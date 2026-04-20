@@ -1,0 +1,68 @@
+/** Backend role strings (must match API JWT `role`). */
+export const ROLE = {
+  SUPER_ADMIN: "super_admin",
+  ADMIN: "admin",
+  FREELANCER: "freelancer",
+  CLIENT: "client",
+};
+
+/** One dashboard URL per role — used for redirects and navbar. */
+export const DASHBOARD_PATH = {
+  [ROLE.SUPER_ADMIN]: "/dashboard/super-admin",
+  [ROLE.ADMIN]: "/dashboard/admin",
+  [ROLE.FREELANCER]: "/dashboard/freelancer",
+  [ROLE.CLIENT]: "/dashboard/client",
+};
+
+export const DASHBOARD_TITLE = {
+  [DASHBOARD_PATH[ROLE.SUPER_ADMIN]]: "لوحة المدير الأعلى",
+  [DASHBOARD_PATH[ROLE.ADMIN]]: "لوحة الإدارة",
+  [DASHBOARD_PATH[ROLE.FREELANCER]]: "لوحة المستقل",
+  [DASHBOARD_PATH[ROLE.CLIENT]]: "لوحة العميل",
+  "/dashboard/freelancer/my-orders": "طلباتي",
+  "/dashboard/freelancer/orders": "الطلبات",
+  "/dashboard/freelancer/financial-claims": "المطالبات المالية",
+};
+
+/**
+ * @param {string} role
+ * @returns {string}
+ */
+export function getDashboardPath(role) {
+  const path = DASHBOARD_PATH[role];
+  return path || "/unauthorized";
+}
+
+/**
+ * @param {string} pathname
+ */
+export function isDashboardPath(pathname) {
+  return pathname.startsWith("/dashboard");
+}
+
+/** Which role may open which dashboard URL (exact path). */
+const DASHBOARD_PATH_TO_ROLES = {
+  [DASHBOARD_PATH[ROLE.SUPER_ADMIN]]: [ROLE.SUPER_ADMIN],
+  [DASHBOARD_PATH[ROLE.ADMIN]]: [ROLE.ADMIN],
+  [DASHBOARD_PATH[ROLE.FREELANCER]]: [ROLE.FREELANCER],
+  [DASHBOARD_PATH[ROLE.CLIENT]]: [ROLE.CLIENT],
+  "/dashboard/freelancer/my-orders": [ROLE.FREELANCER],
+  "/dashboard/freelancer/orders": [ROLE.FREELANCER],
+  "/dashboard/freelancer/financial-claims": [ROLE.FREELANCER],
+};
+
+/**
+ * @param {string} pathname
+ * @param {string} role
+ */
+export function canRoleAccessPath(pathname, role) {
+  if (!pathname.startsWith("/dashboard")) {
+    return true;
+  }
+  const allowed = DASHBOARD_PATH_TO_ROLES[pathname];
+  if (!allowed) {
+    return false;
+  }
+  return allowed.includes(role);
+}
+

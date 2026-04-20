@@ -1,0 +1,241 @@
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { getDashboardPath } from "../../constants/authRoutes";
+
+const SCROLL_COMPACT_THRESHOLD_PX = 56;
+const HERO_SELECTOR = "[data-navbar-hero]";
+
+function getScrollY() {
+  if (typeof window === "undefined") return 0;
+  return (
+    window.scrollY ??
+    window.pageYOffset ??
+    document.documentElement.scrollTop ??
+    document.body.scrollTop ??
+    0
+  );
+}
+
+function isLargeByScroll() {
+  return getScrollY() <= SCROLL_COMPACT_THRESHOLD_PX;
+}
+
+function heroIntersectsViewport(el) {
+  const rect = el.getBoundingClientRect();
+  const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+  return rect.bottom > 0 && rect.top < vh;
+}
+
+const publicExploreItems = [
+  { label: "من نحن", to: "/about" },
+  { label: "الخدمات", to: "/services" },
+  { label: "تواصل معنا", to: "/contact" },
+];
+
+function fullNameAr(user) {
+  const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
+  return parts.join(" ").trim();
+}
+
+function useOnClickOutside(ref, handler) {
+  useEffect(() => {
+    const onDown = (e) => {
+      const el = ref.current;
+      if (!el) return;
+      if (el.contains(e.target)) return;
+      handler(e);
+    };
+    document.addEventListener("mousedown", onDown, true);
+    document.addEventListener("touchstart", onDown, true);
+    return () => {
+      document.removeEventListener("mousedown", onDown, true);
+      document.removeEventListener("touchstart", onDown, true);
+    };
+  }, [ref, handler]);
+}
+
+const Navbar = () => {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { user, loading, logout } = useAuth();
+  const [isInHero, setIsInHero] = useState(true);
+  const [exploreOpen, setExploreOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const exploreRef = useRef(null);
+  const userMenuRef = useRef(null);
+
+  const dashboardPath = user ? getDashboardPath(user.role) : null;
+  const isLoggedIn = Boolean(user) && !loading;
+
+  useOnClickOutside(exploreRef, () => setExploreOpen(false));
+  useOnClickOutside(userMenuRef, () => setUserMenuOpen(false));
+
+  useEffect(() => {
+    setExploreOpen(false);
+    setUserMenuOpen(false);
+  }, [pathname]);
+
+  const navItems = useMemo(() => {
+    const base = [{ label: "الرئيسية", to: "/" }];
+    if (!isLoggedIn) {
+      return [
+        ...base,
+        ...publicExploreItems.slice(0, 2),
+        { label: "الطلبات", to: "/orders" },
+        publicExploreItems[2],
+      ];
+    }
+    if (user?.role === "freelancer") {
+      return [
+        ...base,
+        { label: "طلباتي", to: "/dashboard/freelancer/my-orders" },
+        { label: "الطلبات", to: "/dashboard/freelancer/orders" },
+        { label: "المطالبات المالية", to: "/dashboard/freelancer/financial-claims" },
+      ];
+    }
+    return [...base, { label: "لوحة التحكم", to: dashboardPath || "/dashboard" }];
+  }, [isLoggedIn, user?.role, dashboardPath]);
+
+  const userName = fullNameAr(user) || user?.email || "";
+  const userInitial = (user?.firstName || user?.email || "U").trim().slice(0, 1).toUpperCase();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/", { replace: true });
+  };
+
+  useLayoutEffect(() => {
+    const hero = document.querySelector(HERO_SELECTOR);
+
+    if (hero) {
+      setIsInHero(heroIntersectsViewport(hero));
+      if (typeof IntersectionObserver !== "undefined") {
+        const observer = new IntersectionObserver(
+          ([entry]) => {
+            if (entry) setIsInHero(entry.isIntersecting);
+          },
+          { root: null, rootMargin: "0px", threshold: 0 }
+        );
+        observer.observe(hero);
+        return () => observer.disconnect();
+      }
+      const fallback = () => setIsInHero(heroIntersectsViewport(hero));
+      window.addEventListener("scroll", fallback, { passive: true });
+      window.addEventListener("resize", fallback, { passive: true });
+      return () => {
+        window.removeEventListener("scroll", fallback);
+        window.removeEventListener("resize", fallback);
+      };
+    }
+
+    const update = () => setIsInHero(isLargeByScroll());
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [pathname]);
+
+  return (
+    <header
+      className={`navbar ${isInHero ? "navbar--at-top" : "navbar--scrolled"}`}
+    >
+      <div className="container navbar-shell">
+        <div className="navbar-content">
+          <NavLink to="/" className="brand" aria-label="العودة إلى الرئيسية">
+            <img src="/logo.png" alt="" className="brand-logo" />
+          </NavLink>
+
+          <nav aria-label="التنقل الرئيسي">
+            <ul className="nav-list">
+              {navItems.map((item) => (
+                <li key={item.to}>
+                  <NavLink
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `nav-link ${isActive ? "nav-link-active" : ""}`.trim()
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                </li>
+              ))}
+
+              {isLoggedIn ? (
+                <li className="nav-item-dropdown" ref={exploreRef}>
+                  <button
+                    type="button"
+                    className={`nav-link nav-link-btn ${exploreOpen ? "nav-link-active" : ""}`.trim()}
+                    aria-haspopup="menu"
+                    aria-expanded={exploreOpen}
+                    onClick={() => setExploreOpen((v) => !v)}
+                  >
+                    المزيد
+                  </button>
+                  {exploreOpen ? (
+                    <div className="nav-dropdown" role="menu">
+                      {publicExploreItems.map((x) => (
+                        <NavLink key={x.to} to={x.to} className="nav-dropdown-item" role="menuitem">
+                          {x.label}
+                        </NavLink>
+                      ))}
+                    </div>
+                  ) : null}
+                </li>
+              ) : null}
+            </ul>
+          </nav>
+
+          <div className="nav-auth-actions">
+            {loading ? (
+              <span className="nav-auth-placeholder" aria-hidden="true" />
+            ) : user ? (
+              <>
+                <div className="nav-user" ref={userMenuRef}>
+                  <button
+                    type="button"
+                    className="nav-user-btn"
+                    aria-haspopup="menu"
+                    aria-expanded={userMenuOpen}
+                    onClick={() => setUserMenuOpen((v) => !v)}
+                  >
+                    <span className="nav-user-avatar" aria-hidden="true">
+                      {userInitial}
+                    </span>
+                    <span className="nav-user-name" title={userName}>
+                      {userName}
+                    </span>
+                  </button>
+                  {userMenuOpen ? (
+                    <div className="nav-dropdown nav-dropdown--user" role="menu">
+                      <NavLink to={dashboardPath} className="nav-dropdown-item" role="menuitem">
+                        لوحة التحكم
+                      </NavLink>
+                      {user?.role === "freelancer" ? (
+                        <NavLink to="/dashboard/freelancer" className="nav-dropdown-item" role="menuitem">
+                          لوحة المستقل
+                        </NavLink>
+                      ) : null}
+                      <button type="button" className="nav-dropdown-item nav-dropdown-item--danger" onClick={handleLogout}>
+                        تسجيل الخروج
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <NavLink to="/login" className="nav-login-btn">
+                تسجيل الدخول
+              </NavLink>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+};
+
+export default Navbar;
