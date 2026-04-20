@@ -80,10 +80,7 @@ const Login = () => {
 
           <label className="auth-field">
             <span>البريد الإلكتروني</span>
-            <div className="auth-input-wrap">
-              <i className="auth-input-icon" aria-hidden="true">
-                @
-              </i>
+            <div className="auth-input-wrap auth-input-wrap--noicon">
               <input
                 type="email"
                 name="email"

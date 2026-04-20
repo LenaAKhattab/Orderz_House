@@ -1,31 +1,7 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getDashboardPath } from "../../constants/authRoutes";
-
-const SCROLL_COMPACT_THRESHOLD_PX = 56;
-const HERO_SELECTOR = "[data-navbar-hero]";
-
-function getScrollY() {
-  if (typeof window === "undefined") return 0;
-  return (
-    window.scrollY ??
-    window.pageYOffset ??
-    document.documentElement.scrollTop ??
-    document.body.scrollTop ??
-    0
-  );
-}
-
-function isLargeByScroll() {
-  return getScrollY() <= SCROLL_COMPACT_THRESHOLD_PX;
-}
-
-function heroIntersectsViewport(el) {
-  const rect = el.getBoundingClientRect();
-  const vh = window.innerHeight || document.documentElement.clientHeight || 0;
-  return rect.bottom > 0 && rect.top < vh;
-}
 
 const publicExploreItems = [
   { label: "من نحن", to: "/about" },
@@ -59,7 +35,6 @@ const Navbar = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, loading, logout } = useAuth();
-  const [isInHero, setIsInHero] = useState(true);
   const [exploreOpen, setExploreOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const exploreRef = useRef(null);
@@ -105,44 +80,8 @@ const Navbar = () => {
     navigate("/", { replace: true });
   };
 
-  useLayoutEffect(() => {
-    const hero = document.querySelector(HERO_SELECTOR);
-
-    if (hero) {
-      setIsInHero(heroIntersectsViewport(hero));
-      if (typeof IntersectionObserver !== "undefined") {
-        const observer = new IntersectionObserver(
-          ([entry]) => {
-            if (entry) setIsInHero(entry.isIntersecting);
-          },
-          { root: null, rootMargin: "0px", threshold: 0 }
-        );
-        observer.observe(hero);
-        return () => observer.disconnect();
-      }
-      const fallback = () => setIsInHero(heroIntersectsViewport(hero));
-      window.addEventListener("scroll", fallback, { passive: true });
-      window.addEventListener("resize", fallback, { passive: true });
-      return () => {
-        window.removeEventListener("scroll", fallback);
-        window.removeEventListener("resize", fallback);
-      };
-    }
-
-    const update = () => setIsInHero(isLargeByScroll());
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, [pathname]);
-
   return (
-    <header
-      className={`navbar ${isInHero ? "navbar--at-top" : "navbar--scrolled"}`}
-    >
+    <header className="navbar navbar--at-top">
       <div className="container navbar-shell">
         <div className="navbar-content">
           <NavLink to="/" className="brand" aria-label="العودة إلى الرئيسية">
@@ -214,11 +153,6 @@ const Navbar = () => {
                       <NavLink to={dashboardPath} className="nav-dropdown-item" role="menuitem">
                         لوحة التحكم
                       </NavLink>
-                      {user?.role === "freelancer" ? (
-                        <NavLink to="/dashboard/freelancer" className="nav-dropdown-item" role="menuitem">
-                          لوحة المستقل
-                        </NavLink>
-                      ) : null}
                       <button type="button" className="nav-dropdown-item nav-dropdown-item--danger" onClick={handleLogout}>
                         تسجيل الخروج
                       </button>
