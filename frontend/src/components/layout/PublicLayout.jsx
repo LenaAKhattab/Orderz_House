@@ -12,7 +12,7 @@ const PublicLayout = () => {
     <div className={`page-shell${isHome ? " page-shell--home-flow" : ""}`}>
       <Navbar />
       <Outlet />
-      {!isAuthPage ? <PartnersSection /> : null}
+      {isHome ? <PartnersSection /> : null}
       {!isAuthPage ? <Footer /> : null}
     </div>
   );

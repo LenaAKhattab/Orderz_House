@@ -1,8 +1,10 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
+const path = require("node:path");
 const healthRoutes = require("./routes/healthRoutes");
 const authRoutes = require("./routes/authRoutes");
+const categoriesRoutes = require("./routes/categoriesRoutes");
 const { notFoundMiddleware, errorMiddleware } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -17,9 +19,13 @@ app.use(
 );
 app.use(morgan("dev"));
 
+// Static assets (e.g., category images) served from backend/images
+app.use("/images", express.static(path.join(__dirname, "..", "images")));
+
 // Versioned API mounting keeps future domains modular (auth/orders/users/etc.).
 app.use("/api", healthRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api", categoriesRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

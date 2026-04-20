@@ -2,6 +2,19 @@
 -- If upgrading from an older `users` table, back up data and migrate or drop the table before re-running.
 
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS categories CASCADE;
+
+CREATE TABLE categories (
+  id BIGSERIAL PRIMARY KEY,
+  slug VARCHAR(64) UNIQUE,
+  name VARCHAR(120) NOT NULL,
+  description TEXT NOT NULL,
+  image_url TEXT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 CREATE TABLE users (
   id BIGSERIAL PRIMARY KEY,
@@ -26,3 +39,12 @@ CREATE TABLE users (
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
 CREATE INDEX IF NOT EXISTS idx_users_email_lower ON users(lower(email));
+
+-- Seed initial landing categories (Arabic UI)
+INSERT INTO categories (slug, name, description, image_url, sort_order) VALUES
+  ('programming', 'البرمجة', 'بناء تطبيقات الويب، الواجهات البرمجية، والحلول الحديثة بكفاءة عالية.', '/images/categories/programming.jpg', 10),
+  ('design', 'التصميم', 'تصميم واجهات نظيفة، هويات بصرية، وتجارب استخدام أنيقة.', '/images/categories/design.jpg', 20),
+  ('content-writing', 'كتابة المحتوى', 'كتابة محتوى تسويقي، صفحات هبوط، ومقالات متوافقة مع SEO.', '/images/categories/contentwriting.jpg', 30);
+
+CREATE INDEX IF NOT EXISTS idx_categories_is_active ON categories(is_active);
+CREATE INDEX IF NOT EXISTS idx_categories_sort_order ON categories(sort_order);

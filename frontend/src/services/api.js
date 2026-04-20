@@ -35,4 +35,9 @@ export const meRequest = async () => {
   return data;
 };
 
+export const getCategoriesRequest = async () => {
+  const { data } = await api.get("/categories");
+  return data;
+};
+
 export default api;
