@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import AuthFormCard from "../components/auth/AuthFormCard";
 import AuthLayout from "../components/auth/AuthLayout";
 import Button from "../components/ui/Button";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { canRoleAccessPath, getDashboardPath } from "../constants/authRoutes";
 
 function loginErrorMessage(err) {
@@ -18,6 +18,10 @@ function loginErrorMessage(err) {
         "يوجد مشكلة في قاعدة البيانات. تواصل مع الدعم أو أعد تهيئة قاعدة البيانات.",
       "Database schema does not match the application. Re-run backend/sql/init.sql or migrate your database.":
         "يوجد مشكلة في قاعدة البيانات. تواصل مع الدعم أو حدّث مخطط قاعدة البيانات.",
+      "Database schema is missing required tables. New DB: run sql/init.sql (npm run db:init from backend). Then run npm run db:migrate for RBAC, plans, and subscriptions.":
+        "قاعدة البيانات غير مكتملة. نفّذ تهيئة القاعدة ثم شغّل npm run db:migrate من مجلد backend.",
+      "Database schema does not match the application. Re-run sql/init.sql if needed, then npm run db:migrate from the backend directory.":
+        "مخطط قاعدة البيانات غير متطابق. حدّث القاعدة ثم شغّل npm run db:migrate من مجلد backend.",
     };
     if (map[apiMsg]) return map[apiMsg];
     if (String(apiMsg).toLowerCase().includes("column") || String(apiMsg).toLowerCase().includes("schema")) {
@@ -56,8 +60,9 @@ const Login = () => {
     try {
       const user = await login(email.trim(), password);
       const from = location.state?.from?.pathname;
+      const role = user?.primaryRole || user?.role;
       const target =
-        from && canRoleAccessPath(from, user.role) ? from : getDashboardPath(user.role);
+        from && canRoleAccessPath(from, role) ? from : getDashboardPath(role);
       navigate(target, { replace: true });
     } catch (err) {
       setError(loginErrorMessage(err));

@@ -3,13 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import AuthFormCard from "../components/auth/AuthFormCard";
 import AuthLayout from "../components/auth/AuthLayout";
 import Button from "../components/ui/Button";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { getDashboardPath } from "../constants/authRoutes";
 
 const CATEGORY_OPTIONS = [
   { slug: "design", label: "تصميم" },
   { slug: "content_writing", label: "كتابة محتوى" },
-  { slug: "development", label: "تطوير" },
+  { slug: "development", label: "البرمجة" },
 ];
 
 const COUNTRY_CACHE_KEY = "orderz_countries_cache_v3";
@@ -249,6 +249,10 @@ const API_ERROR_AR = {
     "يوجد مشكلة في قاعدة البيانات. تواصل مع الدعم أو أعد تهيئة قاعدة البيانات.",
   "Database schema does not match the application. Re-run backend/sql/init.sql or migrate your database.":
     "يوجد مشكلة في قاعدة البيانات. تواصل مع الدعم أو حدّث مخطط قاعدة البيانات.",
+  "Database schema is missing required tables. New DB: run sql/init.sql (npm run db:init from backend). Then run npm run db:migrate for RBAC, plans, and subscriptions.":
+    "قاعدة البيانات غير مكتملة. نفّذ تهيئة القاعدة ثم شغّل npm run db:migrate من مجلد backend.",
+  "Database schema does not match the application. Re-run sql/init.sql if needed, then npm run db:migrate from the backend directory.":
+    "مخطط قاعدة البيانات غير متطابق. حدّث القاعدة ثم شغّل npm run db:migrate من مجلد backend.",
 };
 
 function registerErrorMessage(err) {
@@ -446,7 +450,8 @@ const Register = () => {
     setSubmitting(true);
     try {
       const user = await register(body);
-      navigate(getDashboardPath(user.role), { replace: true });
+      const role = user?.primaryRole || user?.role;
+      navigate(getDashboardPath(role), { replace: true });
     } catch (err) {
       setError(registerErrorMessage(err));
     } finally {

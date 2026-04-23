@@ -4,6 +4,7 @@
  *
  * Usage (from backend/):
  *   npm run db:init
+ *   npm run db:migrate   (applies sql/migrations/001_rbac_subscriptions_plans.sql)
  *   npm run db:run -- sql/init.sql
  *   npm run db:run -- path/to/other.sql
  *

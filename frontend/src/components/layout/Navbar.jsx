@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import { getDashboardPath } from "../../constants/authRoutes";
 
 const publicExploreItems = [
@@ -40,19 +40,38 @@ const Navbar = () => {
   const exploreRef = useRef(null);
   const userMenuRef = useRef(null);
 
-  const dashboardPath = user ? getDashboardPath(user.role) : null;
+  const role = user?.primaryRole || user?.role;
+  const roles = Array.isArray(user?.roles) ? user.roles : [];
+  const isFreelancer = role === "freelancer" || roles.includes("freelancer");
+  const dashboardPath = user && role ? getDashboardPath(role) : null;
   const isLoggedIn = Boolean(user) && !loading;
+  const createOrderPath =
+    role === "super_admin"
+      ? "/dashboard/super-admin/orders/create"
+      : role === "admin"
+        ? "/dashboard/admin/orders/create"
+        : role === "client"
+          ? "/dashboard/client/orders/create"
+          : null;
 
   useOnClickOutside(exploreRef, () => setExploreOpen(false));
   useOnClickOutside(userMenuRef, () => setUserMenuOpen(false));
 
   useEffect(() => {
-    setExploreOpen(false);
-    setUserMenuOpen(false);
+    const t = window.setTimeout(() => {
+      setExploreOpen(false);
+      setUserMenuOpen(false);
+    }, 0);
+    return () => window.clearTimeout(t);
   }, [pathname]);
 
   const navItems = useMemo(() => {
-    const base = [{ label: "الرئيسية", to: "/" }];
+    const base =
+      isLoggedIn && (role === "admin" || role === "super_admin")
+        ? []
+        : isLoggedIn && isFreelancer
+          ? []
+          : [{ label: "الباقات", to: "/plans" }];
     if (!isLoggedIn) {
       return [
         ...base,
@@ -61,7 +80,24 @@ const Navbar = () => {
         publicExploreItems[2],
       ];
     }
-    if (user?.role === "freelancer") {
+    if (role === "super_admin") {
+      return [
+        ...base,
+        { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
+        { label: "الاشتراكات", to: "/dashboard/super-admin/subscriptions" },
+        { label: "الطلبات", to: "/dashboard/super-admin/orders" },
+        { label: "إنشاء طلب", to: "/dashboard/super-admin/orders/create" },
+      ];
+    }
+    if (role === "admin") {
+      return [
+        ...base,
+        { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
+        { label: "الطلبات", to: "/dashboard/admin/orders" },
+        { label: "إنشاء طلب", to: "/dashboard/admin/orders/create" },
+      ];
+    }
+    if (isFreelancer) {
       return [
         ...base,
         { label: "طلباتي", to: "/dashboard/freelancer/my-orders" },
@@ -69,8 +105,20 @@ const Navbar = () => {
         { label: "المطالبات المالية", to: "/dashboard/freelancer/financial-claims" },
       ];
     }
+    if (role === "client") {
+      return [
+        ...base,
+        { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
+        { label: "إنشاء طلب", to: "/dashboard/client/orders/create" },
+      ];
+    }
     return [...base, { label: "لوحة التحكم", to: dashboardPath || "/dashboard" }];
-  }, [isLoggedIn, user?.role, dashboardPath]);
+  }, [isLoggedIn, role, dashboardPath, isFreelancer]);
+
+  const moreItems = useMemo(() => {
+    if (!isLoggedIn) return [];
+    return isFreelancer ? [{ label: "الباقات", to: "/plans" }, ...publicExploreItems] : publicExploreItems;
+  }, [isLoggedIn, isFreelancer]);
 
   const userName = fullNameAr(user) || user?.email || "";
   const userInitial = (user?.firstName || user?.email || "U").trim().slice(0, 1).toUpperCase();
@@ -116,7 +164,7 @@ const Navbar = () => {
                   </button>
                   {exploreOpen ? (
                     <div className="nav-dropdown" role="menu">
-                      {publicExploreItems.map((x) => (
+                      {moreItems.map((x) => (
                         <NavLink key={x.to} to={x.to} className="nav-dropdown-item" role="menuitem">
                           {x.label}
                         </NavLink>
@@ -133,6 +181,14 @@ const Navbar = () => {
               <span className="nav-auth-placeholder" aria-hidden="true" />
             ) : user ? (
               <>
+                {createOrderPath ? (
+                  <NavLink to={createOrderPath} className="nav-create-btn" aria-label="إنشاء طلب">
+                    <span className="nav-create-btn__icon" aria-hidden="true">
+                      +
+                    </span>
+                    <span className="nav-create-btn__text">إنشاء طلب</span>
+                  </NavLink>
+                ) : null}
                 <div className="nav-user" ref={userMenuRef}>
                   <button
                     type="button"

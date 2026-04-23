@@ -19,6 +19,8 @@ export const DASHBOARD_TITLE = {
   [DASHBOARD_PATH[ROLE.ADMIN]]: "لوحة الإدارة",
   [DASHBOARD_PATH[ROLE.FREELANCER]]: "لوحة المستقل",
   [DASHBOARD_PATH[ROLE.CLIENT]]: "لوحة العميل",
+  "/dashboard/super-admin/plans": "إدارة الباقات",
+  "/dashboard/super-admin/subscriptions": "اشتراكات المستقلين",
   "/dashboard/freelancer/my-orders": "طلباتي",
   "/dashboard/freelancer/orders": "الطلبات",
   "/dashboard/freelancer/financial-claims": "المطالبات المالية",
@@ -43,6 +45,8 @@ export function isDashboardPath(pathname) {
 /** Which role may open which dashboard URL (exact path). */
 const DASHBOARD_PATH_TO_ROLES = {
   [DASHBOARD_PATH[ROLE.SUPER_ADMIN]]: [ROLE.SUPER_ADMIN],
+  "/dashboard/super-admin/plans": [ROLE.SUPER_ADMIN],
+  "/dashboard/super-admin/subscriptions": [ROLE.SUPER_ADMIN],
   [DASHBOARD_PATH[ROLE.ADMIN]]: [ROLE.ADMIN],
   [DASHBOARD_PATH[ROLE.FREELANCER]]: [ROLE.FREELANCER],
   [DASHBOARD_PATH[ROLE.CLIENT]]: [ROLE.CLIENT],

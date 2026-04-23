@@ -1,8 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { TOKEN_KEY, loginRequest, meRequest, registerRequest } from "../services/api";
 import { getDashboardPath } from "../constants/authRoutes";
-
-const AuthContext = createContext(null);
+import { AuthContext } from "./authContext";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -81,18 +80,13 @@ export function AuthProvider({ children }) {
       login,
       register,
       logout,
-      getDashboardPath: () => (user ? getDashboardPath(user.role) : "/login"),
+      getDashboardPath: () => {
+        const role = user?.primaryRole || user?.role;
+        return user && role ? getDashboardPath(role) : "/login";
+      },
     }),
     [user, loading, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return ctx;
 }

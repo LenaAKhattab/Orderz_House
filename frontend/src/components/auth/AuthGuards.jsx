@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import { getDashboardPath } from "../../constants/authRoutes";
+import { AuthRouteSkeleton } from "../ui/Skeleton";
 
 /**
  * `/dashboard` → redirects to the signed-in user’s role dashboard.
@@ -16,19 +17,15 @@ export function DashboardRedirect() {
     return <Navigate to="/login" replace />;
   }
 
-  return <Navigate to={getDashboardPath(user.role)} replace />;
+  const role = user?.primaryRole || user?.role;
+  return <Navigate to={getDashboardPath(role)} replace />;
 }
 
 /**
  * Full-screen loading while session is being restored (no flash of login on refresh).
  */
 export function AuthRouteLoading() {
-  return (
-    <div className="auth-route-loading" role="status" aria-live="polite">
-      <span className="auth-route-loading__dot" />
-      <span className="auth-route-loading__text">جاري التحميل…</span>
-    </div>
-  );
+  return <AuthRouteSkeleton />;
 }
 
 /**
@@ -60,7 +57,8 @@ export function GuestOnly({ children }) {
   }
 
   if (user) {
-    return <Navigate to={getDashboardPath(user.role)} replace />;
+    const role = user?.primaryRole || user?.role;
+    return <Navigate to={getDashboardPath(role)} replace />;
   }
 
   return children;
@@ -81,8 +79,9 @@ export function RequireRole({ allowedRoles, children }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!allowedRoles.includes(user.role)) {
-    return <Navigate to={getDashboardPath(user.role)} replace />;
+  const role = user?.primaryRole || user?.role;
+  if (!allowedRoles.includes(role)) {
+    return <Navigate to={getDashboardPath(role)} replace />;
   }
 
   return children;

@@ -2,7 +2,6 @@ import { NavLink, Link } from "react-router-dom";
 import Button from "../ui/Button";
 
 const navItems = [
-  { label: "الرئيسية", to: "/" },
   { label: "استكشف", to: "/services" },
   { label: "التصنيفات", to: "/orders" },
 ];

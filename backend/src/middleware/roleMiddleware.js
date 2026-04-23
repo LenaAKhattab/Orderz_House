@@ -7,8 +7,12 @@ const authorizeRoles = (...roles) => {
       });
     }
 
-    const role = req.user.role;
-    if (!role || !roles.includes(role)) {
+    const resolvedRoles = Array.isArray(req.auth?.roles) ? req.auth.roles.map((r) => r.name) : null;
+    const hasAllowedRole = resolvedRoles
+      ? resolvedRoles.some((r) => roles.includes(r))
+      : roles.includes(req.user.role);
+
+    if (!hasAllowedRole) {
       return res.status(403).json({
         success: false,
         message: "You are not allowed to access this resource.",

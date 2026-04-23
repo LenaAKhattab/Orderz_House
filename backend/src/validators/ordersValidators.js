@@ -1,0 +1,140 @@
+const { body, param, query } = require("express-validator");
+
+const orderIdParam = [param("id").isInt({ min: 1 }).withMessage("Invalid order id.")];
+
+const listOrdersValidators = [
+  query("limit").optional().isInt({ min: 1, max: 200 }).withMessage("limit must be 1..200."),
+  query("offset").optional().isInt({ min: 0, max: 100000 }).withMessage("offset must be >= 0."),
+];
+
+const createInternalOrderValidators = [
+  body("orderCode")
+    .isString()
+    .trim()
+    .isLength({ min: 2, max: 32 })
+    .withMessage("Order code is required.")
+    .matches(/^[A-Za-z0-9][A-Za-z0-9_-]{1,31}$/)
+    .withMessage("Order code format is invalid."),
+  body("title").isString().trim().isLength({ min: 2, max: 200 }).withMessage("Project Title is required."),
+  body("description").isString().trim().isLength({ min: 10, max: 5000 }).withMessage("Description is required."),
+  body("categoryId").isInt({ min: 1 }).withMessage("Category is required."),
+  body("subcategoryId").optional({ nullable: true }).isInt({ min: 1 }).withMessage("Invalid sub category."),
+  body("subSubcategoryId").optional({ nullable: true }).isInt({ min: 1 }).withMessage("Invalid sub sub category."),
+  body("subSubcategoryId")
+    .custom((value, { req }) => {
+      if (value === undefined || value === null || value === "") return true;
+      // If detailed is provided, category must be present (already required), and subcategory can be omitted (inferred).
+      return true;
+    }),
+  body("projectType").isIn(["fixed", "bidding"]).withMessage("Project Type must be fixed or bidding."),
+  body("currencyCode")
+    .optional({ nullable: true })
+    .custom((value, { req }) => {
+      const type = String(req.body.projectType || "").trim();
+      if (type === "bidding") {
+        if (value === undefined || value === null || value === "") return true;
+        throw new Error("currencyCode must be omitted for bidding projects.");
+      }
+      // fixed: required 3-letter code
+      if (value === undefined || value === null || value === "") {
+        throw new Error("currencyCode is required for fixed projects.");
+      }
+      const code = String(value).trim().toUpperCase();
+      if (!/^[A-Z]{3}$/.test(code)) {
+        throw new Error("Invalid currencyCode.");
+      }
+      const allowed = ["JOD", "SAR", "USD", "AED", "EUR", "KWD", "QAR", "BHD", "OMR"];
+      if (!allowed.includes(code)) {
+        throw new Error("Unsupported currencyCode.");
+      }
+      return true;
+    }),
+  body("budget")
+    .optional({ nullable: true })
+    .custom((value, { req }) => {
+      const type = String(req.body.projectType || "").trim();
+      if (type === "bidding") {
+        // budget must be omitted or empty for bidding
+        if (value === undefined || value === null || value === "") return true;
+        throw new Error("Budget must be omitted for bidding projects.");
+      }
+      // fixed: budget required and > 0
+      if (value === undefined || value === null || value === "") {
+        throw new Error("Budget is required for fixed projects.");
+      }
+      const n = Number(value);
+      if (!Number.isFinite(n) || !(n > 0)) {
+        throw new Error("Budget must be a number > 0.");
+      }
+      return true;
+    })
+    .toFloat(),
+  body("durationValue").isInt({ min: 1, max: 100000 }).withMessage("Project Duration must be > 0."),
+  body("durationUnit").isIn(["days", "hours", "minutes"]).withMessage("Duration Unit is invalid."),
+  body("preferredSkills")
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === null || value === undefined || value === "") return true;
+      if (Array.isArray(value)) return true;
+      const s = String(value).trim();
+      if (!s) return true;
+      // Accept JSON array or comma-separated
+      if (s.startsWith("[")) {
+        const parsed = JSON.parse(s);
+        if (!Array.isArray(parsed)) throw new Error("preferredSkills must be a list.");
+        if (parsed.length > 50) throw new Error("Too many skills.");
+        return true;
+      }
+      if (s.length > 2000) throw new Error("preferredSkills is too long.");
+      return true;
+    })
+    .withMessage("Preferred Skills is invalid."),
+  body("assignedFreelancerId").optional({ nullable: true }).isInt({ min: 1 }).withMessage("Invalid freelancer."),
+  body("archive")
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === undefined || value === null || value === "") return true;
+      const s = String(value).trim().toLowerCase();
+      if (s === "true" || s === "false") return true;
+      if (value === true || value === false) return true;
+      throw new Error("archive must be boolean.");
+    }),
+  body("extraCategoryIds")
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === undefined || value === null || value === "") return true;
+      const raw = Array.isArray(value) ? value : JSON.parse(String(value));
+      if (!Array.isArray(raw)) throw new Error("extraCategoryIds must be a list.");
+      if (raw.length > 10) throw new Error("Too many extra categories.");
+      for (const v of raw) {
+        const n = Number(v);
+        if (!Number.isInteger(n) || n < 1) throw new Error("Invalid extra category id.");
+      }
+      return true;
+    }),
+  body("extraCategoryDetails")
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === undefined || value === null || value === "") return true;
+      const obj = typeof value === "object" && !Array.isArray(value) ? value : JSON.parse(String(value));
+      if (!obj || typeof obj !== "object" || Array.isArray(obj)) throw new Error("extraCategoryDetails must be an object.");
+      const keys = Object.keys(obj);
+      if (keys.length > 20) throw new Error("extraCategoryDetails too large.");
+      for (const k of keys) {
+        const catId = Number(k);
+        if (!Number.isInteger(catId) || catId < 1) throw new Error("Invalid extra category key.");
+        const v = obj[k];
+        if (v === null || v === undefined || v === "") continue;
+        const ssId = Number(v);
+        if (!Number.isInteger(ssId) || ssId < 1) throw new Error("Invalid extra sub subcategory id.");
+      }
+      return true;
+    }),
+];
+
+module.exports = {
+  orderIdParam,
+  listOrdersValidators,
+  createInternalOrderValidators,
+};
+

@@ -53,7 +53,8 @@ const HomePage = () => {
   const formatArabicDateTime = (isoString) => {
     if (!isoString) return "جاري التحميل...";
     try {
-      return new Intl.DateTimeFormat("ar-EG", {
+      // Keep Arabic text, but force English digits in the formatted date/time
+      return new Intl.DateTimeFormat("ar-EG-u-nu-latn", {
         dateStyle: "medium",
         timeStyle: "short",
       }).format(new Date(isoString));

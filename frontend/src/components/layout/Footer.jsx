@@ -5,7 +5,6 @@ const Footer = () => {
         <section className="footer-column">
           <h3 className="footer-title">استكشاف</h3>
           <ul className="footer-links">
-            <li><a href="#">الرئيسية</a></li>
             <li><a href="#">من نحن</a></li>
             <li><a href="#">الطلبات</a></li>
             <li><a href="#">الباقات</a></li>

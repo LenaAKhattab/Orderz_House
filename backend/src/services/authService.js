@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("node:crypto");
 const { pool } = require("../config/db");
 const { ROLES, PUBLIC_SIGNUP_ROLES } = require("../constants/roles");
+const { ensureUserRole, resolveAuthzContext } = require("./rbacService");
 
 const BCRYPT_ROUNDS = 12;
 const ACCOUNT_ID_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -59,6 +60,7 @@ function mapUserPublic(row) {
     fatherName: row.father_name,
     familyName: row.family_name,
     email: row.email,
+    // Backward-compatible legacy role field (deprecated once RBAC fully migrated)
     role: row.role,
     country: row.country,
     phone: row.phone,
@@ -67,6 +69,15 @@ function mapUserPublic(row) {
     freelancerCategories: row.freelancer_categories || null,
     isActive: row.is_active,
     createdAt: row.created_at,
+  };
+}
+
+function withAuthz(user, authz) {
+  return {
+    ...user,
+    primaryRole: authz.primaryRole,
+    roles: authz.roles.map((r) => r.name),
+    permissions: authz.permissions,
   };
 }
 
@@ -84,6 +95,15 @@ async function findUserById(id) {
   const { rows } = await pool.query(
     `SELECT id, account_id, first_name, father_name, family_name, email, role,
             country, phone, whatsapp, gender, freelancer_categories, is_active, created_at
+     FROM users WHERE id = $1 LIMIT 1`,
+    [id],
+  );
+  return rows[0] || null;
+}
+
+async function getUserRowByIdForAuthz(id) {
+  const { rows } = await pool.query(
+    `SELECT id, account_id, email, role, is_active
      FROM users WHERE id = $1 LIMIT 1`,
     [id],
   );
@@ -128,14 +148,14 @@ function mapDbSchemaError(error) {
   if (!error || !error.code) return null;
   if (error.code === "42P01") {
     const err = new Error(
-      "Database schema is missing the users table. Run backend/sql/init.sql against your database, then try again.",
+      "Database schema is missing required tables. New DB: run sql/init.sql (npm run db:init from backend). Then run npm run db:migrate for RBAC, plans, and subscriptions.",
     );
     err.statusCode = 503;
     return err;
   }
   if (error.code === "42703") {
     const err = new Error(
-      "Database schema does not match the application. Re-run backend/sql/init.sql or migrate your database.",
+      "Database schema does not match the application. Re-run sql/init.sql if needed, then npm run db:migrate from the backend directory.",
     );
     err.statusCode = 503;
     return err;
@@ -220,8 +240,10 @@ async function registerUser(payload) {
       ],
     );
     const row = rows[0];
+    await ensureUserRole({ userId: row.id, roleName: row.role });
+    const authz = await resolveAuthzContext({ userId: row.id, legacyRole: row.role });
     const token = signToken(row);
-    return { user: mapUserPublic(row), token };
+    return { user: withAuthz(mapUserPublic(row), authz), token };
   } catch (error) {
     const mapped = handleUniqueViolation(error);
     if (mapped) throw mapped;
@@ -267,7 +289,8 @@ async function loginUser(emailRaw, password) {
 
   const token = signToken(user);
   const { password_hash: _, ...rest } = user;
-  return { user: mapUserPublic(rest), token };
+  const authz = await resolveAuthzContext({ userId: rest.id, legacyRole: rest.role });
+  return { user: withAuthz(mapUserPublic(rest), authz), token };
 }
 
 async function getPublicUserById(id) {
@@ -284,11 +307,13 @@ async function getPublicUserById(id) {
     err.statusCode = 404;
     throw err;
   }
-  return mapUserPublic(row);
+  const authz = await resolveAuthzContext({ userId: row.id, legacyRole: row.role });
+  return withAuthz(mapUserPublic(row), authz);
 }
 
 module.exports = {
   registerUser,
   loginUser,
   getPublicUserById,
+  getUserRowByIdForAuthz,
 };
