@@ -1,8 +1,9 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import PublicLayout from "./components/layout/PublicLayout";
 import MainLayout from "./layouts/MainLayout";
+import { ClientCreateOrderModalProvider } from "./context/ClientCreateOrderModalContext.jsx";
 import { DashboardRedirect, GuestOnly, RequireAuth, RequireRole } from "./components/auth/AuthGuards";
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -20,7 +21,9 @@ import SuperAdminPlansPage from "./pages/dashboard/SuperAdminPlansPage";
 import SuperAdminSubscriptionsPage from "./pages/dashboard/SuperAdminSubscriptionsPage";
 import AdminOrdersPage from "./pages/dashboard/AdminOrdersPage";
 import AdminCreateOrderPage from "./pages/dashboard/AdminCreateOrderPage";
-import ClientCreateOrderPage from "./pages/dashboard/ClientCreateOrderPage";
+import ClientCreateOrderOpenAndRedirect from "./pages/dashboard/ClientCreateOrderOpenAndRedirect";
+import ClientMyOrdersPage from "./pages/dashboard/ClientMyOrdersPage";
+import ClientFinancialPage from "./pages/dashboard/ClientFinancialPage";
 import FreelancerOrderDetailsPage from "./pages/dashboard/FreelancerOrderDetailsPage";
 import FreelancerMyOrderDetailsPage from "./pages/dashboard/FreelancerMyOrderDetailsPage";
 import { ROLE } from "./constants/authRoutes";
@@ -60,7 +63,13 @@ function App() {
             </Route>
 
             <Route element={<RequireAuth />}>
-              <Route element={<MainLayout />}>
+              <Route
+                element={
+                  <ClientCreateOrderModalProvider>
+                    <MainLayout />
+                  </ClientCreateOrderModalProvider>
+                }
+              >
                 <Route path="/dashboard" element={<DashboardRedirect />} />
                 <Route
                   path="/dashboard/super-admin"
@@ -184,11 +193,28 @@ function App() {
                     </RequireRole>
                   }
                 />
+                <Route path="/dashboard/client/my_orders" element={<Navigate to="/dashboard/client/my-orders" replace />} />
+                <Route
+                  path="/dashboard/client/my-orders"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.CLIENT]}>
+                      <ClientMyOrdersPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/client/financial"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.CLIENT]}>
+                      <ClientFinancialPage />
+                    </RequireRole>
+                  }
+                />
                 <Route
                   path="/dashboard/client/orders/create"
                   element={
                     <RequireRole allowedRoles={[ROLE.CLIENT]}>
-                      <ClientCreateOrderPage />
+                      <ClientCreateOrderOpenAndRedirect />
                     </RequireRole>
                   }
                 />
