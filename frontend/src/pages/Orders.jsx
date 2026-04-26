@@ -16,11 +16,15 @@ const Orders = () => {
   const [busy, setBusy] = useState(true);
   const [takingId, setTakingId] = useState(null);
   const [eligibility, setEligibility] = useState(null);
+  const [eligibilityFetched, setEligibilityFetched] = useState(false);
 
   const canTake = useMemo(() => {
     if (!isFreelancer) return false;
     return Boolean(eligibility?.eligible);
   }, [isFreelancer, eligibility]);
+
+  const showIneligibleNotice =
+    Boolean(user) && isFreelancer && eligibilityFetched && eligibility && eligibility.eligible === false;
 
   useEffect(() => {
     let cancelled = false;
@@ -46,12 +50,18 @@ const Orders = () => {
   useEffect(() => {
     let cancelled = false;
     async function loadEligibility() {
-      if (!user || loading || !isFreelancer) return;
+      if (!user || loading || !isFreelancer) {
+        if (!cancelled) setEligibilityFetched(false);
+        return;
+      }
+      if (!cancelled) setEligibilityFetched(false);
       try {
         const res = await getMyEligibilityRequest();
         if (!cancelled) setEligibility(res?.data || null);
       } catch {
         if (!cancelled) setEligibility(null);
+      } finally {
+        if (!cancelled) setEligibilityFetched(true);
       }
     }
     loadEligibility();
@@ -85,11 +95,11 @@ const Orders = () => {
             لتتمكن من استلام طلب، <Link className="auth-inline-link" to="/login">سجّل الدخول</Link> كفريلانسر.
           </p>
         ) : isFreelancer ? (
-          <p className="help">
-            {eligibility?.eligible
-              ? null
-              : "حسابك غير مؤهل حالياً لاستلام طلبات من الحوض (تحقق من الاشتراك)."}
-          </p>
+          showIneligibleNotice ? (
+            <p className="help">
+              حسابك غير مؤهل حالياً لاستلام طلبات من الحوض (تحقق من الاشتراك).
+            </p>
+          ) : null
         ) : (
           <p className="help">استلام الطلبات متاح للفريلانسر فقط.</p>
         )}

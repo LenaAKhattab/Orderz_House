@@ -377,11 +377,15 @@ function FreelancerPoolOrders() {
   const [busy, setBusy] = useState(true);
   const [takingId, setTakingId] = useState(null);
   const [eligibility, setEligibility] = useState(null);
+  const [eligibilityFetched, setEligibilityFetched] = useState(false);
 
   const canTake = useMemo(() => {
     if (!isFreelancer) return false;
     return Boolean(eligibility?.eligible);
   }, [isFreelancer, eligibility]);
+
+  const showIneligibleNotice =
+    isFreelancer && eligibilityFetched && eligibility && eligibility.eligible === false;
 
   useEffect(() => {
     let cancelled = false;
@@ -405,12 +409,18 @@ function FreelancerPoolOrders() {
   useEffect(() => {
     let cancelled = false;
     async function loadEligibility() {
-      if (!user || loading || !isFreelancer) return;
+      if (!user || loading || !isFreelancer) {
+        if (!cancelled) setEligibilityFetched(false);
+        return;
+      }
+      if (!cancelled) setEligibilityFetched(false);
       try {
         const res = await getMyEligibilityRequest();
         if (!cancelled) setEligibility(res?.data || null);
       } catch {
         if (!cancelled) setEligibility(null);
+      } finally {
+        if (!cancelled) setEligibilityFetched(true);
       }
     }
     loadEligibility();
@@ -446,11 +456,11 @@ function FreelancerPoolOrders() {
       <div className="dash-grid">
         <Section title="الطلبات المتاحة">
           {isFreelancer ? (
-            <p className="help" style={{ marginTop: 0 }}>
-              {eligibility?.eligible
-                ? null
-                : "حسابك غير مؤهل حالياً لاستلام طلبات من الحوض (تحقق من الاشتراك)."}
-            </p>
+            showIneligibleNotice ? (
+              <p className="help" style={{ marginTop: 0 }}>
+                حسابك غير مؤهل حالياً لاستلام طلبات من الحوض (تحقق من الاشتراك).
+              </p>
+            ) : null
           ) : (
             <p className="help" style={{ marginTop: 0 }}>هذه الصفحة متاحة للمستقل فقط.</p>
           )}
