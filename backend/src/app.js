@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
 const path = require("node:path");
+const stripeWebhookRoutes = require("./routes/stripeWebhookRoutes");
 const healthRoutes = require("./routes/healthRoutes");
 const authRoutes = require("./routes/authRoutes");
 const categoriesRoutes = require("./routes/categoriesRoutes");
@@ -14,6 +15,9 @@ const ordersRoutes = require("./routes/ordersRoutes");
 const { notFoundMiddleware, errorMiddleware } = require("./middleware/errorMiddleware");
 
 const app = express();
+
+// Stripe webhooks require the raw body for signature verification (must run before express.json()).
+app.use("/api/webhooks/stripe", express.raw({ type: "application/json" }), stripeWebhookRoutes);
 
 // Core middleware setup for parsing, CORS boundaries, and request logging.
 app.use(express.json());

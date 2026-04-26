@@ -1,11 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { DASHBOARD_TITLE } from "../../constants/authRoutes";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../components/ui/toastContext";
 import PoolOrderCardCompact from "../../components/orders/PoolOrderCardCompact";
 import AssignedOrderCardCompact from "../../components/orders/AssignedOrderCardCompact";
-import { getMyEligibilityRequest, getMySubscriptionRequest, listMyAssignedOrdersRequest, listPoolOrdersRequest, takePoolOrderRequest } from "../../services/api";
+import BidAmountModal from "../../components/orders/BidAmountModal";
+import {
+  getMyEligibilityRequest,
+  getMySubscriptionRequest,
+  listMyAssignedOrdersRequest,
+  listPoolOrdersRequest,
+  submitPoolOrderBidRequest,
+  takePoolOrderRequest,
+} from "../../services/api";
 import { AssignedOrderListSkeleton, PoolOrderListSkeleton, SubscriptionCardSkeleton } from "../../components/ui/Skeleton";
 
 const ROLE_LABEL_AR = {
@@ -14,6 +22,17 @@ const ROLE_LABEL_AR = {
   freelancer: "مستقل",
   client: "عميل",
 };
+
+/** Freelancer «طلباتي» list — filter by orderStatus (API values). */
+const FREELANCER_MY_ORDERS_STATUS_FILTERS = [
+  { key: "all", label: "الكل" },
+  { key: "pending_claim", label: "بانتظار الموافقة" },
+  { key: "assigned", label: "مُسند" },
+  { key: "in_progress", label: "قيد التنفيذ" },
+  { key: "pending_client_review", label: "بانتظار اعتماد العميل" },
+  { key: "completed", label: "مكتمل" },
+  { key: "cancelled", label: "ملغي" },
+];
 
 function fullNameAr(user) {
   const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
@@ -304,6 +323,42 @@ function FreelancerMyOrders() {
 
   const [orders, setOrders] = useState([]);
   const [busy, setBusy] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const statusCounts = useMemo(() => {
+    const counts = { all: orders.length, pending_claim: 0 };
+    for (const o of orders) {
+      if (o?.myClaim?.status === "pending" && !o?.assignedFreelancerId) counts.pending_claim += 1;
+      const s = o?.orderStatus ? String(o.orderStatus) : "";
+      if (!s) continue;
+      counts[s] = (counts[s] || 0) + 1;
+    }
+    return counts;
+  }, [orders]);
+
+  const filteredOrders = useMemo(() => {
+    if (statusFilter === "all") return orders;
+    if (statusFilter === "pending_claim") {
+      return orders.filter((o) => o?.myClaim?.status === "pending" && !o?.assignedFreelancerId);
+    }
+    return orders.filter((o) => String(o?.orderStatus || "") === statusFilter);
+  }, [orders, statusFilter]);
+
+  const fetchAssigned = useCallback(async () => {
+    if (!user || loading || !isFreelancer) return;
+    const res = await listMyAssignedOrdersRequest({ limit: 50, offset: 0 });
+    setOrders(res?.data?.orders || []);
+  }, [user, loading, isFreelancer]);
+
+  const fetchAssignedSilent = useCallback(async () => {
+    if (!user || loading || !isFreelancer) return;
+    try {
+      const res = await listMyAssignedOrdersRequest({ limit: 50, offset: 0 });
+      setOrders(res?.data?.orders || []);
+    } catch {
+      /* ignore — background poll */
+    }
+  }, [user, loading, isFreelancer]);
 
   useEffect(() => {
     let cancelled = false;
@@ -311,8 +366,7 @@ function FreelancerMyOrders() {
       if (!user || loading || !isFreelancer) return;
       setBusy(true);
       try {
-        const res = await listMyAssignedOrdersRequest({ limit: 50, offset: 0 });
-        if (!cancelled) setOrders(res?.data?.orders || []);
+        await fetchAssigned();
       } catch (e) {
         if (!cancelled) push({ type: "error", title: "تعذر تحميل طلباتي", message: e?.response?.data?.message || e?.message });
       } finally {
@@ -323,7 +377,22 @@ function FreelancerMyOrders() {
     return () => {
       cancelled = true;
     };
-  }, [user, loading, isFreelancer, push]);
+  }, [user, loading, isFreelancer, push, fetchAssigned]);
+
+  useEffect(() => {
+    if (busy || !user || loading || !isFreelancer) return undefined;
+    const t = setInterval(() => {
+      void fetchAssignedSilent();
+    }, 20_000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") void fetchAssignedSilent();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [busy, user, loading, isFreelancer, fetchAssignedSilent]);
 
   return (
     <div className="dash">
@@ -331,7 +400,9 @@ function FreelancerMyOrders() {
         <div className="dash-hero__copy">
           <p className="dash-hero__kicker">لوحة مستقل</p>
           <h1 className="dash-hero__title">طلباتي</h1>
-          <p className="dash-hero__subtitle">قائمة الطلبات المسندة لك أو التي قمت بقبولها.</p>
+          <p className="dash-hero__subtitle">
+            الطلبات المسندة لك بعد الموافقة، والطلبات التي تقدمت لها من الحوض وتنتظر موافقة صاحب الطلب أو الإدارة.
+          </p>
         </div>
       </header>
 
@@ -342,22 +413,50 @@ function FreelancerMyOrders() {
           ) : orders.length === 0 ? (
             <EmptyState
               title="لا توجد طلبات حالياً"
-              subtitle="ستظهر طلباتك هنا بمجرد إسنادها لك أو قبولك لها."
+              subtitle="بعد أن تتقدم لطلب من الحوض سيظهر هنا حتى تتم الموافقة أو الرفض. بعد الموافقة يبقى ضمن «طلباتي» للتنفيذ."
               actionLabel="استعرض الطلبات المتاحة"
               actionTo="/dashboard/freelancer/orders"
             />
           ) : (
-            <div className="oh-assigned-list" style={{ marginTop: 0 }}>
-              {orders.map((order) => (
-                <AssignedOrderCardCompact
-                  key={order.id}
-                  order={order}
-                  onOpenDetails={() =>
-                    navigate(`/dashboard/freelancer/my-orders/${order.id}`)
-                  }
+            <>
+              <div className="freelancer-my-orders-filters" role="tablist" aria-label="تصفية الطلبات حسب الحالة">
+                {FREELANCER_MY_ORDERS_STATUS_FILTERS.map((f) => {
+                  const n = f.key === "all" ? statusCounts.all : statusCounts[f.key] || 0;
+                  const active = statusFilter === f.key;
+                  const label = `${f.label} (${n})`;
+                  return (
+                    <button
+                      key={f.key}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      className={`btn btn-secondary freelancer-my-orders-filters__btn${active ? " freelancer-my-orders-filters__btn--active" : ""}`.trim()}
+                      onClick={() => setStatusFilter(f.key)}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              {filteredOrders.length === 0 ? (
+                <EmptyState
+                  title="لا توجد طلبات بهذه الحالة"
+                  subtitle="اختر تصفية أخرى أو عرض «الكل» لرؤية كامل القائمة."
                 />
-              ))}
-            </div>
+              ) : (
+                <div className="oh-assigned-list" style={{ marginTop: 0 }}>
+                  {filteredOrders.map((order) => (
+                    <AssignedOrderCardCompact
+                      key={order.id}
+                      order={order}
+                      onOpenDetails={() =>
+                        navigate(`/dashboard/freelancer/my-orders/${order.id}`)
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </Section>
       </div>
@@ -368,7 +467,6 @@ function FreelancerMyOrders() {
 function FreelancerPoolOrders() {
   const { user, loading } = useAuth();
   const { push } = useToast();
-  const { pathname } = useLocation();
   const role = user?.primaryRole || user?.role;
   const isFreelancer = role === "freelancer";
   const navigate = useNavigate();
@@ -376,6 +474,8 @@ function FreelancerPoolOrders() {
   const [orders, setOrders] = useState([]);
   const [busy, setBusy] = useState(true);
   const [takingId, setTakingId] = useState(null);
+  const [bidBusyId, setBidBusyId] = useState(null);
+  const [bidModalOrder, setBidModalOrder] = useState(null);
   const [eligibility, setEligibility] = useState(null);
   const [eligibilityFetched, setEligibilityFetched] = useState(false);
 
@@ -386,6 +486,11 @@ function FreelancerPoolOrders() {
 
   const showIneligibleNotice =
     isFreelancer && eligibilityFetched && eligibility && eligibility.eligible === false;
+
+  const reloadPool = async () => {
+    const res = await listPoolOrdersRequest({ limit: 50, offset: 0 });
+    setOrders(res?.data?.orders || []);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -433,13 +538,31 @@ function FreelancerPoolOrders() {
     setTakingId(orderId);
     try {
       await takePoolOrderRequest(orderId);
-      push({ type: "success", title: "تم استلام الطلب", message: "تم إسناد الطلب لك بنجاح." });
-      const res = await listPoolOrdersRequest({ limit: 50, offset: 0 });
-      setOrders(res?.data?.orders || []);
+      push({
+        type: "success",
+        title: "تم تقديم الطلب",
+        message: "سيظهر الطلب في «طلباتي» حتى تتم الموافقة أو الرفض. إذا وافق المسؤول على مستقل آخر سيختفي من قائمتك.",
+      });
+      await reloadPool();
     } catch (e) {
       push({ type: "error", title: "تعذر استلام الطلب", message: e?.response?.data?.message || e?.message });
     } finally {
       setTakingId(null);
+    }
+  };
+
+  const submitBid = async (amount) => {
+    if (!bidModalOrder?.id) return;
+    setBidBusyId(bidModalOrder.id);
+    try {
+      await submitPoolOrderBidRequest(bidModalOrder.id, { amount });
+      push({ type: "success", title: "تم إرسال العرض", message: "سيتمكن العميل لاحقاً من مراجعة العروض." });
+      setBidModalOrder(null);
+      await reloadPool();
+    } catch (e) {
+      push({ type: "error", title: "تعذر إرسال العرض", message: e?.response?.data?.message || e?.message });
+    } finally {
+      setBidBusyId(null);
     }
   };
 
@@ -449,7 +572,7 @@ function FreelancerPoolOrders() {
         <div className="dash-hero__copy">
           <p className="dash-hero__kicker">لوحة مستقل</p>
           <h1 className="dash-hero__title">الطلبات</h1>
-          <p className="dash-hero__subtitle">استعرض الطلبات المتاحة من الحوض واستلم ما يناسبك.</p>
+          <p className="dash-hero__subtitle">استعرض الطلبات المتاحة من الحوض (إدارة أو عملاء) واستلم أو قدّم عرض سعر حسب نوع الطلب.</p>
         </div>
       </header>
 
@@ -485,7 +608,9 @@ function FreelancerPoolOrders() {
                   }
                   canTake={Boolean(user) && isFreelancer && canTake}
                   taking={takingId === order.id}
+                  bidBusy={bidBusyId === order.id}
                   onTake={() => take(order.id)}
+                  onBid={() => setBidModalOrder(order)}
                   disabledReason={!canTake ? "غير مؤهل (اشتراك غير نشط)" : ""}
                 />
               ))
@@ -493,6 +618,19 @@ function FreelancerPoolOrders() {
           </div>
         </Section>
       </div>
+
+      <BidAmountModal
+        open={Boolean(bidModalOrder)}
+        title={bidModalOrder ? `عرض سعر: ${bidModalOrder.title}` : ""}
+        min={bidModalOrder?.bidBudgetMin}
+        max={bidModalOrder?.bidBudgetMax}
+        currency={bidModalOrder?.currencyCode}
+        busy={Boolean(bidModalOrder && bidBusyId === bidModalOrder.id)}
+        onClose={() => {
+          if (!bidBusyId) setBidModalOrder(null);
+        }}
+        onSubmit={submitBid}
+      />
     </div>
   );
 }

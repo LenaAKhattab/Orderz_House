@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import OrderCard from "../components/orders/OrderCard";
+import BidAmountModal from "../components/orders/BidAmountModal";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../components/ui/toastContext";
-import { getMyEligibilityRequest, listPoolOrdersRequest, takePoolOrderRequest } from "../services/api";
+import { getMyEligibilityRequest, listPoolOrdersRequest, submitPoolOrderBidRequest, takePoolOrderRequest } from "../services/api";
 import { OrderCardsGridSkeleton } from "../components/ui/Skeleton";
+
+function isPricedBiddingPoolOrder(order) {
+  return order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null;
+}
 
 const Orders = () => {
   const { user, loading } = useAuth();
@@ -15,6 +20,8 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [busy, setBusy] = useState(true);
   const [takingId, setTakingId] = useState(null);
+  const [bidBusyId, setBidBusyId] = useState(null);
+  const [bidModalOrder, setBidModalOrder] = useState(null);
   const [eligibility, setEligibility] = useState(null);
   const [eligibilityFetched, setEligibilityFetched] = useState(false);
 
@@ -74,7 +81,7 @@ const Orders = () => {
     setTakingId(orderId);
     try {
       await takePoolOrderRequest(orderId);
-      push({ type: "success", title: "تم استلام الطلب", message: "تم إسناد الطلب لك بنجاح." });
+      push({ type: "success", title: "تم تقديم الطلب", message: "تم تسجيل طلب الاستلام (قد يحتاج موافقة الإدارة)." });
       const res = await listPoolOrdersRequest({ limit: 50, offset: 0 });
       setOrders(res?.data?.orders || []);
     } catch (e) {
@@ -84,11 +91,30 @@ const Orders = () => {
     }
   };
 
+  const submitBid = async (amount) => {
+    if (!bidModalOrder?.id) return;
+    setBidBusyId(bidModalOrder.id);
+    try {
+      await submitPoolOrderBidRequest(bidModalOrder.id, { amount });
+      push({ type: "success", title: "تم إرسال العرض", message: "سيتمكن العميل لاحقاً من مراجعة العروض واختيار الأنسب." });
+      setBidModalOrder(null);
+      const res = await listPoolOrdersRequest({ limit: 50, offset: 0 });
+      setOrders(res?.data?.orders || []);
+    } catch (e) {
+      push({ type: "error", title: "تعذر إرسال العرض", message: e?.response?.data?.message || e?.message });
+    } finally {
+      setBidBusyId(null);
+    }
+  };
+
   return (
     <main className="container page-content">
       <section className="card">
         <h1>الطلبات</h1>
-        <p>طلبات داخلية منشورة (تم إنشاؤها بواسطة الإدارة) يمكن للفريلانسر المؤهل استلامها.</p>
+        <p>
+          طلبات منشورة في الحوض: من الإدارة أو من العملاء. طلبات <strong>سعر ثابت</strong> تُستلم بنفس تدفق الاستلام الحالي؛ طلبات{" "}
+          <strong>المزايدة بنطاق سعر</strong> تُقدَّم لها عروض أسعار بدل الاستلام المباشر.
+        </p>
 
         {!user ? (
           <p className="help">
@@ -122,26 +148,44 @@ const Orders = () => {
               showAdminBadge={false}
               footer={
                 order?.assignedFreelancerId ? null : (
-                  <div style={{ display: "flex", gap: 10, justifyContent: "flex-start", alignItems: "center" }}>
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      disabled={!user || !isFreelancer || !canTake || takingId === order.id}
-                      title={
-                        order?.myClaim?.status
-                          ? order.myClaim.status === "pending"
-                            ? "سبق أن تقدمت لهذا الطلب وهو قيد المراجعة."
-                            : order.myClaim.status === "withdrawn"
-                              ? "سبق أن تقدمت لهذا الطلب ثم قمت بسحبه."
-                              : order.myClaim.status === "rejected"
-                                ? "سبق أن تقدمت لهذا الطلب وتم رفض الطلب."
-                                : `سبق أن تقدمت لهذا الطلب (الحالة: ${order.myClaim.status}).`
-                          : ""
-                      }
-                      onClick={() => take(order.id)}
-                    >
-                      {takingId === order.id ? "جارٍ الاستلام…" : "استلام الطلب"}
-                    </button>
+                  <div style={{ display: "flex", gap: 10, justifyContent: "flex-start", alignItems: "center", flexWrap: "wrap" }}>
+                    {isPricedBiddingPoolOrder(order) ? (
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        disabled={!user || !isFreelancer || !canTake || bidBusyId === order.id}
+                        title={
+                          order?.myBid?.status === "pending"
+                            ? "لقد قدمت عرضاً لهذا الطلب."
+                            : order?.myBid?.status === "accepted"
+                              ? "تم قبول عرضك."
+                              : ""
+                        }
+                        onClick={() => setBidModalOrder(order)}
+                      >
+                        {bidBusyId === order.id ? "جارٍ الإرسال…" : order?.myBid?.status === "pending" ? "عرضك مُرسل" : "تقديم عرض سعر"}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        disabled={!user || !isFreelancer || !canTake || takingId === order.id}
+                        title={
+                          order?.myClaim?.status
+                            ? order.myClaim.status === "pending"
+                              ? "سبق أن تقدمت لهذا الطلب وهو قيد المراجعة."
+                              : order.myClaim.status === "withdrawn"
+                                ? "سبق أن تقدمت لهذا الطلب ثم قمت بسحبه."
+                                : order.myClaim.status === "rejected"
+                                  ? "سبق أن تقدمت لهذا الطلب وتم رفض الطلب."
+                                  : `سبق أن تقدمت لهذا الطلب (الحالة: ${order.myClaim.status}).`
+                            : ""
+                        }
+                        onClick={() => take(order.id)}
+                      >
+                        {takingId === order.id ? "جارٍ الاستلام…" : "استلام الطلب"}
+                      </button>
+                    )}
                     {!user ? <span className="help">تسجيل الدخول مطلوب</span> : null}
                     {user && isFreelancer && !canTake ? <span className="help">غير مؤهل (اشتراك غير نشط)</span> : null}
                   </div>
@@ -151,6 +195,19 @@ const Orders = () => {
           ))
         )}
       </section>
+
+      <BidAmountModal
+        open={Boolean(bidModalOrder)}
+        title={bidModalOrder ? `عرض سعر: ${bidModalOrder.title}` : ""}
+        min={bidModalOrder?.bidBudgetMin}
+        max={bidModalOrder?.bidBudgetMax}
+        currency={bidModalOrder?.currencyCode}
+        busy={Boolean(bidModalOrder && bidBusyId === bidModalOrder.id)}
+        onClose={() => {
+          if (!bidBusyId) setBidModalOrder(null);
+        }}
+        onSubmit={submitBid}
+      />
     </main>
   );
 };

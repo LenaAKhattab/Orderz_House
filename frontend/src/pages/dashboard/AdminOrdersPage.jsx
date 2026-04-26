@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import OrderCard from "../../components/orders/OrderCard";
+import AdminFreelancerRegistrationModal from "../../components/orders/AdminFreelancerRegistrationModal";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../components/ui/toastContext";
 import { adminAcceptTakenOrderRequest, adminListInternalOrdersRequest, adminListOrderClaimsRequest } from "../../services/api";
 import { OrderCardsGridSkeleton } from "../../components/ui/Skeleton";
+import { getOrderDeliveryTiming } from "../../utils/orderDeliveryTiming";
+import { orderStatusLabelAr } from "../../utils/orderFlowUi";
 
 function fullNameAr(f) {
   const parts = [f?.firstName, f?.fatherName, f?.familyName].filter(Boolean);
@@ -31,8 +34,8 @@ export default function AdminOrdersPage() {
   const [busy, setBusy] = useState(true);
   const [view, setView] = useState("cards"); // cards | table
   const [claimsByOrderId, setClaimsByOrderId] = useState({});
-  const [claimsBusyByOrderId, setClaimsBusyByOrderId] = useState({});
   const [approvingClaimId, setApprovingClaimId] = useState(null);
+  const [registrationModalUserId, setRegistrationModalUserId] = useState(null);
 
   const rows = useMemo(() => (Array.isArray(orders) ? orders : []), [orders]);
 
@@ -64,19 +67,70 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const loadClaims = async (orderId) => {
+  const loadClaims = useCallback(async (orderId) => {
     const key = String(orderId);
-    setClaimsBusyByOrderId((p) => ({ ...p, [key]: true }));
     try {
       const res = await adminListOrderClaimsRequest(orderId);
       const claims = res?.data?.claims || res?.data?.data?.claims || [];
       setClaimsByOrderId((p) => ({ ...p, [key]: Array.isArray(claims) ? claims : [] }));
     } catch {
       setClaimsByOrderId((p) => ({ ...p, [key]: [] }));
-    } finally {
-      setClaimsBusyByOrderId((p) => ({ ...p, [key]: false }));
     }
-  };
+  }, []);
+
+  const claimantOrderIds = useMemo(
+    () =>
+      rows
+        .filter((o) => Boolean(o?.isOpenForPool) && !o?.assignedFreelancerId && !o?.receivedAt && !o?.isArchived)
+        .map((o) => o.id)
+        .filter(Boolean),
+    [rows],
+  );
+
+  /** Auto-load and poll claims for open pool orders (cards view only). */
+  useEffect(() => {
+    if (busy || view !== "cards" || claimantOrderIds.length === 0) return undefined;
+
+    let cancelled = false;
+    const fetchAll = () => {
+      if (cancelled) return;
+      claimantOrderIds.forEach((id) => {
+        void loadClaims(id);
+      });
+    };
+
+    fetchAll();
+    const intervalMs = 15_000;
+    const timer = setInterval(fetchAll, intervalMs);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [busy, view, claimantOrderIds, loadClaims]);
+
+  /** Orders list (incl. delivery timing on cards) updates without manual refresh. */
+  useEffect(() => {
+    if (busy) return undefined;
+    async function tick() {
+      try {
+        const res = await adminListInternalOrdersRequest({ limit: 50, offset: 0 });
+        setOrders(res?.data?.orders || []);
+      } catch {
+        /* ignore */
+      }
+    }
+    const t = setInterval(() => {
+      void tick();
+    }, 25_000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") void tick();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [busy]);
 
   const approveClaim = async ({ orderId, claimId }) => {
     setApprovingClaimId(String(claimId));
@@ -140,7 +194,6 @@ export default function AdminOrdersPage() {
           rows.map((o) => {
             const shouldShowApplicants = Boolean(o?.isOpenForPool) && !o?.assignedFreelancerId && !o?.receivedAt && !o?.isArchived;
             const orderKey = String(o?.id);
-            const claimsBusy = Boolean(claimsBusyByOrderId[orderKey]);
             const claims = Array.isArray(claimsByOrderId[orderKey]) ? claimsByOrderId[orderKey] : null;
             return (
               <OrderCard
@@ -149,33 +202,20 @@ export default function AdminOrdersPage() {
                 footer={
                   shouldShowApplicants ? (
                     <div style={{ display: "grid", gap: 10 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                        <div style={{ display: "grid" }}>
-                          <div style={{ fontWeight: 950 }}>المتقدمون على الطلب</div>
-                          <div className="help" style={{ margin: 0 }}>
-                            اختر متقدماً واحداً لبدء العمل.
-                          </div>
+                      <div style={{ display: "grid" }}>
+                        <div style={{ fontWeight: 950 }}>المتقدمون على الطلب</div>
+                        <div className="help" style={{ margin: 0 }}>
+                          اختر متقدماً واحداً لبدء العمل. تُحدَّث القائمة تلقائياً.
                         </div>
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          disabled={claimsBusy}
-                          onClick={() => loadClaims(o.id)}
-                        >
-                          {claimsBusy ? "جارٍ التحميل…" : "تحديث القائمة"}
-                        </button>
                       </div>
 
-                      {claims === null && claimsBusy ? <ClaimsSkeleton /> : null}
-
-                      {claims !== null ? (
-                        claimsBusy ? (
-                          <ClaimsSkeleton />
-                        ) : claims.length === 0 ? (
-                          <div className="help" style={{ margin: 0 }}>
-                            لا يوجد متقدمون حالياً.
-                          </div>
-                        ) : (
+                      {claims == null ? (
+                        <ClaimsSkeleton />
+                      ) : claims.length === 0 ? (
+                        <div className="help" style={{ margin: 0 }}>
+                          لا يوجد متقدمون حالياً.
+                        </div>
+                      ) : (
                           <div style={{ display: "grid", gap: 8 }}>
                             {claims.map((c) => {
                               const name = fullNameAr(c?.freelancer) || c?.freelancer?.email || `#${c?.freelancerUserId || ""}`;
@@ -196,7 +236,28 @@ export default function AdminOrdersPage() {
                                   }}
                                 >
                                   <div style={{ minWidth: 0 }}>
-                                    <div style={{ fontWeight: 950, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</div>
+                                    <button
+                                      type="button"
+                                      onClick={() => setRegistrationModalUserId(String(c.freelancerUserId || c?.freelancer?.id || ""))}
+                                      style={{
+                                        fontWeight: 950,
+                                        display: "block",
+                                        maxWidth: "100%",
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        background: "none",
+                                        border: "none",
+                                        padding: 0,
+                                        cursor: "pointer",
+                                        textAlign: "inherit",
+                                        color: "var(--color-primary, #1d4ed8)",
+                                        textDecoration: "underline",
+                                      }}
+                                      title="عرض بيانات التسجيل"
+                                    >
+                                      {name}
+                                    </button>
                                     <div className="help" style={{ margin: 0 }}>
                                       {c?.freelancer?.accountId ? `ID: ${c.freelancer.accountId}` : c?.freelancer?.email || ""}
                                       {status ? ` • الحالة: ${status}` : ""}
@@ -215,8 +276,7 @@ export default function AdminOrdersPage() {
                               );
                             })}
                           </div>
-                        )
-                      ) : null}
+                      )}
                     </div>
                   ) : null
                 }
@@ -240,6 +300,7 @@ export default function AdminOrdersPage() {
                     "العملة",
                     "المدة",
                     "الحالة",
+                    "التسليم مقابل الموعد",
                     "في الحوض",
                     "مؤرشف",
                     "assignedFreelancerId",
@@ -262,6 +323,7 @@ export default function AdminOrdersPage() {
                     : "";
                   const files = Array.isArray(o.files) ? o.files.map((f) => f.originalName || f.filePath).filter(Boolean).join(" | ") : "";
                   const skills = Array.isArray(o.preferredSkills) ? o.preferredSkills.map((s) => s.name).filter(Boolean).join(" | ") : "";
+                  const deliveryTiming = getOrderDeliveryTiming(o);
                   return (
                     <tr key={o.id}>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.orderCode || "—"}</td>
@@ -274,7 +336,19 @@ export default function AdminOrdersPage() {
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.projectType === "bidding" ? "—" : (o.budget ?? "—")}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.projectType === "bidding" ? "—" : (o.currencyCode || "—")}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.durationValue ? `${o.durationValue} ${o.durationUnit || ""}` : "—"}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.orderStatus || "—"}</td>
+                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{orderStatusLabelAr(o.orderStatus)}</td>
+                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", maxWidth: 360 }}>
+                        {deliveryTiming ? (
+                          <div style={{ display: "grid", gap: 6 }}>
+                            <span>{deliveryTiming.message}</span>
+                            {deliveryTiming.completionMessage ? (
+                              <span style={{ fontSize: "0.88em", color: "#475569" }}>{deliveryTiming.completionMessage}</span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{String(Boolean(o.isOpenForPool))}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{String(Boolean(o.isArchived))}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.assignedFreelancerId || "—"}</td>
@@ -291,6 +365,12 @@ export default function AdminOrdersPage() {
           </div>
         )}
       </section>
+
+      <AdminFreelancerRegistrationModal
+        open={Boolean(registrationModalUserId)}
+        freelancerUserId={registrationModalUserId}
+        onClose={() => setRegistrationModalUserId(null)}
+      />
     </main>
   );
 }

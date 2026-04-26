@@ -145,6 +145,22 @@ const listOrderClaims = async (req, res, next) => {
   }
 };
 
+const getFreelancerRegistrationProfile = async (req, res, next) => {
+  try {
+    const actorRole = req.user?.role;
+    if (actorRole !== "admin" && actorRole !== "super_admin") {
+      const err = new Error("Forbidden");
+      err.statusCode = 403;
+      throw err;
+    }
+    const profile = await adminUsersService.getFreelancerRegistrationProfileForAdmin(req.params.id);
+    if (!profile) return res.status(404).json({ success: false, message: "المستخدم غير موجود." });
+    return res.status(200).json({ success: true, data: { profile } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   createInternalOrder,
   listInternalOrders,
@@ -152,5 +168,6 @@ module.exports = {
   activateArchivedOrder,
   acceptTakenOrder,
   listOrderClaims,
+  getFreelancerRegistrationProfile,
 };
 

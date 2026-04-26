@@ -525,8 +525,7 @@ export default function AdminCreateOrderPage() {
     }
   };
 
-  const submit = async (e) => {
-    e.preventDefault();
+  const submitOrder = async () => {
     if (!canSubmit) {
       push({ type: "error", title: "تحقق من الحقول", message: "يرجى إكمال البيانات المطلوبة بشكل صحيح." });
       return;
@@ -709,7 +708,13 @@ export default function AdminCreateOrderPage() {
         </div>
       </section>
 
-      <form onSubmit={submit} className="form-grid" style={{ marginTop: 14 }}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+        }}
+        className="form-grid"
+        style={{ marginTop: 14 }}
+      >
         <section className="card" style={{ gridColumn: "span 12" }}>
           <div className="oh-stepper">
             {STEPS.map((s, idx) => (
@@ -1252,7 +1257,7 @@ export default function AdminCreateOrderPage() {
                 التالي
               </button>
             ) : (
-              <button className="btn btn-primary" type="submit" disabled={!canSubmit || busy}>
+              <button type="button" className="btn btn-primary" disabled={!canSubmit || busy} onClick={() => void submitOrder()}>
                 {busy ? "جارٍ الإنشاء…" : "إنشاء الطلب"}
               </button>
             )}

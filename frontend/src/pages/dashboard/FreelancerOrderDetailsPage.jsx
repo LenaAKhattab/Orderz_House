@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useToast } from "../../components/ui/toastContext";
 import { useAuth } from "../../context/useAuth";
-import { getMyEligibilityRequest, getPoolOrderByIdRequest, takePoolOrderRequest } from "../../services/api";
+import BidAmountModal from "../../components/orders/BidAmountModal";
+import { getMyEligibilityRequest, getPoolOrderByIdRequest, submitPoolOrderBidRequest, takePoolOrderRequest } from "../../services/api";
 import { arabicDurationUnit } from "../../utils/arTime";
 import { OrderDetailsPageSkeleton } from "../../components/ui/Skeleton";
 
@@ -51,13 +52,27 @@ export default function FreelancerOrderDetailsPage() {
   const [order, setOrder] = useState(null);
   const [busy, setBusy] = useState(true);
   const [taking, setTaking] = useState(false);
+  const [bidOpen, setBidOpen] = useState(false);
+  const [bidBusy, setBidBusy] = useState(false);
   const [eligibility, setEligibility] = useState(null);
 
   const canTake = useMemo(() => isFreelancer && Boolean(eligibility?.eligible), [isFreelancer, eligibility]);
+  const isPricedBidding = useMemo(
+    () => order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null,
+    [order],
+  );
   const isPoolAvailable = useMemo(() => {
     if (!order) return false;
-    const internal = ["admin_created", "super_admin_created"].includes(order?.sourceType);
-    return Boolean(internal && order?.isPublished && order?.isOpenForPool && !order?.assignedFreelancerId && order?.orderStatus === "published");
+    const sourceOk = ["admin_created", "super_admin_created", "client_created"].includes(order?.sourceType);
+    const statusOk = ["published", "open_for_freelancers", "open_for_bids"].includes(order?.orderStatus);
+    const clientFixedPaid =
+      order?.sourceType !== "client_created" ||
+      order?.projectType !== "fixed" ||
+      order?.paymentStatus === "paid" ||
+      order?.paymentStatus === "skipped_by_admin";
+    return Boolean(
+      sourceOk && order?.isPublished && order?.isOpenForPool && !order?.assignedFreelancerId && statusOk && clientFixedPaid,
+    );
   }, [order]);
 
   useEffect(() => {
@@ -103,7 +118,11 @@ export default function FreelancerOrderDetailsPage() {
     setTaking(true);
     try {
       await takePoolOrderRequest(id);
-      push({ type: "success", title: "تم استلام الطلب", message: "تم إسناد الطلب لك بنجاح." });
+      push({
+        type: "success",
+        title: "تم تقديم الطلب",
+        message: "تم تسجيل طلبك. سيراجع العميل الطلبات ثم يختار مستقلاً؛ راقب صفحة «طلباتي» بعد اعتماده.",
+      });
       navigate("/dashboard/freelancer/my-orders");
     } catch (e) {
       push({ type: "error", title: "تعذر استلام الطلب", message: e?.response?.data?.message || e?.message });
@@ -114,17 +133,36 @@ export default function FreelancerOrderDetailsPage() {
     }
   };
 
+  const submitBid = async (amount) => {
+    setBidBusy(true);
+    try {
+      await submitPoolOrderBidRequest(id, { amount });
+      push({ type: "success", title: "تم إرسال العرض", message: "سيتمكن العميل لاحقاً من مراجعة العروض." });
+      setBidOpen(false);
+      const resPool = await getPoolOrderByIdRequest(id);
+      setOrder(resPool?.data?.order || null);
+    } catch (e) {
+      push({ type: "error", title: "تعذر إرسال العرض", message: e?.response?.data?.message || e?.message });
+    } finally {
+      setBidBusy(false);
+    }
+  };
+
   const metaRows = useMemo(() => {
     if (!order) return [];
     const categoryText = `${order?.category?.name || "—"} — ${order?.subSubcategory?.name || "—"}`;
     const budgetText =
-      order?.projectType === "bidding"
-        ? "—"
-        : `${formatMoney(order?.budget)}${order?.currencyCode ? ` ${order.currencyCode}` : ""}`.trim();
+      order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null
+        ? `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)}${order?.currencyCode ? ` ${order.currencyCode}` : ""}`.trim()
+        : order?.projectType === "bidding"
+          ? "—"
+          : `${formatMoney(order?.budget)}${order?.currencyCode ? ` ${order.currencyCode}` : ""}`.trim();
     const typeAndBudgetText =
-      order?.projectType === "bidding"
-        ? `${typeLabel(order?.projectType)}`
-        : `${typeLabel(order?.projectType)} — ${budgetText}`;
+      order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null
+        ? `${typeLabel(order?.projectType)} — ${budgetText}`
+        : order?.projectType === "bidding"
+          ? `${typeLabel(order?.projectType)}`
+          : `${typeLabel(order?.projectType)} — ${budgetText}`;
 
     const base = [
       { label: "نوع المشروع / السعر", value: typeAndBudgetText, dir: "ltr" },
@@ -155,7 +193,18 @@ export default function FreelancerOrderDetailsPage() {
           <Link className="btn btn-secondary" to={backTo}>
             العودة للقائمة
           </Link>
-          {isPoolAvailable ? (
+          {isPoolAvailable && isPricedBidding ? (
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={!canTake || bidBusy || order?.myBid?.status === "pending"}
+              title={order?.myBid?.status === "pending" ? "لقد قدمت عرضاً لهذا الطلب." : ""}
+              onClick={() => setBidOpen(true)}
+            >
+              {bidBusy ? "جارٍ الإرسال…" : order?.myBid?.status === "pending" ? "عرضك مُرسل" : "تقديم عرض سعر"}
+            </button>
+          ) : null}
+          {isPoolAvailable && !isPricedBidding ? (
             <button
               type="button"
               className="btn btn-primary"
@@ -251,6 +300,19 @@ export default function FreelancerOrderDetailsPage() {
           </aside>
         </section>
       ) : null}
+
+      <BidAmountModal
+        open={bidOpen}
+        title={order ? `عرض سعر: ${order.title}` : ""}
+        min={order?.bidBudgetMin}
+        max={order?.bidBudgetMax}
+        currency={order?.currencyCode}
+        busy={bidBusy}
+        onClose={() => {
+          if (!bidBusy) setBidOpen(false);
+        }}
+        onSubmit={submitBid}
+      />
     </main>
   );
 }

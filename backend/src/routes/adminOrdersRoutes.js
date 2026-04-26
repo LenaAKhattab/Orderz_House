@@ -3,7 +3,12 @@ const adminOrdersController = require("../controllers/adminOrdersController");
 const validateRequest = require("../middleware/validateRequest");
 const { requireAuth, requireAnyRole } = require("../middleware/rbacMiddleware");
 const { uploadOrderFiles, handleOrderUploadErrors } = require("../middleware/ordersUploadMiddleware");
-const { listOrdersValidators, createInternalOrderValidators, orderIdParam } = require("../validators/ordersValidators");
+const {
+  listOrdersValidators,
+  createInternalOrderValidators,
+  orderIdParam,
+  freelancerUserIdParam,
+} = require("../validators/ordersValidators");
 
 const router = express.Router();
 
@@ -12,6 +17,12 @@ router.use(requireAuth, requireAnyRole(["super_admin", "admin"]));
 
 router.get("/orders", listOrdersValidators, validateRequest, adminOrdersController.listInternalOrders);
 router.get("/freelancers", adminOrdersController.searchFreelancers);
+router.get(
+  "/freelancers/:id/registration",
+  freelancerUserIdParam,
+  validateRequest,
+  adminOrdersController.getFreelancerRegistrationProfile,
+);
 router.post(
   "/orders",
   uploadOrderFiles,

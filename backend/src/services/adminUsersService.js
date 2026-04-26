@@ -47,7 +47,52 @@ async function searchFreelancers({ q = "", limit = 20 } = {}) {
   return rows.map(mapFreelancerRow);
 }
 
+/** Full registration-style profile for admin review (no secrets). */
+function mapFreelancerRegistrationProfile(row) {
+  if (!row) return null;
+  const cats = Array.isArray(row.freelancer_categories) ? row.freelancer_categories : [];
+  return {
+    id: String(row.id),
+    accountId: row.account_id,
+    firstName: row.first_name,
+    fatherName: row.father_name,
+    familyName: row.family_name,
+    email: row.email,
+    country: row.country,
+    phone: row.phone,
+    whatsapp: row.whatsapp,
+    gender: row.gender,
+    termsAccepted: Boolean(row.terms_accepted),
+    freelancerCategories: cats,
+    isActive: Boolean(row.is_active),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function getFreelancerRegistrationProfileForAdmin(userId) {
+  const id = Number(userId);
+  if (!Number.isInteger(id) || id < 1) return null;
+  const { rows } = await pool.query(
+    `SELECT id, account_id, first_name, father_name, family_name, email, role, country, phone, whatsapp, gender,
+            terms_accepted, freelancer_categories, is_active, created_at, updated_at
+     FROM users
+     WHERE id = $1
+     LIMIT 1`,
+    [id],
+  );
+  const row = rows[0];
+  if (!row) return null;
+  if (row.role !== "freelancer") {
+    const err = new Error("Profile is only available for freelancer accounts.");
+    err.statusCode = 400;
+    throw err;
+  }
+  return mapFreelancerRegistrationProfile(row);
+}
+
 module.exports = {
   searchFreelancers,
+  getFreelancerRegistrationProfileForAdmin,
 };
 

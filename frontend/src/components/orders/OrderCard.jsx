@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { arabicDurationUnit } from "../../utils/arTime";
+import { orderStatusDisplayBadge, orderStatusLabelAr } from "../../utils/orderFlowUi";
+import OrderDeliveryTimingBanner from "./OrderDeliveryTimingBanner";
 
 function formatMoney(value) {
   const n = Number(value);
@@ -9,8 +11,14 @@ function formatMoney(value) {
 }
 
 function priceLabel(order) {
+  if (order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null) {
+    const a = formatMoney(order.bidBudgetMin);
+    const b = formatMoney(order.bidBudgetMax);
+    const cur = String(order?.currencyCode || "").trim();
+    return `${a} – ${b}${cur ? ` ${cur}` : ""}`.trim();
+  }
   if (order?.projectType === "bidding") return "—";
-  const amt = order?.budget ? formatMoney(order.budget) : "";
+  const amt = order?.budget != null ? formatMoney(order.budget) : "";
   const cur = String(order?.currencyCode || "").trim();
   if (!amt && !cur) return "—";
   return `${amt || "—"}${cur ? ` ${cur}` : ""}`.trim();
@@ -31,18 +39,6 @@ function yn(v) {
   if (v === true) return "نعم";
   if (v === false) return "لا";
   return "—";
-}
-
-function statusBadge(order) {
-  const s = order?.orderStatus;
-  if (order?.isArchived) return { label: "مؤرشف", className: "oh-badge oh-badge--neutral" };
-  if (s === "assigned") return { label: "مُسند", className: "oh-badge oh-badge--success" };
-  if (s === "published") return { label: "منشور", className: "oh-badge oh-badge--warning" };
-  if (s === "in_progress") return { label: "قيد التنفيذ", className: "oh-badge oh-badge--info" };
-  if (s === "completed") return { label: "مكتمل", className: "oh-badge oh-badge--success" };
-  if (s === "cancelled") return { label: "ملغي", className: "oh-badge oh-badge--danger" };
-  if (s === "draft") return { label: "مسودة", className: "oh-badge oh-badge--neutral" };
-  return { label: s || "—", className: "oh-badge oh-badge--neutral" };
 }
 
 function assignmentBadge(order) {
@@ -104,7 +100,7 @@ export default function OrderCard({
   showAdminBadge = true,
 }) {
   const [expanded, setExpanded] = useState(false);
-  const badge = useMemo(() => statusBadge(order), [order]);
+  const badge = useMemo(() => orderStatusDisplayBadge(order), [order]);
   const assign = useMemo(() => assignmentBadge(order), [order]);
   const skills = Array.isArray(order?.preferredSkills) ? order.preferredSkills : [];
   const filesText = useMemo(() => filesLabel(order), [order]);
@@ -140,6 +136,8 @@ export default function OrderCard({
           {showAdminBadge ? <span className="oh-badge oh-badge--primary">إداري</span> : null}
         </div>
       </header>
+
+      <OrderDeliveryTimingBanner order={order} />
 
       <p className="oh-order-card__desc">{expanded ? showValue(order?.description) : shortText(order?.description, 180)}</p>
 
@@ -196,8 +194,10 @@ export default function OrderCard({
       {expanded ? (
         <section className="oh-order-card__meta">
           <div className="oh-meta">
-            <div className="oh-meta__label">الحالة التقنية</div>
-            <div className="oh-meta__value">{showValue(order?.orderStatus)}</div>
+            <div className="oh-meta__label">حالة الطلب</div>
+            <div className="oh-meta__value" title={order?.orderStatus ? String(order.orderStatus) : ""}>
+              {orderStatusLabelAr(order?.orderStatus)}
+            </div>
           </div>
           <div className="oh-meta">
             <div className="oh-meta__label">منشور</div>

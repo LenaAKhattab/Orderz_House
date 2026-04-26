@@ -57,10 +57,26 @@ function optionalAuth(req, res, next) {
   });
 }
 
+/**
+ * Role names for authorization: prefer explicit RBAC `user_roles` rows.
+ * If that list is empty (migrated users / missing links), fall back to `primaryRole` then JWT `role`.
+ * Important: `req.auth.roles` may be `[]` — do not treat like "missing"; empty must still fall back.
+ */
+function resolvedRoleNames(req) {
+  const rbac = Array.isArray(req.auth?.roles)
+    ? req.auth.roles.map((r) => (r && r.name ? String(r.name).trim() : "")).filter(Boolean)
+    : [];
+  if (rbac.length) return [...new Set(rbac)];
+  const primary = req.auth?.primaryRole && String(req.auth.primaryRole).trim();
+  if (primary) return [primary];
+  const legacy = req.user?.role && String(req.user.role).trim();
+  return legacy ? [legacy] : [];
+}
+
 function requireRole(roleName) {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ success: false, message: "Authentication is required." });
-    const roles = Array.isArray(req.auth?.roles) ? req.auth.roles.map((r) => r.name) : [req.user.role].filter(Boolean);
+    const roles = resolvedRoleNames(req);
     if (!roles.includes(roleName)) {
       return res.status(403).json({ success: false, message: "You are not allowed to access this resource." });
     }
@@ -72,7 +88,7 @@ function requireAnyRole(roleNames) {
   const allowed = Array.isArray(roleNames) ? roleNames : [];
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ success: false, message: "Authentication is required." });
-    const roles = Array.isArray(req.auth?.roles) ? req.auth.roles.map((r) => r.name) : [req.user.role].filter(Boolean);
+    const roles = resolvedRoleNames(req);
     if (!roles.some((r) => allowed.includes(r))) {
       return res.status(403).json({ success: false, message: "You are not allowed to access this resource." });
     }

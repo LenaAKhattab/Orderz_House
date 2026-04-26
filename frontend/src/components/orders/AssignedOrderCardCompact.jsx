@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { arabicDurationUnit } from "../../utils/arTime";
+import { orderStatusDisplayBadge } from "../../utils/orderFlowUi";
+import OrderDeliveryTimingBanner from "./OrderDeliveryTimingBanner";
 
 function formatMoney(value) {
   const n = Number(value);
@@ -25,15 +27,6 @@ function durationLabel(order) {
   return `${order.durationValue} ${arabicDurationUnit(order.durationValue, order.durationUnit)}`;
 }
 
-function statusBadge(order) {
-  const s = order?.orderStatus;
-  if (s === "in_progress") return { label: "قيد التنفيذ", className: "oh-badge oh-badge--info" };
-  if (s === "assigned") return { label: "مُسند", className: "oh-badge oh-badge--success" };
-  if (s === "completed") return { label: "مكتمل", className: "oh-badge oh-badge--success" };
-  if (s === "cancelled") return { label: "ملغي", className: "oh-badge oh-badge--danger" };
-  return { label: s || "—", className: "oh-badge oh-badge--neutral" };
-}
-
 function timeLeftLabel(order) {
   const due = order?.dueAt ? new Date(order.dueAt) : null;
   if (!due || !Number.isFinite(due.getTime())) return null;
@@ -52,7 +45,12 @@ function timeLeftLabel(order) {
 }
 
 export default function AssignedOrderCardCompact({ order, onOpenDetails }) {
-  const badge = useMemo(() => statusBadge(order), [order]);
+  const badge = useMemo(() => {
+    if (order?.myClaim?.status === "pending" && !order?.assignedFreelancerId) {
+      return { label: "بانتظار الموافقة", className: "oh-badge oh-badge--warning" };
+    }
+    return orderStatusDisplayBadge(order);
+  }, [order]);
   const categoryText = `${order?.category?.name || "—"}${order?.subSubcategory?.name ? ` • ${order.subSubcategory.name}` : ""}`;
   const priceText = useMemo(() => {
     if (order?.projectType === "bidding") return "—";
@@ -91,6 +89,7 @@ export default function AssignedOrderCardCompact({ order, onOpenDetails }) {
           <span className="oh-mini-chip oh-mini-chip--sm">المدة: {durationText}</span>
           {remaining ? <span className="oh-mini-chip oh-mini-chip--sm">{remaining}</span> : null}
         </div>
+        <OrderDeliveryTimingBanner order={order} className="oh-assigned-card__timing" />
       </div>
 
       <div className="oh-assigned-card__side" onClick={(e) => e.stopPropagation()}>
