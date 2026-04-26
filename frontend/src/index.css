@@ -415,6 +415,24 @@
   border-color: rgba(56, 82, 180, 0.12);
 }
 
+.oh-pool-card--compact-summary .oh-pool-card__head--summary {
+  margin-bottom: 2px;
+}
+
+.oh-pool-card--compact-summary .oh-pool-card__head--summary .oh-pool-card__title {
+  font-size: 1.08rem;
+}
+
+.oh-pool-card__meta--keyonly {
+  margin-top: 2px;
+}
+
+.oh-mini-chip--emph {
+  font-weight: 900;
+  border-color: rgba(56, 82, 180, 0.22);
+  background: rgba(56, 82, 180, 0.08);
+}
+
 .oh-pool-card__foot {
   display: flex;
   flex-direction: column;
@@ -497,6 +515,11 @@
   overflow: hidden;
 }
 
+.oh-pool-card__desc--compact-preview {
+  margin-top: 6px;
+  -webkit-line-clamp: 3;
+}
+
 .oh-pool-card__actions {
   display: flex;
   flex-direction: row;
@@ -509,6 +532,83 @@
 
 .oh-pool-card__actions > .btn {
   flex: 0 1 auto;
+}
+
+/* —— Internal admin orders: عمود واحد، بطاقات بعرض المحتوى —— */
+.oh-internal-orders {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.oh-internal-orders__toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.oh-internal-orders__intro {
+  flex: 1 1 260px;
+  min-width: 0;
+  text-align: right;
+}
+
+.oh-internal-orders__title {
+  margin: 0 0 8px;
+  font-size: clamp(1.35rem, 2.4vw, 1.65rem);
+  font-weight: 950;
+  color: #162047;
+  line-height: 1.2;
+}
+
+.oh-internal-orders__lead {
+  margin: 0;
+  color: #5b6684;
+  font-weight: 650;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  max-width: 56ch;
+}
+
+.oh-internal-orders__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.oh-internal-orders__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+}
+
+.oh-internal-orders__list > * {
+  width: 100%;
+  min-width: 0;
+}
+
+.oh-internal-orders__list .oh-pool-card {
+  max-width: none;
+  padding: 16px 18px 14px;
+  border-radius: 18px;
+}
+
+.oh-internal-orders__empty {
+  width: 100%;
+}
+
+.oh-internal-orders__table-card {
+  width: 100%;
 }
 
 /* Assigned (freelancer) compact horizontal cards */

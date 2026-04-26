@@ -1,0 +1,404 @@
+/* لوحة المدير الأعلى — خطوط وحقول ومسافات أصغر داخل منطقة المحتوى (.oh-sa-outlet) */
+.oh-sa-outlet .page-content {
+  padding: 18px 0 28px;
+}
+
+.oh-sa-outlet .card {
+  padding: 12px 14px;
+}
+
+.oh-sa-outlet .card h1 {
+  font-size: clamp(1.1rem, 2.5vw, 1.45rem);
+  margin-bottom: 6px;
+}
+
+.oh-sa-outlet .card h2 {
+  font-size: 1.02rem;
+  margin-bottom: 6px;
+}
+
+.oh-sa-outlet .card > p {
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+  line-height: 1.45;
+}
+
+.oh-sa-outlet .auth-form-grid {
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.oh-sa-outlet .auth-field {
+  gap: 4px;
+}
+
+.oh-sa-outlet .auth-field > span {
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.oh-sa-outlet .auth-input-wrap input,
+.oh-sa-outlet .auth-input-wrap textarea {
+  min-height: 40px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  border-radius: 10px;
+}
+
+.oh-sa-outlet .auth-input-wrap textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+/* select: احتفظ بمساحة السهم (لا تستخدم padding المختصر لكل الجوانب) */
+.oh-sa-outlet .auth-input-wrap select {
+  min-height: 40px;
+  padding-block: 8px;
+  padding-inline-start: 14px;
+  padding-inline-end: 44px;
+  font-size: 0.8rem;
+  border-radius: 10px;
+}
+
+.oh-sa-outlet .auth-input-wrap--noicon input,
+.oh-sa-outlet .auth-input-wrap--noicon textarea {
+  padding-inline-start: 10px;
+  padding-inline-end: 10px;
+}
+
+.oh-sa-outlet .auth-input-wrap--noicon select {
+  padding-inline-start: 10px;
+  padding-inline-end: 40px;
+  background-position: left 11px center;
+  background-size: 16px 16px;
+}
+
+.oh-sa-outlet .auth-input-wrap input::placeholder,
+.oh-sa-outlet .auth-input-wrap textarea::placeholder {
+  font-size: 0.78rem;
+}
+
+.oh-sa-outlet .auth-row {
+  gap: 8px;
+}
+
+.oh-sa-outlet .auth-field.auth-field--checkbox {
+  gap: 6px;
+}
+
+.oh-sa-outlet .auth-field.auth-field--checkbox > span {
+  font-size: 0.78rem;
+}
+
+.oh-sa-outlet .auth-submit-btn {
+  min-height: 40px;
+  font-size: 0.86rem;
+  border-radius: 10px;
+  margin-top: 4px;
+}
+
+.oh-sa-outlet .cards-grid {
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.oh-sa-outlet .cards-grid > .card h3 {
+  font-size: 0.95rem;
+  margin: 0 0 6px;
+}
+
+.oh-sa-outlet .cards-grid > .card p {
+  font-size: 0.78rem;
+  margin-bottom: 4px;
+}
+
+.oh-sa-outlet .cards-grid > .card .auth-actions-row {
+  margin-top: 8px;
+  gap: 8px;
+}
+
+.oh-sa-outlet .btn {
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  border-radius: 9px;
+}
+
+.oh-sa-outlet .cards-grid > .card .btn {
+  padding: 6px 10px;
+  font-size: 0.76rem;
+}
+
+.oh-sa-outlet .auth-form-error {
+  font-size: 0.8rem;
+  margin-top: 6px;
+}
+
+.oh-sa-outlet .form-grid {
+  gap: 8px;
+}
+
+.oh-sa-outlet .field {
+  gap: 4px;
+}
+
+.oh-sa-outlet .field input,
+.oh-sa-outlet .field textarea,
+.oh-sa-outlet .field select {
+  padding: 8px 11px;
+  font-size: 0.84rem;
+}
+
+.oh-sa-outlet .field .label,
+.oh-sa-outlet label.label {
+  font-size: 0.78rem;
+}
+
+.oh-sa-outlet .auth-actions-row {
+  gap: 8px;
+}
+
+.oh-sa-outlet .auth-actions-row--split {
+  gap: 8px;
+}
+
+.oh-sa-outlet .oh-inline-alert {
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  border-radius: 12px;
+}
+
+.oh-sa-outlet .oh-wizard-section {
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.oh-sa-outlet .oh-wizard-section__title {
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.oh-sa-outlet .oh-stepper {
+  gap: 6px;
+}
+
+.oh-sa-outlet .oh-step {
+  padding: 8px 8px;
+  gap: 8px;
+  border-radius: 14px;
+}
+
+.oh-sa-outlet .oh-step__num {
+  width: 26px;
+  height: 26px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+}
+
+.oh-sa-outlet .oh-step__label {
+  font-size: 0.82rem;
+}
+
+/* نظرة عامة (DashboardPage) داخل القشرة */
+.oh-sa-outlet .dash-shell {
+  padding: 16px 0 28px;
+}
+
+.oh-sa-outlet .dash {
+  gap: 12px;
+}
+
+.oh-sa-outlet .dash-hero {
+  padding: 14px 16px;
+  gap: 12px;
+  border-radius: 16px;
+}
+
+.oh-sa-outlet .dash-hero__kicker {
+  font-size: 0.78rem;
+  margin-bottom: 4px;
+}
+
+.oh-sa-outlet .dash-hero__title {
+  font-size: clamp(1.08rem, 2.4vw, 1.42rem);
+  margin-bottom: 6px;
+}
+
+.oh-sa-outlet .dash-hero__subtitle {
+  font-size: 0.82rem;
+}
+
+.oh-sa-outlet .dash-stats {
+  gap: 8px;
+}
+
+.oh-sa-outlet .dash-stat {
+  padding: 10px 12px 12px;
+  border-radius: 14px;
+}
+
+.oh-sa-outlet .dash-stat__label {
+  font-size: 0.78rem;
+}
+
+.oh-sa-outlet .dash-stat__value {
+  margin-top: 4px;
+  font-size: 1.28rem;
+}
+
+.oh-sa-outlet .dash-stat__hint {
+  font-size: 0.76rem;
+  margin-top: 4px;
+}
+
+.oh-sa-outlet .dash-grid {
+  gap: 8px;
+}
+
+.oh-sa-outlet .dash-section {
+  padding: 12px;
+  border-radius: 16px;
+}
+
+.oh-sa-outlet .dash-section__head {
+  padding: 0 2px 8px;
+  gap: 8px;
+}
+
+.oh-sa-outlet .dash-section__title {
+  font-size: 0.92rem;
+}
+
+.oh-sa-outlet .dash-section__link {
+  font-size: 0.8rem;
+}
+
+.oh-sa-outlet .dash-badge {
+  padding: 4px 8px;
+  font-size: 0.76rem;
+}
+
+.oh-sa-outlet .dash-empty {
+  padding: 12px;
+  gap: 10px;
+}
+
+.oh-sa-outlet .dash-empty__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+}
+
+.oh-sa-outlet .dash-empty__title {
+  font-size: 0.9rem;
+}
+
+.oh-sa-outlet .dash-empty__subtitle {
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+/* الطلبات الداخلية — خط وشِقَر وبطاقات أوضح */
+.oh-sa-outlet .oh-internal-orders {
+  gap: 12px;
+}
+
+.oh-sa-outlet .oh-internal-orders__toolbar {
+  gap: 12px;
+}
+
+.oh-sa-outlet .oh-internal-orders__title {
+  font-size: clamp(1.02rem, 1.9vw, 1.28rem);
+  margin-bottom: 5px;
+}
+
+.oh-sa-outlet .oh-internal-orders__lead {
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.oh-sa-outlet .oh-internal-orders__actions {
+  gap: 8px;
+}
+
+.oh-sa-outlet .oh-internal-orders__list {
+  gap: 11px;
+}
+
+.oh-sa-outlet .oh-internal-orders__list .oh-pool-card {
+  padding: 10px 13px 9px;
+  border-radius: 14px;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-pool-card__head {
+  gap: 8px;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-pool-card__title-wrap {
+  gap: 4px;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-pool-card .oh-pool-card__title {
+  font-size: 0.88rem;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-pool-card__sub {
+  gap: 6px;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-pool-card__meta {
+  gap: 6px;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-mini-chip,
+.oh-sa-outlet .oh-internal-orders .oh-mini-chip--emph {
+  padding: 4px 8px;
+  font-size: 0.74rem;
+  gap: 5px;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-pool-card__desc {
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-pool-card__desc--compact-preview {
+  margin-top: 4px;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-pool-card__foot {
+  gap: 7px;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-pool-card__actions {
+  gap: 7px;
+}
+
+.oh-sa-outlet .oh-internal-orders__table {
+  font-size: 0.78rem;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-empty {
+  padding: 14px;
+  gap: 11px;
+  border-radius: 14px;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-empty__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-empty__title {
+  font-size: 0.94rem;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-empty__subtitle {
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.oh-sa-outlet .oh-internal-orders .oh-empty__actions {
+  margin-top: 8px;
+  gap: 8px;
+}

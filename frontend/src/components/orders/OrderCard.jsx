@@ -109,8 +109,11 @@ export default function OrderCard({
   showOrderCode = true,
   showAssignmentBadge = true,
   showAdminBadge = true,
+  /** لوحة الإدارة: يظهر العنوان + السعر + مدة التسليم فقط حتى فتح «عرض التفاصيل». */
+  compactSummary = false,
 }) {
   const [expanded, setExpanded] = useState(false);
+  const showFull = !compactSummary || expanded;
   const badge = useMemo(
     () => (showAdminBadge ? adminStatusBadge(order) : poolStatusBadge(order)),
     [order, showAdminBadge],
@@ -135,54 +138,81 @@ export default function OrderCard({
     return timeLeftLabel(order);
   }, [order, nowMs]);
 
+  const priceChipBody = pricedBidding
+    ? `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)}${order?.currencyCode ? ` ${order.currencyCode}` : ""}`
+    : order?.projectType === "bidding"
+      ? "—"
+      : `${formatMoney(order?.budget)}${order?.projectType === "fixed" && order?.currencyCode ? ` ${order.currencyCode}` : ""}`;
+
   return (
-    <article className="oh-pool-card oh-pool-card--static">
-      <header className="oh-pool-card__head">
-        <div className="oh-pool-card__title-wrap">
-          <div className="oh-pool-card__title">{order?.title || "—"}</div>
-          <div className="oh-pool-card__sub">
-            {showOrderCode ? (
-              <span className="oh-code" title={order?.orderCode || ""}>
-                {order?.orderCode || "—"}
-              </span>
-            ) : null}
-            {showAssignmentBadge ? <span className={assign.className}>{assign.label}</span> : null}
+    <article className={`oh-pool-card oh-pool-card--static${compactSummary ? " oh-pool-card--compact-summary" : ""}`.trim()}>
+      {showFull ? (
+        <header className="oh-pool-card__head">
+          <div className="oh-pool-card__title-wrap">
+            <div className="oh-pool-card__title">{order?.title || "—"}</div>
+            <div className="oh-pool-card__sub">
+              {showOrderCode ? (
+                <span className="oh-code" title={order?.orderCode || ""}>
+                  {order?.orderCode || "—"}
+                </span>
+              ) : null}
+              {showAssignmentBadge ? <span className={assign.className}>{assign.label}</span> : null}
+            </div>
           </div>
-        </div>
-        <div className="oh-pool-card__badges">
-          <span className={badge.className}>{badge.label}</span>
-          {showAdminBadge ? <span className="oh-badge oh-badge--primary">إداري</span> : null}
-        </div>
-      </header>
+          <div className="oh-pool-card__badges">
+            <span className={badge.className}>{badge.label}</span>
+            {showAdminBadge ? <span className="oh-badge oh-badge--primary">إداري</span> : null}
+          </div>
+        </header>
+      ) : (
+        <header className="oh-pool-card__head oh-pool-card__head--summary">
+          <div className="oh-pool-card__title-wrap">
+            <div className="oh-pool-card__title">{order?.title || "—"}</div>
+          </div>
+        </header>
+      )}
 
-      <div className="oh-pool-card__meta">
-        <span className="oh-mini-chip">{categoryText}</span>
-        <span className="oh-mini-chip">النوع: {typeLabel(order?.projectType)}</span>
-        <span className="oh-mini-chip">
-          السعر:{" "}
-          <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>
-            {pricedBidding
-              ? `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)}${order?.currencyCode ? ` ${order.currencyCode}` : ""}`
-              : order?.projectType === "bidding"
-                ? "—"
-                : `${formatMoney(order?.budget)}${order?.projectType === "fixed" && order?.currencyCode ? ` ${order.currencyCode}` : ""}`}
+      {showFull ? (
+        <div className="oh-pool-card__meta">
+          <span className="oh-mini-chip">{categoryText}</span>
+          <span className="oh-mini-chip">النوع: {typeLabel(order?.projectType)}</span>
+          <span className="oh-mini-chip">
+            السعر:{" "}
+            <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>
+              {priceChipBody}
+            </span>
           </span>
-        </span>
-        <span className="oh-mini-chip">مدة التسليم: {durationLabel(order)}</span>
-        <span className="oh-mini-chip">ملفات: {filesCount ? String(filesCount) : "لا توجد ملفات مضافة"}</span>
-      </div>
+          <span className="oh-mini-chip">مدة التسليم: {durationLabel(order)}</span>
+          <span className="oh-mini-chip">ملفات: {filesCount ? String(filesCount) : "لا توجد ملفات مضافة"}</span>
+        </div>
+      ) : (
+        <>
+          <div className="oh-pool-card__meta oh-pool-card__meta--keyonly" aria-label="ملخص الطلب">
+            <span className="oh-mini-chip oh-mini-chip--emph">
+              السعر:{" "}
+              <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>
+                {priceChipBody}
+              </span>
+            </span>
+            <span className="oh-mini-chip oh-mini-chip--emph">مدة التسليم: {durationLabel(order)}</span>
+          </div>
+          <p className="oh-pool-card__desc oh-pool-card__desc--compact-preview">{shortText(order?.description, 220)}</p>
+        </>
+      )}
 
-      <p className={`oh-pool-card__desc${expanded ? " oh-pool-card__desc--expanded" : ""}`.trim()}>
-        {expanded ? showValue(order?.description) : shortText(order?.description, 140)}
-      </p>
+      {showFull ? (
+        <p className={`oh-pool-card__desc${expanded ? " oh-pool-card__desc--expanded" : ""}`.trim()}>
+          {expanded ? showValue(order?.description) : shortText(order?.description, 140)}
+        </p>
+      ) : null}
 
-      {remaining ? (
+      {showFull && remaining ? (
         <p className="help" style={{ margin: 0 }}>
           {remaining}
         </p>
       ) : null}
 
-      {skillsClean.length ? (
+      {showFull && skillsClean.length ? (
         <div className="oh-pool-card__meta" aria-label="المهارات">
           {skillsClean.slice(0, 8).map((s, idx) => (
             <span className="oh-mini-chip" key={s?.id || s?.name || String(idx)}>

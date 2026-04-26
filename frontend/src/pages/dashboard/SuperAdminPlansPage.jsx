@@ -126,7 +126,7 @@ const SuperAdminPlansPage = () => {
 
       <div className="card">
         <h2>إضافة باقة</h2>
-        <div className="auth-form-grid" style={{ marginTop: 12 }}>
+        <div className="auth-form-grid">
           <label className="auth-field">
             <span>الاسم الداخلي (name)</span>
             <div className="auth-input-wrap auth-input-wrap--noicon">
@@ -250,7 +250,7 @@ const SuperAdminPlansPage = () => {
         {loading ? <AdminInlineGridSkeleton count={3} /> : null}
         {!loading && plans.length === 0 ? <p>لا توجد باقات بعد.</p> : null}
         {!loading && plans.length > 0 ? (
-          <div className="cards-grid" style={{ marginTop: 12 }}>
+          <div className="cards-grid">
             {plans.map((p) => (
               <article className="card" key={p.id}>
                 <h3>{p.title}</h3>
@@ -258,7 +258,7 @@ const SuperAdminPlansPage = () => {
                 <p>المدة: {p.durationDays} يوم</p>
                 <p>زيارة الشركة: {p.requiresCompanyVisit ? "نعم" : "لا"}</p>
                 <p>الحالة: {p.isActive ? "فعّالة" : "غير فعّالة"} / {p.isVisible ? "مرئية" : "مخفية"}</p>
-                <div className="auth-actions-row auth-actions-row--split" style={{ marginTop: 10 }}>
+                <div className="auth-actions-row auth-actions-row--split">
                   <Button type="button" variant="secondary" disabled={submitting} onClick={() => toggle(p, "isActive")}>
                     {p.isActive ? "تعطيل" : "تفعيل"}
                   </Button>
