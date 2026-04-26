@@ -289,6 +289,7 @@ async function loginUser(emailRaw, password) {
 
   const token = signToken(user);
   const { password_hash: _, ...rest } = user;
+  await ensureUserRole({ userId: rest.id, roleName: rest.role });
   const authz = await resolveAuthzContext({ userId: rest.id, legacyRole: rest.role });
   return { user: withAuthz(mapUserPublic(rest), authz), token };
 }

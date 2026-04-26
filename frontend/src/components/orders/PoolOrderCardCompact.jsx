@@ -33,18 +33,25 @@ function statusBadge(order) {
   return { label: s || "—", className: "oh-badge oh-badge--neutral" };
 }
 
+function isPricedBiddingOrder(order) {
+  return order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null;
+}
+
 export default function PoolOrderCardCompact({
   order,
   onOpenDetails,
   canTake = false,
   taking = false,
+  bidBusy = false,
   onTake,
+  onBid,
   disabledReason,
 }) {
   const badge = useMemo(() => statusBadge(order), [order]);
   const filesCount = Array.isArray(order?.files) ? order.files.length : 0;
   const categoryText = `${order?.category?.name || "—"}${order?.subSubcategory?.name ? ` • ${order.subSubcategory.name}` : ""}`;
   const myClaimStatus = order?.myClaim?.status ? String(order.myClaim.status) : "";
+  const pricedBidding = useMemo(() => isPricedBiddingOrder(order), [order]);
   const takenNote =
     myClaimStatus === "pending"
       ? "سبق أن تقدمت لهذا الطلب وهو قيد المراجعة."
@@ -88,8 +95,11 @@ export default function PoolOrderCardCompact({
         <span className="oh-mini-chip">
           السعر:{" "}
           <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>
-            {order?.projectType === "bidding" ? "—" : formatMoney(order?.budget)}
-            {order?.projectType === "fixed" && order?.currencyCode ? ` ${order.currencyCode}` : ""}
+            {pricedBidding
+              ? `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)}${order?.currencyCode ? ` ${order.currencyCode}` : ""}`
+              : order?.projectType === "bidding"
+                ? "—"
+                : `${formatMoney(order?.budget)}${order?.projectType === "fixed" && order?.currencyCode ? ` ${order.currencyCode}` : ""}`}
           </span>
         </span>
         <span className="oh-mini-chip">مدة التسليم: {durationLabel(order)}</span>
@@ -102,15 +112,27 @@ export default function PoolOrderCardCompact({
         <button type="button" className="btn btn-secondary" onClick={() => onOpenDetails?.()}>
           عرض التفاصيل
         </button>
-        <button
-          type="button"
-          className="btn btn-primary"
-          disabled={!canTake || taking || myClaimStatus === "pending"}
-          title={effectiveDisabledReason}
-          onClick={() => onTake?.()}
-        >
-          {taking ? "جارٍ الاستلام…" : "استلام الطلب"}
-        </button>
+        {pricedBidding ? (
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={!canTake || bidBusy || order?.myBid?.status === "pending"}
+            title={effectiveDisabledReason || (order?.myBid?.status === "pending" ? "لقد قدمت عرضاً لهذا الطلب." : "")}
+            onClick={() => onBid?.()}
+          >
+            {bidBusy ? "جارٍ الإرسال…" : order?.myBid?.status === "pending" ? "عرضك مُرسل" : "تقديم عرض سعر"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={!canTake || taking || myClaimStatus === "pending"}
+            title={effectiveDisabledReason}
+            onClick={() => onTake?.()}
+          >
+            {taking ? "جارٍ الاستلام…" : "استلام الطلب"}
+          </button>
+        )}
       </footer>
     </article>
   );
