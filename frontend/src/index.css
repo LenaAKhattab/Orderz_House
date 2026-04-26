@@ -405,6 +405,29 @@
   border-color: rgba(56, 82, 180, 0.22);
 }
 
+.oh-pool-card.oh-pool-card--static {
+  cursor: default;
+}
+
+.oh-pool-card.oh-pool-card--static:hover {
+  transform: none;
+  box-shadow: 0 12px 30px rgba(56, 82, 180, 0.06);
+  border-color: rgba(56, 82, 180, 0.12);
+}
+
+.oh-pool-card__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.oh-pool-card__desc.oh-pool-card__desc--expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
 .oh-pool-card__head {
   display: flex;
   gap: 10px;
@@ -476,9 +499,16 @@
 
 .oh-pool-card__actions {
   display: flex;
+  flex-direction: row;
+  align-items: center;
   gap: 10px;
   justify-content: flex-start;
   flex-wrap: wrap;
+  width: 100%;
+}
+
+.oh-pool-card__actions > .btn {
+  flex: 0 1 auto;
 }
 
 /* Assigned (freelancer) compact horizontal cards */
@@ -1886,6 +1916,28 @@ p {
   display: grid;
   gap: 14px;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+/** حد أقصى 3 أعمدة (مثل الطلبات الداخلية) مع تكيّف على الشاشات الصغيرة */
+.cards-grid.cards-grid--max-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cards-grid.cards-grid--max-3 > .oh-empty,
+.cards-grid.cards-grid--max-3 > .card {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1020px) {
+  .cards-grid.cards-grid--max-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .cards-grid.cards-grid--max-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* —— Plans / pricing (public) —— */
@@ -4130,6 +4182,147 @@ p {
   overflow: hidden;
 }
 
+.client-order-modal--admin-wizard {
+  width: min(1040px, 100%);
+}
+
+.client-order-modal__body--admin-wizard {
+  padding: 10px 14px 16px;
+}
+
+.admin-internal-wizard--modal .form-grid {
+  margin-top: 0;
+}
+
+/* Admin create order (step «بيانات»): mirror client modal field layout */
+.admin-co-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 14px;
+  align-items: start;
+}
+
+.admin-co-fields__span2 {
+  grid-column: 1 / -1;
+}
+
+.admin-co-fields__row4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 12px;
+  align-items: start;
+}
+
+.admin-co-fields .client-co-type-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-co-fields .client-co-type-row .btn {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+}
+
+.admin-co-fields .field {
+  gap: 2px;
+  margin-bottom: 0;
+}
+
+/* لا نحجز مسافة لرسالة الخطأ إلا عند ظهورها (يقلل الفراغ بين الحقول) */
+.admin-co-fields .field-error-slot {
+  margin-top: 0;
+  min-height: 0;
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.admin-co-fields .field-error-slot--show {
+  margin-top: 3px;
+  min-height: auto;
+  visibility: visible;
+}
+
+.admin-co-fields .label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(26, 29, 46, 0.55);
+}
+
+.admin-co-fields .input,
+.admin-co-fields select.input {
+  padding: 8px 11px;
+  font-size: 0.84rem;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 82, 180, 0.2);
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-co-fields textarea.input {
+  min-height: 0;
+  resize: vertical;
+}
+
+.admin-co-fields .help {
+  font-size: 0.72rem;
+  line-height: 1.3;
+  margin-top: 0;
+  color: rgba(26, 29, 46, 0.55);
+}
+
+.admin-co-fields .oh-select__btn {
+  min-height: 36px;
+  padding: 8px 11px;
+  font-size: 0.84rem;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 82, 180, 0.2);
+  background: #fff;
+}
+
+.admin-co-fields .oh-select__btn--open {
+  border-color: rgba(56, 82, 180, 0.45);
+}
+
+.admin-co-fields .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.admin-co-fields .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 82, 180, 0.18);
+  background: rgba(56, 82, 180, 0.05);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 640px) {
+  .admin-co-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-co-fields__span2 {
+    grid-column: 1;
+  }
+
+  .admin-co-fields__row4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-co-fields__row4 {
+    grid-template-columns: 1fr;
+  }
+}
+
 .client-order-modal__head {
   display: flex;
   align-items: flex-start;
@@ -4231,6 +4424,17 @@ p {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px 16px;
   align-items: start;
+}
+
+.client-order-modal__grid .client-co-type-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.client-order-modal__grid .client-co-type-row .btn {
+  padding: 6px 14px;
+  font-size: 0.82rem;
 }
 
 .client-order-modal__span2 {

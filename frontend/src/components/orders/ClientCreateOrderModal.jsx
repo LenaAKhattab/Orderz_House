@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/useAuth";
 import { useToast } from "../ui/toastContext";
-import {
-  createClientOrderRequest,
-  getCategoriesRequest,
-  getCategorySubSubcategoriesRequest,
-} from "../../services/api";
+import { createClientOrderRequest, getCategoriesRequest, getCategorySubSubcategoriesRequest } from "../../services/api";
+import { INTERNAL_ORDERS_LIST_REFRESH } from "../../constants/authRoutes";
+import AdminInternalOrderWizard from "./AdminInternalOrderWizard";
 
 const CURRENCIES = [
   { code: "JOD", label: "JOD" },
@@ -38,6 +37,9 @@ const STEPS = [
 export default function ClientCreateOrderModal({ open, onClose }) {
   const navigate = useNavigate();
   const { push } = useToast();
+  const { user } = useAuth();
+  const accountRole = user?.primaryRole || user?.role;
+  const isAdminLike = accountRole === "admin" || accountRole === "super_admin";
 
   const [step, setStep] = useState(1);
   const [categories, setCategories] = useState([]);
@@ -86,7 +88,7 @@ export default function ClientCreateOrderModal({ open, onClose }) {
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || isAdminLike) return;
     resetForm();
     let cancelled = false;
     (async () => {
@@ -100,7 +102,7 @@ export default function ClientCreateOrderModal({ open, onClose }) {
     return () => {
       cancelled = true;
     };
-  }, [open, push]);
+  }, [open, push, isAdminLike]);
 
   useEffect(() => {
     setSubSubcategories([]);
@@ -108,7 +110,7 @@ export default function ClientCreateOrderModal({ open, onClose }) {
   }, [categoryId]);
 
   useEffect(() => {
-    if (!open || !categoryId) {
+    if (!open || isAdminLike || !categoryId) {
       setSubSubcategories([]);
       return;
     }
@@ -127,7 +129,7 @@ export default function ClientCreateOrderModal({ open, onClose }) {
     return () => {
       cancelled = true;
     };
-  }, [open, categoryId]);
+  }, [open, categoryId, isAdminLike]);
 
   const clientErrors = useMemo(() => {
     const e = {};
@@ -214,6 +216,50 @@ export default function ClientCreateOrderModal({ open, onClose }) {
   };
 
   if (!open) return null;
+
+  if (isAdminLike) {
+    const adminOrdersPath =
+      accountRole === "super_admin" ? "/dashboard/super-admin/orders" : "/dashboard/admin/orders";
+    const onAdminOverlayMouseDown = (e) => {
+      if (e.target === e.currentTarget) onClose();
+    };
+    return (
+      <div className="client-order-modal-overlay" role="presentation" onMouseDown={onAdminOverlayMouseDown}>
+        <div
+          className="client-order-modal client-order-modal--admin-wizard"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="admin-create-order-modal-title"
+          dir="rtl"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <header className="client-order-modal__head">
+            <div>
+              <h2 id="admin-create-order-modal-title" className="client-order-modal__title">
+                إنشاء طلب (إداري)
+              </h2>
+              <p className="client-order-modal__lead">
+                نفس خطوات لوحة الإدارة: رقم الطلب، التصنيفات الإضافية، المهارات، الإسناد، الأرشيف، ثم الملفات والمراجعة.
+              </p>
+            </div>
+            <button type="button" className="btn btn-secondary client-order-modal__close" onClick={() => onClose()}>
+              إغلاق
+            </button>
+          </header>
+          <div className="client-order-modal__body client-order-modal__body--admin-wizard">
+            <AdminInternalOrderWizard
+              variant="modal"
+              onCreated={() => {
+                onClose();
+                navigate(adminOrdersPath);
+                window.dispatchEvent(new CustomEvent(INTERNAL_ORDERS_LIST_REFRESH));
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const typeHelp =
     projectType === "fixed"

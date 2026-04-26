@@ -97,25 +97,28 @@ export function AssignedOrderListSkeleton({ count = 4 }) {
 
 export function OrderCardSkeleton() {
   return (
-    <article className="oh-order-card oh-order-card--skeleton" aria-hidden>
-      <header className="oh-order-card__head">
-        <div className="oh-order-card__title-wrap">
-          <SkelBar style={{ height: 17, width: "68%" }} />
-          <div className="oh-order-card__id-row" style={{ marginTop: 6 }}>
-            <SkelBar style={{ height: 22, width: 96, borderRadius: 10 }} />
-            <SkelBar style={{ height: 24, width: 88, borderRadius: 999 }} />
+    <article className="oh-pool-card oh-pool-card--static oh-pool-card--skeleton" aria-hidden>
+      <header className="oh-pool-card__head">
+        <div className="oh-pool-card__title-wrap">
+          <SkelBar style={{ height: 17, width: "72%" }} />
+          <div className="oh-pool-card__sub" style={{ marginTop: 4 }}>
+            <SkelBar style={{ height: 20, width: 110, borderRadius: 10 }} />
           </div>
         </div>
-        <div className="oh-order-card__badges">
-          <SkelBar style={{ height: 26, width: 64, borderRadius: 999 }} />
+        <div className="oh-pool-card__badges">
           <SkelBar style={{ height: 26, width: 56, borderRadius: 999 }} />
+          <SkelBar style={{ height: 26, width: 48, borderRadius: 999 }} />
         </div>
       </header>
-      <SkelBar style={{ height: 56, width: "100%", marginTop: 4 }} />
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
-        {[76, 84, 70, 92].map((w) => (
-          <SkelBar key={w} style={{ height: 48, width: w, borderRadius: 16 }} />
+      <div className="oh-pool-card__meta">
+        {[120, 72, 88, 96, 140].map((w) => (
+          <SkelBar key={w} style={{ height: 30, width: w, borderRadius: 999 }} />
         ))}
+      </div>
+      <SkelBar style={{ height: 40, width: "100%" }} />
+      <div className="oh-pool-card__actions">
+        <SkelBar style={{ height: 40, width: 120, borderRadius: 12 }} />
+        <SkelBar style={{ height: 40, width: 132, borderRadius: 12 }} />
       </div>
     </article>
   );

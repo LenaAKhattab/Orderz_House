@@ -46,14 +46,7 @@ const Navbar = () => {
   const isFreelancer = role === "freelancer" || roles.includes("freelancer");
   const dashboardPath = user && role ? getDashboardPath(role) : null;
   const isLoggedIn = Boolean(user) && !loading;
-  const createOrderPath =
-    role === "super_admin"
-      ? "/dashboard/super-admin/orders/create"
-      : role === "admin"
-        ? "/dashboard/admin/orders/create"
-        : role === "client"
-          ? null
-          : null;
+  const showAdminCreateOrderButton = role === "super_admin" || role === "admin";
 
   useOnClickOutside(exploreRef, () => setExploreOpen(false));
   useOnClickOutside(userMenuRef, () => setUserMenuOpen(false));
@@ -84,7 +77,6 @@ const Navbar = () => {
         { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
         { label: "الاشتراكات", to: "/dashboard/super-admin/subscriptions" },
         { label: "الطلبات", to: "/dashboard/super-admin/orders" },
-        { label: "إنشاء طلب", to: "/dashboard/super-admin/orders/create" },
       ];
     }
     if (role === "admin") {
@@ -92,7 +84,6 @@ const Navbar = () => {
         ...base,
         { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
         { label: "الطلبات", to: "/dashboard/admin/orders" },
-        { label: "إنشاء طلب", to: "/dashboard/admin/orders/create" },
       ];
     }
     if (isFreelancer) {
@@ -191,7 +182,7 @@ const Navbar = () => {
               <span className="nav-auth-placeholder" aria-hidden="true" />
             ) : user ? (
               <>
-                {role === "client" ? (
+                {role === "client" || showAdminCreateOrderButton ? (
                   <button
                     type="button"
                     className="nav-create-btn"
@@ -203,13 +194,6 @@ const Navbar = () => {
                     </span>
                     <span className="nav-create-btn__text">إنشاء طلب</span>
                   </button>
-                ) : createOrderPath ? (
-                  <NavLink to={createOrderPath} className="nav-create-btn" aria-label="إنشاء طلب">
-                    <span className="nav-create-btn__icon" aria-hidden="true">
-                      +
-                    </span>
-                    <span className="nav-create-btn__text">إنشاء طلب</span>
-                  </NavLink>
                 ) : null}
                 <div className="nav-user" ref={userMenuRef}>
                   <button

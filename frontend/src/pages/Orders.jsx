@@ -136,7 +136,7 @@ const Orders = () => {
               showOrderCode={false}
               showAssignmentBadge={false}
               showAdminBadge={false}
-              footer={
+              footerInline={
                 order?.assignedFreelancerId ? null : (
                   <div style={{ display: "flex", gap: 10, justifyContent: "flex-start", alignItems: "center", flexWrap: "wrap" }}>
                     {isPricedBiddingPoolOrder(order) ? (

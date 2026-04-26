@@ -17,7 +17,9 @@
     "db:migrate:services-seed": "node scripts/runSqlFile.js sql/migrations/005_seed_services_from_doc.sql",
     "db:migrate:orders-currency": "node scripts/runSqlFile.js sql/migrations/006_orders_currency.sql",
     "db:verify-schema": "node scripts/verifySchema.js",
-    "db:assign-freelancer-plan": "node scripts/assignPlanToFreelancerByName.js"
+    "db:assign-freelancer-plan": "node scripts/assignPlanToFreelancerByName.js",
+    "db:create-admin": "node scripts/createAdminUser.js",
+    "db:promote-super-admin": "node scripts/promoteUserToSuperAdminByEmail.js"
   },
   "keywords": [
     "orderz-house",

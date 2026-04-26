@@ -1,3 +1,4 @@
+const fs = require("node:fs");
 const ordersService = require("../services/ordersService");
 const adminUsersService = require("../services/adminUsersService");
 
@@ -20,7 +21,7 @@ function parsePreferredSkills(raw) {
 
 const createInternalOrder = async (req, res, next) => {
   try {
-    const actorRole = req.user?.role;
+    const actorRole = req.auth?.primaryRole || req.user?.role;
     let extraCategoryIds = [];
     try {
       const raw = req.body.extraCategoryIds;
@@ -57,8 +58,10 @@ const createInternalOrder = async (req, res, next) => {
       subcategoryId: req.body.subcategoryId || null,
       subSubcategoryId: req.body.subSubcategoryId || null,
       projectType: req.body.projectType,
-      currencyCode: req.body.projectType === "bidding" ? null : (req.body.currencyCode || null),
-      budget: req.body.projectType === "bidding" ? null : req.body.budget,
+      currencyCode: req.body.currencyCode || null,
+      budget: req.body.budget ?? null,
+      bidBudgetMin: req.body.bidBudgetMin ?? null,
+      bidBudgetMax: req.body.bidBudgetMax ?? null,
       durationValue: req.body.durationValue,
       durationUnit: req.body.durationUnit,
       preferredSkills: parsePreferredSkills(req.body.preferredSkills),
@@ -91,6 +94,20 @@ const listInternalOrders = async (req, res, next) => {
   }
 };
 
+const getInternalOrder = async (req, res, next) => {
+  try {
+    const order = await ordersService.getOrderById(req.params.id);
+    if (!order || !["admin_created", "super_admin_created"].includes(order.sourceType)) {
+      const err = new Error("الطلب غير موجود.");
+      err.statusCode = 404;
+      throw err;
+    }
+    return res.status(200).json({ success: true, data: { order } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const searchFreelancers = async (req, res, next) => {
   try {
     const freelancers = await adminUsersService.searchFreelancers({ q: req.query.q, limit: req.query.limit });
@@ -102,7 +119,7 @@ const searchFreelancers = async (req, res, next) => {
 
 const activateArchivedOrder = async (req, res, next) => {
   try {
-    const actorRole = req.user?.role;
+    const actorRole = req.auth?.primaryRole || req.user?.role;
     if (actorRole !== "admin" && actorRole !== "super_admin") {
       const err = new Error("Forbidden");
       err.statusCode = 403;
@@ -117,7 +134,7 @@ const activateArchivedOrder = async (req, res, next) => {
 
 const acceptTakenOrder = async (req, res, next) => {
   try {
-    const actorRole = req.user?.role;
+    const actorRole = req.auth?.primaryRole || req.user?.role;
     if (actorRole !== "admin" && actorRole !== "super_admin") {
       const err = new Error("Forbidden");
       err.statusCode = 403;
@@ -132,7 +149,7 @@ const acceptTakenOrder = async (req, res, next) => {
 
 const listOrderClaims = async (req, res, next) => {
   try {
-    const actorRole = req.user?.role;
+    const actorRole = req.auth?.primaryRole || req.user?.role;
     if (actorRole !== "admin" && actorRole !== "super_admin") {
       const err = new Error("Forbidden");
       err.statusCode = 403;
@@ -145,12 +162,44 @@ const listOrderClaims = async (req, res, next) => {
   }
 };
 
+const approveInternalDelivery = async (req, res, next) => {
+  try {
+    const order = await ordersService.adminApproveInternalDelivery({ orderId: req.params.id });
+    return res.status(200).json({ success: true, data: { order } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const downloadInternalOrderFile = async (req, res, next) => {
+  try {
+    const { absPath, downloadName, mimeType } = await ordersService.prepareAdminInternalOrderFileDownload({
+      orderId: req.params.id,
+      fileId: req.params.fileId,
+    });
+    const utf8Name = String(downloadName || "file");
+    const encoded = encodeURIComponent(utf8Name);
+    res.setHeader("Content-Type", mimeType);
+    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encoded}`);
+    const stream = fs.createReadStream(absPath);
+    stream.on("error", (e) => {
+      if (!res.headersSent) return next(e);
+    });
+    return stream.pipe(res);
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   createInternalOrder,
   listInternalOrders,
+  getInternalOrder,
   searchFreelancers,
   activateArchivedOrder,
   acceptTakenOrder,
   listOrderClaims,
+  approveInternalDelivery,
+  downloadInternalOrderFile,
 };
 
