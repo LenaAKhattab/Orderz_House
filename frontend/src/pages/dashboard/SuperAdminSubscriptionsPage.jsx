@@ -270,7 +270,7 @@ const SuperAdminSubscriptionsPage = () => {
               <Button
                 type="button"
                 className="auth-submit-btn"
-                style={{ minHeight: 46, width: "auto", paddingInline: 18 }}
+                style={{ minHeight: 40, width: "auto", paddingInline: 16 }}
                 onClick={() => {
                   setConfirmOpen(false);
                   const c = confirmContinue;
@@ -306,7 +306,7 @@ const SuperAdminSubscriptionsPage = () => {
 
       <div className="card">
         <h2>إسناد باقة لمستقل</h2>
-        <div className="auth-form-grid" style={{ marginTop: 12 }}>
+        <div className="auth-form-grid">
           <label className="auth-field">
             <span>المستقل</span>
             <div className="auth-input-wrap auth-input-wrap--noicon">
@@ -456,7 +456,6 @@ const SuperAdminSubscriptionsPage = () => {
                 value={form.planId}
                 onChange={(e) => setForm((v) => ({ ...v, planId: e.target.value }))}
                 disabled={submitting}
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid rgba(56, 82, 180, 0.2)" }}
               >
                 <option value="">اختر باقة…</option>
                 {plans.map((p) => (
@@ -480,7 +479,7 @@ const SuperAdminSubscriptionsPage = () => {
         {!loading && subs.length === 0 ? <p>لا توجد اشتراكات بعد.</p> : null}
 
         {!loading && subs.length > 0 ? (
-          <div className="cards-grid" style={{ marginTop: 12 }}>
+          <div className="cards-grid">
             {subs.map((s) => (
               <article className="card" key={s.id}>
                 <h3>اشتراك #{s.id}</h3>
