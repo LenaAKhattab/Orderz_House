@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useToast } from "../../components/ui/toastContext";
-import { getMyAssignedOrderByIdRequest } from "../../services/api";
+import { getMyAssignedOrderByIdRequest, submitFreelancerOrderDeliveryRequest } from "../../services/api";
 import { arabicDurationUnit } from "../../utils/arTime";
 import { OrderDetailsPageSkeleton } from "../../components/ui/Skeleton";
 
@@ -52,6 +52,8 @@ export default function FreelancerMyOrderDetailsPage() {
 
   const [order, setOrder] = useState(null);
   const [busy, setBusy] = useState(true);
+  const [deliveryBusy, setDeliveryBusy] = useState(false);
+  const [deliveryFiles, setDeliveryFiles] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +76,45 @@ export default function FreelancerMyOrderDetailsPage() {
     };
   }, [id, push, navigate]);
 
+  const briefFiles = useMemo(
+    () => (Array.isArray(order?.files) ? order.files.filter((f) => !f.purpose || f.purpose === "brief") : []),
+    [order?.files],
+  );
+  const submittedDeliveryFiles = useMemo(
+    () => (Array.isArray(order?.files) ? order.files.filter((f) => f.purpose === "delivery") : []),
+    [order?.files],
+  );
+
+  const orderPhaseLabel = useMemo(() => {
+    const s = order?.orderStatus;
+    if (s === "pending_client_review") return "بانتظار اعتماد العميل على التسليم";
+    if (s === "completed") return "مكتمل";
+    if (s === "in_progress") return "قيد التنفيذ — يمكنك تسليم الملفات";
+    return s || "—";
+  }, [order?.orderStatus]);
+
+  const submitDelivery = async (e) => {
+    e.preventDefault();
+    if (!deliveryFiles.length) {
+      push({ type: "error", title: "تنبيه", message: "اختر ملفاً واحداً على الأقل." });
+      return;
+    }
+    setDeliveryBusy(true);
+    try {
+      const fd = new FormData();
+      for (const f of deliveryFiles) fd.append("files", f);
+      const res = await submitFreelancerOrderDeliveryRequest(id, fd);
+      const next = res?.data?.order ?? res?.order;
+      if (next) setOrder(next);
+      setDeliveryFiles([]);
+      push({ type: "success", title: "تم التسليم", message: "أُرسلت المرفقات للعميل للمراجعة." });
+    } catch (err) {
+      push({ type: "error", title: "تعذّر التسليم", message: err?.response?.data?.message || err?.message });
+    } finally {
+      setDeliveryBusy(false);
+    }
+  };
+
   const metaRows = useMemo(() => {
     if (!order) return [];
     const categoryText = `${order?.category?.name || "—"} — ${order?.subSubcategory?.name || "—"}`;
@@ -90,6 +131,7 @@ export default function FreelancerMyOrderDetailsPage() {
       { label: "مدة التسليم", value: durationLabel(order) },
       { label: "التصنيف / التصنيف الفرعي", value: categoryText },
       { label: "تاريخ الاستلام", value: formatJoDateTime(receivedAt) },
+      { label: "حالة التنفيذ", value: orderPhaseLabel },
     ];
 
     const extras =
@@ -105,7 +147,7 @@ export default function FreelancerMyOrderDetailsPage() {
         : [];
 
     return [...base, ...extras];
-  }, [order]);
+  }, [order, orderPhaseLabel]);
 
   return (
     <main className="container page-content dash-shell order-details" dir="rtl">
@@ -134,6 +176,13 @@ export default function FreelancerMyOrderDetailsPage() {
       ) : order ? (
         <section className="order-details__grid">
           <section className="order-details__main">
+            {order?.clientRevisionNote ? (
+              <section className="order-details__block" style={{ borderColor: "rgba(59, 130, 246, 0.35)" }}>
+                <div className="order-details__block-title">ملاحظة من العميل</div>
+                <div className="order-details__block-body">{order.clientRevisionNote}</div>
+              </section>
+            ) : null}
+
             <div className="order-details__desc">
               <div className="order-details__desc-head">
                 <div className="order-details__desc-k">{order?.title || "—"}</div>
@@ -151,11 +200,11 @@ export default function FreelancerMyOrderDetailsPage() {
             ) : null}
 
             <section className="order-details__block">
-              <div className="order-details__block-title">الملفات</div>
+              <div className="order-details__block-title">مرفقات وصف الطلب</div>
               <div className="order-details__block-body">
-                {Array.isArray(order?.files) && order.files.length ? (
+                {briefFiles.length ? (
                   <ul className="order-details__attachments">
-                    {order.files.map((f) => (
+                    {briefFiles.map((f) => (
                       <li key={f.id} className="order-details__attachment">
                         {f.fileUrl ? (
                           <a className="order-details__attachment-link" href={fileHref(f.fileUrl)} target="_blank" rel="noreferrer">
@@ -168,10 +217,74 @@ export default function FreelancerMyOrderDetailsPage() {
                     ))}
                   </ul>
                 ) : (
-                  <span className="help">لا توجد ملفات مضافة</span>
+                  <span className="help">لا توجد ملفات في الوصف</span>
                 )}
               </div>
             </section>
+
+            {submittedDeliveryFiles.length ? (
+              <section className="order-details__block">
+                <div className="order-details__block-title">ما قمت بتسليمه</div>
+                <div className="order-details__block-body">
+                  <ul className="order-details__attachments">
+                    {submittedDeliveryFiles.map((f) => (
+                      <li key={f.id} className="order-details__attachment">
+                        {f.fileUrl ? (
+                          <a className="order-details__attachment-link" href={fileHref(f.fileUrl)} target="_blank" rel="noreferrer">
+                            {f.originalName || f.filePath}
+                          </a>
+                        ) : (
+                          <span>{f.originalName || f.filePath}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </section>
+            ) : null}
+
+            {order?.orderStatus === "in_progress" ? (
+              <section className="order-details__block">
+                <div className="order-details__block-title">تسليم الطلب</div>
+                <div className="order-details__block-body">
+                  <p className="help" style={{ marginTop: 0 }}>
+                    ارفع الملفات أو الصور النهائية (حتى خمس ملفات، عشرة ميغابايت لكل ملف).
+                  </p>
+                  <form onSubmit={submitDelivery}>
+                    <div className="field">
+                      <label className="label" htmlFor="delivery-input">
+                        اختيار الملفات
+                      </label>
+                      <input
+                        id="delivery-input"
+                        type="file"
+                        className="input"
+                        multiple
+                        disabled={deliveryBusy}
+                        onChange={(ev) => {
+                          const list = ev.target.files ? Array.from(ev.target.files) : [];
+                          setDeliveryFiles(list.slice(0, 5));
+                        }}
+                      />
+                    </div>
+                    <button type="submit" className="btn btn-primary" disabled={deliveryBusy || !deliveryFiles.length}>
+                      {deliveryBusy ? "جارٍ الإرسال…" : "تسليم الطلب"}
+                    </button>
+                  </form>
+                </div>
+              </section>
+            ) : null}
+
+            {order?.orderStatus === "pending_client_review" ? (
+              <section className="order-details__block">
+                <div className="order-details__block-title">حالة التسليم</div>
+                <div className="order-details__block-body">
+                  <p className="help" style={{ margin: 0 }}>
+                    تم إرسال تسليمك للعميل. بانتظار اعتماده على المرفقات.
+                  </p>
+                </div>
+              </section>
+            ) : null}
           </section>
 
           <aside className="order-details__side">

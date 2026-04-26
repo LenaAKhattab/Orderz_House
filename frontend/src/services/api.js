@@ -142,9 +142,173 @@ export const takePoolOrderRequest = async (orderId) => {
   return data;
 };
 
+export const listClientMyOrdersRequest = async (params = {}) => {
+  const { data } = await api.get("/client/orders", { params, timeout: 45000 });
+  return data;
+};
+
+export const listClientOrderClaimsRequest = async (orderId) => {
+  const { data } = await api.get(`/client/orders/${orderId}/claims`);
+  return data;
+};
+
+export const approveClientOrderClaimRequest = async (orderId, claimId) => {
+  const { data } = await api.post(`/client/orders/${orderId}/claims/approve`, { claimId });
+  return data;
+};
+
+export const rejectClientOrderClaimRequest = async (orderId, claimId) => {
+  const { data } = await api.post(`/client/orders/${orderId}/claims/reject`, { claimId });
+  return data;
+};
+
+export const listClientOrderBidsRequest = async (orderId) => {
+  const { data } = await api.get(`/client/orders/${orderId}/bids`);
+  return data;
+};
+
+export const acceptClientOrderBidRequest = async (orderId, bidId) => {
+  const { data } = await api.post(`/client/orders/${orderId}/bids/accept`, { bidId });
+  return data;
+};
+
+export const rejectClientOrderBidRequest = async (orderId, bidId) => {
+  const { data } = await api.post(`/client/orders/${orderId}/bids/reject`, { bidId });
+  return data;
+};
+
+export const approveClientOrderDeliveryRequest = async (orderId) => {
+  const { data } = await api.post(`/client/orders/${orderId}/delivery/approve`);
+  return data;
+};
+
+export const requestClientOrderRevisionRequest = async (orderId, note) => {
+  const { data } = await api.post(`/client/orders/${orderId}/delivery/revision`, { note: note || "" });
+  return data;
+};
+
+export const submitFreelancerOrderDeliveryRequest = async (orderId, formData) => {
+  const { data } = await api.post(`/freelancer/my-orders/${orderId}/delivery`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    timeout: 120000,
+  });
+  return data;
+};
+
+/** تنزيل مرفق طلب (عميل) مع اسم ملف صحيح من الخادم. */
+export async function downloadClientOrderFile(orderId, fileId, fallbackDisplayName) {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const base = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace(/\/$/, "");
+  const url = `${base}/client/orders/${orderId}/files/${fileId}/download`;
+  const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!res.ok) {
+    let msg = "تعذّر تنزيل الملف.";
+    try {
+      const j = await res.json();
+      if (j?.message) msg = j.message;
+    } catch {
+      /* ignore */
+    }
+    const err = new Error(msg);
+    err.status = res.status;
+    throw err;
+  }
+  let filename =
+    fallbackDisplayName && String(fallbackDisplayName).trim() ? String(fallbackDisplayName).trim() : "download";
+  const cd = res.headers.get("Content-Disposition");
+  if (cd) {
+    const m = /filename\*=UTF-8''([^;\s]+)/i.exec(cd);
+    if (m) {
+      try {
+        filename = decodeURIComponent(m[1]);
+      } catch {
+        /* keep fallback */
+      }
+    }
+  }
+  const blob = await res.blob();
+  const objectUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = filename;
+  a.rel = "noreferrer";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(objectUrl);
+}
+
+/** تنزيل مرفق طلب داخلي (إدارة / سوبر أدمن). */
+export async function downloadAdminInternalOrderFile(orderId, fileId, fallbackDisplayName) {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const base = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace(/\/$/, "");
+  const url = `${base}/admin/orders/${orderId}/files/${fileId}/download`;
+  const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!res.ok) {
+    let msg = "تعذّر تنزيل الملف.";
+    try {
+      const j = await res.json();
+      if (j?.message) msg = j.message;
+    } catch {
+      /* ignore */
+    }
+    const err = new Error(msg);
+    err.status = res.status;
+    throw err;
+  }
+  let filename =
+    fallbackDisplayName && String(fallbackDisplayName).trim() ? String(fallbackDisplayName).trim() : "download";
+  const cd = res.headers.get("Content-Disposition");
+  if (cd) {
+    const m = /filename\*=UTF-8''([^;\s]+)/i.exec(cd);
+    if (m) {
+      try {
+        filename = decodeURIComponent(m[1]);
+      } catch {
+        /* keep fallback */
+      }
+    }
+  }
+  const blob = await res.blob();
+  const objectUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = filename;
+  a.rel = "noreferrer";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(objectUrl);
+}
+
+export const createClientOrderRequest = async (payload) => {
+  const isFormData = typeof FormData !== "undefined" && payload instanceof FormData;
+  const { data } = await api.post("/client/orders", payload, {
+    timeout: isFormData ? 120000 : 10000,
+  });
+  return data;
+};
+
+export const submitPoolOrderBidRequest = async (orderId, payload) => {
+  const { data } = await api.post(`/orders/pool/${orderId}/bids`, payload);
+  return data;
+};
+
 // Admin/Super Admin internal order creation
 export const adminListInternalOrdersRequest = async (params = {}) => {
-  const { data } = await api.get("/admin/orders", { params });
+  // Avoid 304 with empty body in browsers (would clear the list on the client).
+  const { data } = await api.get("/admin/orders", {
+    params: { ...params, _ts: Date.now() },
+    headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+  });
+  return data;
+};
+
+export const adminGetInternalOrderRequest = async (orderId) => {
+  const { data } = await api.get(`/admin/orders/${orderId}`, {
+    params: { _ts: Date.now() },
+    headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+  });
   return data;
 };
 
@@ -168,6 +332,11 @@ export const adminListOrderClaimsRequest = async (orderId) => {
 export const adminAcceptTakenOrderRequest = async (orderId, payload = {}) => {
   // Pool approval flow: backend requires { claimId }
   const { data } = await api.patch(`/admin/orders/${orderId}/accept`, payload);
+  return data;
+};
+
+export const approveAdminInternalOrderDeliveryRequest = async (orderId) => {
+  const { data } = await api.post(`/admin/orders/${orderId}/delivery/approve`);
   return data;
 };
 

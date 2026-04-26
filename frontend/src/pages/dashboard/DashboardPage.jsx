@@ -5,7 +5,15 @@ import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../components/ui/toastContext";
 import PoolOrderCardCompact from "../../components/orders/PoolOrderCardCompact";
 import AssignedOrderCardCompact from "../../components/orders/AssignedOrderCardCompact";
-import { getMyEligibilityRequest, getMySubscriptionRequest, listMyAssignedOrdersRequest, listPoolOrdersRequest, takePoolOrderRequest } from "../../services/api";
+import BidAmountModal from "../../components/orders/BidAmountModal";
+import {
+  getMyEligibilityRequest,
+  getMySubscriptionRequest,
+  listMyAssignedOrdersRequest,
+  listPoolOrdersRequest,
+  submitPoolOrderBidRequest,
+  takePoolOrderRequest,
+} from "../../services/api";
 import { AssignedOrderListSkeleton, PoolOrderListSkeleton, SubscriptionCardSkeleton } from "../../components/ui/Skeleton";
 
 const ROLE_LABEL_AR = {
@@ -368,7 +376,6 @@ function FreelancerMyOrders() {
 function FreelancerPoolOrders() {
   const { user, loading } = useAuth();
   const { push } = useToast();
-  const { pathname } = useLocation();
   const role = user?.primaryRole || user?.role;
   const isFreelancer = role === "freelancer";
   const navigate = useNavigate();
@@ -376,6 +383,8 @@ function FreelancerPoolOrders() {
   const [orders, setOrders] = useState([]);
   const [busy, setBusy] = useState(true);
   const [takingId, setTakingId] = useState(null);
+  const [bidBusyId, setBidBusyId] = useState(null);
+  const [bidModalOrder, setBidModalOrder] = useState(null);
   const [eligibility, setEligibility] = useState(null);
   const [eligibilityFetched, setEligibilityFetched] = useState(false);
 
@@ -386,6 +395,11 @@ function FreelancerPoolOrders() {
 
   const showIneligibleNotice =
     isFreelancer && eligibilityFetched && eligibility && eligibility.eligible === false;
+
+  const reloadPool = async () => {
+    const res = await listPoolOrdersRequest({ limit: 50, offset: 0 });
+    setOrders(res?.data?.orders || []);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -433,13 +447,27 @@ function FreelancerPoolOrders() {
     setTakingId(orderId);
     try {
       await takePoolOrderRequest(orderId);
-      push({ type: "success", title: "تم استلام الطلب", message: "تم إسناد الطلب لك بنجاح." });
-      const res = await listPoolOrdersRequest({ limit: 50, offset: 0 });
-      setOrders(res?.data?.orders || []);
+      push({ type: "success", title: "تم تقديم الطلب", message: "تم تسجيل طلب الاستلام (قد يحتاج موافقة الإدارة)." });
+      await reloadPool();
     } catch (e) {
       push({ type: "error", title: "تعذر استلام الطلب", message: e?.response?.data?.message || e?.message });
     } finally {
       setTakingId(null);
+    }
+  };
+
+  const submitBid = async (amount) => {
+    if (!bidModalOrder?.id) return;
+    setBidBusyId(bidModalOrder.id);
+    try {
+      await submitPoolOrderBidRequest(bidModalOrder.id, { amount });
+      push({ type: "success", title: "تم إرسال العرض", message: "سيتمكن العميل لاحقاً من مراجعة العروض." });
+      setBidModalOrder(null);
+      await reloadPool();
+    } catch (e) {
+      push({ type: "error", title: "تعذر إرسال العرض", message: e?.response?.data?.message || e?.message });
+    } finally {
+      setBidBusyId(null);
     }
   };
 
@@ -449,7 +477,7 @@ function FreelancerPoolOrders() {
         <div className="dash-hero__copy">
           <p className="dash-hero__kicker">لوحة مستقل</p>
           <h1 className="dash-hero__title">الطلبات</h1>
-          <p className="dash-hero__subtitle">استعرض الطلبات المتاحة من الحوض واستلم ما يناسبك.</p>
+          <p className="dash-hero__subtitle">استعرض الطلبات المتاحة من الحوض (إدارة أو عملاء) واستلم أو قدّم عرض سعر حسب نوع الطلب.</p>
         </div>
       </header>
 
@@ -485,7 +513,9 @@ function FreelancerPoolOrders() {
                   }
                   canTake={Boolean(user) && isFreelancer && canTake}
                   taking={takingId === order.id}
+                  bidBusy={bidBusyId === order.id}
                   onTake={() => take(order.id)}
+                  onBid={() => setBidModalOrder(order)}
                   disabledReason={!canTake ? "غير مؤهل (اشتراك غير نشط)" : ""}
                 />
               ))
@@ -493,6 +523,19 @@ function FreelancerPoolOrders() {
           </div>
         </Section>
       </div>
+
+      <BidAmountModal
+        open={Boolean(bidModalOrder)}
+        title={bidModalOrder ? `عرض سعر: ${bidModalOrder.title}` : ""}
+        min={bidModalOrder?.bidBudgetMin}
+        max={bidModalOrder?.bidBudgetMax}
+        currency={bidModalOrder?.currencyCode}
+        busy={Boolean(bidModalOrder && bidBusyId === bidModalOrder.id)}
+        onClose={() => {
+          if (!bidBusyId) setBidModalOrder(null);
+        }}
+        onSubmit={submitBid}
+      />
     </div>
   );
 }

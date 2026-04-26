@@ -45,10 +45,10 @@ module.exports = {
     if (err instanceof multer.MulterError) {
       const msg =
         err.code === "LIMIT_FILE_SIZE"
-          ? "File is too large."
+          ? "حجم الملف كبير جداً."
           : err.code === "LIMIT_FILE_COUNT"
-            ? "Too many files (max 5)."
-            : "Invalid file upload.";
+            ? "عدد الملفات أكثر من المسموح (٥ كحد أقصى)."
+            : "تعذّر رفع الملف.";
       return res.status(400).json({ success: false, message: msg });
     }
     return next(err);

@@ -4,20 +4,26 @@ import { arabicDurationUnit } from "../../utils/arTime";
 function formatMoney(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "";
-  // Force English digits everywhere in UI
   return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
 }
 
 function priceLabel(order) {
+  if (order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null) {
+    const a = formatMoney(order.bidBudgetMin);
+    const b = formatMoney(order.bidBudgetMax);
+    const cur = String(order?.currencyCode || "").trim();
+    return `${a} – ${b}${cur ? ` ${cur}` : ""}`.trim();
+  }
   if (order?.projectType === "bidding") return "—";
-  const amt = order?.budget ? formatMoney(order.budget) : "";
+  const amt = order?.budget != null ? formatMoney(order.budget) : "";
   const cur = String(order?.currencyCode || "").trim();
   if (!amt && !cur) return "—";
   return `${amt || "—"}${cur ? ` ${cur}` : ""}`.trim();
 }
 
-function shortText(text, max = 120) {
+function shortText(text, max = 140) {
   const s = String(text || "").trim();
+  if (!s) return "—";
   if (s.length <= max) return s;
   return `${s.slice(0, max).trim()}…`;
 }
@@ -33,7 +39,17 @@ function yn(v) {
   return "—";
 }
 
-function statusBadge(order) {
+/** Same labels as `PoolOrderCardCompact` (طلبات الحوض / صفحة الطلبات). */
+function poolStatusBadge(order) {
+  const s = order?.orderStatus;
+  if (order?.isArchived) return { label: "مؤرشف", className: "oh-badge oh-badge--neutral" };
+  if (s === "published") return { label: "متاح", className: "oh-badge oh-badge--warning" };
+  if (s === "assigned") return { label: "مُسند", className: "oh-badge oh-badge--success" };
+  if (s === "draft") return { label: "مسودة", className: "oh-badge oh-badge--neutral" };
+  return { label: s || "—", className: "oh-badge oh-badge--neutral" };
+}
+
+function adminStatusBadge(order) {
   const s = order?.orderStatus;
   if (order?.isArchived) return { label: "مؤرشف", className: "oh-badge oh-badge--neutral" };
   if (s === "assigned") return { label: "مُسند", className: "oh-badge oh-badge--success" };
@@ -50,21 +66,6 @@ function assignmentBadge(order) {
   return { label: "في الحوض", className: "oh-pill oh-pill--pool" };
 }
 
-const NO_FILES_ADDED_AR = "لا توجد ملفات مضافة";
-
-function filesLabel(order) {
-  const files = Array.isArray(order?.files) ? order.files : [];
-  if (files.length === 0) return NO_FILES_ADDED_AR;
-  const names = files
-    .map((f) => f?.originalName || f?.name || f?.fileName || f?.filePath || "")
-    .map((s) => String(s).trim())
-    .filter(Boolean);
-  if (names.length === 0) return `${files.length} ملف`;
-  const head = names.slice(0, 2).join("، ");
-  const more = names.length > 2 ? ` +${names.length - 2}` : "";
-  return `${head}${more}`;
-}
-
 function typeLabel(projectType) {
   if (projectType === "fixed") return "سعر ثابت";
   if (projectType === "bidding") return "مزايدة";
@@ -74,6 +75,10 @@ function typeLabel(projectType) {
 function durationLabel(order) {
   if (!order?.durationValue || !order?.durationUnit) return "—";
   return `${order.durationValue} ${arabicDurationUnit(order.durationValue, order.durationUnit)}`;
+}
+
+function isPricedBiddingOrder(order) {
+  return order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null;
 }
 
 function timeLeftLabel(order) {
@@ -99,17 +104,26 @@ function timeLeftLabel(order) {
 export default function OrderCard({
   order,
   footer,
+  /** أزرار بجانب «عرض التفاصيل» (مثل استلام الطلب في صفحة الطلبات). */
+  footerInline,
   showOrderCode = true,
   showAssignmentBadge = true,
   showAdminBadge = true,
 }) {
   const [expanded, setExpanded] = useState(false);
-  const badge = useMemo(() => statusBadge(order), [order]);
+  const badge = useMemo(
+    () => (showAdminBadge ? adminStatusBadge(order) : poolStatusBadge(order)),
+    [order, showAdminBadge],
+  );
   const assign = useMemo(() => assignmentBadge(order), [order]);
   const skills = Array.isArray(order?.preferredSkills) ? order.preferredSkills : [];
-  const filesText = useMemo(() => filesLabel(order), [order]);
+  const skillsClean = skills.filter((s) => s != null);
   const extraCats = Array.isArray(order?.extraCategories) ? order.extraCategories : [];
   const [nowMs, setNowMs] = useState(() => Date.now());
+
+  const categoryText = `${order?.category?.name || "—"}${order?.subSubcategory?.name ? ` • ${order.subSubcategory.name}` : ""}`;
+  const pricedBidding = useMemo(() => isPricedBiddingOrder(order), [order]);
+  const filesCount = Array.isArray(order?.files) ? order.files.length : 0;
 
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), 60 * 1000);
@@ -122,11 +136,11 @@ export default function OrderCard({
   }, [order, nowMs]);
 
   return (
-    <article className="oh-order-card">
-      <header className="oh-order-card__head">
-        <div className="oh-order-card__title-wrap">
-          <div className="oh-order-card__title">{order?.title || "—"}</div>
-          <div className="oh-order-card__id-row">
+    <article className="oh-pool-card oh-pool-card--static">
+      <header className="oh-pool-card__head">
+        <div className="oh-pool-card__title-wrap">
+          <div className="oh-pool-card__title">{order?.title || "—"}</div>
+          <div className="oh-pool-card__sub">
             {showOrderCode ? (
               <span className="oh-code" title={order?.orderCode || ""}>
                 {order?.orderCode || "—"}
@@ -135,126 +149,124 @@ export default function OrderCard({
             {showAssignmentBadge ? <span className={assign.className}>{assign.label}</span> : null}
           </div>
         </div>
-        <div className="oh-order-card__badges">
+        <div className="oh-pool-card__badges">
           <span className={badge.className}>{badge.label}</span>
           {showAdminBadge ? <span className="oh-badge oh-badge--primary">إداري</span> : null}
         </div>
       </header>
 
-      <p className="oh-order-card__desc">{expanded ? showValue(order?.description) : shortText(order?.description, 180)}</p>
+      <div className="oh-pool-card__meta">
+        <span className="oh-mini-chip">{categoryText}</span>
+        <span className="oh-mini-chip">النوع: {typeLabel(order?.projectType)}</span>
+        <span className="oh-mini-chip">
+          السعر:{" "}
+          <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>
+            {pricedBidding
+              ? `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)}${order?.currencyCode ? ` ${order.currencyCode}` : ""}`
+              : order?.projectType === "bidding"
+                ? "—"
+                : `${formatMoney(order?.budget)}${order?.projectType === "fixed" && order?.currencyCode ? ` ${order.currencyCode}` : ""}`}
+          </span>
+        </span>
+        <span className="oh-mini-chip">مدة التسليم: {durationLabel(order)}</span>
+        <span className="oh-mini-chip">ملفات: {filesCount ? String(filesCount) : "لا توجد ملفات مضافة"}</span>
+      </div>
 
-      <section className="oh-order-card__meta">
-        <div className="oh-meta">
-          <div className="oh-meta__label">السعر</div>
-          <div className="oh-meta__value oh-meta__value--strong">
-            <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>{priceLabel(order)}</span>
-          </div>
-        </div>
-        <div className="oh-meta">
-          <div className="oh-meta__label">النوع</div>
-          <div className="oh-meta__value">{typeLabel(order?.projectType)}</div>
-        </div>
-        <div className="oh-meta">
-          <div className="oh-meta__label">مدة التسليم</div>
-          <div className="oh-meta__value">{durationLabel(order)}</div>
-        </div>
-        <div className="oh-meta">
-          <div className="oh-meta__label">التصنيف</div>
-          <div className="oh-meta__value">
-            {order?.category?.name ? order.category.name : "—"}
-            {order?.subSubcategory?.name ? ` • ${order.subSubcategory.name}` : ""}
-          </div>
-        </div>
-        <div className="oh-meta">
-          <div className="oh-meta__label">الملفات</div>
-          <div
-            className="oh-meta__value"
-            title={Array.isArray(order?.files) && order.files.length && filesText !== NO_FILES_ADDED_AR ? filesText : ""}
-          >
-            {filesText}
-          </div>
-        </div>
-      </section>
+      <p className={`oh-pool-card__desc${expanded ? " oh-pool-card__desc--expanded" : ""}`.trim()}>
+        {expanded ? showValue(order?.description) : shortText(order?.description, 140)}
+      </p>
 
       {remaining ? (
-        <p className="help" style={{ marginTop: 6, marginBottom: 0 }}>
+        <p className="help" style={{ margin: 0 }}>
           {remaining}
         </p>
       ) : null}
 
-      {skills.length ? (
-        <div className="oh-order-card__skills" aria-label="Preferred skills">
-          {skills.slice(0, 10).map((s) => (
-            <span className="oh-skill" key={s.id || s.name}>
-              {s.name}
+      {skillsClean.length ? (
+        <div className="oh-pool-card__meta" aria-label="المهارات">
+          {skillsClean.slice(0, 8).map((s, idx) => (
+            <span className="oh-mini-chip" key={s?.id || s?.name || String(idx)}>
+              {typeof s === "string" ? s : s?.name || "—"}
             </span>
           ))}
-          {skills.length > 10 ? <span className="oh-skill oh-skill--more">+{skills.length - 10}</span> : null}
+          {skillsClean.length > 8 ? <span className="oh-mini-chip">+{skillsClean.length - 8}</span> : null}
         </div>
       ) : null}
 
       {expanded ? (
-        <section className="oh-order-card__meta">
-          <div className="oh-meta">
-            <div className="oh-meta__label">الحالة التقنية</div>
-            <div className="oh-meta__value">{showValue(order?.orderStatus)}</div>
-          </div>
-          <div className="oh-meta">
-            <div className="oh-meta__label">منشور</div>
-            <div className="oh-meta__value">{yn(order?.isPublished)}</div>
-          </div>
-          <div className="oh-meta">
-            <div className="oh-meta__label">مفتوح للحوض</div>
-            <div className="oh-meta__value">{yn(order?.isOpenForPool)}</div>
-          </div>
-          <div className="oh-meta">
-            <div className="oh-meta__label">مؤرشف</div>
-            <div className="oh-meta__value">{yn(order?.isArchived)}</div>
-          </div>
-          <div className="oh-meta">
-            <div className="oh-meta__label">createdByUserId</div>
-            <div className="oh-meta__value">{showValue(order?.createdByUserId)}</div>
-          </div>
-          <div className="oh-meta">
-            <div className="oh-meta__label">assignedFreelancerId</div>
-            <div className="oh-meta__value">{showValue(order?.assignedFreelancerId)}</div>
-          </div>
-          <div className="oh-meta">
-            <div className="oh-meta__label">createdAt</div>
-            <div className="oh-meta__value">{showValue(order?.createdAt)}</div>
-          </div>
-          <div className="oh-meta">
-            <div className="oh-meta__label">updatedAt</div>
-            <div className="oh-meta__value">{showValue(order?.updatedAt)}</div>
-          </div>
-        </section>
-      ) : null}
-
-      {expanded && extraCats.length ? (
-        <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ fontWeight: 950, color: "#1b2341" }}>تصنيفات إضافية</div>
-          <div className="chips">
-            {extraCats.map((x, idx) => {
-              const c = x?.category?.name || "—";
-              const ss = x?.subSubcategory?.name ? ` • ${x.subSubcategory.name}` : "";
-              return (
-                <span className="chip" key={`${x?.category?.id || idx}`}>
-                  {c}{ss}
+        <>
+          <section className="oh-order-card__meta" style={{ marginTop: 2 }}>
+            <div className="oh-meta">
+              <div className="oh-meta__label">السعر (ملخص)</div>
+              <div className="oh-meta__value oh-meta__value--strong">
+                <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>
+                  {priceLabel(order)}
                 </span>
-              );
-            })}
-          </div>
-        </div>
+              </div>
+            </div>
+            <div className="oh-meta">
+              <div className="oh-meta__label">الحالة التقنية</div>
+              <div className="oh-meta__value">{showValue(order?.orderStatus)}</div>
+            </div>
+            <div className="oh-meta">
+              <div className="oh-meta__label">منشور</div>
+              <div className="oh-meta__value">{yn(order?.isPublished)}</div>
+            </div>
+            <div className="oh-meta">
+              <div className="oh-meta__label">مفتوح للحوض</div>
+              <div className="oh-meta__value">{yn(order?.isOpenForPool)}</div>
+            </div>
+            <div className="oh-meta">
+              <div className="oh-meta__label">مؤرشف</div>
+              <div className="oh-meta__value">{yn(order?.isArchived)}</div>
+            </div>
+            <div className="oh-meta">
+              <div className="oh-meta__label">createdByUserId</div>
+              <div className="oh-meta__value">{showValue(order?.createdByUserId)}</div>
+            </div>
+            <div className="oh-meta">
+              <div className="oh-meta__label">assignedFreelancerId</div>
+              <div className="oh-meta__value">{showValue(order?.assignedFreelancerId)}</div>
+            </div>
+            <div className="oh-meta">
+              <div className="oh-meta__label">createdAt</div>
+              <div className="oh-meta__value">{showValue(order?.createdAt)}</div>
+            </div>
+            <div className="oh-meta">
+              <div className="oh-meta__label">updatedAt</div>
+              <div className="oh-meta__value">{showValue(order?.updatedAt)}</div>
+            </div>
+          </section>
+
+          {extraCats.length ? (
+            <div style={{ display: "grid", gap: 8 }}>
+              <div style={{ fontWeight: 950, color: "#1b2341" }}>تصنيفات إضافية</div>
+              <div className="chips">
+                {extraCats.map((x, idx) => {
+                  const c = x?.category?.name || "—";
+                  const ss = x?.subSubcategory?.name ? ` • ${x.subSubcategory.name}` : "";
+                  return (
+                    <span className="chip" key={`${x?.category?.id || idx}`}>
+                      {c}
+                      {ss}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+        </>
       ) : null}
 
-      <div style={{ display: "flex", justifyContent: "flex-start", gap: 10, flexWrap: "wrap" }}>
-        <button type="button" className="btn btn-secondary" onClick={() => setExpanded((v) => !v)}>
-          {expanded ? "إخفاء التفاصيل" : "عرض التفاصيل"}
-        </button>
-      </div>
-
-      {footer ? <div className="oh-order-card__footer">{footer}</div> : null}
+      <footer className="oh-pool-card__foot">
+        <div className="oh-pool-card__actions">
+          <button type="button" className="btn btn-secondary" onClick={() => setExpanded((v) => !v)}>
+            {expanded ? "إخفاء التفاصيل" : "عرض التفاصيل"}
+          </button>
+          {footerInline}
+        </div>
+        {footer}
+      </footer>
     </article>
   );
 }
-

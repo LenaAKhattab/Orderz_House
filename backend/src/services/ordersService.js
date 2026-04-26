@@ -6,14 +6,43 @@ const { pool } = require("../config/db");
 const subscriptionsService = require("./subscriptionsService");
 const { baseUploadsDir } = require("../middleware/ordersUploadMiddleware");
 
+/** Multer/busboy often stores UTF-8 filenames as latin1 bytes; fix for DB display and downloads. */
+function decodeMultipartOriginalName(name) {
+  const s = String(name ?? "");
+  if (!s) return s;
+  try {
+    const decoded = Buffer.from(s, "latin1").toString("utf8");
+    const hasArabic = (t) => /[\u0600-\u06FF]/.test(t);
+    if (hasArabic(decoded) && !hasArabic(s)) return decoded;
+  } catch (_) {
+    /* ignore */
+  }
+  return s;
+}
+
 const ORDER_STATUSES = Object.freeze({
   DRAFT: "draft",
   PUBLISHED: "published",
   ASSIGNED: "assigned",
   IN_PROGRESS: "in_progress",
+  PENDING_CLIENT_REVIEW: "pending_client_review",
   COMPLETED: "completed",
   CANCELLED: "cancelled",
 });
+
+/** Pool listing: internal admin jobs + client-published jobs */
+const POOL_ORDER_SOURCE_TYPES = Object.freeze(["admin_created", "super_admin_created", "client_created"]);
+
+function isPoolListedSourceType(sourceType) {
+  return POOL_ORDER_SOURCE_TYPES.includes(sourceType);
+}
+
+function hasPricedBiddingRow(row) {
+  if (!row || row.project_type !== "bidding") return false;
+  const min = row.bid_budget_min != null ? Number(row.bid_budget_min) : null;
+  const max = row.bid_budget_max != null ? Number(row.bid_budget_max) : null;
+  return Number.isFinite(min) && Number.isFinite(max) && min > 0 && max >= min;
+}
 
 function computeDueAt(startedAt, durationValue, durationUnit) {
   const v = Number(durationValue);
@@ -72,8 +101,10 @@ function mapOrderBase(row) {
     extraCategoryIds: Array.isArray(row.extra_category_ids) ? row.extra_category_ids.map((x) => String(x)) : [],
     extraCategoryDetails: row.extra_category_details && typeof row.extra_category_details === "object" ? row.extra_category_details : {},
     projectType: row.project_type,
-    budget: Number(row.budget),
+    budget: row.budget != null ? Number(row.budget) : null,
     currencyCode: row.currency_code || null,
+    bidBudgetMin: row.bid_budget_min != null ? Number(row.bid_budget_min) : null,
+    bidBudgetMax: row.bid_budget_max != null ? Number(row.bid_budget_max) : null,
     durationValue: row.duration_value,
     durationUnit: row.duration_unit,
     createdByUserId: String(row.created_by_user_id),
@@ -92,6 +123,7 @@ function mapOrderBase(row) {
     dueAt: row.due_at || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    clientRevisionNote: row.client_revision_note || null,
   };
 }
 
@@ -240,25 +272,28 @@ async function upsertSkillsAndAttach({ orderId, skills }, client) {
   return skillIds;
 }
 
-async function attachFiles({ orderId, actorUserId, files }, client) {
+async function attachFiles({ orderId, actorUserId, files, defaultPurpose = "brief" }, client) {
   const runner = client || pool;
   const rowsOut = [];
   for (const f of Array.isArray(files) ? files : []) {
     const relativePath = f.relativePath;
     const urlPath = f.urlPath;
+    const purpose = f.purpose || defaultPurpose;
+    const originalName = decodeMultipartOriginalName(f.originalname);
     const { rows } = await runner.query(
       `INSERT INTO order_files (
-        order_id, file_path, file_url, original_name, mime_type, size_bytes, uploaded_by_user_id
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7)
+        order_id, file_path, file_url, original_name, mime_type, size_bytes, uploaded_by_user_id, purpose
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
       RETURNING *`,
       [
         Number(orderId),
         relativePath,
         urlPath,
-        f.originalname,
+        originalName,
         f.mimetype,
         Number(f.size || 0),
         actorUserId ? Number(actorUserId) : null,
+        purpose,
       ],
     );
     rowsOut.push(rows[0]);
@@ -282,7 +317,7 @@ async function getOrderById(orderId, client) {
   );
 
   const { rows: fileRows } = await runner.query(
-    `SELECT id, file_path, file_url, original_name, mime_type, size_bytes, uploaded_at
+    `SELECT id, file_path, file_url, original_name, mime_type, size_bytes, uploaded_at, purpose
      FROM order_files
      WHERE order_id = $1
      ORDER BY id ASC`,
@@ -385,12 +420,14 @@ async function getOrderById(orderId, client) {
     preferredSkills: skillRows.map((r) => ({ id: String(r.id), name: r.name })),
     files: fileRows.map((r) => ({
       id: String(r.id),
+      orderId: String(orderId),
       filePath: r.file_path,
       fileUrl: r.file_url,
-      originalName: r.original_name,
+      originalName: decodeMultipartOriginalName(r.original_name) || r.original_name,
       mimeType: r.mime_type,
       sizeBytes: Number(r.size_bytes),
       uploadedAt: r.uploaded_at,
+      purpose: r.purpose || "brief",
     })),
   };
 }
@@ -420,7 +457,10 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
       await assertAssignableFreelancer({ freelancerUserId: assignedFreelancerId }, client);
     }
 
-    const orderCode = String(payload.orderCode || "").trim();
+    let orderCode = String(payload.orderCode || "").trim();
+    if (!orderCode) {
+      orderCode = await generateUniqueOrderCode(client);
+    }
     const { rowCount: codeExists } = await client.query(`SELECT 1 FROM orders WHERE order_code = $1`, [orderCode]);
     if (codeExists > 0) {
       const err = new Error("Order code already exists.");
@@ -456,6 +496,29 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
       extraCategoryDetailsSafe[String(catId)] = String(ssId);
     }
 
+    const isBidding = payload.projectType === "bidding";
+    let bidMinIns = null;
+    let bidMaxIns = null;
+    let budgetIns = null;
+    let currencyIns = null;
+    if (!isBidding) {
+      budgetIns = Number(payload.budget);
+      currencyIns = payload.currencyCode ? String(payload.currencyCode).trim().toUpperCase() : null;
+    } else {
+      const bm = payload.bidBudgetMin != null ? Number(payload.bidBudgetMin) : null;
+      const bx = payload.bidBudgetMax != null ? Number(payload.bidBudgetMax) : null;
+      if (Number.isFinite(bm) && Number.isFinite(bx) && bm > 0 && bx >= bm) {
+        bidMinIns = bm;
+        bidMaxIns = bx;
+        currencyIns = payload.currencyCode ? String(payload.currencyCode).trim().toUpperCase() : null;
+        if (!currencyIns || currencyIns.length !== 3) {
+          const err = new Error("currencyCode is required for priced bidding.");
+          err.statusCode = 400;
+          throw err;
+        }
+      }
+    }
+
     const { rows } = await client.query(
       `INSERT INTO orders (
         order_code, title, description,
@@ -470,7 +533,8 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         is_published, is_open_for_pool,
         is_archived,
         payment_required, payment_status,
-        order_status
+        order_status,
+        bid_budget_min, bid_budget_max
       ) VALUES (
         $1,$2,$3,
         $4,$5,
@@ -484,7 +548,8 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         $20,$21,
         $22,
         FALSE,'not_required',
-        $23
+        $23,
+        $24, $25
       )
       RETURNING *`,
       [
@@ -497,8 +562,8 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         extraCategoryIdsSafe,
         extraCategoryDetailsSafe,
         payload.projectType,
-        payload.projectType === "bidding" ? null : payload.budget,
-        payload.projectType === "bidding" ? null : (payload.currencyCode ? String(payload.currencyCode).toUpperCase() : null),
+        budgetIns,
+        currencyIns,
         Number(payload.durationValue),
         payload.durationUnit,
         Number(actorUserId),
@@ -511,6 +576,8 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         isOpenForPool,
         shouldArchive,
         orderStatus,
+        bidMinIns,
+        bidMaxIns,
       ],
     );
 
@@ -562,6 +629,122 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
   }
 }
 
+async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const { rows: roleRows } = await client.query(`SELECT id, role FROM users WHERE id = $1 LIMIT 1`, [Number(clientUserId)]);
+    const u = roleRows[0];
+    if (!u || u.role !== "client") {
+      const err = new Error("Only client accounts can create client orders.");
+      err.statusCode = 403;
+      throw err;
+    }
+
+    const chainResult = await assertCategoryChain(
+      {
+        categoryId: payload.categoryId,
+        subcategoryId: payload.subcategoryId || null,
+        subSubcategoryId: payload.subSubcategoryId || null,
+      },
+      client,
+    );
+
+    const effectiveSubcategoryId =
+      payload.subcategoryId || (chainResult && typeof chainResult === "object" ? chainResult.inferredSubcategoryId : null);
+
+    const orderCode = await generateUniqueOrderCode(client);
+
+    const isFixed = payload.projectType === "fixed";
+    const budget = isFixed ? Number(payload.budget) : null;
+    const currencyCode = String(payload.currencyCode || "").trim().toUpperCase();
+    const bidMin = !isFixed && payload.bidBudgetMin != null ? Number(payload.bidBudgetMin) : null;
+    const bidMax = !isFixed && payload.bidBudgetMax != null ? Number(payload.bidBudgetMax) : null;
+
+    const { rows } = await client.query(
+      `INSERT INTO orders (
+        order_code, title, description,
+        category_id, subcategory_id,
+        sub_subcategory_id,
+        extra_category_ids,
+        extra_category_details,
+        project_type, budget, currency_code,
+        bid_budget_min, bid_budget_max,
+        duration_value, duration_unit,
+        created_by_user_id, source_type,
+        assigned_freelancer_id,
+        received_at, started_at, due_at,
+        is_published, is_open_for_pool,
+        is_archived,
+        payment_required, payment_status,
+        order_status
+      ) VALUES (
+        $1,$2,$3,
+        $4,$5,
+        $6,
+        '{}'::bigint[],
+        '{}'::jsonb,
+        $7,$8,$9,
+        $10,$11,
+        $12,$13,
+        $14,'client_created',
+        NULL,
+        NULL, NULL, NULL,
+        TRUE, TRUE,
+        FALSE,
+        FALSE, 'not_required',
+        'published'
+      )
+      RETURNING *`,
+      [
+        orderCode,
+        payload.title,
+        payload.description,
+        Number(payload.categoryId),
+        effectiveSubcategoryId ? Number(effectiveSubcategoryId) : null,
+        payload.subSubcategoryId ? Number(payload.subSubcategoryId) : null,
+        payload.projectType,
+        budget,
+        currencyCode,
+        isFixed ? null : bidMin,
+        isFixed ? null : bidMax,
+        Number(payload.durationValue),
+        payload.durationUnit,
+        Number(clientUserId),
+      ],
+    );
+
+    const orderRow = rows[0];
+    await upsertSkillsAndAttach({ orderId: orderRow.id, skills: payload.preferredSkills }, client);
+
+    const files = Array.isArray(uploadedFiles) ? uploadedFiles : [];
+    if (files.length) {
+      const orderDir = path.join(baseUploadsDir, "..", String(orderRow.id));
+      if (!fs.existsSync(orderDir)) {
+        fs.mkdirSync(orderDir, { recursive: true });
+      }
+      const preparedFiles = [];
+      for (const f of files) {
+        const srcPath = path.join(baseUploadsDir, f.filename);
+        const destPath = path.join(orderDir, f.filename);
+        await fsp.rename(srcPath, destPath);
+        const relativePath = path.join("orders", String(orderRow.id), f.filename).replace(/\\/g, "/");
+        preparedFiles.push({ ...f, relativePath, urlPath: `/uploads/${relativePath}` });
+      }
+      await attachFiles({ orderId: orderRow.id, actorUserId: clientUserId, files: preparedFiles }, client);
+    }
+
+    await client.query("COMMIT");
+    return await getOrderById(orderRow.id);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 async function listAdminInternalOrders({ limit = 50, offset = 0 } = {}) {
   const lim = Math.min(Math.max(Number(limit) || 50, 1), 200);
   const off = Math.max(Number(offset) || 0, 0);
@@ -581,6 +764,201 @@ async function listAdminInternalOrders({ limit = 50, offset = 0 } = {}) {
   return out;
 }
 
+/**
+ * Client "my orders" list: avoid N×getOrderById (many round-trips per row → slow / client timeout).
+ * Keeps the same response shape as getOrderById for UI compatibility.
+ */
+async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
+  const lim = Math.min(Math.max(Number(limit) || 50, 1), 200);
+  const off = Math.max(Number(offset) || 0, 0);
+  const uid = Number(clientUserId);
+  if (!Number.isInteger(uid) || uid < 1) return [];
+
+  const { rows: orderRows } = await pool.query(
+    `SELECT *
+     FROM orders
+     WHERE created_by_user_id = $1
+       AND source_type = 'client_created'
+     ORDER BY id DESC
+     LIMIT $2 OFFSET $3`,
+    [uid, lim, off],
+  );
+  if (!orderRows.length) return [];
+
+  const orderIds = orderRows.map((r) => Number(r.id)).filter((n) => Number.isInteger(n) && n > 0);
+
+  const [{ rows: skillRowsAll }, { rows: fileRowsAll }] = await Promise.all([
+    pool.query(
+      `SELECT os.order_id, s.id, s.name
+       FROM order_skills os
+       JOIN skills s ON s.id = os.skill_id
+       WHERE os.order_id = ANY($1::bigint[])
+       ORDER BY os.order_id, s.name ASC`,
+      [orderIds],
+    ),
+    pool.query(
+      `SELECT id, order_id, file_path, file_url, original_name, mime_type, size_bytes, uploaded_at, purpose
+       FROM order_files
+       WHERE order_id = ANY($1::bigint[])
+       ORDER BY order_id, id ASC`,
+      [orderIds],
+    ),
+  ]);
+
+  const skillsByOrder = new Map();
+  for (const sr of skillRowsAll) {
+    const oid = String(sr.order_id);
+    if (!skillsByOrder.has(oid)) skillsByOrder.set(oid, []);
+    skillsByOrder.get(oid).push({ id: String(sr.id), name: sr.name });
+  }
+
+  const filesByOrder = new Map();
+  for (const fr of fileRowsAll) {
+    const oid = String(fr.order_id);
+    if (!filesByOrder.has(oid)) filesByOrder.set(oid, []);
+    filesByOrder.get(oid).push({
+      id: String(fr.id),
+      orderId: oid,
+      filePath: fr.file_path,
+      fileUrl: fr.file_url,
+      originalName: decodeMultipartOriginalName(fr.original_name) || fr.original_name,
+      mimeType: fr.mime_type,
+      sizeBytes: Number(fr.size_bytes),
+      uploadedAt: fr.uploaded_at,
+      purpose: fr.purpose || "brief",
+    });
+  }
+
+  const bases = orderRows.map((row) => mapOrderBase(row)).filter(Boolean);
+  const primaryCatIds = new Set();
+  const primarySubIds = new Set();
+  const primarySsIds = new Set();
+  const extraCatIdsAll = new Set();
+  const extraSsIdsAll = new Set();
+
+  for (const b of bases) {
+    const c = Number(b.categoryId);
+    if (Number.isInteger(c) && c > 0) primaryCatIds.add(c);
+    const sc = b.subcategoryId ? Number(b.subcategoryId) : null;
+    if (Number.isInteger(sc) && sc > 0) primarySubIds.add(sc);
+    const ss = b.subSubcategoryId ? Number(b.subSubcategoryId) : null;
+    if (Number.isInteger(ss) && ss > 0) primarySsIds.add(ss);
+
+    const extraCatIds = Array.isArray(b.extraCategoryIds) ? b.extraCategoryIds.map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0) : [];
+    const extraDetails = b.extraCategoryDetails && typeof b.extraCategoryDetails === "object" ? b.extraCategoryDetails : {};
+    for (const cid of extraCatIds) {
+      extraCatIdsAll.add(cid);
+      const raw = extraDetails[String(cid)];
+      const ssId = raw ? Number(raw) : null;
+      if (Number.isInteger(ssId) && ssId > 0) extraSsIdsAll.add(ssId);
+    }
+  }
+
+  const catIdList = [...new Set([...primaryCatIds, ...extraCatIdsAll])];
+  const subIdList = [...primarySubIds];
+  const ssIdList = [...new Set([...primarySsIds, ...extraSsIdsAll])];
+
+  const queries = [];
+  if (catIdList.length) {
+    queries.push(pool.query(`SELECT id, slug, name FROM categories WHERE id = ANY($1::bigint[])`, [catIdList]));
+  } else {
+    queries.push(Promise.resolve({ rows: [] }));
+  }
+  if (subIdList.length) {
+    queries.push(pool.query(`SELECT id, slug, name, category_id FROM subcategories WHERE id = ANY($1::bigint[])`, [subIdList]));
+  } else {
+    queries.push(Promise.resolve({ rows: [] }));
+  }
+  if (ssIdList.length) {
+    queries.push(
+      pool.query(`SELECT id, slug, name, subcategory_id FROM sub_subcategories WHERE id = ANY($1::bigint[])`, [ssIdList]),
+    );
+  } else {
+    queries.push(Promise.resolve({ rows: [] }));
+  }
+
+  const [{ rows: catRows }, { rows: subRows }, { rows: ssRows }] = await Promise.all(queries);
+  const catById = new Map(catRows.map((r) => [Number(r.id), r]));
+  const subById = new Map(subRows.map((r) => [Number(r.id), r]));
+  const ssById = new Map(ssRows.map((r) => [Number(r.id), r]));
+
+  const out = [];
+  for (const row of orderRows) {
+    const base = mapOrderBase(row);
+    if (!base) continue;
+
+    const cRow = catById.get(Number(base.categoryId));
+    const category = cRow ? { id: String(cRow.id), slug: cRow.slug, name: cRow.name } : null;
+
+    let subcategory = null;
+    if (base.subcategoryId) {
+      const sRow = subById.get(Number(base.subcategoryId));
+      if (sRow) {
+        subcategory = {
+          id: String(sRow.id),
+          slug: sRow.slug,
+          name: sRow.name,
+          categoryId: String(sRow.category_id),
+        };
+      }
+    }
+
+    let subSubcategory = null;
+    if (base.subSubcategoryId) {
+      const ssRow = ssById.get(Number(base.subSubcategoryId));
+      if (ssRow) {
+        subSubcategory = {
+          id: String(ssRow.id),
+          slug: ssRow.slug,
+          name: ssRow.name,
+          subcategoryId: String(ssRow.subcategory_id),
+        };
+      }
+    }
+
+    const extraCategories = [];
+    const extraCatIds = Array.isArray(base.extraCategoryIds) ? base.extraCategoryIds.map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0) : [];
+    const extraDetails = base.extraCategoryDetails && typeof base.extraCategoryDetails === "object" ? base.extraCategoryDetails : {};
+    for (const cid of extraCatIds) {
+      const cR = catById.get(cid);
+      const raw = extraDetails[String(cid)];
+      const ssId = raw ? Number(raw) : null;
+      const ssR = ssId && Number.isInteger(ssId) ? ssById.get(ssId) : null;
+      extraCategories.push({
+        category: cR ? { id: String(cR.id), slug: cR.slug, name: cR.name } : { id: String(cid), slug: null, name: String(cid) },
+        subSubcategory: ssR
+          ? { id: String(ssR.id), slug: ssR.slug, name: ssR.name, subcategoryId: String(ssR.subcategory_id) }
+          : null,
+      });
+    }
+
+    const oid = String(base.id);
+    out.push({
+      ...base,
+      category,
+      subcategory,
+      subSubcategory,
+      extraCategories,
+      preferredSkills: skillsByOrder.get(oid) || [],
+      files: filesByOrder.get(oid) || [],
+    });
+  }
+
+  const { rows: bidRows } = await pool.query(
+    `SELECT order_id, COUNT(*)::int AS c
+     FROM order_freelancer_bids
+     WHERE order_id = ANY($1::bigint[])
+     GROUP BY order_id`,
+    [orderIds],
+  );
+  const bidCountByOrder = new Map(bidRows.map((br) => [String(br.order_id), Number(br.c)]));
+  for (const o of out) {
+    o.bidsCount = bidCountByOrder.has(String(o.id)) ? bidCountByOrder.get(String(o.id)) : 0;
+  }
+
+  return out;
+}
+
 async function listPoolOrders({ limit = 50, offset = 0 } = {}) {
   const lim = Math.min(Math.max(Number(limit) || 50, 1), 200);
   const off = Math.max(Number(offset) || 0, 0);
@@ -591,7 +969,7 @@ async function listPoolOrders({ limit = 50, offset = 0 } = {}) {
        AND is_open_for_pool = TRUE
        AND assigned_freelancer_id IS NULL
        AND order_status = 'published'
-       AND source_type IN ('admin_created','super_admin_created')
+       AND source_type IN ('admin_created','super_admin_created','client_created')
      ORDER BY id DESC
      LIMIT $1 OFFSET $2`,
     [lim, off],
@@ -619,12 +997,31 @@ async function getMyOrderClaim({ orderId, freelancerUserId }, clientMaybe) {
   return { id: String(rows[0].id), status: rows[0].status };
 }
 
+async function getMyOrderBid({ orderId, freelancerUserId }, clientMaybe) {
+  if (!freelancerUserId) return null;
+  const runner = clientMaybe || pool;
+  const { rows } = await runner.query(
+    `SELECT id, amount, status
+     FROM order_freelancer_bids
+     WHERE order_id = $1
+       AND freelancer_user_id = $2
+     LIMIT 1`,
+    [Number(orderId), Number(freelancerUserId)],
+  );
+  if (!rows[0]) return null;
+  return { id: String(rows[0].id), amount: Number(rows[0].amount), status: rows[0].status };
+}
+
 async function listPoolOrdersForFreelancer({ freelancerUserId, limit = 50, offset = 0 } = {}) {
   const orders = await listPoolOrders({ limit, offset });
   const out = [];
   for (const o of orders) {
     const myClaim = await getMyOrderClaim({ orderId: o.id, freelancerUserId });
-    out.push({ ...o, myClaim });
+    let myBid = null;
+    if (o.projectType === "bidding" && o.bidBudgetMin != null && o.bidBudgetMax != null) {
+      myBid = await getMyOrderBid({ orderId: o.id, freelancerUserId });
+    }
+    out.push({ ...o, myClaim, myBid });
   }
   return out;
 }
@@ -663,6 +1060,84 @@ async function getFreelancerAssignedOrderById({ freelancerUserId, orderId }) {
   return await getOrderById(orderId);
 }
 
+async function submitPoolOrderBid({ freelancerUserId, orderId, amount }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const eligibility = await subscriptionsService.canFreelancerTakeOrders(String(freelancerUserId));
+    if (!eligibility.eligible) {
+      const err = new Error("Your subscription is not active. You cannot submit bids.");
+      err.statusCode = 403;
+      err.reason = eligibility.reason;
+      throw err;
+    }
+
+    const { rows } = await client.query(
+      `SELECT * FROM orders
+       WHERE id = $1
+       FOR UPDATE`,
+      [Number(orderId)],
+    );
+    const order = rows[0];
+    if (!order) {
+      const err = new Error("Order not found.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (!order.is_published || !order.is_open_for_pool || order.assigned_freelancer_id || order.received_at) {
+      const err = new Error("Order is not available.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (!isPoolListedSourceType(order.source_type)) {
+      const err = new Error("Order is not available.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (order.order_status !== ORDER_STATUSES.PUBLISHED) {
+      const err = new Error("Order is not available.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (!hasPricedBiddingRow(order)) {
+      const err = new Error("This order does not accept price bids.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const bid = Number(amount);
+    if (!Number.isFinite(bid) || bid <= 0) {
+      const err = new Error("Invalid bid amount.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const min = Number(order.bid_budget_min);
+    const max = Number(order.bid_budget_max);
+    if (bid < min || bid > max) {
+      const err = new Error(`Bid must be between ${min} and ${max}.`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    await client.query(
+      `INSERT INTO order_freelancer_bids (order_id, freelancer_user_id, amount, status)
+       VALUES ($1, $2, $3, 'pending')
+       ON CONFLICT (order_id, freelancer_user_id)
+       DO UPDATE SET amount = EXCLUDED.amount, status = 'pending', updated_at = NOW()`,
+      [Number(orderId), Number(freelancerUserId), bid],
+    );
+
+    await client.query("COMMIT");
+    return await getOrderById(orderId);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 async function claimPoolOrder({ freelancerUserId, orderId }) {
   const client = await pool.connect();
   try {
@@ -693,8 +1168,13 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
       err.statusCode = 409;
       throw err;
     }
-    if (!(await isInternalPoolOrder(order))) {
+    if (!isPoolListedSourceType(order.source_type)) {
       const err = new Error("Order is not available in the pool.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (hasPricedBiddingRow(order)) {
+      const err = new Error("This is a bidding order. Submit a price offer instead of taking the order directly.");
       err.statusCode = 409;
       throw err;
     }
@@ -928,6 +1408,673 @@ async function approvePoolClaimAdmin({ actorUserId, orderId, claimId }) {
   }
 }
 
+async function assertClientOwnsOrder({ clientUserId, orderId }, clientMaybe) {
+  const runner = clientMaybe || pool;
+  const { rows } = await runner.query(
+    `SELECT id, created_by_user_id, source_type FROM orders WHERE id = $1 LIMIT 1`,
+    [Number(orderId)],
+  );
+  const order = rows[0];
+  if (!order) {
+    const err = new Error("الطلب غير موجود.");
+    err.statusCode = 404;
+    throw err;
+  }
+  if (order.source_type !== "client_created" || Number(order.created_by_user_id) !== Number(clientUserId)) {
+    const err = new Error("لا يمكنك إدارة هذا الطلب.");
+    err.statusCode = 403;
+    throw err;
+  }
+  return order;
+}
+
+async function listOrderClaimsForClient({ clientUserId, orderId }) {
+  await assertClientOwnsOrder({ clientUserId, orderId });
+  const { rows } = await pool.query(
+    `SELECT o.id, o.order_status, o.assigned_freelancer_id, o.is_open_for_pool, o.is_published
+     FROM orders o
+     WHERE o.id = $1
+     LIMIT 1`,
+    [Number(orderId)],
+  );
+  const o = rows[0];
+  if (!o) return { claims: [], orderSummary: null };
+  if (o.order_status !== ORDER_STATUSES.PUBLISHED || !o.is_published || !o.is_open_for_pool || o.assigned_freelancer_id) {
+    return { claims: [], orderSummary: { hasOpenPool: false } };
+  }
+  const claims = await listOrderClaimsAdmin({ orderId });
+  const pending = claims.filter((c) => c.status === "pending");
+  return { claims: pending, orderSummary: { hasOpenPool: true } };
+}
+
+async function listOrderBidsWithFreelancers({ orderId }, clientMaybe) {
+  const runner = clientMaybe || pool;
+  const { rows } = await runner.query(
+    `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at,
+            u.first_name, u.father_name, u.family_name, u.email, u.account_id
+     FROM order_freelancer_bids b
+     JOIN users u ON u.id = b.freelancer_user_id
+     WHERE b.order_id = $1
+     ORDER BY b.amount ASC, b.created_at ASC`,
+    [Number(orderId)],
+  );
+  return rows.map((r) => ({
+    id: String(r.id),
+    orderId: String(r.order_id),
+    freelancerUserId: String(r.freelancer_user_id),
+    amount: Number(r.amount),
+    status: r.status,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    freelancer: {
+      id: String(r.freelancer_user_id),
+      accountId: r.account_id,
+      firstName: r.first_name,
+      fatherName: r.father_name,
+      familyName: r.family_name,
+      email: r.email,
+    },
+  }));
+}
+
+async function listOrderBidsForClient({ clientUserId, orderId }) {
+  await assertClientOwnsOrder({ clientUserId, orderId });
+  const { rows } = await pool.query(`SELECT * FROM orders WHERE id = $1 LIMIT 1`, [Number(orderId)]);
+  const o = rows[0];
+  if (!o) return { bids: [], orderSummary: null };
+  if (o.project_type !== "bidding" || !hasPricedBiddingRow(o)) {
+    return { bids: [], orderSummary: { hasOpenPool: false } };
+  }
+  if (o.order_status !== ORDER_STATUSES.PUBLISHED || !o.is_published || !o.is_open_for_pool || o.assigned_freelancer_id) {
+    return { bids: [], orderSummary: { hasOpenPool: false } };
+  }
+  const all = await listOrderBidsWithFreelancers({ orderId });
+  const pending = all.filter((b) => b.status === "pending");
+  return {
+    bids: pending,
+    orderSummary: { hasOpenPool: true, currencyCode: o.currency_code || null },
+  };
+}
+
+async function rejectFreelancerBidClient({ clientUserId, orderId, bidId }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertClientOwnsOrder({ clientUserId, orderId }, client);
+    const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
+    const order = rows[0];
+    if (
+      !order.is_published ||
+      !order.is_open_for_pool ||
+      order.assigned_freelancer_id ||
+      order.received_at ||
+      order.order_status !== ORDER_STATUSES.PUBLISHED
+    ) {
+      const err = new Error("لا يمكن رفض العروض في هذه الحالة.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (order.project_type !== "bidding" || !hasPricedBiddingRow(order)) {
+      const err = new Error("هذا الطلب لا يقبل عروض الأسعار بهذه الطريقة.");
+      err.statusCode = 409;
+      throw err;
+    }
+    const { rows: bidRows } = await client.query(
+      `SELECT * FROM order_freelancer_bids WHERE id = $1 AND order_id = $2 FOR UPDATE`,
+      [Number(bidId), Number(orderId)],
+    );
+    const bid = bidRows[0];
+    if (!bid) {
+      const err = new Error("العرض غير موجود.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (bid.status !== "pending") {
+      const err = new Error("تمت معالجة هذا العرض مسبقاً.");
+      err.statusCode = 409;
+      throw err;
+    }
+    await client.query(`UPDATE order_freelancer_bids SET status = 'rejected', updated_at = NOW() WHERE id = $1`, [
+      Number(bid.id),
+    ]);
+    await client.query("COMMIT");
+    return { success: true };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function acceptFreelancerBidClient({ clientUserId, orderId, bidId }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
+    const order = rows[0];
+    if (!order) {
+      const err = new Error("الطلب غير موجود.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (order.source_type !== "client_created" || Number(order.created_by_user_id) !== Number(clientUserId)) {
+      const err = new Error("لا يمكنك اعتماد هذا العرض.");
+      err.statusCode = 403;
+      throw err;
+    }
+    if (order.project_type !== "bidding" || !hasPricedBiddingRow(order)) {
+      const err = new Error("هذا الطلب لا يقبل اعتماد عرض بهذه الطريقة.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (!order.is_published || !order.is_open_for_pool || order.assigned_freelancer_id || order.received_at) {
+      const err = new Error("الطلب غير متاح لاعتماد عرض حالياً.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (order.order_status !== ORDER_STATUSES.PUBLISHED) {
+      const err = new Error("الطلب غير متاح لاعتماد عرض حالياً.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const { rows: bidRows } = await client.query(
+      `SELECT * FROM order_freelancer_bids WHERE id = $1 AND order_id = $2 FOR UPDATE`,
+      [Number(bidId), Number(orderId)],
+    );
+    const bid = bidRows[0];
+    if (!bid) {
+      const err = new Error("العرض غير موجود.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (bid.status !== "pending") {
+      const err = new Error("تمت معالجة هذا العرض مسبقاً.");
+      err.statusCode = 409;
+      throw err;
+    }
+    const amt = Number(bid.amount);
+    const min = Number(order.bid_budget_min);
+    const max = Number(order.bid_budget_max);
+    if (!Number.isFinite(amt) || amt < min || amt > max) {
+      const err = new Error("مبلغ العرض خارج النطاق المسموح.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const receivedAt = new Date();
+    const startedAt = receivedAt;
+    const dueAt = computeDueAt(startedAt, order.duration_value, order.duration_unit);
+
+    await client.query(
+      `UPDATE orders
+         SET assigned_freelancer_id = $2,
+             received_at = $3,
+             started_at = $3,
+             due_at = $4,
+             is_open_for_pool = FALSE,
+             order_status = $5,
+             updated_at = NOW()
+       WHERE id = $1`,
+      [Number(orderId), Number(bid.freelancer_user_id), receivedAt, dueAt, ORDER_STATUSES.IN_PROGRESS],
+    );
+
+    await client.query(`UPDATE order_freelancer_bids SET status = 'accepted', updated_at = NOW() WHERE id = $1`, [
+      Number(bid.id),
+    ]);
+    await client.query(
+      `UPDATE order_freelancer_bids
+         SET status = 'rejected', updated_at = NOW()
+       WHERE order_id = $1
+         AND id <> $2
+         AND status = 'pending'`,
+      [Number(orderId), Number(bid.id)],
+    );
+
+    await subscriptionsService.activateCurrentSubscriptionOnFirstOrder(
+      { freelancerUserId: String(bid.freelancer_user_id), activatedAt: receivedAt },
+      client,
+    );
+
+    await client.query("COMMIT");
+    return await getOrderById(orderId);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function rejectPoolClaimClient({ clientUserId, orderId, claimId }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertClientOwnsOrder({ clientUserId, orderId }, client);
+    const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
+    const order = rows[0];
+    if (
+      !order.is_published ||
+      !order.is_open_for_pool ||
+      order.assigned_freelancer_id ||
+      order.received_at ||
+      order.order_status !== ORDER_STATUSES.PUBLISHED
+    ) {
+      const err = new Error("لا يمكن رفض الطلبات في هذه الحالة.");
+      err.statusCode = 409;
+      throw err;
+    }
+    const { rows: claimRows } = await client.query(
+      `SELECT * FROM order_claims WHERE id = $1 AND order_id = $2 FOR UPDATE`,
+      [Number(claimId), Number(orderId)],
+    );
+    const claim = claimRows[0];
+    if (!claim) {
+      const err = new Error("طلب المستقل غير موجود.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (claim.status !== "pending") {
+      const err = new Error("تمت معالجة هذا الطلب مسبقاً.");
+      err.statusCode = 409;
+      throw err;
+    }
+    const reviewedAt = new Date();
+    await client.query(
+      `UPDATE order_claims
+         SET status = 'rejected',
+             reviewed_at = $2,
+             reviewed_by_user_id = $3,
+             updated_at = NOW()
+       WHERE id = $1`,
+      [Number(claim.id), reviewedAt, Number(clientUserId)],
+    );
+    await client.query("COMMIT");
+    return { success: true };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function approvePoolClaimClient({ clientUserId, orderId, claimId }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const { rows } = await client.query(
+      `SELECT *
+       FROM orders
+       WHERE id = $1
+       FOR UPDATE`,
+      [Number(orderId)],
+    );
+    const order = rows[0];
+    if (!order) {
+      const err = new Error("الطلب غير موجود.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (order.source_type !== "client_created" || Number(order.created_by_user_id) !== Number(clientUserId)) {
+      const err = new Error("لا يمكنك اعتماد هذا الإسناد.");
+      err.statusCode = 403;
+      throw err;
+    }
+    if (!order.is_published || !order.is_open_for_pool || order.assigned_freelancer_id || order.received_at) {
+      const err = new Error("الطلب غير متاح لاعتماد مستقل حالياً.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (order.order_status !== ORDER_STATUSES.PUBLISHED) {
+      const err = new Error("الطلب غير متاح لاعتماد مستقل حالياً.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const { rows: claimRows } = await client.query(
+      `SELECT * FROM order_claims
+       WHERE id = $1 AND order_id = $2
+       FOR UPDATE`,
+      [Number(claimId), Number(orderId)],
+    );
+    const claim = claimRows[0];
+    if (!claim) {
+      const err = new Error("طلب المستقل غير موجود.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (claim.status !== "pending") {
+      const err = new Error("تمت معالجة هذا الطلب مسبقاً.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const receivedAt = new Date();
+    const startedAt = receivedAt;
+    const dueAt = computeDueAt(startedAt, order.duration_value, order.duration_unit);
+
+    await client.query(
+      `UPDATE orders
+         SET assigned_freelancer_id = $2,
+             received_at = $3,
+             started_at = $3,
+             due_at = $4,
+             is_open_for_pool = FALSE,
+             order_status = $5,
+             updated_at = NOW()
+       WHERE id = $1`,
+      [Number(orderId), Number(claim.freelancer_user_id), receivedAt, dueAt, ORDER_STATUSES.IN_PROGRESS],
+    );
+
+    await client.query(
+      `UPDATE order_claims
+         SET status = 'approved',
+             reviewed_at = $2,
+             reviewed_by_user_id = $3,
+             updated_at = NOW()
+       WHERE id = $1`,
+      [Number(claim.id), receivedAt, Number(clientUserId)],
+    );
+    await client.query(
+      `UPDATE order_claims
+         SET status = 'rejected',
+             reviewed_at = $2,
+             reviewed_by_user_id = $3,
+             updated_at = NOW()
+       WHERE order_id = $1
+         AND id <> $4
+         AND status = 'pending'`,
+      [Number(orderId), receivedAt, Number(clientUserId), Number(claim.id)],
+    );
+
+    await subscriptionsService.activateCurrentSubscriptionOnFirstOrder(
+      { freelancerUserId: String(claim.freelancer_user_id), activatedAt: receivedAt },
+      client,
+    );
+
+    await client.query("COMMIT");
+    return await getOrderById(orderId);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, uploadedFiles = [] }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
+    const order = rows[0];
+    if (!order) {
+      const err = new Error("الطلب غير موجود.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (!order.assigned_freelancer_id || Number(order.assigned_freelancer_id) !== Number(freelancerUserId)) {
+      const err = new Error("هذا الطلب غير مسند إليك.");
+      err.statusCode = 403;
+      throw err;
+    }
+    if (order.order_status !== ORDER_STATUSES.IN_PROGRESS) {
+      const err = new Error("لا يمكن التسليم في الحالة الحالية للطلب.");
+      err.statusCode = 409;
+      throw err;
+    }
+    const files = Array.isArray(uploadedFiles) ? uploadedFiles : [];
+    if (!files.length) {
+      const err = new Error("يرجى إرفاق ملف واحد على الأقل.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const orderDir = path.join(baseUploadsDir, "..", String(order.id));
+    await fsp.mkdir(orderDir, { recursive: true });
+    const preparedFiles = [];
+    for (const f of files) {
+      const srcPath = path.join(baseUploadsDir, f.filename);
+      const destPath = path.join(orderDir, f.filename);
+      try {
+        await fsp.rename(srcPath, destPath);
+      } catch {
+        const err = new Error("تعذر حفظ الملفات. حاول مجدداً.");
+        err.statusCode = 500;
+        throw err;
+      }
+      const relativePath = path.join("orders", String(order.id), f.filename).replace(/\\/g, "/");
+      preparedFiles.push({ ...f, relativePath, urlPath: `/uploads/${relativePath}`, purpose: "delivery" });
+    }
+
+    await attachFiles({ orderId: order.id, actorUserId: freelancerUserId, files: preparedFiles, defaultPurpose: "delivery" }, client);
+
+    await client.query(
+      `UPDATE orders
+         SET order_status = $2,
+             client_revision_note = NULL,
+             updated_at = NOW()
+       WHERE id = $1`,
+      [Number(orderId), ORDER_STATUSES.PENDING_CLIENT_REVIEW],
+    );
+
+    await client.query("COMMIT");
+    return await getOrderById(orderId);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function assertInternalOrderForAdmin({ orderId }, clientMaybe) {
+  const runner = clientMaybe || pool;
+  const { rows } = await runner.query(`SELECT id, source_type FROM orders WHERE id = $1 LIMIT 1`, [Number(orderId)]);
+  const order = rows[0];
+  if (!order) {
+    const err = new Error("الطلب غير موجود.");
+    err.statusCode = 404;
+    throw err;
+  }
+  if (!["admin_created", "super_admin_created"].includes(order.source_type)) {
+    const err = new Error("لا يمكن إدارة هذا الطلب من الطلبات الداخلية.");
+    err.statusCode = 403;
+    throw err;
+  }
+  return order;
+}
+
+async function adminApproveInternalDelivery({ orderId }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertInternalOrderForAdmin({ orderId }, client);
+    const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
+    const order = rows[0];
+    if (order.order_status !== ORDER_STATUSES.PENDING_CLIENT_REVIEW) {
+      const err = new Error("لا يوجد تسليم بانتظار اعتمادك حالياً.");
+      err.statusCode = 409;
+      throw err;
+    }
+    const now = new Date();
+    await client.query(
+      `UPDATE orders
+         SET order_status = $2,
+             accepted_at = $3,
+             updated_at = NOW()
+       WHERE id = $1`,
+      [Number(orderId), ORDER_STATUSES.COMPLETED, now],
+    );
+    await client.query("COMMIT");
+    return await getOrderById(orderId);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function prepareAdminInternalOrderFileDownload({ orderId, fileId }) {
+  await assertInternalOrderForAdmin({ orderId });
+  const { rows } = await pool.query(
+    `SELECT id, order_id, file_path, original_name, mime_type
+     FROM order_files
+     WHERE id = $1 AND order_id = $2
+     LIMIT 1`,
+    [Number(fileId), Number(orderId)],
+  );
+  const f = rows[0];
+  if (!f) {
+    const err = new Error("الملف غير موجود.");
+    err.statusCode = 404;
+    throw err;
+  }
+  const rel = String(f.file_path || "").replace(/\\/g, "/").trim();
+  if (!rel || rel.includes("..")) {
+    const err = new Error("مسار الملف غير صالح.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const uploadsRoot = path.resolve(path.join(__dirname, "..", "..", "uploads"));
+  const absPath = path.resolve(uploadsRoot, rel);
+  if (!absPath.startsWith(uploadsRoot + path.sep) && absPath !== uploadsRoot) {
+    const err = new Error("مسار الملف غير صالح.");
+    err.statusCode = 400;
+    throw err;
+  }
+  try {
+    await fsp.access(absPath);
+  } catch {
+    const err = new Error("الملف غير موجود على الخادم.");
+    err.statusCode = 404;
+    throw err;
+  }
+  return {
+    absPath,
+    downloadName: decodeMultipartOriginalName(f.original_name) || f.original_name || "file",
+    mimeType: f.mime_type || "application/octet-stream",
+  };
+}
+
+async function clientApproveDelivery({ clientUserId, orderId }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertClientOwnsOrder({ clientUserId, orderId }, client);
+    const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
+    const order = rows[0];
+    if (order.order_status !== ORDER_STATUSES.PENDING_CLIENT_REVIEW) {
+      const err = new Error("لا يوجد تسليم بانتظار اعتمادك حالياً.");
+      err.statusCode = 409;
+      throw err;
+    }
+    const now = new Date();
+    await client.query(
+      `UPDATE orders
+         SET order_status = $2,
+             accepted_at = $3,
+             updated_at = NOW()
+       WHERE id = $1`,
+      [Number(orderId), ORDER_STATUSES.COMPLETED, now],
+    );
+    await client.query("COMMIT");
+    return await getOrderById(orderId);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function clientRequestDeliveryRevision({ clientUserId, orderId, note }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertClientOwnsOrder({ clientUserId, orderId }, client);
+    const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
+    const order = rows[0];
+    const noteText = note != null ? String(note).trim() : "";
+    if (order.order_status === ORDER_STATUSES.PENDING_CLIENT_REVIEW) {
+      await client.query(`DELETE FROM order_files WHERE order_id = $1 AND purpose = 'delivery'`, [Number(orderId)]);
+      await client.query(
+        `UPDATE orders
+           SET order_status = $2,
+               client_revision_note = $3,
+               updated_at = NOW()
+         WHERE id = $1`,
+        [Number(orderId), ORDER_STATUSES.IN_PROGRESS, noteText || null],
+      );
+    } else if (order.order_status === ORDER_STATUSES.IN_PROGRESS) {
+      await client.query(
+        `UPDATE orders
+           SET client_revision_note = $2,
+               updated_at = NOW()
+         WHERE id = $1`,
+        [Number(orderId), noteText || null],
+      );
+    } else {
+      const err = new Error("لا يمكن طلب تعديل في هذه الحالة.");
+      err.statusCode = 409;
+      throw err;
+    }
+    await client.query("COMMIT");
+    return await getOrderById(orderId);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function prepareClientOrderFileDownload({ clientUserId, orderId, fileId }) {
+  await assertClientOwnsOrder({ clientUserId, orderId });
+  const { rows } = await pool.query(
+    `SELECT id, order_id, file_path, original_name, mime_type
+     FROM order_files
+     WHERE id = $1 AND order_id = $2
+     LIMIT 1`,
+    [Number(fileId), Number(orderId)],
+  );
+  const f = rows[0];
+  if (!f) {
+    const err = new Error("الملف غير موجود.");
+    err.statusCode = 404;
+    throw err;
+  }
+  const rel = String(f.file_path || "").replace(/\\/g, "/").trim();
+  if (!rel || rel.includes("..")) {
+    const err = new Error("مسار الملف غير صالح.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const uploadsRoot = path.resolve(path.join(__dirname, "..", "..", "uploads"));
+  const absPath = path.resolve(uploadsRoot, rel);
+  if (!absPath.startsWith(uploadsRoot + path.sep) && absPath !== uploadsRoot) {
+    const err = new Error("مسار الملف غير صالح.");
+    err.statusCode = 400;
+    throw err;
+  }
+  try {
+    await fsp.access(absPath);
+  } catch {
+    const err = new Error("الملف غير موجود على الخادم.");
+    err.statusCode = 404;
+    throw err;
+  }
+  return {
+    absPath,
+    downloadName: decodeMultipartOriginalName(f.original_name) || f.original_name || "file",
+    mimeType: f.mime_type || "application/octet-stream",
+  };
+}
+
 async function activateArchivedInternalOrder({ orderId }) {
   const client = await pool.connect();
   try {
@@ -979,17 +2126,33 @@ async function activateArchivedInternalOrder({ orderId }) {
 module.exports = {
   ORDER_STATUSES,
   createInternalOrder,
+  createClientOrder,
+  listClientOrders,
   getOrderById,
   listAdminInternalOrders,
   listPoolOrders,
   listPoolOrdersForFreelancer,
   getMyOrderClaim,
+  getMyOrderBid,
   listFreelancerAssignedOrders,
   getFreelancerAssignedOrderById,
+  submitPoolOrderBid,
   claimPoolOrder,
   withdrawPoolClaim,
   listOrderClaimsAdmin,
   approvePoolClaimAdmin,
+  listOrderClaimsForClient,
+  listOrderBidsForClient,
+  rejectFreelancerBidClient,
+  acceptFreelancerBidClient,
+  rejectPoolClaimClient,
+  approvePoolClaimClient,
+  submitFreelancerOrderDelivery,
+  clientApproveDelivery,
+  clientRequestDeliveryRevision,
+  prepareClientOrderFileDownload,
+  adminApproveInternalDelivery,
+  prepareAdminInternalOrderFileDownload,
   activateArchivedInternalOrder,
 };
 

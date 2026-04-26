@@ -6,6 +6,9 @@ export const ROLE = {
   CLIENT: "client",
 };
 
+/** يُطلق بعد إنشاء طلب داخلي من النافذة لتحديث صفحة «الطلبات الداخلية» حتى لو بقي نفس المسار في React Router. */
+export const INTERNAL_ORDERS_LIST_REFRESH = "orderz:internal-orders-refresh";
+
 /** One dashboard URL per role — used for redirects and navbar. */
 export const DASHBOARD_PATH = {
   [ROLE.SUPER_ADMIN]: "/dashboard/super-admin",
@@ -19,6 +22,9 @@ export const DASHBOARD_TITLE = {
   [DASHBOARD_PATH[ROLE.ADMIN]]: "لوحة الإدارة",
   [DASHBOARD_PATH[ROLE.FREELANCER]]: "لوحة المستقل",
   [DASHBOARD_PATH[ROLE.CLIENT]]: "لوحة العميل",
+  "/dashboard/client/my-orders": "طلباتي",
+  "/dashboard/client/my_orders": "طلباتي",
+  "/dashboard/client/financial": "المالية",
   "/dashboard/super-admin/plans": "إدارة الباقات",
   "/dashboard/super-admin/subscriptions": "اشتراكات المستقلين",
   "/dashboard/freelancer/my-orders": "طلباتي",
@@ -50,6 +56,10 @@ const DASHBOARD_PATH_TO_ROLES = {
   [DASHBOARD_PATH[ROLE.ADMIN]]: [ROLE.ADMIN],
   [DASHBOARD_PATH[ROLE.FREELANCER]]: [ROLE.FREELANCER],
   [DASHBOARD_PATH[ROLE.CLIENT]]: [ROLE.CLIENT],
+  "/dashboard/client/my-orders": [ROLE.CLIENT],
+  "/dashboard/client/my_orders": [ROLE.CLIENT],
+  "/dashboard/client/financial": [ROLE.CLIENT],
+  "/dashboard/client/orders/create": [ROLE.CLIENT],
   "/dashboard/freelancer/my-orders": [ROLE.FREELANCER],
   "/dashboard/freelancer/orders": [ROLE.FREELANCER],
   "/dashboard/freelancer/financial-claims": [ROLE.FREELANCER],

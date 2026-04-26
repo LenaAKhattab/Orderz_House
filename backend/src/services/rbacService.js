@@ -34,10 +34,13 @@ async function getUserPermissionKeys(userId) {
 }
 
 function pickPrimaryRole({ roles, legacyRole }) {
-  if (legacyRole && roles.some((r) => r.name === legacyRole)) {
-    return legacyRole;
-  }
-  return roles[0]?.name || legacyRole || null;
+  const privileged = ["super_admin", "admin"];
+  const fromRbac = roles.find((r) => privileged.includes(r.name))?.name;
+  if (fromRbac) return fromRbac;
+  const leg = legacyRole != null ? String(legacyRole).trim() : "";
+  if (leg && privileged.includes(leg)) return leg;
+  if (leg && roles.some((r) => r.name === leg)) return leg;
+  return roles[0]?.name || leg || null;
 }
 
 /**
