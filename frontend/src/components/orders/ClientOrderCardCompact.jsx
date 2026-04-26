@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { arabicDurationUnit } from "../../utils/arTime";
 import ClientFreelancerClaimsModal from "./ClientFreelancerClaimsModal";
+import ClientBiddingOffersModal from "./ClientBiddingOffersModal";
 import ClientDeliveryReviewModal from "./ClientDeliveryReviewModal";
 import ClientRevisionRequestModal from "./ClientRevisionRequestModal";
 
@@ -62,6 +63,7 @@ function clientStatusMeta(order) {
 export default function ClientOrderCardCompact({ order, onOrdersChange }) {
   const [expanded, setExpanded] = useState(false);
   const [claimsOpen, setClaimsOpen] = useState(false);
+  const [bidsOpen, setBidsOpen] = useState(false);
   const [deliveryModal, setDeliveryModal] = useState({ open: false, variant: "workflow" });
   const [revisionOpen, setRevisionOpen] = useState(false);
   const badge = useMemo(() => clientStatusMeta(order), [order]);
@@ -78,6 +80,14 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
   const showClaimsButton =
     isClientOrder &&
     order?.projectType === "fixed" &&
+    order?.orderStatus === "published" &&
+    order?.isOpenForPool &&
+    !order?.assignedFreelancerId &&
+    !order?.isArchived;
+
+  const showBiddingOffersButton =
+    isClientOrder &&
+    pricedBidding &&
     order?.orderStatus === "published" &&
     order?.isOpenForPool &&
     !order?.assignedFreelancerId &&
@@ -134,10 +144,7 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
           ) : null}
         </span>
         {pricedBidding ? (
-          <span className="oh-mini-chip">
-            العروض: {Number.isFinite(bidsCount) ? String(bidsCount) : "—"}
-            <span className="client-order-compact__hint"> (مراجعة العروض قريباً)</span>
-          </span>
+          <span className="oh-mini-chip">العروض: {Number.isFinite(bidsCount) ? String(bidsCount) : "—"}</span>
         ) : null}
       </div>
 
@@ -156,6 +163,11 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
         {showClaimsButton ? (
           <button type="button" className="btn btn-primary" onClick={() => setClaimsOpen(true)}>
             مراجعة طلبات المستقلين
+          </button>
+        ) : null}
+        {showBiddingOffersButton ? (
+          <button type="button" className="btn btn-primary" onClick={() => setBidsOpen(true)}>
+            مراجعة عروض الأسعار
           </button>
         ) : null}
         {showPostAssignActions ? (
@@ -179,6 +191,13 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
         open={claimsOpen}
         orderId={order?.id}
         onClose={() => setClaimsOpen(false)}
+        onChanged={() => onOrdersChange?.()}
+      />
+      <ClientBiddingOffersModal
+        open={bidsOpen}
+        orderId={order?.id}
+        order={order}
+        onClose={() => setBidsOpen(false)}
         onChanged={() => onOrdersChange?.()}
       />
       <ClientDeliveryReviewModal
