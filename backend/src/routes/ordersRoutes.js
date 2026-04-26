@@ -10,6 +10,7 @@ const {
   createClientOrderValidators,
   submitPoolOrderBidValidators,
   clientOrderClaimIdBodyValidators,
+  clientOrderBidIdBodyValidators,
   clientOrderRevisionNoteValidators,
   clientOrderFileDownloadParams,
 } = require("../validators/ordersValidators");
@@ -63,6 +64,35 @@ router.post(
   clientOrderClaimIdBodyValidators,
   validateRequest,
   clientOrdersController.rejectFreelancerClaim,
+);
+
+router.get(
+  "/client/orders/:id/bids",
+  requireAuth,
+  requireRole("client"),
+  orderIdParam,
+  validateRequest,
+  clientOrdersController.listBidsForOrder,
+);
+
+router.post(
+  "/client/orders/:id/bids/accept",
+  requireAuth,
+  requireRole("client"),
+  orderIdParam,
+  clientOrderBidIdBodyValidators,
+  validateRequest,
+  clientOrdersController.acceptFreelancerBid,
+);
+
+router.post(
+  "/client/orders/:id/bids/reject",
+  requireAuth,
+  requireRole("client"),
+  orderIdParam,
+  clientOrderBidIdBodyValidators,
+  validateRequest,
+  clientOrdersController.rejectFreelancerBid,
 );
 
 router.post(

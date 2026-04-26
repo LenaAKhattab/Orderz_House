@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { approveClientOrderDeliveryRequest, downloadClientOrderFile } from "../../services/api";
+import {
+  approveAdminInternalOrderDeliveryRequest,
+  approveClientOrderDeliveryRequest,
+  downloadAdminInternalOrderFile,
+  downloadClientOrderFile,
+} from "../../services/api";
 
 function fileHref(fileUrl) {
   if (!fileUrl) return "";
@@ -26,8 +31,9 @@ function displayFileName(f) {
 
 /**
  * @param {'workflow' | 'archive'} variant — workflow: مراجعة قبل الاعتماد؛ archive: طلب مكتمل، عرض وتنزيل فقط
+ * @param {'client' | 'admin'} audience — مسار API: عميل أو طلب داخلي (إدارة)
  */
-export default function ClientDeliveryReviewModal({ open, order, onClose, onApprove, variant = "workflow" }) {
+export default function ClientDeliveryReviewModal({ open, order, onClose, onApprove, variant = "workflow", audience = "client" }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [downloadingId, setDownloadingId] = useState(null);
@@ -35,14 +41,22 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
   if (!open || !order) return null;
 
   const isArchive = variant === "archive";
-  const deliveryFiles = (Array.isArray(order.files) ? order.files : []).filter((f) => f.purpose === "delivery");
+  const isAdmin = audience === "admin";
+  const orderIdStr = String(order?.id ?? "").trim();
+  const deliveryFiles = (Array.isArray(order.files) ? order.files : []).filter(
+    (f) =>
+      f &&
+      f.purpose === "delivery" &&
+      (!f.orderId || String(f.orderId) === orderIdStr),
+  );
   const canApprove = !isArchive && order.orderStatus === "pending_client_review" && deliveryFiles.length > 0;
 
   const submit = async () => {
     setBusy(true);
     setError("");
     try {
-      await approveClientOrderDeliveryRequest(order.id);
+      if (isAdmin) await approveAdminInternalOrderDeliveryRequest(order.id);
+      else await approveClientOrderDeliveryRequest(order.id);
       onApprove?.();
       onClose();
     } catch (e) {
@@ -56,7 +70,8 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
     setDownloadingId(f.id);
     setError("");
     try {
-      await downloadClientOrderFile(order.id, f.id, displayFileName(f));
+      if (isAdmin) await downloadAdminInternalOrderFile(order.id, f.id, displayFileName(f));
+      else await downloadClientOrderFile(order.id, f.id, displayFileName(f));
     } catch (e) {
       setError(e?.message || "تعذّر تنزيل الملف.");
     } finally {
@@ -95,7 +110,9 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
         <p className="help" style={{ marginTop: 0 }}>
           {isArchive
             ? "يمكنك معاينة أو تنزيل الملفات التي أرسلها المستقل في أي وقت."
-            : "اطلع على ملفات التسليم من المستقل. عند موافقتك على المرفقات يُعتبر الطلب مكتملاً بينكما."}
+            : isAdmin
+              ? "اطلع على ملفات التسليم من المستقل. عند اعتمادك للمرفقات يُعتبر الطلب مكتملاً."
+              : "اطلع على ملفات التسليم من المستقل. عند موافقتك على المرفقات يُعتبر الطلب مكتملاً بينكما."}
         </p>
         {error ? (
           <p className="help" style={{ color: "#b91c1c" }}>
@@ -103,7 +120,11 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
           </p>
         ) : null}
         {!isArchive && order.orderStatus === "in_progress" && deliveryFiles.length === 0 ? (
-          <p className="help">لم يُسلّم المستقل الملفات بعد. يمكنك استخدام «طلب تعديل» إن احتجت توضيحاً إضافياً.</p>
+          <p className="help">
+            {isAdmin
+              ? "لم يُسلّم المستقل الملفات بعد."
+              : "لم يُسلّم المستقل الملفات بعد. يمكنك استخدام «طلب تعديل» إن احتجت توضيحاً إضافياً."}
+          </p>
         ) : null}
         {deliveryFiles.length ? (
           <ul className="order-details__attachments" style={{ marginTop: 12 }}>

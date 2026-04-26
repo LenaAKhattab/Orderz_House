@@ -420,6 +420,7 @@ async function getOrderById(orderId, client) {
     preferredSkills: skillRows.map((r) => ({ id: String(r.id), name: r.name })),
     files: fileRows.map((r) => ({
       id: String(r.id),
+      orderId: String(orderId),
       filePath: r.file_path,
       fileUrl: r.file_url,
       originalName: decodeMultipartOriginalName(r.original_name) || r.original_name,
@@ -456,7 +457,10 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
       await assertAssignableFreelancer({ freelancerUserId: assignedFreelancerId }, client);
     }
 
-    const orderCode = String(payload.orderCode || "").trim();
+    let orderCode = String(payload.orderCode || "").trim();
+    if (!orderCode) {
+      orderCode = await generateUniqueOrderCode(client);
+    }
     const { rowCount: codeExists } = await client.query(`SELECT 1 FROM orders WHERE order_code = $1`, [orderCode]);
     if (codeExists > 0) {
       const err = new Error("Order code already exists.");
@@ -492,6 +496,29 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
       extraCategoryDetailsSafe[String(catId)] = String(ssId);
     }
 
+    const isBidding = payload.projectType === "bidding";
+    let bidMinIns = null;
+    let bidMaxIns = null;
+    let budgetIns = null;
+    let currencyIns = null;
+    if (!isBidding) {
+      budgetIns = Number(payload.budget);
+      currencyIns = payload.currencyCode ? String(payload.currencyCode).trim().toUpperCase() : null;
+    } else {
+      const bm = payload.bidBudgetMin != null ? Number(payload.bidBudgetMin) : null;
+      const bx = payload.bidBudgetMax != null ? Number(payload.bidBudgetMax) : null;
+      if (Number.isFinite(bm) && Number.isFinite(bx) && bm > 0 && bx >= bm) {
+        bidMinIns = bm;
+        bidMaxIns = bx;
+        currencyIns = payload.currencyCode ? String(payload.currencyCode).trim().toUpperCase() : null;
+        if (!currencyIns || currencyIns.length !== 3) {
+          const err = new Error("currencyCode is required for priced bidding.");
+          err.statusCode = 400;
+          throw err;
+        }
+      }
+    }
+
     const { rows } = await client.query(
       `INSERT INTO orders (
         order_code, title, description,
@@ -522,7 +549,7 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         $22,
         FALSE,'not_required',
         $23,
-        NULL, NULL
+        $24, $25
       )
       RETURNING *`,
       [
@@ -535,8 +562,8 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         extraCategoryIdsSafe,
         extraCategoryDetailsSafe,
         payload.projectType,
-        payload.projectType === "bidding" ? null : payload.budget,
-        payload.projectType === "bidding" ? null : (payload.currencyCode ? String(payload.currencyCode).toUpperCase() : null),
+        budgetIns,
+        currencyIns,
         Number(payload.durationValue),
         payload.durationUnit,
         Number(actorUserId),
@@ -549,6 +576,8 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         isOpenForPool,
         shouldArchive,
         orderStatus,
+        bidMinIns,
+        bidMaxIns,
       ],
     );
 
@@ -789,6 +818,7 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
     if (!filesByOrder.has(oid)) filesByOrder.set(oid, []);
     filesByOrder.get(oid).push({
       id: String(fr.id),
+      orderId: oid,
       filePath: fr.file_path,
       fileUrl: fr.file_url,
       originalName: decodeMultipartOriginalName(fr.original_name) || fr.original_name,
@@ -1417,6 +1447,206 @@ async function listOrderClaimsForClient({ clientUserId, orderId }) {
   return { claims: pending, orderSummary: { hasOpenPool: true } };
 }
 
+async function listOrderBidsWithFreelancers({ orderId }, clientMaybe) {
+  const runner = clientMaybe || pool;
+  const { rows } = await runner.query(
+    `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at,
+            u.first_name, u.father_name, u.family_name, u.email, u.account_id
+     FROM order_freelancer_bids b
+     JOIN users u ON u.id = b.freelancer_user_id
+     WHERE b.order_id = $1
+     ORDER BY b.amount ASC, b.created_at ASC`,
+    [Number(orderId)],
+  );
+  return rows.map((r) => ({
+    id: String(r.id),
+    orderId: String(r.order_id),
+    freelancerUserId: String(r.freelancer_user_id),
+    amount: Number(r.amount),
+    status: r.status,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    freelancer: {
+      id: String(r.freelancer_user_id),
+      accountId: r.account_id,
+      firstName: r.first_name,
+      fatherName: r.father_name,
+      familyName: r.family_name,
+      email: r.email,
+    },
+  }));
+}
+
+async function listOrderBidsForClient({ clientUserId, orderId }) {
+  await assertClientOwnsOrder({ clientUserId, orderId });
+  const { rows } = await pool.query(`SELECT * FROM orders WHERE id = $1 LIMIT 1`, [Number(orderId)]);
+  const o = rows[0];
+  if (!o) return { bids: [], orderSummary: null };
+  if (o.project_type !== "bidding" || !hasPricedBiddingRow(o)) {
+    return { bids: [], orderSummary: { hasOpenPool: false } };
+  }
+  if (o.order_status !== ORDER_STATUSES.PUBLISHED || !o.is_published || !o.is_open_for_pool || o.assigned_freelancer_id) {
+    return { bids: [], orderSummary: { hasOpenPool: false } };
+  }
+  const all = await listOrderBidsWithFreelancers({ orderId });
+  const pending = all.filter((b) => b.status === "pending");
+  return {
+    bids: pending,
+    orderSummary: { hasOpenPool: true, currencyCode: o.currency_code || null },
+  };
+}
+
+async function rejectFreelancerBidClient({ clientUserId, orderId, bidId }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertClientOwnsOrder({ clientUserId, orderId }, client);
+    const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
+    const order = rows[0];
+    if (
+      !order.is_published ||
+      !order.is_open_for_pool ||
+      order.assigned_freelancer_id ||
+      order.received_at ||
+      order.order_status !== ORDER_STATUSES.PUBLISHED
+    ) {
+      const err = new Error("لا يمكن رفض العروض في هذه الحالة.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (order.project_type !== "bidding" || !hasPricedBiddingRow(order)) {
+      const err = new Error("هذا الطلب لا يقبل عروض الأسعار بهذه الطريقة.");
+      err.statusCode = 409;
+      throw err;
+    }
+    const { rows: bidRows } = await client.query(
+      `SELECT * FROM order_freelancer_bids WHERE id = $1 AND order_id = $2 FOR UPDATE`,
+      [Number(bidId), Number(orderId)],
+    );
+    const bid = bidRows[0];
+    if (!bid) {
+      const err = new Error("العرض غير موجود.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (bid.status !== "pending") {
+      const err = new Error("تمت معالجة هذا العرض مسبقاً.");
+      err.statusCode = 409;
+      throw err;
+    }
+    await client.query(`UPDATE order_freelancer_bids SET status = 'rejected', updated_at = NOW() WHERE id = $1`, [
+      Number(bid.id),
+    ]);
+    await client.query("COMMIT");
+    return { success: true };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function acceptFreelancerBidClient({ clientUserId, orderId, bidId }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
+    const order = rows[0];
+    if (!order) {
+      const err = new Error("الطلب غير موجود.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (order.source_type !== "client_created" || Number(order.created_by_user_id) !== Number(clientUserId)) {
+      const err = new Error("لا يمكنك اعتماد هذا العرض.");
+      err.statusCode = 403;
+      throw err;
+    }
+    if (order.project_type !== "bidding" || !hasPricedBiddingRow(order)) {
+      const err = new Error("هذا الطلب لا يقبل اعتماد عرض بهذه الطريقة.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (!order.is_published || !order.is_open_for_pool || order.assigned_freelancer_id || order.received_at) {
+      const err = new Error("الطلب غير متاح لاعتماد عرض حالياً.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (order.order_status !== ORDER_STATUSES.PUBLISHED) {
+      const err = new Error("الطلب غير متاح لاعتماد عرض حالياً.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const { rows: bidRows } = await client.query(
+      `SELECT * FROM order_freelancer_bids WHERE id = $1 AND order_id = $2 FOR UPDATE`,
+      [Number(bidId), Number(orderId)],
+    );
+    const bid = bidRows[0];
+    if (!bid) {
+      const err = new Error("العرض غير موجود.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (bid.status !== "pending") {
+      const err = new Error("تمت معالجة هذا العرض مسبقاً.");
+      err.statusCode = 409;
+      throw err;
+    }
+    const amt = Number(bid.amount);
+    const min = Number(order.bid_budget_min);
+    const max = Number(order.bid_budget_max);
+    if (!Number.isFinite(amt) || amt < min || amt > max) {
+      const err = new Error("مبلغ العرض خارج النطاق المسموح.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const receivedAt = new Date();
+    const startedAt = receivedAt;
+    const dueAt = computeDueAt(startedAt, order.duration_value, order.duration_unit);
+
+    await client.query(
+      `UPDATE orders
+         SET assigned_freelancer_id = $2,
+             received_at = $3,
+             started_at = $3,
+             due_at = $4,
+             is_open_for_pool = FALSE,
+             order_status = $5,
+             updated_at = NOW()
+       WHERE id = $1`,
+      [Number(orderId), Number(bid.freelancer_user_id), receivedAt, dueAt, ORDER_STATUSES.IN_PROGRESS],
+    );
+
+    await client.query(`UPDATE order_freelancer_bids SET status = 'accepted', updated_at = NOW() WHERE id = $1`, [
+      Number(bid.id),
+    ]);
+    await client.query(
+      `UPDATE order_freelancer_bids
+         SET status = 'rejected', updated_at = NOW()
+       WHERE order_id = $1
+         AND id <> $2
+         AND status = 'pending'`,
+      [Number(orderId), Number(bid.id)],
+    );
+
+    await subscriptionsService.activateCurrentSubscriptionOnFirstOrder(
+      { freelancerUserId: String(bid.freelancer_user_id), activatedAt: receivedAt },
+      client,
+    );
+
+    await client.query("COMMIT");
+    return await getOrderById(orderId);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 async function rejectPoolClaimClient({ clientUserId, orderId, claimId }) {
   const client = await pool.connect();
   try {
@@ -1641,6 +1871,96 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
   }
 }
 
+async function assertInternalOrderForAdmin({ orderId }, clientMaybe) {
+  const runner = clientMaybe || pool;
+  const { rows } = await runner.query(`SELECT id, source_type FROM orders WHERE id = $1 LIMIT 1`, [Number(orderId)]);
+  const order = rows[0];
+  if (!order) {
+    const err = new Error("الطلب غير موجود.");
+    err.statusCode = 404;
+    throw err;
+  }
+  if (!["admin_created", "super_admin_created"].includes(order.source_type)) {
+    const err = new Error("لا يمكن إدارة هذا الطلب من الطلبات الداخلية.");
+    err.statusCode = 403;
+    throw err;
+  }
+  return order;
+}
+
+async function adminApproveInternalDelivery({ orderId }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertInternalOrderForAdmin({ orderId }, client);
+    const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
+    const order = rows[0];
+    if (order.order_status !== ORDER_STATUSES.PENDING_CLIENT_REVIEW) {
+      const err = new Error("لا يوجد تسليم بانتظار اعتمادك حالياً.");
+      err.statusCode = 409;
+      throw err;
+    }
+    const now = new Date();
+    await client.query(
+      `UPDATE orders
+         SET order_status = $2,
+             accepted_at = $3,
+             updated_at = NOW()
+       WHERE id = $1`,
+      [Number(orderId), ORDER_STATUSES.COMPLETED, now],
+    );
+    await client.query("COMMIT");
+    return await getOrderById(orderId);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function prepareAdminInternalOrderFileDownload({ orderId, fileId }) {
+  await assertInternalOrderForAdmin({ orderId });
+  const { rows } = await pool.query(
+    `SELECT id, order_id, file_path, original_name, mime_type
+     FROM order_files
+     WHERE id = $1 AND order_id = $2
+     LIMIT 1`,
+    [Number(fileId), Number(orderId)],
+  );
+  const f = rows[0];
+  if (!f) {
+    const err = new Error("الملف غير موجود.");
+    err.statusCode = 404;
+    throw err;
+  }
+  const rel = String(f.file_path || "").replace(/\\/g, "/").trim();
+  if (!rel || rel.includes("..")) {
+    const err = new Error("مسار الملف غير صالح.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const uploadsRoot = path.resolve(path.join(__dirname, "..", "..", "uploads"));
+  const absPath = path.resolve(uploadsRoot, rel);
+  if (!absPath.startsWith(uploadsRoot + path.sep) && absPath !== uploadsRoot) {
+    const err = new Error("مسار الملف غير صالح.");
+    err.statusCode = 400;
+    throw err;
+  }
+  try {
+    await fsp.access(absPath);
+  } catch {
+    const err = new Error("الملف غير موجود على الخادم.");
+    err.statusCode = 404;
+    throw err;
+  }
+  return {
+    absPath,
+    downloadName: decodeMultipartOriginalName(f.original_name) || f.original_name || "file",
+    mimeType: f.mime_type || "application/octet-stream",
+  };
+}
+
 async function clientApproveDelivery({ clientUserId, orderId }) {
   const client = await pool.connect();
   try {
@@ -1822,12 +2142,17 @@ module.exports = {
   listOrderClaimsAdmin,
   approvePoolClaimAdmin,
   listOrderClaimsForClient,
+  listOrderBidsForClient,
+  rejectFreelancerBidClient,
+  acceptFreelancerBidClient,
   rejectPoolClaimClient,
   approvePoolClaimClient,
   submitFreelancerOrderDelivery,
   clientApproveDelivery,
   clientRequestDeliveryRevision,
   prepareClientOrderFileDownload,
+  adminApproveInternalDelivery,
+  prepareAdminInternalOrderFileDownload,
   activateArchivedInternalOrder,
 };
 

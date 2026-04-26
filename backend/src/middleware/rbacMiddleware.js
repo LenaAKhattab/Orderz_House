@@ -27,6 +27,8 @@ async function attachAuthContext(req, res, next) {
       userId: String(legacyUser.id),
       accountId: legacyUser.account_id,
       email: legacyUser.email,
+      /** عمود users.role — يُحتفظ به صراحة لأن user_roles قد لا تعكس دور الإدارة بعد الدمج/الترحيل */
+      legacyRole: legacyUser.role ? String(legacyUser.role).trim() : null,
       primaryRole: authz.primaryRole,
       roles: authz.roles,
       permissions: authz.permissions,
@@ -58,19 +60,19 @@ function optionalAuth(req, res, next) {
 }
 
 /**
- * Role names for authorization: prefer explicit RBAC `user_roles` rows.
- * If that list is empty (migrated users / missing links), fall back to `primaryRole` then JWT `role`.
- * Important: `req.auth.roles` may be `[]` — do not treat like "missing"; empty must still fall back.
+ * Role names for authorization: union of RBAC `user_roles`, resolved primary, and legacy `users.role`.
+ * Relying only on `user_roles` breaks when the row set is incomplete (e.g. client linked but admin on users.role).
  */
 function resolvedRoleNames(req) {
   const rbac = Array.isArray(req.auth?.roles)
     ? req.auth.roles.map((r) => (r && r.name ? String(r.name).trim() : "")).filter(Boolean)
     : [];
-  if (rbac.length) return [...new Set(rbac)];
   const primary = req.auth?.primaryRole && String(req.auth.primaryRole).trim();
-  if (primary) return [primary];
-  const legacy = req.user?.role && String(req.user.role).trim();
-  return legacy ? [legacy] : [];
+  const legacyDb = req.auth?.legacyRole && String(req.auth.legacyRole).trim();
+  const merged = [...new Set([...rbac, primary, legacyDb].filter(Boolean))];
+  if (merged.length) return merged;
+  const legacyJwt = req.user?.role && String(req.user.role).trim();
+  return legacyJwt ? [legacyJwt] : [];
 }
 
 function requireRole(roleName) {
