@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
+import { useClientCreateOrderModal } from "../../context/ClientCreateOrderModalContext";
 import { getDashboardPath } from "../../constants/authRoutes";
 
 const publicExploreItems = [
@@ -35,6 +36,7 @@ const Navbar = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, loading, logout } = useAuth();
+  const { openModal: openClientCreateOrderModal } = useClientCreateOrderModal();
   const [exploreOpen, setExploreOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const exploreRef = useRef(null);
@@ -51,7 +53,7 @@ const Navbar = () => {
       : role === "admin"
         ? "/dashboard/admin/orders/create"
         : role === "client"
-          ? "/dashboard/client/orders/create"
+          ? null
           : null;
 
   useOnClickOutside(exploreRef, () => setExploreOpen(false));
@@ -71,7 +73,9 @@ const Navbar = () => {
         ? []
         : isLoggedIn && isFreelancer
           ? []
-          : [{ label: "الباقات", to: "/plans" }];
+          : isLoggedIn && role === "client"
+            ? []
+            : [{ label: "الباقات", to: "/plans" }];
     if (!isLoggedIn) {
       return [
         ...base,
@@ -109,16 +113,17 @@ const Navbar = () => {
       return [
         ...base,
         { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
-        { label: "إنشاء طلب", to: "/dashboard/client/orders/create" },
+        { label: "طلباتي", to: "/dashboard/client/my-orders" },
+        { label: "المالية", to: "/dashboard/client/financial" },
       ];
     }
     return [...base, { label: "لوحة التحكم", to: dashboardPath || "/dashboard" }];
   }, [isLoggedIn, role, dashboardPath, isFreelancer]);
 
   const moreItems = useMemo(() => {
-    if (!isLoggedIn) return [];
+    if (!isLoggedIn || role === "client") return [];
     return isFreelancer ? [{ label: "الباقات", to: "/plans" }, ...publicExploreItems] : publicExploreItems;
-  }, [isLoggedIn, isFreelancer]);
+  }, [isLoggedIn, isFreelancer, role]);
 
   const userName = fullNameAr(user) || user?.email || "";
   const userInitial = (user?.firstName || user?.email || "U").trim().slice(0, 1).toUpperCase();
@@ -151,7 +156,18 @@ const Navbar = () => {
                 </li>
               ))}
 
-              {isLoggedIn ? (
+              {isLoggedIn && role === "client" ? (
+                <li key="contact">
+                  <NavLink
+                    to="/contact"
+                    className={({ isActive }) =>
+                      `nav-link ${isActive ? "nav-link-active" : ""}`.trim()
+                    }
+                  >
+                    تواصل معنا
+                  </NavLink>
+                </li>
+              ) : isLoggedIn ? (
                 <li className="nav-item-dropdown" ref={exploreRef}>
                   <button
                     type="button"
@@ -181,7 +197,19 @@ const Navbar = () => {
               <span className="nav-auth-placeholder" aria-hidden="true" />
             ) : user ? (
               <>
-                {createOrderPath ? (
+                {role === "client" ? (
+                  <button
+                    type="button"
+                    className="nav-create-btn"
+                    aria-label="إنشاء طلب"
+                    onClick={() => openClientCreateOrderModal()}
+                  >
+                    <span className="nav-create-btn__icon" aria-hidden="true">
+                      +
+                    </span>
+                    <span className="nav-create-btn__text">إنشاء طلب</span>
+                  </button>
+                ) : createOrderPath ? (
                   <NavLink to={createOrderPath} className="nav-create-btn" aria-label="إنشاء طلب">
                     <span className="nav-create-btn__icon" aria-hidden="true">
                       +

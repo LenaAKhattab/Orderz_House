@@ -9,8 +9,14 @@ function formatMoney(value) {
 }
 
 function priceLabel(order) {
+  if (order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null) {
+    const a = formatMoney(order.bidBudgetMin);
+    const b = formatMoney(order.bidBudgetMax);
+    const cur = String(order?.currencyCode || "").trim();
+    return `${a} – ${b}${cur ? ` ${cur}` : ""}`.trim();
+  }
   if (order?.projectType === "bidding") return "—";
-  const amt = order?.budget ? formatMoney(order.budget) : "";
+  const amt = order?.budget != null ? formatMoney(order.budget) : "";
   const cur = String(order?.currencyCode || "").trim();
   if (!amt && !cur) return "—";
   return `${amt || "—"}${cur ? ` ${cur}` : ""}`.trim();

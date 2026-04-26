@@ -114,7 +114,7 @@ export function OrderCardSkeleton() {
       <SkelBar style={{ height: 56, width: "100%", marginTop: 4 }} />
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
         {[76, 84, 70, 92].map((w) => (
-          <SkelBar key={w} style={{ height: 48, width, borderRadius: 16 }} />
+          <SkelBar key={w} style={{ height: 48, width: w, borderRadius: 16 }} />
         ))}
       </div>
     </article>

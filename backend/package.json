@@ -8,13 +8,16 @@
     "start": "node server.js",
     "db:init": "node scripts/runSqlFile.js",
     "db:run": "node scripts/runSqlFile.js",
+    "db:seed-client-orders": "node scripts/seedRandomClientOrders.js",
+    "db:seed-pool-orders": "node scripts/seedRandomClientOrders.js --for-pool",
     "db:migrate": "node scripts/runSqlFile.js sql/migrations/001_rbac_subscriptions_plans.sql",
     "db:migrate:orders": "node scripts/runSqlFile.js sql/migrations/002_orders_internal.sql",
     "db:migrate:categories3": "node scripts/runSqlFile.js sql/migrations/003_categories_level3_programming_seed.sql",
     "db:migrate:bidding-budget": "node scripts/runSqlFile.js sql/migrations/004_bidding_budget_nullable.sql",
     "db:migrate:services-seed": "node scripts/runSqlFile.js sql/migrations/005_seed_services_from_doc.sql",
     "db:migrate:orders-currency": "node scripts/runSqlFile.js sql/migrations/006_orders_currency.sql",
-    "db:verify-schema": "node scripts/verifySchema.js"
+    "db:verify-schema": "node scripts/verifySchema.js",
+    "db:assign-freelancer-plan": "node scripts/assignPlanToFreelancerByName.js"
   },
   "keywords": [
     "orderz-house",
