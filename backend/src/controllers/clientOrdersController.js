@@ -99,6 +99,44 @@ const rejectFreelancerClaim = async (req, res, next) => {
   }
 };
 
+const listBidsForOrder = async (req, res, next) => {
+  try {
+    const out = await ordersService.listOrderBidsForClient({
+      clientUserId: req.auth.userId,
+      orderId: req.params.id,
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const acceptFreelancerBid = async (req, res, next) => {
+  try {
+    const order = await ordersService.acceptFreelancerBidClient({
+      clientUserId: req.auth.userId,
+      orderId: req.params.id,
+      bidId: req.body.bidId,
+    });
+    return res.status(200).json({ success: true, data: { order } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const rejectFreelancerBid = async (req, res, next) => {
+  try {
+    const out = await ordersService.rejectFreelancerBidClient({
+      clientUserId: req.auth.userId,
+      orderId: req.params.id,
+      bidId: req.body.bidId,
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const approveDelivery = async (req, res, next) => {
   try {
     const order = await ordersService.clientApproveDelivery({
@@ -151,6 +189,9 @@ module.exports = {
   listClaimsForOrder,
   approveFreelancerClaim,
   rejectFreelancerClaim,
+  listBidsForOrder,
+  acceptFreelancerBid,
+  rejectFreelancerBid,
   approveDelivery,
   requestDeliveryRevision,
   downloadOrderFile,

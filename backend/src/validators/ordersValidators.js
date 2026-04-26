@@ -14,12 +14,13 @@ const listOrdersValidators = [
 
 const createInternalOrderValidators = [
   body("orderCode")
+    .optional({ values: "falsy" })
     .isString()
     .trim()
     .isLength({ min: 2, max: 32 })
-    .withMessage("Order code is required.")
+    .withMessage("رمز الطلب غير صالح.")
     .matches(/^[A-Za-z0-9][A-Za-z0-9_-]{1,31}$/)
-    .withMessage("Order code format is invalid."),
+    .withMessage("رمز الطلب غير صالح."),
   body("title").isString().trim().isLength({ min: 2, max: 200 }).withMessage("Project Title is required."),
   body("description").isString().trim().isLength({ min: 10, max: 5000 }).withMessage("Description is required."),
   body("categoryId").isInt({ min: 1 }).withMessage("Category is required."),
@@ -36,14 +37,27 @@ const createInternalOrderValidators = [
     .optional({ nullable: true })
     .custom((value, { req }) => {
       const type = String(req.body.projectType || "").trim();
-      if (type === "bidding") {
-        if (value === undefined || value === null || value === "") return true;
-        throw new Error("currencyCode must be omitted for bidding projects.");
+      const hasBidRange =
+        type === "bidding" &&
+        req.body.bidBudgetMin !== undefined &&
+        req.body.bidBudgetMin !== "" &&
+        req.body.bidBudgetMax !== undefined &&
+        req.body.bidBudgetMax !== "";
+      if (type === "fixed") {
+        if (value === undefined || value === null || value === "") {
+          throw new Error("currencyCode is required for fixed projects.");
+        }
+      } else if (type === "bidding" && hasBidRange) {
+        if (value === undefined || value === null || value === "") {
+          throw new Error("currencyCode is required for priced bidding.");
+        }
+      } else if (type === "bidding" && !hasBidRange) {
+        if (value !== undefined && value !== null && value !== "") {
+          throw new Error("currencyCode must be omitted for bidding without price range.");
+        }
+        return true;
       }
-      // fixed: required 3-letter code
-      if (value === undefined || value === null || value === "") {
-        throw new Error("currencyCode is required for fixed projects.");
-      }
+      if (value === undefined || value === null || value === "") return true;
       const code = String(value).trim().toUpperCase();
       if (!/^[A-Z]{3}$/.test(code)) {
         throw new Error("Invalid currencyCode.");
@@ -76,6 +90,28 @@ const createInternalOrderValidators = [
     .toFloat(),
   body("durationValue").isInt({ min: 1, max: 100000 }).withMessage("Project Duration must be > 0."),
   body("durationUnit").isIn(["days", "hours", "minutes"]).withMessage("Duration Unit is invalid."),
+  body("bidBudgetMin")
+    .optional({ nullable: true })
+    .custom((value, { req }) => {
+      const type = String(req.body.projectType || "").trim();
+      if (type !== "bidding") return true;
+      if (value === undefined || value === null || value === "") return true;
+      const n = Number(value);
+      if (!Number.isFinite(n) || !(n > 0)) throw new Error("Invalid bid budget min.");
+      return true;
+    }),
+  body("bidBudgetMax")
+    .optional({ nullable: true })
+    .custom((value, { req }) => {
+      const type = String(req.body.projectType || "").trim();
+      if (type !== "bidding") return true;
+      if (value === undefined || value === null || value === "") return true;
+      const max = Number(value);
+      const min = Number(req.body.bidBudgetMin);
+      if (!Number.isFinite(max) || !(max > 0)) throw new Error("Invalid bid budget max.");
+      if (Number.isFinite(min) && max < min) throw new Error("bid max must be >= bid min.");
+      return true;
+    }),
   body("preferredSkills")
     .optional({ nullable: true })
     .custom((value) => {
@@ -219,6 +255,10 @@ const clientOrderClaimIdBodyValidators = [
   body("claimId").isInt({ min: 1 }).withMessage("يرجى تحديد طلب المستقل.").toInt(),
 ];
 
+const clientOrderBidIdBodyValidators = [
+  body("bidId").isInt({ min: 1 }).withMessage("يرجى تحديد العرض.").toInt(),
+];
+
 const clientOrderRevisionNoteValidators = [
   body("note").optional().isString().trim().isLength({ max: 4000 }).withMessage("نص طلب التعديل طويل جداً."),
 ];
@@ -231,6 +271,7 @@ module.exports = {
   createClientOrderValidators,
   submitPoolOrderBidValidators,
   clientOrderClaimIdBodyValidators,
+  clientOrderBidIdBodyValidators,
   clientOrderRevisionNoteValidators,
 };
 

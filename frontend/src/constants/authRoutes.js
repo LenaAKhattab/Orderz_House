@@ -6,6 +6,9 @@ export const ROLE = {
   CLIENT: "client",
 };
 
+/** يُطلق بعد إنشاء طلب داخلي من النافذة لتحديث صفحة «الطلبات الداخلية» حتى لو بقي نفس المسار في React Router. */
+export const INTERNAL_ORDERS_LIST_REFRESH = "orderz:internal-orders-refresh";
+
 /** One dashboard URL per role — used for redirects and navbar. */
 export const DASHBOARD_PATH = {
   [ROLE.SUPER_ADMIN]: "/dashboard/super-admin",
