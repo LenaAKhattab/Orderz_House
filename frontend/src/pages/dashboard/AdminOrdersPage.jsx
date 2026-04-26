@@ -153,13 +153,13 @@ export default function AdminOrdersPage() {
   };
 
   return (
-    <main className="container page-content">
-      <section className="card" style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <h1 style={{ marginBottom: 6 }}>الطلبات الداخلية</h1>
-          <p style={{ margin: 0 }}>طلبات تم إنشاؤها بواسطة الإدارة/السوبر أدمن (بدون دفع).</p>
+    <main className="container page-content oh-internal-orders">
+      <section className="card oh-internal-orders__toolbar">
+        <div className="oh-internal-orders__intro">
+          <h1 className="oh-internal-orders__title">الطلبات الداخلية</h1>
+          <p className="oh-internal-orders__lead">طلبات تم إنشاؤها بواسطة الإدارة/السوبر أدمن (بدون دفع).</p>
         </div>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div className="oh-internal-orders__actions">
           <button
             type="button"
             className={`btn btn-secondary ${view === "cards" ? "nav-link-active" : ""}`.trim()}
@@ -180,11 +180,11 @@ export default function AdminOrdersPage() {
         </div>
       </section>
 
-      <section className="cards-grid cards-grid--max-3" aria-busy={busy}>
+      <section className="oh-internal-orders__list" aria-busy={busy}>
         {busy ? (
-          <OrderCardsGridSkeleton count={3} />
+          <OrderCardsGridSkeleton count={4} />
         ) : orders.length === 0 ? (
-          <section className="oh-empty">
+          <section className="oh-empty oh-internal-orders__empty">
             <div className="oh-empty__icon">📦</div>
             <div>
               <h2 className="oh-empty__title">لا توجد طلبات داخلية بعد</h2>
@@ -216,6 +216,7 @@ export default function AdminOrdersPage() {
               <OrderCard
                 key={o.id}
                 order={o}
+                compactSummary
                 footerInline={
                   <>
                     {shouldShowApplicants ? (
@@ -256,8 +257,8 @@ export default function AdminOrdersPage() {
             );
           })
         ) : (
-          <div className="card" style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1200 }}>
+          <div className="card oh-internal-orders__table-card" style={{ overflowX: "auto" }}>
+            <table className="oh-internal-orders__table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 1200 }}>
               <thead>
                 <tr>
                   {[
