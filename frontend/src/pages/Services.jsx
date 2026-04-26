@@ -1,26 +1,10 @@
-const services = [
-  "إدارة الطلبات الرقمية",
-  "تنسيق التنفيذ بين الفرق",
-  "تنظيم سير عمل المستقلين",
-  "متابعة حالات الطلبات",
-];
+import ServicesExplorer from "../components/services/ServicesExplorer";
+import "../components/services/Services.css";
 
 const Services = () => {
   return (
-    <main className="container page-content">
-      <section className="card">
-        <h1>الخدمات</h1>
-        <p>نظرة سريعة على الخدمات الأساسية داخل المنصة.</p>
-      </section>
-
-      <section className="cards-grid">
-        {services.map((service) => (
-          <article key={service} className="card">
-            <h2>{service}</h2>
-            <p>وصف مختصر للخدمة بهدف عرض الهيكل العام للواجهة فقط.</p>
-          </article>
-        ))}
-      </section>
+    <main className="container page-content services-page" lang="ar" dir="rtl">
+      <ServicesExplorer />
     </main>
   );
 };

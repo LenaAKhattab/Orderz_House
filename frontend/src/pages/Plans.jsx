@@ -74,7 +74,7 @@ const Plans = () => {
   const hasBlockingSubscription = useMemo(() => isBlockingSubscription(mySubscription), [mySubscription]);
 
   return (
-    <main className="container page-content">
+    <main className="container page-content" lang="ar" dir="rtl">
       <PricingSection
         loading={loading}
         plans={plans.filter((p) => p?.isVisible !== false)}

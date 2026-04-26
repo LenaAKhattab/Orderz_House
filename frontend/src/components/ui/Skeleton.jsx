@@ -114,7 +114,7 @@ export function OrderCardSkeleton() {
       <SkelBar style={{ height: 56, width: "100%", marginTop: 4 }} />
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
         {[76, 84, 70, 92].map((w) => (
-          <SkelBar key={w} style={{ height: 48, width, borderRadius: 16 }} />
+          <SkelBar key={w} style={{ height: 48, width: w, borderRadius: 16 }} />
         ))}
       </div>
     </article>
@@ -184,20 +184,21 @@ export function OrderDetailsPageSkeleton() {
 export function PlanCardSkeleton({ featured = false }) {
   return (
     <article className={`pricing-card pricing-card--skeleton ${featured ? "pricing-card--featured" : ""}`.trim()} aria-hidden>
+      {featured ? (
+        <span className="pricing-card__badge" style={{ opacity: 0.45 }}>
+          الأكثر شيوعًا
+        </span>
+      ) : null}
       <header className="pricing-card__head">
         <SkelBar style={{ height: 20, width: "58%", marginBottom: 10 }} />
         <SkelBar style={{ height: 12, width: "100%", marginBottom: 6 }} />
         <SkelBar style={{ height: 12, width: "85%" }} />
       </header>
       <div className="pricing-card__price" style={{ marginTop: 8 }}>
-        <SkelBar style={{ height: 32, width: "48%" }} />
-        <SkelBar style={{ height: 12, width: "36%", marginTop: 8 }} />
+        <SkelBar style={{ height: 36, width: "52%" }} />
       </div>
-      <div className="pricing-card__cta" style={{ marginTop: 12 }}>
-        <SkelBar style={{ height: 42, width: "100%", borderRadius: 12 }} />
-      </div>
-      <div className="pricing-card__divider" aria-hidden style={{ margin: "14px 0", opacity: 0.35 }} />
-      <ul className="pricing-card__features" style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10 }}>
+      <div className="pricing-card__divider" aria-hidden style={{ margin: "14px 0 12px", opacity: 0.35 }} />
+      <ul className="pricing-card__features" style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10, flex: 1 }}>
         {[0, 1, 2, 3, 4].map((i) => (
           <li key={i} className="pricing-card__feature" style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <SkelBar style={{ height: 14, width: 14, borderRadius: 4, flexShrink: 0 }} />
@@ -205,6 +206,9 @@ export function PlanCardSkeleton({ featured = false }) {
           </li>
         ))}
       </ul>
+      <div className="pricing-card__cta" style={{ marginTop: "auto", paddingTop: 18 }}>
+        <SkelBar style={{ height: 44, width: "100%", borderRadius: 14 }} />
+      </div>
     </article>
   );
 }

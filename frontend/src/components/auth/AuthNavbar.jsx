@@ -12,7 +12,7 @@ const AuthNavbar = () => {
       <div className="container">
         <div className="auth-navbar">
           <Link to="/" className="auth-brand" aria-label="العودة إلى الرئيسية">
-            <span>Orderz House</span>
+            <span>أوردرز هاوس</span>
           </Link>
 
           <nav aria-label="تنقل المصادقة">

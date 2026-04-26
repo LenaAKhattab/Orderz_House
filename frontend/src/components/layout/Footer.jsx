@@ -38,14 +38,11 @@ const Footer = () => {
           <h3 className="footer-title">الشركة</h3>
           <ul className="footer-links">
             <li><a href="#">من نحن</a></li>
-            <li><a href="/contact">تواصل معنا</a></li>
           </ul>
         </section>
 
         <section className="footer-column footer-column-contact">
-          <h3 className="footer-title">
-            <a href="/contact">تواصل معنا</a>
-          </h3>
+          <h3 className="footer-title">تواصل معنا</h3>
           <ul className="footer-links footer-contact">
             <li>
               <span>رقم الهاتف:</span>{" "}

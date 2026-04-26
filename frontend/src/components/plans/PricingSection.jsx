@@ -2,8 +2,10 @@ import PlanCard from "./PlanCard";
 import { PlanCardsRowSkeleton } from "../ui/Skeleton";
 
 function pickFeaturedIndex(plans) {
-  const byFlag = plans.findIndex((p) => p?.isFeatured === true);
-  if (byFlag >= 0) return byFlag;
+  const popular = plans.findIndex((p) => p?.isPopular === true || p?.is_popular === true);
+  if (popular >= 0) return popular;
+  const featured = plans.findIndex((p) => p?.isFeatured === true || p?.is_featured === true);
+  if (featured >= 0) return featured;
   if (plans.length === 0) return -1;
   return Math.floor(plans.length / 2);
 }
@@ -15,7 +17,6 @@ const PricingSection = ({ plans, onCta, hasBlockingSubscription = false, loading
     <section className="pricing" aria-label="خطط الاشتراك">
       <header className="pricing__header">
         <h1 className="pricing__title">اختر الباقة المناسبة لك</h1>
-        <p className="pricing__subtitle">باقات ديناميكية من قاعدة البيانات حسب المدة والسعر.</p>
       </header>
 
       {loading ? (

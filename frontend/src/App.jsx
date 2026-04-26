@@ -9,7 +9,6 @@ import About from "./pages/About";
 import Services from "./pages/Services";
 import Orders from "./pages/Orders";
 import Plans from "./pages/Plans";
-import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -38,7 +37,6 @@ function App() {
               <Route path="/services" element={<Services />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/plans" element={<Plans />} />
-              <Route path="/contact" element={<Contact />} />
               <Route
                 path="/login"
                 element={

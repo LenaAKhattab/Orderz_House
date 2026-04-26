@@ -11,27 +11,29 @@ function formatPriceSar(priceCents) {
   return `${(n / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })} ر.س`;
 }
 
-function durationLabel(durationDays) {
-  const d = Number(durationDays);
-  if (!Number.isFinite(d) || d <= 0) return "";
-  if (d === 30) return "شهرياً";
-  if (d === 90) return "كل 3 أشهر";
-  if (d === 365) return "سنوياً";
-  return `${d} يوم`;
-}
-
 function deriveFeatures(plan) {
-  if (Array.isArray(plan?.features) && plan.features.length > 0) {
-    return plan.features.filter(Boolean).slice(0, 8);
+  let raw = plan?.features;
+  if (typeof raw === "string") {
+    try {
+      raw = JSON.parse(raw);
+    } catch {
+      raw = null;
+    }
+  }
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw.filter(Boolean).map(String).slice(0, 12);
   }
 
   const items = [];
-  items.push(`مدة الاشتراك: ${Number(plan.durationDays)} يوم`);
+  const d = Number(plan?.durationDays);
+  if (Number.isFinite(d) && d > 0) {
+    items.push(`مدة الاشتراك: ${d} يوم`);
+  }
   items.push("تجديد مرن حسب الخطة");
   items.push("لوحة تحكم للمستقل");
   items.push("أولوية دعم حسب الخطة");
   items.push("إدارة الطلبات والمطالبات");
-  return items.slice(0, 6);
+  return items.slice(0, 8);
 }
 
 const PlanCard = ({ plan, featured = false, onCta, hasBlockingSubscription = false }) => {
@@ -45,30 +47,49 @@ const PlanCard = ({ plan, featured = false, onCta, hasBlockingSubscription = fal
   const isBlockedBySubscription = Boolean(user) && isFreelancer && hasBlockingSubscription;
 
   const price = formatPriceSar(plan.priceCents);
-  const per = durationLabel(plan.durationDays);
   const features = deriveFeatures(plan);
+  const planTitle = plan.title || plan.name || "—";
 
   const ctaLabel = isLoggedNonFreelancer ? "للمستقلين فقط" : isBlockedBySubscription ? "مشترك بالفعل" : "ابدأ الآن";
-  const usePrimaryCta = featured && (isFreelancer || isGuest);
+  const usePrimaryCta = featured && (isFreelancer || isGuest) && !isBlockedBySubscription;
+  const isLocked = isLoggedNonFreelancer || isBlockedBySubscription;
 
   return (
     <article className={`pricing-card ${featured ? "pricing-card--featured" : ""}`.trim()}>
+      {featured ? (
+        <span className="pricing-card__badge" aria-hidden="true">
+          الأكثر شيوعًا
+        </span>
+      ) : null}
+
       <header className="pricing-card__head">
-        <h2 className="pricing-card__title">{plan.title}</h2>
+        <h2 className="pricing-card__title">{planTitle}</h2>
         {plan.description ? <p className="pricing-card__desc">{plan.description}</p> : null}
       </header>
 
       <div className="pricing-card__price">
         <div className="pricing-card__price-main">{price || "—"}</div>
-        <div className="pricing-card__price-sub">{per}</div>
       </div>
+
+      <div className="pricing-card__divider" aria-hidden="true" />
+
+      <ul className="pricing-card__features" aria-label="مميزات الباقة">
+        {features.map((f, idx) => (
+          <li key={`${String(f)}-${idx}`} className="pricing-card__feature">
+            <span className="pricing-card__check" aria-hidden="true">
+              ✓
+            </span>
+            <span className="pricing-card__feature-text">{f}</span>
+          </li>
+        ))}
+      </ul>
 
       <div className="pricing-card__cta">
         <Button
           type="button"
-          className={`pricing-card__btn ${usePrimaryCta ? "pricing-card__btn--featured" : ""} ${isLoggedNonFreelancer ? "pricing-card__btn--locked" : ""}`.trim()}
+          className={`pricing-card__btn ${usePrimaryCta ? "pricing-card__btn--featured pricing-card__btn--fill" : "pricing-card__btn--outline"} ${isLocked ? "pricing-card__btn--locked" : ""}`.trim()}
           variant={usePrimaryCta ? "primary" : "secondary"}
-          disabled={isLoggedNonFreelancer || isBlockedBySubscription}
+          disabled={isLocked}
           onClick={() => {
             if (isGuest) {
               navigate("/login", { state: { from: { pathname: "/plans" } } });
@@ -82,19 +103,6 @@ const PlanCard = ({ plan, featured = false, onCta, hasBlockingSubscription = fal
           {ctaLabel}
         </Button>
       </div>
-
-      <div className="pricing-card__divider" aria-hidden="true" />
-
-      <ul className="pricing-card__features" aria-label="مميزات الباقة">
-        {features.map((f) => (
-          <li key={f} className="pricing-card__feature">
-            <span className="pricing-card__check" aria-hidden="true">
-              ✓
-            </span>
-            <span className="pricing-card__feature-text">{f}</span>
-          </li>
-        ))}
-      </ul>
     </article>
   );
 };

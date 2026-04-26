@@ -6,7 +6,6 @@ import { getDashboardPath } from "../../constants/authRoutes";
 const publicExploreItems = [
   { label: "من نحن", to: "/about" },
   { label: "الخدمات", to: "/services" },
-  { label: "تواصل معنا", to: "/contact" },
 ];
 
 function fullNameAr(user) {
@@ -73,12 +72,7 @@ const Navbar = () => {
           ? []
           : [{ label: "الباقات", to: "/plans" }];
     if (!isLoggedIn) {
-      return [
-        ...base,
-        ...publicExploreItems.slice(0, 2),
-        { label: "الطلبات", to: "/orders" },
-        publicExploreItems[2],
-      ];
+      return [...base, ...publicExploreItems, { label: "الطلبات", to: "/orders" }];
     }
     if (role === "super_admin") {
       return [
