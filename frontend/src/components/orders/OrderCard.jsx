@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { arabicDurationUnit } from "../../utils/arTime";
+
+const ORDER_CURRENCY = "JOD";
 
 function formatMoney(value) {
   const n = Number(value);
@@ -8,15 +10,20 @@ function formatMoney(value) {
 }
 
 function priceLabel(order) {
+  if (order?.projectType === "bidding" && (order?.paymentAmount != null || order?.paymentCurrency)) {
+    const paid = order?.paymentAmount != null ? formatMoney(order.paymentAmount) : "—";
+    const cur = ORDER_CURRENCY;
+    return `${paid}${cur ? ` ${cur}` : ""}`.trim();
+  }
   if (order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null) {
     const a = formatMoney(order.bidBudgetMin);
     const b = formatMoney(order.bidBudgetMax);
-    const cur = String(order?.currencyCode || "").trim();
+    const cur = ORDER_CURRENCY;
     return `${a} – ${b}${cur ? ` ${cur}` : ""}`.trim();
   }
   if (order?.projectType === "bidding") return "—";
   const amt = order?.budget != null ? formatMoney(order.budget) : "";
-  const cur = String(order?.currencyCode || "").trim();
+  const cur = ORDER_CURRENCY;
   if (!amt && !cur) return "—";
   return `${amt || "—"}${cur ? ` ${cur}` : ""}`.trim();
 }
@@ -81,6 +88,12 @@ function isPricedBiddingOrder(order) {
   return order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null;
 }
 
+function bidderDisplayName(bidUser) {
+  const u = bidUser?.user || {};
+  const full = [u.firstName, u.fatherName, u.familyName].filter(Boolean).join(" ").trim();
+  return full || u.email || "—";
+}
+
 function timeLeftLabel(order) {
   const due = order?.dueAt ? new Date(order.dueAt) : null;
   if (!due || !Number.isFinite(due.getTime())) return null;
@@ -127,6 +140,7 @@ export default function OrderCard({
   const categoryText = `${order?.category?.name || "—"}${order?.subSubcategory?.name ? ` • ${order.subSubcategory.name}` : ""}`;
   const pricedBidding = useMemo(() => isPricedBiddingOrder(order), [order]);
   const filesCount = Array.isArray(order?.files) ? order.files.length : 0;
+  const bidUsers = Array.isArray(order?.bidUsers) ? order.bidUsers : [];
 
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), 60 * 1000);
@@ -139,10 +153,12 @@ export default function OrderCard({
   }, [order, nowMs]);
 
   const priceChipBody = pricedBidding
-    ? `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)}${order?.currencyCode ? ` ${order.currencyCode}` : ""}`
+    ? order?.paymentAmount != null || order?.paymentCurrency
+      ? `${order?.paymentAmount != null ? formatMoney(order.paymentAmount) : "—"} ${ORDER_CURRENCY}`
+      : `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)} ${ORDER_CURRENCY}`
     : order?.projectType === "bidding"
       ? "—"
-      : `${formatMoney(order?.budget)}${order?.projectType === "fixed" && order?.currencyCode ? ` ${order.currencyCode}` : ""}`;
+      : `${formatMoney(order?.budget)} ${ORDER_CURRENCY}`;
 
   return (
     <article className={`oh-pool-card oh-pool-card--static${compactSummary ? " oh-pool-card--compact-summary" : ""}`.trim()}>
@@ -184,6 +200,12 @@ export default function OrderCard({
           </span>
           <span className="oh-mini-chip">مدة التسليم: {durationLabel(order)}</span>
           <span className="oh-mini-chip">ملفات: {filesCount ? String(filesCount) : "لا توجد ملفات مضافة"}</span>
+          {order?.projectType === "bidding" ? (
+            <span className="oh-mini-chip">
+              المتقدمون: {bidUsers.length ? bidUsers.slice(0, 2).map((b) => bidderDisplayName(b)).join("، ") : "لا يوجد"}
+              {bidUsers.length > 2 ? ` +${bidUsers.length - 2}` : ""}
+            </span>
+          ) : null}
         </div>
       ) : (
         <>

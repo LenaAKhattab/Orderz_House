@@ -19,7 +19,7 @@ function normalizeCreatePayload(form) {
     title: form.title.trim(),
     description: form.description.trim() || null,
     durationDays: Number(form.durationDays),
-    priceCents: form.priceCents === "" ? null : Number(form.priceCents),
+    priceJod: form.priceJod === "" ? null : Number(form.priceJod),
     requiresCompanyVisit: Boolean(form.requiresCompanyVisit),
     isActive: Boolean(form.isActive),
     isVisible: Boolean(form.isVisible),
@@ -38,7 +38,7 @@ const SuperAdminPlansPage = () => {
     title: "",
     description: "",
     durationDays: "30",
-    priceCents: "",
+    priceJod: "",
     requiresCompanyVisit: false,
     isActive: true,
     isVisible: true,
@@ -76,7 +76,7 @@ const SuperAdminPlansPage = () => {
         title: "",
         description: "",
         durationDays: "30",
-        priceCents: "",
+        priceJod: "",
         requiresCompanyVisit: false,
         isActive: true,
         isVisible: true,
@@ -179,13 +179,14 @@ const SuperAdminPlansPage = () => {
             </label>
 
             <label className="auth-field">
-              <span>السعر (cents) اختياري</span>
+              <span>السعر (د.أ) اختياري</span>
               <div className="auth-input-wrap auth-input-wrap--noicon">
                 <input
                   type="number"
                   min="0"
-                  value={form.priceCents}
-                  onChange={(e) => setForm((v) => ({ ...v, priceCents: e.target.value }))}
+                  step="0.01"
+                  value={form.priceJod}
+                  onChange={(e) => setForm((v) => ({ ...v, priceJod: e.target.value }))}
                   disabled={submitting}
                 />
               </div>
@@ -256,6 +257,7 @@ const SuperAdminPlansPage = () => {
                 <h3>{p.title}</h3>
                 <p>name: {p.name}</p>
                 <p>المدة: {p.durationDays} يوم</p>
+                <p>السعر: {p.priceJod == null ? "—" : `${Number(p.priceJod).toLocaleString("en-US")} د.أ`}</p>
                 <p>زيارة الشركة: {p.requiresCompanyVisit ? "نعم" : "لا"}</p>
                 <p>الحالة: {p.isActive ? "فعّالة" : "غير فعّالة"} / {p.isVisible ? "مرئية" : "مخفية"}</p>
                 <div className="auth-actions-row auth-actions-row--split">

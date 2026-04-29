@@ -16,6 +16,9 @@
     "db:migrate:bidding-budget": "node scripts/runSqlFile.js sql/migrations/004_bidding_budget_nullable.sql",
     "db:migrate:services-seed": "node scripts/runSqlFile.js sql/migrations/005_seed_services_from_doc.sql",
     "db:migrate:orders-currency": "node scripts/runSqlFile.js sql/migrations/006_orders_currency.sql",
+    "db:migrate:order-submitted-at": "node scripts/runSqlFile.js sql/migrations/014_order_submitted_at.sql",
+    "db:migrate:order-flow-stripe": "node scripts/runSqlFile.js sql/migrations/015_order_flow_stripe.sql",
+    "db:migrate:financial-claims": "node scripts/runSqlFile.js sql/migrations/016_financial_claims_system.sql",
     "db:verify-schema": "node scripts/verifySchema.js",
     "db:assign-freelancer-plan": "node scripts/assignPlanToFreelancerByName.js",
     "db:create-admin": "node scripts/createAdminUser.js",
@@ -30,14 +33,17 @@
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.10.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
-    "multer": "^2.0.2",
     "morgan": "^1.10.1",
-    "pg": "^8.20.0"
+    "multer": "^2.0.2",
+    "pg": "^8.20.0",
+    "stripe": "^18.0.0",
+    "ytpl": "^2.3.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

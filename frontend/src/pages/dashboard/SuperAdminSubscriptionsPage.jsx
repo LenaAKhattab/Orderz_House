@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Button from "../../components/ui/Button";
 import {
+  activateSubscriptionCompanyRequest,
   assignPlanToFreelancerRequest,
   adminSearchFreelancersRequest,
   getFreelancerCurrentSubscriptionAdminRequest,
@@ -59,7 +60,6 @@ const SuperAdminSubscriptionsPage = () => {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmItems, setConfirmItems] = useState([]);
-  const [confirmPlanId, setConfirmPlanId] = useState("");
   const [confirmPlanTitle, setConfirmPlanTitle] = useState("");
   const [confirmContinue, setConfirmContinue] = useState(null);
 
@@ -146,7 +146,6 @@ const SuperAdminSubscriptionsPage = () => {
       if (existing.length) {
         setSubmitting(false);
         setConfirmItems(existing);
-        setConfirmPlanId(String(planId));
         setConfirmPlanTitle(planTitleById[String(planId)] || `planId: ${String(planId)}`);
         const ok = await new Promise((resolve) => {
           setConfirmContinue(() => resolve);
@@ -198,6 +197,19 @@ const SuperAdminSubscriptionsPage = () => {
     setSubmitting(true);
     try {
       await updateSubscriptionRequest(sub.id, { status });
+      await refresh();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const companyActivate = async (sub) => {
+    setError("");
+    setSubmitting(true);
+    try {
+      await activateSubscriptionCompanyRequest(sub.id);
       await refresh();
     } catch (err) {
       setError(errorMessage(err));
@@ -482,31 +494,51 @@ const SuperAdminSubscriptionsPage = () => {
           <div className="cards-grid">
             {subs.map((s) => (
               <article className="card" key={s.id}>
+                {/*
+                  Hide "first order" action once subscription already has a recorded first order.
+                  This keeps UI aligned after admin clicks the action and data refreshes.
+                */}
+                {(() => {
+                  const hasFirstOrderRecorded = Boolean(s?.hasFirstOrder || s?.firstOrderDate || s?.actualStartDate);
+                  return (
+                    <>
                 <h3>اشتراك #{s.id}</h3>
                 <p>freelancerUserId: {s.freelancerUserId}</p>
                 <p>planId: {s.planId}</p>
                 <p>الحالة: {formatSubscriptionStatus(s.status)}</p>
+                <p>حالة الدفع: {s.paymentStatus || "—"}</p>
+                <p>حالة تفعيل الشركة: {s.activationStatus || "—"}</p>
                 <p>assignedAt: {formatJoDateTime(s.assignedAt)}</p>
                 <p>firstOrderDate: {formatJoDateTime(s.firstOrderDate)}</p>
                 <p>actualStartDate: {formatJoDateTime(s.actualStartDate)}</p>
                 <p>expiryDate: {formatJoDateTime(s.expiryDate)}</p>
 
                 <div className="auth-actions-row auth-actions-row--split" style={{ marginTop: 10, flexWrap: "wrap" }}>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={submitting}
-                    onClick={() => markFirstOrder(s, new Date().toISOString())}
-                  >
-                    تسجيل أول طلب (الآن)
-                  </Button>
+                  {!hasFirstOrderRecorded ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={submitting}
+                      onClick={() => markFirstOrder(s, new Date().toISOString())}
+                    >
+                      تسجيل أول طلب (الآن)
+                    </Button>
+                  ) : null}
                   <Button type="button" variant="secondary" disabled={submitting} onClick={() => setStatus(s, "inactive")}>
                     تعطيل
                   </Button>
                   <Button type="button" variant="secondary" disabled={submitting} onClick={() => setStatus(s, "cancelled")}>
                     إلغاء
                   </Button>
+                  {s.paymentStatus === "paid" && s.activationStatus !== "company_approved" ? (
+                    <Button type="button" variant="secondary" disabled={submitting} onClick={() => companyActivate(s)}>
+                      تفعيل الشركة
+                    </Button>
+                  ) : null}
                 </div>
+                    </>
+                  );
+                })()}
               </article>
             ))}
           </div>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { arabicDurationUnit } from "../../utils/arTime";
 import ClientFreelancerClaimsModal from "./ClientFreelancerClaimsModal";
 import ClientBiddingOffersModal from "./ClientBiddingOffersModal";
@@ -31,6 +31,12 @@ function typeLabel(projectType) {
   return "—";
 }
 
+function bidderDisplayName(bidUser) {
+  const u = bidUser?.user || {};
+  const full = [u.firstName, u.fatherName, u.familyName].filter(Boolean).join(" ").trim();
+  return full || u.email || "—";
+}
+
 function durationLabel(order) {
   if (!order?.durationValue || !order?.durationUnit) return "—";
   return `${order.durationValue} ${arabicDurationUnit(order.durationValue, order.durationUnit)}`;
@@ -44,6 +50,11 @@ function clientStatusMeta(order) {
   if (order?.isArchived) return { label: "مؤرشف", className: "oh-badge oh-badge--neutral" };
   const s = order?.orderStatus;
   if (s === "pending_client_review") return { label: "مرفقات بانتظار اعتمادك", className: "oh-badge oh-badge--info" };
+  if (s === "open_for_bids") return { label: "بانتظار عروض المستقلين", className: "oh-badge oh-badge--warning" };
+  if (s === "open_for_freelancers") return { label: "بانتظار عروض المستقلين", className: "oh-badge oh-badge--warning" };
+  if (s === "awaiting_payment_after_bid_selection") {
+    return { label: "بانتظار الدفع بعد اختيار العرض", className: "oh-badge oh-badge--info" };
+  }
   if (s === "completed") return { label: "مكتمل", className: "oh-badge oh-badge--success" };
   if (s === "cancelled") return { label: "ملغي", className: "oh-badge oh-badge--danger" };
   if (order?.assignedFreelancerId && s === "in_progress") {
@@ -75,12 +86,13 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
   );
   const categoryText = `${order?.category?.name || "—"}${order?.subSubcategory?.name ? ` • ${order.subSubcategory.name}` : ""}`;
   const bidsCount = order?.bidsCount != null ? Number(order.bidsCount) : null;
+  const bidUsers = Array.isArray(order?.bidUsers) ? order.bidUsers : [];
 
   const isClientOrder = order?.sourceType === "client_created";
   const showClaimsButton =
     isClientOrder &&
     order?.projectType === "fixed" &&
-    order?.orderStatus === "published" &&
+    (order?.orderStatus === "published" || order?.orderStatus === "open_for_freelancers") &&
     order?.isOpenForPool &&
     !order?.assignedFreelancerId &&
     !order?.isArchived;
@@ -88,7 +100,7 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
   const showBiddingOffersButton =
     isClientOrder &&
     pricedBidding &&
-    order?.orderStatus === "published" &&
+    order?.orderStatus === "open_for_bids" &&
     order?.isOpenForPool &&
     !order?.assignedFreelancerId &&
     !order?.isArchived;
@@ -130,10 +142,12 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
           السعر:{" "}
           <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>
             {pricedBidding
-              ? `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)}${order?.currencyCode ? ` ${order.currencyCode}` : ""}`
+              ? order?.paymentAmount != null || order?.paymentCurrency
+                ? `${order?.paymentAmount != null ? formatMoney(order.paymentAmount) : "—"} JOD`
+                : `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)} JOD`
               : order?.projectType === "bidding"
                 ? "—"
-                : `${formatMoney(order?.budget)}${order?.projectType === "fixed" && order?.currencyCode ? ` ${order.currencyCode}` : ""}`}
+                : `${formatMoney(order?.budget)} JOD`}
           </span>
         </span>
         <span className="oh-mini-chip">مدة التسليم: {durationLabel(order)}</span>
@@ -145,6 +159,9 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
         </span>
         {pricedBidding ? (
           <span className="oh-mini-chip">العروض: {Number.isFinite(bidsCount) ? String(bidsCount) : "—"}</span>
+        ) : null}
+        {pricedBidding && bidUsers.length ? (
+          <span className="oh-mini-chip">المتقدمون: {bidUsers.slice(0, 2).map((b) => bidderDisplayName(b)).join("، ")}{bidUsers.length > 2 ? ` +${bidUsers.length - 2}` : ""}</span>
         ) : null}
       </div>
 
@@ -167,7 +184,7 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
         ) : null}
         {showBiddingOffersButton ? (
           <button type="button" className="btn btn-primary" onClick={() => setBidsOpen(true)}>
-            مراجعة عروض الأسعار
+            عرض مقدمي العروض
           </button>
         ) : null}
         {showPostAssignActions ? (

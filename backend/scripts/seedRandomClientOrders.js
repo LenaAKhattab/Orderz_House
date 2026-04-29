@@ -151,7 +151,24 @@ async function insertOneOrder(client, { creatorId, sourceType, isPublished, isOp
   const durationUnit = pick(["days", "hours"]);
 
   const paymentRequired = sourceType === "client_created";
-  const paymentStatus = paymentRequired ? "unpaid" : "not_required";
+  const paymentStatus =
+    sourceType === "admin_created" || sourceType === "super_admin_created"
+      ? "skipped_by_admin"
+      : paymentRequired
+        ? "unpaid"
+        : "not_required";
+
+  let effectiveOrderStatus = orderStatus;
+  if (
+    isPublished &&
+    isOpenForPool &&
+    (sourceType === "admin_created" || sourceType === "super_admin_created")
+  ) {
+    effectiveOrderStatus = projectType === "bidding" ? "open_for_bids" : "open_for_freelancers";
+  }
+
+  const createdByRole =
+    sourceType === "client_created" ? "client" : sourceType === "super_admin_created" ? "super_admin" : "admin";
 
   await client.query(
     `INSERT INTO orders (
@@ -165,7 +182,8 @@ async function insertOneOrder(client, { creatorId, sourceType, isPublished, isOp
       is_published, is_open_for_pool,
       is_archived,
       payment_required, payment_status,
-      order_status
+      order_status,
+      created_by_role
     ) VALUES (
       $1, $2, $3,
       $4, $5, NULL,
@@ -177,7 +195,8 @@ async function insertOneOrder(client, { creatorId, sourceType, isPublished, isOp
       $13, $14,
       FALSE,
       $15, $16,
-      $17
+      $17,
+      $18
     )`,
     [
       orderCode,
@@ -196,7 +215,8 @@ async function insertOneOrder(client, { creatorId, sourceType, isPublished, isOp
       isOpenForPool,
       paymentRequired,
       paymentStatus,
-      orderStatus,
+      effectiveOrderStatus,
+      createdByRole,
     ],
   );
 
@@ -259,11 +279,11 @@ async function main() {
   );
   if (!args.forPool) {
     console.log("");
-    console.log("AR: طلبات العميل (client_created) لا تظهر في صفحة /orders — تلك الصفحة تعرض فقط طلبات الحوض المنشأة من الإدارة.");
-    console.log("AR: لتعبئة الصفحة استخدم: npm run db:seed-pool-orders -- --count=15");
+    console.log("AR: طلبات العميل ذات السعر الثابت تظهر في الحوض بعد الدفع؛ طلبات المزايدة تظهر عند فتحها للعروض.");
+    console.log("AR: لتعبئة الحوض بطلبات إدارية استخدم: npm run db:seed-pool-orders -- --count=15");
     console.log("");
-    console.log("EN: client_created orders are NOT returned by GET /orders/pool (admin/super_admin internal orders only).");
-    console.log("EN: To fill the freelancer pool UI run: npm run db:seed-pool-orders -- --count=15");
+    console.log("EN: Client fixed-price pool orders appear after Stripe marks them paid; bidding orders appear when open for bids.");
+    console.log("EN: To seed admin pool orders run: npm run db:seed-pool-orders -- --count=15");
   }
 }
 

@@ -28,11 +28,19 @@ const listSubscriptionsValidators = [
   query("status").optional().isString().trim().isLength({ min: 2, max: 40 }).withMessage("Invalid status."),
 ];
 
+const freelancerSelfSubscribeValidators = [
+  body("planId").isInt({ min: 1 }).withMessage("planId is required."),
+];
+
+const activateSubscriptionValidators = [...subscriptionIdParam];
+
 module.exports = {
   subscriptionIdParam,
   freelancerIdParam,
   assignSubscriptionValidators,
   updateSubscriptionValidators,
   listSubscriptionsValidators,
+  freelancerSelfSubscribeValidators,
+  activateSubscriptionValidators,
 };
 

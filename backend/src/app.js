@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
 const path = require("node:path");
+const stripeWebhookRoutes = require("./routes/stripeWebhookRoutes");
 const healthRoutes = require("./routes/healthRoutes");
 const authRoutes = require("./routes/authRoutes");
 const categoriesRoutes = require("./routes/categoriesRoutes");
@@ -9,11 +10,20 @@ const plansRoutes = require("./routes/plansRoutes");
 const adminPlansRoutes = require("./routes/adminPlansRoutes");
 const adminSubscriptionsRoutes = require("./routes/adminSubscriptionsRoutes");
 const adminOrdersRoutes = require("./routes/adminOrdersRoutes");
+const adminCoursesRoutes = require("./routes/adminCoursesRoutes");
+const adminFakeOrdersRoutes = require("./routes/adminFakeOrdersRoutes");
 const freelancerSubscriptionsRoutes = require("./routes/freelancerSubscriptionsRoutes");
+const freelancerCoursesRoutes = require("./routes/freelancerCoursesRoutes");
 const ordersRoutes = require("./routes/ordersRoutes");
+const notificationsRoutes = require("./routes/notificationsRoutes");
+const portalFinancialClaimsRoutes = require("./routes/portalFinancialClaimsRoutes");
+const superAdminFinancialClaimsRoutes = require("./routes/superAdminFinancialClaimsRoutes");
 const { notFoundMiddleware, errorMiddleware } = require("./middleware/errorMiddleware");
 
 const app = express();
+
+// Stripe webhooks require the raw body for signature verification (must run before express.json()).
+app.use("/api/webhooks/stripe", express.raw({ type: "application/json" }), stripeWebhookRoutes);
 
 // Core middleware setup for parsing, CORS boundaries, and request logging.
 app.use(express.json());
@@ -37,8 +47,14 @@ app.use("/api", plansRoutes);
 app.use("/api/admin", adminPlansRoutes);
 app.use("/api/admin", adminSubscriptionsRoutes);
 app.use("/api/admin", adminOrdersRoutes);
+app.use("/api/admin", adminCoursesRoutes);
+app.use("/api/admin", adminFakeOrdersRoutes);
 app.use("/api/freelancer", freelancerSubscriptionsRoutes);
+app.use("/api/freelancer", freelancerCoursesRoutes);
+app.use("/api/portal", portalFinancialClaimsRoutes);
+app.use("/api/super-admin", superAdminFinancialClaimsRoutes);
 app.use("/api", ordersRoutes);
+app.use("/api", notificationsRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

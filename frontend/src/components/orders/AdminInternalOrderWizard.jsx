@@ -5,30 +5,27 @@ import { useToast } from "../ui/toastContext";
 import {
   adminCreateInternalOrderRequest,
   adminSearchFreelancersRequest,
+  createClientOrderRequest,
   getCategoriesRequest,
   getCategorySubSubcategoriesRequest,
 } from "../../services/api";
 import { getDashboardPath } from "../../constants/authRoutes";
 import { SelectPanelBusySkeleton } from "../ui/Skeleton";
 
-const STEPS = [
+const ADMIN_STEPS = [
   { key: "core", label: "بيانات الطلب" },
   { key: "assignment", label: "الإسناد" },
   { key: "files", label: "الملفات" },
   { key: "review", label: "مراجعة وإرسال" },
 ];
 
-const CO_CURRENCIES = [
-  { code: "JOD", label: "JOD" },
-  { code: "SAR", label: "SAR" },
-  { code: "USD", label: "USD" },
-  { code: "AED", label: "AED" },
-  { code: "EUR", label: "EUR" },
-  { code: "KWD", label: "KWD" },
-  { code: "QAR", label: "QAR" },
-  { code: "BHD", label: "BHD" },
-  { code: "OMR", label: "OMR" },
+const CLIENT_STEPS = [
+  { key: "core", label: "بيانات الطلب" },
+  { key: "files", label: "الملفات" },
+  { key: "review", label: "مراجعة وإرسال" },
 ];
+
+const ORDER_CURRENCY = "JOD";
 
 /** Skills used before on this browser — suggestions only; not auto-filled on new orders. */
 const SKILLS_HISTORY_STORAGE_KEY = "orderz_admin_skills_history_v1";
@@ -313,16 +310,53 @@ function SearchableSelect({
 }
 
 /**
- * @param {{ variant?: "page" | "modal"; onCreated?: (res: unknown) => void }} props
+ * @param {{ variant?: "page" | "modal"; onCreated?: (res: unknown) => void; audience?: "admin" | "client"; mode?: "normal" | "fake_training"; initialValues?: Record<string, unknown>; onSubmitFormData?: (fd: FormData, ctx: { form: Record<string, unknown>, files: File[] }) => Promise<unknown> }} props
  * - page: full layout with back links (default admin create route).
  * - modal: compact shell for header popup; call onCreated after successful API response instead of staying on form.
  */
-export default function AdminInternalOrderWizard({ variant = "page", onCreated } = {}) {
+function makeInitialForm(isFakeTraining, initialValues = {}) {
+  return {
+    orderCode: String(initialValues.orderCode || ""),
+    title: String(initialValues.title || ""),
+    description: String(initialValues.description || ""),
+    additionalNotes: String(initialValues.additionalNotes || ""),
+    preferredSkills: Array.isArray(initialValues.preferredSkills) ? initialValues.preferredSkills : [],
+    categoryId: String(initialValues.categoryId || ""),
+    extraCategoryIds: Array.isArray(initialValues.extraCategoryIds) ? initialValues.extraCategoryIds : [],
+    subSubcategoryId: String(initialValues.subSubcategoryId || ""),
+    projectType: isFakeTraining ? "bidding" : String(initialValues.projectType || "fixed"),
+    currencyCode: ORDER_CURRENCY,
+    budget: String(initialValues.budget || ""),
+    bidBudgetMin: String(initialValues.bidBudgetMin || ""),
+    bidBudgetMax: String(initialValues.bidBudgetMax || ""),
+    durationValue: String(initialValues.durationValue || ""),
+    durationUnit: String(initialValues.durationUnit || "days"),
+    assignedFreelancerId: String(initialValues.assignedFreelancerId || ""),
+  };
+}
+
+export default function AdminInternalOrderWizard({
+  variant = "page",
+  onCreated,
+  audience = "admin",
+  mode = "normal",
+  initialValues = {},
+  onSubmitFormData,
+} = {}) {
   const { user } = useAuth();
   const { push } = useToast();
   const role = user?.primaryRole || user?.role;
+  const isClientAudience = audience === "client";
+  const isFakeTraining = mode === "fake_training";
+  const steps = isClientAudience || isFakeTraining ? CLIENT_STEPS : ADMIN_STEPS;
   const base = role ? getDashboardPath(role) : "/dashboard";
-  const listPath = role === "super_admin" ? "/dashboard/super-admin/orders" : "/dashboard/admin/orders";
+  const listPath = isFakeTraining
+    ? role === "super_admin"
+      ? "/dashboard/super-admin/fake-orders"
+      : "/dashboard/admin/fake-orders"
+    : role === "super_admin"
+      ? "/dashboard/super-admin/orders"
+      : "/dashboard/admin/orders";
 
   const [busy, setBusy] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -342,25 +376,12 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
   const [skillHistory, setSkillHistory] = useState(readSkillHistoryFromStorage);
 
   const fileInputRef = useRef(null);
+  const explicitSubmitClickRef = useRef(false);
   const [files, setFiles] = useState([]);
   const [stepIdx, setStepIdx] = useState(0);
   const [attempted, setAttempted] = useState({});
 
-  const [form, setForm] = useState({
-    orderCode: "",
-    title: "",
-    description: "",
-    preferredSkills: [],
-    categoryId: "",
-    extraCategoryIds: [],
-    subSubcategoryId: "",
-    projectType: "fixed",
-    currencyCode: "JOD",
-    budget: "",
-    durationValue: "",
-    durationUnit: "days",
-    assignedFreelancerId: "",
-  });
+  const [form, setForm] = useState(() => makeInitialForm(isFakeTraining, initialValues));
 
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
 
@@ -386,14 +407,17 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
 
     // Step 1 (merged): Basic + Classification + Pricing/Type + Duration
     out.core = {};
-    if (String(form.orderCode || "").trim().length < 2) out.core.orderCode = "رقم الطلب مطلوب.";
+    if (!isClientAudience && !isFakeTraining && String(form.orderCode || "").trim().length < 2) out.core.orderCode = "رقم الطلب مطلوب.";
     if (form.title.trim().length < 2) out.core.title = "عنوان المشروع مطلوب.";
     if (form.description.trim().length < 10) out.core.description = "وصف المشروع مطلوب (10 أحرف على الأقل).";
     if (!String(form.categoryId).trim()) out.core.categoryId = "يرجى اختيار التصنيف.";
     if (!["fixed", "bidding"].includes(form.projectType)) out.core.projectType = "يرجى اختيار نوع المشروع.";
     if (form.projectType === "fixed") {
       if (!(Number(form.budget) > 0)) out.core.budget = "يرجى إدخال ميزانية صحيحة أكبر من 0.";
-      if (!String(form.currencyCode || "").trim()) out.core.currencyCode = "يرجى اختيار العملة.";
+    } else {
+      if (!(Number(form.bidBudgetMin) > 0)) out.core.bidBudgetMin = "يرجى إدخال حد أدنى صحيح.";
+      if (!(Number(form.bidBudgetMax) > 0)) out.core.bidBudgetMax = "يرجى إدخال حد أعلى صحيح.";
+      if (Number(form.bidBudgetMax) < Number(form.bidBudgetMin)) out.core.bidBudgetMax = "الحد الأعلى يجب أن يكون >= الحد الأدنى.";
     }
     if (!(Number(form.durationValue) > 0)) out.core.durationValue = "يرجى إدخال مدة صحيحة أكبر من 0.";
     if (!["days", "hours", "minutes"].includes(form.durationUnit)) out.core.durationUnit = "يرجى اختيار وحدة الزمن.";
@@ -409,7 +433,7 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
     out.review = {};
 
     return out;
-  }, [form, files]);
+  }, [form, files, isClientAudience, isFakeTraining]);
 
   useEffect(() => {
     if (form.projectType === "bidding" && form.budget) {
@@ -418,15 +442,18 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
   }, [form.projectType, form.budget]);
 
   useEffect(() => {
-    if (form.projectType === "bidding" && form.currencyCode) {
-      setForm((p) => ({ ...p, currencyCode: "" }));
+    if (isFakeTraining && form.projectType !== "bidding") {
+      setForm((p) => ({ ...p, projectType: "bidding" }));
     }
-    if (form.projectType === "fixed" && !form.currencyCode) {
-      setForm((p) => ({ ...p, currencyCode: "JOD" }));
-    }
-  }, [form.projectType, form.currencyCode]);
+  }, [isFakeTraining, form.projectType]);
 
-  const currentStepKey = STEPS[stepIdx]?.key;
+  useEffect(() => {
+    if (form.currencyCode !== ORDER_CURRENCY) {
+      setForm((p) => ({ ...p, currencyCode: ORDER_CURRENCY }));
+    }
+  }, [form.currencyCode]);
+
+  const currentStepKey = steps[stepIdx]?.key;
   const currentErrors = useMemo(() => {
     return currentStepKey ? errorsByStep[currentStepKey] || {} : {};
   }, [currentStepKey, errorsByStep]);
@@ -504,7 +531,7 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
       }
       setFreelancerBusy(true);
       try {
-        const res = await adminSearchFreelancersRequest({ q, limit: 20 });
+        const res = await adminSearchFreelancersRequest({ q, limit: 20, onlyActiveSubscription: true });
         if (!cancelled) setFreelancers(res?.data?.freelancers || []);
       } catch {
         if (!cancelled) setFreelancers([]);
@@ -530,6 +557,12 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
 
   const submit = async (e) => {
     e.preventDefault();
+    const submitter = e?.nativeEvent?.submitter;
+    if (!submitter || submitter.getAttribute("data-explicit-submit") !== "true" || !explicitSubmitClickRef.current) {
+      explicitSubmitClickRef.current = false;
+      return;
+    }
+    explicitSubmitClickRef.current = false;
     if (!canSubmit) {
       push({ type: "error", title: "تحقق من الحقول", message: "يرجى إكمال البيانات المطلوبة بشكل صحيح." });
       return;
@@ -537,27 +570,49 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
     setBusy(true);
     try {
       const fd = new FormData();
-      fd.append("orderCode", String(form.orderCode).trim());
+      if (!isClientAudience && !isFakeTraining) {
+        fd.append("orderCode", String(form.orderCode).trim());
+      }
       fd.append("title", form.title.trim());
-      fd.append("description", form.description.trim());
+      const notes = isClientAudience || isFakeTraining ? "" : String(form.additionalNotes || "").trim();
+      const finalDescription = notes ? `${form.description.trim()}\n\nملاحظات إضافية:\n${notes}` : form.description.trim();
+      fd.append("description", finalDescription);
       fd.append("categoryId", String(form.categoryId));
       fd.append("extraCategoryIds", JSON.stringify(form.extraCategoryIds || []));
       fd.append("extraCategoryDetails", JSON.stringify(extraCategoryDetails || {}));
       if (form.subSubcategoryId) fd.append("subSubcategoryId", String(form.subSubcategoryId));
       fd.append("projectType", form.projectType);
+      fd.append("currencyCode", ORDER_CURRENCY);
       if (form.projectType === "fixed") {
-        fd.append("currencyCode", String(form.currencyCode || "SAR"));
         fd.append("budget", String(Number(String(form.budget).replace(/,/g, "."))));
+      } else {
+        fd.append("bidBudgetMin", String(Number(String(form.bidBudgetMin).replace(/,/g, "."))));
+        fd.append("bidBudgetMax", String(Number(String(form.bidBudgetMax).replace(/,/g, "."))));
       }
       fd.append("durationValue", String(Number(form.durationValue)));
       fd.append("durationUnit", form.durationUnit);
       fd.append("preferredSkills", JSON.stringify(form.preferredSkills || []));
-      if (form.assignedFreelancerId) fd.append("assignedFreelancerId", String(form.assignedFreelancerId));
-      fd.append("archive", String(!form.assignedFreelancerId && archiveOnCreate));
+      if (!isClientAudience && !isFakeTraining) {
+        if (form.assignedFreelancerId) fd.append("assignedFreelancerId", String(form.assignedFreelancerId));
+        fd.append("archive", String(!form.assignedFreelancerId && archiveOnCreate));
+      }
       files.forEach((f) => fd.append("files", f));
 
-      const res = await adminCreateInternalOrderRequest(fd);
-      push({ type: "success", title: "تم إنشاء الطلب", message: `رقم الطلب: ${res?.data?.order?.orderCode || ""}`.trim() });
+      const res = onSubmitFormData
+        ? await onSubmitFormData(fd, { form, files })
+        : isClientAudience
+          ? await createClientOrderRequest(fd)
+          : await adminCreateInternalOrderRequest(fd);
+      const checkoutUrl = res?.data?.checkoutUrl || res?.checkoutUrl;
+      if (isClientAudience && checkoutUrl) {
+        window.location.href = checkoutUrl;
+        return;
+      }
+      push({
+        type: "success",
+        title: isFakeTraining ? "تم حفظ الطلب/القالب التجريبي" : "تم إنشاء الطلب",
+        message: isFakeTraining ? "" : `رقم الطلب: ${res?.data?.order?.orderCode || ""}`.trim(),
+      });
       if (typeof onCreated === "function") {
         onCreated(res);
         return;
@@ -568,17 +623,7 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
       setAttempted({});
       setForm((p) => ({
         ...p,
-        title: "",
-        description: "",
-        preferredSkills: [],
-        categoryId: "",
-        subSubcategoryId: "",
-        projectType: "fixed",
-        currencyCode: p.currencyCode || "SAR",
-        budget: "",
-        durationValue: "",
-        durationUnit: "days",
-        assignedFreelancerId: "",
+        ...makeInitialForm(isFakeTraining),
       }));
       // Stay on the create page to allow fast creation of the next order.
     } catch (e2) {
@@ -667,7 +712,7 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
 
   const goNext = () => {
     if (!stepValid) return;
-    setStepIdx((i) => Math.min(i + 1, STEPS.length - 1));
+    setStepIdx((i) => Math.min(i + 1, steps.length - 1));
   };
 
   const goPrev = () => setStepIdx((i) => Math.max(i - 1, 0));
@@ -690,8 +735,14 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
       {!isModal ? (
         <section className="card" style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <h1 style={{ marginBottom: 6 }}>إنشاء طلب (إداري)</h1>
-            <p style={{ margin: 0 }}>سيتم نشر الطلب مباشرةً بدون دفع. ويمكن إسناده لفريلانسر أثناء الإنشاء.</p>
+            <h1 style={{ marginBottom: 6 }}>{isFakeTraining ? "إنشاء طلب تجريبي" : isClientAudience ? "إنشاء طلب" : "إنشاء طلب (إداري)"}</h1>
+            <p style={{ margin: 0 }}>
+              {isClientAudience
+                ? "نفس واجهة إنشاء الطلب مع صلاحيات العميل فقط وبدون تعيين مستقل."
+                : isFakeTraining
+                  ? "إنشاء قالب/طلب تجريبي بنفس حقول الطلب الحقيقي، بنوع مزايدة فقط."
+                : "سيتم نشر الطلب مباشرةً بدون دفع. ويمكن إسناده لفريلانسر أثناء الإنشاء."}
+            </p>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Link className="btn btn-secondary" to={base}>
@@ -707,7 +758,7 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
       <form onSubmit={submit} className="form-grid" style={{ marginTop: isModal ? 0 : 14 }}>
         <section className="card" style={{ gridColumn: "span 12" }}>
           <div className="oh-stepper">
-            {STEPS.map((s, idx) => (
+            {steps.map((s, idx) => (
               <button
                 key={s.key}
                 type="button"
@@ -733,7 +784,10 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
                   <button
                     type="button"
                     className={form.projectType === "fixed" ? "btn btn-primary" : "btn btn-secondary"}
-                    onClick={() => set("projectType", "fixed")}
+                    onClick={() => {
+                      if (!isFakeTraining) set("projectType", "fixed");
+                    }}
+                    disabled={isFakeTraining}
                   >
                     سعر ثابت
                   </button>
@@ -746,26 +800,32 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
                   </button>
                 </div>
                 <div className="help">
-                  {form.projectType === "fixed"
+                  {isFakeTraining
+                    ? "الطلبات التجريبية تعمل دائمًا بنظام المزايدة."
+                    : form.projectType === "fixed"
                     ? "سعر ثابت: يُنشر في الحوض ويستلمه المستقل حسب تدفق الموافقات."
-                    : "مزايدة: بدون نطاق سعر عند الإنشاء؛ المستقلون يقدّمون العروض وتدار العملية من لوحة الطلبات."}
+                    : isClientAudience
+                      ? "مزايدة: يُنشر الطلب لاستقبال العروض، والدفع يتم لاحقًا عند اختيار عرض."
+                      : "مزايدة: بدون نطاق سعر عند الإنشاء؛ المستقلون يقدّمون العروض وتدار العملية من لوحة الطلبات."}
                 </div>
                 <FieldError message={attempted.core ? errorsByStep.core.projectType : ""} />
               </div>
 
-              <div className="field admin-co-fields__span2">
-                <label className="label" htmlFor="adm-order-code">
-                  رقم الطلب
-                </label>
-                <input
-                  id="adm-order-code"
-                  className="input"
-                  value={form.orderCode}
-                  placeholder="أدخل رقم الطلب (مثال: ORD-1001)"
-                  onChange={(e) => set("orderCode", e.target.value)}
-                />
-                <FieldError message={attempted.core ? errorsByStep.core.orderCode : ""} />
-              </div>
+              {!isClientAudience && !isFakeTraining ? (
+                <div className="field admin-co-fields__span2">
+                  <label className="label" htmlFor="adm-order-code">
+                    رقم الطلب
+                  </label>
+                  <input
+                    id="adm-order-code"
+                    className="input"
+                    value={form.orderCode}
+                    placeholder="مثال: ORD-1001"
+                    onChange={(e) => set("orderCode", e.target.value)}
+                  />
+                  <FieldError message={attempted.core ? errorsByStep.core.orderCode : ""} />
+                </div>
+              ) : null}
 
               <div className="field admin-co-fields__span2">
                 <label className="label" htmlFor="adm-co-title">
@@ -798,7 +858,7 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
               </div>
 
               <div className="admin-co-fields__row4 admin-co-fields__span2">
-                <div className="field">
+                <div className="field" style={{ order: 10, gridColumn: "span 2" }}>
                   <label className="label" htmlFor="adm-co-cat">
                     التصنيف
                   </label>
@@ -828,9 +888,129 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
                   <FieldError message={attempted.core ? errorsByStep.core.categoryId : ""} />
                 </div>
 
-                <div className="field">
+                <div className="field admin-co-fields__row4-span4" style={{ order: 30 }}>
+                  <label className="label" style={{ display: "block", marginBottom: 6 }}>
+                    تصنيفات إضافية (اختياري)
+                  </label>
+
+                  <div style={{ display: "grid", gap: 12 }}>
+                    {(form.extraCategoryIds || []).map((id) => {
+                      const catLabel = categoryOptions.find((o) => String(o.value) === String(id))?.label || id;
+                      const list = Array.isArray(extraSubSubsByCat[String(id)]) ? extraSubSubsByCat[String(id)] : [];
+                      const detailOptions = list.map((ss) => ({
+                        value: String(ss.id),
+                        label: ss.name,
+                        meta: ss.slug ? String(ss.slug) : "",
+                      }));
+                      return (
+                        <div
+                          key={String(id)}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                            gap: 12,
+                            alignItems: "start",
+                          }}
+                        >
+                          <div className="field">
+                            <span className="label">التصنيف</span>
+                            <div className="input" style={{ display: "flex", alignItems: "center", minHeight: 40, fontWeight: 700 }}>
+                              {catLabel}
+                            </div>
+                          </div>
+                          <div className="field">
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                              <span className="label" style={{ margin: 0 }}>
+                                التصنيف التفصيلي
+                              </span>
+                              <button
+                                type="button"
+                                className="btn btn-secondary"
+                                style={{ padding: "6px 10px", whiteSpace: "nowrap", fontSize: "0.78rem" }}
+                                onClick={() =>
+                                  setForm((p) => ({
+                                    ...p,
+                                    extraCategoryIds: (p.extraCategoryIds || []).filter((x) => String(x) !== String(id)),
+                                  }))
+                                }
+                              >
+                                إزالة
+                              </button>
+                            </div>
+                            <SearchableSelect
+                              value={extraCategoryDetails[String(id)] || ""}
+                              onChange={(v) =>
+                                setExtraCategoryDetails((p) => ({
+                                  ...p,
+                                  [String(id)]: String(v || ""),
+                                }))
+                              }
+                              placeholder="اختر التصنيف التفصيلي (اختياري)"
+                              options={detailOptions}
+                              busy={Boolean(extraSubBusyByCat[String(id)])}
+                              query={extraSubQueryByCat[String(id)] || ""}
+                              onQueryChange={(q) =>
+                                setExtraSubQueryByCat((p) => ({
+                                  ...p,
+                                  [String(id)]: q,
+                                }))
+                              }
+                              searchPlaceholder="ابحث عن التصنيف التفصيلي…"
+                              disabled={Boolean(extraSubBusyByCat[String(id)])}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {!(form.extraCategoryIds || []).length ? <span className="help">لا توجد تصنيفات إضافية.</span> : null}
+                  </div>
+
+                  <div style={{ marginTop: 10, display: "grid", gap: 8, justifyItems: "stretch" }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ padding: "6px 14px", fontSize: "0.82rem", fontWeight: 700, width: "fit-content" }}
+                      disabled={!form.categoryId || !extraCategoryOptions.length}
+                      title={
+                        !form.categoryId
+                          ? "اختر التصنيف الرئيسي أولاً"
+                          : !extraCategoryOptions.length
+                            ? "لا يوجد تصنيف إضافي متاح"
+                            : ""
+                      }
+                      onClick={() => setExtraCategoryPickerOpen((o) => !o)}
+                    >
+                      {extraCategoryPickerOpen ? "إغلاق" : "إضافة تصنيف إضافي"}
+                    </button>
+                    {extraCategoryPickerOpen ? (
+                      <div className="field" style={{ marginBottom: 0 }}>
+                        <SearchableSelect
+                          value=""
+                          onChange={(v) => {
+                            if (!v) return;
+                            setForm((p) => ({
+                              ...p,
+                              extraCategoryIds: Array.from(new Set([...(p.extraCategoryIds || []), String(v)])).slice(0, 10),
+                            }));
+                            setExtraCategoryQuery("");
+                            setExtraCategoryPickerOpen(false);
+                          }}
+                          placeholder="اختر تصنيفاً إضافياً"
+                          options={extraCategoryOptions}
+                          busy={false}
+                          query={extraCategoryQuery}
+                          onQueryChange={setExtraCategoryQuery}
+                          searchPlaceholder="ابحث عن تصنيف…"
+                          disabled={!form.categoryId}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="field" style={{ order: 11, gridColumn: "span 2" }}>
                   <label className="label" htmlFor="adm-co-ss">
-                    تفصيلي (اختياري)
+                    تفصيلي
                   </label>
                   <select
                     id="adm-co-ss"
@@ -848,37 +1028,15 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
                   </select>
                 </div>
 
-                {form.projectType === "fixed" ? (
-                  <div className="field">
-                    <label className="label" htmlFor="adm-co-cur">
-                      العملة
-                    </label>
-                    <select
-                      id="adm-co-cur"
-                      className="input"
-                      dir="ltr"
-                      value={form.currencyCode}
-                      onChange={(e) => set("currencyCode", e.target.value)}
-                    >
-                      {CO_CURRENCIES.map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.label}
-                        </option>
-                      ))}
-                    </select>
-                    <FieldError message={attempted.core ? errorsByStep.core.currencyCode : ""} />
-                  </div>
-                ) : (
-                  <div className="field">
-                    <span className="label">العملة</span>
-                    <div className="help" style={{ paddingTop: 6 }}>
-                      لا تُستخدم للمزايدة بهذا النموذج.
-                    </div>
-                  </div>
-                )}
+                <div className="field" style={{ order: 40, gridColumn: "span 2" }}>
+                  <label className="label" htmlFor="ord-cur-fixed">
+                    العملة
+                  </label>
+                  <input id="ord-cur-fixed" className="input" dir="ltr" value={ORDER_CURRENCY} readOnly />
+                </div>
 
                 {form.projectType === "fixed" ? (
-                  <div className="field">
+                  <div className="field" style={{ order: 41, gridColumn: "span 2" }}>
                     <label className="label" htmlFor="adm-co-budget">
                       الميزانية
                     </label>
@@ -895,11 +1053,30 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
                     <FieldError message={attempted.core ? errorsByStep.core.budget : ""} />
                   </div>
                 ) : (
-                  <div className="field">
-                    <span className="label">الميزانية</span>
-                    <div className="help" style={{ paddingTop: 6 }}>
-                      لا توجد ميزانية عند اختيار «مزايدة» من لوحة الإدارة.
+                  <div className="field" style={{ order: 41, gridColumn: "span 2" }}>
+                    <span className="label">نطاق الميزانية</span>
+                    <div className="client-order-modal__bid-pair">
+                      <input
+                        className="input"
+                        dir="ltr"
+                        inputMode="decimal"
+                        type="text"
+                        value={form.bidBudgetMin}
+                        placeholder="الحد الأدنى"
+                        onChange={(e) => set("bidBudgetMin", e.target.value)}
+                      />
+                      <span className="client-order-modal__bid-sep">–</span>
+                      <input
+                        className="input"
+                        dir="ltr"
+                        inputMode="decimal"
+                        type="text"
+                        value={form.bidBudgetMax}
+                        placeholder="الحد الأعلى"
+                        onChange={(e) => set("bidBudgetMax", e.target.value)}
+                      />
                     </div>
+                    <FieldError message={attempted.core ? errorsByStep.core.bidBudgetMin || errorsByStep.core.bidBudgetMax : ""} />
                   </div>
                 )}
               </div>
@@ -934,126 +1111,6 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
               </div>
 
               <div className="field admin-co-fields__span2">
-                <label className="label" style={{ display: "block", marginBottom: 6 }}>
-                  تصنيفات إضافية (اختياري)
-                </label>
-
-                <div style={{ display: "grid", gap: 12 }}>
-                  {(form.extraCategoryIds || []).map((id) => {
-                    const catLabel = categoryOptions.find((o) => String(o.value) === String(id))?.label || id;
-                    const list = Array.isArray(extraSubSubsByCat[String(id)]) ? extraSubSubsByCat[String(id)] : [];
-                    const detailOptions = list.map((ss) => ({
-                      value: String(ss.id),
-                      label: ss.name,
-                      meta: ss.slug ? String(ss.slug) : "",
-                    }));
-                    return (
-                      <div
-                        key={String(id)}
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                          gap: 12,
-                          alignItems: "start",
-                        }}
-                      >
-                        <div className="field">
-                          <span className="label">التصنيف</span>
-                          <div className="input" style={{ display: "flex", alignItems: "center", minHeight: 40, fontWeight: 700 }}>
-                            {catLabel}
-                          </div>
-                        </div>
-                        <div className="field">
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                            <span className="label" style={{ margin: 0 }}>
-                              التصنيف التفصيلي
-                            </span>
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              style={{ padding: "6px 10px", whiteSpace: "nowrap", fontSize: "0.78rem" }}
-                              onClick={() =>
-                                setForm((p) => ({
-                                  ...p,
-                                  extraCategoryIds: (p.extraCategoryIds || []).filter((x) => String(x) !== String(id)),
-                                }))
-                              }
-                            >
-                              إزالة
-                            </button>
-                          </div>
-                          <SearchableSelect
-                            value={extraCategoryDetails[String(id)] || ""}
-                            onChange={(v) =>
-                              setExtraCategoryDetails((p) => ({
-                                ...p,
-                                [String(id)]: String(v || ""),
-                              }))
-                            }
-                            placeholder="اختر التصنيف التفصيلي (اختياري)"
-                            options={detailOptions}
-                            busy={Boolean(extraSubBusyByCat[String(id)])}
-                            query={extraSubQueryByCat[String(id)] || ""}
-                            onQueryChange={(q) =>
-                              setExtraSubQueryByCat((p) => ({
-                                ...p,
-                                [String(id)]: q,
-                              }))
-                            }
-                            searchPlaceholder="ابحث عن التصنيف التفصيلي…"
-                            disabled={Boolean(extraSubBusyByCat[String(id)])}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {!(form.extraCategoryIds || []).length ? <span className="help">لا توجد تصنيفات إضافية.</span> : null}
-                </div>
-
-                <div style={{ marginTop: 10, display: "grid", gap: 8, justifyItems: "stretch" }}>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ padding: "6px 14px", fontSize: "0.82rem", fontWeight: 700, width: "fit-content" }}
-                    disabled={!form.categoryId || !extraCategoryOptions.length}
-                    title={
-                      !form.categoryId
-                        ? "اختر التصنيف الرئيسي أولاً"
-                        : !extraCategoryOptions.length
-                          ? "لا يوجد تصنيف إضافي متاح"
-                          : ""
-                    }
-                    onClick={() => setExtraCategoryPickerOpen((o) => !o)}
-                  >
-                    {extraCategoryPickerOpen ? "إغلاق" : "إضافة تصنيف إضافي"}
-                  </button>
-                  {extraCategoryPickerOpen ? (
-                    <div className="field" style={{ marginBottom: 0 }}>
-                      <SearchableSelect
-                        value=""
-                        onChange={(v) => {
-                          if (!v) return;
-                          setForm((p) => ({
-                            ...p,
-                            extraCategoryIds: Array.from(new Set([...(p.extraCategoryIds || []), String(v)])).slice(0, 10),
-                          }));
-                          setExtraCategoryQuery("");
-                          setExtraCategoryPickerOpen(false);
-                        }}
-                        placeholder="اختر تصنيفاً إضافياً"
-                        options={extraCategoryOptions}
-                        busy={false}
-                        query={extraCategoryQuery}
-                        onQueryChange={setExtraCategoryQuery}
-                        searchPlaceholder="ابحث عن تصنيف…"
-                        disabled={!form.categoryId}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="field admin-co-fields__span2">
                 <span className="label">المهارات المطلوبة</span>
                 <SkillsTagsInput
                   value={form.preferredSkills}
@@ -1062,10 +1119,26 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
                   historySkills={skillHistory}
                 />
               </div>
+
+              {!isClientAudience && !isFakeTraining ? (
+                <div className="field admin-co-fields__span2">
+                  <label className="label" htmlFor="co-additional-notes">
+                    ملاحظات إضافية (اختياري)
+                  </label>
+                  <textarea
+                    id="co-additional-notes"
+                    className="input"
+                    rows={2}
+                    value={form.additionalNotes}
+                    placeholder="اكتب أي ملاحظات إضافية"
+                    onChange={(e) => set("additionalNotes", e.target.value)}
+                  />
+                </div>
+              ) : null}
             </div>
           ) : null}
 
-          {currentStepKey === "assignment" ? (
+          {!isClientAudience && !isFakeTraining && currentStepKey === "assignment" ? (
             <>
               <h2 style={{ marginBottom: 10 }}>5) الإسناد (اختياري)</h2>
               <div className="form-grid">
@@ -1200,11 +1273,17 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
                   </div>
                   <div className="oh-review__row">
                     <div className="oh-review__k">الميزانية</div>
-                    <div className="oh-review__v">{form.projectType === "bidding" ? "—" : formatMoney(form.budget)}</div>
+                    <div className="oh-review__v">
+                      {form.projectType === "bidding"
+                        ? isClientAudience
+                          ? `${formatMoney(form.bidBudgetMin)} - ${formatMoney(form.bidBudgetMax)}`
+                          : "—"
+                        : formatMoney(form.budget)}
+                    </div>
                   </div>
                   <div className="oh-review__row">
                     <div className="oh-review__k">العملة</div>
-                    <div className="oh-review__v">{form.projectType === "bidding" ? "—" : (form.currencyCode || "—")}</div>
+                    <div className="oh-review__v">{ORDER_CURRENCY}</div>
                   </div>
                 </div>
                 <div className="oh-review__row">
@@ -1221,24 +1300,30 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
                       : "—"}
                   </div>
                 </div>
-                <div className="oh-review__row">
-                  <div className="oh-review__k">المستقل</div>
-                  <div className="oh-review__v">{selectedFreelancerLabel || "غير معين"}</div>
-                </div>
+                {!isClientAudience && !isFakeTraining ? (
+                  <div className="oh-review__row">
+                    <div className="oh-review__k">المستقل</div>
+                    <div className="oh-review__v">{selectedFreelancerLabel || "غير معين"}</div>
+                  </div>
+                ) : null}
                 <div className="oh-review__row">
                   <div className="oh-review__k">الملفات</div>
                   <div className="oh-review__v">{files.length ? `${files.length} ملفات` : "لا توجد ملفات مضافة"}</div>
                 </div>
 
                 <div className="oh-review__note">
-                  {form.assignedFreelancerId
-                    ? "سيتم تعيين الطلب مباشرة لهذا المستقل"
-                    : archiveOnCreate
-                      ? "سيتم حفظ الطلب في الأرشيف (غير نشط الآن). يمكنك تفعيله لاحقاً من لوحة التحكم."
-                      : "سيتم نشر الطلب في قائمة الطلبات المتاحة"}
+                  {isClientAudience
+                    ? form.projectType === "fixed"
+                      ? "بعد المتابعة للدفع، سيتم تفعيل الطلب ونشره في الحوض."
+                      : "سيتم نشر الطلب لاستقبال العروض، والدفع يتم عند اختيار عرض."
+                    : form.assignedFreelancerId
+                      ? "سيتم تعيين الطلب مباشرة لهذا المستقل"
+                      : archiveOnCreate
+                        ? "سيتم حفظ الطلب في الأرشيف (غير نشط الآن). يمكنك تفعيله لاحقاً من لوحة التحكم."
+                        : "سيتم نشر الطلب في قائمة الطلبات المتاحة"}
                 </div>
 
-                {!form.assignedFreelancerId ? (
+                {!isClientAudience && !isFakeTraining && !form.assignedFreelancerId ? (
                   <div style={{ marginTop: 10 }}>
                     <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 900 }}>
                       <input
@@ -1287,8 +1372,22 @@ export default function AdminInternalOrderWizard({ variant = "page", onCreated }
                 التالي
               </button>
             ) : (
-              <button className="btn btn-primary" type="submit" disabled={!canSubmit || busy}>
-                {busy ? "جارٍ الإنشاء…" : "إنشاء الطلب"}
+              <button
+                className="btn btn-primary"
+                type="submit"
+                data-explicit-submit="true"
+                onClick={() => {
+                  explicitSubmitClickRef.current = true;
+                }}
+                disabled={!canSubmit || busy}
+              >
+                {busy
+                  ? "جارٍ الإنشاء…"
+                  : isClientAudience
+                    ? form.projectType === "fixed"
+                      ? "المتابعة إلى الدفع"
+                      : "نشر الطلب لاستقبال العروض"
+                    : "إنشاء الطلب"}
               </button>
             )}
           </div>

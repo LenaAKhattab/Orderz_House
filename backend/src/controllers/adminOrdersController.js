@@ -21,7 +21,7 @@ function parsePreferredSkills(raw) {
 
 const createInternalOrder = async (req, res, next) => {
   try {
-    const actorRole = req.auth?.primaryRole || req.user?.role;
+    const actorRole = req.auth?.primaryRole || req.auth?.legacyRole || req.user?.role;
     let extraCategoryIds = [];
     try {
       const raw = req.body.extraCategoryIds;
@@ -97,7 +97,7 @@ const listInternalOrders = async (req, res, next) => {
 const getInternalOrder = async (req, res, next) => {
   try {
     const order = await ordersService.getOrderById(req.params.id);
-    if (!order || !["admin_created", "super_admin_created"].includes(order.sourceType)) {
+    if (!order || !["admin_created", "super_admin_created"].includes(order.sourceType) || order.isFake) {
       const err = new Error("الطلب غير موجود.");
       err.statusCode = 404;
       throw err;
@@ -110,7 +110,11 @@ const getInternalOrder = async (req, res, next) => {
 
 const searchFreelancers = async (req, res, next) => {
   try {
-    const freelancers = await adminUsersService.searchFreelancers({ q: req.query.q, limit: req.query.limit });
+    const freelancers = await adminUsersService.searchFreelancers({
+      q: req.query.q,
+      limit: req.query.limit,
+      onlyActiveSubscription: String(req.query.onlyActiveSubscription || "").toLowerCase() === "true",
+    });
     return res.status(200).json({ success: true, data: { freelancers } });
   } catch (err) {
     return next(err);
@@ -119,7 +123,7 @@ const searchFreelancers = async (req, res, next) => {
 
 const activateArchivedOrder = async (req, res, next) => {
   try {
-    const actorRole = req.auth?.primaryRole || req.user?.role;
+    const actorRole = req.auth?.primaryRole || req.auth?.legacyRole || req.user?.role;
     if (actorRole !== "admin" && actorRole !== "super_admin") {
       const err = new Error("Forbidden");
       err.statusCode = 403;
@@ -134,7 +138,7 @@ const activateArchivedOrder = async (req, res, next) => {
 
 const acceptTakenOrder = async (req, res, next) => {
   try {
-    const actorRole = req.auth?.primaryRole || req.user?.role;
+    const actorRole = req.auth?.primaryRole || req.auth?.legacyRole || req.user?.role;
     if (actorRole !== "admin" && actorRole !== "super_admin") {
       const err = new Error("Forbidden");
       err.statusCode = 403;
@@ -149,7 +153,7 @@ const acceptTakenOrder = async (req, res, next) => {
 
 const listOrderClaims = async (req, res, next) => {
   try {
-    const actorRole = req.auth?.primaryRole || req.user?.role;
+    const actorRole = req.auth?.primaryRole || req.auth?.legacyRole || req.user?.role;
     if (actorRole !== "admin" && actorRole !== "super_admin") {
       const err = new Error("Forbidden");
       err.statusCode = 403;
@@ -171,12 +175,27 @@ const approveInternalDelivery = async (req, res, next) => {
   }
 };
 
+const requestInternalDeliveryRevision = async (req, res, next) => {
+  try {
+    const order = await ordersService.adminRequestInternalDeliveryRevision({
+      orderId: req.params.id,
+      note: req.body.note || "",
+      uploadedFiles: req.files || [],
+    });
+    return res.status(200).json({ success: true, data: { order } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const downloadInternalOrderFile = async (req, res, next) => {
   try {
-    const { absPath, downloadName, mimeType } = await ordersService.prepareAdminInternalOrderFileDownload({
+    const out = await ordersService.prepareAdminInternalOrderFileDownload({
       orderId: req.params.id,
       fileId: req.params.fileId,
     });
+    if (out?.redirectUrl) return res.redirect(302, out.redirectUrl);
+    const { absPath, downloadName, mimeType } = out;
     const utf8Name = String(downloadName || "file");
     const encoded = encodeURIComponent(utf8Name);
     res.setHeader("Content-Type", mimeType);
@@ -191,6 +210,22 @@ const downloadInternalOrderFile = async (req, res, next) => {
   }
 };
 
+const getFreelancerRegistrationProfile = async (req, res, next) => {
+  try {
+    const actorRole = req.auth?.primaryRole || req.auth?.legacyRole || req.user?.role;
+    if (actorRole !== "admin" && actorRole !== "super_admin") {
+      const err = new Error("Forbidden");
+      err.statusCode = 403;
+      throw err;
+    }
+    const profile = await adminUsersService.getFreelancerRegistrationProfileForAdmin(req.params.id);
+    if (!profile) return res.status(404).json({ success: false, message: "المستخدم غير موجود." });
+    return res.status(200).json({ success: true, data: { profile } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   createInternalOrder,
   listInternalOrders,
@@ -200,6 +235,8 @@ module.exports = {
   acceptTakenOrder,
   listOrderClaims,
   approveInternalDelivery,
+  requestInternalDeliveryRevision,
   downloadInternalOrderFile,
+  getFreelancerRegistrationProfile,
 };
 

@@ -1,4 +1,14 @@
 const { pool } = require("../config/db");
+const notificationEventsService = require("./notificationEventsService");
+
+async function safeNotify(run) {
+  try {
+    await run();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[notifications]", err?.message || err);
+  }
+}
 
 function mapPlan(row) {
   if (!row) return null;
@@ -8,7 +18,7 @@ function mapPlan(row) {
     title: row.title,
     description: row.description,
     durationDays: row.duration_days,
-    priceCents: row.price_cents,
+    priceJod: row.price_jod != null ? Number(row.price_jod) : null,
     requiresCompanyVisit: row.requires_company_visit,
     isActive: row.is_active,
     isVisible: row.is_visible,
@@ -51,7 +61,7 @@ async function createPlan({ actorUserId, payload }) {
     title,
     description = null,
     durationDays,
-    priceCents = null,
+    priceJod = null,
     requiresCompanyVisit = false,
     isActive = true,
     isVisible = true,
@@ -60,7 +70,7 @@ async function createPlan({ actorUserId, payload }) {
 
   const { rows } = await pool.query(
     `INSERT INTO plans (
-      name, title, description, duration_days, price_cents,
+      name, title, description, duration_days, price_jod,
       requires_company_visit, is_active, is_visible, sort_order,
       created_by_user_id, updated_by_user_id
     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10)
@@ -70,7 +80,7 @@ async function createPlan({ actorUserId, payload }) {
       title,
       description,
       durationDays,
-      priceCents,
+      priceJod != null ? Number(priceJod) : null,
       Boolean(requiresCompanyVisit),
       Boolean(isActive),
       Boolean(isVisible),
@@ -79,7 +89,23 @@ async function createPlan({ actorUserId, payload }) {
     ],
   );
 
-  return mapPlan(rows[0]);
+  const plan = mapPlan(rows[0]);
+  await safeNotify(() =>
+    notificationEventsService.notifySuperAdmins({
+      recipientRole: "super_admin",
+      actorUserId: actorUserId ? Number(actorUserId) : null,
+      type: "plan.created",
+      title: "تم إنشاء باقة جديدة",
+      message: `تم إنشاء باقة جديدة: ${plan.title}.`,
+      entityType: "plan",
+      entityId: Number(plan.id),
+      link: "/dashboard/super-admin/plans",
+      priority: "medium",
+      dedupeKey: `plan_created_${plan.id}`,
+      metadata: { planId: plan.id },
+    }),
+  );
+  return plan;
 }
 
 async function updatePlan({ actorUserId, id, patch }) {
@@ -96,7 +122,7 @@ async function updatePlan({ actorUserId, id, patch }) {
   if (patch.title !== undefined) set("title", patch.title);
   if (patch.description !== undefined) set("description", patch.description);
   if (patch.durationDays !== undefined) set("duration_days", patch.durationDays);
-  if (patch.priceCents !== undefined) set("price_cents", patch.priceCents);
+  if (patch.priceJod !== undefined) set("price_jod", patch.priceJod == null ? null : Number(patch.priceJod));
   if (patch.requiresCompanyVisit !== undefined) set("requires_company_visit", Boolean(patch.requiresCompanyVisit));
   if (patch.isActive !== undefined) set("is_active", Boolean(patch.isActive));
   if (patch.isVisible !== undefined) set("is_visible", Boolean(patch.isVisible));
@@ -120,10 +146,27 @@ async function updatePlan({ actorUserId, id, patch }) {
     err.statusCode = 404;
     throw err;
   }
-  return mapPlan(rows[0]);
+  const plan = mapPlan(rows[0]);
+  await safeNotify(() =>
+    notificationEventsService.notifySuperAdmins({
+      recipientRole: "super_admin",
+      actorUserId: actorUserId ? Number(actorUserId) : null,
+      type: "plan.updated",
+      title: "تم تحديث باقة",
+      message: `تم تحديث إعدادات باقة: ${plan.title}.`,
+      entityType: "plan",
+      entityId: Number(plan.id),
+      link: "/dashboard/super-admin/plans",
+      priority: "medium",
+      dedupeKey: `plan_updated_${plan.id}_${String(plan.updatedAt)}`,
+      metadata: { planId: plan.id },
+    }),
+  );
+  return plan;
 }
 
 async function softDeletePlan({ actorUserId, id }) {
+  const { rows: planRows } = await pool.query(`SELECT id, title FROM plans WHERE id = $1 LIMIT 1`, [Number(id)]);
   const { rowCount } = await pool.query(
     `UPDATE plans
      SET deleted_at = NOW(), updated_by_user_id = $2, updated_at = NOW()
@@ -135,6 +178,22 @@ async function softDeletePlan({ actorUserId, id }) {
     err.statusCode = 404;
     throw err;
   }
+  const plan = planRows[0];
+  await safeNotify(() =>
+    notificationEventsService.notifySuperAdmins({
+      recipientRole: "super_admin",
+      actorUserId: actorUserId ? Number(actorUserId) : null,
+      type: "plan.deleted",
+      title: "تم حذف باقة",
+      message: `تم حذف الباقة: ${plan?.title || `#${id}`}.`,
+      entityType: "plan",
+      entityId: Number(id),
+      link: "/dashboard/super-admin/plans",
+      priority: "high",
+      dedupeKey: `plan_deleted_${id}`,
+      metadata: { planId: String(id) },
+    }),
+  );
   return true;
 }
 

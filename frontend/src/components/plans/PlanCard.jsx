@@ -2,13 +2,13 @@ import { useNavigate } from "react-router-dom";
 import Button from "../ui/Button";
 import { useAuth } from "../../context/useAuth";
 
-function formatPriceSar(priceCents) {
-  if (priceCents === null || priceCents === undefined) return null;
-  const n = Number(priceCents);
+function formatPriceJod(priceJod) {
+  if (priceJod === null || priceJod === undefined) return null;
+  const n = Number(priceJod);
   if (!Number.isFinite(n)) return null;
   if (n === 0) return "مجانية";
   // Force English digits everywhere in UI
-  return `${(n / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })} ر.س`;
+  return `${n.toLocaleString("en-US", { maximumFractionDigits: 2 })} د.أ`;
 }
 
 function deriveFeatures(plan) {
@@ -46,7 +46,7 @@ const PlanCard = ({ plan, featured = false, onCta, hasBlockingSubscription = fal
   const isLoggedNonFreelancer = Boolean(user) && !isFreelancer;
   const isBlockedBySubscription = Boolean(user) && isFreelancer && hasBlockingSubscription;
 
-  const price = formatPriceSar(plan.priceCents);
+  const price = formatPriceJod(plan?.priceJod);
   const features = deriveFeatures(plan);
   const planTitle = plan.title || plan.name || "—";
 

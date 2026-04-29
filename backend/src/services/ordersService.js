@@ -1,10 +1,22 @@
 const path = require("node:path");
 const crypto = require("node:crypto");
-const fs = require("node:fs");
 const fsp = require("node:fs/promises");
 const { pool } = require("../config/db");
 const subscriptionsService = require("./subscriptionsService");
+const notificationService = require("./notificationService");
+const notificationEventsService = require("./notificationEventsService");
 const { baseUploadsDir } = require("../middleware/ordersUploadMiddleware");
+const { uploadBuffer, destroyByPublicId } = require("./cloudinaryUploadService");
+const fakeOrdersService = require("./fakeOrdersService");
+
+async function safeNotify(run) {
+  try {
+    await run();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[notifications]", err?.message || err);
+  }
+}
 
 /** Multer/busboy often stores UTF-8 filenames as latin1 bytes; fix for DB display and downloads. */
 function decodeMultipartOriginalName(name) {
@@ -23,6 +35,9 @@ function decodeMultipartOriginalName(name) {
 const ORDER_STATUSES = Object.freeze({
   DRAFT: "draft",
   PUBLISHED: "published",
+  PENDING_PAYMENT: "pending_payment",
+  OPEN_FOR_BIDS: "open_for_bids",
+  AWAITING_PAYMENT_AFTER_BID_SELECTION: "awaiting_payment_after_bid_selection",
   ASSIGNED: "assigned",
   IN_PROGRESS: "in_progress",
   PENDING_CLIENT_REVIEW: "pending_client_review",
@@ -32,9 +47,14 @@ const ORDER_STATUSES = Object.freeze({
 
 /** Pool listing: internal admin jobs + client-published jobs */
 const POOL_ORDER_SOURCE_TYPES = Object.freeze(["admin_created", "super_admin_created", "client_created"]);
+const CLAIMABLE_POOL_ORDER_STATUSES = Object.freeze(["published", "open_for_freelancers"]);
 
 function isPoolListedSourceType(sourceType) {
   return POOL_ORDER_SOURCE_TYPES.includes(sourceType);
+}
+
+function isClaimablePoolOrderStatus(status) {
+  return CLAIMABLE_POOL_ORDER_STATUSES.includes(String(status || ""));
 }
 
 function hasPricedBiddingRow(row) {
@@ -90,6 +110,12 @@ async function generateUniqueOrderCode(client) {
 
 function mapOrderBase(row) {
   if (!row) return null;
+  const revisionNote = row.client_revision_note || null;
+  const revisionRequestedBy = revisionNote
+    ? ["admin_created", "super_admin_created"].includes(String(row.source_type || ""))
+      ? "admin"
+      : "client"
+    : null;
   return {
     id: String(row.id),
     orderCode: row.order_code,
@@ -102,7 +128,7 @@ function mapOrderBase(row) {
     extraCategoryDetails: row.extra_category_details && typeof row.extra_category_details === "object" ? row.extra_category_details : {},
     projectType: row.project_type,
     budget: row.budget != null ? Number(row.budget) : null,
-    currencyCode: row.currency_code || null,
+    currencyCode: row.currency_code || "JOD",
     bidBudgetMin: row.bid_budget_min != null ? Number(row.bid_budget_min) : null,
     bidBudgetMax: row.bid_budget_max != null ? Number(row.bid_budget_max) : null,
     durationValue: row.duration_value,
@@ -110,25 +136,58 @@ function mapOrderBase(row) {
     createdByUserId: String(row.created_by_user_id),
     sourceType: row.source_type,
     assignedFreelancerId: row.assigned_freelancer_id ? String(row.assigned_freelancer_id) : null,
+    isDirectAdminAssignment: Boolean(row.is_direct_admin_assignment),
     isArchived: Boolean(row.is_archived),
     isPublished: row.is_published,
     isOpenForPool: row.is_open_for_pool,
     paymentRequired: row.payment_required,
     paymentStatus: row.payment_status,
+    paymentAmount: row.payment_amount != null ? Number(row.payment_amount) : null,
+    paymentCurrency: row.payment_currency || null,
     orderStatus: row.order_status,
+    isFake: Boolean(row.is_fake),
+    fakeRoundId: row.fake_round_id ? String(row.fake_round_id) : null,
+    fakeExpiresAt: row.fake_expires_at || null,
+    fakeStatus: row.fake_status || null,
+    showFakeBadge: Boolean(row.show_fake_badge),
     receivedAt: row.received_at || null,
     takenAt: row.taken_at || null,
     acceptedAt: row.accepted_at || null,
     startedAt: row.started_at || null,
+    submittedAt: row.submitted_at || null,
     dueAt: row.due_at || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    clientRevisionNote: row.client_revision_note || null,
+    clientRevisionNote: revisionNote,
+    revisionRequestedBy,
+    revisionRequestedAt: revisionNote ? row.updated_at || null : null,
+    revisionDeadlineAt: revisionNote ? row.due_at || null : null,
   };
 }
 
 async function isInternalPoolOrder(row) {
   return ["admin_created", "super_admin_created"].includes(row?.source_type);
+}
+
+async function getUserIdentitySnapshot(userId, clientMaybe) {
+  const uid = Number(userId);
+  if (!Number.isInteger(uid) || uid < 1) return null;
+  const runner = clientMaybe || pool;
+  const { rows } = await runner.query(
+    `SELECT id, account_id, first_name, father_name, family_name
+     FROM users
+     WHERE id = $1
+     LIMIT 1`,
+    [uid],
+  );
+  const u = rows[0];
+  if (!u) return null;
+  const fullName = [u.first_name, u.father_name, u.family_name].filter(Boolean).join(" ").trim();
+  return {
+    id: String(u.id),
+    accountId: u.account_id || null,
+    fullName: fullName || null,
+  };
 }
 
 async function assertCategoryChain({ categoryId, subcategoryId, subSubcategoryId }, client) {
@@ -277,28 +336,73 @@ async function attachFiles({ orderId, actorUserId, files, defaultPurpose = "brie
   const rowsOut = [];
   for (const f of Array.isArray(files) ? files : []) {
     const relativePath = f.relativePath;
-    const urlPath = f.urlPath;
+    const storedPath =
+      (relativePath && String(relativePath).trim()) ||
+      (f.publicId && String(f.publicId).trim()) ||
+      (f.urlPath && String(f.urlPath).trim()) ||
+      "cloudinary_asset";
+    const urlPath = f.urlPath || f.secureUrl || null;
     const purpose = f.purpose || defaultPurpose;
     const originalName = decodeMultipartOriginalName(f.originalname);
     const { rows } = await runner.query(
       `INSERT INTO order_files (
-        order_id, file_path, file_url, original_name, mime_type, size_bytes, uploaded_by_user_id, purpose
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+        order_id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_by_user_id, purpose, assignment_id, revision_id
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
       RETURNING *`,
       [
         Number(orderId),
-        relativePath,
+        storedPath,
         urlPath,
+        f.secureUrl || urlPath,
+        f.publicId || null,
         originalName,
         f.mimetype,
         Number(f.size || 0),
         actorUserId ? Number(actorUserId) : null,
         purpose,
+        f.assignmentId ? Number(f.assignmentId) : null,
+        f.revisionId ? Number(f.revisionId) : null,
       ],
     );
     rowsOut.push(rows[0]);
   }
   return rowsOut;
+}
+
+async function uploadFilesToCloudinary({ orderId, files, purpose }) {
+  const input = Array.isArray(files) ? files : [];
+  const uploaded = [];
+  try {
+    for (const file of input) {
+      // eslint-disable-next-line no-await-in-loop
+      const out = await uploadBuffer({
+        buffer: file.buffer,
+        mimetype: file.mimetype,
+        originalname: file.originalname,
+        orderId,
+        purpose,
+      });
+      uploaded.push({
+        ...file,
+        purpose,
+        relativePath: null,
+        urlPath: out.secureUrl,
+        secureUrl: out.secureUrl,
+        publicId: out.publicId,
+        size: out.bytes || file.size,
+      });
+    }
+    return uploaded;
+  } catch (e) {
+    for (const f of uploaded) {
+      // eslint-disable-next-line no-await-in-loop
+      await destroyByPublicId(f.publicId);
+    }
+    const err = new Error("فشل رفع الملفات، يرجى المحاولة مرة أخرى.");
+    err.statusCode = 500;
+    err.cause = e;
+    throw err;
+  }
 }
 
 async function getOrderById(orderId, client) {
@@ -317,10 +421,20 @@ async function getOrderById(orderId, client) {
   );
 
   const { rows: fileRows } = await runner.query(
-    `SELECT id, file_path, file_url, original_name, mime_type, size_bytes, uploaded_at, purpose
+    `SELECT id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_at, purpose
      FROM order_files
      WHERE order_id = $1
      ORDER BY id ASC`,
+    [Number(orderId)],
+  );
+
+  const { rows: orderBidRows } = await runner.query(
+    `SELECT b.id, b.amount, b.status, b.created_at, b.order_id,
+            u.id AS user_id, u.first_name, u.father_name, u.family_name, u.email
+     FROM order_freelancer_bids b
+     JOIN users u ON u.id = b.freelancer_user_id
+     WHERE b.order_id = $1
+     ORDER BY b.created_at DESC, b.id DESC`,
     [Number(orderId)],
   );
 
@@ -422,12 +536,28 @@ async function getOrderById(orderId, client) {
       id: String(r.id),
       orderId: String(orderId),
       filePath: r.file_path,
-      fileUrl: r.file_url,
+      fileUrl: r.secure_url || r.file_url,
+      secureUrl: r.secure_url || null,
+      publicId: r.public_id || null,
       originalName: decodeMultipartOriginalName(r.original_name) || r.original_name,
       mimeType: r.mime_type,
       sizeBytes: Number(r.size_bytes),
       uploadedAt: r.uploaded_at,
       purpose: r.purpose || "brief",
+    })),
+    bidsCount: orderBidRows.length,
+    bidUsers: orderBidRows.map((r) => ({
+      bidId: String(r.id),
+      amount: Number(r.amount),
+      status: r.status,
+      createdAt: r.created_at,
+      user: {
+        id: String(r.user_id),
+        firstName: r.first_name || "",
+        fatherName: r.father_name || "",
+        familyName: r.family_name || "",
+        email: r.email || "",
+      },
     })),
   };
 }
@@ -437,7 +567,8 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
   try {
     await client.query("BEGIN");
 
-    const sourceType = actorRole === "super_admin" ? "super_admin_created" : "admin_created";
+    const createdByRole = actorRole === "super_admin" ? "super_admin" : "admin";
+    const sourceType = createdByRole === "super_admin" ? "super_admin_created" : "admin_created";
     const assignedFreelancerId = payload.assignedFreelancerId ? Number(payload.assignedFreelancerId) : null;
     const wantsArchive = Boolean(payload.archive);
 
@@ -475,7 +606,7 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
     const shouldArchive = !isAssigned && wantsArchive;
     const isPublished = shouldArchive ? false : true;
     const isOpenForPool = isAssigned ? false : !shouldArchive;
-    const orderStatus = isAssigned ? ORDER_STATUSES.ASSIGNED : shouldArchive ? ORDER_STATUSES.DRAFT : ORDER_STATUSES.PUBLISHED;
+    const orderStatus = isAssigned ? ORDER_STATUSES.IN_PROGRESS : shouldArchive ? ORDER_STATUSES.DRAFT : ORDER_STATUSES.PUBLISHED;
 
     const extraCategoryIds = Array.isArray(payload.extraCategoryIds)
       ? payload.extraCategoryIds.map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0)
@@ -500,22 +631,17 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
     let bidMinIns = null;
     let bidMaxIns = null;
     let budgetIns = null;
-    let currencyIns = null;
+    let currencyIns = "JOD";
     if (!isBidding) {
       budgetIns = Number(payload.budget);
-      currencyIns = payload.currencyCode ? String(payload.currencyCode).trim().toUpperCase() : null;
+      currencyIns = "JOD";
     } else {
       const bm = payload.bidBudgetMin != null ? Number(payload.bidBudgetMin) : null;
       const bx = payload.bidBudgetMax != null ? Number(payload.bidBudgetMax) : null;
       if (Number.isFinite(bm) && Number.isFinite(bx) && bm > 0 && bx >= bm) {
         bidMinIns = bm;
         bidMaxIns = bx;
-        currencyIns = payload.currencyCode ? String(payload.currencyCode).trim().toUpperCase() : null;
-        if (!currencyIns || currencyIns.length !== 3) {
-          const err = new Error("currencyCode is required for priced bidding.");
-          err.statusCode = 400;
-          throw err;
-        }
+        currencyIns = "JOD";
       }
     }
 
@@ -527,8 +653,9 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         extra_category_ids,
         extra_category_details,
         project_type, budget, currency_code, duration_value, duration_unit,
-        created_by_user_id, source_type,
+        created_by_user_id, created_by_role, source_type,
         assigned_freelancer_id,
+        is_direct_admin_assignment,
         received_at, started_at, due_at,
         is_published, is_open_for_pool,
         is_archived,
@@ -542,14 +669,15 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         $7,
         $8,
         $9,$10,$11,$12,$13,
-        $14,$15,
-        $16,
-        $17,$18,$19,
-        $20,$21,
-        $22,
+        $14,$15,$16,
+        $17,
+        $18,
+        $19,$20,$21,
+        $22,$23,
+        $24,
         FALSE,'not_required',
-        $23,
-        $24, $25
+        $25,
+        $26, $27
       )
       RETURNING *`,
       [
@@ -567,8 +695,10 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         Number(payload.durationValue),
         payload.durationUnit,
         Number(actorUserId),
+        createdByRole,
         sourceType,
         assignedFreelancerId,
+        isAssigned,
         receivedAt,
         startedAt,
         dueAt,
@@ -583,41 +713,58 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
 
     const orderRow = rows[0];
 
-    if (assignedFreelancerId) {
-      // A directly assigned internal order is considered the freelancer's first real order if they haven't started yet.
-      await subscriptionsService.activateCurrentSubscriptionOnFirstOrder(
-        { freelancerUserId: String(assignedFreelancerId), activatedAt: new Date() },
-        client,
-      );
-    }
-
     await upsertSkillsAndAttach({ orderId: orderRow.id, skills: payload.preferredSkills }, client);
 
-    // Persist uploaded files (move from tmp to per-order directory)
-    const orderDir = path.join(baseUploadsDir, "..", String(orderRow.id));
-    if (!fs.existsSync(orderDir)) {
-      fs.mkdirSync(orderDir, { recursive: true });
-    }
-
-    const preparedFiles = [];
-    for (const f of uploadedFiles) {
-      const srcPath = path.join(baseUploadsDir, f.filename);
-      const destPath = path.join(orderDir, f.filename);
-      try {
-        // If the file is already moved or missing, this will throw.
-        // We treat that as a hard error because DB references must be correct.
-        await fsp.rename(srcPath, destPath);
-      } catch (e) {
-        const err = new Error("File upload could not be finalized.");
-        err.statusCode = 500;
-        err.cause = e;
-        throw err;
-      }
-
-      const relativePath = path.join("orders", String(orderRow.id), f.filename).replace(/\\/g, "/");
-      preparedFiles.push({ ...f, relativePath, urlPath: `/uploads/${relativePath}` });
-    }
+    const preparedFiles = await uploadFilesToCloudinary({
+      orderId: orderRow.id,
+      files: uploadedFiles,
+      purpose: "brief",
+    });
     await attachFiles({ orderId: orderRow.id, actorUserId, files: preparedFiles }, client);
+
+    if (assignedFreelancerId) {
+      await safeNotify(() =>
+        notificationService.createIfNotExists(
+          {
+            recipientUserId: Number(assignedFreelancerId),
+            recipientRole: "freelancer",
+            actorUserId: Number(actorUserId),
+            type: "order.freelancer.assigned",
+            title: "تم إسناد مشروع لك",
+            message: "تم إسناد مشروع جديد لك مباشرة من الإدارة.",
+            entityType: "order",
+            entityId: Number(orderRow.id),
+            link: `/dashboard/freelancer/my-orders/${encodeURIComponent(String(orderRow.id))}`,
+            priority: "high",
+            metadata: { orderId: String(orderRow.id), source: "admin_direct_assignment" },
+          },
+          `freelancer_assigned_${String(orderRow.id)}`,
+          client,
+        ),
+      );
+    }
+    if (!assignedFreelancerId && !shouldArchive) {
+      await safeNotify(async () => {
+        const freelancerIds = await notificationEventsService.getRoleUserIds(["freelancer"], client);
+        await notificationEventsService.notifyUsers(
+          {
+            userIds: freelancerIds,
+            recipientRole: "freelancer",
+            actorUserId: Number(actorUserId),
+            type: "order.created",
+            title: "مشروع جديد متاح في الطلبات",
+            message: "تم نشر مشروع جديد ويمكنك التقديم عليه.",
+            entityType: "order",
+            entityId: Number(orderRow.id),
+            link: `/dashboard/freelancer/orders/${encodeURIComponent(String(orderRow.id))}`,
+            priority: "medium",
+            metadata: { orderId: String(orderRow.id), sourceType: sourceType },
+            dedupeKey: `order_created_pool_${String(orderRow.id)}`,
+          },
+          client,
+        );
+      });
+    }
 
     await client.query("COMMIT");
     return await getOrderById(orderRow.id);
@@ -654,13 +801,28 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
     const effectiveSubcategoryId =
       payload.subcategoryId || (chainResult && typeof chainResult === "object" ? chainResult.inferredSubcategoryId : null);
 
-    const orderCode = await generateUniqueOrderCode(client);
+    let orderCode = String(payload.orderCode || "").trim();
+    if (!orderCode) {
+      orderCode = await generateUniqueOrderCode(client);
+    }
+    const { rowCount: codeExists } = await client.query(`SELECT 1 FROM orders WHERE order_code = $1`, [orderCode]);
+    if (codeExists > 0) {
+      const err = new Error("Order code already exists.");
+      err.statusCode = 409;
+      throw err;
+    }
 
     const isFixed = payload.projectType === "fixed";
     const budget = isFixed ? Number(payload.budget) : null;
-    const currencyCode = String(payload.currencyCode || "").trim().toUpperCase();
+    const currencyCode = "JOD";
     const bidMin = !isFixed && payload.bidBudgetMin != null ? Number(payload.bidBudgetMin) : null;
     const bidMax = !isFixed && payload.bidBudgetMax != null ? Number(payload.bidBudgetMax) : null;
+
+    const initialIsPublished = isFixed ? false : true;
+    const initialIsOpenForPool = isFixed ? false : true;
+    const initialPaymentRequired = isFixed ? true : false;
+    const initialPaymentStatus = isFixed ? "pending" : "unpaid";
+    const initialOrderStatus = isFixed ? ORDER_STATUSES.PENDING_PAYMENT : ORDER_STATUSES.OPEN_FOR_BIDS;
 
     const { rows } = await client.query(
       `INSERT INTO orders (
@@ -672,7 +834,7 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
         project_type, budget, currency_code,
         bid_budget_min, bid_budget_max,
         duration_value, duration_unit,
-        created_by_user_id, source_type,
+        created_by_user_id, created_by_role, source_type,
         assigned_freelancer_id,
         received_at, started_at, due_at,
         is_published, is_open_for_pool,
@@ -688,13 +850,13 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
         $7,$8,$9,
         $10,$11,
         $12,$13,
-        $14,'client_created',
+        $14,'client','client_created',
         NULL,
         NULL, NULL, NULL,
-        TRUE, TRUE,
+        $15, $16,
         FALSE,
-        FALSE, 'not_required',
-        'published'
+        $17, $18,
+        $19
       )
       RETURNING *`,
       [
@@ -712,26 +874,61 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
         Number(payload.durationValue),
         payload.durationUnit,
         Number(clientUserId),
+        initialIsPublished,
+        initialIsOpenForPool,
+        initialPaymentRequired,
+        initialPaymentStatus,
+        initialOrderStatus,
       ],
     );
 
     const orderRow = rows[0];
+    await safeNotify(() =>
+      notificationEventsService.notifyOrderOwner(
+        {
+          order: orderRow,
+          actorUserId: Number(clientUserId),
+          type: "order.created",
+          title: "تم إنشاء الطلب",
+          message: isFixed ? "تم إنشاء طلبك وبانتظار إتمام الدفع." : "تم إنشاء طلب مزايدة جديد وفتحه للمستقلين.",
+          priority: "high",
+          dedupeKey: `order_created_${String(orderRow.id)}`,
+          metadata: { orderId: String(orderRow.id), projectType: payload.projectType },
+        },
+        client,
+      ),
+    );
+    if (!isFixed) {
+      await safeNotify(async () => {
+        const freelancerIds = await notificationEventsService.getRoleUserIds(["freelancer"], client);
+        await notificationEventsService.notifyUsers(
+          {
+            userIds: freelancerIds,
+            recipientRole: "freelancer",
+            actorUserId: Number(clientUserId),
+            type: "order.created",
+            title: "مشروع مزايدة جديد",
+            message: "تم نشر مشروع جديد بنظام المزايدة.",
+            entityType: "order",
+            entityId: Number(orderRow.id),
+            link: `/dashboard/freelancer/orders/${encodeURIComponent(String(orderRow.id))}`,
+            priority: "medium",
+            metadata: { orderId: String(orderRow.id), projectType: "bidding" },
+            dedupeKey: `order_bidding_created_${String(orderRow.id)}`,
+          },
+          client,
+        );
+      });
+    }
     await upsertSkillsAndAttach({ orderId: orderRow.id, skills: payload.preferredSkills }, client);
 
     const files = Array.isArray(uploadedFiles) ? uploadedFiles : [];
     if (files.length) {
-      const orderDir = path.join(baseUploadsDir, "..", String(orderRow.id));
-      if (!fs.existsSync(orderDir)) {
-        fs.mkdirSync(orderDir, { recursive: true });
-      }
-      const preparedFiles = [];
-      for (const f of files) {
-        const srcPath = path.join(baseUploadsDir, f.filename);
-        const destPath = path.join(orderDir, f.filename);
-        await fsp.rename(srcPath, destPath);
-        const relativePath = path.join("orders", String(orderRow.id), f.filename).replace(/\\/g, "/");
-        preparedFiles.push({ ...f, relativePath, urlPath: `/uploads/${relativePath}` });
-      }
+      const preparedFiles = await uploadFilesToCloudinary({
+        orderId: orderRow.id,
+        files,
+        purpose: "brief",
+      });
       await attachFiles({ orderId: orderRow.id, actorUserId: clientUserId, files: preparedFiles }, client);
     }
 
@@ -745,6 +942,87 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
   }
 }
 
+async function purgeClientUnpaidFixedOrderDraft({ clientUserId, orderId }, clientMaybe) {
+  const runner = clientMaybe || (await pool.connect());
+  const ownsClient = !clientMaybe;
+  try {
+    if (ownsClient) await runner.query("BEGIN");
+    const uid = Number(clientUserId);
+    const oid = Number(orderId);
+    const { rows } = await runner.query(
+      `SELECT id, created_by_user_id, source_type, project_type, order_status, payment_status
+       FROM orders
+       WHERE id = $1
+       FOR UPDATE`,
+      [oid],
+    );
+    const order = rows[0];
+    if (!order) {
+      const err = new Error("Order not found.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (Number(order.created_by_user_id) !== uid || order.source_type !== "client_created") {
+      const err = new Error("You cannot cancel this order payment.");
+      err.statusCode = 403;
+      throw err;
+    }
+    if (order.project_type !== "fixed") {
+      const err = new Error("This order does not use fixed checkout.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (String(order.payment_status || "") === "paid") {
+      const err = new Error("Order payment is already completed.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (String(order.order_status || "") !== ORDER_STATUSES.PENDING_PAYMENT) {
+      const err = new Error("Order is not in pending payment state.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const { rows: fileRows } = await runner.query(`SELECT file_path, public_id FROM order_files WHERE order_id = $1`, [oid]);
+    await runner.query(`DELETE FROM order_claims WHERE order_id = $1`, [oid]);
+    await runner.query(`DELETE FROM order_freelancer_bids WHERE order_id = $1`, [oid]);
+    await runner.query(`DELETE FROM client_order_payments WHERE order_id = $1`, [oid]);
+    await runner.query(`DELETE FROM order_skills WHERE order_id = $1`, [oid]);
+    await runner.query(`DELETE FROM order_files WHERE order_id = $1`, [oid]);
+    await runner.query(`DELETE FROM orders WHERE id = $1`, [oid]);
+
+    if (ownsClient) await runner.query("COMMIT");
+
+    for (const f of fileRows || []) {
+      if (f.public_id) {
+        // eslint-disable-next-line no-await-in-loop
+        await destroyByPublicId(f.public_id);
+      }
+      const rel = String(f.file_path || "").replace(/^\/+/, "");
+      if (!rel) continue;
+      const abs = path.join(baseUploadsDir, "..", rel);
+      try {
+        // Best-effort cleanup; DB deletion is authoritative.
+        // eslint-disable-next-line no-await-in-loop
+        await fsp.unlink(abs);
+      } catch {
+        // ignore
+      }
+    }
+    try {
+      await fsp.rm(path.join(baseUploadsDir, "..", String(oid)), { recursive: true, force: true });
+    } catch {
+      // ignore
+    }
+    return { removed: true };
+  } catch (err) {
+    if (ownsClient) await runner.query("ROLLBACK");
+    throw err;
+  } finally {
+    if (ownsClient) runner.release();
+  }
+}
+
 async function listAdminInternalOrders({ limit = 50, offset = 0 } = {}) {
   const lim = Math.min(Math.max(Number(limit) || 50, 1), 200);
   const off = Math.max(Number(offset) || 0, 0);
@@ -752,6 +1030,7 @@ async function listAdminInternalOrders({ limit = 50, offset = 0 } = {}) {
     `SELECT id
      FROM orders
      WHERE source_type IN ('admin_created','super_admin_created')
+       AND COALESCE(is_fake, FALSE) = FALSE
      ORDER BY id DESC
      LIMIT $1 OFFSET $2`,
     [lim, off],
@@ -779,6 +1058,10 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
      FROM orders
      WHERE created_by_user_id = $1
        AND source_type = 'client_created'
+       AND (
+         order_status <> 'pending_payment'
+         OR payment_status IN ('paid', 'skipped_by_admin')
+       )
      ORDER BY id DESC
      LIMIT $2 OFFSET $3`,
     [uid, lim, off],
@@ -797,13 +1080,23 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
       [orderIds],
     ),
     pool.query(
-      `SELECT id, order_id, file_path, file_url, original_name, mime_type, size_bytes, uploaded_at, purpose
+      `SELECT id, order_id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_at, purpose
        FROM order_files
        WHERE order_id = ANY($1::bigint[])
        ORDER BY order_id, id ASC`,
       [orderIds],
     ),
   ]);
+
+  const { rows: bidUserRowsAll } = await pool.query(
+    `SELECT b.id, b.order_id, b.amount, b.status, b.created_at,
+            u.id AS user_id, u.first_name, u.father_name, u.family_name, u.email
+     FROM order_freelancer_bids b
+     JOIN users u ON u.id = b.freelancer_user_id
+     WHERE b.order_id = ANY($1::bigint[])
+     ORDER BY b.order_id, b.created_at DESC, b.id DESC`,
+    [orderIds],
+  );
 
   const skillsByOrder = new Map();
   for (const sr of skillRowsAll) {
@@ -820,12 +1113,33 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
       id: String(fr.id),
       orderId: oid,
       filePath: fr.file_path,
-      fileUrl: fr.file_url,
+      fileUrl: fr.secure_url || fr.file_url,
+      secureUrl: fr.secure_url || null,
+      publicId: fr.public_id || null,
       originalName: decodeMultipartOriginalName(fr.original_name) || fr.original_name,
       mimeType: fr.mime_type,
       sizeBytes: Number(fr.size_bytes),
       uploadedAt: fr.uploaded_at,
       purpose: fr.purpose || "brief",
+    });
+  }
+
+  const bidUsersByOrder = new Map();
+  for (const br of bidUserRowsAll) {
+    const oid = String(br.order_id);
+    if (!bidUsersByOrder.has(oid)) bidUsersByOrder.set(oid, []);
+    bidUsersByOrder.get(oid).push({
+      bidId: String(br.id),
+      amount: Number(br.amount),
+      status: br.status,
+      createdAt: br.created_at,
+      user: {
+        id: String(br.user_id),
+        firstName: br.first_name || "",
+        fatherName: br.father_name || "",
+        familyName: br.family_name || "",
+        email: br.email || "",
+      },
     });
   }
 
@@ -941,6 +1255,7 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
       extraCategories,
       preferredSkills: skillsByOrder.get(oid) || [],
       files: filesByOrder.get(oid) || [],
+      bidUsers: bidUsersByOrder.get(oid) || [],
     });
   }
 
@@ -959,27 +1274,154 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
   return out;
 }
 
-async function listPoolOrders({ limit = 50, offset = 0 } = {}) {
-  const lim = Math.min(Math.max(Number(limit) || 50, 1), 200);
-  const off = Math.max(Number(offset) || 0, 0);
-  const { rows } = await pool.query(
-    `SELECT id
-     FROM orders
-     WHERE is_published = TRUE
-       AND is_open_for_pool = TRUE
-       AND assigned_freelancer_id IS NULL
-       AND order_status = 'published'
-       AND source_type IN ('admin_created','super_admin_created','client_created')
-     ORDER BY id DESC
-     LIMIT $1 OFFSET $2`,
-    [lim, off],
-  );
-  const out = [];
-  for (const r of rows) {
-    const o = await getOrderById(r.id);
-    if (o) out.push(o);
+function parsePageLimitOffset({ page, limit, offset, defaultLimit = 12, maxLimit = 200 } = {}) {
+  const lim = Math.min(Math.max(Number(limit) || defaultLimit, 1), maxLimit);
+  const off = Number.isFinite(Number(offset)) ? Math.max(Number(offset), 0) : Math.max(((Number(page) || 1) - 1) * lim, 0);
+  const currentPage = Math.floor(off / lim) + 1;
+  return { limit: lim, offset: off, page: currentPage };
+}
+
+function mapListOrderRow(row) {
+  const base = mapOrderBase(row);
+  if (!base) return null;
+  const category = row.category_id
+    ? { id: String(row.category_id), slug: row.category_slug || null, name: row.category_name || null }
+    : null;
+  const subSubcategory = row.sub_subcategory_id
+    ? {
+        id: String(row.sub_subcategory_id),
+        slug: row.sub_subcategory_slug || null,
+        name: row.sub_subcategory_name || null,
+        subcategoryId: row.sub_subcategory_parent_id ? String(row.sub_subcategory_parent_id) : null,
+      }
+    : null;
+
+  const out = {
+    ...base,
+    category,
+    subSubcategory,
+    filesCount: Number(row.files_count || 0),
+    applicantsCount: Number(row.applicants_count || 0),
+    files: [],
+  };
+  if (row.my_claim_id) {
+    out.myClaim = { id: String(row.my_claim_id), status: row.my_claim_status };
+  }
+  if (row.my_bid_id) {
+    out.myBid = { id: String(row.my_bid_id), amount: Number(row.my_bid_amount), status: row.my_bid_status };
   }
   return out;
+}
+
+function buildOrderByClause(sort, alias) {
+  const key = String(sort || "newest").trim().toLowerCase();
+  if (key === "oldest") return `${alias}.created_at ASC, ${alias}.id ASC`;
+  if (key === "price_high") return `COALESCE(${alias}.budget, 0) DESC, ${alias}.created_at DESC, ${alias}.id DESC`;
+  if (key === "price_low") return `COALESCE(${alias}.budget, 0) ASC, ${alias}.created_at DESC, ${alias}.id DESC`;
+  return `${alias}.created_at DESC, ${alias}.id DESC`;
+}
+
+function parseIdCsv(input) {
+  const s = String(input || "").trim();
+  if (!s) return [];
+  return [...new Set(s.split(",").map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0))];
+}
+
+async function listPoolOrders({
+  page = 1,
+  limit = 12,
+  offset = null,
+  status = null,
+  projectType = null,
+  categoryId = null,
+  subSubCategoryIds = "",
+  sort = "newest",
+  q = "",
+} = {}) {
+  const pg = parsePageLimitOffset({ page, limit, offset, defaultLimit: 12 });
+  const params = [];
+  const where = [
+    `o.is_published = TRUE`,
+    `o.is_open_for_pool = TRUE`,
+    `o.assigned_freelancer_id IS NULL`,
+    `o.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')`,
+    `o.source_type IN ('admin_created','super_admin_created','client_created')`,
+    `o.is_fake = FALSE`,
+  ];
+  if (status && ["published", "open_for_freelancers", "open_for_bids"].includes(String(status))) {
+    params.push(String(status));
+    where.push(`o.order_status = $${params.length}`);
+  }
+  if (projectType) {
+    params.push(String(projectType));
+    where.push(`o.project_type = $${params.length}`);
+  }
+  if (categoryId) {
+    params.push(Number(categoryId));
+    where.push(`o.category_id = $${params.length}`);
+  }
+  const subSubIds = parseIdCsv(subSubCategoryIds);
+  if (subSubIds.length) {
+    params.push(subSubIds);
+    where.push(`o.sub_subcategory_id = ANY($${params.length}::int[])`);
+  }
+  if (String(q || "").trim()) {
+    params.push(`%${String(q).trim()}%`);
+    where.push(`(o.order_code ILIKE $${params.length} OR o.title ILIKE $${params.length})`);
+  }
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const orderBySql = buildOrderByClause(sort, "o");
+
+  const countSql = `SELECT COUNT(*)::int AS total FROM orders o ${whereSql}`;
+  const listSql = `
+    SELECT
+      o.*,
+      c.slug AS category_slug,
+      c.name AS category_name,
+      ss.slug AS sub_subcategory_slug,
+      ss.name AS sub_subcategory_name,
+      ss.subcategory_id AS sub_subcategory_parent_id,
+      COALESCE(ofc.files_count, 0)::int AS files_count,
+      COALESCE(ac.applicants_count, 0)::int AS applicants_count
+    FROM orders o
+    LEFT JOIN categories c ON c.id = o.category_id
+    LEFT JOIN sub_subcategories ss ON ss.id = o.sub_subcategory_id
+    LEFT JOIN (
+      SELECT order_id, COUNT(*)::int AS files_count
+      FROM order_files
+      GROUP BY order_id
+    ) ofc ON ofc.order_id = o.id
+    LEFT JOIN (
+      SELECT z.order_id, COUNT(DISTINCT z.freelancer_user_id)::int AS applicants_count
+      FROM (
+        SELECT order_id, freelancer_user_id
+        FROM order_claims
+        WHERE freelancer_user_id IS NOT NULL
+        UNION ALL
+        SELECT order_id, freelancer_user_id
+        FROM order_freelancer_bids
+        WHERE freelancer_user_id IS NOT NULL
+      ) z
+      GROUP BY z.order_id
+    ) ac ON ac.order_id = o.id
+    ${whereSql}
+    ORDER BY ${orderBySql}
+    LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+  `;
+  const listParams = [...params, pg.limit, pg.offset];
+
+  const [{ rows: countRows }, { rows }] = await Promise.all([pool.query(countSql, params), pool.query(listSql, listParams)]);
+  const total = Number(countRows[0]?.total || 0);
+  const orders = rows.map(mapListOrderRow).filter(Boolean);
+  return {
+    orders,
+    pagination: {
+      page: pg.page,
+      limit: pg.limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pg.limit)),
+    },
+  };
 }
 
 async function getMyOrderClaim({ orderId, freelancerUserId }, clientMaybe) {
@@ -1012,55 +1454,329 @@ async function getMyOrderBid({ orderId, freelancerUserId }, clientMaybe) {
   return { id: String(rows[0].id), amount: Number(rows[0].amount), status: rows[0].status };
 }
 
-async function listPoolOrdersForFreelancer({ freelancerUserId, limit = 50, offset = 0 } = {}) {
-  const orders = await listPoolOrders({ limit, offset });
-  const out = [];
-  for (const o of orders) {
-    const myClaim = await getMyOrderClaim({ orderId: o.id, freelancerUserId });
-    let myBid = null;
-    if (o.projectType === "bidding" && o.bidBudgetMin != null && o.bidBudgetMax != null) {
-      myBid = await getMyOrderBid({ orderId: o.id, freelancerUserId });
-    }
-    out.push({ ...o, myClaim, myBid });
+async function listPoolOrdersForFreelancer({
+  freelancerUserId,
+  page = 1,
+  limit = 12,
+  offset = null,
+  status = null,
+  projectType = null,
+  categoryId = null,
+  subSubCategoryIds = "",
+  sort = "newest",
+  q = "",
+} = {}) {
+  await fakeOrdersService.markExpiredRounds();
+  const uid = Number(freelancerUserId);
+  if (!Number.isInteger(uid) || uid < 1) {
+    return { orders: [], pagination: { page: 1, limit: Number(limit) || 12, total: 0, totalPages: 1 } };
   }
-  return out;
+  const pg = parsePageLimitOffset({ page, limit, offset, defaultLimit: 12 });
+  const filterParams = [];
+  const whereBase = [
+    `o.is_published = TRUE`,
+    `o.is_open_for_pool = TRUE`,
+    `o.assigned_freelancer_id IS NULL`,
+    `o.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')`,
+    `o.source_type IN ('admin_created','super_admin_created','client_created')`,
+    `(
+      o.is_fake = FALSE
+      OR (
+        o.is_fake = TRUE
+        AND o.fake_status = 'active'
+        AND (o.fake_expires_at IS NULL OR o.fake_expires_at > NOW())
+        AND EXISTS (
+          SELECT 1
+          FROM freelancer_subscriptions fs
+          JOIN fake_order_round_plans frp
+            ON frp.plan_id = fs.plan_id
+           AND frp.fake_round_id = o.fake_round_id
+          WHERE fs.freelancer_user_id = ${uid}
+            AND fs.is_current = TRUE
+            AND fs.status IN ('active', 'assigned_not_started')
+            AND COALESCE(fs.payment_status, 'not_required') IN ('paid', 'pending', 'not_required')
+            AND (fs.activation_status IS NULL OR fs.activation_status = 'company_approved')
+            AND (fs.expiry_date IS NULL OR fs.expiry_date > NOW())
+        )
+      )
+    )`,
+  ];
+  const whereCount = [...whereBase];
+  const whereList = [...whereBase];
+  const addFilter = (sqlExprCount, sqlExprList, value) => {
+    filterParams.push(value);
+    const idx = filterParams.length;
+    whereCount.push(sqlExprCount(idx));
+    whereList.push(sqlExprList(idx + 1)); // +1 because $1 is freelancer id in list query joins
+  };
+  if (status && ["published", "open_for_freelancers", "open_for_bids"].includes(String(status))) {
+    addFilter((i) => `o.order_status = $${i}`, (i) => `o.order_status = $${i}`, String(status));
+  }
+  if (projectType) {
+    addFilter((i) => `o.project_type = $${i}`, (i) => `o.project_type = $${i}`, String(projectType));
+  }
+  if (categoryId) {
+    addFilter((i) => `o.category_id = $${i}`, (i) => `o.category_id = $${i}`, Number(categoryId));
+  }
+  const subSubIds = parseIdCsv(subSubCategoryIds);
+  if (subSubIds.length) {
+    addFilter((i) => `o.sub_subcategory_id = ANY($${i}::int[])`, (i) => `o.sub_subcategory_id = ANY($${i}::int[])`, subSubIds);
+  }
+  if (String(q || "").trim()) {
+    const v = `%${String(q).trim()}%`;
+    addFilter((i) => `(o.order_code ILIKE $${i} OR o.title ILIKE $${i})`, (i) => `(o.order_code ILIKE $${i} OR o.title ILIKE $${i})`, v);
+  }
+  const whereSqlCount = whereCount.length ? `WHERE ${whereCount.join(" AND ")}` : "";
+  const whereSqlList = whereList.length ? `WHERE ${whereList.join(" AND ")}` : "";
+  const orderBySql = buildOrderByClause(sort, "o");
+
+  const countSql = `SELECT COUNT(*)::int AS total FROM orders o ${whereSqlCount}`;
+  const listSql = `
+    SELECT
+      o.*,
+      c.slug AS category_slug,
+      c.name AS category_name,
+      ss.slug AS sub_subcategory_slug,
+      ss.name AS sub_subcategory_name,
+      ss.subcategory_id AS sub_subcategory_parent_id,
+      COALESCE(ofc.files_count, 0)::int AS files_count,
+      COALESCE(ac.applicants_count, 0)::int AS applicants_count,
+      oc.id AS my_claim_id,
+      oc.status AS my_claim_status,
+      mb.id AS my_bid_id,
+      mb.amount AS my_bid_amount,
+      mb.status AS my_bid_status
+    FROM orders o
+    LEFT JOIN categories c ON c.id = o.category_id
+    LEFT JOIN sub_subcategories ss ON ss.id = o.sub_subcategory_id
+    LEFT JOIN (
+      SELECT order_id, COUNT(*)::int AS files_count
+      FROM order_files
+      GROUP BY order_id
+    ) ofc ON ofc.order_id = o.id
+    LEFT JOIN (
+      SELECT z.order_id, COUNT(DISTINCT z.freelancer_user_id)::int AS applicants_count
+      FROM (
+        SELECT order_id, freelancer_user_id
+        FROM order_claims
+        WHERE freelancer_user_id IS NOT NULL
+        UNION ALL
+        SELECT order_id, freelancer_user_id
+        FROM order_freelancer_bids
+        WHERE freelancer_user_id IS NOT NULL
+      ) z
+      GROUP BY z.order_id
+    ) ac ON ac.order_id = o.id
+    LEFT JOIN order_claims oc
+      ON oc.order_id = o.id
+     AND oc.freelancer_user_id = $1
+    LEFT JOIN order_freelancer_bids mb
+      ON mb.order_id = o.id
+     AND mb.freelancer_user_id = $1
+    ${whereSqlList}
+    ORDER BY ${orderBySql}
+    LIMIT $${filterParams.length + 2} OFFSET $${filterParams.length + 3}
+  `;
+  const listParams = [uid, ...filterParams, pg.limit, pg.offset];
+  const [{ rows: countRows }, { rows }] = await Promise.all([
+    pool.query(countSql, filterParams),
+    pool.query(listSql, listParams),
+  ]);
+  const total = Number(countRows[0]?.total || 0);
+  const orders = rows.map(mapListOrderRow).filter(Boolean);
+  return {
+    orders,
+    pagination: {
+      page: pg.page,
+      limit: pg.limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pg.limit)),
+    },
+  };
 }
 
-async function listFreelancerAssignedOrders({ freelancerUserId, limit = 50, offset = 0 } = {}) {
-  const lim = Math.min(Math.max(Number(limit) || 50, 1), 200);
-  const off = Math.max(Number(offset) || 0, 0);
-  const { rows } = await pool.query(
-    `SELECT id
-     FROM orders
-     WHERE assigned_freelancer_id = $1
-       AND received_at IS NOT NULL
-     ORDER BY id DESC
-     LIMIT $2 OFFSET $3`,
-    [Number(freelancerUserId), lim, off],
-  );
-  const out = [];
-  for (const r of rows) {
-    const o = await getOrderById(r.id);
-    if (o) out.push(o);
+async function listFreelancerAssignedOrders({
+  freelancerUserId,
+  page = 1,
+  limit = 12,
+  offset = null,
+  status = "all",
+  projectType = null,
+  categoryId = null,
+  subSubCategoryIds = "",
+  sort = "newest",
+  q = "",
+} = {}) {
+  const uid = Number(freelancerUserId);
+  if (!Number.isInteger(uid) || uid < 1) {
+    return {
+      orders: [],
+      pagination: { page: 1, limit: Number(limit) || 12, total: 0, totalPages: 1 },
+      counts: {
+        all: 0,
+        waitingApproval: 0,
+        revisionRequired: 0,
+        assigned: 0,
+        inProgress: 0,
+        waitingClientApproval: 0,
+        completed: 0,
+        canceled: 0,
+      },
+    };
   }
-  return out;
+  const pg = parsePageLimitOffset({ page, limit, offset, defaultLimit: 12 });
+  const normalizedStatus = String(status || "all");
+
+  const where = [];
+  const params = [uid];
+  if (projectType) {
+    params.push(String(projectType));
+    where.push(`b.project_type = $${params.length}`);
+  }
+  if (categoryId) {
+    params.push(Number(categoryId));
+    where.push(`b.category_id = $${params.length}`);
+  }
+  const subSubIds = parseIdCsv(subSubCategoryIds);
+  if (subSubIds.length) {
+    params.push(subSubIds);
+    where.push(`b.sub_subcategory_id = ANY($${params.length}::int[])`);
+  }
+  if (String(q || "").trim()) {
+    params.push(`%${String(q).trim()}%`);
+    where.push(`(b.order_code ILIKE $${params.length} OR b.title ILIKE $${params.length})`);
+  }
+  if (normalizedStatus === "pending_claim") where.push(`b.assigned_freelancer_id IS NULL AND b.my_claim_status = 'pending'`);
+  if (normalizedStatus === "revision_required") where.push(`b.client_revision_note IS NOT NULL AND b.order_status IN ('in_progress','ready_for_work','pending_client_review')`);
+  if (normalizedStatus === "assigned") where.push(`b.order_status = 'assigned'`);
+  if (normalizedStatus === "in_progress") where.push(`b.order_status IN ('in_progress','ready_for_work')`);
+  if (normalizedStatus === "pending_client_review") where.push(`b.order_status = 'pending_client_review'`);
+  if (normalizedStatus === "completed") where.push(`b.order_status = 'completed'`);
+  if (normalizedStatus === "cancelled") where.push(`(b.order_status = 'cancelled' OR b.my_claim_status = 'rejected')`);
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const orderBySql = buildOrderByClause(sort, "b");
+
+  const baseCte = `
+    WITH my_claims AS (
+      SELECT DISTINCT ON (oc.order_id)
+        oc.order_id,
+        oc.id AS my_claim_id,
+        oc.status AS my_claim_status
+      FROM order_claims oc
+      WHERE oc.freelancer_user_id = $1
+        AND oc.status IN ('pending', 'rejected')
+      ORDER BY oc.order_id, oc.updated_at DESC, oc.id DESC
+    ),
+    base AS (
+      SELECT
+        o.*,
+        mc.my_claim_id,
+        mc.my_claim_status
+      FROM orders o
+      LEFT JOIN my_claims mc ON mc.order_id = o.id
+      WHERE o.assigned_freelancer_id = $1
+         OR mc.order_id IS NOT NULL
+    )
+  `;
+
+  const countSql = `${baseCte} SELECT COUNT(*)::int AS total FROM base b ${whereSql}`;
+  const rowsSql = `
+    ${baseCte}
+    SELECT
+      b.*,
+      c.slug AS category_slug,
+      c.name AS category_name,
+      ss.slug AS sub_subcategory_slug,
+      ss.name AS sub_subcategory_name,
+      ss.subcategory_id AS sub_subcategory_parent_id,
+      COALESCE(ac.applicants_count, 0)::int AS applicants_count
+    FROM base b
+    LEFT JOIN categories c ON c.id = b.category_id
+    LEFT JOIN sub_subcategories ss ON ss.id = b.sub_subcategory_id
+    LEFT JOIN (
+      SELECT z.order_id, COUNT(DISTINCT z.freelancer_user_id)::int AS applicants_count
+      FROM (
+        SELECT order_id, freelancer_user_id
+        FROM order_claims
+        WHERE freelancer_user_id IS NOT NULL
+        UNION ALL
+        SELECT order_id, freelancer_user_id
+        FROM order_freelancer_bids
+        WHERE freelancer_user_id IS NOT NULL
+      ) z
+      GROUP BY z.order_id
+    ) ac ON ac.order_id = b.id
+    ${whereSql}
+    ORDER BY ${orderBySql}
+    LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+  `;
+  const countsSql = `
+    ${baseCte}
+    SELECT
+      COUNT(*)::int AS all_count,
+      SUM(CASE WHEN b.assigned_freelancer_id IS NULL AND b.my_claim_status = 'pending' THEN 1 ELSE 0 END)::int AS waiting_approval_count,
+      SUM(CASE WHEN b.client_revision_note IS NOT NULL AND b.order_status IN ('in_progress','ready_for_work','pending_client_review') THEN 1 ELSE 0 END)::int AS revision_required_count,
+      SUM(CASE WHEN b.order_status = 'assigned' THEN 1 ELSE 0 END)::int AS assigned_count,
+      SUM(CASE WHEN b.order_status IN ('in_progress','ready_for_work') THEN 1 ELSE 0 END)::int AS in_progress_count,
+      SUM(CASE WHEN b.order_status = 'pending_client_review' THEN 1 ELSE 0 END)::int AS waiting_client_approval_count,
+      SUM(CASE WHEN b.order_status = 'completed' THEN 1 ELSE 0 END)::int AS completed_count,
+      SUM(CASE WHEN b.order_status = 'cancelled' OR b.my_claim_status = 'rejected' THEN 1 ELSE 0 END)::int AS canceled_count
+    FROM base b
+  `;
+
+  const [countRes, rowsRes, countsRes] = await Promise.all([
+    pool.query(countSql, params),
+    pool.query(rowsSql, [...params, pg.limit, pg.offset]),
+    pool.query(countsSql, [uid]),
+  ]);
+  const total = Number(countRes.rows[0]?.total || 0);
+  const orders = rowsRes.rows.map(mapListOrderRow).filter(Boolean);
+  const c = countsRes.rows[0] || {};
+
+  return {
+    orders,
+    pagination: {
+      page: pg.page,
+      limit: pg.limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pg.limit)),
+    },
+    counts: {
+      all: Number(c.all_count || 0),
+      waitingApproval: Number(c.waiting_approval_count || 0),
+      revisionRequired: Number(c.revision_required_count || 0),
+      assigned: Number(c.assigned_count || 0),
+      inProgress: Number(c.in_progress_count || 0),
+      waitingClientApproval: Number(c.waiting_client_approval_count || 0),
+      completed: Number(c.completed_count || 0),
+      canceled: Number(c.canceled_count || 0),
+    },
+  };
 }
 
 async function getFreelancerAssignedOrderById({ freelancerUserId, orderId }) {
   const { rows } = await pool.query(
-    `SELECT id
-     FROM orders
-     WHERE id = $1
-       AND assigned_freelancer_id = $2
-       AND received_at IS NOT NULL
+    `SELECT o.id
+     FROM orders o
+     LEFT JOIN order_claims oc
+       ON oc.order_id = o.id
+      AND oc.freelancer_user_id = $2
+     WHERE o.id = $1
+       AND (
+         o.assigned_freelancer_id = $2
+         OR oc.status IN ('pending', 'rejected')
+       )
      LIMIT 1`,
     [Number(orderId), Number(freelancerUserId)],
   );
   if (!rows[0]) return null;
-  return await getOrderById(orderId);
+  const order = await getOrderById(orderId);
+  if (!order) return null;
+  const myClaim = await getMyOrderClaim({ orderId, freelancerUserId });
+  return { ...order, myClaim };
 }
 
-async function submitPoolOrderBid({ freelancerUserId, orderId, amount }) {
+async function submitPoolOrderBid({ freelancerUserId, orderId, amount, message = null }) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -1095,7 +1811,7 @@ async function submitPoolOrderBid({ freelancerUserId, orderId, amount }) {
       err.statusCode = 409;
       throw err;
     }
-    if (order.order_status !== ORDER_STATUSES.PUBLISHED) {
+    if (order.order_status !== ORDER_STATUSES.OPEN_FOR_BIDS) {
       const err = new Error("Order is not available.");
       err.statusCode = 409;
       throw err;
@@ -1105,27 +1821,63 @@ async function submitPoolOrderBid({ freelancerUserId, orderId, amount }) {
       err.statusCode = 409;
       throw err;
     }
+    if (order.is_fake) {
+      const eligible = await fakeOrdersService.isFreelancerEligibleForFakeOrder(
+        { freelancerUserId: Number(freelancerUserId), orderId: Number(orderId) },
+        client,
+      );
+      if (!eligible) {
+        const err = new Error("هذا الطلب التدريبي غير متاح لخطة اشتراكك.");
+        err.statusCode = 403;
+        throw err;
+      }
+    }
+    const bidMessage = message != null ? String(message).trim() : null;
 
     const bid = Number(amount);
     if (!Number.isFinite(bid) || bid <= 0) {
-      const err = new Error("Invalid bid amount.");
+      const err = new Error("مبلغ العرض غير صالح.");
       err.statusCode = 400;
       throw err;
     }
     const min = Number(order.bid_budget_min);
     const max = Number(order.bid_budget_max);
     if (bid < min || bid > max) {
-      const err = new Error(`Bid must be between ${min} and ${max}.`);
+      const err = new Error(`يجب أن يكون مبلغ العرض بين ${min} و ${max}.`);
       err.statusCode = 400;
       throw err;
     }
 
+    const { rows: prevBidRows } = await client.query(
+      `SELECT id, amount, status
+       FROM order_freelancer_bids
+       WHERE order_id = $1
+         AND freelancer_user_id = $2
+       LIMIT 1`,
+      [Number(orderId), Number(freelancerUserId)],
+    );
+    const hadBidBefore = Boolean(prevBidRows[0]);
     await client.query(
-      `INSERT INTO order_freelancer_bids (order_id, freelancer_user_id, amount, status)
-       VALUES ($1, $2, $3, 'pending')
+      `INSERT INTO order_freelancer_bids (order_id, freelancer_user_id, amount, status, is_fake_bid, fake_round_id, proposal_message)
+       VALUES ($1, $2, $3, 'pending', $4, $5, $6)
        ON CONFLICT (order_id, freelancer_user_id)
-       DO UPDATE SET amount = EXCLUDED.amount, status = 'pending', updated_at = NOW()`,
-      [Number(orderId), Number(freelancerUserId), bid],
+       DO UPDATE SET amount = EXCLUDED.amount, status = 'pending', proposal_message = EXCLUDED.proposal_message, is_fake_bid = EXCLUDED.is_fake_bid, fake_round_id = EXCLUDED.fake_round_id, updated_at = NOW()`,
+      [Number(orderId), Number(freelancerUserId), bid, Boolean(order.is_fake), order.fake_round_id ? Number(order.fake_round_id) : null, bidMessage || null],
+    );
+    await safeNotify(() =>
+      notificationEventsService.notifyOrderOwner(
+        {
+          order,
+          actorUserId: Number(freelancerUserId),
+          type: hadBidBefore ? "order.bid.updated" : "order.bid.submitted",
+          title: hadBidBefore ? "تم تحديث عرض السعر" : "تم استلام عرض سعر جديد",
+          message: hadBidBefore ? "قام مستقل بتحديث عرضه على المشروع." : "تم إرسال عرض سعر جديد على مشروعك.",
+          priority: "high",
+          dedupeKey: hadBidBefore ? `order_bid_updated_${orderId}_${freelancerUserId}_${bid}` : `order_bid_submitted_${orderId}_${freelancerUserId}`,
+          metadata: { orderId: String(orderId), freelancerUserId: String(freelancerUserId), amount: bid },
+        },
+        client,
+      ),
     );
 
     await client.query("COMMIT");
@@ -1178,7 +1930,7 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
       err.statusCode = 409;
       throw err;
     }
-    if (order.order_status !== ORDER_STATUSES.PUBLISHED) {
+    if (!isClaimablePoolOrderStatus(order.order_status)) {
       const err = new Error("Order is not available in the pool.");
       err.statusCode = 409;
       throw err;
@@ -1201,6 +1953,28 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
       `INSERT INTO order_claims (order_id, freelancer_user_id, status)
        VALUES ($1, $2, 'pending')`,
       [Number(orderId), Number(freelancerUserId)],
+    );
+
+    await safeNotify(() =>
+      notificationService.createNotification(
+        {
+          recipientUserId: Number(order.created_by_user_id),
+          recipientRole: order.created_by_role || null,
+          actorUserId: Number(freelancerUserId),
+          type: "order.claim.submitted",
+          title: "تم استلام طلب تقديم جديد",
+          message: "تقدّم مستقل جديد لاستلام هذا المشروع.",
+          entityType: "order",
+          entityId: Number(orderId),
+          link:
+            order.source_type === "client_created"
+              ? `/dashboard/client/my-orders`
+              : `/dashboard/${String(order.created_by_role || "").trim() === "super_admin" ? "super-admin" : "admin"}/orders`,
+          priority: "high",
+          metadata: { orderId: String(orderId), freelancerUserId: String(freelancerUserId), source: "claim_pool_order" },
+        },
+        client,
+      ),
     );
 
     await client.query("COMMIT");
@@ -1257,6 +2031,21 @@ async function withdrawPoolClaim({ freelancerUserId, orderId }) {
              updated_at = NOW()
        WHERE id = $1`,
       [Number(claim.id)],
+    );
+    await safeNotify(() =>
+      notificationEventsService.notifyOrderOwner(
+        {
+          order,
+          actorUserId: Number(freelancerUserId),
+          type: "order.claim.withdrawn",
+          title: "تم سحب طلب التقديم",
+          message: "قام المستقل بسحب طلب التقديم على المشروع.",
+          priority: "medium",
+          dedupeKey: `order_claim_withdrawn_${orderId}_${freelancerUserId}`,
+          metadata: { orderId: String(orderId), freelancerUserId: String(freelancerUserId) },
+        },
+        client,
+      ),
     );
 
     await client.query("COMMIT");
@@ -1328,7 +2117,7 @@ async function approvePoolClaimAdmin({ actorUserId, orderId, claimId }) {
       err.statusCode = 409;
       throw err;
     }
-    if (order.order_status !== ORDER_STATUSES.PUBLISHED) {
+    if (!isClaimablePoolOrderStatus(order.order_status)) {
       const err = new Error("Order is not pending approval.");
       err.statusCode = 409;
       throw err;
@@ -1391,11 +2180,57 @@ async function approvePoolClaimAdmin({ actorUserId, orderId, claimId }) {
          AND status = 'pending'`,
       [Number(orderId), receivedAt, Number(actorUserId), Number(claim.id)],
     );
+    const { rows: rejectedRows } = await client.query(
+      `SELECT freelancer_user_id
+       FROM order_claims
+       WHERE order_id = $1
+         AND id <> $2
+         AND status = 'rejected'`,
+      [Number(orderId), Number(claim.id)],
+    );
+    await safeNotify(() =>
+      notificationEventsService.notifyUsers(
+        {
+          userIds: rejectedRows.map((r) => Number(r.freelancer_user_id)),
+          recipientRole: "freelancer",
+          actorUserId: Number(actorUserId),
+          type: "order.freelancer.rejected",
+          title: "تم رفض طلبك على المشروع",
+          message: "تم اختيار مستقل آخر لهذا المشروع.",
+          entityType: "order",
+          entityId: Number(orderId),
+          link: `/dashboard/freelancer/orders/${encodeURIComponent(String(orderId))}`,
+          priority: "medium",
+          metadata: { orderId: String(orderId) },
+          dedupeKey: `order_claim_rejected_batch_${orderId}`,
+        },
+        client,
+      ),
+    );
 
     // The first accepted pool order starts the subscription countdown (only once).
-    await subscriptionsService.activateCurrentSubscriptionOnFirstOrder(
-      { freelancerUserId: String(updated[0].assigned_freelancer_id), activatedAt: receivedAt },
+    await subscriptionsService.activateCurrentSubscriptionOnFirstAcceptedOrder(
+      { freelancerUserId: String(updated[0].assigned_freelancer_id), orderId, activatedAt: receivedAt },
       client,
+    );
+    await safeNotify(() =>
+      notificationService.createIfNotExists(
+      {
+        recipientUserId: Number(updated[0].assigned_freelancer_id),
+        recipientRole: "freelancer",
+        actorUserId: Number(actorUserId),
+        type: "order.freelancer.assigned",
+        title: "تم إسناد مشروع لك",
+        message: "وافقت الإدارة على طلبك وتم إسناد المشروع لك.",
+        entityType: "order",
+        entityId: Number(orderId),
+        link: `/dashboard/freelancer/my-orders/${encodeURIComponent(String(orderId))}`,
+        priority: "high",
+        metadata: { orderId: String(orderId), source: "admin_accept" },
+      },
+      `freelancer_assigned_${String(orderId)}`,
+      client,
+      ),
     );
 
     await client.query("COMMIT");
@@ -1439,7 +2274,7 @@ async function listOrderClaimsForClient({ clientUserId, orderId }) {
   );
   const o = rows[0];
   if (!o) return { claims: [], orderSummary: null };
-  if (o.order_status !== ORDER_STATUSES.PUBLISHED || !o.is_published || !o.is_open_for_pool || o.assigned_freelancer_id) {
+  if (!isClaimablePoolOrderStatus(o.order_status) || !o.is_published || !o.is_open_for_pool || o.assigned_freelancer_id) {
     return { claims: [], orderSummary: { hasOpenPool: false } };
   }
   const claims = await listOrderClaimsAdmin({ orderId });
@@ -1450,7 +2285,7 @@ async function listOrderClaimsForClient({ clientUserId, orderId }) {
 async function listOrderBidsWithFreelancers({ orderId }, clientMaybe) {
   const runner = clientMaybe || pool;
   const { rows } = await runner.query(
-    `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at,
+    `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at, b.proposal_message, b.is_fake_bid, b.fake_round_id,
             u.first_name, u.father_name, u.family_name, u.email, u.account_id
      FROM order_freelancer_bids b
      JOIN users u ON u.id = b.freelancer_user_id
@@ -1464,6 +2299,9 @@ async function listOrderBidsWithFreelancers({ orderId }, clientMaybe) {
     freelancerUserId: String(r.freelancer_user_id),
     amount: Number(r.amount),
     status: r.status,
+    message: r.proposal_message || null,
+    isFakeBid: Boolean(r.is_fake_bid),
+    fakeRoundId: r.fake_round_id ? String(r.fake_round_id) : null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
     freelancer: {
@@ -1485,14 +2323,14 @@ async function listOrderBidsForClient({ clientUserId, orderId }) {
   if (o.project_type !== "bidding" || !hasPricedBiddingRow(o)) {
     return { bids: [], orderSummary: { hasOpenPool: false } };
   }
-  if (o.order_status !== ORDER_STATUSES.PUBLISHED || !o.is_published || !o.is_open_for_pool || o.assigned_freelancer_id) {
+  if (o.order_status !== ORDER_STATUSES.OPEN_FOR_BIDS || !o.is_published || !o.is_open_for_pool || o.assigned_freelancer_id) {
     return { bids: [], orderSummary: { hasOpenPool: false } };
   }
   const all = await listOrderBidsWithFreelancers({ orderId });
-  const pending = all.filter((b) => b.status === "pending");
+  const pending = all.filter((b) => b.status === "pending" || b.status === "selected_pending_payment");
   return {
     bids: pending,
-    orderSummary: { hasOpenPool: true, currencyCode: o.currency_code || null },
+    orderSummary: { hasOpenPool: true, currencyCode: o.currency_code || "JOD" },
   };
 }
 
@@ -1508,7 +2346,7 @@ async function rejectFreelancerBidClient({ clientUserId, orderId, bidId }) {
       !order.is_open_for_pool ||
       order.assigned_freelancer_id ||
       order.received_at ||
-      order.order_status !== ORDER_STATUSES.PUBLISHED
+      order.order_status !== ORDER_STATUSES.OPEN_FOR_BIDS
     ) {
       const err = new Error("لا يمكن رفض العروض في هذه الحالة.");
       err.statusCode = 409;
@@ -1537,6 +2375,25 @@ async function rejectFreelancerBidClient({ clientUserId, orderId, bidId }) {
     await client.query(`UPDATE order_freelancer_bids SET status = 'rejected', updated_at = NOW() WHERE id = $1`, [
       Number(bid.id),
     ]);
+    await safeNotify(() =>
+      notificationService.createIfNotExists(
+        {
+          recipientUserId: Number(bid.freelancer_user_id),
+          recipientRole: "freelancer",
+          actorUserId: Number(clientUserId),
+          type: "order.bid.rejected",
+          title: "تم رفض عرض السعر",
+          message: "قام العميل برفض عرضك على المشروع.",
+          entityType: "order",
+          entityId: Number(orderId),
+          link: `/dashboard/freelancer/orders/${encodeURIComponent(String(orderId))}`,
+          priority: "medium",
+          metadata: { orderId: String(orderId), bidId: String(bid.id) },
+        },
+        `order_bid_rejected_${orderId}_${bid.id}`,
+        client,
+      ),
+    );
     await client.query("COMMIT");
     return { success: true };
   } catch (err) {
@@ -1573,7 +2430,7 @@ async function acceptFreelancerBidClient({ clientUserId, orderId, bidId }) {
       err.statusCode = 409;
       throw err;
     }
-    if (order.order_status !== ORDER_STATUSES.PUBLISHED) {
+    if (order.order_status !== ORDER_STATUSES.OPEN_FOR_BIDS) {
       const err = new Error("الطلب غير متاح لاعتماد عرض حالياً.");
       err.statusCode = 409;
       throw err;
@@ -1632,8 +2489,8 @@ async function acceptFreelancerBidClient({ clientUserId, orderId, bidId }) {
       [Number(orderId), Number(bid.id)],
     );
 
-    await subscriptionsService.activateCurrentSubscriptionOnFirstOrder(
-      { freelancerUserId: String(bid.freelancer_user_id), activatedAt: receivedAt },
+    await subscriptionsService.activateCurrentSubscriptionOnFirstAcceptedOrder(
+      { freelancerUserId: String(bid.freelancer_user_id), orderId, activatedAt: receivedAt },
       client,
     );
 
@@ -1659,7 +2516,7 @@ async function rejectPoolClaimClient({ clientUserId, orderId, claimId }) {
       !order.is_open_for_pool ||
       order.assigned_freelancer_id ||
       order.received_at ||
-      order.order_status !== ORDER_STATUSES.PUBLISHED
+      !isClaimablePoolOrderStatus(order.order_status)
     ) {
       const err = new Error("لا يمكن رفض الطلبات في هذه الحالة.");
       err.statusCode = 409;
@@ -1689,6 +2546,25 @@ async function rejectPoolClaimClient({ clientUserId, orderId, claimId }) {
              updated_at = NOW()
        WHERE id = $1`,
       [Number(claim.id), reviewedAt, Number(clientUserId)],
+    );
+    await safeNotify(() =>
+      notificationService.createIfNotExists(
+        {
+          recipientUserId: Number(claim.freelancer_user_id),
+          recipientRole: "freelancer",
+          actorUserId: Number(clientUserId),
+          type: "order.freelancer.rejected",
+          title: "تم رفض طلبك على المشروع",
+          message: "قام العميل برفض طلب التقديم الخاص بك.",
+          entityType: "order",
+          entityId: Number(orderId),
+          link: `/dashboard/freelancer/orders/${encodeURIComponent(String(orderId))}`,
+          priority: "medium",
+          metadata: { orderId: String(orderId), claimId: String(claim.id) },
+        },
+        `order_claim_rejected_${orderId}_${claim.id}`,
+        client,
+      ),
     );
     await client.query("COMMIT");
     return { success: true };
@@ -1728,7 +2604,7 @@ async function approvePoolClaimClient({ clientUserId, orderId, claimId }) {
       err.statusCode = 409;
       throw err;
     }
-    if (order.order_status !== ORDER_STATUSES.PUBLISHED) {
+    if (!isClaimablePoolOrderStatus(order.order_status)) {
       const err = new Error("الطلب غير متاح لاعتماد مستقل حالياً.");
       err.statusCode = 409;
       throw err;
@@ -1789,10 +2665,56 @@ async function approvePoolClaimClient({ clientUserId, orderId, claimId }) {
          AND status = 'pending'`,
       [Number(orderId), receivedAt, Number(clientUserId), Number(claim.id)],
     );
+    const { rows: rejectedRows } = await client.query(
+      `SELECT freelancer_user_id
+       FROM order_claims
+       WHERE order_id = $1
+         AND id <> $2
+         AND status = 'rejected'`,
+      [Number(orderId), Number(claim.id)],
+    );
+    await safeNotify(() =>
+      notificationEventsService.notifyUsers(
+        {
+          userIds: rejectedRows.map((r) => Number(r.freelancer_user_id)),
+          recipientRole: "freelancer",
+          actorUserId: Number(clientUserId),
+          type: "order.freelancer.rejected",
+          title: "تم رفض طلبك على المشروع",
+          message: "تم اختيار مستقل آخر لهذا المشروع.",
+          entityType: "order",
+          entityId: Number(orderId),
+          link: `/dashboard/freelancer/orders/${encodeURIComponent(String(orderId))}`,
+          priority: "medium",
+          metadata: { orderId: String(orderId) },
+          dedupeKey: `order_claim_rejected_batch_${orderId}`,
+        },
+        client,
+      ),
+    );
 
-    await subscriptionsService.activateCurrentSubscriptionOnFirstOrder(
-      { freelancerUserId: String(claim.freelancer_user_id), activatedAt: receivedAt },
+    await subscriptionsService.activateCurrentSubscriptionOnFirstAcceptedOrder(
+      { freelancerUserId: String(claim.freelancer_user_id), orderId, activatedAt: receivedAt },
       client,
+    );
+    await safeNotify(() =>
+      notificationService.createIfNotExists(
+      {
+        recipientUserId: Number(claim.freelancer_user_id),
+        recipientRole: "freelancer",
+        actorUserId: Number(clientUserId),
+        type: "order.freelancer.assigned",
+        title: "تم قبولك في المشروع",
+        message: "وافق العميل على طلبك وتم إسناد المشروع لك.",
+        entityType: "order",
+        entityId: Number(orderId),
+        link: `/dashboard/freelancer/my-orders/${encodeURIComponent(String(orderId))}`,
+        priority: "high",
+        metadata: { orderId: String(orderId), source: "client_accept" },
+      },
+      `freelancer_assigned_${String(orderId)}`,
+      client,
+      ),
     );
 
     await client.query("COMMIT");
@@ -1833,22 +2755,11 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
       throw err;
     }
 
-    const orderDir = path.join(baseUploadsDir, "..", String(order.id));
-    await fsp.mkdir(orderDir, { recursive: true });
-    const preparedFiles = [];
-    for (const f of files) {
-      const srcPath = path.join(baseUploadsDir, f.filename);
-      const destPath = path.join(orderDir, f.filename);
-      try {
-        await fsp.rename(srcPath, destPath);
-      } catch {
-        const err = new Error("تعذر حفظ الملفات. حاول مجدداً.");
-        err.statusCode = 500;
-        throw err;
-      }
-      const relativePath = path.join("orders", String(order.id), f.filename).replace(/\\/g, "/");
-      preparedFiles.push({ ...f, relativePath, urlPath: `/uploads/${relativePath}`, purpose: "delivery" });
-    }
+    const preparedFiles = await uploadFilesToCloudinary({
+      orderId: order.id,
+      files,
+      purpose: "delivery",
+    });
 
     await attachFiles({ orderId: order.id, actorUserId: freelancerUserId, files: preparedFiles, defaultPurpose: "delivery" }, client);
 
@@ -1859,6 +2770,37 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
              updated_at = NOW()
        WHERE id = $1`,
       [Number(orderId), ORDER_STATUSES.PENDING_CLIENT_REVIEW],
+    );
+
+    const actorIdentity = await getUserIdentitySnapshot(freelancerUserId, client);
+    await safeNotify(() =>
+      notificationService.createNotification(
+        {
+          recipientUserId: Number(order.created_by_user_id),
+          recipientRole: order.created_by_role || null,
+          actorUserId: Number(freelancerUserId),
+          type: "order.delivery.submitted",
+          title: "تم تسليم العمل وبانتظار المراجعة",
+          message: "قام المستقل برفع التسليم، يرجى مراجعة الطلب.",
+          entityType: "order",
+          entityId: Number(orderId),
+          link:
+            order.source_type === "client_created"
+              ? `/dashboard/client/my-orders`
+              : `/dashboard/${String(order.created_by_role || "").trim() === "super_admin" ? "super-admin" : "admin"}/orders`,
+          priority: "high",
+          metadata: {
+            orderId: String(orderId),
+            orderCode: order.order_code || null,
+            projectName: order.title || null,
+            freelancerUserId: String(freelancerUserId),
+            actorName: actorIdentity?.fullName || null,
+            actorAccountId: actorIdentity?.accountId || null,
+            source: "delivery_submitted",
+          },
+        },
+        client,
+      ),
     );
 
     await client.query("COMMIT");
@@ -1909,6 +2851,91 @@ async function adminApproveInternalDelivery({ orderId }) {
        WHERE id = $1`,
       [Number(orderId), ORDER_STATUSES.COMPLETED, now],
     );
+    await safeNotify(() =>
+      notificationEventsService.notifyAssignedFreelancer(
+        {
+          order,
+          actorUserId: null,
+          type: "order.delivery.approved",
+          title: "تم اعتماد التسليم",
+          message: "تم اعتماد التسليم وإغلاق المشروع بنجاح.",
+          priority: "high",
+          dedupeKey: `order_delivery_approved_${orderId}`,
+          metadata: { orderId: String(orderId), source: "admin_approve_delivery" },
+        },
+        client,
+      ),
+    );
+    await client.query("COMMIT");
+    return await getOrderById(orderId);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function adminRequestInternalDeliveryRevision({ orderId, note, uploadedFiles = [] }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertInternalOrderForAdmin({ orderId }, client);
+    const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
+    const order = rows[0];
+    const noteText = note != null ? String(note).trim() : "";
+    if (order.order_status === ORDER_STATUSES.PENDING_CLIENT_REVIEW) {
+      await client.query(`DELETE FROM order_files WHERE order_id = $1 AND purpose = 'delivery'`, [Number(orderId)]);
+      await client.query(
+        `UPDATE orders
+           SET order_status = $2,
+               client_revision_note = $3,
+               updated_at = NOW()
+         WHERE id = $1`,
+        [Number(orderId), ORDER_STATUSES.IN_PROGRESS, noteText || null],
+      );
+    } else if (order.order_status === ORDER_STATUSES.IN_PROGRESS) {
+      await client.query(
+        `UPDATE orders
+           SET client_revision_note = $2,
+               updated_at = NOW()
+         WHERE id = $1`,
+        [Number(orderId), noteText || null],
+      );
+    } else {
+      const err = new Error("لا يمكن طلب تعديل في هذه الحالة.");
+      err.statusCode = 409;
+      throw err;
+    }
+    const revisionFiles = Array.isArray(uploadedFiles) ? uploadedFiles : [];
+    if (revisionFiles.length) {
+      const prepared = await uploadFilesToCloudinary({
+        orderId: Number(orderId),
+        files: revisionFiles,
+        purpose: "revision_request",
+      });
+      await attachFiles({ orderId: Number(orderId), actorUserId: null, files: prepared, defaultPurpose: "revision_request" }, client);
+    }
+    if (order.assigned_freelancer_id) {
+      await safeNotify(() =>
+        notificationService.createNotification(
+        {
+          recipientUserId: Number(order.assigned_freelancer_id),
+          recipientRole: "freelancer",
+          actorUserId: null,
+          type: "order.revision.requested",
+          title: "تم طلب تعديل على التسليم",
+          message: noteText || "تم طلب تعديل على العمل المرسل.",
+          entityType: "order",
+          entityId: Number(orderId),
+          link: `/dashboard/freelancer/my-orders/${encodeURIComponent(String(orderId))}`,
+          priority: "high",
+          metadata: { orderId: String(orderId), source: "admin_revision" },
+        },
+        client,
+        ),
+      );
+    }
     await client.query("COMMIT");
     return await getOrderById(orderId);
   } catch (err) {
@@ -1922,7 +2949,7 @@ async function adminApproveInternalDelivery({ orderId }) {
 async function prepareAdminInternalOrderFileDownload({ orderId, fileId }) {
   await assertInternalOrderForAdmin({ orderId });
   const { rows } = await pool.query(
-    `SELECT id, order_id, file_path, original_name, mime_type
+    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type
      FROM order_files
      WHERE id = $1 AND order_id = $2
      LIMIT 1`,
@@ -1933,6 +2960,14 @@ async function prepareAdminInternalOrderFileDownload({ orderId, fileId }) {
     const err = new Error("الملف غير موجود.");
     err.statusCode = 404;
     throw err;
+  }
+  const remoteUrl = String(f.secure_url || f.file_url || "").trim();
+  if (/^https?:\/\//i.test(remoteUrl)) {
+    return {
+      redirectUrl: remoteUrl,
+      downloadName: decodeMultipartOriginalName(f.original_name) || f.original_name || "file",
+      mimeType: f.mime_type || "application/octet-stream",
+    };
   }
   const rel = String(f.file_path || "").replace(/\\/g, "/").trim();
   if (!rel || rel.includes("..")) {
@@ -1982,6 +3017,21 @@ async function clientApproveDelivery({ clientUserId, orderId }) {
        WHERE id = $1`,
       [Number(orderId), ORDER_STATUSES.COMPLETED, now],
     );
+    await safeNotify(() =>
+      notificationEventsService.notifyAssignedFreelancer(
+        {
+          order,
+          actorUserId: Number(clientUserId),
+          type: "order.delivery.approved",
+          title: "تم اعتماد التسليم",
+          message: "قام العميل باعتماد التسليم وإغلاق المشروع.",
+          priority: "high",
+          dedupeKey: `order_delivery_approved_${orderId}`,
+          metadata: { orderId: String(orderId), source: "client_approve_delivery" },
+        },
+        client,
+      ),
+    );
     await client.query("COMMIT");
     return await getOrderById(orderId);
   } catch (err) {
@@ -1992,7 +3042,7 @@ async function clientApproveDelivery({ clientUserId, orderId }) {
   }
 }
 
-async function clientRequestDeliveryRevision({ clientUserId, orderId, note }) {
+async function clientRequestDeliveryRevision({ clientUserId, orderId, note, uploadedFiles = [] }) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -2023,6 +3073,35 @@ async function clientRequestDeliveryRevision({ clientUserId, orderId, note }) {
       err.statusCode = 409;
       throw err;
     }
+    const revisionFiles = Array.isArray(uploadedFiles) ? uploadedFiles : [];
+    if (revisionFiles.length) {
+      const prepared = await uploadFilesToCloudinary({
+        orderId: Number(orderId),
+        files: revisionFiles,
+        purpose: "revision_request",
+      });
+      await attachFiles({ orderId: Number(orderId), actorUserId: Number(clientUserId), files: prepared, defaultPurpose: "revision_request" }, client);
+    }
+    if (order.assigned_freelancer_id) {
+      await safeNotify(() =>
+        notificationService.createNotification(
+        {
+          recipientUserId: Number(order.assigned_freelancer_id),
+          recipientRole: "freelancer",
+          actorUserId: Number(clientUserId),
+          type: "order.revision.requested",
+          title: "العميل طلب تعديلاً على التسليم",
+          message: noteText || "يرجى تعديل التسليم وإعادة الرفع.",
+          entityType: "order",
+          entityId: Number(orderId),
+          link: `/dashboard/freelancer/my-orders/${encodeURIComponent(String(orderId))}`,
+          priority: "high",
+          metadata: { orderId: String(orderId), source: "client_revision" },
+        },
+        client,
+        ),
+      );
+    }
     await client.query("COMMIT");
     return await getOrderById(orderId);
   } catch (err) {
@@ -2036,7 +3115,7 @@ async function clientRequestDeliveryRevision({ clientUserId, orderId, note }) {
 async function prepareClientOrderFileDownload({ clientUserId, orderId, fileId }) {
   await assertClientOwnsOrder({ clientUserId, orderId });
   const { rows } = await pool.query(
-    `SELECT id, order_id, file_path, original_name, mime_type
+    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type
      FROM order_files
      WHERE id = $1 AND order_id = $2
      LIMIT 1`,
@@ -2047,6 +3126,14 @@ async function prepareClientOrderFileDownload({ clientUserId, orderId, fileId })
     const err = new Error("الملف غير موجود.");
     err.statusCode = 404;
     throw err;
+  }
+  const remoteUrl = String(f.secure_url || f.file_url || "").trim();
+  if (/^https?:\/\//i.test(remoteUrl)) {
+    return {
+      redirectUrl: remoteUrl,
+      downloadName: decodeMultipartOriginalName(f.original_name) || f.original_name || "file",
+      mimeType: f.mime_type || "application/octet-stream",
+    };
   }
   const rel = String(f.file_path || "").replace(/\\/g, "/").trim();
   if (!rel || rel.includes("..")) {
@@ -2152,7 +3239,9 @@ module.exports = {
   clientRequestDeliveryRevision,
   prepareClientOrderFileDownload,
   adminApproveInternalDelivery,
+  adminRequestInternalDeliveryRevision,
   prepareAdminInternalOrderFileDownload,
   activateArchivedInternalOrder,
+  purgeClientUnpaidFixedOrderDraft,
 };
 

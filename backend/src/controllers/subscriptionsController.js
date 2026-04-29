@@ -1,4 +1,5 @@
 const subscriptionsService = require("../services/subscriptionsService");
+const stripeCheckoutService = require("../services/stripeCheckoutService");
 
 const assignPlan = async (req, res, next) => {
   try {
@@ -58,11 +59,37 @@ const getFreelancerEligibility = async (req, res, next) => {
   }
 };
 
+const createFreelancerSubscriptionCheckout = async (req, res, next) => {
+  try {
+    const result = await stripeCheckoutService.createFreelancerSubscriptionCheckoutSession({
+      freelancerUserId: req.auth?.userId,
+      planId: req.body.planId,
+    });
+    return res.status(201).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const activateSubscriptionCompanyApproval = async (req, res, next) => {
+  try {
+    const subscription = await subscriptionsService.activateCompanyApprovalForSubscription({
+      actorUserId: req.auth?.userId,
+      subscriptionId: req.params.id,
+    });
+    return res.status(200).json({ success: true, data: { subscription } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   assignPlan,
   updateSubscription,
   listSubscriptions,
   getFreelancerCurrentSubscription,
   getFreelancerEligibility,
+  createFreelancerSubscriptionCheckout,
+  activateSubscriptionCompanyApproval,
 };
 

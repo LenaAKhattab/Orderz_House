@@ -2,6 +2,8 @@ const express = require("express");
 const validateRequest = require("../middleware/validateRequest");
 const { requireAuth, requireRole } = require("../middleware/rbacMiddleware");
 const subscriptionsService = require("../services/subscriptionsService");
+const subscriptionsController = require("../controllers/subscriptionsController");
+const { freelancerSelfSubscribeValidators } = require("../validators/subscriptionsValidators");
 
 const router = express.Router();
 
@@ -25,6 +27,13 @@ router.get("/eligibility", async (req, res, next) => {
     return next(err);
   }
 });
+
+router.post(
+  "/subscriptions/checkout",
+  freelancerSelfSubscribeValidators,
+  validateRequest,
+  subscriptionsController.createFreelancerSubscriptionCheckout,
+);
 
 module.exports = router;
 

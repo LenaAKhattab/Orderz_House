@@ -4,6 +4,16 @@ const crypto = require("node:crypto");
 const { pool } = require("../config/db");
 const { ROLES, PUBLIC_SIGNUP_ROLES } = require("../constants/roles");
 const { ensureUserRole, resolveAuthzContext } = require("./rbacService");
+const notificationService = require("./notificationService");
+
+async function safeNotify(run) {
+  try {
+    await run();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[notifications]", err?.message || err);
+  }
+}
 
 const BCRYPT_ROUNDS = 12;
 const ACCOUNT_ID_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -241,6 +251,24 @@ async function registerUser(payload) {
     );
     const row = rows[0];
     await ensureUserRole({ userId: row.id, roleName: row.role });
+    await safeNotify(() =>
+      notificationService.createIfNotExists(
+        {
+          recipientUserId: Number(row.id),
+          recipientRole: row.role,
+          actorUserId: null,
+          type: "user.registered",
+          title: "تم إنشاء حسابك بنجاح",
+          message: "مرحباً بك في منصة أوردرز هاوس.",
+          entityType: "user",
+          entityId: Number(row.id),
+          link: "/dashboard",
+          priority: "medium",
+          metadata: { userId: String(row.id), role: row.role },
+        },
+        `user_registered_${String(row.id)}`,
+      ),
+    );
     const authz = await resolveAuthzContext({ userId: row.id, legacyRole: row.role });
     const token = signToken(row);
     return { user: withAuthz(mapUserPublic(row), authz), token };

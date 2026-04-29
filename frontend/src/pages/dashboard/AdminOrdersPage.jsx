@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ClientDeliveryReviewModal from "../../components/orders/ClientDeliveryReviewModal";
 import OrderCard from "../../components/orders/OrderCard";
+import AdminFreelancerRegistrationModal from "../../components/orders/AdminFreelancerRegistrationModal";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../components/ui/toastContext";
 import {
@@ -12,6 +13,8 @@ import {
 } from "../../services/api";
 import { INTERNAL_ORDERS_LIST_REFRESH } from "../../constants/authRoutes";
 import { OrderCardsGridSkeleton } from "../../components/ui/Skeleton";
+import { getOrderDeliveryTiming } from "../../utils/orderDeliveryTiming";
+import { orderStatusLabelAr } from "../../utils/orderFlowUi";
 
 function fullNameAr(f) {
   const parts = [f?.firstName, f?.fatherName, f?.familyName].filter(Boolean);
@@ -104,7 +107,7 @@ export default function AdminOrdersPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [claimsModalOrder, approvingClaimId]);
 
-  const loadClaims = async (orderId) => {
+  const loadClaims = useCallback(async (orderId) => {
     const key = String(orderId);
     setClaimsBusyByOrderId((p) => ({ ...p, [key]: true }));
     try {
@@ -116,7 +119,34 @@ export default function AdminOrdersPage() {
     } finally {
       setClaimsBusyByOrderId((p) => ({ ...p, [key]: false }));
     }
-  };
+  }, []);
+
+  // Claims are loaded on-demand (when opening the applicants modal) to avoid
+  // flooding the backend with background requests and triggering timeouts.
+
+  /** Orders list (incl. delivery timing on cards) updates without manual refresh. */
+  useEffect(() => {
+    if (busy) return undefined;
+    async function tick() {
+      try {
+        const res = await adminListInternalOrdersRequest({ limit: 50, offset: 0 });
+        setOrders(res?.data?.orders || []);
+      } catch {
+        /* ignore */
+      }
+    }
+    const t = setInterval(() => {
+      void tick();
+    }, 25_000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") void tick();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [busy]);
 
   const openAdminDeliveryModal = async (orderId, variant) => {
     const key = String(orderId);
@@ -200,10 +230,9 @@ export default function AdminOrdersPage() {
           rows.map((o) => {
             const shouldShowApplicants = Boolean(o?.isOpenForPool) && !o?.assignedFreelancerId && !o?.receivedAt && !o?.isArchived;
             const orderKey = String(o?.id);
-            const claimsBusy = Boolean(claimsBusyByOrderId[orderKey]);
             const claims = Array.isArray(claimsByOrderId[orderKey]) ? claimsByOrderId[orderKey] : null;
-            const claimsCountSuffix =
-              claims !== null && !claimsBusy ? ` (${claims.length})` : "";
+            const claimsBusy = Boolean(claimsBusyByOrderId[orderKey]);
+            const claimsCountSuffix = claims !== null && !claimsBusy ? ` (${claims.length})` : "";
             const showDeliveryReceive =
               Boolean(o?.assignedFreelancerId) &&
               Boolean(o?.receivedAt) &&
@@ -273,6 +302,7 @@ export default function AdminOrdersPage() {
                     "العملة",
                     "المدة",
                     "الحالة",
+                    "التسليم مقابل الموعد",
                     "في الحوض",
                     "مؤرشف",
                     "assignedFreelancerId",
@@ -295,6 +325,7 @@ export default function AdminOrdersPage() {
                     : "";
                   const files = Array.isArray(o.files) ? o.files.map((f) => f.originalName || f.filePath).filter(Boolean).join(" | ") : "";
                   const skills = Array.isArray(o.preferredSkills) ? o.preferredSkills.map((s) => s.name).filter(Boolean).join(" | ") : "";
+                  const deliveryTiming = getOrderDeliveryTiming(o);
                   return (
                     <tr key={o.id}>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.orderCode || "—"}</td>
@@ -305,9 +336,21 @@ export default function AdminOrdersPage() {
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{extra || "—"}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.projectType || "—"}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.projectType === "bidding" ? "—" : (o.budget ?? "—")}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.projectType === "bidding" ? "—" : (o.currencyCode || "—")}</td>
+                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.projectType === "bidding" ? "—" : "JOD"}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.durationValue ? `${o.durationValue} ${o.durationUnit || ""}` : "—"}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.orderStatus || "—"}</td>
+                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{orderStatusLabelAr(o.orderStatus)}</td>
+                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", maxWidth: 360 }}>
+                        {deliveryTiming ? (
+                          <div style={{ display: "grid", gap: 6 }}>
+                            <span>{deliveryTiming.message}</span>
+                            {deliveryTiming.completionMessage ? (
+                              <span style={{ fontSize: "0.88em", color: "#475569" }}>{deliveryTiming.completionMessage}</span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{String(Boolean(o.isOpenForPool))}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{String(Boolean(o.isArchived))}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.assignedFreelancerId || "—"}</td>
@@ -449,6 +492,10 @@ export default function AdminOrdersPage() {
           audience="admin"
           onClose={() => setDeliveryModal({ open: false, order: null, variant: "workflow" })}
           onApprove={() => {
+            void reloadOrders();
+          }}
+          onRevised={() => {
+            push({ type: "success", title: "تم إرسال طلب التعديل", message: "سيظهر للمستقل ويمكنه إعادة التسليم بعد التعديل." });
             void reloadOrders();
           }}
         />

@@ -4,8 +4,15 @@ import OrderCard from "../components/orders/OrderCard";
 import BidAmountModal from "../components/orders/BidAmountModal";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../components/ui/toastContext";
-import { getMyEligibilityRequest, listPoolOrdersRequest, submitPoolOrderBidRequest, takePoolOrderRequest } from "../services/api";
+import {
+  getMyEligibilityRequest,
+  getMySubscriptionRequest,
+  listPoolOrdersRequest,
+  submitPoolOrderBidRequest,
+  takePoolOrderRequest,
+} from "../services/api";
 import { OrderCardsGridSkeleton } from "../components/ui/Skeleton";
+import { getFreelancerOrderEligibilityMessage } from "../utils/freelancerEligibilityUi";
 
 function isPricedBiddingPoolOrder(order) {
   return order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null;
@@ -22,8 +29,13 @@ const Orders = () => {
   const [takingId, setTakingId] = useState(null);
   const [bidBusyId, setBidBusyId] = useState(null);
   const [bidModalOrder, setBidModalOrder] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, totalPages: 1 });
+  const [loadError, setLoadError] = useState("");
+  const [reloadTick, setReloadTick] = useState(0);
   const [eligibility, setEligibility] = useState(null);
   const [eligibilityFetched, setEligibilityFetched] = useState(false);
+  const [subscription, setSubscription] = useState(null);
 
   const canTake = useMemo(() => {
     if (!isFreelancer) return false;
@@ -32,27 +44,34 @@ const Orders = () => {
 
   const showIneligibleNotice =
     Boolean(user) && isFreelancer && eligibilityFetched && eligibility && eligibility.eligible === false;
+  const ineligibleMessage = showIneligibleNotice ? getFreelancerOrderEligibilityMessage(eligibility, subscription) : "";
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setBusy(true);
+      setLoadError("");
       try {
-        const res = await listPoolOrdersRequest({ limit: 50, offset: 0 });
-        if (!cancelled) setOrders(res?.data?.orders || []);
+        const res = await listPoolOrdersRequest({ page, limit: 12 });
+        if (!cancelled) {
+          setOrders(res?.data?.orders || []);
+          setPagination(res?.data?.pagination || { page, limit: 12, total: 0, totalPages: 1 });
+        }
       } catch (e) {
         if (!cancelled) {
-          push({ type: "error", title: "تعذر تحميل الطلبات", message: e?.response?.data?.message || e?.message });
+          const msg = "تعذر تحميل الطلبات حاليًا. يرجى المحاولة مرة أخرى.";
+          setLoadError(msg);
+          push({ type: "error", title: "تعذر تحميل الطلبات", message: msg });
         }
       } finally {
         if (!cancelled) setBusy(false);
       }
     }
-    load();
+    void load();
     return () => {
       cancelled = true;
     };
-  }, [push]);
+  }, [push, page, reloadTick]);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,13 +96,34 @@ const Orders = () => {
     };
   }, [user, loading, isFreelancer]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSubscription() {
+      if (!user || loading || !isFreelancer) {
+        if (!cancelled) setSubscription(null);
+        return;
+      }
+      try {
+        const res = await getMySubscriptionRequest();
+        if (!cancelled) setSubscription(res?.data?.subscription || null);
+      } catch {
+        if (!cancelled) setSubscription(null);
+      }
+    }
+    loadSubscription();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, loading, isFreelancer]);
+
   const take = async (orderId) => {
     setTakingId(orderId);
     try {
       await takePoolOrderRequest(orderId);
       push({ type: "success", title: "تم تقديم الطلب", message: "تم تسجيل طلب الاستلام (قد يحتاج موافقة الإدارة)." });
-      const res = await listPoolOrdersRequest({ limit: 50, offset: 0 });
+      const res = await listPoolOrdersRequest({ page, limit: 12 });
       setOrders(res?.data?.orders || []);
+      setPagination(res?.data?.pagination || { page, limit: 12, total: 0, totalPages: 1 });
     } catch (e) {
       push({ type: "error", title: "تعذر استلام الطلب", message: e?.response?.data?.message || e?.message });
     } finally {
@@ -98,8 +138,9 @@ const Orders = () => {
       await submitPoolOrderBidRequest(bidModalOrder.id, { amount });
       push({ type: "success", title: "تم إرسال العرض", message: "سيتمكن العميل لاحقاً من مراجعة العروض واختيار الأنسب." });
       setBidModalOrder(null);
-      const res = await listPoolOrdersRequest({ limit: 50, offset: 0 });
+      const res = await listPoolOrdersRequest({ page, limit: 12 });
       setOrders(res?.data?.orders || []);
+      setPagination(res?.data?.pagination || { page, limit: 12, total: 0, totalPages: 1 });
     } catch (e) {
       push({ type: "error", title: "تعذر إرسال العرض", message: e?.response?.data?.message || e?.message });
     } finally {
@@ -108,8 +149,8 @@ const Orders = () => {
   };
 
   return (
-    <main className="container page-content">
-      <section className="card">
+    <main className="container page-content dashboard-orders-system">
+      <section className="card dashboard-orders-system__header">
         <h1>الطلبات</h1>
         <p>
           طلبات منشورة في الحوض: من الإدارة أو من العملاء. طلبات <strong>سعر ثابت</strong> تُستلم بنفس تدفق الاستلام الحالي؛ طلبات{" "}
@@ -123,7 +164,7 @@ const Orders = () => {
         ) : isFreelancer ? (
           showIneligibleNotice ? (
             <p className="help">
-              حسابك غير مؤهل حالياً لاستلام طلبات من الحوض (تحقق من الاشتراك).
+              {ineligibleMessage}
             </p>
           ) : null
         ) : (
@@ -134,6 +175,13 @@ const Orders = () => {
       <section className="cards-grid" aria-busy={busy}>
         {busy ? (
           <OrderCardsGridSkeleton count={3} />
+        ) : loadError ? (
+          <section className="card">
+            <p>{loadError}</p>
+            <button type="button" className="btn btn-secondary" onClick={() => setReloadTick((x) => x + 1)}>
+              إعادة المحاولة
+            </button>
+          </section>
         ) : orders.length === 0 ? (
           <section className="card">
             <p>لا توجد طلبات متاحة في الحوض حالياً.</p>
@@ -187,7 +235,9 @@ const Orders = () => {
                       </button>
                     )}
                     {!user ? <span className="help">تسجيل الدخول مطلوب</span> : null}
-                    {user && isFreelancer && !canTake ? <span className="help">غير مؤهل (اشتراك غير نشط)</span> : null}
+                    {user && isFreelancer && !canTake ? (
+                      <span className="help">{getFreelancerOrderEligibilityMessage(eligibility, subscription)}</span>
+                    ) : null}
                   </div>
                 )
               }
@@ -196,12 +246,31 @@ const Orders = () => {
         )}
       </section>
 
+      {!busy && !loadError ? (
+        <section className="card dashboard-orders-system__pagination">
+          <button type="button" className="btn btn-secondary" disabled={(pagination?.page || 1) <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+            السابق
+          </button>
+          <span className="help">
+            الصفحة {pagination?.page || 1} من {Math.max(1, pagination?.totalPages || 1)}
+          </span>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={(pagination?.page || 1) >= Math.max(1, pagination?.totalPages || 1)}
+            onClick={() => setPage((p) => Math.min(Math.max(1, pagination?.totalPages || 1), p + 1))}
+          >
+            التالي
+          </button>
+        </section>
+      ) : null}
+
       <BidAmountModal
         open={Boolean(bidModalOrder)}
         title={bidModalOrder ? `عرض سعر: ${bidModalOrder.title}` : ""}
         min={bidModalOrder?.bidBudgetMin}
         max={bidModalOrder?.bidBudgetMax}
-        currency={bidModalOrder?.currencyCode}
+        currency="JOD"
         busy={Boolean(bidModalOrder && bidBusyId === bidModalOrder.id)}
         onClose={() => {
           if (!bidBusyId) setBidModalOrder(null);

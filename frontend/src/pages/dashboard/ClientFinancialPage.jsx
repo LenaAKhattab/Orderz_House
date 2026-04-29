@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useToast } from "../../components/ui/toastContext";
 import { listClientMyOrdersRequest } from "../../services/api";
+import { orderStatusLabelAr } from "../../utils/orderFlowUi";
 
 function paymentStatusAr(s) {
   if (s === "not_required") return "لا يتطلب دفعاً حالياً";
@@ -98,9 +99,9 @@ export default function ClientFinancialPage() {
                     <td>{o.title || "—"}</td>
                     <td dir="ltr">
                       {o.projectType === "bidding" && o.bidBudgetMin != null && o.bidBudgetMax != null
-                        ? `${formatMoney(o.bidBudgetMin)} – ${formatMoney(o.bidBudgetMax)} ${o.currencyCode || ""}`.trim()
+                        ? `${formatMoney(o.bidBudgetMin)} – ${formatMoney(o.bidBudgetMax)} JOD`
                         : o.budget != null
-                          ? `${formatMoney(o.budget)} ${o.currencyCode || ""}`.trim()
+                          ? `${formatMoney(o.budget)} JOD`
                           : "—"}
                     </td>
                     <td>{o.paymentRequired ? "نعم" : "لا"}</td>

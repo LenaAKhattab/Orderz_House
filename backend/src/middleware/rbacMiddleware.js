@@ -123,11 +123,21 @@ function requireAnyPermission(permissionKeys) {
   };
 }
 
+function requireFreelancer(req, res, next) {
+  return requireRole("freelancer")(req, res, next);
+}
+
+function requireSuperAdmin(req, res, next) {
+  return requireRole("super_admin")(req, res, next);
+}
+
 module.exports = {
   attachAuthContext,
   requireAuth,
   optionalAuth,
   requireRole,
+  requireFreelancer,
+  requireSuperAdmin,
   requireAnyRole,
   requirePermission,
   requireAnyPermission,

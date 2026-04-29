@@ -4,6 +4,7 @@ import { useToast } from "../../components/ui/toastContext";
 import { getMyAssignedOrderByIdRequest, submitFreelancerOrderDeliveryRequest } from "../../services/api";
 import { arabicDurationUnit } from "../../utils/arTime";
 import { OrderDetailsPageSkeleton } from "../../components/ui/Skeleton";
+import OrderDeliveryTimingBanner from "../../components/orders/OrderDeliveryTimingBanner";
 
 function fileHref(fileUrl) {
   if (!fileUrl) return "";
@@ -40,10 +41,25 @@ function typeLabel(projectType) {
   return "—";
 }
 
+function revisionRequesterAr(order) {
+  if (order?.revisionRequestedBy === "admin") return "الإدارة";
+  if (order?.revisionRequestedBy === "client") return "العميل";
+  return order?.sourceType === "admin_created" || order?.sourceType === "super_admin_created" ? "الإدارة" : "العميل";
+}
+
+function revisionStatusAr(order) {
+  const s = String(order?.orderStatus || "");
+  if (s === "pending_client_review") return "تم تسليم التعديل";
+  if (s === "in_progress" || s === "ready_for_work") return "قيد تنفيذ التعديل";
+  return "بانتظار تنفيذ التعديل";
+}
+
 function durationLabel(order) {
   if (!order?.durationValue || !order?.durationUnit) return "—";
   return `${order.durationValue} ${arabicDurationUnit(order.durationValue, order.durationUnit)}`;
 }
+
+const DELIVERY_UPLOAD_ALLOWED_STATUSES = new Set(["in_progress", "assigned", "ready_for_work"]);
 
 export default function FreelancerMyOrderDetailsPage() {
   const { id } = useParams();
@@ -76,6 +92,45 @@ export default function FreelancerMyOrderDetailsPage() {
     };
   }, [id, push, navigate]);
 
+  /** Keep order (incl. submittedAt / dueAt) fresh without full page reload — timing banner and status stay current. */
+  useEffect(() => {
+    if (busy || !id || !order) return undefined;
+    const s = order.orderStatus;
+    if (s === "completed" || s === "cancelled") return undefined;
+
+    let cancelled = false;
+    async function pull() {
+      try {
+        const res = await getMyAssignedOrderByIdRequest(id);
+        if (cancelled) return;
+        const next = res?.data?.order;
+        if (next) setOrder(next);
+      } catch (e) {
+        if (cancelled) return;
+        if (e?.response?.status === 404) {
+          navigate("/dashboard/freelancer/my-orders", { replace: true });
+        }
+      }
+    }
+
+    const intervalMs = 12_000;
+    void pull();
+    const timer = setInterval(() => {
+      void pull();
+    }, intervalMs);
+
+    const onVis = () => {
+      if (document.visibilityState === "visible") void pull();
+    };
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [busy, id, order?.orderStatus, navigate]);
+
   const briefFiles = useMemo(
     () => (Array.isArray(order?.files) ? order.files.filter((f) => !f.purpose || f.purpose === "brief") : []),
     [order?.files],
@@ -84,9 +139,16 @@ export default function FreelancerMyOrderDetailsPage() {
     () => (Array.isArray(order?.files) ? order.files.filter((f) => f.purpose === "delivery") : []),
     [order?.files],
   );
+  const requestAttachments = useMemo(
+    () => (Array.isArray(order?.files) ? order.files.filter((f) => f.purpose === "revision_request") : []),
+    [order?.files],
+  );
 
   const orderPhaseLabel = useMemo(() => {
     const s = order?.orderStatus;
+    if (order?.clientRevisionNote && (s === "in_progress" || s === "ready_for_work")) {
+      return "قيد تنفيذ التعديل";
+    }
     if (s === "pending_client_review") return "بانتظار اعتماد العميل على التسليم";
     if (s === "completed") return "مكتمل";
     if (s === "in_progress") return "قيد التنفيذ — يمكنك تسليم الملفات";
@@ -121,10 +183,14 @@ export default function FreelancerMyOrderDetailsPage() {
     const budgetText =
       order?.projectType === "bidding"
         ? "—"
-        : `${formatMoney(order?.budget)}${order?.currencyCode ? ` ${order.currencyCode}` : ""}`.trim();
+        : `${formatMoney(order?.budget)} JOD`.trim();
     const typeAndBudgetText =
       order?.projectType === "bidding" ? `${typeLabel(order?.projectType)}` : `${typeLabel(order?.projectType)} — ${budgetText}`;
     const receivedAt = order?.receivedAt || null;
+    const receivedLabel =
+      order?.myClaim?.status === "pending" && !order?.assignedFreelancerId
+        ? "لم يبدأ بعد (بانتظار الموافقة على التقديم)"
+        : formatJoDateTime(receivedAt);
 
     const base = [
       { label: "نوع المشروع / السعر", value: typeAndBudgetText, dir: "ltr" },
@@ -178,8 +244,34 @@ export default function FreelancerMyOrderDetailsPage() {
           <section className="order-details__main">
             {order?.clientRevisionNote ? (
               <section className="order-details__block" style={{ borderColor: "rgba(59, 130, 246, 0.35)" }}>
-                <div className="order-details__block-title">ملاحظة من العميل</div>
-                <div className="order-details__block-body">{order.clientRevisionNote}</div>
+                <div className="order-details__block-title">تفاصيل طلب التعديل / المراجعة</div>
+                <div className="order-details__block-body" style={{ display: "grid", gap: 6 }}>
+                  <p style={{ margin: 0 }}><strong>الجهة الطالبة:</strong> {revisionRequesterAr(order)}</p>
+                  <p style={{ margin: 0 }}><strong>رسالة الطلب:</strong> {order.clientRevisionNote}</p>
+                  <p style={{ margin: 0 }}><strong>تاريخ الطلب:</strong> {formatJoDate(order?.revisionRequestedAt || order?.updatedAt)}</p>
+                  <p style={{ margin: 0 }}><strong>الموعد النهائي:</strong> {formatJoDate(order?.revisionDeadlineAt || order?.dueAt)}</p>
+                  <p style={{ margin: 0 }}><strong>الحالة:</strong> {revisionStatusAr(order)}</p>
+                  <div>
+                    <strong>مرفقات مرتبطة:</strong>
+                    {requestAttachments.length ? (
+                      <ul className="order-details__attachments" style={{ marginTop: 6 }}>
+                        {requestAttachments.map((f) => (
+                          <li key={f.id} className="order-details__attachment">
+                            {f.fileUrl ? (
+                              <a className="order-details__attachment-link" href={fileHref(f.fileUrl)} target="_blank" rel="noreferrer">
+                                {f.originalName || f.filePath}
+                              </a>
+                            ) : (
+                              <span>{f.originalName || f.filePath}</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span className="help" style={{ marginInlineStart: 6 }}>لا توجد مرفقات إضافية.</span>
+                    )}
+                  </div>
+                </div>
               </section>
             ) : null}
 
@@ -243,7 +335,7 @@ export default function FreelancerMyOrderDetailsPage() {
               </section>
             ) : null}
 
-            {order?.orderStatus === "in_progress" ? (
+            {DELIVERY_UPLOAD_ALLOWED_STATUSES.has(String(order?.orderStatus || "")) ? (
               <section className="order-details__block">
                 <div className="order-details__block-title">تسليم الطلب</div>
                 <div className="order-details__block-body">
@@ -280,7 +372,7 @@ export default function FreelancerMyOrderDetailsPage() {
                 <div className="order-details__block-title">حالة التسليم</div>
                 <div className="order-details__block-body">
                   <p className="help" style={{ margin: 0 }}>
-                    تم إرسال تسليمك للعميل. بانتظار اعتماده على المرفقات.
+                    تم إرسال تسليمك للمراجعة. بانتظار الاعتماد النهائي (عميل/إدارة).
                   </p>
                 </div>
               </section>

@@ -1,7 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
-import { getMySubscriptionRequest, listPublicPlansRequest } from "../services/api";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  createFreelancerSubscriptionCheckoutRequest,
+  getMySubscriptionRequest,
+  listPublicPlansRequest,
+} from "../services/api";
 import PricingSection from "../components/plans/PricingSection";
 import { useAuth } from "../context/useAuth";
+import { useToast } from "../components/ui/toastContext";
 
 function errorMessage(err) {
   const apiMsg = err?.response?.data?.message;
@@ -24,10 +30,15 @@ function isBlockingSubscription(subscription) {
 
 const Plans = () => {
   const { user } = useAuth();
+  const { push } = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mySubscription, setMySubscription] = useState(null);
+  const [checkoutBusyPlanId, setCheckoutBusyPlanId] = useState(null);
+  const handledToastSearchesRef = useRef(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +83,39 @@ const Plans = () => {
   }, [user]);
 
   const hasBlockingSubscription = useMemo(() => isBlockingSubscription(mySubscription), [mySubscription]);
+  useEffect(() => {
+    const q = new URLSearchParams(location.search || "");
+    const paid = q.get("freelancer_sub_paid") === "1";
+    const cancelled = q.get("freelancer_sub_cancelled") === "1";
+    if (!paid && !cancelled) return;
+    if (handledToastSearchesRef.current.has(location.search || "")) return;
+    handledToastSearchesRef.current.add(location.search || "");
+
+    if (paid) {
+      push({
+        type: "success",
+        title: "تم استلام الدفع",
+        message: "حسابك الآن بانتظار تفعيل الشركة.",
+      });
+    } else if (cancelled) {
+      push({
+        type: "warning",
+        title: "تم إلغاء الدفع",
+        message: "لم تكتمل عملية الدفع.",
+      });
+    }
+
+    q.delete("freelancer_sub_paid");
+    q.delete("freelancer_sub_cancelled");
+    const nextSearch = q.toString();
+    navigate(
+      {
+        pathname: location.pathname,
+        search: nextSearch ? `?${nextSearch}` : "",
+      },
+      { replace: true },
+    );
+  }, [location.pathname, location.search, navigate, push]);
 
   return (
     <main className="container page-content" lang="ar" dir="rtl">
@@ -79,8 +123,19 @@ const Plans = () => {
         loading={loading}
         plans={plans.filter((p) => p?.isVisible !== false)}
         hasBlockingSubscription={hasBlockingSubscription}
-        onCta={() => {
-          // Placeholder: wire to subscribe flow later
+        onCta={async (plan) => {
+          if (!plan?.id || checkoutBusyPlanId) return;
+          setCheckoutBusyPlanId(String(plan.id));
+          setError("");
+          try {
+            const res = await createFreelancerSubscriptionCheckoutRequest(plan.id);
+            const url = res?.data?.checkoutUrl;
+            if (url) window.location.href = url;
+          } catch (err) {
+            setError(errorMessage(err));
+          } finally {
+            setCheckoutBusyPlanId(null);
+          }
         }}
       />
       {error ? (
