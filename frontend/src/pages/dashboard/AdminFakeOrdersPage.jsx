@@ -394,7 +394,7 @@ export default function AdminFakeOrdersPage() {
                 <div style={{ marginTop: 10 }}>
                   <strong>تفاصيل العروض</strong>
                   {(selectedRoundAnalytics.analytics?.bidsByOrder?.[o.id] || []).map((bid) => (
-                    <div key={bid.bidId} style={{ borderTop: "1px solid #eee", paddingTop: 8, marginTop: 8 }}>
+                    <div key={bid.bidId} style={{ borderTop: "1px solid var(--line)", paddingTop: 8, marginTop: 8 }}>
                       <div>{`${bid.freelancer?.firstName || ""} ${bid.freelancer?.fatherName || ""} ${bid.freelancer?.familyName || ""}`.trim()}</div>
                       <div>{bid.freelancer?.email || "—"} • {bid.freelancer?.accountId || bid.freelancer?.id}</div>
                       <div>المبلغ: {bid.amount} JOD</div>
@@ -432,7 +432,7 @@ export default function AdminFakeOrdersPage() {
                 </label>
                 <div className="auth-field">
                   <span>الخطط المؤهلة</span>
-                  <div style={{ maxHeight: 180, overflow: "auto", border: "1px solid #ddd", borderRadius: 8, padding: 8 }}>
+                  <div style={{ maxHeight: 180, overflow: "auto", border: "1px solid var(--line)", borderRadius: 8, padding: 8, background: "var(--background)" }}>
                     {plans.map((p) => (
                       <label key={p.id} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
                         <input
@@ -478,7 +478,7 @@ export default function AdminFakeOrdersPage() {
               <label className="auth-field"><span>اسم الجولة (اختياري)</span><input value={startRound.title} onChange={(e) => setStartRound((p) => ({ ...p, title: e.target.value }))} /></label>
               <div className="auth-field">
                 <span>القوالب المستخدمة</span>
-                <div style={{ maxHeight: 220, overflow: "auto", border: "1px solid #ddd", borderRadius: 8, padding: 8 }}>
+                <div style={{ maxHeight: 220, overflow: "auto", border: "1px solid var(--line)", borderRadius: 8, padding: 8, background: "var(--background)" }}>
                   {templates.filter((t) => t.isActive).map((t) => (
                     <label key={t.id} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
                       <input

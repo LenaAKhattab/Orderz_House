@@ -92,6 +92,18 @@ async function assignFreelancers(req, res, next) {
   }
 }
 
+async function deleteCourse(req, res, next) {
+  try {
+    const out = await coursesService.deleteCourse({
+      actorUserId: req.auth.userId,
+      courseId: req.params.id,
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function listFreelancers(req, res, next) {
   try {
     const freelancers = await coursesService.listFreelancerIds({
@@ -112,5 +124,6 @@ module.exports = {
   importLessons,
   updateLessons,
   assignFreelancers,
+  deleteCourse,
   listFreelancers,
 };
