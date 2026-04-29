@@ -1030,7 +1030,6 @@ async function listAdminInternalOrders({ limit = 50, offset = 0 } = {}) {
     `SELECT id
      FROM orders
      WHERE source_type IN ('admin_created','super_admin_created')
-       AND COALESCE(is_fake, FALSE) = FALSE
      ORDER BY id DESC
      LIMIT $1 OFFSET $2`,
     [lim, off],
@@ -1346,7 +1345,6 @@ async function listPoolOrders({
     `o.assigned_freelancer_id IS NULL`,
     `o.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')`,
     `o.source_type IN ('admin_created','super_admin_created','client_created')`,
-    `o.is_fake = FALSE`,
   ];
   if (status && ["published", "open_for_freelancers", "open_for_bids"].includes(String(status))) {
     params.push(String(status));
@@ -1479,27 +1477,6 @@ async function listPoolOrdersForFreelancer({
     `o.assigned_freelancer_id IS NULL`,
     `o.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')`,
     `o.source_type IN ('admin_created','super_admin_created','client_created')`,
-    `(
-      o.is_fake = FALSE
-      OR (
-        o.is_fake = TRUE
-        AND o.fake_status = 'active'
-        AND (o.fake_expires_at IS NULL OR o.fake_expires_at > NOW())
-        AND EXISTS (
-          SELECT 1
-          FROM freelancer_subscriptions fs
-          JOIN fake_order_round_plans frp
-            ON frp.plan_id = fs.plan_id
-           AND frp.fake_round_id = o.fake_round_id
-          WHERE fs.freelancer_user_id = ${uid}
-            AND fs.is_current = TRUE
-            AND fs.status IN ('active', 'assigned_not_started')
-            AND COALESCE(fs.payment_status, 'not_required') IN ('paid', 'pending', 'not_required')
-            AND (fs.activation_status IS NULL OR fs.activation_status = 'company_approved')
-            AND (fs.expiry_date IS NULL OR fs.expiry_date > NOW())
-        )
-      )
-    )`,
   ];
   const whereCount = [...whereBase];
   const whereList = [...whereBase];
@@ -1934,6 +1911,47 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
       const err = new Error("Order is not available in the pool.");
       err.statusCode = 409;
       throw err;
+    }
+
+    if (order.is_fake) {
+      const eligible = await fakeOrdersService.isFreelancerEligibleForFakeOrder(
+        { freelancerUserId: Number(freelancerUserId), orderId: Number(orderId) },
+        client,
+      );
+      if (!eligible) {
+        const err = new Error("هذا الطلب التدريبي غير متاح لخطة اشتراكك.");
+        err.statusCode = 403;
+        throw err;
+      }
+      const receivedAt = new Date();
+      const startedAt = receivedAt;
+      const dueAt = computeDueAt(startedAt, order.duration_value, order.duration_unit);
+      await client.query(
+        `UPDATE orders
+           SET assigned_freelancer_id = $2,
+               received_at = $3,
+               started_at = $3,
+               due_at = $4,
+               is_open_for_pool = FALSE,
+               order_status = $5,
+               updated_at = NOW()
+         WHERE id = $1`,
+        [Number(orderId), Number(freelancerUserId), receivedAt, dueAt, ORDER_STATUSES.IN_PROGRESS],
+      );
+      if (order.fake_round_id) {
+        await client.query(
+          `INSERT INTO fake_order_interactions (fake_round_id, order_id, freelancer_id, event_type)
+           VALUES ($1, $2, $3, 'taken')
+           ON CONFLICT (fake_round_id, order_id, freelancer_id, event_type) DO NOTHING`,
+          [Number(order.fake_round_id), Number(orderId), Number(freelancerUserId)],
+        );
+      }
+      await subscriptionsService.activateCurrentSubscriptionOnFirstAcceptedOrder(
+        { freelancerUserId: String(freelancerUserId), orderId, activatedAt: receivedAt },
+        client,
+      );
+      await client.query("COMMIT");
+      return await getOrderById(orderId);
     }
 
     // Create claim record. Do NOT assign yet, do NOT remove from pool.

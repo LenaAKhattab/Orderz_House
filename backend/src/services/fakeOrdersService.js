@@ -7,6 +7,35 @@ function randomInt(min, max) {
   return Math.floor(Math.random() * (b - a + 1)) + a;
 }
 
+function classifyMainCategory({ categoryName, categorySlug }) {
+  const name = String(categoryName || "").toLowerCase();
+  const slug = String(categorySlug || "").toLowerCase();
+  const text = `${name} ${slug}`;
+  if (text.includes("content") || text.includes("محتوى") || text.includes("كتابة")) return "content";
+  if (text.includes("program") || text.includes("برمج")) return "programming";
+  if (text.includes("design") || text.includes("تصميم")) return "design";
+  return "other";
+}
+
+function normalizeCategoryDistribution(raw) {
+  const base = {
+    content: Number(raw?.content || 0),
+    programming: Number(raw?.programming || 0),
+    design: Number(raw?.design || 0),
+  };
+  return {
+    content: Number.isFinite(base.content) ? Math.max(0, base.content) : 0,
+    programming: Number.isFinite(base.programming) ? Math.max(0, base.programming) : 0,
+    design: Number.isFinite(base.design) ? Math.max(0, base.design) : 0,
+  };
+}
+
+function pickRandom(list) {
+  if (!Array.isArray(list) || !list.length) return null;
+  const idx = Math.floor(Math.random() * list.length);
+  return list[idx];
+}
+
 async function assertAdminOrSuperAdmin(userId, client) {
   const { rows } = await client.query(`SELECT role, is_active FROM users WHERE id = $1 LIMIT 1`, [Number(userId)]);
   const u = rows[0];
@@ -30,6 +59,7 @@ async function generateUniqueOrderCode(client) {
 }
 
 async function upsertSkillsAndAttach({ orderId, skills }, client) {
+  void orderId;
   const list = Array.isArray(skills) ? skills : [];
   const unique = Array.from(new Set(list.map((x) => String(x || "").trim()).filter(Boolean)));
   for (const name of unique) {
@@ -44,13 +74,6 @@ async function upsertSkillsAndAttach({ orderId, skills }, client) {
     );
     const sid = rows[0]?.id;
     if (!sid) continue;
-    // eslint-disable-next-line no-await-in-loop
-    await client.query(
-      `INSERT INTO order_skills (order_id, skill_id)
-       VALUES ($1, $2)
-       ON CONFLICT DO NOTHING`,
-      [Number(orderId), Number(sid)],
-    );
   }
 }
 
@@ -80,12 +103,16 @@ function mapTemplate(row) {
 
 function mapSettings(row, planRows = []) {
   if (!row) return null;
+  const fallbackHours = Number(row.duration_hours);
+  const durationValue = Number(row.duration_value);
+  const durationUnit = String(row.duration_unit || "").trim();
   return {
     minOrders: Number(row.min_orders),
     maxOrders: Number(row.max_orders),
-    durationHours: Number(row.duration_hours),
-    showFakeBadgeToFreelancers: Boolean(row.show_fake_badge_to_freelancers),
-    expiryBehavior: row.expiry_behavior || "expire",
+    durationValue: Number.isFinite(durationValue) && durationValue > 0 ? durationValue : (Number.isFinite(fallbackHours) && fallbackHours > 0 ? fallbackHours : 12),
+    durationUnit: ["minutes", "hours", "days"].includes(durationUnit) ? durationUnit : "hours",
+    showToAllFreelancers: Boolean(row.show_to_all_freelancers),
+    categoryDistribution: normalizeCategoryDistribution(row.category_distribution || { content: 30, programming: 50, design: 20 }),
     updatedBy: row.updated_by ? String(row.updated_by) : null,
     updatedAt: row.updated_at,
     planIds: planRows.map((p) => String(p.plan_id)),
@@ -266,28 +293,56 @@ async function updateSettings({ actorUserId, patch }) {
     }
     const minOrders = patch.minOrders !== undefined ? Number(patch.minOrders) : Number(current.min_orders);
     const maxOrders = patch.maxOrders !== undefined ? Number(patch.maxOrders) : Number(current.max_orders);
-    const durationHours = patch.durationHours !== undefined ? Number(patch.durationHours) : Number(current.duration_hours);
+    const durationValue =
+      patch.durationValue !== undefined
+        ? Number(patch.durationValue)
+        : Number(current.duration_value || current.duration_hours || 12);
+    const durationUnit = String(patch.durationUnit || current.duration_unit || "hours").trim();
     if (!(minOrders > 0) || !(maxOrders > 0) || minOrders > maxOrders) {
       const err = new Error("الحد الأدنى/الأعلى غير صالح.");
       err.statusCode = 400;
       throw err;
     }
+    if (!(durationValue > 0) || !["minutes", "hours", "days"].includes(durationUnit)) {
+      const err = new Error("مدة الظهور غير صالحة.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const nextDistribution = normalizeCategoryDistribution(
+      patch.categoryDistribution !== undefined ? patch.categoryDistribution : current.category_distribution,
+    );
+    const distTotal = Number(nextDistribution.content) + Number(nextDistribution.programming) + Number(nextDistribution.design);
+    if (distTotal !== 100) {
+      const err = new Error("مجموع نسب توزيع التصنيفات يجب أن يساوي 100%.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const durationHours =
+      durationUnit === "minutes"
+        ? Math.max(1, Math.ceil(durationValue / 60))
+        : durationUnit === "days"
+          ? durationValue * 24
+          : durationValue;
     await client.query(
       `UPDATE fake_order_settings
        SET min_orders = $1,
            max_orders = $2,
            duration_hours = $3,
-           show_fake_badge_to_freelancers = $4,
-           expiry_behavior = $5,
-           updated_by = $6,
+           duration_value = $4,
+           duration_unit = $5,
+           category_distribution = $6::jsonb,
+           show_to_all_freelancers = $7,
+           updated_by = $8,
            updated_at = NOW()
        WHERE id = 1`,
       [
         minOrders,
         maxOrders,
         durationHours,
-        patch.showFakeBadgeToFreelancers !== undefined ? Boolean(patch.showFakeBadgeToFreelancers) : Boolean(current.show_fake_badge_to_freelancers),
-        patch.expiryBehavior || current.expiry_behavior || "expire",
+        durationValue,
+        durationUnit,
+        JSON.stringify(nextDistribution),
+        patch.showToAllFreelancers !== undefined ? Boolean(patch.showToAllFreelancers) : Boolean(current.show_to_all_freelancers),
         Number(actorUserId),
       ],
     );
@@ -328,24 +383,42 @@ async function createRound({ actorUserId, payload }) {
     }
     const minOrders = Number(settings.min_orders);
     const maxOrders = Number(settings.max_orders);
-    const durationHours = Number(settings.duration_hours);
+    const durationValue = Number(settings.duration_value || settings.duration_hours || 12);
+    const durationUnit = String(settings.duration_unit || "hours");
     const generatedCount = randomInt(minOrders, maxOrders);
     const startsAt = new Date();
-    const expiresAt = new Date(startsAt.getTime() + durationHours * 60 * 60 * 1000);
-    const showBadge = Boolean(settings.show_fake_badge_to_freelancers);
+    const durationMs =
+      durationUnit === "minutes"
+        ? durationValue * 60 * 1000
+        : durationUnit === "days"
+          ? durationValue * 24 * 60 * 60 * 1000
+          : durationValue * 60 * 60 * 1000;
+    const expiresAt = new Date(startsAt.getTime() + durationMs);
+    const showToAllFreelancers = Boolean(settings.show_to_all_freelancers);
     const { rows: roundRows } = await client.query(
       `INSERT INTO fake_order_rounds (
          title, min_orders, max_orders, generated_count, duration_hours,
-         starts_at, expires_at, status, show_fake_badge_to_freelancers,
+         starts_at, expires_at, status, show_fake_badge_to_freelancers, show_to_all_freelancers,
          created_by, created_at, updated_at
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,'active',$8,$9,NOW(),NOW())
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,'active',$8,$9,$10,NOW(),NOW())
        RETURNING *`,
-      [String(payload.title || `جولة تدريبية ${startsAt.toLocaleDateString("en-GB")}`).trim(), minOrders, maxOrders, generatedCount, durationHours, startsAt, expiresAt, showBadge, Number(actorUserId)],
+      [
+        String(payload.title || `جولة تدريبية ${startsAt.toLocaleDateString("en-GB")}`).trim(),
+        minOrders,
+        maxOrders,
+        generatedCount,
+        Math.max(1, Math.ceil(durationMs / (60 * 60 * 1000))),
+        startsAt,
+        expiresAt,
+        false,
+        showToAllFreelancers,
+        Number(actorUserId),
+      ],
     );
     const round = roundRows[0];
     const { rows: settingsPlanRows } = await client.query(`SELECT plan_id FROM fake_order_settings_plans`);
     const planIds = [...new Set(settingsPlanRows.map((x) => Number(x.plan_id)).filter((x) => x > 0))];
-    if (!planIds.length) {
+    if (!showToAllFreelancers && !planIds.length) {
       const err = new Error("يرجى اختيار الخطط المؤهلة من إعدادات الطلبات التجريبية.");
       err.statusCode = 400;
       throw err;
@@ -362,10 +435,22 @@ async function createRound({ actorUserId, payload }) {
     let templates = [];
     const templateIds = [...new Set((Array.isArray(payload.templateIds) ? payload.templateIds : []).map((x) => Number(x)).filter((x) => x > 0))];
     if (templateIds.length) {
-      const { rows } = await client.query(`SELECT * FROM fake_order_templates WHERE id = ANY($1::bigint[]) AND is_active = TRUE`, [templateIds]);
+      const { rows } = await client.query(
+        `SELECT t.*, c.name AS category_name, c.slug AS category_slug
+         FROM fake_order_templates t
+         LEFT JOIN categories c ON c.id = t.category_id
+         WHERE t.id = ANY($1::bigint[]) AND t.is_active = TRUE`,
+        [templateIds],
+      );
       templates = rows;
     } else {
-      const { rows } = await client.query(`SELECT * FROM fake_order_templates WHERE is_active = TRUE ORDER BY id ASC`);
+      const { rows } = await client.query(
+        `SELECT t.*, c.name AS category_name, c.slug AS category_slug
+         FROM fake_order_templates t
+         LEFT JOIN categories c ON c.id = t.category_id
+         WHERE t.is_active = TRUE
+         ORDER BY t.id ASC`,
+      );
       templates = rows;
     }
     if (!templates.length) {
@@ -374,15 +459,61 @@ async function createRound({ actorUserId, payload }) {
       throw err;
     }
 
-    for (let i = 0; i < generatedCount; i += 1) {
-      const t = templates[i % templates.length];
+    const distribution = normalizeCategoryDistribution(settings.category_distribution || { content: 30, programming: 50, design: 20 });
+    const grouped = {
+      content: [],
+      programming: [],
+      design: [],
+      other: [],
+    };
+    for (const t of templates) {
+      grouped[classifyMainCategory({ categoryName: t.category_name, categorySlug: t.category_slug })].push(t);
+    }
+
+    const rawTargets = [
+      { key: "content", value: (generatedCount * distribution.content) / 100 },
+      { key: "programming", value: (generatedCount * distribution.programming) / 100 },
+      { key: "design", value: (generatedCount * distribution.design) / 100 },
+    ];
+    const targets = {};
+    let baseSum = 0;
+    for (const r of rawTargets) {
+      targets[r.key] = Math.floor(r.value);
+      baseSum += targets[r.key];
+    }
+    let remainder = Math.max(0, generatedCount - baseSum);
+    rawTargets
+      .sort((a, b) => (b.value - Math.floor(b.value)) - (a.value - Math.floor(a.value)))
+      .forEach((r) => {
+        if (remainder > 0) {
+          targets[r.key] += 1;
+          remainder -= 1;
+        }
+      });
+
+    const selectedTemplates = [];
+    for (const key of ["content", "programming", "design"]) {
+      for (let i = 0; i < (targets[key] || 0); i += 1) {
+        const picked = pickRandom(grouped[key]);
+        if (picked) selectedTemplates.push(picked);
+      }
+    }
+    while (selectedTemplates.length < generatedCount) {
+      const fallbackPool = [...grouped.content, ...grouped.programming, ...grouped.design, ...grouped.other];
+      const picked = pickRandom(fallbackPool);
+      if (!picked) break;
+      selectedTemplates.push(picked);
+    }
+
+    for (let i = 0; i < selectedTemplates.length; i += 1) {
+      const t = selectedTemplates[i];
       const budget = randomInt(Number(t.min_budget), Number(t.max_budget));
-      const durationValue = randomInt(Number(t.min_duration), Number(t.max_duration));
+      const orderDurationValue = randomInt(Number(t.min_duration), Number(t.max_duration));
       // eslint-disable-next-line no-await-in-loop
       const orderCode = await generateUniqueOrderCode(client);
       // eslint-disable-next-line no-await-in-loop
       const { rows } = await client.query(
-        `INSERT INTO orders (
+        `INSERT INTO fake_orders (
            order_code, title, description,
            category_id, subcategory_id, sub_subcategory_id,
            extra_category_ids, extra_category_details,
@@ -417,7 +548,7 @@ async function createRound({ actorUserId, payload }) {
           Number(t.category_id),
           t.subcategory_id ? Number(t.subcategory_id) : null,
           t.sub_subcategory_id ? Number(t.sub_subcategory_id) : null,
-          durationValue,
+          orderDurationValue,
           t.duration_unit || "days",
           Number(actorUserId),
           String((await client.query(`SELECT role FROM users WHERE id = $1`, [Number(actorUserId)])).rows?.[0]?.role || "admin"),
@@ -426,7 +557,7 @@ async function createRound({ actorUserId, payload }) {
           Number(budget),
           Number(round.id),
           expiresAt,
-          showBadge,
+          false,
         ],
       );
       // eslint-disable-next-line no-await-in-loop
@@ -455,7 +586,7 @@ function mapRound(row) {
     startsAt: row.starts_at,
     expiresAt: row.expires_at,
     status: row.status,
-    showFakeBadgeToFreelancers: Boolean(row.show_fake_badge_to_freelancers),
+    showToAllFreelancers: Boolean(row.show_to_all_freelancers),
     createdBy: row.created_by ? String(row.created_by) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -469,7 +600,7 @@ async function listRounds() {
             COALESCE(COUNT(b.id), 0)::int AS total_bids,
             COALESCE(COUNT(DISTINCT b.freelancer_user_id), 0)::int AS unique_freelancers
      FROM fake_order_rounds r
-     LEFT JOIN orders o ON o.fake_round_id = r.id AND o.is_fake = TRUE
+     LEFT JOIN fake_orders o ON o.fake_round_id = r.id AND o.is_fake = TRUE
      LEFT JOIN order_freelancer_bids b ON b.order_id = o.id
      GROUP BY r.id
      ORDER BY r.id DESC`,
@@ -482,22 +613,20 @@ async function listRounds() {
 }
 
 async function markExpiredRounds() {
-  const { rows: behaviorRows } = await pool.query(`SELECT expiry_behavior FROM fake_order_settings WHERE id = 1 LIMIT 1`);
-  const expiryBehavior = behaviorRows[0]?.expiry_behavior || "expire";
   await pool.query(
     `UPDATE fake_order_rounds
      SET status = $1, updated_at = NOW()
      WHERE status = 'active' AND expires_at <= NOW()`,
-    [expiryBehavior === "stop" ? "stopped" : "expired"],
+    ["expired"],
   );
   await pool.query(
-    `UPDATE orders
+    `UPDATE fake_orders
      SET fake_status = $1, updated_at = NOW()
      WHERE is_fake = TRUE
        AND fake_status = 'active'
        AND fake_expires_at IS NOT NULL
        AND fake_expires_at <= NOW()`,
-    [expiryBehavior === "stop" ? "stopped" : "expired"],
+    ["expired"],
   );
 }
 
@@ -518,7 +647,7 @@ async function getRoundById({ roundId }) {
     pool.query(
       `SELECT o.id, o.order_code, o.title, o.fake_status, o.fake_expires_at,
               COUNT(b.id)::int AS bids_count
-       FROM orders o
+       FROM fake_orders o
        LEFT JOIN order_freelancer_bids b ON b.order_id = o.id
        WHERE o.is_fake = TRUE
          AND o.fake_round_id = $1
@@ -534,7 +663,7 @@ async function getRoundById({ roundId }) {
          MIN(b.amount)::numeric(12,2) AS min_bid,
          MAX(b.amount)::numeric(12,2) AS max_bid
        FROM order_freelancer_bids b
-       JOIN orders o ON o.id = b.order_id
+       JOIN fake_orders o ON o.id = b.order_id
        WHERE o.is_fake = TRUE
          AND o.fake_round_id = $1`,
       [Number(roundId)],
@@ -555,7 +684,7 @@ async function getRoundById({ roundId }) {
          u.father_name,
          u.family_name,
          u.email
-       FROM orders o
+       FROM fake_orders o
        JOIN order_freelancer_bids b ON b.order_id = o.id
        JOIN users u ON u.id = b.freelancer_user_id
        WHERE o.is_fake = TRUE
@@ -631,7 +760,7 @@ async function stopRound({ actorUserId, roundId }) {
       [Number(roundId)],
     );
     await client.query(
-      `UPDATE orders
+      `UPDATE fake_orders
        SET fake_status = 'stopped',
            is_open_for_pool = FALSE,
            updated_at = NOW()
@@ -671,7 +800,7 @@ async function isFreelancerEligibleForFakeOrder({ freelancerUserId, orderId }, c
   if (!Number.isInteger(uid) || !Number.isInteger(oid)) return false;
   const { rows } = await runner.query(
     `SELECT o.id, o.is_fake, o.fake_round_id, o.fake_expires_at, o.fake_status
-     FROM orders o
+     FROM fake_orders o
      WHERE o.id = $1
      LIMIT 1`,
     [oid],
@@ -681,8 +810,17 @@ async function isFreelancerEligibleForFakeOrder({ freelancerUserId, orderId }, c
   if (!order.is_fake) return true;
   if (order.fake_status !== "active") return false;
   if (order.fake_expires_at && new Date(order.fake_expires_at).getTime() <= Date.now()) return false;
+  if (!order.fake_round_id) return false;
+  const { rows: roundRows } = await runner.query(
+    `SELECT show_to_all_freelancers
+     FROM fake_order_rounds
+     WHERE id = $1
+     LIMIT 1`,
+    [Number(order.fake_round_id)],
+  );
+  if (Boolean(roundRows[0]?.show_to_all_freelancers)) return true;
   const planId = await getFreelancerCurrentPlanId(uid, runner);
-  if (!planId || !order.fake_round_id) return false;
+  if (!planId) return false;
   const { rowCount } = await runner.query(
     `SELECT 1
      FROM fake_order_round_plans
