@@ -92,7 +92,7 @@ export default function FreelancerCourseDetailsPage() {
                   type="button"
                   key={lesson.id}
                   className="card"
-                  style={{ textAlign: "right", border: String(lesson.id) === String(activeLesson?.id) ? "2px solid #6a5cff" : undefined }}
+                  style={{ textAlign: "right", border: String(lesson.id) === String(activeLesson?.id) ? "2px solid var(--secondary)" : undefined }}
                   onClick={() => setActiveLessonId(lesson.id)}
                 >
                   <strong>{lesson.title}</strong>

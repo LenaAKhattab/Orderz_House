@@ -3,6 +3,7 @@ import { useAuth } from "../../context/useAuth";
 import {
   adminAssignCourseFreelancersRequest,
   adminCreateCourseRequest,
+  adminDeleteCourseRequest,
   adminGetCourseByIdRequest,
   adminImportCourseLessonsRequest,
   adminListCourseFreelancersRequest,
@@ -30,6 +31,11 @@ export default function AdminCoursesPage() {
     isActive: true,
   });
   const [importUrl, setImportUrl] = useState("");
+  const [sendModal, setSendModal] = useState({ open: false, course: null });
+  const [sendQuery, setSendQuery] = useState("");
+  const [sendResults, setSendResults] = useState([]);
+  const [sendLoading, setSendLoading] = useState(false);
+  const [sendSubmitting, setSendSubmitting] = useState(false);
 
   const isSuperAdmin = (user?.primaryRole || user?.role) === "super_admin";
   const pageTitle = isSuperAdmin ? "إدارة الدورات التدريبية (المدير الأعلى)" : "إدارة الدورات التدريبية";
@@ -81,6 +87,26 @@ export default function AdminCoursesPage() {
   useEffect(() => {
     if (selectedCourseId) loadCourseDetails(selectedCourseId);
   }, [selectedCourseId, loadCourseDetails]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!sendModal.open) return undefined;
+    const timer = window.setTimeout(async () => {
+      setSendLoading(true);
+      try {
+        const res = await adminListCourseFreelancersRequest({ q: sendQuery.trim(), limit: 30 });
+        if (!cancelled) setSendResults(res?.data?.freelancers || []);
+      } catch {
+        if (!cancelled) setSendResults([]);
+      } finally {
+        if (!cancelled) setSendLoading(false);
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [sendModal.open, sendQuery]);
 
   const filteredFreelancers = useMemo(() => {
     if (!freelancerQuery.trim()) return freelancers;
@@ -182,6 +208,55 @@ export default function AdminCoursesPage() {
     }
   };
 
+  const onDeleteCourse = async (courseId) => {
+    if (!courseId) return;
+    const ok = window.confirm("هل أنت متأكد من حذف الدورة؟ سيتم حذف الدروس والإسنادات المرتبطة بها.");
+    if (!ok) return;
+    setLoading(true);
+    try {
+      await adminDeleteCourseRequest(courseId);
+      toast.success("تم حذف الدورة بنجاح.");
+      if (String(selectedCourseId) === String(courseId)) {
+        setSelectedCourseId("");
+        setSelectedCourse(null);
+        setSelectedFreelancerIds([]);
+      }
+      await loadCourses();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "تعذر حذف الدورة.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onOpenSendModal = (course) => {
+    setSendModal({ open: true, course });
+    setSendQuery("");
+    setSendResults([]);
+  };
+
+  const onSendCourseToFreelancer = async (courseId, freelancerId) => {
+    if (!courseId || !freelancerId) return;
+    setSendSubmitting(true);
+    try {
+      const detailsRes = await adminGetCourseByIdRequest(courseId);
+      const details = detailsRes?.data || null;
+      const existingIds = (details?.assignments || []).map((x) => Number(x.freelancerId)).filter((x) => Number.isInteger(x) && x > 0);
+      const nextIds = Array.from(new Set([...existingIds, Number(freelancerId)]));
+      await adminAssignCourseFreelancersRequest(courseId, { assignAll: false, freelancerIds: nextIds });
+      toast.success("تم إرسال الدورة للمستقل بنجاح.");
+      setSendModal({ open: false, course: null });
+      await loadCourses();
+      if (String(selectedCourseId) === String(courseId)) {
+        await loadCourseDetails(courseId);
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "تعذر إرسال الدورة.");
+    } finally {
+      setSendSubmitting(false);
+    }
+  };
+
   return (
     <section className="dash">
       <header className="dash-hero">
@@ -231,12 +306,25 @@ export default function AdminCoursesPage() {
         {!courses.length ? <div className="dash-empty">لا توجد دورات حتى الآن.</div> : null}
         <div className="cards-grid">
           {courses.map((c) => (
-            <button key={c.id} type="button" className="card" onClick={() => setSelectedCourseId(c.id)} style={{ textAlign: "right" }}>
-              <strong>{c.title}</strong>
-              <div>الدروس: {c.lessonsCount}</div>
-              <div>المسند إليهم: {c.assignedCount}</div>
-              <div>{c.isActive ? "نشطة" : "غير نشطة"}</div>
-            </button>
+            <article key={c.id} className="card" style={{ textAlign: "right", display: "grid", gap: 10 }}>
+              <button type="button" onClick={() => setSelectedCourseId(c.id)} style={{ all: "unset", cursor: "pointer", display: "grid", gap: 6 }}>
+                <strong>{c.title}</strong>
+                <div>الدروس: {c.lessonsCount}</div>
+                <div>المسند إليهم: {c.assignedCount}</div>
+                <div>{c.isActive ? "نشطة" : "غير نشطة"}</div>
+              </button>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button className="btn btn-secondary" type="button" onClick={() => setSelectedCourseId(c.id)} disabled={loading}>
+                  إدارة الدورة
+                </button>
+                <button className="btn btn-primary" type="button" onClick={() => onOpenSendModal(c)} disabled={loading}>
+                  إرسال الدورة
+                </button>
+                <button className="btn btn-secondary" type="button" onClick={() => onDeleteCourse(c.id)} disabled={loading}>
+                  حذف الدورة
+                </button>
+              </div>
+            </article>
           ))}
         </div>
       </div>
@@ -348,7 +436,7 @@ export default function AdminCoursesPage() {
             </label>
             <div className="auth-field">
               <span>قائمة المستقلين</span>
-              <div style={{ maxHeight: 220, overflow: "auto", border: "1px solid #ddd", borderRadius: 8, padding: 8 }}>
+              <div style={{ maxHeight: 220, overflow: "auto", border: "1px solid var(--line)", borderRadius: 8, padding: 8, background: "var(--background)" }}>
                 {filteredFreelancers.map((f) => {
                   const checked = selectedFreelancerIds.includes(f.id);
                   return (
@@ -399,6 +487,79 @@ export default function AdminCoursesPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      ) : null}
+
+      {sendModal.open && sendModal.course ? (
+        <div
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && !sendSubmitting) setSendModal({ open: false, course: null });
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            background: "rgba(47, 59, 101, 0.45)",
+          }}
+        >
+          <div
+            className="card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="send-course-modal-title"
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{ width: "min(620px, 100%)", maxHeight: "86vh", overflow: "auto", display: "grid", gap: 10 }}
+          >
+            <h3 id="send-course-modal-title" style={{ margin: 0 }}>
+              إرسال الدورة: {sendModal.course.title}
+            </h3>
+            <label className="auth-field">
+              <span>ابحث عن المستقل (الاسم أو الإيميل)</span>
+              <input
+                value={sendQuery}
+                onChange={(e) => setSendQuery(e.target.value)}
+                placeholder="اكتب الاسم أو الإيميل..."
+                disabled={sendSubmitting}
+              />
+            </label>
+            <div style={{ maxHeight: 320, overflow: "auto", border: "1px solid var(--line)", borderRadius: 10, padding: 8, background: "var(--background)" }}>
+              {sendLoading ? (
+                <div className="help">جارٍ البحث...</div>
+              ) : sendResults.length === 0 ? (
+                <div className="help">لا يوجد نتائج.</div>
+              ) : (
+                sendResults.map((f) => (
+                  <div
+                    key={f.id}
+                    style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", padding: "8px 6px", borderBottom: "1px solid var(--line)" }}
+                  >
+                    <div>
+                      <strong>{`${f.firstName || ""} ${f.fatherName || ""} ${f.familyName || ""}`.trim() || "—"}</strong>
+                      <div className="help">{f.email || "—"} {f.accountId ? `• ${f.accountId}` : ""}</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      disabled={sendSubmitting}
+                      onClick={() => onSendCourseToFreelancer(sendModal.course.id, f.id)}
+                    >
+                      {sendSubmitting ? "جارٍ الإرسال..." : "إرسال"}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button type="button" className="btn btn-secondary" disabled={sendSubmitting} onClick={() => setSendModal({ open: false, course: null })}>
+                إغلاق
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

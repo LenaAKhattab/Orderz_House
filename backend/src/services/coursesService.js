@@ -268,6 +268,29 @@ async function updateCourseLessons({ actorUserId, courseId, lessons }) {
   }
 }
 
+async function deleteCourse({ actorUserId, courseId }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertAdminOrSuperAdmin(actorUserId, client);
+    const { rows } = await client.query(`SELECT id, title FROM courses WHERE id = $1 LIMIT 1 FOR UPDATE`, [Number(courseId)]);
+    const course = rows[0];
+    if (!course) {
+      const err = new Error("الدورة غير موجودة.");
+      err.statusCode = 404;
+      throw err;
+    }
+    await client.query(`DELETE FROM courses WHERE id = $1`, [Number(courseId)]);
+    await client.query("COMMIT");
+    return { deleted: true, id: String(course.id), title: course.title };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 async function assignCourseFreelancers({ actorUserId, courseId, freelancerIds = [], assignAll = false }) {
   const client = await pool.connect();
   try {
@@ -316,7 +339,8 @@ async function assignCourseFreelancers({ actorUserId, courseId, freelancerIds = 
             link: `/dashboard/freelancer/courses/${encodeURIComponent(String(courseId))}`,
             priority: "high",
             metadata: { courseId: String(courseId), courseTitle: course.title },
-            dedupeKey: `course_assigned_${courseId}`,
+            // Keep this unique per assignment operation so re-assignment can notify again.
+            dedupeKey: `course_assigned_${courseId}_${Date.now()}`,
           },
           client,
         ),
@@ -593,6 +617,7 @@ module.exports = {
   importCourseLessons,
   updateCourse,
   updateCourseLessons,
+  deleteCourse,
   assignCourseFreelancers,
   listCoursesForAdmin,
   getCourseDetailsForAdmin,
