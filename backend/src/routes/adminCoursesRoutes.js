@@ -21,6 +21,7 @@ router.get("/courses", listCoursesValidators, validateRequest, adminCoursesContr
 router.post("/courses", createCourseValidators, validateRequest, adminCoursesController.createCourse);
 router.get("/courses/:id", courseIdParam, validateRequest, adminCoursesController.getCourseById);
 router.patch("/courses/:id", updateCourseValidators, validateRequest, adminCoursesController.updateCourse);
+router.delete("/courses/:id", courseIdParam, validateRequest, adminCoursesController.deleteCourse);
 router.post("/courses/:id/import-lessons", importLessonsValidators, validateRequest, adminCoursesController.importLessons);
 router.patch("/courses/:id/lessons", updateLessonsValidators, validateRequest, adminCoursesController.updateLessons);
 router.post("/courses/:id/assign", assignCourseValidators, validateRequest, adminCoursesController.assignFreelancers);
