@@ -8,7 +8,6 @@ import { DashboardRedirect, GuestOnly, RequireAuth, RequireRole } from "./compon
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Services from "./pages/Services";
-import Orders from "./pages/Orders";
 import Plans from "./pages/Plans";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -46,7 +45,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/services" element={<Services />} />
-              <Route path="/orders" element={<Orders />} />
+              <Route path="/orders" element={<Navigate to="/dashboard/freelancer/orders" replace />} />
               <Route path="/plans" element={<Plans />} />
               <Route
                 path="/login"
@@ -68,6 +67,16 @@ function App() {
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-conditions" element={<TermsConditions />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
+            </Route>
+
+            <Route
+              element={
+                <ClientCreateOrderModalProvider>
+                  <MainLayout />
+                </ClientCreateOrderModalProvider>
+              }
+            >
+              <Route path="/dashboard/freelancer/orders" element={<DashboardPage />} />
             </Route>
 
             <Route element={<RequireAuth />}>
@@ -246,14 +255,6 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
                       <FreelancerMyOrderDetailsPage />
-                    </RequireRole>
-                  }
-                />
-                <Route
-                  path="/dashboard/freelancer/orders"
-                  element={
-                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
-                      <DashboardPage />
                     </RequireRole>
                   }
                 />
