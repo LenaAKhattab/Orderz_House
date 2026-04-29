@@ -49,11 +49,15 @@ const listTemplatesValidators = [
 const updateSettingsValidators = [
   body("minOrders").optional().isInt({ min: 1, max: 1000 }),
   body("maxOrders").optional().isInt({ min: 1, max: 1000 }),
-  body("durationHours").optional().isInt({ min: 1, max: 720 }),
-  body("planIds").optional().isArray({ min: 1 }).withMessage("يرجى اختيار خطة واحدة على الأقل."),
+  body("durationValue").optional().isInt({ min: 1, max: 10000 }),
+  body("durationUnit").optional().isIn(["minutes", "hours", "days"]),
+  body("planIds").optional().isArray(),
   body("planIds.*").optional().isInt({ min: 1 }),
-  body("showFakeBadgeToFreelancers").optional().isBoolean(),
-  body("expiryBehavior").optional().isIn(["expire", "stop"]),
+  body("showToAllFreelancers").optional().isBoolean(),
+  body("categoryDistribution").optional().isObject(),
+  body("categoryDistribution.content").optional().isInt({ min: 0, max: 100 }),
+  body("categoryDistribution.programming").optional().isInt({ min: 0, max: 100 }),
+  body("categoryDistribution.design").optional().isInt({ min: 0, max: 100 }),
 ];
 
 module.exports = {
