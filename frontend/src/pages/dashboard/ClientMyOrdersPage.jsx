@@ -111,11 +111,10 @@ export default function ClientMyOrdersPage() {
     try {
       await load();
     } catch {
-      /* ignore — background poll should not surface errors */
+      // ignore background poll errors
     }
   }, [load]);
 
-  /** Live list updates (e.g. delivery timing after freelancer submits) without manual refresh. */
   useEffect(() => {
     if (busy) return undefined;
     const t = setInterval(() => {
@@ -160,9 +159,7 @@ export default function ClientMyOrdersPage() {
         <div className="dashboard-orders-system__header-main">
           <p className="dashboard-orders-system__kicker">لوحة العميل</p>
           <h1>طلباتي</h1>
-          <p>
-            تتبّع طلباتك، حالة الدفع، واستقبال العروض للمزايدة، ثم اختيار العرض والدفع لبدء التنفيذ.
-          </p>
+          <p>تتبّع طلباتك، حالة الدفع، واستقبال العروض للمزايدة، ثم اختيار العرض والدفع لبدء التنفيذ.</p>
         </div>
         <div className="dashboard-orders-system__header-actions">
           <button type="button" className="btn btn-primary" onClick={() => openCreateOrder()}>

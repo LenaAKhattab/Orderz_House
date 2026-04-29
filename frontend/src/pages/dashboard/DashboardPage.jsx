@@ -815,6 +815,8 @@ function FreelancerPoolOrders() {
     isFreelancer && eligibilityFetched && eligibility && eligibility.eligible === false;
   const ineligibleMessage = showIneligibleNotice ? getFreelancerOrderEligibilityMessage(eligibility, subscription) : "";
   const canTake = Boolean(isFreelancer && eligibility?.eligible);
+  const loginRequiredMessage = "يجب تسجيل الدخول كمستقل وتفعيل الاشتراك لاستلام الطلبات.";
+  const clientViewOnlyMessage = "يمكن للمستقلين المؤهلين فقط استلام الطلبات.";
 
   const reloadPool = async () => {
     const res = await listPoolOrdersRequest({
@@ -1016,9 +1018,7 @@ function FreelancerPoolOrders() {
                 {ineligibleMessage}
               </p>
             ) : null
-          ) : (
-            <p className="help" style={{ marginTop: 0 }}>هذه الصفحة متاحة للمستقل فقط.</p>
-          )}
+          ) : null}
 
           <div className="oh-market-center">
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8, marginBottom: 10 }}>
@@ -1108,7 +1108,15 @@ function FreelancerPoolOrders() {
                         taking={takingId === order.id}
                         bidBusy={bidBusyId === order.id}
                         actionsDisabled={!canTake}
-                        actionsDisabledReason={!canTake ? getFreelancerOrderEligibilityMessage(eligibility, subscription) : ""}
+                        actionsDisabledReason={
+                          !canTake
+                            ? !user
+                              ? loginRequiredMessage
+                              : role === "client"
+                                ? clientViewOnlyMessage
+                              : getFreelancerOrderEligibilityMessage(eligibility, subscription)
+                            : ""
+                        }
                         onOpenDetails={() =>
                           navigate(`/dashboard/freelancer/orders/${order.id}`, {
                             state: { from: { pathname: "/dashboard/freelancer/orders" } },
@@ -1261,6 +1269,13 @@ const DashboardPage = () => {
   const roleLabel = role ? ROLE_LABEL_AR[role] || role : "";
 
   const isFreelancerRoute = pathname.startsWith("/dashboard/freelancer");
+  if (pathname === "/dashboard/freelancer/orders") {
+    return (
+      <section className="container page-content dash-shell">
+        <FreelancerPoolOrders />
+      </section>
+    );
+  }
   if (role === "freelancer" && isFreelancerRoute) {
     if (pathname === "/dashboard/freelancer") {
       return (
@@ -1273,13 +1288,6 @@ const DashboardPage = () => {
       return (
         <section className="container page-content dash-shell">
           <FreelancerMyOrders />
-        </section>
-      );
-    }
-    if (pathname === "/dashboard/freelancer/orders") {
-      return (
-        <section className="container page-content dash-shell">
-          <FreelancerPoolOrders />
         </section>
       );
     }
