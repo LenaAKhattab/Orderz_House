@@ -3445,6 +3445,43 @@ p {
   outline-offset: 2px;
 }
 
+.fake-orders-table-wrap {
+  overflow: hidden;
+}
+
+.fake-orders-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.fake-orders-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.fake-orders-table th,
+.fake-orders-table td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(49, 58, 97, 0.14);
+  white-space: nowrap;
+}
+
+.fake-orders-table td:nth-child(2) {
+  min-width: 220px;
+  white-space: normal;
+}
+
+.fake-orders-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
 .btn:active:not(.btn-secondary) {
   background: var(--accent-strong);
 }
