@@ -344,7 +344,7 @@ export default function AdminOrdersPage() {
                           <div style={{ display: "grid", gap: 6 }}>
                             <span>{deliveryTiming.message}</span>
                             {deliveryTiming.completionMessage ? (
-                              <span style={{ fontSize: "0.88em", color: "#475569" }}>{deliveryTiming.completionMessage}</span>
+                              <span style={{ fontSize: "0.88em", color: "var(--text-muted)" }}>{deliveryTiming.completionMessage}</span>
                             ) : null}
                           </div>
                         ) : (

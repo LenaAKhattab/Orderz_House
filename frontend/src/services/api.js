@@ -407,6 +407,11 @@ export const adminUpdateCourseRequest = async (courseId, payload) => {
   return data;
 };
 
+export const adminDeleteCourseRequest = async (courseId) => {
+  const { data } = await api.delete(`/admin/courses/${courseId}`);
+  return data;
+};
+
 export const adminImportCourseLessonsRequest = async (courseId, payload) => {
   const { data } = await api.post(`/admin/courses/${courseId}/import-lessons`, payload);
   return data;

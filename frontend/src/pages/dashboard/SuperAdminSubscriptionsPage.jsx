@@ -252,7 +252,7 @@ const SuperAdminSubscriptionsPage = () => {
             onMouseDown={(e) => e.stopPropagation()}
           >
             <h2 style={{ marginBottom: 6 }}>تأكيد تغيير الباقة</h2>
-            <p style={{ marginBottom: 12, color: "#6f7992" }}>
+            <p style={{ marginBottom: 12, color: "var(--text-muted)" }}>
               بعض المستقلين لديهم اشتراك حالي. إذا أكملت، سيتم **تغيير باقتهم** إلى:{" "}
               <strong>{confirmPlanTitle}</strong>
             </p>
@@ -270,8 +270,8 @@ const SuperAdminSubscriptionsPage = () => {
                     gap: 6,
                   }}
                 >
-                  <div style={{ fontWeight: 900, color: "#1b2341" }}>{x.freelancerLabel}</div>
-                  <div style={{ color: "#6f7992", fontWeight: 800, fontSize: "0.92rem" }}>
+                  <div style={{ fontWeight: 900, color: "var(--primary)" }}>{x.freelancerLabel}</div>
+                  <div style={{ color: "var(--text-muted)", fontWeight: 800, fontSize: "0.92rem" }}>
                     الباقة الحالية: <strong>{x.currentPlanTitle || x.currentPlanId || "—"}</strong>
                   </div>
                 </div>
@@ -347,7 +347,7 @@ const SuperAdminSubscriptionsPage = () => {
                       top: "calc(100% + 8px)",
                       insetInline: 0,
                       zIndex: 50,
-                      background: "#fff",
+                      background: "var(--background)",
                       border: "1px solid rgba(56, 82, 180, 0.18)",
                       borderRadius: 14,
                       boxShadow: "0 18px 40px rgba(24, 36, 85, 0.12)",
@@ -355,13 +355,13 @@ const SuperAdminSubscriptionsPage = () => {
                     }}
                   >
                     <div style={{ padding: 10, borderBottom: "1px solid rgba(56, 82, 180, 0.10)", background: "rgba(56, 82, 180, 0.02)" }}>
-                      <div style={{ fontWeight: 800, color: "#6f7992", fontSize: "0.88rem" }}>
+                      <div style={{ fontWeight: 800, color: "var(--text-muted)", fontSize: "0.88rem" }}>
                         {freelancerBusy ? "جارٍ البحث…" : "اختر من النتائج"}
                       </div>
                     </div>
                     <div style={{ maxHeight: 260, overflow: "auto" }}>
                       {freelancerMatches.length === 0 && !freelancerBusy ? (
-                        <div style={{ padding: 12, color: "#6f7992", fontWeight: 800 }}>لا توجد نتائج.</div>
+                        <div style={{ padding: 12, color: "var(--text-muted)", fontWeight: 800 }}>لا توجد نتائج.</div>
                       ) : null}
                       {freelancerMatches.map((f) => (
                         <button
@@ -398,8 +398,8 @@ const SuperAdminSubscriptionsPage = () => {
                             fontFamily: "inherit",
                           }}
                         >
-                          <div style={{ fontWeight: 900, color: "#1b2341" }}>{f.name || "—"}</div>
-                          <div style={{ color: "#6f7992", fontWeight: 700, fontSize: "0.86rem" }}>
+                          <div style={{ fontWeight: 900, color: "var(--primary)" }}>{f.name || "—"}</div>
+                          <div style={{ color: "var(--text-muted)", fontWeight: 700, fontSize: "0.86rem" }}>
                             {f.email || ""}{f.accountId ? ` • ${f.accountId}` : ""} • ID: {String(f.id)}
                           </div>
                         </button>
@@ -426,7 +426,7 @@ const SuperAdminSubscriptionsPage = () => {
                         border: "1px solid rgba(56, 82, 180, 0.18)",
                         background: "rgba(56, 82, 180, 0.05)",
                         fontWeight: 800,
-                        color: "#223069",
+                        color: "var(--primary)",
                       }}
                     >
                       {label}
@@ -440,12 +440,12 @@ const SuperAdminSubscriptionsPage = () => {
                         }
                         style={{
                           border: "1px solid rgba(56, 82, 180, 0.18)",
-                          background: "#fff",
+                          background: "var(--background)",
                           borderRadius: 999,
                           padding: "4px 10px",
                           cursor: "pointer",
                           fontWeight: 900,
-                          color: "#223069",
+                          color: "var(--primary)",
                         }}
                       >
                         إزالة
@@ -455,7 +455,7 @@ const SuperAdminSubscriptionsPage = () => {
                 })}
               </div>
             ) : (
-              <div style={{ marginTop: 10, color: "#6f7992", fontWeight: 800, fontSize: "0.9rem" }}>
+              <div style={{ marginTop: 10, color: "var(--text-muted)", fontWeight: 800, fontSize: "0.9rem" }}>
                 لم يتم اختيار أي مستقل بعد.
               </div>
             )}
