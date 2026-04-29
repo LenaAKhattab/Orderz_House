@@ -22,8 +22,9 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
   const [loading, setLoading] = useState(true);
   const [bids, setBids] = useState([]);
   const [openPool, setOpenPool] = useState(false);
-  const [currencyCode, setCurrencyCode] = useState("");
+  const [currencyCode, setCurrencyCode] = useState("JOD");
   const [error, setError] = useState("");
+  const [confirmBidId, setConfirmBidId] = useState(null);
 
   const load = useCallback(async () => {
     if (!orderId) return;
@@ -34,7 +35,7 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
       const payload = res?.data ?? res;
       setBids(Array.isArray(payload?.bids) ? payload.bids : []);
       setOpenPool(Boolean(payload?.orderSummary?.hasOpenPool));
-      setCurrencyCode(String(payload?.orderSummary?.currencyCode || order?.currencyCode || "").trim());
+      setCurrencyCode("JOD");
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "تعذّر تحميل العروض.");
       setBids([]);
@@ -42,7 +43,7 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
     } finally {
       setLoading(false);
     }
-  }, [orderId, order?.currencyCode]);
+  }, [orderId]);
 
   useEffect(() => {
     if (open && orderId) load();
@@ -59,9 +60,13 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
     setBusy(true);
     setError("");
     try {
-      await acceptClientOrderBidRequest(orderId, bidId);
-      onChanged?.();
-      onClose();
+      const res = await acceptClientOrderBidRequest(orderId, bidId);
+      const checkoutUrl = res?.data?.checkoutUrl || res?.checkoutUrl;
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+        return;
+      }
+      setError("تعذّر إنشاء جلسة الدفع.");
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "تعذّر اعتماد العرض.");
     } finally {
@@ -115,7 +120,7 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
           النطاق المسموح للعروض: <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>{rangeText}</span>
         </p>
         <p className="help" style={{ marginTop: 0 }}>
-          يمكنك اعتماد عرض واحد فقط لإسناد الطلب لهذا المستقل وإغلاق الحوض؛ سيتم رفض بقية العروض المعلّقة تلقائياً.
+          بعد اختيار العرض سيتم تحويلك للدفع أولاً. يبدأ المشروع مع المستقل المختار فقط بعد نجاح الدفع.
         </p>
         {error ? (
           <p className="help" style={{ color: "#b91c1c", marginTop: 8 }}>
@@ -148,13 +153,29 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
                   مبلغ العرض: {formatMoney(b.amount)}
                   {currencyCode ? ` ${currencyCode}` : ""}
                 </div>
+                {confirmBidId === b.id ? (
+                  <div className="help" style={{ marginTop: 8 }}>
+                    سيتم الدفع الآن بقيمة العرض المختار قبل بدء العمل.
+                  </div>
+                ) : null}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12, justifyContent: "flex-end" }}>
                   <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => reject(b.id)}>
                     رفض العرض
                   </button>
-                  <button type="button" className="btn btn-primary" disabled={busy} onClick={() => accept(b.id)}>
-                    اعتماد العرض وإسناد الطلب
-                  </button>
+                  {confirmBidId === b.id ? (
+                    <>
+                      <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => setConfirmBidId(null)}>
+                        إلغاء
+                      </button>
+                      <button type="button" className="btn btn-primary" disabled={busy} onClick={() => accept(b.id)}>
+                        تأكيد والدفع
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" className="btn btn-primary" disabled={busy} onClick={() => setConfirmBidId(b.id)}>
+                      اختيار العرض والدفع
+                    </button>
+                  )}
                 </div>
               </li>
             ))}

@@ -3,9 +3,16 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useToast } from "../../components/ui/toastContext";
 import { useAuth } from "../../context/useAuth";
 import BidAmountModal from "../../components/orders/BidAmountModal";
-import { getMyEligibilityRequest, getPoolOrderByIdRequest, submitPoolOrderBidRequest, takePoolOrderRequest } from "../../services/api";
+import {
+  getMyEligibilityRequest,
+  getMySubscriptionRequest,
+  getPoolOrderByIdRequest,
+  submitPoolOrderBidRequest,
+  takePoolOrderRequest,
+} from "../../services/api";
 import { arabicDurationUnit } from "../../utils/arTime";
 import { OrderDetailsPageSkeleton } from "../../components/ui/Skeleton";
+import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
 
 function fileHref(fileUrl) {
   if (!fileUrl) return "";
@@ -55,8 +62,13 @@ export default function FreelancerOrderDetailsPage() {
   const [bidOpen, setBidOpen] = useState(false);
   const [bidBusy, setBidBusy] = useState(false);
   const [eligibility, setEligibility] = useState(null);
+  const [subscription, setSubscription] = useState(null);
 
   const canTake = useMemo(() => isFreelancer && Boolean(eligibility?.eligible), [isFreelancer, eligibility]);
+  const ineligibleMessage = useMemo(() => {
+    if (!isFreelancer || eligibility?.eligible !== false) return "";
+    return getFreelancerOrderEligibilityMessage(eligibility, subscription);
+  }, [isFreelancer, eligibility, subscription]);
   const isPricedBidding = useMemo(
     () => order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null,
     [order],
@@ -108,6 +120,26 @@ export default function FreelancerOrderDetailsPage() {
     };
   }, [user, loading, isFreelancer]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSubscription() {
+      if (!user || loading || !isFreelancer) {
+        if (!cancelled) setSubscription(null);
+        return;
+      }
+      try {
+        const res = await getMySubscriptionRequest();
+        if (!cancelled) setSubscription(res?.data?.subscription || null);
+      } catch {
+        if (!cancelled) setSubscription(null);
+      }
+    }
+    loadSubscription();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, loading, isFreelancer]);
+
   const take = async () => {
     setTaking(true);
     try {
@@ -147,10 +179,10 @@ export default function FreelancerOrderDetailsPage() {
     const categoryText = `${order?.category?.name || "—"} — ${order?.subSubcategory?.name || "—"}`;
     const budgetText =
       order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null
-        ? `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)}${order?.currencyCode ? ` ${order.currencyCode}` : ""}`.trim()
+        ? `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)} JOD`.trim()
         : order?.projectType === "bidding"
           ? "—"
-          : `${formatMoney(order?.budget)}${order?.currencyCode ? ` ${order.currencyCode}` : ""}`.trim();
+          : `${formatMoney(order?.budget)} JOD`.trim();
     const typeAndBudgetText =
       order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null
         ? `${typeLabel(order?.projectType)} — ${budgetText}`
@@ -212,7 +244,9 @@ export default function FreelancerOrderDetailsPage() {
                       : order.myClaim.status === "rejected"
                         ? "سبق أن تقدمت لهذا الطلب وتم رفض الطلب."
                         : `سبق أن تقدمت لهذا الطلب (الحالة: ${order.myClaim.status}).`
-                  : ""
+                  : !canTake
+                    ? ineligibleMessage
+                    : ""
               }
               onClick={take}
             >
@@ -225,7 +259,7 @@ export default function FreelancerOrderDetailsPage() {
       {isFreelancer && eligibility?.eligible === false ? (
         <section className="card order-details__notice">
           <p className="help" style={{ margin: 0 }}>
-            حسابك غير مؤهل حالياً لاستلام طلبات من الحوض (تحقق من الاشتراك).
+            {ineligibleMessage}
           </p>
         </section>
       ) : null}
@@ -300,7 +334,7 @@ export default function FreelancerOrderDetailsPage() {
         title={order ? `عرض سعر: ${order.title}` : ""}
         min={order?.bidBudgetMin}
         max={order?.bidBudgetMax}
-        currency={order?.currencyCode}
+        currency="JOD"
         busy={bidBusy}
         onClose={() => {
           if (!bidBusy) setBidOpen(false);

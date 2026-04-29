@@ -2,14 +2,41 @@ const { body, param, query } = require("express-validator");
 
 const orderIdParam = [param("id").isInt({ min: 1 }).withMessage("Invalid order id.")];
 
+const freelancerUserIdParam = [param("id").isInt({ min: 1 }).withMessage("معرّف المستخدم غير صالح.")];
+
 const clientOrderFileDownloadParams = [
   param("id").isInt({ min: 1 }).withMessage("معرّف الطلب غير صالح."),
   param("fileId").isInt({ min: 1 }).withMessage("معرّف الملف غير صالح."),
 ];
 
 const listOrdersValidators = [
+  query("page").optional().isInt({ min: 1, max: 100000 }).withMessage("page must be >= 1."),
   query("limit").optional().isInt({ min: 1, max: 200 }).withMessage("limit must be 1..200."),
   query("offset").optional().isInt({ min: 0, max: 100000 }).withMessage("offset must be >= 0."),
+  query("status")
+    .optional()
+    .isIn([
+      "all",
+      "pending_claim",
+      "revision_required",
+      "assigned",
+      "in_progress",
+      "pending_client_review",
+      "completed",
+      "cancelled",
+      "published",
+      "open_for_freelancers",
+      "open_for_bids",
+    ])
+    .withMessage("Invalid status filter."),
+  query("projectType").optional().isIn(["fixed", "bidding"]).withMessage("Invalid projectType filter."),
+  query("categoryId").optional().isInt({ min: 1 }).withMessage("categoryId must be a positive integer."),
+  query("subSubCategoryIds")
+    .optional()
+    .matches(/^\d+(,\d+)*$/)
+    .withMessage("subSubCategoryIds must be comma-separated positive integers."),
+  query("sort").optional().isIn(["newest", "oldest", "price_high", "price_low"]).withMessage("Invalid sort filter."),
+  query("q").optional().isString().trim().isLength({ min: 1, max: 120 }).withMessage("q must be 1..120 chars."),
 ];
 
 const createInternalOrderValidators = [
@@ -33,41 +60,6 @@ const createInternalOrderValidators = [
       return true;
     }),
   body("projectType").isIn(["fixed", "bidding"]).withMessage("Project Type must be fixed or bidding."),
-  body("currencyCode")
-    .optional({ nullable: true })
-    .custom((value, { req }) => {
-      const type = String(req.body.projectType || "").trim();
-      const hasBidRange =
-        type === "bidding" &&
-        req.body.bidBudgetMin !== undefined &&
-        req.body.bidBudgetMin !== "" &&
-        req.body.bidBudgetMax !== undefined &&
-        req.body.bidBudgetMax !== "";
-      if (type === "fixed") {
-        if (value === undefined || value === null || value === "") {
-          throw new Error("currencyCode is required for fixed projects.");
-        }
-      } else if (type === "bidding" && hasBidRange) {
-        if (value === undefined || value === null || value === "") {
-          throw new Error("currencyCode is required for priced bidding.");
-        }
-      } else if (type === "bidding" && !hasBidRange) {
-        if (value !== undefined && value !== null && value !== "") {
-          throw new Error("currencyCode must be omitted for bidding without price range.");
-        }
-        return true;
-      }
-      if (value === undefined || value === null || value === "") return true;
-      const code = String(value).trim().toUpperCase();
-      if (!/^[A-Z]{3}$/.test(code)) {
-        throw new Error("Invalid currencyCode.");
-      }
-      const allowed = ["JOD", "SAR", "USD", "AED", "EUR", "KWD", "QAR", "BHD", "OMR"];
-      if (!allowed.includes(code)) {
-        throw new Error("Unsupported currencyCode.");
-      }
-      return true;
-    }),
   body("budget")
     .optional({ nullable: true })
     .custom((value, { req }) => {
@@ -174,23 +166,20 @@ const createInternalOrderValidators = [
 ];
 
 const createClientOrderValidators = [
+  body("orderCode")
+    .optional({ values: "falsy" })
+    .isString()
+    .trim()
+    .isLength({ min: 2, max: 32 })
+    .withMessage("رقم الطلب غير صالح.")
+    .matches(/^[A-Za-z0-9][A-Za-z0-9_-]{1,31}$/)
+    .withMessage("رقم الطلب غير صالح."),
   body("title").isString().trim().isLength({ min: 2, max: 200 }).withMessage("عنوان المشروع مطلوب."),
   body("description").isString().trim().isLength({ min: 10, max: 5000 }).withMessage("الوصف مطلوب."),
   body("categoryId").isInt({ min: 1 }).withMessage("التصنيف مطلوب."),
   body("subcategoryId").optional({ nullable: true }).isInt({ min: 1 }).withMessage("تصنيف فرعي غير صالح."),
   body("subSubcategoryId").optional({ nullable: true }).isInt({ min: 1 }).withMessage("تصنيف دقيق غير صالح."),
   body("projectType").isIn(["fixed", "bidding"]).withMessage("نوع المشروع غير صالح."),
-  body("currencyCode")
-    .isString()
-    .trim()
-    .isLength({ min: 3, max: 3 })
-    .withMessage("رمز العملة مطلوب (3 أحرف).")
-    .custom((v) => {
-      const code = String(v).trim().toUpperCase();
-      const allowed = ["JOD", "SAR", "USD", "AED", "EUR", "KWD", "QAR", "BHD", "OMR"];
-      if (!allowed.includes(code)) throw new Error("رمز العملة غير مدعوم.");
-      return true;
-    }),
   body("budget")
     .optional({ nullable: true })
     .custom((value, { req }) => {
@@ -249,6 +238,7 @@ const submitPoolOrderBidValidators = [
     .isFloat({ min: 0.01 })
     .withMessage("مبلغ العرض يجب أن يكون أكبر من صفر.")
     .toFloat(),
+  body("message").optional({ nullable: true }).isString().trim().isLength({ max: 4000 }).withMessage("رسالة العرض طويلة جداً."),
 ];
 
 const clientOrderClaimIdBodyValidators = [
@@ -259,12 +249,17 @@ const clientOrderBidIdBodyValidators = [
   body("bidId").isInt({ min: 1 }).withMessage("يرجى تحديد العرض.").toInt(),
 ];
 
+const clientOrderBidIdParamValidators = [
+  param("bidId").isInt({ min: 1 }).withMessage("يرجى تحديد العرض.").toInt(),
+];
+
 const clientOrderRevisionNoteValidators = [
   body("note").optional().isString().trim().isLength({ max: 4000 }).withMessage("نص طلب التعديل طويل جداً."),
 ];
 
 module.exports = {
   orderIdParam,
+  freelancerUserIdParam,
   clientOrderFileDownloadParams,
   listOrdersValidators,
   createInternalOrderValidators,
@@ -272,6 +267,7 @@ module.exports = {
   submitPoolOrderBidValidators,
   clientOrderClaimIdBodyValidators,
   clientOrderBidIdBodyValidators,
+  clientOrderBidIdParamValidators,
   clientOrderRevisionNoteValidators,
 };
 

@@ -1,12 +1,35 @@
 const ordersService = require("../services/ordersService");
+const orderFlowService = require("../services/orderFlowService");
+const fakeOrdersService = require("../services/fakeOrdersService");
 
 const listPoolOrders = async (req, res, next) => {
   try {
     const freelancerUserId = req.auth?.userId || null;
-    const orders = freelancerUserId
-      ? await ordersService.listPoolOrdersForFreelancer({ freelancerUserId, limit: req.query.limit, offset: req.query.offset })
-      : await ordersService.listPoolOrders({ limit: req.query.limit, offset: req.query.offset });
-    return res.status(200).json({ success: true, data: { orders } });
+    const result = freelancerUserId
+      ? await ordersService.listPoolOrdersForFreelancer({
+          freelancerUserId,
+          page: req.query.page,
+          limit: req.query.limit,
+          offset: req.query.offset,
+          status: req.query.status,
+          projectType: req.query.projectType,
+          categoryId: req.query.categoryId,
+          subSubCategoryIds: req.query.subSubCategoryIds,
+          sort: req.query.sort,
+          q: req.query.q,
+        })
+      : await ordersService.listPoolOrders({
+          page: req.query.page,
+          limit: req.query.limit,
+          offset: req.query.offset,
+          status: req.query.status,
+          projectType: req.query.projectType,
+          categoryId: req.query.categoryId,
+          subSubCategoryIds: req.query.subSubCategoryIds,
+          sort: req.query.sort,
+          q: req.query.q,
+        });
+    return res.status(200).json({ success: true, data: result });
   } catch (err) {
     return next(err);
   }
@@ -38,10 +61,19 @@ const getPoolOrderById = async (req, res, next) => {
       return res.status(404).json({ success: false, message: "Order not found." });
     }
     // If it's not currently in the pool, hide it from this endpoint.
-    if (!(order.isPublished && order.isOpenForPool && !order.assignedFreelancerId && order.orderStatus === "published")) {
+    if (!orderFlowService.orderApiEligibleForFreelancerPool(order)) {
       return res.status(404).json({ success: false, message: "Order not found." });
     }
     const freelancerUserId = req.auth?.userId || null;
+    if (order.isFake) {
+      if (!freelancerUserId) {
+        return res.status(404).json({ success: false, message: "Order not found." });
+      }
+      const allowed = await fakeOrdersService.isFreelancerEligibleForFakeOrder({ freelancerUserId, orderId: req.params.id });
+      if (!allowed) {
+        return res.status(404).json({ success: false, message: "Order not found." });
+      }
+    }
     if (freelancerUserId) {
       const myClaim = await ordersService.getMyOrderClaim({ orderId: req.params.id, freelancerUserId });
       let myBid = null;
@@ -62,6 +94,7 @@ const submitPoolOrderBid = async (req, res, next) => {
       freelancerUserId: req.auth.userId,
       orderId: req.params.id,
       amount: req.body.amount,
+      message: req.body.message || null,
     });
     return res.status(200).json({ success: true, data: { order } });
   } catch (err) {
@@ -71,12 +104,19 @@ const submitPoolOrderBid = async (req, res, next) => {
 
 const listMyAssignedOrders = async (req, res, next) => {
   try {
-    const orders = await ordersService.listFreelancerAssignedOrders({
+    const result = await ordersService.listFreelancerAssignedOrders({
       freelancerUserId: req.auth.userId,
+      page: req.query.page,
       limit: req.query.limit,
       offset: req.query.offset,
+      status: req.query.status,
+      projectType: req.query.projectType,
+      categoryId: req.query.categoryId,
+      subSubCategoryIds: req.query.subSubCategoryIds,
+      sort: req.query.sort,
+      q: req.query.q,
     });
-    return res.status(200).json({ success: true, data: { orders } });
+    return res.status(200).json({ success: true, data: result });
   } catch (err) {
     return next(err);
   }

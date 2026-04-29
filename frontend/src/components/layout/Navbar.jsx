@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { useClientCreateOrderModal } from "../../context/ClientCreateOrderModalContext";
-import { getDashboardPath } from "../../constants/authRoutes";
+import { getDashboardPath, getNotificationsPath } from "../../constants/authRoutes";
+import NotificationsBell from "../notifications/NotificationsBell";
 
 const publicExploreItems = [
   { label: "من نحن", to: "/about" },
@@ -45,6 +46,7 @@ const Navbar = () => {
   const roles = Array.isArray(user?.roles) ? user.roles : [];
   const isFreelancer = role === "freelancer" || roles.includes("freelancer");
   const dashboardPath = user && role ? getDashboardPath(role) : null;
+  const notificationsPath = user && role ? getNotificationsPath(role) : "/dashboard";
   const isLoggedIn = Boolean(user) && !loading;
   const showAdminCreateOrderButton = role === "super_admin" || role === "admin";
 
@@ -75,7 +77,10 @@ const Navbar = () => {
       return [
         ...base,
         { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
+        { label: "الدورات", to: "/dashboard/super-admin/courses" },
+        { label: "الطلبات التجريبية", to: "/dashboard/super-admin/fake-orders" },
         { label: "الاشتراكات", to: "/dashboard/super-admin/subscriptions" },
+        { label: "المطالبات المالية", to: "/dashboard/super-admin/financial-claims" },
         { label: "الطلبات", to: "/dashboard/super-admin/orders" },
       ];
     }
@@ -83,12 +88,16 @@ const Navbar = () => {
       return [
         ...base,
         { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
+        { label: "الدورات", to: "/dashboard/admin/courses" },
+        { label: "الطلبات التجريبية", to: "/dashboard/admin/fake-orders" },
+        { label: "تفعيل الاشتراكات", to: "/dashboard/admin/subscriptions" },
         { label: "الطلبات", to: "/dashboard/admin/orders" },
       ];
     }
     if (isFreelancer) {
       return [
         ...base,
+        { label: "الدورات", to: "/dashboard/freelancer/courses" },
         { label: "طلباتي", to: "/dashboard/freelancer/my-orders" },
         { label: "الطلبات", to: "/dashboard/freelancer/orders" },
         { label: "المطالبات المالية", to: "/dashboard/freelancer/financial-claims" },
@@ -195,6 +204,7 @@ const Navbar = () => {
                     <span className="nav-create-btn__text">إنشاء طلب</span>
                   </button>
                 ) : null}
+                <NotificationsBell notificationsPagePath={notificationsPath} variant="navbar" />
                 <div className="nav-user" ref={userMenuRef}>
                   <button
                     type="button"

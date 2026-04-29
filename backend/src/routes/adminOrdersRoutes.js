@@ -7,7 +7,9 @@ const {
   listOrdersValidators,
   createInternalOrderValidators,
   orderIdParam,
+  clientOrderRevisionNoteValidators,
   clientOrderFileDownloadParams,
+  freelancerUserIdParam,
 } = require("../validators/ordersValidators");
 
 const router = express.Router();
@@ -18,6 +20,12 @@ router.use(requireAuth, requireAnyRole(["super_admin", "admin"]));
 router.get("/orders", listOrdersValidators, validateRequest, adminOrdersController.listInternalOrders);
 router.get("/orders/:id", orderIdParam, validateRequest, adminOrdersController.getInternalOrder);
 router.get("/freelancers", adminOrdersController.searchFreelancers);
+router.get(
+  "/freelancers/:id/registration",
+  freelancerUserIdParam,
+  validateRequest,
+  adminOrdersController.getFreelancerRegistrationProfile,
+);
 router.post(
   "/orders",
   uploadOrderFiles,
@@ -31,6 +39,15 @@ router.patch("/orders/:id/activate", orderIdParam, validateRequest, adminOrdersC
 router.get("/orders/:id/claims", orderIdParam, validateRequest, adminOrdersController.listOrderClaims);
 router.patch("/orders/:id/accept", orderIdParam, validateRequest, adminOrdersController.acceptTakenOrder);
 router.post("/orders/:id/delivery/approve", orderIdParam, validateRequest, adminOrdersController.approveInternalDelivery);
+router.post(
+  "/orders/:id/delivery/revision",
+  uploadOrderFiles,
+  handleOrderUploadErrors,
+  orderIdParam,
+  clientOrderRevisionNoteValidators,
+  validateRequest,
+  adminOrdersController.requestInternalDeliveryRevision,
+);
 router.get(
   "/orders/:id/files/:fileId/download",
   clientOrderFileDownloadParams,

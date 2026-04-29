@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { useClientCreateOrderModal } from "../context/ClientCreateOrderModalContext";
+import { getNotificationsPath } from "../constants/authRoutes";
+import NotificationsBell from "../components/notifications/NotificationsBell";
 import "./SuperAdminLayout.css";
 import "./superAdminOutletCompact.css";
 
@@ -29,7 +31,10 @@ function useOnClickOutside(ref, handler) {
 
 function breadcrumbLabel(pathname) {
   const base = ["الرئيسية"];
+  if (pathname.includes("/subscriptions/activation")) base.push("تفعيل الاشتراكات");
   if (pathname.includes("/plans")) base.push("الباقات");
+  else if (pathname.includes("/courses")) base.push("الدورات");
+  else if (pathname.includes("/fake-orders")) base.push("الطلبات التجريبية");
   else if (pathname.includes("/subscriptions")) base.push("اشتراكات المستقلين");
   else if (pathname.includes("/orders/create")) base.push("الطلبات الداخلية", "إنشاء طلب");
   else if (pathname.includes("/orders")) base.push("الطلبات الداخلية");
@@ -39,7 +44,11 @@ function breadcrumbLabel(pathname) {
 const NAV_MAIN = [
   { to: "/dashboard/super-admin", label: "نظرة عامة", icon: "⌂", end: true },
   { to: "/dashboard/super-admin/plans", label: "الباقات", icon: "◆" },
+  { to: "/dashboard/super-admin/courses", label: "الدورات", icon: "▶" },
+  { to: "/dashboard/super-admin/fake-orders", label: "الطلبات التجريبية", icon: "◈" },
   { to: "/dashboard/super-admin/subscriptions", label: "الاشتراكات", icon: "◎" },
+  { to: "/dashboard/super-admin/subscriptions/activation", label: "تفعيل الاشتراكات", icon: "✓" },
+  { to: "/dashboard/super-admin/financial-claims", label: "المطالبات المالية", icon: "◍" },
   { to: "/dashboard/super-admin/orders", label: "الطلبات", icon: "▣" },
 ];
 
@@ -60,6 +69,8 @@ export default function SuperAdminLayout() {
   const displayName = useMemo(() => fullNameAr(user) || user?.email || "مدير", [user]);
   const initial = (user?.firstName || user?.email || "S").trim().slice(0, 1).toUpperCase();
   const crumb = useMemo(() => breadcrumbLabel(pathname), [pathname]);
+  const role = user?.primaryRole || user?.role;
+  const notificationsPath = getNotificationsPath(role);
 
   return (
     <div className="oh-sa-shell" dir="rtl" lang="ar">
@@ -110,13 +121,6 @@ export default function SuperAdminLayout() {
           </li>
         </ul>
 
-        <div className="oh-sa-storage" aria-hidden>
-          <div className="oh-sa-storage__label">سعة المنصة (تجريبي)</div>
-          <div className="oh-sa-storage__bar">
-            <span />
-          </div>
-          <div className="oh-sa-storage__hint">مؤشرات تشغيل — للعرض فقط ضمن التصميم الجديد.</div>
-        </div>
       </aside>
 
       <div className="oh-sa-workspace">
@@ -131,6 +135,15 @@ export default function SuperAdminLayout() {
             <NavLink to="/dashboard/super-admin/subscriptions" className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
               النشاط
             </NavLink>
+            <NavLink to="/dashboard/super-admin/courses" className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
+              الدورات
+            </NavLink>
+            <NavLink to="/dashboard/super-admin/fake-orders" className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
+              الطلبات التجريبية
+            </NavLink>
+            <NavLink to="/dashboard/super-admin/financial-claims" className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
+              المطالبات
+            </NavLink>
             <NavLink to="/dashboard/super-admin/orders" className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
               الطلبات
             </NavLink>
@@ -144,9 +157,7 @@ export default function SuperAdminLayout() {
           </label>
 
           <div className="oh-sa-topbar__actions">
-            <button type="button" className="oh-sa-icon-btn" aria-label="تنبيهات" title="قريباً">
-              🔔
-            </button>
+            <NotificationsBell notificationsPagePath={notificationsPath} variant="superadmin" />
             <div className="oh-sa-user" ref={userMenuRef}>
               <button type="button" className="oh-sa-avatar" aria-expanded={userMenuOpen} aria-haspopup="true" onClick={() => setUserMenuOpen((v) => !v)}>
                 {initial}

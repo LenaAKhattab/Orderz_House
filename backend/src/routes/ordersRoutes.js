@@ -11,6 +11,7 @@ const {
   submitPoolOrderBidValidators,
   clientOrderClaimIdBodyValidators,
   clientOrderBidIdBodyValidators,
+  clientOrderBidIdParamValidators,
   clientOrderRevisionNoteValidators,
   clientOrderFileDownloadParams,
 } = require("../validators/ordersValidators");
@@ -35,6 +36,33 @@ router.post(
   createClientOrderValidators,
   validateRequest,
   clientOrdersController.createClientOrder,
+);
+
+router.post(
+  "/client/orders/:id/pay-checkout",
+  requireAuth,
+  requireRole("client"),
+  orderIdParam,
+  validateRequest,
+  clientOrdersController.createFixedOrderStripeCheckout,
+);
+
+router.post(
+  "/client/orders/:id/pay-confirm",
+  requireAuth,
+  requireRole("client"),
+  orderIdParam,
+  validateRequest,
+  clientOrdersController.confirmFixedOrderPayment,
+);
+
+router.post(
+  "/client/orders/:id/pay-cancel",
+  requireAuth,
+  requireRole("client"),
+  orderIdParam,
+  validateRequest,
+  clientOrdersController.cancelFixedOrderPayment,
 );
 
 router.get(
@@ -86,6 +114,26 @@ router.post(
 );
 
 router.post(
+  "/client/orders/:id/bids/:bidId/select",
+  requireAuth,
+  requireRole("client"),
+  orderIdParam,
+  clientOrderBidIdParamValidators,
+  validateRequest,
+  clientOrdersController.selectFreelancerBid,
+);
+
+router.post(
+  "/client/orders/:id/bids/:bidId/confirm-paid",
+  requireAuth,
+  requireRole("client"),
+  orderIdParam,
+  clientOrderBidIdParamValidators,
+  validateRequest,
+  clientOrdersController.confirmSelectedBidPayment,
+);
+
+router.post(
   "/client/orders/:id/bids/reject",
   requireAuth,
   requireRole("client"),
@@ -94,7 +142,6 @@ router.post(
   validateRequest,
   clientOrdersController.rejectFreelancerBid,
 );
-
 router.post(
   "/client/orders/:id/delivery/approve",
   requireAuth,
@@ -108,6 +155,8 @@ router.post(
   "/client/orders/:id/delivery/revision",
   requireAuth,
   requireRole("client"),
+  uploadOrderFiles,
+  handleOrderUploadErrors,
   orderIdParam,
   clientOrderRevisionNoteValidators,
   validateRequest,

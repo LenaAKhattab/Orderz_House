@@ -1,5 +1,6 @@
 const fs = require("node:fs");
 const ordersService = require("../services/ordersService");
+const stripeCheckoutService = require("../services/stripeCheckoutService");
 
 function parsePreferredSkills(raw) {
   if (raw === undefined || raw === null || raw === "") return [];
@@ -35,6 +36,7 @@ const createClientOrder = async (req, res, next) => {
     const type = String(req.body.projectType || "").trim();
     const currencyCode = String(req.body.currencyCode || "").trim().toUpperCase();
     const payload = {
+      orderCode: req.body.orderCode || null,
       title: req.body.title,
       description: req.body.description,
       categoryId: req.body.categoryId,
@@ -55,7 +57,66 @@ const createClientOrder = async (req, res, next) => {
       payload,
       uploadedFiles: req.files || [],
     });
-    return res.status(201).json({ success: true, data: { order } });
+    if (type === "fixed") {
+      let checkout;
+      try {
+        checkout = await stripeCheckoutService.createClientFixedOrderCheckoutSession({
+          clientUserId: req.auth.userId,
+          orderId: order.id,
+        });
+      } catch (checkoutErr) {
+        try {
+          await ordersService.purgeClientUnpaidFixedOrderDraft({
+            clientUserId: req.auth.userId,
+            orderId: order.id,
+          });
+        } catch {
+          // ignore cleanup error; return original checkout error
+        }
+        throw checkoutErr;
+      }
+      return res.status(201).json({
+        success: true,
+        data: {
+          order,
+          requiresPayment: true,
+          paymentPurpose: "fixed_order_creation",
+          checkoutUrl: checkout.checkoutUrl,
+          sessionId: checkout.sessionId,
+        },
+      });
+    }
+    return res.status(201).json({
+      success: true,
+      data: {
+        order,
+        requiresPayment: false,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const confirmFixedOrderPayment = async (req, res, next) => {
+  try {
+    const out = await stripeCheckoutService.confirmClientFixedOrderPayment({
+      clientUserId: req.auth.userId,
+      orderId: req.params.id,
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const cancelFixedOrderPayment = async (req, res, next) => {
+  try {
+    const out = await stripeCheckoutService.cancelClientFixedOrderPaymentAttempt({
+      clientUserId: req.auth.userId,
+      orderId: req.params.id,
+    });
+    return res.status(200).json({ success: true, data: out });
   } catch (err) {
     return next(err);
   }
@@ -113,12 +174,20 @@ const listBidsForOrder = async (req, res, next) => {
 
 const acceptFreelancerBid = async (req, res, next) => {
   try {
-    const order = await ordersService.acceptFreelancerBidClient({
+    const out = await stripeCheckoutService.createClientSelectedBidCheckoutSession({
       clientUserId: req.auth.userId,
       orderId: req.params.id,
       bidId: req.body.bidId,
     });
-    return res.status(200).json({ success: true, data: { order } });
+    return res.status(200).json({
+      success: true,
+      data: {
+        requiresPayment: true,
+        paymentPurpose: "selected_bid_payment",
+        checkoutUrl: out.checkoutUrl,
+        sessionId: out.sessionId,
+      },
+    });
   } catch (err) {
     return next(err);
   }
@@ -137,6 +206,39 @@ const rejectFreelancerBid = async (req, res, next) => {
   }
 };
 
+const selectFreelancerBid = async (req, res, next) => {
+  try {
+    const out = await stripeCheckoutService.createClientSelectedBidCheckoutSession({
+      clientUserId: req.auth.userId,
+      orderId: req.params.id,
+      bidId: req.params.bidId,
+    });
+    return res.status(200).json({
+      success: true,
+      data: {
+        requiresPayment: true,
+        paymentPurpose: "selected_bid_payment",
+        checkoutUrl: out.checkoutUrl,
+        sessionId: out.sessionId,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const confirmSelectedBidPayment = async (req, res, next) => {
+  try {
+    const out = await stripeCheckoutService.confirmClientSelectedBidPayment({
+      clientUserId: req.auth.userId,
+      orderId: req.params.id,
+      bidId: req.params.bidId,
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+};
 const approveDelivery = async (req, res, next) => {
   try {
     const order = await ordersService.clientApproveDelivery({
@@ -155,6 +257,7 @@ const requestDeliveryRevision = async (req, res, next) => {
       clientUserId: req.auth.userId,
       orderId: req.params.id,
       note: req.body.note,
+      uploadedFiles: req.files || [],
     });
     return res.status(200).json({ success: true, data: { order } });
   } catch (err) {
@@ -162,13 +265,26 @@ const requestDeliveryRevision = async (req, res, next) => {
   }
 };
 
+const createFixedOrderStripeCheckout = async (req, res, next) => {
+  try {
+    const out = await stripeCheckoutService.createClientFixedOrderCheckoutSession({
+      clientUserId: req.auth.userId,
+      orderId: req.params.id,
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+};
 const downloadOrderFile = async (req, res, next) => {
   try {
-    const { absPath, downloadName, mimeType } = await ordersService.prepareClientOrderFileDownload({
+    const out = await ordersService.prepareClientOrderFileDownload({
       clientUserId: req.auth.userId,
       orderId: req.params.id,
       fileId: req.params.fileId,
     });
+    if (out?.redirectUrl) return res.redirect(302, out.redirectUrl);
+    const { absPath, downloadName, mimeType } = out;
     const utf8Name = String(downloadName || "file");
     const encoded = encodeURIComponent(utf8Name);
     res.setHeader("Content-Type", mimeType);
@@ -186,12 +302,17 @@ const downloadOrderFile = async (req, res, next) => {
 module.exports = {
   listMyClientOrders,
   createClientOrder,
+  confirmFixedOrderPayment,
+  cancelFixedOrderPayment,
   listClaimsForOrder,
   approveFreelancerClaim,
   rejectFreelancerClaim,
   listBidsForOrder,
   acceptFreelancerBid,
   rejectFreelancerBid,
+  selectFreelancerBid,
+  confirmSelectedBidPayment,
+  createFixedOrderStripeCheckout,
   approveDelivery,
   requestDeliveryRevision,
   downloadOrderFile,

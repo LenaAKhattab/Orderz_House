@@ -4,6 +4,8 @@ import {
   approveClientOrderDeliveryRequest,
   downloadAdminInternalOrderFile,
   downloadClientOrderFile,
+  requestAdminInternalOrderRevisionRequest,
+  requestClientOrderRevisionRequest,
 } from "../../services/api";
 
 function fileHref(fileUrl) {
@@ -33,10 +35,12 @@ function displayFileName(f) {
  * @param {'workflow' | 'archive'} variant — workflow: مراجعة قبل الاعتماد؛ archive: طلب مكتمل، عرض وتنزيل فقط
  * @param {'client' | 'admin'} audience — مسار API: عميل أو طلب داخلي (إدارة)
  */
-export default function ClientDeliveryReviewModal({ open, order, onClose, onApprove, variant = "workflow", audience = "client" }) {
+export default function ClientDeliveryReviewModal({ open, order, onClose, onApprove, onRevised, variant = "workflow", audience = "client" }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [downloadingId, setDownloadingId] = useState(null);
+  const [revisionNote, setRevisionNote] = useState("");
+  const [revisionFiles, setRevisionFiles] = useState([]);
 
   if (!open || !order) return null;
 
@@ -50,6 +54,7 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
       (!f.orderId || String(f.orderId) === orderIdStr),
   );
   const canApprove = !isArchive && order.orderStatus === "pending_client_review" && deliveryFiles.length > 0;
+  const canRequestRevision = !isArchive && (order.orderStatus === "pending_client_review" || order.orderStatus === "in_progress");
 
   const submit = async () => {
     setBusy(true);
@@ -61,6 +66,27 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
       onClose();
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "تعذّر اعتماد التسليم.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const requestRevision = async () => {
+    const noteText = String(revisionNote || "").trim();
+    if (!noteText) {
+      setError("يرجى كتابة ملاحظة التعديل قبل الإرسال.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      if (isAdmin) await requestAdminInternalOrderRevisionRequest(order.id, noteText, revisionFiles);
+      else await requestClientOrderRevisionRequest(order.id, noteText, revisionFiles);
+      onRevised?.();
+      setRevisionFiles([]);
+      onClose();
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "تعذّر إرسال طلب التعديل.");
     } finally {
       setBusy(false);
     }
@@ -159,10 +185,53 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
         ) : isArchive && !deliveryFiles.length ? (
           <p className="help">لا توجد مرفقات تسليم مسجّلة لهذا الطلب.</p>
         ) : null}
+        {!isArchive && canRequestRevision ? (
+          <div className="field" style={{ marginTop: 12 }}>
+            <label className="label" htmlFor="delivery-revision-note">
+              ملاحظة التعديل للمستقل
+            </label>
+            <textarea
+              id="delivery-revision-note"
+              className="input"
+              rows={3}
+              value={revisionNote}
+              onChange={(e) => {
+                setRevisionNote(e.target.value);
+                if (error) setError("");
+              }}
+              disabled={busy || Boolean(downloadingId)}
+              placeholder="اكتب ما يجب تعديله قبل الاعتماد النهائي…"
+            />
+            <label className="label" htmlFor="delivery-revision-files" style={{ marginTop: 8 }}>
+              مرفقات طلب التعديل (اختياري)
+            </label>
+            <input
+              id="delivery-revision-files"
+              type="file"
+              className="input"
+              multiple
+              disabled={busy || Boolean(downloadingId)}
+              onChange={(e) => {
+                const list = Array.from(e.target.files || []);
+                setRevisionFiles(list.slice(0, 5));
+              }}
+            />
+          </div>
+        ) : null}
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", flexWrap: "wrap", marginTop: 18 }}>
           <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
             إغلاق
           </button>
+          {!isArchive && canRequestRevision ? (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={busy || Boolean(downloadingId) || !String(revisionNote || "").trim()}
+              onClick={requestRevision}
+            >
+              {busy ? "جارٍ الإرسال…" : "طلب تعديل"}
+            </button>
+          ) : null}
           {!isArchive ? (
             <button type="button" className="btn btn-primary" disabled={busy || !canApprove} onClick={submit}>
               {busy ? "جارٍ الاعتماد…" : "اعتماد التسليم وإنهاء الطلب"}

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import AuthFormCard from "../components/auth/AuthFormCard";
 import AuthLayout from "../components/auth/AuthLayout";
 import Button from "../components/ui/Button";
+import { useToast } from "../components/ui/toastContext";
 import { useAuth } from "../context/useAuth";
 import { canRoleAccessPath, getDashboardPath } from "../constants/authRoutes";
 
@@ -37,6 +38,7 @@ function loginErrorMessage(err) {
 
 const Login = () => {
   const { login } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState("");
@@ -59,13 +61,16 @@ const Login = () => {
     setSubmitting(true);
     try {
       const user = await login(email.trim(), password);
+      toast.success({ title: "تم تسجيل الدخول", message: "أهلاً بعودتك." });
       const from = location.state?.from?.pathname;
       const role = user?.primaryRole || user?.role;
       const target =
         from && canRoleAccessPath(from, role) ? from : getDashboardPath(role);
       navigate(target, { replace: true });
     } catch (err) {
-      setError(loginErrorMessage(err));
+      const msg = loginErrorMessage(err);
+      setError(msg);
+      toast.error({ title: "تعذر تسجيل الدخول", message: msg, autoClose: false });
     } finally {
       setSubmitting(false);
     }

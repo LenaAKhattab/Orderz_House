@@ -33,35 +33,37 @@ export function SubscriptionCardSkeleton() {
 
 export function PoolOrderCardSkeleton() {
   return (
-    <article className="oh-pool-card oh-pool-card--skeleton" aria-hidden>
-      <div className="oh-pool-card__head">
-        <div className="oh-pool-card__title-wrap" style={{ flex: 1, minWidth: 0 }}>
-          <SkelBar style={{ height: 16, width: "74%" }} />
-          <SkelBar style={{ height: 11, width: "48%" }} />
+    <li className="oh-order-row-item" aria-hidden>
+      <div className="oh-order-row">
+        <div className="oh-order-row__side">
+          <div style={{ display: "grid", gap: 8, justifyItems: "center" }}>
+            <SkelBar style={{ height: 12, width: 72 }} />
+            <SkelBar style={{ height: 34, width: 92, borderRadius: 8 }} />
+          </div>
         </div>
-        <SkelBar style={{ height: 24, width: 52, borderRadius: 999 }} />
+        <div className="oh-order-row__main">
+          <SkelBar style={{ height: 16, width: "58%" }} />
+          <div className="oh-order-row__meta oh-order-row__meta--skeleton">
+            <SkelBar style={{ height: 12, width: 70 }} />
+            <SkelBar style={{ height: 12, width: 98 }} />
+            <SkelBar style={{ height: 12, width: 64 }} />
+          </div>
+          <SkelBar style={{ height: 12, width: "42%" }} />
+          <SkelBar style={{ height: 12, width: "92%" }} />
+          <SkelBar style={{ height: 12, width: "82%" }} />
+        </div>
       </div>
-      <div className="oh-pool-card__meta">
-        <SkelBar style={{ height: 24, width: 92, borderRadius: 999 }} />
-        <SkelBar style={{ height: 24, width: 84, borderRadius: 999 }} />
-        <SkelBar style={{ height: 24, width: 100, borderRadius: 999 }} />
-      </div>
-      <SkelBar style={{ height: 40, width: "100%" }} />
-      <div className="oh-pool-card__actions">
-        <SkelBar style={{ height: 36, width: 118, borderRadius: 12 }} />
-        <SkelBar style={{ height: 36, width: 124, borderRadius: 12 }} />
-      </div>
-    </article>
+    </li>
   );
 }
 
 export function PoolOrderListSkeleton({ count = 4 }) {
   return (
-    <>
+    <ul className="oh-orders-list" role="status" aria-busy="true" aria-label="جارٍ تحميل الطلبات">
       {Array.from({ length: count }).map((_, i) => (
         <PoolOrderCardSkeleton key={i} />
       ))}
-    </>
+    </ul>
   );
 }
 
