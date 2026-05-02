@@ -53,6 +53,11 @@ export function getDashboardPath(role) {
   return path || "/unauthorized";
 }
 
+/** Alias — same as getDashboardPath; use for redirects from "/" and logo targets. */
+export function getDashboardPathByRole(role) {
+  return getDashboardPath(role);
+}
+
 export function getNotificationsPath(role) {
   if (role === ROLE.SUPER_ADMIN) return "/dashboard/super-admin/notifications";
   if (role === ROLE.ADMIN) return "/dashboard/admin/notifications";

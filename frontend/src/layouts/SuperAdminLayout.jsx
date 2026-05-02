@@ -4,8 +4,6 @@ import { useAuth } from "../context/useAuth";
 import { useClientCreateOrderModal } from "../context/ClientCreateOrderModalContext";
 import { getNotificationsPath } from "../constants/authRoutes";
 import NotificationsBell from "../components/notifications/NotificationsBell";
-import "./SuperAdminLayout.css";
-import "./superAdminOutletCompact.css";
 
 function fullNameAr(user) {
   const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);

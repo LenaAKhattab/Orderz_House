@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import AuthFormCard from "../components/auth/AuthFormCard";
 import AuthLayout from "../components/auth/AuthLayout";
+import * as tw from "../components/auth/authTw";
 import Button from "../components/ui/Button";
 import { useToast } from "../components/ui/toastContext";
 import { useAuth } from "../context/useAuth";
@@ -85,13 +86,14 @@ const Login = () => {
         footerLinkText="إنشاء حساب"
         footerLinkTo="/register"
       >
-        <form className="auth-form-grid" onSubmit={handleSubmit} noValidate>
-          {error ? <p className="auth-form-error">{error}</p> : null}
+        <form className={tw.authFormGrid} onSubmit={handleSubmit} noValidate>
+          {error ? <p className={tw.authFormError}>{error}</p> : null}
 
-          <label className="auth-field">
-            <span>البريد الإلكتروني</span>
-            <div className="auth-input-wrap auth-input-wrap--noicon">
+          <label className={tw.authField}>
+            <span className={tw.authFieldLabel}>البريد الإلكتروني</span>
+            <div className={tw.authInputWrap}>
               <input
+                className={tw.authInputNoIcon}
                 type="email"
                 name="email"
                 autoComplete="email"
@@ -104,18 +106,19 @@ const Login = () => {
             </div>
           </label>
 
-          <label className="auth-field">
-            <div className="auth-field-head">
-              <span>كلمة المرور</span>
-              <Link to="/forgot-password" className="auth-subtle-link">
+          <label className={tw.authField}>
+            <div className={tw.authFieldHead}>
+              <span className={tw.authFieldLabel}>كلمة المرور</span>
+              <Link to="/forgot-password" className={tw.authSubtleLink}>
                 هل نسيت كلمة المرور؟
               </Link>
             </div>
-            <div className="auth-input-wrap">
-              <i className="auth-input-icon" aria-hidden="true">
+            <div className={tw.authInputWrap}>
+              <i className={tw.authInputIcon} aria-hidden="true">
                 *
               </i>
               <input
+                className={tw.authInput}
                 type="password"
                 name="password"
                 autoComplete="current-password"
@@ -128,7 +131,7 @@ const Login = () => {
             </div>
           </label>
 
-          <Button type="submit" className="auth-submit-btn" disabled={submitting}>
+          <Button unstyled type="submit" className={tw.authSubmitBtn} disabled={submitting}>
             {submitting ? "جاري الدخول…" : "تسجيل الدخول"}
           </Button>
         </form>

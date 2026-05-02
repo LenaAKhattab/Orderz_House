@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import OrderCard from "../components/orders/OrderCard";
 import BidAmountModal from "../components/orders/BidAmountModal";
 import { useAuth } from "../context/useAuth";
@@ -11,6 +11,7 @@ import {
   submitPoolOrderBidRequest,
   takePoolOrderRequest,
 } from "../services/api";
+import * as tw from "../components/auth/authTw";
 import { OrderCardsGridSkeleton } from "../components/ui/Skeleton";
 import { getFreelancerOrderEligibilityMessage } from "../utils/freelancerEligibilityUi";
 
@@ -20,9 +21,11 @@ function isPricedBiddingPoolOrder(order) {
 
 const Orders = () => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const { push } = useToast();
   const role = user?.primaryRole || user?.role;
   const isFreelancer = role === "freelancer";
+  const isClient = role === "client";
 
   const [orders, setOrders] = useState([]);
   const [busy, setBusy] = useState(true);
@@ -45,6 +48,14 @@ const Orders = () => {
   const showIneligibleNotice =
     Boolean(user) && isFreelancer && eligibilityFetched && eligibility && eligibility.eligible === false;
   const ineligibleMessage = showIneligibleNotice ? getFreelancerOrderEligibilityMessage(eligibility, subscription) : "";
+
+  useEffect(() => {
+    if (loading) return;
+    const r = user?.primaryRole || user?.role;
+    if (user && (r === "freelancer" || r === "client")) {
+      navigate("/dashboard/freelancer/orders", { replace: true });
+    }
+  }, [loading, user, navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -159,7 +170,7 @@ const Orders = () => {
 
         {!user ? (
           <p className="help">
-            لتتمكن من استلام طلب، <Link className="auth-inline-link" to="/login">سجّل الدخول</Link> كفريلانسر.
+            لتتمكن من استلام طلب، <Link className={tw.authInlineLink} to="/login">سجّل الدخول</Link> كفريلانسر.
           </p>
         ) : isFreelancer ? (
           showIneligibleNotice ? (
@@ -167,7 +178,7 @@ const Orders = () => {
               {ineligibleMessage}
             </p>
           ) : null
-        ) : (
+        ) : isClient ? null : (
           <p className="help">استلام الطلبات متاح للفريلانسر فقط.</p>
         )}
       </section>
@@ -195,7 +206,10 @@ const Orders = () => {
               showAssignmentBadge={false}
               showAdminBadge={false}
               footerInline={
-                order?.assignedFreelancerId ? null : (
+                order?.assignedFreelancerId
+                  ? null
+                  : !user || isFreelancer
+                    ? (
                   <div style={{ display: "flex", gap: 10, justifyContent: "flex-start", alignItems: "center", flexWrap: "wrap" }}>
                     {isPricedBiddingPoolOrder(order) ? (
                       <button
@@ -239,7 +253,8 @@ const Orders = () => {
                       <span className="help">{getFreelancerOrderEligibilityMessage(eligibility, subscription)}</span>
                     ) : null}
                   </div>
-                )
+                    )
+                    : null
               }
             />
           ))
