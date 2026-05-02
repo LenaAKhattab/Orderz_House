@@ -1,5 +1,5 @@
-const Button = ({ children, type = "button", variant = "primary", className = "", ...props }) => {
-  const classes = `btn btn-${variant} ${className}`.trim();
+const Button = ({ children, type = "button", variant = "primary", className = "", unstyled = false, ...props }) => {
+  const classes = unstyled ? className.trim() : `btn btn-${variant} ${className}`.trim();
 
   return (
     <button type={type} className={classes} {...props}>

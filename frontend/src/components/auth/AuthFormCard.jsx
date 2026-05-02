@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import * as tw from "./authTw";
 
 const AuthFormCard = ({
   title,
@@ -12,23 +13,23 @@ const AuthFormCard = ({
   footerLinkTo,
 }) => {
   return (
-    <section className="auth-form-panel">
-      <div className="auth-form-header">
-        <h1>{title}</h1>
-        <p>{subtitle}</p>
+    <section className={tw.authFormPanel}>
+      <div className={tw.authFormHeader}>
+        <h1 className={tw.authFormTitle}>{title}</h1>
+        <p className={tw.authFormSubtitle}>{subtitle}</p>
         {helperLinkText ? (
-          <Link to={helperLinkTo} className="auth-subtle-link">
+          <Link to={helperLinkTo} className={tw.authSubtleLink}>
             {helperLinkText}
           </Link>
         ) : null}
-        {helperText ? <span className="auth-helper-text">{helperText}</span> : null}
+        {helperText ? <span className={tw.authHelperText}>{helperText}</span> : null}
       </div>
 
       {children}
 
-      <p className="auth-footer-note">
+      <p className={tw.authFooterNote}>
         {footerText}{" "}
-        <Link to={footerLinkTo} className="auth-inline-link">
+        <Link to={footerLinkTo} className={tw.authInlineLink}>
           {footerLinkText}
         </Link>
       </p>

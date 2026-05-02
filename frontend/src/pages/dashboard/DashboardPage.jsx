@@ -13,10 +13,12 @@ import {
   submitPoolOrderBidRequest,
   takePoolOrderRequest,
 } from "../../services/api";
-import { AssignedOrderListSkeleton, PoolOrderListSkeleton, SubscriptionCardSkeleton } from "../../components/ui/Skeleton";
+import { AssignedOrderListSkeleton, PoolOrderListSkeleton } from "../../components/ui/Skeleton";
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
 import BidAmountModal from "../../components/orders/BidAmountModal";
 import Pagination from "../../components/common/Pagination";
+import ClientDashboardHome from "./ClientDashboardHome";
+import FreelancerDashboardHome from "./FreelancerDashboardHome";
 
 const ROLE_LABEL_AR = {
   super_admin: "مدير أعلى",
@@ -37,11 +39,6 @@ const FREELANCER_MY_ORDERS_STATUS_FILTERS = [
   { key: "cancelled", label: "ملغي" },
 ];
 
-function fullNameAr(user) {
-  const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
-  return parts.join(" ").trim();
-}
-
 function EmptyState({ title, subtitle, actionLabel, actionTo }) {
   return (
     <div className="dash-empty">
@@ -59,104 +56,6 @@ function EmptyState({ title, subtitle, actionLabel, actionTo }) {
       ) : null}
     </div>
   );
-}
-
-function StatCard({ label, value, hint }) {
-  return (
-    <div className="dash-stat">
-      <div className="dash-stat__top">
-        <span className="dash-stat__label">{label}</span>
-      </div>
-      <div className="dash-stat__value">{value}</div>
-      {hint ? <div className="dash-stat__hint">{hint}</div> : null}
-    </div>
-  );
-}
-
-function formatJoDateTime(value) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
-}
-
-function subscriptionStatusLabel(status) {
-  if (status === "active") return "نشط";
-  if (status === "assigned_not_started") return "تم الإسناد (لم يبدأ بعد)";
-  if (status === "expired") return "منتهي";
-  if (status === "inactive") return "غير نشط";
-  if (status === "cancelled") return "ملغي";
-  return status || "—";
-}
-
-function subscriptionDisplayStatus(subscription) {
-  if (!subscription) return "غير مشترك";
-  const payment = String(subscription.paymentStatus || "");
-  const activation = String(subscription.activationStatus || "");
-  const status = String(subscription.status || "");
-
-  if ((payment === "paid" || payment === "pending") && activation === "company_pending") {
-    return "مدفوع - بانتظار تفعيل الشركة";
-  }
-  if (status === "assigned_not_started" && activation === "company_approved") {
-    return "مفعّل - بانتظار أول طلب مقبول";
-  }
-  if (status === "active") return "نشط";
-  if (status === "expired") return "منتهي";
-  if (payment === "pending") return "الدفع قيد المعالجة";
-  if (status === "inactive" || status === "cancelled") return "غير مشترك";
-  return subscriptionStatusLabel(status);
-}
-
-function hasSubscriptionDurationStarted(subscription) {
-  if (!subscription) return false;
-  if (!subscription.actualStartDate || !subscription.expiryDate) return false;
-  const status = String(subscription.status || "");
-  return status === "active" || status === "expired";
-}
-
-function subscriptionStateHint(subscription) {
-  if (!subscription) return "";
-  const payment = String(subscription.paymentStatus || "");
-  const activation = String(subscription.activationStatus || "");
-  if (payment === "pending") return "الدفع قيد المعالجة.";
-  if (payment === "failed") return "فشل الدفع. يرجى إعادة الاشتراك.";
-  if (payment === "paid" && activation === "company_pending") return "تم استلام الدفع وبانتظار تفعيل الشركة.";
-  if (payment === "paid" && activation === "company_approved" && subscription.status === "assigned_not_started") {
-    return "تم التفعيل، وسيبدأ احتساب المدة عند أول طلب مقبول.";
-  }
-  return "";
-}
-
-function daysRemaining(expiryDate) {
-  if (!expiryDate) return null;
-  const exp = new Date(expiryDate);
-  if (!Number.isFinite(exp.getTime())) return null;
-  const now = Date.now();
-  const diffMs = exp.getTime() - now;
-  const d = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
-  return Number.isFinite(d) ? d : null;
-}
-
-function formatTimeRemainingAr(expiryDate, nowMs) {
-  if (!expiryDate) return null;
-  const exp = new Date(expiryDate);
-  if (!Number.isFinite(exp.getTime())) return null;
-
-  const diffMs = exp.getTime() - nowMs;
-  if (diffMs < 0) return "الاشتراك منتهي.";
-
-  const totalMinutes = Math.floor(diffMs / (60 * 1000));
-  const days = Math.floor(totalMinutes / (60 * 24));
-  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-  const minutes = totalMinutes % 60;
-
-  const nf = new Intl.NumberFormat("en-US");
-  const parts = [];
-  if (days > 0) parts.push(`${nf.format(days)} يوم`);
-  if (hours > 0 || days > 0) parts.push(`${nf.format(hours)} ساعة`);
-  parts.push(`${nf.format(minutes)} دقيقة`);
-  return `متبقي ${parts.join(" و ")}.`;
 }
 
 function Section({ title, actionLabel, actionTo, children }) {
@@ -310,208 +209,6 @@ function MarketplaceOrderListRow({
         </div>
       </button>
     </li>
-  );
-}
-
-function FreelancerHome({ user }) {
-  const name = fullNameAr(user) || "مرحباً بك";
-  const subtitle = "تابع طلباتك، استعرض الفرص المتاحة، وراقب مطالباتك المالية بسهولة.";
-
-  const { push } = useToast();
-  const [subscription, setSubscription] = useState(null);
-  const [subBusy, setSubBusy] = useState(false);
-  const [nowMs, setNowMs] = useState(() => Date.now());
-
-  useEffect(() => {
-    const id = setInterval(() => setNowMs(Date.now()), 60 * 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      const role = user?.primaryRole || user?.role;
-      if (role !== "freelancer") return;
-      setSubBusy(true);
-      try {
-        const res = await getMySubscriptionRequest();
-        if (!cancelled) setSubscription(res?.data?.subscription || null);
-      } catch (e) {
-        if (!cancelled) {
-          setSubscription(null);
-          push({ type: "error", title: "تعذر تحميل الاشتراك", message: e?.response?.data?.message || e?.message });
-        }
-      } finally {
-        if (!cancelled) setSubBusy(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [user, push]);
-
-  // Structured mock state (hidden behind empty states for now)
-  const myRecentOrders = [];
-  const availableOrders = [];
-  const claims = [];
-
-  return (
-    <div className="dash">
-      <header className="dash-hero">
-        <div className="dash-hero__copy">
-          <p className="dash-hero__kicker">لوحة المستقل</p>
-          <h1 className="dash-hero__title oh-orders-sidebar-title">مرحباً، {name}</h1>
-          <p className="dash-hero__subtitle">{subtitle}</p>
-        </div>
-        <div className="dash-hero__badges" aria-label="ملخص سريع">
-          <span className="dash-badge">حساب نشط</span>
-          <span className="dash-badge dash-badge--soft">مستقل</span>
-        </div>
-      </header>
-
-      <div className="dash-stats" role="list" aria-label="إحصاءات سريعة">
-        <div role="listitem">
-          <StatCard label="عدد طلباتي" value="0" hint="طلبات مسندة أو قيد التنفيذ" />
-        </div>
-        <div role="listitem">
-          <StatCard label="الطلبات المتاحة" value="0" hint="فرص جديدة يمكنك قبولها" />
-        </div>
-        <div role="listitem">
-          <StatCard label="المطالبات المالية" value="0" hint="قيد المراجعة أو بانتظار الصرف" />
-        </div>
-        <div role="listitem">
-          <StatCard label="المستحقات القادمة" value="—" hint="سيظهر عند توفر بيانات مالية" />
-        </div>
-      </div>
-
-      <div className="dash-grid">
-        <Section title="تفاصيل الاشتراك">
-          {subBusy ? (
-            <SubscriptionCardSkeleton />
-          ) : subscription ? (
-            <div className="card" style={{ display: "grid", gap: 10 }}>
-              {(() => {
-                const payment = String(subscription.paymentStatus || "");
-                const activation = String(subscription.activationStatus || "");
-                const shouldShowActivationNotice =
-                  (payment === "paid" || payment === "pending") && activation === "company_pending";
-                return shouldShowActivationNotice ? (
-                  <div className="dash-subscription-info-box">
-                    <p className="dash-subscription-info-box__text">
-                      أنت مشترك حاليًا، وتم استلام طلب اشتراكك بنجاح.
-                      <br />
-                      لتفعيل حسابك والبدء باستخدام المنصة، يجب زيارة الشركة وإكمال إجراءات التفعيل.
-                      <br />
-                      يرجى حجز موعد من خلال الرابط التالي:
-                      {" "}
-                      <a
-                        href="https://appointments.battechno.com/survey"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="dash-subscription-info-box__inline-link"
-                      >
-                        https://appointments.battechno.com/survey
-                      </a>
-                    </p>
-                    <a
-                      href="https://appointments.battechno.com/survey"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn btn-secondary dash-subscription-info-box__btn"
-                    >
-                      حجز موعد التفعيل
-                    </a>
-                  </div>
-                ) : null;
-              })()}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
-                <div>
-                  <div className="help" style={{ marginBottom: 4 }}>الباقة</div>
-                  <div style={{ fontWeight: 900 }}>
-                    {subscription?.plan?.title || subscription?.plan?.name || `#${subscription?.planId || "—"}`}
-                  </div>
-                </div>
-                <div>
-                  <div className="help" style={{ marginBottom: 4 }}>الحالة</div>
-                  <div style={{ fontWeight: 900 }}>{subscriptionDisplayStatus(subscription)}</div>
-                </div>
-                <div>
-                  <div className="help" style={{ marginBottom: 4 }}>تاريخ البداية</div>
-                  <div style={{ fontWeight: 800 }}>
-                    {hasSubscriptionDurationStarted(subscription) ? formatJoDateTime(subscription?.actualStartDate) : "لم تبدأ بعد"}
-                  </div>
-                </div>
-                <div>
-                  <div className="help" style={{ marginBottom: 4 }}>تاريخ الانتهاء</div>
-                  <div style={{ fontWeight: 800 }}>
-                    {hasSubscriptionDurationStarted(subscription) ? formatJoDateTime(subscription?.expiryDate) : "لم تبدأ بعد"}
-                  </div>
-                </div>
-              </div>
-              <div className="help" style={{ margin: 0 }}>
-                مدة الاشتراك لا تبدأ إلا بعد قبولك رسميًا في أول طلب من قبل الإدارة أو العميل.
-              </div>
-              {subscription?.status === "assigned_not_started" ? (
-                <div className="help" style={{ margin: 0 }}>
-                  سيبدأ الاشتراك عند استلام أو إسناد أول طلب فعلي
-                </div>
-              ) : subscription?.expiryDate ? (
-                <div className="help" style={{ margin: 0 }}>
-                  {(() => {
-                    const label = formatTimeRemainingAr(subscription.expiryDate, nowMs);
-                    if (label) return label;
-                    const d = daysRemaining(subscription.expiryDate);
-                    if (d === null) return null;
-                    if (d < 0) return "الاشتراك منتهي.";
-                    return `متبقي ${new Intl.NumberFormat("en-US").format(d)} يوم.`;
-                  })()}
-                </div>
-              ) : null}
-              {subscriptionStateHint(subscription) ? (
-                <div className="help" style={{ margin: 0 }}>{subscriptionStateHint(subscription)}</div>
-              ) : null}
-            </div>
-          ) : (
-            <EmptyState
-              title="لا يوجد اشتراك حالياً"
-              subtitle="عند إسناد باقة لك، ستظهر تفاصيلها هنا."
-              actionLabel="عرض الباقات"
-              actionTo="/plans"
-            />
-          )}
-        </Section>
-
-        <Section title="طلباتي الأخيرة" actionLabel="عرض الكل" actionTo="/dashboard/freelancer/my-orders">
-          {myRecentOrders.length === 0 ? (
-            <EmptyState
-              title="لا توجد طلبات بعد"
-              subtitle="عند إسناد طلب لك أو قبولك لطلب، ستظهر التفاصيل هنا."
-              actionLabel="استعرض الطلبات المتاحة"
-              actionTo="/dashboard/freelancer/orders"
-            />
-          ) : null}
-        </Section>
-
-        <Section title="الطلبات المتاحة" actionLabel="استعراض" actionTo="/dashboard/freelancer/orders">
-          {availableOrders.length === 0 ? (
-            <EmptyState
-              title="لا توجد طلبات متاحة حالياً"
-              subtitle="تابع هذه الصفحة لاحقاً، أو فعّل تنبيهاتك عندما تتوفر."
-            />
-          ) : null}
-        </Section>
-
-        <Section title="المطالبات المالية" actionLabel="عرض التفاصيل" actionTo="/dashboard/freelancer/financial-claims">
-          {claims.length === 0 ? (
-            <EmptyState
-              title="لا توجد مطالبات مالية"
-              subtitle="عند إنشاء مطالبة أو تحديث حالتها، ستجد ملخصاً واضحاً هنا."
-            />
-          ) : null}
-        </Section>
-      </div>
-    </div>
   );
 }
 
@@ -776,6 +473,7 @@ function FreelancerPoolOrders() {
   const location = useLocation();
   const role = user?.primaryRole || user?.role;
   const isFreelancer = role === "freelancer";
+  const showPoolRowActions = Boolean(!user || isFreelancer);
   const navigate = useNavigate();
 
   const [orders, setOrders] = useState([]);
@@ -1102,7 +800,7 @@ function FreelancerPoolOrders() {
                       <MarketplaceOrderListRow
                         key={order.id}
                         order={order}
-                        showActions
+                        showActions={showPoolRowActions}
                         onTake={() => setTakeConfirmOrder(order)}
                         onBid={() => setBidModalOrder(order)}
                         taking={takingId === order.id}
@@ -1276,11 +974,18 @@ const DashboardPage = () => {
       </section>
     );
   }
+  if (role === "client" && pathname === "/dashboard/client") {
+    return (
+      <section className="container page-content dash-shell">
+        <ClientDashboardHome user={user} />
+      </section>
+    );
+  }
   if (role === "freelancer" && isFreelancerRoute) {
     if (pathname === "/dashboard/freelancer") {
       return (
         <section className="container page-content dash-shell">
-          <FreelancerHome user={user} />
+          <FreelancerDashboardHome user={user} />
         </section>
       );
     }

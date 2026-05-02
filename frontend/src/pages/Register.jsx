@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthFormCard from "../components/auth/AuthFormCard";
 import AuthLayout from "../components/auth/AuthLayout";
+import * as tw from "../components/auth/authTw";
 import Button from "../components/ui/Button";
 import { useAuth } from "../context/useAuth";
 import { getDashboardPath } from "../constants/authRoutes";
@@ -108,7 +109,8 @@ function PremiumSelect({
   return (
     <div
       ref={wrapRef}
-      className={`auth-select ${open ? "is-open" : ""} ${disabled ? "is-disabled" : ""} ${ltr ? "auth-ltr" : ""}`}
+      dir={ltr ? "ltr" : undefined}
+      className={[tw.authSelectRoot, ltr ? tw.authSelectLtrRoot : ""].filter(Boolean).join(" ")}
       onKeyDown={(e) => {
         if (disabled) return;
         if (e.key === "Escape") setOpen(false);
@@ -125,7 +127,9 @@ function PremiumSelect({
       <button
         type="button"
         id={id}
-        className="auth-select__btn"
+        className={[tw.authSelectBtn, ltr ? tw.authSelectBtnLtr : "", open ? tw.authSelectBtnOpen : ""]
+          .filter(Boolean)
+          .join(" ")}
         aria-haspopup="listbox"
         aria-expanded={open}
         disabled={disabled}
@@ -134,25 +138,36 @@ function PremiumSelect({
           setOpen((v) => !v);
         }}
       >
-        <span className={`auth-select__text ${selected ? "" : "is-placeholder"}`}>
+        <span
+          className={[tw.authSelectText, !selected ? tw.authSelectPlaceholder : ""].filter(Boolean).join(" ")}
+        >
           {selected ? selected.label : placeholder}
         </span>
-        <span className="auth-select__chev" aria-hidden="true" />
+        <span
+          className={[tw.authSelectChev, open ? tw.authSelectChevOpen : ""].filter(Boolean).join(" ")}
+          aria-hidden="true"
+        />
       </button>
 
       {open ? (
-        <div className="auth-select__panel" role="listbox" aria-labelledby={id}>
-          <div className="auth-select__options">
+        <div className={tw.authSelectPanel} role="listbox" aria-labelledby={id}>
+          <div className={tw.authSelectOptions}>
             {options.map((o) => (
               <button
                 key={o.value}
                 type="button"
-                className={`auth-select__opt ${o.value === value ? "is-selected" : ""}`}
+                className={[
+                  tw.authSelectOpt,
+                  ltr ? tw.authSelectOptLtr : "",
+                  o.value === value ? tw.authSelectOptSelected : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 role="option"
                 aria-selected={o.value === value}
                 onClick={() => commit(o.value)}
               >
-                <span className="auth-select__opt-text">{o.label}</span>
+                <span className={tw.authSelectOptText}>{o.label}</span>
               </button>
             ))}
           </div>
@@ -468,23 +483,26 @@ const Register = () => {
         footerLinkText="تسجيل الدخول"
         footerLinkTo="/login"
       >
-        <form className="auth-form-grid" onSubmit={handleSubmit} noValidate>
-          {error ? <p className="auth-form-error">{error}</p> : null}
+        <form className={tw.authFormGrid} onSubmit={handleSubmit} noValidate>
+          {error ? <p className={tw.authFormError}>{error}</p> : null}
 
-          <div className="auth-steps">
+          <div className={tw.authSteps}>
             <button
               type="button"
-              className={`auth-step ${step === 1 ? "is-active" : ""}`}
+              className={[tw.authStep, step === 1 ? tw.authStepActive : ""].filter(Boolean).join(" ")}
               onClick={() => setStep(1)}
               disabled={submitting}
             >
-              <span className="auth-step__num">1</span>
-              <span className="auth-step__label">معلومات الحساب</span>
+              <span className={tw.authStepNum}>1</span>
+              <span className={tw.authStepLabel}>معلومات الحساب</span>
             </button>
-            <div className={`auth-step-divider ${step === 2 ? "is-done" : ""}`} aria-hidden="true" />
+            <div
+              className={[tw.authStepDivider, step === 2 ? tw.authStepDividerDone : ""].filter(Boolean).join(" ")}
+              aria-hidden="true"
+            />
             <button
               type="button"
-              className={`auth-step ${step === 2 ? "is-active" : ""}`}
+              className={[tw.authStep, step === 2 ? tw.authStepActive : ""].filter(Boolean).join(" ")}
               onClick={() => {
                 const err = step1Error;
                 if (err) return setError(err);
@@ -493,18 +511,19 @@ const Register = () => {
               }}
               disabled={submitting}
             >
-              <span className="auth-step__num">2</span>
-              <span className="auth-step__label">الملف والتواصل</span>
+              <span className={tw.authStepNum}>2</span>
+              <span className={tw.authStepLabel}>الملف والتواصل</span>
             </button>
           </div>
 
           {step === 1 ? (
             <>
-          <div className="auth-row auth-row--3">
-            <label className="auth-field">
-              <span>الاسم الأول</span>
-              <div className="auth-input-wrap auth-input-wrap--noicon">
+          <div className={`${tw.authRow} ${tw.authRow3}`}>
+            <label className={tw.authField}>
+              <span className={tw.authFieldLabel}>الاسم الأول</span>
+              <div className={tw.authInputWrap}>
                 <input
+                  className={tw.authInputNoIcon}
                   type="text"
                   placeholder="الاسم الأول"
                   value={firstName}
@@ -514,10 +533,11 @@ const Register = () => {
               </div>
             </label>
 
-            <label className="auth-field">
-              <span>اسم الأب</span>
-              <div className="auth-input-wrap auth-input-wrap--noicon">
+            <label className={tw.authField}>
+              <span className={tw.authFieldLabel}>اسم الأب</span>
+              <div className={tw.authInputWrap}>
                 <input
+                  className={tw.authInputNoIcon}
                   type="text"
                   placeholder="اسم الأب"
                   value={fatherName}
@@ -527,10 +547,11 @@ const Register = () => {
               </div>
             </label>
 
-            <label className="auth-field">
-              <span>اسم العائلة</span>
-              <div className="auth-input-wrap auth-input-wrap--noicon">
+            <label className={tw.authField}>
+              <span className={tw.authFieldLabel}>اسم العائلة</span>
+              <div className={tw.authInputWrap}>
                 <input
+                  className={tw.authInputNoIcon}
                   type="text"
                   placeholder="اسم العائلة"
                   value={familyName}
@@ -541,10 +562,11 @@ const Register = () => {
             </label>
           </div>
 
-          <label className="auth-field">
-            <span>البريد الإلكتروني</span>
-            <div className="auth-input-wrap auth-input-wrap--noicon">
+          <label className={tw.authField}>
+            <span className={tw.authFieldLabel}>البريد الإلكتروني</span>
+            <div className={tw.authInputWrap}>
               <input
+                className={tw.authInputNoIcon}
                 type="email"
                 placeholder="name@email.com"
                 value={email}
@@ -555,10 +577,11 @@ const Register = () => {
             </div>
           </label>
 
-          <label className="auth-field">
-            <span>كلمة المرور</span>
-            <div className="auth-input-wrap auth-input-wrap--noicon">
+          <label className={tw.authField}>
+            <span className={tw.authFieldLabel}>كلمة المرور</span>
+            <div className={tw.authInputWrap}>
               <input
+                className={tw.authInputNoIcon}
                 type="password"
                 placeholder="********"
                 value={password}
@@ -569,10 +592,11 @@ const Register = () => {
             </div>
           </label>
 
-          <label className="auth-field">
-            <span>تأكيد كلمة المرور</span>
-            <div className="auth-input-wrap auth-input-wrap--noicon">
+          <label className={tw.authField}>
+            <span className={tw.authFieldLabel}>تأكيد كلمة المرور</span>
+            <div className={tw.authInputWrap}>
               <input
+                className={tw.authInputNoIcon}
                 type="password"
                 placeholder="********"
                 value={confirmPassword}
@@ -583,8 +607,8 @@ const Register = () => {
             </div>
           </label>
 
-          <label className="auth-field">
-            <span>نوع الحساب</span>
+          <label className={tw.authField}>
+            <span className={tw.authFieldLabel}>نوع الحساب</span>
             <PremiumSelect
               id="register-account-type"
               value={accountType}
@@ -598,16 +622,16 @@ const Register = () => {
             />
           </label>
 
-          <div className="auth-actions-row">
-            <Button type="submit" className="auth-submit-btn" disabled={submitting}>
+          <div className={tw.authActionsRow}>
+            <Button unstyled type="submit" className={tw.authSubmitBtn} disabled={submitting}>
               التالي
             </Button>
           </div>
             </>
           ) : (
             <>
-              <label className="auth-field">
-                <span>الدولة</span>
+              <label className={tw.authField}>
+                <span className={tw.authFieldLabel}>الدولة</span>
                 <PremiumSelect
                   id="register-country"
                   value={country}
@@ -616,14 +640,16 @@ const Register = () => {
                   options={countryOptions}
                   disabled={submitting || countriesLoading}
                 />
-                {countriesError ? <span className="auth-field-hint auth-field-hint--warn">{countriesError}</span> : null}
+                {countriesError ? (
+                  <span className={`${tw.authFieldHint} ${tw.authFieldHintWarn}`}>{countriesError}</span>
+                ) : null}
               </label>
 
-              <div className="auth-field">
-                <span>رقم الهاتف</span>
-                <div className="auth-split-row">
-                  <label className="auth-split-item">
-                    <span className="auth-sr-only">مفتاح الدولة</span>
+              <div className={tw.authField}>
+                <span className={tw.authFieldLabel}>رقم الهاتف</span>
+                <div className={tw.authSplitRow}>
+                  <label className={tw.authSplitItem}>
+                    <span className={tw.authSrOnly}>مفتاح الدولة</span>
                     <PremiumSelect
                       id="register-phone-cc"
                       value={phoneCountryCode}
@@ -634,10 +660,11 @@ const Register = () => {
                       ltr
                     />
                   </label>
-                  <label className="auth-split-item">
-                    <span className="auth-sr-only">الرقم</span>
-                    <div className="auth-input-wrap auth-input-wrap--noicon auth-ltr">
+                  <label className={tw.authSplitItem}>
+                    <span className={tw.authSrOnly}>الرقم</span>
+                    <div className={`${tw.authInputWrap} ${tw.authLtr}`}>
                       <input
+                        className={tw.authInputNoIcon}
                         type="tel"
                         inputMode="numeric"
                         placeholder="5xxxxxxxx"
@@ -650,11 +677,11 @@ const Register = () => {
                 </div>
               </div>
 
-              <div className="auth-field">
-                <span>رقم واتساب</span>
-                <div className="auth-split-row">
-                  <label className="auth-split-item">
-                    <span className="auth-sr-only">مفتاح الدولة</span>
+              <div className={tw.authField}>
+                <span className={tw.authFieldLabel}>رقم واتساب</span>
+                <div className={tw.authSplitRow}>
+                  <label className={tw.authSplitItem}>
+                    <span className={tw.authSrOnly}>مفتاح الدولة</span>
                     <PremiumSelect
                       id="register-wa-cc"
                       value={whatsAppCountryCode}
@@ -665,10 +692,11 @@ const Register = () => {
                       ltr
                     />
                   </label>
-                  <label className="auth-split-item">
-                    <span className="auth-sr-only">الرقم</span>
-                    <div className="auth-input-wrap auth-input-wrap--noicon auth-ltr">
+                  <label className={tw.authSplitItem}>
+                    <span className={tw.authSrOnly}>الرقم</span>
+                    <div className={`${tw.authInputWrap} ${tw.authLtr}`}>
                       <input
+                        className={tw.authInputNoIcon}
                         type="tel"
                         inputMode="numeric"
                         placeholder="5xxxxxxxx"
@@ -681,8 +709,8 @@ const Register = () => {
                 </div>
               </div>
 
-              <label className="auth-field">
-                <span>الجنس</span>
+              <label className={tw.authField}>
+                <span className={tw.authFieldLabel}>الجنس</span>
                 <PremiumSelect
                   id="register-gender"
                   value={gender}
@@ -694,11 +722,11 @@ const Register = () => {
               </label>
 
               {isFreelancer ? (
-                <div className="auth-field">
-                  <span>التصنيفات (اختر واحداً أو أكثر)</span>
-                  <div className="auth-categories">
+                <div className={tw.authField}>
+                  <span className={tw.authFieldLabel}>التصنيفات (اختر واحداً أو أكثر)</span>
+                  <div className={tw.authCategories}>
                     {CATEGORY_OPTIONS.map(({ slug, label }) => (
-                      <label key={slug} className="auth-category-item">
+                      <label key={slug} className={tw.authCategoryItem}>
                         <input
                           type="checkbox"
                           checked={categories.includes(slug)}
@@ -712,30 +740,30 @@ const Register = () => {
                 </div>
               ) : null}
 
-              <label className="auth-field auth-field--checkbox">
+              <label className={tw.authFieldCheckbox}>
                 <input
                   type="checkbox"
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
                   disabled={submitting}
                 />
-                <span className="auth-terms-text">
+                <span className={tw.authTermsText}>
                   أوافق على{" "}
-                  <Link to="/terms-conditions" className="auth-inline-link" target="_blank" rel="noreferrer">
+                  <Link to="/terms-conditions" className={tw.authInlineLink} target="_blank" rel="noreferrer">
                     الشروط والأحكام
                   </Link>{" "}
                   و
-                  <Link to="/privacy-policy" className="auth-inline-link" target="_blank" rel="noreferrer">
+                  <Link to="/privacy-policy" className={tw.authInlineLink} target="_blank" rel="noreferrer">
                     سياسة الخصوصية
                   </Link>
                 </span>
               </label>
 
-              <div className="auth-actions-row auth-actions-row--split">
+              <div className={`${tw.authActionsRow} ${tw.authActionsRowSplit}`}>
                 <Button
+                  unstyled
                   type="button"
-                  variant="secondary"
-                  className="auth-nav-btn"
+                  className={tw.authNavBtn}
                   onClick={() => {
                     setError("");
                     setStep(1);
@@ -744,7 +772,12 @@ const Register = () => {
                 >
                   السابق
                 </Button>
-                <Button type="submit" className="auth-submit-btn" disabled={submitting || Boolean(step2Error)}>
+                <Button
+                  unstyled
+                  type="submit"
+                  className={tw.authSubmitBtn}
+                  disabled={submitting || Boolean(step2Error)}
+                >
                   {submitting ? "جاري إنشاء الحساب…" : "إنشاء الحساب"}
                 </Button>
               </div>

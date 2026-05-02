@@ -219,7 +219,7 @@ export default function FreelancerOrderDetailsPage() {
           <Link className="btn btn-secondary" to={backTo}>
             العودة للقائمة
           </Link>
-          {isPoolAvailable && isPricedBidding ? (
+          {isPoolAvailable && isFreelancer && isPricedBidding ? (
             <button
               type="button"
               className="btn btn-primary"
@@ -230,7 +230,7 @@ export default function FreelancerOrderDetailsPage() {
               {bidBusy ? "جارٍ الإرسال…" : order?.myBid?.status === "pending" ? "عرضك مُرسل" : "تقديم عرض سعر"}
             </button>
           ) : null}
-          {isPoolAvailable && !isPricedBidding ? (
+          {isPoolAvailable && isFreelancer && !isPricedBidding ? (
             <button
               type="button"
               className="btn btn-primary"
@@ -329,18 +329,20 @@ export default function FreelancerOrderDetailsPage() {
         </section>
       ) : null}
 
-      <BidAmountModal
-        open={bidOpen}
-        title={order ? `عرض سعر: ${order.title}` : ""}
-        min={order?.bidBudgetMin}
-        max={order?.bidBudgetMax}
-        currency="JOD"
-        busy={bidBusy}
-        onClose={() => {
-          if (!bidBusy) setBidOpen(false);
-        }}
-        onSubmit={submitBid}
-      />
+      {isFreelancer ? (
+        <BidAmountModal
+          open={bidOpen}
+          title={order ? `عرض سعر: ${order.title}` : ""}
+          min={order?.bidBudgetMin}
+          max={order?.bidBudgetMax}
+          currency="JOD"
+          busy={bidBusy}
+          onClose={() => {
+            if (!bidBusy) setBidOpen(false);
+          }}
+          onSubmit={submitBid}
+        />
+      ) : null}
     </main>
   );
 }

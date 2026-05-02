@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
-import { getDashboardPath } from "../../constants/authRoutes";
+import { getDashboardPathByRole } from "../../constants/authRoutes";
 import { AuthRouteSkeleton } from "../ui/Skeleton";
 
 /**
@@ -18,7 +18,7 @@ export function DashboardRedirect() {
   }
 
   const role = user?.primaryRole || user?.role;
-  return <Navigate to={getDashboardPath(role)} replace />;
+  return <Navigate to={getDashboardPathByRole(role)} replace />;
 }
 
 /**
@@ -58,7 +58,25 @@ export function GuestOnly({ children }) {
 
   if (user) {
     const role = user?.primaryRole || user?.role;
-    return <Navigate to={getDashboardPath(role)} replace />;
+    return <Navigate to={getDashboardPathByRole(role)} replace />;
+  }
+
+  return children;
+}
+
+/**
+ * الصفحة الرئيسية "/" للزوار فقط — المستخدم المسجّل يُحوَّل إلى لوحة دوره بـ replace.
+ */
+export function HomeForGuestsOnly({ children }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <AuthRouteLoading />;
+  }
+
+  if (user) {
+    const role = user?.primaryRole || user?.role;
+    return <Navigate to={getDashboardPathByRole(role)} replace />;
   }
 
   return children;
@@ -81,7 +99,7 @@ export function RequireRole({ allowedRoles, children }) {
 
   const role = user?.primaryRole || user?.role;
   if (!allowedRoles.includes(role)) {
-    return <Navigate to={getDashboardPath(role)} replace />;
+    return <Navigate to={getDashboardPathByRole(role)} replace />;
   }
 
   return children;

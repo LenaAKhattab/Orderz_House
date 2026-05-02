@@ -1,5 +1,6 @@
 import { NavLink, Link } from "react-router-dom";
 import Button from "../ui/Button";
+import * as tw from "./authTw";
 
 const navItems = [
   { label: "استكشف", to: "/services" },
@@ -8,18 +9,18 @@ const navItems = [
 
 const AuthNavbar = () => {
   return (
-    <header className="auth-navbar-wrap">
-      <div className="container">
-        <div className="auth-navbar">
-          <Link to="/" className="auth-brand" aria-label="العودة إلى الرئيسية">
+    <header className={tw.authNavbarWrap}>
+      <div className="mx-auto w-full max-w-[min(1160px,calc(100%-48px))]">
+        <div className={tw.authNavbar}>
+          <Link to="/" className={tw.authBrand} aria-label="العودة إلى الرئيسية">
             <span>أوردرز هاوس</span>
           </Link>
 
           <nav aria-label="تنقل المصادقة">
-            <ul className="auth-nav-list">
+            <ul className={tw.authNavList}>
               {navItems.map((item) => (
                 <li key={item.to}>
-                  <NavLink to={item.to} className="auth-nav-link">
+                  <NavLink to={item.to} className={tw.authNavLink}>
                     {item.label}
                   </NavLink>
                 </li>
@@ -27,11 +28,11 @@ const AuthNavbar = () => {
             </ul>
           </nav>
 
-          <div className="auth-navbar-actions">
-            <NavLink to="/login" className="auth-signin-link">
+          <div className={tw.authNavbarActions}>
+            <NavLink to="/login" className={tw.authSigninLink}>
               تسجيل الدخول
             </NavLink>
-            <Button className="auth-start-btn">ابدأ الآن</Button>
+            <Button className={`btn btn-primary ${tw.authStartBtn}`}>ابدأ الآن</Button>
           </div>
         </div>
       </div>
