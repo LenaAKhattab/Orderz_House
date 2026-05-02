@@ -1,5 +1,4 @@
 import { createElement, useEffect, useRef, useState } from "react";
-import "./About.css";
 
 function useReveal(options = {}) {
   const ref = useRef(null);

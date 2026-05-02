@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import * as tw from "../../components/auth/authTw";
 import { useToast } from "../../components/ui/toastContext";
 import { listClientMyOrdersRequest } from "../../services/api";
 import { orderStatusLabelAr } from "../../utils/orderFlowUi";
@@ -61,7 +62,7 @@ export default function ClientFinancialPage() {
       <section className="card" style={{ marginBottom: 14 }}>
         <p className="help" style={{ margin: 0 }}>
           لمراجعة تفاصيل الطلبات والمرفقات، انتقل إلى{" "}
-          <Link to="/dashboard/client/my-orders" className="auth-inline-link">
+          <Link to="/dashboard/client/my-orders" className={tw.authInlineLink}>
             طلباتي
           </Link>
           .

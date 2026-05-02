@@ -3,7 +3,7 @@ import CategoriesSection from "../components/sections/CategoriesSection";
 
 const Home = () => {
   return (
-    <main className="home-page">
+    <main className="home-page flex flex-1 flex-col">
       <HeroSection />
       <CategoriesSection />
     </main>

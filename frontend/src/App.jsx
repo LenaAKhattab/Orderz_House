@@ -4,11 +4,12 @@ import { ToastProvider } from "./components/ui/ToastProvider";
 import PublicLayout from "./components/layout/PublicLayout";
 import MainLayout from "./layouts/MainLayout";
 import { ClientCreateOrderModalProvider } from "./context/ClientCreateOrderModalContext.jsx";
-import { DashboardRedirect, GuestOnly, RequireAuth, RequireRole } from "./components/auth/AuthGuards";
+import { DashboardRedirect, GuestOnly, HomeForGuestsOnly, RequireAuth, RequireRole } from "./components/auth/AuthGuards";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Services from "./pages/Services";
 import Plans from "./pages/Plans";
+import Orders from "./pages/Orders";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -42,10 +43,17 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route element={<PublicLayout />}>
-              <Route path="/" element={<Home />} />
+              <Route
+                path="/"
+                element={
+                  <HomeForGuestsOnly>
+                    <Home />
+                  </HomeForGuestsOnly>
+                }
+              />
               <Route path="/about" element={<About />} />
               <Route path="/services" element={<Services />} />
-              <Route path="/orders" element={<Navigate to="/dashboard/freelancer/orders" replace />} />
+              <Route path="/orders" element={<Orders />} />
               <Route path="/plans" element={<Plans />} />
               <Route
                 path="/login"
@@ -261,7 +269,7 @@ function App() {
                 <Route
                   path="/dashboard/freelancer/orders/:id"
                   element={
-                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                    <RequireRole allowedRoles={[ROLE.FREELANCER, ROLE.CLIENT]}>
                       <FreelancerOrderDetailsPage />
                     </RequireRole>
                   }
