@@ -1,5 +1,4 @@
 import ServicesExplorer from "../components/services/ServicesExplorer";
-import "../components/services/Services.css";
 
 const Services = () => {
   return (
