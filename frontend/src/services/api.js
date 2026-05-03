@@ -61,6 +61,39 @@ export const meRequest = async () => {
   return data;
 };
 
+/** Extended profile + dashboard stats + subscription (freelancer). */
+export const getProfileMeRequest = async () => {
+  const { data } = await api.get("/profile/me");
+  return data;
+};
+
+export const patchProfileMeRequest = async (patch) => {
+  const { data } = await api.patch("/profile/me", patch);
+  return data;
+};
+
+export const patchProfileNotificationPreferencesRequest = async (prefs) => {
+  const { data } = await api.patch("/profile/notification-preferences", prefs);
+  return data;
+};
+
+export const patchProfilePasswordRequest = async (payload) => {
+  const { data } = await api.patch("/profile/password", payload);
+  return data;
+};
+
+export const patchProfileAvatarRequest = async (file) => {
+  const fd = new FormData();
+  fd.append("avatar", file);
+  const { data } = await api.patch("/profile/avatar", fd);
+  return data;
+};
+
+export const deleteProfileAvatarRequest = async () => {
+  const { data } = await api.delete("/profile/avatar");
+  return data;
+};
+
 /** Clears HttpOnly session cookie on the server (no body secrets). */
 export const logoutRequest = async () => {
   const { data } = await api.post("/auth/logout");

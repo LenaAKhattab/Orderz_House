@@ -2,7 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { useClientCreateOrderModal } from "../../context/ClientCreateOrderModalContext";
-import { getDashboardPathByRole, getNotificationsPath } from "../../constants/authRoutes";
+import {
+  getAccountSettingsPath,
+  getDashboardPathByRole,
+  getNotificationsPath,
+  getProfilePagePath,
+} from "../../constants/authRoutes";
 import NotificationsBell from "../notifications/NotificationsBell";
 
 const publicExploreItems = [
@@ -50,6 +55,8 @@ const Navbar = () => {
   const isLoggedIn = Boolean(user) && !loading;
   const dashboardPath = user && role ? getDashboardPathByRole(role) : null;
   const notificationsPath = user && role ? getNotificationsPath(role) : "/dashboard";
+  const profilePagePath = user && role ? getProfilePagePath(role) : null;
+  const accountSettingsPath = user && role ? getAccountSettingsPath(role) : "/dashboard";
   const logoTo = isLoggedIn && dashboardPath ? dashboardPath : "/";
   const showAdminCreateOrderButton = role === "super_admin" || role === "admin";
 
@@ -180,12 +187,20 @@ const Navbar = () => {
                     aria-expanded={userMenuOpen}
                     onClick={() => setUserMenuOpen((v) => !v)}
                   >
-                    <span
-                      className="grid h-[30px] w-[30px] place-items-center rounded-full bg-[#2f3b65] text-[0.9rem] font-extrabold text-white"
-                      aria-hidden="true"
-                    >
-                      {userInitial}
-                    </span>
+                    {user?.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt=""
+                        className="h-[30px] w-[30px] rounded-full object-cover ring-1 ring-[rgba(56,82,180,0.2)]"
+                      />
+                    ) : (
+                      <span
+                        className="grid h-[30px] w-[30px] place-items-center rounded-full bg-[#2f3b65] text-[0.9rem] font-extrabold text-white"
+                        aria-hidden="true"
+                      >
+                        {userInitial}
+                      </span>
+                    )}
                     <span className="max-w-[180px] truncate text-[0.88rem] font-extrabold text-[#243153] sm:max-w-[120px]">
                       {userName}
                     </span>
@@ -195,21 +210,31 @@ const Navbar = () => {
                       className="absolute end-0 top-[calc(100%+10px)] z-[220] grid min-w-[220px] gap-1 rounded-[14px] border border-[rgba(56,82,180,0.14)] bg-white p-2 shadow-[0_18px_40px_rgba(24,36,85,0.14)]"
                       role="menu"
                     >
+                      {profilePagePath ? (
+                        <NavLink
+                          to={profilePagePath}
+                          className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
+                          role="menuitem"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          الملف الشخصي
+                        </NavLink>
+                      ) : null}
                       <NavLink
-                        to={dashboardPath || "/dashboard"}
+                        to={accountSettingsPath}
                         className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
                         role="menuitem"
                         onClick={() => setUserMenuOpen(false)}
                       >
-                        لوحة التحكم
+                        إعدادات الحساب
                       </NavLink>
                       <NavLink
-                        to="/plans"
+                        to={notificationsPath}
                         className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
                         role="menuitem"
                         onClick={() => setUserMenuOpen(false)}
                       >
-                        الباقات
+                        الإشعارات
                       </NavLink>
                       <button
                         type="button"

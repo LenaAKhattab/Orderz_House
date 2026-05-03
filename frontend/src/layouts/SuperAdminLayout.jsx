@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { useClientCreateOrderModal } from "../context/ClientCreateOrderModalContext";
-import { getNotificationsPath } from "../constants/authRoutes";
+import { getAccountSettingsPath, getNotificationsPath } from "../constants/authRoutes";
 import NotificationsBell from "../components/notifications/NotificationsBell";
 
 function fullNameAr(user) {
@@ -76,6 +76,7 @@ export default function SuperAdminLayout() {
   const trainingSectionActive = pathname.startsWith("/dashboard/super-admin/training-orders");
   const role = user?.primaryRole || user?.role;
   const notificationsPath = getNotificationsPath(role);
+  const accountSettingsPath = getAccountSettingsPath(role);
 
   return (
     <div className="oh-sa-shell" dir="rtl" lang="ar">
@@ -174,11 +175,21 @@ export default function SuperAdminLayout() {
             <NotificationsBell notificationsPagePath={notificationsPath} variant="superadmin" />
             <div className="oh-sa-user" ref={userMenuRef}>
               <button type="button" className="oh-sa-avatar" aria-expanded={userMenuOpen} aria-haspopup="true" onClick={() => setUserMenuOpen((v) => !v)}>
-                {initial}
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="" className="oh-sa-avatar-img" />
+                ) : (
+                  initial
+                )}
               </button>
               {userMenuOpen ? (
                 <div className="oh-sa-user-menu" role="menu">
                   <div style={{ padding: "6px 10px 10px", fontSize: "0.82rem", color: "#5b6684", fontWeight: 800 }}>{displayName}</div>
+                  <NavLink to={accountSettingsPath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
+                    إعدادات الحساب
+                  </NavLink>
+                  <NavLink to={notificationsPath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
+                    الإشعارات
+                  </NavLink>
                   <NavLink to="/" role="menuitem" onClick={() => setUserMenuOpen(false)}>
                     الموقع العام
                   </NavLink>

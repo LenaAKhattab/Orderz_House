@@ -1,0 +1,351 @@
+/* Account profile & settings — Orderz House dashboard (RTL) */
+
+.oh-account-page {
+  padding: clamp(16px, 3vw, 28px) clamp(12px, 2vw, 20px) clamp(28px, 5vw, 56px);
+  max-width: min(960px, 100%);
+  margin-inline: auto;
+}
+
+.oh-account-hero {
+  display: grid;
+  gap: clamp(12px, 2vw, 18px);
+  margin-bottom: clamp(18px, 2.5vw, 26px);
+  padding: clamp(18px, 2.8vw, 26px) clamp(16px, 2.5vw, 28px);
+  border-radius: 22px;
+  border: 1px solid rgba(47, 59, 101, 0.11);
+  background: linear-gradient(135deg, #ffffff 0%, #f4f7fb 42%, #eef2f8 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.7) inset,
+    0 18px 46px -28px rgba(24, 36, 64, 0.22);
+}
+
+.oh-account-hero__kicker {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(47, 59, 101, 0.55);
+}
+
+.oh-account-hero__title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+  font-weight: 900;
+  color: var(--primary, #2f3b65);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.oh-account-hero__lead {
+  margin: 0;
+  font-size: 0.94rem;
+  line-height: 1.6;
+  color: #5a6378;
+  max-width: 56ch;
+}
+
+.oh-account-grid {
+  display: grid;
+  gap: clamp(14px, 2vw, 20px);
+}
+
+@media (min-width: 720px) {
+  .oh-account-grid--2 {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.oh-account-card {
+  border-radius: 18px;
+  border: 1px solid rgba(47, 59, 101, 0.1);
+  background: #fff;
+  padding: clamp(16px, 2.2vw, 22px);
+  box-shadow: 0 10px 32px -22px rgba(24, 36, 64, 0.18);
+}
+
+.oh-account-card__title {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 900;
+  color: #2f3b65;
+}
+
+.oh-account-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: rgba(47, 59, 101, 0.65);
+  margin-bottom: 6px;
+}
+
+.oh-account-value {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #243153;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.oh-account-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.oh-account-stat {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(118, 207, 223, 0.12), rgba(47, 59, 101, 0.04));
+  border: 1px solid rgba(118, 207, 223, 0.28);
+}
+
+.oh-account-stat__label {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: rgba(47, 59, 101, 0.65);
+}
+
+.oh-account-stat__value {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #2f3b65;
+}
+
+.oh-account-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 20px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(56, 82, 180, 0.35);
+  background: #2f3b65;
+  color: #fff;
+  font-weight: 900;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.oh-account-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px -14px rgba(47, 59, 101, 0.45);
+  background: #243153;
+}
+
+.oh-account-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(47, 59, 101, 0.18);
+  background: #fff;
+  color: #2f3b65;
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.oh-account-btn-ghost:hover {
+  background: rgba(56, 82, 180, 0.06);
+}
+
+.oh-account-empty {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(56, 82, 180, 0.06);
+  border: 1px dashed rgba(56, 82, 180, 0.22);
+  color: #5a6378;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.oh-account-form-grid {
+  display: grid;
+  gap: 14px;
+}
+
+@media (min-width: 640px) {
+  .oh-account-form-grid--2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.oh-account-input,
+.oh-account-textarea,
+.oh-account-select {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 12px;
+  border: 1px solid rgba(47, 59, 101, 0.18);
+  padding: 10px 12px;
+  font-size: 0.92rem;
+  font-family: inherit;
+  background: #fff;
+  color: #243153;
+}
+
+.oh-account-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.oh-account-input:focus,
+.oh-account-textarea:focus,
+.oh-account-select:focus {
+  outline: none;
+  border-color: rgba(56, 82, 180, 0.45);
+  box-shadow: 0 0 0 4px rgba(56, 82, 180, 0.12);
+}
+
+.oh-account-error {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #9b2222;
+}
+
+.oh-account-skel {
+  border-radius: 14px;
+  background: linear-gradient(90deg, #eef2f8 0%, #f6f8fc 50%, #eef2f8 100%);
+  background-size: 200% 100%;
+  animation: oh-account-shimmer 1.2s ease-in-out infinite;
+  min-height: 18px;
+}
+
+@keyframes oh-account-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.oh-account-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  background: rgba(47, 59, 101, 0.08);
+  color: #2f3b65;
+}
+
+.oh-account-avatar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.oh-account-avatar-preview {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(47, 59, 101, 0.12);
+  background: #eef2f8;
+}
+
+.oh-account-avatar-placeholder {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: #fff;
+  background: #2f3b65;
+}
+
+.oh-account-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(47, 59, 101, 0.08);
+}
+
+.oh-account-toggle:last-child {
+  border-bottom: 0;
+}
+
+.oh-account-switch {
+  width: 44px;
+  height: 26px;
+  appearance: none;
+  background: #dce2ee;
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.18s ease;
+  flex-shrink: 0;
+}
+
+.oh-account-switch::after {
+  content: "";
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  top: 2px;
+  right: 2px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: transform 0.18s ease;
+}
+
+.oh-account-switch:checked {
+  background: #2f3b65;
+}
+
+.oh-account-switch:checked::after {
+  transform: translateX(-18px);
+}
+
+.oh-account-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.oh-account-link-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  background: rgba(56, 82, 180, 0.08);
+  color: #223069;
+  text-decoration: none;
+  border: 1px solid rgba(56, 82, 180, 0.18);
+}
+
+.oh-account-link-pill:hover {
+  background: rgba(56, 82, 180, 0.12);
+}
+
+.oh-account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
