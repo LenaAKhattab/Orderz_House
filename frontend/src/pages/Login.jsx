@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import AuthFormCard from "../components/auth/AuthFormCard";
 import AuthLayout from "../components/auth/AuthLayout";
@@ -6,34 +6,10 @@ import Button from "../components/ui/Button";
 import { useToast } from "../components/ui/toastContext";
 import { useAuth } from "../context/useAuth";
 import { canRoleAccessPath, getDashboardPath } from "../constants/authRoutes";
+import { getSafeApiErrorMessage } from "../utils/apiErrorMessage";
 
 function loginErrorMessage(err) {
-  const apiMsg = err?.response?.data?.message;
-  if (apiMsg) {
-    const map = {
-      "Invalid email or password.": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
-      "Authentication token is required.": "يجب تسجيل الدخول.",
-      "This account has been disabled.": "تم تعطيل هذا الحساب.",
-      "Server configuration error.": "خطأ في إعدادات الخادم. تواصل مع الدعم.",
-      "Database schema is missing the users table. Run backend/sql/init.sql against your database, then try again.":
-        "يوجد مشكلة في قاعدة البيانات. تواصل مع الدعم أو أعد تهيئة قاعدة البيانات.",
-      "Database schema does not match the application. Re-run backend/sql/init.sql or migrate your database.":
-        "يوجد مشكلة في قاعدة البيانات. تواصل مع الدعم أو حدّث مخطط قاعدة البيانات.",
-      "Database schema is missing required tables. New DB: run sql/init.sql (npm run db:init from backend). Then run npm run db:migrate for RBAC, plans, and subscriptions.":
-        "قاعدة البيانات غير مكتملة. نفّذ تهيئة القاعدة ثم شغّل npm run db:migrate من مجلد backend.",
-      "Database schema does not match the application. Re-run sql/init.sql if needed, then npm run db:migrate from the backend directory.":
-        "مخطط قاعدة البيانات غير متطابق. حدّث القاعدة ثم شغّل npm run db:migrate من مجلد backend.",
-    };
-    if (map[apiMsg]) return map[apiMsg];
-    if (String(apiMsg).toLowerCase().includes("column") || String(apiMsg).toLowerCase().includes("schema")) {
-      return "يوجد مشكلة في قاعدة البيانات. تواصل مع الدعم.";
-    }
-    return apiMsg;
-  }
-  if (err?.message?.includes("Network")) {
-    return "تعذر الاتصال بالخادم. تحقق من الاتصال وحاول مجدداً.";
-  }
-  return "تعذر تسجيل الدخول. حاول مجدداً.";
+  return getSafeApiErrorMessage(err, "تعذر تسجيل الدخول. حاول مجدداً.");
 }
 
 const Login = () => {
@@ -43,8 +19,17 @@ const Login = () => {
   const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const msg = location.state?.message;
+    if (msg) {
+      toast.success({ title: "تم", message: String(msg) });
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.pathname, location.state, navigate, toast]);
 
   const visualContent = {
     title: "إدارة طلباتك باحترافية من أي مكان",
@@ -111,12 +96,9 @@ const Login = () => {
                 هل نسيت كلمة المرور؟
               </Link>
             </div>
-            <div className="auth-input-wrap">
-              <i className="auth-input-icon" aria-hidden="true">
-                *
-              </i>
+            <div className="auth-input-wrap auth-input-wrap--password-toggle">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 autoComplete="current-password"
                 placeholder="********"
@@ -125,6 +107,23 @@ const Login = () => {
                 required
                 disabled={submitting}
               />
+              <button
+                type="button"
+                className="auth-password-toggle"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-pressed={showPassword}
+                aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+                disabled={submitting}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
             </div>
           </label>
 

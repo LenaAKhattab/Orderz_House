@@ -20,6 +20,8 @@ function mapCourse(row) {
     coverImage: row.cover_image || null,
     youtubeSourceUrl: row.youtube_source_url,
     isActive: Boolean(row.is_active),
+    isTestingEnabled: Boolean(row.is_testing_enabled),
+    testFileUrl: row.test_file_url || null,
     createdBy: row.created_by ? String(row.created_by) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -88,8 +90,8 @@ async function createCourse({ actorUserId, payload }) {
     const sourceUrl = String(payload.youtubeSourceUrl || "").trim();
     const imported = await importYoutubeSource(sourceUrl);
     const { rows } = await client.query(
-      `INSERT INTO courses (title, description, cover_image, youtube_source_url, is_active, created_by, created_at, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,NOW(),NOW())
+      `INSERT INTO courses (title, description, cover_image, youtube_source_url, is_active, is_testing_enabled, test_file_url, created_by, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW())
        RETURNING *`,
       [
         String(payload.title || "").trim() || "دورة جديدة",
@@ -97,6 +99,8 @@ async function createCourse({ actorUserId, payload }) {
         payload.coverImage ? String(payload.coverImage).trim() : null,
         sourceUrl,
         payload.isActive !== undefined ? Boolean(payload.isActive) : true,
+        payload.isTestingEnabled !== undefined ? Boolean(payload.isTestingEnabled) : false,
+        payload.testFileUrl ? String(payload.testFileUrl).trim() : null,
         Number(actorUserId),
       ],
     );
@@ -204,6 +208,8 @@ async function updateCourse({ actorUserId, courseId, patch }) {
     if (patch.coverImage !== undefined) set("cover_image", patch.coverImage ? String(patch.coverImage).trim() : null);
     if (patch.youtubeSourceUrl !== undefined) set("youtube_source_url", String(patch.youtubeSourceUrl || "").trim());
     if (patch.isActive !== undefined) set("is_active", Boolean(patch.isActive));
+    if (patch.isTestingEnabled !== undefined) set("is_testing_enabled", Boolean(patch.isTestingEnabled));
+    if (patch.testFileUrl !== undefined) set("test_file_url", patch.testFileUrl ? String(patch.testFileUrl).trim() : null);
     set("updated_at", new Date());
     vals.push(Number(courseId));
     const { rows } = await client.query(
@@ -291,11 +297,130 @@ async function deleteCourse({ actorUserId, courseId }) {
   }
 }
 
+/**
+ * Only `true` or `1` enables "assign to every freelancer". Strings like "false" are truthy in JS — never use those.
+ */
+function coalesceAssignAllFlag(assignAll) {
+  return assignAll === true || assignAll === 1;
+}
+
+/**
+ * Add a single freelancer to a course without removing existing assignments (for "إرسال الدورة" one-by-one).
+ */
+async function addCourseFreelancer({ actorUserId, courseId, freelancerUserId }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertAdminOrSuperAdmin(actorUserId, client);
+    const fid = Number(freelancerUserId);
+    if (!Number.isInteger(fid) || fid < 1) {
+      const err = new Error("معرف المستقل مطلوب وغير صالح.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const { rows: courseRows } = await client.query(`SELECT * FROM courses WHERE id = $1 LIMIT 1 FOR UPDATE`, [Number(courseId)]);
+    const course = courseRows[0];
+    if (!course) {
+      const err = new Error("الدورة غير موجودة.");
+      err.statusCode = 404;
+      throw err;
+    }
+    const { rows: uRows } = await client.query(`SELECT id, role, is_active FROM users WHERE id = $1 LIMIT 1`, [fid]);
+    const user = uRows[0];
+    if (!user || String(user.role) !== "freelancer" || !user.is_active) {
+      const err = new Error("المستخدم ليس مستقلاً نشطاً.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const { rows: inserted } = await client.query(
+      `INSERT INTO course_assignments (course_id, freelancer_id, assigned_by, assigned_at)
+       VALUES ($1,$2,$3,NOW())
+       ON CONFLICT (course_id, freelancer_id) DO NOTHING
+       RETURNING id`,
+      [Number(courseId), fid, Number(actorUserId)],
+    );
+    if (!inserted.length) {
+      const err = new Error("الدورة مسندة لهذا المستقل مسبقاً.");
+      err.statusCode = 409;
+      throw err;
+    }
+    await safeNotify(() =>
+      notificationEventsService.notifyUsers(
+        {
+          userIds: [fid],
+          recipientRole: "freelancer",
+          actorUserId: Number(actorUserId),
+          type: "course.assigned",
+          title: "تم إسناد دورة تدريبية لك",
+          message: `تم إسناد دورة "${course.title}" إلى حسابك.`,
+          entityType: "course",
+          entityId: Number(courseId),
+          link: `/dashboard/freelancer/courses/${encodeURIComponent(String(courseId))}`,
+          priority: "high",
+          metadata: { courseId: String(courseId), courseTitle: course.title },
+          dedupeKey: `course_assigned_${courseId}_${fid}_${Date.now()}`,
+        },
+        client,
+      ),
+    );
+    await client.query("COMMIT");
+    return getCourseDetailsForAdmin({ actorUserId, courseId: Number(courseId) });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Remove one freelancer from a course (admin "unsend"): delete lesson progress then assignment row.
+ */
+async function removeCourseFreelancer({ actorUserId, courseId, freelancerUserId }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertAdminOrSuperAdmin(actorUserId, client);
+    const cid = Number(courseId);
+    const fid = Number(freelancerUserId);
+    if (!Number.isInteger(fid) || fid < 1) {
+      const err = new Error("معرف المستقل مطلوب وغير صالح.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const { rows: courseRows } = await client.query(`SELECT id FROM courses WHERE id = $1 LIMIT 1 FOR UPDATE`, [cid]);
+    if (!courseRows.length) {
+      const err = new Error("الدورة غير موجودة.");
+      err.statusCode = 404;
+      throw err;
+    }
+    const { rows: exists } = await client.query(
+      `SELECT 1 FROM course_assignments WHERE course_id = $1 AND freelancer_id = $2 LIMIT 1`,
+      [cid, fid],
+    );
+    if (!exists.length) {
+      const err = new Error("لا يوجد إسناد لهذا المستقل على هذه الدورة.");
+      err.statusCode = 404;
+      throw err;
+    }
+    await client.query(`DELETE FROM course_lesson_progress WHERE course_id = $1 AND freelancer_id = $2`, [cid, fid]);
+    await client.query(`DELETE FROM course_assignments WHERE course_id = $1 AND freelancer_id = $2`, [cid, fid]);
+    await client.query("COMMIT");
+    return getCourseDetailsForAdmin({ actorUserId, courseId: cid });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 async function assignCourseFreelancers({ actorUserId, courseId, freelancerIds = [], assignAll = false }) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
     await assertAdminOrSuperAdmin(actorUserId, client);
+    const wantsEveryFreelancer = coalesceAssignAllFlag(assignAll);
     const { rows: courseRows } = await client.query(`SELECT * FROM courses WHERE id = $1 LIMIT 1 FOR UPDATE`, [Number(courseId)]);
     const course = courseRows[0];
     if (!course) {
@@ -304,7 +429,7 @@ async function assignCourseFreelancers({ actorUserId, courseId, freelancerIds = 
       throw err;
     }
     let targetIds = [];
-    if (assignAll) {
+    if (wantsEveryFreelancer) {
       const { rows } = await client.query(`SELECT id FROM users WHERE role = 'freelancer' AND is_active = TRUE`);
       targetIds = rows.map((r) => Number(r.id));
     } else {
@@ -446,6 +571,7 @@ async function listAssignedCoursesForFreelancer({ freelancerUserId }) {
   const uid = Number(freelancerUserId);
   const { rows } = await pool.query(
     `SELECT c.*,
+            a.completed_at AS assignment_completed_at,
             (SELECT COUNT(*)::int FROM course_lessons l WHERE l.course_id = c.id AND l.is_active = TRUE) AS total_lessons,
             (SELECT COUNT(*)::int FROM course_lesson_progress p WHERE p.course_id = c.id AND p.freelancer_id = $1) AS completed_lessons
      FROM course_assignments a
@@ -460,6 +586,7 @@ async function listAssignedCoursesForFreelancer({ freelancerUserId }) {
     const completed = Number(r.completed_lessons || 0);
     return {
       ...mapCourse(r),
+      courseCompletedAt: r.assignment_completed_at || null,
       progress: {
         totalLessons: total,
         completedLessons: completed,
@@ -472,15 +599,19 @@ async function listAssignedCoursesForFreelancer({ freelancerUserId }) {
 async function getCourseDetailsForFreelancer({ freelancerUserId, courseId }) {
   const uid = Number(freelancerUserId);
   const cid = Number(courseId);
-  const { rowCount: allowed } = await pool.query(
-    `SELECT 1 FROM course_assignments WHERE course_id = $1 AND freelancer_id = $2 LIMIT 1`,
+  const { rows: assignRows } = await pool.query(
+    `SELECT audit_confirmed, audit_notes, completed_at
+     FROM course_assignments
+     WHERE course_id = $1 AND freelancer_id = $2
+     LIMIT 1`,
     [cid, uid],
   );
-  if (!allowed) {
+  if (!assignRows.length) {
     const err = new Error("لا يمكنك الوصول إلى هذه الدورة.");
     err.statusCode = 403;
     throw err;
   }
+  const assignmentRow = assignRows[0];
   const { rows: courseRows } = await pool.query(`SELECT * FROM courses WHERE id = $1 AND is_active = TRUE LIMIT 1`, [cid]);
   const course = courseRows[0];
   if (!course) {
@@ -504,13 +635,32 @@ async function getCourseDetailsForFreelancer({ freelancerUserId, courseId }) {
     [cid, uid],
   );
   const completed = lessons.filter((l) => l.is_completed).length;
+  const totalLessons = lessons.length;
+  const allLessonsComplete = totalLessons > 0 && completed >= totalLessons;
+  const courseMapped = mapCourse(course);
+  if (!courseMapped.isTestingEnabled) {
+    courseMapped.testFileUrl = null;
+  }
+  const courseCompleted = Boolean(assignmentRow.completed_at);
+  const testingOn = Boolean(course.is_testing_enabled);
   return {
-    course: mapCourse(course),
+    course: courseMapped,
+    assignment: {
+      auditConfirmed: Boolean(assignmentRow.audit_confirmed),
+      auditNotes: assignmentRow.audit_notes || null,
+      completedAt: assignmentRow.completed_at || null,
+    },
+    completion: {
+      allLessonsComplete,
+      courseCompleted,
+      needsAuditStep: testingOn && allLessonsComplete && !courseCompleted,
+      testingEnabled: testingOn,
+    },
     lessons: lessons.map((l) => ({ ...mapLesson(l), isCompleted: Boolean(l.is_completed) })),
     progress: {
-      totalLessons: lessons.length,
+      totalLessons,
       completedLessons: completed,
-      percentage: lessons.length > 0 ? Math.min(100, Math.round((completed / lessons.length) * 100)) : 0,
+      percentage: totalLessons > 0 ? Math.min(100, Math.round((completed / totalLessons) * 100)) : 0,
     },
   };
 }
@@ -555,11 +705,13 @@ async function markLessonComplete({ freelancerUserId, courseId, lessonId }) {
     const { rows: countsRows } = await client.query(
       `SELECT
          (SELECT COUNT(*)::int FROM course_lessons WHERE course_id = $1 AND is_active = TRUE) AS total_lessons,
-         (SELECT COUNT(*)::int FROM course_lesson_progress WHERE course_id = $1 AND freelancer_id = $2) AS completed_lessons`,
+         (SELECT COUNT(*)::int FROM course_lesson_progress WHERE course_id = $1 AND freelancer_id = $2) AS completed_lessons,
+         (SELECT is_testing_enabled FROM courses WHERE id = $1 LIMIT 1) AS is_testing_enabled`,
       [cid, uid],
     );
     const total = Number(countsRows[0]?.total_lessons || 0);
     const completed = Number(countsRows[0]?.completed_lessons || 0);
+    const testingEnabled = Boolean(countsRows[0]?.is_testing_enabled);
     const percentage = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
     await safeNotify(() =>
       notificationEventsService.notifyUsers(
@@ -580,29 +732,132 @@ async function markLessonComplete({ freelancerUserId, courseId, lessonId }) {
         client,
       ),
     );
-    if (total > 0 && completed >= total) {
-      await safeNotify(() =>
-        notificationEventsService.notifyUsers(
-          {
-            userIds: [uid],
-            recipientRole: "freelancer",
-            actorUserId: uid,
-            type: "course.completed",
-            title: "اكتملت الدورة بنجاح",
-            message: "ممتاز! لقد أكملت جميع دروس هذه الدورة.",
-            entityType: "course",
-            entityId: cid,
-            link: `/dashboard/freelancer/courses/${encodeURIComponent(String(cid))}`,
-            priority: "medium",
-            metadata: { courseId: String(cid) },
-            dedupeKey: `course_completed_${cid}_${uid}`,
-          },
-          client,
-        ),
+    if (total > 0 && completed >= total && !testingEnabled) {
+      const { rowCount: updated } = await client.query(
+        `UPDATE course_assignments
+         SET completed_at = COALESCE(completed_at, NOW())
+         WHERE course_id = $1 AND freelancer_id = $2 AND completed_at IS NULL`,
+        [cid, uid],
       );
+      if (updated) {
+        await safeNotify(() =>
+          notificationEventsService.notifyUsers(
+            {
+              userIds: [uid],
+              recipientRole: "freelancer",
+              actorUserId: uid,
+              type: "course.completed",
+              title: "اكتملت الدورة بنجاح",
+              message: "ممتاز! لقد أكملت جميع دروس هذه الدورة.",
+              entityType: "course",
+              entityId: cid,
+              link: `/dashboard/freelancer/courses/${encodeURIComponent(String(cid))}`,
+              priority: "medium",
+              metadata: { courseId: String(cid) },
+              dedupeKey: `course_completed_${cid}_${uid}_${Date.now()}`,
+            },
+            client,
+          ),
+        );
+      }
     }
     await client.query("COMMIT");
     return { totalLessons: total, completedLessons: completed, percentage };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function submitCourseCompletion({ freelancerUserId, courseId, auditConfirmed, auditNotes }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const uid = Number(freelancerUserId);
+    const cid = Number(courseId);
+    const { rows: courseRows } = await client.query(`SELECT * FROM courses WHERE id = $1 AND is_active = TRUE LIMIT 1 FOR UPDATE`, [cid]);
+    const course = courseRows[0];
+    if (!course) {
+      const err = new Error("الدورة غير موجودة.");
+      err.statusCode = 404;
+      throw err;
+    }
+    const { rows: assignRows } = await client.query(
+      `SELECT * FROM course_assignments WHERE course_id = $1 AND freelancer_id = $2 LIMIT 1 FOR UPDATE`,
+      [cid, uid],
+    );
+    const assignment = assignRows[0];
+    if (!assignment) {
+      const err = new Error("غير مسموح بهذا الإجراء.");
+      err.statusCode = 403;
+      throw err;
+    }
+    if (assignment.completed_at) {
+      await client.query("COMMIT");
+      return getCourseDetailsForFreelancer({ freelancerUserId: uid, courseId: cid });
+    }
+    const { rows: countRows } = await client.query(
+      `SELECT
+         (SELECT COUNT(*)::int FROM course_lessons WHERE course_id = $1 AND is_active = TRUE) AS total_lessons,
+         (SELECT COUNT(*)::int FROM course_lesson_progress WHERE course_id = $1 AND freelancer_id = $2) AS completed_lessons`,
+      [cid, uid],
+    );
+    const total = Number(countRows[0]?.total_lessons || 0);
+    const completed = Number(countRows[0]?.completed_lessons || 0);
+    if (total <= 0 || completed < total) {
+      const err = new Error("يجب إكمال جميع الدروس أولاً.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const testingOn = Boolean(course.is_testing_enabled);
+    if (testingOn) {
+      if (!auditConfirmed) {
+        const err = new Error("يجب تأكيد التدقيق قبل إنهاء الدورة.");
+        err.statusCode = 400;
+        throw err;
+      }
+      const notes = auditNotes != null && String(auditNotes).trim() ? String(auditNotes).trim().slice(0, 8000) : null;
+      await client.query(
+        `UPDATE course_assignments
+         SET audit_confirmed = TRUE,
+             audit_notes = $3,
+             completed_at = NOW()
+         WHERE course_id = $1 AND freelancer_id = $2`,
+        [cid, uid, notes],
+      );
+    } else {
+      await client.query(
+        `UPDATE course_assignments
+         SET completed_at = NOW()
+         WHERE course_id = $1 AND freelancer_id = $2`,
+        [cid, uid],
+      );
+    }
+    await safeNotify(() =>
+      notificationEventsService.notifyUsers(
+        {
+          userIds: [uid],
+          recipientRole: "freelancer",
+          actorUserId: uid,
+          type: "course.completed",
+          title: "اكتملت الدورة بنجاح",
+          message: testingOn
+            ? "تم تأكيد التدقيق وإنهاء الدورة بنجاح."
+            : "ممتاز! لقد أكملت جميع متطلبات هذه الدورة.",
+          entityType: "course",
+          entityId: cid,
+          link: `/dashboard/freelancer/courses/${encodeURIComponent(String(cid))}`,
+          priority: "medium",
+          metadata: { courseId: String(cid), audit: testingOn },
+          dedupeKey: `course_completed_submit_${cid}_${uid}_${Date.now()}`,
+        },
+        client,
+      ),
+    );
+    await client.query("COMMIT");
+    return getCourseDetailsForFreelancer({ freelancerUserId: uid, courseId: cid });
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -618,10 +873,13 @@ module.exports = {
   updateCourse,
   updateCourseLessons,
   deleteCourse,
+  addCourseFreelancer,
+  removeCourseFreelancer,
   assignCourseFreelancers,
   listCoursesForAdmin,
   getCourseDetailsForAdmin,
   listAssignedCoursesForFreelancer,
   getCourseDetailsForFreelancer,
   markLessonComplete,
+  submitCourseCompletion,
 };

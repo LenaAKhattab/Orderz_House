@@ -34,9 +34,9 @@ function breadcrumbLabel(pathname) {
   if (pathname.includes("/subscriptions/activation")) base.push("تفعيل الاشتراكات");
   if (pathname.includes("/plans")) base.push("الباقات");
   else if (pathname.includes("/courses")) base.push("الدورات");
-  else if (pathname.includes("/fake-orders")) base.push("الطلبات التجريبية");
   else if (pathname.includes("/subscriptions")) base.push("اشتراكات المستقلين");
   else if (pathname.includes("/orders/create")) base.push("الطلبات الداخلية", "إنشاء طلب");
+  else if (pathname.includes("/training-orders")) base.push("الطلبات التجريبية");
   else if (pathname.includes("/orders")) base.push("الطلبات الداخلية");
   return base.join(" › ");
 }
@@ -45,11 +45,17 @@ const NAV_MAIN = [
   { to: "/dashboard/super-admin", label: "نظرة عامة", icon: "⌂", end: true },
   { to: "/dashboard/super-admin/plans", label: "الباقات", icon: "◆" },
   { to: "/dashboard/super-admin/courses", label: "الدورات", icon: "▶" },
-  { to: "/dashboard/super-admin/fake-orders", label: "الطلبات التجريبية", icon: "◈" },
   { to: "/dashboard/super-admin/subscriptions", label: "الاشتراكات", icon: "◎" },
   { to: "/dashboard/super-admin/subscriptions/activation", label: "تفعيل الاشتراكات", icon: "✓" },
   { to: "/dashboard/super-admin/financial-claims", label: "المطالبات المالية", icon: "◍" },
   { to: "/dashboard/super-admin/orders", label: "الطلبات", icon: "▣" },
+  {
+    to: "/dashboard/super-admin/training-orders/settings",
+    label: "الطلبات التجريبية",
+    icon: "✦",
+    end: false,
+    matchPrefix: "/dashboard/super-admin/training-orders",
+  },
 ];
 
 export default function SuperAdminLayout() {
@@ -69,6 +75,7 @@ export default function SuperAdminLayout() {
   const displayName = useMemo(() => fullNameAr(user) || user?.email || "مدير", [user]);
   const initial = (user?.firstName || user?.email || "S").trim().slice(0, 1).toUpperCase();
   const crumb = useMemo(() => breadcrumbLabel(pathname), [pathname]);
+  const trainingSectionActive = pathname.startsWith("/dashboard/super-admin/training-orders");
   const role = user?.primaryRole || user?.role;
   const notificationsPath = getNotificationsPath(role);
 
@@ -91,7 +98,11 @@ export default function SuperAdminLayout() {
               <NavLink
                 to={item.to}
                 end={Boolean(item.end)}
-                className={({ isActive }) => `oh-sa-navlink${isActive ? " oh-sa-navlink--active" : ""}`.trim()}
+                className={({ isActive }) => {
+                  const prefix = item.matchPrefix && pathname.startsWith(item.matchPrefix);
+                  const active = isActive || prefix;
+                  return `oh-sa-navlink${active ? " oh-sa-navlink--active" : ""}`.trim();
+                }}
               >
                 <span className="oh-sa-navlink__icon" aria-hidden>
                   {item.icon}
@@ -138,14 +149,19 @@ export default function SuperAdminLayout() {
             <NavLink to="/dashboard/super-admin/courses" className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
               الدورات
             </NavLink>
-            <NavLink to="/dashboard/super-admin/fake-orders" className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
-              الطلبات التجريبية
-            </NavLink>
             <NavLink to="/dashboard/super-admin/financial-claims" className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
               المطالبات
             </NavLink>
             <NavLink to="/dashboard/super-admin/orders" className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
               الطلبات
+            </NavLink>
+            <NavLink
+              to="/dashboard/super-admin/training-orders/settings"
+              className={() =>
+                `oh-sa-tab${trainingSectionActive ? " oh-sa-tab--active" : ""}`.trim()
+              }
+            >
+              تجريبي
             </NavLink>
           </div>
 

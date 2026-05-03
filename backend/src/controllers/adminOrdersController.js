@@ -97,7 +97,7 @@ const listInternalOrders = async (req, res, next) => {
 const getInternalOrder = async (req, res, next) => {
   try {
     const order = await ordersService.getOrderById(req.params.id);
-    if (!order || !["admin_created", "super_admin_created"].includes(order.sourceType) || order.isFake) {
+    if (!order || !["admin_created", "super_admin_created"].includes(order.sourceType)) {
       const err = new Error("الطلب غير موجود.");
       err.statusCode = 404;
       throw err;

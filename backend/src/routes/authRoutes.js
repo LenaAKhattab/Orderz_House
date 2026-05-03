@@ -3,13 +3,39 @@ const authController = require("../controllers/authController");
 const { requireAuth } = require("../middleware/rbacMiddleware");
 const { authorizeRoles } = require("../middleware/roleMiddleware");
 const validateRequest = require("../middleware/validateRequest");
-const { registerValidators, loginValidators } = require("../validators/authValidators");
+const {
+  registerValidators,
+  loginValidators,
+  verifyRegisterOtpValidators,
+  resendRegisterOtpValidators,
+  forgotPasswordValidators,
+  verifyForgotPasswordOtpValidators,
+  resetPasswordValidators,
+} = require("../validators/authValidators");
 const { ROLES } = require("../constants/roles");
+const { loginLimiter, otpVerifyLimiter, otpSendLimiter } = require("../middleware/rateLimiters");
 
 const router = express.Router();
 
-router.post("/register", registerValidators, validateRequest, authController.register);
-router.post("/login", loginValidators, validateRequest, authController.login);
+router.post("/register", otpSendLimiter, registerValidators, validateRequest, authController.register);
+router.post(
+  "/verify-register-otp",
+  otpVerifyLimiter,
+  verifyRegisterOtpValidators,
+  validateRequest,
+  authController.verifyRegisterOtp,
+);
+router.post("/resend-register-otp", otpSendLimiter, resendRegisterOtpValidators, validateRequest, authController.resendRegisterOtp);
+router.post("/forgot-password", otpSendLimiter, forgotPasswordValidators, validateRequest, authController.forgotPassword);
+router.post(
+  "/verify-forgot-password-otp",
+  otpVerifyLimiter,
+  verifyForgotPasswordOtpValidators,
+  validateRequest,
+  authController.verifyForgotPasswordOtp,
+);
+router.post("/reset-password", resetPasswordValidators, validateRequest, authController.resetPassword);
+router.post("/login", loginLimiter, loginValidators, validateRequest, authController.login);
 router.post("/logout", authController.logout);
 router.get("/me", requireAuth, authController.me);
 
