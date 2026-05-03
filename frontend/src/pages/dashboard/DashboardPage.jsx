@@ -331,7 +331,7 @@ function FreelancerMyOrders() {
         setPagination(nextPagination);
         setCounts(nextCounts);
         setCache((prev) => ({ ...prev, [cacheKey]: { orders: nextOrders, pagination: nextPagination, counts: nextCounts } }));
-      } catch (e) {
+      } catch {
         if (!cancelled) {
           const msg = "تعذر تحميل الطلبات حاليًا. يرجى المحاولة مرة أخرى.";
           setLoadError(msg);
@@ -515,7 +515,7 @@ function FreelancerPoolOrders() {
   });
   const [filtersView, setFiltersView] = useState("categories");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [sortBy, setSortBy] = useState(() => {
+  const [sortBy, _setSortBy] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const v = String(params.get("sort") || "").trim();
     return ["newest", "oldest", "price_high", "price_low"].includes(v) ? v : "newest";
@@ -567,7 +567,7 @@ function FreelancerPoolOrders() {
           setOrders(res?.data?.orders || []);
           setPagination(res?.data?.pagination || { page, limit: 12, total: 0, totalPages: 1 });
         }
-      } catch (e) {
+      } catch {
         if (!cancelled) {
           const msg = "تعذر تحميل الطلبات حاليًا. يرجى المحاولة مرة أخرى.";
           setLoadError(msg);

@@ -1,7 +1,14 @@
 const express = require("express");
 const subscriptionsController = require("../controllers/subscriptionsController");
 const validateRequest = require("../middleware/validateRequest");
-const { requireAuth, requireRole, requireAnyRole } = require("../middleware/rbacMiddleware");
+const { requireAuth, requireAnyRole } = require("../middleware/rbacMiddleware");
+
+/**
+ * Policy: `admin` and `super_admin` may assign plans, update subscription rows, and read freelancer
+ * subscription/eligibility (same as company-activation). Creating/editing plan *templates* stays
+ * super_admin-only in adminPlansRoutes.js.
+ */
+const ASSIGN_AND_MANAGE_SUBSCRIPTION_ROLES = ["admin", "super_admin"];
 const {
   assignSubscriptionValidators,
   updateSubscriptionValidators,
@@ -16,36 +23,42 @@ router.use(requireAuth);
 
 router.get(
   "/subscriptions",
-  requireAnyRole(["admin", "super_admin"]),
+  requireAnyRole(ASSIGN_AND_MANAGE_SUBSCRIPTION_ROLES),
   listSubscriptionsValidators,
   validateRequest,
   subscriptionsController.listSubscriptions,
 );
 router.post(
   "/subscriptions/assign",
-  requireRole("super_admin"),
+  requireAnyRole(ASSIGN_AND_MANAGE_SUBSCRIPTION_ROLES),
   assignSubscriptionValidators,
   validateRequest,
   subscriptionsController.assignPlan,
 );
-router.patch("/subscriptions/:id", requireRole("super_admin"), updateSubscriptionValidators, validateRequest, subscriptionsController.updateSubscription);
+router.patch(
+  "/subscriptions/:id",
+  requireAnyRole(ASSIGN_AND_MANAGE_SUBSCRIPTION_ROLES),
+  updateSubscriptionValidators,
+  validateRequest,
+  subscriptionsController.updateSubscription,
+);
 router.get(
   "/freelancers/:freelancerUserId/subscription",
-  requireRole("super_admin"),
+  requireAnyRole(ASSIGN_AND_MANAGE_SUBSCRIPTION_ROLES),
   freelancerIdParam,
   validateRequest,
   subscriptionsController.getFreelancerCurrentSubscription,
 );
 router.get(
   "/freelancers/:freelancerUserId/eligibility",
-  requireRole("super_admin"),
+  requireAnyRole(ASSIGN_AND_MANAGE_SUBSCRIPTION_ROLES),
   freelancerIdParam,
   validateRequest,
   subscriptionsController.getFreelancerEligibility,
 );
 router.patch(
   "/subscriptions/:id/company-activate",
-  requireAnyRole(["admin", "super_admin"]),
+  requireAnyRole(ASSIGN_AND_MANAGE_SUBSCRIPTION_ROLES),
   activateSubscriptionValidators,
   validateRequest,
   subscriptionsController.activateSubscriptionCompanyApproval,

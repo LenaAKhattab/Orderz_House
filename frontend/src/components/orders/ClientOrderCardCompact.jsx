@@ -82,7 +82,7 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
   const filesCount = Array.isArray(order?.files) ? order.files.length : 0;
   const deliveryFilesCount = useMemo(
     () => (Array.isArray(order?.files) ? order.files.filter((f) => f.purpose === "delivery").length : 0),
-    [order?.files],
+    [order],
   );
   const categoryText = `${order?.category?.name || "—"}${order?.subSubcategory?.name ? ` • ${order.subSubcategory.name}` : ""}`;
   const bidsCount = order?.bidsCount != null ? Number(order.bidsCount) : null;

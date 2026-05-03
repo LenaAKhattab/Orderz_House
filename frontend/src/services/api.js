@@ -363,6 +363,18 @@ export const adminListOrderClaimsRequest = async (orderId) => {
   return data;
 };
 
+/** Internal priced-bidding orders: list bids (admin/super_admin only). */
+export const adminListInternalOrderBidsRequest = async (orderId) => {
+  const { data } = await api.get(`/admin/orders/${orderId}/bids`, { timeout: 30000 });
+  return data;
+};
+
+/** Award winning bid on internal priced-bidding pool job without Stripe. */
+export const adminApproveInternalPricedBidRequest = async (orderId, bidId) => {
+  const { data } = await api.post(`/admin/orders/${orderId}/bids/${bidId}/approve`);
+  return data;
+};
+
 export const adminGetFreelancerRegistrationRequest = async (userId) => {
   const { data } = await api.get(`/admin/freelancers/${userId}/registration`);
   return data;

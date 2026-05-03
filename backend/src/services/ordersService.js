@@ -143,6 +143,8 @@ function mapOrderBase(row) {
     paymentAmount: row.payment_amount != null ? Number(row.payment_amount) : null,
     paymentCurrency: row.payment_currency || null,
     orderStatus: row.order_status,
+    /** True when freelancers may submit price bids (priced bidding pool job). */
+    acceptsPriceBids: hasPricedBiddingRow(row),
     receivedAt: row.received_at || null,
     takenAt: row.taken_at || null,
     acceptedAt: row.accepted_at || null,
@@ -599,7 +601,18 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
     const shouldArchive = !isAssigned && wantsArchive;
     const isPublished = shouldArchive ? false : true;
     const isOpenForPool = isAssigned ? false : !shouldArchive;
-    const orderStatus = isAssigned ? ORDER_STATUSES.IN_PROGRESS : shouldArchive ? ORDER_STATUSES.DRAFT : ORDER_STATUSES.PUBLISHED;
+    const isBidding = payload.projectType === "bidding";
+    /** Internal pool: fixed → published (claim); bidding → open_for_bids (priced bids only; min/max validated). */
+    let orderStatus;
+    if (isAssigned) {
+      orderStatus = ORDER_STATUSES.IN_PROGRESS;
+    } else if (shouldArchive) {
+      orderStatus = ORDER_STATUSES.DRAFT;
+    } else if (isBidding) {
+      orderStatus = ORDER_STATUSES.OPEN_FOR_BIDS;
+    } else {
+      orderStatus = ORDER_STATUSES.PUBLISHED;
+    }
 
     const extraCategoryIds = Array.isArray(payload.extraCategoryIds)
       ? payload.extraCategoryIds.map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0)
@@ -620,7 +633,6 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
       extraCategoryDetailsSafe[String(catId)] = String(ssId);
     }
 
-    const isBidding = payload.projectType === "bidding";
     let bidMinIns = null;
     let bidMaxIns = null;
     let budgetIns = null;
@@ -629,13 +641,16 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
       budgetIns = Number(payload.budget);
       currencyIns = "JOD";
     } else {
-      const bm = payload.bidBudgetMin != null ? Number(payload.bidBudgetMin) : null;
-      const bx = payload.bidBudgetMax != null ? Number(payload.bidBudgetMax) : null;
-      if (Number.isFinite(bm) && Number.isFinite(bx) && bm > 0 && bx >= bm) {
-        bidMinIns = bm;
-        bidMaxIns = bx;
-        currencyIns = "JOD";
+      const bm = payload.bidBudgetMin != null ? Number(payload.bidBudgetMin) : NaN;
+      const bx = payload.bidBudgetMax != null ? Number(payload.bidBudgetMax) : NaN;
+      if (!Number.isFinite(bm) || !Number.isFinite(bx) || bm <= 0 || bx < bm) {
+        const err = new Error("Bidding projects require valid bidBudgetMin and bidBudgetMax (max >= min > 0).");
+        err.statusCode = 400;
+        throw err;
       }
+      bidMinIns = bm;
+      bidMaxIns = bx;
+      currencyIns = "JOD";
     }
 
     const { rows } = await client.query(
@@ -1373,8 +1388,15 @@ async function listPoolOrders({
     where.push(`o.order_status = $${params.length}`);
   }
   if (projectType) {
-    params.push(String(projectType));
-    where.push(`o.project_type = $${params.length}`);
+    const pt = String(projectType);
+    if (pt === "bidding") {
+      where.push(
+        `(o.project_type = 'bidding' AND o.bid_budget_min IS NOT NULL AND o.bid_budget_max IS NOT NULL AND o.bid_budget_min > 0 AND o.bid_budget_max >= o.bid_budget_min)`,
+      );
+    } else {
+      params.push(pt);
+      where.push(`o.project_type = $${params.length}`);
+    }
   }
   if (categoryId) {
     params.push(Number(categoryId));
@@ -1539,7 +1561,17 @@ async function listPoolOrdersForFreelancer({
     addFilter((i) => `o.order_status = $${i}`, (i) => `o.order_status = $${i}`, String(status));
   }
   if (projectType) {
-    addFilter((i) => `o.project_type = $${i}`, (i) => `o.project_type = $${i}`, String(projectType));
+    const pt = String(projectType);
+    if (pt === "bidding") {
+      whereCount.push(
+        `(o.project_type = 'bidding' AND o.bid_budget_min IS NOT NULL AND o.bid_budget_max IS NOT NULL AND o.bid_budget_min > 0 AND o.bid_budget_max >= o.bid_budget_min)`,
+      );
+      whereList.push(
+        `(o.project_type = 'bidding' AND o.bid_budget_min IS NOT NULL AND o.bid_budget_max IS NOT NULL AND o.bid_budget_min > 0 AND o.bid_budget_max >= o.bid_budget_min)`,
+      );
+    } else {
+      addFilter((i) => `o.project_type = $${i}`, (i) => `o.project_type = $${i}`, pt);
+    }
   }
   if (categoryId) {
     addFilter((i) => `o.category_id = $${i}`, (i) => `o.category_id = $${i}`, Number(categoryId));
@@ -2258,6 +2290,238 @@ async function approvePoolClaimAdmin({ actorUserId, orderId, claimId }) {
   }
 }
 
+/**
+ * List all bids for an internal (admin-created) priced-bidding order — admin console only.
+ */
+async function listInternalOrderBidsForAdmin({ orderId }) {
+  const { rows } = await pool.query(`SELECT * FROM orders WHERE id = $1 LIMIT 1`, [Number(orderId)]);
+  const order = rows[0];
+  if (!order) {
+    const err = new Error("Order not found.");
+    err.statusCode = 404;
+    throw err;
+  }
+  if (!(await isInternalPoolOrder(order))) {
+    const err = new Error("Only internal admin orders support this bid list.");
+    err.statusCode = 403;
+    throw err;
+  }
+  if (order.project_type !== "bidding" || !hasPricedBiddingRow(order)) {
+    const err = new Error("This order is not a priced bidding internal job.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const bids = await listOrderBidsWithFreelancers({ orderId });
+  return {
+    bids,
+    orderSummary: {
+      orderStatus: order.order_status,
+      currencyCode: order.currency_code || "JOD",
+      isOpenForPool: Boolean(order.is_open_for_pool),
+      assignedFreelancerId: order.assigned_freelancer_id ? String(order.assigned_freelancer_id) : null,
+    },
+  };
+}
+
+/**
+ * Award a winning bid on an internal priced-bidding pool job without Stripe (no client payment flow).
+ */
+async function approveInternalPricedBidAdmin({ actorUserId, orderId, bidId }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const { rows } = await client.query(
+      `SELECT * FROM orders
+       WHERE id = $1
+       FOR UPDATE`,
+      [Number(orderId)],
+    );
+    const order = rows[0];
+    if (!order) {
+      const err = new Error("Order not found.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (order.assigned_freelancer_id && Number(order.selected_bid_id) === Number(bidId)) {
+      await client.query("COMMIT");
+      return { order: await getOrderById(orderId), alreadyApplied: true };
+    }
+    if (order.assigned_freelancer_id) {
+      const err = new Error("Order already has an assigned freelancer.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    if (!(await isInternalPoolOrder(order))) {
+      const err = new Error("Only internal admin orders can be awarded through this endpoint.");
+      err.statusCode = 403;
+      throw err;
+    }
+    if (order.source_type === "client_created") {
+      const err = new Error("Client-owned orders cannot use the internal bid award endpoint.");
+      err.statusCode = 403;
+      throw err;
+    }
+    if (order.project_type !== "bidding" || !hasPricedBiddingRow(order)) {
+      const err = new Error("This endpoint is only for priced bidding orders.");
+      err.statusCode = 400;
+      throw err;
+    }
+    if (order.payment_required === true) {
+      const err = new Error("Order requires payment; use the client Stripe flow.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (String(order.payment_status || "") !== "not_required") {
+      const err = new Error("Only unpaid-by-design internal orders can be awarded here.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (order.order_status !== ORDER_STATUSES.OPEN_FOR_BIDS) {
+      const err = new Error("Order is not open for bids.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const { rows: bidRows } = await client.query(
+      `SELECT * FROM order_freelancer_bids
+       WHERE id = $1 AND order_id = $2
+       FOR UPDATE`,
+      [Number(bidId), Number(orderId)],
+    );
+    const selectedBid = bidRows[0];
+    if (!selectedBid) {
+      const err = new Error("Bid not found for this order.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (String(selectedBid.status) !== "pending") {
+      const err = new Error("Bid is not pending and cannot be awarded.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const receivedAt = new Date();
+    const dueAt = computeDueAt(receivedAt, order.duration_value, order.duration_unit);
+    const orderCur = String(order.currency_code || "").trim().toUpperCase() || "JOD";
+    const bidAmount = Number(selectedBid.amount);
+
+    const { rows: updated } = await client.query(
+      `UPDATE orders
+         SET assigned_freelancer_id = $2,
+             selected_bid_id = $3,
+             received_at = $4,
+             started_at = $4,
+             due_at = $5,
+             is_open_for_pool = FALSE,
+             order_status = $6,
+             payment_amount = $7,
+             payment_currency = $8,
+             updated_at = NOW()
+       WHERE id = $1
+         AND source_type IN ('admin_created', 'super_admin_created')
+         AND payment_required = FALSE
+         AND payment_status = 'not_required'
+         AND project_type = 'bidding'
+         AND order_status = $9
+         AND assigned_freelancer_id IS NULL
+       RETURNING *`,
+      [
+        Number(orderId),
+        Number(selectedBid.freelancer_user_id),
+        Number(bidId),
+        receivedAt,
+        dueAt,
+        ORDER_STATUSES.IN_PROGRESS,
+        Number.isFinite(bidAmount) ? bidAmount : null,
+        orderCur,
+        ORDER_STATUSES.OPEN_FOR_BIDS,
+      ],
+    );
+
+    if (!updated[0]) {
+      const err = new Error("Could not award bid (order state changed). Refresh and try again.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    await subscriptionsService.activateCurrentSubscriptionOnFirstAcceptedOrder(
+      { freelancerUserId: String(selectedBid.freelancer_user_id), orderId: Number(orderId), activatedAt: receivedAt },
+      client,
+    );
+
+    await client.query(`UPDATE order_freelancer_bids SET status = 'accepted', updated_at = NOW() WHERE id = $1`, [
+      Number(bidId),
+    ]);
+    await client.query(
+      `UPDATE order_freelancer_bids
+         SET status = 'rejected', updated_at = NOW()
+       WHERE order_id = $1
+         AND id <> $2
+         AND status IN ('pending','selected_pending_payment')`,
+      [Number(orderId), Number(bidId)],
+    );
+
+    const { rows: rejectedBidders } = await client.query(
+      `SELECT freelancer_user_id
+       FROM order_freelancer_bids
+       WHERE order_id = $1
+         AND id <> $2
+         AND status = 'rejected'`,
+      [Number(orderId), Number(bidId)],
+    );
+    await safeNotify(() =>
+      notificationEventsService.notifyUsers(
+        {
+          userIds: rejectedBidders.map((r) => Number(r.freelancer_user_id)),
+          recipientRole: "freelancer",
+          actorUserId: Number(actorUserId),
+          type: "order.bid.rejected",
+          title: "تم رفض عرضك على المشروع",
+          message: "تم قبول عرض مستقل آخر لهذا المشروع.",
+          entityType: "order",
+          entityId: Number(orderId),
+          link: `/dashboard/freelancer/orders/${encodeURIComponent(String(orderId))}`,
+          priority: "medium",
+          metadata: { orderId: String(orderId), selectedBidId: String(bidId) },
+          dedupeKey: `order_bid_rejected_batch_${orderId}_${bidId}`,
+        },
+        client,
+      ),
+    );
+
+    await safeNotify(() =>
+      notificationService.createIfNotExists(
+        {
+          recipientUserId: Number(selectedBid.freelancer_user_id),
+          recipientRole: "freelancer",
+          actorUserId: Number(actorUserId),
+          type: "order.freelancer.assigned",
+          title: "تم إسناد مشروع لك",
+          message: "تم اعتماد عرضك من الإدارة وبدء العمل على المشروع.",
+          entityType: "order",
+          entityId: Number(orderId),
+          link: `/dashboard/freelancer/my-orders/${encodeURIComponent(String(orderId))}`,
+          priority: "high",
+          metadata: { orderId: String(orderId), source: "admin_internal_bid_award" },
+        },
+        `freelancer_assigned_${String(orderId)}`,
+        client,
+      ),
+    );
+
+    await client.query("COMMIT");
+    return { order: await getOrderById(orderId), alreadyApplied: false };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 async function assertClientOwnsOrder({ clientUserId, orderId }, clientMaybe) {
   const runner = clientMaybe || pool;
   const { rows } = await runner.query(
@@ -2417,105 +2681,7 @@ async function rejectFreelancerBidClient({ clientUserId, orderId, bidId }) {
   }
 }
 
-async function acceptFreelancerBidClient({ clientUserId, orderId, bidId }) {
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
-    const order = rows[0];
-    if (!order) {
-      const err = new Error("الطلب غير موجود.");
-      err.statusCode = 404;
-      throw err;
-    }
-    if (order.source_type !== "client_created" || Number(order.created_by_user_id) !== Number(clientUserId)) {
-      const err = new Error("لا يمكنك اعتماد هذا العرض.");
-      err.statusCode = 403;
-      throw err;
-    }
-    if (order.project_type !== "bidding" || !hasPricedBiddingRow(order)) {
-      const err = new Error("هذا الطلب لا يقبل اعتماد عرض بهذه الطريقة.");
-      err.statusCode = 409;
-      throw err;
-    }
-    if (!order.is_published || !order.is_open_for_pool || order.assigned_freelancer_id || order.received_at) {
-      const err = new Error("الطلب غير متاح لاعتماد عرض حالياً.");
-      err.statusCode = 409;
-      throw err;
-    }
-    if (order.order_status !== ORDER_STATUSES.OPEN_FOR_BIDS) {
-      const err = new Error("الطلب غير متاح لاعتماد عرض حالياً.");
-      err.statusCode = 409;
-      throw err;
-    }
-
-    const { rows: bidRows } = await client.query(
-      `SELECT * FROM order_freelancer_bids WHERE id = $1 AND order_id = $2 FOR UPDATE`,
-      [Number(bidId), Number(orderId)],
-    );
-    const bid = bidRows[0];
-    if (!bid) {
-      const err = new Error("العرض غير موجود.");
-      err.statusCode = 404;
-      throw err;
-    }
-    if (bid.status !== "pending") {
-      const err = new Error("تمت معالجة هذا العرض مسبقاً.");
-      err.statusCode = 409;
-      throw err;
-    }
-    const amt = Number(bid.amount);
-    const min = Number(order.bid_budget_min);
-    const max = Number(order.bid_budget_max);
-    if (!Number.isFinite(amt) || amt < min || amt > max) {
-      const err = new Error("مبلغ العرض خارج النطاق المسموح.");
-      err.statusCode = 400;
-      throw err;
-    }
-
-    const receivedAt = new Date();
-    const startedAt = receivedAt;
-    const dueAt = computeDueAt(startedAt, order.duration_value, order.duration_unit);
-
-    await client.query(
-      `UPDATE orders
-         SET assigned_freelancer_id = $2,
-             received_at = $3,
-             started_at = $3,
-             due_at = $4,
-             is_open_for_pool = FALSE,
-             order_status = $5,
-             updated_at = NOW()
-       WHERE id = $1`,
-      [Number(orderId), Number(bid.freelancer_user_id), receivedAt, dueAt, ORDER_STATUSES.IN_PROGRESS],
-    );
-
-    await client.query(`UPDATE order_freelancer_bids SET status = 'accepted', updated_at = NOW() WHERE id = $1`, [
-      Number(bid.id),
-    ]);
-    await client.query(
-      `UPDATE order_freelancer_bids
-         SET status = 'rejected', updated_at = NOW()
-       WHERE order_id = $1
-         AND id <> $2
-         AND status = 'pending'`,
-      [Number(orderId), Number(bid.id)],
-    );
-
-    await subscriptionsService.activateCurrentSubscriptionOnFirstAcceptedOrder(
-      { freelancerUserId: String(bid.freelancer_user_id), orderId, activatedAt: receivedAt },
-      client,
-    );
-
-    await client.query("COMMIT");
-    return await getOrderById(orderId);
-  } catch (err) {
-    await client.query("ROLLBACK");
-    throw err;
-  } finally {
-    client.release();
-  }
-}
+/** Client bid acceptance with payment is only via stripeCheckoutService + Stripe webhook — never assign here. */
 
 async function rejectPoolClaimClient({ clientUserId, orderId, claimId }) {
   const client = await pool.connect();
@@ -3201,16 +3367,21 @@ async function activateArchivedInternalOrder({ orderId }) {
       throw err;
     }
 
+    const reactivatedStatus =
+      row.project_type === "bidding" && hasPricedBiddingRow(row)
+        ? ORDER_STATUSES.OPEN_FOR_BIDS
+        : ORDER_STATUSES.PUBLISHED;
+
     const { rows: updated } = await client.query(
       `UPDATE orders
          SET is_archived = FALSE,
              is_published = TRUE,
              is_open_for_pool = TRUE,
-             order_status = 'published',
+             order_status = $2,
              updated_at = NOW()
        WHERE id = $1
        RETURNING *`,
-      [Number(orderId)],
+      [Number(orderId), reactivatedStatus],
     );
 
     await client.query("COMMIT");
@@ -3242,12 +3413,14 @@ module.exports = {
   withdrawPoolClaim,
   listOrderClaimsAdmin,
   approvePoolClaimAdmin,
+  listInternalOrderBidsForAdmin,
+  approveInternalPricedBidAdmin,
   listOrderClaimsForClient,
   listOrderBidsForClient,
   rejectFreelancerBidClient,
-  acceptFreelancerBidClient,
   rejectPoolClaimClient,
   approvePoolClaimClient,
+  hasPricedBiddingRow,
   submitFreelancerOrderDelivery,
   clientApproveDelivery,
   clientRequestDeliveryRevision,

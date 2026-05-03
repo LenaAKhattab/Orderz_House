@@ -20,6 +20,7 @@ function mapPlan(row) {
     durationDays: row.duration_days,
     priceJod: row.price_jod != null ? Number(row.price_jod) : null,
     requiresCompanyVisit: row.requires_company_visit,
+    selfSubscribeAllowed: row.self_subscribe_allowed,
     isActive: row.is_active,
     isVisible: row.is_visible,
     sortOrder: row.sort_order,
@@ -27,6 +28,16 @@ function mapPlan(row) {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/** Row shape from `plans` (snake_case DB columns). Used by Stripe self-checkout. */
+function planEligibleForFreelancerSelfCheckout(row) {
+  if (!row || row.deleted_at) return false;
+  if (!row.is_active || !row.is_visible) return false;
+  if (!row.self_subscribe_allowed) return false;
+  const priceJod = row.price_jod != null ? Number(row.price_jod) : null;
+  if (!Number.isFinite(priceJod) || priceJod <= 0) return false;
+  return true;
 }
 
 async function listPlans({ includeDeleted = false } = {}) {
@@ -44,7 +55,10 @@ async function listVisibleActivePlans() {
   const { rows } = await pool.query(
     `SELECT *
      FROM plans
-     WHERE deleted_at IS NULL AND is_visible = TRUE AND is_active = TRUE
+     WHERE deleted_at IS NULL
+       AND is_visible = TRUE
+       AND is_active = TRUE
+       AND self_subscribe_allowed = TRUE
      ORDER BY sort_order ASC, id ASC`,
   );
   return rows.map(mapPlan);
@@ -63,6 +77,7 @@ async function createPlan({ actorUserId, payload }) {
     durationDays,
     priceJod = null,
     requiresCompanyVisit = false,
+    selfSubscribeAllowed = false,
     isActive = true,
     isVisible = true,
     sortOrder = 0,
@@ -71,9 +86,9 @@ async function createPlan({ actorUserId, payload }) {
   const { rows } = await pool.query(
     `INSERT INTO plans (
       name, title, description, duration_days, price_jod,
-      requires_company_visit, is_active, is_visible, sort_order,
+      requires_company_visit, self_subscribe_allowed, is_active, is_visible, sort_order,
       created_by_user_id, updated_by_user_id
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10)
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$11)
     RETURNING *`,
     [
       name,
@@ -82,6 +97,7 @@ async function createPlan({ actorUserId, payload }) {
       durationDays,
       priceJod != null ? Number(priceJod) : null,
       Boolean(requiresCompanyVisit),
+      Boolean(selfSubscribeAllowed),
       Boolean(isActive),
       Boolean(isVisible),
       sortOrder,
@@ -124,6 +140,7 @@ async function updatePlan({ actorUserId, id, patch }) {
   if (patch.durationDays !== undefined) set("duration_days", patch.durationDays);
   if (patch.priceJod !== undefined) set("price_jod", patch.priceJod == null ? null : Number(patch.priceJod));
   if (patch.requiresCompanyVisit !== undefined) set("requires_company_visit", Boolean(patch.requiresCompanyVisit));
+  if (patch.selfSubscribeAllowed !== undefined) set("self_subscribe_allowed", Boolean(patch.selfSubscribeAllowed));
   if (patch.isActive !== undefined) set("is_active", Boolean(patch.isActive));
   if (patch.isVisible !== undefined) set("is_visible", Boolean(patch.isVisible));
   if (patch.sortOrder !== undefined) set("sort_order", patch.sortOrder);
@@ -204,5 +221,6 @@ module.exports = {
   createPlan,
   updatePlan,
   softDeletePlan,
+  planEligibleForFreelancerSelfCheckout,
 };
 

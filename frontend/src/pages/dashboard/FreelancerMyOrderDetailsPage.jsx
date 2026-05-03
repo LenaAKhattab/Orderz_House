@@ -187,10 +187,6 @@ export default function FreelancerMyOrderDetailsPage() {
     const typeAndBudgetText =
       order?.projectType === "bidding" ? `${typeLabel(order?.projectType)}` : `${typeLabel(order?.projectType)} — ${budgetText}`;
     const receivedAt = order?.receivedAt || null;
-    const receivedLabel =
-      order?.myClaim?.status === "pending" && !order?.assignedFreelancerId
-        ? "لم يبدأ بعد (بانتظار الموافقة على التقديم)"
-        : formatJoDateTime(receivedAt);
 
     const base = [
       { label: "نوع المشروع / السعر", value: typeAndBudgetText, dir: "ltr" },

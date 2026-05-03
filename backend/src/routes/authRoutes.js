@@ -13,7 +13,12 @@ const {
   resetPasswordValidators,
 } = require("../validators/authValidators");
 const { ROLES } = require("../constants/roles");
-const { loginLimiter, otpVerifyLimiter, otpSendLimiter } = require("../middleware/rateLimiters");
+const {
+  loginLimiter,
+  otpVerifyLimiter,
+  otpSendLimiter,
+  resetPasswordLimiter,
+} = require("../middleware/rateLimiters");
 
 const router = express.Router();
 
@@ -34,7 +39,13 @@ router.post(
   validateRequest,
   authController.verifyForgotPasswordOtp,
 );
-router.post("/reset-password", resetPasswordValidators, validateRequest, authController.resetPassword);
+router.post(
+  "/reset-password",
+  resetPasswordLimiter,
+  resetPasswordValidators,
+  validateRequest,
+  authController.resetPassword,
+);
 router.post("/login", loginLimiter, loginValidators, validateRequest, authController.login);
 router.post("/logout", authController.logout);
 router.get("/me", requireAuth, authController.me);

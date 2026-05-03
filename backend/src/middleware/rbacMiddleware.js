@@ -135,6 +135,7 @@ module.exports = {
   attachAuthContext,
   requireAuth,
   optionalAuth,
+  resolvedRoleNames,
   requireRole,
   requireFreelancer,
   requireSuperAdmin,

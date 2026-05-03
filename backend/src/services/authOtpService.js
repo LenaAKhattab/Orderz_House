@@ -32,6 +32,12 @@ function generateResetToken() {
   return crypto.randomBytes(32).toString("hex");
 }
 
+/** Enumeration-safe delay (mirrors forgot-password unknown-email path; timing normalization). */
+async function sleepEnumerationSafeJitterMs() {
+  const ms = crypto.randomInt(90, 181);
+  await new Promise((r) => setTimeout(r, ms));
+}
+
 async function invalidateOpenOtps(client, emailNorm, purpose) {
   await client.query(
     `UPDATE auth_otps
@@ -159,6 +165,12 @@ async function verifyRegistrationOtp(emailRaw, otpPlain) {
   }
 }
 
+/**
+ * Resend registration OTP: enumeration-safe for unknown emails and already-verified emails.
+ * - Unknown email: no OTP sent; optional jitter; returns void (caller sends generic 200).
+ * - Verified email: same as unknown (does not reveal registration state).
+ * - Unverified email: cooldown from last register OTP send; then send via Resend (same as before).
+ */
 async function resendRegistrationOtp(emailRaw) {
   const emailNorm = normalizeEmail(emailRaw);
   const client = await pool.connect();
@@ -171,11 +183,13 @@ async function resendRegistrationOtp(emailRaw) {
     const user = uRows[0];
     if (!user) {
       await client.query("ROLLBACK");
-      throw createPublicApiError("لم يتم العثور على حساب بهذا البريد.", 404, "NOT_FOUND");
+      await sleepEnumerationSafeJitterMs();
+      return;
     }
     if (user.email_verified) {
       await client.query("ROLLBACK");
-      throw createPublicApiError("البريد الإلكتروني مفعّل مسبقاً.", 400, "EMAIL_ALREADY_VERIFIED");
+      await sleepEnumerationSafeJitterMs();
+      return;
     }
 
     const { rows: lastRows } = await client.query(
@@ -219,7 +233,7 @@ async function resendRegistrationOtp(emailRaw) {
 
 /**
  * Forgot-password request: never reveals whether the email is registered.
- * - Unknown / inactive email: no email sent, optional timing jitter (enumeration + timing).
+ * - Unknown email: no email sent; `sleepEnumerationSafeJitterMs` (enumeration + timing).
  * - Known email: cooldown 60s from last forgot OTP send; then hash OTP, invalidate old rows, send via Resend.
  */
 async function requestForgotPasswordOtp(emailRaw) {
@@ -230,8 +244,7 @@ async function requestForgotPasswordOtp(emailRaw) {
   );
   const user = uRows[0];
   if (!user) {
-    const ms = crypto.randomInt(90, 181);
-    await new Promise((r) => setTimeout(r, ms));
+    await sleepEnumerationSafeJitterMs();
     return;
   }
 

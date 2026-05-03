@@ -26,11 +26,21 @@ function buildDualFilters(status, projectType, categoryId, subSubIds, q) {
     );
   }
   if (projectType) {
-    pushBoth(
-      (i) => `o.project_type = $${i}`,
-      (i) => `fo.project_type = $${i}`,
-      String(projectType),
-    );
+    const pt = String(projectType);
+    if (pt === "bidding") {
+      wr.push(
+        `(o.project_type = 'bidding' AND o.bid_budget_min IS NOT NULL AND o.bid_budget_max IS NOT NULL AND o.bid_budget_min > 0 AND o.bid_budget_max >= o.bid_budget_min)`,
+      );
+      wf.push(
+        `(fo.project_type = 'bidding' AND fo.bid_budget_min IS NOT NULL AND fo.bid_budget_max IS NOT NULL AND fo.bid_budget_min > 0 AND fo.bid_budget_max >= fo.bid_budget_min)`,
+      );
+    } else {
+      pushBoth(
+        (i) => `o.project_type = $${i}`,
+        (i) => `fo.project_type = $${i}`,
+        pt,
+      );
+    }
   }
   if (categoryId) {
     pushBoth(

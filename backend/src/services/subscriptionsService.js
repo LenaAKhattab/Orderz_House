@@ -732,13 +732,21 @@ async function listSubscriptions({ freelancerUserId = null, status = null } = {}
   return rows.map(mapSubscription);
 }
 
-async function canFreelancerTakeOrders(freelancerUserId) {
-  const sub = await getCurrentSubscriptionForFreelancer(freelancerUserId);
+/**
+ * Pool / bids eligibility from a mapped subscription (same rules as canFreelancerTakeOrders).
+ *
+ * Payment (self-service Stripe): `createFreelancerSubscriptionCheckoutSession` sets `payment_status`
+ * to `pending`; webhook `markFreelancerSubscriptionStripePaymentPaid` sets `paid`. Only `paid` or
+ * admin/comp paths (`not_required`) may take marketplace work — not `pending` (checkout started
+ * but unpaid). No grace window: starting checkout does not unlock the pool.
+ */
+function evaluateFreelancerTakeOrdersEligibility(sub) {
   if (!sub) {
     return { eligible: false, reason: "no_subscription" };
   }
 
-  if (sub.paymentStatus && !["paid", "pending", "not_required"].includes(sub.paymentStatus)) {
+  const ps = sub.paymentStatus || SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED;
+  if (![SUBSCRIPTION_PAYMENT_STATUSES.PAID, SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED].includes(ps)) {
     return { eligible: false, reason: "payment_not_completed" };
   }
   if (sub.activationStatus && sub.activationStatus !== "company_approved") {
@@ -749,15 +757,15 @@ async function canFreelancerTakeOrders(freelancerUserId) {
   }
 
   // assigned_not_started should still allow freelancer to take their first order.
-  if (sub.status === "assigned_not_started") {
+  if (sub.status === SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED) {
     return { eligible: true, reason: "assigned_not_started" };
   }
 
-  if (sub.status === "expired") {
+  if (sub.status === SUBSCRIPTION_STATUSES.EXPIRED) {
     return { eligible: false, reason: "expired" };
   }
 
-  if (sub.status !== "active") {
+  if (sub.status !== SUBSCRIPTION_STATUSES.ACTIVE) {
     return { eligible: false, reason: "invalid_status" };
   }
 
@@ -766,6 +774,11 @@ async function canFreelancerTakeOrders(freelancerUserId) {
   }
 
   return { eligible: true, reason: "active" };
+}
+
+async function canFreelancerTakeOrders(freelancerUserId) {
+  const sub = await getCurrentSubscriptionForFreelancer(freelancerUserId);
+  return evaluateFreelancerTakeOrdersEligibility(sub);
 }
 
 module.exports = {
@@ -784,5 +797,6 @@ module.exports = {
   markFreelancerSubscriptionStripePaymentFailed,
   activateCompanyApprovalForSubscription,
   canFreelancerTakeOrders,
+  evaluateFreelancerTakeOrdersEligibility,
 };
 

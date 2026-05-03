@@ -185,7 +185,6 @@ const SuperAdminSubscriptionsPage = () => {
       const existing = [];
       for (const freelancerUserId of freelancerIds) {
         try {
-          // eslint-disable-next-line no-await-in-loop
           const res = await getFreelancerCurrentSubscriptionAdminRequest(freelancerUserId);
           const sub = res?.data?.subscription || null;
           if (sub?.id) {
@@ -219,7 +218,6 @@ const SuperAdminSubscriptionsPage = () => {
         try {
           // Reuse existing endpoint (one freelancer at a time).
           // Sequential to keep UX predictable and avoid rate spikes.
-          // eslint-disable-next-line no-await-in-loop
           await assignPlanToFreelancerRequest({ freelancerUserId, planId, notes: null });
         } catch (e) {
           failures.push({ freelancerUserId: String(freelancerUserId), message: errorMessage(e) });

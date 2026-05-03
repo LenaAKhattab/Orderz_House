@@ -110,6 +110,7 @@ export function ToastProvider({ children }) {
   return <ToastContext.Provider value={api}>{children}</ToastContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- hook paired with ToastProvider in this module
 export function useToast() {
   const ctx = useContext(ToastContext);
   if (!ctx) {

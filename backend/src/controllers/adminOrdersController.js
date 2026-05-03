@@ -151,6 +151,40 @@ const acceptTakenOrder = async (req, res, next) => {
   }
 };
 
+const listInternalOrderBids = async (req, res, next) => {
+  try {
+    const out = await ordersService.listInternalOrderBidsForAdmin({ orderId: req.params.id });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const approveInternalPricedBid = async (req, res, next) => {
+  try {
+    const actorRole = req.auth?.primaryRole || req.auth?.legacyRole || req.user?.role;
+    if (actorRole !== "admin" && actorRole !== "super_admin") {
+      const err = new Error("Forbidden");
+      err.statusCode = 403;
+      throw err;
+    }
+    const result = await ordersService.approveInternalPricedBidAdmin({
+      actorUserId: req.auth.userId,
+      orderId: req.params.id,
+      bidId: req.params.bidId,
+    });
+    return res.status(200).json({
+      success: true,
+      data: {
+        order: result.order,
+        alreadyApplied: result.alreadyApplied === true,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const listOrderClaims = async (req, res, next) => {
   try {
     const actorRole = req.auth?.primaryRole || req.auth?.legacyRole || req.user?.role;
@@ -233,6 +267,8 @@ module.exports = {
   searchFreelancers,
   activateArchivedOrder,
   acceptTakenOrder,
+  listInternalOrderBids,
+  approveInternalPricedBid,
   listOrderClaims,
   approveInternalDelivery,
   requestInternalDeliveryRevision,

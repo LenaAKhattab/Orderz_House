@@ -15,7 +15,8 @@ function filesCountFrom(order) {
 }
 
 /**
- * Guest / logged-out pool detail: marketplace-safe fields only (no bidder identities, no internal IDs, no payment, no file URLs).
+ * Guest / logged-out pool detail and pool **list** rows: marketplace-safe fields only (allowlist).
+ * Never includes `assignedFreelancerId` — pool listings must not leak assignment even if upstream maps include it.
  */
 function sanitizePublicPoolOrder(order) {
   if (!order || typeof order !== "object") return order;
@@ -37,6 +38,7 @@ function sanitizePublicPoolOrder(order) {
     currencyCode: order.currencyCode,
     bidBudgetMin: order.bidBudgetMin,
     bidBudgetMax: order.bidBudgetMax,
+    acceptsPriceBids: Boolean(order.acceptsPriceBids),
     durationValue: order.durationValue,
     durationUnit: order.durationUnit,
     sourceType: order.sourceType,
@@ -44,7 +46,6 @@ function sanitizePublicPoolOrder(order) {
     isPublished: order.isPublished,
     isOpenForPool: order.isOpenForPool,
     isArchived: order.isArchived,
-    assignedFreelancerId: order.assignedFreelancerId,
     receivedAt: order.receivedAt,
     dueAt: order.dueAt,
     createdAt: order.createdAt,
