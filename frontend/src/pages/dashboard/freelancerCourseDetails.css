@@ -1,0 +1,78 @@
+/* Freelancer course detail — audit step (scoped) */
+
+.fcd-audit {
+  margin-top: 20px;
+  padding: 18px 18px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: linear-gradient(165deg, #f8fafc 0%, #fff 55%);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+}
+
+.fcd-audit__title {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.fcd-audit__lead {
+  margin: 0 0 14px;
+  font-size: 0.88rem;
+  color: #475569;
+  line-height: 1.55;
+}
+
+.fcd-audit__list {
+  margin: 0 0 14px;
+  padding-right: 18px;
+  font-size: 0.86rem;
+  color: #334155;
+  line-height: 1.6;
+}
+
+.fcd-audit__prompt-box {
+  margin: 12px 0 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  font-size: 0.82rem;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.fcd-audit__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.fcd-audit__toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+.fcd-audit__toggle input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary, #3852b4);
+}
+
+.fcd-done {
+  margin-top: 20px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-weight: 800;
+  font-size: 0.95rem;
+}

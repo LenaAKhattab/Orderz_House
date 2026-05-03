@@ -7,8 +7,6 @@ const notificationService = require("./notificationService");
 const notificationEventsService = require("./notificationEventsService");
 const { baseUploadsDir } = require("../middleware/ordersUploadMiddleware");
 const { uploadBuffer, destroyByPublicId } = require("./cloudinaryUploadService");
-const fakeOrdersService = require("./fakeOrdersService");
-
 async function safeNotify(run) {
   try {
     await run();
@@ -145,11 +143,6 @@ function mapOrderBase(row) {
     paymentAmount: row.payment_amount != null ? Number(row.payment_amount) : null,
     paymentCurrency: row.payment_currency || null,
     orderStatus: row.order_status,
-    isFake: Boolean(row.is_fake),
-    fakeRoundId: row.fake_round_id ? String(row.fake_round_id) : null,
-    fakeExpiresAt: row.fake_expires_at || null,
-    fakeStatus: row.fake_status || null,
-    showFakeBadge: Boolean(row.show_fake_badge),
     receivedAt: row.received_at || null,
     takenAt: row.taken_at || null,
     acceptedAt: row.accepted_at || null,
@@ -1336,8 +1329,37 @@ async function listPoolOrders({
   subSubCategoryIds = "",
   sort = "newest",
   q = "",
+  viewerUserId = null,
+  viewerRole = null,
 } = {}) {
   const pg = parsePageLimitOffset({ page, limit, offset, defaultLimit: 12 });
+  const trainingPoolList = require("./trainingPoolList");
+  const { hydrateMergedPoolOrders } = require("./hydrateMergedPool");
+  const merged = await trainingPoolList.tryMergedPoolMeta({
+    viewerUserId,
+    viewerRole,
+    page,
+    limit: pg.limit,
+    offset: pg.offset,
+    status,
+    projectType,
+    categoryId,
+    subSubCategoryIds,
+    sort,
+    q,
+  });
+  if (merged) {
+    const orders = await hydrateMergedPoolOrders(merged.idOrder, mapListOrderRow, { freelancerUserId: null });
+    return {
+      orders,
+      pagination: {
+        page: merged.page,
+        limit: merged.limit,
+        total: merged.total,
+        totalPages: Math.max(1, Math.ceil(merged.total / merged.limit)),
+      },
+    };
+  }
   const params = [];
   const where = [
     `o.is_published = TRUE`,
@@ -1454,6 +1476,7 @@ async function getMyOrderBid({ orderId, freelancerUserId }, clientMaybe) {
 
 async function listPoolOrdersForFreelancer({
   freelancerUserId,
+  viewerRole = "freelancer",
   page = 1,
   limit = 12,
   offset = null,
@@ -1464,12 +1487,38 @@ async function listPoolOrdersForFreelancer({
   sort = "newest",
   q = "",
 } = {}) {
-  await fakeOrdersService.markExpiredRounds();
   const uid = Number(freelancerUserId);
   if (!Number.isInteger(uid) || uid < 1) {
     return { orders: [], pagination: { page: 1, limit: Number(limit) || 12, total: 0, totalPages: 1 } };
   }
   const pg = parsePageLimitOffset({ page, limit, offset, defaultLimit: 12 });
+  const trainingPoolList = require("./trainingPoolList");
+  const { hydrateMergedPoolOrders } = require("./hydrateMergedPool");
+  const merged = await trainingPoolList.tryMergedPoolMeta({
+    viewerUserId: uid,
+    viewerRole,
+    page,
+    limit: pg.limit,
+    offset: pg.offset,
+    status,
+    projectType,
+    categoryId,
+    subSubCategoryIds,
+    sort,
+    q,
+  });
+  if (merged) {
+    const orders = await hydrateMergedPoolOrders(merged.idOrder, mapListOrderRow, { freelancerUserId: uid });
+    return {
+      orders,
+      pagination: {
+        page: merged.page,
+        limit: merged.limit,
+        total: merged.total,
+        totalPages: Math.max(1, Math.ceil(merged.total / merged.limit)),
+      },
+    };
+  }
   const filterParams = [];
   const whereBase = [
     `o.is_published = TRUE`,
@@ -1798,17 +1847,6 @@ async function submitPoolOrderBid({ freelancerUserId, orderId, amount, message =
       err.statusCode = 409;
       throw err;
     }
-    if (order.is_fake) {
-      const eligible = await fakeOrdersService.isFreelancerEligibleForFakeOrder(
-        { freelancerUserId: Number(freelancerUserId), orderId: Number(orderId) },
-        client,
-      );
-      if (!eligible) {
-        const err = new Error("هذا الطلب التدريبي غير متاح لخطة اشتراكك.");
-        err.statusCode = 403;
-        throw err;
-      }
-    }
     const bidMessage = message != null ? String(message).trim() : null;
 
     const bid = Number(amount);
@@ -1836,10 +1874,10 @@ async function submitPoolOrderBid({ freelancerUserId, orderId, amount, message =
     const hadBidBefore = Boolean(prevBidRows[0]);
     await client.query(
       `INSERT INTO order_freelancer_bids (order_id, freelancer_user_id, amount, status, is_fake_bid, fake_round_id, proposal_message)
-       VALUES ($1, $2, $3, 'pending', $4, $5, $6)
+       VALUES ($1, $2, $3, 'pending', FALSE, NULL, $4)
        ON CONFLICT (order_id, freelancer_user_id)
-       DO UPDATE SET amount = EXCLUDED.amount, status = 'pending', proposal_message = EXCLUDED.proposal_message, is_fake_bid = EXCLUDED.is_fake_bid, fake_round_id = EXCLUDED.fake_round_id, updated_at = NOW()`,
-      [Number(orderId), Number(freelancerUserId), bid, Boolean(order.is_fake), order.fake_round_id ? Number(order.fake_round_id) : null, bidMessage || null],
+       DO UPDATE SET amount = EXCLUDED.amount, status = 'pending', proposal_message = EXCLUDED.proposal_message, is_fake_bid = FALSE, fake_round_id = NULL, updated_at = NOW()`,
+      [Number(orderId), Number(freelancerUserId), bid, bidMessage || null],
     );
     await safeNotify(() =>
       notificationEventsService.notifyOrderOwner(
@@ -1911,47 +1949,6 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
       const err = new Error("Order is not available in the pool.");
       err.statusCode = 409;
       throw err;
-    }
-
-    if (order.is_fake) {
-      const eligible = await fakeOrdersService.isFreelancerEligibleForFakeOrder(
-        { freelancerUserId: Number(freelancerUserId), orderId: Number(orderId) },
-        client,
-      );
-      if (!eligible) {
-        const err = new Error("هذا الطلب التدريبي غير متاح لخطة اشتراكك.");
-        err.statusCode = 403;
-        throw err;
-      }
-      const receivedAt = new Date();
-      const startedAt = receivedAt;
-      const dueAt = computeDueAt(startedAt, order.duration_value, order.duration_unit);
-      await client.query(
-        `UPDATE orders
-           SET assigned_freelancer_id = $2,
-               received_at = $3,
-               started_at = $3,
-               due_at = $4,
-               is_open_for_pool = FALSE,
-               order_status = $5,
-               updated_at = NOW()
-         WHERE id = $1`,
-        [Number(orderId), Number(freelancerUserId), receivedAt, dueAt, ORDER_STATUSES.IN_PROGRESS],
-      );
-      if (order.fake_round_id) {
-        await client.query(
-          `INSERT INTO fake_order_interactions (fake_round_id, order_id, freelancer_id, event_type)
-           VALUES ($1, $2, $3, 'taken')
-           ON CONFLICT (fake_round_id, order_id, freelancer_id, event_type) DO NOTHING`,
-          [Number(order.fake_round_id), Number(orderId), Number(freelancerUserId)],
-        );
-      }
-      await subscriptionsService.activateCurrentSubscriptionOnFirstAcceptedOrder(
-        { freelancerUserId: String(freelancerUserId), orderId, activatedAt: receivedAt },
-        client,
-      );
-      await client.query("COMMIT");
-      return await getOrderById(orderId);
     }
 
     // Create claim record. Do NOT assign yet, do NOT remove from pool.
@@ -2303,7 +2300,7 @@ async function listOrderClaimsForClient({ clientUserId, orderId }) {
 async function listOrderBidsWithFreelancers({ orderId }, clientMaybe) {
   const runner = clientMaybe || pool;
   const { rows } = await runner.query(
-    `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at, b.proposal_message, b.is_fake_bid, b.fake_round_id,
+    `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at, b.proposal_message,
             u.first_name, u.father_name, u.family_name, u.email, u.account_id
      FROM order_freelancer_bids b
      JOIN users u ON u.id = b.freelancer_user_id
@@ -2318,8 +2315,6 @@ async function listOrderBidsWithFreelancers({ orderId }, clientMaybe) {
     amount: Number(r.amount),
     status: r.status,
     message: r.proposal_message || null,
-    isFakeBid: Boolean(r.is_fake_bid),
-    fakeRoundId: r.fake_round_id ? String(r.fake_round_id) : null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
     freelancer: {
@@ -3230,6 +3225,7 @@ async function activateArchivedInternalOrder({ orderId }) {
 
 module.exports = {
   ORDER_STATUSES,
+  mapListOrderRow,
   createInternalOrder,
   createClientOrder,
   listClientOrders,

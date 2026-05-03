@@ -139,8 +139,14 @@ export default function OrderCard({
 
   const categoryText = `${order?.category?.name || "—"}${order?.subSubcategory?.name ? ` • ${order.subSubcategory.name}` : ""}`;
   const pricedBidding = useMemo(() => isPricedBiddingOrder(order), [order]);
-  const filesCount = Array.isArray(order?.files) ? order.files.length : 0;
+  const filesCount =
+    Array.isArray(order?.files) && order.files.length
+      ? order.files.length
+      : Number(order?.filesCount ?? 0) || 0;
   const bidUsers = Array.isArray(order?.bidUsers) ? order.bidUsers : [];
+  const applicantPoolCount =
+    Number(order?.applicantsCount ?? order?.bidsCount ?? 0) ||
+    (bidUsers.length ? bidUsers.length : 0);
 
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), 60 * 1000);
@@ -202,8 +208,12 @@ export default function OrderCard({
           <span className="oh-mini-chip">ملفات: {filesCount ? String(filesCount) : "لا توجد ملفات مضافة"}</span>
           {order?.projectType === "bidding" ? (
             <span className="oh-mini-chip">
-              المتقدمون: {bidUsers.length ? bidUsers.slice(0, 2).map((b) => bidderDisplayName(b)).join("، ") : "لا يوجد"}
-              {bidUsers.length > 2 ? ` +${bidUsers.length - 2}` : ""}
+              المتقدمون:{" "}
+              {showAdminBadge && bidUsers.length
+                ? `${bidUsers.slice(0, 2).map((b) => bidderDisplayName(b)).join("، ")}${bidUsers.length > 2 ? ` +${bidUsers.length - 2}` : ""}`
+                : applicantPoolCount > 0
+                  ? String(applicantPoolCount)
+                  : "لا يوجد"}
             </span>
           ) : null}
         </div>
@@ -272,14 +282,18 @@ export default function OrderCard({
               <div className="oh-meta__label">مؤرشف</div>
               <div className="oh-meta__value">{yn(order?.isArchived)}</div>
             </div>
-            <div className="oh-meta">
-              <div className="oh-meta__label">createdByUserId</div>
-              <div className="oh-meta__value">{showValue(order?.createdByUserId)}</div>
-            </div>
-            <div className="oh-meta">
-              <div className="oh-meta__label">assignedFreelancerId</div>
-              <div className="oh-meta__value">{showValue(order?.assignedFreelancerId)}</div>
-            </div>
+            {showAdminBadge ? (
+              <>
+                <div className="oh-meta">
+                  <div className="oh-meta__label">createdByUserId</div>
+                  <div className="oh-meta__value">{showValue(order?.createdByUserId)}</div>
+                </div>
+                <div className="oh-meta">
+                  <div className="oh-meta__label">assignedFreelancerId</div>
+                  <div className="oh-meta__value">{showValue(order?.assignedFreelancerId)}</div>
+                </div>
+              </>
+            ) : null}
             <div className="oh-meta">
               <div className="oh-meta__label">createdAt</div>
               <div className="oh-meta__value">{showValue(order?.createdAt)}</div>

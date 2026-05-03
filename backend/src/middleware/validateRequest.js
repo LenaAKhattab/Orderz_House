@@ -9,7 +9,8 @@ const validateRequest = (req, res, next) => {
     const first = result.array({ onlyFirstError: true })[0];
     return res.status(400).json({
       success: false,
-      message: first.msg || "Validation failed.",
+      message: first.msg || "بيانات غير صالحة.",
+      code: "VALIDATION_ERROR",
       field: first.path || first.param,
     });
   }

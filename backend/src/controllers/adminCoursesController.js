@@ -80,11 +80,38 @@ async function updateLessons(req, res, next) {
 
 async function assignFreelancers(req, res, next) {
   try {
+    const assignAll = req.body.assignAll === true || req.body.assignAll === 1;
     const out = await coursesService.assignCourseFreelancers({
       actorUserId: req.auth.userId,
       courseId: req.params.id,
-      freelancerIds: req.body.freelancerIds || [],
-      assignAll: req.body.assignAll,
+      freelancerIds: Array.isArray(req.body.freelancerIds) ? req.body.freelancerIds : [],
+      assignAll,
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function assignOneFreelancer(req, res, next) {
+  try {
+    const out = await coursesService.addCourseFreelancer({
+      actorUserId: req.auth.userId,
+      courseId: req.params.id,
+      freelancerUserId: req.body.freelancerUserId,
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function unassignOneFreelancer(req, res, next) {
+  try {
+    const out = await coursesService.removeCourseFreelancer({
+      actorUserId: req.auth.userId,
+      courseId: req.params.id,
+      freelancerUserId: req.body.freelancerUserId,
     });
     return res.status(200).json({ success: true, data: out });
   } catch (err) {
@@ -124,6 +151,8 @@ module.exports = {
   importLessons,
   updateLessons,
   assignFreelancers,
+  assignOneFreelancer,
+  unassignOneFreelancer,
   deleteCourse,
   listFreelancers,
 };

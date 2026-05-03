@@ -78,10 +78,10 @@ const Navbar = () => {
         ...base,
         { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
         { label: "الدورات", to: "/dashboard/super-admin/courses" },
-        { label: "الطلبات التجريبية", to: "/dashboard/super-admin/fake-orders" },
         { label: "الاشتراكات", to: "/dashboard/super-admin/subscriptions" },
         { label: "المطالبات المالية", to: "/dashboard/super-admin/financial-claims" },
         { label: "الطلبات", to: "/dashboard/super-admin/orders" },
+        { label: "تجريبي", to: "/dashboard/super-admin/training-orders/settings" },
       ];
     }
     if (role === "admin") {
@@ -89,7 +89,6 @@ const Navbar = () => {
         ...base,
         { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
         { label: "الدورات", to: "/dashboard/admin/courses" },
-        { label: "الطلبات التجريبية", to: "/dashboard/admin/fake-orders" },
         { label: "تفعيل الاشتراكات", to: "/dashboard/admin/subscriptions" },
         { label: "الطلبات", to: "/dashboard/admin/orders" },
       ];

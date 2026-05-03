@@ -175,6 +175,23 @@ router.get(
 // Pool browsing is public; if Authorization header exists, we attach `myClaim` in the controller.
 router.get("/orders/pool", optionalAuth, listOrdersValidators, validateRequest, ordersController.listPoolOrders);
 router.post(
+  "/orders/pool/fake/:id/bids",
+  requireAuth,
+  requireRole("freelancer"),
+  orderIdParam,
+  submitPoolOrderBidValidators,
+  validateRequest,
+  ordersController.submitFakePoolOrderBid,
+);
+router.post(
+  "/orders/pool/fake/:id/take",
+  requireAuth,
+  requireRole("freelancer"),
+  orderIdParam,
+  validateRequest,
+  ordersController.takeFakePoolOrder,
+);
+router.post(
   "/orders/pool/:id/bids",
   requireAuth,
   requireRole("freelancer"),

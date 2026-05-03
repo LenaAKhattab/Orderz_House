@@ -3,10 +3,17 @@ node_modules/
 backend/node_modules/
 frontend/node_modules/
 
-# Environment files
+# Environment files (never commit secrets)
 .env
+.env.local
+.env.development
+.env.production
+*.env.local
 backend/.env
 frontend/.env
+frontend/.env.local
+frontend/.env.production
+frontend/.env.development
 
 # Logs
 npm-debug.log*

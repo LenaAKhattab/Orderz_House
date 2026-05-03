@@ -195,7 +195,10 @@ function relativeTimeAr(value) {
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "الآن";
   const diffMs = Date.now() - d.getTime();
-  const diffMin = Math.max(1, Math.floor(diffMs / (60 * 1000)));
+  if (diffMs < 0) return "الآن";
+  /** Under 1 minute: avoid forcing "1 minute" (was Math.max(1, floor) hiding 0–119s as one minute). */
+  if (diffMs < 60 * 1000) return "منذ أقل من دقيقة";
+  const diffMin = Math.floor(diffMs / (60 * 1000));
   if (diffMin < 60) return `منذ ${diffMin} دقيقة`;
   const diffHours = Math.floor(diffMin / 60);
   if (diffHours < 24) return `منذ ${diffHours} ساعة`;
@@ -243,10 +246,17 @@ function MarketplaceOrderListRow({
   const bidding = isBiddingOrder(order);
   return (
     <li className="oh-order-row-item">
-      <button
-        type="button"
+      <div
         className="oh-order-row"
+        role="button"
+        tabIndex={0}
         onClick={onOpenDetails}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onOpenDetails?.();
+          }
+        }}
         aria-label={`فتح تفاصيل الطلب ${order?.title || ""}`}
       >
         <div className="oh-order-row__side">
@@ -283,14 +293,23 @@ function MarketplaceOrderListRow({
               <button
                 type="button"
                 className="oh-order-row__action-btn"
-                disabled={actionsDisabled || taking || order?.myClaim?.status === "pending"}
+                disabled={
+                  actionsDisabled ||
+                  taking ||
+                  order?.myClaim?.status === "pending" ||
+                  (order?.orderSource === "fake" && order?.myBid?.status === "pending")
+                }
                 onClick={(e) => {
                   e.stopPropagation();
                   onTake?.();
                 }}
                 title={actionsDisabledReason || ""}
               >
-                {taking ? "جارٍ الاستلام…" : "استلام الطلب"}
+                {taking
+                  ? "جارٍ الاستلام…"
+                  : order?.orderSource === "fake" && order?.myBid?.status === "pending"
+                    ? "تم التسجيل"
+                    : "استلام الطلب"}
               </button>
             )
           ) : null}
@@ -300,6 +319,11 @@ function MarketplaceOrderListRow({
           <div className="oh-order-row__meta">
             <span>{relativeTimeAr(order?.createdAt)}</span>
             <span>{typeLabelAr(order?.projectType)}</span>
+            {order?.orderSource === "fake" && order?.trainingLabel ? (
+              <span className="help" style={{ opacity: 0.9 }}>
+                {order.trainingLabel}
+              </span>
+            ) : null}
             <span className="oh-order-row__price" dir="ltr">
               {orderPriceText(order)}
             </span>
@@ -308,7 +332,7 @@ function MarketplaceOrderListRow({
           <p className="oh-order-row__summary">{shortDescription(order?.description)}</p>
           <p className="oh-order-row__hint">اضغط للتفاصيل</p>
         </div>
-      </button>
+      </div>
     </li>
   );
 }
@@ -947,10 +971,10 @@ function FreelancerPoolOrders() {
     };
   }, [user, loading, isFreelancer]);
 
-  const take = async (orderId) => {
+  const take = async (orderId, orderSource) => {
     setTakingId(orderId);
     try {
-      await takePoolOrderRequest(orderId);
+      await takePoolOrderRequest(orderId, { orderSource });
       push({ type: "success", title: "تم تقديم الطلب", message: "تم تسجيل طلب الاستلام بنجاح." });
       await reloadPool();
     } catch (e) {
@@ -964,7 +988,7 @@ function FreelancerPoolOrders() {
     if (!bidModalOrder?.id) return;
     setBidBusyId(bidModalOrder.id);
     try {
-      await submitPoolOrderBidRequest(bidModalOrder.id, { amount });
+      await submitPoolOrderBidRequest(bidModalOrder.id, { amount }, { orderSource: bidModalOrder.orderSource });
       push({ type: "success", title: "تم إرسال العرض", message: "تم إرسال عرض السعر بنجاح." });
       setBidModalOrder(null);
       await reloadPool();
@@ -1119,7 +1143,10 @@ function FreelancerPoolOrders() {
                         }
                         onOpenDetails={() =>
                           navigate(`/dashboard/freelancer/orders/${order.id}`, {
-                            state: { from: { pathname: "/dashboard/freelancer/orders" } },
+                            state: {
+                              from: { pathname: "/dashboard/freelancer/orders" },
+                              orderSource: order.orderSource === "fake" ? "fake" : "real",
+                            },
                           })
                         }
                       />
@@ -1244,7 +1271,7 @@ function FreelancerPoolOrders() {
                 onClick={async () => {
                   const orderId = takeConfirmOrder?.id;
                   setTakeConfirmOrder(null);
-                  if (orderId) await take(orderId);
+                  if (orderId) await take(orderId, takeConfirmOrder?.orderSource);
                 }}
               >
                 {takingId ? "جارٍ التنفيذ…" : "متأكد"}
