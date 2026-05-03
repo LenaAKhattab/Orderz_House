@@ -13,23 +13,27 @@ Production-ready Express API foundation for Orderz House with Neon PostgreSQL co
 
 - `npm run dev` - Start server with nodemon
 - `npm start` - Start server with node
+- `npm run db:migrate` - Apply pending SQL files from `sql/migrations` in order (tracks `schema_migrations`; safe to run repeatedly). Requires `DATABASE_URL` in `.env`. Per-file runs still use `npm run db:run -- <path>`.
 
 ## Environment Setup
 
-1. Copy `.env.example` to `.env`
-2. Configure values:
+1. Copy the example file and fill in values **only on your machine or in your host’s secret manager**:
 
 ```bash
 cp .env.example .env
 ```
 
-Required env variables:
+2. **Never commit `.env`** or paste production secrets into git. Use your platform’s environment/secret store in production.
 
-- `PORT`
-- `DATABASE_URL`
-- `JWT_SECRET`
-- `NODE_ENV`
-- `CLIENT_URL`
+Required for a healthy deployment (validated at startup; see `src/config/env.js`):
+
+- `DATABASE_URL` — required; server exits if missing in all environments.
+- `JWT_SECRET` — at least 16 characters; required in production.
+- `CLIENT_URL` — frontend origin for CORS; required in production.
+
+See `.env.example` for optional keys (Stripe, Resend, Cloudinary, `TRUST_PROXY`, `FAKE_ORDERS_TICK_MS`, etc.).
+
+Frontend (Vite): copy `../frontend/.env.example` to `frontend/.env.local` and set `VITE_API_BASE_URL` if needed.
 
 ## Database Initialization
 
@@ -69,7 +73,7 @@ backend/
 ├── sql/
 │   └── init.sql
 ├── server.js
-├── .env
+├── .env                 (local only; copy from .env.example — not committed)
 ├── .env.example
 └── package.json
 ```

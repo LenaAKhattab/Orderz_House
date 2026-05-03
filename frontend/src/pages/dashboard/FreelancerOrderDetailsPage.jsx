@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import { useToast } from "../../components/ui/toastContext";
 import { useAuth } from "../../context/useAuth";
 import BidAmountModal from "../../components/orders/BidAmountModal";
@@ -50,6 +50,8 @@ function durationLabel(order) {
 export default function FreelancerOrderDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { push } = useToast();
   const { user, loading } = useAuth();
   const role = user?.primaryRole || user?.role;
@@ -73,20 +75,38 @@ export default function FreelancerOrderDetailsPage() {
     () => order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null,
     [order],
   );
+  const fakeClaimOrBidPending = useMemo(
+    () =>
+      order?.orderSource === "fake" &&
+      !isPricedBidding &&
+      (order?.myBid?.status === "pending" || order?.myBid?.status === "accepted"),
+    [order, isPricedBidding],
+  );
   const isPoolAvailable = useMemo(() => {
     if (!order) return false;
+    if (order.orderSource === "fake") {
+      return Boolean(
+        order?.isPublished &&
+          order?.isOpenForPool &&
+          !order?.assignedFreelancerId &&
+          ["published", "open_for_freelancers", "open_for_bids"].includes(String(order?.orderStatus || "")),
+      );
+    }
     const sourceOk = ["admin_created", "super_admin_created", "client_created"].includes(order?.sourceType);
     return Boolean(
       sourceOk && order?.isPublished && order?.isOpenForPool && !order?.assignedFreelancerId && order?.orderStatus === "published",
     );
   }, [order]);
 
+  const orderSourceForApi =
+    searchParams.get("source") === "fake" || location.state?.orderSource === "fake" ? "fake" : null;
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setBusy(true);
       try {
-        const resPool = await getPoolOrderByIdRequest(id);
+        const resPool = await getPoolOrderByIdRequest(id, { orderSource: orderSourceForApi });
         if (!cancelled) setOrder(resPool?.data?.order || null);
       } catch (e) {
         if (!cancelled) {
@@ -101,7 +121,13 @@ export default function FreelancerOrderDetailsPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, push, navigate]);
+  }, [id, push, navigate, orderSourceForApi]);
+
+  useEffect(() => {
+    if (order?.orderSource === "fake" && searchParams.get("source") !== "fake") {
+      setSearchParams({ source: "fake" }, { replace: true });
+    }
+  }, [order?.orderSource, searchParams, setSearchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -143,7 +169,7 @@ export default function FreelancerOrderDetailsPage() {
   const take = async () => {
     setTaking(true);
     try {
-      await takePoolOrderRequest(id);
+      await takePoolOrderRequest(id, { orderSource: order?.orderSource === "fake" ? "fake" : undefined });
       push({
         type: "success",
         title: "تم تقديم الطلب",
@@ -162,10 +188,10 @@ export default function FreelancerOrderDetailsPage() {
   const submitBid = async (amount) => {
     setBidBusy(true);
     try {
-      await submitPoolOrderBidRequest(id, { amount });
+      await submitPoolOrderBidRequest(id, { amount }, { orderSource: order?.orderSource === "fake" ? "fake" : undefined });
       push({ type: "success", title: "تم إرسال العرض", message: "سيتمكن العميل لاحقاً من مراجعة العروض." });
       setBidOpen(false);
-      const resPool = await getPoolOrderByIdRequest(id);
+      const resPool = await getPoolOrderByIdRequest(id, { orderSource: order?.orderSource === "fake" ? "fake" : orderSourceForApi });
       setOrder(resPool?.data?.order || null);
     } catch (e) {
       push({ type: "error", title: "تعذر إرسال العرض", message: e?.response?.data?.message || e?.message });
@@ -214,6 +240,11 @@ export default function FreelancerOrderDetailsPage() {
       <header className="order-details__top">
         <div className="order-details__top-title">
           <h1 className="order-details__title">{busy ? "تفاصيل الطلب" : (order?.title || "تفاصيل الطلب")}</h1>
+          {!busy && order?.trainingLabel ? (
+            <p className="help" style={{ margin: "6px 0 0", opacity: 0.88 }}>
+              {order.trainingLabel}
+            </p>
+          ) : null}
         </div>
         <div className="order-details__top-actions">
           <Link className="btn btn-secondary" to={backTo}>
@@ -234,23 +265,25 @@ export default function FreelancerOrderDetailsPage() {
             <button
               type="button"
               className="btn btn-primary"
-              disabled={!canTake || taking || order?.myClaim?.status === "pending"}
+              disabled={!canTake || taking || order?.myClaim?.status === "pending" || fakeClaimOrBidPending}
               title={
-                order?.myClaim?.status
-                  ? order.myClaim.status === "pending"
-                    ? "سبق أن تقدمت لهذا الطلب وهو قيد المراجعة."
-                    : order.myClaim.status === "withdrawn"
-                      ? "سبق أن تقدمت لهذا الطلب ثم قمت بسحبه."
-                      : order.myClaim.status === "rejected"
-                        ? "سبق أن تقدمت لهذا الطلب وتم رفض الطلب."
-                        : `سبق أن تقدمت لهذا الطلب (الحالة: ${order.myClaim.status}).`
-                  : !canTake
-                    ? ineligibleMessage
-                    : ""
+                fakeClaimOrBidPending
+                  ? "سبق أن سجّلت مشاركتك في هذا الطلب التجريبي."
+                  : order?.myClaim?.status
+                    ? order.myClaim.status === "pending"
+                      ? "سبق أن تقدمت لهذا الطلب وهو قيد المراجعة."
+                      : order.myClaim.status === "withdrawn"
+                        ? "سبق أن تقدمت لهذا الطلب ثم قمت بسحبه."
+                        : order.myClaim.status === "rejected"
+                          ? "سبق أن تقدمت لهذا الطلب وتم رفض الطلب."
+                          : `سبق أن تقدمت لهذا الطلب (الحالة: ${order.myClaim.status}).`
+                    : !canTake
+                      ? ineligibleMessage
+                      : ""
               }
               onClick={take}
             >
-              {taking ? "جارٍ الاستلام…" : "استلام الطلب"}
+              {taking ? "جارٍ الاستلام…" : fakeClaimOrBidPending ? "تم التسجيل" : "استلام الطلب"}
             </button>
           ) : null}
         </div>

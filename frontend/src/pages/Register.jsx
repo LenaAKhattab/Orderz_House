@@ -6,6 +6,8 @@ import * as tw from "../components/auth/authTw";
 import Button from "../components/ui/Button";
 import { useAuth } from "../context/useAuth";
 import { getDashboardPath } from "../constants/authRoutes";
+import { resendRegisterOtpRequest } from "../services/api";
+import { getSafeApiErrorMessage } from "../utils/apiErrorMessage";
 
 const CATEGORY_OPTIONS = [
   { slug: "design", label: "تصميم" },
@@ -217,80 +219,17 @@ async function fetchCountries() {
   return items;
 }
 
-const API_ERROR_AR = {
-  "First name is required.": "الاسم الأول مطلوب.",
-  "Father name is required.": "اسم الأب مطلوب.",
-  "Family name is required.": "اسم العائلة مطلوب.",
-  "First name must be Arabic letters only.": "الاسم الأول يجب أن يكون بالعربية فقط.",
-  "Father name must be Arabic letters only.": "اسم الأب يجب أن يكون بالعربية فقط.",
-  "Family name must be Arabic letters only.": "اسم العائلة يجب أن يكون بالعربية فقط.",
-  "First name is too long.": "الاسم الأول طويل جداً.",
-  "Father name is too long.": "اسم الأب طويل جداً.",
-  "Family name is too long.": "اسم العائلة طويل جداً.",
-  "Email is required.": "البريد الإلكتروني مطلوب.",
-  "Invalid email format.": "صيغة البريد الإلكتروني غير صحيحة.",
-  "Password is required.": "كلمة المرور مطلوبة.",
-  "Password must be between 8 and 128 characters.": "كلمة المرور يجب أن تكون بين 8 و 128 حرفاً.",
-  "Password must include at least one letter.": "كلمة المرور يجب أن تحتوي حرفاً إنجليزياً واحداً على الأقل.",
-  "Password must include at least one number.": "كلمة المرور يجب أن تحتوي رقماً واحداً على الأقل.",
-  "Passwords do not match.": "تأكيد كلمة المرور غير مطابق.",
-  "Account type must be client or freelancer.": "نوع الحساب يجب أن يكون عميلاً أو مستقلاً.",
-  "Country is required.": "الدولة مطلوبة.",
-  "Country must be a 2-letter code.": "اختر الدولة من القائمة.",
-  "Country must be an allowed Arab country.": "اختر دولة عربية من القائمة.",
-  "Phone country code is required.": "اختر مفتاح الدولة لرقم الهاتف.",
-  "Invalid phone country code.": "مفتاح الدولة لرقم الهاتف غير صالح.",
-  "Phone country code must be an allowed Arab country code.": "اختر مفتاح دولة عربي لرقم الهاتف.",
-  "Phone number is required.": "رقم الهاتف مطلوب.",
-  "Invalid phone number.": "رقم الهاتف غير صالح.",
-  "Phone must include country code in international format (e.g. +9665xxxxxxxx).":
-    "رقم الهاتف غير صالح. تأكد من اختيار مفتاح الدولة وكتابة الرقم بشكل صحيح.",
-  "WhatsApp country code is required.": "اختر مفتاح الدولة لرقم واتساب.",
-  "Invalid WhatsApp country code.": "مفتاح الدولة لرقم واتساب غير صالح.",
-  "WhatsApp country code must be an allowed Arab country code.": "اختر مفتاح دولة عربي لرقم واتساب.",
-  "WhatsApp number is required.": "رقم واتساب مطلوب.",
-  "Invalid WhatsApp number.": "رقم واتساب غير صالح.",
-  "WhatsApp must include country code in international format (e.g. +9665xxxxxxxx).":
-    "رقم واتساب غير صالح. تأكد من اختيار مفتاح الدولة وكتابة الرقم بشكل صحيح.",
-  "Invalid gender value.": "قيمة غير صالحة للجنس.",
-  "You must accept the terms and conditions.": "يجب الموافقة على الشروط والأحكام.",
-  "Categories are only allowed for freelancer accounts.": "التصنيفات مسموحة لحساب المستقل فقط.",
-  "Select at least one category.": "اختر تصنيفاً واحداً على الأقل.",
-  "Invalid category selection.": "اختيار تصنيف غير صالح.",
-  "Invalid account type.": "نوع الحساب غير صالح.",
-  "Registration could not be completed.": "تعذر إكمال التسجيل. حاول مجدداً.",
-  "This email is already registered.": "هذا البريد مسجّل مسبقاً.",
-  "Database schema is missing the users table. Run backend/sql/init.sql against your database, then try again.":
-    "يوجد مشكلة في قاعدة البيانات. تواصل مع الدعم أو أعد تهيئة قاعدة البيانات.",
-  "Database schema does not match the application. Re-run backend/sql/init.sql or migrate your database.":
-    "يوجد مشكلة في قاعدة البيانات. تواصل مع الدعم أو حدّث مخطط قاعدة البيانات.",
-  "Database schema is missing required tables. New DB: run sql/init.sql (npm run db:init from backend). Then run npm run db:migrate for RBAC, plans, and subscriptions.":
-    "قاعدة البيانات غير مكتملة. نفّذ تهيئة القاعدة ثم شغّل npm run db:migrate من مجلد backend.",
-  "Database schema does not match the application. Re-run sql/init.sql if needed, then npm run db:migrate from the backend directory.":
-    "مخطط قاعدة البيانات غير متطابق. حدّث القاعدة ثم شغّل npm run db:migrate من مجلد backend.",
-};
-
 function registerErrorMessage(err) {
-  const apiMsg = err?.response?.data?.message;
-  if (apiMsg) {
-    if (API_ERROR_AR[apiMsg]) return API_ERROR_AR[apiMsg];
-    const raw = String(apiMsg);
-    const rawLower = raw.toLowerCase();
-    if (rawLower.includes("column") || rawLower.includes("schema")) {
-      return "يوجد مشكلة في قاعدة البيانات. تواصل مع الدعم.";
-    }
-    return apiMsg;
-  }
-  if (err?.message?.includes("Network")) {
-    return "تعذر الاتصال بالخادم. تحقق من الاتصال وحاول مجدداً.";
-  }
-  return "تعذر إنشاء الحساب. راجع الحقول وحاول مجدداً.";
+  return getSafeApiErrorMessage(err, "تعذر إنشاء الحساب. راجع الحقول وحاول مجدداً.");
 }
 
 const Register = () => {
-  const { register } = useAuth();
+  const { register, completeRegisterWithOtp } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [showOtpStep, setShowOtpStep] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [firstName, setFirstName] = useState("");
   const [fatherName, setFatherName] = useState("");
   const [familyName, setFamilyName] = useState("");
@@ -322,6 +261,14 @@ const Register = () => {
   };
 
   const isFreelancer = accountType === "freelancer";
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined;
+    const t = window.setInterval(() => {
+      setResendCooldown((c) => Math.max(0, c - 1));
+    }, 1000);
+    return () => window.clearInterval(t);
+  }, [resendCooldown]);
 
   useEffect(() => {
     let cancelled = false;
@@ -431,9 +378,38 @@ const Register = () => {
     );
   };
 
+  const handleResendOtp = async () => {
+    setError("");
+    try {
+      await resendRegisterOtpRequest(email.trim().toLowerCase());
+      setResendCooldown(60);
+    } catch (err) {
+      setError(registerErrorMessage(err));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (showOtpStep) {
+      const code = otp.trim();
+      if (!/^\d{6}$/.test(code)) {
+        setError("أدخل رمز التحقق المكوّن من 6 أرقام.");
+        return;
+      }
+      setSubmitting(true);
+      try {
+        const user = await completeRegisterWithOtp(email.trim().toLowerCase(), code);
+        const role = user?.primaryRole || user?.role;
+        navigate(getDashboardPath(role), { replace: true });
+      } catch (err) {
+        setError(registerErrorMessage(err));
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     const localErr = step === 1 ? step1Error : step2Error;
     if (localErr) return setError(localErr);
     if (step === 1) return setStep(2);
@@ -464,7 +440,14 @@ const Register = () => {
 
     setSubmitting(true);
     try {
-      const user = await register(body);
+      const result = await register(body);
+      if (result?.requiresEmailVerification) {
+        setShowOtpStep(true);
+        setOtp("");
+        setResendCooldown(60);
+        return;
+      }
+      const user = result;
       const role = user?.primaryRole || user?.role;
       navigate(getDashboardPath(role), { replace: true });
     } catch (err) {
@@ -477,8 +460,12 @@ const Register = () => {
   return (
     <AuthLayout visualContent={visualContent}>
       <AuthFormCard
-        title="إنشاء حساب جديد"
-        subtitle="ابدأ استخدام أوردرز هاوس بخطوات بسيطة"
+        title={showOtpStep ? "تأكيد البريد الإلكتروني" : "إنشاء حساب جديد"}
+        subtitle={
+          showOtpStep
+            ? `أدخل الرمز المكوّن من 6 أرقام المرسل إلى ${email.trim() || "بريدك"}`
+            : "ابدأ استخدام أوردرز هاوس بخطوات بسيطة"
+        }
         footerText="لديك حساب بالفعل؟"
         footerLinkText="تسجيل الدخول"
         footerLinkTo="/login"
@@ -486,7 +473,57 @@ const Register = () => {
         <form className={tw.authFormGrid} onSubmit={handleSubmit} noValidate>
           {error ? <p className={tw.authFormError}>{error}</p> : null}
 
-          <div className={tw.authSteps}>
+          {showOtpStep ? (
+            <>
+              <p className={tw.authHelperText} style={{ margin: 0 }}>
+                أهلاً بك في أوردرز هاوس. الرمز صالح لمدة 10 دقائق.
+              </p>
+              <label className={tw.authField}>
+                <span className={tw.authFieldLabel}>رمز التحقق</span>
+                <div className={`${tw.authInputWrap} ${tw.authLtr}`}>
+                  <input
+                    className={tw.authInputNoIcon}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="••••••"
+                    maxLength={6}
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    disabled={submitting}
+                  />
+                </div>
+              </label>
+              <Button unstyled type="submit" className={tw.authSubmitBtn} disabled={submitting}>
+                {submitting ? "جارٍ التحقق..." : "تأكيد الحساب"}
+              </Button>
+              <Button
+                unstyled
+                type="button"
+                className={tw.authNavBtn}
+                style={{ width: "100%" }}
+                disabled={submitting || resendCooldown > 0}
+                onClick={handleResendOtp}
+              >
+                {resendCooldown > 0 ? `إعادة الإرسال بعد ${resendCooldown} ث` : "إعادة إرسال الرمز"}
+              </Button>
+              <button
+                type="button"
+                className={tw.authSubtleLink}
+                style={{ background: "none", border: "none", cursor: "pointer", width: "100%" }}
+                disabled={submitting}
+                onClick={() => {
+                  setShowOtpStep(false);
+                  setOtp("");
+                  setError("");
+                }}
+              >
+                تعديل بيانات التسجيل
+              </button>
+            </>
+          ) : (
+            <>
+              <div className={tw.authSteps}>
             <button
               type="button"
               className={[tw.authStep, step === 1 ? tw.authStepActive : ""].filter(Boolean).join(" ")}
@@ -781,6 +818,8 @@ const Register = () => {
                   {submitting ? "جاري إنشاء الحساب…" : "إنشاء الحساب"}
                 </Button>
               </div>
+            </>
+          )}
             </>
           )}
         </form>

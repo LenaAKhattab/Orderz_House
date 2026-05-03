@@ -15,10 +15,10 @@ async function attachAuthContext(req, res, next) {
     // Use legacy users.role as compatibility anchor (until Phase 3 removes it)
     const legacyUser = await authService.getUserRowByIdForAuthz(req.user.sub);
     if (!legacyUser) {
-      return res.status(401).json({ success: false, message: "Invalid authentication token." });
+      return res.status(401).json({ success: false, message: "رمز الدخول غير صالح.", code: "INVALID_TOKEN" });
     }
     if (!legacyUser.is_active) {
-      return res.status(403).json({ success: false, message: "This account has been disabled." });
+      return res.status(403).json({ success: false, message: "تم تعطيل هذا الحساب.", code: "ACCOUNT_DISABLED" });
     }
 
     const authz = await resolveAuthzContext({ userId: legacyUser.id, legacyRole: legacyUser.role });
@@ -77,10 +77,10 @@ function resolvedRoleNames(req) {
 
 function requireRole(roleName) {
   return (req, res, next) => {
-    if (!req.user) return res.status(401).json({ success: false, message: "Authentication is required." });
+    if (!req.user) return res.status(401).json({ success: false, message: "يجب تسجيل الدخول.", code: "UNAUTHORIZED" });
     const roles = resolvedRoleNames(req);
     if (!roles.includes(roleName)) {
-      return res.status(403).json({ success: false, message: "You are not allowed to access this resource." });
+      return res.status(403).json({ success: false, message: "ليس لديك صلاحية لهذا الإجراء.", code: "FORBIDDEN" });
     }
     return next();
   };
@@ -89,10 +89,10 @@ function requireRole(roleName) {
 function requireAnyRole(roleNames) {
   const allowed = Array.isArray(roleNames) ? roleNames : [];
   return (req, res, next) => {
-    if (!req.user) return res.status(401).json({ success: false, message: "Authentication is required." });
+    if (!req.user) return res.status(401).json({ success: false, message: "يجب تسجيل الدخول.", code: "UNAUTHORIZED" });
     const roles = resolvedRoleNames(req);
     if (!roles.some((r) => allowed.includes(r))) {
-      return res.status(403).json({ success: false, message: "You are not allowed to access this resource." });
+      return res.status(403).json({ success: false, message: "ليس لديك صلاحية لهذا الإجراء.", code: "FORBIDDEN" });
     }
     return next();
   };
@@ -100,11 +100,11 @@ function requireAnyRole(roleNames) {
 
 function requirePermission(permissionKey) {
   return (req, res, next) => {
-    if (!req.user) return res.status(401).json({ success: false, message: "Authentication is required." });
+    if (!req.user) return res.status(401).json({ success: false, message: "يجب تسجيل الدخول.", code: "UNAUTHORIZED" });
     if (req.auth?.isSuperAdmin) return next();
     const keys = Array.isArray(req.auth?.permissions) ? req.auth.permissions : [];
     if (!keys.includes(permissionKey)) {
-      return res.status(403).json({ success: false, message: "You are not allowed to access this resource." });
+      return res.status(403).json({ success: false, message: "ليس لديك صلاحية لهذا الإجراء.", code: "FORBIDDEN" });
     }
     return next();
   };
@@ -113,11 +113,11 @@ function requirePermission(permissionKey) {
 function requireAnyPermission(permissionKeys) {
   const allowed = Array.isArray(permissionKeys) ? permissionKeys : [];
   return (req, res, next) => {
-    if (!req.user) return res.status(401).json({ success: false, message: "Authentication is required." });
+    if (!req.user) return res.status(401).json({ success: false, message: "يجب تسجيل الدخول.", code: "UNAUTHORIZED" });
     if (req.auth?.isSuperAdmin) return next();
     const keys = Array.isArray(req.auth?.permissions) ? req.auth.permissions : [];
     if (!keys.some((k) => allowed.includes(k))) {
-      return res.status(403).json({ success: false, message: "You are not allowed to access this resource." });
+      return res.status(403).json({ success: false, message: "ليس لديك صلاحية لهذا الإجراء.", code: "FORBIDDEN" });
     }
     return next();
   };

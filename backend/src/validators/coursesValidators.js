@@ -9,6 +9,8 @@ const createCourseValidators = [
   body("coverImage").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("youtubeSourceUrl").isString().trim().isLength({ min: 10, max: 2000 }).withMessage("رابط يوتيوب مطلوب."),
   body("isActive").optional().isBoolean(),
+  body("isTestingEnabled").optional().isBoolean(),
+  body("testFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
 ];
 
 const importLessonsValidators = [
@@ -24,6 +26,8 @@ const updateCourseValidators = [
   body("coverImage").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("youtubeSourceUrl").optional().isString().trim().isLength({ min: 10, max: 2000 }),
   body("isActive").optional().isBoolean(),
+  body("isTestingEnabled").optional().isBoolean(),
+  body("testFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
 ];
 
 const updateLessonsValidators = [
@@ -42,12 +46,23 @@ const assignCourseValidators = [
   body("freelancerIds.*").optional().isInt({ min: 1 }),
 ];
 
+const assignOneFreelancerValidators = [
+  ...courseIdParam,
+  body("freelancerUserId").isInt({ min: 1 }).withMessage("معرف المستقل مطلوب."),
+];
+
 const listCoursesValidators = [
   query("q").optional().isString().trim().isLength({ max: 200 }),
   query("isActive").optional().isBoolean(),
 ];
 
 const markLessonCompleteValidators = [...courseIdParam, ...lessonIdParam];
+
+const submitCourseCompletionValidators = [
+  ...courseIdParam,
+  body("auditConfirmed").optional().isBoolean(),
+  body("auditNotes").optional({ nullable: true }).isString().trim().isLength({ max: 8000 }),
+];
 
 module.exports = {
   courseIdParam,
@@ -57,6 +72,8 @@ module.exports = {
   updateCourseValidators,
   updateLessonsValidators,
   assignCourseValidators,
+  assignOneFreelancerValidators,
   listCoursesValidators,
   markLessonCompleteValidators,
+  submitCourseCompletionValidators,
 };

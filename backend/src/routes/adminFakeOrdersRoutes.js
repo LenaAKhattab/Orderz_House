@@ -1,34 +1,26 @@
 const express = require("express");
-const { requireAuth, requireAnyRole } = require("../middleware/rbacMiddleware");
-const validateRequest = require("../middleware/validateRequest");
 const adminFakeOrdersController = require("../controllers/adminFakeOrdersController");
-const {
-  roundIdParam,
-  templateIdParam,
-  createTemplateValidators,
-  updateTemplateValidators,
-  createRoundValidators,
-  listRoundsValidators,
-  listTemplatesValidators,
-  updateSettingsValidators,
-} = require("../validators/fakeOrdersValidators");
+const { requireAuth, requireAnyRole } = require("../middleware/rbacMiddleware");
 
 const router = express.Router();
 
-router.use(requireAuth, requireAnyRole(["admin", "super_admin"]));
+router.use(requireAuth, requireAnyRole(["super_admin", "admin"]));
 
-router.post("/fake-orders/templates", createTemplateValidators, validateRequest, adminFakeOrdersController.createTemplate);
-router.get("/fake-orders/templates", listTemplatesValidators, validateRequest, adminFakeOrdersController.listTemplates);
-router.patch("/fake-orders/templates/:id", updateTemplateValidators, validateRequest, adminFakeOrdersController.updateTemplate);
-router.delete("/fake-orders/templates/:id", templateIdParam, validateRequest, adminFakeOrdersController.deactivateTemplate);
+router.get("/training-orders/settings", adminFakeOrdersController.getTrainingSettings);
+router.patch("/training-orders/settings", adminFakeOrdersController.patchTrainingSettings);
 
-router.get("/fake-orders/settings", adminFakeOrdersController.getSettings);
-router.patch("/fake-orders/settings", updateSettingsValidators, validateRequest, adminFakeOrdersController.updateSettings);
+router.get("/training-orders/templates", adminFakeOrdersController.listTemplates);
+router.post("/training-orders/templates", adminFakeOrdersController.createTemplate);
+router.get("/training-orders/templates/:id", adminFakeOrdersController.getTemplate);
+router.patch("/training-orders/templates/:id", adminFakeOrdersController.patchTemplate);
+router.delete("/training-orders/templates/:id", adminFakeOrdersController.removeTemplate);
 
-router.post("/fake-orders/rounds", createRoundValidators, validateRequest, adminFakeOrdersController.createRound);
-router.get("/fake-orders/rounds", listRoundsValidators, validateRequest, adminFakeOrdersController.listRounds);
-router.get("/fake-orders/rounds/:id", roundIdParam, validateRequest, adminFakeOrdersController.getRound);
-router.post("/fake-orders/rounds/:id/stop", roundIdParam, validateRequest, adminFakeOrdersController.stopRound);
-router.get("/fake-orders/rounds/:id/analytics", roundIdParam, validateRequest, adminFakeOrdersController.roundAnalytics);
+router.get("/training-orders/rounds", adminFakeOrdersController.listRounds);
+router.post("/training-orders/rounds/start", adminFakeOrdersController.startTrainingRound);
+router.post("/training-orders/rounds/:id/cancel", adminFakeOrdersController.cancelRound);
+
+router.get("/training-orders/applications/summary", adminFakeOrdersController.listApplicationsSummary);
+router.get("/training-orders/applications", adminFakeOrdersController.listApplications);
+router.get("/training-orders/fake-orders/:fakeOrderId/applications", adminFakeOrdersController.listApplicationsByFakeOrder);
 
 module.exports = router;

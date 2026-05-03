@@ -9,7 +9,7 @@ async function getUserRoles(userId) {
     `SELECT r.name, r.display_name, r.is_system
      FROM user_roles ur
      JOIN roles r ON r.id = ur.role_id
-     WHERE ur.user_id = $1
+     WHERE ur.user_id = $1::bigint
      ORDER BY r.is_system DESC, r.name ASC`,
     [userId],
   );
@@ -26,7 +26,7 @@ async function getUserPermissionKeys(userId) {
      FROM user_roles ur
      JOIN role_permissions rp ON rp.role_id = ur.role_id
      JOIN permissions p ON p.id = rp.permission_id
-     WHERE ur.user_id = $1
+     WHERE ur.user_id = $1::bigint
      ORDER BY p.key ASC`,
     [userId],
   );
@@ -72,7 +72,7 @@ async function ensureUserRole({ userId, roleName }) {
   try {
     await pool.query(
       `INSERT INTO user_roles (user_id, role_id)
-       SELECT $1, r.id FROM roles r WHERE r.name = $2
+       SELECT $1::bigint, r.id FROM roles r WHERE r.name = $2::text
        ON CONFLICT (user_id, role_id) DO NOTHING`,
       [userId, roleName],
     );
