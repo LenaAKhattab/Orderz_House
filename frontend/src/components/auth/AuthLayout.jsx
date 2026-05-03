@@ -1,11 +1,11 @@
 import AuthVisualPanel from "./AuthVisualPanel";
-import * as tw from "./authTw";
+import "./auth-pages.css";
 
 const AuthLayout = ({ children, visualContent }) => {
   return (
-    <main className={tw.authPage}>
-      <section className={`${tw.authCardShell} mx-auto`}>
-        <div className={tw.authCard}>
+    <main className="oh-auth-page">
+      <section className="oh-auth-shell">
+        <div className="oh-auth-card">
           <AuthVisualPanel {...visualContent} />
           {children}
         </div>

@@ -14,6 +14,32 @@
   --radius: 12px;
   --ease-premium: cubic-bezier(0.33, 1, 0.68, 1);
   --nav-morph-duration: 0.7s;
+  /* Dashboard: ألوان مشتقة من هوية المشروع (أزرق داكن + فيروزي + لمسة برتقال من شارات الواجهة) */
+  --dash-hero-a: #1a263f;
+  --dash-hero-b: #2f3b65;
+  --dash-hero-c: #3d4f78;
+  --dash-hero-d: #2f5c6a;
+  --dash-shadow-hero: 0 22px 50px -18px rgba(24, 36, 64, 0.42);
+  /* هالة خارج البطاقة (فيروزي + برتقال خفيف) — لا تُقص بـ overflow */
+  --dash-hero-bloom: 0 0 100px 4px rgba(118, 207, 223, 0.12), -60px 0 90px -18px rgba(118, 207, 223, 0.2),
+    60px 0 90px -18px rgba(240, 141, 57, 0.1);
+  --dash-shadow-aside: 0 16px 40px -22px rgba(24, 36, 64, 0.16);
+  --dash-list-hover-line: rgba(47, 59, 101, 0.35);
+  --dash-list-hover-glow: rgba(24, 36, 64, 0.14);
+  --dash-orange-mid: #e8873a;
+  --dash-orange-deep: #c56a1c;
+  /* خلفية مسار لوحة التحكم — نفسها على عرض الصفحة لتجنب خط عمودي على يمين/يسار العمود */
+  --dash-shell-bg: linear-gradient(180deg, #f5f7fb 0%, #eef2f8 52%, #f5f7fb 100%);
+  /* يبدأ من الأبيض تحت الهيدر ثم يذوب إلى لون الصفحة — يخفّف الخط الأفقي بين الهيدر والمحتوى */
+  --dash-shell-bg-top-fade: linear-gradient(
+    180deg,
+    #ffffff 0px,
+    #fafbfd 56px,
+    #f1f5fb 140px,
+    #e8edf5 260px,
+    #eef2f8 55%,
+    #f3f6fa 100%
+  );
 }
 
 @theme {

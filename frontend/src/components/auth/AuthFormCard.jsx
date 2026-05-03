@@ -13,10 +13,15 @@ const AuthFormCard = ({
   footerLinkTo,
 }) => {
   return (
-    <section className={tw.authFormPanel}>
-      <div className={tw.authFormHeader}>
-        <h1 className={tw.authFormTitle}>{title}</h1>
-        <p className={tw.authFormSubtitle}>{subtitle}</p>
+    <section className="oh-auth-form-panel">
+      <div className="oh-auth-brand">
+        <span className="oh-auth-brand__mark" aria-hidden />
+        <span className="oh-auth-brand__text">أوردرز هاوس</span>
+      </div>
+
+      <div className="oh-auth-form-header">
+        <h1 className="oh-auth-form-title">{title}</h1>
+        <p className="oh-auth-form-subtitle">{subtitle}</p>
         {helperLinkText ? (
           <Link to={helperLinkTo} className={tw.authSubtleLink}>
             {helperLinkText}
@@ -27,7 +32,7 @@ const AuthFormCard = ({
 
       {children}
 
-      <p className={tw.authFooterNote}>
+      <p className="oh-auth-footer-note">
         {footerText}{" "}
         <Link to={footerLinkTo} className={tw.authInlineLink}>
           {footerLinkText}

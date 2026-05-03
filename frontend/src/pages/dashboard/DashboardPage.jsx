@@ -387,13 +387,17 @@ function FreelancerMyOrders() {
 
   return (
     <div className="dash oh-my-orders-page">
-      <header className="oh-my-orders-header-plain">
-        <div>
-          <h1 className="oh-orders-sidebar-title oh-orders-sidebar-title--spaced">طلباتي</h1>
+      <header className="dash-hero dash-hero--elevated oh-my-orders-page__hero">
+        <div className="dash-hero__copy">
+          <p className="dash-hero__kicker">لوحة المستقل</p>
+          <h1 className="dash-hero__title oh-orders-sidebar-title oh-orders-sidebar-title--spaced">طلباتي</h1>
+          <p className="dash-hero__subtitle">
+            طلباتك المسندة بعد الموافقة عليها: راقب الحالة، التسليم، ومتطلبات التعديل من مكان واحد.
+          </p>
         </div>
       </header>
 
-      <div className="dash-grid">
+      <div className="dash-grid oh-my-orders-page__grid">
         <Section title={null}>
           {busy ? (
             <AssignedOrderListSkeleton count={4} />

@@ -13,7 +13,9 @@ const PublicLayout = () => {
       className={
         isHome
           ? "flex min-h-screen flex-col bg-white bg-[radial-gradient(120%_85%_at_50%_-25%,rgba(47,59,101,0.07),transparent_55%),radial-gradient(85%_55%_at_95%_32%,rgba(118,207,223,0.07),transparent_52%),radial-gradient(75%_45%_at_5%_58%,rgba(118,207,223,0.05),transparent_50%)]"
-          : "flex min-h-screen flex-col"
+          : isAuthPage
+            ? "flex min-h-screen flex-col bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f8_45%,#f5f7fb_100%)]"
+            : "flex min-h-screen flex-col"
       }
     >
       <Navbar />
