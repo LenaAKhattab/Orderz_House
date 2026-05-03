@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
+import DashboardHomeAside from "../../components/dashboard/DashboardHomeAside";
 import { useClientCreateOrderModal } from "../../context/ClientCreateOrderModalContext";
 import { listClientMyOrdersRequest, listMyNotificationsRequest } from "../../services/api";
 import { orderStatusLabelAr } from "../../utils/orderFlowUi";
@@ -122,6 +123,23 @@ export default function ClientDashboardHome({ user }) {
 
   const recentOrders = useMemo(() => sortByRecent(orders).slice(0, 5), [orders]);
 
+  const completedCount = useMemo(
+    () => orders.filter((o) => String(o?.orderStatus) === "completed").length,
+    [orders],
+  );
+
+  const profilePct = useMemo(() => {
+    if (orders.length === 0) return 14;
+    return Math.round((completedCount / orders.length) * 100);
+  }, [orders.length, completedCount]);
+
+  const userInitials = useMemo(() => {
+    const n = fullNameAr(user) || user?.email || "?";
+    const parts = n.trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return n.slice(0, 2).toUpperCase();
+  }, [user]);
+
   const financial = useMemo(() => {
     let totalPaid = 0;
     let pendingPayment = 0;
@@ -178,7 +196,7 @@ export default function ClientDashboardHome({ user }) {
 
   return (
     <div className="dash" dir="rtl">
-      <header className="dash-hero">
+      <header className="dash-hero dash-hero--elevated">
         <div className="dash-hero__copy">
           <p className="dash-hero__kicker">لوحة العميل</p>
           <h1 className="dash-hero__title oh-orders-sidebar-title">مرحباً، {name}</h1>
@@ -209,7 +227,9 @@ export default function ClientDashboardHome({ user }) {
         </div>
       ) : null}
 
-      <div className="dash-grid">
+      <div className="dash-layout">
+        <div className="dash-layout__main">
+          <div className="dash-grid">
         <Section title="طلبات تحتاج انتباهك" actionLabel="كل الطلبات" actionTo="/dashboard/client/my-orders">
           {attentionOrders.length === 0 ? (
             <p className="help" style={{ margin: 0 }}>
@@ -302,13 +322,20 @@ export default function ClientDashboardHome({ user }) {
             </ul>
           )}
         </Section>
-      </div>
+          </div>
+        </div>
 
-      <style>{`
-        .dash-home-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-        .dash-home-list__item { margin: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); }
-        .dash-home-list__row { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
-      `}</style>
+        <DashboardHomeAside
+          variant="client"
+          userInitials={userInitials}
+          profilePct={profilePct}
+          client={{
+            orderTotal: orders.length,
+            pendingPayment: financial.pendingPayment,
+            totalPaidFormatted: `${formatMoney(financial.totalPaid)} JOD`,
+          }}
+        />
+      </div>
     </div>
   );
 }

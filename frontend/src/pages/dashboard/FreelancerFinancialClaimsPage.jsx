@@ -51,6 +51,16 @@ function mapStatusAr(status) {
   return s || "—";
 }
 
+function statusBadgeClass(status) {
+  const s = String(status || "");
+  if (s === "paid") return "freelancer-claims-page__pill freelancer-claims-page__pill--success";
+  if (s === "pending") return "freelancer-claims-page__pill freelancer-claims-page__pill--warning";
+  if (s === "accepted") return "freelancer-claims-page__pill freelancer-claims-page__pill--info";
+  if (["rejected", "frozen"].includes(s)) return "freelancer-claims-page__pill freelancer-claims-page__pill--danger";
+  if (s === "requires_in_person_review") return "freelancer-claims-page__pill freelancer-claims-page__pill--muted";
+  return "freelancer-claims-page__pill";
+}
+
 function mapPayoutAr(status) {
   const s = String(status || "");
   if (s === "missing_completion_date") return "بدون تاريخ إنجاز";
@@ -173,6 +183,16 @@ export default function FreelancerFinancialClaimsPage() {
 
   const grouped = useMemo(() => groupClaims(claims), [claims]);
 
+  const summary = useMemo(() => {
+    let pending = 0;
+    let paid = 0;
+    for (const c of claims) {
+      if (c.status === "pending") pending += 1;
+      if (c.status === "paid" || c.payoutStatus === "paid") paid += 1;
+    }
+    return { total: claims.length, pending, paid };
+  }, [claims]);
+
   const canSubmitClaim = useMemo(() => {
     if (submitting) return false;
     if (mode === "manual") {
@@ -248,57 +268,129 @@ export default function FreelancerFinancialClaimsPage() {
   };
 
   return (
-    <section className="container page-content dash-shell">
-      <div className="dash">
-        <header className="dash-hero dash-hero--compact">
+    <div className="container page-content dash-shell freelancer-claims-page" dir="rtl">
+      <div className="dash freelancer-claims-page__root">
+        <header className="dash-hero dash-hero--elevated">
           <div className="dash-hero__copy">
             <p className="dash-hero__kicker">لوحة المستقل</p>
             <h1 className="dash-hero__title">المطالبات المالية</h1>
-            <p className="dash-hero__subtitle">أنشئ مطالبة جديدة، وتابع الحالات ونافذة الاستحقاق والمدفوع والمتبقي.</p>
-          </div>
-          <div className="dash-hero__badges">
-            <button type="button" className="btn btn-primary" onClick={() => setCreateOpen(true)}>
-              مطالبة جديدة
-            </button>
+            <p className="dash-hero__subtitle">
+              أنشئ مطالبة جديدة، وتابع المراجعة، ونافذة الاستحقاق، والمبالغ المدفوعة والمتبقية لكل طلب.
+            </p>
+            <div className="freelancer-claims-page__hero-actions">
+              <button type="button" className="btn btn-primary" onClick={() => setCreateOpen(true)}>
+                مطالبة جديدة
+              </button>
+            </div>
           </div>
         </header>
 
-        {busy ? <div className="card">جارٍ التحميل...</div> : null}
+        <div className="freelancer-claims-page__stats" aria-label="ملخص المطالبات">
+          <div className="freelancer-claims-page__stat">
+            <span className="freelancer-claims-page__stat-label">إجمالي المطالبات</span>
+            <strong className="freelancer-claims-page__stat-value">{busy ? "—" : summary.total}</strong>
+          </div>
+          <div className="freelancer-claims-page__stat freelancer-claims-page__stat--accent">
+            <span className="freelancer-claims-page__stat-label">قيد المراجعة</span>
+            <strong className="freelancer-claims-page__stat-value">{busy ? "—" : summary.pending}</strong>
+          </div>
+          <div className="freelancer-claims-page__stat freelancer-claims-page__stat--muted">
+            <span className="freelancer-claims-page__stat-label">مدفوعة</span>
+            <strong className="freelancer-claims-page__stat-value">{busy ? "—" : summary.paid}</strong>
+          </div>
+        </div>
 
-        {!busy &&
+        {busy ? (
+          <section className="dash-section">
+            <div className="dash-section__body">
+              <p className="help" style={{ margin: 0 }}>
+                جارٍ تحميل المطالبات…
+              </p>
+            </div>
+          </section>
+        ) : claims.length === 0 ? (
+          <div className="dash-empty freelancer-claims-page__empty-global">
+            <div className="dash-empty__icon" aria-hidden="true">
+              ◌
+            </div>
+            <div className="dash-empty__copy">
+              <h3 className="dash-empty__title">لا توجد مطالبات بعد</h3>
+              <p className="dash-empty__subtitle">أنشئ أول مطالبة مالية لتظهر هنا ضمن المجموعات حسب الحالة.</p>
+            </div>
+            <button type="button" className="btn btn-primary dash-empty__action" onClick={() => setCreateOpen(true)}>
+              مطالبة جديدة
+            </button>
+          </div>
+        ) : (
           Object.entries(grouped).map(([groupKey, items]) => (
-            <section key={groupKey} className="dash-section">
+            <section key={groupKey} className="dash-section freelancer-claims-page__group">
               <div className="dash-section__head">
-                <h2 className="dash-section__title">{claimGroupTitle(groupKey)} ({items.length})</h2>
+                <h2 className="dash-section__title">
+                  {claimGroupTitle(groupKey)} <span className="freelancer-claims-page__count">({items.length})</span>
+                </h2>
               </div>
-              {items.length === 0 ? (
-                <div className="dash-empty">
-                  <div className="dash-empty__copy">
-                    <h3 className="dash-empty__title">لا توجد عناصر</h3>
+              <div className="dash-section__body freelancer-claims-page__group-body">
+                {items.length === 0 ? (
+                  <div className="freelancer-claims-page__group-empty help">لا توجد عناصر في هذه المجموعة.</div>
+                ) : (
+                  <div className="cards-grid freelancer-claims-page__cards">
+                    {items.map((claim) => (
+                      <article key={claim.id} className="card freelancer-claims-page__claim-card">
+                        <div className="freelancer-claims-page__claim-head">
+                          <h3 className="freelancer-claims-page__claim-title">{claim.requestTitle || "—"}</h3>
+                          <span className={statusBadgeClass(claim.status)}>{mapStatusAr(claim.status)}</span>
+                        </div>
+                        <dl className="freelancer-claims-page__dl">
+                          <div className="freelancer-claims-page__dl-row">
+                            <dt>رقم الطلب</dt>
+                            <dd dir="ltr">{claim.orderNumber || "—"}</dd>
+                          </div>
+                          <div className="freelancer-claims-page__dl-row">
+                            <dt>تاريخ الإنجاز الفعلي</dt>
+                            <dd>{formatDate(claim.actualCompletionDate)}</dd>
+                          </div>
+                          <div className="freelancer-claims-page__dl-row">
+                            <dt>تاريخ التقديم</dt>
+                            <dd>{formatDate(claim.submittedAt)}</dd>
+                          </div>
+                          <div className="freelancer-claims-page__dl-row">
+                            <dt>نافذة الاستحقاق</dt>
+                            <dd>{payoutWindowText(claim)}</dd>
+                          </div>
+                          <div className="freelancer-claims-page__dl-row">
+                            <dt>حالة الاستحقاق</dt>
+                            <dd>{mapPayoutAr(claim.payoutStatus)}</dd>
+                          </div>
+                          <div className="freelancer-claims-page__dl-row freelancer-claims-page__dl-row--money">
+                            <dt>السعر الإجمالي</dt>
+                            <dd dir="ltr">{formatMoney(claim.totalPriceSnapshot)}</dd>
+                          </div>
+                          <div className="freelancer-claims-page__dl-row freelancer-claims-page__dl-row--money">
+                            <dt>مستحق المستقل</dt>
+                            <dd dir="ltr">{formatMoney(claim.userAmountSnapshot)}</dd>
+                          </div>
+                          <div className="freelancer-claims-page__dl-row freelancer-claims-page__dl-row--money">
+                            <dt>المدفوع</dt>
+                            <dd dir="ltr">{formatMoney(claim.paidAmount)}</dd>
+                          </div>
+                          <div className="freelancer-claims-page__dl-row freelancer-claims-page__dl-row--money">
+                            <dt>المتبقي</dt>
+                            <dd dir="ltr">{formatMoney(claim.remainingAmount)}</dd>
+                          </div>
+                        </dl>
+                        {claim.adminNote ? (
+                          <div className="freelancer-claims-page__note">
+                            <strong>ملاحظة الإدارة:</strong> {claim.adminNote}
+                          </div>
+                        ) : null}
+                      </article>
+                    ))}
                   </div>
-                </div>
-              ) : (
-                <div className="cards-grid cards-grid--max-3">
-                  {items.map((claim) => (
-                    <article key={claim.id} className="card">
-                      <h3 style={{ marginTop: 0 }}>{claim.requestTitle}</h3>
-                      <p>رقم الطلب: {claim.orderNumber}</p>
-                      <p>الحالة: {mapStatusAr(claim.status)}</p>
-                      <p>تاريخ الإنجاز الفعلي: {formatDate(claim.actualCompletionDate)}</p>
-                      <p>تاريخ التقديم: {formatDate(claim.submittedAt)}</p>
-                      <p>نافذة الاستحقاق: {payoutWindowText(claim)}</p>
-                      <p>حالة الاستحقاق: {mapPayoutAr(claim.payoutStatus)}</p>
-                      <p>السعر الإجمالي: {formatMoney(claim.totalPriceSnapshot)}</p>
-                      <p>مستحق المستقل: {formatMoney(claim.userAmountSnapshot)}</p>
-                      <p>المدفوع: {formatMoney(claim.paidAmount)}</p>
-                      <p>المتبقي: {formatMoney(claim.remainingAmount)}</p>
-                      {claim.adminNote ? <p>ملاحظة الإدارة: {claim.adminNote}</p> : null}
-                    </article>
-                  ))}
-                </div>
-              )}
+                )}
+              </div>
             </section>
-          ))}
+          ))
+        )}
       </div>
 
       {createOpen ? (
@@ -483,6 +575,6 @@ export default function FreelancerFinancialClaimsPage() {
           </div>
         </div>
       ) : null}
-    </section>
+    </div>
   );
 }

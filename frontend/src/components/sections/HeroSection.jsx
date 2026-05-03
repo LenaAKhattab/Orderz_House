@@ -1,16 +1,33 @@
+import { useId } from "react";
 import { Link } from "react-router-dom";
 import "./home-hero-ref.css";
 
-function IconShield() {
+/** Filled shield + check (reference: centered feature card, illustration-style). */
+function IconShieldIllustrated({ size = 36 }) {
+  const uid = useId().replace(/:/g, "");
+  const gradId = `hero-shield-grad-${uid}`;
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id={gradId} x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#166534" />
+          <stop offset="1" stopColor="#14532d" />
+        </linearGradient>
+      </defs>
       <path
         d="M12 3 4 6v6c0 4.5 3.5 8.5 8 9 4.5-.5 8-4.5 8-9V6l-8-3Z"
-        stroke="currentColor"
-        strokeWidth="1.65"
+        fill={`url(#${gradId})`}
+        stroke="rgba(20, 83, 45, 0.25)"
+        strokeWidth="0.35"
         strokeLinejoin="round"
       />
-      <path d="m9.2 12.2 1.9 1.9 4.1-4.1" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="m9.2 12.2 1.9 1.9 4.1-4.1"
+        stroke="#22c55e"
+        strokeWidth="1.85"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -46,13 +63,13 @@ function FloatCardTopLeft() {
 
 function FloatCardBottomLeft() {
   return (
-    <>
-      <div className="home-hero__float-icon" aria-hidden="true">
-        <IconShield />
+    <div className="home-hero__float-bl-inner" dir="rtl">
+      <div className="home-hero__float-bl-icon" aria-hidden="true">
+        <IconShieldIllustrated size={40} />
       </div>
-      <p className="home-hero__float-kicker">آمن ومنظم</p>
-      <p className="home-hero__float-desc">تابع طلبك من الإنشاء حتى التسليم في مكان واحد.</p>
-    </>
+      <p className="home-hero__float-bl-title">آمن ومنظم</p>
+      <p className="home-hero__float-bl-desc">تابع طلبك من الإنشاء حتى التسليم في مكان واحد.</p>
+    </div>
   );
 }
 
@@ -91,6 +108,9 @@ const HeroSection = () => {
       <div className="home-hero__bg" aria-hidden="true" />
       <div className="home-hero__glow home-hero__glow--l" aria-hidden="true" />
       <div className="home-hero__glow home-hero__glow--r" aria-hidden="true" />
+      <div className="home-hero__glow home-hero__glow--accent home-hero__glow--orange" aria-hidden="true" />
+      <div className="home-hero__glow home-hero__glow--accent home-hero__glow--green" aria-hidden="true" />
+      <div className="home-hero__glow home-hero__glow--accent home-hero__glow--purple" aria-hidden="true" />
 
       <div className="container home-hero__inner">
         <div className="home-hero__ref-stage">
