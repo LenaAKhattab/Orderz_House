@@ -7,9 +7,11 @@ const {
   listOrdersValidators,
   createInternalOrderValidators,
   orderIdParam,
+  clientOrderClaimIdBodyValidators,
   clientOrderRevisionNoteValidators,
   clientOrderFileDownloadParams,
   freelancerUserIdParam,
+  clientOrderBidIdParamValidators,
 } = require("../validators/ordersValidators");
 
 const router = express.Router();
@@ -36,8 +38,27 @@ router.post(
 );
 
 router.patch("/orders/:id/activate", orderIdParam, validateRequest, adminOrdersController.activateArchivedOrder);
+router.get(
+  "/orders/:id/bids",
+  orderIdParam,
+  validateRequest,
+  adminOrdersController.listInternalOrderBids,
+);
+router.post(
+  "/orders/:id/bids/:bidId/approve",
+  orderIdParam,
+  ...clientOrderBidIdParamValidators,
+  validateRequest,
+  adminOrdersController.approveInternalPricedBid,
+);
 router.get("/orders/:id/claims", orderIdParam, validateRequest, adminOrdersController.listOrderClaims);
-router.patch("/orders/:id/accept", orderIdParam, validateRequest, adminOrdersController.acceptTakenOrder);
+router.patch(
+  "/orders/:id/accept",
+  orderIdParam,
+  ...clientOrderClaimIdBodyValidators,
+  validateRequest,
+  adminOrdersController.acceptTakenOrder,
+);
 router.post("/orders/:id/delivery/approve", orderIdParam, validateRequest, adminOrdersController.approveInternalDelivery);
 router.post(
   "/orders/:id/delivery/revision",

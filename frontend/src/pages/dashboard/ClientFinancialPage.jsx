@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import * as tw from "../../components/auth/authTw";
 import { useToast } from "../../components/ui/toastContext";
 import { listClientMyOrdersRequest } from "../../services/api";
-import { orderStatusLabelAr } from "../../utils/orderFlowUi";
 
 function paymentStatusAr(s) {
   if (s === "not_required") return "لا يتطلب دفعاً حالياً";

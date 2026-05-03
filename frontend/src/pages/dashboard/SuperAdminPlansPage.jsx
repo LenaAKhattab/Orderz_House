@@ -21,6 +21,7 @@ function normalizeCreatePayload(form) {
     durationDays: Number(form.durationDays),
     priceJod: form.priceJod === "" ? null : Number(form.priceJod),
     requiresCompanyVisit: Boolean(form.requiresCompanyVisit),
+    selfSubscribeAllowed: Boolean(form.selfSubscribeAllowed),
     isActive: Boolean(form.isActive),
     isVisible: Boolean(form.isVisible),
     sortOrder: Number(form.sortOrder),
@@ -40,6 +41,7 @@ const SuperAdminPlansPage = () => {
     durationDays: "30",
     priceJod: "",
     requiresCompanyVisit: false,
+    selfSubscribeAllowed: false,
     isActive: true,
     isVisible: true,
     sortOrder: "0",
@@ -78,6 +80,7 @@ const SuperAdminPlansPage = () => {
         durationDays: "30",
         priceJod: "",
         requiresCompanyVisit: false,
+        selfSubscribeAllowed: false,
         isActive: true,
         isVisible: true,
         sortOrder: "0",
@@ -235,6 +238,16 @@ const SuperAdminPlansPage = () => {
             <span>مرئية</span>
           </label>
 
+          <label className="auth-field auth-field--checkbox">
+            <input
+              type="checkbox"
+              checked={form.selfSubscribeAllowed}
+              onChange={(e) => setForm((v) => ({ ...v, selfSubscribeAllowed: e.target.checked }))}
+              disabled={submitting}
+            />
+            <span>متاحة للشراء الذاتي (السوق)</span>
+          </label>
+
           <Button
             type="button"
             className="auth-submit-btn"
@@ -260,6 +273,7 @@ const SuperAdminPlansPage = () => {
                 <p>السعر: {p.priceJod == null ? "—" : `${Number(p.priceJod).toLocaleString("en-US")} د.أ`}</p>
                 <p>زيارة الشركة: {p.requiresCompanyVisit ? "نعم" : "لا"}</p>
                 <p>الحالة: {p.isActive ? "فعّالة" : "غير فعّالة"} / {p.isVisible ? "مرئية" : "مخفية"}</p>
+                <p>شراء ذاتي: {p.selfSubscribeAllowed ? "نعم" : "لا"}</p>
                 <div className="auth-actions-row auth-actions-row--split">
                   <Button type="button" variant="secondary" disabled={submitting} onClick={() => toggle(p, "isActive")}>
                     {p.isActive ? "تعطيل" : "تفعيل"}
@@ -269,6 +283,9 @@ const SuperAdminPlansPage = () => {
                   </Button>
                   <Button type="button" variant="secondary" disabled={submitting} onClick={() => toggle(p, "requiresCompanyVisit")}>
                     {p.requiresCompanyVisit ? "إلغاء الزيارة" : "يتطلب زيارة"}
+                  </Button>
+                  <Button type="button" variant="secondary" disabled={submitting} onClick={() => toggle(p, "selfSubscribeAllowed")}>
+                    {p.selfSubscribeAllowed ? "إيقاف الشراء الذاتي" : "تفعيل الشراء الذاتي"}
                   </Button>
                   <Button type="button" variant="secondary" disabled={submitting} onClick={() => softDelete(p)}>
                     حذف

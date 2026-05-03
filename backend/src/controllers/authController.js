@@ -68,7 +68,8 @@ const resendRegisterOtp = async (req, res, next) => {
     await authOtpService.resendRegistrationOtp(req.body.email);
     return res.status(200).json({
       success: true,
-      message: "تم إرسال رمز تحقق جديد إلى بريدك.",
+      message:
+        "إذا كان هناك حساب بانتظار تأكيد البريد الإلكتروني، سيتم إرسال رمز التحقق.",
     });
   } catch (error) {
     return next(error);

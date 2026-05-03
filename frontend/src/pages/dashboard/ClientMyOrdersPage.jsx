@@ -10,6 +10,13 @@ import {
 } from "../../services/api";
 import ClientOrderCardCompact from "../../components/orders/ClientOrderCardCompact";
 import { OrderCardsGridSkeleton } from "../../components/ui/Skeleton";
+import {
+  getBidCheckoutCancelledToast,
+  getBidPaymentConfirmFailureToast,
+  getFixedCheckoutCancelledToast,
+  getFixedPaymentConfirmFailureToast,
+  parseConfirmPaymentAxiosError,
+} from "../../utils/clientMyOrdersPaymentReturn";
 
 export default function ClientMyOrdersPage() {
   const { push } = useToast();
@@ -26,56 +33,6 @@ export default function ClientMyOrdersPage() {
     const dir = String(document.documentElement?.dir || "").toLowerCase();
     return lang.startsWith("ar") || dir === "rtl";
   }, []);
-  const paymentFailureMessage = useMemo(
-    () =>
-      isArabicUi
-        ? "فشل إنشاء المشروع لأن عملية الدفع لم تكتمل. يرجى المحاولة مرة أخرى."
-        : "Project creation failed because the payment was not completed. Please try again.",
-    [isArabicUi],
-  );
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search || "");
-    const paid = params.get("paid");
-    const cancelled = params.get("cancelled");
-    const orderId = params.get("orderId");
-    const bidId = params.get("bidId");
-    if (paid === "1") {
-      (async () => {
-        try {
-          if (orderId && bidId) {
-            await confirmClientOrderBidPaidRequest(orderId, bidId);
-          } else if (orderId) {
-            await confirmClientFixedOrderPaidRequest(orderId);
-          }
-          push({ type: "success", title: "تم الدفع بنجاح", message: "تم إنشاء/تفعيل الطلب وإتاحته بحسب نوعه." });
-        } catch {
-          if (orderId && !bidId) {
-            try {
-              await cancelClientFixedOrderPaymentRequest(orderId);
-            } catch {
-              // best-effort cleanup
-            }
-          }
-          push({ type: "error", title: isArabicUi ? "فشل إنشاء المشروع" : "Project creation failed", message: paymentFailureMessage });
-        } finally {
-          navigate(location.pathname, { replace: true });
-        }
-      })();
-    } else if (cancelled === "1") {
-      (async () => {
-        if (orderId && !bidId) {
-          try {
-            await cancelClientFixedOrderPaymentRequest(orderId);
-          } catch {
-            // best-effort cleanup
-          }
-        }
-        push({ type: "error", title: isArabicUi ? "فشل إنشاء المشروع" : "Project creation failed", message: paymentFailureMessage });
-        navigate(location.pathname, { replace: true });
-      })();
-    }
-  }, [isArabicUi, location.pathname, location.search, navigate, paymentFailureMessage, push]);
 
   const load = useCallback(async () => {
     const res = await listClientMyOrdersRequest({ limit: 50, offset: 0 });
@@ -114,6 +71,74 @@ export default function ClientMyOrdersPage() {
       // ignore background poll errors
     }
   }, [load]);
+
+  /** Stripe success/cancel return URLs: fixed-order vs bid-selection are handled separately (bid errors never run fixed pay-cancel). */
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || "");
+    const paid = params.get("paid");
+    const cancelled = params.get("cancelled");
+    const orderId = params.get("orderId");
+    const bidId = params.get("bidId");
+    if (paid === "1") {
+      (async () => {
+        try {
+          if (orderId && bidId) {
+            await confirmClientOrderBidPaidRequest(orderId, bidId);
+            push({
+              type: "success",
+              title: isArabicUi ? "تم الدفع بنجاح" : "Payment successful",
+              message: isArabicUi
+                ? "تم تأكيد دفع العرض وربطه بالطلب."
+                : "Bid payment was confirmed successfully.",
+            });
+          } else if (orderId) {
+            await confirmClientFixedOrderPaidRequest(orderId);
+            push({
+              type: "success",
+              title: isArabicUi ? "تم الدفع بنجاح" : "Payment successful",
+              message: isArabicUi
+                ? "تم إنشاء/تفعيل الطلب وإتاحته بحسب نوعه."
+                : "Your order was activated according to its type.",
+            });
+          }
+        } catch (e) {
+          if (orderId && bidId) {
+            const toast = getBidPaymentConfirmFailureToast(isArabicUi, parseConfirmPaymentAxiosError(e));
+            push({ type: "error", title: toast.title, message: toast.message });
+          } else if (orderId) {
+            try {
+              await cancelClientFixedOrderPaymentRequest(orderId);
+            } catch {
+              // best-effort cleanup — fixed-order unpaid draft only
+            }
+            const toast = getFixedPaymentConfirmFailureToast(isArabicUi);
+            push({ type: "error", title: toast.title, message: toast.message });
+          }
+        } finally {
+          navigate(location.pathname, { replace: true });
+          void loadSilent();
+        }
+      })();
+    } else if (cancelled === "1") {
+      (async () => {
+        if (orderId && !bidId) {
+          try {
+            await cancelClientFixedOrderPaymentRequest(orderId);
+          } catch {
+            // best-effort cleanup
+          }
+        }
+        if (orderId && bidId) {
+          const toast = getBidCheckoutCancelledToast(isArabicUi);
+          push({ type: "error", title: toast.title, message: toast.message });
+        } else {
+          const toast = getFixedCheckoutCancelledToast(isArabicUi);
+          push({ type: "error", title: toast.title, message: toast.message });
+        }
+        navigate(location.pathname, { replace: true });
+      })();
+    }
+  }, [isArabicUi, location.pathname, location.search, loadSilent, navigate, push]);
 
   useEffect(() => {
     if (busy) return undefined;

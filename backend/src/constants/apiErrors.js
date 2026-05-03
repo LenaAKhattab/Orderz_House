@@ -15,6 +15,7 @@ function defaultCodeForHttpStatus(statusCode) {
   if (s === 404) return "NOT_FOUND";
   if (s === 409) return "CONFLICT";
   if (s === 429) return "RATE_LIMITED";
+  if (s === 402) return "PAYMENT_NOT_COMPLETED";
   if (s === 502 || s === 503) return "SERVICE_UNAVAILABLE";
   if (s >= 500) return "INTERNAL_ERROR";
   return "ERROR";

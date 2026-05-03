@@ -68,7 +68,7 @@ const Orders = () => {
           setOrders(res?.data?.orders || []);
           setPagination(res?.data?.pagination || { page, limit: 12, total: 0, totalPages: 1 });
         }
-      } catch (e) {
+      } catch {
         if (!cancelled) {
           const msg = "تعذر تحميل الطلبات حاليًا. يرجى المحاولة مرة أخرى.";
           setLoadError(msg);

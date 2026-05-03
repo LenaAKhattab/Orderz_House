@@ -87,7 +87,9 @@ const createInternalOrderValidators = [
     .custom((value, { req }) => {
       const type = String(req.body.projectType || "").trim();
       if (type !== "bidding") return true;
-      if (value === undefined || value === null || value === "") return true;
+      if (value === undefined || value === null || value === "") {
+        throw new Error("Bid budget min is required for bidding projects.");
+      }
       const n = Number(value);
       if (!Number.isFinite(n) || !(n > 0)) throw new Error("Invalid bid budget min.");
       return true;
@@ -97,11 +99,14 @@ const createInternalOrderValidators = [
     .custom((value, { req }) => {
       const type = String(req.body.projectType || "").trim();
       if (type !== "bidding") return true;
-      if (value === undefined || value === null || value === "") return true;
+      if (value === undefined || value === null || value === "") {
+        throw new Error("Bid budget max is required for bidding projects.");
+      }
       const max = Number(value);
       const min = Number(req.body.bidBudgetMin);
       if (!Number.isFinite(max) || !(max > 0)) throw new Error("Invalid bid budget max.");
-      if (Number.isFinite(min) && max < min) throw new Error("bid max must be >= bid min.");
+      if (!Number.isFinite(min) || !(min > 0)) return true;
+      if (max < min) throw new Error("Bid max must be >= bid min.");
       return true;
     }),
   body("preferredSkills")

@@ -34,7 +34,12 @@ const listPoolOrders = async (req, res, next) => {
           sort: req.query.sort,
           q: req.query.q,
         });
-    return res.status(200).json({ success: true, data: result });
+    const orders = Array.isArray(result.orders)
+      ? result.orders.map((o) =>
+          freelancerUserId ? sanitizeFreelancerPoolOrder(o) : sanitizePublicPoolOrder(o),
+        )
+      : [];
+    return res.status(200).json({ success: true, data: { ...result, orders } });
   } catch (err) {
     return next(err);
   }

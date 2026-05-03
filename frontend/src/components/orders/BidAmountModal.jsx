@@ -4,7 +4,9 @@ export default function BidAmountModal({ open, title, min, max, currency, busy, 
   const [value, setValue] = useState("");
 
   useEffect(() => {
-    if (!open) setValue("");
+    if (!open) {
+      queueMicrotask(() => setValue(""));
+    }
   }, [open]);
 
   if (!open) return null;

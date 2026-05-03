@@ -67,7 +67,7 @@ export default function SuperAdminLayout() {
   useOnClickOutside(userMenuRef, () => setUserMenuOpen(false));
 
   useEffect(() => {
-    setUserMenuOpen(false);
+    queueMicrotask(() => setUserMenuOpen(false));
   }, [pathname]);
 
   const displayName = useMemo(() => fullNameAr(user) || user?.email || "مدير", [user]);

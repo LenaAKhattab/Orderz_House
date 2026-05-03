@@ -1,11 +1,17 @@
 const Stripe = require("stripe");
 const { pool } = require("../config/db");
+const {
+  resolvePaidCheckoutSessionForClientOrder,
+  PURPOSE_FIXED,
+  PURPOSE_BID,
+} = require("../utils/stripeCheckoutReconcile");
 const { amountMajorToStripeMinor } = require("../utils/stripeMoney");
 const orderFlowService = require("./orderFlowService");
 const subscriptionsService = require("./subscriptionsService");
 const ordersService = require("./ordersService");
 const notificationService = require("./notificationService");
 const notificationEventsService = require("./notificationEventsService");
+const { planEligibleForFreelancerSelfCheckout } = require("./plansService");
 
 async function safeNotify(run) {
   try {
@@ -494,34 +500,22 @@ async function confirmClientSelectedBidPayment({ clientUserId, orderId, bidId })
       err.statusCode = 409;
       throw err;
     }
-    if (!order.stripe_checkout_session_id) {
-      const err = new Error("Missing checkout session for this order.");
-      err.statusCode = 409;
-      throw err;
-    }
     if (!order.selected_bid_id || Number(order.selected_bid_id) !== bid) {
       const err = new Error("Selected bid does not match this order.");
       err.statusCode = 409;
       throw err;
     }
 
-    const session = await stripe.checkout.sessions.retrieve(String(order.stripe_checkout_session_id), {
-      expand: ["payment_intent"],
+    const session = await resolvePaidCheckoutSessionForClientOrder(stripe, db, {
+      order,
+      orderId: oid,
+      purpose: PURPOSE_BID,
+      bidId: bid,
     });
-    const meta = session?.metadata || {};
-    if (String(meta.purpose || "") !== "client_selected_bid") {
-      const err = new Error("Checkout session purpose mismatch.");
-      err.statusCode = 409;
-      throw err;
-    }
-    if (Number(meta.orderId) !== oid || Number(meta.bidId) !== bid) {
-      const err = new Error("Checkout session is not linked to this order/bid.");
-      err.statusCode = 409;
-      throw err;
-    }
-    if (String(session.payment_status || "").toLowerCase() !== "paid") {
+    if (!session) {
       const err = new Error("Payment is not completed yet.");
-      err.statusCode = 409;
+      err.statusCode = 402;
+      err.publicCode = "PAYMENT_NOT_COMPLETED";
       throw err;
     }
 
@@ -547,7 +541,7 @@ async function confirmClientSelectedBidPayment({ clientUserId, orderId, bidId })
     const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null;
     const orderCur = String(order.currency_code || "").trim().toUpperCase() || null;
 
-    await db.query(
+    const { rows: appliedBid } = await db.query(
       `UPDATE orders
          SET payment_status = 'paid',
              order_status = $2,
@@ -562,9 +556,15 @@ async function confirmClientSelectedBidPayment({ clientUserId, orderId, bidId })
              payment_amount = $8,
              payment_currency = $9,
              updated_at = NOW()
-       WHERE id = $1`,
+       WHERE id = $1
+         AND payment_status <> 'paid'
+       RETURNING id`,
       [oid, orderFlowService.ORDER_STATUSES.IN_PROGRESS, Number(selectedBid.freelancer_user_id), bid, paidAt, dueAt, paymentIntentId, Number(selectedBid.amount), orderCur],
     );
+    if (!appliedBid[0]) {
+      await db.query("COMMIT");
+      return { ok: true, alreadyApplied: true };
+    }
     await subscriptionsService.activateCurrentSubscriptionOnFirstAcceptedOrder(
       { freelancerUserId: String(selectedBid.freelancer_user_id), orderId: oid, activatedAt: paidAt },
       db,
@@ -586,8 +586,9 @@ async function confirmClientSelectedBidPayment({ clientUserId, orderId, bidId })
        WHERE order_id = $1
          AND purpose = 'selected_bid_payment'
          AND bid_id = $4
-         AND status = 'pending'`,
-      [oid, paymentIntentId, paidAt, bid],
+         AND status = 'pending'
+         AND provider_checkout_session_id = $5`,
+      [oid, paymentIntentId, paidAt, bid, String(session.id)],
     );
     const { rows: rejectedBidders } = await db.query(
       `SELECT freelancer_user_id
@@ -709,25 +710,17 @@ async function confirmClientFixedOrderPayment({ clientUserId, orderId }) {
       err.statusCode = 409;
       throw err;
     }
-    if (!order.stripe_checkout_session_id) {
-      const err = new Error("Missing checkout session for this order.");
-      err.statusCode = 409;
-      throw err;
-    }
 
-    const session = await stripe.checkout.sessions.retrieve(String(order.stripe_checkout_session_id), {
-      expand: ["payment_intent"],
+    const session = await resolvePaidCheckoutSessionForClientOrder(stripe, db, {
+      order,
+      orderId: oid,
+      purpose: PURPOSE_FIXED,
+      bidId: null,
     });
-    const meta = session?.metadata || {};
-    if (String(meta.purpose || "") !== "client_fixed_order" || Number(meta.orderId) !== oid) {
-      const err = new Error("Checkout session is not linked to this order.");
-      err.statusCode = 409;
-      throw err;
-    }
-    if (String(session.payment_status || "").toLowerCase() !== "paid") {
+    if (!session) {
       const err = new Error("Payment is not completed yet.");
       err.statusCode = 402;
-      err.code = "PAYMENT_NOT_COMPLETED";
+      err.publicCode = "PAYMENT_NOT_COMPLETED";
       throw err;
     }
 
@@ -736,7 +729,7 @@ async function confirmClientFixedOrderPayment({ clientUserId, orderId }) {
     const orderCur = String(order.currency_code || "").trim().toUpperCase() || null;
     const major = order.budget != null ? Number(order.budget) : null;
 
-    await db.query(
+    const { rows: appliedFixed } = await db.query(
       `UPDATE orders
          SET payment_status = 'paid',
              order_status = $2,
@@ -748,9 +741,14 @@ async function confirmClientFixedOrderPayment({ clientUserId, orderId }) {
              payment_currency = $6,
              updated_at = NOW()
        WHERE id = $1
-         AND payment_status <> 'paid'`,
+         AND payment_status <> 'paid'
+       RETURNING id`,
       [oid, orderFlowService.ORDER_STATUSES.OPEN_FOR_FREELANCERS, paymentIntentId, paidAt, Number.isFinite(major) ? major : null, orderCur],
     );
+    if (!appliedFixed[0]) {
+      await db.query("COMMIT");
+      return { ok: true, alreadyApplied: true };
+    }
     await db.query(
       `UPDATE client_order_payments
          SET status = 'paid',
@@ -758,8 +756,9 @@ async function confirmClientFixedOrderPayment({ clientUserId, orderId }) {
              paid_at = COALESCE(paid_at, $3)
        WHERE order_id = $1
          AND purpose = 'fixed_order_creation'
-         AND status = 'pending'`,
-      [oid, paymentIntentId, paidAt],
+         AND status = 'pending'
+         AND provider_checkout_session_id = $4`,
+      [oid, paymentIntentId, paidAt, String(session.id)],
     );
     await safeNotify(() =>
       notificationService.createIfNotExists(
@@ -822,24 +821,31 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
   try {
     await db.query("BEGIN");
     const { rows: planRows } = await db.query(
-      `SELECT id, title, price_jod, is_active, is_visible, deleted_at
+      `SELECT id, title, price_jod, is_active, is_visible, deleted_at, self_subscribe_allowed
        FROM plans
        WHERE id = $1
        LIMIT 1`,
       [pid],
     );
     const plan = planRows[0];
-    if (!plan || plan.deleted_at || !plan.is_active || !plan.is_visible) {
+    if (
+      plan &&
+      !plan.deleted_at &&
+      plan.is_active &&
+      plan.is_visible &&
+      !plan.self_subscribe_allowed
+    ) {
+      const err = new Error("This plan is not available for self-service purchase.");
+      err.statusCode = 400;
+      err.exposeToClient = true;
+      throw err;
+    }
+    if (!planEligibleForFreelancerSelfCheckout(plan)) {
       const err = new Error("Selected plan is not available.");
       err.statusCode = 400;
       throw err;
     }
     const priceJod = plan.price_jod != null ? Number(plan.price_jod) : null;
-    if (!Number.isFinite(priceJod) || priceJod <= 0) {
-      const err = new Error("Selected plan does not have a valid price.");
-      err.statusCode = 400;
-      throw err;
-    }
 
     const currency = "jod";
     const amountMinor = amountMajorToStripeMinor(priceJod, "JOD");

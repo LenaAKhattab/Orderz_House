@@ -22,7 +22,20 @@
     "db:verify-schema": "node scripts/verifySchema.js",
     "db:assign-freelancer-plan": "node scripts/assignPlanToFreelancerByName.js",
     "db:create-admin": "node scripts/createAdminUser.js",
-    "db:promote-super-admin": "node scripts/promoteUserToSuperAdminByEmail.js"
+    "db:promote-super-admin": "node scripts/promoteUserToSuperAdminByEmail.js",
+    "test:stripe-webhook": "node --test test/stripeWebhookIdempotency.test.js",
+    "test:stripe-checkout-apply": "node --test test/stripeWebhookCheckoutApplyOutcome.test.js",
+    "test:client-bidding": "node --test test/clientBiddingPaymentGate.test.js",
+    "test:authorize-roles": "node --test test/authorizeRoles.test.js",
+    "test:admin-accept-claim": "node --test test/adminAcceptPoolClaim.validation.test.js",
+    "test:subscriptions-eligibility": "node --test test/canFreelancerTakeOrdersEligibility.test.js",
+    "test:admin-subscriptions-auth": "node --test test/adminSubscriptionsAuthorization.test.js",
+    "test:plan-self-subscribe": "node --test test/planSelfSubscribeCheckout.test.js",
+    "test:resend-register-otp": "node --test test/resendRegistrationOtp.enumeration.test.js",
+    "test:reset-password-ratelimit": "node --test test/resetPasswordRateLimit.test.js",
+    "test:internal-bidding-pool": "node --test test/internalBiddingPoolConsistency.test.js",
+    "test:pool-sanitize": "node --test test/poolOrderSanitize.test.js",
+    "test": "node --test test/internalPricedBiddingLifecycle.integration.test.js test/stripeWebhookIdempotency.test.js test/stripeWebhookCheckoutApplyOutcome.test.js test/stripeCheckoutReconcile.test.js test/clientBiddingPaymentGate.test.js test/authorizeRoles.test.js test/adminAcceptPoolClaim.validation.test.js test/canFreelancerTakeOrdersEligibility.test.js test/adminSubscriptionsAuthorization.test.js test/planSelfSubscribeCheckout.test.js test/resendRegistrationOtp.enumeration.test.js test/resetPasswordRateLimit.test.js test/internalBiddingPoolConsistency.test.js test/poolOrderSanitize.test.js test/adminInternalBidAward.test.js"
   },
   "keywords": [
     "orderz-house",

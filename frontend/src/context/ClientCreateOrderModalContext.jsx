@@ -19,6 +19,7 @@ export function ClientCreateOrderModalProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- hook paired with ClientCreateOrderModalProvider in this module
 export function useClientCreateOrderModal() {
   const ctx = useContext(ClientCreateOrderModalContext);
   if (!ctx) {
