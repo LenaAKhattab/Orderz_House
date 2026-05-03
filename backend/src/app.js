@@ -17,6 +17,7 @@ const freelancerSubscriptionsRoutes = require("./routes/freelancerSubscriptionsR
 const freelancerCoursesRoutes = require("./routes/freelancerCoursesRoutes");
 const ordersRoutes = require("./routes/ordersRoutes");
 const notificationsRoutes = require("./routes/notificationsRoutes");
+const profileRoutes = require("./routes/profileRoutes");
 const portalFinancialClaimsRoutes = require("./routes/portalFinancialClaimsRoutes");
 const superAdminFinancialClaimsRoutes = require("./routes/superAdminFinancialClaimsRoutes");
 const internalAutomationRoutes = require("./routes/internalAutomationRoutes");
@@ -68,6 +69,7 @@ app.use("/api", healthRoutes);
 // Optional: automation tick for external cron (see FAKE_ORDERS_AUTOMATION_CRON_SECRET).
 app.use("/api/internal", internalAutomationRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/profile", profileRoutes);
 app.use("/api", categoriesRoutes);
 app.use("/api", plansRoutes);
 app.use("/api/admin", adminPlansRoutes);

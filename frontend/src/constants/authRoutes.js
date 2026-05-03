@@ -45,6 +45,12 @@ export const DASHBOARD_TITLE = {
   "/dashboard/admin/notifications": "الإشعارات",
   "/dashboard/client/notifications": "الإشعارات",
   "/dashboard/freelancer/notifications": "الإشعارات",
+  "/dashboard/freelancer/profile": "الملف الشخصي",
+  "/dashboard/freelancer/settings": "إعدادات الحساب",
+  "/dashboard/client/profile": "الملف الشخصي",
+  "/dashboard/client/settings": "إعدادات الحساب",
+  "/dashboard/admin/settings": "إعدادات الحساب",
+  "/dashboard/super-admin/settings": "إعدادات الحساب",
 };
 
 /**
@@ -66,6 +72,22 @@ export function getNotificationsPath(role) {
   if (role === ROLE.ADMIN) return "/dashboard/admin/notifications";
   if (role === ROLE.CLIENT) return "/dashboard/client/notifications";
   if (role === ROLE.FREELANCER) return "/dashboard/freelancer/notifications";
+  return "/dashboard";
+}
+
+/** Profile page URL — freelancers and clients only. */
+export function getProfilePagePath(role) {
+  if (role === ROLE.FREELANCER) return "/dashboard/freelancer/profile";
+  if (role === ROLE.CLIENT) return "/dashboard/client/profile";
+  return null;
+}
+
+/** Account settings URL per role. */
+export function getAccountSettingsPath(role) {
+  if (role === ROLE.SUPER_ADMIN) return "/dashboard/super-admin/settings";
+  if (role === ROLE.ADMIN) return "/dashboard/admin/settings";
+  if (role === ROLE.FREELANCER) return "/dashboard/freelancer/settings";
+  if (role === ROLE.CLIENT) return "/dashboard/client/settings";
   return "/dashboard";
 }
 
@@ -95,7 +117,8 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/client/orders/create": [ROLE.CLIENT],
   "/dashboard/client/notifications": [ROLE.CLIENT],
   "/dashboard/freelancer/my-orders": [ROLE.FREELANCER],
-  "/dashboard/freelancer/orders": [ROLE.FREELANCER],
+  /** حوض الطلبات: مستقل يتقدّم ويعرض؛ عميل يتصفّح الطلبات المتاحة (نفس مسار الواجهة). */
+  "/dashboard/freelancer/orders": [ROLE.FREELANCER, ROLE.CLIENT],
   "/dashboard/freelancer/financial-claims": [ROLE.FREELANCER],
   "/dashboard/freelancer/courses": [ROLE.FREELANCER],
   "/dashboard/freelancer/notifications": [ROLE.FREELANCER],
@@ -106,6 +129,12 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/super-admin/training-orders/templates": [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/training-orders/rounds": [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/training-orders/applications": [ROLE.SUPER_ADMIN],
+  "/dashboard/freelancer/profile": [ROLE.FREELANCER],
+  "/dashboard/freelancer/settings": [ROLE.FREELANCER],
+  "/dashboard/client/profile": [ROLE.CLIENT],
+  "/dashboard/client/settings": [ROLE.CLIENT],
+  "/dashboard/admin/settings": [ROLE.ADMIN],
+  "/dashboard/super-admin/settings": [ROLE.SUPER_ADMIN],
 };
 
 /**

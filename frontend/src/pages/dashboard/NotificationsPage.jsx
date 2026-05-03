@@ -7,12 +7,13 @@ import {
   markAllNotificationsReadRequest,
   markNotificationReadRequest,
 } from "../../services/api";
+import "./notifications-page.css";
 
 function fmtDate(value) {
   if (!value) return "";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "";
-  return new Intl.DateTimeFormat("ar", { dateStyle: "medium", timeStyle: "short" }).format(d);
+  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
 function actorLabel(actor) {
@@ -28,7 +29,8 @@ function notificationDetails(n) {
   const actor = actorLabel(n?.actor);
   const actorFallbackName = String(n?.metadata?.actorName || "").trim();
   const actorFallbackAcc = String(n?.metadata?.actorAccountId || "").trim();
-  const actorFallback = actorFallbackName && actorFallbackAcc ? `${actorFallbackName} (${actorFallbackAcc})` : actorFallbackName || actorFallbackAcc || "";
+  const actorFallback =
+    actorFallbackName && actorFallbackAcc ? `${actorFallbackName} (${actorFallbackAcc})` : actorFallbackName || actorFallbackAcc || "";
   const actorPart = actor || actorFallback;
   const projectName = String(n?.metadata?.projectName || "").trim();
   const orderCode = String(n?.metadata?.orderCode || "").trim();
@@ -42,6 +44,53 @@ function notificationDetails(n) {
   const projectPart = projectName ? projectName : "";
   const parts = [actorPart, projectPart, orderPart].filter(Boolean);
   return parts.join(" - ");
+}
+
+function NotifTypeIcon({ type }) {
+  const t = String(type || "").toLowerCase();
+  const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.85, strokeLinecap: "round", strokeLinejoin: "round" };
+
+  if (t.includes("payment") || t.includes("pay") || t.includes("stripe") || t.includes("invoice")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden {...common}>
+        <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
+        <path d="M2.5 10h19" />
+        <path d="M7 15h4" />
+      </svg>
+    );
+  }
+  if (t.includes("claim") || t.includes("financial")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden {...common}>
+        <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" />
+        <path d="M12 12l8-4.5M12 12v9M12 12L4 7.5" />
+      </svg>
+    );
+  }
+  if (t.includes("course") || t.includes("lesson")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden {...common}>
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+        <path d="M8 7h8M8 11h6" />
+      </svg>
+    );
+  }
+  if (t.includes("order")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden {...common}>
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+        <rect x="9" y="3" width="6" height="4" rx="1" />
+        <path d="M9 12h6M9 16h4" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden {...common}>
+      <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 01-3.46 0" />
+    </svg>
+  );
 }
 
 export default function NotificationsPage() {
@@ -78,7 +127,6 @@ export default function NotificationsPage() {
     const role = user?.primaryRole || user?.role;
     if (role === "super_admin") return "إشعارات المدير الأعلى";
     if (role === "admin") return "إشعارات الإدارة";
-    if (role === "freelancer") return "إشعاراتك";
     return "إشعاراتك";
   }, [user]);
 
@@ -104,75 +152,109 @@ export default function NotificationsPage() {
   }, []);
 
   return (
-    <section className="dash-shell">
-      <div className="container dash">
-        <div className="dash-hero dash-hero--compact">
-          <div>
-            <p className="dash-hero__kicker">Notifications</p>
-            <h1 className="dash-hero__title">{title}</h1>
-            <p className="dash-hero__subtitle">تابع كل التحديثات المهمة على طلباتك ومدفوعاتك.</p>
-          </div>
-          <div className="dash-hero__badges">
-            <span className="dash-badge">غير المقروء: {unreadCount}</span>
-          </div>
+    <section className="oh-notif-page container page-content dash-shell">
+      <header className="oh-notif-page__hero">
+        <div className="oh-notif-page__hero-copy">
+          <p className="oh-notif-page__kicker">مركز الإشعارات</p>
+          <h1 className="oh-notif-page__title">{title}</h1>
+          <p className="oh-notif-page__lead">تابع تحديثات الطلبات، المدفوعات، والمطالبات في مكان واحد.</p>
         </div>
+        <div className="oh-notif-page__stat" aria-live="polite">
+          <span className="oh-notif-page__stat-label">غير المقروء</span>
+          <span className="oh-notif-page__stat-value">{unreadCount}</span>
+        </div>
+      </header>
 
-        <div className="notifications-page__toolbar">
-          <div className="notifications-page__filters">
-            <button
-              type="button"
-              className={filter === "all" ? "is-active" : ""}
-              onClick={() => setFilter("all")}
-            >
-              الكل
-            </button>
-            <button
-              type="button"
-              className={filter === "unread" ? "is-active" : ""}
-              onClick={() => setFilter("unread")}
-            >
-              غير المقروء
-            </button>
-          </div>
-          <button type="button" className="notifications-page__read-all" onClick={handleReadAll} disabled={!unreadCount}>
-            تعليم الكل كمقروء
+      <div className="oh-notif-page__toolbar">
+        <div className="oh-notif-page__segmented" role="tablist" aria-label="تصفية الإشعارات">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={filter === "all"}
+            className={`oh-notif-page__segment ${filter === "all" ? "oh-notif-page__segment--active" : ""}`.trim()}
+            onClick={() => setFilter("all")}
+          >
+            الكل
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={filter === "unread"}
+            className={`oh-notif-page__segment ${filter === "unread" ? "oh-notif-page__segment--active" : ""}`.trim()}
+            onClick={() => setFilter("unread")}
+          >
+            غير المقروء
           </button>
         </div>
+        <button type="button" className="oh-notif-page__mark-all" onClick={handleReadAll} disabled={!unreadCount}>
+          تعليم الكل كمقروء
+        </button>
+      </div>
 
-        <div className="notifications-page__list">
-          {loading ? (
-            <div className="notifications-page__empty">جاري تحميل الإشعارات…</div>
-          ) : items.length === 0 ? (
-            <div className="notifications-page__empty">لا توجد إشعارات لعرضها.</div>
-          ) : (
-            items.map((n) => (
-              <article key={n.id} className={`notifications-page__item ${n.isRead ? "" : "is-unread"}`.trim()}>
-                <div className="notifications-page__item-head">
-                  <h3>{n.title || "إشعار جديد"}</h3>
-                  <time>{fmtDate(n.createdAt)}</time>
+      <div className="oh-notif-page__list">
+        {loading ? (
+          <div className="oh-notif-page__loading" aria-busy="true">
+            <div className="oh-notif-page__loading-dots" aria-hidden>
+              <span />
+              <span />
+              <span />
+            </div>
+            <p style={{ margin: 0 }}>جاري تحميل الإشعارات…</p>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="oh-notif-page__empty">
+            <div className="oh-notif-page__empty-visual" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 01-3.46 0" />
+              </svg>
+            </div>
+            <p>{filter === "unread" ? "لا توجد إشعارات غير مقروءة." : "لا توجد إشعارات لعرضها."}</p>
+          </div>
+        ) : (
+          items.map((n) => {
+            const details = notificationDetails(n);
+            const unread = !n.isRead;
+            return (
+              <article
+                key={n.id}
+                className={`oh-notif-card ${unread ? "oh-notif-card--unread" : ""}`.trim()}
+              >
+                <div className="oh-notif-card__icon-wrap">
+                  <div className="oh-notif-card__icon" aria-hidden>
+                    <NotifTypeIcon type={n.type} />
+                  </div>
+                  {unread ? <span className="oh-notif-card__dot" title="غير مقروء" /> : null}
                 </div>
-                {notificationDetails(n) ? <div className="notifications-page__item-actor">{notificationDetails(n)}</div> : null}
-                <p>{n.message || ""}</p>
-                <div className="notifications-page__item-actions">
-                  {!n.isRead ? (
-                    <button type="button" onClick={() => handleRead(n)}>
-                      تحديد كمقروء
+                <div className="oh-notif-card__body">
+                  <div className="oh-notif-card__head">
+                    <h2 className="oh-notif-card__title">{n.title || "إشعار جديد"}</h2>
+                    <time dateTime={n.createdAt}>{fmtDate(n.createdAt)}</time>
+                  </div>
+                  {details ? <div className="oh-notif-card__meta">{details}</div> : null}
+                  {n.message ? <p className="oh-notif-card__message">{n.message}</p> : null}
+                  <div className="oh-notif-card__actions">
+                    {unread ? (
+                      <button type="button" className="oh-notif-card__btn" onClick={() => handleRead(n)}>
+                        تحديد كمقروء
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="oh-notif-card__btn oh-notif-card__btn--primary"
+                      onClick={async () => {
+                        await handleRead(n);
+                        navigate(n.link || "/dashboard");
+                      }}
+                    >
+                      فتح
                     </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await handleRead(n);
-                      navigate(n.link || "/dashboard");
-                    }}
-                  >
-                    فتح
-                  </button>
+                  </div>
                 </div>
               </article>
-            ))
-          )}
-        </div>
+            );
+          })
+        )}
       </div>
     </section>
   );

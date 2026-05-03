@@ -63,6 +63,9 @@ function resolveSignupRole(accountType) {
 
 function mapUserPublic(row) {
   if (!row) return null;
+  const prefs = row.notification_preferences;
+  const notificationPreferences =
+    prefs && typeof prefs === "object" && !Array.isArray(prefs) ? prefs : {};
   return {
     id: String(row.id),
     accountId: row.account_id,
@@ -80,6 +83,23 @@ function mapUserPublic(row) {
     freelancerCategories: row.freelancer_categories || null,
     isActive: row.is_active,
     createdAt: row.created_at,
+    avatarUrl: row.avatar_url || null,
+    professionalTitle: row.professional_title || null,
+    bio: row.bio || null,
+    skills: row.skills || null,
+    websiteUrl: row.website_url || null,
+    linkedinUrl: row.linkedin_url || null,
+    githubUrl: row.github_url || null,
+    behanceUrl: row.behance_url || null,
+    portfolioUrl: row.portfolio_url || null,
+    companyName: row.company_name || null,
+    billingName: row.billing_name || null,
+    billingCountry: row.billing_country || null,
+    billingCity: row.billing_city || null,
+    billingNotes: row.billing_notes || null,
+    preferredWithdrawalMethod: row.preferred_withdrawal_method || null,
+    payoutNotesHint: row.payout_notes_hint || null,
+    notificationPreferences,
   };
 }
 
@@ -95,7 +115,10 @@ function withAuthz(user, authz) {
 async function findUserByEmail(emailNormalized) {
   const { rows } = await pool.query(
     `SELECT id, account_id, first_name, father_name, family_name, email, password_hash, role,
-            country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at
+            country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at,
+            avatar_url, professional_title, bio, skills, website_url, linkedin_url, github_url, behance_url, portfolio_url,
+            company_name, billing_name, billing_country, billing_city, billing_notes,
+            preferred_withdrawal_method, payout_notes_hint, notification_preferences
      FROM users WHERE lower(email::text) = lower($1::text) LIMIT 1`,
     [emailNormalized],
   );
@@ -105,7 +128,10 @@ async function findUserByEmail(emailNormalized) {
 async function findUserById(id) {
   const { rows } = await pool.query(
     `SELECT id, account_id, first_name, father_name, family_name, email, role,
-            country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at
+            country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at,
+            avatar_url, avatar_public_id, professional_title, bio, skills, website_url, linkedin_url, github_url, behance_url, portfolio_url,
+            company_name, billing_name, billing_country, billing_city, billing_notes,
+            preferred_withdrawal_method, payout_notes_hint, notification_preferences
      FROM users WHERE id = $1::bigint LIMIT 1`,
     [id],
   );
@@ -372,10 +398,33 @@ async function getPublicUserById(id) {
   return withAuthz(mapUserPublic(row), authz);
 }
 
+async function changePasswordForUser(userId, currentPassword, newPassword) {
+  const { rows } = await pool.query(`SELECT id, password_hash FROM users WHERE id = $1::bigint LIMIT 1`, [userId]);
+  const row = rows[0];
+  if (!row) {
+    throw createPublicApiError("المستخدم غير موجود.", 404, "NOT_FOUND");
+  }
+  const match = await bcrypt.compare(String(currentPassword || ""), row.password_hash);
+  if (!match) {
+    throw createPublicApiError("كلمة المرور الحالية غير صحيحة.", 400, "INVALID_PASSWORD");
+  }
+  const np = String(newPassword || "");
+  if (np.length < 8) {
+    throw createPublicApiError("كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف.", 400, "VALIDATION_ERROR");
+  }
+  if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(np)) {
+    throw createPublicApiError("كلمة المرور يجب أن تحتوي على حرف ورقم على الأقل.", 400, "VALIDATION_ERROR");
+  }
+  const newHash = await bcrypt.hash(np, BCRYPT_ROUNDS);
+  await pool.query(`UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2::bigint`, [newHash, userId]);
+}
+
 module.exports = {
   registerUser,
   loginUser,
   getPublicUserById,
   getUserRowByIdForAuthz,
   buildAuthResponseForUserId,
+  changePasswordForUser,
+  findUserById,
 };
