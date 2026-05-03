@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
+import DashboardHomeAside from "../../components/dashboard/DashboardHomeAside";
 import { useToast } from "../../components/ui/toastContext";
 import { SubscriptionCardSkeleton } from "../../components/ui/Skeleton";
 import {
@@ -276,6 +277,23 @@ export default function FreelancerDashboardHome({ user }) {
     return sorted.slice(0, 5);
   }, [assignedOrders]);
 
+  const completedAssigned = useMemo(
+    () => assignedOrders.filter((o) => String(o?.orderStatus) === "completed").length,
+    [assignedOrders],
+  );
+
+  const profilePct = useMemo(() => {
+    if (assignedOrders.length === 0) return 20;
+    return Math.round((completedAssigned / assignedOrders.length) * 100);
+  }, [assignedOrders.length, completedAssigned]);
+
+  const userInitials = useMemo(() => {
+    const n = fullNameAr(user) || user?.email || "?";
+    const parts = n.trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return n.slice(0, 2).toUpperCase();
+  }, [user]);
+
   if (loading) {
     return (
       <div className="dash" dir="rtl">
@@ -307,7 +325,7 @@ export default function FreelancerDashboardHome({ user }) {
 
   return (
     <div className="dash" dir="rtl">
-      <header className="dash-hero">
+      <header className="dash-hero dash-hero--elevated">
         <div className="dash-hero__copy">
           <p className="dash-hero__kicker">لوحة المستقل</p>
           <h1 className="dash-hero__title oh-orders-sidebar-title">مرحباً، {name}</h1>
@@ -327,7 +345,9 @@ export default function FreelancerDashboardHome({ user }) {
         </div>
       </header>
 
-      <div className="dash-grid">
+      <div className="dash-layout">
+        <div className="dash-layout__main">
+          <div className="dash-grid">
         <Section title="الاشتراك والأهلية">
           {subBusy ? (
             <SubscriptionCardSkeleton />
@@ -497,24 +517,6 @@ export default function FreelancerDashboardHome({ user }) {
           )}
         </Section>
 
-        <Section title="المطالبات المالية" actionLabel="عرض المطالبات" actionTo="/dashboard/freelancer/financial-claims">
-          <div className="card" style={{ display: "grid", gap: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <span className="help">قيد المراجعة</span>
-              <strong>{claimsSummary.pendingClaims}</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <span className="help">مقبولة</span>
-              <strong>{claimsSummary.acceptedClaims}</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <span className="help">مدفوعة</span>
-              <strong>{claimsSummary.paidClaims}</strong>
-            </div>
-            {claims.length === 0 ? <p className="help" style={{ margin: 0 }}>لا توجد مطالبات مسجّلة.</p> : null}
-          </div>
-        </Section>
-
         <Section title="الدورات والتأهيل" actionLabel="عرض الدورات" actionTo="/dashboard/freelancer/courses">
           {courses.length === 0 ? (
             <p className="help" style={{ margin: 0 }}>لا توجد دورات مسندة لك حالياً.</p>
@@ -538,28 +540,82 @@ export default function FreelancerDashboardHome({ user }) {
             </ul>
           )}
         </Section>
+          </div>
+        </div>
 
-        <Section title="إشعارات مهمة" actionLabel="كل الإشعارات" actionTo="/dashboard/freelancer/notifications">
-          {notifications.length === 0 ? (
-            <p className="help" style={{ margin: 0 }}>لا توجد إشعارات حديثة.</p>
-          ) : (
-            <ul className="dash-home-list">
-              {notifications.map((n) => (
-                <li key={n.id} className="dash-home-list__item card">
-                  <div style={{ fontWeight: 700 }}>{notificationPreviewLine(n)}</div>
-                  <div className="help" style={{ marginTop: 4 }}>{formatJoDateTime(n.createdAt)}</div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
+        <div className="dash-layout__aside-column">
+          <DashboardHomeAside
+            variant="freelancer"
+            userInitials={userInitials}
+            profilePct={profilePct}
+            freelancer={{
+              subscriptionLabel: subscriptionDisplayStatus(subscription),
+              poolCount: poolOrders.length,
+              assignedCount: assignedOrders.length,
+              claimsPending: claimsSummary.pendingClaims,
+            }}
+          />
+
+          <section className="dash-aside-panel" aria-labelledby="dash-aside-claims-title">
+            <div className="dash-aside-panel__head">
+              <h2 id="dash-aside-claims-title" className="dash-aside-panel__title">
+                المطالبات المالية
+              </h2>
+              <NavLink to="/dashboard/freelancer/financial-claims" className="dash-aside-panel__link">
+                عرض المطالبات
+              </NavLink>
+            </div>
+            <div className="dash-aside-panel__body">
+              <div className="dash-aside-panel__card">
+                <div className="dash-aside-panel__row">
+                  <span className="help">قيد المراجعة</span>
+                  <strong>{claimsSummary.pendingClaims}</strong>
+                </div>
+                <div className="dash-aside-panel__row">
+                  <span className="help">مقبولة</span>
+                  <strong>{claimsSummary.acceptedClaims}</strong>
+                </div>
+                <div className="dash-aside-panel__row">
+                  <span className="help">مدفوعة</span>
+                  <strong>{claimsSummary.paidClaims}</strong>
+                </div>
+              </div>
+              {claims.length === 0 ? (
+                <p className="help dash-aside-panel__foot">لا توجد مطالبات مسجّلة.</p>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="dash-aside-panel" aria-labelledby="dash-aside-notif-title">
+            <div className="dash-aside-panel__head">
+              <h2 id="dash-aside-notif-title" className="dash-aside-panel__title">
+                إشعارات مهمة
+              </h2>
+              <NavLink to="/dashboard/freelancer/notifications" className="dash-aside-panel__link">
+                كل الإشعارات
+              </NavLink>
+            </div>
+            <div className="dash-aside-panel__body">
+              {notifications.length === 0 ? (
+                <p className="help" style={{ margin: 0 }}>
+                  لا توجد إشعارات حديثة.
+                </p>
+              ) : (
+                <ul className="dash-home-list dash-home-list--aside">
+                  {notifications.map((n) => (
+                    <li key={n.id} className="dash-home-list__item card">
+                      <div style={{ fontWeight: 700 }}>{notificationPreviewLine(n)}</div>
+                      <div className="help" style={{ marginTop: 4 }}>
+                        {formatJoDateTime(n.createdAt)}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
+        </div>
       </div>
-
-      <style>{`
-        .dash-home-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-        .dash-home-list__item { margin: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); }
-        .dash-home-list__row { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
-      `}</style>
     </div>
   );
 }

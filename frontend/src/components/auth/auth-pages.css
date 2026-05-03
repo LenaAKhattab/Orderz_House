@@ -1,0 +1,317 @@
+/* Auth screens — shared shell + refinements (login / register / forgot password) */
+
+.oh-auth-page {
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100vh - 100px);
+  display: grid;
+  place-items: center;
+  padding: 18px 12px 48px;
+  overflow-x: clip;
+  background:
+    radial-gradient(ellipse 130% 90% at 50% -25%, rgba(47, 59, 101, 0.11), transparent 58%),
+    radial-gradient(ellipse 85% 55% at 95% 18%, rgba(118, 207, 223, 0.14), transparent 52%),
+    radial-gradient(ellipse 75% 50% at 5% 85%, rgba(240, 141, 57, 0.07), transparent 55%),
+    linear-gradient(185deg, #f8fafc 0%, #eef2f8 48%, #f5f7fb 100%);
+}
+
+.oh-auth-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(rgba(47, 59, 101, 0.07) 1px, transparent 1px);
+  background-size: 20px 20px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 40%, #000 25%, transparent 75%);
+}
+
+.oh-auth-shell {
+  position: relative;
+  z-index: 1;
+  width: min(1160px, calc(100% - 40px));
+}
+
+.oh-auth-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 32px;
+  border: 1px solid rgba(47, 59, 101, 0.11);
+  background: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.75) inset,
+    0 4px 3px rgba(24, 36, 64, 0.02),
+    0 28px 56px -20px rgba(24, 36, 64, 0.2),
+    0 0 100px -36px rgba(118, 207, 223, 0.28);
+  direction: ltr;
+}
+
+@media (min-width: 768px) {
+  .oh-auth-card {
+    grid-template-columns: 1.08fr 1fr;
+    min-height: clamp(520px, 72vh, 660px);
+  }
+}
+
+/* Visual column */
+.oh-auth-visual {
+  position: relative;
+  min-height: 300px;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 56px);
+  text-align: right;
+  direction: rtl;
+  color: #f4f7ff;
+  background:
+    radial-gradient(ellipse 100% 80% at 100% 0%, rgba(118, 207, 223, 0.22), transparent 55%),
+    radial-gradient(ellipse 90% 70% at 0% 100%, rgba(240, 141, 57, 0.2), transparent 50%),
+    linear-gradient(155deg, var(--dash-hero-a, #1a263f) 0%, #2a3a63 38%, var(--primary, #2f3b65) 72%, #3d5280 100%);
+}
+
+.oh-auth-visual__mesh {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.45;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 18px 18px;
+  mask-image: linear-gradient(165deg, rgba(0, 0, 0, 0.95), transparent 70%);
+}
+
+.oh-auth-visual__glow {
+  pointer-events: none;
+  position: absolute;
+  bottom: -140px;
+  left: -80px;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(240, 141, 57, 0.44) 0%,
+    rgba(243, 190, 122, 0.16) 38%,
+    rgba(240, 141, 57, 0) 72%
+  );
+}
+
+.oh-auth-visual__glow-secondary {
+  pointer-events: none;
+  position: absolute;
+  top: -60px;
+  right: -40px;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(118, 207, 223, 0.28) 0%, transparent 68%);
+}
+
+.oh-auth-visual__content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  max-width: 420px;
+  gap: 1.25rem;
+}
+
+@media (max-width: 767px) {
+  .oh-auth-visual__content {
+    max-width: none;
+  }
+}
+
+.oh-auth-visual__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  align-self: start;
+  padding: 0.35rem 0.75rem 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: rgba(249, 250, 255, 0.95);
+  backdrop-filter: blur(8px);
+}
+
+.oh-auth-visual__badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--secondary, #76cfdf), rgba(240, 141, 57, 0.95));
+  box-shadow: 0 0 10px rgba(118, 207, 223, 0.65);
+}
+
+.oh-auth-visual__title {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.2vw, 2.1rem);
+  font-weight: 800;
+  line-height: 1.35;
+  color: #ffffff;
+  text-wrap: balance;
+}
+
+.oh-auth-visual__desc {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.85;
+  color: rgba(236, 240, 255, 0.92);
+}
+
+.oh-auth-quote {
+  margin-top: 0.35rem;
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.15rem 1.2rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 36px -16px rgba(0, 0, 0, 0.25);
+}
+
+.oh-auth-quote__text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: rgba(249, 250, 255, 0.97);
+}
+
+.oh-auth-person {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.oh-auth-person__avatar {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(243, 190, 122, 0.5);
+  background: linear-gradient(145deg, rgba(240, 141, 57, 0.35), rgba(47, 59, 101, 0.35));
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.oh-auth-person__name {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.oh-auth-person__role {
+  display: block;
+  font-size: 0.8rem;
+  color: rgba(231, 236, 255, 0.88);
+}
+
+.oh-auth-visual__dots {
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.oh-auth-visual__dot-bar {
+  height: 6px;
+  width: 28px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(240, 141, 57, 0.95), rgba(118, 207, 223, 0.85));
+}
+
+.oh-auth-visual__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Form column */
+.oh-auth-form-panel {
+  display: grid;
+  align-content: center;
+  gap: 1.35rem;
+  padding: clamp(26px, 4vw, 52px);
+  text-align: right;
+  direction: rtl;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+}
+
+@media (max-width: 767px) {
+  .oh-auth-page {
+    padding: 10px 10px 36px;
+  }
+
+  .oh-auth-shell {
+    width: min(1160px, calc(100% - 24px));
+  }
+
+  .oh-auth-card {
+    border-radius: 26px;
+  }
+
+  .oh-auth-form-panel {
+    padding: 22px 18px 28px;
+  }
+}
+
+.oh-auth-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.15rem;
+}
+
+.oh-auth-brand__mark {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--secondary, #76cfdf), var(--primary, #2f3b65));
+  box-shadow: 0 2px 8px rgba(47, 59, 101, 0.25);
+}
+
+.oh-auth-brand__text {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: var(--primary, #2f3b65);
+  opacity: 0.92;
+}
+
+.oh-auth-form-header {
+  display: grid;
+  gap: 0.45rem;
+  padding-bottom: 1.1rem;
+  margin-bottom: 0.15rem;
+  border-bottom: 1px solid rgba(47, 59, 101, 0.08);
+}
+
+.oh-auth-form-title {
+  margin: 0;
+  font-size: clamp(1.55rem, 2.2vw, 2rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: #141d33;
+  letter-spacing: -0.02em;
+}
+
+.oh-auth-form-subtitle {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #5c657c;
+}
+
+.oh-auth-footer-note {
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+  color: #6b7389;
+}

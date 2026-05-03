@@ -1,29 +1,35 @@
-import * as tw from "./authTw";
-
 const AuthVisualPanel = ({ title, description, quote, personName, personRole }) => {
-  return (
-    <aside className={tw.authVisualPanel}>
-      <div className={tw.authVisualGlow} />
-      <div className={tw.authVisualContent}>
-        <h2 className={tw.authVisualTitle}>{title}</h2>
-        <p className={tw.authVisualDesc}>{description}</p>
+  const initial = personName?.trim()?.charAt(0) || "؟";
 
-        <article className={tw.authQuoteCard}>
-          <p className={tw.authQuoteText}>{quote}</p>
-          <div className={tw.authPersonRow}>
-            <span className={tw.authAvatar}>أ</span>
+  return (
+    <aside className="oh-auth-visual">
+      <div className="oh-auth-visual__mesh" aria-hidden />
+      <div className="oh-auth-visual__glow-secondary" aria-hidden />
+      <div className="oh-auth-visual__glow" aria-hidden />
+      <div className="oh-auth-visual__content">
+        <div className="oh-auth-visual__badge">
+          <span className="oh-auth-visual__badge-dot" aria-hidden />
+          أوردرز هاوس
+        </div>
+        <h2 className="oh-auth-visual__title">{title}</h2>
+        <p className="oh-auth-visual__desc">{description}</p>
+
+        <article className="oh-auth-quote">
+          <p className="oh-auth-quote__text">{quote}</p>
+          <div className="oh-auth-person">
+            <span className="oh-auth-person__avatar">{initial}</span>
             <div>
-              <strong className={tw.authPersonStrong}>{personName}</strong>
-              <span className={tw.authPersonSpan}>{personRole}</span>
+              <strong className="oh-auth-person__name">{personName}</strong>
+              <span className="oh-auth-person__role">{personRole}</span>
             </div>
           </div>
         </article>
 
-        <div className={tw.authDots} aria-hidden="true">
-          <span className={tw.authDotBar} />
-          <span className={tw.authDotSmall} />
-          <span className={tw.authDotSmall} />
-          <span className={tw.authDotSmall} />
+        <div className="oh-auth-visual__dots" aria-hidden="true">
+          <span className="oh-auth-visual__dot-bar" />
+          <span className="oh-auth-visual__dot" />
+          <span className="oh-auth-visual__dot" />
+          <span className="oh-auth-visual__dot" />
         </div>
       </div>
     </aside>
