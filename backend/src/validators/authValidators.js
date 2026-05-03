@@ -32,28 +32,28 @@ const ARAB_COUNTRY_CODES = new Set([
 ]);
 
 const ARAB_DIAL_CODES = new Set([
-  "+966", // SA
-  "+971", // AE
-  "+965", // KW
-  "+974", // QA
-  "+973", // BH
-  "+968", // OM
-  "+962", // JO
-  "+970", // PS
-  "+961", // LB
-  "+963", // SY
-  "+964", // IQ
-  "+20", // EG
-  "+218", // LY
-  "+216", // TN
-  "+213", // DZ
-  "+212", // MA
-  "+249", // SD
-  "+222", // MR
-  "+967", // YE
-  "+252", // SO
-  "+253", // DJ
-  "+269", // KM
+  "+966",
+  "+971",
+  "+965",
+  "+974",
+  "+973",
+  "+968",
+  "+962",
+  "+970",
+  "+961",
+  "+963",
+  "+964",
+  "+20",
+  "+218",
+  "+216",
+  "+213",
+  "+212",
+  "+249",
+  "+222",
+  "+967",
+  "+252",
+  "+253",
+  "+269",
 ]);
 
 function normalizePhonePart(value) {
@@ -66,137 +66,137 @@ const registerValidators = [
   body("firstName")
     .trim()
     .notEmpty()
-    .withMessage("First name is required.")
+    .withMessage("الاسم الأول مطلوب.")
     .matches(/^[\u0600-\u06FF\s]+$/)
-    .withMessage("First name must be Arabic letters only.")
+    .withMessage("الاسم الأول يجب أن يكون بالعربية فقط.")
     .isLength({ max: 80 })
-    .withMessage("First name is too long."),
+    .withMessage("الاسم الأول طويل جداً."),
   body("fatherName")
     .trim()
     .notEmpty()
-    .withMessage("Father name is required.")
+    .withMessage("اسم الأب مطلوب.")
     .matches(/^[\u0600-\u06FF\s]+$/)
-    .withMessage("Father name must be Arabic letters only.")
+    .withMessage("اسم الأب يجب أن يكون بالعربية فقط.")
     .isLength({ max: 80 })
-    .withMessage("Father name is too long."),
+    .withMessage("اسم الأب طويل جداً."),
   body("familyName")
     .trim()
     .notEmpty()
-    .withMessage("Family name is required.")
+    .withMessage("اسم العائلة مطلوب.")
     .matches(/^[\u0600-\u06FF\s]+$/)
-    .withMessage("Family name must be Arabic letters only.")
+    .withMessage("اسم العائلة يجب أن يكون بالعربية فقط.")
     .isLength({ max: 80 })
-    .withMessage("Family name is too long."),
-  body("email").trim().notEmpty().withMessage("Email is required.").isEmail().withMessage("Invalid email format."),
+    .withMessage("اسم العائلة طويل جداً."),
+  body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
   body("password")
     .notEmpty()
-    .withMessage("Password is required.")
+    .withMessage("كلمة المرور مطلوبة.")
     .isLength({ min: 8, max: 128 })
-    .withMessage("Password must be between 8 and 128 characters.")
+    .withMessage("كلمة المرور يجب أن تكون بين 8 و 128 حرفاً.")
     .matches(/[A-Za-z]/)
-    .withMessage("Password must include at least one letter.")
+    .withMessage("كلمة المرور يجب أن تحتوي حرفاً إنجليزياً على الأقل.")
     .matches(/[0-9]/)
-    .withMessage("Password must include at least one number."),
+    .withMessage("كلمة المرور يجب أن تحتوي رقماً على الأقل."),
   body("confirmPassword").custom((value, { req }) => {
     if (value !== req.body.password) {
-      throw new Error("Passwords do not match.");
+      throw new Error("تأكيد كلمة المرور غير مطابق.");
     }
     return true;
   }),
   body("accountType")
     .isIn(["client", "freelancer"])
-    .withMessage("Account type must be client or freelancer."),
+    .withMessage("نوع الحساب يجب أن يكون عميلاً أو مستقلاً."),
   body("country")
     .trim()
     .notEmpty()
-    .withMessage("Country is required.")
+    .withMessage("الدولة مطلوبة.")
     .matches(/^[A-Z]{2}$/)
-    .withMessage("Country must be a 2-letter code."),
+    .withMessage("رمز الدولة يجب أن يكون حرفين."),
   body("country").custom((value) => {
     const v = String(value || "").trim().toUpperCase();
     if (!ARAB_COUNTRY_CODES.has(v)) {
-      throw new Error("Country must be an allowed Arab country.");
+      throw new Error("الدولة يجب أن تكون من الدول العربية المسموحة.");
     }
     return true;
   }),
   body("phone.countryCode")
     .customSanitizer(normalizePhonePart)
     .notEmpty()
-    .withMessage("Phone country code is required.")
+    .withMessage("رمز الدولة للجوال مطلوب.")
     .matches(/^\+\d{1,4}$/)
-    .withMessage("Invalid phone country code."),
+    .withMessage("رمز الدولة للجوال غير صالح."),
   body("phone.countryCode").custom((value) => {
     const v = normalizePhonePart(value);
     if (!ARAB_DIAL_CODES.has(v)) {
-      throw new Error("Phone country code must be an allowed Arab country code.");
+      throw new Error("رمز الاتصال للجوال يجب أن يكون مسموحاً.");
     }
     return true;
   }),
   body("phone.number")
     .customSanitizer(normalizePhonePart)
     .notEmpty()
-    .withMessage("Phone number is required.")
+    .withMessage("رقم الجوال مطلوب.")
     .matches(/^\d{4,14}$/)
-    .withMessage("Invalid phone number."),
+    .withMessage("رقم الجوال غير صالح."),
   body("phone").custom((_, { req }) => {
     const cc = normalizePhonePart(req.body?.phone?.countryCode);
     const num = normalizePhonePart(req.body?.phone?.number);
     const e164 = `${cc}${num}`;
     if (!phonePattern.test(e164)) {
-      throw new Error("Phone must include country code in international format (e.g. +9665xxxxxxxx).");
+      throw new Error("رقم الجوال يجب أن يكون بالصيغة الدولية (مثال: +9665xxxxxxxx).");
     }
     return true;
   }),
   body("whatsApp.countryCode")
     .customSanitizer(normalizePhonePart)
     .notEmpty()
-    .withMessage("WhatsApp country code is required.")
+    .withMessage("رمز الدولة لواتساب مطلوب.")
     .matches(/^\+\d{1,4}$/)
-    .withMessage("Invalid WhatsApp country code."),
+    .withMessage("رمز الدولة لواتساب غير صالح."),
   body("whatsApp.countryCode").custom((value) => {
     const v = normalizePhonePart(value);
     if (!ARAB_DIAL_CODES.has(v)) {
-      throw new Error("WhatsApp country code must be an allowed Arab country code.");
+      throw new Error("رمز الاتصال لواتساب يجب أن يكون مسموحاً.");
     }
     return true;
   }),
   body("whatsApp.number")
     .customSanitizer(normalizePhonePart)
     .notEmpty()
-    .withMessage("WhatsApp number is required.")
+    .withMessage("رقم واتساب مطلوب.")
     .matches(/^\d{4,14}$/)
-    .withMessage("Invalid WhatsApp number."),
+    .withMessage("رقم واتساب غير صالح."),
   body("whatsApp").custom((_, { req }) => {
     const cc = normalizePhonePart(req.body?.whatsApp?.countryCode);
     const num = normalizePhonePart(req.body?.whatsApp?.number);
     const e164 = `${cc}${num}`;
     if (!phonePattern.test(e164)) {
-      throw new Error("WhatsApp must include country code in international format (e.g. +9665xxxxxxxx).");
+      throw new Error("رقم واتساب يجب أن يكون بالصيغة الدولية (مثال: +9665xxxxxxxx).");
     }
     return true;
   }),
   body("gender")
     .isIn(["ذكر", "أنثى"])
-    .withMessage("Invalid gender value."),
+    .withMessage("قيمة الجنس غير صالحة."),
   body("termsAccepted")
     .custom((v) => v === true || v === "true")
-    .withMessage("You must accept the terms and conditions."),
+    .withMessage("يجب الموافقة على الشروط والأحكام."),
   body("categories").custom((value, { req }) => {
     const { accountType } = req.body;
     if (accountType === "client") {
       if (value != null && Array.isArray(value) && value.length > 0) {
-        throw new Error("Categories are only allowed for freelancer accounts.");
+        throw new Error("التصنيفات مسموحة لمستقلين فقط.");
       }
       return true;
     }
     if (accountType === "freelancer") {
       if (!Array.isArray(value) || value.length === 0) {
-        throw new Error("Select at least one category.");
+        throw new Error("اختر تصنيفاً واحداً على الأقل.");
       }
       const unique = [...new Set(value)];
       for (const c of unique) {
         if (!slugSet.has(c)) {
-          throw new Error("Invalid category selection.");
+          throw new Error("اختيار التصنيف غير صالح.");
         }
       }
     }
@@ -205,11 +205,58 @@ const registerValidators = [
 ];
 
 const loginValidators = [
-  body("email").trim().notEmpty().withMessage("Email is required.").isEmail().withMessage("Invalid email format."),
-  body("password").notEmpty().withMessage("Password is required."),
+  body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
+  body("password").notEmpty().withMessage("كلمة المرور مطلوبة."),
+];
+
+const verifyRegisterOtpValidators = [
+  body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
+  body("otp")
+    .trim()
+    .notEmpty()
+    .withMessage("رمز التحقق مطلوب.")
+    .matches(/^\d{6}$/)
+    .withMessage("رمز التحقق يجب أن يكون 6 أرقام."),
+];
+
+const resendRegisterOtpValidators = [
+  body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
+];
+
+const forgotPasswordValidators = [
+  body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
+];
+
+const verifyForgotPasswordOtpValidators = [
+  body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
+  body("otp")
+    .trim()
+    .notEmpty()
+    .withMessage("رمز التحقق مطلوب.")
+    .matches(/^\d{6}$/)
+    .withMessage("رمز التحقق يجب أن يكون 6 أرقام."),
+];
+
+const resetPasswordValidators = [
+  body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
+  body("resetToken").trim().notEmpty().withMessage("رمز إعادة التعيين مطلوب."),
+  body("newPassword")
+    .notEmpty()
+    .withMessage("كلمة المرور الجديدة مطلوبة.")
+    .isLength({ min: 8, max: 128 })
+    .withMessage("كلمة المرور يجب أن تكون بين 8 و 128 حرفاً.")
+    .matches(/[A-Za-z]/)
+    .withMessage("كلمة المرور يجب أن تحتوي حرفاً إنجليزياً على الأقل.")
+    .matches(/[0-9]/)
+    .withMessage("كلمة المرور يجب أن تحتوي رقماً على الأقل."),
 ];
 
 module.exports = {
   registerValidators,
   loginValidators,
+  verifyRegisterOtpValidators,
+  resendRegisterOtpValidators,
+  forgotPasswordValidators,
+  verifyForgotPasswordOtpValidators,
+  resetPasswordValidators,
 };

@@ -3,7 +3,8 @@ const authorizeRoles = (...roles) => {
     if (!req.user) {
       return res.status(401).json({
         success: false,
-        message: "Authentication is required.",
+        message: "يجب تسجيل الدخول.",
+        code: "UNAUTHORIZED",
       });
     }
 
@@ -15,7 +16,8 @@ const authorizeRoles = (...roles) => {
     if (!hasAllowedRole) {
       return res.status(403).json({
         success: false,
-        message: "You are not allowed to access this resource.",
+        message: "ليس لديك صلاحية لهذا الإجراء.",
+        code: "FORBIDDEN",
       });
     }
 

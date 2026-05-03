@@ -25,6 +25,14 @@ const CLIENT_STEPS = [
   { key: "review", label: "مراجعة وإرسال" },
 ];
 
+/** Same step keys/labels as admin internal order flow; used for fake training templates only. */
+const FAKE_TEMPLATE_STEPS = [
+  { key: "core", label: "بيانات الطلب" },
+  { key: "assignment", label: "الإسناد" },
+  { key: "files", label: "الملفات" },
+  { key: "review", label: "مراجعة وإرسال" },
+];
+
 const ORDER_CURRENCY = "JOD";
 
 /** Skills used before on this browser — suggestions only; not auto-filled on new orders. */
@@ -310,11 +318,11 @@ function SearchableSelect({
 }
 
 /**
- * @param {{ variant?: "page" | "modal"; onCreated?: (res: unknown) => void; audience?: "admin" | "client"; mode?: "normal" | "fake_training"; initialValues?: Record<string, unknown>; onSubmitFormData?: (fd: FormData, ctx: { form: Record<string, unknown>, files: File[] }) => Promise<unknown> }} props
+ * @param {{ variant?: "page" | "modal"; onCreated?: (res: unknown) => void; audience?: "admin" | "client"; initialValues?: Record<string, unknown>; onSubmitFormData?: (fd: FormData, ctx: { form: Record<string, unknown>, files: File[] }) => Promise<unknown> }} props
  * - page: full layout with back links (default admin create route).
  * - modal: compact shell for header popup; call onCreated after successful API response instead of staying on form.
  */
-function makeInitialForm(isFakeTraining, initialValues = {}) {
+function makeInitialForm(initialValues = {}) {
   return {
     orderCode: String(initialValues.orderCode || ""),
     title: String(initialValues.title || ""),
@@ -324,14 +332,17 @@ function makeInitialForm(isFakeTraining, initialValues = {}) {
     categoryId: String(initialValues.categoryId || ""),
     extraCategoryIds: Array.isArray(initialValues.extraCategoryIds) ? initialValues.extraCategoryIds : [],
     subSubcategoryId: String(initialValues.subSubcategoryId || ""),
-    projectType: isFakeTraining ? "bidding" : String(initialValues.projectType || "fixed"),
+    projectType: String(initialValues.projectType || "fixed"),
     currencyCode: ORDER_CURRENCY,
     budget: String(initialValues.budget || ""),
     bidBudgetMin: String(initialValues.bidBudgetMin || ""),
     bidBudgetMax: String(initialValues.bidBudgetMax || ""),
     durationValue: String(initialValues.durationValue || ""),
+    durationMin: String(initialValues.durationMin || ""),
+    durationMax: String(initialValues.durationMax || ""),
     durationUnit: String(initialValues.durationUnit || "days"),
     assignedFreelancerId: String(initialValues.assignedFreelancerId || ""),
+    isActiveTemplate: initialValues.isActiveTemplate !== false,
   };
 }
 
@@ -339,24 +350,20 @@ export default function AdminInternalOrderWizard({
   variant = "page",
   onCreated,
   audience = "admin",
-  mode = "normal",
   initialValues = {},
   onSubmitFormData,
+  mode = "real",
+  onSubmitFakeTemplate,
+  resetToken = 0,
 } = {}) {
   const { user } = useAuth();
   const { push } = useToast();
   const role = user?.primaryRole || user?.role;
   const isClientAudience = audience === "client";
-  const isFakeTraining = mode === "fake_training";
-  const steps = isClientAudience || isFakeTraining ? CLIENT_STEPS : ADMIN_STEPS;
+  const isFakeTemplate = mode === "fake-template";
+  const steps = isFakeTemplate ? FAKE_TEMPLATE_STEPS : isClientAudience ? CLIENT_STEPS : ADMIN_STEPS;
   const base = role ? getDashboardPath(role) : "/dashboard";
-  const listPath = isFakeTraining
-    ? role === "super_admin"
-      ? "/dashboard/super-admin/fake-orders"
-      : "/dashboard/admin/fake-orders"
-    : role === "super_admin"
-      ? "/dashboard/super-admin/orders"
-      : "/dashboard/admin/orders";
+  const listPath = role === "super_admin" ? "/dashboard/super-admin/orders" : "/dashboard/admin/orders";
 
   const [busy, setBusy] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -381,9 +388,18 @@ export default function AdminInternalOrderWizard({
   const [stepIdx, setStepIdx] = useState(0);
   const [attempted, setAttempted] = useState({});
 
-  const [form, setForm] = useState(() => makeInitialForm(isFakeTraining, initialValues));
+  const [form, setForm] = useState(() => makeInitialForm(initialValues));
 
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
+
+  useEffect(() => {
+    if (!isFakeTemplate) return;
+    setForm(makeInitialForm(initialValues));
+    setStepIdx(0);
+    setFiles([]);
+    setAttempted({});
+    setArchiveOnCreate(false);
+  }, [resetToken, isFakeTemplate, initialValues]);
 
   // Remember skill *names* for searchable suggestions; each new order starts with empty skills.
   useEffect(() => {
@@ -407,7 +423,7 @@ export default function AdminInternalOrderWizard({
 
     // Step 1 (merged): Basic + Classification + Pricing/Type + Duration
     out.core = {};
-    if (!isClientAudience && !isFakeTraining && String(form.orderCode || "").trim().length < 2) out.core.orderCode = "رقم الطلب مطلوب.";
+    if (!isClientAudience && !isFakeTemplate && String(form.orderCode || "").trim().length < 2) out.core.orderCode = "رقم الطلب مطلوب.";
     if (form.title.trim().length < 2) out.core.title = "عنوان المشروع مطلوب.";
     if (form.description.trim().length < 10) out.core.description = "وصف المشروع مطلوب (10 أحرف على الأقل).";
     if (!String(form.categoryId).trim()) out.core.categoryId = "يرجى اختيار التصنيف.";
@@ -419,7 +435,13 @@ export default function AdminInternalOrderWizard({
       if (!(Number(form.bidBudgetMax) > 0)) out.core.bidBudgetMax = "يرجى إدخال حد أعلى صحيح.";
       if (Number(form.bidBudgetMax) < Number(form.bidBudgetMin)) out.core.bidBudgetMax = "الحد الأعلى يجب أن يكون >= الحد الأدنى.";
     }
-    if (!(Number(form.durationValue) > 0)) out.core.durationValue = "يرجى إدخال مدة صحيحة أكبر من 0.";
+    if (isFakeTemplate && form.projectType === "bidding") {
+      if (!(Number(form.durationMin) > 0)) out.core.durationMin = "يرجى إدخال أدنى مدة صحيحة أكبر من 0.";
+      if (!(Number(form.durationMax) > 0)) out.core.durationMax = "يرجى إدخال أقصى مدة صحيحة أكبر من 0.";
+      if (Number(form.durationMax) < Number(form.durationMin)) out.core.durationMax = "أقصى المدة يجب أن يكون >= الأدنى.";
+    } else if (!(Number(form.durationValue) > 0)) {
+      out.core.durationValue = "يرجى إدخال مدة صحيحة أكبر من 0.";
+    }
     if (!["days", "hours", "minutes"].includes(form.durationUnit)) out.core.durationUnit = "يرجى اختيار وحدة الزمن.";
 
     // Step 5: Assignment (optional)
@@ -433,19 +455,13 @@ export default function AdminInternalOrderWizard({
     out.review = {};
 
     return out;
-  }, [form, files, isClientAudience, isFakeTraining]);
+  }, [form, files, isClientAudience, isFakeTemplate]);
 
   useEffect(() => {
     if (form.projectType === "bidding" && form.budget) {
       setForm((p) => ({ ...p, budget: "" }));
     }
   }, [form.projectType, form.budget]);
-
-  useEffect(() => {
-    if (isFakeTraining && form.projectType !== "bidding") {
-      setForm((p) => ({ ...p, projectType: "bidding" }));
-    }
-  }, [isFakeTraining, form.projectType]);
 
   useEffect(() => {
     if (form.currencyCode !== ORDER_CURRENCY) {
@@ -567,14 +583,65 @@ export default function AdminInternalOrderWizard({
       push({ type: "error", title: "تحقق من الحقول", message: "يرجى إكمال البيانات المطلوبة بشكل صحيح." });
       return;
     }
+    if (isFakeTemplate) {
+      if (typeof onSubmitFakeTemplate !== "function") {
+        push({ type: "error", title: "إعدادات القالب", message: "لم يتم تهيئة حفظ القالب." });
+        return;
+      }
+      setBusy(true);
+      try {
+        const notes = String(form.additionalNotes || "").trim();
+        const finalDescription = notes
+          ? `${form.description.trim()}\n\nملاحظات إضافية:\n${notes}`
+          : form.description.trim();
+        const selectedSs = subSubcategories.find((ss) => String(ss.id) === String(form.subSubcategoryId));
+        const inferredSubcat = selectedSs?.subcategoryId != null ? Number(selectedSs.subcategoryId) : null;
+        let minB;
+        let maxB;
+        let minD;
+        let maxD;
+        if (form.projectType === "fixed") {
+          minB = maxB = Number(String(form.budget).replace(/,/g, "."));
+          minD = maxD = Number(String(form.durationValue).replace(/,/g, "."));
+        } else {
+          minB = Number(String(form.bidBudgetMin).replace(/,/g, "."));
+          maxB = Number(String(form.bidBudgetMax).replace(/,/g, "."));
+          minD = Number(String(form.durationMin).replace(/,/g, "."));
+          maxD = Number(String(form.durationMax).replace(/,/g, "."));
+        }
+        const payload = {
+          title: form.title.trim(),
+          description: finalDescription,
+          categoryId: Number(form.categoryId),
+          subcategoryId: Number.isFinite(inferredSubcat) && inferredSubcat > 0 ? inferredSubcat : null,
+          subSubcategoryId: form.subSubcategoryId ? Number(form.subSubcategoryId) : null,
+          skills: form.preferredSkills || [],
+          minBudget: minB,
+          maxBudget: maxB,
+          currency: ORDER_CURRENCY,
+          minDuration: minD,
+          maxDuration: maxD,
+          durationUnit: form.durationUnit,
+          isActive: form.isActiveTemplate !== false,
+        };
+        await onSubmitFakeTemplate(payload);
+        push({ type: "success", title: "تم حفظ القالب", message: "تم تحديث قالب الطلبات التجريبية." });
+        if (typeof onCreated === "function") onCreated({ ok: true });
+      } catch (e2) {
+        push({ type: "error", title: "تعذر حفظ القالب", message: e2?.response?.data?.message || e2?.message });
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     setBusy(true);
     try {
       const fd = new FormData();
-      if (!isClientAudience && !isFakeTraining) {
+      if (!isClientAudience) {
         fd.append("orderCode", String(form.orderCode).trim());
       }
       fd.append("title", form.title.trim());
-      const notes = isClientAudience || isFakeTraining ? "" : String(form.additionalNotes || "").trim();
+      const notes = isClientAudience ? "" : String(form.additionalNotes || "").trim();
       const finalDescription = notes ? `${form.description.trim()}\n\nملاحظات إضافية:\n${notes}` : form.description.trim();
       fd.append("description", finalDescription);
       fd.append("categoryId", String(form.categoryId));
@@ -592,7 +659,7 @@ export default function AdminInternalOrderWizard({
       fd.append("durationValue", String(Number(form.durationValue)));
       fd.append("durationUnit", form.durationUnit);
       fd.append("preferredSkills", JSON.stringify(form.preferredSkills || []));
-      if (!isClientAudience && !isFakeTraining) {
+      if (!isClientAudience) {
         if (form.assignedFreelancerId) fd.append("assignedFreelancerId", String(form.assignedFreelancerId));
         fd.append("archive", String(!form.assignedFreelancerId && archiveOnCreate));
       }
@@ -610,8 +677,8 @@ export default function AdminInternalOrderWizard({
       }
       push({
         type: "success",
-        title: isFakeTraining ? "تم حفظ الطلب/القالب التجريبي" : "تم إنشاء الطلب",
-        message: isFakeTraining ? "" : `رقم الطلب: ${res?.data?.order?.orderCode || ""}`.trim(),
+        title: "تم إنشاء الطلب",
+        message: `رقم الطلب: ${res?.data?.order?.orderCode || ""}`.trim(),
       });
       if (typeof onCreated === "function") {
         onCreated(res);
@@ -623,7 +690,7 @@ export default function AdminInternalOrderWizard({
       setAttempted({});
       setForm((p) => ({
         ...p,
-        ...makeInitialForm(isFakeTraining),
+        ...makeInitialForm(),
       }));
       // Stay on the create page to allow fast creation of the next order.
     } catch (e2) {
@@ -735,12 +802,10 @@ export default function AdminInternalOrderWizard({
       {!isModal ? (
         <section className="card" style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <h1 style={{ marginBottom: 6 }}>{isFakeTraining ? "إنشاء طلب تجريبي" : isClientAudience ? "إنشاء طلب" : "إنشاء طلب (إداري)"}</h1>
+            <h1 style={{ marginBottom: 6 }}>{isClientAudience ? "إنشاء طلب" : "إنشاء طلب (إداري)"}</h1>
             <p style={{ margin: 0 }}>
               {isClientAudience
                 ? "نفس واجهة إنشاء الطلب مع صلاحيات العميل فقط وبدون تعيين مستقل."
-                : isFakeTraining
-                  ? "إنشاء قالب/طلب تجريبي بنفس حقول الطلب الحقيقي، بنوع مزايدة فقط."
                 : "سيتم نشر الطلب مباشرةً بدون دفع. ويمكن إسناده لفريلانسر أثناء الإنشاء."}
             </p>
           </div>
@@ -784,10 +849,7 @@ export default function AdminInternalOrderWizard({
                   <button
                     type="button"
                     className={form.projectType === "fixed" ? "btn btn-primary" : "btn btn-secondary"}
-                    onClick={() => {
-                      if (!isFakeTraining) set("projectType", "fixed");
-                    }}
-                    disabled={isFakeTraining}
+                    onClick={() => set("projectType", "fixed")}
                   >
                     سعر ثابت
                   </button>
@@ -800,18 +862,20 @@ export default function AdminInternalOrderWizard({
                   </button>
                 </div>
                 <div className="help">
-                  {isFakeTraining
-                    ? "الطلبات التجريبية تعمل دائمًا بنظام المزايدة."
+                  {isFakeTemplate
+                    ? form.projectType === "fixed"
+                      ? "سعر ثابت: ميزانية واحدة ومدة واحدة تُستخدم كنموذج للطلب التجريبي."
+                      : "مزايدة: نطاق ميزانية ونطاق مدة يُستخدمان عند توليد الطلب الوهمي."
                     : form.projectType === "fixed"
-                    ? "سعر ثابت: يُنشر في الحوض ويستلمه المستقل حسب تدفق الموافقات."
-                    : isClientAudience
-                      ? "مزايدة: يُنشر الطلب لاستقبال العروض، والدفع يتم لاحقًا عند اختيار عرض."
-                      : "مزايدة: بدون نطاق سعر عند الإنشاء؛ المستقلون يقدّمون العروض وتدار العملية من لوحة الطلبات."}
+                      ? "سعر ثابت: يُنشر في الحوض ويستلمه المستقل حسب تدفق الموافقات."
+                      : isClientAudience
+                        ? "مزايدة: يُنشر الطلب لاستقبال العروض، والدفع يتم لاحقًا عند اختيار عرض."
+                        : "مزايدة: بدون نطاق سعر عند الإنشاء؛ المستقلون يقدّمون العروض وتدار العملية من لوحة الطلبات."}
                 </div>
                 <FieldError message={attempted.core ? errorsByStep.core.projectType : ""} />
               </div>
 
-              {!isClientAudience && !isFakeTraining ? (
+              {!isClientAudience && !isFakeTemplate ? (
                 <div className="field admin-co-fields__span2">
                   <label className="label" htmlFor="adm-order-code">
                     رقم الطلب
@@ -888,13 +952,14 @@ export default function AdminInternalOrderWizard({
                   <FieldError message={attempted.core ? errorsByStep.core.categoryId : ""} />
                 </div>
 
-                <div className="field admin-co-fields__row4-span4" style={{ order: 30 }}>
-                  <label className="label" style={{ display: "block", marginBottom: 6 }}>
-                    تصنيفات إضافية (اختياري)
-                  </label>
+                {!isFakeTemplate ? (
+                  <div className="field admin-co-fields__row4-span4" style={{ order: 30 }}>
+                    <label className="label" style={{ display: "block", marginBottom: 6 }}>
+                      تصنيفات إضافية (اختياري)
+                    </label>
 
-                  <div style={{ display: "grid", gap: 12 }}>
-                    {(form.extraCategoryIds || []).map((id) => {
+                    <div style={{ display: "grid", gap: 12 }}>
+                      {(form.extraCategoryIds || []).map((id) => {
                       const catLabel = categoryOptions.find((o) => String(o.value) === String(id))?.label || id;
                       const list = Array.isArray(extraSubSubsByCat[String(id)]) ? extraSubSubsByCat[String(id)] : [];
                       const detailOptions = list.map((ss) => ({
@@ -1006,7 +1071,8 @@ export default function AdminInternalOrderWizard({
                       </div>
                     ) : null}
                   </div>
-                </div>
+                  </div>
+                ) : null}
 
                 <div className="field" style={{ order: 11, gridColumn: "span 2" }}>
                   <label className="label" htmlFor="adm-co-ss">
@@ -1081,34 +1147,89 @@ export default function AdminInternalOrderWizard({
                 )}
               </div>
 
-              <div className="field">
-                <label className="label" htmlFor="adm-co-dur">
-                  مدة التسليم
-                </label>
-                <input
-                  id="adm-co-dur"
-                  className="input"
-                  dir="ltr"
-                  inputMode="numeric"
-                  type="text"
-                  value={form.durationValue}
-                  placeholder="7"
-                  onChange={(e) => set("durationValue", e.target.value)}
-                />
-                <FieldError message={attempted.core ? errorsByStep.core.durationValue : ""} />
-              </div>
+              {isFakeTemplate && form.projectType === "bidding" ? (
+                <>
+                  <div className="field admin-co-fields__span2">
+                    <span className="label">نطاق مدة التسليم</span>
+                    <div className="client-order-modal__bid-pair">
+                      <input
+                        className="input"
+                        dir="ltr"
+                        inputMode="numeric"
+                        type="text"
+                        value={form.durationMin}
+                        placeholder="الأدنى"
+                        onChange={(e) => set("durationMin", e.target.value)}
+                      />
+                      <span className="client-order-modal__bid-sep">–</span>
+                      <input
+                        className="input"
+                        dir="ltr"
+                        inputMode="numeric"
+                        type="text"
+                        value={form.durationMax}
+                        placeholder="الأعلى"
+                        onChange={(e) => set("durationMax", e.target.value)}
+                      />
+                    </div>
+                    <FieldError
+                      message={
+                        attempted.core
+                          ? errorsByStep.core.durationMin || errorsByStep.core.durationMax || errorsByStep.core.durationValue
+                          : ""
+                      }
+                    />
+                  </div>
 
-              <div className="field">
-                <label className="label" htmlFor="adm-co-unit">
-                  الوحدة
-                </label>
-                <select id="adm-co-unit" className="input" value={form.durationUnit} onChange={(e) => set("durationUnit", e.target.value)}>
-                  <option value="days">أيام</option>
-                  <option value="hours">ساعات</option>
-                  <option value="minutes">دقائق</option>
-                </select>
-                <FieldError message={attempted.core ? errorsByStep.core.durationUnit : ""} />
-              </div>
+                  <div className="field">
+                    <label className="label" htmlFor="adm-co-unit-tpl">
+                      الوحدة
+                    </label>
+                    <select
+                      id="adm-co-unit-tpl"
+                      className="input"
+                      value={form.durationUnit}
+                      onChange={(e) => set("durationUnit", e.target.value)}
+                    >
+                      <option value="days">أيام</option>
+                      <option value="hours">ساعات</option>
+                      <option value="minutes">دقائق</option>
+                    </select>
+                    <FieldError message={attempted.core ? errorsByStep.core.durationUnit : ""} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="field">
+                    <label className="label" htmlFor="adm-co-dur">
+                      مدة التسليم
+                    </label>
+                    <input
+                      id="adm-co-dur"
+                      className="input"
+                      dir="ltr"
+                      inputMode="numeric"
+                      type="text"
+                      value={form.durationValue}
+                      placeholder="7"
+                      onChange={(e) => set("durationValue", e.target.value)}
+                    />
+                    <FieldError message={attempted.core ? errorsByStep.core.durationValue : ""} />
+                  </div>
+
+                  <div className="field">
+                    <label className="label" htmlFor="adm-co-unit">
+                      الوحدة
+                    </label>
+                    <select id="adm-co-unit" className="input" value={form.durationUnit} onChange={(e) => set("durationUnit", e.target.value)}>
+                      <option value="days">أيام</option>
+                      <option value="hours">ساعات</option>
+                      <option value="minutes">دقائق</option>
+                    </select>
+                    <FieldError message={attempted.core ? errorsByStep.core.durationUnit : ""} />
+                  </div>
+                </>
+              )}
 
               <div className="field admin-co-fields__span2">
                 <span className="label">المهارات المطلوبة</span>
@@ -1120,7 +1241,7 @@ export default function AdminInternalOrderWizard({
                 />
               </div>
 
-              {!isClientAudience && !isFakeTraining ? (
+              {!isClientAudience ? (
                 <div className="field admin-co-fields__span2">
                   <label className="label" htmlFor="co-additional-notes">
                     ملاحظات إضافية (اختياري)
@@ -1138,7 +1259,7 @@ export default function AdminInternalOrderWizard({
             </div>
           ) : null}
 
-          {!isClientAudience && !isFakeTraining && currentStepKey === "assignment" ? (
+          {!isClientAudience && currentStepKey === "assignment" && !isFakeTemplate ? (
             <>
               <h2 style={{ marginBottom: 10 }}>5) الإسناد (اختياري)</h2>
               <div className="form-grid">
@@ -1162,9 +1283,35 @@ export default function AdminInternalOrderWizard({
             </>
           ) : null}
 
+          {isFakeTemplate && currentStepKey === "assignment" ? (
+            <>
+              <h2 style={{ marginBottom: 10 }}>5) الإسناد</h2>
+              <div className="form-grid">
+                <div className="field" style={{ gridColumn: "span 12" }}>
+                  <p className="help" style={{ marginBottom: 12 }}>
+                    قوالب الطلبات التجريبية لا تدعم إسناد مستقل؛ تُستخدم فقط كأساس لتوليد طلبات وهمية في الجولات.
+                  </p>
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800 }}>
+                    <input
+                      type="checkbox"
+                      checked={form.isActiveTemplate !== false}
+                      onChange={(e) => set("isActiveTemplate", e.target.checked)}
+                    />
+                    القالب نشط ويُستخدم عند توليد الجولات
+                  </label>
+                </div>
+              </div>
+            </>
+          ) : null}
+
           {currentStepKey === "files" ? (
             <>
               <h2 style={{ marginBottom: 10 }}>6) الملفات (اختياري)</h2>
+              {isFakeTemplate ? (
+                <p className="help" style={{ marginBottom: 12 }}>
+                  المرفقات لا تُخزَّن مع قوالب الطلبات التجريبية حالياً؛ يمكنك تجاوز هذه الخطوة.
+                </p>
+              ) : null}
               <div
                 className="dropzone"
                 onDragOver={(e) => e.preventDefault()}
@@ -1275,7 +1422,7 @@ export default function AdminInternalOrderWizard({
                     <div className="oh-review__k">الميزانية</div>
                     <div className="oh-review__v">
                       {form.projectType === "bidding"
-                        ? isClientAudience
+                        ? isClientAudience || isFakeTemplate
                           ? `${formatMoney(form.bidBudgetMin)} - ${formatMoney(form.bidBudgetMax)}`
                           : "—"
                         : formatMoney(form.budget)}
@@ -1289,21 +1436,45 @@ export default function AdminInternalOrderWizard({
                 <div className="oh-review__row">
                   <div className="oh-review__k">مدة التسليم</div>
                   <div className="oh-review__v">
-                    {form.durationValue
-                      ? `${form.durationValue} ${
-                        form.durationUnit === "days"
-                          ? (form.durationValue >= 3 && form.durationValue <= 10 ? "أيام" : (form.durationValue === 2 ? "يومين" : "يوم"))
-                          : form.durationUnit === "hours"
-                            ? (form.durationValue >= 3 && form.durationValue <= 10 ? "ساعات" : (form.durationValue === 2 ? "ساعتين" : "ساعة"))
-                            : (form.durationValue >= 3 && form.durationValue <= 10 ? "دقائق" : (form.durationValue === 2 ? "دقيقتين" : "دقيقة"))
-                        }`
-                      : "—"}
+                    {isFakeTemplate && form.projectType === "bidding"
+                      ? form.durationMin && form.durationMax
+                        ? `${form.durationMin} – ${form.durationMax} ${
+                            form.durationUnit === "days" ? "أيام" : form.durationUnit === "hours" ? "ساعات" : "دقائق"
+                          }`
+                        : "—"
+                      : form.durationValue
+                        ? `${form.durationValue} ${
+                            form.durationUnit === "days"
+                              ? form.durationValue >= 3 && form.durationValue <= 10
+                                ? "أيام"
+                                : form.durationValue === 2
+                                  ? "يومين"
+                                  : "يوم"
+                              : form.durationUnit === "hours"
+                                ? form.durationValue >= 3 && form.durationValue <= 10
+                                  ? "ساعات"
+                                  : form.durationValue === 2
+                                    ? "ساعتين"
+                                    : "ساعة"
+                                : form.durationValue >= 3 && form.durationValue <= 10
+                                  ? "دقائق"
+                                  : form.durationValue === 2
+                                    ? "دقيقتين"
+                                    : "دقيقة"
+                          }`
+                        : "—"}
                   </div>
                 </div>
-                {!isClientAudience && !isFakeTraining ? (
+                {!isClientAudience && !isFakeTemplate ? (
                   <div className="oh-review__row">
                     <div className="oh-review__k">المستقل</div>
                     <div className="oh-review__v">{selectedFreelancerLabel || "غير معين"}</div>
+                  </div>
+                ) : null}
+                {isFakeTemplate ? (
+                  <div className="oh-review__row">
+                    <div className="oh-review__k">حالة القالب</div>
+                    <div className="oh-review__v">{form.isActiveTemplate !== false ? "نشط" : "معطّل"}</div>
                   </div>
                 ) : null}
                 <div className="oh-review__row">
@@ -1312,18 +1483,20 @@ export default function AdminInternalOrderWizard({
                 </div>
 
                 <div className="oh-review__note">
-                  {isClientAudience
-                    ? form.projectType === "fixed"
-                      ? "بعد المتابعة للدفع، سيتم تفعيل الطلب ونشره في الحوض."
-                      : "سيتم نشر الطلب لاستقبال العروض، والدفع يتم عند اختيار عرض."
-                    : form.assignedFreelancerId
-                      ? "سيتم تعيين الطلب مباشرة لهذا المستقل"
-                      : archiveOnCreate
-                        ? "سيتم حفظ الطلب في الأرشيف (غير نشط الآن). يمكنك تفعيله لاحقاً من لوحة التحكم."
-                        : "سيتم نشر الطلب في قائمة الطلبات المتاحة"}
+                  {isFakeTemplate
+                    ? "سيتم حفظ القالب في قوالب الطلبات التجريبية فقط — دون إنشاء طلب حقيقي."
+                    : isClientAudience
+                      ? form.projectType === "fixed"
+                        ? "بعد المتابعة للدفع، سيتم تفعيل الطلب ونشره في الحوض."
+                        : "سيتم نشر الطلب لاستقبال العروض، والدفع يتم عند اختيار عرض."
+                      : form.assignedFreelancerId
+                        ? "سيتم تعيين الطلب مباشرة لهذا المستقل"
+                        : archiveOnCreate
+                          ? "سيتم حفظ الطلب في الأرشيف (غير نشط الآن). يمكنك تفعيله لاحقاً من لوحة التحكم."
+                          : "سيتم نشر الطلب في قائمة الطلبات المتاحة"}
                 </div>
 
-                {!isClientAudience && !isFakeTraining && !form.assignedFreelancerId ? (
+                {!isClientAudience && !form.assignedFreelancerId && !isFakeTemplate ? (
                   <div style={{ marginTop: 10 }}>
                     <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 900 }}>
                       <input
@@ -1382,12 +1555,16 @@ export default function AdminInternalOrderWizard({
                 disabled={!canSubmit || busy}
               >
                 {busy
-                  ? "جارٍ الإنشاء…"
-                  : isClientAudience
-                    ? form.projectType === "fixed"
-                      ? "المتابعة إلى الدفع"
-                      : "نشر الطلب لاستقبال العروض"
-                    : "إنشاء الطلب"}
+                  ? isFakeTemplate
+                    ? "جارٍ الحفظ…"
+                    : "جارٍ الإنشاء…"
+                  : isFakeTemplate
+                    ? "حفظ القالب"
+                    : isClientAudience
+                      ? form.projectType === "fixed"
+                        ? "المتابعة إلى الدفع"
+                        : "نشر الطلب لاستقبال العروض"
+                      : "إنشاء الطلب"}
               </button>
             )}
           </div>

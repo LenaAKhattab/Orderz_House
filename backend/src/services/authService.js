@@ -5,6 +5,8 @@ const { pool } = require("../config/db");
 const { ROLES, PUBLIC_SIGNUP_ROLES } = require("../constants/roles");
 const { ensureUserRole, resolveAuthzContext } = require("./rbacService");
 const notificationService = require("./notificationService");
+const authOtpService = require("./authOtpService");
+const { createPublicApiError } = require("../utils/publicApiError");
 
 async function safeNotify(run) {
   try {
@@ -38,14 +40,12 @@ function generateAccountIdCandidate() {
 async function generateUniqueAccountId() {
   for (let i = 0; i < MAX_ACCOUNT_ID_ATTEMPTS; i += 1) {
     const id = generateAccountIdCandidate();
-    const { rowCount } = await pool.query("SELECT 1 FROM users WHERE account_id = $1", [id]);
+    const { rowCount } = await pool.query("SELECT 1 FROM users WHERE account_id = $1::text", [id]);
     if (rowCount === 0) {
       return id;
     }
   }
-  const err = new Error("Could not allocate a unique account ID. Please try again.");
-  err.statusCode = 503;
-  throw err;
+  throw createPublicApiError("تعذّر إكمال التسجيل مؤقتاً. حاول لاحقاً.", 503, "SERVICE_UNAVAILABLE");
 }
 
 /**
@@ -70,6 +70,7 @@ function mapUserPublic(row) {
     fatherName: row.father_name,
     familyName: row.family_name,
     email: row.email,
+    emailVerified: row.email_verified !== false,
     // Backward-compatible legacy role field (deprecated once RBAC fully migrated)
     role: row.role,
     country: row.country,
@@ -94,8 +95,8 @@ function withAuthz(user, authz) {
 async function findUserByEmail(emailNormalized) {
   const { rows } = await pool.query(
     `SELECT id, account_id, first_name, father_name, family_name, email, password_hash, role,
-            country, phone, whatsapp, gender, freelancer_categories, is_active, created_at
-     FROM users WHERE lower(email) = lower($1) LIMIT 1`,
+            country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at
+     FROM users WHERE lower(email::text) = lower($1::text) LIMIT 1`,
     [emailNormalized],
   );
   return rows[0] || null;
@@ -104,8 +105,8 @@ async function findUserByEmail(emailNormalized) {
 async function findUserById(id) {
   const { rows } = await pool.query(
     `SELECT id, account_id, first_name, father_name, family_name, email, role,
-            country, phone, whatsapp, gender, freelancer_categories, is_active, created_at
-     FROM users WHERE id = $1 LIMIT 1`,
+            country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at
+     FROM users WHERE id = $1::bigint LIMIT 1`,
     [id],
   );
   return rows[0] || null;
@@ -114,7 +115,7 @@ async function findUserById(id) {
 async function getUserRowByIdForAuthz(id) {
   const { rows } = await pool.query(
     `SELECT id, account_id, email, role, is_active
-     FROM users WHERE id = $1 LIMIT 1`,
+     FROM users WHERE id = $1::bigint LIMIT 1`,
     [id],
   );
   return rows[0] || null;
@@ -140,35 +141,21 @@ function handleUniqueViolation(error) {
   }
   const detail = error.detail || "";
   if (detail.includes("(email)")) {
-    const err = new Error("This email is already registered.");
-    err.statusCode = 409;
-    return err;
+    return createPublicApiError("هذا البريد الإلكتروني مسجّل مسبقاً.", 409, "EMAIL_ALREADY_REGISTERED");
   }
   if (detail.includes("(account_id)")) {
-    const err = new Error("Registration could not be completed.");
-    err.statusCode = 409;
-    return err;
+    return createPublicApiError("تعذّر إكمال التسجيل. حاول مجدداً.", 409, "REGISTRATION_FAILED");
   }
-  const err = new Error("Registration could not be completed.");
-  err.statusCode = 409;
-  return err;
+  return createPublicApiError("تعذّر إكمال التسجيل. حاول مجدداً.", 409, "REGISTRATION_FAILED");
 }
 
 function mapDbSchemaError(error) {
   if (!error || !error.code) return null;
   if (error.code === "42P01") {
-    const err = new Error(
-      "Database schema is missing required tables. New DB: run sql/init.sql (npm run db:init from backend). Then run npm run db:migrate for RBAC, plans, and subscriptions.",
-    );
-    err.statusCode = 503;
-    return err;
+    return createPublicApiError("قاعدة البيانات غير مكتملة. تواصل مع الدعم أو نفّذ التهيئة والترحيل.", 503, "SCHEMA_MISMATCH");
   }
   if (error.code === "42703") {
-    const err = new Error(
-      "Database schema does not match the application. Re-run sql/init.sql if needed, then npm run db:migrate from the backend directory.",
-    );
-    err.statusCode = 503;
-    return err;
+    return createPublicApiError("إعداد قاعدة البيانات غير متطابق. حدّث المخطط أو تواصل مع الدعم.", 503, "SCHEMA_MISMATCH");
   }
   return null;
 }
@@ -185,39 +172,32 @@ function composeE164(fieldName, raw) {
   const e164 = `${cc}${num}`;
   const phonePattern = /^\+[1-9]\d{7,14}$/;
   if (!phonePattern.test(e164)) {
-    const err = new Error(
+    throw createPublicApiError(
       fieldName === "phone"
-        ? "Phone must include country code in international format (e.g. +9665xxxxxxxx)."
-        : "WhatsApp must include country code in international format (e.g. +9665xxxxxxxx).",
+        ? "رقم الجوال يجب أن يكون بالصيغة الدولية (مثال: +9665xxxxxxxx)."
+        : "رقم واتساب يجب أن يكون بالصيغة الدولية (مثال: +9665xxxxxxxx).",
+      400,
+      "VALIDATION_ERROR",
     );
-    err.statusCode = 400;
-    throw err;
   }
   return e164;
 }
 
-async function registerUser(payload) {
+async function buildRegistrationRowData(payload) {
   const email = String(payload.email).trim().toLowerCase();
   const role = resolveSignupRole(payload.accountType);
 
   if (!role || !PUBLIC_SIGNUP_ROLES.includes(role)) {
-    const err = new Error("Invalid account type.");
-    err.statusCode = 400;
-    throw err;
+    throw createPublicApiError("نوع الحساب غير صالح.", 400, "VALIDATION_ERROR");
   }
 
-  ensureJwtSecret();
-
   const passwordHash = await bcrypt.hash(payload.password, BCRYPT_ROUNDS);
-  const accountId = await generateUniqueAccountId();
 
   let freelancerCategories = null;
   if (role === ROLES.FREELANCER) {
     const raw = payload.categories;
     if (!Array.isArray(raw) || raw.length === 0) {
-      const err = new Error("Select at least one category.");
-      err.statusCode = 400;
-      throw err;
+      throw createPublicApiError("اختر تصنيفاً واحداً على الأقل.", 400, "VALIDATION_ERROR");
     }
     freelancerCategories = [...new Set(raw)].sort();
   }
@@ -225,53 +205,95 @@ async function registerUser(payload) {
   const phone = composeE164("phone", payload.phone);
   const whatsApp = composeE164("whatsApp", payload.whatsApp);
 
+  return {
+    email,
+    role,
+    passwordHash,
+    freelancerCategories,
+    phone,
+    whatsApp,
+    firstName: String(payload.firstName).trim(),
+    fatherName: String(payload.fatherName).trim(),
+    familyName: String(payload.familyName).trim(),
+    country: String(payload.country).trim().toUpperCase(),
+    gender: String(payload.gender).trim(),
+    termsAccepted: Boolean(payload.termsAccepted),
+  };
+}
+
+async function registerUser(payload) {
+  ensureJwtSecret();
+
+  const data = await buildRegistrationRowData(payload);
+  const { email, role, passwordHash, freelancerCategories, phone, whatsApp } = data;
+
+  const existing = await findUserByEmail(email);
+  if (existing && existing.email_verified) {
+    throw createPublicApiError("هذا البريد الإلكتروني مسجّل مسبقاً.", 409, "EMAIL_ALREADY_REGISTERED");
+  }
+
   try {
+    if (existing && !existing.email_verified) {
+      await pool.query(
+        `UPDATE users SET
+          first_name = $1::text, father_name = $2::text, family_name = $3::text,
+          password_hash = $4::text, role = $5::text, country = $6::text, phone = $7::text, whatsapp = $8::text,
+          gender = $9::text, terms_accepted = $10::boolean, freelancer_categories = $11::jsonb,
+          email_verified = FALSE, updated_at = NOW()
+        WHERE id = $12::bigint`,
+        [
+          data.firstName,
+          data.fatherName,
+          data.familyName,
+          passwordHash,
+          role,
+          data.country,
+          phone,
+          whatsApp,
+          data.gender,
+          data.termsAccepted,
+          freelancerCategories,
+          existing.id,
+        ],
+      );
+      await ensureUserRole({ userId: existing.id, roleName: role });
+      await authOtpService.insertRegistrationOtp({ userId: existing.id, email });
+      return { requiresEmailVerification: true, email };
+    }
+
+    const accountId = await generateUniqueAccountId();
     const { rows } = await pool.query(
       `INSERT INTO users (
         account_id, first_name, father_name, family_name, email, password_hash, role,
-        country, phone, whatsapp, gender, terms_accepted, freelancer_categories
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        country, phone, whatsapp, gender, terms_accepted, freelancer_categories, email_verified
+      ) VALUES ($1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text, $8::text, $9::text, $10::text, $11::text, $12::boolean, $13::jsonb, FALSE)
       RETURNING id, account_id, first_name, father_name, family_name, email, role,
-                country, phone, whatsapp, gender, freelancer_categories, is_active, created_at`,
+                country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at`,
       [
         accountId,
-        String(payload.firstName).trim(),
-        String(payload.fatherName).trim(),
-        String(payload.familyName).trim(),
+        data.firstName,
+        data.fatherName,
+        data.familyName,
         email,
         passwordHash,
         role,
-        String(payload.country).trim().toUpperCase(),
+        data.country,
         phone,
         whatsApp,
-        String(payload.gender).trim(),
-        Boolean(payload.termsAccepted),
+        data.gender,
+        data.termsAccepted,
         freelancerCategories,
       ],
     );
     const row = rows[0];
-    await ensureUserRole({ userId: row.id, roleName: row.role });
-    await safeNotify(() =>
-      notificationService.createIfNotExists(
-        {
-          recipientUserId: Number(row.id),
-          recipientRole: row.role,
-          actorUserId: null,
-          type: "user.registered",
-          title: "تم إنشاء حسابك بنجاح",
-          message: "مرحباً بك في منصة أوردرز هاوس.",
-          entityType: "user",
-          entityId: Number(row.id),
-          link: "/dashboard",
-          priority: "medium",
-          metadata: { userId: String(row.id), role: row.role },
-        },
-        `user_registered_${String(row.id)}`,
-      ),
-    );
-    const authz = await resolveAuthzContext({ userId: row.id, legacyRole: row.role });
-    const token = signToken(row);
-    return { user: withAuthz(mapUserPublic(row), authz), token };
+    try {
+      await ensureUserRole({ userId: row.id, roleName: row.role });
+      await authOtpService.insertRegistrationOtp({ userId: row.id, email: row.email });
+    } catch (e) {
+      await pool.query(`DELETE FROM users WHERE id = $1::bigint`, [row.id]);
+      throw e;
+    }
+    return { requiresEmailVerification: true, email: row.email };
   } catch (error) {
     const mapped = handleUniqueViolation(error);
     if (mapped) throw mapped;
@@ -281,6 +303,18 @@ async function registerUser(payload) {
 
     throw error;
   }
+}
+
+async function buildAuthResponseForUserId(userId) {
+  ensureJwtSecret();
+  const row = await findUserById(userId);
+  if (!row) {
+    throw createPublicApiError("المستخدم غير موجود.", 404, "NOT_FOUND");
+  }
+  await ensureUserRole({ userId: row.id, roleName: row.role });
+  const authz = await resolveAuthzContext({ userId: row.id, legacyRole: row.role });
+  const token = signToken(row);
+  return { user: withAuthz(mapUserPublic(row), authz), token };
 }
 
 async function loginUser(emailRaw, password) {
@@ -295,19 +329,16 @@ async function loginUser(emailRaw, password) {
     throw error;
   }
 
-  const generic = () => {
-    const err = new Error("Invalid email or password.");
-    err.statusCode = 401;
-    return err;
-  };
+  const generic = () => createPublicApiError("البريد الإلكتروني أو كلمة المرور غير صحيحة.", 401, "INVALID_CREDENTIALS");
 
   if (!user) {
     throw generic();
   }
+  if (user.email_verified === false) {
+    throw createPublicApiError("يرجى تأكيد البريد الإلكتروني قبل تسجيل الدخول.", 403, "EMAIL_NOT_VERIFIED");
+  }
   if (!user.is_active) {
-    const err = new Error("This account has been disabled.");
-    err.statusCode = 403;
-    throw err;
+    throw createPublicApiError("تم تعطيل هذا الحساب.", 403, "ACCOUNT_DISABLED");
   }
 
   const match = await bcrypt.compare(password, user.password_hash);
@@ -332,9 +363,10 @@ async function getPublicUserById(id) {
     throw error;
   }
   if (!row) {
-    const err = new Error("User not found.");
-    err.statusCode = 404;
-    throw err;
+    throw createPublicApiError("المستخدم غير موجود.", 404, "NOT_FOUND");
+  }
+  if (row.email_verified === false) {
+    throw createPublicApiError("يرجى تأكيد البريد الإلكتروني قبل المتابعة.", 403, "EMAIL_NOT_VERIFIED");
   }
   const authz = await resolveAuthzContext({ userId: row.id, legacyRole: row.role });
   return withAuthz(mapUserPublic(row), authz);
@@ -345,4 +377,5 @@ module.exports = {
   loginUser,
   getPublicUserById,
   getUserRowByIdForAuthz,
+  buildAuthResponseForUserId,
 };

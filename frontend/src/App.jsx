@@ -31,7 +31,13 @@ import SuperAdminFinancialClaimsPage from "./pages/dashboard/SuperAdminFinancial
 import AdminSubscriptionsActivationPage from "./pages/dashboard/AdminSubscriptionsActivationPage";
 import NotificationsPage from "./pages/dashboard/NotificationsPage";
 import AdminCoursesPage from "./pages/dashboard/AdminCoursesPage";
-import AdminFakeOrdersPage from "./pages/dashboard/AdminFakeOrdersPage";
+import TrainingOrdersAdminShell, {
+  TrainingOrdersIndexRedirect,
+} from "./pages/dashboard/trainingOrders/TrainingOrdersAdminShell";
+import TrainingOrdersSettingsPage from "./pages/dashboard/trainingOrders/TrainingOrdersSettingsPage";
+import TrainingOrderTemplatesPage from "./pages/dashboard/trainingOrders/TrainingOrderTemplatesPage";
+import TrainingOrderRoundsPage from "./pages/dashboard/trainingOrders/TrainingOrderRoundsPage";
+import TrainingOrderApplicationsPage from "./pages/dashboard/trainingOrders/TrainingOrderApplicationsPage";
 import FreelancerCoursesPage from "./pages/dashboard/FreelancerCoursesPage";
 import FreelancerCourseDetailsPage from "./pages/dashboard/FreelancerCourseDetailsPage";
 import { ROLE } from "./constants/authRoutes";
@@ -161,14 +167,6 @@ function App() {
                   }
                 />
                 <Route
-                  path="/dashboard/super-admin/fake-orders"
-                  element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
-                      <AdminFakeOrdersPage />
-                    </RequireRole>
-                  }
-                />
-                <Route
                   path="/dashboard/super-admin/orders/create"
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
@@ -176,6 +174,21 @@ function App() {
                     </RequireRole>
                   }
                 />
+
+                <Route
+                  path="/dashboard/super-admin/training-orders"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <TrainingOrdersAdminShell />
+                    </RequireRole>
+                  }
+                >
+                  <Route index element={<TrainingOrdersIndexRedirect />} />
+                  <Route path="settings" element={<TrainingOrdersSettingsPage />} />
+                  <Route path="templates" element={<TrainingOrderTemplatesPage />} />
+                  <Route path="rounds" element={<TrainingOrderRoundsPage />} />
+                  <Route path="applications" element={<TrainingOrderApplicationsPage />} />
+                </Route>
 
                 <Route
                   path="/dashboard/admin"
@@ -198,14 +211,6 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.ADMIN]}>
                       <AdminOrdersPage />
-                    </RequireRole>
-                  }
-                />
-                <Route
-                  path="/dashboard/admin/fake-orders"
-                  element={
-                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
-                      <AdminFakeOrdersPage />
                     </RequireRole>
                   }
                 />

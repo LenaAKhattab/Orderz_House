@@ -35,7 +35,24 @@ function computeDueAtFromOrder(receivedAt, durationValue, durationUnit) {
   return due;
 }
 
-async function recordWebhookEventOnce(eventId) {
+function logStripeWebhook(fields) {
+  // eslint-disable-next-line no-console
+  console.log(
+    JSON.stringify({
+      component: "stripe_webhook",
+      ...fields,
+    }),
+  );
+}
+
+async function isStripeWebhookEventRecorded(eventId) {
+  if (!eventId) return false;
+  const { rows } = await pool.query(`SELECT 1 FROM stripe_webhook_events WHERE id = $1 LIMIT 1`, [String(eventId)]);
+  return Boolean(rows[0]);
+}
+
+/** Persist after successful handling so retries after a failure can re-run business logic. */
+async function recordStripeWebhookEventProcessed(eventId) {
   if (!eventId) return false;
   const { rowCount } = await pool.query(`INSERT INTO stripe_webhook_events (id) VALUES ($1) ON CONFLICT (id) DO NOTHING`, [
     String(eventId),
@@ -50,7 +67,8 @@ async function handleStripeWebhook(req, res) {
   const stripe = getStripeOrNull();
   const secret = process.env.STRIPE_WEBHOOK_SECRET && String(process.env.STRIPE_WEBHOOK_SECRET).trim();
   if (!stripe || !secret) {
-    return res.status(503).send("Stripe webhook not configured");
+    logStripeWebhook({ outcome: "misconfigured", detail: "missing_stripe_or_webhook_secret" });
+    return res.status(503).type("text/plain").send("Unavailable");
   }
 
   const sig = req.headers["stripe-signature"];
@@ -58,32 +76,44 @@ async function handleStripeWebhook(req, res) {
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, secret);
   } catch (err) {
-    return res.status(400).send(`Webhook signature verification failed.`);
+    logStripeWebhook({ outcome: "invalid_signature" });
+    return res.status(400).type("text/plain").send("Invalid signature");
   }
 
-  const inserted = await recordWebhookEventOnce(event.id);
-  if (!inserted) {
-    return res.json({ received: true, duplicate: true });
+  const eventId = String(event.id);
+  const eventType = String(event.type);
+
+  if (await isStripeWebhookEventRecorded(eventId)) {
+    logStripeWebhook({ eventId, type: eventType, outcome: "duplicate_skip" });
+    return res.status(200).json({ received: true, duplicate: true });
   }
 
   try {
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-      await applyCheckoutSessionCompleted(session);
-    } else if (event.type === "payment_intent.succeeded") {
-      const pi = event.data.object;
-      await applyPaymentIntentOutcome(pi, "paid");
-    } else if (event.type === "payment_intent.payment_failed") {
-      const pi = event.data.object;
-      await applyPaymentIntentOutcome(pi, "failed");
+    if (eventType === "checkout.session.completed") {
+      await applyCheckoutSessionCompleted(event.data.object);
+    } else if (eventType === "payment_intent.succeeded") {
+      await applyPaymentIntentOutcome(event.data.object, "paid");
+    } else if (eventType === "payment_intent.payment_failed") {
+      await applyPaymentIntentOutcome(event.data.object, "failed");
+    } else {
+      logStripeWebhook({ eventId, type: eventType, outcome: "unhandled_type" });
     }
+
+    const insertedNew = await recordStripeWebhookEventProcessed(eventId);
+    logStripeWebhook({
+      eventId,
+      type: eventType,
+      outcome: "handled",
+      recordInserted: insertedNew,
+    });
+    return res.status(200).json({ received: true, duplicate: !insertedNew });
   } catch (e) {
+    const safeMsg = String(e?.message || e).slice(0, 200);
+    logStripeWebhook({ eventId, type: eventType, outcome: "handler_failed", error: safeMsg });
     // eslint-disable-next-line no-console
-    console.error("[stripe webhook]", e);
+    console.error("[stripe webhook] handler failed:", safeMsg);
     return res.status(500).json({ received: false });
   }
-
-  return res.json({ received: true });
 }
 
 async function applyCheckoutSessionCompleted(session) {
@@ -735,38 +765,6 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus) {
           client,
           ),
         );
-        if (Number.isInteger(bidId) && bidId > 0) {
-          const { rows: selectedRows } = await client.query(
-            `SELECT freelancer_user_id
-             FROM order_freelancer_bids
-             WHERE id = $1
-               AND order_id = $2
-             LIMIT 1`,
-            [Number(bidId), Number(orderId)],
-          );
-          const selected = selectedRows[0];
-          if (selected?.freelancer_user_id) {
-            await safeNotify(() =>
-              notificationService.createIfNotExists(
-                {
-                  recipientUserId: Number(selected.freelancer_user_id),
-                  recipientRole: "freelancer",
-                  actorUserId: Number(order.created_by_user_id),
-                  type: "order.payment.failed",
-                  title: "فشل دفع العرض المختار",
-                  message: "فشل دفع العميل للعرض المختار وعاد الطلب للمزايدة.",
-                  entityType: "order",
-                  entityId: Number(orderId),
-                  link: `/dashboard/freelancer/orders/${encodeURIComponent(String(orderId))}`,
-                  priority: "high",
-                  metadata: { orderId: String(orderId), bidId: String(bidId) },
-                },
-                `order_bid_payment_failed_${orderId}_${bidId}`,
-                client,
-              ),
-            );
-          }
-        }
       }
     } else if (outcomePaymentStatus === "failed") {
       if (purpose === "client_fixed_order") {

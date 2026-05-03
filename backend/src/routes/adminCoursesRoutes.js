@@ -8,6 +8,7 @@ const {
   updateCourseValidators,
   updateLessonsValidators,
   assignCourseValidators,
+  assignOneFreelancerValidators,
   listCoursesValidators,
   courseIdParam,
 } = require("../validators/coursesValidators");
@@ -24,6 +25,18 @@ router.patch("/courses/:id", updateCourseValidators, validateRequest, adminCours
 router.delete("/courses/:id", courseIdParam, validateRequest, adminCoursesController.deleteCourse);
 router.post("/courses/:id/import-lessons", importLessonsValidators, validateRequest, adminCoursesController.importLessons);
 router.patch("/courses/:id/lessons", updateLessonsValidators, validateRequest, adminCoursesController.updateLessons);
+router.post(
+  "/courses/:id/assign-one",
+  assignOneFreelancerValidators,
+  validateRequest,
+  adminCoursesController.assignOneFreelancer,
+);
+router.post(
+  "/courses/:id/unassign-one",
+  assignOneFreelancerValidators,
+  validateRequest,
+  adminCoursesController.unassignOneFreelancer,
+);
 router.post("/courses/:id/assign", assignCourseValidators, validateRequest, adminCoursesController.assignFreelancers);
 
 module.exports = router;

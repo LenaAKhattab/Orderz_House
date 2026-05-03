@@ -36,8 +36,23 @@ async function markLessonComplete(req, res, next) {
   }
 }
 
+async function submitCourseCompletion(req, res, next) {
+  try {
+    const data = await coursesService.submitCourseCompletion({
+      freelancerUserId: req.auth.userId,
+      courseId: req.params.id,
+      auditConfirmed: req.body?.auditConfirmed,
+      auditNotes: req.body?.auditNotes,
+    });
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   listMyCourses,
   getMyCourseDetails,
   markLessonComplete,
+  submitCourseCompletion,
 };

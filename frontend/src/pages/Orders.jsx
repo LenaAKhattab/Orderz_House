@@ -127,10 +127,10 @@ const Orders = () => {
     };
   }, [user, loading, isFreelancer]);
 
-  const take = async (orderId) => {
+  const take = async (orderId, orderSource) => {
     setTakingId(orderId);
     try {
-      await takePoolOrderRequest(orderId);
+      await takePoolOrderRequest(orderId, { orderSource });
       push({ type: "success", title: "تم تقديم الطلب", message: "تم تسجيل طلب الاستلام (قد يحتاج موافقة الإدارة)." });
       const res = await listPoolOrdersRequest({ page, limit: 12 });
       setOrders(res?.data?.orders || []);
@@ -146,7 +146,7 @@ const Orders = () => {
     if (!bidModalOrder?.id) return;
     setBidBusyId(bidModalOrder.id);
     try {
-      await submitPoolOrderBidRequest(bidModalOrder.id, { amount });
+      await submitPoolOrderBidRequest(bidModalOrder.id, { amount }, { orderSource: bidModalOrder.orderSource });
       push({ type: "success", title: "تم إرسال العرض", message: "سيتمكن العميل لاحقاً من مراجعة العروض واختيار الأنسب." });
       setBidModalOrder(null);
       const res = await listPoolOrdersRequest({ page, limit: 12 });
@@ -243,7 +243,7 @@ const Orders = () => {
                                   : `سبق أن تقدمت لهذا الطلب (الحالة: ${order.myClaim.status}).`
                             : ""
                         }
-                        onClick={() => take(order.id)}
+                        onClick={() => take(order.id, order.orderSource)}
                       >
                         {takingId === order.id ? "جارٍ الاستلام…" : "استلام الطلب"}
                       </button>

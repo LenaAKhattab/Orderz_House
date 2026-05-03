@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { TOKEN_KEY, loginRequest, meRequest, registerRequest } from "../services/api";
+import { TOKEN_KEY, loginRequest, logoutRequest, meRequest, registerRequest, verifyRegisterOtpRequest } from "../services/api";
 import { getDashboardPath } from "../constants/authRoutes";
 import { AuthContext } from "./authContext";
 
@@ -7,33 +7,34 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const clearSession = useCallback(() => {
+  const clearSession = useCallback(async () => {
     localStorage.removeItem(TOKEN_KEY);
     setUser(null);
+    try {
+      await logoutRequest();
+    } catch {
+      /* ignore — cookie may already be absent */
+    }
   }, []);
 
-  const applySession = useCallback((token, nextUser) => {
-    localStorage.setItem(TOKEN_KEY, token);
+  /** Prefer HttpOnly cookie set by the API; do not persist JWT in localStorage. */
+  const applySession = useCallback((nextUser) => {
+    localStorage.removeItem(TOKEN_KEY);
     setUser(nextUser);
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) {
-      setLoading(false);
-      return undefined;
-    }
-
     let cancelled = false;
     (async () => {
       try {
         const data = await meRequest();
         if (!cancelled && data?.data?.user) {
+          localStorage.removeItem(TOKEN_KEY);
           setUser(data.data.user);
         }
       } catch {
         if (!cancelled) {
-          clearSession();
+          await clearSession();
         }
       } finally {
         if (!cancelled) {
@@ -49,28 +50,42 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const data = await loginRequest(email, password);
-    const token = data?.data?.token;
     const nextUser = data?.data?.user;
-    if (!token || !nextUser) {
+    if (!nextUser) {
       throw new Error("استجابة غير صالحة من الخادم.");
     }
-    applySession(token, nextUser);
+    applySession(nextUser);
     return nextUser;
   }, [applySession]);
 
   const register = useCallback(async (body) => {
     const data = await registerRequest(body);
-    const token = data?.data?.token;
+    if (data?.data?.requiresEmailVerification) {
+      return {
+        requiresEmailVerification: true,
+        email: data.data.email,
+      };
+    }
     const nextUser = data?.data?.user;
-    if (!token || !nextUser) {
+    if (!nextUser) {
       throw new Error("استجابة غير صالحة من الخادم.");
     }
-    applySession(token, nextUser);
+    applySession(nextUser);
     return nextUser;
   }, [applySession]);
 
-  const logout = useCallback(() => {
-    clearSession();
+  const completeRegisterWithOtp = useCallback(async (email, otp) => {
+    const data = await verifyRegisterOtpRequest(email, otp);
+    const nextUser = data?.data?.user;
+    if (!nextUser) {
+      throw new Error("استجابة غير صالحة من الخادم.");
+    }
+    applySession(nextUser);
+    return nextUser;
+  }, [applySession]);
+
+  const logout = useCallback(async () => {
+    await clearSession();
   }, [clearSession]);
 
   const value = useMemo(
@@ -79,13 +94,14 @@ export function AuthProvider({ children }) {
       loading,
       login,
       register,
+      completeRegisterWithOtp,
       logout,
       getDashboardPath: () => {
         const role = user?.primaryRole || user?.role;
         return user && role ? getDashboardPath(role) : "/login";
       },
     }),
-    [user, loading, login, register, logout],
+    [user, loading, login, register, completeRegisterWithOtp, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

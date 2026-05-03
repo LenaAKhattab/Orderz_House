@@ -5,6 +5,7 @@ export const TOKEN_KEY = "orderz_auth_token";
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
   timeout: 10000,
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
@@ -30,8 +31,39 @@ export const registerRequest = async (body) => {
   return data;
 };
 
+export const verifyRegisterOtpRequest = async (email, otp) => {
+  const { data } = await api.post("/auth/verify-register-otp", { email, otp });
+  return data;
+};
+
+export const resendRegisterOtpRequest = async (email) => {
+  const { data } = await api.post("/auth/resend-register-otp", { email });
+  return data;
+};
+
+export const forgotPasswordRequest = async (email) => {
+  const { data } = await api.post("/auth/forgot-password", { email });
+  return data;
+};
+
+export const verifyForgotPasswordOtpRequest = async (email, otp) => {
+  const { data } = await api.post("/auth/verify-forgot-password-otp", { email, otp });
+  return data;
+};
+
+export const resetPasswordRequest = async (email, resetToken, newPassword) => {
+  const { data } = await api.post("/auth/reset-password", { email, resetToken, newPassword });
+  return data;
+};
+
 export const meRequest = async () => {
   const { data } = await api.get("/auth/me");
+  return data;
+};
+
+/** Clears HttpOnly session cookie on the server (no body secrets). */
+export const logoutRequest = async () => {
+  const { data } = await api.post("/auth/logout");
   return data;
 };
 
@@ -142,13 +174,19 @@ export const listPoolOrdersRequest = async (params = {}) => {
   return data;
 };
 
-export const getPoolOrderByIdRequest = async (orderId) => {
-  const { data } = await api.get(`/orders/pool/${orderId}`, { timeout: 30000 });
+export const getPoolOrderByIdRequest = async (orderId, options = {}) => {
+  const orderSource = options.orderSource || options.source;
+  const params = orderSource === "fake" ? { source: "fake" } : {};
+  const { data } = await api.get(`/orders/pool/${orderId}`, { params, timeout: 30000 });
   return data;
 };
 
-export const takePoolOrderRequest = async (orderId) => {
-  const { data } = await api.post(`/orders/${orderId}/take`);
+/** @param {string} orderId @param {{ orderSource?: 'real'|'fake' }} [options] */
+export const takePoolOrderRequest = async (orderId, options = {}) => {
+  const orderSource = options.orderSource || options.source;
+  const url =
+    orderSource === "fake" ? `/orders/pool/fake/${orderId}/take` : `/orders/${orderId}/take`;
+  const { data } = await api.post(url);
   return data;
 };
 
@@ -215,8 +253,77 @@ export const cancelClientFixedOrderPaymentRequest = async (orderId) => {
   return data;
 };
 
-export const submitPoolOrderBidRequest = async (orderId, payload) => {
-  const { data } = await api.post(`/orders/pool/${orderId}/bids`, payload);
+export const submitPoolOrderBidRequest = async (orderId, payload, options = {}) => {
+  const orderSource = options.orderSource || options.source;
+  const url =
+    orderSource === "fake" ? `/orders/pool/fake/${orderId}/bids` : `/orders/pool/${orderId}/bids`;
+  const { data } = await api.post(url, payload);
+  return data;
+};
+
+// Admin — الطلبات التجريبية (Training / fake orders)
+export const adminGetTrainingOrdersSettingsRequest = async () => {
+  const { data } = await api.get("/admin/training-orders/settings");
+  return data;
+};
+
+export const adminPatchTrainingOrdersSettingsRequest = async (payload) => {
+  const { data } = await api.patch("/admin/training-orders/settings", payload);
+  return data;
+};
+
+export const adminListTrainingTemplatesRequest = async (params = {}) => {
+  const { data } = await api.get("/admin/training-orders/templates", { params });
+  return data;
+};
+
+export const adminGetTrainingTemplateRequest = async (id) => {
+  const { data } = await api.get(`/admin/training-orders/templates/${id}`);
+  return data;
+};
+
+export const adminCreateTrainingTemplateRequest = async (payload) => {
+  const { data } = await api.post("/admin/training-orders/templates", payload);
+  return data;
+};
+
+export const adminPatchTrainingTemplateRequest = async (id, payload) => {
+  const { data } = await api.patch(`/admin/training-orders/templates/${id}`, payload);
+  return data;
+};
+
+export const adminDeleteTrainingTemplateRequest = async (id) => {
+  const { data } = await api.delete(`/admin/training-orders/templates/${id}`);
+  return data;
+};
+
+export const adminListTrainingRoundsRequest = async (params = {}) => {
+  const { data } = await api.get("/admin/training-orders/rounds", { params });
+  return data;
+};
+
+export const adminStartTrainingRoundRequest = async () => {
+  const { data } = await api.post("/admin/training-orders/rounds/start");
+  return data;
+};
+
+export const adminCancelTrainingRoundRequest = async (id) => {
+  const { data } = await api.post(`/admin/training-orders/rounds/${id}/cancel`);
+  return data;
+};
+
+export const adminListTrainingApplicationsRequest = async (params = {}) => {
+  const { data } = await api.get("/admin/training-orders/applications", { params });
+  return data;
+};
+
+export const adminListTrainingApplicationsSummaryRequest = async (params = {}) => {
+  const { data } = await api.get("/admin/training-orders/applications/summary", { params });
+  return data;
+};
+
+export const adminListTrainingApplicationsByFakeOrderRequest = async (fakeOrderId) => {
+  const { data } = await api.get(`/admin/training-orders/fake-orders/${fakeOrderId}/applications`);
   return data;
 };
 
@@ -427,64 +534,24 @@ export const adminAssignCourseFreelancersRequest = async (courseId, payload) => 
   return data;
 };
 
+/** Add one freelancer to a course without replacing other assignments (send modal). */
+export const adminAddCourseFreelancerRequest = async (courseId, freelancerUserId) => {
+  const { data } = await api.post(`/admin/courses/${courseId}/assign-one`, {
+    freelancerUserId: Number(freelancerUserId),
+  });
+  return data;
+};
+
+/** Remove one freelancer from a course (admin "unsend"). */
+export const adminRemoveCourseFreelancerRequest = async (courseId, freelancerUserId) => {
+  const { data } = await api.post(`/admin/courses/${courseId}/unassign-one`, {
+    freelancerUserId: Number(freelancerUserId),
+  });
+  return data;
+};
+
 export const adminListCourseFreelancersRequest = async (params = {}) => {
   const { data } = await api.get("/admin/courses/freelancers", { params });
-  return data;
-};
-
-// Fake / Training bidding orders (admin/super_admin)
-export const adminCreateFakeOrderTemplateRequest = async (payload) => {
-  const { data } = await api.post("/admin/fake-orders/templates", payload);
-  return data;
-};
-
-export const adminListFakeOrderTemplatesRequest = async (params = {}) => {
-  const { data } = await api.get("/admin/fake-orders/templates", { params });
-  return data;
-};
-
-export const adminUpdateFakeOrderTemplateRequest = async (id, payload) => {
-  const { data } = await api.patch(`/admin/fake-orders/templates/${id}`, payload);
-  return data;
-};
-
-export const adminDeactivateFakeOrderTemplateRequest = async (id) => {
-  const { data } = await api.delete(`/admin/fake-orders/templates/${id}`);
-  return data;
-};
-
-export const adminCreateFakeOrderRoundRequest = async (payload) => {
-  const { data } = await api.post("/admin/fake-orders/rounds", payload);
-  return data;
-};
-
-export const adminListFakeOrderRoundsRequest = async (params = {}) => {
-  const { data } = await api.get("/admin/fake-orders/rounds", { params });
-  return data;
-};
-
-export const adminGetFakeOrderRoundRequest = async (id) => {
-  const { data } = await api.get(`/admin/fake-orders/rounds/${id}`);
-  return data;
-};
-
-export const adminStopFakeOrderRoundRequest = async (id) => {
-  const { data } = await api.post(`/admin/fake-orders/rounds/${id}/stop`);
-  return data;
-};
-
-export const adminGetFakeOrderRoundAnalyticsRequest = async (id) => {
-  const { data } = await api.get(`/admin/fake-orders/rounds/${id}/analytics`);
-  return data;
-};
-
-export const adminGetFakeOrderSettingsRequest = async () => {
-  const { data } = await api.get("/admin/fake-orders/settings");
-  return data;
-};
-
-export const adminUpdateFakeOrderSettingsRequest = async (payload) => {
-  const { data } = await api.patch("/admin/fake-orders/settings", payload);
   return data;
 };
 
@@ -501,6 +568,11 @@ export const freelancerGetCourseDetailsRequest = async (courseId) => {
 
 export const freelancerMarkLessonCompleteRequest = async (courseId, lessonId) => {
   const { data } = await api.post(`/freelancer/courses/${courseId}/lessons/${lessonId}/complete`);
+  return data;
+};
+
+export const freelancerSubmitCourseCompletionRequest = async (courseId, payload = {}) => {
+  const { data } = await api.post(`/freelancer/courses/${courseId}/complete`, payload);
   return data;
 };
 
