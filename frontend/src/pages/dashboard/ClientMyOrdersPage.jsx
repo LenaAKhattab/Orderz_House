@@ -154,55 +154,76 @@ export default function ClientMyOrdersPage() {
   }, [orders]);
 
   return (
-    <main className="container page-content dashboard-orders-system" dir="rtl">
-      <section className="card dashboard-orders-system__header">
-        <div className="dashboard-orders-system__header-main">
-          <p className="dashboard-orders-system__kicker">لوحة العميل</p>
-          <h1>طلباتي</h1>
-          <p>تتبّع طلباتك، حالة الدفع، واستقبال العروض للمزايدة، ثم اختيار العرض والدفع لبدء التنفيذ.</p>
-        </div>
-        <div className="dashboard-orders-system__header-actions">
-          <button type="button" className="btn btn-primary" onClick={() => openCreateOrder()}>
-            + طلب جديد
-          </button>
-          <Link to="/orders" className="btn btn-secondary">
-            استكشاف الحوض
-          </Link>
-        </div>
-      </section>
-
-      <section className="card dashboard-orders-system__filters" aria-label="ملخص سريع">
-        <div className="dashboard-orders-system__chips">
-          <span className="oh-mini-chip">إجمالي الطلبات: {busy ? "—" : stats.total}</span>
-          <span className="oh-mini-chip">في الحوض: {busy ? "—" : stats.inPool}</span>
-          <span className="oh-mini-chip">مُسندة: {busy ? "—" : stats.assigned}</span>
-        </div>
-        <p className="help">القائمة مرتبة من الأحدث إلى الأقدم.</p>
-        <button type="button" className="btn btn-secondary" onClick={onRefresh} disabled={busy || refreshing}>
-          {refreshing ? "جارٍ التحديث…" : "تحديث القائمة"}
-        </button>
-      </section>
-
-      <section className="cards-grid dashboard-orders-system__list" aria-busy={busy}>
-        {busy ? (
-          <OrderCardsGridSkeleton count={3} />
-        ) : orders.length === 0 ? (
-          <section className="card dashboard-orders-system__empty">
-            <h2>لا توجد طلبات بعد</h2>
-            <p>أنشئ أول طلب ليظهر هنا مع حالته وتفاصيله.</p>
-            <div className="dashboard-orders-system__header-actions">
+    <div className="container page-content dash-shell client-my-orders-page" dir="rtl">
+      <div className="dash client-my-orders-page__root">
+        <header className="dash-hero dash-hero--elevated">
+          <div className="dash-hero__copy">
+            <p className="dash-hero__kicker">لوحة العميل</p>
+            <h1 className="dash-hero__title oh-orders-sidebar-title">طلباتي</h1>
+            <p className="dash-hero__subtitle">
+              تتبّع طلباتك، حالة الدفع، واستقبال العروض للمزايدة، ثم اختيار العرض والدفع لبدء التنفيذ.
+            </p>
+            <div className="client-my-orders-page__hero-actions">
               <button type="button" className="btn btn-primary" onClick={() => openCreateOrder()}>
-                إنشاء طلب
+                + طلب جديد
               </button>
               <Link to="/orders" className="btn btn-secondary">
-                تصفّح الحوض
+                استكشاف الحوض
               </Link>
             </div>
-          </section>
-        ) : (
-          orders.map((order) => <ClientOrderCardCompact key={order.id} order={order} onOrdersChange={load} />)
-        )}
-      </section>
-    </main>
+          </div>
+        </header>
+
+        <div className="client-my-orders-page__stats" aria-label="ملخص الطلبات">
+          <div className="client-my-orders-page__stat">
+            <span className="client-my-orders-page__stat-label">إجمالي الطلبات</span>
+            <strong className="client-my-orders-page__stat-value">{busy ? "—" : stats.total}</strong>
+          </div>
+          <div className="client-my-orders-page__stat client-my-orders-page__stat--accent">
+            <span className="client-my-orders-page__stat-label">في الحوض</span>
+            <strong className="client-my-orders-page__stat-value">{busy ? "—" : stats.inPool}</strong>
+          </div>
+          <div className="client-my-orders-page__stat client-my-orders-page__stat--muted">
+            <span className="client-my-orders-page__stat-label">مُسندة</span>
+            <strong className="client-my-orders-page__stat-value">{busy ? "—" : stats.assigned}</strong>
+          </div>
+        </div>
+
+        <section className="dash-section client-my-orders-page__filters-card">
+          <div className="dash-section__body client-my-orders-page__filters-body">
+            <p className="client-my-orders-page__list-meta help">القائمة مرتبة من الأحدث إلى الأقدم. يمكنك التحديث دورياً لمزامنة الحالة.</p>
+            <button type="button" className="btn btn-secondary client-my-orders-page__refresh" onClick={onRefresh} disabled={busy || refreshing}>
+              {refreshing ? "جارٍ التحديث…" : "تحديث القائمة"}
+            </button>
+          </div>
+        </section>
+
+        <section className="cards-grid client-my-orders-page__grid" aria-busy={busy}>
+          {busy ? (
+            <OrderCardsGridSkeleton count={3} />
+          ) : orders.length === 0 ? (
+            <div className="dash-empty client-my-orders-page__empty">
+              <div className="dash-empty__icon" aria-hidden="true">
+                ◌
+              </div>
+              <div className="dash-empty__copy">
+                <h2 className="dash-empty__title">لا توجد طلبات بعد</h2>
+                <p className="dash-empty__subtitle">أنشئ أول طلب ليظهر هنا مع حالته وتفاصيله.</p>
+              </div>
+              <div className="client-my-orders-page__empty-actions">
+                <button type="button" className="btn btn-primary" onClick={() => openCreateOrder()}>
+                  إنشاء طلب
+                </button>
+                <Link to="/orders" className="btn btn-secondary">
+                  تصفّح الحوض
+                </Link>
+              </div>
+            </div>
+          ) : (
+            orders.map((order) => <ClientOrderCardCompact key={order.id} order={order} onOrdersChange={load} />)
+          )}
+        </section>
+      </div>
+    </div>
   );
 }
