@@ -16,6 +16,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import Unauthorized from "./pages/Unauthorized";
+import NotFoundPage from "./pages/NotFoundPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import SuperAdminPlansPage from "./pages/dashboard/SuperAdminPlansPage";
 import SuperAdminSubscriptionsPage from "./pages/dashboard/SuperAdminSubscriptionsPage";
@@ -40,6 +41,12 @@ import TrainingOrderRoundsPage from "./pages/dashboard/trainingOrders/TrainingOr
 import TrainingOrderApplicationsPage from "./pages/dashboard/trainingOrders/TrainingOrderApplicationsPage";
 import FreelancerCoursesPage from "./pages/dashboard/FreelancerCoursesPage";
 import FreelancerCourseDetailsPage from "./pages/dashboard/FreelancerCourseDetailsPage";
+import FreelancerProfilePage from "./pages/dashboard/FreelancerProfilePage";
+import FreelancerSettingsPage from "./pages/dashboard/FreelancerSettingsPage";
+import ClientProfilePage from "./pages/dashboard/ClientProfilePage";
+import ClientSettingsPage from "./pages/dashboard/ClientSettingsPage";
+import AdminSettingsPage from "./pages/dashboard/AdminSettingsPage";
+import SuperAdminSettingsPage from "./pages/dashboard/SuperAdminSettingsPage";
 import { ROLE } from "./constants/authRoutes";
 
 function App() {
@@ -81,16 +88,7 @@ function App() {
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-conditions" element={<TermsConditions />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
-            </Route>
-
-            <Route
-              element={
-                <ClientCreateOrderModalProvider>
-                  <MainLayout />
-                </ClientCreateOrderModalProvider>
-              }
-            >
-              <Route path="/dashboard/freelancer/orders" element={<DashboardPage />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Route>
 
             <Route element={<RequireAuth />}>
@@ -151,6 +149,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/super-admin/settings"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminSettingsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/super-admin/courses"
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
@@ -207,6 +213,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/admin/settings"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <AdminSettingsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/admin/orders"
                   element={
                     <RequireRole allowedRoles={[ROLE.ADMIN]}>
@@ -240,6 +254,14 @@ function App() {
                 />
 
                 <Route
+                  path="/dashboard/freelancer/orders"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER, ROLE.CLIENT]}>
+                      <DashboardPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/freelancer"
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
@@ -252,6 +274,22 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
                       <NotificationsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/profile"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerProfilePage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/settings"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerSettingsPage />
                     </RequireRole>
                   }
                 />
@@ -321,6 +359,22 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/client/profile"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.CLIENT]}>
+                      <ClientProfilePage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/client/settings"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.CLIENT]}>
+                      <ClientSettingsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/client/my-orders"
                   element={
                     <RequireRole allowedRoles={[ROLE.CLIENT]}>
@@ -344,6 +398,7 @@ function App() {
                     </RequireRole>
                   }
                 />
+                <Route path="/dashboard/*" element={<NotFoundPage />} />
               </Route>
             </Route>
           </Routes>

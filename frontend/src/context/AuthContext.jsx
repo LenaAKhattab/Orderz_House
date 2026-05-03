@@ -88,6 +88,15 @@ export function AuthProvider({ children }) {
     await clearSession();
   }, [clearSession]);
 
+  const refreshUser = useCallback(async () => {
+    const data = await meRequest();
+    const nextUser = data?.data?.user;
+    if (nextUser) {
+      localStorage.removeItem(TOKEN_KEY);
+      setUser(nextUser);
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -96,12 +105,13 @@ export function AuthProvider({ children }) {
       register,
       completeRegisterWithOtp,
       logout,
+      refreshUser,
       getDashboardPath: () => {
         const role = user?.primaryRole || user?.role;
         return user && role ? getDashboardPath(role) : "/login";
       },
     }),
-    [user, loading, login, register, completeRegisterWithOtp, logout],
+    [user, loading, login, register, completeRegisterWithOtp, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
