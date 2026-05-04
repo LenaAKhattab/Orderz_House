@@ -12,6 +12,7 @@ const ordersService = require("./ordersService");
 const notificationService = require("./notificationService");
 const notificationEventsService = require("./notificationEventsService");
 const { planEligibleForFreelancerSelfCheckout } = require("./plansService");
+const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPaymentStatus");
 
 async function safeNotify(run) {
   try {
@@ -805,8 +806,13 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
   const uid = Number(freelancerUserId);
   const pid = Number(planId);
   if (!Number.isInteger(uid) || uid < 1 || !Number.isInteger(pid) || pid < 1) {
-    const err = new Error("Invalid freelancer or plan.");
+    const err = new Error(
+      !Number.isInteger(uid) || uid < 1
+        ? "Invalid or missing freelancer user id (check auth context)."
+        : "Invalid plan id for checkout.",
+    );
     err.statusCode = 400;
+    err.exposeToClient = true;
     throw err;
   }
 
@@ -828,8 +834,13 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       [pid],
     );
     const plan = planRows[0];
+    if (!plan) {
+      const err = new Error(`No plan found for checkout (planId=${pid}).`);
+      err.statusCode = 400;
+      err.exposeToClient = true;
+      throw err;
+    }
     if (
-      plan &&
       !plan.deleted_at &&
       plan.is_active &&
       plan.is_visible &&
@@ -841,15 +852,38 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       throw err;
     }
     if (!planEligibleForFreelancerSelfCheckout(plan)) {
-      const err = new Error("Selected plan is not available.");
+      const err = new Error(
+        `Selected plan is not available for self-checkout (planId=${pid}). It must be active, visible, self_subscribe_allowed, and have price_jod > 0.`,
+      );
       err.statusCode = 400;
+      err.exposeToClient = true;
       throw err;
     }
     const priceJod = plan.price_jod != null ? Number(plan.price_jod) : null;
 
     const currency = "jod";
     const amountMinor = amountMajorToStripeMinor(priceJod, "JOD");
-    const successUrl = `${clientUrl}/plans?freelancer_sub_paid=1`;
+    if (amountMinor == null || !Number.isFinite(amountMinor) || amountMinor < 1) {
+      const err = new Error(
+        `Invalid subscription amount for planId=${pid} (check price_jod / currency). Checkout uses dynamic price_data, not a static Stripe Price ID.`,
+      );
+      err.statusCode = 400;
+      err.exposeToClient = true;
+      throw err;
+    }
+    const debugCheckout =
+      process.env.NODE_ENV !== "production" || String(process.env.DEBUG_FREELANCER_CHECKOUT || "") === "1";
+    if (debugCheckout) {
+      // eslint-disable-next-line no-console
+      console.warn("[createFreelancerSubscriptionCheckoutSession]", {
+        planId: pid,
+        freelancerUserId: uid,
+        priceJod,
+        amountMinor,
+        lineItems: "price_data (no env Stripe Price ID for freelancer subscription)",
+      });
+    }
+    const successUrl = `${clientUrl}/plans?freelancer_sub_paid=1&session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${clientUrl}/plans?freelancer_sub_cancelled=1`;
 
     const session = await stripe.checkout.sessions.create({
@@ -925,6 +959,147 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
   }
 }
 
+/**
+ * After returning from Stripe Checkout, verify the session server-side and mark the subscription paid.
+ * Idempotent with webhooks: `markFreelancerSubscriptionStripePaymentPaid` + notification dedupe keys.
+ */
+async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeSessionId }) {
+  const stripe = getStripeOrNull();
+  if (!stripe) {
+    const err = new Error("Stripe is not configured on the server.");
+    err.statusCode = 503;
+    throw err;
+  }
+  const sid = String(stripeSessionId || "").trim();
+  if (!sid) {
+    const err = new Error("sessionId is required.");
+    err.statusCode = 400;
+    err.exposeToClient = true;
+    throw err;
+  }
+
+  let session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(sid, { expand: ["payment_intent"] });
+  } catch {
+    const err = new Error("Could not retrieve Stripe checkout session.");
+    err.statusCode = 502;
+    err.exposeToClient = true;
+    throw err;
+  }
+
+  const meta = session.metadata || {};
+  if (String(meta.purpose || "") !== "freelancer_subscription_purchase") {
+    const err = new Error("This checkout session is not for a freelancer subscription.");
+    err.statusCode = 400;
+    err.exposeToClient = true;
+    throw err;
+  }
+  if (Number(meta.freelancerUserId) !== Number(freelancerUserId)) {
+    const err = new Error("You cannot confirm this checkout session.");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  const planId = Number(meta.planId);
+  if (!Number.isInteger(planId) || planId < 1) {
+    const err = new Error("Invalid subscription metadata.");
+    err.statusCode = 400;
+    err.exposeToClient = true;
+    throw err;
+  }
+
+  const expectedMinor = meta.expectedAmountMinor != null ? Number(meta.expectedAmountMinor) : null;
+  const total = session.amount_total != null ? Number(session.amount_total) : null;
+  if (
+    expectedMinor != null &&
+    Number.isFinite(expectedMinor) &&
+    total != null &&
+    Number.isFinite(total) &&
+    expectedMinor !== total
+  ) {
+    const err = new Error("Payment amount does not match subscription.");
+    err.statusCode = 409;
+    err.exposeToClient = true;
+    throw err;
+  }
+
+  if (!isCheckoutSessionPaymentSuccessful(session)) {
+    const err = new Error("Payment is not completed yet.");
+    err.statusCode = 402;
+    err.exposeToClient = true;
+    err.publicCode = "PAYMENT_NOT_COMPLETED";
+    throw err;
+  }
+
+  const piId =
+    typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null;
+
+  const db = await pool.connect();
+  try {
+    await db.query("BEGIN");
+
+    const { rows: preRows } = await db.query(
+      `SELECT id, payment_status FROM freelancer_subscriptions
+       WHERE freelancer_user_id = $1 AND plan_id = $2 AND is_current = TRUE AND source = 'stripe'
+       ORDER BY id DESC LIMIT 1
+       FOR UPDATE`,
+      [Number(freelancerUserId), planId],
+    );
+    const pre = preRows[0];
+    const wasAlreadyPaid = pre && String(pre.payment_status || "").toLowerCase() === "paid";
+
+    const sub = await subscriptionsService.markFreelancerSubscriptionStripePaymentPaid(
+      {
+        freelancerUserId,
+        planId,
+        stripeSessionId: session.id || null,
+        stripePaymentIntentId: piId,
+        paidAt: new Date(),
+      },
+      db,
+    );
+
+    if (!sub) {
+      await db.query("ROLLBACK");
+      const err = new Error("No pending subscription found for this checkout.");
+      err.statusCode = 404;
+      err.exposeToClient = true;
+      throw err;
+    }
+
+    await db.query("COMMIT");
+
+    if (!wasAlreadyPaid) {
+      await safeNotify(() =>
+        notificationService.createIfNotExists(
+          {
+            recipientUserId: Number(freelancerUserId),
+            recipientRole: "freelancer",
+            actorUserId: null,
+            type: "subscription.payment.succeeded",
+            title: "تم دفع الاشتراك بنجاح",
+            message: "تم استلام دفعة الاشتراك وبانتظار تفعيل الشركة.",
+            entityType: "subscription",
+            entityId: Number(sub.id),
+            link: "/plans?freelancer_sub_paid=1",
+            priority: "high",
+            metadata: { subscriptionId: String(sub.id), source: "confirm_checkout" },
+          },
+          `subscription_paid_${String(sub.id)}`,
+        ),
+      );
+    }
+
+    return { ok: true, subscription: sub, alreadyApplied: wasAlreadyPaid };
+  } catch (e) {
+    await db.query("ROLLBACK");
+    throw e;
+  } finally {
+    db.release();
+  }
+}
+
 module.exports = {
   getStripeOrNull,
   createClientFixedOrderCheckoutSession,
@@ -933,4 +1108,5 @@ module.exports = {
   confirmClientFixedOrderPayment,
   cancelClientFixedOrderPaymentAttempt,
   createFreelancerSubscriptionCheckoutSession,
+  confirmFreelancerSubscriptionCheckout,
 };

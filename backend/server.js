@@ -1,6 +1,8 @@
+const path = require("node:path");
 const dotenv = require("dotenv");
 
-dotenv.config();
+// Load `.env` next to this file — do not rely on `process.cwd()` (breaks if Node is started from repo root).
+dotenv.config({ path: path.join(__dirname, ".env"), override: true });
 const { validateEnv } = require("./src/config/env");
 validateEnv();
 

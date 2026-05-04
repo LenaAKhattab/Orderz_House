@@ -110,7 +110,8 @@ async function resolvePaidCheckoutSessionForClientOrder(stripe, db, { order, ord
       const mb = Number(meta.bidId);
       if (!Number.isInteger(Number(bidId)) || mb !== Number(bidId)) continue;
     }
-    if (String(session.payment_status || "").toLowerCase() !== "paid") continue;
+    const paySt = String(session.payment_status || "").toLowerCase();
+    if (paySt !== "paid" && paySt !== "no_payment_required") continue;
 
     const auth = await assertCheckoutSessionAuthorizedForOrder(db, {
       order,

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
+  confirmFreelancerSubscriptionCheckoutRequest,
   createFreelancerSubscriptionCheckoutRequest,
   getMySubscriptionRequest,
   listPublicPlansRequest,
@@ -29,7 +30,7 @@ function isBlockingSubscription(subscription) {
 }
 
 const Plans = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { push } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
@@ -87,34 +88,68 @@ const Plans = () => {
     const q = new URLSearchParams(location.search || "");
     const paid = q.get("freelancer_sub_paid") === "1";
     const cancelled = q.get("freelancer_sub_cancelled") === "1";
+    const sessionId = q.get("session_id") || "";
     if (!paid && !cancelled) return;
     if (handledToastSearchesRef.current.has(location.search || "")) return;
     handledToastSearchesRef.current.add(location.search || "");
 
-    if (paid) {
-      push({
-        type: "success",
-        title: "تم استلام الدفع",
-        message: "حسابك الآن بانتظار تفعيل الشركة.",
-      });
-    } else if (cancelled) {
-      push({
-        type: "warning",
-        title: "تم إلغاء الدفع",
-        message: "لم تكتمل عملية الدفع.",
-      });
-    }
+    let alive = true;
+    (async () => {
+      let showPaidSuccess = false;
+      if (paid && sessionId) {
+        try {
+          await confirmFreelancerSubscriptionCheckoutRequest(sessionId);
+          const res = await getMySubscriptionRequest();
+          if (alive) {
+            setMySubscription(res?.data?.subscription ?? null);
+          }
+          showPaidSuccess = true;
+        } catch {
+          if (alive) {
+            push({
+              type: "warning",
+              title: "جاري التحقق من الدفع",
+              message:
+                "لم يُؤكَّد الدفع فوراً من الخادم. انتظر قليلاً ثم حدّث الصفحة؛ أو تأكد أن عنوان ويب هوك Stripe يصل إلى الخادم.",
+            });
+          }
+        }
+      } else if (paid && !sessionId) {
+        showPaidSuccess = true;
+      }
 
-    q.delete("freelancer_sub_paid");
-    q.delete("freelancer_sub_cancelled");
-    const nextSearch = q.toString();
-    navigate(
-      {
-        pathname: location.pathname,
-        search: nextSearch ? `?${nextSearch}` : "",
-      },
-      { replace: true },
-    );
+      if (!alive) return;
+
+      if (paid && showPaidSuccess) {
+        push({
+          type: "success",
+          title: "تم استلام الدفع",
+          message: "حسابك الآن بانتظار تفعيل الشركة.",
+        });
+      } else if (cancelled) {
+        push({
+          type: "warning",
+          title: "تم إلغاء الدفع",
+          message: "لم تكتمل عملية الدفع.",
+        });
+      }
+
+      q.delete("freelancer_sub_paid");
+      q.delete("freelancer_sub_cancelled");
+      q.delete("session_id");
+      const nextSearch = q.toString();
+      navigate(
+        {
+          pathname: location.pathname,
+          search: nextSearch ? `?${nextSearch}` : "",
+        },
+        { replace: true },
+      );
+    })();
+
+    return () => {
+      alive = false;
+    };
   }, [location.pathname, location.search, navigate, push]);
 
   return (
@@ -124,7 +159,11 @@ const Plans = () => {
         plans={plans.filter((p) => p?.isVisible !== false)}
         hasBlockingSubscription={hasBlockingSubscription}
         onCta={async (plan) => {
-          if (!plan?.id || checkoutBusyPlanId) return;
+          if (authLoading || !plan?.id || checkoutBusyPlanId) return;
+          const role = user?.primaryRole || user?.role;
+          const roles = Array.isArray(user?.roles) ? user.roles : [];
+          const isFreelancer = role === "freelancer" || roles.includes("freelancer");
+          if (!user || !isFreelancer) return;
           setCheckoutBusyPlanId(String(plan.id));
           setError("");
           try {
@@ -132,6 +171,10 @@ const Plans = () => {
             const url = res?.data?.checkoutUrl;
             if (url) window.location.href = url;
           } catch (err) {
+            if (import.meta.env?.DEV) {
+              // eslint-disable-next-line no-console
+              console.error("[freelancer checkout]", err?.response?.data ?? err);
+            }
             setError(errorMessage(err));
           } finally {
             setCheckoutBusyPlanId(null);

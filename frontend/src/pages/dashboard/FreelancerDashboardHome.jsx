@@ -77,7 +77,7 @@ function subscriptionDisplayStatus(subscription) {
   }
   if (status === "active") return "نشط";
   if (status === "expired") return "منتهي";
-  if (payment === "pending") return "الدفع قيد المعالجة";
+  if (payment === "pending" && activation !== "company_approved") return "الدفع قيد المعالجة";
   if (status === "inactive" || status === "cancelled") return "غير مشترك";
   return subscriptionStatusLabel(status);
 }
@@ -93,10 +93,18 @@ function subscriptionStateHint(subscription) {
   if (!subscription) return "";
   const payment = String(subscription.paymentStatus || "");
   const activation = String(subscription.activationStatus || "");
+  const status = String(subscription.status || "");
+  // Pending row while admin already approved — show activation message, not “payment processing”.
+  if (payment === "pending" && activation === "company_approved") {
+    if (status === "assigned_not_started") {
+      return "تم التفعيل، وسيبدأ احتساب المدة عند أول طلب مقبول.";
+    }
+    return "تم تفعيل الاشتراك من الشركة.";
+  }
   if (payment === "pending") return "الدفع قيد المعالجة.";
   if (payment === "failed") return "فشل الدفع. يرجى إعادة الاشتراك.";
   if (payment === "paid" && activation === "company_pending") return "تم استلام الدفع وبانتظار تفعيل الشركة.";
-  if (payment === "paid" && activation === "company_approved" && subscription.status === "assigned_not_started") {
+  if (payment === "paid" && activation === "company_approved" && status === "assigned_not_started") {
     return "تم التفعيل، وسيبدأ احتساب المدة عند أول طلب مقبول.";
   }
   return "";

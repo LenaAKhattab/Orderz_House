@@ -3,7 +3,10 @@ const validateRequest = require("../middleware/validateRequest");
 const { requireAuth, requireRole } = require("../middleware/rbacMiddleware");
 const subscriptionsService = require("../services/subscriptionsService");
 const subscriptionsController = require("../controllers/subscriptionsController");
-const { freelancerSelfSubscribeValidators } = require("../validators/subscriptionsValidators");
+const {
+  freelancerSelfSubscribeValidators,
+  freelancerConfirmCheckoutValidators,
+} = require("../validators/subscriptionsValidators");
 
 const router = express.Router();
 
@@ -33,6 +36,13 @@ router.post(
   freelancerSelfSubscribeValidators,
   validateRequest,
   subscriptionsController.createFreelancerSubscriptionCheckout,
+);
+
+router.post(
+  "/subscriptions/confirm-checkout",
+  freelancerConfirmCheckoutValidators,
+  validateRequest,
+  subscriptionsController.confirmFreelancerSubscriptionCheckout,
 );
 
 module.exports = router;

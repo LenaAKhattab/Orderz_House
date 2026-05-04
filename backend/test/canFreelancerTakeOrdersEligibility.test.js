@@ -30,9 +30,13 @@ describe("evaluateFreelancerTakeOrdersEligibility", () => {
     assert.deepStrictEqual(r, { eligible: false, reason: "no_subscription" });
   });
 
-  it("blocks pending Stripe payment (checkout started, unpaid)", () => {
+  it("blocks pending Stripe payment before company approval (checkout / unpaid)", () => {
     const r = evaluateFreelancerTakeOrdersEligibility(
-      sub({ paymentStatus: SUBSCRIPTION_PAYMENT_STATUSES.PENDING, status: SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED }),
+      sub({
+        paymentStatus: SUBSCRIPTION_PAYMENT_STATUSES.PENDING,
+        activationStatus: SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_PENDING,
+        status: SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED,
+      }),
     );
     assert.strictEqual(r.eligible, false);
     assert.strictEqual(r.reason, "payment_not_completed");
@@ -69,15 +73,28 @@ describe("evaluateFreelancerTakeOrdersEligibility", () => {
     assert.strictEqual(r.reason, "assigned_not_started");
   });
 
-  it("does not allow assigned_not_started if payment is still pending (self-checkout)", () => {
+  it("does not allow assigned_not_started if payment is still pending and company has not approved", () => {
     const r = evaluateFreelancerTakeOrdersEligibility(
       sub({
         paymentStatus: SUBSCRIPTION_PAYMENT_STATUSES.PENDING,
+        activationStatus: SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_PENDING,
         status: SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED,
       }),
     );
     assert.strictEqual(r.eligible, false);
     assert.strictEqual(r.reason, "payment_not_completed");
+  });
+
+  it("allows pending payment once company_approved (admin activation after pay / legacy DB row)", () => {
+    const r = evaluateFreelancerTakeOrdersEligibility(
+      sub({
+        paymentStatus: SUBSCRIPTION_PAYMENT_STATUSES.PENDING,
+        activationStatus: SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED,
+        status: SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED,
+      }),
+    );
+    assert.strictEqual(r.eligible, true);
+    assert.strictEqual(r.reason, "assigned_not_started");
   });
 
   it("blocks company activation pending for paid subscription", () => {

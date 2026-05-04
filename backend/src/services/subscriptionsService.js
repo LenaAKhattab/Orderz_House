@@ -2,6 +2,10 @@ const { pool } = require("../config/db");
 const notificationEventsService = require("./notificationEventsService");
 const notificationService = require("./notificationService");
 
+function isMissingTableError(err) {
+  return err && (err.code === "42P01" || String(err.message || "").includes("does not exist"));
+}
+
 async function safeNotify(run) {
   try {
     await run();
@@ -45,6 +49,20 @@ function parseDateOrNull(value) {
   // eslint-disable-next-line no-restricted-globals
   if (isNaN(d.getTime())) return null;
   return d;
+}
+
+function normalizePaymentStatus(raw) {
+  if (raw === null || raw === undefined || String(raw).trim() === "") {
+    return SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED;
+  }
+  return String(raw).trim().toLowerCase();
+}
+
+function normalizeActivationStatus(raw) {
+  if (raw === null || raw === undefined || String(raw).trim() === "") {
+    return SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED;
+  }
+  return String(raw).trim().toLowerCase();
 }
 
 function computeExpiry({ startDate, durationDays }) {
@@ -108,8 +126,8 @@ function mapSubscription(row) {
     status: row.status,
     isCurrent: row.is_current,
     source: row.source || SUBSCRIPTION_SOURCES.ADMIN,
-    paymentStatus: row.payment_status || SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED,
-    activationStatus: row.activation_status || SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED,
+    paymentStatus: normalizePaymentStatus(row.payment_status),
+    activationStatus: normalizeActivationStatus(row.activation_status),
     companyActivatedAt: row.company_activated_at,
     companyActivatedByUserId: row.company_activated_by_user_id ? String(row.company_activated_by_user_id) : null,
     stripeSessionId: row.stripe_session_id || null,
@@ -146,21 +164,51 @@ async function getPlanDurationDays(planId, client) {
 
 async function assertUserIsFreelancer(userId, client) {
   const runner = client || pool;
-  const { rows } = await runner.query(
-    `SELECT role FROM users WHERE id = $1 LIMIT 1`,
-    [Number(userId)],
-  );
-  const u = rows[0];
-  if (!u) {
-    const err = new Error("User not found.");
-    err.statusCode = 404;
-    throw err;
-  }
-  // Backward compatible check (legacy role). In full RBAC, we'd join user_roles.
-  if (u.role !== "freelancer") {
+  const uid = Number(userId);
+  const failNotFreelancer = () => {
     const err = new Error("Target user must be a freelancer.");
     err.statusCode = 400;
+    err.exposeToClient = true;
     throw err;
+  };
+  const legacyOnly = async () => {
+    const { rows } = await runner.query(`SELECT role FROM users WHERE id = $1 LIMIT 1`, [uid]);
+    const u = rows[0];
+    if (!u) {
+      const err = new Error("User not found.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (u.role !== "freelancer") failNotFreelancer();
+  };
+  try {
+    const { rows } = await runner.query(
+      `SELECT u.role AS legacy_role,
+              EXISTS (
+                SELECT 1 FROM user_roles ur
+                INNER JOIN roles r ON r.id = ur.role_id
+                WHERE ur.user_id = u.id AND r.name = 'freelancer'
+              ) AS has_freelancer_rbac
+       FROM users u
+       WHERE u.id = $1
+       LIMIT 1`,
+      [uid],
+    );
+    const row = rows[0];
+    if (!row) {
+      const err = new Error("User not found.");
+      err.statusCode = 404;
+      throw err;
+    }
+    const legacy = String(row.legacy_role || "").trim() === "freelancer";
+    if (legacy || row.has_freelancer_rbac) return;
+    failNotFreelancer();
+  } catch (e) {
+    if (isMissingTableError(e)) {
+      await legacyOnly();
+      return;
+    }
+    throw e;
   }
 }
 
@@ -526,6 +574,14 @@ async function activateCompanyApprovalForSubscription({ actorUserId, subscriptio
          company_activated_at = COALESCE(company_activated_at, NOW()),
          company_activated_by_user_id = COALESCE($2, company_activated_by_user_id),
          status = CASE WHEN has_first_order THEN status ELSE 'assigned_not_started' END,
+         payment_status = CASE
+           WHEN payment_status = 'pending' THEN 'paid'
+           ELSE payment_status
+         END,
+         paid_at = CASE
+           WHEN payment_status = 'pending' THEN COALESCE(paid_at, NOW())
+           ELSE paid_at
+         END,
          updated_at = NOW()
      WHERE id = $1
      RETURNING *`,
@@ -745,27 +801,36 @@ function evaluateFreelancerTakeOrdersEligibility(sub) {
     return { eligible: false, reason: "no_subscription" };
   }
 
-  const ps = sub.paymentStatus || SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED;
-  if (![SUBSCRIPTION_PAYMENT_STATUSES.PAID, SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED].includes(ps)) {
+  const ps = normalizePaymentStatus(sub.paymentStatus);
+  const activation = normalizeActivationStatus(sub.activationStatus);
+
+  // Once company_approved, only explicit failed/cancelled payment blocks pool work (handles pending/paid/admin paths + legacy rows).
+  if (activation === SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED) {
+    if (ps === SUBSCRIPTION_PAYMENT_STATUSES.FAILED || ps === SUBSCRIPTION_PAYMENT_STATUSES.CANCELLED) {
+      return { eligible: false, reason: "payment_not_completed" };
+    }
+  } else if (ps !== SUBSCRIPTION_PAYMENT_STATUSES.PAID && ps !== SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED) {
     return { eligible: false, reason: "payment_not_completed" };
   }
-  if (sub.activationStatus && sub.activationStatus !== "company_approved") {
+
+  if (activation && activation !== SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED) {
     return { eligible: false, reason: "company_activation_pending" };
   }
-  if (["inactive", "cancelled"].includes(sub.status)) {
-    return { eligible: false, reason: `status_${sub.status}` };
+  const st = String(sub.status || "").trim().toLowerCase();
+  if (["inactive", "cancelled"].includes(st)) {
+    return { eligible: false, reason: `status_${st}` };
   }
 
   // assigned_not_started should still allow freelancer to take their first order.
-  if (sub.status === SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED) {
+  if (st === SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED) {
     return { eligible: true, reason: "assigned_not_started" };
   }
 
-  if (sub.status === SUBSCRIPTION_STATUSES.EXPIRED) {
+  if (st === SUBSCRIPTION_STATUSES.EXPIRED) {
     return { eligible: false, reason: "expired" };
   }
 
-  if (sub.status !== SUBSCRIPTION_STATUSES.ACTIVE) {
+  if (st !== SUBSCRIPTION_STATUSES.ACTIVE) {
     return { eligible: false, reason: "invalid_status" };
   }
 

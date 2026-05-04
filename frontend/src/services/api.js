@@ -239,7 +239,17 @@ export const getMySubscriptionRequest = async () => {
 };
 
 export const createFreelancerSubscriptionCheckoutRequest = async (planId) => {
-  const { data } = await api.post("/freelancer/subscriptions/checkout", { planId });
+  const id = Number(planId);
+  if (!Number.isInteger(id) || id < 1) {
+    throw new Error("معرّف الباقة غير صالح.");
+  }
+  const { data } = await api.post("/freelancer/subscriptions/checkout", { planId: id });
+  return data;
+};
+
+/** Server-side confirm after Stripe redirect (webhook is still source of truth; this picks up if webhook lags or local dev). */
+export const confirmFreelancerSubscriptionCheckoutRequest = async (sessionId) => {
+  const { data } = await api.post("/freelancer/subscriptions/confirm-checkout", { sessionId });
   return data;
 };
 

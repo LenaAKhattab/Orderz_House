@@ -29,7 +29,17 @@ const listSubscriptionsValidators = [
 ];
 
 const freelancerSelfSubscribeValidators = [
-  body("planId").isInt({ min: 1 }).withMessage("planId is required."),
+  body("planId")
+    .custom((value) => {
+      if (value === undefined || value === null || value === "") return false;
+      const n = typeof value === "number" ? value : parseInt(String(value).trim(), 10);
+      return Number.isInteger(n) && n >= 1;
+    })
+    .withMessage("planId must be a positive integer."),
+];
+
+const freelancerConfirmCheckoutValidators = [
+  body("sessionId").isString().trim().isLength({ min: 1, max: 255 }).withMessage("sessionId is required."),
 ];
 
 const activateSubscriptionValidators = [...subscriptionIdParam];
@@ -41,6 +51,7 @@ module.exports = {
   updateSubscriptionValidators,
   listSubscriptionsValidators,
   freelancerSelfSubscribeValidators,
+  freelancerConfirmCheckoutValidators,
   activateSubscriptionValidators,
 };
 

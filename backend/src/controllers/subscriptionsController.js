@@ -61,11 +61,39 @@ const getFreelancerEligibility = async (req, res, next) => {
 
 const createFreelancerSubscriptionCheckout = async (req, res, next) => {
   try {
+    const planId = Number(req.body.planId);
+    const freelancerUserId = req.auth?.userId ?? req.user?.sub;
+    const debug =
+      process.env.NODE_ENV !== "production" || String(process.env.DEBUG_FREELANCER_CHECKOUT || "") === "1";
+    if (debug) {
+      // Safe debug only — never log secrets
+      // eslint-disable-next-line no-console
+      console.warn("[POST /freelancer/subscriptions/checkout]", {
+        body: req.body,
+        freelancerUserId,
+        primaryRole: req.auth?.primaryRole,
+        legacyRole: req.auth?.legacyRole,
+        roles: req.auth?.roles?.map((r) => r?.name).filter(Boolean),
+        planId,
+      });
+    }
     const result = await stripeCheckoutService.createFreelancerSubscriptionCheckoutSession({
-      freelancerUserId: req.auth?.userId,
-      planId: req.body.planId,
+      freelancerUserId,
+      planId,
     });
     return res.status(201).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const confirmFreelancerSubscriptionCheckout = async (req, res, next) => {
+  try {
+    const result = await stripeCheckoutService.confirmFreelancerSubscriptionCheckout({
+      freelancerUserId: req.auth?.userId,
+      stripeSessionId: req.body.sessionId,
+    });
+    return res.status(200).json({ success: true, data: result });
   } catch (err) {
     return next(err);
   }
@@ -90,6 +118,7 @@ module.exports = {
   getFreelancerCurrentSubscription,
   getFreelancerEligibility,
   createFreelancerSubscriptionCheckout,
+  confirmFreelancerSubscriptionCheckout,
   activateSubscriptionCompanyApproval,
 };
 

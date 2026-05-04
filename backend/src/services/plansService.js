@@ -59,6 +59,8 @@ async function listVisibleActivePlans() {
        AND is_visible = TRUE
        AND is_active = TRUE
        AND self_subscribe_allowed = TRUE
+       AND price_jod IS NOT NULL
+       AND price_jod > 0
      ORDER BY sort_order ASC, id ASC`,
   );
   return rows.map(mapPlan);

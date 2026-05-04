@@ -1,5 +1,6 @@
 const Stripe = require("stripe");
 const { pool } = require("../config/db");
+const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPaymentStatus");
 const { assertCheckoutSessionAuthorizedForOrder } = require("../utils/stripeCheckoutReconcile");
 const orderFlowService = require("../services/orderFlowService");
 const subscriptionsService = require("../services/subscriptionsService");
@@ -44,12 +45,6 @@ function logStripeWebhook(fields) {
       ...fields,
     }),
   );
-}
-
-/** Stripe Checkout session completed with a successful payment (or free/no-payment checkout). */
-function checkoutSessionHasSuccessfulPayment(session) {
-  const ps = String(session?.payment_status || "").toLowerCase();
-  return ps === "paid" || ps === "no_payment_required";
 }
 
 /**
@@ -278,7 +273,7 @@ async function applyCheckoutSessionFreelancerSubscriptionCompleted(session, meta
   const db = await dbPool.connect();
   try {
     await db.query("BEGIN");
-    if (String(session.payment_status || "").toLowerCase() !== "paid") {
+    if (!isCheckoutSessionPaymentSuccessful(session)) {
       await db.query("COMMIT");
       return { status: "ignored", reason: "subscription_checkout_not_paid" };
     }
@@ -368,7 +363,7 @@ async function applyCheckoutSessionFreelancerSubscriptionCompleted(session, meta
  * @returns {Promise<CheckoutWebhookApplyResult>}
  */
 async function applyCheckoutSessionClientOrderCompleted(session, meta, purpose, orderId, dbPool) {
-  if (!checkoutSessionHasSuccessfulPayment(session)) {
+  if (!isCheckoutSessionPaymentSuccessful(session)) {
     return { status: "ignored", reason: "checkout_session_not_paid" };
   }
 
