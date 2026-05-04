@@ -24,6 +24,7 @@
     "db:create-admin": "node scripts/createAdminUser.js",
     "db:promote-super-admin": "node scripts/promoteUserToSuperAdminByEmail.js",
     "db:cleanup:test-data": "node scripts/cleanupTestData.js",
+    "api:smoke": "node scripts/smokeApiEndpoints.js",
     "test:stripe-webhook": "node --test test/stripeWebhookIdempotency.test.js",
     "test:stripe-checkout-apply": "node --test test/stripeWebhookCheckoutApplyOutcome.test.js",
     "test:client-bidding": "node --test test/clientBiddingPaymentGate.test.js",
