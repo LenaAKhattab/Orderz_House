@@ -117,7 +117,7 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/client/orders/create": [ROLE.CLIENT],
   "/dashboard/client/notifications": [ROLE.CLIENT],
   "/dashboard/freelancer/my-orders": [ROLE.FREELANCER],
-  /** حوض الطلبات: مستقل يتقدّم ويعرض؛ عميل يتصفّح الطلبات المتاحة (نفس مسار الواجهة). */
+  /** معرض الطلبات: مستقل يتقدّم ويعرض؛ عميل يتصفّح الطلبات المتاحة (نفس مسار الواجهة). */
   "/dashboard/freelancer/orders": [ROLE.FREELANCER, ROLE.CLIENT],
   "/dashboard/freelancer/financial-claims": [ROLE.FREELANCER],
   "/dashboard/freelancer/courses": [ROLE.FREELANCER],

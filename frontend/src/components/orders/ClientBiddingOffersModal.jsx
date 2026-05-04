@@ -5,10 +5,12 @@ import {
   rejectClientOrderBidRequest,
 } from "../../services/api";
 
-function freelancerDisplayName(f) {
+function applicantDisplayName(row) {
+  if (row?.displayName) return row.displayName;
+  const f = row?.freelancer;
   if (!f) return "—";
   const parts = [f.firstName, f.fatherName, f.familyName].filter(Boolean);
-  return parts.length ? parts.join(" ") : f.email || "—";
+  return parts.length ? parts.join(" ") : "—";
 }
 
 function formatMoney(value) {
@@ -22,7 +24,7 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
   const [loading, setLoading] = useState(true);
   const [bids, setBids] = useState([]);
   const [openPool, setOpenPool] = useState(false);
-  const [currencyCode, setCurrencyCode] = useState("JOD");
+  const currencyCode = "JOD";
   const [error, setError] = useState("");
   const [confirmBidId, setConfirmBidId] = useState(null);
 
@@ -35,7 +37,6 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
       const payload = res?.data ?? res;
       setBids(Array.isArray(payload?.bids) ? payload.bids : []);
       setOpenPool(Boolean(payload?.orderSummary?.hasOpenPool));
-      setCurrencyCode("JOD");
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "تعذّر تحميل العروض.");
       setBids([]);
@@ -130,7 +131,7 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
         {loading ? (
           <p className="help">جارٍ التحميل…</p>
         ) : !openPool ? (
-          <p className="help">لا يمكن عرض العروض هنا (الطلب ليس مزايدة بمدى سعر، أو تم إسناده، أو لم يعد في الحوض).</p>
+          <p className="help">لا يمكن عرض العروض هنا (الطلب ليس مزايدة بمدى سعر، أو تم إسناده، أو لم يعد في المعرض).</p>
         ) : bids.length === 0 ? (
           <p className="help">لا توجد عروض معلّقة حالياً.</p>
         ) : (
@@ -145,10 +146,7 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                 }}
               >
-                <div style={{ fontWeight: 800 }}>{freelancerDisplayName(b.freelancer)}</div>
-                <div className="help" style={{ marginTop: 4 }}>
-                  {b.freelancer?.email ? <span dir="ltr">{b.freelancer.email}</span> : null}
-                </div>
+                <div style={{ fontWeight: 800 }}>{applicantDisplayName(b)}</div>
                 <div style={{ marginTop: 8, fontWeight: 700, unicodeBidi: "plaintext" }} dir="ltr">
                   مبلغ العرض: {formatMoney(b.amount)}
                   {currencyCode ? ` ${currencyCode}` : ""}

@@ -5,10 +5,12 @@ import {
   rejectClientOrderClaimRequest,
 } from "../../services/api";
 
-function freelancerDisplayName(f) {
+function applicantDisplayName(row) {
+  if (row?.displayName) return row.displayName;
+  const f = row?.freelancer;
   if (!f) return "—";
   const parts = [f.firstName, f.fatherName, f.familyName].filter(Boolean);
-  return parts.length ? parts.join(" ") : f.email || "—";
+  return parts.length ? parts.join(" ") : "—";
 }
 
 export default function ClientFreelancerClaimsModal({ open, orderId, onClose, onChanged }) {
@@ -99,7 +101,7 @@ export default function ClientFreelancerClaimsModal({ open, orderId, onClose, on
           طلبات المستقلين على هذا الطلب
         </h2>
         <p className="help" style={{ marginTop: 0 }}>
-          راجع من تقدّم لاستلام طلبك من الحوض. يمكنك اعتماد مستقل واحد فقط؛ سيتم رفض بقية الطلبات تلقائياً.
+          راجع من تقدّم لاستلام طلبك من المعرض. يمكنك اعتماد مستقل واحد فقط؛ سيتم رفض بقية الطلبات تلقائياً.
         </p>
         {error ? (
           <p className="help" style={{ color: "#b91c1c", marginTop: 8 }}>
@@ -109,7 +111,7 @@ export default function ClientFreelancerClaimsModal({ open, orderId, onClose, on
         {loading ? (
           <p className="help">جارٍ التحميل…</p>
         ) : !openPool ? (
-          <p className="help">لا يمكن عرض الطلبات هنا (الطلب غير منشور في الحوض أو تم إسناده مسبقاً).</p>
+          <p className="help">لا يمكن عرض الطلبات هنا (الطلب غير منشور في المعرض أو تم إسناده مسبقاً).</p>
         ) : claims.length === 0 ? (
           <p className="help">لا توجد طلبات معلّقة من المستقلين حالياً.</p>
         ) : (
@@ -124,10 +126,7 @@ export default function ClientFreelancerClaimsModal({ open, orderId, onClose, on
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                 }}
               >
-                <div style={{ fontWeight: 800 }}>{freelancerDisplayName(c.freelancer)}</div>
-                <div className="help" style={{ marginTop: 4 }}>
-                  {c.freelancer?.email ? <span dir="ltr">{c.freelancer.email}</span> : null}
-                </div>
+                <div style={{ fontWeight: 800 }}>{applicantDisplayName(c)}</div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12, justifyContent: "flex-end" }}>
                   <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => reject(c.id)}>
                     رفض

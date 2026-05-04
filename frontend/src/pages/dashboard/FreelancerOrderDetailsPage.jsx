@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams, useLocation } from "reac
 import { useToast } from "../../components/ui/toastContext";
 import { useAuth } from "../../context/useAuth";
 import BidAmountModal from "../../components/orders/BidAmountModal";
+import TakePoolOrderConfirmModal from "../../components/orders/TakePoolOrderConfirmModal";
 import {
   getMyEligibilityRequest,
   getMySubscriptionRequest,
@@ -13,28 +14,13 @@ import {
 import { arabicDurationUnit } from "../../utils/arTime";
 import { OrderDetailsPageSkeleton } from "../../components/ui/Skeleton";
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
-
-function fileHref(fileUrl) {
-  if (!fileUrl) return "";
-  const raw = String(fileUrl).trim();
-  if (!raw) return "";
-  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
-  const base = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "");
-  return `${base}${raw.startsWith("/") ? "" : "/"}${raw}`;
-}
-
-function formatMoney(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
-}
-
-function formatJoDate(value) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium" }).format(d);
-}
+import "../../components/orders/order-details/order-details-page.css";
+import OrderSummaryCard from "../../components/orders/order-details/OrderSummaryCard";
+import OrderTitleCard from "../../components/orders/order-details/OrderTitleCard";
+import OrderDescriptionCard from "../../components/orders/order-details/OrderDescriptionCard";
+import OrderFilesCard from "../../components/orders/order-details/OrderFilesCard";
+import { formatJoDate, formatMoneyJod, formatMoneyJodRange } from "../../components/orders/order-details/orderDetailsUtils";
+import { orderHasAssignment } from "../../utils/orderPrivacyUi";
 
 function typeLabel(projectType) {
   if (projectType === "fixed") return "سعر ثابت";
@@ -63,6 +49,7 @@ export default function FreelancerOrderDetailsPage() {
   const [taking, setTaking] = useState(false);
   const [bidOpen, setBidOpen] = useState(false);
   const [bidBusy, setBidBusy] = useState(false);
+  const [takeConfirmOpen, setTakeConfirmOpen] = useState(false);
   const [eligibility, setEligibility] = useState(null);
   const [subscription, setSubscription] = useState(null);
 
@@ -88,13 +75,13 @@ export default function FreelancerOrderDetailsPage() {
       return Boolean(
         order?.isPublished &&
           order?.isOpenForPool &&
-          !order?.assignedFreelancerId &&
+          !orderHasAssignment(order) &&
           ["published", "open_for_freelancers", "open_for_bids"].includes(String(order?.orderStatus || "")),
       );
     }
     const sourceOk = ["admin_created", "super_admin_created", "client_created"].includes(order?.sourceType);
     return Boolean(
-      sourceOk && order?.isPublished && order?.isOpenForPool && !order?.assignedFreelancerId && order?.orderStatus === "published",
+      sourceOk && order?.isPublished && order?.isOpenForPool && !orderHasAssignment(order) && order?.orderStatus === "published",
     );
   }, [order]);
 
@@ -178,7 +165,6 @@ export default function FreelancerOrderDetailsPage() {
       navigate("/dashboard/freelancer/my-orders");
     } catch (e) {
       push({ type: "error", title: "تعذر استلام الطلب", message: e?.response?.data?.message || e?.message });
-      // If it was taken by someone else, get out of this page.
       navigate(backTo, { replace: true });
     } finally {
       setTaking(false);
@@ -200,166 +186,152 @@ export default function FreelancerOrderDetailsPage() {
     }
   };
 
-  const metaRows = useMemo(() => {
-    if (!order) return [];
-    const categoryText = `${order?.category?.name || "—"} — ${order?.subSubcategory?.name || "—"}`;
-    const budgetText =
+  const categoryText = useMemo(() => {
+    if (!order) return "—";
+    return `${order?.category?.name || "—"} — ${order?.subSubcategory?.name || "—"}`;
+  }, [order]);
+
+  const typeAndBudgetText = useMemo(() => {
+    if (!order) return "—";
+    const bt =
       order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null
-        ? `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)} JOD`.trim()
+        ? formatMoneyJodRange(order.bidBudgetMin, order.bidBudgetMax)
         : order?.projectType === "bidding"
           ? "—"
-          : `${formatMoney(order?.budget)} JOD`.trim();
-    const typeAndBudgetText =
-      order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null
-        ? `${typeLabel(order?.projectType)} — ${budgetText}`
-        : order?.projectType === "bidding"
-          ? `${typeLabel(order?.projectType)}`
-          : `${typeLabel(order?.projectType)} — ${budgetText}`;
+          : formatMoneyJod(order?.budget);
+    if (order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null) {
+      return `${typeLabel(order?.projectType)} — ${bt}`;
+    }
+    if (order?.projectType === "bidding") return `${typeLabel(order?.projectType)}`;
+    return `${typeLabel(order?.projectType)} — ${bt}`;
+  }, [order]);
 
-    const base = [
-      { label: "نوع المشروع / السعر", value: typeAndBudgetText, dir: "ltr" },
+  const summaryRows = useMemo(() => {
+    if (!order) return [];
+    const rows = [
       { label: "مدة التسليم", value: durationLabel(order) },
-      { label: "التصنيف / التصنيف الفرعي", value: categoryText },
+      { label: "التصنيف", value: categoryText },
       { label: "تاريخ الإنشاء", value: formatJoDate(order?.createdAt) },
     ];
-
-    const extras = Array.isArray(order?.extraCategories) && order.extraCategories.length
-      ? [{
+    if (Array.isArray(order?.extraCategories) && order.extraCategories.length) {
+      rows.push({
         label: "تصنيفات إضافية",
         value: order.extraCategories
           .map((x) => `${x?.category?.name || "—"}${x?.subSubcategory?.name ? ` • ${x.subSubcategory.name}` : ""}`)
           .join(" | "),
-      }]
-      : [];
+      });
+    }
+    return rows;
+  }, [order, categoryText]);
 
-    return [...base, ...extras];
+  const skillsLine = useMemo(() => {
+    if (!order) return "لا توجد مهارات مفضلة لهذا المشروع.";
+    const names = Array.isArray(order.preferredSkills) ? order.preferredSkills.map((s) => s.name).filter(Boolean) : [];
+    return names.length ? names.join("، ") : "لا توجد مهارات مفضلة لهذا المشروع.";
   }, [order]);
 
+  const poolFooterButtons = (
+    <>
+      {isPoolAvailable && isFreelancer && isPricedBidding ? (
+        <button
+          type="button"
+          className="btn btn-primary"
+          disabled={!canTake || bidBusy || order?.myBid?.status === "pending"}
+          title={order?.myBid?.status === "pending" ? "لقد قدمت عرضاً لهذا الطلب." : ""}
+          onClick={() => setBidOpen(true)}
+        >
+          {bidBusy ? "جارٍ الإرسال…" : order?.myBid?.status === "pending" ? "عرضك مُرسل" : "تقديم عرض سعر"}
+        </button>
+      ) : null}
+      {isPoolAvailable && isFreelancer && !isPricedBidding ? (
+        <button
+          type="button"
+          className="btn btn-primary od-take-order-btn"
+          disabled={!canTake || taking || order?.myClaim?.status === "pending" || fakeClaimOrBidPending}
+          title={
+            fakeClaimOrBidPending
+              ? "سبق أن سجّلت مشاركتك في هذا الطلب التجريبي."
+              : order?.myClaim?.status
+                ? order.myClaim.status === "pending"
+                  ? "سبق أن تقدمت لهذا الطلب وهو قيد المراجعة."
+                  : order.myClaim.status === "withdrawn"
+                    ? "سبق أن تقدمت لهذا الطلب ثم قمت بسحبه."
+                    : order.myClaim.status === "rejected"
+                      ? "سبق أن تقدمت لهذا الطلب وتم رفض الطلب."
+                      : `سبق أن تقدمت لهذا الطلب (الحالة: ${order.myClaim.status}).`
+                : !canTake
+                  ? ineligibleMessage
+                  : ""
+          }
+          onClick={() => setTakeConfirmOpen(true)}
+        >
+          {taking ? "جارٍ الاستلام…" : fakeClaimOrBidPending ? "تم التسجيل" : "استلام الطلب"}
+        </button>
+      ) : null}
+    </>
+  );
+
+  const renderFooter = isFreelancer && isPoolAvailable;
+
   return (
-    <main className="container page-content dash-shell order-details" dir="rtl">
-      <header className="order-details__top">
-        <div className="order-details__top-title">
-          <h1 className="order-details__title">{busy ? "تفاصيل الطلب" : (order?.title || "تفاصيل الطلب")}</h1>
-          {!busy && order?.trainingLabel ? (
-            <p className="help" style={{ margin: "6px 0 0", opacity: 0.88 }}>
-              {order.trainingLabel}
-            </p>
-          ) : null}
-        </div>
-        <div className="order-details__top-actions">
-          <Link className="btn btn-secondary" to={backTo}>
-            العودة للقائمة
-          </Link>
-          {isPoolAvailable && isFreelancer && isPricedBidding ? (
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={!canTake || bidBusy || order?.myBid?.status === "pending"}
-              title={order?.myBid?.status === "pending" ? "لقد قدمت عرضاً لهذا الطلب." : ""}
-              onClick={() => setBidOpen(true)}
-            >
-              {bidBusy ? "جارٍ الإرسال…" : order?.myBid?.status === "pending" ? "عرضك مُرسل" : "تقديم عرض سعر"}
-            </button>
-          ) : null}
-          {isPoolAvailable && isFreelancer && !isPricedBidding ? (
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={!canTake || taking || order?.myClaim?.status === "pending" || fakeClaimOrBidPending}
-              title={
-                fakeClaimOrBidPending
-                  ? "سبق أن سجّلت مشاركتك في هذا الطلب التجريبي."
-                  : order?.myClaim?.status
-                    ? order.myClaim.status === "pending"
-                      ? "سبق أن تقدمت لهذا الطلب وهو قيد المراجعة."
-                      : order.myClaim.status === "withdrawn"
-                        ? "سبق أن تقدمت لهذا الطلب ثم قمت بسحبه."
-                        : order.myClaim.status === "rejected"
-                          ? "سبق أن تقدمت لهذا الطلب وتم رفض الطلب."
-                          : `سبق أن تقدمت لهذا الطلب (الحالة: ${order.myClaim.status}).`
-                    : !canTake
-                      ? ineligibleMessage
-                      : ""
-              }
-              onClick={take}
-            >
-              {taking ? "جارٍ الاستلام…" : fakeClaimOrBidPending ? "تم التسجيل" : "استلام الطلب"}
-            </button>
-          ) : null}
-        </div>
-      </header>
+    <main className="container page-content dash-shell od-page od-page--pool" dir="rtl">
+      <div className="od-pool-toolbar od-pool-toolbar--bare">
+        <Link className="btn btn-secondary" to={backTo}>
+          العودة للقائمة
+        </Link>
+      </div>
+
+      {!busy && order?.trainingLabel ? <p className="od-pool-hint">{order.trainingLabel}</p> : null}
 
       {isFreelancer && eligibility?.eligible === false ? (
-        <section className="card order-details__notice">
-          <p className="help" style={{ margin: 0 }}>
-            {ineligibleMessage}
-          </p>
-        </section>
+        <div className="od-notice" role="status">
+          <p>{ineligibleMessage}</p>
+        </div>
       ) : null}
 
       {busy ? (
-        <div style={{ marginTop: 12 }}>
-          <OrderDetailsPageSkeleton />
-        </div>
+        <OrderDetailsPageSkeleton />
       ) : order ? (
-        <section className="order-details__grid">
-          <section className="order-details__main">
-            <div className="order-details__desc">
-              <div className="order-details__desc-head">
-                <div className="order-details__desc-k">وصف المشروع</div>
+        <>
+          <div className="od-pool-shell">
+            <div className="od-pool-title">
+              <div className="od-title-desc-group">
+                <OrderTitleCard title={order.title} />
+                <OrderDescriptionCard text={order.description} />
+                <OrderDescriptionCard label="المهارات المطلوبة" text={skillsLine} />
+                {renderFooter ? <div className="od-pool-primary-actions">{poolFooterButtons}</div> : null}
               </div>
-              <div className="order-details__desc-v">{order?.description || "—"}</div>
             </div>
 
-            {Array.isArray(order?.preferredSkills) && order.preferredSkills.length ? (
-              <section className="order-details__block">
-                <div className="order-details__block-title">المهارات المطلوبة</div>
-                <div className="order-details__block-body">
-                  {order.preferredSkills.map((s) => s.name).filter(Boolean).join("، ")}
-                </div>
-              </section>
-            ) : null}
-
-            <section className="order-details__block">
-              <div className="order-details__block-title">الملفات</div>
-              <div className="order-details__block-body">
-                {Array.isArray(order?.files) && order.files.length ? (
-                  <ul className="order-details__attachments">
-                    {order.files.map((f) => (
-                      <li key={f.id} className="order-details__attachment">
-                        {f.fileUrl ? (
-                          <a className="order-details__attachment-link" href={fileHref(f.fileUrl)} target="_blank" rel="noreferrer">
-                            {f.originalName || f.filePath}
-                          </a>
-                        ) : (
-                          <span>{f.originalName || f.filePath}</span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <span className="help">لا توجد ملفات مضافة</span>
-                )}
+            <div className="od-pool-summary">
+              <div className="od-aside-col">
+                <OrderSummaryCard
+                  title="ملخص الطلب"
+                  primaryBlock={{ label: "نوع المشروع / السعر", value: typeAndBudgetText, dir: "ltr" }}
+                  rows={summaryRows}
+                />
+                <OrderFilesCard
+                  orderId={String(id)}
+                  fileAccess={isFreelancer ? "freelancer" : null}
+                  files={order.files || []}
+                  emptyText="لا توجد ملفات مضافة"
+                />
               </div>
-            </section>
-          </section>
+            </div>
+          </div>
 
-          <aside className="order-details__side">
-            <section className="order-details__meta card">
-              <div className="order-details__meta-title">تفاصيل المشروع</div>
-              <div className="order-details__meta-list">
-                {metaRows.map((r) => (
-                  <div key={r.label} className="order-details__meta-row">
-                    <div className="order-details__meta-label">{r.label}</div>
-                    <div className="order-details__meta-value" dir={r.dir || "rtl"} style={r.dir ? { unicodeBidi: "plaintext" } : undefined}>
-                      {r.value || "—"}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </aside>
-        </section>
+          <TakePoolOrderConfirmModal
+            open={takeConfirmOpen}
+            busy={taking}
+            onClose={() => {
+              if (!taking) setTakeConfirmOpen(false);
+            }}
+            onConfirm={async () => {
+              setTakeConfirmOpen(false);
+              await take();
+            }}
+          />
+        </>
       ) : null}
 
       {isFreelancer ? (
@@ -379,4 +351,3 @@ export default function FreelancerOrderDetailsPage() {
     </main>
   );
 }
-

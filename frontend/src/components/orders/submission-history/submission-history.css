@@ -1,0 +1,131 @@
+/* RTL-safe submission timeline — no horizontal overflow */
+
+.oh-submission-history {
+  margin-top: 0.75rem;
+}
+
+.oh-submission-history__title {
+  font-weight: 800;
+  font-size: 1.05rem;
+  margin: 0 0 0.75rem;
+}
+
+.oh-submission-item {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.65);
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.oh-submission-item__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.oh-submission-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.oh-submission-badge--current {
+  background: rgba(59, 130, 246, 0.15);
+  color: #1d4ed8;
+}
+
+.oh-submission-badge--final {
+  background: rgba(16, 185, 129, 0.18);
+  color: #047857;
+}
+
+.oh-submission-badge--past {
+  background: rgba(100, 116, 139, 0.15);
+  color: #334155;
+}
+
+.oh-submission-badge--status {
+  background: rgba(251, 191, 36, 0.2);
+  color: #92400e;
+}
+
+.oh-submission-item__meta {
+  font-size: 0.85rem;
+  color: #64748b;
+  word-break: break-word;
+}
+
+.oh-submission-item__msg {
+  margin: 8px 0 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.oh-submission-files {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.oh-submission-files li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px dashed rgba(148, 163, 184, 0.5);
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
+.oh-submission-files li:first-child {
+  border-top: none;
+}
+
+.oh-revision-card {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  max-width: 100%;
+}
+
+.oh-revision-card__title {
+  font-weight: 800;
+  font-size: 0.88rem;
+  margin: 0 0 6px;
+  color: #5b21b6;
+}
+
+.oh-revision-card__role {
+  font-size: 0.8rem;
+  color: #6d28d9;
+  margin-bottom: 6px;
+}
+
+.oh-revision-card__note {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.oh-revision-card__time {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 6px;
+}

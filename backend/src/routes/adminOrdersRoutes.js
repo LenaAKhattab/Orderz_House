@@ -2,9 +2,10 @@ const express = require("express");
 const adminOrdersController = require("../controllers/adminOrdersController");
 const validateRequest = require("../middleware/validateRequest");
 const { requireAuth, requireAnyRole } = require("../middleware/rbacMiddleware");
-const { uploadOrderFiles, handleOrderUploadErrors } = require("../middleware/ordersUploadMiddleware");
+const { uploadOrderFiles, handleOrderUploadErrors, enforceOrderUploadTotalSize } = require("../middleware/ordersUploadMiddleware");
 const {
   listOrdersValidators,
+  adminFreelancersSearchValidators,
   createInternalOrderValidators,
   orderIdParam,
   clientOrderClaimIdBodyValidators,
@@ -21,7 +22,7 @@ router.use(requireAuth, requireAnyRole(["super_admin", "admin"]));
 
 router.get("/orders", listOrdersValidators, validateRequest, adminOrdersController.listInternalOrders);
 router.get("/orders/:id", orderIdParam, validateRequest, adminOrdersController.getInternalOrder);
-router.get("/freelancers", adminOrdersController.searchFreelancers);
+router.get("/freelancers", adminFreelancersSearchValidators, validateRequest, adminOrdersController.searchFreelancers);
 router.get(
   "/freelancers/:id/registration",
   freelancerUserIdParam,
@@ -32,6 +33,7 @@ router.post(
   "/orders",
   uploadOrderFiles,
   handleOrderUploadErrors,
+  enforceOrderUploadTotalSize,
   createInternalOrderValidators,
   validateRequest,
   adminOrdersController.createInternalOrder,
@@ -64,6 +66,7 @@ router.post(
   "/orders/:id/delivery/revision",
   uploadOrderFiles,
   handleOrderUploadErrors,
+  enforceOrderUploadTotalSize,
   orderIdParam,
   clientOrderRevisionNoteValidators,
   validateRequest,

@@ -146,7 +146,7 @@ async function insertOneOrder(client, { creatorId, sourceType, isPublished, isOp
   const { categoryId, subcategoryId } = await pickCategoryIds(client);
   const projectType = Math.random() < 0.6 ? "fixed" : "bidding";
   const budget = projectType === "fixed" ? (50 + Math.floor(Math.random() * 450)).toFixed(2) : null;
-  const currencyCode = projectType === "fixed" ? "USD" : null;
+  const currencyCode = projectType === "fixed" ? "JOD" : null;
   const durationValue = projectType === "fixed" ? 3 + Math.floor(Math.random() * 10) : 1 + Math.floor(Math.random() * 5);
   const durationUnit = pick(["days", "hours"]);
 
@@ -279,8 +279,8 @@ async function main() {
   );
   if (!args.forPool) {
     console.log("");
-    console.log("AR: طلبات العميل ذات السعر الثابت تظهر في الحوض بعد الدفع؛ طلبات المزايدة تظهر عند فتحها للعروض.");
-    console.log("AR: لتعبئة الحوض بطلبات إدارية استخدم: npm run db:seed-pool-orders -- --count=15");
+    console.log("AR: طلبات العميل ذات السعر الثابت تظهر في المعرض بعد الدفع؛ طلبات المزايدة تظهر عند فتحها للعروض.");
+    console.log("AR: لتعبئة المعرض بطلبات إدارية استخدم: npm run db:seed-pool-orders -- --count=15");
     console.log("");
     console.log("EN: Client fixed-price pool orders appear after Stripe marks them paid; bidding orders appear when open for bids.");
     console.log("EN: To seed admin pool orders run: npm run db:seed-pool-orders -- --count=15");

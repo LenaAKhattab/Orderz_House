@@ -1,9 +1,12 @@
-﻿import { useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { arabicDurationUnit } from "../../utils/arTime";
 import ClientFreelancerClaimsModal from "./ClientFreelancerClaimsModal";
 import ClientBiddingOffersModal from "./ClientBiddingOffersModal";
 import ClientDeliveryReviewModal from "./ClientDeliveryReviewModal";
 import ClientRevisionRequestModal from "./ClientRevisionRequestModal";
+import SubmissionHistoryTimeline from "./submission-history/SubmissionHistoryTimeline";
+import { getClientOrderByIdRequest } from "../../services/api";
+import { orderHasAssignment } from "../../utils/orderPrivacyUi";
 
 function formatMoney(value) {
   const n = Number(value);
@@ -32,9 +35,10 @@ function typeLabel(projectType) {
 }
 
 function bidderDisplayName(bidUser) {
+  if (bidUser?.displayName) return bidUser.displayName;
   const u = bidUser?.user || {};
   const full = [u.firstName, u.fatherName, u.familyName].filter(Boolean).join(" ").trim();
-  return full || u.email || "—";
+  return full || "—";
 }
 
 function durationLabel(order) {
@@ -57,11 +61,11 @@ function clientStatusMeta(order) {
   }
   if (s === "completed") return { label: "مكتمل", className: "oh-badge oh-badge--success" };
   if (s === "cancelled") return { label: "ملغي", className: "oh-badge oh-badge--danger" };
-  if (order?.assignedFreelancerId && s === "in_progress") {
+  if (orderHasAssignment(order) && s === "in_progress") {
     return { label: "قيد التنفيذ مع المستقل", className: "oh-badge oh-badge--success" };
   }
-  if (order?.assignedFreelancerId) return { label: "مُسند لمستقل", className: "oh-badge oh-badge--success" };
-  if (s === "published") return { label: "منشور في الحوض", className: "oh-badge oh-badge--warning" };
+  if (orderHasAssignment(order)) return { label: "مُسند لمستقل", className: "oh-badge oh-badge--success" };
+  if (s === "published") return { label: "منشور في المعرض", className: "oh-badge oh-badge--warning" };
   if (s === "assigned") return { label: "مُسند", className: "oh-badge oh-badge--success" };
   if (s === "in_progress") return { label: "قيد التنفيذ", className: "oh-badge oh-badge--info" };
   if (s === "draft") return { label: "مسودة", className: "oh-badge oh-badge--neutral" };
@@ -73,6 +77,7 @@ function clientStatusMeta(order) {
  */
 export default function ClientOrderCardCompact({ order, onOrdersChange }) {
   const [expanded, setExpanded] = useState(false);
+  const [detailOrder, setDetailOrder] = useState(null);
   const [claimsOpen, setClaimsOpen] = useState(false);
   const [bidsOpen, setBidsOpen] = useState(false);
   const [deliveryModal, setDeliveryModal] = useState({ open: false, variant: "workflow" });
@@ -94,7 +99,7 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
     order?.projectType === "fixed" &&
     (order?.orderStatus === "published" || order?.orderStatus === "open_for_freelancers") &&
     order?.isOpenForPool &&
-    !order?.assignedFreelancerId &&
+    !orderHasAssignment(order) &&
     !order?.isArchived;
 
   const showBiddingOffersButton =
@@ -102,12 +107,12 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
     pricedBidding &&
     order?.orderStatus === "open_for_bids" &&
     order?.isOpenForPool &&
-    !order?.assignedFreelancerId &&
+    !orderHasAssignment(order) &&
     !order?.isArchived;
 
   const showPostAssignActions =
     isClientOrder &&
-    Boolean(order?.assignedFreelancerId) &&
+    orderHasAssignment(order) &&
     !order?.isArchived &&
     order?.orderStatus !== "completed" &&
     order?.orderStatus !== "cancelled";
@@ -115,8 +120,47 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
   const showCompletedDeliveryArchive =
     isClientOrder &&
     order?.orderStatus === "completed" &&
-    Boolean(order?.assignedFreelancerId) &&
+    orderHasAssignment(order) &&
     !order?.isArchived;
+
+  const displayOrder = detailOrder ? { ...order, ...detailOrder } : order;
+
+  const shouldLoadSubmissionDetail =
+    expanded &&
+    isClientOrder &&
+    orderHasAssignment(order) &&
+    !order?.isArchived &&
+    order?.orderStatus !== "cancelled";
+
+  useEffect(() => {
+    if (!shouldLoadSubmissionDetail) {
+      if (!expanded) setDetailOrder(null);
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getClientOrderByIdRequest(order.id);
+        const next = res?.data?.order;
+        if (!cancelled && next) setDetailOrder(next);
+      } catch {
+        /* ignore — timeline optional if endpoint unavailable */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [shouldLoadSubmissionDetail, expanded, order.id]);
+
+  const refetchDetailOrder = useCallback(async () => {
+    try {
+      const res = await getClientOrderByIdRequest(order.id);
+      const next = res?.data?.order;
+      if (next) setDetailOrder(next);
+    } catch {
+      /* ignore */
+    }
+  }, [order.id]);
 
   return (
     <article className="client-order-compact">
@@ -124,9 +168,6 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
         <div className="client-order-compact__title-block">
           <div className="client-order-compact__title">{order?.title || "—"}</div>
           <div className="client-order-compact__codes">
-            <span className="oh-code" title={order?.orderCode || ""}>
-              {order?.orderCode || "—"}
-            </span>
             <span className="client-order-compact__muted">أُنشئ {formatJoDateTime(order?.createdAt)}</span>
           </div>
         </div>
@@ -167,10 +208,14 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
 
       <p className="client-order-compact__desc">{expanded ? String(order?.description || "").trim() || "—" : shortText(order?.description, 200)}</p>
 
-      {order?.clientRevisionNote ? (
+      {displayOrder?.clientRevisionNote ? (
         <p className="help" style={{ margin: "8px 0 0", padding: "10px 12px", background: "rgba(59, 130, 246, 0.08)", borderRadius: 10 }}>
-          <strong>ملاحظة تعديل منك للمستقل:</strong> {order.clientRevisionNote}
+          <strong>ملاحظة تعديل منك للمستقل:</strong> {displayOrder.clientRevisionNote}
         </p>
+      ) : null}
+
+      {expanded && displayOrder?.submissionHistory?.submissions?.length ? (
+        <SubmissionHistoryTimeline submissionHistory={displayOrder.submissionHistory} orderId={String(order.id)} fileAccess="client" />
       ) : null}
 
       <footer className="client-order-compact__foot" style={{ flexWrap: "wrap", gap: 8 }}>
@@ -220,9 +265,16 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
       <ClientDeliveryReviewModal
         open={deliveryModal.open}
         variant={deliveryModal.variant}
-        order={order}
+        order={displayOrder}
         onClose={() => setDeliveryModal({ open: false, variant: "workflow" })}
-        onApprove={() => onOrdersChange?.()}
+        onApprove={() => {
+          onOrdersChange?.();
+          void refetchDetailOrder();
+        }}
+        onRevised={() => {
+          onOrdersChange?.();
+          void refetchDetailOrder();
+        }}
       />
       <ClientRevisionRequestModal
         open={revisionOpen}

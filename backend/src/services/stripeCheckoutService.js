@@ -14,6 +14,7 @@ const notificationEventsService = require("./notificationEventsService");
 const { planEligibleForFreelancerSelfCheckout } = require("./plansService");
 const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPaymentStatus");
 const { getPrimaryClientUrl } = require("../config/clientUrl");
+const freelancerSubscriptionPaymentNotifications = require("./freelancerSubscriptionPaymentNotifications");
 
 /** Stripe redirect URLs must use one origin; CLIENT_URL may list multiple values for CORS — take first via getPrimaryClientUrl. */
 function requireStripeClientUrl() {
@@ -131,17 +132,15 @@ async function createClientFixedOrderCheckoutSession({ clientUserId, orderId }) 
       throw err;
     }
 
-    const currency = String(order.currency_code || "")
-      .trim()
-      .toLowerCase();
+    const stripeCurrency = "jod";
     const budget = order.budget != null ? Number(order.budget) : null;
-    if (!currency || !Number.isFinite(budget) || budget <= 0) {
-      const err = new Error("Order is missing a valid amount or currency.");
+    if (!Number.isFinite(budget) || budget <= 0) {
+      const err = new Error("Order is missing a valid payment amount.");
       err.statusCode = 400;
       throw err;
     }
 
-    const amountMinor = amountMajorToStripeMinor(budget, order.currency_code);
+    const amountMinor = amountMajorToStripeMinor(budget, "JOD");
     if (amountMinor == null || amountMinor < 1) {
       const err = new Error("Could not compute payment amount for Stripe.");
       err.statusCode = 400;
@@ -159,21 +158,21 @@ async function createClientFixedOrderCheckoutSession({ clientUserId, orderId }) 
         purpose: "client_fixed_order",
         clientUserId: String(uid),
         expectedAmountMinor: String(amountMinor),
-        currency: currency.toUpperCase(),
+        currency: stripeCurrency.toUpperCase(),
       },
       payment_intent_data: {
         metadata: {
           orderId: String(oid),
           purpose: "client_fixed_order",
           expectedAmountMinor: String(amountMinor),
-          currency: currency.toUpperCase(),
+          currency: stripeCurrency.toUpperCase(),
         },
       },
       line_items: [
         {
           quantity: 1,
           price_data: {
-            currency,
+            currency: stripeCurrency,
             unit_amount: amountMinor,
             product_data: {
               name: String(order.title || "Order").slice(0, 120),
@@ -316,13 +315,8 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
       throw err;
     }
 
-    const currency = String(order.currency_code || "").trim().toLowerCase();
-    if (!currency) {
-      const err = new Error("Order is missing currency.");
-      err.statusCode = 400;
-      throw err;
-    }
-    const amountMinor = amountMajorToStripeMinor(amountMajor, currency.toUpperCase());
+    const stripeCurrency = "jod";
+    const amountMinor = amountMajorToStripeMinor(amountMajor, "JOD");
     if (!Number.isInteger(amountMinor) || amountMinor < 1) {
       const err = new Error("Could not compute payment amount for Stripe.");
       err.statusCode = 400;
@@ -367,7 +361,7 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
         purpose: "client_selected_bid",
         clientUserId: String(uid),
         expectedAmountMinor: String(amountMinor),
-        currency: currency.toUpperCase(),
+        currency: stripeCurrency.toUpperCase(),
       },
       payment_intent_data: {
         metadata: {
@@ -375,14 +369,14 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
           bidId: String(bid),
           purpose: "client_selected_bid",
           expectedAmountMinor: String(amountMinor),
-          currency: currency.toUpperCase(),
+          currency: stripeCurrency.toUpperCase(),
         },
       },
       line_items: [
         {
           quantity: 1,
           price_data: {
-            currency,
+            currency: stripeCurrency,
             unit_amount: amountMinor,
             product_data: {
               name: `Bid payment - ${String(order.title || "Order").slice(0, 110)}`,
@@ -551,7 +545,7 @@ async function confirmClientSelectedBidPayment({ clientUserId, orderId, bidId })
       return due;
     })();
     const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null;
-    const orderCur = String(order.currency_code || "").trim().toUpperCase() || null;
+    const orderCur = String(order.currency_code || "JOD").trim().toUpperCase() || "JOD";
 
     const { rows: appliedBid } = await db.query(
       `UPDATE orders
@@ -738,7 +732,7 @@ async function confirmClientFixedOrderPayment({ clientUserId, orderId }) {
 
     const paidAt = new Date();
     const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null;
-    const orderCur = String(order.currency_code || "").trim().toUpperCase() || null;
+    const orderCur = String(order.currency_code || "JOD").trim().toUpperCase() || "JOD";
     const major = order.budget != null ? Number(order.budget) : null;
 
     const { rows: appliedFixed } = await db.query(
@@ -890,7 +884,7 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       });
     }
     const successUrl = `${clientUrl}/plans?freelancer_sub_paid=1&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${clientUrl}/plans?freelancer_sub_cancelled=1`;
+    const cancelUrl = `${clientUrl}/plans?freelancer_sub_cancelled=1&session_id={CHECKOUT_SESSION_ID}`;
 
     const subscription = await subscriptionsService.createFreelancerSelfSubscriptionPendingPayment(
       { freelancerUserId: uid, planId: pid, stripeSessionId: null },
@@ -1100,21 +1094,14 @@ async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeS
 
     if (!wasAlreadyPaid) {
       await safeNotify(() =>
-        notificationService.createIfNotExists(
+        freelancerSubscriptionPaymentNotifications.notifyFreelancerSubscriptionPaymentSuccess(
           {
-            recipientUserId: Number(freelancerUserId),
-            recipientRole: "freelancer",
-            actorUserId: null,
-            type: "subscription.payment.succeeded",
-            title: "تم دفع الاشتراك بنجاح",
-            message: "تم استلام دفعة الاشتراك وبانتظار تفعيل الشركة.",
-            entityType: "subscription",
-            entityId: Number(sub.id),
-            link: "/plans?freelancer_sub_paid=1",
-            priority: "high",
-            metadata: { subscriptionId: String(sub.id), source: "confirm_checkout" },
+            freelancerUserId: Number(freelancerUserId),
+            planId,
+            subscriptionId: sub.id,
+            stripeSessionId: session.id || null,
+            source: "confirm_checkout",
           },
-          `subscription_paid_${String(sub.id)}`,
         ),
       );
     }
@@ -1128,6 +1115,79 @@ async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeS
   }
 }
 
+/**
+ * After user returns from Stripe cancel_url: verify session is unpaid freelancer checkout, then persist one notification.
+ * Caller must be authenticated as the freelancer in session metadata.
+ */
+async function recordFreelancerSubscriptionCheckoutCancelled({ freelancerUserId, stripeSessionId }) {
+  const stripe = getStripeOrNull();
+  if (!stripe) {
+    const err = new Error("Stripe is not configured on the server.");
+    err.statusCode = 503;
+    throw err;
+  }
+  const sid = String(stripeSessionId || "").trim();
+  if (!sid) {
+    const err = new Error("sessionId is required.");
+    err.statusCode = 400;
+    err.exposeToClient = true;
+    throw err;
+  }
+
+  let session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(sid);
+  } catch {
+    const err = new Error("Could not retrieve Stripe checkout session.");
+    err.statusCode = 502;
+    err.exposeToClient = true;
+    throw err;
+  }
+
+  const meta = session.metadata || {};
+  if (String(meta.purpose || "") !== "freelancer_subscription_purchase") {
+    const err = new Error("This checkout session is not for a freelancer subscription.");
+    err.statusCode = 400;
+    err.exposeToClient = true;
+    throw err;
+  }
+  if (Number(meta.freelancerUserId) !== Number(freelancerUserId)) {
+    const err = new Error("You cannot record cancellation for this checkout session.");
+    err.statusCode = 403;
+    err.exposeToClient = true;
+    throw err;
+  }
+  if (isCheckoutSessionPaymentSuccessful(session)) {
+    const err = new Error("This checkout session is already paid.");
+    err.statusCode = 409;
+    err.exposeToClient = true;
+    throw err;
+  }
+
+  const st = String(session.status || "").toLowerCase();
+  if (st !== "open" && st !== "expired") {
+    const err = new Error("Checkout session is not in a cancellable unpaid state.");
+    err.statusCode = 409;
+    err.exposeToClient = true;
+    throw err;
+  }
+
+  const planId = meta.planId != null ? Number(meta.planId) : null;
+  const subscriptionId = meta.subscriptionId != null ? Number(meta.subscriptionId) : null;
+
+  await freelancerSubscriptionPaymentNotifications.notifyFreelancerSubscriptionPaymentCancelled(
+    {
+      freelancerUserId: Number(freelancerUserId),
+      planId: Number.isInteger(planId) && planId > 0 ? planId : null,
+      subscriptionId: Number.isInteger(subscriptionId) && subscriptionId > 0 ? subscriptionId : null,
+      stripeSessionId: sid,
+      source: "cancel_return",
+    },
+  );
+
+  return { ok: true };
+}
+
 module.exports = {
   getStripeOrNull,
   createClientFixedOrderCheckoutSession,
@@ -1137,4 +1197,5 @@ module.exports = {
   cancelClientFixedOrderPaymentAttempt,
   createFreelancerSubscriptionCheckoutSession,
   confirmFreelancerSubscriptionCheckout,
+  recordFreelancerSubscriptionCheckoutCancelled,
 };

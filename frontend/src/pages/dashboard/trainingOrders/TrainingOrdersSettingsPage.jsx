@@ -178,7 +178,7 @@ export default function TrainingOrdersSettingsPage() {
       <p className="oh-training-settings-kicker">الأساسيات</p>
       <div className="oh-training-settings">
         <section className="oh-training-settings-section">
-          <h3 className="oh-training-settings-section__title">الحوض</h3>
+          <h3 className="oh-training-settings-section__title">المعرض</h3>
           <p className="oh-training-settings-section__help">بدون التفعيل لن تظهر الطلبات التجريبية للمستقلين.</p>
           <div className="oh-training-toggle-field">
             <div className="oh-training-toggle-wrap">
@@ -186,13 +186,13 @@ export default function TrainingOrdersSettingsPage() {
                 type="button"
                 role="switch"
                 aria-checked={form.trainingOrdersEnabled}
-                aria-label="تفعيل ظهور الطلبات التجريبية في الحوض"
+                aria-label="تفعيل ظهور الطلبات التجريبية في المعرض"
                 className={`oh-training-toggle ${form.trainingOrdersEnabled ? "is-on" : ""}`.trim()}
                 onClick={() => setForm((f) => ({ ...f, trainingOrdersEnabled: !f.trainingOrdersEnabled }))}
               >
                 <span className="oh-training-toggle__thumb" aria-hidden />
               </button>
-              <span className="oh-training-toggle__state">{form.trainingOrdersEnabled ? "مفعّل في الحوض" : "غير مفعّل"}</span>
+              <span className="oh-training-toggle__state">{form.trainingOrdersEnabled ? "مفعّل في المعرض" : "غير مفعّل"}</span>
             </div>
           </div>
         </section>
@@ -323,7 +323,7 @@ export default function TrainingOrdersSettingsPage() {
 
         <section className="oh-training-settings-section">
           <h3 className="oh-training-settings-section__title">الظهور</h3>
-          <p className="oh-training-settings-section__help">من يمكنه رؤية الطلبات التجريبية في الحوض.</p>
+          <p className="oh-training-settings-section__help">من يمكنه رؤية الطلبات التجريبية في المعرض.</p>
           <label className="oh-training-checkbox-row">
             <input
               type="checkbox"

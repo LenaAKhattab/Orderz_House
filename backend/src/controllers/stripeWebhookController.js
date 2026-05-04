@@ -5,6 +5,7 @@ const { assertCheckoutSessionAuthorizedForOrder } = require("../utils/stripeChec
 const orderFlowService = require("../services/orderFlowService");
 const subscriptionsService = require("../services/subscriptionsService");
 const notificationService = require("../services/notificationService");
+const freelancerSubscriptionPaymentNotifications = require("../services/freelancerSubscriptionPaymentNotifications");
 const notificationEventsService = require("../services/notificationEventsService");
 
 async function safeNotify(run) {
@@ -306,21 +307,14 @@ async function applyCheckoutSessionFreelancerSubscriptionCompleted(session, meta
     );
     if (sub?.id) {
       await safeNotify(() =>
-        notificationService.createIfNotExists(
+        freelancerSubscriptionPaymentNotifications.notifyFreelancerSubscriptionPaymentSuccess(
           {
-            recipientUserId: freelancerUserId,
-            recipientRole: "freelancer",
-            actorUserId: null,
-            type: "subscription.payment.succeeded",
-            title: "تم دفع الاشتراك بنجاح",
-            message: "تم استلام دفعة الاشتراك وبانتظار تفعيل الشركة.",
-            entityType: "subscription",
-            entityId: Number(sub.id),
-            link: "/plans?freelancer_sub_paid=1",
-            priority: "high",
-            metadata: { subscriptionId: String(sub.id), source: "stripe_webhook" },
+            freelancerUserId,
+            planId,
+            subscriptionId: sub.id,
+            stripeSessionId: session.id || null,
+            source: "stripe_webhook_checkout",
           },
-          `subscription_paid_${String(sub.id)}`,
           db,
         ),
       );
@@ -441,10 +435,10 @@ async function applyCheckoutSessionClientOrderCompleted(session, meta, purpose, 
       await client.query("ROLLBACK");
       return { status: "retryable_failure", reason: "amount_mismatch" };
     }
-    const orderCur = String(order.currency_code || "")
+    const orderCur = String(order.currency_code || "JOD")
       .trim()
       .toUpperCase();
-    if (currency && orderCur && currency !== orderCur) {
+    if (currency && currency !== orderCur) {
       await client.query("ROLLBACK");
       return { status: "retryable_failure", reason: "currency_mismatch" };
     }
@@ -708,27 +702,20 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool
         );
         if (sub?.id) {
           await safeNotify(() =>
-            notificationService.createIfNotExists(
+            freelancerSubscriptionPaymentNotifications.notifyFreelancerSubscriptionPaymentSuccess(
               {
-                recipientUserId: freelancerUserId,
-                recipientRole: "freelancer",
-                actorUserId: null,
-                type: "subscription.payment.succeeded",
-                title: "تم دفع الاشتراك بنجاح",
-                message: "تم استلام دفعة الاشتراك وبانتظار تفعيل الشركة.",
-                entityType: "subscription",
-                entityId: Number(sub.id),
-                link: "/plans?freelancer_sub_paid=1",
-                priority: "high",
-                metadata: { subscriptionId: String(sub.id), source: "stripe_webhook" },
+                freelancerUserId,
+                planId,
+                subscriptionId: sub.id,
+                stripeSessionId: null,
+                source: "stripe_webhook_payment_intent",
               },
-              `subscription_paid_${String(sub.id)}`,
               db,
             ),
           );
         }
       } else if (outcomePaymentStatus === "failed") {
-        const sub = await subscriptionsService.markFreelancerSubscriptionStripePaymentFailed(
+        await subscriptionsService.markFreelancerSubscriptionStripePaymentFailed(
           {
             freelancerUserId,
             planId,
@@ -737,27 +724,6 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool
           },
           db,
         );
-        if (sub?.id) {
-          await safeNotify(() =>
-            notificationService.createIfNotExists(
-              {
-                recipientUserId: freelancerUserId,
-                recipientRole: "freelancer",
-                actorUserId: null,
-                type: "subscription.payment.failed",
-                title: "فشل دفع الاشتراك",
-                message: "تعذر إتمام دفع الاشتراك. يرجى إعادة المحاولة.",
-                entityType: "subscription",
-                entityId: Number(sub.id),
-                link: "/plans?freelancer_sub_cancelled=1",
-                priority: "high",
-                metadata: { subscriptionId: String(sub.id), source: "stripe_webhook" },
-              },
-              `subscription_failed_${String(sub.id)}`,
-              db,
-            ),
-          );
-        }
       }
       await db.query("COMMIT");
       return { status: "applied" };
@@ -826,10 +792,10 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool
         await client.query("ROLLBACK");
         return { status: "retryable_failure", reason: "amount_mismatch" };
       }
-      const orderCur = String(order.currency_code || "")
+      const orderCur = String(order.currency_code || "JOD")
         .trim()
         .toUpperCase();
-      if (currency && orderCur && currency !== orderCur) {
+      if (currency && currency !== orderCur) {
         await client.query("ROLLBACK");
         return { status: "retryable_failure", reason: "currency_mismatch" };
       }

@@ -4,13 +4,19 @@ import { useAuth } from "../../context/useAuth";
 import { useToast } from "../ui/toastContext";
 import {
   adminCreateInternalOrderRequest,
-  adminSearchFreelancersRequest,
   createClientOrderRequest,
   getCategoriesRequest,
   getCategorySubSubcategoriesRequest,
 } from "../../services/api";
+import AdminFreelancerSelector from "./AdminFreelancerSelector";
 import { getDashboardPath } from "../../constants/authRoutes";
 import { SelectPanelBusySkeleton } from "../ui/Skeleton";
+import { CreateOrderReviewRow } from "./CreateOrderReviewRow";
+import {
+  ORDER_UPLOAD_TOTAL_SIZE_HELPER_AR,
+  ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR,
+  validateOrderFilesSize,
+} from "../../utils/orderUploadLimits";
 
 const ADMIN_STEPS = [
   { key: "core", label: "بيانات الطلب" },
@@ -32,8 +38,6 @@ const FAKE_TEMPLATE_STEPS = [
   { key: "files", label: "الملفات" },
   { key: "review", label: "مراجعة وإرسال" },
 ];
-
-const ORDER_CURRENCY = "JOD";
 
 /** Skills used before on this browser — suggestions only; not auto-filled on new orders. */
 const SKILLS_HISTORY_STORAGE_KEY = "orderz_admin_skills_history_v1";
@@ -123,8 +127,8 @@ function SkillsTagsInput({ value, onChange, placeholder, historySkills }) {
           </span>
         ))}
       </div>
-      <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-        <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "flex-start", minWidth: 0, width: "100%" }}>
+        <div style={{ flex: "1 1 0", minWidth: 0, position: "relative" }}>
           <input
             className="input"
             value={draft}
@@ -327,13 +331,11 @@ function makeInitialForm(initialValues = {}) {
     orderCode: String(initialValues.orderCode || ""),
     title: String(initialValues.title || ""),
     description: String(initialValues.description || ""),
-    additionalNotes: String(initialValues.additionalNotes || ""),
     preferredSkills: Array.isArray(initialValues.preferredSkills) ? initialValues.preferredSkills : [],
     categoryId: String(initialValues.categoryId || ""),
     extraCategoryIds: Array.isArray(initialValues.extraCategoryIds) ? initialValues.extraCategoryIds : [],
     subSubcategoryId: String(initialValues.subSubcategoryId || ""),
     projectType: String(initialValues.projectType || "fixed"),
-    currencyCode: ORDER_CURRENCY,
     budget: String(initialValues.budget || ""),
     bidBudgetMin: String(initialValues.bidBudgetMin || ""),
     bidBudgetMax: String(initialValues.bidBudgetMax || ""),
@@ -377,9 +379,7 @@ export default function AdminInternalOrderWizard({
   const [extraSubQueryByCat, setExtraSubQueryByCat] = useState({});
   const [extraCategoryPickerOpen, setExtraCategoryPickerOpen] = useState(false);
 
-  const [freelancerBusy, setFreelancerBusy] = useState(false);
-  const [freelancers, setFreelancers] = useState([]);
-  const [freelancerQuery, setFreelancerQuery] = useState("");
+  const [assignedFreelancer, setAssignedFreelancer] = useState(null);
   const [skillHistory, setSkillHistory] = useState(readSkillHistoryFromStorage);
 
   const fileInputRef = useRef(null);
@@ -399,6 +399,7 @@ export default function AdminInternalOrderWizard({
     setFiles([]);
     setAttempted({});
     setArchiveOnCreate(false);
+    setAssignedFreelancer(null);
   }, [resetToken, isFakeTemplate, initialValues]);
 
   // Remember skill *names* for searchable suggestions; each new order starts with empty skills.
@@ -450,6 +451,7 @@ export default function AdminInternalOrderWizard({
     // Step 6: Files
     out.files = {};
     if (files.length > 5) out.files.files = "الحد الأقصى 5 ملفات.";
+    else if (!validateOrderFilesSize(files).ok) out.files.files = ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR;
 
     // Step 7: Review
     out.review = {};
@@ -462,12 +464,6 @@ export default function AdminInternalOrderWizard({
       setForm((p) => ({ ...p, budget: "" }));
     }
   }, [form.projectType, form.budget]);
-
-  useEffect(() => {
-    if (form.currencyCode !== ORDER_CURRENCY) {
-      setForm((p) => ({ ...p, currencyCode: ORDER_CURRENCY }));
-    }
-  }, [form.currencyCode]);
 
   const currentStepKey = steps[stepIdx]?.key;
   const currentErrors = useMemo(() => {
@@ -537,34 +533,13 @@ export default function AdminInternalOrderWizard({
     };
   }, [form.categoryId]);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function search() {
-      const q = freelancerQuery.trim();
-      if (!q) {
-        setFreelancers([]);
-        return;
-      }
-      setFreelancerBusy(true);
-      try {
-        const res = await adminSearchFreelancersRequest({ q, limit: 20, onlyActiveSubscription: true });
-        if (!cancelled) setFreelancers(res?.data?.freelancers || []);
-      } catch {
-        if (!cancelled) setFreelancers([]);
-      } finally {
-        if (!cancelled) setFreelancerBusy(false);
-      }
-    }
-    const t = window.setTimeout(search, 250);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(t);
-    };
-  }, [freelancerQuery]);
-
   const addFiles = (incoming) => {
     const list = Array.from(incoming || []);
     const next = [...files, ...list].slice(0, 5);
+    if (!validateOrderFilesSize(next).ok) {
+      push({ type: "error", title: "حجم الملفات", message: ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR });
+      return;
+    }
     setFiles(next);
     if (list.length + files.length > 5) {
       push({ type: "error", title: "حد الملفات", message: "يمكنك رفع 5 ملفات كحد أقصى." });
@@ -590,10 +565,7 @@ export default function AdminInternalOrderWizard({
       }
       setBusy(true);
       try {
-        const notes = String(form.additionalNotes || "").trim();
-        const finalDescription = notes
-          ? `${form.description.trim()}\n\nملاحظات إضافية:\n${notes}`
-          : form.description.trim();
+        const finalDescription = form.description.trim();
         const selectedSs = subSubcategories.find((ss) => String(ss.id) === String(form.subSubcategoryId));
         const inferredSubcat = selectedSs?.subcategoryId != null ? Number(selectedSs.subcategoryId) : null;
         let minB;
@@ -618,7 +590,6 @@ export default function AdminInternalOrderWizard({
           skills: form.preferredSkills || [],
           minBudget: minB,
           maxBudget: maxB,
-          currency: ORDER_CURRENCY,
           minDuration: minD,
           maxDuration: maxD,
           durationUnit: form.durationUnit,
@@ -641,15 +612,12 @@ export default function AdminInternalOrderWizard({
         fd.append("orderCode", String(form.orderCode).trim());
       }
       fd.append("title", form.title.trim());
-      const notes = isClientAudience ? "" : String(form.additionalNotes || "").trim();
-      const finalDescription = notes ? `${form.description.trim()}\n\nملاحظات إضافية:\n${notes}` : form.description.trim();
-      fd.append("description", finalDescription);
+      fd.append("description", form.description.trim());
       fd.append("categoryId", String(form.categoryId));
       fd.append("extraCategoryIds", JSON.stringify(form.extraCategoryIds || []));
       fd.append("extraCategoryDetails", JSON.stringify(extraCategoryDetails || {}));
       if (form.subSubcategoryId) fd.append("subSubcategoryId", String(form.subSubcategoryId));
       fd.append("projectType", form.projectType);
-      fd.append("currencyCode", ORDER_CURRENCY);
       if (form.projectType === "fixed") {
         fd.append("budget", String(Number(String(form.budget).replace(/,/g, "."))));
       } else {
@@ -675,10 +643,13 @@ export default function AdminInternalOrderWizard({
         window.location.href = checkoutUrl;
         return;
       }
+      const created = res?.data?.order ?? res?.order;
       push({
         type: "success",
         title: "تم إنشاء الطلب",
-        message: `رقم الطلب: ${res?.data?.order?.orderCode || ""}`.trim(),
+        message: isClientAudience
+          ? `تم إنشاء الطلب «${form.title.trim()}».`
+          : `رقم الطلب: ${created?.orderCode || ""}`.trim(),
       });
       if (typeof onCreated === "function") {
         onCreated(res);
@@ -692,6 +663,7 @@ export default function AdminInternalOrderWizard({
         ...p,
         ...makeInitialForm(),
       }));
+      setAssignedFreelancer(null);
       // Stay on the create page to allow fast creation of the next order.
     } catch (e2) {
       push({ type: "error", title: "تعذر إنشاء الطلب", message: e2?.response?.data?.message || e2?.message });
@@ -699,18 +671,6 @@ export default function AdminInternalOrderWizard({
       setBusy(false);
     }
   };
-
-  const freelancerOptions = useMemo(() => {
-    const base = [{ value: "", label: "بدون تعيين", meta: "" }];
-    return [
-      ...base,
-      ...(Array.isArray(freelancers) ? freelancers : []).map((f) => ({
-        value: String(f.id),
-        label: `${f.firstName} ${f.fatherName} ${f.familyName}`.trim(),
-        meta: `${f.email}${f.accountId ? ` • ${f.accountId}` : ""}`,
-      })),
-    ];
-  }, [freelancers]);
 
   const categoryOptions = useMemo(() => {
     return (Array.isArray(categories) ? categories : []).map((c) => ({
@@ -773,9 +733,11 @@ export default function AdminInternalOrderWizard({
 
   const selectedFreelancerLabel = useMemo(() => {
     if (!form.assignedFreelancerId) return "غير معين";
-    const opt = freelancerOptions.find((o) => String(o.value) === String(form.assignedFreelancerId));
-    return opt ? opt.label : "غير معين";
-  }, [form.assignedFreelancerId, freelancerOptions]);
+    if (assignedFreelancer && String(assignedFreelancer.id) === String(form.assignedFreelancerId)) {
+      return assignedFreelancer.displayName || assignedFreelancer.fullName || "مستقل";
+    }
+    return `مستقل #${form.assignedFreelancerId}`;
+  }, [form.assignedFreelancerId, assignedFreelancer]);
 
   const goNext = () => {
     if (!stepValid) return;
@@ -800,8 +762,11 @@ export default function AdminInternalOrderWizard({
   const shell = (
     <>
       {!isModal ? (
-        <section className="card" style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
-          <div>
+        <section
+          className="card co-create-order-page__head"
+          style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}
+        >
+          <div style={{ minWidth: 0, flex: "1 1 280px" }}>
             <h1 style={{ marginBottom: 6 }}>{isClientAudience ? "إنشاء طلب" : "إنشاء طلب (إداري)"}</h1>
             <p style={{ margin: 0 }}>
               {isClientAudience
@@ -820,7 +785,7 @@ export default function AdminInternalOrderWizard({
         </section>
       ) : null}
 
-      <form onSubmit={submit} className="form-grid" style={{ marginTop: isModal ? 0 : 14 }}>
+      <form onSubmit={submit} className="form-grid form-co-flow" style={{ marginTop: isModal ? 0 : 14 }}>
         <section className="card" style={{ gridColumn: "span 12" }}>
           <div className="oh-stepper">
             {steps.map((s, idx) => (
@@ -867,7 +832,7 @@ export default function AdminInternalOrderWizard({
                       ? "سعر ثابت: ميزانية واحدة ومدة واحدة تُستخدم كنموذج للطلب التجريبي."
                       : "مزايدة: نطاق ميزانية ونطاق مدة يُستخدمان عند توليد الطلب الوهمي."
                     : form.projectType === "fixed"
-                      ? "سعر ثابت: يُنشر في الحوض ويستلمه المستقل حسب تدفق الموافقات."
+                      ? "سعر ثابت: يُنشر في المعرض ويستلمه المستقل حسب تدفق الموافقات."
                       : isClientAudience
                         ? "مزايدة: يُنشر الطلب لاستقبال العروض، والدفع يتم لاحقًا عند اختيار عرض."
                         : "مزايدة: بدون نطاق سعر عند الإنشاء؛ المستقلون يقدّمون العروض وتدار العملية من لوحة الطلبات."}
@@ -1094,34 +1059,32 @@ export default function AdminInternalOrderWizard({
                   </select>
                 </div>
 
-                <div className="field" style={{ order: 40, gridColumn: "span 2" }}>
-                  <label className="label" htmlFor="ord-cur-fixed">
-                    العملة
-                  </label>
-                  <input id="ord-cur-fixed" className="input" dir="ltr" value={ORDER_CURRENCY} readOnly />
-                </div>
-
                 {form.projectType === "fixed" ? (
                   <div className="field" style={{ order: 41, gridColumn: "span 2" }}>
                     <label className="label" htmlFor="adm-co-budget">
                       الميزانية
                     </label>
-                    <input
-                      id="adm-co-budget"
-                      className="input"
-                      dir="ltr"
-                      inputMode="decimal"
-                      type="text"
-                      value={form.budget}
-                      placeholder="250"
-                      onChange={(e) => set("budget", e.target.value)}
-                    />
+                    <div className="oh-price-with-unit">
+                      <input
+                        id="adm-co-budget"
+                        className="input"
+                        dir="ltr"
+                        inputMode="decimal"
+                        type="text"
+                        value={form.budget}
+                        placeholder="250"
+                        onChange={(e) => set("budget", e.target.value)}
+                      />
+                      <span className="oh-price-with-unit__suffix" dir="ltr">
+                        JOD
+                      </span>
+                    </div>
                     <FieldError message={attempted.core ? errorsByStep.core.budget : ""} />
                   </div>
                 ) : (
                   <div className="field" style={{ order: 41, gridColumn: "span 2" }}>
                     <span className="label">نطاق الميزانية</span>
-                    <div className="client-order-modal__bid-pair">
+                    <div className="client-order-modal__bid-pair client-order-modal__bid-pair--with-currency">
                       <input
                         className="input"
                         dir="ltr"
@@ -1141,6 +1104,9 @@ export default function AdminInternalOrderWizard({
                         placeholder="الحد الأعلى"
                         onChange={(e) => set("bidBudgetMax", e.target.value)}
                       />
+                      <span className="oh-price-with-unit__suffix" dir="ltr">
+                        JOD
+                      </span>
                     </div>
                     <FieldError message={attempted.core ? errorsByStep.core.bidBudgetMin || errorsByStep.core.bidBudgetMax : ""} />
                   </div>
@@ -1240,22 +1206,6 @@ export default function AdminInternalOrderWizard({
                   historySkills={skillHistory}
                 />
               </div>
-
-              {!isClientAudience ? (
-                <div className="field admin-co-fields__span2">
-                  <label className="label" htmlFor="co-additional-notes">
-                    ملاحظات إضافية (اختياري)
-                  </label>
-                  <textarea
-                    id="co-additional-notes"
-                    className="input"
-                    rows={2}
-                    value={form.additionalNotes}
-                    placeholder="اكتب أي ملاحظات إضافية"
-                    onChange={(e) => set("additionalNotes", e.target.value)}
-                  />
-                </div>
-              ) : null}
             </div>
           ) : null}
 
@@ -1266,17 +1216,18 @@ export default function AdminInternalOrderWizard({
                 <div className="field" style={{ gridColumn: "span 12" }}>
                   <label>اختيار المستقل</label>
                   <div className="help" style={{ marginBottom: 8 }}>
-                    سيظهر فقط مستخدمو دور فريلانسر. الإسناد يتطلب اشتراك نشط.
+                    يتم عرض المستقلون النشطون وغير النشطين؛ يمكن الإسناد فقط للمستقل المؤهل (حساب نشط، بريد موثّق، اشتراك يسمح باستلام
+                    الطلبات).
                   </div>
-                  <SearchableSelect
+                  <AdminFreelancerSelector
+                    active={currentStepKey === "assignment"}
                     value={form.assignedFreelancerId}
-                    onChange={(v) => set("assignedFreelancerId", v)}
-                    placeholder="اختر المستقل (اختياري)"
-                    options={freelancerOptions}
-                    busy={freelancerBusy}
-                    query={freelancerQuery}
-                    onQueryChange={setFreelancerQuery}
-                    searchPlaceholder="اكتب للبحث عن المستقل…"
+                    selectedFreelancer={assignedFreelancer}
+                    disabled={busy}
+                    onChange={({ assignedFreelancerId: nextId, assignedFreelancer: nextFl }) => {
+                      set("assignedFreelancerId", nextId || "");
+                      setAssignedFreelancer(nextFl);
+                    }}
                   />
                 </div>
               </div>
@@ -1329,10 +1280,13 @@ export default function AdminInternalOrderWizard({
                 }}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <div style={{ fontWeight: 950, color: "var(--text-main)" }}>
+                <div className="co-dropzone-title">
                   اسحب الملفات هنا أو اضغط للاختيار (حد أقصى 5 ملفات)
                 </div>
                 <div className="help">يمكنك إضافة ملفات المشروع (اختياري).</div>
+                <div className="help" style={{ marginTop: 6 }}>
+                  {ORDER_UPLOAD_TOTAL_SIZE_HELPER_AR}
+                </div>
 
                 <input
                   ref={fileInputRef}
@@ -1347,10 +1301,13 @@ export default function AdminInternalOrderWizard({
                 {files.length ? (
                   <div style={{ marginTop: 12 }}>
                     <div className="help">الملفات المختارة:</div>
-                    <ul className="simple-list">
+                    <ul className="co-dropzone-files">
                       {files.map((f, idx) => (
-                        <li key={`${f.name}-${idx}`}>
-                          {f.name} ({(Math.round((f.size / 1024) * 10) / 10).toLocaleString("en-US")}KB)
+                        <li key={`${f.name}-${idx}`} className="co-dropzone-files__item">
+                          <span className="co-dropzone-files__name">{f.name}</span>
+                          <span className="co-dropzone-files__meta" dir="ltr">
+                            ({(Math.round((f.size / 1024) * 10) / 10).toLocaleString("en-US")} KB)
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -1381,113 +1338,86 @@ export default function AdminInternalOrderWizard({
             <>
               <h2 style={{ marginBottom: 10 }}>7) مراجعة وإرسال</h2>
               <div className="oh-review">
-                <div className="oh-review__row">
-                  <div className="oh-review__k">العنوان</div>
-                  <div className="oh-review__v">{form.title.trim() || "—"}</div>
-                </div>
-                <div className="oh-review__row">
-                  <div className="oh-review__k">الوصف</div>
-                  <div className="oh-review__v">{form.description.trim() || "—"}</div>
-                </div>
+                <CreateOrderReviewRow label="العنوان">{form.title.trim() || "—"}</CreateOrderReviewRow>
+                <CreateOrderReviewRow label="الوصف" multiline>
+                  {form.description.trim() || "—"}
+                </CreateOrderReviewRow>
                 <div className="oh-review__2col">
-                  <div className="oh-review__row">
-                    <div className="oh-review__k">التصنيف</div>
-                    <div className="oh-review__v">
-                      {categories.find((c) => String(c.id) === String(form.categoryId))?.name || "—"}
-                    </div>
-                  </div>
-                  <div className="oh-review__row">
-                    <div className="oh-review__k">التصنيف التفصيلي</div>
-                    <div className="oh-review__v">
-                      {form.subSubcategoryId
-                        ? subSubcategories.find((ss) => String(ss.id) === String(form.subSubcategoryId))?.name || "—"
-                        : "—"}
-                    </div>
-                  </div>
+                  <CreateOrderReviewRow label="التصنيف">
+                    {categories.find((c) => String(c.id) === String(form.categoryId))?.name || "—"}
+                  </CreateOrderReviewRow>
+                  <CreateOrderReviewRow label="التصنيف التفصيلي">
+                    {form.subSubcategoryId
+                      ? subSubcategories.find((ss) => String(ss.id) === String(form.subSubcategoryId))?.name || "—"
+                      : "—"}
+                  </CreateOrderReviewRow>
                 </div>
-                <div className="oh-review__row">
-                  <div className="oh-review__k">المهارات المطلوبة</div>
-                  <div className="oh-review__v">
-                    {Array.isArray(form.preferredSkills) && form.preferredSkills.length
-                      ? form.preferredSkills.join("، ")
-                      : "لا توجد مهارات محددة مطلوبة"}
-                  </div>
-                </div>
-                <div className="oh-review__3col">
-                  <div className="oh-review__row">
-                    <div className="oh-review__k">نوع المشروع</div>
-                    <div className="oh-review__v">{form.projectType === "fixed" ? "سعر ثابت" : form.projectType === "bidding" ? "مزايدة" : "—"}</div>
-                  </div>
-                  <div className="oh-review__row">
-                    <div className="oh-review__k">الميزانية</div>
-                    <div className="oh-review__v">
+                <CreateOrderReviewRow label="المهارات المطلوبة">
+                  {Array.isArray(form.preferredSkills) && form.preferredSkills.length
+                    ? form.preferredSkills.join("، ")
+                    : "لا توجد مهارات محددة مطلوبة"}
+                </CreateOrderReviewRow>
+                <div className="oh-review__2col">
+                  <CreateOrderReviewRow label="نوع المشروع">
+                    {form.projectType === "fixed" ? "سعر ثابت" : form.projectType === "bidding" ? "مزايدة" : "—"}
+                  </CreateOrderReviewRow>
+                  <CreateOrderReviewRow label="الميزانية">
+                    <span dir="ltr" style={{ display: "inline-block", textAlign: "right", width: "100%" }}>
                       {form.projectType === "bidding"
                         ? isClientAudience || isFakeTemplate
-                          ? `${formatMoney(form.bidBudgetMin)} - ${formatMoney(form.bidBudgetMax)}`
+                          ? `${formatMoney(form.bidBudgetMin)} – ${formatMoney(form.bidBudgetMax)} JOD`
                           : "—"
-                        : formatMoney(form.budget)}
-                    </div>
-                  </div>
-                  <div className="oh-review__row">
-                    <div className="oh-review__k">العملة</div>
-                    <div className="oh-review__v">{ORDER_CURRENCY}</div>
-                  </div>
+                        : `${formatMoney(form.budget)} JOD`}
+                    </span>
+                  </CreateOrderReviewRow>
                 </div>
-                <div className="oh-review__row">
-                  <div className="oh-review__k">مدة التسليم</div>
-                  <div className="oh-review__v">
-                    {isFakeTemplate && form.projectType === "bidding"
-                      ? form.durationMin && form.durationMax
-                        ? `${form.durationMin} – ${form.durationMax} ${
-                            form.durationUnit === "days" ? "أيام" : form.durationUnit === "hours" ? "ساعات" : "دقائق"
-                          }`
-                        : "—"
-                      : form.durationValue
-                        ? `${form.durationValue} ${
-                            form.durationUnit === "days"
+                <CreateOrderReviewRow label="مدة التسليم">
+                  {isFakeTemplate && form.projectType === "bidding"
+                    ? form.durationMin && form.durationMax
+                      ? `${form.durationMin} – ${form.durationMax} ${
+                          form.durationUnit === "days" ? "أيام" : form.durationUnit === "hours" ? "ساعات" : "دقائق"
+                        }`
+                      : "—"
+                    : form.durationValue
+                      ? `${form.durationValue} ${
+                          form.durationUnit === "days"
+                            ? form.durationValue >= 3 && form.durationValue <= 10
+                              ? "أيام"
+                              : form.durationValue === 2
+                                ? "يومين"
+                                : "يوم"
+                            : form.durationUnit === "hours"
                               ? form.durationValue >= 3 && form.durationValue <= 10
-                                ? "أيام"
+                                ? "ساعات"
                                 : form.durationValue === 2
-                                  ? "يومين"
-                                  : "يوم"
-                              : form.durationUnit === "hours"
-                                ? form.durationValue >= 3 && form.durationValue <= 10
-                                  ? "ساعات"
-                                  : form.durationValue === 2
-                                    ? "ساعتين"
-                                    : "ساعة"
-                                : form.durationValue >= 3 && form.durationValue <= 10
-                                  ? "دقائق"
-                                  : form.durationValue === 2
-                                    ? "دقيقتين"
-                                    : "دقيقة"
-                          }`
-                        : "—"}
-                  </div>
-                </div>
+                                  ? "ساعتين"
+                                  : "ساعة"
+                              : form.durationValue >= 3 && form.durationValue <= 10
+                                ? "دقائق"
+                                : form.durationValue === 2
+                                  ? "دقيقتين"
+                                  : "دقيقة"
+                        }`
+                      : "—"}
+                </CreateOrderReviewRow>
                 {!isClientAudience && !isFakeTemplate ? (
-                  <div className="oh-review__row">
-                    <div className="oh-review__k">المستقل</div>
-                    <div className="oh-review__v">{selectedFreelancerLabel || "غير معين"}</div>
-                  </div>
+                  <CreateOrderReviewRow label="المستقل">{selectedFreelancerLabel || "غير معين"}</CreateOrderReviewRow>
                 ) : null}
                 {isFakeTemplate ? (
-                  <div className="oh-review__row">
-                    <div className="oh-review__k">حالة القالب</div>
-                    <div className="oh-review__v">{form.isActiveTemplate !== false ? "نشط" : "معطّل"}</div>
-                  </div>
+                  <CreateOrderReviewRow label="حالة القالب">
+                    {form.isActiveTemplate !== false ? "نشط" : "معطّل"}
+                  </CreateOrderReviewRow>
                 ) : null}
-                <div className="oh-review__row">
-                  <div className="oh-review__k">الملفات</div>
-                  <div className="oh-review__v">{files.length ? `${files.length} ملفات` : "لا توجد ملفات مضافة"}</div>
-                </div>
+                <CreateOrderReviewRow label="الملفات">
+                  {files.length ? `${files.length} ملفات` : "لا توجد ملفات مضافة"}
+                </CreateOrderReviewRow>
 
                 <div className="oh-review__note">
                   {isFakeTemplate
                     ? "سيتم حفظ القالب في قوالب الطلبات التجريبية فقط — دون إنشاء طلب حقيقي."
                     : isClientAudience
                       ? form.projectType === "fixed"
-                        ? "بعد المتابعة للدفع، سيتم تفعيل الطلب ونشره في الحوض."
+                        ? "بعد المتابعة للدفع، سيتم تفعيل الطلب ونشره في المعرض."
                         : "سيتم نشر الطلب لاستقبال العروض، والدفع يتم عند اختيار عرض."
                       : form.assignedFreelancerId
                         ? "سيتم تعيين الطلب مباشرة لهذا المستقل"
@@ -1583,6 +1513,8 @@ export default function AdminInternalOrderWizard({
     return <div className="admin-internal-wizard admin-internal-wizard--modal">{shell}</div>;
   }
 
-  return <main className="container page-content">{shell}</main>;
+  return (
+    <main className="container page-content co-create-order-page">{shell}</main>
+  );
 }
 

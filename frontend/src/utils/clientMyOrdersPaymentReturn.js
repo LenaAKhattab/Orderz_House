@@ -69,7 +69,7 @@ export function getBidPaymentConfirmFailureToast(isArabic, errInfo) {
   return {
     title: isArabic ? "تعذّر تأكيد دفع العرض" : "Could not confirm bid payment",
     message: isArabic
-      ? "لم نتمكن من تأكيد دفع العرض المختار. إذا نجح الدفع في Stripe، انتظر قليلاً ثم حدّث الصفحة. إذا تكرّر الخطأ أو لم يُحدَّث الطلب، تواصل مع الدعم مع رقم الطلب."
+      ? "لم نتمكن من تأكيد دفع العرض المختار. إذا نجح الدفع في Stripe، انتظر قليلاً ثم حدّث الصفحة. إذا تكرّر الخطأ أو لم يُحدَّث الطلب، تواصل مع الدعم مع ذكر عنوان الطلب والبريد المسجّل."
       : "We could not confirm payment for the selected bid. If Stripe shows a successful charge, wait briefly and refresh. If this persists, contact support with your order ID.",
     variant: "generic",
   };

@@ -159,7 +159,7 @@ async function insertFakeOrderFromTemplate(client, { template, roundId, actorUse
   const subcategoryId = template.subcategory_id ? Number(template.subcategory_id) : null;
   const subSubcategoryId = template.sub_subcategory_id ? Number(template.sub_subcategory_id) : null;
   const { bidMin: minB, bidMax: maxB } = randomBidRangeFromTemplate(template);
-  const currency = String(template.currency || "JOD").slice(0, 3).toUpperCase();
+  const currency = "JOD";
   const uid = Number(actorUserId);
   const rid = Number(roundId);
   const showBadge = Boolean(settings.show_fake_badge_to_freelancers);
@@ -1330,7 +1330,7 @@ async function createTemplate({ actorUserId, payload }) {
     const maxB = Number(payload.maxBudget);
     const minD = Number(payload.minDuration);
     const maxD = Number(payload.maxDuration);
-    const currency = String(payload.currency || "JOD").slice(0, 3).toUpperCase();
+    const currency = "JOD";
     const durationUnit = String(payload.durationUnit || "days");
     if (!["days", "hours", "minutes"].includes(durationUnit)) {
       const err = new Error("وحدة المدة غير صالحة.");
@@ -1420,7 +1420,6 @@ async function updateTemplate({ actorUserId, id, payload }) {
     }
     if (payload.minBudget != null) push(`min_budget =`, Number(payload.minBudget));
     if (payload.maxBudget != null) push(`max_budget =`, Number(payload.maxBudget));
-    if (payload.currency != null) push(`currency =`, String(payload.currency).slice(0, 3).toUpperCase());
     if (payload.minDuration != null) push(`min_duration =`, Number(payload.minDuration));
     if (payload.maxDuration != null) push(`max_duration =`, Number(payload.maxDuration));
     if (payload.durationUnit != null) push(`duration_unit =`, String(payload.durationUnit));

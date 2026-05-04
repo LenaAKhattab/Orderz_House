@@ -1,4 +1,5 @@
 import * as authTw from "../auth/authTw";
+import "../orders/order-details/order-details-page.css";
 
 /**
  * Shared loading placeholders (skeletons) — use instead of plain "جارٍ التحميل…" copy.
@@ -152,39 +153,43 @@ export function AdminInlineGridSkeleton({ count = 3 }) {
 
 export function OrderDetailsPageSkeleton() {
   return (
-    <section className="order-details__grid" role="status" aria-busy="true" aria-label="جارٍ التحميل">
-      <section className="order-details__main">
-        <div className="order-details__desc">
-          <SkelBar style={{ height: 14, width: "38%", marginBottom: 12 }} />
-          <SkelBar style={{ height: 12, width: "100%", marginBottom: 8 }} />
-          <SkelBar style={{ height: 12, width: "100%", marginBottom: 8 }} />
-          <SkelBar style={{ height: 12, width: "92%", marginBottom: 8 }} />
-          <SkelBar style={{ height: 12, width: "88%" }} />
+    <div className="od-pool-shell" role="status" aria-busy="true" aria-label="جارٍ التحميل">
+      <div className="od-pool-title">
+        <div className="od-title-desc-group">
+          <div className="od-title-card">
+            <SkelBar style={{ height: 10, width: "28%", marginBottom: 10 }} />
+            <SkelBar style={{ height: 18, width: "85%" }} />
+          </div>
+          <div className="od-description" style={{ paddingTop: 12 }}>
+            <SkelBar style={{ height: 11, width: "32%", marginBottom: 12 }} />
+            <SkelBar style={{ height: 12, width: "100%", marginBottom: 8 }} />
+            <SkelBar style={{ height: 12, width: "88%" }} />
+          </div>
+          <div className="od-description" style={{ paddingTop: 12 }}>
+            <SkelBar style={{ height: 11, width: "36%", marginBottom: 12 }} />
+            <SkelBar style={{ height: 12, width: "92%" }} />
+          </div>
         </div>
-        <div className="order-details__block">
-          <SkelBar style={{ height: 14, width: "32%", marginBottom: 10 }} />
-          <SkelBar style={{ height: 12, width: "100%", marginBottom: 8 }} />
-          <SkelBar style={{ height: 12, width: "70%" }} />
-        </div>
-      </section>
-      <aside className="order-details__side">
-        <section className="order-details__meta card">
-          <SkelBar style={{ height: 16, width: "52%", marginBottom: 14 }} />
-          <div className="order-details__meta-list">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="order-details__meta-row"
-                style={{ display: "grid", gridTemplateColumns: "1fr 1.15fr", gap: 10, alignItems: "center" }}
-              >
-                <SkelBar style={{ height: 10, width: "72%" }} />
-                <SkelBar style={{ height: 12, width: "90%" }} />
+      </div>
+      <div className="od-pool-summary">
+        <div className="od-aside-col">
+          <div className="od-summary__surface">
+            <SkelBar style={{ height: 10, width: "42%", marginBottom: 12 }} />
+            <SkelBar style={{ height: 14, width: "72%", marginBottom: 14 }} />
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="od-summary__row">
+                <SkelBar style={{ height: 9, width: "50%", marginBottom: 6 }} />
+                <SkelBar style={{ height: 12, width: "88%" }} />
               </div>
             ))}
           </div>
-        </section>
-      </aside>
-    </section>
+          <div className="od-files-card">
+            <SkelBar style={{ height: 10, width: "36%", marginBottom: 10 }} />
+            <SkelBar style={{ height: 36, width: "100%" }} />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

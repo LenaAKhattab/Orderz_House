@@ -1,43 +1,43 @@
 const ordersService = require("../services/ordersService");
 const orderFlowService = require("../services/orderFlowService");
 const fakeOrdersService = require("../services/fakeOrdersService");
-const { sanitizePublicPoolOrder, sanitizeFreelancerPoolOrder } = require("../utils/poolOrderSanitize");
+const { pipeOrderFileToResponse } = require("../utils/pipeOrderFileDownload");
+const {
+  sanitizePublicPoolOrder,
+  sanitizeFreelancerPoolOrder,
+  sanitizeOrderForFreelancerAssigned,
+} = require("../utils/orderViewerSanitize");
 
 const listPoolOrders = async (req, res, next) => {
   try {
-    const freelancerUserId = req.auth?.userId || null;
-    const role = req.auth?.primaryRole || req.auth?.role || null;
-    const result = freelancerUserId
+    const userId = req.auth?.userId || null;
+    const role = String(req.auth?.primaryRole || req.auth?.role || "").trim();
+    /** Only freelancers get pool rows hydrated with myClaim/myBid; everyone else uses the public list + sanitizer. */
+    const isFreelancer = role === "freelancer" && userId;
+    const queryOpts = {
+      page: req.query.page,
+      limit: req.query.limit,
+      offset: req.query.offset,
+      status: req.query.status,
+      projectType: req.query.projectType,
+      categoryId: req.query.categoryId,
+      subSubCategoryIds: req.query.subSubCategoryIds,
+      sort: req.query.sort,
+      q: req.query.q,
+    };
+    const result = isFreelancer
       ? await ordersService.listPoolOrdersForFreelancer({
-          freelancerUserId,
+          freelancerUserId: userId,
           viewerRole: role,
-          page: req.query.page,
-          limit: req.query.limit,
-          offset: req.query.offset,
-          status: req.query.status,
-          projectType: req.query.projectType,
-          categoryId: req.query.categoryId,
-          subSubCategoryIds: req.query.subSubCategoryIds,
-          sort: req.query.sort,
-          q: req.query.q,
+          ...queryOpts,
         })
       : await ordersService.listPoolOrders({
-          viewerUserId: req.auth?.userId ?? null,
-          viewerRole: role,
-          page: req.query.page,
-          limit: req.query.limit,
-          offset: req.query.offset,
-          status: req.query.status,
-          projectType: req.query.projectType,
-          categoryId: req.query.categoryId,
-          subSubCategoryIds: req.query.subSubCategoryIds,
-          sort: req.query.sort,
-          q: req.query.q,
+          viewerUserId: userId,
+          viewerRole: role || null,
+          ...queryOpts,
         });
     const orders = Array.isArray(result.orders)
-      ? result.orders.map((o) =>
-          freelancerUserId ? sanitizeFreelancerPoolOrder(o) : sanitizePublicPoolOrder(o),
-        )
+      ? result.orders.map((o) => (isFreelancer ? sanitizeFreelancerPoolOrder(o) : sanitizePublicPoolOrder(o)))
       : [];
     return res.status(200).json({ success: true, data: { ...result, orders } });
   } catch (err) {
@@ -48,7 +48,9 @@ const listPoolOrders = async (req, res, next) => {
 const takePoolOrder = async (req, res, next) => {
   try {
     const order = await ordersService.claimPoolOrder({ freelancerUserId: req.auth.userId, orderId: req.params.id });
-    return res.status(200).json({ success: true, data: { order } });
+    const myClaim = await ordersService.getMyOrderClaim({ orderId: req.params.id, freelancerUserId: req.auth.userId });
+    const safe = sanitizeFreelancerPoolOrder({ ...order, myClaim });
+    return res.status(200).json({ success: true, data: { order: safe } });
   } catch (err) {
     return next(err);
   }
@@ -78,8 +80,9 @@ const getPoolOrderById = async (req, res, next) => {
         freelancerUserId: req.auth?.userId || null,
       });
       if (!order) return res.status(404).json({ success: false, message: "Order not found." });
-      const viewerId = req.auth?.userId || null;
-      const safe = viewerId ? sanitizeFreelancerPoolOrder(order) : sanitizePublicPoolOrder(order);
+      const viewerRole = String(req.auth?.primaryRole || req.auth?.role || "").trim();
+      const isFreelancer = viewerRole === "freelancer" && req.auth?.userId;
+      const safe = isFreelancer ? sanitizeFreelancerPoolOrder(order) : sanitizePublicPoolOrder(order);
       return res.status(200).json({ success: true, data: { order: safe } });
     }
     const order = await ordersService.getOrderById(req.params.id);
@@ -91,8 +94,10 @@ const getPoolOrderById = async (req, res, next) => {
     if (!orderFlowService.orderApiEligibleForFreelancerPool(order)) {
       return res.status(404).json({ success: false, message: "Order not found." });
     }
+    const viewerRole = String(req.auth?.primaryRole || req.auth?.role || "").trim();
     const freelancerUserId = req.auth?.userId || null;
-    if (freelancerUserId) {
+    const isFreelancer = viewerRole === "freelancer" && freelancerUserId;
+    if (isFreelancer) {
       const myClaim = await ordersService.getMyOrderClaim({ orderId: req.params.id, freelancerUserId });
       let myBid = null;
       if (order.projectType === "bidding" && order.bidBudgetMin != null && order.bidBudgetMax != null) {
@@ -115,7 +120,10 @@ const submitPoolOrderBid = async (req, res, next) => {
       amount: req.body.amount,
       message: req.body.message || null,
     });
-    return res.status(200).json({ success: true, data: { order } });
+    const myBid = await ordersService.getMyOrderBid({ orderId: req.params.id, freelancerUserId: req.auth.userId });
+    const myClaim = await ordersService.getMyOrderClaim({ orderId: req.params.id, freelancerUserId: req.auth.userId });
+    const safe = sanitizeFreelancerPoolOrder({ ...order, myBid, myClaim });
+    return res.status(200).json({ success: true, data: { order: safe } });
   } catch (err) {
     return next(err);
   }
@@ -133,7 +141,8 @@ const submitFakePoolOrderBid = async (req, res, next) => {
       orderId: req.params.id,
       freelancerUserId: req.auth.userId,
     });
-    return res.status(200).json({ success: true, data: { order } });
+    const safe = sanitizeFreelancerPoolOrder(order);
+    return res.status(200).json({ success: true, data: { order: safe } });
   } catch (err) {
     return next(err);
   }
@@ -150,7 +159,8 @@ const takeFakePoolOrder = async (req, res, next) => {
       orderId: req.params.id,
       freelancerUserId: req.auth.userId,
     });
-    return res.status(200).json({ success: true, data: { order } });
+    const safe = sanitizeFreelancerPoolOrder(order);
+    return res.status(200).json({ success: true, data: { order: safe } });
   } catch (err) {
     return next(err);
   }
@@ -170,7 +180,10 @@ const listMyAssignedOrders = async (req, res, next) => {
       sort: req.query.sort,
       q: req.query.q,
     });
-    return res.status(200).json({ success: true, data: result });
+    const orders = Array.isArray(result.orders)
+      ? result.orders.map((o) => sanitizeOrderForFreelancerAssigned(o))
+      : [];
+    return res.status(200).json({ success: true, data: { ...result, orders } });
   } catch (err) {
     return next(err);
   }
@@ -180,7 +193,8 @@ const getMyAssignedOrderById = async (req, res, next) => {
   try {
     const order = await ordersService.getFreelancerAssignedOrderById({ freelancerUserId: req.auth.userId, orderId: req.params.id });
     if (!order) return res.status(404).json({ success: false, message: "الطلب غير موجود." });
-    return res.status(200).json({ success: true, data: { order } });
+    const safe = sanitizeOrderForFreelancerAssigned(order);
+    return res.status(200).json({ success: true, data: { order: safe } });
   } catch (err) {
     return next(err);
   }
@@ -193,7 +207,22 @@ const submitMyOrderDelivery = async (req, res, next) => {
       orderId: req.params.id,
       uploadedFiles: req.files || [],
     });
-    return res.status(200).json({ success: true, data: { order } });
+    await ordersService.enrichOrderWithSubmissionHistory(order, "freelancer");
+    const safe = sanitizeOrderForFreelancerAssigned(order);
+    return res.status(200).json({ success: true, data: { order: safe } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const downloadFreelancerOrderFile = async (req, res, next) => {
+  try {
+    const out = await ordersService.prepareFreelancerOrderFileDownload({
+      freelancerUserId: req.auth.userId,
+      orderId: req.params.id,
+      fileId: req.params.fileId,
+    });
+    return pipeOrderFileToResponse(req, res, next, out);
   } catch (err) {
     return next(err);
   }
@@ -210,5 +239,6 @@ module.exports = {
   listMyAssignedOrders,
   getMyAssignedOrderById,
   submitMyOrderDelivery,
+  downloadFreelancerOrderFile,
 };
 

@@ -1,6 +1,7 @@
 const { pool } = require("../config/db");
 const notificationEventsService = require("./notificationEventsService");
 const notificationService = require("./notificationService");
+const freelancerSubscriptionPaymentNotifications = require("./freelancerSubscriptionPaymentNotifications");
 
 function isMissingTableError(err) {
   return err && (err.code === "42P01" || String(err.message || "").includes("does not exist"));
@@ -162,28 +163,37 @@ async function getPlanDurationDays(planId, client) {
   return plan.duration_days;
 }
 
-async function assertUserIsFreelancer(userId, client) {
+/**
+ * Snapshot for assignment / eligibility checks (legacy `users.role` OR RBAC freelancer role).
+ * @returns {Promise<{ id: number, isActive: boolean, emailVerified: boolean, isFreelancer: boolean } | null>}
+ */
+async function getFreelancerIdentitySnapshot(userId, client) {
   const runner = client || pool;
   const uid = Number(userId);
-  const failNotFreelancer = () => {
-    const err = new Error("Target user must be a freelancer.");
-    err.statusCode = 400;
-    err.exposeToClient = true;
-    throw err;
-  };
+  if (!Number.isInteger(uid) || uid < 1) return null;
+
   const legacyOnly = async () => {
-    const { rows } = await runner.query(`SELECT role FROM users WHERE id = $1 LIMIT 1`, [uid]);
+    const { rows } = await runner.query(
+      `SELECT id, role, is_active, COALESCE(email_verified, TRUE) AS email_verified
+       FROM users WHERE id = $1 LIMIT 1`,
+      [uid],
+    );
     const u = rows[0];
-    if (!u) {
-      const err = new Error("User not found.");
-      err.statusCode = 404;
-      throw err;
-    }
-    if (u.role !== "freelancer") failNotFreelancer();
+    if (!u) return null;
+    return {
+      id: Number(u.id),
+      isActive: Boolean(u.is_active),
+      emailVerified: Boolean(u.email_verified),
+      isFreelancer: String(u.role || "").trim() === "freelancer",
+    };
   };
+
   try {
     const { rows } = await runner.query(
-      `SELECT u.role AS legacy_role,
+      `SELECT u.id,
+              u.is_active,
+              COALESCE(u.email_verified, TRUE) AS email_verified,
+              u.role AS legacy_role,
               EXISTS (
                 SELECT 1 FROM user_roles ur
                 INNER JOIN roles r ON r.id = ur.role_id
@@ -195,21 +205,36 @@ async function assertUserIsFreelancer(userId, client) {
       [uid],
     );
     const row = rows[0];
-    if (!row) {
-      const err = new Error("User not found.");
-      err.statusCode = 404;
-      throw err;
-    }
+    if (!row) return null;
     const legacy = String(row.legacy_role || "").trim() === "freelancer";
-    if (legacy || row.has_freelancer_rbac) return;
-    failNotFreelancer();
+    return {
+      id: Number(row.id),
+      isActive: Boolean(row.is_active),
+      emailVerified: Boolean(row.email_verified),
+      isFreelancer: legacy || Boolean(row.has_freelancer_rbac),
+    };
   } catch (e) {
-    if (isMissingTableError(e)) {
-      await legacyOnly();
-      return;
-    }
+    if (isMissingTableError(e)) return legacyOnly();
     throw e;
   }
+}
+
+async function assertUserIsFreelancer(userId, client) {
+  const runner = client || pool;
+  const uid = Number(userId);
+  const failNotFreelancer = () => {
+    const err = new Error("Target user must be a freelancer.");
+    err.statusCode = 400;
+    err.exposeToClient = true;
+    throw err;
+  };
+  const snap = await getFreelancerIdentitySnapshot(uid, runner);
+  if (!snap) {
+    const err = new Error("User not found.");
+    err.statusCode = 404;
+    throw err;
+  }
+  if (!snap.isFreelancer) failNotFreelancer();
 }
 
 async function endCurrentSubscription({ freelancerUserId, endedAt = new Date() }, client) {
@@ -546,16 +571,14 @@ async function markFreelancerSubscriptionStripePaymentFailed(
   );
   const mapped = mapSubscription(updated[0]);
   await safeNotify(() =>
-    notificationEventsService.notifySubscriptionOwner(
+    freelancerSubscriptionPaymentNotifications.notifyFreelancerSubscriptionPaymentFailed(
       {
-        subscription: updated[0],
-        actorUserId: null,
-        type: "subscription.payment.failed",
-        title: "فشل دفع الاشتراك",
-        message: "تعذر إتمام دفع الاشتراك. يرجى المحاولة مرة أخرى.",
-        priority: "high",
-        dedupeKey: `subscription_failed_${String(updated[0].id)}`,
-        metadata: { subscriptionId: String(updated[0].id) },
+        freelancerUserId: Number(updated[0].freelancer_user_id),
+        planId: Number(updated[0].plan_id),
+        subscriptionId: Number(updated[0].id),
+        stripeSessionId: stripeSessionId || null,
+        stripePaymentIntentId: stripePaymentIntentId || null,
+        source: "mark_freelancer_subscription_stripe_payment_failed",
       },
       runner,
     ),
@@ -866,6 +889,8 @@ module.exports = {
   SUBSCRIPTION_SOURCES,
   SUBSCRIPTION_PAYMENT_STATUSES,
   SUBSCRIPTION_ACTIVATION_STATUSES,
+  mapSubscription,
+  getFreelancerIdentitySnapshot,
   assignPlanToFreelancer,
   updateSubscription,
   listSubscriptions,

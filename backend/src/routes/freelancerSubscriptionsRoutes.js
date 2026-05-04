@@ -45,5 +45,12 @@ router.post(
   subscriptionsController.confirmFreelancerSubscriptionCheckout,
 );
 
+router.post(
+  "/subscriptions/checkout-cancel-notify",
+  freelancerConfirmCheckoutValidators,
+  validateRequest,
+  subscriptionsController.recordFreelancerSubscriptionCheckoutCancelledNotify,
+);
+
 module.exports = router;
 

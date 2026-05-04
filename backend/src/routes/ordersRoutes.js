@@ -2,7 +2,7 @@ const express = require("express");
 const ordersController = require("../controllers/ordersController");
 const clientOrdersController = require("../controllers/clientOrdersController");
 const validateRequest = require("../middleware/validateRequest");
-const { uploadOrderFiles, handleOrderUploadErrors } = require("../middleware/ordersUploadMiddleware");
+const { uploadOrderFiles, handleOrderUploadErrors, enforceOrderUploadTotalSize } = require("../middleware/ordersUploadMiddleware");
 const { requireAuth, requireRole, optionalAuth } = require("../middleware/rbacMiddleware");
 const {
   listOrdersValidators,
@@ -27,12 +27,22 @@ router.get(
   clientOrdersController.listMyClientOrders,
 );
 
+router.get(
+  "/client/orders/:id",
+  requireAuth,
+  requireRole("client"),
+  orderIdParam,
+  validateRequest,
+  clientOrdersController.getMyClientOrderById,
+);
+
 router.post(
   "/client/orders",
   requireAuth,
   requireRole("client"),
   uploadOrderFiles,
   handleOrderUploadErrors,
+  enforceOrderUploadTotalSize,
   createClientOrderValidators,
   validateRequest,
   clientOrdersController.createClientOrder,
@@ -157,6 +167,7 @@ router.post(
   requireRole("client"),
   uploadOrderFiles,
   handleOrderUploadErrors,
+  enforceOrderUploadTotalSize,
   orderIdParam,
   clientOrderRevisionNoteValidators,
   validateRequest,
@@ -211,9 +222,18 @@ router.post(
   requireRole("freelancer"),
   uploadOrderFiles,
   handleOrderUploadErrors,
+  enforceOrderUploadTotalSize,
   orderIdParam,
   validateRequest,
   ordersController.submitMyOrderDelivery,
+);
+router.get(
+  "/freelancer/my-orders/:id/files/:fileId/download",
+  requireAuth,
+  requireRole("freelancer"),
+  clientOrderFileDownloadParams,
+  validateRequest,
+  ordersController.downloadFreelancerOrderFile,
 );
 
 module.exports = router;

@@ -1,3 +1,5 @@
+import { orderHasAssignment } from "./orderPrivacyUi";
+
 /** Matches backend pool listing / freelancer visibility. */
 const POOL_LIKE_ORDER_STATUSES = new Set(["published", "open_for_freelancers", "open_for_bids"]);
 
@@ -84,7 +86,7 @@ export function isOrderListedForFreelancerPool(order) {
   return (
     order?.isPublished &&
     order?.isOpenForPool &&
-    !order?.assignedFreelancerId &&
+    !orderHasAssignment(order) &&
     POOL_LIKE_ORDER_STATUSES.has(order?.orderStatus) &&
     ["admin_created", "super_admin_created", "client_created"].includes(order?.sourceType) &&
     clientFixedPaidForPool(order)

@@ -337,7 +337,7 @@ export default function FreelancerDashboardHome({ user }) {
         <div className="dash-hero__copy">
           <p className="dash-hero__kicker">لوحة المستقل</p>
           <h1 className="dash-hero__title oh-orders-sidebar-title">مرحباً، {name}</h1>
-          <p className="dash-hero__subtitle">مركز عملك: اشتراكك، طلباتك، والفرص المتاحة في الحوض.</p>
+          <p className="dash-hero__subtitle">مركز عملك: اشتراكك، طلباتك، والفرص المتاحة في المعرض.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 14 }}>
             <NavLink to="/dashboard/freelancer/orders" className="btn btn-primary">
               استعراض الطلبات المتاحة
@@ -363,7 +363,7 @@ export default function FreelancerDashboardHome({ user }) {
             <div className="card" style={{ display: "grid", gap: 10 }}>
               {!isFreelancerEligible ? (
                 <div className="help" style={{ margin: 0, color: "var(--text-main)" }}>
-                  {ineligibleMessage || "لا يمكنك استلام طلبات من الحوض حالياً."}
+                  {ineligibleMessage || "لا يمكنك استلام طلبات من المعرض حالياً."}
                 </div>
               ) : (
                 <p className="help" style={{ margin: 0 }}>
@@ -469,7 +469,7 @@ export default function FreelancerDashboardHome({ user }) {
               </NavLink>
             </div>
           ) : poolOrders.length === 0 ? (
-            <p className="help" style={{ margin: 0 }}>لا توجد طلبات في الحوض تطابق العرض حالياً.</p>
+            <p className="help" style={{ margin: 0 }}>لا توجد طلبات في المعرض تطابق العرض حالياً.</p>
           ) : (
             <ul className="dash-home-list">
               {poolOrders.map((o) => (

@@ -262,11 +262,32 @@ const clientOrderRevisionNoteValidators = [
   body("note").optional().isString().trim().isLength({ max: 4000 }).withMessage("نص طلب التعديل طويل جداً."),
 ];
 
+/** GET /api/admin/freelancers — admin/super_admin assignment search */
+const adminFreelancersSearchValidators = [
+  query("search").optional().isString().trim().isLength({ max: 120 }).withMessage("search must be at most 120 chars."),
+  query("q").optional().isString().trim().isLength({ max: 120 }).withMessage("q must be at most 120 chars."),
+  query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("limit must be 1..100."),
+  query("eligibleOnly").optional().custom((v) => {
+    if (v === undefined || v === null || v === "") return true;
+    const s = String(v).trim().toLowerCase();
+    if (["true", "false", "1", "0"].includes(s)) return true;
+    throw new Error("eligibleOnly must be true or false.");
+  }),
+  query("onlyActiveSubscription").optional().custom((v) => {
+    if (v === undefined || v === null || v === "") return true;
+    const s = String(v).trim().toLowerCase();
+    if (["true", "false", "1", "0"].includes(s)) return true;
+    throw new Error("onlyActiveSubscription must be true or false.");
+  }),
+  query("status").optional().isIn(["all", "active", "inactive"]).withMessage("status must be all, active, or inactive."),
+];
+
 module.exports = {
   orderIdParam,
   freelancerUserIdParam,
   clientOrderFileDownloadParams,
   listOrdersValidators,
+  adminFreelancersSearchValidators,
   createInternalOrderValidators,
   createClientOrderValidators,
   submitPoolOrderBidValidators,

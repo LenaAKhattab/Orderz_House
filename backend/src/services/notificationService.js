@@ -1,4 +1,5 @@
 const { pool } = require("../config/db");
+const { sanitizeNotificationForViewer } = require("../utils/notificationViewerSanitize");
 
 function getRunner(client) {
   return client || pool;
@@ -182,7 +183,7 @@ async function createIfNotExists(data, dedupeKey, client) {
   return mapNotification(existing.rows[0] || null);
 }
 
-async function markAsRead(notificationId, userId, client) {
+async function markAsRead(notificationId, userId, client, viewerRole) {
   const runner = getRunner(client);
   const nid = Number(notificationId);
   const uid = Number(userId);
@@ -197,7 +198,8 @@ async function markAsRead(notificationId, userId, client) {
      RETURNING *`,
     [nid, uid],
   );
-  return mapNotification(rows[0] || null);
+  const mapped = mapNotification(rows[0] || null);
+  return sanitizeNotificationForViewer(mapped, viewerRole);
 }
 
 async function markAllAsRead(userId, client) {
@@ -216,7 +218,7 @@ async function markAllAsRead(userId, client) {
   return { updatedCount: rowCount };
 }
 
-async function getUserNotifications(userId, filters = {}, client) {
+async function getUserNotifications(userId, filters = {}, client, viewerRole) {
   const runner = getRunner(client);
   const uid = Number(userId);
   if (!Number.isInteger(uid) || uid < 1) return { notifications: [], total: 0, limit: 20, offset: 0 };
@@ -262,7 +264,7 @@ async function getUserNotifications(userId, filters = {}, client) {
     runner.query(listSql, [...params, limit, offset]),
   ]);
   return {
-    notifications: listRes.rows.map(mapNotification),
+    notifications: listRes.rows.map((row) => sanitizeNotificationForViewer(mapNotification(row), viewerRole)),
     total: Number(countRes.rows[0]?.total || 0),
     limit,
     offset,
@@ -291,4 +293,5 @@ module.exports = {
   markAllAsRead,
   getUserNotifications,
   getUnreadCount,
+  sanitizeNotificationForViewer,
 };

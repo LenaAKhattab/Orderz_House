@@ -1,6 +1,7 @@
-const fs = require("node:fs");
 const ordersService = require("../services/ordersService");
 const stripeCheckoutService = require("../services/stripeCheckoutService");
+const { sanitizeOrderForClient } = require("../utils/orderViewerSanitize");
+const { pipeOrderFileToResponse } = require("../utils/pipeOrderFileDownload");
 
 function parsePreferredSkills(raw) {
   if (raw === undefined || raw === null || raw === "") return [];
@@ -18,6 +19,21 @@ function parsePreferredSkills(raw) {
   }
 }
 
+const getMyClientOrderById = async (req, res, next) => {
+  try {
+    const order = await ordersService.getClientOrderByIdForOwner({
+      clientUserId: req.auth.userId,
+      orderId: req.params.id,
+    });
+    if (!order) {
+      return res.status(404).json({ success: false, message: "الطلب غير موجود." });
+    }
+    return res.status(200).json({ success: true, data: { order: sanitizeOrderForClient(order) } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const listMyClientOrders = async (req, res, next) => {
   try {
     const orders = await ordersService.listClientOrders({
@@ -34,7 +50,6 @@ const listMyClientOrders = async (req, res, next) => {
 const createClientOrder = async (req, res, next) => {
   try {
     const type = String(req.body.projectType || "").trim();
-    const currencyCode = String(req.body.currencyCode || "").trim().toUpperCase();
     const payload = {
       orderCode: req.body.orderCode || null,
       title: req.body.title,
@@ -43,7 +58,6 @@ const createClientOrder = async (req, res, next) => {
       subcategoryId: req.body.subcategoryId || null,
       subSubcategoryId: req.body.subSubcategoryId || null,
       projectType: type,
-      currencyCode,
       budget: type === "fixed" ? req.body.budget : null,
       bidBudgetMin: type === "bidding" ? req.body.bidBudgetMin : null,
       bidBudgetMax: type === "bidding" ? req.body.bidBudgetMax : null,
@@ -57,6 +71,7 @@ const createClientOrder = async (req, res, next) => {
       payload,
       uploadedFiles: req.files || [],
     });
+    const safeOrder = sanitizeOrderForClient(order);
     if (type === "fixed") {
       let checkout;
       try {
@@ -78,7 +93,7 @@ const createClientOrder = async (req, res, next) => {
       return res.status(201).json({
         success: true,
         data: {
-          order,
+          order: safeOrder,
           requiresPayment: true,
           paymentPurpose: "fixed_order_creation",
           checkoutUrl: checkout.checkoutUrl,
@@ -89,7 +104,7 @@ const createClientOrder = async (req, res, next) => {
     return res.status(201).json({
       success: true,
       data: {
-        order,
+        order: safeOrder,
         requiresPayment: false,
       },
     });
@@ -141,7 +156,7 @@ const approveFreelancerClaim = async (req, res, next) => {
       orderId: req.params.id,
       claimId: req.body.claimId,
     });
-    return res.status(200).json({ success: true, data: { order } });
+    return res.status(200).json({ success: true, data: { order: sanitizeOrderForClient(order) } });
   } catch (err) {
     return next(err);
   }
@@ -245,7 +260,8 @@ const approveDelivery = async (req, res, next) => {
       clientUserId: req.auth.userId,
       orderId: req.params.id,
     });
-    return res.status(200).json({ success: true, data: { order } });
+    await ordersService.enrichOrderWithSubmissionHistory(order, "client");
+    return res.status(200).json({ success: true, data: { order: sanitizeOrderForClient(order) } });
   } catch (err) {
     return next(err);
   }
@@ -259,7 +275,8 @@ const requestDeliveryRevision = async (req, res, next) => {
       note: req.body.note,
       uploadedFiles: req.files || [],
     });
-    return res.status(200).json({ success: true, data: { order } });
+    await ordersService.enrichOrderWithSubmissionHistory(order, "client");
+    return res.status(200).json({ success: true, data: { order: sanitizeOrderForClient(order) } });
   } catch (err) {
     return next(err);
   }
@@ -283,23 +300,14 @@ const downloadOrderFile = async (req, res, next) => {
       orderId: req.params.id,
       fileId: req.params.fileId,
     });
-    if (out?.redirectUrl) return res.redirect(302, out.redirectUrl);
-    const { absPath, downloadName, mimeType } = out;
-    const utf8Name = String(downloadName || "file");
-    const encoded = encodeURIComponent(utf8Name);
-    res.setHeader("Content-Type", mimeType);
-    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encoded}`);
-    const stream = fs.createReadStream(absPath);
-    stream.on("error", (e) => {
-      if (!res.headersSent) return next(e);
-    });
-    return stream.pipe(res);
+    return pipeOrderFileToResponse(req, res, next, out);
   } catch (err) {
     return next(err);
   }
 };
 
 module.exports = {
+  getMyClientOrderById,
   listMyClientOrders,
   createClientOrder,
   confirmFixedOrderPayment,

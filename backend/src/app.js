@@ -73,7 +73,7 @@ app.use(morgan("dev"));
 
 // Static assets (e.g., category images) served from backend/images
 app.use("/images", express.static(path.join(__dirname, "..", "images")));
-app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+// Order uploads live under backend/uploads — never expose via public static; use authenticated download routes only.
 
 // Versioned API mounting keeps future domains modular (auth/orders/users/etc.).
 app.use("/api", healthRoutes);

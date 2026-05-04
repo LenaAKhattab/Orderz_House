@@ -5,7 +5,9 @@ import {
   listMyNotificationsRequest,
   markAllNotificationsReadRequest,
   markNotificationReadRequest,
+  NOTIFICATIONS_REFRESH_EVENT,
 } from "../../services/api";
+import { useAuth } from "../../context/useAuth";
 
 function fmtDate(value) {
   if (!value) return "";
@@ -22,7 +24,7 @@ function actorLabel(actor) {
   return name || acc || "";
 }
 
-function notificationDetails(n) {
+function notificationDetails(n, canShowOrderReference) {
   const type = String(n?.type || "").trim();
   const actor = actorLabel(n?.actor);
   const actorFallbackName = String(n?.metadata?.actorName || "").trim();
@@ -37,13 +39,17 @@ function notificationDetails(n) {
     return projectName;
   }
 
-  const orderPart = orderCode ? `${orderCode}` : orderId ? `#${orderId}` : "";
+  const orderPart =
+    canShowOrderReference && (orderCode || orderId) ? (orderCode ? `${orderCode}` : `#${orderId}`) : "";
   const projectPart = projectName ? projectName : "";
   const parts = [actorPart, projectPart, orderPart].filter(Boolean);
   return parts.join(" - ");
 }
 
 export default function NotificationsBell({ notificationsPagePath, variant = "navbar" }) {
+  const { user } = useAuth();
+  const role = user?.primaryRole || user?.role;
+  const canShowOrderReference = role === "admin" || role === "super_admin";
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -76,6 +82,15 @@ export default function NotificationsBell({ notificationsPagePath, variant = "na
     const t = window.setInterval(fetchCount, 30000);
     return () => window.clearInterval(t);
   }, [fetchCount]);
+
+  useEffect(() => {
+    const onRefresh = () => {
+      void fetchCount();
+      if (open) void fetchLatest();
+    };
+    window.addEventListener(NOTIFICATIONS_REFRESH_EVENT, onRefresh);
+    return () => window.removeEventListener(NOTIFICATIONS_REFRESH_EVENT, onRefresh);
+  }, [fetchCount, fetchLatest, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -173,7 +188,9 @@ export default function NotificationsBell({ notificationsPagePath, variant = "na
                   onClick={() => handleGo(n)}
                 >
                   <div className="notif-bell__item-title">{n.title || "إشعار جديد"}</div>
-                  {notificationDetails(n) ? <div className="notif-bell__item-actor">{notificationDetails(n)}</div> : null}
+                  {notificationDetails(n, canShowOrderReference) ? (
+                    <div className="notif-bell__item-actor">{notificationDetails(n, canShowOrderReference)}</div>
+                  ) : null}
                   <div className="notif-bell__item-msg">{n.message || ""}</div>
                   <div className="notif-bell__item-time">{fmtDate(n.createdAt)}</div>
                 </button>

@@ -26,6 +26,8 @@ describe("sanitizePublicPoolOrder", () => {
     const safe = sanitizePublicPoolOrder(raw);
     assert.strictEqual(safe.assignedFreelancerId, undefined);
     assert.ok(!Object.prototype.hasOwnProperty.call(safe, "assignedFreelancerId"));
+    assert.strictEqual(safe.hasAssignedFreelancer, true);
+    assert.ok(!Object.prototype.hasOwnProperty.call(safe, "orderCode"));
   });
 
   it("pool list rows mapped like GET /orders/pool omit assignment id", () => {
@@ -48,19 +50,23 @@ describe("sanitizePublicPoolOrder", () => {
     assert.ok(!Object.prototype.hasOwnProperty.call(safe, "assignedFreelancerId"));
     assert.ok(!Object.prototype.hasOwnProperty.call(safe, "createdByUserId"));
     assert.ok(!Object.prototype.hasOwnProperty.call(safe, "paymentStatus"));
+    assert.strictEqual(safe.hasAssignedFreelancer, false);
   });
 
-  it("freelancer sanitizer still exposes assignedFreelancerId for pool detail when present", () => {
+  it("freelancer pool sanitizer omits internal IDs; uses hasAssignedFreelancer flag", () => {
     const order = {
       id: "1",
       title: "T",
       assignedFreelancerId: "42",
       createdByUserId: "7",
       paymentStatus: "paid",
+      bidUsers: [{ bidId: "1", user: { id: "9", email: "x@y.com" } }],
     };
     const out = sanitizeFreelancerPoolOrder(order);
-    assert.strictEqual(out.assignedFreelancerId, "42");
-    assert.strictEqual(out.createdByUserId, undefined);
+    assert.ok(!Object.prototype.hasOwnProperty.call(out, "assignedFreelancerId"));
+    assert.ok(!Object.prototype.hasOwnProperty.call(out, "createdByUserId"));
     assert.strictEqual(out.paymentStatus, undefined);
+    assert.strictEqual(out.hasAssignedFreelancer, true);
+    assert.ok(!Object.prototype.hasOwnProperty.call(out, "bidUsers"));
   });
 });

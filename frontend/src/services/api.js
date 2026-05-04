@@ -257,6 +257,16 @@ export const confirmFreelancerSubscriptionCheckoutRequest = async (sessionId) =>
   return data;
 };
 
+/** Server verifies Stripe session is unpaid freelancer checkout before creating a persistent notification. */
+export const notifyFreelancerSubscriptionCheckoutCancelledRequest = async (sessionId) => {
+  const sid = typeof sessionId === "string" ? sessionId.trim() : "";
+  if (!sid || sid.length > 255) {
+    throw new Error("معرّف جلسة الدفع غير صالح.");
+  }
+  const { data } = await api.post("/freelancer/subscriptions/checkout-cancel-notify", { sessionId: sid });
+  return data;
+};
+
 export const listMyAssignedOrdersRequest = async (params = {}) => {
   const { data } = await api.get("/freelancer/my-orders", { params });
   return data;
@@ -291,6 +301,12 @@ export const takePoolOrderRequest = async (orderId, options = {}) => {
 
 export const listClientMyOrdersRequest = async (params = {}) => {
   const { data } = await api.get("/client/orders", { params, timeout: 45000 });
+  return data;
+};
+
+/** Client-owned order + submission timeline (GET). */
+export const getClientOrderByIdRequest = async (orderId) => {
+  const { data } = await api.get(`/client/orders/${orderId}`, { timeout: 45000 });
   return data;
 };
 
@@ -457,6 +473,24 @@ export const adminSearchFreelancersRequest = async (params = {}) => {
   return data;
 };
 
+/** Admin/super_admin only: freelancers for internal order assignment (`GET /api/admin/freelancers`). */
+export const getAdminFreelancersForAssignment = async ({
+  search = "",
+  limit = 50,
+  status = "all",
+  eligibleOnly = false,
+} = {}) => {
+  const { data } = await api.get("/admin/freelancers", {
+    params: {
+      search: String(search || "").trim() || undefined,
+      limit,
+      status,
+      eligibleOnly: eligibleOnly ? true : undefined,
+    },
+  });
+  return data;
+};
+
 export const adminListOrderClaimsRequest = async (orderId) => {
   const { data } = await api.get(`/admin/orders/${orderId}/claims`, { timeout: 30000 });
   return data;
@@ -543,21 +577,74 @@ function triggerBlobDownload(blob, fileName) {
   window.URL.revokeObjectURL(url);
 }
 
-export const downloadClientOrderFile = async (orderId, fileId, fileName) => {
-  const response = await api.get(`/client/orders/${orderId}/files/${fileId}/download`, {
-    responseType: "blob",
-    timeout: 120000,
-  });
-  triggerBlobDownload(response.data, fileName);
-};
+function orderFileDownloadPath(orderId, fileId, scope) {
+  const oid = encodeURIComponent(String(orderId));
+  const fid = encodeURIComponent(String(fileId));
+  if (scope === "client") return `/client/orders/${oid}/files/${fid}/download`;
+  if (scope === "freelancer") return `/freelancer/my-orders/${oid}/files/${fid}/download`;
+  if (scope === "admin") return `/admin/orders/${oid}/files/${fid}/download`;
+  throw new Error("Invalid order file scope.");
+}
 
-export const downloadAdminInternalOrderFile = async (orderId, fileId, fileName) => {
-  const response = await api.get(`/admin/orders/${orderId}/files/${fileId}/download`, {
-    responseType: "blob",
-    timeout: 120000,
-  });
+async function attachBlobErrorMessage(err) {
+  const data = err?.response?.data;
+  const st = err?.response?.status;
+  if (data instanceof Blob && st && st >= 400) {
+    try {
+      const text = await data.text();
+      const j = JSON.parse(text);
+      if (j?.message) err.message = j.message;
+    } catch {
+      /* ignore */
+    }
+  }
+  return err;
+}
+
+export async function fetchOrderFileBlob(orderId, fileId, scope, disposition = "attachment") {
+  const base = orderFileDownloadPath(orderId, fileId, scope);
+  const qs = disposition === "inline" ? "?disposition=inline" : "";
+  try {
+    return await api.get(`${base}${qs}`, { responseType: "blob", timeout: 120000 });
+  } catch (e) {
+    await attachBlobErrorMessage(e);
+    throw e;
+  }
+}
+
+/** Authenticated blob download for order_files by role (client | freelancer | admin). */
+export async function downloadOrderFileForRole(orderId, fileId, fileName, scope) {
+  const response = await fetchOrderFileBlob(orderId, fileId, scope, "attachment");
   triggerBlobDownload(response.data, fileName);
-};
+}
+
+/** Open file in a new tab using an authenticated inline fetch (Bearer-friendly). */
+export async function viewOrderFileForRole(orderId, fileId, fileName, scope) {
+  const response = await fetchOrderFileBlob(orderId, fileId, scope, "inline");
+  const blob = response.data instanceof Blob ? response.data : new Blob([response.data]);
+  const url = window.URL.createObjectURL(blob);
+  const w = window.open(url, "_blank", "noopener,noreferrer");
+  if (!w) {
+    window.URL.revokeObjectURL(url);
+    throw new Error("تم حظر النافذة المنبثقة.");
+  }
+  window.setTimeout(() => {
+    try {
+      window.URL.revokeObjectURL(url);
+    } catch {
+      /* ignore */
+    }
+  }, 120000);
+}
+
+export const downloadClientOrderFile = (orderId, fileId, fileName) =>
+  downloadOrderFileForRole(orderId, fileId, fileName, "client");
+
+export const downloadFreelancerOrderFile = (orderId, fileId, fileName) =>
+  downloadOrderFileForRole(orderId, fileId, fileName, "freelancer");
+
+export const downloadAdminInternalOrderFile = (orderId, fileId, fileName) =>
+  downloadOrderFileForRole(orderId, fileId, fileName, "admin");
 
 // Freelancer financial claims (portal)
 export const listPortalFinancialClaimsRequest = async (params = {}) => {
@@ -686,6 +773,9 @@ export const freelancerSubmitCourseCompletionRequest = async (courseId, payload 
   const { data } = await api.post(`/freelancer/courses/${courseId}/complete`, payload);
   return data;
 };
+
+/** Dispatched on `window` after notification-worthy events (e.g. subscription payment) so the bell refetches. */
+export const NOTIFICATIONS_REFRESH_EVENT = "orderz-notifications-refresh";
 
 // Notifications
 export const listMyNotificationsRequest = async (params = {}) => {

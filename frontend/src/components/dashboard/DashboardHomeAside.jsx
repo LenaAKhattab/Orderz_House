@@ -64,7 +64,7 @@ export default function DashboardHomeAside({ variant, userInitials, profilePct, 
             <li className="dash-aside__stat">
               <span className="dash-aside__stat-icon dash-aside__stat-icon--violet" aria-hidden="true" />
               <div>
-                <span className="dash-aside__stat-label">فرص الحوض (عرض)</span>
+                <span className="dash-aside__stat-label">فرص المعرض (عرض)</span>
                 <span className="dash-aside__stat-value">{freelancer.poolCount}</span>
               </div>
             </li>

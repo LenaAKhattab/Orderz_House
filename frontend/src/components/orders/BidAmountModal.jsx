@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export default function BidAmountModal({ open, title, min, max, currency, busy, onClose, onSubmit }) {
+export default function BidAmountModal({ open, title, min, max, currency = "JOD", busy, onClose, onSubmit }) {
   const [value, setValue] = useState("");
 
   useEffect(() => {

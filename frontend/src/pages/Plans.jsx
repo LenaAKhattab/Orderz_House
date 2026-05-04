@@ -5,6 +5,8 @@ import {
   createFreelancerSubscriptionCheckoutRequest,
   getMySubscriptionRequest,
   listPublicPlansRequest,
+  notifyFreelancerSubscriptionCheckoutCancelledRequest,
+  NOTIFICATIONS_REFRESH_EVENT,
 } from "../services/api";
 import PricingSection from "../components/plans/PricingSection";
 import { useAuth } from "../context/useAuth";
@@ -112,12 +114,22 @@ const Plans = () => {
       const key = `cancel:${location.search || ""}`;
       if (handledToastSearchesRef.current.has(key)) return undefined;
       handledToastSearchesRef.current.add(key);
+      const cancelSessionId = (q.get("session_id") || "").trim();
       push({
         type: "warning",
         title: "تم إلغاء الدفع",
         message: "لم تكتمل عملية الدفع.",
       });
       stripCheckoutParams();
+      if (cancelSessionId && typeof window !== "undefined") {
+        void notifyFreelancerSubscriptionCheckoutCancelledRequest(cancelSessionId)
+          .then(() => {
+            window.dispatchEvent(new CustomEvent(NOTIFICATIONS_REFRESH_EVENT));
+          })
+          .catch(() => {
+            /* optional DB notification — ignore if session invalid or network error */
+          });
+      }
       return undefined;
     }
 
@@ -166,6 +178,9 @@ const Plans = () => {
               title: "تم استلام الدفع",
               message: "تم التحقق من الخادم. حسابك بانتظار تفعيل الشركة.",
             });
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent(NOTIFICATIONS_REFRESH_EVENT));
+            }
           }
         } catch (err) {
           if (typeof sessionStorage !== "undefined") {

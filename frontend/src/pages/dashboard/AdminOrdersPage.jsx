@@ -280,7 +280,7 @@ export default function AdminOrdersPage() {
             <div className="oh-empty__icon">📦</div>
             <div>
               <h2 className="oh-empty__title">لا توجد طلبات داخلية بعد</h2>
-              <p className="oh-empty__subtitle">ابدأ بإنشاء طلب إداري وسيظهر هنا فوراً، ويمكنك إسناده لفريلانسر أو نشره في الحوض.</p>
+              <p className="oh-empty__subtitle">ابدأ بإنشاء طلب إداري وسيظهر هنا فوراً، ويمكنك إسناده لفريلانسر أو نشره في المعرض.</p>
               <div className="oh-empty__actions">
                 <Link className="btn btn-primary" to={createPath}>
                   إنشاء أول طلب
@@ -323,6 +323,7 @@ export default function AdminOrdersPage() {
               <OrderCard
                 key={o.id}
                 order={o}
+                showOrderCode
                 compactSummary
                 footerInline={
                   <>
@@ -393,7 +394,7 @@ export default function AdminOrdersPage() {
                     "المدة",
                     "الحالة",
                     "التسليم مقابل الموعد",
-                    "في الحوض",
+                    "في المعرض",
                     "مؤرشف",
                     "assignedFreelancerId",
                     "createdAt",

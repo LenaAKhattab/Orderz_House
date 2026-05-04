@@ -5,35 +5,25 @@ import { getMyAssignedOrderByIdRequest, submitFreelancerOrderDeliveryRequest } f
 import { arabicDurationUnit } from "../../utils/arTime";
 import { OrderDetailsPageSkeleton } from "../../components/ui/Skeleton";
 import OrderDeliveryTimingBanner from "../../components/orders/OrderDeliveryTimingBanner";
-
-function fileHref(fileUrl) {
-  if (!fileUrl) return "";
-  const raw = String(fileUrl).trim();
-  if (!raw) return "";
-  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
-  const base = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "");
-  return `${base}${raw.startsWith("/") ? "" : "/"}${raw}`;
-}
-
-function formatMoney(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
-}
-
-function formatJoDate(value) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium" }).format(d);
-}
-
-function formatJoDateTime(value) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
-}
+import "../../components/orders/order-details/order-details-page.css";
+import OrderSummaryCard from "../../components/orders/order-details/OrderSummaryCard";
+import OrderSection from "../../components/orders/order-details/OrderSection";
+import OrderTitleCard from "../../components/orders/order-details/OrderTitleCard";
+import OrderDescriptionCard from "../../components/orders/order-details/OrderDescriptionCard";
+import OrderFilesCard from "../../components/orders/order-details/OrderFilesCard";
+import OrderMetadataBlock from "../../components/orders/order-details/OrderMetadataBlock";
+import FileList from "../../components/orders/order-details/FileList";
+import SubmissionHistoryTimeline from "../../components/orders/submission-history/SubmissionHistoryTimeline";
+import {
+  formatJoDate,
+  formatJoDateTime,
+  formatMoneyJod,
+} from "../../components/orders/order-details/orderDetailsUtils";
+import {
+  ORDER_UPLOAD_TOTAL_SIZE_HELPER_AR,
+  ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR,
+  validateOrderFilesSize,
+} from "../../utils/orderUploadLimits";
 
 function typeLabel(projectType) {
   if (projectType === "fixed") return "سعر ثابت";
@@ -92,7 +82,6 @@ export default function FreelancerMyOrderDetailsPage() {
     };
   }, [id, push, navigate]);
 
-  /** Keep order (incl. submittedAt / dueAt) fresh without full page reload — timing banner and status stay current. */
   useEffect(() => {
     if (busy || !id || !order) return undefined;
     const s = order.orderStatus;
@@ -153,12 +142,21 @@ export default function FreelancerMyOrderDetailsPage() {
     if (s === "completed") return "مكتمل";
     if (s === "in_progress") return "قيد التنفيذ — يمكنك تسليم الملفات";
     return s || "—";
-  }, [order?.orderStatus]);
+  }, [order?.orderStatus, order?.clientRevisionNote]);
+
+  const deliveryFilesSizeOk = useMemo(
+    () => (deliveryFiles.length ? validateOrderFilesSize(deliveryFiles).ok : true),
+    [deliveryFiles],
+  );
 
   const submitDelivery = async (e) => {
     e.preventDefault();
     if (!deliveryFiles.length) {
       push({ type: "error", title: "تنبيه", message: "اختر ملفاً واحداً على الأقل." });
+      return;
+    }
+    if (!validateOrderFilesSize(deliveryFiles).ok) {
+      push({ type: "error", title: "حجم الملفات", message: ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR });
       return;
     }
     setDeliveryBusy(true);
@@ -177,222 +175,170 @@ export default function FreelancerMyOrderDetailsPage() {
     }
   };
 
-  const metaRows = useMemo(() => {
-    if (!order) return [];
-    const categoryText = `${order?.category?.name || "—"} — ${order?.subSubcategory?.name || "—"}`;
-    const budgetText =
-      order?.projectType === "bidding"
-        ? "—"
-        : `${formatMoney(order?.budget)} JOD`.trim();
-    const typeAndBudgetText =
-      order?.projectType === "bidding" ? `${typeLabel(order?.projectType)}` : `${typeLabel(order?.projectType)} — ${budgetText}`;
-    const receivedAt = order?.receivedAt || null;
+  const categoryText = useMemo(() => {
+    if (!order) return "—";
+    return `${order?.category?.name || "—"} — ${order?.subSubcategory?.name || "—"}`;
+  }, [order]);
 
-    const base = [
-      { label: "نوع المشروع / السعر", value: typeAndBudgetText, dir: "ltr" },
+  const typeAndBudgetText = useMemo(() => {
+    if (!order) return "—";
+    const budgetLine = order?.projectType === "bidding" ? "—" : formatMoneyJod(order?.budget);
+    return order?.projectType === "bidding" ? `${typeLabel(order?.projectType)}` : `${typeLabel(order?.projectType)} — ${budgetLine}`;
+  }, [order]);
+
+  const summaryRows = useMemo(() => {
+    if (!order) return [];
+    const receivedAt = order?.receivedAt || null;
+    const rows = [
       { label: "مدة التسليم", value: durationLabel(order) },
-      { label: "التصنيف / التصنيف الفرعي", value: categoryText },
+      { label: "التصنيف", value: categoryText },
+      { label: "تاريخ الإنشاء", value: formatJoDate(order?.createdAt) },
       { label: "تاريخ الاستلام", value: formatJoDateTime(receivedAt) },
       { label: "حالة التنفيذ", value: orderPhaseLabel },
     ];
+    if (Array.isArray(order?.extraCategories) && order.extraCategories.length) {
+      rows.push({
+        label: "تصنيفات إضافية",
+        value: order.extraCategories
+          .map((x) => `${x?.category?.name || "—"}${x?.subSubcategory?.name ? ` • ${x.subSubcategory.name}` : ""}`)
+          .join(" | "),
+      });
+    }
+    return rows;
+  }, [order, categoryText, orderPhaseLabel]);
 
-    const extras =
-      Array.isArray(order?.extraCategories) && order.extraCategories.length
-        ? [
-            {
-              label: "تصنيفات إضافية",
-              value: order.extraCategories
-                .map((x) => `${x?.category?.name || "—"}${x?.subSubcategory?.name ? ` • ${x.subSubcategory.name}` : ""}`)
-                .join(" | "),
-            },
-          ]
-        : [];
-
-    return [...base, ...extras];
-  }, [order, orderPhaseLabel]);
+  const skillsLine = useMemo(() => {
+    if (!order) return "لا توجد مهارات مفضلة لهذا المشروع.";
+    const names = Array.isArray(order.preferredSkills) ? order.preferredSkills.map((s) => s.name).filter(Boolean) : [];
+    return names.length ? names.join("، ") : "لا توجد مهارات مفضلة لهذا المشروع.";
+  }, [order]);
 
   return (
-    <main className="container page-content dash-shell order-details" dir="rtl">
-      <header className="order-details__top">
-        <div className="order-details__top-title">
-          <div className="help" style={{ margin: 0, fontWeight: 900 }}>
-            لوحة المستقل • طلباتي
-          </div>
-          <h1 className="order-details__title">تفاصيل الطلب</h1>
-          <p className="help" style={{ margin: "6px 0 0" }}>
-            عرض كامل لتفاصيل الطلب.
-          </p>
-        </div>
+    <main className="container page-content dash-shell od-page od-page--pool od-page--pool-has-main" dir="rtl">
+      <div className="od-pool-toolbar od-pool-toolbar--bare">
+        <Link className="btn btn-secondary" to="/dashboard/freelancer/my-orders">
+          العودة لطلباتي
+        </Link>
+      </div>
 
-        <div className="order-details__top-actions">
-          <Link className="btn btn-secondary" to="/dashboard/freelancer/my-orders">
-            العودة لطلباتي
-          </Link>
-        </div>
-      </header>
+      <p className="od-pool-hint" style={{ margin: 0 }}>
+        لوحة المستقل • طلباتي
+      </p>
+
+      {!busy && order ? <OrderDeliveryTimingBanner order={order} className="od-delivery-banner" /> : null}
 
       {busy ? (
-        <div style={{ marginTop: 12 }}>
-          <OrderDetailsPageSkeleton />
-        </div>
+        <OrderDetailsPageSkeleton />
       ) : order ? (
-        <section className="order-details__grid">
-          <section className="order-details__main">
-            {order?.clientRevisionNote ? (
-              <section className="order-details__block" style={{ borderColor: "rgba(59, 130, 246, 0.35)" }}>
-                <div className="order-details__block-title">تفاصيل طلب التعديل / المراجعة</div>
-                <div className="order-details__block-body" style={{ display: "grid", gap: 6 }}>
-                  <p style={{ margin: 0 }}><strong>الجهة الطالبة:</strong> {revisionRequesterAr(order)}</p>
-                  <p style={{ margin: 0 }}><strong>رسالة الطلب:</strong> {order.clientRevisionNote}</p>
-                  <p style={{ margin: 0 }}><strong>تاريخ الطلب:</strong> {formatJoDate(order?.revisionRequestedAt || order?.updatedAt)}</p>
-                  <p style={{ margin: 0 }}><strong>الموعد النهائي:</strong> {formatJoDate(order?.revisionDeadlineAt || order?.dueAt)}</p>
-                  <p style={{ margin: 0 }}><strong>الحالة:</strong> {revisionStatusAr(order)}</p>
-                  <div>
-                    <strong>مرفقات مرتبطة:</strong>
-                    {requestAttachments.length ? (
-                      <ul className="order-details__attachments" style={{ marginTop: 6 }}>
-                        {requestAttachments.map((f) => (
-                          <li key={f.id} className="order-details__attachment">
-                            {f.fileUrl ? (
-                              <a className="order-details__attachment-link" href={fileHref(f.fileUrl)} target="_blank" rel="noreferrer">
-                                {f.originalName || f.filePath}
-                              </a>
-                            ) : (
-                              <span>{f.originalName || f.filePath}</span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <span className="help" style={{ marginInlineStart: 6 }}>لا توجد مرفقات إضافية.</span>
-                    )}
-                  </div>
-                </div>
-              </section>
-            ) : null}
-
-            <div className="order-details__desc">
-              <div className="order-details__desc-head">
-                <div className="order-details__desc-k">{order?.title || "—"}</div>
-              </div>
-              <div className="order-details__desc-v">{order?.description || "—"}</div>
+        <div className="od-pool-shell">
+          <div className="od-pool-title">
+            <div className="od-title-desc-group">
+              <OrderTitleCard title={order.title} />
+              <OrderDescriptionCard text={order.description} />
+              <OrderDescriptionCard label="المهارات المطلوبة" text={skillsLine} />
             </div>
+          </div>
 
-            {Array.isArray(order?.preferredSkills) && order.preferredSkills.length ? (
-              <section className="order-details__block">
-                <div className="order-details__block-title">المهارات المطلوبة</div>
-                <div className="order-details__block-body">
-                  {order.preferredSkills.map((s) => s.name).filter(Boolean).join("، ")}
+          <div className="od-pool-summary">
+            <div className="od-aside-col">
+              <OrderSummaryCard
+                title="ملخص الطلب"
+                primaryBlock={{ label: "نوع المشروع / السعر", value: typeAndBudgetText, dir: "ltr" }}
+                rows={summaryRows}
+              />
+              <OrderFilesCard
+                title="مرفقات وصف الطلب"
+                orderId={String(id)}
+                fileAccess="freelancer"
+                files={briefFiles}
+                emptyText="لا توجد ملفات في الوصف"
+              />
+            </div>
+          </div>
+
+          <div className="od-pool-main">
+            {order?.clientRevisionNote ? (
+              <OrderSection title="تفاصيل طلب التعديل / المراجعة" accent>
+                <OrderMetadataBlock
+                  rows={[
+                    { label: "الجهة الطالبة", value: revisionRequesterAr(order) },
+                    { label: "رسالة الطلب", value: order.clientRevisionNote },
+                    { label: "تاريخ الطلب", value: formatJoDate(order?.revisionRequestedAt || order?.updatedAt) },
+                    { label: "الموعد النهائي", value: formatJoDate(order?.revisionDeadlineAt || order?.dueAt) },
+                    { label: "الحالة", value: revisionStatusAr(order) },
+                  ]}
+                />
+                <div style={{ marginTop: "0.85rem" }}>
+                  <p className="od-meta-label" style={{ marginBottom: "0.35rem" }}>
+                    مرفقات مرتبطة
+                  </p>
+                  <FileList orderId={String(id)} fileAccess="freelancer" files={requestAttachments} emptyText="لا توجد مرفقات إضافية." />
                 </div>
-              </section>
+              </OrderSection>
             ) : null}
 
-            <section className="order-details__block">
-              <div className="order-details__block-title">مرفقات وصف الطلب</div>
-              <div className="order-details__block-body">
-                {briefFiles.length ? (
-                  <ul className="order-details__attachments">
-                    {briefFiles.map((f) => (
-                      <li key={f.id} className="order-details__attachment">
-                        {f.fileUrl ? (
-                          <a className="order-details__attachment-link" href={fileHref(f.fileUrl)} target="_blank" rel="noreferrer">
-                            {f.originalName || f.filePath}
-                          </a>
-                        ) : (
-                          <span>{f.originalName || f.filePath}</span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <span className="help">لا توجد ملفات في الوصف</span>
-                )}
-              </div>
-            </section>
-
-            {submittedDeliveryFiles.length ? (
-              <section className="order-details__block">
-                <div className="order-details__block-title">ما قمت بتسليمه</div>
-                <div className="order-details__block-body">
-                  <ul className="order-details__attachments">
-                    {submittedDeliveryFiles.map((f) => (
-                      <li key={f.id} className="order-details__attachment">
-                        {f.fileUrl ? (
-                          <a className="order-details__attachment-link" href={fileHref(f.fileUrl)} target="_blank" rel="noreferrer">
-                            {f.originalName || f.filePath}
-                          </a>
-                        ) : (
-                          <span>{f.originalName || f.filePath}</span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </section>
+            {order?.submissionHistory?.submissions?.length ? (
+              <OrderSection title="سجل التسليمات والتعديلات" accent>
+                <SubmissionHistoryTimeline
+                  submissionHistory={order.submissionHistory}
+                  orderId={String(id)}
+                  fileAccess="freelancer"
+                />
+              </OrderSection>
+            ) : submittedDeliveryFiles.length ? (
+              <OrderSection title="ما قمت بتسليمه">
+                <FileList orderId={String(id)} fileAccess="freelancer" files={submittedDeliveryFiles} emptyText="—" />
+              </OrderSection>
             ) : null}
 
             {DELIVERY_UPLOAD_ALLOWED_STATUSES.has(String(order?.orderStatus || "")) ? (
-              <section className="order-details__block">
-                <div className="order-details__block-title">تسليم الطلب</div>
-                <div className="order-details__block-body">
-                  <p className="help" style={{ marginTop: 0 }}>
-                    ارفع الملفات أو الصور النهائية (حتى خمس ملفات، عشرة ميغابايت لكل ملف).
-                  </p>
-                  <form onSubmit={submitDelivery}>
-                    <div className="field">
-                      <label className="label" htmlFor="delivery-input">
-                        اختيار الملفات
-                      </label>
-                      <input
-                        id="delivery-input"
-                        type="file"
-                        className="input"
-                        multiple
-                        disabled={deliveryBusy}
-                        onChange={(ev) => {
-                          const list = ev.target.files ? Array.from(ev.target.files) : [];
-                          setDeliveryFiles(list.slice(0, 5));
-                        }}
-                      />
-                    </div>
-                    <button type="submit" className="btn btn-primary" disabled={deliveryBusy || !deliveryFiles.length}>
-                      {deliveryBusy ? "جارٍ الإرسال…" : "تسليم الطلب"}
-                    </button>
-                  </form>
-                </div>
-              </section>
+              <OrderSection title="تسليم الطلب">
+                <p className="od-muted" style={{ marginTop: 0 }}>
+                  ارفع الملفات أو الصور النهائية (حتى خمس ملفات). {ORDER_UPLOAD_TOTAL_SIZE_HELPER_AR}
+                </p>
+                <form onSubmit={submitDelivery}>
+                  <div className="field">
+                    <label className="label" htmlFor="delivery-input">
+                      اختيار الملفات
+                    </label>
+                    <input
+                      id="delivery-input"
+                      type="file"
+                      className="input"
+                      multiple
+                      disabled={deliveryBusy}
+                      onChange={(ev) => {
+                        const list = ev.target.files ? Array.from(ev.target.files) : [];
+                        setDeliveryFiles(list.slice(0, 5));
+                      }}
+                    />
+                    {deliveryFiles.length > 0 && !deliveryFilesSizeOk ? (
+                      <p className="help" style={{ color: "#b91c1c", marginTop: 6, marginBottom: 0 }}>
+                        {ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR}
+                      </p>
+                    ) : null}
+                  </div>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={deliveryBusy || !deliveryFiles.length || !deliveryFilesSizeOk}
+                  >
+                    {deliveryBusy ? "جارٍ الإرسال…" : "تسليم الطلب"}
+                  </button>
+                </form>
+              </OrderSection>
             ) : null}
 
             {order?.orderStatus === "pending_client_review" ? (
-              <section className="order-details__block">
-                <div className="order-details__block-title">حالة التسليم</div>
-                <div className="order-details__block-body">
-                  <p className="help" style={{ margin: 0 }}>
-                    تم إرسال تسليمك للمراجعة. بانتظار الاعتماد النهائي (عميل/إدارة).
-                  </p>
-                </div>
-              </section>
+              <OrderSection title="حالة التسليم">
+                <p className="od-muted" style={{ margin: 0 }}>
+                  تم إرسال تسليمك للمراجعة. بانتظار الاعتماد النهائي (عميل/إدارة).
+                </p>
+              </OrderSection>
             ) : null}
-          </section>
-
-          <aside className="order-details__side">
-            <section className="order-details__meta card">
-              <div className="order-details__meta-title">تفاصيل المشروع</div>
-              <div className="order-details__meta-list">
-                {metaRows.map((r) => (
-                  <div key={r.label} className="order-details__meta-row">
-                    <div className="order-details__meta-label">{r.label}</div>
-                    <div className="order-details__meta-value" dir={r.dir || "rtl"} style={r.dir ? { unicodeBidi: "plaintext" } : undefined}>
-                      {r.value || "—"}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </aside>
-        </section>
+          </div>
+        </div>
       ) : null}
     </main>
   );
 }
-

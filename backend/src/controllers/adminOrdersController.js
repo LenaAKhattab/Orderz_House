@@ -1,6 +1,6 @@
-const fs = require("node:fs");
 const ordersService = require("../services/ordersService");
 const adminUsersService = require("../services/adminUsersService");
+const { pipeOrderFileToResponse } = require("../utils/pipeOrderFileDownload");
 
 function parsePreferredSkills(raw) {
   if (raw === undefined || raw === null || raw === "") return [];
@@ -21,6 +21,8 @@ function parsePreferredSkills(raw) {
 
 const createInternalOrder = async (req, res, next) => {
   try {
+    // Admin internal orders: description is the only long-form text. Legacy multipart fields
+    // (`notes`, `additionalNotes`, etc.) are not read and have no effect if a cached client sends them.
     const actorRole = req.auth?.primaryRole || req.auth?.legacyRole || req.user?.role;
     let extraCategoryIds = [];
     try {
@@ -58,7 +60,6 @@ const createInternalOrder = async (req, res, next) => {
       subcategoryId: req.body.subcategoryId || null,
       subSubcategoryId: req.body.subSubcategoryId || null,
       projectType: req.body.projectType,
-      currencyCode: req.body.currencyCode || null,
       budget: req.body.budget ?? null,
       bidBudgetMin: req.body.bidBudgetMin ?? null,
       bidBudgetMax: req.body.bidBudgetMax ?? null,
@@ -102,18 +103,30 @@ const getInternalOrder = async (req, res, next) => {
       err.statusCode = 404;
       throw err;
     }
+    const viewerRole = req.auth?.primaryRole || req.auth?.legacyRole || req.user?.role || "admin";
+    await ordersService.enrichOrderWithSubmissionHistory(order, viewerRole);
     return res.status(200).json({ success: true, data: { order } });
   } catch (err) {
     return next(err);
   }
 };
 
+function queryBoolTrue(v) {
+  const s = String(v ?? "").trim().toLowerCase();
+  return s === "true" || s === "1";
+}
+
 const searchFreelancers = async (req, res, next) => {
   try {
+    const eligibleOnly = queryBoolTrue(req.query.eligibleOnly) || queryBoolTrue(req.query.onlyActiveSubscription);
+    const statusRaw = req.query.status != null && String(req.query.status).trim() !== "" ? String(req.query.status).trim() : "all";
     const freelancers = await adminUsersService.searchFreelancers({
+      search: String(req.query.search || req.query.q || "").trim(),
       q: req.query.q,
       limit: req.query.limit,
-      onlyActiveSubscription: String(req.query.onlyActiveSubscription || "").toLowerCase() === "true",
+      eligibleOnly,
+      onlyActiveSubscription: false,
+      status: statusRaw,
     });
     return res.status(200).json({ success: true, data: { freelancers } });
   } catch (err) {
@@ -203,6 +216,8 @@ const listOrderClaims = async (req, res, next) => {
 const approveInternalDelivery = async (req, res, next) => {
   try {
     const order = await ordersService.adminApproveInternalDelivery({ orderId: req.params.id });
+    const viewerRole = req.auth?.primaryRole || req.auth?.legacyRole || req.user?.role || "admin";
+    await ordersService.enrichOrderWithSubmissionHistory(order, viewerRole);
     return res.status(200).json({ success: true, data: { order } });
   } catch (err) {
     return next(err);
@@ -211,11 +226,16 @@ const approveInternalDelivery = async (req, res, next) => {
 
 const requestInternalDeliveryRevision = async (req, res, next) => {
   try {
+    const revisionRequestedByRole = req.auth?.isSuperAdmin ? "super_admin" : "admin";
     const order = await ordersService.adminRequestInternalDeliveryRevision({
       orderId: req.params.id,
       note: req.body.note || "",
       uploadedFiles: req.files || [],
+      staffUserId: req.auth.userId,
+      revisionRequestedByRole,
     });
+    const viewerRole = req.auth?.primaryRole || req.auth?.legacyRole || req.user?.role || "admin";
+    await ordersService.enrichOrderWithSubmissionHistory(order, viewerRole);
     return res.status(200).json({ success: true, data: { order } });
   } catch (err) {
     return next(err);
@@ -224,21 +244,11 @@ const requestInternalDeliveryRevision = async (req, res, next) => {
 
 const downloadInternalOrderFile = async (req, res, next) => {
   try {
-    const out = await ordersService.prepareAdminInternalOrderFileDownload({
+    const out = await ordersService.prepareStaffOrderFileDownload({
       orderId: req.params.id,
       fileId: req.params.fileId,
     });
-    if (out?.redirectUrl) return res.redirect(302, out.redirectUrl);
-    const { absPath, downloadName, mimeType } = out;
-    const utf8Name = String(downloadName || "file");
-    const encoded = encodeURIComponent(utf8Name);
-    res.setHeader("Content-Type", mimeType);
-    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encoded}`);
-    const stream = fs.createReadStream(absPath);
-    stream.on("error", (e) => {
-      if (!res.headersSent) return next(e);
-    });
-    return stream.pipe(res);
+    return pipeOrderFileToResponse(req, res, next, out);
   } catch (err) {
     return next(err);
   }

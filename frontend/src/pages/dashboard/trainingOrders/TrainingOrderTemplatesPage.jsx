@@ -241,7 +241,7 @@ export default function TrainingOrderTemplatesPage() {
                       </td>
                       <td>{t.categoryName || "—"}</td>
                       <td dir="ltr">
-                        {t.minBudget} – {t.maxBudget} {t.currency}
+                        {t.minBudget} – {t.maxBudget} JOD
                       </td>
                       <td dir="ltr">
                         {t.minDuration}–{t.maxDuration} {t.durationUnit}

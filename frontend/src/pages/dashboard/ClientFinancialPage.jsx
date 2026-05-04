@@ -139,7 +139,6 @@ export default function ClientFinancialPage() {
                   <table className="client-financial-table">
                     <thead>
                       <tr>
-                        <th>رمز الطلب</th>
                         <th>العنوان</th>
                         <th>المبلغ / العملة</th>
                         <th>يتطلب دفع</th>
@@ -150,11 +149,6 @@ export default function ClientFinancialPage() {
                     <tbody>
                       {rows.map((o) => (
                         <tr key={o.id}>
-                          <td>
-                            <span className="oh-code" dir="ltr">
-                              {o.orderCode || "—"}
-                            </span>
-                          </td>
                           <td>{o.title || "—"}</td>
                           <td dir="ltr">
                             {o.projectType === "bidding" && o.bidBudgetMin != null && o.bidBudgetMax != null

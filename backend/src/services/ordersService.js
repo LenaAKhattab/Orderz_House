@@ -4,9 +4,13 @@ const fsp = require("node:fs/promises");
 const { pool } = require("../config/db");
 const subscriptionsService = require("./subscriptionsService");
 const notificationService = require("./notificationService");
+const orderFlowService = require("./orderFlowService");
+const { resolveOrderFileLocation } = require("../utils/orderFileDownload");
+const { sanitizeOrderForClient, sanitizeBidsForClient, sanitizeClaimsForClient } = require("../utils/orderViewerSanitize");
 const notificationEventsService = require("./notificationEventsService");
 const { baseUploadsDir } = require("../middleware/ordersUploadMiddleware");
 const { uploadBuffer, destroyByPublicId } = require("./cloudinaryUploadService");
+const orderSubmissionHistoryService = require("./orderSubmissionHistoryService");
 async function safeNotify(run) {
   try {
     await run();
@@ -38,10 +42,17 @@ const ORDER_STATUSES = Object.freeze({
   AWAITING_PAYMENT_AFTER_BID_SELECTION: "awaiting_payment_after_bid_selection",
   ASSIGNED: "assigned",
   IN_PROGRESS: "in_progress",
+  READY_FOR_WORK: "ready_for_work",
   PENDING_CLIENT_REVIEW: "pending_client_review",
   COMPLETED: "completed",
   CANCELLED: "cancelled",
 });
+
+const FREELANCER_DELIVERY_ALLOWED_STATUSES = new Set([
+  ORDER_STATUSES.IN_PROGRESS,
+  ORDER_STATUSES.ASSIGNED,
+  ORDER_STATUSES.READY_FOR_WORK,
+]);
 
 /** Pool listing: internal admin jobs + client-published jobs */
 const POOL_ORDER_SOURCE_TYPES = Object.freeze(["admin_created", "super_admin_created", "client_created"]);
@@ -266,27 +277,29 @@ async function assertCategoryChain({ categoryId, subcategoryId, subSubcategoryId
 
 async function assertAssignableFreelancer({ freelancerUserId }, client) {
   const runner = client || pool;
-  const { rows } = await runner.query(`SELECT id, role, is_active FROM users WHERE id = $1 LIMIT 1`, [
-    Number(freelancerUserId),
-  ]);
-  const u = rows[0];
-  if (!u) {
+  const snap = await subscriptionsService.getFreelancerIdentitySnapshot(Number(freelancerUserId), runner);
+  if (!snap) {
     const err = new Error("Freelancer not found.");
     err.statusCode = 404;
     throw err;
   }
-  if (u.role !== "freelancer") {
+  if (!snap.isFreelancer) {
     const err = new Error("Assigned user must be a freelancer.");
     err.statusCode = 400;
     throw err;
   }
-  if (!u.is_active) {
+  if (!snap.isActive) {
     const err = new Error("Assigned freelancer account is disabled.");
     err.statusCode = 400;
     throw err;
   }
+  if (!snap.emailVerified) {
+    const err = new Error("Assigned freelancer email is not verified.");
+    err.statusCode = 400;
+    throw err;
+  }
 
-  const eligibility = await subscriptionsService.canFreelancerTakeOrders(String(u.id));
+  const eligibility = await subscriptionsService.canFreelancerTakeOrders(String(snap.id));
   if (!eligibility.eligible && !ALLOW_ADMIN_ASSIGN_TO_INACTIVE_FREELANCERS) {
     const err = new Error("Assigned freelancer must have an active subscription.");
     err.statusCode = 400;
@@ -339,10 +352,12 @@ async function attachFiles({ orderId, actorUserId, files, defaultPurpose = "brie
     const urlPath = f.urlPath || f.secureUrl || null;
     const purpose = f.purpose || defaultPurpose;
     const originalName = decodeMultipartOriginalName(f.originalname);
+    const submissionIdIns =
+      f.submissionId != null ? Number(f.submissionId) : f.submission_id != null ? Number(f.submission_id) : null;
     const { rows } = await runner.query(
       `INSERT INTO order_files (
-        order_id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_by_user_id, purpose, assignment_id, revision_id
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+        order_id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_by_user_id, purpose, assignment_id, revision_id, submission_id
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
       RETURNING *`,
       [
         Number(orderId),
@@ -357,6 +372,7 @@ async function attachFiles({ orderId, actorUserId, files, defaultPurpose = "brie
         purpose,
         f.assignmentId ? Number(f.assignmentId) : null,
         f.revisionId ? Number(f.revisionId) : null,
+        submissionIdIns != null && Number.isFinite(submissionIdIns) ? submissionIdIns : null,
       ],
     );
     rowsOut.push(rows[0]);
@@ -416,7 +432,7 @@ async function getOrderById(orderId, client) {
   );
 
   const { rows: fileRows } = await runner.query(
-    `SELECT id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_at, purpose
+    `SELECT id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_at, purpose, submission_id, revision_id
      FROM order_files
      WHERE order_id = $1
      ORDER BY id ASC`,
@@ -530,7 +546,6 @@ async function getOrderById(orderId, client) {
     files: fileRows.map((r) => ({
       id: String(r.id),
       orderId: String(orderId),
-      filePath: r.file_path,
       fileUrl: r.secure_url || r.file_url,
       secureUrl: r.secure_url || null,
       publicId: r.public_id || null,
@@ -539,6 +554,8 @@ async function getOrderById(orderId, client) {
       sizeBytes: Number(r.size_bytes),
       uploadedAt: r.uploaded_at,
       purpose: r.purpose || "brief",
+      submissionId: r.submission_id != null ? String(r.submission_id) : null,
+      revisionRequestId: r.revision_id != null ? String(r.revision_id) : null,
     })),
     bidsCount: orderBidRows.length,
     bidUsers: orderBidRows.map((r) => ({
@@ -1119,7 +1136,6 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
     filesByOrder.get(oid).push({
       id: String(fr.id),
       orderId: oid,
-      filePath: fr.file_path,
       fileUrl: fr.secure_url || fr.file_url,
       secureUrl: fr.secure_url || null,
       publicId: fr.public_id || null,
@@ -1278,7 +1294,7 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
     o.bidsCount = bidCountByOrder.has(String(o.id)) ? bidCountByOrder.get(String(o.id)) : 0;
   }
 
-  return out;
+  return out.map((o) => sanitizeOrderForClient(o));
 }
 
 function parsePageLimitOffset({ page, limit, offset, defaultLimit = 12, maxLimit = 200 } = {}) {
@@ -1830,8 +1846,21 @@ async function getFreelancerAssignedOrderById({ freelancerUserId, orderId }) {
   if (!rows[0]) return null;
   const order = await getOrderById(orderId);
   if (!order) return null;
+  await enrichOrderWithSubmissionHistory(order, "freelancer");
   const myClaim = await getMyOrderClaim({ orderId, freelancerUserId });
   return { ...order, myClaim };
+}
+
+async function enrichOrderWithSubmissionHistory(order, viewerRole) {
+  return orderSubmissionHistoryService.enrichOrderWithSubmissionHistory(order, { viewerRole });
+}
+
+async function getClientOrderByIdForOwner({ clientUserId, orderId }) {
+  await assertClientOwnsOrder({ clientUserId, orderId });
+  const order = await getOrderById(orderId);
+  if (!order) return null;
+  await enrichOrderWithSubmissionHistory(order, "client");
+  return order;
 }
 
 async function submitPoolOrderBid({ freelancerUserId, orderId, amount, message = null }) {
@@ -2558,7 +2587,7 @@ async function listOrderClaimsForClient({ clientUserId, orderId }) {
   }
   const claims = await listOrderClaimsAdmin({ orderId });
   const pending = claims.filter((c) => c.status === "pending");
-  return { claims: pending, orderSummary: { hasOpenPool: true } };
+  return { claims: sanitizeClaimsForClient(pending), orderSummary: { hasOpenPool: true } };
 }
 
 async function listOrderBidsWithFreelancers({ orderId }, clientMaybe) {
@@ -2606,7 +2635,7 @@ async function listOrderBidsForClient({ clientUserId, orderId }) {
   const all = await listOrderBidsWithFreelancers({ orderId });
   const pending = all.filter((b) => b.status === "pending" || b.status === "selected_pending_payment");
   return {
-    bids: pending,
+    bids: sanitizeBidsForClient(pending),
     orderSummary: { hasOpenPool: true, currencyCode: o.currency_code || "JOD" },
   };
 }
@@ -2922,7 +2951,7 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
       err.statusCode = 403;
       throw err;
     }
-    if (order.order_status !== ORDER_STATUSES.IN_PROGRESS) {
+    if (!FREELANCER_DELIVERY_ALLOWED_STATUSES.has(order.order_status)) {
       const err = new Error("لا يمكن التسليم في الحالة الحالية للطلب.");
       err.statusCode = 409;
       throw err;
@@ -2934,11 +2963,20 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
       throw err;
     }
 
+    await orderSubmissionHistoryService.supersedeCurrentSubmissions(client, order.id);
+    const submissionRow = await orderSubmissionHistoryService.insertSubmissionRow(client, {
+      orderId: order.id,
+      freelancerUserId,
+    });
+
     const preparedFiles = await uploadFilesToCloudinary({
       orderId: order.id,
       files,
       purpose: "delivery",
     });
+    for (const pf of preparedFiles) {
+      pf.submissionId = submissionRow.id;
+    }
 
     await attachFiles({ orderId: order.id, actorUserId: freelancerUserId, files: preparedFiles, defaultPurpose: "delivery" }, client);
 
@@ -2959,8 +2997,8 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
           recipientRole: order.created_by_role || null,
           actorUserId: Number(freelancerUserId),
           type: "order.delivery.submitted",
-          title: "تم تسليم العمل وبانتظار المراجعة",
-          message: "قام المستقل برفع التسليم، يرجى مراجعة الطلب.",
+          title: "تم إرسال تسليم جديد",
+          message: "أُرسل تسليم جديد لهذا الطلب — يرجى المراجعة.",
           entityType: "order",
           entityId: Number(orderId),
           link:
@@ -2970,11 +3008,9 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
           priority: "high",
           metadata: {
             orderId: String(orderId),
-            orderCode: order.order_code || null,
+            submissionId: String(submissionRow.id),
             projectName: order.title || null,
-            freelancerUserId: String(freelancerUserId),
             actorName: actorIdentity?.fullName || null,
-            actorAccountId: actorIdentity?.accountId || null,
             source: "delivery_submitted",
           },
         },
@@ -3030,14 +3066,15 @@ async function adminApproveInternalDelivery({ orderId }) {
        WHERE id = $1`,
       [Number(orderId), ORDER_STATUSES.COMPLETED, now],
     );
+    await orderSubmissionHistoryService.acceptCurrentSubmission(client, orderId);
     await safeNotify(() =>
       notificationEventsService.notifyAssignedFreelancer(
         {
           order,
           actorUserId: null,
           type: "order.delivery.approved",
-          title: "تم اعتماد التسليم",
-          message: "تم اعتماد التسليم وإغلاق المشروع بنجاح.",
+          title: "تم قبول التسليم",
+          message: "تم قبول التسليم وإغلاق المشروع بنجاح.",
           priority: "high",
           dedupeKey: `order_delivery_approved_${orderId}`,
           metadata: { orderId: String(orderId), source: "admin_approve_delivery" },
@@ -3055,7 +3092,7 @@ async function adminApproveInternalDelivery({ orderId }) {
   }
 }
 
-async function adminRequestInternalDeliveryRevision({ orderId, note, uploadedFiles = [] }) {
+async function adminRequestInternalDeliveryRevision({ orderId, note, uploadedFiles = [], staffUserId, revisionRequestedByRole }) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -3063,29 +3100,66 @@ async function adminRequestInternalDeliveryRevision({ orderId, note, uploadedFil
     const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
     const order = rows[0];
     const noteText = note != null ? String(note).trim() : "";
+    if (!noteText) {
+      const err = new Error("ملاحظة التعديل مطلوبة.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    let submissionId = await orderSubmissionHistoryService.getCurrentSubmissionId(client, orderId);
+    if (!submissionId) {
+      const err = new Error("لا يوجد تسليم مسجّل لربط طلب التعديل به.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const requestedRole =
+      revisionRequestedByRole === "super_admin" ? "super_admin" : revisionRequestedByRole === "admin" ? "admin" : "admin";
+
+    if (
+      order.order_status !== ORDER_STATUSES.PENDING_CLIENT_REVIEW &&
+      order.order_status !== ORDER_STATUSES.IN_PROGRESS &&
+      order.order_status !== ORDER_STATUSES.READY_FOR_WORK
+    ) {
+      const err = new Error("لا يمكن طلب تعديل في هذه الحالة.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const revIns = await orderSubmissionHistoryService.insertRevisionRequestRow(client, {
+      orderId: Number(orderId),
+      submissionId,
+      requestedByUserId: staffUserId != null ? Number(staffUserId) : null,
+      requestedByRole: requestedRole,
+      note: noteText,
+    });
+    if (!revIns) {
+      const err = new Error("تعذّر حفظ طلب التعديل.");
+      err.statusCode = 500;
+      throw err;
+    }
+
+    await orderSubmissionHistoryService.markSubmissionRevisionRequested(client, submissionId);
+
     if (order.order_status === ORDER_STATUSES.PENDING_CLIENT_REVIEW) {
-      await client.query(`DELETE FROM order_files WHERE order_id = $1 AND purpose = 'delivery'`, [Number(orderId)]);
       await client.query(
         `UPDATE orders
            SET order_status = $2,
                client_revision_note = $3,
                updated_at = NOW()
          WHERE id = $1`,
-        [Number(orderId), ORDER_STATUSES.IN_PROGRESS, noteText || null],
+        [Number(orderId), ORDER_STATUSES.IN_PROGRESS, noteText],
       );
-    } else if (order.order_status === ORDER_STATUSES.IN_PROGRESS) {
+    } else {
       await client.query(
         `UPDATE orders
            SET client_revision_note = $2,
                updated_at = NOW()
          WHERE id = $1`,
-        [Number(orderId), noteText || null],
+        [Number(orderId), noteText],
       );
-    } else {
-      const err = new Error("لا يمكن طلب تعديل في هذه الحالة.");
-      err.statusCode = 409;
-      throw err;
     }
+
     const revisionFiles = Array.isArray(uploadedFiles) ? uploadedFiles : [];
     if (revisionFiles.length) {
       const prepared = await uploadFilesToCloudinary({
@@ -3093,25 +3167,34 @@ async function adminRequestInternalDeliveryRevision({ orderId, note, uploadedFil
         files: revisionFiles,
         purpose: "revision_request",
       });
-      await attachFiles({ orderId: Number(orderId), actorUserId: null, files: prepared, defaultPurpose: "revision_request" }, client);
+      for (const pf of prepared) {
+        pf.revisionId = revIns.id;
+      }
+      await attachFiles({ orderId: Number(orderId), actorUserId: staffUserId || null, files: prepared, defaultPurpose: "revision_request" }, client);
     }
     if (order.assigned_freelancer_id) {
+      const preview = noteText.length > 200 ? `${noteText.slice(0, 200)}…` : noteText;
       await safeNotify(() =>
         notificationService.createNotification(
-        {
-          recipientUserId: Number(order.assigned_freelancer_id),
-          recipientRole: "freelancer",
-          actorUserId: null,
-          type: "order.revision.requested",
-          title: "تم طلب تعديل على التسليم",
-          message: noteText || "تم طلب تعديل على العمل المرسل.",
-          entityType: "order",
-          entityId: Number(orderId),
-          link: `/dashboard/freelancer/my-orders/${encodeURIComponent(String(orderId))}`,
-          priority: "high",
-          metadata: { orderId: String(orderId), source: "admin_revision" },
-        },
-        client,
+          {
+            recipientUserId: Number(order.assigned_freelancer_id),
+            recipientRole: "freelancer",
+            actorUserId: staffUserId != null ? Number(staffUserId) : null,
+            type: "order.revision.requested",
+            title: "تم طلب تعديلات",
+            message: preview,
+            entityType: "order",
+            entityId: Number(orderId),
+            link: `/dashboard/freelancer/my-orders/${encodeURIComponent(String(orderId))}`,
+            priority: "high",
+            metadata: {
+              orderId: String(orderId),
+              submissionId: String(submissionId),
+              revisionRequestId: String(revIns.id),
+              source: "admin_revision",
+            },
+          },
+          client,
         ),
       );
     }
@@ -3125,14 +3208,27 @@ async function adminRequestInternalDeliveryRevision({ orderId, note, uploadedFil
   }
 }
 
-async function prepareAdminInternalOrderFileDownload({ orderId, fileId }) {
-  await assertInternalOrderForAdmin({ orderId });
+/** Staff (admin / super_admin): any order type, file must belong to order. */
+async function prepareStaffOrderFileDownload({ orderId, fileId }) {
+  const oid = Number(orderId);
+  const fid = Number(fileId);
+  if (!Number.isInteger(oid) || oid < 1 || !Number.isInteger(fid) || fid < 1) {
+    const err = new Error("معرّف غير صالح.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const { rows: oRows } = await pool.query(`SELECT id FROM orders WHERE id = $1 LIMIT 1`, [oid]);
+  if (!oRows[0]) {
+    const err = new Error("الطلب غير موجود.");
+    err.statusCode = 404;
+    throw err;
+  }
   const { rows } = await pool.query(
     `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type
      FROM order_files
      WHERE id = $1 AND order_id = $2
      LIMIT 1`,
-    [Number(fileId), Number(orderId)],
+    [fid, oid],
   );
   const f = rows[0];
   if (!f) {
@@ -3140,39 +3236,69 @@ async function prepareAdminInternalOrderFileDownload({ orderId, fileId }) {
     err.statusCode = 404;
     throw err;
   }
-  const remoteUrl = String(f.secure_url || f.file_url || "").trim();
-  if (/^https?:\/\//i.test(remoteUrl)) {
-    return {
-      redirectUrl: remoteUrl,
-      downloadName: decodeMultipartOriginalName(f.original_name) || f.original_name || "file",
-      mimeType: f.mime_type || "application/octet-stream",
-    };
-  }
-  const rel = String(f.file_path || "").replace(/\\/g, "/").trim();
-  if (!rel || rel.includes("..")) {
-    const err = new Error("مسار الملف غير صالح.");
+  const loc = await resolveOrderFileLocation(f);
+  const downloadName = decodeMultipartOriginalName(f.original_name) || f.original_name || "file";
+  const mimeType = f.mime_type || "application/octet-stream";
+  if (loc.redirectUrl) return { redirectUrl: loc.redirectUrl, downloadName, mimeType };
+  return { absPath: loc.absPath, downloadName, mimeType };
+}
+
+/**
+ * Freelancer: assigned order → all purposes; pool-only → brief attachments only while order is pool-listed.
+ */
+async function prepareFreelancerOrderFileDownload({ freelancerUserId, orderId, fileId }) {
+  const uid = Number(freelancerUserId);
+  const oid = Number(orderId);
+  const fid = Number(fileId);
+  if (!Number.isInteger(uid) || uid < 1 || !Number.isInteger(oid) || oid < 1 || !Number.isInteger(fid) || fid < 1) {
+    const err = new Error("معرّف غير صالح.");
     err.statusCode = 400;
     throw err;
   }
-  const uploadsRoot = path.resolve(path.join(__dirname, "..", "..", "uploads"));
-  const absPath = path.resolve(uploadsRoot, rel);
-  if (!absPath.startsWith(uploadsRoot + path.sep) && absPath !== uploadsRoot) {
-    const err = new Error("مسار الملف غير صالح.");
-    err.statusCode = 400;
-    throw err;
-  }
-  try {
-    await fsp.access(absPath);
-  } catch {
-    const err = new Error("الملف غير موجود على الخادم.");
+  const { rows: fr } = await pool.query(
+    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type, purpose
+     FROM order_files
+     WHERE id = $1 AND order_id = $2
+     LIMIT 1`,
+    [fid, oid],
+  );
+  const fileRow = fr[0];
+  if (!fileRow) {
+    const err = new Error("الملف غير موجود.");
     err.statusCode = 404;
     throw err;
   }
-  return {
-    absPath,
-    downloadName: decodeMultipartOriginalName(f.original_name) || f.original_name || "file",
-    mimeType: f.mime_type || "application/octet-stream",
-  };
+  const { rows: orows } = await pool.query(`SELECT * FROM orders WHERE id = $1 LIMIT 1`, [oid]);
+  const order = orows[0];
+  if (!order) {
+    const err = new Error("الطلب غير موجود.");
+    err.statusCode = 404;
+    throw err;
+  }
+  const assignedId = order.assigned_freelancer_id ? Number(order.assigned_freelancer_id) : null;
+  if (assignedId != null && assignedId !== uid) {
+    const err = new Error("لا يمكنك الوصول إلى ملفات هذا الطلب.");
+    err.statusCode = 403;
+    throw err;
+  }
+  if (assignedId !== uid) {
+    const purpose = String(fileRow.purpose || "brief").trim();
+    if (purpose !== "brief") {
+      const err = new Error("لا يمكنك الوصول إلى هذا الملف.");
+      err.statusCode = 403;
+      throw err;
+    }
+    if (!orderFlowService.orderRowEligibleForFreelancerPoolListing(order)) {
+      const err = new Error("لا يمكنك الوصول إلى ملفات هذا الطلب.");
+      err.statusCode = 403;
+      throw err;
+    }
+  }
+  const loc = await resolveOrderFileLocation(fileRow);
+  const downloadName = decodeMultipartOriginalName(fileRow.original_name) || fileRow.original_name || "file";
+  const mimeType = fileRow.mime_type || "application/octet-stream";
+  if (loc.redirectUrl) return { redirectUrl: loc.redirectUrl, downloadName, mimeType };
+  return { absPath: loc.absPath, downloadName, mimeType };
 }
 
 async function clientApproveDelivery({ clientUserId, orderId }) {
@@ -3196,13 +3322,14 @@ async function clientApproveDelivery({ clientUserId, orderId }) {
        WHERE id = $1`,
       [Number(orderId), ORDER_STATUSES.COMPLETED, now],
     );
+    await orderSubmissionHistoryService.acceptCurrentSubmission(client, orderId);
     await safeNotify(() =>
       notificationEventsService.notifyAssignedFreelancer(
         {
           order,
           actorUserId: Number(clientUserId),
           type: "order.delivery.approved",
-          title: "تم اعتماد التسليم",
+          title: "تم قبول التسليم",
           message: "قام العميل باعتماد التسليم وإغلاق المشروع.",
           priority: "high",
           dedupeKey: `order_delivery_approved_${orderId}`,
@@ -3229,29 +3356,63 @@ async function clientRequestDeliveryRevision({ clientUserId, orderId, note, uplo
     const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
     const order = rows[0];
     const noteText = note != null ? String(note).trim() : "";
+    if (!noteText) {
+      const err = new Error("ملاحظة التعديل مطلوبة.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    let submissionId = await orderSubmissionHistoryService.getCurrentSubmissionId(client, orderId);
+    if (!submissionId) {
+      const err = new Error("لا يوجد تسليم مسجّل لربط طلب التعديل به.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    if (
+      order.order_status !== ORDER_STATUSES.PENDING_CLIENT_REVIEW &&
+      order.order_status !== ORDER_STATUSES.IN_PROGRESS &&
+      order.order_status !== ORDER_STATUSES.READY_FOR_WORK
+    ) {
+      const err = new Error("لا يمكن طلب تعديل في هذه الحالة.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const revIns = await orderSubmissionHistoryService.insertRevisionRequestRow(client, {
+      orderId: Number(orderId),
+      submissionId,
+      requestedByUserId: Number(clientUserId),
+      requestedByRole: "client",
+      note: noteText,
+    });
+    if (!revIns) {
+      const err = new Error("تعذّر حفظ طلب التعديل.");
+      err.statusCode = 500;
+      throw err;
+    }
+
+    await orderSubmissionHistoryService.markSubmissionRevisionRequested(client, submissionId);
+
     if (order.order_status === ORDER_STATUSES.PENDING_CLIENT_REVIEW) {
-      await client.query(`DELETE FROM order_files WHERE order_id = $1 AND purpose = 'delivery'`, [Number(orderId)]);
       await client.query(
         `UPDATE orders
            SET order_status = $2,
                client_revision_note = $3,
                updated_at = NOW()
          WHERE id = $1`,
-        [Number(orderId), ORDER_STATUSES.IN_PROGRESS, noteText || null],
+        [Number(orderId), ORDER_STATUSES.IN_PROGRESS, noteText],
       );
-    } else if (order.order_status === ORDER_STATUSES.IN_PROGRESS) {
+    } else {
       await client.query(
         `UPDATE orders
            SET client_revision_note = $2,
                updated_at = NOW()
          WHERE id = $1`,
-        [Number(orderId), noteText || null],
+        [Number(orderId), noteText],
       );
-    } else {
-      const err = new Error("لا يمكن طلب تعديل في هذه الحالة.");
-      err.statusCode = 409;
-      throw err;
     }
+
     const revisionFiles = Array.isArray(uploadedFiles) ? uploadedFiles : [];
     if (revisionFiles.length) {
       const prepared = await uploadFilesToCloudinary({
@@ -3259,25 +3420,34 @@ async function clientRequestDeliveryRevision({ clientUserId, orderId, note, uplo
         files: revisionFiles,
         purpose: "revision_request",
       });
+      for (const pf of prepared) {
+        pf.revisionId = revIns.id;
+      }
       await attachFiles({ orderId: Number(orderId), actorUserId: Number(clientUserId), files: prepared, defaultPurpose: "revision_request" }, client);
     }
     if (order.assigned_freelancer_id) {
+      const preview = noteText.length > 200 ? `${noteText.slice(0, 200)}…` : noteText;
       await safeNotify(() =>
         notificationService.createNotification(
-        {
-          recipientUserId: Number(order.assigned_freelancer_id),
-          recipientRole: "freelancer",
-          actorUserId: Number(clientUserId),
-          type: "order.revision.requested",
-          title: "العميل طلب تعديلاً على التسليم",
-          message: noteText || "يرجى تعديل التسليم وإعادة الرفع.",
-          entityType: "order",
-          entityId: Number(orderId),
-          link: `/dashboard/freelancer/my-orders/${encodeURIComponent(String(orderId))}`,
-          priority: "high",
-          metadata: { orderId: String(orderId), source: "client_revision" },
-        },
-        client,
+          {
+            recipientUserId: Number(order.assigned_freelancer_id),
+            recipientRole: "freelancer",
+            actorUserId: Number(clientUserId),
+            type: "order.revision.requested",
+            title: "تم طلب تعديلات",
+            message: preview,
+            entityType: "order",
+            entityId: Number(orderId),
+            link: `/dashboard/freelancer/my-orders/${encodeURIComponent(String(orderId))}`,
+            priority: "high",
+            metadata: {
+              orderId: String(orderId),
+              submissionId: String(submissionId),
+              revisionRequestId: String(revIns.id),
+              source: "client_revision",
+            },
+          },
+          client,
         ),
       );
     }
@@ -3306,39 +3476,11 @@ async function prepareClientOrderFileDownload({ clientUserId, orderId, fileId })
     err.statusCode = 404;
     throw err;
   }
-  const remoteUrl = String(f.secure_url || f.file_url || "").trim();
-  if (/^https?:\/\//i.test(remoteUrl)) {
-    return {
-      redirectUrl: remoteUrl,
-      downloadName: decodeMultipartOriginalName(f.original_name) || f.original_name || "file",
-      mimeType: f.mime_type || "application/octet-stream",
-    };
-  }
-  const rel = String(f.file_path || "").replace(/\\/g, "/").trim();
-  if (!rel || rel.includes("..")) {
-    const err = new Error("مسار الملف غير صالح.");
-    err.statusCode = 400;
-    throw err;
-  }
-  const uploadsRoot = path.resolve(path.join(__dirname, "..", "..", "uploads"));
-  const absPath = path.resolve(uploadsRoot, rel);
-  if (!absPath.startsWith(uploadsRoot + path.sep) && absPath !== uploadsRoot) {
-    const err = new Error("مسار الملف غير صالح.");
-    err.statusCode = 400;
-    throw err;
-  }
-  try {
-    await fsp.access(absPath);
-  } catch {
-    const err = new Error("الملف غير موجود على الخادم.");
-    err.statusCode = 404;
-    throw err;
-  }
-  return {
-    absPath,
-    downloadName: decodeMultipartOriginalName(f.original_name) || f.original_name || "file",
-    mimeType: f.mime_type || "application/octet-stream",
-  };
+  const loc = await resolveOrderFileLocation(f);
+  const downloadName = decodeMultipartOriginalName(f.original_name) || f.original_name || "file";
+  const mimeType = f.mime_type || "application/octet-stream";
+  if (loc.redirectUrl) return { redirectUrl: loc.redirectUrl, downloadName, mimeType };
+  return { absPath: loc.absPath, downloadName, mimeType };
 }
 
 async function activateArchivedInternalOrder({ orderId }) {
@@ -3401,6 +3543,8 @@ module.exports = {
   createClientOrder,
   listClientOrders,
   getOrderById,
+  enrichOrderWithSubmissionHistory,
+  getClientOrderByIdForOwner,
   listAdminInternalOrders,
   listPoolOrders,
   listPoolOrdersForFreelancer,
@@ -3425,9 +3569,10 @@ module.exports = {
   clientApproveDelivery,
   clientRequestDeliveryRevision,
   prepareClientOrderFileDownload,
+  prepareFreelancerOrderFileDownload,
+  prepareStaffOrderFileDownload,
   adminApproveInternalDelivery,
   adminRequestInternalDeliveryRevision,
-  prepareAdminInternalOrderFileDownload,
   activateArchivedInternalOrder,
   purgeClientUnpaidFixedOrderDraft,
 };

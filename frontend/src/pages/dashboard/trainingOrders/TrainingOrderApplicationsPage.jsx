@@ -137,7 +137,7 @@ export default function TrainingOrderApplicationsPage() {
       <h2 style={{ marginTop: 0 }}>متقدمو الطلبات التجريبية</h2>
       <p className="help">
         قائمة بالطلبات الوهمية التي تلقّت تقديماً — اختر «عرض المتقدمين» لرؤية أسماء المستقلين وتفاصيل العروض. لا يشمل طلبات
-        الحوض الحقيقية.
+        المعرض الحقيقي.
       </p>
       {error ? <p className="auth-form-error">{error}</p> : null}
 

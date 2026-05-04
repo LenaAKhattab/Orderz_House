@@ -24,7 +24,7 @@ function actorLabel(actor) {
   return name || acc || "";
 }
 
-function notificationDetails(n) {
+function notificationDetails(n, canShowOrderReference) {
   const type = String(n?.type || "").trim();
   const actor = actorLabel(n?.actor);
   const actorFallbackName = String(n?.metadata?.actorName || "").trim();
@@ -40,7 +40,8 @@ function notificationDetails(n) {
     return projectName;
   }
 
-  const orderPart = orderCode ? `${orderCode}` : orderId ? `#${orderId}` : "";
+  const orderPart =
+    canShowOrderReference && (orderCode || orderId) ? (orderCode ? `${orderCode}` : `#${orderId}`) : "";
   const projectPart = projectName ? projectName : "";
   const parts = [actorPart, projectPart, orderPart].filter(Boolean);
   return parts.join(" - ");
@@ -96,6 +97,8 @@ function NotifTypeIcon({ type }) {
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const role = user?.primaryRole || user?.role;
+  const canShowOrderReference = role === "admin" || role === "super_admin";
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -213,7 +216,7 @@ export default function NotificationsPage() {
           </div>
         ) : (
           items.map((n) => {
-            const details = notificationDetails(n);
+            const details = notificationDetails(n, canShowOrderReference);
             const unread = !n.isRead;
             return (
               <article

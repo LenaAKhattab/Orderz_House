@@ -109,6 +109,19 @@ const confirmFreelancerSubscriptionCheckout = async (req, res, next) => {
   }
 };
 
+const recordFreelancerSubscriptionCheckoutCancelledNotify = async (req, res, next) => {
+  try {
+    const freelancerUserId = req.auth?.userId ?? req.user?.sub;
+    const result = await stripeCheckoutService.recordFreelancerSubscriptionCheckoutCancelled({
+      freelancerUserId,
+      stripeSessionId: req.body.sessionId,
+    });
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const activateSubscriptionCompanyApproval = async (req, res, next) => {
   try {
     const subscription = await subscriptionsService.activateCompanyApprovalForSubscription({
@@ -129,6 +142,7 @@ module.exports = {
   getFreelancerEligibility,
   createFreelancerSubscriptionCheckout,
   confirmFreelancerSubscriptionCheckout,
+  recordFreelancerSubscriptionCheckoutCancelledNotify,
   activateSubscriptionCompanyApproval,
 };
 

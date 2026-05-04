@@ -29,5 +29,5 @@ export function getFreelancerOrderEligibilityMessage(eligibility, subscription =
     return "اشتراكك منتهي. يرجى تجديد الاشتراك لاستلام الطلبات.";
   }
 
-  return "حسابك غير مؤهل حالياً لاستلام طلبات من الحوض (تحقق من الاشتراك).";
+  return "حسابك غير مؤهل حالياً لاستلام طلبات من المعرض (تحقق من الاشتراك).";
 }

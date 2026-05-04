@@ -17,6 +17,7 @@ import {
   getFixedPaymentConfirmFailureToast,
   parseConfirmPaymentAxiosError,
 } from "../../utils/clientMyOrdersPaymentReturn";
+import { orderHasAssignment } from "../../utils/orderPrivacyUi";
 
 export default function ClientMyOrdersPage() {
   const { push } = useToast();
@@ -173,8 +174,8 @@ export default function ClientMyOrdersPage() {
 
   const stats = useMemo(() => {
     const total = orders.length;
-    const inPool = orders.filter((o) => o?.orderStatus === "published" && !o?.assignedFreelancerId && !o?.isArchived).length;
-    const assigned = orders.filter((o) => Boolean(o?.assignedFreelancerId)).length;
+    const inPool = orders.filter((o) => o?.orderStatus === "published" && !orderHasAssignment(o) && !o?.isArchived).length;
+    const assigned = orders.filter((o) => orderHasAssignment(o)).length;
     return { total, inPool, assigned };
   }, [orders]);
 
@@ -193,7 +194,7 @@ export default function ClientMyOrdersPage() {
                 + طلب جديد
               </button>
               <Link to="/orders" className="btn btn-secondary">
-                استكشاف الحوض
+                استكشاف المعرض
               </Link>
             </div>
           </div>
@@ -205,7 +206,7 @@ export default function ClientMyOrdersPage() {
             <strong className="client-my-orders-page__stat-value">{busy ? "—" : stats.total}</strong>
           </div>
           <div className="client-my-orders-page__stat client-my-orders-page__stat--accent">
-            <span className="client-my-orders-page__stat-label">في الحوض</span>
+            <span className="client-my-orders-page__stat-label">في المعرض</span>
             <strong className="client-my-orders-page__stat-value">{busy ? "—" : stats.inPool}</strong>
           </div>
           <div className="client-my-orders-page__stat client-my-orders-page__stat--muted">
@@ -240,7 +241,7 @@ export default function ClientMyOrdersPage() {
                   إنشاء طلب
                 </button>
                 <Link to="/orders" className="btn btn-secondary">
-                  تصفّح الحوض
+                  تصفّح المعرض
                 </Link>
               </div>
             </div>

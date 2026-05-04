@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { arabicDurationUnit } from "../../utils/arTime";
+import { orderHasAssignment } from "../../utils/orderPrivacyUi";
 
 const ORDER_CURRENCY = "JOD";
 
@@ -46,7 +47,7 @@ function yn(v) {
   return "—";
 }
 
-/** Same labels as `PoolOrderCardCompact` (طلبات الحوض / صفحة الطلبات). */
+/** Same labels as `PoolOrderCardCompact` (طلبات المعرض / صفحة الطلبات). */
 function poolStatusBadge(order) {
   const s = order?.orderStatus;
   if (order?.isArchived) return { label: "مؤرشف", className: "oh-badge oh-badge--neutral" };
@@ -69,8 +70,8 @@ function adminStatusBadge(order) {
 }
 
 function assignmentBadge(order) {
-  if (order?.assignedFreelancerId) return { label: "مُسند لفريلانسر", className: "oh-pill oh-pill--assigned" };
-  return { label: "في الحوض", className: "oh-pill oh-pill--pool" };
+  if (orderHasAssignment(order)) return { label: "مُسند لفريلانسر", className: "oh-pill oh-pill--assigned" };
+  return { label: "في المعرض", className: "oh-pill oh-pill--pool" };
 }
 
 function typeLabel(projectType) {
@@ -89,9 +90,10 @@ function isPricedBiddingOrder(order) {
 }
 
 function bidderDisplayName(bidUser) {
+  if (bidUser?.displayName) return bidUser.displayName;
   const u = bidUser?.user || {};
   const full = [u.firstName, u.fatherName, u.familyName].filter(Boolean).join(" ").trim();
-  return full || u.email || "—";
+  return full || "—";
 }
 
 function timeLeftLabel(order) {
@@ -119,7 +121,7 @@ export default function OrderCard({
   footer,
   /** أزرار بجانب «عرض التفاصيل» (مثل استلام الطلب في صفحة الطلبات). */
   footerInline,
-  showOrderCode = true,
+  showOrderCode = false,
   showAssignmentBadge = true,
   showAdminBadge = true,
   /** لوحة الإدارة: يظهر العنوان + السعر + مدة التسليم فقط حتى فتح «عرض التفاصيل». */
@@ -173,9 +175,9 @@ export default function OrderCard({
           <div className="oh-pool-card__title-wrap">
             <div className="oh-pool-card__title">{order?.title || "—"}</div>
             <div className="oh-pool-card__sub">
-              {showOrderCode ? (
-                <span className="oh-code" title={order?.orderCode || ""}>
-                  {order?.orderCode || "—"}
+              {showOrderCode && order?.orderCode ? (
+                <span className="oh-code" title={order.orderCode}>
+                  {order.orderCode}
                 </span>
               ) : null}
               {showAssignmentBadge ? <span className={assign.className}>{assign.label}</span> : null}
@@ -275,7 +277,7 @@ export default function OrderCard({
               <div className="oh-meta__value">{yn(order?.isPublished)}</div>
             </div>
             <div className="oh-meta">
-              <div className="oh-meta__label">مفتوح للحوض</div>
+              <div className="oh-meta__label">مفتوح للمعرض</div>
               <div className="oh-meta__value">{yn(order?.isOpenForPool)}</div>
             </div>
             <div className="oh-meta">
