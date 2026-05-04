@@ -264,7 +264,7 @@ async function registerUser(payload) {
         `UPDATE users SET
           first_name = $1::text, father_name = $2::text, family_name = $3::text,
           password_hash = $4::text, role = $5::text, country = $6::text, phone = $7::text, whatsapp = $8::text,
-          gender = $9::text, terms_accepted = $10::boolean, freelancer_categories = $11::jsonb,
+          gender = $9::text, terms_accepted = $10::boolean, freelancer_categories = $11::text[],
           email_verified = FALSE, updated_at = NOW()
         WHERE id = $12::bigint`,
         [
@@ -292,7 +292,7 @@ async function registerUser(payload) {
       `INSERT INTO users (
         account_id, first_name, father_name, family_name, email, password_hash, role,
         country, phone, whatsapp, gender, terms_accepted, freelancer_categories, email_verified
-      ) VALUES ($1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text, $8::text, $9::text, $10::text, $11::text, $12::boolean, $13::jsonb, FALSE)
+      ) VALUES ($1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text, $8::text, $9::text, $10::text, $11::text, $12::boolean, $13::text[], FALSE)
       RETURNING id, account_id, first_name, father_name, family_name, email, role,
                 country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at`,
       [

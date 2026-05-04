@@ -22,6 +22,7 @@ const portalFinancialClaimsRoutes = require("./routes/portalFinancialClaimsRoute
 const superAdminFinancialClaimsRoutes = require("./routes/superAdminFinancialClaimsRoutes");
 const internalAutomationRoutes = require("./routes/internalAutomationRoutes");
 const { notFoundMiddleware, errorMiddleware } = require("./middleware/errorMiddleware");
+const { isProduction } = require("./config/env");
 
 const app = express();
 
@@ -31,6 +32,18 @@ function parseAllowedOrigins() {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+/** Non-prod: allow any localhost / 127.0.0.1 origin so Vite port drift and OS-level CLIENT_URL do not break CORS. */
+function isDevLocalOrigin(origin) {
+  if (!origin) return false;
+  try {
+    const u = new URL(origin);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return false;
+    return u.hostname === "localhost" || u.hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
 }
 
 // Behind nginx/Render/Fly/etc., set TRUST_PROXY=1 so req.ip uses X-Forwarded-For (rate limits + logs).
@@ -51,6 +64,7 @@ app.use(
       const allowed = parseAllowedOrigins();
       if (!origin) return callback(null, true);
       if (allowed.includes(origin)) return callback(null, true);
+      if (!isProduction() && isDevLocalOrigin(origin)) return callback(null, true);
       return callback(null, false);
     },
     credentials: true,

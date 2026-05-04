@@ -2,6 +2,9 @@ import axios from "axios";
 
 export const TOKEN_KEY = "orderz_auth_token";
 
+/** Non-secret flag: set after any successful server session in this tab (login/register); cleared on logout. Used to avoid GET /auth/me for cold visitors. HttpOnly cookies alone are not readable here—users who only clear localStorage may need to sign in again until the next successful session. */
+export const AUTH_SESSION_HINT_KEY = "orderz_session_hint";
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
   timeout: 10000,
@@ -15,6 +18,46 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+function hasSessionBootstrapCandidate() {
+  if (typeof localStorage === "undefined") return false;
+  const legacy = localStorage.getItem(TOKEN_KEY);
+  return Boolean((legacy && legacy.trim()) || localStorage.getItem(AUTH_SESSION_HINT_KEY));
+}
+
+/** Shared in-flight promise so React Strict Mode’s double mount does not send two /auth/me requests. */
+let sessionBootstrapPromise = null;
+
+export function resetSessionBootstrap() {
+  sessionBootstrapPromise = null;
+}
+
+/**
+ * Initial session check: 401 is treated as guest (validateStatus), not an axios error.
+ * Returns null when there is no legacy token and no session hint — skips the request entirely.
+ */
+export async function fetchSessionBootstrap() {
+  if (!hasSessionBootstrapCandidate()) {
+    return null;
+  }
+  if (!sessionBootstrapPromise) {
+    sessionBootstrapPromise = api
+      .get("/auth/me", {
+        validateStatus: (status) => status === 200 || status === 401,
+      })
+      .then((response) => {
+        if (response.status === 401) {
+          return null;
+        }
+        return response.data;
+      })
+      .catch((err) => {
+        resetSessionBootstrap();
+        throw err;
+      });
+  }
+  return sessionBootstrapPromise;
+}
 
 export const getHealthStatus = async () => {
   const response = await api.get("/health");
@@ -56,9 +99,18 @@ export const resetPasswordRequest = async (email, resetToken, newPassword) => {
   return data;
 };
 
+/**
+ * Refresh current user (e.g. after profile change). 401 → null without axios throw.
+ * Prefer fetchSessionBootstrap() only for the one-time app shell init.
+ */
 export const meRequest = async () => {
-  const { data } = await api.get("/auth/me");
-  return data;
+  const response = await api.get("/auth/me", {
+    validateStatus: (status) => status === 200 || status === 401,
+  });
+  if (response.status === 401) {
+    return null;
+  }
+  return response.data;
 };
 
 /** Extended profile + dashboard stats + subscription (freelancer). */
