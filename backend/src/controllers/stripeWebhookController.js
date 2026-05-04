@@ -269,6 +269,22 @@ async function applyCheckoutSessionFreelancerSubscriptionCompleted(session, meta
   if (!Number.isInteger(freelancerUserId) || freelancerUserId < 1 || !Number.isInteger(planId) || planId < 1) {
     return { status: "ignored", reason: "subscription_invalid_meta" };
   }
+  const subscriptionMetaId = meta.subscriptionId != null ? Number(meta.subscriptionId) : null;
+  const narrowSubId =
+    subscriptionMetaId != null && Number.isInteger(subscriptionMetaId) && subscriptionMetaId > 0
+      ? subscriptionMetaId
+      : null;
+  const expectedMinor = meta.expectedAmountMinor != null ? Number(meta.expectedAmountMinor) : null;
+  const total = session.amount_total != null ? Number(session.amount_total) : null;
+  if (
+    expectedMinor != null &&
+    Number.isFinite(expectedMinor) &&
+    total != null &&
+    Number.isFinite(total) &&
+    expectedMinor !== total
+  ) {
+    return { status: "ignored", reason: "subscription_amount_mismatch" };
+  }
   const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null;
   const db = await dbPool.connect();
   try {
@@ -284,6 +300,7 @@ async function applyCheckoutSessionFreelancerSubscriptionCompleted(session, meta
         stripeSessionId: session.id || null,
         stripePaymentIntentId: paymentIntentId,
         paidAt: new Date(),
+        subscriptionId: narrowSubId,
       },
       db,
     );
@@ -669,6 +686,11 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool
     if (!Number.isInteger(freelancerUserId) || freelancerUserId < 1 || !Number.isInteger(planId) || planId < 1) {
       return { status: "ignored", reason: "subscription_invalid_meta" };
     }
+    const subscriptionMetaId = meta.subscriptionId != null ? Number(meta.subscriptionId) : null;
+    const narrowSubId =
+      subscriptionMetaId != null && Number.isInteger(subscriptionMetaId) && subscriptionMetaId > 0
+        ? subscriptionMetaId
+        : null;
     const db = await dbPool.connect();
     try {
       await db.query("BEGIN");
@@ -680,6 +702,7 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool
             stripeSessionId: null,
             stripePaymentIntentId: pi.id || null,
             paidAt: new Date(),
+            subscriptionId: narrowSubId,
           },
           db,
         );

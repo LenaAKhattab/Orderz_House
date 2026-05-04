@@ -465,20 +465,35 @@ async function createFreelancerSelfSubscriptionPendingPayment({ freelancerUserId
 }
 
 async function markFreelancerSubscriptionStripePaymentPaid(
-  { freelancerUserId, planId, stripeSessionId, stripePaymentIntentId = null, paidAt = new Date() },
+  {
+    freelancerUserId,
+    planId,
+    stripeSessionId,
+    stripePaymentIntentId = null,
+    paidAt = new Date(),
+    subscriptionId = null,
+  },
   client,
 ) {
   const runner = client || pool;
+  const sid =
+    stripeSessionId != null && String(stripeSessionId).trim() !== "" ? String(stripeSessionId).trim() : null;
+  const subId =
+    subscriptionId != null && Number.isInteger(Number(subscriptionId)) && Number(subscriptionId) > 0
+      ? Number(subscriptionId)
+      : null;
   const { rows } = await runner.query(
     `SELECT * FROM freelancer_subscriptions
      WHERE freelancer_user_id = $1
        AND plan_id = $2
        AND is_current = TRUE
        AND source = 'stripe'
+       AND ($3::text IS NULL OR stripe_session_id = $3)
+       AND ($4::bigint IS NULL OR id = $4::bigint)
      ORDER BY id DESC
      LIMIT 1
      FOR UPDATE`,
-    [Number(freelancerUserId), Number(planId)],
+    [Number(freelancerUserId), Number(planId), sid, subId],
   );
   const sub = rows[0];
   if (!sub) return null;

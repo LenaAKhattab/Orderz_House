@@ -48,6 +48,18 @@ function validateEnv() {
     console.error(`Missing required environment variable: ${key}`);
   }
 
+  if (
+    missing.length === 0 &&
+    isProduction() &&
+    String(process.env.CLIENT_URL || "").includes(",")
+  ) {
+    // eslint-disable-next-line no-console
+    console.error(
+      "Production CLIENT_URL must be a single origin (no commas). Use CORS_ORIGINS for additional browser origins.",
+    );
+    process.exit(1);
+  }
+
   if (missing.length === 0) {
     return;
   }

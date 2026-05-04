@@ -249,7 +249,11 @@ export const createFreelancerSubscriptionCheckoutRequest = async (planId) => {
 
 /** Server-side confirm after Stripe redirect (webhook is still source of truth; this picks up if webhook lags or local dev). */
 export const confirmFreelancerSubscriptionCheckoutRequest = async (sessionId) => {
-  const { data } = await api.post("/freelancer/subscriptions/confirm-checkout", { sessionId });
+  const sid = typeof sessionId === "string" ? sessionId.trim() : "";
+  if (!sid || sid.length > 255) {
+    throw new Error("معرّف جلسة الدفع غير صالح.");
+  }
+  const { data } = await api.post("/freelancer/subscriptions/confirm-checkout", { sessionId: sid });
   return data;
 };
 

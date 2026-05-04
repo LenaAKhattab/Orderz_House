@@ -89,8 +89,18 @@ const createFreelancerSubscriptionCheckout = async (req, res, next) => {
 
 const confirmFreelancerSubscriptionCheckout = async (req, res, next) => {
   try {
+    const freelancerUserId = req.auth?.userId ?? req.user?.sub;
+    const debug =
+      process.env.NODE_ENV !== "production" || String(process.env.DEBUG_FREELANCER_CHECKOUT || "") === "1";
+    if (debug) {
+      // eslint-disable-next-line no-console
+      console.warn("[POST /freelancer/subscriptions/confirm-checkout]", {
+        sessionIdPrefix: req.body?.sessionId ? String(req.body.sessionId).slice(0, 16) : null,
+        freelancerUserId,
+      });
+    }
     const result = await stripeCheckoutService.confirmFreelancerSubscriptionCheckout({
-      freelancerUserId: req.auth?.userId,
+      freelancerUserId,
       stripeSessionId: req.body.sessionId,
     });
     return res.status(200).json({ success: true, data: result });

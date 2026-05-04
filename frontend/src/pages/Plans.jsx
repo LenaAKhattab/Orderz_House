@@ -84,56 +84,14 @@ const Plans = () => {
   }, [user]);
 
   const hasBlockingSubscription = useMemo(() => isBlockingSubscription(mySubscription), [mySubscription]);
+
   useEffect(() => {
     const q = new URLSearchParams(location.search || "");
     const paid = q.get("freelancer_sub_paid") === "1";
     const cancelled = q.get("freelancer_sub_cancelled") === "1";
-    const sessionId = q.get("session_id") || "";
-    if (!paid && !cancelled) return;
-    if (handledToastSearchesRef.current.has(location.search || "")) return;
-    handledToastSearchesRef.current.add(location.search || "");
+    const sessionId = (q.get("session_id") || "").trim();
 
-    let alive = true;
-    (async () => {
-      let showPaidSuccess = false;
-      if (paid && sessionId) {
-        try {
-          await confirmFreelancerSubscriptionCheckoutRequest(sessionId);
-          const res = await getMySubscriptionRequest();
-          if (alive) {
-            setMySubscription(res?.data?.subscription ?? null);
-          }
-          showPaidSuccess = true;
-        } catch {
-          if (alive) {
-            push({
-              type: "warning",
-              title: "جاري التحقق من الدفع",
-              message:
-                "لم يُؤكَّد الدفع فوراً من الخادم. انتظر قليلاً ثم حدّث الصفحة؛ أو تأكد أن عنوان ويب هوك Stripe يصل إلى الخادم.",
-            });
-          }
-        }
-      } else if (paid && !sessionId) {
-        showPaidSuccess = true;
-      }
-
-      if (!alive) return;
-
-      if (paid && showPaidSuccess) {
-        push({
-          type: "success",
-          title: "تم استلام الدفع",
-          message: "حسابك الآن بانتظار تفعيل الشركة.",
-        });
-      } else if (cancelled) {
-        push({
-          type: "warning",
-          title: "تم إلغاء الدفع",
-          message: "لم تكتمل عملية الدفع.",
-        });
-      }
-
+    const stripCheckoutParams = () => {
       q.delete("freelancer_sub_paid");
       q.delete("freelancer_sub_cancelled");
       q.delete("session_id");
@@ -145,11 +103,100 @@ const Plans = () => {
         },
         { replace: true },
       );
-    })();
-
-    return () => {
-      alive = false;
     };
+
+    if (!paid && !cancelled) return undefined;
+
+    /** Success toast only after backend confirms the Stripe session — never trust `freelancer_sub_paid` alone. */
+    if (cancelled) {
+      const key = `cancel:${location.search || ""}`;
+      if (handledToastSearchesRef.current.has(key)) return undefined;
+      handledToastSearchesRef.current.add(key);
+      push({
+        type: "warning",
+        title: "تم إلغاء الدفع",
+        message: "لم تكتمل عملية الدفع.",
+      });
+      stripCheckoutParams();
+      return undefined;
+    }
+
+    if (paid && !sessionId) {
+      const key = "paid:missing_session";
+      if (handledToastSearchesRef.current.has(key)) return undefined;
+      handledToastSearchesRef.current.add(key);
+      push({
+        type: "warning",
+        title: "تعذر التحقق من الدفع",
+        message:
+          "لم يُستلم رقم جلسة Stripe في الرابط. انتظر قليلاً ثم حدّث الصفحة، أو راجع لوحة المستقل بعد وصول ويب هوك الدفع.",
+      });
+      stripCheckoutParams();
+      return undefined;
+    }
+
+    if (paid && sessionId) {
+      const storageKey = `oh_fsub_confirm_${sessionId}`;
+      let cancelledEffect = false;
+
+      if (typeof sessionStorage !== "undefined") {
+        if (sessionStorage.getItem(storageKey) === "done") {
+          stripCheckoutParams();
+          return undefined;
+        }
+        if (sessionStorage.getItem(storageKey) === "pending") {
+          return undefined;
+        }
+        sessionStorage.setItem(storageKey, "pending");
+      }
+
+      (async () => {
+        try {
+          await confirmFreelancerSubscriptionCheckoutRequest(sessionId);
+          const res = await getMySubscriptionRequest();
+          if (!cancelledEffect) {
+            setMySubscription(res?.data?.subscription ?? null);
+          }
+          if (typeof sessionStorage !== "undefined") {
+            sessionStorage.setItem(storageKey, "done");
+          }
+          if (!cancelledEffect) {
+            push({
+              type: "success",
+              title: "تم استلام الدفع",
+              message: "تم التحقق من الخادم. حسابك بانتظار تفعيل الشركة.",
+            });
+          }
+        } catch (err) {
+          if (typeof sessionStorage !== "undefined") {
+            sessionStorage.removeItem(storageKey);
+          }
+          const msg = err?.response?.data?.message;
+          if (!cancelledEffect) {
+            push({
+              type: "warning",
+              title: "لم يُؤكَّد الدفع بعد",
+              message:
+                msg ||
+                "انتظر قليلاً ثم حدّث الصفحة؛ أو تأكد أن ويب هوك Stripe يصل إلى الخادم. الدفع لا يُعتمد من المتصفح فقط.",
+            });
+          }
+        } finally {
+          if (!cancelledEffect) {
+            stripCheckoutParams();
+          }
+        }
+      })();
+
+      return () => {
+        cancelledEffect = true;
+        if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(storageKey) === "pending") {
+          sessionStorage.removeItem(storageKey);
+        }
+      };
+    }
+
+    return undefined;
   }, [location.pathname, location.search, navigate, push]);
 
   return (

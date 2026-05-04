@@ -13,6 +13,27 @@ const notificationService = require("./notificationService");
 const notificationEventsService = require("./notificationEventsService");
 const { planEligibleForFreelancerSelfCheckout } = require("./plansService");
 const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPaymentStatus");
+const { getPrimaryClientUrl } = require("../config/clientUrl");
+
+/** Stripe redirect URLs must use one origin; CLIENT_URL may list multiple values for CORS — take first via getPrimaryClientUrl. */
+function requireStripeClientUrl() {
+  const clientUrl = getPrimaryClientUrl();
+  if (!clientUrl) {
+    const err = new Error("CLIENT_URL is not configured (set a single origin, e.g. https://orderzhouse.com).");
+    err.statusCode = 500;
+    throw err;
+  }
+  try {
+    // eslint-disable-next-line no-new
+    new URL(clientUrl);
+  } catch {
+    const err = new Error("CLIENT_URL must be a single valid http(s) URL (use CORS_ORIGINS for extra origins).");
+    err.statusCode = 500;
+    err.exposeToClient = true;
+    throw err;
+  }
+  return clientUrl;
+}
 
 async function safeNotify(run) {
   try {
@@ -71,12 +92,7 @@ async function createClientFixedOrderCheckoutSession({ clientUserId, orderId }) 
     throw err;
   }
 
-  const clientUrl = String(process.env.CLIENT_URL || "").replace(/\/$/, "");
-  if (!clientUrl) {
-    const err = new Error("CLIENT_URL is not configured.");
-    err.statusCode = 500;
-    throw err;
-  }
+  const clientUrl = requireStripeClientUrl();
 
   const db = await pool.connect();
   try {
@@ -241,12 +257,7 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
     throw err;
   }
 
-  const clientUrl = String(process.env.CLIENT_URL || "").replace(/\/$/, "");
-  if (!clientUrl) {
-    const err = new Error("CLIENT_URL is not configured.");
-    err.statusCode = 500;
-    throw err;
-  }
+  const clientUrl = requireStripeClientUrl();
 
   const db = await pool.connect();
   try {
@@ -816,12 +827,7 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
     throw err;
   }
 
-  const clientUrl = String(process.env.CLIENT_URL || "").replace(/\/$/, "");
-  if (!clientUrl) {
-    const err = new Error("CLIENT_URL is not configured.");
-    err.statusCode = 500;
-    throw err;
-  }
+  const clientUrl = requireStripeClientUrl();
 
   const db = await pool.connect();
   try {
@@ -886,23 +892,31 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
     const successUrl = `${clientUrl}/plans?freelancer_sub_paid=1&session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${clientUrl}/plans?freelancer_sub_cancelled=1`;
 
+    const subscription = await subscriptionsService.createFreelancerSelfSubscriptionPendingPayment(
+      { freelancerUserId: uid, planId: pid, stripeSessionId: null },
+      db,
+    );
+    const internalSubId = Number(subscription?.id);
+    if (!Number.isInteger(internalSubId) || internalSubId < 1) {
+      const err = new Error("Could not create pending subscription record.");
+      err.statusCode = 500;
+      throw err;
+    }
+
+    const baseMeta = {
+      purpose: "freelancer_subscription_purchase",
+      freelancerUserId: String(uid),
+      planId: String(pid),
+      subscriptionId: String(internalSubId),
+      expectedAmountMinor: String(amountMinor),
+      currency: currency.toUpperCase(),
+    };
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      metadata: {
-        purpose: "freelancer_subscription_purchase",
-        freelancerUserId: String(uid),
-        planId: String(pid),
-        expectedAmountMinor: String(amountMinor),
-        currency: currency.toUpperCase(),
-      },
+      metadata: baseMeta,
       payment_intent_data: {
-        metadata: {
-          purpose: "freelancer_subscription_purchase",
-          freelancerUserId: String(uid),
-          planId: String(pid),
-          expectedAmountMinor: String(amountMinor),
-          currency: currency.toUpperCase(),
-        },
+        metadata: { ...baseMeta },
       },
       line_items: [
         {
@@ -920,10 +934,10 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       cancel_url: cancelUrl,
     });
 
-    const subscription = await subscriptionsService.createFreelancerSelfSubscriptionPendingPayment(
-      { freelancerUserId: uid, planId: pid, stripeSessionId: session.id },
-      db,
-    );
+    await db.query(`UPDATE freelancer_subscriptions SET stripe_session_id = $1, updated_at = NOW() WHERE id = $2`, [
+      session.id,
+      internalSubId,
+    ]);
     await safeNotify(() =>
       notificationService.createIfNotExists(
         {
@@ -950,7 +964,11 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       err.statusCode = 502;
       throw err;
     }
-    return { checkoutUrl: session.url, sessionId: session.id, subscription };
+    return {
+      checkoutUrl: session.url,
+      sessionId: session.id,
+      subscription: { ...subscription, stripeSessionId: session.id },
+    };
   } catch (e) {
     await db.query("ROLLBACK");
     throw e;
@@ -998,6 +1016,7 @@ async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeS
   if (Number(meta.freelancerUserId) !== Number(freelancerUserId)) {
     const err = new Error("You cannot confirm this checkout session.");
     err.statusCode = 403;
+    err.exposeToClient = true;
     throw err;
   }
 
@@ -1008,6 +1027,12 @@ async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeS
     err.exposeToClient = true;
     throw err;
   }
+
+  const metaSubscriptionIdRaw = meta.subscriptionId != null ? Number(meta.subscriptionId) : null;
+  const narrowSubscriptionId =
+    metaSubscriptionIdRaw != null && Number.isInteger(metaSubscriptionIdRaw) && metaSubscriptionIdRaw > 0
+      ? metaSubscriptionIdRaw
+      : null;
 
   const expectedMinor = meta.expectedAmountMinor != null ? Number(meta.expectedAmountMinor) : null;
   const total = session.amount_total != null ? Number(session.amount_total) : null;
@@ -1042,9 +1067,11 @@ async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeS
     const { rows: preRows } = await db.query(
       `SELECT id, payment_status FROM freelancer_subscriptions
        WHERE freelancer_user_id = $1 AND plan_id = $2 AND is_current = TRUE AND source = 'stripe'
+         AND ($3::text IS NULL OR stripe_session_id = $3)
+         AND ($4::bigint IS NULL OR id = $4::bigint)
        ORDER BY id DESC LIMIT 1
        FOR UPDATE`,
-      [Number(freelancerUserId), planId],
+      [Number(freelancerUserId), planId, session.id || null, narrowSubscriptionId],
     );
     const pre = preRows[0];
     const wasAlreadyPaid = pre && String(pre.payment_status || "").toLowerCase() === "paid";
@@ -1056,6 +1083,7 @@ async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeS
         stripeSessionId: session.id || null,
         stripePaymentIntentId: piId,
         paidAt: new Date(),
+        subscriptionId: narrowSubscriptionId,
       },
       db,
     );

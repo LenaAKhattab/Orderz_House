@@ -23,15 +23,12 @@ const superAdminFinancialClaimsRoutes = require("./routes/superAdminFinancialCla
 const internalAutomationRoutes = require("./routes/internalAutomationRoutes");
 const { notFoundMiddleware, errorMiddleware } = require("./middleware/errorMiddleware");
 const { isProduction } = require("./config/env");
+const { parseAllowedClientOrigins } = require("./config/clientUrl");
 
 const app = express();
 
 function parseAllowedOrigins() {
-  const raw = process.env.CLIENT_URL || "http://localhost:5173";
-  return raw
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  return parseAllowedClientOrigins();
 }
 
 /** Non-prod: allow any localhost / 127.0.0.1 origin so Vite port drift and OS-level CLIENT_URL do not break CORS. */
