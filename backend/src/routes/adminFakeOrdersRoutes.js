@@ -17,6 +17,7 @@ router.delete("/training-orders/templates/:id", adminFakeOrdersController.remove
 
 router.get("/training-orders/rounds", adminFakeOrdersController.listRounds);
 router.post("/training-orders/rounds/start", adminFakeOrdersController.startTrainingRound);
+router.post("/training-orders/force-generate", adminFakeOrdersController.forceGenerateTrainingRound);
 router.post("/training-orders/rounds/:id/cancel", adminFakeOrdersController.cancelRound);
 
 router.get("/training-orders/applications/summary", adminFakeOrdersController.listApplicationsSummary);

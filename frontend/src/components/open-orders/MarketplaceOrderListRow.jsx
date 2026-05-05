@@ -2,7 +2,6 @@ import {
   categoryLine,
   isBiddingOrder,
   orderPriceText,
-  relativeTimeAr,
   shortDescription,
   typeLabelAr,
 } from "./openOrdersFormatters";
@@ -92,7 +91,6 @@ export default function MarketplaceOrderListRow({
         <div className="oh-order-row__main">
           <h3 className="oh-order-row__title">{categoryLine(order)}</h3>
           <div className="oh-order-row__meta">
-            <span>{relativeTimeAr(order?.createdAt)}</span>
             <span>{typeLabelAr(order?.projectType)}</span>
             {order?.orderSource === "fake" && order?.trainingLabel ? (
               <span className="help" style={{ opacity: 0.9 }}>

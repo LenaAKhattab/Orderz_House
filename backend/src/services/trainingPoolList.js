@@ -1,6 +1,12 @@
 const { pool } = require("../config/db");
 const fakeOrdersService = require("./fakeOrdersService");
 
+function debugTrainingPoolLog(event, fields = {}) {
+  if (String(process.env.TRAINING_POOL_DEBUG || "").trim() !== "1") return;
+  // eslint-disable-next-line no-console
+  console.log(JSON.stringify({ component: "training_pool_list", event, ...fields }));
+}
+
 function parseIdCsv(input) {
   const s = String(input || "").trim();
   if (!s) return [];
@@ -86,8 +92,19 @@ async function tryMergedPoolMeta({
   }
   const canSee = await fakeOrdersService.poolViewerMaySeeFakeOrders({ userId: viewerUserId, role: viewerRole });
   const st = await fakeOrdersService.getSettings();
+  debugTrainingPoolLog("visibility_gate", {
+    viewerUserId: viewerUserId ?? null,
+    viewerRole: viewerRole || null,
+    trainingOrdersEnabled: st?.trainingOrdersEnabled === true,
+    canSee,
+  });
   if (!st || st.trainingOrdersEnabled !== true || !canSee) {
     return null;
+  }
+  try {
+    await fakeOrdersService.ensureMinimumVisibleFakeOrders({ reason: "orders_pool_request" });
+  } catch (e) {
+    console.error("[trainingPoolList] ensureMinimumVisibleFakeOrders failed (non-fatal):", e?.message || e);
   }
 
   const lim = Math.min(Math.max(Number(limit) || 12, 1), 200);
@@ -185,6 +202,17 @@ async function tryMergedPoolMeta({
   ]);
 
   const total = Number(cRows[0]?.total || 0);
+  const fakeCount = idRows.filter((r) => String(r.src) === "fake").length;
+  if (fakeCount === 0) {
+    console.warn("[trainingPoolList] No active fake orders found in merged pool result.");
+  }
+  debugTrainingPoolLog("merged_result", {
+    total,
+    fakeInPage: fakeCount,
+    realInPage: idRows.length - fakeCount,
+    page: Math.floor(off / lim) + 1,
+    limit: lim,
+  });
   return {
     total,
     idOrder: idRows.map((r) => ({ id: String(r.sort_id), source: r.src })),

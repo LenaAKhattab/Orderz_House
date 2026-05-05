@@ -1,4 +1,5 @@
 const { pool } = require("../config/db");
+const { isAllowedCleanBudgetRange, normalizeToCleanBudgetRange } = require("../utils/fakeBudgetRanges");
 
 async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUserId }) {
   if (!idOrder.length) return [];
@@ -152,6 +153,23 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
     if (!mapped) continue;
     if (source === "fake") {
       mapped.orderSource = "fake";
+      if (mapped.projectType === "bidding") {
+        const min = Number(mapped.bidBudgetMin);
+        const max = Number(mapped.bidBudgetMax);
+        if (!isAllowedCleanBudgetRange(min, max)) {
+          const fixed = normalizeToCleanBudgetRange(min, max, "technical");
+          mapped.bidBudgetMin = fixed.min;
+          mapped.bidBudgetMax = fixed.max;
+          // eslint-disable-next-line no-console
+          console.warn("[hydrateMergedPool] corrected invalid fake bid range in response", {
+            fakeOrderId: String(row.id),
+            from: [min, max],
+            to: [fixed.min, fixed.max],
+          });
+        }
+      } else if (mapped.budget != null) {
+        mapped.budget = Math.round(Number(mapped.budget));
+      }
       if (row.show_fake_badge) mapped.trainingLabel = "طلب تجريبي";
       if (row.pool_listed_at != null) {
         mapped.createdAt = row.pool_listed_at;

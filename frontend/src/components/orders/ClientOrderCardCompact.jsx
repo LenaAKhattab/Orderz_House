@@ -14,13 +14,6 @@ function formatMoney(value) {
   return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
 }
 
-function formatJoDateTime(value) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
-}
-
 function shortText(text, max = 160) {
   const s = String(text || "").trim();
   if (!s.length) return "—";
@@ -167,9 +160,6 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
       <header className="client-order-compact__head">
         <div className="client-order-compact__title-block">
           <div className="client-order-compact__title">{order?.title || "—"}</div>
-          <div className="client-order-compact__codes">
-            <span className="client-order-compact__muted">أُنشئ {formatJoDateTime(order?.createdAt)}</span>
-          </div>
         </div>
         <div className="client-order-compact__badges">
           <span className={badge.className}>{badge.label}</span>

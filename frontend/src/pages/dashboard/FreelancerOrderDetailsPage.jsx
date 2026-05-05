@@ -19,7 +19,7 @@ import OrderSummaryCard from "../../components/orders/order-details/OrderSummary
 import OrderTitleCard from "../../components/orders/order-details/OrderTitleCard";
 import OrderDescriptionCard from "../../components/orders/order-details/OrderDescriptionCard";
 import OrderFilesCard from "../../components/orders/order-details/OrderFilesCard";
-import { formatJoDate, formatMoneyJod, formatMoneyJodRange } from "../../components/orders/order-details/orderDetailsUtils";
+import { formatMoneyJod, formatMoneyJodRange } from "../../components/orders/order-details/orderDetailsUtils";
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
 
 function typeLabel(projectType) {
@@ -211,7 +211,6 @@ export default function FreelancerOrderDetailsPage() {
     const rows = [
       { label: "مدة التسليم", value: durationLabel(order) },
       { label: "التصنيف", value: categoryText },
-      { label: "تاريخ الإنشاء", value: formatJoDate(order?.createdAt) },
     ];
     if (Array.isArray(order?.extraCategories) && order.extraCategories.length) {
       rows.push({

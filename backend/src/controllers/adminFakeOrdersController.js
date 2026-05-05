@@ -155,6 +155,18 @@ const startTrainingRound = async (req, res, next) => {
   }
 };
 
+const forceGenerateTrainingRound = async (req, res, next) => {
+  try {
+    const out = await fakeOrdersService.startTrainingRoundManual({ actorUserId: req.auth.userId });
+    return res.status(201).json({
+      success: true,
+      data: { round: out.round, generatedCount: out.generatedCount },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   getTrainingSettings,
   patchTrainingSettings,
@@ -169,4 +181,5 @@ module.exports = {
   listApplications,
   listApplicationsByFakeOrder,
   startTrainingRound,
+  forceGenerateTrainingRound,
 };

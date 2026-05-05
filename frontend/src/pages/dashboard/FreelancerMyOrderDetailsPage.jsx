@@ -15,7 +15,6 @@ import OrderMetadataBlock from "../../components/orders/order-details/OrderMetad
 import FileList from "../../components/orders/order-details/FileList";
 import SubmissionHistoryTimeline from "../../components/orders/submission-history/SubmissionHistoryTimeline";
 import {
-  formatJoDate,
   formatJoDateTime,
   formatMoneyJod,
 } from "../../components/orders/order-details/orderDetailsUtils";
@@ -192,7 +191,6 @@ export default function FreelancerMyOrderDetailsPage() {
     const rows = [
       { label: "مدة التسليم", value: durationLabel(order) },
       { label: "التصنيف", value: categoryText },
-      { label: "تاريخ الإنشاء", value: formatJoDate(order?.createdAt) },
       { label: "تاريخ الاستلام", value: formatJoDateTime(receivedAt) },
       { label: "حالة التنفيذ", value: orderPhaseLabel },
     ];

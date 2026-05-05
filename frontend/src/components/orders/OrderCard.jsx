@@ -297,10 +297,6 @@ export default function OrderCard({
               </>
             ) : null}
             <div className="oh-meta">
-              <div className="oh-meta__label">createdAt</div>
-              <div className="oh-meta__value">{showValue(order?.createdAt)}</div>
-            </div>
-            <div className="oh-meta">
               <div className="oh-meta__label">updatedAt</div>
               <div className="oh-meta__value">{showValue(order?.updatedAt)}</div>
             </div>

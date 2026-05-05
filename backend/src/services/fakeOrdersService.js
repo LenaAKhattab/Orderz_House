@@ -1,5 +1,10 @@
 const { pool } = require("../config/db");
 const { isFakeOrdersAutomationVerbose } = require("../config/fakeOrdersAutomation");
+const {
+  isAllowedCleanBudgetRange,
+  inferComplexityProfile,
+  normalizeToCleanBudgetRange,
+} = require("../utils/fakeBudgetRanges");
 
 /** Session advisory lock: cross-process generation guard (PostgreSQL). */
 const AUTOMATION_GENERATION_LOCK_KEY = 882947361;
@@ -77,18 +82,15 @@ function msFromDurationSettings(value, unit) {
 function randomBidRangeFromTemplate(t) {
   const lo = Number(t.min_budget);
   const hi = Number(t.max_budget);
-  if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo <= 0 || hi < lo) {
-    return { bidMin: lo, bidMax: hi };
-  }
-  if (hi === lo) return { bidMin: lo, bidMax: hi };
-  const centsLo = Math.round(lo * 100);
-  const centsHi = Math.round(hi * 100);
-  if (centsHi <= centsLo) return { bidMin: lo, bidMax: hi };
-  const a = randomInt(centsLo, centsHi);
-  const b = randomInt(centsLo, centsHi);
-  const loC = Math.min(a, b);
-  const hiC = Math.max(a, b);
-  return { bidMin: loC / 100, bidMax: hiC / 100 };
+  const profile = inferComplexityProfile({
+    categoryBucket: classifyMainCategory({ categoryName: t.category_name, categorySlug: t.category_slug }),
+    title: t.title,
+    description: t.description,
+    categoryName: t.category_name,
+    subcategoryName: t.subcategory_name,
+  });
+  const normalized = normalizeToCleanBudgetRange(lo, hi, profile);
+  return { bidMin: normalized.min, bidMax: normalized.max };
 }
 
 /**
@@ -1218,6 +1220,99 @@ async function runAutomationTick() {
   }
 }
 
+async function getVisibleFakeOrdersCount(clientOrPool) {
+  const runner = clientOrPool || pool;
+  const { rows } = await runner.query(
+    `SELECT COUNT(*)::int AS c
+     FROM fake_orders fo
+     INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id
+     INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
+     WHERE fo.fake_status = 'active'
+       AND fo.is_published = TRUE
+       AND fo.is_open_for_pool = TRUE
+       AND ri.status = 'active'
+       AND ri.visible_from <= NOW()
+       AND ri.visible_until >= NOW()
+       AND fr.status = 'active'`,
+  );
+  return Number(rows[0]?.c || 0);
+}
+
+/**
+ * Ensure there are enough visible fake orders when training display is enabled.
+ * Safe for repeated calls (advisory lock + transactional checks).
+ */
+async function ensureMinimumVisibleFakeOrders({ reason = "runtime", minVisible = null } = {}) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows: sRows } = await client.query(`SELECT * FROM fake_order_settings WHERE id = 1 FOR UPDATE`);
+    const s = sRows[0];
+    if (!s || !s.training_orders_enabled) {
+      await client.query("COMMIT");
+      return { ok: false, code: "TRAINING_DISABLED" };
+    }
+
+    const thresholdFromSettings = Math.max(1, Number(s.min_orders) || 20);
+    const threshold = Number.isFinite(Number(minVisible)) ? Math.max(1, Number(minVisible)) : thresholdFromSettings;
+    const currentVisible = await getVisibleFakeOrdersCount(client);
+    if (currentVisible >= threshold) {
+      await client.query("COMMIT");
+      return { ok: true, generated: false, visible: currentVisible, threshold };
+    }
+
+    const { rows: lockRows } = await client.query(`SELECT pg_try_advisory_lock($1::bigint) AS got`, [
+      AUTOMATION_GENERATION_LOCK_KEY,
+    ]);
+    if (!lockRows[0]?.got) {
+      await client.query("ROLLBACK");
+      logAutomationEvent("ensure_min_visible_skipped_lock", { reason, currentVisible, threshold });
+      return { ok: false, code: "LOCK_BUSY", visible: currentVisible, threshold };
+    }
+
+    try {
+      const actorUserId = await resolveAutomationActorUserId(client);
+      if (!actorUserId) {
+        await client.query("COMMIT");
+        logAutomationEvent("ensure_min_visible_no_actor", { reason, currentVisible, threshold });
+        return { ok: false, code: "NO_ADMIN_ACTOR", visible: currentVisible, threshold };
+      }
+
+      const result = await generateTrainingRoundInternal(client, { actorUserId, roundSource: "automation" });
+      if (!result.ok) {
+        await client.query("COMMIT");
+        logAutomationEvent("ensure_min_visible_no_templates", { reason, currentVisible, threshold });
+        return { ok: false, code: result.code || "NO_TEMPLATES", visible: currentVisible, threshold };
+      }
+      await client.query("COMMIT");
+      logAutomationEvent("ensure_min_visible_generated", {
+        reason,
+        roundId: result.round?.id ? Number(result.round.id) : null,
+        generatedCount: Number(result.generatedCount || 0),
+        threshold,
+      });
+      return {
+        ok: true,
+        generated: true,
+        roundId: result.round?.id ? Number(result.round.id) : null,
+        generatedCount: Number(result.generatedCount || 0),
+        threshold,
+      };
+    } finally {
+      await client.query(`SELECT pg_advisory_unlock($1::bigint)`, [AUTOMATION_GENERATION_LOCK_KEY]);
+    }
+  } catch (e) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (_) {
+      /* ignore */
+    }
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 function mapRound(row) {
   if (!row) return null;
   const snap = row.settings_snapshot;
@@ -1342,6 +1437,11 @@ async function createTemplate({ actorUserId, payload }) {
       err.statusCode = 400;
       throw err;
     }
+    if (!Number.isInteger(minB) || !Number.isInteger(maxB) || !isAllowedCleanBudgetRange(minB, maxB)) {
+      const err = new Error("نطاق الميزانية يجب أن يكون من الأزواج المعتمدة فقط (بدون كسور).");
+      err.statusCode = 400;
+      throw err;
+    }
     if (!Number.isFinite(minD) || !Number.isFinite(maxD) || minD < 1 || maxD < minD) {
       const err = new Error("نطاق المدة غير صالح.");
       err.statusCode = 400;
@@ -1396,8 +1496,12 @@ async function updateTemplate({ actorUserId, id, payload }) {
     await client.query("BEGIN");
     await assertAdminOrSuperAdmin(actorUserId, client);
     const tid = Number(id);
-    const { rows: curRows } = await client.query(`SELECT id FROM fake_order_templates WHERE id = $1 FOR UPDATE`, [tid]);
-    if (!curRows[0]) {
+    const { rows: curRows } = await client.query(
+      `SELECT id, min_budget, max_budget FROM fake_order_templates WHERE id = $1 FOR UPDATE`,
+      [tid],
+    );
+    const current = curRows[0];
+    if (!current) {
       const err = new Error("القالب غير موجود.");
       err.statusCode = 404;
       throw err;
@@ -1427,6 +1531,13 @@ async function updateTemplate({ actorUserId, id, payload }) {
     if (!fields.length) {
       await client.query("COMMIT");
       return getTemplateById(tid);
+    }
+    const finalMin = payload.minBudget != null ? Number(payload.minBudget) : Number(current.min_budget);
+    const finalMax = payload.maxBudget != null ? Number(payload.maxBudget) : Number(current.max_budget);
+    if (!Number.isInteger(finalMin) || !Number.isInteger(finalMax) || !isAllowedCleanBudgetRange(finalMin, finalMax)) {
+      const err = new Error("نطاق الميزانية يجب أن يكون من الأزواج المعتمدة فقط (بدون كسور).");
+      err.statusCode = 400;
+      throw err;
     }
     fields.push(`updated_at = NOW()`);
     vals.push(tid);
@@ -1724,6 +1835,8 @@ module.exports = {
   getSettings,
   updateSettings,
   expireStaleItems,
+  ensureMinimumVisibleFakeOrders,
+  getVisibleFakeOrdersCount,
   runAutomationTick,
   startTrainingRoundManual,
   getFakePoolOrderMapped,

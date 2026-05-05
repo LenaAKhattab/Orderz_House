@@ -54,6 +54,16 @@ function templateToWizardInitial(t) {
   };
 }
 
+function formatDuration(minDuration, maxDuration, durationUnit) {
+  const min = Number(minDuration);
+  const max = Number(maxDuration);
+  const unit = durationUnit || "days";
+  if (Number.isFinite(min) && Number.isFinite(max) && min === max) {
+    return `${min} ${unit}`;
+  }
+  return `${minDuration}–${maxDuration} ${unit}`;
+}
+
 export default function TrainingOrderTemplatesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -244,7 +254,7 @@ export default function TrainingOrderTemplatesPage() {
                         {t.minBudget} – {t.maxBudget} JOD
                       </td>
                       <td dir="ltr">
-                        {t.minDuration}–{t.maxDuration} {t.durationUnit}
+                        {formatDuration(t.minDuration, t.maxDuration, t.durationUnit)}
                       </td>
                       <td>
                         {t.isActive ? (

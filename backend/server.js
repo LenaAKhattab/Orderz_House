@@ -42,7 +42,26 @@ const startServer = async () => {
         hint: "Set FAKE_ORDERS_AUTOMATION_ENABLED=true for in-process ticks, or use POST /api/internal/fake-orders/automation-tick with FAKE_ORDERS_AUTOMATION_CRON_SECRET.",
       }),
     );
+    // eslint-disable-next-line no-console
+    console.warn("[fakeOrders] WARNING: FAKE_ORDERS_AUTOMATION_ENABLED is false. Automatic round ticks are disabled.");
   }
+
+  // Bootstrap guarantee: when training display is enabled but there are no visible fake orders, generate immediately.
+  fakeOrdersService
+    .ensureMinimumVisibleFakeOrders({ reason: "server_startup" })
+    .then((r) => {
+      // eslint-disable-next-line no-console
+      console.log(
+        JSON.stringify({
+          component: "fake_orders_automation",
+          event: "startup_ensure_min_visible_done",
+          result: r,
+        }),
+      );
+    })
+    .catch((err) => {
+      console.error("[fakeOrders] startup ensureMinimumVisibleFakeOrders failed:", err?.message || err);
+    });
 
   app.listen(PORT, () => {
     console.log(`Backend server listening on port ${PORT}`);
