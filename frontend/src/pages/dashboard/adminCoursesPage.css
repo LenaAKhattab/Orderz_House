@@ -1,47 +1,9 @@
 /* Admin training courses — dashboard-style layout (RTL) */
 
 .oh-admin-courses {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 0 4px 32px;
-}
-
-.oh-admin-courses__title {
-  margin: 0 0 24px;
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--text, #0f172a);
-  letter-spacing: -0.02em;
-}
-
-.oh-admin-courses__card {
-  background: #fff;
-  border-radius: 14px;
-  padding: 22px 22px 24px;
-  margin-bottom: 22px;
-  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
-  border: 1px solid rgba(148, 163, 184, 0.22);
-}
-
-.oh-admin-courses__section-head {
-  margin: 0 0 18px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
-}
-
-.oh-admin-courses__section-title {
-  margin: 0;
-  font-size: 1.02rem;
-  font-weight: 800;
-  color: #1e293b;
-}
-
-.oh-admin-courses__section-help {
-  margin: 6px 0 0;
-  font-size: 0.82rem;
-  color: #64748b;
-  font-weight: 500;
-  line-height: 1.45;
+  width: 100%;
+  min-width: 0;
+  padding: 0 0 32px;
 }
 
 /* Create form grid */
@@ -189,24 +151,6 @@
   gap: 4px;
 }
 
-.oh-admin-courses__badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 800;
-}
-
-.oh-admin-courses__badge--on {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.oh-admin-courses__badge--off {
-  background: #f1f5f9;
-  color: #64748b;
-}
-
 .oh-admin-courses__course-actions {
   display: flex;
   flex-wrap: wrap;
@@ -235,38 +179,6 @@
 .oh-admin-courses__btn-danger:hover:not(:disabled) {
   background: #fef2f2;
   border-color: #f87171;
-}
-
-/* Empty state */
-.oh-admin-courses__empty {
-  text-align: center;
-  padding: 40px 20px 36px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
-  border: 1px dashed #e2e8f0;
-}
-
-.oh-admin-courses__empty-icon {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 14px;
-  color: #94a3b8;
-}
-
-.oh-admin-courses__empty-title {
-  margin: 0 0 8px;
-  font-size: 1rem;
-  font-weight: 800;
-  color: #475569;
-}
-
-.oh-admin-courses__empty-text {
-  margin: 0;
-  font-size: 0.88rem;
-  color: #64748b;
-  line-height: 1.5;
-  max-width: 320px;
-  margin-inline: auto;
 }
 
 /* Manage course modal */

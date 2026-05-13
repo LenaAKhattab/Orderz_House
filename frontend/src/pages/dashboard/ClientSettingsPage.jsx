@@ -9,12 +9,14 @@ import {
   patchProfilePasswordRequest,
 } from "../../services/api";
 import { mergeNotificationPrefs } from "../../utils/accountDisplay";
+import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
+import { breadcrumbHomeFromUser } from "../../components/dashboard/dashboardBreadcrumbs";
 import "./shared/account-pages.css";
 
 const PHONE_RE = /^\+[1-9]\d{7,14}$/;
 
 export default function ClientSettingsPage() {
-  const { refreshUser } = useAuth();
+  const { refreshUser, user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -195,11 +197,15 @@ export default function ClientSettingsPage() {
 
   return (
     <div className="oh-account-page" dir="rtl">
-      <div className="oh-account-hero">
-        <p className="oh-account-hero__kicker">إعدادات العميل</p>
-        <h1 className="oh-account-hero__title">إعدادات الحساب</h1>
-        <p className="oh-account-hero__lead">حدّث بياناتك وبيانات الفوترة المعروضة للفريق. لا تُخزَّن بيانات بطاقات الدفع هنا.</p>
-      </div>
+      <DashboardPageHeader
+        eyebrow="إعدادات العميل"
+        title="إعدادات الحساب"
+        description="حدّث بياناتك وبيانات الفوترة المعروضة للفريق. لا تُخزَّن بيانات بطاقات الدفع هنا."
+        breadcrumbs={[
+          { label: "الرئيسية", href: breadcrumbHomeFromUser(user) },
+          { label: "إعدادات الحساب" },
+        ]}
+      />
 
       <div className="oh-account-card" style={{ marginBottom: 16 }}>
         <h2 className="oh-account-card__title">صورة الحساب</h2>

@@ -7,6 +7,11 @@ import {
   getCategoriesRequest,
 } from "../../../services/api";
 import AdminInternalOrderWizard from "../../../components/orders/AdminInternalOrderWizard";
+import DashboardSection from "../../../components/dashboard/DashboardSection";
+import DashboardToolbar from "../../../components/dashboard/DashboardToolbar";
+import DashboardLoadingState from "../../../components/dashboard/DashboardLoadingState";
+import DashboardEmptyState from "../../../components/dashboard/DashboardEmptyState";
+import StatusBadge from "../../../components/dashboard/StatusBadge";
 import "./trainingOrdersAdmin.css";
 
 function errMsg(e) {
@@ -178,17 +183,18 @@ export default function TrainingOrderTemplatesPage() {
 
   return (
     <>
-      <div className="card">
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-          <h2 style={{ margin: 0 }}>قوالب الطلبات التجريبية</h2>
+      <DashboardSection
+        className="oh-training-page-section"
+        title="قوالب الطلبات التجريبية"
+        description="القوالب تُستخدم لتوليد طلبات وهمية في الجولات — لا تُحفظ في جدول الطلبات الحقيقية."
+        actions={
           <button type="button" className="btn btn-primary" onClick={openCreate}>
             + قالب جديد
           </button>
-        </div>
-        <p className="help">القوالب تُستخدم لتوليد طلبات وهمية في الجولات — لا تُحفظ في جدول الطلبات الحقيقية.</p>
+        }
+      >
         {error ? <p className="auth-form-error">{error}</p> : null}
-
-        <div className="oh-training-filters">
+        <DashboardToolbar className="oh-training-filters">
           <label>
             بحث بالعنوان
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="عنوان أو وصف" />
@@ -215,10 +221,12 @@ export default function TrainingOrderTemplatesPage() {
           <button type="button" className="btn btn-secondary" onClick={search}>
             تطبيق
           </button>
-        </div>
+        </DashboardToolbar>
 
         {loading ? (
-          <p>جاري التحميل…</p>
+          <DashboardLoadingState label="جاري التحميل…" />
+        ) : templates.length === 0 ? (
+          <DashboardEmptyState title="لا توجد قوالب." />
         ) : (
           <div className="oh-training-table-wrap">
             <table className="oh-training-table">
@@ -233,56 +241,46 @@ export default function TrainingOrderTemplatesPage() {
                 </tr>
               </thead>
               <tbody>
-                {templates.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: "center", padding: 24 }}>
-                      لا توجد قوالب.
+                {templates.map((t) => (
+                  <tr key={t.id}>
+                    <td>
+                      <strong>{t.title}</strong>
+                      <div className="help" style={{ marginTop: 4 }}>
+                        {(t.description || "").slice(0, 80)}
+                        {(t.description || "").length > 80 ? "…" : ""}
+                      </div>
+                    </td>
+                    <td>{t.categoryName || "—"}</td>
+                    <td dir="ltr">
+                      {t.minBudget} – {t.maxBudget} JOD
+                    </td>
+                    <td dir="ltr">{formatDuration(t.minDuration, t.maxDuration, t.durationUnit)}</td>
+                    <td>
+                      {t.isActive ? (
+                        <StatusBadge tone="active">نشط</StatusBadge>
+                      ) : (
+                        <StatusBadge tone="inactive">معطّل</StatusBadge>
+                      )}
+                    </td>
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      <button type="button" className="btn btn-secondary" style={{ marginLeft: 6 }} onClick={() => openEdit(t)}>
+                        تعديل
+                      </button>
+                      <button type="button" className="btn btn-secondary" style={{ marginLeft: 6 }} onClick={() => toggleActive(t)}>
+                        {t.isActive ? "تعطيل" : "تفعيل"}
+                      </button>
+                      <button type="button" className="btn btn-secondary" onClick={() => remove(t)}>
+                        حذف
+                      </button>
                     </td>
                   </tr>
-                ) : (
-                  templates.map((t) => (
-                    <tr key={t.id}>
-                      <td>
-                        <strong>{t.title}</strong>
-                        <div className="help" style={{ marginTop: 4 }}>
-                          {(t.description || "").slice(0, 80)}
-                          {(t.description || "").length > 80 ? "…" : ""}
-                        </div>
-                      </td>
-                      <td>{t.categoryName || "—"}</td>
-                      <td dir="ltr">
-                        {t.minBudget} – {t.maxBudget} JOD
-                      </td>
-                      <td dir="ltr">
-                        {formatDuration(t.minDuration, t.maxDuration, t.durationUnit)}
-                      </td>
-                      <td>
-                        {t.isActive ? (
-                          <span className="oh-training-badge">نشط</span>
-                        ) : (
-                          <span className="oh-training-badge oh-training-badge--muted">معطّل</span>
-                        )}
-                      </td>
-                      <td style={{ whiteSpace: "nowrap" }}>
-                        <button type="button" className="btn btn-secondary" style={{ marginLeft: 6 }} onClick={() => openEdit(t)}>
-                          تعديل
-                        </button>
-                        <button type="button" className="btn btn-secondary" style={{ marginLeft: 6 }} onClick={() => toggleActive(t)}>
-                          {t.isActive ? "تعطيل" : "تفعيل"}
-                        </button>
-                        <button type="button" className="btn btn-secondary" onClick={() => remove(t)}>
-                          حذف
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
         )}
 
-        <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 16 }}>
+        <DashboardToolbar className="oh-training-pagination">
           <button type="button" className="btn btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
             السابق
           </button>
@@ -292,8 +290,8 @@ export default function TrainingOrderTemplatesPage() {
           <button type="button" className="btn btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
             التالي
           </button>
-        </div>
-      </div>
+        </DashboardToolbar>
+      </DashboardSection>
 
       {modalOpen ? (
         <div

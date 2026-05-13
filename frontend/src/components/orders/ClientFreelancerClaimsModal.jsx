@@ -30,7 +30,8 @@ export default function ClientFreelancerClaimsModal({ open, orderId, onClose, on
       setClaims(Array.isArray(payload?.claims) ? payload.claims : []);
       setOpenPool(Boolean(payload?.orderSummary?.hasOpenPool));
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "تعذّر تحميل القائمة.");
+      const message = e?.response?.data?.message || e?.message || "تعذّر تحميل القائمة.";
+      setError(message);
       setClaims([]);
       setOpenPool(false);
     } finally {

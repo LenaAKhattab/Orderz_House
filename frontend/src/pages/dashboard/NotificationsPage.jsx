@@ -7,6 +7,8 @@ import {
   markAllNotificationsReadRequest,
   markNotificationReadRequest,
 } from "../../services/api";
+import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
+import { breadcrumbHomeFromUser } from "../../components/dashboard/dashboardBreadcrumbs";
 import "./notifications-page.css";
 
 function fmtDate(value) {
@@ -156,17 +158,21 @@ export default function NotificationsPage() {
 
   return (
     <section className="oh-notif-page container page-content dash-shell">
-      <header className="oh-notif-page__hero">
-        <div className="oh-notif-page__hero-copy">
-          <p className="oh-notif-page__kicker">مركز الإشعارات</p>
-          <h1 className="oh-notif-page__title">{title}</h1>
-          <p className="oh-notif-page__lead">تابع تحديثات الطلبات، المدفوعات، والمطالبات في مكان واحد.</p>
-        </div>
-        <div className="oh-notif-page__stat" aria-live="polite">
-          <span className="oh-notif-page__stat-label">غير المقروء</span>
-          <span className="oh-notif-page__stat-value">{unreadCount}</span>
-        </div>
-      </header>
+      <DashboardPageHeader
+        eyebrow="مركز الإشعارات"
+        title={title}
+        description="تابع تحديثات الطلبات، المدفوعات، والمطالبات في مكان واحد."
+        breadcrumbs={[
+          { label: "الرئيسية", href: breadcrumbHomeFromUser(user) },
+          { label: "الإشعارات" },
+        ]}
+        actions={
+          <div className="oh-notif-page__stat" aria-live="polite">
+            <span className="oh-notif-page__stat-label">غير المقروء</span>
+            <span className="oh-notif-page__stat-value">{unreadCount}</span>
+          </div>
+        }
+      />
 
       <div className="oh-notif-page__toolbar">
         <div className="oh-notif-page__segmented" role="tablist" aria-label="تصفية الإشعارات">

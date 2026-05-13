@@ -61,7 +61,7 @@ const FaqSection = () => {
 
   return (
     <section
-      className="relative w-full bg-white px-4 py-10 sm:px-8 sm:py-12 md:px-12 lg:px-16"
+      className="relative w-full px-4 py-10 sm:px-8 sm:py-12 md:px-12 lg:px-16"
       aria-labelledby="home-faq-heading"
       dir="rtl"
     >
@@ -75,7 +75,8 @@ const FaqSection = () => {
           </h2>
         </header>
 
-        <ul className="m-0 list-none divide-y divide-gray-200 border-y border-gray-200 p-0" role="list">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <ul className="m-0 list-none divide-y divide-gray-200 p-0" role="list">
           {FAQ_ITEMS.map((item) => {
             const open = openId === item.id;
             const panelId = `faq-panel-${item.id}`;
@@ -113,6 +114,7 @@ const FaqSection = () => {
             );
           })}
         </ul>
+        </div>
       </div>
     </section>
   );

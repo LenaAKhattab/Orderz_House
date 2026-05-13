@@ -183,7 +183,7 @@ router.get(
   clientOrdersController.downloadOrderFile,
 );
 
-// Pool browsing is public; if Authorization header exists, we attach `myClaim` in the controller.
+// Pool browsing is public; for freelancers we attach viewer-specific bid/legacy-claim metadata when relevant.
 router.get("/orders/pool", optionalAuth, listOrdersValidators, validateRequest, ordersController.listPoolOrders);
 router.post(
   "/orders/pool/fake/:id/bids",

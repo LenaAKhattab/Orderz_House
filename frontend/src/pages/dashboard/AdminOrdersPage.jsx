@@ -2,21 +2,25 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ClientDeliveryReviewModal from "../../components/orders/ClientDeliveryReviewModal";
 import OrderCard from "../../components/orders/OrderCard";
-import AdminFreelancerRegistrationModal from "../../components/orders/AdminFreelancerRegistrationModal";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../components/ui/toastContext";
 import {
-  adminAcceptTakenOrderRequest,
   adminApproveInternalPricedBidRequest,
   adminGetInternalOrderRequest,
   adminListInternalOrderBidsRequest,
   adminListInternalOrdersRequest,
-  adminListOrderClaimsRequest,
 } from "../../services/api";
 import { INTERNAL_ORDERS_LIST_REFRESH } from "../../constants/authRoutes";
 import { OrderCardsGridSkeleton } from "../../components/ui/Skeleton";
 import { getOrderDeliveryTiming } from "../../utils/orderDeliveryTiming";
 import { orderStatusLabelAr } from "../../utils/orderFlowUi";
+import { trackEvent } from "../../services/analytics";
+import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
+import { breadcrumbHomeFromUser } from "../../components/dashboard/dashboardBreadcrumbs";
+import DashboardShell from "../../components/dashboard/DashboardShell";
+import DashboardSection from "../../components/dashboard/DashboardSection";
+import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
+import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 
 function fullNameAr(f) {
   const parts = [f?.firstName, f?.fatherName, f?.familyName].filter(Boolean);
@@ -47,10 +51,6 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [busy, setBusy] = useState(true);
   const [view, setView] = useState("cards"); // cards | table
-  const [claimsByOrderId, setClaimsByOrderId] = useState({});
-  const [claimsBusyByOrderId, setClaimsBusyByOrderId] = useState({});
-  const [approvingClaimId, setApprovingClaimId] = useState(null);
-  const [claimsModalOrderId, setClaimsModalOrderId] = useState(null);
   const [bidsModalOrderId, setBidsModalOrderId] = useState(null);
   const [bidsByOrderId, setBidsByOrderId] = useState({});
   const [bidsBusyByOrderId, setBidsBusyByOrderId] = useState({});
@@ -60,19 +60,10 @@ export default function AdminOrdersPage() {
 
   const rows = useMemo(() => (Array.isArray(orders) ? orders : []), [orders]);
 
-  const claimsModalOrder = useMemo(() => {
-    if (claimsModalOrderId == null) return null;
-    return rows.find((x) => String(x?.id) === String(claimsModalOrderId)) || null;
-  }, [claimsModalOrderId, rows]);
-
   const bidsModalOrder = useMemo(() => {
     if (bidsModalOrderId == null) return null;
     return rows.find((x) => String(x?.id) === String(bidsModalOrderId)) || null;
   }, [bidsModalOrderId, rows]);
-
-  const claimsModalKey = claimsModalOrder ? String(claimsModalOrder.id) : "";
-  const claimsModalList = claimsModalKey && Array.isArray(claimsByOrderId[claimsModalKey]) ? claimsByOrderId[claimsModalKey] : null;
-  const claimsModalBusy = claimsModalKey ? Boolean(claimsBusyByOrderId[claimsModalKey]) : false;
 
   const bidsModalKey = bidsModalOrder ? String(bidsModalOrder.id) : "";
   const bidsModalList = bidsModalKey && Array.isArray(bidsByOrderId[bidsModalKey]) ? bidsByOrderId[bidsModalKey] : null;
@@ -113,23 +104,9 @@ export default function AdminOrdersPage() {
   }, [reloadOrders]);
 
   useEffect(() => {
-    if (claimsModalOrderId == null) return;
-    if (!rows.some((x) => String(x?.id) === String(claimsModalOrderId))) setClaimsModalOrderId(null);
-  }, [claimsModalOrderId, rows]);
-
-  useEffect(() => {
     if (bidsModalOrderId == null) return;
     if (!rows.some((x) => String(x?.id) === String(bidsModalOrderId))) setBidsModalOrderId(null);
   }, [bidsModalOrderId, rows]);
-
-  useEffect(() => {
-    if (!claimsModalOrder) return;
-    const onKey = (e) => {
-      if (e.key === "Escape" && !approvingClaimId) setClaimsModalOrderId(null);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [claimsModalOrder, approvingClaimId]);
 
   useEffect(() => {
     if (!bidsModalOrder) return;
@@ -139,20 +116,6 @@ export default function AdminOrdersPage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [bidsModalOrder, approvingBidId]);
-
-  const loadClaims = useCallback(async (orderId) => {
-    const key = String(orderId);
-    setClaimsBusyByOrderId((p) => ({ ...p, [key]: true }));
-    try {
-      const res = await adminListOrderClaimsRequest(orderId);
-      const claims = res?.data?.claims || res?.data?.data?.claims || [];
-      setClaimsByOrderId((p) => ({ ...p, [key]: Array.isArray(claims) ? claims : [] }));
-    } catch {
-      setClaimsByOrderId((p) => ({ ...p, [key]: [] }));
-    } finally {
-      setClaimsBusyByOrderId((p) => ({ ...p, [key]: false }));
-    }
-  }, []);
 
   const loadBids = useCallback(async (orderId) => {
     const key = String(orderId);
@@ -214,25 +177,15 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const approveClaim = async ({ orderId, claimId }) => {
-    setApprovingClaimId(String(claimId));
-    try {
-      await adminAcceptTakenOrderRequest(orderId, { claimId });
-      push({ type: "success", title: "تم قبول المتقدم", message: "تم بدء مدة المشروع من لحظة القبول." });
-      setClaimsModalOrderId(null);
-      await reloadOrders();
-      await loadClaims(orderId);
-    } catch (e) {
-      push({ type: "error", title: "تعذر القبول", message: e?.response?.data?.message || e?.message });
-    } finally {
-      setApprovingClaimId(null);
-    }
-  };
-
   const approveInternalBid = async ({ orderId, bidId }) => {
     setApprovingBidId(String(bidId));
     try {
       await adminApproveInternalPricedBidRequest(orderId, bidId);
+      trackEvent("bid_approved", {
+        order_id: String(orderId),
+        bid_id: String(bidId),
+        source: "admin_internal",
+      });
       push({ type: "success", title: "تم اعتماد العرض", message: "تم إسناد المشروع للمستقل دون دفع عبر المنصة." });
       setBidsModalOrderId(null);
       await reloadOrders();
@@ -245,54 +198,66 @@ export default function AdminOrdersPage() {
   };
 
   return (
-    <main className="container page-content oh-internal-orders">
-      <section className="card oh-internal-orders__toolbar">
-        <div className="oh-internal-orders__intro">
-          <h1 className="oh-internal-orders__title">الطلبات الداخلية</h1>
-          <p className="oh-internal-orders__lead">طلبات تم إنشاؤها بواسطة الإدارة/السوبر أدمن (بدون دفع).</p>
-        </div>
-        <div className="oh-internal-orders__actions">
-          <button
-            type="button"
-            className={`btn btn-secondary ${view === "cards" ? "nav-link-active" : ""}`.trim()}
-            onClick={() => setView("cards")}
-          >
-            عرض بطاقات
-          </button>
-          <button
-            type="button"
-            className={`btn btn-secondary ${view === "table" ? "nav-link-active" : ""}`.trim()}
-            onClick={() => setView("table")}
-          >
-            عرض جدول
-          </button>
-          <Link className="btn btn-primary" to={createPath}>
-            إنشاء طلب
-          </Link>
-        </div>
-      </section>
+    <>
+      <DashboardShell className="oh-internal-orders">
+        <DashboardPageHeader
+          eyebrow="لوحة التحكم"
+          title="الطلبات الداخلية"
+          description="طلبات تم إنشاؤها بواسطة الإدارة/السوبر أدمن (بدون دفع)."
+          breadcrumbs={[
+            { label: "الرئيسية", href: breadcrumbHomeFromUser(user) },
+            { label: "الطلبات" },
+          ]}
+          actions={
+            <>
+              <button
+                type="button"
+                className={`btn btn-secondary ${view === "cards" ? "nav-link-active" : ""}`.trim()}
+                onClick={() => setView("cards")}
+              >
+                عرض بطاقات
+              </button>
+              <button
+                type="button"
+                className={`btn btn-secondary ${view === "table" ? "nav-link-active" : ""}`.trim()}
+                onClick={() => setView("table")}
+              >
+                عرض جدول
+              </button>
+              <Link className="btn btn-primary" to={createPath}>
+                إنشاء طلب
+              </Link>
+            </>
+          }
+        />
 
-      <section className="oh-internal-orders__list" aria-busy={busy}>
-        {busy ? (
-          <OrderCardsGridSkeleton count={4} />
-        ) : orders.length === 0 ? (
-          <section className="oh-empty oh-internal-orders__empty">
-            <div className="oh-empty__icon">📦</div>
-            <div>
-              <h2 className="oh-empty__title">لا توجد طلبات داخلية بعد</h2>
-              <p className="oh-empty__subtitle">ابدأ بإنشاء طلب إداري وسيظهر هنا فوراً، ويمكنك إسناده لفريلانسر أو نشره في المعرض.</p>
-              <div className="oh-empty__actions">
-                <Link className="btn btn-primary" to={createPath}>
-                  إنشاء أول طلب
-                </Link>
-              </div>
-            </div>
-          </section>
-        ) : view === "cards" ? (
-          rows.map((o) => {
+        <DashboardSection>
+          <div className="oh-internal-orders__list" aria-busy={busy}>
+            {busy ? (
+              <DashboardLoadingState label="جارٍ تحميل الطلبات…">
+                <OrderCardsGridSkeleton count={4} />
+              </DashboardLoadingState>
+            ) : orders.length === 0 ? (
+              <DashboardEmptyState
+                title="لا توجد طلبات داخلية بعد"
+                description="ابدأ بإنشاء طلب إداري وسيظهر هنا فوراً، ويمكنك إسناده لفريلانسر أو نشره في المعرض."
+                icon={
+                  <span className="text-3xl" aria-hidden>
+                    📦
+                  </span>
+                }
+                actions={
+                  <Link className="btn btn-primary" to={createPath}>
+                    إنشاء أول طلب
+                  </Link>
+                }
+              />
+            ) : view === "cards" ? (
+              rows.map((o) => {
             const pricedBidding = isPricedInternalBidding(o);
             const shouldShowApplicants =
               !pricedBidding &&
+              String(o?.projectType || "") !== "fixed" &&
               Boolean(o?.isOpenForPool) &&
               !o?.assignedFreelancerId &&
               !o?.receivedAt &&
@@ -305,9 +270,6 @@ export default function AdminOrdersPage() {
               !o?.receivedAt &&
               !o?.isArchived;
             const orderKey = String(o?.id);
-            const claims = Array.isArray(claimsByOrderId[orderKey]) ? claimsByOrderId[orderKey] : null;
-            const claimsBusy = Boolean(claimsBusyByOrderId[orderKey]);
-            const claimsCountSuffix = claims !== null && !claimsBusy ? ` (${claims.length})` : "";
             const bids = Array.isArray(bidsByOrderId[orderKey]) ? bidsByOrderId[orderKey] : null;
             const bidsBusy = Boolean(bidsBusyByOrderId[orderKey]);
             const bidsCountSuffix = bids !== null && !bidsBusy ? ` (${bids.length})` : "";
@@ -328,16 +290,7 @@ export default function AdminOrdersPage() {
                 footerInline={
                   <>
                     {shouldShowApplicants ? (
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => {
-                          setClaimsModalOrderId(o.id);
-                          void loadClaims(o.id);
-                        }}
-                      >
-                        طلبات المستقلين{claimsCountSuffix}
-                      </button>
+                      <span className="help">تدفق المطالبات غير متاح للطلبات الثابتة.</span>
                     ) : null}
                     {shouldShowBidAward ? (
                       <button
@@ -414,6 +367,7 @@ export default function AdminOrdersPage() {
                   const pricedBidding = isPricedInternalBidding(o);
                   const tableShowClaims =
                     !pricedBidding &&
+                    String(o?.projectType || "") !== "fixed" &&
                     Boolean(o?.isOpenForPool) &&
                     !o?.assignedFreelancerId &&
                     !o?.receivedAt &&
@@ -469,17 +423,7 @@ export default function AdminOrdersPage() {
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", whiteSpace: "nowrap" }}>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                           {tableShowClaims ? (
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              style={{ fontSize: "0.85rem", padding: "6px 10px" }}
-                              onClick={() => {
-                                setClaimsModalOrderId(o.id);
-                                void loadClaims(o.id);
-                              }}
-                            >
-                              المتقدمون
-                            </button>
+                            <span className="help">المتقدمون</span>
                           ) : null}
                           {tableShowBids ? (
                             <button
@@ -504,122 +448,9 @@ export default function AdminOrdersPage() {
             </table>
           </div>
         )}
-      </section>
-
-      {claimsModalOrder ? (
-        <div
-          role="presentation"
-          onMouseDown={() => {
-            if (!approvingClaimId) setClaimsModalOrderId(null);
-          }}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16,
-            background: "rgba(15, 23, 42, 0.45)",
-          }}
-        >
-          <div
-            className="card"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="admin-claims-modal-title"
-            onMouseDown={(ev) => ev.stopPropagation()}
-            style={{ maxWidth: 560, width: "100%", maxHeight: "min(88vh, 720px)", display: "flex", flexDirection: "column", overflow: "hidden" }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
-              <div style={{ minWidth: 0 }}>
-                <h2 id="admin-claims-modal-title" style={{ margin: "0 0 6px" }}>
-                  طلبات المستقلين
-                </h2>
-                <p className="help" style={{ margin: 0 }}>
-                  {claimsModalOrder.orderCode ? `${claimsModalOrder.orderCode} — ` : ""}
-                  {claimsModalOrder.title || "—"}
-                </p>
-                <p className="help" style={{ margin: "8px 0 0" }}>
-                  اختر متقدماً واحداً لبدء العمل.
-                </p>
-              </div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", flexShrink: 0 }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={claimsModalBusy || Boolean(approvingClaimId)}
-                  onClick={() => loadClaims(claimsModalOrder.id)}
-                >
-                  {claimsModalBusy ? "جارٍ التحميل…" : "تحديث القائمة"}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={Boolean(approvingClaimId)}
-                  onClick={() => setClaimsModalOrderId(null)}
-                >
-                  إغلاق
-                </button>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 14, overflow: "auto", flex: 1, minHeight: 0 }}>
-              {claimsModalList === null && claimsModalBusy ? <ClaimsSkeleton /> : null}
-
-              {claimsModalList !== null ? (
-                claimsModalBusy ? (
-                  <ClaimsSkeleton />
-                ) : claimsModalList.length === 0 ? (
-                  <div className="help" style={{ margin: 0 }}>
-                    لا يوجد متقدمون حالياً.
-                  </div>
-                ) : (
-                  <div style={{ display: "grid", gap: 8 }}>
-                    {claimsModalList.map((c) => {
-                      const name = fullNameAr(c?.freelancer) || c?.freelancer?.email || `#${c?.freelancerUserId || ""}`;
-                      const status = String(c?.status || "").trim();
-                      const canApprove = status === "pending";
-                      return (
-                        <div
-                          key={String(c.id)}
-                          style={{
-                            display: "flex",
-                            gap: 10,
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            padding: "10px 12px",
-                            borderRadius: 14,
-                            border: "1px solid rgba(56,82,180,0.12)",
-                            background: "rgba(56,82,180,0.03)",
-                          }}
-                        >
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontWeight: 950, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</div>
-                            <div className="help" style={{ margin: 0 }}>
-                              {c?.freelancer?.accountId ? `ID: ${c.freelancer.accountId}` : c?.freelancer?.email || ""}
-                              {status ? ` • الحالة: ${status}` : ""}
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            className="btn btn-primary"
-                            disabled={!canApprove || approvingClaimId === String(c.id)}
-                            title={!canApprove ? "لا يمكن قبول هذا المتقدم" : ""}
-                            onClick={() => approveClaim({ orderId: claimsModalOrder.id, claimId: c.id })}
-                          >
-                            {approvingClaimId === String(c.id) ? "جارٍ القبول…" : "قبول"}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )
-              ) : null}
-            </div>
           </div>
-        </div>
-      ) : null}
+        </DashboardSection>
+      </DashboardShell>
 
       {bidsModalOrder ? (
         <div
@@ -754,7 +585,7 @@ export default function AdminOrdersPage() {
           }}
         />
       ) : null}
-    </main>
+    </>
   );
 }
 

@@ -66,6 +66,22 @@ async function listVisibleActivePlans() {
   return rows.map(mapPlan);
 }
 
+/** Marketing /pricing page: any visible active plan (incl. free or company-only). Stripe still uses planEligibleForFreelancerSelfCheckout. */
+async function listPublicCatalogPlans() {
+  const { rows } = await pool.query(
+    `SELECT *
+     FROM plans
+     WHERE deleted_at IS NULL
+       AND is_visible = TRUE
+       AND is_active = TRUE
+     ORDER BY sort_order ASC, id ASC`,
+  );
+  return rows.map((row) => ({
+    ...mapPlan(row),
+    selfCheckoutEligible: planEligibleForFreelancerSelfCheckout(row),
+  }));
+}
+
 async function getPlanById(id) {
   const { rows } = await pool.query(`SELECT * FROM plans WHERE id = $1 LIMIT 1`, [id]);
   return mapPlan(rows[0]);
@@ -219,6 +235,7 @@ async function softDeletePlan({ actorUserId, id }) {
 module.exports = {
   listPlans,
   listVisibleActivePlans,
+  listPublicCatalogPlans,
   getPlanById,
   createPlan,
   updatePlan,

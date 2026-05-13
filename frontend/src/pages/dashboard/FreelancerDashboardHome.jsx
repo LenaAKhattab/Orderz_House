@@ -14,6 +14,7 @@ import {
 } from "../../services/api";
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
 import { orderStatusLabelAr } from "../../utils/orderFlowUi";
+import { trackEvent } from "../../services/analytics";
 
 function fullNameAr(user) {
   const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
@@ -97,7 +98,7 @@ function subscriptionStateHint(subscription) {
   // Pending row while admin already approved — show activation message, not “payment processing”.
   if (payment === "pending" && activation === "company_approved") {
     if (status === "assigned_not_started") {
-      return "تم التفعيل، وسيبدأ احتساب المدة عند أول طلب مقبول.";
+      return "Your subscription is active. For fixed orders, it starts when you take your first order. For bidding orders, it starts when you are selected/approved for your first order.";
     }
     return "تم تفعيل الاشتراك من الشركة.";
   }
@@ -105,7 +106,7 @@ function subscriptionStateHint(subscription) {
   if (payment === "failed") return "فشل الدفع. يرجى إعادة الاشتراك.";
   if (payment === "paid" && activation === "company_pending") return "تم استلام الدفع وبانتظار تفعيل الشركة.";
   if (payment === "paid" && activation === "company_approved" && status === "assigned_not_started") {
-    return "تم التفعيل، وسيبدأ احتساب المدة عند أول طلب مقبول.";
+    return "Your subscription is active. For fixed orders, it starts when you take your first order. For bidding orders, it starts when you are selected/approved for your first order.";
   }
   return "";
 }
@@ -262,6 +263,21 @@ export default function FreelancerDashboardHome({ user }) {
       cancelled = true;
     };
   }, [load]);
+
+  useEffect(() => {
+    const userId = user?.id != null ? String(user.id) : "";
+    const startDate = String(subscription?.actualStartDate || "").trim();
+    const status = String(subscription?.status || "");
+    if (!userId || !startDate || status !== "active") return;
+    const storageKey = `oh_ga_first_subscription_started_${userId}_${startDate}`;
+    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(storageKey)) return;
+    trackEvent("first_subscription_started", {
+      subscription_start_date: startDate,
+    });
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem(storageKey, "1");
+    }
+  }, [subscription?.actualStartDate, subscription?.status, user?.id]);
 
   const isFreelancerEligible = Boolean(eligibility?.eligible);
   const ineligibleMessage = useMemo(() => {
@@ -437,9 +453,11 @@ export default function FreelancerDashboardHome({ user }) {
                       </div>
                     </div>
                   </div>
-                  <div className="help" style={{ margin: 0 }}>
-                    مدة الاشتراك لا تبدأ إلا بعد قبولك رسميًا في أول طلب من قبل الإدارة أو العميل.
-                  </div>
+                  {!hasSubscriptionDurationStarted(subscription) ? (
+                    <div className="help" style={{ margin: 0 }}>
+                      Your subscription is active. For fixed orders, it starts when you take your first order. For bidding orders, it starts when you are selected/approved for your first order.
+                    </div>
+                  ) : null}
                   {subscription?.expiryDate && hasSubscriptionDurationStarted(subscription) ? (
                     <div className="help" style={{ margin: 0 }}>
                       {formatTimeRemainingAr(subscription.expiryDate, nowMs) || ""}

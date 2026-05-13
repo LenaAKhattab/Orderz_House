@@ -1,0 +1,25 @@
+/* Home top: hero shell only (offers live in home-promo-offers.css) */
+
+.home-top-section .home-hero.home-hero--ref {
+  background: transparent;
+}
+
+.home-top-section .home-hero.home-hero--ref.home-hero--marketing {
+  background-color: transparent;
+}
+
+.home-top-section .home-hero.home-hero--ref.home-hero--marketing.home-hero--premium-stage {
+  background: transparent;
+}
+
+.home-top-section__inner {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
+.home-top-section__hero {
+  width: 100%;
+  max-width: 100%;
+}

@@ -1,6 +1,8 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { ToastProvider } from "./components/ui/ToastProvider";
+import { useToast } from "./components/ui/toastContext";
 import PublicLayout from "./components/layout/PublicLayout";
 import MainLayout from "./layouts/MainLayout";
 import { ClientCreateOrderModalProvider } from "./context/ClientCreateOrderModalContext.jsx";
@@ -32,6 +34,7 @@ import SuperAdminFinancialClaimsPage from "./pages/dashboard/SuperAdminFinancial
 import AdminSubscriptionsActivationPage from "./pages/dashboard/AdminSubscriptionsActivationPage";
 import NotificationsPage from "./pages/dashboard/NotificationsPage";
 import AdminCoursesPage from "./pages/dashboard/AdminCoursesPage";
+import AdminAdsPage from "./pages/dashboard/AdminAdsPage";
 import TrainingOrdersAdminShell, {
   TrainingOrdersIndexRedirect,
 } from "./pages/dashboard/trainingOrders/TrainingOrdersAdminShell";
@@ -48,12 +51,58 @@ import ClientSettingsPage from "./pages/dashboard/ClientSettingsPage";
 import AdminSettingsPage from "./pages/dashboard/AdminSettingsPage";
 import SuperAdminSettingsPage from "./pages/dashboard/SuperAdminSettingsPage";
 import { ROLE } from "./constants/authRoutes";
+import { useAuth } from "./context/useAuth";
+import { clearAnalyticsUser, initAnalytics, setAnalyticsUser, trackPageView } from "./services/analytics";
+
+function AnalyticsBridge() {
+  const location = useLocation();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
+  useEffect(() => {
+    const fullPath = `${location.pathname || "/"}${location.search || ""}${location.hash || ""}`;
+    trackPageView(fullPath, document?.title || "");
+  }, [location.pathname, location.search, location.hash]);
+
+  useEffect(() => {
+    if (user?.id != null) {
+      setAnalyticsUser(user);
+      return;
+    }
+    clearAnalyticsUser();
+  }, [user]);
+
+  return null;
+}
+
+/** يزيل الإشعارات العالقة عند مغادرة لوحة التحكم (مثل أخطاء لا تُغلق تلقائيًا). */
+function ToastDashboardExitBridge() {
+  const location = useLocation();
+  const { clear } = useToast();
+  const prevPathRef = useRef(location.pathname);
+
+  useEffect(() => {
+    const prev = prevPathRef.current;
+    const next = location.pathname;
+    prevPathRef.current = next;
+    if (prev.startsWith("/dashboard") && !next.startsWith("/dashboard")) {
+      clear();
+    }
+  }, [location.pathname, clear]);
+
+  return null;
+}
 
 function App() {
   return (
     <BrowserRouter>
       <ToastProvider>
         <AuthProvider>
+          <AnalyticsBridge />
+          <ToastDashboardExitBridge />
           <Routes>
             <Route element={<PublicLayout />}>
               <Route
@@ -165,6 +214,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/super-admin/ads"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <AdminAdsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/super-admin/orders"
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
@@ -249,6 +306,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.ADMIN]}>
                       <AdminCoursesPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/ads"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <AdminAdsPage />
                     </RequireRole>
                   }
                 />

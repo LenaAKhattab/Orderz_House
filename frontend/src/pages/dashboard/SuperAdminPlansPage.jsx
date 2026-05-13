@@ -1,90 +1,98 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Button from "../../components/ui/Button";
+import { AdminInlineGridSkeleton } from "../../components/ui/Skeleton";
 import {
   createPlanRequest,
   deletePlanRequest,
   listAdminPlansRequest,
   updatePlanRequest,
 } from "../../services/api";
-import { AdminInlineGridSkeleton } from "../../components/ui/Skeleton";
+import AdminPlanCard from "../../admin/plans/AdminPlanCard";
+import PlanEditModal from "../../admin/plans/PlanEditModal";
+import PlanFormSection from "../../admin/plans/PlanFormSection";
+import PlanToggle from "../../admin/plans/PlanToggle";
+import { getInitialPlanFormState } from "../../admin/plans/planFormConstants";
+import { suggestPlanInternalName } from "../../admin/plans/planNameAuto";
+import { canSubmitCreate, normalizeCreatePayload } from "../../admin/plans/planPayloadUtils";
+import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
+import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
+import DashboardShell from "../../components/dashboard/DashboardShell";
+import DashboardSection from "../../components/dashboard/DashboardSection";
+import DashboardFormCard from "../../components/dashboard/DashboardFormCard";
+import DashboardToolbar from "../../components/dashboard/DashboardToolbar";
+import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
+import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
+import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
+import StatusBadge from "../../components/dashboard/StatusBadge";
+import "../../admin/plans/super-admin-plans.css";
 
 function errorMessage(err) {
   const apiMsg = err?.response?.data?.message;
   return apiMsg || "تعذر تنفيذ العملية. حاول مجدداً.";
 }
 
-function normalizeCreatePayload(form) {
-  return {
-    name: form.name.trim(),
-    title: form.title.trim(),
-    description: form.description.trim() || null,
-    durationDays: Number(form.durationDays),
-    priceJod: form.priceJod === "" ? null : Number(form.priceJod),
-    requiresCompanyVisit: Boolean(form.requiresCompanyVisit),
-    selfSubscribeAllowed: Boolean(form.selfSubscribeAllowed),
-    isActive: Boolean(form.isActive),
-    isVisible: Boolean(form.isVisible),
-    sortOrder: Number(form.sortOrder),
-  };
+function PlansEmptyIcon() {
+  return (
+    <svg viewBox="0 0 48 48" width="48" height="48" fill="none" aria-hidden>
+      <circle cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="1.5" opacity="0.25" />
+      <path d="M16 28h16M20 20h8M18 32h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" opacity="0.45" />
+    </svg>
+  );
 }
 
 const SuperAdminPlansPage = () => {
+  const createAnchorRef = useRef(null);
   const [plans, setPlans] = useState([]);
+  /** All `name` values (incl. soft-deleted) for unique auto-generated internal keys */
+  const [reservedPlanNames, setReservedPlanNames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const [form, setForm] = useState({
-    name: "",
-    title: "",
-    description: "",
-    durationDays: "30",
-    priceJod: "",
-    requiresCompanyVisit: false,
-    selfSubscribeAllowed: false,
-    isActive: true,
-    isVisible: true,
-    sortOrder: "0",
-  });
+  const [form, setForm] = useState(getInitialPlanFormState);
 
-  const canCreate = useMemo(() => {
-    return form.name.trim().length >= 2 && form.title.trim().length >= 2 && Number(form.durationDays) > 0;
-  }, [form.name, form.title, form.durationDays]);
+  const [editPlan, setEditPlan] = useState(null);
 
-  const refresh = async () => {
+  const canCreate = useMemo(() => canSubmitCreate(form), [form]);
+
+  const generatedInternalName = useMemo(() => {
+    if (form.title.trim().length < 2) return "";
+    return suggestPlanInternalName(form.title, reservedPlanNames);
+  }, [form.title, reservedPlanNames]);
+
+  const refresh = useCallback(async () => {
     setError("");
     setLoading(true);
     try {
-      const data = await listAdminPlansRequest(false);
-      setPlans(data?.data?.plans || []);
+      const [visibleRes, allRes] = await Promise.all([listAdminPlansRequest(false), listAdminPlansRequest(true)]);
+      setPlans(visibleRes?.data?.plans || []);
+      const allPlans = allRes?.data?.plans || [];
+      setReservedPlanNames(allPlans.map((p) => p.name).filter(Boolean));
     } catch (err) {
       setError(errorMessage(err));
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    refresh();
-  }, []);
+    void refresh();
+  }, [refresh]);
+
+  const scrollToCreate = () => {
+    createAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const resetForm = () => {
+    setForm(getInitialPlanFormState());
+  };
 
   const createPlan = async () => {
     setError("");
     setSubmitting(true);
     try {
-      await createPlanRequest(normalizeCreatePayload(form));
-      setForm({
-        name: "",
-        title: "",
-        description: "",
-        durationDays: "30",
-        priceJod: "",
-        requiresCompanyVisit: false,
-        selfSubscribeAllowed: false,
-        isActive: true,
-        isVisible: true,
-        sortOrder: "0",
-      });
+      await createPlanRequest(normalizeCreatePayload(form, reservedPlanNames));
+      setForm(getInitialPlanFormState());
       await refresh();
     } catch (err) {
       setError(errorMessage(err));
@@ -93,11 +101,12 @@ const SuperAdminPlansPage = () => {
     }
   };
 
-  const toggle = async (plan, field) => {
+  const setPlanActive = async (plan, nextActive) => {
+    if (Boolean(plan.isActive) === Boolean(nextActive)) return;
     setError("");
     setSubmitting(true);
     try {
-      await updatePlanRequest(plan.id, { [field]: !plan[field] });
+      await updatePlanRequest(plan.id, { isActive: Boolean(nextActive) });
       await refresh();
     } catch (err) {
       setError(errorMessage(err));
@@ -107,10 +116,27 @@ const SuperAdminPlansPage = () => {
   };
 
   const softDelete = async (plan) => {
+    if (!window.confirm(`حذف الباقة «${plan.title}»؟ لا يمكن التراجع من الواجهة.`)) return;
     setError("");
     setSubmitting(true);
     try {
       await deletePlanRequest(plan.id);
+      if (editPlan?.id === plan.id) setEditPlan(null);
+      await refresh();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const saveEdit = async (payload) => {
+    if (!editPlan) return;
+    setError("");
+    setSubmitting(true);
+    try {
+      await updatePlanRequest(editPlan.id, payload);
+      setEditPlan(null);
       await refresh();
     } catch (err) {
       setError(errorMessage(err));
@@ -120,185 +146,204 @@ const SuperAdminPlansPage = () => {
   };
 
   return (
-    <section className="container page-content">
-      <div className="card">
-        <h1>إدارة الباقات</h1>
-        <p>هذه الصفحة متاحة للمدير الأعلى فقط. الباقات ديناميكية من قاعدة البيانات.</p>
-        {error ? <p className="auth-form-error">{error}</p> : null}
-      </div>
-
-      <div className="card">
-        <h2>إضافة باقة</h2>
-        <div className="auth-form-grid">
-          <label className="auth-field">
-            <span>الاسم الداخلي (name)</span>
-            <div className="auth-input-wrap auth-input-wrap--noicon">
-              <input
-                value={form.name}
-                onChange={(e) => setForm((v) => ({ ...v, name: e.target.value }))}
-                placeholder="freelancer_pro"
-                disabled={submitting}
-              />
-            </div>
-          </label>
-
-          <label className="auth-field">
-            <span>العنوان</span>
-            <div className="auth-input-wrap auth-input-wrap--noicon">
-              <input
-                value={form.title}
-                onChange={(e) => setForm((v) => ({ ...v, title: e.target.value }))}
-                placeholder="باقتي الاحترافية"
-                disabled={submitting}
-              />
-            </div>
-          </label>
-
-          <label className="auth-field">
-            <span>الوصف</span>
-            <div className="auth-input-wrap auth-input-wrap--noicon">
-              <input
-                value={form.description}
-                onChange={(e) => setForm((v) => ({ ...v, description: e.target.value }))}
-                placeholder="وصف مختصر للباقه"
-                disabled={submitting}
-              />
-            </div>
-          </label>
-
-          <div className="auth-row auth-row--3">
-            <label className="auth-field">
-              <span>المدة (أيام)</span>
-              <div className="auth-input-wrap auth-input-wrap--noicon">
-                <input
-                  type="number"
-                  min="1"
-                  max="3650"
-                  value={form.durationDays}
-                  onChange={(e) => setForm((v) => ({ ...v, durationDays: e.target.value }))}
-                  disabled={submitting}
-                />
-              </div>
-            </label>
-
-            <label className="auth-field">
-              <span>السعر (د.أ) اختياري</span>
-              <div className="auth-input-wrap auth-input-wrap--noicon">
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={form.priceJod}
-                  onChange={(e) => setForm((v) => ({ ...v, priceJod: e.target.value }))}
-                  disabled={submitting}
-                />
-              </div>
-            </label>
-
-            <label className="auth-field">
-              <span>الترتيب</span>
-              <div className="auth-input-wrap auth-input-wrap--noicon">
-                <input
-                  type="number"
-                  value={form.sortOrder}
-                  onChange={(e) => setForm((v) => ({ ...v, sortOrder: e.target.value }))}
-                  disabled={submitting}
-                />
-              </div>
-            </label>
-          </div>
-
-          <label className="auth-field auth-field--checkbox">
-            <input
-              type="checkbox"
-              checked={form.requiresCompanyVisit}
-              onChange={(e) => setForm((v) => ({ ...v, requiresCompanyVisit: e.target.checked }))}
-              disabled={submitting}
-            />
-            <span>يتطلب زيارة الشركة</span>
-          </label>
-
-          <label className="auth-field auth-field--checkbox">
-            <input
-              type="checkbox"
-              checked={form.isActive}
-              onChange={(e) => setForm((v) => ({ ...v, isActive: e.target.checked }))}
-              disabled={submitting}
-            />
-            <span>فعّالة</span>
-          </label>
-
-          <label className="auth-field auth-field--checkbox">
-            <input
-              type="checkbox"
-              checked={form.isVisible}
-              onChange={(e) => setForm((v) => ({ ...v, isVisible: e.target.checked }))}
-              disabled={submitting}
-            />
-            <span>مرئية</span>
-          </label>
-
-          <label className="auth-field auth-field--checkbox">
-            <input
-              type="checkbox"
-              checked={form.selfSubscribeAllowed}
-              onChange={(e) => setForm((v) => ({ ...v, selfSubscribeAllowed: e.target.checked }))}
-              disabled={submitting}
-            />
-            <span>متاحة للشراء الذاتي (السوق)</span>
-          </label>
-
-          <Button
-            type="button"
-            className="auth-submit-btn"
-            disabled={submitting || !canCreate}
-            onClick={createPlan}
-          >
-            إضافة الباقة
+    <DashboardShell>
+      <DashboardPageHeader
+        eyebrow="لوحة المدير الأعلى"
+        title="إدارة الباقات"
+        description="إنشاء قوالب الباقات، التحكم بالظهور والشراء الذاتي، والمدة والسعر. متاح للمدير الأعلى فقط — البيانات من قاعدة البيانات دون تغيير هيكل الـ API."
+        breadcrumbs={superAdminBreadcrumbs("الباقات")}
+        actions={
+          <Button type="button" variant="secondary" onClick={scrollToCreate}>
+            إضافة باقة
           </Button>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="card">
-        <h2>قائمة الباقات</h2>
-        {loading ? <AdminInlineGridSkeleton count={3} /> : null}
-        {!loading && plans.length === 0 ? <p>لا توجد باقات بعد.</p> : null}
-        {!loading && plans.length > 0 ? (
-          <div className="cards-grid">
-            {plans.map((p) => (
-              <article className="card" key={p.id}>
-                <h3>{p.title}</h3>
-                <p>name: {p.name}</p>
-                <p>المدة: {p.durationDays} يوم</p>
-                <p>السعر: {p.priceJod == null ? "—" : `${Number(p.priceJod).toLocaleString("en-US")} د.أ`}</p>
-                <p>زيارة الشركة: {p.requiresCompanyVisit ? "نعم" : "لا"}</p>
-                <p>الحالة: {p.isActive ? "فعّالة" : "غير فعّالة"} / {p.isVisible ? "مرئية" : "مخفية"}</p>
-                <p>شراء ذاتي: {p.selfSubscribeAllowed ? "نعم" : "لا"}</p>
-                <div className="auth-actions-row auth-actions-row--split">
-                  <Button type="button" variant="secondary" disabled={submitting} onClick={() => toggle(p, "isActive")}>
-                    {p.isActive ? "تعطيل" : "تفعيل"}
-                  </Button>
-                  <Button type="button" variant="secondary" disabled={submitting} onClick={() => toggle(p, "isVisible")}>
-                    {p.isVisible ? "إخفاء" : "إظهار"}
-                  </Button>
-                  <Button type="button" variant="secondary" disabled={submitting} onClick={() => toggle(p, "requiresCompanyVisit")}>
-                    {p.requiresCompanyVisit ? "إلغاء الزيارة" : "يتطلب زيارة"}
-                  </Button>
-                  <Button type="button" variant="secondary" disabled={submitting} onClick={() => toggle(p, "selfSubscribeAllowed")}>
-                    {p.selfSubscribeAllowed ? "إيقاف الشراء الذاتي" : "تفعيل الشراء الذاتي"}
-                  </Button>
-                  <Button type="button" variant="secondary" disabled={submitting} onClick={() => softDelete(p)}>
-                    حذف
-                  </Button>
+      {error ? (
+        <DashboardErrorState
+          message={error}
+          actions={
+            <Button type="button" variant="secondary" onClick={() => void refresh()}>
+              إعادة المحاولة
+            </Button>
+          }
+        />
+      ) : null}
+
+      <DashboardSection
+        ref={createAnchorRef}
+        id="oh-sapl-create"
+        title="إنشاء باقة جديدة"
+        description="يُولَّد المعرف الداخلي (snake_case) تلقائياً من العنوان، مع تجنّب التعارض مع أي باقة حالية أو محذوفة."
+      >
+        <DashboardFormCard>
+          <div className="oh-sapl-form">
+            <PlanFormSection title="المعلومات الأساسية" hint="العنوان يظهر للمستخدمين؛ المعرف الداخلي يُشتق تلقائياً ولا يُعدَّل لاحقاً من الواجهة.">
+              <div className="oh-sapl-field">
+                <span className="oh-sapl-field__label">العنوان</span>
+                <input
+                  className="oh-sapl-input"
+                  value={form.title}
+                  onChange={(e) => setForm((v) => ({ ...v, title: e.target.value }))}
+                  placeholder="باقة احترافية للمستقلين"
+                  disabled={submitting}
+                />
+                {generatedInternalName ? (
+                  <p className="oh-sapl-name-preview">
+                    <span className="oh-sapl-name-preview__label">المعرف الداخلي (تلقائي):</span>{" "}
+                    <code className="oh-sapl-name-preview__code">{generatedInternalName}</code>
+                  </p>
+                ) : (
+                  <p className="oh-sapl-name-preview oh-sapl-name-preview--muted">أدخل عنواناً (حرفان على الأقل) لعرض المعرف المقترح.</p>
+                )}
+              </div>
+              <div className="oh-sapl-field">
+                <span className="oh-sapl-field__label">وصف مختصر</span>
+                <textarea
+                  className="oh-sapl-input oh-sapl-input--textarea"
+                  rows={3}
+                  value={form.description}
+                  onChange={(e) => setForm((v) => ({ ...v, description: e.target.value }))}
+                  placeholder="اختياري — يظهر حيث تُعرض تفاصيل الباقة"
+                  disabled={submitting}
+                />
+              </div>
+            </PlanFormSection>
+
+            <PlanFormSection title="السعر والمدة والترتيب">
+              <div className="oh-sapl-grid oh-sapl-grid--3">
+                <div className="oh-sapl-field">
+                  <span className="oh-sapl-field__label">المدة (أيام)</span>
+                  <input
+                    className="oh-sapl-input"
+                    type="number"
+                    min={1}
+                    max={3650}
+                    value={form.durationDays}
+                    onChange={(e) => setForm((v) => ({ ...v, durationDays: e.target.value }))}
+                    disabled={submitting}
+                  />
                 </div>
-              </article>
+                <div className="oh-sapl-field">
+                  <span className="oh-sapl-field__label">السعر (د.أ)</span>
+                  <input
+                    className="oh-sapl-input"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={form.priceJod}
+                    onChange={(e) => setForm((v) => ({ ...v, priceJod: e.target.value }))}
+                    placeholder="اختياري"
+                    disabled={submitting}
+                  />
+                </div>
+                <div className="oh-sapl-field">
+                  <span className="oh-sapl-field__label">ترتيب العرض</span>
+                  <input
+                    className="oh-sapl-input"
+                    type="number"
+                    value={form.sortOrder}
+                    onChange={(e) => setForm((v) => ({ ...v, sortOrder: e.target.value }))}
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+            </PlanFormSection>
+
+            <PlanFormSection title="خيارات الباقة" hint="بدّل الحالات بسرعة — نفس الحقول المرسلة للـ API.">
+              <div className="oh-sapl-options">
+                <PlanToggle
+                  label="يتطلب زيارة ميدانية للشركة"
+                  checked={form.requiresCompanyVisit}
+                  disabled={submitting}
+                  onChange={(v) => setForm((f) => ({ ...f, requiresCompanyVisit: v }))}
+                />
+                <PlanToggle
+                  label="الباقة مفعّلة"
+                  description="عند التعطيل لن تُستخدم في إسناد جديد."
+                  checked={form.isActive}
+                  disabled={submitting}
+                  onChange={(v) => setForm((f) => ({ ...f, isActive: v }))}
+                />
+                <PlanToggle
+                  label="ظهور في قائمة الباقات العامة"
+                  description="إخفاء الباقة عن صفحة الباقات دون حذفها."
+                  checked={form.isVisible}
+                  disabled={submitting}
+                  onChange={(v) => setForm((f) => ({ ...f, isVisible: v }))}
+                />
+                <PlanToggle
+                  label="متاحة للشراء الذاتي (Stripe)"
+                  description="يتطلب سعراً أكبر من صفر وإعدادات الدفع."
+                  checked={form.selfSubscribeAllowed}
+                  disabled={submitting}
+                  onChange={(v) => setForm((f) => ({ ...f, selfSubscribeAllowed: v }))}
+                />
+              </div>
+            </PlanFormSection>
+
+            <div className="oh-sapl-actions">
+              <Button type="button" variant="secondary" disabled={submitting} onClick={resetForm}>
+                مسح الحقول
+              </Button>
+              <Button type="button" disabled={submitting || !canCreate} onClick={() => void createPlan()}>
+                حفظ وإضافة الباقة
+              </Button>
+            </div>
+          </div>
+        </DashboardFormCard>
+      </DashboardSection>
+
+      <DashboardSection
+        title="الباقات الحالية"
+        description="تعديل كامل من نافذة «تعديل» — تشغيل سريع من المفتاح على البطاقة."
+      >
+        <DashboardToolbar>
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+            <StatusBadge tone="neutral">{plans.length} باقة</StatusBadge>
+            <div className="oh-sapl-toolbar__slot">فلترة / بحث (جاهز لاحقاً)</div>
+          </div>
+        </DashboardToolbar>
+
+        {loading ? (
+          <DashboardLoadingState label="جارٍ تحميل الباقات…">
+            <AdminInlineGridSkeleton count={4} />
+          </DashboardLoadingState>
+        ) : null}
+
+        {!loading && plans.length === 0 ? (
+          <DashboardEmptyState
+            title="لا توجد باقات بعد"
+            description="أنشئ أول باقة من النموذج أعلاه لتظهر هنا."
+            icon={<PlansEmptyIcon />}
+          />
+        ) : null}
+
+        {!loading && plans.length > 0 ? (
+          <div className="oh-sapl-cards">
+            {plans.map((p) => (
+              <AdminPlanCard
+                key={p.id}
+                plan={p}
+                submitting={submitting}
+                onActiveChange={setPlanActive}
+                onEdit={() => setEditPlan(p)}
+                onDelete={() => void softDelete(p)}
+              />
             ))}
           </div>
         ) : null}
-      </div>
-    </section>
+      </DashboardSection>
+
+      <PlanEditModal
+        plan={editPlan}
+        open={Boolean(editPlan)}
+        submitting={submitting}
+        onClose={() => setEditPlan(null)}
+        onSave={saveEdit}
+      />
+    </DashboardShell>
   );
 };
 
 export default SuperAdminPlansPage;
-

@@ -2,6 +2,7 @@ const ordersService = require("../services/ordersService");
 const stripeCheckoutService = require("../services/stripeCheckoutService");
 const { sanitizeOrderForClient } = require("../utils/orderViewerSanitize");
 const { pipeOrderFileToResponse } = require("../utils/pipeOrderFileDownload");
+const { capture, captureException } = require("../config/posthog");
 
 function parsePreferredSkills(raw) {
   if (raw === undefined || raw === null || raw === "") return [];
@@ -71,6 +72,12 @@ const createClientOrder = async (req, res, next) => {
       payload,
       uploadedFiles: req.files || [],
     });
+    capture(String(req.auth.userId), "client_order_created", {
+      orderId: String(order.id),
+      projectType: type,
+      categoryId: req.body.categoryId,
+      budget: type === "fixed" ? req.body.budget : null,
+    });
     const safeOrder = sanitizeOrderForClient(order);
     if (type === "fixed") {
       let checkout;
@@ -109,6 +116,7 @@ const createClientOrder = async (req, res, next) => {
       },
     });
   } catch (err) {
+    captureException(err, req.auth?.userId ? String(req.auth.userId) : undefined);
     return next(err);
   }
 };
@@ -194,6 +202,10 @@ const acceptFreelancerBid = async (req, res, next) => {
       orderId: req.params.id,
       bidId: req.body.bidId,
     });
+    capture(String(req.auth.userId), "bid_approved", {
+      orderId: String(req.params.id),
+      bidId: String(req.body.bidId),
+    });
     return res.status(200).json({
       success: true,
       data: {
@@ -228,6 +240,10 @@ const selectFreelancerBid = async (req, res, next) => {
       orderId: req.params.id,
       bidId: req.params.bidId,
     });
+    capture(String(req.auth.userId), "bid_approved", {
+      orderId: String(req.params.id),
+      bidId: String(req.params.bidId),
+    });
     return res.status(200).json({
       success: true,
       data: {
@@ -261,6 +277,10 @@ const approveDelivery = async (req, res, next) => {
       orderId: req.params.id,
     });
     await ordersService.enrichOrderWithSubmissionHistory(order, "client");
+    capture(String(req.auth.userId), "order_completed", {
+      orderId: String(req.params.id),
+      projectType: order.projectType || order.project_type,
+    });
     return res.status(200).json({ success: true, data: { order: sanitizeOrderForClient(order) } });
   } catch (err) {
     return next(err);
@@ -276,6 +296,9 @@ const requestDeliveryRevision = async (req, res, next) => {
       uploadedFiles: req.files || [],
     });
     await ordersService.enrichOrderWithSubmissionHistory(order, "client");
+    capture(String(req.auth.userId), "delivery_revision_requested", {
+      orderId: String(req.params.id),
+    });
     return res.status(200).json({ success: true, data: { order: sanitizeOrderForClient(order) } });
   } catch (err) {
     return next(err);

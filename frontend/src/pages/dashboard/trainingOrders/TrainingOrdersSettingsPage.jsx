@@ -4,6 +4,9 @@ import {
   adminPatchTrainingOrdersSettingsRequest,
   listAdminPlansRequest,
 } from "../../../services/api";
+import DashboardSection from "../../../components/dashboard/DashboardSection";
+import DashboardFormCard from "../../../components/dashboard/DashboardFormCard";
+import DashboardLoadingState from "../../../components/dashboard/DashboardLoadingState";
 import "./trainingOrdersAdmin.css";
 
 function errMsg(e) {
@@ -159,9 +162,13 @@ export default function TrainingOrdersSettingsPage() {
 
   if (loading) {
     return (
-      <div className="card">
-        <p>جاري تحميل الإعدادات…</p>
-      </div>
+      <DashboardSection
+        className="oh-training-page-section"
+        title="إعدادات الطلبات التجريبية"
+        description="تفعيل المعرض، أتمتة الجولات، التوزيع بين التصنيفات، وخيارات الظهور."
+      >
+        <DashboardLoadingState label="جاري تحميل الإعدادات…" />
+      </DashboardSection>
     );
   }
 
@@ -170,13 +177,18 @@ export default function TrainingOrdersSettingsPage() {
   const d = Number(form.designPct) || 0;
 
   return (
-    <div className="card">
-      <h2 style={{ marginTop: 0 }}>إعدادات الطلبات التجريبية</h2>
+    <DashboardSection
+      className="oh-training-page-section"
+      title="إعدادات الطلبات التجريبية"
+      description="تفعيل المعرض، أتمتة الجولات، التوزيع بين التصنيفات، وخيارات الظهور."
+    >
       {error ? <p className="auth-form-error">{error}</p> : null}
-      {success ? <p style={{ color: "#15803d", fontWeight: 700 }}>{success}</p> : null}
+      {success ? (
+        <p style={{ color: "#15803d", fontWeight: 700, margin: error ? "8px 0 0" : 0 }}>{success}</p>
+      ) : null}
 
-      <p className="oh-training-settings-kicker">الأساسيات</p>
-      <div className="oh-training-settings">
+      <DashboardFormCard title="الأساسيات">
+          <div className="oh-training-settings">
         <section className="oh-training-settings-section">
           <h3 className="oh-training-settings-section__title">المعرض</h3>
           <p className="oh-training-settings-section__help">بدون التفعيل لن تظهر الطلبات التجريبية للمستقلين.</p>
@@ -342,19 +354,20 @@ export default function TrainingOrdersSettingsPage() {
           ) : null}
         </section>
 
-        <div className="oh-training-settings-actions">
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={saving || orderRangeInvalid || pctDistributionInvalid || visibilityInvalid}
-            onClick={save}
-          >
-            {saving ? "جاري الحفظ…" : "حفظ الإعدادات"}
-          </button>
-        </div>
-      </div>
+            <div className="oh-training-settings-actions">
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={saving || orderRangeInvalid || pctDistributionInvalid || visibilityInvalid}
+                onClick={save}
+              >
+                {saving ? "جاري الحفظ…" : "حفظ الإعدادات"}
+              </button>
+            </div>
+          </div>
+        </DashboardFormCard>
 
-      <details className="oh-training-settings-advanced">
+        <details className="oh-training-settings-advanced">
         <summary>إعدادات متقدمة</summary>
         <div className="oh-training-settings-advanced__body">
           <section className="oh-training-settings-section">
@@ -455,7 +468,7 @@ export default function TrainingOrdersSettingsPage() {
             </div>
           </section>
         </div>
-      </details>
-    </div>
+        </details>
+    </DashboardSection>
   );
 }

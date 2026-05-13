@@ -5,10 +5,32 @@ function resolveBackendAssetUrl(maybeUrl) {
   if (!maybeUrl) return "";
   const raw = String(maybeUrl).trim();
   if (!raw) return "";
-  if (/^https?:\/\//i.test(raw)) return raw;
+
   const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+  const apiOrigin = (() => {
+    try {
+      return new URL(base).origin;
+    } catch {
+      return "";
+    }
+  })();
+  const isLocalHost = (host) => ["localhost", "127.0.0.1", "::1"].includes(String(host || "").toLowerCase());
+
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const parsed = new URL(raw);
+      if (apiOrigin && isLocalHost(parsed.hostname)) {
+        return new URL(`${parsed.pathname}${parsed.search}${parsed.hash}`, apiOrigin).toString();
+      }
+      return parsed.toString();
+    } catch {
+      return raw;
+    }
+  }
+
   try {
-    return new URL(raw, base).toString();
+    const relative = raw.startsWith("/") ? raw : `/${raw}`;
+    return new URL(relative, apiOrigin || base).toString();
   } catch {
     return raw;
   }

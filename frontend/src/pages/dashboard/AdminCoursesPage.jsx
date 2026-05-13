@@ -14,6 +14,13 @@ import {
   adminUpdateCourseRequest,
 } from "../../services/api";
 import { useToast } from "../../components/ui/toastContext";
+import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
+import { breadcrumbHomeFromUser } from "../../components/dashboard/dashboardBreadcrumbs";
+import DashboardShell from "../../components/dashboard/DashboardShell";
+import DashboardSection from "../../components/dashboard/DashboardSection";
+import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
+import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
+import StatusBadge from "../../components/dashboard/StatusBadge";
 import "./adminCoursesPage.css";
 
 export default function AdminCoursesPage() {
@@ -433,17 +440,23 @@ export default function AdminCoursesPage() {
   const manageCourseTitle = selectedCourse?.course?.title || "";
 
   return (
-    <div className="oh-admin-courses">
-      <h1 className="oh-admin-courses__title">{pageTitle}</h1>
+    <>
+      <DashboardShell className="oh-admin-courses">
+        <DashboardPageHeader
+          eyebrow="لوحة التحكم"
+          title={pageTitle}
+          description="إنشاء الدورات واستيراد الدروس من يوتيوب، وإدارة المستقلين المسجلين في كل دورة."
+          breadcrumbs={[
+            { label: "الرئيسية", href: breadcrumbHomeFromUser(user) },
+            { label: "الدورات" },
+          ]}
+        />
 
-      <section className="oh-admin-courses__card" aria-labelledby="courses-create-heading">
-        <div className="oh-admin-courses__section-head">
-          <h2 id="courses-create-heading" className="oh-admin-courses__section-title">
-            إنشاء دورة جديدة
-          </h2>
-          <p className="oh-admin-courses__section-help">أدخل البيانات الأساسية ثم استورد الدروس من يوتيوب.</p>
-        </div>
-        <form className="oh-admin-courses__form" onSubmit={onCreateCourse}>
+        <DashboardSection
+          title="إنشاء دورة جديدة"
+          description="أدخل البيانات الأساسية ثم استورد الدروس من يوتيوب."
+        >
+          <form className="oh-admin-courses__form" onSubmit={onCreateCourse}>
           <div className="oh-admin-courses__row-2">
             <label className="oh-admin-courses__field">
               <span>العنوان</span>
@@ -525,74 +538,71 @@ export default function AdminCoursesPage() {
             </button>
           </div>
         </form>
-      </section>
+        </DashboardSection>
 
-      <section className="oh-admin-courses__card" aria-labelledby="courses-list-heading">
-        <div className="oh-admin-courses__section-head">
-          <h2 id="courses-list-heading" className="oh-admin-courses__section-title">
-            الدورات الحالية
-          </h2>
-          <p className="oh-admin-courses__section-help">إدارة الدورات المنشأة، الإرسال للمستقلين، أو الحذف.</p>
-        </div>
+        <DashboardSection title="الدورات الحالية" description="إدارة الدورات المنشأة، الإرسال للمستقلين، أو الحذف.">
+          {loading && !courses.length ? (
+            <DashboardLoadingState label="جاري تحميل الدورات…" />
+          ) : null}
 
-        {loading && !courses.length ? (
-          <p className="help" style={{ margin: 0 }}>
-            جاري تحميل الدورات…
-          </p>
-        ) : null}
+          {!loading && !courses.length ? (
+            <DashboardEmptyState
+              title="لا توجد دورات حالياً"
+              description="ابدأ بإنشاء دورة جديدة من القسم أعلاه لاستيراد الدروس من يوتيوب."
+              icon={
+                <svg
+                  className="h-12 w-12 text-slate-400"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  aria-hidden
+                >
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  <path d="M8 7h8M8 11h6" strokeLinecap="round" />
+                </svg>
+              }
+            />
+          ) : null}
 
-        {!loading && !courses.length ? (
-          <div className="oh-admin-courses__empty" role="status">
-            <svg className="oh-admin-courses__empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              <path d="M8 7h8M8 11h6" strokeLinecap="round" />
-            </svg>
-            <p className="oh-admin-courses__empty-title">لا توجد دورات حالياً</p>
-            <p className="oh-admin-courses__empty-text">ابدأ بإنشاء دورة جديدة من القسم أعلاه لاستيراد الدروس من يوتيوب.</p>
-          </div>
-        ) : null}
-
-        {courses.length > 0 ? (
-          <div className="oh-admin-courses__grid">
-            {courses.map((c) => (
-              <article key={c.id} className="oh-admin-courses__course-card">
-                <h3 className="oh-admin-courses__course-title">{c.title}</h3>
-                <div className="oh-admin-courses__course-meta">
-                  <span>عدد الدروس: {c.lessonsCount ?? 0}</span>
-                  <span>عدد المهام: {c.assignedCount ?? 0}</span>
-                  <span
-                    className={`oh-admin-courses__badge ${c.isActive ? "oh-admin-courses__badge--on" : "oh-admin-courses__badge--off"}`}
-                  >
-                    {c.isActive ? "نشطة" : "غير نشطة"}
-                  </span>
-                </div>
-                <div className="oh-admin-courses__course-actions">
-                  <button
-                    type="button"
-                    className="btn btn-secondary oh-admin-courses__btn-outline"
-                    onClick={() => openManageModal(c)}
-                    disabled={loading}
-                  >
-                    إدارة الدورة
-                  </button>
-                  <button type="button" className="btn btn-primary" onClick={() => onOpenSendModal(c)} disabled={loading}>
-                    إرسال الدورة
-                  </button>
-                  <button
-                    type="button"
-                    className="btn oh-admin-courses__btn-danger"
-                    onClick={() => onDeleteCourse(c.id)}
-                    disabled={loading}
-                  >
-                    حذف الدورة
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : null}
-      </section>
+          {courses.length > 0 ? (
+            <div className="oh-admin-courses__grid">
+              {courses.map((c) => (
+                <article key={c.id} className="oh-admin-courses__course-card">
+                  <h3 className="oh-admin-courses__course-title">{c.title}</h3>
+                  <div className="oh-admin-courses__course-meta">
+                    <span>عدد الدروس: {c.lessonsCount ?? 0}</span>
+                    <span>عدد المهام: {c.assignedCount ?? 0}</span>
+                    <StatusBadge tone={c.isActive ? "active" : "inactive"}>{c.isActive ? "نشطة" : "غير نشطة"}</StatusBadge>
+                  </div>
+                  <div className="oh-admin-courses__course-actions">
+                    <button
+                      type="button"
+                      className="btn btn-secondary oh-admin-courses__btn-outline"
+                      onClick={() => openManageModal(c)}
+                      disabled={loading}
+                    >
+                      إدارة الدورة
+                    </button>
+                    <button type="button" className="btn btn-primary" onClick={() => onOpenSendModal(c)} disabled={loading}>
+                      إرسال الدورة
+                    </button>
+                    <button
+                      type="button"
+                      className="btn oh-admin-courses__btn-danger"
+                      onClick={() => onDeleteCourse(c.id)}
+                      disabled={loading}
+                    >
+                      حذف الدورة
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : null}
+        </DashboardSection>
+      </DashboardShell>
 
       {manageModalOpen ? (
         <div
@@ -1104,6 +1114,6 @@ export default function AdminCoursesPage() {
           ) : null}
         </div>
       ) : null}
-    </div>
+    </>
   );
 }

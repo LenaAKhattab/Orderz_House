@@ -21,6 +21,7 @@ import OrderDescriptionCard from "../../components/orders/order-details/OrderDes
 import OrderFilesCard from "../../components/orders/order-details/OrderFilesCard";
 import { formatMoneyJod, formatMoneyJodRange } from "../../components/orders/order-details/orderDetailsUtils";
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
+import { trackEvent } from "../../services/analytics";
 
 function typeLabel(projectType) {
   if (projectType === "fixed") return "سعر ثابت";
@@ -80,8 +81,10 @@ export default function FreelancerOrderDetailsPage() {
       );
     }
     const sourceOk = ["admin_created", "super_admin_created", "client_created"].includes(order?.sourceType);
+    const isFixedAvailable = order?.projectType === "fixed" && ["published", "open_for_freelancers"].includes(String(order?.orderStatus || ""));
+    const isBiddingAvailable = order?.projectType === "bidding" && String(order?.orderStatus || "") === "open_for_bids";
     return Boolean(
-      sourceOk && order?.isPublished && order?.isOpenForPool && !orderHasAssignment(order) && order?.orderStatus === "published",
+      sourceOk && order?.isPublished && order?.isOpenForPool && !orderHasAssignment(order) && (isFixedAvailable || isBiddingAvailable),
     );
   }, [order]);
 
@@ -157,10 +160,14 @@ export default function FreelancerOrderDetailsPage() {
     setTaking(true);
     try {
       await takePoolOrderRequest(id, { orderSource: order?.orderSource === "fake" ? "fake" : undefined });
+      trackEvent("fixed_order_taken", {
+        order_id: String(id),
+        source: String(order?.orderSource || "real"),
+      });
       push({
         type: "success",
-        title: "تم تقديم الطلب",
-        message: "تم تسجيل طلبك. سيراجع العميل الطلبات ثم يختار مستقلاً؛ راقب صفحة «طلباتي» بعد اعتماده.",
+        title: "تم استلام الطلب",
+        message: "تم إسناد الطلب لك مباشرة ويمكنك البدء بالعمل الآن.",
       });
       navigate("/dashboard/freelancer/my-orders");
     } catch (e) {
@@ -175,6 +182,11 @@ export default function FreelancerOrderDetailsPage() {
     setBidBusy(true);
     try {
       await submitPoolOrderBidRequest(id, { amount }, { orderSource: order?.orderSource === "fake" ? "fake" : undefined });
+      trackEvent("bid_submitted", {
+        order_id: String(id),
+        amount: Number(amount),
+        source: String(order?.orderSource || "real"),
+      });
       push({ type: "success", title: "تم إرسال العرض", message: "سيتمكن العميل لاحقاً من مراجعة العروض." });
       setBidOpen(false);
       const resPool = await getPoolOrderByIdRequest(id, { orderSource: order?.orderSource === "fake" ? "fake" : orderSourceForApi });
@@ -246,21 +258,13 @@ export default function FreelancerOrderDetailsPage() {
         <button
           type="button"
           className="btn btn-primary od-take-order-btn"
-          disabled={!canTake || taking || order?.myClaim?.status === "pending" || fakeClaimOrBidPending}
+          disabled={!canTake || taking || fakeClaimOrBidPending}
           title={
             fakeClaimOrBidPending
               ? "سبق أن سجّلت مشاركتك في هذا الطلب التجريبي."
-              : order?.myClaim?.status
-                ? order.myClaim.status === "pending"
-                  ? "سبق أن تقدمت لهذا الطلب وهو قيد المراجعة."
-                  : order.myClaim.status === "withdrawn"
-                    ? "سبق أن تقدمت لهذا الطلب ثم قمت بسحبه."
-                    : order.myClaim.status === "rejected"
-                      ? "سبق أن تقدمت لهذا الطلب وتم رفض الطلب."
-                      : `سبق أن تقدمت لهذا الطلب (الحالة: ${order.myClaim.status}).`
-                : !canTake
-                  ? ineligibleMessage
-                  : ""
+              : !canTake
+                ? ineligibleMessage
+                : ""
           }
           onClick={() => setTakeConfirmOpen(true)}
         >

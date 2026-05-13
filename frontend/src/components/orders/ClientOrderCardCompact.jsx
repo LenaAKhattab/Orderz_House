@@ -89,7 +89,7 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
   const isClientOrder = order?.sourceType === "client_created";
   const showClaimsButton =
     isClientOrder &&
-    order?.projectType === "fixed" &&
+    order?.projectType !== "fixed" &&
     (order?.orderStatus === "published" || order?.orderStatus === "open_for_freelancers") &&
     order?.isOpenForPool &&
     !orderHasAssignment(order) &&

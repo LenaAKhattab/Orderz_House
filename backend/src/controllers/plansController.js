@@ -12,7 +12,7 @@ const listAdminPlans = async (req, res, next) => {
 
 const listPublicPlans = async (req, res, next) => {
   try {
-    const plans = await plansService.listVisibleActivePlans();
+    const plans = await plansService.listPublicCatalogPlans();
     return res.status(200).json({ success: true, data: { plans } });
   } catch (err) {
     return next(err);

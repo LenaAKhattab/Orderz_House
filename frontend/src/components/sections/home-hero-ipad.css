@@ -1,0 +1,65 @@
+/* Premium home hero — iPad stage, chips (RTL). Extends home-hero-marketing.css */
+
+/* Seamless page canvas — no radial/linear stage wash (avoids “boxed” hero + cyan cast) */
+.home-hero.home-hero--ref.home-hero--marketing.home-hero--premium-stage {
+  background: transparent;
+}
+
+.home-hero--premium-stage .home-hero__inner {
+  position: relative;
+  z-index: 1;
+}
+
+/* Trust / feature chips */
+.home-hero-marketing__chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 0.65rem;
+  width: 100%;
+  max-width: min(100%, 40rem);
+  margin: clamp(1rem, 2.4vw, 1.35rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 1024px) {
+  .home-hero-marketing__chips {
+    justify-content: flex-start;
+  }
+}
+
+.home-hero-marketing__chips li {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  font-size: clamp(0.7rem, 1.35vw, 0.8rem);
+  font-weight: 700;
+  color: rgba(47, 59, 101, 0.88);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(47, 59, 101, 0.1);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  transition: border-color 0.2s var(--ease-premium, ease), box-shadow 0.2s var(--ease-premium, ease);
+}
+
+.home-hero-marketing__chips li:hover {
+  border-color: rgba(118, 207, 223, 0.45);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 6px 18px -12px rgba(118, 207, 223, 0.35);
+}
+
+/* Headline: slightly tighter on small screens (wins over .home-hero__ref-title alone) */
+.home-hero__ref-title.home-hero-marketing__title-ipad {
+  font-size: clamp(1.72rem, 0.95rem + 4.1vw, 3.65rem);
+  line-height: 1.05;
+}
+
+.home-hero-marketing__title-sub {
+  display: block;
+  margin-top: 0.35em;
+  font-size: clamp(0.95rem, 0.82rem + 1.1vw, 1.35rem);
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: rgba(47, 59, 101, 0.72);
+}

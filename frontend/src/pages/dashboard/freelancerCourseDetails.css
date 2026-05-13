@@ -50,7 +50,7 @@
 .fcd-page__hero {
   border-radius: 22px;
   padding: clamp(18px, 3vw, 28px) clamp(18px, 3vw, 32px);
-  background: linear-gradient(145deg, #ffffff 0%, #f4f7fb 55%, #eef2f8 100%);
+  background: #ffffff;
   border: 1px solid rgba(47, 59, 101, 0.12);
   box-shadow: var(--dash-shadow-aside, 0 16px 40px -22px rgba(24, 36, 64, 0.16));
 }
@@ -194,7 +194,7 @@
 .fcd-page__sidebar {
   border-radius: 20px;
   border: 1px solid rgba(47, 59, 101, 0.1);
-  background: linear-gradient(180deg, #ffffff 0%, #fafbfd 100%);
+  background: #ffffff;
   padding: 16px 14px;
   box-shadow: 0 8px 28px -18px rgba(24, 36, 64, 0.12);
   position: sticky;
@@ -511,7 +511,7 @@
   padding: 18px 18px 16px;
   border-radius: 14px;
   border: 1px solid rgba(148, 163, 184, 0.35);
-  background: linear-gradient(165deg, #f8fafc 0%, #fff 55%);
+  background: #ffffff;
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
 }
 

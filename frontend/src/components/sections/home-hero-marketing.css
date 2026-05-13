@@ -1,0 +1,391 @@
+/* --- Public home marketing hero: fluid spacing, no fixed layout pixels --- */
+
+.home-landing-vp {
+  width: 100%;
+  min-width: 0;
+}
+
+.home-hero.home-hero--ref.home-hero--marketing {
+  --hero-space-2xs: clamp(0.125rem, 0.5vw, 0.25rem);
+  --hero-space-xs: clamp(0.25rem, 1vw, 0.5rem);
+  --hero-space-sm: clamp(0.375rem, 1.5vw, 0.625rem);
+  --hero-space-md: clamp(0.5rem, 2vw, 0.875rem);
+  --hero-space-lg: clamp(0.625rem, 2.5vw, 1rem);
+  --hero-radius: clamp(0.625rem, 1.5vw, 1rem);
+  /* Fallback when @container rules do not apply; primary scaling in @container hero-visual */
+  --hero-img-max-h: min(60dvh, clamp(14rem, 45vw, 42rem));
+
+  overflow-x: clip;
+  overflow-y: visible;
+  padding: 0;
+  background: transparent;
+}
+
+/* Typography: inherit fluid sizes from home-hero-ref.css; only spacing tweaks here */
+.home-hero--marketing .home-hero__ref-title {
+  margin: 0 0 var(--hero-space-sm);
+}
+
+.home-hero--marketing .home-hero__ref-title-line--2 {
+  margin-top: 0.05em;
+}
+
+.home-hero.home-hero--ref.home-hero--marketing .home-hero__lead {
+  margin: 0 0 var(--hero-space-md);
+  line-height: 1.55;
+}
+
+@media (min-width: 1024px) {
+  .home-hero.home-hero--ref.home-hero--marketing .home-hero__lead {
+    max-width: min(48rem, 100%);
+  }
+}
+
+.home-hero.home-hero--ref.home-hero--marketing .home-hero__cta {
+  gap: var(--hero-space-md);
+}
+
+.home-hero.home-hero--ref.home-hero--marketing .home-hero__cta-primary {
+  padding-inline: clamp(0.875rem, 3vw, 1.25rem);
+  min-height: clamp(2.75rem, 8vw, 3.125rem);
+}
+
+.home-hero.home-hero--ref.home-hero--marketing .home-hero__cta-secondary {
+  min-height: clamp(2.75rem, 8vw, 3.125rem);
+}
+
+.home-hero.home-hero--ref.home-hero--marketing .home-hero__copy {
+  max-width: 100%;
+  margin-inline: 0;
+}
+
+/* Illustration column only: cqi tracks the visual lane; allow glow blur to extend softly */
+.hero-main-content__visual {
+  container-type: inline-size;
+  container-name: hero-visual;
+  overflow: visible;
+}
+
+@container hero-visual (min-width: 0px) {
+  .home-hero-devices__img {
+    max-height: min(62dvh, clamp(14rem, 52cqi + 6rem, 46rem));
+    width: auto;
+    max-width: min(100%, 100cqi);
+  }
+}
+
+.home-hero-devices {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* Glows sit under the PNG (z-index); flex keeps natural image height — no grid row blow-up */
+.home-hero-devices--layered {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* Figure wraps illustration — shrink-to-fit for legacy PNG heroes */
+.home-hero-devices__figure {
+  position: relative;
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+  min-width: 0;
+  isolation: isolate;
+  --device-glow-size: min(46cqi, 26rem, min(92cqi, 100%));
+}
+
+/* iPad CSS mockup: % / aspect children need a definite inline size — avoid fit-content collapse */
+.home-hero-devices--ipad .home-hero-devices__figure {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Premium decorative stack — sized to illustration frame */
+.home-hero-devices__figure .home-hero-devices__decor {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+  inset-inline: -5%;
+  inset-block: clamp(-3rem, -8cqi, -0.75rem) -3%;
+}
+
+.home-hero-devices__blob {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  aspect-ratio: 1;
+  transform: translateZ(0);
+}
+
+/* Soft violet wash — smaller circle, low smear */
+.home-hero-devices__blob--lavender {
+  width: min(72cqi, 20rem);
+  inset-inline-start: 50%;
+  bottom: clamp(0%, 2cqi, 5%);
+  transform: translateX(-50%) translateZ(0);
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(167, 139, 250, 0.14) 0%,
+    rgba(196, 181, 253, 0.06) 45%,
+    transparent 70%
+  );
+  filter: blur(clamp(14px, 2.5cqi, 28px));
+  opacity: 0.55;
+}
+
+/* Secondary cyan depth — tight under device */
+.home-hero-devices__blob--sky {
+  width: min(48cqi, 17rem);
+  inset-inline-start: 50%;
+  bottom: clamp(3%, 3.5cqi, 9%);
+  transform: translateX(-50%) translateZ(0);
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(118, 207, 223, 0.12) 0%,
+    rgba(147, 197, 253, 0.06) 48%,
+    transparent 72%
+  );
+  filter: blur(clamp(10px, 1.8cqi, 22px));
+  opacity: 0.5;
+}
+
+/* Subtle vignette — circular (no elliptical banding) */
+.home-hero-devices__wash {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 55%,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(247, 247, 248, 0.28) 52%,
+    rgba(247, 247, 248, 0.55) 100%
+  );
+  opacity: 0.85;
+  mix-blend-mode: multiply;
+}
+
+/* Fine dot grid — low contrast */
+.home-hero-devices__dots {
+  position: absolute;
+  inset-inline-start: 8%;
+  inset-block-start: 18%;
+  width: min(42%, 12rem);
+  height: min(38%, 11rem);
+  opacity: 0.22;
+  background-image: radial-gradient(circle at center, rgba(47, 59, 101, 0.35) 1px, transparent 1.2px);
+  background-size: 10px 10px;
+  mask-image: radial-gradient(ellipse 80% 80% at 30% 40%, black 15%, transparent 72%);
+}
+
+.home-hero-devices__spark {
+  position: absolute;
+  width: clamp(7px, 1.2cqi, 11px);
+  height: clamp(7px, 1.2cqi, 11px);
+  border-radius: 1px;
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.95), rgba(167, 139, 250, 0.75));
+  opacity: 0.55;
+  box-shadow: 0 0 14px 2px rgba(147, 197, 253, 0.35);
+  transform: rotate(45deg) translateZ(0);
+}
+
+.home-hero-devices__spark--1 {
+  inset-inline-start: 14%;
+  inset-block-start: 22%;
+}
+
+.home-hero-devices__spark--2 {
+  inset-inline-end: 18%;
+  inset-block-start: 38%;
+  opacity: 0.42;
+  transform: rotate(36deg) scale(0.85) translateZ(0);
+}
+
+.home-hero-devices__spark--3 {
+  inset-inline-end: 12%;
+  inset-block-end: 28%;
+  opacity: 0.38;
+  transform: rotate(52deg) scale(0.75) translateZ(0);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-hero-devices__spark {
+    animation: home-hero-spark-drift 10s ease-in-out infinite;
+  }
+
+  .home-hero-devices__spark--2 {
+    animation-duration: 12s;
+    animation-delay: -2s;
+  }
+
+  .home-hero-devices__spark--3 {
+    animation-duration: 14s;
+    animation-delay: -4s;
+  }
+}
+
+@keyframes home-hero-spark-drift {
+  0%,
+  100% {
+    translate: 0 0;
+    opacity: 0.35;
+  }
+  50% {
+    translate: 0 -6px;
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-devices__spark {
+    animation: none;
+  }
+}
+
+/* Cyan orb under laptop: equal sizing (cqi + aspect-ratio) — avoids stretched ellipse from % height≠width */
+.home-hero-devices__glow {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  pointer-events: none;
+  inset-inline-start: 50%;
+  bottom: clamp(0.1rem, 1.2cqi, 0.55rem);
+  border-radius: 9999px;
+  aspect-ratio: 1;
+  height: auto;
+  box-sizing: border-box;
+}
+
+.home-hero-devices__glow--outer {
+  width: min(var(--device-glow-size), 100%);
+  max-width: 100%;
+  transform: translate3d(-50%, 14%, 0);
+  background: radial-gradient(
+    circle at 50% 46%,
+    rgba(165, 230, 240, 0.42) 0%,
+    rgba(118, 207, 223, 0.22) 32%,
+    rgba(96, 165, 250, 0.09) 54%,
+    transparent 72%
+  );
+  filter: blur(clamp(18px, 2.8cqi, 40px));
+  opacity: 0.26;
+}
+
+.home-hero-devices__glow--inner {
+  width: min(calc(var(--device-glow-size) * 0.52), 100%);
+  max-width: 100%;
+  transform: translate3d(-50%, 14%, 0);
+  background: radial-gradient(
+    circle at 50% 44%,
+    rgba(224, 247, 252, 0.5) 0%,
+    rgba(118, 207, 223, 0.28) 38%,
+    rgba(56, 189, 248, 0.1) 58%,
+    transparent 74%
+  );
+  filter: blur(clamp(8px, 1.2cqi, 18px));
+  opacity: 0.3;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-hero-devices__glow--outer {
+    animation: home-hero-devices-glow-orb-soft 10s ease-in-out infinite alternate;
+  }
+
+  .home-hero-devices__glow--inner {
+    animation: home-hero-devices-glow-breathe 9s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes home-hero-devices-glow-orb-soft {
+  0%,
+  100% {
+    opacity: 0.22;
+    transform: translate3d(-50%, 14%, 0) scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: translate3d(-50%, 14%, 0) scale(1.04);
+  }
+}
+
+@keyframes home-hero-devices-glow-breathe {
+  from {
+    opacity: 0.24;
+  }
+  to {
+    opacity: 0.34;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-devices__glow--outer,
+  .home-hero-devices__glow--inner {
+    animation: none;
+  }
+}
+
+.home-hero-devices__img {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: auto;
+  max-width: min(100%, 100cqi);
+  height: auto;
+  max-height: var(--hero-img-max-h);
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.home-hero-marketing__cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hero-space-sm);
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .home-hero-marketing__cta-row {
+    justify-content: flex-start;
+  }
+}
+
+.home-hero-marketing__cta-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hero-space-xs);
+}
+
+.home-hero--marketing .home-hero__inline-stats {
+  max-width: min(100%, 26rem);
+}
+
+@media (min-width: 1024px) {
+  .home-hero--marketing .home-hero__inline-stats {
+    max-width: min(100%, 28rem);
+  }
+}
+
+.home-hero.home-hero--marketing .home-hero__cta-primary {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero.home-hero--ref .home-hero__cta-primary {
+    animation: none !important;
+  }
+}

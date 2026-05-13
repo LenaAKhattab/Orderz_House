@@ -12,6 +12,7 @@ import {
 } from "../services/api";
 import { getDashboardPath } from "../constants/authRoutes";
 import { AuthContext } from "./authContext";
+import { clearAnalyticsUser, trackEvent } from "../services/analytics";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -21,6 +22,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(AUTH_SESSION_HINT_KEY);
     setUser(null);
+    clearAnalyticsUser();
   }, []);
 
   const clearSession = useCallback(async () => {
@@ -78,6 +80,7 @@ export function AuthProvider({ children }) {
     }
     resetSessionBootstrap();
     applySession(nextUser);
+    trackEvent("user_logged_in", { method: "password", role: String(nextUser?.primaryRole || nextUser?.role || "unknown") });
     return nextUser;
   }, [applySession]);
 
@@ -95,6 +98,7 @@ export function AuthProvider({ children }) {
     }
     resetSessionBootstrap();
     applySession(nextUser);
+    trackEvent("signup_completed", { method: "registration", role: String(nextUser?.primaryRole || nextUser?.role || "unknown") });
     return nextUser;
   }, [applySession]);
 
@@ -106,6 +110,7 @@ export function AuthProvider({ children }) {
     }
     resetSessionBootstrap();
     applySession(nextUser);
+    trackEvent("signup_completed", { method: "registration_otp", role: String(nextUser?.primaryRole || nextUser?.role || "unknown") });
     return nextUser;
   }, [applySession]);
 

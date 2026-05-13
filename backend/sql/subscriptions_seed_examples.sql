@@ -1,4 +1,4 @@
--- Seed 3 example plans (idempotent).
+-- Seed example plans (idempotent).
 -- Run: (from backend/) npm run db:run -- sql/subscriptions_seed_examples.sql
 
 BEGIN;
@@ -25,17 +25,6 @@ VALUES
     TRUE,
     TRUE,
     10
-  ),
-  (
-    'freelancer_pro_visit',
-    'باقة برو (زيارة الشركة)',
-    'باقة احترافية لمدة 90 يوم مع شرط زيارة الشركة لتفعيلها حسب سياسة الشركة.',
-    90,
-    29900,
-    TRUE,
-    TRUE,
-    TRUE,
-    20
   ),
   (
     'freelancer_enterprise',

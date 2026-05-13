@@ -13,7 +13,7 @@
   padding: clamp(18px, 2.8vw, 26px) clamp(16px, 2.5vw, 28px);
   border-radius: 22px;
   border: 1px solid rgba(47, 59, 101, 0.11);
-  background: linear-gradient(135deg, #ffffff 0%, #f4f7fb 42%, #eef2f8 100%);
+  background: #ffffff;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.7) inset,
     0 18px 46px -28px rgba(24, 36, 64, 0.22);

@@ -9,6 +9,9 @@ import {
   getProfilePagePath,
 } from "../../constants/authRoutes";
 import NotificationsBell from "../notifications/NotificationsBell";
+import { useHomePageBlocking } from "../../context/HomePageBlockingContext";
+import NavbarSkeleton from "../skeletons/NavbarSkeleton";
+import "../skeletons/home-skeleton.css";
 
 const publicExploreItems = [
   { label: "من نحن", to: "/about" },
@@ -16,7 +19,7 @@ const publicExploreItems = [
 ];
 
 const navLinkBase =
-  "rounded-lg px-2.5 py-1.5 text-[0.9rem] font-medium text-[#202020]/90 transition-[color,opacity,font-size,padding] duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)] hover:text-[#2f3b65] hover:opacity-100";
+  "rounded-lg px-3.5 py-2 text-[1rem] font-medium text-[#202020]/90 transition-[color,opacity,font-size,padding] duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)] hover:text-[#2f3b65] hover:opacity-100 sm:px-4 sm:py-2.5 sm:text-[1.05rem] lg:px-5 lg:py-2.5 lg:text-[1.08rem]";
 const navLinkActive = "font-bold text-[#2f3b65] opacity-100";
 
 function fullNameAr(user) {
@@ -85,6 +88,7 @@ const Navbar = () => {
       return [
         ...base,
         { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
+        { label: "إدارة الإعلانات", to: "/dashboard/super-admin/ads" },
         { label: "الدورات", to: "/dashboard/super-admin/courses" },
         { label: "الاشتراكات", to: "/dashboard/super-admin/subscriptions" },
         { label: "المطالبات المالية", to: "/dashboard/super-admin/financial-claims" },
@@ -96,6 +100,7 @@ const Navbar = () => {
       return [
         ...base,
         { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
+        { label: "إدارة الإعلانات", to: "/dashboard/admin/ads" },
         { label: "الدورات", to: "/dashboard/admin/courses" },
         { label: "تفعيل الاشتراكات", to: "/dashboard/admin/subscriptions" },
         { label: "الطلبات", to: "/dashboard/admin/orders" },
@@ -133,130 +138,149 @@ const Navbar = () => {
 
   const linkClass = ({ isActive }) => [navLinkBase, isActive ? navLinkActive : ""].filter(Boolean).join(" ");
 
+  const { homeBlocking } = useHomePageBlocking();
+  const showHomeNavSkeleton = pathname === "/" && homeBlocking;
+
   return (
-    <header className="sticky top-0 z-50 bg-transparent py-[clamp(6px,1.2vw,12px)] pb-[clamp(6px,1vw,10px)] transition-[padding,background,box-shadow,border-color] duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)]">
-      <div className="navbar-shell mx-auto w-full max-w-[min(1120px,calc(100%-24px))] rounded-full border border-[rgba(47,59,101,0.2)] bg-white px-[clamp(16px,3vw,36px)] py-[clamp(5px,0.9vw,9px)] shadow-[0_8px_24px_rgba(47,59,101,0.08)] transition-all duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)]">
-        <div className="flex min-h-[clamp(48px,5.5vw,56px)] items-center justify-between gap-[clamp(14px,2.5vw,26px)] p-0 transition-all duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)]">
-          <NavLink
-            to={logoTo}
-            className="flex min-w-[120px] items-center justify-center no-underline"
-            aria-label={isLoggedIn ? "العودة إلى لوحة التحكم" : "العودة إلى الصفحة الرئيسية"}
-          >
-            <img src="/logo.png" alt="" className="block h-[clamp(44px,5.2vw,56px)] w-auto object-contain transition-all duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)]" />
-          </NavLink>
+    <header
+      dir="rtl"
+      className="sticky top-0 z-50 bg-transparent py-1.5 transition-[padding,background,box-shadow,border-color] duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)]"
+    >
+      <div className="navbar-shell relative mx-auto flex min-h-[56px] w-full max-w-7xl flex-wrap items-center justify-between gap-3 rounded-full border border-[rgba(47,59,101,0.12)] bg-white/95 px-5 py-2 shadow-[0_10px_40px_rgba(47,59,101,0.09)] backdrop-blur-sm sm:min-h-[60px] sm:gap-4 sm:px-7 lg:min-h-[72px] lg:max-h-[92px] lg:gap-6 lg:px-10 lg:py-2.5">
+        {showHomeNavSkeleton ? (
+          <div className="relative z-[2] w-full min-w-0">
+            <NavbarSkeleton />
+          </div>
+        ) : (
+          <>
+        <NavLink
+          to={logoTo}
+          className="relative z-[2] flex min-w-[110px] shrink-0 items-center justify-center no-underline sm:min-w-[132px]"
+          aria-label={isLoggedIn ? "العودة إلى لوحة التحكم" : "العودة إلى الصفحة الرئيسية"}
+        >
+          <img
+            src="/logo.png"
+            alt=""
+            className="block h-10 w-auto object-contain transition-all duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)] sm:h-11 lg:h-12"
+          />
+        </NavLink>
 
-          <nav aria-label="التنقل الرئيسي">
-            <ul className="m-0 flex list-none flex-wrap items-center gap-x-[clamp(12px,2vw,28px)] gap-y-2 p-0 transition-[gap] duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)]">
-              {navItems.map((item) => (
-                <li key={item.to}>
-                  <NavLink to={item.to} className={linkClass}>
-                    {item.label}
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
-          </nav>
+        <nav
+          aria-label="التنقل الرئيسي"
+          className="order-3 flex w-full basis-full justify-center overflow-x-auto pt-1 [-ms-overflow-style:none] [scrollbar-width:none] lg:absolute lg:inset-0 lg:z-[1] lg:flex lg:w-auto lg:basis-auto lg:items-center lg:justify-center lg:overflow-visible lg:pt-0 lg:[pointer-events:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <ul className="m-0 flex w-max max-w-full list-none flex-nowrap items-center gap-x-[clamp(14px,2.2vw,40px)] gap-y-2.5 px-2 py-0 sm:gap-x-[clamp(16px,2.5vw,48px)] lg:[pointer-events:auto]">
+            {navItems.map((item) => (
+              <li key={item.to} className="shrink-0">
+                <NavLink to={item.to} className={linkClass}>
+                  {item.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-          <div className="flex flex-wrap items-center justify-end gap-2.5">
-            {loading ? (
-              <span className="min-h-10 min-w-[120px]" aria-hidden="true" />
-            ) : user ? (
-              <>
-                {role === "client" || showAdminCreateOrderButton ? (
-                  <button
-                    type="button"
-                    className="inline-flex cursor-pointer items-center gap-2.5 rounded-full border-[1.5px] border-[rgba(56,82,180,0.35)] bg-white px-4 py-2 font-black text-[#223069] shadow-[0_10px_26px_rgba(56,82,180,0.08)] transition-[transform,box-shadow,border-color,background-color] duration-[180ms] hover:-translate-y-px hover:border-[rgba(56,82,180,0.5)] hover:bg-[rgba(56,82,180,0.02)] hover:shadow-[0_14px_34px_rgba(56,82,180,0.12)] focus:outline-none focus:shadow-[0_0_0_4px_rgba(56,82,180,0.14),0_14px_34px_rgba(56,82,180,0.12)]"
-                    aria-label="إنشاء طلب"
-                    onClick={() => openClientCreateOrderModal()}
+        <div className="relative z-[2] flex shrink-0 flex-wrap items-center justify-end gap-3.5 sm:gap-4">
+          {loading ? (
+            <span className="min-h-11 min-w-[140px]" aria-hidden="true" />
+          ) : user ? (
+            <>
+              {role === "client" || showAdminCreateOrderButton ? (
+                <button
+                  type="button"
+                  className="inline-flex cursor-pointer items-center gap-3 rounded-full border-[1.5px] border-[rgba(56,82,180,0.35)] bg-white px-5 py-2.5 font-black text-[#223069] shadow-[0_10px_26px_rgba(56,82,180,0.08)] transition-[transform,box-shadow,border-color,background-color] duration-[180ms] hover:-translate-y-px hover:border-[rgba(56,82,180,0.5)] hover:bg-[rgba(56,82,180,0.02)] hover:shadow-[0_14px_34px_rgba(56,82,180,0.12)] focus:outline-none focus:shadow-[0_0_0_4px_rgba(56,82,180,0.14),0_14px_34px_rgba(56,82,180,0.12)] sm:px-6 sm:py-3"
+                  aria-label="إنشاء طلب"
+                  onClick={() => openClientCreateOrderModal()}
+                >
+                  <span
+                    className="grid h-[30px] w-[30px] place-items-center rounded-[10px] border border-[rgba(56,82,180,0.22)] bg-[rgba(56,82,180,0.06)] text-xl font-black leading-none text-[#2f3b65]"
+                    aria-hidden="true"
                   >
+                    +
+                  </span>
+                  <span className="text-[1rem] tracking-wide sm:text-[1.05rem]">إنشاء طلب</span>
+                </button>
+              ) : null}
+              <NotificationsBell notificationsPagePath={notificationsPath} variant="navbar" />
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  type="button"
+                  className="inline-flex cursor-pointer items-center gap-3 rounded-full border border-[rgba(56,82,180,0.16)] bg-white py-2 pe-3 ps-2.5 transition-[background-color,border-color,box-shadow] duration-200 hover:border-[rgba(56,82,180,0.28)] hover:bg-[rgba(56,82,180,0.04)] focus:outline-none focus:shadow-[0_0_0_4px_rgba(56,82,180,0.14)] sm:py-2.5 sm:pe-3.5 sm:ps-3"
+                  aria-haspopup="menu"
+                  aria-expanded={userMenuOpen}
+                  onClick={() => setUserMenuOpen((v) => !v)}
+                >
+                  {user?.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt=""
+                      className="h-[34px] w-[34px] rounded-full object-cover ring-1 ring-[rgba(56,82,180,0.2)] sm:h-[36px] sm:w-[36px]"
+                    />
+                  ) : (
                     <span
-                      className="grid h-[26px] w-[26px] place-items-center rounded-[9px] border border-[rgba(56,82,180,0.22)] bg-[rgba(56,82,180,0.06)] text-lg font-black leading-none text-[#2f3b65]"
+                      className="grid h-[34px] w-[34px] place-items-center rounded-full bg-[#2f3b65] text-[0.95rem] font-extrabold text-white sm:h-[36px] sm:w-[36px] sm:text-[1rem]"
                       aria-hidden="true"
                     >
-                      +
+                      {userInitial}
                     </span>
-                    <span className="text-[0.92rem] tracking-wide">إنشاء طلب</span>
-                  </button>
-                ) : null}
-                <NotificationsBell notificationsPagePath={notificationsPath} variant="navbar" />
-                <div className="relative" ref={userMenuRef}>
-                  <button
-                    type="button"
-                    className="inline-flex cursor-pointer items-center gap-2.5 rounded-full border border-[rgba(56,82,180,0.16)] bg-white py-1.5 pe-2.5 ps-2 transition-[background-color,border-color,box-shadow] duration-200 hover:border-[rgba(56,82,180,0.28)] hover:bg-[rgba(56,82,180,0.04)] focus:outline-none focus:shadow-[0_0_0_4px_rgba(56,82,180,0.14)]"
-                    aria-haspopup="menu"
-                    aria-expanded={userMenuOpen}
-                    onClick={() => setUserMenuOpen((v) => !v)}
+                  )}
+                  <span className="max-w-[200px] truncate text-[0.95rem] font-extrabold text-[#243153] sm:max-w-[140px] sm:text-[1rem]">
+                    {userName}
+                  </span>
+                </button>
+                {userMenuOpen ? (
+                  <div
+                    className="absolute end-0 top-[calc(100%+10px)] z-[220] grid min-w-[220px] gap-1 rounded-[14px] border border-[rgba(56,82,180,0.14)] bg-white p-2 shadow-[0_18px_40px_rgba(24,36,85,0.14)]"
+                    role="menu"
                   >
-                    {user?.avatarUrl ? (
-                      <img
-                        src={user.avatarUrl}
-                        alt=""
-                        className="h-[30px] w-[30px] rounded-full object-cover ring-1 ring-[rgba(56,82,180,0.2)]"
-                      />
-                    ) : (
-                      <span
-                        className="grid h-[30px] w-[30px] place-items-center rounded-full bg-[#2f3b65] text-[0.9rem] font-extrabold text-white"
-                        aria-hidden="true"
+                    {profilePagePath ? (
+                      <NavLink
+                        to={profilePagePath}
+                        className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
+                        role="menuitem"
+                        onClick={() => setUserMenuOpen(false)}
                       >
-                        {userInitial}
-                      </span>
-                    )}
-                    <span className="max-w-[180px] truncate text-[0.88rem] font-extrabold text-[#243153] sm:max-w-[120px]">
-                      {userName}
-                    </span>
-                  </button>
-                  {userMenuOpen ? (
-                    <div
-                      className="absolute end-0 top-[calc(100%+10px)] z-[220] grid min-w-[220px] gap-1 rounded-[14px] border border-[rgba(56,82,180,0.14)] bg-white p-2 shadow-[0_18px_40px_rgba(24,36,85,0.14)]"
-                      role="menu"
+                        الملف الشخصي
+                      </NavLink>
+                    ) : null}
+                    <NavLink
+                      to={accountSettingsPath}
+                      className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
+                      role="menuitem"
+                      onClick={() => setUserMenuOpen(false)}
                     >
-                      {profilePagePath ? (
-                        <NavLink
-                          to={profilePagePath}
-                          className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
-                          role="menuitem"
-                          onClick={() => setUserMenuOpen(false)}
-                        >
-                          الملف الشخصي
-                        </NavLink>
-                      ) : null}
-                      <NavLink
-                        to={accountSettingsPath}
-                        className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
-                        role="menuitem"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        إعدادات الحساب
-                      </NavLink>
-                      <NavLink
-                        to={notificationsPath}
-                        className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
-                        role="menuitem"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        الإشعارات
-                      </NavLink>
-                      <button
-                        type="button"
-                        className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] transition-colors hover:bg-[rgba(180,50,50,0.08)] hover:text-[#8b2222]"
-                        onClick={handleLogout}
-                      >
-                        تسجيل الخروج
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-              </>
-            ) : (
-              <NavLink
-                to="/login"
-                className="inline-flex min-h-[34px] min-w-fit items-center justify-center rounded-full bg-[#2f3b65] px-4 py-2 text-[0.85rem] font-bold text-white no-underline transition-[background-color,transform,min-height,padding,font-size] duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)] hover:-translate-y-px hover:bg-[#d87929]"
-              >
-                تسجيل الدخول
-              </NavLink>
-            )}
-          </div>
+                      إعدادات الحساب
+                    </NavLink>
+                    <NavLink
+                      to={notificationsPath}
+                      className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
+                      role="menuitem"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      الإشعارات
+                    </NavLink>
+                    <button
+                      type="button"
+                      className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] transition-colors hover:bg-[rgba(180,50,50,0.08)] hover:text-[#8b2222]"
+                      onClick={handleLogout}
+                    >
+                      تسجيل الخروج
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <NavLink
+              to="/login"
+              className="inline-flex min-h-[42px] min-w-fit items-center justify-center rounded-full bg-[#2f3b65] px-6 py-2.5 text-[0.95rem] font-bold text-white no-underline shadow-[0_8px_22px_rgba(47,59,101,0.22)] transition-[background-color,transform,min-height,padding,font-size,box-shadow] duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)] hover:-translate-y-px hover:bg-[#243153] hover:shadow-[0_12px_28px_rgba(47,59,101,0.28)] sm:min-h-[44px] sm:px-7 sm:text-[1rem]"
+            >
+              تسجيل الدخول
+            </NavLink>
+          )}
         </div>
+          </>
+        )}
       </div>
     </header>
   );

@@ -1,0 +1,156 @@
+/* Home hero stats — minimal inline metrics (no cards, shadows, or borders on items) */
+
+.home-hero-metrics {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(1rem, 4vw, 2.25rem);
+  row-gap: clamp(1.25rem, 3vw, 2rem);
+}
+
+@media (min-width: 640px) {
+  .home-hero-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-hero-metrics {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    column-gap: clamp(1.1rem, 2.2vw, 1.75rem);
+    row-gap: 0;
+  }
+
+  .home-hero-metrics__item:not(:first-child) {
+    border-inline-start: 1px solid rgba(226, 232, 240, 0.95);
+    padding-inline-start: clamp(0.875rem, 1.8vw, 1.35rem);
+    margin-inline-start: clamp(0.125rem, 0.4vw, 0.35rem);
+  }
+}
+
+.home-hero-metrics__item {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(0.3rem, 0.9vw, 0.45rem);
+  padding-block: clamp(0.15rem, 0.5vw, 0.35rem);
+  text-align: start;
+}
+
+.home-hero-metrics__value {
+  margin: 0;
+  color: #0a0a0a;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  font-size: clamp(1.35rem, 2.2vw + 0.85rem, 2.65rem);
+}
+
+@media (min-width: 1024px) {
+  .home-hero-metrics__value {
+    font-size: clamp(1.5rem, 1.5vw + 1.1rem, 2.75rem);
+  }
+}
+
+.home-hero-metrics__text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+
+.home-hero-metrics__label {
+  margin: 0;
+  font-size: clamp(0.72rem, 0.35rem + 1.1vw, 0.875rem);
+  font-weight: 600;
+  line-height: 1.35;
+  color: #171717;
+}
+
+.home-hero-metrics__hint {
+  margin: 0;
+  font-size: clamp(0.65rem, 0.3rem + 0.9vw, 0.78rem);
+  font-weight: 500;
+  line-height: 1.35;
+  color: #262626;
+}
+
+/* Two metrics only (visitors + actives) — keep a clean pair on all breakpoints */
+.home-hero-metrics--analytics-only {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(1.25rem, 4vw, 2.5rem);
+  row-gap: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+@media (min-width: 640px) {
+  .home-hero-metrics--analytics-only {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-hero-metrics--analytics-only {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(1.5rem, 4vw, 3rem);
+    row-gap: 0;
+  }
+
+  .home-hero-metrics--analytics-only .home-hero-metrics__item:not(:first-child) {
+    border-inline-start: 1px solid rgba(226, 232, 240, 0.95);
+    padding-inline-start: clamp(0.875rem, 1.8vw, 1.35rem);
+    margin-inline-start: clamp(0.125rem, 0.4vw, 0.35rem);
+  }
+}
+
+/* Hero analytics strip (copy column): label above number, no cards */
+.home-hero-analytics--minimal.home-hero-metrics--analytics-only {
+  text-align: start;
+}
+
+.home-hero-analytics--minimal .home-hero-metrics__item {
+  gap: clamp(0.12rem, 0.45vw, 0.22rem);
+  padding-block: 0;
+}
+
+.home-hero-analytics--minimal .home-hero-analytics__label {
+  margin: 0;
+  order: 0;
+  font-size: clamp(0.68rem, 0.35rem + 0.9vw, 0.8125rem);
+  font-weight: 500;
+  line-height: 1.35;
+  color: rgba(32, 32, 32, 0.5);
+}
+
+.home-hero-analytics--minimal .home-hero-analytics__value {
+  margin: 0;
+  color: #0a0a0a;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-size: clamp(1.2rem, 1.1vw + 0.85rem, 1.85rem);
+}
+
+@media (min-width: 1024px) {
+  .home-hero-analytics--minimal .home-hero-analytics__value {
+    font-size: clamp(1.35rem, 1vw + 1rem, 2.1rem);
+  }
+}
+
+.home-hero-analytics--minimal.home-hero-metrics--analytics-only .home-hero-metrics__item:not(:first-child) {
+  border-inline-start-color: rgba(47, 59, 101, 0.12);
+}
+
+.home-hero-analytics__degraded {
+  grid-column: 1 / -1;
+  margin: 0.35rem 0 0;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: rgba(47, 59, 101, 0.52);
+  text-align: inherit;
+}

@@ -3,6 +3,7 @@ const authOtpService = require("../services/authOtpService");
 const notificationService = require("../services/notificationService");
 const { createPublicApiError } = require("../utils/publicApiError");
 const { setAuthCookie, clearAuthCookie } = require("../utils/authCookie");
+const { capture, identify, captureException } = require("../config/posthog");
 
 async function safeNotify(run) {
   try {
@@ -52,6 +53,13 @@ const verifyRegisterOtp = async (req, res, next) => {
         `user_registered_${String(userId)}`,
       ),
     );
+    identify(String(userId), {
+      email: user.email,
+      role: user.primaryRole || user.role,
+    });
+    capture(String(userId), "signup_completed", {
+      role: user.primaryRole || user.role,
+    });
     setAuthCookie(res, token);
     return res.status(200).json({
       success: true,
@@ -59,6 +67,7 @@ const verifyRegisterOtp = async (req, res, next) => {
       data: { user, token },
     });
   } catch (error) {
+    captureException(error);
     return next(error);
   }
 };
@@ -119,6 +128,13 @@ const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const { user, token } = await authService.loginUser(email, password);
+    identify(String(user.id), {
+      email: user.email,
+      role: user.primaryRole || user.role,
+    });
+    capture(String(user.id), "user_logged_in", {
+      role: user.primaryRole || user.role,
+    });
     setAuthCookie(res, token);
     return res.status(200).json({
       success: true,

@@ -1,43 +1,100 @@
-.oh-training-hub {
-  max-width: 1100px;
+/* Shell width/padding: `DashboardShell` — this file composes training hub chrome only. */
+
+.oh-training-hub__inner {
+  width: 100%;
+  min-width: 0;
 }
 
 .oh-training-hub__tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
   margin-bottom: 20px;
-  padding: 0;
-  list-style: none;
 }
 
-.oh-training-hub__tab {
+/* Tab strip + links (was partly `dashboard-ui.css` / `dash-ui-tabs` / `dash-ui-tab`) */
+.oh-training-hub .dash-ui-tabs.oh-training-hub__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.oh-training-hub__tabs a.oh-training-hub__tab:not(.oh-training-hub__tab--active) {
+  border: 0;
+  background: transparent;
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: #64748b;
+  border-radius: 10px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.oh-training-hub__tabs a.oh-training-hub__tab:not(.oh-training-hub__tab--active):hover {
+  background: rgba(255, 255, 255, 0.75);
+  color: #334155;
+}
+
+.oh-training-hub__tabs a.oh-training-hub__tab {
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   padding: 10px 16px;
-  border-radius: 10px;
-  font-weight: 700;
   font-size: 0.92rem;
-  color: #334155;
-  background: #f1f5f9;
-  text-decoration: none;
-  border: 1px solid transparent;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.oh-training-hub__tab:hover {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-
-.oh-training-hub__tab--active {
+.oh-training-hub__tabs a.oh-training-hub__tab.dash-ui-tab--selected.oh-training-hub__tab--active,
+.oh-training-hub__tabs a.oh-training-hub__tab.oh-training-hub__tab--active {
   background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
   color: #fff;
   border-color: #0f172a;
+  box-shadow: none;
+}
+
+/* Compose dashboard toolbar with training filter row (single margin from primitive `mb-4`) */
+.dash-ui-toolbar.oh-training-filters {
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.dash-ui-toolbar.oh-training-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.dash-ui-toolbar.oh-training-filters input,
+.dash-ui-toolbar.oh-training-filters select {
+  min-width: 140px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.88rem;
+}
+
+.dash-ui-toolbar.oh-training-pagination {
+  justify-content: flex-start;
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+.dash-ui-form-card__body > .oh-training-settings {
+  margin-top: 0;
+}
+
+.oh-training-page-section .dash-ui-section__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .oh-training-table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   margin-top: 12px;
 }
 
@@ -58,32 +115,6 @@
   font-weight: 800;
   color: #475569;
   background: #f8fafc;
-}
-
-.oh-training-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-end;
-  margin-bottom: 16px;
-}
-
-.oh-training-filters label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: #475569;
-}
-
-.oh-training-filters input,
-.oh-training-filters select {
-  min-width: 140px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
-  font-size: 0.88rem;
 }
 
 .oh-training-modal-overlay {
@@ -214,7 +245,7 @@
 }
 
 .oh-training-settings-section {
-  background: #fafbfc;
+  background: #ffffff;
   border: 1px solid #eef2f7;
   border-radius: 12px;
   padding: 18px 20px;
@@ -223,7 +254,7 @@
 }
 
 .oh-training-settings-section--muted {
-  background: #f1f5f9;
+  background: #ffffff;
 }
 
 .oh-training-settings-section__title {

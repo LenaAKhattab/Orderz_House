@@ -70,7 +70,6 @@ export default function MarketplaceOrderListRow({
                 disabled={
                   actionsDisabled ||
                   taking ||
-                  order?.myClaim?.status === "pending" ||
                   (order?.orderSource === "fake" && order?.myBid?.status === "pending")
                 }
                 onClick={(e) => {

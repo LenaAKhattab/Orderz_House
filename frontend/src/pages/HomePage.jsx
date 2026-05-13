@@ -89,9 +89,7 @@ const HomePage = () => {
 
   return (
     <div className="home-page mx-auto flex w-full max-w-[min(1160px,calc(100%-48px))] flex-1 flex-col gap-6 py-6 md:gap-8 md:py-10">
-      <section
-        className={`relative ${sectionCard} bg-linear-to-bl from-[rgba(47,59,101,0.06)] via-white to-white`}
-      >
+      <section className={`relative ${sectionCard}`}>
         <p className="mb-2 text-sm font-extrabold tracking-wide text-[#76cfdf]">
           أوردرز هاوس
         </p>

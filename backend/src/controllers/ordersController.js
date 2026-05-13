@@ -7,6 +7,7 @@ const {
   sanitizeFreelancerPoolOrder,
   sanitizeOrderForFreelancerAssigned,
 } = require("../utils/orderViewerSanitize");
+const { capture } = require("../config/posthog");
 
 const listPoolOrders = async (req, res, next) => {
   try {
@@ -48,8 +49,10 @@ const listPoolOrders = async (req, res, next) => {
 const takePoolOrder = async (req, res, next) => {
   try {
     const order = await ordersService.claimPoolOrder({ freelancerUserId: req.auth.userId, orderId: req.params.id });
-    const myClaim = await ordersService.getMyOrderClaim({ orderId: req.params.id, freelancerUserId: req.auth.userId });
-    const safe = sanitizeFreelancerPoolOrder({ ...order, myClaim });
+    capture(String(req.auth.userId), "fixed_order_taken", {
+      orderId: String(req.params.id),
+    });
+    const safe = sanitizeFreelancerPoolOrder(order);
     return res.status(200).json({ success: true, data: { order: safe } });
   } catch (err) {
     return next(err);
@@ -98,7 +101,8 @@ const getPoolOrderById = async (req, res, next) => {
     const freelancerUserId = req.auth?.userId || null;
     const isFreelancer = viewerRole === "freelancer" && freelancerUserId;
     if (isFreelancer) {
-      const myClaim = await ordersService.getMyOrderClaim({ orderId: req.params.id, freelancerUserId });
+      const myClaim =
+        order.projectType === "fixed" ? null : await ordersService.getMyOrderClaim({ orderId: req.params.id, freelancerUserId });
       let myBid = null;
       if (order.projectType === "bidding" && order.bidBudgetMin != null && order.bidBudgetMax != null) {
         myBid = await ordersService.getMyOrderBid({ orderId: req.params.id, freelancerUserId });
@@ -119,6 +123,10 @@ const submitPoolOrderBid = async (req, res, next) => {
       orderId: req.params.id,
       amount: req.body.amount,
       message: req.body.message || null,
+    });
+    capture(String(req.auth.userId), "bid_submitted", {
+      orderId: String(req.params.id),
+      amount: req.body.amount,
     });
     const myBid = await ordersService.getMyOrderBid({ orderId: req.params.id, freelancerUserId: req.auth.userId });
     const myClaim = await ordersService.getMyOrderClaim({ orderId: req.params.id, freelancerUserId: req.auth.userId });
@@ -208,6 +216,10 @@ const submitMyOrderDelivery = async (req, res, next) => {
       uploadedFiles: req.files || [],
     });
     await ordersService.enrichOrderWithSubmissionHistory(order, "freelancer");
+    capture(String(req.auth.userId), "order_delivered", {
+      orderId: String(req.params.id),
+      projectType: order.projectType || order.project_type,
+    });
     const safe = sanitizeOrderForFreelancerAssigned(order);
     return res.status(200).json({ success: true, data: { order: safe } });
   } catch (err) {
@@ -241,4 +253,3 @@ module.exports = {
   submitMyOrderDelivery,
   downloadFreelancerOrderFile,
 };
-

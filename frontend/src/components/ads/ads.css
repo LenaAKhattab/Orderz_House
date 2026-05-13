@@ -1,0 +1,53 @@
+/* Homepage ads panel — sticky column + scroll, RTL-safe */
+
+.oh-ads-panel__sticky {
+  position: sticky;
+  top: var(--oh-ads-sticky-top, 7rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: calc(100vh - var(--oh-ads-sticky-top, 7rem) - 1.5rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-inline-end: 4px;
+  scrollbar-width: thin;
+}
+
+.oh-ads-panel__sticky::-webkit-scrollbar {
+  width: 6px;
+}
+
+.oh-ads-panel__sticky::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.35);
+  border-radius: 999px;
+}
+
+.oh-ads-strip {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+
+.oh-ads-strip__item {
+  flex: 0 0 min(320px, 85vw);
+  scroll-snap-align: start;
+}
+
+.oh-ad-card__img {
+  transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.oh-ad-card:hover .oh-ad-card__img {
+  transform: scale(1.04);
+}
+
+.oh-ad-sponsored {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.45);
+}

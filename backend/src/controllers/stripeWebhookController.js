@@ -7,6 +7,7 @@ const subscriptionsService = require("../services/subscriptionsService");
 const notificationService = require("../services/notificationService");
 const freelancerSubscriptionPaymentNotifications = require("../services/freelancerSubscriptionPaymentNotifications");
 const notificationEventsService = require("../services/notificationEventsService");
+const { capture } = require("../config/posthog");
 
 async function safeNotify(run) {
   try {
@@ -358,6 +359,10 @@ async function applyCheckoutSessionFreelancerSubscriptionCompleted(session, meta
         ),
       );
     }
+    capture(String(freelancerUserId), "subscription_purchased", {
+      planId: String(planId),
+      subscriptionId: sub?.id ? String(sub.id) : undefined,
+    });
     await db.query("COMMIT");
     return { status: "applied" };
   } catch (e) {
@@ -558,6 +563,10 @@ async function applyCheckoutSessionClientOrderCompleted(session, meta, purpose, 
         { freelancerUserId: String(bid.freelancer_user_id), orderId, activatedAt: paidAt },
         client,
       );
+      capture(String(bid.freelancer_user_id), "first_subscription_started", {
+        orderId: String(orderId),
+        bidId: String(bid.id),
+      });
       await client.query(`UPDATE order_freelancer_bids SET status = 'accepted', updated_at = NOW() WHERE id = $1`, [Number(bid.id)]);
       await client.query(
         `UPDATE order_freelancer_bids
@@ -906,6 +915,10 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool
           { freelancerUserId: String(bid.freelancer_user_id), orderId, activatedAt: paidAt },
           client,
         );
+        capture(String(bid.freelancer_user_id), "first_subscription_started", {
+          orderId: String(orderId),
+          bidId: String(bid.id),
+        });
         await client.query(`UPDATE order_freelancer_bids SET status = 'accepted', updated_at = NOW() WHERE id = $1`, [Number(bid.id)]);
         await client.query(
           `UPDATE order_freelancer_bids

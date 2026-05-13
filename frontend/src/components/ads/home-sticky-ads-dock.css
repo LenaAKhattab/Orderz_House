@@ -1,0 +1,148 @@
+/* Desktop floating promo rail — below navbar (z-50), above page content */
+
+.home-sticky-ads-dock {
+  position: fixed;
+  inset-inline-end: clamp(16px, 2vw, 24px);
+  top: clamp(6.75rem, 14vh, 7.75rem);
+  width: min(360px, calc(100vw - 2rem));
+  max-height: min(calc(100dvh - 10rem), calc(100vh - 10rem));
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
+  transition:
+    opacity 0.32s cubic-bezier(0.33, 1, 0.68, 1),
+    transform 0.32s cubic-bezier(0.33, 1, 0.68, 1);
+  will-change: opacity, transform;
+}
+
+.home-sticky-ads-dock--visible {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+@media (max-width: 1023.98px) {
+  .home-sticky-ads-dock {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-sticky-ads-dock {
+    transition: opacity 0.2s ease;
+    transform: none;
+  }
+
+  .home-sticky-ads-dock--visible {
+    transform: none;
+  }
+}
+
+.home-sticky-ads-dock__panel {
+  max-height: inherit;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0.65rem 0.7rem 0.75rem;
+  border-radius: clamp(0.85rem, 1.5vw, 1.05rem);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 18px 42px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.home-sticky-ads-dock__eyebrow {
+  margin: 0 0 0.5rem;
+  padding-inline: 0.15rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.home-sticky-ads-dock__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+  flex: 1 1 auto;
+  padding-inline-end: 0.1rem;
+  scrollbar-gutter: stable;
+}
+
+.home-sticky-ads-dock__item {
+  flex-shrink: 0;
+}
+
+/* Compact vertical cards inside dock (override homepage row layout) */
+.home-promo-card__shell--sticky {
+  width: 100%;
+}
+
+.home-promo-card__shell--sticky .home-promo-card {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 0.4rem;
+  padding: 0.5rem 0.55rem;
+  height: auto;
+  min-height: 0;
+}
+
+.home-promo-card__shell--sticky .home-promo-card--has-image {
+  flex-direction: column !important;
+}
+
+.home-promo-card__shell--sticky .home-promo-card__body {
+  flex: 0 1 auto;
+  width: 100%;
+  min-height: 0;
+}
+
+.home-promo-card__shell--sticky .home-promo-card__media {
+  order: -1;
+  width: 100%;
+  max-height: 4.25rem;
+  align-self: stretch;
+}
+
+.home-promo-card__shell--sticky .home-promo-card__img {
+  max-height: 3.75rem !important;
+}
+
+.home-promo-card__shell--sticky .home-promo-card__title {
+  font-size: clamp(0.78rem, 1.6vw, 0.88rem);
+  line-height: 1.3;
+}
+
+.home-promo-card__shell--sticky .home-promo-card__subtitle {
+  font-size: 0.72rem;
+}
+
+.home-promo-card__shell--sticky .home-promo-card__desc {
+  font-size: 0.68rem;
+  line-height: 1.45;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.home-promo-card__shell--sticky .home-promo-card__btn,
+.home-promo-card__shell--sticky .home-promo-card__btn--static {
+  padding: 0.32rem 0.65rem;
+  font-size: 0.7rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-promo-card__shell--sticky:hover .home-promo-card {
+    transform: scale(1.03);
+    box-shadow:
+      0 3px 6px rgba(15, 23, 42, 0.06),
+      0 14px 32px rgba(15, 23, 42, 0.1);
+  }
+}

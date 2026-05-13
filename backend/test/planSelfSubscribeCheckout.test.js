@@ -65,12 +65,31 @@ describe("company/admin assignment does not require self_subscribe_allowed", () 
     assert.ok(src.includes("planEligibleForFreelancerSelfCheckout"), "checkout uses shared eligibility helper");
   });
 
-  it("public plan listing filters to self_subscribe_allowed plans", () => {
+  it("listVisibleActivePlans remains the self-checkout-eligible subset", () => {
     const p = path.join(__dirname, "..", "src", "services", "plansService.js");
     const src = fs.readFileSync(p, "utf8");
     assert.ok(
       /listVisibleActivePlans[\s\S]*self_subscribe_allowed\s*=\s*TRUE/.test(src),
       "listVisibleActivePlans must require self_subscribe_allowed",
+    );
+  });
+
+  it("public catalog listing is broader (visible+active only; no paid-only gate)", () => {
+    const svc = path.join(__dirname, "..", "src", "services", "plansService.js");
+    const ctl = path.join(__dirname, "..", "src", "controllers", "plansController.js");
+    const svcSrc = fs.readFileSync(svc, "utf8");
+    const ctlSrc = fs.readFileSync(ctl, "utf8");
+    assert.ok(
+      /listPublicCatalogPlans[\s\S]*is_visible\s*=\s*TRUE[\s\S]*is_active\s*=\s*TRUE/.test(svcSrc),
+      "listPublicCatalogPlans must gate on visible+active",
+    );
+    assert.ok(
+      !/listPublicCatalogPlans[\s\S]*price_jod\s*>\s*0/.test(svcSrc),
+      "listPublicCatalogPlans must not require paid price (free tiers shown on /plans)",
+    );
+    assert.ok(
+      ctlSrc.includes("listPublicCatalogPlans"),
+      "listPublicPlans must use listPublicCatalogPlans",
     );
   });
 });

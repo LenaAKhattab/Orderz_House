@@ -11,6 +11,7 @@ import OpenOrdersMarketplace from "../../components/open-orders/OpenOrdersMarket
 import MarketplaceOrderListRow from "../../components/open-orders/MarketplaceOrderListRow";
 import ClientDashboardHome from "./ClientDashboardHome";
 import FreelancerDashboardHome from "./FreelancerDashboardHome";
+import SuperAdminVisitorsDashboard from "./SuperAdminVisitorsDashboard";
 
 const ROLE_LABEL_AR = {
   super_admin: "مدير أعلى",
@@ -22,7 +23,6 @@ const ROLE_LABEL_AR = {
 /** Freelancer «طلباتي» list — filter by orderStatus (API values). */
 const FREELANCER_MY_ORDERS_STATUS_FILTERS = [
   { key: "all", label: "الكل" },
-  { key: "pending_claim", label: "بانتظار الموافقة" },
   { key: "revision_required", label: "تعديلات مطلوبة" },
   { key: "assigned", label: "مُسند" },
   { key: "in_progress", label: "قيد التنفيذ" },
@@ -124,7 +124,6 @@ function FreelancerMyOrders() {
   const statusCounts = useMemo(
     () => ({
       all: counts.all || 0,
-      pending_claim: counts.waitingApproval || 0,
       revision_required: counts.revisionRequired || 0,
       assigned: counts.assigned || 0,
       in_progress: counts.inProgress || 0,
@@ -237,7 +236,7 @@ function FreelancerMyOrders() {
           ) : orders.length === 0 ? (
             <EmptyState
               title="لا توجد طلبات حالياً"
-              subtitle="بعد أن تتقدم لطلب من المعرض سيظهر هنا حتى تتم الموافقة أو الرفض. بعد الموافقة يبقى ضمن «طلباتي» للتنفيذ."
+              subtitle="بعد إسناد طلب لك مباشرة سيظهر هنا لمتابعة التنفيذ والتسليم."
               actionLabel="استعرض الطلبات المتاحة"
               actionTo="/dashboard/freelancer/orders"
             />
@@ -350,6 +349,9 @@ const DashboardPage = () => {
         <ClientDashboardHome user={user} />
       </section>
     );
+  }
+  if (role === "super_admin" && pathname === "/dashboard/super-admin") {
+    return <SuperAdminVisitorsDashboard />;
   }
   if (role === "freelancer" && isFreelancerRoute) {
     if (pathname === "/dashboard/freelancer") {

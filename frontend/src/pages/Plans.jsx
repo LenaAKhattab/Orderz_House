@@ -11,6 +11,7 @@ import {
 import PricingSection from "../components/plans/PricingSection";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../components/ui/toastContext";
+import { trackEvent } from "../services/analytics";
 
 function errorMessage(err) {
   const apiMsg = err?.response?.data?.message;
@@ -169,6 +170,10 @@ const Plans = () => {
           if (!cancelledEffect) {
             setMySubscription(res?.data?.subscription ?? null);
           }
+          trackEvent("subscription_purchased", {
+            checkout_session_id: String(sessionId),
+            source: "stripe_checkout_confirm",
+          });
           if (typeof sessionStorage !== "undefined") {
             sessionStorage.setItem(storageKey, "done");
           }

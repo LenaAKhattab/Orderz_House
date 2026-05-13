@@ -18,6 +18,7 @@ import {
   parseConfirmPaymentAxiosError,
 } from "../../utils/clientMyOrdersPaymentReturn";
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
+import { trackEvent } from "../../services/analytics";
 
 export default function ClientMyOrdersPage() {
   const { push } = useToast();
@@ -85,6 +86,11 @@ export default function ClientMyOrdersPage() {
         try {
           if (orderId && bidId) {
             await confirmClientOrderBidPaidRequest(orderId, bidId);
+            trackEvent("bid_approved", {
+              order_id: String(orderId),
+              bid_id: String(bidId),
+              source: "client_paid_selection",
+            });
             push({
               type: "success",
               title: isArabicUi ? "تم الدفع بنجاح" : "Payment successful",
@@ -174,7 +180,13 @@ export default function ClientMyOrdersPage() {
 
   const stats = useMemo(() => {
     const total = orders.length;
-    const inPool = orders.filter((o) => o?.orderStatus === "published" && !orderHasAssignment(o) && !o?.isArchived).length;
+    const inPool = orders.filter((o) => {
+      if (!o || o?.isArchived || orderHasAssignment(o) || !o?.isOpenForPool) return false;
+      const status = String(o?.orderStatus || "");
+      if (o?.projectType === "fixed") return status === "published" || status === "open_for_freelancers";
+      if (o?.projectType === "bidding") return status === "open_for_bids";
+      return ["published", "open_for_freelancers", "open_for_bids"].includes(status);
+    }).length;
     const assigned = orders.filter((o) => orderHasAssignment(o)).length;
     return { total, inPool, assigned };
   }, [orders]);

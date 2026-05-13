@@ -17,7 +17,6 @@ const listOrdersValidators = [
     .optional()
     .isIn([
       "all",
-      "pending_claim",
       "revision_required",
       "assigned",
       "in_progress",

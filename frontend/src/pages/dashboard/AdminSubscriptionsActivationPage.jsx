@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Button from "../../components/ui/Button";
+import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
+import DashboardShell from "../../components/dashboard/DashboardShell";
+import DashboardSection from "../../components/dashboard/DashboardSection";
+import { breadcrumbHomeFromUser, superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { activateSubscriptionCompanyRequest, listSubscriptionsRequest } from "../../services/api";
+import { useAuth } from "../../context/useAuth";
 import { AdminInlineGridSkeleton } from "../../components/ui/Skeleton";
 
 function errorMessage(err) {
@@ -24,6 +29,9 @@ function fullNameAr(user) {
 }
 
 export default function AdminSubscriptionsActivationPage() {
+  const { user } = useAuth();
+  const role = user?.primaryRole || user?.role;
+  const isSuperAdmin = role === "super_admin";
   const [loading, setLoading] = useState(true);
   const [submittingId, setSubmittingId] = useState(null);
   const [error, setError] = useState("");
@@ -73,16 +81,24 @@ export default function AdminSubscriptionsActivationPage() {
     }
   };
 
-  return (
-    <section className="container page-content">
-      <div className="card">
-        <h1>تفعيل اشتراكات المستقلين</h1>
-        <p>يمكنك تفعيل الحسابات المشتركة بعد مراجعة الشركة، ليصبح المستقل مؤهلاً لاستلام الطلبات.</p>
-        {error ? <p className="auth-form-error">{error}</p> : null}
-      </div>
+  const breadcrumbs = isSuperAdmin
+    ? superAdminBreadcrumbs("تفعيل الاشتراكات")
+    : [
+        { label: "الرئيسية", href: breadcrumbHomeFromUser(user) },
+        { label: "تفعيل الاشتراكات" },
+      ];
 
-      <div className="card">
-        <h2>بانتظار تفعيل الشركة</h2>
+  return (
+    <DashboardShell>
+      <DashboardPageHeader
+        eyebrow={isSuperAdmin ? "لوحة المدير الأعلى" : "لوحة التحكم"}
+        title="تفعيل اشتراكات المستقلين"
+        description="يمكنك تفعيل الحسابات المشتركة بعد مراجعة الشركة، ليصبح المستقل مؤهلاً لاستلام الطلبات."
+        breadcrumbs={breadcrumbs}
+        alert={error ? <p className="auth-form-error">{error}</p> : null}
+      />
+
+      <DashboardSection title="بانتظار تفعيل الشركة">
         {loading ? <AdminInlineGridSkeleton count={3} /> : null}
         {!loading && pendingCompanyActivation.length === 0 ? (
           <p>لا توجد اشتراكات بانتظار التفعيل حالياً.</p>
@@ -115,8 +131,8 @@ export default function AdminSubscriptionsActivationPage() {
             ))}
           </div>
         ) : null}
-      </div>
-    </section>
+      </DashboardSection>
+    </DashboardShell>
   );
 }
 

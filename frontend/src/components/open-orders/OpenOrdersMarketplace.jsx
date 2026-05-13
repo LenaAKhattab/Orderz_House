@@ -17,6 +17,7 @@ import BidAmountModal from "../../components/orders/BidAmountModal";
 import TakePoolOrderConfirmModal from "../../components/orders/TakePoolOrderConfirmModal";
 import Pagination from "../../components/common/Pagination";
 import MarketplaceOrderListRow from "./MarketplaceOrderListRow";
+import { trackEvent } from "../../services/analytics";
 
 function PoolSection({ title, children }) {
   const hasHead = Boolean(title);
@@ -250,7 +251,11 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     setTakingId(orderId);
     try {
       await takePoolOrderRequest(orderId, { orderSource });
-      push({ type: "success", title: "تم تقديم الطلب", message: "تم تسجيل طلب الاستلام بنجاح." });
+      trackEvent("fixed_order_taken", {
+        order_id: String(orderId),
+        source: String(orderSource || "real"),
+      });
+      push({ type: "success", title: "تم استلام الطلب", message: "تم إسناد الطلب لك مباشرة." });
       await reloadPool();
     } catch (e) {
       push({ type: "error", title: "تعذر استلام الطلب", message: e?.response?.data?.message || e?.message });
@@ -264,6 +269,11 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     setBidBusyId(bidModalOrder.id);
     try {
       await submitPoolOrderBidRequest(bidModalOrder.id, { amount }, { orderSource: bidModalOrder.orderSource });
+      trackEvent("bid_submitted", {
+        order_id: String(bidModalOrder.id),
+        amount: Number(amount),
+        source: String(bidModalOrder.orderSource || "real"),
+      });
       push({ type: "success", title: "تم إرسال العرض", message: "تم إرسال عرض السعر بنجاح." });
       setBidModalOrder(null);
       await reloadPool();

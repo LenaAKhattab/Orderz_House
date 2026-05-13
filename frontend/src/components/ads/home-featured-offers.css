@@ -1,0 +1,279 @@
+/* Homepage featured offers rail — white shell, stacked cards, RTL */
+
+.home-featured-offers {
+  width: 100%;
+  min-width: 0;
+  border-radius: clamp(1rem, 2.2vw, 1.35rem);
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 12px 32px rgba(15, 23, 42, 0.06);
+  padding: clamp(0.85rem, 2vw, 1.15rem) clamp(0.75rem, 1.8vw, 1rem);
+}
+
+.home-featured-offers__head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.45rem;
+  margin-bottom: clamp(0.65rem, 1.6vw, 0.85rem);
+  padding-inline: 0.15rem 0;
+}
+
+.home-featured-offers__sparkle {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+  color: var(--primary, #2f3b65);
+  opacity: 0.92;
+}
+
+.home-featured-offers__title {
+  margin: 0;
+  font-size: clamp(0.95rem, 2.4vw, 1.05rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.home-featured-offers__stack {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.55rem, 1.4vw, 0.75rem);
+  min-width: 0;
+}
+
+/* --- Card --- */
+
+.home-offer-card {
+  position: relative;
+  border-radius: clamp(0.85rem, 2vw, 1.1rem);
+  border: 1px solid transparent;
+  background-size: cover;
+  background-color: #fafafa;
+  max-width: 100%;
+  min-width: 0;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-offer-card {
+    transition: none;
+  }
+}
+
+.home-offer-card--featured:hover,
+.home-offer-card--compact:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+}
+
+.home-offer-card__link .home-offer-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+}
+
+
+.home-offer-card__grid {
+  display: grid;
+  gap: clamp(0.65rem, 2vw, 1rem);
+  align-items: center;
+  padding: clamp(0.75rem, 2vw, 1rem);
+  min-width: 0;
+}
+
+.home-offer-card--featured .home-offer-card__grid--has-media {
+  grid-template-columns: minmax(0, 1fr) minmax(5.5rem, 38%);
+  padding: clamp(0.9rem, 2.2vw, 1.15rem);
+}
+
+.home-offer-card--compact .home-offer-card__grid--has-media {
+  grid-template-columns: minmax(0, 1fr) minmax(4.5rem, 30%);
+  padding: clamp(0.65rem, 1.6vw, 0.85rem);
+}
+
+.home-offer-card__grid:not(.home-offer-card__grid--has-media) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.home-offer-card__grid.home-offer-card__grid--has-media {
+  align-items: start;
+}
+
+.home-offer-card__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: right;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.home-offer-card__badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  line-height: 1.2;
+}
+
+.home-offer-card__badge--lg {
+  font-size: 0.72rem;
+  padding: 0.28rem 0.65rem;
+}
+
+.home-offer-card__title {
+  margin: 0;
+  font-size: clamp(0.88rem, 2.1vw, 0.98rem);
+  font-weight: 900;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.home-offer-card__title--featured {
+  font-size: clamp(1rem, 2.5vw, 1.15rem);
+}
+
+.home-offer-card__subtitle {
+  margin: 0;
+  font-size: clamp(0.82rem, 1.9vw, 0.92rem);
+  line-height: 1.45;
+  font-weight: 700;
+  opacity: 0.95;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.home-offer-card__subtitle + .home-offer-card__desc {
+  margin-top: 0.35rem;
+}
+
+.home-offer-card__desc {
+  margin: 0;
+  font-size: clamp(0.78rem, 1.8vw, 0.84rem);
+  line-height: 1.55;
+  font-weight: 600;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.home-offer-card__cta-wrap {
+  margin-top: 0.25rem;
+}
+
+.home-offer-card__cta,
+.home-offer-card__cta--static {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.65rem;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.home-offer-card__cta:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.14);
+  transform: translateY(-1px);
+}
+
+.home-offer-card__cta--lg,
+.home-offer-card__cta--static.home-offer-card__cta--lg {
+  padding: 0.55rem 1.15rem;
+  font-size: 0.84rem;
+  border-radius: 0.75rem;
+}
+
+.home-offer-card__media {
+  position: relative;
+  border-radius: 0.65rem;
+  background: transparent;
+  overflow: hidden;
+  align-self: start;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.home-offer-card__media--featured {
+  border-radius: 0.75rem;
+}
+
+.home-offer-card__media-inner {
+  width: 100%;
+  display: block;
+  line-height: 0;
+}
+
+.home-offer-card__img {
+  width: 100%;
+  height: auto;
+  max-height: clamp(5rem, 22vw, 8rem);
+  object-fit: contain;
+  object-position: center;
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .home-featured-offers {
+    padding: clamp(0.95rem, 2.2vw, 1.25rem) clamp(0.85rem, 1.9vw, 1.1rem);
+  }
+
+  .home-featured-offers__head {
+    margin-bottom: clamp(0.7rem, 1.5vw, 0.95rem);
+  }
+
+  .home-featured-offers__title {
+    font-size: clamp(1rem, 2.2vw, 1.12rem);
+  }
+
+  .home-featured-offers__stack {
+    gap: clamp(0.65rem, 1.5vw, 0.9rem);
+  }
+
+  .home-offer-card--featured .home-offer-card__grid--has-media {
+    gap: clamp(0.75rem, 2vw, 1.1rem);
+    padding: clamp(1rem, 2.2vw, 1.25rem);
+  }
+
+  .home-offer-card--compact .home-offer-card__grid--has-media {
+    padding: clamp(0.72rem, 1.7vw, 0.95rem);
+  }
+
+  .home-offer-card__title {
+    font-size: clamp(0.92rem, 2vw, 1.02rem);
+  }
+
+  .home-offer-card__title--featured {
+    font-size: clamp(1.05rem, 2.4vw, 1.2rem);
+  }
+
+  .home-offer-card__subtitle {
+    font-size: clamp(0.84rem, 1.85vw, 0.95rem);
+  }
+
+  .home-offer-card__desc {
+    font-size: clamp(0.8rem, 1.75vw, 0.88rem);
+    line-height: 1.6;
+  }
+
+  .home-offer-card--featured .home-offer-card__img {
+    max-height: clamp(6rem, 12vw, 9rem);
+  }
+}

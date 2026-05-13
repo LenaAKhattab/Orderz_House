@@ -8,23 +8,11 @@
   place-items: center;
   padding: 18px 12px 48px;
   overflow-x: clip;
-  background:
-    radial-gradient(ellipse 130% 90% at 50% -25%, rgba(47, 59, 101, 0.11), transparent 58%),
-    radial-gradient(ellipse 85% 55% at 95% 18%, rgba(118, 207, 223, 0.14), transparent 52%),
-    radial-gradient(ellipse 75% 50% at 5% 85%, rgba(240, 141, 57, 0.07), transparent 55%),
-    linear-gradient(185deg, #f8fafc 0%, #eef2f8 48%, #f5f7fb 100%);
+  background: var(--page-bg, #f3f4f4);
 }
 
 .oh-auth-page::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0.4;
-  pointer-events: none;
-  z-index: 0;
-  background-image: radial-gradient(rgba(47, 59, 101, 0.07) 1px, transparent 1px);
-  background-size: 20px 20px;
-  mask-image: radial-gradient(ellipse 90% 70% at 50% 40%, #000 25%, transparent 75%);
+  content: none;
 }
 
 .oh-auth-shell {

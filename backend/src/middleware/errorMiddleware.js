@@ -7,6 +7,7 @@ const {
 } = require("../constants/publicErrorMessages");
 const { defaultCodeForHttpStatus } = require("../constants/apiErrors");
 const { shouldExposeErrorDebug } = require("../config/env");
+const { captureException } = require("../config/posthog");
 
 /**
  * When true, the error `message` is sent to the client (must already be safe, user-facing text).
@@ -71,12 +72,17 @@ const errorMiddleware = (err, req, res, next) => {
 
   if (statusCode >= 500) {
     console.error(`[${req.method} ${req.originalUrl}]${logRequestContext(req)}`, err.message);
+    if (err.logDetails) {
+      console.error("[details]", err.logDetails);
+    }
     if (err.cause) {
       console.error("[cause]", err.cause);
     }
     if (err.stack) {
       console.error(err.stack);
     }
+    const distinctId = req.user?.sub || req.auth?.userId;
+    captureException(err, distinctId ? String(distinctId) : undefined);
   } else if (statusCode >= 400 && err.exposeToClient !== true) {
     console.warn(`[${req.method} ${req.originalUrl}]${logRequestContext(req)}`, err.message);
   }

@@ -1644,6 +1644,7 @@ async function listPoolOrdersForFreelancer({
     LEFT JOIN order_claims oc
       ON oc.order_id = o.id
      AND oc.freelancer_user_id = $1
+     AND o.project_type <> 'fixed'
     LEFT JOIN order_freelancer_bids mb
       ON mb.order_id = o.id
      AND mb.freelancer_user_id = $1
@@ -1720,36 +1721,21 @@ async function listFreelancerAssignedOrders({
     params.push(`%${String(q).trim()}%`);
     where.push(`(b.order_code ILIKE $${params.length} OR b.title ILIKE $${params.length})`);
   }
-  if (normalizedStatus === "pending_claim") where.push(`b.assigned_freelancer_id IS NULL AND b.my_claim_status = 'pending'`);
   if (normalizedStatus === "revision_required") where.push(`b.client_revision_note IS NOT NULL AND b.order_status IN ('in_progress','ready_for_work','pending_client_review')`);
   if (normalizedStatus === "assigned") where.push(`b.order_status = 'assigned'`);
   if (normalizedStatus === "in_progress") where.push(`b.order_status IN ('in_progress','ready_for_work')`);
   if (normalizedStatus === "pending_client_review") where.push(`b.order_status = 'pending_client_review'`);
   if (normalizedStatus === "completed") where.push(`b.order_status = 'completed'`);
-  if (normalizedStatus === "cancelled") where.push(`(b.order_status = 'cancelled' OR b.my_claim_status = 'rejected')`);
+  if (normalizedStatus === "cancelled") where.push(`b.order_status = 'cancelled'`);
   const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
   const orderBySql = buildOrderByClause(sort, "b");
 
   const baseCte = `
-    WITH my_claims AS (
-      SELECT DISTINCT ON (oc.order_id)
-        oc.order_id,
-        oc.id AS my_claim_id,
-        oc.status AS my_claim_status
-      FROM order_claims oc
-      WHERE oc.freelancer_user_id = $1
-        AND oc.status IN ('pending', 'rejected')
-      ORDER BY oc.order_id, oc.updated_at DESC, oc.id DESC
-    ),
-    base AS (
-      SELECT
-        o.*,
-        mc.my_claim_id,
-        mc.my_claim_status
+    WITH base AS (
+      SELECT o.*
       FROM orders o
-      LEFT JOIN my_claims mc ON mc.order_id = o.id
       WHERE o.assigned_freelancer_id = $1
-         OR mc.order_id IS NOT NULL
+         OR o.accepted_freelancer_id = $1
     )
   `;
 
@@ -1788,13 +1774,13 @@ async function listFreelancerAssignedOrders({
     ${baseCte}
     SELECT
       COUNT(*)::int AS all_count,
-      SUM(CASE WHEN b.assigned_freelancer_id IS NULL AND b.my_claim_status = 'pending' THEN 1 ELSE 0 END)::int AS waiting_approval_count,
+      0::int AS waiting_approval_count,
       SUM(CASE WHEN b.client_revision_note IS NOT NULL AND b.order_status IN ('in_progress','ready_for_work','pending_client_review') THEN 1 ELSE 0 END)::int AS revision_required_count,
       SUM(CASE WHEN b.order_status = 'assigned' THEN 1 ELSE 0 END)::int AS assigned_count,
       SUM(CASE WHEN b.order_status IN ('in_progress','ready_for_work') THEN 1 ELSE 0 END)::int AS in_progress_count,
       SUM(CASE WHEN b.order_status = 'pending_client_review' THEN 1 ELSE 0 END)::int AS waiting_client_approval_count,
       SUM(CASE WHEN b.order_status = 'completed' THEN 1 ELSE 0 END)::int AS completed_count,
-      SUM(CASE WHEN b.order_status = 'cancelled' OR b.my_claim_status = 'rejected' THEN 1 ELSE 0 END)::int AS canceled_count
+      SUM(CASE WHEN b.order_status = 'cancelled' THEN 1 ELSE 0 END)::int AS canceled_count
     FROM base b
   `;
 
@@ -1832,13 +1818,10 @@ async function getFreelancerAssignedOrderById({ freelancerUserId, orderId }) {
   const { rows } = await pool.query(
     `SELECT o.id
      FROM orders o
-     LEFT JOIN order_claims oc
-       ON oc.order_id = o.id
-      AND oc.freelancer_user_id = $2
      WHERE o.id = $1
        AND (
          o.assigned_freelancer_id = $2
-         OR oc.status IN ('pending', 'rejected')
+         OR o.accepted_freelancer_id = $2
        )
      LIMIT 1`,
     [Number(orderId), Number(freelancerUserId)],
@@ -1847,8 +1830,7 @@ async function getFreelancerAssignedOrderById({ freelancerUserId, orderId }) {
   const order = await getOrderById(orderId);
   if (!order) return null;
   await enrichOrderWithSubmissionHistory(order, "freelancer");
-  const myClaim = await getMyOrderClaim({ orderId, freelancerUserId });
-  return { ...order, myClaim };
+  return order;
 }
 
 async function enrichOrderWithSubmissionHistory(order, viewerRole) {
@@ -1973,7 +1955,7 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
 
     const eligibility = await subscriptionsService.canFreelancerTakeOrders(String(freelancerUserId));
     if (!eligibility.eligible) {
-      const err = new Error("Your subscription is not active. You cannot take orders.");
+      const err = new Error("You are not allowed to take this order.");
       err.statusCode = 403;
       err.reason = eligibility.reason;
       throw err;
@@ -1991,7 +1973,7 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
       err.statusCode = 404;
       throw err;
     }
-    if (!order.is_published || !order.is_open_for_pool || order.assigned_freelancer_id || order.received_at) {
+    if (!order.is_published || !order.is_open_for_pool) {
       const err = new Error("Order is not available in the pool.");
       err.statusCode = 409;
       throw err;
@@ -2001,8 +1983,8 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
       err.statusCode = 409;
       throw err;
     }
-    if (hasPricedBiddingRow(order)) {
-      const err = new Error("This is a bidding order. Submit a price offer instead of taking the order directly.");
+    if (order.project_type !== "fixed" || hasPricedBiddingRow(order)) {
+      const err = new Error("Only fixed orders can be taken directly.");
       err.statusCode = 409;
       throw err;
     }
@@ -2011,46 +1993,71 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
       err.statusCode = 409;
       throw err;
     }
-
-    // Create claim record. Do NOT assign yet, do NOT remove from pool.
-    // Unique constraint prevents duplicates; allow re-apply only if withdrawn/rejected? (we block for now).
-    const { rows: existing } = await client.query(
-      `SELECT id, status FROM order_claims WHERE order_id = $1 AND freelancer_user_id = $2 LIMIT 1`,
-      [Number(orderId), Number(freelancerUserId)],
+    if (!orderFlowService.clientFixedOrderPaidForPool(order)) {
+      const err = new Error("Order is not available in the pool.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (order.assigned_freelancer_id || order.received_at) {
+      const err = new Error("This order has already been taken.");
+      err.statusCode = 409;
+      throw err;
+    }
+    const now = new Date();
+    const dueAt = computeDueAt(now, order.duration_value, order.duration_unit);
+    const { rows: updatedRows } = await client.query(
+      `UPDATE orders
+         SET assigned_freelancer_id = $2,
+             accepted_freelancer_id = $2,
+             taken_at = COALESCE(taken_at, $3),
+             accepted_at = COALESCE(accepted_at, $3),
+             started_at = COALESCE(started_at, $3),
+             received_at = COALESCE(received_at, $3),
+             due_at = COALESCE(due_at, $4),
+             is_open_for_pool = FALSE,
+             order_status = $5,
+             updated_at = NOW()
+       WHERE id = $1
+         AND project_type = 'fixed'
+         AND is_published = TRUE
+         AND is_open_for_pool = TRUE
+         AND assigned_freelancer_id IS NULL
+         AND accepted_freelancer_id IS NULL
+         AND received_at IS NULL
+         AND order_status IN ('published', 'open_for_freelancers')
+       RETURNING *`,
+      [Number(orderId), Number(freelancerUserId), now, dueAt, ORDER_STATUSES.IN_PROGRESS],
     );
-    if (existing[0]) {
-      const st = existing[0].status;
-      const err = new Error(st === "withdrawn" ? "You already withdrew this application." : "You already applied for this order.");
+    if (!updatedRows[0]) {
+      const err = new Error("This order has already been taken.");
       err.statusCode = 409;
       throw err;
     }
 
-    await client.query(
-      `INSERT INTO order_claims (order_id, freelancer_user_id, status)
-       VALUES ($1, $2, 'pending')`,
-      [Number(orderId), Number(freelancerUserId)],
-    );
-
     await safeNotify(() =>
       notificationService.createNotification(
         {
-          recipientUserId: Number(order.created_by_user_id),
+          recipientUserId: Number(updatedRows[0].created_by_user_id),
           recipientRole: order.created_by_role || null,
           actorUserId: Number(freelancerUserId),
-          type: "order.claim.submitted",
-          title: "تم استلام طلب تقديم جديد",
-          message: "تقدّم مستقل جديد لاستلام هذا المشروع.",
+          type: "order.assigned",
+          title: "تم استلام المشروع",
+          message: "قام مستقل باستلام المشروع وبدأ التنفيذ.",
           entityType: "order",
           entityId: Number(orderId),
           link:
-            order.source_type === "client_created"
+            updatedRows[0].source_type === "client_created"
               ? `/dashboard/client/my-orders`
-              : `/dashboard/${String(order.created_by_role || "").trim() === "super_admin" ? "super-admin" : "admin"}/orders`,
+              : `/dashboard/${String(updatedRows[0].created_by_role || "").trim() === "super_admin" ? "super-admin" : "admin"}/orders`,
           priority: "high",
-          metadata: { orderId: String(orderId), freelancerUserId: String(freelancerUserId), source: "claim_pool_order" },
+          metadata: { orderId: String(orderId), freelancerUserId: String(freelancerUserId), source: "take_fixed_order" },
         },
         client,
       ),
+    );
+    await subscriptionsService.activateCurrentSubscriptionOnFirstAcceptedOrder(
+      { freelancerUserId: String(freelancerUserId), orderId: Number(orderId), activatedAt: now },
+      client,
     );
 
     await client.query("COMMIT");
@@ -2075,6 +2082,11 @@ async function withdrawPoolClaim({ freelancerUserId, orderId }) {
     if (!order) {
       const err = new Error("Order not found.");
       err.statusCode = 404;
+      throw err;
+    }
+    if (order.project_type === "fixed" && (order.assigned_freelancer_id || order.accepted_freelancer_id || order.received_at)) {
+      const err = new Error("Fixed direct assignments cannot be withdrawn from this endpoint.");
+      err.statusCode = 409;
       throw err;
     }
     if (order.assigned_freelancer_id || order.received_at) {
@@ -2136,6 +2148,17 @@ async function withdrawPoolClaim({ freelancerUserId, orderId }) {
 
 async function listOrderClaimsAdmin({ orderId }, clientMaybe) {
   const runner = clientMaybe || pool;
+  const { rows: orderRows } = await runner.query(`SELECT project_type FROM orders WHERE id = $1 LIMIT 1`, [Number(orderId)]);
+  if (!orderRows[0]) {
+    const err = new Error("Order not found.");
+    err.statusCode = 404;
+    throw err;
+  }
+  if (orderRows[0].project_type === "fixed") {
+    const err = new Error("Fixed orders are assigned directly and do not use claim approval.");
+    err.statusCode = 409;
+    throw err;
+  }
   const { rows } = await runner.query(
     `SELECT oc.id, oc.order_id, oc.freelancer_user_id, oc.status, oc.reviewed_at, oc.reviewed_by_user_id, oc.created_at, oc.updated_at,
             u.first_name, u.father_name, u.family_name, u.email, u.account_id
@@ -2190,6 +2213,11 @@ async function approvePoolClaimAdmin({ actorUserId, orderId, claimId }) {
     }
     if (!order.is_published || !order.is_open_for_pool || order.assigned_freelancer_id || order.received_at) {
       const err = new Error("Order is not pending approval.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (order.project_type === "fixed") {
+      const err = new Error("Fixed orders are assigned directly and do not use claim approval.");
       err.statusCode = 409;
       throw err;
     }
@@ -2574,7 +2602,7 @@ async function assertClientOwnsOrder({ clientUserId, orderId }, clientMaybe) {
 async function listOrderClaimsForClient({ clientUserId, orderId }) {
   await assertClientOwnsOrder({ clientUserId, orderId });
   const { rows } = await pool.query(
-    `SELECT o.id, o.order_status, o.assigned_freelancer_id, o.is_open_for_pool, o.is_published
+    `SELECT o.id, o.project_type, o.order_status, o.assigned_freelancer_id, o.is_open_for_pool, o.is_published
      FROM orders o
      WHERE o.id = $1
      LIMIT 1`,
@@ -2582,6 +2610,11 @@ async function listOrderClaimsForClient({ clientUserId, orderId }) {
   );
   const o = rows[0];
   if (!o) return { claims: [], orderSummary: null };
+  if (o.project_type === "fixed") {
+    const err = new Error("Fixed orders are assigned directly and do not use claim approval.");
+    err.statusCode = 409;
+    throw err;
+  }
   if (!isClaimablePoolOrderStatus(o.order_status) || !o.is_published || !o.is_open_for_pool || o.assigned_freelancer_id) {
     return { claims: [], orderSummary: { hasOpenPool: false } };
   }
@@ -2730,6 +2763,11 @@ async function rejectPoolClaimClient({ clientUserId, orderId, claimId }) {
       err.statusCode = 409;
       throw err;
     }
+    if (order.project_type === "fixed") {
+      const err = new Error("Fixed orders are assigned directly and do not use claim approval.");
+      err.statusCode = 409;
+      throw err;
+    }
     const { rows: claimRows } = await client.query(
       `SELECT * FROM order_claims WHERE id = $1 AND order_id = $2 FOR UPDATE`,
       [Number(claimId), Number(orderId)],
@@ -2809,6 +2847,11 @@ async function approvePoolClaimClient({ clientUserId, orderId, claimId }) {
     }
     if (!order.is_published || !order.is_open_for_pool || order.assigned_freelancer_id || order.received_at) {
       const err = new Error("الطلب غير متاح لاعتماد مستقل حالياً.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (order.project_type === "fixed") {
+      const err = new Error("Fixed orders are assigned directly and do not use claim approval.");
       err.statusCode = 409;
       throw err;
     }

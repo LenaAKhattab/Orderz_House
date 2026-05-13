@@ -14,6 +14,7 @@ import {
   ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR,
   validateOrderFilesSize,
 } from "../../utils/orderUploadLimits";
+import { trackEvent } from "../../services/analytics";
 
 /** يحسّن عرض اسم الملف إن كان محفوظاً بترميز خاطئ سابقاً. */
 function displayFileName(f) {
@@ -68,6 +69,10 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
     try {
       if (isAdmin) await approveAdminInternalOrderDeliveryRequest(order.id);
       else await approveClientOrderDeliveryRequest(order.id);
+      trackEvent("order_completed", {
+        order_id: String(order.id),
+        audience: isAdmin ? "admin" : "client",
+      });
       onApprove?.();
       onClose();
     } catch (e) {

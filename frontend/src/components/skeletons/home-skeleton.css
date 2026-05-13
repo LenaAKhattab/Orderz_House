@@ -1,0 +1,48 @@
+/* Premium homepage skeleton — soft neutrals + lightweight shimmer */
+
+.home-sk-base {
+  background-color: #e6e7ec;
+}
+
+.home-sk-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.home-sk-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.72) 48%,
+    transparent 96%
+  );
+  animation: home-sk-shimmer-move 1.45s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes home-sk-shimmer-move {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-sk-shimmer::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+.home-sk-line {
+  border-radius: 0.5rem;
+}
+
+.home-sk-card {
+  border-radius: 0.875rem;
+}

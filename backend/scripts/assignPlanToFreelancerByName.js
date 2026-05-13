@@ -5,7 +5,7 @@
  * Usage (from backend/):
  *   node scripts/assignPlanToFreelancerByName.js
  *   node scripts/assignPlanToFreelancerByName.js "محمد احمد ابراهيم"
- *   node scripts/assignPlanToFreelancerByName.js "محمد احمد ابراهيم" freelancer_pro_visit
+ *   node scripts/assignPlanToFreelancerByName.js "محمد احمد ابراهيم" freelancer_starter
  *
  * Env: DATABASE_URL in backend/.env
  */

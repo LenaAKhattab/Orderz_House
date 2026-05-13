@@ -1,28 +1,32 @@
 import { Outlet, useLocation } from "react-router-dom";
+import { HomePageBlockingProvider, useHomePageBlocking } from "../../context/HomePageBlockingContext";
+import PartnersBandSkeleton from "../skeletons/PartnersBandSkeleton";
 import PartnersSection from "../sections/PartnersSection";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import "../skeletons/home-skeleton.css";
 
-const PublicLayout = () => {
+function PublicLayoutInner() {
   const { pathname } = useLocation();
+  const { homeBlocking } = useHomePageBlocking();
   const isAuthPage = ["/login", "/register", "/forgot-password"].includes(pathname);
   const isHome = pathname === "/";
 
   return (
-    <div
-      className={
-        isHome
-          ? "flex min-h-screen flex-col bg-white bg-[radial-gradient(120%_85%_at_50%_-25%,rgba(47,59,101,0.07),transparent_55%),radial-gradient(85%_55%_at_95%_32%,rgba(118,207,223,0.07),transparent_52%),radial-gradient(75%_45%_at_5%_58%,rgba(118,207,223,0.05),transparent_50%)]"
-          : isAuthPage
-            ? "flex min-h-screen flex-col bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f8_45%,#f5f7fb_100%)]"
-            : "flex min-h-screen flex-col"
-      }
-    >
+    <div className="flex min-h-screen flex-col bg-page-bg">
       <Navbar />
       <Outlet />
-      {isHome ? <PartnersSection /> : null}
+      {isHome ? (homeBlocking ? <PartnersBandSkeleton /> : <PartnersSection />) : null}
       {!isAuthPage ? <Footer homeBlend={isHome} /> : null}
     </div>
+  );
+}
+
+const PublicLayout = () => {
+  return (
+    <HomePageBlockingProvider>
+      <PublicLayoutInner />
+    </HomePageBlockingProvider>
   );
 };
 

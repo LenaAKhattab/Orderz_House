@@ -1,0 +1,78 @@
+/* Homepage public stats strip — below hero, matches soft card / hero aesthetic */
+
+.home-stats-strip {
+  padding: 0 0 clamp(1.75rem, 4vw, 2.75rem);
+  margin-top: clamp(-0.5rem, -1vw, 0rem);
+  background: transparent;
+}
+
+.home-stats-strip__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: clamp(0.75rem, 2.5vw, 1.25rem);
+  max-width: min(52rem, 100%);
+  margin-inline: auto;
+}
+
+.home-stats-strip__card {
+  flex: 1 1 min(160px, 100%);
+  max-width: min(340px, 100%);
+  padding: clamp(1rem, 2.5vw, 1.25rem) clamp(1.1rem, 3vw, 1.35rem);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(47, 59, 101, 0.12);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.07);
+  display: grid;
+  gap: 0.2rem;
+  text-align: center;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.home-stats-strip__card:hover {
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
+  transform: translateY(-2px);
+}
+
+.home-stats-strip__label {
+  font-size: clamp(0.8rem, 2vw, 0.88rem);
+  font-weight: 800;
+  color: rgba(30, 41, 59, 0.82);
+  margin: 0;
+}
+
+.home-stats-strip__value {
+  font-size: clamp(1.45rem, 4vw, 1.85rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: rgb(22, 101, 52);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+.home-stats-strip__sub {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: rgba(71, 85, 105, 0.88);
+  margin: 0;
+}
+
+.home-stats-strip__hint {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: rgba(234, 88, 12, 0.95);
+  margin: 0.15rem 0 0;
+}
+
+@media (max-width: 520px) {
+  .home-stats-strip__row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .home-stats-strip__card {
+    max-width: 100%;
+    width: 100%;
+  }
+}

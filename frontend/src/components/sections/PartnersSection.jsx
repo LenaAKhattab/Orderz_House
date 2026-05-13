@@ -22,7 +22,7 @@ const PartnersSection = () => {
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
-            fill="#ffffff"
+            fill="#F3F4F4"
             d="M0 0h1440v20Q1080 56 720 36T0 28V0z"
           />
         </svg>
@@ -33,9 +33,20 @@ const PartnersSection = () => {
 
       <div className="container partners-section__inner">
         <h2 className="partners-section__title">شركاء النجاح</h2>
-        <ul className="partners-section__logos">
+        <ul
+          id="home-partners-anchor"
+          className="partners-section__logos"
+          aria-label="شعارات الشركاء"
+        >
           {PARTNER_LOGOS.map((item) => (
-            <li key={item.id} className="partners-section__logo-item">
+            <li
+              key={item.id}
+              className={`partners-section__logo-item ${
+                item.id === "fazaat" || item.id === "bildazo" || item.id === "studyzhouse" || item.id === "battech"
+                  ? "partners-section__logo-item--desktop-boost"
+                  : ""
+              }`.trim()}
+            >
               <div className="partners-section__logo-wrap">
                 <img
                   className="partners-section__logo-img"
@@ -58,7 +69,7 @@ const PartnersSection = () => {
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
-            fill="#ffffff"
+            fill="#F3F4F4"
             d="M0 8Q360 0 720 20t720-12v40H0z"
           />
         </svg>

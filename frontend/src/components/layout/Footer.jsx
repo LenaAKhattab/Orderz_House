@@ -4,7 +4,7 @@ const Footer = ({ homeBlend = false }) => {
       className={
         homeBlend
           ? "mt-auto border-0 bg-transparent pb-[env(safe-area-inset-bottom,0)] shadow-none"
-          : "mt-auto border-t border-[rgba(47,59,101,0.2)] bg-white pb-[env(safe-area-inset-bottom,0)]"
+          : "mt-auto border-t border-[rgba(47,59,101,0.2)] bg-page-bg pb-[env(safe-area-inset-bottom,0)]"
       }
     >
       <div className="mx-auto grid w-full max-w-[min(1160px,calc(100%-48px))] grid-cols-1 items-start gap-x-5 gap-y-6 px-0 py-[34px] pb-[42px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[1fr_0.8fr_0.85fr_1fr_0.9fr_1.4fr]">
@@ -94,8 +94,8 @@ const Footer = ({ homeBlend = false }) => {
             </li>
             <li>
               <span className="font-semibold text-[#76cfdf]">البريد الإلكتروني:</span>{" "}
-              <a href="mailto:faz3at@icloud.com" dir="ltr" className="inline-block text-[#202020] [unicode-bidi:plaintext] [direction:ltr]">
-                faz3at@icloud.com
+              <a href="mailto:info@orderzhouse.com" dir="ltr" className="inline-block text-[#202020] [unicode-bidi:plaintext] [direction:ltr]">
+                info@orderzhouse.com
               </a>
             </li>
             <li>
@@ -109,14 +109,14 @@ const Footer = ({ homeBlend = false }) => {
               </a>
             </li>
             <li>
-              <span>الموقع:</span> عمّان، الأردن
+              <span>الموقع:</span> الامارات العربية المتحدة، دبي
             </li>
           </ul>
           <div className="mt-[18px] border-t border-dashed border-[rgba(47,59,101,0.2)] pt-3.5">
             <h3 className="mb-3 text-[0.98rem] font-bold text-[#2f3b65]">ساعات العمل</h3>
             <ul className="m-0 grid list-none gap-2 p-0 text-[0.9rem] leading-[1.55] text-[#202020]">
               <li>من السبت إلى الخميس</li>
-              <li>9:00 صباحاً - 6:00 مساءً</li>
+              <li>نعمل 24 ساعة من أجلكم</li>
             </ul>
           </div>
         </section>

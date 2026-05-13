@@ -42,6 +42,7 @@ function breadcrumbLabel(pathname) {
 const NAV_MAIN = [
   { to: "/dashboard/super-admin", label: "نظرة عامة", icon: "⌂", end: true },
   { to: "/dashboard/super-admin/plans", label: "الباقات", icon: "◆" },
+  { to: "/dashboard/super-admin/ads", label: "الإعلانات", icon: "◈" },
   { to: "/dashboard/super-admin/courses", label: "الدورات", icon: "▶" },
   { to: "/dashboard/super-admin/subscriptions", label: "الاشتراكات", icon: "◎" },
   { to: "/dashboard/super-admin/subscriptions/activation", label: "تفعيل الاشتراكات", icon: "✓" },
@@ -73,7 +74,6 @@ export default function SuperAdminLayout() {
   const displayName = useMemo(() => fullNameAr(user) || user?.email || "مدير", [user]);
   const initial = (user?.firstName || user?.email || "S").trim().slice(0, 1).toUpperCase();
   const crumb = useMemo(() => breadcrumbLabel(pathname), [pathname]);
-  const trainingSectionActive = pathname.startsWith("/dashboard/super-admin/training-orders");
   const role = user?.primaryRole || user?.role;
   const notificationsPath = getNotificationsPath(role);
   const accountSettingsPath = getAccountSettingsPath(role);
@@ -135,41 +135,9 @@ export default function SuperAdminLayout() {
 
       <div className="oh-sa-workspace">
         <header className="oh-sa-topbar">
-          <div className="oh-sa-tabs" role="tablist" aria-label="أقسام سريعة">
-            <NavLink to="/dashboard/super-admin" end className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
-              نظرة عامة
-            </NavLink>
-            <NavLink to="/dashboard/super-admin/plans" className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
-              الباقات
-            </NavLink>
-            <NavLink to="/dashboard/super-admin/subscriptions" className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
-              النشاط
-            </NavLink>
-            <NavLink to="/dashboard/super-admin/courses" className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
-              الدورات
-            </NavLink>
-            <NavLink to="/dashboard/super-admin/financial-claims" className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
-              المطالبات
-            </NavLink>
-            <NavLink to="/dashboard/super-admin/orders" className={({ isActive }) => `oh-sa-tab${isActive ? " oh-sa-tab--active" : ""}`.trim()}>
-              الطلبات
-            </NavLink>
-            <NavLink
-              to="/dashboard/super-admin/training-orders/settings"
-              className={() =>
-                `oh-sa-tab${trainingSectionActive ? " oh-sa-tab--active" : ""}`.trim()
-              }
-            >
-              تجريبي
-            </NavLink>
+          <div className="oh-sa-breadcrumb">
+            <span>{crumb}</span>
           </div>
-
-          <label className="oh-sa-search">
-            <span aria-hidden style={{ opacity: 0.55 }}>
-              🔍
-            </span>
-            <input type="search" placeholder="ابحث في لوحة التحكم…" readOnly aria-readonly="true" />
-          </label>
 
           <div className="oh-sa-topbar__actions">
             <NotificationsBell notificationsPagePath={notificationsPath} variant="superadmin" />
@@ -207,10 +175,6 @@ export default function SuperAdminLayout() {
                 </div>
               ) : null}
             </div>
-          </div>
-
-          <div className="oh-sa-breadcrumb">
-            <span>{crumb}</span>
           </div>
         </header>
 

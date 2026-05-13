@@ -45,14 +45,27 @@ const PlanCard = ({ plan, featured = false, onCta, hasBlockingSubscription = fal
   const isFreelancer = role === "freelancer" || roles.includes("freelancer");
   const isLoggedNonFreelancer = Boolean(user) && !isFreelancer;
   const isBlockedBySubscription = Boolean(user) && isFreelancer && hasBlockingSubscription;
+  /** API adds this; missing = older backend — treat as eligible to avoid locking paid plans. */
+  const canSelfCheckout =
+    plan?.selfCheckoutEligible == null ? true : Boolean(plan.selfCheckoutEligible);
 
   const price = formatPriceJod(plan?.priceJod);
   const features = deriveFeatures(plan);
   const planTitle = plan.title || plan.name || "—";
 
-  const ctaLabel = isLoggedNonFreelancer ? "للمستقلين فقط" : isBlockedBySubscription ? "مشترك بالفعل" : "ابدأ الآن";
-  const usePrimaryCta = featured && (isFreelancer || isGuest) && !isBlockedBySubscription;
-  const isLocked = isLoggedNonFreelancer || isBlockedBySubscription;
+  const ctaLabel = isLoggedNonFreelancer
+    ? "للمستقلين فقط"
+    : isBlockedBySubscription
+      ? "مشترك بالفعل"
+      : isFreelancer && !canSelfCheckout
+        ? "يتم التفعيل عبر الشركة"
+        : "ابدأ الآن";
+  const usePrimaryCta =
+    featured &&
+    (isGuest || (isFreelancer && canSelfCheckout)) &&
+    !isBlockedBySubscription;
+  const isLocked =
+    isLoggedNonFreelancer || isBlockedBySubscription || (isFreelancer && !canSelfCheckout);
 
   return (
     <article className={`pricing-card ${featured ? "pricing-card--featured" : ""}`.trim()}>
@@ -97,6 +110,7 @@ const PlanCard = ({ plan, featured = false, onCta, hasBlockingSubscription = fal
             }
             if (!isFreelancer) return;
             if (isBlockedBySubscription) return;
+            if (!canSelfCheckout) return;
             onCta?.(plan);
           }}
         >

@@ -8,6 +8,10 @@
   --accent-light: #76cfdf;
   --accent-strong: #2f3b65;
   --background: #ffffff;
+  /** Full-page canvas (body, layouts, dashboard main behind cards) */
+  --page-bg: #f3f4f4;
+  /** Public home: sticky header + gap for first-viewport hero landing (tune with Navbar shell height) */
+  --home-nav-stack: 84px;
   --text-main: #202020;
   --text-muted: #2f3b65;
   --line: rgba(47, 59, 101, 0.2);
@@ -29,17 +33,13 @@
   --dash-orange-mid: #e8873a;
   --dash-orange-deep: #c56a1c;
   /* خلفية مسار لوحة التحكم — نفسها على عرض الصفحة لتجنب خط عمودي على يمين/يسار العمود */
-  --dash-shell-bg: linear-gradient(180deg, #f5f7fb 0%, #eef2f8 52%, #f5f7fb 100%);
-  /* يبدأ من الأبيض تحت الهيدر ثم يذوب إلى لون الصفحة — يخفّف الخط الأفقي بين الهيدر والمحتوى */
-  --dash-shell-bg-top-fade: linear-gradient(
-    180deg,
-    #ffffff 0px,
-    #fafbfd 56px,
-    #f1f5fb 140px,
-    #e8edf5 260px,
-    #eef2f8 55%,
-    #f3f6fa 100%
-  );
+  --dash-shell-bg: var(--page-bg);
+  --dash-shell-bg-top-fade: var(--page-bg);
+  /* Migrated dashboard primitives — soft SaaS surfaces (Tailwind-first; optional var() hooks) */
+  --dash-surface-radius: 18px;
+  --dash-card-border: rgba(148, 163, 184, 0.32);
+  --dash-card-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 10px 28px -10px rgba(15, 23, 42, 0.08);
+  --dash-icon-chip-bg: rgba(47, 59, 101, 0.08);
 }
 
 @theme {
@@ -47,6 +47,7 @@
   --color-primary: #2f3b65;
   --color-secondary: #76cfdf;
   --color-background: #ffffff;
+  --color-page-bg: #f3f4f4;
   --color-text-main: #202020;
   --color-text-muted: #2f3b65;
   --radius-lg: 12px;
@@ -74,7 +75,7 @@
 
   body {
     margin: 0;
-    background-color: #ffffff;
+    background-color: var(--page-bg);
     color: var(--text-main);
     font-family: var(--font-sans);
     line-height: 1.6;
@@ -83,6 +84,8 @@
   }
 
   #root {
+    min-height: 100%;
+    background-color: var(--page-bg);
     font-family: var(--font-sans);
   }
 

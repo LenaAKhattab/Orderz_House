@@ -49,20 +49,16 @@ function orderRowEligibleForFreelancerPoolListing(row) {
 }
 
 /**
- * Fixed-price pool phase where owner reviews claims (not bidding).
+ * Deprecated in direct-take model: fixed orders no longer use claim review.
  * @param {object} row orders table row (snake_case)
  */
 function orderRowAllowsFixedClaimReview(row) {
-  if (!row || row.project_type === "bidding") return false;
-  return orderRowEligibleForFreelancerPoolListing(row);
+  return false;
 }
 
-/** Fixed-price orders where a claim can be approved (published or open_for_freelancers, pool open, paid if client fixed). */
+/** Deprecated in direct-take model: fixed orders do not support claim approval. */
 function orderRowAllowsClaimApproval(row) {
-  if (!row || row.project_type === "bidding") return false;
-  const st = row.order_status;
-  if (st !== ORDER_STATUSES.PUBLISHED && st !== ORDER_STATUSES.OPEN_FOR_FREELANCERS) return false;
-  return orderRowAllowsFixedClaimReview(row);
+  return false;
 }
 
 /** API (camelCase) order object from getOrderById. */

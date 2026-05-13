@@ -16,7 +16,7 @@ const MainLayout = () => {
   }
 
   return (
-    <div className="page-shell">
+    <div className="page-shell bg-page-bg">
       <Navbar />
       <main className="app-shell">
         <Outlet />

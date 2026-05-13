@@ -13,6 +13,7 @@ const adminSubscriptionsRoutes = require("./routes/adminSubscriptionsRoutes");
 const adminOrdersRoutes = require("./routes/adminOrdersRoutes");
 const adminCoursesRoutes = require("./routes/adminCoursesRoutes");
 const adminFakeOrdersRoutes = require("./routes/adminFakeOrdersRoutes");
+const adminAdsRoutes = require("./routes/adminAdsRoutes");
 const freelancerSubscriptionsRoutes = require("./routes/freelancerSubscriptionsRoutes");
 const freelancerCoursesRoutes = require("./routes/freelancerCoursesRoutes");
 const ordersRoutes = require("./routes/ordersRoutes");
@@ -20,6 +21,8 @@ const notificationsRoutes = require("./routes/notificationsRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const portalFinancialClaimsRoutes = require("./routes/portalFinancialClaimsRoutes");
 const superAdminFinancialClaimsRoutes = require("./routes/superAdminFinancialClaimsRoutes");
+const superAdminAnalyticsRoutes = require("./routes/superAdminAnalyticsRoutes");
+const publicRoutes = require("./routes/publicRoutes");
 const internalAutomationRoutes = require("./routes/internalAutomationRoutes");
 const { notFoundMiddleware, errorMiddleware } = require("./middleware/errorMiddleware");
 const { isProduction } = require("./config/env");
@@ -77,6 +80,7 @@ app.use("/images", express.static(path.join(__dirname, "..", "images")));
 
 // Versioned API mounting keeps future domains modular (auth/orders/users/etc.).
 app.use("/api", healthRoutes);
+app.use("/api", publicRoutes);
 // Optional: automation tick for external cron (see FAKE_ORDERS_AUTOMATION_CRON_SECRET).
 app.use("/api/internal", internalAutomationRoutes);
 app.use("/api/auth", authRoutes);
@@ -88,10 +92,12 @@ app.use("/api/admin", adminSubscriptionsRoutes);
 app.use("/api/admin", adminOrdersRoutes);
 app.use("/api/admin", adminCoursesRoutes);
 app.use("/api/admin", adminFakeOrdersRoutes);
+app.use("/api/admin", adminAdsRoutes);
 app.use("/api/freelancer", freelancerSubscriptionsRoutes);
 app.use("/api/freelancer", freelancerCoursesRoutes);
 app.use("/api/portal", portalFinancialClaimsRoutes);
 app.use("/api/super-admin", superAdminFinancialClaimsRoutes);
+app.use("/api/superadmin", superAdminAnalyticsRoutes);
 app.use("/api", ordersRoutes);
 app.use("/api", notificationsRoutes);
 

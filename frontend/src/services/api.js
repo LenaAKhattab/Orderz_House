@@ -691,6 +691,88 @@ export const createSuperAdminFreelancerPaymentRequest = async (payload) => {
   return data;
 };
 
+export const getSuperadminVisitorsAnalyticsRequest = async (params = {}) => {
+  const { data } = await api.get("/superadmin/analytics/visitors", {
+    params: {
+      range: params.range || "7d",
+      topLimit: params.topLimit || 10,
+    },
+  });
+  return data;
+};
+
+export const getPublicHomeStatsRequest = async () => {
+  const { data } = await api.get("/public/home-stats");
+  return data;
+};
+
+/** Public homepage / placement ads (active + scheduled window only). */
+export const getPublicAdsRequest = async (params = {}) => {
+  const { data } = await api.get("/public/ads", { params });
+  return data;
+};
+
+/** إعلان منتهٍ أو غير ظاهر يعيد 404 — لا نعتبره خطأ Axios. */
+export const postPublicAdImpressionRequest = async (adId, params = {}) => {
+  await api.post(`/public/ads/${adId}/impression`, {}, {
+    params,
+    validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
+  });
+};
+
+export const postPublicAdClickRequest = async (adId, params = {}) => {
+  await api.post(`/public/ads/${adId}/click`, {}, {
+    params,
+    validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
+  });
+};
+
+// Ads (admin / super_admin)
+export const adminListAdsRequest = async () => {
+  const { data } = await api.get("/admin/ads");
+  return data;
+};
+
+export const adminGetAdRequest = async (adId) => {
+  const { data } = await api.get(`/admin/ads/${adId}`);
+  return data;
+};
+
+export const adminCreateAdRequest = async (payload) => {
+  const { data } = await api.post("/admin/ads", payload);
+  return data;
+};
+
+export const adminUpdateAdRequest = async (adId, payload) => {
+  const { data } = await api.patch(`/admin/ads/${adId}`, payload);
+  return data;
+};
+
+export const adminDeleteAdRequest = async (adId) => {
+  const { data } = await api.delete(`/admin/ads/${adId}`);
+  return data;
+};
+
+export const adminDuplicateAdRequest = async (adId) => {
+  const { data } = await api.post(`/admin/ads/${adId}/duplicate`);
+  return data;
+};
+
+export const adminReorderAdsRequest = async (items) => {
+  const { data } = await api.patch("/admin/ads/reorder", { items });
+  return data;
+};
+
+export const getSuperadminHeroHomeStatsSettingRequest = async () => {
+  const { data } = await api.get("/superadmin/platform/home-hero-stats");
+  return data;
+};
+
+export const patchSuperadminHeroHomeStatsSettingRequest = async (payload) => {
+  const { data } = await api.patch("/superadmin/platform/home-hero-stats", payload);
+  return data;
+};
+
 // Courses (admin/super_admin)
 export const adminListCoursesRequest = async (params = {}) => {
   const { data } = await api.get("/admin/courses", { params });
