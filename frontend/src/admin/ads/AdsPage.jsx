@@ -1,16 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import AdForm from "./AdForm";
+import { useCallback, useEffect, useMemo, useRef, useState, useDeferredValue } from "react";
+import AdBuilderForm from "./AdBuilderForm";
 import { buildPayloadFromForm, emptyAdForm, mapApiAdToForm } from "./adFormUtils";
-import { getLayoutOption, PLACEMENT_OPTIONS } from "./adFormConstants";
+import { PLACEMENT_OPTIONS } from "./adFormConstants";
 import { hasBlockingErrors, validateAdFormFrontend } from "./adFormValidation";
-import { getAdAdminStatus } from "./adAdminStatus";
 import AdPreview from "./AdPreview";
-import AdRescheduleModal from "./AdRescheduleModal";
+import AdsManagementTable from "./AdsManagementTable";
+import AdsReorderSection from "./AdsReorderSection";
 import "./adminAds.css";
 import {
   adminCreateAdRequest,
   adminDeleteAdRequest,
-  adminDuplicateAdRequest,
   adminListAdsRequest,
   adminReorderAdsRequest,
   adminUpdateAdRequest,
@@ -24,112 +23,45 @@ import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
-import StatusBadge from "../../components/dashboard/StatusBadge";
 
-const PLACEMENT_LABEL = Object.fromEntries(PLACEMENT_OPTIONS.map((p) => [p.value, p.label]));
-const LAYOUT_LABEL = {
-  image_top: "صورة بالأعلى",
-  image_background: "صورة كخلفية",
-  text_only: "نص فقط",
-  split: "تقسيم صورة ونص",
-  minimal_banner: "بانر بسيط",
-  carousel: "صور متعددة",
-};
-
-const THEME_LABEL_AR = {
-  purple: "بنفسجي",
-  green: "أخضر",
-  orange: "برتقالي",
-  blue: "أزرق",
-};
-
-/** عمود «الظهور»: تشغيل/إيقاف بدون تواريخ، أو وقت البداية */
-function fmtAppearCell(ad, nowMs = Date.now()) {
-  const hasStart = ad.startDate != null && String(ad.startDate).trim() !== "";
-  const hasEnd = ad.endDate != null && String(ad.endDate).trim() !== "";
-  if (!hasStart && !hasEnd) {
-    return (
-      <div className="oh-admin-ads__appear-cell">
-        <span className="oh-admin-ads__appear-primary">تشغيل / إيقاف</span>
-        <span className="oh-admin-ads__appear-sub">فوري</span>
-      </div>
-    );
-  }
-  if (!hasStart && hasEnd) {
-    try {
-      const ed = new Date(ad.endDate);
-      if (!Number.isNaN(ed.getTime())) {
-        return (
-          <div className="oh-admin-ads__appear-cell">
-            <span className="oh-admin-ads__appear-primary">بدون بداية محددة</span>
-            <span className="oh-admin-ads__appear-sub">ينتهي {ed.toLocaleString("ar")}</span>
-          </div>
-        );
-      }
-    } catch {
-      /* ignore */
-    }
-  }
-  if (hasStart) {
-    try {
-      const d = new Date(ad.startDate);
-      if (!Number.isNaN(d.getTime())) {
-        const sub = d.getTime() > nowMs ? "بداية مجدولة" : "بدأ العرض";
-        return (
-          <div className="oh-admin-ads__appear-cell">
-            <span className="oh-admin-ads__appear-primary">{d.toLocaleString("ar")}</span>
-            <span className="oh-admin-ads__appear-sub">{sub}</span>
-          </div>
-        );
-      }
-    } catch {
-      /* ignore */
-    }
-  }
-  return <span className="oh-admin-ads__appear-sub">—</span>;
+function promptAdminNote(actionLabel) {
+  const note = window.prompt(`${actionLabel}\nسبب الإجراء (3 أحرف على الأقل):`);
+  if (note == null) return null;
+  const t = note.trim();
+  if (t.length < 3) return "";
+  return t;
 }
 
-function fmtAdminEnd(iso) {
-  if (!iso) return "بدون نهاية";
-  try {
-    const d = new Date(iso);
-    return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("ar");
-  } catch {
-    return "—";
-  }
-}
-
-/** لمقارنة start/end بين النموذج والخادم قبل إرسال PATCH جزئي */
-function normDateForCompare(iso) {
-  if (iso == null || iso === "") return null;
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+function fmtRelative(ts) {
+  if (!ts) return "";
+  const sec = Math.round((Date.now() - ts) / 1000);
+  if (sec < 8) return "الآن";
+  if (sec < 60) return `منذ ${sec} ث`;
+  const min = Math.round(sec / 60);
+  return `منذ ${min} د`;
 }
 
 export default function AdsPage() {
   const toast = useToast();
   const { user } = useAuth();
+  const builderRef = useRef(null);
   const [ads, setAds] = useState([]);
   const [loadError, setLoadError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyAdForm());
   const [saving, setSaving] = useState(false);
   const [attemptedSave, setAttemptedSave] = useState(false);
-  const [rescheduleAd, setRescheduleAd] = useState(null);
   const [reorderBusy, setReorderBusy] = useState(false);
-
-  /** Recalculate admin status badges every 30s without refetching the list. */
+  const [reorderPlacement, setReorderPlacement] = useState("home_right_panel");
   const [nowTick, setNowTick] = useState(() => Date.now());
+  const [activeStep, setActiveStep] = useState(1);
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
+  const [lastEditedAt, setLastEditedAt] = useState(null);
+  const [formBaseline, setFormBaseline] = useState(() => JSON.stringify(emptyAdForm()));
+  const previewDraft = useDeferredValue(form);
 
-  const validationResult = useMemo(() => validateAdFormFrontend(form), [form]);
-  const formWarningsLive = validationResult.warnings;
-
-  const handleFormChange = useCallback((next) => {
-    setForm(next);
-    setAttemptedSave(false);
-  }, []);
+  const validationResult = useMemo(() => validateAdFormFrontend(form, { requireReason: true }), [form]);
 
   const load = useCallback(async (opts = {}) => {
     const silent = Boolean(opts.silent);
@@ -141,9 +73,7 @@ export default function AdsPage() {
       const res = await adminListAdsRequest();
       setAds(res?.data?.ads || []);
     } catch (err) {
-      if (!silent) {
-        setLoadError(err?.response?.data?.message || "حاول مرة أخرى.");
-      }
+      if (!silent) setLoadError(err?.response?.data?.message || "حاول مرة أخرى.");
     } finally {
       if (!silent) setLoading(false);
     }
@@ -159,395 +89,326 @@ export default function AdsPage() {
   }, []);
 
   useEffect(() => {
-    const t = window.setInterval(() => void load({ silent: true }), 60_000);
-    return () => window.clearInterval(t);
-  }, [load]);
+    if (form.placement) setReorderPlacement(form.placement);
+  }, [form.placement]);
 
-  const openCreate = () => {
+  const patchForm = useCallback((next) => {
+    setForm(next);
+    setLastEditedAt(Date.now());
+  }, []);
+
+  const isDirty = useMemo(() => JSON.stringify(form) !== formBaseline, [form, formBaseline]);
+
+  const resetBuilder = useCallback(() => {
+    const empty = emptyAdForm();
     setEditingId(null);
-    setForm(emptyAdForm());
+    setForm(empty);
+    setFormBaseline(JSON.stringify(empty));
     setAttemptedSave(false);
-    setModalOpen(true);
-  };
+    setActiveStep(1);
+    setLastEditedAt(null);
+  }, []);
 
-  const openEdit = (ad) => {
+  const startNewAd = useCallback(() => {
+    const empty = emptyAdForm();
+    setEditingId(null);
+    setForm(empty);
+    setFormBaseline(JSON.stringify(empty));
+    setAttemptedSave(false);
+    setActiveStep(1);
+    setLastEditedAt(null);
+    requestAnimationFrame(() => {
+      builderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
+
+  const startEdit = useCallback((ad) => {
+    const mapped = mapApiAdToForm(ad);
     setEditingId(ad.id);
-    setForm(mapApiAdToForm(ad));
+    setForm(mapped);
+    setFormBaseline(JSON.stringify(mapped));
     setAttemptedSave(false);
-    setModalOpen(true);
-  };
+    setActiveStep(1);
+    setReorderPlacement(ad.placement || "home_right_panel");
+    requestAnimationFrame(() => {
+      builderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
 
-  const closeModal = () => {
-    if (saving) return;
-    setModalOpen(false);
-  };
-
-  const onSave = async () => {
-    setAttemptedSave(true);
-    const v = validateAdFormFrontend(form);
-    if (hasBlockingErrors(v)) {
-      toast.push({
-        type: "warning",
-        title: "تأكد من الحقول",
-        message: "صحّح الأخطاء المشار إليها أدناه ثم أعد المحاولة.",
-      });
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const payload = buildPayloadFromForm(form);
-      if (editingId) {
-        await adminUpdateAdRequest(editingId, payload);
-        toast.push({ type: "success", title: "تم الحفظ", message: "تم تحديث الإعلان." });
-      } else {
-        await adminCreateAdRequest(payload);
-        toast.push({ type: "success", title: "تم الإنشاء", message: "تمت إضافة الإعلان." });
+  const saveWithMode = useCallback(
+    async (publish) => {
+      setAttemptedSave(true);
+      const v = validateAdFormFrontend(form, { requireReason: true });
+      if (hasBlockingErrors(v)) {
+        toast.push({ type: "warning", title: "تأكد من الحقول", message: "صحّح الأخطاء المشار إليها ثم أعد المحاولة." });
+        return;
       }
-      setModalOpen(false);
-      setAttemptedSave(false);
-      await load();
-    } catch (err) {
-      toast.push({
-        type: "error",
-        title: "فشل الحفظ",
-        message: err?.response?.data?.message || "تحقق من الحقول.",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
 
-  const onDelete = async (id) => {
-    if (!window.confirm("حذف هذا الإعلان نهائيًا؟")) return;
-    try {
-      await adminDeleteAdRequest(id);
-      toast.push({ type: "success", title: "تم الحذف", message: "" });
-      await load();
-    } catch (err) {
-      toast.push({
-        type: "error",
-        title: "تعذر الحذف",
-        message: err?.response?.data?.message || "",
-      });
-    }
-  };
+      setSaving(true);
+      try {
+        const body = {
+          ...buildPayloadFromForm(form, { publish }),
+          adminNote: String(form.adminNote).trim(),
+        };
+        if (editingId) {
+          await adminUpdateAdRequest(editingId, body);
+          toast.push({ type: "success", title: "تم الحفظ", message: publish ? "تم نشر الإعلان." : "تم حفظ المسودة." });
+        } else {
+          await adminCreateAdRequest(body);
+          toast.push({ type: "success", title: "تم الإنشاء", message: publish ? "تم نشر الإعلان." : "تم حفظ المسودة." });
+        }
+        resetBuilder();
+        await load({ silent: true });
+      } catch (err) {
+        toast.push({ type: "error", title: "فشل الحفظ", message: err?.response?.data?.message || "تحقق من الحقول." });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [form, editingId, toast, resetBuilder, load],
+  );
 
-  const onDuplicate = async (id) => {
-    try {
-      await adminDuplicateAdRequest(id);
-      toast.push({ type: "success", title: "تم النسخ", message: "نسخة جديدة غير مفعّلة." });
-      await load();
-    } catch (err) {
-      toast.push({
-        type: "error",
-        title: "فشل النسخ",
-        message: err?.response?.data?.message || "",
-      });
-    }
-  };
+  const handleToggleActive = useCallback(
+    async (ad, nextActive) => {
+      const note = promptAdminNote(nextActive ? "تفعيل الإعلان" : "تعطيل الإعلان");
+      if (note === null) return;
+      if (note === "") {
+        toast.push({ type: "warning", title: "سبب مطلوب", message: "أدخل سببًا من 3 أحرف على الأقل." });
+        return;
+      }
+      try {
+        await adminUpdateAdRequest(ad.id, { isActive: nextActive, adminNote: note });
+        toast.push({ type: "success", title: "تم التحديث", message: nextActive ? "تم تفعيل الإعلان." : "تم تعطيل الإعلان." });
+        await load({ silent: true });
+        if (String(editingId) === String(ad.id)) {
+          setForm((f) => ({ ...f, isActive: nextActive }));
+        }
+      } catch (err) {
+        toast.push({ type: "error", title: "خطأ", message: err?.response?.data?.message || "" });
+      }
+    },
+    [toast, load, editingId],
+  );
 
-  const moveRow = useCallback(
-    async (index, dir) => {
-      const row = [...ads].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-      const j = index + dir;
-      if (j < 0 || j >= row.length) return;
+  const handleDelete = useCallback(
+    async (id) => {
+      if (!window.confirm("حذف هذا الإعلان نهائيًا؟")) return;
+      const note = promptAdminNote("حذف الإعلان");
+      if (note === null) return;
+      if (note === "") {
+        toast.push({ type: "warning", title: "سبب مطلوب", message: "أدخل سببًا من 3 أحرف على الأقل." });
+        return;
+      }
+      try {
+        await adminDeleteAdRequest(id, { adminNote: note });
+        toast.push({ type: "success", title: "تم الحذف", message: "" });
+        if (String(editingId) === String(id)) resetBuilder();
+        await load({ silent: true });
+      } catch (err) {
+        toast.push({ type: "error", title: "تعذر الحذف", message: err?.response?.data?.message || "" });
+      }
+    },
+    [toast, load, editingId, resetBuilder],
+  );
+
+  const placementAds = useMemo(
+    () =>
+      [...ads]
+        .filter((a) => a.placement === reorderPlacement)
+        .sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)),
+    [ads, reorderPlacement],
+  );
+
+  const tableAds = useMemo(() => [...ads].sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)), [ads]);
+
+  const editingAd = useMemo(() => ads.find((a) => String(a.id) === String(editingId)) || null, [ads, editingId]);
+
+  const applyReorder = useCallback(
+    async (fromIndex, toIndex) => {
+      if (fromIndex === toIndex) return;
+      const note = promptAdminNote("إعادة ترتيب الإعلانات");
+      if (note === null) return;
+      if (note === "") {
+        toast.push({ type: "warning", title: "سبب مطلوب", message: "أدخل سببًا من 3 أحرف على الأقل." });
+        return;
+      }
+      const next = [...placementAds];
+      const [item] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, item);
+      const items = next.map((a, i) => ({ id: Number(a.id), sortOrder: i }));
       const snapshot = ads.map((a) => ({ ...a }));
-      const nextRow = [...row];
-      [nextRow[index], nextRow[j]] = [nextRow[j], nextRow[index]];
-      const nextList = nextRow.map((a, i) => ({ ...a, sortOrder: i }));
-      setAds(nextList);
+      setAds((prev) => {
+        const map = new Map(items.map((it) => [String(it.id), it.sortOrder]));
+        return prev.map((a) =>
+          a.placement === reorderPlacement && map.has(String(a.id)) ? { ...a, sortOrder: map.get(String(a.id)) } : a,
+        );
+      });
       setReorderBusy(true);
       try {
-        await adminReorderAdsRequest(nextList.map((a, i) => ({ id: Number(a.id), sortOrder: i })));
+        await adminReorderAdsRequest({ placement: reorderPlacement, items, adminNote: note });
         toast.push({ type: "success", title: "تم تحديث الترتيب", message: "" });
       } catch (err) {
         setAds(snapshot);
-        toast.push({
-          type: "error",
-          title: "تعذر تحديث الترتيب",
-          message: err?.response?.data?.message || "حاول مرة أخرى.",
-        });
+        toast.push({ type: "error", title: "تعذر الترتيب", message: err?.response?.data?.message || "" });
       } finally {
         setReorderBusy(false);
       }
     },
-    [ads, toast],
+    [placementAds, ads, reorderPlacement, toast],
   );
-
-  const handleRescheduleSubmit = useCallback(
-    async (payload) => {
-      const orig = rescheduleAd;
-      if (!orig) return;
-      const patch = {};
-      if (Boolean(payload.isActive) !== Boolean(orig.isActive)) {
-        patch.isActive = payload.isActive;
-      }
-      const nStart = normDateForCompare(payload.startDate);
-      const oStart = normDateForCompare(orig.startDate);
-      if (nStart !== oStart) {
-        patch.startDate = payload.startDate;
-      }
-      const nEnd = normDateForCompare(payload.endDate);
-      const oEnd = normDateForCompare(orig.endDate);
-      if (nEnd !== oEnd) {
-        patch.endDate = payload.endDate;
-      }
-      if (Object.keys(patch).length === 0) {
-        return;
-      }
-      try {
-        await adminUpdateAdRequest(orig.id, patch);
-        toast.push({ type: "success", title: "تم الحفظ", message: "تم تحديث الجدولة." });
-        await load({ silent: true });
-      } catch (err) {
-        toast.push({
-          type: "error",
-          title: "خطأ",
-          message: err?.response?.data?.message || "تعذر حفظ التغييرات، حاول مرة أخرى.",
-        });
-        throw err;
-      }
-    },
-    [rescheduleAd, toast, load],
-  );
-
-  const sorted = useMemo(() => [...ads].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)), [ads]);
 
   const fieldErrorsForForm = attemptedSave ? validationResult.errors : {};
   const imageUrlErrorsForForm = attemptedSave ? validationResult.imageUrlErrors : {};
 
-  const loadErrorActions = (
+  const orderStepSlot = (
     <>
-      <button type="button" className="btn btn-primary" disabled={loading} onClick={() => load()}>
-        إعادة المحاولة
-      </button>
-      <button type="button" className="btn btn-secondary" onClick={() => setLoadError(null)}>
-        إخفاء
-      </button>
+      <div className="oh-admin-ads__reorder-toolbar oh-admin-ads__reorder-toolbar--studio">
+        <label htmlFor="reorder-placement" className="oh-admin-ads__reorder-label">
+          مكان العرض
+        </label>
+        <select
+          id="reorder-placement"
+          value={reorderPlacement}
+          onChange={(e) => setReorderPlacement(e.target.value)}
+          className="oh-admin-ads__reorder-select"
+        >
+          {PLACEMENT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <span className="oh-admin-ads__field-hint">اسحب البطاقات لإعادة الترتيب</span>
+      </div>
+      <AdsReorderSection ads={placementAds} onReorder={applyReorder} busy={reorderBusy} nowTick={nowTick} />
     </>
   );
 
   return (
-    <>
-      <DashboardShell>
-        <DashboardPageHeader
-          eyebrow="لوحة التحكم"
-          title="إدارة الإعلانات"
-          description="إنشاء إعلانات بسيطة للزوار — عنوان، وصف، صورة، وزر."
-          breadcrumbs={[
-            { label: "الرئيسية", href: breadcrumbHomeFromUser(user) },
-            { label: "الإعلانات" },
-          ]}
+    <DashboardShell className="oh-admin-ads-page">
+      <DashboardPageHeader
+        eyebrow="لوحة التحكم"
+        title="إدارة الإعلانات"
+        description="بناء سريع، معاينة فورية، ونشر بخطوات واضحة."
+        breadcrumbs={[
+          { label: "الرئيسية", href: breadcrumbHomeFromUser(user) },
+          { label: "الإعلانات" },
+        ]}
+        actions={
+          <>
+            <button type="button" className="btn btn-primary" onClick={startNewAd}>
+              إعلان جديد
+            </button>
+            <button type="button" className="btn btn-secondary" disabled={loading} onClick={() => load()}>
+              تحديث
+            </button>
+          </>
+        }
+      />
+
+      {loadError ? (
+        <DashboardErrorState
+          className="mb-4"
+          message={loadError}
           actions={
-            <>
-              <button type="button" className="btn btn-primary" onClick={openCreate}>
-                + إعلان جديد
-              </button>
-              <button type="button" className="btn btn-secondary" disabled={loading} onClick={() => load()}>
-                تحديث القائمة
-              </button>
-            </>
+            <button type="button" className="btn btn-primary" onClick={() => load()}>
+              إعادة المحاولة
+            </button>
           }
         />
+      ) : null}
 
-        {loadError ? (
-          <DashboardErrorState
-            className="mb-4"
-            message={
-              <>
-                <strong>تعذر التحميل</strong>
-                <div className="mt-1 text-[0.92rem] font-bold opacity-95">{loadError}</div>
-              </>
-            }
-            actions={loadErrorActions}
-          />
-        ) : null}
-
-        <DashboardSection>
-          {loading ? (
-            <DashboardLoadingState label="جارٍ التحميل…" />
-          ) : !loadError && sorted.length === 0 ? (
-            <DashboardEmptyState title="لا توجد إعلانات بعد." />
-          ) : (
-            <div className="oh-admin-ads__table-wrap">
-                <table className="oh-admin-ads__table">
-                  <thead>
-                    <tr>
-                      <th>العنوان</th>
-                      <th>الحالة</th>
-                      <th>المكان</th>
-                      <th>التخطيط</th>
-                      <th>الظهور</th>
-                      <th>النهاية</th>
-                      <th>الترتيب</th>
-                      <th>إجراءات</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loadError ? (
-                      <tr>
-                        <td colSpan={8} style={{ textAlign: "center", padding: 24, color: "#64748b" }}>
-                          تعذر تحميل الجدول — استخدم «إعادة المحاولة» أعلاه أو «تحديث القائمة».
-                        </td>
-                      </tr>
-                    ) : (
-                      sorted.map((ad, idx) => {
-                        const status = getAdAdminStatus(ad, new Date(nowTick));
-                        const canUp = idx > 0;
-                        const canDown = idx < sorted.length - 1;
-                        return (
-                          <tr key={ad.id} className={reorderBusy ? "oh-admin-ads__row--reordering" : undefined}>
-                            <td style={{ whiteSpace: "normal", maxWidth: 240 }}>
-                              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                <span>{ad.title}</span>
-                                <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
-                                  {ad.isFeatured ? (
-                                    <span className="oh-admin-ads__mini-tag" title="يظهر كبيرًا في عمود العروض">
-                                      مميز
-                                    </span>
-                                  ) : null}
-                                  {ad.themePreset ? (
-                                    <span className="oh-admin-ads__mini-tag">
-                                      {THEME_LABEL_AR[ad.themePreset] || ad.themePreset}
-                                    </span>
-                                  ) : null}
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              <div className="oh-admin-ads__admin-status-cell">
-                                <span title={status.description}>
-                                  <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
-                                </span>
-                                {status.key === "expired" && ad.isActive ? (
-                                  <span className="oh-admin-ads__admin-status-sub">كان مفعّلًا</span>
-                                ) : null}
-                              </div>
-                            </td>
-                            <td>
-                              <span className="oh-admin-ads__mini-tag">{PLACEMENT_LABEL[ad.placement] || ad.placement}</span>
-                            </td>
-                            <td>
-                              <span className="oh-admin-ads__mini-tag">
-                                {LAYOUT_LABEL[ad.layoutType] || getLayoutOption(ad.layoutType).label}
-                              </span>
-                            </td>
-                            <td className="oh-admin-ads__appear-td">{fmtAppearCell(ad, nowTick)}</td>
-                            <td>{fmtAdminEnd(ad.endDate)}</td>
-                            <td className="oh-admin-ads__sort-td">
-                              <div className="oh-admin-ads__sort-arrows" aria-busy={reorderBusy}>
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary oh-admin-ads__sort-btn"
-                                  disabled={!canUp || reorderBusy}
-                                  title="أعلى"
-                                  aria-label="نقل لأعلى"
-                                  onClick={() => void moveRow(idx, -1)}
-                                >
-                                  ↑
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary oh-admin-ads__sort-btn"
-                                  disabled={!canDown || reorderBusy}
-                                  title="أسفل"
-                                  aria-label="نقل لأسفل"
-                                  onClick={() => void moveRow(idx, 1)}
-                                >
-                                  ↓
-                                </button>
-                              </div>
-                            </td>
-                            <td>
-                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary"
-                                  style={{ padding: "4px 10px", fontSize: 12 }}
-                                  onClick={() => openEdit(ad)}
-                                >
-                                  تعديل
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary"
-                                  style={{ padding: "4px 10px", fontSize: 12 }}
-                                  onClick={() => setRescheduleAd(ad)}
-                                >
-                                  إعادة جدولة
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary"
-                                  style={{ padding: "4px 10px", fontSize: 12 }}
-                                  onClick={() => onDuplicate(ad.id)}
-                                >
-                                  نسخ
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary"
-                                  style={{ padding: "4px 10px", fontSize: 12 }}
-                                  onClick={() => onDelete(ad.id)}
-                                >
-                                  حذف
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-        </DashboardSection>
-      </DashboardShell>
-
-      {modalOpen ? (
-        <div className="oh-admin-ads__modal" role="dialog" aria-modal="true" aria-labelledby="ads-modal-title">
-          <div className="oh-admin-ads__modal-card">
-            <div className="oh-admin-ads__modal-header">
-              <h2 id="ads-modal-title" className="oh-admin-ads__modal-title">
-                {editingId ? "تعديل إعلان" : "إعلان جديد"}
-              </h2>
-              <div className="oh-admin-ads__modal-actions">
-                <button type="button" className="btn btn-secondary" disabled={saving} onClick={closeModal}>
-                  إلغاء
-                </button>
-                <button type="button" className="btn btn-primary" disabled={saving} onClick={onSave}>
-                  {saving ? "جارٍ الحفظ…" : "حفظ"}
-                </button>
-              </div>
+      <DashboardSection>
+        <div ref={builderRef} className="oh-admin-ads__studio">
+          <div className="oh-admin-ads__studio-head">
+            <div>
+              <h2 className="oh-admin-ads__workspace-title">{editingId ? "تعديل إعلان" : "بناء إعلان جديد"}</h2>
+              <p className="oh-admin-ads__studio-sub">
+                {isDirty ? (
+                  <span className="oh-admin-ads__draft-badge">مسودة غير محفوظة · {fmtRelative(lastEditedAt)}</span>
+                ) : (
+                  <span className="oh-admin-ads__draft-badge oh-admin-ads__draft-badge--saved">متزامن</span>
+                )}
+              </p>
             </div>
+          </div>
 
-            <div className="oh-admin-ads__split">
-              <AdForm
+          <div className="oh-admin-ads__studio-body">
+            <div className="oh-admin-ads__studio-form">
+              <AdBuilderForm
                 data={form}
-                onChange={handleFormChange}
+                onChange={patchForm}
                 fieldErrors={fieldErrorsForForm}
                 imageUrlErrors={imageUrlErrorsForForm}
                 attemptedSave={attemptedSave}
+                activeStep={activeStep}
+                onStepChange={setActiveStep}
+                orderStepSlot={orderStepSlot}
+                editingAd={editingAd}
               />
-              <aside className="oh-admin-ads__preview" aria-label="معاينة الإعلان">
-                <AdPreview draft={{ ...form, id: editingId || "preview" }} extraWarnings={formWarningsLive} />
-              </aside>
             </div>
-          </div>
-        </div>
-      ) : null}
 
-      {rescheduleAd ? (
-        <AdRescheduleModal
-          key={rescheduleAd.id}
-          ad={rescheduleAd}
-          statusLabel={getAdAdminStatus(rescheduleAd, new Date(nowTick)).label}
-          onClose={() => setRescheduleAd(null)}
-          onSubmit={(payload) => handleRescheduleSubmit(payload)}
-        />
-      ) : null}
-    </>
+            <aside className="oh-admin-ads__studio-preview" aria-label="معاينة الإعلان">
+              <AdPreview draft={{ ...previewDraft, id: editingId || "preview" }} />
+            </aside>
+          </div>
+
+          <button
+            type="button"
+            className="oh-admin-ads__preview-fab"
+            aria-expanded={mobilePreviewOpen}
+            onClick={() => setMobilePreviewOpen(true)}
+          >
+            معاينة
+          </button>
+
+          {mobilePreviewOpen ? (
+            <div className="oh-admin-ads__preview-drawer" role="dialog" aria-modal="true" aria-label="معاينة الإعلان">
+              <div className="oh-admin-ads__preview-drawer-backdrop" onClick={() => setMobilePreviewOpen(false)} aria-hidden />
+              <div className="oh-admin-ads__preview-drawer-panel">
+                <header className="oh-admin-ads__preview-drawer-head">
+                  <strong>معاينة كاملة</strong>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setMobilePreviewOpen(false)}>
+                    إغلاق
+                  </button>
+                </header>
+                <AdPreview draft={{ ...previewDraft, id: editingId || "preview" }} compact />
+              </div>
+            </div>
+          ) : null}
+
+          <footer className="oh-admin-ads__action-bar">
+            <button type="button" className="btn btn-secondary" disabled={saving} onClick={resetBuilder}>
+              إعادة تعيين
+            </button>
+            <button type="button" className="btn btn-secondary" disabled={saving} onClick={() => setMobilePreviewOpen(true)}>
+              معاينة كاملة
+            </button>
+            <button type="button" className="btn btn-secondary" disabled={saving} onClick={() => saveWithMode(false)}>
+              {saving ? "جارٍ…" : "حفظ كمسودة"}
+            </button>
+            <button type="button" className="btn btn-primary" disabled={saving} onClick={() => saveWithMode(true)}>
+              {saving ? "جارٍ…" : "نشر الإعلان"}
+            </button>
+          </footer>
+        </div>
+      </DashboardSection>
+
+      <DashboardSection title="جميع الإعلانات" description="تعديل سريع، إحصاءات، وإدارة الحالة.">
+        {loading ? (
+          <DashboardLoadingState label="جارٍ التحميل…" />
+        ) : !loadError && tableAds.length === 0 ? (
+          <DashboardEmptyState title="لا توجد إعلانات بعد." />
+        ) : (
+          <AdsManagementTable
+            ads={tableAds}
+            onEdit={startEdit}
+            onToggleActive={handleToggleActive}
+            onDelete={handleDelete}
+            nowTick={nowTick}
+          />
+        )}
+      </DashboardSection>
+    </DashboardShell>
   );
 }

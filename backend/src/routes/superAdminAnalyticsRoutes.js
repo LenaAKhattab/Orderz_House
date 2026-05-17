@@ -25,4 +25,11 @@ router.patch(
   superAdminAnalyticsController.patchHeroPlatformSettings,
 );
 
+router.get(
+  "/analytics/health",
+  requireAuth,
+  requireAnyRole(["super_admin"]),
+  superAdminAnalyticsController.getAnalyticsHealth,
+);
+
 module.exports = router;

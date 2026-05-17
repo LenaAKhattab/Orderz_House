@@ -5,6 +5,8 @@ const {
   sanitizeOptionalColor,
   sanitizeTextsArray,
   sanitizeImagesArray,
+  parseBannerMetaFromTexts,
+  textsForPublicResponse,
 } = require("../utils/adsSanitize");
 
 /** Migration 053 may not have run; INSERT/UPDATE expect these columns. Safe no-op when already present. */
@@ -19,8 +21,34 @@ async function ensureContentAdsFeaturedColumns() {
   contentAdsFeaturedColumnsEnsured = true;
 }
 
+let contentAdsLastClickedColumnEnsured = false;
+async function ensureContentAdsLastClickedColumn() {
+  if (contentAdsLastClickedColumnEnsured) return;
+  await pool.query(`
+    ALTER TABLE content_ads
+      ADD COLUMN IF NOT EXISTS last_clicked_at TIMESTAMPTZ NULL;
+  `);
+  contentAdsLastClickedColumnEnsured = true;
+}
+
 const PLACEMENTS = new Set(["home_right_panel", "home_after_hero", "services_page", "global_sidebar"]);
-const THEME_PRESETS = new Set(["purple", "green", "orange", "blue"]);
+const THEME_PRESETS = new Set([
+  "purple",
+  "green",
+  "orange",
+  "blue",
+  "banner_1",
+  "banner_2",
+  "banner_3",
+  "banner_4",
+  "banner_5",
+  "classic_split",
+  "product_focus",
+  "luxury_center",
+  "ribbon_strip",
+  "business_partner",
+  "minimal_clean",
+]);
 const LAYOUT_TYPES = new Set([
   "image_top",
   "image_background",
@@ -36,7 +64,7 @@ function coerceDate(value) {
   return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
-function mapRow(row) {
+function mapRow(row, { forPublic = false } = {}) {
   if (!row) return null;
   let texts = row.texts;
   let images = row.images;
@@ -54,14 +82,18 @@ function mapRow(row) {
       images = [];
     }
   }
-  return {
+  const textsArr = Array.isArray(texts) ? texts : [];
+  const meta = parseBannerMetaFromTexts(textsArr);
+  const publicTexts = forPublic ? textsForPublicResponse(textsArr) : textsArr;
+
+  const base = {
     id: String(row.id),
     title: row.title,
     subtitle: row.subtitle || null,
     description: row.description || null,
     badgeText: row.badge_text || null,
     badgeColor: row.badge_color || null,
-    texts: Array.isArray(texts) ? texts : [],
+    texts: publicTexts,
     images: Array.isArray(images) ? images : [],
     ctaText: row.cta_text || null,
     ctaUrl: row.cta_url || null,
@@ -93,6 +125,23 @@ function mapRow(row) {
     updatedAt: row.updated_at,
     isFeatured: Boolean(row.is_featured),
     themePreset: row.theme_preset && THEME_PRESETS.has(String(row.theme_preset)) ? String(row.theme_preset) : null,
+  };
+
+  if (forPublic) return base;
+
+  return {
+    ...base,
+    companyName: meta.companyName != null ? String(meta.companyName) : null,
+    logoUrl: meta.logoUrl != null ? String(meta.logoUrl) : null,
+    discountText: meta.discountText != null ? String(meta.discountText) : null,
+    openMode: meta.openMode != null ? String(meta.openMode) : null,
+    priority: meta.priority !== undefined && meta.priority !== null ? Number(meta.priority) : 0,
+    salePercent: meta.salePercent,
+    phone: meta.phone != null ? String(meta.phone) : null,
+    whatsapp: meta.whatsapp != null ? String(meta.whatsapp) : null,
+    colorPreset: meta.colorPreset != null ? String(meta.colorPreset) : null,
+    internalNotes: meta.internalNotes != null ? String(meta.internalNotes) : null,
+    lastClickedAt: row.last_clicked_at || null,
   };
 }
 
@@ -247,6 +296,21 @@ function validateBusinessRules(payload, { partial = false } = {}) {
   return errors;
 }
 
+function assertAdminNote(adminNote) {
+  const t = adminNote != null ? String(adminNote).trim() : "";
+  if (t.length < 3) {
+    const err = new Error("سبب الإجراء مطلوب (3 أحرف على الأقل).");
+    err.code = "ADS_VALIDATION";
+    throw err;
+  }
+  if (t.length > 500) {
+    const err = new Error("سبب الإجراء طويل جدًا.");
+    err.code = "ADS_VALIDATION";
+    throw err;
+  }
+  return t;
+}
+
 async function listPublicActive(placement) {
   const p = PLACEMENTS.has(String(placement)) ? String(placement) : "home_right_panel";
   const { rows } = await pool.query(
@@ -261,11 +325,12 @@ async function listPublicActive(placement) {
     `,
     [p],
   );
-  return rows.map(mapRow);
+  return rows.map((r) => mapRow(r, { forPublic: true }));
 }
 
 async function listAllForAdmin() {
   await ensureContentAdsFeaturedColumns();
+  await ensureContentAdsLastClickedColumn();
   const { rows } = await pool.query(
     `
     SELECT *
@@ -276,10 +341,11 @@ async function listAllForAdmin() {
   return rows.map(mapRow);
 }
 
-async function getById(id) {
+async function getById(id, { forPublic = false } = {}) {
   await ensureContentAdsFeaturedColumns();
+  await ensureContentAdsLastClickedColumn();
   const { rows } = await pool.query(`SELECT * FROM content_ads WHERE id = $1::bigint LIMIT 1`, [id]);
-  return mapRow(rows[0]);
+  return mapRow(rows[0], { forPublic });
 }
 
 async function createAd(body) {
@@ -484,8 +550,9 @@ async function duplicateAd(id) {
   return createAd(body);
 }
 
-async function reorderAds(items) {
+async function reorderAds(items, placement) {
   if (!Array.isArray(items) || items.length === 0) return 0;
+  const p = PLACEMENTS.has(String(placement)) ? String(placement) : "home_right_panel";
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -494,11 +561,11 @@ async function reorderAds(items) {
       if (!item || item.id == null) continue;
       const sortOrder = Number(item.sortOrder);
       if (!Number.isFinite(sortOrder)) continue;
-      await client.query(`UPDATE content_ads SET sort_order = $2::int, updated_at = NOW() WHERE id = $1::bigint`, [
-        item.id,
-        Math.trunc(sortOrder),
-      ]);
-      n += 1;
+      const { rowCount } = await client.query(
+        `UPDATE content_ads SET sort_order = $2::int, updated_at = NOW() WHERE id = $1::bigint AND placement = $3::text`,
+        [item.id, Math.trunc(sortOrder), p],
+      );
+      if (rowCount > 0) n += 1;
     }
     await client.query("COMMIT");
     return n;
@@ -518,8 +585,9 @@ async function incrementImpression(id) {
 }
 
 async function incrementClick(id) {
+  await ensureContentAdsLastClickedColumn();
   await pool.query(
-    `UPDATE content_ads SET click_count = click_count + 1, updated_at = NOW() WHERE id = $1::bigint`,
+    `UPDATE content_ads SET click_count = click_count + 1, last_clicked_at = NOW(), updated_at = NOW() WHERE id = $1::bigint`,
     [id],
   );
 }
@@ -535,6 +603,7 @@ module.exports = {
   reorderAds,
   incrementImpression,
   incrementClick,
+  assertAdminNote,
   PLACEMENTS,
   LAYOUT_TYPES,
   THEME_PRESETS,

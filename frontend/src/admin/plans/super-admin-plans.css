@@ -472,6 +472,11 @@
   cursor: pointer;
 }
 
+.oh-sapl-modal--wide {
+  width: min(920px, calc(100vw - 24px)) !important;
+  max-height: min(92dvh, 960px) !important;
+}
+
 .oh-sapl-modal {
   position: relative;
   z-index: 1;

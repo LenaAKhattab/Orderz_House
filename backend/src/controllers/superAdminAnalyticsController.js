@@ -1,5 +1,6 @@
 const superAdminAnalyticsOverviewService = require("../services/superAdminAnalyticsOverviewService");
 const platformUiSettingsService = require("../services/platformUiSettingsService");
+const analyticsHealthService = require("../services/analyticsHealthService");
 
 async function getVisitorsAnalytics(req, res, next) {
   try {
@@ -53,8 +54,18 @@ async function patchHeroPlatformSettings(req, res, next) {
   }
 }
 
+async function getAnalyticsHealth(req, res, next) {
+  try {
+    const data = await analyticsHealthService.getAnalyticsHealthReport();
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   getVisitorsAnalytics,
   getHeroPlatformSettings,
   patchHeroPlatformSettings,
+  getAnalyticsHealth,
 };

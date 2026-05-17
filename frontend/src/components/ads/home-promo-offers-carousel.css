@@ -161,13 +161,107 @@
   outline-offset: 2px;
 }
 
+/* Active slide — subtle focus (card design unchanged) */
+.home-promo-offers__carousel-slide .home-promo-card__shell,
+.home-promo-offers__carousel-slide .home-promo-banner-frame {
+  transition:
+    transform 0.45s cubic-bezier(0.33, 1, 0.68, 1),
+    opacity 0.45s ease,
+    box-shadow 0.45s ease;
+}
+
+.home-promo-offers__carousel-slide:not(.is-active) .home-promo-card__shell,
+.home-promo-offers__carousel-slide:not(.is-active) .home-promo-banner-frame {
+  opacity: 0.88;
+  transform: scale(0.985);
+}
+
+.home-promo-offers__carousel-slide.is-active .home-promo-card__shell,
+.home-promo-offers__carousel-slide.is-active .home-promo-banner-frame {
+  opacity: 1;
+  transform: scale(1);
+  box-shadow: none;
+}
+
+/* 2–3 ads below hero: one banner at a time */
+.home-promo-offers__carousel--focus-one .home-promo-offers__carousel-slide {
+  flex: 0 0 100%;
+}
+
+@media (min-width: 640px) {
+  .home-promo-offers__carousel--focus-one .home-promo-offers__carousel-slide {
+    flex: 0 0 100%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-promo-offers__carousel--focus-one .home-promo-offers__carousel-slide {
+    flex: 0 0 100%;
+  }
+}
+
+/* Hero inline banner — single slide, minimal chrome */
+.home-promo-offers__carousel--hero {
+  --hp-carousel-gap: clamp(0.65rem, 2vw, 1rem);
+}
+
+.home-promo-offers__carousel--hero .home-promo-offers__carousel-stage {
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.home-promo-offers__carousel--hero .home-promo-offers__carousel-slide {
+  flex: 0 0 100%;
+}
+
+.home-promo-offers__carousel--hero .home-promo-offers__carousel-arrow {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(47, 59, 101, 0.12);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+}
+
+.home-promo-offers__carousel--hero .home-promo-offers__carousel-dots {
+  margin-top: 0.55rem;
+}
+
+.home-promo-offers__carousel--hero .home-promo-offers__carousel-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+}
+
+.home-promo-offers__carousel--hero .home-promo-offers__carousel-dot.is-active {
+  width: 1rem;
+}
+
+@media (max-width: 479px) {
+  .home-promo-offers__carousel--hero .home-promo-offers__carousel-arrow {
+    width: 1.85rem;
+    height: 1.85rem;
+  }
+
+  .home-promo-offers__carousel--hero .home-promo-offers__carousel-stage {
+    gap: 0.15rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .home-promo-offers__carousel-arrow,
-  .home-promo-offers__carousel-dot {
+  .home-promo-offers__carousel-dot,
+  .home-promo-offers__carousel-slide .home-promo-card__shell,
+  .home-promo-offers__carousel-slide .home-promo-banner-frame {
     transition: none;
   }
 
   .home-promo-offers__carousel-arrow:active {
+    transform: none;
+  }
+
+  .home-promo-offers__carousel-slide:not(.is-active) .home-promo-card__shell,
+  .home-promo-offers__carousel-slide:not(.is-active) .home-promo-banner-frame {
+    opacity: 1;
     transform: none;
   }
 }

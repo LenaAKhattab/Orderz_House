@@ -11,7 +11,7 @@ const subscriptionsService = require("./subscriptionsService");
 const ordersService = require("./ordersService");
 const notificationService = require("./notificationService");
 const notificationEventsService = require("./notificationEventsService");
-const { planEligibleForFreelancerSelfCheckout } = require("./plansService");
+const { planEligibleForFreelancerSelfCheckout, effectiveCheckoutPriceJod } = require("./plansService");
 const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPaymentStatus");
 const { getPrimaryClientUrl } = require("../config/clientUrl");
 const freelancerSubscriptionPaymentNotifications = require("./freelancerSubscriptionPaymentNotifications");
@@ -827,7 +827,7 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
   try {
     await db.query("BEGIN");
     const { rows: planRows } = await db.query(
-      `SELECT id, title, price_jod, is_active, is_visible, deleted_at, self_subscribe_allowed
+      `SELECT id, title, price_jod, stripe_checkout_amount_jod, is_active, is_visible, deleted_at, self_subscribe_allowed
        FROM plans
        WHERE id = $1
        LIMIT 1`,
@@ -859,7 +859,7 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       err.exposeToClient = true;
       throw err;
     }
-    const priceJod = plan.price_jod != null ? Number(plan.price_jod) : null;
+    const priceJod = effectiveCheckoutPriceJod(plan);
 
     const currency = "jod";
     const amountMinor = amountMajorToStripeMinor(priceJod, "JOD");

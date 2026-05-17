@@ -35,7 +35,7 @@ export default function Home() {
   }, [contentReady, setHomeBlocking]);
 
   return (
-    <main className="home-page relative flex min-w-0 w-full flex-1 flex-col bg-page-bg">
+    <main className="home-page relative flex min-w-0 w-full flex-1 flex-col bg-transparent">
       <div className={contentReady ? "relative" : "relative min-h-[100svh]"}>
         {/* Ready: skeleton must leave flow at opacity-0 or it still reserves full skeleton height. */}
         <div

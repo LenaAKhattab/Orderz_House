@@ -25,6 +25,8 @@ import DashboardLoadingState from "../../dashboard/DashboardLoadingState";
 import DashboardEmptyState from "../../dashboard/DashboardEmptyState";
 import DashboardErrorState from "../../dashboard/DashboardErrorState";
 import StatusBadge from "../../dashboard/StatusBadge";
+import SuperAdminAnalyticsHealthPanel from "./SuperAdminAnalyticsHealthPanel";
+import HomeMetricsAdminExplainer from "./HomeMetricsAdminExplainer";
 import "./super-admin-analytics.css";
 
 const EVENT_LABELS_AR = {
@@ -294,13 +296,16 @@ export default function SuperAdminProductAnalytics() {
 
       <DashboardSection
         title="الصفحة الرئيسية — بطاقات الإحصاءات العامة"
-        description="التحكم بظهور بطاقات الزوار والمستخدمين النشطين على الصفحة الرئيسية."
+        description="التحكم بظهور مؤشرَي زوار الموقع والمستخدمين المتفاعلين (آخر 7 أيام — ليس متصل الآن)."
       >
+        <HomeMetricsAdminExplainer />
         <div className="flex flex-col divide-y divide-slate-100">
           <div className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0">
             <div className="min-w-0">
-              <p className={fieldLabelClass}>إظهار عدد الزوار في الصفحة الرئيسية</p>
-              <p className={fieldHelpClass}>بطاقة «زائر للموقع» (آخر 7 أيام).</p>
+              <p className={fieldLabelClass}>إظهار زوار الموقع في الصفحة الرئيسية</p>
+              <p className={fieldHelpClass}>
+                عدد زيارات الصفحات ($pageview) خلال آخر 7 أيام — ليس عدّاً لحظياً للمتصلين الآن.
+              </p>
             </div>
             <label
               className={`inline-flex shrink-0 items-center gap-2.5 ${heroBusy || heroSaving ? "cursor-wait" : "cursor-pointer"}`}
@@ -320,8 +325,10 @@ export default function SuperAdminProductAnalytics() {
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 py-4 last:pb-0">
             <div className="min-w-0">
-              <p className={fieldLabelClass}>إظهار المستخدمين النشطين في الصفحة الرئيسية</p>
-              <p className={fieldHelpClass}>بطاقة «مستخدم نشط الآن» (آخر 30 دقيقة).</p>
+              <p className={fieldLabelClass}>إظهار المستخدمين المتفاعلين في الصفحة الرئيسية</p>
+              <p className={fieldHelpClass}>
+                أي نشاط يُتتبَّع في المنصة خلال آخر 7 أيام (دخول، طلبات، أحداث) — قد يكون أعلى من الزوار.
+              </p>
             </div>
             <label
               className={`inline-flex shrink-0 items-center gap-2.5 ${heroBusy || heroSaving ? "cursor-wait" : "cursor-pointer"}`}
@@ -335,11 +342,18 @@ export default function SuperAdminProductAnalytics() {
                 checked={heroActiveUsers}
                 disabled={heroBusy || heroSaving}
                 onChange={(e) => void patchHomeStats({ showHomeActiveUsersCount: e.target.checked })}
-                aria-label="إظهار المستخدمين النشطين في الصفحة الرئيسية"
+                aria-label="إظهار المستخدمين المتفاعلين في الصفحة الرئيسية"
               />
             </label>
           </div>
         </div>
+      </DashboardSection>
+
+      <DashboardSection
+        title="صحة التحليلات وتشخيص الزوار"
+        description="حالة PostHog، التتبع، وآخر $pageview — لمعرفة سبب ظهور صفر في الصفحة الرئيسية."
+      >
+        <SuperAdminAnalyticsHealthPanel />
       </DashboardSection>
 
       <DashboardToolbar>

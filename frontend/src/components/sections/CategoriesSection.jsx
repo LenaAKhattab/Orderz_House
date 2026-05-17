@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import heroImage from "../../assets/hero.png";
 import CategoriesSkeleton from "../skeletons/CategoriesSkeleton";
+import "./categories-section.css";
 
 function resolveBackendAssetUrl(maybeUrl) {
   if (!maybeUrl) return "";
@@ -128,38 +129,6 @@ function CategoryIcon({ slug, theme }) {
   return <IconDesign className="shrink-0" />;
 }
 
-/** ~270° ring (gap ~90°) — design ref #78cfe0; `rotateDeg` shifts where the gap sits (toward cards column). */
-function CategoriesHeadingArc({ className = "" }) {
-  const cx = 200;
-  const cy = 200;
-  const r = 168;
-  const c = 2 * Math.PI * r;
-  const arcVisible = c * 0.75; // 270°
-  const gap = c - arcVisible;
-  const rotateDeg = 125;
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 400 400"
-      fill="none"
-      aria-hidden
-    >
-      <circle
-        cx={cx}
-        cy={cy}
-        r={r}
-        fill="none"
-        stroke="#78cfe0"
-        strokeWidth="2.5"
-        strokeOpacity={0.92}
-        strokeLinecap="round"
-        strokeDasharray={`${arcVisible} ${gap}`}
-        transform={`rotate(${rotateDeg} ${cx} ${cy})`}
-      />
-    </svg>
-  );
-}
-
 /**
  * @param {{ items?: unknown[]; loading?: boolean }} p — Data from `usePublicHomeCategories` (homepage).
  */
@@ -197,26 +166,35 @@ const CategoriesSection = ({ items = [], loading = false }) => {
         <div
           className={[
             "grid w-full grid-cols-1 items-stretch  rounded-[22px]   p-5 sm:p-6 md:p-8 lg:rounded-[28px] lg:px-9 xl:rounded-[32px] xl:p-0",
-            "max-[960px]:gap-6 min-[961px]:grid-cols-[minmax(220px,32%)_minmax(0,1fr)] ",
+            "max-[960px]:gap-6 min-[961px]:grid-cols-[minmax(14rem,26%)_minmax(0,1fr)]",
           ].join(" ")}
         >
           <aside
             className={[
               "relative flex min-h-0 min-w-0 w-full max-w-[min(420px,100%)] flex-col items-center justify-center max-[960px]:max-w-none",
-              "min-[961px]:min-h-[min(20rem,48vh)] min-[961px]:items-start min-[961px]:justify-center min-[961px]:overflow-x-clip min-[961px]:ps-0 min-[961px]:pe-4",
+              "min-[961px]:min-h-[min(20rem,48vh)] min-[961px]:items-end min-[961px]:justify-center min-[961px]:ps-0 min-[961px]:pe-2",
               "max-[960px]:items-center max-[960px]:text-center",
             ].join(" ")}
           >
-            {/* Ring sits in this column only (clip x) and paints under the heading (z-order). */}
-            <div className="relative z-0 flex w-full max-w-[min(19rem,100%)] flex-col items-stretch pb-1 max-[960px]:max-w-none min-[961px]:min-h-[11rem] min-[961px]:items-start">
-              <CategoriesHeadingArc className="pointer-events-none absolute start-1/2 top-[45%] z-0 hidden h-[min(68vw,15.5rem)] w-[min(68vw,15.5rem)] -translate-x-1/2 -translate-y-1/2 min-[961px]:block" />
+            <div className="home-categories-intro relative flex w-full max-w-[min(19rem,100%)] flex-col items-stretch max-[960px]:max-w-none min-[961px]:items-end">
               <h2
                 id="home-categories-heading"
-                className="relative z-10 m-0 max-[960px]:text-center px-2 py-6 text-[clamp(1.35rem,2.5vw,2.05rem)] font-extrabold leading-tight tracking-tight text-gray-900 min-[961px]:px-0 min-[961px]:py-8 min-[961px]:text-start"
+                dir="rtl"
+                lang="ar"
+                className="home-categories-intro__title m-0 max-[960px]:text-center px-2 py-6 text-[clamp(1.35rem,2.5vw,2.05rem)] font-extrabold leading-tight tracking-tight text-gray-900 min-[961px]:px-0 min-[961px]:py-8 min-[961px]:text-end"
               >
                 <span className="text-gray-900">اكتشف التصنيفات</span>{" "}
-                <span className="text-[#2f3b65]">خلال ثوانٍ</span>
+                <span className="text-[#2f3b65]" dir="rtl" lang="ar">
+                  خلال ثوانٍ
+                </span>
               </h2>
+              <div className="home-categories-decor" aria-hidden="true">
+                <span className="home-categories-decor__ring home-categories-decor__ring--lg" />
+                <span className="home-categories-decor__ring home-categories-decor__ring--md" />
+                <span className="home-categories-decor__ring home-categories-decor__ring--sm" />
+                <span className="home-categories-decor__dot home-categories-decor__dot--1" />
+                <span className="home-categories-decor__dot home-categories-decor__dot--2" />
+              </div>
             </div>
           </aside>
 

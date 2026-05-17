@@ -1,14 +1,74 @@
 /* Home top: hero shell only (offers live in home-promo-offers.css) */
 
-.home-top-section .home-hero.home-hero--ref {
+/* Homepage: wallpaper from top of viewport (behind navbar) */
+.home-public-layout {
   background: transparent;
 }
 
-.home-top-section .home-hero.home-hero--ref.home-hero--marketing {
+.home-public-layout::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  height: 100svh;
+  pointer-events: none;
+  background-color: var(--page-bg, #f3f4f4);
+  background-image:
+    linear-gradient(
+      90deg,
+      rgb(248 250 252 / 0.06) 0%,
+      rgb(248 250 252 / 0.14) 45%,
+      rgb(248 250 252 / 0.3) 100%
+    ),
+    url("/hero/background.webp");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 90%,
+    rgba(0, 0, 0, 0.7) 96%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 90%,
+    rgba(0, 0, 0, 0.7) 96%,
+    transparent 100%
+  );
+}
+
+.home-top-section__hero:has(.home-hero--bg-image) {
+  overflow: hidden;
+}
+
+.home-public-layout > * {
+  position: relative;
+  z-index: 1;
+}
+
+.home-public-layout .home-page,
+.home-public-layout .home-top-section {
+  background: transparent;
+}
+
+.home-public-layout .home-top-section__inner {
+  padding-top: 0;
+}
+
+.home-top-section .home-hero.home-hero--ref:not(.home-hero--bg-image) {
+  background: transparent;
+}
+
+.home-top-section .home-hero.home-hero--ref.home-hero--marketing:not(.home-hero--bg-image) {
   background-color: transparent;
 }
 
-.home-top-section .home-hero.home-hero--ref.home-hero--marketing.home-hero--premium-stage {
+.home-top-section .home-hero.home-hero--ref.home-hero--marketing.home-hero--premium-stage:not(.home-hero--bg-image) {
   background: transparent;
 }
 
@@ -22,4 +82,223 @@
 .home-top-section__hero {
   width: 100%;
   max-width: 100%;
+}
+
+/* —— Inline hero ads: centered rectangular banner under CTAs —— */
+.home-hero__ads,
+.hero-inline-ads {
+  --hero-ad-lane-max: min(52.5rem, calc(100vw - 2.5rem)); /* ~840px — balanced hero lane */
+  position: relative;
+  z-index: 3;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--hero-ad-lane-max);
+  margin: clamp(4.15rem, 8.8vw, 6rem) auto 0;
+  padding-inline: clamp(0.65rem, 2.25vw, 1.35rem);
+  padding-top: clamp(0.55rem, 1.6vw, 1rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow-x: clip;
+}
+
+/* Premium hand-off from hero CTAs → secondary promo lane */
+.home-hero--marketing .home-hero__ads.hero-inline-ads::before,
+.home-hero--marketing .hero-inline-ads.home-hero__ads::before {
+  content: "";
+  display: block;
+  flex-shrink: 0;
+  width: min(11rem, 38%);
+  height: 1px;
+  margin: 0 auto clamp(0.75rem, 2vw, 1.15rem);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(47, 59, 101, 0.09) 22%,
+    rgba(47, 59, 101, 0.14) 50%,
+    rgba(47, 59, 101, 0.09) 78%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.home-hero--marketing.home-hero--bg-image .home-hero__ads,
+.home-hero--marketing.home-hero--bg-image .hero-inline-ads {
+  margin-top: clamp(4.5rem, 9.8vw, 6.5rem);
+  padding-top: clamp(0.6rem, 1.75vw, 1.1rem);
+}
+
+.home-hero__ads .home-promo-offers--hero {
+  width: 100%;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Single centered column in hero (never 2–3 narrow cards) */
+.home-hero__ads .home-promo-offers--hero .home-promo-offers__grid {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: clamp(0.85rem, 2vw, 1.1rem);
+}
+
+.home-hero__ads .home-promo-offers__cell {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.home-hero__ads .home-promo-banner-frame,
+.home-hero__ads .home-promo-card__shell {
+  --ad-banner-max-w: 100%;
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.home-hero__ads .home-promo-banner-frame .ppm {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  box-sizing: border-box;
+}
+
+.home-hero__ads .home-promo-banner__row {
+  min-height: clamp(5.25rem, 10vw, 6.25rem);
+  padding: clamp(0.45rem, 1.1vw, 0.65rem) clamp(0.6rem, 1.4vw, 0.85rem);
+  gap: clamp(0.45rem, 1.2vw, 0.65rem);
+  align-items: center;
+}
+
+.home-hero__ads .home-promo-banner--tpl3 {
+  min-height: clamp(6rem, 12vw, 7rem);
+}
+
+.home-hero__ads .home-promo-banner__media-inner {
+  max-height: clamp(3rem, 8vw, 4.25rem);
+}
+
+.home-hero__ads .home-promo-banner__main {
+  gap: 0.25rem;
+}
+
+.home-hero__ads .home-promo-banner__title,
+.home-hero__ads .home-promo-banner__title--hero,
+.home-hero__ads .home-promo-banner__tpl3-title {
+  font-size: clamp(0.88rem, 2vw, 1rem);
+  line-height: 1.2;
+}
+
+.home-hero__ads .home-promo-banner__desc,
+.home-hero__ads .home-promo-banner__subtitle {
+  font-size: clamp(0.72rem, 1.6vw, 0.8rem);
+  line-height: 1.35;
+}
+
+.home-hero__ads .home-promo-banner__btn {
+  padding: 0.32rem 0.75rem;
+  font-size: 0.78rem;
+}
+
+/* Carousel: one full-width slide centered in the same lane */
+.home-hero__ads .home-promo-offers__carousel {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.home-hero__ads .home-promo-offers__carousel-slide {
+  flex: 0 0 100%;
+}
+
+.home-hero__ads .home-promo-offers__cell--carousel {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.home-hero__ads .home-promo-offers--skeleton.home-promo-offers--hero {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.home-hero__ads .home-promo-offers--skeleton .home-promo-offers__grid {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.home-hero__ads .home-promo-offers--skeleton .home-promo-offers__cell {
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .home-hero__ads,
+  .hero-inline-ads {
+    --hero-ad-lane-max: min(54rem, calc(100vw - 3rem)); /* ~864px on large desktops */
+  }
+}
+
+@media (max-width: 768px) {
+  .home-hero__ads,
+  .hero-inline-ads {
+    --hero-ad-lane-max: 100%;
+    max-width: 100%;
+    padding-inline: 1rem;
+    margin-top: clamp(3.5rem, 9.5vw, 4.5rem);
+    padding-top: clamp(0.45rem, 1.35vw, 0.8rem);
+  }
+
+  .home-hero--marketing.home-hero--bg-image .home-hero__ads,
+  .home-hero--marketing.home-hero--bg-image .hero-inline-ads {
+    margin-top: clamp(3.65rem, 10vw, 4.85rem);
+  }
+
+  .home-hero__ads .home-promo-offers--hero .home-promo-offers__grid,
+  .home-hero__ads .home-promo-offers__carousel,
+  .home-hero__ads .home-promo-card__shell,
+  .home-hero__ads .home-promo-offers__cell,
+  .home-hero__ads .home-promo-offers--skeleton.home-promo-offers--hero {
+    max-width: 100%;
+  }
+
+  .home-hero__ads .home-promo-banner {
+    min-height: 5.5rem;
+  }
+
+  .home-hero__ads .home-promo-banner__row {
+    min-height: 5rem;
+  }
+
+  .home-hero__ads .home-promo-offers__carousel-stage {
+    padding-inline: 0;
+  }
+}
+
+@media (min-width: 640px) {
+  .home-hero__ads .home-promo-offers__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-hero__ads .home-promo-offers__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

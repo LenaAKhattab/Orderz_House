@@ -3,7 +3,7 @@ import Button from "../../components/ui/Button";
 import { planToEditForm } from "./planFormConstants";
 import { canSubmitEdit, normalizeEditPayload } from "./planPayloadUtils";
 import PlanFormSection from "./PlanFormSection";
-import PlanToggle from "./PlanToggle";
+import PlanExtendedFields from "./PlanExtendedFields";
 
 /**
  * @param {{
@@ -27,7 +27,7 @@ export default function PlanEditModal({ plan, open, submitting, onClose, onSave 
     <div className="oh-sapl-modal-root" role="presentation">
       <button type="button" className="oh-sapl-modal-backdrop" onClick={onClose} aria-label="إغلاق النافذة" />
       <div
-        className="oh-sapl-modal"
+        className="oh-sapl-modal oh-sapl-modal--wide"
         role="dialog"
         aria-modal="true"
         aria-labelledby="oh-sapl-edit-title"
@@ -73,77 +73,7 @@ export default function PlanEditModal({ plan, open, submitting, onClose, onSave 
             </div>
           </PlanFormSection>
 
-          <PlanFormSection title="السعر والمدة والترتيب">
-            <div className="oh-sapl-grid oh-sapl-grid--3">
-              <div className="oh-sapl-field">
-                <span className="oh-sapl-field__label">المدة (أيام)</span>
-                <input
-                  className="oh-sapl-input"
-                  type="number"
-                  min={1}
-                  max={3650}
-                  value={form.durationDays}
-                  onChange={(e) => setForm((v) => ({ ...v, durationDays: e.target.value }))}
-                  disabled={submitting}
-                />
-              </div>
-              <div className="oh-sapl-field">
-                <span className="oh-sapl-field__label">السعر (د.أ)</span>
-                <input
-                  className="oh-sapl-input"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={form.priceJod}
-                  onChange={(e) => setForm((v) => ({ ...v, priceJod: e.target.value }))}
-                  disabled={submitting}
-                  placeholder="اختياري"
-                />
-              </div>
-              <div className="oh-sapl-field">
-                <span className="oh-sapl-field__label">ترتيب العرض</span>
-                <input
-                  className="oh-sapl-input"
-                  type="number"
-                  value={form.sortOrder}
-                  onChange={(e) => setForm((v) => ({ ...v, sortOrder: e.target.value }))}
-                  disabled={submitting}
-                />
-              </div>
-            </div>
-          </PlanFormSection>
-
-          <PlanFormSection title="خيارات الباقة" hint="تحكم بالظهور والشراء الذاتي وزيارة المقر.">
-            <div className="oh-sapl-options">
-              <PlanToggle
-                label="الباقة مفعّلة"
-                description="عند التعطيل لن تُستخدم في إسناد جديد."
-                checked={form.isActive}
-                disabled={submitting}
-                onChange={(v) => setForm((f) => ({ ...f, isActive: v }))}
-              />
-              <PlanToggle
-                label="ظهور في قائمة الباقات العامة"
-                description="إخفاء الباقة عن صفحة الباقات دون حذفها."
-                checked={form.isVisible}
-                disabled={submitting}
-                onChange={(v) => setForm((f) => ({ ...f, isVisible: v }))}
-              />
-              <PlanToggle
-                label="يتطلب زيارة ميدانية للشركة"
-                checked={form.requiresCompanyVisit}
-                disabled={submitting}
-                onChange={(v) => setForm((f) => ({ ...f, requiresCompanyVisit: v }))}
-              />
-              <PlanToggle
-                label="متاحة للشراء الذاتي (Stripe)"
-                description="يتطلب سعراً أكبر من صفر وإعدادات الدفع."
-                checked={form.selfSubscribeAllowed}
-                disabled={submitting}
-                onChange={(v) => setForm((f) => ({ ...f, selfSubscribeAllowed: v }))}
-              />
-            </div>
-          </PlanFormSection>
+          <PlanExtendedFields form={form} setForm={setForm} submitting={submitting} />
         </div>
 
         <footer className="oh-sapl-modal__foot">

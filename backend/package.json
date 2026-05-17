@@ -22,6 +22,7 @@
     "db:verify-schema": "node scripts/verifySchema.js",
     "db:assign-freelancer-plan": "node scripts/assignPlanToFreelancerByName.js",
     "db:create-admin": "node scripts/createAdminUser.js",
+    "db:seed-youtube-course": "node scripts/seedYoutubePlaylistCourse.js",
     "db:promote-super-admin": "node scripts/promoteUserToSuperAdminByEmail.js",
     "db:cleanup:test-data": "node scripts/cleanupTestData.js",
     "api:smoke": "node scripts/smokeApiEndpoints.js",

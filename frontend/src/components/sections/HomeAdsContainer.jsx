@@ -3,11 +3,13 @@ import AdsBandSkeleton from "../skeletons/AdsBandSkeleton";
 import "../ads/home-promo-offers.css";
 
 /**
- * Homepage offers band below the hero (full width, responsive grid). Same placement + API as before.
- * @param {{ ads?: import("../../../types/ad.js").Ad[]; loading?: boolean }} p
+ * Homepage promo ads — default band or inline inside hero (`variant="hero"`).
+ * @param {{ ads?: import("../../types/ad.js").Ad[]; loading?: boolean; variant?: "default"|"hero"; showTitle?: boolean }} p
  */
-export default function HomeAdsContainer({ ads = [], loading = false }) {
+export default function HomeAdsContainer({ ads = [], loading = false, variant = "default", showTitle = true }) {
   const hasAds = Array.isArray(ads) && ads.length > 0;
+  const isHero = variant === "hero";
+  const wrapClass = isHero ? "home-hero__ads hero-inline-ads w-full min-w-0" : "home-ads-band w-full min-w-0";
 
   if (!loading && !hasAds) {
     return null;
@@ -15,15 +17,20 @@ export default function HomeAdsContainer({ ads = [], loading = false }) {
 
   if (loading) {
     return (
-      <div className="home-ads-band w-full min-w-0" aria-busy="true" aria-label="جاري تحميل الإعلانات">
-        <AdsBandSkeleton />
+      <div className={wrapClass} aria-busy="true" aria-label="جاري تحميل الإعلانات">
+        <AdsBandSkeleton variant={isHero ? "hero" : "default"} />
       </div>
     );
   }
 
   return (
-    <div className="home-ads-band w-full min-w-0">
-      <HomePromoOffersSection ads={ads} placement="home_right_panel" />
+    <div className={wrapClass}>
+      <HomePromoOffersSection
+        ads={ads}
+        placement="home_right_panel"
+        variant={variant}
+        showTitle={showTitle}
+      />
     </div>
   );
 }

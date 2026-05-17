@@ -5,4 +5,5 @@ export {
   getSuperadminVisitorsAnalyticsRequest as fetchSuperAdminOverview,
   getSuperadminHeroHomeStatsSettingRequest,
   patchSuperadminHeroHomeStatsSettingRequest,
+  getSuperadminAnalyticsHealthRequest,
 } from "./api";

@@ -1,22 +1,19 @@
 /**
- * Single primary status for the admin ads table (display only).
- * Does not change public filtering or API behavior.
+ * Admin ads table status (display only).
+ * Priority: مسودة → منتهي → مجدول → يعرض الآن
  *
- * Priority: غير مفعّل → منتهي → مجدول → ظاهر الآن
- *
- * @param {object} ad — API ad row (camelCase)
+ * @param {object} ad
  * @param {Date} [now]
- * @returns {{ key: string, label: string, tone: 'neutral'|'danger'|'warning'|'success', description: string }}
  */
 export function getAdAdminStatus(ad, now = new Date()) {
   const t = now.getTime();
 
   if (!ad?.isActive) {
     return {
-      key: "inactive",
-      label: "غير مفعّل",
+      key: "draft",
+      label: "مسودة",
       tone: "neutral",
-      description: "الإعلان متوقف يدويًا.",
+      description: "الإعلان غير منشور ولن يظهر للزوار.",
     };
   }
 
@@ -28,7 +25,7 @@ export function getAdAdminStatus(ad, now = new Date()) {
       key: "expired",
       label: "منتهي",
       tone: "danger",
-      description: "انتهى وقت عرض الإعلان ولن يظهر للزوار.",
+      description: "انتهى وقت العرض.",
     };
   }
 
@@ -40,14 +37,26 @@ export function getAdAdminStatus(ad, now = new Date()) {
       key: "scheduled",
       label: "مجدول",
       tone: "warning",
-      description: "سيظهر الإعلان عند وقت البداية.",
+      description: "سيظهر عند وقت البداية.",
     };
   }
 
   return {
-    key: "visible",
-    label: "ظاهر الآن",
+    key: "live",
+    label: "يعرض الآن",
     tone: "success",
-    description: "الإعلان ظاهر للمستخدمين حاليًا ضمن الجدولة.",
+    description: "الإعلان ظاهر للزوار ضمن الجدولة.",
   };
+}
+
+/**
+ * @param {number} impressions
+ * @param {number} clicks
+ * @returns {string}
+ */
+export function formatCtr(impressions, clicks) {
+  const imp = Number(impressions) || 0;
+  const clk = Number(clicks) || 0;
+  if (imp <= 0) return "—";
+  return `${((clk / imp) * 100).toFixed(1)}%`;
 }

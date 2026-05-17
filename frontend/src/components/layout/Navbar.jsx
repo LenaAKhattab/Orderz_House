@@ -88,7 +88,6 @@ const Navbar = () => {
       return [
         ...base,
         { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
-        { label: "إدارة الإعلانات", to: "/dashboard/super-admin/ads" },
         { label: "الدورات", to: "/dashboard/super-admin/courses" },
         { label: "الاشتراكات", to: "/dashboard/super-admin/subscriptions" },
         { label: "المطالبات المالية", to: "/dashboard/super-admin/financial-claims" },

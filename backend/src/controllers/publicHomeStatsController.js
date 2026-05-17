@@ -1,6 +1,6 @@
 const platformUiSettingsService = require("../services/platformUiSettingsService");
-const posthogAnalyticsService = require("../services/posthogAnalyticsService");
 const publicHomeOrderStatsService = require("../services/publicHomeOrderStatsService");
+const analyticsHealthService = require("../services/analyticsHealthService");
 
 async function getPublicHomeStats(req, res, next) {
   try {
@@ -37,34 +37,32 @@ async function getPublicHomeStats(req, res, next) {
           showActiveUsersCount: false,
           visitors: null,
           activeUsers: null,
+          visitorsReason: "toggle_off",
+          activeUsersReason: "toggle_off",
           ...orderPayload,
         },
       });
     }
 
-    let visitors = null;
-    let activeUsers = null;
-    let analyticsDegraded = false;
-
-    try {
-      const snap = await posthogAnalyticsService.getHeroSnapshotNumbers();
-      if (showVisitorsCount) visitors = snap.visitorsLast7Days;
-      if (showActiveUsersCount) activeUsers = snap.activeUsersLast7Days;
-    } catch {
-      analyticsDegraded = true;
-      if (showVisitorsCount) visitors = null;
-      if (showActiveUsersCount) activeUsers = null;
-    }
+    const meta = await analyticsHealthService.getPublicHomeAnalyticsMeta({
+      showVisitorsCount,
+      showActiveUsersCount,
+    });
 
     return res.status(200).json({
       success: true,
       data: {
         showVisitorsCount,
         showActiveUsersCount,
-        visitors,
-        activeUsers,
+        visitors: meta.visitors,
+        activeUsers: meta.activeUsers,
+        visitorsReason: meta.reasons.visitors,
+        activeUsersReason: meta.reasons.activeUsers,
+        analyticsQueriedAt: meta.queriedAt,
+        analyticsLastPageviewAt: meta.lastPageviewAt,
         ...orderPayload,
-        ...(analyticsDegraded ? { analyticsDegraded: true } : {}),
+        ...(meta.analyticsDegraded ? { analyticsDegraded: true } : {}),
+        ...(meta.analyticsMisconfigured ? { analyticsMisconfigured: true } : {}),
       },
     });
   } catch (err) {

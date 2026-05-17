@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { listPublicPlansRequest } from "../services/api";
+import { getOrderzhousePlansCatalog, mergeApiPlansWithCatalog } from "../constants/orderzhousePlansCatalog";
 
 /**
- * Public catalog plans (same payload as `/plans` page).
+ * Public catalog: hard-coded ORDERZHOUSE plans (ids 1, 2, 3), optional API overlay for checkout flags.
  * @returns {{ items: unknown[]; loading: boolean; error: boolean }}
  */
 export default function usePublicPlans() {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(() => getOrderzhousePlansCatalog());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -18,10 +19,10 @@ export default function usePublicPlans() {
       try {
         const data = await listPublicPlansRequest();
         const list = Array.isArray(data?.data?.plans) ? data.data.plans : [];
-        if (!cancelled) setItems(list);
+        if (!cancelled) setItems(mergeApiPlansWithCatalog(list));
       } catch {
         if (!cancelled) {
-          setItems([]);
+          setItems(getOrderzhousePlansCatalog());
           setError(true);
         }
       } finally {

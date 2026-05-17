@@ -1,5 +1,3 @@
-import CompactSwatchRow from "./CompactSwatchRow";
-import { TEXT_BLOCK_INLINE_SWATCHES } from "./adColorPalette";
 import { FONT_SIZE_PRESETS, FONT_WEIGHT_PRESETS, TEXT_POSITION_OPTIONS } from "./adFormConstants";
 
 function uid() {
@@ -83,17 +81,6 @@ export default function AdTextBlocksManager({ texts, onChange }) {
               <label>نص إضافي</label>
               <textarea value={t.content || ""} onChange={(e) => update(idx, { content: e.target.value })} rows={3} />
             </div>
-
-            <CompactSwatchRow
-              label="لون النص"
-              value={t.color || ""}
-              onChange={(next) => update(idx, { color: next })}
-              options={TEXT_BLOCK_INLINE_SWATCHES}
-              allowEmpty
-              emptyLabel="افتراضي"
-              size="sm"
-            />
-            <p className="oh-admin-ads__text-card__color-hint">افتراضي يستخدم لون النص الرئيسي للإعلان.</p>
 
             <div className="oh-admin-ads__text-card__meta-grid">
               <div className="oh-admin-ads__field">

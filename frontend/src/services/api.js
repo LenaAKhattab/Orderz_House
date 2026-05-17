@@ -129,6 +129,16 @@ export const patchProfileNotificationPreferencesRequest = async (prefs) => {
   return data;
 };
 
+export const patchBrowserNotificationsRequest = async ({ status }) => {
+  const { data } = await api.patch("/profile/browser-notifications", { status });
+  return data;
+};
+
+export const postBrowserNotificationTestRequest = async () => {
+  const { data } = await api.post("/profile/browser-notifications/test");
+  return data;
+};
+
 export const patchProfilePasswordRequest = async (payload) => {
   const { data } = await api.patch("/profile/password", payload);
   return data;
@@ -748,18 +758,27 @@ export const adminUpdateAdRequest = async (adId, payload) => {
   return data;
 };
 
-export const adminDeleteAdRequest = async (adId) => {
-  const { data } = await api.delete(`/admin/ads/${adId}`);
+export const adminDeleteAdRequest = async (adId, { adminNote } = {}) => {
+  const { data } = await api.delete(`/admin/ads/${adId}`, { data: { adminNote } });
   return data;
 };
 
-export const adminDuplicateAdRequest = async (adId) => {
-  const { data } = await api.post(`/admin/ads/${adId}/duplicate`);
+export const adminDuplicateAdRequest = async (adId, { adminNote } = {}) => {
+  const { data } = await api.post(`/admin/ads/${adId}/duplicate`, { adminNote });
   return data;
 };
 
-export const adminReorderAdsRequest = async (items) => {
-  const { data } = await api.patch("/admin/ads/reorder", { items });
+export const adminReorderAdsRequest = async ({ placement, items, adminNote }) => {
+  const { data } = await api.patch("/admin/ads/reorder", { placement, items, adminNote });
+  return data;
+};
+
+/** @param {File} file @param {"background"|"main"} [purpose] */
+export const adminUploadAdImageRequest = async (file, purpose = "background") => {
+  const fd = new FormData();
+  fd.append("image", file);
+  fd.append("purpose", purpose === "main" ? "main" : "background");
+  const { data } = await api.post("/admin/ads/upload-image", fd, { timeout: 120000 });
   return data;
 };
 
@@ -770,6 +789,11 @@ export const getSuperadminHeroHomeStatsSettingRequest = async () => {
 
 export const patchSuperadminHeroHomeStatsSettingRequest = async (payload) => {
   const { data } = await api.patch("/superadmin/platform/home-hero-stats", payload);
+  return data;
+};
+
+export const getSuperadminAnalyticsHealthRequest = async () => {
+  const { data } = await api.get("/superadmin/analytics/health");
   return data;
 };
 

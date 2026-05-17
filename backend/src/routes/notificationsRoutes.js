@@ -1,8 +1,11 @@
 const express = require("express");
 const { requireAuth } = require("../middleware/rbacMiddleware");
+const { requireNotificationStreamAuth } = require("../middleware/notificationStreamAuth");
 const notificationsController = require("../controllers/notificationsController");
 
 const router = express.Router();
+
+router.get("/notifications/stream", requireNotificationStreamAuth, notificationsController.streamNotifications);
 
 router.use(requireAuth);
 

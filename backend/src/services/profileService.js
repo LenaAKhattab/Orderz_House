@@ -1,4 +1,5 @@
 const { pool } = require("../config/db");
+const { invalidateUserNotificationPreferences } = require("./notificationPreferenceCache");
 const { ROLES } = require("../constants/roles");
 const { createPublicApiError } = require("../utils/publicApiError");
 
@@ -235,6 +236,37 @@ async function patchUserProfile(userId, legacyRole, body) {
   params.push(userId);
   const sql = `UPDATE users SET ${updates.join(", ")} WHERE id = $${idx}::bigint`;
   await pool.query(sql, params);
+
+  if (body.notificationPreferences !== undefined) {
+    invalidateUserNotificationPreferences(userId);
+  }
+}
+
+const BROWSER_STATUS_VALUES = new Set(["pending", "accepted", "rejected"]);
+
+async function patchBrowserNotificationStatus(userId, status) {
+  const s = String(status || "").trim().toLowerCase();
+  if (!BROWSER_STATUS_VALUES.has(s)) {
+    throw createPublicApiError("حالة إشعارات المتصفح غير صالحة.", 400, "VALIDATION_ERROR");
+  }
+  await pool.query(
+    `UPDATE users
+     SET browser_notification_status = $1::text,
+         notification_prompt_answered_at = COALESCE(notification_prompt_answered_at, NOW()),
+         updated_at = NOW()
+     WHERE id = $2::bigint`,
+    [s, userId],
+  );
+}
+
+async function markBrowserPromptAnswered(userId) {
+  await pool.query(
+    `UPDATE users
+     SET notification_prompt_answered_at = COALESCE(notification_prompt_answered_at, NOW()),
+         updated_at = NOW()
+     WHERE id = $1::bigint`,
+    [userId],
+  );
 }
 
 async function clearAvatar(userId) {
@@ -255,4 +287,6 @@ module.exports = {
   patchUserProfile,
   clearAvatar,
   setAvatar,
+  patchBrowserNotificationStatus,
+  markBrowserPromptAnswered,
 };

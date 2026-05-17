@@ -198,23 +198,25 @@
 }
 
 .home-hero.home-hero--ref .home-hero__cta-secondary {
-  border-radius: 999px;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-weight: 700;
+  padding: 0;
+  min-height: 0;
+  font-weight: 600;
   color: var(--primary);
-  border: 1px solid transparent;
-  background: transparent;
+  border: none;
+  background: none;
+  box-shadow: none;
+  text-decoration: none;
 }
 
 .home-hero.home-hero--ref .home-hero__cta-secondary:hover {
-  background: rgba(47, 59, 101, 0.06);
-  border-color: rgba(47, 59, 101, 0.1);
+  background: none;
+  box-shadow: none;
 }
 
 .home-hero__cta-chevron {
-  color: rgba(37, 99, 235, 0.9);
   flex-shrink: 0;
 }
 

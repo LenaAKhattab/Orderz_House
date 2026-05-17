@@ -14,9 +14,15 @@ const AuthFormCard = ({
 }) => {
   return (
     <section className="oh-auth-form-panel">
-      <div className="oh-auth-brand">
-        <span className="oh-auth-brand__mark" aria-hidden />
-        <span className="oh-auth-brand__text">أوردرز هاوس</span>
+      <div className="oh-auth-brand oh-auth-brand--full-logo">
+        <img
+          src="/hero/fullLogp.png"
+          alt="أوردرز هاوس"
+          className="oh-auth-brand__logo"
+          width={200}
+          height={48}
+          decoding="async"
+        />
       </div>
 
       <div className="oh-auth-form-header">

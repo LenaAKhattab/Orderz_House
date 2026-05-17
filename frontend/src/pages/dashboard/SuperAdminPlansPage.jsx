@@ -10,7 +10,7 @@ import {
 import AdminPlanCard from "../../admin/plans/AdminPlanCard";
 import PlanEditModal from "../../admin/plans/PlanEditModal";
 import PlanFormSection from "../../admin/plans/PlanFormSection";
-import PlanToggle from "../../admin/plans/PlanToggle";
+import PlanExtendedFields from "../../admin/plans/PlanExtendedFields";
 import { getInitialPlanFormState } from "../../admin/plans/planFormConstants";
 import { suggestPlanInternalName } from "../../admin/plans/planNameAuto";
 import { canSubmitCreate, normalizeCreatePayload } from "../../admin/plans/planPayloadUtils";
@@ -210,77 +210,9 @@ const SuperAdminPlansPage = () => {
               </div>
             </PlanFormSection>
 
-            <PlanFormSection title="السعر والمدة والترتيب">
-              <div className="oh-sapl-grid oh-sapl-grid--3">
-                <div className="oh-sapl-field">
-                  <span className="oh-sapl-field__label">المدة (أيام)</span>
-                  <input
-                    className="oh-sapl-input"
-                    type="number"
-                    min={1}
-                    max={3650}
-                    value={form.durationDays}
-                    onChange={(e) => setForm((v) => ({ ...v, durationDays: e.target.value }))}
-                    disabled={submitting}
-                  />
-                </div>
-                <div className="oh-sapl-field">
-                  <span className="oh-sapl-field__label">السعر (د.أ)</span>
-                  <input
-                    className="oh-sapl-input"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={form.priceJod}
-                    onChange={(e) => setForm((v) => ({ ...v, priceJod: e.target.value }))}
-                    placeholder="اختياري"
-                    disabled={submitting}
-                  />
-                </div>
-                <div className="oh-sapl-field">
-                  <span className="oh-sapl-field__label">ترتيب العرض</span>
-                  <input
-                    className="oh-sapl-input"
-                    type="number"
-                    value={form.sortOrder}
-                    onChange={(e) => setForm((v) => ({ ...v, sortOrder: e.target.value }))}
-                    disabled={submitting}
-                  />
-                </div>
-              </div>
-            </PlanFormSection>
+                        <PlanExtendedFields form={form} setForm={setForm} submitting={submitting} />
 
-            <PlanFormSection title="خيارات الباقة" hint="بدّل الحالات بسرعة — نفس الحقول المرسلة للـ API.">
-              <div className="oh-sapl-options">
-                <PlanToggle
-                  label="يتطلب زيارة ميدانية للشركة"
-                  checked={form.requiresCompanyVisit}
-                  disabled={submitting}
-                  onChange={(v) => setForm((f) => ({ ...f, requiresCompanyVisit: v }))}
-                />
-                <PlanToggle
-                  label="الباقة مفعّلة"
-                  description="عند التعطيل لن تُستخدم في إسناد جديد."
-                  checked={form.isActive}
-                  disabled={submitting}
-                  onChange={(v) => setForm((f) => ({ ...f, isActive: v }))}
-                />
-                <PlanToggle
-                  label="ظهور في قائمة الباقات العامة"
-                  description="إخفاء الباقة عن صفحة الباقات دون حذفها."
-                  checked={form.isVisible}
-                  disabled={submitting}
-                  onChange={(v) => setForm((f) => ({ ...f, isVisible: v }))}
-                />
-                <PlanToggle
-                  label="متاحة للشراء الذاتي (Stripe)"
-                  description="يتطلب سعراً أكبر من صفر وإعدادات الدفع."
-                  checked={form.selfSubscribeAllowed}
-                  disabled={submitting}
-                  onChange={(v) => setForm((f) => ({ ...f, selfSubscribeAllowed: v }))}
-                />
-              </div>
-            </PlanFormSection>
+
 
             <div className="oh-sapl-actions">
               <Button type="button" variant="secondary" disabled={submitting} onClick={resetForm}>

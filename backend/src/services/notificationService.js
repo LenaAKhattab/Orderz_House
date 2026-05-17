@@ -1,5 +1,8 @@
 const { pool } = require("../config/db");
 const { sanitizeNotificationForViewer } = require("../utils/notificationViewerSanitize");
+const { isAllowedByPreferences } = require("../utils/notificationPreferenceRules");
+const { getUserNotificationPreferences } = require("./notificationPreferenceCache");
+const realtimeHub = require("./notificationRealtimeHub");
 
 function getRunner(client) {
   return client || pool;
@@ -89,9 +92,34 @@ function normalizeCreateInput(data) {
   return out;
 }
 
+async function shouldDeliverInApp(input) {
+  try {
+    const prefs = await getUserNotificationPreferences(input.recipientUserId);
+    return isAllowedByPreferences(prefs, input.type, input.priority);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[notifications] preference check failed:", err?.message || err);
+    return true;
+  }
+}
+
+function publishRealtime(mapped) {
+  if (!mapped?.recipientUserId) return;
+  try {
+    const viewerRole = mapped.recipientRole || null;
+    const safe = sanitizeNotificationForViewer(mapped, viewerRole);
+    realtimeHub.publish(mapped.recipientUserId, safe);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[notifications] realtime publish failed:", err?.message || err);
+  }
+}
+
 async function createNotification(data, client) {
   const runner = getRunner(client);
   const input = normalizeCreateInput(data);
+  const allowed = await shouldDeliverInApp(input);
+  if (!allowed) return null;
   const { rows } = await runner.query(
     `INSERT INTO notifications (
       recipient_user_id, recipient_role, actor_user_id, type, title, message,
@@ -114,13 +142,21 @@ async function createNotification(data, client) {
       input.dedupeKey,
     ],
   );
-  return mapNotification(rows[0]);
+  const mapped = mapNotification(rows[0]);
+  publishRealtime(mapped);
+  return mapped;
 }
 
 async function createManyNotifications(items, client) {
   if (!Array.isArray(items) || items.length === 0) return [];
   const runner = getRunner(client);
-  const normalized = items.map((x) => normalizeCreateInput(x));
+  const normalized = [];
+  for (const item of items) {
+    const input = normalizeCreateInput(item);
+    // eslint-disable-next-line no-await-in-loop
+    if (await shouldDeliverInApp(input)) normalized.push(input);
+  }
+  if (!normalized.length) return [];
   const values = [];
   const placeholders = normalized.map((item, idx) => {
     const base = idx * 12;
@@ -148,12 +184,16 @@ async function createManyNotifications(items, client) {
     RETURNING *`,
     values,
   );
-  return rows.map(mapNotification);
+  const mapped = rows.map(mapNotification);
+  mapped.forEach(publishRealtime);
+  return mapped;
 }
 
 async function createIfNotExists(data, dedupeKey, client) {
   const runner = getRunner(client);
   const input = normalizeCreateInput({ ...data, dedupeKey: dedupeKey || data?.dedupeKey || null });
+  const allowed = await shouldDeliverInApp(input);
+  if (!allowed) return null;
   const { rows } = await runner.query(
     `INSERT INTO notifications (
       recipient_user_id, recipient_role, actor_user_id, type, title, message,
@@ -177,7 +217,11 @@ async function createIfNotExists(data, dedupeKey, client) {
       input.dedupeKey,
     ],
   );
-  if (rows[0]) return mapNotification(rows[0]);
+  if (rows[0]) {
+    const mapped = mapNotification(rows[0]);
+    publishRealtime(mapped);
+    return mapped;
+  }
   if (!input.dedupeKey) return null;
   const existing = await runner.query(`SELECT * FROM notifications WHERE dedupe_key = $1 LIMIT 1`, [input.dedupeKey]);
   return mapNotification(existing.rows[0] || null);

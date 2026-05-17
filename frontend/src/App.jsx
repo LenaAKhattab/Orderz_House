@@ -52,13 +52,14 @@ import AdminSettingsPage from "./pages/dashboard/AdminSettingsPage";
 import SuperAdminSettingsPage from "./pages/dashboard/SuperAdminSettingsPage";
 import { ROLE } from "./constants/authRoutes";
 import { useAuth } from "./context/useAuth";
-import { clearAnalyticsUser, initAnalytics, setAnalyticsUser, trackPageView } from "./services/analytics";
+import { clearAnalyticsUser, initAnalytics, runAnalyticsStartupChecks, setAnalyticsUser, trackPageView } from "./services/analytics";
 
 function AnalyticsBridge() {
   const location = useLocation();
   const { user } = useAuth();
 
   useEffect(() => {
+    runAnalyticsStartupChecks();
     initAnalytics();
   }, []);
 

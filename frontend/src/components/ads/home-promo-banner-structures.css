@@ -1,0 +1,462 @@
+/* Per-template structural layouts — colors come from theme tokens */
+
+/* —— Classic split: copy right, visual left —— */
+.ad-banner--classic-split .ppm__shell {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: clamp(0.65rem, 2vw, 1.25rem);
+  padding: clamp(0.65rem, 1.6vw, 0.95rem) clamp(0.85rem, 2vw, 1.15rem);
+  min-height: 0;
+  height: 100%;
+}
+
+.ad-banner--classic-split .ppm__shell--split {
+  align-items: center;
+}
+
+.ad-banner--classic-split .ppm__copy {
+  flex: 1 1 50%;
+  min-width: 0;
+  padding-inline-end: 0.5rem;
+}
+
+.ad-banner--classic-split .ppm__visual-col {
+  flex: 0 0 min(42%, 11.5rem);
+  max-width: 46%;
+  overflow: visible;
+}
+
+.ad-banner--classic-split .ppm__split-divider {
+  flex: 0 0 1px;
+  align-self: stretch;
+  margin: 0.35rem 0;
+  background: linear-gradient(180deg, transparent, rgba(148, 163, 184, 0.45), transparent);
+}
+
+.ad-banner--classic-split .ppm__badge-slot--tr {
+  position: absolute;
+  top: 0.65rem;
+  inset-inline-end: 0.85rem;
+  z-index: 3;
+}
+
+.ad-banner--classic-split .ppm__discount--on-visual {
+  position: absolute;
+  bottom: -0.15rem;
+  inset-inline-start: -0.25rem;
+}
+
+.ad-banner--classic-split.ad-banner--corner-ribbon .ppm__visual-col,
+.ad-banner--classic-split.ad-banner--corner-ribbon .ppm__split-divider {
+  display: none;
+}
+
+.ad-banner--classic-split.ad-banner--corner-ribbon .ppm__copy {
+  flex: 1 1 auto;
+  max-width: none;
+  /* RTL: keep title/CTA clear of the top-left ribbon diagonal */
+  padding-inline-end: clamp(3.5rem, 16%, 5.25rem);
+  padding-top: 0.2rem;
+}
+
+/* —— Product hero: large visual, compact copy —— */
+.ad-banner--product-focus .ppm__shell {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: clamp(0.5rem, 1.8vw, 1rem);
+  padding: clamp(0.65rem, 1.6vw, 0.95rem) clamp(0.85rem, 2vw, 1.15rem);
+  min-height: 0;
+  height: 100%;
+}
+
+.ad-banner--product-focus .ppm__visual-col {
+  flex: 0 0 min(44%, 12rem);
+  max-width: 48%;
+  position: relative;
+}
+
+.ad-banner--product-focus .ppm__visual-col::before {
+  content: "";
+  position: absolute;
+  inset: 8% 0;
+  border-radius: 45% 55% 50% 50%;
+  background: var(--ppm-blob, rgba(99, 102, 241, 0.12));
+  filter: blur(8px);
+  z-index: 0;
+}
+
+.ad-banner--product-focus .ppm__copy {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.ad-banner--product-focus .ppm__title {
+  font-size: clamp(1.05rem, 2.8vw, 1.45rem);
+}
+
+.ad-banner--product-focus .ppm__cta,
+.ad-banner--product-focus .ppm__cta--pill {
+  border-radius: 999px;
+  padding: 0.55rem 1.35rem;
+  font-size: 0.88rem;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.14);
+}
+
+.ad-banner--product-focus .ppm__company {
+  font-size: 0.72rem;
+}
+
+.ad-banner--product-focus .ppm__discount--on-visual {
+  position: absolute;
+  top: 0;
+  inset-inline-end: -0.35rem;
+  width: clamp(3.5rem, 11vw, 4.35rem);
+  height: clamp(3.5rem, 11vw, 4.35rem);
+  transform: rotate(6deg);
+  z-index: 3;
+}
+
+.ad-banner--product-focus .ppm__badge-slot--tr {
+  position: absolute;
+  top: 0.55rem;
+  inset-inline-end: 0.75rem;
+  z-index: 3;
+}
+
+/* —— Luxury center: stacked centered —— */
+.ad-banner--luxury-center .ppm__shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: clamp(0.55rem, 1.4vw, 0.85rem) clamp(0.75rem, 1.8vw, 1rem);
+  min-height: 0;
+  height: 100%;
+  gap: 0.35rem;
+}
+
+.ad-banner--luxury-center .ppm__luxury-ring {
+  position: relative;
+  padding: 0.35rem;
+  border-radius: 50%;
+  border: 2px solid rgba(251, 191, 36, 0.35);
+  box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.08);
+}
+
+.ad-banner--luxury-center .ppm__visual-col {
+  width: min(100%, 8.5rem);
+  max-height: 42%;
+  flex-shrink: 0;
+}
+
+.home-promo-banner-frame .ad-banner--luxury-center .ppm__luxury-ring {
+  max-height: 46%;
+  flex-shrink: 0;
+}
+
+.ad-banner--luxury-center .ppm__copy {
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}
+
+.ad-banner--luxury-center .ppm__tagline {
+  justify-content: center;
+}
+
+.ad-banner--luxury-center .ppm__badge-slot--above-title {
+  margin-bottom: 0.15rem;
+}
+
+.ad-banner--luxury-center .ppm__discount--center {
+  margin: 0.1rem 0;
+}
+
+.ad-banner--luxury-center .ppm__cta-row {
+  display: flex;
+  justify-content: center;
+}
+
+/* —— Ribbon strip: horizontal row —— */
+.ad-banner--ribbon-strip {
+  border-radius: clamp(0.65rem, 1.5vw, 0.95rem);
+}
+
+.ad-banner--ribbon-strip .ppm__ribbon {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.ad-banner--ribbon-strip .ppm__ribbon::before {
+  content: "";
+  position: absolute;
+  top: 38%;
+  inset-inline: -12%;
+  height: 2.75rem;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--ppm-ribbon, rgba(239, 68, 68, 0.35)) 35%,
+    var(--ppm-ribbon, rgba(239, 68, 68, 0.35)) 65%,
+    transparent 100%
+  );
+  transform: rotate(-5deg);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.12);
+}
+
+.ad-banner--ribbon-strip .ppm__ribbon::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  inset-inline-end: 8%;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: var(--ppm-ribbon, rgba(239, 68, 68, 0.4));
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  transform: translateY(-50%);
+  opacity: 0.7;
+}
+
+.ad-banner--ribbon-strip .ppm__shell {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: clamp(0.45rem, 1.5vw, 0.85rem);
+  padding: 0.45rem clamp(0.65rem, 1.6vw, 0.9rem);
+  min-height: 0;
+  height: 100%;
+}
+
+.ad-banner--ribbon-strip .ppm__visual-col {
+  flex: 0 0 clamp(2.75rem, 10%, 3.5rem);
+}
+
+.ad-banner--ribbon-strip .ppm__visual-col .ppm__visual-media,
+.ad-banner--ribbon-strip .ppm__visual-col .ppm__visual-placeholder {
+  max-height: 2.75rem;
+}
+
+.ad-banner--ribbon-strip .ppm__copy {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.65rem;
+  min-width: 0;
+}
+
+.ad-banner--ribbon-strip .ppm__title {
+  font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+  margin: 0;
+}
+
+.ad-banner--ribbon-strip .ppm__company,
+.ad-banner--ribbon-strip .ppm__tagline,
+.ad-banner--ribbon-strip .ppm__desc,
+.ad-banner--ribbon-strip .ppm__discount-line {
+  display: none;
+}
+
+.ad-banner--ribbon-strip .ppm__strip-sub {
+  font-size: 0.72rem;
+  font-weight: 700;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.ad-banner--ribbon-strip .ppm__cta {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.ad-banner--ribbon-strip .ppm__discount--edge {
+  flex-shrink: 0;
+  padding: 0.3rem 0.55rem;
+  border-radius: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.ad-banner--ribbon-strip .ppm__badge-slot--inline .ppm__top-badge {
+  font-size: 0.62rem;
+  padding: 0.15rem 0.45rem;
+}
+
+/* —— Business partner —— */
+.ad-banner--business-partner .ppm__shell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: clamp(0.65rem, 2vw, 1.1rem);
+  padding: clamp(0.65rem, 1.6vw, 0.95rem) clamp(0.85rem, 2vw, 1.15rem);
+  min-height: 0;
+  height: 100%;
+}
+
+.ad-banner--business-partner .ppm__visual-col--framed {
+  flex: 0 0 clamp(6.5rem, 32%, 11rem);
+  padding: 0.35rem;
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.ad-banner--business-partner .ppm__visual-col--framed .ppm__visual-glow {
+  display: none;
+}
+
+.ad-banner--business-partner .ppm__copy {
+  flex: 1 1 auto;
+  align-items: flex-start;
+  border-inline-end: 3px solid var(--ppm-blob, rgba(14, 165, 233, 0.45));
+  padding-inline-end: 0.85rem;
+  margin-inline-end: 0.25rem;
+}
+
+.ad-banner--business-partner .ppm__biz-sub {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.4;
+  opacity: 0.88;
+}
+
+.ad-banner--business-partner .ppm__title {
+  font-size: clamp(1.1rem, 2.8vw, 1.5rem);
+  font-weight: 800;
+}
+
+.ad-banner--business-partner .ppm__top-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  opacity: 0.92;
+}
+
+.ad-banner--business-partner .ppm__discount--label {
+  display: inline-block;
+  padding: 0.18rem 0.5rem;
+  border-radius: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  margin-top: 0.2rem;
+}
+
+.ad-banner--business-partner .ppm__cta,
+.ad-banner--business-partner .ppm__cta--corporate {
+  border-radius: 0.45rem;
+  padding: 0.45rem 1rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  box-shadow: none;
+  letter-spacing: 0.01em;
+}
+
+.ad-banner--ribbon-strip .ppm__cta--compact {
+  border-radius: 0.4rem;
+  font-weight: 800;
+}
+
+.ad-banner--business-partner .ppm__decor {
+  opacity: 0.28 !important;
+}
+
+/* —— Minimal clean —— */
+.ad-banner--minimal-clean {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+}
+
+.ad-banner--minimal-clean .ppm__decor {
+  display: none;
+}
+
+.ad-banner--minimal-clean .ppm__shell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  min-height: 0;
+  height: 100%;
+}
+
+.ad-banner--minimal-clean .ppm__visual-col {
+  flex: 0 0 clamp(3rem, 12%, 4rem);
+}
+
+.ad-banner--minimal-clean .ppm__visual-col .ppm__visual-glow {
+  display: none;
+}
+
+.ad-banner--minimal-clean .ppm__copy {
+  flex: 1 1 auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+}
+
+.ad-banner--minimal-clean .ppm__title {
+  font-size: clamp(1.15rem, 3vw, 1.55rem);
+  flex: 1 1 auto;
+  min-width: 8rem;
+}
+
+.ad-banner--minimal-clean .ppm__company,
+.ad-banner--minimal-clean .ppm__tagline,
+.ad-banner--minimal-clean .ppm__desc,
+.ad-banner--minimal-clean .ppm__discount-line {
+  display: none;
+}
+
+.ad-banner--minimal-clean .ppm__top-badge {
+  font-size: 0.62rem;
+  padding: 0.15rem 0.45rem;
+}
+
+.ad-banner--minimal-clean .ppm__cta {
+  border-radius: 0.4rem;
+  padding: 0.38rem 0.9rem;
+  font-size: 0.76rem;
+  box-shadow: none;
+}
+
+.ad-banner--minimal-clean .ppm__cta--outline {
+  background: transparent !important;
+  border: 1.5px solid currentColor;
+}
+
+.ad-banner--minimal-clean .ppm__discount--pill {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+}
+
+/* Preview / picker mini scale */
+.ppm--mini-scale .ppm__title {
+  font-size: 1rem;
+}
+
+.ppm--mini-scale .ppm__cta {
+  font-size: 0.65rem;
+  padding: 0.3rem 0.65rem;
+}
+
+@media (max-width: 639px) {
+  .home-promo-banner-frame .ad-banner--ribbon-strip .ppm__shell {
+    grid-template-columns: auto 1fr auto;
+    gap: 0.35rem;
+  }
+}

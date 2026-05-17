@@ -100,8 +100,18 @@ function mapUserPublic(row) {
     preferredWithdrawalMethod: row.preferred_withdrawal_method || null,
     payoutNotesHint: row.payout_notes_hint || null,
     notificationPreferences,
+    browserNotificationStatus: row.browser_notification_status || "pending",
+    notificationPromptAnsweredAt: row.notification_prompt_answered_at || null,
   };
 }
+
+const USER_PUBLIC_SELECT = `
+  id, account_id, first_name, father_name, family_name, email, role,
+  country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at,
+  avatar_url, professional_title, bio, skills, website_url, linkedin_url, github_url, behance_url, portfolio_url,
+  company_name, billing_name, billing_country, billing_city, billing_notes,
+  preferred_withdrawal_method, payout_notes_hint, notification_preferences,
+  browser_notification_status, notification_prompt_answered_at`;
 
 function withAuthz(user, authz) {
   return {
@@ -118,7 +128,8 @@ async function findUserByEmail(emailNormalized) {
             country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at,
             avatar_url, professional_title, bio, skills, website_url, linkedin_url, github_url, behance_url, portfolio_url,
             company_name, billing_name, billing_country, billing_city, billing_notes,
-            preferred_withdrawal_method, payout_notes_hint, notification_preferences
+            preferred_withdrawal_method, payout_notes_hint, notification_preferences,
+            browser_notification_status, notification_prompt_answered_at
      FROM users WHERE lower(email::text) = lower($1::text) LIMIT 1`,
     [emailNormalized],
   );
@@ -127,11 +138,7 @@ async function findUserByEmail(emailNormalized) {
 
 async function findUserById(id) {
   const { rows } = await pool.query(
-    `SELECT id, account_id, first_name, father_name, family_name, email, role,
-            country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at,
-            avatar_url, avatar_public_id, professional_title, bio, skills, website_url, linkedin_url, github_url, behance_url, portfolio_url,
-            company_name, billing_name, billing_country, billing_city, billing_notes,
-            preferred_withdrawal_method, payout_notes_hint, notification_preferences
+    `SELECT ${USER_PUBLIC_SELECT}, avatar_public_id
      FROM users WHERE id = $1::bigint LIMIT 1`,
     [id],
   );

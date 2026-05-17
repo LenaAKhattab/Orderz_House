@@ -1,4 +1,10 @@
-/* Homepage: full-width promo band under hero (no sidebar rail) */
+/* Homepage: full-width promo band (default below hero) or inline in hero (--hero) */
+
+.home-promo-offers--hero {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
 
 .home-promo-offers {
   width: 100%;

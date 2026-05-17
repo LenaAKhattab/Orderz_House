@@ -84,7 +84,20 @@ export default function NotificationsBell({ notificationsPagePath, variant = "na
   }, [fetchCount]);
 
   useEffect(() => {
-    const onRefresh = () => {
+    const onRefresh = (ev) => {
+      const incoming = ev?.detail?.notification;
+      const delta = Number(ev?.detail?.unreadDelta);
+      if (incoming?.id) {
+        setItems((prev) => {
+          if (prev.some((x) => String(x.id) === String(incoming.id))) return prev;
+          return [incoming, ...prev].slice(0, 8);
+        });
+        if (!incoming.isRead && Number.isFinite(delta) && delta > 0) {
+          setUnreadCount((v) => v + delta);
+        } else if (!incoming.isRead) {
+          setUnreadCount((v) => v + 1);
+        }
+      }
       void fetchCount();
       if (open) void fetchLatest();
     };

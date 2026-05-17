@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-/** RTL accordion list — flat rows, bottom borders, chevron on the visual right (reference layout) */
+/** RTL accordion — questions / answers (static copy). */
 const FAQ_ITEMS = [
   {
     id: "trust",
@@ -42,7 +42,7 @@ const FAQ_ITEMS = [
 function Chevron({ open }) {
   return (
     <span
-      className={`shrink-0 text-gray-500 transition-transform duration-200 ${open ? "-rotate-180" : ""}`}
+      className={`shrink-0 text-violet-600 transition-transform duration-200 ${open ? "-rotate-180" : ""}`}
       aria-hidden
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -61,59 +61,75 @@ const FaqSection = () => {
 
   return (
     <section
-      className="relative w-full px-4 py-10 sm:px-8 sm:py-12 md:px-12 lg:px-16"
+      className="relative w-full border-t border-slate-200/60 px-4 py-12 sm:px-6 sm:py-14 md:px-8 md:py-16 lg:px-10"
       aria-labelledby="home-faq-heading"
       dir="rtl"
     >
-      <div className="mx-auto w-full max-w-4xl">
-        <header className="mb-8 sm:mb-10">
+      <div className="mx-auto w-full max-w-6xl pb-2">
+        <header className="mb-8 text-right sm:mb-10">
           <h2
             id="home-faq-heading"
-            className="m-0 text-right text-2xl font-bold tracking-tight text-gray-900 sm:text-[clamp(1.35rem,2.8vw,1.75rem)]"
+            className="m-0 text-[clamp(1.45rem,3.2vw,1.9rem)] font-extrabold leading-tight tracking-tight text-[#1e293b]"
           >
             الأسئلة الشائعة
           </h2>
+          <p className="mt-2.5 mb-0 max-w-xl text-[0.92rem] leading-relaxed text-slate-600 sm:text-[0.95rem]">
+            إجابات سريعة وواضحة على أكثر الأسئلة شيوعًا.
+          </p>
         </header>
 
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <ul className="m-0 list-none divide-y divide-gray-200 p-0" role="list">
-          {FAQ_ITEMS.map((item) => {
-            const open = openId === item.id;
-            const panelId = `faq-panel-${item.id}`;
-            const buttonId = `faq-trigger-${item.id}`;
-            return (
-              <li key={item.id}>
-                <button
-                  id={buttonId}
-                  type="button"
-                  className={`flex w-full items-center gap-4 px-1 py-5 text-right transition-colors sm:px-2 sm:py-[1.35rem] ${
-                    open ? "bg-gray-50" : "bg-white hover:bg-gray-50"
-                  }`}
-                  aria-expanded={open}
-                  aria-controls={panelId}
-                  onClick={() => toggle(item.id)}
-                >
-                  {/* في RTL: العنصر الأول يظهر يميناً — الشيفرون على أقصى اليمين */}
-                  <Chevron open={open} />
-                  <span className="min-w-0 flex-1 text-[0.95rem] font-normal leading-relaxed text-gray-900 sm:text-base">
-                    {item.q}
-                  </span>
-                </button>
-                <div
-                  id={panelId}
-                  role="region"
-                  aria-labelledby={buttonId}
-                  hidden={!open}
-                  className="border-t border-gray-100 bg-gray-50"
-                >
-                  <p className="px-1 pb-5 pt-3 text-right text-sm leading-[1.75] text-gray-600 sm:px-2 sm:text-[0.95rem]">
-                    {item.a}
-                  </p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="flex flex-col items-stretch gap-8 md:flex-row md:items-start md:gap-8 lg:gap-12">
+          <ul className="m-0 min-w-0 flex-1 list-none divide-y divide-slate-200/80 p-0" role="list">
+            {FAQ_ITEMS.map((item) => {
+              const open = openId === item.id;
+              const panelId = `faq-panel-${item.id}`;
+              const buttonId = `faq-trigger-${item.id}`;
+              return (
+                <li key={item.id}>
+                  <button
+                    id={buttonId}
+                    type="button"
+                    className={`flex w-full items-center gap-3 px-1 py-4 text-right transition-colors sm:gap-4 sm:px-0 sm:py-[1.15rem] ${
+                      open ? "bg-violet-50/85 hover:bg-violet-50/90" : "bg-transparent hover:bg-slate-100/60"
+                    }`}
+                    aria-expanded={open}
+                    aria-controls={panelId}
+                    onClick={() => toggle(item.id)}
+                  >
+                    <span className="min-w-0 flex-1 text-[0.95rem] font-semibold leading-relaxed text-[#1e293b] sm:text-base">
+                      {item.q}
+                    </span>
+                    <Chevron open={open} />
+                  </button>
+                  <div
+                    id={panelId}
+                    role="region"
+                    aria-labelledby={buttonId}
+                    hidden={!open}
+                    className="border-t border-slate-200/70 bg-violet-50/40"
+                  >
+                    <p className="m-0 px-1 pb-5 pt-3.5 text-right text-[0.9rem] leading-[1.75] text-slate-600 sm:px-0 sm:text-[0.95rem]">
+                      {item.a}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div
+            className="flex shrink-0 items-start justify-center md:w-[min(42%,14rem)] md:justify-end lg:w-[min(38%,16rem)] lg:sticky lg:top-24"
+            aria-hidden
+          >
+            <img
+              src="/home-faq-side-accent.png"
+              alt=""
+              width={256}
+              height={256}
+              decoding="async"
+              className="pointer-events-none h-[clamp(9rem,28vw,16rem)] w-[clamp(9rem,28vw,16rem)] max-w-full object-contain"
+            />
+          </div>
         </div>
       </div>
     </section>

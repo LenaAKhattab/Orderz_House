@@ -1,0 +1,302 @@
+/* Premium composition layer — classic split (public + admin preview) */
+
+/* Reference-style split: copy lane + hero visual lane (RTL-safe) */
+.ad-banner--classic-split .ppm__shell--split {
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: clamp(0.75rem, 2.2vw, 1.35rem);
+  padding: clamp(0.75rem, 1.8vw, 1.05rem) clamp(1rem, 2.4vw, 1.35rem);
+}
+
+.ad-banner--classic-split .ppm__split-divider {
+  display: none;
+}
+
+/* Copy column — left lane in RTL (organized text hierarchy) */
+.ad-banner--classic-split .ppm__copy {
+  flex: 1 1 48%;
+  justify-content: center;
+  gap: clamp(0.28rem, 0.85vw, 0.42rem);
+  padding-inline-end: clamp(0.25rem, 1vw, 0.5rem);
+}
+
+.ad-banner--classic-split .ppm__company {
+  font-size: clamp(0.72rem, 1.6vw, 0.8rem);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  opacity: 0.92;
+}
+
+.ad-banner--classic-split .ppm__title {
+  margin: clamp(0.08rem, 0.35vw, 0.15rem) 0 0;
+  font-size: clamp(1.42rem, 3.6vw, 2.05rem);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.ad-banner--classic-split .ppm__tagline {
+  margin: clamp(0.1rem, 0.4vw, 0.2rem) 0;
+}
+
+.ad-banner--classic-split .ppm__tagline-line {
+  max-width: clamp(1.5rem, 4vw, 2.75rem);
+  opacity: 0.55;
+}
+
+.ad-banner--classic-split .ppm__tagline-text {
+  font-size: clamp(0.78rem, 1.85vw, 0.92rem);
+  font-weight: 800;
+}
+
+.ad-banner--classic-split .ppm__desc {
+  font-size: clamp(0.76rem, 1.7vw, 0.84rem);
+  line-height: 1.45;
+  opacity: 0.9;
+}
+
+.ad-banner--classic-split .ppm__discount-line {
+  margin-top: clamp(0.12rem, 0.45vw, 0.22rem);
+  font-size: clamp(0.92rem, 2.1vw, 1.08rem);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.ad-banner--classic-split .ppm__cta-row {
+  margin-top: clamp(0.45rem, 1.2vw, 0.65rem);
+  width: 100%;
+}
+
+.ad-banner--classic-split .ppm__cta {
+  padding: clamp(0.52rem, 1.4vw, 0.62rem) clamp(1.1rem, 2.8vw, 1.35rem);
+  font-size: clamp(0.8rem, 1.85vw, 0.88rem);
+  font-weight: 900;
+  border-radius: 999px;
+  box-shadow:
+    0 2px 4px rgba(15, 23, 42, 0.06),
+    0 10px 22px rgba(15, 23, 42, 0.14);
+}
+
+.ad-banner--classic-split .ppm__cta:hover {
+  transform: translateY(-1px);
+}
+
+.ad-banner--classic-split .ppm__cta-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+/* Visual column — hero object + layered depth */
+.ad-banner--classic-split .ppm__visual-col {
+  flex: 0 0 min(46%, 12.5rem);
+  max-width: 50%;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: clamp(0.15rem, 0.6vw, 0.35rem);
+}
+
+.ad-banner--classic-split .ppm__visual {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
+  min-height: clamp(5.5rem, 42%, 7.5rem);
+}
+
+.ad-banner--classic-split .ppm__visual-glow {
+  inset: 4% 0 8%;
+  filter: blur(22px);
+  opacity: 0.95;
+}
+
+/* Soft pedestal under product image */
+.ad-banner--classic-split .ppm__visual::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  bottom: 4%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(78%, 9.5rem);
+  height: clamp(0.65rem, 12%, 1.1rem);
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(15, 23, 42, 0.14) 0%,
+    rgba(15, 23, 42, 0.04) 55%,
+    transparent 72%
+  );
+  pointer-events: none;
+}
+
+.ad-banner--classic-split .ppm__visual-media,
+.ad-banner--classic-split .ppm__visual-placeholder {
+  max-height: clamp(6.25rem, 88%, 9.5rem);
+  filter: drop-shadow(0 10px 22px rgba(15, 23, 42, 0.12));
+}
+
+.ad-banner--classic-split .ppm__visual-img {
+  max-height: clamp(6.25rem, 88%, 9.5rem);
+  object-position: center bottom;
+}
+
+/* Floating discount — glass circle on visual corner */
+.ad-banner--classic-split .ppm__discount--on-visual {
+  bottom: -0.2rem;
+  inset-inline-start: auto;
+  inset-inline-end: -0.45rem;
+  width: clamp(3.65rem, 11.5vw, 4.65rem);
+  height: clamp(3.65rem, 11.5vw, 4.65rem);
+  transform: rotate(-10deg);
+  border: 2px solid rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 4px 12px rgba(15, 23, 42, 0.1),
+    0 14px 28px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.ad-banner--classic-split .ppm__sale-sticker-pct {
+  font-size: clamp(1rem, 2.4vw, 1.12rem);
+}
+
+.ad-banner--classic-split .ppm__sale-sticker-off {
+  font-size: 0.58rem;
+  font-weight: 900;
+  opacity: 0.92;
+}
+
+/* Limited badge — top corner (away from visual focal) */
+.ad-banner--classic-split .ppm__badge-slot--tr {
+  top: clamp(0.55rem, 1.4vw, 0.75rem);
+  inset-inline-end: clamp(0.7rem, 1.8vw, 0.95rem);
+  inset-inline-start: auto;
+}
+
+.ad-banner--classic-split .ppm__top-badge {
+  padding: 0.24rem 0.62rem;
+  font-size: clamp(0.62rem, 1.45vw, 0.7rem);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+/* Decorative layer — soft SaaS shapes */
+.ppm__decor--split {
+  background-image:
+    radial-gradient(circle at 6% 22%, rgba(148, 163, 184, 0.22) 0 2px, transparent 3px),
+    radial-gradient(circle at 94% 72%, rgba(148, 163, 184, 0.18) 0 2px, transparent 3px),
+    radial-gradient(ellipse 55% 45% at 88% 42%, var(--ppm-blob, rgba(139, 124, 247, 0.14)) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 35% at 12% 78%, rgba(14, 165, 233, 0.08) 0%, transparent 68%);
+  background-size: 26px 26px, 22px 22px, 100% 100%, 100% 100%;
+}
+
+.ppm__decor--split::before {
+  width: clamp(2.75rem, 7vw, 3.75rem);
+  height: clamp(2.75rem, 7vw, 3.75rem);
+  top: 10%;
+  inset-inline-start: 5%;
+  border-color: rgba(139, 124, 247, 0.18);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.35) 0%, transparent 70%);
+}
+
+.ppm__decor--split::after {
+  width: clamp(1.35rem, 3.5vw, 1.85rem);
+  height: clamp(1.35rem, 3.5vw, 1.85rem);
+  bottom: 14%;
+  inset-inline-end: 10%;
+  border-color: rgba(14, 165, 233, 0.2);
+}
+
+/* Card shell polish (same outer dimensions) */
+.home-promo-banner-frame .ad-banner--classic-split.ppm {
+  border-radius: clamp(1.05rem, 2.4vw, 1.55rem);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 18px 42px rgba(15, 23, 42, 0.09);
+}
+
+.home-promo-banner-frame .ad-banner--classic-split.ppm--has-bg::before {
+  background-image:
+    linear-gradient(
+      112deg,
+      rgba(255, 255, 255, 0.96) 0%,
+      rgba(255, 255, 255, 0.9) 38%,
+      rgba(255, 255, 255, 0.82) 100%
+    ),
+    var(--ppm-bg-url);
+}
+
+/* Tablet — balanced split, slightly tighter visual */
+@media (min-width: 640px) and (max-width: 900px) {
+  .ad-banner--classic-split .ppm__visual-col {
+    flex-basis: min(44%, 11rem);
+  }
+
+  .ad-banner--classic-split .ppm__title {
+    font-size: clamp(1.25rem, 3.2vw, 1.65rem);
+  }
+}
+
+/* Mobile — clean vertical stack */
+@media (max-width: 639px) {
+  .ad-banner--classic-split .ppm__shell--split {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 0.55rem;
+    padding: 0.65rem 0.8rem 0.7rem;
+  }
+
+  .ad-banner--classic-split .ppm__visual-col {
+    flex: 0 0 auto;
+    max-width: 100%;
+    width: 100%;
+    min-height: 0;
+    padding-bottom: 0.15rem;
+  }
+
+  .ad-banner--classic-split .ppm__visual {
+    min-height: clamp(4.75rem, 38vw, 5.75rem);
+  }
+
+  .ad-banner--classic-split .ppm__visual-media,
+  .ad-banner--classic-split .ppm__visual-img {
+    max-height: clamp(4.5rem, 36vw, 5.5rem);
+  }
+
+  .ad-banner--classic-split .ppm__discount--on-visual {
+    inset-inline-end: 0.15rem;
+    bottom: -0.1rem;
+    width: 3.35rem;
+    height: 3.35rem;
+  }
+
+  .ad-banner--classic-split .ppm__copy {
+    flex: 1 1 auto;
+    padding-inline-end: 0;
+    gap: 0.28rem;
+  }
+
+  .ad-banner--classic-split .ppm__title {
+    font-size: 1.12rem;
+  }
+
+  .ad-banner--classic-split .ppm__cta-row .ppm__cta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ad-banner--classic-split .ppm__badge-slot--tr {
+    top: 0.45rem;
+    inset-inline-end: 0.55rem;
+  }
+
+  .ad-banner--classic-split.ad-banner--corner-ribbon .ppm__copy {
+    padding-inline-end: clamp(3rem, 14%, 4.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ad-banner--classic-split .ppm__cta:hover {
+    transform: none;
+  }
+}

@@ -20,12 +20,12 @@ export default function PublicHomePageSkeleton() {
                 <section className="home-hero home-hero--ref home-hero--marketing w-full min-w-0 overflow-x-clip">
                   <div className="home-hero__inner w-full min-w-0 py-8 md:py-10 lg:py-12">
                     <HeroSkeleton />
+                    <div className="home-hero__ads w-full min-w-0">
+                      <AdsBandSkeleton variant="hero" />
+                    </div>
                   </div>
                 </section>
               </div>
-            </div>
-            <div className="home-ads-band w-full min-w-0">
-              <AdsBandSkeleton />
             </div>
           </div>
         </section>

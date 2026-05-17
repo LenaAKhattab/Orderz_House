@@ -10,13 +10,20 @@ function pickFeaturedIndex(plans) {
   return Math.floor(plans.length / 2);
 }
 
-const PricingSection = ({ plans, onCta, hasBlockingSubscription = false, loading = false }) => {
+const PricingSection = ({
+  plans,
+  onCta,
+  hasBlockingSubscription = false,
+  loading = false,
+  checkoutBusyPlanId = null,
+}) => {
   const featuredIndex = pickFeaturedIndex(plans);
 
   return (
     <section className="pricing" aria-label="خطط الاشتراك">
       <header className="pricing__header">
-        <h1 className="pricing__title">اختر الباقة المناسبة لك</h1>
+        <h1 className="pricing__title">باقات ORDERZHOUSE للعمل الحر</h1>
+        <p className="pricing__subtitle">اختر الاشتراك المناسب — جميع التفاصيل من قاعدة البيانات</p>
       </header>
 
       {loading ? (
@@ -30,6 +37,7 @@ const PricingSection = ({ plans, onCta, hasBlockingSubscription = false, loading
               featured={idx === featuredIndex}
               onCta={onCta}
               hasBlockingSubscription={hasBlockingSubscription}
+              checkoutBusy={checkoutBusyPlanId != null && String(checkoutBusyPlanId) === String(p.id)}
             />
           ))}
         </div>

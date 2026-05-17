@@ -5,6 +5,7 @@ import PartnersSection from "../sections/PartnersSection";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import "../skeletons/home-skeleton.css";
+import "../sections/home-landing-top.css";
 
 function PublicLayoutInner() {
   const { pathname } = useLocation();
@@ -13,7 +14,7 @@ function PublicLayoutInner() {
   const isHome = pathname === "/";
 
   return (
-    <div className="flex min-h-screen flex-col bg-page-bg">
+    <div className={`relative flex min-h-screen flex-col ${isHome ? "home-public-layout" : "bg-page-bg"}`}>
       <Navbar />
       <Outlet />
       {isHome ? (homeBlocking ? <PartnersBandSkeleton /> : <PartnersSection />) : null}

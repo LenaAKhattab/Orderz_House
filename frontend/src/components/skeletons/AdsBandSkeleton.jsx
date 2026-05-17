@@ -14,27 +14,44 @@ function AdCardSkeleton() {
   );
 }
 
-/** Matches `HomePromoOffersSection` band: title row + responsive grid of cards. */
-export default function AdsBandSkeleton() {
+/**
+ * Matches `HomePromoOffersSection` band: title row + responsive grid of cards.
+ * @param {{ variant?: "default"|"hero" }} p
+ */
+export default function AdsBandSkeleton({ variant = "default" }) {
+  const isHero = variant === "hero";
   return (
-    <div className="home-promo-offers home-promo-offers--skeleton w-full min-w-0" aria-hidden>
-      <div className="home-promo-offers__head">
-        <div className="home-promo-offers__title-block">
-          <SkBox className="h-5 w-5 shrink-0 rounded-md opacity-70" />
-          <SkLine className="h-7 w-[min(100%,14rem)] rounded-lg" />
+    <div
+      className={`home-promo-offers home-promo-offers--skeleton w-full min-w-0${isHero ? " home-promo-offers--hero" : ""}`}
+      aria-hidden
+    >
+      {!isHero ? (
+        <div className="home-promo-offers__head">
+          <div className="home-promo-offers__title-block">
+            <SkBox className="h-5 w-5 shrink-0 rounded-md opacity-70" />
+            <SkLine className="h-7 w-[min(100%,14rem)] rounded-lg" />
+          </div>
         </div>
-      </div>
-      <div className="home-promo-offers__grid">
-        <div className="home-promo-offers__cell">
-          <AdCardSkeleton />
+      ) : null}
+      {isHero ? (
+        <div className="home-promo-offers__grid">
+          <div className="home-promo-offers__cell">
+            <SkBox className="mx-auto h-[clamp(5.5rem,16vw,6.75rem)] w-full max-w-[42.5rem] rounded-2xl border border-slate-200/70" />
+          </div>
         </div>
-        <div className="home-promo-offers__cell max-[639px]:hidden">
-          <AdCardSkeleton />
+      ) : (
+        <div className="home-promo-offers__grid">
+          <div className="home-promo-offers__cell">
+            <AdCardSkeleton />
+          </div>
+          <div className="home-promo-offers__cell max-[639px]:hidden">
+            <AdCardSkeleton />
+          </div>
+          <div className="home-promo-offers__cell max-[1023px]:hidden">
+            <AdCardSkeleton />
+          </div>
         </div>
-        <div className="home-promo-offers__cell max-[1023px]:hidden">
-          <AdCardSkeleton />
-        </div>
-      </div>
+      )}
     </div>
   );
 }

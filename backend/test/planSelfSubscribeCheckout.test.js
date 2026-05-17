@@ -9,7 +9,10 @@ const { describe, it } = require("node:test");
 const assert = require("node:assert");
 const fs = require("node:fs");
 const path = require("node:path");
-const { planEligibleForFreelancerSelfCheckout } = require("../src/services/plansService");
+const {
+  planEligibleForFreelancerSelfCheckout,
+  effectiveCheckoutPriceJod,
+} = require("../src/services/plansService");
 
 function basePlan(overrides = {}) {
   return {
@@ -44,6 +47,16 @@ describe("planEligibleForFreelancerSelfCheckout", () => {
   it("denies non-positive or missing price", () => {
     assert.strictEqual(planEligibleForFreelancerSelfCheckout(basePlan({ price_jod: 0 })), false);
     assert.strictEqual(planEligibleForFreelancerSelfCheckout(basePlan({ price_jod: null })), false);
+  });
+
+  it("uses stripe_checkout_amount_jod when set for eligibility", () => {
+    assert.strictEqual(
+      planEligibleForFreelancerSelfCheckout(
+        basePlan({ price_jod: 900, stripe_checkout_amount_jod: 300 }),
+      ),
+      true,
+    );
+    assert.strictEqual(effectiveCheckoutPriceJod(basePlan({ price_jod: 900, stripe_checkout_amount_jod: 300 })), 300);
   });
 });
 

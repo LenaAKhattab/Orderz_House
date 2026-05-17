@@ -1,7 +1,23 @@
 const { body, param, query } = require("express-validator");
 
 const PLACEMENTS = ["home_right_panel", "home_after_hero", "services_page", "global_sidebar"];
-const THEME_PRESETS = ["purple", "green", "orange", "blue"];
+const THEME_PRESETS = [
+  "purple",
+  "green",
+  "orange",
+  "blue",
+  "banner_1",
+  "banner_2",
+  "banner_3",
+  "banner_4",
+  "banner_5",
+  "classic_split",
+  "product_focus",
+  "luxury_center",
+  "ribbon_strip",
+  "business_partner",
+  "minimal_clean",
+];
 const LAYOUT_TYPES = [
   "image_top",
   "image_background",
@@ -58,7 +74,7 @@ const createAdValidators = [
   body("themePreset")
     .optional({ nullable: true })
     .custom((v) => v == null || v === "" || THEME_PRESETS.includes(String(v).toLowerCase()))
-    .withMessage("نمط اللون غير صالح."),
+    .withMessage("قالب العرض أو نمط الألوان غير صالح."),
 ];
 
 const updateAdValidators = [
@@ -98,14 +114,28 @@ const updateAdValidators = [
   body("themePreset")
     .optional({ nullable: true })
     .custom((v) => v == null || v === "" || THEME_PRESETS.includes(String(v).toLowerCase()))
-    .withMessage("نمط اللون غير صالح."),
+    .withMessage("قالب العرض أو نمط الألوان غير صالح."),
 ];
 
+const adminNoteBody = body("adminNote")
+  .isString()
+  .trim()
+  .isLength({ min: 3, max: 500 })
+  .withMessage("سبب الإجراء مطلوب (3–500 حرف).");
+
 const reorderAdsValidators = [
+  body("placement").optional().isString().isIn(PLACEMENTS),
   body("items").isArray({ min: 1 }).withMessage("قائمة الترتيب مطلوبة."),
   body("items.*.id").isInt({ min: 1 }),
   body("items.*.sortOrder").isInt(),
+  adminNoteBody,
 ];
+
+const deleteAdValidators = [...adIdParam, adminNoteBody];
+
+const createAdValidatorsWithNote = [...createAdValidators, adminNoteBody];
+const updateAdValidatorsWithNote = [...updateAdValidators, adminNoteBody];
+const duplicateAdValidatorsWithNote = [...adIdParam, adminNoteBody];
 
 module.exports = {
   adIdParam,
@@ -113,6 +143,10 @@ module.exports = {
   publicAdEventValidators,
   createAdValidators,
   updateAdValidators,
+  createAdValidatorsWithNote,
+  updateAdValidatorsWithNote,
   reorderAdsValidators,
+  deleteAdValidators,
   duplicateAdValidators: adIdParam,
+  duplicateAdValidatorsWithNote,
 };

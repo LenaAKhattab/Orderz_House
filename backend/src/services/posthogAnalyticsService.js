@@ -17,15 +17,12 @@ function buildPublicError(message, statusCode = 503, publicCode = "PH_UNAVAILABL
   return err;
 }
 
-function normalizeHost(raw) {
-  const s = String(raw || "https://app.posthog.com").trim().replace(/\/+$/, "");
-  return s || "https://app.posthog.com";
-}
+const { normalizeHost } = require("../utils/posthogEnvValidation");
 
 function resolvePosthogConfig() {
   const projectId = String(process.env.POSTHOG_PROJECT_ID || "").trim();
   let apiKey = String(process.env.POSTHOG_PERSONAL_API_KEY || "").trim();
-  const host = normalizeHost(process.env.POSTHOG_HOST);
+  const { host } = normalizeHost(process.env.POSTHOG_HOST);
 
   const wizardProjectKey = String(process.env.POSTHOG_API_KEY || "").trim();
   if (!apiKey && wizardProjectKey.startsWith("phc_")) {
@@ -73,7 +70,7 @@ function rangeToWhereClause(rangeKey) {
 function readPosthogCredentialsLoose() {
   const projectId = String(process.env.POSTHOG_PROJECT_ID || "").trim();
   const apiKey = String(process.env.POSTHOG_PERSONAL_API_KEY || "").trim();
-  const host = normalizeHost(process.env.POSTHOG_HOST);
+  const { host } = normalizeHost(process.env.POSTHOG_HOST);
   if (!projectId || !apiKey) return null;
   if (apiKey.startsWith("phc_")) return null;
   return { projectId, apiKey, host };
@@ -328,4 +325,7 @@ module.exports = {
   rangeToWhereClause,
   readPosthogCredentialsLoose,
   fetchSuperAdminOverviewPosthog,
+  scalarWithCfg,
+  executeHogQL: executeHogQL,
+  executeHogQLWithCfg: executeHogQL,
 };

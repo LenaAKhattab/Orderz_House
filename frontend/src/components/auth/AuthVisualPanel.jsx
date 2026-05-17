@@ -8,8 +8,14 @@ const AuthVisualPanel = ({ title, description, quote, personName, personRole }) 
       <div className="oh-auth-visual__glow" aria-hidden />
       <div className="oh-auth-visual__content">
         <div className="oh-auth-visual__badge">
-          <span className="oh-auth-visual__badge-dot" aria-hidden />
-          أوردرز هاوس
+          <img
+            src="/hero/fullLogp.png"
+            alt="أوردرز هاوس"
+            className="oh-auth-visual__badge-logo"
+            width={160}
+            height={40}
+            decoding="async"
+          />
         </div>
         <h2 className="oh-auth-visual__title">{title}</h2>
         <p className="oh-auth-visual__desc">{description}</p>

@@ -4454,6 +4454,14 @@ p {
   font-weight: 900;
 }
 
+.pricing__subtitle {
+  margin: 10px 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(15, 26, 58, 0.62);
+  line-height: 1.5;
+}
+
 .pricing__grid {
   display: grid;
   gap: clamp(18px, 2.4vw, 26px);
@@ -4592,6 +4600,60 @@ p {
   font-weight: 950;
   color: #0f1a3a;
   letter-spacing: -0.02em;
+}
+
+.pricing-card__price-sub {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(15, 26, 58, 0.62);
+}
+
+.pricing-card__price-note {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(15, 26, 58, 0.72);
+}
+
+.pricing-card__duration {
+  margin: 6px 0 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: rgba(56, 82, 180, 0.85);
+}
+
+.pricing-card__offer {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(240, 141, 57, 0.14), rgba(240, 141, 57, 0.06));
+  border: 1px solid rgba(240, 141, 57, 0.28);
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #9a4b12;
+}
+
+.pricing-card__order-range {
+  margin: 12px 0 0;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #0f1a3a;
+}
+
+.pricing-card__activation {
+  margin: 10px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: rgba(15, 26, 58, 0.68);
+}
+
+.pricing-card__footnote {
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: rgba(15, 26, 58, 0.55);
 }
 
 .pricing-card__divider {
@@ -4814,8 +4876,16 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.home-hero__cta-primary {
   min-height: 46px;
   padding-inline: 22px;
+}
+
+.home-hero__cta-secondary {
+  min-height: 0;
+  padding-inline: 0;
 }
 
 /* ===== Hero: analytics reference (light / RTL) ===== */
@@ -8705,6 +8775,21 @@ p {
   font-size: 0.78rem;
   color: var(--text-muted);
   font-weight: 700;
+}
+
+.oh-sa-brand--full-logo {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.oh-sa-brand__logo {
+  display: block;
+  width: auto;
+  max-width: 180px;
+  height: auto;
+  max-height: 48px;
+  object-fit: contain;
 }
 
 .oh-sa-nav__list {

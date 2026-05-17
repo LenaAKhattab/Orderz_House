@@ -1,0 +1,131 @@
+/* Decorative circles — homepage categories intro only (RTL-safe). */
+
+.home-categories-intro {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 0;
+  padding-bottom: 0.25rem;
+}
+
+@media (min-width: 961px) {
+  .home-categories-intro {
+    min-height: 11rem;
+    padding-bottom: 0.5rem;
+    /* Slight pull toward cards; main gap closure is grid + aside alignment. */
+    transform: translateX(-0.5rem);
+  }
+}
+
+.home-categories-decor {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  inset-block-end: 0;
+  inset-inline-start: 0;
+  width: min(220px, 100%);
+  height: 9.5rem;
+}
+
+@media (max-width: 960px) {
+  .home-categories-intro {
+    transform: translateX(-0.55rem);
+  }
+
+  .home-categories-decor {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    max-width: 16rem;
+    height: 6.5rem;
+    margin-inline: auto;
+    margin-top: 0.25rem;
+    transform: scale(0.92);
+    opacity: 0.72;
+  }
+
+  .home-categories-decor__ring--lg {
+    display: none;
+  }
+
+  .home-categories-decor__ring--md {
+    inset-inline-start: 0.25rem;
+    inset-block-end: 0.35rem;
+  }
+
+  .home-categories-decor__ring--sm {
+    inset-inline-start: auto;
+    inset-inline-end: 0.5rem;
+    inset-block-end: 3.75rem;
+  }
+
+  .home-categories-decor__dot--1 {
+    inset-inline-start: 5.5rem;
+    inset-block-end: 1.5rem;
+  }
+
+  .home-categories-decor__dot--2 {
+    inset-inline-start: 3.25rem;
+    inset-inline-end: auto;
+    inset-block-end: 5.25rem;
+  }
+}
+
+.home-categories-intro__title {
+  position: relative;
+  z-index: 1;
+}
+
+.home-categories-decor__ring {
+  position: absolute;
+  border-radius: 999px;
+  box-sizing: border-box;
+}
+
+.home-categories-decor__ring--lg {
+  width: 7.5rem;
+  height: 7.5rem;
+  inset-block-end: 0;
+  inset-inline-start: 0;
+  border: 2px solid rgba(56, 189, 248, 0.38);
+  opacity: 0.85;
+}
+
+.home-categories-decor__ring--md {
+  width: 3.25rem;
+  height: 3.25rem;
+  inset-block-end: 1.35rem;
+  inset-inline-start: 5.5rem;
+  border: 2px solid rgba(124, 58, 237, 0.28);
+  opacity: 0.9;
+}
+
+.home-categories-decor__ring--sm {
+  width: 1.65rem;
+  height: 1.65rem;
+  inset-block-end: 6.25rem;
+  inset-inline-start: 4.25rem;
+  border: 2px solid rgba(14, 165, 233, 0.32);
+  opacity: 0.88;
+}
+
+.home-categories-decor__dot {
+  position: absolute;
+  border-radius: 999px;
+}
+
+.home-categories-decor__dot--1 {
+  width: 0.55rem;
+  height: 0.55rem;
+  inset-block-end: 2.75rem;
+  inset-inline-start: 7.25rem;
+  background: rgba(124, 58, 237, 0.28);
+}
+
+.home-categories-decor__dot--2 {
+  width: 0.7rem;
+  height: 0.7rem;
+  inset-block-end: 6.75rem;
+  inset-inline-start: 1.1rem;
+  background: rgba(251, 146, 60, 0.28);
+}

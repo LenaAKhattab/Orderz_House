@@ -10,6 +10,7 @@ import {
 } from "../../services/api";
 import { mergeNotificationPrefs } from "../../utils/accountDisplay";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
+import BrowserNotificationSettings from "../../components/notifications/BrowserNotificationSettings";
 import { breadcrumbHomeFromUser } from "../../components/dashboard/dashboardBreadcrumbs";
 import "./shared/account-pages.css";
 
@@ -283,6 +284,8 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
           </button>
         </div>
       </div>
+
+      <BrowserNotificationSettings />
 
       <div className="oh-account-card">
         <h2 className="oh-account-card__title">تفضيلات الإشعارات</h2>

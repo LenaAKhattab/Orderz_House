@@ -1,5 +1,54 @@
 import { suggestPlanInternalName } from "./planNameAuto";
 
+function linesToArray(text) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function optionalNum(value) {
+  if (value === "" || value === undefined || value === null) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function buildInstallmentPlan(form) {
+  const upfrontJod = optionalNum(form.installmentUpfrontJod);
+  const monthlyJod = optionalNum(form.installmentMonthlyJod);
+  const monthsRaw = form.installmentMonths === "" ? null : Number(form.installmentMonths);
+  const months = Number.isInteger(monthsRaw) && monthsRaw > 0 ? monthsRaw : null;
+  const notes = String(form.installmentNotes || "").trim();
+
+  if (upfrontJod == null && monthlyJod == null && months == null && !notes) return null;
+
+  const out = {};
+  if (upfrontJod != null) out.upfrontJod = upfrontJod;
+  if (monthlyJod != null) out.monthlyJod = monthlyJod;
+  if (months != null) out.months = months;
+  if (notes) out.notes = notes;
+  return Object.keys(out).length > 0 ? out : null;
+}
+
+function extendedFieldsFromForm(form) {
+  return {
+    features: linesToArray(form.featuresText),
+    trainings: linesToArray(form.trainingsText),
+    paymentNotes: form.paymentNotes.trim() || null,
+    installmentPlan: buildInstallmentPlan(form),
+    offerExpiresAt: form.offerExpiresAt.trim() || null,
+    offerLabel: form.offerLabel.trim() || null,
+    orderValueMinJod: optionalNum(form.orderValueMinJod),
+    orderValueMaxJod: optionalNum(form.orderValueMaxJod),
+    activationRequirements: form.activationRequirements.trim() || null,
+    refundPolicy: form.refundPolicy.trim() || null,
+    adminNotes: form.adminNotes.trim() || null,
+    isPopular: Boolean(form.isPopular),
+    isFeatured: Boolean(form.isFeatured),
+    stripeCheckoutAmountJod: optionalNum(form.stripeCheckoutAmountJod),
+  };
+}
+
 export function normalizeCreatePayload(form, existingNames = []) {
   const name = suggestPlanInternalName(form.title, existingNames);
   return {
@@ -13,6 +62,7 @@ export function normalizeCreatePayload(form, existingNames = []) {
     isActive: Boolean(form.isActive),
     isVisible: Boolean(form.isVisible),
     sortOrder: Number(form.sortOrder),
+    ...extendedFieldsFromForm(form),
   };
 }
 
@@ -28,6 +78,7 @@ export function normalizeEditPayload(form) {
     isActive: Boolean(form.isActive),
     isVisible: Boolean(form.isVisible),
     sortOrder: Number(form.sortOrder),
+    ...extendedFieldsFromForm(form),
   };
 }
 

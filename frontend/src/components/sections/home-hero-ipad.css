@@ -1,7 +1,7 @@
 /* Premium home hero — iPad stage, chips (RTL). Extends home-hero-marketing.css */
 
 /* Seamless page canvas — no radial/linear stage wash (avoids “boxed” hero + cyan cast) */
-.home-hero.home-hero--ref.home-hero--marketing.home-hero--premium-stage {
+.home-hero.home-hero--ref.home-hero--marketing.home-hero--premium-stage:not(.home-hero--bg-image) {
   background: transparent;
 }
 

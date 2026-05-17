@@ -1,12 +1,13 @@
 const { PostHog } = require("posthog-node");
+const { normalizeHost } = require("../utils/posthogEnvValidation");
 
 let _client = null;
 
 function getPostHogClient() {
   if (_client) return _client;
-  const apiKey = process.env.POSTHOG_API_KEY;
-  const host = process.env.POSTHOG_HOST;
-  if (!apiKey || !host) return null;
+  const apiKey = String(process.env.POSTHOG_API_KEY || "").trim();
+  const { host } = normalizeHost(process.env.POSTHOG_HOST);
+  if (!apiKey || !host || !apiKey.startsWith("phc_")) return null;
   _client = new PostHog(apiKey, {
     host,
     enableExceptionAutocapture: true,

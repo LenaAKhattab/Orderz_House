@@ -134,6 +134,14 @@
   box-shadow: 0 0 10px rgba(118, 207, 223, 0.65);
 }
 
+.oh-auth-visual__badge-logo {
+  display: block;
+  width: auto;
+  max-width: 140px;
+  max-height: 32px;
+  object-fit: contain;
+}
+
 .oh-auth-visual__title {
   margin: 0;
   font-size: clamp(1.5rem, 2.2vw, 2.1rem);
@@ -272,6 +280,19 @@
   letter-spacing: 0.03em;
   color: var(--primary, #2f3b65);
   opacity: 0.92;
+}
+
+.oh-auth-brand--full-logo {
+  margin-bottom: 0.35rem;
+}
+
+.oh-auth-brand__logo {
+  display: block;
+  width: auto;
+  max-width: 200px;
+  height: auto;
+  max-height: 44px;
+  object-fit: contain;
 }
 
 .oh-auth-form-header {

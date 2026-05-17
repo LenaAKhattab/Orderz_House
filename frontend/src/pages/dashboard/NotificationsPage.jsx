@@ -6,6 +6,7 @@ import {
   listMyNotificationsRequest,
   markAllNotificationsReadRequest,
   markNotificationReadRequest,
+  NOTIFICATIONS_REFRESH_EVENT,
 } from "../../services/api";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import { breadcrumbHomeFromUser } from "../../components/dashboard/dashboardBreadcrumbs";
@@ -127,6 +128,24 @@ export default function NotificationsPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    const onRefresh = (ev) => {
+      const incoming = ev?.detail?.notification;
+      if (incoming?.id) {
+        setItems((prev) => {
+          if (prev.some((x) => String(x.id) === String(incoming.id))) return prev;
+          if (filter === "unread" && incoming.isRead) return prev;
+          return [incoming, ...prev];
+        });
+        if (!incoming.isRead) setUnreadCount((v) => v + 1);
+      } else {
+        void fetchData();
+      }
+    };
+    window.addEventListener(NOTIFICATIONS_REFRESH_EVENT, onRefresh);
+    return () => window.removeEventListener(NOTIFICATIONS_REFRESH_EVENT, onRefresh);
+  }, [fetchData, filter]);
 
   const title = useMemo(() => {
     const role = user?.primaryRole || user?.role;

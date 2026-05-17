@@ -2,6 +2,9 @@
  * Homepage «عروض مميزة» rail — theme presets + surface resolution (backward compatible with legacy ads).
  */
 
+import { COLOR_PRESET_KEYS, getBannerMetaFromTexts, LEGACY_THEME_COLORS } from "./bannerAdMeta";
+import { PREMIUM_THEME_EXTRAS } from "./bannerDesignSystem";
+
 /** @typedef {{ gradientCss: string, titleColor: string, textColor: string, btnBg: string, btnFg: string, badgeBg: string, badgeFg: string, cardBorder: string }} OfferSurface */
 
 const PRESETS = /** @type {Record<string, OfferSurface>} */ ({
@@ -48,6 +51,242 @@ const PRESETS = /** @type {Record<string, OfferSurface>} */ ({
 });
 
 const FALLBACK = PRESETS.purple;
+
+/** DB + visual fields for each admin color pack (saved on submit). */
+export const COLOR_PRESET_DB_PATCH = Object.freeze({
+  cream_navy: {
+    gradientFrom: "#faf9f7",
+    gradientMid: "#f0f1f8",
+    gradientTo: "#e8eaf6",
+    gradientAngle: 118,
+    titleColor: "#1e293b",
+    textColor: "#64748b",
+    buttonColor: "#2f3b65",
+    buttonTextColor: "#ffffff",
+    badgeColor: "#f5ebe0",
+    badgeTextColor: "#78350f",
+    borderColor: "rgba(47, 59, 101, 0.1)",
+    backgroundColor: "",
+  },
+  soft_lavender: {
+    gradientFrom: "#faf5ff",
+    gradientMid: "#f5f3ff",
+    gradientTo: "#ede9fe",
+    gradientAngle: 125,
+    titleColor: "#312e81",
+    textColor: "#6b7280",
+    buttonColor: "#6d28d9",
+    buttonTextColor: "#ffffff",
+    badgeColor: "#ede9fe",
+    badgeTextColor: "#5b21b6",
+    borderColor: "rgba(109, 40, 217, 0.12)",
+    backgroundColor: "",
+  },
+  pastel_blue_violet: {
+    gradientFrom: "#f0f9ff",
+    gradientMid: "#eef2ff",
+    gradientTo: "#f5f3ff",
+    gradientAngle: 110,
+    titleColor: "#1e3a5f",
+    textColor: "#64748b",
+    buttonColor: "#4f46e5",
+    buttonTextColor: "#ffffff",
+    badgeColor: "#e0f2fe",
+    badgeTextColor: "#0369a1",
+    borderColor: "rgba(79, 70, 229, 0.14)",
+    backgroundColor: "",
+  },
+  navy_gold: {
+    gradientFrom: "#0f172a",
+    gradientMid: "#1e293b",
+    gradientTo: "#334155",
+    gradientAngle: 135,
+    titleColor: "#fef3c7",
+    textColor: "#cbd5e1",
+    buttonColor: "#d97706",
+    buttonTextColor: "#1c1917",
+    badgeColor: "rgba(251, 191, 36, 0.22)",
+    badgeTextColor: "#fef3c7",
+    borderColor: "rgba(245, 158, 11, 0.35)",
+    backgroundColor: "",
+  },
+  warm_beige: {
+    gradientFrom: "#fffbeb",
+    gradientMid: "#fff7ed",
+    gradientTo: "#ffffff",
+    gradientAngle: 120,
+    titleColor: "#78350f",
+    textColor: "#78716c",
+    buttonColor: "#c2410c",
+    buttonTextColor: "#ffffff",
+    badgeColor: "#ffedd5",
+    badgeTextColor: "#9a3412",
+    borderColor: "rgba(234, 88, 12, 0.18)",
+    backgroundColor: "",
+  },
+  purple_yellow: {
+    gradientFrom: "#4c1d95",
+    gradientTo: "#6d28d9",
+    titleColor: "#ffffff",
+    textColor: "rgba(255, 255, 255, 0.9)",
+    buttonColor: "#facc15",
+    buttonTextColor: "#4c1d95",
+    badgeColor: "#facc15",
+    badgeTextColor: "#4c1d95",
+    borderColor: "rgba(250, 204, 21, 0.45)",
+    backgroundColor: "",
+  },
+  blue_white: {
+    gradientFrom: "#1e3a8a",
+    gradientTo: "#2563eb",
+    titleColor: "#ffffff",
+    textColor: "rgba(255, 255, 255, 0.92)",
+    buttonColor: "#ffffff",
+    buttonTextColor: "#1e40af",
+    badgeColor: "rgba(255, 255, 255, 0.2)",
+    badgeTextColor: "#ffffff",
+    borderColor: "rgba(147, 197, 253, 0.45)",
+    backgroundColor: "",
+  },
+  darkblue_cyan: {
+    gradientFrom: "#0b1220",
+    gradientMid: "#1e3a8a",
+    gradientTo: "#0369a1",
+    gradientAngle: 102,
+    titleColor: "#f0f9ff",
+    textColor: "rgba(224, 242, 254, 0.92)",
+    buttonColor: "#22d3ee",
+    buttonTextColor: "#0f172a",
+    badgeColor: "rgba(34, 211, 238, 0.95)",
+    badgeTextColor: "#0c4a6e",
+    borderColor: "rgba(34, 211, 238, 0.4)",
+    backgroundColor: "",
+  },
+  green_nature: {
+    gradientFrom: "#ecfdf5",
+    gradientTo: "#f0fdf4",
+    titleColor: "#064e3b",
+    textColor: "#4b5563",
+    buttonColor: "#059669",
+    buttonTextColor: "#ffffff",
+    badgeColor: "rgba(16, 185, 129, 0.2)",
+    borderColor: "rgba(5, 150, 105, 0.25)",
+    backgroundColor: "",
+  },
+  red_sale: {
+    gradientFrom: "#fef2f2",
+    gradientTo: "#fff1f2",
+    titleColor: "#7f1d1d",
+    textColor: "#57534e",
+    buttonColor: "#dc2626",
+    buttonTextColor: "#ffffff",
+    badgeColor: "rgba(220, 38, 38, 0.15)",
+    borderColor: "rgba(220, 38, 38, 0.22)",
+    backgroundColor: "",
+  },
+  orange_bright: {
+    gradientFrom: "#fff7ed",
+    gradientTo: "#fffbeb",
+    titleColor: "#9a3412",
+    textColor: "#57534e",
+    buttonColor: "#ea580c",
+    buttonTextColor: "#ffffff",
+    badgeColor: "rgba(234, 88, 12, 0.15)",
+    borderColor: "rgba(251, 146, 60, 0.28)",
+    backgroundColor: "",
+  },
+  black_gold: {
+    gradientFrom: "#171717",
+    gradientTo: "#292524",
+    titleColor: "#fef3c7",
+    textColor: "#e7e5e4",
+    buttonColor: "#d97706",
+    buttonTextColor: "#1c1917",
+    badgeColor: "rgba(217, 119, 6, 0.25)",
+    borderColor: "rgba(245, 158, 11, 0.35)",
+    backgroundColor: "",
+  },
+});
+
+/** @type {Record<string, OfferSurface>} */
+const COLOR_PRESET_SURFACES = {};
+for (const k of COLOR_PRESET_KEYS) {
+  const p = COLOR_PRESET_DB_PATCH[k];
+  if (!p) continue;
+  const angle = p.gradientAngle != null ? Number(p.gradientAngle) : 145;
+  const mid = p.gradientMid != null ? p.gradientMid : null;
+  const gradientCss =
+    mid != null
+      ? `linear-gradient(${angle}deg, ${p.gradientFrom} 0%, ${mid} 48%, ${p.gradientTo} 100%)`
+      : `linear-gradient(${angle}deg, ${p.gradientFrom} 0%, ${p.gradientTo} 100%)`;
+  COLOR_PRESET_SURFACES[k] = {
+    gradientCss,
+    titleColor: p.titleColor,
+    textColor: p.textColor,
+    btnBg: p.buttonColor,
+    btnFg: p.buttonTextColor,
+    badgeBg: p.badgeColor,
+    badgeFg: p.badgeTextColor != null ? p.badgeTextColor : p.titleColor,
+    cardBorder: p.borderColor,
+  };
+}
+
+/**
+ * @param {import("../../types/ad.js").Ad} ad
+ * @returns {OfferSurface}
+ */
+export function resolvePublicBannerSurface(ad) {
+  const g1 = ad?.gradientFrom;
+  const g2 = ad?.gradientTo;
+  if (g1 && g2) {
+    const meta = getBannerMetaFromTexts(ad?.texts);
+    return {
+      gradientCss: `linear-gradient(145deg, ${g1} 0%, ${g2} 100%)`,
+      titleColor: ad.titleColor || "#ffffff",
+      textColor: ad.textColor || "rgba(255, 255, 255, 0.9)",
+      btnBg: ad.buttonColor || "#ffffff",
+      btnFg: ad.buttonTextColor || "#1e40af",
+      badgeBg: ad.badgeColor || "rgba(255, 255, 255, 0.2)",
+      badgeFg: meta.badgeTextColor || ad.titleColor || "#ffffff",
+      cardBorder: ad.borderColor || "rgba(147, 197, 253, 0.35)",
+    };
+  }
+
+  const meta = getBannerMetaFromTexts(ad?.texts);
+  const cp = meta.colorPreset && String(meta.colorPreset).trim().toLowerCase();
+  if (cp && COLOR_PRESET_SURFACES[cp]) return COLOR_PRESET_SURFACES[cp];
+
+  const tp = ad?.themePreset != null ? String(ad.themePreset).toLowerCase() : "";
+  if (LEGACY_THEME_COLORS.includes(/** @type {any} */ (tp)) && PRESETS[tp]) return PRESETS[tp];
+
+  return resolveOfferSurface(ad);
+}
+
+/**
+ * Surface + premium accent tokens for banner renderer.
+ * @param {import("../../types/ad.js").Ad} ad
+ */
+export function resolvePremiumBannerSurface(ad) {
+  const base = resolvePublicBannerSurface(ad);
+  const meta = getBannerMetaFromTexts(ad?.texts);
+  const cp = meta.colorPreset && String(meta.colorPreset).trim().toLowerCase();
+  const presetExtras = (cp && PREMIUM_THEME_EXTRAS[cp]) || PREMIUM_THEME_EXTRAS.blue_white || {};
+  const extras = {
+    ...presetExtras,
+    ...(meta.saleStickerBg ? { saleStickerBg: meta.saleStickerBg, saleStickerFg: meta.saleStickerFg || "#fff" } : {}),
+    ...(meta.badgeTextColor ? { badgeFg: meta.badgeTextColor } : {}),
+    ...(meta.subtitleColor ? { accentColor: meta.subtitleColor } : {}),
+    ...(meta.discountLineColor ? { accentCyan: meta.discountLineColor } : {}),
+  };
+  return {
+    ...base,
+    ...extras,
+    companyNameColor: meta.companyNameColor || base.textColor,
+    subtitleColor: meta.subtitleColor || extras.accentColor,
+    descriptionColor: meta.descriptionColor || base.textColor,
+    discountLineColor: meta.discountLineColor || extras.accentCyan || base.btnBg,
+  };
+}
 
 /**
  * @param {import("../../types/ad.js").Ad} ad

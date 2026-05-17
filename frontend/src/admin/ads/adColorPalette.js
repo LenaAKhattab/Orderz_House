@@ -23,6 +23,21 @@ export const BASIC_FIELD_COLOR_OPTIONS = [
   { label: "أبيض", value: "#ffffff" },
 ];
 
+/** Dropdown lists: افتراضي + premium swatches (no free hex entry). */
+export const PREMIUM_COLOR_DROPDOWN_OPTIONS = [
+  { label: "افتراضي", value: "" },
+  { label: "كحلي", value: "#0c4a6e" },
+  { label: "أزرق", value: "#2563eb" },
+  { label: "سماوي", value: "#0284c7" },
+  { label: "أخضر", value: "#16a34a" },
+  { label: "ذهبي", value: "#f59e0b" },
+  { label: "أحمر", value: "#dc2626" },
+  { label: "بنفسجي", value: "#7c3aed" },
+  { label: "رمادي", value: "#64748b" },
+  { label: "أسود", value: "#111827" },
+  { label: "أبيض", value: "#ffffff" },
+];
+
 export const MAIN_SIMPLE_SWATCHES = [
   { label: "كحلي", value: "#0c4a6e" },
   { label: "أزرق", value: "#2563eb" },
@@ -103,6 +118,21 @@ export const COLOR_SWATCHES_BUTTON_TEXT = [
   { label: "كريمي", value: "#fef3c7" },
   { label: "أسود", value: "#111827" },
   { label: "رمادي داكن", value: "#1e293b" },
+];
+
+export const PREMIUM_BG_DROPDOWN_OPTIONS = [
+  { label: "افتراضي", value: "" },
+  ...COLOR_SWATCHES_SOFT_BG,
+];
+
+export const PREMIUM_BUTTON_DROPDOWN_OPTIONS = [
+  { label: "افتراضي", value: "" },
+  ...COLOR_SWATCHES_BUTTON,
+];
+
+export const PREMIUM_BUTTON_TEXT_DROPDOWN_OPTIONS = [
+  { label: "تلقائي", value: "" },
+  ...COLOR_SWATCHES_BUTTON_TEXT,
 ];
 
 /** Gradient quick presets (both ends) */

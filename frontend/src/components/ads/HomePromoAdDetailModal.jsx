@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import SafeAdImage from "./SafeAdImage";
 import { linkTargetRel, primaryHref } from "./adUtils";
-import { resolveOfferSurface } from "./homeOffersTheme";
+import { resolvePublicBannerSurface } from "./homeOffersTheme";
+import { buildWhatsAppHref, getBannerMetaFromTexts, parseSalePercent } from "./bannerAdMeta";
 
 /**
  * Full-screen dialog overlay for reading a homepage promo ad (RTL).
@@ -37,7 +38,12 @@ export default function HomePromoAdDetailModal({ ad, onClose }) {
     return () => d.removeEventListener("close", onDialogClose);
   }, [onClose]);
 
-  const surface = ad ? resolveOfferSurface(ad) : null;
+  const surface = ad ? resolvePublicBannerSurface(ad) : null;
+  const meta = ad ? getBannerMetaFromTexts(ad.texts) : {};
+  const saleN = parseSalePercent(meta?.salePercent);
+  const phone = meta?.phone != null ? String(meta.phone).trim() : "";
+  const whatsapp = meta?.whatsapp != null ? String(meta.whatsapp).trim() : "";
+  const waHref = buildWhatsAppHref(whatsapp);
   const img = ad?.images?.[0];
   const href = ad ? primaryHref(ad) : null;
   const secondaryHref =
@@ -134,6 +140,27 @@ export default function HomePromoAdDetailModal({ ad, onClose }) {
               </p>
             ) : (
               <p className="home-promo-ad-modal__desc home-promo-ad-modal__desc--muted">لا يوجد وصف إضافي.</p>
+            )}
+
+            {saleN != null ? (
+              <p className="home-promo-ad-modal__desc" style={{ color: surface.textColor }}>
+                <strong>الخصم:</strong> {saleN}%
+              </p>
+            ) : null}
+
+            {(phone || waHref) && (
+              <p className="home-promo-ad-modal__desc" style={{ color: surface.textColor }}>
+                {phone ? (
+                  <span dir="ltr" style={{ display: "block" }}>
+                    هاتف: {phone}
+                  </span>
+                ) : null}
+                {waHref ? (
+                  <a href={waHref} target="_blank" rel="noopener noreferrer" dir="ltr" style={{ display: "inline-block", marginTop: 6, fontWeight: 700 }}>
+                    واتساب
+                  </a>
+                ) : null}
+              </p>
             )}
 
             {primaryCta || secondaryCta ? (

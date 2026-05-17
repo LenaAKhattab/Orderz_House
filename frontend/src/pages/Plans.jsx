@@ -9,6 +9,7 @@ import {
   NOTIFICATIONS_REFRESH_EVENT,
 } from "../services/api";
 import PricingSection from "../components/plans/PricingSection";
+import { getOrderzhousePlansCatalog, mergeApiPlansWithCatalog } from "../constants/orderzhousePlansCatalog";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../components/ui/toastContext";
 import { trackEvent } from "../services/analytics";
@@ -52,9 +53,9 @@ const Plans = () => {
       try {
         const data = await listPublicPlansRequest();
         const items = data?.data?.plans || [];
-        if (!cancelled) setPlans(items);
-      } catch (err) {
-        if (!cancelled) setError(errorMessage(err));
+        if (!cancelled) setPlans(mergeApiPlansWithCatalog(items));
+      } catch {
+        if (!cancelled) setPlans(getOrderzhousePlansCatalog());
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -223,8 +224,9 @@ const Plans = () => {
     <main className="container page-content" lang="ar" dir="rtl">
       <PricingSection
         loading={loading}
-        plans={plans.filter((p) => p?.isVisible !== false)}
+        plans={plans}
         hasBlockingSubscription={hasBlockingSubscription}
+        checkoutBusyPlanId={checkoutBusyPlanId}
         onCta={async (plan) => {
           if (authLoading || !plan?.id || checkoutBusyPlanId) return;
           const role = user?.primaryRole || user?.role;

@@ -1,4 +1,5 @@
 const notificationService = require("../services/notificationService");
+const realtimeHub = require("../services/notificationRealtimeHub");
 
 function viewerRole(req) {
   return req.auth?.primaryRole || req.auth?.role || null;
@@ -54,9 +55,32 @@ async function readAllNotifications(req, res, next) {
   }
 }
 
+async function streamNotifications(req, res, next) {
+  try {
+    const userId = req.auth.userId;
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    if (typeof res.flushHeaders === "function") res.flushHeaders();
+
+    res.write(`event: connected\ndata: ${JSON.stringify({ ok: true, userId: String(userId) })}\n\n`);
+
+    realtimeHub.subscribe(userId, res);
+    realtimeHub.startHeartbeat(res);
+
+    req.on("close", () => {
+      realtimeHub.unsubscribe(userId, res);
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   listMyNotifications,
   getMyUnreadCount,
   readNotification,
   readAllNotifications,
+  streamNotifications,
 };

@@ -145,6 +145,23 @@
   border-inline-start-color: rgba(47, 59, 101, 0.12);
 }
 
+.home-hero-analytics__metric-sub {
+  margin: 0.12rem 0 0;
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: rgba(47, 59, 101, 0.48);
+}
+
+.home-hero-analytics__metric-hint {
+  margin: 0.2rem 0 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: rgba(234, 88, 12, 0.92);
+  max-width: 12rem;
+}
+
 .home-hero-analytics__degraded {
   grid-column: 1 / -1;
   margin: 0.35rem 0 0;

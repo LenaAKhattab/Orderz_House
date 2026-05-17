@@ -1,42 +1,22 @@
 import { useNavigate } from "react-router-dom";
 import Button from "../ui/Button";
 import { useAuth } from "../../context/useAuth";
+import {
+  formatInstallmentSummary,
+  formatOrderValueRange,
+  isOfferActive,
+  planBadgeLabel,
+  planListItems,
+  planPriceHeadline,
+} from "./planDisplayUtils";
 
-function formatPriceJod(priceJod) {
-  if (priceJod === null || priceJod === undefined) return null;
-  const n = Number(priceJod);
-  if (!Number.isFinite(n)) return null;
-  if (n === 0) return "مجانية";
-  // Force English digits everywhere in UI
-  return `${n.toLocaleString("en-US", { maximumFractionDigits: 2 })} د.أ`;
-}
-
-function deriveFeatures(plan) {
-  let raw = plan?.features;
-  if (typeof raw === "string") {
-    try {
-      raw = JSON.parse(raw);
-    } catch {
-      raw = null;
-    }
-  }
-  if (Array.isArray(raw) && raw.length > 0) {
-    return raw.filter(Boolean).map(String).slice(0, 12);
-  }
-
-  const items = [];
-  const d = Number(plan?.durationDays);
-  if (Number.isFinite(d) && d > 0) {
-    items.push(`مدة الاشتراك: ${d} يوم`);
-  }
-  items.push("تجديد مرن حسب الخطة");
-  items.push("لوحة تحكم للمستقل");
-  items.push("أولوية دعم حسب الخطة");
-  items.push("إدارة الطلبات والمطالبات");
-  return items.slice(0, 8);
-}
-
-const PlanCard = ({ plan, featured = false, onCta, hasBlockingSubscription = false }) => {
+const PlanCard = ({
+  plan,
+  featured = false,
+  onCta,
+  hasBlockingSubscription = false,
+  checkoutBusy = false,
+}) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const role = user ? user.primaryRole || user.role : null;
@@ -45,43 +25,67 @@ const PlanCard = ({ plan, featured = false, onCta, hasBlockingSubscription = fal
   const isFreelancer = role === "freelancer" || roles.includes("freelancer");
   const isLoggedNonFreelancer = Boolean(user) && !isFreelancer;
   const isBlockedBySubscription = Boolean(user) && isFreelancer && hasBlockingSubscription;
-  /** API adds this; missing = older backend — treat as eligible to avoid locking paid plans. */
   const canSelfCheckout =
     plan?.selfCheckoutEligible == null ? true : Boolean(plan.selfCheckoutEligible);
 
-  const price = formatPriceJod(plan?.priceJod);
-  const features = deriveFeatures(plan);
+  const { main: priceMain, sub: priceSub } = planPriceHeadline(plan);
+  const features = planListItems(plan);
+  const orderRange = formatOrderValueRange(plan);
+  const installment = formatInstallmentSummary(plan);
+  const paymentNotes = plan?.paymentNotes ? String(plan.paymentNotes).trim() : "";
+  const offerActive = isOfferActive(plan);
   const planTitle = plan.title || plan.name || "—";
+  const badge = planBadgeLabel(plan, featured);
+  const durationDays = Number(plan?.durationDays);
+  const durationLabel =
+    Number.isFinite(durationDays) && durationDays >= 365
+      ? "سنة كاملة"
+      : Number.isFinite(durationDays) && durationDays > 0
+        ? `${durationDays} يوم`
+        : null;
 
   const ctaLabel = isLoggedNonFreelancer
     ? "للمستقلين فقط"
     : isBlockedBySubscription
       ? "مشترك بالفعل"
-      : isFreelancer && !canSelfCheckout
-        ? "يتم التفعيل عبر الشركة"
-        : "ابدأ الآن";
+      : checkoutBusy
+        ? "جارٍ التحويل…"
+        : isFreelancer && !canSelfCheckout
+          ? "يتم التفعيل عبر الشركة"
+          : "ابدأ الآن";
   const usePrimaryCta =
     featured &&
     (isGuest || (isFreelancer && canSelfCheckout)) &&
     !isBlockedBySubscription;
   const isLocked =
-    isLoggedNonFreelancer || isBlockedBySubscription || (isFreelancer && !canSelfCheckout);
+    isLoggedNonFreelancer ||
+    isBlockedBySubscription ||
+    checkoutBusy ||
+    (isFreelancer && !canSelfCheckout);
 
   return (
     <article className={`pricing-card ${featured ? "pricing-card--featured" : ""}`.trim()}>
-      {featured ? (
+      {badge ? (
         <span className="pricing-card__badge" aria-hidden="true">
-          الأكثر شيوعًا
+          {badge}
         </span>
       ) : null}
 
       <header className="pricing-card__head">
         <h2 className="pricing-card__title">{planTitle}</h2>
         {plan.description ? <p className="pricing-card__desc">{plan.description}</p> : null}
+        {durationLabel ? <p className="pricing-card__duration">{durationLabel}</p> : null}
       </header>
 
+      {offerActive && plan.offerLabel ? (
+        <p className="pricing-card__offer">{plan.offerLabel}</p>
+      ) : null}
+
       <div className="pricing-card__price">
-        <div className="pricing-card__price-main">{price || "—"}</div>
+        <div className="pricing-card__price-main">{priceMain}</div>
+        {priceSub ? <div className="pricing-card__price-sub">{priceSub}</div> : null}
+        {installment ? <p className="pricing-card__price-note">{installment}</p> : null}
+        {!installment && paymentNotes ? <p className="pricing-card__price-note">{paymentNotes}</p> : null}
       </div>
 
       <div className="pricing-card__divider" aria-hidden="true" />
@@ -96,6 +100,14 @@ const PlanCard = ({ plan, featured = false, onCta, hasBlockingSubscription = fal
           </li>
         ))}
       </ul>
+
+      {orderRange ? <p className="pricing-card__order-range">{orderRange}</p> : null}
+
+      {plan.activationRequirements ? (
+        <p className="pricing-card__activation">{plan.activationRequirements}</p>
+      ) : null}
+
+      {plan.refundPolicy ? <p className="pricing-card__footnote">{plan.refundPolicy}</p> : null}
 
       <div className="pricing-card__cta">
         <Button
@@ -122,4 +134,3 @@ const PlanCard = ({ plan, featured = false, onCta, hasBlockingSubscription = fal
 };
 
 export default PlanCard;
-

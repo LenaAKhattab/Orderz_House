@@ -32,6 +32,7 @@ function breadcrumbLabel(pathname) {
   if (pathname.includes("/subscriptions/activation")) base.push("تفعيل الاشتراكات");
   if (pathname.includes("/plans")) base.push("الباقات");
   else if (pathname.includes("/courses")) base.push("الدورات");
+  else if (pathname.includes("/super-admin/ads")) base.push("الإعلانات");
   else if (pathname.includes("/subscriptions")) base.push("اشتراكات المستقلين");
   else if (pathname.includes("/orders/create")) base.push("الطلبات الداخلية", "إنشاء طلب");
   else if (pathname.includes("/training-orders")) base.push("الطلبات التجريبية");
@@ -42,8 +43,8 @@ function breadcrumbLabel(pathname) {
 const NAV_MAIN = [
   { to: "/dashboard/super-admin", label: "نظرة عامة", icon: "⌂", end: true },
   { to: "/dashboard/super-admin/plans", label: "الباقات", icon: "◆" },
-  { to: "/dashboard/super-admin/ads", label: "الإعلانات", icon: "◈" },
   { to: "/dashboard/super-admin/courses", label: "الدورات", icon: "▶" },
+  { to: "/dashboard/super-admin/ads", label: "الإعلانات", icon: "✴", end: true },
   { to: "/dashboard/super-admin/subscriptions", label: "الاشتراكات", icon: "◎" },
   { to: "/dashboard/super-admin/subscriptions/activation", label: "تفعيل الاشتراكات", icon: "✓" },
   { to: "/dashboard/super-admin/financial-claims", label: "المطالبات المالية", icon: "◍" },
@@ -81,14 +82,16 @@ export default function SuperAdminLayout() {
   return (
     <div className="oh-sa-shell" dir="rtl" lang="ar">
       <aside className="oh-sa-nav" aria-label="قائمة المدير الأعلى">
-        <div className="oh-sa-brand">
-          <div className="oh-sa-brand__mark" aria-hidden>
-            OH
-          </div>
-          <div className="oh-sa-brand__text">
-            <div className="oh-sa-brand__title">أوردرز هاوس</div>
-            <div className="oh-sa-brand__sub">لوحة المدير الأعلى</div>
-          </div>
+        <div className="oh-sa-brand oh-sa-brand--full-logo">
+          <img
+            src="/hero/fullLogp.png"
+            alt="أوردرز هاوس"
+            className="oh-sa-brand__logo"
+            width={200}
+            height={56}
+            decoding="async"
+          />
+          <div className="oh-sa-brand__sub">لوحة المدير الأعلى</div>
         </div>
 
         <ul className="oh-sa-nav__list">

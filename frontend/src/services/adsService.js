@@ -9,6 +9,7 @@ import {
   adminDeleteAdRequest,
   adminDuplicateAdRequest,
   adminReorderAdsRequest,
+  adminUploadAdImageRequest,
 } from "./api";
 
 export {
@@ -22,4 +23,5 @@ export {
   adminDeleteAdRequest,
   adminDuplicateAdRequest,
   adminReorderAdsRequest,
+  adminUploadAdImageRequest,
 };

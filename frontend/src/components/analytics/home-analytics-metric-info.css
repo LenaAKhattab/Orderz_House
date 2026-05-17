@@ -1,0 +1,190 @@
+/* Homepage public metrics — labels, tooltips, tone */
+
+.home-analytics-metric-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.home-analytics-metric-label__text {
+  font: inherit;
+  color: inherit;
+  line-height: 1.35;
+}
+
+.home-analytics-metric-info__kind-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+  opacity: 0.72;
+}
+
+.home-analytics-metric-label--visitors .home-analytics-metric-info__kind-icon {
+  color: #0d9488;
+}
+
+.home-analytics-metric-label--active .home-analytics-metric-info__kind-icon {
+  color: #4f46e5;
+}
+
+.home-analytics-metric-info {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.home-analytics-metric-info__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(47, 59, 101, 0.06);
+  color: rgba(47, 59, 101, 0.55);
+  cursor: help;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.home-analytics-metric-info__btn:hover,
+.home-analytics-metric-info__btn:focus-visible {
+  background: rgba(47, 59, 101, 0.1);
+  color: rgba(47, 59, 101, 0.85);
+  outline: none;
+}
+
+.home-analytics-metric-info__icon {
+  width: 0.72rem;
+  height: 0.72rem;
+}
+
+.home-analytics-metric-info__tip {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.35rem);
+  inset-inline-end: 0;
+  width: min(16rem, 72vw);
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(47, 59, 101, 0.12);
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #334155;
+  text-align: start;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-2px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.home-analytics-metric-info--open .home-analytics-metric-info__tip,
+.home-analytics-metric-info:focus-within .home-analytics-metric-info__tip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+@media (hover: hover) {
+  .home-analytics-metric-info:hover .home-analytics-metric-info__tip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+}
+
+/* Hero strip value accents */
+.home-hero-metrics__item--visitors .home-hero-analytics__value {
+  color: #0f766e;
+}
+
+.home-hero-metrics__item--active .home-hero-analytics__value {
+  color: #4338ca;
+}
+
+.home-hero-analytics--minimal .home-hero-metrics__item--visitors .home-hero-analytics__metric-sub {
+  color: rgba(13, 148, 136, 0.75);
+}
+
+.home-hero-analytics--minimal .home-hero-metrics__item--active .home-hero-analytics__metric-sub {
+  color: rgba(79, 70, 229, 0.72);
+}
+
+.home-stats-strip__card--visitors .home-stats-strip__value {
+  color: #0f766e;
+}
+
+.home-stats-strip__card--active .home-stats-strip__value {
+  color: #4338ca;
+}
+
+.home-stats-strip__card--visitors .home-stats-strip__sub {
+  color: rgba(13, 148, 136, 0.8);
+}
+
+.home-stats-strip__card--active .home-stats-strip__sub {
+  color: rgba(79, 70, 229, 0.78);
+}
+
+/* Super Admin explainer */
+.sa-home-metrics-explainer {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--sa-line, rgba(148, 163, 184, 0.35));
+  background: color-mix(in oklab, var(--background, #fff) 96%, #e2e8f0);
+}
+
+.sa-home-metrics-explainer__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--sa-text, #0f172a);
+}
+
+.sa-home-metrics-explainer__note {
+  margin: 0.65rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sa-muted, #64748b);
+  line-height: 1.45;
+}
+
+.sa-home-metrics-explainer__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.sa-home-metrics-explainer__item strong {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--sa-text, #0f172a);
+  margin-bottom: 0.12rem;
+}
+
+.sa-home-metrics-explainer__item p {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--sa-muted, #64748b);
+}
+
+.sa-home-metrics-explainer__item--visitors strong {
+  color: #0f766e;
+}
+
+.sa-home-metrics-explainer__item--active strong {
+  color: #4338ca;
+}

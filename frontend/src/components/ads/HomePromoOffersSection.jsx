@@ -19,11 +19,16 @@ function SparkleIcon() {
 }
 
 /**
- * Full-width homepage band under the hero: grid (≤3 ads) or Embla carousel (>3 ads).
+ * Full-width homepage band: static grid (1 ad) or Embla carousel (2+ ads).
  * Desktop: optional fixed vertical dock after scrolling past this band until partners.
- * @param {{ ads: import("../../types/ad.js").Ad[]; placement?: string }} p
+ * @param {{ ads: import("../../types/ad.js").Ad[]; placement?: string; showTitle?: boolean; variant?: "default"|"hero" }} p
  */
-export default function HomePromoOffersSection({ ads = [], placement = "home_right_panel" }) {
+export default function HomePromoOffersSection({
+  ads = [],
+  placement = "home_right_panel",
+  showTitle = true,
+  variant = "default",
+}) {
   const tracked = useRef(new Set());
   const triggerRef = useRef(/** @type {HTMLElement | null} */ (null));
   const sectionRef = useRef(/** @type {HTMLElement | null} */ (null));
@@ -31,7 +36,7 @@ export default function HomePromoOffersSection({ ads = [], placement = "home_rig
   const [detailAd, setDetailAd] = useState(/** @type {import("../../types/ad.js").Ad | null} */ (null));
 
   const ordered = useMemo(() => getOrderedHomeOffersAds(ads), [ads]);
-  const useCarousel = ordered.length > 3;
+  const useCarousel = ordered.length > 1;
   const hasOverflow = ordered.length > INITIAL_VISIBLE;
   const displayAds = useMemo(() => {
     if (useCarousel) return ordered;
@@ -95,30 +100,44 @@ export default function HomePromoOffersSection({ ads = [], placement = "home_rig
 
   if (!ordered.length) return null;
 
+  const isHero = variant === "hero";
+  const sectionClass = `home-promo-offers${isHero ? " home-promo-offers--hero" : ""}`;
+  const showHead = showTitle || showMore;
+
   return (
     <>
       <section
         ref={sectionRef}
-        className="home-promo-offers"
+        className={sectionClass}
         dir="rtl"
-        aria-labelledby="home-promo-offers-heading"
+        aria-labelledby={showTitle ? "home-promo-offers-heading" : undefined}
+        aria-label={showTitle ? undefined : "عروض وإعلانات"}
       >
-        <header className="home-promo-offers__head">
-          <div className="home-promo-offers__title-block">
-            <SparkleIcon />
-            <h2 id="home-promo-offers-heading" className="home-promo-offers__title">
-              عروض وإعلانات مميزة
-            </h2>
-          </div>
-          {showMore ? (
-            <button type="button" className="home-promo-offers__more-btn" onClick={() => setExpanded(true)}>
-              عرض المزيد
-            </button>
-          ) : null}
-        </header>
+        {showHead ? (
+          <header className="home-promo-offers__head">
+            {showTitle ? (
+              <div className="home-promo-offers__title-block">
+                <SparkleIcon />
+                <h2 id="home-promo-offers-heading" className="home-promo-offers__title">
+                  عروض وإعلانات مميزة
+                </h2>
+              </div>
+            ) : null}
+            {showMore ? (
+              <button type="button" className="home-promo-offers__more-btn" onClick={() => setExpanded(true)}>
+                عرض المزيد
+              </button>
+            ) : null}
+          </header>
+        ) : null}
 
         {useCarousel ? (
-          <HomePromoOffersCarousel ads={displayAds} openDetails={openDetails} onTrackClick={trackClick} />
+          <HomePromoOffersCarousel
+            ads={displayAds}
+            variant={variant}
+            openDetails={openDetails}
+            onTrackClick={trackClick}
+          />
         ) : (
           <div className="home-promo-offers__grid">
             {displayAds.map((ad) => (
