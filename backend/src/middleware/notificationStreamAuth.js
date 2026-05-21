@@ -10,8 +10,6 @@ function getJwtSecret() {
 }
 
 function getTokenFromRequest(req) {
-  const q = req.query?.token;
-  if (q && typeof q === "string" && q.trim()) return q.trim();
   const fromCookie = req.cookies?.[AUTH_COOKIE_NAME];
   if (fromCookie && typeof fromCookie === "string" && fromCookie.trim()) return fromCookie.trim();
   const [scheme, bearer] = String(req.headers.authorization || "").split(" ");
@@ -19,7 +17,7 @@ function getTokenFromRequest(req) {
   return null;
 }
 
-/** SSE auth — supports HttpOnly cookie or `?token=` for EventSource clients. */
+/** SSE auth — HttpOnly cookie (withCredentials) or Authorization Bearer only; never query ?token=. */
 async function requireNotificationStreamAuth(req, res, next) {
   const token = getTokenFromRequest(req);
   if (!token) {

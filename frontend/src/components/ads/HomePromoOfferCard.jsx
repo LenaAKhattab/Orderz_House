@@ -1,5 +1,4 @@
 import PremiumPromoBanner from "./PremiumPromoBanner";
-import { primaryHref } from "./adUtils";
 import "./home-promo-banner-templates.css";
 import "./home-promo-premium-banners.css";
 
@@ -12,8 +11,6 @@ import "./home-promo-premium-banners.css";
  * @param {boolean} [p.previewMode] — admin preview: no modal trigger
  */
 export default function HomePromoOfferCard({ ad, onTrackClick, onOpenDetails, variant = "default", previewMode = false }) {
-  const href = primaryHref(ad);
-
   const stopCardActivate = (e) => {
     e.stopPropagation();
   };

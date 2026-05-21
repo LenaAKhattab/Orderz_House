@@ -75,10 +75,12 @@ describe("pool listing: bidding filter = priced bidding only", () => {
 });
 
 describe("claim vs bid — priced bidding rejects claim", () => {
-  it("claimPoolOrder rejects hasPricedBiddingRow (read source)", () => {
+  it("claimPoolOrder rejects non-fixed and priced bidding rows (read source)", () => {
     const src = fs.readFileSync(path.join(__dirname, "..", "src", "services", "ordersService.js"), "utf8");
     assert.ok(
-      /if \(hasPricedBiddingRow\(order\)\) \{[\s\S]*?bidding order\. Submit a price offer/.test(src),
+      /if \(order\.project_type !== "fixed" \|\| hasPricedBiddingRow\(order\)\)/.test(src),
+      "claimPoolOrder should block priced bidding and non-fixed orders",
     );
+    assert.ok(src.includes("Only fixed orders can be taken directly."));
   });
 });

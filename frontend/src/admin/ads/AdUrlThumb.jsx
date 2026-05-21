@@ -1,4 +1,3 @@
-import { useState } from "react";
 import SafeAdImage from "../../components/ads/SafeAdImage";
 
 /**
@@ -6,10 +5,9 @@ import SafeAdImage from "../../components/ads/SafeAdImage";
  * @param {{ url?: string; label?: string; className?: string }} p
  */
 export default function AdUrlThumb({ url, label = "معاينة", className = "" }) {
-  const [failed, setFailed] = useState(false);
   const t = url != null ? String(url).trim() : "";
 
-  if (!t || failed) {
+  if (!t) {
     return (
       <div className={`oh-admin-ads__url-thumb oh-admin-ads__url-thumb--empty ${className}`.trim()} aria-hidden="true">
         <span>{label}</span>

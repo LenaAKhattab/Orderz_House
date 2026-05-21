@@ -132,6 +132,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const navigate = useNavigate();
   const role = user?.primaryRole || user?.role;
   const isFreelancer = role === "freelancer";
+  const isClient = role === "client";
   const showPoolRowActions = Boolean(!user || isFreelancer);
 
   const [orders, setOrders] = useState([]);
@@ -394,16 +395,30 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     });
   }, []);
 
-  const listFromPath = layout === "dashboard" ? "/dashboard/freelancer/orders" : "/orders";
+  const listFromPath = useMemo(() => {
+    if (layout !== "dashboard") return "/orders";
+    if (isClient) return "/dashboard/client/orders";
+    return "/dashboard/freelancer/orders";
+  }, [layout, isClient]);
+
+  const poolDetailsPath = useCallback(
+    (orderId) => {
+      if (layout !== "dashboard") return `/orders/${orderId}`;
+      if (isClient) return `/dashboard/client/orders/${orderId}`;
+      return `/dashboard/freelancer/orders/${orderId}`;
+    },
+    [layout, isClient],
+  );
 
   const openPoolOrderDetails = useCallback(
     (order) => {
       const id = order?.id;
       if (!id) return;
+      const detailsPath = poolDetailsPath(id);
       if (!user) {
         navigate("/login", {
           state: {
-            from: { pathname: `/dashboard/freelancer/orders/${id}` },
+            from: { pathname: detailsPath },
             message: "سجّل دخولك لعرض التفاصيل والمشاركة في الطلبات.",
           },
         });
@@ -411,7 +426,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       }
       const r = user?.primaryRole || user?.role;
       if (r === "freelancer" || r === "client") {
-        navigate(`/dashboard/freelancer/orders/${id}`, {
+        navigate(detailsPath, {
           state: { from: { pathname: listFromPath } },
         });
         return;
@@ -426,7 +441,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       }
       navigate("/login");
     },
-    [user, navigate, listFromPath],
+    [user, navigate, listFromPath, poolDetailsPath],
   );
 
   const isDashboard = layout === "dashboard";

@@ -1,7 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { getDashboardPathByRole } from "../../constants/authRoutes";
-import { AuthRouteSkeleton } from "../ui/Skeleton";
+import { AuthRouteSkeleton } from "../ui/AuthRouteSkeleton";
 
 /**
  * `/dashboard` → redirects to the signed-in user’s role dashboard.

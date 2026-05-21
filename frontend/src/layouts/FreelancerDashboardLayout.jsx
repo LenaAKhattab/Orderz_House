@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 
 import { PanelRightClose, PanelRightOpen } from "lucide-react";
 
@@ -201,9 +202,9 @@ export default function FreelancerDashboardLayout() {
 
 
   useEffect(() => {
-
-    setSidebarCollapsed(readSidebarCollapsedPreference(shellConfig.sidebarCollapsedKey));
-
+    queueMicrotask(() => {
+      setSidebarCollapsed(readSidebarCollapsedPreference(shellConfig.sidebarCollapsedKey));
+    });
   }, [shellConfig.sidebarCollapsedKey]);
 
 
@@ -213,11 +214,10 @@ export default function FreelancerDashboardLayout() {
 
 
   useEffect(() => {
-
-    setSidebarOpen(false);
-
-    setUserMenuOpen(false);
-
+    queueMicrotask(() => {
+      setSidebarOpen(false);
+      setUserMenuOpen(false);
+    });
   }, [pathname]);
 
 
@@ -640,7 +640,7 @@ export default function FreelancerDashboardLayout() {
 
           <main className="fdl-outlet">
 
-            <Outlet />
+            <LazyRouteOutlet />
 
           </main>
 

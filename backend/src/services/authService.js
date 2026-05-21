@@ -395,6 +395,7 @@ async function loginUser(emailRaw, password) {
 
   const token = signToken(user);
   const { password_hash: _, ...rest } = user;
+  // Heal users.role ↔ user_roles drift on each successful login (idempotent).
   await ensureUserRole({ userId: rest.id, roleName: rest.role });
   const authz = await resolveAuthzContext({ userId: rest.id, legacyRole: rest.role });
   await bootstrapFreelancerSubscriptionIfNeeded(rest.id, authz);

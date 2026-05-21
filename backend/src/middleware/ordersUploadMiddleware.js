@@ -7,6 +7,8 @@ const { validateTotalUploadSize, cleanupUploadedFiles } = require("../utils/orde
 const baseUploadsDir = path.join(__dirname, "..", "..", "uploads", "orders");
 const storage = multer.memoryStorage();
 
+const DANGEROUS_FILENAME = /\.(exe|bat|cmd|com|msi|scr|sh|bash|js|mjs|cjs|html|htm|xhtml|php|phtml|jar|dll|vbs|ps1|svg)(\?.*)?$/i;
+
 const ALLOWED_MIME_TYPES = new Set([
   "application/pdf",
   "application/zip",
@@ -26,6 +28,12 @@ const ALLOWED_MIME_TYPES = new Set([
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
+    const name = String(file?.originalname || "");
+    if (DANGEROUS_FILENAME.test(name) || name.includes("..")) {
+      const err = new Error("نوع الملف غير مدعوم.");
+      err.statusCode = 400;
+      return cb(err);
+    }
     const mt = String(file?.mimetype || "").toLowerCase();
     if (ALLOWED_MIME_TYPES.has(mt)) return cb(null, true);
     const err = new Error("نوع الملف غير مدعوم.");

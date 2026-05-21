@@ -1,3 +1,8 @@
+import { Link } from "react-router-dom";
+
+const linkClass =
+  "text-[#202020] no-underline transition-colors hover:text-[#2f3b65]";
+
 const Footer = ({ homeBlend = false }) => {
   return (
     <footer
@@ -12,19 +17,29 @@ const Footer = ({ homeBlend = false }) => {
           <h3 className="mb-3 text-[0.98rem] font-bold text-[#2f3b65]">استكشاف</h3>
           <ul className="m-0 grid list-none gap-2 p-0 text-[0.9rem] leading-[1.55] text-[#202020]">
             <li>
-              <a className="text-[#202020] no-underline transition-colors hover:text-[#2f3b65]" href="#">
+              <Link to="/" className={linkClass}>
+                الرئيسية
+              </Link>
+            </li>
+            <li>
+              <Link to="/about" className={linkClass}>
                 من نحن
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="text-[#202020] no-underline transition-colors hover:text-[#2f3b65]" href="#">
+              <Link to="/orders" className={linkClass}>
                 الطلبات
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="text-[#202020] no-underline transition-colors hover:text-[#2f3b65]" href="#">
+              <Link to="/plans" className={linkClass}>
                 الباقات
-              </a>
+              </Link>
+            </li>
+            <li>
+              <Link to="/services" className={linkClass}>
+                الخدمات
+              </Link>
             </li>
           </ul>
         </section>
@@ -33,9 +48,14 @@ const Footer = ({ homeBlend = false }) => {
           <h3 className="mb-3 text-[0.98rem] font-bold text-[#2f3b65]">للعملاء</h3>
           <ul className="m-0 grid list-none gap-2 p-0 text-[0.9rem] leading-[1.55] text-[#202020]">
             <li>
-              <a className="text-[#202020] no-underline transition-colors hover:text-[#2f3b65]" href="#">
+              <Link to="/register" className={linkClass}>
                 إضافة طلب
-              </a>
+              </Link>
+            </li>
+            <li>
+              <Link to="/login" className={linkClass}>
+                تسجيل الدخول
+              </Link>
             </li>
           </ul>
         </section>
@@ -44,9 +64,19 @@ const Footer = ({ homeBlend = false }) => {
           <h3 className="mb-3 text-[0.98rem] font-bold text-[#2f3b65]">للمستقلين</h3>
           <ul className="m-0 grid list-none gap-2 p-0 text-[0.9rem] leading-[1.55] text-[#202020]">
             <li>
-              <a className="text-[#202020] no-underline transition-colors hover:text-[#2f3b65]" href="#">
+              <Link to="/orders" className={linkClass}>
                 المشاريع
-              </a>
+              </Link>
+            </li>
+            <li>
+              <Link to="/plans" className={linkClass}>
+                الباقات
+              </Link>
+            </li>
+            <li>
+              <Link to="/register" className={linkClass}>
+                انضم كمستقل
+              </Link>
             </li>
           </ul>
         </section>
@@ -55,19 +85,19 @@ const Footer = ({ homeBlend = false }) => {
           <h3 className="mb-3 text-[0.98rem] font-bold text-[#2f3b65]">الموارد</h3>
           <ul className="m-0 grid list-none gap-2 p-0 text-[0.9rem] leading-[1.55] text-[#202020]">
             <li>
-              <a className="text-[#202020] no-underline transition-colors hover:text-[#2f3b65]" href="#">
+              <Link to="/privacy-policy" className={linkClass}>
                 سياسة الخصوصية
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="text-[#202020] no-underline transition-colors hover:text-[#2f3b65]" href="#">
+              <Link to="/terms-conditions" className={linkClass}>
                 الشروط والأحكام
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="text-[#202020] no-underline transition-colors hover:text-[#2f3b65]" href="#">
+              <Link to="/about" className={linkClass}>
                 مركز المساعدة
-              </a>
+              </Link>
             </li>
           </ul>
         </section>
@@ -76,9 +106,9 @@ const Footer = ({ homeBlend = false }) => {
           <h3 className="mb-3 text-[0.98rem] font-bold text-[#2f3b65]">الشركة</h3>
           <ul className="m-0 grid list-none gap-2 p-0 text-[0.9rem] leading-[1.55] text-[#202020]">
             <li>
-              <a className="text-[#202020] no-underline transition-colors hover:text-[#2f3b65]" href="#">
+              <Link to="/about" className={linkClass}>
                 من نحن
-              </a>
+              </Link>
             </li>
           </ul>
         </section>
@@ -100,7 +130,7 @@ const Footer = ({ homeBlend = false }) => {
             </li>
             <li>
               <a
-                className="text-[#202020] no-underline transition-colors hover:text-[#2f3b65]"
+                className={linkClass}
                 href="https://wa.me/971522857808"
                 target="_blank"
                 rel="noreferrer"
@@ -131,12 +161,12 @@ const Footer = ({ homeBlend = false }) => {
       >
         <div className="mx-auto flex w-full max-w-[min(1160px,calc(100%-48px))] flex-wrap items-center justify-between gap-4">
           <div className="flex gap-4">
-            <a className="text-[0.86rem] text-[#76cfdf] no-underline transition-colors hover:text-[#2f3b65]" href="#">
+            <Link to="/privacy-policy" className="text-[0.86rem] text-[#76cfdf] no-underline transition-colors hover:text-[#2f3b65]">
               سياسة الخصوصية
-            </a>
-            <a className="text-[0.86rem] text-[#76cfdf] no-underline transition-colors hover:text-[#2f3b65]" href="#">
+            </Link>
+            <Link to="/terms-conditions" className="text-[0.86rem] text-[#76cfdf] no-underline transition-colors hover:text-[#2f3b65]">
               الشروط والأحكام
-            </a>
+            </Link>
           </div>
           <p className="m-0 text-[0.86rem] text-[#76cfdf]">© 2026 أوردرز هاوس - جميع الحقوق محفوظة</p>
         </div>

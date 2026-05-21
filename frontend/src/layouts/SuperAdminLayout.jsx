@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 import { useAuth } from "../context/useAuth";
 import { useClientCreateOrderModal } from "../context/ClientCreateOrderModalContext";
 import { getAccountSettingsPath, getNotificationsPath } from "../constants/authRoutes";
@@ -182,7 +183,7 @@ export default function SuperAdminLayout() {
         </header>
 
         <div className="oh-sa-outlet">
-          <Outlet />
+          <LazyRouteOutlet />
         </div>
       </div>
     </div>

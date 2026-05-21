@@ -1,12 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "./useAuth";
 import { connectNotificationStream } from "../services/notificationRealtime";
 import { showBrowserNotification } from "../services/browserNotifications";
 import { shouldShowBrowserPush } from "../utils/notificationPreferenceRules";
 import { mergeNotificationPrefs } from "../utils/accountDisplay";
 import { NOTIFICATIONS_REFRESH_EVENT } from "../services/api";
-
-const NotificationRealtimeContext = createContext(null);
+import { NotificationRealtimeContext } from "./notificationRealtimeContext";
 
 export function NotificationRealtimeProvider({ children }) {
   const { user } = useAuth();
@@ -43,7 +42,10 @@ export function NotificationRealtimeProvider({ children }) {
   );
 
   const handlerRef = useRef(onRealtimePayload);
-  handlerRef.current = onRealtimePayload;
+
+  useEffect(() => {
+    handlerRef.current = onRealtimePayload;
+  }, [onRealtimePayload]);
 
   useEffect(() => {
     if (!userId) return undefined;
@@ -53,9 +55,9 @@ export function NotificationRealtimeProvider({ children }) {
     return disconnect;
   }, [userId]);
 
-  return <NotificationRealtimeContext.Provider value={{ connected: Boolean(userId) }}>{children}</NotificationRealtimeContext.Provider>;
-}
-
-export function useNotificationRealtime() {
-  return useContext(NotificationRealtimeContext);
+  return (
+    <NotificationRealtimeContext.Provider value={{ connected: Boolean(userId) }}>
+      {children}
+    </NotificationRealtimeContext.Provider>
+  );
 }

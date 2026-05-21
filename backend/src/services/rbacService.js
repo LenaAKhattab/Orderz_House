@@ -85,5 +85,6 @@ async function ensureUserRole({ userId, roleName }) {
 module.exports = {
   resolveAuthzContext,
   ensureUserRole,
+  pickPrimaryRole,
 };
 

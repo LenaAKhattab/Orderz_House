@@ -29,10 +29,30 @@ function isFakeOrdersAutomationVerbose() {
   return parseBoolEnv("FAKE_ORDERS_AUTOMATION_VERBOSE", false);
 }
 
+const WEAK_AUTOMATION_SECRETS = new Set([
+  "changeme",
+  "change-me",
+  "change_me",
+  "your_secret",
+  "your-secret",
+  "secret",
+  "test",
+  "test123",
+  "placeholder",
+  "fake_orders_automation_cron_secret",
+  "xxxxxxxxxxxxxxxx",
+]);
+
 /** Secret for POST /api/internal/fake-orders/automation-tick (optional external cron). */
 function getAutomationCronSecret() {
   const s = process.env.FAKE_ORDERS_AUTOMATION_CRON_SECRET;
-  return s && String(s).trim().length >= 16 ? String(s).trim() : null;
+  if (!s) return null;
+  const trimmed = String(s).trim();
+  if (trimmed.length < 16) return null;
+  const lower = trimmed.toLowerCase();
+  if (WEAK_AUTOMATION_SECRETS.has(lower)) return null;
+  if (/^(.)\1{15,}$/.test(trimmed)) return null;
+  return trimmed;
 }
 
 module.exports = {

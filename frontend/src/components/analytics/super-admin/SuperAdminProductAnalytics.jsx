@@ -274,7 +274,7 @@ export default function SuperAdminProductAnalytics() {
 
   const kpis = data?.kpis;
   const meta = data?.meta;
-  const events = data?.events || {};
+  const events = useMemo(() => data?.events || {}, [data?.events]);
   const conversion = data?.conversion || {};
   const topPages = Array.isArray(data?.topPages) ? data.topPages : [];
 

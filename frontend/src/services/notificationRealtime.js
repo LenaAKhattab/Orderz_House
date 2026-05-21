@@ -1,14 +1,11 @@
-import { TOKEN_KEY } from "./api";
-
 function buildStreamUrl() {
   const base = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace(/\/$/, "");
-  const token = typeof localStorage !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
-  const qs = token && token.trim() ? `?token=${encodeURIComponent(token.trim())}` : "";
-  return `${base}/notifications/stream${qs}`;
+  return `${base}/notifications/stream`;
 }
 
 /**
  * Connect to SSE notification stream. Returns cleanup function.
+ * Auth: HttpOnly session cookie via withCredentials (no JWT in query string).
  * @param {{ onNotification?: (payload: object) => void, onConnected?: () => void, onError?: () => void }} handlers
  */
 export function connectNotificationStream(handlers = {}) {

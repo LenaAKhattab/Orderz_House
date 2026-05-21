@@ -22,11 +22,18 @@ function maxAgeMsFromJwt(token) {
   }
 }
 
+function resolveSameSite() {
+  const raw = String(process.env.COOKIE_SAME_SITE || "").trim().toLowerCase();
+  if (raw === "none") return "none";
+  if (raw === "strict") return "strict";
+  return "lax";
+}
+
 function getAuthCookieBaseOptions() {
   return {
     httpOnly: true,
     secure: isSecureCookie(),
-    sameSite: "lax",
+    sameSite: resolveSameSite(),
     path: "/",
   };
 }

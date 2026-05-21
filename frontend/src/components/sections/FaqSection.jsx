@@ -126,6 +126,7 @@ const FaqSection = () => {
               alt=""
               width={256}
               height={256}
+              loading="lazy"
               decoding="async"
               className="pointer-events-none h-[clamp(9rem,28vw,16rem)] w-[clamp(9rem,28vw,16rem)] max-w-full object-contain"
             />

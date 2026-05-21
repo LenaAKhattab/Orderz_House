@@ -1,11 +1,15 @@
+import { lazy, Suspense } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { DASHBOARD_TITLE } from "../../constants/authRoutes";
 import { useAuth } from "../../context/useAuth";
-import OpenOrdersMarketplace from "../../components/open-orders/OpenOrdersMarketplace";
-import ClientDashboardHome from "./ClientDashboardHome";
-import FreelancerDashboardHome from "./FreelancerDashboardHome";
-import FreelancerMyOrdersPage from "./FreelancerMyOrdersPage";
-import SuperAdminVisitorsDashboard from "./SuperAdminVisitorsDashboard";
+import RouteSuspenseFallback from "../../components/ui/RouteSuspenseFallback";
+
+const OpenOrdersMarketplace = lazy(() => import("../../components/open-orders/OpenOrdersMarketplace"));
+const ClientDashboardHome = lazy(() => import("./ClientDashboardHome"));
+const FreelancerDashboardHome = lazy(() => import("./FreelancerDashboardHome"));
+const FreelancerMyOrdersPage = lazy(() => import("./FreelancerMyOrdersPage"));
+const SuperAdminVisitorsDashboard = lazy(() => import("./SuperAdminVisitorsDashboard"));
+const AdminDashboardHome = lazy(() => import("./AdminDashboardHome"));
 
 const ROLE_LABEL_AR = {
   super_admin: "مدير أعلى",
@@ -52,6 +56,10 @@ function Section({ title, actionLabel, actionTo, children }) {
   );
 }
 
+function LazyDashboardView({ children }) {
+  return <Suspense fallback={<RouteSuspenseFallback />}>{children}</Suspense>;
+}
+
 const DashboardPage = () => {
   const { pathname } = useLocation();
   const { user } = useAuth();
@@ -60,21 +68,50 @@ const DashboardPage = () => {
   const roleLabel = role ? ROLE_LABEL_AR[role] || role : "";
 
   const isFreelancerRoute = pathname.startsWith("/dashboard/freelancer");
-  if (pathname === "/dashboard/freelancer/orders") {
-    return <OpenOrdersMarketplace layout="dashboard" />;
+  const isClientMarketplace =
+    pathname === "/dashboard/client/orders" || pathname.startsWith("/dashboard/client/orders/");
+  if (pathname === "/dashboard/freelancer/orders" || isClientMarketplace) {
+    return (
+      <LazyDashboardView>
+        <OpenOrdersMarketplace layout="dashboard" />
+      </LazyDashboardView>
+    );
+  }
+  if (role === "admin" && pathname === "/dashboard/admin") {
+    return (
+      <LazyDashboardView>
+        <AdminDashboardHome user={user} />
+      </LazyDashboardView>
+    );
   }
   if (role === "client" && pathname === "/dashboard/client") {
-    return <ClientDashboardHome user={user} />;
+    return (
+      <LazyDashboardView>
+        <ClientDashboardHome user={user} />
+      </LazyDashboardView>
+    );
   }
   if (role === "super_admin" && pathname === "/dashboard/super-admin") {
-    return <SuperAdminVisitorsDashboard />;
+    return (
+      <LazyDashboardView>
+        <SuperAdminVisitorsDashboard />
+      </LazyDashboardView>
+    );
   }
   if (role === "freelancer" && isFreelancerRoute) {
     if (pathname === "/dashboard/freelancer") {
-      return <FreelancerDashboardHome user={user} />;
+      return (
+        <LazyDashboardView>
+          <FreelancerDashboardHome user={user} />
+        </LazyDashboardView>
+      );
     }
     if (pathname === "/dashboard/freelancer/my-orders") {
-      return <FreelancerMyOrdersPage />;
+      return (
+        <LazyDashboardView>
+          <FreelancerMyOrdersPage />
+        </LazyDashboardView>
+      );
     }
   }
 

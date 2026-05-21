@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminCancelTrainingRoundRequest, adminListTrainingRoundsRequest } from "../../../services/api";
 import DashboardSection from "../../../components/dashboard/DashboardSection";
 import DashboardToolbar from "../../../components/dashboard/DashboardToolbar";
@@ -35,7 +35,7 @@ export default function TrainingOrderRoundsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [busyId, setBusyId] = useState(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setError("");
     setLoading(true);
     try {
@@ -52,11 +52,11 @@ export default function TrainingOrderRoundsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, statusFilter]);
 
   useEffect(() => {
-    load();
-  }, [page, statusFilter]);
+    void load();
+  }, [load]);
 
   const cancel = async (r) => {
     if (!window.confirm(`إيقاف الجولة «${r.title}»؟`)) return;

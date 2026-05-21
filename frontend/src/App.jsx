@@ -1,54 +1,57 @@
-import { useEffect, useRef } from "react";
+import { Suspense, lazy, useEffect, useRef } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { useToast } from "./components/ui/toastContext";
+import RouteSuspenseFallback from "./components/ui/RouteSuspenseFallback";
 import PublicLayout from "./components/layout/PublicLayout";
-import MainLayout from "./layouts/MainLayout";
+
+const MainLayout = lazy(() => import("./layouts/MainLayout"));
 import { ClientCreateOrderModalProvider } from "./context/ClientCreateOrderModalContext.jsx";
 import { DashboardRedirect, GuestOnly, HomeForGuestsOnly, RequireAuth, RequireRole } from "./components/auth/AuthGuards";
-import Home from "./pages/Home";
-import About from "./pages/About";
-import Services from "./pages/Services";
-import Plans from "./pages/Plans";
-import Orders from "./pages/Orders";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsConditions from "./pages/TermsConditions";
-import Unauthorized from "./pages/Unauthorized";
-import NotFoundPage from "./pages/NotFoundPage";
-import DashboardPage from "./pages/dashboard/DashboardPage";
-import SuperAdminPlansPage from "./pages/dashboard/SuperAdminPlansPage";
-import SuperAdminSubscriptionsPage from "./pages/dashboard/SuperAdminSubscriptionsPage";
-import AdminOrdersPage from "./pages/dashboard/AdminOrdersPage";
-import AdminCreateOrderPage from "./pages/dashboard/AdminCreateOrderPage";
-import ClientCreateOrderOpenAndRedirect from "./pages/dashboard/ClientCreateOrderOpenAndRedirect";
-import ClientMyOrdersPage from "./pages/dashboard/ClientMyOrdersPage";
-import ClientFinancialPage from "./pages/dashboard/ClientFinancialPage";
-import FreelancerOrderDetailsPage from "./pages/dashboard/FreelancerOrderDetailsPage";
-import FreelancerMyOrderDetailsPage from "./pages/dashboard/FreelancerMyOrderDetailsPage";
-import FreelancerFinancialClaimsPage from "./pages/dashboard/FreelancerFinancialClaimsPage";
-import SuperAdminFinancialClaimsPage from "./pages/dashboard/SuperAdminFinancialClaimsPage";
-import AdminSubscriptionsActivationPage from "./pages/dashboard/AdminSubscriptionsActivationPage";
-import NotificationsPage from "./pages/dashboard/NotificationsPage";
-import AdminCoursesPage from "./pages/dashboard/AdminCoursesPage";
-import AdminAdsPage from "./pages/dashboard/AdminAdsPage";
-import TrainingOrdersAdminShell, {
+import {
+  Home,
+  About,
+  Services,
+  Plans,
+  Orders,
+  Login,
+  Register,
+  ForgotPassword,
+  PrivacyPolicy,
+  TermsConditions,
+  Unauthorized,
+  NotFoundPage,
+  DashboardPage,
+  SuperAdminPlansPage,
+  SuperAdminSubscriptionsPage,
+  SuperAdminFinancialClaimsPage,
+  SuperAdminSettingsPage,
+  AdminOrdersPage,
+  AdminCreateOrderPage,
+  AdminSubscriptionsActivationPage,
+  AdminCoursesPage,
+  AdminAdsPage,
+  AdminSettingsPage,
+  TrainingOrdersAdminShell,
   TrainingOrdersIndexRedirect,
-} from "./pages/dashboard/trainingOrders/TrainingOrdersAdminShell";
-import TrainingOrdersSettingsPage from "./pages/dashboard/trainingOrders/TrainingOrdersSettingsPage";
-import TrainingOrderTemplatesPage from "./pages/dashboard/trainingOrders/TrainingOrderTemplatesPage";
-import TrainingOrderRoundsPage from "./pages/dashboard/trainingOrders/TrainingOrderRoundsPage";
-import TrainingOrderApplicationsPage from "./pages/dashboard/trainingOrders/TrainingOrderApplicationsPage";
-import FreelancerCoursesPage from "./pages/dashboard/FreelancerCoursesPage";
-import FreelancerCourseDetailsPage from "./pages/dashboard/FreelancerCourseDetailsPage";
-import FreelancerSettingsPage from "./pages/dashboard/FreelancerSettingsPage";
-import ClientProfilePage from "./pages/dashboard/ClientProfilePage";
-import ClientSettingsPage from "./pages/dashboard/ClientSettingsPage";
-import AdminSettingsPage from "./pages/dashboard/AdminSettingsPage";
-import SuperAdminSettingsPage from "./pages/dashboard/SuperAdminSettingsPage";
+  TrainingOrdersSettingsPage,
+  TrainingOrderTemplatesPage,
+  TrainingOrderRoundsPage,
+  TrainingOrderApplicationsPage,
+  ClientCreateOrderOpenAndRedirect,
+  ClientMyOrdersPage,
+  ClientFinancialPage,
+  ClientProfilePage,
+  ClientSettingsPage,
+  FreelancerOrderDetailsPage,
+  FreelancerMyOrderDetailsPage,
+  FreelancerFinancialClaimsPage,
+  FreelancerCoursesPage,
+  FreelancerCourseDetailsPage,
+  FreelancerSettingsPage,
+  NotificationsPage,
+} from "./routes/lazyPages";
 import { ROLE } from "./constants/authRoutes";
 import { useAuth } from "./context/useAuth";
 import { clearAnalyticsUser, initAnalytics, runAnalyticsStartupChecks, setAnalyticsUser, trackPageView } from "./services/analytics";
@@ -143,9 +146,11 @@ function App() {
             <Route element={<RequireAuth />}>
               <Route
                 element={
-                  <ClientCreateOrderModalProvider>
-                    <MainLayout />
-                  </ClientCreateOrderModalProvider>
+                  <Suspense fallback={<RouteSuspenseFallback />}>
+                    <ClientCreateOrderModalProvider>
+                      <MainLayout />
+                    </ClientCreateOrderModalProvider>
+                  </Suspense>
                 }
               >
                 <Route path="/dashboard" element={<DashboardRedirect />} />
@@ -452,6 +457,22 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.CLIENT]}>
                       <ClientCreateOrderOpenAndRedirect />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/client/orders"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.CLIENT]}>
+                      <DashboardPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/client/orders/:id"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.CLIENT]}>
+                      <FreelancerOrderDetailsPage />
                     </RequireRole>
                   }
                 />

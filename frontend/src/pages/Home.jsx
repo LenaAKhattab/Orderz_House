@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useHomePageBlocking } from "../context/HomePageBlockingContext";
+import { useHomePageBlocking } from "../hooks/useHomePageBlocking";
 import usePublicAds from "../hooks/usePublicAds";
 import usePublicHomeCategories from "../hooks/usePublicHomeCategories";
 import { usePublicHomeStats } from "../hooks/usePublicHomeStats";
@@ -8,6 +8,7 @@ import HomeTopSection from "../components/sections/HomeTopSection";
 import CategoriesSection from "../components/sections/CategoriesSection";
 import FaqSection from "../components/sections/FaqSection";
 import "../components/skeletons/home-skeleton.css";
+import "../components/sections/home-landing-top.css";
 
 /** Upper bound so skeleton never blocks real content indefinitely. */
 const HOME_BLOCKING_MAX_MS = 3600;

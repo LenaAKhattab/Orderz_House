@@ -1,9 +1,5 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
-
-const HomePageBlockingContext = createContext({
-  homeBlocking: false,
-  setHomeBlocking: () => {},
-});
+import { useCallback, useMemo, useState } from "react";
+import { HomePageBlockingContext } from "./homePageBlockingContext";
 
 export function HomePageBlockingProvider({ children }) {
   const [homeBlocking, setHomeBlockingState] = useState(false);
@@ -20,8 +16,4 @@ export function HomePageBlockingProvider({ children }) {
   );
 
   return <HomePageBlockingContext.Provider value={value}>{children}</HomePageBlockingContext.Provider>;
-}
-
-export function useHomePageBlocking() {
-  return useContext(HomePageBlockingContext);
 }

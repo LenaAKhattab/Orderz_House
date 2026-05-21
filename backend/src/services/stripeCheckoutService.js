@@ -14,6 +14,7 @@ const notificationEventsService = require("./notificationEventsService");
 const { planEligibleForFreelancerSelfCheckout, effectiveCheckoutPriceJod } = require("./plansService");
 const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPaymentStatus");
 const { getPrimaryClientUrl } = require("../config/clientUrl");
+const { isProduction } = require("../config/env");
 const freelancerSubscriptionPaymentNotifications = require("./freelancerSubscriptionPaymentNotifications");
 
 /** Stripe redirect URLs must use one origin; CLIENT_URL may list multiple values for CORS — take first via getPrimaryClientUrl. */
@@ -51,6 +52,18 @@ function getStripeOrNull() {
   return new Stripe(key);
 }
 
+function throwStripeNotConfigured() {
+  const err = new Error(
+    isProduction()
+      ? "خدمة الدفع غير مفعّلة على الخادم. راجع إعداد STRIPE_SECRET_KEY أو تواصل مع الدعم."
+      : "Stripe is not configured on the server (set STRIPE_SECRET_KEY).",
+  );
+  err.statusCode = 503;
+  err.exposeToClient = true;
+  err.publicCode = "STRIPE_NOT_CONFIGURED";
+  throw err;
+}
+
 function hasPricedBiddingRow(order) {
   if (!order) return false;
   if (order.project_type !== "bidding") return false;
@@ -80,9 +93,7 @@ async function insertPendingPayment({
 async function createClientFixedOrderCheckoutSession({ clientUserId, orderId }) {
   const stripe = getStripeOrNull();
   if (!stripe) {
-    const err = new Error("Stripe is not configured on the server.");
-    err.statusCode = 503;
-    throw err;
+    throwStripeNotConfigured();
   }
 
   const uid = Number(clientUserId);
@@ -242,9 +253,7 @@ async function createClientFixedOrderCheckoutSession({ clientUserId, orderId }) 
 async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, bidId }) {
   const stripe = getStripeOrNull();
   if (!stripe) {
-    const err = new Error("Stripe is not configured on the server.");
-    err.statusCode = 503;
-    throw err;
+    throwStripeNotConfigured();
   }
 
   const uid = Number(clientUserId);
@@ -464,9 +473,7 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
 async function confirmClientSelectedBidPayment({ clientUserId, orderId, bidId }) {
   const stripe = getStripeOrNull();
   if (!stripe) {
-    const err = new Error("Stripe is not configured on the server.");
-    err.statusCode = 503;
-    throw err;
+    throwStripeNotConfigured();
   }
   const uid = Number(clientUserId);
   const oid = Number(orderId);
@@ -675,9 +682,7 @@ async function confirmClientSelectedBidPayment({ clientUserId, orderId, bidId })
 async function confirmClientFixedOrderPayment({ clientUserId, orderId }) {
   const stripe = getStripeOrNull();
   if (!stripe) {
-    const err = new Error("Stripe is not configured on the server.");
-    err.statusCode = 503;
-    throw err;
+    throwStripeNotConfigured();
   }
   const uid = Number(clientUserId);
   const oid = Number(orderId);
@@ -803,9 +808,7 @@ async function cancelClientFixedOrderPaymentAttempt({ clientUserId, orderId }) {
 async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, planId }) {
   const stripe = getStripeOrNull();
   if (!stripe) {
-    const err = new Error("Stripe is not configured on the server.");
-    err.statusCode = 503;
-    throw err;
+    throwStripeNotConfigured();
   }
 
   const uid = Number(freelancerUserId);
@@ -978,9 +981,7 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
 async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeSessionId }) {
   const stripe = getStripeOrNull();
   if (!stripe) {
-    const err = new Error("Stripe is not configured on the server.");
-    err.statusCode = 503;
-    throw err;
+    throwStripeNotConfigured();
   }
   const sid = String(stripeSessionId || "").trim();
   if (!sid) {
@@ -1122,9 +1123,7 @@ async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeS
 async function recordFreelancerSubscriptionCheckoutCancelled({ freelancerUserId, stripeSessionId }) {
   const stripe = getStripeOrNull();
   if (!stripe) {
-    const err = new Error("Stripe is not configured on the server.");
-    err.statusCode = 503;
-    throw err;
+    throwStripeNotConfigured();
   }
   const sid = String(stripeSessionId || "").trim();
   if (!sid) {

@@ -45,7 +45,11 @@ function pickSafeClientPayload(err) {
     typeof raw === "string" &&
     (/^(error:|severity:|column\s|relation\s|syntax\s)/i.test(raw) ||
       /postgres|connection refused|ECONNREFUSED|ETIMEDOUT|timeout/i.test(raw) ||
-      /\bStripe\b|\bResend\b|\bNeon\b|\bAWS\b|duplicate key|violates foreign key/i.test(raw));
+      /\bStripe\b|\bResend\b|\bNeon\b|\bAWS\b|duplicate key|violates foreign key/i.test(raw) ||
+      /\bDATABASE_URL\b|postgresql:\/\//i.test(raw) ||
+      /\b(sk_|whsec_|pk_)[a-z0-9_]+/i.test(raw) ||
+      /\bBearer\s+[A-Za-z0-9._-]{20,}/i.test(raw) ||
+      /\bJWT_SECRET\b/i.test(raw));
 
   if (looksInternal) {
     return {
@@ -73,7 +77,18 @@ const errorMiddleware = (err, req, res, next) => {
   if (statusCode >= 500) {
     console.error(`[${req.method} ${req.originalUrl}]${logRequestContext(req)}`, err.message);
     if (err.logDetails) {
-      console.error("[details]", err.logDetails);
+      const safeDetails =
+        typeof err.logDetails === "object" && err.logDetails !== null
+          ? { ...err.logDetails }
+          : err.logDetails;
+      if (safeDetails && typeof safeDetails === "object") {
+        for (const key of Object.keys(safeDetails)) {
+          if (/secret|password|token|authorization|cookie/i.test(key)) {
+            safeDetails[key] = "[redacted]";
+          }
+        }
+      }
+      console.error("[details]", safeDetails);
     }
     if (err.cause) {
       console.error("[cause]", err.cause);

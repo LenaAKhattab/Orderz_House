@@ -58,10 +58,13 @@ npm run dev
 
 Backend runs at `http://localhost:5000`.
 
-Initialize database schema:
+Initialize database schema (**local empty DB only** — `init.sql` drops tables; never use on staging/production):
 
 ```bash
-psql "<your_database_url>" -f sql/init.sql
+cd backend
+npm run db:migrate
+# Fresh local only (destructive):
+# psql "<your_database_url>" -f sql/init.sql
 ```
 
 ## Frontend Setup
@@ -76,21 +79,15 @@ Frontend runs at `http://localhost:5173` by default.
 
 ## Environment Variables
 
-Backend (`backend/.env`):
+Copy templates (no real secrets):
 
-```env
-PORT=5000
-DATABASE_URL=postgresql://...
-JWT_SECRET=change_this_to_a_strong_secret
-NODE_ENV=development
-CLIENT_URL=http://localhost:5173
-```
+- `backend/.env.example` → `backend/.env`
+- `frontend/.env.example` → `frontend/.env`
 
-Frontend (`frontend/.env`):
+## Deployment (staging / production)
 
-```env
-VITE_API_BASE_URL=http://localhost:5000/api
-```
+- [docs/deployment-checklist.md](docs/deployment-checklist.md) — env, migrations, Stripe webhook, warnings
+- [docs/manual-staging-e2e.md](docs/manual-staging-e2e.md) — manual QA before go-live
 
 ## Roles Foundation
 
