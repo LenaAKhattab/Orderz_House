@@ -18,14 +18,13 @@ function StarsDisplay({ rating, size = "md" }) {
   );
 }
 
-function DistributionBars({ distribution = {}, total = 0 }) {
+function DistributionBars({ distribution = {}, total: _total = 0 }) {
   const dist = distribution || {};
   const max = Math.max(1, ...[1, 2, 3, 4, 5].map((k) => Number(dist[k] || 0)));
   return (
     <ul className="fdash-review-dist">
       {[5, 4, 3, 2, 1].map((star) => {
         const count = Number(dist[star] || 0);
-        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
         return (
           <li key={star}>
             <span className="fdash-review-dist__label">{star}★</span>

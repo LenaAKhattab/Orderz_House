@@ -27,6 +27,9 @@ const publicRoutes = require("./routes/publicRoutes");
 const internalAutomationRoutes = require("./routes/internalAutomationRoutes");
 const { notFoundMiddleware, errorMiddleware } = require("./middleware/errorMiddleware");
 const { requestTimingMiddleware } = require("./middleware/requestTimingMiddleware");
+const { applySecurityHeaders } = require("./middleware/securityHeaders");
+const { createApiGeneralLimiter } = require("./middleware/apiRateLimiter");
+const { originGuardMiddleware } = require("./middleware/originGuardMiddleware");
 const { isProduction } = require("./config/env");
 const { parseAllowedClientOrigins } = require("./config/clientUrl");
 
@@ -59,6 +62,8 @@ if (trustProxy === "1" || trustProxy === "true") {
 // Stripe webhooks require the raw body for signature verification (must run before express.json()).
 app.use("/api/webhooks/stripe", express.raw({ type: "application/json" }), stripeWebhookRoutes);
 
+applySecurityHeaders(app);
+
 // Core middleware setup for parsing, CORS boundaries, and request logging.
 app.use(
   cors({
@@ -75,6 +80,8 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
+app.use("/api", createApiGeneralLimiter());
+app.use("/api", originGuardMiddleware);
 app.use("/api", requestTimingMiddleware);
 
 // Static assets (e.g., category images) served from backend/images

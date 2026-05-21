@@ -15,6 +15,7 @@ import OrderMetadataBlock from "../../components/orders/order-details/OrderMetad
 import FileList from "../../components/orders/order-details/FileList";
 import SubmissionHistoryTimeline from "../../components/orders/submission-history/SubmissionHistoryTimeline";
 import {
+  formatJoDate,
   formatJoDateTime,
   formatMoneyJod,
 } from "../../components/orders/order-details/orderDetailsUtils";
@@ -117,7 +118,7 @@ export default function FreelancerMyOrderDetailsPage() {
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [busy, id, order?.orderStatus, navigate]);
+  }, [busy, id, order, navigate]);
 
   const briefFiles = useMemo(
     () => (Array.isArray(order?.files) ? order.files.filter((f) => !f.purpose || f.purpose === "brief") : []),

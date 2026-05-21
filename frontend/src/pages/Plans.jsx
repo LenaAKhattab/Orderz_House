@@ -249,7 +249,6 @@ const Plans = () => {
             if (url) window.location.href = url;
           } catch (err) {
             if (import.meta.env?.DEV) {
-              // eslint-disable-next-line no-console
               console.error("[freelancer checkout]", err?.response?.data ?? err);
             }
             setError(errorMessage(err));

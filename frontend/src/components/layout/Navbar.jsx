@@ -9,7 +9,7 @@ import {
   getProfilePagePath,
 } from "../../constants/authRoutes";
 import NotificationsBell from "../notifications/NotificationsBell";
-import { useHomePageBlocking } from "../../context/HomePageBlockingContext";
+import { useHomePageBlocking } from "../../hooks/useHomePageBlocking";
 import NavbarSkeleton from "../skeletons/NavbarSkeleton";
 import "../skeletons/home-skeleton.css";
 

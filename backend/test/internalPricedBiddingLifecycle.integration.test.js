@@ -1,9 +1,10 @@
 /**
  * Postgres integration: internal admin priced-bidding lifecycle (create → pool → bids → award)
- * without Stripe. Skips when DATABASE_URL / JWT_SECRET are missing or the database is unreachable.
+ * without Stripe.
  *
- * This file is listed first in `npm test` so `dotenv` can load `backend/.env` before any other
- * test file sets a placeholder `DATABASE_URL` and initializes the pool.
+ * Run: npm run test:integration
+ * Requires: backend/.env with real DATABASE_URL (not a *placeholder* URL) and JWT_SECRET (16+ chars).
+ * Skips when env is missing, DATABASE_URL is unreachable, or assignable paid plan is absent.
  */
 const path = require("node:path");
 const http = require("node:http");
@@ -18,9 +19,8 @@ if (!process.env.CLIENT_URL || !String(process.env.CLIENT_URL).trim()) {
   process.env.CLIENT_URL = "http://localhost:5173";
 }
 
-const integrationEnvOk =
-  Boolean(String(process.env.DATABASE_URL || "").trim()) &&
-  Boolean(String(process.env.JWT_SECRET || "").trim().length >= 16);
+const { isIntegrationEnvConfigured } = require("./helpers/integrationEnv");
+const integrationEnvOk = isIntegrationEnvConfigured();
 
 const rootDescribe = integrationEnvOk ? describe : describe.skip;
 
@@ -150,11 +150,12 @@ rootDescribe("internal priced bidding lifecycle (Postgres integration)", () => {
         assert.ok(catRows[0], "seed DB must include programming category (migration 003)");
         const categoryId = Number(catRows[0].id);
 
-        const { rows: planRows } = await pool.query(
-          `SELECT id FROM plans WHERE is_active = TRUE AND deleted_at IS NULL ORDER BY id ASC LIMIT 1`,
+        const planId = 3;
+        const { rows: planCheck } = await pool.query(
+          `SELECT id FROM plans WHERE id = $1 AND is_active = TRUE AND deleted_at IS NULL LIMIT 1`,
+          [planId],
         );
-        assert.ok(planRows[0], "seed DB must include at least one active plan");
-        const planId = Number(planRows[0].id);
+        assert.ok(planCheck[0], "seed DB must include active plan id=3 (platinum) for integration bids");
 
         await subscriptionsService.assignPlanToFreelancer({
           actorUserId: adminId,
@@ -168,6 +169,11 @@ rootDescribe("internal priced bidding lifecycle (Postgres integration)", () => {
           planId,
           notes: "integration test",
         });
+
+        const subA = await subscriptionsService.getCurrentSubscriptionForFreelancer(freelancerA);
+        const subB = await subscriptionsService.getCurrentSubscriptionForFreelancer(freelancerB);
+        assert.strictEqual(Number(subA?.planId), planId, "freelancer A must have assigned paid plan before bidding");
+        assert.strictEqual(Number(subB?.planId), planId, "freelancer B must have assigned paid plan before bidding");
 
         const created = await ordersService.createInternalOrder({
           actorUserId: adminId,
@@ -216,16 +222,18 @@ rootDescribe("internal priced bidding lifecycle (Postgres integration)", () => {
           "internal priced-bidding order should be pool-eligible (same predicates as listPoolOrders real branch)",
         );
 
+        const bidAmountA = 10;
+        const bidAmountB = 12;
         await ordersService.submitPoolOrderBid({
           freelancerUserId: freelancerA,
           orderId,
-          amount: 50,
+          amount: bidAmountA,
           message: null,
         });
         const orderAfterA = await ordersService.submitPoolOrderBid({
           freelancerUserId: freelancerB,
           orderId,
-          amount: 60,
+          amount: bidAmountB,
           message: null,
         });
 

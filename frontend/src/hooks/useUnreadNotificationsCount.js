@@ -16,7 +16,9 @@ export default function useUnreadNotificationsCount(enabled = true) {
 
   useEffect(() => {
     if (!enabled) return undefined;
-    void fetchCount();
+    queueMicrotask(() => {
+      void fetchCount();
+    });
     const t = setInterval(fetchCount, 30_000);
     const onRefresh = (e) => {
       const delta = e?.detail?.unreadDelta;

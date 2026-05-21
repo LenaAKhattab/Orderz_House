@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import ClientCreateOrderModal from "../components/orders/ClientCreateOrderModal";
+import { Suspense, createContext, lazy, useCallback, useContext, useMemo, useState } from "react";
+
+const ClientCreateOrderModal = lazy(() => import("../components/orders/ClientCreateOrderModal"));
 
 const ClientCreateOrderModalContext = createContext(null);
 
@@ -14,7 +15,11 @@ export function ClientCreateOrderModalProvider({ children }) {
   return (
     <ClientCreateOrderModalContext.Provider value={value}>
       {children}
-      <ClientCreateOrderModal open={open} onClose={closeModal} />
+      {open ? (
+        <Suspense fallback={null}>
+          <ClientCreateOrderModal open={open} onClose={closeModal} />
+        </Suspense>
+      ) : null}
     </ClientCreateOrderModalContext.Provider>
   );
 }

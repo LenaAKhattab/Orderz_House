@@ -3,6 +3,7 @@
  */
 const orderFlowService = require("./orderFlowService");
 const planOrderValueEligibility = require("./planOrderValueEligibility");
+const { collectResolvedRoleNames } = require("../utils/roleResolution");
 
 /** Staff panel operators (legacy `super_admin` DB role retained; no new roles added). */
 const STAFF_ORDER_ROLES = Object.freeze(["admin", "super_admin"]);
@@ -33,12 +34,7 @@ function isClientAuth(auth) {
 }
 
 function collectRoleNames(auth) {
-  const rbac = Array.isArray(auth?.roles)
-    ? auth.roles.map((r) => (r?.name ? String(r.name).trim() : "")).filter(Boolean)
-    : [];
-  const primary = auth?.primaryRole ? String(auth.primaryRole).trim() : "";
-  const legacy = auth?.legacyRole ? String(auth.legacyRole).trim() : "";
-  return [...new Set([...rbac, primary, legacy].filter(Boolean))];
+  return collectResolvedRoleNames(auth);
 }
 
 function requireAuthenticatedUserId(auth) {

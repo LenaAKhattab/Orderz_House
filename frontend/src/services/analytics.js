@@ -1,4 +1,3 @@
-import posthog from "posthog-js";
 import { resolvePostHogHost, validatePostHogProjectKey } from "../utils/posthogEnv";
 
 const POSTHOG_KEY_RAW = String(import.meta.env.VITE_POSTHOG_KEY || "").trim();
@@ -14,11 +13,21 @@ const ANALYTICS_ENABLED = CONFIG_VALID && Boolean(POSTHOG_KEY_RAW) && (IS_PROD |
 
 let initialized = false;
 let initBlocked = false;
+let initPromise = null;
+let posthog = null;
 let currentUserId = null;
 let lastPageViewKey = "";
 let lastPageviewTrackedAt = null;
 let startupChecksDone = false;
 const warnedCodes = new Set();
+
+/** @type {Array<{ path: string, title: string }>} */
+const pendingPageViews = [];
+/** @type {Array<{ name: string, params: Record<string, unknown> }>} */
+const pendingEvents = [];
+/** @type {Array<{ userId: string, role?: string }>} */
+const pendingIdentifies = [];
+let pendingReset = false;
 
 function canUseDom() {
   return typeof window !== "undefined" && typeof document !== "undefined";
@@ -26,14 +35,12 @@ function canUseDom() {
 
 function debugLog(...args) {
   if (!IS_DEV) return;
-  // eslint-disable-next-line no-console
   console.debug("[analytics]", ...args);
 }
 
 function warnOnceCode(code, message) {
   if (!canUseDom() || warnedCodes.has(code)) return;
   warnedCodes.add(code);
-  // eslint-disable-next-line no-console
   console.warn(`[analytics] ${message}`);
 }
 
@@ -128,6 +135,118 @@ function validateFrontendEnv() {
   };
 }
 
+const SENSITIVE_PARAM_KEYS = new Set([
+  "email",
+  "password",
+  "token",
+  "secret",
+  "card",
+  "cvv",
+  "iban",
+  "phone",
+]);
+
+function sanitizeEventParams(params = {}) {
+  const out = {};
+  for (const [key, value] of Object.entries(params || {})) {
+    if (!key || SENSITIVE_PARAM_KEYS.has(String(key).toLowerCase())) continue;
+    if (value === undefined || value === null) continue;
+    if (typeof value === "object") continue;
+    out[key] = value;
+  }
+  return out;
+}
+
+function flushPendingQueue() {
+  if (!initialized || !posthog) return;
+
+  if (pendingReset) {
+    pendingReset = false;
+    try {
+      posthog.reset();
+    } catch (err) {
+      debugLog("reset failed", err?.message);
+    }
+  }
+
+  for (const item of pendingIdentifies.splice(0)) {
+    try {
+      posthog.identify(item.userId, item.role ? { role: item.role } : undefined);
+    } catch (err) {
+      debugLog("identify failed", err?.message);
+    }
+  }
+
+  for (const item of pendingPageViews.splice(0)) {
+    const key = `${item.path}::${item.title || ""}`;
+    if (lastPageViewKey === key) continue;
+    lastPageViewKey = key;
+    const href = typeof window !== "undefined" ? window.location.href : undefined;
+    try {
+      posthog.capture("$pageview", {
+        path: item.path,
+        title: item.title || undefined,
+        $current_url: href,
+      });
+      lastPageviewTrackedAt = new Date().toISOString();
+      debugLog("pageview captured (queued)", { path: item.path, at: lastPageviewTrackedAt });
+    } catch (err) {
+      console.warn("[analytics] pageview capture failed:", err?.message || err);
+    }
+  }
+
+  for (const item of pendingEvents.splice(0)) {
+    try {
+      posthog.capture(item.name, sanitizeEventParams(item.params));
+      debugLog("event (queued)", item.name);
+    } catch (err) {
+      debugLog("event failed", item.name, err?.message);
+    }
+  }
+}
+
+async function ensurePostHogLoaded() {
+  if (!ANALYTICS_ENABLED || !canUseDom() || initBlocked) return false;
+  if (initialized && posthog) return true;
+
+  if (!POSTHOG_HOST) {
+    initBlocked = true;
+    warnOnceCode("init_no_host", "[analytics] PostHog initialization skipped due to invalid configuration (host).");
+    return false;
+  }
+
+  if (!initPromise) {
+    initPromise = import("posthog-js")
+      .then((mod) => {
+        posthog = mod.default;
+        posthog.init(POSTHOG_KEY_RAW, {
+          api_host: POSTHOG_HOST,
+          ...(HOST_RESOLVED.uiHost ? { ui_host: HOST_RESOLVED.uiHost } : {}),
+          capture_pageview: false,
+          autocapture: false,
+          persistence: "localStorage+cookie",
+          disable_session_recording: true,
+          advanced_disable_flags: true,
+          advanced_disable_decide: true,
+          disable_persistence: false,
+        });
+        initialized = true;
+        debugLog("initialized (lazy)", { api_host: POSTHOG_HOST, flags: "disabled" });
+        flushPendingQueue();
+        return true;
+      })
+      .catch((err) => {
+        initBlocked = true;
+        initPromise = null;
+        console.warn("[analytics] init failed:", err?.message || err);
+        return false;
+      });
+  }
+
+  await initPromise;
+  return initialized;
+}
+
 export function runAnalyticsStartupChecks() {
   if (!canUseDom() || startupChecksDone) return validateFrontendEnv();
   startupChecksDone = true;
@@ -170,28 +289,6 @@ export function isDevTrackingDisabled() {
   return IS_DEV && !ENABLE_DEV_TRACKING;
 }
 
-const SENSITIVE_PARAM_KEYS = new Set([
-  "email",
-  "password",
-  "token",
-  "secret",
-  "card",
-  "cvv",
-  "iban",
-  "phone",
-]);
-
-function sanitizeEventParams(params = {}) {
-  const out = {};
-  for (const [key, value] of Object.entries(params || {})) {
-    if (!key || SENSITIVE_PARAM_KEYS.has(String(key).toLowerCase())) continue;
-    if (value === undefined || value === null) continue;
-    if (typeof value === "object") continue;
-    out[key] = value;
-  }
-  return out;
-}
-
 export function initAnalytics() {
   runAnalyticsStartupChecks();
 
@@ -204,31 +301,7 @@ export function initAnalytics() {
     return;
   }
 
-  if (!POSTHOG_HOST) {
-    initBlocked = true;
-    warnOnceCode("init_no_host", "[analytics] PostHog initialization skipped due to invalid configuration (host).");
-    return;
-  }
-
-  try {
-    posthog.init(POSTHOG_KEY_RAW, {
-      api_host: POSTHOG_HOST,
-      ...(HOST_RESOLVED.uiHost ? { ui_host: HOST_RESOLVED.uiHost } : {}),
-      capture_pageview: false,
-      autocapture: false,
-      persistence: "localStorage+cookie",
-      disable_session_recording: true,
-      advanced_disable_flags: true,
-      advanced_disable_decide: true,
-      disable_persistence: false,
-    });
-    initialized = true;
-    debugLog("initialized", { api_host: POSTHOG_HOST, flags: "disabled" });
-  } catch (err) {
-    initBlocked = true;
-    // eslint-disable-next-line no-console
-    console.warn("[analytics] init failed:", err?.message || err);
-  }
+  void ensurePostHogLoaded();
 }
 
 export function trackPageView(path, title = "") {
@@ -237,8 +310,12 @@ export function trackPageView(path, title = "") {
     debugLog("pageview skipped", { path, reason: !ANALYTICS_ENABLED ? "disabled" : "empty_path" });
     return;
   }
-  initAnalytics();
-  if (!initialized) return;
+
+  if (!initialized) {
+    pendingPageViews.push({ path, title });
+    void ensurePostHogLoaded();
+    return;
+  }
 
   const key = `${path}::${title || ""}`;
   if (lastPageViewKey === key) return;
@@ -253,15 +330,19 @@ export function trackPageView(path, title = "") {
     lastPageviewTrackedAt = new Date().toISOString();
     debugLog("pageview captured", { path, at: lastPageviewTrackedAt });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.warn("[analytics] pageview capture failed:", err?.message || err);
   }
 }
 
 export function trackEvent(name, params = {}) {
   if (!ANALYTICS_ENABLED || !name) return;
-  initAnalytics();
-  if (!initialized) return;
+
+  if (!initialized) {
+    pendingEvents.push({ name, params });
+    void ensurePostHogLoaded();
+    return;
+  }
+
   try {
     posthog.capture(name, sanitizeEventParams(params));
     debugLog("event", name);
@@ -276,9 +357,14 @@ export function setAnalyticsUser(user) {
   const nextUserId = rawId != null ? String(rawId).trim() : "";
   if (!nextUserId || nextUserId === currentUserId) return;
   currentUserId = nextUserId;
-  initAnalytics();
-  if (!initialized) return;
   const role = user?.primaryRole || user?.role;
+
+  if (!initialized) {
+    pendingIdentifies.push({ userId: nextUserId, role: role ? String(role) : undefined });
+    void ensurePostHogLoaded();
+    return;
+  }
+
   posthog.identify(currentUserId, role ? { role: String(role) } : undefined);
 }
 
@@ -286,7 +372,13 @@ export function clearAnalyticsUser() {
   if (!ANALYTICS_ENABLED) return;
   currentUserId = null;
   lastPageViewKey = "";
-  initAnalytics();
-  if (!initialized) return;
+  pendingIdentifies.length = 0;
+
+  if (!initialized) {
+    pendingReset = true;
+    void ensurePostHogLoaded();
+    return;
+  }
+
   posthog.reset();
 }

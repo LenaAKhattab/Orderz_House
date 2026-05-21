@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   adminCreateTrainingTemplateRequest,
   adminDeleteTrainingTemplateRequest,
@@ -86,7 +86,7 @@ export default function TrainingOrderTemplatesPage() {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [wizardReset, setWizardReset] = useState(0);
 
-  const loadList = async () => {
+  const loadList = useCallback(async () => {
     setError("");
     setLoading(true);
     try {
@@ -106,7 +106,7 @@ export default function TrainingOrderTemplatesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, q, categoryFilter, statusFilter]);
 
   useEffect(() => {
     let cancelled = false;
@@ -126,8 +126,8 @@ export default function TrainingOrderTemplatesPage() {
   }, []);
 
   useEffect(() => {
-    loadList();
-  }, [page, categoryFilter, statusFilter]);
+    void loadList();
+  }, [loadList]);
 
   const search = () => {
     setPage(1);

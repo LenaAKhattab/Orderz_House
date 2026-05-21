@@ -1,6 +1,7 @@
 const { authenticate, optionalAuthenticate } = require("./authMiddleware");
 const authService = require("../services/authService");
 const { resolveAuthzContext } = require("../services/rbacService");
+const { collectResolvedRoleNames } = require("../utils/roleResolution");
 
 /**
  * Hydrate req.auth with roles + permissions from DB.
@@ -64,15 +65,8 @@ function optionalAuth(req, res, next) {
  * Relying only on `user_roles` breaks when the row set is incomplete (e.g. client linked but admin on users.role).
  */
 function resolvedRoleNames(req) {
-  const rbac = Array.isArray(req.auth?.roles)
-    ? req.auth.roles.map((r) => (r && r.name ? String(r.name).trim() : "")).filter(Boolean)
-    : [];
-  const primary = req.auth?.primaryRole && String(req.auth.primaryRole).trim();
-  const legacyDb = req.auth?.legacyRole && String(req.auth.legacyRole).trim();
-  const merged = [...new Set([...rbac, primary, legacyDb].filter(Boolean))];
-  if (merged.length) return merged;
-  const legacyJwt = req.user?.role && String(req.user.role).trim();
-  return legacyJwt ? [legacyJwt] : [];
+  const merged = collectResolvedRoleNames(req.auth, req.user?.role);
+  return merged.length ? merged : [];
 }
 
 function requireRole(roleName) {

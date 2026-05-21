@@ -145,18 +145,3 @@ export function IconBarChart3(props) {
   );
 }
 
-const INSIGHT_ICON_MAP = {
-  profile: IconUserCheck,
-  orders: IconMessageCircle,
-  courses: IconBookOpen,
-  performance: IconTrophy,
-  subscription: IconBell,
-  reviews: IconStar,
-  earnings: IconWallet,
-  growth: IconTrendingUp,
-  action: IconClipboardCheck,
-};
-
-export function insightIconForType(type) {
-  return INSIGHT_ICON_MAP[type] || IconBarChart3;
-}

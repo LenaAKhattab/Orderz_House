@@ -1,11 +1,13 @@
-import { Outlet, useLocation } from "react-router-dom";
-import { HomePageBlockingProvider, useHomePageBlocking } from "../../context/HomePageBlockingContext";
+import { Suspense, lazy } from "react";
+import { useLocation } from "react-router-dom";
+import LazyRouteOutlet from "./LazyRouteOutlet";
+import { HomePageBlockingProvider } from "../../context/HomePageBlockingContext.jsx";
+import { useHomePageBlocking } from "../../hooks/useHomePageBlocking";
 import PartnersBandSkeleton from "../skeletons/PartnersBandSkeleton";
-import PartnersSection from "../sections/PartnersSection";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import "../skeletons/home-skeleton.css";
-import "../sections/home-landing-top.css";
+
+const PartnersSection = lazy(() => import("../sections/PartnersSection"));
 
 function PublicLayoutInner() {
   const { pathname } = useLocation();
@@ -16,8 +18,16 @@ function PublicLayoutInner() {
   return (
     <div className={`relative flex min-h-screen flex-col ${isHome ? "home-public-layout" : "bg-page-bg"}`}>
       <Navbar />
-      <Outlet />
-      {isHome ? (homeBlocking ? <PartnersBandSkeleton /> : <PartnersSection />) : null}
+      <LazyRouteOutlet />
+      {isHome ? (
+        homeBlocking ? (
+          <PartnersBandSkeleton />
+        ) : (
+          <Suspense fallback={<PartnersBandSkeleton />}>
+            <PartnersSection />
+          </Suspense>
+        )
+      ) : null}
       {!isAuthPage ? <Footer homeBlend={isHome} /> : null}
     </div>
   );

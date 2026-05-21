@@ -43,21 +43,6 @@ const LAYOUT_DEFAULTS = {
 };
 
 
-
-/**
-
- * @param {string | undefined} _tp
-
- */
-
-function normalizeTemplateForForm(_tp) {
-
-  return FIXED_BANNER_TEMPLATE;
-
-}
-
-
-
 /** @param {string} legacy */
 
 function legacyThemeToColorPreset(legacy) {

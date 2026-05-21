@@ -95,7 +95,18 @@ export default function AdminSubscriptionsActivationPage() {
         title="تفعيل اشتراكات المستقلين"
         description="يمكنك تفعيل الحسابات المشتركة بعد مراجعة الشركة، ليصبح المستقل مؤهلاً لاستلام الطلبات."
         breadcrumbs={breadcrumbs}
-        alert={error ? <p className="auth-form-error">{error}</p> : null}
+        alert={
+          error ? (
+            <div className="auth-actions-row" style={{ flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+              <p className="auth-form-error" style={{ margin: 0 }}>
+                {error}
+              </p>
+              <Button type="button" variant="secondary" onClick={() => void refresh()}>
+                إعادة المحاولة
+              </Button>
+            </div>
+          ) : null
+        }
       />
 
       <DashboardSection title="بانتظار تفعيل الشركة">

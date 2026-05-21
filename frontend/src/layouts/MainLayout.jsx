@@ -1,27 +1,51 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { Suspense, lazy } from "react";
+import { useLocation } from "react-router-dom";
+import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
-import SuperAdminLayout from "./SuperAdminLayout";
-import FreelancerDashboardLayout from "./FreelancerDashboardLayout";
+import RouteSuspenseFallback from "../components/ui/RouteSuspenseFallback";
 import { useAuth } from "../context/useAuth";
 import { ROLE } from "../constants/authRoutes";
 import { isFreelancerDashboardPath } from "../constants/freelancerNav";
 import { isClientDashboardShellPath } from "../constants/clientNav";
+import { isAdminDashboardPath } from "../constants/adminNav";
 import { NotificationRealtimeProvider } from "../context/NotificationRealtimeContext.jsx";
 import NotificationPermissionPrompt from "../components/notifications/NotificationPermissionPrompt";
+
+const SuperAdminLayout = lazy(() => import("./SuperAdminLayout"));
+const AdminLayout = lazy(() => import("./AdminLayout"));
+const FreelancerDashboardLayout = lazy(() => import("./FreelancerDashboardLayout"));
+
+function DashboardShellSuspense({ children }) {
+  return <Suspense fallback={<RouteSuspenseFallback />}>{children}</Suspense>;
+}
 
 const MainLayout = () => {
   const { user } = useAuth();
   const { pathname } = useLocation();
   const role = user?.primaryRole || user?.role;
   const useSuperShell = role === ROLE.SUPER_ADMIN && pathname.startsWith("/dashboard/super-admin");
+  const useAdminShell = role === ROLE.ADMIN && isAdminDashboardPath(pathname);
   const useFreelancerShell = role === ROLE.FREELANCER && isFreelancerDashboardPath(pathname);
   const useClientShell = role === ROLE.CLIENT && isClientDashboardShellPath(pathname);
 
   if (useSuperShell) {
     return (
       <NotificationRealtimeProvider>
-        <SuperAdminLayout />
+        <DashboardShellSuspense>
+          <SuperAdminLayout />
+        </DashboardShellSuspense>
+        {user ? <NotificationPermissionPrompt /> : null}
+      </NotificationRealtimeProvider>
+    );
+  }
+
+  if (useAdminShell) {
+    return (
+      <NotificationRealtimeProvider>
+        <DashboardShellSuspense>
+          <AdminLayout />
+        </DashboardShellSuspense>
         {user ? <NotificationPermissionPrompt /> : null}
       </NotificationRealtimeProvider>
     );
@@ -31,7 +55,9 @@ const MainLayout = () => {
     return (
       <NotificationRealtimeProvider>
         <div className="page-shell bg-page-bg">
-          <FreelancerDashboardLayout />
+          <DashboardShellSuspense>
+            <FreelancerDashboardLayout />
+          </DashboardShellSuspense>
         </div>
         {user ? <NotificationPermissionPrompt /> : null}
       </NotificationRealtimeProvider>
@@ -43,7 +69,7 @@ const MainLayout = () => {
       <div className="page-shell bg-page-bg">
         <Navbar />
         <main className="app-shell">
-          <Outlet />
+          <LazyRouteOutlet />
         </main>
         <Footer />
       </div>

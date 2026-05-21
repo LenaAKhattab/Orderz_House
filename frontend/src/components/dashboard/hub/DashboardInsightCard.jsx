@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import DashboardInsightIcon from "./DashboardInsightIcon";
-import { insightIconForType } from "./icons/DashboardIcons";
+import { INSIGHT_ICON_MAP } from "./icons/dashboardInsightIcons";
 
 const TONE_BY_TYPE = {
   orders: "blue",
@@ -22,13 +22,13 @@ export default function DashboardInsightCard({
   actionUrl,
   actionLabel,
 }) {
-  const Icon = insightIconForType(type);
+  const IconComponent = INSIGHT_ICON_MAP[type] ?? INSIGHT_ICON_MAP.growth;
   const tone = TONE_BY_TYPE[type] || "blue";
 
   return (
     <article className={`fdash-insight-card fdash-insight-card--${tone} fdash-surface-3d fdash-surface-3d--soft`}>
       <DashboardInsightIcon tone={tone}>
-        <Icon />
+        <IconComponent />
       </DashboardInsightIcon>
 
       <div className="fdash-insight-card__content">

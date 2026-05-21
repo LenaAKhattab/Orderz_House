@@ -1,4 +1,5 @@
-import { NavLink, Outlet, Navigate, useLocation } from "react-router-dom";
+import { NavLink, Navigate, useLocation } from "react-router-dom";
+import LazyRouteOutlet from "../../../components/layout/LazyRouteOutlet";
 import DashboardPageHeader from "../../../components/dashboard/DashboardPageHeader";
 import DashboardShell from "../../../components/dashboard/DashboardShell";
 import { trainingOrdersBreadcrumbs } from "../../../components/dashboard/dashboardBreadcrumbs";
@@ -55,7 +56,7 @@ export default function TrainingOrdersAdminShell() {
           </div>
         </nav>
 
-        <Outlet />
+        <LazyRouteOutlet />
       </div>
     </DashboardShell>
   );

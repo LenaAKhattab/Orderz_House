@@ -149,7 +149,7 @@ export default function FreelancerDashboardHome({ user }) {
   }, [load]);
 
   const subscription = summary?.subscription ?? null;
-  const orderCounts = summary?.orders?.counts ?? {};
+  const orderCounts = useMemo(() => summary?.orders?.counts ?? {}, [summary?.orders?.counts]);
   const pendingActions = summary?.pendingActions ?? [];
   const insights = useMemo(
     () => (summary?.insights ?? []).filter((item) => item?.type !== "profile"),
@@ -161,7 +161,7 @@ export default function FreelancerDashboardHome({ user }) {
   const earningsLoadState = summary?.earnings?.loadState === "error" ? "error" : summary ? "ok" : "pending";
   const earningsSummary = useMemo(() => {
     if (!summary?.earnings || earningsLoadState !== "ok") return null;
-    const { loadState, error: _e, ...rest } = summary.earnings;
+    const { error: _e, ...rest } = summary.earnings;
     return rest;
   }, [summary?.earnings, earningsLoadState]);
 
@@ -224,7 +224,7 @@ export default function FreelancerDashboardHome({ user }) {
     <DashboardHubPage>
       <DashboardWelcomeHero welcomeName={welcomeName} metrics={metrics} tip={tip} />
       <DashboardActionBanner actions={pendingActions} />
-      <DashboardInsightsSection insights={insights} />
+      {insights.length > 0 ? <DashboardInsightsSection insights={insights} /> : null}
     </DashboardHubPage>
   );
 }

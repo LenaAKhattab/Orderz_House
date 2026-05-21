@@ -509,7 +509,7 @@ export default function FreelancerCourseDetailsPage() {
     loadDetails();
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const lessons = data?.lessons || [];
+  const lessons = useMemo(() => data?.lessons || [], [data?.lessons]);
   const completion = data?.completion;
   const course = data?.course;
   const assignment = data?.assignment;

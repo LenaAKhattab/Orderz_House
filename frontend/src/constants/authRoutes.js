@@ -25,6 +25,7 @@ export const DASHBOARD_TITLE = {
   "/dashboard/client/my-orders": "طلباتي",
   "/dashboard/client/my_orders": "طلباتي",
   "/dashboard/client/financial": "المالية",
+  "/dashboard/client/orders": "معرض الطلبات",
   "/dashboard/super-admin/plans": "إدارة الباقات",
   "/dashboard/super-admin/subscriptions": "اشتراكات المستقلين",
   "/dashboard/super-admin/subscriptions/activation": "تفعيل الاشتراكات",
@@ -116,6 +117,7 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/client/my_orders": [ROLE.CLIENT],
   "/dashboard/client/financial": [ROLE.CLIENT],
   "/dashboard/client/orders/create": [ROLE.CLIENT],
+  "/dashboard/client/orders": [ROLE.CLIENT],
   "/dashboard/client/notifications": [ROLE.CLIENT],
   "/dashboard/freelancer/my-orders": [ROLE.FREELANCER],
   /** معرض الطلبات: مستقل يتقدّم ويعرض؛ عميل يتصفّح الطلبات المتاحة (نفس مسار الواجهة). */
@@ -139,6 +141,21 @@ const DASHBOARD_PATH_TO_ROLES = {
 };
 
 /**
+ * Prefix rules for login `state.from` redirects (UI still guarded by RequireRole).
+ * Most specific prefixes first.
+ */
+const DASHBOARD_PREFIX_RULES = [
+  { prefix: "/dashboard/super-admin", roles: [ROLE.SUPER_ADMIN] },
+  { prefix: "/dashboard/admin", roles: [ROLE.ADMIN] },
+  { prefix: "/dashboard/freelancer/orders", roles: [ROLE.FREELANCER, ROLE.CLIENT] },
+  { prefix: "/dashboard/freelancer/my-orders", roles: [ROLE.FREELANCER] },
+  { prefix: "/dashboard/freelancer/financial-claims", roles: [ROLE.FREELANCER] },
+  { prefix: "/dashboard/freelancer/courses", roles: [ROLE.FREELANCER] },
+  { prefix: "/dashboard/freelancer", roles: [ROLE.FREELANCER] },
+  { prefix: "/dashboard/client", roles: [ROLE.CLIENT] },
+];
+
+/**
  * @param {string} pathname
  * @param {string} role
  */
@@ -146,10 +163,15 @@ export function canRoleAccessPath(pathname, role) {
   if (!pathname.startsWith("/dashboard")) {
     return true;
   }
-  const allowed = DASHBOARD_PATH_TO_ROLES[pathname];
-  if (!allowed) {
-    return false;
+  const exact = DASHBOARD_PATH_TO_ROLES[pathname];
+  if (exact) {
+    return exact.includes(role);
   }
-  return allowed.includes(role);
+  for (const rule of DASHBOARD_PREFIX_RULES) {
+    if (pathname === rule.prefix || pathname.startsWith(`${rule.prefix}/`)) {
+      return rule.roles.includes(role);
+    }
+  }
+  return false;
 }
 

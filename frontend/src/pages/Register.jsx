@@ -17,6 +17,7 @@ const CATEGORY_OPTIONS = [
 
 const COUNTRY_CACHE_KEY = "orderz_countries_cache_v3";
 const COUNTRY_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+const ARABIC_ONLY = /^[\u0600-\u06FF\s]+$/;
 
 const ARAB_COUNTRY_CODES = new Set([
   "SA", // Saudi Arabia
@@ -325,8 +326,6 @@ const Register = () => {
     ],
     [],
   );
-
-  const ARABIC_ONLY = /^[\u0600-\u06FF\s]+$/;
 
   const step1Error = useMemo(() => {
     if (!firstName.trim()) return "أدخل الاسم الأول.";

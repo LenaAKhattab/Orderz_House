@@ -126,7 +126,7 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
 
   useEffect(() => {
     if (!showReviewAction || !order?.id) {
-      setReviewStatus(null);
+      queueMicrotask(() => setReviewStatus(null));
       return undefined;
     }
     let cancelled = false;
@@ -152,7 +152,7 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
 
   useEffect(() => {
     if (!shouldLoadSubmissionDetail) {
-      if (!expanded) setDetailOrder(null);
+      if (!expanded) queueMicrotask(() => setDetailOrder(null));
       return undefined;
     }
     let cancelled = false;

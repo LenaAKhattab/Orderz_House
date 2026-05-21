@@ -3,6 +3,11 @@
  * Never logs secret values — only variable names.
  */
 
+const {
+  isInProcessAutomationIntervalEnabled,
+  getAutomationCronSecret,
+} = require("./fakeOrdersAutomation");
+
 function isProduction() {
   return String(process.env.NODE_ENV || "").toLowerCase() === "production";
 }
@@ -20,6 +25,11 @@ function shouldExposeErrorDebug() {
   }
   const flag = String(process.env.EXPOSE_ERROR_DEBUG || "").trim().toLowerCase();
   return flag === "true" || flag === "1";
+}
+
+function warnProduction(name, detail) {
+  // eslint-disable-next-line no-console
+  console.warn(`[env] production warning: ${name}${detail ? ` — ${detail}` : ""}`);
 }
 
 /**
@@ -43,6 +53,15 @@ function validateEnv() {
     missing.push("CLIENT_URL");
   }
 
+  if (isProduction()) {
+    if (!process.env.STRIPE_SECRET_KEY || !String(process.env.STRIPE_SECRET_KEY).trim()) {
+      missing.push("STRIPE_SECRET_KEY");
+    }
+    if (!process.env.STRIPE_WEBHOOK_SECRET || !String(process.env.STRIPE_WEBHOOK_SECRET).trim()) {
+      missing.push("STRIPE_WEBHOOK_SECRET");
+    }
+  }
+
   for (const key of missing) {
     // eslint-disable-next-line no-console
     console.error(`Missing required environment variable: ${key}`);
@@ -58,6 +77,23 @@ function validateEnv() {
       "Production CLIENT_URL must be a single origin (no commas). Use CORS_ORIGINS for additional browser origins.",
     );
     process.exit(1);
+  }
+
+  if (missing.length === 0 && isProduction()) {
+    const trustProxy = process.env.TRUST_PROXY;
+    if (!trustProxy || !String(trustProxy).trim()) {
+      warnProduction(
+        "TRUST_PROXY",
+        "set TRUST_PROXY=1 when the API runs behind Render/Railway/Fly/nginx",
+      );
+    }
+
+    if (isInProcessAutomationIntervalEnabled() && !getAutomationCronSecret()) {
+      warnProduction(
+        "FAKE_ORDERS_AUTOMATION",
+        "in-process tick enabled without FAKE_ORDERS_AUTOMATION_CRON_SECRET — risky on multiple instances",
+      );
+    }
   }
 
   if (missing.length === 0) {

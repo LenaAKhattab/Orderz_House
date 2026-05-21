@@ -1,38 +1,15 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "../../components/ui/Button";
 import { planToEditForm } from "./planFormConstants";
 import { canSubmitEdit, normalizeEditPayload } from "./planPayloadUtils";
 import PlanFormSection from "./PlanFormSection";
 import PlanExtendedFields from "./PlanExtendedFields";
 
-/**
- * @param {{
- *   plan: Record<string, unknown> | null;
- *   open: boolean;
- *   submitting: boolean;
- *   onClose: () => void;
- *   onSave: (payload: Record<string, unknown>) => Promise<void> | void;
- * }} p
- */
-export default function PlanEditModal({ plan, open, submitting, onClose, onSave }) {
-  const [form, setForm] = useState(() => planToEditForm(plan || {}));
-
-  useEffect(() => {
-    if (open && plan) setForm(planToEditForm(plan));
-  }, [open, plan]);
-
-  if (!open || !plan) return null;
+function PlanEditForm({ plan, submitting, onClose, onSave }) {
+  const [form, setForm] = useState(() => planToEditForm(plan));
 
   return (
-    <div className="oh-sapl-modal-root" role="presentation">
-      <button type="button" className="oh-sapl-modal-backdrop" onClick={onClose} aria-label="إغلاق النافذة" />
-      <div
-        className="oh-sapl-modal oh-sapl-modal--wide"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="oh-sapl-edit-title"
-        dir="rtl"
-      >
+    <>
         <header className="oh-sapl-modal__head">
           <div>
             <h2 id="oh-sapl-edit-title" className="oh-sapl-modal__title">
@@ -88,6 +65,39 @@ export default function PlanEditModal({ plan, open, submitting, onClose, onSave 
             حفظ التعديلات
           </Button>
         </footer>
+    </>
+  );
+}
+
+/**
+ * @param {{
+ *   plan: Record<string, unknown> | null;
+ *   open: boolean;
+ *   submitting: boolean;
+ *   onClose: () => void;
+ *   onSave: (payload: Record<string, unknown>) => Promise<void> | void;
+ * }} p
+ */
+export default function PlanEditModal({ plan, open, submitting, onClose, onSave }) {
+  if (!open || !plan) return null;
+
+  return (
+    <div className="oh-sapl-modal-root" role="presentation">
+      <button type="button" className="oh-sapl-modal-backdrop" onClick={onClose} aria-label="إغلاق النافذة" />
+      <div
+        className="oh-sapl-modal oh-sapl-modal--wide"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="oh-sapl-edit-title"
+        dir="rtl"
+      >
+        <PlanEditForm
+          key={String(plan.id ?? plan.name)}
+          plan={plan}
+          submitting={submitting}
+          onClose={onClose}
+          onSave={onSave}
+        />
       </div>
     </div>
   );

@@ -39,11 +39,9 @@ const startServer = async () => {
       JSON.stringify({
         component: "fake_orders_automation",
         event: "interval_disabled",
-        hint: "Set FAKE_ORDERS_AUTOMATION_ENABLED=true for in-process ticks, or use POST /api/internal/fake-orders/automation-tick with FAKE_ORDERS_AUTOMATION_CRON_SECRET.",
+        hint: "Set FAKE_ORDERS_AUTOMATION_ENABLED=true for in-process ticks (single instance only), or use POST /api/internal/fake-orders/automation-tick with FAKE_ORDERS_AUTOMATION_CRON_SECRET.",
       }),
     );
-    // eslint-disable-next-line no-console
-    console.warn("[fakeOrders] WARNING: FAKE_ORDERS_AUTOMATION_ENABLED is false. Automatic round ticks are disabled.");
   }
 
   // Bootstrap guarantee: when training display is enabled but there are no visible fake orders, generate immediately.

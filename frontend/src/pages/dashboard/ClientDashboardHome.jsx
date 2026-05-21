@@ -273,7 +273,7 @@ export default function ClientDashboardHome({ user }) {
         metrics={metrics}
         primaryCta={{ to: "/dashboard/client/my-orders", label: "طلباتي" }}
         secondaryCta={{
-          to: "/dashboard/freelancer/orders",
+          to: "/dashboard/client/orders",
           label: "استكشاف المعرض",
         }}
         tip={

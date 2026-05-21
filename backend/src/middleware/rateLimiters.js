@@ -75,5 +75,6 @@ module.exports = {
   otpSendLimiter,
   resetPasswordLimiter,
   resetPasswordRateLimitKey,
+  rateLimitJsonHandler,
   RATE_LIMITED_CODE,
 };
