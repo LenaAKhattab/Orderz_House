@@ -60,11 +60,51 @@ export function PoolOrderCardSkeleton() {
   );
 }
 
+/** Matches freelancer dashboard open-orders row (oh-order-row--neu) dimensions. */
+export function PoolOrderDashboardRowSkeleton() {
+  return (
+    <li className="oh-order-row-item oh-order-row-item--skeleton" aria-hidden>
+      <div className="oh-order-row oh-order-row--neu oh-order-row--skeleton fdash-surface-3d fdash-surface-3d--soft">
+        <div className="oh-order-row__budget">
+          <div className="oh-order-row__stat">
+            <SkelBar style={{ height: 10, width: 48 }} />
+            <SkelBar style={{ height: 14, width: 72 }} />
+          </div>
+          <div className="oh-order-row__stat">
+            <SkelBar style={{ height: 10, width: 56 }} />
+            <SkelBar style={{ height: 14, width: 64 }} />
+          </div>
+        </div>
+        <div className="oh-order-row__divider" aria-hidden />
+        <div className="oh-order-row__center">
+          <SkelBar style={{ height: 16, width: "72%" }} />
+          <SkelBar style={{ height: 12, width: "96%" }} />
+          <SkelBar style={{ height: 12, width: "88%" }} />
+          <div className="oh-order-row__chips">
+            <SkelBar style={{ height: 24, width: 88, borderRadius: 999 }} />
+            <SkelBar style={{ height: 24, width: 76, borderRadius: 999 }} />
+          </div>
+        </div>
+        <div className="oh-order-row__divider" aria-hidden />
+        <div className="oh-order-row__side">
+          <SkelBar style={{ height: 12, width: 80 }} />
+          <SkelBar style={{ height: 36, width: "100%", maxWidth: 140, borderRadius: 999 }} />
+        </div>
+      </div>
+    </li>
+  );
+}
+
 export function PoolOrderListSkeleton({ count = 4 }) {
   return (
-    <ul className="oh-orders-list" role="status" aria-busy="true" aria-label="جارٍ تحميل الطلبات">
+    <ul
+      className="oh-orders-list oh-orders-list--loading"
+      role="status"
+      aria-busy="true"
+      aria-label="جارٍ تحميل الطلبات"
+    >
       {Array.from({ length: count }).map((_, i) => (
-        <PoolOrderCardSkeleton key={i} />
+        <PoolOrderDashboardRowSkeleton key={i} />
       ))}
     </ul>
   );
@@ -153,25 +193,8 @@ export function AdminInlineGridSkeleton({ count = 3 }) {
 
 export function OrderDetailsPageSkeleton() {
   return (
-    <div className="od-pool-shell" role="status" aria-busy="true" aria-label="جارٍ التحميل">
-      <div className="od-pool-title">
-        <div className="od-title-desc-group">
-          <div className="od-title-card">
-            <SkelBar style={{ height: 10, width: "28%", marginBottom: 10 }} />
-            <SkelBar style={{ height: 18, width: "85%" }} />
-          </div>
-          <div className="od-description" style={{ paddingTop: 12 }}>
-            <SkelBar style={{ height: 11, width: "32%", marginBottom: 12 }} />
-            <SkelBar style={{ height: 12, width: "100%", marginBottom: 8 }} />
-            <SkelBar style={{ height: 12, width: "88%" }} />
-          </div>
-          <div className="od-description" style={{ paddingTop: 12 }}>
-            <SkelBar style={{ height: 11, width: "36%", marginBottom: 12 }} />
-            <SkelBar style={{ height: 12, width: "92%" }} />
-          </div>
-        </div>
-      </div>
-      <div className="od-pool-summary">
+    <div className="od-pool-shell oh-order-details__layout order-details-layout" role="status" aria-busy="true" aria-label="جارٍ التحميل">
+      <aside className="od-pool-summary oh-order-details__aside">
         <div className="od-aside-col">
           <div className="od-summary__surface">
             <SkelBar style={{ height: 10, width: "42%", marginBottom: 12 }} />
@@ -186,6 +209,23 @@ export function OrderDetailsPageSkeleton() {
           <div className="od-files-card">
             <SkelBar style={{ height: 10, width: "36%", marginBottom: 10 }} />
             <SkelBar style={{ height: 36, width: "100%" }} />
+          </div>
+        </div>
+      </aside>
+      <div className="od-pool-title oh-order-details__main">
+        <div className="od-title-desc-group">
+          <div className="od-title-card">
+            <SkelBar style={{ height: 10, width: "28%", marginBottom: 10 }} />
+            <SkelBar style={{ height: 18, width: "85%" }} />
+          </div>
+          <div className="od-description" style={{ paddingTop: 12 }}>
+            <SkelBar style={{ height: 11, width: "32%", marginBottom: 12 }} />
+            <SkelBar style={{ height: 12, width: "100%", marginBottom: 8 }} />
+            <SkelBar style={{ height: 12, width: "88%" }} />
+          </div>
+          <div className="od-description" style={{ paddingTop: 12 }}>
+            <SkelBar style={{ height: 11, width: "36%", marginBottom: 12 }} />
+            <SkelBar style={{ height: 12, width: "92%" }} />
           </div>
         </div>
       </div>

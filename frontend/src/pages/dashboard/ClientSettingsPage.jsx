@@ -9,9 +9,11 @@ import {
   patchProfilePasswordRequest,
 } from "../../services/api";
 import { mergeNotificationPrefs } from "../../utils/accountDisplay";
+import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import BrowserNotificationSettings from "../../components/notifications/BrowserNotificationSettings";
 import { breadcrumbHomeFromUser } from "../../components/dashboard/dashboardBreadcrumbs";
+import "../../styles/dashboardHub.css";
 import "./shared/account-pages.css";
 
 const PHONE_RE = /^\+[1-9]\d{7,14}$/;
@@ -175,28 +177,33 @@ export default function ClientSettingsPage() {
 
   if (loading) {
     return (
-      <div className="oh-account-page" dir="rtl">
-        <div className="oh-account-skel" style={{ height: 120, borderRadius: 20 }} />
-      </div>
+      <DashboardHubPage className="fdash-page--account">
+        <div className="oh-account-page" dir="rtl">
+          <div className="oh-account-skel" style={{ height: 120, borderRadius: 20 }} />
+        </div>
+      </DashboardHubPage>
     );
   }
 
   if (error) {
     return (
-      <div className="oh-account-page" dir="rtl">
-        <div className="oh-account-card">
-          <p className="oh-account-error" style={{ margin: 0 }}>
-            {error}
-          </p>
-          <button type="button" className="oh-account-btn-primary" style={{ marginTop: 12 }} onClick={load}>
-            إعادة المحاولة
-          </button>
+      <DashboardHubPage className="fdash-page--account">
+        <div className="oh-account-page" dir="rtl">
+          <div className="oh-account-card">
+            <p className="oh-account-error" style={{ margin: 0 }}>
+              {error}
+            </p>
+            <button type="button" className="oh-account-btn-primary" style={{ marginTop: 12 }} onClick={load}>
+              إعادة المحاولة
+            </button>
+          </div>
         </div>
-      </div>
+      </DashboardHubPage>
     );
   }
 
   return (
+    <DashboardHubPage className="fdash-page--account">
     <div className="oh-account-page" dir="rtl">
       <DashboardPageHeader
         eyebrow="إعدادات العميل"
@@ -368,5 +375,6 @@ export default function ClientSettingsPage() {
         </div>
       </div>
     </div>
+    </DashboardHubPage>
   );
 }

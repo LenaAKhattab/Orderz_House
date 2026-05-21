@@ -1,10 +1,27 @@
 const ordersService = require("../services/ordersService");
-const orderFlowService = require("../services/orderFlowService");
+const poolOrderResolveService = require("../services/poolOrderResolveService");
 const fakeOrdersService = require("../services/fakeOrdersService");
+
+const POOL_ORDER_NOT_FOUND = "لم يتم العثور على الطلب";
+
+async function sanitizeResolvedFreelancerPoolOrder(orderId, freelancerUserId, viewerRole) {
+  const resolved = await poolOrderResolveService.resolvePoolOrderForViewer(orderId, {
+    userId: freelancerUserId,
+    role: viewerRole,
+  });
+  if (!resolved) return null;
+  const enriched = await poolOrderResolveService.enrichFreelancerPoolOrder(resolved, freelancerUserId);
+  const order = enriched.order;
+  if (order.poolEligibility?.isLockedByPlan) {
+    return sanitizeLockedFreelancerPoolOrder(order, order.poolEligibility);
+  }
+  return sanitizeFreelancerPoolOrder(order);
+}
 const { pipeOrderFileToResponse } = require("../utils/pipeOrderFileDownload");
 const {
   sanitizePublicPoolOrder,
   sanitizeFreelancerPoolOrder,
+  sanitizeLockedFreelancerPoolOrder,
   sanitizeOrderForFreelancerAssigned,
 } = require("../utils/orderViewerSanitize");
 const { capture } = require("../config/posthog");
@@ -13,7 +30,9 @@ const listPoolOrders = async (req, res, next) => {
   try {
     const userId = req.auth?.userId || null;
     const role = String(req.auth?.primaryRole || req.auth?.role || "").trim();
-    /** Only freelancers get pool rows hydrated with myClaim/myBid; everyone else uses the public list + sanitizer. */
+    const orderAuthz = require("../services/orderAuthorizationService");
+    const isStaff = orderAuthz.isStaffAuth(req.auth);
+    /** Freelancers get subscription-filtered pool; staff may browse sanitized pool metadata. */
     const isFreelancer = role === "freelancer" && userId;
     const queryOpts = {
       page: req.query.page,
@@ -34,11 +53,13 @@ const listPoolOrders = async (req, res, next) => {
         })
       : await ordersService.listPoolOrders({
           viewerUserId: userId,
-          viewerRole: role || null,
+          viewerRole: isStaff ? "admin" : role || null,
           ...queryOpts,
         });
     const orders = Array.isArray(result.orders)
-      ? result.orders.map((o) => (isFreelancer ? sanitizeFreelancerPoolOrder(o) : sanitizePublicPoolOrder(o)))
+      ? result.orders.map((o) =>
+          isFreelancer ? sanitizeFreelancerPoolOrder(o) : sanitizePublicPoolOrder(o),
+        )
       : [];
     return res.status(200).json({ success: true, data: { ...result, orders } });
   } catch (err) {
@@ -59,6 +80,41 @@ const takePoolOrder = async (req, res, next) => {
   }
 };
 
+/** Unified pool take: resolves real vs training order server-side (no client source param). */
+const takeUnifiedPoolOrder = async (req, res, next) => {
+  try {
+    const viewerRole = req.auth?.primaryRole || req.auth?.role || null;
+    const resolved = await poolOrderResolveService.resolvePoolOrderForViewer(req.params.id, {
+      userId: req.auth.userId,
+      role: viewerRole,
+    });
+    if (!resolved) {
+      return res.status(404).json({ success: false, message: POOL_ORDER_NOT_FOUND });
+    }
+    if (resolved.kind === "fake") {
+      await fakeOrdersService.submitFakeTrainingClaim({
+        freelancerUserId: req.auth.userId,
+        orderId: req.params.id,
+      });
+      capture(String(req.auth.userId), "fixed_order_taken", {
+        orderId: String(req.params.id),
+      });
+      const safe = await sanitizeResolvedFreelancerPoolOrder(req.params.id, req.auth.userId, viewerRole);
+      return res.status(200).json({ success: true, data: { order: safe } });
+    }
+    const order = await ordersService.claimPoolOrder({ freelancerUserId: req.auth.userId, orderId: req.params.id });
+    capture(String(req.auth.userId), "fixed_order_taken", {
+      orderId: String(req.params.id),
+    });
+    const myBid = await ordersService.getMyOrderBid({ orderId: req.params.id, freelancerUserId: req.auth.userId });
+    const myClaim = await ordersService.getMyOrderClaim({ orderId: req.params.id, freelancerUserId: req.auth.userId });
+    const safe = sanitizeFreelancerPoolOrder({ ...order, myBid, myClaim });
+    return res.status(200).json({ success: true, data: { order: safe } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const withdrawPoolOrderClaim = async (req, res, next) => {
   try {
     const out = await ordersService.withdrawPoolClaim({ freelancerUserId: req.auth.userId, orderId: req.params.id });
@@ -70,47 +126,32 @@ const withdrawPoolOrderClaim = async (req, res, next) => {
 
 const getPoolOrderById = async (req, res, next) => {
   try {
-    if (String(req.query.source || "").toLowerCase() === "fake") {
-      const maySee = await fakeOrdersService.poolViewerMaySeeFakeOrders({
-        userId: req.auth?.userId ?? null,
-        role: req.auth?.primaryRole || req.auth?.role || null,
-      });
-      if (!maySee) {
-        return res.status(404).json({ success: false, message: "Order not found." });
-      }
-      const order = await fakeOrdersService.getFakePoolOrderMapped({
-        orderId: req.params.id,
-        freelancerUserId: req.auth?.userId || null,
-      });
-      if (!order) return res.status(404).json({ success: false, message: "Order not found." });
-      const viewerRole = String(req.auth?.primaryRole || req.auth?.role || "").trim();
-      const isFreelancer = viewerRole === "freelancer" && req.auth?.userId;
-      const safe = isFreelancer ? sanitizeFreelancerPoolOrder(order) : sanitizePublicPoolOrder(order);
-      return res.status(200).json({ success: true, data: { order: safe } });
-    }
-    const order = await ordersService.getOrderById(req.params.id);
-    if (!order) return res.status(404).json({ success: false, message: "Order not found." });
-    if (!["admin_created", "super_admin_created", "client_created"].includes(order.sourceType)) {
-      return res.status(404).json({ success: false, message: "Order not found." });
-    }
-    // If it's not currently in the pool, hide it from this endpoint.
-    if (!orderFlowService.orderApiEligibleForFreelancerPool(order)) {
-      return res.status(404).json({ success: false, message: "Order not found." });
-    }
     const viewerRole = String(req.auth?.primaryRole || req.auth?.role || "").trim();
     const freelancerUserId = req.auth?.userId || null;
     const isFreelancer = viewerRole === "freelancer" && freelancerUserId;
-    if (isFreelancer) {
-      const myClaim =
-        order.projectType === "fixed" ? null : await ordersService.getMyOrderClaim({ orderId: req.params.id, freelancerUserId });
-      let myBid = null;
-      if (order.projectType === "bidding" && order.bidBudgetMin != null && order.bidBudgetMax != null) {
-        myBid = await ordersService.getMyOrderBid({ orderId: req.params.id, freelancerUserId });
-      }
-      const merged = { ...order, myClaim, myBid };
-      return res.status(200).json({ success: true, data: { order: sanitizeFreelancerPoolOrder(merged) } });
+
+    const resolved = await poolOrderResolveService.resolvePoolOrderForViewer(req.params.id, {
+      userId: freelancerUserId,
+      role: viewerRole,
+    });
+    if (!resolved) {
+      return res.status(404).json({ success: false, message: POOL_ORDER_NOT_FOUND });
     }
-    return res.status(200).json({ success: true, data: { order: sanitizePublicPoolOrder(order) } });
+
+    if (isFreelancer) {
+      const enriched = await poolOrderResolveService.enrichFreelancerPoolOrder(resolved, freelancerUserId);
+      if (enriched.order.poolEligibility?.isLockedByPlan) {
+        return res.status(200).json({
+          success: true,
+          data: { order: sanitizeLockedFreelancerPoolOrder(enriched.order, enriched.order.poolEligibility) },
+        });
+      }
+      return res.status(200).json({
+        success: true,
+        data: { order: sanitizeFreelancerPoolOrder(enriched.order) },
+      });
+    }
+    return res.status(200).json({ success: true, data: { order: sanitizePublicPoolOrder(resolved.order) } });
   } catch (err) {
     return next(err);
   }
@@ -118,6 +159,28 @@ const getPoolOrderById = async (req, res, next) => {
 
 const submitPoolOrderBid = async (req, res, next) => {
   try {
+    const viewerRole = req.auth?.primaryRole || req.auth?.role || null;
+    const resolved = await poolOrderResolveService.resolvePoolOrderForViewer(req.params.id, {
+      userId: req.auth.userId,
+      role: viewerRole,
+    });
+    if (!resolved) {
+      return res.status(404).json({ success: false, message: POOL_ORDER_NOT_FOUND });
+    }
+    if (resolved.kind === "fake") {
+      await fakeOrdersService.submitFakeTrainingBid({
+        freelancerUserId: req.auth.userId,
+        orderId: req.params.id,
+        amount: req.body.amount,
+        message: req.body.message || null,
+      });
+      capture(String(req.auth.userId), "bid_submitted", {
+        orderId: String(req.params.id),
+        amount: req.body.amount,
+      });
+      const safe = await sanitizeResolvedFreelancerPoolOrder(req.params.id, req.auth.userId, viewerRole);
+      return res.status(200).json({ success: true, data: { order: safe } });
+    }
     const order = await ordersService.submitPoolOrderBid({
       freelancerUserId: req.auth.userId,
       orderId: req.params.id,
@@ -137,42 +200,11 @@ const submitPoolOrderBid = async (req, res, next) => {
   }
 };
 
-const submitFakePoolOrderBid = async (req, res, next) => {
-  try {
-    await fakeOrdersService.submitFakeTrainingBid({
-      freelancerUserId: req.auth.userId,
-      orderId: req.params.id,
-      amount: req.body.amount,
-      message: req.body.message || null,
-    });
-    const order = await fakeOrdersService.getFakePoolOrderMapped({
-      orderId: req.params.id,
-      freelancerUserId: req.auth.userId,
-    });
-    const safe = sanitizeFreelancerPoolOrder(order);
-    return res.status(200).json({ success: true, data: { order: safe } });
-  } catch (err) {
-    return next(err);
-  }
-};
+/** Legacy route — same behavior as unified pool bid (no client source param). */
+const submitFakePoolOrderBid = submitPoolOrderBid;
 
-const takeFakePoolOrder = async (req, res, next) => {
-  try {
-    await fakeOrdersService.submitFakeTrainingClaim({
-      freelancerUserId: req.auth.userId,
-      orderId: req.params.id,
-      message: req.body?.message || null,
-    });
-    const order = await fakeOrdersService.getFakePoolOrderMapped({
-      orderId: req.params.id,
-      freelancerUserId: req.auth.userId,
-    });
-    const safe = sanitizeFreelancerPoolOrder(order);
-    return res.status(200).json({ success: true, data: { order: safe } });
-  } catch (err) {
-    return next(err);
-  }
-};
+/** Legacy route — same behavior as unified pool take (no client source param). */
+const takeFakePoolOrder = takeUnifiedPoolOrder;
 
 const listMyAssignedOrders = async (req, res, next) => {
   try {
@@ -247,6 +279,7 @@ module.exports = {
   submitFakePoolOrderBid,
   takeFakePoolOrder,
   takePoolOrder,
+  takeUnifiedPoolOrder,
   withdrawPoolOrderClaim,
   listMyAssignedOrders,
   getMyAssignedOrderById,

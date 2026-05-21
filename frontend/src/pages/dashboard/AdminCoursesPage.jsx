@@ -3,6 +3,7 @@ import { useAuth } from "../../context/useAuth";
 import {
   adminAddCourseFreelancerRequest,
   adminRemoveCourseFreelancerRequest,
+  adminArchiveCourseRequest,
   adminAssignCourseFreelancersRequest,
   adminCreateCourseRequest,
   adminDeleteCourseRequest,
@@ -10,8 +11,11 @@ import {
   adminImportCourseLessonsRequest,
   adminListCourseFreelancersRequest,
   adminListCoursesRequest,
+  adminPublishCourseRequest,
   adminUpdateCourseLessonsRequest,
   adminUpdateCourseRequest,
+  adminUploadCourseTestFileRequest,
+  adminUploadCoursePromptFileRequest,
 } from "../../services/api";
 import { useToast } from "../../components/ui/toastContext";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
@@ -20,8 +24,19 @@ import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
+import DashboardTable from "../../components/dashboard/DashboardTable";
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import "./adminCoursesPage.css";
+
+function fmtCourseDate(iso) {
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("ar");
+  } catch {
+    return "—";
+  }
+}
 
 export default function AdminCoursesPage() {
   const { user } = useAuth();
@@ -34,15 +49,22 @@ export default function AdminCoursesPage() {
   const [freelancers, setFreelancers] = useState([]);
   const [freelancerQuery, setFreelancerQuery] = useState("");
   const [selectedFreelancerIds, setSelectedFreelancerIds] = useState([]);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [editingCourseId, setEditingCourseId] = useState("");
+  const [courseSearch, setCourseSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [createForm, setCreateForm] = useState({
     title: "",
     description: "",
     coverImage: "",
     youtubeSourceUrl: "",
-    isActive: true,
+    isActive: false,
     isTestingEnabled: false,
     testFileUrl: "",
+    testPromptFileUrl: "",
   });
+  const [testFileUploading, setTestFileUploading] = useState(false);
+  const [promptFileUploading, setPromptFileUploading] = useState(false);
   const [importUrl, setImportUrl] = useState("");
   const [sendModal, setSendModal] = useState({ open: false, course: null });
   const [sendQuery, setSendQuery] = useState("");
@@ -63,19 +85,24 @@ export default function AdminCoursesPage() {
   const [progressQuery, setProgressQuery] = useState("");
 
   const isSuperAdmin = (user?.primaryRole || user?.role) === "super_admin";
-  const pageTitle = isSuperAdmin ? "إدارة الدورات التدريبية (المدير الأعلى)" : "إدارة الدورات التدريبية";
+  const pageTitle = "إدارة الكورسات";
 
   const loadCourses = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await adminListCoursesRequest();
+      const params = {};
+      const q = courseSearch.trim();
+      if (q) params.q = q;
+      if (statusFilter === "published") params.isActive = true;
+      if (statusFilter === "draft") params.isActive = false;
+      const res = await adminListCoursesRequest(params);
       setCourses(res?.data?.courses || []);
     } catch (err) {
       toast.error(err?.response?.data?.message || "تعذر تحميل الدورات.");
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, courseSearch, statusFilter]);
 
   const loadCourseDetails = useCallback(
     async (courseId) => {
@@ -198,26 +225,136 @@ export default function AdminCoursesPage() {
     });
   }, [selectedCourse?.assignments, progressQuery]);
 
-  const onCreateCourse = async (e) => {
+  const resetComposer = useCallback(() => {
+    setEditingCourseId("");
+    setCreateForm({
+      title: "",
+      description: "",
+      coverImage: "",
+      youtubeSourceUrl: "",
+      isActive: false,
+      isTestingEnabled: false,
+      testFileUrl: "",
+      testPromptFileUrl: "",
+    });
+  }, []);
+
+  const onUploadCourseTestFile = async (courseId, file) => {
+    if (!courseId || !file) return;
+    setTestFileUploading(true);
+    try {
+      const res = await adminUploadCourseTestFileRequest(courseId, file);
+      const url = res?.data?.course?.testFileUrl || "";
+      if (String(editingCourseId) === String(courseId)) {
+        setCreateForm((s) => ({ ...s, testFileUrl: url }));
+      }
+      if (String(selectedCourseId) === String(courseId) && selectedCourse?.course) {
+        setSelectedCourse((s) => ({ ...s, course: { ...s.course, testFileUrl: url } }));
+      }
+      toast.success("تم رفع ملف الاختبار.");
+      await loadCourses();
+      if (String(selectedCourseId) === String(courseId)) await loadCourseDetails(courseId);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "تعذر رفع ملف الاختبار.");
+    } finally {
+      setTestFileUploading(false);
+    }
+  };
+
+  const onUploadCoursePromptFile = async (courseId, file) => {
+    if (!courseId || !file) return;
+    setPromptFileUploading(true);
+    try {
+      const res = await adminUploadCoursePromptFileRequest(courseId, file);
+      const url = res?.data?.course?.testPromptFileUrl || "";
+      if (String(editingCourseId) === String(courseId)) {
+        setCreateForm((s) => ({ ...s, testPromptFileUrl: url }));
+      }
+      if (String(selectedCourseId) === String(courseId) && selectedCourse?.course) {
+        setSelectedCourse((s) => ({ ...s, course: { ...s.course, testPromptFileUrl: url } }));
+      }
+      toast.success("تم رفع ملف مطالبة ChatGPT.");
+      await loadCourses();
+      if (String(selectedCourseId) === String(courseId)) await loadCourseDetails(courseId);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "تعذر رفع ملف المطالبة.");
+    } finally {
+      setPromptFileUploading(false);
+    }
+  };
+
+  const onStartEditCourse = useCallback((course) => {
+    setEditingCourseId(String(course.id));
+    setCreateForm({
+      title: course.title || "",
+      description: course.description || "",
+      coverImage: course.coverImage || "",
+      youtubeSourceUrl: course.youtubeSourceUrl || "",
+      isActive: Boolean(course.isActive),
+      isTestingEnabled: Boolean(course.isTestingEnabled),
+      testFileUrl: course.testFileUrl || "",
+      testPromptFileUrl: course.testPromptFileUrl || "",
+    });
+    setComposerOpen(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const onComposerSubmit = async (e) => {
     e.preventDefault();
     setCreating(true);
     try {
-      await adminCreateCourseRequest(createForm);
-      toast.success("تم إنشاء الدورة واستيراد الدروس بنجاح.");
-      setCreateForm({
-        title: "",
-        description: "",
-        coverImage: "",
-        youtubeSourceUrl: "",
-        isActive: true,
-        isTestingEnabled: false,
-        testFileUrl: "",
-      });
+      if (editingCourseId) {
+        await adminUpdateCourseRequest(editingCourseId, {
+          title: createForm.title,
+          description: createForm.description,
+          coverImage: createForm.coverImage,
+          isActive: createForm.isActive,
+          isTestingEnabled: createForm.isTestingEnabled,
+          testFileUrl: createForm.testFileUrl,
+          testPromptFileUrl: createForm.testPromptFileUrl,
+        });
+        toast.success("تم تحديث بيانات الكورس.");
+      } else {
+        await adminCreateCourseRequest(createForm);
+        toast.success("تم إنشاء الكورس واستيراد الدروس بنجاح.");
+        resetComposer();
+        setComposerOpen(false);
+      }
       await loadCourses();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "فشل إنشاء الدورة.");
+      toast.error(err?.response?.data?.message || (editingCourseId ? "تعذر تحديث الكورس." : "فشل إنشاء الكورس."));
     } finally {
       setCreating(false);
+    }
+  };
+
+  const onPublishCourse = async (courseId) => {
+    setLoading(true);
+    try {
+      await adminPublishCourseRequest(courseId);
+      toast.success("تم نشر الكورس بنجاح.");
+      await loadCourses();
+      if (String(selectedCourseId) === String(courseId)) await loadCourseDetails(courseId);
+    } catch (err) {
+      const labels = err?.response?.data?.missingLabels;
+      const base = err?.response?.data?.message || "لا يمكن نشر الكورس قبل اكتمال البيانات.";
+      toast.error(labels?.length ? `${base} (${labels.join("، ")})` : base);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onArchiveCourse = async (courseId) => {
+    setLoading(true);
+    try {
+      await adminArchiveCourseRequest(courseId);
+      toast.success("تم أرشفة الكورس (إيقاف النشر).");
+      await loadCourses();
+      if (String(selectedCourseId) === String(courseId)) await loadCourseDetails(courseId);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "تعذر أرشفة الكورس.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -233,6 +370,7 @@ export default function AdminCoursesPage() {
         isActive: selectedCourse.course.isActive,
         isTestingEnabled: Boolean(selectedCourse.course.isTestingEnabled),
         testFileUrl: selectedCourse.course.testFileUrl || "",
+        testPromptFileUrl: selectedCourse.course.testPromptFileUrl || "",
       });
       toast.success("تم تحديث بيانات الدورة.");
       await loadCourses();
@@ -268,6 +406,7 @@ export default function AdminCoursesPage() {
         lessons: selectedCourse.lessons.map((l, idx) => ({
           id: l.id,
           title: l.title,
+          description: l.description ?? "",
           sortOrder: Number(l.sortOrder || idx + 1),
           isActive: Boolean(l.isActive),
         })),
@@ -409,8 +548,8 @@ export default function AdminCoursesPage() {
     }
   };
 
-  const openManageModal = useCallback((course) => {
-    setManageTab("details");
+  const openManageModal = useCallback((course, initialTab = "details") => {
+    setManageTab(initialTab);
     setSelectedCourse(null);
     setCourseDetailsLoading(true);
     setSelectedCourseId(course.id);
@@ -445,18 +584,43 @@ export default function AdminCoursesPage() {
         <DashboardPageHeader
           eyebrow="لوحة التحكم"
           title={pageTitle}
-          description="إنشاء الدورات واستيراد الدروس من يوتيوب، وإدارة المستقلين المسجلين في كل دورة."
+          description={
+            isSuperAdmin
+              ? "إنشاء الكورسات واستيراد الدروس من يوتيوب، النشر الآمن، وإدارة المستقلين."
+              : "إنشاء الكورسات واستيراد الدروس من يوتيوب، النشر الآمن، وإدارة المستقلين المسجلين."
+          }
           breadcrumbs={[
             { label: "الرئيسية", href: breadcrumbHomeFromUser(user) },
-            { label: "الدورات" },
+            { label: "الكورسات" },
           ]}
+          actions={
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                if (composerOpen && !editingCourseId) {
+                  setComposerOpen(false);
+                  resetComposer();
+                } else if (composerOpen && editingCourseId) {
+                  setComposerOpen(false);
+                  resetComposer();
+                } else {
+                  resetComposer();
+                  setComposerOpen(true);
+                }
+              }}
+            >
+              {composerOpen ? "إخفاء الإضافة" : "إضافة كورس جديد"}
+            </button>
+          }
         />
 
+        {composerOpen ? (
         <DashboardSection
-          title="إنشاء دورة جديدة"
-          description="أدخل البيانات الأساسية ثم استورد الدروس من يوتيوب."
+          title={editingCourseId ? "تعديل الكورس" : "إضافة كورس جديد"}
+          description={editingCourseId ? "عدّل البيانات ثم احفظ. لاستيراد دروس جديدة استخدم «إدارة الدروس»." : "أدخل البيانات الأساسية ثم استورد الدروس من يوتيوب."}
         >
-          <form className="oh-admin-courses__form" onSubmit={onCreateCourse}>
+          <form className="oh-admin-courses__form" onSubmit={onComposerSubmit}>
           <div className="oh-admin-courses__row-2">
             <label className="oh-admin-courses__field">
               <span>العنوان</span>
@@ -467,6 +631,7 @@ export default function AdminCoursesPage() {
                 required
               />
             </label>
+            {!editingCourseId ? (
             <label className="oh-admin-courses__field">
               <span>رابط يوتيوب (فيديو أو قائمة تشغيل)</span>
               <input
@@ -478,6 +643,7 @@ export default function AdminCoursesPage() {
                 placeholder="https://..."
               />
             </label>
+            ) : null}
           </div>
           <label className="oh-admin-courses__field">
             <span>
@@ -491,64 +657,170 @@ export default function AdminCoursesPage() {
             />
           </label>
           <label className="oh-admin-courses__field">
-            <span>
-              الوصف <span className="oh-admin-courses__optional">(اختياري)</span>
-            </span>
+            <span>الوصف (مطلوب للنشر — 10 أحرف على الأقل)</span>
             <textarea
               className="oh-admin-courses__textarea"
               value={createForm.description}
               onChange={(e) => setCreateForm((s) => ({ ...s, description: e.target.value }))}
               rows={4}
+              required
             />
           </label>
+          {!editingCourseId ? (
+          <p className="oh-admin-courses__modal-hint">يُنشأ الكورس كمسودة. استخدم «نشر» بعد اكتمال الدروس.</p>
+          ) : null}
+          {editingCourseId ? (
           <label className="oh-admin-courses__toggle">
             <input
               type="checkbox"
               checked={createForm.isActive}
               onChange={(e) => setCreateForm((s) => ({ ...s, isActive: e.target.checked }))}
             />
-            <span>الدورة نشطة</span>
+            <span>الدورة نشطة (منشورة)</span>
           </label>
+          ) : null}
           <div className="oh-admin-courses__modal-divider" style={{ margin: "8px 0" }} />
-          <h3 className="oh-admin-courses__modal-subheading">إعدادات التدقيق</h3>
-          <p className="oh-admin-courses__modal-hint">سيظهر طلب التدقيق للمستقلين قبل إنهاء الدورة عند التفعيل.</p>
+          <h3 className="oh-admin-courses__modal-subheading">اختبار / تدقيق ما بعد الدورة</h3>
+          <p className="oh-admin-courses__modal-hint">
+            عند التفعيل، يجب على المستقل إرسال استجابة ChatGPT بعد إكمال الدروس (ملف اختبار + مطالبة + لصق/رفع الاستجابة).
+          </p>
           <label className="oh-admin-courses__toggle">
             <input
               type="checkbox"
               checked={createForm.isTestingEnabled}
               onChange={(e) => setCreateForm((s) => ({ ...s, isTestingEnabled: e.target.checked }))}
             />
-            <span>تفعيل مرحلة التدقيق لهذا الكورس</span>
+            <span>تفعيل اختبار/تدقيق ما بعد الدورة</span>
           </label>
-          <label className="oh-admin-courses__field">
-            <span>
-              رابط ملف اختبارات المشروع <span className="oh-admin-courses__optional">(اختياري)</span>
-            </span>
-            <input
-              className="oh-admin-courses__input"
-              dir="ltr"
-              value={createForm.testFileUrl}
-              onChange={(e) => setCreateForm((s) => ({ ...s, testFileUrl: e.target.value }))}
-              placeholder="https://..."
-            />
-          </label>
+          {createForm.isTestingEnabled ? (
+            <>
+              <label className="oh-admin-courses__field">
+                <span>ملف الاختبار / التكليف</span>
+                {createForm.testFileUrl ? (
+                  <p className="help" style={{ margin: "4px 0 8px" }}>
+                    الملف الحالي:{" "}
+                    <a href={createForm.testFileUrl} target="_blank" rel="noopener noreferrer" dir="ltr">
+                      فتح / تحميل
+                    </a>
+                  </p>
+                ) : null}
+                {editingCourseId ? (
+                  <input
+                    type="file"
+                    className="oh-admin-courses__input"
+                    disabled={testFileUploading}
+                    accept=".pdf,.doc,.docx,.txt,.zip,.png,.jpg,.jpeg,.webp,.xls,.xlsx,.ppt,.pptx"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void onUploadCourseTestFile(editingCourseId, f);
+                      e.target.value = "";
+                    }}
+                  />
+                ) : (
+                  <p className="help">بعد إنشاء الكورس يمكنك رفع ملف الاختبار من «إدارة الدورة».</p>
+                )}
+              </label>
+              <label className="oh-admin-courses__field">
+                <span>
+                  أو رابط ملف الاختبار <span className="oh-admin-courses__optional">(اختياري)</span>
+                </span>
+                <input
+                  className="oh-admin-courses__input"
+                  dir="ltr"
+                  value={createForm.testFileUrl}
+                  onChange={(e) => setCreateForm((s) => ({ ...s, testFileUrl: e.target.value }))}
+                  placeholder="https://..."
+                />
+              </label>
+              <label className="oh-admin-courses__field">
+                <span>ملف مطالبة ChatGPT للمستقل</span>
+                {createForm.testPromptFileUrl ? (
+                  <p className="help" style={{ margin: "4px 0 8px" }}>
+                    الملف الحالي:{" "}
+                    <a href={createForm.testPromptFileUrl} target="_blank" rel="noopener noreferrer" dir="ltr">
+                      فتح / تحميل
+                    </a>
+                  </p>
+                ) : null}
+                {editingCourseId ? (
+                  <input
+                    type="file"
+                    className="oh-admin-courses__input"
+                    disabled={promptFileUploading}
+                    accept=".pdf,.doc,.docx,.txt,.zip,.png,.jpg,.jpeg,.webp,.xls,.xlsx,.ppt,.pptx"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void onUploadCoursePromptFile(editingCourseId, f);
+                      e.target.value = "";
+                    }}
+                  />
+                ) : (
+                  <p className="help">بعد إنشاء الكورس يمكنك رفع ملف المطالبة من «إدارة الدورة».</p>
+                )}
+              </label>
+            </>
+          ) : null}
           <div className="oh-admin-courses__submit-row">
             <button className="btn btn-primary oh-admin-courses__btn-primary" disabled={creating} type="submit">
-              {creating ? "جاري الإنشاء والاستيراد…" : "إنشاء واستيراد الدروس"}
+              {creating
+                ? editingCourseId
+                  ? "جاري الحفظ…"
+                  : "جاري الإنشاء والاستيراد…"
+                : editingCourseId
+                  ? "حفظ التعديلات"
+                  : "إنشاء واستيراد الدروس"}
             </button>
+            {editingCourseId ? (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={creating}
+                onClick={() => {
+                  resetComposer();
+                  setComposerOpen(false);
+                }}
+              >
+                إلغاء التعديل
+              </button>
+            ) : null}
           </div>
         </form>
         </DashboardSection>
+        ) : null}
 
-        <DashboardSection title="الدورات الحالية" description="إدارة الدورات المنشأة، الإرسال للمستقلين، أو الحذف.">
+        <DashboardSection title="قائمة الكورسات" description="بحث، تصفية، نشر، وإدارة الدروس والإسناد.">
+          <div className="oh-admin-courses__toolbar">
+            <input
+              className="oh-admin-courses__input"
+              type="search"
+              value={courseSearch}
+              onChange={(e) => setCourseSearch(e.target.value)}
+              placeholder="ابحث بالعنوان أو الوصف…"
+              aria-label="بحث في الكورسات"
+            />
+            <select
+              className="oh-admin-courses__input oh-admin-courses__filter-select"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label="تصفية الحالة"
+            >
+              <option value="all">كل الحالات</option>
+              <option value="published">منشورة</option>
+              <option value="draft">مسودة / معطّلة</option>
+            </select>
+            <button type="button" className="btn btn-secondary" onClick={() => void loadCourses()} disabled={loading}>
+              تحديث
+            </button>
+          </div>
+
           {loading && !courses.length ? (
-            <DashboardLoadingState label="جاري تحميل الدورات…" />
+            <DashboardLoadingState label="جاري تحميل الكورسات…" />
           ) : null}
 
           {!loading && !courses.length ? (
             <DashboardEmptyState
-              title="لا توجد دورات حالياً"
-              description="ابدأ بإنشاء دورة جديدة من القسم أعلاه لاستيراد الدروس من يوتيوب."
+              title="لا توجد كورسات بعد"
+              description="ابدأ بإضافة أول كورس من زر «إضافة كورس جديد»."
               icon={
                 <svg
                   className="h-12 w-12 text-slate-400"
@@ -567,39 +839,58 @@ export default function AdminCoursesPage() {
           ) : null}
 
           {courses.length > 0 ? (
-            <div className="oh-admin-courses__grid">
-              {courses.map((c) => (
-                <article key={c.id} className="oh-admin-courses__course-card">
-                  <h3 className="oh-admin-courses__course-title">{c.title}</h3>
-                  <div className="oh-admin-courses__course-meta">
-                    <span>عدد الدروس: {c.lessonsCount ?? 0}</span>
-                    <span>عدد المهام: {c.assignedCount ?? 0}</span>
-                    <StatusBadge tone={c.isActive ? "active" : "inactive"}>{c.isActive ? "نشطة" : "غير نشطة"}</StatusBadge>
-                  </div>
-                  <div className="oh-admin-courses__course-actions">
-                    <button
-                      type="button"
-                      className="btn btn-secondary oh-admin-courses__btn-outline"
-                      onClick={() => openManageModal(c)}
-                      disabled={loading}
-                    >
-                      إدارة الدورة
-                    </button>
-                    <button type="button" className="btn btn-primary" onClick={() => onOpenSendModal(c)} disabled={loading}>
-                      إرسال الدورة
-                    </button>
-                    <button
-                      type="button"
-                      className="btn oh-admin-courses__btn-danger"
-                      onClick={() => onDeleteCourse(c.id)}
-                      disabled={loading}
-                    >
-                      حذف الدورة
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
+            <DashboardTable caption="قائمة الكورسات">
+              <thead>
+                <tr>
+                  <th>العنوان</th>
+                  <th>الحالة</th>
+                  <th>الدروس</th>
+                  <th>المسندون</th>
+                  <th>آخر تحديث</th>
+                  <th>إجراءات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {courses.map((c) => (
+                  <tr key={c.id}>
+                    <td className="oh-admin-courses__table-title">{c.title}</td>
+                    <td>
+                      <StatusBadge tone={c.isActive ? "active" : "inactive"}>
+                        {c.isActive ? "منشورة" : "مسودة"}
+                      </StatusBadge>
+                    </td>
+                    <td dir="ltr">{c.lessonsCount ?? 0}</td>
+                    <td dir="ltr">{c.assignedCount ?? 0}</td>
+                    <td>{fmtCourseDate(c.updatedAt)}</td>
+                    <td>
+                      <div className="oh-admin-courses__table-actions">
+                        <button type="button" className="btn btn-secondary oh-admin-courses__row-btn" onClick={() => onStartEditCourse(c)} disabled={loading}>
+                          تعديل
+                        </button>
+                        <button type="button" className="btn btn-secondary oh-admin-courses__row-btn" onClick={() => openManageModal(c, "lessons")} disabled={loading}>
+                          إدارة الدروس
+                        </button>
+                        {!c.isActive ? (
+                          <button type="button" className="btn btn-primary oh-admin-courses__row-btn" onClick={() => void onPublishCourse(c.id)} disabled={loading}>
+                            نشر
+                          </button>
+                        ) : (
+                          <button type="button" className="btn btn-secondary oh-admin-courses__row-btn" onClick={() => void onArchiveCourse(c.id)} disabled={loading}>
+                            أرشفة
+                          </button>
+                        )}
+                        <button type="button" className="btn btn-secondary oh-admin-courses__row-btn" onClick={() => onOpenSendModal(c)} disabled={loading}>
+                          إرسال
+                        </button>
+                        <button type="button" className="btn oh-admin-courses__btn-danger oh-admin-courses__row-btn" onClick={() => onDeleteCourse(c.id)} disabled={loading}>
+                          حذف
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </DashboardTable>
           ) : null}
         </DashboardSection>
       </DashboardShell>
@@ -680,6 +971,11 @@ export default function AdminCoursesPage() {
                 <>
                   {manageTab === "details" ? (
                     <div className="oh-admin-courses__modal-panel" role="tabpanel">
+                      {selectedCourse.publishReadiness && !selectedCourse.publishReadiness.ok ? (
+                        <p className="oh-admin-courses__readiness-warn" role="status">
+                          لا يمكن نشر الكورس قبل اكتمال: {(selectedCourse.publishReadiness.missingLabels || []).join("، ")}
+                        </p>
+                      ) : null}
                       <form className="oh-admin-courses__form" onSubmit={onUpdateCourse}>
                         <label className="oh-admin-courses__field">
                           <span>العنوان</span>
@@ -716,8 +1012,10 @@ export default function AdminCoursesPage() {
                           <span>حالة الدورة (نشطة)</span>
                         </label>
                         <div className="oh-admin-courses__modal-divider" />
-                        <h3 className="oh-admin-courses__modal-subheading">إعدادات التدقيق</h3>
-                        <p className="oh-admin-courses__modal-hint">سيظهر هذا للمستقلين قبل التسليم عند تفعيل مرحلة التدقيق.</p>
+                        <h3 className="oh-admin-courses__modal-subheading">اختبار / تدقيق ما بعد الدورة</h3>
+                        <p className="oh-admin-courses__modal-hint">
+                          عند التفعيل، يُطلب من المستقل إرسال استجابة ChatGPT بعد إكمال الدروس.
+                        </p>
                         <label className="oh-admin-courses__toggle">
                           <input
                             type="checkbox"
@@ -726,20 +1024,80 @@ export default function AdminCoursesPage() {
                               setSelectedCourse((s) => ({ ...s, course: { ...s.course, isTestingEnabled: e.target.checked } }))
                             }
                           />
-                          <span>تفعيل مرحلة التدقيق لهذا الكورس</span>
+                          <span>تفعيل اختبار/تدقيق ما بعد الدورة</span>
                         </label>
-                        <label className="oh-admin-courses__field">
-                          <span>
-                            رابط ملف اختبارات المشروع <span className="oh-admin-courses__optional">(اختياري)</span>
-                          </span>
-                          <input
-                            className="oh-admin-courses__input"
-                            dir="ltr"
-                            value={selectedCourse.course.testFileUrl || ""}
-                            onChange={(e) => setSelectedCourse((s) => ({ ...s, course: { ...s.course, testFileUrl: e.target.value } }))}
-                            placeholder="https://..."
-                          />
-                        </label>
+                        {selectedCourse.course.isTestingEnabled ? (
+                          <>
+                            <label className="oh-admin-courses__field">
+                              <span>ملف الاختبار / التكليف</span>
+                              {selectedCourse.course.testFileUrl ? (
+                                <p className="help" style={{ margin: "4px 0 8px" }}>
+                                  الملف الحالي:{" "}
+                                  <a
+                                    href={selectedCourse.course.testFileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    dir="ltr"
+                                  >
+                                    فتح / تحميل
+                                  </a>
+                                </p>
+                              ) : null}
+                              <input
+                                type="file"
+                                className="oh-admin-courses__input"
+                                disabled={testFileUploading || loading}
+                                accept=".pdf,.doc,.docx,.txt,.zip,.png,.jpg,.jpeg,.webp,.xls,.xlsx,.ppt,.pptx"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f && selectedCourseId) void onUploadCourseTestFile(selectedCourseId, f);
+                                  e.target.value = "";
+                                }}
+                              />
+                            </label>
+                            <label className="oh-admin-courses__field">
+                              <span>
+                                أو رابط ملف الاختبار <span className="oh-admin-courses__optional">(اختياري)</span>
+                              </span>
+                              <input
+                                className="oh-admin-courses__input"
+                                dir="ltr"
+                                value={selectedCourse.course.testFileUrl || ""}
+                                onChange={(e) =>
+                                  setSelectedCourse((s) => ({ ...s, course: { ...s.course, testFileUrl: e.target.value } }))
+                                }
+                                placeholder="https://..."
+                              />
+                            </label>
+                            <label className="oh-admin-courses__field">
+                              <span>ملف مطالبة ChatGPT للمستقل</span>
+                              {selectedCourse.course.testPromptFileUrl ? (
+                                <p className="help" style={{ margin: "4px 0 8px" }}>
+                                  الملف الحالي:{" "}
+                                  <a
+                                    href={selectedCourse.course.testPromptFileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    dir="ltr"
+                                  >
+                                    فتح / تحميل
+                                  </a>
+                                </p>
+                              ) : null}
+                              <input
+                                type="file"
+                                className="oh-admin-courses__input"
+                                disabled={promptFileUploading || loading}
+                                accept=".pdf,.doc,.docx,.txt,.zip,.png,.jpg,.jpeg,.webp,.xls,.xlsx,.ppt,.pptx"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f && selectedCourseId) void onUploadCoursePromptFile(selectedCourseId, f);
+                                  e.target.value = "";
+                                }}
+                              />
+                            </label>
+                          </>
+                        ) : null}
                         <div className="oh-admin-courses__submit-row">
                           <button className="btn btn-primary oh-admin-courses__btn-primary" type="submit" disabled={loading}>
                             حفظ بيانات الدورة
@@ -790,6 +1148,24 @@ export default function AdminCoursesPage() {
                                     setSelectedCourse((s) => ({
                                       ...s,
                                       lessons: s.lessons.map((x) => (x.id === lesson.id ? { ...x, title: e.target.value } : x)),
+                                    }))
+                                  }
+                                />
+                              </label>
+                              <label className="oh-admin-courses__field">
+                                <span>
+                                  وصف الدرس <span className="oh-admin-courses__optional">(اختياري)</span>
+                                </span>
+                                <textarea
+                                  className="oh-admin-courses__textarea"
+                                  rows={2}
+                                  value={lesson.description || ""}
+                                  onChange={(e) =>
+                                    setSelectedCourse((s) => ({
+                                      ...s,
+                                      lessons: s.lessons.map((x) =>
+                                        x.id === lesson.id ? { ...x, description: e.target.value } : x,
+                                      ),
                                     }))
                                   }
                                 />

@@ -29,6 +29,7 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
       LEFT JOIN (
         SELECT order_id, COUNT(*)::int AS files_count
         FROM order_files
+        WHERE order_id = ANY($1::bigint[])
         GROUP BY order_id
       ) ofc ON ofc.order_id = o.id
       LEFT JOIN (
@@ -36,11 +37,11 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
         FROM (
           SELECT order_id, freelancer_user_id
           FROM order_claims
-          WHERE freelancer_user_id IS NOT NULL
+          WHERE order_id = ANY($1::bigint[]) AND freelancer_user_id IS NOT NULL
           UNION ALL
           SELECT order_id, freelancer_user_id
           FROM order_freelancer_bids
-          WHERE freelancer_user_id IS NOT NULL
+          WHERE order_id = ANY($1::bigint[]) AND freelancer_user_id IS NOT NULL
         ) z
         GROUP BY z.order_id
       ) ac ON ac.order_id = o.id
@@ -64,6 +65,7 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
       LEFT JOIN (
         SELECT order_id, COUNT(*)::int AS files_count
         FROM order_files
+        WHERE order_id = ANY($1::bigint[])
         GROUP BY order_id
       ) ofc ON ofc.order_id = o.id
       LEFT JOIN (
@@ -71,11 +73,11 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
         FROM (
           SELECT order_id, freelancer_user_id
           FROM order_claims
-          WHERE freelancer_user_id IS NOT NULL
+          WHERE order_id = ANY($1::bigint[]) AND freelancer_user_id IS NOT NULL
           UNION ALL
           SELECT order_id, freelancer_user_id
           FROM order_freelancer_bids
-          WHERE freelancer_user_id IS NOT NULL
+          WHERE order_id = ANY($1::bigint[]) AND freelancer_user_id IS NOT NULL
         ) z
         GROUP BY z.order_id
       ) ac ON ac.order_id = o.id
@@ -106,6 +108,7 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
       LEFT JOIN (
         SELECT fake_order_id, COUNT(DISTINCT freelancer_user_id)::int AS applicants_count
         FROM fake_order_applications
+        WHERE fake_order_id = ANY($1::bigint[])
         GROUP BY fake_order_id
       ) appc ON appc.fake_order_id = fo.id
       LEFT JOIN fake_order_applications fa ON fa.fake_order_id = fo.id AND fa.freelancer_user_id = $2
@@ -132,6 +135,7 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
       LEFT JOIN (
         SELECT fake_order_id, COUNT(DISTINCT freelancer_user_id)::int AS applicants_count
         FROM fake_order_applications
+        WHERE fake_order_id = ANY($1::bigint[])
         GROUP BY fake_order_id
       ) appc ON appc.fake_order_id = fo.id
       WHERE fo.id = ANY($1::bigint[])
@@ -170,7 +174,6 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
       } else if (mapped.budget != null) {
         mapped.budget = Math.round(Number(mapped.budget));
       }
-      if (row.show_fake_badge) mapped.trainingLabel = "طلب تجريبي";
       if (row.pool_listed_at != null) {
         mapped.createdAt = row.pool_listed_at;
         mapped.poolListedAt = row.pool_listed_at;

@@ -6,6 +6,13 @@
   margin-inline: auto;
 }
 
+.fdl-outlet .fdash-page--account .oh-account-page {
+  max-width: none;
+  width: 100%;
+  margin-inline: 0;
+  padding: 0;
+}
+
 .oh-account-hero {
   display: grid;
   gap: clamp(12px, 2vw, 18px);

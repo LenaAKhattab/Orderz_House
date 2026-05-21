@@ -67,6 +67,15 @@ function stripInternalFileFields(f) {
   return out;
 }
 
+/** Pool/freelancer JSON must not expose direct download URLs — use authenticated download routes. */
+function stripDirectFileUrls(f) {
+  const out = stripInternalFileFields(f);
+  delete out.fileUrl;
+  delete out.secureUrl;
+  delete out.filePath;
+  return out;
+}
+
 /** Remove nested admin-only metadata from submission timeline for client/freelancer. */
 function sanitizeSubmissionHistoryForNonStaff(h) {
   if (!h || !Array.isArray(h.submissions)) return h;
@@ -74,12 +83,12 @@ function sanitizeSubmissionHistoryForNonStaff(h) {
     submissions: h.submissions.map((s) => {
       const sub = { ...s };
       delete sub.adminMetadata;
-      sub.files = Array.isArray(sub.files) ? sub.files.map(stripInternalFileFields) : [];
+      sub.files = Array.isArray(sub.files) ? sub.files.map(stripDirectFileUrls) : [];
       sub.revisionRequests = Array.isArray(sub.revisionRequests)
         ? sub.revisionRequests.map((r) => {
             const rr = { ...r };
             delete rr.adminMetadata;
-            rr.files = Array.isArray(rr.files) ? rr.files.map(stripInternalFileFields) : [];
+            rr.files = Array.isArray(rr.files) ? rr.files.map(stripDirectFileUrls) : [];
             return rr;
           })
         : [];
@@ -140,8 +149,6 @@ function sanitizePublicPoolOrder(order) {
     bidsCount: applicantsCount,
     filesCount: fc,
     files: [],
-    orderSource: order.orderSource,
-    trainingLabel: order.trainingLabel,
     hasAssignedFreelancer: Boolean(order.assignedFreelancerId),
   };
 }
@@ -155,7 +162,8 @@ function sanitizeFreelancerPoolOrder(order) {
   const pub = sanitizePublicPoolOrder(order);
   return {
     ...pub,
-    files: Array.isArray(order.files) ? order.files : [],
+    poolEligibility: order.poolEligibility ?? null,
+    files: Array.isArray(order.files) ? order.files.map(stripDirectFileUrls) : [],
     myClaim: order.myClaim ?? null,
     myBid: order.myBid ?? null,
     updatedAt: order.updatedAt ?? null,
@@ -163,6 +171,27 @@ function sanitizeFreelancerPoolOrder(order) {
     acceptedAt: order.acceptedAt ?? null,
     startedAt: order.startedAt ?? null,
     submittedAt: order.submittedAt ?? null,
+  };
+}
+
+/** Limited pool preview when plan locks a real order (no files, short description). */
+function sanitizeLockedFreelancerPoolOrder(order, poolEligibility = null) {
+  if (!order || typeof order !== "object") return order;
+  const desc = String(order.description || "").trim();
+  const shortDesc = desc.length > 220 ? `${desc.slice(0, 220).trim()}…` : desc || null;
+  const pub = sanitizePublicPoolOrder(order);
+  return {
+    ...pub,
+    description: shortDesc,
+    files: [],
+    filesCount: Number(order.filesCount || 0),
+    poolEligibility,
+    isLockedByPlan: true,
+    lockReason: poolEligibility?.lockReason ?? null,
+    requiredPlanLabel: poolEligibility?.requiredPlanLabel ?? null,
+    requiredPlanRange: poolEligibility?.requiredPlanRange ?? null,
+    myClaim: null,
+    myBid: null,
   };
 }
 
@@ -184,7 +213,7 @@ function sanitizeOrderForFreelancerAssigned(order) {
     o.submissionHistory = sanitizeSubmissionHistoryForNonStaff(o.submissionHistory);
   }
   if (Array.isArray(o.files)) {
-    o.files = o.files.map(stripInternalFileFields);
+    o.files = o.files.map(stripDirectFileUrls);
   }
   return o;
 }
@@ -277,6 +306,7 @@ module.exports = {
   serializeOrderForViewer,
   sanitizePublicPoolOrder,
   sanitizeFreelancerPoolOrder,
+  sanitizeLockedFreelancerPoolOrder,
   sanitizeOrderForFreelancerAssigned,
   sanitizeOrderForClient,
   sanitizeOrderForStaff,

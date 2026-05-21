@@ -3,10 +3,16 @@ const { requireAuth, requireAnyRole } = require("../middleware/rbacMiddleware");
 const validateRequest = require("../middleware/validateRequest");
 const adminCoursesController = require("../controllers/adminCoursesController");
 const {
+  uploadCourseTestFile: uploadCourseTestFileMw,
+  uploadCoursePromptFile: uploadCoursePromptFileMw,
+} = require("../middleware/courseUploadMiddleware");
+const {
   createCourseValidators,
   importLessonsValidators,
   updateCourseValidators,
   updateLessonsValidators,
+  publishCourseValidators,
+  archiveCourseValidators,
   assignCourseValidators,
   assignOneFreelancerValidators,
   listCoursesValidators,
@@ -22,6 +28,22 @@ router.get("/courses", listCoursesValidators, validateRequest, adminCoursesContr
 router.post("/courses", createCourseValidators, validateRequest, adminCoursesController.createCourse);
 router.get("/courses/:id", courseIdParam, validateRequest, adminCoursesController.getCourseById);
 router.patch("/courses/:id", updateCourseValidators, validateRequest, adminCoursesController.updateCourse);
+router.post(
+  "/courses/:id/test-file",
+  courseIdParam,
+  validateRequest,
+  uploadCourseTestFileMw,
+  adminCoursesController.uploadCourseTestFile,
+);
+router.post(
+  "/courses/:id/prompt-file",
+  courseIdParam,
+  validateRequest,
+  uploadCoursePromptFileMw,
+  adminCoursesController.uploadCoursePromptFile,
+);
+router.post("/courses/:id/publish", publishCourseValidators, validateRequest, adminCoursesController.publishCourse);
+router.post("/courses/:id/archive", archiveCourseValidators, validateRequest, adminCoursesController.archiveCourse);
 router.delete("/courses/:id", courseIdParam, validateRequest, adminCoursesController.deleteCourse);
 router.post("/courses/:id/import-lessons", importLessonsValidators, validateRequest, adminCoursesController.importLessons);
 router.patch("/courses/:id/lessons", updateLessonsValidators, validateRequest, adminCoursesController.updateLessons);

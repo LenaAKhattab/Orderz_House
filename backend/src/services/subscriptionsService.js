@@ -1,4 +1,8 @@
 const { pool } = require("../config/db");
+const {
+  ORDERZHOUSE_FREE_PLAN_ID,
+  isOrderzhouseFreePlan,
+} = require("../constants/orderzhousePlansCatalog");
 const notificationEventsService = require("./notificationEventsService");
 const notificationService = require("./notificationService");
 const freelancerSubscriptionPaymentNotifications = require("./freelancerSubscriptionPaymentNotifications");
@@ -884,6 +888,94 @@ async function canFreelancerTakeOrders(freelancerUserId) {
   return evaluateFreelancerTakeOrdersEligibility(sub);
 }
 
+function shouldRetainCurrentSubscription(sub) {
+  if (!sub || sub.isCurrent !== true) return false;
+  const ps = normalizePaymentStatus(sub.paymentStatus);
+  const st = String(sub.status || "").trim().toLowerCase();
+  if (ps === SUBSCRIPTION_PAYMENT_STATUSES.FAILED || ps === SUBSCRIPTION_PAYMENT_STATUSES.CANCELLED) {
+    return false;
+  }
+  if (st === SUBSCRIPTION_STATUSES.CANCELLED) return false;
+  return true;
+}
+
+async function ensureFreePlanInFakeSettingsPlans(client) {
+  const runner = client || pool;
+  await runner.query(
+    `INSERT INTO fake_order_settings_plans (plan_id)
+     VALUES ($1::bigint)
+     ON CONFLICT (plan_id) DO NOTHING`,
+    [ORDERZHOUSE_FREE_PLAN_ID],
+  );
+}
+
+/**
+ * Idempotent: assign free plan when freelancer has no meaningful current subscription.
+ * @returns {Promise<{ created: boolean, subscription: object | null }>}
+ */
+async function ensureFreelancerDefaultFreePlan(freelancerUserId, { actorUserId = null } = {}) {
+  const uid = Number(freelancerUserId);
+  if (!Number.isInteger(uid) || uid < 1) {
+    const err = new Error("Invalid freelancer user id.");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const current = await getCurrentSubscriptionForFreelancer(uid);
+  if (shouldRetainCurrentSubscription(current)) {
+    return { created: false, subscription: current };
+  }
+
+  const result = await assignPlanToFreelancer({
+    actorUserId,
+    freelancerUserId: uid,
+    planId: ORDERZHOUSE_FREE_PLAN_ID,
+    notes: "auto_default_free_plan",
+  });
+
+  try {
+    await ensureFreePlanInFakeSettingsPlans();
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("[subscriptions] ensureFreePlanInFakeSettingsPlans failed (non-fatal):", e?.message || e);
+  }
+
+  return { created: true, subscription: result.subscription };
+}
+
+/**
+ * Non-throwing bootstrap for auth/profile paths.
+ */
+async function maybeEnsureFreelancerDefaultFreePlan(freelancerUserId) {
+  try {
+    const snap = await getFreelancerIdentitySnapshot(freelancerUserId);
+    if (!snap?.isFreelancer) return null;
+    const out = await ensureFreelancerDefaultFreePlan(freelancerUserId);
+    return out.subscription;
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("[subscriptions] maybeEnsureFreelancerDefaultFreePlan failed:", e?.message || e);
+    return null;
+  }
+}
+
+async function isFreelancerOnFreePlan(freelancerUserId) {
+  const sub = await getCurrentSubscriptionForFreelancer(freelancerUserId);
+  if (!sub) return false;
+  return isOrderzhouseFreePlan(sub.plan || { id: sub.planId, name: sub.plan?.name });
+}
+
+async function assertFreelancerMayAccessRealPoolOrders(freelancerUserId) {
+  // Catalog lists 3–7 د.أ for free tier (display only); real marketplace orders stay fake-only.
+  if (await isFreelancerOnFreePlan(freelancerUserId)) {
+    const err = new Error("الطلبات الحقيقية غير متاحة ضمن الاشتراك المجاني.");
+    err.statusCode = 403;
+    err.reason = "free_plan_real_orders_restricted";
+    err.exposeToClient = true;
+    throw err;
+  }
+}
+
 module.exports = {
   SUBSCRIPTION_STATUSES,
   SUBSCRIPTION_SOURCES,
@@ -903,5 +995,12 @@ module.exports = {
   activateCompanyApprovalForSubscription,
   canFreelancerTakeOrders,
   evaluateFreelancerTakeOrdersEligibility,
+  ORDERZHOUSE_FREE_PLAN_ID,
+  shouldRetainCurrentSubscription,
+  ensureFreelancerDefaultFreePlan,
+  maybeEnsureFreelancerDefaultFreePlan,
+  isFreelancerOnFreePlan,
+  assertFreelancerMayAccessRealPoolOrders,
+  ensureFreePlanInFakeSettingsPlans,
 };
 

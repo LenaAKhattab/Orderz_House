@@ -937,6 +937,23 @@ async function createFreelancerPaymentBySuperAdmin({
   }
 }
 
+/** Dashboard: minimal claim rows for earnings aggregate + pending actions (no heavy joins). */
+async function listClaimsForFreelancerDashboard(freelancerUserId) {
+  const uid = Number(freelancerUserId);
+  if (!Number.isInteger(uid) || uid < 1) return [];
+  const { rows } = await pool.query(
+    `SELECT id, freelancer_id, order_number, request_title, status,
+            user_amount_snapshot, paid_amount, remaining_amount,
+            created_at, updated_at
+     FROM financial_claims
+     WHERE freelancer_id = $1
+     ORDER BY updated_at DESC, id DESC
+     LIMIT 500`,
+    [uid],
+  );
+  return rows.map((row) => mapClaimRow(row));
+}
+
 module.exports = {
   CLAIM_STATUSES,
   PAYOUT_STATUSES,
@@ -944,6 +961,7 @@ module.exports = {
   computePayoutWindow,
   listDoneProjectsForFreelancer,
   listClaimsForFreelancer,
+  listClaimsForFreelancerDashboard,
   createFinancialClaimForFreelancer,
   listClaimsForSuperAdmin,
   getClaimDetailsForSuperAdmin,

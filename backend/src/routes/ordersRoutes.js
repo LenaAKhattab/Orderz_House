@@ -5,6 +5,14 @@ const validateRequest = require("../middleware/validateRequest");
 const { uploadOrderFiles, handleOrderUploadErrors, enforceOrderUploadTotalSize } = require("../middleware/ordersUploadMiddleware");
 const { requireAuth, requireRole, optionalAuth } = require("../middleware/rbacMiddleware");
 const {
+  requireClientOwnsOrderParam,
+  requireFreelancerAssignedOrderParam,
+  requireFreelancerCanClaimOrderParam,
+  requireFreelancerCanBidOrderParam,
+  requireFreelancerPoolOrderAccess,
+  requireOrderFileAccess,
+} = require("../middleware/orderAuthMiddleware");
+const {
   listOrdersValidators,
   orderIdParam,
   createClientOrderValidators,
@@ -15,6 +23,11 @@ const {
   clientOrderRevisionNoteValidators,
   clientOrderFileDownloadParams,
 } = require("../validators/ordersValidators");
+const freelancerReviewsController = require("../controllers/freelancerReviewsController");
+const {
+  submitClientReviewValidators,
+  updateClientReviewValidators,
+} = require("../validators/freelancerReviewsValidators");
 
 const router = express.Router();
 
@@ -33,6 +46,7 @@ router.get(
   requireRole("client"),
   orderIdParam,
   validateRequest,
+  requireClientOwnsOrderParam,
   clientOrdersController.getMyClientOrderById,
 );
 
@@ -54,6 +68,7 @@ router.post(
   requireRole("client"),
   orderIdParam,
   validateRequest,
+  requireClientOwnsOrderParam,
   clientOrdersController.createFixedOrderStripeCheckout,
 );
 
@@ -63,6 +78,7 @@ router.post(
   requireRole("client"),
   orderIdParam,
   validateRequest,
+  requireClientOwnsOrderParam,
   clientOrdersController.confirmFixedOrderPayment,
 );
 
@@ -72,6 +88,7 @@ router.post(
   requireRole("client"),
   orderIdParam,
   validateRequest,
+  requireClientOwnsOrderParam,
   clientOrdersController.cancelFixedOrderPayment,
 );
 
@@ -81,6 +98,7 @@ router.get(
   requireRole("client"),
   orderIdParam,
   validateRequest,
+  requireClientOwnsOrderParam,
   clientOrdersController.listClaimsForOrder,
 );
 
@@ -91,6 +109,7 @@ router.post(
   orderIdParam,
   clientOrderClaimIdBodyValidators,
   validateRequest,
+  requireClientOwnsOrderParam,
   clientOrdersController.approveFreelancerClaim,
 );
 
@@ -101,6 +120,7 @@ router.post(
   orderIdParam,
   clientOrderClaimIdBodyValidators,
   validateRequest,
+  requireClientOwnsOrderParam,
   clientOrdersController.rejectFreelancerClaim,
 );
 
@@ -110,6 +130,7 @@ router.get(
   requireRole("client"),
   orderIdParam,
   validateRequest,
+  requireClientOwnsOrderParam,
   clientOrdersController.listBidsForOrder,
 );
 
@@ -120,6 +141,7 @@ router.post(
   orderIdParam,
   clientOrderBidIdBodyValidators,
   validateRequest,
+  requireClientOwnsOrderParam,
   clientOrdersController.acceptFreelancerBid,
 );
 
@@ -130,6 +152,7 @@ router.post(
   orderIdParam,
   clientOrderBidIdParamValidators,
   validateRequest,
+  requireClientOwnsOrderParam,
   clientOrdersController.selectFreelancerBid,
 );
 
@@ -140,6 +163,7 @@ router.post(
   orderIdParam,
   clientOrderBidIdParamValidators,
   validateRequest,
+  requireClientOwnsOrderParam,
   clientOrdersController.confirmSelectedBidPayment,
 );
 
@@ -150,6 +174,7 @@ router.post(
   orderIdParam,
   clientOrderBidIdBodyValidators,
   validateRequest,
+  requireClientOwnsOrderParam,
   clientOrdersController.rejectFreelancerBid,
 );
 router.post(
@@ -158,7 +183,40 @@ router.post(
   requireRole("client"),
   orderIdParam,
   validateRequest,
+  requireClientOwnsOrderParam,
   clientOrdersController.approveDelivery,
+);
+
+router.get(
+  "/client/orders/:id/review",
+  requireAuth,
+  requireRole("client"),
+  orderIdParam,
+  validateRequest,
+  requireClientOwnsOrderParam,
+  freelancerReviewsController.getClientOrderReviewStatus,
+);
+
+router.post(
+  "/client/orders/:id/review",
+  requireAuth,
+  requireRole("client"),
+  orderIdParam,
+  submitClientReviewValidators,
+  validateRequest,
+  requireClientOwnsOrderParam,
+  freelancerReviewsController.submitClientOrderReview,
+);
+
+router.patch(
+  "/client/orders/:id/review",
+  requireAuth,
+  requireRole("client"),
+  orderIdParam,
+  updateClientReviewValidators,
+  validateRequest,
+  requireClientOwnsOrderParam,
+  freelancerReviewsController.updateClientOrderReview,
 );
 
 router.post(
@@ -171,6 +229,7 @@ router.post(
   orderIdParam,
   clientOrderRevisionNoteValidators,
   validateRequest,
+  requireClientOwnsOrderParam,
   clientOrdersController.requestDeliveryRevision,
 );
 
@@ -180,10 +239,11 @@ router.get(
   requireRole("client"),
   clientOrderFileDownloadParams,
   validateRequest,
+  requireOrderFileAccess,
   clientOrdersController.downloadOrderFile,
 );
 
-// Pool browsing is public; for freelancers we attach viewer-specific bid/legacy-claim metadata when relevant.
+// Browse: guests get sanitized public list; logged-in freelancers get plan eligibility metadata.
 router.get("/orders/pool", optionalAuth, listOrdersValidators, validateRequest, ordersController.listPoolOrders);
 router.post(
   "/orders/pool/fake/:id/bids",
@@ -203,6 +263,14 @@ router.post(
   ordersController.takeFakePoolOrder,
 );
 router.post(
+  "/orders/pool/:id/take",
+  requireAuth,
+  requireRole("freelancer"),
+  orderIdParam,
+  validateRequest,
+  ordersController.takeUnifiedPoolOrder,
+);
+router.post(
   "/orders/pool/:id/bids",
   requireAuth,
   requireRole("freelancer"),
@@ -212,10 +280,34 @@ router.post(
   ordersController.submitPoolOrderBid,
 );
 router.get("/orders/pool/:id", optionalAuth, orderIdParam, validateRequest, ordersController.getPoolOrderById);
-router.post("/orders/:id/take", requireAuth, requireRole("freelancer"), orderIdParam, validateRequest, ordersController.takePoolOrder);
-router.delete("/orders/:id/take", requireAuth, requireRole("freelancer"), orderIdParam, validateRequest, ordersController.withdrawPoolOrderClaim);
+router.post(
+  "/orders/:id/take",
+  requireAuth,
+  requireRole("freelancer"),
+  orderIdParam,
+  validateRequest,
+  requireFreelancerCanClaimOrderParam,
+  ordersController.takePoolOrder,
+);
+router.delete(
+  "/orders/:id/take",
+  requireAuth,
+  requireRole("freelancer"),
+  orderIdParam,
+  validateRequest,
+  requireFreelancerPoolOrderAccess,
+  ordersController.withdrawPoolOrderClaim,
+);
 router.get("/freelancer/my-orders", requireAuth, requireRole("freelancer"), listOrdersValidators, validateRequest, ordersController.listMyAssignedOrders);
-router.get("/freelancer/my-orders/:id", requireAuth, requireRole("freelancer"), orderIdParam, validateRequest, ordersController.getMyAssignedOrderById);
+router.get(
+  "/freelancer/my-orders/:id",
+  requireAuth,
+  requireRole("freelancer"),
+  orderIdParam,
+  validateRequest,
+  requireFreelancerAssignedOrderParam,
+  ordersController.getMyAssignedOrderById,
+);
 router.post(
   "/freelancer/my-orders/:id/delivery",
   requireAuth,
@@ -225,6 +317,7 @@ router.post(
   enforceOrderUploadTotalSize,
   orderIdParam,
   validateRequest,
+  requireFreelancerAssignedOrderParam,
   ordersController.submitMyOrderDelivery,
 );
 router.get(
@@ -233,6 +326,7 @@ router.get(
   requireRole("freelancer"),
   clientOrderFileDownloadParams,
   validateRequest,
+  requireOrderFileAccess,
   ordersController.downloadFreelancerOrderFile,
 );
 

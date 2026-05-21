@@ -16,6 +16,7 @@ const adminFakeOrdersRoutes = require("./routes/adminFakeOrdersRoutes");
 const adminAdsRoutes = require("./routes/adminAdsRoutes");
 const freelancerSubscriptionsRoutes = require("./routes/freelancerSubscriptionsRoutes");
 const freelancerCoursesRoutes = require("./routes/freelancerCoursesRoutes");
+const freelancerDashboardRoutes = require("./routes/freelancerDashboardRoutes");
 const ordersRoutes = require("./routes/ordersRoutes");
 const notificationsRoutes = require("./routes/notificationsRoutes");
 const profileRoutes = require("./routes/profileRoutes");
@@ -25,6 +26,7 @@ const superAdminAnalyticsRoutes = require("./routes/superAdminAnalyticsRoutes");
 const publicRoutes = require("./routes/publicRoutes");
 const internalAutomationRoutes = require("./routes/internalAutomationRoutes");
 const { notFoundMiddleware, errorMiddleware } = require("./middleware/errorMiddleware");
+const { requestTimingMiddleware } = require("./middleware/requestTimingMiddleware");
 const { isProduction } = require("./config/env");
 const { parseAllowedClientOrigins } = require("./config/clientUrl");
 
@@ -73,6 +75,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
+app.use("/api", requestTimingMiddleware);
 
 // Static assets (e.g., category images) served from backend/images
 app.use("/images", express.static(path.join(__dirname, "..", "images")));
@@ -95,6 +98,7 @@ app.use("/api/admin", adminFakeOrdersRoutes);
 app.use("/api/admin", adminAdsRoutes);
 app.use("/api/freelancer", freelancerSubscriptionsRoutes);
 app.use("/api/freelancer", freelancerCoursesRoutes);
+app.use("/api/freelancer", freelancerDashboardRoutes);
 app.use("/api/portal", portalFinancialClaimsRoutes);
 app.use("/api/super-admin", superAdminFinancialClaimsRoutes);
 app.use("/api/superadmin", superAdminAnalyticsRoutes);

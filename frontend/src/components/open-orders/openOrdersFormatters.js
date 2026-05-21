@@ -1,3 +1,5 @@
+import { arabicDurationUnit } from "../../utils/arTime";
+
 export function formatMoney(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "—";
@@ -34,4 +36,18 @@ export function categoryLine(order) {
 
 export function isBiddingOrder(order) {
   return order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null;
+}
+
+export function durationLabel(order) {
+  if (!order?.durationValue || !order?.durationUnit) return "—";
+  return `${order.durationValue} ${arabicDurationUnit(order.durationValue, order.durationUnit)}`;
+}
+
+export function categoryChips(order) {
+  const chips = [];
+  const c = String(order?.category?.name || "").trim();
+  const ss = String(order?.subSubcategory?.name || "").trim();
+  if (c) chips.push(c);
+  if (ss && ss !== c) chips.push(ss);
+  return chips;
 }

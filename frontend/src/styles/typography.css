@@ -1,0 +1,61 @@
+/**
+ * Global typography — Cairo Arabic SaaS system.
+ * Components should inherit; avoid per-component font-family unless monospace/code.
+ */
+
+@layer base {
+  :where(
+    table,
+    thead,
+    tbody,
+    tfoot,
+    tr,
+    th,
+    td,
+    caption,
+    dialog,
+    [role="dialog"],
+    [role="alertdialog"],
+    [role="menu"],
+    [role="listbox"],
+    [role="tooltip"],
+    nav,
+    .toast,
+    .toast-stack,
+    .fdash-page,
+    .fdl-shell,
+    .oh-sa-shell
+  ) {
+    font-family: inherit;
+  }
+
+  :where(h1, h2, h3, h4, h5, h6) {
+    font-family: inherit;
+    font-weight: var(--font-weight-heading);
+    line-height: var(--line-height-heading);
+    color: inherit;
+  }
+
+  :where(button, [type="button"], [type="submit"], [type="reset"]) {
+    font-family: inherit;
+    font-weight: var(--font-weight-button);
+  }
+
+  :where(label, legend) {
+    font-family: inherit;
+    font-weight: var(--font-weight-label);
+  }
+
+  :where(small, .text-muted, [class*="__muted"], [class*="--muted"]) {
+    font-weight: var(--font-weight-body);
+  }
+
+  :where(code, kbd, samp, pre) {
+    font-family: var(--font-mono);
+  }
+
+  /* Charts (Recharts) */
+  :where(.recharts-wrapper, .recharts-surface) text {
+    font-family: var(--font-sans) !important;
+  }
+}

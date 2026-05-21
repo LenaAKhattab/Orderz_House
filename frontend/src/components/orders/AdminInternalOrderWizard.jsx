@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Gavel, Plus, Tag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../ui/toastContext";
@@ -357,6 +358,7 @@ export default function AdminInternalOrderWizard({
   mode = "real",
   onSubmitFakeTemplate,
   resetToken = 0,
+  modalOnClose,
 } = {}) {
   const { user } = useAuth();
   const { push } = useToast();
@@ -785,9 +787,18 @@ export default function AdminInternalOrderWizard({
         </section>
       ) : null}
 
-      <form onSubmit={submit} className="form-grid form-co-flow" style={{ marginTop: isModal ? 0 : 14 }}>
-        <section className="card" style={{ gridColumn: "span 12" }}>
-          <div className="oh-stepper">
+      <form
+        onSubmit={submit}
+        className={`form-grid form-co-flow${isModal ? " co-modal-ref__form-flow" : ""}`.trim()}
+        style={{ marginTop: isModal ? 0 : 14 }}
+      >
+        <section
+          className={isModal ? "co-modal-ref__stepper-shell" : "card"}
+          style={{ gridColumn: "span 12" }}
+        >
+          <div
+            className={`oh-stepper${isModal ? ` co-modal-ref__stepper co-modal-ref__stepper--steps-${steps.length}` : ""}`.trim()}
+          >
             {steps.map((s, idx) => (
               <button
                 key={s.key}
@@ -805,25 +816,43 @@ export default function AdminInternalOrderWizard({
           </div>
         </section>
 
-        <section className="card" style={{ gridColumn: "span 12" }}>
+        <section
+          className={isModal ? "co-modal-ref__scroll-body" : "card"}
+          style={{ gridColumn: "span 12" }}
+        >
+          <div className={isModal ? "co-modal-ref__form-card" : "co-modal-ref__form-card--page"}>
           {currentStepKey === "core" ? (
             <div className="admin-co-fields">
               <div className="field admin-co-fields__span2">
                 <span className="label">نوع الطلب</span>
-                <div className="client-co-type-row">
+                <div className={`client-co-type-row${isModal ? " co-modal-ref__type-toggle" : ""}`.trim()}>
                   <button
                     type="button"
-                    className={form.projectType === "fixed" ? "btn btn-primary" : "btn btn-secondary"}
+                    className={
+                      isModal
+                        ? `co-modal-ref__type-option${form.projectType === "fixed" ? " co-modal-ref__type-option--active" : ""}`.trim()
+                        : form.projectType === "fixed"
+                          ? "btn btn-primary"
+                          : "btn btn-secondary"
+                    }
                     onClick={() => set("projectType", "fixed")}
                   >
-                    سعر ثابت
+                    {isModal ? <Tag size={18} strokeWidth={2.25} aria-hidden="true" /> : null}
+                    <span>سعر ثابت</span>
                   </button>
                   <button
                     type="button"
-                    className={form.projectType === "bidding" ? "btn btn-primary" : "btn btn-secondary"}
+                    className={
+                      isModal
+                        ? `co-modal-ref__type-option${form.projectType === "bidding" ? " co-modal-ref__type-option--active" : ""}`.trim()
+                        : form.projectType === "bidding"
+                          ? "btn btn-primary"
+                          : "btn btn-secondary"
+                    }
                     onClick={() => set("projectType", "bidding")}
                   >
-                    مزايدة
+                    {isModal ? <Gavel size={18} strokeWidth={2.25} aria-hidden="true" /> : null}
+                    <span>مزايدة</span>
                   </button>
                 </div>
                 <div className="help">
@@ -998,8 +1027,12 @@ export default function AdminInternalOrderWizard({
                   <div style={{ marginTop: 10, display: "grid", gap: 8, justifyItems: "stretch" }}>
                     <button
                       type="button"
-                      className="btn btn-secondary"
-                      style={{ padding: "6px 14px", fontSize: "0.82rem", fontWeight: 700, width: "fit-content" }}
+                      className={`btn btn-secondary${isModal ? " co-modal-ref__add-category" : ""}`.trim()}
+                      style={
+                        isModal
+                          ? undefined
+                          : { padding: "6px 14px", fontSize: "0.82rem", fontWeight: 700, width: "fit-content" }
+                      }
                       disabled={!form.categoryId || !extraCategoryOptions.length}
                       title={
                         !form.categoryId
@@ -1010,6 +1043,9 @@ export default function AdminInternalOrderWizard({
                       }
                       onClick={() => setExtraCategoryPickerOpen((o) => !o)}
                     >
+                      {isModal && !extraCategoryPickerOpen ? (
+                        <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
+                      ) : null}
                       {extraCategoryPickerOpen ? "إغلاق" : "إضافة تصنيف إضافي"}
                     </button>
                     {extraCategoryPickerOpen ? (
@@ -1444,10 +1480,11 @@ export default function AdminInternalOrderWizard({
               </div>
             </>
           ) : null}
+          </div>
         </section>
 
         <section
-          className="card"
+          className={isModal ? "co-modal-ref__wizard-foot" : "card"}
           style={{
             gridColumn: "span 12",
             display: "flex",
@@ -1458,6 +1495,11 @@ export default function AdminInternalOrderWizard({
           }}
         >
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {typeof modalOnClose === "function" ? (
+              <button type="button" className="btn btn-secondary co-modal-ref__foot-close" onClick={modalOnClose}>
+                إغلاق
+              </button>
+            ) : null}
             <button type="button" className="btn btn-secondary" onClick={goPrev} disabled={stepIdx === 0 || busy}>
               السابق
             </button>

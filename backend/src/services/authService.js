@@ -6,7 +6,20 @@ const { ROLES, PUBLIC_SIGNUP_ROLES } = require("../constants/roles");
 const { ensureUserRole, resolveAuthzContext } = require("./rbacService");
 const notificationService = require("./notificationService");
 const authOtpService = require("./authOtpService");
+const subscriptionsService = require("./subscriptionsService");
 const { createPublicApiError } = require("../utils/publicApiError");
+
+function authzIsFreelancer(authz) {
+  if (!authz) return false;
+  if (authz.primaryRole === ROLES.FREELANCER) return true;
+  if (String(authz.legacyRole || "").trim() === ROLES.FREELANCER) return true;
+  return Array.isArray(authz.roles) && authz.roles.some((r) => r?.name === ROLES.FREELANCER);
+}
+
+async function bootstrapFreelancerSubscriptionIfNeeded(userId, authz) {
+  if (!authzIsFreelancer(authz)) return;
+  await subscriptionsService.maybeEnsureFreelancerDefaultFreePlan(userId);
+}
 
 async function safeNotify(run) {
   try {
@@ -346,6 +359,7 @@ async function buildAuthResponseForUserId(userId) {
   }
   await ensureUserRole({ userId: row.id, roleName: row.role });
   const authz = await resolveAuthzContext({ userId: row.id, legacyRole: row.role });
+  await bootstrapFreelancerSubscriptionIfNeeded(row.id, authz);
   const token = signToken(row);
   return { user: withAuthz(mapUserPublic(row), authz), token };
 }
@@ -383,6 +397,7 @@ async function loginUser(emailRaw, password) {
   const { password_hash: _, ...rest } = user;
   await ensureUserRole({ userId: rest.id, roleName: rest.role });
   const authz = await resolveAuthzContext({ userId: rest.id, legacyRole: rest.role });
+  await bootstrapFreelancerSubscriptionIfNeeded(rest.id, authz);
   return { user: withAuthz(mapUserPublic(rest), authz), token };
 }
 
@@ -402,6 +417,7 @@ async function getPublicUserById(id) {
     throw createPublicApiError("يرجى تأكيد البريد الإلكتروني قبل المتابعة.", 403, "EMAIL_NOT_VERIFIED");
   }
   const authz = await resolveAuthzContext({ userId: row.id, legacyRole: row.role });
+  await bootstrapFreelancerSubscriptionIfNeeded(row.id, authz);
   return withAuthz(mapUserPublic(row), authz);
 }
 

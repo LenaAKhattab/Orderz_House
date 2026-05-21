@@ -4,8 +4,9 @@ import ClientFreelancerClaimsModal from "./ClientFreelancerClaimsModal";
 import ClientBiddingOffersModal from "./ClientBiddingOffersModal";
 import ClientDeliveryReviewModal from "./ClientDeliveryReviewModal";
 import ClientRevisionRequestModal from "./ClientRevisionRequestModal";
+import ClientFreelancerReviewModal from "./ClientFreelancerReviewModal";
 import SubmissionHistoryTimeline from "./submission-history/SubmissionHistoryTimeline";
-import { getClientOrderByIdRequest } from "../../services/api";
+import { getClientOrderByIdRequest, getClientOrderReviewStatusRequest } from "../../services/api";
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
 
 function formatMoney(value) {
@@ -75,6 +76,8 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
   const [bidsOpen, setBidsOpen] = useState(false);
   const [deliveryModal, setDeliveryModal] = useState({ open: false, variant: "workflow" });
   const [revisionOpen, setRevisionOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewStatus, setReviewStatus] = useState(null);
   const badge = useMemo(() => clientStatusMeta(order), [order]);
   const pricedBidding = useMemo(() => isPricedBidding(order), [order]);
   const filesCount = Array.isArray(order?.files) ? order.files.length : 0;
@@ -116,7 +119,29 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
     orderHasAssignment(order) &&
     !order?.isArchived;
 
+  const showReviewAction =
+    isClientOrder && order?.orderStatus === "completed" && orderHasAssignment(order) && !order?.isArchived;
+
   const displayOrder = detailOrder ? { ...order, ...detailOrder } : order;
+
+  useEffect(() => {
+    if (!showReviewAction || !order?.id) {
+      setReviewStatus(null);
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getClientOrderReviewStatusRequest(order.id);
+        if (!cancelled) setReviewStatus(res?.data ?? res);
+      } catch {
+        if (!cancelled) setReviewStatus(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [showReviewAction, order?.id]);
 
   const shouldLoadSubmissionDetail =
     expanded &&
@@ -237,6 +262,16 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
             ملفات تسليم المستقل
           </button>
         ) : null}
+        {showReviewAction && reviewStatus?.canSubmit ? (
+          <button type="button" className="btn btn-primary" onClick={() => setReviewOpen(true)}>
+            قيّم تجربتك مع المستقل
+          </button>
+        ) : null}
+        {showReviewAction && reviewStatus?.existingReview ? (
+          <button type="button" className="btn btn-secondary" onClick={() => setReviewOpen(true)}>
+            {reviewStatus.existingReview.canEdit ? "تعديل تقييمك" : "عرض تقييمك"}
+          </button>
+        ) : null}
       </footer>
 
       <ClientFreelancerClaimsModal
@@ -271,6 +306,16 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
         orderId={order?.id}
         onClose={() => setRevisionOpen(false)}
         onSaved={() => onOrdersChange?.()}
+      />
+      <ClientFreelancerReviewModal
+        open={reviewOpen}
+        orderId={order?.id}
+        orderTitle={order?.title}
+        onClose={() => setReviewOpen(false)}
+        onSubmitted={() => {
+          onOrdersChange?.();
+          void getClientOrderReviewStatusRequest(order.id).then((res) => setReviewStatus(res?.data ?? res));
+        }}
       />
     </article>
   );

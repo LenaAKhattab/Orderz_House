@@ -1,4 +1,5 @@
 const ordersService = require("../services/ordersService");
+const freelancerReviewsService = require("../services/freelancerReviewsService");
 const stripeCheckoutService = require("../services/stripeCheckoutService");
 const { sanitizeOrderForClient } = require("../utils/orderViewerSanitize");
 const { pipeOrderFileToResponse } = require("../utils/pipeOrderFileDownload");
@@ -280,6 +281,11 @@ const approveDelivery = async (req, res, next) => {
     capture(String(req.auth.userId), "order_completed", {
       orderId: String(req.params.id),
       projectType: order.projectType || order.project_type,
+    });
+    void freelancerReviewsService.notifyClientReviewReminder({
+      clientUserId: req.auth.userId,
+      orderId: req.params.id,
+      orderTitle: order.title,
     });
     return res.status(200).json({ success: true, data: { order: sanitizeOrderForClient(order) } });
   } catch (err) {

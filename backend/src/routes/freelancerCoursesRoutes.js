@@ -2,6 +2,7 @@ const express = require("express");
 const { requireAuth, requireRole } = require("../middleware/rbacMiddleware");
 const validateRequest = require("../middleware/validateRequest");
 const freelancerCoursesController = require("../controllers/freelancerCoursesController");
+const { uploadCourseAuditResponseFile } = require("../middleware/courseUploadMiddleware");
 const {
   courseIdParam,
   markLessonCompleteValidators,
@@ -16,6 +17,8 @@ router.get("/courses", freelancerCoursesController.listMyCourses);
 router.get("/courses/:id", courseIdParam, validateRequest, freelancerCoursesController.getMyCourseDetails);
 router.post(
   "/courses/:id/complete",
+  courseIdParam,
+  uploadCourseAuditResponseFile,
   submitCourseCompletionValidators,
   validateRequest,
   freelancerCoursesController.submitCourseCompletion,

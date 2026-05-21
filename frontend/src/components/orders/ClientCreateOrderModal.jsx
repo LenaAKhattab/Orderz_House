@@ -1,8 +1,10 @@
 ﻿import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { FilePlus2, X } from "lucide-react";
 import { useAuth } from "../../context/useAuth";
 import { INTERNAL_ORDERS_LIST_REFRESH } from "../../constants/authRoutes";
 import AdminInternalOrderWizard from "./AdminInternalOrderWizard";
+import "../../styles/createOrderModal.css";
 
 export default function ClientCreateOrderModal({ open, onClose }) {
   const navigate = useNavigate();
@@ -40,14 +42,22 @@ export default function ClientCreateOrderModal({ open, onClose }) {
           dir="rtl"
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <header className="client-order-modal__head">
-            <div>
-              <h2 id="admin-create-order-modal-title" className="client-order-modal__title">
+          <header className="client-order-modal__head co-modal-ref__head">
+            <div className="co-modal-ref__head-main">
+              <span className="co-modal-ref__head-icon" aria-hidden="true">
+                <FilePlus2 size={22} strokeWidth={2.25} />
+              </span>
+              <h2 id="admin-create-order-modal-title" className="client-order-modal__title co-modal-ref__title">
                 إنشاء طلب (إداري)
               </h2>
             </div>
-            <button type="button" className="btn btn-secondary client-order-modal__close" onClick={() => onClose()}>
-              إغلاق
+            <button
+              type="button"
+              className="co-modal-ref__close"
+              onClick={() => onClose()}
+              aria-label="إغلاق"
+            >
+              <X size={20} strokeWidth={2.25} aria-hidden="true" />
             </button>
           </header>
           <div className="client-order-modal__body client-order-modal__body--admin-wizard">
@@ -81,17 +91,29 @@ export default function ClientCreateOrderModal({ open, onClose }) {
         dir="rtl"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <header className="client-order-modal__head">
-          <div>
-            <h2 id="client-create-order-modal-title" className="client-order-modal__title">
+        <header className="client-order-modal__head co-modal-ref__head">
+          <div className="co-modal-ref__head-main">
+            <span className="co-modal-ref__head-icon" aria-hidden="true">
+              <FilePlus2 size={22} strokeWidth={2.25} />
+            </span>
+            <h2 id="client-create-order-modal-title" className="client-order-modal__title co-modal-ref__title">
               إنشاء طلب
             </h2>
           </div>
+          <button
+            type="button"
+            className="co-modal-ref__close"
+            onClick={() => onClose()}
+            aria-label="إغلاق"
+          >
+            <X size={20} strokeWidth={2.25} aria-hidden="true" />
+          </button>
         </header>
         <div className="client-order-modal__body client-order-modal__body--admin-wizard">
           <AdminInternalOrderWizard
             variant="modal"
             audience="client"
+            modalOnClose={onClose}
             onCreated={() => {
               onClose();
               navigate("/dashboard/client/my-orders");
@@ -99,13 +121,6 @@ export default function ClientCreateOrderModal({ open, onClose }) {
             }}
           />
         </div>
-        <footer className="client-order-modal__foot">
-          <div className="client-order-modal__foot-left">
-            <button type="button" className="btn btn-secondary" onClick={() => onClose()}>
-              إغلاق
-            </button>
-          </div>
-        </footer>
       </div>
     </div>
   );

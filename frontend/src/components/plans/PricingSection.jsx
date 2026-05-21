@@ -13,6 +13,7 @@ function pickFeaturedIndex(plans) {
 const PricingSection = ({
   plans,
   onCta,
+  currentSubscription = null,
   hasBlockingSubscription = false,
   loading = false,
   checkoutBusyPlanId = null,
@@ -22,8 +23,7 @@ const PricingSection = ({
   return (
     <section className="pricing" aria-label="خطط الاشتراك">
       <header className="pricing__header">
-        <h1 className="pricing__title">باقات ORDERZHOUSE للعمل الحر</h1>
-        <p className="pricing__subtitle">اختر الاشتراك المناسب — جميع التفاصيل من قاعدة البيانات</p>
+        <h1 className="pricing__title">باقات أوردرز هاوس للعمل الحر</h1>
       </header>
 
       {loading ? (
@@ -35,6 +35,7 @@ const PricingSection = ({
               key={p.id}
               plan={p}
               featured={idx === featuredIndex}
+              currentSubscription={currentSubscription}
               onCta={onCta}
               hasBlockingSubscription={hasBlockingSubscription}
               checkoutBusy={checkoutBusyPlanId != null && String(checkoutBusyPlanId) === String(p.id)}

@@ -15,6 +15,7 @@ const getProfileMe = async (req, res, next) => {
     const stats = await profileStatsService.getDashboardStats(userId, legacyRole);
     let subscription = null;
     if (legacyRole === ROLES.FREELANCER) {
+      await subscriptionsService.maybeEnsureFreelancerDefaultFreePlan(userId);
       subscription = await subscriptionsService.getCurrentSubscriptionForFreelancer(userId);
     }
     return res.status(200).json({ success: true, data: { user, stats, subscription } });

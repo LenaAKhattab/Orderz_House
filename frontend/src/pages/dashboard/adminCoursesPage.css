@@ -613,3 +613,49 @@
     border-bottom-color: #e2e8f0;
   }
 }
+
+.oh-admin-courses__toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.oh-admin-courses__filter-select {
+  min-width: 160px;
+}
+
+.oh-admin-courses__table-title {
+  font-weight: 800;
+  color: #0f172a;
+  max-width: 280px;
+}
+
+.oh-admin-courses__table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.oh-admin-courses__row-btn {
+  font-size: 0.78rem;
+  padding: 6px 10px;
+}
+
+.oh-admin-courses__readiness-warn {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .oh-admin-courses__toolbar {
+    grid-template-columns: 1fr;
+  }
+}

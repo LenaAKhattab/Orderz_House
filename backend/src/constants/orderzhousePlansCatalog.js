@@ -5,6 +5,10 @@
 
 const ORDERZHOUSE_PLAN_IDS = [1, 2, 3];
 
+/** Canonical free tier — auto-assigned to new freelancers. */
+const ORDERZHOUSE_FREE_PLAN_ID = 1;
+const ORDERZHOUSE_FREE_PLAN_NAME = "orderzhouse_free";
+
 const ORDERZHOUSE_PLANS_BY_ID = {
   1: {
     id: "1",
@@ -30,6 +34,9 @@ const ORDERZHOUSE_PLANS_BY_ID = {
     installmentPlan: null,
     offerExpiresAt: null,
     offerLabel: null,
+    /** Display/marketing range only — real pool orders are fake-only for plan 1 (see planOrderValueEligibility). */
+    minOrderValue: 3,
+    maxOrderValue: 7,
     orderValueMinJod: 3,
     orderValueMaxJod: 7,
     activationRequirements:
@@ -68,6 +75,8 @@ const ORDERZHOUSE_PLANS_BY_ID = {
     installmentPlan: null,
     offerExpiresAt: "2026-09-30",
     offerLabel: "يتم استرداد قيمة الاشتراك عند استلام أول طلب (العرض ساري حتى 30-09-2026)",
+    minOrderValue: 7,
+    maxOrderValue: 20,
     orderValueMinJod: 7,
     orderValueMaxJod: 20,
     activationRequirements:
@@ -112,6 +121,8 @@ const ORDERZHOUSE_PLANS_BY_ID = {
     },
     offerExpiresAt: null,
     offerLabel: null,
+    minOrderValue: 10,
+    maxOrderValue: null,
     orderValueMinJod: 10,
     orderValueMaxJod: null,
     activationRequirements:
@@ -142,9 +153,25 @@ function mergeApiPlansWithCatalog(apiPlans) {
   });
 }
 
+function isOrderzhouseFreePlan(planOrId) {
+  if (planOrId == null) return false;
+  if (typeof planOrId === "object") {
+    const id = Number(planOrId.id ?? planOrId.planId);
+    const name = String(planOrId.name ?? planOrId.plan?.name ?? "").trim();
+    if (Number.isInteger(id) && id === ORDERZHOUSE_FREE_PLAN_ID) return true;
+    return name === ORDERZHOUSE_FREE_PLAN_NAME;
+  }
+  const n = Number(planOrId);
+  if (Number.isInteger(n) && n === ORDERZHOUSE_FREE_PLAN_ID) return true;
+  return String(planOrId).trim() === ORDERZHOUSE_FREE_PLAN_NAME;
+}
+
 module.exports = {
   ORDERZHOUSE_PLAN_IDS,
+  ORDERZHOUSE_FREE_PLAN_ID,
+  ORDERZHOUSE_FREE_PLAN_NAME,
   ORDERZHOUSE_PLANS_BY_ID,
   getOrderzhousePlansCatalog,
   mergeApiPlansWithCatalog,
+  isOrderzhouseFreePlan,
 };

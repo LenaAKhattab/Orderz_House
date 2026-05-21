@@ -131,6 +131,11 @@ function requireSuperAdmin(req, res, next) {
   return requireRole("super_admin")(req, res, next);
 }
 
+/** Admin panel operators (`admin` or legacy `super_admin` in DB — no new roles). */
+function requireAdmin(req, res, next) {
+  return requireAnyRole(["admin", "super_admin"])(req, res, next);
+}
+
 module.exports = {
   attachAuthContext,
   requireAuth,
@@ -139,6 +144,7 @@ module.exports = {
   requireRole,
   requireFreelancer,
   requireSuperAdmin,
+  requireAdmin,
   requireAnyRole,
   requirePermission,
   requireAnyPermission,

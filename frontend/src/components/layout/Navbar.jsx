@@ -19,7 +19,7 @@ const publicExploreItems = [
 ];
 
 const navLinkBase =
-  "rounded-lg px-3.5 py-2 text-[1rem] font-medium text-[#202020]/90 transition-[color,opacity,font-size,padding] duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)] hover:text-[#2f3b65] hover:opacity-100 sm:px-4 sm:py-2.5 sm:text-[1.05rem] lg:px-5 lg:py-2.5 lg:text-[1.08rem]";
+  "inline-flex shrink-0 whitespace-nowrap rounded-lg px-4 py-2 text-[0.9rem] font-medium text-[#202020]/90 transition-[color,opacity] duration-200 hover:text-[#2f3b65] hover:opacity-100 sm:px-5 sm:text-[0.95rem] lg:px-6 lg:py-2 lg:text-[0.92rem] xl:px-7 xl:text-[0.98rem]";
 const navLinkActive = "font-bold text-[#2f3b65] opacity-100";
 
 function fullNameAr(user) {
@@ -106,14 +106,7 @@ const Navbar = () => {
       ];
     }
     if (isFreelancer) {
-      return [
-        ...base,
-        { label: "لوحة التحكم", to: "/dashboard/freelancer" },
-        { label: "الطلبات المتاحة", to: "/dashboard/freelancer/orders" },
-        { label: "طلباتي", to: "/dashboard/freelancer/my-orders" },
-        { label: "المطالبات المالية", to: "/dashboard/freelancer/financial-claims" },
-        { label: "الدورات", to: "/dashboard/freelancer/courses" },
-      ];
+      return [...base];
     }
     if (role === "client") {
       return [
@@ -145,7 +138,7 @@ const Navbar = () => {
       dir="rtl"
       className="sticky top-0 z-50 bg-transparent py-1.5 transition-[padding,background,box-shadow,border-color] duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)]"
     >
-      <div className="navbar-shell relative mx-auto flex min-h-[56px] w-full max-w-7xl flex-wrap items-center justify-between gap-3 rounded-full border border-[rgba(47,59,101,0.12)] bg-white/95 px-5 py-2 shadow-[0_10px_40px_rgba(47,59,101,0.09)] backdrop-blur-sm sm:min-h-[60px] sm:gap-4 sm:px-7 lg:min-h-[72px] lg:max-h-[92px] lg:gap-6 lg:px-10 lg:py-2.5">
+      <div className="navbar-shell mx-auto grid w-full max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1.5 rounded-full border border-[rgba(47,59,101,0.12)] bg-white/95 px-5 py-2 shadow-[0_10px_40px_rgba(47,59,101,0.09)] backdrop-blur-sm sm:min-h-[60px] sm:gap-x-8 sm:px-7 lg:min-h-[64px] lg:gap-x-12 lg:px-10 lg:py-2.5 xl:gap-x-14 xl:px-12">
         {showHomeNavSkeleton ? (
           <div className="relative z-[2] w-full min-w-0">
             <NavbarSkeleton />
@@ -154,7 +147,7 @@ const Navbar = () => {
           <>
         <NavLink
           to={logoTo}
-          className="relative z-[2] flex min-w-[110px] shrink-0 items-center justify-center no-underline sm:min-w-[132px]"
+          className="col-start-1 row-start-1 me-4 flex min-w-0 shrink-0 items-center justify-start no-underline sm:me-6 lg:me-9 xl:me-11"
           aria-label={isLoggedIn ? "العودة إلى لوحة التحكم" : "العودة إلى الصفحة الرئيسية"}
         >
           <img
@@ -166,12 +159,12 @@ const Navbar = () => {
 
         <nav
           aria-label="التنقل الرئيسي"
-          className="order-3 flex w-full basis-full justify-center overflow-x-auto pt-1 [-ms-overflow-style:none] [scrollbar-width:none] lg:absolute lg:inset-0 lg:z-[1] lg:flex lg:w-auto lg:basis-auto lg:items-center lg:justify-center lg:overflow-visible lg:pt-0 lg:[pointer-events:none] [&::-webkit-scrollbar]:hidden"
+          className="col-span-3 row-start-2 min-w-0 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] sm:col-span-1 sm:col-start-2 sm:row-start-1 [&::-webkit-scrollbar]:hidden"
         >
-          <ul className="m-0 flex w-max max-w-full list-none flex-nowrap items-center gap-x-[clamp(14px,2.2vw,40px)] gap-y-2.5 px-2 py-0 sm:gap-x-[clamp(16px,2.5vw,48px)] lg:[pointer-events:auto]">
+          <ul className="m-0 flex w-max min-w-full list-none flex-nowrap items-center justify-center gap-x-5 px-1 py-0.5 sm:gap-x-6 md:gap-x-8 lg:gap-x-10 xl:gap-x-12">
             {navItems.map((item) => (
               <li key={item.to} className="shrink-0">
-                <NavLink to={item.to} className={linkClass}>
+                <NavLink to={item.to} className={linkClass} title={item.label}>
                   {item.label}
                 </NavLink>
               </li>
@@ -179,7 +172,7 @@ const Navbar = () => {
           </ul>
         </nav>
 
-        <div className="relative z-[2] flex shrink-0 flex-wrap items-center justify-end gap-3.5 sm:gap-4">
+        <div className="col-start-3 row-start-1 flex min-w-0 shrink-0 items-center justify-end gap-4 sm:gap-5 lg:gap-6">
           {loading ? (
             <span className="min-h-11 min-w-[140px]" aria-hidden="true" />
           ) : user ? (
@@ -223,7 +216,7 @@ const Navbar = () => {
                       {userInitial}
                     </span>
                   )}
-                  <span className="max-w-[200px] truncate text-[0.95rem] font-extrabold text-[#243153] sm:max-w-[140px] sm:text-[1rem]">
+                  <span className="hidden max-w-[7.5rem] truncate text-[0.9rem] font-extrabold text-[#243153] xl:inline xl:max-w-[9rem] xl:text-[0.95rem]">
                     {userName}
                   </span>
                 </button>

@@ -47,7 +47,6 @@ export const DASHBOARD_TITLE = {
   "/dashboard/admin/notifications": "الإشعارات",
   "/dashboard/client/notifications": "الإشعارات",
   "/dashboard/freelancer/notifications": "الإشعارات",
-  "/dashboard/freelancer/profile": "الملف الشخصي",
   "/dashboard/freelancer/settings": "إعدادات الحساب",
   "/dashboard/client/profile": "الملف الشخصي",
   "/dashboard/client/settings": "إعدادات الحساب",
@@ -79,7 +78,6 @@ export function getNotificationsPath(role) {
 
 /** Profile page URL — freelancers and clients only. */
 export function getProfilePagePath(role) {
-  if (role === ROLE.FREELANCER) return "/dashboard/freelancer/profile";
   if (role === ROLE.CLIENT) return "/dashboard/client/profile";
   return null;
 }
@@ -133,7 +131,6 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/super-admin/training-orders/templates": [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/training-orders/rounds": [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/training-orders/applications": [ROLE.SUPER_ADMIN],
-  "/dashboard/freelancer/profile": [ROLE.FREELANCER],
   "/dashboard/freelancer/settings": [ROLE.FREELANCER],
   "/dashboard/client/profile": [ROLE.CLIENT],
   "/dashboard/client/settings": [ROLE.CLIENT],

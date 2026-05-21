@@ -41,8 +41,10 @@ async function submitCourseCompletion(req, res, next) {
     const data = await coursesService.submitCourseCompletion({
       freelancerUserId: req.auth.userId,
       courseId: req.params.id,
-      auditConfirmed: req.body?.auditConfirmed,
       auditNotes: req.body?.auditNotes,
+      auditResponseText: req.body?.auditResponseText,
+      auditResponseFileUrl: req.body?.auditResponseFileUrl,
+      auditResponseFile: req.file || null,
     });
     return res.status(200).json({ success: true, data });
   } catch (err) {

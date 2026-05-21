@@ -15,6 +15,7 @@ router.use(requireAuth, requireRole("freelancer"));
 
 router.get("/subscription", async (req, res, next) => {
   try {
+    await subscriptionsService.maybeEnsureFreelancerDefaultFreePlan(req.auth.userId);
     const subscription = await subscriptionsService.getCurrentSubscriptionForFreelancer(req.auth.userId);
     return res.status(200).json({ success: true, data: { subscription } });
   } catch (err) {
@@ -24,6 +25,7 @@ router.get("/subscription", async (req, res, next) => {
 
 router.get("/eligibility", async (req, res, next) => {
   try {
+    await subscriptionsService.maybeEnsureFreelancerDefaultFreePlan(req.auth.userId);
     const eligibility = await subscriptionsService.canFreelancerTakeOrders(req.auth.userId);
     return res.status(200).json({ success: true, data: eligibility });
   } catch (err) {

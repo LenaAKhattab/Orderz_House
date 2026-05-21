@@ -112,6 +112,41 @@ function uploadAdPromoImageBuffer({ buffer, mimetype, originalname, userId, purp
   });
 }
 
+function uploadCourseDocumentBuffer({ buffer, mimetype, originalname, courseId, purpose = "test" }) {
+  const cloudinary = getCloudinary();
+  const ext = path.extname(String(originalname || ""));
+  const base = toSafeBase(path.basename(String(originalname || "file"), ext));
+  const folder = `orderz/courses/${String(courseId)}/${String(purpose || "test")}`;
+  const publicId = `${folder}/${Date.now()}-${base}`.replace(/\s+/g, "_");
+
+  return new Promise((resolve, reject) => {
+    const upload = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "auto",
+        folder,
+        public_id: publicId,
+        overwrite: false,
+        use_filename: false,
+      },
+      (err, result) => {
+        if (err || !result) return reject(err || new Error("Cloudinary upload failed."));
+        resolve({
+          publicId: result.public_id,
+          secureUrl: result.secure_url,
+          url: result.url || result.secure_url,
+          bytes: Number(result.bytes || 0),
+          format: result.format || null,
+          resourceType: result.resource_type || null,
+          mimetype,
+          originalname,
+        });
+      },
+    );
+    upload.on("error", reject);
+    upload.end(buffer);
+  });
+}
+
 async function destroyByPublicId(publicId) {
   if (!publicId) return;
   const cloudinary = getCloudinary();
@@ -126,5 +161,6 @@ module.exports = {
   uploadBuffer,
   uploadAvatarBuffer,
   uploadAdPromoImageBuffer,
+  uploadCourseDocumentBuffer,
   destroyByPublicId,
 };

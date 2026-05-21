@@ -1,9 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { NavLink } from "react-router-dom";
-import DashboardHomeAside from "../../components/dashboard/DashboardHomeAside";
 import { useClientCreateOrderModal } from "../../context/ClientCreateOrderModalContext";
+import { useToast } from "../../components/ui/toastContext";
+import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
+import DashboardWelcomeHero from "../../components/dashboard/hub/DashboardWelcomeHero";
+import DashboardWelcomeSkeleton from "../../components/dashboard/hub/DashboardWelcomeSkeleton";
+import DashboardActionBanner from "../../components/dashboard/hub/DashboardActionBanner";
+import DashboardInsightsSection from "../../components/dashboard/hub/DashboardInsightsSection";
+import {
+  IconBriefcase,
+  IconStar,
+  IconWallet,
+} from "../../components/dashboard/hub/icons/DashboardIcons";
 import { listClientMyOrdersRequest, listMyNotificationsRequest } from "../../services/api";
-import { orderStatusLabelAr } from "../../utils/orderFlowUi";
+import "../../styles/dashboardHub.css";
 
 function fullNameAr(user) {
   const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
@@ -12,21 +21,8 @@ function fullNameAr(user) {
 
 function formatMoney(value) {
   const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
+  if (!Number.isFinite(n)) return "0";
   return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
-}
-
-function formatJoDateTime(value) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
-}
-
-function typeLabelAr(projectType) {
-  if (projectType === "fixed") return "سعر ثابت";
-  if (projectType === "bidding") return "مزايدة";
-  return "—";
 }
 
 function normalizeClientOrders(res) {
@@ -55,37 +51,116 @@ function sortByRecent(orders) {
   });
 }
 
-function Section({ title, actionLabel, actionTo, children }) {
-  const hasHead = Boolean(title || (actionLabel && actionTo));
-  return (
-    <section className="dash-section">
-      {hasHead ? (
-        <div className="dash-section__head">
-          {title ? <h2 className="dash-section__title">{title}</h2> : <span />}
-          {actionLabel && actionTo ? (
-            <NavLink to={actionTo} className="dash-section__link">
-              {actionLabel}
-            </NavLink>
-          ) : null}
-        </div>
-      ) : null}
-      <div className="dash-section__body">{children}</div>
-    </section>
-  );
+function buildClientMetrics({ orders, financial, attentionCount, unreadNotifications }) {
+  return [
+    {
+      id: "orders",
+      label: "إجمالي الطلبات",
+      value: String(orders.length),
+      sublabel: "طلباتك المنشورة",
+      icon: IconBriefcase,
+      tone: "blue",
+    },
+    {
+      id: "attention",
+      label: "تحتاج انتباهك",
+      value: String(attentionCount),
+      sublabel: "إجراء مطلوب",
+      icon: IconStar,
+      tone: "amber",
+    },
+    {
+      id: "paid",
+      label: "إجمالي المدفوع",
+      value: `${formatMoney(financial.totalPaid)} د.أ`,
+      sublabel: "من طلباتك المدفوعة",
+      icon: IconWallet,
+      tone: "green",
+    },
+    {
+      id: "notifications",
+      label: "إشعارات غير مقروءة",
+      value: String(unreadNotifications),
+      sublabel: "آخر التحديثات",
+      icon: IconStar,
+      tone: "purple",
+    },
+  ];
 }
 
-function notificationPreviewLine(n) {
-  const title = String(n?.title || "").trim();
-  const body = String(n?.body || n?.message || "").trim();
-  return title || body || "إشعار";
+function buildPendingActions(attentionOrders) {
+  return attentionOrders.slice(0, 3).map((o) => {
+    const meta = attentionMeta(o);
+    return {
+      title: o.title || "طلب يحتاج انتباهك",
+      description: meta?.action || "راجع الطلب واتخذ الإجراء المناسب.",
+      to: "/dashboard/client/my-orders",
+      cta: "متابعة",
+    };
+  });
+}
+
+function buildClientInsights({ attentionOrders, financial, orders, unreadNotifications }) {
+  const items = [];
+  if (attentionOrders.length > 0) {
+    const first = attentionOrders[0];
+    const meta = attentionMeta(first);
+    items.push({
+      id: "attention-orders",
+      type: "orders",
+      titleAr: `${attentionOrders.length} طلب${attentionOrders.length === 1 ? "" : "ات"} تحتاج انتباهك`,
+      descriptionAr: meta?.action || "راجع الطلبات واتخذ الإجراء المناسب.",
+      helperText: first?.title ? `مثال: ${first.title}` : "من طلباتك فقط",
+      actionLabel: "طلباتي",
+      actionUrl: "/dashboard/client/my-orders",
+    });
+  }
+  if (financial.pendingPayment > 0) {
+    items.push({
+      id: "pending-pay",
+      type: "performance",
+      titleAr: `${financial.pendingPayment} طلب بانتظار الدفع`,
+      descriptionAr: "أكمل الدفع لتفعيل الطلب أو متابعة التنفيذ.",
+      helperText: "المدفوعات من حسابك فقط",
+      actionLabel: "المالية",
+      actionUrl: "/dashboard/client/financial",
+    });
+  }
+  if (orders.length === 0) {
+    items.push({
+      id: "first-order",
+      type: "orders",
+      titleAr: "ابدأ أول طلب لك",
+      descriptionAr: "انشر طلبك في المعرض واستقبل عروض المستقلين.",
+      helperText: "إنشاء طلب جديد",
+      actionLabel: "إنشاء طلب",
+      actionUrl: "/dashboard/client/my-orders",
+    });
+  }
+  if (unreadNotifications > 0) {
+    items.push({
+      id: "unread-notif",
+      type: "messages",
+      titleAr: `${unreadNotifications} إشعار غير مقروء`,
+      descriptionAr: "تابع آخر التحديثات على طلباتك.",
+      helperText: "رسائلي",
+      actionLabel: "الإشعارات",
+      actionUrl: "/dashboard/client/notifications",
+    });
+  }
+  return items.slice(0, 3);
 }
 
 export default function ClientDashboardHome({ user }) {
   const { openModal: openCreateOrder } = useClientCreateOrderModal();
-  const name = fullNameAr(user) || user?.email || "مرحباً بك";
+  const { push } = useToast();
+  const welcomeName = useMemo(() => {
+    const n = fullNameAr(user);
+    return n ? n.split(/\s+/)[0] : null;
+  }, [user]);
 
   const [orders, setOrders] = useState([]);
-  const [notifications, setNotifications] = useState([]);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -93,11 +168,13 @@ export default function ClientDashboardHome({ user }) {
     setError("");
     const [ordersRes, notifRes] = await Promise.all([
       listClientMyOrdersRequest({ limit: 200, offset: 0 }),
-      listMyNotificationsRequest({ limit: 8, offset: 0 }),
+      listMyNotificationsRequest({ limit: 50, offset: 0, isRead: false }),
     ]);
     setOrders(normalizeClientOrders(ordersRes));
     const raw = notifRes?.data?.notifications ?? notifRes?.notifications;
-    setNotifications(Array.isArray(raw) ? raw.slice(0, 3) : []);
+    const list = Array.isArray(raw) ? raw : [];
+    const total = Number(notifRes?.data?.pagination?.total ?? notifRes?.pagination?.total);
+    setUnreadNotifications(Number.isFinite(total) ? total : list.length);
   }, []);
 
   useEffect(() => {
@@ -107,7 +184,11 @@ export default function ClientDashboardHome({ user }) {
       try {
         await load();
       } catch (e) {
-        if (!cancelled) setError(e?.response?.data?.message || e?.message || "تعذر تحميل البيانات.");
+        if (!cancelled) {
+          const msg = e?.response?.data?.message || e?.message || "تعذر تحميل البيانات.";
+          setError(msg);
+          push({ type: "error", title: "تعذر تحميل لوحة التحكم", message: msg });
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -115,30 +196,12 @@ export default function ClientDashboardHome({ user }) {
     return () => {
       cancelled = true;
     };
-  }, [load]);
+  }, [load, push]);
 
-  const attentionOrders = useMemo(() => {
-    return sortByRecent(orders.filter((o) => attentionMeta(o))).slice(0, 8);
-  }, [orders]);
-
-  const recentOrders = useMemo(() => sortByRecent(orders).slice(0, 5), [orders]);
-
-  const completedCount = useMemo(
-    () => orders.filter((o) => String(o?.orderStatus) === "completed").length,
+  const attentionOrders = useMemo(
+    () => sortByRecent(orders.filter((o) => attentionMeta(o))),
     [orders],
   );
-
-  const profilePct = useMemo(() => {
-    if (orders.length === 0) return 14;
-    return Math.round((completedCount / orders.length) * 100);
-  }, [orders.length, completedCount]);
-
-  const userInitials = useMemo(() => {
-    const n = fullNameAr(user) || user?.email || "?";
-    const parts = n.trim().split(/\s+/).filter(Boolean);
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    return n.slice(0, 2).toUpperCase();
-  }, [user]);
 
   const financial = useMemo(() => {
     let totalPaid = 0;
@@ -161,181 +224,83 @@ export default function ClientDashboardHome({ user }) {
     return { totalPaid, pendingPayment, unpaid };
   }, [orders]);
 
+  const metrics = useMemo(
+    () =>
+      buildClientMetrics({
+        orders,
+        financial,
+        attentionCount: attentionOrders.length,
+        unreadNotifications,
+      }),
+    [orders, financial, attentionOrders.length, unreadNotifications],
+  );
+
+  const pendingActions = useMemo(() => buildPendingActions(attentionOrders), [attentionOrders]);
+  const insights = useMemo(
+    () => buildClientInsights({ attentionOrders, financial, orders, unreadNotifications }),
+    [attentionOrders, financial, orders, unreadNotifications],
+  );
+
+  const welcomeTitle = welcomeName ? `مرحباً، ${welcomeName}` : "مرحباً بك في لوحة العميل";
+
   if (loading) {
     return (
-      <div className="dash" dir="rtl">
-        <header className="dash-hero dash-hero--compact">
-          <p className="dash-hero__kicker">لوحة العميل</p>
-          <h1 className="dash-hero__title oh-orders-sidebar-title">جارٍ التحميل…</h1>
-        </header>
-        <div className="card" style={{ marginTop: 12 }}>
-          <p className="help" style={{ margin: 0 }}>
-            يتم جلب طلباتك وإشعاراتك…
-          </p>
-        </div>
-      </div>
+      <DashboardHubPage>
+        <DashboardWelcomeSkeleton />
+        <div className="fdash-skel" style={{ height: 56, borderRadius: 18 }} />
+      </DashboardHubPage>
     );
   }
 
-  if (error) {
+  if (error && orders.length === 0) {
     return (
-      <div className="dash" dir="rtl">
-        <header className="dash-hero dash-hero--compact">
-          <p className="dash-hero__kicker">لوحة العميل</p>
-          <h1 className="dash-hero__title oh-orders-sidebar-title">تعذر التحميل</h1>
-        </header>
-        <div className="card" style={{ display: "grid", gap: 12 }}>
+      <DashboardHubPage>
+        <div className="fdash-alert">
           <p style={{ margin: 0 }}>{error}</p>
-          <button type="button" className="btn btn-secondary" onClick={() => void load()}>
+          <button type="button" className="fdash-toolbar__btn" onClick={() => void load()}>
             إعادة المحاولة
           </button>
         </div>
-      </div>
+      </DashboardHubPage>
     );
   }
 
   return (
-    <div className="dash" dir="rtl">
-      <header className="dash-hero dash-hero--elevated">
-        <div className="dash-hero__copy">
-          <p className="dash-hero__kicker">لوحة العميل</p>
-          <h1 className="dash-hero__title oh-orders-sidebar-title">مرحباً، {name}</h1>
-          <p className="dash-hero__subtitle">تابع طلباتك ومدفوعاتك وتسليماتك من مكان واحد.</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 14, alignItems: "center" }}>
-            <button type="button" className="btn btn-primary" onClick={() => openCreateOrder()}>
-              إنشاء طلب جديد
-            </button>
-            <NavLink to="/dashboard/client/orders/create" className="dash-section__link" style={{ fontSize: "0.95rem" }}>
-              أو افتح صفحة إنشاء الطلب
-            </NavLink>
-          </div>
-        </div>
-      </header>
-
-      {orders.length === 0 ? (
-        <div className="dash-empty" style={{ marginTop: 8 }}>
-          <div className="dash-empty__icon" aria-hidden="true">
-            ◌
-          </div>
-          <div className="dash-empty__copy">
-            <h3 className="dash-empty__title">لم تنشئ أي طلب بعد</h3>
-            <p className="dash-empty__subtitle">ابدأ بطلبك الأول وتابع حالته من هذه اللوحة.</p>
-          </div>
-          <button type="button" className="btn btn-primary dash-empty__action" onClick={() => openCreateOrder()}>
-            أنشئ أول طلب
-          </button>
-        </div>
-      ) : null}
-
-      <div className="dash-layout">
-        <div className="dash-layout__main">
-          <div className="dash-grid">
-        <Section title="طلبات تحتاج انتباهك" actionLabel="كل الطلبات" actionTo="/dashboard/client/my-orders">
-          {attentionOrders.length === 0 ? (
-            <p className="help" style={{ margin: 0 }}>
-              لا توجد طلبات تتطلب إجراءً منك حالياً.
-            </p>
-          ) : (
-            <ul className="dash-home-list">
-              {attentionOrders.map((o) => {
-                const meta = attentionMeta(o);
-                return (
-                  <li key={o.id} className="dash-home-list__item card">
-                    <div className="dash-home-list__row">
-                      <div>
-                        <div style={{ fontWeight: 800 }}>{o.title || "—"}</div>
-                        <div className="help" style={{ marginTop: 4 }}>
-                          {orderStatusLabelAr(o.orderStatus)} · {formatJoDateTime(o.updatedAt || o.createdAt)}
-                        </div>
-                        {meta ? <div style={{ marginTop: 8, color: "var(--text-main)" }}>{meta.action}</div> : null}
-                      </div>
-                      <NavLink to="/dashboard/client/my-orders" className="btn btn-secondary" style={{ alignSelf: "center" }}>
-                        عرض التفاصيل
-                      </NavLink>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Section>
-
-        <Section title="آخر طلباتي" actionLabel="عرض الكل" actionTo="/dashboard/client/my-orders">
-          {recentOrders.length === 0 ? (
-            <p className="help" style={{ margin: 0 }}>لا توجد طلبات.</p>
-          ) : (
-            <ul className="dash-home-list">
-              {recentOrders.map((o) => (
-                <li key={o.id} className="dash-home-list__item card">
-                  <div className="dash-home-list__row">
-                    <div>
-                      <div style={{ fontWeight: 800 }}>{o.title || "—"}</div>
-                      <div className="help" style={{ marginTop: 4 }}>
-                        {orderStatusLabelAr(o.orderStatus)} · {typeLabelAr(o.projectType)} · آخر تحديث:{" "}
-                        {formatJoDateTime(o.updatedAt || o.createdAt)}
-                      </div>
-                      <div className="help" style={{ marginTop: 4 }} dir="ltr">
-                        {o.budget != null ? `${formatMoney(o.budget)} JOD` : "—"} · الدفع: {String(o.paymentStatus || "—")}
-                      </div>
-                    </div>
-                    <NavLink to="/dashboard/client/my-orders" className="btn btn-secondary" style={{ alignSelf: "center" }}>
-                      عرض
-                    </NavLink>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
-
-        <Section title="المالية المختصرة" actionLabel="الذهاب إلى المالية" actionTo="/dashboard/client/financial">
-          <div className="card" style={{ display: "grid", gap: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <span className="help">إجمالي المدفوع (طلبات بميزانية ثابتة ومدفوعة)</span>
-              <strong dir="ltr">{formatMoney(financial.totalPaid)} JOD</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <span className="help">طلبات بانتظار دفع (عدد)</span>
-              <strong>{financial.pendingPayment}</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <span className="help">طلبات تحتاج دفع (حقل غير مدفوع)</span>
-              <strong>{financial.unpaid}</strong>
-            </div>
-            <p className="help" style={{ margin: 0 }}>
-              الأرقام مأخوذة من طلباتك فقط؛ للتفصيل الكامل راجع صفحة المالية.
-            </p>
-          </div>
-        </Section>
-
-        <Section title="إشعارات مهمة" actionLabel="عرض كل الإشعارات" actionTo="/dashboard/client/notifications">
-          {notifications.length === 0 ? (
-            <p className="help" style={{ margin: 0 }}>لا توجد إشعارات حديثة.</p>
-          ) : (
-            <ul className="dash-home-list">
-              {notifications.map((n) => (
-                <li key={n.id} className="dash-home-list__item card">
-                  <div style={{ fontWeight: 700 }}>{notificationPreviewLine(n)}</div>
-                  <div className="help" style={{ marginTop: 4 }}>{formatJoDateTime(n.createdAt)}</div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
-          </div>
-        </div>
-
-        <DashboardHomeAside
-          variant="client"
-          userInitials={userInitials}
-          profilePct={profilePct}
-          client={{
-            orderTotal: orders.length,
-            pendingPayment: financial.pendingPayment,
-            totalPaidFormatted: `${formatMoney(financial.totalPaid)} JOD`,
-          }}
-        />
+    <DashboardHubPage>
+      <DashboardWelcomeHero
+        title={welcomeTitle}
+        subtitle="تابع طلباتك ومدفوعاتك وتسليماتك من مكان واحد — بيانات حقيقية من حسابك فقط."
+        metrics={metrics}
+        primaryCta={{ to: "/dashboard/client/my-orders", label: "طلباتي" }}
+        secondaryCta={{
+          to: "/dashboard/freelancer/orders",
+          label: "استكشاف المعرض",
+        }}
+        tip={
+          orders.length === 0
+            ? {
+                headline: "ابدأ بنشر طلبك الأول",
+                description: "أنشئ طلباً جديداً ليظهر في المعرض ويصلك عروض المستقلين.",
+                actionUrl: "/dashboard/client/my-orders",
+                actionLabel: "إنشاء طلب",
+              }
+            : pendingActions[0]
+              ? {
+                  headline: pendingActions[0].title,
+                  description: pendingActions[0].description,
+                  actionUrl: pendingActions[0].to,
+                  actionLabel: pendingActions[0].cta,
+                }
+              : null
+        }
+      />
+      <div className="fdash-client-home-actions">
+        <button type="button" className="fdash-banner__cta" onClick={() => openCreateOrder()}>
+          + إنشاء طلب جديد
+        </button>
       </div>
-    </div>
+      <DashboardActionBanner actions={pendingActions} />
+      {insights.length > 0 ? <DashboardInsightsSection insights={insights} loading={false} /> : null}
+    </DashboardHubPage>
   );
 }

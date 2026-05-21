@@ -1,7 +1,9 @@
+import OrderDetailsNeuIcon from "./OrderDetailsNeuIcon";
+
 /**
  * Compact summary (Stripe-style): optional primary block + label / value rows.
- * @param {{ label: string, value: string, dir?: string }[]} props.rows
- * @param {{ label: string, value: string, dir?: string }} [props.primaryBlock] — e.g. نوع المشروع / السعر
+ * @param {{ label: string, value: string, dir?: string, icon?: string }[]} props.rows
+ * @param {{ label: string, value: string, dir?: string, icon?: string }} [props.primaryBlock]
  * @param {string} [props.title]
  */
 export default function OrderSummaryCard({ title = "ملخص الطلب", primaryBlock, rows = [] }) {
@@ -11,13 +13,18 @@ export default function OrderSummaryCard({ title = "ملخص الطلب", primar
         <h2 className="od-summary__title">{title}</h2>
         {primaryBlock ? (
           <div className="od-summary__primary">
-            <div className="od-summary__label">{primaryBlock.label}</div>
-            <div
-              className="od-summary__primary-value"
-              dir={primaryBlock.dir || "rtl"}
-              style={primaryBlock.dir ? { unicodeBidi: "plaintext" } : undefined}
-            >
-              {primaryBlock.value || "—"}
+            <div className="od-summary__row-line">
+              {primaryBlock.icon ? <OrderDetailsNeuIcon name={primaryBlock.icon} /> : null}
+              <div className="od-summary__row-copy">
+                <div className="od-summary__label">{primaryBlock.label}</div>
+                <div
+                  className="od-summary__primary-value"
+                  dir={primaryBlock.dir || "rtl"}
+                  style={primaryBlock.dir ? { unicodeBidi: "plaintext" } : undefined}
+                >
+                  {primaryBlock.value || "—"}
+                </div>
+              </div>
             </div>
           </div>
         ) : null}
@@ -25,14 +32,19 @@ export default function OrderSummaryCard({ title = "ملخص الطلب", primar
           <dl className="od-summary__list">
             {rows.map((r) => (
               <div key={r.label} className="od-summary__row">
-                <dt className="od-summary__label">{r.label}</dt>
-                <dd
-                  className="od-summary__value"
-                  dir={r.dir || "rtl"}
-                  style={r.dir ? { unicodeBidi: "plaintext" } : undefined}
-                >
-                  {r.value || "—"}
-                </dd>
+                <div className="od-summary__row-line">
+                  {r.icon ? <OrderDetailsNeuIcon name={r.icon} /> : null}
+                  <div className="od-summary__row-copy">
+                    <dt className="od-summary__label">{r.label}</dt>
+                    <dd
+                      className="od-summary__value"
+                      dir={r.dir || "rtl"}
+                      style={r.dir ? { unicodeBidi: "plaintext" } : undefined}
+                    >
+                      {r.value || "—"}
+                    </dd>
+                  </div>
+                </div>
               </div>
             ))}
           </dl>

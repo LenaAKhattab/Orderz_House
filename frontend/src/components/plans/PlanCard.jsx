@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import Button from "../ui/Button";
 import { useAuth } from "../../context/useAuth";
+import { isOrderzhouseFreePlan } from "../../constants/orderzhousePlansCatalog";
 import {
   formatInstallmentSummary,
   formatOrderValueRange,
@@ -13,6 +14,7 @@ import {
 const PlanCard = ({
   plan,
   featured = false,
+  currentSubscription = null,
   onCta,
   hasBlockingSubscription = false,
   checkoutBusy = false,
@@ -25,6 +27,9 @@ const PlanCard = ({
   const isFreelancer = role === "freelancer" || roles.includes("freelancer");
   const isLoggedNonFreelancer = Boolean(user) && !isFreelancer;
   const isBlockedBySubscription = Boolean(user) && isFreelancer && hasBlockingSubscription;
+  const isCurrentPlan =
+    Boolean(currentSubscription) && String(currentSubscription.planId) === String(plan.id);
+  const isFreePlan = isOrderzhouseFreePlan(plan);
   const canSelfCheckout =
     plan?.selfCheckoutEligible == null ? true : Boolean(plan.selfCheckoutEligible);
 
@@ -46,22 +51,31 @@ const PlanCard = ({
 
   const ctaLabel = isLoggedNonFreelancer
     ? "للمستقلين فقط"
-    : isBlockedBySubscription
-      ? "مشترك بالفعل"
-      : checkoutBusy
-        ? "جارٍ التحويل…"
-        : isFreelancer && !canSelfCheckout
-          ? "يتم التفعيل عبر الشركة"
-          : "ابدأ الآن";
+    : isCurrentPlan
+      ? "باقتك الحالية"
+      : isBlockedBySubscription
+        ? "مشترك بالفعل"
+        : checkoutBusy
+          ? "جارٍ التحويل…"
+          : isFreelancer && canSelfCheckout
+            ? "ترقية الاشتراك"
+            : isFreelancer && isFreePlan
+              ? "مفعّل تلقائياً"
+              : isFreelancer && !canSelfCheckout
+                ? "يتم التفعيل عبر الشركة"
+                : "ابدأ الآن";
   const usePrimaryCta =
     featured &&
     (isGuest || (isFreelancer && canSelfCheckout)) &&
-    !isBlockedBySubscription;
+    !isBlockedBySubscription &&
+    !isCurrentPlan;
   const isLocked =
     isLoggedNonFreelancer ||
+    isCurrentPlan ||
     isBlockedBySubscription ||
     checkoutBusy ||
-    (isFreelancer && !canSelfCheckout);
+    (isFreelancer && isFreePlan) ||
+    (isFreelancer && !canSelfCheckout && !isCurrentPlan);
 
   return (
     <article className={`pricing-card ${featured ? "pricing-card--featured" : ""}`.trim()}>

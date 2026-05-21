@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useToast } from "../../components/ui/toastContext";
 import { useAuth } from "../../context/useAuth";
 import BidAmountModal from "../../components/orders/BidAmountModal";
@@ -15,13 +15,17 @@ import { arabicDurationUnit } from "../../utils/arTime";
 import { OrderDetailsPageSkeleton } from "../../components/ui/Skeleton";
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
 import "../../components/orders/order-details/order-details-page.css";
+import "../../styles/freelancerOrderDetails.css";
 import OrderSummaryCard from "../../components/orders/order-details/OrderSummaryCard";
 import OrderTitleCard from "../../components/orders/order-details/OrderTitleCard";
 import OrderDescriptionCard from "../../components/orders/order-details/OrderDescriptionCard";
 import OrderFilesCard from "../../components/orders/order-details/OrderFilesCard";
 import { formatMoneyJod, formatMoneyJodRange } from "../../components/orders/order-details/orderDetailsUtils";
-import { orderHasAssignment } from "../../utils/orderPrivacyUi";
 import { trackEvent } from "../../services/analytics";
+import { isPoolOrderLockedByPlan } from "../../utils/poolOrderPlanEligibility";
+import { isPoolOrderAvailable, poolFixedParticipationPending } from "../../utils/poolOrderParticipation";
+import { isPoolOrderTakenAsAssignment } from "../../utils/poolOrderTakeOutcome";
+import { Lock } from "lucide-react";
 
 function typeLabel(projectType) {
   if (projectType === "fixed") return "سعر ثابت";
@@ -37,7 +41,6 @@ function durationLabel(order) {
 export default function FreelancerOrderDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { push } = useToast();
   const { user, loading } = useAuth();
@@ -54,7 +57,9 @@ export default function FreelancerOrderDetailsPage() {
   const [eligibility, setEligibility] = useState(null);
   const [subscription, setSubscription] = useState(null);
 
+  const planLocked = useMemo(() => isPoolOrderLockedByPlan(order), [order]);
   const canTake = useMemo(() => isFreelancer && Boolean(eligibility?.eligible), [isFreelancer, eligibility]);
+  const canActOnOrder = canTake && !planLocked;
   const ineligibleMessage = useMemo(() => {
     if (!isFreelancer || eligibility?.eligible !== false) return "";
     return getFreelancerOrderEligibilityMessage(eligibility, subscription);
@@ -63,40 +68,26 @@ export default function FreelancerOrderDetailsPage() {
     () => order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null,
     [order],
   );
-  const fakeClaimOrBidPending = useMemo(
-    () =>
-      order?.orderSource === "fake" &&
-      !isPricedBidding &&
-      (order?.myBid?.status === "pending" || order?.myBid?.status === "accepted"),
+  const participationPending = useMemo(
+    () => !isPricedBidding && poolFixedParticipationPending(order),
     [order, isPricedBidding],
   );
-  const isPoolAvailable = useMemo(() => {
-    if (!order) return false;
-    if (order.orderSource === "fake") {
-      return Boolean(
-        order?.isPublished &&
-          order?.isOpenForPool &&
-          !orderHasAssignment(order) &&
-          ["published", "open_for_freelancers", "open_for_bids"].includes(String(order?.orderStatus || "")),
-      );
-    }
-    const sourceOk = ["admin_created", "super_admin_created", "client_created"].includes(order?.sourceType);
-    const isFixedAvailable = order?.projectType === "fixed" && ["published", "open_for_freelancers"].includes(String(order?.orderStatus || ""));
-    const isBiddingAvailable = order?.projectType === "bidding" && String(order?.orderStatus || "") === "open_for_bids";
-    return Boolean(
-      sourceOk && order?.isPublished && order?.isOpenForPool && !orderHasAssignment(order) && (isFixedAvailable || isBiddingAvailable),
-    );
-  }, [order]);
+  const isPoolAvailable = useMemo(() => isPoolOrderAvailable(order), [order]);
 
-  const orderSourceForApi =
-    searchParams.get("source") === "fake" || location.state?.orderSource === "fake" ? "fake" : null;
+  useEffect(() => {
+    if (searchParams.has("source")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("source");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setBusy(true);
       try {
-        const resPool = await getPoolOrderByIdRequest(id, { orderSource: orderSourceForApi });
+        const resPool = await getPoolOrderByIdRequest(id);
         if (!cancelled) setOrder(resPool?.data?.order || null);
       } catch (e) {
         if (!cancelled) {
@@ -111,13 +102,7 @@ export default function FreelancerOrderDetailsPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, push, navigate, orderSourceForApi]);
-
-  useEffect(() => {
-    if (order?.orderSource === "fake" && searchParams.get("source") !== "fake") {
-      setSearchParams({ source: "fake" }, { replace: true });
-    }
-  }, [order?.orderSource, searchParams, setSearchParams]);
+  }, [id, push, navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -159,37 +144,46 @@ export default function FreelancerOrderDetailsPage() {
   const take = async () => {
     setTaking(true);
     try {
-      await takePoolOrderRequest(id, { orderSource: order?.orderSource === "fake" ? "fake" : undefined });
+      const res = await takePoolOrderRequest(id);
+      const updated = res?.data?.order;
       trackEvent("fixed_order_taken", {
         order_id: String(id),
-        source: String(order?.orderSource || "real"),
       });
+      if (isPoolOrderTakenAsAssignment(updated)) {
+        push({
+          type: "success",
+          title: "تم استلام الطلب",
+          message: "تم إسناد الطلب لك مباشرة ويمكنك البدء بالعمل الآن.",
+        });
+        navigate("/dashboard/freelancer/my-orders");
+        return;
+      }
       push({
         type: "success",
-        title: "تم استلام الطلب",
-        message: "تم إسناد الطلب لك مباشرة ويمكنك البدء بالعمل الآن.",
+        title: "تم إرسال طلبك",
+        message: "تم تسجيل طلبك بنجاح.",
       });
-      navigate("/dashboard/freelancer/my-orders");
+      const resPool = await getPoolOrderByIdRequest(id);
+      setOrder(resPool?.data?.order || null);
     } catch (e) {
       push({ type: "error", title: "تعذر استلام الطلب", message: e?.response?.data?.message || e?.message });
-      navigate(backTo, { replace: true });
     } finally {
       setTaking(false);
+      setTakeConfirmOpen(false);
     }
   };
 
   const submitBid = async (amount) => {
     setBidBusy(true);
     try {
-      await submitPoolOrderBidRequest(id, { amount }, { orderSource: order?.orderSource === "fake" ? "fake" : undefined });
+      await submitPoolOrderBidRequest(id, { amount });
       trackEvent("bid_submitted", {
         order_id: String(id),
         amount: Number(amount),
-        source: String(order?.orderSource || "real"),
       });
-      push({ type: "success", title: "تم إرسال العرض", message: "سيتمكن العميل لاحقاً من مراجعة العروض." });
+      push({ type: "success", title: "تم إرسال عرضك", message: "تم إرسال عرضك بنجاح" });
       setBidOpen(false);
-      const resPool = await getPoolOrderByIdRequest(id, { orderSource: order?.orderSource === "fake" ? "fake" : orderSourceForApi });
+      const resPool = await getPoolOrderByIdRequest(id);
       setOrder(resPool?.data?.order || null);
     } catch (e) {
       push({ type: "error", title: "تعذر إرسال العرض", message: e?.response?.data?.message || e?.message });
@@ -221,15 +215,16 @@ export default function FreelancerOrderDetailsPage() {
   const summaryRows = useMemo(() => {
     if (!order) return [];
     const rows = [
-      { label: "مدة التسليم", value: durationLabel(order) },
-      { label: "التصنيف", value: categoryText },
+      { label: "مدة التسليم", value: durationLabel(order), icon: "clock" },
+      { label: "التصنيف", value: categoryText, icon: "category" },
     ];
     if (Array.isArray(order?.extraCategories) && order.extraCategories.length) {
-      rows.push({
+        rows.push({
         label: "تصنيفات إضافية",
         value: order.extraCategories
           .map((x) => `${x?.category?.name || "—"}${x?.subSubcategory?.name ? ` • ${x.subSubcategory.name}` : ""}`)
           .join(" | "),
+        icon: "category",
       });
     }
     return rows;
@@ -247,28 +242,48 @@ export default function FreelancerOrderDetailsPage() {
         <button
           type="button"
           className="btn btn-primary"
-          disabled={!canTake || bidBusy || order?.myBid?.status === "pending"}
-          title={order?.myBid?.status === "pending" ? "لقد قدمت عرضاً لهذا الطلب." : ""}
+          disabled={!canActOnOrder || bidBusy || order?.myBid?.status === "pending"}
+          title={order?.myBid?.status === "pending" ? "لقد قدمت عرضاً لهذا الطلب." : planLocked ? "غير متاح لباقتك" : ""}
           onClick={() => setBidOpen(true)}
         >
-          {bidBusy ? "جارٍ الإرسال…" : order?.myBid?.status === "pending" ? "عرضك مُرسل" : "تقديم عرض سعر"}
+          {planLocked ? (
+            <>
+              <Lock size={18} strokeWidth={2.2} aria-hidden />
+              غير متاح لباقتك
+            </>
+          ) : bidBusy
+              ? "جارٍ الإرسال…"
+              : order?.myBid?.status === "pending"
+                ? "عرضك مُرسل"
+                : "تقديم عرض سعر"}
         </button>
       ) : null}
       {isPoolAvailable && isFreelancer && !isPricedBidding ? (
         <button
           type="button"
           className="btn btn-primary od-take-order-btn"
-          disabled={!canTake || taking || fakeClaimOrBidPending}
+          disabled={!canActOnOrder || taking || participationPending}
           title={
-            fakeClaimOrBidPending
-              ? "سبق أن سجّلت مشاركتك في هذا الطلب التجريبي."
-              : !canTake
-                ? ineligibleMessage
-                : ""
+            planLocked
+              ? "غير متاح لباقتك"
+              : participationPending
+                ? "سبق أن سجّلت مشاركتك في هذا الطلب."
+                : !canTake
+                  ? ineligibleMessage
+                  : ""
           }
           onClick={() => setTakeConfirmOpen(true)}
         >
-          {taking ? "جارٍ الاستلام…" : fakeClaimOrBidPending ? "تم التسجيل" : "استلام الطلب"}
+          {planLocked ? (
+            <>
+              <Lock size={18} strokeWidth={2.2} aria-hidden />
+              غير متاح لباقتك
+            </>
+          ) : taking
+              ? "جارٍ الاستلام…"
+              : participationPending
+                ? "تم التسجيل"
+                : "استلام الطلب"}
         </button>
       ) : null}
     </>
@@ -277,17 +292,15 @@ export default function FreelancerOrderDetailsPage() {
   const renderFooter = isFreelancer && isPoolAvailable;
 
   return (
-    <main className="container page-content dash-shell od-page od-page--pool" dir="rtl">
-      <div className="od-pool-toolbar od-pool-toolbar--bare">
-        <Link className="btn btn-secondary" to={backTo}>
+    <main className="container page-content dash-shell od-page od-page--pool oh-order-details--dashboard" dir="rtl">
+      <div className="od-pool-toolbar od-pool-toolbar--bare oh-order-details__toolbar">
+        <Link className="btn btn-secondary oh-order-details__back" to={backTo}>
           العودة للقائمة
         </Link>
       </div>
 
-      {!busy && order?.trainingLabel ? <p className="od-pool-hint">{order.trainingLabel}</p> : null}
-
       {isFreelancer && eligibility?.eligible === false ? (
-        <div className="od-notice" role="status">
+        <div className="od-notice oh-order-details__notice" role="status">
           <p>{ineligibleMessage}</p>
         </div>
       ) : null}
@@ -296,61 +309,57 @@ export default function FreelancerOrderDetailsPage() {
         <OrderDetailsPageSkeleton />
       ) : order ? (
         <>
-          <div className="od-pool-shell">
-            <div className="od-pool-title">
-              <div className="od-title-desc-group">
-                <OrderTitleCard title={order.title} />
-                <OrderDescriptionCard text={order.description} />
-                <OrderDescriptionCard label="المهارات المطلوبة" text={skillsLine} />
-                {renderFooter ? <div className="od-pool-primary-actions">{poolFooterButtons}</div> : null}
-              </div>
-            </div>
-
-            <div className="od-pool-summary">
+          <div className="od-pool-shell oh-order-details__layout order-details-layout">
+            <aside className="od-pool-summary oh-order-details__aside">
               <div className="od-aside-col">
-                <OrderSummaryCard
-                  title="ملخص الطلب"
-                  primaryBlock={{ label: "نوع المشروع / السعر", value: typeAndBudgetText, dir: "ltr" }}
-                  rows={summaryRows}
-                />
-                <OrderFilesCard
-                  orderId={String(id)}
-                  fileAccess={isFreelancer ? "freelancer" : null}
-                  files={order.files || []}
-                  emptyText="لا توجد ملفات مضافة"
-                />
+                <div className="oh-order-details-neu oh-order-details-neu--summary">
+                  <OrderSummaryCard
+                    title="ملخص الطلب"
+                    primaryBlock={{ label: "نوع المشروع / السعر", value: typeAndBudgetText, dir: "ltr", icon: "price" }}
+                    rows={summaryRows}
+                  />
+                </div>
+                <div className="oh-order-details-neu oh-order-details-neu--files">
+                  <OrderFilesCard
+                    orderId={String(id)}
+                    fileAccess={!planLocked && isFreelancer ? "freelancer" : null}
+                    files={order.files || []}
+                    emptyText="لا توجد ملفات مضافة"
+                  />
+                </div>
+              </div>
+            </aside>
+
+            <div className="od-pool-title oh-order-details__main">
+              <div className="oh-order-details-neu oh-order-details-neu--main">
+                <div className="od-title-desc-group">
+                  <OrderTitleCard title={order.title} />
+                  <OrderDescriptionCard text={order.description} />
+                  <OrderDescriptionCard label="المهارات المطلوبة" text={skillsLine} icon="skills" />
+                  {renderFooter ? <div className="od-pool-primary-actions">{poolFooterButtons}</div> : null}
+                </div>
               </div>
             </div>
           </div>
 
+          <BidAmountModal
+            open={bidOpen}
+            busy={bidBusy}
+            min={order.bidBudgetMin}
+            max={order.bidBudgetMax}
+            onClose={() => setBidOpen(false)}
+            onSubmit={submitBid}
+          />
           <TakePoolOrderConfirmModal
             open={takeConfirmOpen}
             busy={taking}
-            onClose={() => {
-              if (!taking) setTakeConfirmOpen(false);
-            }}
-            onConfirm={async () => {
-              setTakeConfirmOpen(false);
-              await take();
-            }}
+            onClose={() => setTakeConfirmOpen(false)}
+            onConfirm={take}
           />
         </>
-      ) : null}
-
-      {isFreelancer ? (
-        <BidAmountModal
-          open={bidOpen}
-          title={order ? `عرض سعر: ${order.title}` : ""}
-          min={order?.bidBudgetMin}
-          max={order?.bidBudgetMax}
-          currency="JOD"
-          busy={bidBusy}
-          onClose={() => {
-            if (!bidBusy) setBidOpen(false);
-          }}
-          onSubmit={submitBid}
-        />
-      ) : null}
+      ) : (
+        <p className="od-empty">لم يتم العثور على الطلب</p>
+      )}
     </main>
   );
 }

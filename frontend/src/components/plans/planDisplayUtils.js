@@ -6,14 +6,48 @@ export function formatPriceJod(priceJod) {
   return `${n.toLocaleString("en-US", { maximumFractionDigits: 2 })} د.أ`;
 }
 
+/** Normalize bullet text so feature vs training duplicates can be detected. */
+function normalizePlanBullet(text) {
+  return String(text)
+    .replace(/^تدريب:\s*/u, "")
+    .replace(/^تدريب\s+/u, "")
+    .replace(/مجاني(?:ة)?/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isRedundantPlanBullet(candidate, existingNormalized) {
+  const normalized = normalizePlanBullet(candidate);
+  if (!normalized) return true;
+  return existingNormalized.some((entry) => {
+    if (!entry) return false;
+    if (normalized === entry) return true;
+    return entry.includes(normalized) || normalized.includes(entry);
+  });
+}
+
 export function planListItems(plan) {
   const features = Array.isArray(plan?.features) ? plan.features.filter(Boolean).map(String) : [];
   const trainings = Array.isArray(plan?.trainings) ? plan.trainings.filter(Boolean).map(String) : [];
   if (features.length > 0 || trainings.length > 0) {
-    const items = [...features];
-    if (trainings.length > 0) {
-      items.push(...trainings.map((t) => `تدريب: ${t}`));
+    const items = [];
+    const normalized = [];
+
+    for (const feature of features) {
+      if (isRedundantPlanBullet(feature, normalized)) continue;
+      items.push(feature);
+      normalized.push(normalizePlanBullet(feature));
     }
+
+    for (const training of trainings) {
+      const labelled = `تدريب: ${training}`;
+      if (isRedundantPlanBullet(training, normalized) || isRedundantPlanBullet(labelled, normalized)) {
+        continue;
+      }
+      items.push(labelled);
+      normalized.push(normalizePlanBullet(training));
+    }
+
     return items.slice(0, 14);
   }
   const d = Number(plan?.durationDays);
@@ -24,8 +58,10 @@ export function planListItems(plan) {
 }
 
 export function formatOrderValueRange(plan) {
-  const min = plan?.orderValueMinJod != null ? Number(plan.orderValueMinJod) : null;
-  const max = plan?.orderValueMaxJod != null ? Number(plan.orderValueMaxJod) : null;
+  const minRaw = plan?.minOrderValue ?? plan?.orderValueMinJod;
+  const maxRaw = plan?.maxOrderValue ?? plan?.orderValueMaxJod;
+  const min = minRaw != null ? Number(minRaw) : null;
+  const max = maxRaw != null ? Number(maxRaw) : null;
   if (!Number.isFinite(min) && !Number.isFinite(max)) return null;
   if (Number.isFinite(min) && Number.isFinite(max)) {
     return `قيمة الطلبات: من ${min} إلى ${max} د.أ`;

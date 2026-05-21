@@ -11,6 +11,7 @@ const createCourseValidators = [
   body("isActive").optional().isBoolean(),
   body("isTestingEnabled").optional().isBoolean(),
   body("testFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
+  body("testPromptFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
 ];
 
 const importLessonsValidators = [
@@ -28,6 +29,7 @@ const updateCourseValidators = [
   body("isActive").optional().isBoolean(),
   body("isTestingEnabled").optional().isBoolean(),
   body("testFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
+  body("testPromptFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
 ];
 
 const updateLessonsValidators = [
@@ -35,9 +37,13 @@ const updateLessonsValidators = [
   body("lessons").isArray({ min: 1 }).withMessage("قائمة الدروس مطلوبة."),
   body("lessons.*.id").isInt({ min: 1 }),
   body("lessons.*.title").optional().isString().trim().isLength({ min: 1, max: 255 }),
+  body("lessons.*.description").optional({ nullable: true }).isString().trim().isLength({ max: 8000 }),
   body("lessons.*.sortOrder").optional().isInt({ min: 1 }),
   body("lessons.*.isActive").optional().isBoolean(),
 ];
+
+const publishCourseValidators = [...courseIdParam];
+const archiveCourseValidators = [...courseIdParam];
 
 const assignCourseValidators = [
   ...courseIdParam,
@@ -60,8 +66,9 @@ const markLessonCompleteValidators = [...courseIdParam, ...lessonIdParam];
 
 const submitCourseCompletionValidators = [
   ...courseIdParam,
-  body("auditConfirmed").optional().isBoolean(),
   body("auditNotes").optional({ nullable: true }).isString().trim().isLength({ max: 8000 }),
+  body("auditResponseText").optional({ nullable: true }).isString().trim().isLength({ max: 50000 }),
+  body("auditResponseFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
 ];
 
 module.exports = {
@@ -71,6 +78,8 @@ module.exports = {
   importLessonsValidators,
   updateCourseValidators,
   updateLessonsValidators,
+  publishCourseValidators,
+  archiveCourseValidators,
   assignCourseValidators,
   assignOneFreelancerValidators,
   listCoursesValidators,

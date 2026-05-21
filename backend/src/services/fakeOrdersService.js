@@ -846,7 +846,6 @@ async function getFakePoolOrderMapped({ orderId, freelancerUserId }) {
   const mapped = mapListOrderRow(row);
   if (!mapped) return null;
   mapped.orderSource = "fake";
-  if (row.show_fake_badge) mapped.trainingLabel = "طلب تجريبي";
   if (row.pool_listed_at != null) {
     mapped.createdAt = row.pool_listed_at;
     mapped.poolListedAt = row.pool_listed_at;
@@ -895,6 +894,19 @@ async function submitFakeTrainingBid({ freelancerUserId, orderId, amount, messag
     if (!Number.isFinite(bid) || bid < min || bid > max) {
       const err = new Error("مبلغ العرض غير ضمن النطاق.");
       err.statusCode = 400;
+      throw err;
+    }
+    const planOrderValueEligibility = require("./planOrderValueEligibility");
+    const { range: bidPlanRange } = await planOrderValueEligibility.assertFreelancerMayAccessFakeOrderByPlan(
+      uid,
+      fo,
+      client,
+    );
+    if (!planOrderValueEligibility.isSingleValueInPlanRange(bidPlanRange, bid)) {
+      const err = new Error("مبلغ العرض خارج نطاق باقة اشتراكك.");
+      err.statusCode = 403;
+      err.reason = "bid_amount_outside_plan_range";
+      err.exposeToClient = true;
       throw err;
     }
     const msg = message != null ? String(message).trim() : null;
@@ -950,6 +962,8 @@ async function submitFakeTrainingClaim({ freelancerUserId, orderId, message = nu
       err.statusCode = 409;
       throw err;
     }
+    const planOrderValueEligibility = require("./planOrderValueEligibility");
+    await planOrderValueEligibility.assertFreelancerMayAccessFakeOrderByPlan(uid, fo, client);
     const budget = fo.budget != null ? Number(fo.budget) : null;
     const amount = budget != null && Number.isFinite(budget) && budget > 0 ? budget : 1;
     const msg = message != null ? String(message).trim() : null;

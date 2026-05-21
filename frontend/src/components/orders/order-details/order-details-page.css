@@ -8,6 +8,16 @@
   margin-inline: auto;
 }
 
+.od-page--pool {
+  max-width: none;
+  width: 100%;
+  margin-inline: 0;
+}
+
+.oh-order-details--dashboard.od-page--pool {
+  gap: 0;
+}
+
 .od-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
@@ -279,10 +289,13 @@
   background: var(--background, #fff);
   border: 1px solid rgba(56, 82, 180, 0.1);
   border-radius: 12px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
 }
 
 .od-description__label {
-  margin: 0 0 0.6rem;
+  margin: 0 0 0.75rem;
   font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -290,13 +303,33 @@
   color: #6f7992;
 }
 
+.od-description__body {
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+}
+
 .od-description__text {
+  display: block;
   margin: 0;
   font-size: 0.98rem;
-  line-height: 1.75;
+  line-height: 2;
   color: #243047;
-  white-space: pre-wrap;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
   word-break: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  max-width: 100%;
+  max-height: none;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  -webkit-box-orient: unset;
+}
+
+.od-description__text + .od-description__text {
+  margin-top: 1rem;
 }
 
 /* —— File list —— */
@@ -462,8 +495,10 @@
   gap: 0;
   border-radius: 12px;
   border: 1px solid rgba(56, 82, 180, 0.1);
-  overflow: hidden;
+  overflow: visible;
   background: var(--background, #fff);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .od-title-desc-group .od-title-card {
@@ -481,7 +516,7 @@
   border-top: 1px solid rgba(56, 82, 180, 0.1);
 }
 
-/* Primary CTAs (take order / bid) under description + skills, inside title card */
+/* Primary CTAs (take order / bid) — visual left in RTL */
 .od-title-desc-group .od-pool-primary-actions {
   padding: 1.15rem 1.35rem 1.35rem;
   border-top: 1px solid rgba(56, 82, 180, 0.1);
@@ -489,7 +524,8 @@
   flex-wrap: wrap;
   gap: 0.85rem;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: flex-end;
+  width: 100%;
   background: var(--background, #fff);
 }
 
@@ -542,6 +578,8 @@
 .od-pool-title {
   grid-area: od-title;
   min-width: 0;
+  max-width: 100%;
+  overflow: visible;
 }
 
 .od-pool-main {
@@ -595,30 +633,59 @@
 }
 
 @media (min-width: 960px) {
-  .od-page--pool:not(.od-page--pool-has-main) .od-pool-shell {
-    grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
-    grid-template-areas: "od-title od-side";
-    align-items: start;
+  /* ملخص الطلب left | details right (LTR flex for placement only) */
+  .od-page--pool .od-pool-shell {
+    display: flex;
+    flex-direction: row;
+    direction: ltr;
+    align-items: flex-start;
+    gap: 1.25rem 1.5rem;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
   }
 
-  .od-page--pool:not(.od-page--pool-has-main).od-page--pool-actions .od-pool-shell {
-    grid-template-areas:
-      "od-title od-side"
-      "od-act od-act";
+  .od-page--pool .od-pool-title,
+  .od-page--pool .od-pool-summary,
+  .od-page--pool .od-pool-main {
+    direction: rtl;
+    min-width: 0;
+  }
+
+  .od-page--pool .od-pool-title {
+    order: 2;
+    flex: 1 1 auto;
+    width: auto;
+    max-width: none;
+  }
+
+  .od-page--pool .od-pool-title .od-title-desc-group {
+    width: 100%;
+  }
+
+  .od-page--pool .od-pool-summary {
+    order: 1;
+    flex: 0 0 minmax(280px, 320px);
+    width: minmax(280px, 320px);
+    max-width: 320px;
   }
 
   .od-page--pool-has-main .od-pool-shell {
-    grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
+    display: grid;
+    flex-direction: unset;
+    direction: ltr;
+    grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
     grid-template-areas:
-      "od-title od-side"
-      "od-main od-side";
+      "od-side od-title"
+      "od-side od-main";
+    gap: 1.25rem 1.5rem;
     align-items: start;
   }
 
   .od-page--pool-has-main.od-page--pool-actions .od-pool-shell {
     grid-template-areas:
-      "od-title od-side"
-      "od-main od-side"
+      "od-side od-title"
+      "od-side od-main"
       "od-act od-act";
   }
 }
@@ -695,5 +762,53 @@
     bottom: 0.75rem;
     z-index: 2;
     box-shadow: 0 4px 24px rgba(15, 26, 58, 0.08);
+  }
+}
+
+/* Pool order details — never clip description (override list/card truncation utilities) */
+.od-page--pool .od-title-desc-group .od-description,
+.od-page--pool .od-title-desc-group .od-description__body,
+.od-page--pool .od-title-desc-group .od-description__text {
+  display: block;
+  overflow: visible;
+  max-height: none;
+  height: auto;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  -webkit-box-orient: unset;
+  text-overflow: unset;
+}
+
+.od-page--pool .od-title-desc-group .od-description__text {
+  white-space: pre-wrap;
+  line-height: 2;
+}
+
+/* Freelancer shell: full-width outlet, shared shell background (no page-level tint) */
+.fdl-outlet:has(> .od-page--pool),
+.fdl-outlet:has(> .oh-order-details--dashboard) {
+  padding-inline: clamp(10px, 1.1vw, 16px);
+  padding-block: 2px clamp(14px, 1.6vw, 22px);
+}
+
+.fdl-outlet > .container.page-content.od-page--pool {
+  max-width: none;
+  width: 100%;
+  overflow: visible;
+  padding: 0;
+  background: transparent;
+}
+
+.fdl-outlet > .container.page-content.od-page--pool .od-pool-shell,
+.fdl-outlet > .container.page-content.od-page--pool .od-pool-title,
+.fdl-outlet > .container.page-content.od-page--pool .od-title-desc-group {
+  overflow: visible;
+}
+
+@media (min-width: 960px) {
+  .fdl-outlet > .container.page-content.od-page--pool .od-pool-toolbar--bare {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
   }
 }

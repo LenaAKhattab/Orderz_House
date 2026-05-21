@@ -1297,6 +1297,20 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
   return out.map((o) => sanitizeOrderForClient(o));
 }
 
+/** Default page size for open pool (`GET /orders/pool`). */
+const POOL_LIST_DEFAULT_LIMIT = 8;
+
+const POOL_ORDER_APPLICANTS_COUNT_SQL = `(
+  SELECT COUNT(DISTINCT z.freelancer_user_id)::int
+  FROM (
+    SELECT freelancer_user_id FROM order_claims WHERE order_id = o.id AND freelancer_user_id IS NOT NULL
+    UNION ALL
+    SELECT freelancer_user_id FROM order_freelancer_bids WHERE order_id = o.id AND freelancer_user_id IS NOT NULL
+  ) z
+)`;
+
+const POOL_ORDER_FILES_COUNT_SQL = `(SELECT COUNT(*)::int FROM order_files f WHERE f.order_id = o.id)`;
+
 function parsePageLimitOffset({ page, limit, offset, defaultLimit = 12, maxLimit = 200 } = {}) {
   const lim = Math.min(Math.max(Number(limit) || defaultLimit, 1), maxLimit);
   const off = Number.isFinite(Number(offset)) ? Math.max(Number(offset), 0) : Math.max(((Number(page) || 1) - 1) * lim, 0);
@@ -1352,7 +1366,7 @@ function parseIdCsv(input) {
 
 async function listPoolOrders({
   page = 1,
-  limit = 12,
+  limit = POOL_LIST_DEFAULT_LIMIT,
   offset = null,
   status = null,
   projectType = null,
@@ -1363,7 +1377,7 @@ async function listPoolOrders({
   viewerUserId = null,
   viewerRole = null,
 } = {}) {
-  const pg = parsePageLimitOffset({ page, limit, offset, defaultLimit: 12 });
+  const pg = parsePageLimitOffset({ page, limit, offset, defaultLimit: POOL_LIST_DEFAULT_LIMIT });
   const trainingPoolList = require("./trainingPoolList");
   const { hydrateMergedPoolOrders } = require("./hydrateMergedPool");
   const merged = await trainingPoolList.tryMergedPoolMeta({
@@ -1439,29 +1453,11 @@ async function listPoolOrders({
       ss.slug AS sub_subcategory_slug,
       ss.name AS sub_subcategory_name,
       ss.subcategory_id AS sub_subcategory_parent_id,
-      COALESCE(ofc.files_count, 0)::int AS files_count,
-      COALESCE(ac.applicants_count, 0)::int AS applicants_count
+      COALESCE(${POOL_ORDER_FILES_COUNT_SQL}, 0)::int AS files_count,
+      COALESCE(${POOL_ORDER_APPLICANTS_COUNT_SQL}, 0)::int AS applicants_count
     FROM orders o
     LEFT JOIN categories c ON c.id = o.category_id
     LEFT JOIN sub_subcategories ss ON ss.id = o.sub_subcategory_id
-    LEFT JOIN (
-      SELECT order_id, COUNT(*)::int AS files_count
-      FROM order_files
-      GROUP BY order_id
-    ) ofc ON ofc.order_id = o.id
-    LEFT JOIN (
-      SELECT z.order_id, COUNT(DISTINCT z.freelancer_user_id)::int AS applicants_count
-      FROM (
-        SELECT order_id, freelancer_user_id
-        FROM order_claims
-        WHERE freelancer_user_id IS NOT NULL
-        UNION ALL
-        SELECT order_id, freelancer_user_id
-        FROM order_freelancer_bids
-        WHERE freelancer_user_id IS NOT NULL
-      ) z
-      GROUP BY z.order_id
-    ) ac ON ac.order_id = o.id
     ${whereSql}
     ORDER BY ${orderBySql}
     LIMIT $${params.length + 1} OFFSET $${params.length + 2}
@@ -1516,7 +1512,7 @@ async function listPoolOrdersForFreelancer({
   freelancerUserId,
   viewerRole = "freelancer",
   page = 1,
-  limit = 12,
+  limit = POOL_LIST_DEFAULT_LIMIT,
   offset = null,
   status = null,
   projectType = null,
@@ -1527,9 +1523,14 @@ async function listPoolOrdersForFreelancer({
 } = {}) {
   const uid = Number(freelancerUserId);
   if (!Number.isInteger(uid) || uid < 1) {
-    return { orders: [], pagination: { page: 1, limit: Number(limit) || 12, total: 0, totalPages: 1 } };
+    return {
+      orders: [],
+      pagination: { page: 1, limit: Number(limit) || POOL_LIST_DEFAULT_LIMIT, total: 0, totalPages: 1 },
+    };
   }
-  const pg = parsePageLimitOffset({ page, limit, offset, defaultLimit: 12 });
+  await subscriptionsService.maybeEnsureFreelancerDefaultFreePlan(uid);
+  const planOrderValueEligibility = require("./planOrderValueEligibility");
+  const pg = parsePageLimitOffset({ page, limit, offset, defaultLimit: POOL_LIST_DEFAULT_LIMIT });
   const trainingPoolList = require("./trainingPoolList");
   const { hydrateMergedPoolOrders } = require("./hydrateMergedPool");
   const merged = await trainingPoolList.tryMergedPoolMeta({
@@ -1544,9 +1545,11 @@ async function listPoolOrdersForFreelancer({
     subSubCategoryIds,
     sort,
     q,
+    includeRealOrders: true,
   });
   if (merged) {
-    const orders = await hydrateMergedPoolOrders(merged.idOrder, mapListOrderRow, { freelancerUserId: uid });
+    const mapped = await hydrateMergedPoolOrders(merged.idOrder, mapListOrderRow, { freelancerUserId: uid });
+    const orders = await planOrderValueEligibility.enrichFreelancerPoolOrdersPlanEligibility(mapped, uid);
     return {
       orders,
       pagination: {
@@ -1557,6 +1560,7 @@ async function listPoolOrdersForFreelancer({
       },
     };
   }
+
   const filterParams = [];
   const whereBase = [
     `o.is_published = TRUE`,
@@ -1613,8 +1617,8 @@ async function listPoolOrdersForFreelancer({
       ss.slug AS sub_subcategory_slug,
       ss.name AS sub_subcategory_name,
       ss.subcategory_id AS sub_subcategory_parent_id,
-      COALESCE(ofc.files_count, 0)::int AS files_count,
-      COALESCE(ac.applicants_count, 0)::int AS applicants_count,
+      COALESCE(${POOL_ORDER_FILES_COUNT_SQL}, 0)::int AS files_count,
+      COALESCE(${POOL_ORDER_APPLICANTS_COUNT_SQL}, 0)::int AS applicants_count,
       oc.id AS my_claim_id,
       oc.status AS my_claim_status,
       mb.id AS my_bid_id,
@@ -1623,24 +1627,6 @@ async function listPoolOrdersForFreelancer({
     FROM orders o
     LEFT JOIN categories c ON c.id = o.category_id
     LEFT JOIN sub_subcategories ss ON ss.id = o.sub_subcategory_id
-    LEFT JOIN (
-      SELECT order_id, COUNT(*)::int AS files_count
-      FROM order_files
-      GROUP BY order_id
-    ) ofc ON ofc.order_id = o.id
-    LEFT JOIN (
-      SELECT z.order_id, COUNT(DISTINCT z.freelancer_user_id)::int AS applicants_count
-      FROM (
-        SELECT order_id, freelancer_user_id
-        FROM order_claims
-        WHERE freelancer_user_id IS NOT NULL
-        UNION ALL
-        SELECT order_id, freelancer_user_id
-        FROM order_freelancer_bids
-        WHERE freelancer_user_id IS NOT NULL
-      ) z
-      GROUP BY z.order_id
-    ) ac ON ac.order_id = o.id
     LEFT JOIN order_claims oc
       ON oc.order_id = o.id
      AND oc.freelancer_user_id = $1
@@ -1658,7 +1644,8 @@ async function listPoolOrdersForFreelancer({
     pool.query(listSql, listParams),
   ]);
   const total = Number(countRows[0]?.total || 0);
-  const orders = rows.map(mapListOrderRow).filter(Boolean);
+  const mapped = rows.map(mapListOrderRow).filter(Boolean);
+  const orders = await planOrderValueEligibility.enrichFreelancerPoolOrdersPlanEligibility(mapped, uid);
   return {
     orders,
     pagination: {
@@ -1749,23 +1736,10 @@ async function listFreelancerAssignedOrders({
       ss.slug AS sub_subcategory_slug,
       ss.name AS sub_subcategory_name,
       ss.subcategory_id AS sub_subcategory_parent_id,
-      COALESCE(ac.applicants_count, 0)::int AS applicants_count
+      0::int AS applicants_count
     FROM base b
     LEFT JOIN categories c ON c.id = b.category_id
     LEFT JOIN sub_subcategories ss ON ss.id = b.sub_subcategory_id
-    LEFT JOIN (
-      SELECT z.order_id, COUNT(DISTINCT z.freelancer_user_id)::int AS applicants_count
-      FROM (
-        SELECT order_id, freelancer_user_id
-        FROM order_claims
-        WHERE freelancer_user_id IS NOT NULL
-        UNION ALL
-        SELECT order_id, freelancer_user_id
-        FROM order_freelancer_bids
-        WHERE freelancer_user_id IS NOT NULL
-      ) z
-      GROUP BY z.order_id
-    ) ac ON ac.order_id = b.id
     ${whereSql}
     ORDER BY ${orderBySql}
     LIMIT $${params.length + 1} OFFSET $${params.length + 2}
@@ -1815,18 +1789,13 @@ async function listFreelancerAssignedOrders({
 }
 
 async function getFreelancerAssignedOrderById({ freelancerUserId, orderId }) {
-  const { rows } = await pool.query(
-    `SELECT o.id
-     FROM orders o
-     WHERE o.id = $1
-       AND (
-         o.assigned_freelancer_id = $2
-         OR o.accepted_freelancer_id = $2
-       )
-     LIMIT 1`,
-    [Number(orderId), Number(freelancerUserId)],
-  );
-  if (!rows[0]) return null;
+  const orderAuthz = require("./orderAuthorizationService");
+  try {
+    await orderAuthz.assertFreelancerAssignedToOrder(freelancerUserId, orderId);
+  } catch (e) {
+    if (e?.statusCode === 404 || e?.statusCode === 403) return null;
+    throw e;
+  }
   const order = await getOrderById(orderId);
   if (!order) return null;
   await enrichOrderWithSubmissionHistory(order, "freelancer");
@@ -1850,14 +1819,7 @@ async function submitPoolOrderBid({ freelancerUserId, orderId, amount, message =
   try {
     await client.query("BEGIN");
 
-    const eligibility = await subscriptionsService.canFreelancerTakeOrders(String(freelancerUserId));
-    if (!eligibility.eligible) {
-      const err = new Error("Your subscription is not active. You cannot submit bids.");
-      err.statusCode = 403;
-      err.reason = eligibility.reason;
-      throw err;
-    }
-
+    const orderAuthz = require("./orderAuthorizationService");
     const { rows } = await client.query(
       `SELECT * FROM orders
        WHERE id = $1
@@ -1870,6 +1832,10 @@ async function submitPoolOrderBid({ freelancerUserId, orderId, amount, message =
       err.statusCode = 404;
       throw err;
     }
+    await orderAuthz.assertFreelancerCanBidOrder(freelancerUserId, order, client);
+    const planOrderValueEligibility = require("./planOrderValueEligibility");
+    const bidPlanRange = await planOrderValueEligibility.getFreelancerPlanOrderValueRange(freelancerUserId);
+
     if (!order.is_published || !order.is_open_for_pool || order.assigned_freelancer_id || order.received_at) {
       const err = new Error("Order is not available.");
       err.statusCode = 409;
@@ -1903,6 +1869,13 @@ async function submitPoolOrderBid({ freelancerUserId, orderId, amount, message =
     if (bid < min || bid > max) {
       const err = new Error(`يجب أن يكون مبلغ العرض بين ${min} و ${max}.`);
       err.statusCode = 400;
+      throw err;
+    }
+    if (!planOrderValueEligibility.isSingleValueInPlanRange(bidPlanRange, bid)) {
+      const err = new Error("مبلغ العرض خارج نطاق باقة اشتراكك.");
+      err.statusCode = 403;
+      err.reason = "bid_amount_outside_plan_range";
+      err.exposeToClient = true;
       throw err;
     }
 
@@ -1953,14 +1926,7 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
   try {
     await client.query("BEGIN");
 
-    const eligibility = await subscriptionsService.canFreelancerTakeOrders(String(freelancerUserId));
-    if (!eligibility.eligible) {
-      const err = new Error("You are not allowed to take this order.");
-      err.statusCode = 403;
-      err.reason = eligibility.reason;
-      throw err;
-    }
-
+    const orderAuthz = require("./orderAuthorizationService");
     const { rows } = await client.query(
       `SELECT * FROM orders
        WHERE id = $1
@@ -1973,6 +1939,8 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
       err.statusCode = 404;
       throw err;
     }
+    await orderAuthz.assertFreelancerCanClaimOrder(freelancerUserId, order, client);
+
     if (!order.is_published || !order.is_open_for_pool) {
       const err = new Error("Order is not available in the pool.");
       err.statusCode = 409;
@@ -2084,6 +2052,8 @@ async function withdrawPoolClaim({ freelancerUserId, orderId }) {
       err.statusCode = 404;
       throw err;
     }
+    const orderAuthz = require("./orderAuthorizationService");
+    await orderAuthz.assertFreelancerCanAccessPoolOrder(freelancerUserId, order, client);
     if (order.project_type === "fixed" && (order.assigned_freelancer_id || order.accepted_freelancer_id || order.received_at)) {
       const err = new Error("Fixed direct assignments cannot be withdrawn from this endpoint.");
       err.statusCode = 409;
@@ -2580,23 +2550,8 @@ async function approveInternalPricedBidAdmin({ actorUserId, orderId, bidId }) {
 }
 
 async function assertClientOwnsOrder({ clientUserId, orderId }, clientMaybe) {
-  const runner = clientMaybe || pool;
-  const { rows } = await runner.query(
-    `SELECT id, created_by_user_id, source_type FROM orders WHERE id = $1 LIMIT 1`,
-    [Number(orderId)],
-  );
-  const order = rows[0];
-  if (!order) {
-    const err = new Error("الطلب غير موجود.");
-    err.statusCode = 404;
-    throw err;
-  }
-  if (order.source_type !== "client_created" || Number(order.created_by_user_id) !== Number(clientUserId)) {
-    const err = new Error("لا يمكنك إدارة هذا الطلب.");
-    err.statusCode = 403;
-    throw err;
-  }
-  return order;
+  const orderAuthz = require("./orderAuthorizationService");
+  return orderAuthz.assertClientOwnsOrder(clientUserId, orderId, clientMaybe);
 }
 
 async function listOrderClaimsForClient({ clientUserId, orderId }) {
@@ -3311,32 +3266,11 @@ async function prepareFreelancerOrderFileDownload({ freelancerUserId, orderId, f
     err.statusCode = 404;
     throw err;
   }
-  const { rows: orows } = await pool.query(`SELECT * FROM orders WHERE id = $1 LIMIT 1`, [oid]);
-  const order = orows[0];
-  if (!order) {
-    const err = new Error("الطلب غير موجود.");
-    err.statusCode = 404;
-    throw err;
-  }
-  const assignedId = order.assigned_freelancer_id ? Number(order.assigned_freelancer_id) : null;
-  if (assignedId != null && assignedId !== uid) {
-    const err = new Error("لا يمكنك الوصول إلى ملفات هذا الطلب.");
-    err.statusCode = 403;
-    throw err;
-  }
-  if (assignedId !== uid) {
-    const purpose = String(fileRow.purpose || "brief").trim();
-    if (purpose !== "brief") {
-      const err = new Error("لا يمكنك الوصول إلى هذا الملف.");
-      err.statusCode = 403;
-      throw err;
-    }
-    if (!orderFlowService.orderRowEligibleForFreelancerPoolListing(order)) {
-      const err = new Error("لا يمكنك الوصول إلى ملفات هذا الطلب.");
-      err.statusCode = 403;
-      throw err;
-    }
-  }
+  const orderAuthz = require("./orderAuthorizationService");
+  await orderAuthz.assertCanAccessOrderFile(
+    { auth: { userId: String(uid), primaryRole: "freelancer", roles: [{ name: "freelancer" }] }, orderId: oid, fileId: fid },
+    pool,
+  );
   const loc = await resolveOrderFileLocation(fileRow);
   const downloadName = decodeMultipartOriginalName(fileRow.original_name) || fileRow.original_name || "file";
   const mimeType = fileRow.mime_type || "application/octet-stream";
@@ -3579,6 +3513,124 @@ async function activateArchivedInternalOrder({ orderId }) {
   }
 }
 
+/**
+ * Dashboard snapshot: order counts, overdue active orders, recent active orders (single round-trip).
+ */
+async function getFreelancerDashboardOrderSnapshot(freelancerUserId) {
+  const uid = Number(freelancerUserId);
+  if (!Number.isInteger(uid) || uid < 1) {
+    return {
+      counts: {
+        all: 0,
+        waitingApproval: 0,
+        revisionRequired: 0,
+        assigned: 0,
+        inProgress: 0,
+        waitingClientApproval: 0,
+        completed: 0,
+        canceled: 0,
+      },
+      overdueCount: 0,
+      recentActiveOrders: [],
+    };
+  }
+
+  const baseCte = `
+    WITH base AS (
+      SELECT o.*
+      FROM orders o
+      WHERE o.assigned_freelancer_id = $1
+         OR o.accepted_freelancer_id = $1
+    )
+  `;
+
+  const recentSql = `
+    ${baseCte}
+    SELECT
+      b.*,
+      c.slug AS category_slug,
+      c.name AS category_name,
+      ss.slug AS sub_subcategory_slug,
+      ss.name AS sub_subcategory_name,
+      ss.subcategory_id AS sub_subcategory_parent_id,
+      0::int AS applicants_count
+    FROM base b
+    LEFT JOIN categories c ON c.id = b.category_id
+    LEFT JOIN sub_subcategories ss ON ss.id = b.sub_subcategory_id
+    WHERE b.order_status IN ('assigned','in_progress','ready_for_work','pending_client_review')
+       OR (
+         b.client_revision_note IS NOT NULL
+         AND b.order_status IN ('in_progress','ready_for_work','pending_client_review')
+       )
+    ORDER BY b.updated_at DESC, b.id DESC
+    LIMIT $2
+  `;
+
+  const countsSql = `
+    ${baseCte}
+    SELECT
+      COUNT(*)::int AS all_count,
+      0::int AS waiting_approval_count,
+      SUM(CASE WHEN b.client_revision_note IS NOT NULL AND b.order_status IN ('in_progress','ready_for_work','pending_client_review') THEN 1 ELSE 0 END)::int AS revision_required_count,
+      SUM(CASE WHEN b.order_status = 'assigned' THEN 1 ELSE 0 END)::int AS assigned_count,
+      SUM(CASE WHEN b.order_status IN ('in_progress','ready_for_work') THEN 1 ELSE 0 END)::int AS in_progress_count,
+      SUM(CASE WHEN b.order_status = 'pending_client_review' THEN 1 ELSE 0 END)::int AS waiting_client_approval_count,
+      SUM(CASE WHEN b.order_status = 'completed' THEN 1 ELSE 0 END)::int AS completed_count,
+      SUM(CASE WHEN b.order_status = 'cancelled' THEN 1 ELSE 0 END)::int AS canceled_count,
+      COUNT(*) FILTER (
+        WHERE b.due_at IS NOT NULL
+          AND b.due_at < NOW()
+          AND b.order_status IN ('assigned','in_progress','ready_for_work','pending_client_review')
+      )::int AS overdue_count
+    FROM base b
+  `;
+
+  const [countsRes, recentRes] = await Promise.all([
+    pool.query(countsSql, [uid]),
+    pool.query(recentSql, [uid, 8]),
+  ]);
+
+  const c = countsRes.rows[0] || {};
+  const counts = {
+    all: Number(c.all_count || 0),
+    waitingApproval: Number(c.waiting_approval_count || 0),
+    revisionRequired: Number(c.revision_required_count || 0),
+    assigned: Number(c.assigned_count || 0),
+    inProgress: Number(c.in_progress_count || 0),
+    waitingClientApproval: Number(c.waiting_client_approval_count || 0),
+    completed: Number(c.completed_count || 0),
+    canceled: Number(c.canceled_count || 0),
+  };
+
+  const recentActiveOrders = recentRes.rows.map(mapListOrderRow).filter(Boolean).slice(0, 5);
+
+  return {
+    counts,
+    overdueCount: Number(c.overdue_count || 0),
+    recentActiveOrders,
+  };
+}
+
+/**
+ * Lightweight pool visibility count for dashboard (no hydrate/enrich).
+ */
+async function getPoolMarketplaceCountSummary() {
+  const { rows } = await pool.query(
+    `SELECT COUNT(*)::int AS total
+     FROM orders o
+     WHERE o.is_published = TRUE
+       AND o.is_open_for_pool = TRUE
+       AND o.assigned_freelancer_id IS NULL
+       AND o.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')
+       AND o.source_type IN ('admin_created', 'super_admin_created', 'client_created')`,
+  );
+  return {
+    totalVisible: Number(rows[0]?.total || 0),
+    eligibleCount: null,
+    eligibleCountSampled: false,
+  };
+}
+
 module.exports = {
   ORDER_STATUSES,
   mapListOrderRow,
@@ -3594,6 +3646,8 @@ module.exports = {
   getMyOrderClaim,
   getMyOrderBid,
   listFreelancerAssignedOrders,
+  getFreelancerDashboardOrderSnapshot,
+  getPoolMarketplaceCountSummary,
   getFreelancerAssignedOrderById,
   submitPoolOrderBid,
   claimPoolOrder,

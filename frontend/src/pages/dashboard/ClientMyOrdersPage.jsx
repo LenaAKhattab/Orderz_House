@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ClipboardList, Inbox, RefreshCw } from "lucide-react";
 import { useClientCreateOrderModal } from "../../context/ClientCreateOrderModalContext";
 import { useToast } from "../../components/ui/toastContext";
 import {
@@ -9,6 +10,8 @@ import {
   listClientMyOrdersRequest,
 } from "../../services/api";
 import ClientOrderCardCompact from "../../components/orders/ClientOrderCardCompact";
+import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
+import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
 import { OrderCardsGridSkeleton } from "../../components/ui/Skeleton";
 import {
   getBidCheckoutCancelledToast,
@@ -19,6 +22,22 @@ import {
 } from "../../utils/clientMyOrdersPaymentReturn";
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
 import { trackEvent } from "../../services/analytics";
+import "../../styles/dashboardHub.css";
+import "./freelancerMyOrders.css";
+
+function StatSegment({ tone, label, value, loading }) {
+  return (
+    <div className={`fmo-stat-segment fmo-stat-segment--${tone}`}>
+      <span className="fmo-stat-segment__icon" aria-hidden>
+        <ClipboardList size={18} strokeWidth={2} />
+      </span>
+      <div className="fmo-stat-segment__copy">
+        {loading ? <HubMetricSkeleton variant="stat" /> : <strong className="fmo-stat-segment__value">{value}</strong>}
+        <span className="fmo-stat-segment__label">{label}</span>
+      </div>
+    </div>
+  );
+}
 
 export default function ClientMyOrdersPage() {
   const { push } = useToast();
@@ -192,76 +211,79 @@ export default function ClientMyOrdersPage() {
   }, [orders]);
 
   return (
-    <div className="container page-content dash-shell client-my-orders-page" dir="rtl">
-      <div className="dash client-my-orders-page__root">
-        <header className="dash-hero dash-hero--elevated">
-          <div className="dash-hero__copy">
-            <p className="dash-hero__kicker">لوحة العميل</p>
-            <h1 className="dash-hero__title oh-orders-sidebar-title">طلباتي</h1>
-            <p className="dash-hero__subtitle">
-              تتبّع طلباتك، حالة الدفع، واستقبال العروض للمزايدة، ثم اختيار العرض والدفع لبدء التنفيذ.
-            </p>
-            <div className="client-my-orders-page__hero-actions">
-              <button type="button" className="btn btn-primary" onClick={() => openCreateOrder()}>
-                + طلب جديد
+    <DashboardHubPage className="fdash-page--my-orders">
+      <header className="fmo-surface fmo-header">
+        <div className="fmo-header__copy">
+          <h1 className="fmo-header__title">طلباتي</h1>
+          <p className="fmo-header__subtitle">
+            تتبّع طلباتك، حالة الدفع، واستقبال العروض للمزايدة، ثم اختيار العرض والدفع لبدء التنفيذ.
+          </p>
+          <div className="fmo-header__actions">
+            <button type="button" className="fmo-empty__cta" style={{ border: "none", cursor: "pointer" }} onClick={() => openCreateOrder()}>
+              + طلب جديد
+            </button>
+            <Link className="fmo-toolbar__refresh fmo-toolbar__refresh--label" to="/dashboard/freelancer/orders">
+              استكشاف المعرض
+            </Link>
+          </div>
+        </div>
+        <div className="fmo-header__art" aria-hidden>
+          <span className="fmo-header__icon-chip">
+            <ClipboardList size={32} strokeWidth={1.85} />
+          </span>
+        </div>
+      </header>
+
+      <div className="fmo-surface fmo-stats-bar" aria-label="ملخص الطلبات">
+        <StatSegment tone="slate" label="إجمالي الطلبات" value={stats.total} loading={busy} />
+        <StatSegment tone="amber" label="في المعرض" value={stats.inPool} loading={busy} />
+        <StatSegment tone="green" label="مُسندة" value={stats.assigned} loading={busy} />
+      </div>
+
+      <div className="fmo-surface fmo-toolbar">
+        <p className="fmo-toolbar__hint">القائمة مرتبة من الأحدث إلى الأقدم. يمكنك التحديث دورياً لمزامنة الحالة.</p>
+        <div className="fmo-toolbar__actions">
+          <button
+            type="button"
+            className={`fmo-toolbar__refresh fmo-toolbar__refresh--label${refreshing || busy ? " is-spinning" : ""}`}
+            onClick={onRefresh}
+            disabled={refreshing || busy}
+            aria-label="تحديث القائمة"
+            title="تحديث القائمة"
+          >
+            <RefreshCw size={17} strokeWidth={2.2} aria-hidden />
+            <span className="fmo-toolbar__refresh-label">تحديث القائمة</span>
+          </button>
+        </div>
+      </div>
+
+      <section className="fmo-surface fmo-content fmo-content--client-cards" aria-busy={busy} aria-label="قائمة الطلبات">
+        {busy ? (
+          <OrderCardsGridSkeleton count={3} />
+        ) : orders.length === 0 ? (
+          <div className="fmo-empty">
+            <span className="fmo-empty__icon-chip" aria-hidden>
+              <Inbox size={36} strokeWidth={1.6} />
+            </span>
+            <h3 className="fmo-empty__title">لا توجد طلبات بعد</h3>
+            <p className="fmo-empty__sub">أنشئ أول طلب ليظهر هنا مع حالته وتفاصيله.</p>
+            <div className="fmo-empty__actions">
+              <button type="button" className="fmo-empty__cta" onClick={() => openCreateOrder()}>
+                إنشاء طلب
               </button>
-              <Link to="/orders" className="btn btn-secondary">
-                استكشاف المعرض
+              <Link className="fmo-empty__cta fmo-empty__cta--muted" to="/dashboard/freelancer/orders">
+                تصفّح المعرض
               </Link>
             </div>
           </div>
-        </header>
-
-        <div className="client-my-orders-page__stats" aria-label="ملخص الطلبات">
-          <div className="client-my-orders-page__stat">
-            <span className="client-my-orders-page__stat-label">إجمالي الطلبات</span>
-            <strong className="client-my-orders-page__stat-value">{busy ? "—" : stats.total}</strong>
+        ) : (
+          <div className="fmo-client-cards-grid">
+            {orders.map((order) => (
+              <ClientOrderCardCompact key={order.id} order={order} onOrdersChange={load} />
+            ))}
           </div>
-          <div className="client-my-orders-page__stat client-my-orders-page__stat--accent">
-            <span className="client-my-orders-page__stat-label">في المعرض</span>
-            <strong className="client-my-orders-page__stat-value">{busy ? "—" : stats.inPool}</strong>
-          </div>
-          <div className="client-my-orders-page__stat client-my-orders-page__stat--muted">
-            <span className="client-my-orders-page__stat-label">مُسندة</span>
-            <strong className="client-my-orders-page__stat-value">{busy ? "—" : stats.assigned}</strong>
-          </div>
-        </div>
-
-        <section className="dash-section client-my-orders-page__filters-card">
-          <div className="dash-section__body client-my-orders-page__filters-body">
-            <p className="client-my-orders-page__list-meta help">القائمة مرتبة من الأحدث إلى الأقدم. يمكنك التحديث دورياً لمزامنة الحالة.</p>
-            <button type="button" className="btn btn-secondary client-my-orders-page__refresh" onClick={onRefresh} disabled={busy || refreshing}>
-              {refreshing ? "جارٍ التحديث…" : "تحديث القائمة"}
-            </button>
-          </div>
-        </section>
-
-        <section className="cards-grid client-my-orders-page__grid" aria-busy={busy}>
-          {busy ? (
-            <OrderCardsGridSkeleton count={3} />
-          ) : orders.length === 0 ? (
-            <div className="dash-empty client-my-orders-page__empty">
-              <div className="dash-empty__icon" aria-hidden="true">
-                ◌
-              </div>
-              <div className="dash-empty__copy">
-                <h2 className="dash-empty__title">لا توجد طلبات بعد</h2>
-                <p className="dash-empty__subtitle">أنشئ أول طلب ليظهر هنا مع حالته وتفاصيله.</p>
-              </div>
-              <div className="client-my-orders-page__empty-actions">
-                <button type="button" className="btn btn-primary" onClick={() => openCreateOrder()}>
-                  إنشاء طلب
-                </button>
-                <Link to="/orders" className="btn btn-secondary">
-                  تصفّح المعرض
-                </Link>
-              </div>
-            </div>
-          ) : (
-            orders.map((order) => <ClientOrderCardCompact key={order.id} order={order} onOrdersChange={load} />)
-          )}
-        </section>
-      </div>
-    </div>
+        )}
+      </section>
+    </DashboardHubPage>
   );
 }

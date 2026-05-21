@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { getProfileMeRequest } from "../../services/api";
+import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import { fullNameAr } from "../../utils/accountDisplay";
+import "../../styles/dashboardHub.css";
 import "./shared/account-pages.css";
 
 export default function ClientProfilePage() {
@@ -35,32 +37,37 @@ export default function ClientProfilePage() {
 
   if (loading) {
     return (
-      <div className="oh-account-page" dir="rtl">
-        <div className="oh-account-hero">
-          <div className="oh-account-skel" style={{ height: 14, width: "40%" }} />
-          <div className="oh-account-skel" style={{ height: 32, width: "55%" }} />
+      <DashboardHubPage className="fdash-page--account">
+        <div className="oh-account-page" dir="rtl">
+          <div className="oh-account-hero">
+            <div className="oh-account-skel" style={{ height: 14, width: "40%" }} />
+            <div className="oh-account-skel" style={{ height: 32, width: "55%" }} />
+          </div>
+          <div className="oh-account-skel" style={{ height: 200, borderRadius: 18 }} />
         </div>
-        <div className="oh-account-skel" style={{ height: 200, borderRadius: 18 }} />
-      </div>
+      </DashboardHubPage>
     );
   }
 
   if (error) {
     return (
-      <div className="oh-account-page" dir="rtl">
-        <div className="oh-account-card">
-          <p className="oh-account-error" style={{ margin: 0 }}>
-            {error}
-          </p>
-          <button type="button" className="oh-account-btn-primary" style={{ marginTop: 12 }} onClick={load}>
-            إعادة المحاولة
-          </button>
+      <DashboardHubPage className="fdash-page--account">
+        <div className="oh-account-page" dir="rtl">
+          <div className="oh-account-card">
+            <p className="oh-account-error" style={{ margin: 0 }}>
+              {error}
+            </p>
+            <button type="button" className="oh-account-btn-primary" style={{ marginTop: 12 }} onClick={load}>
+              إعادة المحاولة
+            </button>
+          </div>
         </div>
-      </div>
+      </DashboardHubPage>
     );
   }
 
   return (
+    <DashboardHubPage className="fdash-page--account">
     <div className="oh-account-page" dir="rtl">
       <div className="oh-account-hero">
         <p className="oh-account-hero__kicker">حساب العميل</p>
@@ -130,5 +137,6 @@ export default function ClientProfilePage() {
         </p>
       </div>
     </div>
+    </DashboardHubPage>
   );
 }

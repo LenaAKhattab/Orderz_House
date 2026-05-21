@@ -2,7 +2,20 @@
 
 /* Design tokens (used by legacy rules + new Tailwind utilities) */
 :root {
-  --font-sans: "Dubai", "Segoe UI", Tahoma, sans-serif;
+  --font-sans: "Cairo", "Segoe UI", Tahoma, system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Segoe UI Mono", Consolas, monospace;
+
+  --font-weight-body: 400;
+  --font-weight-label: 500;
+  --font-weight-button: 600;
+  --font-weight-subheading: 600;
+  --font-weight-heading: 700;
+  --font-weight-display: 800;
+
+  --line-height-body: 1.6;
+  --line-height-heading: 1.35;
+  --line-height-tight: 1.25;
+
   --primary: #2f3b65;
   --secondary: #76cfdf;
   --accent-light: #76cfdf;
@@ -43,7 +56,7 @@
 }
 
 @theme {
-  --font-sans: "Dubai", "Segoe UI", Tahoma, sans-serif;
+  --font-sans: "Cairo", "Segoe UI", Tahoma, system-ui, sans-serif;
   --color-primary: #2f3b65;
   --color-secondary: #76cfdf;
   --color-background: #ffffff;
@@ -51,14 +64,6 @@
   --color-text-main: #202020;
   --color-text-muted: #2f3b65;
   --radius-lg: 12px;
-}
-
-@font-face {
-  font-family: "Dubai";
-  src: local("Dubai"), local("Dubai Regular");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
 }
 
 @layer base {
@@ -70,21 +75,29 @@
 
   html {
     overflow-x: clip;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
     font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
     margin: 0;
+    min-height: 100vh;
     background-color: var(--page-bg);
     color: var(--text-main);
     font-family: var(--font-sans);
-    line-height: 1.6;
+    font-weight: var(--font-weight-body);
+    font-size: 1rem;
+    line-height: var(--line-height-body);
     direction: rtl;
     text-align: right;
   }
 
   #root {
-    min-height: 100%;
+    min-height: 100vh;
     background-color: var(--page-bg);
     font-family: var(--font-sans);
   }
@@ -92,8 +105,11 @@
   button,
   input,
   textarea,
-  select {
+  select,
+  optgroup {
     font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
   }
 
   input[type="number"]::-webkit-outer-spin-button,

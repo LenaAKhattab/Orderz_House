@@ -72,11 +72,12 @@ function buildDualFilters(status, projectType, categoryId, subSubIds, q) {
   return { vals, wr, wf };
 }
 
+/** Pool list is read-only; fake maintenance runs via automation/cron (`runAutomationTick`). */
 async function tryMergedPoolMeta({
   viewerUserId,
   viewerRole,
   page = 1,
-  limit = 12,
+  limit = 8,
   offset = null,
   status = null,
   projectType = null,
@@ -84,30 +85,19 @@ async function tryMergedPoolMeta({
   subSubCategoryIds = "",
   sort = "newest",
   q = "",
+  includeRealOrders = true,
 }) {
-  try {
-    await fakeOrdersService.expireStaleItems();
-  } catch (e) {
-    console.error("[trainingPoolList] expireStaleItems failed (non-fatal):", e?.message || e);
-  }
   const canSee = await fakeOrdersService.poolViewerMaySeeFakeOrders({ userId: viewerUserId, role: viewerRole });
-  const st = await fakeOrdersService.getSettings();
   debugTrainingPoolLog("visibility_gate", {
     viewerUserId: viewerUserId ?? null,
     viewerRole: viewerRole || null,
-    trainingOrdersEnabled: st?.trainingOrdersEnabled === true,
     canSee,
   });
-  if (!st || st.trainingOrdersEnabled !== true || !canSee) {
+  if (!canSee) {
     return null;
   }
-  try {
-    await fakeOrdersService.ensureMinimumVisibleFakeOrders({ reason: "orders_pool_request" });
-  } catch (e) {
-    console.error("[trainingPoolList] ensureMinimumVisibleFakeOrders failed (non-fatal):", e?.message || e);
-  }
 
-  const lim = Math.min(Math.max(Number(limit) || 12, 1), 200);
+  const lim = Math.min(Math.max(Number(limit) || 8, 1), 200);
   const off = Number.isFinite(Number(offset)) ? Math.max(Number(offset), 0) : Math.max(((Number(page) || 1) - 1) * lim, 0);
   const subSubIds = parseIdCsv(subSubCategoryIds);
   const { vals: fvals, wr, wf } = buildDualFilters(status, projectType, categoryId, subSubIds, q);
@@ -160,17 +150,25 @@ async function tryMergedPoolMeta({
       : "sort_ts DESC, sort_id DESC";
 
   const baseParams = [...fvals, uid];
-  const countSql = `
-    WITH unioned AS (
-      SELECT o.id AS sort_id, o.created_at AS sort_ts, 'real'::text AS src
-      FROM orders o
-      ${whereRSql}
-      UNION ALL
-      SELECT fo.id, ri.visible_from AS sort_ts, 'fake'::text AS src
+  const fakeSelect = `
+      SELECT fo.id AS sort_id, ri.visible_from AS sort_ts, 'fake'::text AS src
       FROM fake_orders fo
       INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id
       INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
-      ${whereFSql}
+      ${whereFSql}`;
+
+  const realSelect = `
+      SELECT o.id AS sort_id, o.created_at AS sort_ts, 'real'::text AS src
+      FROM orders o
+      ${whereRSql}`;
+
+  const unionBody = includeRealOrders
+    ? `${realSelect}\n      UNION ALL\n      ${fakeSelect}`
+    : fakeSelect;
+
+  const countSql = `
+    WITH unioned AS (
+      ${unionBody}
     )
     SELECT COUNT(*)::int AS total FROM unioned
   `;
@@ -179,15 +177,7 @@ async function tryMergedPoolMeta({
   const offPh = baseParams.length + 2;
   const listSql = `
     WITH unioned AS (
-      SELECT o.id AS sort_id, o.created_at AS sort_ts, 'real'::text AS src
-      FROM orders o
-      ${whereRSql}
-      UNION ALL
-      SELECT fo.id, ri.visible_from AS sort_ts, 'fake'::text AS src
-      FROM fake_orders fo
-      INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id
-      INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
-      ${whereFSql}
+      ${unionBody}
     )
     SELECT sort_id, src FROM unioned
     ORDER BY ${orderBy}
@@ -221,7 +211,13 @@ async function tryMergedPoolMeta({
   };
 }
 
+/** Training/fake orders only (no real `orders` branch) — for free-plan freelancers. */
+async function tryFakeOnlyPoolMeta(options) {
+  return tryMergedPoolMeta({ ...options, includeRealOrders: false });
+}
+
 module.exports = {
   tryMergedPoolMeta,
+  tryFakeOnlyPoolMeta,
   parseIdCsv,
 };

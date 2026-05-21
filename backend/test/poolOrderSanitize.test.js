@@ -45,8 +45,12 @@ describe("sanitizePublicPoolOrder", () => {
       filesCount: 0,
       files: [],
       orderSource: "real",
+      trainingLabel: "طلب تجريبي",
     };
-    const safe = sanitizePublicPoolOrder(listRow);
+    const safe = sanitizePublicPoolOrder({ ...listRow, isDisplayOnly: true, orderSource: "fake" });
+    assert.ok(!Object.prototype.hasOwnProperty.call(safe, "isDisplayOnly"));
+    assert.ok(!Object.prototype.hasOwnProperty.call(safe, "orderSource"));
+    assert.ok(!Object.prototype.hasOwnProperty.call(safe, "trainingLabel"));
     assert.ok(!Object.prototype.hasOwnProperty.call(safe, "assignedFreelancerId"));
     assert.ok(!Object.prototype.hasOwnProperty.call(safe, "createdByUserId"));
     assert.ok(!Object.prototype.hasOwnProperty.call(safe, "paymentStatus"));

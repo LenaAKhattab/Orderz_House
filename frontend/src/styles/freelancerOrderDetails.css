@@ -1,0 +1,714 @@
+/* Freelancer pool order details — premium soft 3D neumorphism (open orders marketplace) */
+
+.fdl-outlet:has(> .oh-order-details--dashboard) {
+  padding-inline: clamp(10px, 1.1vw, 16px);
+  padding-block: 0 clamp(14px, 1.6vw, 22px);
+}
+
+.oh-order-details--dashboard {
+  --oh-od-gap: 24px;
+  --oh-od-radius: 30px;
+  --oh-od-radius-sm: 26px;
+  --oh-od-blue: #3b6fc8;
+  --oh-od-blue-deep: #2f5fb8;
+  --oh-od-text: #1e293b;
+  --oh-od-muted: #94a3b8;
+  --oh-od-ease: cubic-bezier(0.33, 1, 0.68, 1);
+  --oh-od-surface-bg: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.96) 0%,
+    rgba(255, 255, 255, 0.82) 48%,
+    rgba(248, 250, 252, 0.78) 100%
+  );
+  --oh-od-surface-border: 1px solid rgba(255, 255, 255, 0.72);
+  --oh-od-surface-shadow:
+    0 14px 36px rgba(148, 163, 184, 0.14),
+    -8px -8px 20px rgba(255, 255, 255, 0.82),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --oh-od-surface-shadow-hover:
+    0 18px 42px rgba(148, 163, 184, 0.18),
+    -9px -9px 22px rgba(255, 255, 255, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  --oh-od-inset-bg: rgba(246, 248, 252, 0.72);
+  --oh-od-inset-border: 1px solid rgba(255, 255, 255, 0.65);
+  --oh-od-inset-shadow:
+    inset 1px 1px 4px rgba(148, 163, 184, 0.08),
+    inset -1px -1px 3px rgba(255, 255, 255, 0.85);
+
+  width: 100%;
+  max-width: none;
+  padding: 0 !important;
+  background: transparent;
+  color: var(--oh-od-text);
+  gap: 0;
+}
+
+/* Tighten top rhythm (override legacy .od-page / .dash-shell / .page-content spacing) */
+.oh-order-details--dashboard.od-page--pool {
+  gap: 0;
+}
+
+.fdl-outlet > .container.page-content.oh-order-details--dashboard {
+  padding: 0 !important;
+}
+
+.oh-order-details--dashboard .od-pool-toolbar--bare {
+  padding: 0 !important;
+}
+
+/* —— Shared floating neu surface —— */
+.oh-order-details--dashboard .oh-order-details-neu {
+  position: relative;
+  isolation: isolate;
+  background: var(--oh-od-surface-bg);
+  border: var(--oh-od-surface-border);
+  box-shadow: var(--oh-od-surface-shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: var(--oh-od-radius);
+  overflow: hidden;
+  transition:
+    transform 0.24s var(--oh-od-ease),
+    box-shadow 0.24s var(--oh-od-ease);
+}
+
+.oh-order-details--dashboard .oh-order-details-neu::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 255, 255, 0.14) 26%,
+    transparent 46%
+  );
+}
+
+.oh-order-details--dashboard .oh-order-details-neu::after {
+  content: "";
+  position: absolute;
+  inset: auto 12% 0 12%;
+  z-index: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55) 20%,
+    rgba(255, 255, 255, 0.55) 80%,
+    transparent
+  );
+  opacity: 0.85;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 960px) {
+  .oh-order-details--dashboard .oh-order-details-neu--main:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--oh-od-surface-shadow-hover);
+  }
+
+  .oh-order-details--dashboard .oh-order-details-neu--summary:hover,
+  .oh-order-details--dashboard .oh-order-details-neu--files:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--oh-od-surface-shadow-hover);
+  }
+}
+
+.oh-order-details--dashboard .oh-order-details-neu--main,
+.oh-order-details--dashboard .oh-order-details-neu--summary,
+.oh-order-details--dashboard .oh-order-details-neu--files {
+  border-radius: var(--oh-od-radius);
+}
+
+/* —— Back control — raised soft chip —— */
+.oh-order-details--dashboard .oh-order-details__back {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 9px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.78) !important;
+  background: var(--oh-od-surface-bg) !important;
+  color: #475569 !important;
+  font-size: 0.86rem;
+  font-weight: 800;
+  box-shadow:
+    0 10px 26px rgba(148, 163, 184, 0.12),
+    -5px -5px 14px rgba(255, 255, 255, 0.88),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  text-decoration: none;
+  transition:
+    transform 0.2s var(--oh-od-ease),
+    box-shadow 0.2s var(--oh-od-ease),
+    color 0.2s var(--oh-od-ease);
+}
+
+.oh-order-details--dashboard .oh-order-details__back:hover {
+  transform: translateY(-2px);
+  color: var(--oh-od-blue-deep) !important;
+  box-shadow:
+    0 14px 32px rgba(148, 163, 184, 0.16),
+    -6px -6px 16px rgba(255, 255, 255, 0.92),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+.oh-order-details--dashboard .oh-order-details__toolbar {
+  margin: 0 0 10px;
+  min-height: 0;
+}
+
+/* —— Notice — soft amber neu panel —— */
+.oh-order-details--dashboard .oh-order-details__notice {
+  position: relative;
+  margin: 0 0 var(--oh-od-gap);
+  padding: 16px 20px;
+  border-radius: var(--oh-od-radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.65) !important;
+  background: linear-gradient(
+    160deg,
+    rgba(255, 251, 235, 0.92) 0%,
+    rgba(254, 243, 199, 0.78) 100%
+  ) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    0 12px 30px rgba(180, 83, 9, 0.1),
+    -5px -5px 14px rgba(255, 255, 255, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+}
+
+.oh-order-details--dashboard .oh-order-details__notice::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.5) 0%, transparent 42%);
+}
+
+.oh-order-details--dashboard .oh-order-details__notice p {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #92400e;
+}
+
+/* —— Balanced two-column workspace (summary | details) —— */
+.oh-order-details--dashboard .order-details-layout,
+.oh-order-details--dashboard .oh-order-details__layout.od-pool-shell {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+
+.oh-order-details--dashboard .oh-order-details__aside .od-aside-col {
+  gap: 18px;
+}
+
+@media (min-width: 960px) {
+  .oh-order-details--dashboard .order-details-layout,
+  .oh-order-details--dashboard .oh-order-details__layout.od-pool-shell {
+    display: grid !important;
+    grid-template-columns: minmax(280px, min(360px, 32%)) minmax(0, 1fr);
+    gap: 28px;
+    align-items: stretch;
+    direction: ltr;
+    flex-direction: unset !important;
+  }
+
+  .oh-order-details--dashboard .oh-order-details__aside.od-pool-summary {
+    grid-column: 1;
+    grid-row: 1;
+    order: unset !important;
+    width: 100% !important;
+    min-width: 0;
+    max-width: none !important;
+    flex: none !important;
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    min-height: 100%;
+  }
+
+  .oh-order-details--dashboard .oh-order-details__aside .od-aside-col {
+    position: static;
+    top: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    height: 100%;
+    gap: 18px;
+  }
+
+  .oh-order-details--dashboard .oh-order-details-neu--summary {
+    flex-shrink: 0;
+  }
+
+  .oh-order-details--dashboard .oh-order-details-neu--files {
+    margin-top: auto;
+    flex: 1 1 0;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .oh-order-details--dashboard .oh-order-details__main.od-pool-title {
+    grid-column: 2;
+    grid-row: 1;
+    order: unset !important;
+    width: 100% !important;
+    min-width: 0;
+    max-width: none !important;
+    flex: none !important;
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    min-height: 100%;
+  }
+
+  .oh-order-details--dashboard .oh-order-details__main .oh-order-details-neu--main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .oh-order-details--dashboard .oh-order-details__main .od-title-desc-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .oh-order-details--dashboard .oh-order-details-neu--main .od-pool-primary-actions {
+    margin-top: auto;
+  }
+
+  .oh-order-details--dashboard .oh-order-details__aside {
+    position: sticky;
+    top: calc(var(--fdl-topbar-h, 80px) + var(--fdl-shell-gap, 16px) + 8px);
+  }
+}
+
+@media (max-width: 959px) {
+  .oh-order-details--dashboard .order-details-layout,
+  .oh-order-details--dashboard .oh-order-details__layout.od-pool-shell {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    direction: rtl;
+  }
+
+  .oh-order-details--dashboard .oh-order-details__main.od-pool-title {
+    grid-row: 1;
+    order: unset !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .oh-order-details--dashboard .oh-order-details__aside.od-pool-summary {
+    grid-row: 2;
+    order: unset !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+/* Strip legacy flat chrome inside neu shells */
+.oh-order-details--dashboard .oh-order-details-neu .od-summary__surface,
+.oh-order-details--dashboard .oh-order-details-neu .od-files-card,
+.oh-order-details--dashboard .oh-order-details-neu .od-title-card,
+.oh-order-details--dashboard .oh-order-details-neu .od-description,
+.oh-order-details--dashboard .oh-order-details-neu .od-title-desc-group {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu--main .od-title-desc-group {
+  gap: 0;
+}
+
+/* Main card sections */
+.oh-order-details--dashboard .oh-order-details-neu .od-title-card {
+  padding: 1.5rem 1.65rem 1.25rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-title-card__label {
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--oh-od-muted);
+  text-transform: uppercase;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-title-card__value {
+  margin-top: 0.4rem;
+  font-size: clamp(1.2rem, 2.1vw, 1.5rem);
+  font-weight: 800;
+  line-height: 1.38;
+  color: var(--oh-od-text);
+  letter-spacing: -0.025em;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-description {
+  padding: 1.25rem 1.65rem;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-description + .od-description {
+  border-top: 1px solid rgba(226, 232, 240, 0.45) !important;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-description__text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.9;
+  color: #475569;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-pool-primary-actions {
+  padding: 1.35rem 1.65rem 1.55rem !important;
+  border-top: 1px solid rgba(226, 232, 240, 0.5) !important;
+  background: linear-gradient(180deg, transparent 0%, rgba(248, 250, 252, 0.35) 100%) !important;
+}
+
+/* Summary — inset primary block */
+.oh-order-details--dashboard .oh-order-details-neu--summary .od-summary__surface {
+  padding: 1.35rem 1.45rem 1.45rem;
+}
+
+/* —— Neu icon chips —— */
+.oh-order-details--dashboard .od-neu-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  background: linear-gradient(145deg, #ffffff 0%, #f4f7fb 100%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 4px 12px rgba(148, 163, 184, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.oh-order-details--dashboard .od-neu-icon--circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.oh-order-details--dashboard .od-neu-icon--squircle {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  color: #5b6b84;
+}
+
+.oh-order-details--dashboard .od-section-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  direction: rtl;
+  text-align: right;
+}
+
+.oh-order-details--dashboard .od-section-head--compact {
+  align-items: center;
+  margin-bottom: 0.15rem;
+}
+
+.oh-order-details--dashboard .od-section-head__copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-summary__title {
+  margin: 0 0 1.05rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--oh-od-muted);
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-summary__row-line {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  direction: rtl;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-summary__row-copy {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-files-card__title,
+.oh-order-details--dashboard .oh-order-details-neu .od-description__label {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  text-align: right;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-files-card__title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--oh-od-muted);
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-section-head--compact + .od-description__body {
+  margin-top: 0.35rem;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-description__label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--oh-od-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-summary__primary {
+  margin: 0 0 1.05rem;
+  padding: 14px 14px 12px;
+  border-radius: 18px;
+  border: var(--oh-od-inset-border);
+  background: var(--oh-od-inset-bg);
+  box-shadow: var(--oh-od-inset-shadow);
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-summary__primary-value {
+  color: var(--oh-od-blue-deep);
+  font-size: 1.06rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-summary__label {
+  color: var(--oh-od-muted);
+  font-size: 0.74rem;
+  font-weight: 750;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-summary__value {
+  color: #334155;
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-summary__row {
+  display: block;
+  padding-bottom: 0.7rem;
+  border-bottom-color: rgba(226, 232, 240, 0.38);
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-summary__row > .od-summary__row-line {
+  width: 100%;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-summary__primary > .od-summary__row-line {
+  width: 100%;
+}
+
+/* Files card — grows to fill sidebar space below summary */
+.oh-order-details--dashboard .oh-order-details-neu--files {
+  display: flex;
+  flex-direction: column;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu--files .od-files-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  padding: 1.4rem 1.45rem 1.55rem;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu--files .od-files-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu--files .od-files-card__body > .od-muted {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  min-height: 168px;
+  padding: 32px 20px;
+  border-radius: 16px;
+  text-align: center;
+  color: var(--oh-od-muted);
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.55;
+  background: var(--oh-od-inset-bg);
+  border: var(--oh-od-inset-border);
+  box-shadow: var(--oh-od-inset-shadow);
+}
+
+.oh-order-details--dashboard .oh-order-details-neu--files .od-files-card__body > .od-file-list {
+  flex: 1;
+  min-height: 120px;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-muted {
+  color: var(--oh-od-muted);
+  font-size: 0.86rem;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-file-list {
+  gap: 10px;
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-file-list__item {
+  padding: 11px 13px;
+  border-radius: 16px;
+  border: var(--oh-od-inset-border);
+  background: var(--oh-od-inset-bg);
+  box-shadow: var(--oh-od-inset-shadow);
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-file-list__btn {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: linear-gradient(145deg, #ffffff, #f1f5f9);
+  font-weight: 800;
+  font-size: 0.78rem;
+  box-shadow:
+    0 4px 10px rgba(148, 163, 184, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.oh-order-details--dashboard .oh-order-details-neu .od-file-list__btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(145deg, #ffffff, #e8eef5);
+  box-shadow:
+    0 6px 14px rgba(148, 163, 184, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+/* Primary CTA — elevated 3D pill */
+.oh-order-details--dashboard .od-pool-primary-actions .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 54px;
+  padding: 0.9rem 2.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 999px !important;
+  background: linear-gradient(145deg, #4a7fd4 0%, var(--oh-od-blue) 38%, var(--oh-od-blue-deep) 100%) !important;
+  color: #fff !important;
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  box-shadow:
+    0 14px 32px -6px rgba(47, 95, 184, 0.48),
+    -3px -3px 10px rgba(255, 255, 255, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 4px rgba(30, 64, 120, 0.2) !important;
+  transition:
+    transform 0.2s var(--oh-od-ease),
+    box-shadow 0.2s var(--oh-od-ease),
+    filter 0.2s var(--oh-od-ease);
+}
+
+.oh-order-details--dashboard .od-pool-primary-actions .btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+  box-shadow:
+    0 18px 38px -6px rgba(47, 95, 184, 0.52),
+    -4px -4px 12px rgba(255, 255, 255, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 4px rgba(30, 64, 120, 0.22) !important;
+}
+
+.oh-order-details--dashboard .od-pool-primary-actions .btn-primary:disabled {
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  background: linear-gradient(145deg, #f8fafc 0%, #e8edf2 100%) !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+  box-shadow:
+    0 8px 20px rgba(148, 163, 184, 0.1),
+    inset 0 2px 5px rgba(148, 163, 184, 0.1),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.75) !important;
+}
+
+/* Empty state */
+.oh-order-details--dashboard .od-empty {
+  margin: 2rem 0;
+  padding: 2.25rem 1.5rem;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--oh-od-muted);
+  border-radius: var(--oh-od-radius);
+  background: var(--oh-od-surface-bg);
+  border: var(--oh-od-surface-border);
+  box-shadow: var(--oh-od-surface-shadow);
+  backdrop-filter: blur(14px);
+}
+
+/* Skeleton — match neu shells */
+.oh-order-details--dashboard .od-pool-shell[aria-busy="true"] .od-summary__surface,
+.oh-order-details--dashboard .od-pool-shell[aria-busy="true"] .od-files-card {
+  background: var(--oh-od-surface-bg) !important;
+  border: var(--oh-od-surface-border) !important;
+  box-shadow: var(--oh-od-surface-shadow) !important;
+  border-radius: var(--oh-od-radius) !important;
+  backdrop-filter: blur(14px);
+}
+
+.oh-order-details--dashboard .od-pool-shell[aria-busy="true"] .od-title-desc-group {
+  background: var(--oh-od-surface-bg) !important;
+  border: var(--oh-od-surface-border) !important;
+  box-shadow: var(--oh-od-surface-shadow) !important;
+  border-radius: var(--oh-od-radius) !important;
+  backdrop-filter: blur(14px);
+}
+
+@media (max-width: 959px) {
+  .oh-order-details--dashboard {
+    --oh-od-radius: 26px;
+  }
+
+  .oh-order-details--dashboard .oh-order-details-neu .od-title-card,
+  .oh-order-details--dashboard .oh-order-details-neu .od-description,
+  .oh-order-details--dashboard .oh-order-details-neu .od-pool-primary-actions {
+    padding-inline: 1.25rem;
+  }
+}

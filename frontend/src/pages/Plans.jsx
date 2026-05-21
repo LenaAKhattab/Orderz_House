@@ -9,7 +9,11 @@ import {
   NOTIFICATIONS_REFRESH_EVENT,
 } from "../services/api";
 import PricingSection from "../components/plans/PricingSection";
-import { getOrderzhousePlansCatalog, mergeApiPlansWithCatalog } from "../constants/orderzhousePlansCatalog";
+import {
+  getOrderzhousePlansCatalog,
+  isOrderzhouseFreePlan,
+  mergeApiPlansWithCatalog,
+} from "../constants/orderzhousePlansCatalog";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../components/ui/toastContext";
 import { trackEvent } from "../services/analytics";
@@ -21,6 +25,9 @@ function errorMessage(err) {
 
 function isBlockingSubscription(subscription) {
   if (!subscription) return false;
+  if (isOrderzhouseFreePlan(subscription.plan || { id: subscription.planId, name: subscription.plan?.name })) {
+    return false;
+  }
   const status = subscription?.status;
   if (status === "inactive" || status === "cancelled") return false;
 
@@ -225,6 +232,7 @@ const Plans = () => {
       <PricingSection
         loading={loading}
         plans={plans}
+        currentSubscription={mySubscription}
         hasBlockingSubscription={hasBlockingSubscription}
         checkoutBusyPlanId={checkoutBusyPlanId}
         onCta={async (plan) => {

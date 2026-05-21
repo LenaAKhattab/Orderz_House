@@ -119,6 +119,38 @@ async function unassignOneFreelancer(req, res, next) {
   }
 }
 
+async function publishCourse(req, res, next) {
+  try {
+    const out = await coursesService.publishCourse({
+      actorUserId: req.auth.userId,
+      courseId: req.params.id,
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    if (err.code === "COURSE_PUBLISH_INCOMPLETE") {
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+        missing: err.missing || [],
+        missingLabels: err.missingLabels || [],
+      });
+    }
+    return next(err);
+  }
+}
+
+async function archiveCourse(req, res, next) {
+  try {
+    const out = await coursesService.archiveCourse({
+      actorUserId: req.auth.userId,
+      courseId: req.params.id,
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function deleteCourse(req, res, next) {
   try {
     const out = await coursesService.deleteCourse({
@@ -143,11 +175,39 @@ async function listFreelancers(req, res, next) {
   }
 }
 
+async function uploadCourseTestFile(req, res, next) {
+  try {
+    const out = await coursesService.uploadCourseTestFile({
+      actorUserId: req.auth.userId,
+      courseId: req.params.id,
+      file: req.file,
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function uploadCoursePromptFile(req, res, next) {
+  try {
+    const out = await coursesService.uploadCoursePromptFile({
+      actorUserId: req.auth.userId,
+      courseId: req.params.id,
+      file: req.file,
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   listCourses,
   createCourse,
   getCourseById,
   updateCourse,
+  publishCourse,
+  archiveCourse,
   importLessons,
   updateLessons,
   assignFreelancers,
@@ -155,4 +215,6 @@ module.exports = {
   unassignOneFreelancer,
   deleteCourse,
   listFreelancers,
+  uploadCourseTestFile,
+  uploadCoursePromptFile,
 };

@@ -248,6 +248,12 @@ export const getMySubscriptionRequest = async () => {
   return data;
 };
 
+/** Freelancer control-center dashboard: single aggregated summary (Phase 2). */
+export const getFreelancerDashboardSummaryRequest = async () => {
+  const { data } = await api.get("/freelancer/dashboard-summary", { timeout: 20000 });
+  return data;
+};
+
 export const createFreelancerSubscriptionCheckoutRequest = async (planId) => {
   const id = Number(planId);
   if (!Number.isInteger(id) || id < 1) {
@@ -288,24 +294,24 @@ export const getMyAssignedOrderByIdRequest = async (orderId) => {
 };
 
 // Orders (internal admin-created pool)
-export const listPoolOrdersRequest = async (params = {}) => {
-  const { data } = await api.get("/orders/pool", { params, timeout: 30000 });
+export const listPoolOrdersRequest = async (params = {}, options = {}) => {
+  const { signal, ...axiosOptions } = options;
+  const { data } = await api.get("/orders/pool", {
+    params,
+    timeout: 30000,
+    signal,
+    ...axiosOptions,
+  });
   return data;
 };
 
 export const getPoolOrderByIdRequest = async (orderId, options = {}) => {
-  const orderSource = options.orderSource || options.source;
-  const params = orderSource === "fake" ? { source: "fake" } : {};
-  const { data } = await api.get(`/orders/pool/${orderId}`, { params, timeout: 30000 });
+  const { data } = await api.get(`/orders/pool/${orderId}`, { timeout: 30000, ...options });
   return data;
 };
 
-/** @param {string} orderId @param {{ orderSource?: 'real'|'fake' }} [options] */
-export const takePoolOrderRequest = async (orderId, options = {}) => {
-  const orderSource = options.orderSource || options.source;
-  const url =
-    orderSource === "fake" ? `/orders/pool/fake/${orderId}/take` : `/orders/${orderId}/take`;
-  const { data } = await api.post(url);
+export const takePoolOrderRequest = async (orderId) => {
+  const { data } = await api.post(`/orders/pool/${orderId}/take`);
   return data;
 };
 
@@ -317,6 +323,31 @@ export const listClientMyOrdersRequest = async (params = {}) => {
 /** Client-owned order + submission timeline (GET). */
 export const getClientOrderByIdRequest = async (orderId) => {
   const { data } = await api.get(`/client/orders/${orderId}`, { timeout: 45000 });
+  return data;
+};
+
+export const getClientOrderReviewStatusRequest = async (orderId) => {
+  const { data } = await api.get(`/client/orders/${orderId}/review`);
+  return data;
+};
+
+export const submitClientOrderReviewRequest = async (orderId, payload) => {
+  const { data } = await api.post(`/client/orders/${orderId}/review`, payload);
+  return data;
+};
+
+export const updateClientOrderReviewRequest = async (orderId, payload) => {
+  const { data } = await api.patch(`/client/orders/${orderId}/review`, payload);
+  return data;
+};
+
+export const listFreelancerReviewsRequest = async (params = {}) => {
+  const { data } = await api.get("/freelancer/reviews", { params });
+  return data;
+};
+
+export const getFreelancerReviewsSummaryRequest = async () => {
+  const { data } = await api.get("/freelancer/reviews/summary");
   return data;
 };
 
@@ -378,11 +409,8 @@ export const cancelClientFixedOrderPaymentRequest = async (orderId) => {
   return data;
 };
 
-export const submitPoolOrderBidRequest = async (orderId, payload, options = {}) => {
-  const orderSource = options.orderSource || options.source;
-  const url =
-    orderSource === "fake" ? `/orders/pool/fake/${orderId}/bids` : `/orders/pool/${orderId}/bids`;
-  const { data } = await api.post(url, payload);
+export const submitPoolOrderBidRequest = async (orderId, payload) => {
+  const { data } = await api.post(`/orders/pool/${orderId}/bids`, payload);
   return data;
 };
 
@@ -818,6 +846,30 @@ export const adminUpdateCourseRequest = async (courseId, payload) => {
   return data;
 };
 
+export const adminUploadCourseTestFileRequest = async (courseId, file) => {
+  const fd = new FormData();
+  fd.append("testFile", file);
+  const { data } = await api.post(`/admin/courses/${courseId}/test-file`, fd, { timeout: 120000 });
+  return data;
+};
+
+export const adminUploadCoursePromptFileRequest = async (courseId, file) => {
+  const fd = new FormData();
+  fd.append("promptFile", file);
+  const { data } = await api.post(`/admin/courses/${courseId}/prompt-file`, fd, { timeout: 120000 });
+  return data;
+};
+
+export const adminPublishCourseRequest = async (courseId) => {
+  const { data } = await api.post(`/admin/courses/${courseId}/publish`);
+  return data;
+};
+
+export const adminArchiveCourseRequest = async (courseId) => {
+  const { data } = await api.post(`/admin/courses/${courseId}/archive`);
+  return data;
+};
+
 export const adminDeleteCourseRequest = async (courseId) => {
   const { data } = await api.delete(`/admin/courses/${courseId}`);
   return data;
@@ -876,7 +928,20 @@ export const freelancerMarkLessonCompleteRequest = async (courseId, lessonId) =>
 };
 
 export const freelancerSubmitCourseCompletionRequest = async (courseId, payload = {}) => {
-  const { data } = await api.post(`/freelancer/courses/${courseId}/complete`, payload);
+  const file = payload?.auditResponseFile;
+  if (file instanceof File) {
+    const fd = new FormData();
+    if (payload.auditResponseText != null && String(payload.auditResponseText).trim()) {
+      fd.append("auditResponseText", String(payload.auditResponseText).trim());
+    }
+    if (payload.auditNotes) fd.append("auditNotes", String(payload.auditNotes).trim());
+    fd.append("auditResponseFile", file);
+    const { data } = await api.post(`/freelancer/courses/${courseId}/complete`, fd, { timeout: 120000 });
+    return data;
+  }
+  const body = { ...payload };
+  delete body.auditResponseFile;
+  const { data } = await api.post(`/freelancer/courses/${courseId}/complete`, body);
   return data;
 };
 

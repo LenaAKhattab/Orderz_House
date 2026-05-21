@@ -44,7 +44,6 @@ import TrainingOrderRoundsPage from "./pages/dashboard/trainingOrders/TrainingOr
 import TrainingOrderApplicationsPage from "./pages/dashboard/trainingOrders/TrainingOrderApplicationsPage";
 import FreelancerCoursesPage from "./pages/dashboard/FreelancerCoursesPage";
 import FreelancerCourseDetailsPage from "./pages/dashboard/FreelancerCourseDetailsPage";
-import FreelancerProfilePage from "./pages/dashboard/FreelancerProfilePage";
 import FreelancerSettingsPage from "./pages/dashboard/FreelancerSettingsPage";
 import ClientProfilePage from "./pages/dashboard/ClientProfilePage";
 import ClientSettingsPage from "./pages/dashboard/ClientSettingsPage";
@@ -340,14 +339,6 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
                       <NotificationsPage />
-                    </RequireRole>
-                  }
-                />
-                <Route
-                  path="/dashboard/freelancer/profile"
-                  element={
-                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
-                      <FreelancerProfilePage />
                     </RequireRole>
                   }
                 />
