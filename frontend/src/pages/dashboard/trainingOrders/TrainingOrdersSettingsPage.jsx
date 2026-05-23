@@ -16,8 +16,11 @@ function errMsg(e) {
 export default function TrainingOrdersSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [visibilitySaving, setVisibilitySaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [visibilityError, setVisibilityError] = useState("");
+  const [visibilitySuccess, setVisibilitySuccess] = useState("");
   const [plans, setPlans] = useState([]);
   const [autoMeta, setAutoMeta] = useState({
     nextAutomationRunAt: null,
@@ -117,6 +120,24 @@ export default function TrainingOrdersSettingsPage() {
     }));
   };
 
+  const toggleTrainingVisibility = async () => {
+    const next = !form.trainingOrdersEnabled;
+    setVisibilityError("");
+    setVisibilitySuccess("");
+    setVisibilitySaving(true);
+    try {
+      const res = await adminPatchTrainingOrdersSettingsRequest({ trainingOrdersEnabled: next });
+      const enabled = Boolean(res?.data?.trainingOrdersEnabled ?? next);
+      setForm((f) => ({ ...f, trainingOrdersEnabled: enabled }));
+      setVisibilitySuccess(enabled ? "تم تشغيل ظهور الطلبات التدريبية." : "تم إيقاف ظهور الطلبات التدريبية.");
+      await load();
+    } catch (e) {
+      setVisibilityError(errMsg(e));
+    } finally {
+      setVisibilitySaving(false);
+    }
+  };
+
   const save = async () => {
     setError("");
     setSuccess("");
@@ -187,27 +208,39 @@ export default function TrainingOrdersSettingsPage() {
         <p style={{ color: "#15803d", fontWeight: 700, margin: error ? "8px 0 0" : 0 }}>{success}</p>
       ) : null}
 
+      <DashboardFormCard title="ظهور الطلبات التدريبية في المعرض">
+        <div
+          className={`oh-training-visibility-control ${form.trainingOrdersEnabled ? "oh-training-visibility-control--on" : "oh-training-visibility-control--off"}`.trim()}
+        >
+          <p className="oh-training-visibility-control__status" role="status">
+            {form.trainingOrdersEnabled ? "الطلبات التدريبية ظاهرة الآن" : "الطلبات التدريبية مخفية الآن"}
+          </p>
+          <p className="oh-training-visibility-control__help">
+            {form.trainingOrdersEnabled
+              ? "يظهر للمستقلين ما يطابق إعدادات الظهور والباقات أدناه. إيقاف هذا الخيار يخفي الطلبات التدريبية من المعرض دون حذف القوالب أو الجولات."
+              : "الطلبات التدريبية مخفية عن المعرض والمستقلين. القوالب والجولات والتقديمات تبقى محفوظة."}
+          </p>
+          {visibilityError ? <p className="auth-form-error">{visibilityError}</p> : null}
+          {visibilitySuccess ? (
+            <p className="oh-training-visibility-control__success">{visibilitySuccess}</p>
+          ) : null}
+          <button
+            type="button"
+            className={`btn ${form.trainingOrdersEnabled ? "btn-secondary" : "btn-primary"} oh-training-visibility-control__btn`}
+            disabled={visibilitySaving}
+            onClick={() => void toggleTrainingVisibility()}
+          >
+            {visibilitySaving
+              ? "جاري التحديث…"
+              : form.trainingOrdersEnabled
+                ? "إيقاف ظهور الطلبات التدريبية"
+                : "تشغيل ظهور الطلبات التدريبية"}
+          </button>
+        </div>
+      </DashboardFormCard>
+
       <DashboardFormCard title="الأساسيات">
           <div className="oh-training-settings">
-        <section className="oh-training-settings-section">
-          <h3 className="oh-training-settings-section__title">المعرض</h3>
-          <p className="oh-training-settings-section__help">بدون التفعيل لن تظهر الطلبات التجريبية للمستقلين.</p>
-          <div className="oh-training-toggle-field">
-            <div className="oh-training-toggle-wrap">
-              <button
-                type="button"
-                role="switch"
-                aria-checked={form.trainingOrdersEnabled}
-                aria-label="تفعيل ظهور الطلبات التجريبية في المعرض"
-                className={`oh-training-toggle ${form.trainingOrdersEnabled ? "is-on" : ""}`.trim()}
-                onClick={() => setForm((f) => ({ ...f, trainingOrdersEnabled: !f.trainingOrdersEnabled }))}
-              >
-                <span className="oh-training-toggle__thumb" aria-hidden />
-              </button>
-              <span className="oh-training-toggle__state">{form.trainingOrdersEnabled ? "مفعّل في المعرض" : "غير مفعّل"}</span>
-            </div>
-          </div>
-        </section>
 
         <section className="oh-training-settings-section">
           <h3 className="oh-training-settings-section__title">عدد الطلبات في الجولة</h3>

@@ -46,7 +46,7 @@ export const ORDERZHOUSE_PLANS_BY_ID = {
     installmentPlan: null,
     offerExpiresAt: null,
     offerLabel: null,
-    /** Display range on plan card; real orders remain fake-only for free tier. */
+    /** Order value band for pool (real + training/fake). */
     minOrderValue: 3,
     maxOrderValue: 7,
     orderValueMinJod: 3,

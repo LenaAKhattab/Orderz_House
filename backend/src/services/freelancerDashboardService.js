@@ -94,23 +94,20 @@ function mapSubscriptionSummary(subscription, planRange) {
       ? {
           minOrderValue: planRange.minOrderValue != null ? Number(planRange.minOrderValue) : null,
           maxOrderValue: planRange.maxOrderValue != null ? Number(planRange.maxOrderValue) : null,
-          blocksRealOrders: Boolean(planRange.blocksRealOrders),
           labelAr,
         }
       : null,
-    blocksRealOrders: Boolean(planRange?.blocksRealOrders),
     labelAr,
   };
 }
 
 function mapEligibilitySummary(eligibility, subscription, planRange, canAccessTrainingOrders) {
   const eligible = Boolean(eligibility?.eligible);
-  const blocksReal = Boolean(planRange?.blocksRealOrders);
   return {
     eligible,
     reason: eligibility?.reason || null,
     messageAr: getEligibilityMessageAr(eligibility, subscription),
-    canAccessRealOrders: eligible && !blocksReal,
+    canAccessRealOrders: eligible,
     canAccessTrainingOrders: Boolean(canAccessTrainingOrders),
   };
 }

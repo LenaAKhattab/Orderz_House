@@ -571,16 +571,45 @@
     border-color 0.18s var(--oh-pool-ease);
 }
 
-.oh-orders-market--modern .oh-order-row__action-btn:hover:not(:disabled) {
+.oh-orders-market--modern .oh-order-row__action-btn:hover:not(:disabled):not(.oh-order-row__action-btn--cta) {
   background: #f1f5f9;
   border-color: rgba(203, 213, 225, 0.9);
 }
 
+/* Actionable pool row — clear primary CTA (not plan-locked / not ineligible) */
+.oh-orders-market--modern .oh-order-row__action-btn--cta {
+  border-color: var(--oh-pool-blue-deep);
+  background: linear-gradient(180deg, var(--oh-pool-blue) 0%, var(--oh-pool-blue-deep) 100%);
+  color: #fff;
+  box-shadow:
+    0 4px 14px rgba(47, 95, 184, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.oh-orders-market--modern .oh-order-row__action-btn--cta:hover:not(:disabled) {
+  background: linear-gradient(180deg, #4a7fd4 0%, #3569c4 100%);
+  border-color: #3569c4;
+  box-shadow:
+    0 6px 18px rgba(47, 95, 184, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.oh-orders-market--modern .oh-order-row__action-btn--cta:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(47, 95, 184, 0.3);
+}
+
 .oh-orders-market--modern .oh-order-row__action-btn--locked,
-.oh-orders-market--modern .oh-order-row__action-btn:disabled {
+.oh-orders-market--modern .oh-order-row__action-btn:disabled:not(.oh-order-row__action-btn--cta) {
   color: #94a3b8;
   background: #f8fafc;
+  border-color: rgba(226, 232, 240, 0.95);
+  box-shadow: none;
   cursor: not-allowed;
+}
+
+.oh-orders-market--modern .oh-order-row__action-btn--locked {
+  gap: 4px;
 }
 
 .oh-orders-market--modern .oh-order-row-item--plan-locked .oh-order-row--neu {

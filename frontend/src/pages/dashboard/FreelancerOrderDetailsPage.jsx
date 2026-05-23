@@ -22,7 +22,7 @@ import OrderDescriptionCard from "../../components/orders/order-details/OrderDes
 import OrderFilesCard from "../../components/orders/order-details/OrderFilesCard";
 import { formatMoneyJod, formatMoneyJodRange } from "../../components/orders/order-details/orderDetailsUtils";
 import { trackEvent } from "../../services/analytics";
-import { isPoolOrderLockedByPlan } from "../../utils/poolOrderPlanEligibility";
+import { isPoolOrderLockedByPlan, poolOrderPlanLockBadgeText } from "../../utils/poolOrderPlanEligibility";
 import { isPoolOrderAvailable, poolFixedParticipationPending } from "../../utils/poolOrderParticipation";
 import { isPoolOrderTakenAsAssignment } from "../../utils/poolOrderTakeOutcome";
 import { Lock } from "lucide-react";
@@ -58,6 +58,7 @@ export default function FreelancerOrderDetailsPage() {
   const [subscription, setSubscription] = useState(null);
 
   const planLocked = useMemo(() => isPoolOrderLockedByPlan(order), [order]);
+  const planLockLabel = poolOrderPlanLockBadgeText();
   const canTake = useMemo(() => isFreelancer && Boolean(eligibility?.eligible), [isFreelancer, eligibility]);
   const canActOnOrder = canTake && !planLocked;
   const ineligibleMessage = useMemo(() => {
@@ -243,13 +244,13 @@ export default function FreelancerOrderDetailsPage() {
           type="button"
           className="btn btn-primary"
           disabled={!canActOnOrder || bidBusy || order?.myBid?.status === "pending"}
-          title={order?.myBid?.status === "pending" ? "لقد قدمت عرضاً لهذا الطلب." : planLocked ? "غير متاح لباقتك" : ""}
+          title={order?.myBid?.status === "pending" ? "لقد قدمت عرضاً لهذا الطلب." : planLocked ? planLockLabel : ""}
           onClick={() => setBidOpen(true)}
         >
           {planLocked ? (
             <>
               <Lock size={18} strokeWidth={2.2} aria-hidden />
-              غير متاح لباقتك
+              {planLockLabel}
             </>
           ) : bidBusy
               ? "جارٍ الإرسال…"
@@ -265,7 +266,7 @@ export default function FreelancerOrderDetailsPage() {
           disabled={!canActOnOrder || taking || participationPending}
           title={
             planLocked
-              ? "غير متاح لباقتك"
+              ? planLockLabel
               : participationPending
                 ? "سبق أن سجّلت مشاركتك في هذا الطلب."
                 : !canTake
@@ -277,7 +278,7 @@ export default function FreelancerOrderDetailsPage() {
           {planLocked ? (
             <>
               <Lock size={18} strokeWidth={2.2} aria-hidden />
-              غير متاح لباقتك
+              {planLockLabel}
             </>
           ) : taking
               ? "جارٍ الاستلام…"

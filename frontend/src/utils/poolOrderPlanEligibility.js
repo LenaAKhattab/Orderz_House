@@ -24,10 +24,9 @@ export function poolOrderPlanLockBadgeText() {
   return "غير متاح لباقتك";
 }
 
-/** Tooltip/title for locked plan actions. */
-export function poolOrderPlanLockTooltip(order) {
-  const pe = getPoolOrderPlanEligibility(order);
-  return pe.lockReason || "خارج نطاق قيمة طلبات باقتك";
+/** Tooltip/title for locked plan actions (single copy; ignores API `lockReason`). */
+export function poolOrderPlanLockTooltip(_order) {
+  return poolOrderPlanLockBadgeText();
 }
 
 export function poolOrderPlanLockMessage(order) {

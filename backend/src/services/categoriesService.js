@@ -10,7 +10,19 @@ async function listCategories() {
   return rows;
 }
 
+async function getCategoryImageBySlug(slug) {
+  const { rows } = await pool.query(
+    `SELECT image_data, image_mime, image_url
+     FROM categories
+     WHERE slug = $1 AND is_active = TRUE
+     LIMIT 1`,
+    [slug],
+  );
+  return rows[0] || null;
+}
+
 module.exports = {
   listCategories,
+  getCategoryImageBySlug,
 };
 

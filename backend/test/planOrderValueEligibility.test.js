@@ -19,17 +19,13 @@ describe("getPlanOrderValueRange", () => {
     const free = getPlanOrderValueRange(1);
     assert.strictEqual(free.minOrderValue, 3);
     assert.strictEqual(free.maxOrderValue, 7);
-    assert.strictEqual(free.blocksRealOrders, true);
-
     const mid = getPlanOrderValueRange(2);
     assert.strictEqual(mid.minOrderValue, 7);
     assert.strictEqual(mid.maxOrderValue, 20);
-    assert.strictEqual(mid.blocksRealOrders, false);
 
     const plat = getPlanOrderValueRange(3);
     assert.strictEqual(plat.minOrderValue, 10);
     assert.strictEqual(plat.maxOrderValue, null);
-    assert.strictEqual(plat.blocksRealOrders, false);
   });
 });
 
@@ -50,14 +46,14 @@ describe("fixed orders — budget vs plan", () => {
     assert.strictEqual(isOrderValueAllowedForPlan(3, fixed(9.99)), false);
   });
 
-  it("free plan blocks real fixed orders despite 3–7 display range", () => {
-    assert.strictEqual(isOrderValueAllowedForPlan(1, fixed(5)), false);
+  it("free plan allows real and fake fixed orders in 3–7 JOD", () => {
+    assert.strictEqual(isOrderValueAllowedForPlan(1, fixed(5)), true);
+    assert.strictEqual(isOrderValueAllowedForPlan(1, fixed(2.99)), false);
+    assert.strictEqual(isOrderValueAllowedForPlan(1, fixed(7.01)), false);
     assert.strictEqual(
       isOrderValueAllowedForPlan(1, { ...fixed(5), orderSource: "fake" }),
       true,
     );
-    const range = getPlanOrderValueRange(1);
-    assert.strictEqual(isOrderRowAllowedForPlanRange(fixed(5), range), true);
   });
 });
 
@@ -83,8 +79,9 @@ describe("bidding orders — budget band overlap", () => {
     assert.strictEqual(isOrderValueAllowedForPlan(3, bidding(1, 9)), false);
   });
 
-  it("free plan blocks real bidding", () => {
-    assert.strictEqual(isOrderValueAllowedForPlan(1, bidding(3, 7)), false);
+  it("free plan allows real bidding when band overlaps 3–7", () => {
+    assert.strictEqual(isOrderValueAllowedForPlan(1, bidding(3, 7)), true);
+    assert.strictEqual(isOrderValueAllowedForPlan(1, bidding(1, 2)), false);
   });
 });
 
@@ -134,11 +131,14 @@ describe("computePoolOrderPlanEligibility", () => {
     assert.strictEqual(ok.canBid, true);
   });
 
-  it("free plan locks all real orders", () => {
+  it("free plan unlocks in-band real orders, locks out-of-band", () => {
     const range = getPlanOrderValueRange(1);
-    const el = computePoolOrderPlanEligibility({ project_type: "fixed", budget: 5, orderSource: "real" }, range);
-    assert.strictEqual(el.isLockedByPlan, true);
-    assert.strictEqual(el.canViewDetails, false);
+    const inBand = computePoolOrderPlanEligibility({ project_type: "fixed", budget: 5, orderSource: "real" }, range);
+    assert.strictEqual(inBand.isLockedByPlan, false);
+    assert.strictEqual(inBand.canClaim, true);
+    const low = computePoolOrderPlanEligibility({ project_type: "fixed", budget: 1, orderSource: "real" }, range);
+    assert.strictEqual(low.isLockedByPlan, true);
+    assert.strictEqual(low.canClaim, false);
   });
 
   it("fake pool rows follow plan band (free plan can claim in-band fake fixed)", () => {

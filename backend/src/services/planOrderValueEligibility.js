@@ -1,17 +1,12 @@
 /**
- * Central plan ↔ real order value eligibility (catalog-driven).
+ * Central plan ↔ order value eligibility (catalog-driven).
  *
  * Business rules:
  * - Fixed orders: compare `orders.budget` (JOD) to plan [minOrderValue, maxOrderValue].
- * - Bidding orders: compare plan range to order [bid_budget_min, bid_budget_max] via interval overlap
- *   (freelancer may bid only when client budget band overlaps subscription band).
- * - Free plan (id 1): catalog lists 3–7 د.أ for display, but real orders remain fake-only
- *   (`blocksRealOrders`); pool/claim/bid on real orders are blocked before range checks apply.
+ * - Bidding orders: compare plan range to order [bid_budget_min, bid_budget_max] via interval overlap.
+ * - Real and fake/training pool rows use the same value band (e.g. free plan 3–7 د.أ for both).
  */
-const {
-  ORDERZHOUSE_PLANS_BY_ID,
-  isOrderzhouseFreePlan,
-} = require("../constants/orderzhousePlansCatalog");
+const { ORDERZHOUSE_PLANS_BY_ID } = require("../constants/orderzhousePlansCatalog");
 
 function parseJod(value) {
   if (value === null || value === undefined || value === "") return null;
@@ -30,8 +25,6 @@ function normalizePlanRange(planId, row) {
     planId: id,
     minOrderValue,
     maxOrderValue,
-    /** Stronger than catalog range: free tier must not access real marketplace orders. */
-    blocksRealOrders: isOrderzhouseFreePlan(id),
   };
 }
 
@@ -145,7 +138,7 @@ function buildPlanOrderValueWhereClause(alias, minParamIndex, maxParamIndex) {
  * Pushes [min, max] onto `params` when omitted from caller.
  */
 function appendSqlPlanOrderValueFilter(whereParts, params, alias, range) {
-  if (!range || range.blocksRealOrders) return { applied: false };
+  if (!range) return { applied: false };
   const min = parseJod(range.minOrderValue);
   if (min == null) return { applied: false };
   params.push(min);
@@ -158,9 +151,6 @@ function appendSqlPlanOrderValueFilter(whereParts, params, alias, range) {
 
 function formatPlanRangeLabel(range) {
   if (!range) return null;
-  if (range.blocksRealOrders) {
-    return "الاشتراك المجاني — الطلبات الحقيقية تتطلب ترقية الاشتراك";
-  }
   const min = parseJod(range.minOrderValue);
   const max = parseJod(range.maxOrderValue);
   if (min != null && max != null) return `من ${min} إلى ${max} د.أ`;
@@ -182,37 +172,26 @@ function normalizeOrderLikeForPlanCheck(orderLike) {
 function isPlanValueAllowedForOrder(orderLike, range) {
   if (!range) return false;
   const norm = normalizeOrderLikeForPlanCheck(orderLike);
-  const isFake = norm.orderSource === "fake";
-  if (!isFake && range.blocksRealOrders) return false;
   return isOrderRowAllowedForPlanRange(norm, range);
 }
 
 /**
- * Pool UI eligibility (visibility vs action). Real + fake/training use catalog money bands.
- * Free plan: real orders stay blocked by blocksRealOrders; fake orders use 3–7 د.أ band only.
+ * Pool UI eligibility (visibility vs action). Real + fake/training share the same plan value band.
  */
 function computePoolOrderPlanEligibility(orderLike, range) {
   const norm = normalizeOrderLikeForPlanCheck(orderLike);
-  const isFake = norm.orderSource === "fake";
   const allowed = isPlanValueAllowedForOrder(orderLike, range);
-  const blocksReal = !isFake && (!range || range.blocksRealOrders);
-  const locked = !allowed || blocksReal;
+  const locked = !allowed;
 
-  let lockReason = null;
-  if (blocksReal) {
-    lockReason = "غير متاح لباقتك";
-  } else if (!allowed) {
-    lockReason = "خارج نطاق قيمة طلبات باقتك";
-  }
+  const lockReason = locked ? "غير متاح لباقتك" : null;
 
   const requiredPlanLabel = formatPlanRangeLabel(range);
-  const requiredPlanRange =
-    range && !range.blocksRealOrders
-      ? {
-          minOrderValue: parseJod(range.minOrderValue),
-          maxOrderValue: parseJod(range.maxOrderValue),
-        }
-      : null;
+  const requiredPlanRange = range
+    ? {
+        minOrderValue: parseJod(range.minOrderValue),
+        maxOrderValue: parseJod(range.maxOrderValue),
+      }
+    : null;
 
   const projectType = String(norm.project_type || "").trim();
   const pricedBidding =
@@ -284,9 +263,6 @@ async function assertFreelancerMayAccessFakeOrderByPlan(freelancerUserId, orderO
 }
 
 async function assertFreelancerMayAccessOrderByPlan(freelancerUserId, orderOrId, client) {
-  const subscriptionsService = require("./subscriptionsService");
-  await subscriptionsService.assertFreelancerMayAccessRealPoolOrders(freelancerUserId);
-
   const runner = client || require("../config/db").pool;
   let order = orderOrId;
   if (order == null || (typeof orderOrId !== "object" && orderOrId != null)) {

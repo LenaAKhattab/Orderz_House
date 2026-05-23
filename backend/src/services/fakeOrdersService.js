@@ -578,9 +578,17 @@ async function poolViewerMaySeeFakeOrders({ userId, role }) {
   return Boolean(prow[0]);
 }
 
-/** Freelancer applying to a training fake order must match pool visibility rules. */
+/** Freelancer applying to a training fake order must match global switch + pool visibility rules. */
 async function assertFreelancerMayApplyToTrainingOrders(freelancerUserId) {
   const uid = Number(freelancerUserId);
+  const { rows: srows } = await pool.query(
+    `SELECT training_orders_enabled FROM fake_order_settings WHERE id = 1 LIMIT 1`,
+  );
+  if (!srows[0]?.training_orders_enabled) {
+    const err = new Error("الطلبات التدريبية مخفية حالياً ولا يمكن التقديم عليها.");
+    err.statusCode = 403;
+    throw err;
+  }
   const ok = await poolViewerMaySeeFakeOrders({ userId: uid, role: "freelancer" });
   if (!ok) {
     const err = new Error("لا يمكنك التقديم على هذا الطلب التجريبي وفق إعدادات الظهور.");
@@ -705,10 +713,20 @@ async function updateSettings({ actorUserId, patch }) {
     const showFreelancers =
       patch.showToAllFreelancers !== undefined ? Boolean(patch.showToAllFreelancers) : Boolean(current.show_to_all_freelancers);
     const planIds = Array.isArray(patch.planIds) ? patch.planIds.map((x) => Number(x)).filter((n) => n > 0) : null;
-    if (!showToAll && !showFreelancers && (!planIds || planIds.length === 0)) {
-      const err = new Error("اختر إظهار الطلبات التجريبية لجميع الزوار/المستقلين أو حدد باقة واحدة على الأقل.");
-      err.statusCode = 400;
-      throw err;
+    const patchKeys = Object.keys(patch).filter((k) => patch[k] !== undefined);
+    const trainingVisibilityOnlyPatch =
+      patchKeys.length === 1 && patchKeys[0] === "trainingOrdersEnabled";
+    if (!trainingVisibilityOnlyPatch) {
+      let effectivePlanIds = planIds;
+      if (effectivePlanIds === null) {
+        const pr = await client.query(`SELECT plan_id FROM fake_order_settings_plans`);
+        effectivePlanIds = pr.rows.map((r) => Number(r.plan_id)).filter((n) => n > 0);
+      }
+      if (!showToAll && !showFreelancers && effectivePlanIds.length === 0) {
+        const err = new Error("اختر إظهار الطلبات التجريبية لجميع الزوار/المستقلين أو حدد باقة واحدة على الأقل.");
+        err.statusCode = 400;
+        throw err;
+      }
     }
     const trainingOn = patch.trainingOrdersEnabled !== undefined ? Boolean(patch.trainingOrdersEnabled) : Boolean(current.training_orders_enabled);
     const autoOn = patch.automationEnabled !== undefined ? Boolean(patch.automationEnabled) : Boolean(current.automation_enabled);

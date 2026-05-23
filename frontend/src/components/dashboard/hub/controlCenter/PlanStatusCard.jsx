@@ -102,7 +102,7 @@ export default function PlanStatusCard({ subscription, eligibility, orderCounts,
             ) : null}
             <div>
               <dt>طلبات حقيقية</dt>
-              <dd>{freePlan ? "غير متاحة (ترقية مطلوبة)" : "متاحة وفق الباقة"}</dd>
+              <dd>{freePlan ? "متاحة ضمن نطاق 3–7 د.أ" : "متاحة وفق الباقة"}</dd>
             </div>
             <div>
               <dt>طلبات تدريبية</dt>

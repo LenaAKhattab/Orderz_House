@@ -34,9 +34,17 @@ function ApplicantsIcon() {
   );
 }
 
+function actionBtnClass({ planLocked, actionsDisabled, disabled }) {
+  const parts = ["oh-order-row__action-btn"];
+  if (planLocked) parts.push("oh-order-row__action-btn--locked");
+  else if (!actionsDisabled && !disabled) parts.push("oh-order-row__action-btn--cta");
+  return parts.join(" ");
+}
+
 function ActionButton({
   bidding,
   planLocked,
+  actionsDisabled,
   rowDisabled,
   rowDisabledReason,
   bidBusy,
@@ -46,11 +54,12 @@ function ActionButton({
   onTake,
 }) {
   if (bidding) {
+    const bidDisabled = rowDisabled || bidBusy || order?.myBid?.status === "pending";
     return (
       <button
         type="button"
-        className={`oh-order-row__action-btn${planLocked ? " oh-order-row__action-btn--locked" : ""}`}
-        disabled={rowDisabled || bidBusy || order?.myBid?.status === "pending"}
+        className={actionBtnClass({ planLocked, actionsDisabled, disabled: bidDisabled })}
+        disabled={bidDisabled}
         onClick={(e) => {
           e.stopPropagation();
           if (!rowDisabled) onBid?.();
@@ -73,11 +82,14 @@ function ActionButton({
     );
   }
 
+  const takeDisabled =
+    rowDisabled || taking || (isPoolFixedApplicationOrder(order) && order?.myBid?.status === "pending");
+
   return (
     <button
       type="button"
-      className={`oh-order-row__action-btn${planLocked ? " oh-order-row__action-btn--locked" : ""}`}
-      disabled={rowDisabled || taking || (isPoolFixedApplicationOrder(order) && order?.myBid?.status === "pending")}
+      className={actionBtnClass({ planLocked, actionsDisabled, disabled: takeDisabled })}
+      disabled={takeDisabled}
       onClick={(e) => {
         e.stopPropagation();
         if (!rowDisabled) onTake?.();
@@ -177,6 +189,7 @@ function MarketplaceOrderRow({
             <ActionButton
               bidding={bidding}
               planLocked={planLocked}
+              actionsDisabled={actionsDisabled}
               rowDisabled={rowDisabled}
               rowDisabledReason={rowDisabledReason}
               bidBusy={bidBusy}

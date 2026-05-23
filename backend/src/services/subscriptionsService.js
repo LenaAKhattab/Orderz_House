@@ -965,16 +965,8 @@ async function isFreelancerOnFreePlan(freelancerUserId) {
   return isOrderzhouseFreePlan(sub.plan || { id: sub.planId, name: sub.plan?.name });
 }
 
-async function assertFreelancerMayAccessRealPoolOrders(freelancerUserId) {
-  // Catalog lists 3–7 د.أ for free tier (display only); real marketplace orders stay fake-only.
-  if (await isFreelancerOnFreePlan(freelancerUserId)) {
-    const err = new Error("الطلبات الحقيقية غير متاحة ضمن الاشتراك المجاني.");
-    err.statusCode = 403;
-    err.reason = "free_plan_real_orders_restricted";
-    err.exposeToClient = true;
-    throw err;
-  }
-}
+/** @deprecated Real pool access is gated by plan value range in planOrderValueEligibility only. */
+async function assertFreelancerMayAccessRealPoolOrders(_freelancerUserId) {}
 
 module.exports = {
   SUBSCRIPTION_STATUSES,

@@ -34,7 +34,7 @@ const ORDERZHOUSE_PLANS_BY_ID = {
     installmentPlan: null,
     offerExpiresAt: null,
     offerLabel: null,
-    /** Display/marketing range only — real pool orders are fake-only for plan 1 (see planOrderValueEligibility). */
+    /** Order value band for pool (real + training/fake). */
     minOrderValue: 3,
     maxOrderValue: 7,
     orderValueMinJod: 3,

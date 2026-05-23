@@ -87,7 +87,7 @@ export function getPlanOrderValueRangeLabel(subscription) {
   const catalog = ORDERZHOUSE_PLANS_BY_ID[planId];
   if (!catalog) return null;
   if (isOrderzhouseFreePlan(planId)) {
-    return "تدريبية: 3–7 د.أ (الطلبات الحقيقية تتطلب ترقية)";
+    return "من 3 إلى 7 د.أ (طلبات حقيقية وتدريبية)";
   }
   const min = catalog.minOrderValue ?? catalog.orderValueMinJod;
   const max = catalog.maxOrderValue ?? catalog.orderValueMaxJod;

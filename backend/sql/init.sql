@@ -10,6 +10,8 @@ CREATE TABLE categories (
   name VARCHAR(120) NOT NULL,
   description TEXT NOT NULL,
   image_url TEXT NULL,
+  image_data BYTEA NULL,
+  image_mime VARCHAR(64) NULL,
   sort_order INT NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -42,9 +44,9 @@ CREATE INDEX IF NOT EXISTS idx_users_email_lower ON users(lower(email));
 
 -- Seed initial landing categories (Arabic UI)
 INSERT INTO categories (slug, name, description, image_url, sort_order) VALUES
-  ('programming', 'البرمجة', 'بناء تطبيقات الويب، الواجهات البرمجية، والحلول الحديثة بكفاءة عالية.', '/images/categories/programming.jpg', 10),
-  ('design', 'التصميم', 'تصميم واجهات نظيفة، هويات بصرية، وتجارب استخدام أنيقة.', '/images/categories/design.jpg', 20),
-  ('content-writing', 'كتابة المحتوى', 'كتابة محتوى تسويقي، صفحات هبوط، ومقالات متوافقة مع SEO.', '/images/categories/contentwriting.jpg', 30);
+  ('programming', 'البرمجة', 'بناء تطبيقات الويب، الواجهات البرمجية، والحلول الحديثة بكفاءة عالية.', '/api/categories/images/programming', 10),
+  ('design', 'التصميم', 'تصميم واجهات نظيفة، هويات بصرية، وتجارب استخدام أنيقة.', '/api/categories/images/design', 20),
+  ('content-writing', 'كتابة المحتوى', 'كتابة محتوى تسويقي، صفحات هبوط، ومقالات متوافقة مع SEO.', '/api/categories/images/content-writing', 30);
 
 CREATE INDEX IF NOT EXISTS idx_categories_is_active ON categories(is_active);
 CREATE INDEX IF NOT EXISTS idx_categories_sort_order ON categories(sort_order);
