@@ -1,5 +1,6 @@
 import PlanCard from "./PlanCard";
 import { PlanCardsRowSkeleton } from "../ui/Skeleton";
+import "../../styles/plansPage.css";
 
 function pickFeaturedIndex(plans) {
   const popular = plans.findIndex((p) => p?.isPopular === true || p?.is_popular === true);
@@ -21,9 +22,14 @@ const PricingSection = ({
   const featuredIndex = pickFeaturedIndex(plans);
 
   return (
-    <section className="pricing" aria-label="خطط الاشتراك">
-      <header className="pricing__header">
-        <h1 className="pricing__title">باقات أوردرز هاوس للعمل الحر</h1>
+    <section className="pricing pricing-ref-shell" aria-label="خطط الاشتراك">
+      <header className="pricing__header pricing-ref-hero">
+        <h1 className="pricing__title pricing-ref-hero__title">باقات أوردرز هاوس للعمل الحر</h1>
+        <div className="pricing-ref-hero__divider" aria-hidden>
+          <span className="pricing-ref-hero__divider-line" />
+          <span className="pricing-ref-hero__divider-diamond" />
+          <span className="pricing-ref-hero__divider-line" />
+        </div>
       </header>
 
       {loading ? (

@@ -20,7 +20,7 @@ const publicExploreItems = [
 
 const navLinkBase =
   "inline-flex shrink-0 whitespace-nowrap rounded-lg px-4 py-2 text-[0.9rem] font-medium text-[#202020]/90 transition-[color,opacity] duration-200 hover:text-[#2f3b65] hover:opacity-100 sm:px-5 sm:text-[0.95rem] lg:px-6 lg:py-2 lg:text-[0.92rem] xl:px-7 xl:text-[0.98rem]";
-const navLinkActive = "font-bold text-[#2f3b65] opacity-100";
+const navLinkActive = "public-nav-link--active";
 
 function fullNameAr(user) {
   const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
@@ -265,8 +265,12 @@ const Navbar = () => {
           ) : (
             <NavLink
               to="/login"
-              className="inline-flex min-h-[42px] min-w-fit items-center justify-center rounded-full bg-[#2f3b65] px-6 py-2.5 text-[0.95rem] font-bold text-white no-underline shadow-[0_8px_22px_rgba(47,59,101,0.22)] transition-[background-color,transform,min-height,padding,font-size,box-shadow] duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)] hover:-translate-y-px hover:bg-[#243153] hover:shadow-[0_12px_28px_rgba(47,59,101,0.28)] sm:min-h-[44px] sm:px-7 sm:text-[1rem]"
+              className="inline-flex min-h-[42px] min-w-fit items-center justify-center gap-2 rounded-full bg-[#2f3b65] px-6 py-2.5 text-[0.95rem] font-bold text-white no-underline shadow-[0_8px_22px_rgba(47,59,101,0.22)] transition-[background-color,transform,min-height,padding,font-size,box-shadow] duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)] hover:-translate-y-px hover:bg-[#243153] hover:shadow-[0_12px_28px_rgba(47,59,101,0.28)] sm:min-h-[44px] sm:px-7 sm:text-[1rem]"
             >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden className="opacity-95">
+                <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M5 20c0-4 3.5-6 7-6s7 2 7 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
               تسجيل الدخول
             </NavLink>
           )}

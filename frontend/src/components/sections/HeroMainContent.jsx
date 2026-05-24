@@ -35,9 +35,9 @@ export default function HeroMainContent({ statsPayload }) {
           alt="أوردرز هاوس"
           width={760}
           height={220}
-          decoding="async"
-          fetchPriority="high"
           loading="eager"
+          fetchPriority="high"
+          decoding="async"
           className="home-hero__logo mb-4 h-32 w-auto max-w-[min(760px,98vw)] object-contain sm:h-36 md:h-44 lg:h-52 xl:h-56"
         />
         <h1 id="home-hero-heading" className="home-hero__ref-title home-hero-marketing__title-ipad">

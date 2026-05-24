@@ -3,6 +3,7 @@ import HomeAdsContainer from "./HomeAdsContainer";
 import "./home-hero-ref.css";
 import "./home-hero-marketing.css";
 import "./home-hero-ipad.css";
+import "./home-hero-loading.css";
 
 /**
  * Hero column: marketing content, inline stats, CTAs, and promo ads on the hero background.
@@ -12,7 +13,7 @@ export default function HeroContainer({ statsPayload = null, ads = [], adsLoadin
   return (
     <div className="hero-container min-w-0 w-full">
       <section
-        className="home-hero home-hero--ref home-hero--marketing home-hero--premium-stage home-hero--bg-image w-full min-w-0 overflow-x-clip overflow-y-visible"
+        className="home-hero home-hero--ref home-hero--marketing home-hero--premium-stage home-hero--bg-image home-hero--progressive w-full min-w-0 overflow-x-clip overflow-y-visible"
         dir="rtl"
         data-navbar-hero
         aria-labelledby="home-hero-heading"

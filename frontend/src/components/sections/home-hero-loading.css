@@ -1,0 +1,161 @@
+/* Hero progressive loading — staged reveal, blur-up images, wallpaper fade */
+
+.progressive-img {
+  opacity: 0;
+  filter: blur(10px);
+  transform: scale(1.015);
+  transition:
+    opacity 0.5s cubic-bezier(0.33, 1, 0.68, 1),
+    filter 0.55s cubic-bezier(0.33, 1, 0.68, 1),
+    transform 0.55s cubic-bezier(0.33, 1, 0.68, 1);
+  will-change: opacity, filter;
+}
+
+.progressive-img--loaded {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressive-img {
+    filter: none;
+    transform: none;
+    transition: opacity 0.2s ease;
+  }
+}
+
+/* Wallpaper fades in after preload (see useHeroWallpaperReady) */
+.home-public-layout::before {
+  opacity: 0;
+  transition: opacity 0.65s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.home-public-layout.home-public-layout--wallpaper-ready::before {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-public-layout::before {
+    transition: none;
+    opacity: 1;
+  }
+}
+
+/* Staged hero copy reveal — text/CTA first, ads lane later */
+.home-hero--progressive .home-hero__copy > * {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: home-hero-stage-in 0.55s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+}
+
+.home-hero--progressive .home-hero__logo {
+  animation: none;
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.home-hero--progressive .home-hero__ref-title {
+  animation-delay: 70ms;
+}
+
+.home-hero--progressive .home-hero__lead {
+  animation-delay: 130ms;
+}
+
+.home-hero--progressive .home-hero__inline-stats {
+  animation-delay: 190ms;
+}
+
+.home-hero--progressive .home-hero__cta {
+  animation-delay: 250ms;
+}
+
+.home-hero--progressive .home-hero__ads {
+  opacity: 0;
+  animation: home-hero-stage-in 0.6s cubic-bezier(0.33, 1, 0.68, 1) 320ms forwards;
+}
+
+.home-hero__ads--revealed {
+  opacity: 1;
+}
+
+@keyframes home-hero-stage-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero--progressive .home-hero__copy > *,
+  .home-hero--progressive .home-hero__ads {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
+
+/* Hero ad lane: reserve space + soft placeholder while promos load */
+.hero-inline-ads--pending {
+  min-height: clamp(5.5rem, 16vw, 6.75rem);
+}
+
+.hero-inline-ads__placeholder {
+  width: 100%;
+  max-width: 42.5rem;
+  margin-inline: auto;
+  min-height: clamp(5.5rem, 16vw, 6.75rem);
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: linear-gradient(
+    135deg,
+    rgba(248, 250, 252, 0.92) 0%,
+    rgba(241, 245, 249, 0.75) 48%,
+    rgba(248, 250, 252, 0.88) 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-inline-ads__placeholder::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 48%,
+    transparent 96%
+  );
+  animation: home-hero-ad-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes home-hero-ad-shimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-inline-ads__placeholder::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+.home-hero-metrics__value {
+  transition: opacity 0.35s ease;
+}
+
+.home-hero-metrics--hydrating .home-hero-metrics__value {
+  opacity: 0.72;
+}

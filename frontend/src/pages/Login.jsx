@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useLocation, useNavigationType } from "react-router-dom";
 import AuthFormCard from "../components/auth/AuthFormCard";
 import AuthLayout from "../components/auth/AuthLayout";
 import * as tw from "../components/auth/authTw";
@@ -8,6 +8,7 @@ import { useToast } from "../components/ui/toastContext";
 import { useAuth } from "../context/useAuth";
 import { canRoleAccessPath, getDashboardPath } from "../constants/authRoutes";
 import { getSafeApiErrorMessage } from "../utils/apiErrorMessage";
+import { pushLoginRouteMessageToast, GUEST_POOL_LOGIN_MESSAGE } from "../utils/guestPoolLoginToast";
 
 function loginErrorMessage(err) {
   return getSafeApiErrorMessage(err, "تعذر تسجيل الدخول. حاول مجدداً.");
@@ -15,23 +16,52 @@ function loginErrorMessage(err) {
 
 const Login = () => {
   const { login } = useAuth();
-  const { toast } = useToast();
+  const { success, error: showError } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const navigationType = useNavigationType();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const handledRouteMessageKeyRef = useRef(null);
 
   useEffect(() => {
     const msg = location.state?.message;
-    if (msg) {
-      toast.success({ title: "تم", message: String(msg) });
-      navigate(location.pathname, { replace: true, state: {} });
+    if (!msg) {
+      handledRouteMessageKeyRef.current = null;
+      return;
     }
-  }, [location.pathname, location.state, navigate, toast]);
 
+    const text = String(msg);
+    const entryKey = `${location.key}:${text}`;
+    if (handledRouteMessageKeyRef.current === entryKey) return;
+    handledRouteMessageKeyRef.current = entryKey;
+
+    const stripState = () => {
+      navigate(location.pathname, {
+        replace: true,
+        state: location.state?.from ? { from: location.state.from } : {},
+      });
+    };
+
+    // Legacy/history entries: guest pool redirect message is owned by OpenOrdersMarketplace click handler.
+    if (text === GUEST_POOL_LOGIN_MESSAGE) {
+      stripState();
+      return;
+    }
+
+    // Back/forward must not replay route-carried messages (stale history entries).
+    if (navigationType === "POP") {
+      stripState();
+      return;
+    }
+
+    if (pushLoginRouteMessageToast(success, text)) {
+      stripState();
+    }
+  }, [location.key, location.pathname, location.state?.message, location.state?.from, navigationType, navigate, success]);
   const visualContent = {
     title: "إدارة طلباتك باحترافية من أي مكان",
     description:
@@ -47,7 +77,7 @@ const Login = () => {
     setSubmitting(true);
     try {
       const user = await login(email.trim(), password);
-      toast.success({ title: "تم تسجيل الدخول", message: "أهلاً بعودتك." });
+      success({ title: "تم تسجيل الدخول", message: "أهلاً بعودتك." });
       const from = location.state?.from?.pathname;
       const role = user?.primaryRole || user?.role;
       const target =
@@ -56,7 +86,7 @@ const Login = () => {
     } catch (err) {
       const msg = loginErrorMessage(err);
       setError(msg);
-      toast.error({ title: "تعذر تسجيل الدخول", message: msg, autoClose: false });
+      showError({ title: "تعذر تسجيل الدخول", message: msg, autoClose: false });
     } finally {
       setSubmitting(false);
     }

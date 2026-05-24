@@ -1,7 +1,7 @@
 import { formatHomePublicStat } from "../../hooks/usePublicHomeStats";
 import { isDevTrackingDisabled } from "../../services/analytics";
 
-/** Fallback demo numbers — used only when toggles are off or API unavailable before first load. */
+/** @deprecated Demo fallbacks removed from hero display — kept for tests/legacy imports only. */
 export const FALLBACK_DEMO = {
   views: 24365,
   activeUsers: 1248,
@@ -51,15 +51,13 @@ export function resolveAnalyticsHint(payload, key) {
   return null;
 }
 
-export function resolveNumber(payload, key, demoVal) {
-  const ready = payload != null && !payload.error;
+export function resolveNumber(payload, key) {
+  if (payload == null) return "";
+  if (payload.error) return "—";
+
   if (key === "views") {
-    if (!ready || !payload.showVisitorsCount) {
-      return formatHomePublicStat(demoVal);
-    }
-    if (shouldHideZeroVisitors(payload, key)) {
-      return "—";
-    }
+    if (!payload.showVisitorsCount) return "—";
+    if (shouldHideZeroVisitors(payload, key)) return "—";
     const reason = reasonForKey(payload, key);
     if (isBrokenReason(reason)) return "—";
     if (payload.visitors != null && !Number.isNaN(Number(payload.visitors))) {
@@ -68,9 +66,7 @@ export function resolveNumber(payload, key, demoVal) {
     return "—";
   }
   if (key === "active") {
-    if (!ready || !payload.showActiveUsersCount) {
-      return formatHomePublicStat(demoVal);
-    }
+    if (!payload.showActiveUsersCount) return "—";
     const reason = reasonForKey(payload, key);
     if (isBrokenReason(reason)) return "—";
     if (payload.activeUsers != null && !Number.isNaN(Number(payload.activeUsers))) {
@@ -78,7 +74,7 @@ export function resolveNumber(payload, key, demoVal) {
     }
     return "—";
   }
-  return formatHomePublicStat(demoVal);
+  return "—";
 }
 
 export function projectCountsFromApi(payload) {
@@ -91,14 +87,16 @@ export function projectCountsFromApi(payload) {
   return { open: Number(o), inProgress: Number(ip), completed: Number(c) };
 }
 
-export function resolveProjectNumber(payload, key, demoVal) {
+export function resolveProjectNumber(payload, key) {
+  if (payload == null) return "";
   const fromApi = projectCountsFromApi(payload);
   if (fromApi) {
     if (key === "open") return formatHomePublicStat(fromApi.open);
     if (key === "inProgress") return formatHomePublicStat(fromApi.inProgress);
     if (key === "completed") return formatHomePublicStat(fromApi.completed);
   }
-  return formatHomePublicStat(demoVal);
+  if (payload.error || payload.orderCountsDegraded) return "—";
+  return "—";
 }
 
 export function showProjectSkeleton(payload) {
@@ -112,11 +110,11 @@ export function showAnalyticsSkeleton(payload, key) {
 }
 
 export function statDisplayValueProjects(row, statsPayload) {
-  if (showProjectSkeleton(statsPayload)) return "…";
-  return resolveProjectNumber(statsPayload, row.key, row.demo);
+  if (statsPayload == null) return "";
+  return resolveProjectNumber(statsPayload, row.key);
 }
 
 export function statDisplayValueAnalytics(row, statsPayload) {
-  if (showAnalyticsSkeleton(statsPayload, row.key)) return "…";
-  return resolveNumber(statsPayload, row.key, row.demo);
+  if (statsPayload == null) return "";
+  return resolveNumber(statsPayload, row.key);
 }

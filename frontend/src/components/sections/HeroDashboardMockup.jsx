@@ -3,8 +3,6 @@ import {
   FALLBACK_DEMO,
   resolveNumber,
   resolveProjectNumber,
-  showAnalyticsSkeleton,
-  showProjectSkeleton,
 } from "./heroHomeStatUtils";
 
 /** Auto-rotate dashboard tabs (ms) */
@@ -116,11 +114,9 @@ function IconFolder({ className }) {
 
 function statDisplayValue({ mode, row, statsPayload }) {
   if (mode === "projects") {
-    if (showProjectSkeleton(statsPayload)) return "…";
-    return resolveProjectNumber(statsPayload, row.key, row.demo);
+    return resolveProjectNumber(statsPayload, row.key);
   }
-  if (showAnalyticsSkeleton(statsPayload, row.key)) return "…";
-  return resolveNumber(statsPayload, row.key, row.demo);
+  return resolveNumber(statsPayload, row.key);
 }
 
 function StatCards({ stats, statsPayload, mode }) {

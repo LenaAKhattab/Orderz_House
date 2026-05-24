@@ -1,7 +1,7 @@
 /* Premium homepage skeleton — soft neutrals + lightweight shimmer */
 
 .home-sk-base {
-  background-color: #e6e7ec;
+  background: linear-gradient(135deg, rgba(241, 245, 249, 0.95) 0%, rgba(226, 232, 240, 0.55) 100%);
 }
 
 .home-sk-shimmer {

@@ -1,7 +1,6 @@
 import { lazy } from "react";
 
-/** Public marketing & auth */
-export const Home = lazy(() => import("../pages/Home"));
+/** Public marketing & auth — Home is eagerly loaded in App.jsx for first paint */
 export const About = lazy(() => import("../pages/About"));
 export const Services = lazy(() => import("../pages/Services"));
 export const Plans = lazy(() => import("../pages/Plans"));

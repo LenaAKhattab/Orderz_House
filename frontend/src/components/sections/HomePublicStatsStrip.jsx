@@ -21,7 +21,7 @@ export default function HomePublicStatsStrip() {
     const m = HOME_PUBLIC_METRICS.views;
     cards.push({
       ...m,
-      display: resolveNumber(payload, "views", 0),
+      display: resolveNumber(payload, "views"),
       hint: resolveAnalyticsHint(payload, "views"),
     });
   }
@@ -29,7 +29,7 @@ export default function HomePublicStatsStrip() {
     const m = HOME_PUBLIC_METRICS.active;
     cards.push({
       ...m,
-      display: resolveNumber(payload, "active", 0),
+      display: resolveNumber(payload, "active"),
       hint: resolveAnalyticsHint(payload, "active"),
     });
   }

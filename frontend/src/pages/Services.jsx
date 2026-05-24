@@ -1,8 +1,9 @@
 import ServicesExplorer from "../components/services/ServicesExplorer";
+import "../styles/servicesPage.css";
 
 const Services = () => {
   return (
-    <main className="container page-content services-page" lang="ar" dir="rtl">
+    <main className="container page-content services-page services-page--ref" lang="ar" dir="rtl">
       <ServicesExplorer />
     </main>
   );

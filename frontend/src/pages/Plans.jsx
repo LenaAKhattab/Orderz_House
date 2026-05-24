@@ -228,7 +228,7 @@ const Plans = () => {
   }, [location.pathname, location.search, navigate, push]);
 
   return (
-    <main className="container page-content" lang="ar" dir="rtl">
+    <main className="container page-content plans-page plans-page--ref" lang="ar" dir="rtl">
       <PricingSection
         loading={loading}
         plans={plans}

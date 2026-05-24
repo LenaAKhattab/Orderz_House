@@ -17,14 +17,22 @@ export default function HomeAdsContainer({ ads = [], loading = false, variant = 
 
   if (loading) {
     return (
-      <div className={wrapClass} aria-busy="true" aria-label="جاري تحميل الإعلانات">
-        <AdsBandSkeleton variant={isHero ? "hero" : "default"} />
+      <div
+        className={`${wrapClass}${isHero ? " hero-inline-ads--pending" : ""}`}
+        aria-busy="true"
+        aria-label="جاري تحميل الإعلانات"
+      >
+        {isHero ? (
+          <div className="hero-inline-ads__placeholder" aria-hidden />
+        ) : (
+          <AdsBandSkeleton variant="default" />
+        )}
       </div>
     );
   }
 
   return (
-    <div className={wrapClass}>
+    <div className={`${wrapClass}${isHero ? " home-hero__ads--revealed" : ""}`}>
       <HomePromoOffersSection
         ads={ads}
         placement="home_right_panel"

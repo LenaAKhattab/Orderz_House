@@ -25,6 +25,11 @@ import {
   isPoolOrderLockedByPlan,
 } from "../../utils/poolOrderPlanEligibility";
 import { isPoolOrderTakenAsAssignment } from "../../utils/poolOrderTakeOutcome";
+import {
+  clearGuestPoolLoginToastFlag,
+  isGuestPoolLoginToast,
+  pushGuestPoolLoginToast,
+} from "../../utils/guestPoolLoginToast";
 import "../../styles/dashboardHub.css";
 import "../../styles/freelancerOpenOrders.css";
 
@@ -127,7 +132,7 @@ const POOL_PAGE_LIMIT = 8;
  */
 export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const { user, loading } = useAuth();
-  const { push } = useToast();
+  const { push, dismissMatching } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const role = user?.primaryRole || user?.role;
@@ -170,6 +175,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const listWrapperRef = useRef(null);
   const poolFetchGenRef = useRef(0);
   const categoryFiltersCacheRef = useRef(null);
+  const guestLoginNavLockRef = useRef(false);
 
   const showIneligibleNotice = isFreelancer && eligibilityFetched && eligibility && eligibility.eligible === false;
   const ineligibleMessage = showIneligibleNotice ? getFreelancerOrderEligibilityMessage(eligibility, subscription) : "";
@@ -236,6 +242,34 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       navigate({ pathname: location.pathname, search: nextSearch }, { replace: true });
     }
   }, [location.pathname, location.search, navigate, page, selectedSubSubIds, sortBy]);
+
+  useEffect(() => {
+    const onPoolList =
+      location.pathname === "/orders" ||
+      location.pathname === "/dashboard/freelancer/orders" ||
+      location.pathname === "/dashboard/client/orders";
+    if (!onPoolList) return;
+    guestLoginNavLockRef.current = false;
+    dismissMatching(isGuestPoolLoginToast);
+    clearGuestPoolLoginToastFlag();
+  }, [location.pathname, dismissMatching]);
+
+  useEffect(() => {
+    const onPoolList = (pathname) =>
+      pathname === "/orders" ||
+      pathname === "/dashboard/freelancer/orders" ||
+      pathname === "/dashboard/client/orders";
+
+    const onPageShow = (event) => {
+      if (!event.persisted || !onPoolList(window.location.pathname)) return;
+      dismissMatching(isGuestPoolLoginToast);
+      clearGuestPoolLoginToastFlag();
+      guestLoginNavLockRef.current = false;
+    };
+
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, [dismissMatching]);
 
   useEffect(() => {
     let cancelled = false;
@@ -416,10 +450,12 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       if (!id) return;
       const detailsPath = poolDetailsPath(id);
       if (!user) {
+        if (guestLoginNavLockRef.current) return;
+        guestLoginNavLockRef.current = true;
+        pushGuestPoolLoginToast(push);
         navigate("/login", {
           state: {
             from: { pathname: detailsPath },
-            message: "سجّل دخولك لعرض التفاصيل والمشاركة في الطلبات.",
           },
         });
         return;
@@ -441,7 +477,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       }
       navigate("/login");
     },
-    [user, navigate, listFromPath, poolDetailsPath],
+    [user, navigate, listFromPath, poolDetailsPath, push],
   );
 
   const isDashboard = layout === "dashboard";

@@ -1,16 +1,16 @@
 import { Suspense, lazy, useEffect, useRef } from "react";
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { useToast } from "./components/ui/toastContext";
 import RouteSuspenseFallback from "./components/ui/RouteSuspenseFallback";
 import PublicLayout from "./components/layout/PublicLayout";
+import Home from "./pages/Home";
 
 const MainLayout = lazy(() => import("./layouts/MainLayout"));
 import { ClientCreateOrderModalProvider } from "./context/ClientCreateOrderModalContext.jsx";
 import { DashboardRedirect, GuestOnly, HomeForGuestsOnly, RequireAuth, RequireRole } from "./components/auth/AuthGuards";
 import {
-  Home,
   About,
   Services,
   Plans,
@@ -55,6 +55,10 @@ import {
 import { ROLE } from "./constants/authRoutes";
 import { useAuth } from "./context/useAuth";
 import { clearAnalyticsUser, initAnalytics, runAnalyticsStartupChecks, setAnalyticsUser, trackPageView } from "./services/analytics";
+import {
+  clearGuestPoolLoginToastFlag,
+  isGuestPoolLoginToast,
+} from "./utils/guestPoolLoginToast";
 
 function AnalyticsBridge() {
   const location = useLocation();
@@ -77,6 +81,32 @@ function AnalyticsBridge() {
     }
     clearAnalyticsUser();
   }, [user]);
+
+  return null;
+}
+
+/** Clears guest pool login toasts when returning to the marketplace (incl. bfcache back). */
+function ToastGuestPoolBridge() {
+  const location = useLocation();
+  const navigationType = useNavigationType();
+  const { dismissMatching } = useToast();
+  const prevPathRef = useRef(location.pathname);
+
+  useEffect(() => {
+    const prev = prevPathRef.current;
+    const next = location.pathname;
+    prevPathRef.current = next;
+
+    const isPoolList = (pathname) =>
+      pathname === "/orders" ||
+      pathname === "/dashboard/freelancer/orders" ||
+      pathname === "/dashboard/client/orders";
+
+    if (isPoolList(next) && (navigationType === "POP" || prev === "/login")) {
+      dismissMatching(isGuestPoolLoginToast);
+      clearGuestPoolLoginToastFlag();
+    }
+  }, [location.pathname, navigationType, dismissMatching]);
 
   return null;
 }
@@ -106,6 +136,7 @@ function App() {
         <AuthProvider>
           <AnalyticsBridge />
           <ToastDashboardExitBridge />
+          <ToastGuestPoolBridge />
           <Routes>
             <Route element={<PublicLayout />}>
               <Route

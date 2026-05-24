@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCategoriesRequest, getSubcategoriesRequest, getSubSubcategoriesRequest } from "../../services/api";
+import ServicesBenefitsStrip from "./ServicesBenefitsStrip";
+import ServicesRefCard from "./ServicesRefCard";
 
 function resolveBackendAssetUrl(maybeUrl) {
   if (!maybeUrl) return "";
@@ -36,52 +38,35 @@ function resolveBackendAssetUrl(maybeUrl) {
   }
 }
 
-function CategoryIconArt({ index }) {
-  const mod = index % 3;
-  if (mod === 0) {
-    return (
-      <svg viewBox="0 0 40 40" fill="none" className="services-cat-icon__svg" aria-hidden>
-        <rect x="6" y="8" width="28" height="24" rx="4" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M6 16h28" stroke="currentColor" strokeWidth="1.6" />
-      </svg>
-    );
-  }
-  if (mod === 1) {
-    return (
-      <svg viewBox="0 0 40 40" fill="none" className="services-cat-icon__svg" aria-hidden>
-        <path d="M8 30l8-18 6 12 6-8 4 14H8z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-      </svg>
-    );
-  }
+function ServicesRefCardSkeleton() {
   return (
-    <svg viewBox="0 0 40 40" fill="none" className="services-cat-icon__svg" aria-hidden>
-      <circle cx="20" cy="14" r="6" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M10 32c0-6 5-10 10-10s10 4 10 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function ExpandArrow({ open, size = "md" }) {
-  return (
-    <span
-      className={`services-expand-arrow services-expand-arrow--${size} ${open ? "services-expand-arrow--open" : ""}`.trim()}
-      aria-hidden
-    >
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="services-expand-arrow__svg">
-        <path
-          d="M6 9l6 6 6-6"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </span>
+    <div className="services-ref-skel-card" aria-hidden>
+      <span className="services-ref-skel-card__media" />
+      <span className="services-ref-skel-card__body">
+        <span className="services-ref-skel-card__line services-ref-skel-card__line--title" />
+        <span className="services-ref-skel-card__line services-ref-skel-card__line--desc" />
+      </span>
+      <span className="services-ref-skel-card__cta" />
+    </div>
   );
 }
 
 const HEADER_LEDE =
-  "استكشف مجموعة الخدمات المتاحة داخل المنصة، حيث نوفر حلولًا متكاملة تلبي احتياجات الأعمال، المشاريع الأكاديمية، والخدمات الشخصية بجودة عالية وتنفيذ احترافي.";
+  "استكشف مجموعة الخدمات المتاحة داخل المنصة، حيث نوفر حلولاً متكاملة تلبي احتياجات الأعمال والمشاريع بكفاءة واحترافية من كتابة وتحرير إلى برمجة وتصميم.";
+
+function ServicesRefHero({ lede = HEADER_LEDE }) {
+  return (
+    <header className="services-ref-hero">
+      <h1 className="services-ref-hero__title">الخدمات</h1>
+      <div className="services-ref-hero__divider" aria-hidden>
+        <span className="services-ref-hero__divider-line" />
+        <span className="services-ref-hero__divider-diamond" />
+        <span className="services-ref-hero__divider-line" />
+      </div>
+      <p className="services-ref-hero__lede">{lede}</p>
+    </header>
+  );
+}
 
 function ServicesSubSkeleton() {
   return (
@@ -230,34 +215,23 @@ const ServicesExplorer = () => {
 
   if (loading) {
     return (
-      <div className="services-shell" aria-busy="true" aria-live="polite">
-        <header className="services-header services-header--center">
-          <div className="services-skel services-skel--title services-skel--center" />
-          <div className="services-skel services-skel--sub services-skel--center wide" />
-        </header>
-        <div className="services-cat-grid services-cat-grid--hero">
+      <div className="services-ref-shell" aria-busy="true" aria-live="polite">
+        <ServicesRefHero />
+        <div className="services-ref-cards">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="services-skel-card services-skel-card--hero services-skel-card--hero--media" aria-hidden>
-              <div className="services-skel-hero-fill" />
-              <div className="services-skel-card__bottom">
-                <div className="services-skel services-skel--line services-skel--center" />
-                <div className="services-skel services-skel--line short services-skel--center" />
-              </div>
-            </div>
+            <ServicesRefCardSkeleton key={i} />
           ))}
         </div>
+        <div className="services-ref-skel-benefits" aria-hidden />
       </div>
     );
   }
 
   if (error && categories.length === 0) {
     return (
-      <div className="services-shell">
-        <header className="services-header services-header--center">
-          <h1 className="services-header__title">الخدمات</h1>
-          <p className="services-header__lede">{HEADER_LEDE}</p>
-        </header>
-        <p className="services-error" role="alert">
+      <div className="services-ref-shell">
+        <ServicesRefHero />
+        <p className="services-ref-error" role="alert">
           {error}
         </p>
       </div>
@@ -265,17 +239,14 @@ const ServicesExplorer = () => {
   }
 
   return (
-    <div className="services-shell">
-      <header className="services-header services-header--center">
-        <h1 className="services-header__title">الخدمات</h1>
-        <p className="services-header__lede">{HEADER_LEDE}</p>
-      </header>
+    <div className="services-ref-shell">
+      <ServicesRefHero />
 
       {!sortedCategories.length ? (
-        <p className="services-empty services-empty--center">لا توجد تصنيفات متاحة حالياً.</p>
+        <p className="services-ref-muted">لا توجد تصنيفات متاحة حالياً.</p>
       ) : (
         <>
-          <div className="services-cat-grid services-cat-grid--hero">
+          <div className="services-ref-cards">
             {sortedCategories.map((cat, idx) => {
               const id = String(cat.id);
               const isOpen = openCategoryId === id;
@@ -283,48 +254,27 @@ const ServicesExplorer = () => {
               const tone = idx % 3;
 
               return (
-                <button
+                <ServicesRefCard
                   key={id}
-                  type="button"
-                  aria-expanded={isOpen}
-                  aria-controls="services-category-detail"
-                  id={`services-cat-trigger-${id}`}
-                  className={`services-cat-card services-cat-card--hero services-cat-card--tone-${tone} ${img ? "services-cat-card--has-media" : ""} ${isOpen ? "services-cat-card--active" : ""}`.trim()}
-                  onClick={() => toggleCat(id)}
-                >
-                  {img ? (
-                    <>
-                      <span className="services-cat-card__media" aria-hidden>
-                        <img src={img} alt="" className="services-cat-card__bg-img" loading="lazy" decoding="async" />
-                      </span>
-                      <span className="services-cat-card__media-overlay" aria-hidden />
-                    </>
-                  ) : null}
-                  <span className="services-cat-card__inner">
-                    {!img ? (
-                      <span className="services-cat-card__icon-wrap services-cat-card__icon-wrap--lg" aria-hidden>
-                        <span className="services-cat-icon">
-                          <CategoryIconArt index={idx} />
-                        </span>
-                      </span>
-                    ) : null}
-                    <span className="services-cat-card__stack">
-                      <span className="services-cat-card__title">{cat.name || cat.title || "—"}</span>
-                      {cat.description ? <span className="services-cat-card__desc">{cat.description}</span> : null}
-                    </span>
-                    <ExpandArrow open={isOpen} />
-                  </span>
-                </button>
+                  cat={cat}
+                  idx={idx}
+                  tone={tone}
+                  isOpen={isOpen}
+                  imageSrc={img}
+                  onToggle={() => toggleCat(id)}
+                />
               );
             })}
           </div>
+
+          <ServicesBenefitsStrip />
 
           <div
             id="services-category-detail"
             role="region"
             aria-labelledby={openCategoryId ? `services-cat-trigger-${openCategoryId}` : undefined}
             aria-hidden={!openCategoryId}
-            className={`services-detail-shell ${openCategoryId ? "is-open" : ""}`.trim()}
+            className={`services-ref-detail services-detail-shell ${openCategoryId ? "is-open" : ""}`.trim()}
           >
             <div className="services-detail-shell__body">
               <div className="services-detail-shell__inner">

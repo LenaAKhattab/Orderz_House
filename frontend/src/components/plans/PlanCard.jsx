@@ -92,7 +92,20 @@ const PlanCard = ({
       </header>
 
       {offerActive && plan.offerLabel ? (
-        <p className="pricing-card__offer">{plan.offerLabel}</p>
+        <p className="pricing-card__offer">
+          <span className="pricing-card__offer-icon" aria-hidden>
+            <svg viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 3 4 6v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V6l-8-3z"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinejoin="round"
+              />
+              <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+          <span className="pricing-card__offer-text">{plan.offerLabel}</span>
+        </p>
       ) : null}
 
       <div className="pricing-card__price">
@@ -108,7 +121,9 @@ const PlanCard = ({
         {features.map((f, idx) => (
           <li key={`${String(f)}-${idx}`} className="pricing-card__feature">
             <span className="pricing-card__check" aria-hidden="true">
-              ✓
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 12l4 4L19 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </span>
             <span className="pricing-card__feature-text">{f}</span>
           </li>

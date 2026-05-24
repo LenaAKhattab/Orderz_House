@@ -72,7 +72,17 @@ export function ToastProvider({ children }) {
       autoClose: typeof normalized.autoClose === "boolean" ? normalized.autoClose : resolvedType !== "error",
       closing: false,
     };
-    setToasts((prev) => [toast, ...prev].slice(0, MAX_TOASTS));
+    setToasts((prev) => {
+      const duplicate = prev.some(
+        (t) =>
+          !t.closing &&
+          t.type === toast.type &&
+          t.title === toast.title &&
+          t.message === toast.message,
+      );
+      if (duplicate) return prev;
+      return [toast, ...prev].slice(0, MAX_TOASTS);
+    });
     return id;
   }, []);
 
@@ -82,6 +92,20 @@ export function ToastProvider({ children }) {
   const info = useCallback((payload) => showToast({ ...normalizeToast(payload, "info"), type: "info" }), [showToast]);
 
   const push = useCallback((payload) => showToast(payload), [showToast]);
+
+  const dismissMatching = useCallback((predicate) => {
+    setToasts((prev) => {
+      const next = prev.filter((t) => !predicate(t));
+      for (const t of prev) {
+        if (predicate(t)) {
+          const pending = dismissTimersRef.current.get(t.id);
+          if (pending) window.clearTimeout(pending);
+          dismissTimersRef.current.delete(t.id);
+        }
+      }
+      return next;
+    });
+  }, []);
 
   const clear = useCallback(() => {
     setToasts([]);
@@ -102,9 +126,10 @@ export function ToastProvider({ children }) {
       warning,
       info,
       dismiss,
+      dismissMatching,
       clear,
     }),
-    [toasts, showToast, push, success, error, warning, info, dismiss, clear],
+    [toasts, showToast, push, success, error, warning, info, dismiss, dismissMatching, clear],
   );
 
   return <ToastContext.Provider value={api}>{children}</ToastContext.Provider>;

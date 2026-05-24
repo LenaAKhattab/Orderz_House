@@ -1,13 +1,10 @@
 import { HOME_PUBLIC_METRICS } from "../../constants/homeAnalyticsMetrics";
 import { HomeAnalyticsMetricLabelRow } from "../analytics/HomeAnalyticsMetricInfo";
-import { FALLBACK_DEMO, resolveAnalyticsHint, statDisplayValueAnalytics } from "./heroHomeStatUtils";
+import { resolveAnalyticsHint, statDisplayValueAnalytics } from "./heroHomeStatUtils";
 import "../analytics/home-analytics-metric-info.css";
 import "./home-hero-metrics.css";
 
-const HERO_ANALYTICS_METRICS = [
-  { ...HOME_PUBLIC_METRICS.views, demo: FALLBACK_DEMO.views },
-  { ...HOME_PUBLIC_METRICS.active, demo: FALLBACK_DEMO.activeUsers },
-];
+const HERO_ANALYTICS_METRICS = [HOME_PUBLIC_METRICS.views, HOME_PUBLIC_METRICS.active];
 
 /**
  * Hero copy column: visitors + weekly actives (minimal metrics, no cards).
@@ -19,12 +16,16 @@ export default function HeroAnalyticsStrip({ statsPayload }) {
 
   return (
     <div
-      className="home-hero-analytics home-hero-analytics--minimal home-hero-metrics home-hero-metrics--analytics-only w-full min-w-0"
+      className={`home-hero-analytics home-hero-analytics--minimal home-hero-metrics home-hero-metrics--analytics-only w-full min-w-0${statsPayload == null ? " home-hero-metrics--hydrating" : ""}`.trim()}
       dir="rtl"
       role="group"
       aria-label="إحصائيات زوار الموقع والمستخدمين المتفاعلين — آخر 7 أيام"
     >
       {HERO_ANALYTICS_METRICS.map((row) => {
+        if (statsPayload) {
+          if (row.key === "views" && !statsPayload.showVisitorsCount) return null;
+          if (row.key === "active" && !statsPayload.showActiveUsersCount) return null;
+        }
         const hint = resolveAnalyticsHint(statsPayload, row.key);
         return (
           <div
@@ -34,8 +35,8 @@ export default function HeroAnalyticsStrip({ statsPayload }) {
             <div className="home-hero-metrics__label home-hero-analytics__label m-0">
               <HomeAnalyticsMetricLabelRow label={row.label} tone={row.tone} showInfo={false} />
             </div>
-            <p className="home-hero-metrics__value home-hero-analytics__value">
-              {statDisplayValueAnalytics(row, statsPayload)}
+            <p className="home-hero-metrics__value home-hero-analytics__value" aria-live="polite">
+              {statDisplayValueAnalytics(row, statsPayload) || "\u00a0"}
             </p>
             <p className="home-hero-analytics__metric-sub">{row.sub}</p>
             {hint ? <p className="home-hero-analytics__metric-hint">{hint}</p> : null}
