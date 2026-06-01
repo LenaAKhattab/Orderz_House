@@ -112,46 +112,98 @@ function uploadAdPromoImageBuffer({ buffer, mimetype, originalname, userId, purp
   });
 }
 
+const COURSE_DOC_IMAGE_EXT = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".svg"]);
+
+/**
+ * PDFs and office docs must use raw delivery — "auto" often stores PDFs as image and breaks open/download.
+ */
+function resolveCourseDocumentResourceType(mimetype, originalname) {
+  const mt = String(mimetype || "").toLowerCase();
+  const ext = path.extname(String(originalname || "")).toLowerCase();
+  if (mt.startsWith("image/") || COURSE_DOC_IMAGE_EXT.has(ext)) return "image";
+  return "raw";
+}
+
+/**
+ * public_id must NOT end with .pdf — Cloudinary blocks CDN delivery for raw assets whose
+ * delivery URL contains a .pdf suffix (account PDF/ZIP delivery restriction).
+ */
+function buildCourseDocumentPublicId(originalname) {
+  const ext = path.extname(String(originalname || "")).toLowerCase();
+  const base = toSafeBase(path.basename(String(originalname || "file"), ext));
+  return `${Date.now()}-${base}`.replace(/\s+/g, "_");
+}
+
 function uploadCourseDocumentBuffer({ buffer, mimetype, originalname, courseId, purpose = "test" }) {
   const cloudinary = getCloudinary();
-  const ext = path.extname(String(originalname || ""));
-  const base = toSafeBase(path.basename(String(originalname || "file"), ext));
+  const resourceType = resolveCourseDocumentResourceType(mimetype, originalname);
   const folder = `orderz/courses/${String(courseId)}/${String(purpose || "test")}`;
-  const publicId = `${folder}/${Date.now()}-${base}`.replace(/\s+/g, "_");
+  const publicId = buildCourseDocumentPublicId(originalname);
 
   return new Promise((resolve, reject) => {
     const upload = cloudinary.uploader.upload_stream(
       {
-        resource_type: "auto",
+        resource_type: resourceType,
         folder,
         public_id: publicId,
         overwrite: false,
         use_filename: false,
       },
       (err, result) => {
-        if (err || !result) return reject(err || new Error("Cloudinary upload failed."));
+        if (err) {
+          console.error("[cloudinary] course document upload failed", {
+            courseId,
+            purpose,
+            resourceType,
+            mimetype,
+            originalname,
+            message: err.message,
+          });
+          return reject(err);
+        }
+        if (!result?.secure_url) {
+          console.error("[cloudinary] course document upload missing secure_url", { courseId, purpose, result });
+          return reject(new Error("Cloudinary upload returned no secure_url."));
+        }
+        console.info("[cloudinary] course document uploaded", {
+          courseId,
+          purpose,
+          folder,
+          publicId: result.public_id,
+          resourceType: result.resource_type,
+          bytes: result.bytes,
+          format: result.format,
+          secureUrl: result.secure_url,
+        });
         resolve({
           publicId: result.public_id,
           secureUrl: result.secure_url,
           url: result.url || result.secure_url,
           bytes: Number(result.bytes || 0),
           format: result.format || null,
-          resourceType: result.resource_type || null,
+          resourceType: result.resource_type || resourceType,
           mimetype,
           originalname,
         });
       },
     );
-    upload.on("error", reject);
+    upload.on("error", (streamErr) => {
+      console.error("[cloudinary] course document upload stream error", {
+        courseId,
+        purpose,
+        message: streamErr?.message,
+      });
+      reject(streamErr);
+    });
     upload.end(buffer);
   });
 }
 
-async function destroyByPublicId(publicId) {
+async function destroyByPublicId(publicId, resourceType = "auto") {
   if (!publicId) return;
   const cloudinary = getCloudinary();
   try {
-    await cloudinary.uploader.destroy(String(publicId), { resource_type: "auto", invalidate: true });
+    await cloudinary.uploader.destroy(String(publicId), { resource_type: resourceType, invalidate: true });
   } catch {
     // Best-effort cleanup only.
   }

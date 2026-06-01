@@ -1,4 +1,9 @@
-import { useId } from "react";
+import { useEffect, useId, useRef } from "react";
+
+const CONFIRM_VARIANT_CLASS = {
+  primary: "btn btn-primary",
+  danger: "btn btn-danger",
+};
 
 /**
  * Destructive / high-friction confirm — UI only.
@@ -12,6 +17,8 @@ import { useId } from "react";
  * @param {() => void} p.onCancel
  * @param {string} [p.className]
  * @param {boolean} [p.confirmFirst] — render primary confirm before cancel (matches legacy flows)
+ * @param {"primary"|"danger"} [p.confirmVariant]
+ * @param {string} [p.layerClassName] — stacking, e.g. z-[1300] above nested modals
  */
 export default function ConfirmDialog({
   open,
@@ -23,29 +30,46 @@ export default function ConfirmDialog({
   onCancel,
   className = "",
   confirmFirst = false,
+  confirmVariant = "primary",
+  layerClassName = "z-[1200]",
 }) {
   const titleId = useId();
+  const cancelRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const t = window.setTimeout(() => cancelRef.current?.focus(), 0);
+    return () => window.clearTimeout(t);
+  }, [open]);
+
   if (!open) return null;
 
+  const confirmBtnClass = CONFIRM_VARIANT_CLASS[confirmVariant] || CONFIRM_VARIANT_CLASS.primary;
+
   const confirmBtn = (
-    <button type="button" className="btn btn-primary" onClick={onConfirm}>
+    <button type="button" className={confirmBtnClass} onClick={onConfirm}>
       {confirmLabel}
     </button>
   );
   const cancelBtn = (
-    <button type="button" className="btn btn-secondary" onClick={onCancel}>
+    <button ref={cancelRef} type="button" className="btn btn-secondary" onClick={onCancel}>
       {cancelLabel}
     </button>
   );
 
   return (
-    <div className={`fixed inset-0 z-[1200] grid place-items-center p-4 ${className}`.trim()} role="presentation">
-      <button type="button" className="absolute inset-0 bg-slate-900/35" aria-label="إلغاء" onClick={onCancel} />
+    <div
+      className={`dash-ui-confirm-dialog fixed inset-0 grid place-items-center p-4 ${layerClassName} ${className}`.trim()}
+      role="presentation"
+    >
+      <button type="button" className="dash-ui-confirm-dialog__backdrop absolute inset-0 bg-slate-900/40" aria-label="إلغاء" onClick={onCancel} />
       <div
-        className="relative z-[1] w-full max-w-[420px] rounded-2xl border border-slate-300/25 bg-white px-[18px] pb-4 pt-[18px] shadow-[0_20px_44px_rgba(15,23,42,0.16)]"
+        className="dash-ui-confirm-dialog__panel relative z-[1] w-full max-w-[420px] rounded-2xl border border-slate-300/25 bg-white px-[18px] pb-4 pt-[18px] text-right shadow-[0_20px_44px_rgba(15,23,42,0.16)]"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        dir="rtl"
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <h2 id={titleId} className="mb-2 mt-0 text-base font-black text-slate-900">
           {title}

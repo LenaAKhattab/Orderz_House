@@ -76,22 +76,36 @@ function readPosthogCredentialsLoose() {
   return { projectId, apiKey, host };
 }
 
-async function executeHogQL(cfg, query) {
+async function executeHogQL(cfg, query, { timeoutMs = 15000 } = {}) {
   const { projectId, apiKey, host } = cfg;
   const url = `${host}/api/projects/${encodeURIComponent(projectId)}/query/`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      query: {
-        kind: "HogQLQuery",
-        query,
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let res;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
-    }),
-  });
+      body: JSON.stringify({
+        query: {
+          kind: "HogQLQuery",
+          query,
+        },
+      }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err?.name === "AbortError") {
+      throw buildPublicError("PostHog analytics query timed out.", 504, "PH_QUERY_TIMEOUT");
+    }
+    throw buildPublicError("PostHog analytics query failed.", 503, "PH_QUERY_FAILED", err?.message || null);
+  } finally {
+    clearTimeout(timer);
+  }
 
   const text = await res.text();
   let json = null;
@@ -298,6 +312,28 @@ async function fetchSuperAdminOverviewPosthog(cfg, { range = "7d", topLimit = 10
   };
 }
 
+const POSTHOG_OVERVIEW_TIMEOUT_MS = Math.min(
+  Math.max(Number(process.env.POSTHOG_OVERVIEW_TIMEOUT_MS) || 20000, 5000),
+  60000,
+);
+
+/** Race overview HogQL bundle against a hard ceiling so DB-backed metrics can return without waiting forever. */
+async function fetchSuperAdminOverviewPosthogWithTimeout(cfg, options = {}) {
+  let timer;
+  try {
+    return await Promise.race([
+      fetchSuperAdminOverviewPosthog(cfg, options),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          reject(buildPublicError("PostHog analytics query timed out.", 504, "PH_QUERY_TIMEOUT"));
+        }, POSTHOG_OVERVIEW_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function getHeroSnapshotNumbers() {
   const visitors7d = await scalar(`
     SELECT uniq(person_id)
@@ -325,6 +361,7 @@ module.exports = {
   rangeToWhereClause,
   readPosthogCredentialsLoose,
   fetchSuperAdminOverviewPosthog,
+  fetchSuperAdminOverviewPosthogWithTimeout,
   scalarWithCfg,
   executeHogQL: executeHogQL,
   executeHogQLWithCfg: executeHogQL,

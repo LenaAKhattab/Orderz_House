@@ -6,6 +6,10 @@ import { useClientCreateOrderModal } from "../context/ClientCreateOrderModalCont
 import { getAccountSettingsPath, getNotificationsPath } from "../constants/authRoutes";
 import NotificationsBell from "../components/notifications/NotificationsBell";
 
+import "../styles/dashboardHub.css";
+import "../styles/adminDashboardShell.css";
+import "../styles/adminDashboardHub.css";
+
 function fullNameAr(user) {
   const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
   return parts.join(" ").trim();
@@ -31,7 +35,8 @@ function useOnClickOutside(ref, handler) {
 function breadcrumbLabel(pathname) {
   const base = ["الرئيسية"];
   if (pathname.includes("/subscriptions/activation")) base.push("تفعيل الاشتراكات");
-  if (pathname.includes("/plans")) base.push("الباقات");
+  else if (pathname.includes("/analytics")) base.push("تحليلات المنتج");
+  else if (pathname.includes("/plans")) base.push("الباقات");
   else if (pathname.includes("/courses")) base.push("الدورات");
   else if (pathname.includes("/super-admin/ads")) base.push("الإعلانات");
   else if (pathname.includes("/subscriptions")) base.push("اشتراكات المستقلين");
@@ -43,6 +48,7 @@ function breadcrumbLabel(pathname) {
 
 const NAV_MAIN = [
   { to: "/dashboard/super-admin", label: "نظرة عامة", icon: "⌂", end: true },
+  { to: "/dashboard/super-admin/analytics", label: "تحليلات المنتج", icon: "▤" },
   { to: "/dashboard/super-admin/plans", label: "الباقات", icon: "◆" },
   { to: "/dashboard/super-admin/courses", label: "الدورات", icon: "▶" },
   { to: "/dashboard/super-admin/ads", label: "الإعلانات", icon: "✴", end: true },
@@ -115,7 +121,11 @@ export default function SuperAdminLayout() {
             </li>
           ))}
           <li>
-            <button type="button" className="oh-sa-navlink" style={{ width: "100%", border: "none", cursor: "pointer" }} onClick={() => openClientCreateOrderModal()}>
+            <button
+              type="button"
+              className="oh-sa-navlink oh-sa-navlink--button"
+              onClick={() => openClientCreateOrderModal()}
+            >
               <span className="oh-sa-navlink__icon" aria-hidden>
                 +
               </span>

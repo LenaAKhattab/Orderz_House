@@ -146,14 +146,24 @@
   }
 
   .services-ref-card:hover .services-ref-card__cta {
-    background: rgba(56, 82, 180, 0.06);
-    border-top-color: rgba(56, 82, 180, 0.18);
-    color: #243153;
+    background: transparent;
+    border-top-color: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
   }
 
   .services-ref-card:hover .services-ref-card__cta-arrow {
-    color: #3852b4;
+    color: #ffffff;
     transform: translateX(-3px);
+  }
+
+  .services-ref-card:hover .services-ref-card__overlay {
+    background: linear-gradient(
+      to top,
+      rgba(8, 14, 32, 0.94) 0%,
+      rgba(8, 14, 32, 0.72) 48%,
+      rgba(8, 14, 32, 0.35) 78%,
+      rgba(8, 14, 32, 0.12) 100%
+    );
   }
 }
 

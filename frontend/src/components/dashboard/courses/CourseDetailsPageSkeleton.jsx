@@ -19,7 +19,10 @@ export default function CourseDetailsPageSkeleton() {
             <div className="fdash-skel" style={{ height: 12, width: 100 }} />
             <div className="fdash-skel" style={{ height: 12, width: 88 }} />
           </div>
-          <div className="fdash-skel fcd-header__bar-sk" />
+          <div className="fcd-header__status-rail fcd-header__status-rail--sk">
+            <div className="fdash-skel" style={{ height: 28, width: "min(100%, 220px)", borderRadius: 999 }} />
+            <div className="fdash-skel fcd-header__status-accent-sk" />
+          </div>
         </header>
 
         <div className="fcd-layout">

@@ -1,3 +1,5 @@
+const skelBar = "dash-ui-skeleton-rows__bar block rounded-md bg-slate-200/90";
+
 /**
  * KPI tile — optional icon chip, label, value, hint and/or trend (presentation only).
  * @param {object} p
@@ -8,16 +10,14 @@
  * @param {import("react").ReactNode} [p.icon] — placed in a soft tinted chip
  * @param {string} [p.className]
  */
-export default function DashboardStatCard({ label, value, hint, trend, icon, className = "" }) {
-  const cardShell =
-    "rounded-[length:var(--dash-surface-radius,18px)] border border-[color:var(--dash-card-border)] bg-white shadow-[var(--dash-card-shadow)]";
+export default function DashboardStatCard({ label, value, hint, trend, icon, className = "" }) {  const cardShell = "dash-ui-surface--soft";
 
   return (
     <article className={`dash-ui-stat-card flex min-h-[7.25rem] flex-col ${cardShell} p-5 ${className}`.trim()}>
       <div className="flex flex-1 items-start gap-3.5">
         {icon ? (
           <div
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--dash-icon-chip-bg)] text-[color:var(--primary,#2f3b65)] [&>svg]:h-5 [&>svg]:w-5"
+            className="dash-ui-stat-card__icon-chip flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[color:var(--primary,#2f3b65)] [&>svg]:h-5 [&>svg]:w-5"
             aria-hidden
           >
             {icon}
@@ -38,6 +38,32 @@ export default function DashboardStatCard({ label, value, hint, trend, icon, cla
           {hint}
         </p>
       ) : null}
+    </article>
+  );
+}
+
+/**
+ * Stat card placeholder — matches `DashboardStatCard` layout (label, value, hint, optional icon).
+ * @param {object} p
+ * @param {string} [p.className]
+ * @param {boolean} [p.withIcon]
+ */
+export function DashboardStatCardSkeleton({ className = "", withIcon = true }) {
+  const cardShell = "dash-ui-surface--soft";
+
+  return (
+    <article
+      className={`dash-ui-stat-card flex min-h-[7.25rem] flex-col ${cardShell} p-5 ${className}`.trim()}
+      aria-hidden
+    >
+      <div className="flex flex-1 items-start gap-3.5">
+        {withIcon ? <span className={`${skelBar} h-11 w-11 shrink-0 rounded-xl`} /> : null}
+        <div className="min-w-0 flex-1">
+          <span className={`${skelBar} h-3 w-[58%]`} />
+          <span className={`${skelBar} mt-2.5 h-8 w-[42%]`} />
+        </div>
+      </div>
+      <span className={`${skelBar} mt-3 h-2.5 w-[72%]`} />
     </article>
   );
 }

@@ -11,6 +11,8 @@ import AdminPlanCard from "../../admin/plans/AdminPlanCard";
 import PlanEditModal from "../../admin/plans/PlanEditModal";
 import PlanFormSection from "../../admin/plans/PlanFormSection";
 import PlanExtendedFields from "../../admin/plans/PlanExtendedFields";
+import PlanCollapsibleSection from "../../admin/plans/PlanCollapsibleSection";
+import { computePlanKpis, filterPlans } from "../../admin/plans/planDisplayUtils";
 import { getInitialPlanFormState } from "../../admin/plans/planFormConstants";
 import { suggestPlanInternalName } from "../../admin/plans/planNameAuto";
 import { canSubmitCreate, normalizeCreatePayload } from "../../admin/plans/planPayloadUtils";
@@ -23,6 +25,7 @@ import DashboardToolbar from "../../components/dashboard/DashboardToolbar";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
+import DashboardStatCard, { DashboardStatCardSkeleton } from "../../components/dashboard/DashboardStatCard";
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import "../../admin/plans/super-admin-plans.css";
 
@@ -40,6 +43,9 @@ function PlansEmptyIcon() {
   );
 }
 
+const filterSelectClass =
+  "oh-sapl-filter-select min-h-[40px] rounded-lg border border-slate-200/90 bg-white px-3 text-sm font-semibold text-slate-800";
+
 const SuperAdminPlansPage = () => {
   const createAnchorRef = useRef(null);
   const [plans, setPlans] = useState([]);
@@ -48,6 +54,11 @@ const SuperAdminPlansPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [visibilityFilter, setVisibilityFilter] = useState("all");
+  const [selfPurchaseFilter, setSelfPurchaseFilter] = useState("all");
 
   const [form, setForm] = useState(getInitialPlanFormState);
 
@@ -59,6 +70,19 @@ const SuperAdminPlansPage = () => {
     if (form.title.trim().length < 2) return "";
     return suggestPlanInternalName(form.title, reservedPlanNames);
   }, [form.title, reservedPlanNames]);
+
+  const kpis = useMemo(() => computePlanKpis(plans), [plans]);
+
+  const filteredPlans = useMemo(
+    () =>
+      filterPlans(plans, {
+        search,
+        status: statusFilter,
+        visibility: visibilityFilter,
+        selfPurchase: selfPurchaseFilter,
+      }),
+    [plans, search, statusFilter, visibilityFilter, selfPurchaseFilter],
+  );
 
   const refresh = useCallback(async () => {
     setError("");
@@ -145,8 +169,10 @@ const SuperAdminPlansPage = () => {
     }
   };
 
+  const openEdit = (plan) => setEditPlan(plan);
+
   return (
-    <DashboardShell>
+    <DashboardShell className="oh-sapl-page">
       <DashboardPageHeader
         eyebrow="لوحة المدير الأعلى"
         title="إدارة الباقات"
@@ -170,14 +196,138 @@ const SuperAdminPlansPage = () => {
         />
       ) : null}
 
+      <section className="oh-sapl-kpi-row" aria-label="ملخص الباقات">
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <DashboardStatCardSkeleton key={`kpi-${i}`} className="oh-sapl-kpi-card" />
+          ))
+        ) : (
+          <>
+            <DashboardStatCard className="oh-sapl-kpi-card" label="إجمالي الباقات" value={kpis.total} />
+            <DashboardStatCard className="oh-sapl-kpi-card" label="الباقات النشطة" value={kpis.active} />
+            <DashboardStatCard className="oh-sapl-kpi-card" label="الباقات الظاهرة في المتجر" value={kpis.storeVisible} />
+            <DashboardStatCard className="oh-sapl-kpi-card" label="الباقات المعطلة" value={kpis.inactive} />
+          </>
+        )}
+      </section>
+
       <DashboardSection
+        title="الباقات الحالية"
+        description="تعديل كامل من نافذة «تعديل» — تشغيل سريع من المفتاح على البطاقة."
+        className="oh-sapl-section--plans"
+      >
+        <DashboardToolbar className="oh-sapl-toolbar-row">
+          <div className="oh-sapl-toolbar-filters">
+            <label className="oh-sapl-filter">
+              <span className="oh-sapl-filter__label">بحث</span>
+              <input
+                type="search"
+                className="oh-sapl-filter-input"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="ابحث بعنوان الباقة…"
+                disabled={loading}
+              />
+            </label>
+            <label className="oh-sapl-filter">
+              <span className="oh-sapl-filter__label">الحالة</span>
+              <select
+                className={filterSelectClass}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                disabled={loading}
+              >
+                <option value="all">الكل</option>
+                <option value="active">نشطة</option>
+                <option value="inactive">معطلة</option>
+              </select>
+            </label>
+            <label className="oh-sapl-filter">
+              <span className="oh-sapl-filter__label">الظهور</span>
+              <select
+                className={filterSelectClass}
+                value={visibilityFilter}
+                onChange={(e) => setVisibilityFilter(e.target.value)}
+                disabled={loading}
+              >
+                <option value="all">الكل</option>
+                <option value="visible">ظاهرة</option>
+                <option value="hidden">مخفية</option>
+              </select>
+            </label>
+            <label className="oh-sapl-filter">
+              <span className="oh-sapl-filter__label">الشراء الذاتي</span>
+              <select
+                className={filterSelectClass}
+                value={selfPurchaseFilter}
+                onChange={(e) => setSelfPurchaseFilter(e.target.value)}
+                disabled={loading}
+              >
+                <option value="all">الكل</option>
+                <option value="allowed">متاحة</option>
+                <option value="blocked">غير متاحة</option>
+              </select>
+            </label>
+          </div>
+          <div className="oh-sapl-toolbar-meta">
+            <StatusBadge tone="neutral">
+              {loading ? "…" : `${filteredPlans.length} / ${plans.length} باقة`}
+            </StatusBadge>
+          </div>
+        </DashboardToolbar>
+
+        {loading ? (
+          <DashboardLoadingState label="جارٍ تحميل الباقات…">
+            <AdminInlineGridSkeleton count={4} />
+          </DashboardLoadingState>
+        ) : null}
+
+        {!loading && plans.length === 0 ? (
+          <DashboardEmptyState
+            title="لا توجد باقات بعد"
+            description="أنشئ أول باقة من قسم «إنشاء باقة جديدة» أدناه."
+            icon={<PlansEmptyIcon />}
+            actions={
+              <Button type="button" variant="secondary" onClick={scrollToCreate}>
+                إنشاء باقة
+              </Button>
+            }
+          />
+        ) : null}
+
+        {!loading && plans.length > 0 && filteredPlans.length === 0 ? (
+          <DashboardEmptyState
+            title="لا توجد نتائج"
+            description="جرّب تغيير البحث أو عوامل التصفية."
+          />
+        ) : null}
+
+        {!loading && filteredPlans.length > 0 ? (
+          <div className="oh-sapl-cards">
+            {filteredPlans.map((p) => (
+              <AdminPlanCard
+                key={p.id}
+                plan={p}
+                submitting={submitting}
+                onActiveChange={setPlanActive}
+                onEdit={() => openEdit(p)}
+                onManageDetails={() => openEdit(p)}
+                onDelete={() => void softDelete(p)}
+              />
+            ))}
+          </div>
+        ) : null}
+      </DashboardSection>
+
+      <PlanCollapsibleSection
         ref={createAnchorRef}
         id="oh-sapl-create"
         title="إنشاء باقة جديدة"
         description="يُولَّد المعرف الداخلي (snake_case) تلقائياً من العنوان، مع تجنّب التعارض مع أي باقة حالية أو محذوفة."
+        defaultOpen={false}
       >
         <DashboardFormCard>
-          <div className="oh-sapl-form">
+          <div className="oh-sapl-form oh-sapl-form--wide">
             <PlanFormSection title="المعلومات الأساسية" hint="العنوان يظهر للمستخدمين؛ المعرف الداخلي يُشتق تلقائياً ولا يُعدَّل لاحقاً من الواجهة.">
               <div className="oh-sapl-field">
                 <span className="oh-sapl-field__label">العنوان</span>
@@ -194,7 +344,9 @@ const SuperAdminPlansPage = () => {
                     <code className="oh-sapl-name-preview__code">{generatedInternalName}</code>
                   </p>
                 ) : (
-                  <p className="oh-sapl-name-preview oh-sapl-name-preview--muted">أدخل عنواناً (حرفان على الأقل) لعرض المعرف المقترح.</p>
+                  <p className="oh-sapl-name-preview oh-sapl-name-preview--muted">
+                    أدخل عنواناً (حرفان على الأقل) لعرض المعرف المقترح.
+                  </p>
                 )}
               </div>
               <div className="oh-sapl-field">
@@ -210,9 +362,7 @@ const SuperAdminPlansPage = () => {
               </div>
             </PlanFormSection>
 
-                        <PlanExtendedFields form={form} setForm={setForm} submitting={submitting} />
-
-
+            <PlanExtendedFields form={form} setForm={setForm} submitting={submitting} />
 
             <div className="oh-sapl-actions">
               <Button type="button" variant="secondary" disabled={submitting} onClick={resetForm}>
@@ -224,48 +374,7 @@ const SuperAdminPlansPage = () => {
             </div>
           </div>
         </DashboardFormCard>
-      </DashboardSection>
-
-      <DashboardSection
-        title="الباقات الحالية"
-        description="تعديل كامل من نافذة «تعديل» — تشغيل سريع من المفتاح على البطاقة."
-      >
-        <DashboardToolbar>
-          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-            <StatusBadge tone="neutral">{plans.length} باقة</StatusBadge>
-            <div className="oh-sapl-toolbar__slot">فلترة / بحث (جاهز لاحقاً)</div>
-          </div>
-        </DashboardToolbar>
-
-        {loading ? (
-          <DashboardLoadingState label="جارٍ تحميل الباقات…">
-            <AdminInlineGridSkeleton count={4} />
-          </DashboardLoadingState>
-        ) : null}
-
-        {!loading && plans.length === 0 ? (
-          <DashboardEmptyState
-            title="لا توجد باقات بعد"
-            description="أنشئ أول باقة من النموذج أعلاه لتظهر هنا."
-            icon={<PlansEmptyIcon />}
-          />
-        ) : null}
-
-        {!loading && plans.length > 0 ? (
-          <div className="oh-sapl-cards">
-            {plans.map((p) => (
-              <AdminPlanCard
-                key={p.id}
-                plan={p}
-                submitting={submitting}
-                onActiveChange={setPlanActive}
-                onEdit={() => setEditPlan(p)}
-                onDelete={() => void softDelete(p)}
-              />
-            ))}
-          </div>
-        ) : null}
-      </DashboardSection>
+      </PlanCollapsibleSection>
 
       <PlanEditModal
         plan={editPlan}

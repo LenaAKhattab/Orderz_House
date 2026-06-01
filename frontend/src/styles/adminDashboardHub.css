@@ -1,0 +1,1118 @@
+/* Admin / Super-admin inner pages — freelancer hub visual parity (scoped to outlet) */
+
+.oh-sa-outlet {
+  --dash-surface-radius: clamp(26px, 2.8vw, 30px);
+  --dash-card-border: rgba(224, 231, 242, 0.75);
+  --dash-card-shadow:
+    10px 10px 26px rgba(163, 177, 198, 0.14),
+    -8px -8px 20px rgba(255, 255, 255, 0.95);
+  --dash-icon-chip-bg: linear-gradient(145deg, #fbfdff, #eef3f8);
+  --dash-icon-chip-border: 1px solid rgba(255, 255, 255, 0.78);
+  --dash-icon-chip-shadow:
+    4px 4px 12px rgba(163, 177, 198, 0.14),
+    -4px -4px 10px rgba(255, 255, 255, 0.92),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.88);
+  --dash-input-border: rgba(224, 231, 242, 0.95);
+  --dash-input-focus: rgba(118, 207, 223, 0.55);
+  --dash-ease: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* —— Page wrapper (DashboardShell) —— */
+.oh-sa-outlet .dash-ui-shell {
+  gap: 0.35rem;
+  /* Outlet already pads horizontally — avoid triple inset from Tailwind px-* on the shell */
+  padding-inline: 0;
+  padding-top: clamp(6px, 1vw, 10px);
+  padding-bottom: clamp(16px, 2.5vw, 28px);
+}
+
+.oh-sa-outlet .fdash-page {
+  padding: 0;
+  max-width: none;
+  width: 100%;
+}
+
+.oh-sa-outlet .fdash-page__inner {
+  width: 100%;
+  max-width: none;
+  padding-bottom: 24px;
+}
+
+/* —— Shared soft surfaces —— */
+.oh-sa-outlet .dash-ui-surface--soft {
+  border-radius: var(--dash-surface-radius);
+  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  border: 1px solid var(--dash-card-border);
+  box-shadow: var(--dash-card-shadow), inset 1px 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.oh-sa-outlet [data-dashboard-header].dash-ui-surface--soft {
+  position: relative;
+  overflow: hidden;
+}
+
+.oh-sa-outlet [data-dashboard-header].dash-ui-surface--soft::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.42) 0%,
+    rgba(255, 255, 255, 0.06) 30%,
+    transparent 50%
+  );
+}
+
+.oh-sa-outlet [data-dashboard-header] > * {
+  position: relative;
+  z-index: 1;
+}
+
+.oh-sa-outlet .dash-ui-section__head {
+  border-bottom-color: rgba(226, 232, 240, 0.75);
+}
+
+.oh-sa-outlet .dash-ui-section__title,
+.oh-sa-outlet [data-dashboard-header] h1 {
+  color: #1e2a4a;
+}
+
+/* —— Stat cards —— */
+.oh-sa-outlet .dash-ui-stat-card .dash-ui-stat-card__icon-chip,
+.oh-sa-outlet .dash-ui-stat-card > div > div[aria-hidden="true"] {
+  border-radius: 13px;
+  background: var(--dash-icon-chip-bg);
+  border: var(--dash-icon-chip-border);
+  box-shadow: var(--dash-icon-chip-shadow);
+  color: #2563eb;
+}
+
+.oh-sa-outlet .dash-ui-stat-card__value {
+  color: #1e2a4a;
+}
+
+.oh-sa-outlet .dash-ui-stats-grid {
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .oh-sa-outlet .dash-ui-stats-grid {
+    gap: 1.25rem;
+  }
+}
+
+/* —— Toolbar / filters —— */
+.oh-sa-outlet .dash-ui-toolbar {
+  margin-bottom: 1.15rem;
+  padding: 0.85rem 1rem;
+  border-radius: clamp(20px, 2.5vw, 26px);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.88) 100%);
+  border: 1px solid rgba(224, 231, 242, 0.85);
+  box-shadow:
+    6px 6px 18px rgba(163, 177, 198, 0.1),
+    -5px -5px 14px rgba(255, 255, 255, 0.92),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.oh-sa-outlet .dash-ui-toolbar input:not([type="checkbox"]):not([type="radio"]),
+.oh-sa-outlet .dash-ui-toolbar select,
+.oh-sa-outlet .dash-ui-toolbar textarea,
+.oh-sa-outlet .dash-ui-section input:not([type="checkbox"]):not([type="radio"]),
+.oh-sa-outlet .dash-ui-section select,
+.oh-sa-outlet .dash-ui-section textarea,
+.oh-sa-outlet .dash-ui-form-card input:not([type="checkbox"]):not([type="radio"]),
+.oh-sa-outlet .dash-ui-form-card select,
+.oh-sa-outlet .dash-ui-form-card textarea {
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--dash-input-border);
+  background: rgba(255, 255, 255, 0.92);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--primary, #2f3b65);
+  transition: border-color 0.15s var(--dash-ease), box-shadow 0.15s var(--dash-ease);
+}
+
+.oh-sa-outlet .dash-ui-toolbar input:focus,
+.oh-sa-outlet .dash-ui-toolbar select:focus,
+.oh-sa-outlet .dash-ui-section input:focus,
+.oh-sa-outlet .dash-ui-section select:focus,
+.oh-sa-outlet .dash-ui-form-card input:focus,
+.oh-sa-outlet .dash-ui-form-card select:focus {
+  outline: none;
+  border-color: var(--dash-input-focus);
+  box-shadow: 0 0 0 3px rgba(118, 207, 223, 0.22);
+}
+
+/* —— Tabs —— */
+.oh-sa-outlet .dash-ui-tabs {
+  margin-bottom: 1rem;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(224, 231, 242, 0.85);
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 1px 1px 4px rgba(148, 163, 184, 0.06);
+}
+
+.oh-sa-outlet .dash-ui-tab {
+  border-radius: 999px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.oh-sa-outlet .dash-ui-tab:hover {
+  color: var(--primary, #2f3b65);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.oh-sa-outlet .dash-ui-tab--selected {
+  color: #2563eb;
+  background: linear-gradient(145deg, rgba(239, 246, 255, 0.95), rgba(224, 242, 254, 0.75));
+  border: 1px solid rgba(191, 219, 254, 0.65);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.9),
+    2px 2px 8px rgba(163, 177, 198, 0.08);
+}
+
+/* —— Tables —— */
+.oh-sa-outlet .dash-ui-table-wrap {
+  overflow-x: auto;
+  border-radius: clamp(18px, 2.2vw, 22px);
+  border: 1px solid rgba(224, 231, 242, 0.85);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.96) 100%);
+  box-shadow:
+    8px 8px 22px rgba(163, 177, 198, 0.1),
+    -6px -6px 16px rgba(255, 255, 255, 0.9),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.oh-sa-outlet .dash-ui-table thead th {
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+  background: rgba(248, 250, 252, 0.95);
+  padding: 0.65rem 0.75rem;
+  text-align: start;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.oh-sa-outlet .dash-ui-table tbody td {
+  border-bottom: 1px solid rgba(241, 245, 249, 0.95);
+  padding: 0.65rem 0.75rem;
+  color: #334155;
+}
+
+.oh-sa-outlet .dash-ui-table tbody tr:hover td {
+  background: rgba(239, 246, 255, 0.45);
+}
+
+.oh-sa-outlet .dash-ui-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.oh-sa-outlet .dash-ui-chart-card__head {
+  border-bottom-color: rgba(226, 232, 240, 0.75);
+}
+
+/* —— Empty / loading / error —— */
+.oh-sa-outlet .dash-ui-empty {
+  border-style: dashed;
+  border-color: rgba(191, 219, 254, 0.55);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(255, 255, 255, 0.98));
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.oh-sa-outlet .dash-ui-empty__icon {
+  width: 3.25rem;
+  height: 3.25rem;
+  margin-inline: auto;
+  margin-bottom: 0.85rem;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--dash-icon-chip-bg);
+  border: var(--dash-icon-chip-border);
+  box-shadow: var(--dash-icon-chip-shadow);
+  color: #2563eb;
+}
+
+.oh-sa-outlet .dash-ui-empty__title {
+  color: #1e2a4a;
+}
+
+.oh-sa-outlet .dash-ui-loading {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
+}
+
+.oh-sa-outlet .dash-ui-skeleton-rows__bar {
+  background: linear-gradient(90deg, #e2e8f0 0%, #f1f5f9 50%, #e2e8f0 100%);
+  background-size: 200% 100%;
+  animation: admin-dash-skel 1.35s ease-in-out infinite;
+}
+
+@keyframes admin-dash-skel {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.oh-sa-outlet .dash-ui-error {
+  border-color: rgba(252, 165, 165, 0.75);
+  background: linear-gradient(160deg, #fff5f5 0%, #fef2f2 100%);
+  border-radius: clamp(18px, 2.2vw, 22px);
+}
+
+/* —— Buttons (admin outlet only) —— */
+.oh-sa-outlet .btn {
+  min-height: 42px;
+  padding: 0.55rem 1.15rem;
+  border-radius: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  transition:
+    transform 0.15s var(--dash-ease),
+    box-shadow 0.15s var(--dash-ease),
+    background 0.15s var(--dash-ease),
+    border-color 0.15s var(--dash-ease);
+}
+
+.oh-sa-outlet .btn-primary,
+.oh-sa-outlet .btn:not(.btn-secondary):not(.btn-link) {
+  background: linear-gradient(135deg, #2b59c3, #3d6fd4);
+  color: #fff;
+  border: none;
+  box-shadow: 0 10px 24px -12px rgba(43, 89, 195, 0.55);
+}
+
+.oh-sa-outlet .btn-primary:hover:not(:disabled),
+.oh-sa-outlet .btn:not(.btn-secondary):not(.btn-link):hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #2f61d0, #4578dc);
+  box-shadow: 0 14px 28px -10px rgba(43, 89, 195, 0.6);
+}
+
+.oh-sa-outlet .btn-secondary {
+  background: #fff;
+  color: #2b59c3;
+  border: 1.5px solid rgba(43, 89, 195, 0.35);
+  box-shadow: 0 4px 14px -8px rgba(43, 89, 195, 0.15);
+}
+
+.oh-sa-outlet .btn-secondary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #f8faff;
+  border-color: #2b59c3;
+  color: #2b59c3;
+}
+
+.oh-sa-outlet .btn[style*="background"][style*="red"],
+.oh-sa-outlet .btn.btn-danger,
+.oh-sa-outlet button[class*="danger"] {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  border: none;
+  box-shadow: 0 8px 20px -10px rgba(220, 38, 38, 0.45);
+}
+
+.oh-sa-outlet .btn:disabled {
+  opacity: 0.58;
+  transform: none;
+  cursor: not-allowed;
+}
+
+/* —— Confirm dialog (stacked above nested modals) —— */
+.dash-ui-confirm-dialog__backdrop {
+  animation: dashUiConfirmFadeIn 0.18s ease-out;
+}
+
+.dash-ui-confirm-dialog__panel {
+  animation: dashUiConfirmScaleIn 0.2s ease-out;
+}
+
+@keyframes dashUiConfirmFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dashUiConfirmScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* —— Legacy .card surfaces still used in a few admin pages —— */
+.oh-sa-outlet .dash-ui-section .card,
+.oh-sa-outlet .cards-grid > .card,
+.oh-sa-outlet .oh-internal-orders__table-card,
+.oh-sa-outlet .card[role="dialog"] {
+  padding: clamp(14px, 2vw, 18px);
+  border-radius: clamp(20px, 2.4vw, 26px);
+  border: 1px solid var(--dash-card-border);
+  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  box-shadow: var(--dash-card-shadow), inset 1px 1px 0 rgba(255, 255, 255, 0.86);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.oh-sa-outlet .cards-grid > .card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e2a4a;
+}
+
+.oh-sa-outlet .cards-grid > .card p {
+  margin-bottom: 6px;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* Restore hub button sizing inside legacy cards (legacy outlet compact rule is more specific) */
+.oh-sa-outlet .cards-grid > .card .btn,
+.oh-sa-outlet .card[role="dialog"] .btn {
+  min-height: 42px;
+  padding: 0.55rem 1.15rem;
+  font-size: 0.88rem;
+  border-radius: 14px;
+}
+
+.oh-sa-outlet .oh-internal-orders__table-card {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.oh-sa-outlet .oh-internal-orders__table-card .oh-internal-orders__table {
+  min-width: 0;
+}
+
+/* —— DashboardModal + admin inline dialogs —— */
+.oh-sa-outlet .dash-ui-modal__panel {
+  border-radius: clamp(22px, 2.6vw, 28px);
+  border: 1px solid var(--dash-card-border);
+  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  box-shadow:
+    12px 12px 34px rgba(163, 177, 198, 0.18),
+    -8px -8px 24px rgba(255, 255, 255, 0.92),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.88);
+  max-width: min(520px, calc(100vw - 32px));
+}
+
+.oh-sa-outlet .dash-ui-modal--bids .dash-ui-modal__panel {
+  max-width: min(560px, calc(100vw - 32px));
+}
+
+.oh-sa-outlet .dash-ui-modal__head {
+  border-bottom-color: rgba(226, 232, 240, 0.85);
+}
+
+.oh-sa-outlet .dash-ui-modal__title {
+  color: #1e2a4a;
+  font-weight: 800;
+}
+
+.oh-sa-outlet .dash-ui-modal__foot {
+  border-top-color: rgba(226, 232, 240, 0.85);
+  background: rgba(248, 250, 252, 0.72);
+}
+
+.oh-sa-outlet .dash-ui-modal__lead {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #334155;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.oh-sa-outlet .dash-ui-modal__hint,
+.oh-sa-outlet .dash-ui-modal__empty {
+  margin: 0 0 14px;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.oh-sa-outlet .dash-ui-modal__form {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.oh-sa-outlet .dash-ui-modal__form .input,
+.oh-sa-outlet .dash-ui-modal__form .textarea,
+.oh-sa-outlet .dash-ui-modal__form select.input {
+  min-height: 42px;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 12px;
+  border: 1px solid var(--dash-input-border);
+  background: rgba(255, 255, 255, 0.92);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--primary, #2f3b65);
+}
+
+.oh-sa-outlet .dash-ui-modal__form .textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.oh-sa-outlet .dash-ui-modal__form .input:focus,
+.oh-sa-outlet .dash-ui-modal__form .textarea:focus,
+.oh-sa-outlet .dash-ui-modal__form select.input:focus {
+  outline: none;
+  border-color: var(--dash-input-focus);
+  box-shadow: 0 0 0 3px rgba(118, 207, 223, 0.22);
+}
+
+.oh-sa-outlet .admin-dash-modal__bid-list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.oh-sa-outlet .admin-dash-modal__bid-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(224, 231, 242, 0.9);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.88);
+  min-width: 0;
+}
+
+.oh-sa-outlet .admin-dash-modal__bid-copy {
+  min-width: 0;
+  flex: 1 1 180px;
+}
+
+.oh-sa-outlet .admin-dash-modal__bid-name {
+  font-weight: 800;
+  color: #1e2a4a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.oh-sa-outlet .admin-dash-modal__bid-meta {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+/* Admin courses inline dialogs */
+.oh-sa-outlet .oh-admin-courses__modal-backdrop,
+.oh-sa-outlet .oh-admin-courses__send-backdrop {
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+.oh-sa-outlet .oh-admin-courses__modal {
+  border-radius: clamp(22px, 2.6vw, 28px);
+  border: 1px solid var(--dash-card-border);
+  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  box-shadow:
+    12px 12px 34px rgba(163, 177, 198, 0.18),
+    -8px -8px 24px rgba(255, 255, 255, 0.92),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.oh-sa-outlet .oh-admin-courses__modal-header {
+  border-bottom-color: rgba(226, 232, 240, 0.85);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.oh-sa-outlet .oh-admin-courses__modal-tabs {
+  padding-inline: 12px;
+  border-bottom-color: rgba(226, 232, 240, 0.85);
+  background: rgba(248, 250, 252, 0.72);
+}
+
+.oh-sa-outlet .oh-admin-courses__modal-tab {
+  border-radius: 999px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.oh-sa-outlet .oh-admin-courses__modal-tab--active {
+  color: #2563eb;
+  background: linear-gradient(145deg, rgba(239, 246, 255, 0.95), rgba(224, 242, 254, 0.75));
+  border: 1px solid rgba(191, 219, 254, 0.65);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.9),
+    2px 2px 8px rgba(163, 177, 198, 0.08);
+}
+
+.oh-sa-outlet .oh-admin-courses__modal-close {
+  border-radius: 12px;
+  background: linear-gradient(145deg, #fbfdff, #eef3f8);
+  border: 1px solid rgba(224, 231, 242, 0.85);
+  box-shadow:
+    2px 2px 8px rgba(163, 177, 198, 0.08),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.oh-sa-outlet .admin-dash-inline-dialog {
+  width: min(620px, calc(100vw - 32px));
+  max-height: min(86vh, 720px);
+  overflow: auto;
+  display: grid;
+  gap: 12px;
+}
+
+.oh-sa-outlet .admin-dash-inline-dialog--confirm {
+  width: min(420px, calc(100vw - 32px));
+  max-height: none;
+}
+
+.oh-sa-outlet .admin-dash-inline-dialog__title {
+  margin: 0;
+  font-size: 1.06rem;
+  font-weight: 800;
+  color: #1e2a4a;
+}
+
+.oh-sa-outlet .admin-dash-inline-dialog__search-panel {
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid rgba(224, 231, 242, 0.9);
+  border-radius: 14px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  min-width: 0;
+}
+
+.oh-sa-outlet .admin-dash-inline-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.oh-sa-outlet .admin-dash-inline-dialog__actions--end {
+  justify-content: flex-end;
+}
+
+.oh-sa-outlet .admin-dash-inline-dialog__confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.oh-sa-outlet .admin-dash-inline-dialog__confirm-text {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.oh-sa-outlet .admin-dash-inline-dialog .auth-field input {
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--dash-input-border);
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.oh-sa-outlet .admin-dash-inline-dialog .auth-field input:focus {
+  outline: none;
+  border-color: var(--dash-input-focus);
+  box-shadow: 0 0 0 3px rgba(118, 207, 223, 0.22);
+}
+
+/* Admin ads + plans modals (super-admin shared pages) */
+.oh-sa-outlet .oh-admin-ads__modal-card,
+.oh-sa-outlet .oh-admin-ads__modal-card--reschedule,
+.oh-sa-outlet .oh-admin-ads__template-picker-card,
+.oh-sa-outlet .oh-sapl-modal {
+  border-radius: clamp(22px, 2.6vw, 28px);
+  border: 1px solid var(--dash-card-border);
+  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  box-shadow:
+    12px 12px 34px rgba(163, 177, 198, 0.18),
+    -8px -8px 24px rgba(255, 255, 255, 0.92),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.oh-sa-outlet .oh-sapl-modal__head,
+.oh-sa-outlet .oh-sapl-modal__foot,
+.oh-sa-outlet .oh-admin-ads__modal-header {
+  border-color: rgba(226, 232, 240, 0.85);
+}
+
+@media (max-width: 640px) {
+  .oh-sa-outlet .dash-ui-modal__foot,
+  .oh-sa-outlet .admin-dash-inline-dialog__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .oh-sa-outlet .dash-ui-modal__foot .btn,
+  .oh-sa-outlet .admin-dash-inline-dialog__actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .oh-sa-outlet .admin-dash-modal__bid-row .btn {
+    width: 100%;
+  }
+}
+
+/* —— Status badges —— */
+.oh-sa-outlet .inline-flex.rounded-full.border {
+  font-weight: 700;
+}
+
+/* —— Form cards —— */
+.oh-sa-outlet .dash-ui-form-card {
+  border-radius: clamp(20px, 2.4vw, 24px);
+  border-color: rgba(224, 231, 242, 0.85);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 250, 252, 0.9) 100%);
+  box-shadow:
+    6px 6px 18px rgba(163, 177, 198, 0.08),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+/* —— Action menu —— */
+.oh-sa-outlet .dash-ui-action-menu__panel {
+  border-radius: 16px;
+  border-color: rgba(224, 231, 242, 0.85);
+  box-shadow:
+    10px 10px 28px rgba(163, 177, 198, 0.16),
+    -6px -6px 16px rgba(255, 255, 255, 0.92);
+}
+
+/* —— Admin home (DashboardHubPage) quick cards —— */
+.oh-sa-outlet .admin-dash-quick__card {
+  border-radius: clamp(22px, 2.6vw, 28px);
+  border: 1px solid rgba(224, 231, 242, 0.85);
+  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  box-shadow:
+    8px 8px 22px rgba(163, 177, 198, 0.12),
+    -6px -6px 16px rgba(255, 255, 255, 0.92),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.88);
+  transition:
+    transform 0.2s var(--dash-ease),
+    box-shadow 0.2s var(--dash-ease),
+    border-color 0.2s var(--dash-ease);
+}
+
+.oh-sa-outlet .admin-dash-quick__card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(191, 219, 254, 0.75);
+  box-shadow:
+    10px 12px 28px rgba(163, 177, 198, 0.16),
+    -7px -7px 18px rgba(255, 255, 255, 0.94);
+}
+
+.oh-sa-outlet .admin-dash-summary__item {
+  border-radius: clamp(20px, 2.4vw, 26px);
+  border: 1px solid rgba(224, 231, 242, 0.85);
+  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow:
+    6px 6px 18px rgba(163, 177, 198, 0.1),
+    -5px -5px 14px rgba(255, 255, 255, 0.92);
+}
+
+/* —— Training orders hub tabs —— */
+.oh-sa-outlet .oh-training-hub__tabs.dash-ui-tabs {
+  border-radius: 999px;
+}
+
+.oh-sa-outlet .oh-training-hub__tab.dash-ui-tab--selected {
+  color: #2563eb;
+}
+
+.oh-sa-outlet .dash-ui-toolbar.oh-training-filters input,
+.oh-sa-outlet .dash-ui-toolbar.oh-training-filters select {
+  min-height: 42px;
+  border-radius: 12px;
+}
+
+/* —— Admin courses page helpers —— */
+.oh-sa-outlet .oh-admin-courses__input,
+.oh-sa-outlet .oh-admin-courses__textarea,
+.oh-sa-outlet .oh-admin-courses__select {
+  border-radius: 12px;
+  border-color: var(--dash-input-border);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.oh-sa-outlet .oh-admin-courses__input:focus,
+.oh-sa-outlet .oh-admin-courses__textarea:focus,
+.oh-sa-outlet .oh-admin-courses__select:focus {
+  border-color: var(--dash-input-focus);
+  box-shadow: 0 0 0 3px rgba(118, 207, 223, 0.22);
+}
+
+.oh-sa-outlet .oh-admin-courses__course-card {
+  border-radius: clamp(22px, 2.6vw, 28px);
+  border-color: rgba(224, 231, 242, 0.85);
+  box-shadow:
+    8px 8px 22px rgba(163, 177, 198, 0.1),
+    -6px -6px 16px rgba(255, 255, 255, 0.9);
+}
+
+/* —— Analytics —— */
+.oh-sa-outlet .sa-event-pill,
+.oh-sa-outlet .sa-pages-list__row {
+  border-radius: 14px;
+  border-color: rgba(224, 231, 242, 0.85);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
+}
+
+.oh-sa-outlet .sa-skeleton,
+.oh-sa-outlet .sa-skeleton-bar {
+  border-radius: 12px;
+}
+
+@media (max-width: 768px) {
+  .oh-sa-outlet .dash-ui-shell {
+    padding-inline: 0;
+  }
+
+  .oh-sa-outlet .dash-ui-toolbar {
+    padding: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oh-sa-outlet .dash-ui-skeleton-rows__bar {
+    animation: none;
+  }
+
+  .oh-sa-outlet .btn:hover:not(:disabled),
+  .oh-sa-outlet .admin-dash-quick__card:hover {
+    transform: none;
+  }
+}
+
+/* —— Admin internal order wizard (page mode) —— */
+.oh-sa-outlet .admin-internal-wizard--page.co-create-order-page {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.oh-sa-outlet .admin-co-wizard__form {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.oh-sa-outlet .admin-co-wizard__panel {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.oh-sa-outlet .admin-co-wizard__stepper-panel {
+  padding: clamp(14px, 2vw, 18px);
+}
+
+.oh-sa-outlet .admin-co-wizard__form-panel {
+  padding: clamp(16px, 2.2vw, 22px);
+}
+
+.oh-sa-outlet .admin-co-wizard__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: clamp(14px, 2vw, 18px);
+}
+
+.oh-sa-outlet .admin-co-wizard__stepper-panel .oh-stepper {
+  gap: 8px;
+  padding: 4px;
+  border-radius: clamp(20px, 2.5vw, 26px);
+  border: 1px solid rgba(224, 231, 242, 0.85);
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 1px 1px 4px rgba(148, 163, 184, 0.06);
+}
+
+.oh-sa-outlet .admin-co-wizard__stepper-panel .oh-step {
+  border-radius: clamp(14px, 2vw, 18px);
+  border: 1px solid rgba(224, 231, 242, 0.9);
+  background: rgba(255, 255, 255, 0.72);
+  padding: 10px 12px;
+  transition:
+    background 0.18s var(--dash-ease),
+    border-color 0.18s var(--dash-ease),
+    box-shadow 0.18s var(--dash-ease),
+    transform 0.18s var(--dash-ease);
+}
+
+.oh-sa-outlet .admin-co-wizard__stepper-panel .oh-step:hover {
+  border-color: rgba(191, 219, 254, 0.85);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.oh-sa-outlet .admin-co-wizard__stepper-panel .oh-step--active {
+  border-color: rgba(191, 219, 254, 0.85);
+  background: linear-gradient(145deg, rgba(239, 246, 255, 0.95), rgba(224, 242, 254, 0.75));
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.9),
+    2px 2px 8px rgba(163, 177, 198, 0.08);
+}
+
+.oh-sa-outlet .admin-co-wizard__stepper-panel .oh-step--done {
+  border-color: rgba(167, 243, 208, 0.75);
+  background: linear-gradient(145deg, rgba(236, 253, 245, 0.92), rgba(209, 250, 229, 0.55));
+}
+
+.oh-sa-outlet .admin-co-wizard__stepper-panel .oh-step__num {
+  width: 28px;
+  height: 28px;
+  border-radius: 11px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  background: var(--dash-icon-chip-bg);
+  border: var(--dash-icon-chip-border);
+  box-shadow: var(--dash-icon-chip-shadow);
+  color: #2563eb;
+}
+
+.oh-sa-outlet .admin-co-wizard__stepper-panel .oh-step--active .oh-step__num {
+  color: #1d4ed8;
+}
+
+.oh-sa-outlet .admin-co-wizard__stepper-panel .oh-step--done .oh-step__num {
+  color: #059669;
+}
+
+.oh-sa-outlet .admin-co-wizard__stepper-panel .oh-step__label {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.oh-sa-outlet .admin-co-wizard__form-panel .admin-co-fields .input,
+.oh-sa-outlet .admin-co-wizard__form-panel .admin-co-fields select.input,
+.oh-sa-outlet .admin-co-wizard__form-panel .admin-co-fields textarea.input,
+.oh-sa-outlet .admin-co-wizard__form-panel .admin-co-fields .oh-select__btn {
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--dash-input-border);
+  background: rgba(255, 255, 255, 0.92);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--primary, #2f3b65);
+  transition: border-color 0.15s var(--dash-ease), box-shadow 0.15s var(--dash-ease);
+}
+
+.oh-sa-outlet .admin-co-wizard__form-panel .admin-co-fields .input:focus,
+.oh-sa-outlet .admin-co-wizard__form-panel .admin-co-fields select.input:focus,
+.oh-sa-outlet .admin-co-wizard__form-panel .admin-co-fields textarea.input:focus,
+.oh-sa-outlet .admin-co-wizard__form-panel .admin-co-fields .oh-select__btn--open {
+  outline: none;
+  border-color: var(--dash-input-focus);
+  box-shadow: 0 0 0 3px rgba(118, 207, 223, 0.22);
+}
+
+.oh-sa-outlet .admin-co-wizard__form-panel .admin-co-fields .label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.oh-sa-outlet .admin-co-wizard__form-panel .admin-co-fields .client-co-type-row .btn {
+  min-height: 42px;
+  padding: 0.55rem 1.15rem;
+  font-size: 0.88rem;
+  border-radius: 14px;
+}
+
+.oh-sa-outlet .admin-co-wizard__form-panel .oh-review,
+.oh-sa-outlet .admin-co-wizard__form-panel .oh-wizard-section {
+  border-radius: clamp(18px, 2.2vw, 22px);
+  border: 1px solid rgba(224, 231, 242, 0.85);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
+  box-shadow:
+    4px 4px 14px rgba(163, 177, 198, 0.08),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.oh-sa-outlet .admin-co-wizard__form-panel .dropzone {
+  border-radius: clamp(16px, 2vw, 20px);
+  border: 1.5px dashed rgba(191, 219, 254, 0.85);
+  background: linear-gradient(160deg, rgba(248, 250, 252, 0.95), rgba(255, 255, 255, 0.98));
+}
+
+.oh-sa-outlet .admin-co-wizard__footer .oh-inline-alert {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(252, 165, 165, 0.65);
+  background: linear-gradient(160deg, #fff5f5 0%, #fef2f2 100%);
+  color: #991b1b;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .oh-sa-outlet .admin-co-wizard__stepper-panel .oh-stepper {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .oh-sa-outlet .admin-co-wizard__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .oh-sa-outlet .admin-co-wizard__footer .oh-inline-alert {
+    order: -1;
+  }
+}
+
+/* —— Staff account settings (admin outlet) —— */
+.oh-sa-outlet .oh-account-page--staff {
+  padding: 0;
+  max-width: none;
+  margin: 0;
+}
+
+.oh-sa-outlet .oh-account-page--staff .oh-account-input,
+.oh-sa-outlet .oh-account-page--staff .oh-account-textarea,
+.oh-sa-outlet .oh-account-page--staff .oh-account-select {
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--dash-input-border);
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--primary, #2f3b65);
+  transition: border-color 0.15s var(--dash-ease), box-shadow 0.15s var(--dash-ease);
+}
+
+.oh-sa-outlet .oh-account-page--staff .oh-account-input:focus,
+.oh-sa-outlet .oh-account-page--staff .oh-account-textarea:focus,
+.oh-sa-outlet .oh-account-page--staff .oh-account-select:focus {
+  outline: none;
+  border-color: var(--dash-input-focus);
+  box-shadow: 0 0 0 3px rgba(118, 207, 223, 0.22);
+}
+
+.oh-sa-outlet .oh-account-page--staff .oh-account-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.oh-sa-outlet .oh-account-page--staff .oh-account-page__hint {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.oh-sa-outlet .oh-account-page--staff .oh-account-toggle__label {
+  font-weight: 800;
+}
+
+.oh-sa-outlet .oh-account-page--staff .oh-account-page__notif-note {
+  margin-top: 12px;
+}
+
+.oh-sa-outlet .oh-account-page--staff .oh-account-switch:checked {
+  background: linear-gradient(135deg, #2b59c3, #3d6fd4);
+}
+
+.oh-sa-outlet .oh-account-page--staff .oh-account-empty {
+  border-radius: 14px;
+  border: 1px dashed rgba(191, 219, 254, 0.65);
+  background: linear-gradient(160deg, rgba(248, 250, 252, 0.95), rgba(255, 255, 255, 0.98));
+  color: #64748b;
+}
+
+.oh-sa-outlet .oh-account-page--staff .oh-account-avatar-row .btn-secondary {
+  min-height: 42px;
+}
+
+/* BrowserNotificationSettings child card inside staff settings */
+.oh-sa-outlet .oh-account-page--staff .oh-account-card {
+  margin-bottom: 1.25rem;
+  padding: clamp(16px, 2.2vw, 22px);
+  border-radius: var(--dash-surface-radius);
+  border: 1px solid var(--dash-card-border);
+  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  box-shadow: var(--dash-card-shadow), inset 1px 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.oh-sa-outlet .oh-account-page--staff .oh-account-card__title {
+  margin: 0 0 12px;
+  font-size: 1.06rem;
+  font-weight: 700;
+  color: #1e2a4a;
+}
+
+.oh-sa-outlet .oh-account-page--staff .oh-account-btn-primary {
+  min-height: 42px;
+  padding: 0.55rem 1.15rem;
+  border-radius: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  border: none;
+  background: linear-gradient(135deg, #2b59c3, #3d6fd4);
+  color: #fff;
+  box-shadow: 0 10px 24px -12px rgba(43, 89, 195, 0.55);
+}
+
+.oh-sa-outlet .oh-account-page--staff .oh-account-btn-ghost {
+  min-height: 42px;
+  padding: 0.55rem 1.15rem;
+  border-radius: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  background: #fff;
+  color: #2b59c3;
+  border: 1.5px solid rgba(43, 89, 195, 0.35);
+  box-shadow: 0 4px 14px -8px rgba(43, 89, 195, 0.15);
+}
+
+.oh-sa-outlet .oh-account-page--staff .oh-account-btn-primary:hover:not(:disabled),
+.oh-sa-outlet .oh-account-page--staff .oh-account-btn-ghost:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oh-sa-outlet .admin-co-wizard__stepper-panel .oh-step:hover,
+  .oh-sa-outlet .oh-account-page--staff .oh-account-btn-primary:hover:not(:disabled),
+  .oh-sa-outlet .oh-account-page--staff .oh-account-btn-ghost:hover:not(:disabled) {
+    transform: none;
+  }
+}

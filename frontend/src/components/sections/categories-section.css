@@ -129,3 +129,22 @@
   inset-inline-start: 1.1rem;
   background: rgba(251, 146, 60, 0.28);
 }
+
+.home-categories-card {
+  animation: home-categories-card-in 0.35s ease-out both;
+}
+
+@keyframes home-categories-card-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-categories-card {
+    animation: none;
+  }
+}

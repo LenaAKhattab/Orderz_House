@@ -118,7 +118,7 @@ const FaqSection = () => {
           </ul>
 
           <div
-            className="flex shrink-0 items-start justify-center md:w-[min(42%,14rem)] md:justify-end lg:w-[min(38%,16rem)]"
+            className="flex shrink-0 items-start justify-center md:w-[min(42%,14rem)] md:-translate-x-10 md:justify-end lg:w-[min(38%,16rem)] lg:-translate-x-12"
             aria-hidden
           >
             <img

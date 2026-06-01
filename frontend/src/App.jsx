@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { useToast } from "./components/ui/toastContext";
 import RouteSuspenseFallback from "./components/ui/RouteSuspenseFallback";
+import ScrollToTop from "./components/routing/ScrollToTop";
 import PublicLayout from "./components/layout/PublicLayout";
 import Home from "./pages/Home";
 
@@ -26,6 +27,7 @@ import {
   SuperAdminPlansPage,
   SuperAdminSubscriptionsPage,
   SuperAdminFinancialClaimsPage,
+  SuperAdminProductAnalyticsPage,
   SuperAdminSettingsPage,
   AdminOrdersPage,
   AdminCreateOrderPage,
@@ -132,6 +134,7 @@ function ToastDashboardExitBridge() {
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <ToastProvider>
         <AuthProvider>
           <AnalyticsBridge />
@@ -190,6 +193,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
                       <DashboardPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/analytics"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminProductAnalyticsPage />
                     </RequireRole>
                   }
                 />

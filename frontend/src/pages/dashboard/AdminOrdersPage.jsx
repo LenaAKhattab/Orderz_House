@@ -21,6 +21,7 @@ import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
+import DashboardModal from "../../components/dashboard/DashboardModal";
 
 function fullNameAr(f) {
   const parts = [f?.firstName, f?.fatherName, f?.familyName].filter(Boolean);
@@ -452,121 +453,85 @@ export default function AdminOrdersPage() {
         </DashboardSection>
       </DashboardShell>
 
-      {bidsModalOrder ? (
-        <div
-          role="presentation"
-          onMouseDown={() => {
-            if (!approvingBidId) setBidsModalOrderId(null);
-          }}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16,
-            background: "rgba(15, 23, 42, 0.45)",
-          }}
-        >
-          <div
-            className="card"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="admin-bids-modal-title"
-            onMouseDown={(ev) => ev.stopPropagation()}
-            style={{ maxWidth: 560, width: "100%", maxHeight: "min(88vh, 720px)", display: "flex", flexDirection: "column", overflow: "hidden" }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
-              <div style={{ minWidth: 0 }}>
-                <h2 id="admin-bids-modal-title" style={{ margin: "0 0 6px" }}>
-                  عروض الأسعار (مزايدة داخلية)
-                </h2>
-                <p className="help" style={{ margin: 0 }}>
-                  {bidsModalOrder.orderCode ? `${bidsModalOrder.orderCode} — ` : ""}
-                  {bidsModalOrder.title || "—"}
-                </p>
-                <p className="help" style={{ margin: "8px 0 0" }}>
-                  اعتماد عرض واحد يُسند المشروع دون دفع عبر Stripe (طلب إداري).
-                </p>
-              </div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", flexShrink: 0 }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={bidsModalBusy || Boolean(approvingBidId)}
-                  onClick={() => loadBids(bidsModalOrder.id)}
-                >
-                  {bidsModalBusy ? "جارٍ التحميل…" : "تحديث القائمة"}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={Boolean(approvingBidId)}
-                  onClick={() => setBidsModalOrderId(null)}
-                >
-                  إغلاق
-                </button>
-              </div>
-            </div>
+      <DashboardModal
+        open={Boolean(bidsModalOrder)}
+        title="عروض الأسعار (مزايدة داخلية)"
+        className="dash-ui-modal--bids"
+        onClose={() => {
+          if (!approvingBidId) setBidsModalOrderId(null);
+        }}
+        footer={
+          bidsModalOrder ? (
+            <>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={bidsModalBusy || Boolean(approvingBidId)}
+                onClick={() => loadBids(bidsModalOrder.id)}
+              >
+                {bidsModalBusy ? "جارٍ التحميل…" : "تحديث القائمة"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={Boolean(approvingBidId)}
+                onClick={() => setBidsModalOrderId(null)}
+              >
+                إغلاق
+              </button>
+            </>
+          ) : null
+        }
+      >
+        {bidsModalOrder ? (
+          <>
+            <p className="dash-ui-modal__lead">
+              {bidsModalOrder.orderCode ? `${bidsModalOrder.orderCode} — ` : ""}
+              {bidsModalOrder.title || "—"}
+            </p>
+            <p className="dash-ui-modal__hint">اعتماد عرض واحد يُسند المشروع دون دفع عبر Stripe (طلب إداري).</p>
 
-            <div style={{ marginTop: 14, overflow: "auto", flex: 1, minHeight: 0 }}>
-              {bidsModalList === null && bidsModalBusy ? <ClaimsSkeleton /> : null}
+            {bidsModalList === null && bidsModalBusy ? <ClaimsSkeleton /> : null}
 
-              {bidsModalList !== null ? (
-                bidsModalBusy ? (
-                  <ClaimsSkeleton />
-                ) : bidsModalList.length === 0 ? (
-                  <div className="help" style={{ margin: 0 }}>
-                    لا توجد عروض بعد.
-                  </div>
-                ) : (
-                  <div style={{ display: "grid", gap: 8 }}>
-                    {bidsModalList.map((b) => {
-                      const name = fullNameAr(b?.freelancer) || b?.freelancer?.email || `#${b?.freelancerUserId || ""}`;
-                      const status = String(b?.status || "").trim();
-                      const canApprove = status === "pending";
-                      const cur = bidsModalOrder.currencyCode || "JOD";
-                      return (
-                        <div
-                          key={String(b.id)}
-                          style={{
-                            display: "flex",
-                            gap: 10,
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            padding: "10px 12px",
-                            borderRadius: 14,
-                            border: "1px solid rgba(56,82,180,0.12)",
-                            background: "rgba(56,82,180,0.03)",
-                          }}
-                        >
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontWeight: 950, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</div>
-                            <div className="help" style={{ margin: 0 }}>
-                              المبلغ: {b?.amount != null ? `${b.amount} ${cur}` : "—"}
-                              {status ? ` • الحالة: ${status}` : ""}
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            className="btn btn-primary"
-                            disabled={!canApprove || approvingBidId === String(b.id)}
-                            title={!canApprove ? "لا يمكن اعتماد هذا العرض" : ""}
-                            onClick={() => approveInternalBid({ orderId: bidsModalOrder.id, bidId: b.id })}
-                          >
-                            {approvingBidId === String(b.id) ? "جارٍ الاعتماد…" : "اعتماد"}
-                          </button>
+            {bidsModalList !== null ? (
+              bidsModalBusy ? (
+                <ClaimsSkeleton />
+              ) : bidsModalList.length === 0 ? (
+                <p className="dash-ui-modal__empty">لا توجد عروض بعد.</p>
+              ) : (
+                <div className="admin-dash-modal__bid-list">
+                  {bidsModalList.map((b) => {
+                    const name = fullNameAr(b?.freelancer) || b?.freelancer?.email || `#${b?.freelancerUserId || ""}`;
+                    const status = String(b?.status || "").trim();
+                    const canApprove = status === "pending";
+                    const cur = bidsModalOrder.currencyCode || "JOD";
+                    return (
+                      <div key={String(b.id)} className="admin-dash-modal__bid-row">
+                        <div className="admin-dash-modal__bid-copy">
+                          <div className="admin-dash-modal__bid-name">{name}</div>
+                          <p className="admin-dash-modal__bid-meta">
+                            المبلغ: {b?.amount != null ? `${b.amount} ${cur}` : "—"}
+                            {status ? ` • الحالة: ${status}` : ""}
+                          </p>
                         </div>
-                      );
-                    })}
-                  </div>
-                )
-              ) : null}
-            </div>
-          </div>
-        </div>
-      ) : null}
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          disabled={!canApprove || approvingBidId === String(b.id)}
+                          title={!canApprove ? "لا يمكن اعتماد هذا العرض" : ""}
+                          onClick={() => approveInternalBid({ orderId: bidsModalOrder.id, bidId: b.id })}
+                        >
+                          {approvingBidId === String(b.id) ? "جارٍ الاعتماد…" : "اعتماد"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            ) : null}
+          </>
+        ) : null}
+      </DashboardModal>
 
       {deliveryModal.open && deliveryModal.order ? (
         <ClientDeliveryReviewModal

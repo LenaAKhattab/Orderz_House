@@ -1,7 +1,27 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchSuperAdminOverview } from "../services/superAdminAnalytics";
 
 const REFRESH_MS = 60_000;
+
+function mapAnalyticsError(e) {
+  const code = e?.code || "";
+  const message = String(e?.message || "");
+  if (code === "ERR_CANCELED" || code === "CanceledError") {
+    return { message: "", code: "", canceled: true };
+  }
+  if (code === "ECONNABORTED" || /timeout/i.test(message)) {
+    return {
+      message: "استغرق تحميل التحليلات وقتًا أطول من المتوقع. حاول التحديث بعد قليل.",
+      code: "TIMEOUT",
+      canceled: false,
+    };
+  }
+  return {
+    message: e?.response?.data?.message || message || "تعذر تحميل لوحة التحليلات.",
+    code: e?.response?.data?.code || "",
+    canceled: false,
+  };
+}
 
 /**
  * Loads Super Admin analytics overview (PostHog + DB). Auto-refreshes every 60s.
@@ -12,35 +32,89 @@ export function useSuperAdminAnalyticsOverview({ range = "7d", topLimit = 10 } =
   const [error, setError] = useState("");
   const [errorCode, setErrorCode] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    setErrorCode("");
-    try {
-      const res = await fetchSuperAdminOverview({
-        range,
-        topLimit,
-      });
-      setData(res?.data || null);
-    } catch (e) {
-      const message = e?.response?.data?.message || e?.message || "تعذر تحميل لوحة التحليلات.";
-      const code = e?.response?.data?.code || "";
-      setError(String(message));
-      setErrorCode(String(code));
-      setData((prev) => prev);
-    } finally {
-      setLoading(false);
-    }
-  }, [range, topLimit]);
+  const dataRef = useRef(null);
+  const inFlightRef = useRef(false);
+  const abortRef = useRef(null);
+
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
+
+  const load = useCallback(
+    async ({ manual = false } = {}) => {
+      if (inFlightRef.current && !manual) {
+        return;
+      }
+
+      if (inFlightRef.current && manual) {
+        abortRef.current?.abort();
+      }
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+      inFlightRef.current = true;
+
+      if (!dataRef.current) {
+        setLoading(true);
+      }
+      setError("");
+      setErrorCode("");
+
+      try {
+        const res = await fetchSuperAdminOverview(
+          {
+            range,
+            topLimit,
+          },
+          { signal: controller.signal },
+        );
+
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        setData(res?.data || null);
+      } catch (e) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        const mapped = mapAnalyticsError(e);
+        if (mapped.canceled) {
+          return;
+        }
+
+        setError(String(mapped.message));
+        setErrorCode(String(mapped.code));
+        setData((prev) => prev);
+      } finally {
+        if (abortRef.current === controller) {
+          abortRef.current = null;
+        }
+        inFlightRef.current = false;
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    },
+    [range, topLimit],
+  );
 
   useEffect(() => {
     void load();
   }, [load]);
 
   useEffect(() => {
-    const id = window.setInterval(() => void load(), REFRESH_MS);
+    const id = window.setInterval(() => void load({ manual: false }), REFRESH_MS);
     return () => window.clearInterval(id);
   }, [load]);
+
+  useEffect(
+    () => () => {
+      abortRef.current?.abort();
+    },
+    [],
+  );
 
   const chartPack = useMemo(() => buildChartPack(data), [data]);
 
@@ -49,7 +123,7 @@ export function useSuperAdminAnalyticsOverview({ range = "7d", topLimit = 10 } =
     loading,
     error,
     errorCode,
-    refresh: load,
+    refresh: () => load({ manual: true }),
     chartPack,
     refreshIntervalMs: REFRESH_MS,
   };

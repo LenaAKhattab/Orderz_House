@@ -1,4 +1,5 @@
 const coursesService = require("../services/coursesService");
+const courseFileDeliveryService = require("../services/courseFileDeliveryService");
 
 async function listCourses(req, res, next) {
   try {
@@ -201,6 +202,21 @@ async function uploadCoursePromptFile(req, res, next) {
   }
 }
 
+async function streamCourseFile(req, res, next) {
+  try {
+    const download = req.query.download === "1" || req.query.download === "true";
+    await courseFileDeliveryService.streamCourseFileForAdmin({
+      actorUserId: req.auth.userId,
+      courseId: req.params.id,
+      fileKind: req.params.fileKind,
+      download,
+      res,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   listCourses,
   createCourse,
@@ -217,4 +233,5 @@ module.exports = {
   listFreelancers,
   uploadCourseTestFile,
   uploadCoursePromptFile,
+  streamCourseFile,
 };

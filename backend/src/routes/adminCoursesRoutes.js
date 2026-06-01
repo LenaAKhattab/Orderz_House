@@ -17,6 +17,7 @@ const {
   assignOneFreelancerValidators,
   listCoursesValidators,
   courseIdParam,
+  courseFileStreamValidators,
 } = require("../validators/coursesValidators");
 
 const router = express.Router();
@@ -26,6 +27,12 @@ router.use(requireAuth, requireAnyRole(["admin", "super_admin"]));
 router.get("/courses/freelancers", adminCoursesController.listFreelancers);
 router.get("/courses", listCoursesValidators, validateRequest, adminCoursesController.listCourses);
 router.post("/courses", createCourseValidators, validateRequest, adminCoursesController.createCourse);
+router.get(
+  "/courses/:id/files/:fileKind",
+  courseFileStreamValidators,
+  validateRequest,
+  adminCoursesController.streamCourseFile,
+);
 router.get("/courses/:id", courseIdParam, validateRequest, adminCoursesController.getCourseById);
 router.patch("/courses/:id", updateCourseValidators, validateRequest, adminCoursesController.updateCourse);
 router.post(

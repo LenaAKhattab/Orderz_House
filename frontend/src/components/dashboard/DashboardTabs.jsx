@@ -4,11 +4,7 @@
  */
 export default function DashboardTabs({ "aria-label": ariaLabel = "أقسام", children, className = "" }) {
   return (
-    <div
-      className={`dash-ui-tabs mb-3.5 flex flex-wrap gap-1.5 rounded-xl border border-slate-300/25 bg-slate-50/90 p-1 ${className}`.trim()}
-      role="tablist"
-      aria-label={ariaLabel}
-    >
+    <div className={`dash-ui-tabs flex flex-wrap gap-1.5 ${className}`.trim()} role="tablist" aria-label={ariaLabel}>
       {children}
     </div>
   );
@@ -27,7 +23,7 @@ export function DashboardTab({ selected, onSelect, children, className = "" }) {
       type="button"
       role="tab"
       aria-selected={selected}
-      className={`dash-ui-tab cursor-pointer rounded-[10px] border-0 bg-transparent px-3 py-2 text-[0.82rem] font-extrabold text-slate-500 transition-colors hover:bg-white/75 hover:text-slate-700 ${selected ? "dash-ui-tab--selected bg-white text-[color:var(--primary,#2f3b65)] shadow-[0_2px_10px_rgba(15,23,42,0.06)]" : ""} ${className}`.trim()}
+      className={`dash-ui-tab cursor-pointer border-0 bg-transparent px-3 py-2 text-[0.82rem] font-extrabold transition-colors ${selected ? "dash-ui-tab--selected" : ""} ${className}`.trim()}
       onClick={onSelect}
     >
       {children}

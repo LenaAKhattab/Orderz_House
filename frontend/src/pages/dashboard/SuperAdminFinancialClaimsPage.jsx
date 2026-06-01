@@ -417,17 +417,17 @@ export default function SuperAdminFinancialClaimsPage() {
         title="تحديث حالة المطالبة"
         onClose={closeStatusModal}
         footer={
-          <div className="client-order-modal__foot">
+          <>
             <button type="button" className="btn btn-primary" disabled={actionBusy} onClick={applyStatus}>
               حفظ
             </button>
             <button type="button" className="btn btn-secondary" disabled={actionBusy} onClick={closeStatusModal}>
               إلغاء
             </button>
-          </div>
+          </>
         }
       >
-        <div className="client-order-modal__body">
+        <div className="dash-ui-modal__form">
           <select className="input" value={statusModal.status} onChange={(e) => setStatusModal((p) => ({ ...p, status: e.target.value }))}>
             {CLAIM_STATUS_OPTIONS.filter((opt) => opt.value).map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -449,17 +449,17 @@ export default function SuperAdminFinancialClaimsPage() {
         title="تعديل التسعير"
         onClose={closePricingModal}
         footer={
-          <div className="client-order-modal__foot">
+          <>
             <button type="button" className="btn btn-primary" disabled={actionBusy} onClick={applyPricing}>
               حفظ
             </button>
             <button type="button" className="btn btn-secondary" disabled={actionBusy} onClick={closePricingModal}>
               إلغاء
             </button>
-          </div>
+          </>
         }
       >
-        <div className="client-order-modal__body">
+        <div className="dash-ui-modal__form">
           <input
             className="input"
             type="number"
@@ -494,19 +494,19 @@ export default function SuperAdminFinancialClaimsPage() {
         title="تسجيل دفعة"
         onClose={closePaymentModal}
         footer={
-          <div className="client-order-modal__foot">
+          <>
             <button type="button" className="btn btn-primary" disabled={actionBusy} onClick={registerPayment}>
               تأكيد الدفع
             </button>
             <button type="button" className="btn btn-secondary" disabled={actionBusy} onClick={closePaymentModal}>
               إلغاء
             </button>
-          </div>
+          </>
         }
       >
-        <div className="client-order-modal__body">
-          <p>المطالبة: #{paymentModal.claim?.id}</p>
-          <p>المبلغ المتبقي: {formatMoney(paymentModal.claim?.remainingAmount)}</p>
+        <div className="dash-ui-modal__form">
+          <p className="dash-ui-modal__lead">المطالبة: #{paymentModal.claim?.id}</p>
+          <p className="dash-ui-modal__hint">المبلغ المتبقي: {formatMoney(paymentModal.claim?.remainingAmount)}</p>
           <input
             className="input"
             placeholder="طريقة الدفع"

@@ -615,6 +615,55 @@ function triggerBlobDownload(blob, fileName) {
   window.URL.revokeObjectURL(url);
 }
 
+function scheduleBlobUrlRevoke(url, ms = 120000) {
+  window.setTimeout(() => {
+    try {
+      window.URL.revokeObjectURL(url);
+    } catch {
+      /* ignore */
+    }
+  }, ms);
+}
+
+/** Open a tab synchronously on user click (before await) to avoid popup blockers. */
+export function openPdfPreviewTab() {
+  try {
+    const w = window.open("about:blank", "_blank");
+    if (w) {
+      try {
+        w.document.title = "جاري فتح الملف…";
+        w.document.body.innerHTML =
+          '<p style="font-family:system-ui,sans-serif;padding:2rem;text-align:center">جاري تحميل الملف…</p>';
+      } catch {
+        /* ignore */
+      }
+    }
+    return w;
+  } catch {
+    return null;
+  }
+}
+
+function toPdfBlob(data) {
+  if (data instanceof Blob) {
+    return data.type === "application/pdf" ? data : new Blob([data], { type: "application/pdf" });
+  }
+  return new Blob([data], { type: "application/pdf" });
+}
+
+/** Show PDF in previewWindow; if unavailable, download instead (no popup error). */
+function showPdfBlobInTab(previewWindow, blob, fileName) {
+  const pdfBlob = toPdfBlob(blob);
+  const url = window.URL.createObjectURL(pdfBlob);
+  if (previewWindow && !previewWindow.closed) {
+    previewWindow.location.href = url;
+    scheduleBlobUrlRevoke(url);
+    return;
+  }
+  window.URL.revokeObjectURL(url);
+  triggerBlobDownload(pdfBlob, fileName);
+}
+
 function orderFileDownloadPath(orderId, fileId, scope) {
   const oid = encodeURIComponent(String(orderId));
   const fid = encodeURIComponent(String(fileId));
@@ -657,22 +706,9 @@ export async function downloadOrderFileForRole(orderId, fileId, fileName, scope)
 }
 
 /** Open file in a new tab using an authenticated inline fetch (Bearer-friendly). */
-export async function viewOrderFileForRole(orderId, fileId, fileName, scope) {
+export async function viewOrderFileForRole(orderId, fileId, fileName, scope, previewWindow = null) {
   const response = await fetchOrderFileBlob(orderId, fileId, scope, "inline");
-  const blob = response.data instanceof Blob ? response.data : new Blob([response.data]);
-  const url = window.URL.createObjectURL(blob);
-  const w = window.open(url, "_blank", "noopener,noreferrer");
-  if (!w) {
-    window.URL.revokeObjectURL(url);
-    throw new Error("تم حظر النافذة المنبثقة.");
-  }
-  window.setTimeout(() => {
-    try {
-      window.URL.revokeObjectURL(url);
-    } catch {
-      /* ignore */
-    }
-  }, 120000);
+  showPdfBlobInTab(previewWindow, response.data, fileName);
 }
 
 export const downloadClientOrderFile = (orderId, fileId, fileName) =>
@@ -729,12 +765,26 @@ export const createSuperAdminFreelancerPaymentRequest = async (payload) => {
   return data;
 };
 
-export const getSuperadminVisitorsAnalyticsRequest = async (params = {}) => {
+export const getSuperadminVisitorsAnalyticsRequest = async (params = {}, options = {}) => {
+  const { signal, ...axiosOptions } = options;
   const { data } = await api.get("/superadmin/analytics/visitors", {
     params: {
       range: params.range || "7d",
       topLimit: params.topLimit || 10,
     },
+    timeout: 30000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+export const getSuperadminDashboardSummaryRequest = async (options = {}) => {
+  const { signal, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/summary", {
+    timeout: 30000,
+    signal,
+    ...axiosOptions,
   });
   return data;
 };
@@ -820,8 +870,11 @@ export const patchSuperadminHeroHomeStatsSettingRequest = async (payload) => {
   return data;
 };
 
-export const getSuperadminAnalyticsHealthRequest = async () => {
-  const { data } = await api.get("/superadmin/analytics/health");
+export const getSuperadminAnalyticsHealthRequest = async (options = {}) => {
+  const { data } = await api.get("/superadmin/analytics/health", {
+    timeout: 20000,
+    ...options,
+  });
   return data;
 };
 
@@ -944,6 +997,58 @@ export const freelancerSubmitCourseCompletionRequest = async (courseId, payload 
   const { data } = await api.post(`/freelancer/courses/${courseId}/complete`, body);
   return data;
 };
+
+function filenameFromContentDisposition(header) {
+  if (!header) return null;
+  const m = /filename="([^"]+)"/i.exec(String(header));
+  return m?.[1] ? decodeURIComponent(m[1]) : null;
+}
+
+async function fetchCourseFileBlob(scope, courseId, fileKind, download = false) {
+  const cid = encodeURIComponent(String(courseId));
+  const kind = encodeURIComponent(String(fileKind));
+  const base =
+    scope === "admin" ? `/admin/courses/${cid}/files/${kind}` : `/freelancer/courses/${cid}/files/${kind}`;
+  const qs = download ? "?download=1" : "";
+  try {
+    return await api.get(`${base}${qs}`, { responseType: "blob", timeout: 120000 });
+  } catch (e) {
+    await attachBlobErrorMessage(e);
+    throw e;
+  }
+}
+
+export async function viewFreelancerCourseFile(courseId, fileKind, fallbackName, previewWindow = null) {
+  const response = await fetchCourseFileBlob("freelancer", courseId, fileKind, false);
+  const name =
+    filenameFromContentDisposition(response.headers?.["content-disposition"]) || fallbackName || "course-file.pdf";
+  showPdfBlobInTab(previewWindow, response.data, name);
+  return name;
+}
+
+export async function downloadFreelancerCourseFile(courseId, fileKind, fallbackName) {
+  const response = await fetchCourseFileBlob("freelancer", courseId, fileKind, true);
+  const name =
+    filenameFromContentDisposition(response.headers?.["content-disposition"]) || fallbackName || "course-file.pdf";
+  const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: "application/pdf" });
+  triggerBlobDownload(blob, name);
+}
+
+export async function viewAdminCourseFile(courseId, fileKind, fallbackName, previewWindow = null) {
+  const response = await fetchCourseFileBlob("admin", courseId, fileKind, false);
+  const name =
+    filenameFromContentDisposition(response.headers?.["content-disposition"]) || fallbackName || "course-file.pdf";
+  showPdfBlobInTab(previewWindow, response.data, name);
+  return name;
+}
+
+export async function downloadAdminCourseFile(courseId, fileKind, fallbackName) {
+  const response = await fetchCourseFileBlob("admin", courseId, fileKind, true);
+  const name =
+    filenameFromContentDisposition(response.headers?.["content-disposition"]) || fallbackName || "course-file.pdf";
+  const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: "application/pdf" });
+  triggerBlobDownload(blob, name);
+}
 
 /** Dispatched on `window` after notification-worthy events (e.g. subscription payment) so the bell refetches. */
 export const NOTIFICATIONS_REFRESH_EVENT = "orderz-notifications-refresh";

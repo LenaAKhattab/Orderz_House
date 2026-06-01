@@ -1,8 +1,10 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import heroImage from "../../assets/hero.png";
-import CategoriesSkeleton from "../skeletons/CategoriesSkeleton";
+import { CategoryCardSkeleton } from "../skeletons/CategoriesSkeleton";
 import "./categories-section.css";
+
+const SKELETON_CARD_COUNT = 3;
 
 function resolveBackendAssetUrl(maybeUrl) {
   if (!maybeUrl) return "";
@@ -130,9 +132,9 @@ function CategoryIcon({ slug, theme }) {
 }
 
 /**
- * @param {{ items?: unknown[]; loading?: boolean }} p — Data from `usePublicHomeCategories` (homepage).
+ * @param {{ items?: unknown[]; loading?: boolean; error?: boolean }} p — Data from `usePublicHomeCategories` (homepage).
  */
-const CategoriesSection = ({ items = [], loading = false }) => {
+const CategoriesSection = ({ items = [], loading = false, error = false }) => {
   const cards = useMemo(() => {
     const source = items.length > 0 ? items : FALLBACK_CARDS;
     return source.map((c, index) => {
@@ -150,12 +152,11 @@ const CategoriesSection = ({ items = [], loading = false }) => {
     });
   }, [items]);
 
-  const cardGridTemplate =
-    cards.length > 0 ? `repeat(${cards.length}, minmax(0, 1fr))` : "repeat(1, minmax(0, 1fr))";
-
-  if (loading) {
-    return <CategoriesSkeleton />;
-  }
+  const cardGridTemplate = loading
+    ? `repeat(${SKELETON_CARD_COUNT}, minmax(0, 1fr))`
+    : cards.length > 0
+      ? `repeat(${cards.length}, minmax(0, 1fr))`
+      : "repeat(1, minmax(0, 1fr))";
 
   return (
     <section
@@ -199,19 +200,30 @@ const CategoriesSection = ({ items = [], loading = false }) => {
           </aside>
 
           <div className="min-h-0 min-w-0 rounded-2xl border border-gray-200/90 bg-white p-2.5 sm:p-4 lg:rounded-[22px] lg:p-5">
+            {error && !loading && items.length === 0 ? (
+              <p className="home-categories-fetch-fallback m-0 px-2 pb-4 text-center text-sm leading-relaxed text-slate-500" role="status">
+                تعذّر تحميل التصنيفات. نعرض أدناه تصنيفات افتراضية يمكنك استكشافها.
+              </p>
+            ) : null}
             <div
               className="m-0 grid min-w-0 list-none items-stretch gap-5 sm:gap-6 md:gap-7"
               style={{ gridTemplateColumns: cardGridTemplate }}
               role="list"
-              aria-label="تصنيفات المنصة"
+              aria-busy={loading || undefined}
+              aria-label={loading ? "جارٍ تحميل التصنيفات" : "تصنيفات المنصة"}
             >
-              {cards.map((card) => {
+              {loading
+                ? Array.from({ length: SKELETON_CARD_COUNT }, (_, index) => (
+                    <CategoryCardSkeleton key={`category-skeleton-${index}`} />
+                  ))
+                : cards.map((card, index) => {
                 const t = THEME_CLASSES[card.theme] || THEME_CLASSES.sky;
                 return (
                   <article
                     key={card.key}
-                    className="group flex min-w-0 max-w-full flex-col rounded-[24px] border border-slate-200/70 bg-white p-5 shadow-[0_10px_40px_-14px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_22px_50px_-18px_rgba(15,23,42,0.16)]"
+                    className="home-categories-card group flex min-w-0 max-w-full flex-col rounded-[24px] border border-slate-200/70 bg-white p-5 shadow-[0_10px_40px_-14px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_22px_50px_-18px_rgba(15,23,42,0.16)]"
                     role="listitem"
+                    style={{ animationDelay: `${index * 60}ms` }}
                   >
                     <div className="relative w-full shrink-0">
                       <div className="aspect-[4/3] overflow-hidden rounded-2xl ring-1 ring-slate-200/35 sm:aspect-[5/3]">

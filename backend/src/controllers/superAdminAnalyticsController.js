@@ -1,4 +1,5 @@
 const superAdminAnalyticsOverviewService = require("../services/superAdminAnalyticsOverviewService");
+const superAdminDashboardSummaryService = require("../services/superAdminDashboardSummaryService");
 const platformUiSettingsService = require("../services/platformUiSettingsService");
 const analyticsHealthService = require("../services/analyticsHealthService");
 
@@ -63,9 +64,21 @@ async function getAnalyticsHealth(req, res, next) {
   }
 }
 
+async function getDashboardSummary(req, res, next) {
+  try {
+    const data = await superAdminDashboardSummaryService.getDashboardSummary({
+      userId: req.auth.userId,
+    });
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   getVisitorsAnalytics,
   getHeroPlatformSettings,
   patchHeroPlatformSettings,
   getAnalyticsHealth,
+  getDashboardSummary,
 };

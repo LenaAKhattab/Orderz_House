@@ -18,7 +18,7 @@ export default function FaqSkeleton() {
               </li>
             ))}
           </ul>
-          <div className="flex shrink-0 justify-center md:w-[min(42%,14rem)] md:justify-end lg:w-[min(38%,16rem)]">
+          <div className="flex shrink-0 justify-center md:w-[min(42%,14rem)] md:-translate-x-10 md:justify-end lg:w-[min(38%,16rem)] lg:-translate-x-12">
             <SkBox className="h-[clamp(9rem,28vw,16rem)] w-[clamp(9rem,28vw,16rem)] max-w-full shrink-0 rounded-none opacity-90" />
           </div>
         </div>

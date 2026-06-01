@@ -9,6 +9,7 @@ const createCourseValidators = [
   body("coverImage").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("youtubeSourceUrl").isString().trim().isLength({ min: 10, max: 2000 }).withMessage("رابط يوتيوب مطلوب."),
   body("isActive").optional().isBoolean(),
+  body("isVisibleToAllFreelancers").optional().isBoolean(),
   body("isTestingEnabled").optional().isBoolean(),
   body("testFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("testPromptFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
@@ -27,6 +28,7 @@ const updateCourseValidators = [
   body("coverImage").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("youtubeSourceUrl").optional().isString().trim().isLength({ min: 10, max: 2000 }),
   body("isActive").optional().isBoolean(),
+  body("isVisibleToAllFreelancers").optional().isBoolean(),
   body("isTestingEnabled").optional().isBoolean(),
   body("testFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("testPromptFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
@@ -71,6 +73,12 @@ const submitCourseCompletionValidators = [
   body("auditResponseFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
 ];
 
+const courseFileStreamValidators = [
+  ...courseIdParam,
+  param("fileKind").isIn(["test", "prompt"]).withMessage("نوع الملف غير صالح."),
+  query("download").optional().isIn(["0", "1", "true", "false"]),
+];
+
 module.exports = {
   courseIdParam,
   lessonIdParam,
@@ -85,4 +93,5 @@ module.exports = {
   listCoursesValidators,
   markLessonCompleteValidators,
   submitCourseCompletionValidators,
+  courseFileStreamValidators,
 };

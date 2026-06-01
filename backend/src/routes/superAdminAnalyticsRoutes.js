@@ -32,4 +32,11 @@ router.get(
   superAdminAnalyticsController.getAnalyticsHealth,
 );
 
+router.get(
+  "/dashboard/summary",
+  requireAuth,
+  requireAnyRole(["super_admin"]),
+  superAdminAnalyticsController.getDashboardSummary,
+);
+
 module.exports = router;

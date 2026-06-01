@@ -10,6 +10,10 @@ import {
 } from "../../services/api";
 import { mergeNotificationPrefs } from "../../utils/accountDisplay";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
+import DashboardSection from "../../components/dashboard/DashboardSection";
+import DashboardShell from "../../components/dashboard/DashboardShell";
+import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
+import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import BrowserNotificationSettings from "../../components/notifications/BrowserNotificationSettings";
 import { breadcrumbHomeFromUser } from "../../components/dashboard/dashboardBreadcrumbs";
 import "./shared/account-pages.css";
@@ -155,29 +159,30 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
 
   if (loading) {
     return (
-      <div className="oh-account-page" dir="rtl">
-        <div className="oh-account-skel" style={{ height: 100, borderRadius: 18 }} />
-      </div>
+      <DashboardShell className="oh-account-page oh-account-page--staff" dir="rtl">
+        <DashboardLoadingState label="جاري تحميل الإعدادات…" rows={5} />
+      </DashboardShell>
     );
   }
 
   if (error) {
     return (
-      <div className="oh-account-page" dir="rtl">
-        <div className="oh-account-card">
-          <p className="oh-account-error" style={{ margin: 0 }}>
-            {error}
-          </p>
-          <button type="button" className="oh-account-btn-primary" style={{ marginTop: 12 }} onClick={load}>
-            إعادة المحاولة
-          </button>
-        </div>
-      </div>
+      <DashboardShell className="oh-account-page oh-account-page--staff" dir="rtl">
+        <DashboardEmptyState
+          title="تعذّر التحميل"
+          description={error}
+          actions={
+            <button type="button" className="btn btn-primary" onClick={load}>
+              إعادة المحاولة
+            </button>
+          }
+        />
+      </DashboardShell>
     );
   }
 
   return (
-    <div className="oh-account-page" dir="rtl">
+    <DashboardShell className="oh-account-page oh-account-page--staff" dir="rtl">
       <DashboardPageHeader
         eyebrow={heroKicker}
         title={heroTitle}
@@ -188,21 +193,19 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
         ]}
       />
 
-      <div className="oh-account-card" style={{ marginBottom: 16 }}>
-        <h2 className="oh-account-card__title">الصورة</h2>
+      <DashboardSection title="الصورة">
         <div className="oh-account-avatar-row">
-          <label className="oh-account-btn-ghost" style={{ cursor: avatarBusy ? "wait" : "pointer" }}>
+          <label className="btn btn-secondary" style={{ cursor: avatarBusy ? "wait" : "pointer" }}>
             {avatarBusy ? "جاري…" : "رفع صورة"}
             <input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={avatarBusy} onChange={onAvatarPick} />
           </label>
-          <button type="button" className="oh-account-btn-ghost" disabled={avatarBusy} onClick={onAvatarClear}>
+          <button type="button" className="btn btn-secondary" disabled={avatarBusy} onClick={onAvatarClear}>
             إزالة الصورة
           </button>
         </div>
-      </div>
+      </DashboardSection>
 
-      <div className="oh-account-card" style={{ marginBottom: 16 }}>
-        <h2 className="oh-account-card__title">البيانات الأساسية</h2>
+      <DashboardSection title="البيانات الأساسية">
         <div className="oh-account-form-grid oh-account-form-grid--2">
           <div>
             <label className="oh-account-label">الاسم الأول</label>
@@ -229,18 +232,17 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
             <input className="oh-account-input" dir="ltr" value={whatsApp} onChange={(e) => setWhatsApp(e.target.value)} />
           </div>
         </div>
-        <p className="oh-account-value" style={{ marginTop: 10, fontSize: "0.82rem", color: "#6b7280" }}>
+        <p className="oh-account-value oh-account-page__hint">
           البريد للعرض فقط؛ لتغييره يجب توفر آلية منفصلة من الدعم أو النظام لاحقاً.
         </p>
         <div className="oh-account-actions">
-          <button type="button" className="oh-account-btn-primary" disabled={saving} onClick={handleSave}>
+          <button type="button" className="btn btn-primary" disabled={saving} onClick={handleSave}>
             {saving ? "جاري الحفظ…" : "حفظ"}
           </button>
         </div>
-      </div>
+      </DashboardSection>
 
-      <div className="oh-account-card" style={{ marginBottom: 16 }}>
-        <h2 className="oh-account-card__title">الأمان</h2>
+      <DashboardSection title="الأمان">
         <div className="oh-account-form-grid">
           <div>
             <label className="oh-account-label">كلمة المرور الحالية</label>
@@ -279,24 +281,21 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
           </div>
         </div>
         <div className="oh-account-actions">
-          <button type="button" className="oh-account-btn-primary" disabled={pwSaving} onClick={handleSavePassword}>
+          <button type="button" className="btn btn-primary" disabled={pwSaving} onClick={handleSavePassword}>
             {pwSaving ? "جاري التحديث…" : "تحديث كلمة المرور"}
           </button>
         </div>
-      </div>
+      </DashboardSection>
 
       <BrowserNotificationSettings />
 
-      <div className="oh-account-card">
-        <h2 className="oh-account-card__title">تفضيلات الإشعارات</h2>
+      <DashboardSection title="تفضيلات الإشعارات">
         {[
           ["general", "إشعارات عامة"],
           ["orders", "إشعارات الطلبات والأنشطة"],
         ].map(([key, label]) => (
           <div key={key} className="oh-account-toggle">
-            <span className="oh-account-value" style={{ fontWeight: 800 }}>
-              {label}
-            </span>
+            <span className="oh-account-value oh-account-toggle__label">{label}</span>
             <input
               type="checkbox"
               className="oh-account-switch"
@@ -305,15 +304,13 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
             />
           </div>
         ))}
-        <p className="oh-account-empty" style={{ marginTop: 12 }}>
-          تخزين التفضيلات في قاعدة البيانات؛ التطبيق الفعلي على قنوات الإشعار يعتمد على إعدادات الخادم.
-        </p>
+        <p className="oh-account-empty oh-account-page__notif-note">تخزين التفضيلات في قاعدة البيانات؛ التطبيق الفعلي على قنوات الإشعار يعتمد على إعدادات الخادم.</p>
         <div className="oh-account-actions">
-          <button type="button" className="oh-account-btn-primary" disabled={saving} onClick={handleSave}>
+          <button type="button" className="btn btn-primary" disabled={saving} onClick={handleSave}>
             {saving ? "جاري الحفظ…" : "حفظ التفضيلات"}
           </button>
         </div>
-      </div>
-    </div>
+      </DashboardSection>
+    </DashboardShell>
   );
 }

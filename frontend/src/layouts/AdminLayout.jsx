@@ -6,6 +6,10 @@ import { getAccountSettingsPath, getNotificationsPath } from "../constants/authR
 import { ADMIN_NAV_FOOTER, ADMIN_NAV_MAIN, adminBreadcrumb } from "../constants/adminNav";
 import NotificationsBell from "../components/notifications/NotificationsBell";
 
+import "../styles/dashboardHub.css";
+import "../styles/adminDashboardShell.css";
+import "../styles/adminDashboardHub.css";
+
 function fullNameAr(user) {
   const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
   return parts.join(" ").trim();
@@ -81,7 +85,10 @@ export default function AdminLayout() {
             </li>
           ))}
           <li>
-            <NavLink to="/dashboard/admin/orders/create" className="oh-sa-navlink">
+            <NavLink
+              to="/dashboard/admin/orders/create"
+              className={({ isActive }) => `oh-sa-navlink${isActive ? " oh-sa-navlink--active" : ""}`.trim()}
+            >
               <span className="oh-sa-navlink__icon" aria-hidden>
                 +
               </span>
@@ -93,7 +100,11 @@ export default function AdminLayout() {
         <ul className="oh-sa-nav__list oh-sa-nav__list--muted">
           {ADMIN_NAV_FOOTER.map((item) => (
             <li key={item.to}>
-              <NavLink to={item.to} className="oh-sa-navlink" end={item.to === "/dashboard/admin/settings"}>
+              <NavLink
+                to={item.to}
+                end={item.to === "/dashboard/admin/settings"}
+                className={({ isActive }) => `oh-sa-navlink${isActive ? " oh-sa-navlink--active" : ""}`.trim()}
+              >
                 <span className="oh-sa-navlink__icon" aria-hidden>
                   {item.icon}
                 </span>

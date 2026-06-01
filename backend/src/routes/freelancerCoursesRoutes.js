@@ -5,6 +5,7 @@ const freelancerCoursesController = require("../controllers/freelancerCoursesCon
 const { uploadCourseAuditResponseFile } = require("../middleware/courseUploadMiddleware");
 const {
   courseIdParam,
+  courseFileStreamValidators,
   markLessonCompleteValidators,
   submitCourseCompletionValidators,
 } = require("../validators/coursesValidators");
@@ -14,6 +15,12 @@ const router = express.Router();
 router.use(requireAuth, requireRole("freelancer"));
 
 router.get("/courses", freelancerCoursesController.listMyCourses);
+router.get(
+  "/courses/:id/files/:fileKind",
+  courseFileStreamValidators,
+  validateRequest,
+  freelancerCoursesController.streamCourseFile,
+);
 router.get("/courses/:id", courseIdParam, validateRequest, freelancerCoursesController.getMyCourseDetails);
 router.post(
   "/courses/:id/complete",

@@ -25,32 +25,68 @@ function buildConversionSummary(eventCounts = {}) {
   };
 }
 
+function emptyEventCounts() {
+  const counts = {};
+  for (const name of [
+    "signup_completed",
+    "user_logged_in",
+    "client_order_created",
+    "fixed_order_taken",
+    "bid_submitted",
+    "order_completed",
+    "subscription_purchased",
+    "financial_claim_submitted",
+  ]) {
+    counts[name] = 0;
+  }
+  return counts;
+}
+
+function formatPosthogError(err) {
+  const code = err?.publicCode || "";
+  if (code === "PH_QUERY_TIMEOUT" || err?.name === "AbortError") {
+    return "استغرق استعلام PostHog وقتاً أطول من المتوقع.";
+  }
+  return err?.message || "PostHog analytics query failed.";
+}
+
+async function loadPosthogSlice(cfg, { range, topLimit }) {
+  if (!cfg) {
+    return {
+      slice: null,
+      error: "PostHog غير مُعدّ على الخادم (POSTHOG_PROJECT_ID / POSTHOG_PERSONAL_API_KEY).",
+    };
+  }
+
+  try {
+    const slice = await posthogAnalyticsService.fetchSuperAdminOverviewPosthogWithTimeout(cfg, {
+      range,
+      topLimit,
+    });
+    return { slice, error: null };
+  } catch (err) {
+    return { slice: null, error: formatPosthogError(err) };
+  }
+}
+
 async function getAnalyticsOverview({ range: rangeIn, topLimit } = {}) {
   const range = normalizeRange(rangeIn);
   const updatedAt = new Date().toISOString();
+  const cfg = posthogAnalyticsService.readPosthogCredentialsLoose();
 
-  const [revenueTodayJod, activeSubscriptions, revenueByDay] = await Promise.all([
-    businessMetrics.getRevenueTodayJod(),
-    businessMetrics.getActivePaidSubscriptionsCount(),
-    businessMetrics.getRevenueByDayLast7Days(),
+  const [dbResult, posthogResult] = await Promise.all([
+    Promise.all([
+      businessMetrics.getRevenueTodayJod(),
+      businessMetrics.getActivePaidSubscriptionsCount(),
+      businessMetrics.getRevenueByDayLast7Days(),
+    ]),
+    loadPosthogSlice(cfg, { range, topLimit }),
   ]);
 
-  const cfg = posthogAnalyticsService.readPosthogCredentialsLoose();
-  let posthogSlice = null;
-  let posthogError = null;
-
-  if (cfg) {
-    try {
-      posthogSlice = await posthogAnalyticsService.fetchSuperAdminOverviewPosthog(cfg, { range, topLimit });
-    } catch (err) {
-      posthogError = err?.message || "PostHog analytics query failed.";
-    }
-  } else {
-    posthogError = "PostHog غير مُعدّ على الخادم (POSTHOG_PROJECT_ID / POSTHOG_PERSONAL_API_KEY).";
-  }
-
-  const ph = posthogSlice;
-  const events = ph?.eventCounts || {};
+  const [revenueTodayJod, activeSubscriptions, revenueByDay] = dbResult;
+  const posthogSlice = posthogResult.slice;
+  const posthogError = posthogResult.error;
+  const events = posthogSlice?.eventCounts || emptyEventCounts();
 
   return {
     updatedAt,
@@ -61,19 +97,19 @@ async function getAnalyticsOverview({ range: rangeIn, topLimit } = {}) {
       currency: "JOD",
     },
     kpis: {
-      visitorsToday: ph?.kpisToday?.visitorsToday ?? null,
-      activeUsersToday: ph?.kpisToday?.activeUsersToday ?? null,
-      ordersToday: ph?.kpisToday?.ordersToday ?? null,
+      visitorsToday: posthogSlice?.kpisToday?.visitorsToday ?? null,
+      activeUsersToday: posthogSlice?.kpisToday?.activeUsersToday ?? null,
+      ordersToday: posthogSlice?.kpisToday?.ordersToday ?? null,
       revenueTodayJod,
       activeSubscriptions,
     },
     trends: {
-      visitorsByDay: ph?.trends?.visitorsByDay ?? [],
-      ordersByDay: ph?.trends?.ordersByDay ?? [],
+      visitorsByDay: posthogSlice?.trends?.visitorsByDay ?? [],
+      ordersByDay: posthogSlice?.trends?.ordersByDay ?? [],
       revenueByDay,
     },
     events,
-    topPages: ph?.topPages ?? [],
+    topPages: posthogSlice?.topPages ?? [],
     conversion: buildConversionSummary(events),
   };
 }

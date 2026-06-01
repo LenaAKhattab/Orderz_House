@@ -1,17 +1,24 @@
 import { SkBox, SkLine } from "./SkeletonPrimitives";
+import "./home-skeleton.css";
 
-function CategoryCardSkeleton() {
+/** Matches one `CategoriesSection` card — same dimensions, spacing, and RTL-safe layout. */
+export function CategoryCardSkeleton() {
   return (
-    <article className="flex min-w-0 max-w-full flex-col rounded-[24px] border border-slate-200/70 bg-white p-5 shadow-[0_10px_40px_-14px_rgba(15,23,42,0.12)]">
+    <article
+      className="flex min-w-0 max-w-full flex-col rounded-[24px] border border-slate-200/70 bg-white p-5 shadow-[0_10px_40px_-14px_rgba(15,23,42,0.12)]"
+      aria-hidden
+    >
       <div className="relative w-full shrink-0">
-        <SkBox className="aspect-[4/3] w-full shrink-0 rounded-2xl sm:aspect-[5/3]" />
-        <div className="absolute bottom-0 left-1/2 z-10 h-[52px] w-[52px] -translate-x-1/2 translate-y-1/2 rounded-full border-[5px] border-white bg-slate-200 shadow-md" aria-hidden />
+        <SkBox className="aspect-[4/3] w-full shrink-0 rounded-2xl ring-1 ring-slate-200/35 sm:aspect-[5/3]" />
+        <SkBox className="absolute bottom-0 left-1/2 z-10 h-[52px] w-[52px] -translate-x-1/2 translate-y-1/2 rounded-full border-[5px] border-white shadow-[0_6px_20px_rgba(15,23,42,0.12)]" />
       </div>
-      <div className="flex flex-col items-center gap-2 px-1 pt-10 text-center">
+      <div className="flex flex-1 flex-col items-center gap-2 px-1 pb-1 pt-9 text-center sm:gap-2.5 sm:px-2 sm:pt-10">
         <SkLine className="h-5 w-[55%] rounded-md" />
-        <SkLine className="h-3.5 w-[92%] max-w-[28ch] rounded-md opacity-90" />
+        <SkLine className="h-3.5 w-[92%] max-w-[30ch] rounded-md opacity-90" />
         <SkLine className="h-3.5 w-[80%] max-w-[24ch] rounded-md opacity-75" />
-        <SkLine className="mt-4 h-10 w-[min(100%,14rem)] rounded-full opacity-80" />
+        <div className="mt-3 flex w-full flex-1 flex-col justify-end sm:mt-4">
+          <SkLine className="h-10 w-[min(100%,14rem)] rounded-full opacity-80" />
+        </div>
       </div>
     </article>
   );
@@ -32,7 +39,10 @@ export default function CategoriesSkeleton() {
             <SkLine className="h-4 w-[min(100%,18rem)] max-w-full rounded-md opacity-80 max-[960px]:mx-auto" />
           </aside>
           <div className="min-h-0 min-w-0 rounded-2xl border border-gray-200/90 bg-white p-2.5 sm:p-4 lg:rounded-[22px] lg:p-5">
-            <div className="m-0 grid min-w-0 list-none grid-cols-1 items-stretch gap-5 sm:grid-cols-3 sm:gap-6 md:gap-7">
+            <div
+              className="m-0 grid min-w-0 list-none items-stretch gap-5 sm:gap-6 md:gap-7"
+              style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}
+            >
               <CategoryCardSkeleton />
               <CategoryCardSkeleton />
               <CategoryCardSkeleton />

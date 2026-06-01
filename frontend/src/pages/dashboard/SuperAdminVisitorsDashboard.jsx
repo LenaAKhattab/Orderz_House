@@ -1,7 +1,7 @@
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import SuperAdminProductAnalytics from "../../components/analytics/super-admin/SuperAdminProductAnalytics";
 
-/** Super Admin home — product analytics (PostHog + DB). */
+/** Super Admin home — management control center. */
 export default function SuperAdminVisitorsDashboard() {
   return (
     <DashboardShell>

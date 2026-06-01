@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../context/useAuth";
 import {
   adminAddCourseFreelancerRequest,
@@ -26,6 +26,12 @@ import DashboardLoadingState from "../../components/dashboard/DashboardLoadingSt
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import DashboardTable from "../../components/dashboard/DashboardTable";
 import StatusBadge from "../../components/dashboard/StatusBadge";
+import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
+import AdminCourseCreateComposer from "../../admin/courses/AdminCourseCreateComposer";
+import CourseFileUploadField from "../../admin/courses/CourseFileUploadField";
+import CourseUrlField from "../../admin/courses/CourseUrlField";
+import "../../admin/courses/adminCourseComposer.css";
+import "../../admin/courses/courseAssetFields.css";
 import "./adminCoursesPage.css";
 
 function fmtCourseDate(iso) {
@@ -36,6 +42,37 @@ function fmtCourseDate(iso) {
   } catch {
     return "—";
   }
+}
+
+function courseListStatusPresentation(course) {
+  if (course?.isActive) {
+    return { label: "منشورة", tone: "active" };
+  }
+  return { label: "مسودة", tone: "inactive" };
+}
+
+function formatLessonChipCount(count) {
+  return `${Number(count) || 0} درس`;
+}
+
+function formatAccessChipCount(count, isGlobal) {
+  const n = Number(count) || 0;
+  return isGlobal ? `${n} مستقل` : `${n} مسند`;
+}
+
+const EMPTY_CREATE_FORM = {
+  title: "",
+  description: "",
+  coverImage: "",
+  youtubeSourceUrl: "",
+  isActive: false,
+  isTestingEnabled: false,
+  testFileUrl: "",
+  testPromptFileUrl: "",
+};
+
+function cloneCreateForm(form) {
+  return JSON.parse(JSON.stringify(form ?? EMPTY_CREATE_FORM));
 }
 
 export default function AdminCoursesPage() {
@@ -50,35 +87,32 @@ export default function AdminCoursesPage() {
   const [freelancerQuery, setFreelancerQuery] = useState("");
   const [selectedFreelancerIds, setSelectedFreelancerIds] = useState([]);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [composerUnsavedConfirmOpen, setComposerUnsavedConfirmOpen] = useState(false);
+  /** After discard confirm: close only, or close then open a fresh create modal. */
+  const [composerDiscardIntent, setComposerDiscardIntent] = useState(null);
   const [editingCourseId, setEditingCourseId] = useState("");
+  const [editingCourseMeta, setEditingCourseMeta] = useState(null);
   const [courseSearch, setCourseSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [createForm, setCreateForm] = useState({
-    title: "",
-    description: "",
-    coverImage: "",
-    youtubeSourceUrl: "",
-    isActive: false,
-    isTestingEnabled: false,
-    testFileUrl: "",
-    testPromptFileUrl: "",
-  });
+  const [createForm, setCreateForm] = useState(() => ({ ...EMPTY_CREATE_FORM }));
   const [testFileUploading, setTestFileUploading] = useState(false);
   const [promptFileUploading, setPromptFileUploading] = useState(false);
+  /** PDF files chosen during create — uploaded right after the course is created. */
+  const [createPendingTestFile, setCreatePendingTestFile] = useState(null);
+  const [createPendingPromptFile, setCreatePendingPromptFile] = useState(null);
   const [importUrl, setImportUrl] = useState("");
   const [sendModal, setSendModal] = useState({ open: false, course: null });
   const [sendQuery, setSendQuery] = useState("");
   const [sendResults, setSendResults] = useState([]);
   const [sendLoading, setSendLoading] = useState(false);
-  /** Single-row send in progress (freelancer user id as string); bulk uses sendBulkSubmitting. */
+  /** Single-row send in progress (freelancer user id as string). */
   const [sendRowLoadingId, setSendRowLoadingId] = useState(null);
   const [unassignRowLoadingId, setUnassignRowLoadingId] = useState(null);
-  const [sendBulkSubmitting, setSendBulkSubmitting] = useState(false);
   /** Freelancers already assigned to the course open in the send modal (for sort + grey state). */
   const [sendAssignedIds, setSendAssignedIds] = useState(() => new Set());
   /** False until GET course details finishes for the send modal (avoid wrong grey/active state). */
   const [sendAssignedReady, setSendAssignedReady] = useState(false);
-  const [sendAllConfirmOpen, setSendAllConfirmOpen] = useState(false);
+  const [visibilityTogglingId, setVisibilityTogglingId] = useState("");
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [manageTab, setManageTab] = useState("details");
   const [courseDetailsLoading, setCourseDetailsLoading] = useState(false);
@@ -86,6 +120,62 @@ export default function AdminCoursesPage() {
 
   const isSuperAdmin = (user?.primaryRole || user?.role) === "super_admin";
   const pageTitle = "إدارة الكورسات";
+
+  const COURSE_FILE_UPLOAD_ERROR = "تعذر رفع الملف. تأكد أن الملف PDF وحاول مرة أخرى.";
+
+  /** Server truth for file URLs — PATCH only sends file URLs when they differ from this snapshot. */
+  const serverFileUrlsRef = useRef({ testFileUrl: "", testPromptFileUrl: "" });
+  /** Form snapshot when composer modal opens — used for unsaved-close confirmation. */
+  const composerSnapshotRef = useRef(null);
+
+  const syncServerFileUrls = useCallback((course) => {
+    if (!course) return;
+    serverFileUrlsRef.current = {
+      testFileUrl: String(course.testFileUrl || "").trim(),
+      testPromptFileUrl: String(course.testPromptFileUrl || "").trim(),
+    };
+  }, []);
+
+  const syncCourseFileFieldsFromServer = useCallback(
+    (courseId, course) => {
+      if (!course) return;
+      syncServerFileUrls(course);
+      const testFileUrl = course.testFileUrl || "";
+      const testPromptFileUrl = course.testPromptFileUrl || "";
+      if (String(editingCourseId) === String(courseId)) {
+        setCreateForm((s) => ({ ...s, testFileUrl, testPromptFileUrl }));
+      }
+      if (String(selectedCourseId) === String(courseId)) {
+        setSelectedCourse((prev) =>
+          prev?.course ? { ...prev, course: { ...prev.course, testFileUrl, testPromptFileUrl } } : prev,
+        );
+      }
+    },
+    [editingCourseId, selectedCourseId, syncServerFileUrls],
+  );
+
+  const buildCourseMetadataPatch = useCallback((fields) => {
+    const patch = {
+      title: fields.title,
+      description: fields.description,
+      coverImage: fields.coverImage,
+      isActive: fields.isActive,
+      isTestingEnabled: fields.isTestingEnabled,
+    };
+    if (fields.isVisibleToAllFreelancers !== undefined) {
+      patch.isVisibleToAllFreelancers = fields.isVisibleToAllFreelancers;
+    }
+    const server = serverFileUrlsRef.current;
+    const test = String(fields.testFileUrl ?? "").trim();
+    const prompt = String(fields.testPromptFileUrl ?? "").trim();
+    if (test !== String(server.testFileUrl || "").trim()) {
+      patch.testFileUrl = test || null;
+    }
+    if (prompt !== String(server.testPromptFileUrl || "").trim()) {
+      patch.testPromptFileUrl = prompt || null;
+    }
+    return patch;
+  }, []);
 
   const loadCourses = useCallback(async () => {
     setLoading(true);
@@ -112,6 +202,16 @@ export default function AdminCoursesPage() {
         const res = await adminGetCourseByIdRequest(courseId);
         const details = res?.data || null;
         setSelectedCourse(details);
+        if (details?.course) {
+          syncServerFileUrls(details.course);
+          if (String(editingCourseId) === String(courseId)) {
+            setCreateForm((s) => ({
+              ...s,
+              testFileUrl: details.course.testFileUrl || "",
+              testPromptFileUrl: details.course.testPromptFileUrl || "",
+            }));
+          }
+        }
         setSelectedFreelancerIds((details?.assignments || []).map((x) => x.freelancerId));
       } catch (err) {
         toast.error(err?.response?.data?.message || "تعذر تحميل تفاصيل الدورة.");
@@ -120,7 +220,7 @@ export default function AdminCoursesPage() {
         setCourseDetailsLoading(false);
       }
     },
-    [toast],
+    [toast, editingCourseId, syncServerFileUrls],
   );
 
   const loadFreelancers = useCallback(
@@ -203,7 +303,7 @@ export default function AdminCoursesPage() {
   }, [sendResults, sendAssignedIds, sendAssignedReady]);
 
   const sendModalBusy =
-    sendRowLoadingId !== null || unassignRowLoadingId !== null || sendBulkSubmitting;
+    sendRowLoadingId !== null || unassignRowLoadingId !== null;
 
   const filteredFreelancers = useMemo(() => {
     if (!freelancerQuery.trim()) return freelancers;
@@ -227,35 +327,104 @@ export default function AdminCoursesPage() {
 
   const resetComposer = useCallback(() => {
     setEditingCourseId("");
-    setCreateForm({
-      title: "",
-      description: "",
-      coverImage: "",
-      youtubeSourceUrl: "",
-      isActive: false,
-      isTestingEnabled: false,
-      testFileUrl: "",
-      testPromptFileUrl: "",
-    });
+    setEditingCourseMeta(null);
+    setCreateForm({ ...EMPTY_CREATE_FORM });
+    setCreatePendingTestFile(null);
+    setCreatePendingPromptFile(null);
+    composerSnapshotRef.current = null;
   }, []);
+
+  const isComposerDirty = useCallback(() => {
+    const snap = composerSnapshotRef.current;
+    if (!snap) return false;
+    return (
+      JSON.stringify(createForm) !== JSON.stringify(snap) ||
+      Boolean(createPendingTestFile) ||
+      Boolean(createPendingPromptFile)
+    );
+  }, [createForm, createPendingTestFile, createPendingPromptFile]);
+
+  const finishCloseComposerModal = useCallback(() => {
+    setComposerUnsavedConfirmOpen(false);
+    setComposerDiscardIntent(null);
+    setComposerOpen(false);
+    resetComposer();
+  }, [resetComposer]);
+
+  const openFreshCreateComposerModal = useCallback(() => {
+    const empty = cloneCreateForm(EMPTY_CREATE_FORM);
+    setCreateForm(empty);
+    composerSnapshotRef.current = empty;
+    setComposerOpen(true);
+  }, []);
+
+  const requestCloseComposerModal = useCallback(() => {
+    if (creating) return;
+    if (isComposerDirty()) {
+      setComposerDiscardIntent("close");
+      setComposerUnsavedConfirmOpen(true);
+      return;
+    }
+    finishCloseComposerModal();
+  }, [creating, isComposerDirty, finishCloseComposerModal]);
+
+  const confirmDiscardComposerModal = useCallback(() => {
+    const intent = composerDiscardIntent;
+    setComposerUnsavedConfirmOpen(false);
+    setComposerDiscardIntent(null);
+    setComposerOpen(false);
+    resetComposer();
+    if (intent === "reopen-create") {
+      openFreshCreateComposerModal();
+    }
+  }, [composerDiscardIntent, resetComposer, openFreshCreateComposerModal]);
+
+  const cancelDiscardComposerModal = useCallback(() => {
+    setComposerUnsavedConfirmOpen(false);
+    setComposerDiscardIntent(null);
+  }, []);
+
+  const onPendingCreateTestFile = useCallback((file) => {
+    setCreatePendingTestFile(file);
+    if (file) {
+      setCreateForm((s) => ({ ...s, testFileUrl: "" }));
+    }
+  }, []);
+
+  const onPendingCreatePromptFile = useCallback((file) => {
+    setCreatePendingPromptFile(file);
+    if (file) {
+      setCreateForm((s) => ({ ...s, testPromptFileUrl: "" }));
+    }
+  }, []);
+
+  const openCreateComposerModal = useCallback(() => {
+    if (composerOpen) {
+      if (isComposerDirty()) {
+        setComposerDiscardIntent("reopen-create");
+        setComposerUnsavedConfirmOpen(true);
+        return;
+      }
+      finishCloseComposerModal();
+    }
+    openFreshCreateComposerModal();
+  }, [composerOpen, isComposerDirty, finishCloseComposerModal, openFreshCreateComposerModal]);
 
   const onUploadCourseTestFile = async (courseId, file) => {
     if (!courseId || !file) return;
     setTestFileUploading(true);
     try {
       const res = await adminUploadCourseTestFileRequest(courseId, file);
-      const url = res?.data?.course?.testFileUrl || "";
-      if (String(editingCourseId) === String(courseId)) {
-        setCreateForm((s) => ({ ...s, testFileUrl: url }));
+      const course = res?.data?.course;
+      if (!course?.testFileUrl?.startsWith("http")) {
+        throw new Error(COURSE_FILE_UPLOAD_ERROR);
       }
-      if (String(selectedCourseId) === String(courseId) && selectedCourse?.course) {
-        setSelectedCourse((s) => ({ ...s, course: { ...s.course, testFileUrl: url } }));
-      }
-      toast.success("تم رفع ملف الاختبار.");
+      syncCourseFileFieldsFromServer(courseId, course);
+      toast.success("تم رفع ملف الاختبار بنجاح.");
       await loadCourses();
       if (String(selectedCourseId) === String(courseId)) await loadCourseDetails(courseId);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "تعذر رفع ملف الاختبار.");
+      toast.error(err?.response?.data?.message || COURSE_FILE_UPLOAD_ERROR);
     } finally {
       setTestFileUploading(false);
     }
@@ -266,26 +435,23 @@ export default function AdminCoursesPage() {
     setPromptFileUploading(true);
     try {
       const res = await adminUploadCoursePromptFileRequest(courseId, file);
-      const url = res?.data?.course?.testPromptFileUrl || "";
-      if (String(editingCourseId) === String(courseId)) {
-        setCreateForm((s) => ({ ...s, testPromptFileUrl: url }));
+      const course = res?.data?.course;
+      if (!course?.testPromptFileUrl?.startsWith("http")) {
+        throw new Error(COURSE_FILE_UPLOAD_ERROR);
       }
-      if (String(selectedCourseId) === String(courseId) && selectedCourse?.course) {
-        setSelectedCourse((s) => ({ ...s, course: { ...s.course, testPromptFileUrl: url } }));
-      }
-      toast.success("تم رفع ملف مطالبة ChatGPT.");
+      syncCourseFileFieldsFromServer(courseId, course);
+      toast.success("تم رفع ملف المطالبة بنجاح.");
       await loadCourses();
       if (String(selectedCourseId) === String(courseId)) await loadCourseDetails(courseId);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "تعذر رفع ملف المطالبة.");
+      toast.error(err?.response?.data?.message || COURSE_FILE_UPLOAD_ERROR);
     } finally {
       setPromptFileUploading(false);
     }
   };
 
   const onStartEditCourse = useCallback((course) => {
-    setEditingCourseId(String(course.id));
-    setCreateForm({
+    const formState = {
       title: course.title || "",
       description: course.description || "",
       coverImage: course.coverImage || "",
@@ -294,17 +460,25 @@ export default function AdminCoursesPage() {
       isTestingEnabled: Boolean(course.isTestingEnabled),
       testFileUrl: course.testFileUrl || "",
       testPromptFileUrl: course.testPromptFileUrl || "",
+    };
+    setEditingCourseId(String(course.id));
+    setEditingCourseMeta({
+      lessonsCount: course.lessonsCount,
+      youtubeSourceUrl: course.youtubeSourceUrl || "",
+      updatedAt: course.updatedAt || null,
     });
+    setCreateForm(formState);
+    composerSnapshotRef.current = cloneCreateForm(formState);
+    syncServerFileUrls(course);
     setComposerOpen(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  }, [syncServerFileUrls]);
 
   const onComposerSubmit = async (e) => {
     e.preventDefault();
     setCreating(true);
     try {
       if (editingCourseId) {
-        await adminUpdateCourseRequest(editingCourseId, {
+        const patch = buildCourseMetadataPatch({
           title: createForm.title,
           description: createForm.description,
           coverImage: createForm.coverImage,
@@ -313,12 +487,22 @@ export default function AdminCoursesPage() {
           testFileUrl: createForm.testFileUrl,
           testPromptFileUrl: createForm.testPromptFileUrl,
         });
+        const res = await adminUpdateCourseRequest(editingCourseId, patch);
+        if (res?.data?.course) syncCourseFileFieldsFromServer(editingCourseId, res.data.course);
         toast.success("تم تحديث بيانات الكورس.");
+        composerSnapshotRef.current = cloneCreateForm(createForm);
       } else {
-        await adminCreateCourseRequest(createForm);
-        toast.success("تم إنشاء الكورس واستيراد الدروس بنجاح.");
-        resetComposer();
+        const res = await adminCreateCourseRequest(createForm);
+        const newCourseId = res?.data?.course?.id;
+        if (newCourseId && createPendingTestFile) {
+          await onUploadCourseTestFile(newCourseId, createPendingTestFile);
+        }
+        if (newCourseId && createPendingPromptFile) {
+          await onUploadCoursePromptFile(newCourseId, createPendingPromptFile);
+        }
+        toast.success("تم إنشاء الدورة وإضافة الدروس بنجاح.");
         setComposerOpen(false);
+        resetComposer();
       }
       await loadCourses();
     } catch (err) {
@@ -363,7 +547,7 @@ export default function AdminCoursesPage() {
     if (!selectedCourseId || !selectedCourse?.course) return;
     setLoading(true);
     try {
-      await adminUpdateCourseRequest(selectedCourseId, {
+      const patch = buildCourseMetadataPatch({
         title: selectedCourse.course.title,
         description: selectedCourse.course.description,
         coverImage: selectedCourse.course.coverImage,
@@ -372,6 +556,8 @@ export default function AdminCoursesPage() {
         testFileUrl: selectedCourse.course.testFileUrl || "",
         testPromptFileUrl: selectedCourse.course.testPromptFileUrl || "",
       });
+      const res = await adminUpdateCourseRequest(selectedCourseId, patch);
+      if (res?.data?.course) syncCourseFileFieldsFromServer(selectedCourseId, res.data.course);
       toast.success("تم تحديث بيانات الدورة.");
       await loadCourses();
       await loadCourseDetails(selectedCourseId);
@@ -460,11 +646,29 @@ export default function AdminCoursesPage() {
     }
   };
 
+  const onToggleGlobalVisibility = async (course, nextValue) => {
+    if (!course?.id) return;
+    setVisibilityTogglingId(String(course.id));
+    try {
+      await adminUpdateCourseRequest(course.id, { isVisibleToAllFreelancers: Boolean(nextValue) });
+      toast.success(
+        nextValue ? "أصبح الكورس متاحاً لجميع المستقلين الحاليين والمستقبليين." : "تم إيقاف الإظهار لجميع المستقلين.",
+      );
+      await loadCourses();
+      if (String(selectedCourseId) === String(course.id)) {
+        await loadCourseDetails(course.id);
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "تعذر تحديث إعداد الوصول.");
+    } finally {
+      setVisibilityTogglingId("");
+    }
+  };
+
   const onOpenSendModal = (course) => {
-    setSendAllConfirmOpen(false);
+    if (course?.isVisibleToAllFreelancers) return;
     setSendRowLoadingId(null);
     setUnassignRowLoadingId(null);
-    setSendBulkSubmitting(false);
     setSendAssignedReady(false);
     setSendModal({ open: true, course });
     setSendQuery("");
@@ -528,26 +732,6 @@ export default function AdminCoursesPage() {
     }
   };
 
-  const onSendCourseToAllFreelancers = async () => {
-    const course = sendModal.course;
-    if (!course?.id) return;
-    setSendBulkSubmitting(true);
-    try {
-      await adminAssignCourseFreelancersRequest(course.id, { assignAll: true, freelancerIds: [] });
-      toast.success("تم إرسال الدورة لجميع المستقلين النشطين.");
-      setSendAllConfirmOpen(false);
-      setSendModal({ open: false, course: null });
-      await loadCourses();
-      if (String(selectedCourseId) === String(course.id)) {
-        await loadCourseDetails(course.id);
-      }
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "تعذر إرسال الدورة للجميع.");
-    } finally {
-      setSendBulkSubmitting(false);
-    }
-  };
-
   const openManageModal = useCallback((course, initialTab = "details") => {
     setManageTab(initialTab);
     setSelectedCourse(null);
@@ -576,6 +760,24 @@ export default function AdminCoursesPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [manageModalOpen, loading, closeManageModal]);
 
+  useEffect(() => {
+    if (!composerOpen) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape" && !creating && !composerUnsavedConfirmOpen) requestCloseComposerModal();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [composerOpen, creating, composerUnsavedConfirmOpen, requestCloseComposerModal]);
+
+  useEffect(() => {
+    if (!composerUnsavedConfirmOpen) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape") cancelDiscardComposerModal();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [composerUnsavedConfirmOpen, cancelDiscardComposerModal]);
+
   const manageCourseTitle = selectedCourse?.course?.title || "";
 
   return (
@@ -594,199 +796,11 @@ export default function AdminCoursesPage() {
             { label: "الكورسات" },
           ]}
           actions={
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => {
-                if (composerOpen && !editingCourseId) {
-                  setComposerOpen(false);
-                  resetComposer();
-                } else if (composerOpen && editingCourseId) {
-                  setComposerOpen(false);
-                  resetComposer();
-                } else {
-                  resetComposer();
-                  setComposerOpen(true);
-                }
-              }}
-            >
-              {composerOpen ? "إخفاء الإضافة" : "إضافة كورس جديد"}
+            <button type="button" className="btn btn-primary" onClick={openCreateComposerModal}>
+              إنشاء دورة جديدة
             </button>
           }
         />
-
-        {composerOpen ? (
-        <DashboardSection
-          title={editingCourseId ? "تعديل الكورس" : "إضافة كورس جديد"}
-          description={editingCourseId ? "عدّل البيانات ثم احفظ. لاستيراد دروس جديدة استخدم «إدارة الدروس»." : "أدخل البيانات الأساسية ثم استورد الدروس من يوتيوب."}
-        >
-          <form className="oh-admin-courses__form" onSubmit={onComposerSubmit}>
-          <div className="oh-admin-courses__row-2">
-            <label className="oh-admin-courses__field">
-              <span>العنوان</span>
-              <input
-                className="oh-admin-courses__input"
-                value={createForm.title}
-                onChange={(e) => setCreateForm((s) => ({ ...s, title: e.target.value }))}
-                required
-              />
-            </label>
-            {!editingCourseId ? (
-            <label className="oh-admin-courses__field">
-              <span>رابط يوتيوب (فيديو أو قائمة تشغيل)</span>
-              <input
-                className="oh-admin-courses__input"
-                value={createForm.youtubeSourceUrl}
-                onChange={(e) => setCreateForm((s) => ({ ...s, youtubeSourceUrl: e.target.value }))}
-                required
-                dir="ltr"
-                placeholder="https://..."
-              />
-            </label>
-            ) : null}
-          </div>
-          <label className="oh-admin-courses__field">
-            <span>
-              رابط صورة الغلاف <span className="oh-admin-courses__optional">(اختياري)</span>
-            </span>
-            <input
-              className="oh-admin-courses__input"
-              value={createForm.coverImage}
-              onChange={(e) => setCreateForm((s) => ({ ...s, coverImage: e.target.value }))}
-              dir="ltr"
-            />
-          </label>
-          <label className="oh-admin-courses__field">
-            <span>الوصف (مطلوب للنشر — 10 أحرف على الأقل)</span>
-            <textarea
-              className="oh-admin-courses__textarea"
-              value={createForm.description}
-              onChange={(e) => setCreateForm((s) => ({ ...s, description: e.target.value }))}
-              rows={4}
-              required
-            />
-          </label>
-          {!editingCourseId ? (
-          <p className="oh-admin-courses__modal-hint">يُنشأ الكورس كمسودة. استخدم «نشر» بعد اكتمال الدروس.</p>
-          ) : null}
-          {editingCourseId ? (
-          <label className="oh-admin-courses__toggle">
-            <input
-              type="checkbox"
-              checked={createForm.isActive}
-              onChange={(e) => setCreateForm((s) => ({ ...s, isActive: e.target.checked }))}
-            />
-            <span>الدورة نشطة (منشورة)</span>
-          </label>
-          ) : null}
-          <div className="oh-admin-courses__modal-divider" style={{ margin: "8px 0" }} />
-          <h3 className="oh-admin-courses__modal-subheading">اختبار / تدقيق ما بعد الدورة</h3>
-          <p className="oh-admin-courses__modal-hint">
-            عند التفعيل، يجب على المستقل إرسال استجابة ChatGPT بعد إكمال الدروس (ملف اختبار + مطالبة + لصق/رفع الاستجابة).
-          </p>
-          <label className="oh-admin-courses__toggle">
-            <input
-              type="checkbox"
-              checked={createForm.isTestingEnabled}
-              onChange={(e) => setCreateForm((s) => ({ ...s, isTestingEnabled: e.target.checked }))}
-            />
-            <span>تفعيل اختبار/تدقيق ما بعد الدورة</span>
-          </label>
-          {createForm.isTestingEnabled ? (
-            <>
-              <label className="oh-admin-courses__field">
-                <span>ملف الاختبار / التكليف</span>
-                {createForm.testFileUrl ? (
-                  <p className="help" style={{ margin: "4px 0 8px" }}>
-                    الملف الحالي:{" "}
-                    <a href={createForm.testFileUrl} target="_blank" rel="noopener noreferrer" dir="ltr">
-                      فتح / تحميل
-                    </a>
-                  </p>
-                ) : null}
-                {editingCourseId ? (
-                  <input
-                    type="file"
-                    className="oh-admin-courses__input"
-                    disabled={testFileUploading}
-                    accept=".pdf,.doc,.docx,.txt,.zip,.png,.jpg,.jpeg,.webp,.xls,.xlsx,.ppt,.pptx"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) void onUploadCourseTestFile(editingCourseId, f);
-                      e.target.value = "";
-                    }}
-                  />
-                ) : (
-                  <p className="help">بعد إنشاء الكورس يمكنك رفع ملف الاختبار من «إدارة الدورة».</p>
-                )}
-              </label>
-              <label className="oh-admin-courses__field">
-                <span>
-                  أو رابط ملف الاختبار <span className="oh-admin-courses__optional">(اختياري)</span>
-                </span>
-                <input
-                  className="oh-admin-courses__input"
-                  dir="ltr"
-                  value={createForm.testFileUrl}
-                  onChange={(e) => setCreateForm((s) => ({ ...s, testFileUrl: e.target.value }))}
-                  placeholder="https://..."
-                />
-              </label>
-              <label className="oh-admin-courses__field">
-                <span>ملف مطالبة ChatGPT للمستقل</span>
-                {createForm.testPromptFileUrl ? (
-                  <p className="help" style={{ margin: "4px 0 8px" }}>
-                    الملف الحالي:{" "}
-                    <a href={createForm.testPromptFileUrl} target="_blank" rel="noopener noreferrer" dir="ltr">
-                      فتح / تحميل
-                    </a>
-                  </p>
-                ) : null}
-                {editingCourseId ? (
-                  <input
-                    type="file"
-                    className="oh-admin-courses__input"
-                    disabled={promptFileUploading}
-                    accept=".pdf,.doc,.docx,.txt,.zip,.png,.jpg,.jpeg,.webp,.xls,.xlsx,.ppt,.pptx"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) void onUploadCoursePromptFile(editingCourseId, f);
-                      e.target.value = "";
-                    }}
-                  />
-                ) : (
-                  <p className="help">بعد إنشاء الكورس يمكنك رفع ملف المطالبة من «إدارة الدورة».</p>
-                )}
-              </label>
-            </>
-          ) : null}
-          <div className="oh-admin-courses__submit-row">
-            <button className="btn btn-primary oh-admin-courses__btn-primary" disabled={creating} type="submit">
-              {creating
-                ? editingCourseId
-                  ? "جاري الحفظ…"
-                  : "جاري الإنشاء والاستيراد…"
-                : editingCourseId
-                  ? "حفظ التعديلات"
-                  : "إنشاء واستيراد الدروس"}
-            </button>
-            {editingCourseId ? (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                disabled={creating}
-                onClick={() => {
-                  resetComposer();
-                  setComposerOpen(false);
-                }}
-              >
-                إلغاء التعديل
-              </button>
-            ) : null}
-          </div>
-        </form>
-        </DashboardSection>
-        ) : null}
 
         <DashboardSection title="قائمة الكورسات" description="بحث، تصفية، نشر، وإدارة الدروس والإسناد.">
           <div className="oh-admin-courses__toolbar">
@@ -820,7 +834,7 @@ export default function AdminCoursesPage() {
           {!loading && !courses.length ? (
             <DashboardEmptyState
               title="لا توجد كورسات بعد"
-              description="ابدأ بإضافة أول كورس من زر «إضافة كورس جديد»."
+              description="ابدأ بإضافة أول كورس من زر «إنشاء دورة جديدة»."
               icon={
                 <svg
                   className="h-12 w-12 text-slate-400"
@@ -839,61 +853,211 @@ export default function AdminCoursesPage() {
           ) : null}
 
           {courses.length > 0 ? (
-            <DashboardTable caption="قائمة الكورسات">
+            <DashboardTable caption="قائمة الكورسات" className="oh-admin-courses__table-wrap">
               <thead>
                 <tr>
-                  <th>العنوان</th>
-                  <th>الحالة</th>
-                  <th>الدروس</th>
-                  <th>المسندون</th>
-                  <th>آخر تحديث</th>
-                  <th>إجراءات</th>
+                  <th className="oh-admin-courses__col-course">الدورة</th>
+                  <th className="oh-admin-courses__col-status">الحالة</th>
+                  <th className="oh-admin-courses__col-access">الوصول</th>
+                  <th className="oh-admin-courses__col-date">آخر تحديث</th>
+                  <th className="oh-admin-courses__col-visibility">الظهور للجميع</th>
+                  <th className="oh-admin-courses__col-actions">إجراءات</th>
                 </tr>
               </thead>
               <tbody>
-                {courses.map((c) => (
-                  <tr key={c.id}>
-                    <td className="oh-admin-courses__table-title">{c.title}</td>
-                    <td>
-                      <StatusBadge tone={c.isActive ? "active" : "inactive"}>
-                        {c.isActive ? "منشورة" : "مسودة"}
+                {courses.map((c) => {
+                  const isGlobal = Boolean(c.isVisibleToAllFreelancers);
+                  const visibilityBusy = visibilityTogglingId === String(c.id);
+                  const status = courseListStatusPresentation(c);
+                  return (
+                  <tr key={c.id} className="oh-admin-courses__table-row">
+                    <td className="oh-admin-courses__col-course">
+                      <div className="oh-admin-courses__course-anchor">
+                        <p className="oh-admin-courses__course-title">{c.title}</p>
+                        <div className="oh-admin-courses__course-meta" aria-label="ملخص الدورة">
+                          <span className="oh-admin-courses__meta-chip">{formatLessonChipCount(c.lessonsCount)}</span>
+                          <span
+                            className="oh-admin-courses__meta-chip oh-admin-courses__meta-chip--muted"
+                            title={
+                              isGlobal
+                                ? "عدد المستقلين النشطين الذين يمكنهم الوصول لهذه الدورة"
+                                : "عدد المستقلين المسندين يدوياً"
+                            }
+                          >
+                            {formatAccessChipCount(c.assignedCount, isGlobal)}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="oh-admin-courses__col-status">
+                      <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+                    </td>
+                    <td className="oh-admin-courses__col-access">
+                      <StatusBadge tone={isGlobal ? "active" : "neutral"}>
+                        {isGlobal ? "جميع المستقلين" : "مخصص"}
                       </StatusBadge>
                     </td>
-                    <td dir="ltr">{c.lessonsCount ?? 0}</td>
-                    <td dir="ltr">{c.assignedCount ?? 0}</td>
-                    <td>{fmtCourseDate(c.updatedAt)}</td>
-                    <td>
+                    <td className="oh-admin-courses__col-date">
+                      <time dateTime={c.updatedAt || undefined}>{fmtCourseDate(c.updatedAt)}</time>
+                    </td>
+                    <td className="oh-admin-courses__col-visibility">
+                      <label
+                        className="oh-admin-courses__row-toggle"
+                        title={
+                          isGlobal
+                            ? "الدورة متاحة تلقائياً لكل المستقلين. ألغِ التفعيل للإسناد اليدوي."
+                            : "اجعل الدورة تظهر لجميع المستقلين الحاليين والجدد."
+                        }
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isGlobal}
+                          disabled={loading || visibilityBusy}
+                          onChange={(e) => void onToggleGlobalVisibility(c, e.target.checked)}
+                          aria-label="إظهار الدورة لجميع المستقلين"
+                        />
+                        <span className="oh-admin-courses__row-toggle-label">
+                          {isGlobal ? "مفعّل للجميع" : "إظهار للجميع"}
+                        </span>
+                      </label>
+                    </td>
+                    <td className="oh-admin-courses__col-actions">
                       <div className="oh-admin-courses__table-actions">
-                        <button type="button" className="btn btn-secondary oh-admin-courses__row-btn" onClick={() => onStartEditCourse(c)} disabled={loading}>
-                          تعديل
-                        </button>
-                        <button type="button" className="btn btn-secondary oh-admin-courses__row-btn" onClick={() => openManageModal(c, "lessons")} disabled={loading}>
+                        <button
+                          type="button"
+                          className="btn btn-primary oh-admin-courses__row-btn oh-admin-courses__row-btn--primary"
+                          onClick={() => openManageModal(c, "lessons")}
+                          disabled={loading}
+                        >
                           إدارة الدروس
                         </button>
-                        {!c.isActive ? (
-                          <button type="button" className="btn btn-primary oh-admin-courses__row-btn" onClick={() => void onPublishCourse(c.id)} disabled={loading}>
-                            نشر
+                        <div className="oh-admin-courses__table-actions-group">
+                          <button
+                            type="button"
+                            className="btn btn-secondary oh-admin-courses__row-btn"
+                            onClick={() => onStartEditCourse(c)}
+                            disabled={loading}
+                          >
+                            تعديل
                           </button>
-                        ) : (
-                          <button type="button" className="btn btn-secondary oh-admin-courses__row-btn" onClick={() => void onArchiveCourse(c.id)} disabled={loading}>
-                            أرشفة
+                          {!c.isActive ? (
+                            <button
+                              type="button"
+                              className="btn btn-secondary oh-admin-courses__row-btn"
+                              onClick={() => void onPublishCourse(c.id)}
+                              disabled={loading}
+                            >
+                              نشر
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="btn btn-secondary oh-admin-courses__row-btn"
+                              onClick={() => void onArchiveCourse(c.id)}
+                              disabled={loading}
+                            >
+                              أرشفة
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="btn btn-secondary oh-admin-courses__row-btn oh-admin-courses__row-btn--quiet"
+                            onClick={() => onOpenSendModal(c)}
+                            disabled={loading || isGlobal}
+                            title={
+                              isGlobal
+                                ? "الدورة متاحة لجميع المستقلين — لا حاجة للإسناد اليدوي."
+                                : "إسناد الدورة لمستقل محدد"
+                            }
+                          >
+                            إسناد إلى مستقل
                           </button>
-                        )}
-                        <button type="button" className="btn btn-secondary oh-admin-courses__row-btn" onClick={() => onOpenSendModal(c)} disabled={loading}>
-                          إرسال
-                        </button>
-                        <button type="button" className="btn oh-admin-courses__btn-danger oh-admin-courses__row-btn" onClick={() => onDeleteCourse(c.id)} disabled={loading}>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn oh-admin-courses__row-btn oh-admin-courses__row-btn--danger"
+                          onClick={() => onDeleteCourse(c.id)}
+                          disabled={loading}
+                        >
                           حذف
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </DashboardTable>
           ) : null}
         </DashboardSection>
       </DashboardShell>
+
+      <ConfirmDialog
+        open={composerUnsavedConfirmOpen}
+        title="تغييرات غير محفوظة"
+        body="لديك تغييرات لم يتم حفظها. هل تريد إغلاق النافذة بدون حفظ؟"
+        cancelLabel="متابعة التعديل"
+        confirmLabel="إغلاق بدون حفظ"
+        confirmVariant="danger"
+        layerClassName="z-[1300]"
+        onCancel={cancelDiscardComposerModal}
+        onConfirm={confirmDiscardComposerModal}
+      />
+
+      {composerOpen ? (
+        <div
+          className="oh-admin-courses__modal-backdrop oh-admin-courses__modal-backdrop--composer"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && !creating && !composerUnsavedConfirmOpen) requestCloseComposerModal();
+          }}
+        >
+          <div
+            className="oh-admin-courses__modal oh-admin-courses__modal--composer"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="composer-modal-title"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <header className="oh-admin-courses__modal-header">
+              <h2 id="composer-modal-title" className="oh-admin-courses__modal-title">
+                {editingCourseId ? "تعديل الكورس" : "إنشاء دورة جديدة"}
+              </h2>
+              <button
+                type="button"
+                className="oh-admin-courses__modal-close"
+                onClick={requestCloseComposerModal}
+                disabled={creating}
+                aria-label="إغلاق"
+              >
+                ×
+              </button>
+            </header>
+
+            <div className="oh-admin-courses__modal-body oh-admin-courses__composer-modal-body">
+              <AdminCourseCreateComposer
+                mode={editingCourseId ? "edit" : "create"}
+                form={createForm}
+                setForm={setCreateForm}
+                creating={creating}
+                editingCourseId={editingCourseId}
+                editMeta={editingCourseMeta}
+                onSubmit={onComposerSubmit}
+                onCancelEdit={requestCloseComposerModal}
+                onUploadCourseTestFile={onUploadCourseTestFile}
+                onUploadCoursePromptFile={onUploadCoursePromptFile}
+                onUploadError={(msg) => toast.error(msg)}
+                testFileUploading={testFileUploading}
+                promptFileUploading={promptFileUploading}
+                pendingCreateTestFile={createPendingTestFile}
+                pendingCreatePromptFile={createPendingPromptFile}
+                onPendingCreateTestFile={onPendingCreateTestFile}
+                onPendingCreatePromptFile={onPendingCreatePromptFile}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {manageModalOpen ? (
         <div
@@ -994,15 +1158,25 @@ export default function AdminCoursesPage() {
                             onChange={(e) => setSelectedCourse((s) => ({ ...s, course: { ...s.course, description: e.target.value } }))}
                           />
                         </label>
-                        <label className="oh-admin-courses__field">
-                          <span>رابط صورة الغلاف</span>
-                          <input
-                            className="oh-admin-courses__input"
-                            dir="ltr"
-                            value={selectedCourse.course.coverImage || ""}
-                            onChange={(e) => setSelectedCourse((s) => ({ ...s, course: { ...s.course, coverImage: e.target.value } }))}
+                        <CourseUrlField
+                          label="رابط صورة الغلاف"
+                          optional
+                          value={selectedCourse.course.coverImage || ""}
+                          onChange={(e) =>
+                            setSelectedCourse((s) => ({ ...s, course: { ...s.course, coverImage: e.target.value } }))
+                          }
+                          updatedAt={selectedCourse.course.updatedAt}
+                          linkTitle="رابط الغلاف الحالي"
+                        />
+                        {selectedCourse.course.youtubeSourceUrl ? (
+                          <CourseUrlField
+                            label="رابط يوتيوب المحفوظ"
+                            value={selectedCourse.course.youtubeSourceUrl}
+                            readOnly
+                            updatedAt={selectedCourse.course.updatedAt}
+                            linkTitle="مصدر الدورة (يوتيوب)"
                           />
-                        </label>
+                        ) : null}
                         <label className="oh-admin-courses__toggle">
                           <input
                             type="checkbox"
@@ -1028,74 +1202,44 @@ export default function AdminCoursesPage() {
                         </label>
                         {selectedCourse.course.isTestingEnabled ? (
                           <>
-                            <label className="oh-admin-courses__field">
-                              <span>ملف الاختبار / التكليف</span>
-                              {selectedCourse.course.testFileUrl ? (
-                                <p className="help" style={{ margin: "4px 0 8px" }}>
-                                  الملف الحالي:{" "}
-                                  <a
-                                    href={selectedCourse.course.testFileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    dir="ltr"
-                                  >
-                                    فتح / تحميل
-                                  </a>
-                                </p>
-                              ) : null}
-                              <input
-                                type="file"
-                                className="oh-admin-courses__input"
-                                disabled={testFileUploading || loading}
-                                accept=".pdf,.doc,.docx,.txt,.zip,.png,.jpg,.jpeg,.webp,.xls,.xlsx,.ppt,.pptx"
-                                onChange={(e) => {
-                                  const f = e.target.files?.[0];
-                                  if (f && selectedCourseId) void onUploadCourseTestFile(selectedCourseId, f);
-                                  e.target.value = "";
-                                }}
-                              />
-                            </label>
-                            <label className="oh-admin-courses__field">
-                              <span>
-                                أو رابط ملف الاختبار <span className="oh-admin-courses__optional">(اختياري)</span>
-                              </span>
-                              <input
-                                className="oh-admin-courses__input"
-                                dir="ltr"
-                                value={selectedCourse.course.testFileUrl || ""}
-                                onChange={(e) =>
-                                  setSelectedCourse((s) => ({ ...s, course: { ...s.course, testFileUrl: e.target.value } }))
-                                }
-                                placeholder="https://..."
-                              />
-                            </label>
-                            <label className="oh-admin-courses__field">
-                              <span>ملف مطالبة ChatGPT للمستقل</span>
-                              {selectedCourse.course.testPromptFileUrl ? (
-                                <p className="help" style={{ margin: "4px 0 8px" }}>
-                                  الملف الحالي:{" "}
-                                  <a
-                                    href={selectedCourse.course.testPromptFileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    dir="ltr"
-                                  >
-                                    فتح / تحميل
-                                  </a>
-                                </p>
-                              ) : null}
-                              <input
-                                type="file"
-                                className="oh-admin-courses__input"
-                                disabled={promptFileUploading || loading}
-                                accept=".pdf,.doc,.docx,.txt,.zip,.png,.jpg,.jpeg,.webp,.xls,.xlsx,.ppt,.pptx"
-                                onChange={(e) => {
-                                  const f = e.target.files?.[0];
-                                  if (f && selectedCourseId) void onUploadCoursePromptFile(selectedCourseId, f);
-                                  e.target.value = "";
-                                }}
-                              />
-                            </label>
+                            <CourseFileUploadField
+                              label="ملف الاختبار / التكليف"
+                              fileUrl={selectedCourse.course.testFileUrl}
+                              updatedAt={selectedCourse.course.updatedAt}
+                              disabled={loading}
+                              uploading={testFileUploading}
+                              isEdit
+                              courseId={selectedCourseId}
+                              fileKind="test"
+                              onFileSelected={(f) => {
+                                if (selectedCourseId) void onUploadCourseTestFile(selectedCourseId, f);
+                              }}
+                              onValidationError={(msg) => toast.error(msg)}
+                            />
+                            <CourseUrlField
+                              label="أو رابط ملف الاختبار"
+                              optional
+                              value={selectedCourse.course.testFileUrl || ""}
+                              onChange={(e) =>
+                                setSelectedCourse((s) => ({ ...s, course: { ...s.course, testFileUrl: e.target.value } }))
+                              }
+                              updatedAt={selectedCourse.course.updatedAt}
+                              linkTitle="رابط ملف الاختبار الحالي"
+                            />
+                            <CourseFileUploadField
+                              label="ملف مطالبة ChatGPT للمستقل"
+                              fileUrl={selectedCourse.course.testPromptFileUrl}
+                              updatedAt={selectedCourse.course.updatedAt}
+                              disabled={loading}
+                              uploading={promptFileUploading}
+                              isEdit
+                              courseId={selectedCourseId}
+                              fileKind="prompt"
+                              onFileSelected={(f) => {
+                                if (selectedCourseId) void onUploadCoursePromptFile(selectedCourseId, f);
+                              }}
+                              onValidationError={(msg) => toast.error(msg)}
+                            />
                           </>
                         ) : null}
                         <div className="oh-admin-courses__submit-row">
@@ -1215,6 +1359,12 @@ export default function AdminCoursesPage() {
 
                   {manageTab === "assign" ? (
                     <div className="oh-admin-courses__modal-panel oh-admin-courses__modal-panel--assign" role="tabpanel">
+                      {selectedCourse.course.isVisibleToAllFreelancers ? (
+                        <p className="oh-admin-courses__global-info" role="status">
+                          هذا الكورس متاح لجميع المستقلين، لذلك لا تحتاج إلى إرساله يدويًا.
+                        </p>
+                      ) : (
+                      <>
                       <div className="oh-admin-courses__tab-top">
                         <input
                           className="oh-admin-courses__input"
@@ -1273,10 +1423,9 @@ export default function AdminCoursesPage() {
                         <button className="btn btn-primary" type="button" onClick={() => onAssign(false)} disabled={loading}>
                           حفظ الإسناد المحدد
                         </button>
-                        <button className="btn btn-primary" type="button" onClick={() => onAssign(true)} disabled={loading}>
-                          إسناد لجميع المستقلين
-                        </button>
                       </div>
+                      </>
+                      )}
                     </div>
                   ) : null}
 
@@ -1343,26 +1492,24 @@ export default function AdminCoursesPage() {
         </div>
       ) : null}
 
-      {sendModal.open && sendModal.course ? (
+      {sendModal.open && sendModal.course && !sendModal.course.isVisibleToAllFreelancers ? (
         <div
           className="oh-admin-courses__send-backdrop"
           role="presentation"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget && !sendModalBusy) {
-              setSendAllConfirmOpen(false);
               setSendModal({ open: false, course: null });
             }
           }}
         >
           <div
-            className="card"
+            className="card admin-dash-inline-dialog"
             role="dialog"
             aria-modal="true"
             aria-labelledby="send-course-modal-title"
             onMouseDown={(e) => e.stopPropagation()}
-            style={{ width: "min(620px, 100%)", maxHeight: "86vh", overflow: "auto", display: "grid", gap: 10 }}
           >
-            <h3 id="send-course-modal-title" style={{ margin: 0 }}>
+            <h3 id="send-course-modal-title" className="admin-dash-inline-dialog__title">
               إرسال الدورة: {sendModal.course.title}
             </h3>
             <label className="auth-field">
@@ -1371,10 +1518,10 @@ export default function AdminCoursesPage() {
                 value={sendQuery}
                 onChange={(e) => setSendQuery(e.target.value)}
                 placeholder="اكتب الاسم أو الإيميل..."
-                disabled={sendBulkSubmitting}
+                disabled={sendModalBusy}
               />
             </label>
-            <div style={{ maxHeight: 320, overflow: "auto", border: "1px solid var(--line)", borderRadius: 10, padding: 8, background: "var(--background)" }}>
+            <div className="admin-dash-inline-dialog__search-panel">
               {sendLoading ? (
                 <div className="help">جارٍ البحث...</div>
               ) : sortedSendResults.length === 0 ? (
@@ -1386,7 +1533,7 @@ export default function AdminCoursesPage() {
                   const rowLoading = sendRowLoadingId === idStr;
                   const unassignLoading = unassignRowLoadingId === idStr;
                   const rowActionsLocked =
-                    sendBulkSubmitting || !sendAssignedReady || sendRowLoadingId !== null || unassignRowLoadingId !== null;
+                    !sendAssignedReady || sendRowLoadingId !== null || unassignRowLoadingId !== null;
                   return (
                     <div
                       key={f.id}
@@ -1427,67 +1574,17 @@ export default function AdminCoursesPage() {
                 })
               )}
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                disabled={sendModalBusy || !sendAssignedReady}
-                onClick={() => setSendAllConfirmOpen(true)}
-              >
-                إرسال لجميع المستقلين
-              </button>
+            <div className="admin-dash-inline-dialog__actions">
               <button
                 type="button"
                 className="btn btn-secondary"
                 disabled={sendModalBusy}
-                onClick={() => {
-                  setSendAllConfirmOpen(false);
-                  setSendModal({ open: false, course: null });
-                }}
+                onClick={() => setSendModal({ open: false, course: null })}
               >
                 إغلاق
               </button>
             </div>
           </div>
-          {sendAllConfirmOpen ? (
-            <div
-              role="presentation"
-              style={{
-                position: "fixed",
-                inset: 0,
-                zIndex: 1000,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 16,
-                background: "rgba(0,0,0,0.45)",
-              }}
-              onMouseDown={(e) => {
-                if (e.target === e.currentTarget && !sendBulkSubmitting) setSendAllConfirmOpen(false);
-              }}
-            >
-              <div
-                className="card"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="send-all-confirm-title"
-                onMouseDown={(e) => e.stopPropagation()}
-                style={{ width: "min(420px, 100%)", display: "grid", gap: 12 }}
-              >
-                <p id="send-all-confirm-title" style={{ margin: 0 }}>
-                  هل أنت متأكد من إرسال الدورة لجميع المستقلين؟
-                </p>
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
-                  <button type="button" className="btn btn-secondary" disabled={sendBulkSubmitting} onClick={() => setSendAllConfirmOpen(false)}>
-                    إلغاء
-                  </button>
-                  <button type="button" className="btn btn-primary" disabled={sendBulkSubmitting} onClick={onSendCourseToAllFreelancers}>
-                    {sendBulkSubmitting ? "جارٍ الإرسال..." : "تأكيد الإرسال للجميع"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
         </div>
       ) : null}
     </>

@@ -19,26 +19,15 @@ function Grid({ children, className = "", style }) {
 }
 
 /**
- * Shared extended plan fields for create + edit forms.
+ * Shared extended plan fields for create + edit forms (visual grouping only).
  */
 export default function PlanExtendedFields({ form, setForm, submitting = false, showAdminNotes = true }) {
   const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
   return (
     <>
-      <PlanFormSection title="السعر والمدة والترتيب">
+      <PlanFormSection title="التسعير والمدة" hint="السعر والمدة كما تُعرض للمستقلين.">
         <Grid className="oh-sapl-grid--3">
-          <Field label="المدة (أيام)">
-            <input
-              className="oh-sapl-input"
-              type="number"
-              min={1}
-              max={3650}
-              value={form.durationDays}
-              onChange={(e) => set("durationDays", e.target.value)}
-              disabled={submitting}
-            />
-          </Field>
           <Field label="السعر الإجمالي (د.أ)">
             <input
               className="oh-sapl-input"
@@ -63,6 +52,17 @@ export default function PlanExtendedFields({ form, setForm, submitting = false, 
               disabled={submitting}
             />
           </Field>
+          <Field label="المدة (أيام)">
+            <input
+              className="oh-sapl-input"
+              type="number"
+              min={1}
+              max={3650}
+              value={form.durationDays}
+              onChange={(e) => set("durationDays", e.target.value)}
+              disabled={submitting}
+            />
+          </Field>
           <Field label="ترتيب العرض">
             <input
               className="oh-sapl-input"
@@ -75,7 +75,99 @@ export default function PlanExtendedFields({ form, setForm, submitting = false, 
         </Grid>
       </PlanFormSection>
 
-      <PlanFormSection title="المميزات والتدريبات" hint="سطر واحد لكل عنصر.">
+      <PlanFormSection title="حدود الطلبات" hint="نطاق قيمة الطلبات المسموح بها ضمن الباقة.">
+        <Grid className="oh-sapl-grid--2">
+          <Field label="حد أدنى لقيمة الطلب (د.أ)">
+            <input
+              className="oh-sapl-input"
+              type="number"
+              min={0}
+              step="0.01"
+              value={form.orderValueMinJod}
+              onChange={(e) => set("orderValueMinJod", e.target.value)}
+              disabled={submitting}
+            />
+          </Field>
+          <Field label="حد أقصى لقيمة الطلب (د.أ)">
+            <input
+              className="oh-sapl-input"
+              type="number"
+              min={0}
+              step="0.01"
+              value={form.orderValueMaxJod}
+              onChange={(e) => set("orderValueMaxJod", e.target.value)}
+              placeholder="فارغ = بدون حد أعلى"
+              disabled={submitting}
+            />
+          </Field>
+        </Grid>
+        <div className="oh-sapl-field" style={{ marginTop: 12 }}>
+          <span className="oh-sapl-field__label">آلية التفعيل</span>
+          <textarea
+            className="oh-sapl-input oh-sapl-input--textarea"
+            rows={3}
+            value={form.activationRequirements}
+            onChange={(e) => set("activationRequirements", e.target.value)}
+            disabled={submitting}
+          />
+        </div>
+        <div className="oh-sapl-field" style={{ marginTop: 12 }}>
+          <span className="oh-sapl-field__label">سياسة الاسترداد</span>
+          <textarea
+            className="oh-sapl-input oh-sapl-input--textarea"
+            rows={2}
+            value={form.refundPolicy}
+            onChange={(e) => set("refundPolicy", e.target.value)}
+            disabled={submitting}
+          />
+        </div>
+      </PlanFormSection>
+
+      <PlanFormSection title="الميزات" hint="تبديل سريع لحالات الباقة — نفس الحقول المرسلة للـ API.">
+        <div className="oh-sapl-options">
+          <PlanToggle
+            label="متاحة للشراء الذاتي (Stripe)"
+            description="يتطلب مبلغ دفع (السعر أو مبلغ Stripe) أكبر من صفر."
+            checked={form.selfSubscribeAllowed}
+            disabled={submitting}
+            onChange={(v) => set("selfSubscribeAllowed", v)}
+          />
+          <PlanToggle
+            label="يتطلب زيارة ميدانية للشركة"
+            checked={form.requiresCompanyVisit}
+            disabled={submitting}
+            onChange={(v) => set("requiresCompanyVisit", v)}
+          />
+          <PlanToggle
+            label="باقة مميزة (تمييز بصري)"
+            checked={form.isFeatured}
+            disabled={submitting}
+            onChange={(v) => set("isFeatured", v)}
+          />
+          <PlanToggle
+            label="الأكثر شيوعاً (شارة)"
+            checked={form.isPopular}
+            disabled={submitting}
+            onChange={(v) => set("isPopular", v)}
+          />
+          <PlanToggle
+            label="ظهور في قائمة الباقات العامة"
+            description="إخفاء الباقة عن صفحة الباقات دون حذفها."
+            checked={form.isVisible}
+            disabled={submitting}
+            onChange={(v) => set("isVisible", v)}
+          />
+          <PlanToggle
+            label="الباقة مفعّلة"
+            description="عند التعطيل لن تُستخدم في إسناد جديد."
+            checked={form.isActive}
+            disabled={submitting}
+            onChange={(v) => set("isActive", v)}
+          />
+        </div>
+      </PlanFormSection>
+
+      <PlanFormSection title="قوائم المميزات والتدريبات" hint="سطر واحد لكل عنصر.">
         <div className="oh-sapl-field">
           <span className="oh-sapl-field__label">يشمل (قائمة المميزات)</span>
           <textarea
@@ -176,98 +268,6 @@ export default function PlanExtendedFields({ form, setForm, submitting = false, 
         </Grid>
       </PlanFormSection>
 
-      <PlanFormSection title="قيمة الطلبات والتفعيل">
-        <Grid className="oh-sapl-grid--2">
-          <Field label="حد أدنى لقيمة الطلب (د.أ)">
-            <input
-              className="oh-sapl-input"
-              type="number"
-              min={0}
-              step="0.01"
-              value={form.orderValueMinJod}
-              onChange={(e) => set("orderValueMinJod", e.target.value)}
-              disabled={submitting}
-            />
-          </Field>
-          <Field label="حد أقصى لقيمة الطلب (د.أ)">
-            <input
-              className="oh-sapl-input"
-              type="number"
-              min={0}
-              step="0.01"
-              value={form.orderValueMaxJod}
-              onChange={(e) => set("orderValueMaxJod", e.target.value)}
-              placeholder="فارغ = بدون حد أعلى"
-              disabled={submitting}
-            />
-          </Field>
-        </Grid>
-        <div className="oh-sapl-field" style={{ marginTop: 12 }}>
-          <span className="oh-sapl-field__label">آلية التفعيل</span>
-          <textarea
-            className="oh-sapl-input oh-sapl-input--textarea"
-            rows={3}
-            value={form.activationRequirements}
-            onChange={(e) => set("activationRequirements", e.target.value)}
-            disabled={submitting}
-          />
-        </div>
-        <div className="oh-sapl-field" style={{ marginTop: 12 }}>
-          <span className="oh-sapl-field__label">سياسة الاسترداد</span>
-          <textarea
-            className="oh-sapl-input oh-sapl-input--textarea"
-            rows={2}
-            value={form.refundPolicy}
-            onChange={(e) => set("refundPolicy", e.target.value)}
-            disabled={submitting}
-          />
-        </div>
-      </PlanFormSection>
-
-      <PlanFormSection title="خيارات الباقة" hint="بدّل الحالات بسرعة — نفس الحقول المرسلة للـ API.">
-        <div className="oh-sapl-options">
-          <PlanToggle
-            label="يتطلب زيارة ميدانية للشركة"
-            checked={form.requiresCompanyVisit}
-            disabled={submitting}
-            onChange={(v) => set("requiresCompanyVisit", v)}
-          />
-          <PlanToggle
-            label="الباقة مفعّلة"
-            description="عند التعطيل لن تُستخدم في إسناد جديد."
-            checked={form.isActive}
-            disabled={submitting}
-            onChange={(v) => set("isActive", v)}
-          />
-          <PlanToggle
-            label="ظهور في قائمة الباقات العامة"
-            description="إخفاء الباقة عن صفحة الباقات دون حذفها."
-            checked={form.isVisible}
-            disabled={submitting}
-            onChange={(v) => set("isVisible", v)}
-          />
-          <PlanToggle
-            label="متاحة للشراء الذاتي (Stripe)"
-            description="يتطلب مبلغ دفع (السعر أو مبلغ Stripe) أكبر من صفر."
-            checked={form.selfSubscribeAllowed}
-            disabled={submitting}
-            onChange={(v) => set("selfSubscribeAllowed", v)}
-          />
-          <PlanToggle
-            label="الأكثر شيوعاً (شارة)"
-            checked={form.isPopular}
-            disabled={submitting}
-            onChange={(v) => set("isPopular", v)}
-          />
-          <PlanToggle
-            label="باقة مميزة (تمييز بصري)"
-            checked={form.isFeatured}
-            disabled={submitting}
-            onChange={(v) => set("isFeatured", v)}
-          />
-        </div>
-      </PlanFormSection>
-
       {showAdminNotes ? (
         <PlanFormSection title="ملاحظات داخلية" hint="لا تظهر في صفحة الباقات العامة.">
           <textarea
@@ -282,5 +282,3 @@ export default function PlanExtendedFields({ form, setForm, submitting = false, 
     </>
   );
 }
-
-

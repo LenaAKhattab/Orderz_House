@@ -10,6 +10,8 @@ import {
   getCategorySubSubcategoriesRequest,
 } from "../../services/api";
 import AdminFreelancerSelector from "./AdminFreelancerSelector";
+import DashboardPageHeader from "../dashboard/DashboardPageHeader";
+import DashboardShell from "../dashboard/DashboardShell";
 import { getDashboardPath } from "../../constants/authRoutes";
 import { SelectPanelBusySkeleton } from "../ui/Skeleton";
 import { CreateOrderReviewRow } from "./CreateOrderReviewRow";
@@ -760,40 +762,46 @@ export default function AdminInternalOrderWizard({
   }, [currentStepKey]);
 
   const isModal = variant === "modal";
+  const pagePanelClass = "dash-ui-surface--soft admin-co-wizard__panel";
 
   const shell = (
     <>
       {!isModal ? (
-        <section
-          className="card co-create-order-page__head"
-          style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}
-        >
-          <div style={{ minWidth: 0, flex: "1 1 280px" }}>
-            <h1 style={{ marginBottom: 6 }}>{isClientAudience ? "إنشاء طلب" : "إنشاء طلب (إداري)"}</h1>
-            <p style={{ margin: 0 }}>
-              {isClientAudience
-                ? "نفس واجهة إنشاء الطلب مع صلاحيات العميل فقط وبدون تعيين مستقل."
-                : "سيتم نشر الطلب مباشرةً بدون دفع. ويمكن إسناده لفريلانسر أثناء الإنشاء."}
-            </p>
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Link className="btn btn-secondary" to={base}>
-              العودة
-            </Link>
-            <Link className="btn btn-secondary" to={listPath}>
-              كل الطلبات
-            </Link>
-          </div>
-        </section>
+        <DashboardPageHeader
+          title={isClientAudience ? "إنشاء طلب" : "إنشاء طلب (إداري)"}
+          description={
+            isClientAudience
+              ? "نفس واجهة إنشاء الطلب مع صلاحيات العميل فقط وبدون تعيين مستقل."
+              : "سيتم نشر الطلب مباشرةً بدون دفع. ويمكن إسناده لفريلانسر أثناء الإنشاء."
+          }
+          breadcrumbs={[
+            { label: "الرئيسية", href: base },
+            { label: "الطلبات", href: listPath },
+            { label: isClientAudience ? "إنشاء طلب" : "إنشاء طلب (إداري)" },
+          ]}
+          actions={
+            <>
+              <Link className="btn btn-secondary" to={base}>
+                العودة
+              </Link>
+              <Link className="btn btn-secondary" to={listPath}>
+                كل الطلبات
+              </Link>
+            </>
+          }
+        />
       ) : null}
 
       <form
         onSubmit={submit}
-        className={`form-grid form-co-flow${isModal ? " co-modal-ref__form-flow" : ""}`.trim()}
-        style={{ marginTop: isModal ? 0 : 14 }}
+        className={`form-grid form-co-flow admin-co-wizard__form${isModal ? " co-modal-ref__form-flow" : ""}`.trim()}
       >
         <section
-          className={isModal ? "co-modal-ref__stepper-shell" : "card"}
+          className={
+            isModal
+              ? "co-modal-ref__stepper-shell"
+              : `${pagePanelClass} admin-co-wizard__stepper-panel`
+          }
           style={{ gridColumn: "span 12" }}
         >
           <div
@@ -817,7 +825,9 @@ export default function AdminInternalOrderWizard({
         </section>
 
         <section
-          className={isModal ? "co-modal-ref__scroll-body" : "card"}
+          className={
+            isModal ? "co-modal-ref__scroll-body" : `${pagePanelClass} admin-co-wizard__form-panel`
+          }
           style={{ gridColumn: "span 12" }}
         >
           <div className={isModal ? "co-modal-ref__form-card" : "co-modal-ref__form-card--page"}>
@@ -1484,15 +1494,12 @@ export default function AdminInternalOrderWizard({
         </section>
 
         <section
-          className={isModal ? "co-modal-ref__wizard-foot" : "card"}
-          style={{
-            gridColumn: "span 12",
-            display: "flex",
-            gap: 10,
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
+          className={
+            isModal
+              ? "co-modal-ref__wizard-foot"
+              : `${pagePanelClass} admin-co-wizard__footer`
+          }
+          style={{ gridColumn: "span 12" }}
         >
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {typeof modalOnClose === "function" ? (
@@ -1556,7 +1563,9 @@ export default function AdminInternalOrderWizard({
   }
 
   return (
-    <main className="container page-content co-create-order-page">{shell}</main>
+    <DashboardShell className="admin-internal-wizard admin-internal-wizard--page co-create-order-page" dir="rtl">
+      {shell}
+    </DashboardShell>
   );
 }
 
