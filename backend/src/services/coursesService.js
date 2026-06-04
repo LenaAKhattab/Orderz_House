@@ -1,6 +1,11 @@
 const { pool } = require("../config/db");
 const { importYoutubeSource } = require("../utils/youtubeImport");
 const { assessCoursePublishReadiness } = require("../utils/coursePublishReadiness");
+const {
+  normalizeQuestionCount,
+  validateAndComputeExamMarks,
+  mapAssignmentGrading,
+} = require("../utils/courseExamGrading");
 const notificationEventsService = require("./notificationEventsService");
 const { uploadCourseDocumentBuffer, destroyByPublicId } = require("./cloudinaryUploadService");
 const {
@@ -46,6 +51,8 @@ function applyTestingVisibilityToCourse(mapped, testingEnabled) {
   if (!testingEnabled) {
     mapped.testFileUrl = null;
     mapped.testPromptFileUrl = null;
+    mapped.testModelAnswerFileUrl = null;
+    mapped.testQuestionCount = null;
   }
   return mapped;
 }
@@ -86,6 +93,8 @@ function mapCourse(row, { forFreelancer = false } = {}) {
     isTestingEnabled: Boolean(row.is_testing_enabled),
     testFileUrl: row.test_file_url || null,
     testPromptFileUrl: row.test_prompt_file_url || null,
+    testModelAnswerFileUrl: row.test_model_answer_file_url || null,
+    testQuestionCount: row.test_question_count != null ? Number(row.test_question_count) : null,
     createdBy: row.created_by ? String(row.created_by) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -219,8 +228,8 @@ async function createCourse({ actorUserId, payload }) {
     const sourceUrl = String(payload.youtubeSourceUrl || "").trim();
     const imported = await importYoutubeSource(sourceUrl);
     const { rows } = await client.query(
-      `INSERT INTO courses (title, description, cover_image, youtube_source_url, is_active, is_visible_to_all_freelancers, is_testing_enabled, test_file_url, test_prompt_file_url, created_by, created_at, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW(),NOW())
+      `INSERT INTO courses (title, description, cover_image, youtube_source_url, is_active, is_visible_to_all_freelancers, is_testing_enabled, test_file_url, test_prompt_file_url, test_model_answer_file_url, test_question_count, created_by, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
        RETURNING *`,
       [
         String(payload.title || "").trim() || "دورة جديدة",
@@ -232,6 +241,8 @@ async function createCourse({ actorUserId, payload }) {
         payload.isTestingEnabled !== undefined ? Boolean(payload.isTestingEnabled) : false,
         payload.testFileUrl ? String(payload.testFileUrl).trim() : null,
         payload.testPromptFileUrl ? String(payload.testPromptFileUrl).trim() : null,
+        payload.testModelAnswerFileUrl ? String(payload.testModelAnswerFileUrl).trim() : null,
+        normalizeQuestionCount(payload.testQuestionCount),
         Number(actorUserId),
       ],
     );
@@ -343,10 +354,13 @@ async function updateCourse({ actorUserId, courseId, patch }) {
       set("is_visible_to_all_freelancers", Boolean(patch.isVisibleToAllFreelancers));
     }
     if (patch.isTestingEnabled !== undefined) set("is_testing_enabled", Boolean(patch.isTestingEnabled));
+    if (patch.testQuestionCount !== undefined) {
+      set("test_question_count", normalizeQuestionCount(patch.testQuestionCount));
+    }
 
     const cid = Number(courseId);
     const { rows: beforeRows } = await client.query(
-      `SELECT test_file_url, test_prompt_file_url FROM courses WHERE id = $1 LIMIT 1`,
+      `SELECT test_file_url, test_prompt_file_url, test_model_answer_file_url FROM courses WHERE id = $1 LIMIT 1`,
       [cid],
     );
     const before = beforeRows[0] || {};
@@ -369,6 +383,15 @@ async function updateCourse({ actorUserId, courseId, patch }) {
       }
       set("test_prompt_file_url", url);
     }
+    if (patch.testModelAnswerFileUrl !== undefined) {
+      const url = patch.testModelAnswerFileUrl ? String(patch.testModelAnswerFileUrl).trim() : null;
+      if (url && isLegacyBrokenCloudinaryPdfUrl(url)) {
+        const err = new Error("رابط ملف الإجابة النموذجية قديم وغير صالح. أعد رفع الملف.");
+        err.statusCode = 400;
+        throw err;
+      }
+      set("test_model_answer_file_url", url);
+    }
 
     set("updated_at", new Date());
     vals.push(cid);
@@ -385,16 +408,23 @@ async function updateCourse({ actorUserId, courseId, patch }) {
       throw err;
     }
 
-    if (patch.testFileUrl !== undefined || patch.testPromptFileUrl !== undefined) {
+    if (
+      patch.testFileUrl !== undefined ||
+      patch.testPromptFileUrl !== undefined ||
+      patch.testModelAnswerFileUrl !== undefined
+    ) {
       logCourseFileUrlDiagnostic({
         courseId: cid,
         action: "patch",
         previousTestFileUrl: before.test_file_url || null,
         previousPromptFileUrl: before.test_prompt_file_url || null,
+        previousModelAnswerFileUrl: before.test_model_answer_file_url || null,
         patchTestFileUrl: patch.testFileUrl !== undefined ? patch.testFileUrl : undefined,
         patchPromptFileUrl: patch.testPromptFileUrl !== undefined ? patch.testPromptFileUrl : undefined,
+        patchModelAnswerFileUrl: patch.testModelAnswerFileUrl !== undefined ? patch.testModelAnswerFileUrl : undefined,
         storedTestFileUrl: rows[0].test_file_url || null,
         storedPromptFileUrl: rows[0].test_prompt_file_url || null,
+        storedModelAnswerFileUrl: rows[0].test_model_answer_file_url || null,
       });
     }
 
@@ -772,7 +802,8 @@ async function getCourseDetailsForAdmin({ actorUserId, courseId }) {
     const [lessonRes, assignRes, progressRes] = await Promise.all([
       client.query(`SELECT * FROM course_lessons WHERE course_id = $1 ORDER BY sort_order ASC, id ASC`, [Number(courseId)]),
       client.query(
-        `SELECT a.freelancer_id, u.account_id, u.first_name, u.father_name, u.family_name, u.email
+        `SELECT a.freelancer_id, a.exam_question_marks, a.exam_final_grade, a.audit_submitted_at, a.completed_at,
+                u.account_id, u.first_name, u.father_name, u.family_name, u.email
          FROM course_assignments a
          JOIN users u ON u.id = a.freelancer_id
          WHERE a.course_id = $1
@@ -797,6 +828,7 @@ async function getCourseDetailsForAdmin({ actorUserId, courseId }) {
       lessons: lessonRes.rows.map(mapLesson),
       assignments: assignRes.rows.map((r) => {
         const completed = progressByFreelancer.get(String(r.freelancer_id)) || 0;
+        const grading = mapAssignmentGrading(r);
         return {
           freelancerId: String(r.freelancer_id),
           accountId: r.account_id,
@@ -809,6 +841,9 @@ async function getCourseDetailsForAdmin({ actorUserId, courseId }) {
             completedLessons: completed,
             percentage: totalLessons > 0 ? Math.min(100, Math.round((completed / totalLessons) * 100)) : 0,
           },
+          examQuestionMarks: grading.examQuestionMarks,
+          examFinalGrade: grading.examFinalGrade,
+          examSubmittedAt: r.audit_submitted_at || r.completed_at || null,
         };
       }),
     };
@@ -986,6 +1021,56 @@ async function uploadCoursePromptFile({ actorUserId, courseId, file }) {
   }
 }
 
+async function uploadCourseModelAnswerFile({ actorUserId, courseId, file }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertAdminOrSuperAdmin(actorUserId, client);
+    const cid = Number(courseId);
+    const { rows } = await client.query(`SELECT id FROM courses WHERE id = $1 LIMIT 1 FOR UPDATE`, [cid]);
+    if (!rows[0]) {
+      const err = new Error("الدورة غير موجودة.");
+      err.statusCode = 404;
+      throw err;
+    }
+    assertCoursePdfUploadFile(file);
+    let uploaded;
+    try {
+      uploaded = await uploadCourseDocumentBuffer({
+        buffer: file.buffer,
+        mimetype: file.mimetype,
+        originalname: file.originalname,
+        courseId: cid,
+        purpose: "model-answer",
+      });
+      const secureUrl = assertCloudinaryCourseFileUpload(uploaded, { courseId: cid, purpose: "model-answer" });
+      await verifyCloudinaryPdfDelivery(secureUrl, { minBytes: file.buffer.length > 0 ? 5 : 1 });
+      await client.query(`UPDATE courses SET test_model_answer_file_url = $2, updated_at = NOW() WHERE id = $1`, [
+        cid,
+        secureUrl,
+      ]);
+      logCourseFileUrlDiagnostic({
+        courseId: cid,
+        action: "upload-model-answer-file",
+        uploadSecureUrl: secureUrl,
+        storedModelAnswerFileUrl: secureUrl,
+      });
+    } catch (uploadErr) {
+      if (uploaded?.publicId) {
+        await destroyByPublicId(uploaded.publicId, uploaded.resourceType || "raw");
+      }
+      throw uploadErr;
+    }
+    await client.query("COMMIT");
+    return getCourseDetailsForAdmin({ actorUserId, courseId: cid });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw wrapCourseFileUploadError(err, "uploadCourseModelAnswerFile");
+  } finally {
+    client.release();
+  }
+}
+
 async function getCourseDetailsForFreelancer({ freelancerUserId, courseId }) {
   const uid = Number(freelancerUserId);
   const cid = Number(courseId);
@@ -1008,7 +1093,8 @@ async function getCourseDetailsForFreelancer({ freelancerUserId, courseId }) {
   }
 
   const { rows: assignRows } = await pool.query(
-    `SELECT audit_confirmed, audit_notes, audit_response_text, audit_response_file_url, audit_submitted_at, completed_at
+    `SELECT audit_confirmed, audit_notes, audit_response_text, audit_response_file_url, audit_submitted_at, completed_at,
+            exam_question_marks, exam_final_grade
      FROM course_assignments
      WHERE course_id = $1 AND freelancer_id = $2
      LIMIT 1`,
@@ -1021,7 +1107,10 @@ async function getCourseDetailsForFreelancer({ freelancerUserId, courseId }) {
     audit_response_file_url: null,
     audit_submitted_at: null,
     completed_at: null,
+    exam_question_marks: null,
+    exam_final_grade: null,
   };
+  const assignmentGrading = mapAssignmentGrading(assignmentRow);
   const { rows: courseRows } = await pool.query(`SELECT * FROM courses WHERE id = $1 AND is_active = TRUE LIMIT 1`, [cid]);
   const course = courseRows[0];
   if (!course) {
@@ -1059,6 +1148,8 @@ async function getCourseDetailsForFreelancer({ freelancerUserId, courseId }) {
       auditResponseFileUrl: assignmentRow.audit_response_file_url || null,
       auditSubmittedAt: assignmentRow.audit_submitted_at || null,
       completedAt: assignmentRow.completed_at || null,
+      examQuestionMarks: assignmentGrading.examQuestionMarks,
+      examFinalGrade: assignmentGrading.examFinalGrade,
     },
     completion: {
       allLessonsComplete,
@@ -1186,6 +1277,7 @@ async function submitCourseCompletion({
   auditResponseText,
   auditResponseFileUrl,
   auditResponseFile,
+  questionMarks,
 }) {
   const client = await pool.connect();
   try {
@@ -1234,7 +1326,25 @@ async function submitCourseCompletion({
       throw err;
     }
     const testingOn = Boolean(course.is_testing_enabled);
+    const questionCount = normalizeQuestionCount(course.test_question_count);
+    let examMarksJson = null;
+    let examFinalGrade = null;
+
     if (testingOn) {
+      if (questionCount) {
+        const markResult = validateAndComputeExamMarks(questionMarks, questionCount);
+        if (!markResult.ok) {
+          const err = new Error(markResult.message || "تحقق من درجات جميع الأسئلة.");
+          err.statusCode = 400;
+          err.exposeToClient = true;
+          err.publicCode = "EXAM_MARKS_INVALID";
+          err.fieldErrors = markResult.fieldErrors || {};
+          throw err;
+        }
+        examMarksJson = JSON.stringify(markResult.marks);
+        examFinalGrade = markResult.finalGrade;
+      }
+
       let responseFileUrl =
         auditResponseFileUrl != null && String(auditResponseFileUrl).trim()
           ? String(auditResponseFileUrl).trim().slice(0, 2000)
@@ -1265,10 +1375,12 @@ async function submitCourseCompletion({
              audit_notes = $3,
              audit_response_text = $4,
              audit_response_file_url = $5,
+             exam_question_marks = $6::jsonb,
+             exam_final_grade = $7,
              audit_submitted_at = NOW(),
              completed_at = NOW()
          WHERE course_id = $1 AND freelancer_id = $2`,
-        [cid, uid, notes, responseText, responseFileUrl],
+        [cid, uid, notes, responseText, responseFileUrl, examMarksJson, examFinalGrade],
       );
     } else {
       await client.query(
@@ -1330,4 +1442,5 @@ module.exports = {
   submitCourseCompletion,
   uploadCourseTestFile,
   uploadCoursePromptFile,
+  uploadCourseModelAnswerFile,
 };

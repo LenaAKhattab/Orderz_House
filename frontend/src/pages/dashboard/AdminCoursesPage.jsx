@@ -16,6 +16,7 @@ import {
   adminUpdateCourseRequest,
   adminUploadCourseTestFileRequest,
   adminUploadCoursePromptFileRequest,
+  adminUploadCourseModelAnswerFileRequest,
 } from "../../services/api";
 import { useToast } from "../../components/ui/toastContext";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
@@ -69,6 +70,8 @@ const EMPTY_CREATE_FORM = {
   isTestingEnabled: false,
   testFileUrl: "",
   testPromptFileUrl: "",
+  testModelAnswerFileUrl: "",
+  testQuestionCount: "",
 };
 
 function cloneCreateForm(form) {
@@ -97,9 +100,11 @@ export default function AdminCoursesPage() {
   const [createForm, setCreateForm] = useState(() => ({ ...EMPTY_CREATE_FORM }));
   const [testFileUploading, setTestFileUploading] = useState(false);
   const [promptFileUploading, setPromptFileUploading] = useState(false);
+  const [modelAnswerFileUploading, setModelAnswerFileUploading] = useState(false);
   /** PDF files chosen during create — uploaded right after the course is created. */
   const [createPendingTestFile, setCreatePendingTestFile] = useState(null);
   const [createPendingPromptFile, setCreatePendingPromptFile] = useState(null);
+  const [createPendingModelAnswerFile, setCreatePendingModelAnswerFile] = useState(null);
   const [importUrl, setImportUrl] = useState("");
   const [sendModal, setSendModal] = useState({ open: false, course: null });
   const [sendQuery, setSendQuery] = useState("");
@@ -124,7 +129,7 @@ export default function AdminCoursesPage() {
   const COURSE_FILE_UPLOAD_ERROR = "تعذر رفع الملف. تأكد أن الملف PDF وحاول مرة أخرى.";
 
   /** Server truth for file URLs — PATCH only sends file URLs when they differ from this snapshot. */
-  const serverFileUrlsRef = useRef({ testFileUrl: "", testPromptFileUrl: "" });
+  const serverFileUrlsRef = useRef({ testFileUrl: "", testPromptFileUrl: "", testModelAnswerFileUrl: "" });
   /** Form snapshot when composer modal opens — used for unsaved-close confirmation. */
   const composerSnapshotRef = useRef(null);
 
@@ -133,6 +138,7 @@ export default function AdminCoursesPage() {
     serverFileUrlsRef.current = {
       testFileUrl: String(course.testFileUrl || "").trim(),
       testPromptFileUrl: String(course.testPromptFileUrl || "").trim(),
+      testModelAnswerFileUrl: String(course.testModelAnswerFileUrl || "").trim(),
     };
   }, []);
 
@@ -142,12 +148,15 @@ export default function AdminCoursesPage() {
       syncServerFileUrls(course);
       const testFileUrl = course.testFileUrl || "";
       const testPromptFileUrl = course.testPromptFileUrl || "";
+      const testModelAnswerFileUrl = course.testModelAnswerFileUrl || "";
       if (String(editingCourseId) === String(courseId)) {
-        setCreateForm((s) => ({ ...s, testFileUrl, testPromptFileUrl }));
+        setCreateForm((s) => ({ ...s, testFileUrl, testPromptFileUrl, testModelAnswerFileUrl }));
       }
       if (String(selectedCourseId) === String(courseId)) {
         setSelectedCourse((prev) =>
-          prev?.course ? { ...prev, course: { ...prev.course, testFileUrl, testPromptFileUrl } } : prev,
+          prev?.course
+            ? { ...prev, course: { ...prev.course, testFileUrl, testPromptFileUrl, testModelAnswerFileUrl } }
+            : prev,
         );
       }
     },
@@ -168,11 +177,19 @@ export default function AdminCoursesPage() {
     const server = serverFileUrlsRef.current;
     const test = String(fields.testFileUrl ?? "").trim();
     const prompt = String(fields.testPromptFileUrl ?? "").trim();
+    const modelAnswer = String(fields.testModelAnswerFileUrl ?? "").trim();
     if (test !== String(server.testFileUrl || "").trim()) {
       patch.testFileUrl = test || null;
     }
     if (prompt !== String(server.testPromptFileUrl || "").trim()) {
       patch.testPromptFileUrl = prompt || null;
+    }
+    if (modelAnswer !== String(server.testModelAnswerFileUrl || "").trim()) {
+      patch.testModelAnswerFileUrl = modelAnswer || null;
+    }
+    if (fields.testQuestionCount !== undefined) {
+      const raw = String(fields.testQuestionCount ?? "").trim();
+      patch.testQuestionCount = raw === "" ? null : Number(raw);
     }
     return patch;
   }, []);
@@ -209,6 +226,7 @@ export default function AdminCoursesPage() {
               ...s,
               testFileUrl: details.course.testFileUrl || "",
               testPromptFileUrl: details.course.testPromptFileUrl || "",
+              testModelAnswerFileUrl: details.course.testModelAnswerFileUrl || "",
             }));
           }
         }
@@ -398,6 +416,13 @@ export default function AdminCoursesPage() {
     }
   }, []);
 
+  const onPendingCreateModelAnswerFile = useCallback((file) => {
+    setCreatePendingModelAnswerFile(file);
+    if (file) {
+      setCreateForm((s) => ({ ...s, testModelAnswerFileUrl: "" }));
+    }
+  }, []);
+
   const openCreateComposerModal = useCallback(() => {
     if (composerOpen) {
       if (isComposerDirty()) {
@@ -450,6 +475,26 @@ export default function AdminCoursesPage() {
     }
   };
 
+  const onUploadCourseModelAnswerFile = async (courseId, file) => {
+    if (!courseId || !file) return;
+    setModelAnswerFileUploading(true);
+    try {
+      const res = await adminUploadCourseModelAnswerFileRequest(courseId, file);
+      const course = res?.data?.course;
+      if (!course?.testModelAnswerFileUrl?.startsWith("http")) {
+        throw new Error(COURSE_FILE_UPLOAD_ERROR);
+      }
+      syncCourseFileFieldsFromServer(courseId, course);
+      toast.success("تم رفع ملف الإجابة النموذجية بنجاح.");
+      await loadCourses();
+      if (String(selectedCourseId) === String(courseId)) await loadCourseDetails(courseId);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || COURSE_FILE_UPLOAD_ERROR);
+    } finally {
+      setModelAnswerFileUploading(false);
+    }
+  };
+
   const onStartEditCourse = useCallback((course) => {
     const formState = {
       title: course.title || "",
@@ -460,6 +505,11 @@ export default function AdminCoursesPage() {
       isTestingEnabled: Boolean(course.isTestingEnabled),
       testFileUrl: course.testFileUrl || "",
       testPromptFileUrl: course.testPromptFileUrl || "",
+      testModelAnswerFileUrl: course.testModelAnswerFileUrl || "",
+      testQuestionCount:
+        course.testQuestionCount != null && !Number.isNaN(Number(course.testQuestionCount))
+          ? String(course.testQuestionCount)
+          : "",
     };
     setEditingCourseId(String(course.id));
     setEditingCourseMeta({
@@ -486,6 +536,8 @@ export default function AdminCoursesPage() {
           isTestingEnabled: createForm.isTestingEnabled,
           testFileUrl: createForm.testFileUrl,
           testPromptFileUrl: createForm.testPromptFileUrl,
+          testModelAnswerFileUrl: createForm.testModelAnswerFileUrl,
+          testQuestionCount: createForm.testQuestionCount,
         });
         const res = await adminUpdateCourseRequest(editingCourseId, patch);
         if (res?.data?.course) syncCourseFileFieldsFromServer(editingCourseId, res.data.course);
@@ -499,6 +551,9 @@ export default function AdminCoursesPage() {
         }
         if (newCourseId && createPendingPromptFile) {
           await onUploadCoursePromptFile(newCourseId, createPendingPromptFile);
+        }
+        if (newCourseId && createPendingModelAnswerFile) {
+          await onUploadCourseModelAnswerFile(newCourseId, createPendingModelAnswerFile);
         }
         toast.success("تم إنشاء الدورة وإضافة الدروس بنجاح.");
         setComposerOpen(false);
@@ -555,6 +610,12 @@ export default function AdminCoursesPage() {
         isTestingEnabled: Boolean(selectedCourse.course.isTestingEnabled),
         testFileUrl: selectedCourse.course.testFileUrl || "",
         testPromptFileUrl: selectedCourse.course.testPromptFileUrl || "",
+        testModelAnswerFileUrl: selectedCourse.course.testModelAnswerFileUrl || "",
+        testQuestionCount:
+          selectedCourse.course.testQuestionCount != null &&
+          !Number.isNaN(Number(selectedCourse.course.testQuestionCount))
+            ? selectedCourse.course.testQuestionCount
+            : "",
       });
       const res = await adminUpdateCourseRequest(selectedCourseId, patch);
       if (res?.data?.course) syncCourseFileFieldsFromServer(selectedCourseId, res.data.course);
@@ -768,6 +829,20 @@ export default function AdminCoursesPage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [composerOpen, creating, composerUnsavedConfirmOpen, requestCloseComposerModal]);
+
+  /** Lock page scroll while composer is open (body + admin outlet scroll container). */
+  useEffect(() => {
+    if (!composerOpen) return undefined;
+    const outlet = document.querySelector(".oh-sa-outlet");
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevOutletOverflow = outlet instanceof HTMLElement ? outlet.style.overflow : "";
+    document.body.style.overflow = "hidden";
+    if (outlet instanceof HTMLElement) outlet.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      if (outlet instanceof HTMLElement) outlet.style.overflow = prevOutletOverflow;
+    };
+  }, [composerOpen]);
 
   useEffect(() => {
     if (!composerUnsavedConfirmOpen) return undefined;
@@ -1034,27 +1109,29 @@ export default function AdminCoursesPage() {
               </button>
             </header>
 
-            <div className="oh-admin-courses__modal-body oh-admin-courses__composer-modal-body">
-              <AdminCourseCreateComposer
-                mode={editingCourseId ? "edit" : "create"}
-                form={createForm}
-                setForm={setCreateForm}
-                creating={creating}
-                editingCourseId={editingCourseId}
-                editMeta={editingCourseMeta}
-                onSubmit={onComposerSubmit}
-                onCancelEdit={requestCloseComposerModal}
-                onUploadCourseTestFile={onUploadCourseTestFile}
-                onUploadCoursePromptFile={onUploadCoursePromptFile}
-                onUploadError={(msg) => toast.error(msg)}
-                testFileUploading={testFileUploading}
-                promptFileUploading={promptFileUploading}
-                pendingCreateTestFile={createPendingTestFile}
-                pendingCreatePromptFile={createPendingPromptFile}
-                onPendingCreateTestFile={onPendingCreateTestFile}
-                onPendingCreatePromptFile={onPendingCreatePromptFile}
-              />
-            </div>
+            <AdminCourseCreateComposer
+              mode={editingCourseId ? "edit" : "create"}
+              form={createForm}
+              setForm={setCreateForm}
+              creating={creating}
+              editingCourseId={editingCourseId}
+              editMeta={editingCourseMeta}
+              onSubmit={onComposerSubmit}
+              onCancelEdit={requestCloseComposerModal}
+              onUploadCourseTestFile={onUploadCourseTestFile}
+              onUploadCoursePromptFile={onUploadCoursePromptFile}
+              onUploadCourseModelAnswerFile={onUploadCourseModelAnswerFile}
+              onUploadError={(msg) => toast.error(msg)}
+              testFileUploading={testFileUploading}
+              promptFileUploading={promptFileUploading}
+              modelAnswerFileUploading={modelAnswerFileUploading}
+              pendingCreateTestFile={createPendingTestFile}
+              pendingCreatePromptFile={createPendingPromptFile}
+              pendingCreateModelAnswerFile={createPendingModelAnswerFile}
+              onPendingCreateTestFile={onPendingCreateTestFile}
+              onPendingCreatePromptFile={onPendingCreatePromptFile}
+              onPendingCreateModelAnswerFile={onPendingCreateModelAnswerFile}
+            />
           </div>
         </div>
       ) : null}
@@ -1240,6 +1317,63 @@ export default function AdminCoursesPage() {
                               }}
                               onValidationError={(msg) => toast.error(msg)}
                             />
+                            <div className="oh-admin-courses__exam-block">
+                              <h4 className="oh-admin-courses__exam-block-title">ملف الإجابة النموذجية</h4>
+                              <CourseFileUploadField
+                                label="رفع ملف من الجهاز"
+                                fileUrl={selectedCourse.course.testModelAnswerFileUrl}
+                                updatedAt={selectedCourse.course.updatedAt}
+                                disabled={loading}
+                                uploading={modelAnswerFileUploading}
+                                isEdit
+                                courseId={selectedCourseId}
+                                fileKind="model-answer"
+                                onFileSelected={(f) => {
+                                  if (selectedCourseId) void onUploadCourseModelAnswerFile(selectedCourseId, f);
+                                }}
+                                onValidationError={(msg) => toast.error(msg)}
+                              />
+                              <CourseUrlField
+                                label="أو رابط ملف الإجابة النموذجية"
+                                optional
+                                value={selectedCourse.course.testModelAnswerFileUrl || ""}
+                                onChange={(e) =>
+                                  setSelectedCourse((s) => ({
+                                    ...s,
+                                    course: { ...s.course, testModelAnswerFileUrl: e.target.value },
+                                  }))
+                                }
+                                updatedAt={selectedCourse.course.updatedAt}
+                                linkTitle="رابط ملف الإجابة النموذجية"
+                              />
+                            </div>
+                            <label className="oh-admin-courses__field">
+                              <span>عدد أسئلة الاختبار</span>
+                              <input
+                                className="oh-admin-courses__input"
+                                type="number"
+                                min={1}
+                                step={1}
+                                value={
+                                  selectedCourse.course.testQuestionCount != null
+                                    ? String(selectedCourse.course.testQuestionCount)
+                                    : ""
+                                }
+                                onChange={(e) =>
+                                  setSelectedCourse((s) => ({
+                                    ...s,
+                                    course: {
+                                      ...s.course,
+                                      testQuestionCount: e.target.value === "" ? null : Number(e.target.value),
+                                    },
+                                  }))
+                                }
+                                placeholder="مثال: 5"
+                              />
+                              <span className="oh-admin-courses__field-hint">
+                                يحدد عدد حقول إدخال الدرجات (سؤال 1، سؤال 2، …) عند التسليم.
+                              </span>
+                            </label>
                           </>
                         ) : null}
                         <div className="oh-admin-courses__submit-row">
@@ -1476,6 +1610,34 @@ export default function AdminCoursesPage() {
                                 <div className="oh-admin-courses__progress-stats">
                                   التقدم: {a.progress?.completedLessons ?? 0}/{a.progress?.totalLessons ?? 0} ({a.progress?.percentage ?? 0}%)
                                 </div>
+                                {a.examFinalGrade != null ? (
+                                  <div className="oh-admin-courses__exam-grade-block">
+                                    <div className="oh-admin-courses__exam-grade-head">
+                                      <strong>الدرجة النهائية: {a.examFinalGrade}%</strong>
+                                      {a.examSubmittedAt ? (
+                                        <span className="oh-admin-courses__exam-grade-date">
+                                          تاريخ التسليم:{" "}
+                                          {new Intl.DateTimeFormat("ar-JO-u-nu-latn", {
+                                            dateStyle: "medium",
+                                          }).format(new Date(a.examSubmittedAt))}
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                    {Array.isArray(a.examQuestionMarks) && a.examQuestionMarks.length > 0 ? (
+                                      <ul className="oh-admin-courses__exam-marks-list">
+                                        {a.examQuestionMarks.map((mark, idx) => (
+                                          <li key={`${a.freelancerId}-q-${idx}`}>
+                                            س{idx + 1}: {mark}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : null}
+                                  </div>
+                                ) : selectedCourse.course.isTestingEnabled &&
+                                  (a.progress?.completedLessons ?? 0) >= (a.progress?.totalLessons ?? 0) &&
+                                  (a.progress?.totalLessons ?? 0) > 0 ? (
+                                  <p className="oh-admin-courses__exam-grade-pending">بانتظار تسليم الاختبار النهائي</p>
+                                ) : null}
                               </div>
                             ))}
                           </div>

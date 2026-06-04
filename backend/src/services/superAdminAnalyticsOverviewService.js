@@ -5,6 +5,13 @@
 
 const posthogAnalyticsService = require("./posthogAnalyticsService");
 const businessMetrics = require("./superAdminBusinessMetricsService");
+const { getOrSet } = require("../utils/superAdminDashboardCache");
+const { timedDashboardSection } = require("../utils/superAdminDashboardTiming");
+
+const POSTHOG_OVERVIEW_CACHE_TTL_MS = Math.min(
+  Math.max(Number(process.env.SUPERADMIN_DASHBOARD_POSTHOG_CACHE_MS) || 120_000, 60_000),
+  300_000,
+);
 
 function normalizeRange(range) {
   const r = String(range || "7d").trim();
@@ -69,51 +76,74 @@ async function loadPosthogSlice(cfg, { range, topLimit }) {
   }
 }
 
+async function getPosthogProductAnalytics({ range: rangeIn, topLimit } = {}) {
+  const range = normalizeRange(rangeIn);
+  const limit = Math.max(1, Math.min(50, Math.trunc(Number(topLimit) || 10)));
+  const cacheKey = `posthog-overview:${range}:${limit}`;
+
+  return getOrSet(cacheKey, POSTHOG_OVERVIEW_CACHE_TTL_MS, async () => {
+    const updatedAt = new Date().toISOString();
+    const cfg = posthogAnalyticsService.readPosthogCredentialsLoose();
+    const posthogResult = await timedDashboardSection("analytics/visitors", "posthog", () =>
+      loadPosthogSlice(cfg, { range, topLimit: limit }),
+    );
+    const posthogSlice = posthogResult.slice;
+    const posthogError = posthogResult.error;
+    const events = posthogError || !posthogSlice ? null : posthogSlice.eventCounts || emptyEventCounts();
+
+    return {
+      updatedAt,
+      range,
+      meta: {
+        posthogConfigured: Boolean(cfg),
+        posthogError,
+        currency: "JOD",
+      },
+      kpis: {
+        visitorsToday: posthogSlice?.kpisToday?.visitorsToday ?? null,
+        activeUsersToday: posthogSlice?.kpisToday?.activeUsersToday ?? null,
+        ordersToday: posthogSlice?.kpisToday?.ordersToday ?? null,
+      },
+      trends: {
+        visitorsByDay: posthogSlice?.trends?.visitorsByDay ?? [],
+        ordersByDay: posthogSlice?.trends?.ordersByDay ?? [],
+      },
+      events,
+      topPages: posthogSlice?.topPages ?? [],
+      conversion: buildConversionSummary(events),
+    };
+  });
+}
+
+/** Full overview (DB + PostHog) — used by dedicated analytics pages. */
 async function getAnalyticsOverview({ range: rangeIn, topLimit } = {}) {
   const range = normalizeRange(rangeIn);
-  const updatedAt = new Date().toISOString();
-  const cfg = posthogAnalyticsService.readPosthogCredentialsLoose();
-
-  const [dbResult, posthogResult] = await Promise.all([
-    Promise.all([
-      businessMetrics.getRevenueTodayJod(),
-      businessMetrics.getActivePaidSubscriptionsCount(),
-      businessMetrics.getRevenueByDayLast7Days(),
-    ]),
-    loadPosthogSlice(cfg, { range, topLimit }),
+  const [business, posthog] = await Promise.all([
+    businessMetrics.getDashboardBusinessKpis(),
+    getPosthogProductAnalytics({ range, topLimit }),
   ]);
 
-  const [revenueTodayJod, activeSubscriptions, revenueByDay] = dbResult;
-  const posthogSlice = posthogResult.slice;
-  const posthogError = posthogResult.error;
-  const events = posthogSlice?.eventCounts || emptyEventCounts();
-
   return {
-    updatedAt,
+    ...posthog,
+    updatedAt: new Date().toISOString(),
     range,
     meta: {
-      posthogConfigured: Boolean(cfg),
-      posthogError,
-      currency: "JOD",
+      ...posthog.meta,
+      currency: business.currency || "JOD",
     },
     kpis: {
-      visitorsToday: posthogSlice?.kpisToday?.visitorsToday ?? null,
-      activeUsersToday: posthogSlice?.kpisToday?.activeUsersToday ?? null,
-      ordersToday: posthogSlice?.kpisToday?.ordersToday ?? null,
-      revenueTodayJod,
-      activeSubscriptions,
+      ...posthog.kpis,
+      revenueTodayJod: business.revenueTodayJod,
+      activeSubscriptions: business.activeSubscriptions,
     },
     trends: {
-      visitorsByDay: posthogSlice?.trends?.visitorsByDay ?? [],
-      ordersByDay: posthogSlice?.trends?.ordersByDay ?? [],
-      revenueByDay,
+      ...posthog.trends,
+      revenueByDay: business.revenueByDay,
     },
-    events,
-    topPages: posthogSlice?.topPages ?? [],
-    conversion: buildConversionSummary(events),
   };
 }
 
 module.exports = {
   getAnalyticsOverview,
+  getPosthogProductAnalytics,
 };

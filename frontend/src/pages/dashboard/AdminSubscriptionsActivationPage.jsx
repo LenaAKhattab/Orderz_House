@@ -7,6 +7,7 @@ import { breadcrumbHomeFromUser, superAdminBreadcrumbs } from "../../components/
 import { activateSubscriptionCompanyRequest, listSubscriptionsRequest } from "../../services/api";
 import { useAuth } from "../../context/useAuth";
 import { AdminInlineGridSkeleton } from "../../components/ui/Skeleton";
+import { formatSubscriptionPaymentCountry } from "../../utils/countryDisplay";
 
 function errorMessage(err) {
   return err?.response?.data?.message || "تعذر تنفيذ العملية. حاول مجدداً.";
@@ -26,6 +27,38 @@ function formatJoDateTime(value) {
 function fullNameAr(user) {
   const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
   return parts.join(" ").trim();
+}
+
+function planLabel(s) {
+  if (s?.plan?.title) return s.plan.title;
+  if (s?.planId != null && String(s.planId).trim() !== "") return `الباقة #${String(s.planId)}`;
+  return "—";
+}
+
+function paymentStatusLabel(status) {
+  const p = String(status || "").trim().toLowerCase();
+  if (p === "pending") return "قيد الانتظار";
+  if (p === "paid") return "مدفوع";
+  if (p === "not_required") return "لا يتطلب دفعاً";
+  if (p === "failed" || p === "unpaid") return "غير مكتمل";
+  return status || "—";
+}
+
+function activationStatusLabel(status) {
+  const s = String(status || "").trim().toLowerCase();
+  if (s === "company_pending") return "بانتظار تفعيل الشركة";
+  if (s === "company_approved") return "مفعّل";
+  if (s === "company_rejected") return "مرفوض";
+  return status || "—";
+}
+
+function paymentDateLabel(s) {
+  const payment = String(s?.paymentStatus || "").trim().toLowerCase();
+  if (s?.paidAt) return formatJoDateTime(s.paidAt);
+  if (payment === "pending") return "بانتظار الدفع";
+  if (payment === "not_required") return "لا يتطلب دفعاً";
+  if (payment === "paid") return "تم الدفع (الوقت غير مسجل)";
+  return "—";
 }
 
 export default function AdminSubscriptionsActivationPage() {
@@ -120,14 +153,21 @@ export default function AdminSubscriptionsActivationPage() {
             {pendingCompanyActivation.map((s) => (
               <article className="card" key={s.id}>
                 <h3>اشتراك #{s.id}</h3>
-                <p>الاسم: {fullNameAr(s?.freelancer) || "—"}</p>
+                <p>
+                  الاسم: {fullNameAr(s?.freelancer) || "—"}
+                  <span className="block text-sm font-semibold text-slate-500" style={{ marginTop: 4 }}>
+                    {formatSubscriptionPaymentCountry({
+                      countryCode: s.paymentCountryCode,
+                      paymentStatus: s.paymentStatus,
+                    })}
+                  </span>
+                </p>
                 <p>البريد: {s?.freelancer?.email || "—"}</p>
-                <p>account_id: {s?.freelancer?.accountId || "—"}</p>
-                <p>planId: {s.planId}</p>
-                <p>حالة الدفع: {s.paymentStatus || "—"}</p>
-                <p>حالة التفعيل: {s.activationStatus || "—"}</p>
-                <p>assignedAt: {formatJoDateTime(s.assignedAt)}</p>
-                <p>paidAt: {formatJoDateTime(s.paidAt)}</p>
+                <p>الباقة: {planLabel(s)}</p>
+                <p>حالة الدفع: {paymentStatusLabel(s.paymentStatus)}</p>
+                <p>حالة التفعيل: {activationStatusLabel(s.activationStatus)}</p>
+                <p>تاريخ الإسناد: {formatJoDateTime(s.assignedAt)}</p>
+                <p>تاريخ الدفع: {paymentDateLabel(s)}</p>
                 <div className="auth-actions-row auth-actions-row--split" style={{ marginTop: 10 }}>
                   <Button
                     type="button"

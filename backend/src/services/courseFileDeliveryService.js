@@ -9,7 +9,7 @@ const {
 
 function normalizeFileKind(fileKind) {
   const k = String(fileKind || "").toLowerCase();
-  if (k === "test" || k === "prompt") return k;
+  if (k === "test" || k === "prompt" || k === "model-answer") return k;
   const err = new Error("نوع الملف غير صالح.");
   err.statusCode = 400;
   throw err;
@@ -45,7 +45,12 @@ async function freelancerHasCourseAccess(client, courseId, freelancerUserId) {
 }
 
 function resolveStoredFileUrl(courseRow, fileKind) {
-  const url = fileKind === "test" ? courseRow.test_file_url : courseRow.test_prompt_file_url;
+  const url =
+    fileKind === "test"
+      ? courseRow.test_file_url
+      : fileKind === "prompt"
+        ? courseRow.test_prompt_file_url
+        : courseRow.test_model_answer_file_url;
   const trimmed = url != null ? String(url).trim() : "";
   if (!trimmed) {
     const err = new Error("الملف غير متوفر لهذه الدورة.");
@@ -78,7 +83,7 @@ async function streamCourseFileForFreelancer({ freelancerUserId, courseId, fileK
       throw err;
     }
     const { rows } = await client.query(
-      `SELECT id, is_testing_enabled, test_file_url, test_prompt_file_url
+      `SELECT id, is_testing_enabled, test_file_url, test_prompt_file_url, test_model_answer_file_url
        FROM courses
        WHERE id = $1 AND is_active = TRUE
        LIMIT 1`,
@@ -118,7 +123,7 @@ async function streamCourseFileForAdmin({ actorUserId, courseId, fileKind, downl
   try {
     await assertAdminOrSuperAdmin(actorUserId, client);
     const { rows } = await client.query(
-      `SELECT id, is_testing_enabled, test_file_url, test_prompt_file_url
+      `SELECT id, is_testing_enabled, test_file_url, test_prompt_file_url, test_model_answer_file_url
        FROM courses
        WHERE id = $1
        LIMIT 1`,

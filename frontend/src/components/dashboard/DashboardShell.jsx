@@ -15,9 +15,9 @@ import { runDashboardShellDevLayoutCheck } from "./dashboardShellDevLayoutCheck.
  * - If a form needs to be narrow, **narrow only the inner form** (or a wrapper inside sections), not
  *   the shell, header, or section cards.
  *
- * @param {{ children: import("react").ReactNode; className?: string }} p
+ * @param {{ children: import("react").ReactNode; className?: string; dir?: "rtl" | "ltr"; lang?: string }} p
  */
-export default function DashboardShell({ children, className = "" }) {
+export default function DashboardShell({ children, className = "", dir = "rtl", lang = "ar" }) {
   const shellRef = useRef(null);
   const { pathname } = useLocation();
 
@@ -67,6 +67,8 @@ export default function DashboardShell({ children, className = "" }) {
   return (
     <div
       ref={shellRef}
+      dir={dir}
+      lang={lang}
       className={`dash-ui-shell flex w-full min-w-0 max-w-full flex-col items-stretch box-border px-4 pb-12 pt-4 sm:px-5 ${className}`.trim()}
     >
       {children}

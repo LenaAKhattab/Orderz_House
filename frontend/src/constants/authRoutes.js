@@ -27,7 +27,6 @@ export const DASHBOARD_TITLE = {
   "/dashboard/client/financial": "المالية",
   "/dashboard/client/orders": "معرض الطلبات",
   "/dashboard/super-admin/plans": "إدارة الباقات",
-  "/dashboard/super-admin/analytics": "تحليلات المنتج",
   "/dashboard/super-admin/subscriptions": "اشتراكات المستقلين",
   "/dashboard/super-admin/subscriptions/activation": "تفعيل الاشتراكات",
   "/dashboard/super-admin/financial-claims": "المطالبات المالية",
@@ -104,7 +103,6 @@ export function isDashboardPath(pathname) {
 const DASHBOARD_PATH_TO_ROLES = {
   [DASHBOARD_PATH[ROLE.SUPER_ADMIN]]: [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/plans": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/analytics": [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/subscriptions": [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/subscriptions/activation": [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/financial-claims": [ROLE.SUPER_ADMIN],

@@ -31,6 +31,16 @@ async function getRevenueTodayJod() {
   return num(oRows[0]?.total) + num(sRows[0]?.total);
 }
 
+/** All real orders created today (server local calendar day) — matches orders intelligence totals. */
+async function getOrdersTodayCount() {
+  const { rows } = await pool.query(
+    `SELECT COUNT(*)::int AS n
+     FROM orders
+     WHERE created_at >= date_trunc('day', now())`,
+  );
+  return Math.trunc(Number(rows[0]?.n) || 0);
+}
+
 /** Paid freelancer subscriptions currently active (current row + active status + not past expiry). */
 async function getActivePaidSubscriptionsCount() {
   const { rows } = await pool.query(
@@ -88,8 +98,28 @@ async function getRevenueByDayLast7Days() {
   }));
 }
 
+/** Fast DB-only payload for Super Admin home (no PostHog). */
+async function getDashboardBusinessKpis() {
+  const [revenueTodayJod, activeSubscriptions, revenueByDay, ordersToday] = await Promise.all([
+    getRevenueTodayJod(),
+    getActivePaidSubscriptionsCount(),
+    getRevenueByDayLast7Days(),
+    getOrdersTodayCount(),
+  ]);
+  return {
+    updatedAt: new Date().toISOString(),
+    currency: "JOD",
+    revenueTodayJod,
+    activeSubscriptions,
+    revenueByDay,
+    ordersToday,
+  };
+}
+
 module.exports = {
   getRevenueTodayJod,
+  getOrdersTodayCount,
   getActivePaidSubscriptionsCount,
   getRevenueByDayLast7Days,
+  getDashboardBusinessKpis,
 };

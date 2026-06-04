@@ -5,6 +5,7 @@ const adminCoursesController = require("../controllers/adminCoursesController");
 const {
   uploadCourseTestFile: uploadCourseTestFileMw,
   uploadCoursePromptFile: uploadCoursePromptFileMw,
+  uploadCourseModelAnswerFile: uploadCourseModelAnswerFileMw,
 } = require("../middleware/courseUploadMiddleware");
 const {
   createCourseValidators,
@@ -48,6 +49,13 @@ router.post(
   validateRequest,
   uploadCoursePromptFileMw,
   adminCoursesController.uploadCoursePromptFile,
+);
+router.post(
+  "/courses/:id/model-answer-file",
+  courseIdParam,
+  validateRequest,
+  uploadCourseModelAnswerFileMw,
+  adminCoursesController.uploadCourseModelAnswerFile,
 );
 router.post("/courses/:id/publish", publishCourseValidators, validateRequest, adminCoursesController.publishCourse);
 router.post("/courses/:id/archive", archiveCourseValidators, validateRequest, adminCoursesController.archiveCourse);

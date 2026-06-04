@@ -10,7 +10,7 @@ const STRIP_STATS = [
   { key: "open", label: "مفتوحة", hint: "طلبات بحاجة لبدء", demo: FALLBACK_DEMO.open, tone: "orange", kind: "project" },
   { key: "inProgress", label: "قيد التنفيذ", hint: "طلبات جارية", demo: FALLBACK_DEMO.inProgress, tone: "gold", kind: "project" },
   { key: "completed", label: "مكتملة", hint: "طلبات منجزة", demo: FALLBACK_DEMO.completed, tone: "green", kind: "project" },
-  { key: "views", label: "مشاهدات", hint: "هذا الأسبوع", demo: FALLBACK_DEMO.views, tone: "blue", kind: "analytics" },
+  { key: "views", label: "مشاهدات", hint: "إجمالي الموقع", demo: FALLBACK_DEMO.views, tone: "blue", kind: "analytics" },
   { key: "active", label: "مستخدمون نشطون", hint: "هذا الأسبوع", demo: FALLBACK_DEMO.activeUsers, tone: "purple", kind: "analytics" },
 ];
 

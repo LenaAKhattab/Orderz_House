@@ -202,6 +202,19 @@ async function uploadCoursePromptFile(req, res, next) {
   }
 }
 
+async function uploadCourseModelAnswerFile(req, res, next) {
+  try {
+    const out = await coursesService.uploadCourseModelAnswerFile({
+      actorUserId: req.auth.userId,
+      courseId: req.params.id,
+      file: req.file,
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function streamCourseFile(req, res, next) {
   try {
     const download = req.query.download === "1" || req.query.download === "true";
@@ -233,5 +246,6 @@ module.exports = {
   listFreelancers,
   uploadCourseTestFile,
   uploadCoursePromptFile,
+  uploadCourseModelAnswerFile,
   streamCourseFile,
 };

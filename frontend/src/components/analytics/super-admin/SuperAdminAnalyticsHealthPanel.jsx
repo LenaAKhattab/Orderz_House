@@ -156,7 +156,7 @@ export default function SuperAdminAnalyticsHealthPanel() {
                 >
                   <ul className="sa-analytics-health__list">
                     <li>آخر $pageview: {fmtTime(health?.snapshot?.lastPageviewAt)}</li>
-                    <li>زوار (7 أيام): {health?.snapshot?.visitorsLast7Days != null ? health.snapshot.visitorsLast7Days : "—"}</li>
+                    <li>مشاهدات ($pageview، كل الوقت): {health?.snapshot?.pageViewsAllTime != null ? health.snapshot.pageViewsAllTime : "—"}</li>
                     <li>نشطون (7 أيام): {health?.snapshot?.activeUsersLast7Days != null ? health.snapshot.activeUsersLast7Days : "—"}</li>
                   </ul>
                 </HealthCard>

@@ -772,7 +772,7 @@ export const getSuperadminVisitorsAnalyticsRequest = async (params = {}, options
       range: params.range || "7d",
       topLimit: params.topLimit || 10,
     },
-    timeout: 30000,
+    timeout: 12000,
     signal,
     ...axiosOptions,
   });
@@ -782,7 +782,165 @@ export const getSuperadminVisitorsAnalyticsRequest = async (params = {}, options
 export const getSuperadminDashboardSummaryRequest = async (options = {}) => {
   const { signal, ...axiosOptions } = options;
   const { data } = await api.get("/superadmin/dashboard/summary", {
+    timeout: 10000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+/** Fast DB-only business KPIs (no PostHog) for Super Admin home. */
+export const getSuperadminDashboardBusinessKpisRequest = async (options = {}) => {
+  const { signal, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/business-kpis", {
+    timeout: 8000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+/** Super Admin home — single bundle (summary + KPIs + PostHog 7d + intelligence). Legacy / fallback. */
+export const getSuperadminDashboardHomeBundleRequest = async (options = {}) => {
+  const { signal, params, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/home-bundle", {
     timeout: 30000,
+    signal,
+    params,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+/** Super Admin home — fast first paint (summary, business KPIs, attention only). */
+export const getSuperadminDashboardHomeFastRequest = async (options = {}) => {
+  const { signal, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/home-fast", {
+    timeout: 10000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+/** Super Admin home — executive month comparison (non-blocking for hero KPIs). */
+export const getSuperadminDashboardExecutiveKpisRequest = async (options = {}) => {
+  const { signal, params, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/executive-kpis", {
+    timeout: 12000,
+    signal,
+    params,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+/** Super Admin home — heavy SQL intelligence sections (no PostHog). */
+export const getSuperadminDashboardHomeIntelligenceRequest = async (options = {}) => {
+  const { signal, params, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/home-intelligence", {
+    timeout: 30000,
+    signal,
+    params,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+export const getSuperadminDashboardIntelligenceSummaryRequest = async (options = {}) => {
+  const { signal, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/intelligence/summary", {
+    timeout: 12000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+export const getSuperadminDashboardIntelligenceOrdersRequest = async (options = {}) => {
+  const { signal, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/intelligence/orders", {
+    timeout: 15000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+export const getSuperadminDashboardIntelligenceClientsRequest = async (options = {}) => {
+  const { signal, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/intelligence/clients", {
+    timeout: 12000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+export const getSuperadminDashboardIntelligenceFreelancersRequest = async (options = {}) => {
+  const { signal, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/intelligence/freelancers", {
+    timeout: 12000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+export const getSuperadminDashboardIntelligenceSubscriptionsRequest = async (options = {}) => {
+  const { signal, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/intelligence/subscriptions", {
+    timeout: 15000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+export const getSuperadminDashboardIntelligenceCoursesRequest = async (options = {}) => {
+  const { signal, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/intelligence/courses", {
+    timeout: 12000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+export const getSuperadminDashboardIntelligenceCategoriesRequest = async (options = {}) => {
+  const { signal, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/intelligence/categories", {
+    timeout: 12000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+export const getSuperadminDashboardIntelligenceFinancialRequest = async (options = {}) => {
+  const { signal, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/intelligence/financial", {
+    timeout: 12000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+export const getSuperadminDashboardIntelligenceAttentionRequest = async (options = {}) => {
+  const { signal, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/intelligence/attention", {
+    timeout: 12000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+export const getSuperadminDashboardIntelligenceActivityRequest = async (options = {}) => {
+  const { signal, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/intelligence/activity", {
+    timeout: 12000,
     signal,
     ...axiosOptions,
   });
@@ -913,6 +1071,13 @@ export const adminUploadCoursePromptFileRequest = async (courseId, file) => {
   return data;
 };
 
+export const adminUploadCourseModelAnswerFileRequest = async (courseId, file) => {
+  const fd = new FormData();
+  fd.append("modelAnswerFile", file);
+  const { data } = await api.post(`/admin/courses/${courseId}/model-answer-file`, fd, { timeout: 120000 });
+  return data;
+};
+
 export const adminPublishCourseRequest = async (courseId) => {
   const { data } = await api.post(`/admin/courses/${courseId}/publish`);
   return data;
@@ -982,13 +1147,16 @@ export const freelancerMarkLessonCompleteRequest = async (courseId, lessonId) =>
 
 export const freelancerSubmitCourseCompletionRequest = async (courseId, payload = {}) => {
   const file = payload?.auditResponseFile;
-  if (file instanceof File) {
+  const marks = payload?.questionMarks;
+  const hasMarks = Array.isArray(marks) && marks.length > 0;
+  if (file instanceof File || hasMarks) {
     const fd = new FormData();
     if (payload.auditResponseText != null && String(payload.auditResponseText).trim()) {
       fd.append("auditResponseText", String(payload.auditResponseText).trim());
     }
     if (payload.auditNotes) fd.append("auditNotes", String(payload.auditNotes).trim());
-    fd.append("auditResponseFile", file);
+    if (file instanceof File) fd.append("auditResponseFile", file);
+    if (hasMarks) fd.append("questionMarks", JSON.stringify(marks));
     const { data } = await api.post(`/freelancer/courses/${courseId}/complete`, fd, { timeout: 120000 });
     return data;
   }

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 import { useAuth } from "../context/useAuth";
@@ -35,7 +36,6 @@ function useOnClickOutside(ref, handler) {
 function breadcrumbLabel(pathname) {
   const base = ["الرئيسية"];
   if (pathname.includes("/subscriptions/activation")) base.push("تفعيل الاشتراكات");
-  else if (pathname.includes("/analytics")) base.push("تحليلات المنتج");
   else if (pathname.includes("/plans")) base.push("الباقات");
   else if (pathname.includes("/courses")) base.push("الدورات");
   else if (pathname.includes("/super-admin/ads")) base.push("الإعلانات");
@@ -46,9 +46,18 @@ function breadcrumbLabel(pathname) {
   return base.join(" › ");
 }
 
+const SUPER_ADMIN_SIDEBAR_COLLAPSED_KEY = "superAdminSidebarCollapsed";
+
+function readSidebarCollapsedPreference() {
+  try {
+    return localStorage.getItem(SUPER_ADMIN_SIDEBAR_COLLAPSED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
 const NAV_MAIN = [
   { to: "/dashboard/super-admin", label: "نظرة عامة", icon: "⌂", end: true },
-  { to: "/dashboard/super-admin/analytics", label: "تحليلات المنتج", icon: "▤" },
   { to: "/dashboard/super-admin/plans", label: "الباقات", icon: "◆" },
   { to: "/dashboard/super-admin/courses", label: "الدورات", icon: "▶" },
   { to: "/dashboard/super-admin/ads", label: "الإعلانات", icon: "✴", end: true },
@@ -71,9 +80,22 @@ export default function SuperAdminLayout() {
   const navigate = useNavigate();
   const { openModal: openClientCreateOrderModal } = useClientCreateOrderModal();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => readSidebarCollapsedPreference());
   const userMenuRef = useRef(null);
 
   useOnClickOutside(userMenuRef, () => setUserMenuOpen(false));
+
+  const toggleSidebarCollapsed = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SUPER_ADMIN_SIDEBAR_COLLAPSED_KEY, String(next));
+      } catch {
+        /* ignore storage errors */
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     queueMicrotask(() => setUserMenuOpen(false));
@@ -86,68 +108,87 @@ export default function SuperAdminLayout() {
   const notificationsPath = getNotificationsPath(role);
   const accountSettingsPath = getAccountSettingsPath(role);
 
+  const shellClassName = `oh-sa-shell${sidebarCollapsed ? " oh-sa-shell--sidebar-collapsed" : ""}`;
+  const navClassName = `oh-sa-nav${sidebarCollapsed ? " oh-sa-nav--collapsed" : ""}`;
+
   return (
-    <div className="oh-sa-shell" dir="rtl" lang="ar">
-      <aside className="oh-sa-nav" aria-label="قائمة المدير الأعلى">
-        <div className="oh-sa-brand oh-sa-brand--full-logo">
-          <img
-            src="/hero/fullLogp.png"
-            alt="أوردرز هاوس"
-            className="oh-sa-brand__logo"
-            width={200}
-            height={56}
-            decoding="async"
-          />
-          <div className="oh-sa-brand__sub">لوحة المدير الأعلى</div>
+    <div className={shellClassName} dir="rtl" lang="ar">
+      <div className="oh-sa-shell__grid">
+        <div className="oh-sa-sidebar-wrap">
+          <button
+            type="button"
+            className="oh-sa-sidebar__collapse oh-sa-icon-button-3d"
+            onClick={toggleSidebarCollapsed}
+            aria-label={sidebarCollapsed ? "فتح القائمة الجانبية" : "طي القائمة الجانبية"}
+            aria-expanded={!sidebarCollapsed}
+          >
+            {sidebarCollapsed ? (
+              <PanelLeftOpen className="oh-sa-sidebar__collapse-icon" size={22} strokeWidth={1.75} aria-hidden />
+            ) : (
+              <PanelLeftClose className="oh-sa-sidebar__collapse-icon" size={22} strokeWidth={1.75} aria-hidden />
+            )}
+          </button>
+
+          <aside className={navClassName} aria-label="قائمة المدير الأعلى">
+            <div className="oh-sa-brand oh-sa-brand--full-logo">
+              <img
+                src="/hero/fullLogp.png"
+                alt="أوردرز هاوس"
+                className="oh-sa-brand__logo"
+                width={200}
+                height={56}
+                decoding="async"
+              />
+              <div className="oh-sa-brand__sub">لوحة المدير الأعلى</div>
+            </div>
+
+            <ul className="oh-sa-nav__list">
+              {NAV_MAIN.map((item) => (
+                <li key={item.to}>
+                  <NavLink
+                    to={item.to}
+                    end={Boolean(item.end)}
+                    className={({ isActive }) => {
+                      const prefix = item.matchPrefix && pathname.startsWith(item.matchPrefix);
+                      const active = isActive || prefix;
+                      return `oh-sa-navlink${active ? " oh-sa-navlink--active" : ""}`.trim();
+                    }}
+                  >
+                    <span className="oh-sa-navlink__icon" aria-hidden>
+                      {item.icon}
+                    </span>
+                    <span className="oh-sa-navlink__label">{item.label}</span>
+                  </NavLink>
+                </li>
+              ))}
+              <li>
+                <button
+                  type="button"
+                  className="oh-sa-navlink oh-sa-navlink--button"
+                  onClick={() => openClientCreateOrderModal()}
+                >
+                  <span className="oh-sa-navlink__icon" aria-hidden>
+                    +
+                  </span>
+                  <span className="oh-sa-navlink__label">إنشاء طلب</span>
+                </button>
+              </li>
+            </ul>
+
+            <ul className="oh-sa-nav__list oh-sa-nav__list--muted">
+              <li>
+                <NavLink to="/" className="oh-sa-navlink">
+                  <span className="oh-sa-navlink__icon" aria-hidden>
+                    ↗
+                  </span>
+                  <span className="oh-sa-navlink__label">الموقع العام</span>
+                </NavLink>
+              </li>
+            </ul>
+          </aside>
         </div>
 
-        <ul className="oh-sa-nav__list">
-          {NAV_MAIN.map((item) => (
-            <li key={item.to}>
-              <NavLink
-                to={item.to}
-                end={Boolean(item.end)}
-                className={({ isActive }) => {
-                  const prefix = item.matchPrefix && pathname.startsWith(item.matchPrefix);
-                  const active = isActive || prefix;
-                  return `oh-sa-navlink${active ? " oh-sa-navlink--active" : ""}`.trim();
-                }}
-              >
-                <span className="oh-sa-navlink__icon" aria-hidden>
-                  {item.icon}
-                </span>
-                {item.label}
-              </NavLink>
-            </li>
-          ))}
-          <li>
-            <button
-              type="button"
-              className="oh-sa-navlink oh-sa-navlink--button"
-              onClick={() => openClientCreateOrderModal()}
-            >
-              <span className="oh-sa-navlink__icon" aria-hidden>
-                +
-              </span>
-              إنشاء طلب
-            </button>
-          </li>
-        </ul>
-
-        <ul className="oh-sa-nav__list oh-sa-nav__list--muted">
-          <li>
-            <NavLink to="/" className="oh-sa-navlink">
-              <span className="oh-sa-navlink__icon" aria-hidden>
-                ↗
-              </span>
-              الموقع العام
-            </NavLink>
-          </li>
-        </ul>
-
-      </aside>
-
-      <div className="oh-sa-workspace">
+        <div className="oh-sa-workspace">
         <header className="oh-sa-topbar">
           <div className="oh-sa-breadcrumb">
             <span>{crumb}</span>
@@ -194,6 +235,7 @@ export default function SuperAdminLayout() {
 
         <div className="oh-sa-outlet">
           <LazyRouteOutlet />
+        </div>
         </div>
       </div>
     </div>

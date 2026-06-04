@@ -48,8 +48,48 @@ const FINAL_TEST_STEP_ID = "final-test";
 const FINAL_TEST_TITLE = "الاختبار النهائي بعد الدورة";
 const MAX_RESPONSE_CHARS = 15000;
 
-const PROMPT_USAGE_HINT =
-  "افتح ملف التعليمات المرفق من الإدارة، انسخ محتواه بالكامل، والصقه في ChatGPT مع ملف الاختبار وعملك/تكليفك، ثم انسخ الاستجابة للتسليم هنا.";
+function parseQuestionCount(course) {
+  const n = Number(course?.testQuestionCount);
+  return Number.isInteger(n) && n >= 1 ? n : 0;
+}
+
+function emptyMarksArray(count) {
+  return Array.from({ length: count }, () => "");
+}
+
+function computeExamAverage(marks, questionCount) {
+  const nums = marks.slice(0, questionCount).map((m) => Number(m));
+  if (nums.length !== questionCount || nums.some((n) => !Number.isFinite(n))) return null;
+  return Math.round(nums.reduce((acc, n) => acc + n, 0) / questionCount);
+}
+
+function validateClientExamMarks(marks, questionCount) {
+  const fieldErrors = {};
+  let ok = true;
+  for (let i = 0; i < questionCount; i += 1) {
+    const raw = marks[i];
+    if (raw === "" || raw == null) {
+      fieldErrors[`q${i + 1}`] = "الدرجة مطلوبة.";
+      ok = false;
+      continue;
+    }
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < 0 || n > 100) {
+      fieldErrors[`q${i + 1}`] = "الدرجة بين 0 و 100.";
+      ok = false;
+    }
+  }
+  return { ok, fieldErrors, previewGrade: ok ? computeExamAverage(marks, questionCount) : null };
+}
+
+const FIXED_EXAM_INSTRUCTIONS = [
+  "افتح ملف الاختبار وأجب عن الأسئلة.",
+  "افتح ملف تعليمات التقييم.",
+  "افتح ملف الإجابة النموذجية.",
+  "أرسل إجابتك مع تعليمات التقييم والإجابة النموذجية إلى ChatGPT.",
+  "بعد أن يعطيك ChatGPT علامة كل سؤال من 100، أدخل العلامات في الحقول الموجودة في المنصة.",
+  "سيتم حساب النتيجة النهائية تلقائيًا.",
+];
 
 const COURSE_FILE_LEGACY_MESSAGE = "هذا الملف يحتاج إلى إعادة رفع من الإدارة.";
 const COURSE_FILE_OPEN_FAILED_TOAST = "تعذر فتح الملف. يرجى إبلاغ الإدارة لإعادة رفعه.";
@@ -427,38 +467,48 @@ function CompletedActionButton({ label, icon: Icon, variant = "solid", loading, 
   );
 }
 
-function FinalTestCompletedSection({ courseId, testLink, promptFileLink, assignment }) {
+function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAnswerFileLink, assignment, course }) {
   const toast = useToast();
-  const [fileAction, setFileAction] = useState({ test: null, prompt: null, answer: null });
+  const [fileAction, setFileAction] = useState({ test: null, prompt: null, modelAnswer: null, answer: null });
   const [showAnswerText, setShowAnswerText] = useState(false);
 
   const testLegacy = testLink ? isLegacyBrokenCloudinaryPdfUrl(testLink) : false;
   const promptLegacy = promptFileLink ? isLegacyBrokenCloudinaryPdfUrl(promptFileLink) : false;
+  const modelAnswerLegacy = modelAnswerFileLink ? isLegacyBrokenCloudinaryPdfUrl(modelAnswerFileLink) : false;
   const submittedText = String(assignment?.auditResponseText || "").trim();
   const answerFileUrl = String(assignment?.auditResponseFileUrl || "").trim();
   const hasTestFile = Boolean(testLink) && !testLegacy;
   const hasPromptFile = Boolean(promptFileLink) && !promptLegacy;
+  const hasModelAnswerFile = Boolean(modelAnswerFileLink) && !modelAnswerLegacy;
   const hasAnswerFile = Boolean(answerFileUrl);
   const hasAnswerText = Boolean(submittedText);
 
   const testDownloadName = getStudentCourseFileDownloadName("test");
   const promptDownloadName = getStudentCourseFileDownloadName("prompt");
+  const modelAnswerDownloadName = getStudentCourseFileDownloadName("model-answer");
 
   const runCourseFile = async (kind, mode) => {
-    const legacy = kind === "test" ? testLegacy : promptLegacy;
+    const legacy =
+      kind === "test" ? testLegacy : kind === "prompt" ? promptLegacy : modelAnswerLegacy;
     if (legacy) {
       toast.error(COURSE_FILE_LEGACY_MESSAGE);
       return;
     }
     if (fileAction[kind]) return;
     setFileAction((prev) => ({ ...prev, [kind]: mode }));
-    const fallbackName = kind === "test" ? testDownloadName : promptDownloadName;
+    const apiKind = kind === "modelAnswer" ? "model-answer" : kind;
+    const fallbackName =
+      kind === "test"
+        ? testDownloadName
+        : kind === "prompt"
+          ? promptDownloadName
+          : modelAnswerDownloadName;
     const preview = mode === "view" ? openPdfPreviewTab() : null;
     try {
       if (mode === "view") {
-        await viewFreelancerCourseFile(courseId, kind, fallbackName, preview);
+        await viewFreelancerCourseFile(courseId, apiKind, fallbackName, preview);
       } else {
-        await downloadFreelancerCourseFile(courseId, kind, fallbackName);
+        await downloadFreelancerCourseFile(courseId, apiKind, fallbackName);
       }
     } catch (err) {
       if (preview && !preview.closed) {
@@ -492,7 +542,13 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, assignm
     }
   };
 
-  const hasAnyFileAction = hasTestFile || hasPromptFile || hasAnswerFile;
+  const hasAnyFileAction = hasTestFile || hasPromptFile || hasModelAnswerFile || hasAnswerFile;
+  const finalGrade = assignment?.examFinalGrade;
+  const examMarks = Array.isArray(assignment?.examQuestionMarks) ? assignment.examQuestionMarks : [];
+  const submittedAt = assignment?.auditSubmittedAt || assignment?.completedAt || null;
+  const submittedLabel = submittedAt
+    ? new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium" }).format(new Date(submittedAt))
+    : null;
 
   return (
     <div className="fcd-final fcd-final--completed">
@@ -501,7 +557,30 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, assignm
         <p className="fcd-final__completed-sub">
           تم تسجيل استجابة الاختبار النهائي وإتمام الدورة. يمكنك مراجعة ملفات الاختبار والتسليم في أي وقت.
         </p>
+        {finalGrade != null ? (
+          <p className="fcd-final__completed-grade" role="status">
+            <strong>الدرجة النهائية: {finalGrade}%</strong>
+            {submittedLabel ? <span> — تاريخ التسليم: {submittedLabel}</span> : null}
+          </p>
+        ) : null}
       </header>
+
+      {examMarks.length > 0 ? (
+        <section className="fcd-final__completed-grades" aria-labelledby="fcd-completed-grades-title">
+          <h3 id="fcd-completed-grades-title" className="fcd-final__section-title">
+            درجات الأسئلة
+            {parseQuestionCount(course) > 0 ? ` (${parseQuestionCount(course)} أسئلة)` : ""}
+          </h3>
+          <ul className="fcd-final__marks-grid fcd-final__marks-grid--readonly">
+            {examMarks.map((mark, idx) => (
+              <li key={`done-q-${idx}`} className="fcd-final__mark-readonly">
+                <span className="fcd-final__mark-readonly-label">سؤال {idx + 1}</span>
+                <strong>{mark}</strong>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {hasAnyFileAction ? (
         <section className="fcd-final__completed-files" aria-labelledby="fcd-completed-files-title">
@@ -523,6 +602,14 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, assignm
                 icon={Download}
                 loading={fileAction.prompt === "download"}
                 onClick={() => void runCourseFile("prompt", "download")}
+              />
+            ) : null}
+            {hasModelAnswerFile ? (
+              <CompletedActionButton
+                label="تحميل ملف الإجابة النموذجية"
+                icon={Download}
+                loading={fileAction.modelAnswer === "download"}
+                onClick={() => void runCourseFile("modelAnswer", "download")}
               />
             ) : null}
             {hasAnswerFile ? (
@@ -585,7 +672,7 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, assignm
         </section>
       )}
 
-      {testLegacy || promptLegacy ? (
+      {testLegacy || promptLegacy || modelAnswerLegacy ? (
         <p className="fcd-final__legacy-warn" role="alert">
           <CircleAlert size={16} aria-hidden />
           <span>{COURSE_FILE_LEGACY_MESSAGE}</span>
@@ -633,14 +720,20 @@ function FinalTestSidebarItem({ isActive, locked, completed, ready, onSelect }) 
 
 function FinalTestPanel({
   courseId,
+  course,
   courseDone,
   allLessonsComplete,
   testLink,
   promptFileLink,
+  modelAnswerFileLink,
   auditResponseText,
   setAuditResponseText,
   auditResponseFile,
   setAuditResponseFile,
+  questionMarks,
+  setQuestionMarks,
+  markErrors,
+  setMarkErrors,
   submitting,
   onSubmit,
   assignment,
@@ -648,8 +741,8 @@ function FinalTestPanel({
 }) {
   const toast = useToast();
   const fileInputRef = useRef(null);
-  const [fileAction, setFileAction] = useState({ test: null, prompt: null });
-  const [flowTouched, setFlowTouched] = useState({ test: false, prompt: false, copied: false });
+  const [fileAction, setFileAction] = useState({ test: null, prompt: null, modelAnswer: null });
+  const [flowTouched, setFlowTouched] = useState({ test: false, prompt: false, modelAnswer: false });
   const completedLessons = progress?.completedLessons ?? 0;
   const totalLessons = progress?.totalLessons ?? 0;
 
@@ -657,8 +750,10 @@ function FinalTestPanel({
     return (
       <FinalTestCompletedSection
         courseId={courseId}
+        course={course}
         testLink={testLink}
         promptFileLink={promptFileLink}
+        modelAnswerFileLink={modelAnswerFileLink}
         assignment={assignment}
       />
     );
@@ -682,16 +777,26 @@ function FinalTestPanel({
     );
   }
 
+  const questionCount = parseQuestionCount(course);
+  const marksCheck = questionCount > 0 ? validateClientExamMarks(questionMarks, questionCount) : { ok: true, fieldErrors: {}, previewGrade: null };
   const hasTextResponse = auditResponseText.trim().length > 0;
   const hasFileResponse = auditResponseFile instanceof File;
   const hasResponse = hasTextResponse || hasFileResponse;
-  const canSubmit = hasResponse && !submitting;
+  const canSubmit = hasResponse && !submitting && marksCheck.ok;
   const testLegacy = testLink ? isLegacyBrokenCloudinaryPdfUrl(testLink) : false;
   const promptLegacy = promptFileLink ? isLegacyBrokenCloudinaryPdfUrl(promptFileLink) : false;
+  const modelAnswerLegacy = modelAnswerFileLink ? isLegacyBrokenCloudinaryPdfUrl(modelAnswerFileLink) : false;
   const testFileDisplay = resolveStudentCourseFileDisplay({ url: testLink, fileKind: "test" });
   const promptFileDisplay = resolveStudentCourseFileDisplay({ url: promptFileLink, fileKind: "prompt" });
+  const modelAnswerFileDisplay = resolveStudentCourseFileDisplay({
+    url: modelAnswerFileLink,
+    fileKind: "model-answer",
+  });
   const testDownloadName = testLink ? getStudentCourseFileDownloadName("test") : undefined;
   const promptDownloadName = promptFileLink ? getStudentCourseFileDownloadName("prompt") : undefined;
+  const modelAnswerDownloadName = modelAnswerFileLink
+    ? getStudentCourseFileDownloadName("model-answer")
+    : undefined;
   const charCount = auditResponseText.length;
   const uploadSizeLabel = auditResponseFile ? formatUploadFileSize(auditResponseFile.size) : null;
 
@@ -701,23 +806,34 @@ function FinalTestPanel({
   };
 
   const runCourseFileAction = async (kind, mode, previewWindow = null) => {
-    const legacy = kind === "test" ? testLegacy : promptLegacy;
+    const legacy =
+      kind === "test" ? testLegacy : kind === "prompt" ? promptLegacy : modelAnswerLegacy;
     if (legacy) {
       toast.error(COURSE_FILE_LEGACY_MESSAGE);
       return;
     }
     if (fileAction[kind]) return;
     setFileAction((prev) => ({ ...prev, [kind]: mode }));
-    const fallbackName = kind === "test" ? testDownloadName : promptDownloadName;
+    const apiKind = kind === "modelAnswer" ? "model-answer" : kind;
+    const fallbackName =
+      kind === "test"
+        ? testDownloadName
+        : kind === "prompt"
+          ? promptDownloadName
+          : modelAnswerDownloadName;
     try {
       if (mode === "view") {
-        await viewFreelancerCourseFile(courseId, kind, fallbackName, previewWindow);
+        await viewFreelancerCourseFile(courseId, apiKind, fallbackName, previewWindow);
       } else {
-        await downloadFreelancerCourseFile(courseId, kind, fallbackName);
+        await downloadFreelancerCourseFile(courseId, apiKind, fallbackName);
       }
       setFlowTouched((prev) => ({
         ...prev,
-        ...(kind === "test" ? { test: true } : { prompt: true }),
+        ...(kind === "test"
+          ? { test: true }
+          : kind === "prompt"
+            ? { prompt: true }
+            : { modelAnswer: true }),
       }));
     } catch (err) {
       if (previewWindow && !previewWindow.closed) {
@@ -733,31 +849,23 @@ function FinalTestPanel({
     }
   };
 
-  const copyPromptHint = async () => {
-    try {
-      await navigator.clipboard.writeText(PROMPT_USAGE_HINT);
-      setFlowTouched((prev) => ({ ...prev, copied: true }));
-      toast.success("تم نسخ التعليمات.");
-    } catch {
-      toast.error("تعذر النسخ. انسخ النص يدوياً من الصندوق.");
-    }
-  };
-
   const step1Done = flowTouched.test;
   const step2Done = flowTouched.prompt;
-  const step3Done = step1Done && step2Done;
-  const step4Done = hasResponse;
-  const activeStep = !step1Done ? 1 : !step2Done ? 2 : !step4Done ? 4 : 5;
+  const step3Done = flowTouched.modelAnswer;
+  const step4Done = step1Done && step2Done && step3Done;
+  const step5Done = hasResponse;
+  const activeStep = !step1Done ? 1 : !step2Done ? 2 : !step3Done ? 3 : !step5Done ? 5 : 6;
 
   const trackSteps = [
     { id: 1, label: "الاختبار", done: step1Done, active: activeStep === 1 },
     { id: 2, label: "التعليمات", done: step2Done, active: activeStep === 2 },
-    { id: 3, label: "ChatGPT", done: step3Done, active: activeStep === 3 },
-    { id: 4, label: "التسليم", done: step4Done, active: activeStep === 4 },
-    { id: 5, label: "الإتمام", done: false, active: activeStep === 5 },
+    { id: 3, label: "النموذج", done: step3Done, active: activeStep === 3 },
+    { id: 4, label: "ChatGPT", done: step4Done, active: activeStep === 4 },
+    { id: 5, label: "التسليم", done: step5Done, active: activeStep === 5 },
+    { id: 6, label: "الإتمام", done: false, active: activeStep === 6 },
   ];
 
-  const phase1Done = step3Done;
+  const phase1Done = step4Done;
 
   return (
     <div className="fcd-final fcd-final--flow">
@@ -775,9 +883,26 @@ function FinalTestPanel({
         <span className="fcd-final__intro-kicker">الخطوة الأخيرة</span>
         <h2 className="fcd-final__intro-title">{FINAL_TEST_TITLE}</h2>
         <p className="fcd-final__intro-lead">
-          اتبع الخطوات بالترتيب: حمّل ملف الاختبار، استخدم التعليمات في ChatGPT، ثم سلّم إجابتك لإتمام الدورة.
+          اتبع الخطوات بالترتيب: حمّل ملفات الاختبار والتعليمات والإجابة النموذجية، استخدمها في ChatGPT، أدخل
+          درجات كل سؤال، ثم سلّم إجابتك لإتمام الدورة.
         </p>
       </header>
+
+      <section className="fcd-final__exam-brief fdash-surface-inset" aria-labelledby="fcd-exam-brief-title">
+        <h3 id="fcd-exam-brief-title" className="fcd-final__section-title">
+          تعليمات الاختبار
+        </h3>
+        {questionCount > 0 ? (
+          <p className="fcd-final__exam-meta">
+            عدد الأسئلة: <strong>{questionCount}</strong>
+          </p>
+        ) : null}
+        <ol className="fcd-final__exam-instructions-list">
+          {FIXED_EXAM_INSTRUCTIONS.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ol>
+      </section>
 
       <div className="fcd-workflow">
         <FlowTrackHeader steps={trackSteps} />
@@ -785,7 +910,7 @@ function FinalTestPanel({
         <FlowPhase
           phaseNum={1}
           title="التحضير"
-          subtitle="حمّل ملف الاختبار وافتح ملف التعليمات قبل البدء في ChatGPT"
+          subtitle="حمّل ملف الاختبار وملف التعليمات وملف الإجابة النموذجية قبل البدء في ChatGPT"
           tone={phase1Done ? "done" : "prep"}
         >
           <FlowStepRow
@@ -823,15 +948,14 @@ function FinalTestPanel({
             <FinalExamFileCard
               embedded
               stepNum={2}
-              title="ملف التعليمات"
-              description="افتح ملف التعليمات أو انسخها لاستخدامها مع ChatGPT."
+              title="ملف تعليمات / Prompt التقييم"
+              description="افتح ملف التعليمات لاستخدامه مع ChatGPT."
               displayTitle={promptFileDisplay.title}
               fileUrl={promptFileLink}
               legacy={promptLegacy}
               fileAction={fileAction.prompt}
               viewLabel="فتح ملف التعليمات"
               downloadLabel="تنزيل الملف"
-              onCopy={() => void copyPromptHint()}
               onView={() => {
                 const preview = openPdfPreviewTab();
                 void runCourseFileAction("prompt", "view", preview);
@@ -842,13 +966,39 @@ function FinalTestPanel({
 
           <FlowStepRow
             step={3}
-            stepTitle="استخدام ChatGPT"
+            stepTitle="فتح ملف الإجابة النموذجية"
             done={step3Done}
-            active={step3Done && !step4Done}
+            active={activeStep === 3}
+            isLast={false}
+          >
+            <FinalExamFileCard
+              embedded
+              stepNum={3}
+              title="ملف الإجابة النموذجية"
+              description="افتح الملف لاستخدامه مع ChatGPT عند تقييم إجابتك."
+              displayTitle={modelAnswerFileDisplay.title}
+              fileUrl={modelAnswerFileLink}
+              legacy={modelAnswerLegacy}
+              fileAction={fileAction.modelAnswer}
+              viewLabel="فتح ملف الإجابة النموذجية"
+              downloadLabel="تنزيل الملف"
+              onView={() => {
+                const preview = openPdfPreviewTab();
+                void runCourseFileAction("modelAnswer", "view", preview);
+              }}
+              onDownload={() => void runCourseFileAction("modelAnswer", "download")}
+            />
+          </FlowStepRow>
+
+          <FlowStepRow
+            step={4}
+            stepTitle="استخدام ChatGPT"
+            done={step4Done}
+            active={activeStep === 4}
             isLast
           >
             <p className="fcd-flow__step-note">
-              نفّذ المطلوب في ChatGPT باستخدام ملف الاختبار وملف التعليمات، ثم انتقل للتسليم أدناه.
+              نفّذ الخطوات في قسم «تعليمات الاختبار» أعلاه باستخدام الملفات الثلاثة، ثم انتقل للتسليم أدناه.
             </p>
           </FlowStepRow>
         </FlowPhase>
@@ -865,10 +1015,10 @@ function FinalTestPanel({
         >
           <form className="fcd-flow__destination" onSubmit={onSubmit}>
             <FlowStepRow
-              step={4}
+              step={5}
               stepTitle="رفع الإجابة أو لصق النص"
-              done={step4Done}
-              active={activeStep === 4}
+              done={step5Done}
+              active={activeStep === 5 && !step5Done}
               isLast={false}
             >
               <div className="fcd-final__delivery" aria-label="اختر طريقة التسليم">
@@ -966,11 +1116,67 @@ function FinalTestPanel({
               </div>
             </FlowStepRow>
 
+            {questionCount > 0 ? (
+              <FlowStepRow
+                step={6}
+                stepTitle="إدخال درجات الأسئلة (من ChatGPT)"
+                done={marksCheck.ok}
+                active={activeStep === 5 && step5Done && !marksCheck.ok}
+                isLast={false}
+              >
+                <p className="fcd-flow__step-note">
+                  انسخ درجة كل سؤال كما أعطاك إياها ChatGPT (من 0 إلى 100). يُحسب المتوسط تلقائياً.
+                </p>
+                <div className="fcd-final__marks-grid">
+                  {Array.from({ length: questionCount }, (_, idx) => {
+                    const key = `q${idx + 1}`;
+                    const err = markErrors[key];
+                    return (
+                      <label key={key} className={`fcd-final__mark-field${err ? " fcd-final__mark-field--error" : ""}`}>
+                        <span className="fcd-final__mark-label">سؤال {idx + 1}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={1}
+                          className="fcd-final__mark-input"
+                          value={questionMarks[idx] ?? ""}
+                          disabled={submitting}
+                          onChange={(e) => {
+                            const next = [...questionMarks];
+                            next[idx] = e.target.value;
+                            setQuestionMarks(next);
+                            setMarkErrors((prev) => {
+                              const copy = { ...prev };
+                              delete copy[key];
+                              return copy;
+                            });
+                          }}
+                          aria-invalid={Boolean(err)}
+                          aria-describedby={err ? `${key}-err` : undefined}
+                        />
+                        {err ? (
+                          <span id={`${key}-err`} className="fcd-final__mark-error" role="alert">
+                            {err}
+                          </span>
+                        ) : null}
+                      </label>
+                    );
+                  })}
+                </div>
+                {marksCheck.previewGrade != null ? (
+                  <p className="fcd-final__grade-preview" role="status">
+                    الدرجة النهائية المحسوبة: <strong>{marksCheck.previewGrade}%</strong>
+                  </p>
+                ) : null}
+              </FlowStepRow>
+            ) : null}
+
             <FlowStepRow
-              step={5}
+              step={questionCount > 0 ? 7 : 6}
               stepTitle="إرسال الاستجابة وإتمام الدورة"
               done={false}
-              active={activeStep === 5}
+              active={activeStep === 6}
               isLast
             >
               <div className="fcd-flow__finale">
@@ -991,11 +1197,14 @@ function FinalTestPanel({
                   </button>
                   {!canSubmit && !submitting ? (
                     <p className="fcd-final__submit-hint" role="status">
-                      أكمل متطلبات التسليم أولاً — أضف نص الاستجابة أو ارفع ملفاً.
+                      {questionCount > 0 && !marksCheck.ok
+                        ? "أكمل درجات جميع الأسئلة وأضف نص الاستجابة أو ارفع ملفاً."
+                        : "أكمل متطلبات التسليم أولاً — أضف نص الاستجابة أو ارفع ملفاً."}
                     </p>
                   ) : (
                     <p className="fcd-final__submit-note" role="note">
                       يمكنك إرسال النص فقط، أو الملف فقط، أو كليهما معاً.
+                      {questionCount > 0 ? " يجب أيضاً إدخال درجة كل سؤال." : ""}
                     </p>
                   )}
                 </div>
@@ -1010,7 +1219,16 @@ function FinalTestPanel({
           <Sparkles size={16} />
         </span>
         <p>
-          <strong>معلومة:</strong> هذا ليس اختباراً بدرجات، بل خطوة لتطبيق ما تعلمته. راجع إجابتك قبل الإرسال.
+          {questionCount > 0 ? (
+            <>
+              <strong>معلومة:</strong> بعد التقييم في ChatGPT أدخل درجة كل سؤال (0–100). تُحسب الدرجة النهائية
+              كمتوسط تلقائي.
+            </>
+          ) : (
+            <>
+              <strong>معلومة:</strong> هذا ليس اختباراً بدرجات، بل خطوة لتطبيق ما تعلمته. راجع إجابتك قبل الإرسال.
+            </>
+          )}
         </p>
       </aside>
     </div>
@@ -1029,6 +1247,8 @@ export default function FreelancerCourseDetailsPage() {
   const [activeLessonId, setActiveLessonId] = useState(null);
   const [auditResponseText, setAuditResponseText] = useState("");
   const [auditResponseFile, setAuditResponseFile] = useState(null);
+  const [questionMarks, setQuestionMarks] = useState([]);
+  const [markErrors, setMarkErrors] = useState({});
   const [lessonNotes, setLessonNotes] = useState({});
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
 
@@ -1070,6 +1290,18 @@ export default function FreelancerCourseDetailsPage() {
 
         if (out?.assignment?.auditResponseText) setAuditResponseText(out.assignment.auditResponseText);
         else setAuditResponseText("");
+        const qCount = parseQuestionCount(out?.course);
+        if (qCount > 0) {
+          const stored = out?.assignment?.examQuestionMarks;
+          if (Array.isArray(stored) && stored.length === qCount) {
+            setQuestionMarks(stored.map((m) => String(m)));
+          } else {
+            setQuestionMarks(emptyMarksArray(qCount));
+          }
+        } else {
+          setQuestionMarks([]);
+        }
+        setMarkErrors({});
         setAuditResponseFile(null);
         return out;
       } catch (err) {
@@ -1194,18 +1426,35 @@ export default function FreelancerCourseDetailsPage() {
       return;
     }
 
+    const qCount = parseQuestionCount(course);
+    let marksPayload;
+    if (testingEnabled && qCount > 0) {
+      const check = validateClientExamMarks(questionMarks, qCount);
+      if (!check.ok) {
+        setMarkErrors(check.fieldErrors);
+        toast.error("أكمل درجات جميع الأسئلة (من 0 إلى 100) قبل الإرسال.");
+        return;
+      }
+      marksPayload = check.previewGrade != null ? questionMarks.map((m) => Number(m)) : undefined;
+    }
+
     setSubmitting(true);
     try {
       const payload = testingEnabled
         ? {
             auditResponseText: auditResponseText.trim() || undefined,
             auditResponseFile: auditResponseFile || undefined,
+            questionMarks: marksPayload,
           }
         : {};
       await freelancerSubmitCourseCompletionRequest(id, payload);
       toast.success("تم إنهاء الدورة بنجاح.");
       await loadDetails({ openFinalTest: true });
     } catch (err) {
+      const fieldErrors = err?.response?.data?.fieldErrors;
+      if (fieldErrors && typeof fieldErrors === "object") {
+        setMarkErrors(fieldErrors);
+      }
       toast.error(err?.response?.data?.message || "تعذر إنهاء الدورة.");
     } finally {
       setSubmitting(false);
@@ -1413,14 +1662,20 @@ export default function FreelancerCourseDetailsPage() {
                 <div className="fcd-final-wrap fdash-surface-3d fdash-surface-3d--soft">
                   <FinalTestPanel
                     courseId={id}
+                    course={course}
                     courseDone={courseDone}
                     allLessonsComplete={allLessonsComplete}
                     testLink={course?.testFileUrl}
                     promptFileLink={course?.testPromptFileUrl}
+                    modelAnswerFileLink={course?.testModelAnswerFileUrl}
                     auditResponseText={auditResponseText}
                     setAuditResponseText={setAuditResponseText}
                     auditResponseFile={auditResponseFile}
                     setAuditResponseFile={setAuditResponseFile}
+                    questionMarks={questionMarks}
+                    setQuestionMarks={setQuestionMarks}
+                    markErrors={markErrors}
+                    setMarkErrors={setMarkErrors}
                     submitting={submitting}
                     onSubmit={onSubmitCompletion}
                     assignment={assignment}

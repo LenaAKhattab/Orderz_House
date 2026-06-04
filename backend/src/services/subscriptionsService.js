@@ -797,6 +797,7 @@ async function updateSubscription({ actorUserId, subscriptionId, patch }) {
 }
 
 async function listSubscriptions({ freelancerUserId = null, status = null } = {}) {
+  const { enrichSubscriptionsWithPaymentCountry } = require("./stripeSubscriptionCountryService");
   const values = [];
   const where = ["1=1"];
   let i = 1;
@@ -827,7 +828,36 @@ async function listSubscriptions({ freelancerUserId = null, status = null } = {}
      LIMIT 200`,
     values,
   );
-  return rows.map(mapSubscription);
+  const mapped = rows.map(mapSubscription);
+  const enriched = await enrichSubscriptionsWithPaymentCountry(mapped);
+  return collapseSupersededPendingAttempts(enriched);
+}
+
+/**
+ * Admin list UX: when a paid row exists for same freelancer+plan, older pending rows are historical attempts.
+ * Keep the paid row (latest first by SQL order) and hide superseded pending attempts from listing.
+ */
+function collapseSupersededPendingAttempts(subscriptions) {
+  if (!Array.isArray(subscriptions) || subscriptions.length === 0) return subscriptions;
+  const paidKeySet = new Set();
+  for (const sub of subscriptions) {
+    const payment = String(sub?.paymentStatus || "").trim().toLowerCase();
+    if (payment === SUBSCRIPTION_PAYMENT_STATUSES.PAID) {
+      paidKeySet.add(`${String(sub.freelancerUserId)}:${String(sub.planId)}`);
+    }
+  }
+  if (paidKeySet.size === 0) return subscriptions;
+
+  return subscriptions.filter((sub) => {
+    const key = `${String(sub.freelancerUserId)}:${String(sub.planId)}`;
+    if (!paidKeySet.has(key)) return true;
+    const payment = String(sub?.paymentStatus || "").trim().toLowerCase();
+    const activation = String(sub?.activationStatus || "").trim().toLowerCase();
+    const isSupersededPendingAttempt =
+      payment === SUBSCRIPTION_PAYMENT_STATUSES.PENDING &&
+      (activation === SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_PENDING || activation === "");
+    return !isSupersededPendingAttempt;
+  });
 }
 
 /**

@@ -27,7 +27,6 @@ import {
   SuperAdminPlansPage,
   SuperAdminSubscriptionsPage,
   SuperAdminFinancialClaimsPage,
-  SuperAdminProductAnalyticsPage,
   SuperAdminSettingsPage,
   AdminOrdersPage,
   AdminCreateOrderPage,
@@ -193,14 +192,6 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
                       <DashboardPage />
-                    </RequireRole>
-                  }
-                />
-                <Route
-                  path="/dashboard/super-admin/analytics"
-                  element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
-                      <SuperAdminProductAnalyticsPage />
                     </RequireRole>
                   }
                 />

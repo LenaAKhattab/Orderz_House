@@ -116,7 +116,7 @@ export function useSuperAdminAnalyticsOverview({ range = "7d", topLimit = 10 } =
     [],
   );
 
-  const chartPack = useMemo(() => buildChartPack(data), [data]);
+  const chartPack = useMemo(() => buildChartPack(data, null), [data]);
 
   return {
     data,
@@ -139,11 +139,15 @@ function indexByDate(rows, key) {
   return m;
 }
 
-/** Align last 7 days revenue (DB) with PostHog trend rows for charts. */
-export function buildChartPack(data) {
-  const rev = data?.trends?.revenueByDay || [];
-  const vis = data?.trends?.visitorsByDay || [];
-  const ord = data?.trends?.ordersByDay || [];
+/**
+ * Merge PostHog trends with optional fast DB revenue series for charts.
+ * @param {object|null} analyticsData — PostHog product analytics
+ * @param {object|null} businessData — DB business KPIs (`revenueByDay`)
+ */
+export function buildChartPack(analyticsData, businessData = null) {
+  const rev = businessData?.revenueByDay || analyticsData?.trends?.revenueByDay || [];
+  const vis = analyticsData?.trends?.visitorsByDay || [];
+  const ord = analyticsData?.trends?.ordersByDay || [];
 
   const dates = new Set();
   for (const r of rev) dates.add(String(r.date).slice(0, 10));

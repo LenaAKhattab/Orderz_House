@@ -6,11 +6,13 @@ const skelBar = "dash-ui-skeleton-rows__bar block rounded-md bg-slate-200/90";
  * @param {string} p.label
  * @param {import("react").ReactNode} p.value
  * @param {string} [p.hint]
+ * @param {string} [p.scopeLabel] — muted data scope, e.g. "إجمالي المنصة"
  * @param {import("react").ReactNode} [p.trend] — e.g. colored % change; shown under value when set
  * @param {import("react").ReactNode} [p.icon] — placed in a soft tinted chip
  * @param {string} [p.className]
  */
-export default function DashboardStatCard({ label, value, hint, trend, icon, className = "" }) {  const cardShell = "dash-ui-surface--soft";
+export default function DashboardStatCard({ label, value, hint, scopeLabel, trend, icon, className = "" }) {
+  const cardShell = "dash-ui-surface--soft";
 
   return (
     <article className={`dash-ui-stat-card flex min-h-[7.25rem] flex-col ${cardShell} p-5 ${className}`.trim()}>
@@ -25,6 +27,11 @@ export default function DashboardStatCard({ label, value, hint, trend, icon, cla
         ) : null}
         <div className="min-w-0 flex-1">
           <p className="dash-ui-stat-card__label m-0 text-[0.72rem] font-semibold leading-snug text-slate-500">{label}</p>
+          {scopeLabel ? (
+            <p className="sa-metric-scope m-0 mt-0.5" aria-label={`نطاق البيانات: ${scopeLabel}`}>
+              {scopeLabel}
+            </p>
+          ) : null}
           <p className="dash-ui-stat-card__value m-0 mt-1 text-2xl font-bold tracking-tight text-slate-900 tabular-nums">
             {value}
           </p>

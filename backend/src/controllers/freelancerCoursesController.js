@@ -37,6 +37,20 @@ async function markLessonComplete(req, res, next) {
   }
 }
 
+function parseQuestionMarksFromRequest(body) {
+  const raw = body?.questionMarks;
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string" && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 async function submitCourseCompletion(req, res, next) {
   try {
     const data = await coursesService.submitCourseCompletion({
@@ -46,6 +60,7 @@ async function submitCourseCompletion(req, res, next) {
       auditResponseText: req.body?.auditResponseText,
       auditResponseFileUrl: req.body?.auditResponseFileUrl,
       auditResponseFile: req.file || null,
+      questionMarks: parseQuestionMarksFromRequest(req.body),
     });
     return res.status(200).json({ success: true, data });
   } catch (err) {

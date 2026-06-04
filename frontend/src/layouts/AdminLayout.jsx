@@ -52,7 +52,9 @@ export default function AdminLayout() {
 
   return (
     <div className="oh-sa-shell" dir="rtl" lang="ar">
-      <aside className="oh-sa-nav" aria-label="قائمة الإدارة">
+      <div className="oh-sa-shell__grid">
+        <div className="oh-sa-sidebar-wrap">
+          <aside className="oh-sa-nav" aria-label="قائمة الإدارة">
         <div className="oh-sa-brand oh-sa-brand--full-logo">
           <img
             src="/hero/fullLogp.png"
@@ -113,9 +115,10 @@ export default function AdminLayout() {
             </li>
           ))}
         </ul>
-      </aside>
+          </aside>
+        </div>
 
-      <div className="oh-sa-workspace">
+        <div className="oh-sa-workspace">
         <header className="oh-sa-topbar">
           <div className="oh-sa-breadcrumb">
             <span>{crumb}</span>
@@ -170,6 +173,7 @@ export default function AdminLayout() {
 
         <div className="oh-sa-outlet">
           <LazyRouteOutlet />
+        </div>
         </div>
       </div>
     </div>

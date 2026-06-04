@@ -649,7 +649,7 @@ html[dir="ltr"] .toast-stack {
 .oh-internal-orders__intro {
   flex: 1 1 260px;
   min-width: 0;
-  text-align: right;
+  text-align: start;
 }
 
 .oh-internal-orders__title {

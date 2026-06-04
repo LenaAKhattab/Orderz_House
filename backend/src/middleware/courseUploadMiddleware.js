@@ -29,6 +29,12 @@ const uploadCoursePromptFile = multer({
   fileFilter: courseFileFilter,
 }).single("promptFile");
 
+const uploadCourseModelAnswerFile = multer({
+  storage,
+  limits: { fileSize: MAX_COURSE_FILE_BYTES, files: 1 },
+  fileFilter: courseFileFilter,
+}).single("modelAnswerFile");
+
 const uploadCourseAuditResponseFile = multer({
   storage,
   limits: { fileSize: MAX_COURSE_FILE_BYTES, files: 1 },
@@ -38,6 +44,7 @@ const uploadCourseAuditResponseFile = multer({
 module.exports = {
   uploadCourseTestFile,
   uploadCoursePromptFile,
+  uploadCourseModelAnswerFile,
   uploadCourseAuditResponseFile,
   MAX_COURSE_FILE_BYTES,
   COURSE_FILE_SIZE_MESSAGE_AR,

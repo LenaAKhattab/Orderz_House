@@ -34,7 +34,7 @@ export default function DashboardPageHeader({
   const crumbs = Array.isArray(breadcrumbs) ? breadcrumbs.filter((c) => c && String(c.label || "").trim()) : [];
 
   const actionsRowClass =
-    "flex flex-wrap justify-start gap-2 rtl:justify-end max-sm:justify-stretch max-sm:rtl:justify-stretch max-sm:[&_.btn]:flex-1 max-sm:[&_.btn]:justify-center";
+    "flex flex-wrap justify-end gap-2 max-sm:justify-stretch max-sm:[&_.btn]:flex-1 max-sm:[&_.btn]:justify-center";
 
   const cardShell =
     "dash-ui-surface--soft w-full min-w-0 max-w-full box-border p-5 sm:p-6";

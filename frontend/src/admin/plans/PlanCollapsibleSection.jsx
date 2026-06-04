@@ -5,7 +5,7 @@ import { forwardRef, useState } from "react";
  * @param {{ title: string; description?: string; defaultOpen?: boolean; children: import("react").ReactNode; id?: string }} p
  */
 const PlanCollapsibleSection = forwardRef(function PlanCollapsibleSection(
-  { title, description, defaultOpen = false, children, id },
+  { title, description, defaultOpen = false, children, id, className = "" },
   ref,
 ) {
   const [open, setOpen] = useState(defaultOpen);
@@ -14,7 +14,7 @@ const PlanCollapsibleSection = forwardRef(function PlanCollapsibleSection(
     <section
       ref={ref}
       id={id}
-      className={`dash-ui-section dash-ui-surface--soft oh-sapl-collapse mb-5 w-full min-w-0 text-start ${open ? "" : "oh-sapl-collapse--closed"}`.trim()}
+      className={`dash-ui-section dash-ui-surface--soft oh-sapl-collapse mb-5 w-full min-w-0 text-start ${open ? "" : "oh-sapl-collapse--closed"} ${className}`.trim()}
     >
       <button
         type="button"

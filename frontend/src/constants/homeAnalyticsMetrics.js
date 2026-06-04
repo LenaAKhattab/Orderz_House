@@ -1,5 +1,5 @@
 /**
- * Public homepage hero metrics — copy only (logic unchanged: 7-day PostHog window).
+ * Public homepage hero metrics — copy only (views: all-time $pageview count; active: 7-day window).
  * @type {Record<'views'|'active', {
  *   key: 'views'|'active',
  *   label: string,
@@ -12,36 +12,39 @@
 export const HOME_PUBLIC_METRICS = Object.freeze({
   views: {
     key: "views",
-    label: "زوار الموقع",
-    sub: "زيارات الصفحات · آخر 7 أيام",
+    label: "مشاهدات الموقع",
+    sub: "إجمالي مشاهدات الموقع",
     tooltip:
-      "عدد الأشخاص الذين زاروا صفحات الموقع خلال آخر 7 أيام (حدث $pageview في PostHog). ليس عدّاً لحظياً للمتصلين الآن.",
+      "إجمالي أحداث مشاهدة الصفحات ($pageview) على الموقع منذ بدء التتبع في PostHog. يشمل كل الزيارات وليس عدد الزوار الفريدين.",
     tone: "visitors",
-    stripLabel: "زوار الموقع",
+    stripLabel: "مشاهدات الموقع",
   },
   active: {
     key: "active",
-    label: "المستخدمون المتفاعلون",
-    sub: "نشاط داخل المنصة · آخر 7 أيام",
+    label: "المستخدمون النشطون",
+    sub: "نشاط في المنصة · آخر 7 أيام",
     tooltip:
-      "عدد المستخدمين الذين نفّذوا أي نشاط يُتتبَّع خلال آخر 7 أيام (مثل تسجيل الدخول أو أحداث المنصة). قد يكون أعلى من الزوار إذا حدث نشاط دون زيارة صفحة.",
+      "عدد المستخدمين الذين نفّذوا نشاطاً في المنصة خلال آخر 7 أيام، مثل تسجيل الدخول أو إنشاء طلب. قد يكون أعلى من الزوار.",
     tone: "active",
-    stripLabel: "مستخدمون متفاعلون",
+    stripLabel: "مستخدمون نشطون",
   },
 });
 
-/** Super Admin / docs — why numbers differ */
+/** Super Admin — collapsible help (platform settings) */
+export const HOME_METRICS_ADMIN_HELP = Object.freeze({
+  title: "ما الفرق بين المؤشرين؟",
+  visitors: "مشاهدات الموقع: إجمالي أحداث $pageview منذ بدء التتبع.",
+  active: "المستخدمون النشطون: المستخدمون الذين قاموا بنشاط داخل المنصة خلال آخر 7 أيام.",
+});
+
+/** @deprecated Use HOME_METRICS_ADMIN_HELP — kept for legacy imports */
 export const HOME_METRICS_ADMIN_EXPLAINER = Object.freeze({
-  title: "ما الفرق بين المؤشرين على الصفحة الرئيسية؟",
-  note: "كلا الرقمين يعكسان آخر 7 أيام — وليس «متصل الآن» أو «نشط هذه اللحظة».",
-  visitors: {
-    term: "زوار الموقع",
-    body: "يعتمد على زيارات الصفحات — أي شخص فتح صفحة في الموقع.",
-  },
+  title: HOME_METRICS_ADMIN_HELP.title,
+  note: "",
+  visitors: { term: "مشاهدات الموقع", body: HOME_METRICS_ADMIN_HELP.visitors.replace(/^مشاهدات الموقع:\s*/, "") },
   active: {
-    term: "المستخدمون المتفاعلون",
-    body: "يعتمد على أي نشاط داخل المنصة (تسجيل دخول، طلبات، تفاعلات، إلخ) — حتى دون زيارة صفحة جديدة.",
+    term: "المستخدمون النشطون",
+    body: HOME_METRICS_ADMIN_HELP.active.replace(/^المستخدمون النشطون:\s*/, ""),
   },
-  whyDiffer:
-    "قد يظهر المتفاعلون أعلى من الزوار عندما يعود مستخدم مسجّل وينفّذ إجراءات دون تصفح صفحات عامة جديدة.",
+  whyDiffer: "",
 });

@@ -19,7 +19,7 @@ export default function HeroAnalyticsStrip({ statsPayload }) {
       className={`home-hero-analytics home-hero-analytics--minimal home-hero-metrics home-hero-metrics--analytics-only w-full min-w-0${statsPayload == null ? " home-hero-metrics--hydrating" : ""}`.trim()}
       dir="rtl"
       role="group"
-      aria-label="إحصائيات زوار الموقع والمستخدمين المتفاعلين — آخر 7 أيام"
+      aria-label="إحصائيات مشاهدات الموقع والمستخدمين المتفاعلين"
     >
       {HERO_ANALYTICS_METRICS.map((row) => {
         if (statsPayload) {

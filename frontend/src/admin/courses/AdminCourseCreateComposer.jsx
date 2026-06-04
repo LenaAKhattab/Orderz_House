@@ -48,19 +48,24 @@ export default function AdminCourseCreateComposer({
   onCancelEdit,
   onUploadCourseTestFile,
   onUploadCoursePromptFile,
+  onUploadCourseModelAnswerFile,
   onUploadError,
   testFileUploading = false,
   promptFileUploading = false,
+  modelAnswerFileUploading = false,
   pendingCreateTestFile = null,
   pendingCreatePromptFile = null,
+  pendingCreateModelAnswerFile = null,
   onPendingCreateTestFile,
   onPendingCreatePromptFile,
+  onPendingCreateModelAnswerFile,
 }) {
   const isEdit = mode === "edit" && Boolean(editingCourseId);
   const [analysis, setAnalysis] = useState(null);
   const [analyzeBusy, setAnalyzeBusy] = useState(false);
   const [pendingTestFile, setPendingTestFile] = useState(null);
   const [pendingPromptFile, setPendingPromptFile] = useState(null);
+  const [pendingModelAnswerFile, setPendingModelAnswerFile] = useState(null);
   const assetUpdatedAt = isEdit ? editMeta?.updatedAt || null : null;
 
   const handleTestFileSelected = useCallback(
@@ -97,6 +102,23 @@ export default function AdminCourseCreateComposer({
     [editingCourseId, onUploadCoursePromptFile, onPendingCreatePromptFile],
   );
 
+  const handleModelAnswerFileSelected = useCallback(
+    async (file) => {
+      if (!file) return;
+      if (!editingCourseId) {
+        onPendingCreateModelAnswerFile?.(file);
+        return;
+      }
+      setPendingModelAnswerFile({ name: file.name, size: file.size });
+      try {
+        await onUploadCourseModelAnswerFile(editingCourseId, file);
+      } finally {
+        setPendingModelAnswerFile(null);
+      }
+    },
+    [editingCourseId, onUploadCourseModelAnswerFile, onPendingCreateModelAnswerFile],
+  );
+
   const createTestPending = useMemo(() => {
     if (!pendingCreateTestFile) return null;
     return {
@@ -114,6 +136,15 @@ export default function AdminCourseCreateComposer({
       onClear: () => onPendingCreatePromptFile?.(null),
     };
   }, [pendingCreatePromptFile, onPendingCreatePromptFile]);
+
+  const createModelAnswerPending = useMemo(() => {
+    if (!pendingCreateModelAnswerFile) return null;
+    return {
+      name: pendingCreateModelAnswerFile.name,
+      size: pendingCreateModelAnswerFile.size,
+      onClear: () => onPendingCreateModelAnswerFile?.(null),
+    };
+  }, [pendingCreateModelAnswerFile, onPendingCreateModelAnswerFile]);
 
   useEffect(() => {
     if (!isEdit) {
@@ -177,7 +208,8 @@ export default function AdminCourseCreateComposer({
   }, [coverUrl]);
 
   return (
-    <form className="oh-admin-courses__composer" onSubmit={onSubmit} noValidate={false}>
+    <form className="oh-admin-courses__composer oh-admin-courses__composer--in-modal" onSubmit={onSubmit} noValidate={false}>
+      <div className="oh-admin-courses__composer-scroll">
       {!isEdit ? (
         <div className="oh-admin-courses__composer-steps" aria-label="مراحل إنشاء الدورة">
           {CREATE_STEPS.map((step, idx) => {
@@ -446,7 +478,7 @@ export default function AdminCourseCreateComposer({
                 <span className="oh-admin-courses__exam-block-icon" aria-hidden>
                   📄
                 </span>
-                ملف تعليمات الاختبار
+                ملف تعليمات / Prompt التقييم
               </h4>
               <CourseFileUploadField
                 label="رفع ملف من الجهاز"
@@ -480,8 +512,78 @@ export default function AdminCourseCreateComposer({
                 يمكنك رفع ملف التعليمات الآن أو إضافته لاحقاً من إدارة الدورة.
               </p>
             </div>
+
+            <div className="oh-admin-courses__exam-block">
+              <h4 className="oh-admin-courses__exam-block-title">
+                <span className="oh-admin-courses__exam-block-icon" aria-hidden>
+                  📄
+                </span>
+                ملف الإجابة النموذجية
+              </h4>
+              <CourseFileUploadField
+                label="رفع ملف من الجهاز"
+                fileUrl={isEdit || !pendingCreateModelAnswerFile ? form.testModelAnswerFileUrl : ""}
+                updatedAt={assetUpdatedAt}
+                disabled={creating}
+                uploading={modelAnswerFileUploading}
+                pendingFile={isEdit ? pendingModelAnswerFile : createModelAnswerPending}
+                isEdit={isEdit}
+                allowPickBeforeSave={!isEdit}
+                pickButtonLabel="رفع ملف من الجهاز"
+                onFileSelected={handleModelAnswerFileSelected}
+                onValidationError={onUploadError}
+                courseId={editingCourseId || null}
+                fileKind="model-answer"
+              />
+              <p className="oh-admin-courses__exam-or">أو</p>
+              <CourseUrlField
+                label="إدخال رابط الملف"
+                optional
+                value={form.testModelAnswerFileUrl}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setForm((s) => ({ ...s, testModelAnswerFileUrl: next }));
+                  if (!isEdit && next.trim()) onPendingCreateModelAnswerFile?.(null);
+                }}
+                updatedAt={assetUpdatedAt}
+                linkTitle="رابط ملف الإجابة النموذجية"
+              />
+              <p className="oh-admin-courses__exam-help">
+                يُستخدم مع ملف الاختبار وملف التعليمات في ChatGPT عند تقييم إجابة المستقل.
+              </p>
+            </div>
+
+            <div className="oh-admin-courses__exam-block">
+              <h4 className="oh-admin-courses__exam-block-title">
+                <span className="oh-admin-courses__exam-block-icon" aria-hidden>
+                  ✍️
+                </span>
+                إعدادات التقييم
+              </h4>
+              <label className="oh-admin-courses__field">
+                <span>عدد أسئلة الاختبار</span>
+                <input
+                  className="oh-admin-courses__input"
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={form.testQuestionCount ?? ""}
+                  onChange={(e) =>
+                    setForm((s) => ({
+                      ...s,
+                      testQuestionCount: e.target.value,
+                    }))
+                  }
+                  placeholder="مثال: 5"
+                />
+                <span className="oh-admin-courses__field-hint">
+                  يظهر للمستقل حقول «سؤال 1»، «سؤال 2»، … بعد التقييم في ChatGPT.
+                </span>
+              </label>
+            </div>
           </div>
         </div>
+      </div>
       </div>
 
       <div className="oh-admin-courses__composer-action-bar">

@@ -2735,3 +2735,111 @@
     gap: 10px;
   }
 }
+
+.fcd-final__exam-brief {
+  margin-bottom: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--fcd-radius-md);
+}
+
+.fcd-final__exam-meta {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--fcd-muted);
+}
+
+.fcd-final__exam-copy-block {
+  margin-top: 0.65rem;
+}
+
+.fcd-final__exam-copy-body {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--fcd-navy);
+  white-space: pre-wrap;
+}
+
+.fcd-final__exam-instructions-list {
+  margin: 0.5rem 0 0;
+  padding-inline-start: 1.35rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--fcd-navy);
+}
+
+.fcd-final__exam-instructions-list li + li {
+  margin-top: 0.35rem;
+}
+
+.fcd-final__marks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.65rem;
+}
+
+.fcd-final__marks-grid--readonly {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fcd-final__mark-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.fcd-final__mark-field--error .fcd-final__mark-input {
+  border-color: #dc2626;
+}
+
+.fcd-final__mark-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--fcd-navy);
+}
+
+.fcd-final__mark-input {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid var(--fcd-line);
+  font-size: 1rem;
+}
+
+.fcd-final__mark-error {
+  font-size: 0.75rem;
+  color: #dc2626;
+}
+
+.fcd-final__grade-preview {
+  margin: 0.75rem 0 0;
+  font-size: 0.95rem;
+  color: var(--fcd-navy);
+}
+
+.fcd-final__completed-grade {
+  margin: 0.5rem 0 0;
+  font-size: 1rem;
+  color: var(--fcd-navy);
+}
+
+.fcd-final__completed-grades {
+  margin-top: 1rem;
+}
+
+.fcd-final__mark-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 10px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid var(--fcd-line);
+}
+
+.fcd-final__mark-readonly-label {
+  font-size: 0.78rem;
+  color: var(--fcd-muted);
+}

@@ -313,7 +313,7 @@ async function fetchSuperAdminOverviewPosthog(cfg, { range = "7d", topLimit = 10
 }
 
 const POSTHOG_OVERVIEW_TIMEOUT_MS = Math.min(
-  Math.max(Number(process.env.POSTHOG_OVERVIEW_TIMEOUT_MS) || 20000, 5000),
+  Math.max(Number(process.env.POSTHOG_OVERVIEW_TIMEOUT_MS) || 8000, 4000),
   60000,
 );
 
@@ -335,12 +335,11 @@ async function fetchSuperAdminOverviewPosthogWithTimeout(cfg, options = {}) {
 }
 
 async function getHeroSnapshotNumbers() {
-  const visitors7d = await scalar(`
-    SELECT uniq(person_id)
+  /** Public homepage page views: all $pageview events since tracking began (not unique visitors). */
+  const pageViewsAllTime = await scalar(`
+    SELECT count()
     FROM events
     WHERE event = '$pageview'
-      AND timestamp >= now() - INTERVAL 7 DAY
-      AND timestamp < now() + INTERVAL 1 MINUTE
   `);
   /** Weekly actives: distinct persons with any ingested event in the last 7 days (matches hero copy “هذا الأسبوع”). */
   const activeUsers7d = await scalar(`
@@ -350,7 +349,7 @@ async function getHeroSnapshotNumbers() {
       AND timestamp < now() + INTERVAL 1 MINUTE
   `);
   return {
-    visitorsLast7Days: Math.trunc(visitors7d),
+    pageViewsAllTime: Math.trunc(pageViewsAllTime),
     activeUsersLast7Days: Math.trunc(activeUsers7d),
   };
 }

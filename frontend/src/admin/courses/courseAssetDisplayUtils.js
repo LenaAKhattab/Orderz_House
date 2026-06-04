@@ -28,18 +28,26 @@ export function isTechnicalStorageFileName(name) {
 }
 
 export const COURSE_TEST_FILE_STUDENT_TITLE = "ملف الاختبار";
-export const COURSE_PROMPT_FILE_STUDENT_TITLE = "ملف التعليمات";
+export const COURSE_PROMPT_FILE_STUDENT_TITLE = "ملف تعليمات / Prompt التقييم";
+export const COURSE_MODEL_ANSWER_FILE_STUDENT_TITLE = "ملف الإجابة النموذجية";
 
 /** Fixed download names for student-facing course files (never expose storage keys). */
 export function getStudentCourseFileDownloadName(fileKind) {
   if (fileKind === "prompt") return "course-prompt.pdf";
+  if (fileKind === "model-answer") return "course-model-answer.pdf";
   if (fileKind === "answer") return "course-answer.pdf";
   return "course-test.pdf";
 }
 
 export function resolveStudentCourseFileDisplay({ url, fileKind, updatedAt = null }) {
-  const kind = fileKind === "prompt" ? "prompt" : "test";
-  const title = kind === "prompt" ? COURSE_PROMPT_FILE_STUDENT_TITLE : COURSE_TEST_FILE_STUDENT_TITLE;
+  const kind =
+    fileKind === "prompt" ? "prompt" : fileKind === "model-answer" ? "model-answer" : "test";
+  const title =
+    kind === "prompt"
+      ? COURSE_PROMPT_FILE_STUDENT_TITLE
+      : kind === "model-answer"
+        ? COURSE_MODEL_ANSWER_FILE_STUDENT_TITLE
+        : COURSE_TEST_FILE_STUDENT_TITLE;
   const rawName = fileNameFromUrl(url);
   const dateLabel = formatAssetDate(updatedAt);
   return {

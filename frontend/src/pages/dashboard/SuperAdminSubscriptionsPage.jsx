@@ -20,6 +20,7 @@ import DashboardLoadingState from "../../components/dashboard/DashboardLoadingSt
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
+import { formatSubscriptionPaymentCountry } from "../../utils/countryDisplay";
 import "./superAdminSubscriptionsPage.css";
 
 /** Shared control styling — matches Step 2 dash tokens + RTL-safe `text-start`. */
@@ -58,13 +59,20 @@ function formatSubscriptionStatus(status) {
   return s || "—";
 }
 
-function formatFreelancerDisplay(sub) {
+function formatFreelancerName(sub) {
   const f = sub?.freelancer;
   if (!f) return `مستقل · ${sub.freelancerUserId}`;
   const name = [f.firstName, f.fatherName, f.familyName].filter(Boolean).join(" ").trim();
-  if (name) return f.accountId ? `${name} · ${f.accountId}` : name;
+  if (name) return name;
   if (f.email) return `${f.email}`;
   return `مستقل · ${sub.freelancerUserId}`;
+}
+
+function formatFreelancerDisplay(sub) {
+  const f = sub?.freelancer;
+  const name = formatFreelancerName(sub);
+  if (!f?.accountId || String(name).includes("@")) return name;
+  return `${name} · ${f.accountId}`;
 }
 
 function planDisplayName(sub, planTitleById) {
@@ -558,9 +566,17 @@ const SuperAdminSubscriptionsPage = () => {
                   </div>
 
                   <div className="mb-4 flex flex-col gap-2.5">
-                    <div className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1 text-sm">
+                    <div className="grid grid-cols-[auto_1fr] items-start gap-x-3 gap-y-1 text-sm">
                       <span className="text-xs font-bold text-slate-500">المستقل</span>
-                      <span className="min-w-0 break-words font-bold text-slate-900">{formatFreelancerDisplay(s)}</span>
+                      <span className="min-w-0">
+                        <span className="block break-words font-bold text-slate-900">{formatFreelancerDisplay(s)}</span>
+                        <span className="sa-sub-country mt-0.5 block text-xs font-bold text-slate-500" title="دولة الدفع (Stripe)">
+                          {formatSubscriptionPaymentCountry({
+                            countryCode: s.paymentCountryCode,
+                            paymentStatus: s.paymentStatus,
+                          })}
+                        </span>
+                      </span>
                     </div>
                     <div className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1 text-sm">
                       <span className="text-xs font-bold text-slate-500">الباقة</span>

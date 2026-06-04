@@ -55,7 +55,7 @@ async function getAnalyticsHealthReport() {
   let hogqlReachable = false;
   let hogqlError = null;
   let lastPageviewAt = null;
-  let visitorsLast7Days = null;
+  let pageViewsAllTime = null;
   let activeUsersLast7Days = null;
   let snapshotError = null;
 
@@ -67,7 +67,7 @@ async function getAnalyticsHealthReport() {
     if (hogqlReachable) {
       try {
         const snap = await posthogAnalyticsService.getHeroSnapshotNumbers();
-        visitorsLast7Days = snap.visitorsLast7Days;
+        pageViewsAllTime = snap.pageViewsAllTime;
         activeUsersLast7Days = snap.activeUsersLast7Days;
         lastPageviewAt = await fetchLastPageviewAt(cfg);
         lastSuccessfulHogqlAt = queriedAt;
@@ -95,7 +95,7 @@ async function getAnalyticsHealthReport() {
       personalKeyPresent: env.personalKeyPresent,
     },
     snapshot: {
-      visitorsLast7Days,
+      pageViewsAllTime,
       activeUsersLast7Days,
       lastPageviewAt,
       error: snapshotError,
@@ -103,17 +103,17 @@ async function getAnalyticsHealthReport() {
     degraded,
     warnings: env.warnings,
     errors: env.errors,
-    hints: buildHints({ env, hogqlReachable, lastPageviewAt, visitorsLast7Days }),
+    hints: buildHints({ env, hogqlReachable, lastPageviewAt, pageViewsAllTime }),
   };
 }
 
-function buildHints({ env, hogqlReachable, lastPageviewAt, visitorsLast7Days }) {
+function buildHints({ env, hogqlReachable, lastPageviewAt, pageViewsAllTime }) {
   const hints = [];
   if (!env.hogqlReady) {
     hints.push("أكمل إعداد POSTHOG_PROJECT_ID و POSTHOG_PERSONAL_API_KEY على الخادم.");
   } else if (!hogqlReachable) {
     hints.push("PostHog لا يستجيب للاستعلامات — تحقق من المضيف والمفاتيح.");
-  } else if (visitorsLast7Days === 0 && !lastPageviewAt) {
+  } else if (pageViewsAllTime === 0 && !lastPageviewAt) {
     hints.push("لا توجد أحداث $pageview — فعّل تتبع المتصفح (VITE_POSTHOG_KEY) أو VITE_POSTHOG_ENABLE_IN_DEV محلياً.");
   }
   return hints;
@@ -164,11 +164,11 @@ async function getPublicHomeAnalyticsMeta(opts) {
     const snap = await posthogAnalyticsService.getHeroSnapshotNumbers();
     lastPageviewAt = await fetchLastPageviewAt(cfg);
     lastSuccessfulHogqlAt = queriedAt;
-    if (opts.showVisitorsCount) visitors = snap.visitorsLast7Days;
+    if (opts.showVisitorsCount) visitors = snap.pageViewsAllTime;
     if (opts.showActiveUsersCount) activeUsers = snap.activeUsersLast7Days;
 
     if (opts.showVisitorsCount) {
-      if (snap.visitorsLast7Days > 0) reasons.visitors = "ok";
+      if (snap.pageViewsAllTime > 0) reasons.visitors = "ok";
       else if (!lastPageviewAt) reasons.visitors = "waiting_first_pageview";
       else reasons.visitors = "zero_traffic";
     }

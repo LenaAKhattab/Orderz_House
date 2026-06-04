@@ -13,7 +13,8 @@ export const FALLBACK_DEMO = {
 const REASON_HINTS = {
   toggle_off: null,
   ok: null,
-  zero_traffic: "لا زيارات مسجّلة خلال 7 أيام",
+  zero_traffic_views: "لا مشاهدات مسجّلة بعد",
+  zero_traffic_active: "لا نشاط مسجّل خلال 7 أيام",
   waiting_first_pageview: "بانتظار أول زيارة ($pageview)",
   posthog_unavailable: "التحليلات غير متاحة مؤقتاً",
   posthog_misconfigured: "إعداد PostHog على الخادم غير مكتمل",
@@ -46,6 +47,9 @@ export function resolveAnalyticsHint(payload, key) {
     return REASON_HINTS.dev_tracking_disabled;
   }
   const reason = reasonForKey(payload, key);
+  if (reason === "zero_traffic") {
+    return key === "views" ? REASON_HINTS.zero_traffic_views : REASON_HINTS.zero_traffic_active;
+  }
   if (reason && REASON_HINTS[reason]) return REASON_HINTS[reason];
   if (payload?.analyticsDegraded && key === "views") return REASON_HINTS.posthog_unavailable;
   return null;

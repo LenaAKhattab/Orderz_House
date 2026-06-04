@@ -109,6 +109,7 @@ const errorMiddleware = (err, req, res, next) => {
     success: false,
     message: payload.message,
     code: payload.code,
+    ...(err.fieldErrors && typeof err.fieldErrors === "object" ? { fieldErrors: err.fieldErrors } : {}),
     ...(exposeDebug
       ? {
           debug: {

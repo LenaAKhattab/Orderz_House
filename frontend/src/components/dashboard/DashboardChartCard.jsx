@@ -2,12 +2,13 @@
  * Card wrapper for charts — title row + body slot.
  * @param {object} p
  * @param {string} [p.title]
+ * @param {string} [p.description] — muted subtitle (period / unit)
  * @param {import("react").ReactNode} [p.actions]
  * @param {import("react").ReactNode} p.children
  * @param {string} [p.className]
  */
-export default function DashboardChartCard({ title, actions, children, className = "" }) {
-  const hasHead = Boolean(title || actions);
+export default function DashboardChartCard({ title, description, actions, children, className = "" }) {
+  const hasHead = Boolean(title || description || actions);
 
   const cardShell = "dash-ui-surface--soft";
 
@@ -15,11 +16,14 @@ export default function DashboardChartCard({ title, actions, children, className
     <div className={`dash-ui-chart-card flex min-h-0 min-w-0 flex-col ${cardShell} p-5 sm:p-6 ${className}`.trim()}>
       {hasHead ? (
         <div className="dash-ui-chart-card__head mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          {title ? (
-            <h3 className="dash-ui-chart-card__title m-0 text-base font-bold tracking-tight text-slate-900">{title}</h3>
-          ) : (
-            <span />
-          )}
+          <div className="min-w-0">
+            {title ? (
+              <h3 className="dash-ui-chart-card__title m-0 text-base font-bold tracking-tight text-slate-900">{title}</h3>
+            ) : null}
+            {description ? (
+              <p className="sa-chart-card__desc m-0 mt-0.5 text-[0.72rem] font-semibold text-slate-400">{description}</p>
+            ) : null}
+          </div>
           {actions ? <div className="shrink-0 [&_.input]:rounded-lg [&_.input]:border-slate-200/90">{actions}</div> : null}
         </div>
       ) : null}

@@ -15,10 +15,6 @@ function PlanEditForm({ plan, submitting, onClose, onSave }) {
             <h2 id="oh-sapl-edit-title" className="oh-sapl-modal__title">
               تعديل الباقة
             </h2>
-            <p className="oh-sapl-modal__subtitle">
-              <code className="oh-sapl-card__code">{plan.name}</code>
-              <span className="oh-sapl-modal__hint"> — المعرف الداخلي لا يُعدّل بعد الإنشاء</span>
-            </p>
           </div>
           <button type="button" className="oh-sapl-modal__close" onClick={onClose} aria-label="إغلاق">
             ×

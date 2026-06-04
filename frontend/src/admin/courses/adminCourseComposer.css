@@ -311,8 +311,10 @@
 }
 
 .oh-admin-courses__composer-test-panel--expanded {
-  max-height: 1200px;
+  /* Large cap so exam uploads are not clipped inside the panel; outer modal scroll handles overflow */
+  max-height: 4000px;
   opacity: 1;
+  overflow: visible;
 }
 
 .oh-admin-courses__composer-test-inner {

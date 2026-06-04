@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   Area,
@@ -11,89 +11,53 @@ import {
 } from "recharts";
 import { useClientCreateOrderModal } from "../../../context/ClientCreateOrderModalContext";
 import { useToast } from "../../ui/toastContext";
-import { useSuperAdminAnalyticsOverview } from "../../../hooks/useSuperAdminAnalyticsOverview";
-import { useSuperAdminDashboardSummary } from "../../../hooks/useSuperAdminDashboardSummary";
+import { useSuperAdminDashboardHomeBundle } from "../../../hooks/useSuperAdminDashboardHomeBundle";
 import {
   getSuperadminHeroHomeStatsSettingRequest,
   patchSuperadminHeroHomeStatsSettingRequest,
 } from "../../../services/superAdminAnalytics";
+import SuperAdminHomeIntelligenceSections from "./SuperAdminHomeIntelligenceSections";
+import SuperAdminCommandCenter from "./SuperAdminCommandCenter";
+import SuperAdminAttentionSidePanel from "./SuperAdminAttentionSidePanel";
+import { computeAttentionTotalCount } from "./UnifiedAttentionPanel";
+import DashboardDateFilterBar from "./DashboardDateFilterBar";
+import { adaptBundleForPeriod } from "./adaptBundleForPeriod";
+import { buildForecasts } from "./buildForecasts";
+import { buildUnifiedAttention } from "./buildUnifiedAttention";
+import {
+  loadStoredPeriod,
+  saveStoredPeriod,
+  resolveDashboardPeriod,
+} from "./dashboardDateRange";
+import {
+  StatCardLink,
+  CollapsibleBlock,
+  KpiComparisonGrid,
+  LABEL_UNAVAILABLE,
+} from "./superAdminHomeBundleUi";
+import { SA_ROUTES, sectionFailed } from "./superAdminHomeDataUtils";
+import { chartMetaForKey, executiveKpiScope } from "./dashboardMetricScope";
 import DashboardPageHeader from "../../dashboard/DashboardPageHeader";
 import { superAdminBreadcrumbs } from "../../dashboard/dashboardBreadcrumbs";
 import DashboardSection from "../../dashboard/DashboardSection";
 import DashboardStatCard, { DashboardStatCardSkeleton } from "../../dashboard/DashboardStatCard";
 import DashboardChartCard, { DashboardChartCardSkeleton } from "../../dashboard/DashboardChartCard";
 import DashboardEmptyState from "../../dashboard/DashboardEmptyState";
-import DashboardErrorState from "../../dashboard/DashboardErrorState";
-import StatusBadge from "../../dashboard/StatusBadge";
-import HomeMetricsAdminExplainer from "./HomeMetricsAdminExplainer";
+import PlatformHomeStatsSettings from "./PlatformHomeStatsSettings";
 import "./super-admin-analytics.css";
 
-const ATTENTION_CARDS = [
-  {
-    to: "/dashboard/super-admin/subscriptions/activation",
-    icon: "✓",
-    title: "تفعيل الاشتراكات",
-    description: "متابعة الاشتراكات التي تحتاج تفعيلًا أو مراجعة.",
-    badgeKey: "subscriptionsAwaitingActivation",
-  },
-  {
-    to: "/dashboard/super-admin/financial-claims",
-    icon: "◍",
-    title: "المطالبات المالية",
-    description: "مراجعة المطالبات المعلقة وتحديث حالة الدفع.",
-    badgeKey: "financialClaimsPending",
-  },
-  {
-    to: "/dashboard/super-admin/orders",
-    icon: "▣",
-    title: "الطلبات",
-    description: "متابعة الطلبات الداخلية وحالة التنفيذ.",
-    badgeKey: "internalOrdersPendingClaims",
-  },
-  {
-    to: "/dashboard/super-admin/notifications",
-    icon: "◉",
-    title: "الإشعارات",
-    description: "مراجعة التنبيهات والرسائل الجديدة.",
-    badgeKey: "unreadNotifications",
-  },
-];
-
 const ADMIN_TASK_CARDS = [
-  { to: "/dashboard/super-admin/plans", icon: "◆", title: "الباقات", description: "خطط الاشتراك والأسعار." },
-  { to: "/dashboard/super-admin/subscriptions", icon: "◎", title: "الاشتراكات", description: "اشتراكات المستقلين." },
-  { to: "/dashboard/super-admin/courses", icon: "▶", title: "الدورات", description: "الدورات والتسجيلات." },
-  { to: "/dashboard/super-admin/ads", icon: "✴", title: "الإعلانات", description: "الإعلانات الظاهرة." },
+  { to: "/dashboard/super-admin/plans", icon: "◆", title: "الباقات", description: "إدارة خطط الاشتراك والأسعار." },
+  { to: "/dashboard/super-admin/subscriptions", icon: "◎", title: "الاشتراكات", description: "اشتراكات المستقلين الحالية." },
+  { to: "/dashboard/super-admin/courses", icon: "▶", title: "الدورات", description: "إدارة الدورات والتسجيلات." },
+  { to: "/dashboard/super-admin/ads", icon: "✴", title: "الإعلانات", description: "الإعلانات المعروضة في المنصة." },
   {
     to: "/dashboard/super-admin/training-orders/settings",
     icon: "✦",
     title: "الطلبات التجريبية",
-    description: "إعدادات الطلبات التدريبية.",
+    description: "إعدادات تجربة الطلبات للمستقلين الجدد.",
   },
 ];
-
-function IconVisitors({ className = "" }) {
-  return (
-    <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
-    </svg>
-  );
-}
-
-function IconActive({ className = "" }) {
-  return (
-    <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 function IconRevenue({ className = "" }) {
   return (
@@ -158,17 +122,22 @@ function isMetricMissing(value) {
   return value === null || value === undefined || Number.isNaN(Number(value));
 }
 
-function renderMetricValue(value, formatFn, { loading = false } = {}) {
+function renderMetricValue(value, formatFn, { loading = false, failed = false } = {}) {
   if (loading) {
     return <span className={`${skelBar} inline-block h-8 w-[5.5rem] max-w-[42%]`} aria-hidden />;
   }
+  if (failed) {
+    return <span className="font-bold text-slate-400">تعذر تحميل البيانات</span>;
+  }
   if (isMetricMissing(value)) {
-    return <span className="font-bold text-slate-400">غير متاح</span>;
+    return <span className="font-bold text-slate-400">{LABEL_UNAVAILABLE}</span>;
   }
   return formatFn(value);
 }
 
 const skelBar = "dash-ui-skeleton-rows__bar block rounded-md bg-slate-200/90";
+
+const ANALYTICS_UNAVAILABLE_MSG = "تعذر تحميل بيانات النشاط حالياً";
 
 function ActionCardSkeleton({ variant = "attention" }) {
   return (
@@ -203,16 +172,23 @@ const CHART_TOOLTIP_STYLE = {
   color: "var(--text-main, #0f172a)",
 };
 
-function ChartsBlock({ unified }) {
+function ChartsBlock({ unified, periodLabel }) {
   if (!unified?.length) {
     return (
-      <DashboardEmptyState title="لا توجد بيانات اتجاه" description="لا توجد بيانات اتجاه لآخر 7 أيام." />
+      <DashboardEmptyState
+        title="لا توجد بيانات كافية"
+        description={`لا تتوفر بيانات لعرض الاتجاه خلال ${periodLabel || "الفترة المحددة"}.`}
+      />
     );
   }
 
   return (
     <div className="sa-charts-layout">
-      <DashboardChartCard title="الإيرادات — آخر 7 أيام" className="sa-chart--primary">
+      <DashboardChartCard
+        title={chartMetaForKey("revenue", periodLabel).title}
+        description={`${chartMetaForKey("revenue", periodLabel).unit} — ${chartMetaForKey("revenue", periodLabel).scope}`}
+        className="sa-chart--primary"
+      >
         <div className="sa-chart__canvas sa-chart__canvas--primary" dir="ltr">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={unified} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -233,7 +209,11 @@ function ChartsBlock({ unified }) {
       </DashboardChartCard>
 
       <div className="sa-charts-layout__secondary">
-        <DashboardChartCard title="الزيارات — آخر 7 أيام" className="sa-chart--secondary">
+        <DashboardChartCard
+          title={chartMetaForKey("visitors", periodLabel).title}
+          description={`${chartMetaForKey("visitors", periodLabel).unit} — ${chartMetaForKey("visitors", periodLabel).scope}`}
+          className="sa-chart--secondary"
+        >
           <div className="sa-chart__canvas sa-chart__canvas--secondary" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={unified} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -253,7 +233,11 @@ function ChartsBlock({ unified }) {
           </div>
         </DashboardChartCard>
 
-        <DashboardChartCard title="نشاط الطلبات — آخر 7 أيام" className="sa-chart--secondary sa-chart--events">
+        <DashboardChartCard
+          title={chartMetaForKey("ordersChart", periodLabel).title}
+          description={`${chartMetaForKey("ordersChart", periodLabel).unit} — ${chartMetaForKey("ordersChart", periodLabel).scope}`}
+          className="sa-chart--secondary sa-chart--events"
+        >
           <div className="sa-chart__canvas sa-chart__canvas--secondary" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={unified} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -283,7 +267,7 @@ function ActionCard({ to, icon, title, description, variant = "attention", badge
   return (
     <NavLink
       to={to}
-      className={`sa-action-card admin-dash-quick__card sa-action-card--${variant}`}
+      className={`sa-action-card sa-action-card--premium admin-dash-quick__card sa-action-card--${variant}`}
     >
       <span className="sa-action-card__icon" aria-hidden>
         {icon}
@@ -302,23 +286,43 @@ function ActionCard({ to, icon, title, description, variant = "attention", badge
   );
 }
 
-function CollapsibleSection({ title, description, defaultOpen = false, children }) {
+function SectionInlineNotice({ children, tone = "warn" }) {
+  return (
+    <p
+      className={`sa-section-notice${tone === "error" ? " sa-section-notice--error" : ""}`}
+      role="status"
+    >
+      {children}
+    </p>
+  );
+}
+
+function CollapsibleSection({ title, description, icon, statusBadge, defaultOpen = false, onOpenChange, children }) {
   const [open, setOpen] = useState(defaultOpen);
+
+  const toggle = () => {
+    setOpen((v) => {
+      const next = !v;
+      onOpenChange?.(next);
+      return next;
+    });
+  };
 
   return (
     <section
-      className={`dash-ui-section dash-ui-surface--soft mb-5 w-full min-w-0 text-start sa-collapsible sa-collapsible--compact ${defaultOpen ? "" : "sa-collapsible--closed"}`.trim()}
+      className={`dash-ui-section dash-ui-surface--soft mb-4 w-full min-w-0 sa-collapsible sa-collapsible--compact sa-collapsible--premium ${open ? "" : "sa-collapsible--closed"}`.trim()}
     >
-      <button
-        type="button"
-        className="sa-collapsible__trigger"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
+      <button type="button" className="sa-collapsible__trigger" aria-expanded={open} onClick={toggle}>
+        {icon ? (
+          <span className="sa-collapsible__icon-chip" aria-hidden>
+            {icon}
+          </span>
+        ) : null}
         <div className="sa-collapsible__head-copy">
           <h2 className="sa-collapsible__title">{title}</h2>
           {description ? <p className="sa-collapsible__desc">{description}</p> : null}
         </div>
+        {statusBadge ? <span className="sa-collapsible__status">{statusBadge}</span> : null}
         <span className="sa-collapsible__chevron" aria-hidden>
           {open ? "▾" : "◂"}
         </span>
@@ -328,71 +332,230 @@ function CollapsibleSection({ title, description, defaultOpen = false, children 
   );
 }
 
-function PlatformSummaryGrid({ platformOrders }) {
+const EXEC_KPI_LINKS = {
+  activeSubscriptions: SA_ROUTES.subscriptions,
+  pendingClaims: SA_ROUTES.financialClaims,
+  ordersThisMonth: SA_ROUTES.orders,
+  monthlyRevenue: SA_ROUTES.orders,
+  totalOrders: SA_ROUTES.orders,
+  claimsSubmitted: SA_ROUTES.financialClaims,
+};
+
+function HeroKpiGrid({
+  businessData,
+  businessPending,
+  businessFailed,
+  ordersToday,
+  ordersTodayPending,
+  pendingClaims,
+  summaryPending,
+  summaryFailed,
+}) {
+  return (
+    <div className="sa-kpi-grid sa-kpi-grid--hero sa-kpi-grid--hero-pulse sa-kpi-grid--pulse-premium" aria-busy={businessPending || ordersTodayPending || summaryPending || undefined}>
+      {businessPending ? (
+        <DashboardStatCardSkeleton className="sa-stat-card--business sa-stat-card--hero sa-stat-card--hero-primary" />
+      ) : (
+        <DashboardStatCard
+          className="sa-stat-card--business sa-stat-card--hero sa-stat-card--hero-primary"
+          label="إيرادات اليوم"
+          value={renderMetricValue(businessData?.revenueTodayJod, formatMoneyJod, { failed: businessFailed })}
+          icon={<IconRevenue />}
+        />
+      )}
+      {ordersTodayPending ? (
+        <DashboardStatCardSkeleton className="sa-stat-card--activity sa-stat-card--hero" />
+      ) : (
+        <StatCardLink to={SA_ROUTES.orders}>
+          <DashboardStatCard
+            className="sa-stat-card--activity sa-stat-card--hero sa-stat-card--clickable"
+            label="طلبات اليوم"
+            value={renderMetricValue(ordersToday, formatInt)}
+            icon={<IconOrders />}
+          />
+        </StatCardLink>
+      )}
+      {businessPending ? (
+        <DashboardStatCardSkeleton className="sa-stat-card--business sa-stat-card--hero" />
+      ) : (
+        <StatCardLink to={SA_ROUTES.subscriptions}>
+          <DashboardStatCard
+            className="sa-stat-card--business sa-stat-card--hero sa-stat-card--clickable"
+            label="اشتراكات نشطة"
+            value={renderMetricValue(businessData?.activeSubscriptions, formatInt, { failed: businessFailed })}
+            icon={<IconSubscriptions />}
+          />
+        </StatCardLink>
+      )}
+      {summaryPending ? (
+        <DashboardStatCardSkeleton className="sa-stat-card--business sa-stat-card--hero" />
+      ) : (
+        <StatCardLink to={SA_ROUTES.financialClaims}>
+          <DashboardStatCard
+            className="sa-stat-card--business sa-stat-card--hero sa-stat-card--clickable"
+            label="مطالبات معلّقة"
+            value={renderMetricValue(pendingClaims, formatInt, { failed: summaryFailed })}
+            icon={<IconClaims />}
+          />
+        </StatCardLink>
+      )}
+    </div>
+  );
+}
+
+function SecondaryMetricsBlock({
+  intelSummary,
+  platformOrders,
+  posthogKpis,
+  loading,
+  failed,
+  posthogUnavailable,
+  summaryFailed,
+}) {
+  const s = intelSummary;
+  const stripItems = [
+    { key: "u", label: "المستخدمون", value: s?.totalUsers },
+    { key: "c", label: "العملاء", value: s?.totalClients },
+    { key: "f", label: "المستقلين", value: s?.totalFreelancers },
+    { key: "o", label: "إجمالي الطلبات", value: s?.totalOrders, to: SA_ROUTES.orders },
+    { key: "rev", label: "إيرادات الشهر", value: s?.monthlyRevenueJod, money: true },
+    {
+      key: "vis",
+      label: "زوار اليوم",
+      value: posthogUnavailable ? null : posthogKpis?.visitorsToday,
+      missing: posthogUnavailable || isMetricMissing(posthogKpis?.visitorsToday),
+    },
+    {
+      key: "act",
+      label: "نشطون اليوم",
+      value: posthogUnavailable ? null : posthogKpis?.activeUsersToday,
+      missing: posthogUnavailable || isMetricMissing(posthogKpis?.activeUsersToday),
+    },
+  ];
+
+  if (loading && !s) {
+    return <div className="sa-kpi-grid sa-kpi-grid--dense" aria-hidden>{stripItems.map((item) => <DashboardStatCardSkeleton key={item.key} className="sa-stat-card--dense" />)}</div>;
+  }
+
   const open = platformOrders?.openProjects;
   const inProgress = platformOrders?.inProgressProjects;
   const completed = platformOrders?.completedProjects;
 
   return (
-    <div className="sa-kpi-grid sa-kpi-grid--platform">
-      <DashboardStatCard
-        className="sa-stat-card--platform"
-        label="طلبات مفتوحة"
-        value={renderMetricValue(open, formatInt)}
-        hint="بانتظار التعيين أو العروض"
-        icon={<IconOrders />}
-      />
-      <DashboardStatCard
-        className="sa-stat-card--platform"
-        label="طلبات قيد التنفيذ"
-        value={renderMetricValue(inProgress, formatInt)}
-        hint="مُسندة أو قيد العمل"
-        icon={<IconOrders />}
-      />
-      <DashboardStatCard
-        className="sa-stat-card--platform"
-        label="طلبات مكتملة"
-        value={renderMetricValue(completed, formatInt)}
-        hint="منجزة على المنصة"
-        icon={<IconOrders />}
-      />
-    </div>
-  );
-}
-
-function PlatformSummarySkeleton() {
-  return (
-    <div className="sa-kpi-grid sa-kpi-grid--platform" aria-hidden>
-      {Array.from({ length: 3 }).map((_, i) => (
-        <DashboardStatCardSkeleton key={`platform-${i}`} className="sa-stat-card--platform min-h-[6.75rem]" />
-      ))}
-    </div>
+    <>
+      <div className="sa-kpi-grid sa-kpi-grid--dense sa-kpi-grid--dense-4">
+        {stripItems.map((item) => (
+          <StatCardLink key={item.key} to={item.to}>
+            <DashboardStatCard
+              className={`sa-stat-card--platform sa-stat-card--dense${item.to ? " sa-stat-card--clickable" : ""}${failed || item.missing || item.value == null ? " sa-stat-card--unavailable" : ""}`}
+              label={item.label}
+              value={
+                failed
+                  ? "تعذر تحميل البيانات"
+                  : item.missing
+                    ? LABEL_UNAVAILABLE
+                    : item.money
+                      ? formatMoneyJod(item.value)
+                      : formatInt(item.value)
+              }
+            />
+          </StatCardLink>
+        ))}
+      </div>
+      <p className="sa-kpi-group-label sa-kpi-group-label--tight">حالة الطلبات</p>
+      <div className="sa-kpi-grid sa-kpi-grid--platform sa-kpi-grid--hero-secondary">
+        <StatCardLink to={SA_ROUTES.orders}>
+          <DashboardStatCard
+            className="sa-stat-card--platform sa-stat-card--hero sa-stat-card--clickable"
+            label="مفتوحة"
+            value={renderMetricValue(open, formatInt, { failed: summaryFailed })}
+          />
+        </StatCardLink>
+        <StatCardLink to={SA_ROUTES.orders}>
+          <DashboardStatCard
+            className="sa-stat-card--platform sa-stat-card--hero sa-stat-card--clickable"
+            label="قيد التنفيذ"
+            value={renderMetricValue(inProgress, formatInt, { failed: summaryFailed })}
+          />
+        </StatCardLink>
+        <StatCardLink to={SA_ROUTES.orders}>
+          <DashboardStatCard
+            className="sa-stat-card--platform sa-stat-card--hero sa-stat-card--clickable"
+            label="مكتملة"
+            value={renderMetricValue(completed, formatInt, { failed: summaryFailed })}
+          />
+        </StatCardLink>
+      </div>
+    </>
   );
 }
 
 export default function SuperAdminProductAnalytics() {
   const { push } = useToast();
   const { openModal: openCreateOrderModal } = useClientCreateOrderModal();
-  const { data, loading, error, errorCode, refresh, chartPack } = useSuperAdminAnalyticsOverview({
-    range: "7d",
-    topLimit: 10,
+
+  const [periodInput, setPeriodInput] = useState(() => {
+    const stored = loadStoredPeriod();
+    return {
+      preset: stored?.preset || "7d",
+      customFrom: stored?.customFrom,
+      customTo: stored?.customTo,
+    };
   });
+
+  const period = useMemo(
+    () => resolveDashboardPeriod(periodInput),
+    [periodInput.preset, periodInput.customFrom, periodInput.customTo],
+  );
+
   const {
-    data: summaryData,
-    loading: summaryLoading,
-    error: summaryError,
-    refresh: refreshSummary,
-  } = useSuperAdminDashboardSummary();
+    data: bundleRaw,
+    fastLoading,
+    executiveLoading,
+    intelligenceLoading,
+    posthogLoading,
+    loading: bundleLoading,
+    error: bundleError,
+    fastError,
+    executiveError,
+    intelligenceError,
+    posthogError,
+    requestIntelligence,
+    requestPosthog,
+    refresh,
+  } = useSuperAdminDashboardHomeBundle(period);
 
-  const attentionCounts = summaryError ? null : summaryData?.attention;
-  const platformOrders = summaryError ? null : summaryData?.platformOrders;
-  const pendingClaims =
-    summaryLoading || summaryError ? null : summaryData?.attention?.financialClaimsPending;
+  const { bundle, periodMetrics, chartPack, periodLabel } = useMemo(
+    () => adaptBundleForPeriod(bundleRaw, period),
+    [bundleRaw, period],
+  );
 
-  const [heroBusy, setHeroBusy] = useState(true);
+  const summaryData = bundle?.summary;
+  const businessData = bundle?.businessKpis;
+  const data = bundle?.posthog;
+  const meta = bundle?.meta;
+  const sectionErrors = bundle?.meta?.sectionErrors || {};
+  const intelligence = bundle?.intelligence;
+
+  const platformOrders = summaryData?.platformOrders;
+  const pendingClaims = summaryData?.attention?.financialClaimsPending;
+  const unifiedAttention = intelligence?.attention?.data;
+
+  const handlePeriodChange = useCallback((next) => {
+    setPeriodInput((prev) => {
+      const merged = { ...prev, ...next };
+      const resolved = resolveDashboardPeriod(merged);
+      saveStoredPeriod({ preset: resolved.preset, customFrom: resolved.customFrom, customTo: resolved.customTo });
+      return merged;
+    });
+  }, []);
+
+  const [heroBusy, setHeroBusy] = useState(false);
   const [heroSaving, setHeroSaving] = useState(false);
   const [heroVisitors, setHeroVisitors] = useState(false);
   const [heroActiveUsers, setHeroActiveUsers] = useState(false);
+  const [heroLoaded, setHeroLoaded] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const loadHero = useCallback(async () => {
     setHeroBusy(true);
@@ -400,6 +563,7 @@ export default function SuperAdminProductAnalytics() {
       const response = await getSuperadminHeroHomeStatsSettingRequest();
       setHeroVisitors(Boolean(response?.data?.showHomeVisitorsCount));
       setHeroActiveUsers(Boolean(response?.data?.showHomeActiveUsersCount));
+      setHeroLoaded(true);
     } catch (e) {
       const message = e?.response?.data?.message || e?.message || "تعذر تحميل إعداد الصفحة الرئيسية.";
       push({ type: "error", title: "إعداد الصفحة الرئيسية", message });
@@ -409,8 +573,9 @@ export default function SuperAdminProductAnalytics() {
   }, [push]);
 
   useEffect(() => {
+    if (!settingsOpen || heroLoaded) return;
     void loadHero();
-  }, [loadHero]);
+  }, [settingsOpen, heroLoaded, loadHero]);
 
   const patchHomeStats = async (patch) => {
     setHeroSaving(true);
@@ -430,270 +595,327 @@ export default function SuperAdminProductAnalytics() {
     }
   };
 
-  const kpis = data?.kpis;
-  const meta = data?.meta;
-  const showFailState = Boolean(error) && !data && !loading;
-  const analyticsPending = loading || (!data && !error);
-  const summaryPending = summaryLoading || (!summaryData && !summaryError);
+  const posthogKpis = data?.kpis;
+  const fastPending = fastLoading && !summaryData && !businessData;
+  const analyticsPending = posthogLoading && !data;
+  const analyticsFailed = Boolean(posthogError) && !data && !posthogLoading;
+  const summaryPending = fastPending;
+  const summaryFailed = Boolean(fastError) && !summaryData && !fastLoading;
+  const businessPending = fastPending;
+  const businessFailed = Boolean(fastError) && !businessData && !fastLoading;
+  const intelSummaryFailed = sectionFailed(sectionErrors, "summary");
+  const posthogUnavailable = Boolean(meta?.posthogError) || meta?.posthogConfigured === false;
+  const isRefreshing =
+    (fastLoading || executiveLoading || posthogLoading || intelligenceLoading) && Boolean(bundle);
+  const attentionPending = fastLoading && !unifiedAttention;
+  const executiveKpis = intelligence?.executiveKpis?.data;
+  const executiveKpisFailed = sectionFailed(sectionErrors, "executiveKpis");
+  const executiveKpisPending = executiveLoading && !executiveKpis && !executiveKpisFailed;
 
-  const fieldLabelClass = "m-0 text-sm font-bold leading-snug text-slate-900";
-  const fieldHelpClass = "m-0 mt-1.5 text-xs leading-relaxed text-slate-500";
+  const handleHeavySectionOpen = useCallback(
+    (open) => {
+      if (!open) return;
+      requestIntelligence();
+      requestPosthog();
+    },
+    [requestIntelligence, requestPosthog],
+  );
+
+  const handleChartsSectionOpen = useCallback(
+    (open) => {
+      if (open) requestPosthog();
+    },
+    [requestPosthog],
+  );
+
+  const commandCenter = useMemo(
+    () => ({
+      forecasts: buildForecasts({ intelligence, periodMetrics }),
+      attentionItems: buildUnifiedAttention({ intelligence, attention: unifiedAttention }),
+    }),
+    [periodMetrics, intelligence, unifiedAttention],
+  );
+
+  const intelSummary = intelligence?.summary?.data;
+  const executiveWithLinks = useMemo(
+    () => (Array.isArray(executiveKpis) ? executiveKpis.map((m) => ({ ...m, to: EXEC_KPI_LINKS[m.key] })) : executiveKpis),
+    [executiveKpis],
+  );
+
+  const ordersToday = useMemo(() => {
+    const fromFast = businessData?.ordersToday;
+    if (fromFast != null && !Number.isNaN(Number(fromFast))) return fromFast;
+    const fromIntel = intelligence?.orders?.data?.totals?.ordersToday;
+    if (fromIntel != null && !Number.isNaN(Number(fromIntel))) return fromIntel;
+    if (!posthogUnavailable && !isMetricMissing(posthogKpis?.ordersToday)) {
+      return posthogKpis.ordersToday;
+    }
+    return null;
+  }, [
+    businessData?.ordersToday,
+    intelligence?.orders?.data?.totals?.ordersToday,
+    posthogUnavailable,
+    posthogKpis?.ordersToday,
+  ]);
+
+  const ordersTodayPending = fastPending && ordersToday == null;
+
+  const attentionTotal = useMemo(
+    () => computeAttentionTotalCount(commandCenter.attentionItems),
+    [commandCenter.attentionItems],
+  );
+
+  const forecastGrowthPct = useMemo(() => {
+    const rev = Array.isArray(executiveKpis) ? executiveKpis.find((m) => m.key === "monthlyRevenue") : null;
+    return rev?.comparable !== false ? rev?.changePct : null;
+  }, [executiveKpis]);
+
+  const heroStatusChips = useMemo(() => {
+    const chips = [];
+    if (bundle?.updatedAt) {
+      chips.push({
+        key: "updated",
+        label: "آخر تحديث",
+        value: new Date(bundle.updatedAt).toLocaleString("ar-JO-u-nu-latn", {
+          dateStyle: "short",
+          timeStyle: "short",
+        }),
+      });
+    }
+    if (!attentionPending) {
+      chips.push({ key: "actions", label: "إجراءات", value: formatInt(attentionTotal) });
+      chips.push({
+        key: "platform",
+        label: "حالة المنصة",
+        value: attentionTotal > 0 ? "يتطلب متابعة" : "مستقرة",
+        tone: attentionTotal > 0 ? "warn" : "ok",
+      });
+    }
+    return chips;
+  }, [bundle?.updatedAt, attentionPending, attentionTotal]);
+
+  const intelLazyBadge =
+    intelligenceLoading && !intelSummary ? "تحميل عند الفتح" : intelSummary ? "جاهز" : null;
+  const chartsLazyBadge =
+    !chartPack?.unified?.length && (analyticsPending || posthogLoading) ? "تحميل عند الفتح" : chartPack?.unified?.length
+      ? "جاهز"
+      : null;
+  const settingsLazyBadge = settingsOpen && heroBusy ? "تحميل عند الفتح" : heroLoaded ? "جاهز" : null;
 
   const handleRefresh = () => {
     void refresh();
-    void refreshSummary();
   };
 
   return (
-    <div className="sa-analytics w-full min-w-0 text-start">
+    <div className="sa-analytics sa-analytics--premium w-full min-w-0" dir="rtl" lang="ar">
       <DashboardPageHeader
-        className="sa-control-header"
+        className="sa-control-header sa-control-header--compact sa-control-header--premium"
         eyebrow="لوحة المدير الأعلى"
-        title="مركز تحكم المدير الأعلى"
-        description="متابعة الأعمال، المهام العاجلة، وصحة المنصة من مكان واحد."
+        title="مركز التحكم"
+        description="مركز قيادة تنفيذي — الحالة والمخاطر والفرص في لمحة."
         breadcrumbs={superAdminBreadcrumbs("نظرة عامة")}
         actions={
           <>
             <button type="button" className="btn btn-primary sa-header-cta" onClick={() => openCreateOrderModal()}>
               إنشاء طلب
             </button>
-            <button type="button" className="btn btn-secondary sa-header-refresh" onClick={handleRefresh} disabled={loading}>
-              {loading ? "جارٍ التحديث…" : "تحديث"}
+            <button type="button" className="btn btn-secondary sa-header-refresh" onClick={handleRefresh} disabled={isRefreshing}>
+              {isRefreshing ? "جارٍ التحديث…" : "تحديث"}
             </button>
           </>
         }
       />
 
-      {meta?.posthogError ? (
-        <div
-          className="mb-5 rounded-[length:var(--dash-surface-radius,18px)] border border-amber-200/70 bg-amber-50/90 px-4 py-3 text-sm leading-relaxed text-slate-800 dark:border-amber-500/35 dark:bg-amber-950/35 dark:text-amber-50/95"
-          role="status"
-        >
-          <strong className="mb-1.5 block font-bold text-slate-900 dark:text-amber-50">تنبيه</strong>
-          تعذر تحميل بعض بيانات النشاط حاليًا. تم عرض المؤشرات المتاحة.
-        </div>
+      {heroStatusChips.length ? (
+        <ul className="sa-hero-status-chips m-0 list-none p-0" aria-label="مؤشرات سريعة">
+          {heroStatusChips.map((chip) => (
+            <li
+              key={chip.key}
+              className={`sa-hero-status-chip${chip.tone === "warn" ? " sa-hero-status-chip--warn" : ""}${chip.tone === "ok" ? " sa-hero-status-chip--ok" : ""}`}
+            >
+              <span className="sa-hero-status-chip__label">{chip.label}</span>
+              <strong className="sa-hero-status-chip__value">{chip.value}</strong>
+            </li>
+          ))}
+        </ul>
       ) : null}
 
-      {error && data ? (
-        <DashboardErrorState
-          message={`تعذر تحديث البيانات في الخلفية: ${error}${errorCode ? ` (${errorCode})` : ""}`}
-          actions={
-            <button type="button" className="btn btn-primary" onClick={handleRefresh}>
-              تحديث
-            </button>
-          }
-        />
+      {(executiveError || posthogError || intelligenceError) && bundle ? (
+        <SectionInlineNotice tone="warn">
+          تعذر تحديث بعض بيانات اللوحة في الخلفية.{" "}
+          <button type="button" className="sa-section-notice__btn" onClick={() => void refresh()}>
+            إعادة المحاولة
+          </button>
+        </SectionInlineNotice>
+      ) : null}
+      {fastError && !bundle ? (
+        <SectionInlineNotice tone="error">
+          {fastError}{" "}
+          <button type="button" className="sa-section-notice__btn" onClick={() => void refresh()}>
+            إعادة المحاولة
+          </button>
+        </SectionInlineNotice>
       ) : null}
 
-      {showFailState ? (
-        <DashboardErrorState
-          message={error || "تعذر تحميل لوحة التحكم."}
-          actions={
-            <button type="button" className="btn btn-primary" onClick={handleRefresh}>
+      <DashboardDateFilterBar period={period} onChange={handlePeriodChange} disabled={fastLoading && !bundle} />
+
+      <section className="sa-dashboard-main-grid" aria-label="محتوى لوحة التحكم">
+        <main className="sa-dashboard-main-column">
+          <div className="sa-pulse-forecast-row">
+            <DashboardSection title="نبض اليوم" className="sa-section--compact sa-section--hero-kpis sa-section--pulse-premium sa-pulse-forecast-row__pulse">
+              <p className="sa-section-scope-label help m-0 mb-2">اليوم — لا يتأثر بفلتر الفترة</p>
+              <HeroKpiGrid
+                businessData={businessData}
+                businessPending={businessPending}
+                businessFailed={businessFailed}
+                ordersToday={ordersToday}
+                ordersTodayPending={ordersTodayPending}
+                pendingClaims={pendingClaims}
+                summaryPending={summaryPending}
+                summaryFailed={summaryFailed}
+              />
+            </DashboardSection>
+
+            <SuperAdminCommandCenter forecasts={commandCenter.forecasts} growthPct={forecastGrowthPct} />
+          </div>
+
+      <DashboardSection title="مقارنة الشهر" className="sa-section--compact sa-section--exec-compare sa-section--exec-premium">
+        <p className="sa-section-scope-label help m-0 mb-2">القيمة الحالية مقابل الفترة السابقة</p>
+        {executiveError && !executiveKpis ? (
+          <SectionInlineNotice tone="warn">
+            {executiveError}{" "}
+            <button type="button" className="sa-section-notice__btn" onClick={() => void refresh()}>
               إعادة المحاولة
             </button>
-          }
+          </SectionInlineNotice>
+        ) : null}
+        <div className="sa-exec-compare-grid">
+          <KpiComparisonGrid
+            metrics={executiveWithLinks}
+            loading={executiveKpisPending}
+            dense
+            period={period}
+            resolveScope={executiveKpiScope}
+            showCardScope={false}
+          />
+        </div>
+      </DashboardSection>
+
+      <CollapsibleBlock
+        title="مؤشرات إضافية"
+        description="مستخدمون، نشاط، وحالة الطلبات."
+        icon="📊"
+        statusBadge={intelLazyBadge}
+        defaultOpen={false}
+        className="sa-section--compact sa-section--muted sa-collapsible--premium mb-0"
+        onOpenChange={handleHeavySectionOpen}
+      >
+        <p className="sa-section-scope-label help m-0 mb-2">الوضع الحالي على المنصة</p>
+        {intelligenceLoading && !intelSummary ? (
+          <p className="help m-0 mb-2 text-slate-500">جارٍ تحميل البيانات…</p>
+        ) : null}
+        {intelligenceError && !intelSummary ? (
+          <SectionInlineNotice tone="warn">
+            {intelligenceError}{" "}
+            <button type="button" className="sa-section-notice__btn" onClick={() => void refresh()}>
+              إعادة المحاولة
+            </button>
+          </SectionInlineNotice>
+        ) : null}
+        <SecondaryMetricsBlock
+          intelSummary={intelSummary}
+          platformOrders={platformOrders}
+          posthogKpis={posthogKpis}
+          loading={(intelligenceLoading && !intelSummary) || (posthogLoading && posthogUnavailable && !posthogKpis)}
+          failed={intelSummaryFailed}
+          posthogUnavailable={posthogUnavailable}
+          summaryFailed={summaryFailed}
         />
-      ) : (
-        <>
-          <DashboardSection
-            title="أداء الأعمال اليوم"
-            description="مؤشرات مالية وتشغيلية لليوم."
-            className="sa-section--compact sa-section--business"
-          >
-            <div className="sa-kpi-grid sa-kpi-grid--business sa-kpi-grid--business-wide" aria-busy={analyticsPending || summaryPending || undefined}>
-              {analyticsPending ? (
-                <DashboardStatCardSkeleton className="sa-stat-card--business min-h-[7.5rem]" />
-              ) : (
-                <DashboardStatCard
-                  className="sa-stat-card--business"
-                  label="إيرادات اليوم"
-                  value={renderMetricValue(kpis?.revenueTodayJod, formatMoneyJod)}
-                  hint="مدفوعات الطلبات والاشتراكات"
-                  icon={<IconRevenue />}
-                />
-              )}
-              {analyticsPending ? (
-                <DashboardStatCardSkeleton className="sa-stat-card--business min-h-[7.5rem]" />
-              ) : (
-                <DashboardStatCard
-                  className="sa-stat-card--business"
-                  label="اشتراكات فعّالة"
-                  value={renderMetricValue(kpis?.activeSubscriptions, formatInt)}
-                  hint="اشتراكات مدفوعة وسارية الآن"
-                  icon={<IconSubscriptions />}
-                />
-              )}
-              {summaryPending ? (
-                <DashboardStatCardSkeleton className="sa-stat-card--business min-h-[7.5rem]" />
-              ) : (
-                <DashboardStatCard
-                  className="sa-stat-card--business"
-                  label="مطالبات معلّقة"
-                  value={renderMetricValue(pendingClaims, formatInt)}
-                  hint="بانتظار مراجعة المدير الأعلى"
-                  icon={<IconClaims />}
-                />
-              )}
-            </div>
-          </DashboardSection>
+      </CollapsibleBlock>
 
-          <DashboardSection
-            title="نشاط المنصة اليوم"
-            description="زيارات ومستخدمون وطلبات مسجّلة اليوم."
-            className="sa-section--compact sa-section--analytics"
-          >
-            <div className="sa-kpi-grid sa-kpi-grid--activity" aria-busy={analyticsPending || undefined}>
-              {analyticsPending ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <DashboardStatCardSkeleton key={`activity-${i}`} className="sa-stat-card--activity min-h-[6.75rem]" />
-                ))
-              ) : (
-                <>
-                  <DashboardStatCard
-                    className={`sa-stat-card--activity${isMetricMissing(kpis?.visitorsToday) ? " sa-stat-card--unavailable" : ""}`}
-                    label="زوار اليوم"
-                    value={renderMetricValue(kpis?.visitorsToday, formatInt)}
-                    hint="مشاهدات صفحة ($pageview)"
-                    icon={<IconVisitors />}
-                  />
-                  <DashboardStatCard
-                    className={`sa-stat-card--activity${isMetricMissing(kpis?.activeUsersToday) ? " sa-stat-card--unavailable" : ""}`}
-                    label="نشطون اليوم"
-                    value={renderMetricValue(kpis?.activeUsersToday, formatInt)}
-                    hint="تسجيلات دخول فريدة"
-                    icon={<IconActive />}
-                  />
-                  <DashboardStatCard
-                    className={`sa-stat-card--activity${isMetricMissing(kpis?.ordersToday) ? " sa-stat-card--unavailable" : ""}`}
-                    label="نشاط الطلبات"
-                    value={renderMetricValue(kpis?.ordersToday, formatInt)}
-                    hint="أحداث إنشاء الطلبات اليوم"
-                    icon={<IconOrders />}
-                  />
-                </>
-              )}
-            </div>
-          </DashboardSection>
+      <CollapsibleBlock
+        title="اتجاهات الفترة"
+        description={periodLabel ? `إيرادات، زيارات، طلبات — ${periodLabel}` : "إيرادات، زيارات، طلبات"}
+        icon="📈"
+        statusBadge={chartsLazyBadge}
+        defaultOpen={false}
+        className="sa-section--compact sa-section--charts sa-collapsible--premium mb-0"
+        onOpenChange={handleChartsSectionOpen}
+      >
+        {analyticsFailed && !businessData?.revenueByDay?.length ? (
+          <SectionInlineNotice tone="error">
+            {ANALYTICS_UNAVAILABLE_MSG}{" "}
+            <button type="button" className="sa-section-notice__btn" onClick={() => void refresh()}>
+              إعادة المحاولة
+            </button>
+          </SectionInlineNotice>
+        ) : !chartPack?.unified?.length && businessPending ? (
+          <ChartsSkeleton />
+        ) : !chartPack?.unified?.length && analyticsPending ? (
+          <ChartsSkeleton />
+        ) : (
+          <ChartsBlock unified={chartPack?.unified} periodLabel={periodLabel} />
+        )}
+      </CollapsibleBlock>
 
-          <DashboardSection
-            title="ما يحتاج انتباهك"
-            description="انتقال سريع إلى قوائم العمل."
-            className="sa-section--compact sa-section--attention"
-          >
-            <div className="sa-action-cards sa-action-cards--attention" aria-busy={summaryPending || undefined}>
-              {summaryPending
-                ? ATTENTION_CARDS.map((card) => <ActionCardSkeleton key={card.to} variant="attention" />)
-                : ATTENTION_CARDS.map((card) => (
-                    <ActionCard
-                      key={card.to}
-                      {...card}
-                      variant="attention"
-                      badgeCount={summaryError ? undefined : attentionCounts?.[card.badgeKey]}
-                    />
-                  ))}
-            </div>
-          </DashboardSection>
+      <SuperAdminHomeIntelligenceSections
+        intelligence={intelligence}
+        posthog={data}
+        meta={meta}
+        period={period}
+        periodLabel={periodLabel}
+        loading={intelligenceLoading}
+        posthogLoading={posthogLoading}
+        sectionErrors={sectionErrors}
+        onRetry={handleRefresh}
+        onRequestIntelligence={requestIntelligence}
+        onRequestPosthog={requestPosthog}
+        intelligenceError={intelligenceError}
+      />
 
-          <DashboardSection title="مهام الإدارة" className="sa-section--compact sa-section--tasks">
-            <div className="sa-action-cards sa-action-cards--tasks">
-              {ADMIN_TASK_CARDS.map((card) => (
-                <ActionCard key={card.to} {...card} variant="task" />
-              ))}
-            </div>
-          </DashboardSection>
-
-          {!summaryError ? (
-            <DashboardSection
-              title="ملخص المنصة"
-              description="نظرة عامة على حالة الطلبات في المنصة."
-              className="sa-section--compact sa-section--platform"
-            >
-              {summaryPending ? (
-                <PlatformSummarySkeleton />
-              ) : (
-                <PlatformSummaryGrid platformOrders={platformOrders} />
-              )}
-            </DashboardSection>
-          ) : null}
-
-          <DashboardSection
-            title="اتجاهات آخر 7 أيام"
-            description="الإيرادات والزيارات ونشاط الطلبات."
-            className="sa-section--compact sa-section--charts"
-            aria-busy={analyticsPending || undefined}
-          >
-            {analyticsPending ? <ChartsSkeleton /> : <ChartsBlock unified={chartPack?.unified} />}
-          </DashboardSection>
+      <CollapsibleBlock
+        title="مهام الإدارة"
+        description="اختصارات لإدارة المنصة."
+        icon="🗂️"
+        statusBadge="جاهز"
+        defaultOpen={false}
+        className="sa-section--compact sa-section--muted sa-section--tasks sa-collapsible--premium mb-0"
+      >
+        <div className="sa-action-cards sa-action-cards--tasks sa-action-cards--premium">
+          {ADMIN_TASK_CARDS.map((card) => (
+            <ActionCard key={card.to} {...card} variant="task" />
+          ))}
+        </div>
+      </CollapsibleBlock>
 
           <CollapsibleSection
             title="إعدادات المنصة"
-            description="التحكم بما يظهر للزوار في الصفحة الرئيسية."
+            description="إظهار أو إخفاء أرقام الصفحة الرئيسية."
+            icon="⚙️"
+            statusBadge={settingsLazyBadge}
             defaultOpen={false}
+            onOpenChange={setSettingsOpen}
           >
-            <div className="sa-platform-settings">
-              <h3 className="sa-platform-settings__subtitle">إعدادات أرقام الصفحة الرئيسية</h3>
-              <div className="sa-platform-settings__explainer">
-                <HomeMetricsAdminExplainer />
-              </div>
-              <div className="flex flex-col divide-y divide-slate-100">
-                <div className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0">
-                  <div className="min-w-0">
-                    <p className={fieldLabelClass}>إظهار زوار الموقع في الصفحة الرئيسية</p>
-                    <p className={fieldHelpClass}>
-                      عدد زيارات الصفحات خلال آخر 7 أيام — وليس عدّاً لحظياً للمتصلين الآن.
-                    </p>
-                  </div>
-                  <label
-                    className={`inline-flex shrink-0 items-center gap-2.5 ${heroBusy || heroSaving ? "cursor-wait" : "cursor-pointer"}`}
-                  >
-                    <StatusBadge tone={heroBusy ? "neutral" : heroVisitors ? "active" : "inactive"}>
-                      {heroBusy ? "…" : heroVisitors ? "مفعّل" : "متوقف"}
-                    </StatusBadge>
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-slate-300 text-[color:var(--primary,#2f3b65)] focus:ring-2 focus:ring-[color:var(--primary,#2f3b65)]/25"
-                      checked={heroVisitors}
-                      disabled={heroBusy || heroSaving}
-                      onChange={(e) => void patchHomeStats({ showHomeVisitorsCount: e.target.checked })}
-                      aria-label="إظهار عدد الزوار في الصفحة الرئيسية"
-                    />
-                  </label>
-                </div>
-                <div className="flex flex-wrap items-center justify-between gap-3 py-4 last:pb-0">
-                  <div className="min-w-0">
-                    <p className={fieldLabelClass}>إظهار المستخدمين المتفاعلين في الصفحة الرئيسية</p>
-                    <p className={fieldHelpClass}>
-                      أي نشاط يُتتبَّع في المنصة خلال آخر 7 أيام — قد يكون أعلى من الزوار.
-                    </p>
-                  </div>
-                  <label
-                    className={`inline-flex shrink-0 items-center gap-2.5 ${heroBusy || heroSaving ? "cursor-wait" : "cursor-pointer"}`}
-                  >
-                    <StatusBadge tone={heroBusy ? "neutral" : heroActiveUsers ? "active" : "inactive"}>
-                      {heroBusy ? "…" : heroActiveUsers ? "مفعّل" : "متوقف"}
-                    </StatusBadge>
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-slate-300 text-[color:var(--primary,#2f3b65)] focus:ring-2 focus:ring-[color:var(--primary,#2f3b65)]/25"
-                      checked={heroActiveUsers}
-                      disabled={heroBusy || heroSaving}
-                      onChange={(e) => void patchHomeStats({ showHomeActiveUsersCount: e.target.checked })}
-                      aria-label="إظهار المستخدمين المتفاعلين في الصفحة الرئيسية"
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
+            <PlatformHomeStatsSettings
+              open={settingsOpen}
+              showVisitors={heroVisitors}
+              showActiveUsers={heroActiveUsers}
+              busy={heroBusy}
+              saving={heroSaving}
+              onToggleVisitors={(checked) => void patchHomeStats({ showHomeVisitorsCount: checked })}
+              onToggleActiveUsers={(checked) => void patchHomeStats({ showHomeActiveUsersCount: checked })}
+            />
           </CollapsibleSection>
 
-          {data?.updatedAt ? (
-            <p className="help m-0 mt-2 text-end text-xs text-slate-500">
-              آخر تحديث: {new Date(data.updatedAt).toLocaleString("ar-JO-u-nu-latn")}
-            </p>
-          ) : null}
-        </>
-      )}
+        </main>
+
+        <aside className="sa-dashboard-side-column">
+          <SuperAdminAttentionSidePanel
+            items={commandCenter.attentionItems}
+            loading={attentionPending}
+          />
+        </aside>
+      </section>
     </div>
   );
 }
