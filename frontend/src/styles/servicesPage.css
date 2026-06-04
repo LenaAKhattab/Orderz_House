@@ -629,7 +629,7 @@
 
 /* ——— Footer services page polish ——— */
 .site-footer--public .site-footer__link--active {
-  color: #3852b4 !important;
+  color: #475569 !important;
   font-weight: 800;
 }
 
@@ -637,13 +637,13 @@
   margin: 0;
   text-align: center;
   font-size: 0.86rem;
-  color: #76cfdf;
+  color: #64748b;
 }
 
 .site-footer__copyright-heart {
   display: inline-block;
   margin-inline: 4px;
-  color: #3852b4;
+  color: #64748b;
 }
 
 .site-footer__bottom-bar {

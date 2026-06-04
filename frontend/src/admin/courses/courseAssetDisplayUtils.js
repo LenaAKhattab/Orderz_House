@@ -77,10 +77,7 @@ export function getYoutubeThumbnail(url) {
   if (videoId) {
     return `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`;
   }
-  const playlistId = extractYoutubePlaylistId(raw);
-  if (playlistId) {
-    return `https://i.ytimg.com/vi/${encodeURIComponent(playlistId)}/hqdefault.jpg`;
-  }
+  /* Playlist-only URLs have no single /vi/{id}/ thumbnail; avoid 404 from using playlist id as video id */
   return null;
 }
 

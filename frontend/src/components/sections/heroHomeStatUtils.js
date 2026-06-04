@@ -119,6 +119,6 @@ export function statDisplayValueProjects(row, statsPayload) {
 }
 
 export function statDisplayValueAnalytics(row, statsPayload) {
-  if (statsPayload == null) return "";
+  if (statsPayload == null) return "…";
   return resolveNumber(statsPayload, row.key);
 }

@@ -35,6 +35,8 @@ function normalizeToast(input, fallbackType = "info") {
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const dismissTimersRef = useRef(new Map());
+  /** Same error message → one toast per page session until cleared (e.g. manual retry). */
+  const sessionErrorMessagesRef = useRef(new Set());
 
   const removeToast = useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -86,8 +88,27 @@ export function ToastProvider({ children }) {
     return id;
   }, []);
 
+  const clearSessionErrorToast = useCallback((message) => {
+    if (message == null || message === "") {
+      sessionErrorMessagesRef.current.clear();
+      return;
+    }
+    sessionErrorMessagesRef.current.delete(String(message).trim());
+  }, []);
+
   const success = useCallback((payload) => showToast({ ...normalizeToast(payload, "success"), type: "success" }), [showToast]);
-  const error = useCallback((payload) => showToast({ ...normalizeToast(payload, "error"), type: "error" }), [showToast]);
+  const error = useCallback(
+    (payload) => {
+      const normalized = normalizeToast(payload, "error");
+      const msgKey = (normalized.message || normalized.title || "").trim();
+      if (msgKey && sessionErrorMessagesRef.current.has(msgKey)) {
+        return null;
+      }
+      if (msgKey) sessionErrorMessagesRef.current.add(msgKey);
+      return showToast({ ...normalized, type: "error" });
+    },
+    [showToast],
+  );
   const warning = useCallback((payload) => showToast({ ...normalizeToast(payload, "warning"), type: "warning" }), [showToast]);
   const info = useCallback((payload) => showToast({ ...normalizeToast(payload, "info"), type: "info" }), [showToast]);
 
@@ -128,8 +149,9 @@ export function ToastProvider({ children }) {
       dismiss,
       dismissMatching,
       clear,
+      clearSessionErrorToast,
     }),
-    [toasts, showToast, push, success, error, warning, info, dismiss, dismissMatching, clear],
+    [toasts, showToast, push, success, error, warning, info, dismiss, dismissMatching, clear, clearSessionErrorToast],
   );
 
   return <ToastContext.Provider value={api}>{children}</ToastContext.Provider>;

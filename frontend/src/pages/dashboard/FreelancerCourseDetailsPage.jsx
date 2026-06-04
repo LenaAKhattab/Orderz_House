@@ -86,7 +86,7 @@ const FIXED_EXAM_INSTRUCTIONS = [
   "افتح ملف الاختبار وأجب عن الأسئلة.",
   "افتح ملف تعليمات التقييم.",
   "افتح ملف الإجابة النموذجية.",
-  "أرسل إجابتك مع تعليمات التقييم والإجابة النموذجية إلى ChatGPT.",
+  "أرسل إلى ChatGPT ملف الاختبار، وملف تعليمات التقييم / Prompt، والإجابة النموذجية، وإجابتك أنت.",
   "بعد أن يعطيك ChatGPT علامة كل سؤال من 100، أدخل العلامات في الحقول الموجودة في المنصة.",
   "سيتم حساب النتيجة النهائية تلقائيًا.",
 ];
@@ -861,7 +861,7 @@ function FinalTestPanel({
     { id: 2, label: "التعليمات", done: step2Done, active: activeStep === 2 },
     { id: 3, label: "النموذج", done: step3Done, active: activeStep === 3 },
     { id: 4, label: "ChatGPT", done: step4Done, active: activeStep === 4 },
-    { id: 5, label: "التسليم", done: step5Done, active: activeStep === 5 },
+    { id: 5, label: "نتيجة التقييم", done: step5Done, active: activeStep === 5 },
     { id: 6, label: "الإتمام", done: false, active: activeStep === 6 },
   ];
 
@@ -884,7 +884,7 @@ function FinalTestPanel({
         <h2 className="fcd-final__intro-title">{FINAL_TEST_TITLE}</h2>
         <p className="fcd-final__intro-lead">
           اتبع الخطوات بالترتيب: حمّل ملفات الاختبار والتعليمات والإجابة النموذجية، استخدمها في ChatGPT، أدخل
-          درجات كل سؤال، ثم سلّم إجابتك لإتمام الدورة.
+          درجات كل سؤال، ثم سلّم نتيجة تقييم ChatGPT لإتمام الدورة.
         </p>
       </header>
 
@@ -1010,28 +1010,33 @@ function FinalTestPanel({
         <FlowPhase
           phaseNum={2}
           title="التسليم"
-          subtitle="اختر طريقة التسليم ثم أرسل إجابتك لإتمام الدورة"
+          subtitle="أرفق نتيجة تقييم ChatGPT (ملف أو نص) ثم أكمل إرسال الدورة"
           tone="submit"
         >
           <form className="fcd-flow__destination" onSubmit={onSubmit}>
             <FlowStepRow
               step={5}
-              stepTitle="رفع الإجابة أو لصق النص"
+              stepTitle="نتيجة تقييم ChatGPT"
               done={step5Done}
               active={activeStep === 5 && !step5Done}
               isLast={false}
             >
-              <div className="fcd-final__delivery" aria-label="اختر طريقة التسليم">
-                <p className="fcd-final__delivery-heading">اختر طريقة التسليم</p>
+              <p className="fcd-final__legacy-warn" role="note">
+                <strong>مهم:</strong> في هذه الخطوة نريد نتيجة تقييم ChatGPT بعد المقارنة، وليس إجابتك الأصلية
+                للاختبار.
+              </p>
+
+              <div className="fcd-final__delivery" aria-label="اختر طريقة إرفاق نتيجة التقييم">
+                <p className="fcd-final__delivery-heading">اختر طريقة إرفاق نتيجة التقييم</p>
                 <div className="fcd-final__delivery-options">
                   <span className={`fcd-final__delivery-chip ${hasFileResponse ? "fcd-final__delivery-chip--on" : ""}`}>
                     <Upload size={15} aria-hidden />
-                    رفع ملف (PDF / Word / نص / صورة)
+                    رفع ملف نتيجة التقييم
                   </span>
                   <span className="fcd-final__delivery-or">أو</span>
                   <span className={`fcd-final__delivery-chip ${hasTextResponse ? "fcd-final__delivery-chip--on" : ""}`}>
                     <FileText size={15} aria-hidden />
-                    لصق نص الاستجابة
+                    لصق نص التقييم
                   </span>
                 </div>
               </div>
@@ -1084,7 +1089,9 @@ function FinalTestPanel({
                       <span className="fcd-final__upload-icon" aria-hidden>
                         <Upload size={22} />
                       </span>
-                      <span className="fcd-final__upload-title">ارفع ملف الاستجابة من جهازك</span>
+                      <span className="fcd-final__upload-title">
+                        ارفع ملف نتيجة ChatGPT أو تقرير التقييم الذي أنشأه ChatGPT
+                      </span>
                       <span className="fcd-final__upload-hint">PDF، Word، نص، صور — حتى 5 ميجابايت</span>
                       <button
                         type="button"
@@ -1099,14 +1106,14 @@ function FinalTestPanel({
                 </div>
 
                 <label className="fcd-final__field fcd-final__field--text">
-                  <span className="fcd-final__field-label">لصق نص استجابة ChatGPT</span>
+                  <span className="fcd-final__field-label">لصق نتيجة تقييم ChatGPT</span>
                   <textarea
                     rows={7}
                     maxLength={MAX_RESPONSE_CHARS}
                     value={auditResponseText}
                     onChange={(e) => setAuditResponseText(e.target.value)}
                     disabled={submitting}
-                    placeholder="الصق هنا النص الكامل أو الملخص الذي أعطاك إياه ChatGPT…"
+                    placeholder="الصق هنا تقرير ChatGPT أو العلامات التي أعطاك إياها لكل سؤال — وليس إجابتك الأصلية…"
                     className="fcd-final__textarea"
                   />
                   <span className="fcd-final__char-count" aria-live="polite">
@@ -1174,7 +1181,7 @@ function FinalTestPanel({
 
             <FlowStepRow
               step={questionCount > 0 ? 7 : 6}
-              stepTitle="إرسال الاستجابة وإتمام الدورة"
+              stepTitle="إرسال نتيجة التقييم وإتمام الدورة"
               done={false}
               active={activeStep === 6}
               isLast
@@ -1193,17 +1200,17 @@ function FinalTestPanel({
                     ) : (
                       <Send size={18} aria-hidden />
                     )}
-                    {submitting ? "جاري الإرسال..." : "إرسال الاستجابة وإتمام الدورة"}
+                    {submitting ? "جاري الإرسال..." : "إرسال نتيجة التقييم وإتمام الدورة"}
                   </button>
                   {!canSubmit && !submitting ? (
                     <p className="fcd-final__submit-hint" role="status">
                       {questionCount > 0 && !marksCheck.ok
-                        ? "أكمل درجات جميع الأسئلة وأضف نص الاستجابة أو ارفع ملفاً."
-                        : "أكمل متطلبات التسليم أولاً — أضف نص الاستجابة أو ارفع ملفاً."}
+                        ? "أكمل درجات جميع الأسئلة وأضف نص نتيجة تقييم ChatGPT أو ارفع ملف التقييم."
+                        : "أكمل متطلبات التسليم أولاً — أضف نص نتيجة التقييم أو ارفع ملف تقرير ChatGPT."}
                     </p>
                   ) : (
                     <p className="fcd-final__submit-note" role="note">
-                      يمكنك إرسال النص فقط، أو الملف فقط، أو كليهما معاً.
+                      يمكنك إرسال نص التقييم فقط، أو ملف التقييم فقط، أو كليهما معاً — وليس إجابتك الأصلية.
                       {questionCount > 0 ? " يجب أيضاً إدخال درجة كل سؤال." : ""}
                     </p>
                   )}
@@ -1422,7 +1429,7 @@ export default function FreelancerCourseDetailsPage() {
     const hasText = auditResponseText.trim().length > 0;
     const hasFile = auditResponseFile instanceof File;
     if (testingEnabled && !hasText && !hasFile) {
-      toast.error("يرجى لصق استجابة ChatGPT أو رفع ملف الاستجابة.");
+      toast.error("يرجى لصق نتيجة تقييم ChatGPT أو رفع ملف تقرير التقييم.");
       return;
     }
 

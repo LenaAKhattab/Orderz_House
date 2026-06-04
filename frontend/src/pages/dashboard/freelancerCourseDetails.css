@@ -2352,6 +2352,11 @@
   color: #334155;
 }
 
+.fcd-final__info-banner .fcd-final__exam-instructions-list {
+  margin: 0.35rem 0 0;
+  font-size: 0.84rem;
+}
+
 .fcd-final__hero-inner--center {
   text-align: center;
   margin-inline: auto;
@@ -2774,8 +2779,9 @@
 
 .fcd-final__marks-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fill, minmax(7.75rem, 7.75rem));
+  justify-content: start;
+  gap: 0.75rem;
 }
 
 .fcd-final__marks-grid--readonly {
@@ -2784,33 +2790,92 @@
   padding: 0;
 }
 
+/* Mini card per question — grading fields */
 .fcd-final__mark-field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: 7.75rem;
+  padding: 0.75rem 0.7rem;
+  border-radius: 12px;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  background: rgba(255, 255, 255, 0.96);
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s var(--fcd-ease),
+    box-shadow 0.2s var(--fcd-ease);
 }
 
-.fcd-final__mark-field--error .fcd-final__mark-input {
+.fcd-final__mark-field:hover {
+  border-color: rgba(148, 163, 184, 0.85);
+}
+
+.fcd-final__mark-field:focus-within:not(.fcd-final__mark-field--error) {
+  border-color: rgba(37, 99, 235, 0.5);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.fcd-final__mark-field--error {
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+.fcd-final__mark-field--error:focus-within {
   border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
 }
 
 .fcd-final__mark-label {
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--fcd-navy);
+  line-height: 1.2;
 }
 
 .fcd-final__mark-input {
   width: 100%;
-  padding: 0.5rem 0.65rem;
-  border-radius: 10px;
-  border: 1px solid var(--fcd-line);
-  font-size: 1rem;
+  min-width: 0;
+  height: 44px;
+  padding: 0 0.65rem;
+  border-radius: 12px;
+  border: 1.5px solid rgba(203, 213, 225, 0.95);
+  background: rgba(248, 250, 252, 0.98);
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--fcd-text);
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s var(--fcd-ease),
+    box-shadow 0.2s var(--fcd-ease),
+    background-color 0.2s var(--fcd-ease);
+}
+
+.fcd-final__mark-input:hover:not(:disabled) {
+  border-color: rgba(148, 163, 184, 0.95);
+  background: #fff;
+}
+
+.fcd-final__mark-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+.fcd-final__mark-field--error .fcd-final__mark-input {
+  border-color: #dc2626;
+}
+
+.fcd-final__mark-field--error .fcd-final__mark-input:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.14);
 }
 
 .fcd-final__mark-error {
   font-size: 0.75rem;
   color: #dc2626;
+  line-height: 1.35;
+  max-width: 100%;
 }
 
 .fcd-final__grade-preview {
@@ -2832,11 +2897,13 @@
 .fcd-final__mark-readonly {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.5rem 0.65rem;
-  border-radius: 10px;
-  background: rgba(248, 250, 252, 0.95);
-  border: 1px solid var(--fcd-line);
+  gap: 0.35rem;
+  width: 7.75rem;
+  padding: 0.75rem 0.7rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  box-sizing: border-box;
 }
 
 .fcd-final__mark-readonly-label {

@@ -156,8 +156,8 @@ async function scalar(sql) {
   return firstScalar(json);
 }
 
-async function scalarWithCfg(cfg, sql) {
-  const json = await executeHogQL(cfg, sql);
+async function scalarWithCfg(cfg, sql, options = {}) {
+  const json = await executeHogQL(cfg, sql, options);
   return firstScalar(json);
 }
 
@@ -334,28 +334,68 @@ async function fetchSuperAdminOverviewPosthogWithTimeout(cfg, options = {}) {
   }
 }
 
-async function getHeroSnapshotNumbers() {
-  /** Public homepage page views: all $pageview events since tracking began (not unique visitors). */
-  const pageViewsAllTime = await scalar(`
+const POSTHOG_HERO_TIMEOUT_MS = Math.min(
+  Math.max(Number(process.env.POSTHOG_HERO_TIMEOUT_MS) || 8000, 3000),
+  20000,
+);
+
+const POSTHOG_HERO_QUERY_TIMEOUT_MS = Math.min(
+  Math.max(Number(process.env.POSTHOG_HERO_QUERY_TIMEOUT_MS) || 6000, 2000),
+  15000,
+);
+
+async function getHeroSnapshotNumbersWithCfg(cfg) {
+  const hogqlOpts = { timeoutMs: POSTHOG_HERO_QUERY_TIMEOUT_MS };
+  const [pageViewsAllTime, activeUsers7d] = await Promise.all([
+    scalarWithCfg(
+      cfg,
+      `
     SELECT count()
     FROM events
     WHERE event = '$pageview'
-  `);
-  /** Weekly actives: distinct persons with any ingested event in the last 7 days (matches hero copy “هذا الأسبوع”). */
-  const activeUsers7d = await scalar(`
+  `,
+      hogqlOpts,
+    ),
+    scalarWithCfg(
+      cfg,
+      `
     SELECT uniq(person_id)
     FROM events
     WHERE timestamp >= now() - INTERVAL 7 DAY
       AND timestamp < now() + INTERVAL 1 MINUTE
-  `);
+  `,
+      hogqlOpts,
+    ),
+  ]);
   return {
     pageViewsAllTime: Math.trunc(pageViewsAllTime),
     activeUsersLast7Days: Math.trunc(activeUsers7d),
   };
 }
 
+async function getHeroSnapshotNumbersWithTimeout(cfg) {
+  let timer;
+  try {
+    return await Promise.race([
+      getHeroSnapshotNumbersWithCfg(cfg),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          reject(buildPublicError("PostHog hero snapshot timed out.", 504, "PH_QUERY_TIMEOUT"));
+        }, POSTHOG_HERO_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function getHeroSnapshotNumbers() {
+  return getHeroSnapshotNumbersWithTimeout(resolvePosthogConfig());
+}
+
 module.exports = {
   getHeroSnapshotNumbers,
+  getHeroSnapshotNumbersWithTimeout,
   RANGE_PRESETS,
   rangeToWhereClause,
   readPosthogCredentialsLoose,

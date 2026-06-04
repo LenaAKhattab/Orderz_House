@@ -6,6 +6,7 @@ const {
   validateAndComputeExamMarks,
   mapAssignmentGrading,
 } = require("../utils/courseExamGrading");
+const { deriveLearningTimeline } = require("../utils/courseLearningDuration");
 const notificationEventsService = require("./notificationEventsService");
 const { uploadCourseDocumentBuffer, destroyByPublicId } = require("./cloudinaryUploadService");
 const {
@@ -812,7 +813,9 @@ async function getCourseDetailsForAdmin({ actorUserId, courseId }) {
       ),
       client.query(
         `SELECT p.freelancer_id,
-                COUNT(*)::int AS completed_lessons
+                COUNT(*)::int AS completed_lessons,
+                MIN(p.completed_at) AS first_lesson_completed_at,
+                MAX(p.completed_at) AS last_lesson_completed_at
          FROM course_lesson_progress p
          WHERE p.course_id = $1
          GROUP BY p.freelancer_id`,
@@ -820,15 +823,35 @@ async function getCourseDetailsForAdmin({ actorUserId, courseId }) {
       ),
     ]);
     const totalLessons = lessonRes.rows.filter((x) => x.is_active).length;
-    const progressByFreelancer = new Map(progressRes.rows.map((r) => [String(r.freelancer_id), Number(r.completed_lessons || 0)]));
+    const progressByFreelancer = new Map(
+      progressRes.rows.map((r) => [
+        String(r.freelancer_id),
+        {
+          completedLessons: Number(r.completed_lessons || 0),
+          firstLessonCompletedAt: r.first_lesson_completed_at || null,
+          lastLessonCompletedAt: r.last_lesson_completed_at || null,
+        },
+      ]),
+    );
     const publishReadiness = assessCoursePublishReadiness(course, lessonRes.rows);
     return {
       course: mapCourse(course),
       publishReadiness,
       lessons: lessonRes.rows.map(mapLesson),
       assignments: assignRes.rows.map((r) => {
-        const completed = progressByFreelancer.get(String(r.freelancer_id)) || 0;
+        const prog = progressByFreelancer.get(String(r.freelancer_id)) || {
+          completedLessons: 0,
+          firstLessonCompletedAt: null,
+          lastLessonCompletedAt: null,
+        };
+        const completed = prog.completedLessons;
         const grading = mapAssignmentGrading(r);
+        const learning = deriveLearningTimeline({
+          completedLessons: completed,
+          totalLessons,
+          firstLessonCompletedAt: prog.firstLessonCompletedAt,
+          lastLessonCompletedAt: prog.lastLessonCompletedAt,
+        });
         return {
           freelancerId: String(r.freelancer_id),
           accountId: r.account_id,
@@ -841,6 +864,7 @@ async function getCourseDetailsForAdmin({ actorUserId, courseId }) {
             completedLessons: completed,
             percentage: totalLessons > 0 ? Math.min(100, Math.round((completed / totalLessons) * 100)) : 0,
           },
+          learning,
           examQuestionMarks: grading.examQuestionMarks,
           examFinalGrade: grading.examFinalGrade,
           examSubmittedAt: r.audit_submitted_at || r.completed_at || null,

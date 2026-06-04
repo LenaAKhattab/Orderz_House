@@ -32,6 +32,7 @@ async function fetchLastPageviewAt(cfg) {
       WHERE event = '$pageview'
         AND timestamp >= now() - INTERVAL 30 DAY
     `,
+      { timeoutMs: 6000 },
     );
     const row = json?.results?.[0];
     const raw = row?.[0];
@@ -161,8 +162,11 @@ async function getPublicHomeAnalyticsMeta(opts) {
   let activeUsers = null;
 
   try {
-    const snap = await posthogAnalyticsService.getHeroSnapshotNumbers();
-    lastPageviewAt = await fetchLastPageviewAt(cfg);
+    const [snap, lastAt] = await Promise.all([
+      posthogAnalyticsService.getHeroSnapshotNumbersWithTimeout(cfg),
+      fetchLastPageviewAt(cfg),
+    ]);
+    lastPageviewAt = lastAt;
     lastSuccessfulHogqlAt = queriedAt;
     if (opts.showVisitorsCount) visitors = snap.pageViewsAllTime;
     if (opts.showActiveUsersCount) activeUsers = snap.activeUsersLast7Days;

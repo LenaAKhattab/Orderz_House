@@ -760,9 +760,38 @@ async function getCoursesIntelligence() {
            WHERE l.total_lessons > 0
              AND (100.0 * COALESCE(p.completed_lessons, 0) / l.total_lessons) >= 80
              AND COALESCE(p.completed_lessons, 0) < l.total_lessons
+         ),
+         learner_span AS (
+           SELECT
+             p.course_id,
+             p.freelancer_id,
+             MIN(p.completed_at) AS first_at,
+             MAX(p.completed_at) AS last_at,
+             COUNT(*)::int AS done
+           FROM course_lesson_progress p
+           GROUP BY p.course_id, p.freelancer_id
+         ),
+         completed_spans AS (
+           SELECT EXTRACT(EPOCH FROM (ls.last_at - ls.first_at))::double precision AS span_sec
+           FROM learner_span ls
+           INNER JOIN lesson_totals lt ON lt.course_id = ls.course_id
+           WHERE lt.total_lessons > 0
+             AND ls.done >= lt.total_lessons
+             AND ls.done > 1
+             AND ls.last_at > ls.first_at
+         ),
+         avg_learning AS (
+           SELECT AVG(span_sec)::double precision AS avg_completion_duration_seconds
+           FROM completed_spans
+           WHERE span_sec > 0
          )
-         SELECT *
-         FROM c, lessons, students, finals, stuck`,
+         SELECT c.*, lessons.*, students.*, finals.*, stuck.*, avg_learning.avg_completion_duration_seconds
+         FROM c
+         CROSS JOIN lessons
+         CROSS JOIN students
+         CROSS JOIN finals
+         CROSS JOIN stuck
+         CROSS JOIN avg_learning`,
       ),
       pool.query(
         `WITH stats AS (
@@ -808,6 +837,10 @@ async function getCoursesIntelligence() {
           ? (toInt(t.final_exam_completed) / toInt(t.final_exam_submissions)) * 100
           : 0,
         stuckAbove80Percent: toInt(t.stuck_above_80),
+        averageLearningDurationSeconds:
+          t.avg_completion_duration_seconds != null && Number(t.avg_completion_duration_seconds) > 0
+            ? Number(t.avg_completion_duration_seconds)
+            : null,
       },
       topCourses: list.map((x) => ({
         courseId: x.id,

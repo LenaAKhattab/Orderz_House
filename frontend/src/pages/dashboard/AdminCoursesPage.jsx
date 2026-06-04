@@ -28,11 +28,13 @@ import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState"
 import DashboardTable from "../../components/dashboard/DashboardTable";
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
+import WidgetLoadError from "../../components/dashboard/hub/controlCenter/WidgetLoadError";
 import AdminCourseCreateComposer from "../../admin/courses/AdminCourseCreateComposer";
 import CourseFileUploadField from "../../admin/courses/CourseFileUploadField";
 import CourseUrlField from "../../admin/courses/CourseUrlField";
 import "../../admin/courses/adminCourseComposer.css";
 import "../../admin/courses/courseAssetFields.css";
+import { formatCompletionDuration, formatLearningTimestamp } from "../../utils/courseLearningDuration";
 import "./adminCoursesPage.css";
 
 function fmtCourseDate(iso) {
@@ -60,6 +62,10 @@ function formatAccessChipCount(count, isGlobal) {
   const n = Number(count) || 0;
   return isGlobal ? `${n} مستقل` : `${n} مسند`;
 }
+
+const COURSES_LOAD_ERROR_MSG = "تعذر تحميل الدورات.";
+const FREELANCERS_LOAD_ERROR_MSG = "تعذر تحميل المستقلين.";
+const COURSE_DETAILS_LOAD_ERROR_MSG = "تعذر تحميل تفاصيل الدورة.";
 
 const EMPTY_CREATE_FORM = {
   title: "",
@@ -122,6 +128,12 @@ export default function AdminCoursesPage() {
   const [manageTab, setManageTab] = useState("details");
   const [courseDetailsLoading, setCourseDetailsLoading] = useState(false);
   const [progressQuery, setProgressQuery] = useState("");
+  const [coursesLoadError, setCoursesLoadError] = useState(null);
+  const [freelancersLoadError, setFreelancersLoadError] = useState(null);
+
+  const coursesFetchGenRef = useRef(0);
+  const freelancersFetchGenRef = useRef(0);
+  const courseDetailsGenRef = useRef(0);
 
   const isSuperAdmin = (user?.primaryRole || user?.role) === "super_admin";
   const pageTitle = "إدارة الكورسات";
@@ -194,7 +206,8 @@ export default function AdminCoursesPage() {
     return patch;
   }, []);
 
-  const loadCourses = useCallback(async () => {
+  const fetchCoursesList = useCallback(async () => {
+    const gen = ++coursesFetchGenRef.current;
     setLoading(true);
     try {
       const params = {};
@@ -203,20 +216,28 @@ export default function AdminCoursesPage() {
       if (statusFilter === "published") params.isActive = true;
       if (statusFilter === "draft") params.isActive = false;
       const res = await adminListCoursesRequest(params);
+      if (gen !== coursesFetchGenRef.current) return;
       setCourses(res?.data?.courses || []);
+      setCoursesLoadError(null);
+      toast.clearSessionErrorToast(COURSES_LOAD_ERROR_MSG);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "تعذر تحميل الدورات.");
+      if (gen !== coursesFetchGenRef.current) return;
+      const msg = err?.response?.data?.message || COURSES_LOAD_ERROR_MSG;
+      setCoursesLoadError(msg);
+      toast.error(msg);
     } finally {
-      setLoading(false);
+      if (gen === coursesFetchGenRef.current) setLoading(false);
     }
   }, [toast, courseSearch, statusFilter]);
 
   const loadCourseDetails = useCallback(
     async (courseId) => {
       if (!courseId) return;
+      const gen = ++courseDetailsGenRef.current;
       setCourseDetailsLoading(true);
       try {
         const res = await adminGetCourseByIdRequest(courseId);
+        if (gen !== courseDetailsGenRef.current) return;
         const details = res?.data || null;
         setSelectedCourse(details);
         if (details?.course) {
@@ -231,35 +252,65 @@ export default function AdminCoursesPage() {
           }
         }
         setSelectedFreelancerIds((details?.assignments || []).map((x) => x.freelancerId));
+        toast.clearSessionErrorToast(COURSE_DETAILS_LOAD_ERROR_MSG);
       } catch (err) {
-        toast.error(err?.response?.data?.message || "تعذر تحميل تفاصيل الدورة.");
+        if (gen !== courseDetailsGenRef.current) return;
+        const msg = err?.response?.data?.message || COURSE_DETAILS_LOAD_ERROR_MSG;
+        toast.error(msg);
         setSelectedCourse(null);
       } finally {
-        setCourseDetailsLoading(false);
+        if (gen === courseDetailsGenRef.current) setCourseDetailsLoading(false);
       }
     },
     [toast, editingCourseId, syncServerFileUrls],
   );
 
-  const loadFreelancers = useCallback(
-    async (q = "") => {
-      try {
-        const res = await adminListCourseFreelancersRequest({ q, limit: 200 });
-        setFreelancers(res?.data?.freelancers || []);
-      } catch (err) {
-        toast.error(err?.response?.data?.message || "تعذر تحميل المستقلين.");
-      }
-    },
-    [toast],
-  );
+  const loadFreelancers = useCallback(async () => {
+    const gen = ++freelancersFetchGenRef.current;
+    try {
+      const res = await adminListCourseFreelancersRequest({ q: "", limit: 200 });
+      if (gen !== freelancersFetchGenRef.current) return;
+      setFreelancers(res?.data?.freelancers || []);
+      setFreelancersLoadError(null);
+      toast.clearSessionErrorToast(FREELANCERS_LOAD_ERROR_MSG);
+    } catch (err) {
+      if (gen !== freelancersFetchGenRef.current) return;
+      const msg = err?.response?.data?.message || FREELANCERS_LOAD_ERROR_MSG;
+      setFreelancersLoadError(msg);
+      toast.error(msg);
+    }
+  }, [toast]);
+
+  const retryCoursesLoad = useCallback(() => {
+    toast.clearSessionErrorToast(COURSES_LOAD_ERROR_MSG);
+    void fetchCoursesList();
+  }, [toast, fetchCoursesList]);
+
+  const retryFreelancersLoad = useCallback(() => {
+    toast.clearSessionErrorToast(FREELANCERS_LOAD_ERROR_MSG);
+    void loadFreelancers();
+  }, [toast, loadFreelancers]);
 
   useEffect(() => {
-    loadCourses();
-    loadFreelancers("");
-  }, [loadCourses, loadFreelancers]);
+    void loadFreelancers();
+  }, [loadFreelancers]);
 
   useEffect(() => {
-    if (selectedCourseId) loadCourseDetails(selectedCourseId);
+    const timer = window.setTimeout(() => {
+      void fetchCoursesList();
+    }, 300);
+    return () => {
+      window.clearTimeout(timer);
+      coursesFetchGenRef.current += 1;
+    };
+  }, [fetchCoursesList]);
+
+  useEffect(() => {
+    if (!selectedCourseId) return undefined;
+    void loadCourseDetails(selectedCourseId);
+    return () => {
+      courseDetailsGenRef.current += 1;
+    };
   }, [selectedCourseId, loadCourseDetails]);
 
   useEffect(() => {
@@ -446,7 +497,7 @@ export default function AdminCoursesPage() {
       }
       syncCourseFileFieldsFromServer(courseId, course);
       toast.success("تم رفع ملف الاختبار بنجاح.");
-      await loadCourses();
+      await fetchCoursesList();
       if (String(selectedCourseId) === String(courseId)) await loadCourseDetails(courseId);
     } catch (err) {
       toast.error(err?.response?.data?.message || COURSE_FILE_UPLOAD_ERROR);
@@ -466,7 +517,7 @@ export default function AdminCoursesPage() {
       }
       syncCourseFileFieldsFromServer(courseId, course);
       toast.success("تم رفع ملف المطالبة بنجاح.");
-      await loadCourses();
+      await fetchCoursesList();
       if (String(selectedCourseId) === String(courseId)) await loadCourseDetails(courseId);
     } catch (err) {
       toast.error(err?.response?.data?.message || COURSE_FILE_UPLOAD_ERROR);
@@ -486,7 +537,7 @@ export default function AdminCoursesPage() {
       }
       syncCourseFileFieldsFromServer(courseId, course);
       toast.success("تم رفع ملف الإجابة النموذجية بنجاح.");
-      await loadCourses();
+      await fetchCoursesList();
       if (String(selectedCourseId) === String(courseId)) await loadCourseDetails(courseId);
     } catch (err) {
       toast.error(err?.response?.data?.message || COURSE_FILE_UPLOAD_ERROR);
@@ -559,7 +610,7 @@ export default function AdminCoursesPage() {
         setComposerOpen(false);
         resetComposer();
       }
-      await loadCourses();
+      await fetchCoursesList();
     } catch (err) {
       toast.error(err?.response?.data?.message || (editingCourseId ? "تعذر تحديث الكورس." : "فشل إنشاء الكورس."));
     } finally {
@@ -572,7 +623,7 @@ export default function AdminCoursesPage() {
     try {
       await adminPublishCourseRequest(courseId);
       toast.success("تم نشر الكورس بنجاح.");
-      await loadCourses();
+      await fetchCoursesList();
       if (String(selectedCourseId) === String(courseId)) await loadCourseDetails(courseId);
     } catch (err) {
       const labels = err?.response?.data?.missingLabels;
@@ -588,7 +639,7 @@ export default function AdminCoursesPage() {
     try {
       await adminArchiveCourseRequest(courseId);
       toast.success("تم أرشفة الكورس (إيقاف النشر).");
-      await loadCourses();
+      await fetchCoursesList();
       if (String(selectedCourseId) === String(courseId)) await loadCourseDetails(courseId);
     } catch (err) {
       toast.error(err?.response?.data?.message || "تعذر أرشفة الكورس.");
@@ -620,7 +671,7 @@ export default function AdminCoursesPage() {
       const res = await adminUpdateCourseRequest(selectedCourseId, patch);
       if (res?.data?.course) syncCourseFileFieldsFromServer(selectedCourseId, res.data.course);
       toast.success("تم تحديث بيانات الدورة.");
-      await loadCourses();
+      await fetchCoursesList();
       await loadCourseDetails(selectedCourseId);
     } catch (err) {
       toast.error(err?.response?.data?.message || "تعذر تحديث الدورة.");
@@ -637,7 +688,7 @@ export default function AdminCoursesPage() {
       toast.success("تم استيراد الدروس.");
       setImportUrl("");
       await loadCourseDetails(selectedCourseId);
-      await loadCourses();
+      await fetchCoursesList();
     } catch (err) {
       toast.error(err?.response?.data?.message || "فشل استيراد الدروس.");
     } finally {
@@ -677,7 +728,7 @@ export default function AdminCoursesPage() {
       });
       toast.success(assignAll ? "تم إسناد الدورة لجميع المستقلين." : "تم تحديث إسناد الدورة.");
       await loadCourseDetails(selectedCourseId);
-      await loadCourses();
+      await fetchCoursesList();
     } catch (err) {
       toast.error(err?.response?.data?.message || "تعذر حفظ الإسناد.");
     } finally {
@@ -699,7 +750,7 @@ export default function AdminCoursesPage() {
         setSelectedFreelancerIds([]);
         setManageModalOpen(false);
       }
-      await loadCourses();
+      await fetchCoursesList();
     } catch (err) {
       toast.error(err?.response?.data?.message || "تعذر حذف الدورة.");
     } finally {
@@ -715,7 +766,7 @@ export default function AdminCoursesPage() {
       toast.success(
         nextValue ? "أصبح الكورس متاحاً لجميع المستقلين الحاليين والمستقبليين." : "تم إيقاف الإظهار لجميع المستقلين.",
       );
-      await loadCourses();
+      await fetchCoursesList();
       if (String(selectedCourseId) === String(course.id)) {
         await loadCourseDetails(course.id);
       }
@@ -751,7 +802,7 @@ export default function AdminCoursesPage() {
       setSendAssignedIds((prev) => new Set([...prev, String(fid)]));
       toast.success(`تم إرسال الدورة إلى ${displayName || "المستقل"}.`);
       setSendModal({ open: false, course: null });
-      await loadCourses();
+      await fetchCoursesList();
       if (String(selectedCourseId) === String(courseId)) {
         await loadCourseDetails(courseId);
       }
@@ -782,7 +833,7 @@ export default function AdminCoursesPage() {
         return next;
       });
       toast.success(`تم إلغاء إرسال الدورة عن ${displayName || "المستقل"}.`);
-      await loadCourses();
+      await fetchCoursesList();
       if (String(selectedCourseId) === String(courseId)) {
         await loadCourseDetails(courseId);
       }
@@ -897,10 +948,14 @@ export default function AdminCoursesPage() {
               <option value="published">منشورة</option>
               <option value="draft">مسودة / معطّلة</option>
             </select>
-            <button type="button" className="btn btn-secondary" onClick={() => void loadCourses()} disabled={loading}>
+            <button type="button" className="btn btn-secondary" onClick={() => void fetchCoursesList()} disabled={loading}>
               تحديث
             </button>
           </div>
+
+          {coursesLoadError ? (
+            <WidgetLoadError message={coursesLoadError} onRetry={retryCoursesLoad} />
+          ) : null}
 
           {loading && !courses.length ? (
             <DashboardLoadingState label="جاري تحميل الكورسات…" />
@@ -1499,6 +1554,9 @@ export default function AdminCoursesPage() {
                         </p>
                       ) : (
                       <>
+                      {freelancersLoadError ? (
+                        <WidgetLoadError message={freelancersLoadError} onRetry={retryFreelancersLoad} />
+                      ) : null}
                       <div className="oh-admin-courses__tab-top">
                         <input
                           className="oh-admin-courses__input"
@@ -1610,6 +1668,20 @@ export default function AdminCoursesPage() {
                                 <div className="oh-admin-courses__progress-stats">
                                   التقدم: {a.progress?.completedLessons ?? 0}/{a.progress?.totalLessons ?? 0} ({a.progress?.percentage ?? 0}%)
                                 </div>
+                                <dl className="oh-admin-courses__learning-duration">
+                                  <div className="oh-admin-courses__learning-duration-row">
+                                    <dt>بدء التعلّم</dt>
+                                    <dd>{formatLearningTimestamp(a.learning?.startedLearningAt)}</dd>
+                                  </div>
+                                  <div className="oh-admin-courses__learning-duration-row">
+                                    <dt>انتهاء التعلّم</dt>
+                                    <dd>{formatLearningTimestamp(a.learning?.finishedLearningAt)}</dd>
+                                  </div>
+                                  <div className="oh-admin-courses__learning-duration-row">
+                                    <dt>مدة الإكمال</dt>
+                                    <dd>{formatCompletionDuration(a.learning?.completionDurationSeconds)}</dd>
+                                  </div>
+                                </dl>
                                 {a.examFinalGrade != null ? (
                                   <div className="oh-admin-courses__exam-grade-block">
                                     <div className="oh-admin-courses__exam-grade-head">

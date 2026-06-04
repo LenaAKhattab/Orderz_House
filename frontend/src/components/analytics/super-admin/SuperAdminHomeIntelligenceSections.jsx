@@ -23,6 +23,7 @@ import {
   SCOPE_LABELS,
   periodScopeLabel,
 } from "./dashboardMetricScope";
+import { formatAverageCompletionDuration } from "../../../utils/courseLearningDuration";
 
 function SectionInlineNotice({ children, tone = "warn", className = "" }) {
   return (
@@ -128,6 +129,9 @@ function buildCourseHighlights(courses) {
   }
   if (Number(courses.totals.stuckAbove80Percent) > 0) {
     lines.push(`${formatInt(courses.totals.stuckAbove80Percent)} متعلّم عالق فوق 80٪.`);
+  }
+  if (courses.totals.averageLearningDurationSeconds != null) {
+    lines.push(`متوسط مدة إكمال الدروس: ${formatAverageCompletionDuration(courses.totals.averageLearningDurationSeconds)}.`);
   }
   return lines;
 }
@@ -519,6 +523,14 @@ export default function SuperAdminHomeIntelligenceSections({
               ...fromSection(coursesFailed, courses?.totals?.finalExamCompletionRate, { percent: true }),
               key: "cr8",
               label: "إكمال الاختبار %",
+            },
+            {
+              key: "cr9",
+              label: "متوسط مدة التعلّم",
+              value: coursesFailed
+                ? null
+                : formatAverageCompletionDuration(courses?.totals?.averageLearningDurationSeconds),
+              failed: coursesFailed,
             },
           ]}
         />

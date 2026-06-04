@@ -678,6 +678,36 @@
   color: #475569;
 }
 
+.oh-admin-courses__learning-duration {
+  margin: 0.55rem 0 0;
+  padding: 0.55rem 0 0;
+  border-top: 1px dashed rgba(148, 163, 184, 0.4);
+  display: grid;
+  gap: 0.35rem;
+}
+
+.oh-admin-courses__learning-duration-row {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, auto) 1fr;
+  gap: 0.35rem 0.65rem;
+  align-items: baseline;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.oh-admin-courses__learning-duration-row dt {
+  margin: 0;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.oh-admin-courses__learning-duration-row dd {
+  margin: 0;
+  font-weight: 600;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
 .oh-admin-courses__exam-grade-block {
   margin-top: 0.65rem;
   padding-top: 0.65rem;
@@ -767,7 +797,7 @@
 }
 
 .oh-admin-courses__col-actions {
-  min-width: 200px;
+  min-width: 280px;
 }
 
 .oh-admin-courses__course-anchor {
@@ -832,26 +862,41 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem 0.5rem;
+  gap: 0.5rem;
 }
 
 .oh-admin-courses__table-actions-group {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
 }
 
+/* Row actions: fixed tiers so label length does not change button size */
 .oh-admin-courses__row-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 2rem;
   font-size: 0.78rem;
-  padding: 6px 11px;
+  padding: 6px 12px;
   line-height: 1.25;
   white-space: nowrap;
 }
 
 .oh-admin-courses__row-btn--primary {
+  min-width: 8.25rem;
   font-weight: 800;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.oh-admin-courses__table-actions-group .oh-admin-courses__row-btn:not(.oh-admin-courses__row-btn--quiet) {
+  min-width: 5.25rem;
+}
+
+.oh-admin-courses__row-btn--quiet {
+  min-width: 11.5rem;
 }
 
 .oh-admin-courses__row-btn--quiet {
@@ -867,6 +912,7 @@
 }
 
 .oh-admin-courses__row-btn--danger {
+  min-width: 5.25rem;
   color: #b91c1c;
   background: #fff;
   border: 1px solid #fecaca;
@@ -902,10 +948,13 @@
 
   .oh-admin-courses__table-actions-group {
     width: 100%;
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .oh-admin-courses__row-btn--primary {
+  .oh-admin-courses__table-actions .oh-admin-courses__row-btn {
     width: 100%;
+    min-width: 0;
     justify-content: center;
   }
 }
