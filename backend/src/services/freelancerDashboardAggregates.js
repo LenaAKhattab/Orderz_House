@@ -167,13 +167,13 @@ function getEligibilityMessageAr(eligibility, subscription = null) {
   const paymentStatus = String(subscription?.paymentStatus || "");
   const isCompanyPending =
     activationStatus === "company_pending" &&
-    (paymentStatus === "paid" || paymentStatus === "pending" || paymentStatus === "");
+    (paymentStatus === "paid" ||
+      paymentStatus === "pending" ||
+      paymentStatus === "not_required" ||
+      paymentStatus === "");
 
-  if (isCompanyPending) {
-    return "أنت مشترك حالياً، لكن حسابك بانتظار تفعيل الشركة. يرجى مراجعة الشركة لإكمال التفعيل قبل استلام الطلبات.";
-  }
-  if (reason === "company_activation_pending") {
-    return "أنت مشترك حالياً، لكن حسابك بانتظار تفعيل الشركة. يرجى مراجعة الشركة لإكمال التفعيل قبل استلام الطلبات.";
+  if (isCompanyPending || reason === "company_activation_pending") {
+    return "بانتظار موافقة الإدارة قبل بدء استلام الطلبات";
   }
   if (reason === "no_subscription") {
     return "لا يمكنك استلام الطلبات حالياً لأنك غير مشترك. يرجى الاشتراك أولاً.";
@@ -261,8 +261,8 @@ function buildPendingActions({
       type: "company_activation_pending",
       priority: 2,
       icon: "◎",
-      titleAr: "تفعيل الشركة",
-      descriptionAr: "حسابك بانتظار تفعيل الشركة بعد الدفع أو الزيارة.",
+      titleAr: "موافقة الإدارة",
+      descriptionAr: "بانتظار موافقة الإدارة قبل بدء استلام الطلبات.",
       actionUrl: "/dashboard/freelancer/settings",
       actionLabel: "مراجعة الحساب",
     });

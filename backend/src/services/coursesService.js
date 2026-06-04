@@ -7,6 +7,7 @@ const {
   mapAssignmentGrading,
 } = require("../utils/courseExamGrading");
 const { deriveLearningTimeline } = require("../utils/courseLearningDuration");
+const subscriptionsService = require("./subscriptionsService");
 const notificationEventsService = require("./notificationEventsService");
 const { uploadCourseDocumentBuffer, destroyByPublicId } = require("./cloudinaryUploadService");
 const {
@@ -793,6 +794,47 @@ async function listCoursesForAdmin({ actorUserId, q = "", isActive = null } = {}
   }
 }
 
+function mapAssignmentSubscriptionSummary(sub) {
+  if (!sub) return null;
+  const eligibility = subscriptionsService.evaluateFreelancerTakeOrdersEligibility(sub);
+  return {
+    subscriptionId: sub.id,
+    planId: sub.planId,
+    planName: sub.plan?.title || sub.plan?.name || null,
+    activationStatus: sub.activationStatus,
+    paymentStatus: sub.paymentStatus,
+    subscriptionStatus: sub.status,
+    expiryDate: sub.expiryDate,
+    canTakeOrders: eligibility.eligible,
+    eligibilityReason: eligibility.reason,
+  };
+}
+
+async function fetchCurrentSubscriptionsByFreelancerIds(freelancerIds, client) {
+  const ids = [...new Set(freelancerIds.map((id) => Number(id)).filter((n) => Number.isInteger(n) && n > 0))];
+  const map = new Map();
+  if (!ids.length) return map;
+  const { rows } = await client.query(
+    `SELECT DISTINCT ON (fs.freelancer_user_id)
+       fs.*,
+       p.name AS plan_name,
+       p.title AS plan_title,
+       p.duration_days AS plan_duration_days,
+       p.price_jod AS plan_price_jod
+     FROM freelancer_subscriptions fs
+     JOIN plans p ON p.id = fs.plan_id
+     WHERE fs.freelancer_user_id = ANY($1::bigint[])
+       AND fs.is_current = TRUE
+     ORDER BY fs.freelancer_user_id ASC, fs.id DESC`,
+    [ids],
+  );
+  for (const row of rows) {
+    const sub = subscriptionsService.mapSubscription(row);
+    map.set(String(row.freelancer_user_id), mapAssignmentSubscriptionSummary(sub));
+  }
+  return map;
+}
+
 async function getCourseDetailsForAdmin({ actorUserId, courseId }) {
   const client = await pool.connect();
   try {
@@ -804,7 +846,7 @@ async function getCourseDetailsForAdmin({ actorUserId, courseId }) {
       client.query(`SELECT * FROM course_lessons WHERE course_id = $1 ORDER BY sort_order ASC, id ASC`, [Number(courseId)]),
       client.query(
         `SELECT a.freelancer_id, a.exam_question_marks, a.exam_final_grade, a.audit_submitted_at, a.completed_at,
-                u.account_id, u.first_name, u.father_name, u.family_name, u.email
+                u.account_id, u.first_name, u.father_name, u.family_name, u.email, u.phone
          FROM course_assignments a
          JOIN users u ON u.id = a.freelancer_id
          WHERE a.course_id = $1
@@ -834,6 +876,10 @@ async function getCourseDetailsForAdmin({ actorUserId, courseId }) {
       ]),
     );
     const publishReadiness = assessCoursePublishReadiness(course, lessonRes.rows);
+    const subscriptionByFreelancer = await fetchCurrentSubscriptionsByFreelancerIds(
+      assignRes.rows.map((r) => r.freelancer_id),
+      client,
+    );
     return {
       course: mapCourse(course),
       publishReadiness,
@@ -859,6 +905,8 @@ async function getCourseDetailsForAdmin({ actorUserId, courseId }) {
           fatherName: r.father_name,
           familyName: r.family_name,
           email: r.email,
+          phone: r.phone || null,
+          subscription: subscriptionByFreelancer.get(String(r.freelancer_id)) || null,
           progress: {
             totalLessons,
             completedLessons: completed,

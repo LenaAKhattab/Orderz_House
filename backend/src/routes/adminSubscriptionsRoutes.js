@@ -35,6 +35,11 @@ router.post(
   validateRequest,
   subscriptionsController.assignPlan,
 );
+router.get(
+  "/subscriptions/assignable-plans",
+  requireAnyRole(ASSIGN_AND_MANAGE_SUBSCRIPTION_ROLES),
+  subscriptionsController.listAssignablePlans,
+);
 router.patch(
   "/subscriptions/:id",
   requireAnyRole(ASSIGN_AND_MANAGE_SUBSCRIPTION_ROLES),

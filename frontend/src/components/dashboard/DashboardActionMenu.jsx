@@ -1,11 +1,14 @@
+import { forwardRef } from "react";
+
 /**
  * `<details>` action menu — pass `<summary>…</summary>` and
  * `<div className="dash-ui-action-menu__panel">…</div>` as `children`.
  * @param {{ children: import("react").ReactNode; className?: string }} p
  */
-export default function DashboardActionMenu({ children, className = "" }) {
+const DashboardActionMenu = forwardRef(function DashboardActionMenu({ children, className = "" }, ref) {
   return (
     <details
+      ref={ref}
       className={
         `dash-ui-action-menu relative inline-block ${className} ` +
         `[&>summary]:list-none [&>summary]:cursor-pointer [&>summary]:rounded-[10px] [&>summary]:border [&>summary]:border-slate-400/35 [&>summary]:bg-white [&>summary]:px-2.5 [&>summary]:py-1.5 [&>summary]:text-[0.82rem] [&>summary]:font-extrabold [&>summary]:text-[color:var(--primary,#2f3b65)] ` +
@@ -16,4 +19,6 @@ export default function DashboardActionMenu({ children, className = "" }) {
       {children}
     </details>
   );
-}
+});
+
+export default DashboardActionMenu;

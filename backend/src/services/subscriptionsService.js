@@ -956,21 +956,64 @@ async function ensureFreelancerDefaultFreePlan(freelancerUserId, { actorUserId =
     return { created: false, subscription: current };
   }
 
-  const result = await assignPlanToFreelancer({
-    actorUserId,
-    freelancerUserId: uid,
-    planId: ORDERZHOUSE_FREE_PLAN_ID,
-    notes: "auto_default_free_plan",
-  });
-
+  const client = await pool.connect();
   try {
-    await ensureFreePlanInFakeSettingsPlans();
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error("[subscriptions] ensureFreePlanInFakeSettingsPlans failed (non-fatal):", e?.message || e);
-  }
+    await client.query("BEGIN");
+    await assertUserIsFreelancer(uid, client);
+    await getPlanDurationDays(ORDERZHOUSE_FREE_PLAN_ID, client);
+    await endCurrentSubscription({ freelancerUserId: uid }, client);
 
-  return { created: true, subscription: result.subscription };
+    const { rows } = await client.query(
+      `INSERT INTO freelancer_subscriptions (
+        freelancer_user_id, plan_id, assigned_by_user_id, notes,
+        status, has_first_order, first_order_date, actual_start_date, expiry_date,
+        is_current, source, payment_status, activation_status
+      ) VALUES ($1,$2,$3,$4,$5,FALSE,NULL,NULL,NULL,TRUE,$6,$7,$8)
+      RETURNING *`,
+      [
+        uid,
+        ORDERZHOUSE_FREE_PLAN_ID,
+        actorUserId ? Number(actorUserId) : null,
+        "auto_default_free_plan",
+        SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED,
+        SUBSCRIPTION_SOURCES.ADMIN,
+        SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED,
+        SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_PENDING,
+      ],
+    );
+
+    const subscription = mapSubscription(rows[0]);
+    await safeNotify(() =>
+      notificationEventsService.notifySubscriptionOwner(
+        {
+          subscription: rows[0],
+          actorUserId: actorUserId ? Number(actorUserId) : null,
+          type: "subscription.assigned",
+          title: "تم تعيين الاشتراك المجاني",
+          message: "تم تعيين الباقة المجانية. بانتظار موافقة الإدارة قبل بدء استلام الطلبات.",
+          priority: "high",
+          dedupeKey: `subscription_assigned_${String(rows[0].id)}`,
+          metadata: { subscriptionId: String(rows[0].id), planId: String(ORDERZHOUSE_FREE_PLAN_ID) },
+        },
+        client,
+      ),
+    );
+    await client.query("COMMIT");
+
+    try {
+      await ensureFreePlanInFakeSettingsPlans();
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[subscriptions] ensureFreePlanInFakeSettingsPlans failed (non-fatal):", e?.message || e);
+    }
+
+    return { created: true, subscription };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 /**

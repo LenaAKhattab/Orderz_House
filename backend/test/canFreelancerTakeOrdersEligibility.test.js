@@ -108,6 +108,18 @@ describe("evaluateFreelancerTakeOrdersEligibility", () => {
     assert.strictEqual(r.reason, "company_activation_pending");
   });
 
+  it("blocks default free plan bootstrap (not_required + company_pending)", () => {
+    const r = evaluateFreelancerTakeOrdersEligibility(
+      sub({
+        paymentStatus: SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED,
+        activationStatus: SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_PENDING,
+        status: SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED,
+      }),
+    );
+    assert.strictEqual(r.eligible, false);
+    assert.strictEqual(r.reason, "company_activation_pending");
+  });
+
   it("blocks inactive status", () => {
     const r = evaluateFreelancerTakeOrdersEligibility(sub({ status: SUBSCRIPTION_STATUSES.INACTIVE }));
     assert.strictEqual(r.eligible, false);

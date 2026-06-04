@@ -1,16 +1,17 @@
+/** Shown when pool take/bid is blocked until admin approves the subscription. */
+export const FREELANCER_ADMIN_APPROVAL_PENDING_MSG =
+  "بانتظار موافقة الإدارة قبل بدء استلام الطلبات";
+
 export function getFreelancerOrderEligibilityMessage(eligibility, subscription = null) {
   const reason = String(eligibility?.reason || "");
   const activationStatus = String(subscription?.activationStatus || "");
   const paymentStatus = String(subscription?.paymentStatus || "");
   const isCompanyPending =
-    activationStatus === "company_pending" && (paymentStatus === "paid" || paymentStatus === "pending" || paymentStatus === "");
+    activationStatus === "company_pending" &&
+    (paymentStatus === "paid" || paymentStatus === "pending" || paymentStatus === "not_required" || paymentStatus === "");
 
-  if (isCompanyPending) {
-    return "أنت مشترك حالياً، لكن حسابك بانتظار تفعيل الشركة. يرجى مراجعة الشركة لإكمال التفعيل قبل استلام الطلبات.";
-  }
-
-  if (reason === "company_activation_pending") {
-    return "أنت مشترك حالياً، لكن حسابك بانتظار تفعيل الشركة. يرجى مراجعة الشركة لإكمال التفعيل قبل استلام الطلبات.";
+  if (isCompanyPending || reason === "company_activation_pending") {
+    return FREELANCER_ADMIN_APPROVAL_PENDING_MSG;
   }
 
   if (reason === "no_subscription") {

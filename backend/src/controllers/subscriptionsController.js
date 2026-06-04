@@ -1,4 +1,5 @@
 const subscriptionsService = require("../services/subscriptionsService");
+const plansService = require("../services/plansService");
 const stripeCheckoutService = require("../services/stripeCheckoutService");
 
 const assignPlan = async (req, res, next) => {
@@ -122,6 +123,16 @@ const recordFreelancerSubscriptionCheckoutCancelledNotify = async (req, res, nex
   }
 };
 
+const listAssignablePlans = async (req, res, next) => {
+  try {
+    const plans = await plansService.listPlans({ includeDeleted: false });
+    const assignable = plans.filter((p) => p && p.isActive);
+    return res.status(200).json({ success: true, data: { plans: assignable } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const activateSubscriptionCompanyApproval = async (req, res, next) => {
   try {
     const subscription = await subscriptionsService.activateCompanyApprovalForSubscription({
@@ -136,6 +147,7 @@ const activateSubscriptionCompanyApproval = async (req, res, next) => {
 
 module.exports = {
   assignPlan,
+  listAssignablePlans,
   updateSubscription,
   listSubscriptions,
   getFreelancerCurrentSubscription,

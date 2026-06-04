@@ -17,7 +17,9 @@ import {
   adminUploadCourseTestFileRequest,
   adminUploadCoursePromptFileRequest,
   adminUploadCourseModelAnswerFileRequest,
+  listAssignablePlansAdminRequest,
 } from "../../services/api";
+import CourseProgressFreelancerActions from "../../admin/courses/CourseProgressFreelancerActions";
 import { useToast } from "../../components/ui/toastContext";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import { breadcrumbHomeFromUser } from "../../components/dashboard/dashboardBreadcrumbs";
@@ -128,6 +130,8 @@ export default function AdminCoursesPage() {
   const [manageTab, setManageTab] = useState("details");
   const [courseDetailsLoading, setCourseDetailsLoading] = useState(false);
   const [progressQuery, setProgressQuery] = useState("");
+  const [assignablePlans, setAssignablePlans] = useState([]);
+  const [assignablePlansLoading, setAssignablePlansLoading] = useState(false);
   const [coursesLoadError, setCoursesLoadError] = useState(null);
   const [freelancersLoadError, setFreelancersLoadError] = useState(null);
 
@@ -393,6 +397,37 @@ export default function AdminCoursesPage() {
       return name.includes(q) || account.includes(q);
     });
   }, [selectedCourse?.assignments, progressQuery]);
+
+  const patchAssignmentSubscription = useCallback((freelancerId, subscription) => {
+    setSelectedCourse((prev) => {
+      if (!prev?.assignments) return prev;
+      return {
+        ...prev,
+        assignments: prev.assignments.map((a) =>
+          String(a.freelancerId) === String(freelancerId) ? { ...a, subscription: subscription ?? null } : a,
+        ),
+      };
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!manageModalOpen || manageTab !== "progress") return undefined;
+    let cancelled = false;
+    setAssignablePlansLoading(true);
+    listAssignablePlansAdminRequest()
+      .then((res) => {
+        if (!cancelled) setAssignablePlans(res?.data?.plans || []);
+      })
+      .catch(() => {
+        if (!cancelled) setAssignablePlans([]);
+      })
+      .finally(() => {
+        if (!cancelled) setAssignablePlansLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [manageModalOpen, manageTab]);
 
   const resetComposer = useCallback(() => {
     setEditingCourseId("");
@@ -1655,8 +1690,16 @@ export default function AdminCoursesPage() {
                           <div className="oh-admin-courses__progress-grid">
                             {filteredAssignments.map((a) => (
                               <div key={a.freelancerId} className="oh-admin-courses__progress-card">
-                                <div className="oh-admin-courses__progress-name">
-                                  {a.firstName} {a.fatherName} {a.familyName}
+                                <div className="oh-admin-courses__progress-card-head">
+                                  <div className="oh-admin-courses__progress-name">
+                                    {a.firstName} {a.fatherName} {a.familyName}
+                                  </div>
+                                  <CourseProgressFreelancerActions
+                                    assignment={a}
+                                    assignablePlans={assignablePlans}
+                                    assignablePlansLoading={assignablePlansLoading}
+                                    onSubscriptionUpdate={patchAssignmentSubscription}
+                                  />
                                 </div>
                                 <div className="oh-admin-courses__progress-meta">الحساب: {a.accountId || "—"}</div>
                                 <div className="oh-admin-courses__progress-bar-wrap" aria-hidden>

@@ -1,0 +1,49 @@
+import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
+
+export function activationStatusLabel(status) {
+  const s = String(status || "").trim().toLowerCase();
+  if (s === "company_pending") return "بانتظار تفعيل الشركة";
+  if (s === "company_approved") return "مفعّل";
+  if (s === "company_rejected") return "مرفوض";
+  return status || "—";
+}
+
+export function paymentStatusLabel(status) {
+  const p = String(status || "").trim().toLowerCase();
+  if (p === "pending") return "قيد الانتظار";
+  if (p === "paid") return "مدفوع";
+  if (p === "not_required") return "لا يتطلب دفعاً";
+  if (p === "failed" || p === "unpaid") return "غير مكتمل";
+  if (p === "cancelled") return "ملغى";
+  return status || "—";
+}
+
+export function subscriptionStatusLabel(status) {
+  const st = String(status || "").trim().toLowerCase();
+  if (st === "assigned_not_started") return "معيّن — لم يبدأ";
+  if (st === "active") return "نشط";
+  if (st === "expired") return "منتهٍ";
+  if (st === "inactive") return "غير نشط";
+  if (st === "cancelled") return "ملغى";
+  return status || "—";
+}
+
+export function eligibilityReasonAdminMessage(reason, subscription = null) {
+  const eligibility = { reason: reason || "" };
+  return getFreelancerOrderEligibilityMessage(eligibility, subscription);
+}
+
+export function formatPlanOrderValueRange(plan) {
+  const min = plan?.orderValueMinJod;
+  const max = plan?.orderValueMaxJod;
+  if (min != null && max != null) return `${min}–${max} د.أ`;
+  if (min != null) return `من ${min} د.أ`;
+  if (max != null) return `حتى ${max} د.أ`;
+  return "—";
+}
+
+export function formatPlanPriceLabel(plan) {
+  const price = plan?.priceJod;
+  if (price == null || !Number.isFinite(Number(price))) return "—";
+  return `${Number(price)} د.أ`;
+}

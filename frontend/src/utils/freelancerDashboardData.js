@@ -235,8 +235,8 @@ export function buildFreelancerStatusHeadline({ eligibility, subscription, nowMs
   if (activation === "company_pending" || reason === "company_activation_pending") {
     return {
       tone: "warning",
-      headline: "الاشتراك بانتظار تفعيل الشركة",
-      sub: "تم استلام الدفع أو طلبك قيد المراجعة — أكمل زيارة الشركة عند الحاجة.",
+      headline: "بانتظار موافقة الإدارة",
+      sub: "بانتظار موافقة الإدارة قبل بدء استلام الطلبات.",
     };
   }
 
@@ -323,8 +323,8 @@ export function buildPendingActions({
       id: "company-pending",
       priority: 2,
       icon: "◎",
-      title: "تفعيل الشركة",
-      description: "حسابك بانتظار تفعيل الشركة بعد الدفع أو الزيارة.",
+      title: "موافقة الإدارة",
+      description: "بانتظار موافقة الإدارة قبل بدء استلام الطلبات.",
       to: "/dashboard/freelancer/settings",
       cta: "مراجعة الحساب",
     });

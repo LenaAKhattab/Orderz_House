@@ -213,6 +213,11 @@ export const assignPlanToFreelancerRequest = async (payload) => {
   return data;
 };
 
+export const listAssignablePlansAdminRequest = async () => {
+  const { data } = await api.get("/admin/subscriptions/assignable-plans");
+  return data;
+};
+
 export const listSubscriptionsRequest = async (params = {}) => {
   const { data } = await api.get("/admin/subscriptions", { params });
   return data;

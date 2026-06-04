@@ -634,6 +634,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 12px;
+  align-items: start;
 }
 
 .oh-admin-courses__progress-card {
@@ -642,13 +643,179 @@
   border: 1px solid #e2e8f0;
   background: #fff;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  overflow: visible;
+  position: relative;
+  z-index: 0;
+}
+
+.oh-admin-courses__progress-card:has(.oh-admin-courses__progress-actions-menu--open) {
+  z-index: 1;
+}
+
+.oh-admin-courses__progress-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
 }
 
 .oh-admin-courses__progress-name {
   font-weight: 800;
   color: #0f172a;
-  margin-bottom: 4px;
   font-size: 0.92rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.oh-admin-courses__progress-actions-menu {
+  flex-shrink: 0;
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+}
+
+.oh-admin-courses__progress-actions-trigger {
+  white-space: nowrap;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #fff;
+  color: var(--primary, #2f3b65);
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  line-height: 1.25;
+}
+
+.oh-admin-courses__progress-actions-trigger:hover {
+  border-color: rgba(100, 116, 139, 0.45);
+}
+
+/* Portaled menu — position:fixed set inline; removed from document flow inside scroll areas. */
+.oh-admin-courses__progress-actions-portal {
+  z-index: 1110;
+  pointer-events: auto;
+  max-width: min(240px, calc(100vw - 48px));
+  text-align: start;
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: #fff;
+  padding: 6px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+  direction: rtl;
+}
+
+.oh-admin-courses__progress-actions-item {
+  display: block;
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: start;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.oh-admin-courses__progress-actions-item:hover:not(:disabled):not(.oh-admin-courses__progress-actions-item--muted) {
+  background: #f1f5f9;
+}
+
+.oh-admin-courses__progress-actions-item:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.oh-admin-courses__progress-actions-item--muted {
+  color: #64748b;
+  cursor: default;
+  font-weight: 600;
+}
+
+.oh-admin-courses__progress-action-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.oh-admin-courses__progress-action-dialog {
+  width: min(100%, 420px);
+  max-height: min(85vh, 560px);
+  overflow: auto;
+  padding: 16px;
+}
+
+.oh-admin-courses__progress-action-dialog__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.oh-admin-courses__progress-action-dialog__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.oh-admin-courses__progress-action-dialog__close {
+  border: none;
+  background: transparent;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #64748b;
+  padding: 0 4px;
+}
+
+.oh-admin-courses__progress-action-dialog__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.oh-admin-courses__progress-action-dl {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.oh-admin-courses__progress-action-dl dt {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  margin: 0 0 2px;
+}
+
+.oh-admin-courses__progress-action-dl dd {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.oh-admin-courses__progress-action-hint {
+  margin: 0 0 10px;
+}
+
+.oh-admin-courses__progress-action-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 6px;
 }
 
 .oh-admin-courses__progress-meta {
