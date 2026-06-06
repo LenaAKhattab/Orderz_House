@@ -1096,48 +1096,46 @@ export default function AdminCoursesPage() {
                         >
                           إدارة الدروس
                         </button>
-                        <div className="oh-admin-courses__table-actions-group">
+                        <button
+                          type="button"
+                          className="btn btn-secondary oh-admin-courses__row-btn"
+                          onClick={() => onStartEditCourse(c)}
+                          disabled={loading}
+                        >
+                          تعديل
+                        </button>
+                        {!c.isActive ? (
                           <button
                             type="button"
                             className="btn btn-secondary oh-admin-courses__row-btn"
-                            onClick={() => onStartEditCourse(c)}
+                            onClick={() => void onPublishCourse(c.id)}
                             disabled={loading}
                           >
-                            تعديل
+                            نشر
                           </button>
-                          {!c.isActive ? (
-                            <button
-                              type="button"
-                              className="btn btn-secondary oh-admin-courses__row-btn"
-                              onClick={() => void onPublishCourse(c.id)}
-                              disabled={loading}
-                            >
-                              نشر
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className="btn btn-secondary oh-admin-courses__row-btn"
-                              onClick={() => void onArchiveCourse(c.id)}
-                              disabled={loading}
-                            >
-                              أرشفة
-                            </button>
-                          )}
+                        ) : (
                           <button
                             type="button"
-                            className="btn btn-secondary oh-admin-courses__row-btn oh-admin-courses__row-btn--quiet"
-                            onClick={() => onOpenSendModal(c)}
-                            disabled={loading || isGlobal}
-                            title={
-                              isGlobal
-                                ? "الدورة متاحة لجميع المستقلين — لا حاجة للإسناد اليدوي."
-                                : "إسناد الدورة لمستقل محدد"
-                            }
+                            className="btn btn-secondary oh-admin-courses__row-btn"
+                            onClick={() => void onArchiveCourse(c.id)}
+                            disabled={loading}
                           >
-                            إسناد إلى مستقل
+                            أرشفة
                           </button>
-                        </div>
+                        )}
+                        <button
+                          type="button"
+                          className="btn btn-secondary oh-admin-courses__row-btn oh-admin-courses__row-btn--quiet"
+                          onClick={() => onOpenSendModal(c)}
+                          disabled={loading || isGlobal}
+                          title={
+                            isGlobal
+                              ? "الدورة متاحة لجميع المستقلين — لا حاجة للإسناد اليدوي."
+                              : "إسناد الدورة لمستقل محدد"
+                          }
+                        >
+                          إسناد إلى مستقل
+                        </button>
                         <button
                           type="button"
                           className="btn oh-admin-courses__row-btn oh-admin-courses__row-btn--danger"

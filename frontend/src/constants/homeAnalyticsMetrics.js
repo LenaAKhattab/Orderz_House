@@ -1,5 +1,5 @@
 /**
- * Public homepage hero metrics — copy only (views: all-time $pageview count; active: 7-day window).
+ * Public homepage hero metrics — copy only (both stats from local DB).
  * @type {Record<'views'|'active', {
  *   key: 'views'|'active',
  *   label: string,
@@ -15,16 +15,16 @@ export const HOME_PUBLIC_METRICS = Object.freeze({
     label: "مشاهدات الموقع",
     sub: "إجمالي مشاهدات الموقع",
     tooltip:
-      "إجمالي أحداث مشاهدة الصفحات ($pageview) على الموقع منذ بدء التتبع في PostHog. يشمل كل الزيارات وليس عدد الزوار الفريدين.",
+      "إجمالي مشاهدات الصفحات على الموقع منذ بدء العد. يشمل كل الزيارات (تحديث الصفحة والتنقل) وليس عدد الزوار الفريدين.",
     tone: "visitors",
     stripLabel: "مشاهدات الموقع",
   },
   active: {
     key: "active",
     label: "المستخدمون النشطون",
-    sub: "نشاط في المنصة · آخر 7 أيام",
+    sub: "نشاط داخل المنصة · آخر 7 أيام",
     tooltip:
-      "عدد المستخدمين الذين نفّذوا نشاطاً في المنصة خلال آخر 7 أيام، مثل تسجيل الدخول أو إنشاء طلب. قد يكون أعلى من الزوار.",
+      "عدد الزوار الفريدين (جلسات المتصفح أو حسابات مسجّلة) الذين زاروا الموقع خلال آخر 7 أيام. التحديث المتكرر من نفس المتصفح يُعد زائراً واحداً.",
     tone: "active",
     stripLabel: "مستخدمون نشطون",
   },
@@ -33,8 +33,8 @@ export const HOME_PUBLIC_METRICS = Object.freeze({
 /** Super Admin — collapsible help (platform settings) */
 export const HOME_METRICS_ADMIN_HELP = Object.freeze({
   title: "ما الفرق بين المؤشرين؟",
-  visitors: "مشاهدات الموقع: إجمالي أحداث $pageview منذ بدء التتبع.",
-  active: "المستخدمون النشطون: المستخدمون الذين قاموا بنشاط داخل المنصة خلال آخر 7 أيام.",
+  visitors: "مشاهدات الموقع: إجمالي مشاهدات الصفحات المسجّلة محلياً منذ بدء العد.",
+  active: "المستخدمون النشطون: زوار فريدون (جلسة أو حساب) زاروا الموقع خلال آخر 7 أيام — من قاعدة البيانات المحلية.",
 });
 
 /** @deprecated Use HOME_METRICS_ADMIN_HELP — kept for legacy imports */

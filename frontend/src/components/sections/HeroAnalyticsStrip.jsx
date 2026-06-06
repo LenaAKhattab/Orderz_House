@@ -1,6 +1,7 @@
 import { HOME_PUBLIC_METRICS } from "../../constants/homeAnalyticsMetrics";
 import { HomeAnalyticsMetricLabelRow } from "../analytics/HomeAnalyticsMetricInfo";
-import { resolveAnalyticsHint, statDisplayValueAnalytics } from "./heroHomeStatUtils";
+import { resolveAnalyticsHint } from "./heroHomeStatUtils";
+import HeroStatValue from "./HeroStatValue";
 import "../analytics/home-analytics-metric-info.css";
 import "./home-hero-metrics.css";
 
@@ -16,7 +17,7 @@ export default function HeroAnalyticsStrip({ statsPayload }) {
 
   return (
     <div
-      className={`home-hero-analytics home-hero-analytics--minimal home-hero-metrics home-hero-metrics--analytics-only w-full min-w-0${statsPayload == null ? " home-hero-metrics--hydrating" : ""}`.trim()}
+      className="home-hero-analytics home-hero-analytics--minimal home-hero-metrics home-hero-metrics--analytics-only w-full min-w-0"
       dir="rtl"
       role="group"
       aria-label="إحصائيات مشاهدات الموقع والمستخدمين المتفاعلين"
@@ -35,8 +36,8 @@ export default function HeroAnalyticsStrip({ statsPayload }) {
             <div className="home-hero-metrics__label home-hero-analytics__label m-0">
               <HomeAnalyticsMetricLabelRow label={row.label} tone={row.tone} showInfo={false} />
             </div>
-            <p className="home-hero-metrics__value home-hero-analytics__value" aria-live="polite">
-              {statDisplayValueAnalytics(row, statsPayload) || "\u00a0"}
+            <p className="home-hero-metrics__value home-hero-analytics__value m-0">
+              <HeroStatValue statsPayload={statsPayload} metricKey={row.key} />
             </p>
             <p className="home-hero-analytics__metric-sub">{row.sub}</p>
             {hint ? <p className="home-hero-analytics__metric-hint">{hint}</p> : null}

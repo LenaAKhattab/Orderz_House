@@ -3,7 +3,7 @@ import { SkBox, SkLine } from "./SkeletonPrimitives";
 /** Mirrors `HeroMainContent` (centered copy + stat row over hero background). */
 export default function HeroSkeleton() {
   return (
-    <div className="hero-main-content relative z-[1] mx-auto flex min-h-0 w-full max-w-[min(100%,48rem)] flex-col items-center justify-start" aria-hidden>
+    <div className="hero-main-content relative z-[1] flex min-h-0 w-full flex-col items-center justify-start" aria-hidden>
       <div className="flex min-w-0 w-full flex-col items-center gap-3 text-center">
         <div className="flex w-full min-w-0 max-w-[min(100%,48rem)] flex-col items-center gap-2.5">
           <SkBox className="h-12 w-28 rounded-lg opacity-90 sm:h-14 sm:w-32" />

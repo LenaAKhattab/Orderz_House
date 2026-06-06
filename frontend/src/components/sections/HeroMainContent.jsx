@@ -28,7 +28,7 @@ function IconCtaArrow() {
  */
 export default function HeroMainContent({ statsPayload }) {
   return (
-    <div className="hero-main-content relative z-[1] mx-auto flex min-h-0 w-full max-w-[min(100%,48rem)] flex-col items-center justify-start">
+    <div className="hero-main-content relative z-[1] flex min-h-0 w-full flex-col items-center justify-start">
       <div className="home-hero__copy flex min-w-0 w-full flex-col items-center gap-3 text-center">
         <img
           src="/hero/fullLogp.png"
@@ -38,13 +38,13 @@ export default function HeroMainContent({ statsPayload }) {
           loading="eager"
           fetchPriority="high"
           decoding="async"
-          className="home-hero__logo mb-4 h-32 w-auto max-w-[min(760px,98vw)] object-contain sm:h-36 md:h-44 lg:h-52 xl:h-56"
+          className="home-hero__logo object-contain"
         />
-        <h1 id="home-hero-heading" className="home-hero__ref-title home-hero-marketing__title-ipad">
+        <h1 id="home-hero-heading" className="home-hero__ref-title home-hero-marketing__title-ipad w-full min-w-0">
           <span className="home-hero-marketing__title-sub block">منصة واحدة تجمعك بالخدمات والمستقلين المناسبين</span>
         </h1>
 
-        <p className="home-hero__lead w-full min-w-0 max-w-[min(100%,48rem)]">
+        <p className="home-hero__lead w-full min-w-0">
           ابدأ بطلبك بسهولة، قارن الخدمات المتاحة، وتابع كل خطوة من مكان واحد حتى تصل للنتيجة التي تحتاجها.
         </p>
 

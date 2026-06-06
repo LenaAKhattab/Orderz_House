@@ -1,4 +1,7 @@
 import { resolvePostHogHost, validatePostHogProjectKey } from "../utils/posthogEnv";
+import { buildPageViewIdempotencyKey, getClientSessionId } from "../utils/pageViewNavigation";
+import { postPublicPageViewRequest } from "./api";
+import { triggerPublicHomeStatsRefetch } from "./publicHomeStatsRefetch";
 
 const POSTHOG_KEY_RAW = String(import.meta.env.VITE_POSTHOG_KEY || "").trim();
 const HOST_RESOLVED = resolvePostHogHost(import.meta.env.VITE_POSTHOG_HOST);
@@ -16,10 +19,11 @@ let initBlocked = false;
 let initPromise = null;
 let posthog = null;
 let currentUserId = null;
-let lastPageViewKey = "";
 let lastPageviewTrackedAt = null;
 let startupChecksDone = false;
 const warnedCodes = new Set();
+/** @type {Set<string>} */
+const emittedPageViewKeys = new Set();
 
 /** @type {Array<{ path: string, title: string }>} */
 const pendingPageViews = [];
@@ -54,13 +58,13 @@ function validateFrontendEnv() {
     errors.push({
       code: "VITE_POSTHOG_KEY_MISSING",
       message: "VITE_POSTHOG_KEY is not set.",
-      impact: "Browser pageviews will not be sent — homepage «الزوار» will stay at 0.",
+      impact: "Browser PostHog pageviews will not be sent — local DB counter still works for the homepage hero.",
     });
   } else if (!POSTHOG_KEY_VALIDATION.valid) {
     errors.push({
       code: "VITE_POSTHOG_KEY_INVALID",
       message: POSTHOG_KEY_VALIDATION.message,
-      impact: "PostHog initialization skipped — visitors counter will not receive browser pageviews.",
+      impact: "PostHog initialization skipped — secondary analytics only; homepage hero uses local DB.",
     });
   }
 
@@ -102,14 +106,14 @@ function validateFrontendEnv() {
     warnings.push({
       code: "VITE_POSTHOG_ENABLE_IN_DEV_FALSE",
       message: "VITE_POSTHOG_ENABLE_IN_DEV is false.",
-      impact: "PostHog dev tracking disabled — visitors counter will remain 0.",
+      impact: "PostHog dev tracking disabled — homepage hero still uses local DB pageview POST.",
     });
   }
 
   if (IS_DEV && POSTHOG_KEY_RAW && !ENABLE_DEV_TRACKING) {
     warnOnceCode(
       "dev_tracking_off",
-      "[analytics] PostHog dev tracking disabled — visitors counter will remain 0. Set VITE_POSTHOG_ENABLE_IN_DEV=true in frontend/.env to test locally.",
+      "[analytics] PostHog dev tracking disabled — homepage hero still records local pageviews. Set VITE_POSTHOG_ENABLE_IN_DEV=true for PostHog secondary analytics.",
     );
   }
 
@@ -178,9 +182,6 @@ function flushPendingQueue() {
   }
 
   for (const item of pendingPageViews.splice(0)) {
-    const key = `${item.path}::${item.title || ""}`;
-    if (lastPageViewKey === key) continue;
-    lastPageViewKey = key;
     const href = typeof window !== "undefined" ? window.location.href : undefined;
     try {
       posthog.capture("$pageview", {
@@ -304,31 +305,62 @@ export function initAnalytics() {
   void ensurePostHogLoaded();
 }
 
+async function recordLocalPageView({ path, title, idempotencyKey }) {
+  try {
+    const referrer = typeof document !== "undefined" ? document.referrer || null : null;
+    const res = await postPublicPageViewRequest({
+      path,
+      title: title || null,
+      referrer,
+      idempotencyKey,
+      clientSessionId: getClientSessionId(),
+    });
+    triggerPublicHomeStatsRefetch(res?.data?.totalCount, res?.data?.activeUsersLast7Days);
+    debugLog("local pageview recorded", { path, idempotencyKey });
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.warn("[analytics] local pageview failed:", err?.message || err);
+    }
+  }
+}
+
 export function trackPageView(path, title = "") {
   runAnalyticsStartupChecks();
-  if (!ANALYTICS_ENABLED || !path) {
-    debugLog("pageview skipped", { path, reason: !ANALYTICS_ENABLED ? "disabled" : "empty_path" });
+  const fullPath = path || "/";
+  if (!fullPath) {
+    debugLog("pageview skipped", { path, reason: "empty_path" });
+    return;
+  }
+
+  const idempotencyKey = buildPageViewIdempotencyKey(fullPath);
+  if (emittedPageViewKeys.has(idempotencyKey)) {
+    debugLog("pageview skipped duplicate", { path: fullPath, idempotencyKey });
+    return;
+  }
+  emittedPageViewKeys.add(idempotencyKey);
+
+  void recordLocalPageView({ path: fullPath, title, idempotencyKey });
+
+  if (!ANALYTICS_ENABLED) {
+    debugLog("posthog pageview skipped", { path: fullPath, reason: "disabled" });
     return;
   }
 
   if (!initialized) {
-    pendingPageViews.push({ path, title });
+    pendingPageViews.push({ path: fullPath, title });
     void ensurePostHogLoaded();
     return;
   }
 
-  const key = `${path}::${title || ""}`;
-  if (lastPageViewKey === key) return;
-  lastPageViewKey = key;
   const href = typeof window !== "undefined" ? window.location.href : undefined;
   try {
     posthog.capture("$pageview", {
-      path,
+      path: fullPath,
       title: title || undefined,
       $current_url: href,
     });
     lastPageviewTrackedAt = new Date().toISOString();
-    debugLog("pageview captured", { path, at: lastPageviewTrackedAt });
+    debugLog("pageview captured", { path: fullPath, at: lastPageviewTrackedAt });
   } catch (err) {
     console.warn("[analytics] pageview capture failed:", err?.message || err);
   }
@@ -371,7 +403,6 @@ export function setAnalyticsUser(user) {
 export function clearAnalyticsUser() {
   if (!ANALYTICS_ENABLED) return;
   currentUserId = null;
-  lastPageViewKey = "";
   pendingIdentifies.length = 0;
 
   if (!initialized) {

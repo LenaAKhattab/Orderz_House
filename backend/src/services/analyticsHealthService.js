@@ -1,4 +1,5 @@
 const posthogAnalyticsService = require("./posthogAnalyticsService");
+const publicPageViewService = require("./publicPageViewService");
 const { validatePosthogEnv, logPosthogEnvWarningsOnce } = require("../utils/posthogEnvValidation");
 
 let lastSuccessfulHogqlAt = null;
@@ -58,7 +59,22 @@ async function getAnalyticsHealthReport() {
   let lastPageviewAt = null;
   let pageViewsAllTime = null;
   let activeUsersLast7Days = null;
+  let localPageViewsTotal = null;
+  let localLastPageviewAt = null;
+  let localActiveUsersLast7Days = null;
   let snapshotError = null;
+
+  try {
+    [localPageViewsTotal, localLastPageviewAt, localActiveUsersLast7Days] = await Promise.all([
+      publicPageViewService.getTotalPageViewCount(),
+      publicPageViewService.getLastPageViewAt(),
+      publicPageViewService.getActiveUsersLast7Days(),
+    ]);
+  } catch {
+    localPageViewsTotal = null;
+    localLastPageviewAt = null;
+    localActiveUsersLast7Days = null;
+  }
 
   if (cfg) {
     const probe = await probeHogql(cfg);
@@ -99,35 +115,55 @@ async function getAnalyticsHealthReport() {
       pageViewsAllTime,
       activeUsersLast7Days,
       lastPageviewAt,
+      localPageViewsTotal,
+      localLastPageviewAt,
+      localActiveUsersLast7Days,
       error: snapshotError,
     },
     degraded,
     warnings: env.warnings,
     errors: env.errors,
-    hints: buildHints({ env, hogqlReachable, lastPageviewAt, pageViewsAllTime }),
+    hints: buildHints({
+      env,
+      hogqlReachable,
+      lastPageviewAt,
+      pageViewsAllTime,
+      localPageViewsTotal,
+      localLastPageviewAt,
+      localActiveUsersLast7Days,
+    }),
   };
 }
 
-function buildHints({ env, hogqlReachable, lastPageviewAt, pageViewsAllTime }) {
+function buildHints({
+  env,
+  hogqlReachable,
+  lastPageviewAt,
+  pageViewsAllTime,
+  localPageViewsTotal,
+  localLastPageviewAt,
+  localActiveUsersLast7Days,
+}) {
   const hints = [];
   if (!env.hogqlReady) {
     hints.push("أكمل إعداد POSTHOG_PROJECT_ID و POSTHOG_PERSONAL_API_KEY على الخادم.");
   } else if (!hogqlReachable) {
     hints.push("PostHog لا يستجيب للاستعلامات — تحقق من المضيف والمفاتيح.");
-  } else if (pageViewsAllTime === 0 && !lastPageviewAt) {
-    hints.push("لا توجد أحداث $pageview — فعّل تتبع المتصفح (VITE_POSTHOG_KEY) أو VITE_POSTHOG_ENABLE_IN_DEV محلياً.");
+  } else if (pageViewsAllTime === 0 && !lastPageviewAt && localPageViewsTotal === 0) {
+    hints.push("لا توجد مشاهدات مسجّلة — تأكد من تشغيل migration 072 وتفعيل تتبع الصفحة المحلي.");
+  } else if (localPageViewsTotal === 0 && !localLastPageviewAt) {
+    hints.push("عداد المشاهدات المحلي فارغ — سجّل زيارة من المتصفح أو تحقق من migration 072.");
+  } else if (localActiveUsersLast7Days === 0 && localPageViewsTotal > 0) {
+    hints.push("المشاهدات المحلية موجودة لكن «النشطون» صفر — قد يكون كل الزوار خارج نافذة 7 أيام أو بدون client_session_id.");
   }
   return hints;
 }
 
 /**
- * Metadata for public homepage stats (reason codes, no secrets).
+ * Public homepage hero stats — local DB only (no PostHog HogQL).
  * @param {{ showVisitorsCount: boolean, showActiveUsersCount: boolean }} opts
  */
 async function getPublicHomeAnalyticsMeta(opts) {
-  logPosthogEnvWarningsOnce();
-  const env = validatePosthogEnv();
-  const cfg = posthogAnalyticsService.readPosthogCredentialsLoose();
   const queriedAt = new Date().toISOString();
 
   /** @type {Record<string, string>} */
@@ -138,57 +174,56 @@ async function getPublicHomeAnalyticsMeta(opts) {
 
   let lastPageviewAt = null;
   let analyticsDegraded = false;
-  let analyticsMisconfigured = !env.hogqlReady;
 
   if (!opts.showVisitorsCount && !opts.showActiveUsersCount) {
     return {
       queriedAt,
       analyticsDegraded: false,
-      analyticsMisconfigured,
+      analyticsMisconfigured: false,
       lastPageviewAt: null,
       reasons,
     };
   }
 
-  if (!cfg || !env.hogqlReady) {
-    analyticsDegraded = true;
-    analyticsMisconfigured = true;
-    if (opts.showVisitorsCount) reasons.visitors = "posthog_misconfigured";
-    if (opts.showActiveUsersCount) reasons.activeUsers = "posthog_misconfigured";
-    return { queriedAt, analyticsDegraded, analyticsMisconfigured, lastPageviewAt, reasons };
-  }
-
   let visitors = null;
   let activeUsers = null;
 
-  try {
-    const [snap, lastAt] = await Promise.all([
-      posthogAnalyticsService.getHeroSnapshotNumbersWithTimeout(cfg),
-      fetchLastPageviewAt(cfg),
-    ]);
-    lastPageviewAt = lastAt;
-    lastSuccessfulHogqlAt = queriedAt;
-    if (opts.showVisitorsCount) visitors = snap.pageViewsAllTime;
-    if (opts.showActiveUsersCount) activeUsers = snap.activeUsersLast7Days;
+  const needVisitors = opts.showVisitorsCount;
+  const needActive = opts.showActiveUsersCount;
 
-    if (opts.showVisitorsCount) {
-      if (snap.pageViewsAllTime > 0) reasons.visitors = "ok";
-      else if (!lastPageviewAt) reasons.visitors = "waiting_first_pageview";
-      else reasons.visitors = "zero_traffic";
+  try {
+    const tasks = [];
+    if (needVisitors) {
+      tasks.push(publicPageViewService.getTotalPageViewCount());
+      tasks.push(publicPageViewService.getLastPageViewAt());
     }
-    if (opts.showActiveUsersCount) {
-      reasons.activeUsers = snap.activeUsersLast7Days > 0 ? "ok" : "zero_traffic";
+    if (needActive) {
+      tasks.push(publicPageViewService.getActiveUsersLast7Days());
+    }
+
+    const results = await Promise.all(tasks);
+    let idx = 0;
+
+    if (needVisitors) {
+      visitors = results[idx++];
+      lastPageviewAt = results[idx++];
+      reasons.visitors = visitors > 0 ? "ok" : "zero_traffic";
+    }
+
+    if (needActive) {
+      activeUsers = results[idx++];
+      reasons.activeUsers = activeUsers > 0 ? "ok" : "zero_traffic";
     }
   } catch {
     analyticsDegraded = true;
-    if (opts.showVisitorsCount) reasons.visitors = "posthog_unavailable";
-    if (opts.showActiveUsersCount) reasons.activeUsers = "posthog_unavailable";
+    if (needVisitors) reasons.visitors = "db_unavailable";
+    if (needActive) reasons.activeUsers = "db_unavailable";
   }
 
   return {
     queriedAt,
     analyticsDegraded,
-    analyticsMisconfigured,
+    analyticsMisconfigured: false,
     lastPageviewAt,
     reasons,
     visitors,

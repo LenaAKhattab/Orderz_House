@@ -103,7 +103,7 @@ export default function SuperAdminAnalyticsHealthPanel() {
             <>
               <div className="sa-analytics-health__toolbar">
                 <p className="sa-analytics-health__intro">
-                  تشخيص سريع — لماذا قد يظهر «الزوار» صفراً على الصفحة الرئيسية.
+                  تشخيص سريع — تتبع PostHog الثانوي ومقارنته بعدّاد المشاهدات المحلي للصفحة الرئيسية.
                 </p>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => void load()}>
                   تحديث
@@ -129,35 +129,42 @@ export default function SuperAdminAnalyticsHealthPanel() {
                     <li>آخر pageview من المتصفح: {fmtTime(client.lastPageviewTrackedAt)}</li>
                     <li>تتبع التطوير: {client.devTrackingEnabled ? "مفعّل" : "معطّل"}</li>
                     {isDevTrackingDisabled() ? (
-                      <li className="sa-analytics-health__warn">بدون VITE_POSTHOG_ENABLE_IN_DEV=true لن تُسجَّل زيارات محلياً.</li>
+                      <li className="sa-analytics-health__warn">بدون VITE_POSTHOG_ENABLE_IN_DEV=true لن يُرسل PostHog من المتصفح — العدّاد المحلي للبطل يعمل بشكل مستقل.</li>
                     ) : null}
                   </ul>
                 </HealthCard>
 
                 <HealthCard
-                  title="استعلامات HogQL (الخادم)"
+                  title="إحصائيات الصفحة الرئيسية (قاعدة البيانات)"
+                  tone={toneFromOk(
+                    health?.snapshot?.localPageViewsTotal != null || health?.snapshot?.localActiveUsersLast7Days != null,
+                  )}
+                  statusLabel={
+                    health?.snapshot?.localPageViewsTotal != null || health?.snapshot?.localActiveUsersLast7Days != null
+                      ? "محلي"
+                      : "غير متاح"
+                  }
+                >
+                  <ul className="sa-analytics-health__list">
+                    <li>مشاهدات الموقع (محلي): {health?.snapshot?.localPageViewsTotal != null ? health.snapshot.localPageViewsTotal : "—"}</li>
+                    <li>نشطون 7 أيام (محلي): {health?.snapshot?.localActiveUsersLast7Days != null ? health.snapshot.localActiveUsersLast7Days : "—"}</li>
+                    <li>آخر مشاهدة محلية: {fmtTime(health?.snapshot?.localLastPageviewAt)}</li>
+                  </ul>
+                </HealthCard>
+
+                <HealthCard
+                  title="PostHog (مرجع · ليس مصدر البطل)"
                   tone={toneFromOk(health?.posthog?.hogqlConfigured && health?.posthog?.hogqlReachable)}
                   statusLabel={
                     !health?.posthog?.hogqlConfigured ? "غير مُعد" : health?.posthog?.hogqlReachable ? "متصل" : "غير متاح"
                   }
                 >
                   <ul className="sa-analytics-health__list">
+                    <li>آخر $pageview (PostHog): {fmtTime(health?.snapshot?.lastPageviewAt)}</li>
+                    <li>مشاهدات PostHog ($pageview، كل الوقت): {health?.snapshot?.pageViewsAllTime != null ? health.snapshot.pageViewsAllTime : "—"}</li>
+                    <li>uniq(person) PostHog (7 أيام): {health?.snapshot?.activeUsersLast7Days != null ? health.snapshot.activeUsersLast7Days : "—"}</li>
                     <li>المضيف: {health?.posthog?.host || "—"}</li>
-                    <li>معرّف المشروع: {health?.posthog?.projectIdPresent ? "موجود" : "ناقص"}</li>
-                    <li>مفتاح شخصي: {health?.posthog?.personalKeyPresent ? "موجود" : "ناقص"}</li>
-                    <li>آخر استعلام ناجح: {fmtTime(health?.lastSuccessfulHogqlAt)}</li>
-                  </ul>
-                </HealthCard>
-
-                <HealthCard
-                  title="تقاطعات $pageview"
-                  tone={toneFromOk(health?.snapshot?.lastPageviewAt != null)}
-                  statusLabel={health?.snapshot?.lastPageviewAt ? "مستلمة" : "لا أحداث"}
-                >
-                  <ul className="sa-analytics-health__list">
-                    <li>آخر $pageview: {fmtTime(health?.snapshot?.lastPageviewAt)}</li>
-                    <li>مشاهدات ($pageview، كل الوقت): {health?.snapshot?.pageViewsAllTime != null ? health.snapshot.pageViewsAllTime : "—"}</li>
-                    <li>نشطون (7 أيام): {health?.snapshot?.activeUsersLast7Days != null ? health.snapshot.activeUsersLast7Days : "—"}</li>
+                    <li>آخر استعلام HogQL ناجح: {fmtTime(health?.lastSuccessfulHogqlAt)}</li>
                   </ul>
                 </HealthCard>
 

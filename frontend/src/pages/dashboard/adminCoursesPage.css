@@ -944,7 +944,7 @@
 
 /* Courses list table */
 .oh-admin-courses__table-wrap .dash-ui-table {
-  min-width: 720px;
+  min-width: min(100%, 880px);
 }
 
 .oh-admin-courses__table-wrap .dash-ui-table thead th {
@@ -964,7 +964,10 @@
 }
 
 .oh-admin-courses__col-actions {
-  min-width: 280px;
+  min-width: clamp(16rem, 34vw, 26rem);
+  width: auto;
+  max-width: none;
+  vertical-align: middle;
 }
 
 .oh-admin-courses__course-anchor {
@@ -1025,45 +1028,50 @@
   min-width: 118px;
 }
 
+/* Single-row equal action buttons (5 siblings in one flex row) */
 .oh-admin-courses__table-actions {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: clamp(0.25rem, 0.55vw, 0.4rem);
+  width: 100%;
+  min-width: 0;
 }
 
-.oh-admin-courses__table-actions-group {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
+.oh-admin-courses__table-actions > .oh-admin-courses__row-btn {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
-/* Row actions: fixed tiers so label length does not change button size */
+.oh-sa-outlet .oh-admin-courses__table-actions > .btn.oh-admin-courses__row-btn {
+  min-height: clamp(1.85rem, 4vw, 2.05rem);
+  height: auto;
+  padding: clamp(0.28rem, 0.65vw, 0.38rem) clamp(0.2rem, 0.45vw, 0.45rem);
+  border-radius: clamp(0.42rem, 1vw, 0.55rem);
+  transform: none;
+}
+
+.oh-sa-outlet .oh-admin-courses__table-actions > .btn.oh-admin-courses__row-btn:hover:not(:disabled) {
+  transform: none;
+}
+
 .oh-admin-courses__row-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  min-height: 2rem;
-  font-size: 0.78rem;
-  padding: 6px 12px;
-  line-height: 1.25;
-  white-space: nowrap;
+  width: 100%;
+  font-size: clamp(0.62rem, 1.05vw, 0.76rem);
+  line-height: 1.2;
+  white-space: normal;
+  text-align: center;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 .oh-admin-courses__row-btn--primary {
-  min-width: 8.25rem;
   font-weight: 800;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
-}
-
-.oh-admin-courses__table-actions-group .oh-admin-courses__row-btn:not(.oh-admin-courses__row-btn--quiet) {
-  min-width: 5.25rem;
-}
-
-.oh-admin-courses__row-btn--quiet {
-  min-width: 11.5rem;
 }
 
 .oh-admin-courses__row-btn--quiet {
@@ -1078,8 +1086,11 @@
   border-color: #cbd5e1;
 }
 
+.oh-admin-courses__row-btn--quiet:disabled {
+  opacity: 0.72;
+}
+
 .oh-admin-courses__row-btn--danger {
-  min-width: 5.25rem;
   color: #b91c1c;
   background: #fff;
   border: 1px solid #fecaca;
@@ -1090,6 +1101,26 @@
   background: #fef2f2;
   border-color: #fca5a5;
   color: #991b1b;
+}
+
+@media (max-width: 1100px) {
+  .oh-admin-courses__table-wrap .dash-ui-table {
+    min-width: min(100%, 820px);
+  }
+
+  .oh-admin-courses__col-actions {
+    min-width: clamp(14rem, 42vw, 22rem);
+  }
+
+  .oh-sa-outlet .oh-admin-courses__table-actions > .btn.oh-admin-courses__row-btn {
+    min-height: clamp(1.75rem, 4.5vw, 1.95rem);
+    font-size: clamp(0.58rem, 1.35vw, 0.72rem);
+    padding: clamp(0.24rem, 0.75vw, 0.32rem) clamp(0.15rem, 0.4vw, 0.35rem);
+  }
+
+  .oh-admin-courses__row-btn {
+    font-size: clamp(0.58rem, 1.35vw, 0.72rem);
+  }
 }
 
 .oh-admin-courses__readiness-warn {
@@ -1108,21 +1139,26 @@
     grid-template-columns: 1fr;
   }
 
+  .oh-admin-courses__table-wrap .dash-ui-table {
+    min-width: min(100%, 760px);
+  }
+
+  .oh-admin-courses__col-actions {
+    min-width: clamp(12.5rem, 48vw, 18rem);
+  }
+
   .oh-admin-courses__table-actions {
-    flex-direction: column;
-    align-items: stretch;
+    gap: clamp(0.2rem, 0.8vw, 0.32rem);
   }
 
-  .oh-admin-courses__table-actions-group {
-    width: 100%;
-    flex-direction: column;
-    align-items: stretch;
+  .oh-sa-outlet .oh-admin-courses__table-actions > .btn.oh-admin-courses__row-btn {
+    min-height: clamp(1.65rem, 5vw, 1.85rem);
+    font-size: clamp(0.55rem, 1.8vw, 0.68rem);
+    border-radius: clamp(0.42rem, 1.5vw, 0.5rem);
   }
 
-  .oh-admin-courses__table-actions .oh-admin-courses__row-btn {
-    width: 100%;
-    min-width: 0;
-    justify-content: center;
+  .oh-admin-courses__row-btn {
+    font-size: clamp(0.55rem, 1.8vw, 0.68rem);
   }
 }
 
@@ -1131,8 +1167,34 @@
     max-width: none;
   }
 
+  .oh-admin-courses__col-actions {
+    min-width: 11rem;
+    max-width: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .oh-admin-courses__table-actions {
+    min-width: 22rem;
+  }
+
+  .oh-admin-courses__table-wrap .dash-ui-table {
+    min-width: min(100%, 640px);
+  }
+
   .oh-admin-courses__row-toggle-label {
     font-size: 0.72rem;
+  }
+
+  .oh-sa-outlet .oh-admin-courses__table-actions > .btn.oh-admin-courses__row-btn {
+    min-height: 1.65rem;
+    font-size: 0.58rem;
+    padding: 0.22rem 0.12rem;
+  }
+
+  .oh-admin-courses__row-btn {
+    font-size: 0.58rem;
   }
 }
 

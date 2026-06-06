@@ -3,6 +3,7 @@ import HomeAdsContainer from "./HomeAdsContainer";
 import "./home-hero-ref.css";
 import "./home-hero-marketing.css";
 import "./home-hero-ipad.css";
+import "./home-hero-center-responsive.css";
 import "./home-hero-loading.css";
 
 /**

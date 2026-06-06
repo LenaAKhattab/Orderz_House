@@ -1,5 +1,4 @@
 import { formatHomePublicStat } from "../../hooks/usePublicHomeStats";
-import { isDevTrackingDisabled } from "../../services/analytics";
 
 /** @deprecated Demo fallbacks removed from hero display — kept for tests/legacy imports only. */
 export const FALLBACK_DEMO = {
@@ -15,9 +14,7 @@ const REASON_HINTS = {
   ok: null,
   zero_traffic_views: "لا مشاهدات مسجّلة بعد",
   zero_traffic_active: "لا نشاط مسجّل خلال 7 أيام",
-  waiting_first_pageview: "بانتظار أول زيارة ($pageview)",
-  posthog_unavailable: "التحليلات غير متاحة مؤقتاً",
-  posthog_misconfigured: "إعداد PostHog على الخادم غير مكتمل",
+  db_unavailable: "إحصائيات المنصة غير متاحة مؤقتاً",
   dev_tracking_disabled: "التتبع معطّل في بيئة التطوير",
 };
 
@@ -28,30 +25,52 @@ function reasonForKey(payload, key) {
 }
 
 function isBrokenReason(reason) {
-  return reason === "posthog_unavailable" || reason === "posthog_misconfigured";
+  return reason === "db_unavailable";
+}
+
+function metricEnabled(payload, key) {
+  if (!payload) return true;
+  if (key === "views") return payload.showVisitorsCount !== false;
+  if (key === "active") return payload.showActiveUsersCount !== false;
+  return true;
+}
+
+export function getAnalyticsRawNumber(payload, key) {
+  if (!payload || payload.error) return null;
+  if (key === "views") {
+    if (!payload.showVisitorsCount) return null;
+    if (payload.visitors == null || Number.isNaN(Number(payload.visitors))) return null;
+    return Math.trunc(Number(payload.visitors));
+  }
+  if (key === "active") {
+    if (!payload.showActiveUsersCount) return null;
+    if (payload.activeUsers == null || Number.isNaN(Number(payload.activeUsers))) return null;
+    return Math.trunc(Number(payload.activeUsers));
+  }
+  return null;
+}
+
+/** True only on first load when this metric has no value yet (not during background refresh). */
+export function isAnalyticsMetricLoading(payload, key) {
+  if (payload != null && payload.error) return false;
+  if (payload != null && !metricEnabled(payload, key)) return false;
+  return getAnalyticsRawNumber(payload, key) == null;
 }
 
 function shouldHideZeroVisitors(payload, key) {
   if (key !== "views") return false;
-  if (isDevTrackingDisabled() && payload?.showVisitorsCount) return true;
   const reason = reasonForKey(payload, key);
-  if (reason === "waiting_first_pageview" || reason === "posthog_unavailable" || reason === "posthog_misconfigured") {
-    return true;
-  }
-  if (payload?.analyticsMisconfigured) return true;
+  if (isBrokenReason(reason)) return true;
   return false;
 }
 
 export function resolveAnalyticsHint(payload, key) {
-  if (key === "views" && isDevTrackingDisabled() && payload?.showVisitorsCount) {
-    return REASON_HINTS.dev_tracking_disabled;
-  }
   const reason = reasonForKey(payload, key);
   if (reason === "zero_traffic") {
     return key === "views" ? REASON_HINTS.zero_traffic_views : REASON_HINTS.zero_traffic_active;
   }
   if (reason && REASON_HINTS[reason]) return REASON_HINTS[reason];
-  if (payload?.analyticsDegraded && key === "views") return REASON_HINTS.posthog_unavailable;
+  if (payload?.analyticsDegraded) return REASON_HINTS.db_unavailable;
   return null;
 }
 
@@ -119,6 +138,6 @@ export function statDisplayValueProjects(row, statsPayload) {
 }
 
 export function statDisplayValueAnalytics(row, statsPayload) {
-  if (statsPayload == null) return "…";
+  if (statsPayload == null) return "";
   return resolveNumber(statsPayload, row.key);
 }

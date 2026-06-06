@@ -952,8 +952,14 @@ export const getSuperadminDashboardIntelligenceActivityRequest = async (options 
   return data;
 };
 
-export const getPublicHomeStatsRequest = async () => {
-  const { data } = await api.get("/public/home-stats");
+export const getPublicHomeStatsRequest = async ({ signal } = {}) => {
+  const { data } = await api.get("/public/home-stats", { signal, timeout: 8000 });
+  return data;
+};
+
+/** Record a public pageview in the local DB counter (idempotent per idempotencyKey). */
+export const postPublicPageViewRequest = async (payload) => {
+  const { data } = await api.post("/public/analytics/pageview", payload, { timeout: 8000 });
   return data;
 };
 
