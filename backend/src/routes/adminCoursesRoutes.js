@@ -1,5 +1,5 @@
 const express = require("express");
-const { requireAuth, requireAnyRole } = require("../middleware/rbacMiddleware");
+const { requireAuth, requireAnyRole, requirePermission } = require("../middleware/rbacMiddleware");
 const validateRequest = require("../middleware/validateRequest");
 const adminCoursesController = require("../controllers/adminCoursesController");
 const {
@@ -23,21 +23,28 @@ const {
 
 const router = express.Router();
 
-router.use(requireAuth, requireAnyRole(["admin", "super_admin"]));
+// Scope guards to /courses routes only — avoid blocking other /api/admin/* routers mounted on the same prefix.
+const coursesGuard = [
+  requireAuth,
+  requireAnyRole(["admin", "super_admin"]),
+  requirePermission("dashboard.admin.courses"),
+];
 
-router.get("/courses/freelancers", adminCoursesController.listFreelancers);
-router.get("/courses", listCoursesValidators, validateRequest, adminCoursesController.listCourses);
-router.post("/courses", createCourseValidators, validateRequest, adminCoursesController.createCourse);
+router.get("/courses/freelancers", ...coursesGuard, adminCoursesController.listFreelancers);
+router.get("/courses", ...coursesGuard, listCoursesValidators, validateRequest, adminCoursesController.listCourses);
+router.post("/courses", ...coursesGuard, createCourseValidators, validateRequest, adminCoursesController.createCourse);
 router.get(
   "/courses/:id/files/:fileKind",
+  ...coursesGuard,
   courseFileStreamValidators,
   validateRequest,
   adminCoursesController.streamCourseFile,
 );
-router.get("/courses/:id", courseIdParam, validateRequest, adminCoursesController.getCourseById);
-router.patch("/courses/:id", updateCourseValidators, validateRequest, adminCoursesController.updateCourse);
+router.get("/courses/:id", ...coursesGuard, courseIdParam, validateRequest, adminCoursesController.getCourseById);
+router.patch("/courses/:id", ...coursesGuard, updateCourseValidators, validateRequest, adminCoursesController.updateCourse);
 router.post(
   "/courses/:id/test-file",
+  ...coursesGuard,
   courseIdParam,
   validateRequest,
   uploadCourseTestFileMw,
@@ -45,6 +52,7 @@ router.post(
 );
 router.post(
   "/courses/:id/prompt-file",
+  ...coursesGuard,
   courseIdParam,
   validateRequest,
   uploadCoursePromptFileMw,
@@ -52,28 +60,31 @@ router.post(
 );
 router.post(
   "/courses/:id/model-answer-file",
+  ...coursesGuard,
   courseIdParam,
   validateRequest,
   uploadCourseModelAnswerFileMw,
   adminCoursesController.uploadCourseModelAnswerFile,
 );
-router.post("/courses/:id/publish", publishCourseValidators, validateRequest, adminCoursesController.publishCourse);
-router.post("/courses/:id/archive", archiveCourseValidators, validateRequest, adminCoursesController.archiveCourse);
-router.delete("/courses/:id", courseIdParam, validateRequest, adminCoursesController.deleteCourse);
-router.post("/courses/:id/import-lessons", importLessonsValidators, validateRequest, adminCoursesController.importLessons);
-router.patch("/courses/:id/lessons", updateLessonsValidators, validateRequest, adminCoursesController.updateLessons);
+router.post("/courses/:id/publish", ...coursesGuard, publishCourseValidators, validateRequest, adminCoursesController.publishCourse);
+router.post("/courses/:id/archive", ...coursesGuard, archiveCourseValidators, validateRequest, adminCoursesController.archiveCourse);
+router.delete("/courses/:id", ...coursesGuard, courseIdParam, validateRequest, adminCoursesController.deleteCourse);
+router.post("/courses/:id/import-lessons", ...coursesGuard, importLessonsValidators, validateRequest, adminCoursesController.importLessons);
+router.patch("/courses/:id/lessons", ...coursesGuard, updateLessonsValidators, validateRequest, adminCoursesController.updateLessons);
 router.post(
   "/courses/:id/assign-one",
+  ...coursesGuard,
   assignOneFreelancerValidators,
   validateRequest,
   adminCoursesController.assignOneFreelancer,
 );
 router.post(
   "/courses/:id/unassign-one",
+  ...coursesGuard,
   assignOneFreelancerValidators,
   validateRequest,
   adminCoursesController.unassignOneFreelancer,
 );
-router.post("/courses/:id/assign", assignCourseValidators, validateRequest, adminCoursesController.assignFreelancers);
+router.post("/courses/:id/assign", ...coursesGuard, assignCourseValidators, validateRequest, adminCoursesController.assignFreelancers);
 
 module.exports = router;

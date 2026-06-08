@@ -148,3 +148,98 @@
     animation: none;
   }
 }
+
+/* —— Mobile: compact 3-column row (icon + title only) —— */
+@media (max-width: 768px) {
+  .home-categories-panel {
+    padding: 0.65rem;
+    overflow: visible;
+  }
+
+  .home-categories-cards {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .home-categories-cards .home-categories-card {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 140px;
+    padding: 8px !important;
+    border-radius: 14px;
+    box-shadow: 0 6px 20px -12px rgba(15, 23, 42, 0.14);
+  }
+
+  .home-categories-card {
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  .home-categories-card:hover {
+    transform: none;
+  }
+
+  .home-categories-card:focus-visible {
+    outline: 2px solid rgba(118, 207, 223, 0.85);
+    outline-offset: 2px;
+  }
+
+  .home-categories-card__media {
+    flex-shrink: 0;
+  }
+
+  .home-categories-card__image {
+    aspect-ratio: unset !important;
+    height: 68px;
+    border-radius: 12px;
+  }
+
+  .home-categories-card__image img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
+
+  .home-categories-card__chip {
+    display: none !important;
+  }
+
+  .home-categories-card .home-categories-card__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0 !important;
+    min-height: 0;
+    padding: 0.4rem 0 0.25rem !important;
+  }
+
+  .home-categories-card__title {
+    display: -webkit-box;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 6px;
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.35;
+    text-align: center;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .home-categories-card__desc,
+  .home-categories-card__actions {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 960px) {
+  .home-categories-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}

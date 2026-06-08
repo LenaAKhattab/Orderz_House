@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useParams } from "react-router-dom";
+import { useAuth } from "../../context/useAuth";
 import {
   ArrowLeft,
   ArrowRight,
@@ -30,9 +31,17 @@ import {
   freelancerGetCourseDetailsRequest,
   freelancerMarkLessonCompleteRequest,
   freelancerSubmitCourseCompletionRequest,
+  freelancerUploadCompletedExamFileRequest,
   openPdfPreviewTab,
   viewFreelancerCourseFile,
+  viewFreelancerCompletedExamFile,
+  downloadFreelancerCompletedExamFile,
 } from "../../services/api";
+import {
+  emptyMarksArray,
+  resolveExamQuestions,
+  validateClientExamMarks,
+} from "../../utils/courseExamQuestions";
 import { useToast } from "../../components/ui/toastContext";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import CourseDetailsPageSkeleton from "../../components/dashboard/courses/CourseDetailsPageSkeleton";
@@ -47,52 +56,85 @@ import "./freelancerCourseDetails.css";
 const FINAL_TEST_STEP_ID = "final-test";
 const FINAL_TEST_TITLE = "الاختبار النهائي بعد الدورة";
 const MAX_RESPONSE_CHARS = 15000;
+const EXAM_MARK_MAX_ERROR = "لا يمكن أن تكون العلامة أكبر من العلامة القصوى لهذا السؤال";
+const EXAM_MARK_NEGATIVE_ERROR = "لا يمكن أن تكون الدرجة سالبة.";
 
-function parseQuestionCount(course) {
-  const n = Number(course?.testQuestionCount);
-  return Number.isInteger(n) && n >= 1 ? n : 0;
+function preventNumberInputScroll(e) {
+  e.currentTarget.blur();
 }
 
-function emptyMarksArray(count) {
-  return Array.from({ length: count }, () => "");
-}
+function sanitizeExamMarkInput(raw, maxMark) {
+  const value = String(raw ?? "");
+  if (value === "") return { value: "", fieldError: null };
 
-function computeExamAverage(marks, questionCount) {
-  const nums = marks.slice(0, questionCount).map((m) => Number(m));
-  if (nums.length !== questionCount || nums.some((n) => !Number.isFinite(n))) return null;
-  return Math.round(nums.reduce((acc, n) => acc + n, 0) / questionCount);
-}
+  const max = Number(maxMark);
+  const n = Number(value);
+  if (!Number.isFinite(n)) return { value, fieldError: null };
 
-function validateClientExamMarks(marks, questionCount) {
-  const fieldErrors = {};
-  let ok = true;
-  for (let i = 0; i < questionCount; i += 1) {
-    const raw = marks[i];
-    if (raw === "" || raw == null) {
-      fieldErrors[`q${i + 1}`] = "الدرجة مطلوبة.";
-      ok = false;
-      continue;
-    }
-    const n = Number(raw);
-    if (!Number.isFinite(n) || n < 0 || n > 100) {
-      fieldErrors[`q${i + 1}`] = "الدرجة بين 0 و 100.";
-      ok = false;
-    }
+  if (n < 0) return { value: "0", fieldError: EXAM_MARK_NEGATIVE_ERROR };
+  if (Number.isFinite(max) && n > max) {
+    return { value: String(max), fieldError: EXAM_MARK_MAX_ERROR };
   }
-  return { ok, fieldErrors, previewGrade: ok ? computeExamAverage(marks, questionCount) : null };
+  return { value, fieldError: null };
 }
 
-const FIXED_EXAM_INSTRUCTIONS = [
-  "افتح ملف الاختبار وأجب عن الأسئلة.",
-  "افتح ملف تعليمات التقييم.",
-  "افتح ملف الإجابة النموذجية.",
-  "أرسل إلى ChatGPT ملف الاختبار، وملف تعليمات التقييم / Prompt، والإجابة النموذجية، وإجابتك أنت.",
-  "بعد أن يعطيك ChatGPT علامة كل سؤال من 100، أدخل العلامات في الحقول الموجودة في المنصة.",
-  "سيتم حساب النتيجة النهائية تلقائيًا.",
-];
+function examQuestionsForCourse(course) {
+  return resolveExamQuestions(course);
+}
+
+function stepStatusLabel(status) {
+  if (status === "done") return "مكتملة";
+  if (status === "available") return "متاحة الآن";
+  if (status === "locked") return "مقفلة";
+  if (status === "waiting_upload") return "بانتظار رفع الملف";
+  if (status === "waiting_chatgpt") return "بانتظار نتيجة ChatGPT";
+  if (status === "waiting_marks") return "بانتظار إدخال العلامات";
+  return "مقفلة";
+}
 
 const COURSE_FILE_LEGACY_MESSAGE = "هذا الملف يحتاج إلى إعادة رفع من الإدارة.";
 const COURSE_FILE_OPEN_FAILED_TOAST = "تعذر فتح الملف. يرجى إبلاغ الإدارة لإعادة رفعه.";
+
+function chatGptDraftStorageKey(courseId, userId) {
+  return `oh_course_exam_chatgpt_draft_${String(userId || "anon")}_${String(courseId)}`;
+}
+
+function readChatGptDraft(courseId, userId) {
+  try {
+    return localStorage.getItem(chatGptDraftStorageKey(courseId, userId)) || "";
+  } catch {
+    return "";
+  }
+}
+
+function writeChatGptDraft(courseId, userId, text) {
+  try {
+    const key = chatGptDraftStorageKey(courseId, userId);
+    const value = String(text || "");
+    if (!value.trim()) {
+      localStorage.removeItem(key);
+    } else {
+      localStorage.setItem(key, value);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function clearChatGptDraft(courseId, userId) {
+  try {
+    localStorage.removeItem(chatGptDraftStorageKey(courseId, userId));
+  } catch {
+    /* ignore */
+  }
+}
+
+function resolveExamStepStatus({ done, locked, isCurrent }) {
+  if (done) return "done";
+  if (locked) return "locked";
+  if (isCurrent) return "available";
+  return "locked";
+}
 
 function toEmbedUrl(videoId) {
   return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(String(videoId || ""))}?rel=0&modestbranding=1&playsinline=1`;
@@ -469,7 +511,13 @@ function CompletedActionButton({ label, icon: Icon, variant = "solid", loading, 
 
 function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAnswerFileLink, assignment, course }) {
   const toast = useToast();
-  const [fileAction, setFileAction] = useState({ test: null, prompt: null, modelAnswer: null, answer: null });
+  const [fileAction, setFileAction] = useState({
+    test: null,
+    prompt: null,
+    modelAnswer: null,
+    answer: null,
+    completedExam: null,
+  });
   const [showAnswerText, setShowAnswerText] = useState(false);
 
   const testLegacy = testLink ? isLegacyBrokenCloudinaryPdfUrl(testLink) : false;
@@ -482,10 +530,38 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
   const hasModelAnswerFile = Boolean(modelAnswerFileLink) && !modelAnswerLegacy;
   const hasAnswerFile = Boolean(answerFileUrl);
   const hasAnswerText = Boolean(submittedText);
+  const completedExamUrl = String(assignment?.completedExamFileUrl || "").trim();
+  const hasCompletedExamFile = Boolean(completedExamUrl);
+  const completedExamLabel = hasCompletedExamFile ? fileNameFromCompletedUrl(completedExamUrl) : null;
 
   const testDownloadName = getStudentCourseFileDownloadName("test");
   const promptDownloadName = getStudentCourseFileDownloadName("prompt");
   const modelAnswerDownloadName = getStudentCourseFileDownloadName("model-answer");
+  const completedExamDownloadName = getStudentCourseFileDownloadName("completed-exam");
+
+  const runCompletedExamFile = async (mode) => {
+    if (!hasCompletedExamFile || fileAction.completedExam) return;
+    setFileAction((prev) => ({ ...prev, completedExam: mode }));
+    const preview = mode === "view" ? openPdfPreviewTab() : null;
+    try {
+      if (mode === "view") {
+        await viewFreelancerCompletedExamFile(courseId, completedExamDownloadName, preview);
+      } else {
+        await downloadFreelancerCompletedExamFile(courseId, completedExamDownloadName);
+      }
+    } catch (err) {
+      if (preview && !preview.closed) {
+        try {
+          preview.close();
+        } catch {
+          /* ignore */
+        }
+      }
+      toast.error(err?.message || COURSE_FILE_OPEN_FAILED_TOAST);
+    } finally {
+      setFileAction((prev) => ({ ...prev, completedExam: null }));
+    }
+  };
 
   const runCourseFile = async (kind, mode) => {
     const legacy =
@@ -542,7 +618,8 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
     }
   };
 
-  const hasAnyFileAction = hasTestFile || hasPromptFile || hasModelAnswerFile || hasAnswerFile;
+  const hasAnyFileAction =
+    hasTestFile || hasPromptFile || hasModelAnswerFile || hasAnswerFile || hasCompletedExamFile;
   const finalGrade = assignment?.examFinalGrade;
   const examMarks = Array.isArray(assignment?.examQuestionMarks) ? assignment.examQuestionMarks : [];
   const submittedAt = assignment?.auditSubmittedAt || assignment?.completedAt || null;
@@ -569,7 +646,9 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
         <section className="fcd-final__completed-grades" aria-labelledby="fcd-completed-grades-title">
           <h3 id="fcd-completed-grades-title" className="fcd-final__section-title">
             درجات الأسئلة
-            {parseQuestionCount(course) > 0 ? ` (${parseQuestionCount(course)} أسئلة)` : ""}
+            {examQuestionsForCourse(course).length > 0
+              ? ` (${examQuestionsForCourse(course).length} أسئلة)`
+              : ""}
           </h3>
           <ul className="fcd-final__marks-grid fcd-final__marks-grid--readonly">
             {examMarks.map((mark, idx) => (
@@ -630,6 +709,33 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
               </>
             ) : null}
           </div>
+          {hasCompletedExamFile ? (
+            <div className="fcd-final__completed-work-file" role="status">
+              <span className="fcd-final__completed-work-file-icon" aria-hidden>
+                <CheckCircle2 size={20} />
+              </span>
+              <div className="fcd-final__completed-work-file-copy">
+                <strong>الملف المنجز</strong>
+                <span>{completedExamLabel || "تم رفع ملف الاختبار المنجز"}</span>
+                <span className="fcd-final__completed-work-file-ok">تم رفعه بنجاح</span>
+              </div>
+              <div className="fcd-final__completed-work-file-actions">
+                <CompletedActionButton
+                  label="عرض الملف"
+                  icon={Eye}
+                  variant="outline"
+                  loading={fileAction.completedExam === "view"}
+                  onClick={() => void runCompletedExamFile("view")}
+                />
+                <CompletedActionButton
+                  label="تحميل الملف"
+                  icon={Download}
+                  loading={fileAction.completedExam === "download"}
+                  onClick={() => void runCompletedExamFile("download")}
+                />
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -718,6 +824,36 @@ function FinalTestSidebarItem({ isActive, locked, completed, ready, onSelect }) 
   );
 }
 
+function ExamStepCard({ step, title, status, locked, children }) {
+  const statusClass =
+    status === "done"
+      ? "fcd-exam-step--done"
+      : status === "available"
+        ? "fcd-exam-step--available"
+        : "fcd-exam-step--locked";
+  return (
+    <section className={`fcd-exam-step ${statusClass}${locked ? " fcd-exam-step--blocked" : ""}`}>
+      <header className="fcd-exam-step__head">
+        <span className="fcd-exam-step__num">{step}</span>
+        <div className="fcd-exam-step__copy">
+          <h3 className="fcd-exam-step__title">{title}</h3>
+          <span className="fcd-exam-step__status">{stepStatusLabel(status)}</span>
+        </div>
+        {status === "done" ? (
+          <span className="fcd-exam-step__done-icon" aria-hidden>
+            <Check size={16} strokeWidth={2.6} />
+          </span>
+        ) : locked ? (
+          <span className="fcd-exam-step__lock-icon" aria-hidden>
+            <Lock size={15} strokeWidth={2.2} />
+          </span>
+        ) : null}
+      </header>
+      {!locked ? <div className="fcd-exam-step__body">{children}</div> : null}
+    </section>
+  );
+}
+
 function FinalTestPanel({
   courseId,
   course,
@@ -736,15 +872,18 @@ function FinalTestPanel({
   setMarkErrors,
   submitting,
   onSubmit,
+  onRefreshDetails,
   assignment,
   progress,
 }) {
   const toast = useToast();
   const fileInputRef = useRef(null);
-  const [fileAction, setFileAction] = useState({ test: null, prompt: null, modelAnswer: null });
-  const [flowTouched, setFlowTouched] = useState({ test: false, prompt: false, modelAnswer: false });
+  const completedFileInputRef = useRef(null);
+  const [fileAction, setFileAction] = useState({ test: null, prompt: null, modelAnswer: null, completedExam: null });
+  const [uploadingCompleted, setUploadingCompleted] = useState(false);
   const completedLessons = progress?.completedLessons ?? 0;
   const totalLessons = progress?.totalLessons ?? 0;
+  const examQuestions = useMemo(() => examQuestionsForCourse(course), [course]);
 
   if (courseDone) {
     return (
@@ -777,12 +916,20 @@ function FinalTestPanel({
     );
   }
 
-  const questionCount = parseQuestionCount(course);
-  const marksCheck = questionCount > 0 ? validateClientExamMarks(questionMarks, questionCount) : { ok: true, fieldErrors: {}, previewGrade: null };
+  const questionCount = examQuestions.length;
+  const marksCheck =
+    questionCount > 0
+      ? validateClientExamMarks(questionMarks, examQuestions)
+      : { ok: true, fieldErrors: {}, previewGrade: null };
   const hasTextResponse = auditResponseText.trim().length > 0;
   const hasFileResponse = auditResponseFile instanceof File;
-  const hasResponse = hasTextResponse || hasFileResponse;
-  const canSubmit = hasResponse && !submitting && marksCheck.ok;
+  const hasChatGptResponse = hasTextResponse || hasFileResponse;
+  const completedExamUrl = String(assignment?.completedExamFileUrl || "").trim();
+  const step1Done = Boolean(completedExamUrl);
+  const step2Done = hasChatGptResponse;
+  const step3Done = questionCount === 0 || marksCheck.ok;
+  const canSubmit = step1Done && step2Done && step3Done && !submitting;
+
   const testLegacy = testLink ? isLegacyBrokenCloudinaryPdfUrl(testLink) : false;
   const promptLegacy = promptFileLink ? isLegacyBrokenCloudinaryPdfUrl(promptFileLink) : false;
   const modelAnswerLegacy = modelAnswerFileLink ? isLegacyBrokenCloudinaryPdfUrl(modelAnswerFileLink) : false;
@@ -799,6 +946,7 @@ function FinalTestPanel({
     : undefined;
   const charCount = auditResponseText.length;
   const uploadSizeLabel = auditResponseFile ? formatUploadFileSize(auditResponseFile.size) : null;
+  const completedFileName = completedExamUrl ? fileNameFromCompletedUrl(completedExamUrl) : null;
 
   const clearAuditFile = () => {
     setAuditResponseFile(null);
@@ -827,14 +975,6 @@ function FinalTestPanel({
       } else {
         await downloadFreelancerCourseFile(courseId, apiKind, fallbackName);
       }
-      setFlowTouched((prev) => ({
-        ...prev,
-        ...(kind === "test"
-          ? { test: true }
-          : kind === "prompt"
-            ? { prompt: true }
-            : { modelAnswer: true }),
-      }));
     } catch (err) {
       if (previewWindow && !previewWindow.closed) {
         try {
@@ -849,30 +989,72 @@ function FinalTestPanel({
     }
   };
 
-  const step1Done = flowTouched.test;
-  const step2Done = flowTouched.prompt;
-  const step3Done = flowTouched.modelAnswer;
-  const step4Done = step1Done && step2Done && step3Done;
-  const step5Done = hasResponse;
-  const activeStep = !step1Done ? 1 : !step2Done ? 2 : !step3Done ? 3 : !step5Done ? 5 : 6;
+  const runCompletedExamFileAction = async (mode, previewWindow = null) => {
+    if (!step1Done || fileAction.completedExam) return;
+    setFileAction((prev) => ({ ...prev, completedExam: mode }));
+    const fallbackName = getStudentCourseFileDownloadName("completed-exam");
+    try {
+      if (mode === "view") {
+        await viewFreelancerCompletedExamFile(courseId, fallbackName, previewWindow);
+      } else {
+        await downloadFreelancerCompletedExamFile(courseId, fallbackName);
+      }
+    } catch (err) {
+      if (previewWindow && !previewWindow.closed) {
+        try {
+          previewWindow.close();
+        } catch {
+          /* ignore */
+        }
+      }
+      toast.error(err?.message || COURSE_FILE_OPEN_FAILED_TOAST);
+    } finally {
+      setFileAction((prev) => ({ ...prev, completedExam: null }));
+    }
+  };
 
-  const trackSteps = [
-    { id: 1, label: "الاختبار", done: step1Done, active: activeStep === 1 },
-    { id: 2, label: "التعليمات", done: step2Done, active: activeStep === 2 },
-    { id: 3, label: "النموذج", done: step3Done, active: activeStep === 3 },
-    { id: 4, label: "ChatGPT", done: step4Done, active: activeStep === 4 },
-    { id: 5, label: "نتيجة التقييم", done: step5Done, active: activeStep === 5 },
-    { id: 6, label: "الإتمام", done: false, active: activeStep === 6 },
-  ];
+  const onUploadCompletedExam = async (file) => {
+    if (!file || uploadingCompleted) return;
+    if (String(file.type || "").toLowerCase() !== "application/pdf") {
+      toast.error("تعذر رفع الملف. تأكد أن الملف PDF وحاول مرة أخرى.");
+      return;
+    }
+    setUploadingCompleted(true);
+    try {
+      await freelancerUploadCompletedExamFileRequest(courseId, file);
+      toast.success("تم رفع الملف المنجز بنجاح");
+      if (completedFileInputRef.current) completedFileInputRef.current.value = "";
+      await onRefreshDetails?.();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "تعذر رفع الملف المنجز.");
+    } finally {
+      setUploadingCompleted(false);
+    }
+  };
 
-  const phase1Done = step4Done;
+  const currentStep = !step1Done ? 1 : !step2Done ? 2 : !step3Done ? 3 : null;
+  const step1Status = resolveExamStepStatus({
+    done: step1Done,
+    locked: false,
+    isCurrent: currentStep === 1,
+  });
+  const step2Status = resolveExamStepStatus({
+    done: step2Done,
+    locked: !step1Done,
+    isCurrent: currentStep === 2,
+  });
+  const step3Status = resolveExamStepStatus({
+    done: step3Done,
+    locked: !step2Done,
+    isCurrent: currentStep === 3,
+  });
 
   return (
     <div className="fcd-final fcd-final--flow">
       <div className="fcd-final__congrats fdash-surface-inset" role="status">
         <Sparkles size={20} className="fcd-final__congrats-icon" aria-hidden />
         <p>
-          <strong>🎉 مبروك! أنهيت جميع الدروس.</strong> تبقى فقط إرسال الاختبار النهائي لإتمام الدورة.
+          <strong>🎉 مبروك! أنهيت جميع الدروس.</strong> أكمل الخطوات الثلاث بالترتيب لإتمام الاختبار النهائي.
           <span className="fcd-final__congrats-meta">
             ({completedLessons}/{totalLessons} درس مكتمل)
           </span>
@@ -883,368 +1065,355 @@ function FinalTestPanel({
         <span className="fcd-final__intro-kicker">الخطوة الأخيرة</span>
         <h2 className="fcd-final__intro-title">{FINAL_TEST_TITLE}</h2>
         <p className="fcd-final__intro-lead">
-          اتبع الخطوات بالترتيب: حمّل ملفات الاختبار والتعليمات والإجابة النموذجية، استخدمها في ChatGPT، أدخل
-          درجات كل سؤال، ثم سلّم نتيجة تقييم ChatGPT لإتمام الدورة.
+          حمّل ملف الاختبار وأنجز العمل، ارفع الملف المنجز، ثم استخدم ChatGPT مع ملفات التقييم، وأدخل علامات الأسئلة
+          قبل الإرسال النهائي.
         </p>
       </header>
 
-      <section className="fcd-final__exam-brief fdash-surface-inset" aria-labelledby="fcd-exam-brief-title">
-        <h3 id="fcd-exam-brief-title" className="fcd-final__section-title">
-          تعليمات الاختبار
-        </h3>
-        {questionCount > 0 ? (
-          <p className="fcd-final__exam-meta">
-            عدد الأسئلة: <strong>{questionCount}</strong>
-          </p>
-        ) : null}
-        <ol className="fcd-final__exam-instructions-list">
-          {FIXED_EXAM_INSTRUCTIONS.map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        </ol>
-      </section>
-
-      <div className="fcd-workflow">
-        <FlowTrackHeader steps={trackSteps} />
-
-        <FlowPhase
-          phaseNum={1}
-          title="التحضير"
-          subtitle="حمّل ملف الاختبار وملف التعليمات وملف الإجابة النموذجية قبل البدء في ChatGPT"
-          tone={phase1Done ? "done" : "prep"}
+      <form className="fcd-exam-flow" onSubmit={onSubmit}>
+        <ExamStepCard
+          step={1}
+          title="الخطوة 1: تحميل ملف الاختبار ورفع الملف المنجز"
+          status={step1Status}
+          locked={false}
         >
-          <FlowStepRow
-            step={1}
-            stepTitle="تحميل ملف الاختبار"
-            done={step1Done}
-            active={activeStep === 1}
-            isLast={false}
-          >
-            <FinalExamFileCard
-              embedded
-              stepNum={1}
-              primary
-              title="ملف الاختبار"
-              description="حمّل الملف واستخدمه مع عملك داخل ChatGPT."
-              displayTitle={testFileDisplay.title}
-              fileUrl={testLink}
-              legacy={testLegacy}
-              fileAction={fileAction.test}
-              onView={() => {
-                const preview = openPdfPreviewTab();
-                void runCourseFileAction("test", "view", preview);
-              }}
-              onDownload={() => void runCourseFileAction("test", "download")}
-            />
-          </FlowStepRow>
+          <FinalExamFileCard
+            embedded
+            primary
+            title="ملف الاختبار"
+            description="حمّل ملف الاختبار وأنجز الإجابة خارج المنصة."
+            displayTitle={testFileDisplay.title}
+            fileUrl={testLink}
+            legacy={testLegacy}
+            fileAction={fileAction.test}
+            downloadLabel="تحميل ملف الاختبار"
+            onView={() => {
+              const preview = openPdfPreviewTab();
+              void runCourseFileAction("test", "view", preview);
+            }}
+            onDownload={() => void runCourseFileAction("test", "download")}
+          />
 
-          <FlowStepRow
-            step={2}
-            stepTitle="فتح ملف التعليمات"
-            done={step2Done}
-            active={activeStep === 2}
-            isLast={false}
-          >
+          <div className={`fcd-final__upload-zone ${step1Done ? "fcd-final__upload-zone--filled" : ""}`}>
+            <input
+              ref={completedFileInputRef}
+              type="file"
+              className="fcd-final__upload-input"
+              accept=".pdf,application/pdf"
+              disabled={submitting || uploadingCompleted}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void onUploadCompletedExam(file);
+              }}
+            />
+            {step1Done ? (
+              <div className="fcd-final__upload-selected" role="status">
+                <span className="fcd-final__upload-selected-icon" aria-hidden>
+                  <CheckCircle2 size={22} />
+                </span>
+                <div className="fcd-final__upload-selected-copy">
+                  <strong>{completedFileName || "الملف المنجز"}</strong>
+                  <span className="fcd-final__upload-selected-ok">تم رفع الملف المنجز بنجاح</span>
+                </div>
+                <div className="fcd-final__upload-selected-actions">
+                  <button
+                    type="button"
+                    className="fcd-final__upload-mini-btn"
+                    disabled={submitting || uploadingCompleted || Boolean(fileAction.completedExam)}
+                    onClick={() => {
+                      const preview = openPdfPreviewTab();
+                      void runCompletedExamFileAction("view", preview);
+                    }}
+                  >
+                    {fileAction.completedExam === "view" ? (
+                      <Loader2 size={14} className="fcd-btn__spinner" aria-hidden />
+                    ) : (
+                      <Eye size={14} aria-hidden />
+                    )}
+                    عرض الملف
+                  </button>
+                  <button
+                    type="button"
+                    className="fcd-final__upload-mini-btn"
+                    disabled={submitting || uploadingCompleted || Boolean(fileAction.completedExam)}
+                    onClick={() => void runCompletedExamFileAction("download")}
+                  >
+                    {fileAction.completedExam === "download" ? (
+                      <Loader2 size={14} className="fcd-btn__spinner" aria-hidden />
+                    ) : (
+                      <Download size={14} aria-hidden />
+                    )}
+                    تحميل الملف
+                  </button>
+                  <button
+                    type="button"
+                    className="fcd-final__upload-mini-btn"
+                    disabled={submitting || uploadingCompleted}
+                    onClick={() => completedFileInputRef.current?.click()}
+                  >
+                    استبدال الملف
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <span className="fcd-final__upload-icon" aria-hidden>
+                  <Upload size={22} />
+                </span>
+                <span className="fcd-final__upload-title">ارفع الملف المنجز بعد حل الاختبار</span>
+                <span className="fcd-final__upload-hint">PDF فقط — حتى 5 ميجابايت</span>
+                <button
+                  type="button"
+                  className="fcd-final__upload-btn"
+                  disabled={submitting || uploadingCompleted}
+                  onClick={() => completedFileInputRef.current?.click()}
+                >
+                  {uploadingCompleted ? "جاري الرفع..." : "رفع الملف المنجز"}
+                </button>
+              </>
+            )}
+          </div>
+          {!step1Done ? (
+            <p className="fcd-exam-step__hint" role="status">
+              يجب رفع الملف المنجز أولاً قبل الانتقال للخطوة التالية.
+            </p>
+          ) : null}
+        </ExamStepCard>
+
+        <ExamStepCard
+          step={2}
+          title="الخطوة 2: تحميل ملف البرومبت والإجابة النموذجية"
+          status={step2Status}
+          locked={!step1Done}
+        >
+          <p className="fcd-flow__step-note">
+            يرجى إعطاء ChatGPT الملفات التالية: الملف المنجز، ملف البرومبت، والإجابة النموذجية، ثم انسخ نتيجة
+            ChatGPT هنا أو ارفعها كملف.
+          </p>
+
+          <div className="fcd-exam-step__file-grid">
             <FinalExamFileCard
               embedded
-              stepNum={2}
               title="ملف تعليمات / Prompt التقييم"
-              description="افتح ملف التعليمات لاستخدامه مع ChatGPT."
+              description="حمّل ملف البرومبت لاستخدامه مع ChatGPT."
               displayTitle={promptFileDisplay.title}
               fileUrl={promptFileLink}
               legacy={promptLegacy}
               fileAction={fileAction.prompt}
-              viewLabel="فتح ملف التعليمات"
-              downloadLabel="تنزيل الملف"
+              downloadLabel="تحميل ملف البرومبت"
               onView={() => {
                 const preview = openPdfPreviewTab();
                 void runCourseFileAction("prompt", "view", preview);
               }}
               onDownload={() => void runCourseFileAction("prompt", "download")}
             />
-          </FlowStepRow>
-
-          <FlowStepRow
-            step={3}
-            stepTitle="فتح ملف الإجابة النموذجية"
-            done={step3Done}
-            active={activeStep === 3}
-            isLast={false}
-          >
             <FinalExamFileCard
               embedded
-              stepNum={3}
               title="ملف الإجابة النموذجية"
-              description="افتح الملف لاستخدامه مع ChatGPT عند تقييم إجابتك."
+              description="حمّل الإجابة النموذجية لاستخدامها مع ChatGPT."
               displayTitle={modelAnswerFileDisplay.title}
               fileUrl={modelAnswerFileLink}
               legacy={modelAnswerLegacy}
               fileAction={fileAction.modelAnswer}
-              viewLabel="فتح ملف الإجابة النموذجية"
-              downloadLabel="تنزيل الملف"
+              downloadLabel="تحميل الإجابة النموذجية"
               onView={() => {
                 const preview = openPdfPreviewTab();
                 void runCourseFileAction("modelAnswer", "view", preview);
               }}
               onDownload={() => void runCourseFileAction("modelAnswer", "download")}
             />
-          </FlowStepRow>
+          </div>
 
-          <FlowStepRow
-            step={4}
-            stepTitle="استخدام ChatGPT"
-            done={step4Done}
-            active={activeStep === 4}
-            isLast
-          >
-            <p className="fcd-flow__step-note">
-              نفّذ الخطوات في قسم «تعليمات الاختبار» أعلاه باستخدام الملفات الثلاثة، ثم انتقل للتسليم أدناه.
-            </p>
-          </FlowStepRow>
-        </FlowPhase>
+          <div className="fcd-final__submit-split">
+            <div className={`fcd-final__upload-zone ${hasFileResponse ? "fcd-final__upload-zone--filled" : ""}`}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="fcd-final__upload-input"
+                accept=".pdf,.doc,.docx,.txt,.zip,.png,.jpg,.jpeg,.webp,.xls,.xlsx,.ppt,.pptx"
+                disabled={submitting}
+                onChange={(e) => setAuditResponseFile(e.target.files?.[0] || null)}
+              />
+              {hasFileResponse ? (
+                <div className="fcd-final__upload-selected" role="status">
+                  <span className="fcd-final__upload-selected-icon" aria-hidden>
+                    <CheckCircle2 size={22} />
+                  </span>
+                  <div className="fcd-final__upload-selected-copy">
+                    <strong>{auditResponseFile.name}</strong>
+                    {uploadSizeLabel ? (
+                      <span className="fcd-final__upload-selected-size">{uploadSizeLabel}</span>
+                    ) : null}
+                    <span className="fcd-final__upload-selected-ok">تم اختيار ملف نتيجة ChatGPT</span>
+                  </div>
+                  <div className="fcd-final__upload-selected-actions">
+                    <button
+                      type="button"
+                      className="fcd-final__upload-mini-btn"
+                      disabled={submitting}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      استبدال
+                    </button>
+                    <button
+                      type="button"
+                      className="fcd-final__upload-mini-btn fcd-final__upload-mini-btn--danger"
+                      disabled={submitting}
+                      onClick={clearAuditFile}
+                      aria-label="إزالة الملف"
+                    >
+                      <X size={14} aria-hidden />
+                      إزالة
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <span className="fcd-final__upload-icon" aria-hidden>
+                    <Upload size={22} />
+                  </span>
+                  <span className="fcd-final__upload-title">ارفع نتيجة ChatGPT كملف</span>
+                  <button
+                    type="button"
+                    className="fcd-final__upload-btn"
+                    disabled={submitting}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    اختيار ملف
+                  </button>
+                </>
+              )}
+            </div>
 
-        <div className="fcd-flow__bridge fcd-flow__bridge--submit" aria-hidden>
-          <span className="fcd-flow__bridge-line" />
-        </div>
+            <label className="fcd-final__field fcd-final__field--text">
+              <span className="fcd-final__field-label">أو الصق نتيجة ChatGPT</span>
+              <textarea
+                rows={6}
+                maxLength={MAX_RESPONSE_CHARS}
+                value={auditResponseText}
+                onChange={(e) => setAuditResponseText(e.target.value)}
+                disabled={submitting}
+                placeholder="الصق هنا نتيجة تقييم ChatGPT…"
+                className="fcd-final__textarea"
+              />
+              <span className="fcd-final__char-count" aria-live="polite">
+                {charCount.toLocaleString("ar")} / {MAX_RESPONSE_CHARS.toLocaleString("ar")}
+              </span>
+            </label>
+          </div>
+        </ExamStepCard>
 
-        <FlowPhase
-          phaseNum={2}
-          title="التسليم"
-          subtitle="أرفق نتيجة تقييم ChatGPT (ملف أو نص) ثم أكمل إرسال الدورة"
-          tone="submit"
+        <ExamStepCard
+          step={3}
+          title="الخطوة 3: إدخال علامات الأسئلة"
+          status={step3Status}
+          locked={!step2Done}
         >
-          <form className="fcd-flow__destination" onSubmit={onSubmit}>
-            <FlowStepRow
-              step={5}
-              stepTitle="نتيجة تقييم ChatGPT"
-              done={step5Done}
-              active={activeStep === 5 && !step5Done}
-              isLast={false}
-            >
-              <p className="fcd-final__legacy-warn" role="note">
-                <strong>مهم:</strong> في هذه الخطوة نريد نتيجة تقييم ChatGPT بعد المقارنة، وليس إجابتك الأصلية
-                للاختبار.
+          {questionCount > 0 ? (
+            <>
+              <p className="fcd-flow__step-note">
+                أدخل علامة كل سؤال بناءً على نتيجة ChatGPT. تُحسب النتيجة النهائية من مجموع العلامات ÷ مجموع
+                العلامات القصوى.
               </p>
-
-              <div className="fcd-final__delivery" aria-label="اختر طريقة إرفاق نتيجة التقييم">
-                <p className="fcd-final__delivery-heading">اختر طريقة إرفاق نتيجة التقييم</p>
-                <div className="fcd-final__delivery-options">
-                  <span className={`fcd-final__delivery-chip ${hasFileResponse ? "fcd-final__delivery-chip--on" : ""}`}>
-                    <Upload size={15} aria-hidden />
-                    رفع ملف نتيجة التقييم
-                  </span>
-                  <span className="fcd-final__delivery-or">أو</span>
-                  <span className={`fcd-final__delivery-chip ${hasTextResponse ? "fcd-final__delivery-chip--on" : ""}`}>
-                    <FileText size={15} aria-hidden />
-                    لصق نص التقييم
-                  </span>
-                </div>
-              </div>
-
-              <div className="fcd-final__submit-split">
-                <div className={`fcd-final__upload-zone ${hasFileResponse ? "fcd-final__upload-zone--filled" : ""}`}>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    className="fcd-final__upload-input"
-                    accept=".pdf,.doc,.docx,.txt,.zip,.png,.jpg,.jpeg,.webp,.xls,.xlsx,.ppt,.pptx"
-                    disabled={submitting}
-                    onChange={(e) => setAuditResponseFile(e.target.files?.[0] || null)}
-                  />
-                  {hasFileResponse ? (
-                    <div className="fcd-final__upload-selected" role="status">
-                      <span className="fcd-final__upload-selected-icon" aria-hidden>
-                        <CheckCircle2 size={22} />
-                      </span>
-                      <div className="fcd-final__upload-selected-copy">
-                        <strong>{auditResponseFile.name}</strong>
-                        {uploadSizeLabel ? (
-                          <span className="fcd-final__upload-selected-size">{uploadSizeLabel}</span>
-                        ) : null}
-                        <span className="fcd-final__upload-selected-ok">تم اختيار الملف بنجاح</span>
-                      </div>
-                      <div className="fcd-final__upload-selected-actions">
-                        <button
-                          type="button"
-                          className="fcd-final__upload-mini-btn"
-                          disabled={submitting}
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          استبدال
-                        </button>
-                        <button
-                          type="button"
-                          className="fcd-final__upload-mini-btn fcd-final__upload-mini-btn--danger"
-                          disabled={submitting}
-                          onClick={clearAuditFile}
-                          aria-label="إزالة الملف"
-                        >
-                          <X size={14} aria-hidden />
-                          إزالة
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <span className="fcd-final__upload-icon" aria-hidden>
-                        <Upload size={22} />
-                      </span>
-                      <span className="fcd-final__upload-title">
-                        ارفع ملف نتيجة ChatGPT أو تقرير التقييم الذي أنشأه ChatGPT
-                      </span>
-                      <span className="fcd-final__upload-hint">PDF، Word، نص، صور — حتى 5 ميجابايت</span>
-                      <button
-                        type="button"
-                        className="fcd-final__upload-btn"
-                        disabled={submitting}
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        اختيار ملف
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                <label className="fcd-final__field fcd-final__field--text">
-                  <span className="fcd-final__field-label">لصق نتيجة تقييم ChatGPT</span>
-                  <textarea
-                    rows={7}
-                    maxLength={MAX_RESPONSE_CHARS}
-                    value={auditResponseText}
-                    onChange={(e) => setAuditResponseText(e.target.value)}
-                    disabled={submitting}
-                    placeholder="الصق هنا تقرير ChatGPT أو العلامات التي أعطاك إياها لكل سؤال — وليس إجابتك الأصلية…"
-                    className="fcd-final__textarea"
-                  />
-                  <span className="fcd-final__char-count" aria-live="polite">
-                    {charCount.toLocaleString("ar")} / {MAX_RESPONSE_CHARS.toLocaleString("ar")}
-                  </span>
-                </label>
-              </div>
-            </FlowStepRow>
-
-            {questionCount > 0 ? (
-              <FlowStepRow
-                step={6}
-                stepTitle="إدخال درجات الأسئلة (من ChatGPT)"
-                done={marksCheck.ok}
-                active={activeStep === 5 && step5Done && !marksCheck.ok}
-                isLast={false}
-              >
-                <p className="fcd-flow__step-note">
-                  انسخ درجة كل سؤال كما أعطاك إياها ChatGPT (من 0 إلى 100). يُحسب المتوسط تلقائياً.
-                </p>
-                <div className="fcd-final__marks-grid">
-                  {Array.from({ length: questionCount }, (_, idx) => {
-                    const key = `q${idx + 1}`;
-                    const err = markErrors[key];
-                    return (
-                      <label key={key} className={`fcd-final__mark-field${err ? " fcd-final__mark-field--error" : ""}`}>
-                        <span className="fcd-final__mark-label">سؤال {idx + 1}</span>
+              <div className="fcd-final__marks-grid fcd-final__marks-grid--rows">
+                {examQuestions.map((q, idx) => {
+                  const key = `q${q.number}`;
+                  const err = markErrors[key] || marksCheck.fieldErrors[key];
+                  const label = q.text ? `السؤال ${q.number}: ${q.text}` : `السؤال ${q.number}`;
+                  return (
+                    <label key={key} className={`fcd-final__mark-row${err ? " fcd-final__mark-row--error" : ""}`}>
+                      <span className="fcd-final__mark-row-label">{label}</span>
+                      <div className="fcd-final__mark-row-input-wrap">
+                        <span className="fcd-final__mark-row-prefix">العلامة</span>
                         <input
                           type="number"
                           min={0}
-                          max={100}
+                          max={q.maxMark}
                           step={1}
-                          className="fcd-final__mark-input"
+                          inputMode="numeric"
+                          className="fcd-final__mark-input fcd-final__mark-input--compact"
                           value={questionMarks[idx] ?? ""}
                           disabled={submitting}
+                          onWheel={preventNumberInputScroll}
                           onChange={(e) => {
+                            const { value, fieldError } = sanitizeExamMarkInput(e.target.value, q.maxMark);
                             const next = [...questionMarks];
-                            next[idx] = e.target.value;
+                            next[idx] = value;
                             setQuestionMarks(next);
                             setMarkErrors((prev) => {
                               const copy = { ...prev };
-                              delete copy[key];
+                              if (fieldError) copy[key] = fieldError;
+                              else delete copy[key];
                               return copy;
                             });
                           }}
                           aria-invalid={Boolean(err)}
                           aria-describedby={err ? `${key}-err` : undefined}
                         />
-                        {err ? (
-                          <span id={`${key}-err`} className="fcd-final__mark-error" role="alert">
-                            {err}
-                          </span>
-                        ) : null}
-                      </label>
-                    );
-                  })}
-                </div>
-                {marksCheck.previewGrade != null ? (
-                  <p className="fcd-final__grade-preview" role="status">
-                    الدرجة النهائية المحسوبة: <strong>{marksCheck.previewGrade}%</strong>
-                  </p>
-                ) : null}
-              </FlowStepRow>
-            ) : null}
-
-            <FlowStepRow
-              step={questionCount > 0 ? 7 : 6}
-              stepTitle="إرسال نتيجة التقييم وإتمام الدورة"
-              done={false}
-              active={activeStep === 6}
-              isLast
-            >
-              <div className="fcd-flow__finale">
-                <p className="fcd-flow__finale-lead">هذه هي الخطوة الأخيرة — بعد الإرسال تُسجَّل الدورة كمكتملة.</p>
-                <div className="fcd-final__submit-footer">
-                  <button
-                    type="submit"
-                    className="fcd-final__submit fcd-final__submit--finale"
-                    disabled={!canSubmit}
-                    aria-busy={submitting}
-                  >
-                    {submitting ? (
-                      <Loader2 size={20} className="fcd-btn__spinner" aria-hidden />
-                    ) : (
-                      <Send size={18} aria-hidden />
-                    )}
-                    {submitting ? "جاري الإرسال..." : "إرسال نتيجة التقييم وإتمام الدورة"}
-                  </button>
-                  {!canSubmit && !submitting ? (
-                    <p className="fcd-final__submit-hint" role="status">
-                      {questionCount > 0 && !marksCheck.ok
-                        ? "أكمل درجات جميع الأسئلة وأضف نص نتيجة تقييم ChatGPT أو ارفع ملف التقييم."
-                        : "أكمل متطلبات التسليم أولاً — أضف نص نتيجة التقييم أو ارفع ملف تقرير ChatGPT."}
-                    </p>
-                  ) : (
-                    <p className="fcd-final__submit-note" role="note">
-                      يمكنك إرسال نص التقييم فقط، أو ملف التقييم فقط، أو كليهما معاً — وليس إجابتك الأصلية.
-                      {questionCount > 0 ? " يجب أيضاً إدخال درجة كل سؤال." : ""}
-                    </p>
-                  )}
-                </div>
+                        <span className="fcd-final__mark-row-max">/ {q.maxMark}</span>
+                      </div>
+                      {err ? (
+                        <span id={`${key}-err`} className="fcd-final__mark-error" role="alert">
+                          {err}
+                        </span>
+                      ) : null}
+                    </label>
+                  );
+                })}
               </div>
-            </FlowStepRow>
-          </form>
-        </FlowPhase>
-      </div>
-
-      <aside className="fcd-final__info-banner" role="note">
-        <span className="fcd-final__info-icon" aria-hidden>
-          <Sparkles size={16} />
-        </span>
-        <p>
-          {questionCount > 0 ? (
-            <>
-              <strong>معلومة:</strong> بعد التقييم في ChatGPT أدخل درجة كل سؤال (0–100). تُحسب الدرجة النهائية
-              كمتوسط تلقائي.
             </>
           ) : (
-            <>
-              <strong>معلومة:</strong> هذا ليس اختباراً بدرجات، بل خطوة لتطبيق ما تعلمته. راجع إجابتك قبل الإرسال.
-            </>
+            <p className="fcd-flow__step-note">
+              لا توجد أسئلة بدرجات لهذه الدورة. يكفي إكمال الخطوتين السابقتين ثم الإرسال.
+            </p>
           )}
-        </p>
-      </aside>
+
+          <div className="fcd-final__submit-footer">
+            <button
+              type="submit"
+              className="fcd-final__submit fcd-final__submit--finale"
+              disabled={!canSubmit}
+              aria-busy={submitting}
+            >
+              {submitting ? (
+                <Loader2 size={20} className="fcd-btn__spinner" aria-hidden />
+              ) : (
+                <Send size={18} aria-hidden />
+              )}
+              {submitting ? "جاري الإرسال..." : "إرسال النتيجة وإتمام الدورة"}
+            </button>
+            {!canSubmit && !submitting ? (
+              <p className="fcd-final__submit-hint" role="status">
+                {!step1Done
+                  ? "يجب رفع الملف المنجز أولاً."
+                  : !step2Done
+                    ? "أضف نص نتيجة ChatGPT أو ارفع ملف النتيجة."
+                    : !step3Done
+                      ? "أكمل إدخال علامات جميع الأسئلة."
+                      : "أكمل جميع الخطوات قبل الإرسال."}
+              </p>
+            ) : null}
+          </div>
+        </ExamStepCard>
+      </form>
     </div>
   );
 }
 
+function fileNameFromCompletedUrl(url) {
+  try {
+    const tail = decodeURIComponent(new URL(url).pathname.split("/").pop() || "");
+    return tail && tail.length < 120 ? tail : "الملف المنجز.pdf";
+  } catch {
+    return "الملف المنجز.pdf";
+  }
+}
+
 export default function FreelancerCourseDetailsPage() {
   const { id } = useParams();
+  const { user } = useAuth();
   const toast = useToast();
+  const freelancerUserId = user?.id != null ? String(user.id) : "";
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [markingLessonComplete, setMarkingLessonComplete] = useState(false);
@@ -1295,15 +1464,20 @@ export default function FreelancerCourseDetailsPage() {
           });
         }
 
-        if (out?.assignment?.auditResponseText) setAuditResponseText(out.assignment.auditResponseText);
-        else setAuditResponseText("");
-        const qCount = parseQuestionCount(out?.course);
-        if (qCount > 0) {
+        if (out?.assignment?.auditResponseText) {
+          setAuditResponseText(out.assignment.auditResponseText);
+        } else if (id && freelancerUserId) {
+          setAuditResponseText(readChatGptDraft(id, freelancerUserId));
+        } else {
+          setAuditResponseText("");
+        }
+        const questions = examQuestionsForCourse(out?.course);
+        if (questions.length > 0) {
           const stored = out?.assignment?.examQuestionMarks;
-          if (Array.isArray(stored) && stored.length === qCount) {
+          if (Array.isArray(stored) && stored.length === questions.length) {
             setQuestionMarks(stored.map((m) => String(m)));
           } else {
-            setQuestionMarks(emptyMarksArray(qCount));
+            setQuestionMarks(emptyMarksArray(questions.length));
           }
         } else {
           setQuestionMarks([]);
@@ -1318,12 +1492,27 @@ export default function FreelancerCourseDetailsPage() {
         if (!silent) setLoading(false);
       }
     },
-    [id, toast],
+    [id, toast, freelancerUserId],
   );
 
   useEffect(() => {
     loadDetails();
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!id || !freelancerUserId || !data?.completion?.testingEnabled || data?.completion?.courseCompleted) {
+      return;
+    }
+    if (data?.assignment?.auditResponseText) return;
+    writeChatGptDraft(id, freelancerUserId, auditResponseText);
+  }, [
+    auditResponseText,
+    data?.assignment?.auditResponseText,
+    data?.completion?.courseCompleted,
+    data?.completion?.testingEnabled,
+    freelancerUserId,
+    id,
+  ]);
 
   const lessons = useMemo(() => data?.lessons || [], [data?.lessons]);
   const completion = data?.completion;
@@ -1433,16 +1622,21 @@ export default function FreelancerCourseDetailsPage() {
       return;
     }
 
-    const qCount = parseQuestionCount(course);
+    const questions = examQuestionsForCourse(course);
     let marksPayload;
-    if (testingEnabled && qCount > 0) {
-      const check = validateClientExamMarks(questionMarks, qCount);
+    if (testingEnabled && questions.length > 0) {
+      const check = validateClientExamMarks(questionMarks, questions);
       if (!check.ok) {
         setMarkErrors(check.fieldErrors);
-        toast.error("أكمل درجات جميع الأسئلة (من 0 إلى 100) قبل الإرسال.");
+        toast.error("أكمل درجات جميع الأسئلة قبل الإرسال.");
         return;
       }
       marksPayload = check.previewGrade != null ? questionMarks.map((m) => Number(m)) : undefined;
+    }
+
+    if (testingEnabled && !assignment?.completedExamFileUrl) {
+      toast.error("يجب رفع الملف المنجز أولاً قبل الإرسال.");
+      return;
     }
 
     setSubmitting(true);
@@ -1455,6 +1649,7 @@ export default function FreelancerCourseDetailsPage() {
           }
         : {};
       await freelancerSubmitCourseCompletionRequest(id, payload);
+      if (freelancerUserId) clearChatGptDraft(id, freelancerUserId);
       toast.success("تم إنهاء الدورة بنجاح.");
       await loadDetails({ openFinalTest: true });
     } catch (err) {
@@ -1685,6 +1880,7 @@ export default function FreelancerCourseDetailsPage() {
                     setMarkErrors={setMarkErrors}
                     submitting={submitting}
                     onSubmit={onSubmitCompletion}
+                    onRefreshDetails={() => loadDetails({ silent: true, openFinalTest: true })}
                     assignment={assignment}
                     progress={progress}
                   />

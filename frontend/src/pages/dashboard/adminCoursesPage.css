@@ -1024,6 +1024,19 @@
   white-space: nowrap;
 }
 
+.oh-admin-courses__access-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+}
+
+.oh-admin-courses__access-hint {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
 .oh-admin-courses__col-visibility {
   min-width: 118px;
 }

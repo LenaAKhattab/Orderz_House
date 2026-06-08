@@ -1,4 +1,5 @@
 import ServicesExplorer from "../components/services/ServicesExplorer";
+import "../styles/publicPageHeader.css";
 import "../styles/servicesPage.css";
 
 const Services = () => {

@@ -52,7 +52,7 @@ export default function HeroMainContent({ statsPayload }) {
           <HeroAnalyticsStrip statsPayload={statsPayload} />
         </div>
 
-        <div className="home-hero__cta home-hero-marketing__cta-row mt-4 flex w-full min-w-0 flex-wrap justify-center gap-2 sm:mt-5">
+        <div className="home-hero__cta home-hero-marketing__cta-row flex w-full min-w-0 flex-wrap justify-center gap-2 sm:mt-5">
           <Link to="/register" className="home-hero__cta-primary home-hero-marketing__cta-primary">
             ابدأ طلبك الآن
           </Link>

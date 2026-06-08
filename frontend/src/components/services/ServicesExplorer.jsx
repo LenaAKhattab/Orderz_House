@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import PublicPageHeader from "../layout/PublicPageHeader";
 import { getCategoriesRequest, getSubcategoriesRequest, getSubSubcategoriesRequest } from "../../services/api";
 import ServicesBenefitsStrip from "./ServicesBenefitsStrip";
 import ServicesRefCard from "./ServicesRefCard";
@@ -53,20 +54,6 @@ function ServicesRefCardSkeleton() {
 
 const HEADER_LEDE =
   "استكشف مجموعة الخدمات المتاحة داخل المنصة، حيث نوفر حلولاً متكاملة تلبي احتياجات الأعمال والمشاريع بكفاءة واحترافية من كتابة وتحرير إلى برمجة وتصميم.";
-
-function ServicesRefHero({ lede = HEADER_LEDE }) {
-  return (
-    <header className="services-ref-hero">
-      <h1 className="services-ref-hero__title">الخدمات</h1>
-      <div className="services-ref-hero__divider" aria-hidden>
-        <span className="services-ref-hero__divider-line" />
-        <span className="services-ref-hero__divider-diamond" />
-        <span className="services-ref-hero__divider-line" />
-      </div>
-      <p className="services-ref-hero__lede">{lede}</p>
-    </header>
-  );
-}
 
 function ServicesSubSkeleton() {
   return (
@@ -216,7 +203,7 @@ const ServicesExplorer = () => {
   if (loading) {
     return (
       <div className="services-ref-shell" aria-busy="true" aria-live="polite">
-        <ServicesRefHero />
+        <PublicPageHeader title="الخدمات" description={HEADER_LEDE} />
         <div className="services-ref-cards">
           {[0, 1, 2].map((i) => (
             <ServicesRefCardSkeleton key={i} />
@@ -230,7 +217,7 @@ const ServicesExplorer = () => {
   if (error && categories.length === 0) {
     return (
       <div className="services-ref-shell">
-        <ServicesRefHero />
+        <PublicPageHeader title="الخدمات" description={HEADER_LEDE} />
         <p className="services-ref-error" role="alert">
           {error}
         </p>
@@ -240,7 +227,7 @@ const ServicesExplorer = () => {
 
   return (
     <div className="services-ref-shell">
-      <ServicesRefHero />
+      <PublicPageHeader title="الخدمات" description={HEADER_LEDE} />
 
       {!sortedCategories.length ? (
         <p className="services-ref-muted">لا توجد تصنيفات متاحة حالياً.</p>

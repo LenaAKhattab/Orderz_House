@@ -431,3 +431,143 @@ export function buildPendingActions({
   const priorityRank = { 1: 0, 2: 1, 3: 2 };
   return actions.sort((a, b) => (priorityRank[a.priority] ?? 9) - (priorityRank[b.priority] ?? 9)).slice(0, 5);
 }
+
+/** Lightweight courses-focus hints for sidebar + banner — no layout redesign. */
+export function deriveFreelancerCoursesFocus(summary) {
+  const empty = {
+    show: false,
+    sidebarBadge: null,
+    coursesAgg: null,
+  };
+
+  if (!summary) return empty;
+
+  const subscription = summary.subscription;
+  const courses = summary.courses?.loadState === "ok" ? summary.courses : null;
+  if (!courses) return empty;
+
+  const activation = String(subscription?.activationStatus || "");
+  const isCompanyApproved = activation === "company_approved";
+  const total = Number(courses.total) || 0;
+  const completed = Number(courses.completed) || 0;
+  const pendingFinalTest = Number(courses.pendingFinalTest) || 0;
+
+  if (total === 0) return { ...empty, coursesAgg: courses };
+
+  const coursesPathComplete = completed === total && pendingFinalTest === 0;
+  const needsCoursesFocus = !isCompanyApproved || !coursesPathComplete;
+
+  if (!needsCoursesFocus) {
+    return { ...empty, coursesAgg: courses };
+  }
+
+  return {
+    show: true,
+    sidebarBadge: pendingFinalTest > 0 ? "مطلوب" : "ابدأ هنا",
+    coursesAgg: courses,
+  };
+}
+
+function extractCourseNameFromAction(action, fallback = "الدورة") {
+  const text = String(action?.description || action?.descriptionAr || "");
+  const match = text.match(/«([^»]+)»/);
+  return match?.[1] || fallback;
+}
+
+/** Build/enhance the top activation banner action (exam or courses pending). */
+export function buildCoursesActivationBannerActions(summary, pendingActions = []) {
+  const focus = deriveFreelancerCoursesFocus(summary);
+  const courses = focus.coursesAgg;
+  const activationActions = [];
+
+  if (focus.show && courses) {
+    const pendingFinalTest = Number(courses.pendingFinalTest) || 0;
+    const total = Number(courses.total) || 0;
+    const completed = Number(courses.completed) || 0;
+    const latestCourse = courses.latestInProgressCourse || courses.continueCourse;
+    const examPendingAction = pendingActions.find((a) => a.id === "final-test");
+
+    if (pendingFinalTest > 0) {
+      const courseName = extractCourseNameFromAction(
+        examPendingAction,
+        latestCourse?.title || "الدورة",
+      );
+      const examUrl =
+        examPendingAction?.to ||
+        examPendingAction?.actionUrl ||
+        (latestCourse?.id
+          ? `/dashboard/freelancer/courses/${latestCourse.id}`
+          : "/dashboard/freelancer/courses");
+
+      activationActions.push({
+        id: "final-test",
+        isActivationBanner: true,
+        title: `اختبار نهائي بانتظارك (${pendingFinalTest})`,
+        description: `أكمل الاختبار النهائي لدورة ${courseName} لإتمام متطلبات التفعيل.`,
+        to: examUrl,
+        cta: "إكمال الاختبار",
+        secondaryTo: examUrl,
+        secondaryCta: "عرض الدورة",
+      });
+    } else if (completed < total) {
+      const pendingCount = total - completed;
+      const continueUrl = latestCourse?.id
+        ? `/dashboard/freelancer/courses/${latestCourse.id}`
+        : "/dashboard/freelancer/courses";
+
+      activationActions.push({
+        id: "courses-pending",
+        isActivationBanner: true,
+        title: `دورات مطلوبة بانتظارك (${pendingCount})`,
+        description: "أكمل الدورات المطلوبة للانتقال إلى الاختبار النهائي.",
+        to: continueUrl,
+        cta: "متابعة الدورات",
+        secondaryTo: "/dashboard/freelancer/courses",
+        secondaryCta: "عرض الدورة",
+      });
+    }
+  }
+
+  const rest = pendingActions.filter(
+    (a) => a.id !== "final-test" && a.id !== "courses-pending",
+  );
+
+  return [...activationActions, ...rest];
+}
+
+function insightSortRank(item) {
+  if (item?.type === "courses" || item?.id === "final-test" || item?.id === "course-progress") {
+    return 0;
+  }
+  if (item?.id === "company-pending" || String(item?.titleAr || "").includes("موافقة الإدارة")) {
+    return 1;
+  }
+  return 5;
+}
+
+export function prioritizeCoursesInsights(insights = [], coursesFocusActive = false) {
+  const boosted = insights.map((item) => {
+    if (item.id === "final-test" || String(item.titleAr || "").includes("اختبار نهائي")) {
+      return {
+        ...item,
+        titleAr: item.titleAr || "اختبار نهائي بانتظارك",
+        actionLabel: item.actionLabel || "إكمال الاختبار",
+      };
+    }
+    return item;
+  });
+
+  if (!coursesFocusActive) return boosted;
+
+  return [...boosted].sort((a, b) => insightSortRank(a) - insightSortRank(b));
+}
+
+export function insightsForWelcomeTip(insights = [], coursesFocusActive = false) {
+  if (!coursesFocusActive) return insights;
+  return insights.filter(
+    (item) =>
+      item?.type !== "courses" &&
+      item?.id !== "final-test" &&
+      item?.id !== "course-progress",
+  );
+}

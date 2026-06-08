@@ -1035,6 +1035,23 @@
   background: linear-gradient(145deg, #fff, #f0f7ff);
 }
 
+.fdash-cc-card--courses-focus {
+  border-color: rgba(56, 82, 180, 0.28);
+  box-shadow: 0 6px 20px rgba(56, 82, 180, 0.1);
+}
+
+.fdash-cc-card__focus-badge {
+  display: inline-flex;
+  margin-inline-start: 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #3852b4;
+  background: rgba(56, 82, 180, 0.12);
+  vertical-align: middle;
+}
+
 .fdash-cc-card__head {
   display: flex;
   align-items: center;
@@ -1857,6 +1874,36 @@
   white-space: nowrap;
 }
 
+.fdash-welcome__course-notice {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(56, 82, 180, 0.18);
+  background: rgba(56, 82, 180, 0.05);
+  max-width: 36rem;
+}
+
+.fdash-welcome__course-notice-title {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #1a2340;
+}
+
+.fdash-welcome__course-notice-desc {
+  margin: 4px 0 10px;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: #5b6b8a;
+  font-weight: 600;
+}
+
+.fdash-welcome__course-notice .fdash-btn {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+}
+
 /* Connected bottom panel — tip (RTL right) + inline metrics + actions */
 .fdash-welcome__panel {
   position: relative;
@@ -2240,6 +2287,10 @@
   --fd-surface-3d-thin-bg: linear-gradient(145deg, #fffdfd 0%, #f8f6fc 100%);
 }
 
+.fdash-banner--activation {
+  --fd-surface-3d-thin-bg: linear-gradient(145deg, #f8faff 0%, #f0f4ff 100%);
+}
+
 .fdash-banner__illustration {
   position: relative;
   z-index: 1;
@@ -2317,9 +2368,17 @@
   color: #dc2626;
 }
 
+.fdash-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+
 .fdash-banner__cta {
   display: inline-flex;
-  margin-top: 8px;
   padding: 0;
   font-size: 0.78rem;
   font-weight: 800;
@@ -2330,6 +2389,26 @@
 
 .fdash-banner__cta:hover {
   text-decoration: underline;
+}
+
+.fdash-banner__cta--primary {
+  padding: 7px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2b59c3, #3d6fd4);
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 6px 16px -8px rgba(43, 89, 195, 0.55);
+}
+
+.fdash-banner__cta--primary:hover {
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.fdash-banner__cta--secondary {
+  color: #64748b;
+  font-size: 0.74rem;
 }
 
 @media (max-width: 768px) {

@@ -41,11 +41,28 @@ const uploadCourseAuditResponseFile = multer({
   fileFilter: courseFileFilter,
 }).single("auditResponseFile");
 
+function completedExamPdfFilter(req, file, cb) {
+  const mt = String(file?.mimetype || "").toLowerCase();
+  if (mt === "application/pdf") return cb(null, true);
+  const err = new Error("تعذر رفع الملف. تأكد أن الملف PDF وحاول مرة أخرى.");
+  err.statusCode = 400;
+  err.exposeToClient = true;
+  err.publicCode = "VALIDATION_ERROR";
+  return cb(err);
+}
+
+const uploadCompletedExamFile = multer({
+  storage,
+  limits: { fileSize: MAX_COURSE_FILE_BYTES, files: 1 },
+  fileFilter: completedExamPdfFilter,
+}).single("completedExamFile");
+
 module.exports = {
   uploadCourseTestFile,
   uploadCoursePromptFile,
   uploadCourseModelAnswerFile,
   uploadCourseAuditResponseFile,
+  uploadCompletedExamFile,
   MAX_COURSE_FILE_BYTES,
   COURSE_FILE_SIZE_MESSAGE_AR,
 };

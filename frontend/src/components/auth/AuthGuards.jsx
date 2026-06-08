@@ -1,7 +1,9 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
-import { getDashboardPathByRole } from "../../constants/authRoutes";
+import { getDashboardPathByRole, ROLE } from "../../constants/authRoutes";
+import { userHasPermission } from "../../constants/dashboardPermissions";
 import { AuthRouteSkeleton } from "../ui/AuthRouteSkeleton";
+import Unauthorized from "../../pages/Unauthorized";
 
 /**
  * `/dashboard` → redirects to the signed-in user’s role dashboard.
@@ -103,4 +105,35 @@ export function RequireRole({ allowedRoles, children }) {
   }
 
   return children;
+}
+
+/**
+ * Admin dashboard routes: super_admin bypasses; admin must hold `permission`.
+ */
+export function RequirePermission({ permission, children }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <AuthRouteLoading />;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const role = user?.primaryRole || user?.role;
+  if (role === ROLE.SUPER_ADMIN) {
+    return children;
+  }
+
+  if (role === ROLE.ADMIN && userHasPermission(user, permission)) {
+    return children;
+  }
+
+  return (
+    <Unauthorized
+      title="ليس لديك صلاحية"
+      message="ليس لديك صلاحية الوصول إلى هذه الصفحة"
+    />
+  );
 }

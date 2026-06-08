@@ -15,6 +15,10 @@ const createCourseValidators = [
   body("testPromptFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("testModelAnswerFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("testQuestionCount").optional({ nullable: true }).isInt({ min: 1, max: 500 }),
+  body("examQuestions").optional({ nullable: true }).isArray({ max: 500 }),
+  body("examQuestions.*.number").optional().isInt({ min: 1, max: 500 }),
+  body("examQuestions.*.text").optional({ nullable: true }).isString().trim().isLength({ max: 4000 }),
+  body("examQuestions.*.maxMark").optional().isInt({ min: 1, max: 100 }),
 ];
 
 const importLessonsValidators = [
@@ -36,6 +40,10 @@ const updateCourseValidators = [
   body("testPromptFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("testModelAnswerFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("testQuestionCount").optional({ nullable: true }).isInt({ min: 1, max: 500 }),
+  body("examQuestions").optional({ nullable: true }).isArray({ max: 500 }),
+  body("examQuestions.*.number").optional().isInt({ min: 1, max: 500 }),
+  body("examQuestions.*.text").optional({ nullable: true }).isString().trim().isLength({ max: 4000 }),
+  body("examQuestions.*.maxMark").optional().isInt({ min: 1, max: 100 }),
 ];
 
 const updateLessonsValidators = [
@@ -80,7 +88,9 @@ const submitCourseCompletionValidators = [
 
 const courseFileStreamValidators = [
   ...courseIdParam,
-  param("fileKind").isIn(["test", "prompt", "model-answer"]).withMessage("نوع الملف غير صالح."),
+  param("fileKind")
+    .isIn(["test", "prompt", "model-answer", "completed-exam"])
+    .withMessage("نوع الملف غير صالح."),
   query("download").optional().isIn(["0", "1", "true", "false"]),
 ];
 

@@ -46,6 +46,7 @@ export const DASHBOARD_TITLE = {
   "/dashboard/super-admin/training-orders/rounds": "جولات الطلبات التجريبية",
   "/dashboard/super-admin/training-orders/applications": "متقدمو الطلبات التجريبية",
   "/dashboard/admin/notifications": "الإشعارات",
+  "/dashboard/admin/orders": "الطلبات الداخلية",
   "/dashboard/client/notifications": "الإشعارات",
   "/dashboard/freelancer/notifications": "الإشعارات",
   "/dashboard/freelancer/settings": "إعدادات الحساب",
@@ -53,6 +54,9 @@ export const DASHBOARD_TITLE = {
   "/dashboard/client/settings": "إعدادات الحساب",
   "/dashboard/admin/settings": "إعدادات الحساب",
   "/dashboard/super-admin/settings": "إعدادات الحساب",
+  "/dashboard/super-admin/admins": "إدارة الأدمن",
+  "/dashboard/admin/orders": "الطلبات الداخلية",
+  "/dashboard/admin/orders/create": "إنشاء طلب داخلي",
 };
 
 /**
@@ -138,6 +142,9 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/client/settings": [ROLE.CLIENT],
   "/dashboard/admin/settings": [ROLE.ADMIN],
   "/dashboard/super-admin/settings": [ROLE.SUPER_ADMIN],
+  "/dashboard/super-admin/admins": [ROLE.SUPER_ADMIN],
+  "/dashboard/admin/orders": [ROLE.ADMIN],
+  "/dashboard/admin/orders/create": [ROLE.ADMIN],
 };
 
 /**

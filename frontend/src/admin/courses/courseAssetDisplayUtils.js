@@ -36,6 +36,7 @@ export function getStudentCourseFileDownloadName(fileKind) {
   if (fileKind === "prompt") return "course-prompt.pdf";
   if (fileKind === "model-answer") return "course-model-answer.pdf";
   if (fileKind === "answer") return "course-answer.pdf";
+  if (fileKind === "completed-exam") return "completed-exam.pdf";
   return "course-test.pdf";
 }
 

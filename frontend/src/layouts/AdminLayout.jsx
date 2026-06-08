@@ -2,8 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 import { useAuth } from "../context/useAuth";
-import { getAccountSettingsPath, getNotificationsPath } from "../constants/authRoutes";
-import { ADMIN_NAV_FOOTER, ADMIN_NAV_MAIN, adminBreadcrumb } from "../constants/adminNav";
+import { getNotificationsPath } from "../constants/authRoutes";
+import {
+  ADMIN_NAV_CREATE_ORDER,
+  ADMIN_NAV_HOME,
+  ADMIN_NAV_MAIN,
+  ADMIN_NAV_NOTIFICATIONS,
+  adminBreadcrumb,
+  filterAdminNavItems,
+} from "../constants/adminNav";
+import { userHasPermission } from "../constants/dashboardPermissions";
 import NotificationsBell from "../components/notifications/NotificationsBell";
 
 import "../styles/dashboardHub.css";
@@ -48,7 +56,9 @@ export default function AdminLayout() {
   const crumb = useMemo(() => adminBreadcrumb(pathname), [pathname]);
   const role = user?.primaryRole || user?.role;
   const notificationsPath = getNotificationsPath(role);
-  const accountSettingsPath = getAccountSettingsPath(role);
+  const businessNav = useMemo(() => filterAdminNavItems(ADMIN_NAV_MAIN, user, userHasPermission), [user]);
+  const showCreateOrder = userHasPermission(user, ADMIN_NAV_CREATE_ORDER.permission);
+  const hasBusinessPermissions = businessNav.length > 0 || showCreateOrder;
 
   return (
     <div className="oh-sa-shell" dir="rtl" lang="ar">
@@ -68,7 +78,19 @@ export default function AdminLayout() {
         </div>
 
         <ul className="oh-sa-nav__list">
-          {ADMIN_NAV_MAIN.map((item) => (
+          <li>
+            <NavLink
+              to={ADMIN_NAV_HOME.to}
+              end={Boolean(ADMIN_NAV_HOME.end)}
+              className={({ isActive }) => `oh-sa-navlink${isActive ? " oh-sa-navlink--active" : ""}`.trim()}
+            >
+              <span className="oh-sa-navlink__icon" aria-hidden>
+                {ADMIN_NAV_HOME.icon}
+              </span>
+              {ADMIN_NAV_HOME.label}
+            </NavLink>
+          </li>
+          {businessNav.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
@@ -86,35 +108,41 @@ export default function AdminLayout() {
               </NavLink>
             </li>
           ))}
+          {showCreateOrder ? (
+            <li>
+              <NavLink
+                to={ADMIN_NAV_CREATE_ORDER.to}
+                className={({ isActive }) => `oh-sa-navlink${isActive ? " oh-sa-navlink--active" : ""}`.trim()}
+              >
+                <span className="oh-sa-navlink__icon" aria-hidden>
+                  {ADMIN_NAV_CREATE_ORDER.icon}
+                </span>
+                {ADMIN_NAV_CREATE_ORDER.label}
+              </NavLink>
+            </li>
+          ) : null}
+        </ul>
+
+        <ul className="oh-sa-nav__list">
           <li>
             <NavLink
-              to="/dashboard/admin/orders/create"
+              to={ADMIN_NAV_NOTIFICATIONS.to}
               className={({ isActive }) => `oh-sa-navlink${isActive ? " oh-sa-navlink--active" : ""}`.trim()}
             >
               <span className="oh-sa-navlink__icon" aria-hidden>
-                +
+                {ADMIN_NAV_NOTIFICATIONS.icon}
               </span>
-              إنشاء طلب داخلي
+              {ADMIN_NAV_NOTIFICATIONS.label}
             </NavLink>
           </li>
         </ul>
 
-        <ul className="oh-sa-nav__list oh-sa-nav__list--muted">
-          {ADMIN_NAV_FOOTER.map((item) => (
-            <li key={item.to}>
-              <NavLink
-                to={item.to}
-                end={item.to === "/dashboard/admin/settings"}
-                className={({ isActive }) => `oh-sa-navlink${isActive ? " oh-sa-navlink--active" : ""}`.trim()}
-              >
-                <span className="oh-sa-navlink__icon" aria-hidden>
-                  {item.icon}
-                </span>
-                {item.label}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
+        {!hasBusinessPermissions ? (
+          <p className="oh-admin-nav-empty" style={{ padding: "12px 16px", fontSize: "0.82rem", color: "#5b6684", lineHeight: 1.6 }}>
+            ليس لديك صلاحيات مفعلة حالياً. يرجى التواصل مع المدير الأعلى.
+          </p>
+        ) : null}
+
           </aside>
         </div>
 
@@ -145,14 +173,8 @@ export default function AdminLayout() {
                   <div style={{ padding: "6px 10px 10px", fontSize: "0.82rem", color: "#5b6684", fontWeight: 800 }}>
                     {displayName}
                   </div>
-                  <NavLink to={accountSettingsPath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
-                    إعدادات الحساب
-                  </NavLink>
                   <NavLink to={notificationsPath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
                     الإشعارات
-                  </NavLink>
-                  <NavLink to="/" role="menuitem" onClick={() => setUserMenuOpen(false)}>
-                    الموقع العام
                   </NavLink>
                   <button
                     type="button"

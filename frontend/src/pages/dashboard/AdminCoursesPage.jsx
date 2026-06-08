@@ -32,7 +32,9 @@ import StatusBadge from "../../components/dashboard/StatusBadge";
 import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
 import WidgetLoadError from "../../components/dashboard/hub/controlCenter/WidgetLoadError";
 import AdminCourseCreateComposer from "../../admin/courses/AdminCourseCreateComposer";
-import CourseFileUploadField from "../../admin/courses/CourseFileUploadField";
+import ExamQuestionsEditor, { isExamQuestionsEditorValid } from "../../admin/courses/ExamQuestionsEditor";
+import { parseExamQuestions } from "../../utils/courseExamQuestions";
+import CourseFileManagerSection from "../../admin/courses/CourseFileManagerSection";
 import CourseUrlField from "../../admin/courses/CourseUrlField";
 import "../../admin/courses/adminCourseComposer.css";
 import "../../admin/courses/courseAssetFields.css";
@@ -80,6 +82,7 @@ const EMPTY_CREATE_FORM = {
   testPromptFileUrl: "",
   testModelAnswerFileUrl: "",
   testQuestionCount: "",
+  examQuestions: [],
 };
 
 function cloneCreateForm(form) {
@@ -99,6 +102,7 @@ export default function AdminCoursesPage() {
   const [selectedFreelancerIds, setSelectedFreelancerIds] = useState([]);
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerUnsavedConfirmOpen, setComposerUnsavedConfirmOpen] = useState(false);
+  const [deleteConfirmCourseId, setDeleteConfirmCourseId] = useState("");
   /** After discard confirm: close only, or close then open a fresh create modal. */
   const [composerDiscardIntent, setComposerDiscardIntent] = useState(null);
   const [editingCourseId, setEditingCourseId] = useState("");
@@ -109,6 +113,7 @@ export default function AdminCoursesPage() {
   const [testFileUploading, setTestFileUploading] = useState(false);
   const [promptFileUploading, setPromptFileUploading] = useState(false);
   const [modelAnswerFileUploading, setModelAnswerFileUploading] = useState(false);
+  const [fileRemoveBusy, setFileRemoveBusy] = useState(false);
   /** PDF files chosen during create — uploaded right after the course is created. */
   const [createPendingTestFile, setCreatePendingTestFile] = useState(null);
   const [createPendingPromptFile, setCreatePendingPromptFile] = useState(null);
@@ -207,12 +212,16 @@ export default function AdminCoursesPage() {
       const raw = String(fields.testQuestionCount ?? "").trim();
       patch.testQuestionCount = raw === "" ? null : Number(raw);
     }
+    if (fields.examQuestions !== undefined) {
+      const rows = parseExamQuestions(fields.examQuestions);
+      patch.examQuestions = rows.length ? rows : null;
+    }
     return patch;
   }, []);
 
-  const fetchCoursesList = useCallback(async () => {
+  const fetchCoursesList = useCallback(async ({ silent = false } = {}) => {
     const gen = ++coursesFetchGenRef.current;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const params = {};
       const q = courseSearch.trim();
@@ -228,11 +237,17 @@ export default function AdminCoursesPage() {
       if (gen !== coursesFetchGenRef.current) return;
       const msg = err?.response?.data?.message || COURSES_LOAD_ERROR_MSG;
       setCoursesLoadError(msg);
-      toast.error(msg);
+      if (!silent) toast.error(msg);
     } finally {
-      if (gen === coursesFetchGenRef.current) setLoading(false);
+      if (gen === coursesFetchGenRef.current && !silent) setLoading(false);
     }
   }, [toast, courseSearch, statusFilter]);
+
+  const patchCourseListRow = useCallback((courseId, patch) => {
+    setCourses((prev) =>
+      prev.map((c) => (String(c.id) === String(courseId) ? { ...c, ...patch } : c)),
+    );
+  }, []);
 
   const loadCourseDetails = useCallback(
     async (courseId) => {
@@ -435,6 +450,7 @@ export default function AdminCoursesPage() {
     setCreateForm({ ...EMPTY_CREATE_FORM });
     setCreatePendingTestFile(null);
     setCreatePendingPromptFile(null);
+    setCreatePendingModelAnswerFile(null);
     composerSnapshotRef.current = null;
   }, []);
 
@@ -581,6 +597,76 @@ export default function AdminCoursesPage() {
     }
   };
 
+  const removeCourseFileByField = useCallback(
+    async ({ field, courseId, clearPending }) => {
+      setFileRemoveBusy(true);
+      try {
+        if (courseId) {
+          const res = await adminUpdateCourseRequest(courseId, { [field]: null });
+          if (res?.data?.course) syncCourseFileFieldsFromServer(courseId, res.data.course);
+          toast.success("تم إزالة الملف.");
+          await fetchCoursesList();
+          if (String(selectedCourseId) === String(courseId)) await loadCourseDetails(courseId);
+        } else {
+          setCreateForm((s) => ({ ...s, [field]: "" }));
+          clearPending?.();
+          toast.success("تم إزالة الملف.");
+        }
+      } catch (err) {
+        toast.error(err?.response?.data?.message || "تعذر إزالة الملف.");
+        throw err;
+      } finally {
+        setFileRemoveBusy(false);
+      }
+    },
+    [fetchCoursesList, loadCourseDetails, selectedCourseId, syncCourseFileFieldsFromServer, toast],
+  );
+
+  const onRemoveComposerTestFile = useCallback(
+    () =>
+      removeCourseFileByField({
+        field: "testFileUrl",
+        courseId: editingCourseId || null,
+        clearPending: () => onPendingCreateTestFile(null),
+      }),
+    [editingCourseId, onPendingCreateTestFile, removeCourseFileByField],
+  );
+
+  const onRemoveComposerPromptFile = useCallback(
+    () =>
+      removeCourseFileByField({
+        field: "testPromptFileUrl",
+        courseId: editingCourseId || null,
+        clearPending: () => onPendingCreatePromptFile(null),
+      }),
+    [editingCourseId, onPendingCreatePromptFile, removeCourseFileByField],
+  );
+
+  const onRemoveComposerModelAnswerFile = useCallback(
+    () =>
+      removeCourseFileByField({
+        field: "testModelAnswerFileUrl",
+        courseId: editingCourseId || null,
+        clearPending: () => onPendingCreateModelAnswerFile(null),
+      }),
+    [editingCourseId, onPendingCreateModelAnswerFile, removeCourseFileByField],
+  );
+
+  const onRemoveManageTestFile = useCallback(
+    () => removeCourseFileByField({ field: "testFileUrl", courseId: selectedCourseId }),
+    [removeCourseFileByField, selectedCourseId],
+  );
+
+  const onRemoveManagePromptFile = useCallback(
+    () => removeCourseFileByField({ field: "testPromptFileUrl", courseId: selectedCourseId }),
+    [removeCourseFileByField, selectedCourseId],
+  );
+
+  const onRemoveManageModelAnswerFile = useCallback(
+    () => removeCourseFileByField({ field: "testModelAnswerFileUrl", courseId: selectedCourseId }),
+    [removeCourseFileByField, selectedCourseId],
+  );
+
   const onStartEditCourse = useCallback((course) => {
     const formState = {
       title: course.title || "",
@@ -596,6 +682,7 @@ export default function AdminCoursesPage() {
         course.testQuestionCount != null && !Number.isNaN(Number(course.testQuestionCount))
           ? String(course.testQuestionCount)
           : "",
+      examQuestions: parseExamQuestions(course.examQuestions),
     };
     setEditingCourseId(String(course.id));
     setEditingCourseMeta({
@@ -611,6 +698,13 @@ export default function AdminCoursesPage() {
 
   const onComposerSubmit = async (e) => {
     e.preventDefault();
+    if (
+      createForm.isTestingEnabled &&
+      !isExamQuestionsEditorValid(createForm.testQuestionCount, createForm.examQuestions)
+    ) {
+      toast.error("يجب أن يكون مجموع العلامات القصوى لجميع الأسئلة مساوياً لـ 100");
+      return;
+    }
     setCreating(true);
     try {
       if (editingCourseId) {
@@ -624,26 +718,31 @@ export default function AdminCoursesPage() {
           testPromptFileUrl: createForm.testPromptFileUrl,
           testModelAnswerFileUrl: createForm.testModelAnswerFileUrl,
           testQuestionCount: createForm.testQuestionCount,
+          examQuestions: createForm.examQuestions,
         });
         const res = await adminUpdateCourseRequest(editingCourseId, patch);
         if (res?.data?.course) syncCourseFileFieldsFromServer(editingCourseId, res.data.course);
         toast.success("تم تحديث بيانات الكورس.");
         composerSnapshotRef.current = cloneCreateForm(createForm);
       } else {
+        const pendingTest = createPendingTestFile;
+        const pendingPrompt = createPendingPromptFile;
+        const pendingModelAnswer = createPendingModelAnswerFile;
         const res = await adminCreateCourseRequest(createForm);
         const newCourseId = res?.data?.course?.id;
-        if (newCourseId && createPendingTestFile) {
-          await onUploadCourseTestFile(newCourseId, createPendingTestFile);
+
+        toast.success("تم إنشاء الدورة بنجاح.");
+        finishCloseComposerModal();
+
+        if (newCourseId && pendingTest) {
+          await onUploadCourseTestFile(newCourseId, pendingTest);
         }
-        if (newCourseId && createPendingPromptFile) {
-          await onUploadCoursePromptFile(newCourseId, createPendingPromptFile);
+        if (newCourseId && pendingPrompt) {
+          await onUploadCoursePromptFile(newCourseId, pendingPrompt);
         }
-        if (newCourseId && createPendingModelAnswerFile) {
-          await onUploadCourseModelAnswerFile(newCourseId, createPendingModelAnswerFile);
+        if (newCourseId && pendingModelAnswer) {
+          await onUploadCourseModelAnswerFile(newCourseId, pendingModelAnswer);
         }
-        toast.success("تم إنشاء الدورة وإضافة الدروس بنجاح.");
-        setComposerOpen(false);
-        resetComposer();
       }
       await fetchCoursesList();
     } catch (err) {
@@ -686,6 +785,16 @@ export default function AdminCoursesPage() {
   const onUpdateCourse = async (e) => {
     e.preventDefault();
     if (!selectedCourseId || !selectedCourse?.course) return;
+    if (
+      selectedCourse.course.isTestingEnabled &&
+      !isExamQuestionsEditorValid(
+        selectedCourse.course.testQuestionCount,
+        parseExamQuestions(selectedCourse.course.examQuestions),
+      )
+    ) {
+      toast.error("يجب أن يكون مجموع العلامات القصوى لجميع الأسئلة مساوياً لـ 100");
+      return;
+    }
     setLoading(true);
     try {
       const patch = buildCourseMetadataPatch({
@@ -702,6 +811,7 @@ export default function AdminCoursesPage() {
           !Number.isNaN(Number(selectedCourse.course.testQuestionCount))
             ? selectedCourse.course.testQuestionCount
             : "",
+        examQuestions: parseExamQuestions(selectedCourse.course.examQuestions),
       });
       const res = await adminUpdateCourseRequest(selectedCourseId, patch);
       if (res?.data?.course) syncCourseFileFieldsFromServer(selectedCourseId, res.data.course);
@@ -771,10 +881,19 @@ export default function AdminCoursesPage() {
     }
   };
 
-  const onDeleteCourse = async (courseId) => {
-    if (!courseId) return;
-    const ok = window.confirm("هل أنت متأكد من حذف الدورة؟ سيتم حذف الدروس والإسنادات المرتبطة بها.");
-    if (!ok) return;
+  const requestDeleteCourse = (courseId) => {
+    if (!courseId || loading) return;
+    setDeleteConfirmCourseId(String(courseId));
+  };
+
+  const cancelDeleteCourse = () => {
+    if (loading) return;
+    setDeleteConfirmCourseId("");
+  };
+
+  const confirmDeleteCourse = async () => {
+    const courseId = deleteConfirmCourseId;
+    if (!courseId || loading) return;
     setLoading(true);
     try {
       await adminDeleteCourseRequest(courseId);
@@ -785,6 +904,7 @@ export default function AdminCoursesPage() {
         setSelectedFreelancerIds([]);
         setManageModalOpen(false);
       }
+      setDeleteConfirmCourseId("");
       await fetchCoursesList();
     } catch (err) {
       toast.error(err?.response?.data?.message || "تعذر حذف الدورة.");
@@ -795,17 +915,70 @@ export default function AdminCoursesPage() {
 
   const onToggleGlobalVisibility = async (course, nextValue) => {
     if (!course?.id) return;
-    setVisibilityTogglingId(String(course.id));
-    try {
-      await adminUpdateCourseRequest(course.id, { isVisibleToAllFreelancers: Boolean(nextValue) });
-      toast.success(
-        nextValue ? "أصبح الكورس متاحاً لجميع المستقلين الحاليين والمستقبليين." : "تم إيقاف الإظهار لجميع المستقلين.",
+    const courseId = String(course.id);
+    const nextVisible = Boolean(nextValue);
+    const previousVisible = Boolean(course.isVisibleToAllFreelancers);
+    setVisibilityTogglingId(courseId);
+    patchCourseListRow(courseId, { isVisibleToAllFreelancers: nextVisible });
+    if (String(selectedCourseId) === courseId) {
+      setSelectedCourse((s) =>
+        s?.course ? { ...s, course: { ...s.course, isVisibleToAllFreelancers: nextVisible } } : s,
       );
-      await fetchCoursesList();
-      if (String(selectedCourseId) === String(course.id)) {
-        await loadCourseDetails(course.id);
+    }
+    try {
+      const res = await adminUpdateCourseRequest(course.id, { isVisibleToAllFreelancers: nextVisible });
+      const updatedCourse = res?.data?.course;
+      const publishReadiness = res?.data?.publishReadiness;
+      patchCourseListRow(courseId, {
+        isVisibleToAllFreelancers: nextVisible,
+        ...(updatedCourse?.isActive !== undefined ? { isActive: updatedCourse.isActive } : {}),
+        ...(updatedCourse?.updatedAt ? { updatedAt: updatedCourse.updatedAt } : {}),
+      });
+      if (String(selectedCourseId) === courseId && updatedCourse) {
+        setSelectedCourse((s) =>
+          s?.course
+            ? {
+                ...s,
+                course: {
+                  ...s.course,
+                  isVisibleToAllFreelancers: nextVisible,
+                  ...(updatedCourse.isActive !== undefined ? { isActive: updatedCourse.isActive } : {}),
+                  ...(updatedCourse.updatedAt ? { updatedAt: updatedCourse.updatedAt } : {}),
+                },
+              }
+            : s,
+        );
+      }
+      if (nextVisible) {
+        if (updatedCourse?.isActive) {
+          toast.success("أصبح الكورس منشوراً ومتاحاً لجميع المستقلين.");
+        } else {
+          const missing = publishReadiness?.missingLabels?.filter(Boolean).join("، ");
+          toast.error(
+            missing
+              ? `تم حفظ إعداد الظهور للجميع، لكن الدورة ما زالت مسودة. أكمل: ${missing}`
+              : "تم حفظ إعداد الظهور للجميع، لكن الدورة ما زالت مسودة. انشرها لتظهر للمستقلين.",
+          );
+        }
+      } else {
+        const assignedCount = Number(course.assignedCount) || 0;
+        toast.success(
+          assignedCount > 0
+            ? `تم إيقاف الظهور للجميع. الدورة ما زالت تظهر لـ ${assignedCount} مستقل مسند إليه.`
+            : "تم إيقاف الإظهار لجميع المستقلين.",
+        );
+      }
+      void fetchCoursesList({ silent: true });
+      if (String(selectedCourseId) === courseId) {
+        void loadCourseDetails(course.id);
       }
     } catch (err) {
+      patchCourseListRow(courseId, { isVisibleToAllFreelancers: previousVisible });
+      if (String(selectedCourseId) === courseId) {
+        setSelectedCourse((s) =>
+          s?.course ? { ...s, course: { ...s.course, isVisibleToAllFreelancers: previousVisible } } : s,
+        );
+      }
       toast.error(err?.response?.data?.message || "تعذر تحديث إعداد الوصول.");
     } finally {
       setVisibilityTogglingId("");
@@ -889,6 +1062,7 @@ export default function AdminCoursesPage() {
 
   const closeManageModal = useCallback(() => {
     setManageModalOpen(false);
+    setManageTab("details");
     setSelectedCourseId("");
     setSelectedCourse(null);
     setSelectedFreelancerIds([]);
@@ -1058,9 +1232,16 @@ export default function AdminCoursesPage() {
                       <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
                     </td>
                     <td className="oh-admin-courses__col-access">
-                      <StatusBadge tone={isGlobal ? "active" : "neutral"}>
-                        {isGlobal ? "جميع المستقلين" : "مخصص"}
-                      </StatusBadge>
+                      <div className="oh-admin-courses__access-cell">
+                        <StatusBadge tone={isGlobal ? "active" : "neutral"}>
+                          {isGlobal ? "جميع المستقلين" : "مخصص"}
+                        </StatusBadge>
+                        {!isGlobal && Number(c.assignedCount) > 0 ? (
+                          <span className="oh-admin-courses__access-hint" title="الدورة تظهر فقط للمستقلين المسندين إليها">
+                            {formatAccessChipCount(c.assignedCount, false)}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="oh-admin-courses__col-date">
                       <time dateTime={c.updatedAt || undefined}>{fmtCourseDate(c.updatedAt)}</time>
@@ -1071,7 +1252,9 @@ export default function AdminCoursesPage() {
                         title={
                           isGlobal
                             ? "الدورة متاحة تلقائياً لكل المستقلين. ألغِ التفعيل للإسناد اليدوي."
-                            : "اجعل الدورة تظهر لجميع المستقلين الحاليين والجدد."
+                            : Number(c.assignedCount) > 0
+                              ? "الدورة غير مفعلة للجميع لكنها تظهر للمستقلين المسندين إليها."
+                              : "اجعل الدورة تظهر لجميع المستقلين الحاليين والجدد."
                         }
                       >
                         <input
@@ -1091,7 +1274,7 @@ export default function AdminCoursesPage() {
                         <button
                           type="button"
                           className="btn btn-primary oh-admin-courses__row-btn oh-admin-courses__row-btn--primary"
-                          onClick={() => openManageModal(c, "lessons")}
+                          onClick={() => openManageModal(c)}
                           disabled={loading}
                         >
                           إدارة الدروس
@@ -1139,7 +1322,7 @@ export default function AdminCoursesPage() {
                         <button
                           type="button"
                           className="btn oh-admin-courses__row-btn oh-admin-courses__row-btn--danger"
-                          onClick={() => onDeleteCourse(c.id)}
+                          onClick={() => requestDeleteCourse(c.id)}
                           disabled={loading}
                         >
                           حذف
@@ -1165,6 +1348,18 @@ export default function AdminCoursesPage() {
         layerClassName="z-[1300]"
         onCancel={cancelDiscardComposerModal}
         onConfirm={confirmDiscardComposerModal}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteConfirmCourseId)}
+        title="تأكيد حذف الدورة"
+        body="هل أنت متأكد من حذف هذه الدورة؟ سيتم حذف الدروس والبيانات المرتبطة بها."
+        cancelLabel="إلغاء"
+        confirmLabel="حذف الدورة"
+        confirmVariant="danger"
+        confirmBusy={loading}
+        onCancel={cancelDeleteCourse}
+        onConfirm={confirmDeleteCourse}
       />
 
       {composerOpen ? (
@@ -1219,6 +1414,10 @@ export default function AdminCoursesPage() {
               onPendingCreateTestFile={onPendingCreateTestFile}
               onPendingCreatePromptFile={onPendingCreatePromptFile}
               onPendingCreateModelAnswerFile={onPendingCreateModelAnswerFile}
+              onRemoveCourseTestFile={onRemoveComposerTestFile}
+              onRemoveCoursePromptFile={onRemoveComposerPromptFile}
+              onRemoveCourseModelAnswerFile={onRemoveComposerModelAnswerFile}
+              fileRemoveBusy={fileRemoveBusy}
             />
           </div>
         </div>
@@ -1367,105 +1566,108 @@ export default function AdminCoursesPage() {
                         </label>
                         {selectedCourse.course.isTestingEnabled ? (
                           <>
-                            <CourseFileUploadField
+                            <CourseFileManagerSection
                               label="ملف الاختبار / التكليف"
-                              fileUrl={selectedCourse.course.testFileUrl}
+                              description="يُستخدم هذا الملف ضمن خطوات الاختبار النهائي."
+                              value={selectedCourse.course.testFileUrl || ""}
+                              onChangeUrl={(next) =>
+                                setSelectedCourse((s) => ({ ...s, course: { ...s.course, testFileUrl: next } }))
+                              }
+                              fileKind="test"
+                              courseId={selectedCourseId}
                               updatedAt={selectedCourse.course.updatedAt}
                               disabled={loading}
                               uploading={testFileUploading}
+                              removing={fileRemoveBusy}
                               isEdit
-                              courseId={selectedCourseId}
-                              fileKind="test"
                               onFileSelected={(f) => {
                                 if (selectedCourseId) void onUploadCourseTestFile(selectedCourseId, f);
                               }}
                               onValidationError={(msg) => toast.error(msg)}
+                              onRemove={onRemoveManageTestFile}
                             />
-                            <CourseUrlField
-                              label="أو رابط ملف الاختبار"
-                              optional
-                              value={selectedCourse.course.testFileUrl || ""}
-                              onChange={(e) =>
-                                setSelectedCourse((s) => ({ ...s, course: { ...s.course, testFileUrl: e.target.value } }))
-                              }
-                              updatedAt={selectedCourse.course.updatedAt}
-                              linkTitle="رابط ملف الاختبار الحالي"
-                            />
-                            <CourseFileUploadField
+                            <CourseFileManagerSection
                               label="ملف مطالبة ChatGPT للمستقل"
-                              fileUrl={selectedCourse.course.testPromptFileUrl}
+                              description="يُستخدم مع ملف الاختبار عند تقييم إجابة المستقل."
+                              value={selectedCourse.course.testPromptFileUrl || ""}
+                              onChangeUrl={(next) =>
+                                setSelectedCourse((s) => ({ ...s, course: { ...s.course, testPromptFileUrl: next } }))
+                              }
+                              fileKind="prompt"
+                              courseId={selectedCourseId}
                               updatedAt={selectedCourse.course.updatedAt}
                               disabled={loading}
                               uploading={promptFileUploading}
+                              removing={fileRemoveBusy}
                               isEdit
-                              courseId={selectedCourseId}
-                              fileKind="prompt"
                               onFileSelected={(f) => {
                                 if (selectedCourseId) void onUploadCoursePromptFile(selectedCourseId, f);
                               }}
                               onValidationError={(msg) => toast.error(msg)}
+                              onRemove={onRemoveManagePromptFile}
                             />
-                            <div className="oh-admin-courses__exam-block">
-                              <h4 className="oh-admin-courses__exam-block-title">ملف الإجابة النموذجية</h4>
-                              <CourseFileUploadField
-                                label="رفع ملف من الجهاز"
-                                fileUrl={selectedCourse.course.testModelAnswerFileUrl}
-                                updatedAt={selectedCourse.course.updatedAt}
-                                disabled={loading}
-                                uploading={modelAnswerFileUploading}
-                                isEdit
-                                courseId={selectedCourseId}
-                                fileKind="model-answer"
-                                onFileSelected={(f) => {
-                                  if (selectedCourseId) void onUploadCourseModelAnswerFile(selectedCourseId, f);
-                                }}
-                                onValidationError={(msg) => toast.error(msg)}
-                              />
-                              <CourseUrlField
-                                label="أو رابط ملف الإجابة النموذجية"
-                                optional
-                                value={selectedCourse.course.testModelAnswerFileUrl || ""}
-                                onChange={(e) =>
-                                  setSelectedCourse((s) => ({
-                                    ...s,
-                                    course: { ...s.course, testModelAnswerFileUrl: e.target.value },
-                                  }))
-                                }
-                                updatedAt={selectedCourse.course.updatedAt}
-                                linkTitle="رابط ملف الإجابة النموذجية"
-                              />
-                            </div>
-                            <label className="oh-admin-courses__field">
-                              <span>عدد أسئلة الاختبار</span>
-                              <input
-                                className="oh-admin-courses__input"
-                                type="number"
-                                min={1}
-                                step={1}
-                                value={
-                                  selectedCourse.course.testQuestionCount != null
-                                    ? String(selectedCourse.course.testQuestionCount)
-                                    : ""
-                                }
-                                onChange={(e) =>
-                                  setSelectedCourse((s) => ({
-                                    ...s,
-                                    course: {
-                                      ...s.course,
-                                      testQuestionCount: e.target.value === "" ? null : Number(e.target.value),
-                                    },
-                                  }))
-                                }
-                                placeholder="مثال: 5"
-                              />
-                              <span className="oh-admin-courses__field-hint">
-                                يحدد عدد حقول إدخال الدرجات (سؤال 1، سؤال 2، …) عند التسليم.
-                              </span>
-                            </label>
+                            <CourseFileManagerSection
+                              label="ملف الإجابة النموذجية"
+                              description="يُستخدم مع ملف الاختبار وملف التعليمات في ChatGPT عند التقييم."
+                              value={selectedCourse.course.testModelAnswerFileUrl || ""}
+                              onChangeUrl={(next) =>
+                                setSelectedCourse((s) => ({
+                                  ...s,
+                                  course: { ...s.course, testModelAnswerFileUrl: next },
+                                }))
+                              }
+                              fileKind="model-answer"
+                              courseId={selectedCourseId}
+                              updatedAt={selectedCourse.course.updatedAt}
+                              disabled={loading}
+                              uploading={modelAnswerFileUploading}
+                              removing={fileRemoveBusy}
+                              isEdit
+                              onFileSelected={(f) => {
+                                if (selectedCourseId) void onUploadCourseModelAnswerFile(selectedCourseId, f);
+                              }}
+                              onValidationError={(msg) => toast.error(msg)}
+                              onRemove={onRemoveManageModelAnswerFile}
+                            />
+                            <ExamQuestionsEditor
+                              disabled={loading}
+                              questionCount={
+                                selectedCourse.course.testQuestionCount != null
+                                  ? String(selectedCourse.course.testQuestionCount)
+                                  : ""
+                              }
+                              examQuestions={parseExamQuestions(selectedCourse.course.examQuestions)}
+                              onQuestionCountChange={(next) =>
+                                setSelectedCourse((s) => ({
+                                  ...s,
+                                  course: {
+                                    ...s.course,
+                                    testQuestionCount: next === "" ? null : Number(next),
+                                  },
+                                }))
+                              }
+                              onExamQuestionsChange={(next) =>
+                                setSelectedCourse((s) => ({
+                                  ...s,
+                                  course: { ...s.course, examQuestions: next },
+                                }))
+                              }
+                            />
                           </>
                         ) : null}
                         <div className="oh-admin-courses__submit-row">
-                          <button className="btn btn-primary oh-admin-courses__btn-primary" type="submit" disabled={loading}>
+                          <button
+                            className="btn btn-primary oh-admin-courses__btn-primary"
+                            type="submit"
+                            disabled={
+                              loading ||
+                              (selectedCourse.course.isTestingEnabled &&
+                                !isExamQuestionsEditorValid(
+                                  selectedCourse.course.testQuestionCount,
+                                  parseExamQuestions(selectedCourse.course.examQuestions),
+                                ))
+                            }
+                          >
                             حفظ بيانات الدورة
                           </button>
                         </div>
@@ -1711,17 +1913,25 @@ export default function AdminCoursesPage() {
                                 </div>
                                 <dl className="oh-admin-courses__learning-duration">
                                   <div className="oh-admin-courses__learning-duration-row">
+                                    <dt>الحالة</dt>
+                                    <dd>{a.learning?.learningStatusLabel || "—"}</dd>
+                                  </div>
+                                  <div className="oh-admin-courses__learning-duration-row">
                                     <dt>بدء التعلّم</dt>
                                     <dd>{formatLearningTimestamp(a.learning?.startedLearningAt)}</dd>
                                   </div>
-                                  <div className="oh-admin-courses__learning-duration-row">
-                                    <dt>انتهاء التعلّم</dt>
-                                    <dd>{formatLearningTimestamp(a.learning?.finishedLearningAt)}</dd>
-                                  </div>
-                                  <div className="oh-admin-courses__learning-duration-row">
-                                    <dt>مدة الإكمال</dt>
-                                    <dd>{formatCompletionDuration(a.learning?.completionDurationSeconds)}</dd>
-                                  </div>
+                                  {a.learning?.finishedLearningAt ? (
+                                    <div className="oh-admin-courses__learning-duration-row">
+                                      <dt>انتهاء التعلّم</dt>
+                                      <dd>{formatLearningTimestamp(a.learning.finishedLearningAt)}</dd>
+                                    </div>
+                                  ) : null}
+                                  {a.learning?.canShowCompletionDuration ? (
+                                    <div className="oh-admin-courses__learning-duration-row">
+                                      <dt>مدة الإكمال</dt>
+                                      <dd>{formatCompletionDuration(a.learning?.completionDurationSeconds)}</dd>
+                                    </div>
+                                  ) : null}
                                 </dl>
                                 {a.examFinalGrade != null ? (
                                   <div className="oh-admin-courses__exam-grade-block">

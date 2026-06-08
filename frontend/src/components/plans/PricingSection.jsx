@@ -1,4 +1,5 @@
 import PlanCard from "./PlanCard";
+import PublicPageHeader from "../layout/PublicPageHeader";
 import { PlanCardsRowSkeleton } from "../ui/Skeleton";
 import "../../styles/plansPage.css";
 
@@ -23,14 +24,7 @@ const PricingSection = ({
 
   return (
     <section className="pricing pricing-ref-shell" aria-label="خطط الاشتراك">
-      <header className="pricing__header pricing-ref-hero">
-        <h1 className="pricing__title pricing-ref-hero__title">باقات أوردرز هاوس للعمل الحر</h1>
-        <div className="pricing-ref-hero__divider" aria-hidden>
-          <span className="pricing-ref-hero__divider-line" />
-          <span className="pricing-ref-hero__divider-diamond" />
-          <span className="pricing-ref-hero__divider-line" />
-        </div>
-      </header>
+      <PublicPageHeader title="باقات أوردرز هاوس للعمل الحر" />
 
       {loading ? (
         <PlanCardsRowSkeleton count={3} />

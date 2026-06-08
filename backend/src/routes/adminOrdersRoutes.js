@@ -1,7 +1,7 @@
 const express = require("express");
 const adminOrdersController = require("../controllers/adminOrdersController");
 const validateRequest = require("../middleware/validateRequest");
-const { requireAuth, requireAnyRole } = require("../middleware/rbacMiddleware");
+const { requireAuth, requireAnyRole, requirePermission } = require("../middleware/rbacMiddleware");
 const { uploadOrderFiles, handleOrderUploadErrors, enforceOrderUploadTotalSize } = require("../middleware/ordersUploadMiddleware");
 const {
   listOrdersValidators,
@@ -20,17 +20,22 @@ const router = express.Router();
 // admin + super_admin only
 router.use(requireAuth, requireAnyRole(["super_admin", "admin"]));
 
-router.get("/orders", listOrdersValidators, validateRequest, adminOrdersController.listInternalOrders);
-router.get("/orders/:id", orderIdParam, validateRequest, adminOrdersController.getInternalOrder);
-router.get("/freelancers", adminFreelancersSearchValidators, validateRequest, adminOrdersController.searchFreelancers);
+const ordersPerm = requirePermission("dashboard.admin.orders");
+const createOrderPerm = requirePermission("dashboard.admin.create_order");
+
+router.get("/orders", ordersPerm, listOrdersValidators, validateRequest, adminOrdersController.listInternalOrders);
+router.get("/orders/:id", ordersPerm, orderIdParam, validateRequest, adminOrdersController.getInternalOrder);
+router.get("/freelancers", ordersPerm, adminFreelancersSearchValidators, validateRequest, adminOrdersController.searchFreelancers);
 router.get(
   "/freelancers/:id/registration",
+  ordersPerm,
   freelancerUserIdParam,
   validateRequest,
   adminOrdersController.getFreelancerRegistrationProfile,
 );
 router.post(
   "/orders",
+  createOrderPerm,
   uploadOrderFiles,
   handleOrderUploadErrors,
   enforceOrderUploadTotalSize,
@@ -39,31 +44,35 @@ router.post(
   adminOrdersController.createInternalOrder,
 );
 
-router.patch("/orders/:id/activate", orderIdParam, validateRequest, adminOrdersController.activateArchivedOrder);
+router.patch("/orders/:id/activate", ordersPerm, orderIdParam, validateRequest, adminOrdersController.activateArchivedOrder);
 router.get(
   "/orders/:id/bids",
+  ordersPerm,
   orderIdParam,
   validateRequest,
   adminOrdersController.listInternalOrderBids,
 );
 router.post(
   "/orders/:id/bids/:bidId/approve",
+  ordersPerm,
   orderIdParam,
   ...clientOrderBidIdParamValidators,
   validateRequest,
   adminOrdersController.approveInternalPricedBid,
 );
-router.get("/orders/:id/claims", orderIdParam, validateRequest, adminOrdersController.listOrderClaims);
+router.get("/orders/:id/claims", ordersPerm, orderIdParam, validateRequest, adminOrdersController.listOrderClaims);
 router.patch(
   "/orders/:id/accept",
+  ordersPerm,
   orderIdParam,
   ...clientOrderClaimIdBodyValidators,
   validateRequest,
   adminOrdersController.acceptTakenOrder,
 );
-router.post("/orders/:id/delivery/approve", orderIdParam, validateRequest, adminOrdersController.approveInternalDelivery);
+router.post("/orders/:id/delivery/approve", ordersPerm, orderIdParam, validateRequest, adminOrdersController.approveInternalDelivery);
 router.post(
   "/orders/:id/delivery/revision",
+  ordersPerm,
   uploadOrderFiles,
   handleOrderUploadErrors,
   enforceOrderUploadTotalSize,
@@ -74,6 +83,7 @@ router.post(
 );
 router.get(
   "/orders/:id/files/:fileId/download",
+  ordersPerm,
   clientOrderFileDownloadParams,
   validateRequest,
   adminOrdersController.downloadInternalOrderFile,

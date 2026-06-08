@@ -19,6 +19,7 @@ const CONFIRM_VARIANT_CLASS = {
  * @param {boolean} [p.confirmFirst] — render primary confirm before cancel (matches legacy flows)
  * @param {"primary"|"danger"} [p.confirmVariant]
  * @param {string} [p.layerClassName] — stacking, e.g. z-[1300] above nested modals
+ * @param {boolean} [p.confirmBusy] — disables actions while async confirm is in progress
  */
 export default function ConfirmDialog({
   open,
@@ -32,6 +33,7 @@ export default function ConfirmDialog({
   confirmFirst = false,
   confirmVariant = "primary",
   layerClassName = "z-[1200]",
+  confirmBusy = false,
 }) {
   const titleId = useId();
   const cancelRef = useRef(null);
@@ -47,12 +49,12 @@ export default function ConfirmDialog({
   const confirmBtnClass = CONFIRM_VARIANT_CLASS[confirmVariant] || CONFIRM_VARIANT_CLASS.primary;
 
   const confirmBtn = (
-    <button type="button" className={confirmBtnClass} onClick={onConfirm}>
+    <button type="button" className={confirmBtnClass} onClick={onConfirm} disabled={confirmBusy}>
       {confirmLabel}
     </button>
   );
   const cancelBtn = (
-    <button ref={cancelRef} type="button" className="btn btn-secondary" onClick={onCancel}>
+    <button ref={cancelRef} type="button" className="btn btn-secondary" onClick={onCancel} disabled={confirmBusy}>
       {cancelLabel}
     </button>
   );
@@ -62,7 +64,13 @@ export default function ConfirmDialog({
       className={`dash-ui-confirm-dialog fixed inset-0 grid place-items-center p-4 ${layerClassName} ${className}`.trim()}
       role="presentation"
     >
-      <button type="button" className="dash-ui-confirm-dialog__backdrop absolute inset-0 bg-slate-900/40" aria-label="إلغاء" onClick={onCancel} />
+      <button
+        type="button"
+        className="dash-ui-confirm-dialog__backdrop absolute inset-0 bg-slate-900/40"
+        aria-label="إلغاء"
+        onClick={confirmBusy ? undefined : onCancel}
+        disabled={confirmBusy}
+      />
       <div
         className="dash-ui-confirm-dialog__panel relative z-[1] w-full max-w-[420px] rounded-2xl border border-slate-300/25 bg-white px-[18px] pb-4 pt-[18px] text-right shadow-[0_20px_44px_rgba(15,23,42,0.16)]"
         role="alertdialog"

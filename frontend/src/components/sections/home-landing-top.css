@@ -46,9 +46,19 @@
   overflow: hidden;
 }
 
-.home-public-layout > * {
+.home-public-layout > *:not(.public-nav-mobile-layer) {
   position: relative;
   z-index: 1;
+}
+
+.home-public-layout > .public-nav-header {
+  z-index: var(--public-nav-z, 500);
+}
+
+.home-public-layout > .public-nav-mobile-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--public-nav-layer-z, 600);
 }
 
 .home-public-layout .home-page,
@@ -261,13 +271,18 @@
     --hero-ad-lane-max: 100%;
     max-width: 100%;
     padding-inline: 1rem;
-    margin-top: clamp(3.5rem, 9.5vw, 4.5rem);
-    padding-top: clamp(0.45rem, 1.35vw, 0.8rem);
+    margin-top: clamp(1rem, 3.5vw, 1.35rem);
+    padding-top: clamp(0.25rem, 0.8vw, 0.4rem);
   }
 
   .home-hero--marketing.home-hero--bg-image .home-hero__ads,
   .home-hero--marketing.home-hero--bg-image .hero-inline-ads {
-    margin-top: clamp(3.65rem, 10vw, 4.85rem);
+    margin-top: clamp(0.875rem, 3vw, 1.15rem);
+  }
+
+  .home-hero--marketing .home-hero__ads.hero-inline-ads::before,
+  .home-hero--marketing .hero-inline-ads.home-hero__ads::before {
+    margin-bottom: clamp(0.45rem, 1.5vw, 0.65rem);
   }
 
   .home-hero__ads .home-promo-offers--hero .home-promo-offers__grid,
@@ -288,6 +303,29 @@
 
   .home-hero__ads .home-promo-offers__carousel-stage {
     padding-inline: 0;
+  }
+}
+
+/* Hero → categories handoff on mobile */
+@media (max-width: 768px) {
+  .home-public-layout .home-top-section {
+    margin-bottom: 0;
+  }
+
+  section[aria-labelledby="home-categories-heading"] {
+    margin-top: 0.25rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.75rem;
+  }
+
+  section[aria-labelledby="home-categories-heading"] .home-categories-intro__title {
+    padding-top: 0.5rem;
+    padding-bottom: 0.35rem;
+  }
+
+  section[aria-labelledby="home-categories-heading"] .home-categories-decor {
+    height: 5.25rem;
+    margin-top: 0;
   }
 }
 

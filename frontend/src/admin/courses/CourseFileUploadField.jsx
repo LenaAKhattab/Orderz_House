@@ -23,6 +23,8 @@ export default function CourseFileUploadField({
   pickButtonLabel = "اختيار ملف",
   courseId = null,
   fileKind = null,
+  onRemove = null,
+  showUploadedStatus = false,
 }) {
   const inputId = useId();
   const inputRef = useRef(null);
@@ -46,7 +48,7 @@ export default function CourseFileUploadField({
 
   return (
     <div className="oh-course-upload-field">
-      <span className="oh-admin-courses__field-label">{label}</span>
+      {label ? <span className="oh-admin-courses__field-label">{label}</span> : null}
 
       <CourseCurrentFileCard
         fileUrl={fileUrl}
@@ -54,9 +56,10 @@ export default function CourseFileUploadField({
         pendingFile={displayPending}
         uploading={uploading}
         onReplace={canPick ? triggerPick : null}
+        onRemove={onRemove}
         courseId={courseId}
         fileKind={fileKind}
-        hideStorageUrl={allowPickBeforeSave && !isEdit}
+        showUploadedStatus={showUploadedStatus}
       />
 
       {canPick ? (

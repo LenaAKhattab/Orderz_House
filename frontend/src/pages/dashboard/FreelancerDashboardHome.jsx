@@ -14,7 +14,15 @@ import {
 import { useToast } from "../../components/ui/toastContext";
 import "../../styles/dashboardHub.css";
 import { getFreelancerDashboardSummaryRequest } from "../../services/api";
-import { computeActiveWorkloadCount, formatMoneyJod } from "../../utils/freelancerDashboardData";
+import {
+  buildCoursesActivationBannerActions,
+  computeActiveWorkloadCount,
+  deriveFreelancerCoursesFocus,
+  formatMoneyJod,
+  insightsForWelcomeTip,
+  prioritizeCoursesInsights,
+} from "../../utils/freelancerDashboardData";
+import { setFreelancerCoursesFocusFromSummary } from "../../utils/freelancerCoursesFocusCache";
 import { trackEvent } from "../../services/analytics";
 
 const TRUST_LEVEL_NUM = {
@@ -125,6 +133,7 @@ export default function FreelancerDashboardHome({ user }) {
       const res = await getFreelancerDashboardSummaryRequest();
       const data = res?.data ?? res;
       setSummary(data || null);
+      setFreelancerCoursesFocusFromSummary(data || null);
     } catch (e) {
       setSummary(null);
       const msg = e?.response?.data?.message || e?.message || "تعذر تحميل لوحة التحكم.";
@@ -195,7 +204,22 @@ export default function FreelancerDashboardHome({ user }) {
     [reputation, earningsSummary, earningsLoadState, activeWorkload, reviews],
   );
 
-  const tip = useMemo(() => buildWelcomeTip(insights), [insights]);
+  const coursesFocus = useMemo(() => deriveFreelancerCoursesFocus(summary), [summary]);
+
+  const tip = useMemo(
+    () => buildWelcomeTip(insightsForWelcomeTip(insights, coursesFocus.show)),
+    [insights, coursesFocus.show],
+  );
+
+  const displayPendingActions = useMemo(
+    () => buildCoursesActivationBannerActions(summary, pendingActions),
+    [summary, pendingActions],
+  );
+
+  const displayInsights = useMemo(
+    () => prioritizeCoursesInsights(insights, coursesFocus.show),
+    [insights, coursesFocus.show],
+  );
 
   if (loading) {
     return (
@@ -223,8 +247,8 @@ export default function FreelancerDashboardHome({ user }) {
   return (
     <DashboardHubPage>
       <DashboardWelcomeHero welcomeName={welcomeName} metrics={metrics} tip={tip} />
-      <DashboardActionBanner actions={pendingActions} />
-      {insights.length > 0 ? <DashboardInsightsSection insights={insights} /> : null}
+      <DashboardActionBanner actions={displayPendingActions} />
+      {displayInsights.length > 0 ? <DashboardInsightsSection insights={displayInsights} /> : null}
     </DashboardHubPage>
   );
 }

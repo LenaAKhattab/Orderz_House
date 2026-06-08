@@ -23,10 +23,11 @@ export default function CourseCurrentFileCard({
   pendingFile = null,
   uploading = false,
   onReplace,
+  onRemove,
   className = "",
   courseId = null,
   fileKind = null,
-  hideStorageUrl = false,
+  showUploadedStatus = false,
 }) {
   const toast = useToast();
   const [fileAction, setFileAction] = useState(null);
@@ -96,13 +97,8 @@ export default function CourseCurrentFileCard({
             </span>
             <div className="oh-course-asset__copy">
               <span className="oh-course-asset__filename">{savedName}</span>
-              {!hideStorageUrl ? (
-                <details className="oh-course-asset__url-details">
-                  <summary>عرض رابط التخزين</summary>
-                  <span className="oh-course-asset__url" dir="ltr">
-                    {trimmed}
-                  </span>
-                </details>
+              {showUploadedStatus ? (
+                <span className="oh-course-asset__status">الملف الحالي مرفوع</span>
               ) : null}
             </div>
           </div>
@@ -131,6 +127,11 @@ export default function CourseCurrentFileCard({
             {onReplace ? (
               <button type="button" className="btn btn-secondary oh-course-asset__btn" onClick={onReplace} disabled={uploading}>
                 استبدال الملف
+              </button>
+            ) : null}
+            {onRemove ? (
+              <button type="button" className="btn btn-danger oh-course-asset__btn" onClick={onRemove} disabled={uploading}>
+                إزالة الملف
               </button>
             ) : null}
           </div>

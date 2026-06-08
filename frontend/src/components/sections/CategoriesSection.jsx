@@ -199,14 +199,14 @@ const CategoriesSection = ({ items = [], loading = false, error = false }) => {
             </div>
           </aside>
 
-          <div className="min-h-0 min-w-0 rounded-2xl border border-gray-200/90 bg-white p-2.5 sm:p-4 lg:rounded-[22px] lg:p-5">
+          <div className="home-categories-panel min-h-0 min-w-0 rounded-2xl border border-gray-200/90 bg-white p-2.5 sm:p-4 lg:rounded-[22px] lg:p-5">
             {error && !loading && items.length === 0 ? (
               <p className="home-categories-fetch-fallback m-0 px-2 pb-4 text-center text-sm leading-relaxed text-slate-500" role="status">
                 تعذّر تحميل التصنيفات. نعرض أدناه تصنيفات افتراضية يمكنك استكشافها.
               </p>
             ) : null}
             <div
-              className="m-0 grid min-w-0 list-none items-stretch gap-5 sm:gap-6 md:gap-7"
+              className="home-categories-cards m-0 grid min-w-0 list-none items-stretch gap-5 sm:gap-6 md:gap-7"
               style={{ gridTemplateColumns: cardGridTemplate }}
               role="list"
               aria-busy={loading || undefined}
@@ -219,14 +219,15 @@ const CategoriesSection = ({ items = [], loading = false, error = false }) => {
                 : cards.map((card, index) => {
                 const t = THEME_CLASSES[card.theme] || THEME_CLASSES.sky;
                 return (
-                  <article
+                  <Link
                     key={card.key}
-                    className="home-categories-card group flex min-w-0 max-w-full flex-col rounded-[24px] border border-slate-200/70 bg-white p-5 shadow-[0_10px_40px_-14px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_22px_50px_-18px_rgba(15,23,42,0.16)]"
+                    to="/services"
+                    className="home-categories-card group flex min-w-0 max-w-full flex-col rounded-[24px] border border-slate-200/70 bg-white p-5 text-inherit no-underline shadow-[0_10px_40px_-14px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_22px_50px_-18px_rgba(15,23,42,0.16)]"
                     role="listitem"
                     style={{ animationDelay: `${index * 60}ms` }}
                   >
-                    <div className="relative w-full shrink-0">
-                      <div className="aspect-[4/3] overflow-hidden rounded-2xl ring-1 ring-slate-200/35 sm:aspect-[5/3]">
+                    <div className="home-categories-card__media relative w-full shrink-0">
+                      <div className="home-categories-card__image aspect-[4/3] overflow-hidden rounded-2xl ring-1 ring-slate-200/35 sm:aspect-[5/3]">
                         <img
                           src={card.imgSrc || heroImage}
                           alt={card.imgAlt}
@@ -240,33 +241,32 @@ const CategoriesSection = ({ items = [], loading = false, error = false }) => {
                         />
                       </div>
                       <div
-                        className={`absolute bottom-0 left-1/2 z-10 flex h-[52px] w-[52px] -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full border-[5px] border-white shadow-[0_6px_20px_rgba(15,23,42,0.12)] ${t.chip}`}
+                        className={`home-categories-card__chip absolute bottom-0 left-1/2 z-10 flex h-[52px] w-[52px] -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full border-[5px] border-white shadow-[0_6px_20px_rgba(15,23,42,0.12)] ${t.chip}`}
                         aria-hidden
                       >
                         <CategoryIcon slug={String(card.slug || "").toLowerCase()} theme={card.theme} />
                       </div>
                     </div>
 
-                    <div className="flex flex-1 flex-col items-center gap-2 px-1 pb-1 pt-9 text-center sm:gap-2.5 sm:px-2 sm:pt-10">
-                      <h3 className="m-0 text-[clamp(1rem,2.2vw,1.22rem)] font-extrabold leading-snug tracking-tight text-slate-900">
+                    <div className="home-categories-card__body flex flex-1 flex-col items-center gap-2 px-1 pb-1 pt-9 text-center sm:gap-2.5 sm:px-2 sm:pt-10">
+                      <h3 className="home-categories-card__title m-0 text-[clamp(1rem,2.2vw,1.22rem)] font-extrabold leading-snug tracking-tight text-slate-900">
                         {card.title}
                       </h3>
-                      <p className="m-0 max-w-[30ch] text-[0.9rem] leading-relaxed text-slate-500 sm:text-[0.95rem]">
+                      <p className="home-categories-card__desc m-0 max-w-[30ch] text-[0.9rem] leading-relaxed text-slate-500 sm:text-[0.95rem]">
                         {card.text}
                       </p>
-                      <div className="mt-3 flex w-full flex-1 flex-col justify-end sm:mt-4">
-                        <Link
-                          to="/services"
-                          className={`inline-flex items-center justify-center gap-2 self-center rounded-full px-6 py-2.5 text-sm font-extrabold no-underline transition-colors ${t.btn}`}
+                      <div className="home-categories-card__actions mt-3 flex w-full flex-1 flex-col justify-end sm:mt-4">
+                        <span
+                          className={`home-categories-card__btn inline-flex items-center justify-center gap-2 self-center rounded-full px-6 py-2.5 text-sm font-extrabold transition-colors ${t.btn}`}
                         >
                           <span>استكشف الخدمات</span>
                           <span className="text-lg font-black leading-none" aria-hidden>
                             ←
                           </span>
-                        </Link>
+                        </span>
                       </div>
                     </div>
-                  </article>
+                  </Link>
                 );
               })}
             </div>

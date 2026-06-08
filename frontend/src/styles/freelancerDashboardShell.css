@@ -365,6 +365,16 @@
   box-shadow: 0 2px 8px rgba(124, 58, 237, 0.28);
 }
 
+.fdl-nav-badge--courses {
+  min-width: auto;
+  height: auto;
+  min-height: 18px;
+  padding: 2px 6px;
+  font-size: 0.58rem;
+  background: linear-gradient(145deg, #3852b4, #2f4294);
+  box-shadow: 0 2px 8px rgba(56, 82, 180, 0.24);
+}
+
 .fdl-workspace {
   display: flex;
   flex-direction: column;

@@ -2910,3 +2910,216 @@
   font-size: 0.78rem;
   color: var(--fcd-muted);
 }
+
+.fcd-exam-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.fcd-exam-step {
+  border-radius: var(--fcd-radius-md);
+  border: 1px solid var(--fcd-line);
+  background: rgba(255, 255, 255, 0.92);
+  overflow: hidden;
+}
+
+.fcd-exam-step--blocked {
+  opacity: 0.72;
+}
+
+.fcd-exam-step__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(255, 255, 255, 0.85));
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.fcd-exam-step--done .fcd-exam-step__head {
+  background: linear-gradient(180deg, rgba(236, 253, 245, 0.9), rgba(255, 255, 255, 0.9));
+}
+
+.fcd-exam-step--available .fcd-exam-step__head {
+  background: linear-gradient(180deg, rgba(239, 246, 255, 0.95), rgba(255, 255, 255, 0.9));
+  border-bottom-color: rgba(147, 197, 253, 0.55);
+}
+
+.fcd-exam-step--available .fcd-exam-step__status {
+  color: #1d4ed8;
+  font-weight: 800;
+}
+
+.fcd-exam-step__num {
+  flex: 0 0 auto;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #1e3a8a;
+  background: #eff6ff;
+  border: 1px solid rgba(147, 197, 253, 0.8);
+}
+
+.fcd-exam-step__copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.fcd-exam-step__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--fcd-text);
+  line-height: 1.45;
+}
+
+.fcd-exam-step__status {
+  display: inline-block;
+  margin-top: 0.2rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--fcd-muted);
+}
+
+.fcd-exam-step--done .fcd-exam-step__status {
+  color: #047857;
+}
+
+.fcd-exam-step__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.fcd-exam-step__hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #b45309;
+}
+
+.fcd-exam-step__file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.fcd-final__marks-grid--rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.fcd-final__mark-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.fcd-final__mark-row--error {
+  border-color: #fca5a5;
+}
+
+.fcd-final__mark-row-label {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--fcd-navy);
+  line-height: 1.45;
+}
+
+.fcd-final__mark-row-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: nowrap;
+  max-width: 100%;
+}
+
+.fcd-final__mark-row-prefix,
+.fcd-final__mark-row-max {
+  font-size: 0.8rem;
+  color: var(--fcd-muted);
+  font-weight: 600;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.fcd-final__mark-input--compact {
+  width: 7.5rem;
+  min-width: 6.875rem;
+  max-width: 8.75rem;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 480px) {
+  .fcd-final__mark-row-input-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .fcd-final__mark-input--compact {
+    flex: 1 1 6.25rem;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+  }
+}
+
+.fcd-final__completed-work-file {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(167, 243, 208, 0.9);
+  background: rgba(236, 253, 245, 0.65);
+}
+
+.fcd-final__completed-work-file-icon {
+  color: #059669;
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+}
+
+.fcd-final__completed-work-file-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.fcd-final__completed-work-file-copy strong {
+  font-size: 0.88rem;
+  color: var(--fcd-navy);
+}
+
+.fcd-final__completed-work-file-copy span {
+  font-size: 0.8rem;
+  color: var(--fcd-muted);
+  word-break: break-word;
+}
+
+.fcd-final__completed-work-file-ok {
+  color: #047857 !important;
+  font-weight: 700;
+}
+
+.fcd-final__completed-work-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  margin-top: 0.15rem;
+}

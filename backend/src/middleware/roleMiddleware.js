@@ -1,4 +1,5 @@
 const { resolvedRoleNames } = require("./rbacMiddleware");
+const { logAccessDenied } = require("../services/securityAuditService");
 
 /**
  * Same role union as requireAnyRole: RBAC rows + primary + legacy DB + JWT fallback.
@@ -18,6 +19,7 @@ const authorizeRoles = (...roles) => {
     const hasAllowedRole = names.some((r) => allowed.includes(r));
 
     if (!hasAllowedRole) {
+      logAccessDenied(req, { type: "role", requiredRoles: allowed });
       return res.status(403).json({
         success: false,
         message: "ليس لديك صلاحية لهذا الإجراء.",

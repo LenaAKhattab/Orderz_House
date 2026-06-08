@@ -770,6 +770,27 @@ export const createSuperAdminFreelancerPaymentRequest = async (payload) => {
   return data;
 };
 
+// Super Admin — admin account management
+export const listSuperAdminAdminsRequest = async () => {
+  const { data } = await api.get("/super-admin/admins");
+  return data;
+};
+
+export const listSuperAdminAdminPermissionsRequest = async () => {
+  const { data } = await api.get("/super-admin/admin-permissions");
+  return data;
+};
+
+export const createSuperAdminAdminRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/admins", payload);
+  return data;
+};
+
+export const updateSuperAdminAdminRequest = async (id, payload) => {
+  const { data } = await api.patch(`/super-admin/admins/${id}`, payload);
+  return data;
+};
+
 export const getSuperadminVisitorsAnalyticsRequest = async (params = {}, options = {}) => {
   const { signal, ...axiosOptions } = options;
   const { data } = await api.get("/superadmin/analytics/visitors", {
@@ -1156,6 +1177,13 @@ export const freelancerMarkLessonCompleteRequest = async (courseId, lessonId) =>
   return data;
 };
 
+export const freelancerUploadCompletedExamFileRequest = async (courseId, file) => {
+  const fd = new FormData();
+  fd.append("completedExamFile", file);
+  const { data } = await api.post(`/freelancer/courses/${courseId}/completed-exam-file`, fd, { timeout: 120000 });
+  return data;
+};
+
 export const freelancerSubmitCourseCompletionRequest = async (courseId, payload = {}) => {
   const file = payload?.auditResponseFile;
   const marks = payload?.questionMarks;
@@ -1211,6 +1239,14 @@ export async function downloadFreelancerCourseFile(courseId, fileKind, fallbackN
     filenameFromContentDisposition(response.headers?.["content-disposition"]) || fallbackName || "course-file.pdf";
   const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: "application/pdf" });
   triggerBlobDownload(blob, name);
+}
+
+export async function viewFreelancerCompletedExamFile(courseId, fallbackName, previewWindow = null) {
+  return viewFreelancerCourseFile(courseId, "completed-exam", fallbackName, previewWindow);
+}
+
+export async function downloadFreelancerCompletedExamFile(courseId, fallbackName) {
+  return downloadFreelancerCourseFile(courseId, "completed-exam", fallbackName);
 }
 
 export async function viewAdminCourseFile(courseId, fileKind, fallbackName, previewWindow = null) {

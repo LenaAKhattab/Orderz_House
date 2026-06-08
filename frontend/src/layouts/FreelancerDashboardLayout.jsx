@@ -36,12 +36,17 @@ import FreelancerNavIcon from "../components/layout/FreelancerNavIcon";
 import NotificationsBell from "../components/notifications/NotificationsBell";
 
 import useUnreadNotificationsCount from "../hooks/useUnreadNotificationsCount";
+import {
+  ensureFreelancerCoursesFocus,
+  getFreelancerCoursesFocusCached,
+  subscribeFreelancerCoursesFocus,
+} from "../utils/freelancerCoursesFocusCache";
 
 import "../styles/freelancerDashboardShell.css";
 
 import "../styles/dashboardHub.css";
 
-
+const FREELANCER_COURSES_PATH = "/dashboard/freelancer/courses";
 
 function fullNameAr(user) {
 
@@ -198,8 +203,18 @@ export default function FreelancerDashboardLayout() {
   const userMenuRef = useRef(null);
 
   const { count: unreadCount } = useUnreadNotificationsCount(Boolean(user));
+  const [coursesNavBadge, setCoursesNavBadge] = useState(
+    () => getFreelancerCoursesFocusCached()?.sidebarBadge || null,
+  );
 
-
+  useEffect(() => {
+    if (isClient) return undefined;
+    const sync = (focus) => setCoursesNavBadge(focus?.sidebarBadge || null);
+    const unsub = subscribeFreelancerCoursesFocus(sync);
+    sync(getFreelancerCoursesFocusCached());
+    void ensureFreelancerCoursesFocus().then(sync);
+    return unsub;
+  }, [isClient]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -434,7 +449,11 @@ export default function FreelancerDashboardLayout() {
 
                       <span className="fdl-navlink__label">{item.label}</span>
 
-                      {badge ? <span className="fdl-nav-badge">{badge}</span> : null}
+                      {!isClient && item.to === FREELANCER_COURSES_PATH && coursesNavBadge ? (
+                        <span className="fdl-nav-badge fdl-nav-badge--courses">{coursesNavBadge}</span>
+                      ) : badge ? (
+                        <span className="fdl-nav-badge">{badge}</span>
+                      ) : null}
 
                     </NavLink>
 

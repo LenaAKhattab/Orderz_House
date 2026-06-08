@@ -10,7 +10,14 @@ import Home from "./pages/Home";
 
 const MainLayout = lazy(() => import("./layouts/MainLayout"));
 import { ClientCreateOrderModalProvider } from "./context/ClientCreateOrderModalContext.jsx";
-import { DashboardRedirect, GuestOnly, HomeForGuestsOnly, RequireAuth, RequireRole } from "./components/auth/AuthGuards";
+import {
+  DashboardRedirect,
+  GuestOnly,
+  RequireAuth,
+  RequirePermission,
+  RequireRole,
+} from "./components/auth/AuthGuards";
+import { ADMIN_PAGE_PERMISSIONS } from "./constants/dashboardPermissions";
 import {
   About,
   Services,
@@ -28,12 +35,12 @@ import {
   SuperAdminSubscriptionsPage,
   SuperAdminFinancialClaimsPage,
   SuperAdminSettingsPage,
+  SuperAdminAdminsPage,
   AdminOrdersPage,
   AdminCreateOrderPage,
   AdminSubscriptionsActivationPage,
   AdminCoursesPage,
   AdminAdsPage,
-  AdminSettingsPage,
   TrainingOrdersAdminShell,
   TrainingOrdersIndexRedirect,
   TrainingOrdersSettingsPage,
@@ -141,14 +148,7 @@ function App() {
           <ToastGuestPoolBridge />
           <Routes>
             <Route element={<PublicLayout />}>
-              <Route
-                path="/"
-                element={
-                  <HomeForGuestsOnly>
-                    <Home />
-                  </HomeForGuestsOnly>
-                }
-              />
+              <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/services" element={<Services />} />
               <Route path="/orders" element={<Orders />} />
@@ -277,6 +277,14 @@ function App() {
                 />
 
                 <Route
+                  path="/dashboard/super-admin/admins"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminAdminsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/super-admin/training-orders"
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
@@ -308,18 +316,12 @@ function App() {
                   }
                 />
                 <Route
-                  path="/dashboard/admin/settings"
-                  element={
-                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
-                      <AdminSettingsPage />
-                    </RequireRole>
-                  }
-                />
-                <Route
                   path="/dashboard/admin/orders"
                   element={
                     <RequireRole allowedRoles={[ROLE.ADMIN]}>
-                      <AdminOrdersPage />
+                      <RequirePermission permission={ADMIN_PAGE_PERMISSIONS.orders}>
+                        <AdminOrdersPage />
+                      </RequirePermission>
                     </RequireRole>
                   }
                 />
@@ -327,7 +329,9 @@ function App() {
                   path="/dashboard/admin/orders/create"
                   element={
                     <RequireRole allowedRoles={[ROLE.ADMIN]}>
-                      <AdminCreateOrderPage />
+                      <RequirePermission permission={ADMIN_PAGE_PERMISSIONS.createOrder}>
+                        <AdminCreateOrderPage />
+                      </RequirePermission>
                     </RequireRole>
                   }
                 />
@@ -335,7 +339,9 @@ function App() {
                   path="/dashboard/admin/subscriptions"
                   element={
                     <RequireRole allowedRoles={[ROLE.ADMIN]}>
-                      <AdminSubscriptionsActivationPage />
+                      <RequirePermission permission={ADMIN_PAGE_PERMISSIONS.subscriptionActivation}>
+                        <AdminSubscriptionsActivationPage />
+                      </RequirePermission>
                     </RequireRole>
                   }
                 />
@@ -343,7 +349,9 @@ function App() {
                   path="/dashboard/admin/courses"
                   element={
                     <RequireRole allowedRoles={[ROLE.ADMIN]}>
-                      <AdminCoursesPage />
+                      <RequirePermission permission={ADMIN_PAGE_PERMISSIONS.courses}>
+                        <AdminCoursesPage />
+                      </RequirePermission>
                     </RequireRole>
                   }
                 />
@@ -351,7 +359,9 @@ function App() {
                   path="/dashboard/admin/ads"
                   element={
                     <RequireRole allowedRoles={[ROLE.ADMIN]}>
-                      <AdminAdsPage />
+                      <RequirePermission permission={ADMIN_PAGE_PERMISSIONS.ads}>
+                        <AdminAdsPage />
+                      </RequirePermission>
                     </RequireRole>
                   }
                 />

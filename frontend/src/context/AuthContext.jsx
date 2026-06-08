@@ -11,6 +11,7 @@ import {
   verifyRegisterOtpRequest,
 } from "../services/api";
 import { getDashboardPath } from "../constants/authRoutes";
+import { userHasPermission, userHasAnyPermission } from "../constants/dashboardPermissions";
 import { AuthContext } from "./authContext";
 import { clearAnalyticsUser, trackEvent } from "../services/analytics";
 
@@ -144,6 +145,9 @@ export function AuthProvider({ children }) {
         const role = user?.primaryRole || user?.role;
         return user && role ? getDashboardPath(role) : "/login";
       },
+      hasPermission: (permissionKey) => userHasPermission(user, permissionKey),
+      hasAnyPermission: (permissionKeys) => userHasAnyPermission(user, permissionKeys),
+      permissions: user?.permissions || [],
     }),
     [user, isAuthenticated, loading, login, register, completeRegisterWithOtp, logout, refreshUser],
   );

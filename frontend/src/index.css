@@ -31,6 +31,11 @@
   --radius: 12px;
   --ease-premium: cubic-bezier(0.33, 1, 0.68, 1);
   --nav-morph-duration: 0.7s;
+  --public-nav-z: 500;
+  --public-nav-layer-z: 600;
+  --public-nav-bar-z: 502;
+  --public-nav-backdrop-z: 1;
+  --public-nav-drawer-z: 2;
   /* Dashboard: ألوان مشتقة من هوية المشروع (أزرق داكن + فيروزي + لمسة برتقال من شارات الواجهة) */
   --dash-hero-a: #1a263f;
   --dash-hero-b: #2f3b65;

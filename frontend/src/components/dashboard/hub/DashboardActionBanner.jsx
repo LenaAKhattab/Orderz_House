@@ -43,7 +43,7 @@ export default function DashboardActionBanner({ actions = [] }) {
 
   return (
     <BannerShell
-      variant="alert"
+      variant={top.isActivationBanner ? "activation" : "alert"}
       title={top.title}
       subtitle={
         <>
@@ -52,10 +52,22 @@ export default function DashboardActionBanner({ actions = [] }) {
         </>
       }
     >
-      {top.to ? (
-        <Link to={top.to} className="fdash-banner__cta">
-          {top.cta || "متابعة"}
-        </Link>
+      {top.to || top.secondaryTo ? (
+        <div className="fdash-banner__actions">
+          {top.to ? (
+            <Link
+              to={top.to}
+              className={`fdash-banner__cta${top.isActivationBanner ? " fdash-banner__cta--primary" : ""}`}
+            >
+              {top.cta || "متابعة"}
+            </Link>
+          ) : null}
+          {top.secondaryTo ? (
+            <Link to={top.secondaryTo} className="fdash-banner__cta fdash-banner__cta--secondary">
+              {top.secondaryCta || "عرض الدورة"}
+            </Link>
+          ) : null}
+        </div>
       ) : null}
     </BannerShell>
   );

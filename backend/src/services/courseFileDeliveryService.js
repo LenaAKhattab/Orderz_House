@@ -9,7 +9,7 @@ const {
 
 function normalizeFileKind(fileKind) {
   const k = String(fileKind || "").toLowerCase();
-  if (k === "test" || k === "prompt" || k === "model-answer") return k;
+  if (k === "test" || k === "prompt" || k === "model-answer" || k === "completed-exam") return k;
   const err = new Error("نوع الملف غير صالح.");
   err.statusCode = 400;
   throw err;
@@ -100,7 +100,32 @@ async function streamCourseFileForFreelancer({ freelancerUserId, courseId, fileK
       err.statusCode = 403;
       throw err;
     }
-    const sourceUrl = resolveStoredFileUrl(course, kind);
+
+    let sourceUrl;
+    if (kind === "completed-exam") {
+      const { rows: assignRows } = await client.query(
+        `SELECT completed_exam_file_url
+         FROM course_assignments
+         WHERE course_id = $1 AND freelancer_id = $2
+         LIMIT 1`,
+        [cid, uid],
+      );
+      const assignment = assignRows[0];
+      if (!assignment) {
+        const err = new Error("لا يوجد ملف منجز لهذه الدورة.");
+        err.statusCode = 404;
+        throw err;
+      }
+      sourceUrl = String(assignment.completed_exam_file_url || "").trim();
+      if (!sourceUrl) {
+        const err = new Error("الملف المنجز غير متوفر.");
+        err.statusCode = 404;
+        throw err;
+      }
+    } else {
+      sourceUrl = resolveStoredFileUrl(course, kind);
+    }
+
     console.info("[courses] stream course file (freelancer)", {
       courseId: cid,
       fileKind: kind,
@@ -118,6 +143,11 @@ async function streamCourseFileForFreelancer({ freelancerUserId, courseId, fileK
 
 async function streamCourseFileForAdmin({ actorUserId, courseId, fileKind, download, res }) {
   const kind = normalizeFileKind(fileKind);
+  if (kind === "completed-exam") {
+    const err = new Error("نوع الملف غير صالح.");
+    err.statusCode = 400;
+    throw err;
+  }
   const cid = Number(courseId);
   const client = await pool.connect();
   try {

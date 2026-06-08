@@ -3,10 +3,14 @@ const { importYoutubeSource } = require("../utils/youtubeImport");
 const { assessCoursePublishReadiness } = require("../utils/coursePublishReadiness");
 const {
   normalizeQuestionCount,
+  normalizeExamQuestionsPayload,
+  resolveExamQuestionsForCourse,
+  effectiveQuestionCount,
   validateAndComputeExamMarks,
   mapAssignmentGrading,
+  mapExamQuestionsForApi,
 } = require("../utils/courseExamGrading");
-const { deriveLearningTimeline } = require("../utils/courseLearningDuration");
+const { deriveAssignmentLearning } = require("../utils/courseLearningDuration");
 const subscriptionsService = require("./subscriptionsService");
 const notificationEventsService = require("./notificationEventsService");
 const { uploadCourseDocumentBuffer, destroyByPublicId } = require("./cloudinaryUploadService");
@@ -55,6 +59,7 @@ function applyTestingVisibilityToCourse(mapped, testingEnabled) {
     mapped.testPromptFileUrl = null;
     mapped.testModelAnswerFileUrl = null;
     mapped.testQuestionCount = null;
+    mapped.examQuestions = null;
   }
   return mapped;
 }
@@ -97,6 +102,7 @@ function mapCourse(row, { forFreelancer = false } = {}) {
     testPromptFileUrl: row.test_prompt_file_url || null,
     testModelAnswerFileUrl: row.test_model_answer_file_url || null,
     testQuestionCount: row.test_question_count != null ? Number(row.test_question_count) : null,
+    examQuestions: mapExamQuestionsForApi(row.exam_questions),
     createdBy: row.created_by ? String(row.created_by) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -229,9 +235,14 @@ async function createCourse({ actorUserId, payload }) {
     await assertAdminOrSuperAdmin(actorUserId, client);
     const sourceUrl = String(payload.youtubeSourceUrl || "").trim();
     const imported = await importYoutubeSource(sourceUrl);
+    const examQuestionsNorm = normalizeExamQuestionsPayload(payload.examQuestions, payload.testQuestionCount);
+    const questionCountForInsert =
+      examQuestionsNorm?.length > 0
+        ? examQuestionsNorm.length
+        : normalizeQuestionCount(payload.testQuestionCount);
     const { rows } = await client.query(
-      `INSERT INTO courses (title, description, cover_image, youtube_source_url, is_active, is_visible_to_all_freelancers, is_testing_enabled, test_file_url, test_prompt_file_url, test_model_answer_file_url, test_question_count, created_by, created_at, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
+      `INSERT INTO courses (title, description, cover_image, youtube_source_url, is_active, is_visible_to_all_freelancers, is_testing_enabled, test_file_url, test_prompt_file_url, test_model_answer_file_url, test_question_count, exam_questions, created_by, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,NOW(),NOW())
        RETURNING *`,
       [
         String(payload.title || "").trim() || "دورة جديدة",
@@ -244,7 +255,8 @@ async function createCourse({ actorUserId, payload }) {
         payload.testFileUrl ? String(payload.testFileUrl).trim() : null,
         payload.testPromptFileUrl ? String(payload.testPromptFileUrl).trim() : null,
         payload.testModelAnswerFileUrl ? String(payload.testModelAnswerFileUrl).trim() : null,
-        normalizeQuestionCount(payload.testQuestionCount),
+        questionCountForInsert,
+        examQuestionsNorm ? JSON.stringify(examQuestionsNorm) : null,
         Number(actorUserId),
       ],
     );
@@ -356,7 +368,14 @@ async function updateCourse({ actorUserId, courseId, patch }) {
       set("is_visible_to_all_freelancers", Boolean(patch.isVisibleToAllFreelancers));
     }
     if (patch.isTestingEnabled !== undefined) set("is_testing_enabled", Boolean(patch.isTestingEnabled));
-    if (patch.testQuestionCount !== undefined) {
+    let examQuestionsNorm = null;
+    if (patch.examQuestions !== undefined) {
+      examQuestionsNorm = normalizeExamQuestionsPayload(patch.examQuestions, patch.testQuestionCount);
+      set("exam_questions", examQuestionsNorm ? JSON.stringify(examQuestionsNorm) : null);
+    }
+    if (examQuestionsNorm?.length > 0) {
+      set("test_question_count", examQuestionsNorm.length);
+    } else if (patch.testQuestionCount !== undefined) {
       set("test_question_count", normalizeQuestionCount(patch.testQuestionCount));
     }
 
@@ -428,6 +447,21 @@ async function updateCourse({ actorUserId, courseId, patch }) {
         storedPromptFileUrl: rows[0].test_prompt_file_url || null,
         storedModelAnswerFileUrl: rows[0].test_model_answer_file_url || null,
       });
+    }
+
+    if (patch.isVisibleToAllFreelancers === true && !rows[0].is_active) {
+      const { rows: lessonRows } = await client.query(
+        `SELECT * FROM course_lessons WHERE course_id = $1 ORDER BY sort_order ASC, id ASC`,
+        [cid],
+      );
+      const readiness = assessCoursePublishReadiness(rows[0], lessonRows);
+      if (readiness.ok) {
+        const { rows: publishedRows } = await client.query(
+          `UPDATE courses SET is_active = TRUE, updated_at = NOW() WHERE id = $1 RETURNING *`,
+          [cid],
+        );
+        if (publishedRows[0]) rows[0] = publishedRows[0];
+      }
     }
 
     await client.query("COMMIT");
@@ -892,11 +926,15 @@ async function getCourseDetailsForAdmin({ actorUserId, courseId }) {
         };
         const completed = prog.completedLessons;
         const grading = mapAssignmentGrading(r);
-        const learning = deriveLearningTimeline({
+        const learning = deriveAssignmentLearning({
           completedLessons: completed,
           totalLessons,
           firstLessonCompletedAt: prog.firstLessonCompletedAt,
           lastLessonCompletedAt: prog.lastLessonCompletedAt,
+          courseCompletedAt: r.completed_at || null,
+          isTestingEnabled: Boolean(course.is_testing_enabled),
+          auditSubmittedAt: r.audit_submitted_at || null,
+          examFinalGrade: grading.examFinalGrade,
         });
         return {
           freelancerId: String(r.freelancer_id),
@@ -946,7 +984,7 @@ async function listAssignedCoursesForFreelancerDashboard({ freelancerUserId }) {
        WHERE p.course_id = c.id AND p.freelancer_id = $1
      ) lp ON TRUE
      WHERE c.is_active = TRUE
-       AND (c.is_visible_to_all_freelancers = TRUE OR a.freelancer_id IS NOT NULL)
+       AND (c.is_visible_to_all_freelancers = TRUE OR a.id IS NOT NULL)
      ORDER BY c.id DESC
      LIMIT 50`,
     [uid],
@@ -973,13 +1011,13 @@ async function listAssignedCoursesForFreelancer({ freelancerUserId }) {
   const { rows } = await pool.query(
     `SELECT DISTINCT ON (c.id) c.*,
             a.completed_at AS assignment_completed_at,
-            (a.freelancer_id IS NOT NULL) AS has_assignment_row,
+            (a.id IS NOT NULL) AS has_assignment_row,
             (SELECT COUNT(*)::int FROM course_lessons l WHERE l.course_id = c.id AND l.is_active = TRUE) AS total_lessons,
             (SELECT COUNT(*)::int FROM course_lesson_progress p WHERE p.course_id = c.id AND p.freelancer_id = $1) AS completed_lessons
      FROM courses c
      LEFT JOIN course_assignments a ON a.course_id = c.id AND a.freelancer_id = $1
      WHERE c.is_active = TRUE
-       AND (c.is_visible_to_all_freelancers = TRUE OR a.freelancer_id IS NOT NULL)
+       AND (c.is_visible_to_all_freelancers = TRUE OR a.id IS NOT NULL)
      ORDER BY c.id DESC`,
     [uid],
   );
@@ -1165,8 +1203,8 @@ async function getCourseDetailsForFreelancer({ freelancerUserId, courseId }) {
   }
 
   const { rows: assignRows } = await pool.query(
-    `SELECT audit_confirmed, audit_notes, audit_response_text, audit_response_file_url, audit_submitted_at, completed_at,
-            exam_question_marks, exam_final_grade
+    `SELECT audit_confirmed, audit_notes, audit_response_text, audit_response_file_url, completed_exam_file_url,
+            audit_submitted_at, completed_at, exam_question_marks, exam_final_grade
      FROM course_assignments
      WHERE course_id = $1 AND freelancer_id = $2
      LIMIT 1`,
@@ -1177,6 +1215,7 @@ async function getCourseDetailsForFreelancer({ freelancerUserId, courseId }) {
     audit_notes: null,
     audit_response_text: null,
     audit_response_file_url: null,
+    completed_exam_file_url: null,
     audit_submitted_at: null,
     completed_at: null,
     exam_question_marks: null,
@@ -1218,6 +1257,7 @@ async function getCourseDetailsForFreelancer({ freelancerUserId, courseId }) {
       auditNotes: assignmentRow.audit_notes || null,
       auditResponseText: assignmentRow.audit_response_text || null,
       auditResponseFileUrl: assignmentRow.audit_response_file_url || null,
+      completedExamFileUrl: assignmentRow.completed_exam_file_url || null,
       auditSubmittedAt: assignmentRow.audit_submitted_at || null,
       completedAt: assignmentRow.completed_at || null,
       examQuestionMarks: assignmentGrading.examQuestionMarks,
@@ -1342,6 +1382,96 @@ async function markLessonComplete({ freelancerUserId, courseId, lessonId }) {
   }
 }
 
+async function uploadCompletedExamFile({ freelancerUserId, courseId, file }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const uid = Number(freelancerUserId);
+    const cid = Number(courseId);
+    const { rows: courseRows } = await client.query(
+      `SELECT * FROM courses WHERE id = $1 AND is_active = TRUE LIMIT 1 FOR UPDATE`,
+      [cid],
+    );
+    const course = courseRows[0];
+    if (!course) {
+      const err = new Error("الدورة غير موجودة.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (!course.is_testing_enabled) {
+      const err = new Error("ملفات الاختبار غير متاحة لهذه الدورة.");
+      err.statusCode = 403;
+      throw err;
+    }
+    const hasAccess = await freelancerHasCourseAccess(client, cid, uid);
+    if (!hasAccess) {
+      const err = new Error("غير مسموح بهذا الإجراء.");
+      err.statusCode = 403;
+      throw err;
+    }
+    await ensureFreelancerCourseEngagement(client, { courseId: cid, freelancerId: uid });
+    const { rows: assignRows } = await client.query(
+      `SELECT * FROM course_assignments WHERE course_id = $1 AND freelancer_id = $2 LIMIT 1 FOR UPDATE`,
+      [cid, uid],
+    );
+    const assignment = assignRows[0];
+    if (!assignment) {
+      const err = new Error("غير مسموح بهذا الإجراء.");
+      err.statusCode = 403;
+      throw err;
+    }
+    if (assignment.completed_at) {
+      const err = new Error("تم إنهاء الدورة مسبقاً.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const { rows: countRows } = await client.query(
+      `SELECT
+         (SELECT COUNT(*)::int FROM course_lessons WHERE course_id = $1 AND is_active = TRUE) AS total_lessons,
+         (SELECT COUNT(*)::int FROM course_lesson_progress WHERE course_id = $1 AND freelancer_id = $2) AS completed_lessons`,
+      [cid, uid],
+    );
+    const total = Number(countRows[0]?.total_lessons || 0);
+    const completed = Number(countRows[0]?.completed_lessons || 0);
+    if (total <= 0 || completed < total) {
+      const err = new Error("يجب إكمال جميع الدروس أولاً.");
+      err.statusCode = 400;
+      throw err;
+    }
+    assertCoursePdfUploadFile(file);
+    let uploaded;
+    try {
+      uploaded = await uploadCourseDocumentBuffer({
+        buffer: file.buffer,
+        mimetype: file.mimetype,
+        originalname: file.originalname,
+        courseId: cid,
+        purpose: `completed/${uid}`,
+      });
+      const secureUrl = assertCloudinaryCourseFileUpload(uploaded, { courseId: cid, purpose: "completed" });
+      await verifyCloudinaryPdfDelivery(secureUrl, { minBytes: file.buffer.length > 0 ? 5 : 1 });
+      await client.query(
+        `UPDATE course_assignments
+         SET completed_exam_file_url = $3
+         WHERE course_id = $1 AND freelancer_id = $2`,
+        [cid, uid, secureUrl],
+      );
+    } catch (uploadErr) {
+      if (uploaded?.publicId) {
+        await destroyByPublicId(uploaded.publicId, uploaded.resourceType || "raw");
+      }
+      throw uploadErr;
+    }
+    await client.query("COMMIT");
+    return getCourseDetailsForFreelancer({ freelancerUserId: uid, courseId: cid });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw wrapCourseFileUploadError(err, "uploadCompletedExamFile");
+  } finally {
+    client.release();
+  }
+}
+
 async function submitCourseCompletion({
   freelancerUserId,
   courseId,
@@ -1398,13 +1528,21 @@ async function submitCourseCompletion({
       throw err;
     }
     const testingOn = Boolean(course.is_testing_enabled);
-    const questionCount = normalizeQuestionCount(course.test_question_count);
+    const examQuestions = resolveExamQuestionsForCourse(course);
+    const questionCount = effectiveQuestionCount(course, examQuestions);
     let examMarksJson = null;
     let examFinalGrade = null;
 
     if (testingOn) {
-      if (questionCount) {
-        const markResult = validateAndComputeExamMarks(questionMarks, questionCount);
+      const completedExamUrl = String(assignment.completed_exam_file_url || "").trim();
+      if (!completedExamUrl) {
+        const err = new Error("يجب رفع الملف المنجز أولاً قبل الانتقال للخطوة التالية.");
+        err.statusCode = 400;
+        throw err;
+      }
+
+      if (questionCount > 0) {
+        const markResult = validateAndComputeExamMarks(questionMarks, questionCount, examQuestions);
         if (!markResult.ok) {
           const err = new Error(markResult.message || "تحقق من درجات جميع الأسئلة.");
           err.statusCode = 400;
@@ -1512,6 +1650,7 @@ module.exports = {
   getCourseDetailsForFreelancer,
   markLessonComplete,
   submitCourseCompletion,
+  uploadCompletedExamFile,
   uploadCourseTestFile,
   uploadCoursePromptFile,
   uploadCourseModelAnswerFile,

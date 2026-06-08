@@ -1,7 +1,14 @@
 import { Link } from "react-router-dom";
 import WidgetLoadError from "./WidgetLoadError";
 
-export default function CoursesProgressCard({ courseAgg, loadState = "ok", loadError = "", onRetry, loading }) {
+export default function CoursesProgressCard({
+  courseAgg,
+  loadState = "ok",
+  loadError = "",
+  onRetry,
+  loading,
+  focusBadge = null,
+}) {
   if (loading) {
     return (
       <article className="fdash-cc-card">
@@ -15,9 +22,14 @@ export default function CoursesProgressCard({ courseAgg, loadState = "ok", loadE
   const continueCourse = agg.continueCourse;
 
   return (
-    <article className="fdash-cc-card fdash-cc-card--courses">
+    <article
+      className={`fdash-cc-card fdash-cc-card--courses${focusBadge ? " fdash-cc-card--courses-focus" : ""}`}
+    >
       <header className="fdash-cc-card__head">
-        <h3 className="fdash-cc-card__title">الدورات والتدريب</h3>
+        <h3 className="fdash-cc-card__title">
+          الدورات والتدريب
+          {focusBadge ? <span className="fdash-cc-card__focus-badge">{focusBadge}</span> : null}
+        </h3>
         <Link to="/dashboard/freelancer/courses" className="fdash-cc-card__link">
           جميع الدورات
         </Link>

@@ -6,13 +6,13 @@ const { listPlansValidators, createPlanValidators, updatePlanValidators, planIdP
 
 const router = express.Router();
 
-// super_admin only
-router.use(requireAuth, requireRole("super_admin"));
+// super_admin only — scope guards to /plans routes so other /api/admin/* routers (courses, ads, …) are not blocked.
+const superAdminOnly = [requireAuth, requireRole("super_admin")];
 
-router.get("/plans", listPlansValidators, validateRequest, plansController.listAdminPlans);
-router.post("/plans", createPlanValidators, validateRequest, plansController.createPlan);
-router.patch("/plans/:id", updatePlanValidators, validateRequest, plansController.updatePlan);
-router.delete("/plans/:id", planIdParam, validateRequest, plansController.deletePlan);
+router.get("/plans", ...superAdminOnly, listPlansValidators, validateRequest, plansController.listAdminPlans);
+router.post("/plans", ...superAdminOnly, createPlanValidators, validateRequest, plansController.createPlan);
+router.patch("/plans/:id", ...superAdminOnly, updatePlanValidators, validateRequest, plansController.updatePlan);
+router.delete("/plans/:id", ...superAdminOnly, planIdParam, validateRequest, plansController.deletePlan);
 
 module.exports = router;
 

@@ -2,7 +2,7 @@ const express = require("express");
 const { requireAuth, requireRole } = require("../middleware/rbacMiddleware");
 const validateRequest = require("../middleware/validateRequest");
 const freelancerCoursesController = require("../controllers/freelancerCoursesController");
-const { uploadCourseAuditResponseFile } = require("../middleware/courseUploadMiddleware");
+const { uploadCourseAuditResponseFile, uploadCompletedExamFile } = require("../middleware/courseUploadMiddleware");
 const {
   courseIdParam,
   courseFileStreamValidators,
@@ -22,6 +22,13 @@ router.get(
   freelancerCoursesController.streamCourseFile,
 );
 router.get("/courses/:id", courseIdParam, validateRequest, freelancerCoursesController.getMyCourseDetails);
+router.post(
+  "/courses/:id/completed-exam-file",
+  courseIdParam,
+  validateRequest,
+  uploadCompletedExamFile,
+  freelancerCoursesController.uploadCompletedExamFile,
+);
 router.post(
   "/courses/:id/complete",
   courseIdParam,

@@ -1,11 +1,5 @@
 /* Plans page — premium RTL pricing (scoped) */
 
-.container.page-content.plans-page--ref {
-  max-width: min(1180px, calc(100% - 32px));
-  width: min(1180px, calc(100% - 32px));
-  padding: clamp(44px, 5.5vw, 64px) 0 clamp(40px, 4.5vw, 56px);
-}
-
 .plans-page--ref {
   position: relative;
   padding: 0;
@@ -29,52 +23,9 @@
   z-index: 1;
 }
 
-/* ——— Hero title ——— */
+/* ——— Pricing section ——— */
 .plans-page--ref .pricing {
   padding: 0;
-}
-
-.plans-page--ref .pricing-ref-hero {
-  text-align: center;
-  max-width: none;
-  margin: 0 0 clamp(32px, 4vw, 48px);
-}
-
-.plans-page--ref .pricing-ref-hero__title {
-  margin: 0 0 16px;
-  font-size: clamp(1.85rem, 3.8vw, 2.35rem);
-  font-weight: 950;
-  color: #0f1a3a;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-}
-
-.plans-page--ref .pricing-ref-hero__divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: min(220px, 52%);
-  margin: 0 auto;
-}
-
-.plans-page--ref .pricing-ref-hero__divider-line {
-  flex: 1;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(56, 82, 180, 0.45));
-}
-
-.plans-page--ref .pricing-ref-hero__divider-line:last-child {
-  background: linear-gradient(90deg, rgba(56, 82, 180, 0.45), transparent);
-}
-
-.plans-page--ref .pricing-ref-hero__divider-diamond {
-  width: 7px;
-  height: 7px;
-  margin-inline: 8px;
-  flex-shrink: 0;
-  background: #3852b4;
-  transform: rotate(45deg);
-  border-radius: 1px;
 }
 
 /* ——— Grid ——— */
@@ -314,19 +265,294 @@
 }
 
 @media (max-width: 639px) {
-  .container.page-content.plans-page--ref {
-    padding-top: clamp(32px, 6vw, 44px);
+  /* Sticky nav: solid bar + scroll clearance on plans page only */
+  .bg-page-bg:has(.plans-page--ref) .public-nav-header {
+    background: rgba(243, 244, 244, 0.97);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 6px 20px rgba(47, 59, 101, 0.08);
+  }
+
+  .plans-page--ref .pricing__grid {
+    gap: 12px;
   }
 
   .plans-page--ref .pricing-card {
     width: min(100%, 420px);
     margin-inline: auto;
+    padding: 14px 14px 12px;
+    border-radius: 18px;
+    scroll-margin-top: calc(72px + env(safe-area-inset-top, 0));
+  }
+
+  .plans-page--ref .pricing-card--featured {
+    padding-top: 16px;
+  }
+
+  .plans-page--ref .pricing-card--featured .pricing-card__head {
+    padding-top: 0;
+  }
+
+  .plans-page--ref .pricing-card__badge {
+    position: static;
+    transform: none;
+    display: inline-flex;
+    align-self: flex-start;
+    margin: 2px 4px 6px 0;
+    padding: 5px 11px;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    border-radius: 999px;
+  }
+
+  .plans-page--ref .pricing-card__head {
+    margin-bottom: 2px;
+  }
+
+  .plans-page--ref .pricing-card__head:has(.pricing-card__duration) .pricing-card__desc {
+    display: none;
+  }
+
+  .plans-page--ref .pricing-card__title {
+    margin-bottom: 4px;
+    font-size: 1.03rem;
+    line-height: 1.32;
+  }
+
+  .plans-page--ref .pricing-card__duration {
+    margin-top: 0;
+    font-size: 0.8rem;
+  }
+
+  .plans-page--ref .pricing-card__offer--inline {
+    display: none;
+  }
+
+  .plans-page--ref .pricing-card__price {
+    margin-top: 2px;
+  }
+
+  .plans-page--ref .pricing-card__price-main {
+    font-size: clamp(1.62rem, 7vw, 1.9rem);
+    line-height: 1.08;
+  }
+
+  .plans-page--ref .pricing-card__price-sub,
+  .plans-page--ref .pricing-card__price-note {
+    margin-top: 3px;
+    font-size: 0.76rem;
+    line-height: 1.4;
+  }
+
+  .plans-page--ref .pricing-card__cta {
+    margin-top: 0;
+    padding-top: 8px;
+  }
+
+  .plans-page--ref .pricing-card__btn {
+    min-height: 44px;
+    padding: 11px 16px;
+    font-size: 0.88rem;
+  }
+
+  .plans-page--ref .pricing-card__divider--features {
+    margin: 10px 0 8px;
+  }
+
+  .plans-page--ref .pricing-card__benefits {
+    display: grid;
+    gap: 6px;
+  }
+
+  .plans-page--ref .pricing-card__features {
+    gap: 6px;
+  }
+
+  .plans-page--ref .pricing-card__features .pricing-card__feature:nth-child(n + 4) {
+    display: none;
+  }
+
+  .plans-page--ref .pricing-card__feature {
+    grid-template-columns: 18px 1fr;
+    gap: 7px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .plans-page--ref .pricing-card__check {
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+  }
+
+  .plans-page--ref .pricing-card__check svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .plans-page--ref .pricing-card__details-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 42px;
+    padding: 0 12px;
+    cursor: pointer;
+    list-style: none;
+    border: 1px solid rgba(56, 82, 180, 0.12);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.92);
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #2f3b65;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .plans-page--ref .pricing-card__details-row::-webkit-details-marker {
+    display: none;
+  }
+
+  .plans-page--ref .pricing-card__details-label {
+    flex: 1;
+    min-width: 0;
+    text-align: right;
+  }
+
+  .plans-page--ref .pricing-card__details-chevron {
+    flex-shrink: 0;
+    color: #76cfdf;
+    transition: transform 0.22s var(--ease-premium, cubic-bezier(0.33, 1, 0.68, 1));
+  }
+
+  .plans-page--ref .pricing-card__more-features[open] .pricing-card__details-chevron,
+  .plans-page--ref .pricing-card__extras[open] .pricing-card__details-chevron {
+    transform: rotate(180deg);
+  }
+
+  .plans-page--ref .pricing-card__more-features[open] .pricing-card__details-row,
+  .plans-page--ref .pricing-card__extras[open] > .pricing-card__details-row {
+    border-color: rgba(56, 82, 180, 0.2);
+    background: rgba(248, 250, 252, 0.98);
+    box-shadow: inset 0 -1px 0 rgba(56, 82, 180, 0.08);
+  }
+
+  .plans-page--ref .pricing-card__more-features-summary {
+    color: #3852b4;
+  }
+
+  .plans-page--ref .pricing-card__more-features {
+    margin-top: 4px;
+  }
+
+  .plans-page--ref .pricing-card__features--more {
+    margin-top: 6px;
+    padding: 8px 10px 2px;
+    border-radius: 10px;
+    background: rgba(248, 250, 252, 0.88);
+    gap: 5px;
+  }
+
+  .plans-page--ref .pricing-card__meta-desktop {
+    display: none !important;
+  }
+
+  .plans-page--ref .pricing-card__extras {
+    margin-top: 6px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
+  }
+
+  .plans-page--ref .pricing-card__extras > .pricing-card__details-row {
+    width: 100%;
+  }
+
+  .plans-page--ref .pricing-card__extras-body {
+    display: grid;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 8px 10px;
+    border: 1px solid rgba(56, 82, 180, 0.1);
+    border-radius: 12px;
+    background: rgba(248, 250, 252, 0.94);
+  }
+
+  .plans-page--ref .pricing-card__extras-block + .pricing-card__extras-block {
+    padding-top: 6px;
+    border-top: 1px dashed rgba(56, 82, 180, 0.1);
+  }
+
+  .plans-page--ref .pricing-card__extras-block--offer .pricing-card__offer--in-extras {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    font-size: 0.74rem;
+    line-height: 1.42;
+  }
+
+  .plans-page--ref .pricing-card__extras-block--offer .pricing-card__offer-icon {
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+  }
+
+  .plans-page--ref .pricing-card__extras-block--offer .pricing-card__offer-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .plans-page--ref .pricing-card__extras-body .pricing-card__order-range {
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1.4;
+  }
+
+  .plans-page--ref .pricing-card__extras-body .pricing-card__activation,
+  .plans-page--ref .pricing-card__extras-body .pricing-card__footnote {
+    margin: 0;
+    font-size: 0.72rem;
+    line-height: 1.42;
+    color: #64748b;
+  }
+}
+
+@media (min-width: 640px) {
+  .plans-page--ref .pricing-card__more-features,
+  .plans-page--ref .pricing-card__extras {
+    display: none !important;
+  }
+
+  .plans-page--ref .pricing-card__offer--in-extras {
+    display: none;
+  }
+
+  .plans-page--ref .pricing-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .plans-page--ref .pricing-card__cta {
+    order: 10;
+    margin-top: auto;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .plans-page--ref .pricing-card,
-  .plans-page--ref .pricing-card__btn {
+  .plans-page--ref .pricing-card__btn,
+  .plans-page--ref .pricing-card__details-chevron,
+  .plans-page--ref .pricing-card__details-row {
     transition: none;
   }
 }

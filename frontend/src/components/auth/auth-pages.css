@@ -104,11 +104,6 @@
   gap: 1.25rem;
 }
 
-@media (max-width: 767px) {
-  .oh-auth-visual__content {
-    max-width: none;
-  }
-}
 
 .oh-auth-visual__badge {
   display: inline-flex;
@@ -243,19 +238,84 @@
 
 @media (max-width: 767px) {
   .oh-auth-page {
-    padding: 10px 10px 36px;
+    min-height: calc(100vh - 100px);
+    place-items: start center;
+    padding: 4px 0 28px;
   }
 
   .oh-auth-shell {
-    width: min(1160px, calc(100% - 24px));
+    width: min(560px, 92vw);
+    max-width: 100%;
   }
 
   .oh-auth-card {
-    border-radius: 26px;
+    grid-template-columns: 1fr;
+    width: 100%;
+    border-radius: 22px;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.75) inset,
+      0 2px 2px rgba(24, 36, 64, 0.03),
+      0 16px 40px -18px rgba(24, 36, 64, 0.16),
+      0 0 72px -40px rgba(118, 207, 223, 0.22);
+  }
+
+  /* Mobile-first: form only — visual panel stays in DOM for desktop */
+  .oh-auth-visual {
+    display: none;
   }
 
   .oh-auth-form-panel {
-    padding: 22px 18px 28px;
+    align-content: start;
+    gap: 0.95rem;
+    padding: 16px 16px 20px;
+  }
+
+  .oh-auth-brand--full-logo {
+    margin-bottom: 0.15rem;
+  }
+
+  .oh-auth-brand__logo {
+    max-width: min(176px, 46vw);
+    max-height: 42px;
+  }
+
+  .oh-auth-form-header {
+    gap: 0.35rem;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0;
+  }
+
+  .oh-auth-form-title {
+    font-size: clamp(1.32rem, 5.4vw, 1.52rem);
+  }
+
+  .oh-auth-form-subtitle {
+    font-size: 0.88rem;
+    line-height: 1.48;
+  }
+
+  .oh-auth-footer-note {
+    margin-top: 0.1rem;
+    font-size: 0.86rem;
+  }
+
+  /* Shared form stack (login / register / forgot-password) */
+  .oh-auth-form-panel form {
+    gap: 0.85rem;
+  }
+
+  /* Login: forgot-password link row */
+  .oh-auth-form-panel label:has(a[href="/forgot-password"]) > div:first-child {
+    gap: 0.45rem;
+    align-items: center;
+  }
+
+  .oh-auth-form-panel label a[href="/forgot-password"] {
+    flex-shrink: 0;
+    padding-block: 2px;
+    font-size: 0.76rem;
+    line-height: 1.35;
+    white-space: nowrap;
   }
 }
 

@@ -23,6 +23,7 @@ export const SuperAdminFinancialClaimsPage = lazy(
   () => import("../pages/dashboard/SuperAdminFinancialClaimsPage"),
 );
 export const SuperAdminSettingsPage = lazy(() => import("../pages/dashboard/SuperAdminSettingsPage"));
+export const SuperAdminAdminsPage = lazy(() => import("../pages/dashboard/SuperAdminAdminsPage"));
 
 /** Admin */
 export const AdminOrdersPage = lazy(() => import("../pages/dashboard/AdminOrdersPage"));

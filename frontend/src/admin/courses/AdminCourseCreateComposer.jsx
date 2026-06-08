@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import DashboardFormCard from "../../components/dashboard/DashboardFormCard";
-import CourseFileUploadField from "./CourseFileUploadField";
 import CourseCurrentLinkCard from "./CourseCurrentLinkCard";
+import CourseFileManagerSection from "./CourseFileManagerSection";
 import CourseUrlField from "./CourseUrlField";
+import ExamQuestionsEditor, { isExamQuestionsEditorValid } from "./ExamQuestionsEditor";
 import { analyzeYoutubeSourceUrl, isHttpUrl } from "./youtubeSourceUtils";
 import "./adminCourseComposer.css";
 import "./courseAssetFields.css";
@@ -59,6 +60,10 @@ export default function AdminCourseCreateComposer({
   onPendingCreateTestFile,
   onPendingCreatePromptFile,
   onPendingCreateModelAnswerFile,
+  onRemoveCourseTestFile,
+  onRemoveCoursePromptFile,
+  onRemoveCourseModelAnswerFile,
+  fileRemoveBusy = false,
 }) {
   const isEdit = mode === "edit" && Boolean(editingCourseId);
   const [analysis, setAnalysis] = useState(null);
@@ -161,6 +166,11 @@ export default function AdminCourseCreateComposer({
       setAnalyzeBusy(false);
     }
   }, [form.youtubeSourceUrl]);
+
+  const examQuestionsValid = useMemo(() => {
+    if (!form.isTestingEnabled) return true;
+    return isExamQuestionsEditorValid(form.testQuestionCount, form.examQuestions ?? []);
+  }, [form.examQuestions, form.isTestingEnabled, form.testQuestionCount]);
 
   const stepState = useMemo(() => {
     const importDone = isEdit || Boolean(analysis?.ok);
@@ -434,123 +444,75 @@ export default function AdminCourseCreateComposer({
         >
           <div className="oh-admin-courses__composer-test-inner">
             <div className="oh-admin-courses__exam-block">
-              <h4 className="oh-admin-courses__exam-block-title">
-                <span className="oh-admin-courses__exam-block-icon" aria-hidden>
-                  📄
-                </span>
-                ملف الاختبار النهائي
-              </h4>
-              <CourseFileUploadField
-                label="رفع ملف من الجهاز"
-                fileUrl={isEdit || !pendingCreateTestFile ? form.testFileUrl : ""}
+              <CourseFileManagerSection
+                label="ملف الاختبار / التكليف"
+                description="يُستخدم هذا الملف ضمن خطوات الاختبار النهائي."
+                value={form.testFileUrl}
+                onChangeUrl={(next) => {
+                  setForm((s) => ({ ...s, testFileUrl: next }));
+                  if (!isEdit && String(next).trim()) onPendingCreateTestFile?.(null);
+                }}
+                fileKind="test"
+                courseId={editingCourseId || null}
                 updatedAt={assetUpdatedAt}
                 disabled={creating}
                 uploading={testFileUploading}
-                pendingFile={isEdit ? pendingTestFile : createTestPending}
+                removing={fileRemoveBusy}
                 isEdit={isEdit}
                 allowPickBeforeSave={!isEdit}
-                pickButtonLabel="رفع ملف من الجهاز"
+                pendingFile={isEdit ? pendingTestFile : createTestPending}
                 onFileSelected={handleTestFileSelected}
                 onValidationError={onUploadError}
-                courseId={editingCourseId || null}
-                fileKind="test"
+                onRemove={onRemoveCourseTestFile}
               />
-              <p className="oh-admin-courses__exam-or">أو</p>
-              <CourseUrlField
-                label="إدخال رابط الملف"
-                optional
-                value={form.testFileUrl}
-                onChange={(e) => {
-                  const next = e.target.value;
-                  setForm((s) => ({ ...s, testFileUrl: next }));
-                  if (!isEdit && next.trim()) onPendingCreateTestFile?.(null);
-                }}
-                updatedAt={assetUpdatedAt}
-                linkTitle="رابط ملف الاختبار"
-              />
-              <p className="oh-admin-courses__exam-help">
-                يمكنك رفع الملف الآن أو إضافته لاحقاً من إدارة الدورة.
-              </p>
             </div>
 
             <div className="oh-admin-courses__exam-block">
-              <h4 className="oh-admin-courses__exam-block-title">
-                <span className="oh-admin-courses__exam-block-icon" aria-hidden>
-                  📄
-                </span>
-                ملف تعليمات / Prompt التقييم
-              </h4>
-              <CourseFileUploadField
-                label="رفع ملف من الجهاز"
-                fileUrl={isEdit || !pendingCreatePromptFile ? form.testPromptFileUrl : ""}
+              <CourseFileManagerSection
+                label="ملف مطالبة ChatGPT للمستقل"
+                description="يُستخدم مع ملف الاختبار عند تقييم إجابة المستقل."
+                value={form.testPromptFileUrl}
+                onChangeUrl={(next) => {
+                  setForm((s) => ({ ...s, testPromptFileUrl: next }));
+                  if (!isEdit && String(next).trim()) onPendingCreatePromptFile?.(null);
+                }}
+                fileKind="prompt"
+                courseId={editingCourseId || null}
                 updatedAt={assetUpdatedAt}
                 disabled={creating}
                 uploading={promptFileUploading}
-                pendingFile={isEdit ? pendingPromptFile : createPromptPending}
+                removing={fileRemoveBusy}
                 isEdit={isEdit}
                 allowPickBeforeSave={!isEdit}
-                pickButtonLabel="رفع ملف من الجهاز"
+                pendingFile={isEdit ? pendingPromptFile : createPromptPending}
                 onFileSelected={handlePromptFileSelected}
                 onValidationError={onUploadError}
-                courseId={editingCourseId || null}
-                fileKind="prompt"
+                onRemove={onRemoveCoursePromptFile}
               />
-              <p className="oh-admin-courses__exam-or">أو</p>
-              <CourseUrlField
-                label="إدخال رابط الملف"
-                optional
-                value={form.testPromptFileUrl}
-                onChange={(e) => {
-                  const next = e.target.value;
-                  setForm((s) => ({ ...s, testPromptFileUrl: next }));
-                  if (!isEdit && next.trim()) onPendingCreatePromptFile?.(null);
-                }}
-                updatedAt={assetUpdatedAt}
-                linkTitle="رابط ملف التعليمات"
-              />
-              <p className="oh-admin-courses__exam-help">
-                يمكنك رفع ملف التعليمات الآن أو إضافته لاحقاً من إدارة الدورة.
-              </p>
             </div>
 
             <div className="oh-admin-courses__exam-block">
-              <h4 className="oh-admin-courses__exam-block-title">
-                <span className="oh-admin-courses__exam-block-icon" aria-hidden>
-                  📄
-                </span>
-                ملف الإجابة النموذجية
-              </h4>
-              <CourseFileUploadField
-                label="رفع ملف من الجهاز"
-                fileUrl={isEdit || !pendingCreateModelAnswerFile ? form.testModelAnswerFileUrl : ""}
+              <CourseFileManagerSection
+                label="ملف الإجابة النموذجية"
+                description="يُستخدم مع ملف الاختبار وملف التعليمات في ChatGPT عند التقييم."
+                value={form.testModelAnswerFileUrl}
+                onChangeUrl={(next) => {
+                  setForm((s) => ({ ...s, testModelAnswerFileUrl: next }));
+                  if (!isEdit && String(next).trim()) onPendingCreateModelAnswerFile?.(null);
+                }}
+                fileKind="model-answer"
+                courseId={editingCourseId || null}
                 updatedAt={assetUpdatedAt}
                 disabled={creating}
                 uploading={modelAnswerFileUploading}
-                pendingFile={isEdit ? pendingModelAnswerFile : createModelAnswerPending}
+                removing={fileRemoveBusy}
                 isEdit={isEdit}
                 allowPickBeforeSave={!isEdit}
-                pickButtonLabel="رفع ملف من الجهاز"
+                pendingFile={isEdit ? pendingModelAnswerFile : createModelAnswerPending}
                 onFileSelected={handleModelAnswerFileSelected}
                 onValidationError={onUploadError}
-                courseId={editingCourseId || null}
-                fileKind="model-answer"
+                onRemove={onRemoveCourseModelAnswerFile}
               />
-              <p className="oh-admin-courses__exam-or">أو</p>
-              <CourseUrlField
-                label="إدخال رابط الملف"
-                optional
-                value={form.testModelAnswerFileUrl}
-                onChange={(e) => {
-                  const next = e.target.value;
-                  setForm((s) => ({ ...s, testModelAnswerFileUrl: next }));
-                  if (!isEdit && next.trim()) onPendingCreateModelAnswerFile?.(null);
-                }}
-                updatedAt={assetUpdatedAt}
-                linkTitle="رابط ملف الإجابة النموذجية"
-              />
-              <p className="oh-admin-courses__exam-help">
-                يُستخدم مع ملف الاختبار وملف التعليمات في ChatGPT عند تقييم إجابة المستقل.
-              </p>
             </div>
 
             <div className="oh-admin-courses__exam-block">
@@ -558,28 +520,15 @@ export default function AdminCourseCreateComposer({
                 <span className="oh-admin-courses__exam-block-icon" aria-hidden>
                   ✍️
                 </span>
-                إعدادات التقييم
+                إعدادات التقييم والأسئلة
               </h4>
-              <label className="oh-admin-courses__field">
-                <span>عدد أسئلة الاختبار</span>
-                <input
-                  className="oh-admin-courses__input"
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={form.testQuestionCount ?? ""}
-                  onChange={(e) =>
-                    setForm((s) => ({
-                      ...s,
-                      testQuestionCount: e.target.value,
-                    }))
-                  }
-                  placeholder="مثال: 5"
-                />
-                <span className="oh-admin-courses__field-hint">
-                  يظهر للمستقل حقول «سؤال 1»، «سؤال 2»، … بعد التقييم في ChatGPT.
-                </span>
-              </label>
+              <ExamQuestionsEditor
+                disabled={creating}
+                questionCount={form.testQuestionCount ?? ""}
+                examQuestions={form.examQuestions ?? []}
+                onQuestionCountChange={(next) => setForm((s) => ({ ...s, testQuestionCount: next }))}
+                onExamQuestionsChange={(next) => setForm((s) => ({ ...s, examQuestions: next }))}
+              />
             </div>
           </div>
         </div>
@@ -602,7 +551,11 @@ export default function AdminCourseCreateComposer({
             إلغاء التعديل
           </button>
         )}
-        <button className="btn btn-primary oh-admin-courses__btn-primary" disabled={creating} type="submit">
+        <button
+          className="btn btn-primary oh-admin-courses__btn-primary"
+          disabled={creating || !examQuestionsValid}
+          type="submit"
+        >
           {creating
             ? isEdit
               ? "جاري الحفظ…"

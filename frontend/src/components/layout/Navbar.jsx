@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { useClientCreateOrderModal } from "../../context/ClientCreateOrderModalContext";
@@ -12,6 +13,7 @@ import NotificationsBell from "../notifications/NotificationsBell";
 import { useHomePageBlocking } from "../../hooks/useHomePageBlocking";
 import NavbarSkeleton from "../skeletons/NavbarSkeleton";
 import "../skeletons/home-skeleton.css";
+import "../../styles/servicesPage.css";
 
 const publicExploreItems = [
   { label: "من نحن", to: "/about" },
@@ -21,6 +23,10 @@ const publicExploreItems = [
 const navLinkBase =
   "inline-flex shrink-0 whitespace-nowrap rounded-lg px-4 py-2 text-[0.9rem] font-medium text-[#202020]/90 transition-[color,opacity] duration-200 hover:text-[#2f3b65] hover:opacity-100 sm:px-5 sm:text-[0.95rem] lg:px-6 lg:py-2 lg:text-[0.92rem] xl:px-7 xl:text-[0.98rem]";
 const navLinkActive = "public-nav-link--active";
+
+const drawerLinkBase = "public-nav-drawer__link";
+const drawerLinkActive = "public-nav-drawer__link--active";
+const drawerActionBase = "public-nav-drawer__action";
 
 function fullNameAr(user) {
   const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
@@ -50,7 +56,10 @@ const Navbar = () => {
   const { user, loading, logout } = useAuth();
   const { openModal: openClientCreateOrderModal } = useClientCreateOrderModal();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const userMenuRef = useRef(null);
+
+  const closeMobileDrawer = useCallback(() => setMobileDrawerOpen(false), []);
 
   const role = user?.primaryRole || user?.role;
   const roles = Array.isArray(user?.roles) ? user.roles : [];
@@ -68,9 +77,28 @@ const Navbar = () => {
   useEffect(() => {
     const t = window.setTimeout(() => {
       setUserMenuOpen(false);
+      setMobileDrawerOpen(false);
     }, 0);
     return () => window.clearTimeout(t);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileDrawerOpen) return undefined;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") closeMobileDrawer();
+    };
+    const onResize = () => {
+      if (window.matchMedia("(min-width: 1024px)").matches) closeMobileDrawer();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", onResize);
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [mobileDrawerOpen, closeMobileDrawer]);
 
   const navItems = useMemo(() => {
     const base =
@@ -129,39 +157,54 @@ const Navbar = () => {
   };
 
   const linkClass = ({ isActive }) => [navLinkBase, isActive ? navLinkActive : ""].filter(Boolean).join(" ");
+  const drawerLinkClass = ({ isActive }) => [drawerLinkBase, isActive ? drawerLinkActive : ""].filter(Boolean).join(" ");
 
   const { homeBlocking } = useHomePageBlocking();
   const showHomeNavSkeleton = pathname === "/" && homeBlocking;
 
+  const showCreateOrderButton = role === "client" || showAdminCreateOrderButton;
+
+  const handleCreateOrder = () => {
+    openClientCreateOrderModal();
+    closeMobileDrawer();
+  };
+
+  const handleDrawerLogout = () => {
+    closeMobileDrawer();
+    handleLogout();
+  };
+
   return (
+    <>
     <header
       dir="rtl"
-      className="sticky top-0 z-50 bg-transparent py-1.5 transition-[padding,background,box-shadow,border-color] duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)]"
+      className={`public-nav-header${mobileDrawerOpen ? " public-nav-header--drawer-open" : ""}`}
     >
-      <div className="navbar-shell mx-auto grid w-full max-w-7xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1.5 rounded-full border border-[rgba(47,59,101,0.12)] bg-white/95 px-5 py-2 shadow-[0_10px_40px_rgba(47,59,101,0.09)] backdrop-blur-sm sm:min-h-[60px] sm:gap-x-8 sm:px-7 lg:min-h-[64px] lg:gap-x-12 lg:px-10 lg:py-2.5 xl:gap-x-14 xl:px-12">
+      <div className="public-nav-header__bar mx-auto w-full max-w-7xl px-3 py-1.5 sm:px-4 lg:px-5">
+        <div className="navbar-shell public-nav-header__shell grid w-full grid-cols-[1fr_auto] items-center gap-x-3 rounded-full border border-[rgba(47,59,101,0.12)] bg-white/95 px-4 py-2.5 shadow-[0_10px_40px_rgba(47,59,101,0.09)] backdrop-blur-sm lg:min-h-[64px] lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-x-12 lg:px-10 lg:py-2.5 xl:gap-x-14 xl:px-12">
         {showHomeNavSkeleton ? (
-          <div className="relative z-[2] w-full min-w-0">
+          <div className="relative z-[2] col-span-2 w-full min-w-0 lg:col-span-1">
             <NavbarSkeleton />
           </div>
         ) : (
           <>
         <NavLink
           to={logoTo}
-          className="col-start-1 row-start-1 me-4 flex min-w-0 shrink-0 items-center justify-start no-underline sm:me-6 lg:me-9 xl:me-11"
+          className="public-nav-header__logo-link col-start-1 row-start-1 flex min-w-0 shrink-0 items-center justify-start no-underline lg:me-9 xl:me-11"
           aria-label={isLoggedIn ? "العودة إلى لوحة التحكم" : "العودة إلى الصفحة الرئيسية"}
         >
           <img
             src="/logo.png"
             alt=""
-            className="block h-10 w-auto object-contain transition-all duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)] sm:h-11 lg:h-12"
+            className="block h-11 w-auto object-contain transition-all duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)] lg:h-12"
           />
         </NavLink>
 
         <nav
           aria-label="التنقل الرئيسي"
-          className="col-span-3 row-start-2 min-w-0 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] sm:col-span-1 sm:col-start-2 sm:row-start-1 [&::-webkit-scrollbar]:hidden"
+          className="col-start-2 row-start-1 hidden min-w-0 lg:block"
         >
-          <ul className="m-0 flex w-max min-w-full list-none flex-nowrap items-center justify-center gap-x-5 px-1 py-0.5 sm:gap-x-6 md:gap-x-8 lg:gap-x-10 xl:gap-x-12">
+          <ul className="m-0 flex list-none flex-wrap items-center justify-center gap-x-5 px-1 py-0.5 md:gap-x-8 lg:gap-x-10 xl:gap-x-12">
             {navItems.map((item) => (
               <li key={item.to} className="shrink-0">
                 <NavLink to={item.to} className={linkClass} title={item.label}>
@@ -172,12 +215,13 @@ const Navbar = () => {
           </ul>
         </nav>
 
-        <div className="col-start-3 row-start-1 flex min-w-0 shrink-0 items-center justify-end gap-4 sm:gap-5 lg:gap-6">
+        <div className="public-nav-header__actions col-start-2 row-start-1 flex min-w-0 shrink-0 items-center justify-end gap-2 lg:col-start-3 lg:gap-6">
+          <div className="hidden items-center gap-2 lg:flex lg:gap-6">
           {loading ? (
             <span className="min-h-11 min-w-[140px]" aria-hidden="true" />
           ) : user ? (
             <>
-              {role === "client" || showAdminCreateOrderButton ? (
+              {showCreateOrderButton ? (
                 <button
                   type="button"
                   className="inline-flex cursor-pointer items-center gap-3 rounded-full border-[1.5px] border-[rgba(56,82,180,0.35)] bg-white px-5 py-2.5 font-black text-[#223069] shadow-[0_10px_26px_rgba(56,82,180,0.08)] transition-[transform,box-shadow,border-color,background-color] duration-[180ms] hover:-translate-y-px hover:border-[rgba(56,82,180,0.5)] hover:bg-[rgba(56,82,180,0.02)] hover:shadow-[0_14px_34px_rgba(56,82,180,0.12)] focus:outline-none focus:shadow-[0_0_0_4px_rgba(56,82,180,0.14),0_14px_34px_rgba(56,82,180,0.12)] sm:px-6 sm:py-3"
@@ -265,7 +309,7 @@ const Navbar = () => {
           ) : (
             <NavLink
               to="/login"
-              className="inline-flex min-h-[42px] min-w-fit items-center justify-center gap-2 rounded-full bg-[#2f3b65] px-6 py-2.5 text-[0.95rem] font-bold text-white no-underline shadow-[0_8px_22px_rgba(47,59,101,0.22)] transition-[background-color,transform,min-height,padding,font-size,box-shadow] duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)] hover:-translate-y-px hover:bg-[#243153] hover:shadow-[0_12px_28px_rgba(47,59,101,0.28)] sm:min-h-[44px] sm:px-7 sm:text-[1rem]"
+              className="inline-flex min-h-[44px] min-w-fit items-center justify-center gap-2 rounded-full bg-[#2f3b65] px-7 py-2.5 text-[1rem] font-bold text-white no-underline shadow-[0_8px_22px_rgba(47,59,101,0.22)] transition-[background-color,transform,box-shadow] duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)] hover:-translate-y-px hover:bg-[#243153] hover:shadow-[0_12px_28px_rgba(47,59,101,0.28)]"
             >
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden className="opacity-95">
                 <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" />
@@ -274,11 +318,166 @@ const Navbar = () => {
               تسجيل الدخول
             </NavLink>
           )}
+          </div>
+          <button
+            type="button"
+            className="public-nav-menu-btn lg:hidden"
+            aria-label="فتح القائمة"
+            aria-expanded={mobileDrawerOpen}
+            aria-controls="public-nav-drawer"
+            onClick={() => setMobileDrawerOpen((v) => !v)}
+          >
+            <span className="public-nav-menu-btn__icon" aria-hidden>
+              <span className="public-nav-menu-btn__line public-nav-menu-btn__line--top" />
+              <span className="public-nav-menu-btn__line public-nav-menu-btn__line--mid" />
+              <span className="public-nav-menu-btn__line public-nav-menu-btn__line--bot" />
+            </span>
+          </button>
         </div>
-          </>
+
+        </>
         )}
+        </div>
       </div>
     </header>
+
+    {typeof document !== "undefined" && !showHomeNavSkeleton
+      ? createPortal(
+          <div
+            className={`public-nav-mobile-layer${mobileDrawerOpen ? " public-nav-mobile-layer--open" : ""}`}
+            aria-hidden={!mobileDrawerOpen}
+          >
+            <div
+              className={`public-nav-drawer-backdrop${mobileDrawerOpen ? " public-nav-drawer-backdrop--open" : ""}`}
+              onClick={closeMobileDrawer}
+            />
+
+            <aside
+              id="public-nav-drawer"
+              className={`public-nav-drawer${mobileDrawerOpen ? " public-nav-drawer--open" : ""}`}
+              dir="rtl"
+              lang="ar"
+              aria-hidden={!mobileDrawerOpen}
+              aria-label="قائمة التنقل"
+            >
+              <div className="public-nav-drawer__panel">
+                <div className="public-nav-drawer__head">
+                  <div className="public-nav-drawer__head-top">
+                    <button
+                      type="button"
+                      className="public-nav-drawer__close"
+                      aria-label="إغلاق القائمة"
+                      onClick={closeMobileDrawer}
+                    >
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden>
+                        <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                    <img src="/logo.png" alt="" className="public-nav-drawer__logo" />
+                  </div>
+                  <div className="public-nav-drawer__intro">
+                    {isLoggedIn ? (
+                      <>
+                        <span className="public-nav-drawer__eyebrow">أهلاً بك</span>
+                        <span className="public-nav-drawer__title">{userName}</span>
+                        {user?.email ? <span className="public-nav-drawer__subtitle">{user.email}</span> : null}
+                      </>
+                    ) : (
+                      <>
+                        <span className="public-nav-drawer__eyebrow">مرحباً بك</span>
+                        <span className="public-nav-drawer__title">استكشف أوردرز هاوس</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="public-nav-drawer__head-divider" aria-hidden="true" />
+
+                <div className="public-nav-drawer__body">
+                  <nav className="public-nav-drawer__nav" aria-label="روابط التنقل">
+                    <p className="public-nav-drawer__section-label">التنقل</p>
+                    <ul className="public-nav-drawer__list">
+                      {navItems.map((item) => (
+                        <li key={item.to}>
+                          <NavLink
+                            to={item.to}
+                            className={drawerLinkClass}
+                            onClick={closeMobileDrawer}
+                          >
+                            <span className="public-nav-drawer__link-text">{item.label}</span>
+                            <span className="public-nav-drawer__link-chevron" aria-hidden>
+                              <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+                                <path d="m9 6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </span>
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </nav>
+                </div>
+
+                <div className="public-nav-drawer__footer">
+                  <div className="public-nav-drawer__account-card">
+                    <div className="public-nav-drawer__account-head">
+                      <span className="public-nav-drawer__account-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                          <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" />
+                          <path d="M5 20c0-4 3.5-6 7-6s7 2 7 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                      </span>
+                      <div className="public-nav-drawer__account-copy">
+                        <p className="public-nav-drawer__account-title">حسابك</p>
+                        <p className="public-nav-drawer__account-hint">
+                          {user
+                            ? "إدارة حسابك وإعداداتك من مكان واحد"
+                            : "سجّل الدخول لمتابعة طلباتك وخدماتك"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="public-nav-drawer__actions">
+                      {loading ? null : user ? (
+                        <>
+                          {showCreateOrderButton ? (
+                            <button type="button" className={`${drawerActionBase} public-nav-drawer__action--primary`} onClick={handleCreateOrder}>
+                              <span className="public-nav-drawer__action-icon" aria-hidden>+</span>
+                              إنشاء طلب
+                            </button>
+                          ) : null}
+                          {profilePagePath ? (
+                            <NavLink to={profilePagePath} className={drawerActionBase} onClick={closeMobileDrawer}>
+                              الملف الشخصي
+                            </NavLink>
+                          ) : null}
+                          <NavLink to={accountSettingsPath} className={drawerActionBase} onClick={closeMobileDrawer}>
+                            إعدادات الحساب
+                          </NavLink>
+                          <NavLink to={notificationsPath} className={drawerActionBase} onClick={closeMobileDrawer}>
+                            الإشعارات
+                          </NavLink>
+                          <button type="button" className={`${drawerActionBase} public-nav-drawer__action--danger`} onClick={handleDrawerLogout}>
+                            تسجيل الخروج
+                          </button>
+                        </>
+                      ) : (
+                        <NavLink to="/login" className={`${drawerActionBase} public-nav-drawer__action--primary public-nav-drawer__action--login`} onClick={closeMobileDrawer}>
+                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden className="public-nav-drawer__action-leading-icon">
+                            <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" />
+                            <path d="M5 20c0-4 3.5-6 7-6s7 2 7 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                          </svg>
+                          تسجيل الدخول
+                        </NavLink>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>,
+          document.body,
+        )
+      : null}
+    </>
   );
 };
 

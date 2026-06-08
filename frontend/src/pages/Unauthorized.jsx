@@ -2,7 +2,10 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { getDashboardPathByRole } from "../constants/authRoutes";
 
-const Unauthorized = () => {
+const Unauthorized = ({
+  title = "غير مصرّح",
+  message = "لا يمكنك الوصول إلى هذه الصفحة. إن كنت تعتقد أن هذا خطأ، استخدم حسابًا له الصلاحية أو تواصل مع الدعم.",
+}) => {
   const { user } = useAuth();
   const role = user?.primaryRole || user?.role;
   const homeTo = user && role ? getDashboardPathByRole(role) : "/";
@@ -25,10 +28,10 @@ const Unauthorized = () => {
         403
       </div>
       <h1 style={{ color: "var(--primary)", marginBottom: "12px", fontSize: "clamp(1.25rem, 3vw, 1.5rem)" }}>
-        غير مصرّح
+        {title}
       </h1>
       <p style={{ color: "var(--text-muted)", marginBottom: "28px", maxWidth: "40ch", marginInline: "auto" }}>
-        لا يمكنك الوصول إلى هذه الصفحة. إن كنت تعتقد أن هذا خطأ، استخدم حسابًا له الصلاحية أو تواصل مع الدعم.
+        {message}
       </p>
       <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
         <Link to={homeTo} className="btn btn-primary">

@@ -89,6 +89,7 @@ function buildCoursePdfDownloadFilename(fileKind, sourceUrl) {
   if (kind === "test") return "course-test.pdf";
   if (kind === "prompt") return "course-prompt.pdf";
   if (kind === "model-answer") return "course-model-answer.pdf";
+  if (kind === "completed-exam") return "completed-exam.pdf";
   try {
     const tail = decodeURIComponent(new URL(sourceUrl).pathname.split("/").pop() || "");
     if (tail && !tail.includes("/")) {

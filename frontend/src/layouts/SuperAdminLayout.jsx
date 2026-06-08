@@ -41,6 +41,7 @@ function breadcrumbLabel(pathname) {
   else if (pathname.includes("/super-admin/ads")) base.push("الإعلانات");
   else if (pathname.includes("/subscriptions")) base.push("اشتراكات المستقلين");
   else if (pathname.includes("/orders/create")) base.push("الطلبات الداخلية", "إنشاء طلب");
+  else if (pathname.includes("/admins")) base.push("إدارة الأدمن");
   else if (pathname.includes("/training-orders")) base.push("الطلبات التجريبية");
   else if (pathname.includes("/orders")) base.push("الطلبات الداخلية");
   return base.join(" › ");
@@ -72,6 +73,7 @@ const NAV_MAIN = [
     end: false,
     matchPrefix: "/dashboard/super-admin/training-orders",
   },
+  { to: "/dashboard/super-admin/admins", label: "إدارة الأدمن", icon: "👤", end: true },
 ];
 
 export default function SuperAdminLayout() {
