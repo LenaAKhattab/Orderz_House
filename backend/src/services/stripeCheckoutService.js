@@ -886,8 +886,8 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
         lineItems: "price_data (no env Stripe Price ID for freelancer subscription)",
       });
     }
-    const successUrl = `${clientUrl}/plans?freelancer_sub_paid=1&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${clientUrl}/plans?freelancer_sub_cancelled=1&session_id={CHECKOUT_SESSION_ID}`;
+    const successUrl = `${clientUrl}/dashboard/freelancer/plans?freelancer_sub_paid=1&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${clientUrl}/dashboard/freelancer/plans?freelancer_sub_cancelled=1&session_id={CHECKOUT_SESSION_ID}`;
 
     const subscription = await subscriptionsService.createFreelancerSelfSubscriptionPendingPayment(
       { freelancerUserId: uid, planId: pid, stripeSessionId: null },
@@ -946,7 +946,7 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
           message: "تم إنشاء جلسة دفع الاشتراك، أكمل الدفع للمتابعة.",
           entityType: "subscription",
           entityId: Number(subscription?.id),
-          link: "/plans",
+          link: "/dashboard/freelancer/plans",
           priority: "high",
           metadata: { subscriptionId: String(subscription?.id || ""), planId: String(pid) },
         },

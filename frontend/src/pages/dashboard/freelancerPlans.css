@@ -1,0 +1,217 @@
+/* Freelancer plans — dashboard hub theme */
+
+.fdash-page--plans {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.fdash-page--plans .fdash-page__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.fp-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 100%;
+  min-width: 0;
+  animation: fp-page-in 0.35s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+@keyframes fp-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fp-surface {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(226, 232, 240, 0.75);
+  border-radius: 28px;
+  box-shadow:
+    0 12px 32px rgba(148, 163, 184, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.fp-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  padding: clamp(20px, 3vw, 28px);
+  border-radius: 28px;
+}
+
+@media (min-width: 768px) {
+  .fp-hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+}
+
+.fp-hero__copy {
+  min-width: 0;
+  text-align: right;
+}
+
+.fp-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 750;
+  color: #1e40af;
+  background: rgba(219, 234, 254, 0.65);
+  border: 1px solid rgba(191, 219, 254, 0.75);
+}
+
+.fp-hero__title {
+  margin: 0 0 8px;
+  font-size: clamp(1.2rem, 2.4vw, 1.6rem);
+  font-weight: 800;
+  line-height: 1.3;
+  color: #0f172a;
+}
+
+.fp-hero__subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #64748b;
+  font-weight: 550;
+}
+
+.fp-hero__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-width: min(100%, 320px);
+}
+
+.fp-hero__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(165deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+}
+
+.fp-hero__stat dt {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: #94a3b8;
+}
+
+.fp-hero__stat dd {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.fp-hero__stat dd.fp-hero__stat-value--ok {
+  color: #047857;
+}
+
+.fp-hero__stat dd.fp-hero__stat-value--warn {
+  color: #b45309;
+}
+
+.fp-hero__stat dd.fp-hero__stat-value--accent {
+  color: #1e40af;
+}
+
+.fp-upgrade-hint {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 0.84rem;
+  font-weight: 650;
+  line-height: 1.55;
+  color: #1e3a8a;
+  background: rgba(239, 246, 255, 0.9);
+  border: 1px solid rgba(191, 219, 254, 0.75);
+}
+
+.fp-pricing-wrap {
+  padding: clamp(16px, 2.5vw, 22px);
+  border-radius: 28px;
+}
+
+.fp-pricing-wrap .pricing--dashboard {
+  padding: 0;
+}
+
+.fp-pricing-wrap .pricing--dashboard .pricing__grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .fp-pricing-wrap .pricing--dashboard .pricing__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    align-items: stretch;
+  }
+}
+
+.fp-pricing-wrap .pricing-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 22px;
+  padding: clamp(20px, 2.5vw, 26px);
+  box-shadow:
+    0 10px 28px -12px rgba(148, 163, 184, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  text-align: start;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease;
+}
+
+.fp-pricing-wrap .pricing-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(191, 219, 254, 0.85);
+  box-shadow: 0 16px 36px -14px rgba(59, 130, 246, 0.18);
+}
+
+.fp-pricing-wrap .pricing-card--featured {
+  border: 2px solid rgba(30, 58, 138, 0.45);
+  box-shadow: 0 18px 40px -14px rgba(30, 58, 138, 0.2);
+}
+
+.fp-pricing-wrap .pricing-card--current {
+  border-color: rgba(167, 243, 208, 0.85);
+  box-shadow: 0 12px 32px -12px rgba(5, 150, 105, 0.16);
+}
+
+.fp-error {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 0.86rem;
+  font-weight: 650;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}

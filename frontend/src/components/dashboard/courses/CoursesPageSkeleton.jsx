@@ -36,9 +36,12 @@ export default function CoursesPageSkeleton() {
               <div className="fdash-skel" style={{ height: 11, width: "50%", marginTop: 10 }} />
             </div>
             <div className="fc-course-card__aside-sk">
-              <div className="fdash-skel" style={{ height: 28, width: 48 }} />
-              <div className="fdash-skel" style={{ height: 8, width: "100%", marginTop: 10, borderRadius: 999 }} />
-              <div className="fdash-skel" style={{ height: 40, width: "100%", marginTop: 14, borderRadius: 999 }} />
+              <div className="fdash-skel fc-course-card__pct-sk" style={{ height: 28, width: 48 }} />
+              <div className="fdash-skel fc-course-card__progress" style={{ height: 8, width: "100%", marginTop: 10, borderRadius: 999 }} />
+              <div className="fc-course-card__footer">
+                <div className="fdash-skel" style={{ height: 12, width: 56 }} />
+                <div className="fdash-skel" style={{ height: 12, width: 64 }} />
+              </div>
             </div>
           </div>
         ))}

@@ -599,3 +599,126 @@
   font-weight: 900;
   color: #0f172a;
 }
+
+/* —— Mobile: filters, tabs, tables —— */
+@media (max-width: 768px) {
+  .oh-training-hub__tabs a.oh-training-hub__tab {
+    flex: 1 1 calc(50% - 4px);
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    text-align: center;
+  }
+
+  .dash-ui-toolbar.oh-training-filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .dash-ui-toolbar.oh-training-filters label {
+    width: 100%;
+  }
+
+  .dash-ui-toolbar.oh-training-filters input,
+  .dash-ui-toolbar.oh-training-filters select {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .dash-ui-toolbar.oh-training-filters > .btn {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .dash-ui-toolbar.oh-training-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .dash-ui-toolbar.oh-training-pagination .btn {
+    min-height: 44px;
+    min-width: 7rem;
+  }
+
+  .oh-training-visibility-control__btn {
+    width: 100%;
+    max-width: none;
+  }
+
+  .oh-training-table th,
+  .oh-training-table td {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    white-space: normal;
+  }
+
+  .oh-training-table td:last-child {
+    min-width: 7.5rem;
+  }
+
+  .oh-training-table td:last-child .btn {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    margin: 0 0 6px !important;
+    box-sizing: border-box;
+  }
+
+  .oh-training-table td:last-child .btn:last-child {
+    margin-bottom: 0 !important;
+  }
+
+  .oh-training-modal-overlay {
+    padding: 10px;
+    align-items: flex-end;
+  }
+
+  .oh-training-modal {
+    max-height: calc(100dvh - 20px);
+    border-radius: 14px 14px 0 0;
+  }
+
+  .oh-training-modal__card {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .oh-training-hub__tabs a.oh-training-hub__tab {
+    flex: 1 1 100%;
+  }
+
+  .oh-training-settings {
+    max-width: none;
+  }
+
+  .oh-training-settings-section {
+    padding: 14px 16px;
+  }
+
+  .oh-training-settings-field {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .oh-training-pct-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .oh-training-table-wrap {
+    margin-inline: -4px;
+    padding-inline: 4px;
+  }
+
+  .oh-training-table th,
+  .oh-training-table td {
+    padding: 7px 8px;
+    font-size: 0.76rem;
+  }
+}

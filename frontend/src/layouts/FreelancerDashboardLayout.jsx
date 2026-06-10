@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 
-import { PanelRightClose, PanelRightOpen } from "lucide-react";
+import { PanelRightClose, PanelRightOpen, X } from "lucide-react";
 
 import { useAuth } from "../context/useAuth";
 
@@ -406,6 +406,15 @@ export default function FreelancerDashboardLayout() {
 
 
           <aside className={sidebarClassName} aria-label={shellConfig.sidebarAria}>
+
+            <button
+              type="button"
+              className="fdl-sidebar__close fdl-icon-button-3d"
+              aria-label="إغلاق القائمة"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <X className="fdl-sidebar__close-icon" size={20} strokeWidth={2} aria-hidden />
+            </button>
 
             <div className="fdl-sidebar__brand">
 

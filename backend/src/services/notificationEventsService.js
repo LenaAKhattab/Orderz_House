@@ -236,7 +236,7 @@ async function notifySubscriptionOwner({
       message,
       entityType: "subscription",
       entityId: Number(subscription?.id),
-      link: "/plans",
+      link: "/dashboard/freelancer/plans",
       priority,
       metadata,
     },

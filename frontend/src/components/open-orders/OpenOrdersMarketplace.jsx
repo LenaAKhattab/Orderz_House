@@ -59,7 +59,7 @@ function PlanFilterEmptyState() {
           الطلبات الظاهرة في المعرض قد تتجاوز نطاق قيمة باقتك. يمكنك ترقية الاشتراك لفتح المزيد.
         </p>
       </div>
-      <Link to="/plans" className="oh-orders-plan-empty__cta btn btn-primary">
+      <Link to="/dashboard/freelancer/plans" className="oh-orders-plan-empty__cta btn btn-primary">
         ترقية الباقة
       </Link>
     </div>

@@ -237,7 +237,7 @@ function buildPendingActions({
       icon: "◆",
       titleAr: "اختر باقة اشتراك",
       descriptionAr: "لا يوجد اشتراك نشط — ابدأ باختيار الباقة المناسبة.",
-      actionUrl: "/plans",
+      actionUrl: "/dashboard/freelancer/plans",
       actionLabel: "عرض الباقات",
     });
   }
@@ -250,7 +250,7 @@ function buildPendingActions({
       icon: "◍",
       titleAr: "إكمال الدفع",
       descriptionAr: "الدفع قيد المعالجة أو لم يُستكمل بعد.",
-      actionUrl: "/plans",
+      actionUrl: "/dashboard/freelancer/plans",
       actionLabel: "إكمال الدفع",
     });
   }
@@ -276,7 +276,7 @@ function buildPendingActions({
       icon: "⏱",
       titleAr: "تجديد الاشتراك",
       descriptionAr: "انتهت صلاحية اشتراكك — جدّد للعودة للمعرض.",
-      actionUrl: "/plans",
+      actionUrl: "/dashboard/freelancer/plans",
       actionLabel: "تجديد",
     });
   }
@@ -293,7 +293,7 @@ function buildPendingActions({
       icon: "⏳",
       titleAr: expiryUrgency.headline,
       descriptionAr: expiryUrgency.sub,
-      actionUrl: "/plans",
+      actionUrl: "/dashboard/freelancer/plans",
       actionLabel: "مراجعة الباقات",
     });
   }

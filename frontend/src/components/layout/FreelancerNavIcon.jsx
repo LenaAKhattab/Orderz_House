@@ -1,6 +1,7 @@
 import {
   BriefcaseBusiness,
   ClipboardList,
+  Crown,
   ExternalLink,
   GraduationCap,
   LayoutDashboard,
@@ -14,6 +15,7 @@ const ICON_MAP = {
   orders: BriefcaseBusiness,
   "my-orders": ClipboardList,
   wallet: Wallet,
+  plans: Crown,
   messages: MessageSquare,
   courses: GraduationCap,
   settings: Settings2,

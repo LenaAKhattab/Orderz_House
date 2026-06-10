@@ -443,7 +443,7 @@ function buildSmartInsights(ctx) {
       titleAr: expiry.headline,
       descriptionAr: expiry.sub,
       actionLabel: "مراجعة الباقات",
-      actionUrl: "/plans",
+      actionUrl: "/dashboard/freelancer/plans",
     });
   }
 

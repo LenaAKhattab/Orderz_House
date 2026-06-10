@@ -82,10 +82,18 @@ export default function SuperAdminLayout() {
   const navigate = useNavigate();
   const { openModal: openClientCreateOrderModal } = useClientCreateOrderModal();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => readSidebarCollapsedPreference());
   const userMenuRef = useRef(null);
 
   useOnClickOutside(userMenuRef, () => setUserMenuOpen(false));
+
+  useEffect(() => {
+    document.body.style.overflow = sidebarOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sidebarOpen]);
 
   const toggleSidebarCollapsed = useCallback(() => {
     setSidebarCollapsed((prev) => {
@@ -100,7 +108,10 @@ export default function SuperAdminLayout() {
   }, []);
 
   useEffect(() => {
-    queueMicrotask(() => setUserMenuOpen(false));
+    queueMicrotask(() => {
+      setSidebarOpen(false);
+      setUserMenuOpen(false);
+    });
   }, [pathname]);
 
   const displayName = useMemo(() => fullNameAr(user) || user?.email || "مدير", [user]);
@@ -112,11 +123,19 @@ export default function SuperAdminLayout() {
 
   const shellClassName = `oh-sa-shell${sidebarCollapsed ? " oh-sa-shell--sidebar-collapsed" : ""}`;
   const navClassName = `oh-sa-nav${sidebarCollapsed ? " oh-sa-nav--collapsed" : ""}`;
+  const sidebarWrapClassName = ["oh-sa-sidebar-wrap", sidebarOpen ? "oh-sa-sidebar-wrap--open" : ""]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className={shellClassName} dir="rtl" lang="ar">
+      <div
+        className={`oh-sa-backdrop${sidebarOpen ? " oh-sa-backdrop--open" : ""}`}
+        aria-hidden={!sidebarOpen}
+        onClick={() => setSidebarOpen(false)}
+      />
       <div className="oh-sa-shell__grid">
-        <div className="oh-sa-sidebar-wrap">
+        <div className={sidebarWrapClassName}>
           <button
             type="button"
             className="oh-sa-sidebar__collapse oh-sa-icon-button-3d"
@@ -155,6 +174,7 @@ export default function SuperAdminLayout() {
                       const active = isActive || prefix;
                       return `oh-sa-navlink${active ? " oh-sa-navlink--active" : ""}`.trim();
                     }}
+                    onClick={() => setSidebarOpen(false)}
                   >
                     <span className="oh-sa-navlink__icon" aria-hidden>
                       {item.icon}
@@ -167,7 +187,10 @@ export default function SuperAdminLayout() {
                 <button
                   type="button"
                   className="oh-sa-navlink oh-sa-navlink--button"
-                  onClick={() => openClientCreateOrderModal()}
+                  onClick={() => {
+                    setSidebarOpen(false);
+                    openClientCreateOrderModal();
+                  }}
                 >
                   <span className="oh-sa-navlink__icon" aria-hidden>
                     +
@@ -179,7 +202,7 @@ export default function SuperAdminLayout() {
 
             <ul className="oh-sa-nav__list oh-sa-nav__list--muted">
               <li>
-                <NavLink to="/" className="oh-sa-navlink">
+                <NavLink to="/" className="oh-sa-navlink" onClick={() => setSidebarOpen(false)}>
                   <span className="oh-sa-navlink__icon" aria-hidden>
                     ↗
                   </span>
@@ -192,8 +215,19 @@ export default function SuperAdminLayout() {
 
         <div className="oh-sa-workspace">
         <header className="oh-sa-topbar">
-          <div className="oh-sa-breadcrumb">
-            <span>{crumb}</span>
+          <div className="oh-sa-topbar__start">
+            <button
+              type="button"
+              className="oh-sa-topbar__menu oh-sa-icon-button-3d"
+              aria-label="فتح القائمة"
+              aria-expanded={sidebarOpen}
+              onClick={() => setSidebarOpen((v) => !v)}
+            >
+              ☰
+            </button>
+            <div className="oh-sa-breadcrumb">
+              <span>{crumb}</span>
+            </div>
           </div>
 
           <div className="oh-sa-topbar__actions">

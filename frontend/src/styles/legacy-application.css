@@ -4652,15 +4652,39 @@ p {
 }
 
 .pricing-card__offer {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   margin: 0 0 10px;
   padding: 10px 12px;
   border-radius: 12px;
   background: linear-gradient(135deg, rgba(240, 141, 57, 0.14), rgba(240, 141, 57, 0.06));
   border: 1px solid rgba(240, 141, 57, 0.28);
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  line-height: 1.5;
+  line-height: 1.55;
   color: #9a4b12;
+}
+
+.pricing-card__offer-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  color: #c56a1c;
+}
+
+.pricing-card__offer-icon svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.pricing-card__offer-text {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .pricing-card__order-range {

@@ -1,5 +1,43 @@
 /* Plans page — premium RTL pricing (scoped) */
 
+/* Offer guarantee — shared (public + dashboard pricing cards) */
+.pricing-card__offer {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px 0 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 243, 230, 0.95);
+  border: 1px solid rgba(240, 141, 57, 0.35);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #9a4b12;
+  text-align: start;
+}
+
+.pricing-card__offer-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  color: #c56a1c;
+}
+
+.pricing-card__offer-icon svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.pricing-card__offer-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .plans-page--ref {
   position: relative;
   padding: 0;
@@ -107,42 +145,6 @@
   font-size: 0.9rem;
   font-weight: 800;
   color: #3852b4;
-}
-
-.plans-page--ref .pricing-card__offer {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin: 14px 0 12px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(255, 243, 230, 0.95);
-  border: 1px solid rgba(240, 141, 57, 0.35);
-  font-size: 0.84rem;
-  font-weight: 700;
-  line-height: 1.65;
-  color: #9a4b12;
-  text-align: start;
-}
-
-.plans-page--ref .pricing-card__offer-icon {
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  margin-top: 2px;
-  color: #c56a1c;
-}
-
-.plans-page--ref .pricing-card__offer-icon svg {
-  width: 18px;
-  height: 18px;
-}
-
-.plans-page--ref .pricing-card__offer-text {
-  flex: 1 1 auto;
-  min-width: 0;
 }
 
 .plans-page--ref .pricing-card__price {
@@ -501,9 +503,9 @@
   }
 
   .plans-page--ref .pricing-card__extras-block--offer .pricing-card__offer-icon {
-    width: 18px;
-    height: 18px;
-    margin-top: 1px;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
   }
 
   .plans-page--ref .pricing-card__extras-block--offer .pricing-card__offer-icon svg {

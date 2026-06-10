@@ -1178,22 +1178,57 @@
 @media (max-width: 640px) {
   .oh-admin-courses__col-course {
     max-width: none;
+    min-width: 0;
   }
 
-  .oh-admin-courses__col-actions {
-    min-width: 11rem;
-    max-width: none;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
+  .oh-admin-courses__col-status,
+  .oh-admin-courses__col-access,
+  .oh-admin-courses__col-date {
+    white-space: normal;
   }
 
-  .oh-admin-courses__table-actions {
-    min-width: 22rem;
+  .oh-admin-courses__table-wrap .dash-ui-table thead th.oh-admin-courses__col-date,
+  .oh-admin-courses__table-wrap .dash-ui-table tbody td.oh-admin-courses__col-date,
+  .oh-admin-courses__table-wrap .dash-ui-table thead th.oh-admin-courses__col-visibility,
+  .oh-admin-courses__table-wrap .dash-ui-table tbody td.oh-admin-courses__col-visibility {
+    display: none;
   }
 
   .oh-admin-courses__table-wrap .dash-ui-table {
-    min-width: min(100%, 640px);
+    min-width: 0;
+    width: 100%;
+  }
+
+  .oh-admin-courses__table-wrap .dash-ui-table thead th,
+  .oh-admin-courses__table-wrap .dash-ui-table tbody td {
+    padding: 0.65rem 0.55rem;
+  }
+
+  .oh-admin-courses__col-actions {
+    min-width: 0;
+    max-width: none;
+    overflow: visible;
+  }
+
+  .oh-admin-courses__table-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    min-width: 0;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .oh-admin-courses__table-actions > .oh-admin-courses__row-btn--primary {
+    grid-column: 1 / -1;
+  }
+
+  .oh-admin-courses__table-actions > .oh-admin-courses__row-btn {
+    flex: unset;
+    width: 100%;
+    min-height: 44px;
+    font-size: 0.78rem;
+    padding: 0.5rem 0.65rem;
   }
 
   .oh-admin-courses__row-toggle-label {
@@ -1201,13 +1236,13 @@
   }
 
   .oh-sa-outlet .oh-admin-courses__table-actions > .btn.oh-admin-courses__row-btn {
-    min-height: 1.65rem;
-    font-size: 0.58rem;
-    padding: 0.22rem 0.12rem;
+    min-height: 44px;
+    font-size: 0.78rem;
+    padding: 0.5rem 0.65rem;
   }
 
   .oh-admin-courses__row-btn {
-    font-size: 0.58rem;
+    font-size: 0.78rem;
   }
 }
 

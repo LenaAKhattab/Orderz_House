@@ -18,11 +18,7 @@ export default function NotificationListSkeleton({ count = 5 }) {
                 </div>
               </div>
               <div className="fn-notif-card__aside">
-                <div className="fn-notif-card__sk-actions">
-                  <div className="fdash-skel" style={{ height: 32, width: 88, borderRadius: 999 }} />
-                  <div className="fdash-skel" style={{ height: 32, width: 56, borderRadius: 999 }} />
-                </div>
-                <div className="fdash-skel" style={{ height: 11, width: 56, marginTop: 2 }} />
+                <div className="fdash-skel" style={{ height: 11, width: 72 }} />
               </div>
             </div>
           </div>
