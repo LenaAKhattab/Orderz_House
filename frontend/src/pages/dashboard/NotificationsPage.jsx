@@ -241,6 +241,14 @@ export default function NotificationsPage() {
     }
   }, []);
 
+  const handleOpen = useCallback(
+    async (n) => {
+      await handleRead(n);
+      navigate(n?.link || "/dashboard");
+    },
+    [handleRead, navigate],
+  );
+
   const handleReadAll = useCallback(async () => {
     try {
       await markAllNotificationsReadRequest();
@@ -351,8 +359,12 @@ export default function NotificationsPage() {
                   key={n.id}
                   className={`fn-notif-card${unread ? " fn-notif-card--unread" : " fn-notif-card--read"}`.trim()}
                 >
-                  {unread ? <span className="fn-notif-card__edge" aria-hidden /> : null}
-                  <div className="fn-notif-card__surface">
+                  <button
+                    type="button"
+                    className="fn-notif-card__surface"
+                    onClick={() => handleOpen(n)}
+                    aria-label={`${n.title || "إشعار جديد"}${unread ? " — غير مقروء" : ""}`}
+                  >
                     <div className="fn-notif-card__start">
                       <div className="fn-notif-card__rail">
                         <div className="fn-notif-card__icon-wrap">
@@ -376,28 +388,11 @@ export default function NotificationsPage() {
                     </div>
 
                     <div className="fn-notif-card__aside">
-                      <div className="fn-notif-card__actions">
-                        {unread ? (
-                          <button type="button" className="fn-notif-card__btn" onClick={() => handleRead(n)}>
-                            تحديد كمقروء
-                          </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          className="fn-notif-card__btn fn-notif-card__btn--primary"
-                          onClick={async () => {
-                            await handleRead(n);
-                            navigate(n.link || "/dashboard");
-                          }}
-                        >
-                          فتح
-                        </button>
-                      </div>
                       <time className="fn-notif-card__aside-time" dateTime={n.createdAt}>
                         {relativeTime}
                       </time>
                     </div>
-                  </div>
+                  </button>
                 </article>
               );
             })}

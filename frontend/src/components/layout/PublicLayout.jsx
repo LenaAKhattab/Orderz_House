@@ -24,9 +24,11 @@ function PublicLayoutInner() {
       <Navbar />
       <LazyRouteOutlet />
       {isHome ? (
-        <Suspense fallback={<PartnersBandSkeleton />}>
-          <PartnersSection />
-        </Suspense>
+        <div className="home-desktop-only">
+          <Suspense fallback={<PartnersBandSkeleton />}>
+            <PartnersSection />
+          </Suspense>
+        </div>
       ) : null}
       {!isAuthPage ? <Footer homeBlend={isHome} /> : null}
     </div>

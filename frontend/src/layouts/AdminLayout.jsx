@@ -43,12 +43,23 @@ export default function AdminLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const userMenuRef = useRef(null);
 
   useOnClickOutside(userMenuRef, () => setUserMenuOpen(false));
 
   useEffect(() => {
-    queueMicrotask(() => setUserMenuOpen(false));
+    document.body.style.overflow = sidebarOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setSidebarOpen(false);
+      setUserMenuOpen(false);
+    });
   }, [pathname]);
 
   const displayName = useMemo(() => fullNameAr(user) || user?.email || "مدير", [user]);
@@ -59,11 +70,19 @@ export default function AdminLayout() {
   const businessNav = useMemo(() => filterAdminNavItems(ADMIN_NAV_MAIN, user, userHasPermission), [user]);
   const showCreateOrder = userHasPermission(user, ADMIN_NAV_CREATE_ORDER.permission);
   const hasBusinessPermissions = businessNav.length > 0 || showCreateOrder;
+  const sidebarWrapClassName = ["oh-sa-sidebar-wrap", sidebarOpen ? "oh-sa-sidebar-wrap--open" : ""]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className="oh-sa-shell" dir="rtl" lang="ar">
+      <div
+        className={`oh-sa-backdrop${sidebarOpen ? " oh-sa-backdrop--open" : ""}`}
+        aria-hidden={!sidebarOpen}
+        onClick={() => setSidebarOpen(false)}
+      />
       <div className="oh-sa-shell__grid">
-        <div className="oh-sa-sidebar-wrap">
+        <div className={sidebarWrapClassName}>
           <aside className="oh-sa-nav" aria-label="قائمة الإدارة">
         <div className="oh-sa-brand oh-sa-brand--full-logo">
           <img
@@ -83,6 +102,7 @@ export default function AdminLayout() {
               to={ADMIN_NAV_HOME.to}
               end={Boolean(ADMIN_NAV_HOME.end)}
               className={({ isActive }) => `oh-sa-navlink${isActive ? " oh-sa-navlink--active" : ""}`.trim()}
+              onClick={() => setSidebarOpen(false)}
             >
               <span className="oh-sa-navlink__icon" aria-hidden>
                 {ADMIN_NAV_HOME.icon}
@@ -100,6 +120,7 @@ export default function AdminLayout() {
                   const active = isActive || prefix;
                   return `oh-sa-navlink${active ? " oh-sa-navlink--active" : ""}`.trim();
                 }}
+                onClick={() => setSidebarOpen(false)}
               >
                 <span className="oh-sa-navlink__icon" aria-hidden>
                   {item.icon}
@@ -113,6 +134,7 @@ export default function AdminLayout() {
               <NavLink
                 to={ADMIN_NAV_CREATE_ORDER.to}
                 className={({ isActive }) => `oh-sa-navlink${isActive ? " oh-sa-navlink--active" : ""}`.trim()}
+                onClick={() => setSidebarOpen(false)}
               >
                 <span className="oh-sa-navlink__icon" aria-hidden>
                   {ADMIN_NAV_CREATE_ORDER.icon}
@@ -128,6 +150,7 @@ export default function AdminLayout() {
             <NavLink
               to={ADMIN_NAV_NOTIFICATIONS.to}
               className={({ isActive }) => `oh-sa-navlink${isActive ? " oh-sa-navlink--active" : ""}`.trim()}
+              onClick={() => setSidebarOpen(false)}
             >
               <span className="oh-sa-navlink__icon" aria-hidden>
                 {ADMIN_NAV_NOTIFICATIONS.icon}
@@ -148,8 +171,19 @@ export default function AdminLayout() {
 
         <div className="oh-sa-workspace">
         <header className="oh-sa-topbar">
-          <div className="oh-sa-breadcrumb">
-            <span>{crumb}</span>
+          <div className="oh-sa-topbar__start">
+            <button
+              type="button"
+              className="oh-sa-topbar__menu oh-sa-icon-button-3d"
+              aria-label="فتح القائمة"
+              aria-expanded={sidebarOpen}
+              onClick={() => setSidebarOpen((v) => !v)}
+            >
+              ☰
+            </button>
+            <div className="oh-sa-breadcrumb">
+              <span>{crumb}</span>
+            </div>
           </div>
 
           <div className="oh-sa-topbar__actions">

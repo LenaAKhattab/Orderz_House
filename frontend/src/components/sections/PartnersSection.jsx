@@ -1,13 +1,9 @@
+import { PARTNER_LOGOS } from "../../constants/partnerLogos";
+
 /**
  * Partner logos strip — soft wave + subtle brand tints (design system only).
  * Logos live in `public/partners/`.
  */
-const PARTNER_LOGOS = [
-  { id: "fazaat", src: "/partners/Fazaat.png", alt: "فزعة" },
-  { id: "bildazo", src: "/partners/Bildazo.png", alt: "بيلدازو" },
-  { id: "studyzhouse", src: "/partners/studyzhouse.png", alt: "ستادي هاوس" },
-  { id: "battech", src: "/partners/Battech.png", alt: "بات تكنو" },
-];
 
 const PartnersSection = () => {
   return (

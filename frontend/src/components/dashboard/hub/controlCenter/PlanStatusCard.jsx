@@ -50,7 +50,7 @@ export default function PlanStatusCard({ subscription, eligibility, orderCounts,
       <header className="fdash-cc-card__head">
         <h3 className="fdash-cc-card__title">الباقة والأهلية</h3>
         {!subscription ? (
-          <Link to="/plans" className="fdash-cc-card__link">
+          <Link to="/dashboard/freelancer/plans" className="fdash-cc-card__link">
             اختيار باقة
           </Link>
         ) : null}

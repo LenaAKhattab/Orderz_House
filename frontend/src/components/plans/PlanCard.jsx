@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import Button from "../ui/Button";
 import { useAuth } from "../../context/useAuth";
 import { isOrderzhouseFreePlan } from "../../constants/orderzhousePlansCatalog";
+import { isUpgradePlan, planTierRank } from "../../utils/planSubscriptionUtils";
 import {
   formatInstallmentSummary,
   formatOrderValueRange,
@@ -54,14 +55,14 @@ function OfferBlock({ label, className = "" }) {
   return (
     <p className={`pricing-card__offer ${className}`.trim()}>
       <span className="pricing-card__offer-icon" aria-hidden>
-        <svg viewBox="0 0 24 24" fill="none">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
           <path
             d="M12 3 4 6v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V6l-8-3z"
             stroke="currentColor"
-            strokeWidth="1.6"
+            strokeWidth="1.5"
             strokeLinejoin="round"
           />
-          <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
       <span className="pricing-card__offer-text">{label}</span>
@@ -84,9 +85,14 @@ const PlanCard = ({
   const isGuest = !user;
   const isFreelancer = role === "freelancer" || roles.includes("freelancer");
   const isLoggedNonFreelancer = Boolean(user) && !isFreelancer;
-  const isBlockedBySubscription = Boolean(user) && isFreelancer && hasBlockingSubscription;
   const isCurrentPlan =
     Boolean(currentSubscription) && String(currentSubscription.planId) === String(plan.id);
+  const isUpgradeTarget = isUpgradePlan(currentSubscription, plan);
+  const isLowerTier =
+    Boolean(currentSubscription) &&
+    planTierRank(plan) < planTierRank(currentSubscription.plan ?? currentSubscription.planId);
+  const isBlockedBySubscription =
+    Boolean(user) && isFreelancer && hasBlockingSubscription && !isUpgradeTarget;
   const isFreePlan = isOrderzhouseFreePlan(plan);
   const canSelfCheckout =
     plan?.selfCheckoutEligible == null ? true : Boolean(plan.selfCheckoutEligible);
@@ -113,17 +119,21 @@ const PlanCard = ({
     ? "للمستقلين فقط"
     : isCurrentPlan
       ? "باقتك الحالية"
-      : isBlockedBySubscription
-        ? "مشترك بالفعل"
-        : checkoutBusy
-          ? "جارٍ التحويل…"
-          : isFreelancer && canSelfCheckout
-            ? "ترقية الاشتراك"
-            : isFreelancer && isFreePlan
-              ? "مفعّل تلقائياً"
-              : isFreelancer && !canSelfCheckout
-                ? "يتم التفعيل عبر الشركة"
-                : "ابدأ الآن";
+      : isLowerTier
+        ? "باقة أقل"
+        : isBlockedBySubscription
+          ? "مشترك بالفعل"
+          : checkoutBusy
+            ? "جارٍ التحويل…"
+            : isFreelancer && isUpgradeTarget && canSelfCheckout
+              ? "ترقية الاشتراك"
+              : isFreelancer && canSelfCheckout
+                ? "ترقية الاشتراك"
+                : isFreelancer && isFreePlan
+                  ? "مفعّل تلقائياً"
+                  : isFreelancer && !canSelfCheckout
+                    ? "يتم التفعيل عبر الشركة"
+                    : "ابدأ الآن";
   const usePrimaryCta =
     featured &&
     (isGuest || (isFreelancer && canSelfCheckout)) &&
@@ -132,10 +142,11 @@ const PlanCard = ({
   const isLocked =
     isLoggedNonFreelancer ||
     isCurrentPlan ||
+    isLowerTier ||
     isBlockedBySubscription ||
     checkoutBusy ||
     (isFreelancer && isFreePlan) ||
-    (isFreelancer && !canSelfCheckout && !isCurrentPlan);
+    (isFreelancer && !canSelfCheckout && !isCurrentPlan && !isUpgradeTarget);
 
   const hasExtras = Boolean(
     offerLabel || orderRange || plan.activationRequirements || plan.refundPolicy,
@@ -153,7 +164,15 @@ const PlanCard = ({
   };
 
   return (
-    <article className={`pricing-card ${featured ? "pricing-card--featured" : ""}`.trim()}>
+    <article
+      className={[
+        "pricing-card",
+        featured ? "pricing-card--featured" : "",
+        isCurrentPlan ? "pricing-card--current" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {badge ? (
         <span className="pricing-card__badge" aria-hidden="true">
           {badge}

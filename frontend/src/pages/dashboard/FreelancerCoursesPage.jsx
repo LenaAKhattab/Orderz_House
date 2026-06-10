@@ -138,6 +138,12 @@ function ctaLabel(status) {
   return "متابعة التعلم";
 }
 
+function ctaLabelShort(status) {
+  if (status === "completed") return "مراجعة";
+  if (status === "not_started") return "ابدأ";
+  return "متابعة";
+}
+
 function StatSegment({ tone, Icon, value, label, loading }) {
   return (
     <div className={`fc-stat-segment fc-stat-segment--${tone}`}>
@@ -165,8 +171,11 @@ function CourseCard({ course, isFavorite, onToggleFavorite }) {
   const badge = statusUi(status);
   const BadgeIcon = badge.Icon;
 
+  const courseTo = `/dashboard/freelancer/courses/${course.id}`;
+
   return (
-    <article
+    <Link
+      to={courseTo}
       className={[
         "fc-course-card fc-surface-3d fc-surface-3d--soft",
         status === "completed" ? "fc-course-card--completed" : "",
@@ -174,6 +183,7 @@ function CourseCard({ course, isFavorite, onToggleFavorite }) {
       ]
         .filter(Boolean)
         .join(" ")}
+      aria-label={`${course.title || "دورة بدون عنوان"} — ${ctaLabel(status)}`}
     >
       <div className="fc-course-card__media">
         {cover ? (
@@ -190,7 +200,11 @@ function CourseCard({ course, isFavorite, onToggleFavorite }) {
         <button
           type="button"
           className={`fc-course-card__fav${isFavorite ? " is-active" : ""}`}
-          onClick={() => onToggleFavorite(course.id)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleFavorite(course.id);
+          }}
           aria-label={isFavorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
           aria-pressed={isFavorite}
         >
@@ -199,6 +213,10 @@ function CourseCard({ course, isFavorite, onToggleFavorite }) {
       </div>
 
       <div className="fc-course-card__main">
+        <span className={`fc-course-card__status-label ${badge.className}`}>
+          <BadgeIcon size={11} strokeWidth={2.4} aria-hidden />
+          {badge.label}
+        </span>
         <div className="fc-course-card__head">
           <h3 className="fc-course-card__title">{course.title || "دورة بدون عنوان"}</h3>
           {test ? <span className={`fc-course-card__test fc-course-card__test--${test.tone}`}>{test.label}</span> : null}
@@ -245,15 +263,23 @@ function CourseCard({ course, isFavorite, onToggleFavorite }) {
             style={{ width: `${pct}%` }}
           />
         </div>
-        <span className="fc-course-card__progress-sub">
-          {completed}/{total} درس مكتمل
-        </span>
-        <Link className="fc-course-card__cta" to={`/dashboard/freelancer/courses/${course.id}`}>
-          {ctaLabel(status)}
-          <ArrowLeft size={16} strokeWidth={2.2} aria-hidden />
-        </Link>
+        <div className="fc-course-card__footer">
+          <span className="fc-course-card__progress-sub">
+            <span className="fc-course-card__progress-sub-long">
+              {completed}/{total} درس مكتمل
+            </span>
+            <span className="fc-course-card__progress-sub-short">
+              {completed}/{total} درس
+            </span>
+          </span>
+          <span className="fc-course-card__cta" aria-hidden>
+            <span className="fc-course-card__cta-long">{ctaLabel(status)}</span>
+            <span className="fc-course-card__cta-short">{ctaLabelShort(status)}</span>
+            <ArrowLeft size={16} strokeWidth={2.2} aria-hidden />
+          </span>
+        </div>
       </div>
-    </article>
+    </Link>
   );
 }
 

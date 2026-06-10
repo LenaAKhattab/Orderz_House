@@ -1,0 +1,396 @@
+/* ═══════════════════════════════════════════════════════════════
+   Public plans page — radical mobile layout (≤640px only)
+   ═══════════════════════════════════════════════════════════════ */
+
+.plans-mobile-page {
+  --pm-bg: #f5f7fc;
+  --pm-surface: #ffffff;
+  --pm-primary: var(--primary, #2f3b65);
+  --pm-primary-deep: #1f2947;
+  --pm-primary-mid: #3d4d7a;
+  --pm-primary-light: #5b6fa3;
+  --pm-primary-soft: rgba(47, 59, 101, 0.1);
+  --pm-ink: #0f172a;
+  --pm-muted: #64748b;
+  --pm-radius: 1.35rem;
+  --pm-shadow: 0 10px 32px -14px rgba(15, 23, 42, 0.14);
+  display: none;
+  width: 100%;
+  min-width: 0;
+  background: var(--pm-bg);
+  padding-bottom: 2rem;
+}
+
+.plans-desktop-only {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .plans-mobile-page {
+    display: block;
+  }
+
+  .plans-desktop-only {
+    display: none !important;
+  }
+
+  .plans-page--ref.container.page-content {
+    padding-inline: 0;
+    max-width: none;
+  }
+
+  .plans-page--ref::before {
+    display: none;
+  }
+
+  .bg-page-bg:has(.plans-mobile-page) .public-nav-header {
+    background: rgba(245, 247, 252, 0.97);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 6px 20px rgba(47, 59, 101, 0.08);
+  }
+}
+
+/* —— Hero —— */
+.pm-hero {
+  --pm-masthead-nav-space: clamp(4.65rem, 13.5vw, 5.35rem);
+  padding: 0 1rem 1rem;
+}
+
+.pm-hero__masthead {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin-inline: -1rem;
+  margin-top: calc(-1 * var(--pm-masthead-nav-space));
+  padding-top: calc(var(--pm-masthead-nav-space) + 0.55rem);
+  padding-inline: 1rem;
+  padding-bottom: 0.85rem;
+}
+
+.pm-hero__masthead-art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.pm-hero__top {
+  position: relative;
+  z-index: 1;
+}
+
+.pm-hero__label {
+  margin: 0 0 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(47, 59, 101, 0.68);
+}
+
+.pm-hero__title {
+  margin: 0;
+  font-size: clamp(1.2rem, 5.2vw, 1.45rem);
+  font-weight: 900;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--pm-primary);
+}
+
+.pm-hero__lede {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.65;
+  color: var(--pm-muted);
+}
+
+/* —— Section head —— */
+.pm-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding-inline: 1rem;
+}
+
+.pm-section-head__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--pm-ink);
+}
+
+.pm-section-head__hint {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--pm-muted);
+}
+
+/* —— Plans list —— */
+.pm-plans {
+  padding: 0.25rem 0 0.5rem;
+}
+
+.pm-plans__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-inline: 1rem;
+}
+
+/* —— Plan card —— */
+.pm-plan-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1rem 0.95rem;
+  border-radius: var(--pm-radius);
+  background: var(--pm-surface);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow: var(--pm-shadow);
+}
+
+.pm-plan-card--featured {
+  border: 2px solid rgba(47, 59, 101, 0.42);
+  box-shadow:
+    0 14px 36px -12px rgba(47, 59, 101, 0.22),
+    0 4px 14px rgba(47, 59, 101, 0.08);
+}
+
+.pm-plan-card--current {
+  border-color: rgba(91, 111, 163, 0.45);
+  background: linear-gradient(180deg, #fff 0%, rgba(47, 59, 101, 0.03) 100%);
+}
+
+.pm-plan-card__badge {
+  align-self: flex-start;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(168deg, var(--pm-primary-mid) 0%, var(--pm-primary) 52%, var(--pm-primary-deep) 100%);
+}
+
+.pm-plan-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 900;
+  line-height: 1.35;
+  color: var(--pm-ink);
+}
+
+.pm-plan-card__desc {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--pm-muted);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.pm-plan-card__duration {
+  margin: 0.35rem 0 0;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--pm-primary-light);
+}
+
+.pm-plan-card__price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+}
+
+.pm-plan-card__price-main {
+  font-size: clamp(1.55rem, 7vw, 1.85rem);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--pm-primary);
+}
+
+.pm-plan-card__price-sub {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--pm-muted);
+}
+
+.pm-plan-card__price-note {
+  width: 100%;
+  margin: 0;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--pm-muted);
+}
+
+.pm-plan-card__offer {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.85rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #9a4b12;
+  background: rgba(255, 243, 230, 0.95);
+  border: 1px solid rgba(240, 141, 57, 0.28);
+}
+
+.pm-plan-card__features {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.pm-plan-card__features--more {
+  padding-top: 0.15rem;
+}
+
+.pm-plan-card__feature {
+  display: grid;
+  grid-template-columns: 1.15rem 1fr;
+  gap: 0.45rem;
+  align-items: start;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #334155;
+}
+
+.pm-plan-card__check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.1rem;
+  border-radius: 999px;
+  color: var(--pm-primary);
+  background: var(--pm-primary-soft);
+}
+
+.pm-plan-card__more {
+  align-self: flex-start;
+  padding: 0.35rem 0.55rem;
+  border: none;
+  border-radius: 0.65rem;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--pm-primary-mid);
+  cursor: pointer;
+}
+
+.pm-plan-card__meta {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.85rem;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.pm-plan-card__meta p {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--pm-muted);
+}
+
+.pm-plan-card__cta {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 0.15rem;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  border: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.pm-plan-card__cta--primary {
+  color: #fff;
+  background: linear-gradient(168deg, var(--pm-primary-mid) 0%, var(--pm-primary) 52%, var(--pm-primary-deep) 100%);
+  box-shadow: 0 10px 24px -10px rgba(47, 59, 101, 0.45);
+}
+
+.pm-plan-card__cta--ghost {
+  color: var(--pm-ink);
+  background: var(--pm-surface);
+  border: 1.5px solid rgba(203, 213, 225, 0.95);
+}
+
+.pm-plan-card__cta--locked {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.pm-plan-card--skeleton {
+  min-height: 14rem;
+  background: linear-gradient(110deg, #e8edf5 0%, #f4f6fb 45%, #e8edf5 90%);
+  background-size: 200% 100%;
+  animation: pm-shimmer 1.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pm-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.pm-feedback {
+  margin: 0.75rem 1rem 0;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--pm-muted);
+  background: var(--pm-surface);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.pm-feedback--error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.pm-footnote {
+  margin: 1rem 1rem 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+  color: rgba(100, 116, 139, 0.9);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-plan-card--skeleton {
+    animation: none;
+    background-position: 0 0;
+  }
+}

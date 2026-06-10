@@ -55,6 +55,7 @@ import {
   FreelancerOrderDetailsPage,
   FreelancerMyOrderDetailsPage,
   FreelancerFinancialClaimsPage,
+  FreelancerPlansPage,
   FreelancerCoursesPage,
   FreelancerCourseDetailsPage,
   FreelancerSettingsPage,
@@ -427,6 +428,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
                       <FreelancerFinancialClaimsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/plans"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerPlansPage />
                     </RequireRole>
                   }
                 />

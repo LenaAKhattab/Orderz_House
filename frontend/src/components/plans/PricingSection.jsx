@@ -19,12 +19,17 @@ const PricingSection = ({
   hasBlockingSubscription = false,
   loading = false,
   checkoutBusyPlanId = null,
+  variant = "public",
 }) => {
   const featuredIndex = pickFeaturedIndex(plans);
+  const isDashboard = variant === "dashboard";
 
   return (
-    <section className="pricing pricing-ref-shell" aria-label="خطط الاشتراك">
-      <PublicPageHeader title="باقات أوردرز هاوس للعمل الحر" />
+    <section
+      className={`pricing ${isDashboard ? "pricing--dashboard" : "pricing-ref-shell"}`.trim()}
+      aria-label="خطط الاشتراك"
+    >
+      {isDashboard ? null : <PublicPageHeader title="باقات أوردرز هاوس للعمل الحر" />}
 
       {loading ? (
         <PlanCardsRowSkeleton count={3} />

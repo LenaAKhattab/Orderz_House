@@ -2734,10 +2734,12 @@
   }
 }
 
-@media (max-width: 520px) {
-  .fcd-header__meta {
-    flex-direction: column;
-    gap: 10px;
+@media (max-width: 640px) {
+  .fcd-ring-wrap,
+  .fcd-header__meta,
+  .fcd-header__ring-sk,
+  .fcd-header__meta-sk {
+    display: none;
   }
 }
 

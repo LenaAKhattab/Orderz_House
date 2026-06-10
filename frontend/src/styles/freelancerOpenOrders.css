@@ -945,10 +945,6 @@
     padding-inline: var(--oh-pool-shell-pad-inline);
   }
 
-  .oh-orders-public-page {
-    --oh-pool-public-edge-inline: clamp(28px, 7vw, 36px);
-  }
-
   .oh-orders-market--modern .oh-order-row__budget {
     grid-template-columns: 1fr;
   }
@@ -970,6 +966,81 @@
 .oh-orders-public-page .oh-orders-market--modern {
   width: 100%;
   max-width: none;
+}
+
+/* Public `/orders` — tighter mobile gutters and filter toolbar */
+@media (max-width: 768px) {
+  .oh-orders-public-page {
+    --oh-pool-public-edge-inline: 16px;
+  }
+
+  .oh-orders-public-page .oh-orders-toolbar-neu {
+    gap: 8px;
+  }
+
+  .oh-orders-public-page .oh-orders-toolbar-neu__controls {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    margin-inline-start: 0;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .oh-orders-public-page .oh-orders-sort-card.fdash-surface-3d.fdash-surface-3d--soft {
+    flex: 1 1 auto;
+    min-width: min(100%, 220px);
+    max-width: 100%;
+  }
+
+  .oh-orders-public-page .oh-orders-sort-card__label {
+    white-space: normal;
+  }
+
+  .oh-orders-public-page .oh-orders-market--modern .oh-orders-sort {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .oh-orders-public-page .oh-orders-plan-filter-btn {
+    white-space: normal;
+    max-width: 100%;
+  }
+
+  .oh-orders-public-page .oh-orders-mobile-filters-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .oh-orders-public-page {
+    --oh-pool-public-edge-inline: 12px;
+  }
+
+  .oh-orders-public-page .oh-orders-market--modern .oh-order-row--neu.fdash-surface-3d.fdash-surface-3d--soft {
+    padding: 14px 12px;
+  }
+
+  .oh-orders-public-page .oh-orders-toolbar-neu__controls {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .oh-orders-public-page .oh-orders-toolbar-neu__controls::-webkit-scrollbar {
+    display: none;
+  }
+
+  .oh-orders-public-page .oh-orders-sort-card.fdash-surface-3d.fdash-surface-3d--soft,
+  .oh-orders-public-page .oh-orders-plan-filter-wrap,
+  .oh-orders-public-page .oh-orders-mobile-filters-btn {
+    flex: 0 0 auto;
+  }
 }
 
 /* Public sticky offsets — no dashboard topbar */

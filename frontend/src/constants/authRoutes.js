@@ -36,6 +36,7 @@ export const DASHBOARD_TITLE = {
   "/dashboard/freelancer/my-orders": "طلباتي",
   "/dashboard/freelancer/orders": "الطلبات",
   "/dashboard/freelancer/financial-claims": "المطالبات المالية",
+  "/dashboard/freelancer/plans": "الباقات",
   "/dashboard/freelancer/courses": "الدورات التدريبية",
   "/dashboard/super-admin/notifications": "الإشعارات",
   "/dashboard/super-admin/courses": "إدارة الدورات",
@@ -127,6 +128,7 @@ const DASHBOARD_PATH_TO_ROLES = {
   /** معرض الطلبات: مستقل يتقدّم ويعرض؛ عميل يتصفّح الطلبات المتاحة (نفس مسار الواجهة). */
   "/dashboard/freelancer/orders": [ROLE.FREELANCER, ROLE.CLIENT],
   "/dashboard/freelancer/financial-claims": [ROLE.FREELANCER],
+  "/dashboard/freelancer/plans": [ROLE.FREELANCER],
   "/dashboard/freelancer/courses": [ROLE.FREELANCER],
   "/dashboard/freelancer/notifications": [ROLE.FREELANCER],
   "/dashboard/super-admin/notifications": [ROLE.SUPER_ADMIN],
@@ -157,6 +159,7 @@ const DASHBOARD_PREFIX_RULES = [
   { prefix: "/dashboard/freelancer/orders", roles: [ROLE.FREELANCER, ROLE.CLIENT] },
   { prefix: "/dashboard/freelancer/my-orders", roles: [ROLE.FREELANCER] },
   { prefix: "/dashboard/freelancer/financial-claims", roles: [ROLE.FREELANCER] },
+  { prefix: "/dashboard/freelancer/plans", roles: [ROLE.FREELANCER] },
   { prefix: "/dashboard/freelancer/courses", roles: [ROLE.FREELANCER] },
   { prefix: "/dashboard/freelancer", roles: [ROLE.FREELANCER] },
   { prefix: "/dashboard/client", roles: [ROLE.CLIENT] },

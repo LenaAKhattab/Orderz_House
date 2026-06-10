@@ -74,6 +74,7 @@ export const FreelancerMyOrderDetailsPage = lazy(
 export const FreelancerFinancialClaimsPage = lazy(
   () => import("../pages/dashboard/FreelancerFinancialClaimsPage"),
 );
+export const FreelancerPlansPage = lazy(() => import("../pages/dashboard/FreelancerPlansPage"));
 export const FreelancerCoursesPage = lazy(() => import("../pages/dashboard/FreelancerCoursesPage"));
 export const FreelancerCourseDetailsPage = lazy(() => import("../pages/dashboard/FreelancerCourseDetailsPage"));
 export const FreelancerSettingsPage = lazy(() => import("../pages/dashboard/FreelancerSettingsPage"));

@@ -2698,6 +2698,12 @@
   border-radius: 14px;
 }
 
+@media (max-width: 768px) {
+  .fdash-welcome__subtitle {
+    white-space: normal;
+  }
+}
+
 @media (max-width: 899px) {
   .fdash-welcome__aside {
     padding-bottom: 14px;
