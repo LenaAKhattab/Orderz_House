@@ -1,5 +1,5 @@
 import { resolvePostHogHost, validatePostHogProjectKey } from "../utils/posthogEnv";
-import { buildPageViewIdempotencyKey, getClientSessionId } from "../utils/pageViewNavigation";
+import { buildPageViewIdempotencyKey, getClientSessionId, shouldIncrementVisitCounter } from "../utils/pageViewNavigation";
 import { postPublicPageViewRequest } from "./api";
 import { triggerPublicHomeStatsRefetch } from "./publicHomeStatsRefetch";
 
@@ -339,7 +339,11 @@ export function trackPageView(path, title = "") {
   }
   emittedPageViewKeys.add(idempotencyKey);
 
-  void recordLocalPageView({ path: fullPath, title, idempotencyKey });
+  if (shouldIncrementVisitCounter()) {
+    void recordLocalPageView({ path: fullPath, title, idempotencyKey });
+  } else {
+    debugLog("visit counter skipped", { path: fullPath, reason: "within_30min_session" });
+  }
 
   if (!ANALYTICS_ENABLED) {
     debugLog("posthog pageview skipped", { path: fullPath, reason: "disabled" });
