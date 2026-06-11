@@ -39,10 +39,8 @@ export const AdminSettingsPage = lazy(() => import("../pages/dashboard/AdminSett
 export const TrainingOrdersAdminShell = lazy(
   () => import("../pages/dashboard/trainingOrders/TrainingOrdersAdminShell"),
 );
-export const TrainingOrdersIndexRedirect = lazy(
-  () => import("../pages/dashboard/trainingOrders/TrainingOrdersAdminShell").then((m) => ({
-    default: m.TrainingOrdersIndexRedirect,
-  })),
+export const TrainingOrdersOverviewPage = lazy(
+  () => import("../pages/dashboard/trainingOrders/TrainingOrdersOverviewPage"),
 );
 export const TrainingOrdersSettingsPage = lazy(
   () => import("../pages/dashboard/trainingOrders/TrainingOrdersSettingsPage"),

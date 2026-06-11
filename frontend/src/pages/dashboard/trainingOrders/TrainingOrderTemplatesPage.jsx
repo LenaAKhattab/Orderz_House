@@ -185,7 +185,7 @@ export default function TrainingOrderTemplatesPage() {
     <>
       <DashboardSection
         className="oh-training-page-section"
-        title="قوالب الطلبات التجريبية"
+        title="القوالب"
         description="القوالب تُستخدم لتوليد طلبات وهمية في الجولات — لا تُحفظ في جدول الطلبات الحقيقية."
         actions={
           <button type="button" className="btn btn-primary" onClick={openCreate}>

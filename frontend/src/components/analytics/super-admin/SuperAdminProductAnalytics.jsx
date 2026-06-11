@@ -52,7 +52,7 @@ const ADMIN_TASK_CARDS = [
   { to: "/dashboard/super-admin/courses", icon: "▶", title: "الدورات", description: "إدارة الدورات والتسجيلات." },
   { to: "/dashboard/super-admin/ads", icon: "✴", title: "الإعلانات", description: "الإعلانات المعروضة في المنصة." },
   {
-    to: "/dashboard/super-admin/training-orders/settings",
+    to: "/dashboard/super-admin/training-orders",
     icon: "✦",
     title: "الطلبات التجريبية",
     description: "إعدادات تجربة الطلبات للمستقلين الجدد.",

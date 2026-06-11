@@ -377,16 +377,16 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       if (isPoolOrderTakenAsAssignment(updated)) {
         push({
           type: "success",
-          title: "تم استلام الطلب",
-          message: "تم إسناد الطلب لك مباشرة.",
+          title: "تم إسناد الطلب",
+          message: "أصبح الطلب في قائمة «طلباتي» ويمكنك البدء بالعمل.",
         });
         navigate("/dashboard/freelancer/my-orders");
         return;
       } else {
         push({
           type: "success",
-          title: "تم إرسال طلبك",
-          message: "تم تسجيل طلبك بنجاح.",
+          title: "تم تسجيل مشاركتك",
+          message: "سنراجع طلبك ونبلغك عند أي تحديث.",
         });
       }
       await reloadPool();
@@ -406,7 +406,11 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
         order_id: String(bidModalOrder.id),
         amount: Number(amount),
       });
-      push({ type: "success", title: "تم إرسال عرضك", message: "تم إرسال عرضك بنجاح" });
+      push({
+        type: "success",
+        title: "تم إرسال عرضك",
+        message: "سيتم مراجعة عرضك وإشعارك عند أي تحديث.",
+      });
       setBidModalOrder(null);
       await reloadPool();
     } catch (e) {

@@ -162,7 +162,7 @@ export default function TrainingOrderApplicationsPage() {
         {error ? <p className="auth-form-error">{error}</p> : null}
         <DashboardToolbar className="oh-training-filters">
           <label>
-            رقم الطلب التجريبي
+            معرّف الطلب
             <input value={fakeOrderId} onChange={(e) => setFakeOrderId(e.target.value)} dir="ltr" title="معرّف السجل" />
           </label>
           <label>
@@ -194,7 +194,7 @@ export default function TrainingOrderApplicationsPage() {
             <table className="oh-training-table">
               <thead>
                 <tr>
-                  <th>رقم الطلب</th>
+                  <th>معرّف الطلب</th>
                   <th>العنوان</th>
                   <th>التصنيف</th>
                   <th>الجولة</th>

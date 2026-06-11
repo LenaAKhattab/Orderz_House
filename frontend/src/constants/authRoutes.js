@@ -43,7 +43,7 @@ export const DASHBOARD_TITLE = {
   "/dashboard/super-admin/ads": "الإعلانات",
   "/dashboard/super-admin/training-orders": "الطلبات التجريبية",
   "/dashboard/super-admin/training-orders/settings": "إعدادات الطلبات التجريبية",
-  "/dashboard/super-admin/training-orders/templates": "قوالب الطلبات التجريبية",
+  "/dashboard/super-admin/training-orders/templates": "القوالب",
   "/dashboard/super-admin/training-orders/rounds": "جولات الطلبات التجريبية",
   "/dashboard/super-admin/training-orders/applications": "متقدمو الطلبات التجريبية",
   "/dashboard/admin/notifications": "الإشعارات",

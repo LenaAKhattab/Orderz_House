@@ -8,7 +8,12 @@ import { useToast } from "../components/ui/toastContext";
 import { useAuth } from "../context/useAuth";
 import { canRoleAccessPath, getDashboardPath } from "../constants/authRoutes";
 import { getSafeApiErrorMessage } from "../utils/apiErrorMessage";
-import { pushLoginRouteMessageToast, GUEST_POOL_LOGIN_MESSAGE } from "../utils/guestPoolLoginToast";
+import {
+  GUEST_POOL_LOGIN_MESSAGE,
+  LOGIN_SUCCESS_MESSAGE,
+  LOGIN_SUCCESS_TITLE,
+  pushLoginRouteMessageToast,
+} from "../utils/guestPoolLoginToast";
 
 function loginErrorMessage(err) {
   return getSafeApiErrorMessage(err, "تعذر تسجيل الدخول. حاول مجدداً.");
@@ -77,7 +82,7 @@ const Login = () => {
     setSubmitting(true);
     try {
       const user = await login(email.trim(), password);
-      success({ title: "تم تسجيل الدخول", message: "أهلاً بعودتك." });
+      success({ title: LOGIN_SUCCESS_TITLE, message: LOGIN_SUCCESS_MESSAGE });
       const from = location.state?.from?.pathname;
       const role = user?.primaryRole || user?.role;
       const target =

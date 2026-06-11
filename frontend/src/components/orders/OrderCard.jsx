@@ -1,4 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
+import OrderApplicantsCount from "./OrderApplicantsCount";
+import { useAuth } from "../../context/useAuth";
 import { arabicDurationUnit } from "../../utils/arTime";
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
 
@@ -127,6 +129,8 @@ export default function OrderCard({
   /** لوحة الإدارة: يظهر العنوان + السعر + مدة التسليم فقط حتى فتح «عرض التفاصيل». */
   compactSummary = false,
 }) {
+  const { user } = useAuth();
+  const isAuthenticated = Boolean(user);
   const [expanded, setExpanded] = useState(false);
   const showFull = !compactSummary || expanded;
   const badge = useMemo(
@@ -211,11 +215,18 @@ export default function OrderCard({
           {order?.projectType === "bidding" ? (
             <span className="oh-mini-chip">
               المتقدمون:{" "}
-              {showAdminBadge && bidUsers.length
-                ? `${bidUsers.slice(0, 2).map((b) => bidderDisplayName(b)).join("، ")}${bidUsers.length > 2 ? ` +${bidUsers.length - 2}` : ""}`
-                : applicantPoolCount > 0
-                  ? String(applicantPoolCount)
-                  : "لا يوجد"}
+              {showAdminBadge && bidUsers.length ? (
+                <>
+                  {bidUsers.slice(0, 2).map((b) => bidderDisplayName(b)).join("، ")}
+                  {bidUsers.length > 2 ? ` +${bidUsers.length - 2}` : ""}
+                </>
+              ) : (
+                <OrderApplicantsCount
+                  count={applicantPoolCount}
+                  isAuthenticated={showAdminBadge ? true : isAuthenticated}
+                  variant="value"
+                />
+              )}
             </span>
           ) : null}
         </div>

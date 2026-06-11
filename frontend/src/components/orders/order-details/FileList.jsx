@@ -1,6 +1,10 @@
 import { useCallback, useState } from "react";
 import { useToast } from "../../ui/toastContext";
 import { downloadOrderFileForRole, viewOrderFileForRole } from "../../../services/api";
+import {
+  FILE_ACCESS_LOGIN_MESSAGE,
+  FILE_ACCESS_LOGIN_TITLE,
+} from "../../../utils/guestPoolLoginToast";
 
 /** @typedef {"client"|"freelancer"|"admin"} OrderFileAccessScope */
 
@@ -51,7 +55,14 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
           msg ||
           (status === 403 ? "غير مصرح بعرض هذا الملف." : status === 404 ? "الملف غير موجود." : null);
       }
-      if (status === 401) msg = "يرجى تسجيل الدخول.";
+      if (status === 401) {
+        push({
+          type: "info",
+          title: FILE_ACCESS_LOGIN_TITLE,
+          message: FILE_ACCESS_LOGIN_MESSAGE,
+        });
+        return;
+      }
       if (status === 403) msg = msg || "غير مصرح بعرض هذا الملف.";
       if (status === 404) msg = msg || "الملف غير موجود.";
       push({ type: "error", title, message: msg || "تعذّرت العملية." });

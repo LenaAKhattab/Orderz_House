@@ -67,7 +67,7 @@ const NAV_MAIN = [
   { to: "/dashboard/super-admin/financial-claims", label: "المطالبات المالية", icon: "◍" },
   { to: "/dashboard/super-admin/orders", label: "الطلبات", icon: "▣" },
   {
-    to: "/dashboard/super-admin/training-orders/settings",
+    to: "/dashboard/super-admin/training-orders",
     label: "الطلبات التجريبية",
     icon: "✦",
     end: false,

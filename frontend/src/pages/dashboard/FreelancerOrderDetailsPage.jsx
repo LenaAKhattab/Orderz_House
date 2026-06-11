@@ -153,16 +153,16 @@ export default function FreelancerOrderDetailsPage() {
       if (isPoolOrderTakenAsAssignment(updated)) {
         push({
           type: "success",
-          title: "تم استلام الطلب",
-          message: "تم إسناد الطلب لك مباشرة ويمكنك البدء بالعمل الآن.",
+          title: "تم إسناد الطلب",
+          message: "أصبح الطلب في قائمة «طلباتي» ويمكنك البدء بالعمل.",
         });
         navigate("/dashboard/freelancer/my-orders");
         return;
       }
       push({
         type: "success",
-        title: "تم إرسال طلبك",
-        message: "تم تسجيل طلبك بنجاح.",
+        title: "تم تسجيل مشاركتك",
+        message: "سنراجع طلبك ونبلغك عند أي تحديث.",
       });
       const resPool = await getPoolOrderByIdRequest(id);
       setOrder(resPool?.data?.order || null);
@@ -182,7 +182,11 @@ export default function FreelancerOrderDetailsPage() {
         order_id: String(id),
         amount: Number(amount),
       });
-      push({ type: "success", title: "تم إرسال عرضك", message: "تم إرسال عرضك بنجاح" });
+      push({
+        type: "success",
+        title: "تم إرسال عرضك",
+        message: "سيتم مراجعة عرضك وإشعارك عند أي تحديث.",
+      });
       setBidOpen(false);
       const resPool = await getPoolOrderByIdRequest(id);
       setOrder(resPool?.data?.order || null);

@@ -5,18 +5,12 @@ import DashboardToolbar from "../../../components/dashboard/DashboardToolbar";
 import DashboardLoadingState from "../../../components/dashboard/DashboardLoadingState";
 import DashboardEmptyState from "../../../components/dashboard/DashboardEmptyState";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
+import { formatRoundPeriod, ROUND_STATUS_AR, roundSourceAr } from "./trainingOrdersDisplayUtils";
 import "./trainingOrdersAdmin.css";
 
 function errMsg(e) {
   return e?.response?.data?.message || e?.message || "حدث خطأ.";
 }
-
-const STATUS_AR = {
-  scheduled: "مجدولة",
-  active: "نشطة",
-  expired: "منتهية",
-  stopped: "متوقفة",
-};
 
 function roundStatusTone(status) {
   if (status === "active") return "success";
@@ -105,10 +99,9 @@ export default function TrainingOrderRoundsPage() {
                   <th>العنوان</th>
                   <th>المصدر</th>
                   <th>الحالة</th>
-                  <th>الحد min–max</th>
-                  <th>المُولَّد</th>
-                  <th>البداية</th>
-                  <th>الانتهاء</th>
+                  <th>النطاق</th>
+                  <th>عدد الطلبات</th>
+                  <th>الفترة</th>
                   <th />
                 </tr>
               </thead>
@@ -118,18 +111,15 @@ export default function TrainingOrderRoundsPage() {
                     <td>
                       <strong>{r.title}</strong>
                     </td>
+                    <td>{roundSourceAr(r.roundSource)}</td>
                     <td>
-                      {r.roundSource === "automation" ? "تلقائي" : r.roundSource === "manual" ? "يدوي" : "—"}
-                    </td>
-                    <td>
-                      <StatusBadge tone={roundStatusTone(r.status)}>{STATUS_AR[r.status] || r.status}</StatusBadge>
+                      <StatusBadge tone={roundStatusTone(r.status)}>{ROUND_STATUS_AR[r.status] || r.status}</StatusBadge>
                     </td>
                     <td dir="ltr">
                       {r.minOrders} – {r.maxOrders}
                     </td>
                     <td dir="ltr">{r.generatedCount}</td>
-                    <td style={{ whiteSpace: "nowrap" }}>{r.startsAt ? new Date(r.startsAt).toLocaleString("ar-JO") : "—"}</td>
-                    <td style={{ whiteSpace: "nowrap" }}>{r.expiresAt ? new Date(r.expiresAt).toLocaleString("ar-JO") : "—"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{formatRoundPeriod(r.startsAt, r.expiresAt)}</td>
                     <td>
                       {r.status === "active" || r.status === "scheduled" ? (
                         <button

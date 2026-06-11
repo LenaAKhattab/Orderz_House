@@ -1,3 +1,5 @@
+import OrderApplicantsCount from "../orders/OrderApplicantsCount";
+import { useAuth } from "../../context/useAuth";
 import {
   categoryChips,
   durationLabel,
@@ -128,7 +130,9 @@ function MarketplaceOrderRow({
   const rowDisabled = actionsDisabled || planLocked;
   const rowDisabledReason = planLocked ? poolOrderPlanLockTooltip(order) : actionsDisabledReason;
   const chips = categoryChips(order);
-  const applicants = Number(order?.applicantsCount || 0);
+  const { user } = useAuth();
+  const isAuthenticated = Boolean(user);
+  const applicants = Number(order?.applicantsCount ?? order?.bidsCount ?? 0);
 
   return (
     <li className={`oh-order-row-item${planLocked ? " oh-order-row-item--plan-locked" : ""}`}>
@@ -177,13 +181,13 @@ function MarketplaceOrderRow({
         <div className="oh-order-row__divider" aria-hidden />
 
         <div className="oh-order-row__side">
-          <div className="oh-order-row__applicants">
+          <div
+            className={`oh-order-row__applicants${isAuthenticated ? "" : " oh-order-row__applicants--guest"}`.trim()}
+          >
             <span className="oh-order-row__applicants-icon" aria-hidden>
               <ApplicantsIcon />
             </span>
-            <span>
-              {applicants} {applicants === 1 ? "متقدم" : "متقدمون"}
-            </span>
+            <OrderApplicantsCount count={applicants} isAuthenticated={isAuthenticated} />
           </div>
           {showActions ? (
             <ActionButton

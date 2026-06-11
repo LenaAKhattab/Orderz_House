@@ -24,7 +24,7 @@ export function superAdminBreadcrumbs(pageLabel) {
 export function trainingOrdersBreadcrumbs(sectionLabel) {
   return [
     { label: "الرئيسية", href: SUPER_ADMIN_HOME },
-    { label: "الطلبات التجريبية", href: `${SUPER_ADMIN_HOME}/training-orders/settings` },
+    { label: "الطلبات التجريبية", href: `${SUPER_ADMIN_HOME}/training-orders` },
     { label: sectionLabel },
   ];
 }

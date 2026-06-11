@@ -120,7 +120,7 @@ const Navbar = () => {
         { label: "الاشتراكات", to: "/dashboard/super-admin/subscriptions" },
         { label: "المطالبات المالية", to: "/dashboard/super-admin/financial-claims" },
         { label: "الطلبات", to: "/dashboard/super-admin/orders" },
-        { label: "تجريبي", to: "/dashboard/super-admin/training-orders/settings" },
+        { label: "تجريبي", to: "/dashboard/super-admin/training-orders" },
       ];
     }
     if (role === "admin") {

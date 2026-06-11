@@ -42,7 +42,7 @@ import {
   AdminCoursesPage,
   AdminAdsPage,
   TrainingOrdersAdminShell,
-  TrainingOrdersIndexRedirect,
+  TrainingOrdersOverviewPage,
   TrainingOrdersSettingsPage,
   TrainingOrderTemplatesPage,
   TrainingOrderRoundsPage,
@@ -293,7 +293,7 @@ function App() {
                     </RequireRole>
                   }
                 >
-                  <Route index element={<TrainingOrdersIndexRedirect />} />
+                  <Route index element={<TrainingOrdersOverviewPage />} />
                   <Route path="settings" element={<TrainingOrdersSettingsPage />} />
                   <Route path="templates" element={<TrainingOrderTemplatesPage />} />
                   <Route path="rounds" element={<TrainingOrderRoundsPage />} />

@@ -1,20 +1,22 @@
-import { NavLink, Navigate, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import LazyRouteOutlet from "../../../components/layout/LazyRouteOutlet";
 import DashboardPageHeader from "../../../components/dashboard/DashboardPageHeader";
 import DashboardShell from "../../../components/dashboard/DashboardShell";
 import { trainingOrdersBreadcrumbs } from "../../../components/dashboard/dashboardBreadcrumbs";
+import TrainingOrdersStatusBar from "./TrainingOrdersStatusBar";
 import "./trainingOrdersAdmin.css";
 
 const TABS = [
-  { to: "/dashboard/super-admin/training-orders/settings", label: "الإعدادات", end: false },
-  { to: "/dashboard/super-admin/training-orders/templates", label: "قوالب الطلبات", end: false },
+  { to: "/dashboard/super-admin/training-orders", label: "نظرة عامة", end: true },
   { to: "/dashboard/super-admin/training-orders/rounds", label: "الجولات", end: false },
+  { to: "/dashboard/super-admin/training-orders/templates", label: "القوالب", end: false },
   { to: "/dashboard/super-admin/training-orders/applications", label: "المتقدمون", end: false },
+  { to: "/dashboard/super-admin/training-orders/settings", label: "الإعدادات", end: false },
 ];
 
 function trainingSectionTitle(pathname) {
   if (pathname.includes("/applications")) return "المتقدمون";
-  if (pathname.includes("/templates")) return "قوالب الطلبات";
+  if (pathname.includes("/templates")) return "القوالب";
   if (pathname.includes("/rounds")) return "الجولات";
   if (pathname.includes("/settings")) return "الإعدادات";
   return "نظرة عامة";
@@ -56,12 +58,11 @@ export default function TrainingOrdersAdminShell() {
           </div>
         </nav>
 
+        <TrainingOrdersStatusBar />
+
         <LazyRouteOutlet />
       </div>
     </DashboardShell>
   );
 }
 
-export function TrainingOrdersIndexRedirect() {
-  return <Navigate to="/dashboard/super-admin/training-orders/settings" replace />;
-}
