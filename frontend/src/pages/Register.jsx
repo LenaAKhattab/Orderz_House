@@ -8,6 +8,7 @@ import { useAuth } from "../context/useAuth";
 import { getDashboardPath } from "../constants/authRoutes";
 import { resendRegisterOtpRequest } from "../services/api";
 import { getSafeApiErrorMessage } from "../utils/apiErrorMessage";
+import { ARAB_COUNTRIES, DEFAULT_DIAL_CODE } from "../constants/arabCountries";
 
 const CATEGORY_OPTIONS = [
   { slug: "design", label: "تصميم" },
@@ -15,60 +16,12 @@ const CATEGORY_OPTIONS = [
   { slug: "development", label: "البرمجة" },
 ];
 
-const COUNTRY_CACHE_KEY = "orderz_countries_cache_v3";
-const COUNTRY_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 const ARABIC_ONLY = /^[\u0600-\u06FF\s]+$/;
-
-const ARAB_COUNTRY_CODES = new Set([
-  "SA", // Saudi Arabia
-  "AE", // United Arab Emirates
-  "KW", // Kuwait
-  "QA", // Qatar
-  "BH", // Bahrain
-  "OM", // Oman
-  "JO", // Jordan
-  "PS", // Palestine
-  "LB", // Lebanon
-  "SY", // Syria
-  "IQ", // Iraq
-  "EG", // Egypt
-  "LY", // Libya
-  "TN", // Tunisia
-  "DZ", // Algeria
-  "MA", // Morocco
-  "SD", // Sudan
-  "MR", // Mauritania
-  "YE", // Yemen
-  "SO", // Somalia
-  "DJ", // Djibouti
-  "KM", // Comoros
-]);
-
-function iso2ToFlag(iso2) {
-  const code = String(iso2 || "").toUpperCase();
-  if (!/^[A-Z]{2}$/.test(code)) return "";
-  const a = 0x1f1e6;
-  const first = code.codePointAt(0) - 65 + a;
-  const second = code.codePointAt(1) - 65 + a;
-  return String.fromCodePoint(first, second);
-}
 
 function normalizePhonePart(value) {
   return String(value ?? "")
     .trim()
     .replace(/[\s()-]/g, "");
-}
-
-function safeDialCode(country) {
-  const root = country?.idd?.root;
-  const suffix = Array.isArray(country?.idd?.suffixes) ? country.idd.suffixes[0] : "";
-  const dial = `${root || ""}${suffix || ""}`.trim();
-  return /^\+\d{1,4}$/.test(dial) ? dial : "";
-}
-
-function getArabicCountryName(country) {
-  // Arabic-only UI: no English fallback
-  return country?.translations?.ara?.common || country?.translations?.ara?.official || "";
 }
 
 function useOnClickOutside(ref, handler) {
@@ -180,46 +133,6 @@ function PremiumSelect({
   );
 }
 
-async function fetchCountries() {
-  const cachedRaw = localStorage.getItem(COUNTRY_CACHE_KEY);
-  if (cachedRaw) {
-    try {
-      const cached = JSON.parse(cachedRaw);
-      if (cached?.at && Date.now() - cached.at < COUNTRY_CACHE_TTL_MS && Array.isArray(cached?.items)) {
-        return cached.items;
-      }
-    } catch {
-      // ignore cache parse errors
-    }
-  }
-
-  const res = await fetch(
-    "https://restcountries.com/v3.1/all?fields=cca2,name,translations,idd",
-    { method: "GET" },
-  );
-  if (!res.ok) {
-    throw new Error("COUNTRIES_FETCH_FAILED");
-  }
-  const json = await res.json();
-  const items = (Array.isArray(json) ? json : [])
-    .map((c) => {
-      const code = String(c?.cca2 || "").toUpperCase();
-      const nameAr = getArabicCountryName(c);
-      const dialCode = safeDialCode(c);
-      const flag = iso2ToFlag(code);
-      return { code, nameAr, dialCode, flag };
-    })
-    .filter((c) => c.code && c.nameAr && ARAB_COUNTRY_CODES.has(c.code))
-    .sort((a, b) => a.nameAr.localeCompare(b.nameAr, "ar"));
-
-  try {
-    localStorage.setItem(COUNTRY_CACHE_KEY, JSON.stringify({ at: Date.now(), items }));
-  } catch {
-    // ignore quota
-  }
-  return items;
-}
-
 function registerErrorMessage(err) {
   return getSafeApiErrorMessage(err, "تعذر إنشاء الحساب. راجع الحقول وحاول مجدداً.");
 }
@@ -246,9 +159,6 @@ const Register = () => {
   const [gender, setGender] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [countries, setCountries] = useState([]);
-  const [countriesLoading, setCountriesLoading] = useState(true);
-  const [countriesError, setCountriesError] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -271,44 +181,20 @@ const Register = () => {
     return () => window.clearInterval(t);
   }, [resendCooldown]);
 
-  useEffect(() => {
-    let cancelled = false;
-    setCountriesLoading(true);
-    setCountriesError("");
-    (async () => {
-      try {
-        const items = await fetchCountries();
-        if (!cancelled) {
-          setCountries(items);
-        }
-      } catch {
-        if (!cancelled) {
-          setCountriesError("تعذر تحميل قائمة الدول. يمكنك المحاولة لاحقاً دون أن تتعطل الصفحة.");
-        }
-      } finally {
-        if (!cancelled) {
-          setCountriesLoading(false);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const dialCodeOptions = useMemo(() => {
+    return ARAB_COUNTRIES.map((c) => ({
+      value: c.dialCode,
+      label: `${c.flag ? `${c.flag} ` : ""}${c.dialCode} — ${c.nameAr}`,
+    })).sort((a, b) => {
+      if (a.value === DEFAULT_DIAL_CODE) return -1;
+      if (b.value === DEFAULT_DIAL_CODE) return 1;
+      return a.value.localeCompare(b.value);
+    });
   }, []);
 
-  const dialCodeOptions = useMemo(() => {
-    return countries
-      .filter((c) => c.dialCode)
-      .map((c) => ({
-        value: c.dialCode,
-        label: `${c.flag ? `${c.flag} ` : ""}${c.dialCode} — ${c.nameAr}`,
-      }))
-      .sort((a, b) => a.value.localeCompare(b.value));
-  }, [countries]);
-
   const countryOptions = useMemo(
-    () => countries.map((c) => ({ value: c.code, label: c.nameAr })),
-    [countries],
+    () => ARAB_COUNTRIES.map((c) => ({ value: c.code, label: c.nameAr })),
+    [],
   );
 
   const accountTypeOptions = useMemo(
@@ -346,7 +232,6 @@ const Register = () => {
 
   const step2Error = useMemo(() => {
     if (!country) return "اختر الدولة.";
-    if (countriesError) return "تعذر تحميل الدول حالياً. حاول مجدداً بعد قليل.";
     if (!phoneCountryCode) return "اختر مفتاح الدولة لرقم الهاتف.";
     if (!normalizePhonePart(phoneNumber)) return "أدخل رقم الهاتف.";
     if (!/^\d{4,14}$/.test(normalizePhonePart(phoneNumber))) return "رقم الهاتف غير صالح.";
@@ -360,7 +245,6 @@ const Register = () => {
     return null;
   }, [
     country,
-    countriesError,
     phoneCountryCode,
     phoneNumber,
     whatsAppCountryCode,
@@ -672,13 +556,10 @@ const Register = () => {
                   id="register-country"
                   value={country}
                   onChange={setCountry}
-                  placeholder={countriesLoading ? "جاري تحميل الدول…" : "اختر الدولة"}
+                  placeholder="اختر الدولة"
                   options={countryOptions}
-                  disabled={submitting || countriesLoading}
+                  disabled={submitting}
                 />
-                {countriesError ? (
-                  <span className={`${tw.authFieldHint} ${tw.authFieldHintWarn}`}>{countriesError}</span>
-                ) : null}
               </label>
 
               <div className={tw.authField}>
@@ -690,9 +571,9 @@ const Register = () => {
                       id="register-phone-cc"
                       value={phoneCountryCode}
                       onChange={setPhoneCountryCode}
-                      placeholder={countriesLoading ? "..." : "+الرمز"}
+                      placeholder="+الرمز"
                       options={dialCodeOptions}
-                      disabled={submitting || countriesLoading}
+                      disabled={submitting}
                       ltr
                     />
                   </label>
@@ -722,9 +603,9 @@ const Register = () => {
                       id="register-wa-cc"
                       value={whatsAppCountryCode}
                       onChange={setWhatsAppCountryCode}
-                      placeholder={countriesLoading ? "..." : "+الرمز"}
+                      placeholder="+الرمز"
                       options={dialCodeOptions}
-                      disabled={submitting || countriesLoading}
+                      disabled={submitting}
                       ltr
                     />
                   </label>
