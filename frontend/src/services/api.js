@@ -978,6 +978,91 @@ export const getPublicHomeStatsRequest = async ({ signal } = {}) => {
   return data;
 };
 
+export const getPublicFaqRequest = async ({ signal } = {}) => {
+  const { data } = await api.get("/public/faq", { signal, timeout: 8000 });
+  return data;
+};
+
+export const listSuperAdminWebsiteFaqRequest = async () => {
+  const { data } = await api.get("/super-admin/website/faq");
+  return data;
+};
+
+export const createSuperAdminWebsiteFaqRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/website/faq", payload);
+  return data;
+};
+
+export const updateSuperAdminWebsiteFaqRequest = async (id, payload) => {
+  const { data } = await api.patch(`/super-admin/website/faq/${id}`, payload);
+  return data;
+};
+
+export const deleteSuperAdminWebsiteFaqRequest = async (id) => {
+  const { data } = await api.delete(`/super-admin/website/faq/${id}`);
+  return data;
+};
+
+export const reorderSuperAdminWebsiteFaqRequest = async (orderedIds) => {
+  const { data } = await api.patch("/super-admin/website/faq/reorder", { orderedIds });
+  return data;
+};
+
+export const getPublicWebsitePageRequest = async (slug, { signal } = {}) => {
+  const { data } = await api.get(`/public/pages/${encodeURIComponent(slug)}`, { signal, timeout: 8000 });
+  return data;
+};
+
+export const listSuperAdminWebsitePagesRequest = async () => {
+  const { data } = await api.get("/super-admin/website/pages");
+  return data;
+};
+
+export const getSuperAdminWebsitePageRequest = async (slug) => {
+  const { data } = await api.get(`/super-admin/website/pages/${encodeURIComponent(slug)}`);
+  return data;
+};
+
+export const updateSuperAdminWebsitePageRequest = async (slug, payload) => {
+  const { data } = await api.patch(`/super-admin/website/pages/${encodeURIComponent(slug)}`, payload);
+  return data;
+};
+
+export const createSuperAdminWebsitePageBlockRequest = async (slug, payload) => {
+  const { data } = await api.post(`/super-admin/website/pages/${encodeURIComponent(slug)}/blocks`, payload);
+  return data;
+};
+
+export const updateSuperAdminWebsitePageBlockRequest = async (slug, blockId, payload) => {
+  const { data } = await api.patch(
+    `/super-admin/website/pages/${encodeURIComponent(slug)}/blocks/${blockId}`,
+    payload,
+  );
+  return data;
+};
+
+export const deleteSuperAdminWebsitePageBlockRequest = async (slug, blockId) => {
+  const { data } = await api.delete(
+    `/super-admin/website/pages/${encodeURIComponent(slug)}/blocks/${blockId}`,
+  );
+  return data;
+};
+
+export const reorderSuperAdminWebsitePageBlocksRequest = async (slug, orderedIds) => {
+  const { data } = await api.patch(
+    `/super-admin/website/pages/${encodeURIComponent(slug)}/blocks/reorder`,
+    { orderedIds },
+  );
+  return data;
+};
+
+export const uploadSuperAdminWebsiteImageRequest = async (file) => {
+  const fd = new FormData();
+  fd.append("image", file);
+  const { data } = await api.post("/super-admin/website/upload-image", fd, { timeout: 120000 });
+  return data;
+};
+
 /** Record a public pageview in the local DB counter (idempotent per idempotencyKey). */
 export const postPublicPageViewRequest = async (payload) => {
   const { data } = await api.post("/public/analytics/pageview", payload, { timeout: 8000 });

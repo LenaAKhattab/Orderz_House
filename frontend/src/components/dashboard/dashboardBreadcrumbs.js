@@ -20,6 +20,15 @@ export function superAdminBreadcrumbs(pageLabel) {
   ];
 }
 
+/** Edit-website hub (tabs under super-admin). */
+export function editWebsiteBreadcrumbs(sectionLabel) {
+  return [
+    { label: "الرئيسية", href: SUPER_ADMIN_HOME },
+    { label: "تعديل الموقع", href: `${SUPER_ADMIN_HOME}/edit-website` },
+    { label: sectionLabel },
+  ];
+}
+
 /** Training-orders hub (tabs under super-admin). */
 export function trainingOrdersBreadcrumbs(sectionLabel) {
   return [

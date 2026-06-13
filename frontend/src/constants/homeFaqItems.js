@@ -1,4 +1,4 @@
-/** Static FAQ copy for the public homepage. */
+/** Default FAQ copy — seeded to DB and used as public fallback when API is unavailable. */
 export const HOME_FAQ_ITEMS = [
   {
     id: "trust",

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { HOME_FAQ_ITEMS } from "../../../constants/homeFaqItems";
+import { FAQ_SCROLL_THRESHOLD, usePublicFaq } from "../../../hooks/usePublicFaq";
+import "../home-faq-scroll.css";
 
 function Chevron({ open }) {
   return (
@@ -19,11 +20,14 @@ function Chevron({ open }) {
 
 /** Mobile-only FAQ — quote card + menu-style accordion list. */
 export default function HomeMobileFaq() {
+  const { items, loading } = usePublicFaq();
   const [openId, setOpenId] = useState(null);
 
   const toggle = (id) => {
     setOpenId((prev) => (prev === id ? null : id));
   };
+
+  const scrollable = items.length > FAQ_SCROLL_THRESHOLD;
 
   return (
     <section className="hm-faq" dir="rtl" aria-labelledby="hm-faq-heading">
@@ -44,37 +48,56 @@ export default function HomeMobileFaq() {
       </div>
 
       <div className="hm-faq__menu">
-        <ul className="hm-faq__list" role="list">
-          {HOME_FAQ_ITEMS.map((item) => {
-            const open = openId === item.id;
-            const panelId = `hm-faq-panel-${item.id}`;
-            const buttonId = `hm-faq-trigger-${item.id}`;
-            return (
-              <li key={item.id} className="hm-faq__item">
-                <button
-                  id={buttonId}
-                  type="button"
-                  className="hm-faq__trigger"
-                  aria-expanded={open}
-                  aria-controls={panelId}
-                  onClick={() => toggle(item.id)}
-                >
-                  <span className="hm-faq__question">{item.q}</span>
-                  <Chevron open={open} />
-                </button>
-                <div
-                  id={panelId}
-                  role="region"
-                  aria-labelledby={buttonId}
-                  hidden={!open}
-                  className="hm-faq__panel"
-                >
-                  <p className="hm-faq__answer">{item.a}</p>
+        {loading ? (
+          <ul className="hm-faq__list" role="list" aria-hidden>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <li key={i} className="hm-faq__item">
+                <div className="hm-faq__trigger hm-faq__trigger--skeleton">
+                  <span className="hm-faq__question hm-faq__question--skeleton" />
                 </div>
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+        ) : items.length === 0 ? (
+          <p className="hm-faq__empty">لا توجد أسئلة شائعة حالياً.</p>
+        ) : (
+          <ul
+            className={["hm-faq__list", scrollable ? "hm-faq__list--scroll home-faq-list--scroll" : ""]
+              .filter(Boolean)
+              .join(" ")}
+            role="list"
+          >
+            {items.map((item) => {
+              const open = openId === item.id;
+              const panelId = `hm-faq-panel-${item.id}`;
+              const buttonId = `hm-faq-trigger-${item.id}`;
+              return (
+                <li key={item.id} className="hm-faq__item">
+                  <button
+                    id={buttonId}
+                    type="button"
+                    className="hm-faq__trigger"
+                    aria-expanded={open}
+                    aria-controls={panelId}
+                    onClick={() => toggle(item.id)}
+                  >
+                    <span className="hm-faq__question">{item.question}</span>
+                    <Chevron open={open} />
+                  </button>
+                  <div
+                    id={panelId}
+                    role="region"
+                    aria-labelledby={buttonId}
+                    hidden={!open}
+                    className="hm-faq__panel"
+                  >
+                    <p className="hm-faq__answer">{item.answer}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </section>
   );

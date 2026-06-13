@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { HOME_FAQ_ITEMS } from "../../constants/homeFaqItems";
+import { FAQ_SCROLL_THRESHOLD, usePublicFaq } from "../../hooks/usePublicFaq";
+import FaqSkeleton from "../skeletons/FaqSkeleton";
+import "./home-faq-scroll.css";
 
 function Chevron({ open }) {
   return (
@@ -15,11 +17,18 @@ function Chevron({ open }) {
 }
 
 const FaqSection = () => {
+  const { items, loading } = usePublicFaq();
   const [openId, setOpenId] = useState(null);
 
   const toggle = (id) => {
     setOpenId((prev) => (prev === id ? null : id));
   };
+
+  if (loading) {
+    return <FaqSkeleton />;
+  }
+
+  const scrollable = items.length > FAQ_SCROLL_THRESHOLD;
 
   return (
     <section
@@ -41,43 +50,57 @@ const FaqSection = () => {
         </header>
 
         <div className="flex flex-col items-stretch gap-8 md:flex-row md:items-start md:gap-8 lg:gap-12">
-          <ul className="m-0 min-w-0 flex-1 list-none divide-y divide-slate-200/80 p-0" role="list">
-            {HOME_FAQ_ITEMS.map((item) => {
-              const open = openId === item.id;
-              const panelId = `faq-panel-${item.id}`;
-              const buttonId = `faq-trigger-${item.id}`;
-              return (
-                <li key={item.id}>
-                  <button
-                    id={buttonId}
-                    type="button"
-                    className={`flex w-full items-center gap-3 px-1 py-4 text-right transition-colors sm:gap-4 sm:px-0 sm:py-[1.15rem] ${
-                      open ? "bg-violet-50/85 hover:bg-violet-50/90" : "bg-transparent hover:bg-slate-100/60"
-                    }`}
-                    aria-expanded={open}
-                    aria-controls={panelId}
-                    onClick={() => toggle(item.id)}
-                  >
-                    <span className="min-w-0 flex-1 text-[0.95rem] font-semibold leading-relaxed text-[#1e293b] sm:text-base">
-                      {item.q}
-                    </span>
-                    <Chevron open={open} />
-                  </button>
-                  <div
-                    id={panelId}
-                    role="region"
-                    aria-labelledby={buttonId}
-                    hidden={!open}
-                    className="border-t border-slate-200/70 bg-violet-50/40"
-                  >
-                    <p className="m-0 px-1 pb-5 pt-3.5 text-right text-[0.9rem] leading-[1.75] text-slate-600 sm:px-0 sm:text-[0.95rem]">
-                      {item.a}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          {items.length === 0 ? (
+            <p className="m-0 flex-1 text-right text-[0.95rem] leading-relaxed text-slate-500">
+              لا توجد أسئلة شائعة حالياً.
+            </p>
+          ) : (
+            <ul
+              className={[
+                "m-0 min-w-0 flex-1 list-none divide-y divide-slate-200/80 p-0",
+                scrollable ? "home-faq-list--scroll" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              role="list"
+            >
+              {items.map((item) => {
+                const open = openId === item.id;
+                const panelId = `faq-panel-${item.id}`;
+                const buttonId = `faq-trigger-${item.id}`;
+                return (
+                  <li key={item.id}>
+                    <button
+                      id={buttonId}
+                      type="button"
+                      className={`flex w-full items-center gap-3 px-1 py-4 text-right transition-colors sm:gap-4 sm:px-0 sm:py-[1.15rem] ${
+                        open ? "bg-violet-50/85 hover:bg-violet-50/90" : "bg-transparent hover:bg-slate-100/60"
+                      }`}
+                      aria-expanded={open}
+                      aria-controls={panelId}
+                      onClick={() => toggle(item.id)}
+                    >
+                      <span className="min-w-0 flex-1 text-[0.95rem] font-semibold leading-relaxed text-[#1e293b] sm:text-base">
+                        {item.question}
+                      </span>
+                      <Chevron open={open} />
+                    </button>
+                    <div
+                      id={panelId}
+                      role="region"
+                      aria-labelledby={buttonId}
+                      hidden={!open}
+                      className="border-t border-slate-200/70 bg-violet-50/40"
+                    >
+                      <p className="m-0 px-1 pb-5 pt-3.5 text-right text-[0.9rem] leading-[1.75] text-slate-600 sm:px-0 sm:text-[0.95rem]">
+                        {item.answer}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
 
           <div
             className="flex shrink-0 items-start justify-center md:w-[min(42%,14rem)] md:-translate-x-10 md:justify-end lg:w-[min(38%,16rem)] lg:-translate-x-12"

@@ -24,6 +24,7 @@ const portalFinancialClaimsRoutes = require("./routes/portalFinancialClaimsRoute
 const superAdminFinancialClaimsRoutes = require("./routes/superAdminFinancialClaimsRoutes");
 const superAdminAnalyticsRoutes = require("./routes/superAdminAnalyticsRoutes");
 const superAdminAdminsRoutes = require("./routes/superAdminAdminsRoutes");
+const superAdminWebsiteRoutes = require("./routes/superAdminWebsiteRoutes");
 const publicRoutes = require("./routes/publicRoutes");
 const internalAutomationRoutes = require("./routes/internalAutomationRoutes");
 const { notFoundMiddleware, errorMiddleware } = require("./middleware/errorMiddleware");
@@ -110,6 +111,7 @@ app.use("/api/freelancer", freelancerDashboardRoutes);
 app.use("/api/portal", portalFinancialClaimsRoutes);
 app.use("/api/super-admin", superAdminFinancialClaimsRoutes);
 app.use("/api/super-admin", superAdminAdminsRoutes);
+app.use("/api/super-admin", superAdminWebsiteRoutes);
 app.use("/api/superadmin", superAdminAnalyticsRoutes);
 app.use("/api", ordersRoutes);
 app.use("/api", notificationsRoutes);

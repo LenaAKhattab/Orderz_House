@@ -3,6 +3,8 @@ const validateRequest = require("../middleware/validateRequest");
 const { optionalAuth } = require("../middleware/rbacMiddleware");
 const publicHomeStatsController = require("../controllers/publicHomeStatsController");
 const publicPageViewController = require("../controllers/publicPageViewController");
+const publicFaqController = require("../controllers/publicFaqController");
+const publicWebsitePageController = require("../controllers/publicWebsitePageController");
 const publicAdsController = require("../controllers/publicAdsController");
 const {
   publicListAdsValidators,
@@ -13,6 +15,8 @@ const { recordPublicPageViewValidators } = require("../validators/publicPageView
 const router = express.Router();
 
 router.get("/public/home-stats", publicHomeStatsController.getPublicHomeStats);
+router.get("/public/faq", publicFaqController.listPublicFaq);
+router.get("/public/pages/:slug", publicWebsitePageController.getPublicPage);
 router.post(
   "/public/analytics/pageview",
   optionalAuth,

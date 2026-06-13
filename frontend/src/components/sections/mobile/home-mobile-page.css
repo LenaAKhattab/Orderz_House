@@ -685,6 +685,32 @@
   color: var(--hm-muted);
 }
 
+.hm-faq__list--scroll {
+  max-height: min(28rem, 62vh);
+}
+
+.hm-faq__empty {
+  margin: 0;
+  padding: 1rem 0.25rem;
+  text-align: right;
+  font-size: 0.85rem;
+  color: var(--hm-muted);
+}
+
+.hm-faq__trigger--skeleton {
+  pointer-events: none;
+}
+
+.hm-faq__question--skeleton {
+  display: block;
+  width: 85%;
+  height: 0.85rem;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #eef2f7 0%, #f8fafc 50%, #eef2f7 100%);
+  background-size: 200% 100%;
+  animation: hm-shimmer 1.2s ease-in-out infinite;
+}
+
 @keyframes hm-shimmer {
   0% {
     background-position: 100% 0;

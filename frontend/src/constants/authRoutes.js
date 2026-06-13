@@ -56,6 +56,11 @@ export const DASHBOARD_TITLE = {
   "/dashboard/admin/settings": "إعدادات الحساب",
   "/dashboard/super-admin/settings": "إعدادات الحساب",
   "/dashboard/super-admin/admins": "إدارة الأدمن",
+  "/dashboard/super-admin/edit-website": "تعديل الموقع",
+  "/dashboard/super-admin/edit-website/faq": "الأسئلة الشائعة",
+  "/dashboard/super-admin/edit-website/how-it-works": "طريقة العمل",
+  "/how-it-works/freelancer": "طريقة العمل كمستقل",
+  "/how-it-works/client": "طريقة الطلب للعميل",
   "/dashboard/admin/orders": "الطلبات الداخلية",
   "/dashboard/admin/orders/create": "إنشاء طلب داخلي",
 };
@@ -145,6 +150,9 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/admin/settings": [ROLE.ADMIN],
   "/dashboard/super-admin/settings": [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/admins": [ROLE.SUPER_ADMIN],
+  "/dashboard/super-admin/edit-website": [ROLE.SUPER_ADMIN],
+  "/dashboard/super-admin/edit-website/faq": [ROLE.SUPER_ADMIN],
+  "/dashboard/super-admin/edit-website/how-it-works": [ROLE.SUPER_ADMIN],
   "/dashboard/admin/orders": [ROLE.ADMIN],
   "/dashboard/admin/orders/create": [ROLE.ADMIN],
 };

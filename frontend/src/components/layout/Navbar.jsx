@@ -11,9 +11,11 @@ import {
 } from "../../constants/authRoutes";
 import NotificationsBell from "../notifications/NotificationsBell";
 import { useHomePageBlocking } from "../../hooks/useHomePageBlocking";
+import useHowItWorksNav from "../../hooks/useHowItWorksNav";
 import NavbarSkeleton from "../skeletons/NavbarSkeleton";
 import "../skeletons/home-skeleton.css";
 import "../../styles/servicesPage.css";
+import "../../styles/howItWorksPage.css";
 
 const publicExploreItems = [
   { label: "من نحن", to: "/about" },
@@ -57,7 +59,9 @@ const Navbar = () => {
   const { openModal: openClientCreateOrderModal } = useClientCreateOrderModal();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
   const userMenuRef = useRef(null);
+  const howItWorksRef = useRef(null);
 
   const closeMobileDrawer = useCallback(() => setMobileDrawerOpen(false), []);
 
@@ -73,10 +77,14 @@ const Navbar = () => {
   const showAdminCreateOrderButton = role === "super_admin" || role === "admin";
 
   useOnClickOutside(userMenuRef, () => setUserMenuOpen(false));
+  useOnClickOutside(howItWorksRef, () => setHowItWorksOpen(false));
+
+  const { items: howItWorksItems, showNav: showHowItWorksNav } = useHowItWorksNav();
 
   useEffect(() => {
     const t = window.setTimeout(() => {
       setUserMenuOpen(false);
+      setHowItWorksOpen(false);
       setMobileDrawerOpen(false);
     }, 0);
     return () => window.clearTimeout(t);
@@ -148,6 +156,26 @@ const Navbar = () => {
     return [...base, { label: "لوحة التحكم", to: dashboardPath || "/dashboard" }];
   }, [isLoggedIn, role, dashboardPath, isFreelancer]);
 
+  const showPublicHowItWorks = showHowItWorksNav && role !== "admin" && role !== "super_admin";
+
+  const desktopNavEntries = useMemo(() => {
+    const entries = navItems.map((item) => ({ type: "link", ...item }));
+    if (!showPublicHowItWorks) return entries;
+
+    const howEntry = {
+      type: "dropdown",
+      id: "how-it-works",
+      label: "طريقة العمل",
+      items: howItWorksItems,
+    };
+    const ordersIdx = entries.findIndex((e) => e.type === "link" && e.to === "/orders");
+    if (ordersIdx >= 0) entries.splice(ordersIdx, 0, howEntry);
+    else entries.push(howEntry);
+    return entries;
+  }, [navItems, showPublicHowItWorks, howItWorksItems]);
+
+  const isHowItWorksActive = howItWorksItems.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
+
   const userName = fullNameAr(user) || user?.email || "";
   const userInitial = (user?.firstName || user?.email || "U").trim().slice(0, 1).toUpperCase();
 
@@ -205,13 +233,59 @@ const Navbar = () => {
           className="col-start-2 row-start-1 hidden min-w-0 lg:block"
         >
           <ul className="m-0 flex list-none flex-wrap items-center justify-center gap-x-5 px-1 py-0.5 md:gap-x-8 lg:gap-x-10 xl:gap-x-12">
-            {navItems.map((item) => (
-              <li key={item.to} className="shrink-0">
-                <NavLink to={item.to} className={linkClass} title={item.label}>
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
+            {desktopNavEntries.map((entry) => {
+              if (entry.type === "dropdown") {
+                return (
+                  <li
+                    key={entry.id}
+                    className={`public-nav-dropdown shrink-0${howItWorksOpen ? " public-nav-dropdown--open" : ""}`}
+                    ref={howItWorksRef}
+                    onMouseEnter={() => setHowItWorksOpen(true)}
+                    onMouseLeave={() => setHowItWorksOpen(false)}
+                  >
+                    <button
+                      type="button"
+                      className={`${navLinkBase} public-nav-dropdown__trigger${isHowItWorksActive ? ` ${navLinkActive}` : ""}`}
+                      aria-haspopup="menu"
+                      aria-expanded={howItWorksOpen}
+                      onClick={() => setHowItWorksOpen((v) => !v)}
+                    >
+                      {entry.label}
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                    {howItWorksOpen ? (
+                      <div className="public-nav-dropdown__menu" role="menu">
+                        {entry.items.map((sub) => (
+                          <NavLink
+                            key={sub.to}
+                            to={sub.to}
+                            className={({ isActive }) =>
+                              ["public-nav-dropdown__item", isActive ? "public-nav-dropdown__item--active" : ""]
+                                .filter(Boolean)
+                                .join(" ")
+                            }
+                            role="menuitem"
+                            onClick={() => setHowItWorksOpen(false)}
+                          >
+                            {sub.label}
+                          </NavLink>
+                        ))}
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              }
+
+              return (
+                <li key={entry.to} className="shrink-0">
+                  <NavLink to={entry.to} className={linkClass} title={entry.label}>
+                    {entry.label}
+                  </NavLink>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 
@@ -412,6 +486,30 @@ const Navbar = () => {
                           </NavLink>
                         </li>
                       ))}
+                      {showPublicHowItWorks ? (
+                        <li>
+                          <p className="public-nav-drawer__section-label public-nav-drawer__section-label--nested">
+                            طريقة العمل
+                          </p>
+                          <ul className="public-nav-drawer__sublist">
+                            {howItWorksItems.map((sub) => (
+                              <li key={sub.to}>
+                                <NavLink
+                                  to={sub.to}
+                                  className={({ isActive }) =>
+                                    ["public-nav-drawer__sublink", isActive ? "public-nav-drawer__sublink--active" : ""]
+                                      .filter(Boolean)
+                                      .join(" ")
+                                  }
+                                  onClick={closeMobileDrawer}
+                                >
+                                  {sub.label}
+                                </NavLink>
+                              </li>
+                            ))}
+                          </ul>
+                        </li>
+                      ) : null}
                     </ul>
                   </nav>
                 </div>

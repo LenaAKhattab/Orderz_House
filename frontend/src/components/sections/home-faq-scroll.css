@@ -1,0 +1,20 @@
+.home-faq-list--scroll {
+  max-height: min(28rem, 70vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 58, 237, 0.45) transparent;
+}
+
+.home-faq-list--scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.home-faq-list--scroll::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.35);
+  border-radius: 999px;
+}
+
+.home-faq-list--scroll::-webkit-scrollbar-track {
+  background: transparent;
+}

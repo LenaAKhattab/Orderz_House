@@ -36,6 +36,12 @@ import {
   SuperAdminFinancialClaimsPage,
   SuperAdminSettingsPage,
   SuperAdminAdminsPage,
+  SuperAdminEditWebsitePage,
+  SuperAdminEditWebsiteFaqPage,
+  SuperAdminEditWebsiteHowItWorksPage,
+  SuperAdminEditWebsiteHowItWorksEditorPage,
+  HowItWorksFreelancerPage,
+  HowItWorksClientPage,
   AdminOrdersPage,
   AdminCreateOrderPage,
   AdminSubscriptionsActivationPage,
@@ -173,6 +179,8 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-conditions" element={<TermsConditions />} />
+              <Route path="/how-it-works/freelancer" element={<HowItWorksFreelancerPage />} />
+              <Route path="/how-it-works/client" element={<HowItWorksClientPage />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
@@ -282,6 +290,38 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
                       <SuperAdminAdminsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminEditWebsitePage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website/faq"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminEditWebsiteFaqPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website/how-it-works/:slug"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminEditWebsiteHowItWorksEditorPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website/how-it-works"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminEditWebsiteHowItWorksPage />
                     </RequireRole>
                   }
                 />

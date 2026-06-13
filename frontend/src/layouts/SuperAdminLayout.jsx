@@ -42,6 +42,10 @@ function breadcrumbLabel(pathname) {
   else if (pathname.includes("/subscriptions")) base.push("اشتراكات المستقلين");
   else if (pathname.includes("/orders/create")) base.push("الطلبات الداخلية", "إنشاء طلب");
   else if (pathname.includes("/admins")) base.push("إدارة الأدمن");
+  else if (pathname.includes("/edit-website/how-it-works/")) base.push("تعديل الموقع", "طريقة العمل", "محرر الصفحة");
+  else if (pathname.includes("/edit-website/how-it-works")) base.push("تعديل الموقع", "طريقة العمل");
+  else if (pathname.includes("/edit-website/faq")) base.push("تعديل الموقع", "الأسئلة الشائعة");
+  else if (pathname.includes("/edit-website")) base.push("تعديل الموقع");
   else if (pathname.includes("/training-orders")) base.push("الطلبات التجريبية");
   else if (pathname.includes("/orders")) base.push("الطلبات الداخلية");
   return base.join(" › ");
@@ -74,6 +78,7 @@ const NAV_MAIN = [
     matchPrefix: "/dashboard/super-admin/training-orders",
   },
   { to: "/dashboard/super-admin/admins", label: "إدارة الأدمن", icon: "👤", end: true },
+  { to: "/dashboard/super-admin/edit-website", label: "تعديل الموقع", icon: "✎", end: false, matchPrefix: "/dashboard/super-admin/edit-website" },
 ];
 
 export default function SuperAdminLayout() {
@@ -163,53 +168,55 @@ export default function SuperAdminLayout() {
               <div className="oh-sa-brand__sub">لوحة المدير الأعلى</div>
             </div>
 
-            <ul className="oh-sa-nav__list">
-              {NAV_MAIN.map((item) => (
-                <li key={item.to}>
-                  <NavLink
-                    to={item.to}
-                    end={Boolean(item.end)}
-                    className={({ isActive }) => {
-                      const prefix = item.matchPrefix && pathname.startsWith(item.matchPrefix);
-                      const active = isActive || prefix;
-                      return `oh-sa-navlink${active ? " oh-sa-navlink--active" : ""}`.trim();
+            <div className="oh-sa-nav__scroll">
+              <ul className="oh-sa-nav__list">
+                {NAV_MAIN.map((item) => (
+                  <li key={item.to}>
+                    <NavLink
+                      to={item.to}
+                      end={Boolean(item.end)}
+                      className={({ isActive }) => {
+                        const prefix = item.matchPrefix && pathname.startsWith(item.matchPrefix);
+                        const active = isActive || prefix;
+                        return `oh-sa-navlink${active ? " oh-sa-navlink--active" : ""}`.trim();
+                      }}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <span className="oh-sa-navlink__icon" aria-hidden>
+                        {item.icon}
+                      </span>
+                      <span className="oh-sa-navlink__label">{item.label}</span>
+                    </NavLink>
+                  </li>
+                ))}
+                <li>
+                  <button
+                    type="button"
+                    className="oh-sa-navlink oh-sa-navlink--button"
+                    onClick={() => {
+                      setSidebarOpen(false);
+                      openClientCreateOrderModal();
                     }}
-                    onClick={() => setSidebarOpen(false)}
                   >
                     <span className="oh-sa-navlink__icon" aria-hidden>
-                      {item.icon}
+                      +
                     </span>
-                    <span className="oh-sa-navlink__label">{item.label}</span>
+                    <span className="oh-sa-navlink__label">إنشاء طلب</span>
+                  </button>
+                </li>
+              </ul>
+
+              <ul className="oh-sa-nav__list oh-sa-nav__list--muted">
+                <li>
+                  <NavLink to="/" className="oh-sa-navlink" onClick={() => setSidebarOpen(false)}>
+                    <span className="oh-sa-navlink__icon" aria-hidden>
+                      ↗
+                    </span>
+                    <span className="oh-sa-navlink__label">الموقع العام</span>
                   </NavLink>
                 </li>
-              ))}
-              <li>
-                <button
-                  type="button"
-                  className="oh-sa-navlink oh-sa-navlink--button"
-                  onClick={() => {
-                    setSidebarOpen(false);
-                    openClientCreateOrderModal();
-                  }}
-                >
-                  <span className="oh-sa-navlink__icon" aria-hidden>
-                    +
-                  </span>
-                  <span className="oh-sa-navlink__label">إنشاء طلب</span>
-                </button>
-              </li>
-            </ul>
-
-            <ul className="oh-sa-nav__list oh-sa-nav__list--muted">
-              <li>
-                <NavLink to="/" className="oh-sa-navlink" onClick={() => setSidebarOpen(false)}>
-                  <span className="oh-sa-navlink__icon" aria-hidden>
-                    ↗
-                  </span>
-                  <span className="oh-sa-navlink__label">الموقع العام</span>
-                </NavLink>
-              </li>
-            </ul>
+              </ul>
+            </div>
           </aside>
         </div>
 

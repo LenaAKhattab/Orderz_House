@@ -24,6 +24,21 @@ export const SuperAdminFinancialClaimsPage = lazy(
 );
 export const SuperAdminSettingsPage = lazy(() => import("../pages/dashboard/SuperAdminSettingsPage"));
 export const SuperAdminAdminsPage = lazy(() => import("../pages/dashboard/SuperAdminAdminsPage"));
+export const SuperAdminEditWebsitePage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsitePage"));
+export const SuperAdminEditWebsiteFaqPage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsiteFaqPage"));
+export const SuperAdminEditWebsiteHowItWorksPage = lazy(
+  () => import("../pages/dashboard/SuperAdminEditWebsiteHowItWorksPage"),
+);
+export const SuperAdminEditWebsiteHowItWorksEditorPage = lazy(
+  () => import("../pages/dashboard/SuperAdminEditWebsiteHowItWorksEditorPage"),
+);
+
+export const HowItWorksFreelancerPage = lazy(() =>
+  import("../pages/HowItWorksPage").then((m) => ({ default: m.HowItWorksFreelancerPage })),
+);
+export const HowItWorksClientPage = lazy(() =>
+  import("../pages/HowItWorksPage").then((m) => ({ default: m.HowItWorksClientPage })),
+);
 
 /** Admin */
 export const AdminOrdersPage = lazy(() => import("../pages/dashboard/AdminOrdersPage"));
