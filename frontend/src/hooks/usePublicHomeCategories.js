@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getCategoriesRequest } from "../services/api";
+import { filterHomepageCategories } from "../utils/homeCategoryCards";
 
 /**
  * Public homepage categories grid (same payload as legacy CategoriesSection fetch).
@@ -17,7 +18,7 @@ export default function usePublicHomeCategories() {
     (async () => {
       try {
         const res = await getCategoriesRequest();
-        const list = Array.isArray(res?.data) ? res.data : [];
+        const list = filterHomepageCategories(Array.isArray(res?.data) ? res.data : []);
         if (!cancelled) setItems(list);
       } catch {
         if (!cancelled) {

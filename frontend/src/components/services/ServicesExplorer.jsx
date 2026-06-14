@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PublicPageHeader from "../layout/PublicPageHeader";
 import { getCategoriesRequest, getSubcategoriesRequest, getSubSubcategoriesRequest } from "../../services/api";
+import { filterServiceCategories } from "../../utils/homeCategoryCards";
 import ServicesBenefitsStrip from "./ServicesBenefitsStrip";
 import ServicesRefCard from "./ServicesRefCard";
 
@@ -111,7 +112,7 @@ const ServicesExplorer = () => {
       setError("");
       try {
         const res = await getCategoriesRequest();
-        const list = Array.isArray(res?.data) ? res.data : [];
+        const list = filterServiceCategories(Array.isArray(res?.data) ? res.data : []);
         if (!cancelled) setCategories(list);
       } catch {
         if (!cancelled) {

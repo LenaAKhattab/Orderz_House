@@ -79,29 +79,47 @@
   color: #262626;
 }
 
-/* Two metrics only (visitors + actives) — responsive flex row in hero copy */
-.home-hero-analytics.home-hero-analytics--minimal.home-hero-metrics--analytics-only,
-.home-hero-metrics--analytics-only {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+/* Hero analytics strip — mobile 2×2, desktop (1024px+) single row of 4 */
+.home-hero-analytics.home-hero-analytics--minimal.home-hero-metrics--analytics-only:not(.home-hero-metrics--four),
+.home-hero-metrics--analytics-only:not(.home-hero-metrics--four) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-items: stretch;
   align-items: stretch;
   gap: clamp(0.75rem, 2vw, 1.75rem);
   width: 100%;
   max-width: 100%;
 }
 
-.home-hero-analytics--minimal.home-hero-metrics--analytics-only .home-hero-metrics__item,
-.home-hero-metrics--analytics-only .home-hero-metrics__item {
-  flex: 1 1 clamp(7.5rem, 18vw, 11.25rem);
-  min-width: min(100%, clamp(6.75rem, 38vw, 11.25rem));
-  max-width: 13.75rem;
+.home-hero-analytics.home-hero-analytics--minimal.home-hero-metrics--analytics-only.home-hero-metrics--four,
+.home-hero-metrics--four.home-hero-metrics--analytics-only {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto auto;
+  justify-items: stretch;
+  align-items: stretch;
+  column-gap: clamp(0.75rem, 2vw, 1.75rem);
+  row-gap: clamp(0.75rem, 2vw, 1.75rem);
+  width: 100%;
+  max-width: 100%;
 }
 
-@media (min-width: 640px) {
-  .home-hero-metrics--analytics-only {
-    flex-direction: row;
+@media (min-width: 1024px) {
+  .home-hero-analytics.home-hero-analytics--minimal.home-hero-metrics--analytics-only.home-hero-metrics--four,
+  .home-hero-metrics--four.home-hero-metrics--analytics-only {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: 1fr;
+    column-gap: 0;
+    row-gap: 0;
+    align-items: stretch;
+    justify-items: center;
   }
+}
+
+.home-hero-analytics--minimal.home-hero-metrics--analytics-only .home-hero-metrics__item,
+.home-hero-metrics--analytics-only .home-hero-metrics__item {
+  min-width: 0;
+  max-width: none;
 }
 
 @media (min-width: 1024px) {
@@ -109,10 +127,20 @@
     gap: clamp(1rem, 2.5vw, 1.75rem);
   }
 
+  .home-hero-metrics--four.home-hero-metrics--analytics-only {
+    gap: 0;
+  }
+
   .home-hero-metrics--analytics-only .home-hero-metrics__item:not(:first-child) {
     border-inline-start: 1px solid rgba(226, 232, 240, 0.95);
     padding-inline-start: clamp(0.875rem, 1.8vw, 1.35rem);
     margin-inline-start: clamp(0.125rem, 0.4vw, 0.35rem);
+  }
+
+  .home-hero-metrics--four.home-hero-metrics--analytics-only .home-hero-metrics__item {
+    align-self: stretch;
+    height: 100%;
+    padding-block: clamp(0.15rem, 0.5vw, 0.35rem);
   }
 }
 
@@ -138,6 +166,16 @@
   font-weight: 500;
   line-height: 1.35;
   color: rgba(32, 32, 32, 0.5);
+}
+
+.home-hero-analytics--minimal.home-hero-metrics--four .home-analytics-metric-label {
+  flex-wrap: nowrap;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.home-hero-analytics--minimal.home-hero-metrics--four .home-analytics-metric-label__text {
+  white-space: nowrap;
 }
 
 .home-hero-analytics--minimal .home-hero-analytics__value {
@@ -192,8 +230,6 @@
 
 @media (max-width: 480px) {
   .home-hero-analytics.home-hero-analytics--minimal.home-hero-metrics--analytics-only {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: clamp(0.5rem, 2.5vw, 0.75rem);
     width: 100%;
     max-width: 100%;

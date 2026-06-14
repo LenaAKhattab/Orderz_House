@@ -42,6 +42,11 @@ function useAnimatedCount(target) {
       return undefined;
     }
 
+    if (target < from) {
+      setDisplay(target);
+      return undefined;
+    }
+
     const start = performance.now();
     const tick = (now) => {
       const t = Math.min(1, (now - start) / COUNT_UP_MS);
@@ -63,7 +68,7 @@ function useAnimatedCount(target) {
 
 /**
  * Hero stat number — skeleton on first load, last value on refresh, subtle count-up on change.
- * @param {{ statsPayload: object | null, metricKey: 'views' | 'active', className?: string }} p
+ * @param {{ statsPayload: object | null, metricKey: 'views' | 'active' | 'availableOrders' | 'completedOrders', className?: string }} p
  */
 export default function HeroStatValue({ statsPayload, metricKey, className = "" }) {
   const loading = isAnalyticsMetricLoading(statsPayload, metricKey);

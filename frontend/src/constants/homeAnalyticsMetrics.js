@@ -1,24 +1,15 @@
 /**
- * Public homepage hero metrics — copy only (both stats from local DB).
- * @type {Record<'views'|'active', {
- *   key: 'views'|'active',
+ * Public homepage hero metrics — copy only (local DB).
+ * @type {Record<'active'|'views'|'availableOrders'|'completedOrders', {
+ *   key: 'active'|'views'|'availableOrders'|'completedOrders',
  *   label: string,
  *   sub: string,
  *   tooltip: string,
- *   tone: 'visitors'|'active',
+ *   tone: 'active'|'visitors'|'available'|'completed',
  *   stripLabel: string,
  * }>}
  */
 export const HOME_PUBLIC_METRICS = Object.freeze({
-  views: {
-    key: "views",
-    label: "مشاهدات الموقع",
-    sub: "إجمالي الزيارات المسجّلة",
-    tooltip:
-      "يُزاد العداد مرة واحدة لكل جلسة نشطة (30 دقيقة). التحديث أو العودة خلال نفس الجلسة لا يزيد العدد.",
-    tone: "visitors",
-    stripLabel: "مشاهدات الموقع",
-  },
   active: {
     key: "active",
     label: "المستخدمون النشطون",
@@ -28,7 +19,40 @@ export const HOME_PUBLIC_METRICS = Object.freeze({
     tone: "active",
     stripLabel: "مستخدمون نشطون",
   },
+  views: {
+    key: "views",
+    label: "مشاهدات الموقع",
+    sub: "إجمالي الزيارات المسجّلة",
+    tooltip:
+      "يُزاد العداد مرة واحدة لكل جلسة نشطة (30 دقيقة). التحديث أو العودة خلال نفس الجلسة لا يزيد العدد.",
+    tone: "visitors",
+    stripLabel: "مشاهدات الموقع",
+  },
+  availableOrders: {
+    key: "availableOrders",
+    label: "الطلبات المتاحة الآن",
+    sub: "طلبات متاحة للتقديم الآن",
+    tooltip: "طلبات حقيقية مفتوحة في السوق والطلبات التجريبية الظاهرة للمستقلين حالياً.",
+    tone: "available",
+    stripLabel: "طلبات متاحة الآن",
+  },
+  completedOrders: {
+    key: "completedOrders",
+    label: "الطلبات المنجزة",
+    sub: "إجمالي الطلبات المنجزة",
+    tooltip: "الطلبات الحقيقية المكتملة والطلبات التجريبية التي انتهت دورة ظهورها في السوق.",
+    tone: "completed",
+    stripLabel: "طلبات منجزة",
+  },
 });
+
+/** Hero strip display order (RTL). */
+export const HOME_HERO_METRICS_ORDER = Object.freeze([
+  HOME_PUBLIC_METRICS.views,
+  HOME_PUBLIC_METRICS.active,
+  HOME_PUBLIC_METRICS.completedOrders,
+  HOME_PUBLIC_METRICS.availableOrders,
+]);
 
 /** Super Admin — collapsible help (platform settings) */
 export const HOME_METRICS_ADMIN_HELP = Object.freeze({

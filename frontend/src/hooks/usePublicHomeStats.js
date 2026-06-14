@@ -2,8 +2,40 @@ import { useEffect, useRef, useState } from "react";
 import { getPublicHomeStatsRequest } from "../services/api";
 import { setPublicHomeStatsRefetchListener, peekLatestVisitorsTotal, peekLatestActiveUsersTotal } from "../services/publicHomeStatsRefetch";
 
-/** Near-real-time poll while homepage tab is visible (ms). */
-const PUBLIC_HOME_STATS_POLL_MS = 8_000;
+/** Poll while homepage tab is visible (ms). Align with backend order-stats cache TTL. */
+const PUBLIC_HOME_STATS_POLL_MS = Math.min(
+  Math.max(Number(import.meta.env.VITE_PUBLIC_HOME_STATS_POLL_MS) || 20_000, 15_000),
+  30_000,
+);
+
+/**
+ * Homepage public stats helpers — see usePublicHomeStats below.
+ */
+
+function toStatInt(v) {
+  if (v == null || Number.isNaN(Number(v))) return null;
+  return Math.trunc(Number(v));
+}
+
+/** Pageview total is monotonic — never regress from stale poll/cache. */
+function mergeMonotonicVisitors(prev, next) {
+  if (!next.showVisitorsCount) return next;
+  const p = toStatInt(prev?.visitors);
+  const n = toStatInt(next.visitors);
+  if (p == null || n == null) return next;
+  if (n < p) {
+    return { ...next, visitors: p };
+  }
+  return next;
+}
+
+/** Keep last good values on poll; accept backend decreases for order counts & active users. */
+function mergePolledHeroStats(prev, next) {
+  if (!prev || prev.error) return next;
+  let merged = { ...next, error: false };
+  merged = mergeMonotonicVisitors(prev, merged);
+  return merged;
+}
 
 export function formatHomePublicStat(n) {
   if (n == null || Number.isNaN(Number(n))) return "—";
@@ -25,6 +57,8 @@ function mapHomeStats(d) {
     openProjects: d?.openProjects,
     inProgressProjects: d?.inProgressProjects,
     completedProjects: d?.completedProjects,
+    availableOrdersNow: d?.availableOrdersNow,
+    completedOrders: d?.completedOrders,
     orderCountsDegraded: Boolean(d?.orderCountsDegraded),
   };
 }
@@ -40,14 +74,16 @@ function mergeInstantPatch(prev, instant) {
   };
 
   if (instantVisitors != null) {
-    next.visitors = instantVisitors;
-    next.visitorsReason = instantVisitors > 0 ? "ok" : "zero_traffic";
+    const prevV = toStatInt(prev?.visitors);
+    const nextV = toStatInt(instantVisitors);
+    next.visitors = prevV != null && nextV != null ? Math.max(prevV, nextV) : nextV;
+    next.visitorsReason = (next.visitors ?? 0) > 0 ? "ok" : "zero_traffic";
     if (prev == null || prev.showVisitorsCount == null) next.showVisitorsCount = true;
   }
 
   if (instantActive != null) {
-    next.activeUsers = instantActive;
-    next.activeUsersReason = instantActive > 0 ? "ok" : "zero_traffic";
+    next.activeUsers = toStatInt(instantActive);
+    next.activeUsersReason = (next.activeUsers ?? 0) > 0 ? "ok" : "zero_traffic";
     if (prev == null || prev.showActiveUsersCount == null) next.showActiveUsersCount = true;
   }
 
@@ -60,7 +96,7 @@ function isAbortError(err) {
 
 /**
  * Homepage public stats: local DB pageviews + active users (7d), plus DB order counts.
- * Instant update from pageview POST; polls every 8s while tab is visible.
+ * Instant pageview bump via publicHomeStatsRefetch; polls ~20s while tab is visible.
  */
 export function usePublicHomeStats() {
   const [payload, setPayload] = useState(null);
@@ -92,7 +128,7 @@ export function usePublicHomeStats() {
 
         const cachedVisitors = peekLatestVisitorsTotal();
         const cachedActive = peekLatestActiveUsersTotal();
-        const next = {
+        let next = {
           ...mapHomeStats(d),
           error: false,
           ...(cachedVisitors != null && d?.showVisitorsCount
@@ -102,6 +138,9 @@ export function usePublicHomeStats() {
             ? { activeUsers: cachedActive, activeUsersReason: cachedActive > 0 ? "ok" : "zero_traffic" }
             : {}),
         };
+        if (lastGoodRef.current) {
+          next = mergePolledHeroStats(lastGoodRef.current, next);
+        }
         applyPayload(next);
       } catch (e) {
         if (cancelled || isAbortError(e)) return;

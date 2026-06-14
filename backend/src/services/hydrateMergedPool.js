@@ -1,5 +1,6 @@
 const { pool } = require("../config/db");
 const { isAllowedCleanBudgetRange, normalizeToCleanBudgetRange } = require("../utils/fakeBudgetRanges");
+const { FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT } = require("../utils/fakeMarketplaceApplicantsSql");
 
 async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUserId }) {
   if (!idOrder.length) return [];
@@ -95,7 +96,7 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
         ss.name AS sub_subcategory_name,
         ss.subcategory_id AS sub_subcategory_parent_id,
         0::int AS files_count,
-        COALESCE(appc.applicants_count, 0)::int AS applicants_count,
+        ${FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT},
         fa.id AS my_bid_id,
         fa.amount AS my_bid_amount,
         fa.status AS my_bid_status
@@ -125,7 +126,7 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
         ss.name AS sub_subcategory_name,
         ss.subcategory_id AS sub_subcategory_parent_id,
         0::int AS files_count,
-        COALESCE(appc.applicants_count, 0)::int AS applicants_count
+        ${FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT}
       FROM fake_orders fo
       INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id AND ri.status = 'active'
         AND ri.visible_from <= NOW() AND ri.visible_until >= NOW()

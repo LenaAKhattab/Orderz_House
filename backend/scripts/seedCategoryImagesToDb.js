@@ -14,6 +14,7 @@ const SLUG_TO_FILE = {
   programming: "programming.jpg",
   design: "design.jpg",
   "content-writing": "contentwriting.jpg",
+  "special-requests": "special-requests.png",
 };
 
 async function main() {
@@ -27,15 +28,16 @@ async function main() {
 
     const buffer = fs.readFileSync(filePath);
     const imageUrl = `/api/categories/images/${slug}`;
+    const imageMime = filename.endsWith(".png") ? "image/png" : "image/jpeg";
 
     const { rowCount } = await pool.query(
       `UPDATE categories
        SET image_data = $1,
-           image_mime = 'image/jpeg',
-           image_url = $2,
+           image_mime = $2,
+           image_url = $3,
            updated_at = NOW()
-       WHERE slug = $3`,
-      [buffer, imageUrl, slug],
+       WHERE slug = $4`,
+      [buffer, imageMime, imageUrl, slug],
     );
 
     if (rowCount === 0) {

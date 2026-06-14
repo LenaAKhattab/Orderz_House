@@ -41,8 +41,9 @@ export default function CategoriesSkeleton() {
           <div className="min-h-0 min-w-0 rounded-2xl border border-gray-200/90 bg-white p-2.5 sm:p-4 lg:rounded-[22px] lg:p-5">
             <div
               className="home-categories-cards m-0 grid min-w-0 list-none items-stretch gap-5 sm:gap-6 md:gap-7"
-              style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}
+              style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}
             >
+              <CategoryCardSkeleton />
               <CategoryCardSkeleton />
               <CategoryCardSkeleton />
               <CategoryCardSkeleton />

@@ -24,30 +24,125 @@ const IN_PROGRESS_PROJECT_STATUSES = Object.freeze([
   ORDER_STATUSES.PENDING_CLIENT_REVIEW,
 ]);
 
-/**
- * Aggregate counts from real `orders` rows only (not training `fake_orders`).
- */
-async function getPublicHomeOrderCounts() {
+/** Pool-visible real orders for hero “available now”. */
+const AVAILABLE_REAL_STATUSES = Object.freeze([
+  ORDER_STATUSES.OPEN_FOR_FREELANCERS,
+  ORDER_STATUSES.OPEN_FOR_BIDS,
+]);
+
+const HOME_ORDER_STATS_CACHE_TTL_MS = Math.min(
+  Math.max(Number(process.env.PUBLIC_HOME_ORDER_STATS_CACHE_MS) || 20_000, 15_000),
+  30_000,
+);
+
+/** @type {{ value: object | null, expires: number }} */
+let orderStatsCache = { value: null, expires: 0 };
+
+async function queryHeroOrderCounts() {
   const { rows } = await pool.query(
     `
     SELECT
-      COUNT(*) FILTER (WHERE order_status = ANY($1::text[]))::int AS open_projects,
-      COUNT(*) FILTER (WHERE order_status = ANY($2::text[]))::int AS in_progress_projects,
-      COUNT(*) FILTER (WHERE order_status = $3)::int AS completed_projects
+      (
+        SELECT COUNT(*)::int
+        FROM orders o
+        WHERE o.order_status = ANY($1::text[])
+          AND o.is_published = TRUE
+          AND o.is_open_for_pool = TRUE
+          AND COALESCE(o.is_archived, FALSE) = FALSE
+      ) AS available_real,
+      (
+        SELECT COUNT(DISTINCT fo.id)::int
+        FROM fake_orders fo
+        INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id
+        INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
+        WHERE fo.fake_status = 'active'
+          AND fo.is_published = TRUE
+          AND fo.is_open_for_pool = TRUE
+          AND fo.assigned_freelancer_id IS NULL
+          AND ri.status = 'active'
+          AND fr.status = 'active'
+          AND ri.visible_from <= NOW()
+          AND ri.visible_until >= NOW()
+          AND (SELECT training_orders_enabled FROM fake_order_settings WHERE id = 1) = TRUE
+      ) AS available_training,
+      (
+        SELECT COUNT(*)::int
+        FROM orders o
+        WHERE o.order_status = $2
+          AND COALESCE(o.is_archived, FALSE) = FALSE
+      ) AS completed_real,
+      (
+        SELECT COUNT(*)::int
+        FROM fake_orders fo
+        WHERE EXISTS (
+          SELECT 1 FROM fake_order_round_items ri WHERE ri.fake_order_id = fo.id
+        )
+          AND NOT (
+            fo.fake_status = 'active'
+            AND EXISTS (
+              SELECT 1
+              FROM fake_order_round_items ri
+              INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
+              WHERE ri.fake_order_id = fo.id
+                AND ri.status = 'active'
+                AND fr.status = 'active'
+                AND ri.visible_from <= NOW()
+                AND ri.visible_until >= NOW()
+            )
+          )
+      ) AS completed_training,
+      COUNT(*) FILTER (WHERE order_status = ANY($3::text[]))::int AS open_projects,
+      COUNT(*) FILTER (WHERE order_status = ANY($4::text[]))::int AS in_progress_projects,
+      COUNT(*) FILTER (WHERE order_status = $2)::int AS completed_projects
     FROM orders
     `,
-    [OPEN_PROJECT_STATUSES, IN_PROGRESS_PROJECT_STATUSES, ORDER_STATUSES.COMPLETED]
+    [
+      AVAILABLE_REAL_STATUSES,
+      ORDER_STATUSES.COMPLETED,
+      OPEN_PROJECT_STATUSES,
+      IN_PROGRESS_PROJECT_STATUSES,
+    ],
   );
+
   const row = rows[0] || {};
+  const availableReal = Number(row.available_real) || 0;
+  const availableTraining = Number(row.available_training) || 0;
+  const completedReal = Number(row.completed_real) || 0;
+  const completedTraining = Number(row.completed_training) || 0;
+
   return {
     openProjects: Number(row.open_projects) || 0,
     inProgressProjects: Number(row.in_progress_projects) || 0,
     completedProjects: Number(row.completed_projects) || 0,
+    availableOrdersNow: availableReal + availableTraining,
+    completedOrders: completedReal + completedTraining,
+    availableOrdersNowReal: availableReal,
+    availableOrdersNowTraining: availableTraining,
+    completedOrdersReal: completedReal,
+    completedOrdersTraining: completedTraining,
   };
+}
+
+/**
+ * Aggregate homepage hero order counts (real + training where applicable).
+ */
+async function getPublicHomeOrderCounts() {
+  if (orderStatsCache.value && orderStatsCache.expires > Date.now()) {
+    return orderStatsCache.value;
+  }
+
+  const counts = await queryHeroOrderCounts();
+  orderStatsCache = {
+    value: counts,
+    expires: Date.now() + HOME_ORDER_STATS_CACHE_TTL_MS,
+  };
+  return counts;
 }
 
 module.exports = {
   getPublicHomeOrderCounts,
   OPEN_PROJECT_STATUSES,
   IN_PROGRESS_PROJECT_STATUSES,
+  AVAILABLE_REAL_STATUSES,
+  queryHeroOrderCounts,
 };

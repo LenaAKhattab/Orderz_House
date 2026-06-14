@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { HOME_PUBLIC_METRICS } from "../../../constants/homeAnalyticsMetrics";
+import { HOME_HERO_METRICS_ORDER } from "../../../constants/homeAnalyticsMetrics";
 import HomePromoOffersSection from "../../ads/HomePromoOffersSection";
 import AdsBandSkeleton from "../../skeletons/AdsBandSkeleton";
 import HeroStatValue from "../HeroStatValue";
@@ -7,7 +7,7 @@ import { resolveAnalyticsHint } from "../heroHomeStatUtils";
 import HomeMobileHeroMastheadArt from "./HomeMobileHeroMastheadArt";
 import "../../ads/home-promo-offers.css";
 
-const HERO_METRICS = [HOME_PUBLIC_METRICS.views, HOME_PUBLIC_METRICS.active];
+const HERO_METRICS = HOME_HERO_METRICS_ORDER;
 
 const DEFAULT_FEATURED = [
   {

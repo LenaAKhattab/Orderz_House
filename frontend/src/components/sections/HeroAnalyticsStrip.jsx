@@ -1,14 +1,12 @@
-import { HOME_PUBLIC_METRICS } from "../../constants/homeAnalyticsMetrics";
+import { HOME_HERO_METRICS_ORDER } from "../../constants/homeAnalyticsMetrics";
 import { HomeAnalyticsMetricLabelRow } from "../analytics/HomeAnalyticsMetricInfo";
 import { resolveAnalyticsHint } from "./heroHomeStatUtils";
 import HeroStatValue from "./HeroStatValue";
 import "../analytics/home-analytics-metric-info.css";
 import "./home-hero-metrics.css";
 
-const HERO_ANALYTICS_METRICS = [HOME_PUBLIC_METRICS.views, HOME_PUBLIC_METRICS.active];
-
 /**
- * Hero copy column: visitors + weekly actives (minimal metrics, no cards).
+ * Hero copy column: platform metrics (minimal layout, no cards).
  * @param {{ statsPayload: object | null }} p
  */
 export default function HeroAnalyticsStrip({ statsPayload }) {
@@ -17,12 +15,12 @@ export default function HeroAnalyticsStrip({ statsPayload }) {
 
   return (
     <div
-      className="home-hero-analytics home-hero-analytics--minimal home-hero-metrics home-hero-metrics--analytics-only w-full min-w-0"
+      className="home-hero-analytics home-hero-analytics--minimal home-hero-metrics home-hero-metrics--analytics-only home-hero-metrics--four w-full min-w-0"
       dir="rtl"
       role="group"
-      aria-label="إحصائيات مشاهدات الموقع والمستخدمين المتفاعلين"
+      aria-label="إحصائيات المنصة"
     >
-      {HERO_ANALYTICS_METRICS.map((row) => {
+      {HOME_HERO_METRICS_ORDER.map((row) => {
         if (statsPayload) {
           if (row.key === "views" && !statsPayload.showVisitorsCount) return null;
           if (row.key === "active" && !statsPayload.showActiveUsersCount) return null;
@@ -44,7 +42,7 @@ export default function HeroAnalyticsStrip({ statsPayload }) {
           </div>
         );
       })}
-      {showGlobalHint && !HERO_ANALYTICS_METRICS.some((r) => resolveAnalyticsHint(statsPayload, r.key)) ? (
+      {showGlobalHint && !HOME_HERO_METRICS_ORDER.some((r) => resolveAnalyticsHint(statsPayload, r.key)) ? (
         <p className="home-hero-analytics__degraded">الإحصائيات غير متاحة حالياً</p>
       ) : null}
     </div>

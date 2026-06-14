@@ -60,16 +60,27 @@ export default function HomeMobileCategories({
           ? Array.from({ length: SKELETON_COUNT }, (_, i) => (
               <span key={`pill-skel-${i}`} className="hm-pill hm-pill--skeleton" aria-hidden />
             ))
-          : cards.map((card, index) => (
-              <Link
-                key={card.key}
-                to="/services"
-                role="listitem"
-                className={`hm-pill${index % 3 === 1 ? " hm-pill--accent" : ""}`}
-              >
-                {card.title}
-              </Link>
-            ))}
+          : cards.map((card) => {
+              if (card.isExternal) {
+                return (
+                  <a
+                    key={card.key}
+                    href={card.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    role="listitem"
+                    className="hm-pill"
+                  >
+                    {card.title}
+                  </a>
+                );
+              }
+              return (
+                <Link key={card.key} to={card.href} role="listitem" className="hm-pill">
+                  {card.title}
+                </Link>
+              );
+            })}
       </div>
 
       <header className="hm-section-head hm-section-head--sub">
