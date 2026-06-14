@@ -109,12 +109,28 @@
   color: #4338ca;
 }
 
+.home-hero-metrics__item--available .home-hero-analytics__value {
+  color: #0369a1;
+}
+
+.home-hero-metrics__item--completed .home-hero-analytics__value {
+  color: #0f766e;
+}
+
 .home-hero-analytics--minimal .home-hero-metrics__item--visitors .home-hero-analytics__metric-sub {
   color: rgba(13, 148, 136, 0.75);
 }
 
 .home-hero-analytics--minimal .home-hero-metrics__item--active .home-hero-analytics__metric-sub {
   color: rgba(79, 70, 229, 0.72);
+}
+
+.home-hero-analytics--minimal .home-hero-metrics__item--available .home-hero-analytics__metric-sub {
+  color: rgba(2, 132, 199, 0.72);
+}
+
+.home-hero-analytics--minimal .home-hero-metrics__item--completed .home-hero-analytics__metric-sub {
+  color: rgba(13, 148, 136, 0.72);
 }
 
 .home-stats-strip__card--visitors .home-stats-strip__value {

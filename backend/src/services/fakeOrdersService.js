@@ -5,6 +5,7 @@ const {
   inferComplexityProfile,
   normalizeToCleanBudgetRange,
 } = require("../utils/fakeBudgetRanges");
+const { FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT } = require("../utils/fakeMarketplaceApplicantsSql");
 
 /** Session advisory lock: cross-process generation guard (PostgreSQL). */
 const AUTOMATION_GENERATION_LOCK_KEY = 882947361;
@@ -167,6 +168,7 @@ async function insertFakeOrderFromTemplate(client, { template, roundId, actorUse
   const showBadge = Boolean(settings.show_fake_badge_to_freelancers);
   const cbr = createdByRole === "super_admin" ? "super_admin" : "admin";
   const st = sourceType || (cbr === "super_admin" ? "super_admin_created" : "admin_created");
+  const baselineApplicantsCount = randomInt(3, 12);
 
   const tplId = template.id != null ? Number(template.id) : null;
 
@@ -186,7 +188,8 @@ async function insertFakeOrderFromTemplate(client, { template, roundId, actorUse
       order_status,
       bid_budget_min, bid_budget_max,
       template_id,
-      fake_status, is_fake, fake_round_id, show_fake_badge, fake_expires_at
+      fake_status, is_fake, fake_round_id, show_fake_badge, fake_expires_at,
+      baseline_applicants_count
     ) VALUES (
       $1, $2, $3,
       $4, $5, $6,
@@ -202,7 +205,8 @@ async function insertFakeOrderFromTemplate(client, { template, roundId, actorUse
       'published',
       $13, $14,
       $15,
-      'active', TRUE, $16, $17, $18
+      'active', TRUE, $16, $17, $18,
+      $19
     )
     RETURNING id`,
     [
@@ -224,6 +228,7 @@ async function insertFakeOrderFromTemplate(client, { template, roundId, actorUse
       rid,
       showBadge,
       visibleUntil,
+      baselineApplicantsCount,
     ],
   );
   return Number(rows[0].id);
@@ -817,7 +822,7 @@ async function getFakePoolOrderMapped({ orderId, freelancerUserId }) {
         ss.name AS sub_subcategory_name,
         ss.subcategory_id AS sub_subcategory_parent_id,
         0::int AS files_count,
-        COALESCE(appc.applicants_count, 0)::int AS applicants_count,
+        ${FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT},
         fa.id AS my_bid_id,
         fa.amount AS my_bid_amount,
         fa.status AS my_bid_status
@@ -845,7 +850,7 @@ async function getFakePoolOrderMapped({ orderId, freelancerUserId }) {
         ss.name AS sub_subcategory_name,
         ss.subcategory_id AS sub_subcategory_parent_id,
         0::int AS files_count,
-        COALESCE(appc.applicants_count, 0)::int AS applicants_count
+        ${FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT}
       FROM fake_orders fo
       INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id AND ri.status = 'active'
         AND ri.visible_from <= NOW() AND ri.visible_until >= NOW()

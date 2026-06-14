@@ -1,93 +1,12 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { Handshake } from "lucide-react";
 import heroImage from "../../assets/hero.png";
 import { CategoryCardSkeleton } from "../skeletons/CategoriesSkeleton";
+import { mapHomeCategoryCards, THEME_CLASSES } from "../../utils/homeCategoryCards";
 import "./categories-section.css";
 
-const SKELETON_CARD_COUNT = 3;
-
-function resolveBackendAssetUrl(maybeUrl) {
-  if (!maybeUrl) return "";
-  const raw = String(maybeUrl).trim();
-  if (!raw) return "";
-
-  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-  const apiOrigin = (() => {
-    try {
-      return new URL(base).origin;
-    } catch {
-      return "";
-    }
-  })();
-  const isLocalHost = (host) => ["localhost", "127.0.0.1", "::1"].includes(String(host || "").toLowerCase());
-
-  if (/^https?:\/\//i.test(raw)) {
-    try {
-      const parsed = new URL(raw);
-      if (apiOrigin && isLocalHost(parsed.hostname)) {
-        return new URL(`${parsed.pathname}${parsed.search}${parsed.hash}`, apiOrigin).toString();
-      }
-      return parsed.toString();
-    } catch {
-      return raw;
-    }
-  }
-
-  try {
-    const relative = raw.startsWith("/") ? raw : `/${raw}`;
-    return new URL(relative, apiOrigin || base).toString();
-  } catch {
-    return raw;
-  }
-}
-
-const FALLBACK_CARDS = [
-  {
-    key: "programming",
-    title: "خدمات البرمجة",
-    text: "خدمات برمجية احترافية للأعمال، والأبحاث الأكاديمية، والمشاريع المخصصة.",
-  },
-  {
-    key: "design",
-    title: "خدمات التصميم",
-    text: "خدمات تصميم احترافية للأعمال، والمجال الأكاديمي، والاحتياجات الشخصية.",
-  },
-  {
-    key: "content-writing",
-    title: "خدمات كتابة المحتوى",
-    text: "خدمات كتابة احترافية للأعمال، الأبحاث الأكاديمية، والاحتياجات الشخصية.",
-  },
-];
-
-/** Visual theme per category slug — matches landing reference (sky / violet / orange). */
-const THEME_BY_SLUG = {
-  programming: "sky",
-  design: "violet",
-  "content-writing": "orange",
-};
-
-const THEME_CLASSES = {
-  sky: {
-    chip: "bg-sky-100 text-sky-800 ring-2 ring-sky-200/55",
-    btn: "bg-sky-100 text-sky-900 hover:bg-sky-200/90 border border-sky-200/60",
-  },
-  violet: {
-    chip: "bg-violet-100 text-violet-800 ring-2 ring-violet-200/55",
-    btn: "bg-violet-100 text-violet-900 hover:bg-violet-200/90 border border-violet-200/60",
-  },
-  orange: {
-    chip: "bg-orange-100 text-orange-900 ring-2 ring-orange-200/55",
-    btn: "bg-orange-100 text-orange-950 hover:bg-orange-200/90 border border-orange-200/60",
-  },
-};
-
-const THEME_ORDER = ["sky", "violet", "orange"];
-
-function themeForCard(slug, index) {
-  const s = String(slug || "").toLowerCase();
-  if (THEME_BY_SLUG[s]) return THEME_BY_SLUG[s];
-  return THEME_ORDER[index % THEME_ORDER.length];
-}
+const SKELETON_CARD_COUNT = 4;
 
 function IconProgramming({ className = "" }) {
   return (
@@ -120,37 +39,61 @@ function IconWriting({ className = "" }) {
   );
 }
 
+function IconHandshake({ className = "" }) {
+  return <Handshake className={className} size={22} strokeWidth={2} aria-hidden />;
+}
+
 function CategoryIcon({ slug, theme }) {
   const s = String(slug || "").toLowerCase();
   if (s === "programming") return <IconProgramming className="shrink-0" />;
   if (s === "design") return <IconDesign className="shrink-0" />;
   if (s === "content-writing") return <IconWriting className="shrink-0" />;
+  if (s === "special-requests") return <IconHandshake className="shrink-0" />;
   if (theme === "sky") return <IconProgramming className="shrink-0" />;
   if (theme === "violet") return <IconDesign className="shrink-0" />;
   if (theme === "orange") return <IconWriting className="shrink-0" />;
   return <IconDesign className="shrink-0" />;
 }
 
+function HomeCategoryCardLink({ card, index, children }) {
+  const className =
+    "home-categories-card group flex min-w-0 max-w-full flex-col rounded-[24px] border border-slate-200/70 bg-white p-5 text-inherit no-underline shadow-[0_10px_40px_-14px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_22px_50px_-18px_rgba(15,23,42,0.16)]";
+
+  if (card.isExternal) {
+    return (
+      <a
+        key={card.key}
+        href={card.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+        role="listitem"
+        style={{ animationDelay: `${index * 60}ms` }}
+        aria-label={`${card.title} — ${card.buttonLabel}`}
+      >
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <Link
+      key={card.key}
+      to={card.href}
+      className={className}
+      role="listitem"
+      style={{ animationDelay: `${index * 60}ms` }}
+    >
+      {children}
+    </Link>
+  );
+}
+
 /**
  * @param {{ items?: unknown[]; loading?: boolean; error?: boolean }} p — Data from `usePublicHomeCategories` (homepage).
  */
 const CategoriesSection = ({ items = [], loading = false, error = false }) => {
-  const cards = useMemo(() => {
-    const source = items.length > 0 ? items : FALLBACK_CARDS;
-    return source.map((c, index) => {
-      const slugRaw = c.slug != null ? String(c.slug) : c.key != null ? String(c.key) : "";
-      const slug = slugRaw.toLowerCase();
-      return {
-        key: String(c.slug || c.id || c.key || index),
-        slug: slugRaw || String(c.slug || c.key || index),
-        theme: themeForCard(slug, index),
-        title: c.name || c.title || "",
-        text: c.description || c.text || "",
-        imgAlt: c.name || c.title || "تصنيف",
-        imgSrc: resolveBackendAssetUrl(c.image_url) || heroImage,
-      };
-    });
-  }, [items]);
+  const cards = useMemo(() => mapHomeCategoryCards(items), [items]);
 
   const cardGridTemplate = loading
     ? `repeat(${SKELETON_CARD_COUNT}, minmax(0, 1fr))`
@@ -217,58 +160,52 @@ const CategoriesSection = ({ items = [], loading = false, error = false }) => {
                     <CategoryCardSkeleton key={`category-skeleton-${index}`} />
                   ))
                 : cards.map((card, index) => {
-                const t = THEME_CLASSES[card.theme] || THEME_CLASSES.sky;
-                return (
-                  <Link
-                    key={card.key}
-                    to="/services"
-                    className="home-categories-card group flex min-w-0 max-w-full flex-col rounded-[24px] border border-slate-200/70 bg-white p-5 text-inherit no-underline shadow-[0_10px_40px_-14px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_22px_50px_-18px_rgba(15,23,42,0.16)]"
-                    role="listitem"
-                    style={{ animationDelay: `${index * 60}ms` }}
-                  >
-                    <div className="home-categories-card__media relative w-full shrink-0">
-                      <div className="home-categories-card__image aspect-[4/3] overflow-hidden rounded-2xl ring-1 ring-slate-200/35 sm:aspect-[5/3]">
-                        <img
-                          src={card.imgSrc || heroImage}
-                          alt={card.imgAlt}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                          onError={(event) => {
-                            event.currentTarget.onerror = null;
-                            event.currentTarget.src = heroImage;
-                          }}
-                        />
-                      </div>
-                      <div
-                        className={`home-categories-card__chip absolute bottom-0 left-1/2 z-10 flex h-[52px] w-[52px] -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full border-[5px] border-white shadow-[0_6px_20px_rgba(15,23,42,0.12)] ${t.chip}`}
-                        aria-hidden
-                      >
-                        <CategoryIcon slug={String(card.slug || "").toLowerCase()} theme={card.theme} />
-                      </div>
-                    </div>
+                    const t = THEME_CLASSES[card.theme] || THEME_CLASSES.sky;
+                    return (
+                      <HomeCategoryCardLink key={card.key} card={card} index={index}>
+                        <div className="home-categories-card__media relative w-full shrink-0">
+                          <div className="home-categories-card__image aspect-[4/3] overflow-hidden rounded-2xl ring-1 ring-slate-200/35 sm:aspect-[5/3]">
+                            <img
+                              src={card.imgSrc || heroImage}
+                              alt={card.imgAlt}
+                              className="h-full w-full object-cover object-center"
+                              loading="lazy"
+                              decoding="async"
+                              onError={(event) => {
+                                event.currentTarget.onerror = null;
+                                event.currentTarget.src = heroImage;
+                              }}
+                            />
+                          </div>
+                          <div
+                            className={`home-categories-card__chip absolute bottom-0 left-1/2 z-10 flex h-[52px] w-[52px] -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full border-[5px] border-white shadow-[0_6px_20px_rgba(15,23,42,0.12)] ${t.chip}`}
+                            aria-hidden
+                          >
+                            <CategoryIcon slug={String(card.slug || "").toLowerCase()} theme={card.theme} />
+                          </div>
+                        </div>
 
-                    <div className="home-categories-card__body flex flex-1 flex-col items-center gap-2 px-1 pb-1 pt-9 text-center sm:gap-2.5 sm:px-2 sm:pt-10">
-                      <h3 className="home-categories-card__title m-0 text-[clamp(1rem,2.2vw,1.22rem)] font-extrabold leading-snug tracking-tight text-slate-900">
-                        {card.title}
-                      </h3>
-                      <p className="home-categories-card__desc m-0 max-w-[30ch] text-[0.9rem] leading-relaxed text-slate-500 sm:text-[0.95rem]">
-                        {card.text}
-                      </p>
-                      <div className="home-categories-card__actions mt-3 flex w-full flex-1 flex-col justify-end sm:mt-4">
-                        <span
-                          className={`home-categories-card__btn inline-flex items-center justify-center gap-2 self-center rounded-full px-6 py-2.5 text-sm font-extrabold transition-colors ${t.btn}`}
-                        >
-                          <span>استكشف الخدمات</span>
-                          <span className="text-lg font-black leading-none" aria-hidden>
-                            ←
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
+                        <div className="home-categories-card__body flex flex-1 flex-col items-center gap-2 px-1 pb-1 pt-9 text-center sm:gap-2.5 sm:px-2 sm:pt-10">
+                          <h3 className="home-categories-card__title m-0 text-[clamp(1rem,2.2vw,1.22rem)] font-extrabold leading-snug tracking-tight text-slate-900">
+                            {card.title}
+                          </h3>
+                          <p className="home-categories-card__desc m-0 max-w-[30ch] text-[0.9rem] leading-relaxed text-slate-500 sm:text-[0.95rem]">
+                            {card.text}
+                          </p>
+                          <div className="home-categories-card__actions mt-3 flex w-full flex-1 flex-col justify-end sm:mt-4">
+                            <span
+                              className={`home-categories-card__btn inline-flex items-center justify-center gap-2 self-center rounded-full px-6 py-2.5 text-sm font-extrabold transition-colors ${t.btn}`}
+                            >
+                              <span>{card.buttonLabel}</span>
+                              <span className="text-lg font-black leading-none" aria-hidden>
+                                ←
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                      </HomeCategoryCardLink>
+                    );
+                  })}
             </div>
           </div>
         </div>

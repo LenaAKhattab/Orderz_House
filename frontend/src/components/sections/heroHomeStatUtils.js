@@ -32,6 +32,7 @@ function metricEnabled(payload, key) {
   if (!payload) return true;
   if (key === "views") return payload.showVisitorsCount !== false;
   if (key === "active") return payload.showActiveUsersCount !== false;
+  if (key === "availableOrders" || key === "completedOrders") return !payload.orderCountsDegraded;
   return true;
 }
 
@@ -46,6 +47,16 @@ export function getAnalyticsRawNumber(payload, key) {
     if (!payload.showActiveUsersCount) return null;
     if (payload.activeUsers == null || Number.isNaN(Number(payload.activeUsers))) return null;
     return Math.trunc(Number(payload.activeUsers));
+  }
+  if (key === "availableOrders") {
+    if (payload.orderCountsDegraded) return null;
+    if (payload.availableOrdersNow == null || Number.isNaN(Number(payload.availableOrdersNow))) return null;
+    return Math.trunc(Number(payload.availableOrdersNow));
+  }
+  if (key === "completedOrders") {
+    if (payload.orderCountsDegraded) return null;
+    if (payload.completedOrders == null || Number.isNaN(Number(payload.completedOrders))) return null;
+    return Math.trunc(Number(payload.completedOrders));
   }
   return null;
 }
@@ -97,6 +108,20 @@ export function resolveNumber(payload, key) {
     }
     return "—";
   }
+  if (key === "availableOrders") {
+    if (payload.orderCountsDegraded) return "—";
+    if (payload.availableOrdersNow != null && !Number.isNaN(Number(payload.availableOrdersNow))) {
+      return formatHomePublicStat(payload.availableOrdersNow);
+    }
+    return "—";
+  }
+  if (key === "completedOrders") {
+    if (payload.orderCountsDegraded) return "—";
+    if (payload.completedOrders != null && !Number.isNaN(Number(payload.completedOrders))) {
+      return formatHomePublicStat(payload.completedOrders);
+    }
+    return "—";
+  }
   return "—";
 }
 
@@ -128,8 +153,11 @@ export function showProjectSkeleton(payload) {
 
 export function showAnalyticsSkeleton(payload, key) {
   if (payload != null && payload.error) return false;
+  if (payload != null && (key === "availableOrders" || key === "completedOrders")) {
+    return payload.orderCountsDegraded ? false : payload[key === "availableOrders" ? "availableOrdersNow" : "completedOrders"] == null;
+  }
   if (payload != null) return false;
-  return key === "views" || key === "active";
+  return key === "views" || key === "active" || key === "availableOrders" || key === "completedOrders";
 }
 
 export function statDisplayValueProjects(row, statsPayload) {

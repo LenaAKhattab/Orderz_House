@@ -21,12 +21,16 @@ async function getPublicHomeStats(req, res, next) {
             openProjects: null,
             inProgressProjects: null,
             completedProjects: null,
+            availableOrdersNow: null,
+            completedOrders: null,
             orderCountsDegraded: true,
           }
         : {
             openProjects: orderCounts.openProjects,
             inProgressProjects: orderCounts.inProgressProjects,
             completedProjects: orderCounts.completedProjects,
+            availableOrdersNow: orderCounts.availableOrdersNow,
+            completedOrders: orderCounts.completedOrders,
           };
 
     if (!showVisitorsCount && !showActiveUsersCount) {

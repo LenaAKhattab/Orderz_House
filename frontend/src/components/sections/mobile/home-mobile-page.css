@@ -322,6 +322,7 @@
   font-size: 0.66rem;
   font-weight: 700;
   color: var(--hm-muted);
+  white-space: nowrap;
 }
 
 .hm-stat-pill__value {
@@ -357,6 +358,24 @@
 
 .hm-stat-pill--active .hm-stat-pill__value {
   color: var(--hm-primary-light);
+}
+
+.hm-stat-pill--available {
+  border-color: rgba(2, 132, 199, 0.18);
+  background: linear-gradient(180deg, #fff 0%, rgba(224, 242, 254, 0.55) 100%);
+}
+
+.hm-stat-pill--available .hm-stat-pill__value {
+  color: #0369a1;
+}
+
+.hm-stat-pill--completed {
+  border-color: rgba(5, 150, 105, 0.18);
+  background: linear-gradient(180deg, #fff 0%, rgba(209, 250, 229, 0.55) 100%);
+}
+
+.hm-stat-pill--completed .hm-stat-pill__value {
+  color: #047857;
 }
 
 /* Admin-designed promo banners (same component as desktop + admin preview) */
