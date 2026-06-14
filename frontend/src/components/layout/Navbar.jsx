@@ -63,6 +63,7 @@ const Navbar = () => {
   const [howItWorksOpen, setHowItWorksOpen] = useState(false);
   const userMenuRef = useRef(null);
   const howItWorksRef = useRef(null);
+  const howItWorksCloseTimerRef = useRef(null);
 
   const closeMobileDrawer = useCallback(() => setMobileDrawerOpen(false), []);
 
@@ -79,6 +80,32 @@ const Navbar = () => {
 
   useOnClickOutside(userMenuRef, () => setUserMenuOpen(false));
   useOnClickOutside(howItWorksRef, () => setHowItWorksOpen(false));
+
+  useEffect(() => {
+    return () => {
+      if (howItWorksCloseTimerRef.current) {
+        window.clearTimeout(howItWorksCloseTimerRef.current);
+      }
+    };
+  }, []);
+
+  const openHowItWorksMenu = useCallback(() => {
+    if (howItWorksCloseTimerRef.current) {
+      window.clearTimeout(howItWorksCloseTimerRef.current);
+      howItWorksCloseTimerRef.current = null;
+    }
+    setHowItWorksOpen(true);
+  }, []);
+
+  const scheduleCloseHowItWorksMenu = useCallback(() => {
+    if (howItWorksCloseTimerRef.current) {
+      window.clearTimeout(howItWorksCloseTimerRef.current);
+    }
+    howItWorksCloseTimerRef.current = window.setTimeout(() => {
+      howItWorksCloseTimerRef.current = null;
+      setHowItWorksOpen(false);
+    }, 150);
+  }, []);
 
   const { items: howItWorksItems, showNav: showHowItWorksNav } = useHowItWorksNav();
   const { mobileMenuPages, error: sitePagesError } = usePublicSitePages();
@@ -242,41 +269,47 @@ const Navbar = () => {
                   <li
                     key={entry.id}
                     className={`public-nav-dropdown shrink-0${howItWorksOpen ? " public-nav-dropdown--open" : ""}`}
-                    ref={howItWorksRef}
-                    onMouseEnter={() => setHowItWorksOpen(true)}
-                    onMouseLeave={() => setHowItWorksOpen(false)}
                   >
-                    <button
-                      type="button"
-                      className={`${navLinkBase} public-nav-dropdown__trigger${isHowItWorksActive ? ` ${navLinkActive}` : ""}`}
-                      aria-haspopup="menu"
-                      aria-expanded={howItWorksOpen}
-                      onClick={() => setHowItWorksOpen((v) => !v)}
+                    <div
+                      className="public-nav-dropdown__wrap"
+                      ref={howItWorksRef}
+                      onMouseEnter={openHowItWorksMenu}
+                      onMouseLeave={scheduleCloseHowItWorksMenu}
                     >
-                      {entry.label}
-                      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                        <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                    {howItWorksOpen ? (
-                      <div className="public-nav-dropdown__menu" role="menu">
-                        {entry.items.map((sub) => (
-                          <NavLink
-                            key={sub.to}
-                            to={sub.to}
-                            className={({ isActive }) =>
-                              ["public-nav-dropdown__item", isActive ? "public-nav-dropdown__item--active" : ""]
-                                .filter(Boolean)
-                                .join(" ")
-                            }
-                            role="menuitem"
-                            onClick={() => setHowItWorksOpen(false)}
-                          >
-                            {sub.label}
-                          </NavLink>
-                        ))}
-                      </div>
-                    ) : null}
+                      <button
+                        type="button"
+                        className={`${navLinkBase} public-nav-dropdown__trigger${isHowItWorksActive ? ` ${navLinkActive}` : ""}`}
+                        aria-haspopup="menu"
+                        aria-expanded={howItWorksOpen}
+                        onClick={() => setHowItWorksOpen((v) => !v)}
+                      >
+                        {entry.label}
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                          <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+                      {howItWorksOpen ? (
+                        <div className="public-nav-dropdown__menu" role="menu">
+                          <div className="public-nav-dropdown__menu-panel">
+                            {entry.items.map((sub) => (
+                              <NavLink
+                                key={sub.to}
+                                to={sub.to}
+                                className={({ isActive }) =>
+                                  ["public-nav-dropdown__item", isActive ? "public-nav-dropdown__item--active" : ""]
+                                    .filter(Boolean)
+                                    .join(" ")
+                                }
+                                role="menuitem"
+                                onClick={() => setHowItWorksOpen(false)}
+                              >
+                                {sub.label}
+                              </NavLink>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   </li>
                 );
               }

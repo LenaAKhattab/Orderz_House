@@ -1,74 +1,48 @@
-import { PARTNER_LOGOS } from "../../constants/partnerLogos";
+import { PARTNER_LOGOS, PARTNERS_SECTION_SUBTITLE } from "../../constants/partnerLogos";
+import "./partners-section.css";
 
 /**
- * Partner logos strip — soft wave + subtle brand tints (design system only).
+ * Partners showcase — text + logo grid on page background.
  * Logos live in `public/partners/`.
  */
-
 const PartnersSection = () => {
   return (
-    <section className="partners-section" aria-label="شركاء النجاح">
-      <div className="partners-section__bg" aria-hidden="true" />
+    <section className="partners-section" aria-labelledby="partners-section-heading">
+      <div className="partners-section__container">
+        <div className="partners-section__content" dir="rtl">
+          <div className="partners-section__copy">
+            <h2 id="partners-section-heading" className="partners-section__title">
+              شركاء النجاح
+            </h2>
+            <p className="partners-section__subtitle">{PARTNERS_SECTION_SUBTITLE}</p>
+          </div>
 
-      <div className="partners-section__wave-top" aria-hidden="true">
-        <svg
-          className="partners-section__wave-svg"
-          viewBox="0 0 1440 64"
-          preserveAspectRatio="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            fill="#F3F4F4"
-            d="M0 0h1440v20Q1080 56 720 36T0 28V0z"
-          />
-        </svg>
-      </div>
-
-      <div className="partners-decor partners-decor--circle" aria-hidden="true" />
-      <div className="partners-decor partners-decor--dots" aria-hidden="true" />
-
-      <div className="container partners-section__inner">
-        <h2 className="partners-section__title">شركاء النجاح</h2>
-        <ul
-          id="home-partners-anchor"
-          className="partners-section__logos"
-          aria-label="شعارات الشركاء"
-        >
-          {PARTNER_LOGOS.map((item) => (
-            <li
-              key={item.id}
-              className={`partners-section__logo-item ${
-                item.id === "fazaat" || item.id === "bildazo" || item.id === "studyzhouse" || item.id === "battech"
-                  ? "partners-section__logo-item--desktop-boost"
-                  : ""
-              }`.trim()}
-            >
-              <div className="partners-section__logo-wrap">
-                <img
-                  className="partners-section__logo-img"
-                  src={item.src}
-                  alt={item.alt}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="partners-section__wave-bottom" aria-hidden="true">
-        <svg
-          className="partners-section__wave-svg partners-section__wave-svg--bottom"
-          viewBox="0 0 1440 48"
-          preserveAspectRatio="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            fill="#F3F4F4"
-            d="M0 8Q360 0 720 20t720-12v40H0z"
-          />
-        </svg>
+          <ul
+            id="home-partners-anchor"
+            className="partners-section__grid"
+            aria-label="شعارات الشركاء"
+          >
+            {PARTNER_LOGOS.map((item) => (
+              <li key={item.id} className="partners-section__grid-cell">
+                <a
+                  href={item.href}
+                  className="partners-section__logo-link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`زيارة موقع ${item.alt}`}
+                >
+                  <img
+                    className="partners-section__logo"
+                    src={item.src}
+                    alt={item.alt}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   );

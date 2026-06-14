@@ -1,14 +1,12 @@
-import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import heroImage from "../../../assets/hero.png";
-import { mapHomeCategoryCards } from "../../../utils/homeCategoryCards";
+import HomeFeaturedServicesGrid from "../HomeFeaturedServicesGrid";
+import { HOME_FEATURED_ICON_STROKE_WIDTH_MOBILE } from "../../../constants/homeFeaturedServices";
 import { mapHomeMobileOrderCards } from "../../../utils/homeMobileOrderCards";
-import { CategoryCardSkeleton } from "../../skeletons/CategoriesSkeleton";
 
-const SKELETON_COUNT = 4;
 const ORDER_SKELETON_COUNT = 3;
 
-function ChevronLeft() {
+function ChevronLeftSmall() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -17,71 +15,40 @@ function ChevronLeft() {
 }
 
 /**
- * Mobile-only categories — pill grid + latest pool orders list.
+ * Mobile-only categories — featured services grid + latest pool orders list.
  * @param {{
- *   items?: unknown[];
- *   loading?: boolean;
- *   error?: boolean;
  *   recentOrders?: unknown[];
  *   recentOrdersLoading?: boolean;
  *   recentOrdersError?: boolean;
  * }} p
  */
 export default function HomeMobileCategories({
-  items = [],
-  loading = false,
-  error = false,
   recentOrders = [],
   recentOrdersLoading = false,
   recentOrdersError = false,
 }) {
-  const cards = useMemo(() => mapHomeCategoryCards(items), [items]);
-  const orderCards = useMemo(() => mapHomeMobileOrderCards(recentOrders, items), [recentOrders, items]);
+  const orderCards = mapHomeMobileOrderCards(recentOrders, []);
 
   return (
     <section className="hm-categories" dir="rtl" aria-labelledby="hm-categories-heading">
-      <header className="hm-section-head">
-        <h2 id="hm-categories-heading" className="hm-section-head__title">
-          اكتشف التصنيفات خلال ثوانٍ
-        </h2>
-        <Link to="/services" className="hm-section-head__link">
+      <header className="hm-section-head hm-section-head--categories">
+        <div className="hm-categories-intro-copy">
+          <h2 id="hm-categories-heading" className="hm-section-head__title hm-section-head__title--categories">
+            اكتشف التصنيفات خلال ثوانٍ
+          </h2>
+          <p className="hm-section-head__subtitle">اختر المجال المناسب وابدأ الطلب خلال دقائق</p>
+        </div>
+        <Link to="/orders" className="hm-section-head__link">
           عرض الكل
         </Link>
       </header>
 
-      {error && !loading && items.length === 0 ? (
-        <p className="hm-categories__fallback" role="status">
-          تعذّر تحميل التصنيفات. نعرض أدناه تصنيفات افتراضية.
-        </p>
-      ) : null}
-
-      <div className="hm-categories__pills" role="list" aria-busy={loading || undefined}>
-        {loading
-          ? Array.from({ length: SKELETON_COUNT }, (_, i) => (
-              <span key={`pill-skel-${i}`} className="hm-pill hm-pill--skeleton" aria-hidden />
-            ))
-          : cards.map((card) => {
-              if (card.isExternal) {
-                return (
-                  <a
-                    key={card.key}
-                    href={card.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    role="listitem"
-                    className="hm-pill"
-                  >
-                    {card.title}
-                  </a>
-                );
-              }
-              return (
-                <Link key={card.key} to={card.href} role="listitem" className="hm-pill">
-                  {card.title}
-                </Link>
-              );
-            })}
-      </div>
+      <HomeFeaturedServicesGrid
+        className="hm-categories-icon-grid hm-categories-icon-grid--featured"
+        iconSize={38}
+        iconStrokeWidth={HOME_FEATURED_ICON_STROKE_WIDTH_MOBILE}
+        listLabel="الخدمات المميزة"
+      />
 
       <header className="hm-section-head hm-section-head--sub">
         <h3 className="hm-section-head__title hm-section-head__title--sm">أحدث الطلبات</h3>
@@ -131,7 +98,7 @@ export default function HomeMobileCategories({
                     </div>
                   </div>
                   <span className="hm-list-card__action" aria-hidden>
-                    <ChevronLeft />
+                    <ChevronLeftSmall />
                   </span>
                 </Link>
               ))

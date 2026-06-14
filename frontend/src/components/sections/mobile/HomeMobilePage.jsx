@@ -10,9 +10,6 @@ import "./home-mobile-page.css";
  *   ads?: import("../../../types/ad.js").Ad[];
  *   adsLoading?: boolean;
  *   statsPayload?: object | null;
- *   categoryItems?: unknown[];
- *   categoriesLoading?: boolean;
- *   categoriesError?: boolean;
  *   recentOrders?: unknown[];
  *   recentOrdersLoading?: boolean;
  *   recentOrdersError?: boolean;
@@ -22,9 +19,6 @@ export default function HomeMobilePage({
   ads = [],
   adsLoading = false,
   statsPayload = null,
-  categoryItems = [],
-  categoriesLoading = false,
-  categoriesError = false,
   recentOrders = [],
   recentOrdersLoading = false,
   recentOrdersError = false,
@@ -33,9 +27,6 @@ export default function HomeMobilePage({
     <div className="home-mobile-page" dir="rtl">
       <HomeMobileHero statsPayload={statsPayload} ads={ads} adsLoading={adsLoading} />
       <HomeMobileCategories
-        items={categoryItems}
-        loading={categoriesLoading}
-        error={categoriesError}
         recentOrders={recentOrders}
         recentOrdersLoading={recentOrdersLoading}
         recentOrdersError={recentOrdersError}

@@ -7,16 +7,24 @@ const publicFaqController = require("../controllers/publicFaqController");
 const publicWebsitePageController = require("../controllers/publicWebsitePageController");
 const publicSitePageController = require("../controllers/publicSitePageController");
 const publicAdsController = require("../controllers/publicAdsController");
+const publicSubSubcategoriesController = require("../controllers/publicSubSubcategoriesController");
 const {
   publicListAdsValidators,
   publicAdEventValidators,
 } = require("../validators/adsValidators");
 const { recordPublicPageViewValidators } = require("../validators/publicPageViewValidators");
 const { sitePageSlugParam } = require("../validators/publicSitePageValidators");
+const { publicSubSubcategoriesListValidators } = require("../validators/categoriesValidators");
 
 const router = express.Router();
 
 router.get("/public/home-stats", publicHomeStatsController.getPublicHomeStats);
+router.get(
+  "/public/sub-subcategories",
+  publicSubSubcategoriesListValidators,
+  validateRequest,
+  publicSubSubcategoriesController.listPublicPaginated,
+);
 router.get("/public/faq", publicFaqController.listPublicFaq);
 router.get("/public/site-pages", publicSitePageController.listPublicSitePages);
 router.get(

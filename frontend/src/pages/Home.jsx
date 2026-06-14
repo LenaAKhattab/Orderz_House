@@ -1,5 +1,4 @@
 import usePublicAds from "../hooks/usePublicAds";
-import usePublicHomeCategories from "../hooks/usePublicHomeCategories";
 import usePublicPoolOrdersPreview from "../hooks/usePublicPoolOrdersPreview";
 import { usePublicHomeStats } from "../hooks/usePublicHomeStats";
 import { HOME_MOBILE_ORDERS_PREVIEW_LIMIT } from "../utils/homeMobileOrderCards";
@@ -15,7 +14,6 @@ import "../components/sections/home-landing-top.css";
 export default function Home() {
   const { ads, loading: adsLoading } = usePublicAds("home_right_panel");
   const { payload: statsPayload } = usePublicHomeStats();
-  const { items: categoryItems, loading: categoriesLoading, error: categoriesError } = usePublicHomeCategories();
   const {
     items: recentOrders,
     loading: recentOrdersLoading,
@@ -28,7 +26,7 @@ export default function Home() {
         <div className="home-landing-vp min-w-0 home-landing-vp--ready">
           <HomeTopSection ads={ads} adsLoading={adsLoading} statsPayload={statsPayload} />
         </div>
-        <CategoriesSection items={categoryItems} loading={categoriesLoading} error={categoriesError} />
+        <CategoriesSection />
         <FaqSection />
       </div>
 
@@ -36,9 +34,6 @@ export default function Home() {
         ads={ads}
         adsLoading={adsLoading}
         statsPayload={statsPayload}
-        categoryItems={categoryItems}
-        categoriesLoading={categoriesLoading}
-        categoriesError={categoriesError}
         recentOrders={recentOrders}
         recentOrdersLoading={recentOrdersLoading}
         recentOrdersError={recentOrdersError}

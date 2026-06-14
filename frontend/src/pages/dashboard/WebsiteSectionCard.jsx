@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { ChevronLeft, CircleHelp, FileText, SquarePen, Workflow } from "lucide-react";
+import { ChevronLeft, CircleHelp, FileText, Sparkles, SquarePen, Workflow } from "lucide-react";
 
 const SECTION_ICONS = {
+  "featured-services": Sparkles,
   faq: CircleHelp,
   "how-it-works": Workflow,
   "site-pages": FileText,

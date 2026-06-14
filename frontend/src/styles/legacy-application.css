@@ -5560,20 +5560,7 @@ p {
   margin-top: 0;
   border: none;
   box-shadow: none;
-}
-
-.page-shell--home-flow .partners-section__wave-top,
-.page-shell--home-flow .partners-section__wave-bottom {
-  display: none;
-}
-
-.page-shell--home-flow .partners-section__bg {
-  /* Single canvas = .page-shell--home-flow; avoid a second gradient edge at hero/partners join */
   background: transparent;
-}
-
-.page-shell--home-flow .partners-section__inner {
-  padding: clamp(2.75rem, 6.5vw, 4.5rem) 0 clamp(3rem, 7vw, 5rem);
 }
 
 .page-shell--home-flow .footer {
@@ -6130,195 +6117,24 @@ p {
   color: var(--primary);
 }
 
-/* —— Partners strip (above footer) —— */
-.partners-section {
-  position: relative;
-  overflow: hidden;
-  margin-top: 8px;
-}
-
-.partners-section__bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background: var(--page-bg, #f3f4f4);
-  pointer-events: none;
-}
-
-.partners-decor {
-  position: absolute;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.partners-decor--circle {
-  inset-inline-start: 6%;
-  top: 18%;
-  width: 120px;
-  height: 120px;
-  border: 1px solid rgba(47, 59, 101, 0.14);
-  border-radius: 50%;
-  opacity: 0.85;
-}
-
-.partners-decor--dots {
-  inset-inline-end: 5%;
-  top: 22%;
-  width: 72px;
-  height: 72px;
-  background-image: radial-gradient(
-    rgba(47, 59, 101, 0.3) 1.5px,
-    transparent 1.5px
-  );
-  background-size: 10px 10px;
-  opacity: 0.45;
-}
-
+/* —— Partners strip (above footer) — legacy layout retired; see partners-section.css —— */
+.partners-section__bg,
 .partners-section__wave-top,
-.partners-section__wave-bottom {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  line-height: 0;
-}
-
-.partners-section__wave-top {
-  margin-bottom: -1px;
-}
-
-.partners-section__wave-svg {
-  display: block;
-  width: 100%;
-  height: 72px;
-}
-
-.partners-section__wave-svg--bottom {
-  height: 62px;
-}
-
-.partners-section__inner {
-  position: relative;
-  z-index: 2;
-  padding: 78px 0 88px;
-}
-
-.partners-section__title {
-  margin: 0 0 40px;
-  text-align: center;
-  font-size: clamp(1.25rem, 3vw, 1.65rem);
-  font-weight: 700;
-  color: var(--primary);
-  letter-spacing: 0.02em;
-}
-
-.partners-section__logos {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(20px, 2.8vw, 34px);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.partners-section__logos::-webkit-scrollbar {
-  display: none;
-}
-
-.partners-section__logo-item {
-  margin: 0;
-  width: auto;
-  flex: 0 0 auto;
-  display: flex;
-  justify-content: center;
-}
-
-.partners-section__logo-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 220px;
-  height: 96px;
-  max-width: 100%;
-  padding: 0;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-}
-
+.partners-section__wave-bottom,
+.partners-decor,
+.partners-section__inner,
+.partners-section__logos,
+.partners-section__logo-item,
+.partners-section__logo-wrap,
 .partners-section__logo-img {
-  display: block;
-  width: auto;
-  height: auto;
-  max-width: 156px;
-  max-height: 80px;
-  object-fit: contain;
-  opacity: 0.92;
-  filter: none;
-  transition: opacity 0.25s ease;
+  /* noop — kept for selector compatibility during migration */
 }
 
-.partners-section__logo-wrap:hover .partners-section__logo-img {
-  opacity: 1;
-}
-
-@media (min-width: 1024px) {
-  .partners-section__logo-item--desktop-boost .partners-section__logo-wrap {
-    width: 262px;
-    height: 118px;
-  }
-
-  .partners-section__logo-item--desktop-boost .partners-section__logo-img {
-    max-width: 206px;
-    max-height: 92px;
-  }
+.partners-section:not(.partners-section--skeleton) {
+  margin-top: 0;
 }
 
 @media (max-width: 768px) {
-  .partners-section__inner {
-    padding: 56px 0 48px;
-  }
-
-  .partners-section__title {
-    margin-bottom: 28px;
-  }
-
-  .partners-decor--circle {
-    width: 80px;
-    height: 80px;
-    top: 10%;
-  }
-
-  .partners-decor--dots {
-    width: 56px;
-    height: 56px;
-    opacity: 0.35;
-  }
-
-  .partners-section__logos {
-    flex-wrap: wrap;
-    overflow-x: visible;
-    overflow-y: visible;
-    justify-content: center;
-    gap: 16px 20px;
-    padding-inline: 0;
-  }
-
-  .partners-section__logo-wrap {
-    width: 198px;
-    height: 88px;
-  }
-
-  .partners-section__logo-img {
-    max-width: 140px;
-    max-height: 50px;
-  }
-
   .navbar--at-top {
     padding: 6px 0 4px;
   }
@@ -6401,22 +6217,6 @@ p {
 
   .footer-content {
     grid-template-columns: 1fr;
-  }
-
-  .partners-section__logo-wrap {
-    width: 184px;
-    height: 82px;
-  }
-
-  .partners-section__logo-img {
-    max-width: 132px;
-    max-height: 46px;
-  }
-
-  .partners-section__logos {
-    justify-content: center;
-    gap: 14px 16px;
-    padding-inline: 0;
   }
 }
 

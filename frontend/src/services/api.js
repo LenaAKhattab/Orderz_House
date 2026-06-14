@@ -978,6 +978,15 @@ export const getPublicHomeStatsRequest = async ({ signal } = {}) => {
   return data;
 };
 
+export const getPublicSubSubcategoriesRequest = async ({ page = 1, limit = 16 } = {}, { signal } = {}) => {
+  const { data } = await api.get("/public/sub-subcategories", {
+    params: { page, limit },
+    signal,
+    timeout: 8000,
+  });
+  return data;
+};
+
 export const getPublicFaqRequest = async ({ signal } = {}) => {
   const { data } = await api.get("/public/faq", { signal, timeout: 8000 });
   return data;
