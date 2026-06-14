@@ -10,6 +10,24 @@ export const Register = lazy(() => import("../pages/Register"));
 export const ForgotPassword = lazy(() => import("../pages/ForgotPassword"));
 export const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
 export const TermsConditions = lazy(() => import("../pages/TermsConditions"));
+export const PublicGuaranteePage = lazy(() =>
+  import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicGuaranteePage })),
+);
+export const PublicHelpCenterPage = lazy(() =>
+  import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicHelpCenterPage })),
+);
+export const PublicEnterprisePage = lazy(() =>
+  import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicEnterprisePage })),
+);
+export const PublicFindWorkPage = lazy(() =>
+  import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicFindWorkPage })),
+);
+export const PublicCommunityPage = lazy(() =>
+  import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicCommunityPage })),
+);
+export const PublicBlogPage = lazy(() =>
+  import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicBlogPage })),
+);
 export const Unauthorized = lazy(() => import("../pages/Unauthorized"));
 export const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 
@@ -26,6 +44,8 @@ export const SuperAdminSettingsPage = lazy(() => import("../pages/dashboard/Supe
 export const SuperAdminAdminsPage = lazy(() => import("../pages/dashboard/SuperAdminAdminsPage"));
 export const SuperAdminEditWebsitePage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsitePage"));
 export const SuperAdminEditWebsiteFaqPage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsiteFaqPage"));
+export const SuperAdminSitePagesPage = lazy(() => import("../pages/dashboard/SuperAdminSitePagesPage"));
+export const SuperAdminSitePageEditPage = lazy(() => import("../pages/dashboard/SuperAdminSitePageEditPage"));
 export const SuperAdminEditWebsiteHowItWorksPage = lazy(
   () => import("../pages/dashboard/SuperAdminEditWebsiteHowItWorksPage"),
 );

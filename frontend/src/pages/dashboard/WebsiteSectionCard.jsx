@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
-import { ChevronLeft, CircleHelp, SquarePen, Workflow } from "lucide-react";
+import { ChevronLeft, CircleHelp, FileText, SquarePen, Workflow } from "lucide-react";
 
 const SECTION_ICONS = {
   faq: CircleHelp,
   "how-it-works": Workflow,
+  "site-pages": FileText,
 };
 
 /**
