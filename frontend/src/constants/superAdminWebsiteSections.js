@@ -16,4 +16,11 @@ export const SUPER_ADMIN_WEBSITE_SECTIONS = [
     editLabel: "تعديل القسم",
     path: `${EDIT_WEBSITE_BASE}/how-it-works`,
   },
+  {
+    id: "site-pages",
+    title: "الصفحات العامة",
+    description: "تعديل صفحات الموقع العامة (الخصوصية، الشروط، مركز المساعدة، وغيرها)",
+    editLabel: "تعديل القسم",
+    path: `${EDIT_WEBSITE_BASE}/pages`,
+  },
 ];

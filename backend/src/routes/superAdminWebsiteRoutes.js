@@ -4,6 +4,7 @@ const validateRequest = require("../middleware/validateRequest");
 const { uploadWebsiteContentImage } = require("../middleware/websiteContentImageUploadMiddleware");
 const superAdminWebsiteFaqController = require("../controllers/superAdminWebsiteFaqController");
 const superAdminWebsitePageController = require("../controllers/superAdminWebsitePageController");
+const superAdminSitePageController = require("../controllers/superAdminSitePageController");
 const {
   faqIdParam,
   createFaqValidators,
@@ -18,6 +19,10 @@ const {
   updateBlockValidators,
   reorderBlocksValidators,
 } = require("../validators/websitePageValidators");
+const {
+  sitePageIdParam,
+  updateSitePageValidators,
+} = require("../validators/publicSitePageValidators");
 
 const router = express.Router();
 
@@ -76,6 +81,15 @@ router.delete(
   [...pageSlugParam, ...blockIdParam],
   validateRequest,
   superAdminWebsitePageController.deleteBlock,
+);
+
+router.get("/site-pages", superAdminSitePageController.listSitePages);
+router.get("/site-pages/:id", sitePageIdParam, validateRequest, superAdminSitePageController.getSitePage);
+router.patch(
+  "/site-pages/:id",
+  updateSitePageValidators,
+  validateRequest,
+  superAdminSitePageController.updateSitePage,
 );
 
 module.exports = router;

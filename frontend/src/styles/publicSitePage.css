@@ -1,0 +1,46 @@
+.public-site-page {
+  padding: min(8vh, 72px) 0 48px;
+}
+
+.public-site-page__card {
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.public-site-page__title {
+  margin: 0 0 1.25rem;
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
+  font-weight: 800;
+  color: #2f3b65;
+  line-height: 1.35;
+}
+
+.public-site-page__content {
+  display: grid;
+  gap: 1rem;
+  color: #334155;
+  font-size: 1rem;
+  line-height: 1.85;
+}
+
+.public-site-page__content h2 {
+  margin: 0.75rem 0 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #2f3b65;
+}
+
+.public-site-page__content p {
+  margin: 0;
+}
+
+.public-site-page__state {
+  text-align: center;
+  padding: min(12vh, 120px) 0 48px;
+  color: #64748b;
+}
+
+.public-site-page__state h1 {
+  color: #2f3b65;
+  margin-bottom: 0.75rem;
+}

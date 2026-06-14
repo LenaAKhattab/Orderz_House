@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { usePublicSitePages } from "../../hooks/usePublicSitePages";
 
 const linkClass =
   "site-footer__link text-[#202020] no-underline transition-colors hover:text-[#475569]";
@@ -35,6 +36,8 @@ function ContactIcon({ children }) {
 const Footer = ({ homeBlend = false }) => {
   const { pathname } = useLocation();
   const gridRef = useRef(null);
+  const { footerPages, loading: sitePagesLoading, error: sitePagesError } = usePublicSitePages();
+  const showImportantLinks = !sitePagesError && footerPages.length > 0;
 
   useEffect(() => {
     const root = gridRef.current;
@@ -54,7 +57,7 @@ const Footer = ({ homeBlend = false }) => {
     syncDesktopGroups();
     mq.addEventListener("change", syncDesktopGroups);
     return () => mq.removeEventListener("change", syncDesktopGroups);
-  }, []);
+  }, [showImportantLinks, sitePagesLoading]);
 
   return (
     <footer
@@ -145,29 +148,23 @@ const Footer = ({ homeBlend = false }) => {
           </ul>
         </details>
 
-        <details className="site-footer__group site-footer__panel min-w-0">
-          <summary className="site-footer__group-summary">
-            <span>الموارد</span>
-            <FooterGroupChevron />
-          </summary>
-          <ul className="site-footer__link-list m-0 grid list-none gap-2 p-0 text-[0.9rem] leading-[1.55] text-[#202020]">
-            <li>
-              <Link to="/privacy-policy" className={linkClass}>
-                سياسة الخصوصية
-              </Link>
-            </li>
-            <li>
-              <Link to="/terms-conditions" className={linkClass}>
-                الشروط والأحكام
-              </Link>
-            </li>
-            <li>
-              <Link to="/about" className={linkClass}>
-                مركز المساعدة
-              </Link>
-            </li>
-          </ul>
-        </details>
+        {showImportantLinks ? (
+          <details className="site-footer__group site-footer__panel min-w-0" open>
+            <summary className="site-footer__group-summary">
+              <span>روابط مهمة</span>
+              <FooterGroupChevron />
+            </summary>
+            <ul className="site-footer__link-list m-0 grid list-none gap-2 p-0 text-[0.9rem] leading-[1.55] text-[#202020]">
+              {footerPages.map((page) => (
+                <li key={page.id}>
+                  <Link to={page.path} className={footerLinkClass(pathname, page.path)}>
+                    {page.menuLabel || page.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
 
         <details className="site-footer__group site-footer__panel min-w-0">
           <summary className="site-footer__group-summary">
@@ -207,7 +204,7 @@ const Footer = ({ homeBlend = false }) => {
             <li className="site-footer__contact-row">
               <ContactIcon>
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
-                  <path d="M4 6.5 12 13l8-6.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M4 6.5 12 13l8-6.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   <path d="M5 19h14a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z" stroke="currentColor" strokeWidth="1.7" />
                 </svg>
               </ContactIcon>
@@ -267,14 +264,6 @@ const Footer = ({ homeBlend = false }) => {
             : "site-footer__bottom-bar border-t border-[rgba(100,116,139,0.22)] bg-white py-[18px] pb-7"
         }
       >
-        <div className="site-footer__bottom-links">
-          <Link to="/privacy-policy" className="text-[0.86rem] text-[#64748b] no-underline transition-colors hover:text-[#475569]">
-            سياسة الخصوصية
-          </Link>
-          <Link to="/terms-conditions" className="text-[0.86rem] text-[#64748b] no-underline transition-colors hover:text-[#475569]">
-            الشروط والأحكام
-          </Link>
-        </div>
         <p className="site-footer__copyright">
           © 2026 أوردر هاوس. جميع الحقوق محفوظة.
         </p>

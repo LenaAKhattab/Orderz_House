@@ -12,6 +12,7 @@ import {
 import NotificationsBell from "../notifications/NotificationsBell";
 import { useHomePageBlocking } from "../../hooks/useHomePageBlocking";
 import useHowItWorksNav from "../../hooks/useHowItWorksNav";
+import { usePublicSitePages } from "../../hooks/usePublicSitePages";
 import NavbarSkeleton from "../skeletons/NavbarSkeleton";
 import "../skeletons/home-skeleton.css";
 import "../../styles/servicesPage.css";
@@ -80,6 +81,8 @@ const Navbar = () => {
   useOnClickOutside(howItWorksRef, () => setHowItWorksOpen(false));
 
   const { items: howItWorksItems, showNav: showHowItWorksNav } = useHowItWorksNav();
+  const { mobileMenuPages, error: sitePagesError } = usePublicSitePages();
+  const showImportantLinks = !sitePagesError && mobileMenuPages.length > 0;
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -511,6 +514,32 @@ const Navbar = () => {
                         </li>
                       ) : null}
                     </ul>
+
+                    {showImportantLinks ? (
+                      <>
+                        <p className="public-nav-drawer__section-label public-nav-drawer__section-label--nested">
+                          روابط مهمة
+                        </p>
+                        <ul className="public-nav-drawer__list">
+                          {mobileMenuPages.map((item) => (
+                            <li key={item.id}>
+                              <NavLink
+                                to={item.path}
+                                className={drawerLinkClass}
+                                onClick={closeMobileDrawer}
+                              >
+                                <span className="public-nav-drawer__link-text">{item.menuLabel}</span>
+                                <span className="public-nav-drawer__link-chevron" aria-hidden>
+                                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+                                    <path d="m9 6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                </span>
+                              </NavLink>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : null}
                   </nav>
                 </div>
 

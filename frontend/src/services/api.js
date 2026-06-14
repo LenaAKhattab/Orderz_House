@@ -983,6 +983,34 @@ export const getPublicFaqRequest = async ({ signal } = {}) => {
   return data;
 };
 
+export const getPublicSitePagesRequest = async ({ signal } = {}) => {
+  const { data } = await api.get("/public/site-pages", { signal, timeout: 8000 });
+  return data;
+};
+
+export const getPublicSitePageBySlugRequest = async (slug, { signal } = {}) => {
+  const { data } = await api.get(`/public/site-pages/${encodeURIComponent(slug)}`, {
+    signal,
+    timeout: 8000,
+  });
+  return data;
+};
+
+export const listSuperAdminSitePagesRequest = async () => {
+  const { data } = await api.get("/super-admin/site-pages");
+  return data;
+};
+
+export const getSuperAdminSitePageRequest = async (id) => {
+  const { data } = await api.get(`/super-admin/site-pages/${id}`);
+  return data;
+};
+
+export const updateSuperAdminSitePageRequest = async (id, payload) => {
+  const { data } = await api.patch(`/super-admin/site-pages/${id}`, payload);
+  return data;
+};
+
 export const listSuperAdminWebsiteFaqRequest = async () => {
   const { data } = await api.get("/super-admin/website/faq");
   return data;
