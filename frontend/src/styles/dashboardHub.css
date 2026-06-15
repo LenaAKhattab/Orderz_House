@@ -1580,6 +1580,7 @@
   font-size: 1rem;
   font-weight: 700;
   color: var(--fd-primary, #2f3b65);
+  text-align: start;
 }
 
 .fdash-growth-insights__list {
@@ -1960,7 +1961,7 @@
 .fdash-welcome__actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
   margin-top: 18px;
   padding-top: 4px;
@@ -2291,6 +2292,33 @@
   --fd-surface-3d-thin-bg: linear-gradient(145deg, #f8faff 0%, #f0f4ff 100%);
 }
 
+.fdash-banner--readiness {
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: auto;
+}
+
+.fdash-banner--readiness-courses {
+  --fd-surface-3d-thin-bg: linear-gradient(145deg, #f8faff 0%, #eef3ff 100%);
+  border-inline-start: 3px solid #6366f1;
+}
+
+.fdash-banner--readiness-approval {
+  --fd-surface-3d-thin-bg: linear-gradient(145deg, #f6fdf9 0%, #eef8f2 100%);
+  border-inline-start: 3px solid #22c55e;
+}
+
+.fdash-banner__content--readiness {
+  max-width: none;
+}
+
+.fdash-banner--readiness .fdash-banner__actions {
+  margin-top: 10px;
+}
+
+.fdash-banner--readiness .fdash-banner__subtitle {
+  margin-bottom: 0;
+}
+
 .fdash-banner__illustration {
   position: relative;
   z-index: 1;
@@ -2461,6 +2489,7 @@
 .fdash-insights {
   display: grid;
   gap: 16px;
+  text-align: start;
 }
 
 .fdash-insights__title {
@@ -2469,12 +2498,14 @@
   font-weight: 800;
   line-height: 1.35;
   color: #1a2340;
+  text-align: start;
 }
 
 .fdash-insights__grid {
   display: grid;
   gap: 14px;
   align-items: stretch;
+  direction: inherit;
 }
 
 @media (min-width: 640px) {

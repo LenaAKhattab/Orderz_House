@@ -1,14 +1,21 @@
+import { useTranslation } from "../../../i18n/LanguageProvider";
+
 export default function DashboardHubToolbar({
   searchValue,
   onSearchChange,
-  searchPlaceholder = "بحث…",
+  searchPlaceholder,
   sortValue,
   onSortChange,
   sortOptions,
   onRefresh,
   refreshing = false,
-  refreshLabel = "تحديث القائمة",
+  refreshLabel,
 }) {
+  const { t } = useTranslation();
+
+  const resolvedSearchPlaceholder = searchPlaceholder ?? t("freelancerDashboard.toolbar.searchPlaceholder");
+  const resolvedRefreshLabel = refreshLabel ?? t("freelancerDashboard.toolbar.refreshList");
+
   return (
     <div className="fdash-toolbar">
       {onSearchChange != null ? (
@@ -21,8 +28,8 @@ export default function DashboardHubToolbar({
             className="fdash-toolbar__search-input"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
+            placeholder={resolvedSearchPlaceholder}
+            aria-label={resolvedSearchPlaceholder}
           />
         </div>
       ) : null}
@@ -32,7 +39,7 @@ export default function DashboardHubToolbar({
             className="fdash-toolbar__select"
             value={sortValue}
             onChange={(e) => onSortChange?.(e.target.value)}
-            aria-label="ترتيب"
+            aria-label={t("freelancerDashboard.toolbar.sortAriaLabel")}
           >
             {sortOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -48,7 +55,7 @@ export default function DashboardHubToolbar({
             disabled={refreshing}
             onClick={onRefresh}
           >
-            {refreshing ? "جارٍ التحديث…" : refreshLabel}
+            {refreshing ? t("freelancerDashboard.toolbar.refreshing") : resolvedRefreshLabel}
           </button>
         ) : null}
       </div>

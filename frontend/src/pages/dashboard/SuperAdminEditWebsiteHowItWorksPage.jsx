@@ -65,7 +65,7 @@ export default function SuperAdminEditWebsiteHowItWorksPage() {
       <DashboardPageHeader
         title="طريقة العمل"
         description="إدارة صفحات طريقة العمل للمستقل والعميل."
-        breadcrumbs={editWebsiteBreadcrumbs("طريقة العمل")}
+        breadcrumbs={editWebsiteBreadcrumbs("dashboard.breadcrumbs.howItWorks")}
       />
 
       <DashboardSection title="صفحات طريقة العمل">

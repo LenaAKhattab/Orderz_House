@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "../../../../i18n/LanguageProvider";
+import { getLocalizedField } from "../../../../lib/i18n/getLocalizedField";
 
 function formatRating(value) {
   if (value == null || !Number.isFinite(Number(value))) return "—";
@@ -40,6 +42,8 @@ function DistributionBars({ distribution = {}, total: _total = 0 }) {
 }
 
 export default function ReviewsCard({ reviews, loadState = "ok", loadError = "", onRetry, loading }) {
+  const { t, locale } = useTranslation();
+
   if (loading) {
     return (
       <article className="fdash-cc-card">
@@ -52,12 +56,12 @@ export default function ReviewsCard({ reviews, loadState = "ok", loadError = "",
     return (
       <article className="fdash-cc-card fdash-cc-card--reviews">
         <header className="fdash-cc-card__head">
-          <h3 className="fdash-cc-card__title">التقييمات</h3>
+          <h3 className="fdash-cc-card__title">{t("freelancerDashboard.controlCenter.reviews.title")}</h3>
         </header>
-        <p className="fdash-cc-card__muted">{loadError || "تعذر تحميل التقييمات."}</p>
+        <p className="fdash-cc-card__muted">{loadError || t("freelancerDashboard.controlCenter.reviews.loadError")}</p>
         {onRetry ? (
           <button type="button" className="fdash-cc-btn fdash-cc-btn--sm" onClick={onRetry}>
-            إعادة المحاولة
+            {t("freelancerDashboard.common.retry")}
           </button>
         ) : null}
       </article>
@@ -67,33 +71,37 @@ export default function ReviewsCard({ reviews, loadState = "ok", loadError = "",
   const r = reviews || {};
   const total = Number(r.totalReviews || 0);
   const empty = !r.available || total === 0;
+  const emptyMessage =
+    getLocalizedField(r, "message", locale) || t("freelancerDashboard.controlCenter.reviews.empty");
 
   return (
     <article className="fdash-cc-card fdash-cc-card--growth fdash-cc-card--reviews">
       <header className="fdash-cc-card__head">
-        <h3 className="fdash-cc-card__title">التقييمات</h3>
+        <h3 className="fdash-cc-card__title">{t("freelancerDashboard.controlCenter.reviews.title")}</h3>
         <Link to="/dashboard/freelancer/profile" className="fdash-cc-card__link">
-          عرض الكل
+          {t("freelancerDashboard.controlCenter.reviews.viewAll")}
         </Link>
       </header>
 
       {empty ? (
-        <p className="fdash-cc-card__muted">
-          {r.messageAr || "لا توجد تقييمات بعد — ستظهر بعد أن يقيّمك العملاء على مشاريع مكتملة."}
-        </p>
+        <p className="fdash-cc-card__muted">{emptyMessage}</p>
       ) : (
         <>
           <div className="fdash-review-summary">
             <div className="fdash-review-summary__score">
               <strong>{formatRating(r.averageRating)}</strong>
               <StarsDisplay rating={r.averageRating} size="lg" />
-              <span className="fdash-cc-card__muted">{total} تقييم</span>
+              <span className="fdash-cc-card__muted">
+                {t("freelancerDashboard.controlCenter.reviews.reviewCount", { count: total })}
+              </span>
             </div>
             <DistributionBars distribution={r.ratingDistribution} total={total} />
           </div>
           {r.recommendationRate != null ? (
             <p className="fdash-cc-card__line">
-              نسبة التوصية: <strong>{r.recommendationRate}%</strong>
+              {t("freelancerDashboard.controlCenter.reviews.recommendationRate", {
+                rate: r.recommendationRate,
+              })}
             </p>
           ) : null}
           {r.latestReviews?.length > 0 ? (
@@ -102,7 +110,9 @@ export default function ReviewsCard({ reviews, loadState = "ok", loadError = "",
                 <li key={rev.id}>
                   <div className="fdash-review-latest__head">
                     <StarsDisplay rating={rev.rating} size="sm" />
-                    <span className="fdash-review-latest__who">{rev.clientLabel || "عميل"}</span>
+                    <span className="fdash-review-latest__who">
+                      {rev.clientLabel || t("freelancerDashboard.controlCenter.reviews.client")}
+                    </span>
                   </div>
                   {rev.reviewText ? <p>{rev.reviewText}</p> : null}
                 </li>

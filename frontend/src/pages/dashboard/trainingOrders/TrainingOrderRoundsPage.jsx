@@ -5,7 +5,8 @@ import DashboardToolbar from "../../../components/dashboard/DashboardToolbar";
 import DashboardLoadingState from "../../../components/dashboard/DashboardLoadingState";
 import DashboardEmptyState from "../../../components/dashboard/DashboardEmptyState";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
-import { formatRoundPeriod, ROUND_STATUS_AR, roundSourceAr } from "./trainingOrdersDisplayUtils";
+import { formatRoundPeriod, getRoundStatusLabel } from "./trainingOrdersDisplayUtils";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import "./trainingOrdersAdmin.css";
 
 function errMsg(e) {
@@ -21,6 +22,7 @@ function roundStatusTone(status) {
 }
 
 export default function TrainingOrderRoundsPage() {
+  const { t, locale } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
@@ -53,7 +55,7 @@ export default function TrainingOrderRoundsPage() {
   }, [load]);
 
   const cancel = async (r) => {
-    if (!window.confirm(`إيقاف الجولة «${r.title}»؟`)) return;
+    if (!window.confirm(t("trainingOrders.rounds.cancelConfirm", { title: r.title }))) return;
     setBusyId(r.id);
     setError("");
     try {
@@ -71,8 +73,8 @@ export default function TrainingOrderRoundsPage() {
   return (
     <DashboardSection
       className="oh-training-page-section"
-      title="جولات الطلبات التجريبية"
-      description="جولة تجريبية واحدة نشطة في كل مرة. عند بدء جولة جديدة تُنهى الجولة السابقة وتختفي طلباتها من معرض الطلبات فوراً، مع بقاء السجل هنا للمراجعة."
+      title={t("trainingOrders.rounds.title")}
+      description={t("trainingOrders.rounds.description")}
     >
       {error ? <p className="auth-form-error">{error}</p> : null}
       <DashboardToolbar className="oh-training-filters">
@@ -113,13 +115,13 @@ export default function TrainingOrderRoundsPage() {
                     </td>
                     <td>{roundSourceAr(r.roundSource)}</td>
                     <td>
-                      <StatusBadge tone={roundStatusTone(r.status)}>{ROUND_STATUS_AR[r.status] || r.status}</StatusBadge>
+                      <StatusBadge tone={roundStatusTone(r.status)}>{getRoundStatusLabel(r.status, t)}</StatusBadge>
                     </td>
                     <td dir="ltr">
                       {r.minOrders} – {r.maxOrders}
                     </td>
                     <td dir="ltr">{r.generatedCount}</td>
-                    <td style={{ whiteSpace: "nowrap" }}>{formatRoundPeriod(r.startsAt, r.expiresAt)}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{formatRoundPeriod(r.startsAt, r.expiresAt, locale)}</td>
                     <td>
                       {r.status === "active" || r.status === "scheduled" ? (
                         <button

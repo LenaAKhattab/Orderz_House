@@ -3,14 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/useAuth";
 import { isOrderzhouseFreePlan } from "../../../constants/orderzhousePlansCatalog";
 import { isUpgradePlan, planTierRank } from "../../../utils/planSubscriptionUtils";
-import {
-  formatInstallmentSummary,
-  formatOrderValueRange,
-  isOfferActive,
-  planBadgeLabel,
-  planListItems,
-  planPriceHeadline,
-} from "../planDisplayUtils";
+import { getLocalizedPlanBadge, getLocalizedPlanCardDisplay } from "../../../lib/i18n/getLocalizedPlanDisplay";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 
 const FEATURE_PREVIEW = 4;
 
@@ -42,6 +36,7 @@ export default function PlansMobilePlanCard({
 }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t, locale } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   const role = user ? user.primaryRole || user.role : null;
@@ -61,44 +56,44 @@ export default function PlansMobilePlanCard({
   const canSelfCheckout =
     plan?.selfCheckoutEligible == null ? true : Boolean(plan.selfCheckoutEligible);
 
-  const { main: priceMain, sub: priceSub } = planPriceHeadline(plan);
-  const features = planListItems(plan);
+  const display = getLocalizedPlanCardDisplay(plan, locale, t);
+  const { main: priceMain, sub: priceSub } = display.price;
+  const features = display.features;
   const previewFeatures = features.slice(0, FEATURE_PREVIEW);
   const moreFeatures = features.slice(FEATURE_PREVIEW);
-  const orderRange = formatOrderValueRange(plan);
-  const installment = formatInstallmentSummary(plan);
-  const paymentNotes = plan?.paymentNotes ? String(plan.paymentNotes).trim() : "";
-  const offerActive = isOfferActive(plan);
-  const offerLabel = offerActive && plan.offerLabel ? String(plan.offerLabel).trim() : "";
-  const planTitle = plan.title || plan.name || "—";
-  const badge = planBadgeLabel(plan, featured);
+  const orderRange = display.orderRange;
+  const installment = display.installment;
+  const paymentNotes = display.paymentNotes;
+  const offerLabel = display.offerLabel;
+  const planTitle = display.title;
+  const badge = getLocalizedPlanBadge(plan, featured, locale, t);
   const durationDays = Number(plan?.durationDays);
   const durationLabel =
     Number.isFinite(durationDays) && durationDays >= 365
-      ? "سنة كاملة"
+      ? t("plans.fullYear")
       : Number.isFinite(durationDays) && durationDays > 0
-        ? `${durationDays} يوم`
+        ? t("plans.days", { count: durationDays })
         : null;
 
   const ctaLabel = isLoggedNonFreelancer
-    ? "للمستقلين فقط"
+    ? t("plans.cta.freelancersOnly")
     : isCurrentPlan
-      ? "باقتك الحالية"
+      ? t("plans.cta.currentPlan")
       : isLowerTier
-        ? "باقة أقل"
+        ? t("plans.cta.lowerPlan")
         : isBlockedBySubscription
-          ? "مشترك بالفعل"
+          ? t("plans.cta.alreadySubscribed")
           : checkoutBusy
-            ? "جارٍ التحويل…"
+            ? t("common.loading.redirecting")
             : isFreelancer && isUpgradeTarget && canSelfCheckout
-              ? "ترقية الاشتراك"
+              ? t("plans.cta.upgrade")
               : isFreelancer && canSelfCheckout
-                ? "ترقية الاشتراك"
+                ? t("plans.cta.upgrade")
                 : isFreelancer && isFreePlan
-                  ? "مفعّل تلقائياً"
+                  ? t("plans.cta.autoActivated")
                   : isFreelancer && !canSelfCheckout
-                    ? "يتم التفعيل عبر الشركة"
-                    : "ابدأ الآن";
+                    ? t("plans.cta.companyActivation")
+                    : t("plans.cta.startNow");
 
   const usePrimaryCta =
     featured &&
@@ -126,7 +121,7 @@ export default function PlansMobilePlanCard({
     onCta?.(plan);
   };
 
-  const hasMeta = Boolean(offerLabel || orderRange || plan.activationRequirements || plan.refundPolicy);
+  const hasMeta = Boolean(offerLabel || orderRange || display.activationRequirements || display.refundPolicy);
 
   return (
     <article
@@ -142,7 +137,7 @@ export default function PlansMobilePlanCard({
 
       <div className="pm-plan-card__head">
         <h2 className="pm-plan-card__title">{planTitle}</h2>
-        {plan.description ? <p className="pm-plan-card__desc">{plan.description}</p> : null}
+        {display.description ? <p className="pm-plan-card__desc">{display.description}</p> : null}
         {durationLabel ? <p className="pm-plan-card__duration">{durationLabel}</p> : null}
       </div>
 
@@ -155,7 +150,7 @@ export default function PlansMobilePlanCard({
 
       {offerLabel ? <p className="pm-plan-card__offer">{offerLabel}</p> : null}
 
-      <ul className="pm-plan-card__features" aria-label="مميزات الباقة">
+      <ul className="pm-plan-card__features" aria-label={t("plans.featuresAria")}>
         {previewFeatures.map((text, idx) => (
           <li key={`${text}-${idx}`} className="pm-plan-card__feature">
             <span className="pm-plan-card__check">
@@ -173,12 +168,12 @@ export default function PlansMobilePlanCard({
           aria-expanded={expanded}
           onClick={() => setExpanded((v) => !v)}
         >
-          {expanded ? "إخفاء المزايا" : `عرض ${moreFeatures.length} ميزة إضافية`}
+          {expanded ? t("plans.hideFeatures") : t("plans.showMoreFeatures", { count: moreFeatures.length })}
         </button>
       ) : null}
 
       {expanded && moreFeatures.length > 0 ? (
-        <ul className="pm-plan-card__features pm-plan-card__features--more" aria-label="مزايا إضافية">
+        <ul className="pm-plan-card__features pm-plan-card__features--more" aria-label={t("plans.extraFeaturesAria")}>
           {moreFeatures.map((text, idx) => (
             <li key={`more-${text}-${idx}`} className="pm-plan-card__feature">
               <span className="pm-plan-card__check">
@@ -193,8 +188,8 @@ export default function PlansMobilePlanCard({
       {hasMeta ? (
         <div className="pm-plan-card__meta">
           {orderRange ? <p>{orderRange}</p> : null}
-          {plan.activationRequirements ? <p>{plan.activationRequirements}</p> : null}
-          {plan.refundPolicy ? <p>{plan.refundPolicy}</p> : null}
+          {display.activationRequirements ? <p>{display.activationRequirements}</p> : null}
+          {display.refundPolicy ? <p>{display.refundPolicy}</p> : null}
         </div>
       ) : null}
 

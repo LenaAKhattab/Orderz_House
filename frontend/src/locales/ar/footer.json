@@ -1,0 +1,32 @@
+{
+  "explore": "استكشف",
+  "home": "الرئيسية",
+  "forClients": "للعملاء",
+  "addRequest": "إضافة طلب",
+  "forFreelancers": "للمستقلين",
+  "projects": "المشاريع",
+  "joinFreelancer": "انضم كمستقل",
+  "importantLinks": {
+    "title": "روابط مهمة",
+    "rightsGuarantee": "ضمان حقوقك",
+    "terms": "شروط الاستخدام",
+    "privacy": "بيان الخصوصية",
+    "helpCenter": "مركز المساعدة",
+    "enterprise": "أوردرز هاوس للمؤسسات",
+    "findWork": "ابحث عن عمل",
+    "community": "مجتمع أوردرز هاوس",
+    "blog": "مدونة أوردرز هاوس"
+  },
+  "company": "الشركة",
+  "contactUs": "تواصل معنا",
+  "phone": "رقم الهاتف",
+  "email": "البريد الإلكتروني",
+  "whatsapp": "واتساب",
+  "location": "الموقع",
+  "locationValue": "الإمارات العربية المتحدة، دبي",
+  "workingHours": "ساعات العمل",
+  "workingHoursValue": "نعمل على مدار الساعة لخدمتك",
+  "phoneValue": "+971 522857808",
+  "emailValue": "info@orderzhouse.com",
+  "whatsappValue": "+971 522857808"
+}

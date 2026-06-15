@@ -1,11 +1,3 @@
-export function formatPriceJod(priceJod) {
-  if (priceJod === null || priceJod === undefined) return null;
-  const n = Number(priceJod);
-  if (!Number.isFinite(n)) return null;
-  if (n === 0) return "مجانية";
-  return `${n.toLocaleString("en-US", { maximumFractionDigits: 2 })} د.أ`;
-}
-
 /** Normalize bullet text so feature vs training duplicates can be detected. */
 function normalizePlanBullet(text) {
   return String(text)
@@ -92,21 +84,4 @@ export function isOfferActive(plan) {
   const t = new Date(exp).getTime();
   if (!Number.isFinite(t)) return true;
   return t >= Date.now();
-}
-
-export function planPriceHeadline(plan) {
-  const total = formatPriceJod(plan?.priceJod);
-  const checkout =
-    plan?.stripeCheckoutAmountJod != null ? formatPriceJod(plan.stripeCheckoutAmountJod) : null;
-  if (checkout && total && checkout !== total) {
-    return { main: checkout, sub: `الإجمالي ${total}` };
-  }
-  return { main: total || "—", sub: null };
-}
-
-export function planBadgeLabel(plan, featured) {
-  if (featured && plan?.isPopular) return "الأكثر شيوعًا";
-  if (featured && plan?.isFeatured) return "باقة مميزة";
-  if (featured) return "الأكثر شيوعًا";
-  return null;
 }

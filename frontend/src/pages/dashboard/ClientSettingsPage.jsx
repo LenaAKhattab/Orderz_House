@@ -12,7 +12,8 @@ import { mergeNotificationPrefs } from "../../utils/accountDisplay";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import BrowserNotificationSettings from "../../components/notifications/BrowserNotificationSettings";
-import { breadcrumbHomeFromUser } from "../../components/dashboard/dashboardBreadcrumbs";
+import { breadcrumbHomeCrumb } from "../../components/dashboard/dashboardBreadcrumbs";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../styles/dashboardHub.css";
 import "./shared/account-pages.css";
 
@@ -20,6 +21,7 @@ const PHONE_RE = /^\+[1-9]\d{7,14}$/;
 
 export default function ClientSettingsPage() {
   const { refreshUser, user } = useAuth();
+  const { dir } = useTranslation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -178,7 +180,7 @@ export default function ClientSettingsPage() {
   if (loading) {
     return (
       <DashboardHubPage className="fdash-page--account">
-        <div className="oh-account-page" dir="rtl">
+        <div className="oh-account-page" dir={dir}>
           <div className="oh-account-skel" style={{ height: 120, borderRadius: 20 }} />
         </div>
       </DashboardHubPage>
@@ -188,7 +190,7 @@ export default function ClientSettingsPage() {
   if (error) {
     return (
       <DashboardHubPage className="fdash-page--account">
-        <div className="oh-account-page" dir="rtl">
+        <div className="oh-account-page" dir={dir}>
           <div className="oh-account-card">
             <p className="oh-account-error" style={{ margin: 0 }}>
               {error}
@@ -204,13 +206,13 @@ export default function ClientSettingsPage() {
 
   return (
     <DashboardHubPage className="fdash-page--account">
-    <div className="oh-account-page" dir="rtl">
+    <div className="oh-account-page" dir={dir}>
       <DashboardPageHeader
         eyebrow="إعدادات العميل"
         title="إعدادات الحساب"
         description="حدّث بياناتك وبيانات الفوترة المعروضة للفريق. لا تُخزَّن بيانات بطاقات الدفع هنا."
         breadcrumbs={[
-          { label: "الرئيسية", href: breadcrumbHomeFromUser(user) },
+          breadcrumbHomeCrumb(user),
           { label: "إعدادات الحساب" },
         ]}
       />

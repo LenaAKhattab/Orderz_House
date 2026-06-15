@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { freelancerListMyCoursesRequest } from "../../services/api";
 import { useToast } from "../../components/ui/toastContext";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import DashboardHubEmpty from "../../components/dashboard/hub/DashboardHubEmpty";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
@@ -24,20 +25,20 @@ import "./freelancerCourses.css";
 
 const FAVORITES_KEY = "oh_freelancer_course_favorites";
 
-const STATUS_TABS = [
-  { id: "all", label: "الكل", Icon: LayoutGrid },
-  { id: "in_progress", label: "في تقدم", Icon: Play },
-  { id: "completed", label: "مكتملة", Icon: Check },
-  { id: "not_started", label: "لم تبدأ", Icon: Circle },
-  { id: "favorites", label: "المفضلة", Icon: Star },
+const STATUS_TAB_IDS = [
+  { id: "all", tabKey: "all", Icon: LayoutGrid },
+  { id: "in_progress", tabKey: "inProgress", Icon: Play },
+  { id: "completed", tabKey: "completed", Icon: Check },
+  { id: "not_started", tabKey: "notStarted", Icon: Circle },
+  { id: "favorites", tabKey: "favorites", Icon: Star },
 ];
 
-const SORT_OPTIONS = [
-  { value: "newest", label: "الأحدث" },
-  { value: "oldest", label: "الأقدم" },
-  { value: "progress_high", label: "الأعلى تقدماً" },
-  { value: "progress_low", label: "الأقل تقدماً" },
-  { value: "title", label: "الاسم (أ–ي)" },
+const SORT_OPTION_VALUES = [
+  { value: "newest", sortKey: "newest" },
+  { value: "oldest", sortKey: "oldest" },
+  { value: "progress_high", sortKey: "progressHigh" },
+  { value: "progress_low", sortKey: "progressLow" },
+  { value: "title", sortKey: "title" },
 ];
 
 function prog(course) {
@@ -67,23 +68,24 @@ function courseStatus(course) {
   return "not_started";
 }
 
-function testingInfo(course) {
+function testingInfo(course, t) {
   if (!course?.isTestingEnabled) return null;
   if (isCourseCompleted(course)) {
-    return { tone: "done", label: "اكتمل الاختبار النهائي" };
+    return { tone: "done", label: t("freelancerDashboard.training.card.testCompleted") };
   }
   const { completed, total } = prog(course);
   if (total > 0 && completed >= total) {
-    return { tone: "pending", label: "بانتظار الاختبار النهائي" };
+    return { tone: "pending", label: t("freelancerDashboard.training.card.testPending") };
   }
-  return { tone: "included", label: "يتضمن اختبار نهائي" };
+  return { tone: "included", label: t("freelancerDashboard.training.card.testIncluded") };
 }
 
-function formatJoDate(value) {
+function formatCourseDate(value, locale) {
   if (!value) return null;
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return null;
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium" }).format(d);
+  const tag = locale === "ar" ? "ar-JO-u-nu-latn" : "en-GB";
+  return new Intl.DateTimeFormat(tag, { dateStyle: "medium" }).format(d);
 }
 
 function courseHaystack(course) {
@@ -122,26 +124,38 @@ function writeFavorites(ids) {
   }
 }
 
-function statusUi(status) {
+function statusUi(status, t) {
   if (status === "completed") {
-    return { label: "مكتملة", className: "fc-course-card__badge--done", Icon: Check };
+    return {
+      label: t("freelancerDashboard.training.card.statusCompleted"),
+      className: "fc-course-card__badge--done",
+      Icon: Check,
+    };
   }
   if (status === "in_progress") {
-    return { label: "في تقدم", className: "fc-course-card__badge--active", Icon: Play };
+    return {
+      label: t("freelancerDashboard.training.card.statusInProgress"),
+      className: "fc-course-card__badge--active",
+      Icon: Play,
+    };
   }
-  return { label: "لم تبدأ بعد", className: "fc-course-card__badge--idle", Icon: Circle };
+  return {
+    label: t("freelancerDashboard.training.card.statusNotStarted"),
+    className: "fc-course-card__badge--idle",
+    Icon: Circle,
+  };
 }
 
-function ctaLabel(status) {
-  if (status === "completed") return "مراجعة الدورة";
-  if (status === "not_started") return "ابدأ الدورة";
-  return "متابعة التعلم";
+function ctaLabel(status, t) {
+  if (status === "completed") return t("freelancerDashboard.training.card.reviewCourse");
+  if (status === "not_started") return t("freelancerDashboard.training.card.startCourse");
+  return t("freelancerDashboard.training.card.continueLearning");
 }
 
-function ctaLabelShort(status) {
-  if (status === "completed") return "مراجعة";
-  if (status === "not_started") return "ابدأ";
-  return "متابعة";
+function ctaLabelShort(status, t) {
+  if (status === "completed") return t("freelancerDashboard.training.card.review");
+  if (status === "not_started") return t("freelancerDashboard.training.card.start");
+  return t("freelancerDashboard.training.card.continue");
 }
 
 function StatSegment({ tone, Icon, value, label, loading }) {
@@ -162,14 +176,15 @@ function StatSegment({ tone, Icon, value, label, loading }) {
   );
 }
 
-function CourseCard({ course, isFavorite, onToggleFavorite }) {
+function CourseCard({ course, isFavorite, onToggleFavorite, t, locale }) {
   const { completed, total, pct } = prog(course);
   const status = courseStatus(course);
-  const test = testingInfo(course);
-  const lastTouch = formatJoDate(course.updatedAt || course.courseCompletedAt);
+  const test = testingInfo(course, t);
+  const lastTouch = formatCourseDate(course.updatedAt || course.courseCompletedAt, locale);
   const cover = course.coverImage?.trim() || null;
-  const badge = statusUi(status);
+  const badge = statusUi(status, t);
   const BadgeIcon = badge.Icon;
+  const untitled = t("freelancerDashboard.training.card.untitled");
 
   const courseTo = `/dashboard/freelancer/courses/${course.id}`;
 
@@ -183,7 +198,7 @@ function CourseCard({ course, isFavorite, onToggleFavorite }) {
       ]
         .filter(Boolean)
         .join(" ")}
-      aria-label={`${course.title || "دورة بدون عنوان"} — ${ctaLabel(status)}`}
+      aria-label={`${course.title || untitled} — ${ctaLabel(status, t)}`}
     >
       <div className="fc-course-card__media">
         {cover ? (
@@ -205,7 +220,11 @@ function CourseCard({ course, isFavorite, onToggleFavorite }) {
             e.stopPropagation();
             onToggleFavorite(course.id);
           }}
-          aria-label={isFavorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
+          aria-label={
+            isFavorite
+              ? t("freelancerDashboard.training.card.removeFavorite")
+              : t("freelancerDashboard.training.card.addFavorite")
+          }
           aria-pressed={isFavorite}
         >
           <Star size={16} strokeWidth={2} fill={isFavorite ? "currentColor" : "none"} />
@@ -218,29 +237,33 @@ function CourseCard({ course, isFavorite, onToggleFavorite }) {
           {badge.label}
         </span>
         <div className="fc-course-card__head">
-          <h3 className="fc-course-card__title">{course.title || "دورة بدون عنوان"}</h3>
+          <h3 className="fc-course-card__title">{course.title || untitled}</h3>
           {test ? <span className={`fc-course-card__test fc-course-card__test--${test.tone}`}>{test.label}</span> : null}
         </div>
 
         <p className="fc-course-card__desc">
-          {course.description?.trim() || "تابع دروس الفيديو وأكمل متطلبات الدورة خطوة بخطوة."}
+          {course.description?.trim() || t("freelancerDashboard.training.card.defaultDescription")}
         </p>
 
         <ul className="fc-course-card__meta">
           <li>
             <BookOpen size={14} strokeWidth={2} aria-hidden />
-            {total > 0 ? `${total} درس` : "بدون دروس"}
+            {total > 0
+              ? t(total === 1 ? "freelancerDashboard.training.card.lessonCount" : "freelancerDashboard.training.card.lessonCount_plural", {
+                  count: total,
+                })
+              : t("freelancerDashboard.training.card.noLessons")}
           </li>
           <li>
             <span className="fc-course-card__meta-dot" aria-hidden>
               •
             </span>
-            متوسط
+            {t("freelancerDashboard.training.card.levelIntermediate")}
           </li>
           {lastTouch ? (
             <li>
               <Clock size={14} strokeWidth={2} aria-hidden />
-              آخر تحديث {lastTouch}
+              {t("freelancerDashboard.training.card.lastUpdated", { date: lastTouch })}
             </li>
           ) : null}
         </ul>
@@ -256,7 +279,7 @@ function CourseCard({ course, isFavorite, onToggleFavorite }) {
           aria-valuenow={pct}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label={`التقدم ${pct}%`}
+          aria-label={t("freelancerDashboard.training.card.progressAria", { pct })}
         >
           <span
             className={`fc-course-card__progress-fill${status === "completed" ? " fc-course-card__progress-fill--done" : ""}`}
@@ -266,15 +289,20 @@ function CourseCard({ course, isFavorite, onToggleFavorite }) {
         <div className="fc-course-card__footer">
           <span className="fc-course-card__progress-sub">
             <span className="fc-course-card__progress-sub-long">
-              {completed}/{total} درس مكتمل
+              {t(
+                total === 1
+                  ? "freelancerDashboard.training.card.lessonsCompleted"
+                  : "freelancerDashboard.training.card.lessonsCompleted_plural",
+                { completed, total },
+              )}
             </span>
             <span className="fc-course-card__progress-sub-short">
-              {completed}/{total} درس
+              {t("freelancerDashboard.training.card.lessonsShort", { completed, total })}
             </span>
           </span>
           <span className="fc-course-card__cta" aria-hidden>
-            <span className="fc-course-card__cta-long">{ctaLabel(status)}</span>
-            <span className="fc-course-card__cta-short">{ctaLabelShort(status)}</span>
+            <span className="fc-course-card__cta-long">{ctaLabel(status, t)}</span>
+            <span className="fc-course-card__cta-short">{ctaLabelShort(status, t)}</span>
             <ArrowLeft size={16} strokeWidth={2.2} aria-hidden />
           </span>
         </div>
@@ -285,6 +313,7 @@ function CourseCard({ course, isFavorite, onToggleFavorite }) {
 
 export default function FreelancerCoursesPage() {
   const toast = useToast();
+  const { t, locale } = useTranslation();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -302,7 +331,7 @@ export default function FreelancerCoursesPage() {
         setCourses(res?.data?.courses || []);
       } catch (err) {
         if (!mounted) return;
-        toast.error(err?.response?.data?.message || "تعذر تحميل الدورات.");
+        toast.error(err?.response?.data?.message || t("freelancerDashboard.training.loadError"));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -311,7 +340,7 @@ export default function FreelancerCoursesPage() {
     return () => {
       mounted = false;
     };
-  }, [toast]);
+  }, [toast, t]);
 
   const toggleFavorite = useCallback((courseId) => {
     const id = String(courseId);
@@ -372,46 +401,52 @@ export default function FreelancerCoursesPage() {
   }, [courses, filter, searchInput, sortBy, favorites]);
 
   const emptyCopy = useMemo(() => {
+    const es = "freelancerDashboard.emptyStates.courses";
     if (courses.length === 0) {
       return {
-        title: "لا توجد دورات مسندة",
-        sub: "عند إسناد دورة لحسابك ستظهر هنا مع التقدم والاختبار النهائي إن وُجد.",
+        title: t(`${es}.noneTitle`),
+        sub: t(`${es}.noneSub`),
       };
     }
     if (searchInput.trim()) {
       return {
-        title: "لا توجد نتائج للبحث",
-        sub: "جرّب كلمات أخرى أو امسح البحث لعرض القائمة كاملة.",
-        actionLabel: "مسح البحث",
+        title: t(`${es}.searchTitle`),
+        sub: t(`${es}.searchSub`),
+        actionLabel: t(`${es}.clearSearch`),
         onAction: () => setSearchInput(""),
       };
     }
     if (filter === "favorites") {
       return {
-        title: "لا توجد دورات في المفضلة",
-        sub: "اضغط على نجمة أي دورة لإضافتها إلى قائمتك المفضلة.",
+        title: t(`${es}.favoritesTitle`),
+        sub: t(`${es}.favoritesSub`),
       };
     }
     if (filter === "completed") {
       return {
-        title: "لا توجد دورات مكتملة بعد",
-        sub: "أكمل دروس الدورة والاختبار النهائي إن وُجد لتظهر هنا.",
+        title: t(`${es}.completedTitle`),
+        sub: t(`${es}.completedSub`),
       };
     }
     if (filter === "in_progress") {
       return {
-        title: "لا توجد دورات قيد التنفيذ",
-        sub: "ابدأ درساً في إحدى دوراتك لتظهر في هذا التبويب.",
+        title: t(`${es}.inProgressTitle`),
+        sub: t(`${es}.inProgressSub`),
       };
     }
     if (filter === "not_started") {
       return {
-        title: "لا توجد دورات لم تبدأ",
-        sub: "جميع دوراتك المسندة بدأت أو اكتملت.",
+        title: t(`${es}.notStartedTitle`),
+        sub: t(`${es}.notStartedSub`),
       };
     }
-    return { title: "لا توجد نتائج", sub: "جرّب تبويباً أو تصفية أخرى." };
-  }, [courses.length, filter, searchInput]);
+    return { title: t(`${es}.genericTitle`), sub: t(`${es}.genericSub`) };
+  }, [courses.length, filter, searchInput, t]);
+
+  const countLabel =
+    displayedCourses.length === 1
+      ? t("freelancerDashboard.training.courseCount", { count: displayedCourses.length })
+      : t("freelancerDashboard.training.courseCount_plural", { count: displayedCourses.length });
 
   return (
     <DashboardHubPage className="fdash-page--courses">
@@ -421,11 +456,8 @@ export default function FreelancerCoursesPage() {
         <div className="fc-page fc-page--loaded">
           <header className="fc-surface fc-hero">
             <div className="fc-hero__copy">
-              <h1 className="fc-hero__title">طور مهاراتك، وارتق بمستقبلك</h1>
-              <p className="fc-hero__subtitle">
-                استكشف الدورات المسندة لك، تابع تقدمك، وأكمل دروسك واختباراتك النهائية في تجربة تعلم
-                متصلة بلوحة التحكم.
-              </p>
+              <h1 className="fc-hero__title">{t("freelancerDashboard.training.pageTitle")}</h1>
+              <p className="fc-hero__subtitle">{t("freelancerDashboard.training.pageSubtitle")}</p>
               <div className="fc-hero__search">
                 <Search size={18} strokeWidth={2} className="fc-hero__search-icon" aria-hidden />
                 <input
@@ -433,8 +465,8 @@ export default function FreelancerCoursesPage() {
                   className="fc-hero__search-input"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="ابحث عن دورة أو مهارة..."
-                  aria-label="ابحث عن دورة"
+                  placeholder={t("freelancerDashboard.training.searchPlaceholder")}
+                  aria-label={t("freelancerDashboard.training.searchAria")}
                 />
               </div>
             </div>
@@ -443,34 +475,40 @@ export default function FreelancerCoursesPage() {
             </div>
           </header>
 
-          <div className="fc-surface fc-stats-bar" aria-label="ملخص الدورات">
-            <StatSegment tone="blue" Icon={BookOpen} value={summary.count} label="إجمالي الدورات" loading={loading} />
+          <div className="fc-surface fc-stats-bar" aria-label={t("freelancerDashboard.training.coursesSummaryAria")}>
+            <StatSegment
+              tone="blue"
+              Icon={BookOpen}
+              value={summary.count}
+              label={t("freelancerDashboard.stats.courses.totalCourses")}
+              loading={loading}
+            />
             <StatSegment
               tone="green"
               Icon={Check}
               value={summary.completedCourses}
-              label="مكتملة"
+              label={t("freelancerDashboard.stats.courses.completed")}
               loading={loading}
             />
             <StatSegment
               tone="amber"
               Icon={Play}
               value={summary.inProgressCourses}
-              label="في تقدم"
+              label={t("freelancerDashboard.stats.courses.inProgressLabel")}
               loading={loading}
             />
             <StatSegment
               tone="purple"
               Icon={GraduationCap}
               value={`${summary.avgPct}%`}
-              label="متوسط التقدم"
+              label={t("freelancerDashboard.stats.courses.avgProgress")}
               loading={loading}
             />
           </div>
 
           <div className="fc-surface fc-toolbar">
-            <nav className="fc-tabs-bar" aria-label="تصفية الدورات">
-              {STATUS_TABS.map(({ id, label, Icon }) => {
+            <nav className="fc-tabs-bar" aria-label={t("freelancerDashboard.training.filterAria")}>
+              {STATUS_TAB_IDS.map(({ id, tabKey, Icon }) => {
                 const active = filter === id;
                 return (
                   <button
@@ -481,23 +519,23 @@ export default function FreelancerCoursesPage() {
                     onClick={() => setFilter(id)}
                   >
                     <Icon size={15} strokeWidth={2.1} aria-hidden />
-                    <span>{label}</span>
+                    <span>{t(`freelancerDashboard.training.tabs.${tabKey}`)}</span>
                     <span className="fc-tabs-bar__count">{filterCounts[id] ?? 0}</span>
                   </button>
                 );
               })}
             </nav>
             <label className="fc-toolbar__sort">
-              <span className="fc-toolbar__sort-prefix">ترتيب:</span>
+              <span className="fc-toolbar__sort-prefix">{t("freelancerDashboard.training.sortPrefix")}</span>
               <select
                 className="fc-toolbar__sort-select"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                aria-label="ترتيب الدورات"
+                aria-label={t("freelancerDashboard.training.sortAria")}
               >
-                {SORT_OPTIONS.map((opt) => (
+                {SORT_OPTION_VALUES.map((opt) => (
                   <option key={opt.value} value={opt.value}>
-                    {opt.label}
+                    {t(`freelancerDashboard.training.sort.${opt.sortKey}`)}
                   </option>
                 ))}
               </select>
@@ -507,11 +545,9 @@ export default function FreelancerCoursesPage() {
           <section className="fc-list" aria-labelledby="fc-courses-list-heading">
             <div className="fc-list__head">
               <h2 id="fc-courses-list-heading" className="fc-list__title">
-                دوراتك
+                {t("freelancerDashboard.training.yourCourses")}
               </h2>
-              {displayedCourses.length > 0 ? (
-                <span className="fc-list__count">{displayedCourses.length} دورة</span>
-              ) : null}
+              {displayedCourses.length > 0 ? <span className="fc-list__count">{countLabel}</span> : null}
             </div>
 
             {displayedCourses.length === 0 ? (
@@ -529,6 +565,8 @@ export default function FreelancerCoursesPage() {
                     course={course}
                     isFavorite={favorites.includes(String(course.id))}
                     onToggleFavorite={toggleFavorite}
+                    t={t}
+                    locale={locale}
                   />
                 ))}
               </div>

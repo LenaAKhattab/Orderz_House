@@ -1,0 +1,172 @@
+{
+  "filters": {
+    "title": "التصنيفات",
+    "all": "الكل",
+    "categories": "التصنيفات",
+    "toggleAria": "التبديل بين الكل والتصنيفات",
+    "show": "التصنيفات",
+    "hide": "إخفاء التصنيفات"
+  },
+  "sort": {
+    "label": "ترتيب",
+    "aria": "ترتيب الطلبات",
+    "newest": "الأحدث",
+    "oldest": "الأقدم",
+    "priceHigh": "السعر الأعلى",
+    "priceLow": "السعر الأقل"
+  },
+  "planFilter": {
+    "label": "المتاح لخطتي",
+    "title": "عرض الطلبات المتاحة وفق خطتك فقط"
+  },
+  "empty": {
+    "planTitle": "لا توجد طلبات متاحة ضمن باقتك الحالية",
+    "planSubtitle": "الطلبات الظاهرة في المعرض قد تتجاوز نطاق قيمة باقتك. يمكنك ترقية الاشتراك لفتح المزيد.",
+    "upgradeCta": "ترقية الباقة"
+  },
+  "status": {
+    "unknown": "غير معروف",
+    "draft": "مسودة",
+    "published": "منشور",
+    "assigned": "مُسند",
+    "in_progress": "قيد التنفيذ",
+    "pending_client_review": "بانتظار المراجعة",
+    "completed": "مكتمل",
+    "cancelled": "ملغي",
+    "pending_payment": "بانتظار الدفع",
+    "open_for_freelancers": "متاح للمستقلين",
+    "open_for_bids": "مفتوح للعروض",
+    "awaiting_payment_after_bid_selection": "بانتظار الدفع بعد اختيار العرض",
+    "pending_freelancer_acceptance": "بانتظار قبول مستقل",
+    "ready_for_work": "جاهز للعمل",
+    "archived": "مؤرشف",
+    "available": "متاح",
+    "pending": "قيد الانتظار",
+    "pending_review": "بانتظار المراجعة",
+    "open": "مفتوح",
+    "rejected": "مرفوض",
+    "closed": "مغلق",
+    "under_review": "قيد المراجعة",
+    "waiting_for_payment": "بانتظار الدفع",
+    "paid": "مدفوع",
+    "unpaid": "غير مدفوع",
+    "refunded": "مسترد",
+    "expired": "منتهي",
+    "revisionDelivered": "تم تسليم التعديل",
+    "revisionRequestedAdmin": "طلب تعديل من الإدارة",
+    "revisionRequestedClient": "طلب تعديل من العميل",
+    "revisionRequired": "تعديل مطلوب"
+  },
+  "bid": {
+    "title": "تقديم عرض سعر",
+    "titleWithOrder": "عرض سعر: {{title}}",
+    "hint": "أدخل مبلغ عرضك ضمن النطاق المسموح ({{min}} – {{max}} {{currency}}).",
+    "amountLabel": "قيمة العرض",
+    "amountPlaceholder": "مثال: {{min}}",
+    "submit": "إرسال العرض",
+    "submitShort": "تقديم عرض",
+    "submitting": "جارٍ إرسال العرض…",
+    "submitted": "عرضك مُرسل",
+    "cancel": "إلغاء"
+  },
+  "row": {
+    "budget": "ميزانية",
+    "duration": "وقت التنفيذ",
+    "bidSubmitted": "لقد قدمت عرضاً لهذا الطلب."
+  },
+  "type": {
+    "fixed": "سعر ثابت",
+    "bidding": "مزايدة"
+  },
+  "details": {
+    "titleLabel": "عنوان الطلب",
+    "descriptionLabel": "وصف المشروع",
+    "skillsLabel": "المهارات المطلوبة",
+    "summaryTitle": "ملخص الطلب",
+    "projectTypeBudget": "نوع المشروع / السعر",
+    "deliveryTime": "مدة التسليم",
+    "category": "التصنيف",
+    "extraCategories": "تصنيفات إضافية",
+    "receivedAt": "تاريخ الاستلام",
+    "executionStatus": "حالة التنفيذ",
+    "attachmentsTitle": "مرفقات وصف الطلب",
+    "noAttachments": "لا توجد ملفات في الوصف",
+    "noPreferredSkills": "لا توجد مهارات مفضلة لهذا المشروع.",
+    "backToMyOrders": "العودة لطلباتي",
+    "freelancerHub": "لوحة المستقل • طلباتي",
+    "loadError": "تعذر تحميل تفاصيل الطلب"
+  },
+  "card": {
+    "value": "القيمة",
+    "deadline": "الموعد النهائي",
+    "deliveryDuration": "مدة التسليم",
+    "lastUpdated": "آخر تحديث",
+    "files": "{{count}} ملف",
+    "files_plural": "{{count}} ملفات",
+    "noAttachments": "بدون مرفقات",
+    "revisionNote": "تعديل مطلوب — راجع ملاحظات العميل أو الإدارة في التفاصيل",
+    "completed": "مكتمل",
+    "cancelled": "ملغي",
+    "overdue": "متأخر",
+    "daysLeft": "{{count}} يوم",
+    "daysLeft_plural": "{{count}} يوم",
+    "ctaRevision": "تنفيذ التعديل",
+    "ctaPendingReview": "بانتظار المراجعة",
+    "ctaViewOrder": "عرض الطلب",
+    "ctaViewDetails": "عرض التفاصيل",
+    "ctaContinue": "متابعة التنفيذ",
+    "assignedToFreelancer": "مُسند لفريلانسر",
+    "inPool": "في المعرض",
+    "adminBadge": "إداري",
+    "type": "النوع",
+    "price": "السعر",
+    "filesLabel": "ملفات",
+    "noFiles": "لا توجد ملفات مضافة",
+    "applicants": "المتقدمون",
+    "yes": "نعم",
+    "no": "لا"
+  },
+  "marketplace": {
+    "loginRequiredFreelancer": "يجب تسجيل الدخول كمستقل وتفعيل الاشتراك لاستلام الطلبات.",
+    "clientViewOnly": "يمكن للمستقلين المؤهلين فقط استلام الطلبات.",
+    "loadErrorTitle": "تعذر تحميل الطلبات",
+    "planLocked": "غير متاح لباقتك",
+    "orderAssigned": {
+      "title": "تم إسناد الطلب",
+      "message": "أصبح الطلب في قائمة «طلباتي» ويمكنك البدء بالعمل."
+    },
+    "participationRegistered": {
+      "title": "تم تسجيل مشاركتك",
+      "message": "سنراجع طلبك ونبلغك عند أي تحديث."
+    },
+    "bidSubmitted": {
+      "title": "تم إرسال عرضك",
+      "message": "سيتم مراجعة عرضك وإشعارك عند أي تحديث."
+    },
+    "takeOrderError": "تعذر استلام الطلب",
+    "submitBidError": "تعذر إرسال العرض",
+    "alreadyParticipated": "سبق أن سجّلت مشاركتك في هذا الطلب.",
+    "backToList": "العودة للقائمة",
+    "orderNotFound": "لم يتم العثور على الطلب",
+    "card": {
+      "day": "يوم",
+      "days": "أيام",
+      "hour": "ساعة",
+      "hours": "ساعات",
+      "minute": "دقيقة",
+      "minutes": "دقائق",
+      "loginRequired": "يظهر بعد تسجيل الدخول",
+      "loginRequiredTitle": "سجّل الدخول لعرض عدد المتقدمين",
+      "noApplicants": "لا يوجد",
+      "applicant": "متقدم",
+      "applicants": "متقدمون",
+      "noDescription": "لا يوجد وصف.",
+      "uncategorized": "بدون تصنيف",
+      "openOrderAria": "فتح تفاصيل الطلب {{title}}",
+      "takeOrder": "استلام الطلب",
+      "takingOrder": "جارٍ الاستلام…",
+      "registered": "تم التسجيل",
+      "hiddenBudget": "يظهر بعد تسجيل الدخول"
+    }
+  }
+}

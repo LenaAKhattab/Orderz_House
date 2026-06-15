@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
+  ArrowRight,
   Check,
   CircleDot,
   ClipboardList,
@@ -17,6 +18,7 @@ import {
 import { useAuth } from "../../context/useAuth";
 import { computeActiveWorkloadCount } from "../../utils/freelancerDashboardData";
 import { useToast } from "../../components/ui/toastContext";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import { listMyAssignedOrdersRequest } from "../../services/api";
 import Pagination from "../../components/common/Pagination";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
@@ -26,24 +28,15 @@ import MyOrderCard from "../../components/dashboard/hub/MyOrderCard";
 import "../../styles/dashboardHub.css";
 import "./freelancerMyOrders.css";
 
-const STATUS_FILTERS = [
-  { id: "all", label: "الكل", Icon: LayoutGrid },
-  { id: "revision_required", label: "تعديلات مطلوبة", Icon: PencilLine },
-  { id: "assigned", label: "مُسند", Icon: CircleDot },
-  { id: "in_progress", label: "قيد التنفيذ", Icon: Play },
-  { id: "pending_client_review", label: "بانتظار المراجعة", Icon: Hourglass },
-  { id: "completed", label: "مكتمل", Icon: Check },
-  { id: "cancelled", label: "ملغي", Icon: X },
-];
-
-const SORT_OPTIONS = [
-  { value: "newest", label: "الأحدث" },
-  { value: "oldest", label: "الأقدم" },
-  { value: "price_high", label: "السعر الأعلى" },
-  { value: "price_low", label: "السعر الأقل" },
-];
-
-const VALID_STATUS_IDS = new Set(STATUS_FILTERS.map((f) => f.id));
+const VALID_STATUS_IDS = new Set([
+  "all",
+  "revision_required",
+  "assigned",
+  "in_progress",
+  "pending_client_review",
+  "completed",
+  "cancelled",
+]);
 
 function parseStatusFromSearch(searchParams) {
   const q = String(searchParams.get("status") || "").trim();
@@ -71,9 +64,37 @@ function StatSegment({ tone, Icon, value, label, loading }) {
 export default function FreelancerMyOrdersPage() {
   const { user, loading: authLoading } = useAuth();
   const { push } = useToast();
+  const { t, dir } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const role = user?.primaryRole || user?.role;
   const isFreelancer = role === "freelancer";
+
+  const statusFilters = useMemo(
+    () => [
+      { id: "all", label: t("freelancerDashboard.myOrders.filters.all"), Icon: LayoutGrid },
+      { id: "revision_required", label: t("freelancerDashboard.myOrders.filters.revisionRequired"), Icon: PencilLine },
+      { id: "assigned", label: t("freelancerDashboard.myOrders.filters.assigned"), Icon: CircleDot },
+      { id: "in_progress", label: t("freelancerDashboard.myOrders.filters.inProgress"), Icon: Play },
+      {
+        id: "pending_client_review",
+        label: t("freelancerDashboard.myOrders.filters.pendingReview"),
+        Icon: Hourglass,
+      },
+      { id: "completed", label: t("freelancerDashboard.myOrders.filters.completed"), Icon: Check },
+      { id: "cancelled", label: t("freelancerDashboard.myOrders.filters.cancelled"), Icon: X },
+    ],
+    [t],
+  );
+
+  const sortOptions = useMemo(
+    () => [
+      { value: "newest", label: t("freelancerDashboard.myOrders.sort.newest") },
+      { value: "oldest", label: t("freelancerDashboard.myOrders.sort.oldest") },
+      { value: "price_high", label: t("freelancerDashboard.myOrders.sort.priceHigh") },
+      { value: "price_low", label: t("freelancerDashboard.myOrders.sort.priceLow") },
+    ],
+    [t],
+  );
 
   const [orders, setOrders] = useState([]);
   const [busy, setBusy] = useState(true);
@@ -137,8 +158,8 @@ export default function FreelancerMyOrdersPage() {
   );
 
   useEffect(() => {
-    const t = setTimeout(() => setSearchQuery(searchInput.trim()), 400);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setSearchQuery(searchInput.trim()), 400);
+    return () => clearTimeout(timer);
   }, [searchInput]);
 
   useEffect(() => {
@@ -181,9 +202,9 @@ export default function FreelancerMyOrdersPage() {
         }));
       } catch {
         if (!cancelled) {
-          const msg = "تعذر تحميل الطلبات حاليًا. يرجى المحاولة مرة أخرى.";
+          const msg = t("freelancerDashboard.myOrders.loadError");
           setLoadError(msg);
-          push({ type: "error", title: "تعذر تحميل الطلبات", message: msg });
+          push({ type: "error", title: t("freelancerDashboard.myOrders.loadErrorTitle"), message: msg });
         }
       } finally {
         if (!cancelled) {
@@ -196,11 +217,11 @@ export default function FreelancerMyOrdersPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, authLoading, isFreelancer, page, statusFilter, sortBy, searchQuery, push, reloadTick, cacheKey, cache]);
+  }, [user, authLoading, isFreelancer, page, statusFilter, sortBy, searchQuery, push, reloadTick, cacheKey, cache, t]);
 
   useEffect(() => {
     if (!user || authLoading || !isFreelancer || busy) return undefined;
-    const t = setInterval(() => {
+    const timer = setInterval(() => {
       setCache({});
       setReloadTick((x) => x + 1);
     }, 20_000);
@@ -212,7 +233,7 @@ export default function FreelancerMyOrdersPage() {
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {
-      clearInterval(t);
+      clearInterval(timer);
       document.removeEventListener("visibilitychange", onVis);
     };
   }, [busy, user, authLoading, isFreelancer]);
@@ -238,39 +259,38 @@ export default function FreelancerMyOrdersPage() {
   const emptyCopy = useMemo(() => {
     if (counts.all === 0 && !searchQuery) {
       return {
-        title: "لا توجد طلبات حالياً",
-        sub: "لم يتم إسناد أي طلب إليك بعد. تصفح الطلبات المتاحة وتقدّم على ما يناسب مهاراتك.",
-        actionLabel: "استعرض الطلبات المتاحة",
+        title: t("freelancerDashboard.emptyStates.myOrders.noneTitle"),
+        sub: t("freelancerDashboard.emptyStates.myOrders.noneSub"),
+        actionLabel: t("freelancerDashboard.emptyStates.myOrders.browseOrders"),
         actionTo: "/dashboard/freelancer/orders",
       };
     }
     if (searchQuery) {
       return {
-        title: "لا توجد نتائج للبحث",
-        sub: "جرّب كلمات أخرى أو امسح البحث لعرض القائمة كاملة.",
-        actionLabel: "مسح البحث",
+        title: t("freelancerDashboard.emptyStates.myOrders.searchTitle"),
+        sub: t("freelancerDashboard.emptyStates.myOrders.searchSub"),
+        actionLabel: t("freelancerDashboard.emptyStates.myOrders.clearSearch"),
         onAction: () => setSearchInput(""),
       };
     }
     return {
-      title: "لا توجد طلبات بهذه الحالة",
-      sub: "اختر تصفية أخرى أو عرض «الكل» لرؤية كامل القائمة.",
-      actionLabel: statusFilter !== "all" ? "عرض الكل" : null,
+      title: t("freelancerDashboard.emptyStates.myOrders.filterTitle"),
+      sub: t("freelancerDashboard.emptyStates.myOrders.filterSub"),
+      actionLabel: statusFilter !== "all" ? t("freelancerDashboard.emptyStates.myOrders.showAll") : null,
       onAction: statusFilter !== "all" ? () => handleStatusFilterChange("all") : null,
     };
-  }, [counts.all, searchQuery, statusFilter, handleStatusFilterChange]);
+  }, [counts.all, searchQuery, statusFilter, handleStatusFilterChange, t]);
 
   const shownCount = busy && !orders.length ? 0 : orders.length;
   const totalCount = busy && !orders.length ? 0 : Number(pagination.total || 0);
+  const EmptyCtaArrow = dir === "rtl" ? ArrowLeft : ArrowRight;
 
   return (
     <DashboardHubPage className="fdash-page--my-orders">
       <header className="fmo-surface fmo-header">
         <div className="fmo-header__copy">
-          <h1 className="fmo-header__title">طلباتي الحالية</h1>
-          <p className="fmo-header__subtitle">
-            تابع كل أعمالك المسندة، والمواعيد النهائية، وحالة التنفيذ بسهولة.
-          </p>
+          <h1 className="fmo-header__title">{t("freelancerDashboard.myOrders.title")}</h1>
+          <p className="fmo-header__subtitle">{t("freelancerDashboard.myOrders.subtitle")}</p>
         </div>
         <div className="fmo-header__art" aria-hidden>
           <span className="fmo-header__icon-chip">
@@ -279,34 +299,46 @@ export default function FreelancerMyOrdersPage() {
         </div>
       </header>
 
-      <div className="fmo-surface fmo-stats-bar" aria-label="ملخص الطلبات">
+      <div className="fmo-surface fmo-stats-bar" aria-label={t("freelancerDashboard.stats.myOrders.summaryAria")}>
         <StatSegment
           tone="slate"
           Icon={ClipboardList}
           value={counts.all || 0}
-          label="إجمالي الطلبات"
+          label={t("freelancerDashboard.stats.myOrders.total")}
           loading={statsLoading}
         />
-        <StatSegment tone="amber" Icon={Play} value={activeCount} label="نشطة" loading={statsLoading} />
+        <StatSegment
+          tone="amber"
+          Icon={Play}
+          value={activeCount}
+          label={t("freelancerDashboard.stats.myOrders.active")}
+          loading={statsLoading}
+        />
         <StatSegment
           tone="purple"
           Icon={Hourglass}
           value={counts.waitingClientApproval || 0}
-          label="بانتظار المراجعة"
+          label={t("freelancerDashboard.stats.myOrders.pendingReview")}
           loading={statsLoading}
         />
         <StatSegment
           tone="green"
           Icon={Check}
           value={counts.completed || 0}
-          label="مكتملة"
+          label={t("freelancerDashboard.stats.myOrders.completed")}
           loading={statsLoading}
         />
-        <StatSegment tone="rose" Icon={X} value={counts.canceled || 0} label="ملغاة" loading={statsLoading} />
+        <StatSegment
+          tone="rose"
+          Icon={X}
+          value={counts.canceled || 0}
+          label={t("freelancerDashboard.stats.myOrders.cancelled")}
+          loading={statsLoading}
+        />
       </div>
 
-      <nav className="fmo-surface fmo-tabs-bar" aria-label="تصفية الطلبات حسب الحالة">
-        {STATUS_FILTERS.map(({ id, label, Icon }) => {
+      <nav className="fmo-surface fmo-tabs-bar" aria-label={t("freelancerDashboard.myOrders.filterAria")}>
+        {statusFilters.map(({ id, label, Icon }) => {
           const active = statusFilter === id;
           const alert = id === "revision_required" && Number(statusCounts.revision_required) > 0;
           return (
@@ -337,20 +369,20 @@ export default function FreelancerMyOrdersPage() {
             className="fmo-toolbar__search-input"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="ابحث في الطلبات (العنوان أو رقم الطلب)"
-            aria-label="ابحث في الطلبات (العنوان أو رقم الطلب)"
+            placeholder={t("freelancerDashboard.myOrders.searchPlaceholder")}
+            aria-label={t("freelancerDashboard.myOrders.searchAria")}
           />
         </div>
         <div className="fmo-toolbar__actions">
           <label className="fmo-toolbar__sort">
-            <span className="fmo-toolbar__sort-prefix">ترتيب:</span>
+            <span className="fmo-toolbar__sort-prefix">{t("freelancerDashboard.myOrders.sortPrefix")}</span>
             <select
               className="fmo-toolbar__sort-select"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              aria-label="ترتيب الطلبات"
+              aria-label={t("freelancerDashboard.myOrders.sortAria")}
             >
-              {SORT_OPTIONS.map((opt) => (
+              {sortOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
@@ -362,22 +394,22 @@ export default function FreelancerMyOrdersPage() {
             className={`fmo-toolbar__refresh${refreshing || busy ? " is-spinning" : ""}`}
             onClick={handleRefresh}
             disabled={refreshing || busy}
-            aria-label="تحديث القائمة"
-            title="تحديث القائمة"
+            aria-label={t("freelancerDashboard.myOrders.refreshAria")}
+            title={t("freelancerDashboard.myOrders.refreshTitle")}
           >
             <RefreshCw size={17} strokeWidth={2.2} />
           </button>
         </div>
       </div>
 
-      <section className="fmo-surface fmo-content" ref={listRef} aria-label="قائمة الطلبات">
+      <section className="fmo-surface fmo-content" ref={listRef} aria-label={t("freelancerDashboard.myOrders.listAria")}>
         {busy && !orders.length ? (
           <DashboardHubSkeletonCards count={4} variant="order-row" />
         ) : loadError ? (
           <div className="fmo-alert">
             <p>{loadError}</p>
             <button type="button" className="fmo-toolbar__refresh fmo-toolbar__refresh--label" onClick={retryLoad}>
-              إعادة المحاولة
+              {t("freelancerDashboard.common.retry")}
             </button>
           </div>
         ) : orders.length === 0 ? (
@@ -390,13 +422,13 @@ export default function FreelancerMyOrdersPage() {
             {emptyCopy.actionLabel && emptyCopy.actionTo ? (
               <Link className="fmo-empty__cta" to={emptyCopy.actionTo}>
                 <span>{emptyCopy.actionLabel}</span>
-                <ArrowLeft size={16} strokeWidth={2.2} aria-hidden />
+                <EmptyCtaArrow size={16} strokeWidth={2.2} aria-hidden />
               </Link>
             ) : null}
             {emptyCopy.actionLabel && emptyCopy.onAction && !emptyCopy.actionTo ? (
               <button type="button" className="fmo-empty__cta" onClick={emptyCopy.onAction}>
                 <span>{emptyCopy.actionLabel}</span>
-                <ArrowLeft size={16} strokeWidth={2.2} aria-hidden />
+                <EmptyCtaArrow size={16} strokeWidth={2.2} aria-hidden />
               </button>
             ) : null}
           </div>
@@ -414,11 +446,11 @@ export default function FreelancerMyOrdersPage() {
 
         <footer className="fmo-list-footer">
           <p className="fmo-list-footer__meta">
-            عرض {shownCount} من {totalCount} طلب
+            {t("freelancerDashboard.stats.myOrders.showing", { shown: shownCount, total: totalCount })}
           </p>
           <div className="fmo-list-footer__end">
             <span className="fmo-list-footer__pagesize" aria-hidden={false}>
-              {pageLimit} / صفحة
+              {t("freelancerDashboard.stats.myOrders.perPage", { limit: pageLimit })}
             </span>
             {totalPages > 1 || totalCount > 0 ? (
               <Pagination

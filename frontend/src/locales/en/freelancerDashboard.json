@@ -1,0 +1,1007 @@
+{
+  "header": {
+    "loadErrorTitle": "Could not load dashboard",
+    "loadErrorDefault": "Could not load the dashboard.",
+    "retry": "Try again"
+  },
+  "hero": {
+    "ariaLabel": "Welcome to your dashboard",
+    "title": "Welcome to your dashboard",
+    "subtitle": "An all-in-one hub to manage freelance work, track orders, grow your skills, and increase your income.",
+    "browseOrders": "Browse available orders",
+    "myOrders": "View my orders",
+    "metricsAria": "Quick summary",
+    "welcomeName": "Hello, {{name}}",
+    "controlCenterTitle": "Control center",
+    "controlCenterSubtitle": "A complete view of your work, subscription, and orders."
+  },
+  "stats": {
+    "trustLevel": "Trust level",
+    "trustLevelNumber": "Level {{level}}",
+    "totalEarnings": "Total earnings",
+    "fromClaims": "From financial claims",
+    "paidTotal": "Total paid",
+    "activeOrders": "Active orders",
+    "activeOrdersSub": "In progress",
+    "overallRating": "Overall rating",
+    "noRatingYet": "None yet",
+    "outOfFive": "out of 5",
+    "reviewCount": "{{count}} review",
+    "reviewCount_plural": "{{count}} reviews",
+    "beginner": "Beginner",
+    "trustLevels": {
+      "beginner": "Beginner",
+      "active": "Active",
+      "professional": "Professional",
+      "trusted": "Trusted",
+      "expert": "Expert"
+    },
+    "performance": {
+      "title": "Performance",
+      "completed": "Completed",
+      "completionRate": "Completion rate",
+      "onTime": "On time",
+      "revisions": "Revisions",
+      "avgDelivery": "Avg. delivery",
+      "days": "{{count}} day",
+      "days_plural": "{{count}} days",
+      "paidClaims": "Paid (claims)",
+      "completedLast30": "{{count}} order completed in the last 30 days.",
+      "completedLast30_plural": "{{count}} orders completed in the last 30 days."
+    },
+    "courses": {
+      "assigned": "Assigned",
+      "inProgress": "In progress",
+      "completed": "Completed",
+      "finalTest": "Final test",
+      "totalCourses": "Total courses",
+      "inProgressLabel": "In progress",
+      "avgProgress": "Average progress"
+    },
+    "earnings": {
+      "paid": "Paid",
+      "pending": "Due / pending",
+      "openClaims": "Open claims"
+    },
+    "myOrders": {
+      "summaryAria": "Orders summary",
+      "total": "Total orders",
+      "active": "Active",
+      "pendingReview": "Pending review",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "showing": "Showing {{shown}} of {{total}} order",
+      "showing_plural": "Showing {{shown}} of {{total}} orders",
+      "perPage": "{{limit}} / page"
+    },
+    "financialClaims": {
+      "summaryAria": "Claims summary",
+      "total": "Total claims",
+      "underReview": "Under review",
+      "paid": "Paid"
+    },
+    "workload": {
+      "activeCount": "{{count}} active order",
+      "activeCount_plural": "{{count}} active orders"
+    }
+  },
+  "tip": {
+    "title": "Tip of the day",
+    "profileCompletion": "Profile completion",
+    "percentComplete": "{{pct}}% complete",
+    "defaultHeadline": "Keep up the great work",
+    "defaultDescription": "Focus on delivery quality and building strong client reviews.",
+    "browseOrders": "Browse orders"
+  },
+  "actions": {
+    "noUrgentTitle": "No urgent actions right now",
+    "noUrgentSubtitle": "You're up to date on your orders and notifications.",
+    "moreCount": "(+{{count}} more)",
+    "moreCount_plural": "(+{{count}} more)",
+    "continue": "Continue",
+    "viewCourse": "View course"
+  },
+  "training": {
+    "coursesTitle": "Courses & training",
+    "allCourses": "All courses",
+    "eligibilityNote": "Completing courses does not automatically change marketplace eligibility — for professional development only.",
+    "pendingFinalTest": "You have {{count}} course waiting for the final test.",
+    "pendingFinalTest_plural": "You have {{count}} courses waiting for the final test.",
+    "continueCourse": "Continue: {{title}}",
+    "defaultCourseTitle": "Course",
+    "noAssignedCourses": "No courses assigned yet.",
+    "pageTitle": "Grow your skills, elevate your future",
+    "pageSubtitle": "Explore assigned courses, track progress, and complete lessons and final tests in a learning experience connected to your dashboard.",
+    "searchPlaceholder": "Search for a course or skill...",
+    "searchAria": "Search courses",
+    "coursesSummaryAria": "Courses summary",
+    "filterAria": "Filter courses",
+    "sortPrefix": "Sort:",
+    "sortAria": "Sort courses",
+    "yourCourses": "Your courses",
+    "courseCount": "{{count}} course",
+    "courseCount_plural": "{{count}} courses",
+    "tabs": {
+      "all": "All",
+      "inProgress": "In progress",
+      "completed": "Completed",
+      "notStarted": "Not started",
+      "favorites": "Favorites"
+    },
+    "sort": {
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "progressHigh": "Most progress",
+      "progressLow": "Least progress",
+      "title": "Name (A–Z)"
+    },
+    "card": {
+      "untitled": "Untitled course",
+      "defaultDescription": "Follow video lessons and complete course requirements step by step.",
+      "lessonCount": "{{count}} lesson",
+      "lessonCount_plural": "{{count}} lessons",
+      "noLessons": "No lessons",
+      "levelIntermediate": "Intermediate",
+      "lastUpdated": "Last updated {{date}}",
+      "progressAria": "Progress {{pct}}%",
+      "lessonsCompleted": "{{completed}}/{{total}} lesson completed",
+      "lessonsCompleted_plural": "{{completed}}/{{total}} lessons completed",
+      "lessonsShort": "{{completed}}/{{total}} lessons",
+      "reviewCourse": "Review course",
+      "startCourse": "Start course",
+      "continueLearning": "Continue learning",
+      "review": "Review",
+      "start": "Start",
+      "continue": "Continue",
+      "addFavorite": "Add to favorites",
+      "removeFavorite": "Remove from favorites",
+      "statusCompleted": "Completed",
+      "statusInProgress": "In progress",
+      "statusNotStarted": "Not started yet",
+      "testCompleted": "Final test completed",
+      "testPending": "Final test pending",
+      "testIncluded": "Includes final test"
+    },
+    "loadError": "Could not load courses."
+  },
+  "orders": {
+    "backToList": "Back to list",
+    "orderNotFound": "Order not found",
+    "noFiles": "No files attached",
+    "alreadyParticipated": "You have already registered participation in this order.",
+    "alreadyBid": "You have already submitted a bid for this order.",
+    "submitting": "Submitting…",
+    "bidSubmitted": "Bid submitted",
+    "submitBid": "Submit bid",
+    "taking": "Accepting…",
+    "registered": "Registered",
+    "takeOrder": "Take order"
+  },
+  "myOrders": {
+    "title": "My current orders",
+    "subtitle": "Track assigned work, deadlines, and execution status with ease.",
+    "searchPlaceholder": "Search orders (title or order number)",
+    "searchAria": "Search orders",
+    "sortPrefix": "Sort:",
+    "sortAria": "Sort orders",
+    "refreshAria": "Refresh list",
+    "refreshTitle": "Refresh list",
+    "listAria": "Orders list",
+    "loadError": "Could not load orders right now. Please try again.",
+    "loadErrorTitle": "Could not load orders",
+    "filterAria": "Filter orders by status",
+    "filters": {
+      "all": "All",
+      "revisionRequired": "Revisions required",
+      "assigned": "Assigned",
+      "inProgress": "In progress",
+      "pendingReview": "Pending review",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "sort": {
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "priceHigh": "Highest price",
+      "priceLow": "Lowest price"
+    },
+    "details": {
+      "loadErrorTitle": "Could not load order details",
+      "revisionSectionTitle": "Revision / review request details",
+      "requestedBy": "Requested by",
+      "requestMessage": "Request message",
+      "requestDate": "Request date",
+      "deadline": "Deadline",
+      "status": "Status",
+      "linkedAttachments": "Linked attachments",
+      "noExtraAttachments": "No additional attachments.",
+      "submissionHistory": "Delivery & revision history",
+      "yourDelivery": "What you delivered",
+      "deliverOrder": "Deliver order",
+      "deliveryHint": "Upload final files or images (up to five files).",
+      "selectFiles": "Choose files",
+      "submitDelivery": "Submit delivery",
+      "submitting": "Submitting…",
+      "deliveryStatus": "Delivery status",
+      "pendingReviewMessage": "Your delivery was sent for review. Awaiting final approval (client/admin).",
+      "alertTitle": "Notice",
+      "selectFileRequired": "Select at least one file.",
+      "fileSizeTitle": "File size",
+      "uploadSizeHelper": "Maximum total upload size: 5 MB.",
+      "uploadSizeError": "Total file size must not exceed 5 MB.",
+      "deliverySuccessTitle": "Delivered",
+      "deliverySuccessMessage": "Attachments were sent to the client for review.",
+      "deliveryErrorTitle": "Delivery failed",
+      "revisionRequesterAdmin": "Admin",
+      "revisionRequesterClient": "Client",
+      "revisionDelivered": "Revision delivered",
+      "revisionInProgress": "Revision in progress",
+      "revisionPending": "Awaiting revision work",
+      "phaseRevisionInProgress": "Revision in progress",
+      "phasePendingClientApproval": "Awaiting client approval of delivery",
+      "phaseCompleted": "Completed",
+      "phaseInProgressDeliver": "In progress — you can submit files"
+    }
+  },
+  "plans": {
+    "eyebrow": "Your current plan",
+    "freePlanTitle": "Free subscription",
+    "freePlanSubtitle": "Upgrade to a higher plan for larger-value orders and extra benefits.",
+    "paidPlanSubtitle": "Track your subscription and upgrade to the next plan when ready.",
+    "nextPlanHint": "Next plan: {{title}} — choose it from the list below to upgrade.",
+    "summaryAria": "Subscription summary",
+    "upgradeSectionAria": "Upgrade plans",
+    "subscriptionStatus": "Subscription status",
+    "payment": "Payment",
+    "companyActivation": "Company activation",
+    "marketplaceEligibility": "Marketplace eligibility",
+    "orderValueRange": "Order value range",
+    "expiresOn": "Expires on",
+    "canApply": "You can apply",
+    "notEligible": "Not eligible",
+    "planAndEligibility": "Plan & eligibility",
+    "choosePlan": "Choose a plan",
+    "noActiveSubscription": "No active subscription — choose a plan to get started.",
+    "subscriptionLabel": "Subscription",
+    "realOrders": "Real orders",
+    "realOrdersFreeRange": "Available within 3–7 JOD range",
+    "realOrdersPerPlan": "Available per your plan",
+    "trainingOrders": "Training orders",
+    "trainingOrdersNote": "Available per platform settings",
+    "currentWorkload": "Current workload",
+    "remainingTime": "Time remaining",
+    "rangeFreePlan": "3 to 7 JOD (real and training orders)",
+    "rangeMinMax": "{{min}} to {{max}} JOD",
+    "rangeMinOnly": "{{min}} JOD and above"
+  },
+  "financialClaims": {
+    "title": "Financial claims",
+    "subtitle": "Create a new claim and track review, payout window, and paid/remaining amounts for each order.",
+    "newClaim": "New claim",
+    "loading": "Loading claims…",
+    "loadErrorTitle": "Could not load claims",
+    "emptyTitle": "No claims yet",
+    "emptySub": "Create your first financial claim to see it grouped by status here.",
+    "groupEmpty": "No items in this group.",
+    "wallet": "Earnings & wallet",
+    "walletLink": "Wallet",
+    "earningsNote": "Figures come from your approved financial claims — not platform order values.",
+    "latestClaim": "Latest claim",
+    "noClaimsYet": "No financial claims yet.",
+    "createSuccessTitle": "Claim created",
+    "createSuccessMessage": "Your financial claim was submitted successfully.",
+    "createErrorTitle": "Could not create claim",
+    "modal": {
+      "title": "New claim",
+      "subtitle": "Enter order details to submit the claim for review",
+      "close": "Close",
+      "modeAria": "Claim type",
+      "fromDoneProject": "Claim from completed project",
+      "manual": "Manual claim for new order",
+      "searchDoneProjects": "Search completed projects",
+      "searchPlaceholder": "Search by order number or title...",
+      "selectProject": "Select a completed project",
+      "selectProjectPlaceholder": "Select a project...",
+      "noTitle": "Untitled",
+      "missingCompletionDate": "This project has no actual completion date. Add the date before creating the claim.",
+      "projectHint": "Completion date: {{date}} | Status: {{status}}",
+      "projectMeta": "Source: {{source}} | Payment: {{payment}} | Amount: {{amount}}{{currency}}",
+      "orderNumber": "Order number",
+      "orderNumberPlaceholder": "Example: ORD-2024-001",
+      "requestTitle": "Order title",
+      "requestTitlePlaceholder": "Clear order title",
+      "requestTitleFromProject": "Order title (from completed project)",
+      "categories": "Categories",
+      "noCategories": "No categories available right now.",
+      "durationMinutes": "Minutes worked",
+      "completionDate": "Actual completion date",
+      "cancel": "Cancel",
+      "submit": "Submit claim",
+      "submitting": "Submitting..."
+    },
+    "fields": {
+      "orderNumber": "Order number",
+      "completionDate": "Actual completion date",
+      "submittedAt": "Submitted at",
+      "payoutWindow": "Payout window",
+      "payoutStatus": "Payout status",
+      "totalPrice": "Total price",
+      "freelancerAmount": "Freelancer amount",
+      "paid": "Paid",
+      "remaining": "Remaining",
+      "adminNote": "Admin note:"
+    },
+    "groups": {
+      "underReview": "Under review",
+      "notDue": "Not due yet",
+      "due": "Due for payment",
+      "paid": "Paid",
+      "blocked": "Rejected / frozen / in-person review required"
+    }
+  },
+  "settings": {
+    "eyebrow": "Freelancer settings",
+    "title": "Account settings",
+    "description": "Update your public profile, account security, and notifications. All fields are saved via the API.",
+    "breadcrumb": "Account settings",
+    "loadError": "Could not load.",
+    "avatar": {
+      "title": "Profile photo",
+      "upload": "Upload photo",
+      "uploading": "Uploading…",
+      "remove": "Remove photo",
+      "hint": "JPEG, PNG, or WebP, up to 2 MB.",
+      "sizeError": "Image size must not exceed 2 MB.",
+      "success": "Photo updated.",
+      "uploadError": "Photo upload failed.",
+      "removeSuccess": "Photo removed.",
+      "removeError": "Could not remove photo."
+    },
+    "basic": {
+      "title": "Basic information",
+      "firstName": "First name",
+      "fatherName": "Father's name",
+      "familyName": "Family name",
+      "professionalTitle": "Professional title",
+      "phone": "Mobile (E.164)",
+      "whatsapp": "WhatsApp (E.164)",
+      "bio": "Bio (max 2000 characters)",
+      "skills": "Skills (comma-separated)",
+      "website": "Website",
+      "portfolio": "Portfolio",
+      "save": "Save information",
+      "saving": "Saving…",
+      "saveSuccess": "Settings saved.",
+      "saveError": "Could not save.",
+      "nameTooShort": "Full name must be at least 2 characters.",
+      "phoneInvalid": "Mobile number must use international format +966…",
+      "whatsappInvalid": "WhatsApp number must use international format.",
+      "urlInvalid": "{{label}}: invalid URL (use http or https).",
+      "bioTooLong": "Bio exceeds the allowed length."
+    },
+    "payout": {
+      "title": "Payouts & claims",
+      "hint": "This section stores safe preferences only — no full account numbers or sensitive data.",
+      "method": "Preferred withdrawal method",
+      "methodPlaceholder": "— Select —",
+      "bankTransfer": "Bank transfer",
+      "wallet": "E-wallet",
+      "cash": "Cash pickup",
+      "other": "Other",
+      "notes": "Safe short notes",
+      "notesPlaceholder": "Example: bank name only, not full account number",
+      "save": "Save payout section"
+    },
+    "security": {
+      "title": "Security",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "hint": "New password must include a letter and a number (minimum 8 characters).",
+      "update": "Update password",
+      "updating": "Updating…",
+      "mismatch": "Passwords do not match.",
+      "tooShort": "New password is too short.",
+      "success": "Password updated.",
+      "error": "Could not change password."
+    },
+    "notifications": {
+      "title": "Notification settings",
+      "orders": "Order notifications",
+      "claims": "Financial claim notifications",
+      "courses": "Course notifications",
+      "save": "Save notification preferences"
+    }
+  },
+  "courseDetails": {
+    "finalTestTitle": "Final test after the course",
+    "examMarkMaxError": "Mark cannot exceed the maximum for this question",
+    "examMarkNegativeError": "Score cannot be negative.",
+    "stepStatus": {
+      "done": "Completed",
+      "available": "Available now",
+      "locked": "Locked",
+      "waitingUpload": "Waiting for file upload",
+      "waitingChatgpt": "Waiting for ChatGPT result",
+      "waitingMarks": "Waiting for marks entry"
+    },
+    "fileLegacy": "This file needs to be re-uploaded by admin.",
+    "fileOpenFailed": "Could not open file. Please notify admin to re-upload it.",
+    "progress": {
+      "fullyCompleted": "Course fully completed",
+      "readyForTest": "Ready for final test",
+      "lessonsCompleted": "All lessons completed",
+      "lessonsProgress": "{{done}} of {{total}} lesson completed",
+      "lessonsProgress_plural": "{{done}} of {{total}} lessons completed",
+      "notStarted": "Progress not started yet",
+      "ringCaption": "Overall progress",
+      "completed": "Completed",
+      "ready": "Ready",
+      "lessons": "Lessons"
+    },
+    "loadError": "Could not load course.",
+    "completeLessonsFirst": "Complete all video lessons first to unlock the final test.",
+    "saveProgressInfo": "Saving your progress and moving to the next lesson...",
+    "lessonCompleteSuccess": "View completion recorded.",
+    "testUnlocked": "Final test unlocked — complete submission now.",
+    "saveProgressError": "Could not save progress, try again.",
+    "mustCompleteLessons": "You must complete all video lessons before submitting.",
+    "chatgptRequired": "Please paste the ChatGPT evaluation result or upload the evaluation report file.",
+    "completeAllMarks": "Complete all question scores before submitting.",
+    "uploadCompletedFirst": "You must upload the completed file before submitting.",
+    "courseFinishedSuccess": "Course completed successfully.",
+    "courseFinishError": "Could not finish course.",
+    "uploadError": "Could not upload file. Make sure it is PDF and try again.",
+    "uploadSuccess": "Completed file uploaded successfully",
+    "uploadCompletedError": "Could not upload completed file.",
+    "duration": {
+      "minute": "{{count}} minute",
+      "minute_plural": "{{count}} minutes",
+      "hour": "{{count}} hour",
+      "hour_plural": "{{count}} hours",
+      "hoursAndMinutes": "{{hours}} hr {{minutes}} min",
+      "hoursOnly": "{{count}} hour",
+      "hoursOnly_plural": "{{count}} hours"
+    },
+    "activity": {
+      "now": "Just now",
+      "minutesAgo": "{{count}} min ago",
+      "minutesAgo_plural": "{{count}} mins ago",
+      "hoursAgo": "{{count}} hr ago",
+      "hoursAgo_plural": "{{count}} hrs ago",
+      "daysAgo": "{{count}} day ago",
+      "daysAgo_plural": "{{count}} days ago"
+    },
+    "fileSize": {
+      "bytes": "{{count}} B",
+      "kb": "{{size}} KB",
+      "mb": "{{size}} MB"
+    },
+    "file": {
+      "viewFile": "View file",
+      "downloadFile": "Download file",
+      "copyInstructions": "Copy instructions",
+      "needsReuploadShort": "Needs re-upload",
+      "available": "Available",
+      "unavailable": "Unavailable",
+      "needsReuploadBadge": "File needs re-upload",
+      "notAttachedByAdmin": "This file has not been attached by admin yet.",
+      "openFailedTryDownload": "Could not open file. Try downloading instead.",
+      "completedWorkFile": "Completed file",
+      "completedWorkFileDefault": "Completed exam file uploaded",
+      "uploadedSuccessfully": "Uploaded successfully",
+      "replaceFile": "Replace file",
+      "removeFile": "Remove file",
+      "removeFileAria": "Remove file",
+      "chooseFile": "Choose file",
+      "replace": "Replace",
+      "remove": "Remove",
+      "defaultCompletedPdf": "completed-file.pdf"
+    },
+    "flow": {
+      "phaseTag": "Phase {{num}}",
+      "trackAria": "Steps 1 to 5 path"
+    },
+    "completed": {
+      "congratsTitle": "Well done! Course completed successfully",
+      "congratsSub": "Your final test response was recorded and the course is complete. You can review test and submission files anytime.",
+      "finalGrade": "Final grade: {{grade}}%",
+      "submittedAt": " — Submitted: {{date}}",
+      "questionGrades": "Question scores",
+      "questionCount": " ({{count}} questions)",
+      "questionLabel": "Question {{num}}",
+      "filesAndSubmission": "Test files & submission",
+      "downloadTestFile": "Download test file",
+      "downloadInstructionsFile": "Download instructions file",
+      "downloadModelAnswer": "Download model answer file",
+      "viewAnswerFile": "View uploaded answer file",
+      "downloadAnswerFile": "Download uploaded answer file",
+      "submissionSummary": "Submission summary",
+      "viewAnswerText": "View answer text",
+      "answerText": "Answer text",
+      "hideText": "Hide text",
+      "answerFileOnlyNote": "Answer file was submitted. Use the buttons above to view or download it."
+    },
+    "sidebar": {
+      "finalStepBadge": "Final step",
+      "statusCompleted": "Completed",
+      "statusLocked": "Complete all lessons to unlock the final test",
+      "statusReady": "Ready to submit",
+      "contentAria": "Course content",
+      "contentTitle": "Course content",
+      "completedWithDuration": "{{duration}} • Completed",
+      "completed": "Completed",
+      "watchingWithDuration": "{{duration}} • Watching",
+      "watching": "Watching",
+      "noDuration": "No duration",
+      "showAllLessons": "Show all lessons ({{count}})"
+    },
+    "header": {
+      "trainingChip": "Training course",
+      "backToCourses": "Back to courses",
+      "summaryAria": "Course summary",
+      "lessonsCompleted": "Lessons completed: {{completed}} of {{total}}",
+      "totalDuration": "Total duration: {{duration}}",
+      "lastActivity": "Last activity: {{activity}}",
+      "durationUnknown": "Not specified",
+      "noActivity": "None",
+      "courseFinishedBanner": "This course was completed successfully.",
+      "completionRecorded": "Completion date is recorded in the system."
+    },
+    "lesson": {
+      "noVideo": "No video available for this lesson.",
+      "untitled": "Untitled lesson",
+      "videoChip": "Video",
+      "lessonOf": "Lesson {{current}} of {{total}}",
+      "finalTestReadyHint": "You finished all videos — the final test is ready in the sidebar.",
+      "prevLesson": "Previous lesson",
+      "nextLesson": "Next lesson",
+      "finalTestNav": "Final test",
+      "markComplete": "Mark lesson complete",
+      "savingProgress": "Saving progress…",
+      "summaryTitle": "Lesson summary / your notes",
+      "summaryPlaceholder": "Write your summary here…",
+      "summaryAria": "Lesson summary"
+    },
+    "finish": {
+      "allLessonsDone": "You completed all lessons. If completion was not recorded automatically, click below.",
+      "submitting": "Recording…",
+      "finishCourse": "Finish course"
+    },
+    "empty": {
+      "loadFailed": "Could not display the course. Return to the course list and try again.",
+      "backToCourses": "Training courses"
+    },
+    "exam": {
+      "lockedTitle": "Final test locked",
+      "lockedSub": "Complete all video lessons ({{completed}}/{{total}}) to unlock this final step and finish the course.",
+      "lessonsDoneBanner": "🎉 Congrats! You finished all lessons.",
+      "lessonsDoneBannerSub": "Complete the three steps in order to finish the final test.",
+      "lessonsCompletedCount": "({{completed}}/{{total}} lessons completed)",
+      "introSub": "Download the test file and complete the work, upload the completed file, use ChatGPT with evaluation files, and enter question scores before final submission.",
+      "step1Title": "Step 1: Download test file and upload completed file",
+      "testFileTitle": "Test file",
+      "testFileDesc": "Download the test file and complete your answer off-platform.",
+      "downloadTestFile": "Download test file",
+      "uploadCompletedTitle": "Upload your completed file after finishing the test",
+      "uploadCompletedHint": "PDF only — up to 5 MB",
+      "uploadCompletedBtn": "Upload completed file",
+      "uploading": "Uploading…",
+      "uploadCompletedSuccess": "Completed file uploaded successfully",
+      "step1Required": "You must upload the completed file before moving to the next step.",
+      "step2Title": "Step 2: Download prompt and model answer files",
+      "step2Note": "Give ChatGPT these files: the completed file, prompt file, and model answer — then paste the ChatGPT result here or upload it as a file.",
+      "promptFileTitle": "Evaluation instructions / Prompt file",
+      "promptFileDesc": "Download the prompt file to use with ChatGPT.",
+      "downloadPromptFile": "Download prompt file",
+      "modelAnswerTitle": "Model answer file",
+      "modelAnswerDesc": "Download the model answer to use with ChatGPT.",
+      "downloadModelAnswer": "Download model answer",
+      "chatgptFileSelected": "ChatGPT result file selected",
+      "uploadChatgptTitle": "Upload ChatGPT result as a file",
+      "pasteChatgptLabel": "Or paste ChatGPT result",
+      "pasteChatgptPlaceholder": "Paste ChatGPT evaluation result here…",
+      "step3Title": "Step 3: Enter question scores",
+      "step3Note": "Enter each question score based on the ChatGPT result. The final grade is the sum of scores ÷ sum of max scores.",
+      "questionWithText": "Question {{num}}: {{text}}",
+      "questionNumber": "Question {{num}}",
+      "markLabel": "Score",
+      "noGradedQuestions": "This course has no graded questions. Complete the previous two steps then submit.",
+      "submitting": "Submitting…",
+      "submitFinale": "Submit results and complete course",
+      "hintUploadFirst": "Upload the completed file first.",
+      "hintChatgptRequired": "Add ChatGPT result text or upload the result file.",
+      "hintCompleteMarks": "Complete all question scores.",
+      "hintCompleteAllSteps": "Complete all steps before submitting."
+    }
+  },
+  "apiInsights": {
+    "profileIncomplete": {
+      "title": "Complete your profile",
+      "description": "You're {{percent}}% complete — a stronger profile improves your chances of acceptance.",
+      "actionLabel": "Update profile"
+    },
+    "revisionsPending": {
+      "title": "Orders need revision",
+      "description": "You have {{count}} order needing revision or an updated delivery.",
+      "description_plural": "You have {{count}} orders needing revision or an updated delivery.",
+      "actionLabel": "View revisions"
+    },
+    "courseProgress": {
+      "title": "You're close to finishing the course",
+      "description": "You've completed {{percent}}% of {{course}}.",
+      "actionLabel": "Continue course"
+    },
+    "finalTest": {
+      "title": "Final test waiting for you",
+      "description": "{{count}} course is waiting for the final test.",
+      "description_plural": "{{count}} courses are waiting for the final test.",
+      "actionLabel": "Complete test"
+    },
+    "deliveryExcellent": {
+      "title": "Your on-time delivery rate is excellent",
+      "description": "{{percent}}% of your completed orders were delivered on time."
+    },
+    "subExpiring": {
+      "title": "Your subscription is expiring soon",
+      "description": "Review your plan before access changes.",
+      "actionLabel": "Review plans"
+    },
+    "addPortfolio": {
+      "title": "Add work to your portfolio",
+      "description": "Link your Behance or website to build client trust.",
+      "actionLabel": "Update links"
+    },
+    "startFirstOrder": {
+      "title": "Start your first project",
+      "description": "Browse available orders and build your track record on the platform.",
+      "actionLabel": "Available orders"
+    },
+    "reviewsStrong": {
+      "title": "Your reviews are excellent",
+      "description": "Average {{rating}} from {{count}} review.",
+      "description_plural": "Average {{rating}} from {{count}} reviews.",
+      "actionLabel": "View details"
+    },
+    "claimsHint": {
+      "title": "Reminder: earnings via wallet",
+      "description": "After completing projects, submit financial claims from the wallet section.",
+      "actionLabel": "Wallet"
+    },
+    "reviewAnalytics": {
+      "title": "Client feedback insight",
+      "description": "Based on your verified client reviews.",
+      "actionLabel": "View reviews"
+    }
+  },
+  "recommendations": {
+    "title": "Insights & recommendations",
+    "finalTestPending": "Final test waiting for you",
+    "completeTest": "Complete test"
+  },
+  "status": {
+    "subscription": {
+      "active": "Active",
+      "assignedNotStarted": "Awaiting first order",
+      "expired": "Expired",
+      "inactive": "Inactive"
+    },
+    "payment": {
+      "paid": "Paid",
+      "pending": "Processing",
+      "failed": "Failed",
+      "notRequired": "Not required",
+      "unpaid": "Unpaid",
+      "refunded": "Refunded",
+      "skippedByAdmin": "Payment skipped (admin)"
+    },
+    "activation": {
+      "approved": "Activated",
+      "pending": "Awaiting company"
+    },
+    "claim": {
+      "paid": "Paid",
+      "pending": "Under review",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "frozen": "Frozen",
+      "inPersonReview": "In-person review",
+      "requiresInPersonReview": "Requires in-person review"
+    },
+    "payout": {
+      "missingCompletionDate": "No completion date",
+      "notDueYet": "Not due yet",
+      "withinWindow": "Within payout window",
+      "lateAfterWindow": "Late after payout window",
+      "paid": "Paid"
+    },
+    "chips": {
+      "trainingAndLimitedMarketplace": "Training + limited marketplace",
+      "marketplaceEligible": "Marketplace eligible",
+      "notEligibleNow": "Not eligible now",
+      "activeSubscription": "Active subscription",
+      "waitingFirstOrder": "Awaiting first order",
+      "expired": "Expired"
+    },
+    "marketplace": {
+      "canApply": "You can apply",
+      "notEligible": "Not eligible"
+    },
+    "timeRemaining": {
+      "expired": "Subscription expired",
+      "remaining": "{{parts}} remaining",
+      "day": "{{count}} day",
+      "day_plural": "{{count}} days",
+      "hour": "{{count}} hour",
+      "hour_plural": "{{count}} hours",
+      "minute": "{{count}} minute",
+      "minute_plural": "{{count}} minutes",
+      "joiner": " and "
+    },
+    "eligibility": {
+      "adminApprovalPending": "Awaiting admin approval before you can receive orders",
+      "noSubscription": "You cannot receive orders because you are not subscribed. Please subscribe first.",
+      "inactive": "Your subscription is not active. Please subscribe first.",
+      "paymentIncomplete": "Order intake could not be enabled because subscription payment is incomplete.",
+      "expired": "Your subscription has expired. Please renew to receive orders.",
+      "generic": "Your account is not currently eligible for marketplace orders (check your subscription)."
+    }
+  },
+  "emptyStates": {
+    "myOrders": {
+      "noneTitle": "No orders yet",
+      "noneSub": "No orders have been assigned to you yet. Browse available orders and apply for ones that match your skills.",
+      "browseOrders": "Browse available orders",
+      "searchTitle": "No search results",
+      "searchSub": "Try different keywords or clear search to see the full list.",
+      "clearSearch": "Clear search",
+      "filterTitle": "No orders with this status",
+      "filterSub": "Choose another filter or view All to see the full list.",
+      "showAll": "Show all"
+    },
+    "courses": {
+      "noneTitle": "No assigned courses",
+      "noneSub": "When a course is assigned to your account it will appear here with progress and any final test.",
+      "searchTitle": "No search results",
+      "searchSub": "Try different keywords or clear search to see the full list.",
+      "clearSearch": "Clear search",
+      "favoritesTitle": "No favorite courses",
+      "favoritesSub": "Tap the star on any course to add it to your favorites.",
+      "completedTitle": "No completed courses yet",
+      "completedSub": "Complete course lessons and the final test if required to see them here.",
+      "inProgressTitle": "No courses in progress",
+      "inProgressSub": "Start a lesson in one of your courses to see it in this tab.",
+      "notStartedTitle": "No not-started courses",
+      "notStartedSub": "All assigned courses have started or been completed.",
+      "genericTitle": "No results",
+      "genericSub": "Try another tab or filter."
+    },
+    "performance": {
+      "noHistory": "No order history yet — start your first project to see metrics."
+    },
+    "reviews": {
+      "empty": "No reviews yet — they will appear after clients rate you on completed projects.",
+      "clientLabel": "Client"
+    },
+    "reputation": {
+      "empty": "Complete orders and your profile to raise your trust level."
+    },
+    "achievements": {
+      "empty": "Complete orders and courses to earn professional achievements."
+    },
+    "profile": {
+      "complete": "Your profile is complete — well done!",
+      "completeProfile": "Complete profile"
+    }
+  },
+  "notifications": {
+    "title": "My messages",
+    "viewAll": "View all",
+    "empty": "No recent messages.",
+    "defaultTitle": "Notification",
+    "loadError": "Could not load messages."
+  },
+  "sidebar": {
+    "badges": {
+      "required": "Required",
+      "startHere": "Start here"
+    }
+  },
+  "controlCenter": {
+    "reputation": {
+      "title": "Trust score",
+      "note": "Calculated from your real platform achievements — not fake ratings.",
+      "improveProfile": "Improve profile & presence"
+    },
+    "reviews": {
+      "title": "Reviews",
+      "viewAll": "View all",
+      "recommendationRate": "Recommendation rate: {{rate}}%",
+      "loadError": "Could not load reviews."
+    },
+    "profile": {
+      "title": "Profile completion",
+      "update": "Update"
+    },
+    "achievements": {
+      "title": "Achievements"
+    },
+    "earnings": {
+      "loadError": "Could not load earnings. We won't show potentially misleading numbers."
+    },
+    "courses": {
+      "loadError": "Could not load courses."
+    },
+    "performance": {
+      "loadError": "Could not load performance metrics."
+    },
+    "widgetLoadError": "Could not load this section."
+  },
+  "pendingActions": {
+    "title": "Required actions",
+    "clear": "No urgent actions — you're up to date.",
+    "choosePlan": {
+      "title": "Choose a subscription plan",
+      "description": "No active subscription — start by choosing the right plan.",
+      "cta": "View plans"
+    },
+    "completePayment": {
+      "title": "Complete payment",
+      "description": "Payment is processing or not yet completed.",
+      "cta": "Complete payment"
+    },
+    "companyApproval": {
+      "title": "Admin approval",
+      "description": "Awaiting admin approval before you can receive orders.",
+      "cta": "Review account"
+    },
+    "renewSubscription": {
+      "title": "Renew subscription",
+      "description": "Your subscription expired — renew to return to the marketplace.",
+      "cta": "Renew"
+    },
+    "reviewPlans": {
+      "cta": "Review plans"
+    },
+    "revisionRequired": {
+      "title": "Revisions required ({{count}})",
+      "title_plural": "Revisions required ({{count}})",
+      "descriptionWithOrder": "Order #{{code}} needs review and an updated delivery.",
+      "descriptionGeneric": "You have orders needing revision — review them in My orders.",
+      "cta": "Continue revision"
+    },
+    "finalTest": {
+      "title": "Final test waiting ({{count}})",
+      "title_plural": "Final tests waiting ({{count}})",
+      "descriptionWithCourse": "Complete the final test for course «{{course}}».",
+      "descriptionGeneric": "Complete the final test to finish the course.",
+      "descriptionActivation": "Complete the final test for {{course}} to finish activation requirements.",
+      "descriptionActivationGeneric": "Complete the final test for your current course to finish activation requirements.",
+      "cta": "Complete test",
+      "viewCourse": "View course"
+    },
+    "coursesPending": {
+      "title": "Required courses waiting ({{count}})",
+      "title_plural": "Required courses waiting ({{count}})",
+      "description": "Complete required courses to move on to the final test.",
+      "cta": "Continue courses"
+    },
+    "claimsReview": {
+      "title": "Claims under review ({{count}})",
+      "title_plural": "Claims under review ({{count}})",
+      "description": "Your financial claims are awaiting admin approval.",
+      "cta": "View wallet"
+    },
+    "claimsAcceptedPayout": {
+      "title": "Accepted claims awaiting payout ({{count}})",
+      "title_plural": "Accepted claims awaiting payout ({{count}})",
+      "description": "Accepted amounts not fully paid yet — review your wallet.",
+      "cta": "View wallet"
+    }
+  },
+  "statusHeadline": {
+    "noSubscription": {
+      "headline": "Your subscription is not activated yet",
+      "sub": "Choose a plan to get started on the platform."
+    },
+    "expired": {
+      "headline": "Your subscription has expired",
+      "sub": "Renew to receive new orders."
+    },
+    "paymentPending": {
+      "headline": "Complete payment to activate your account",
+      "sub": "You cannot receive marketplace orders until payment is complete."
+    },
+    "companyPending": {
+      "headline": "Awaiting admin approval",
+      "sub": "Awaiting admin approval before you can receive orders."
+    },
+    "expiringDays": {
+      "headline": "Your subscription expires in {{count}} day",
+      "headline_plural": "Your subscription expires in {{count}} days"
+    },
+    "expiringTomorrow": {
+      "headline": "Your subscription expires tomorrow"
+    },
+    "expiringHours": {
+      "headline": "Your subscription expires in {{count}} hour",
+      "headline_plural": "Your subscription expires in {{count}} hours"
+    },
+    "expiringToday": {
+      "headline": "Your subscription expires today"
+    },
+    "freePlanExplore": {
+      "headline": "You can explore available marketplace orders",
+      "sub": "Real marketplace orders require a subscription upgrade."
+    },
+    "firstOrder": {
+      "headline": "You can receive your first order",
+      "sub": "Your subscription period starts when you accept your first order."
+    },
+    "eligible": {
+      "headline": "You can receive orders",
+      "sub": "Your account is eligible to apply for available orders per your plan."
+    },
+    "notEligible": {
+      "headline": "You cannot receive orders right now",
+      "sub": "Review subscription details below."
+    }
+  },
+  "notificationsPage": {
+    "titleFreelancer": "Your notifications",
+    "titleAdmin": "Admin notifications",
+    "titleSuperAdmin": "Super admin notifications",
+    "subtitleHub": "Track order updates, messages, and payments in one place.",
+    "subtitleStaff": "Track order updates, payments, and claims in one place.",
+    "summaryAria": "Notifications summary",
+    "total": "Total notifications",
+    "unread": "Unread",
+    "searchPlaceholder": "Search notifications…",
+    "searchAria": "Search notifications",
+    "filterAria": "Filter notifications",
+    "filterAll": "All",
+    "filterUnread": "Unread",
+    "markAllRead": "Mark all as read",
+    "listAria": "Notifications list",
+    "emptySearch": "No search results",
+    "emptyUnread": "No unread notifications",
+    "emptyAll": "No notifications yet",
+    "emptySearchSub": "Try different search terms or clear the search field.",
+    "emptyDefaultSub": "New updates will appear here when available.",
+    "newNotification": "New notification",
+    "unreadSuffix": " — unread",
+    "unreadTitle": "Unread",
+    "categoryMessages": "Messages",
+    "categoryClaims": "Claims",
+    "categoryCourses": "Courses",
+    "categoryOrders": "Orders",
+    "categoryAlert": "Alert",
+    "relativeNow": "Now",
+    "relativeMinutes": "{{count}} min ago",
+    "relativeMinutes_plural": "{{count}} mins ago",
+    "relativeHours": "{{count}} hour ago",
+    "relativeHours_plural": "{{count}} hours ago",
+    "relativeDays": "{{count}} day ago",
+    "relativeDays_plural": "{{count}} days ago"
+  },
+  "common": {
+    "retry": "Try again",
+    "loading": "Loading",
+    "unavailable": "Unavailable",
+    "loadFailed": "Could not load",
+    "emDash": "—",
+    "currencyJod": "JOD",
+    "currencyJodLabel": "JOD",
+    "defaultCourse": "Course",
+    "client": "Client",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "submitting": "Submitting…",
+    "save": "Save",
+    "saving": "Saving…",
+    "close": "Close",
+    "viewAll": "View all",
+    "update": "Update",
+    "alert": "Notice"
+  }
+}

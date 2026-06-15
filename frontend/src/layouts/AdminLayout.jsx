@@ -13,6 +13,8 @@ import {
 } from "../constants/adminNav";
 import { userHasPermission } from "../constants/dashboardPermissions";
 import NotificationsBell from "../components/notifications/NotificationsBell";
+import { useTranslation } from "../i18n/LanguageProvider";
+import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
 
 import "../styles/dashboardHub.css";
 import "../styles/adminDashboardShell.css";
@@ -40,6 +42,7 @@ function useOnClickOutside(ref, handler) {
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const { t, dir, locale } = useTranslation();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -62,9 +65,9 @@ export default function AdminLayout() {
     });
   }, [pathname]);
 
-  const displayName = useMemo(() => fullNameAr(user) || user?.email || "مدير", [user]);
+  const displayName = useMemo(() => fullNameAr(user) || user?.email || t("dashboard.roles.admin"), [user, t]);
   const initial = (user?.firstName || user?.email || "A").trim().slice(0, 1).toUpperCase();
-  const crumb = useMemo(() => adminBreadcrumb(pathname), [pathname]);
+  const crumb = useMemo(() => adminBreadcrumb(pathname, t), [pathname, t]);
   const role = user?.primaryRole || user?.role;
   const notificationsPath = getNotificationsPath(role);
   const businessNav = useMemo(() => filterAdminNavItems(ADMIN_NAV_MAIN, user, userHasPermission), [user]);
@@ -75,7 +78,7 @@ export default function AdminLayout() {
     .join(" ");
 
   return (
-    <div className="oh-sa-shell" dir="rtl" lang="ar">
+    <div className="oh-sa-shell" dir={dir} lang={locale}>
       <div
         className={`oh-sa-backdrop${sidebarOpen ? " oh-sa-backdrop--open" : ""}`}
         aria-hidden={!sidebarOpen}
@@ -83,17 +86,17 @@ export default function AdminLayout() {
       />
       <div className="oh-sa-shell__grid">
         <div className={sidebarWrapClassName}>
-          <aside className="oh-sa-nav" aria-label="قائمة الإدارة">
+          <aside className="oh-sa-nav" aria-label={t("dashboard.nav.admin.sidebarAria")}>
         <div className="oh-sa-brand oh-sa-brand--full-logo">
           <img
             src="/hero/fullLogp.png"
-            alt="أوردرز هاوس"
+            alt={t("common.brand")}
             className="oh-sa-brand__logo"
             width={200}
             height={56}
             decoding="async"
           />
-          <div className="oh-sa-brand__sub">لوحة الإدارة</div>
+          <div className="oh-sa-brand__sub">{t("dashboard.nav.admin.panelTitle")}</div>
         </div>
 
         <ul className="oh-sa-nav__list">
@@ -107,7 +110,7 @@ export default function AdminLayout() {
               <span className="oh-sa-navlink__icon" aria-hidden>
                 {ADMIN_NAV_HOME.icon}
               </span>
-              {ADMIN_NAV_HOME.label}
+              {resolveNavLabel(ADMIN_NAV_HOME, t)}
             </NavLink>
           </li>
           {businessNav.map((item) => (
@@ -125,7 +128,7 @@ export default function AdminLayout() {
                 <span className="oh-sa-navlink__icon" aria-hidden>
                   {item.icon}
                 </span>
-                {item.label}
+                {resolveNavLabel(item, t)}
               </NavLink>
             </li>
           ))}
@@ -139,7 +142,7 @@ export default function AdminLayout() {
                 <span className="oh-sa-navlink__icon" aria-hidden>
                   {ADMIN_NAV_CREATE_ORDER.icon}
                 </span>
-                {ADMIN_NAV_CREATE_ORDER.label}
+                {resolveNavLabel(ADMIN_NAV_CREATE_ORDER, t)}
               </NavLink>
             </li>
           ) : null}
@@ -155,14 +158,14 @@ export default function AdminLayout() {
               <span className="oh-sa-navlink__icon" aria-hidden>
                 {ADMIN_NAV_NOTIFICATIONS.icon}
               </span>
-              {ADMIN_NAV_NOTIFICATIONS.label}
+              {resolveNavLabel(ADMIN_NAV_NOTIFICATIONS, t)}
             </NavLink>
           </li>
         </ul>
 
         {!hasBusinessPermissions ? (
           <p className="oh-admin-nav-empty" style={{ padding: "12px 16px", fontSize: "0.82rem", color: "#5b6684", lineHeight: 1.6 }}>
-            ليس لديك صلاحيات مفعلة حالياً. يرجى التواصل مع المدير الأعلى.
+            {t("dashboard.nav.admin.noPermissions")}
           </p>
         ) : null}
 
@@ -175,7 +178,7 @@ export default function AdminLayout() {
             <button
               type="button"
               className="oh-sa-topbar__menu oh-sa-icon-button-3d"
-              aria-label="فتح القائمة"
+              aria-label={t("dashboard.nav.common.openMenu")}
               aria-expanded={sidebarOpen}
               onClick={() => setSidebarOpen((v) => !v)}
             >
@@ -208,7 +211,7 @@ export default function AdminLayout() {
                     {displayName}
                   </div>
                   <NavLink to={notificationsPath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
-                    الإشعارات
+                    {t("dashboard.nav.common.notifications")}
                   </NavLink>
                   <button
                     type="button"
@@ -219,7 +222,7 @@ export default function AdminLayout() {
                       navigate("/", { replace: true });
                     }}
                   >
-                    تسجيل الخروج
+                    {t("dashboard.nav.common.logout")}
                   </button>
                 </div>
               ) : null}

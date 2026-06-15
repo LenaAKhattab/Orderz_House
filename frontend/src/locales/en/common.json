@@ -1,0 +1,46 @@
+{
+  "brand": "Orderz House",
+  "language": {
+    "ar": "العربية",
+    "en": "English",
+    "switchTo": "العربية",
+    "switchAria": "Switch language to English",
+    "switchToArAria": "Switch language to Arabic",
+    "switching": "Switching language…"
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "retry": "Try again",
+    "showMore": "Show more",
+    "backHome": "Back to home",
+    "startNow": "Start now",
+    "explore": "Explore"
+  },
+  "loading": {
+    "default": "Loading…",
+    "redirecting": "Redirecting…",
+    "sending": "Sending…",
+    "saving": "Saving…",
+    "verifying": "Verifying…"
+  },
+  "empty": {
+    "faq": "No FAQs available at the moment.",
+    "plans": "No plans available at the moment.",
+    "categories": "No categories available at the moment.",
+    "orders": "No requests at the moment",
+    "ordersHint": "New requests will appear here when they are published."
+  },
+  "errors": {
+    "loadCategories": "Could not load categories. Please try again later.",
+    "loadSubcategories": "Could not load subcategories.",
+    "loadSubSubcategories": "Could not load detailed categories.",
+    "loadOrders": "Could not load requests. Please try again.",
+    "loadPage": "Could not load this page",
+    "generic": "Something went wrong. Please try again."
+  },
+  "notFound": {
+    "title": "Page unavailable",
+    "text": "This page may be hidden or the link is incorrect."
+  },
+  "copyright": "© {{year}} Orderz House. All rights reserved."
+}

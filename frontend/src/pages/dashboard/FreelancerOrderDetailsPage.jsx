@@ -11,7 +11,18 @@ import {
   submitPoolOrderBidRequest,
   takePoolOrderRequest,
 } from "../../services/api";
-import { arabicDurationUnit } from "../../utils/arTime";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import {
+  formatOrderDuration,
+  formatOrderProjectType,
+  categoryLine,
+} from "../../lib/orders/orderDisplayFormatters";
+import {
+  getLocalizedOrderDescription,
+  getLocalizedOrderTitle,
+  resolveUserContentDir,
+} from "../../lib/i18n/getLocalizedMarketplaceOrderText";
+import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 import { OrderDetailsPageSkeleton } from "../../components/ui/Skeleton";
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
 import "../../components/orders/order-details/order-details-page.css";
@@ -22,23 +33,17 @@ import OrderDescriptionCard from "../../components/orders/order-details/OrderDes
 import OrderFilesCard from "../../components/orders/order-details/OrderFilesCard";
 import { formatMoneyJod, formatMoneyJodRange } from "../../components/orders/order-details/orderDetailsUtils";
 import { trackEvent } from "../../services/analytics";
-import { isPoolOrderLockedByPlan, poolOrderPlanLockBadgeText } from "../../utils/poolOrderPlanEligibility";
+import { isPoolOrderLockedByPlan } from "../../utils/poolOrderPlanEligibility";
 import { isPoolOrderAvailable, poolFixedParticipationPending } from "../../utils/poolOrderParticipation";
 import { isPoolOrderTakenAsAssignment } from "../../utils/poolOrderTakeOutcome";
 import { Lock } from "lucide-react";
 
-function typeLabel(projectType) {
-  if (projectType === "fixed") return "سعر ثابت";
-  if (projectType === "bidding") return "مزايدة";
-  return "—";
-}
-
-function durationLabel(order) {
-  if (!order?.durationValue || !order?.durationUnit) return "—";
-  return `${order.durationValue} ${arabicDurationUnit(order.durationValue, order.durationUnit)}`;
+function typeLabel(projectType, t) {
+  return formatOrderProjectType(projectType, t);
 }
 
 export default function FreelancerOrderDetailsPage() {
+  const { t, locale, dir } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -58,13 +63,13 @@ export default function FreelancerOrderDetailsPage() {
   const [subscription, setSubscription] = useState(null);
 
   const planLocked = useMemo(() => isPoolOrderLockedByPlan(order), [order]);
-  const planLockLabel = poolOrderPlanLockBadgeText();
+  const planLockLabel = t("orders.marketplace.planLocked");
   const canTake = useMemo(() => isFreelancer && Boolean(eligibility?.eligible), [isFreelancer, eligibility]);
   const canActOnOrder = canTake && !planLocked;
   const ineligibleMessage = useMemo(() => {
     if (!isFreelancer || eligibility?.eligible !== false) return "";
-    return getFreelancerOrderEligibilityMessage(eligibility, subscription);
-  }, [isFreelancer, eligibility, subscription]);
+    return getFreelancerOrderEligibilityMessage(eligibility, subscription, t);
+  }, [isFreelancer, eligibility, subscription, t]);
   const isPricedBidding = useMemo(
     () => order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null,
     [order],
@@ -92,7 +97,7 @@ export default function FreelancerOrderDetailsPage() {
         if (!cancelled) setOrder(resPool?.data?.order || null);
       } catch (e) {
         if (!cancelled) {
-          push({ type: "error", title: "تعذر تحميل تفاصيل الطلب", message: e?.response?.data?.message || e?.message });
+          push({ type: "error", title: t("orders.details.loadError"), message: e?.response?.data?.message || e?.message });
           navigate("/dashboard/freelancer/orders", { replace: true });
         }
       } finally {
@@ -153,21 +158,25 @@ export default function FreelancerOrderDetailsPage() {
       if (isPoolOrderTakenAsAssignment(updated)) {
         push({
           type: "success",
-          title: "تم إسناد الطلب",
-          message: "أصبح الطلب في قائمة «طلباتي» ويمكنك البدء بالعمل.",
+          title: t("orders.marketplace.orderAssigned.title"),
+          message: t("orders.marketplace.orderAssigned.message"),
         });
         navigate("/dashboard/freelancer/my-orders");
         return;
       }
       push({
         type: "success",
-        title: "تم تسجيل مشاركتك",
-        message: "سنراجع طلبك ونبلغك عند أي تحديث.",
+        title: t("orders.marketplace.participationRegistered.title"),
+        message: t("orders.marketplace.participationRegistered.message"),
       });
       const resPool = await getPoolOrderByIdRequest(id);
       setOrder(resPool?.data?.order || null);
     } catch (e) {
-      push({ type: "error", title: "تعذر استلام الطلب", message: e?.response?.data?.message || e?.message });
+      push({
+        type: "error",
+        title: t("orders.marketplace.takeOrderError"),
+        message: e?.response?.data?.message || e?.message,
+      });
     } finally {
       setTaking(false);
       setTakeConfirmOpen(false);
@@ -184,62 +193,75 @@ export default function FreelancerOrderDetailsPage() {
       });
       push({
         type: "success",
-        title: "تم إرسال عرضك",
-        message: "سيتم مراجعة عرضك وإشعارك عند أي تحديث.",
+        title: t("orders.marketplace.bidSubmitted.title"),
+        message: t("orders.marketplace.bidSubmitted.message"),
       });
       setBidOpen(false);
       const resPool = await getPoolOrderByIdRequest(id);
       setOrder(resPool?.data?.order || null);
     } catch (e) {
-      push({ type: "error", title: "تعذر إرسال العرض", message: e?.response?.data?.message || e?.message });
+      push({
+        type: "error",
+        title: t("orders.marketplace.submitBidError"),
+        message: e?.response?.data?.message || e?.message,
+      });
     } finally {
       setBidBusy(false);
     }
   };
 
-  const categoryText = useMemo(() => {
-    if (!order) return "—";
-    return `${order?.category?.name || "—"} — ${order?.subSubcategory?.name || "—"}`;
-  }, [order]);
+  const categoryText = useMemo(
+    () => categoryLine(order, locale) || t("freelancerDashboard.common.emDash"),
+    [order, locale, t],
+  );
+
+  const localizedTitle = useMemo(() => getLocalizedOrderTitle(order, locale), [order, locale]);
+  const localizedDescription = useMemo(() => getLocalizedOrderDescription(order, locale), [order, locale]);
+  const titleDir = resolveUserContentDir(localizedTitle, dir);
+  const descriptionDir = resolveUserContentDir(localizedDescription, dir);
 
   const typeAndBudgetText = useMemo(() => {
-    if (!order) return "—";
+    if (!order) return t("freelancerDashboard.common.emDash");
     const bt =
       order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null
         ? formatMoneyJodRange(order.bidBudgetMin, order.bidBudgetMax)
         : order?.projectType === "bidding"
-          ? "—"
+          ? t("freelancerDashboard.common.emDash")
           : formatMoneyJod(order?.budget);
     if (order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null) {
-      return `${typeLabel(order?.projectType)} — ${bt}`;
+      return `${typeLabel(order?.projectType, t)} — ${bt}`;
     }
-    if (order?.projectType === "bidding") return `${typeLabel(order?.projectType)}`;
-    return `${typeLabel(order?.projectType)} — ${bt}`;
-  }, [order]);
+    if (order?.projectType === "bidding") return `${typeLabel(order?.projectType, t)}`;
+    return `${typeLabel(order?.projectType, t)} — ${bt}`;
+  }, [order, t]);
 
   const summaryRows = useMemo(() => {
     if (!order) return [];
     const rows = [
-      { label: "مدة التسليم", value: durationLabel(order), icon: "clock" },
-      { label: "التصنيف", value: categoryText, icon: "category" },
+      { label: t("orders.details.deliveryTime"), value: formatOrderDuration(order, locale, t), icon: "clock" },
+      { label: t("orders.details.category"), value: categoryText, icon: "category" },
     ];
     if (Array.isArray(order?.extraCategories) && order.extraCategories.length) {
         rows.push({
-        label: "تصنيفات إضافية",
+        label: t("orders.details.extraCategories"),
         value: order.extraCategories
-          .map((x) => `${x?.category?.name || "—"}${x?.subSubcategory?.name ? ` • ${x.subSubcategory.name}` : ""}`)
+          .map((x) => {
+            const c = getLocalizedField(x?.category, "name", locale);
+            const ss = getLocalizedField(x?.subSubcategory, "name", locale);
+            return `${c || t("freelancerDashboard.common.emDash")}${ss ? ` • ${ss}` : ""}`;
+          })
           .join(" | "),
         icon: "category",
       });
     }
     return rows;
-  }, [order, categoryText]);
+  }, [order, categoryText, locale, t]);
 
   const skillsLine = useMemo(() => {
-    if (!order) return "لا توجد مهارات مفضلة لهذا المشروع.";
+    if (!order) return t("orders.details.noPreferredSkills");
     const names = Array.isArray(order.preferredSkills) ? order.preferredSkills.map((s) => s.name).filter(Boolean) : [];
-    return names.length ? names.join("، ") : "لا توجد مهارات مفضلة لهذا المشروع.";
-  }, [order]);
+    return names.length ? names.join(locale === "en" ? ", " : "، ") : t("orders.details.noPreferredSkills");
+  }, [order, locale, t]);
 
   const poolFooterButtons = (
     <>
@@ -248,7 +270,7 @@ export default function FreelancerOrderDetailsPage() {
           type="button"
           className="btn btn-primary"
           disabled={!canActOnOrder || bidBusy || order?.myBid?.status === "pending"}
-          title={order?.myBid?.status === "pending" ? "لقد قدمت عرضاً لهذا الطلب." : planLocked ? planLockLabel : ""}
+          title={order?.myBid?.status === "pending" ? t("freelancerDashboard.orders.alreadyBid") : planLocked ? planLockLabel : ""}
           onClick={() => setBidOpen(true)}
         >
           {planLocked ? (
@@ -257,10 +279,10 @@ export default function FreelancerOrderDetailsPage() {
               {planLockLabel}
             </>
           ) : bidBusy
-              ? "جارٍ الإرسال…"
+              ? t("freelancerDashboard.orders.submitting")
               : order?.myBid?.status === "pending"
-                ? "عرضك مُرسل"
-                : "تقديم عرض سعر"}
+                ? t("freelancerDashboard.orders.bidSubmitted")
+                : t("freelancerDashboard.orders.submitBid")}
         </button>
       ) : null}
       {isPoolAvailable && isFreelancer && !isPricedBidding ? (
@@ -272,7 +294,7 @@ export default function FreelancerOrderDetailsPage() {
             planLocked
               ? planLockLabel
               : participationPending
-                ? "سبق أن سجّلت مشاركتك في هذا الطلب."
+                ? t("freelancerDashboard.orders.alreadyParticipated")
                 : !canTake
                   ? ineligibleMessage
                   : ""
@@ -285,10 +307,10 @@ export default function FreelancerOrderDetailsPage() {
               {planLockLabel}
             </>
           ) : taking
-              ? "جارٍ الاستلام…"
+              ? t("freelancerDashboard.orders.taking")
               : participationPending
-                ? "تم التسجيل"
-                : "استلام الطلب"}
+                ? t("freelancerDashboard.orders.registered")
+                : t("freelancerDashboard.orders.takeOrder")}
         </button>
       ) : null}
     </>
@@ -297,10 +319,10 @@ export default function FreelancerOrderDetailsPage() {
   const renderFooter = isFreelancer && isPoolAvailable;
 
   return (
-    <main className="container page-content dash-shell od-page od-page--pool oh-order-details--dashboard" dir="rtl">
+    <main className="container page-content dash-shell od-page od-page--pool oh-order-details--dashboard" dir={dir}>
       <div className="od-pool-toolbar od-pool-toolbar--bare oh-order-details__toolbar">
         <Link className="btn btn-secondary oh-order-details__back" to={backTo}>
-          العودة للقائمة
+          {t("orders.marketplace.backToList")}
         </Link>
       </div>
 
@@ -319,8 +341,13 @@ export default function FreelancerOrderDetailsPage() {
               <div className="od-aside-col">
                 <div className="oh-order-details-neu oh-order-details-neu--summary">
                   <OrderSummaryCard
-                    title="ملخص الطلب"
-                    primaryBlock={{ label: "نوع المشروع / السعر", value: typeAndBudgetText, dir: "ltr", icon: "price" }}
+                    title={t("orders.details.summaryTitle")}
+                    primaryBlock={{
+                      label: t("orders.details.projectTypeBudget"),
+                      value: typeAndBudgetText,
+                      dir: "ltr",
+                      icon: "price",
+                    }}
                     rows={summaryRows}
                   />
                 </div>
@@ -329,7 +356,7 @@ export default function FreelancerOrderDetailsPage() {
                     orderId={String(id)}
                     fileAccess={!planLocked && isFreelancer ? "freelancer" : null}
                     files={order.files || []}
-                    emptyText="لا توجد ملفات مضافة"
+                    emptyText={t("freelancerDashboard.orders.noFiles")}
                   />
                 </div>
               </div>
@@ -338,9 +365,11 @@ export default function FreelancerOrderDetailsPage() {
             <div className="od-pool-title oh-order-details__main">
               <div className="oh-order-details-neu oh-order-details-neu--main">
                 <div className="od-title-desc-group">
-                  <OrderTitleCard title={order.title} />
-                  <OrderDescriptionCard text={order.description} />
-                  <OrderDescriptionCard label="المهارات المطلوبة" text={skillsLine} icon="skills" />
+                  <OrderTitleCard title={localizedTitle} />
+                  <div dir={descriptionDir}>
+                    <OrderDescriptionCard text={localizedDescription} />
+                  </div>
+                  <OrderDescriptionCard label={t("orders.details.skillsLabel")} text={skillsLine} icon="skills" />
                   {renderFooter ? <div className="od-pool-primary-actions">{poolFooterButtons}</div> : null}
                 </div>
               </div>
@@ -363,7 +392,7 @@ export default function FreelancerOrderDetailsPage() {
           />
         </>
       ) : (
-        <p className="od-empty">لم يتم العثور على الطلب</p>
+        <p className="od-empty">{t("orders.marketplace.orderNotFound")}</p>
       )}
     </main>
   );

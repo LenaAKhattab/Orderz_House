@@ -1,4 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { HOME_FEATURED_ICON_STROKE_WIDTH } from "../../constants/homeFeaturedServices";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
+import { getLocalizedServiceCategoryDescription } from "../../lib/i18n/getLocalizedServiceCategoryDescription";
+import { resolveServiceCategoryIcon } from "../../utils/subSubcategoryIcons";
 
 function CategoryIconArt({ index }) {
   const mod = index % 3;
@@ -25,27 +30,33 @@ function CategoryIconArt({ index }) {
   );
 }
 
-function ExploreArrow() {
+function ExploreArrow({ dir }) {
+  const chevronPath = dir === "ltr" ? "m13 6 6 6-6 6" : "m11 6-6 6 6 6";
+
   return (
     <span className="services-ref-card__cta-arrow" aria-hidden>
       <svg viewBox="0 0 24 24" fill="none">
         <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <path d="m11 6-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={chevronPath} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
   );
 }
 
-export default function ServicesRefCard({ cat, idx, tone, isOpen, onToggle, imageSrc }) {
-  const title = cat.name || cat.title || "—";
+export default function ServicesRefCard({ cat, idx, tone, isOpen, onToggle, imageSrc, compact = false }) {
+  const { t, locale, dir } = useTranslation();
+  const title = getLocalizedField(cat, "name", locale) || getLocalizedField(cat, "title", locale) || "—";
+  const description = getLocalizedServiceCategoryDescription(cat, locale);
   const id = String(cat.id);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
   const imgRef = useRef(null);
-  const hasImage = Boolean(imageSrc) && !imageFailed;
+  const hasImage = !compact && Boolean(imageSrc) && !imageFailed;
   const eager = idx < 3;
 
   useEffect(() => {
+    if (compact) return;
+
     setImageLoaded(false);
     setImageFailed(false);
     const el = imgRef.current;
@@ -58,7 +69,32 @@ export default function ServicesRefCard({ cat, idx, tone, isOpen, onToggle, imag
       return;
     }
     setImageLoaded(true);
-  }, [imageSrc]);
+  }, [compact, imageSrc]);
+
+  if (compact) {
+    const Icon = resolveServiceCategoryIcon(cat, idx);
+
+    return (
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls="services-category-detail"
+        id={`services-cat-trigger-${id}`}
+        className={`services-ref-card services-ref-card--compact${isOpen ? " services-ref-card--active" : ""}`.trim()}
+        onClick={onToggle}
+      >
+        <span className="services-ref-card__compact-icon" aria-hidden>
+          <Icon
+            size={38}
+            strokeWidth={HOME_FEATURED_ICON_STROKE_WIDTH}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </span>
+        <span className="services-ref-card__compact-title">{title}</span>
+      </button>
+    );
+  }
 
   return (
     <button
@@ -107,11 +143,11 @@ export default function ServicesRefCard({ cat, idx, tone, isOpen, onToggle, imag
       </span>
       <span className="services-ref-card__body">
         <span className="services-ref-card__title">{title}</span>
-        {cat.description ? <span className="services-ref-card__desc">{cat.description}</span> : null}
+        {description ? <span className="services-ref-card__desc">{description}</span> : null}
       </span>
       <span className="services-ref-card__cta">
-        <span>استكشف الخدمة</span>
-        <ExploreArrow />
+        <span>{t("services.card.explore")}</span>
+        <ExploreArrow dir={dir} />
       </span>
     </button>
   );

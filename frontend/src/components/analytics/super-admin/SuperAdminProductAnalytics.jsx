@@ -38,6 +38,7 @@ import {
 import { SA_ROUTES, sectionFailed } from "./superAdminHomeDataUtils";
 import { chartMetaForKey, executiveKpiScope } from "./dashboardMetricScope";
 import DashboardPageHeader from "../../dashboard/DashboardPageHeader";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import { superAdminBreadcrumbs } from "../../dashboard/dashboardBreadcrumbs";
 import DashboardSection from "../../dashboard/DashboardSection";
 import DashboardStatCard, { DashboardStatCardSkeleton } from "../../dashboard/DashboardStatCard";
@@ -491,6 +492,7 @@ function SecondaryMetricsBlock({
 }
 
 export default function SuperAdminProductAnalytics() {
+  const { dir, locale } = useTranslation();
   const { push } = useToast();
   const { openModal: openCreateOrderModal } = useClientCreateOrderModal();
 
@@ -707,13 +709,13 @@ export default function SuperAdminProductAnalytics() {
   };
 
   return (
-    <div className="sa-analytics sa-analytics--premium w-full min-w-0" dir="rtl" lang="ar">
+    <div className="sa-analytics sa-analytics--premium w-full min-w-0" dir={dir} lang={locale}>
       <DashboardPageHeader
         className="sa-control-header sa-control-header--compact sa-control-header--premium"
         eyebrow="لوحة المدير الأعلى"
         title="مركز التحكم"
         description="مركز قيادة تنفيذي — الحالة والمخاطر والفرص في لمحة."
-        breadcrumbs={superAdminBreadcrumbs("نظرة عامة")}
+        breadcrumbs={superAdminBreadcrumbs("dashboard.nav.superAdmin.overview")}
         actions={
           <>
             <button type="button" className="btn btn-primary sa-header-cta" onClick={() => openCreateOrderModal()}>

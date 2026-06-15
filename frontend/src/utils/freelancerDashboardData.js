@@ -2,6 +2,7 @@ import {
   isOrderzhouseFreePlan,
   ORDERZHOUSE_PLANS_BY_ID,
 } from "../constants/orderzhousePlansCatalog";
+import { getLocaleField } from "../lib/i18n/getLocalizedField";
 
 export function formatMoneyJod(value) {
   const n = Number(value);
@@ -9,48 +10,87 @@ export function formatMoneyJod(value) {
   return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
 }
 
-export function formatJoDateMedium(value) {
+export function formatJoDateMedium(value, locale = "ar") {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium" }).format(d);
+  const dateLocale = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+  return new Intl.DateTimeFormat(dateLocale, { dateStyle: "medium" }).format(d);
 }
 
-export function formatTimeRemainingAr(expiryDate, nowMs = Date.now()) {
-  if (!expiryDate) return null;
+export function formatTimeRemaining(expiryDate, nowMs = Date.now(), t) {
+  if (!expiryDate || typeof t !== "function") return null;
   const exp = new Date(expiryDate);
   if (!Number.isFinite(exp.getTime())) return null;
   const diffMs = exp.getTime() - nowMs;
-  if (diffMs < 0) return { expired: true, days: 0, hours: 0, minutes: 0, text: "الاشتراك منتهي" };
+  if (diffMs < 0) {
+    return {
+      expired: true,
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      text: t("freelancerDashboard.status.timeRemaining.expired"),
+    };
+  }
 
   const totalMinutes = Math.floor(diffMs / (60 * 1000));
   const days = Math.floor(totalMinutes / (60 * 24));
   const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
   const minutes = totalMinutes % 60;
-  const nf = new Intl.NumberFormat("en-US");
+  const joiner = t("freelancerDashboard.status.timeRemaining.joiner");
   const parts = [];
-  if (days > 0) parts.push(`${nf.format(days)} يوم`);
-  if (hours > 0 || days > 0) parts.push(`${nf.format(hours)} ساعة`);
-  if (days === 0 && hours === 0 && minutes > 0) parts.push(`${nf.format(minutes)} دقيقة`);
-  return { expired: false, days, hours, minutes, text: `متبقي ${parts.join(" و ")}` };
+  if (days > 0) parts.push(t("freelancerDashboard.status.timeRemaining.day", { count: days }));
+  if (hours > 0 || days > 0) parts.push(t("freelancerDashboard.status.timeRemaining.hour", { count: hours }));
+  if (days === 0 && hours === 0 && minutes > 0) {
+    parts.push(t("freelancerDashboard.status.timeRemaining.minute", { count: minutes }));
+  }
+  const partsText = parts.join(joiner);
+  return {
+    expired: false,
+    days,
+    hours,
+    minutes,
+    text: t("freelancerDashboard.status.timeRemaining.remaining", { parts: partsText }),
+  };
+}
+
+/** @deprecated Use formatTimeRemaining */
+export function formatTimeRemainingAr(expiryDate, nowMs = Date.now(), t) {
+  return formatTimeRemaining(expiryDate, nowMs, t);
 }
 
 /** Human headline for subscription expiring within 7 days. */
-export function formatExpiryUrgency(expiryDate, nowMs = Date.now()) {
-  const remaining = formatTimeRemainingAr(expiryDate, nowMs);
+export function formatExpiryUrgency(expiryDate, nowMs = Date.now(), t) {
+  const remaining = formatTimeRemaining(expiryDate, nowMs, t);
   if (!remaining || remaining.expired) return null;
   if (remaining.days > 7) return null;
 
   if (remaining.days >= 2) {
-    return { headline: `اشتراكك ينتهي خلال ${remaining.days} يوم`, sub: remaining.text };
+    return {
+      headlineKey: "freelancerDashboard.statusHeadline.expiringDays.headline",
+      headlineParams: { count: remaining.days },
+      sub: remaining.text,
+    };
   }
   if (remaining.days === 1) {
-    return { headline: "اشتراكك ينتهي غداً", sub: remaining.text };
+    return {
+      headlineKey: "freelancerDashboard.statusHeadline.expiringTomorrow.headline",
+      headlineParams: undefined,
+      sub: remaining.text,
+    };
   }
   if (remaining.hours > 0) {
-    return { headline: `اشتراكك ينتهي خلال ${remaining.hours} ساعة`, sub: remaining.text };
+    return {
+      headlineKey: "freelancerDashboard.statusHeadline.expiringHours.headline",
+      headlineParams: { count: remaining.hours },
+      sub: remaining.text,
+    };
   }
-  return { headline: "اشتراكك ينتهي اليوم", sub: remaining.text };
+  return {
+    headlineKey: "freelancerDashboard.statusHeadline.expiringToday.headline",
+    headlineParams: undefined,
+    sub: remaining.text,
+  };
 }
 
 /**
@@ -82,17 +122,18 @@ export function mergeOrdersByRecency(orderLists, limit = 5) {
     .slice(0, limit);
 }
 
-export function getPlanOrderValueRangeLabel(subscription) {
+export function getPlanOrderValueRangeLabel(subscription, t) {
+  if (typeof t !== "function") return null;
   const planId = Number(subscription?.planId ?? subscription?.plan?.id);
   const catalog = ORDERZHOUSE_PLANS_BY_ID[planId];
   if (!catalog) return null;
   if (isOrderzhouseFreePlan(planId)) {
-    return "من 3 إلى 7 د.أ (طلبات حقيقية وتدريبية)";
+    return t("freelancerDashboard.plans.rangeFreePlan");
   }
   const min = catalog.minOrderValue ?? catalog.orderValueMinJod;
   const max = catalog.maxOrderValue ?? catalog.orderValueMaxJod;
-  if (min != null && max != null) return `من ${min} إلى ${max} د.أ`;
-  if (min != null) return `من ${min} د.أ وأكثر`;
+  if (min != null && max != null) return t("freelancerDashboard.plans.rangeMinMax", { min, max });
+  if (min != null) return t("freelancerDashboard.plans.rangeMinOnly", { min });
   return null;
 }
 
@@ -212,7 +253,11 @@ export function filterActiveOrders(orders = [], limit = 5) {
   return orders.filter(isActiveOrder).slice(0, limit);
 }
 
-export function buildFreelancerStatusHeadline({ eligibility, subscription, nowMs = Date.now() }) {
+export function buildFreelancerStatusHeadline({ eligibility, subscription, nowMs = Date.now(), t }) {
+  if (typeof t !== "function") {
+    return { tone: "neutral", headlineKey: null, subKey: null };
+  }
+
   const reason = String(eligibility?.reason || "");
   const eligible = Boolean(eligibility?.eligible);
   const payment = String(subscription?.paymentStatus || "");
@@ -221,61 +266,76 @@ export function buildFreelancerStatusHeadline({ eligibility, subscription, nowMs
   const freePlan = isOrderzhouseFreePlan(subscription?.planId ?? subscription?.plan);
 
   if (!subscription) {
-    return { tone: "warning", headline: "لم يُفعَّل اشتراكك بعد", sub: "اختر باقة للبدء على المنصة." };
+    return {
+      tone: "warning",
+      headlineKey: "freelancerDashboard.statusHeadline.noSubscription.headline",
+      subKey: "freelancerDashboard.statusHeadline.noSubscription.sub",
+    };
   }
 
   if (reason === "expired" || status === "expired") {
-    return { tone: "danger", headline: "اشتراكك منتهي", sub: "جدّد الاشتراك لاستقبال طلبات جديدة." };
+    return {
+      tone: "danger",
+      headlineKey: "freelancerDashboard.statusHeadline.expired.headline",
+      subKey: "freelancerDashboard.statusHeadline.expired.sub",
+    };
   }
 
   if (payment === "pending" && activation !== "company_approved") {
-    return { tone: "warning", headline: "أكمل الدفع لتفعيل الحساب", sub: "لا يمكن استقبال طلبات من المعرض قبل إتمام الدفع." };
+    return {
+      tone: "warning",
+      headlineKey: "freelancerDashboard.statusHeadline.paymentPending.headline",
+      subKey: "freelancerDashboard.statusHeadline.paymentPending.sub",
+    };
   }
 
   if (activation === "company_pending" || reason === "company_activation_pending") {
     return {
       tone: "warning",
-      headline: "بانتظار موافقة الإدارة",
-      sub: "بانتظار موافقة الإدارة قبل بدء استلام الطلبات.",
+      headlineKey: "freelancerDashboard.statusHeadline.companyPending.headline",
+      subKey: "freelancerDashboard.statusHeadline.companyPending.sub",
     };
   }
 
   const expiryUrgency =
-    status === "active" && subscription?.expiryDate
-      ? formatExpiryUrgency(subscription.expiryDate, nowMs)
-      : null;
+    status === "active" && subscription?.expiryDate ? formatExpiryUrgency(subscription.expiryDate, nowMs, t) : null;
   if (expiryUrgency) {
-    return { tone: "warning", headline: expiryUrgency.headline, sub: expiryUrgency.sub };
+    return {
+      tone: "warning",
+      headlineKey: expiryUrgency.headlineKey,
+      headlineParams: expiryUrgency.headlineParams,
+      subText: expiryUrgency.sub,
+    };
   }
 
   if (eligible && freePlan) {
     return {
       tone: "info",
-      headline: "يمكنك استكشاف الطلبات المتاحة في المعرض",
-      sub: "الطلبات الحقيقية في المعرض تتطلب ترقية الاشتراك.",
+      headlineKey: "freelancerDashboard.statusHeadline.freePlanExplore.headline",
+      subKey: "freelancerDashboard.statusHeadline.freePlanExplore.sub",
     };
   }
 
   if (eligible && status === "assigned_not_started") {
     return {
       tone: "success",
-      headline: "يمكنك استقبال أول طلب",
-      sub: "يبدأ عدّ مدة الاشتراك عند قبول أول طلب.",
+      headlineKey: "freelancerDashboard.statusHeadline.firstOrder.headline",
+      subKey: "freelancerDashboard.statusHeadline.firstOrder.sub",
     };
   }
 
   if (eligible) {
     return {
       tone: "success",
-      headline: "يمكنك استقبال الطلبات",
-      sub: "حسابك مؤهل للتقديم على الطلبات المتاحة وفق باقتك.",
+      headlineKey: "freelancerDashboard.statusHeadline.eligible.headline",
+      subKey: "freelancerDashboard.statusHeadline.eligible.sub",
     };
   }
 
   return {
     tone: "neutral",
-    headline: "لا يمكنك استقبال طلبات حالياً",
-    sub: "راجع تفاصيل الاشتراك أدناه.",
+    headlineKey: "freelancerDashboard.statusHeadline.notEligible.headline",
+    subKey: "freelancerDashboard.statusHeadline.notEligible.sub",
   };
 }
 
@@ -287,6 +347,8 @@ export function buildPendingActions({
   claims = [],
   recentOrders = [],
   nowMs = Date.now(),
+  t,
+  locale = "ar",
 }) {
   const actions = [];
   const payment = String(subscription?.paymentStatus || "");
@@ -299,10 +361,7 @@ export function buildPendingActions({
       id: "no-sub",
       priority: 1,
       icon: "◆",
-      title: "اختر باقة اشتراك",
-      description: "لا يوجد اشتراك نشط — ابدأ باختيار الباقة المناسبة.",
       to: "/dashboard/freelancer/plans",
-      cta: "عرض الباقات",
     });
   }
 
@@ -311,10 +370,7 @@ export function buildPendingActions({
       id: "payment-pending",
       priority: 1,
       icon: "◍",
-      title: "إكمال الدفع",
-      description: "الدفع قيد المعالجة أو لم يُستكمل بعد.",
       to: "/dashboard/freelancer/plans",
-      cta: "إكمال الدفع",
     });
   }
 
@@ -323,10 +379,7 @@ export function buildPendingActions({
       id: "company-pending",
       priority: 2,
       icon: "◎",
-      title: "موافقة الإدارة",
-      description: "بانتظار موافقة الإدارة قبل بدء استلام الطلبات.",
       to: "/dashboard/freelancer/settings",
-      cta: "مراجعة الحساب",
     });
   }
 
@@ -335,26 +388,23 @@ export function buildPendingActions({
       id: "sub-expired",
       priority: 1,
       icon: "⏱",
-      title: "تجديد الاشتراك",
-      description: "انتهت صلاحية اشتراكك — جدّد للعودة للمعرض.",
       to: "/dashboard/freelancer/plans",
-      cta: "تجديد",
     });
   }
 
   const expiryUrgency =
-    status === "active" && subscription?.expiryDate
-      ? formatExpiryUrgency(subscription.expiryDate, nowMs)
+    status === "active" && subscription?.expiryDate && typeof t === "function"
+      ? formatExpiryUrgency(subscription.expiryDate, nowMs, t)
       : null;
   if (expiryUrgency) {
     actions.push({
       id: "sub-expiring",
       priority: 3,
       icon: "⏳",
-      title: expiryUrgency.headline,
-      description: expiryUrgency.sub,
+      titleKey: expiryUrgency.headlineKey,
+      i18nParams: expiryUrgency.headlineParams,
+      descriptionText: expiryUrgency.sub,
       to: "/dashboard/freelancer/plans",
-      cta: "مراجعة الباقات",
     });
   }
 
@@ -369,31 +419,30 @@ export function buildPendingActions({
       id: "revision",
       priority: 2,
       icon: "✎",
-      title: `تعديلات مطلوبة (${revisionCount})`,
-      description: revOrder
-        ? `طلب #${revOrder.orderCode || revOrder.id} يحتاج مراجعة وتسليماً محدثاً.`
-        : "لديك طلبات تحتاج تعديلاً — راجعها في طلباتي.",
+      i18nParams: revOrder
+        ? { count: revisionCount, code: revOrder.orderCode || revOrder.id }
+        : { count: revisionCount },
+      descriptionVariant: revOrder ? "description" : "descriptionGeneric",
       to: revOrder
         ? `/dashboard/freelancer/my-orders/${revOrder.id}`
         : "/dashboard/freelancer/my-orders?status=revision_required",
-      cta: "متابعة التعديل",
     });
   }
 
   const courseAgg = aggregateCourses(courses);
   if (courseAgg.pendingFinalTest > 0) {
-    const testCourse =
-      courses.find((c) => isCourseFinalTestPending(c)) || courseAgg.continueCourse;
+    const testCourse = courses.find((c) => isCourseFinalTestPending(c)) || courseAgg.continueCourse;
+    const courseName = getLocaleField(testCourse, "title", locale);
+    const hasCourseTitle = Boolean(courseName?.trim());
     actions.push({
       id: "final-test",
       priority: 2,
       icon: "▶",
-      title: `اختبار نهائي بانتظارك (${courseAgg.pendingFinalTest})`,
-      description: testCourse
-        ? `أكمل الاختبار النهائي لدورة «${testCourse.title || "الدورة"}».`
-        : "أكمل الاختبار النهائي لإنهاء الدورة.",
+      i18nParams: {
+        count: courseAgg.pendingFinalTest,
+        ...(hasCourseTitle ? { course: courseName.trim() } : {}),
+      },
       to: testCourse ? `/dashboard/freelancer/courses/${testCourse.id}` : "/dashboard/freelancer/courses",
-      cta: "إكمال الاختبار",
     });
   }
 
@@ -404,10 +453,8 @@ export function buildPendingActions({
       id: "claims-review",
       priority: 3,
       icon: "◍",
-      title: `مطالبات قيد المراجعة (${openReview.length})`,
-      description: "مطالباتك المالية بانتظار موافقة الإدارة.",
+      i18nParams: { count: openReview.length },
       to: "/dashboard/freelancer/financial-claims",
-      cta: "عرض المحفظة",
     });
   }
 
@@ -421,10 +468,8 @@ export function buildPendingActions({
       id: "claims-accepted-payout",
       priority: 3,
       icon: "◍",
-      title: `مطالبات مقبولة بانتظار الصرف (${acceptedPayout.length})`,
-      description: "مبالغ مقبولة ولم تُصرف بالكامل بعد — راجع المحفظة.",
+      i18nParams: { count: acceptedPayout.length },
       to: "/dashboard/freelancer/financial-claims",
-      cta: "عرض المحفظة",
     });
   }
 
@@ -436,7 +481,7 @@ export function buildPendingActions({
 export function deriveFreelancerCoursesFocus(summary) {
   const empty = {
     show: false,
-    sidebarBadge: null,
+    sidebarBadgeKey: null,
     coursesAgg: null,
   };
 
@@ -463,19 +508,26 @@ export function deriveFreelancerCoursesFocus(summary) {
 
   return {
     show: true,
-    sidebarBadge: pendingFinalTest > 0 ? "مطلوب" : "ابدأ هنا",
+    sidebarBadgeKey:
+      pendingFinalTest > 0
+        ? "freelancerDashboard.sidebar.badges.required"
+        : "freelancerDashboard.sidebar.badges.startHere",
     coursesAgg: courses,
   };
 }
 
-function extractCourseNameFromAction(action, fallback = "الدورة") {
-  const text = String(action?.description || action?.descriptionAr || "");
-  const match = text.match(/«([^»]+)»/);
-  return match?.[1] || fallback;
+function resolveCourseName(examPendingAction, latestCourse, locale) {
+  if (latestCourse) {
+    const title = getLocaleField(latestCourse, "title", locale);
+    return title ? String(title).trim() : "";
+  }
+  const fromParams = examPendingAction?.i18nParams?.course;
+  if (fromParams && String(fromParams).trim()) return String(fromParams).trim();
+  return "";
 }
 
 /** Build/enhance the top activation banner action (exam or courses pending). */
-export function buildCoursesActivationBannerActions(summary, pendingActions = []) {
+export function buildCoursesActivationBannerActions(summary, pendingActions = [], t, locale = "ar") {
   const focus = deriveFreelancerCoursesFocus(summary);
   const courses = focus.coursesAgg;
   const activationActions = [];
@@ -488,26 +540,27 @@ export function buildCoursesActivationBannerActions(summary, pendingActions = []
     const examPendingAction = pendingActions.find((a) => a.id === "final-test");
 
     if (pendingFinalTest > 0) {
-      const courseName = extractCourseNameFromAction(
-        examPendingAction,
-        latestCourse?.title || "الدورة",
-      );
+      const courseName = resolveCourseName(examPendingAction, latestCourse, locale);
+      const hasCourseTitle = Boolean(courseName);
       const examUrl =
         examPendingAction?.to ||
         examPendingAction?.actionUrl ||
-        (latestCourse?.id
-          ? `/dashboard/freelancer/courses/${latestCourse.id}`
-          : "/dashboard/freelancer/courses");
+        (latestCourse?.id ? `/dashboard/freelancer/courses/${latestCourse.id}` : "/dashboard/freelancer/courses");
 
       activationActions.push({
         id: "final-test",
         isActivationBanner: true,
-        title: `اختبار نهائي بانتظارك (${pendingFinalTest})`,
-        description: `أكمل الاختبار النهائي لدورة ${courseName} لإتمام متطلبات التفعيل.`,
+        i18nParams: {
+          count: pendingFinalTest,
+          ...(hasCourseTitle ? { course: courseName } : {}),
+        },
+        descriptionKey: hasCourseTitle
+          ? "freelancerDashboard.pendingActions.finalTest.descriptionActivation"
+          : "freelancerDashboard.pendingActions.finalTest.descriptionActivationGeneric",
+        ctaKey: "freelancerDashboard.pendingActions.finalTest.cta",
+        secondaryCtaKey: "freelancerDashboard.pendingActions.finalTest.viewCourse",
         to: examUrl,
-        cta: "إكمال الاختبار",
         secondaryTo: examUrl,
-        secondaryCta: "عرض الدورة",
       });
     } else if (completed < total) {
       const pendingCount = total - completed;
@@ -518,19 +571,14 @@ export function buildCoursesActivationBannerActions(summary, pendingActions = []
       activationActions.push({
         id: "courses-pending",
         isActivationBanner: true,
-        title: `دورات مطلوبة بانتظارك (${pendingCount})`,
-        description: "أكمل الدورات المطلوبة للانتقال إلى الاختبار النهائي.",
+        i18nParams: { count: pendingCount },
         to: continueUrl,
-        cta: "متابعة الدورات",
         secondaryTo: "/dashboard/freelancer/courses",
-        secondaryCta: "عرض الدورة",
       });
     }
   }
 
-  const rest = pendingActions.filter(
-    (a) => a.id !== "final-test" && a.id !== "courses-pending",
-  );
+  const rest = pendingActions.filter((a) => a.id !== "final-test" && a.id !== "courses-pending");
 
   return [...activationActions, ...rest];
 }
@@ -539,19 +587,19 @@ function insightSortRank(item) {
   if (item?.type === "courses" || item?.id === "final-test" || item?.id === "course-progress") {
     return 0;
   }
-  if (item?.id === "company-pending" || String(item?.titleAr || "").includes("موافقة الإدارة")) {
+  if (item?.id === "company-pending" || item?.id === "pending-company-pending") {
     return 1;
   }
   return 5;
 }
 
-export function prioritizeCoursesInsights(insights = [], coursesFocusActive = false) {
+export function prioritizeCoursesInsights(insights = [], coursesFocusActive = false, t) {
   const boosted = insights.map((item) => {
-    if (item.id === "final-test" || String(item.titleAr || "").includes("اختبار نهائي")) {
+    if (item.id === "final-test") {
       return {
         ...item,
-        titleAr: item.titleAr || "اختبار نهائي بانتظارك",
-        actionLabel: item.actionLabel || "إكمال الاختبار",
+        actionLabelKey:
+          item.actionLabelKey || "freelancerDashboard.recommendations.completeTest",
       };
     }
     return item;

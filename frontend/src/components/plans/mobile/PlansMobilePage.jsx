@@ -1,5 +1,6 @@
 import PlansMobileHero from "./PlansMobileHero";
 import PlansMobilePlans from "./PlansMobilePlans";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import "./plans-mobile-page.css";
 
 /**
@@ -23,8 +24,10 @@ export default function PlansMobilePage({
   checkoutBusyPlanId = null,
   onCta,
 }) {
+  const { t, dir } = useTranslation();
+
   return (
-    <div className="plans-mobile-page" dir="rtl">
+    <div className="plans-mobile-page" dir={dir}>
       <PlansMobileHero />
       <PlansMobilePlans
         loading={loading}
@@ -43,11 +46,11 @@ export default function PlansMobilePage({
 
       {!loading && plans.length === 0 ? (
         <p className="pm-feedback" role="status">
-          لا توجد باقات متاحة حالياً.
+          {t("common.empty.plans")}
         </p>
       ) : null}
 
-      <p className="pm-footnote">الباقات مخصّصة للمستقلين المسجّلين في المنصة.</p>
+      <p className="pm-footnote">{t("plans.mobile.footnote")}</p>
     </div>
   );
 }

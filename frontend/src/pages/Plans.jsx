@@ -1,4 +1,5 @@
 import { useAuth } from "../context/useAuth";
+import { useTranslation } from "../i18n/LanguageProvider";
 import PricingSection from "../components/plans/PricingSection";
 import PlansMobilePage from "../components/plans/mobile/PlansMobilePage";
 import { useFreelancerPlansCheckout } from "../hooks/useFreelancerPlansCheckout";
@@ -14,6 +15,7 @@ const Plans = () => {
     checkoutBusyPlanId,
     startCheckout,
   } = useFreelancerPlansCheckout({ returnPath: "/plans" });
+  const { t, dir } = useTranslation();
 
   const handlePlanCta = async (plan) => {
     if (authLoading || !plan?.id || checkoutBusyPlanId) return;
@@ -25,7 +27,7 @@ const Plans = () => {
   };
 
   return (
-    <main className="container page-content plans-page plans-page--ref" lang="ar" dir="rtl">
+    <main className="container page-content plans-page plans-page--ref" lang={dir === "rtl" ? "ar" : "en"} dir={dir}>
       <div className="plans-desktop-only">
         <PricingSection
           loading={loading}
@@ -43,7 +45,7 @@ const Plans = () => {
 
         {!loading && plans.length === 0 ? (
           <section className="card" style={{ marginTop: 14 }}>
-            <p>لا توجد باقات متاحة حالياً.</p>
+            <p>{t("common.empty.plans")}</p>
           </section>
         ) : null}
       </div>

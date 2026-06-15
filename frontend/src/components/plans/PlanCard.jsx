@@ -1,16 +1,10 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import Button from "../ui/Button";
 import { useAuth } from "../../context/useAuth";
 import { isOrderzhouseFreePlan } from "../../constants/orderzhousePlansCatalog";
 import { isUpgradePlan, planTierRank } from "../../utils/planSubscriptionUtils";
-import {
-  formatInstallmentSummary,
-  formatOrderValueRange,
-  isOfferActive,
-  planBadgeLabel,
-  planListItems,
-  planPriceHeadline,
-} from "./planDisplayUtils";
+import { getLocalizedPlanBadge, getLocalizedPlanCardDisplay } from "../../lib/i18n/getLocalizedPlanDisplay";
 
 const MOBILE_FEATURE_PREVIEW = 3;
 
@@ -80,6 +74,7 @@ const PlanCard = ({
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t, locale } = useTranslation();
   const role = user ? user.primaryRole || user.role : null;
   const roles = Array.isArray(user?.roles) ? user.roles : [];
   const isGuest = !user;
@@ -97,43 +92,43 @@ const PlanCard = ({
   const canSelfCheckout =
     plan?.selfCheckoutEligible == null ? true : Boolean(plan.selfCheckoutEligible);
 
-  const { main: priceMain, sub: priceSub } = planPriceHeadline(plan);
-  const features = planListItems(plan);
+  const display = getLocalizedPlanCardDisplay(plan, locale, t);
+  const { main: priceMain, sub: priceSub } = display.price;
+  const features = display.features;
   const extraFeatures = features.slice(MOBILE_FEATURE_PREVIEW);
-  const orderRange = formatOrderValueRange(plan);
-  const installment = formatInstallmentSummary(plan);
-  const paymentNotes = plan?.paymentNotes ? String(plan.paymentNotes).trim() : "";
-  const offerActive = isOfferActive(plan);
-  const offerLabel = offerActive && plan.offerLabel ? String(plan.offerLabel).trim() : "";
-  const planTitle = plan.title || plan.name || "—";
-  const badge = planBadgeLabel(plan, featured);
+  const orderRange = display.orderRange;
+  const installment = display.installment;
+  const paymentNotes = display.paymentNotes;
+  const offerLabel = display.offerLabel;
+  const planTitle = display.title;
+  const badge = getLocalizedPlanBadge(plan, featured, locale, t);
   const durationDays = Number(plan?.durationDays);
   const durationLabel =
     Number.isFinite(durationDays) && durationDays >= 365
-      ? "سنة كاملة"
+      ? t("plans.fullYear")
       : Number.isFinite(durationDays) && durationDays > 0
-        ? `${durationDays} يوم`
+        ? t("plans.days", { count: durationDays })
         : null;
 
   const ctaLabel = isLoggedNonFreelancer
-    ? "للمستقلين فقط"
+    ? t("plans.cta.freelancersOnly")
     : isCurrentPlan
-      ? "باقتك الحالية"
+      ? t("plans.cta.currentPlan")
       : isLowerTier
-        ? "باقة أقل"
+        ? t("plans.cta.lowerPlan")
         : isBlockedBySubscription
-          ? "مشترك بالفعل"
+          ? t("plans.cta.alreadySubscribed")
           : checkoutBusy
-            ? "جارٍ التحويل…"
+            ? t("common.loading.redirecting")
             : isFreelancer && isUpgradeTarget && canSelfCheckout
-              ? "ترقية الاشتراك"
+              ? t("plans.cta.upgrade")
               : isFreelancer && canSelfCheckout
-                ? "ترقية الاشتراك"
+                ? t("plans.cta.upgrade")
                 : isFreelancer && isFreePlan
-                  ? "مفعّل تلقائياً"
+                  ? t("plans.cta.autoActivated")
                   : isFreelancer && !canSelfCheckout
-                    ? "يتم التفعيل عبر الشركة"
-                    : "ابدأ الآن";
+                    ? t("plans.cta.companyActivation")
+                    : t("plans.cta.startNow");
   const usePrimaryCta =
     featured &&
     (isGuest || (isFreelancer && canSelfCheckout)) &&
@@ -149,7 +144,7 @@ const PlanCard = ({
     (isFreelancer && !canSelfCheckout && !isCurrentPlan && !isUpgradeTarget);
 
   const hasExtras = Boolean(
-    offerLabel || orderRange || plan.activationRequirements || plan.refundPolicy,
+    offerLabel || orderRange || display.activationRequirements || display.refundPolicy,
   );
 
   const handleCtaClick = () => {
@@ -181,7 +176,7 @@ const PlanCard = ({
 
       <header className="pricing-card__head">
         <h2 className="pricing-card__title">{planTitle}</h2>
-        {plan.description ? <p className="pricing-card__desc">{plan.description}</p> : null}
+        {display.description ? <p className="pricing-card__desc">{display.description}</p> : null}
         {durationLabel ? <p className="pricing-card__duration">{durationLabel}</p> : null}
       </header>
 
@@ -209,7 +204,7 @@ const PlanCard = ({
       <div className="pricing-card__divider pricing-card__divider--features" aria-hidden="true" />
 
       <div className="pricing-card__benefits">
-        <ul className="pricing-card__features" aria-label="مميزات الباقة">
+        <ul className="pricing-card__features" aria-label={t("plans.featuresAria")}>
           {features.map((f, idx) => (
             <FeatureItem key={`${String(f)}-${idx}`} text={f} />
           ))}
@@ -218,9 +213,9 @@ const PlanCard = ({
         {extraFeatures.length > 0 ? (
           <details className="pricing-card__more-features">
             <DetailsSummary className="pricing-card__more-features-summary pricing-card__details-row">
-              عرض المزايا ({extraFeatures.length})
+              {t("plans.showFeatures", { count: extraFeatures.length })}
             </DetailsSummary>
-            <ul className="pricing-card__features pricing-card__features--more" aria-label="مزايا إضافية">
+            <ul className="pricing-card__features pricing-card__features--more" aria-label={t("plans.extraFeaturesAria")}>
               {extraFeatures.map((f, idx) => (
                 <FeatureItem key={`more-${String(f)}-${idx}`} text={f} />
               ))}
@@ -231,16 +226,16 @@ const PlanCard = ({
 
       <div className="pricing-card__meta-desktop">
         {orderRange ? <p className="pricing-card__order-range">{orderRange}</p> : null}
-        {plan.activationRequirements ? (
-          <p className="pricing-card__activation">{plan.activationRequirements}</p>
+        {display.activationRequirements ? (
+          <p className="pricing-card__activation">{display.activationRequirements}</p>
         ) : null}
-        {plan.refundPolicy ? <p className="pricing-card__footnote">{plan.refundPolicy}</p> : null}
+        {display.refundPolicy ? <p className="pricing-card__footnote">{display.refundPolicy}</p> : null}
       </div>
 
       {hasExtras ? (
         <details className="pricing-card__extras">
           <DetailsSummary className="pricing-card__extras-summary pricing-card__details-row">
-            تفاصيل إضافية
+            {t("plans.extraDetails")}
           </DetailsSummary>
           <div className="pricing-card__extras-body">
             {offerLabel ? (
@@ -253,14 +248,14 @@ const PlanCard = ({
                 <p className="pricing-card__order-range">{orderRange}</p>
               </div>
             ) : null}
-            {plan.activationRequirements ? (
+            {display.activationRequirements ? (
               <div className="pricing-card__extras-block">
-                <p className="pricing-card__activation">{plan.activationRequirements}</p>
+                <p className="pricing-card__activation">{display.activationRequirements}</p>
               </div>
             ) : null}
-            {plan.refundPolicy ? (
+            {display.refundPolicy ? (
               <div className="pricing-card__extras-block">
-                <p className="pricing-card__footnote">{plan.refundPolicy}</p>
+                <p className="pricing-card__footnote">{display.refundPolicy}</p>
               </div>
             ) : null}
           </div>

@@ -109,6 +109,14 @@
   position: relative;
   z-index: 1;
   margin-bottom: 0;
+  text-align: center;
+}
+
+.hm-hero__greeting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .hm-hero__greeting-label {
@@ -432,6 +440,15 @@
   padding: 0.5rem 0 1.75rem;
 }
 
+.hm-categories__divider {
+  display: block;
+  width: min(100%, 280px);
+  height: 1px;
+  margin: 1.25rem auto 1.5rem;
+  background: rgba(226, 232, 240, 0.8);
+  border: none;
+}
+
 .hm-categories__fallback {
   margin: 0 1rem 0.75rem;
   font-size: 0.8rem;
@@ -641,31 +658,17 @@
 }
 
 .hm-list-card--skeleton {
-  min-height: 4.5rem;
+  min-height: 3.5rem;
   background: linear-gradient(110deg, #e8edf5 0%, #f4f6fb 45%, #e8edf5 90%);
   background-size: 200% 100%;
   animation: hm-shimmer 1.2s ease-in-out infinite;
   border: none;
 }
 
-.hm-list-card__thumb {
-  flex-shrink: 0;
-  width: 3.25rem;
-  height: 3.25rem;
-  border-radius: 1rem;
-  overflow: hidden;
-  background: var(--hm-primary-soft);
-}
-
-.hm-list-card__thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .hm-list-card__body {
   flex: 1;
   min-width: 0;
+  text-align: start;
 }
 
 .hm-list-card__title {
@@ -674,6 +677,7 @@
   font-weight: 800;
   line-height: 1.35;
   color: var(--hm-ink);
+  text-align: start;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -729,12 +733,40 @@
   padding: 0.5rem 0 1.5rem;
 }
 
+.hm-faq__inner {
+  padding-inline: 1rem;
+}
+
+.hm-faq__head {
+  margin-bottom: 0.9rem;
+}
+
+.hm-faq__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--hm-ink);
+  text-align: start;
+}
+
+.hm-faq__subtitle {
+  margin: 0.35rem 0 0;
+  max-width: 22rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.55;
+  color: var(--hm-muted);
+  text-align: start;
+}
+
 .hm-faq__quote {
-  margin: 0 1rem 1rem;
-  padding: 1.1rem 1rem;
+  margin: 0 0 1rem;
+  padding: 1rem 1.05rem;
   border-radius: var(--hm-radius-xl);
   background: linear-gradient(145deg, rgba(91, 111, 163, 0.1) 0%, rgba(47, 59, 101, 0.04) 55%, #fff 100%);
   border: 1px solid rgba(47, 59, 101, 0.14);
+  text-align: start;
 }
 
 .hm-faq__quote-label {
@@ -742,14 +774,17 @@
   font-size: 0.72rem;
   font-weight: 800;
   color: var(--hm-primary-light);
+  text-align: start;
 }
 
 .hm-faq__quote-text {
   margin: 0 0 0.85rem;
-  font-size: 0.92rem;
-  font-weight: 800;
-  line-height: 1.5;
+  max-width: 20rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.6;
   color: var(--hm-ink);
+  text-align: start;
 }
 
 .hm-faq__quote-cta {
@@ -765,7 +800,6 @@
 }
 
 .hm-faq__menu {
-  margin-inline: 1rem;
   border-radius: var(--hm-radius-xl);
   background: var(--hm-surface);
   border: 1px solid rgba(226, 232, 240, 0.95);
@@ -785,10 +819,10 @@
 
 .hm-faq__trigger {
   display: flex;
-  align-items: center;
-  gap: 0.65rem;
+  align-items: flex-start;
+  gap: 0.75rem;
   width: 100%;
-  padding: 0.9rem 1rem;
+  padding: 0.95rem 1.05rem;
   border: none;
   background: transparent;
   text-align: start;
@@ -799,10 +833,22 @@
 .hm-faq__question {
   flex: 1;
   min-width: 0;
-  font-size: 0.84rem;
-  font-weight: 700;
-  line-height: 1.45;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.55;
   color: var(--hm-ink);
+  text-align: start;
+}
+
+.hm-faq__chevron-wrap {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-top: 0.05rem;
+  border-radius: 999px;
+  background: rgba(47, 59, 101, 0.06);
 }
 
 .hm-faq__chevron {
@@ -819,16 +865,21 @@
   background: var(--hm-primary-soft-strong);
 }
 
+.hm-faq__trigger[aria-expanded="true"] .hm-faq__chevron-wrap {
+  background: rgba(47, 59, 101, 0.1);
+}
+
 .hm-faq__panel {
-  padding: 0 1rem 0.9rem;
+  padding: 0 1.05rem 1rem;
   background: rgba(248, 250, 252, 0.9);
 }
 
 .hm-faq__answer {
   margin: 0;
   font-size: 0.8rem;
-  line-height: 1.7;
+  line-height: 1.75;
   color: var(--hm-muted);
+  text-align: start;
 }
 
 .hm-faq__list--scroll {
@@ -837,8 +888,8 @@
 
 .hm-faq__empty {
   margin: 0;
-  padding: 1rem 0.25rem;
-  text-align: right;
+  padding: 1rem 1.05rem;
+  text-align: start;
   font-size: 0.85rem;
   color: var(--hm-muted);
 }

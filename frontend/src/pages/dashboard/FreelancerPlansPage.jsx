@@ -8,34 +8,37 @@ import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerElig
 import { formatJoDateMedium, getPlanOrderValueRangeLabel } from "../../utils/freelancerDashboardData";
 import { isOrderzhouseFreePlan } from "../../constants/orderzhousePlansCatalog";
 import { getNextUpgradePlan } from "../../utils/planSubscriptionUtils";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 import "../../styles/dashboardHub.css";
 import "./freelancerPlans.css";
 
-function paymentLabel(status) {
+function paymentLabel(status, t) {
   const s = String(status || "");
-  if (s === "paid") return "مدفوع";
-  if (s === "pending") return "قيد المعالجة";
-  if (s === "failed") return "فشل";
-  if (s === "not_required") return "غير مطلوب";
-  return s || "—";
+  if (s === "paid") return t("freelancerDashboard.status.payment.paid");
+  if (s === "pending") return t("freelancerDashboard.status.payment.pending");
+  if (s === "failed") return t("freelancerDashboard.status.payment.failed");
+  if (s === "not_required") return t("freelancerDashboard.status.payment.notRequired");
+  return s || t("freelancerDashboard.common.emDash");
 }
 
-function activationLabel(status) {
+function activationLabel(status, t) {
   const s = String(status || "");
-  if (s === "company_approved") return "مفعّل";
-  if (s === "company_pending") return "بانتظار الشركة";
-  return s || "—";
+  if (s === "company_approved") return t("freelancerDashboard.status.activation.approved");
+  if (s === "company_pending") return t("freelancerDashboard.status.activation.pending");
+  return s || t("freelancerDashboard.common.emDash");
 }
 
-function subscriptionStatusLabel(status) {
-  if (status === "active") return "نشط";
-  if (status === "assigned_not_started") return "بانتظار أول طلب";
-  if (status === "expired") return "منتهي";
-  if (status === "inactive") return "غير نشط";
-  return status || "—";
+function subscriptionStatusLabel(status, t) {
+  if (status === "active") return t("freelancerDashboard.status.subscription.active");
+  if (status === "assigned_not_started") return t("freelancerDashboard.status.subscription.assignedNotStarted");
+  if (status === "expired") return t("freelancerDashboard.status.subscription.expired");
+  if (status === "inactive") return t("freelancerDashboard.status.subscription.inactive");
+  return status || t("freelancerDashboard.common.emDash");
 }
 
 export default function FreelancerPlansPage() {
+  const { t, locale } = useTranslation();
   const {
     plans,
     loading,
@@ -65,13 +68,17 @@ export default function FreelancerPlansPage() {
 
   const nextPlan = useMemo(() => getNextUpgradePlan(plans, mySubscription), [plans, mySubscription]);
   const rangeLabel =
-    mySubscription?.labelAr ||
-    mySubscription?.planOrderValueRange?.labelAr ||
-    getPlanOrderValueRangeLabel(mySubscription);
+    getLocalizedField(mySubscription, "label", locale) ||
+    getLocalizedField(mySubscription?.planOrderValueRange, "label", locale) ||
+    getPlanOrderValueRangeLabel(mySubscription, t);
   const freePlan = isOrderzhouseFreePlan(mySubscription?.planId ?? mySubscription?.plan);
+  const planTitle =
+    getLocalizedField(mySubscription?.plan, "title", locale) ||
+    t("freelancerDashboard.plans.freePlanTitle");
+  const nextPlanTitle = nextPlan ? getLocalizedField(nextPlan, "title", locale) || nextPlan.title : "";
   const blockMsg =
     eligibility && !eligibility.eligible
-      ? getFreelancerOrderEligibilityMessage(eligibility, mySubscription)
+      ? getFreelancerOrderEligibilityMessage(eligibility, mySubscription, t)
       : "";
 
   return (
@@ -81,60 +88,62 @@ export default function FreelancerPlansPage() {
           <div className="fp-hero__copy">
             <span className="fp-hero__eyebrow">
               <Crown size={14} strokeWidth={2} aria-hidden />
-              باقتك الحالية
+              {t("freelancerDashboard.plans.eyebrow")}
             </span>
-            <h1 className="fp-hero__title">{mySubscription?.plan?.title || "الاشتراك المجاني"}</h1>
+            <h1 className="fp-hero__title">{planTitle}</h1>
             <p className="fp-hero__subtitle">
               {freePlan
-                ? "يمكنك الترقية لباقة أعلى للوصول إلى طلبات بقيمة أكبر ومزايا إضافية."
-                : "تابع حالة اشتراكك وادفع للترقية للباقة التالية عند الجاهزية."}
+                ? t("freelancerDashboard.plans.freePlanSubtitle")
+                : t("freelancerDashboard.plans.paidPlanSubtitle")}
             </p>
             {nextPlan ? (
               <p className="fp-upgrade-hint" style={{ marginTop: 14 }}>
                 <Sparkles size={15} strokeWidth={2} style={{ verticalAlign: "middle", marginInlineEnd: 6 }} aria-hidden />
-                الباقة التالية: <strong>{nextPlan.title}</strong> — اخترها من القائمة أدناه للترقية.
+                {t("freelancerDashboard.plans.nextPlanHint", { title: nextPlanTitle })}
               </p>
             ) : null}
             {blockMsg ? <p className="fp-upgrade-hint" style={{ marginTop: 10 }}>{blockMsg}</p> : null}
           </div>
 
-          <dl className="fp-hero__stats" aria-label="ملخص الاشتراك">
+          <dl className="fp-hero__stats" aria-label={t("freelancerDashboard.plans.summaryAria")}>
             <div className="fp-hero__stat">
-              <dt>حالة الاشتراك</dt>
-              <dd className="fp-hero__stat-value--accent">{subscriptionStatusLabel(mySubscription?.status)}</dd>
+              <dt>{t("freelancerDashboard.plans.subscriptionStatus")}</dt>
+              <dd className="fp-hero__stat-value--accent">{subscriptionStatusLabel(mySubscription?.status, t)}</dd>
             </div>
             <div className="fp-hero__stat">
-              <dt>الدفع</dt>
-              <dd>{paymentLabel(mySubscription?.paymentStatus)}</dd>
+              <dt>{t("freelancerDashboard.plans.payment")}</dt>
+              <dd>{paymentLabel(mySubscription?.paymentStatus, t)}</dd>
             </div>
             <div className="fp-hero__stat">
-              <dt>تفعيل الشركة</dt>
+              <dt>{t("freelancerDashboard.plans.companyActivation")}</dt>
               <dd className={mySubscription?.activationStatus === "company_approved" ? "fp-hero__stat-value--ok" : "fp-hero__stat-value--warn"}>
-                {activationLabel(mySubscription?.activationStatus)}
+                {activationLabel(mySubscription?.activationStatus, t)}
               </dd>
             </div>
             <div className="fp-hero__stat">
-              <dt>أهلية المعرض</dt>
+              <dt>{t("freelancerDashboard.plans.marketplaceEligibility")}</dt>
               <dd className={eligibility?.eligible ? "fp-hero__stat-value--ok" : "fp-hero__stat-value--warn"}>
-                {eligibility?.eligible ? "يمكنك التقديم" : "غير مؤهل"}
+                {eligibility?.eligible
+                  ? t("freelancerDashboard.plans.canApply")
+                  : t("freelancerDashboard.plans.notEligible")}
               </dd>
             </div>
             {rangeLabel ? (
               <div className="fp-hero__stat" style={{ gridColumn: "1 / -1" }}>
-                <dt>نطاق قيمة الطلبات</dt>
+                <dt>{t("freelancerDashboard.plans.orderValueRange")}</dt>
                 <dd>{rangeLabel}</dd>
               </div>
             ) : null}
             {mySubscription?.expiryDate ? (
               <div className="fp-hero__stat" style={{ gridColumn: "1 / -1" }}>
-                <dt>ينتهي في</dt>
-                <dd>{formatJoDateMedium(mySubscription.expiryDate)}</dd>
+                <dt>{t("freelancerDashboard.plans.expiresOn")}</dt>
+                <dd>{formatJoDateMedium(mySubscription.expiryDate, locale)}</dd>
               </div>
             ) : null}
           </dl>
         </header>
 
-        <section className="fp-surface fp-pricing-wrap" aria-label="باقات الترقية">
+        <section className="fp-surface fp-pricing-wrap" aria-label={t("freelancerDashboard.plans.upgradeSectionAria")}>
           {error ? <p className="fp-error">{error}</p> : null}
           <PricingSection
             variant="dashboard"

@@ -1,13 +1,17 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "../../../../i18n/LanguageProvider";
+import { resolveFreelancerDashboardItem } from "../../../../lib/i18n/resolveFreelancerDashboardItem";
 
 export default function PendingActionsList({ actions = [] }) {
+  const { t, locale } = useTranslation();
+
   if (!actions.length) {
     return (
       <section className="fdash-cc-pending fdash-cc-pending--clear" aria-labelledby="fdash-pending-heading">
         <h2 id="fdash-pending-heading" className="fdash-cc-pending__title">
-          الإجراءات المطلوبة
+          {t("freelancerDashboard.controlCenter.pendingActions.title")}
         </h2>
-        <p className="fdash-cc-pending__clear">لا توجد إجراءات عاجلة — أنت على اطلاع.</p>
+        <p className="fdash-cc-pending__clear">{t("freelancerDashboard.controlCenter.pendingActions.clear")}</p>
       </section>
     );
   }
@@ -15,7 +19,7 @@ export default function PendingActionsList({ actions = [] }) {
   return (
     <section className="fdash-cc-pending" aria-labelledby="fdash-pending-heading">
       <h2 id="fdash-pending-heading" className="fdash-cc-pending__title">
-        الإجراءات المطلوبة
+        {t("freelancerDashboard.controlCenter.pendingActions.title")}
         <span className="fdash-cc-pending__count">{actions.length}</span>
       </h2>
       <ul className="fdash-cc-pending__list">
@@ -25,11 +29,15 @@ export default function PendingActionsList({ actions = [] }) {
               {a.icon}
             </span>
             <div className="fdash-cc-pending__copy">
-              <h3 className="fdash-cc-pending__item-title">{a.title}</h3>
-              <p className="fdash-cc-pending__item-desc">{a.description}</p>
+              <h3 className="fdash-cc-pending__item-title">
+                {resolveFreelancerDashboardItem(a, "title", t, locale)}
+              </h3>
+              <p className="fdash-cc-pending__item-desc">
+                {resolveFreelancerDashboardItem(a, "description", t, locale)}
+              </p>
             </div>
             <Link to={a.to} className="fdash-cc-btn fdash-cc-btn--sm">
-              {a.cta}
+              {resolveFreelancerDashboardItem(a, "cta", t, locale)}
             </Link>
           </li>
         ))}

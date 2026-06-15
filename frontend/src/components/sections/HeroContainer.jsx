@@ -1,5 +1,6 @@
 import HeroMainContent from "./HeroMainContent";
 import HomeAdsContainer from "./HomeAdsContainer";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import "./home-hero-ref.css";
 import "./home-hero-marketing.css";
 import "./home-hero-ipad.css";
@@ -11,11 +12,13 @@ import "./home-hero-loading.css";
  * @param {{ statsPayload?: object | null; ads?: import("../../types/ad.js").Ad[]; adsLoading?: boolean }} p
  */
 export default function HeroContainer({ statsPayload = null, ads = [], adsLoading = false }) {
+  const { dir } = useTranslation();
+
   return (
     <div className="hero-container min-w-0 w-full">
       <section
         className="home-hero home-hero--ref home-hero--marketing home-hero--premium-stage home-hero--bg-image home-hero--progressive w-full min-w-0 overflow-x-clip overflow-y-visible"
-        dir="rtl"
+        dir={dir}
         data-navbar-hero
         aria-labelledby="home-hero-heading"
       >

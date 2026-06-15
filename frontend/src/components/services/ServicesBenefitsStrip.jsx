@@ -1,25 +1,4 @@
-const BENEFITS = [
-  {
-    title: "جودة مضمونة",
-    desc: "معايير عالية في كل خدمة",
-    icon: "shield",
-  },
-  {
-    title: "تنفيذ احترافي",
-    desc: "خبراء متخصصون في كل مجال",
-    icon: "briefcase",
-  },
-  {
-    title: "تواصل مباشر",
-    desc: "سهولة التواصل ومتابعة مستمرة",
-    icon: "chat",
-  },
-  {
-    title: "دفع موثوق",
-    desc: "طرق دفع آمنة ومتنوعة",
-    icon: "card",
-  },
-];
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 function BenefitIcon({ type }) {
   if (type === "shield") {
@@ -63,10 +42,18 @@ function BenefitIcon({ type }) {
 }
 
 export default function ServicesBenefitsStrip() {
+  const { t } = useTranslation();
+  const benefits = [
+    { title: t("services.benefits.qualityTitle"), desc: t("services.benefits.qualityDesc"), icon: "shield" },
+    { title: t("services.benefits.executionTitle"), desc: t("services.benefits.executionDesc"), icon: "briefcase" },
+    { title: t("services.benefits.communicationTitle"), desc: t("services.benefits.communicationDesc"), icon: "chat" },
+    { title: t("services.benefits.paymentTitle"), desc: t("services.benefits.paymentDesc"), icon: "card" },
+  ];
+
   return (
-    <section className="services-ref-benefits" aria-label="مزايا المنصة">
+    <section className="services-ref-benefits" aria-label={t("services.benefitsAria")}>
       <div className="services-ref-benefits__inner">
-        {BENEFITS.map((item) => (
+        {benefits.map((item) => (
           <div key={item.title} className="services-ref-benefits__item">
             <span className="services-ref-benefits__icon" aria-hidden>
               <BenefitIcon type={item.icon} />

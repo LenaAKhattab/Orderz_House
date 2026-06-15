@@ -113,7 +113,7 @@ export default function SuperAdminSitePageEditPage() {
   };
 
   const breadcrumbs = [
-    ...editWebsiteBreadcrumbs("الصفحات العامة").slice(0, -1),
+    ...editWebsiteBreadcrumbs("dashboard.breadcrumbs.websitePages").slice(0, -1),
     { label: page?.title || "تعديل الصفحة" },
   ];
 

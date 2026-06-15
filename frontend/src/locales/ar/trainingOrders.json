@@ -1,0 +1,81 @@
+{
+  "shell": {
+    "eyebrow": "لوحة المدير الأعلى",
+    "title": "الطلبات التجريبية",
+    "description": "إدارة إعدادات الجولات التلقائية، قوالب الطلبات الوهمية، ومتابعة المتقدمين — منفصلة بالكامل عن الطلبات الحقيقية.",
+    "tabsAria": "أقسام الطلبات التجريبية",
+    "overview": "نظرة عامة",
+    "rounds": "الجولات",
+    "templates": "القوالب",
+    "applications": "المتقدمون",
+    "settings": "الإعدادات"
+  },
+  "roundStatus": {
+    "scheduled": "مجدولة",
+    "active": "نشطة",
+    "expired": "منتهية",
+    "stopped": "متوقفة"
+  },
+  "fakeOrderStatus": {
+    "active": "نشط",
+    "expired": "منتهٍ",
+    "stopped": "متوقف"
+  },
+  "automationStatus": {
+    "success": "نجاح",
+    "skipped_no_templates": "تخطي — لا قوالب",
+    "skipped_lock": "تخطي — قفل",
+    "failed": "فشل"
+  },
+  "roundSource": {
+    "automation": "تلقائي",
+    "manual": "يدوي"
+  },
+  "templates": {
+    "title": "قوالب الطلبات التجريبية",
+    "description": "قوالب قابلة لإعادة الاستخدام لطلبات التدريب في المعرض. كل قالب يمكن أن يولّد طلبات تدريب بسعر ثابت أو مزايدة.",
+    "searchPlaceholder": "عنوان أو وصف",
+    "category": "التصنيف",
+    "status": "الحالة",
+    "all": "الكل",
+    "active": "نشط",
+    "inactive": "معطّل",
+    "apply": "تطبيق",
+    "loading": "جاري التحميل…",
+    "empty": "لا توجد قوالب.",
+    "colTitle": "العنوان",
+    "colCategory": "التصنيف",
+    "colBudget": "الميزانية",
+    "colDuration": "المدة",
+    "colStatus": "الحالة",
+    "edit": "تعديل",
+    "disable": "تعطيل",
+    "enable": "تفعيل",
+    "delete": "حذف"
+  },
+  "rounds": {
+    "title": "جولات الطلبات التجريبية",
+    "description": "جولة تجريبية واحدة نشطة في كل مرة. عند بدء جولة جديدة تُنهى الجولة السابقة وتختفي طلباتها من معرض الطلبات فوراً، مع بقاء السجل هنا للمراجعة.",
+    "statusFilter": "حالة الجولة",
+    "all": "الكل",
+    "cancelConfirm": "إيقاف الجولة «{{title}}»؟",
+    "empty": "لا توجد جولات.",
+    "loading": "جاري التحميل…"
+  },
+  "applications": {
+    "title": "متقدمو الطلبات التجريبية",
+    "description": "المتقدمون على طلبات التدريب في المعرض، مجمّعون حسب الطلب.",
+    "empty": "لا يوجد متقدمون.",
+    "loading": "جاري التحميل…"
+  },
+  "statusBar": {
+    "automation": "الأتمتة",
+    "activeRound": "الجولة النشطة",
+    "settings": "الإعدادات",
+    "viewRounds": "عرض الجولات",
+    "viewTemplates": "عرض القوالب",
+    "lastRun": "آخر تشغيل",
+    "nextRun": "التشغيل التالي",
+    "notConfigured": "غير مُعدّ"
+  }
+}

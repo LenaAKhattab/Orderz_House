@@ -1,5 +1,6 @@
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import PlansMobilePlanCard from "./PlansMobilePlanCard";
-import { pickFeaturedPlanIndex } from "./plansMobileUtils";
+import { pickFeaturedPlanIndex } from "../plansFeaturedUtils";
 
 const SKELETON_COUNT = 3;
 
@@ -21,13 +22,16 @@ export default function PlansMobilePlans({
   checkoutBusyPlanId = null,
   onCta,
 }) {
+  const { t } = useTranslation();
   const featuredIndex = pickFeaturedPlanIndex(plans);
 
   return (
-    <section className="pm-plans" aria-label="قائمة الباقات" aria-busy={loading || undefined}>
+    <section className="pm-plans" aria-label={t("plans.sectionAria")} aria-busy={loading || undefined}>
       <header className="pm-section-head">
-        <h2 className="pm-section-head__title">قارن الباقات</h2>
-        <span className="pm-section-head__hint">{loading ? "…" : `${plans.length} باقة`}</span>
+        <h2 className="pm-section-head__title">{t("plans.mobile.compareTitle")}</h2>
+        <span className="pm-section-head__hint">
+          {loading ? "…" : t("plans.mobile.packageCount", { count: plans.length })}
+        </span>
       </header>
 
       <div className="pm-plans__list">

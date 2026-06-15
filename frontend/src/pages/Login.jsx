@@ -7,20 +7,22 @@ import Button from "../components/ui/Button";
 import { useToast } from "../components/ui/toastContext";
 import { useAuth } from "../context/useAuth";
 import { canRoleAccessPath, getDashboardPath } from "../constants/authRoutes";
+import { useTranslation } from "../i18n/LanguageProvider";
 import { getSafeApiErrorMessage } from "../utils/apiErrorMessage";
 import {
-  GUEST_POOL_LOGIN_MESSAGE,
-  LOGIN_SUCCESS_MESSAGE,
-  LOGIN_SUCCESS_TITLE,
+  AUTH_TOAST_PASSWORD_RESET,
+  getPasswordResetLoginToast,
+  isGuestPoolLoginMessage,
   pushLoginRouteMessageToast,
 } from "../utils/guestPoolLoginToast";
 
-function loginErrorMessage(err) {
-  return getSafeApiErrorMessage(err, "تعذر تسجيل الدخول. حاول مجدداً.");
+function loginErrorMessage(err, t) {
+  return getSafeApiErrorMessage(err, t("auth.login.error"));
 }
 
 const Login = () => {
   const { login } = useAuth();
+  const { t } = useTranslation();
   const { success, error: showError } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,13 +35,14 @@ const Login = () => {
   const handledRouteMessageKeyRef = useRef(null);
 
   useEffect(() => {
+    const authToast = location.state?.authToast;
     const msg = location.state?.message;
-    if (!msg) {
+    if (!authToast && !msg) {
       handledRouteMessageKeyRef.current = null;
       return;
     }
 
-    const text = String(msg);
+    const text = authToast === AUTH_TOAST_PASSWORD_RESET ? AUTH_TOAST_PASSWORD_RESET : String(msg || "");
     const entryKey = `${location.key}:${text}`;
     if (handledRouteMessageKeyRef.current === entryKey) return;
     handledRouteMessageKeyRef.current = entryKey;
@@ -52,7 +55,7 @@ const Login = () => {
     };
 
     // Legacy/history entries: guest pool redirect message is owned by OpenOrdersMarketplace click handler.
-    if (text === GUEST_POOL_LOGIN_MESSAGE) {
+    if (msg && isGuestPoolLoginMessage(msg)) {
       stripState();
       return;
     }
@@ -63,17 +66,22 @@ const Login = () => {
       return;
     }
 
-    if (pushLoginRouteMessageToast(success, text)) {
+    if (authToast === AUTH_TOAST_PASSWORD_RESET) {
+      success(getPasswordResetLoginToast(t));
+      stripState();
+      return;
+    }
+
+    if (pushLoginRouteMessageToast(success, text, t)) {
       stripState();
     }
-  }, [location.key, location.pathname, location.state?.message, location.state?.from, navigationType, navigate, success]);
+  }, [location.key, location.pathname, location.state?.authToast, location.state?.message, location.state?.from, navigationType, navigate, success, t]);
   const visualContent = {
-    title: "إدارة طلباتك باحترافية من أي مكان",
-    description:
-      "تواصل بسهولة مع العملاء والمستقلين، ونظّم سير العمل بخطوات واضحة تضمن تسليم الطلبات في الوقت المناسب.",
-    quote: "أوردرز هاوس ساعدني أنظم مشاريعي مع العملاء بشكل أدق وأنجز الطلبات بثقة أكبر.",
-    personName: "أحمد علي",
-    personRole: "مستقل - تطوير واجهات",
+    title: t("auth.login.visualTitle"),
+    description: t("auth.login.visualDesc"),
+    quote: t("auth.login.visualQuote"),
+    personName: t("auth.login.visualPersonName"),
+    personRole: t("auth.login.visualPersonRole"),
   };
 
   const handleSubmit = async (e) => {
@@ -82,16 +90,16 @@ const Login = () => {
     setSubmitting(true);
     try {
       const user = await login(email.trim(), password);
-      success({ title: LOGIN_SUCCESS_TITLE, message: LOGIN_SUCCESS_MESSAGE });
+      success({ title: t("auth.login.successTitle"), message: t("auth.login.successMessage") });
       const from = location.state?.from?.pathname;
       const role = user?.primaryRole || user?.role;
       const target =
         from && canRoleAccessPath(from, role) ? from : getDashboardPath(role);
       navigate(target, { replace: true });
     } catch (err) {
-      const msg = loginErrorMessage(err);
+      const msg = loginErrorMessage(err, t);
       setError(msg);
-      showError({ title: "تعذر تسجيل الدخول", message: msg, autoClose: false });
+      showError({ title: t("auth.login.errorTitle"), message: msg, autoClose: false });
     } finally {
       setSubmitting(false);
     }
@@ -100,17 +108,17 @@ const Login = () => {
   return (
     <AuthLayout visualContent={visualContent}>
       <AuthFormCard
-        title="مرحباً بعودتك"
-        subtitle="سجّل الدخول للمتابعة إلى أوردرز هاوس"
-        footerText="ليس لديك حساب؟"
-        footerLinkText="إنشاء حساب"
+        title={t("auth.login.title")}
+        subtitle={t("auth.login.subtitle")}
+        footerText={t("auth.login.noAccount")}
+        footerLinkText={t("auth.login.createAccount")}
         footerLinkTo="/register"
       >
         <form className={tw.authFormGrid} onSubmit={handleSubmit} noValidate>
           {error ? <p className={tw.authFormError}>{error}</p> : null}
 
           <label className={tw.authField}>
-            <span className={tw.authFieldLabel}>البريد الإلكتروني</span>
+            <span className={tw.authFieldLabel}>{t("auth.login.email")}</span>
             <div className={tw.authInputWrap}>
               <input
                 className={tw.authInputNoIcon}
@@ -128,9 +136,9 @@ const Login = () => {
 
           <label className={tw.authField}>
             <div className={tw.authFieldHead}>
-              <span className={tw.authFieldLabel}>كلمة المرور</span>
+              <span className={tw.authFieldLabel}>{t("auth.login.password")}</span>
               <Link to="/forgot-password" className={tw.authSubtleLink}>
-                هل نسيت كلمة المرور؟
+                {t("auth.login.forgotPassword")}
               </Link>
             </div>
             <div className={`${tw.authInputWrap} auth-input-wrap--password-toggle`}>
@@ -150,7 +158,7 @@ const Login = () => {
                 className="auth-password-toggle"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-pressed={showPassword}
-                aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+                aria-label={showPassword ? t("auth.login.hidePassword") : t("auth.login.showPassword")}
                 disabled={submitting}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
@@ -166,7 +174,7 @@ const Login = () => {
           </label>
 
           <Button unstyled type="submit" className={tw.authSubmitBtn} disabled={submitting}>
-            {submitting ? "جاري الدخول…" : "تسجيل الدخول"}
+            {submitting ? t("auth.login.submitting") : t("auth.login.submit")}
           </Button>
         </form>
       </AuthFormCard>

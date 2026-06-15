@@ -1,15 +1,33 @@
 import { useEffect, useState } from "react";
 import { getPublicFaqRequest } from "../services/api";
 import { HOME_FAQ_ITEMS } from "../constants/homeFaqItems";
+import { resolveFaqLocaleKey } from "../lib/i18n/resolveFaqLocaleKey";
 
-/** @typedef {{ id: number | string, question: string, answer: string }} PublicFaqItem */
+/** @typedef {{ id: number | string, question: string, answer: string, localeKey?: string | null, question_en?: string, answer_en?: string }} PublicFaqItem */
+
+function mapPublicFaqItem(item, index) {
+  return {
+    id: item.id,
+    question: item.question,
+    answer: item.answer,
+    question_en: item.question_en,
+    answer_en: item.answer_en,
+    localeKey: resolveFaqLocaleKey(item, index),
+  };
+}
 
 function fallbackItems() {
-  return HOME_FAQ_ITEMS.map((item) => ({
-    id: item.id,
-    question: item.q,
-    answer: item.a,
-  }));
+  return HOME_FAQ_ITEMS.map((item, index) =>
+    mapPublicFaqItem(
+      {
+        id: item.id,
+        question: item.q,
+        answer: item.a,
+        localeKey: item.id,
+      },
+      index,
+    ),
+  );
 }
 
 /**
@@ -31,13 +49,7 @@ export function usePublicFaq() {
         const list = Array.isArray(res?.data?.items) ? res.data.items : [];
         if (!cancelled) {
           if (list.length) {
-            setItems(
-              list.map((item) => ({
-                id: item.id,
-                question: item.question,
-                answer: item.answer,
-              })),
-            );
+            setItems(list.map((item, index) => mapPublicFaqItem(item, index)));
           } else {
             setItems(fallbackItems());
           }

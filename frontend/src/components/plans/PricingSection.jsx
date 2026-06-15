@@ -1,16 +1,9 @@
+import { useTranslation } from "../../i18n/LanguageProvider";
 import PlanCard from "./PlanCard";
 import PublicPageHeader from "../layout/PublicPageHeader";
 import { PlanCardsRowSkeleton } from "../ui/Skeleton";
+import { pickFeaturedPlanIndex } from "./plansFeaturedUtils";
 import "../../styles/plansPage.css";
-
-function pickFeaturedIndex(plans) {
-  const popular = plans.findIndex((p) => p?.isPopular === true || p?.is_popular === true);
-  if (popular >= 0) return popular;
-  const featured = plans.findIndex((p) => p?.isFeatured === true || p?.is_featured === true);
-  if (featured >= 0) return featured;
-  if (plans.length === 0) return -1;
-  return Math.floor(plans.length / 2);
-}
 
 const PricingSection = ({
   plans,
@@ -21,15 +14,18 @@ const PricingSection = ({
   checkoutBusyPlanId = null,
   variant = "public",
 }) => {
-  const featuredIndex = pickFeaturedIndex(plans);
+  const { t } = useTranslation();
+  const featuredIndex = pickFeaturedPlanIndex(plans);
   const isDashboard = variant === "dashboard";
 
   return (
     <section
       className={`pricing ${isDashboard ? "pricing--dashboard" : "pricing-ref-shell"}`.trim()}
-      aria-label="خطط الاشتراك"
+      aria-label={t("plans.sectionAria")}
     >
-      {isDashboard ? null : <PublicPageHeader title="باقات أوردرز هاوس للعمل الحر" />}
+      {isDashboard ? null : (
+        <PublicPageHeader title={t("plans.hero.title")} subtitle={t("plans.hero.subtitle")} />
+      )}
 
       {loading ? (
         <PlanCardsRowSkeleton count={3} />

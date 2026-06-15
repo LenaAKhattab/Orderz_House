@@ -419,6 +419,17 @@
   position: relative;
 }
 
+/* English locale — respect dir="ltr" on card (overrides default RTL card layout) */
+.oh-orders-market--modern .oh-order-row--neu.fdash-surface-3d.fdash-surface-3d--soft[dir="ltr"] {
+  direction: ltr;
+  text-align: left;
+}
+
+.oh-orders-market--modern .oh-order-row--neu.fdash-surface-3d.fdash-surface-3d--soft[dir="ltr"] .oh-order-row__budget {
+  justify-items: start;
+  text-align: left;
+}
+
 .oh-orders-market--modern .oh-order-row__divider {
   width: 1px;
   align-self: stretch;

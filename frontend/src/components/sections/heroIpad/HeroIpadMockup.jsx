@@ -4,7 +4,9 @@ import usePublicHomeCategories from "../../../hooks/usePublicHomeCategories";
 import usePublicPoolOrdersPreview from "../../../hooks/usePublicPoolOrdersPreview";
 import usePublicPlans from "../../../hooks/usePublicPlans";
 import { orderPriceText, typeLabelAr } from "../../open-orders/openOrdersFormatters";
-import { orderStatusLabelAr } from "../../../utils/orderFlowUi";
+import { getOrderStatusLabel } from "../../../utils/orderFlowUi";
+import { useTranslation } from "../../../i18n/LanguageProvider";
+import { getLocalizedField } from "../../../lib/i18n/getLocalizedField";
 import HeroIpadOverviewAnalytics from "./HeroIpadOverviewAnalytics";
 import { HERO_IPAD_BRAND_AR, HERO_IPAD_DEFAULT_ID, HERO_IPAD_LOGO_SRC, HERO_IPAD_NAV } from "./heroIpadData";
 
@@ -194,6 +196,8 @@ function ScreenOverview() {
  * @param {{ categories?: { id?: number|string; slug?: string; name?: string; description?: string|null; image_url?: string|null }[]; loading?: boolean; error?: boolean }} p
  */
 function ScreenServices({ categories = [], loading = false, error = false }) {
+  const { locale } = useTranslation();
+
   return (
     <div className="home-hero-ipad-screen home-hero-ipad-screen--services-v2">
       <p className="home-hero-ipad-services-v2__kicker">تصنيفات الخدمات</p>
@@ -224,8 +228,8 @@ function ScreenServices({ categories = [], loading = false, error = false }) {
         <div className="home-hero-ipad-services-v2__grid" role="list">
           {categories.map((c, index) => {
             const key = String(c.slug ?? c.id ?? index);
-            const title = c.name || "";
-            const desc = (c.description && String(c.description).trim()) || "—";
+            const title = getLocalizedField(c, "name", locale);
+            const desc = getLocalizedField(c, "description", locale) || "—";
             const img = resolveBackendAssetUrl(c.image_url);
             return (
               <article key={key} className="home-hero-ipad-services-v2__card" role="listitem">
@@ -326,6 +330,8 @@ function ScreenPlans({ plans = [], loading = false, error = false }) {
  * @param {{ orders?: { id?: string|number; title?: string; orderStatus?: string; projectType?: string }[]; loading?: boolean; error?: boolean }} p
  */
 function ScreenOrders({ orders = [], loading = false, error = false }) {
+  const { t } = useTranslation();
+
   return (
     <div className="home-hero-ipad-screen home-hero-ipad-screen--orders">
       {loading ? (
@@ -365,7 +371,7 @@ function ScreenOrders({ orders = [], loading = false, error = false }) {
           {orders.map((o, i) => {
             const id = o?.id != null ? String(o.id) : `idx-${i}`;
             const title = String(o?.title || "—").trim() || "—";
-            const statusLine = `${orderStatusLabelAr(o?.orderStatus)} · ${typeLabelAr(o?.projectType)}`;
+            const statusLine = `${getOrderStatusLabel(o?.orderStatus, t)} · ${typeLabelAr(o?.projectType)}`;
             const budget = orderPriceText(o);
             return (
               <div key={id} className="home-hero-ipad-table__row">
@@ -389,12 +395,12 @@ function ScreenOrders({ orders = [], loading = false, error = false }) {
   );
 }
 
-function ScreenAuth() {
+function ScreenAuth({ dir }) {
   const roleGroupId = useId();
   const [role, setRole] = useState(null);
 
   return (
-    <div className="home-hero-ipad-screen home-hero-ipad-screen--auth" dir="rtl">
+    <div className="home-hero-ipad-screen home-hero-ipad-screen--auth" dir={dir}>
       <div className="hi-ipad-auth-onb">
         <header className="hi-ipad-auth-onb__head">
           <img
@@ -464,6 +470,7 @@ const SCREEN_BY_ID = {
 
 export default function HeroIpadMockup() {
   const baseId = useId();
+  const { dir } = useTranslation();
   const sidebarId = `${baseId}-sidebar`;
   const [selectedId, setSelectedId] = useState(HERO_IPAD_DEFAULT_ID);
   const [sidebarOpen, setSidebarOpen] = useHeroIpadSidebarOpen();
@@ -497,7 +504,9 @@ export default function HeroIpadMockup() {
               loading: poolOrdersLoading,
               error: poolOrdersError,
             }
-          : {};
+          : selectedId === "auth"
+            ? { dir }
+            : {};
 
   const onNavKeyDown = useCallback(
     (e) => {
@@ -532,7 +541,7 @@ export default function HeroIpadMockup() {
                   <div className="home-hero-ipad-bezel__screen">
                     <div
                       className="home-hero-ipad-mockup__viewport-inner home-hero-ipad-mockup__viewport-inner--app flex min-h-0 min-w-0 flex-1 flex-col px-0.5 pb-1"
-                      dir="rtl"
+                      dir={dir}
                     >
                       <header className="home-hero-ipad-app__header">
                   <button

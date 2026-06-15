@@ -258,7 +258,7 @@ const SuperAdminPlansPage = () => {
         eyebrow="لوحة المدير الأعلى"
         title={PAGE_COPY.title}
         description={PAGE_COPY.description}
-        breadcrumbs={superAdminBreadcrumbs("الباقات")}
+        breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.plans")}
         actions={
           <Button type="button" className="oh-sapl-header-cta" onClick={scrollToCreate}>
             + إنشاء باقة جديدة

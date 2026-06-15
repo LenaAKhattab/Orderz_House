@@ -1,0 +1,172 @@
+{
+  "filters": {
+    "title": "Categories",
+    "all": "All",
+    "categories": "Categories",
+    "toggleAria": "Switch between all and categories",
+    "show": "Categories",
+    "hide": "Hide categories"
+  },
+  "sort": {
+    "label": "Sort",
+    "aria": "Sort requests",
+    "newest": "Newest",
+    "oldest": "Oldest",
+    "priceHigh": "Highest price",
+    "priceLow": "Lowest price"
+  },
+  "planFilter": {
+    "label": "Available on my plan",
+    "title": "Show only requests available on your plan"
+  },
+  "empty": {
+    "planTitle": "No requests available on your current plan",
+    "planSubtitle": "Requests in the marketplace may exceed your plan's value range. Upgrade your subscription to unlock more.",
+    "upgradeCta": "Upgrade plan"
+  },
+  "status": {
+    "unknown": "Unknown",
+    "draft": "Draft",
+    "published": "Published",
+    "assigned": "Assigned",
+    "in_progress": "In progress",
+    "pending_client_review": "Pending review",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "pending_payment": "Waiting for payment",
+    "open_for_freelancers": "Open to freelancers",
+    "open_for_bids": "Open for offers",
+    "awaiting_payment_after_bid_selection": "Waiting for payment after offer selection",
+    "pending_freelancer_acceptance": "Pending freelancer acceptance",
+    "ready_for_work": "Ready to start",
+    "archived": "Archived",
+    "available": "Available",
+    "pending": "Pending",
+    "pending_review": "Pending review",
+    "open": "Open",
+    "rejected": "Rejected",
+    "closed": "Closed",
+    "under_review": "Under review",
+    "waiting_for_payment": "Waiting for payment",
+    "paid": "Paid",
+    "unpaid": "Unpaid",
+    "refunded": "Refunded",
+    "expired": "Expired",
+    "revisionDelivered": "Revision submitted",
+    "revisionRequestedAdmin": "Revision requested by admin",
+    "revisionRequestedClient": "Revision requested by client",
+    "revisionRequired": "Revision required"
+  },
+  "bid": {
+    "title": "Submit a price offer",
+    "titleWithOrder": "Price offer: {{title}}",
+    "hint": "Enter your offer within the allowed range ({{min}} – {{max}} {{currency}}).",
+    "amountLabel": "Offer amount",
+    "amountPlaceholder": "e.g. {{min}}",
+    "submit": "Submit offer",
+    "submitShort": "Submit offer",
+    "submitting": "Submitting offer…",
+    "submitted": "Offer sent",
+    "cancel": "Cancel"
+  },
+  "row": {
+    "budget": "Budget",
+    "duration": "Delivery time",
+    "bidSubmitted": "You have already submitted an offer for this request."
+  },
+  "type": {
+    "fixed": "Fixed price",
+    "bidding": "Bidding"
+  },
+  "details": {
+    "titleLabel": "Request title",
+    "descriptionLabel": "Project description",
+    "skillsLabel": "Required skills",
+    "summaryTitle": "Request summary",
+    "projectTypeBudget": "Project type / price",
+    "deliveryTime": "Delivery time",
+    "category": "Category",
+    "extraCategories": "Additional categories",
+    "receivedAt": "Received on",
+    "executionStatus": "Execution status",
+    "attachmentsTitle": "Brief attachments",
+    "noAttachments": "No files in the brief",
+    "noPreferredSkills": "No preferred skills for this project.",
+    "backToMyOrders": "Back to my requests",
+    "freelancerHub": "Freelancer dashboard • My requests",
+    "loadError": "Could not load request details"
+  },
+  "card": {
+    "value": "Value",
+    "deadline": "Deadline",
+    "deliveryDuration": "Delivery time",
+    "lastUpdated": "Last updated",
+    "files": "{{count}} file",
+    "files_plural": "{{count}} files",
+    "noAttachments": "No attachments",
+    "revisionNote": "Revision required — review client or admin notes in details",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "overdue": "Overdue",
+    "daysLeft": "{{count}} day",
+    "daysLeft_plural": "{{count}} days",
+    "ctaRevision": "Apply revision",
+    "ctaPendingReview": "Awaiting review",
+    "ctaViewOrder": "View request",
+    "ctaViewDetails": "View details",
+    "ctaContinue": "Continue work",
+    "assignedToFreelancer": "Assigned to freelancer",
+    "inPool": "In marketplace",
+    "adminBadge": "Admin",
+    "type": "Type",
+    "price": "Price",
+    "filesLabel": "Files",
+    "noFiles": "No files attached",
+    "applicants": "Applicants",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "marketplace": {
+    "loginRequiredFreelancer": "Log in as a freelancer with an active subscription to take orders.",
+    "clientViewOnly": "Only eligible freelancers can take orders.",
+    "loadErrorTitle": "Could not load orders",
+    "planLocked": "Not available on your plan",
+    "orderAssigned": {
+      "title": "Order assigned",
+      "message": "The order is now in My orders and you can start working."
+    },
+    "participationRegistered": {
+      "title": "Participation registered",
+      "message": "We will review your request and notify you of any updates."
+    },
+    "bidSubmitted": {
+      "title": "Bid submitted",
+      "message": "Your bid will be reviewed and you will be notified of any updates."
+    },
+    "takeOrderError": "Could not take order",
+    "submitBidError": "Could not submit bid",
+    "alreadyParticipated": "You have already registered participation in this order.",
+    "backToList": "Back to list",
+    "orderNotFound": "Order not found",
+    "card": {
+      "day": "day",
+      "days": "days",
+      "hour": "hour",
+      "hours": "hours",
+      "minute": "minute",
+      "minutes": "minutes",
+      "loginRequired": "Visible after login",
+      "loginRequiredTitle": "Log in to see applicant count",
+      "noApplicants": "None",
+      "applicant": "applicant",
+      "applicants": "applicants",
+      "noDescription": "No description.",
+      "uncategorized": "Uncategorized",
+      "openOrderAria": "Open order details: {{title}}",
+      "takeOrder": "Take order",
+      "takingOrder": "Accepting…",
+      "registered": "Registered",
+      "hiddenBudget": "Visible after login"
+    }
+  }
+}

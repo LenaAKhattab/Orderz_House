@@ -49,10 +49,10 @@
   animation: home-hero-stage-in 0.55s cubic-bezier(0.33, 1, 0.68, 1) forwards;
 }
 
+.home-hero--progressive .home-hero__logo-frame,
 .home-hero--progressive .home-hero__logo {
   animation: none;
   opacity: 1;
-  transform: none;
   filter: none;
 }
 

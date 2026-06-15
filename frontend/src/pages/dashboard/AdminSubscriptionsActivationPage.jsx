@@ -3,7 +3,7 @@ import Button from "../../components/ui/Button";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
-import { breadcrumbHomeFromUser, superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
+import { breadcrumbHomeCrumb, superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { activateSubscriptionCompanyRequest, listSubscriptionsRequest } from "../../services/api";
 import { useAuth } from "../../context/useAuth";
 import { AdminInlineGridSkeleton } from "../../components/ui/Skeleton";
@@ -115,10 +115,10 @@ export default function AdminSubscriptionsActivationPage() {
   };
 
   const breadcrumbs = isSuperAdmin
-    ? superAdminBreadcrumbs("تفعيل الاشتراكات")
+    ? superAdminBreadcrumbs("dashboard.breadcrumbs.subscriptionActivation")
     : [
-        { label: "الرئيسية", href: breadcrumbHomeFromUser(user) },
-        { label: "تفعيل الاشتراكات" },
+        breadcrumbHomeCrumb(user),
+        { labelKey: "dashboard.breadcrumbs.subscriptionActivation" },
       ];
 
   return (

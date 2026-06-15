@@ -13,6 +13,15 @@
   margin: 0 0 clamp(32px, 4vw, 48px);
 }
 
+.public-page-hero__eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
 .public-page-hero__title {
   margin: 0 0 16px;
   font-size: clamp(1.85rem, 3.8vw, 2.35rem);

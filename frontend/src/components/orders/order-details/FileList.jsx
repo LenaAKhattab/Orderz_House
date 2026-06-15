@@ -1,10 +1,8 @@
 import { useCallback, useState } from "react";
 import { useToast } from "../../ui/toastContext";
 import { downloadOrderFileForRole, viewOrderFileForRole } from "../../../services/api";
-import {
-  FILE_ACCESS_LOGIN_MESSAGE,
-  FILE_ACCESS_LOGIN_TITLE,
-} from "../../../utils/guestPoolLoginToast";
+import { useTranslation } from "../../../i18n/LanguageProvider";
+import { getFileAccessLoginToast } from "../../../utils/guestPoolLoginToast";
 
 /** @typedef {"client"|"freelancer"|"admin"} OrderFileAccessScope */
 
@@ -41,6 +39,7 @@ function displayOrderFileName(f) {
  */
 export default function FileList({ files, emptyText, orderId = null, fileAccess = null }) {
   const { push } = useToast();
+  const { t } = useTranslation();
   const [busyId, setBusyId] = useState(null);
   const [busyAction, setBusyAction] = useState(null);
 
@@ -56,18 +55,14 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
           (status === 403 ? "غير مصرح بعرض هذا الملف." : status === 404 ? "الملف غير موجود." : null);
       }
       if (status === 401) {
-        push({
-          type: "info",
-          title: FILE_ACCESS_LOGIN_TITLE,
-          message: FILE_ACCESS_LOGIN_MESSAGE,
-        });
+        push(getFileAccessLoginToast(t));
         return;
       }
       if (status === 403) msg = msg || "غير مصرح بعرض هذا الملف.";
       if (status === 404) msg = msg || "الملف غير موجود.";
       push({ type: "error", title, message: msg || "تعذّرت العملية." });
     },
-    [push],
+    [push, t],
   );
 
   const runView = useCallback(

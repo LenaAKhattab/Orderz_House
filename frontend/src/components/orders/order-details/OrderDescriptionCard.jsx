@@ -1,7 +1,10 @@
 import OrderDetailsNeuIcon from "./OrderDetailsNeuIcon";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 
 /** Main project description block. */
-export default function OrderDescriptionCard({ label = "وصف المشروع", text, icon = "description" }) {
+export default function OrderDescriptionCard({ label, text, icon = "description" }) {
+  const { t } = useTranslation();
+  const sectionLabel = label || t("orders.details.descriptionLabel");
   const raw = text?.trim() || "";
   const paragraphs = raw ? raw.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean) : [];
 
@@ -9,7 +12,7 @@ export default function OrderDescriptionCard({ label = "وصف المشروع", 
     <article className="od-description">
       <div className="od-section-head od-section-head--compact">
         <OrderDetailsNeuIcon name={icon} variant="squircle" />
-        <h2 className="od-description__label">{label}</h2>
+        <h2 className="od-description__label">{sectionLabel}</h2>
       </div>
       <div className="od-description__body">
         {paragraphs.length ? (

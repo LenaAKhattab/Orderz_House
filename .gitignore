@@ -27,3 +27,4 @@ frontend/dist/
 .DS_Store
 Thumbs.db
 backend/google/service-account.json
+backend/data/translation-cache.json

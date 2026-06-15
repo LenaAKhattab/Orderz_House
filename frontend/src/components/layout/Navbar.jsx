@@ -13,14 +13,18 @@ import NotificationsBell from "../notifications/NotificationsBell";
 import { useHomePageBlocking } from "../../hooks/useHomePageBlocking";
 import useHowItWorksNav from "../../hooks/useHowItWorksNav";
 import { usePublicSitePages } from "../../hooks/usePublicSitePages";
+import LanguageSwitcher from "./LanguageSwitcher";
 import NavbarSkeleton from "../skeletons/NavbarSkeleton";
+import BrandLogo from "../brand/BrandLogo";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import { getFooterImportantLinkLabel } from "../../lib/i18n/footerImportantLinkLabel";
 import "../skeletons/home-skeleton.css";
 import "../../styles/servicesPage.css";
 import "../../styles/howItWorksPage.css";
 
 const publicExploreItems = [
-  { label: "من نحن", to: "/about" },
-  { label: "الخدمات", to: "/services" },
+  { labelKey: "nav.about", to: "/about" },
+  { labelKey: "nav.services", to: "/services" },
 ];
 
 const navLinkBase =
@@ -30,6 +34,20 @@ const navLinkActive = "public-nav-link--active";
 const drawerLinkBase = "public-nav-drawer__link";
 const drawerLinkActive = "public-nav-drawer__link--active";
 const drawerActionBase = "public-nav-drawer__action";
+
+function DrawerLinkChevron({ isRtl }) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden>
+      <path
+        d={isRtl ? "M15 18l-6-6 6-6" : "M9 18l6-6-6-6"}
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 function fullNameAr(user) {
   const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
@@ -56,6 +74,7 @@ function useOnClickOutside(ref, handler) {
 const Navbar = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { t, dir, locale, isRtl } = useTranslation();
   const { user, loading, logout } = useAuth();
   const { openModal: openClientCreateOrderModal } = useClientCreateOrderModal();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -146,29 +165,29 @@ const Navbar = () => {
           ? []
           : isLoggedIn && role === "client"
             ? []
-            : [{ label: "الباقات", to: "/plans" }];
+            : [{ labelKey: "nav.plans", to: "/plans" }];
     if (!isLoggedIn) {
-      return [...base, ...publicExploreItems, { label: "الطلبات", to: "/orders" }];
+      return [...base, ...publicExploreItems, { labelKey: "nav.orders", to: "/orders" }];
     }
     if (role === "super_admin") {
       return [
         ...base,
-        { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
-        { label: "الدورات", to: "/dashboard/super-admin/courses" },
-        { label: "الاشتراكات", to: "/dashboard/super-admin/subscriptions" },
-        { label: "المطالبات المالية", to: "/dashboard/super-admin/financial-claims" },
-        { label: "الطلبات", to: "/dashboard/super-admin/orders" },
-        { label: "تجريبي", to: "/dashboard/super-admin/training-orders" },
+        { labelKey: "nav.dashboard", to: dashboardPath || "/dashboard" },
+        { labelKey: "nav.courses", to: "/dashboard/super-admin/courses" },
+        { labelKey: "nav.subscriptions", to: "/dashboard/super-admin/subscriptions" },
+        { labelKey: "nav.financialClaims", to: "/dashboard/super-admin/financial-claims" },
+        { labelKey: "nav.orders", to: "/dashboard/super-admin/orders" },
+        { labelKey: "nav.training", to: "/dashboard/super-admin/training-orders" },
       ];
     }
     if (role === "admin") {
       return [
         ...base,
-        { label: "لوحة التحكم", to: dashboardPath || "/dashboard" },
-        { label: "إدارة الإعلانات", to: "/dashboard/admin/ads" },
-        { label: "الدورات", to: "/dashboard/admin/courses" },
-        { label: "تفعيل الاشتراكات", to: "/dashboard/admin/subscriptions" },
-        { label: "الطلبات", to: "/dashboard/admin/orders" },
+        { labelKey: "nav.dashboard", to: dashboardPath || "/dashboard" },
+        { labelKey: "nav.manageAds", to: "/dashboard/admin/ads" },
+        { labelKey: "nav.courses", to: "/dashboard/admin/courses" },
+        { labelKey: "nav.activateSubscriptions", to: "/dashboard/admin/subscriptions" },
+        { labelKey: "nav.orders", to: "/dashboard/admin/orders" },
       ];
     }
     if (isFreelancer) {
@@ -177,13 +196,13 @@ const Navbar = () => {
     if (role === "client") {
       return [
         ...base,
-        { label: "لوحة التحكم", to: dashboardPath || "/dashboard/client" },
-        { label: "طلباتي", to: "/dashboard/client/my-orders" },
-        { label: "المالية", to: "/dashboard/client/financial" },
-        { label: "الطلبات", to: "/dashboard/freelancer/orders" },
+        { labelKey: "nav.dashboard", to: dashboardPath || "/dashboard/client" },
+        { labelKey: "nav.myOrders", to: "/dashboard/client/my-orders" },
+        { labelKey: "nav.financial", to: "/dashboard/client/financial" },
+        { labelKey: "nav.orders", to: "/dashboard/freelancer/orders" },
       ];
     }
-    return [...base, { label: "لوحة التحكم", to: dashboardPath || "/dashboard" }];
+    return [...base, { labelKey: "nav.dashboard", to: dashboardPath || "/dashboard" }];
   }, [isLoggedIn, role, dashboardPath, isFreelancer]);
 
   const showPublicHowItWorks = showHowItWorksNav && role !== "admin" && role !== "super_admin";
@@ -195,7 +214,7 @@ const Navbar = () => {
     const howEntry = {
       type: "dropdown",
       id: "how-it-works",
-      label: "طريقة العمل",
+      labelKey: "nav.howItWorks",
       items: howItWorksItems,
     };
     const ordersIdx = entries.findIndex((e) => e.type === "link" && e.to === "/orders");
@@ -235,34 +254,33 @@ const Navbar = () => {
   return (
     <>
     <header
-      dir="rtl"
+      dir={dir}
       className={`public-nav-header${mobileDrawerOpen ? " public-nav-header--drawer-open" : ""}`}
     >
       <div className="public-nav-header__bar mx-auto w-full max-w-7xl px-3 py-1.5 sm:px-4 lg:px-5">
-        <div className="navbar-shell public-nav-header__shell grid w-full grid-cols-[1fr_auto] items-center gap-x-3 rounded-full border border-[rgba(47,59,101,0.12)] bg-white/95 px-4 py-2.5 shadow-[0_10px_40px_rgba(47,59,101,0.09)] backdrop-blur-sm lg:min-h-[64px] lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-x-12 lg:px-10 lg:py-2.5 xl:gap-x-14 xl:px-12">
+        <div className="navbar-shell public-nav-header__shell w-full rounded-full border border-[rgba(47,59,101,0.12)] bg-white/95 px-4 py-2.5 shadow-[0_10px_40px_rgba(47,59,101,0.09)] backdrop-blur-sm lg:min-h-[64px] lg:px-10 lg:py-2.5 xl:px-12">
         {showHomeNavSkeleton ? (
-          <div className="relative z-[2] col-span-2 w-full min-w-0 lg:col-span-1">
+          <div className="public-nav-header__skeleton relative z-[2] w-full min-w-0">
             <NavbarSkeleton />
           </div>
         ) : (
           <>
-        <NavLink
-          to={logoTo}
-          className="public-nav-header__logo-link col-start-1 row-start-1 flex min-w-0 shrink-0 items-center justify-start no-underline lg:me-9 xl:me-11"
-          aria-label={isLoggedIn ? "العودة إلى لوحة التحكم" : "العودة إلى الصفحة الرئيسية"}
-        >
-          <img
-            src="/logo.png"
-            alt=""
-            className="block h-11 w-auto object-contain transition-all duration-700 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)] lg:h-12"
-          />
-        </NavLink>
+        <div className="public-nav-header__brand">
+          <NavLink
+            to={logoTo}
+            className="public-nav-header__logo-link flex items-center justify-start no-underline"
+            aria-label={isLoggedIn ? t("nav.backDashboard") : t("nav.backHome")}
+          >
+            <BrandLogo variant="navbar" decorative />
+          </NavLink>
+        </div>
 
         <nav
-          aria-label="التنقل الرئيسي"
-          className="col-start-2 row-start-1 hidden min-w-0 lg:block"
+          aria-label={t("nav.mainAria")}
+          className="public-nav-header__nav hidden min-w-0 lg:block"
+          dir={dir}
         >
-          <ul className="m-0 flex list-none flex-wrap items-center justify-center gap-x-5 px-1 py-0.5 md:gap-x-8 lg:gap-x-10 xl:gap-x-12">
+          <ul className="m-0 flex list-none flex-nowrap items-center justify-center gap-x-4 px-1 py-0.5 md:gap-x-6 lg:gap-x-8 xl:gap-x-10">
             {desktopNavEntries.map((entry) => {
               if (entry.type === "dropdown") {
                 return (
@@ -283,7 +301,7 @@ const Navbar = () => {
                         aria-expanded={howItWorksOpen}
                         onClick={() => setHowItWorksOpen((v) => !v)}
                       >
-                        {entry.label}
+                        {entry.labelKey ? t(entry.labelKey) : entry.label}
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden>
                           <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
@@ -303,7 +321,7 @@ const Navbar = () => {
                                 role="menuitem"
                                 onClick={() => setHowItWorksOpen(false)}
                               >
-                                {sub.label}
+                                {t(sub.labelKey)}
                               </NavLink>
                             ))}
                           </div>
@@ -316,8 +334,8 @@ const Navbar = () => {
 
               return (
                 <li key={entry.to} className="shrink-0">
-                  <NavLink to={entry.to} className={linkClass} title={entry.label}>
-                    {entry.label}
+                  <NavLink to={entry.to} className={linkClass} title={t(entry.labelKey)}>
+                    {t(entry.labelKey)}
                   </NavLink>
                 </li>
               );
@@ -325,8 +343,9 @@ const Navbar = () => {
           </ul>
         </nav>
 
-        <div className="public-nav-header__actions col-start-2 row-start-1 flex min-w-0 shrink-0 items-center justify-end gap-2 lg:col-start-3 lg:gap-6">
-          <div className="hidden items-center gap-2 lg:flex lg:gap-6">
+        <div className="public-nav-header__actions flex min-w-0 shrink-0 items-center justify-end gap-2 lg:gap-6">
+          <div className={`hidden items-center gap-2 lg:flex lg:gap-4${isRtl ? " flex-row-reverse" : ""}`}>
+          <LanguageSwitcher />
           {loading ? (
             <span className="min-h-11 min-w-[140px]" aria-hidden="true" />
           ) : user ? (
@@ -335,7 +354,7 @@ const Navbar = () => {
                 <button
                   type="button"
                   className="inline-flex cursor-pointer items-center gap-3 rounded-full border-[1.5px] border-[rgba(56,82,180,0.35)] bg-white px-5 py-2.5 font-black text-[#223069] shadow-[0_10px_26px_rgba(56,82,180,0.08)] transition-[transform,box-shadow,border-color,background-color] duration-[180ms] hover:-translate-y-px hover:border-[rgba(56,82,180,0.5)] hover:bg-[rgba(56,82,180,0.02)] hover:shadow-[0_14px_34px_rgba(56,82,180,0.12)] focus:outline-none focus:shadow-[0_0_0_4px_rgba(56,82,180,0.14),0_14px_34px_rgba(56,82,180,0.12)] sm:px-6 sm:py-3"
-                  aria-label="إنشاء طلب"
+                  aria-label={t("nav.createOrder")}
                   onClick={() => openClientCreateOrderModal()}
                 >
                   <span
@@ -344,7 +363,7 @@ const Navbar = () => {
                   >
                     +
                   </span>
-                  <span className="text-[1rem] tracking-wide sm:text-[1.05rem]">إنشاء طلب</span>
+                  <span className="text-[1rem] tracking-wide sm:text-[1.05rem]">{t("nav.createOrder")}</span>
                 </button>
               ) : null}
               <NotificationsBell notificationsPagePath={notificationsPath} variant="navbar" />
@@ -382,35 +401,35 @@ const Navbar = () => {
                     {profilePagePath ? (
                       <NavLink
                         to={profilePagePath}
-                        className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
+                        className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-start text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
                         role="menuitem"
                         onClick={() => setUserMenuOpen(false)}
                       >
-                        الملف الشخصي
+                        {t("nav.profile")}
                       </NavLink>
                     ) : null}
                     <NavLink
                       to={accountSettingsPath}
-                      className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
+                      className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-start text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
                       role="menuitem"
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      إعدادات الحساب
+                      {t("nav.accountSettings")}
                     </NavLink>
                     <NavLink
                       to={notificationsPath}
-                      className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
+                      className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-start text-[0.9rem] font-semibold text-[#202020] no-underline transition-colors hover:bg-[rgba(56,82,180,0.06)] hover:text-[#2f3b65]"
                       role="menuitem"
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      الإشعارات
+                      {t("nav.notifications")}
                     </NavLink>
                     <button
                       type="button"
-                      className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[0.9rem] font-semibold text-[#202020] transition-colors hover:bg-[rgba(180,50,50,0.08)] hover:text-[#8b2222]"
+                      className="block w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-start text-[0.9rem] font-semibold text-[#202020] transition-colors hover:bg-[rgba(180,50,50,0.08)] hover:text-[#8b2222]"
                       onClick={handleLogout}
                     >
-                      تسجيل الخروج
+                      {t("nav.logout")}
                     </button>
                   </div>
                 ) : null}
@@ -425,14 +444,15 @@ const Navbar = () => {
                 <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" />
                 <path d="M5 20c0-4 3.5-6 7-6s7 2 7 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
-              تسجيل الدخول
+              {t("nav.login")}
             </NavLink>
           )}
           </div>
+          <LanguageSwitcher className="lg:hidden" />
           <button
             type="button"
             className="public-nav-menu-btn lg:hidden"
-            aria-label="فتح القائمة"
+            aria-label={t("nav.openMenu")}
             aria-expanded={mobileDrawerOpen}
             aria-controls="public-nav-drawer"
             onClick={() => setMobileDrawerOpen((v) => !v)}
@@ -465,10 +485,10 @@ const Navbar = () => {
             <aside
               id="public-nav-drawer"
               className={`public-nav-drawer${mobileDrawerOpen ? " public-nav-drawer--open" : ""}`}
-              dir="rtl"
-              lang="ar"
+              dir={dir}
+              lang={locale}
               aria-hidden={!mobileDrawerOpen}
-              aria-label="قائمة التنقل"
+              aria-label={t("nav.drawerAria")}
             >
               <div className="public-nav-drawer__panel">
                 <div className="public-nav-drawer__head">
@@ -476,26 +496,26 @@ const Navbar = () => {
                     <button
                       type="button"
                       className="public-nav-drawer__close"
-                      aria-label="إغلاق القائمة"
+                      aria-label={t("nav.closeMenu")}
                       onClick={closeMobileDrawer}
                     >
                       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden>
                         <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                       </svg>
                     </button>
-                    <img src="/logo.png" alt="" className="public-nav-drawer__logo" />
+                    <BrandLogo variant="navbar" decorative imgClassName="public-nav-drawer__logo" />
                   </div>
                   <div className="public-nav-drawer__intro">
                     {isLoggedIn ? (
                       <>
-                        <span className="public-nav-drawer__eyebrow">أهلاً بك</span>
+                        <span className="public-nav-drawer__eyebrow">{t("nav.welcomeBack")}</span>
                         <span className="public-nav-drawer__title">{userName}</span>
                         {user?.email ? <span className="public-nav-drawer__subtitle">{user.email}</span> : null}
                       </>
                     ) : (
                       <>
-                        <span className="public-nav-drawer__eyebrow">مرحباً بك</span>
-                        <span className="public-nav-drawer__title">استكشف أوردرز هاوس</span>
+                        <span className="public-nav-drawer__eyebrow">{t("nav.welcome")}</span>
+                        <span className="public-nav-drawer__title">{t("nav.exploreBrand")}</span>
                       </>
                     )}
                   </div>
@@ -503,8 +523,8 @@ const Navbar = () => {
                 <div className="public-nav-drawer__head-divider" aria-hidden="true" />
 
                 <div className="public-nav-drawer__body">
-                  <nav className="public-nav-drawer__nav" aria-label="روابط التنقل">
-                    <p className="public-nav-drawer__section-label">التنقل</p>
+                  <nav className="public-nav-drawer__nav" aria-label={t("nav.mainAria")}>
+                    <p className="public-nav-drawer__section-label">{t("nav.navigation")}</p>
                     <ul className="public-nav-drawer__list">
                       {navItems.map((item) => (
                         <li key={item.to}>
@@ -513,11 +533,9 @@ const Navbar = () => {
                             className={drawerLinkClass}
                             onClick={closeMobileDrawer}
                           >
-                            <span className="public-nav-drawer__link-text">{item.label}</span>
+                            <span className="public-nav-drawer__link-text">{t(item.labelKey)}</span>
                             <span className="public-nav-drawer__link-chevron" aria-hidden>
-                              <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
-                                <path d="m9 6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
+                              <DrawerLinkChevron isRtl={isRtl} />
                             </span>
                           </NavLink>
                         </li>
@@ -525,7 +543,7 @@ const Navbar = () => {
                       {showPublicHowItWorks ? (
                         <li>
                           <p className="public-nav-drawer__section-label public-nav-drawer__section-label--nested">
-                            طريقة العمل
+                            {t("nav.howItWorks")}
                           </p>
                           <ul className="public-nav-drawer__sublist">
                             {howItWorksItems.map((sub) => (
@@ -539,7 +557,7 @@ const Navbar = () => {
                                   }
                                   onClick={closeMobileDrawer}
                                 >
-                                  {sub.label}
+                                  {t(sub.labelKey)}
                                 </NavLink>
                               </li>
                             ))}
@@ -551,7 +569,7 @@ const Navbar = () => {
                     {showImportantLinks ? (
                       <>
                         <p className="public-nav-drawer__section-label public-nav-drawer__section-label--nested">
-                          روابط مهمة
+                          {t("nav.importantLinks")}
                         </p>
                         <ul className="public-nav-drawer__list">
                           {mobileMenuPages.map((item) => (
@@ -561,11 +579,9 @@ const Navbar = () => {
                                 className={drawerLinkClass}
                                 onClick={closeMobileDrawer}
                               >
-                                <span className="public-nav-drawer__link-text">{item.menuLabel}</span>
+                                <span className="public-nav-drawer__link-text">{getFooterImportantLinkLabel(item, t)}</span>
                                 <span className="public-nav-drawer__link-chevron" aria-hidden>
-                                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
-                                    <path d="m9 6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                  </svg>
+                                  <DrawerLinkChevron isRtl={isRtl} />
                                 </span>
                               </NavLink>
                             </li>
@@ -586,11 +602,11 @@ const Navbar = () => {
                         </svg>
                       </span>
                       <div className="public-nav-drawer__account-copy">
-                        <p className="public-nav-drawer__account-title">حسابك</p>
+                        <p className="public-nav-drawer__account-title">{t("nav.yourAccount")}</p>
                         <p className="public-nav-drawer__account-hint">
                           {user
-                            ? "إدارة حسابك وإعداداتك من مكان واحد"
-                            : "سجّل الدخول لمتابعة طلباتك وخدماتك"}
+                            ? t("nav.accountHintLoggedIn")
+                            : t("nav.accountHintGuest")}
                         </p>
                       </div>
                     </div>
@@ -601,22 +617,22 @@ const Navbar = () => {
                           {showCreateOrderButton ? (
                             <button type="button" className={`${drawerActionBase} public-nav-drawer__action--primary`} onClick={handleCreateOrder}>
                               <span className="public-nav-drawer__action-icon" aria-hidden>+</span>
-                              إنشاء طلب
+                              {t("nav.createOrder")}
                             </button>
                           ) : null}
                           {profilePagePath ? (
                             <NavLink to={profilePagePath} className={drawerActionBase} onClick={closeMobileDrawer}>
-                              الملف الشخصي
+                              {t("nav.profile")}
                             </NavLink>
                           ) : null}
                           <NavLink to={accountSettingsPath} className={drawerActionBase} onClick={closeMobileDrawer}>
-                            إعدادات الحساب
+                            {t("nav.accountSettings")}
                           </NavLink>
                           <NavLink to={notificationsPath} className={drawerActionBase} onClick={closeMobileDrawer}>
-                            الإشعارات
+                            {t("nav.notifications")}
                           </NavLink>
                           <button type="button" className={`${drawerActionBase} public-nav-drawer__action--danger`} onClick={handleDrawerLogout}>
-                            تسجيل الخروج
+                            {t("nav.logout")}
                           </button>
                         </>
                       ) : (
@@ -625,7 +641,7 @@ const Navbar = () => {
                             <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" />
                             <path d="M5 20c0-4 3.5-6 7-6s7 2 7 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                           </svg>
-                          تسجيل الدخول
+                          {t("nav.login")}
                         </NavLink>
                       )}
                     </div>

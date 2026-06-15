@@ -220,7 +220,7 @@ export default function SuperAdminAdminsPage() {
       <DashboardPageHeader
         title="إدارة الأدمن"
         description="إنشاء حسابات الأدمن وتحديد صلاحيات الوصول لصفحات لوحة الإدارة."
-        breadcrumbs={superAdminBreadcrumbs("إدارة الأدمن")}
+        breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.admins")}
         actions={
           <Button type="button" onClick={openCreate}>
             + إضافة أدمن

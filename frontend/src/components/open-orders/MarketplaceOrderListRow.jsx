@@ -1,5 +1,10 @@
 import OrderApplicantsCount from "../orders/OrderApplicantsCount";
 import { useAuth } from "../../context/useAuth";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import {
+  getLocalizedMarketplaceOrderDescription,
+  getLocalizedMarketplaceOrderTitle,
+} from "../../lib/i18n/getLocalizedMarketplaceOrderText";
 import {
   categoryChips,
   durationLabel,
@@ -9,8 +14,6 @@ import {
 } from "./openOrdersFormatters";
 import {
   isPoolOrderLockedByPlan,
-  poolOrderPlanLockBadgeText,
-  poolOrderPlanLockTooltip,
 } from "../../utils/poolOrderPlanEligibility";
 import { isPoolFixedApplicationOrder, poolFixedParticipationPending } from "../../utils/poolOrderParticipation";
 
@@ -54,6 +57,8 @@ function ActionButton({
   order,
   onBid,
   onTake,
+  t,
+  planLockedLabel,
 }) {
   if (bidding) {
     const bidDisabled = rowDisabled || bidBusy || order?.myBid?.status === "pending";
@@ -66,19 +71,19 @@ function ActionButton({
           e.stopPropagation();
           if (!rowDisabled) onBid?.();
         }}
-        title={rowDisabledReason || (order?.myBid?.status === "pending" ? "لقد قدمت عرضاً لهذا الطلب." : "")}
+        title={rowDisabledReason || (order?.myBid?.status === "pending" ? t("orders.row.bidSubmitted") : "")}
       >
         {planLocked ? (
           <>
             <LockIcon />
-            {poolOrderPlanLockBadgeText()}
+            {planLockedLabel}
           </>
         ) : bidBusy ? (
-          "جارٍ الإرسال…"
+          t("orders.bid.submitting")
         ) : order?.myBid?.status === "pending" ? (
-          "عرضك مُرسل"
+          t("orders.bid.submitted")
         ) : (
-          "تقديم عرض"
+          t("orders.bid.submitShort")
         )}
       </button>
     );
@@ -101,14 +106,14 @@ function ActionButton({
       {planLocked ? (
         <>
           <LockIcon />
-          {poolOrderPlanLockBadgeText()}
+          {planLockedLabel}
         </>
       ) : taking ? (
-        "جارٍ الاستلام…"
+        t("orders.marketplace.card.takingOrder")
       ) : poolFixedParticipationPending(order) ? (
-        "تم التسجيل"
+        t("orders.marketplace.card.registered")
       ) : (
-        "استلام الطلب"
+        t("orders.marketplace.card.takeOrder")
       )}
     </button>
   );
@@ -127,12 +132,23 @@ function MarketplaceOrderRow({
 }) {
   const bidding = isBiddingOrder(order);
   const planLocked = isPoolOrderLockedByPlan(order);
-  const rowDisabled = actionsDisabled || planLocked;
-  const rowDisabledReason = planLocked ? poolOrderPlanLockTooltip(order) : actionsDisabledReason;
-  const chips = categoryChips(order);
   const { user } = useAuth();
+  const { t, locale, dir } = useTranslation();
+  const rowDisabled = actionsDisabled || planLocked;
+  const rowDisabledReason = planLocked ? t("orders.marketplace.planLocked") : actionsDisabledReason;
   const isAuthenticated = Boolean(user);
   const applicants = Number(order?.applicantsCount ?? order?.bidsCount ?? 0);
+  const durationLabels = {
+    day: t("orders.marketplace.card.day"),
+    days: t("orders.marketplace.card.days"),
+    hour: t("orders.marketplace.card.hour"),
+    hours: t("orders.marketplace.card.hours"),
+    minute: t("orders.marketplace.card.minute"),
+    minutes: t("orders.marketplace.card.minutes"),
+  };
+  const chips = categoryChips(order, locale);
+  const title = getLocalizedMarketplaceOrderTitle(order, locale);
+  const description = getLocalizedMarketplaceOrderDescription(order, locale);
 
   return (
     <li className={`oh-order-row-item${planLocked ? " oh-order-row-item--plan-locked" : ""}`}>
@@ -140,6 +156,7 @@ function MarketplaceOrderRow({
         className="oh-order-row oh-order-row--neu fdash-surface-3d fdash-surface-3d--soft"
         role="button"
         tabIndex={0}
+        dir={dir}
         onClick={onOpenDetails}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -147,26 +164,32 @@ function MarketplaceOrderRow({
             onOpenDetails?.();
           }
         }}
-        aria-label={`فتح تفاصيل الطلب ${order?.title || ""}`}
+        aria-label={t("orders.marketplace.card.openOrderAria", { title })}
       >
         <div className="oh-order-row__budget">
           <div className="oh-order-row__stat">
-            <span className="oh-order-row__stat-label">ميزانية</span>
+            <span className="oh-order-row__stat-label">{t("orders.row.budget")}</span>
             <strong className="oh-order-row__stat-value oh-order-row__stat-value--price" dir="ltr">
-              {orderPriceText(order)}
+              {orderPriceText(order, locale)}
             </strong>
           </div>
           <div className="oh-order-row__stat">
-            <span className="oh-order-row__stat-label">وقت التنفيذ</span>
-            <strong className="oh-order-row__stat-value">{durationLabel(order)}</strong>
+            <span className="oh-order-row__stat-label">{t("orders.row.duration")}</span>
+            <strong className="oh-order-row__stat-value" dir={locale === "en" ? "ltr" : undefined}>
+              {durationLabel(order, locale, durationLabels)}
+            </strong>
           </div>
         </div>
 
         <div className="oh-order-row__divider" aria-hidden />
 
-        <div className="oh-order-row__center">
-          <h3 className="oh-order-row__title">{order?.title || "—"}</h3>
-          <p className="oh-order-row__summary">{shortDescription(order?.description, 120)}</p>
+        <div className="oh-order-row__center text-start">
+          <h3 className="oh-order-row__title text-start" dir={locale === "en" ? "ltr" : "auto"}>
+            {title}
+          </h3>
+          <p className="oh-order-row__summary text-start" dir={locale === "en" ? "ltr" : "auto"}>
+            {shortDescription(description, 120, { emptyLabel: t("orders.marketplace.card.noDescription") })}
+          </p>
           {chips.length ? (
             <div className="oh-order-row__chips">
               {chips.map((chip) => (
@@ -187,7 +210,15 @@ function MarketplaceOrderRow({
             <span className="oh-order-row__applicants-icon" aria-hidden>
               <ApplicantsIcon />
             </span>
-            <OrderApplicantsCount count={applicants} isAuthenticated={isAuthenticated} />
+            <OrderApplicantsCount
+              count={applicants}
+              isAuthenticated={isAuthenticated}
+              guestMessage={t("orders.marketplace.card.loginRequired")}
+              guestTitle={t("orders.marketplace.card.loginRequiredTitle")}
+              applicantSingular={t("orders.marketplace.card.applicant")}
+              applicantPlural={t("orders.marketplace.card.applicants")}
+              emptyLabel={t("orders.marketplace.card.noApplicants")}
+            />
           </div>
           {showActions ? (
             <ActionButton
@@ -201,6 +232,8 @@ function MarketplaceOrderRow({
               order={order}
               onBid={onBid}
               onTake={onTake}
+              t={t}
+              planLockedLabel={t("orders.marketplace.planLocked")}
             />
           ) : null}
         </div>

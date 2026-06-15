@@ -13,7 +13,8 @@ import {
 import { INTERNAL_ORDERS_LIST_REFRESH } from "../../constants/authRoutes";
 import { OrderCardsGridSkeleton } from "../../components/ui/Skeleton";
 import { getOrderDeliveryTiming } from "../../utils/orderDeliveryTiming";
-import { orderStatusLabelAr } from "../../utils/orderFlowUi";
+import { getOrderStatusLabel } from "../../utils/orderFlowUi";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import { trackEvent } from "../../services/analytics";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import { breadcrumbHomeFromUser } from "../../components/dashboard/dashboardBreadcrumbs";
@@ -45,6 +46,7 @@ function isPricedInternalBidding(o) {
 export default function AdminOrdersPage() {
   const { user } = useAuth();
   const { push } = useToast();
+  const { t } = useTranslation();
   const location = useLocation();
   const role = user?.primaryRole || user?.role;
   const createPath = role === "super_admin" ? "/dashboard/super-admin/orders/create" : "/dashboard/admin/orders/create";
@@ -400,7 +402,7 @@ export default function AdminOrdersPage() {
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.projectType === "bidding" ? "—" : (o.budget ?? "—")}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.projectType === "bidding" ? "—" : "JOD"}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.durationValue ? `${o.durationValue} ${o.durationUnit || ""}` : "—"}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{orderStatusLabelAr(o.orderStatus)}</td>
+                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{getOrderStatusLabel(o.orderStatus, t)}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", maxWidth: 360 }}>
                         {deliveryTiming ? (
                           <div style={{ display: "grid", gap: 6 }}>

@@ -63,6 +63,8 @@ const CATEGORY_ICON_FALLBACK = {
   "content-writing": FileText,
 };
 
+const CATEGORY_ICON_BY_INDEX = [Code2, Palette, FileText];
+
 const DEFAULT_ICON = Layers;
 
 function buildSearchText(item = {}) {
@@ -78,6 +80,12 @@ function buildSearchText(item = {}) {
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
+}
+
+export function resolveServiceCategoryIcon(cat = {}, index = 0) {
+  const slug = String(cat.slug || cat.key || "").toLowerCase();
+  if (CATEGORY_ICON_FALLBACK[slug]) return CATEGORY_ICON_FALLBACK[slug];
+  return CATEGORY_ICON_BY_INDEX[Math.abs(Number(index) || 0) % CATEGORY_ICON_BY_INDEX.length];
 }
 
 export function resolveSubSubcategoryIcon(item = {}) {

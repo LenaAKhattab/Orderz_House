@@ -14,6 +14,9 @@ import {
   takePoolOrderRequest,
 } from "../../services/api";
 import { PoolOrderListSkeleton } from "../../components/ui/Skeleton";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
+import { getLocalizedMarketplaceOrderTitle } from "../../lib/i18n/getLocalizedMarketplaceOrderText";
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
 import BidAmountModal from "../../components/orders/BidAmountModal";
 import TakePoolOrderConfirmModal from "../../components/orders/TakePoolOrderConfirmModal";
@@ -48,19 +51,18 @@ function PoolEmptyState({ title, subtitle }) {
 }
 
 function PlanFilterEmptyState() {
+  const { t } = useTranslation();
   return (
     <div className="oh-orders-plan-empty oh-orders-plan-empty--neu fdash-surface-3d fdash-surface-3d--soft">
       <div className="oh-orders-plan-empty__icon" aria-hidden>
         <Briefcase size={28} strokeWidth={1.9} />
       </div>
       <div className="oh-orders-plan-empty__copy">
-        <h3 className="oh-orders-plan-empty__title">لا توجد طلبات متاحة ضمن باقتك الحالية</h3>
-        <p className="oh-orders-plan-empty__subtitle">
-          الطلبات الظاهرة في المعرض قد تتجاوز نطاق قيمة باقتك. يمكنك ترقية الاشتراك لفتح المزيد.
-        </p>
+        <h3 className="oh-orders-plan-empty__title">{t("orders.empty.planTitle")}</h3>
+        <p className="oh-orders-plan-empty__subtitle">{t("orders.empty.planSubtitle")}</p>
       </div>
       <Link to="/dashboard/freelancer/plans" className="oh-orders-plan-empty__cta btn btn-primary">
-        ترقية الباقة
+        {t("orders.empty.upgradeCta")}
       </Link>
     </div>
   );
@@ -75,10 +77,11 @@ function CategoryFiltersPanel({
   selectedSubSubIds,
   toggleSubSub,
 }) {
+  const { t, locale } = useTranslation();
   return (
-    <aside className={className} aria-label="التصنيفات">
-      <h3 className="oh-orders-filters__title">التصنيفات</h3>
-      <div className="oh-orders-filters__switch" role="tablist" aria-label="التبديل بين الكل والتصنيفات">
+    <aside className={className} aria-label={t("orders.filters.title")}>
+      <h3 className="oh-orders-filters__title">{t("orders.filters.title")}</h3>
+      <div className="oh-orders-filters__switch" role="tablist" aria-label={t("orders.filters.toggleAria")}>
         <button
           type="button"
           role="tab"
@@ -89,7 +92,7 @@ function CategoryFiltersPanel({
             setSelectedSubSubIds([]);
           }}
         >
-          الكل
+          {t("orders.filters.all")}
         </button>
         <button
           type="button"
@@ -98,19 +101,19 @@ function CategoryFiltersPanel({
           className={`oh-orders-filters__switch-btn ${filtersView === "categories" ? "is-active" : ""}`.trim()}
           onClick={() => setFiltersView("categories")}
         >
-          التصنيفات
+          {t("orders.filters.categories")}
         </button>
       </div>
       <div className="oh-orders-filters__list">
         {categoryFilters.map((category) => (
           <div key={category.id} className="oh-orders-filters__group">
-            <div className="oh-orders-filters__category-title">{category.name}</div>
+            <div className="oh-orders-filters__category-title">{getLocalizedField(category, "name", locale)}</div>
             <div className="oh-orders-filters__sublist">
               {category.subSubs.map((sub) => {
                 const checked = selectedSubSubIds.includes(sub.id);
                 return (
                   <label key={sub.id} className="oh-orders-filters__item">
-                    <span>{sub.name}</span>
+                    <span>{getLocalizedField(sub, "name", locale)}</span>
                     <input type="checkbox" checked={checked} onChange={(e) => toggleSubSub(sub.id, e.target.checked)} />
                   </label>
                 );
@@ -123,7 +126,7 @@ function CategoryFiltersPanel({
   );
 }
 
-const POOL_LOAD_ERROR = "تعذر تحميل الطلبات، حاول مرة أخرى";
+const POOL_LOAD_ERROR_KEY = "common.errors.loadOrders";
 const POOL_PAGE_LIMIT = 8;
 
 /**
@@ -132,6 +135,8 @@ const POOL_PAGE_LIMIT = 8;
  */
 export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const { user, loading } = useAuth();
+  const { t, dir, locale } = useTranslation();
+  const POOL_LOAD_ERROR = t(POOL_LOAD_ERROR_KEY);
   const { push, dismissMatching } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
@@ -178,10 +183,12 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const guestLoginNavLockRef = useRef(false);
 
   const showIneligibleNotice = isFreelancer && eligibilityFetched && eligibility && eligibility.eligible === false;
-  const ineligibleMessage = showIneligibleNotice ? getFreelancerOrderEligibilityMessage(eligibility, subscription) : "";
+  const ineligibleMessage = showIneligibleNotice
+    ? getFreelancerOrderEligibilityMessage(eligibility, subscription, t)
+    : "";
   const canTake = Boolean(isFreelancer && eligibility?.eligible);
-  const loginRequiredMessage = "يجب تسجيل الدخول كمستقل وتفعيل الاشتراك لاستلام الطلبات.";
-  const clientViewOnlyMessage = "يمكن للمستقلين المؤهلين فقط استلام الطلبات.";
+  const loginRequiredMessage = t("orders.marketplace.loginRequiredFreelancer");
+  const clientViewOnlyMessage = t("orders.marketplace.clientViewOnly");
 
   const displayedOrders = useMemo(() => {
     if (!planAvailableOnly || !isFreelancer) return orders;
@@ -220,7 +227,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
         if (abortController.signal.aborted || err?.code === "ERR_CANCELED") return;
         if (fetchGen !== poolFetchGenRef.current) return;
         setLoadError(POOL_LOAD_ERROR);
-        push({ type: "error", title: "تعذر تحميل الطلبات", message: POOL_LOAD_ERROR });
+        push({ type: "error", title: t("orders.marketplace.loadErrorTitle"), message: POOL_LOAD_ERROR });
       } finally {
         if (fetchGen === poolFetchGenRef.current) setBusy(false);
       }
@@ -230,6 +237,36 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       abortController.abort();
     };
   }, [push, page, reloadTick, poolListParams, layout, loading, user?.id]);
+
+  useEffect(() => {
+    const onPoolList =
+      location.pathname === "/orders" ||
+      location.pathname === "/dashboard/freelancer/orders" ||
+      location.pathname === "/dashboard/client/orders";
+    if (!onPoolList) return undefined;
+
+    const pollMs = Math.min(
+      Math.max(Number(import.meta.env.VITE_PUBLIC_POOL_PREVIEW_POLL_MS) || 30_000, 20_000),
+      60_000,
+    );
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        setReloadTick((n) => n + 1);
+      }
+    };
+
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === "hidden") return;
+      setReloadTick((n) => n + 1);
+    }, pollMs);
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [location.pathname]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -297,8 +334,13 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
             return {
               id: String(category.id),
               name: String(category.name || ""),
+              name_en: category.name_en || null,
               subSubs: list
-                .map((item) => ({ id: String(item.id), name: String(item.name || "") }))
+                .map((item) => ({
+                  id: String(item.id),
+                  name: String(item.name || ""),
+                  name_en: item.name_en || null,
+                }))
                 .sort((a, b) => a.name.localeCompare(b.name, "ar")),
             };
           }),
@@ -377,21 +419,25 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       if (isPoolOrderTakenAsAssignment(updated)) {
         push({
           type: "success",
-          title: "تم إسناد الطلب",
-          message: "أصبح الطلب في قائمة «طلباتي» ويمكنك البدء بالعمل.",
+          title: t("orders.marketplace.orderAssigned.title"),
+          message: t("orders.marketplace.orderAssigned.message"),
         });
         navigate("/dashboard/freelancer/my-orders");
         return;
       } else {
         push({
           type: "success",
-          title: "تم تسجيل مشاركتك",
-          message: "سنراجع طلبك ونبلغك عند أي تحديث.",
+          title: t("orders.marketplace.participationRegistered.title"),
+          message: t("orders.marketplace.participationRegistered.message"),
         });
       }
       await reloadPool();
     } catch (e) {
-      push({ type: "error", title: "تعذر استلام الطلب", message: e?.response?.data?.message || e?.message });
+      push({
+        type: "error",
+        title: t("orders.marketplace.takeOrderError"),
+        message: e?.response?.data?.message || e?.message,
+      });
     } finally {
       setTakingId(null);
     }
@@ -408,13 +454,17 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       });
       push({
         type: "success",
-        title: "تم إرسال عرضك",
-        message: "سيتم مراجعة عرضك وإشعارك عند أي تحديث.",
+        title: t("orders.marketplace.bidSubmitted.title"),
+        message: t("orders.marketplace.bidSubmitted.message"),
       });
       setBidModalOrder(null);
       await reloadPool();
     } catch (e) {
-      push({ type: "error", title: "تعذر إرسال العرض", message: e?.response?.data?.message || e?.message });
+      push({
+        type: "error",
+        title: t("orders.marketplace.submitBidError"),
+        message: e?.response?.data?.message || e?.message,
+      });
     } finally {
       setBidBusyId(null);
     }
@@ -456,7 +506,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       if (!user) {
         if (guestLoginNavLockRef.current) return;
         guestLoginNavLockRef.current = true;
-        pushGuestPoolLoginToast(push);
+        pushGuestPoolLoginToast(push, t);
         navigate("/login", {
           state: {
             from: { pathname: detailsPath },
@@ -509,11 +559,11 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
         <div className="oh-orders-load-error fdash-surface-3d fdash-surface-3d--soft">
           <p className="oh-orders-load-error__text">{loadError}</p>
           <button type="button" className="oh-orders-retry-btn" onClick={() => setReloadTick((x) => x + 1)}>
-            إعادة المحاولة
+            {t("common.actions.retry")}
           </button>
         </div>
       ) : orders.length === 0 ? (
-        <PoolEmptyState title="لا توجد طلبات متاحة حالياً" subtitle="عند نشر طلبات جديدة في المعرض ستظهر هنا." />
+        <PoolEmptyState title={t("common.empty.orders")} subtitle={t("common.empty.ordersHint")} />
       ) : planAvailableOnly && isFreelancer && displayedOrders.length === 0 ? (
         <PlanFilterEmptyState />
       ) : (
@@ -538,7 +588,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
                     ? loginRequiredMessage
                     : role === "client"
                       ? clientViewOnlyMessage
-                      : getFreelancerOrderEligibilityMessage(eligibility, subscription)
+                      : getFreelancerOrderEligibilityMessage(eligibility, subscription, t)
                   : ""
               }
               onOpenDetails={() => openPoolOrderDetails(order)}
@@ -557,12 +607,12 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
         setPage(1);
         setSortBy(e.target.value);
       }}
-      aria-label="ترتيب الطلبات"
+      aria-label={t("orders.sort.aria")}
     >
-      <option value="newest">الأحدث</option>
-      <option value="oldest">الأقدم</option>
-      <option value="price_high">السعر الأعلى</option>
-      <option value="price_low">السعر الأقل</option>
+      <option value="newest">{t("orders.sort.newest")}</option>
+      <option value="oldest">{t("orders.sort.oldest")}</option>
+      <option value="price_high">{t("orders.sort.priceHigh")}</option>
+      <option value="price_low">{t("orders.sort.priceLow")}</option>
     </select>
   );
 
@@ -574,7 +624,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
           className={`oh-orders-plan-filter-btn${planAvailableOnly ? " is-active" : ""}`}
           aria-pressed={planAvailableOnly}
           aria-describedby="oh-plan-filter-tooltip"
-          title="عرض الطلبات المتاحة وفق خطتك فقط"
+          title={t("orders.planFilter.title")}
           onClick={() => setPlanAvailableOnly((v) => !v)}
         >
           <Filter
@@ -583,7 +633,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
             className="oh-orders-plan-filter-btn__icon oh-orders-plan-filter-btn__icon--filter"
             aria-hidden
           />
-          <span className="oh-orders-plan-filter-btn__label">المتاح لخطتي</span>
+          <span className="oh-orders-plan-filter-btn__label">{t("orders.planFilter.label")}</span>
           <Sparkles
             size={15}
             strokeWidth={2.1}
@@ -592,14 +642,14 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
           />
         </button>
         <span id="oh-plan-filter-tooltip" className="oh-orders-plan-filter-tooltip" role="tooltip">
-          عرض الطلبات المتاحة وفق خطتك فقط
+          {t("orders.planFilter.title")}
         </span>
       </div>
     ) : null;
 
   const sortControl = (
     <div className="oh-orders-sort-card fdash-surface-3d fdash-surface-3d--soft">
-      <span className="oh-orders-sort-card__label">ترتيب</span>
+      <span className="oh-orders-sort-card__label">{t("orders.sort.label")}</span>
       {sortSelect}
     </div>
   );
@@ -621,7 +671,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
             disabled={busy}
             onClick={() => handlePageChange(currentPage + 1)}
           >
-            عرض المزيد
+            {t("common.actions.showMore")}
             <span aria-hidden>↓</span>
           </button>
         </div>
@@ -640,7 +690,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   ) : null;
 
   return (
-    <div className={outerClass}>
+    <div className={outerClass} dir={dir}>
       <div className="dash-grid">
         <div className="oh-orders-page-layout oh-orders-page-layout--neu">
           <div className="oh-orders-main">
@@ -655,7 +705,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
                 className="oh-orders-mobile-filters-btn"
                 onClick={() => setFiltersOpen((v) => !v)}
               >
-                {filtersOpen ? "إخفاء التصنيفات" : "التصنيفات"}
+                {filtersOpen ? t("orders.filters.hide") : t("orders.filters.show")}
               </button>
             </div>
 
@@ -681,7 +731,11 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
 
       <BidAmountModal
         open={Boolean(bidModalOrder)}
-        title={bidModalOrder ? `عرض سعر: ${bidModalOrder.title}` : ""}
+        title={
+          bidModalOrder
+            ? t("orders.bid.titleWithOrder", { title: getLocalizedMarketplaceOrderTitle(bidModalOrder, locale) })
+            : ""
+        }
         min={bidModalOrder?.bidBudgetMin}
         max={bidModalOrder?.bidBudgetMax}
         currency="JOD"

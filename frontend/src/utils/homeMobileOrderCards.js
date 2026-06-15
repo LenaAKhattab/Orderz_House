@@ -1,49 +1,57 @@
-import heroImage from "../assets/hero.png";
 import { orderPriceText } from "../components/open-orders/openOrdersFormatters";
-import { resolveBackendAssetUrl } from "./homeCategoryCards";
+import { getLocaleField, getLocalizedField } from "../lib/i18n/getLocalizedField";
+import { getLocalizedMarketplaceOrderTitle } from "../lib/i18n/getLocalizedMarketplaceOrderText";
 
 const PREVIEW_LIMIT = 3;
 
 /**
- * @param {unknown[]} categoryItems
+ * @param {unknown} order
+ * @param {string} locale
+ * @param {string} fallbackTitle
  */
-export function buildCategoryImageMap(categoryItems = []) {
-  const map = new Map();
-  for (const item of categoryItems) {
-    const id = item?.id;
-    if (id == null) continue;
-    const img = resolveBackendAssetUrl(item?.image_url);
-    if (img) map.set(String(id), img);
+function resolveHomeMobileLatestOrderTitle(order, locale, fallbackTitle) {
+  if (locale === "en") {
+    const title = getLocalizedMarketplaceOrderTitle(order, "en");
+    if (title && title !== "—") return title;
   }
-  return map;
+
+  return getLocalizedField(order, "title", locale).trim() || fallbackTitle;
 }
 
 /**
  * @param {unknown} order
- * @param {Map<string, string>} categoryImageMap
+ * @param {string} locale
+ * @param {{ fallbackTitle: string; fallbackCategory: string }} labels
  */
-export function mapHomeMobileOrderCard(order, categoryImageMap) {
-  const categoryId = order?.categoryId != null ? String(order.categoryId) : "";
-  const categoryName = String(order?.category?.name || "").trim() || "طلب";
-  const imgSrc = (categoryId && categoryImageMap.get(categoryId)) || heroImage;
+export function mapHomeMobileOrderCard(order, locale = "ar", labels = {}) {
+  const fallbackTitle = labels.fallbackTitle || "";
+  const fallbackCategory = labels.fallbackCategory || "";
 
+  const categoryName =
+    (locale === "en"
+      ? getLocaleField(order?.category, "name", "en")
+      : getLocalizedField(order?.category, "name", locale)
+    ).trim() || fallbackCategory;
+  const title = resolveHomeMobileLatestOrderTitle(order, locale, fallbackTitle);
   return {
     id: String(order?.id ?? ""),
-    title: String(order?.title || "طلب بدون عنوان").trim() || "طلب بدون عنوان",
-    imgSrc,
+    title,
     categoryTag: categoryName,
-    priceTag: orderPriceText(order),
+    priceTag: orderPriceText(order, locale),
     to: "/orders",
   };
 }
 
 /**
  * @param {unknown[]} orders
- * @param {unknown[]} categoryItems
+ * @param {unknown[]} _categoryItems - reserved for future category enrichment
+ * @param {string} locale
+ * @param {{ fallbackTitle: string; fallbackCategory: string }} labels
  */
-export function mapHomeMobileOrderCards(orders = [], categoryItems = []) {
-  const categoryImageMap = buildCategoryImageMap(categoryItems);
-  return orders.slice(0, PREVIEW_LIMIT).map((order) => mapHomeMobileOrderCard(order, categoryImageMap));
+export function mapHomeMobileOrderCards(orders = [], _categoryItems = [], locale = "ar", labels = {}) {
+  return orders
+    .slice(0, PREVIEW_LIMIT)
+    .map((order) => mapHomeMobileOrderCard(order, locale, labels));
 }
 
 export { PREVIEW_LIMIT as HOME_MOBILE_ORDERS_PREVIEW_LIMIT };

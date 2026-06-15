@@ -5,23 +5,28 @@ export const GUEST_APPLICANTS_MESSAGE_LONG = "عدد المتقدمين يظهر
 
 /**
  * @param {unknown} count
- * @param {{ isAuthenticated?: boolean, emptyLabel?: string }} [opts]
+ * @param {{ isAuthenticated?: boolean, emptyLabel?: string, guestMessage?: string }} [opts]
  * @returns {string}
  */
-export function formatApplicantsCountValue(count, { isAuthenticated = false, emptyLabel = "لا يوجد" } = {}) {
-  if (!isAuthenticated) return GUEST_APPLICANTS_MESSAGE;
+export function formatApplicantsCountValue(count, { isAuthenticated = false, emptyLabel, guestMessage } = {}) {
+  if (!isAuthenticated) return guestMessage || GUEST_APPLICANTS_MESSAGE;
   const n = Math.max(0, Number(count) || 0);
-  return n > 0 ? String(n) : emptyLabel;
+  return n > 0 ? String(n) : emptyLabel || "لا يوجد";
 }
 
 /**
- * Full label for list rows, e.g. "3 متقدمون".
+ * Full label for list rows, e.g. "3 applicants".
  * @param {unknown} count
- * @param {{ isAuthenticated?: boolean }} [opts]
+ * @param {{ isAuthenticated?: boolean, guestMessage?: string, applicantSingular?: string, applicantPlural?: string }} [opts]
  * @returns {string}
  */
-export function formatApplicantsCountLabel(count, { isAuthenticated = false } = {}) {
-  if (!isAuthenticated) return GUEST_APPLICANTS_MESSAGE;
+export function formatApplicantsCountLabel(
+  count,
+  { isAuthenticated = false, guestMessage, applicantSingular, applicantPlural } = {},
+) {
+  if (!isAuthenticated) return guestMessage || GUEST_APPLICANTS_MESSAGE;
   const n = Math.max(0, Number(count) || 0);
-  return `${n} ${n === 1 ? "متقدم" : "متقدمون"}`;
+  const singular = applicantSingular || "متقدم";
+  const plural = applicantPlural || "متقدمون";
+  return `${n} ${n === 1 ? singular : plural}`;
 }

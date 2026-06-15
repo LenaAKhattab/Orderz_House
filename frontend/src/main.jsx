@@ -4,12 +4,12 @@ import "./index.css";
 import "./styles/typography.css";
 import "./styles/legacy-application.css";
 import App from "./App";
-
-document.documentElement.lang = "ar";
-document.documentElement.dir = "rtl";
+import { LanguageProvider } from "./i18n/LanguageProvider";
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <LanguageProvider>
+      <App />
+    </LanguageProvider>
   </StrictMode>,
 );

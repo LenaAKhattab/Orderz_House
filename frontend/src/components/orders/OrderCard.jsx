@@ -1,7 +1,23 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import OrderApplicantsCount from "./OrderApplicantsCount";
 import { useAuth } from "../../context/useAuth";
-import { arabicDurationUnit } from "../../utils/arTime";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import {
+  formatOrderBudget,
+  formatOrderDuration,
+  formatOrderProjectType,
+  categoryLine,
+  shortDescription,
+} from "../../lib/orders/orderDisplayFormatters";
+import {
+  getLocalizedOrderDescription,
+  getLocalizedOrderTitle,
+} from "../../lib/i18n/getLocalizedMarketplaceOrderText";
+import {
+  getOrderStatusBadgeClass,
+  getOrderStatusLabel,
+  poolMarketplaceStatusBadge,
+} from "../../utils/orderFlowUi";
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
 
 const ORDER_CURRENCY = "JOD";
@@ -31,11 +47,12 @@ function priceLabel(order) {
   return `${amt || "—"}${cur ? ` ${cur}` : ""}`.trim();
 }
 
-function shortText(text, max = 140) {
-  const s = String(text || "").trim();
-  if (!s) return "—";
-  if (s.length <= max) return s;
-  return `${s.slice(0, max).trim()}…`;
+function shortText(text, max = 140, emptyLabel = "—") {
+  return shortDescription(text, max, { emptyLabel });
+}
+
+function typeLabel(projectType, t) {
+  return formatOrderProjectType(projectType, t);
 }
 
 function showValue(v) {
@@ -43,48 +60,27 @@ function showValue(v) {
   return String(v);
 }
 
-function yn(v) {
-  if (v === true) return "نعم";
-  if (v === false) return "لا";
+function yn(v, t) {
+  if (v === true) return t("orders.card.yes");
+  if (v === false) return t("orders.card.no");
   return "—";
 }
 
-/** Same labels as `PoolOrderCardCompact` (طلبات المعرض / صفحة الطلبات). */
-function poolStatusBadge(order) {
-  const s = order?.orderStatus;
-  if (order?.isArchived) return { label: "مؤرشف", className: "oh-badge oh-badge--neutral" };
-  if (s === "published") return { label: "متاح", className: "oh-badge oh-badge--warning" };
-  if (s === "assigned") return { label: "مُسند", className: "oh-badge oh-badge--success" };
-  if (s === "draft") return { label: "مسودة", className: "oh-badge oh-badge--neutral" };
-  return { label: s || "—", className: "oh-badge oh-badge--neutral" };
+/** Admin table/card badge using shared status labels. */
+function adminStatusBadge(order, t) {
+  if (order?.isArchived) {
+    return { label: t("orders.status.archived"), className: "oh-badge oh-badge--neutral" };
+  }
+  const s = order?.orderStatus != null ? String(order.orderStatus).trim() : "";
+  if (!s) return { label: "—", className: "oh-badge oh-badge--neutral" };
+  return { label: getOrderStatusLabel(s, t), className: getOrderStatusBadgeClass(s) };
 }
 
-function adminStatusBadge(order) {
-  const s = order?.orderStatus;
-  if (order?.isArchived) return { label: "مؤرشف", className: "oh-badge oh-badge--neutral" };
-  if (s === "assigned") return { label: "مُسند", className: "oh-badge oh-badge--success" };
-  if (s === "published") return { label: "منشور", className: "oh-badge oh-badge--warning" };
-  if (s === "in_progress") return { label: "قيد التنفيذ", className: "oh-badge oh-badge--info" };
-  if (s === "completed") return { label: "مكتمل", className: "oh-badge oh-badge--success" };
-  if (s === "cancelled") return { label: "ملغي", className: "oh-badge oh-badge--danger" };
-  if (s === "draft") return { label: "مسودة", className: "oh-badge oh-badge--neutral" };
-  return { label: s || "—", className: "oh-badge oh-badge--neutral" };
-}
-
-function assignmentBadge(order) {
-  if (orderHasAssignment(order)) return { label: "مُسند لفريلانسر", className: "oh-pill oh-pill--assigned" };
-  return { label: "في المعرض", className: "oh-pill oh-pill--pool" };
-}
-
-function typeLabel(projectType) {
-  if (projectType === "fixed") return "سعر ثابت";
-  if (projectType === "bidding") return "مزايدة";
-  return "—";
-}
-
-function durationLabel(order) {
-  if (!order?.durationValue || !order?.durationUnit) return "—";
-  return `${order.durationValue} ${arabicDurationUnit(order.durationValue, order.durationUnit)}`;
+function assignmentBadge(order, t) {
+  if (orderHasAssignment(order)) {
+    return { label: t("orders.card.assignedToFreelancer"), className: "oh-pill oh-pill--assigned" };
+  }
+  return { label: t("orders.card.inPool"), className: "oh-pill oh-pill--pool" };
 }
 
 function isPricedBiddingOrder(order) {
@@ -130,20 +126,23 @@ export default function OrderCard({
   compactSummary = false,
 }) {
   const { user } = useAuth();
+  const { t, locale } = useTranslation();
   const isAuthenticated = Boolean(user);
+  const localizedTitle = getLocalizedOrderTitle(order, locale);
+  const localizedDescription = getLocalizedOrderDescription(order, locale);
   const [expanded, setExpanded] = useState(false);
   const showFull = !compactSummary || expanded;
   const badge = useMemo(
-    () => (showAdminBadge ? adminStatusBadge(order) : poolStatusBadge(order)),
-    [order, showAdminBadge],
+    () => (showAdminBadge ? adminStatusBadge(order, t) : poolMarketplaceStatusBadge(order, t)),
+    [order, showAdminBadge, t],
   );
-  const assign = useMemo(() => assignmentBadge(order), [order]);
+  const assign = useMemo(() => assignmentBadge(order, t), [order, t]);
   const skills = Array.isArray(order?.preferredSkills) ? order.preferredSkills : [];
   const skillsClean = skills.filter((s) => s != null);
   const extraCats = Array.isArray(order?.extraCategories) ? order.extraCategories : [];
   const [nowMs, setNowMs] = useState(() => Date.now());
 
-  const categoryText = `${order?.category?.name || "—"}${order?.subSubcategory?.name ? ` • ${order.subSubcategory.name}` : ""}`;
+  const categoryText = categoryLine(order, locale);
   const pricedBidding = useMemo(() => isPricedBiddingOrder(order), [order]);
   const filesCount =
     Array.isArray(order?.files) && order.files.length
@@ -164,20 +163,14 @@ export default function OrderCard({
     return timeLeftLabel(order);
   }, [order, nowMs]);
 
-  const priceChipBody = pricedBidding
-    ? order?.paymentAmount != null || order?.paymentCurrency
-      ? `${order?.paymentAmount != null ? formatMoney(order.paymentAmount) : "—"} ${ORDER_CURRENCY}`
-      : `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)} ${ORDER_CURRENCY}`
-    : order?.projectType === "bidding"
-      ? "—"
-      : `${formatMoney(order?.budget)} ${ORDER_CURRENCY}`;
+  const priceChipBody = formatOrderBudget(order, locale);
 
   return (
     <article className={`oh-pool-card oh-pool-card--static${compactSummary ? " oh-pool-card--compact-summary" : ""}`.trim()}>
       {showFull ? (
         <header className="oh-pool-card__head">
           <div className="oh-pool-card__title-wrap">
-            <div className="oh-pool-card__title">{order?.title || "—"}</div>
+            <div className="oh-pool-card__title">{localizedTitle}</div>
             <div className="oh-pool-card__sub">
               {showOrderCode && order?.orderCode ? (
                 <span className="oh-code" title={order.orderCode}>
@@ -189,13 +182,13 @@ export default function OrderCard({
           </div>
           <div className="oh-pool-card__badges">
             <span className={badge.className}>{badge.label}</span>
-            {showAdminBadge ? <span className="oh-badge oh-badge--primary">إداري</span> : null}
+            {showAdminBadge ? <span className="oh-badge oh-badge--primary">{t("orders.card.adminBadge")}</span> : null}
           </div>
         </header>
       ) : (
         <header className="oh-pool-card__head oh-pool-card__head--summary">
           <div className="oh-pool-card__title-wrap">
-            <div className="oh-pool-card__title">{order?.title || "—"}</div>
+            <div className="oh-pool-card__title">{localizedTitle}</div>
           </div>
         </header>
       )}
@@ -203,18 +196,24 @@ export default function OrderCard({
       {showFull ? (
         <div className="oh-pool-card__meta">
           <span className="oh-mini-chip">{categoryText}</span>
-          <span className="oh-mini-chip">النوع: {typeLabel(order?.projectType)}</span>
           <span className="oh-mini-chip">
-            السعر:{" "}
+            {t("orders.card.type")}: {typeLabel(order?.projectType, t)}
+          </span>
+          <span className="oh-mini-chip">
+            {t("orders.card.price")}:{" "}
             <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>
               {priceChipBody}
             </span>
           </span>
-          <span className="oh-mini-chip">مدة التسليم: {durationLabel(order)}</span>
-          <span className="oh-mini-chip">ملفات: {filesCount ? String(filesCount) : "لا توجد ملفات مضافة"}</span>
+          <span className="oh-mini-chip">
+            {t("orders.card.deliveryDuration")}: {formatOrderDuration(order, locale, t)}
+          </span>
+          <span className="oh-mini-chip">
+            {t("orders.card.filesLabel")}: {filesCount ? String(filesCount) : t("orders.card.noFiles")}
+          </span>
           {order?.projectType === "bidding" ? (
             <span className="oh-mini-chip">
-              المتقدمون:{" "}
+              {t("orders.card.applicants")}:{" "}
               {showAdminBadge && bidUsers.length ? (
                 <>
                   {bidUsers.slice(0, 2).map((b) => bidderDisplayName(b)).join("، ")}
@@ -234,20 +233,24 @@ export default function OrderCard({
         <>
           <div className="oh-pool-card__meta oh-pool-card__meta--keyonly" aria-label="ملخص الطلب">
             <span className="oh-mini-chip oh-mini-chip--emph">
-              السعر:{" "}
+              {t("orders.card.price")}:{" "}
               <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>
                 {priceChipBody}
               </span>
             </span>
-            <span className="oh-mini-chip oh-mini-chip--emph">مدة التسليم: {durationLabel(order)}</span>
+            <span className="oh-mini-chip oh-mini-chip--emph">
+              {t("orders.card.deliveryDuration")}: {formatOrderDuration(order, locale, t)}
+            </span>
           </div>
-          <p className="oh-pool-card__desc oh-pool-card__desc--compact-preview">{shortText(order?.description, 220)}</p>
+          <p className="oh-pool-card__desc oh-pool-card__desc--compact-preview">
+            {shortText(localizedDescription, 220, t("orders.marketplace.card.noDescription"))}
+          </p>
         </>
       )}
 
       {showFull ? (
         <p className={`oh-pool-card__desc${expanded ? " oh-pool-card__desc--expanded" : ""}`.trim()}>
-          {expanded ? showValue(order?.description) : shortText(order?.description, 140)}
+          {expanded ? showValue(localizedDescription) : shortText(localizedDescription, 140, t("orders.marketplace.card.noDescription"))}
         </p>
       ) : null}
 
@@ -285,11 +288,11 @@ export default function OrderCard({
             </div>
             <div className="oh-meta">
               <div className="oh-meta__label">منشور</div>
-              <div className="oh-meta__value">{yn(order?.isPublished)}</div>
+              <div className="oh-meta__value">{yn(order?.isPublished, t)}</div>
             </div>
             <div className="oh-meta">
-              <div className="oh-meta__label">مفتوح للمعرض</div>
-              <div className="oh-meta__value">{yn(order?.isOpenForPool)}</div>
+              <div className="oh-meta__label">{t("orders.card.inPool")}</div>
+              <div className="oh-meta__value">{yn(order?.isOpenForPool, t)}</div>
             </div>
             <div className="oh-meta">
               <div className="oh-meta__label">مؤرشف</div>

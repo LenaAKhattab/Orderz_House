@@ -29,14 +29,9 @@
   text-align: center;
 }
 
-.home-hero--marketing.home-hero--bg-image .home-hero__logo {
-  display: block;
-  width: auto;
-  height: clamp(3.75rem, 9vw + 1.25rem, 8.75rem);
-  max-width: min(100%, clamp(14rem, 72vw, 28rem));
+.home-hero--marketing.home-hero--bg-image .home-hero__logo-frame {
   margin-inline: auto;
   margin-bottom: clamp(0.65rem, 2vw, 1.15rem);
-  object-fit: contain;
 }
 
 .home-hero--marketing.home-hero--bg-image .home-hero__ref-title.home-hero-marketing__title-ipad {
@@ -95,11 +90,6 @@
   .home-hero--marketing.home-hero--bg-image {
     --hero-center-width: min(100%, clamp(18rem, 58vw, 34rem));
     --hero-safe-inline: clamp(1.1rem, 8vw, 2.25rem);
-  }
-
-  .home-hero--marketing.home-hero--bg-image .home-hero__logo {
-    height: clamp(3.35rem, 8vw + 1rem, 7rem);
-    max-width: min(100%, clamp(13rem, 68vw, 24rem));
   }
 }
 
@@ -172,9 +162,7 @@
     gap: clamp(0.625rem, 2.5vw, 0.875rem);
   }
 
-  .home-hero--marketing.home-hero--bg-image .home-hero__logo {
-    height: clamp(3.15rem, 15vw, 4.35rem);
-    max-width: min(100%, 19.5rem);
+  .home-hero--marketing.home-hero--bg-image .home-hero__logo-frame {
     margin-bottom: clamp(0.5rem, 2vw, 0.75rem);
   }
 

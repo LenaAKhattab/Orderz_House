@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "../../../../i18n/LanguageProvider";
 import { isOrderzhouseFreePlan } from "../../../../constants/orderzhousePlansCatalog";
 
 export default function FreelancerStatusHero({
@@ -10,26 +11,44 @@ export default function FreelancerStatusHero({
   cta,
   secondaryCta,
 }) {
+  const { t } = useTranslation();
   const eligible = Boolean(eligibility?.eligible);
   const freePlan = isOrderzhouseFreePlan(subscription?.planId ?? subscription?.plan);
-  const planLabel = subscription?.plan?.title || subscription?.plan?.name || "—";
+  const planLabel = subscription?.plan?.title || subscription?.plan?.name || t("freelancerDashboard.common.emDash");
 
   const chips = [];
-  if (planLabel && planLabel !== "—") {
+  if (planLabel && planLabel !== t("freelancerDashboard.common.emDash")) {
     chips.push({ key: "plan", label: planLabel, className: "fdash-cc-chip--plan" });
   }
   chips.push({
     key: "elig",
-    label: eligible ? (freePlan ? "تدريب + معرض محدود" : "مؤهل للمعرض") : "غير مؤهل حالياً",
+    label: eligible
+      ? freePlan
+        ? t("freelancerDashboard.statusHero.chips.trainingLimited")
+        : t("freelancerDashboard.statusHero.chips.eligible")
+      : t("freelancerDashboard.statusHero.chips.notEligible"),
     className: eligible ? "fdash-cc-chip--success" : "fdash-cc-chip--warning",
   });
   if (subscription?.status) {
     const st = String(subscription.status);
-    if (st === "active") chips.push({ key: "st", label: "اشتراك نشط", className: "fdash-cc-chip--success" });
-    else if (st === "assigned_not_started") {
-      chips.push({ key: "st", label: "بانتظار أول طلب", className: "fdash-cc-chip--info" });
+    if (st === "active") {
+      chips.push({
+        key: "st",
+        label: t("freelancerDashboard.statusHero.chips.activeSubscription"),
+        className: "fdash-cc-chip--success",
+      });
+    } else if (st === "assigned_not_started") {
+      chips.push({
+        key: "st",
+        label: t("freelancerDashboard.statusHero.chips.waitingFirstOrder"),
+        className: "fdash-cc-chip--info",
+      });
     } else if (st === "expired") {
-      chips.push({ key: "st", label: "منتهي", className: "fdash-cc-chip--danger" });
+      chips.push({
+        key: "st",
+        label: t("freelancerDashboard.statusHero.chips.expired"),
+        className: "fdash-cc-chip--danger",
+      });
     }
   }
 
@@ -42,9 +61,15 @@ export default function FreelancerStatusHero({
         <span className="fdash-hero__glyph fdash-hero__glyph--b">✦</span>
       </div>
       <div className="fdash-hero__copy">
-        {welcomeName ? <span className="fdash-hero__badge">مرحباً، {welcomeName}</span> : null}
-        <h1 className="fdash-hero__title">{headline?.headline || "مركز التحكم"}</h1>
-        <p className="fdash-hero__subtitle">{subline || headline?.sub || "نظرة شاملة على عملك واشتراكك وطلباتك."}</p>
+        {welcomeName ? (
+          <span className="fdash-hero__badge">
+            {t("freelancerDashboard.statusHero.welcome", { name: welcomeName })}
+          </span>
+        ) : null}
+        <h1 className="fdash-hero__title">{headline?.headline || t("freelancerDashboard.statusHero.title")}</h1>
+        <p className="fdash-hero__subtitle">
+          {subline || headline?.sub || t("freelancerDashboard.statusHero.subtitle")}
+        </p>
         {chips.length > 0 ? (
           <div className="fdash-cc-hero__chips" role="list">
             {chips.map((c) => (

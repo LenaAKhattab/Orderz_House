@@ -2,6 +2,7 @@ import HomeMobileHero from "./HomeMobileHero";
 import HomeMobileCategories from "./HomeMobileCategories";
 import HomeMobileFaq from "./HomeMobileFaq";
 import HomeMobilePartners from "./HomeMobilePartners";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import "./home-mobile-page.css";
 
 /**
@@ -23,8 +24,10 @@ export default function HomeMobilePage({
   recentOrdersLoading = false,
   recentOrdersError = false,
 }) {
+  const { dir } = useTranslation();
+
   return (
-    <div className="home-mobile-page" dir="rtl">
+    <div className="home-mobile-page" dir={dir}>
       <HomeMobileHero statsPayload={statsPayload} ads={ads} adsLoading={adsLoading} />
       <HomeMobileCategories
         recentOrders={recentOrders}

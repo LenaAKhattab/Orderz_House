@@ -1,4 +1,6 @@
 import { createElement, useEffect, useRef, useState } from "react";
+import { useTranslation } from "../i18n/LanguageProvider";
+import PublicPageHeader from "../components/layout/PublicPageHeader";
 
 function useReveal(options = {}) {
   const ref = useRef(null);
@@ -20,7 +22,7 @@ function useReveal(options = {}) {
           obs.disconnect();
         }
       },
-      { threshold: options.threshold ?? 0.12, rootMargin: options.rootMargin ?? "0px 0px -32px 0px" }
+      { threshold: options.threshold ?? 0.12, rootMargin: options.rootMargin ?? "0px 0px -32px 0px" },
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -106,48 +108,6 @@ function IconHuman() {
   );
 }
 
-const CORE_VALUES = [
-  {
-    title: "التميز في الخدمة",
-    body: "نسعى لتحقيق أعلى معايير الجودة في كل مشروع وتقديم نتائج تفوق التوقعات.",
-    Icon: IconStar,
-  },
-  {
-    title: "الشفافية والثقة",
-    body: "نبني علاقات طويلة الأمد من خلال التواصل الصادق والشراكات الموثوقة.",
-    Icon: IconShield,
-  },
-  {
-    title: "تمكين الابتكار",
-    body: "نعزز الإبداع ونقدم حلولًا متقدمة تدعم نمو الأعمال.",
-    Icon: IconSpark,
-  },
-  {
-    title: "التقنية المتمحورة حول الإنسان",
-    body: "نستخدم التقنية لخدمة الإنسان أولًا، وليس العكس.",
-    Icon: IconHuman,
-  },
-];
-
-const WORK_STEPS = [
-  {
-    title: "اشتراك المستقل",
-    text: "قم بإنشاء حسابك وملفك الشخصي لعرض مهاراتك.",
-  },
-  {
-    title: "الحصول على عمل",
-    text: "تصفح المشاريع المناسبة لك وقدم عروضك.",
-  },
-  {
-    title: "تنفيذ المشروع",
-    text: "أنجز العمل بجودة عالية وفي الوقت المحدد.",
-  },
-  {
-    title: "استلام الأرباح",
-    text: "احصل على مستحقاتك بأمان بعد موافقة العميل.",
-  },
-];
-
 function RevealSection({ children, className = "" }) {
   const [ref, visible] = useReveal();
   return (
@@ -158,20 +118,30 @@ function RevealSection({ children, className = "" }) {
 }
 
 const About = () => {
+  const { t, dir } = useTranslation();
+
+  const coreValues = [
+    { title: t("about.values.excellence.title"), body: t("about.values.excellence.body"), Icon: IconStar },
+    { title: t("about.values.trust.title"), body: t("about.values.trust.body"), Icon: IconShield },
+    { title: t("about.values.innovation.title"), body: t("about.values.innovation.body"), Icon: IconSpark },
+    { title: t("about.values.human.title"), body: t("about.values.human.body"), Icon: IconHuman },
+  ];
+
+  const workSteps = [
+    { title: t("about.howWeWork.step1.title"), text: t("about.howWeWork.step1.text") },
+    { title: t("about.howWeWork.step2.title"), text: t("about.howWeWork.step2.text") },
+    { title: t("about.howWeWork.step3.title"), text: t("about.howWeWork.step3.text") },
+    { title: t("about.howWeWork.step4.title"), text: t("about.howWeWork.step4.text") },
+  ];
+
   return (
-    <main className="about-page page-content" lang="ar" dir="rtl">
+    <main className="about-page page-content" lang={dir === "rtl" ? "ar" : "en"} dir={dir}>
       <div className="about-page__inner">
         <RevealSection>
-          <header className="about-hero">
-            <h1 className="about-hero__title">
-              حول <span className="about-hero__brand">أوردرز هاوس</span>
-            </h1>
-            <p className="about-hero__lead">
-              <span className="about-hero__brand">أوردرز هاوس</span> هي منصتك الأولى للنجاح في العمل الحر. نُسهّل على
-              المستقلين الموهوبين العثور على مشاريع مميزة، ونساعد الشركات على توظيف الأشخاص المناسبين. نحن الجسر الذي
-              يربط بين المهارات والفرص، لنصنع تجربة عمل أكثر سهولة ونجاحًا للجميع.
-            </p>
-          </header>
+          <PublicPageHeader
+            title={t("about.hero.title")}
+            subtitle={t("about.hero.subtitle")}
+          />
         </RevealSection>
 
         <RevealSection>
@@ -181,12 +151,9 @@ const About = () => {
                 <IconVision />
               </div>
               <div className="about-mv-card__body">
-                <h2 className="about-mv-card__h">رؤيتنا</h2>
-                <p className="about-mv-card__p">
-                  أن نكون الرواد عالميًا في ابتكار العمل الحر، ونقود مستقبل العمل عن بُعد، ونبني عالمًا بلا حدود
-                  للمواهب.
-                </p>
-                <span className="about-mv-card__tag">مدفوعون بالابتكار</span>
+                <h2 className="about-mv-card__h">{t("about.vision.title")}</h2>
+                <p className="about-mv-card__p">{t("about.vision.text")}</p>
+                <span className="about-mv-card__tag">{t("about.vision.tag")}</span>
               </div>
             </article>
             <article className="about-mv-card">
@@ -194,11 +161,9 @@ const About = () => {
                 <IconMission />
               </div>
               <div className="about-mv-card__body">
-                <h2 className="about-mv-card__h">مهمتنا</h2>
-                <p className="about-mv-card__p">
-                  تمكين المستقلين والشركات من خلال تعاون ذكي، آمن، وسلس يحقق النجاح ويعزز الابتكار عالميًا.
-                </p>
-                <span className="about-mv-card__tag">نركز على التميز</span>
+                <h2 className="about-mv-card__h">{t("about.mission.title")}</h2>
+                <p className="about-mv-card__p">{t("about.mission.text")}</p>
+                <span className="about-mv-card__tag">{t("about.mission.tag")}</span>
               </div>
             </article>
           </div>
@@ -206,13 +171,11 @@ const About = () => {
 
         <RevealSection>
           <div className="about-section-head">
-            <h2 className="about-section-head__title">قيمنا الأساسية</h2>
-            <p className="about-section-head__subtitle">
-              المبادئ التي توجه كل ما نقوم به وتعكس التزامنا بالتميز.
-            </p>
+            <h2 className="about-section-head__title">{t("about.values.title")}</h2>
+            <p className="about-section-head__subtitle">{t("about.values.subtitle")}</p>
           </div>
           <div className="about-values__grid">
-            {CORE_VALUES.map(({ title, body, Icon }) => (
+            {coreValues.map(({ title, body, Icon }) => (
               <article key={title} className="about-value-card">
                 <div className="about-value-card__icon" aria-hidden>
                   {createElement(Icon)}
@@ -226,13 +189,11 @@ const About = () => {
 
         <RevealSection>
           <div className="about-section-head">
-            <h2 className="about-section-head__title">كيف نعمل</h2>
-            <p className="about-section-head__subtitle">
-              عملية بسيطة من 4 خطوات تربط بين المواهب والفرص بسلاسة.
-            </p>
+            <h2 className="about-section-head__title">{t("about.howWeWork.title")}</h2>
+            <p className="about-section-head__subtitle">{t("about.howWeWork.subtitle")}</p>
           </div>
-          <ol className="about-steps" aria-label="خطوات العمل">
-            {WORK_STEPS.map((step, i) => {
+          <ol className="about-steps" aria-label={t("about.howWeWork.stepsAria")}>
+            {workSteps.map((step, i) => {
               const n = i + 1;
               return (
                 <li key={step.title} className="about-steps__seg">

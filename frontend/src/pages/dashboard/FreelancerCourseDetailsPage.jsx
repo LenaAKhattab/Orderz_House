@@ -43,6 +43,7 @@ import {
   validateClientExamMarks,
 } from "../../utils/courseExamQuestions";
 import { useToast } from "../../components/ui/toastContext";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import CourseDetailsPageSkeleton from "../../components/dashboard/courses/CourseDetailsPageSkeleton";
 import {
@@ -54,16 +55,14 @@ import "../../styles/dashboardHub.css";
 import "./freelancerCourseDetails.css";
 
 const FINAL_TEST_STEP_ID = "final-test";
-const FINAL_TEST_TITLE = "الاختبار النهائي بعد الدورة";
 const MAX_RESPONSE_CHARS = 15000;
-const EXAM_MARK_MAX_ERROR = "لا يمكن أن تكون العلامة أكبر من العلامة القصوى لهذا السؤال";
-const EXAM_MARK_NEGATIVE_ERROR = "لا يمكن أن تكون الدرجة سالبة.";
+const CD = "freelancerDashboard.courseDetails";
 
 function preventNumberInputScroll(e) {
   e.currentTarget.blur();
 }
 
-function sanitizeExamMarkInput(raw, maxMark) {
+function sanitizeExamMarkInput(raw, maxMark, t) {
   const value = String(raw ?? "");
   if (value === "") return { value: "", fieldError: null };
 
@@ -71,9 +70,9 @@ function sanitizeExamMarkInput(raw, maxMark) {
   const n = Number(value);
   if (!Number.isFinite(n)) return { value, fieldError: null };
 
-  if (n < 0) return { value: "0", fieldError: EXAM_MARK_NEGATIVE_ERROR };
+  if (n < 0) return { value: "0", fieldError: t(`${CD}.examMarkNegativeError`) };
   if (Number.isFinite(max) && n > max) {
-    return { value: String(max), fieldError: EXAM_MARK_MAX_ERROR };
+    return { value: String(max), fieldError: t(`${CD}.examMarkMaxError`) };
   }
   return { value, fieldError: null };
 }
@@ -82,18 +81,17 @@ function examQuestionsForCourse(course) {
   return resolveExamQuestions(course);
 }
 
-function stepStatusLabel(status) {
-  if (status === "done") return "مكتملة";
-  if (status === "available") return "متاحة الآن";
-  if (status === "locked") return "مقفلة";
-  if (status === "waiting_upload") return "بانتظار رفع الملف";
-  if (status === "waiting_chatgpt") return "بانتظار نتيجة ChatGPT";
-  if (status === "waiting_marks") return "بانتظار إدخال العلامات";
-  return "مقفلة";
+function stepStatusLabel(status, t) {
+  const map = {
+    done: `${CD}.stepStatus.done`,
+    available: `${CD}.stepStatus.available`,
+    locked: `${CD}.stepStatus.locked`,
+    waiting_upload: `${CD}.stepStatus.waitingUpload`,
+    waiting_chatgpt: `${CD}.stepStatus.waitingChatgpt`,
+    waiting_marks: `${CD}.stepStatus.waitingMarks`,
+  };
+  return t(map[status] || map.locked);
 }
-
-const COURSE_FILE_LEGACY_MESSAGE = "هذا الملف يحتاج إلى إعادة رفع من الإدارة.";
-const COURSE_FILE_OPEN_FAILED_TOAST = "تعذر فتح الملف. يرجى إبلاغ الإدارة لإعادة رفعه.";
 
 function chatGptDraftStorageKey(courseId, userId) {
   return `oh_course_exam_chatgpt_draft_${String(userId || "anon")}_${String(courseId)}`;
@@ -140,35 +138,47 @@ function toEmbedUrl(videoId) {
   return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(String(videoId || ""))}?rel=0&modestbranding=1&playsinline=1`;
 }
 
-function formatLessonDuration(seconds) {
+function formatLessonDuration(seconds, t) {
   const s = Number(seconds);
   if (!Number.isFinite(s) || s <= 0) return null;
   const mins = Math.max(1, Math.round(s / 60));
-  if (mins < 60) return `${mins} دقيقة`;
+  if (mins < 60) {
+    return t(mins === 1 ? `${CD}.duration.minute` : `${CD}.duration.minute_plural`, { count: mins });
+  }
   const h = Math.floor(mins / 60);
   const r = mins % 60;
-  return r > 0 ? `${h} ساعة و ${r} دقيقة` : `${h} ساعة`;
+  if (r > 0) {
+    return t(`${CD}.duration.hoursAndMinutes`, { hours: h, minutes: r });
+  }
+  return t(h === 1 ? `${CD}.duration.hoursOnly` : `${CD}.duration.hoursOnly_plural`, { count: h });
 }
 
-function formatTotalCourseDuration(lessons) {
+function formatTotalCourseDuration(lessons, t) {
   const totalSec = (lessons || []).reduce((sum, l) => sum + (Number(l.durationSeconds) || 0), 0);
   if (totalSec <= 0) return null;
-  return formatLessonDuration(totalSec) || null;
+  return formatLessonDuration(totalSec, t) || null;
 }
 
-function formatLastActivityLabel(value) {
+function formatLastActivityLabel(value, t, locale) {
   if (!value) return null;
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return null;
   const diff = Date.now() - d.getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "الآن";
-  if (mins < 60) return `منذ ${mins} دقيقة`;
+  if (mins < 1) return t(`${CD}.activity.now`);
+  if (mins < 60) {
+    return t(mins === 1 ? `${CD}.activity.minutesAgo` : `${CD}.activity.minutesAgo_plural`, { count: mins });
+  }
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `منذ ${hours} ساعة`;
+  if (hours < 24) {
+    return t(hours === 1 ? `${CD}.activity.hoursAgo` : `${CD}.activity.hoursAgo_plural`, { count: hours });
+  }
   const days = Math.floor(hours / 24);
-  if (days < 7) return `منذ ${days} يوم`;
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium" }).format(d);
+  if (days < 7) {
+    return t(days === 1 ? `${CD}.activity.daysAgo` : `${CD}.activity.daysAgo_plural`, { count: days });
+  }
+  const tag = locale === "ar" ? "ar-JO-u-nu-latn" : "en-GB";
+  return new Intl.DateTimeFormat(tag, { dateStyle: "medium" }).format(d);
 }
 
 /** Presentation-only copy for the course header (does not affect progress math). */
@@ -179,27 +189,28 @@ function getHeaderCompletionPresentation({
   completedLessons,
   totalLessons,
   testingEnabled,
+  t,
 }) {
   if (courseDone) {
     return {
-      label: "تم إكمال الدورة بالكامل",
-      ringCaption: "مكتمل",
+      label: t(`${CD}.progress.fullyCompleted`),
+      ringCaption: t(`${CD}.progress.completed`),
       tone: "complete",
       accent: "full",
     };
   }
   if (finalTestReady || (allLessonsComplete && testingEnabled)) {
     return {
-      label: "جاهز للاختبار النهائي",
-      ringCaption: "جاهز",
+      label: t(`${CD}.progress.readyForTest`),
+      ringCaption: t(`${CD}.progress.ready`),
       tone: "final-test",
       accent: "full",
     };
   }
   if (allLessonsComplete) {
     return {
-      label: "تم إكمال جميع الدروس",
-      ringCaption: "الدروس",
+      label: t(`${CD}.progress.lessonsCompleted`),
+      ringCaption: t(`${CD}.progress.lessons`),
       tone: "lessons-done",
       accent: "full",
     };
@@ -207,14 +218,20 @@ function getHeaderCompletionPresentation({
   const done = Number(completedLessons) || 0;
   const total = Number(totalLessons) || 0;
   return {
-    label: total > 0 ? `${done} من ${total} درس مكتمل` : "لم يبدأ التقدم بعد",
-    ringCaption: "التقدم",
+    label:
+      total > 0
+        ? t(total === 1 ? `${CD}.progress.lessonsProgress` : `${CD}.progress.lessonsProgress_plural`, {
+            done,
+            total,
+          })
+        : t(`${CD}.progress.notStarted`),
+    ringCaption: t(`${CD}.progress.ringCaption`),
     tone: "in-progress",
     accent: "muted",
   };
 }
 
-function CircularProgressRing({ percent, size = 92, caption = "التقدم الكلي", ariaLabel }) {
+function CircularProgressRing({ percent, size = 92, caption, ariaLabel }) {
   const pct = Math.min(100, Math.max(0, Number(percent) || 0));
   const stroke = 7;
   const r = (size - stroke) / 2;
@@ -259,12 +276,12 @@ function CircularProgressRing({ percent, size = 92, caption = "التقدم ال
   );
 }
 
-function formatUploadFileSize(bytes) {
+function formatUploadFileSize(bytes, t) {
   const n = Number(bytes);
   if (!Number.isFinite(n) || n <= 0) return null;
-  if (n < 1024) return `${n} بايت`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} ك.ب`;
-  return `${(n / (1024 * 1024)).toFixed(1)} م.ب`;
+  if (n < 1024) return t(`${CD}.fileSize.bytes`, { count: n });
+  if (n < 1024 * 1024) return t(`${CD}.fileSize.kb`, { size: (n / 1024).toFixed(1) });
+  return t(`${CD}.fileSize.mb`, { size: (n / (1024 * 1024)).toFixed(1) });
 }
 
 function FlowStepMarker({ step, done, active, isLast }) {
@@ -308,11 +325,11 @@ function FlowStepRow({ step, stepTitle, done, active, isLast, children }) {
   );
 }
 
-function FlowPhase({ phaseNum, title, subtitle, tone = "default", children }) {
+function FlowPhase({ phaseNum, title, subtitle, tone = "default", children, t }) {
   return (
     <section className={`fcd-flow__phase fcd-flow__phase--${tone}`}>
       <header className="fcd-flow__phase-head">
-        <span className="fcd-flow__phase-tag">المرحلة {phaseNum}</span>
+        <span className="fcd-flow__phase-tag">{t(`${CD}.flow.phaseTag`, { num: phaseNum })}</span>
         <div className="fcd-flow__phase-copy">
           <h3 className="fcd-flow__phase-title">{title}</h3>
           {subtitle ? <p className="fcd-flow__phase-sub">{subtitle}</p> : null}
@@ -323,9 +340,9 @@ function FlowPhase({ phaseNum, title, subtitle, tone = "default", children }) {
   );
 }
 
-function FlowTrackHeader({ steps }) {
+function FlowTrackHeader({ steps, t }) {
   return (
-    <nav className="fcd-flow__track" aria-label="مسار الخطوات 1 إلى 5">
+    <nav className="fcd-flow__track" aria-label={t(`${CD}.flow.trackAria`)}>
       <ol className="fcd-flow__track-list">
         {steps.map((s, index) => (
           <li
@@ -368,14 +385,21 @@ function FinalExamFileCard({
   onCopy,
   primary = false,
   embedded = false,
-  viewLabel = "عرض الملف",
-  downloadLabel = "تحميل الملف",
+  viewLabel,
+  downloadLabel,
+  t,
 }) {
   const friendlyTitle = displayTitle || title;
   const hasFile = Boolean(fileUrl);
   const available = hasFile && !legacy;
-  const statusLabel = legacy ? "يحتاج إعادة رفع" : hasFile ? "متاح" : "غير متوفر";
+  const statusLabel = legacy
+    ? t(`${CD}.file.needsReuploadShort`)
+    : hasFile
+      ? t(`${CD}.file.available`)
+      : t(`${CD}.file.unavailable`);
   const statusClass = legacy ? "fcd-final__status--warn" : hasFile ? "fcd-final__status--ok" : "fcd-final__status--empty";
+  const resolvedViewLabel = viewLabel || t(`${CD}.file.viewFile`);
+  const resolvedDownloadLabel = downloadLabel || t(`${CD}.file.downloadFile`);
 
   return (
     <div
@@ -405,8 +429,8 @@ function FinalExamFileCard({
         <p className="fcd-final__legacy-warn" role="alert">
           <CircleAlert size={16} aria-hidden />
           <span>
-            <span className="fcd-final__legacy-badge">يحتاج إعادة رفع الملف</span>
-            {COURSE_FILE_LEGACY_MESSAGE}
+            <span className="fcd-final__legacy-badge">{t(`${CD}.file.needsReuploadBadge`)}</span>
+            {t(`${CD}.fileLegacy`)}
           </span>
         </p>
       ) : null}
@@ -424,7 +448,7 @@ function FinalExamFileCard({
       ) : (
         <p className="fcd-final__resource-empty">
           <CircleAlert size={16} aria-hidden />
-          لم يُرفق هذا الملف من الإدارة بعد.
+          {t(`${CD}.file.notAttachedByAdmin`)}
         </p>
       )}
 
@@ -437,7 +461,7 @@ function FinalExamFileCard({
             onClick={onView}
           >
             {fileAction === "view" ? <Loader2 size={16} className="fcd-btn__spinner" aria-hidden /> : <Eye size={16} aria-hidden />}
-            {viewLabel}
+            {resolvedViewLabel}
           </button>
           <button
             type="button"
@@ -450,12 +474,12 @@ function FinalExamFileCard({
             ) : (
               <Download size={16} aria-hidden />
             )}
-            {downloadLabel}
+            {resolvedDownloadLabel}
           </button>
           {onCopy ? (
             <button type="button" className="fcd-final__action-btn fcd-final__action-btn--ghost" onClick={onCopy}>
               <Copy size={16} aria-hidden />
-              نسخ التعليمات
+              {t(`${CD}.file.copyInstructions`)}
             </button>
           ) : null}
         </div>
@@ -511,6 +535,7 @@ function CompletedActionButton({ label, icon: Icon, variant = "solid", loading, 
 
 function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAnswerFileLink, assignment, course }) {
   const toast = useToast();
+  const { t, locale } = useTranslation();
   const [fileAction, setFileAction] = useState({
     test: null,
     prompt: null,
@@ -557,7 +582,7 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
           /* ignore */
         }
       }
-      toast.error(err?.message || COURSE_FILE_OPEN_FAILED_TOAST);
+      toast.error(err?.message || t(`${CD}.fileOpenFailed`));
     } finally {
       setFileAction((prev) => ({ ...prev, completedExam: null }));
     }
@@ -567,7 +592,7 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
     const legacy =
       kind === "test" ? testLegacy : kind === "prompt" ? promptLegacy : modelAnswerLegacy;
     if (legacy) {
-      toast.error(COURSE_FILE_LEGACY_MESSAGE);
+      toast.error(t(`${CD}.fileLegacy`));
       return;
     }
     if (fileAction[kind]) return;
@@ -594,7 +619,7 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
           /* ignore */
         }
       }
-      toast.error(err?.message || COURSE_FILE_OPEN_FAILED_TOAST);
+      toast.error(err?.message || t(`${CD}.fileOpenFailed`));
     } finally {
       setFileAction((prev) => ({ ...prev, [kind]: null }));
     }
@@ -606,7 +631,7 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
     try {
       if (mode === "view") {
         if (!openExternalFileInTab(answerFileUrl)) {
-          toast.error("تعذر فتح الملف. جرّب التحميل.");
+          toast.error(t(`${CD}.file.openFailedTryDownload`));
         }
       } else {
         downloadExternalFile(answerFileUrl, getStudentCourseFileDownloadName("answer"));
@@ -624,20 +649,20 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
   const examMarks = Array.isArray(assignment?.examQuestionMarks) ? assignment.examQuestionMarks : [];
   const submittedAt = assignment?.auditSubmittedAt || assignment?.completedAt || null;
   const submittedLabel = submittedAt
-    ? new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium" }).format(new Date(submittedAt))
+    ? new Intl.DateTimeFormat(locale === "ar" ? "ar-JO-u-nu-latn" : "en-GB", { dateStyle: "medium" }).format(
+        new Date(submittedAt),
+      )
     : null;
 
   return (
     <div className="fcd-final fcd-final--completed">
       <header className="fcd-final__completed-hero fdash-surface-inset">
-        <h2 className="fcd-final__completed-title">أحسنت! اكتملت الدورة بنجاح</h2>
-        <p className="fcd-final__completed-sub">
-          تم تسجيل استجابة الاختبار النهائي وإتمام الدورة. يمكنك مراجعة ملفات الاختبار والتسليم في أي وقت.
-        </p>
+        <h2 className="fcd-final__completed-title">{t(`${CD}.completed.congratsTitle`)}</h2>
+        <p className="fcd-final__completed-sub">{t(`${CD}.completed.congratsSub`)}</p>
         {finalGrade != null ? (
           <p className="fcd-final__completed-grade" role="status">
-            <strong>الدرجة النهائية: {finalGrade}%</strong>
-            {submittedLabel ? <span> — تاريخ التسليم: {submittedLabel}</span> : null}
+            <strong>{t(`${CD}.completed.finalGrade`, { grade: finalGrade })}</strong>
+            {submittedLabel ? <span>{t(`${CD}.completed.submittedAt`, { date: submittedLabel })}</span> : null}
           </p>
         ) : null}
       </header>
@@ -645,15 +670,15 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
       {examMarks.length > 0 ? (
         <section className="fcd-final__completed-grades" aria-labelledby="fcd-completed-grades-title">
           <h3 id="fcd-completed-grades-title" className="fcd-final__section-title">
-            درجات الأسئلة
+            {t(`${CD}.completed.questionGrades`)}
             {examQuestionsForCourse(course).length > 0
-              ? ` (${examQuestionsForCourse(course).length} أسئلة)`
+              ? t(`${CD}.completed.questionCount`, { count: examQuestionsForCourse(course).length })
               : ""}
           </h3>
           <ul className="fcd-final__marks-grid fcd-final__marks-grid--readonly">
             {examMarks.map((mark, idx) => (
               <li key={`done-q-${idx}`} className="fcd-final__mark-readonly">
-                <span className="fcd-final__mark-readonly-label">سؤال {idx + 1}</span>
+                <span className="fcd-final__mark-readonly-label">{t(`${CD}.completed.questionLabel`, { num: idx + 1 })}</span>
                 <strong>{mark}</strong>
               </li>
             ))}
@@ -664,12 +689,12 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
       {hasAnyFileAction ? (
         <section className="fcd-final__completed-files" aria-labelledby="fcd-completed-files-title">
           <h3 id="fcd-completed-files-title" className="fcd-final__completed-files-title">
-            ملفات وتسليم الاختبار
+            {t(`${CD}.completed.filesAndSubmission`)}
           </h3>
           <div className="fcd-final__completed-actions">
             {hasTestFile ? (
               <CompletedActionButton
-                label="تحميل ملف الاختبار"
+                label={t(`${CD}.completed.downloadTestFile`)}
                 icon={Download}
                 loading={fileAction.test === "download"}
                 onClick={() => void runCourseFile("test", "download")}
@@ -677,7 +702,7 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
             ) : null}
             {hasPromptFile ? (
               <CompletedActionButton
-                label="تحميل ملف التعليمات"
+                label={t(`${CD}.completed.downloadInstructionsFile`)}
                 icon={Download}
                 loading={fileAction.prompt === "download"}
                 onClick={() => void runCourseFile("prompt", "download")}
@@ -685,7 +710,7 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
             ) : null}
             {hasModelAnswerFile ? (
               <CompletedActionButton
-                label="تحميل ملف الإجابة النموذجية"
+                label={t(`${CD}.completed.downloadModelAnswer`)}
                 icon={Download}
                 loading={fileAction.modelAnswer === "download"}
                 onClick={() => void runCourseFile("modelAnswer", "download")}
@@ -694,14 +719,14 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
             {hasAnswerFile ? (
               <>
                 <CompletedActionButton
-                  label="عرض ملف الإجابة المرفوع"
+                  label={t(`${CD}.completed.viewAnswerFile`)}
                   icon={Eye}
                   variant="outline"
                   loading={fileAction.answer === "view"}
                   onClick={() => runAnswerFile("view")}
                 />
                 <CompletedActionButton
-                  label="تحميل ملف الإجابة المرفوع"
+                  label={t(`${CD}.completed.downloadAnswerFile`)}
                   icon={Download}
                   loading={fileAction.answer === "download"}
                   onClick={() => runAnswerFile("download")}
@@ -715,20 +740,20 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
                 <CheckCircle2 size={20} />
               </span>
               <div className="fcd-final__completed-work-file-copy">
-                <strong>الملف المنجز</strong>
-                <span>{completedExamLabel || "تم رفع ملف الاختبار المنجز"}</span>
-                <span className="fcd-final__completed-work-file-ok">تم رفعه بنجاح</span>
+                <strong>{t(`${CD}.file.completedWorkFile`)}</strong>
+                <span>{completedExamLabel || t(`${CD}.file.completedWorkFileDefault`)}</span>
+                <span className="fcd-final__completed-work-file-ok">{t(`${CD}.file.uploadedSuccessfully`)}</span>
               </div>
               <div className="fcd-final__completed-work-file-actions">
                 <CompletedActionButton
-                  label="عرض الملف"
+                  label={t(`${CD}.file.viewFile`)}
                   icon={Eye}
                   variant="outline"
                   loading={fileAction.completedExam === "view"}
                   onClick={() => void runCompletedExamFile("view")}
                 />
                 <CompletedActionButton
-                  label="تحميل الملف"
+                  label={t(`${CD}.file.downloadFile`)}
                   icon={Download}
                   loading={fileAction.completedExam === "download"}
                   onClick={() => void runCompletedExamFile("download")}
@@ -742,13 +767,13 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
       {(hasAnswerText || hasAnswerFile) && (
         <section className="fcd-final__completed-summary" aria-labelledby="fcd-completed-summary-title">
           <h3 id="fcd-completed-summary-title" className="fcd-final__section-title">
-            ملخص التسليم
+            {t(`${CD}.completed.submissionSummary`)}
           </h3>
           {hasAnswerText ? (
             <div className="fcd-final__completed-text-block">
               {!showAnswerText ? (
                 <CompletedActionButton
-                  label="عرض نص الإجابة"
+                  label={t(`${CD}.completed.viewAnswerText`)}
                   icon={FileText}
                   variant="outline"
                   onClick={() => setShowAnswerText(true)}
@@ -756,7 +781,7 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
               ) : (
                 <>
                   <div className="fcd-final__submitted-text">
-                    <span className="fcd-final__submitted-label">نص الإجابة</span>
+                    <span className="fcd-final__submitted-label">{t(`${CD}.completed.answerText`)}</span>
                     <p className="fcd-final__answer-text-body">{submittedText}</p>
                   </div>
                   <button
@@ -764,7 +789,7 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
                     className="fcd-final__completed-collapse"
                     onClick={() => setShowAnswerText(false)}
                   >
-                    إخفاء النص
+                    {t(`${CD}.completed.hideText`)}
                   </button>
                 </>
               )}
@@ -772,7 +797,7 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
           ) : null}
           {hasAnswerFile && !hasAnswerText ? (
             <p className="fcd-final__completed-summary-note" role="status">
-              تم إرسال ملف الإجابة. استخدم الأزرار أعلاه لعرضه أو تحميله.
+              {t(`${CD}.completed.answerFileOnlyNote`)}
             </p>
           ) : null}
         </section>
@@ -781,7 +806,7 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
       {testLegacy || promptLegacy || modelAnswerLegacy ? (
         <p className="fcd-final__legacy-warn" role="alert">
           <CircleAlert size={16} aria-hidden />
-          <span>{COURSE_FILE_LEGACY_MESSAGE}</span>
+          <span>{t(`${CD}.fileLegacy`)}</span>
         </p>
       ) : null}
     </div>
@@ -789,7 +814,12 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
 }
 
 function FinalTestSidebarItem({ isActive, locked, completed, ready, onSelect }) {
-  const statusLabel = completed ? "مكتمل" : locked ? "أكمل جميع الدروس لفتح الاختبار النهائي" : "جاهز للتسليم";
+  const { t } = useTranslation();
+  const statusLabel = completed
+    ? t(`${CD}.sidebar.statusCompleted`)
+    : locked
+      ? t(`${CD}.sidebar.statusLocked`)
+      : t(`${CD}.sidebar.statusReady`);
 
   return (
     <li className="fcd-final-item-wrap">
@@ -812,8 +842,8 @@ function FinalTestSidebarItem({ isActive, locked, completed, ready, onSelect }) 
           {completed ? <Check size={18} strokeWidth={2.4} /> : locked ? <Lock size={17} strokeWidth={2.2} /> : <Star size={17} strokeWidth={2.2} />}
         </span>
         <span className="fcd-final-item__body">
-          <span className="fcd-final-item__badge">الخطوة الأخيرة</span>
-          <span className="fcd-final-item__title">{FINAL_TEST_TITLE}</span>
+          <span className="fcd-final-item__badge">{t(`${CD}.sidebar.finalStepBadge`)}</span>
+          <span className="fcd-final-item__title">{t(`${CD}.finalTestTitle`)}</span>
           <span className="fcd-final-item__status">{statusLabel}</span>
         </span>
         <span className="fcd-final-item__chev" aria-hidden>
@@ -825,6 +855,7 @@ function FinalTestSidebarItem({ isActive, locked, completed, ready, onSelect }) 
 }
 
 function ExamStepCard({ step, title, status, locked, children }) {
+  const { t } = useTranslation();
   const statusClass =
     status === "done"
       ? "fcd-exam-step--done"
@@ -837,7 +868,7 @@ function ExamStepCard({ step, title, status, locked, children }) {
         <span className="fcd-exam-step__num">{step}</span>
         <div className="fcd-exam-step__copy">
           <h3 className="fcd-exam-step__title">{title}</h3>
-          <span className="fcd-exam-step__status">{stepStatusLabel(status)}</span>
+          <span className="fcd-exam-step__status">{stepStatusLabel(status, t)}</span>
         </div>
         {status === "done" ? (
           <span className="fcd-exam-step__done-icon" aria-hidden>
@@ -877,6 +908,7 @@ function FinalTestPanel({
   progress,
 }) {
   const toast = useToast();
+  const { t, locale } = useTranslation();
   const fileInputRef = useRef(null);
   const completedFileInputRef = useRef(null);
   const [fileAction, setFileAction] = useState({ test: null, prompt: null, modelAnswer: null, completedExam: null });
@@ -906,9 +938,9 @@ function FinalTestPanel({
             <div className="fcd-final__lock-hero" aria-hidden>
               🔒
             </div>
-            <h2 className="fcd-final__hero-title">الاختبار النهائي مقفول</h2>
+            <h2 className="fcd-final__hero-title">{t(`${CD}.exam.lockedTitle`)}</h2>
             <p className="fcd-final__hero-sub">
-              أكمل جميع دروس الفيديو ({completedLessons}/{totalLessons}) لفتح هذه الخطوة النهائية وإتمام الدورة.
+              {t(`${CD}.exam.lockedSub`, { completed: completedLessons, total: totalLessons })}
             </p>
           </div>
         </div>
@@ -945,8 +977,8 @@ function FinalTestPanel({
     ? getStudentCourseFileDownloadName("model-answer")
     : undefined;
   const charCount = auditResponseText.length;
-  const uploadSizeLabel = auditResponseFile ? formatUploadFileSize(auditResponseFile.size) : null;
-  const completedFileName = completedExamUrl ? fileNameFromCompletedUrl(completedExamUrl) : null;
+  const uploadSizeLabel = auditResponseFile ? formatUploadFileSize(auditResponseFile.size, t) : null;
+  const completedFileName = completedExamUrl ? fileNameFromCompletedUrl(completedExamUrl, t) : null;
 
   const clearAuditFile = () => {
     setAuditResponseFile(null);
@@ -957,7 +989,7 @@ function FinalTestPanel({
     const legacy =
       kind === "test" ? testLegacy : kind === "prompt" ? promptLegacy : modelAnswerLegacy;
     if (legacy) {
-      toast.error(COURSE_FILE_LEGACY_MESSAGE);
+      toast.error(t(`${CD}.fileLegacy`));
       return;
     }
     if (fileAction[kind]) return;
@@ -983,7 +1015,7 @@ function FinalTestPanel({
           /* ignore */
         }
       }
-      toast.error(err?.message || COURSE_FILE_OPEN_FAILED_TOAST);
+      toast.error(err?.message || t(`${CD}.fileOpenFailed`));
     } finally {
       setFileAction((prev) => ({ ...prev, [kind]: null }));
     }
@@ -1007,7 +1039,7 @@ function FinalTestPanel({
           /* ignore */
         }
       }
-      toast.error(err?.message || COURSE_FILE_OPEN_FAILED_TOAST);
+      toast.error(err?.message || t(`${CD}.fileOpenFailed`));
     } finally {
       setFileAction((prev) => ({ ...prev, completedExam: null }));
     }
@@ -1016,17 +1048,17 @@ function FinalTestPanel({
   const onUploadCompletedExam = async (file) => {
     if (!file || uploadingCompleted) return;
     if (String(file.type || "").toLowerCase() !== "application/pdf") {
-      toast.error("تعذر رفع الملف. تأكد أن الملف PDF وحاول مرة أخرى.");
+      toast.error(t(`${CD}.uploadError`));
       return;
     }
     setUploadingCompleted(true);
     try {
       await freelancerUploadCompletedExamFileRequest(courseId, file);
-      toast.success("تم رفع الملف المنجز بنجاح");
+      toast.success(t(`${CD}.uploadSuccess`));
       if (completedFileInputRef.current) completedFileInputRef.current.value = "";
       await onRefreshDetails?.();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "تعذر رفع الملف المنجز.");
+      toast.error(err?.response?.data?.message || t(`${CD}.uploadCompletedError`));
     } finally {
       setUploadingCompleted(false);
     }
@@ -1054,39 +1086,37 @@ function FinalTestPanel({
       <div className="fcd-final__congrats fdash-surface-inset" role="status">
         <Sparkles size={20} className="fcd-final__congrats-icon" aria-hidden />
         <p>
-          <strong>🎉 مبروك! أنهيت جميع الدروس.</strong> أكمل الخطوات الثلاث بالترتيب لإتمام الاختبار النهائي.
+          <strong>{t(`${CD}.exam.lessonsDoneBanner`)}</strong> {t(`${CD}.exam.lessonsDoneBannerSub`)}
           <span className="fcd-final__congrats-meta">
-            ({completedLessons}/{totalLessons} درس مكتمل)
+            {t(`${CD}.exam.lessonsCompletedCount`, { completed: completedLessons, total: totalLessons })}
           </span>
         </p>
       </div>
 
       <header className="fcd-final__intro">
-        <span className="fcd-final__intro-kicker">الخطوة الأخيرة</span>
-        <h2 className="fcd-final__intro-title">{FINAL_TEST_TITLE}</h2>
-        <p className="fcd-final__intro-lead">
-          حمّل ملف الاختبار وأنجز العمل، ارفع الملف المنجز، ثم استخدم ChatGPT مع ملفات التقييم، وأدخل علامات الأسئلة
-          قبل الإرسال النهائي.
-        </p>
+        <span className="fcd-final__intro-kicker">{t(`${CD}.sidebar.finalStepBadge`)}</span>
+        <h2 className="fcd-final__intro-title">{t(`${CD}.finalTestTitle`)}</h2>
+        <p className="fcd-final__intro-lead">{t(`${CD}.exam.introSub`)}</p>
       </header>
 
       <form className="fcd-exam-flow" onSubmit={onSubmit}>
         <ExamStepCard
           step={1}
-          title="الخطوة 1: تحميل ملف الاختبار ورفع الملف المنجز"
+          title={t(`${CD}.exam.step1Title`)}
           status={step1Status}
           locked={false}
         >
           <FinalExamFileCard
             embedded
             primary
-            title="ملف الاختبار"
-            description="حمّل ملف الاختبار وأنجز الإجابة خارج المنصة."
+            t={t}
+            title={t(`${CD}.exam.testFileTitle`)}
+            description={t(`${CD}.exam.testFileDesc`)}
             displayTitle={testFileDisplay.title}
             fileUrl={testLink}
             legacy={testLegacy}
             fileAction={fileAction.test}
-            downloadLabel="تحميل ملف الاختبار"
+            downloadLabel={t(`${CD}.exam.downloadTestFile`)}
             onView={() => {
               const preview = openPdfPreviewTab();
               void runCourseFileAction("test", "view", preview);
@@ -1112,8 +1142,8 @@ function FinalTestPanel({
                   <CheckCircle2 size={22} />
                 </span>
                 <div className="fcd-final__upload-selected-copy">
-                  <strong>{completedFileName || "الملف المنجز"}</strong>
-                  <span className="fcd-final__upload-selected-ok">تم رفع الملف المنجز بنجاح</span>
+                  <strong>{completedFileName || t(`${CD}.file.completedWorkFile`)}</strong>
+                  <span className="fcd-final__upload-selected-ok">{t(`${CD}.exam.uploadCompletedSuccess`)}</span>
                 </div>
                 <div className="fcd-final__upload-selected-actions">
                   <button
@@ -1130,7 +1160,7 @@ function FinalTestPanel({
                     ) : (
                       <Eye size={14} aria-hidden />
                     )}
-                    عرض الملف
+                    {t(`${CD}.file.viewFile`)}
                   </button>
                   <button
                     type="button"
@@ -1143,7 +1173,7 @@ function FinalTestPanel({
                     ) : (
                       <Download size={14} aria-hidden />
                     )}
-                    تحميل الملف
+                    {t(`${CD}.file.downloadFile`)}
                   </button>
                   <button
                     type="button"
@@ -1151,7 +1181,7 @@ function FinalTestPanel({
                     disabled={submitting || uploadingCompleted}
                     onClick={() => completedFileInputRef.current?.click()}
                   >
-                    استبدال الملف
+                    {t(`${CD}.file.replaceFile`)}
                   </button>
                 </div>
               </div>
@@ -1160,47 +1190,45 @@ function FinalTestPanel({
                 <span className="fcd-final__upload-icon" aria-hidden>
                   <Upload size={22} />
                 </span>
-                <span className="fcd-final__upload-title">ارفع الملف المنجز بعد حل الاختبار</span>
-                <span className="fcd-final__upload-hint">PDF فقط — حتى 5 ميجابايت</span>
+                <span className="fcd-final__upload-title">{t(`${CD}.exam.uploadCompletedTitle`)}</span>
+                <span className="fcd-final__upload-hint">{t(`${CD}.exam.uploadCompletedHint`)}</span>
                 <button
                   type="button"
                   className="fcd-final__upload-btn"
                   disabled={submitting || uploadingCompleted}
                   onClick={() => completedFileInputRef.current?.click()}
                 >
-                  {uploadingCompleted ? "جاري الرفع..." : "رفع الملف المنجز"}
+                  {uploadingCompleted ? t(`${CD}.exam.uploading`) : t(`${CD}.exam.uploadCompletedBtn`)}
                 </button>
               </>
             )}
           </div>
           {!step1Done ? (
             <p className="fcd-exam-step__hint" role="status">
-              يجب رفع الملف المنجز أولاً قبل الانتقال للخطوة التالية.
+              {t(`${CD}.exam.step1Required`)}
             </p>
           ) : null}
         </ExamStepCard>
 
         <ExamStepCard
           step={2}
-          title="الخطوة 2: تحميل ملف البرومبت والإجابة النموذجية"
+          title={t(`${CD}.exam.step2Title`)}
           status={step2Status}
           locked={!step1Done}
         >
-          <p className="fcd-flow__step-note">
-            يرجى إعطاء ChatGPT الملفات التالية: الملف المنجز، ملف البرومبت، والإجابة النموذجية، ثم انسخ نتيجة
-            ChatGPT هنا أو ارفعها كملف.
-          </p>
+          <p className="fcd-flow__step-note">{t(`${CD}.exam.step2Note`)}</p>
 
           <div className="fcd-exam-step__file-grid">
             <FinalExamFileCard
               embedded
-              title="ملف تعليمات / Prompt التقييم"
-              description="حمّل ملف البرومبت لاستخدامه مع ChatGPT."
+              t={t}
+              title={t(`${CD}.exam.promptFileTitle`)}
+              description={t(`${CD}.exam.promptFileDesc`)}
               displayTitle={promptFileDisplay.title}
               fileUrl={promptFileLink}
               legacy={promptLegacy}
               fileAction={fileAction.prompt}
-              downloadLabel="تحميل ملف البرومبت"
+              downloadLabel={t(`${CD}.exam.downloadPromptFile`)}
               onView={() => {
                 const preview = openPdfPreviewTab();
                 void runCourseFileAction("prompt", "view", preview);
@@ -1209,13 +1237,14 @@ function FinalTestPanel({
             />
             <FinalExamFileCard
               embedded
-              title="ملف الإجابة النموذجية"
-              description="حمّل الإجابة النموذجية لاستخدامها مع ChatGPT."
+              t={t}
+              title={t(`${CD}.exam.modelAnswerTitle`)}
+              description={t(`${CD}.exam.modelAnswerDesc`)}
               displayTitle={modelAnswerFileDisplay.title}
               fileUrl={modelAnswerFileLink}
               legacy={modelAnswerLegacy}
               fileAction={fileAction.modelAnswer}
-              downloadLabel="تحميل الإجابة النموذجية"
+              downloadLabel={t(`${CD}.exam.downloadModelAnswer`)}
               onView={() => {
                 const preview = openPdfPreviewTab();
                 void runCourseFileAction("modelAnswer", "view", preview);
@@ -1244,7 +1273,7 @@ function FinalTestPanel({
                     {uploadSizeLabel ? (
                       <span className="fcd-final__upload-selected-size">{uploadSizeLabel}</span>
                     ) : null}
-                    <span className="fcd-final__upload-selected-ok">تم اختيار ملف نتيجة ChatGPT</span>
+                    <span className="fcd-final__upload-selected-ok">{t(`${CD}.exam.chatgptFileSelected`)}</span>
                   </div>
                   <div className="fcd-final__upload-selected-actions">
                     <button
@@ -1253,17 +1282,17 @@ function FinalTestPanel({
                       disabled={submitting}
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      استبدال
+                      {t(`${CD}.file.replace`)}
                     </button>
                     <button
                       type="button"
                       className="fcd-final__upload-mini-btn fcd-final__upload-mini-btn--danger"
                       disabled={submitting}
                       onClick={clearAuditFile}
-                      aria-label="إزالة الملف"
+                      aria-label={t(`${CD}.file.removeFileAria`)}
                     >
                       <X size={14} aria-hidden />
-                      إزالة
+                      {t(`${CD}.file.remove`)}
                     </button>
                   </div>
                 </div>
@@ -1272,32 +1301,32 @@ function FinalTestPanel({
                   <span className="fcd-final__upload-icon" aria-hidden>
                     <Upload size={22} />
                   </span>
-                  <span className="fcd-final__upload-title">ارفع نتيجة ChatGPT كملف</span>
+                  <span className="fcd-final__upload-title">{t(`${CD}.exam.uploadChatgptTitle`)}</span>
                   <button
                     type="button"
                     className="fcd-final__upload-btn"
                     disabled={submitting}
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    اختيار ملف
+                    {t(`${CD}.file.chooseFile`)}
                   </button>
                 </>
               )}
             </div>
 
             <label className="fcd-final__field fcd-final__field--text">
-              <span className="fcd-final__field-label">أو الصق نتيجة ChatGPT</span>
+              <span className="fcd-final__field-label">{t(`${CD}.exam.pasteChatgptLabel`)}</span>
               <textarea
                 rows={6}
                 maxLength={MAX_RESPONSE_CHARS}
                 value={auditResponseText}
                 onChange={(e) => setAuditResponseText(e.target.value)}
                 disabled={submitting}
-                placeholder="الصق هنا نتيجة تقييم ChatGPT…"
+                placeholder={t(`${CD}.exam.pasteChatgptPlaceholder`)}
                 className="fcd-final__textarea"
               />
               <span className="fcd-final__char-count" aria-live="polite">
-                {charCount.toLocaleString("ar")} / {MAX_RESPONSE_CHARS.toLocaleString("ar")}
+                {charCount.toLocaleString(locale)} / {MAX_RESPONSE_CHARS.toLocaleString(locale)}
               </span>
             </label>
           </div>
@@ -1305,26 +1334,25 @@ function FinalTestPanel({
 
         <ExamStepCard
           step={3}
-          title="الخطوة 3: إدخال علامات الأسئلة"
+          title={t(`${CD}.exam.step3Title`)}
           status={step3Status}
           locked={!step2Done}
         >
           {questionCount > 0 ? (
             <>
-              <p className="fcd-flow__step-note">
-                أدخل علامة كل سؤال بناءً على نتيجة ChatGPT. تُحسب النتيجة النهائية من مجموع العلامات ÷ مجموع
-                العلامات القصوى.
-              </p>
+              <p className="fcd-flow__step-note">{t(`${CD}.exam.step3Note`)}</p>
               <div className="fcd-final__marks-grid fcd-final__marks-grid--rows">
                 {examQuestions.map((q, idx) => {
                   const key = `q${q.number}`;
                   const err = markErrors[key] || marksCheck.fieldErrors[key];
-                  const label = q.text ? `السؤال ${q.number}: ${q.text}` : `السؤال ${q.number}`;
+                  const label = q.text
+                    ? t(`${CD}.exam.questionWithText`, { num: q.number, text: q.text })
+                    : t(`${CD}.exam.questionNumber`, { num: q.number });
                   return (
                     <label key={key} className={`fcd-final__mark-row${err ? " fcd-final__mark-row--error" : ""}`}>
                       <span className="fcd-final__mark-row-label">{label}</span>
                       <div className="fcd-final__mark-row-input-wrap">
-                        <span className="fcd-final__mark-row-prefix">العلامة</span>
+                        <span className="fcd-final__mark-row-prefix">{t(`${CD}.exam.markLabel`)}</span>
                         <input
                           type="number"
                           min={0}
@@ -1336,7 +1364,7 @@ function FinalTestPanel({
                           disabled={submitting}
                           onWheel={preventNumberInputScroll}
                           onChange={(e) => {
-                            const { value, fieldError } = sanitizeExamMarkInput(e.target.value, q.maxMark);
+                            const { value, fieldError } = sanitizeExamMarkInput(e.target.value, q.maxMark, t);
                             const next = [...questionMarks];
                             next[idx] = value;
                             setQuestionMarks(next);
@@ -1363,9 +1391,7 @@ function FinalTestPanel({
               </div>
             </>
           ) : (
-            <p className="fcd-flow__step-note">
-              لا توجد أسئلة بدرجات لهذه الدورة. يكفي إكمال الخطوتين السابقتين ثم الإرسال.
-            </p>
+            <p className="fcd-flow__step-note">{t(`${CD}.exam.noGradedQuestions`)}</p>
           )}
 
           <div className="fcd-final__submit-footer">
@@ -1380,17 +1406,17 @@ function FinalTestPanel({
               ) : (
                 <Send size={18} aria-hidden />
               )}
-              {submitting ? "جاري الإرسال..." : "إرسال النتيجة وإتمام الدورة"}
+              {submitting ? t(`${CD}.exam.submitting`) : t(`${CD}.exam.submitFinale`)}
             </button>
             {!canSubmit && !submitting ? (
               <p className="fcd-final__submit-hint" role="status">
                 {!step1Done
-                  ? "يجب رفع الملف المنجز أولاً."
+                  ? t(`${CD}.exam.hintUploadFirst`)
                   : !step2Done
-                    ? "أضف نص نتيجة ChatGPT أو ارفع ملف النتيجة."
+                    ? t(`${CD}.exam.hintChatgptRequired`)
                     : !step3Done
-                      ? "أكمل إدخال علامات جميع الأسئلة."
-                      : "أكمل جميع الخطوات قبل الإرسال."}
+                      ? t(`${CD}.exam.hintCompleteMarks`)
+                      : t(`${CD}.exam.hintCompleteAllSteps`)}
               </p>
             ) : null}
           </div>
@@ -1400,12 +1426,13 @@ function FinalTestPanel({
   );
 }
 
-function fileNameFromCompletedUrl(url) {
+function fileNameFromCompletedUrl(url, t) {
+  const fallback = t(`${CD}.file.defaultCompletedPdf`);
   try {
     const tail = decodeURIComponent(new URL(url).pathname.split("/").pop() || "");
-    return tail && tail.length < 120 ? tail : "الملف المنجز.pdf";
+    return tail && tail.length < 120 ? tail : fallback;
   } catch {
-    return "الملف المنجز.pdf";
+    return fallback;
   }
 }
 
@@ -1413,6 +1440,7 @@ export default function FreelancerCourseDetailsPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const toast = useToast();
+  const { t, locale, dir } = useTranslation();
   const freelancerUserId = user?.id != null ? String(user.id) : "";
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -1486,13 +1514,13 @@ export default function FreelancerCourseDetailsPage() {
         setAuditResponseFile(null);
         return out;
       } catch (err) {
-        toast.error(err?.response?.data?.message || "تعذر تحميل الدورة.");
+        toast.error(err?.response?.data?.message || t(`${CD}.loadError`));
         return null;
       } finally {
         if (!silent) setLoading(false);
       }
     },
-    [id, toast, freelancerUserId],
+    [id, toast, freelancerUserId, t],
   );
 
   useEffect(() => {
@@ -1549,7 +1577,7 @@ export default function FreelancerCourseDetailsPage() {
   const selectFinalTest = () => {
     if (!testingEnabled) return;
     if (finalTestLocked) {
-      toast.error("أكمل جميع دروس الفيديو أولاً لفتح الاختبار النهائي.");
+      toast.error(t(`${CD}.completeLessonsFirst`));
       return;
     }
     setMainView("final-test");
@@ -1579,11 +1607,11 @@ export default function FreelancerCourseDetailsPage() {
 
     markCompleteInFlightRef.current = true;
     setMarkingLessonComplete(true);
-    toast.info("يتم حفظ تقدمك ونقلك للدرس التالي...");
+    toast.info(t(`${CD}.saveProgressInfo`));
 
     try {
       await freelancerMarkLessonCompleteRequest(id, markedLessonId);
-      toast.success("تم تسجيل إكمال المشاهدة.");
+      toast.success(t(`${CD}.lessonCompleteSuccess`));
       const out = await loadDetails({
         silent: true,
         preferLessonId: nextLessonId,
@@ -1594,12 +1622,12 @@ export default function FreelancerCourseDetailsPage() {
 
       if (testingOn && allDone && !completed) {
         setMainView("final-test");
-        toast.success("تم فتح الاختبار النهائي — أكمل التسليم الآن.");
+        toast.success(t(`${CD}.testUnlocked`));
       } else if (nextLessonId) {
         setMainView("lesson");
       }
     } catch (err) {
-      toast.error(err?.response?.data?.message || "تعذر حفظ التقدم، حاول مرة أخرى.");
+      toast.error(err?.response?.data?.message || t(`${CD}.saveProgressError`));
     } finally {
       markCompleteInFlightRef.current = false;
       setMarkingLessonComplete(false);
@@ -1611,14 +1639,14 @@ export default function FreelancerCourseDetailsPage() {
     if (!id) return;
 
     if (!allLessonsComplete) {
-      toast.error("يجب إكمال جميع دروس الفيديو قبل التسليم.");
+      toast.error(t(`${CD}.mustCompleteLessons`));
       return;
     }
 
     const hasText = auditResponseText.trim().length > 0;
     const hasFile = auditResponseFile instanceof File;
     if (testingEnabled && !hasText && !hasFile) {
-      toast.error("يرجى لصق نتيجة تقييم ChatGPT أو رفع ملف تقرير التقييم.");
+      toast.error(t(`${CD}.chatgptRequired`));
       return;
     }
 
@@ -1628,14 +1656,14 @@ export default function FreelancerCourseDetailsPage() {
       const check = validateClientExamMarks(questionMarks, questions);
       if (!check.ok) {
         setMarkErrors(check.fieldErrors);
-        toast.error("أكمل درجات جميع الأسئلة قبل الإرسال.");
+        toast.error(t(`${CD}.completeAllMarks`));
         return;
       }
       marksPayload = check.previewGrade != null ? questionMarks.map((m) => Number(m)) : undefined;
     }
 
     if (testingEnabled && !assignment?.completedExamFileUrl) {
-      toast.error("يجب رفع الملف المنجز أولاً قبل الإرسال.");
+      toast.error(t(`${CD}.uploadCompletedFirst`));
       return;
     }
 
@@ -1650,14 +1678,14 @@ export default function FreelancerCourseDetailsPage() {
         : {};
       await freelancerSubmitCourseCompletionRequest(id, payload);
       if (freelancerUserId) clearChatGptDraft(id, freelancerUserId);
-      toast.success("تم إنهاء الدورة بنجاح.");
+      toast.success(t(`${CD}.courseFinishedSuccess`));
       await loadDetails({ openFinalTest: true });
     } catch (err) {
       const fieldErrors = err?.response?.data?.fieldErrors;
       if (fieldErrors && typeof fieldErrors === "object") {
         setMarkErrors(fieldErrors);
       }
-      toast.error(err?.response?.data?.message || "تعذر إنهاء الدورة.");
+      toast.error(err?.response?.data?.message || t(`${CD}.courseFinishError`));
     } finally {
       setSubmitting(false);
     }
@@ -1668,11 +1696,11 @@ export default function FreelancerCourseDetailsPage() {
   const totalLessons = progress?.totalLessons ?? lessons.length;
   const lastActivityAt =
     assignment?.auditSubmittedAt || assignment?.completedAt || course?.updatedAt || course?.createdAt || null;
-  const activeLessonDuration = formatLessonDuration(activeLesson?.durationSeconds);
+  const activeLessonDuration = formatLessonDuration(activeLesson?.durationSeconds, t);
   const activeNoteKey = activeLesson?.id ? String(activeLesson.id) : "";
 
-  const totalDurationLabel = formatTotalCourseDuration(lessons) || "غير محددة";
-  const lastActivityLabel = formatLastActivityLabel(lastActivityAt) || "لا يوجد";
+  const totalDurationLabel = formatTotalCourseDuration(lessons, t) || t(`${CD}.header.durationUnknown`);
+  const lastActivityLabel = formatLastActivityLabel(lastActivityAt, t, locale) || t(`${CD}.header.noActivity`);
 
   const lessonNavLocked = markingLessonComplete;
 
@@ -1685,6 +1713,7 @@ export default function FreelancerCourseDetailsPage() {
         completedLessons,
         totalLessons,
         testingEnabled,
+        t,
       }),
     [
       courseDone,
@@ -1693,22 +1722,23 @@ export default function FreelancerCourseDetailsPage() {
       completedLessons,
       totalLessons,
       testingEnabled,
+      t,
     ],
   );
 
   return (
     <DashboardHubPage className="fdash-page--course-details">
-      <div className="fcd-page" lang="ar">
+      <div className="fcd-page" lang={locale} dir={dir}>
         {loading ? <CourseDetailsPageSkeleton /> : null}
 
         {!loading && course ? (
           <div className="fcd-page__content fcd-page--loaded">
           <header className="fcd-header fdash-surface-3d fdash-surface-3d--soft">
             <div className="fcd-header__top">
-              <span className="fcd-header__chip">دورة تدريبية</span>
+              <span className="fcd-header__chip">{t(`${CD}.header.trainingChip`)}</span>
               <NavLink to="/dashboard/freelancer/courses" className="fcd-header__back" dir="ltr">
                 <ArrowLeft size={18} strokeWidth={2.2} aria-hidden />
-                العودة إلى الدورات
+                {t(`${CD}.header.backToCourses`)}
               </NavLink>
             </div>
 
@@ -1742,23 +1772,23 @@ export default function FreelancerCourseDetailsPage() {
               </div>
             </div>
 
-            <ul className="fcd-header__meta" aria-label="ملخص الدورة">
+            <ul className="fcd-header__meta" aria-label={t(`${CD}.header.summaryAria`)}>
               <li>
                 <Clock size={16} strokeWidth={2} aria-hidden />
                 <span>
-                  الدروس المكتملة: <strong>{completedLessons}</strong> من <strong>{totalLessons}</strong> درس
+                  {t(`${CD}.header.lessonsCompleted`, { completed: completedLessons, total: totalLessons })}
                 </span>
               </li>
               <li>
                 <Play size={16} strokeWidth={2} aria-hidden />
                 <span>
-                  المدة الإجمالية: <strong>{totalDurationLabel}</strong>
+                  {t(`${CD}.header.totalDuration`, { duration: totalDurationLabel })}
                 </span>
               </li>
               <li>
                 <FileText size={16} strokeWidth={2} aria-hidden />
                 <span>
-                  آخر نشاط: <strong>{lastActivityLabel}</strong>
+                  {t(`${CD}.header.lastActivity`, { activity: lastActivityLabel })}
                 </span>
               </li>
             </ul>
@@ -1770,30 +1800,30 @@ export default function FreelancerCourseDetailsPage() {
                 <Check size={20} strokeWidth={2.4} />
               </span>
               <div className="fcd-banner__copy">
-                <strong>تم إنهاء هذه الدورة بنجاح.</strong>
+                <strong>{t(`${CD}.header.courseFinishedBanner`)}</strong>
                 {assignment?.completedAt ? (
-                  <span className="fcd-banner__sub">تاريخ الإنهاء مسجّل في النظام.</span>
+                  <span className="fcd-banner__sub">{t(`${CD}.header.completionRecorded`)}</span>
                 ) : null}
               </div>
             </div>
           ) : null}
 
           <div className="fcd-layout">
-            <aside className="fcd-sidebar fdash-surface-3d fdash-surface-3d--soft" aria-label="محتوى الدورة">
-              <h2 className="fcd-sidebar__title">محتوى الدورة</h2>
+            <aside className="fcd-sidebar fdash-surface-3d fdash-surface-3d--soft" aria-label={t(`${CD}.sidebar.contentAria`)}>
+              <h2 className="fcd-sidebar__title">{t(`${CD}.sidebar.contentTitle`)}</h2>
               <ol className={`fcd-sidebar__list${sidebarExpanded ? " fcd-sidebar__list--expanded" : ""}`}>
                 {lessons.map((lesson, idx) => {
                   const isActive = !isFinalTestView && String(lesson.id) === String(activeLesson?.id);
-                  const duration = formatLessonDuration(lesson.durationSeconds);
+                  const duration = formatLessonDuration(lesson.durationSeconds, t);
                   const statusLine = lesson.isCompleted
                     ? duration
-                      ? `${duration} • مكتمل`
-                      : "مكتمل"
+                      ? t(`${CD}.sidebar.completedWithDuration`, { duration })
+                      : t(`${CD}.sidebar.completed`)
                     : isActive
                       ? duration
-                        ? `${duration} • قيد المشاهدة`
-                        : "قيد المشاهدة"
-                      : duration || "بدون مدة";
+                        ? t(`${CD}.sidebar.watchingWithDuration`, { duration })
+                        : t(`${CD}.sidebar.watching`)
+                      : duration || t(`${CD}.sidebar.noDuration`);
 
                   return (
                     <li key={lesson.id}>
@@ -1847,7 +1877,7 @@ export default function FreelancerCourseDetailsPage() {
                   aria-expanded={sidebarExpanded}
                 >
                   <span>
-                    عرض جميع الدروس ({lessons.length})
+                    {t(`${CD}.sidebar.showAllLessons`, { count: lessons.length })}
                   </span>
                   <ChevronDown
                     size={18}
@@ -1891,7 +1921,7 @@ export default function FreelancerCourseDetailsPage() {
                     {lessonNavLocked ? (
                       <div className="fcd-lesson-card__saving-banner" role="status" aria-live="polite">
                         <Loader2 size={16} className="fcd-btn__spinner" aria-hidden />
-                        يتم حفظ تقدمك ونقلك للدرس التالي...
+                        {t(`${CD}.saveProgressInfo`)}
                       </div>
                     ) : null}
                     <div className="fcd-lesson-card__video">
@@ -1909,14 +1939,14 @@ export default function FreelancerCourseDetailsPage() {
                       ) : (
                         <div className="fcd-lesson-card__no-video">
                           <Video size={32} strokeWidth={1.6} aria-hidden />
-                          <p>لا يوجد فيديو متاح لهذا الدرس.</p>
+                          <p>{t(`${CD}.lesson.noVideo`)}</p>
                         </div>
                       )}
                     </div>
 
                     <div className="fcd-lesson-card__body">
                       <div className="fcd-lesson-card__head">
-                        <h2 className="fcd-lesson-card__title">{activeLesson?.title || "درس بدون عنوان"}</h2>
+                        <h2 className="fcd-lesson-card__title">{activeLesson?.title || t(`${CD}.lesson.untitled`)}</h2>
                         {activeIndex >= 0 ? (
                           <span className="fcd-lesson-card__badge">{activeIndex + 1}</span>
                         ) : null}
@@ -1925,7 +1955,7 @@ export default function FreelancerCourseDetailsPage() {
                       <div className="fcd-lesson-card__chips">
                         <span className="fcd-lesson-card__chip">
                           <Video size={14} strokeWidth={2} aria-hidden />
-                          فيديو
+                          {t(`${CD}.lesson.videoChip`)}
                         </span>
                         {activeLessonDuration ? (
                           <span className="fcd-lesson-card__chip">
@@ -1934,7 +1964,10 @@ export default function FreelancerCourseDetailsPage() {
                           </span>
                         ) : null}
                         <span className="fcd-lesson-card__chip">
-                          الدرس {activeIndex >= 0 ? activeIndex + 1 : 0} من {lessons.length}
+                          {t(`${CD}.lesson.lessonOf`, {
+                            current: activeIndex >= 0 ? activeIndex + 1 : 0,
+                            total: lessons.length,
+                          })}
                         </span>
                       </div>
 
@@ -1943,9 +1976,7 @@ export default function FreelancerCourseDetailsPage() {
                       ) : null}
 
                       {finalTestReady ? (
-                        <p className="fcd-lesson-card__hint">
-                          أكملت جميع الفيديوهات — <strong>الاختبار النهائي</strong> جاهز في القائمة الجانبية.
-                        </p>
+                        <p className="fcd-lesson-card__hint">{t(`${CD}.lesson.finalTestReadyHint`)}</p>
                       ) : null}
 
                       <div className="fcd-lesson-card__actions">
@@ -1956,7 +1987,7 @@ export default function FreelancerCourseDetailsPage() {
                           disabled={courseDone || activeIndex <= 0 || lessonNavLocked}
                         >
                           <ChevronRight size={18} strokeWidth={2.2} aria-hidden />
-                          الدرس السابق
+                          {t(`${CD}.lesson.prevLesson`)}
                         </button>
                         <button
                           type="button"
@@ -1968,12 +1999,12 @@ export default function FreelancerCourseDetailsPage() {
                           {markingLessonComplete ? (
                             <>
                               <Loader2 size={18} strokeWidth={2.4} className="fcd-btn__spinner" aria-hidden />
-                              جارٍ حفظ التقدم...
+                              {t(`${CD}.lesson.savingProgress`)}
                             </>
                           ) : (
                             <>
                               <Check size={18} strokeWidth={2.4} aria-hidden />
-                              تعليم الدرس كمكتمل
+                              {t(`${CD}.lesson.markComplete`)}
                             </>
                           )}
                         </button>
@@ -1983,7 +2014,9 @@ export default function FreelancerCourseDetailsPage() {
                           onClick={goNextLesson}
                           disabled={courseDone || lessonNavLocked}
                         >
-                          {activeIndex >= lessons.length - 1 && finalTestReady ? "الاختبار النهائي" : "الدرس التالي"}
+                          {activeIndex >= lessons.length - 1 && finalTestReady
+                            ? t(`${CD}.lesson.finalTestNav`)
+                            : t(`${CD}.lesson.nextLesson`)}
                           <ChevronLeft size={18} strokeWidth={2.2} aria-hidden />
                         </button>
                       </div>
@@ -1992,19 +2025,19 @@ export default function FreelancerCourseDetailsPage() {
 
                   <section className="fcd-summary-card fdash-surface-3d fdash-surface-3d--soft" aria-labelledby="fcd-summary-title">
                     <h3 id="fcd-summary-title" className="fcd-summary-card__title">
-                      ملخص الدرس / استجابتك
+                      {t(`${CD}.lesson.summaryTitle`)}
                     </h3>
                     <div className="fcd-summary-card__field fdash-surface-inset">
                       <textarea
                         className="fcd-summary-card__textarea"
                         rows={5}
-                        placeholder="اكتب ملخصك هنا..."
+                        placeholder={t(`${CD}.lesson.summaryPlaceholder`)}
                         value={activeNoteKey ? lessonNotes[activeNoteKey] || "" : ""}
                         onChange={(e) => {
                           if (!activeNoteKey) return;
                           setLessonNotes((prev) => ({ ...prev, [activeNoteKey]: e.target.value }));
                         }}
-                        aria-label="ملخص الدرس"
+                        aria-label={t(`${CD}.lesson.summaryAria`)}
                       />
                       <span className="fcd-summary-card__icon" aria-hidden>
                         <FileText size={20} strokeWidth={1.9} />
@@ -2018,16 +2051,14 @@ export default function FreelancerCourseDetailsPage() {
 
           {!testingEnabled && allLessonsComplete && !courseDone ? (
             <div className="fcd-finish-card fdash-surface-3d fdash-surface-3d--soft">
-              <p className="fcd-finish-card__text">
-                أكملت جميع الدروس. إذا لم يُسجَّل الإنهاء تلقائياً، اضغط الزر أدناه.
-              </p>
+              <p className="fcd-finish-card__text">{t(`${CD}.finish.allLessonsDone`)}</p>
               <button
                 type="button"
                 className="fcd-btn fcd-btn--primary"
                 disabled={submitting}
                 onClick={() => void onSubmitCompletion()}
               >
-                {submitting ? "جارٍ التسجيل…" : "إنهاء الدورة"}
+                {submitting ? t(`${CD}.finish.submitting`) : t(`${CD}.finish.finishCourse`)}
               </button>
             </div>
           ) : null}
@@ -2036,9 +2067,9 @@ export default function FreelancerCourseDetailsPage() {
 
         {!loading && !course ? (
           <div className="fcd-empty fdash-surface-3d fdash-surface-3d--soft">
-            <p>تعذر عرض الدورة. عد إلى قائمة الدورات وحاول مجدداً.</p>
+            <p>{t(`${CD}.empty.loadFailed`)}</p>
             <NavLink to="/dashboard/freelancer/courses" className="fcd-btn fcd-btn--primary">
-              الدورات التدريبية
+              {t(`${CD}.empty.backToCourses`)}
             </NavLink>
           </div>
         ) : null}

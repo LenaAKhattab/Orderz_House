@@ -1,12 +1,15 @@
 import { SkBox, SkLine } from "./SkeletonPrimitives";
-import "../components/sections/partners-section.css";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../sections/partners-section.css";
 
 /** Approximates `PartnersSection` layout. */
 export default function PartnersBandSkeleton() {
+  const { dir } = useTranslation();
+
   return (
     <section className="partners-section partners-section--skeleton" aria-hidden>
       <div className="partners-section__container">
-        <div className="partners-section__content" dir="rtl">
+        <div className="partners-section__content" dir={dir}>
           <div className="partners-section__copy">
             <SkLine className="h-9 w-[min(100%,12rem)] rounded-lg" />
             <SkLine className="h-4 w-[min(100%,16rem)] rounded-md" />

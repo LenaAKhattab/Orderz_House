@@ -608,7 +608,7 @@
   gap: clamp(0.875rem, 2.4vw, 1.2rem);
 }
 
-.home-hero--marketing.home-hero--bg-image .home-hero__logo {
+.home-hero--marketing.home-hero--bg-image .home-hero__logo-frame {
   margin-bottom: clamp(0.9rem, 2.2vw, 1.15rem);
 }
 

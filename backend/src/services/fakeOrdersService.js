@@ -1,11 +1,21 @@
 const { pool } = require("../config/db");
-const { isFakeOrdersAutomationVerbose } = require("../config/fakeOrdersAutomation");
+const { isFakeOrdersAutomationVerbose, getFakeOrdersTickMs } = require("../config/fakeOrdersAutomation");
+const {
+  TRAINING_POOL_VISIBLE_FROM_SQL,
+  trainingPoolVisibleWhereSql,
+} = require("./trainingPoolEligibility");
+const { invalidatePublicHomeOrderStatsCache } = require("./publicHomeOrderStatsService");
 const {
   isAllowedCleanBudgetRange,
   inferComplexityProfile,
   normalizeToCleanBudgetRange,
 } = require("../utils/fakeBudgetRanges");
 const { FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT } = require("../utils/fakeMarketplaceApplicantsSql");
+const {
+  mapCachedEnglishFields,
+  scheduleFakeOrderTranslation,
+  scheduleTemplateTranslation,
+} = require("./orderTranslationHelper");
 
 /** Session advisory lock: cross-process generation guard (PostgreSQL). */
 const AUTOMATION_GENERATION_LOCK_KEY = 882947361;
@@ -66,6 +76,32 @@ function shuffleArray(arr) {
     a[j] = t;
   }
   return a;
+}
+
+/** Minimum overlap lead time before the sole visible round expires (ms). */
+function getOverlapThresholdMs() {
+  const tickMs = getFakeOrdersTickMs();
+  const envMs = Number(process.env.FAKE_ORDERS_OVERLAP_MS);
+  const configured = Number.isFinite(envMs) && envMs > 0 ? envMs : 5 * 60 * 1000;
+  return Math.max(tickMs * 2, configured, 60_000);
+}
+
+async function getTrainingPoolCoverage(clientOrPool) {
+  const runner = clientOrPool || pool;
+  const { rows } = await runner.query(
+    `SELECT
+       COUNT(*)::int AS visible_count,
+       COUNT(DISTINCT fr.id)::int AS active_rounds,
+       MIN(ri.visible_until) AS earliest_until
+     ${TRAINING_POOL_VISIBLE_FROM_SQL}
+     WHERE ${trainingPoolVisibleWhereSql()}`,
+  );
+  const row = rows[0] || {};
+  return {
+    visibleCount: Number(row.visible_count) || 0,
+    activeRounds: Number(row.active_rounds) || 0,
+    earliestUntil: row.earliest_until || null,
+  };
 }
 
 /** Wall-clock offset for visibility / automation scheduling */
@@ -158,6 +194,8 @@ async function insertFakeOrderFromTemplate(client, { template, roundId, actorUse
   const durUnit = String(template.duration_unit || "days");
   const title = String(template.title || "").trim();
   const description = String(template.description || "").trim();
+  const titleEn = template.title_en != null ? String(template.title_en).trim() || null : null;
+  const descriptionEn = template.description_en != null ? String(template.description_en).trim() || null : null;
   const categoryId = Number(template.category_id);
   const subcategoryId = template.subcategory_id ? Number(template.subcategory_id) : null;
   const subSubcategoryId = template.sub_subcategory_id ? Number(template.sub_subcategory_id) : null;
@@ -174,7 +212,7 @@ async function insertFakeOrderFromTemplate(client, { template, roundId, actorUse
 
   const { rows } = await client.query(
     `INSERT INTO fake_orders (
-      order_code, title, description,
+      order_code, title, description, title_en, description_en,
       category_id, subcategory_id, sub_subcategory_id,
       extra_category_ids, extra_category_details,
       project_type, budget, currency_code, duration_value, duration_unit,
@@ -191,11 +229,11 @@ async function insertFakeOrderFromTemplate(client, { template, roundId, actorUse
       fake_status, is_fake, fake_round_id, show_fake_badge, fake_expires_at,
       baseline_applicants_count
     ) VALUES (
-      $1, $2, $3,
-      $4, $5, $6,
+      $1, $2, $3, $4, $5,
+      $6, $7, $8,
       '{}'::bigint[], '{}'::jsonb,
-      'bidding', NULL, $7, $8, $9,
-      $10, $11, $12,
+      'bidding', NULL, $9, $10, $11,
+      $12, $13, $14,
       NULL,
       FALSE,
       NULL, NULL, NULL,
@@ -203,16 +241,18 @@ async function insertFakeOrderFromTemplate(client, { template, roundId, actorUse
       FALSE,
       FALSE, 'not_required',
       'published',
-      $13, $14,
-      $15,
-      'active', TRUE, $16, $17, $18,
-      $19
+      $15, $16,
+      $17,
+      'active', TRUE, $18, $19, $20,
+      $21
     )
     RETURNING id`,
     [
       orderCode,
       title,
       description,
+      titleEn,
+      descriptionEn,
       categoryId,
       Number.isInteger(subcategoryId) && subcategoryId > 0 ? subcategoryId : null,
       Number.isInteger(subSubcategoryId) && subSubcategoryId > 0 ? subSubcategoryId : null,
@@ -231,7 +271,11 @@ async function insertFakeOrderFromTemplate(client, { template, roundId, actorUse
       baselineApplicantsCount,
     ],
   );
-  return Number(rows[0].id);
+  const fakeOrderId = Number(rows[0].id);
+  if (!titleEn && !descriptionEn) {
+    scheduleFakeOrderTranslation(fakeOrderId, title, description);
+  }
+  return fakeOrderId;
 }
 
 async function loadActiveTemplatesForGeneration(client) {
@@ -295,7 +339,7 @@ function pickTemplateForBucketWithExclusion(bucket, byBucket, allRows, excludedL
 /**
  * @returns {Promise<{ ok: boolean, code?: string, round?: object, generatedCount?: number }>}
  */
-async function generateTrainingRoundInternal(client, { actorUserId, roundSource }) {
+async function generateTrainingRoundInternal(client, { actorUserId, roundSource, supersedeExisting = true }) {
   const uid = Number(actorUserId);
   if (!Number.isInteger(uid) || uid < 1) {
     const err = new Error("معرّف المستخدم غير صالح لتوليد الجولة.");
@@ -336,9 +380,11 @@ async function generateTrainingRoundInternal(client, { actorUserId, roundSource 
     return { ok: false, code: "NO_TEMPLATES" };
   }
 
-  const excludedLastRoundIds = await loadTemplateIdsUsedInActiveRound(client);
+  const excludedLastRoundIds = supersedeExisting ? await loadTemplateIdsUsedInActiveRound(client) : new Set();
 
-  await supersedeActiveTrainingRounds(client);
+  if (supersedeExisting) {
+    await supersedeActiveTrainingRounds(client);
+  }
 
   const dist = normalizeCategoryDistribution(s.category_distribution || {});
   const slots = allocateBucketSlots(n, dist);
@@ -608,6 +654,7 @@ function mapTemplate(row) {
     id: String(row.id),
     title: row.title,
     description: row.description,
+    ...mapCachedEnglishFields(row),
     categoryId: String(row.category_id),
     subcategoryId: row.subcategory_id ? String(row.subcategory_id) : null,
     subSubcategoryId: row.sub_subcategory_id ? String(row.sub_subcategory_id) : null,
@@ -828,7 +875,7 @@ async function getFakePoolOrderMapped({ orderId, freelancerUserId }) {
         fa.status AS my_bid_status
       FROM fake_orders fo
       INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id AND ri.status = 'active'
-        AND ri.visible_from <= NOW() AND ri.visible_until >= NOW()
+        AND ri.visible_from <= NOW() AND ri.visible_until > NOW()
       INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id AND fr.status = 'active'
       LEFT JOIN categories c ON c.id = fo.category_id
       LEFT JOIN sub_subcategories ss ON ss.id = fo.sub_subcategory_id
@@ -853,7 +900,7 @@ async function getFakePoolOrderMapped({ orderId, freelancerUserId }) {
         ${FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT}
       FROM fake_orders fo
       INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id AND ri.status = 'active'
-        AND ri.visible_from <= NOW() AND ri.visible_until >= NOW()
+        AND ri.visible_from <= NOW() AND ri.visible_until > NOW()
       INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id AND fr.status = 'active'
       LEFT JOIN categories c ON c.id = fo.category_id
       LEFT JOIN sub_subcategories ss ON ss.id = fo.sub_subcategory_id
@@ -894,7 +941,7 @@ async function submitFakeTrainingBid({ freelancerUserId, orderId, amount, messag
       `SELECT fo.*, ri.round_id, ri.visible_until
        FROM fake_orders fo
        INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id AND ri.status = 'active'
-         AND ri.visible_from <= NOW() AND ri.visible_until >= NOW()
+         AND ri.visible_from <= NOW() AND ri.visible_until > NOW()
        INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id AND fr.status = 'active'
        WHERE fo.id = $1 AND fo.fake_status = 'active'
        FOR UPDATE OF fo`,
@@ -968,7 +1015,7 @@ async function submitFakeTrainingClaim({ freelancerUserId, orderId, message = nu
       `SELECT fo.*, ri.round_id
        FROM fake_orders fo
        INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id AND ri.status = 'active'
-         AND ri.visible_from <= NOW() AND ri.visible_until >= NOW()
+         AND ri.visible_from <= NOW() AND ri.visible_until > NOW()
        INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id AND fr.status = 'active'
        WHERE fo.id = $1 AND fo.fake_status = 'active'
        FOR UPDATE OF fo`,
@@ -1043,6 +1090,9 @@ async function expireStaleItems() {
     const rowsItems = Number(r1.rowCount || 0);
     const rowsOrders = Number(r2.rowCount || 0);
     const rowsRounds = Number(r3.rowCount || 0);
+    if (rowsItems + rowsOrders + rowsRounds > 0) {
+      invalidatePublicHomeOrderStatsCache();
+    }
     if (rowsItems + rowsOrders + rowsRounds > 0 && isFakeOrdersAutomationVerbose()) {
       logAutomationEvent("expire_pass", {
         rowsItems,
@@ -1132,27 +1182,29 @@ async function runAutomationTick() {
     }
 
     const now = Date.now();
-    if (now < nextRun) {
-      await client.query("COMMIT");
-      if (isFakeOrdersAutomationVerbose()) {
-        logAutomationEvent("skipped_not_due", { nextRunAtMs: nextRun });
-      }
-      return;
-    }
-
-    /** Next run = wall clock after this tick (same as مدة الجولة). */
     const nextAtDate = new Date(Date.now() + intervalMs);
-
-    const { rows: lockRows } = await client.query(`SELECT pg_try_advisory_lock($1::bigint) AS got`, [
-      AUTOMATION_GENERATION_LOCK_KEY,
-    ]);
-    if (!lockRows[0]?.got) {
-      await client.query("ROLLBACK");
-      logAutomationEvent("skipped_lock", { reason: "advisory_lock_active" });
+    const actorUserId = await resolveAutomationActorUserId(client);
+    if (!actorUserId) {
+      logAutomationEvent("no_admin_actor", { reason: "no_admin_user" });
+      console.error("[fakeOrders] automation: no admin user found for training round generation");
+      await client.query(
+        `UPDATE fake_order_settings SET
+           next_automation_run_at = $1,
+           last_automation_next_at = $1,
+           last_automation_run_at = NOW(),
+           last_automation_status = 'failed',
+           last_automation_error = 'no_admin_actor',
+           last_automation_round_id = NULL,
+           last_automation_generated_count = NULL,
+           updated_at = NOW()
+         WHERE id = 1`,
+        [nextAtDate],
+      );
+      await client.query("COMMIT");
       await insertAutomationLogSafe(pool, {
-        runStartedAt: runStartedAt,
-        status: "skipped_lock",
-        errorMessage: null,
+        runStartedAt,
+        status: "failed",
+        errorMessage: "no_admin_actor",
         roundId: null,
         generatedCount: null,
         source: "automation",
@@ -1160,29 +1212,44 @@ async function runAutomationTick() {
       return;
     }
 
-    try {
-      const actorUserId = await resolveAutomationActorUserId(client);
-      if (!actorUserId) {
-        logAutomationEvent("no_admin_actor", { reason: "no_admin_user" });
-        console.error("[fakeOrders] automation: no admin user found for training round generation");
-        await client.query(
-          `UPDATE fake_order_settings SET
-             next_automation_run_at = $1,
-             last_automation_next_at = $1,
-             last_automation_run_at = NOW(),
-             last_automation_status = 'failed',
-             last_automation_error = 'no_admin_actor',
-             last_automation_round_id = NULL,
-             last_automation_generated_count = NULL,
-             updated_at = NOW()
-           WHERE id = 1`,
-          [nextAtDate],
-        );
-        await client.query("COMMIT");
+    let genStatus = "success";
+    let genError = null;
+    let roundId = null;
+    let genCount = null;
+    let didGenerate = false;
+
+    const seamless = await ensureSeamlessTrainingRotation(client, s, {
+      actorUserId,
+      reason: "automation_tick",
+      minVisible: 1,
+    });
+    if (seamless.generated) {
+      didGenerate = true;
+      roundId = seamless.roundId ?? null;
+      genCount = seamless.generatedCount ?? null;
+      genStatus = "success";
+      logAutomationEvent("seamless_rotation", {
+        action: seamless.action,
+        roundId,
+        generatedCount: genCount,
+      });
+    } else if (seamless.code === "NO_TEMPLATES") {
+      genStatus = "skipped_no_templates";
+      logAutomationEvent("skipped_no_templates", { code: "NO_TEMPLATES", phase: "seamless" });
+    }
+
+    const scheduledDue = now >= nextRun;
+    if (!didGenerate && scheduledDue) {
+      const { rows: lockRows } = await client.query(`SELECT pg_try_advisory_lock($1::bigint) AS got`, [
+        AUTOMATION_GENERATION_LOCK_KEY,
+      ]);
+      if (!lockRows[0]?.got) {
+        await client.query("ROLLBACK");
+        logAutomationEvent("skipped_lock", { reason: "advisory_lock_active" });
         await insertAutomationLogSafe(pool, {
-          runStartedAt: runStartedAt,
-          status: "failed",
-          errorMessage: "no_admin_actor",
+          runStartedAt,
+          status: "skipped_lock",
+          errorMessage: null,
           roundId: null,
           generatedCount: null,
           source: "automation",
@@ -1190,36 +1257,45 @@ async function runAutomationTick() {
         return;
       }
 
-      let genStatus = "success";
-      let genError = null;
-      let roundId = null;
-      let genCount = null;
-
-      await client.query("SAVEPOINT training_round_gen");
       try {
-        const result = await generateTrainingRoundInternal(client, { actorUserId, roundSource: "automation" });
-        if (result.ok) {
-          roundId = result.round?.id ? Number(result.round.id) : null;
-          genCount = result.generatedCount ?? null;
-          genStatus = "success";
-        } else if (result.code === "NO_TEMPLATES") {
-          genStatus = "skipped_no_templates";
-          logAutomationEvent("skipped_no_templates", { code: "NO_TEMPLATES" });
-          console.error("[fakeOrders] automation: no active templates — skipping round generation");
+        await client.query("SAVEPOINT training_round_gen");
+        try {
+          const result = await generateTrainingRoundInternal(client, {
+            actorUserId,
+            roundSource: "automation",
+            supersedeExisting: true,
+          });
+          if (result.ok) {
+            didGenerate = true;
+            roundId = result.round?.id ? Number(result.round.id) : null;
+            genCount = result.generatedCount ?? null;
+            genStatus = "success";
+            invalidatePublicHomeOrderStatsCache();
+          } else if (result.code === "NO_TEMPLATES") {
+            genStatus = "skipped_no_templates";
+            logAutomationEvent("skipped_no_templates", { code: "NO_TEMPLATES", phase: "scheduled" });
+            console.error("[fakeOrders] automation: no active templates — skipping round generation");
+          }
+          await client.query("RELEASE SAVEPOINT training_round_gen");
+        } catch (e) {
+          await client.query("ROLLBACK TO SAVEPOINT training_round_gen");
+          genStatus = "failed";
+          genError = String(e?.message || e).slice(0, 5000);
+          logAutomationEvent("generation_failed", { message: genError.slice(0, 200) });
+          console.error("[fakeOrders] automation: round generation failed:", e?.message || e);
         }
-        await client.query("RELEASE SAVEPOINT training_round_gen");
-      } catch (e) {
-        await client.query("ROLLBACK TO SAVEPOINT training_round_gen");
-        genStatus = "failed";
-        genError = String(e?.message || e).slice(0, 5000);
-        logAutomationEvent("generation_failed", { message: genError.slice(0, 200) });
-        console.error("[fakeOrders] automation: round generation failed:", e?.message || e);
-      }
 
-      if (genStatus === "success" && roundId) {
-        logAutomationEvent("generated_round", { roundId, generatedCount: genCount });
+        if (genStatus === "success" && roundId) {
+          logAutomationEvent("generated_round", { roundId, generatedCount: genCount, phase: "scheduled" });
+        }
+      } finally {
+        await client.query(`SELECT pg_advisory_unlock($1::bigint)`, [AUTOMATION_GENERATION_LOCK_KEY]);
       }
+    } else if (!didGenerate && !scheduledDue && isFakeOrdersAutomationVerbose()) {
+      logAutomationEvent("skipped_not_due", { nextRunAtMs: nextRun });
+    }
 
+    if (didGenerate || scheduledDue) {
       await client.query(
         `UPDATE fake_order_settings SET
            next_automation_run_at = $1,
@@ -1234,17 +1310,20 @@ async function runAutomationTick() {
         [nextAtDate, genStatus, genError, roundId, genCount],
       );
       await client.query("COMMIT");
-      await insertAutomationLogSafe(pool, {
-        runStartedAt: runStartedAt,
-        status: genStatus,
-        errorMessage: genError,
-        roundId,
-        generatedCount: genCount,
-        source: "automation",
-      });
-    } finally {
-      await client.query(`SELECT pg_advisory_unlock($1::bigint)`, [AUTOMATION_GENERATION_LOCK_KEY]);
+      if (didGenerate || genStatus !== "success") {
+        await insertAutomationLogSafe(pool, {
+          runStartedAt,
+          status: genStatus,
+          errorMessage: genError,
+          roundId,
+          generatedCount: genCount,
+          source: "automation",
+        });
+      }
+      return;
     }
+
+    await client.query("COMMIT");
   } catch (e) {
     try {
       await client.query("ROLLBACK");
@@ -1261,18 +1340,91 @@ async function getVisibleFakeOrdersCount(clientOrPool) {
   const runner = clientOrPool || pool;
   const { rows } = await runner.query(
     `SELECT COUNT(*)::int AS c
-     FROM fake_orders fo
-     INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id
-     INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
-     WHERE fo.fake_status = 'active'
-       AND fo.is_published = TRUE
-       AND fo.is_open_for_pool = TRUE
-       AND ri.status = 'active'
-       AND ri.visible_from <= NOW()
-       AND ri.visible_until >= NOW()
-       AND fr.status = 'active'`,
+     ${TRAINING_POOL_VISIBLE_FROM_SQL}
+     WHERE ${trainingPoolVisibleWhereSql()}`,
   );
   return Number(rows[0]?.c || 0);
+}
+
+/**
+ * Keep public pool continuous: replenish after expiry and publish the next round before the last one ends.
+ * Idempotent via advisory lock + coverage checks (no duplicate overlap rounds).
+ */
+async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, reason = "rotation", minVisible = null } = {}) {
+  const minVisibleCount = Number.isFinite(Number(minVisible)) ? Math.max(1, Number(minVisible)) : 1;
+  const coverage = await getTrainingPoolCoverage(client);
+  const overlapMs = getOverlapThresholdMs();
+  const now = Date.now();
+
+  let supersedeExisting = true;
+  let rotationReason = null;
+
+  if (coverage.visibleCount < minVisibleCount) {
+    rotationReason = "replenish";
+    supersedeExisting = true;
+  } else if (
+    coverage.activeRounds === 1 &&
+    coverage.earliestUntil &&
+    new Date(coverage.earliestUntil).getTime() - now <= overlapMs
+  ) {
+    rotationReason = "preemptive_overlap";
+    supersedeExisting = false;
+  } else {
+    return { ok: true, action: "none", visible: coverage.visibleCount, coverage };
+  }
+
+  const { rows: lockRows } = await client.query(`SELECT pg_try_advisory_lock($1::bigint) AS got`, [
+    AUTOMATION_GENERATION_LOCK_KEY,
+  ]);
+  if (!lockRows[0]?.got) {
+    logAutomationEvent("rotation_skipped_lock", { reason, rotationReason, visible: coverage.visibleCount });
+    return { ok: false, code: "LOCK_BUSY", visible: coverage.visibleCount, coverage };
+  }
+
+  try {
+    const afterLock = await getTrainingPoolCoverage(client);
+    if (rotationReason === "replenish" && afterLock.visibleCount >= minVisibleCount) {
+      return { ok: true, action: "none", visible: afterLock.visibleCount, coverage: afterLock };
+    }
+    if (
+      rotationReason === "preemptive_overlap" &&
+      (afterLock.activeRounds >= 2 ||
+        !afterLock.earliestUntil ||
+        new Date(afterLock.earliestUntil).getTime() - Date.now() > overlapMs)
+    ) {
+      return { ok: true, action: "none", visible: afterLock.visibleCount, coverage: afterLock };
+    }
+
+    const result = await generateTrainingRoundInternal(client, {
+      actorUserId,
+      roundSource: "automation",
+      supersedeExisting,
+    });
+    if (!result.ok) {
+      logAutomationEvent("rotation_skipped_no_templates", { reason, rotationReason });
+      return { ok: false, code: result.code || "NO_TEMPLATES", visible: afterLock.visibleCount, coverage: afterLock };
+    }
+
+    invalidatePublicHomeOrderStatsCache();
+    logAutomationEvent("rotation_generated", {
+      reason,
+      rotationReason,
+      supersedeExisting,
+      roundId: result.round?.id ? Number(result.round.id) : null,
+      generatedCount: Number(result.generatedCount || 0),
+    });
+    return {
+      ok: true,
+      action: rotationReason,
+      generated: true,
+      roundId: result.round?.id ? Number(result.round.id) : null,
+      generatedCount: Number(result.generatedCount || 0),
+      visible: afterLock.visibleCount,
+      coverage: afterLock,
+    };
+  } finally {
+    await client.query(`SELECT pg_advisory_unlock($1::bigint)`, [AUTOMATION_GENERATION_LOCK_KEY]);
+  }
 }
 
 /**
@@ -1298,46 +1450,40 @@ async function ensureMinimumVisibleFakeOrders({ reason = "runtime", minVisible =
       return { ok: true, generated: false, visible: currentVisible, threshold };
     }
 
-    const { rows: lockRows } = await client.query(`SELECT pg_try_advisory_lock($1::bigint) AS got`, [
-      AUTOMATION_GENERATION_LOCK_KEY,
-    ]);
-    if (!lockRows[0]?.got) {
+    const actorUserId = await resolveAutomationActorUserId(client);
+    if (!actorUserId) {
+      await client.query("COMMIT");
+      logAutomationEvent("ensure_min_visible_no_actor", { reason, currentVisible, threshold });
+      return { ok: false, code: "NO_ADMIN_ACTOR", visible: currentVisible, threshold };
+    }
+
+    const rotation = await ensureSeamlessTrainingRotation(client, s, {
+      actorUserId,
+      reason,
+      minVisible: threshold,
+    });
+    if (rotation.code === "LOCK_BUSY") {
       await client.query("ROLLBACK");
       logAutomationEvent("ensure_min_visible_skipped_lock", { reason, currentVisible, threshold });
       return { ok: false, code: "LOCK_BUSY", visible: currentVisible, threshold };
     }
-
-    try {
-      const actorUserId = await resolveAutomationActorUserId(client);
-      if (!actorUserId) {
-        await client.query("COMMIT");
-        logAutomationEvent("ensure_min_visible_no_actor", { reason, currentVisible, threshold });
-        return { ok: false, code: "NO_ADMIN_ACTOR", visible: currentVisible, threshold };
-      }
-
-      const result = await generateTrainingRoundInternal(client, { actorUserId, roundSource: "automation" });
-      if (!result.ok) {
-        await client.query("COMMIT");
-        logAutomationEvent("ensure_min_visible_no_templates", { reason, currentVisible, threshold });
-        return { ok: false, code: result.code || "NO_TEMPLATES", visible: currentVisible, threshold };
-      }
+    if (!rotation.generated) {
       await client.query("COMMIT");
-      logAutomationEvent("ensure_min_visible_generated", {
-        reason,
-        roundId: result.round?.id ? Number(result.round.id) : null,
-        generatedCount: Number(result.generatedCount || 0),
-        threshold,
-      });
-      return {
-        ok: true,
-        generated: true,
-        roundId: result.round?.id ? Number(result.round.id) : null,
-        generatedCount: Number(result.generatedCount || 0),
-        threshold,
-      };
-    } finally {
-      await client.query(`SELECT pg_advisory_unlock($1::bigint)`, [AUTOMATION_GENERATION_LOCK_KEY]);
+      if (rotation.code === "NO_TEMPLATES") {
+        logAutomationEvent("ensure_min_visible_no_templates", { reason, currentVisible, threshold });
+        return { ok: false, code: "NO_TEMPLATES", visible: currentVisible, threshold };
+      }
+      return { ok: true, generated: false, visible: currentVisible, threshold };
     }
+
+    await client.query("COMMIT");
+    return {
+      ok: true,
+      generated: true,
+      roundId: rotation.roundId ?? null,
+      generatedCount: rotation.generatedCount ?? null,
+      threshold,
+    };
   } catch (e) {
     try {
       await client.query("ROLLBACK");
@@ -1518,6 +1664,7 @@ async function createTemplate({ actorUserId, payload }) {
     );
     const newId = rows[0].id;
     await client.query("COMMIT");
+    scheduleTemplateTranslation(newId, title, description);
     return getTemplateById(newId);
   } catch (e) {
     await client.query("ROLLBACK");
@@ -1534,7 +1681,7 @@ async function updateTemplate({ actorUserId, id, payload }) {
     await assertAdminOrSuperAdmin(actorUserId, client);
     const tid = Number(id);
     const { rows: curRows } = await client.query(
-      `SELECT id, min_budget, max_budget FROM fake_order_templates WHERE id = $1 FOR UPDATE`,
+      `SELECT id, title, description, min_budget, max_budget FROM fake_order_templates WHERE id = $1 FOR UPDATE`,
       [tid],
     );
     const current = curRows[0];
@@ -1579,7 +1726,14 @@ async function updateTemplate({ actorUserId, id, payload }) {
     fields.push(`updated_at = NOW()`);
     vals.push(tid);
     await client.query(`UPDATE fake_order_templates SET ${fields.join(", ")} WHERE id = $${vals.length}`, vals);
+    const titleChanged = payload.title != null;
+    const descriptionChanged = payload.description != null;
+    const nextTitle = titleChanged ? String(payload.title).trim() : String(current.title || "").trim();
+    const nextDescription = descriptionChanged ? String(payload.description).trim() : String(current.description || "").trim();
     await client.query("COMMIT");
+    if (titleChanged || descriptionChanged) {
+      scheduleTemplateTranslation(tid, nextTitle, nextDescription);
+    }
     return getTemplateById(tid);
   } catch (e) {
     await client.query("ROLLBACK");
@@ -1872,8 +2026,11 @@ module.exports = {
   getSettings,
   updateSettings,
   expireStaleItems,
+  ensureSeamlessTrainingRotation,
   ensureMinimumVisibleFakeOrders,
   getVisibleFakeOrdersCount,
+  getTrainingPoolCoverage,
+  getOverlapThresholdMs,
   runAutomationTick,
   startTrainingRoundManual,
   getFakePoolOrderMapped,

@@ -1,5 +1,9 @@
 const { pool } = require("../config/db");
 const { ORDER_STATUSES } = require("./orderFlowService");
+const {
+  TRAINING_POOL_VISIBLE_FROM_SQL,
+  trainingPoolVisibleWhereSql,
+} = require("./trainingPoolEligibility");
 
 /**
  * Homepage “open pipeline” — pre-assignment / marketplace / payment gates.
@@ -52,18 +56,8 @@ async function queryHeroOrderCounts() {
       ) AS available_real,
       (
         SELECT COUNT(DISTINCT fo.id)::int
-        FROM fake_orders fo
-        INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id
-        INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
-        WHERE fo.fake_status = 'active'
-          AND fo.is_published = TRUE
-          AND fo.is_open_for_pool = TRUE
-          AND fo.assigned_freelancer_id IS NULL
-          AND ri.status = 'active'
-          AND fr.status = 'active'
-          AND ri.visible_from <= NOW()
-          AND ri.visible_until >= NOW()
-          AND (SELECT training_orders_enabled FROM fake_order_settings WHERE id = 1) = TRUE
+        ${TRAINING_POOL_VISIBLE_FROM_SQL}
+        WHERE ${trainingPoolVisibleWhereSql({ publicAudienceOnly: true })}
       ) AS available_training,
       (
         SELECT COUNT(*)::int
@@ -87,7 +81,7 @@ async function queryHeroOrderCounts() {
                 AND ri.status = 'active'
                 AND fr.status = 'active'
                 AND ri.visible_from <= NOW()
-                AND ri.visible_until >= NOW()
+                AND ri.visible_until > NOW()
             )
           )
       ) AS completed_training,
@@ -126,6 +120,10 @@ async function queryHeroOrderCounts() {
 /**
  * Aggregate homepage hero order counts (real + training where applicable).
  */
+function invalidatePublicHomeOrderStatsCache() {
+  orderStatsCache = { value: null, expires: 0 };
+}
+
 async function getPublicHomeOrderCounts() {
   if (orderStatsCache.value && orderStatsCache.expires > Date.now()) {
     return orderStatsCache.value;
@@ -141,6 +139,7 @@ async function getPublicHomeOrderCounts() {
 
 module.exports = {
   getPublicHomeOrderCounts,
+  invalidatePublicHomeOrderStatsCache,
   OPEN_PROJECT_STATUSES,
   IN_PROGRESS_PROJECT_STATUSES,
   AVAILABLE_REAL_STATUSES,

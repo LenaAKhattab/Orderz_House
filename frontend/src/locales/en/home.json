@@ -1,0 +1,109 @@
+{
+  "hero": {
+    "title": "One platform connecting you with the right services and freelancers",
+    "lead": "Start your request easily, compare available services, and track every step in one place until you get the results you need.",
+    "leadShort": "Start your request easily, compare available services, and track every step in one place.",
+    "ctaPrimary": "Start your request now",
+    "ctaSecondary": "Explore services",
+    "greeting": "Welcome to",
+    "searchPlaceholder": "Search for a service or category...",
+    "searchAria": "Search for a service",
+    "featuredAria": "Get started",
+    "statsAria": "Platform statistics",
+    "adsAria": "Promotions",
+    "logoAlt": "Orderz House logo",
+    "featured": {
+      "startOrder": "Start your request easily",
+      "startOrderTag": "One step",
+      "exploreServices": "Compare available services",
+      "exploreTag": "Explore"
+    }
+  },
+  "categories": {
+    "title": "Discover categories",
+    "titleAccent": "in seconds",
+    "subtitle": "Choose the right field and start your request in minutes",
+    "featuredTitle": "Featured services",
+    "viewAll": "View all",
+    "latestOrders": "Latest orders",
+    "ordersListAria": "Latest orders list",
+    "loadError": "Couldn't load orders.",
+    "emptyOrders": "No available orders at the moment."
+  },
+  "orders": {
+    "fallbackTitle": "Untitled order",
+    "fallbackCategory": "Order"
+  },
+  "featuredServices": {
+    "frontendDevelopment": "Frontend Development",
+    "backendDevelopment": "Backend Development",
+    "mobileApps": "Mobile Apps",
+    "artificialIntelligence": "Artificial Intelligence",
+    "graphicDesign": "Graphic Design",
+    "uiUxDesign": "UI/UX Design",
+    "digitalMarketing": "Digital Marketing",
+    "contentWriting": "Content Writing",
+    "specialRequests": "Special Requests",
+    "specialRequestsWhatsappMessage": "Hello, I'd like to submit a special request through Orders House."
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "subtitle": "Quick, clear answers to the most common questions.",
+    "whyBrand": "Why Orders House?",
+    "quote": "One platform to request services, compare offers, and track your project through delivery — clearly.",
+    "mobilePromoText": "Request services, compare offers, and track your project clearly.",
+    "cta": "Get started",
+    "items": {
+      "trust": {
+        "question": "Is Orders House a trusted platform, and are the services provided recognized?",
+        "answer": "We operate under clear policies for orders and reviews, and you can track your request status from your dashboard. Official recognition depends on employer policies; we recommend keeping proof of delivery and communications within the platform."
+      },
+      "worth": {
+        "question": "Are the platform's paid services worth the investment?",
+        "answer": "It depends on your needs: you can compare freelancer offers, read reviews, and define the scope before committing. Start with a small request to assess quality, then expand when you're satisfied."
+      },
+      "plus": {
+        "question": "What do premium plans or advanced options include, and are they right for me?",
+        "answer": "If plans or add-ons are available, they are explained on the pricing or settings page. Review what each tier includes and choose what fits your team size or request volume."
+      },
+      "free": {
+        "question": "Are there free resources or guides for users?",
+        "answer": "We provide helpful content, FAQs, and explanatory pages on the site. Check the help section or blog when available for updates."
+      },
+      "popular": {
+        "question": "What types of requests are most popular on the platform?",
+        "answer": "This changes over time; programming, design, and content writing requests are often the most active. Browse categories to see what's available now."
+      },
+      "career": {
+        "question": "How does the platform help me find the right freelancer or complete my project?",
+        "answer": "You choose the category, details, and deadline; then relevant freelancers can view your request. Compare offers and communicate securely within the request before you decide."
+      },
+      "business": {
+        "question": "What services does the platform offer for teams or businesses, and how is pricing structured?",
+        "answer": "If you have recurring needs or larger volume, check the contact page or business services if listed, or reach out to support for a quote tailored to your team."
+      }
+    }
+  },
+  "partners": {
+    "title": "Success partners",
+    "subtitle": "We are proud to partner with leading organizations that have helped build remarkable success stories.",
+    "logosAria": "Partner logos",
+    "visitSite": "Visit {{name}} website"
+  },
+  "metrics": {
+    "activeUsers": "Active users",
+    "activeSub": "Platform activity · last 7 days",
+    "views": "Site views",
+    "viewsSub": "Total recorded visits",
+    "availableOrders": "Available requests",
+    "availableSub": "Open for applications now",
+    "completedOrders": "Completed requests",
+    "completedSub": "Total completed requests",
+    "zeroViews": "No views recorded yet",
+    "zeroActive": "No activity in the last 7 days",
+    "statsAria": "Platform statistics",
+    "degraded": "Statistics are unavailable at the moment",
+    "dbUnavailable": "Platform statistics are temporarily unavailable",
+    "devTrackingDisabled": "Tracking is disabled in the development environment"
+  }
+}

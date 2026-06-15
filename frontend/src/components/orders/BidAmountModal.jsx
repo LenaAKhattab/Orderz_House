@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 export default function BidAmountModal({ open, title, min, max, currency = "JOD", busy, onClose, onSubmit }) {
+  const { t } = useTranslation();
   const [value, setValue] = useState("");
 
   useEffect(() => {
@@ -16,6 +18,9 @@ export default function BidAmountModal({ open, title, min, max, currency = "JOD"
     const n = Number(String(value).replace(/,/g, "."));
     onSubmit(n);
   };
+
+  const modalTitle = title || t("orders.bid.title");
+  const hint = t("orders.bid.hint", { min, max, currency: currency || "" });
 
   return (
     <div
@@ -43,15 +48,15 @@ export default function BidAmountModal({ open, title, min, max, currency = "JOD"
         style={{ maxWidth: 420, width: "100%" }}
       >
         <h2 id="bid-modal-title" style={{ marginTop: 0 }}>
-          {title || "تقديم عرض سعر"}
+          {modalTitle}
         </h2>
         <p className="help" style={{ marginTop: 0 }}>
-          أدخل مبلغ عرضك ضمن النطاق المسموح ({min} – {max} {currency || ""}).
+          {hint}
         </p>
         <form onSubmit={submit}>
           <div className="field">
             <label className="label" htmlFor="bid-amount-input">
-              مبلغ العرض
+              {t("orders.bid.amountLabel")}
             </label>
             <input
               id="bid-amount-input"
@@ -60,16 +65,16 @@ export default function BidAmountModal({ open, title, min, max, currency = "JOD"
               inputMode="decimal"
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder={`مثال: ${min}`}
+              placeholder={t("orders.bid.amountPlaceholder", { min })}
               disabled={busy}
             />
           </div>
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", flexWrap: "wrap", marginTop: 14 }}>
             <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-              إلغاء
+              {t("orders.bid.cancel")}
             </button>
             <button type="submit" className="btn btn-primary" disabled={busy}>
-              {busy ? "جارٍ الإرسال…" : "إرسال العرض"}
+              {busy ? t("orders.bid.submitting") : t("orders.bid.submit")}
             </button>
           </div>
         </form>

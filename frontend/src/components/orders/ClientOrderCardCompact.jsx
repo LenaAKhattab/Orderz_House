@@ -1,5 +1,17 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { arabicDurationUnit } from "../../utils/arTime";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import {
+  formatOrderDuration,
+  formatOrderProjectType,
+  categoryLine,
+  shortDescription,
+} from "../../lib/orders/orderDisplayFormatters";
+import {
+  getLocalizedOrderDescription,
+  getLocalizedOrderTitle,
+  resolveUserContentDir,
+} from "../../lib/i18n/getLocalizedMarketplaceOrderText";
+import { getOrderStatusLabel } from "../../utils/orderFlowUi";
 import ClientFreelancerClaimsModal from "./ClientFreelancerClaimsModal";
 import ClientBiddingOffersModal from "./ClientBiddingOffersModal";
 import ClientDeliveryReviewModal from "./ClientDeliveryReviewModal";
@@ -22,10 +34,8 @@ function shortText(text, max = 160) {
   return `${s.slice(0, max).trim()}…`;
 }
 
-function typeLabel(projectType) {
-  if (projectType === "fixed") return "سعر ثابت";
-  if (projectType === "bidding") return "مزايدة";
-  return "—";
+function typeLabel(projectType, t) {
+  return formatOrderProjectType(projectType, t);
 }
 
 function bidderDisplayName(bidUser) {
@@ -35,41 +45,42 @@ function bidderDisplayName(bidUser) {
   return full || "—";
 }
 
-function durationLabel(order) {
-  if (!order?.durationValue || !order?.durationUnit) return "—";
-  return `${order.durationValue} ${arabicDurationUnit(order.durationValue, order.durationUnit)}`;
+function durationLabel(order, locale, t) {
+  return formatOrderDuration(order, locale, t);
+}
+
+function clientStatusMeta(order, t) {
+  if (order?.isArchived) return { label: t("orders.status.archived"), className: "oh-badge oh-badge--neutral" };
+  const s = order?.orderStatus;
+  if (s === "pending_client_review") return { label: t("orders.status.pending_client_review"), className: "oh-badge oh-badge--info" };
+  if (s === "open_for_bids" || s === "open_for_freelancers") {
+    return { label: t("orders.status.open_for_bids"), className: "oh-badge oh-badge--warning" };
+  }
+  if (s === "awaiting_payment_after_bid_selection") {
+    return { label: t("orders.status.awaiting_payment_after_bid_selection"), className: "oh-badge oh-badge--info" };
+  }
+  if (s === "completed") return { label: t("orders.status.completed"), className: "oh-badge oh-badge--success" };
+  if (s === "cancelled") return { label: t("orders.status.cancelled"), className: "oh-badge oh-badge--danger" };
+  if (orderHasAssignment(order) && s === "in_progress") {
+    return { label: t("orders.status.in_progress"), className: "oh-badge oh-badge--success" };
+  }
+  if (orderHasAssignment(order)) return { label: t("orders.status.assigned"), className: "oh-badge oh-badge--success" };
+  if (s === "published") return { label: t("orders.status.available"), className: "oh-badge oh-badge--warning" };
+  if (s === "assigned") return { label: t("orders.status.assigned"), className: "oh-badge oh-badge--success" };
+  if (s === "in_progress") return { label: t("orders.status.in_progress"), className: "oh-badge oh-badge--info" };
+  if (s === "draft") return { label: t("orders.status.draft"), className: "oh-badge oh-badge--neutral" };
+  return { label: getOrderStatusLabel(s, t), className: "oh-badge oh-badge--neutral" };
 }
 
 function isPricedBidding(order) {
   return order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null;
 }
 
-function clientStatusMeta(order) {
-  if (order?.isArchived) return { label: "مؤرشف", className: "oh-badge oh-badge--neutral" };
-  const s = order?.orderStatus;
-  if (s === "pending_client_review") return { label: "مرفقات بانتظار اعتمادك", className: "oh-badge oh-badge--info" };
-  if (s === "open_for_bids") return { label: "بانتظار عروض المستقلين", className: "oh-badge oh-badge--warning" };
-  if (s === "open_for_freelancers") return { label: "بانتظار عروض المستقلين", className: "oh-badge oh-badge--warning" };
-  if (s === "awaiting_payment_after_bid_selection") {
-    return { label: "بانتظار الدفع بعد اختيار العرض", className: "oh-badge oh-badge--info" };
-  }
-  if (s === "completed") return { label: "مكتمل", className: "oh-badge oh-badge--success" };
-  if (s === "cancelled") return { label: "ملغي", className: "oh-badge oh-badge--danger" };
-  if (orderHasAssignment(order) && s === "in_progress") {
-    return { label: "قيد التنفيذ مع المستقل", className: "oh-badge oh-badge--success" };
-  }
-  if (orderHasAssignment(order)) return { label: "مُسند لمستقل", className: "oh-badge oh-badge--success" };
-  if (s === "published") return { label: "منشور في المعرض", className: "oh-badge oh-badge--warning" };
-  if (s === "assigned") return { label: "مُسند", className: "oh-badge oh-badge--success" };
-  if (s === "in_progress") return { label: "قيد التنفيذ", className: "oh-badge oh-badge--info" };
-  if (s === "draft") return { label: "مسودة", className: "oh-badge oh-badge--neutral" };
-  return { label: s || "—", className: "oh-badge oh-badge--neutral" };
-}
-
 /**
  * بطاقة مدمجة لطلبات العميل (قائمة «طلباتي») — تدفق الموافقة على المستقلين والتسليم.
  */
 export default function ClientOrderCardCompact({ order, onOrdersChange }) {
+  const { t, locale, dir } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [detailOrder, setDetailOrder] = useState(null);
   const [claimsOpen, setClaimsOpen] = useState(false);
@@ -78,14 +89,18 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
   const [revisionOpen, setRevisionOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewStatus, setReviewStatus] = useState(null);
-  const badge = useMemo(() => clientStatusMeta(order), [order]);
+  const badge = useMemo(() => clientStatusMeta(order, t), [order, t]);
   const pricedBidding = useMemo(() => isPricedBidding(order), [order]);
+  const localizedTitle = getLocalizedOrderTitle(order, locale);
+  const localizedDescription = getLocalizedOrderDescription(order, locale);
+  const titleDir = resolveUserContentDir(localizedTitle, dir);
+  const descriptionDir = resolveUserContentDir(localizedDescription, dir);
   const filesCount = Array.isArray(order?.files) ? order.files.length : 0;
   const deliveryFilesCount = useMemo(
     () => (Array.isArray(order?.files) ? order.files.filter((f) => f.purpose === "delivery").length : 0),
     [order],
   );
-  const categoryText = `${order?.category?.name || "—"}${order?.subSubcategory?.name ? ` • ${order.subSubcategory.name}` : ""}`;
+  const categoryText = categoryLine(order, locale) || "—";
   const bidsCount = order?.bidsCount != null ? Number(order.bidsCount) : null;
   const bidUsers = Array.isArray(order?.bidUsers) ? order.bidUsers : [];
 
@@ -184,18 +199,20 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
     <article className="client-order-compact">
       <header className="client-order-compact__head">
         <div className="client-order-compact__title-block">
-          <div className="client-order-compact__title">{order?.title || "—"}</div>
+          <div className="client-order-compact__title" dir={titleDir}>
+            {localizedTitle}
+          </div>
         </div>
         <div className="client-order-compact__badges">
           <span className={badge.className}>{badge.label}</span>
-          <span className="oh-mini-chip">{typeLabel(order?.projectType)}</span>
+          <span className="oh-mini-chip">{typeLabel(order?.projectType, t)}</span>
         </div>
       </header>
 
       <div className="client-order-compact__meta">
         <span className="oh-mini-chip">{categoryText}</span>
         <span className="oh-mini-chip">
-          السعر:{" "}
+          {t("orders.card.price")}:{" "}
           <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>
             {pricedBidding
               ? order?.paymentAmount != null || order?.paymentCurrency
@@ -206,9 +223,11 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
                 : `${formatMoney(order?.budget)} JOD`}
           </span>
         </span>
-        <span className="oh-mini-chip">مدة التسليم: {durationLabel(order)}</span>
         <span className="oh-mini-chip">
-          ملفات: {filesCount ? String(filesCount) : "لا يوجد"}
+          {t("orders.card.deliveryDuration")}: {durationLabel(order, locale, t)}
+        </span>
+        <span className="oh-mini-chip">
+          {t("orders.card.filesLabel")}: {filesCount ? String(filesCount) : t("orders.card.no")}
           {order?.orderStatus === "completed" && deliveryFilesCount > 0 ? (
             <span className="client-order-compact__hint"> ({deliveryFilesCount} تسليم)</span>
           ) : null}

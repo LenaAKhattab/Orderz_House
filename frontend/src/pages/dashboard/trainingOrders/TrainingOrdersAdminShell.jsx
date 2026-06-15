@@ -3,56 +3,52 @@ import LazyRouteOutlet from "../../../components/layout/LazyRouteOutlet";
 import DashboardPageHeader from "../../../components/dashboard/DashboardPageHeader";
 import DashboardShell from "../../../components/dashboard/DashboardShell";
 import { trainingOrdersBreadcrumbs } from "../../../components/dashboard/dashboardBreadcrumbs";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import TrainingOrdersStatusBar from "./TrainingOrdersStatusBar";
 import "./trainingOrdersAdmin.css";
 
-const TABS = [
-  { to: "/dashboard/super-admin/training-orders", label: "نظرة عامة", end: true },
-  { to: "/dashboard/super-admin/training-orders/rounds", label: "الجولات", end: false },
-  { to: "/dashboard/super-admin/training-orders/templates", label: "القوالب", end: false },
-  { to: "/dashboard/super-admin/training-orders/applications", label: "المتقدمون", end: false },
-  { to: "/dashboard/super-admin/training-orders/settings", label: "الإعدادات", end: false },
-];
-
-function trainingSectionTitle(pathname) {
-  if (pathname.includes("/applications")) return "المتقدمون";
-  if (pathname.includes("/templates")) return "القوالب";
-  if (pathname.includes("/rounds")) return "الجولات";
-  if (pathname.includes("/settings")) return "الإعدادات";
-  return "نظرة عامة";
+function trainingSectionLabelKey(pathname) {
+  if (pathname.includes("/applications")) return "dashboard.breadcrumbs.trainingApplications";
+  if (pathname.includes("/templates")) return "dashboard.breadcrumbs.trainingTemplates";
+  if (pathname.includes("/rounds")) return "dashboard.breadcrumbs.trainingRounds";
+  if (pathname.includes("/settings")) return "dashboard.breadcrumbs.trainingSettings";
+  return "dashboard.nav.superAdmin.overview";
 }
 
 export default function TrainingOrdersAdminShell() {
+  const { t, dir, locale } = useTranslation();
   const { pathname } = useLocation();
-  const sectionLabel = trainingSectionTitle(pathname);
+  const sectionLabelKey = trainingSectionLabelKey(pathname);
+  const tabs = [
+    { to: "/dashboard/super-admin/training-orders", label: t("trainingOrders.shell.overview"), end: true },
+    { to: "/dashboard/super-admin/training-orders/rounds", label: t("trainingOrders.shell.rounds"), end: false },
+    { to: "/dashboard/super-admin/training-orders/templates", label: t("trainingOrders.shell.templates"), end: false },
+    { to: "/dashboard/super-admin/training-orders/applications", label: t("trainingOrders.shell.applications"), end: false },
+    { to: "/dashboard/super-admin/training-orders/settings", label: t("trainingOrders.shell.settings"), end: false },
+  ];
 
   return (
     <DashboardShell className="oh-training-hub">
-      <div className="oh-training-hub__inner" dir="rtl" lang="ar">
-        {/*
-          Dev note: this shell is the only place that should render DashboardPageHeader for Training Orders.
-          Nested routes under <Outlet /> should use DashboardSection title/description (and toolbars as needed),
-          not a second DashboardPageHeader — that would duplicate breadcrumbs and top header chrome.
-        */}
+      <div className="oh-training-hub__inner" dir={dir} lang={locale}>
         <DashboardPageHeader
-          eyebrow="لوحة المدير الأعلى"
-          title="الطلبات التجريبية"
-          description="إدارة إعدادات الجولات التلقائية، قوالب الطلبات الوهمية، ومتابعة المتقدمين — منفصلة بالكامل عن الطلبات الحقيقية."
-          breadcrumbs={trainingOrdersBreadcrumbs(sectionLabel)}
+          eyebrow={t("trainingOrders.shell.eyebrow")}
+          title={t("trainingOrders.shell.title")}
+          description={t("trainingOrders.shell.description")}
+          breadcrumbs={trainingOrdersBreadcrumbs(sectionLabelKey)}
         />
 
-        <nav aria-label="أقسام الطلبات التجريبية">
+        <nav aria-label={t("trainingOrders.shell.tabsAria")}>
           <div className="dash-ui-tabs oh-training-hub__tabs" role="presentation">
-            {TABS.map((t) => (
+            {tabs.map((tab) => (
               <NavLink
-                key={t.to}
-                to={t.to}
-                end={Boolean(t.end)}
+                key={tab.to}
+                to={tab.to}
+                end={Boolean(tab.end)}
                 className={({ isActive }) =>
                   `dash-ui-tab oh-training-hub__tab${isActive ? " dash-ui-tab--selected oh-training-hub__tab--active" : ""}`.trim()
                 }
               >
-                {t.label}
+                {tab.label}
               </NavLink>
             ))}
           </div>
@@ -65,4 +61,3 @@ export default function TrainingOrdersAdminShell() {
     </DashboardShell>
   );
 }
-

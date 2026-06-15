@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 const CONFIRM_VARIANT_CLASS = {
   primary: "btn btn-primary",
@@ -35,6 +36,7 @@ export default function ConfirmDialog({
   layerClassName = "z-[1200]",
   confirmBusy = false,
 }) {
+  const { dir } = useTranslation();
   const titleId = useId();
   const cancelRef = useRef(null);
 
@@ -72,11 +74,11 @@ export default function ConfirmDialog({
         disabled={confirmBusy}
       />
       <div
-        className="dash-ui-confirm-dialog__panel relative z-[1] w-full max-w-[420px] rounded-2xl border border-slate-300/25 bg-white px-[18px] pb-4 pt-[18px] text-right shadow-[0_20px_44px_rgba(15,23,42,0.16)]"
+        className="dash-ui-confirm-dialog__panel relative z-[1] w-full max-w-[420px] rounded-2xl border border-slate-300/25 bg-white px-[18px] pb-4 pt-[18px] text-start shadow-[0_20px_44px_rgba(15,23,42,0.16)]"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        dir="rtl"
+        dir={dir}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <h2 id={titleId} className="mb-2 mt-0 text-base font-black text-slate-900">

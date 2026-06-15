@@ -5,7 +5,10 @@ import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 import { useAuth } from "../context/useAuth";
 import { useClientCreateOrderModal } from "../context/ClientCreateOrderModalContext";
 import { getAccountSettingsPath, getNotificationsPath } from "../constants/authRoutes";
+import { SUPER_ADMIN_NAV_MAIN, superAdminBreadcrumb } from "../constants/superAdminNav";
 import NotificationsBell from "../components/notifications/NotificationsBell";
+import { useTranslation } from "../i18n/LanguageProvider";
+import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
 
 import "../styles/dashboardHub.css";
 import "../styles/adminDashboardShell.css";
@@ -33,24 +36,6 @@ function useOnClickOutside(ref, handler) {
   }, [ref, handler]);
 }
 
-function breadcrumbLabel(pathname) {
-  const base = ["الرئيسية"];
-  if (pathname.includes("/subscriptions/activation")) base.push("تفعيل الاشتراكات");
-  else if (pathname.includes("/plans")) base.push("الباقات");
-  else if (pathname.includes("/courses")) base.push("الدورات");
-  else if (pathname.includes("/super-admin/ads")) base.push("الإعلانات");
-  else if (pathname.includes("/subscriptions")) base.push("اشتراكات المستقلين");
-  else if (pathname.includes("/orders/create")) base.push("الطلبات الداخلية", "إنشاء طلب");
-  else if (pathname.includes("/admins")) base.push("إدارة الأدمن");
-  else if (pathname.includes("/edit-website/how-it-works/")) base.push("تعديل الموقع", "طريقة العمل", "محرر الصفحة");
-  else if (pathname.includes("/edit-website/how-it-works")) base.push("تعديل الموقع", "طريقة العمل");
-  else if (pathname.includes("/edit-website/faq")) base.push("تعديل الموقع", "الأسئلة الشائعة");
-  else if (pathname.includes("/edit-website")) base.push("تعديل الموقع");
-  else if (pathname.includes("/training-orders")) base.push("الطلبات التجريبية");
-  else if (pathname.includes("/orders")) base.push("الطلبات الداخلية");
-  return base.join(" › ");
-}
-
 const SUPER_ADMIN_SIDEBAR_COLLAPSED_KEY = "superAdminSidebarCollapsed";
 
 function readSidebarCollapsedPreference() {
@@ -61,28 +46,9 @@ function readSidebarCollapsedPreference() {
   }
 }
 
-const NAV_MAIN = [
-  { to: "/dashboard/super-admin", label: "نظرة عامة", icon: "⌂", end: true },
-  { to: "/dashboard/super-admin/plans", label: "الباقات", icon: "◆" },
-  { to: "/dashboard/super-admin/courses", label: "الدورات", icon: "▶" },
-  { to: "/dashboard/super-admin/ads", label: "الإعلانات", icon: "✴", end: true },
-  { to: "/dashboard/super-admin/subscriptions", label: "الاشتراكات", icon: "◎" },
-  { to: "/dashboard/super-admin/subscriptions/activation", label: "تفعيل الاشتراكات", icon: "✓" },
-  { to: "/dashboard/super-admin/financial-claims", label: "المطالبات المالية", icon: "◍" },
-  { to: "/dashboard/super-admin/orders", label: "الطلبات", icon: "▣" },
-  {
-    to: "/dashboard/super-admin/training-orders",
-    label: "الطلبات التجريبية",
-    icon: "✦",
-    end: false,
-    matchPrefix: "/dashboard/super-admin/training-orders",
-  },
-  { to: "/dashboard/super-admin/admins", label: "إدارة الأدمن", icon: "👤", end: true },
-  { to: "/dashboard/super-admin/edit-website", label: "تعديل الموقع", icon: "✎", end: false, matchPrefix: "/dashboard/super-admin/edit-website" },
-];
-
 export default function SuperAdminLayout() {
   const { user, logout } = useAuth();
+  const { t, dir, locale } = useTranslation();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { openModal: openClientCreateOrderModal } = useClientCreateOrderModal();
@@ -119,9 +85,12 @@ export default function SuperAdminLayout() {
     });
   }, [pathname]);
 
-  const displayName = useMemo(() => fullNameAr(user) || user?.email || "مدير", [user]);
+  const displayName = useMemo(
+    () => fullNameAr(user) || user?.email || t("dashboard.roles.superAdmin"),
+    [user, t],
+  );
   const initial = (user?.firstName || user?.email || "S").trim().slice(0, 1).toUpperCase();
-  const crumb = useMemo(() => breadcrumbLabel(pathname), [pathname]);
+  const crumb = useMemo(() => superAdminBreadcrumb(pathname, t), [pathname, t]);
   const role = user?.primaryRole || user?.role;
   const notificationsPath = getNotificationsPath(role);
   const accountSettingsPath = getAccountSettingsPath(role);
@@ -133,7 +102,7 @@ export default function SuperAdminLayout() {
     .join(" ");
 
   return (
-    <div className={shellClassName} dir="rtl" lang="ar">
+    <div className={shellClassName} dir={dir} lang={locale}>
       <div
         className={`oh-sa-backdrop${sidebarOpen ? " oh-sa-backdrop--open" : ""}`}
         aria-hidden={!sidebarOpen}
@@ -145,7 +114,7 @@ export default function SuperAdminLayout() {
             type="button"
             className="oh-sa-sidebar__collapse oh-sa-icon-button-3d"
             onClick={toggleSidebarCollapsed}
-            aria-label={sidebarCollapsed ? "فتح القائمة الجانبية" : "طي القائمة الجانبية"}
+            aria-label={sidebarCollapsed ? t("dashboard.nav.common.expandSidebar") : t("dashboard.nav.common.collapseSidebar")}
             aria-expanded={!sidebarCollapsed}
           >
             {sidebarCollapsed ? (
@@ -155,22 +124,22 @@ export default function SuperAdminLayout() {
             )}
           </button>
 
-          <aside className={navClassName} aria-label="قائمة المدير الأعلى">
+          <aside className={navClassName} aria-label={t("dashboard.nav.superAdmin.sidebarAria")}>
             <div className="oh-sa-brand oh-sa-brand--full-logo">
               <img
                 src="/hero/fullLogp.png"
-                alt="أوردرز هاوس"
+                alt={t("common.brand")}
                 className="oh-sa-brand__logo"
                 width={200}
                 height={56}
                 decoding="async"
               />
-              <div className="oh-sa-brand__sub">لوحة المدير الأعلى</div>
+              <div className="oh-sa-brand__sub">{t("dashboard.nav.superAdmin.panelTitle")}</div>
             </div>
 
             <div className="oh-sa-nav__scroll">
               <ul className="oh-sa-nav__list">
-                {NAV_MAIN.map((item) => (
+                {SUPER_ADMIN_NAV_MAIN.map((item) => (
                   <li key={item.to}>
                     <NavLink
                       to={item.to}
@@ -185,7 +154,7 @@ export default function SuperAdminLayout() {
                       <span className="oh-sa-navlink__icon" aria-hidden>
                         {item.icon}
                       </span>
-                      <span className="oh-sa-navlink__label">{item.label}</span>
+                      <span className="oh-sa-navlink__label">{resolveNavLabel(item, t)}</span>
                     </NavLink>
                   </li>
                 ))}
@@ -201,7 +170,7 @@ export default function SuperAdminLayout() {
                     <span className="oh-sa-navlink__icon" aria-hidden>
                       +
                     </span>
-                    <span className="oh-sa-navlink__label">إنشاء طلب</span>
+                    <span className="oh-sa-navlink__label">{t("dashboard.nav.superAdmin.createRequest")}</span>
                   </button>
                 </li>
               </ul>
@@ -212,7 +181,7 @@ export default function SuperAdminLayout() {
                     <span className="oh-sa-navlink__icon" aria-hidden>
                       ↗
                     </span>
-                    <span className="oh-sa-navlink__label">الموقع العام</span>
+                    <span className="oh-sa-navlink__label">{t("dashboard.nav.common.backToWebsite")}</span>
                   </NavLink>
                 </li>
               </ul>
@@ -226,7 +195,7 @@ export default function SuperAdminLayout() {
             <button
               type="button"
               className="oh-sa-topbar__menu oh-sa-icon-button-3d"
-              aria-label="فتح القائمة"
+              aria-label={t("dashboard.nav.common.openMenu")}
               aria-expanded={sidebarOpen}
               onClick={() => setSidebarOpen((v) => !v)}
             >
@@ -251,13 +220,13 @@ export default function SuperAdminLayout() {
                 <div className="oh-sa-user-menu" role="menu">
                   <div style={{ padding: "6px 10px 10px", fontSize: "0.82rem", color: "#5b6684", fontWeight: 800 }}>{displayName}</div>
                   <NavLink to={accountSettingsPath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
-                    إعدادات الحساب
+                    {t("dashboard.nav.common.accountSettings")}
                   </NavLink>
                   <NavLink to={notificationsPath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
-                    الإشعارات
+                    {t("dashboard.nav.common.notifications")}
                   </NavLink>
                   <NavLink to="/" role="menuitem" onClick={() => setUserMenuOpen(false)}>
-                    الموقع العام
+                    {t("dashboard.nav.common.backToWebsite")}
                   </NavLink>
                   <button
                     type="button"
@@ -268,7 +237,7 @@ export default function SuperAdminLayout() {
                       navigate("/", { replace: true });
                     }}
                   >
-                    تسجيل الخروج
+                    {t("dashboard.nav.common.logout")}
                   </button>
                 </div>
               ) : null}

@@ -1,6 +1,6 @@
 import { SkBox, SkLine } from "./SkeletonPrimitives";
-import { HOME_FEATURED_SERVICES_COUNT } from "../constants/homeFeaturedServices";
-import "../components/sections/categories-section.css";
+import { HOME_FEATURED_SERVICES_COUNT } from "../../constants/homeFeaturedServices";
+import "../sections/categories-section.css";
 import "./home-skeleton.css";
 
 /** Matches one featured service cell on the homepage. */

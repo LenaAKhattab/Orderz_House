@@ -354,7 +354,7 @@ const SuperAdminSubscriptionsPage = () => {
         eyebrow="لوحة المدير الأعلى"
         title="اشتراكات المستقلين"
         description="إسناد الباقات ومتابعة حالة الاشتراك (للمدير الأعلى فقط)."
-        breadcrumbs={superAdminBreadcrumbs("الاشتراكات")}
+        breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.subscriptions")}
       />
 
       {error ? (

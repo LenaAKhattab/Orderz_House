@@ -57,7 +57,7 @@ export const authFormSubtitle = "";
 export const authHelperText = "text-[0.82rem] text-[#7a839a]";
 
 export const authFormError =
-  "m-0 rounded-[14px] border border-[rgba(180,50,50,0.18)] bg-[rgba(180,50,50,0.06)] px-3.5 py-3 text-right text-[0.9rem] leading-[1.45] text-[#8b2222]";
+  "m-0 rounded-[14px] border border-[rgba(180,50,50,0.18)] bg-[rgba(180,50,50,0.06)] px-3.5 py-3 text-start text-[0.9rem] leading-[1.45] text-[#8b2222]";
 
 export const authSubtleLink =
   "text-[0.8rem] font-bold text-[#5e6b8f] no-underline transition-colors hover:text-[#2f3b65]";
@@ -72,7 +72,7 @@ export const authFormGrid = "grid gap-3.5";
 export const authField = "grid gap-2";
 
 export const authFieldCheckbox =
-  "flex flex-row items-start gap-2.5 [direction:rtl] [&>input]:mt-1 [&>input]:h-[18px] [&>input]:w-[18px] [&>input]:shrink-0 [&>input]:accent-[#2f3b65]";
+  "flex flex-row items-start gap-2.5 [&>input]:mt-1 [&>input]:h-[18px] [&>input]:w-[18px] [&>input]:shrink-0 [&>input]:accent-[#2f3b65]";
 
 export const authFieldLabel = "text-[0.86rem] font-bold text-[#2c3658]";
 
@@ -95,7 +95,7 @@ export const authInputNoIcon = `${inputBase} px-3.5`;
 export const authSelectRoot = "relative w-full";
 
 export const authSelectBtn =
-  "flex min-h-[52px] w-full items-center justify-between gap-3 rounded-2xl border border-[rgba(47,59,101,0.14)] bg-[#f9fafc] py-3 pe-11 ps-3.5 text-right text-[0.92rem] text-[#1a2238] transition-[border-color,box-shadow,background-color] duration-200 hover:border-[rgba(47,59,101,0.22)] hover:bg-white disabled:cursor-not-allowed disabled:opacity-90";
+  "flex min-h-[52px] w-full items-center justify-between gap-3 rounded-2xl border border-[rgba(47,59,101,0.14)] bg-[#f9fafc] py-3 pe-11 ps-3.5 text-start text-[0.92rem] text-[#1a2238] transition-[border-color,box-shadow,background-color] duration-200 hover:border-[rgba(47,59,101,0.22)] hover:bg-white disabled:cursor-not-allowed disabled:opacity-90";
 
 export const authSelectBtnOpen =
   "border-[var(--secondary,#76cfdf)] bg-white shadow-[0_0_0_4px_rgba(118,207,223,0.2)] outline-none";
@@ -116,7 +116,7 @@ export const authSelectPanel =
 export const authSelectOptions = "max-h-[280px] overflow-auto p-1.5";
 
 export const authSelectOpt =
-  "flex w-full appearance-none items-center justify-between gap-2.5 rounded-xl border-0 bg-transparent px-3 py-2.5 text-right text-[#1f2848] transition-colors hover:bg-[rgba(56,82,180,0.06)]";
+  "flex w-full appearance-none items-center justify-between gap-2.5 rounded-xl border-0 bg-transparent px-3 py-2.5 text-start text-[#1f2848] transition-colors hover:bg-[rgba(56,82,180,0.06)]";
 
 export const authSelectOptSelected =
   "bg-[rgba(240,141,57,0.12)] font-extrabold text-[#1b2341]";
@@ -125,11 +125,11 @@ export const authSelectOptText =
   "min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap";
 
 /** LTR phone / dial selects */
-export const authSelectLtrRoot = "ltr text-left";
+export const authSelectLtrRoot = "ltr text-start";
 
-export const authSelectBtnLtr = "py-3 ps-11 pe-3.5 text-left";
+export const authSelectBtnLtr = "py-3 ps-11 pe-3.5 text-start";
 
-export const authSelectOptLtr = "text-left";
+export const authSelectOptLtr = "text-start";
 
 export const authTermsText = "leading-[1.55]";
 

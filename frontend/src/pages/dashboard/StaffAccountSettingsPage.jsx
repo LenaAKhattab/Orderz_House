@@ -15,7 +15,7 @@ import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import BrowserNotificationSettings from "../../components/notifications/BrowserNotificationSettings";
-import { breadcrumbHomeFromUser } from "../../components/dashboard/dashboardBreadcrumbs";
+import { breadcrumbHomeCrumb } from "../../components/dashboard/dashboardBreadcrumbs";
 import "./shared/account-pages.css";
 
 const PHONE_RE = /^\+[1-9]\d{7,14}$/;
@@ -159,7 +159,7 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
 
   if (loading) {
     return (
-      <DashboardShell className="oh-account-page oh-account-page--staff" dir="rtl">
+      <DashboardShell className="oh-account-page oh-account-page--staff">
         <DashboardLoadingState label="جاري تحميل الإعدادات…" rows={5} />
       </DashboardShell>
     );
@@ -167,7 +167,7 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
 
   if (error) {
     return (
-      <DashboardShell className="oh-account-page oh-account-page--staff" dir="rtl">
+      <DashboardShell className="oh-account-page oh-account-page--staff">
         <DashboardEmptyState
           title="تعذّر التحميل"
           description={error}
@@ -182,13 +182,13 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
   }
 
   return (
-    <DashboardShell className="oh-account-page oh-account-page--staff" dir="rtl">
+    <DashboardShell className="oh-account-page oh-account-page--staff">
       <DashboardPageHeader
         eyebrow={heroKicker}
         title={heroTitle}
         description={heroLead}
         breadcrumbs={[
-          { label: "الرئيسية", href: breadcrumbHomeFromUser(authUser) },
+          breadcrumbHomeCrumb(authUser),
           { label: "إعدادات الحساب" },
         ]}
       />

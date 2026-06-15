@@ -1,20 +1,27 @@
+import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
+
 /** Primary client dashboard sidebar navigation. */
 export const CLIENT_NAV_MAIN = [
-  { to: "/dashboard/client", label: "لوحة التحكم", icon: "dashboard", end: true },
-  { to: "/dashboard/client/my-orders", label: "طلباتي", icon: "my-orders" },
-  { to: "/dashboard/client/financial", label: "المالية", icon: "wallet" },
+  { to: "/dashboard/client", labelKey: "dashboard.nav.client.home", icon: "dashboard", end: true },
+  { to: "/dashboard/client/my-orders", labelKey: "dashboard.nav.client.myRequests", icon: "my-orders" },
+  { to: "/dashboard/client/financial", labelKey: "dashboard.nav.client.finance", icon: "wallet" },
   {
     to: "/dashboard/client/orders",
-    label: "معرض الطلبات",
+    labelKey: "dashboard.nav.client.requestMarketplace",
     icon: "orders",
     matchPrefix: "/dashboard/client/orders",
   },
-  { to: "/dashboard/client/notifications", label: "رسائلي", icon: "messages", badgeKey: "notifications" },
+  {
+    to: "/dashboard/client/notifications",
+    labelKey: "dashboard.nav.client.messages",
+    icon: "messages",
+    badgeKey: "notifications",
+  },
 ];
 
 export const CLIENT_NAV_FOOTER = [
-  { to: "/dashboard/client/settings", label: "الإعدادات", icon: "settings" },
-  { to: "/", label: "الموقع العام", icon: "external", external: false },
+  { to: "/dashboard/client/settings", labelKey: "dashboard.nav.common.settings", icon: "settings" },
+  { to: "/", labelKey: "dashboard.nav.common.backToWebsite", icon: "external", external: false },
 ];
 
 export function isClientDashboardPath(pathname) {
@@ -33,15 +40,17 @@ export function isClientDashboardShellPath(pathname) {
   );
 }
 
-export function clientPageTitle(pathname) {
+export function clientPageTitle(pathname, t) {
   const item = CLIENT_NAV_MAIN.find((n) =>
     n.end ? pathname === n.to : pathname === n.to || pathname.startsWith(`${n.to}/`),
   );
-  if (item) return item.label;
-  if (pathname.includes("/settings")) return "الإعدادات";
-  if (pathname.includes("/profile")) return "الملف الشخصي";
-  if (pathname.includes("/financial")) return "المالية";
-  if (pathname.includes("/my-orders")) return "طلباتي";
-  if (pathname.includes("/client/orders") || pathname.includes("/freelancer/orders")) return "معرض الطلبات";
-  return "لوحة العميل";
+  if (item) return resolveNavLabel(item, t);
+  if (pathname.includes("/settings")) return t("dashboard.nav.common.settings");
+  if (pathname.includes("/profile")) return t("dashboard.nav.common.profile");
+  if (pathname.includes("/financial")) return t("dashboard.nav.client.finance");
+  if (pathname.includes("/my-orders")) return t("dashboard.nav.client.myRequests");
+  if (pathname.includes("/client/orders") || pathname.includes("/freelancer/orders")) {
+    return t("dashboard.nav.client.requestMarketplace");
+  }
+  return t("dashboard.nav.client.panelTitle");
 }

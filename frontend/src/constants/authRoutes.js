@@ -66,6 +66,66 @@ export const DASHBOARD_TITLE = {
   "/dashboard/admin/orders/create": "إنشاء طلب داخلي",
 };
 
+/** i18n keys for dashboard route titles (layout chrome). */
+export const DASHBOARD_TITLE_KEYS = {
+  [DASHBOARD_PATH[ROLE.SUPER_ADMIN]]: "dashboard.titles.superAdminPanel",
+  [DASHBOARD_PATH[ROLE.ADMIN]]: "dashboard.titles.adminPanel",
+  [DASHBOARD_PATH[ROLE.FREELANCER]]: "dashboard.titles.freelancerPanel",
+  [DASHBOARD_PATH[ROLE.CLIENT]]: "dashboard.titles.clientPanel",
+  "/dashboard/client/my-orders": "dashboard.breadcrumbs.myRequests",
+  "/dashboard/client/my_orders": "dashboard.breadcrumbs.myRequests",
+  "/dashboard/client/financial": "dashboard.breadcrumbs.finance",
+  "/dashboard/client/orders": "dashboard.nav.client.requestMarketplace",
+  "/dashboard/super-admin/plans": "dashboard.breadcrumbs.managePlans",
+  "/dashboard/super-admin/subscriptions": "dashboard.breadcrumbs.freelancerSubscriptions",
+  "/dashboard/super-admin/subscriptions/activation": "dashboard.breadcrumbs.subscriptionActivation",
+  "/dashboard/super-admin/financial-claims": "dashboard.breadcrumbs.financialClaims",
+  "/dashboard/admin/subscriptions": "dashboard.breadcrumbs.subscriptionActivation",
+  "/dashboard/admin/courses": "dashboard.breadcrumbs.manageCourses",
+  "/dashboard/admin/ads": "dashboard.breadcrumbs.manageAds",
+  "/dashboard/freelancer/my-orders": "dashboard.breadcrumbs.myRequests",
+  "/dashboard/freelancer/orders": "dashboard.breadcrumbs.orders",
+  "/dashboard/freelancer/financial-claims": "dashboard.breadcrumbs.financialClaims",
+  "/dashboard/freelancer/plans": "dashboard.breadcrumbs.plans",
+  "/dashboard/freelancer/courses": "dashboard.breadcrumbs.trainingCourses",
+  "/dashboard/super-admin/notifications": "dashboard.breadcrumbs.notifications",
+  "/dashboard/super-admin/courses": "dashboard.breadcrumbs.manageCourses",
+  "/dashboard/super-admin/ads": "dashboard.breadcrumbs.ads",
+  "/dashboard/super-admin/training-orders": "dashboard.breadcrumbs.trainingRequests",
+  "/dashboard/super-admin/training-orders/settings": "dashboard.breadcrumbs.trainingSettings",
+  "/dashboard/super-admin/training-orders/templates": "dashboard.breadcrumbs.trainingTemplates",
+  "/dashboard/super-admin/training-orders/rounds": "dashboard.breadcrumbs.trainingRounds",
+  "/dashboard/super-admin/training-orders/applications": "dashboard.breadcrumbs.trainingApplications",
+  "/dashboard/admin/notifications": "dashboard.breadcrumbs.notifications",
+  "/dashboard/admin/orders": "dashboard.breadcrumbs.internalRequests",
+  "/dashboard/client/notifications": "dashboard.breadcrumbs.notifications",
+  "/dashboard/freelancer/notifications": "dashboard.breadcrumbs.notifications",
+  "/dashboard/freelancer/settings": "dashboard.breadcrumbs.accountSettings",
+  "/dashboard/client/profile": "dashboard.breadcrumbs.profile",
+  "/dashboard/client/settings": "dashboard.breadcrumbs.accountSettings",
+  "/dashboard/admin/settings": "dashboard.breadcrumbs.accountSettings",
+  "/dashboard/super-admin/settings": "dashboard.breadcrumbs.accountSettings",
+  "/dashboard/super-admin/admins": "dashboard.breadcrumbs.admins",
+  "/dashboard/super-admin/edit-website": "dashboard.breadcrumbs.editWebsite",
+  "/dashboard/super-admin/edit-website/faq": "dashboard.breadcrumbs.faq",
+  "/dashboard/super-admin/edit-website/how-it-works": "dashboard.breadcrumbs.howItWorks",
+  "/dashboard/super-admin/edit-website/pages": "dashboard.breadcrumbs.websitePages",
+  "/how-it-works/freelancer": "dashboard.breadcrumbs.howItWorksFreelancer",
+  "/how-it-works/client": "dashboard.breadcrumbs.howItWorksClient",
+  "/dashboard/admin/orders/create": "dashboard.breadcrumbs.createInternalRequest",
+};
+
+/**
+ * @param {string} pathname
+ * @param {(key: string) => string} t
+ * @returns {string}
+ */
+export function getDashboardTitle(pathname, t) {
+  const key = DASHBOARD_TITLE_KEYS[pathname];
+  if (key) return t(key);
+  return t("dashboard.titles.default");
+}
+
 /**
  * @param {string} role
  * @returns {string}

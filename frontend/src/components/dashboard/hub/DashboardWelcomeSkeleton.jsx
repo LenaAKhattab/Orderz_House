@@ -1,6 +1,10 @@
+import { useTranslation } from "../../../i18n/LanguageProvider";
+
 export default function DashboardWelcomeSkeleton() {
+  const { t } = useTranslation();
+
   return (
-    <section className="fdash-welcome fdash-welcome--loading" aria-busy="true" aria-label="جارٍ التحميل">
+    <section className="fdash-welcome fdash-welcome--loading" aria-busy="true" aria-label={t("freelancerDashboard.common.loading")}>
       <div className="fdash-welcome__hero">
         <div className="fdash-welcome__content">
           <div className="fdash-skel fdash-skel--badge" />

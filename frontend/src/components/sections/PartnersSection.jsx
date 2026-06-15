@@ -1,4 +1,5 @@
-import { PARTNER_LOGOS, PARTNERS_SECTION_SUBTITLE } from "../../constants/partnerLogos";
+import { PARTNER_LOGOS } from "../../constants/partnerLogos";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import "./partners-section.css";
 
 /**
@@ -6,21 +7,23 @@ import "./partners-section.css";
  * Logos live in `public/partners/`.
  */
 const PartnersSection = () => {
+  const { t, dir } = useTranslation();
+
   return (
     <section className="partners-section" aria-labelledby="partners-section-heading">
       <div className="partners-section__container">
-        <div className="partners-section__content" dir="rtl">
+        <div className="partners-section__content" dir={dir}>
           <div className="partners-section__copy">
             <h2 id="partners-section-heading" className="partners-section__title">
-              شركاء النجاح
+              {t("home.partners.title")}
             </h2>
-            <p className="partners-section__subtitle">{PARTNERS_SECTION_SUBTITLE}</p>
+            <p className="partners-section__subtitle">{t("home.partners.subtitle")}</p>
           </div>
 
           <ul
             id="home-partners-anchor"
             className="partners-section__grid"
-            aria-label="شعارات الشركاء"
+            aria-label={t("home.partners.logosAria")}
           >
             {PARTNER_LOGOS.map((item) => (
               <li key={item.id} className="partners-section__grid-cell">
@@ -29,7 +32,7 @@ const PartnersSection = () => {
                   className="partners-section__logo-link"
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`زيارة موقع ${item.alt}`}
+                  aria-label={t("home.partners.visitSite", { name: item.alt })}
                 >
                   <img
                     className="partners-section__logo"

@@ -12,7 +12,7 @@ export default function SuperAdminEditWebsitePage() {
       <DashboardPageHeader
         title="تعديل الموقع"
         description="اختر القسم الذي تريد تعديله من محتوى الموقع العام."
-        breadcrumbs={superAdminBreadcrumbs("تعديل الموقع")}
+        breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.editWebsite")}
       />
 
       <DashboardSection title="أقسام الموقع القابلة للتعديل">

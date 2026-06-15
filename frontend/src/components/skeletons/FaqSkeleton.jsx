@@ -1,11 +1,14 @@
 import { SkBox, SkLine } from "./SkeletonPrimitives";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 /** Placeholders aligned with `FaqSection` (header + list + side image). */
 export default function FaqSkeleton() {
+  const { dir } = useTranslation();
+
   return (
-    <section className="relative w-full border-t border-slate-200/60 px-4 py-12 sm:px-6 sm:py-14 md:px-8 md:py-16 lg:px-10" dir="rtl" aria-hidden>
+    <section className="relative w-full border-t border-slate-200/60 px-4 py-12 sm:px-6 sm:py-14 md:px-8 md:py-16 lg:px-10" dir={dir} aria-hidden>
       <div className="mx-auto w-full max-w-6xl pb-2">
-        <header className="mb-8 text-right sm:mb-10">
+        <header className="mb-8 text-start sm:mb-10">
           <SkLine className="ms-auto h-9 w-[min(100%,14rem)] rounded-lg sm:h-10" />
           <SkLine className="ms-auto mt-3 h-4 w-[min(100%,22rem)] max-w-full rounded-md opacity-80" />
         </header>

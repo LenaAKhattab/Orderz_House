@@ -1,24 +1,9 @@
+import { getTranslation } from "../lib/translation/getTranslation";
+import { DEFAULT_LOCALE } from "../i18n/resources";
 import { orderHasAssignment } from "./orderPrivacyUi";
 
 /** Matches backend pool listing / freelancer visibility. */
 const POOL_LIKE_ORDER_STATUSES = new Set(["published", "open_for_freelancers", "open_for_bids"]);
-
-/** Human-readable Arabic for API `orderStatus` values (backend CHECK). */
-const ORDER_STATUS_LABEL_AR = {
-  draft: "مسودة",
-  published: "منشور",
-  assigned: "مُسند",
-  in_progress: "قيد التنفيذ",
-  pending_client_review: "بانتظار اعتماد العميل",
-  completed: "مكتمل",
-  cancelled: "ملغي",
-  pending_payment: "بانتظار الدفع",
-  open_for_freelancers: "متاح للمستقلين",
-  open_for_bids: "مفتوح للعروض",
-  awaiting_payment_after_bid_selection: "بانتظار الدفع بعد اختيار العرض",
-  pending_freelancer_acceptance: "بانتظار قبول مستقل",
-  ready_for_work: "جاهز للعمل",
-};
 
 const ORDER_STATUS_BADGE_CLASS = {
   draft: "oh-badge oh-badge--neutral",
@@ -36,37 +21,90 @@ const ORDER_STATUS_BADGE_CLASS = {
   ready_for_work: "oh-badge oh-badge--success",
 };
 
-export function orderStatusLabelAr(status) {
-  const s = status != null ? String(status).trim() : "";
-  if (!s) return "—";
-  return ORDER_STATUS_LABEL_AR[s] || s;
+function resolveTranslator(t) {
+  return typeof t === "function" ? t : (key) => getTranslation(key, DEFAULT_LOCALE);
 }
 
-/** Badge for order cards (header): label + CSS class. */
-export function orderStatusDisplayBadge(order) {
+/**
+ * @param {string | null | undefined} status
+ * @param {(key: string, values?: Record<string, string | number>) => string} t
+ */
+export function getOrderStatusLabel(status, t) {
+  const tr = resolveTranslator(t);
+  const s = status != null ? String(status).trim() : "";
+  if (!s) return tr("orders.status.unknown");
+  const key = `orders.status.${s}`;
+  const label = tr(key);
+  if (label === key) return s;
+  return label;
+}
+
+export function getOrderStatusBadgeClass(status) {
+  const s = status != null ? String(status).trim() : "";
+  return ORDER_STATUS_BADGE_CLASS[s] || "oh-badge oh-badge--neutral";
+}
+
+/**
+ * Badge for order cards (header): label + CSS class.
+ * @param {object} order
+ * @param {(key: string, values?: Record<string, string | number>) => string} [t]
+ */
+export function orderStatusDisplayBadge(order, t) {
+  const tr = resolveTranslator(t);
+
   if (order?.isArchived) {
-    return { label: "مؤرشف", className: "oh-badge oh-badge--neutral" };
+    return { label: tr("orders.status.archived"), className: "oh-badge oh-badge--neutral" };
   }
+
   const hasRevision = Boolean(order?.clientRevisionNote);
   const requestedByAdmin =
-    order?.revisionRequestedBy === "admin" || order?.sourceType === "admin_created" || order?.sourceType === "super_admin_created";
+    order?.revisionRequestedBy === "admin" ||
+    order?.sourceType === "admin_created" ||
+    order?.sourceType === "super_admin_created";
+
   if (hasRevision) {
     if (order?.orderStatus === "pending_client_review") {
-      return { label: "تم تسليم التعديل", className: "oh-badge oh-badge--info" };
+      return { label: tr("orders.status.revisionDelivered"), className: "oh-badge oh-badge--info" };
     }
     if (order?.orderStatus === "in_progress" || order?.orderStatus === "ready_for_work") {
       return {
-        label: requestedByAdmin ? "طلب تعديل من الإدارة" : "طلب تعديل من العميل",
+        label: requestedByAdmin
+          ? tr("orders.status.revisionRequestedAdmin")
+          : tr("orders.status.revisionRequestedClient"),
         className: "oh-badge oh-badge--warning",
       };
     }
-    return { label: "تعديل مطلوب", className: "oh-badge oh-badge--warning" };
+    return { label: tr("orders.status.revisionRequired"), className: "oh-badge oh-badge--warning" };
+  }
+
+  const s = order?.orderStatus != null ? String(order.orderStatus).trim() : "";
+  if (!s) return { label: "—", className: "oh-badge oh-badge--neutral" };
+
+  return {
+    label: getOrderStatusLabel(s, tr),
+    className: getOrderStatusBadgeClass(s),
+  };
+}
+
+/**
+ * Pool/marketplace card badge — `published` shown as «available» in the public gallery.
+ * @param {object} order
+ * @param {(key: string, values?: Record<string, string | number>) => string} [t]
+ */
+export function poolMarketplaceStatusBadge(order, t) {
+  const tr = resolveTranslator(t);
+  if (order?.isArchived) {
+    return { label: tr("orders.status.archived"), className: "oh-badge oh-badge--neutral" };
   }
   const s = order?.orderStatus != null ? String(order.orderStatus).trim() : "";
   if (!s) return { label: "—", className: "oh-badge oh-badge--neutral" };
-  const label = ORDER_STATUS_LABEL_AR[s] || s;
-  const className = ORDER_STATUS_BADGE_CLASS[s] || "oh-badge oh-badge--neutral";
-  return { label, className };
+  const label = s === "published" ? tr("orders.status.available") : getOrderStatusLabel(s, tr);
+  return { label, className: getOrderStatusBadgeClass(s) };
+}
+
+/** @deprecated Use getOrderStatusLabel(status, t) — Arabic-only fallback for legacy callers. */
+export function orderStatusLabelAr(status) {
+  return getOrderStatusLabel(status, (key) => getTranslation(key, DEFAULT_LOCALE));
 }
 
 export function isClientFixedAwaitingPayment(order) {

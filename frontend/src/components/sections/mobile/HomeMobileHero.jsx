@@ -1,30 +1,19 @@
 import { Link } from "react-router-dom";
+import { useMemo } from "react";
 import { HOME_HERO_METRICS_ORDER } from "../../../constants/homeAnalyticsMetrics";
 import HomePromoOffersSection from "../../ads/HomePromoOffersSection";
 import AdsBandSkeleton from "../../skeletons/AdsBandSkeleton";
 import HeroStatValue from "../HeroStatValue";
-import { resolveAnalyticsHint } from "../heroHomeStatUtils";
 import HomeMobileHeroMastheadArt from "./HomeMobileHeroMastheadArt";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import "../../ads/home-promo-offers.css";
 
-const HERO_METRICS = HOME_HERO_METRICS_ORDER;
-
-const DEFAULT_FEATURED = [
-  {
-    id: "start-order",
-    title: "ابدأ طلبك بسهولة",
-    tag: "خطوة واحدة",
-    to: "/register",
-    tone: "dark",
-  },
-  {
-    id: "explore-services",
-    title: "قارن الخدمات المتاحة",
-    tag: "استكشف",
-    to: "/services",
-    tone: "accent",
-  },
-];
+const METRIC_LABEL_KEYS = {
+  views: { label: "home.metrics.views", sub: "home.metrics.viewsSub" },
+  active: { label: "home.metrics.activeUsers", sub: "home.metrics.activeSub" },
+  availableOrders: { label: "home.metrics.availableOrders", sub: "home.metrics.availableSub" },
+  completedOrders: { label: "home.metrics.completedOrders", sub: "home.metrics.completedSub" },
+};
 
 function SearchIcon() {
   return (
@@ -48,37 +37,56 @@ function PlayIcon() {
  * @param {{ statsPayload: object | null; ads?: import("../../../types/ad.js").Ad[]; adsLoading?: boolean }} p
  */
 export default function HomeMobileHero({ statsPayload, ads = [], adsLoading = false }) {
+  const { t, dir } = useTranslation();
   const showAds = adsLoading || (Array.isArray(ads) && ads.length > 0);
 
+  const featured = useMemo(
+    () => [
+      {
+        id: "start-order",
+        title: t("home.hero.featured.startOrder"),
+        tag: t("home.hero.featured.startOrderTag"),
+        to: "/register",
+        tone: "dark",
+      },
+      {
+        id: "explore-services",
+        title: t("home.hero.featured.exploreServices"),
+        tag: t("home.hero.featured.exploreTag"),
+        to: "/services",
+        tone: "accent",
+      },
+    ],
+    [t],
+  );
+
   return (
-    <section className="hm-hero" dir="rtl" aria-labelledby="hm-hero-heading">
+    <section className="hm-hero" dir={dir} aria-labelledby="hm-hero-heading">
       <div className="hm-hero__masthead">
         <HomeMobileHeroMastheadArt />
         <header className="hm-hero__top">
           <div className="hm-hero__greeting">
-            <p className="hm-hero__greeting-label">مرحباً بك في</p>
+            <p className="hm-hero__greeting-label">{t("home.hero.greeting")}</p>
             <h1 id="hm-hero-heading" className="hm-hero__greeting-title">
-              أوردرز هاوس
+              {t("common.brand")}
             </h1>
           </div>
         </header>
       </div>
 
-      <Link to="/services" className="hm-hero__search" aria-label="البحث عن خدمة">
+      <Link to="/services" className="hm-hero__search" aria-label={t("home.hero.searchAria")}>
         <SearchIcon />
-        <span>ابحث عن خدمة أو تصنيف...</span>
+        <span>{t("home.hero.searchPlaceholder")}</span>
       </Link>
 
       <div className="hm-hero__intro">
-        <h2 className="hm-hero__headline">منصة واحدة تجمعك بالخدمات والمستقلين المناسبين</h2>
-        <p className="hm-hero__subline">
-          ابدأ بطلبك بسهولة، قارن الخدمات المتاحة، وتابع كل خطوة من مكان واحد.
-        </p>
+        <h2 className="hm-hero__headline">{t("home.hero.title")}</h2>
+        <p className="hm-hero__subline">{t("home.hero.leadShort")}</p>
       </div>
 
-      <div className="hm-hero__featured" aria-label="ابدأ من هنا">
+      <div className="hm-hero__featured" aria-label={t("home.hero.featuredAria")}>
         <div className="hm-hero__featured-track">
-          {DEFAULT_FEATURED.map((item) => (
+          {featured.map((item) => (
             <Link
               key={item.id}
               to={item.to}
@@ -96,28 +104,27 @@ export default function HomeMobileHero({ statsPayload, ads = [], adsLoading = fa
         </div>
       </div>
 
-      <div className="hm-hero__stats" role="group" aria-label="إحصائيات المنصة">
-        {HERO_METRICS.map((row) => {
+      <div className="hm-hero__stats" role="group" aria-label={t("home.metrics.statsAria")}>
+        {HOME_HERO_METRICS_ORDER.map((row) => {
           if (statsPayload) {
             if (row.key === "views" && !statsPayload.showVisitorsCount) return null;
             if (row.key === "active" && !statsPayload.showActiveUsersCount) return null;
           }
-          const hint = resolveAnalyticsHint(statsPayload, row.key);
+          const keys = METRIC_LABEL_KEYS[row.key] || { label: row.label, sub: row.sub };
           return (
             <div key={row.key} className={`hm-stat-pill hm-stat-pill--${row.tone}`}>
-              <span className="hm-stat-pill__label">{row.label}</span>
+              <span className="hm-stat-pill__label">{t(keys.label)}</span>
               <span className="hm-stat-pill__value">
                 <HeroStatValue statsPayload={statsPayload} metricKey={row.key} />
               </span>
-              <span className="hm-stat-pill__sub">{row.sub}</span>
-              {hint ? <span className="hm-stat-pill__hint">{hint}</span> : null}
+              <span className="hm-stat-pill__sub">{t(keys.sub)}</span>
             </div>
           );
         })}
       </div>
 
       {showAds ? (
-        <div className="hm-hero__ads" aria-label="إعلانات">
+        <div className="hm-hero__ads" aria-label={t("home.hero.adsAria")}>
           {adsLoading ? (
             <AdsBandSkeleton variant="hero" />
           ) : (

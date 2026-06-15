@@ -22,6 +22,7 @@ import Pagination from "../../components/common/Pagination";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
 import NotificationListSkeleton from "../../components/dashboard/hub/NotificationListSkeleton";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../styles/dashboardHub.css";
 import "./notifications-page.css";
 
@@ -36,26 +37,27 @@ function sortNewestFirst(list) {
   });
 }
 
-function fmtDate(value) {
+function fmtDate(value, locale) {
   if (!value) return "";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
+  const tag = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+  return new Intl.DateTimeFormat(tag, { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
-function fmtRelativeTime(value) {
+function fmtRelativeTime(value, t, locale) {
   if (!value) return "";
   const d = new Date(value);
   const diff = Date.now() - d.getTime();
   if (!Number.isFinite(diff)) return "";
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "الآن";
-  if (mins < 60) return `منذ ${mins} دقيقة`;
+  if (mins < 1) return t("freelancerDashboard.notificationsPage.relativeNow");
+  if (mins < 60) return t("freelancerDashboard.notificationsPage.relativeMinutes", { count: mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `منذ ${hours} ساعة`;
+  if (hours < 24) return t("freelancerDashboard.notificationsPage.relativeHours", { count: hours });
   const days = Math.floor(hours / 24);
-  if (days < 7) return `منذ ${days} يوم`;
-  return fmtDate(value);
+  if (days < 7) return t("freelancerDashboard.notificationsPage.relativeDays", { count: days });
+  return fmtDate(value, locale);
 }
 
 function actorLabel(actor) {
@@ -89,27 +91,33 @@ function notificationDetails(n, canShowOrderReference) {
   return parts.join(" - ");
 }
 
-function notificationCategory(type) {
-  const t = String(type || "").toLowerCase();
-  if (t.includes("message") || t.includes("chat")) return { label: "رسائل", tone: "emerald" };
-  if (t.includes("claim") || t.includes("financial") || t.includes("payment") || t.includes("pay") || t.includes("stripe") || t.includes("invoice")) {
-    return { label: "مطالبات", tone: "violet" };
+function notificationCategory(type, t) {
+  const raw = String(type || "").toLowerCase();
+  if (raw.includes("message") || raw.includes("chat")) {
+    return { label: t("freelancerDashboard.notificationsPage.categoryMessages"), tone: "emerald" };
   }
-  if (t.includes("course") || t.includes("lesson")) return { label: "دورات", tone: "amber" };
-  if (t.includes("order")) return { label: "طلبات", tone: "blue" };
-  return { label: "تنبيه", tone: "teal" };
+  if (raw.includes("claim") || raw.includes("financial") || raw.includes("payment") || raw.includes("pay") || raw.includes("stripe") || raw.includes("invoice")) {
+    return { label: t("freelancerDashboard.notificationsPage.categoryClaims"), tone: "violet" };
+  }
+  if (raw.includes("course") || raw.includes("lesson")) {
+    return { label: t("freelancerDashboard.notificationsPage.categoryCourses"), tone: "amber" };
+  }
+  if (raw.includes("order")) {
+    return { label: t("freelancerDashboard.notificationsPage.categoryOrders"), tone: "blue" };
+  }
+  return { label: t("freelancerDashboard.notificationsPage.categoryAlert"), tone: "teal" };
 }
 
 function NotifTypeIcon({ type }) {
-  const t = String(type || "").toLowerCase();
+  const raw = String(type || "").toLowerCase();
   const props = { size: 21, strokeWidth: 1.5, "aria-hidden": true };
 
-  if (t.includes("message") || t.includes("chat")) return <MessageSquare {...props} />;
-  if (t.includes("claim") || t.includes("financial") || t.includes("payment") || t.includes("pay") || t.includes("stripe") || t.includes("invoice")) {
+  if (raw.includes("message") || raw.includes("chat")) return <MessageSquare {...props} />;
+  if (raw.includes("claim") || raw.includes("financial") || raw.includes("payment") || raw.includes("pay") || raw.includes("stripe") || raw.includes("invoice")) {
     return <Wallet {...props} />;
   }
-  if (t.includes("course") || t.includes("lesson")) return <GraduationCap {...props} />;
-  if (t.includes("order")) return <FileText {...props} />;
+  if (raw.includes("course") || raw.includes("lesson")) return <GraduationCap {...props} />;
+  if (raw.includes("order")) return <FileText {...props} />;
   return <Bell {...props} />;
 }
 
@@ -130,6 +138,7 @@ function StatSegment({ tone, Icon, label, value, loading }) {
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t, locale, isLanguageSwitching } = useTranslation();
   const role = user?.primaryRole || user?.role;
   const isDashboardHubShell = role === "freelancer" || role === "client";
   const canShowOrderReference = role === "admin" || role === "super_admin";
@@ -210,15 +219,15 @@ export default function NotificationsPage() {
   }, [fetchData, filter, page]);
 
   const title = useMemo(() => {
-    if (role === "super_admin") return "إشعارات المدير الأعلى";
-    if (role === "admin") return "إشعارات الإدارة";
-    return "إشعاراتك";
-  }, [role]);
+    if (role === "super_admin") return t("freelancerDashboard.notificationsPage.titleSuperAdmin");
+    if (role === "admin") return t("freelancerDashboard.notificationsPage.titleAdmin");
+    return t("freelancerDashboard.notificationsPage.titleFreelancer");
+  }, [role, t]);
 
   const subtitle = useMemo(() => {
-    if (isDashboardHubShell) return "تابع تحديثات الطلبات، الرسائل، والمدفوعات من مكان واحد.";
-    return "تابع تحديثات الطلبات، المدفوعات، والمطالبات في مكان واحد.";
-  }, [isDashboardHubShell]);
+    if (isDashboardHubShell) return t("freelancerDashboard.notificationsPage.subtitleHub");
+    return t("freelancerDashboard.notificationsPage.subtitleStaff");
+  }, [isDashboardHubShell, t]);
 
   const filteredItems = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -259,6 +268,8 @@ export default function NotificationsPage() {
     }
   }, []);
 
+  const showLoading = loading || isLanguageSwitching;
+
   const pageBody = (
     <>
       <header className="fn-surface fn-header">
@@ -266,9 +277,9 @@ export default function NotificationsPage() {
           <h1 className="fn-header__title">{title}</h1>
           <p className="fn-header__subtitle">{subtitle}</p>
         </div>
-        <div className="fn-stats-bar" aria-label="ملخص الإشعارات">
-          <StatSegment tone="slate" Icon={FileText} label="إجمالي الإشعارات" value={allTotal} loading={loading} />
-          <StatSegment tone="blue" Icon={Bell} label="غير المقروء" value={unreadCount} loading={loading} />
+        <div className="fn-stats-bar" aria-label={t("freelancerDashboard.notificationsPage.summaryAria")}>
+          <StatSegment tone="slate" Icon={FileText} label={t("freelancerDashboard.notificationsPage.total")} value={allTotal} loading={showLoading} />
+          <StatSegment tone="blue" Icon={Bell} label={t("freelancerDashboard.notificationsPage.unread")} value={unreadCount} loading={showLoading} />
         </div>
       </header>
 
@@ -281,13 +292,13 @@ export default function NotificationsPage() {
               className="fn-toolbar__search-input"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ابحث في الإشعارات..."
-              aria-label="ابحث في الإشعارات"
+              placeholder={t("freelancerDashboard.notificationsPage.searchPlaceholder")}
+              aria-label={t("freelancerDashboard.notificationsPage.searchAria")}
             />
           </div>
         </div>
         <div className="fn-toolbar__zone fn-toolbar__zone--filters">
-          <div className="fn-toolbar__segmented" role="tablist" aria-label="تصفية الإشعارات">
+          <div className="fn-toolbar__segmented" role="tablist" aria-label={t("freelancerDashboard.notificationsPage.filterAria")}>
             <button
               type="button"
               role="tab"
@@ -298,7 +309,7 @@ export default function NotificationsPage() {
                 setPage(1);
               }}
             >
-              الكل
+              {t("freelancerDashboard.notificationsPage.filterAll")}
             </button>
             <button
               type="button"
@@ -310,19 +321,19 @@ export default function NotificationsPage() {
                 setPage(1);
               }}
             >
-              غير المقروء
+              {t("freelancerDashboard.notificationsPage.filterUnread")}
             </button>
           </div>
         </div>
         <div className="fn-toolbar__zone fn-toolbar__zone--action">
-          <button type="button" className="fn-toolbar__mark-all" onClick={handleReadAll} disabled={!unreadCount || loading}>
+          <button type="button" className="fn-toolbar__mark-all" onClick={handleReadAll} disabled={!unreadCount || showLoading}>
             <CheckCheck size={16} strokeWidth={1.75} aria-hidden />
-            <span>تعليم الكل كمقروء</span>
+            <span>{t("freelancerDashboard.notificationsPage.markAllRead")}</span>
           </button>
         </div>
       </div>
 
-      {loading ? (
+      {showLoading ? (
         <NotificationListSkeleton count={PAGE_SIZE} />
       ) : filteredItems.length === 0 ? (
         <section className="fn-surface fn-empty">
@@ -331,28 +342,29 @@ export default function NotificationsPage() {
           </span>
           <h2 className="fn-empty__title">
             {searchQuery.trim()
-              ? "لا توجد نتائج للبحث"
+              ? t("freelancerDashboard.notificationsPage.emptySearch")
               : filter === "unread"
-                ? "لا توجد إشعارات غير مقروءة"
-                : "لا توجد إشعارات حالياً"}
+                ? t("freelancerDashboard.notificationsPage.emptyUnread")
+                : t("freelancerDashboard.notificationsPage.emptyAll")}
           </h2>
           <p className="fn-empty__sub">
             {searchQuery.trim()
-              ? "جرّب كلمات بحث مختلفة أو امسح حقل البحث."
-              : "ستظهر التحديثات الجديدة هنا عند توفرها."}
+              ? t("freelancerDashboard.notificationsPage.emptySearchSub")
+              : t("freelancerDashboard.notificationsPage.emptyDefaultSub")}
           </p>
         </section>
       ) : (
         <>
-        <section className="fn-surface fn-inbox" aria-label="قائمة الإشعارات">
+        <section className="fn-surface fn-inbox" aria-label={t("freelancerDashboard.notificationsPage.listAria")}>
           <div className="fn-notif-list">
             {filteredItems.map((n) => {
               const unread = !n.isRead;
               const details = notificationDetails(n, canShowOrderReference);
               const message = String(n.message || "").trim();
               const description = message || details || "";
-              const category = notificationCategory(n.type);
-              const relativeTime = fmtRelativeTime(n.createdAt);
+              const category = notificationCategory(n.type, t);
+              const relativeTime = fmtRelativeTime(n.createdAt, t, locale);
+              const cardTitle = n.title || t("freelancerDashboard.notificationsPage.newNotification");
 
               return (
                 <article
@@ -363,7 +375,7 @@ export default function NotificationsPage() {
                     type="button"
                     className="fn-notif-card__surface"
                     onClick={() => handleOpen(n)}
-                    aria-label={`${n.title || "إشعار جديد"}${unread ? " — غير مقروء" : ""}`}
+                    aria-label={`${cardTitle}${unread ? t("freelancerDashboard.notificationsPage.unreadSuffix") : ""}`}
                   >
                     <div className="fn-notif-card__start">
                       <div className="fn-notif-card__rail">
@@ -371,14 +383,14 @@ export default function NotificationsPage() {
                           <span className={`fn-notif-card__icon fn-notif-card__icon--${category.tone}`} aria-hidden>
                             <NotifTypeIcon type={n.type} />
                           </span>
-                          {unread ? <span className="fn-notif-card__dot" title="غير مقروء" /> : null}
+                          {unread ? <span className="fn-notif-card__dot" title={t("freelancerDashboard.notificationsPage.unreadTitle")} /> : null}
                         </div>
                         <span className={`fn-notif-card__pill fn-notif-card__pill--${category.tone}`}>{category.label}</span>
                       </div>
                       <span className="fn-notif-card__rail-sep" aria-hidden />
 
                       <div className="fn-notif-card__body">
-                        <h2 className="fn-notif-card__title">{n.title || "إشعار جديد"}</h2>
+                        <h2 className="fn-notif-card__title">{cardTitle}</h2>
                         <p className="fn-notif-card__details">
                           {unread ? <span className="fn-notif-card__details-dot" aria-hidden /> : null}
                           <span className="fn-notif-card__details-category">{category.label}</span>
@@ -403,7 +415,7 @@ export default function NotificationsPage() {
             currentPage={page}
             totalPages={totalPages}
             onPageChange={setPage}
-            isLoading={loading}
+            isLoading={showLoading}
             className="fn-pagination app-pagination"
           />
         ) : null}

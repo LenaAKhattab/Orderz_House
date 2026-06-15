@@ -6,14 +6,15 @@ import * as tw from "../components/auth/authTw";
 import Button from "../components/ui/Button";
 import { useAuth } from "../context/useAuth";
 import { getDashboardPath } from "../constants/authRoutes";
+import { useTranslation } from "../i18n/LanguageProvider";
 import { resendRegisterOtpRequest } from "../services/api";
 import { getSafeApiErrorMessage } from "../utils/apiErrorMessage";
 import { ARAB_COUNTRIES, DEFAULT_DIAL_CODE } from "../constants/arabCountries";
 
-const CATEGORY_OPTIONS = [
-  { slug: "design", label: "تصميم" },
-  { slug: "content_writing", label: "كتابة محتوى" },
-  { slug: "development", label: "البرمجة" },
+const CATEGORY_SLUGS = [
+  { slug: "design", translationKey: "auth.register.categories.design" },
+  { slug: "content_writing", translationKey: "auth.register.categories.contentWriting" },
+  { slug: "development", translationKey: "auth.register.categories.development" },
 ];
 
 const ARABIC_ONLY = /^[\u0600-\u06FF\s]+$/;
@@ -133,12 +134,9 @@ function PremiumSelect({
   );
 }
 
-function registerErrorMessage(err) {
-  return getSafeApiErrorMessage(err, "تعذر إنشاء الحساب. راجع الحقول وحاول مجدداً.");
-}
-
 const Register = () => {
   const { register, completeRegisterWithOtp } = useAuth();
+  const { t, locale } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [showOtpStep, setShowOtpStep] = useState(false);
@@ -162,86 +160,102 @@ const Register = () => {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const registerErrorMessage = (err) => getSafeApiErrorMessage(err, t("auth.register.error"));
+
   const visualContent = {
-    title: "أنشئ حضورك المهني بثقة",
-    description:
-      "ابدأ حسابك في أوردرز هاوس للوصول إلى فرص أكثر وتنظيم الطلبات والتواصل مع فريقك بشكل احترافي.",
-    quote: "منصة مرتبة وسهلة الاستخدام، خلّت متابعة الطلبات بيني وبين العملاء أوضح بكثير.",
-    personName: "ريم خالد",
-    personRole: "صاحبة متجر رقمي",
+    title: t("auth.register.visualTitle"),
+    description: t("auth.register.visualDesc"),
+    quote: t("auth.register.visualQuote"),
+    personName: t("auth.register.visualPersonName"),
+    personRole: t("auth.register.visualPersonRole"),
   };
 
   const isFreelancer = accountType === "freelancer";
 
   useEffect(() => {
     if (resendCooldown <= 0) return undefined;
-    const t = window.setInterval(() => {
+    const timer = window.setInterval(() => {
       setResendCooldown((c) => Math.max(0, c - 1));
     }, 1000);
-    return () => window.clearInterval(t);
+    return () => window.clearInterval(timer);
   }, [resendCooldown]);
+
+  const regionNames = useMemo(() => {
+    try {
+      return new Intl.DisplayNames([locale === "en" ? "en" : "ar"], { type: "region" });
+    } catch {
+      return null;
+    }
+  }, [locale]);
+
+  const countryLabel = (code, nameAr) => {
+    if (locale === "en" && regionNames) {
+      return regionNames.of(code) || nameAr;
+    }
+    return nameAr;
+  };
 
   const dialCodeOptions = useMemo(() => {
     return ARAB_COUNTRIES.map((c) => ({
       value: c.dialCode,
-      label: `${c.flag ? `${c.flag} ` : ""}${c.dialCode} — ${c.nameAr}`,
+      label: `${c.flag ? `${c.flag} ` : ""}${c.dialCode} — ${countryLabel(c.code, c.nameAr)}`,
     })).sort((a, b) => {
       if (a.value === DEFAULT_DIAL_CODE) return -1;
       if (b.value === DEFAULT_DIAL_CODE) return 1;
       return a.value.localeCompare(b.value);
     });
-  }, []);
+  }, [locale, regionNames]);
 
   const countryOptions = useMemo(
-    () => ARAB_COUNTRIES.map((c) => ({ value: c.code, label: c.nameAr })),
-    [],
+    () => ARAB_COUNTRIES.map((c) => ({ value: c.code, label: countryLabel(c.code, c.nameAr) })),
+    [locale, regionNames],
   );
 
   const accountTypeOptions = useMemo(
     () => [
-      { value: "client", label: "عميل" },
-      { value: "freelancer", label: "مستقل" },
+      { value: "client", label: t("auth.register.accountTypes.client") },
+      { value: "freelancer", label: t("auth.register.accountTypes.freelancer") },
     ],
-    [],
+    [t],
   );
 
   const genderOptions = useMemo(
     () => [
-      { value: "ذكر", label: "ذكر" },
-      { value: "أنثى", label: "أنثى" },
+      { value: "ذكر", label: t("auth.register.gender.male") },
+      { value: "أنثى", label: t("auth.register.gender.female") },
     ],
-    [],
+    [t],
   );
 
   const step1Error = useMemo(() => {
-    if (!firstName.trim()) return "أدخل الاسم الأول.";
-    if (!fatherName.trim()) return "أدخل اسم الأب.";
-    if (!familyName.trim()) return "أدخل اسم العائلة.";
-    if (!ARABIC_ONLY.test(firstName.trim())) return "الاسم الأول يجب أن يكون بالعربية فقط.";
-    if (!ARABIC_ONLY.test(fatherName.trim())) return "اسم الأب يجب أن يكون بالعربية فقط.";
-    if (!ARABIC_ONLY.test(familyName.trim())) return "اسم العائلة يجب أن يكون بالعربية فقط.";
-    if (!email.trim()) return "أدخل البريد الإلكتروني.";
-    if (password.length < 8) return "كلمة المرور يجب ألا تقل عن 8 أحرف.";
+    if (!firstName.trim()) return t("auth.register.validation.firstNameRequired");
+    if (!fatherName.trim()) return t("auth.register.validation.fatherNameRequired");
+    if (!familyName.trim()) return t("auth.register.validation.familyNameRequired");
+    if (!ARABIC_ONLY.test(firstName.trim())) return t("auth.register.validation.firstNameArabicOnly");
+    if (!ARABIC_ONLY.test(fatherName.trim())) return t("auth.register.validation.fatherNameArabicOnly");
+    if (!ARABIC_ONLY.test(familyName.trim())) return t("auth.register.validation.familyNameArabicOnly");
+    if (!email.trim()) return t("auth.register.validation.emailRequired");
+    if (password.length < 8) return t("auth.register.validation.passwordMin");
     if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      return "كلمة المرور يجب أن تحتوي حرفاً ورقماً على الأقل.";
+      return t("auth.register.validation.passwordComplexity");
     }
-    if (password !== confirmPassword) return "تأكيد كلمة المرور غير مطابق.";
-    if (!["client", "freelancer"].includes(accountType)) return "اختر نوع الحساب.";
+    if (password !== confirmPassword) return t("auth.register.validation.passwordMismatch");
+    if (!["client", "freelancer"].includes(accountType)) return t("auth.register.validation.accountTypeRequired");
     return null;
-  }, [firstName, fatherName, familyName, email, password, confirmPassword, accountType]);
+  }, [firstName, fatherName, familyName, email, password, confirmPassword, accountType, t]);
 
   const step2Error = useMemo(() => {
-    if (!country) return "اختر الدولة.";
-    if (!phoneCountryCode) return "اختر مفتاح الدولة لرقم الهاتف.";
-    if (!normalizePhonePart(phoneNumber)) return "أدخل رقم الهاتف.";
-    if (!/^\d{4,14}$/.test(normalizePhonePart(phoneNumber))) return "رقم الهاتف غير صالح.";
-    if (!whatsAppCountryCode) return "اختر مفتاح الدولة لرقم واتساب.";
-    if (!normalizePhonePart(whatsAppNumber)) return "أدخل رقم واتساب.";
-    if (!/^\d{4,14}$/.test(normalizePhonePart(whatsAppNumber))) return "رقم واتساب غير صالح.";
-    if (!gender) return "اختر الجنس.";
-    if (!["ذكر", "أنثى"].includes(gender)) return "قيمة غير صالحة للجنس.";
-    if (isFreelancer && categories.length === 0) return "اختر تصنيفاً واحداً على الأقل للمستقل.";
-    if (!termsAccepted) return "يجب الموافقة على الشروط والأحكام.";
+    if (!country) return t("auth.register.validation.countryRequired");
+    if (!phoneCountryCode) return t("auth.register.validation.phoneCountryCodeRequired");
+    if (!normalizePhonePart(phoneNumber)) return t("auth.register.validation.phoneRequired");
+    if (!/^\d{4,14}$/.test(normalizePhonePart(phoneNumber))) return t("auth.register.validation.phoneInvalid");
+    if (!whatsAppCountryCode) return t("auth.register.validation.whatsappCountryCodeRequired");
+    if (!normalizePhonePart(whatsAppNumber)) return t("auth.register.validation.whatsappRequired");
+    if (!/^\d{4,14}$/.test(normalizePhonePart(whatsAppNumber))) return t("auth.register.validation.whatsappInvalid");
+    if (!gender) return t("auth.register.validation.genderRequired");
+    if (!["ذكر", "أنثى"].includes(gender)) return t("auth.register.validation.genderInvalid");
+    if (isFreelancer && categories.length === 0) return t("auth.register.validation.categoriesRequired");
+    if (!termsAccepted) return t("auth.register.validation.termsRequired");
     return null;
   }, [
     country,
@@ -253,6 +267,7 @@ const Register = () => {
     isFreelancer,
     categories.length,
     termsAccepted,
+    t,
   ]);
 
   const toggleCategory = (slug) => {
@@ -277,7 +292,7 @@ const Register = () => {
     if (showOtpStep) {
       const code = otp.trim();
       if (!/^\d{6}$/.test(code)) {
-        setError("أدخل رمز التحقق المكوّن من 6 أرقام.");
+        setError(t("auth.register.validation.otpRequired"));
         return;
       }
       setSubmitting(true);
@@ -340,17 +355,17 @@ const Register = () => {
     }
   };
 
+  const otpSubtitle = t("auth.register.subtitleOtp", {
+    email: email.trim() || t("auth.register.subtitleOtpFallback"),
+  });
+
   return (
     <AuthLayout visualContent={visualContent}>
       <AuthFormCard
-        title={showOtpStep ? "تأكيد البريد الإلكتروني" : "إنشاء حساب جديد"}
-        subtitle={
-          showOtpStep
-            ? `أدخل الرمز المكوّن من 6 أرقام المرسل إلى ${email.trim() || "بريدك"}`
-            : "ابدأ استخدام أوردرز هاوس بخطوات بسيطة"
-        }
-        footerText="لديك حساب بالفعل؟"
-        footerLinkText="تسجيل الدخول"
+        title={showOtpStep ? t("auth.register.titleOtp") : t("auth.register.title")}
+        subtitle={showOtpStep ? otpSubtitle : t("auth.register.subtitle")}
+        footerText={t("auth.register.hasAccount")}
+        footerLinkText={t("auth.register.loginLink")}
         footerLinkTo="/login"
       >
         <form className={tw.authFormGrid} onSubmit={handleSubmit} noValidate>
@@ -359,10 +374,10 @@ const Register = () => {
           {showOtpStep ? (
             <>
               <p className={tw.authHelperText} style={{ margin: 0 }}>
-                أهلاً بك في أوردرز هاوس. الرمز صالح لمدة 10 دقائق.
+                {t("auth.register.otpWelcome")}
               </p>
               <label className={tw.authField}>
-                <span className={tw.authFieldLabel}>رمز التحقق</span>
+                <span className={tw.authFieldLabel}>{t("auth.register.otpLabel")}</span>
                 <div className={`${tw.authInputWrap} ${tw.authLtr}`}>
                   <input
                     className={tw.authInputNoIcon}
@@ -378,7 +393,7 @@ const Register = () => {
                 </div>
               </label>
               <Button unstyled type="submit" className={tw.authSubmitBtn} disabled={submitting}>
-                {submitting ? "جارٍ التحقق..." : "تأكيد الحساب"}
+                {submitting ? t("auth.register.verifying") : t("auth.register.confirmAccount")}
               </Button>
               <Button
                 unstyled
@@ -388,7 +403,9 @@ const Register = () => {
                 disabled={submitting || resendCooldown > 0}
                 onClick={handleResendOtp}
               >
-                {resendCooldown > 0 ? `إعادة الإرسال بعد ${resendCooldown} ث` : "إعادة إرسال الرمز"}
+                {resendCooldown > 0
+                  ? t("auth.register.resendCooldown", { seconds: resendCooldown })
+                  : t("auth.register.resend")}
               </Button>
               <button
                 type="button"
@@ -401,305 +418,305 @@ const Register = () => {
                   setError("");
                 }}
               >
-                تعديل بيانات التسجيل
+                {t("auth.register.editRegistration")}
               </button>
             </>
           ) : (
             <>
               <div className={tw.authSteps}>
-            <button
-              type="button"
-              className={[tw.authStep, step === 1 ? tw.authStepActive : ""].filter(Boolean).join(" ")}
-              onClick={() => setStep(1)}
-              disabled={submitting}
-            >
-              <span className={tw.authStepNum}>1</span>
-              <span className={tw.authStepLabel}>معلومات الحساب</span>
-            </button>
-            <div
-              className={[tw.authStepDivider, step === 2 ? tw.authStepDividerDone : ""].filter(Boolean).join(" ")}
-              aria-hidden="true"
-            />
-            <button
-              type="button"
-              className={[tw.authStep, step === 2 ? tw.authStepActive : ""].filter(Boolean).join(" ")}
-              onClick={() => {
-                const err = step1Error;
-                if (err) return setError(err);
-                setError("");
-                setStep(2);
-              }}
-              disabled={submitting}
-            >
-              <span className={tw.authStepNum}>2</span>
-              <span className={tw.authStepLabel}>الملف والتواصل</span>
-            </button>
-          </div>
-
-          {step === 1 ? (
-            <>
-          <div className={`${tw.authRow} ${tw.authRow3}`}>
-            <label className={tw.authField}>
-              <span className={tw.authFieldLabel}>الاسم الأول</span>
-              <div className={tw.authInputWrap}>
-                <input
-                  className={tw.authInputNoIcon}
-                  type="text"
-                  placeholder="الاسم الأول"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  disabled={submitting}
-                />
-              </div>
-            </label>
-
-            <label className={tw.authField}>
-              <span className={tw.authFieldLabel}>اسم الأب</span>
-              <div className={tw.authInputWrap}>
-                <input
-                  className={tw.authInputNoIcon}
-                  type="text"
-                  placeholder="اسم الأب"
-                  value={fatherName}
-                  onChange={(e) => setFatherName(e.target.value)}
-                  disabled={submitting}
-                />
-              </div>
-            </label>
-
-            <label className={tw.authField}>
-              <span className={tw.authFieldLabel}>اسم العائلة</span>
-              <div className={tw.authInputWrap}>
-                <input
-                  className={tw.authInputNoIcon}
-                  type="text"
-                  placeholder="اسم العائلة"
-                  value={familyName}
-                  onChange={(e) => setFamilyName(e.target.value)}
-                  disabled={submitting}
-                />
-              </div>
-            </label>
-          </div>
-
-          <label className={tw.authField}>
-            <span className={tw.authFieldLabel}>البريد الإلكتروني</span>
-            <div className={tw.authInputWrap}>
-              <input
-                className={tw.authInputNoIcon}
-                type="email"
-                placeholder="name@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                disabled={submitting}
-              />
-            </div>
-          </label>
-
-          <label className={tw.authField}>
-            <span className={tw.authFieldLabel}>كلمة المرور</span>
-            <div className={tw.authInputWrap}>
-              <input
-                className={tw.authInputNoIcon}
-                type="password"
-                placeholder="********"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-                disabled={submitting}
-              />
-            </div>
-          </label>
-
-          <label className={tw.authField}>
-            <span className={tw.authFieldLabel}>تأكيد كلمة المرور</span>
-            <div className={tw.authInputWrap}>
-              <input
-                className={tw.authInputNoIcon}
-                type="password"
-                placeholder="********"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
-                disabled={submitting}
-              />
-            </div>
-          </label>
-
-          <label className={tw.authField}>
-            <span className={tw.authFieldLabel}>نوع الحساب</span>
-            <PremiumSelect
-              id="register-account-type"
-              value={accountType}
-              onChange={(v) => {
-                setAccountType(v);
-                setCategories([]);
-              }}
-              placeholder="اختر نوع الحساب"
-              options={accountTypeOptions}
-              disabled={submitting}
-            />
-          </label>
-
-          <div className={tw.authActionsRow}>
-            <Button unstyled type="submit" className={tw.authSubmitBtn} disabled={submitting}>
-              التالي
-            </Button>
-          </div>
-            </>
-          ) : (
-            <>
-              <label className={tw.authField}>
-                <span className={tw.authFieldLabel}>الدولة</span>
-                <PremiumSelect
-                  id="register-country"
-                  value={country}
-                  onChange={setCountry}
-                  placeholder="اختر الدولة"
-                  options={countryOptions}
-                  disabled={submitting}
-                />
-              </label>
-
-              <div className={tw.authField}>
-                <span className={tw.authFieldLabel}>رقم الهاتف</span>
-                <div className={tw.authSplitRow}>
-                  <label className={tw.authSplitItem}>
-                    <span className={tw.authSrOnly}>مفتاح الدولة</span>
-                    <PremiumSelect
-                      id="register-phone-cc"
-                      value={phoneCountryCode}
-                      onChange={setPhoneCountryCode}
-                      placeholder="+الرمز"
-                      options={dialCodeOptions}
-                      disabled={submitting}
-                      ltr
-                    />
-                  </label>
-                  <label className={tw.authSplitItem}>
-                    <span className={tw.authSrOnly}>الرقم</span>
-                    <div className={`${tw.authInputWrap} ${tw.authLtr}`}>
-                      <input
-                        className={tw.authInputNoIcon}
-                        type="tel"
-                        inputMode="numeric"
-                        placeholder="5xxxxxxxx"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        disabled={submitting}
-                      />
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              <div className={tw.authField}>
-                <span className={tw.authFieldLabel}>رقم واتساب</span>
-                <div className={tw.authSplitRow}>
-                  <label className={tw.authSplitItem}>
-                    <span className={tw.authSrOnly}>مفتاح الدولة</span>
-                    <PremiumSelect
-                      id="register-wa-cc"
-                      value={whatsAppCountryCode}
-                      onChange={setWhatsAppCountryCode}
-                      placeholder="+الرمز"
-                      options={dialCodeOptions}
-                      disabled={submitting}
-                      ltr
-                    />
-                  </label>
-                  <label className={tw.authSplitItem}>
-                    <span className={tw.authSrOnly}>الرقم</span>
-                    <div className={`${tw.authInputWrap} ${tw.authLtr}`}>
-                      <input
-                        className={tw.authInputNoIcon}
-                        type="tel"
-                        inputMode="numeric"
-                        placeholder="5xxxxxxxx"
-                        value={whatsAppNumber}
-                        onChange={(e) => setWhatsAppNumber(e.target.value)}
-                        disabled={submitting}
-                      />
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              <label className={tw.authField}>
-                <span className={tw.authFieldLabel}>الجنس</span>
-                <PremiumSelect
-                  id="register-gender"
-                  value={gender}
-                  onChange={setGender}
-                  placeholder="اختر الجنس"
-                  options={genderOptions}
-                  disabled={submitting}
-                />
-              </label>
-
-              {isFreelancer ? (
-                <div className={tw.authField}>
-                  <span className={tw.authFieldLabel}>التصنيفات (اختر واحداً أو أكثر)</span>
-                  <div className={tw.authCategories}>
-                    {CATEGORY_OPTIONS.map(({ slug, label }) => (
-                      <label key={slug} className={tw.authCategoryItem}>
-                        <input
-                          type="checkbox"
-                          checked={categories.includes(slug)}
-                          onChange={() => toggleCategory(slug)}
-                          disabled={submitting}
-                        />
-                        <span>{label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              <label className={tw.authFieldCheckbox}>
-                <input
-                  type="checkbox"
-                  checked={termsAccepted}
-                  onChange={(e) => setTermsAccepted(e.target.checked)}
-                  disabled={submitting}
-                />
-                <span className={tw.authTermsText}>
-                  أوافق على{" "}
-                  <Link to="/terms-conditions" className={tw.authInlineLink} target="_blank" rel="noreferrer">
-                    الشروط والأحكام
-                  </Link>{" "}
-                  و
-                  <Link to="/privacy-policy" className={tw.authInlineLink} target="_blank" rel="noreferrer">
-                    سياسة الخصوصية
-                  </Link>
-                </span>
-              </label>
-
-              <div className={`${tw.authActionsRow} ${tw.authActionsRowSplit}`}>
-                <Button
-                  unstyled
+                <button
                   type="button"
-                  className={tw.authNavBtn}
+                  className={[tw.authStep, step === 1 ? tw.authStepActive : ""].filter(Boolean).join(" ")}
+                  onClick={() => setStep(1)}
+                  disabled={submitting}
+                >
+                  <span className={tw.authStepNum}>1</span>
+                  <span className={tw.authStepLabel}>{t("auth.register.steps.accountInfo")}</span>
+                </button>
+                <div
+                  className={[tw.authStepDivider, step === 2 ? tw.authStepDividerDone : ""].filter(Boolean).join(" ")}
+                  aria-hidden="true"
+                />
+                <button
+                  type="button"
+                  className={[tw.authStep, step === 2 ? tw.authStepActive : ""].filter(Boolean).join(" ")}
                   onClick={() => {
+                    const err = step1Error;
+                    if (err) return setError(err);
                     setError("");
-                    setStep(1);
+                    setStep(2);
                   }}
                   disabled={submitting}
                 >
-                  السابق
-                </Button>
-                <Button
-                  unstyled
-                  type="submit"
-                  className={tw.authSubmitBtn}
-                  disabled={submitting || Boolean(step2Error)}
-                >
-                  {submitting ? "جاري إنشاء الحساب…" : "إنشاء الحساب"}
-                </Button>
+                  <span className={tw.authStepNum}>2</span>
+                  <span className={tw.authStepLabel}>{t("auth.register.steps.profileContact")}</span>
+                </button>
               </div>
-            </>
-          )}
+
+              {step === 1 ? (
+                <>
+                  <div className={`${tw.authRow} ${tw.authRow3}`}>
+                    <label className={tw.authField}>
+                      <span className={tw.authFieldLabel}>{t("auth.register.fields.firstName")}</span>
+                      <div className={tw.authInputWrap}>
+                        <input
+                          className={tw.authInputNoIcon}
+                          type="text"
+                          placeholder={t("auth.register.placeholders.firstName")}
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          disabled={submitting}
+                        />
+                      </div>
+                    </label>
+
+                    <label className={tw.authField}>
+                      <span className={tw.authFieldLabel}>{t("auth.register.fields.fatherName")}</span>
+                      <div className={tw.authInputWrap}>
+                        <input
+                          className={tw.authInputNoIcon}
+                          type="text"
+                          placeholder={t("auth.register.placeholders.fatherName")}
+                          value={fatherName}
+                          onChange={(e) => setFatherName(e.target.value)}
+                          disabled={submitting}
+                        />
+                      </div>
+                    </label>
+
+                    <label className={tw.authField}>
+                      <span className={tw.authFieldLabel}>{t("auth.register.fields.familyName")}</span>
+                      <div className={tw.authInputWrap}>
+                        <input
+                          className={tw.authInputNoIcon}
+                          type="text"
+                          placeholder={t("auth.register.placeholders.familyName")}
+                          value={familyName}
+                          onChange={(e) => setFamilyName(e.target.value)}
+                          disabled={submitting}
+                        />
+                      </div>
+                    </label>
+                  </div>
+
+                  <label className={tw.authField}>
+                    <span className={tw.authFieldLabel}>{t("auth.register.fields.email")}</span>
+                    <div className={tw.authInputWrap}>
+                      <input
+                        className={tw.authInputNoIcon}
+                        type="email"
+                        placeholder="name@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        autoComplete="email"
+                        disabled={submitting}
+                      />
+                    </div>
+                  </label>
+
+                  <label className={tw.authField}>
+                    <span className={tw.authFieldLabel}>{t("auth.register.fields.password")}</span>
+                    <div className={tw.authInputWrap}>
+                      <input
+                        className={tw.authInputNoIcon}
+                        type="password"
+                        placeholder="********"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        autoComplete="new-password"
+                        disabled={submitting}
+                      />
+                    </div>
+                  </label>
+
+                  <label className={tw.authField}>
+                    <span className={tw.authFieldLabel}>{t("auth.register.fields.confirmPassword")}</span>
+                    <div className={tw.authInputWrap}>
+                      <input
+                        className={tw.authInputNoIcon}
+                        type="password"
+                        placeholder="********"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        autoComplete="new-password"
+                        disabled={submitting}
+                      />
+                    </div>
+                  </label>
+
+                  <label className={tw.authField}>
+                    <span className={tw.authFieldLabel}>{t("auth.register.fields.accountType")}</span>
+                    <PremiumSelect
+                      id="register-account-type"
+                      value={accountType}
+                      onChange={(v) => {
+                        setAccountType(v);
+                        setCategories([]);
+                      }}
+                      placeholder={t("auth.register.placeholders.accountType")}
+                      options={accountTypeOptions}
+                      disabled={submitting}
+                    />
+                  </label>
+
+                  <div className={tw.authActionsRow}>
+                    <Button unstyled type="submit" className={tw.authSubmitBtn} disabled={submitting}>
+                      {t("auth.register.buttons.next")}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <label className={tw.authField}>
+                    <span className={tw.authFieldLabel}>{t("auth.register.fields.country")}</span>
+                    <PremiumSelect
+                      id="register-country"
+                      value={country}
+                      onChange={setCountry}
+                      placeholder={t("auth.register.placeholders.country")}
+                      options={countryOptions}
+                      disabled={submitting}
+                    />
+                  </label>
+
+                  <div className={tw.authField}>
+                    <span className={tw.authFieldLabel}>{t("auth.register.fields.phone")}</span>
+                    <div className={tw.authSplitRow}>
+                      <label className={tw.authSplitItem}>
+                        <span className={tw.authSrOnly}>{t("auth.register.fields.countryCode")}</span>
+                        <PremiumSelect
+                          id="register-phone-cc"
+                          value={phoneCountryCode}
+                          onChange={setPhoneCountryCode}
+                          placeholder={t("auth.register.placeholders.dialCode")}
+                          options={dialCodeOptions}
+                          disabled={submitting}
+                          ltr
+                        />
+                      </label>
+                      <label className={tw.authSplitItem}>
+                        <span className={tw.authSrOnly}>{t("auth.register.fields.phoneNumber")}</span>
+                        <div className={`${tw.authInputWrap} ${tw.authLtr}`}>
+                          <input
+                            className={tw.authInputNoIcon}
+                            type="tel"
+                            inputMode="numeric"
+                            placeholder="5xxxxxxxx"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                            disabled={submitting}
+                          />
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className={tw.authField}>
+                    <span className={tw.authFieldLabel}>{t("auth.register.fields.whatsapp")}</span>
+                    <div className={tw.authSplitRow}>
+                      <label className={tw.authSplitItem}>
+                        <span className={tw.authSrOnly}>{t("auth.register.fields.countryCode")}</span>
+                        <PremiumSelect
+                          id="register-wa-cc"
+                          value={whatsAppCountryCode}
+                          onChange={setWhatsAppCountryCode}
+                          placeholder={t("auth.register.placeholders.dialCode")}
+                          options={dialCodeOptions}
+                          disabled={submitting}
+                          ltr
+                        />
+                      </label>
+                      <label className={tw.authSplitItem}>
+                        <span className={tw.authSrOnly}>{t("auth.register.fields.phoneNumber")}</span>
+                        <div className={`${tw.authInputWrap} ${tw.authLtr}`}>
+                          <input
+                            className={tw.authInputNoIcon}
+                            type="tel"
+                            inputMode="numeric"
+                            placeholder="5xxxxxxxx"
+                            value={whatsAppNumber}
+                            onChange={(e) => setWhatsAppNumber(e.target.value)}
+                            disabled={submitting}
+                          />
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <label className={tw.authField}>
+                    <span className={tw.authFieldLabel}>{t("auth.register.fields.gender")}</span>
+                    <PremiumSelect
+                      id="register-gender"
+                      value={gender}
+                      onChange={setGender}
+                      placeholder={t("auth.register.placeholders.gender")}
+                      options={genderOptions}
+                      disabled={submitting}
+                    />
+                  </label>
+
+                  {isFreelancer ? (
+                    <div className={tw.authField}>
+                      <span className={tw.authFieldLabel}>{t("auth.register.fields.categories")}</span>
+                      <div className={tw.authCategories}>
+                        {CATEGORY_SLUGS.map(({ slug, translationKey }) => (
+                          <label key={slug} className={tw.authCategoryItem}>
+                            <input
+                              type="checkbox"
+                              checked={categories.includes(slug)}
+                              onChange={() => toggleCategory(slug)}
+                              disabled={submitting}
+                            />
+                            <span>{t(translationKey)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <label className={tw.authFieldCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={termsAccepted}
+                      onChange={(e) => setTermsAccepted(e.target.checked)}
+                      disabled={submitting}
+                    />
+                    <span className={tw.authTermsText}>
+                      {t("auth.register.terms.prefix")}{" "}
+                      <Link to="/terms-conditions" className={tw.authInlineLink} target="_blank" rel="noreferrer">
+                        {t("auth.register.terms.termsLink")}
+                      </Link>{" "}
+                      {t("auth.register.terms.and")}{" "}
+                      <Link to="/privacy-policy" className={tw.authInlineLink} target="_blank" rel="noreferrer">
+                        {t("auth.register.terms.privacyLink")}
+                      </Link>
+                    </span>
+                  </label>
+
+                  <div className={`${tw.authActionsRow} ${tw.authActionsRowSplit}`}>
+                    <Button
+                      unstyled
+                      type="button"
+                      className={tw.authNavBtn}
+                      onClick={() => {
+                        setError("");
+                        setStep(1);
+                      }}
+                      disabled={submitting}
+                    >
+                      {t("auth.register.buttons.back")}
+                    </Button>
+                    <Button
+                      unstyled
+                      type="submit"
+                      className={tw.authSubmitBtn}
+                      disabled={submitting || Boolean(step2Error)}
+                    >
+                      {submitting ? t("auth.register.submitting") : t("auth.register.submit")}
+                    </Button>
+                  </div>
+                </>
+              )}
             </>
           )}
         </form>

@@ -1,0 +1,59 @@
+{
+  "title": "About",
+  "lead": "is your platform for success in freelancing. We make it easier for talented freelancers to find great projects, and help businesses hire the right people. We are the bridge between skills and opportunities — building a smoother, more successful work experience for everyone.",
+  "hero": {
+    "title": "About Orderz House",
+    "subtitle": "Your platform for freelancing success — connecting talent with opportunity and making collaboration easier for everyone."
+  },
+  "vision": {
+    "title": "Our vision",
+    "text": "To lead global innovation in freelancing, shape the future of remote work, and build a borderless world for talent.",
+    "tag": "Driven by innovation"
+  },
+  "mission": {
+    "title": "Our mission",
+    "text": "Empower freelancers and businesses through smart, secure, seamless collaboration that drives success and innovation worldwide.",
+    "tag": "Focused on excellence"
+  },
+  "values": {
+    "title": "Our core values",
+    "subtitle": "The principles that guide everything we do and reflect our commitment to excellence.",
+    "excellence": {
+      "title": "Service excellence",
+      "body": "We aim for the highest quality standards in every project and deliver results that exceed expectations."
+    },
+    "trust": {
+      "title": "Transparency and trust",
+      "body": "We build lasting relationships through honest communication and reliable partnerships."
+    },
+    "innovation": {
+      "title": "Enabling innovation",
+      "body": "We foster creativity and deliver advanced solutions that support business growth."
+    },
+    "human": {
+      "title": "Human-centered technology",
+      "body": "We use technology to serve people first — not the other way around."
+    }
+  },
+  "howWeWork": {
+    "title": "How we work",
+    "subtitle": "A simple 4-step process that connects talent and opportunity seamlessly.",
+    "stepsAria": "Work steps",
+    "step1": {
+      "title": "Freelancer signup",
+      "text": "Create your account and profile to showcase your skills."
+    },
+    "step2": {
+      "title": "Find work",
+      "text": "Browse projects that fit you and submit your proposals."
+    },
+    "step3": {
+      "title": "Deliver the project",
+      "text": "Complete the work with high quality and on time."
+    },
+    "step4": {
+      "title": "Get paid",
+      "text": "Receive your earnings securely after client approval."
+    }
+  }
+}

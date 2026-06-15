@@ -52,7 +52,7 @@ export default function SuperAdminSitePagesPage() {
       <DashboardPageHeader
         title="الصفحات العامة"
         description="إدارة صفحات الموقع العامة (الفوتر وقائمة الموبايل)."
-        breadcrumbs={editWebsiteBreadcrumbs("الصفحات العامة")}
+        breadcrumbs={editWebsiteBreadcrumbs("dashboard.breadcrumbs.websitePages")}
       />
 
       <DashboardSection title="قائمة الصفحات">

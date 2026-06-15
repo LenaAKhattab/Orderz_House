@@ -278,7 +278,7 @@
 
 .public-nav-drawer__sublist {
   margin: 0;
-  padding: 0 0 0 12px;
+  padding-inline-start: 12px;
   list-style: none;
   display: grid;
   gap: 6px;
@@ -292,6 +292,7 @@
   padding: 10px 12px;
   border-radius: 12px;
   text-decoration: none;
+  text-align: start;
   font-size: 0.88rem;
   font-weight: 600;
   color: #3d4660;

@@ -28,14 +28,13 @@
   flex-direction: column;
   align-items: flex-start;
   gap: clamp(0.85rem, 1.8vw, 1.15rem);
-  text-align: right;
+  text-align: start;
   padding-inline-end: clamp(1.5rem, 3vw, 2.5rem);
   border-inline-end: 1px solid rgba(226, 232, 240, 0.95);
 }
 
 .partners-section__copy .partners-section__title {
   margin: 0;
-  text-align: right;
   font-size: clamp(1.65rem, 3.2vw, 2.35rem);
   font-weight: 800;
   line-height: 1.2;

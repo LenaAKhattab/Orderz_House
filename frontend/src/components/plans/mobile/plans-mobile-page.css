@@ -19,6 +19,7 @@
   min-width: 0;
   background: var(--pm-bg);
   padding-bottom: 2rem;
+  text-align: start;
 }
 
 .plans-desktop-only {
@@ -55,34 +56,8 @@
 
 /* —— Hero —— */
 .pm-hero {
-  --pm-masthead-nav-space: clamp(4.65rem, 13.5vw, 5.35rem);
-  padding: 0 1rem 1rem;
-}
-
-.pm-hero__masthead {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  margin-inline: -1rem;
-  margin-top: calc(-1 * var(--pm-masthead-nav-space));
-  padding-top: calc(var(--pm-masthead-nav-space) + 0.55rem);
-  padding-inline: 1rem;
-  padding-bottom: 0.85rem;
-}
-
-.pm-hero__masthead-art {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.pm-hero__top {
-  position: relative;
-  z-index: 1;
+  --pm-hero-nav-space: clamp(4.65rem, 13.5vw, 5.35rem);
+  padding: var(--pm-hero-nav-space) 1rem 0.85rem;
 }
 
 .pm-hero__label {
@@ -90,6 +65,7 @@
   font-size: 0.78rem;
   font-weight: 600;
   color: rgba(47, 59, 101, 0.68);
+  text-align: start;
 }
 
 .pm-hero__title {
@@ -99,14 +75,16 @@
   line-height: 1.3;
   letter-spacing: -0.02em;
   color: var(--pm-primary);
+  text-align: start;
 }
 
 .pm-hero__lede {
-  margin: 0;
+  margin: 0.5rem 0 0;
   font-size: 0.84rem;
   font-weight: 600;
   line-height: 1.65;
   color: var(--pm-muted);
+  text-align: start;
 }
 
 /* —— Section head —— */
@@ -117,6 +95,7 @@
   gap: 0.75rem;
   margin-bottom: 0.75rem;
   padding-inline: 1rem;
+  text-align: start;
 }
 
 .pm-section-head__title {
@@ -124,6 +103,7 @@
   font-size: 1rem;
   font-weight: 800;
   color: var(--pm-ink);
+  text-align: start;
 }
 
 .pm-section-head__hint {
@@ -131,6 +111,7 @@
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--pm-muted);
+  text-align: start;
 }
 
 /* —— Plans list —— */
@@ -149,12 +130,13 @@
 .pm-plan-card {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.7rem;
   padding: 1rem 0.95rem;
   border-radius: var(--pm-radius);
   background: var(--pm-surface);
   border: 1px solid rgba(226, 232, 240, 0.95);
   box-shadow: var(--pm-shadow);
+  text-align: start;
 }
 
 .pm-plan-card--featured {
@@ -185,18 +167,20 @@
   font-weight: 900;
   line-height: 1.35;
   color: var(--pm-ink);
+  text-align: start;
 }
 
 .pm-plan-card__desc {
   margin: 0.25rem 0 0;
   font-size: 0.8rem;
   font-weight: 600;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--pm-muted);
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
+  text-align: start;
 }
 
 .pm-plan-card__duration {
@@ -204,6 +188,7 @@
   font-size: 0.76rem;
   font-weight: 800;
   color: var(--pm-primary-light);
+  text-align: start;
 }
 
 .pm-plan-card__price {
@@ -211,6 +196,7 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.35rem 0.5rem;
+  text-align: start;
 }
 
 .pm-plan-card__price-main {
@@ -225,6 +211,7 @@
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--pm-muted);
+  text-align: start;
 }
 
 .pm-plan-card__price-note {
@@ -234,6 +221,7 @@
   font-weight: 600;
   line-height: 1.45;
   color: var(--pm-muted);
+  text-align: start;
 }
 
 .pm-plan-card__offer {
@@ -242,10 +230,11 @@
   border-radius: 0.85rem;
   font-size: 0.76rem;
   font-weight: 700;
-  line-height: 1.5;
+  line-height: 1.55;
   color: #9a4b12;
   background: rgba(255, 243, 230, 0.95);
   border: 1px solid rgba(240, 141, 57, 0.28);
+  text-align: start;
 }
 
 .pm-plan-card__features {
@@ -254,6 +243,7 @@
   list-style: none;
   display: grid;
   gap: 0.45rem;
+  text-align: start;
 }
 
 .pm-plan-card__features--more {
@@ -267,8 +257,9 @@
   align-items: start;
   font-size: 0.8rem;
   font-weight: 600;
-  line-height: 1.45;
+  line-height: 1.5;
   color: #334155;
+  text-align: start;
 }
 
 .pm-plan-card__check {
@@ -298,19 +289,21 @@
 
 .pm-plan-card__meta {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.4rem;
   padding: 0.55rem 0.65rem;
   border-radius: 0.85rem;
   background: rgba(248, 250, 252, 0.95);
   border: 1px solid rgba(226, 232, 240, 0.95);
+  text-align: start;
 }
 
 .pm-plan-card__meta p {
   margin: 0;
   font-size: 0.72rem;
   font-weight: 600;
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--pm-muted);
+  text-align: start;
 }
 
 .pm-plan-card__cta {
@@ -323,6 +316,7 @@
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 800;
+  text-align: center;
   cursor: pointer;
   transition: opacity 0.15s ease, transform 0.15s ease;
 }
@@ -371,6 +365,7 @@
   color: var(--pm-muted);
   background: var(--pm-surface);
   border: 1px solid rgba(226, 232, 240, 0.95);
+  text-align: start;
 }
 
 .pm-feedback--error {

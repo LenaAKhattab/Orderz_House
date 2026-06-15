@@ -1,6 +1,7 @@
 import { HOME_PUBLIC_METRICS } from "../../constants/homeAnalyticsMetrics";
 import { HomeAnalyticsMetricLabelRow } from "../analytics/HomeAnalyticsMetricInfo";
 import { usePublicHomeStats } from "../../hooks/usePublicHomeStats";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import { resolveAnalyticsHint, resolveNumber } from "./heroHomeStatUtils";
 import "../analytics/home-analytics-metric-info.css";
 import "./home-public-stats.css";
@@ -9,6 +10,7 @@ import "./home-public-stats.css";
  * Horizontal stats strip below the hero. Cards render only when their Super Admin toggle is ON.
  */
 export default function HomePublicStatsStrip() {
+  const { dir } = useTranslation();
   const { payload } = usePublicHomeStats();
 
   if (payload === null || payload.error) return null;
@@ -35,7 +37,7 @@ export default function HomePublicStatsStrip() {
   }
 
   return (
-    <section className="home-stats-strip" dir="rtl" aria-live="polite">
+    <section className="home-stats-strip" dir={dir} aria-live="polite">
       <div className="container">
         <div className="home-stats-strip__row">
           {cards.map((card) => (

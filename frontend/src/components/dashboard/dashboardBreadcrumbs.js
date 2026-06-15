@@ -3,7 +3,7 @@ import { DASHBOARD_PATH } from "../../constants/authRoutes";
 const SUPER_ADMIN_HOME = "/dashboard/super-admin";
 
 /**
- * Dashboard home URL for breadcrumb «الرئيسية» from auth user (`primaryRole` || `role`).
+ * Dashboard home URL for breadcrumb home link from auth user (`primaryRole` || `role`).
  * @param {{ primaryRole?: string, role?: string } | null | undefined} user
  * @returns {string}
  */
@@ -12,28 +12,33 @@ export function breadcrumbHomeFromUser(user) {
   return DASHBOARD_PATH[role] || "/dashboard/client";
 }
 
+/** Home breadcrumb crumb for layout chrome. */
+export function breadcrumbHomeCrumb(user) {
+  return { labelKey: "dashboard.breadcrumbs.home", href: breadcrumbHomeFromUser(user) };
+}
+
 /** Two-level trail for super-admin management pages. */
-export function superAdminBreadcrumbs(pageLabel) {
+export function superAdminBreadcrumbs(pageLabelKey) {
   return [
-    { label: "الرئيسية", href: SUPER_ADMIN_HOME },
-    { label: pageLabel },
+    { labelKey: "dashboard.breadcrumbs.home", href: SUPER_ADMIN_HOME },
+    { labelKey: pageLabelKey },
   ];
 }
 
 /** Edit-website hub (tabs under super-admin). */
-export function editWebsiteBreadcrumbs(sectionLabel) {
+export function editWebsiteBreadcrumbs(sectionLabelKey) {
   return [
-    { label: "الرئيسية", href: SUPER_ADMIN_HOME },
-    { label: "تعديل الموقع", href: `${SUPER_ADMIN_HOME}/edit-website` },
-    { label: sectionLabel },
+    { labelKey: "dashboard.breadcrumbs.home", href: SUPER_ADMIN_HOME },
+    { labelKey: "dashboard.breadcrumbs.editWebsite", href: `${SUPER_ADMIN_HOME}/edit-website` },
+    { labelKey: sectionLabelKey },
   ];
 }
 
 /** Training-orders hub (tabs under super-admin). */
-export function trainingOrdersBreadcrumbs(sectionLabel) {
+export function trainingOrdersBreadcrumbs(sectionLabelKey) {
   return [
-    { label: "الرئيسية", href: SUPER_ADMIN_HOME },
-    { label: "الطلبات التجريبية", href: `${SUPER_ADMIN_HOME}/training-orders` },
-    { label: sectionLabel },
+    { labelKey: "dashboard.breadcrumbs.home", href: SUPER_ADMIN_HOME },
+    { labelKey: "dashboard.breadcrumbs.trainingRequests", href: `${SUPER_ADMIN_HOME}/training-orders` },
+    { labelKey: sectionLabelKey },
   ];
 }

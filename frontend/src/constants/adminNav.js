@@ -1,9 +1,10 @@
 import { ADMIN_PAGE_PERMISSIONS } from "./dashboardPermissions";
+import { formatBreadcrumbTrail } from "../lib/i18n/resolveNavLabel";
 
 /** Always visible — admin home shell (no page permission). */
 export const ADMIN_NAV_HOME = {
   to: "/dashboard/admin",
-  label: "لوحة التحكم",
+  labelKey: "dashboard.nav.admin.home",
   icon: "⌂",
   end: true,
   permission: null,
@@ -12,7 +13,7 @@ export const ADMIN_NAV_HOME = {
 /** Always visible — personal notifications (no page permission). */
 export const ADMIN_NAV_NOTIFICATIONS = {
   to: "/dashboard/admin/notifications",
-  label: "الإشعارات",
+  labelKey: "dashboard.nav.common.notifications",
   icon: "✉",
   permission: null,
 };
@@ -21,21 +22,21 @@ export const ADMIN_NAV_NOTIFICATIONS = {
 export const ADMIN_NAV_MAIN = [
   {
     to: "/dashboard/admin/orders",
-    label: "الطلبات الداخلية",
+    labelKey: "dashboard.nav.admin.internalRequests",
     icon: "▣",
     matchPrefix: "/dashboard/admin/orders",
     permission: ADMIN_PAGE_PERMISSIONS.orders,
   },
   {
     to: "/dashboard/admin/courses",
-    label: "الدورات",
+    labelKey: "dashboard.nav.admin.courses",
     icon: "▶",
     matchPrefix: "/dashboard/admin/courses",
     permission: ADMIN_PAGE_PERMISSIONS.courses,
   },
   {
     to: "/dashboard/admin/ads",
-    label: "الإعلانات",
+    labelKey: "dashboard.nav.admin.ads",
     icon: "✴",
     end: true,
     matchPrefix: "/dashboard/admin/ads",
@@ -43,7 +44,7 @@ export const ADMIN_NAV_MAIN = [
   },
   {
     to: "/dashboard/admin/subscriptions",
-    label: "تفعيل الاشتراكات",
+    labelKey: "dashboard.nav.admin.subscriptions",
     icon: "✓",
     permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation,
   },
@@ -51,7 +52,7 @@ export const ADMIN_NAV_MAIN = [
 
 export const ADMIN_NAV_CREATE_ORDER = {
   to: "/dashboard/admin/orders/create",
-  label: "إنشاء طلب داخلي",
+  labelKey: "dashboard.nav.admin.createInternalRequest",
   icon: "+",
   permission: ADMIN_PAGE_PERMISSIONS.createOrder,
 };
@@ -65,24 +66,31 @@ export function isAdminDashboardPath(pathname) {
   return p === "/dashboard/admin" || p.startsWith("/dashboard/admin/");
 }
 
-export function adminPageTitle(pathname) {
-  if (pathname.includes("/orders/create")) return "إنشاء طلب داخلي";
-  if (pathname.includes("/orders")) return "الطلبات الداخلية";
-  if (pathname.includes("/courses")) return "الدورات";
-  if (pathname.includes("/ads")) return "الإعلانات";
-  if (pathname.includes("/subscriptions")) return "تفعيل الاشتراكات";
-  if (pathname.includes("/notifications")) return "الإشعارات";
-  if (pathname === "/dashboard/admin") return "لوحة الإدارة";
-  return "لوحة الإدارة";
+export function adminPageTitle(pathname, t) {
+  if (pathname.includes("/orders/create")) return t("dashboard.breadcrumbs.createInternalRequest");
+  if (pathname.includes("/orders")) return t("dashboard.breadcrumbs.internalRequests");
+  if (pathname.includes("/courses")) return t("dashboard.breadcrumbs.courses");
+  if (pathname.includes("/ads")) return t("dashboard.breadcrumbs.ads");
+  if (pathname.includes("/subscriptions")) return t("dashboard.breadcrumbs.subscriptionActivation");
+  if (pathname.includes("/notifications")) return t("dashboard.breadcrumbs.notifications");
+  if (pathname === "/dashboard/admin") return t("dashboard.nav.admin.panelTitle");
+  return t("dashboard.nav.admin.panelTitle");
 }
 
-export function adminBreadcrumb(pathname) {
-  const base = ["لوحة الإدارة"];
-  if (pathname.includes("/orders/create")) return [...base, "الطلبات الداخلية", "إنشاء طلب"].join(" › ");
-  if (pathname.includes("/orders")) return [...base, "الطلبات الداخلية"].join(" › ");
-  if (pathname.includes("/courses")) return [...base, "الدورات"].join(" › ");
-  if (pathname.includes("/ads")) return [...base, "الإعلانات"].join(" › ");
-  if (pathname.includes("/subscriptions")) return [...base, "تفعيل الاشتراكات"].join(" › ");
-  if (pathname.includes("/notifications")) return [...base, "الإشعارات"].join(" › ");
-  return base.join(" › ");
+export function adminBreadcrumbKeys(pathname) {
+  const base = ["dashboard.breadcrumbs.adminHome"];
+  if (pathname.includes("/orders/create")) {
+    return [...base, "dashboard.breadcrumbs.internalRequests", "dashboard.breadcrumbs.createInternalRequest"];
+  }
+  if (pathname.includes("/orders")) return [...base, "dashboard.breadcrumbs.internalRequests"];
+  if (pathname.includes("/courses")) return [...base, "dashboard.breadcrumbs.courses"];
+  if (pathname.includes("/ads")) return [...base, "dashboard.breadcrumbs.ads"];
+  if (pathname.includes("/subscriptions")) return [...base, "dashboard.breadcrumbs.subscriptionActivation"];
+  if (pathname.includes("/notifications")) return [...base, "dashboard.breadcrumbs.notifications"];
+  return base;
+}
+
+/** @deprecated Use adminBreadcrumbKeys(pathname) with formatBreadcrumbTrail(keys, t) */
+export function adminBreadcrumb(pathname, t) {
+  return formatBreadcrumbTrail(adminBreadcrumbKeys(pathname), t);
 }

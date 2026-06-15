@@ -10,9 +10,8 @@ import {
   TabletSmartphone,
 } from "lucide-react";
 
-/** WhatsApp — طلبات خاصة (fixed, not admin-editable for now). */
-export const HOME_SPECIAL_REQUESTS_WHATSAPP_URL =
-  "https://wa.me/971543266550?text=لاستلام%20طلبك%20بشكل%20مباشر%20لدى%20فريق%20الدعم%20للموقع";
+/** WhatsApp business number for طلبات خاصة (fixed, not admin-editable for now). */
+export const HOME_SPECIAL_REQUESTS_WHATSAPP_PHONE = "971543266550";
 
 const EDIT_WEBSITE_FEATURED_SERVICES_PATH = "/dashboard/super-admin/edit-website/featured-services";
 
@@ -45,7 +44,7 @@ export const HOME_FEATURED_SERVICE_ICON_MAP = {
 export const HOME_FEATURED_SERVICES = [
   {
     id: "frontend-dev",
-    label: "تطوير الواجهة الأمامية",
+    translationKey: "home.featuredServices.frontendDevelopment",
     type: "sub_subcategory",
     subSubcategoryId: "145",
     slug: "frontend-dev",
@@ -53,7 +52,7 @@ export const HOME_FEATURED_SERVICES = [
   },
   {
     id: "backend-dev",
-    label: "تطوير الواجهة الخلفية",
+    translationKey: "home.featuredServices.backendDevelopment",
     type: "sub_subcategory",
     subSubcategoryId: "146",
     slug: "backend-dev",
@@ -61,7 +60,7 @@ export const HOME_FEATURED_SERVICES = [
   },
   {
     id: "custom-mobile-apps",
-    label: "تطبيقات الجوال",
+    translationKey: "home.featuredServices.mobileApps",
     type: "sub_subcategory",
     subSubcategoryId: "149",
     slug: "custom-mobile-apps",
@@ -69,7 +68,7 @@ export const HOME_FEATURED_SERVICES = [
   },
   {
     id: "ai",
-    label: "الذكاء الاصطناعي",
+    translationKey: "home.featuredServices.artificialIntelligence",
     type: "sub_subcategory",
     subSubcategoryId: "159",
     slug: "ai",
@@ -77,7 +76,7 @@ export const HOME_FEATURED_SERVICES = [
   },
   {
     id: "illustration-design",
-    label: "تصميم الجرافيك",
+    translationKey: "home.featuredServices.graphicDesign",
     type: "sub_subcategory",
     subSubcategoryId: "93",
     slug: "illustration-design",
@@ -85,7 +84,7 @@ export const HOME_FEATURED_SERVICES = [
   },
   {
     id: "app-ui-design",
-    label: "تصميم UI/UX",
+    translationKey: "home.featuredServices.uiUxDesign",
     type: "sub_subcategory",
     subSubcategoryId: "79",
     slug: "app-ui-design",
@@ -93,7 +92,7 @@ export const HOME_FEATURED_SERVICES = [
   },
   {
     id: "marketing-campaign",
-    label: "التسويق الإلكتروني",
+    translationKey: "home.featuredServices.digitalMarketing",
     type: "sub_subcategory",
     subSubcategoryId: "81",
     slug: "marketing-campaign-materials-design",
@@ -101,7 +100,7 @@ export const HOME_FEATURED_SERVICES = [
   },
   {
     id: "website-content-writing",
-    label: "كتابة المحتوى",
+    translationKey: "home.featuredServices.contentWriting",
     type: "sub_subcategory",
     subSubcategoryId: "7",
     slug: "website-content-writing",
@@ -109,9 +108,8 @@ export const HOME_FEATURED_SERVICES = [
   },
   {
     id: "special-requests",
-    label: "طلبات خاصة",
+    translationKey: "home.featuredServices.specialRequests",
     type: "external",
-    href: HOME_SPECIAL_REQUESTS_WHATSAPP_URL,
     icon: "Handshake",
   },
 ];
@@ -126,8 +124,28 @@ export function getHomeFeaturedServiceIcon(item) {
   return HOME_FEATURED_SERVICE_ICON_MAP[item?.icon] || AppWindow;
 }
 
-export function getHomeFeaturedServiceHref(item) {
-  if (item?.type === "external" && item.href) return item.href;
+/**
+ * @param {string} message - Prefilled WhatsApp message (localized).
+ */
+export function buildSpecialRequestsWhatsappUrl(message) {
+  const text = String(message || "").trim();
+  const base = `https://wa.me/${HOME_SPECIAL_REQUESTS_WHATSAPP_PHONE}`;
+  if (!text) return base;
+  return `${base}?text=${encodeURIComponent(text)}`;
+}
+
+/**
+ * @param {object} item
+ * @param {{ t?: (key: string) => string }} [options]
+ */
+export function getHomeFeaturedServiceHref(item, { t } = {}) {
+  if (item?.type === "external") {
+    const message =
+      typeof t === "function"
+        ? t("home.featuredServices.specialRequestsWhatsappMessage")
+        : "مرحباً، أريد تقديم طلب خاص عبر أوردرز هاوس.";
+    return buildSpecialRequestsWhatsappUrl(message);
+  }
   const id = String(item?.subSubcategoryId || "").trim();
   if (!id) return "/orders";
   return `/orders?filters=${encodeURIComponent(id)}`;

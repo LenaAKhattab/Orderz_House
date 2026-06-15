@@ -1,0 +1,81 @@
+{
+  "shell": {
+    "eyebrow": "Super admin panel",
+    "title": "Training requests",
+    "description": "Manage automated round settings, training request templates, and applicant tracking — fully separate from real orders.",
+    "tabsAria": "Training request sections",
+    "overview": "Overview",
+    "rounds": "Rounds",
+    "templates": "Templates",
+    "applications": "Applicants",
+    "settings": "Settings"
+  },
+  "roundStatus": {
+    "scheduled": "Scheduled",
+    "active": "Active",
+    "expired": "Expired",
+    "stopped": "Stopped"
+  },
+  "fakeOrderStatus": {
+    "active": "Active",
+    "expired": "Expired",
+    "stopped": "Stopped"
+  },
+  "automationStatus": {
+    "success": "Success",
+    "skipped_no_templates": "Skipped — no templates",
+    "skipped_lock": "Skipped — locked",
+    "failed": "Failed"
+  },
+  "roundSource": {
+    "automation": "Automated",
+    "manual": "Manual"
+  },
+  "templates": {
+    "title": "Training request templates",
+    "description": "Reusable templates for training pool requests. Each template can generate bidding or fixed-price training orders.",
+    "searchPlaceholder": "Title or description",
+    "category": "Category",
+    "status": "Status",
+    "all": "All",
+    "active": "Active",
+    "inactive": "Inactive",
+    "apply": "Apply",
+    "loading": "Loading…",
+    "empty": "No templates found.",
+    "colTitle": "Title",
+    "colCategory": "Category",
+    "colBudget": "Budget",
+    "colDuration": "Duration",
+    "colStatus": "Status",
+    "edit": "Edit",
+    "disable": "Disable",
+    "enable": "Enable",
+    "delete": "Delete"
+  },
+  "rounds": {
+    "title": "Training request rounds",
+    "description": "Only one active training round at a time. Starting a new round ends the previous one and removes its requests from the marketplace immediately, while history remains here for review.",
+    "statusFilter": "Round status",
+    "all": "All",
+    "cancelConfirm": "Stop round «{{title}}»?",
+    "empty": "No rounds found.",
+    "loading": "Loading…"
+  },
+  "applications": {
+    "title": "Training request applicants",
+    "description": "Applicants on training pool requests, grouped by training order.",
+    "empty": "No applicants found.",
+    "loading": "Loading…"
+  },
+  "statusBar": {
+    "automation": "Automation",
+    "activeRound": "Active round",
+    "settings": "Settings",
+    "viewRounds": "View rounds",
+    "viewTemplates": "View templates",
+    "lastRun": "Last run",
+    "nextRun": "Next run",
+    "notConfigured": "Not configured"
+  }
+}

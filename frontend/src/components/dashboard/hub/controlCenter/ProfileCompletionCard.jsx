@@ -1,6 +1,10 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "../../../../i18n/LanguageProvider";
+import { getLocalizedField } from "../../../../lib/i18n/getLocalizedField";
 
 export default function ProfileCompletionCard({ profileCompletion, loading }) {
+  const { t, locale } = useTranslation();
+
   if (loading) {
     return (
       <article className="fdash-cc-card">
@@ -11,13 +15,15 @@ export default function ProfileCompletionCard({ profileCompletion, loading }) {
 
   const pc = profileCompletion || { percentage: 0, items: [], missing: [], suggestions: [] };
   const pct = Math.min(100, Math.max(0, Number(pc.percentage) || 0));
+  const firstSuggestion =
+    pc.suggestions?.[0] || t("freelancerDashboard.controlCenter.profileCompletion.completeProfile");
 
   return (
     <article className="fdash-cc-card fdash-cc-card--growth">
       <header className="fdash-cc-card__head">
-        <h3 className="fdash-cc-card__title">اكتمال الملف</h3>
+        <h3 className="fdash-cc-card__title">{t("freelancerDashboard.controlCenter.profileCompletion.title")}</h3>
         <Link to="/dashboard/freelancer/settings" className="fdash-cc-card__link">
-          تحديث
+          {t("freelancerDashboard.controlCenter.profileCompletion.update")}
         </Link>
       </header>
       <div className="fdash-growth-ring" aria-hidden>
@@ -40,16 +46,16 @@ export default function ProfileCompletionCard({ profileCompletion, loading }) {
             <span className="fdash-growth-checklist__mark" aria-hidden>
               {item.completed ? "✓" : "○"}
             </span>
-            <span>{item.labelAr}</span>
+            <span>{getLocalizedField(item, "label", locale)}</span>
           </li>
         ))}
       </ul>
       {pc.missing?.length > 0 ? (
         <Link to={pc.missing[0].actionUrl || "/dashboard/freelancer/settings"} className="fdash-cc-btn fdash-cc-btn--block">
-          {pc.suggestions?.[0] || "إكمال الملف"}
+          {firstSuggestion}
         </Link>
       ) : (
-        <p className="fdash-cc-card__muted">ملفك مكتمل — أحسنت!</p>
+        <p className="fdash-cc-card__muted">{t("freelancerDashboard.controlCenter.profileCompletion.complete")}</p>
       )}
     </article>
   );

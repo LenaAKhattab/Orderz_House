@@ -1,7 +1,8 @@
 import { lazy, Suspense } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { DASHBOARD_TITLE } from "../../constants/authRoutes";
+import { getDashboardTitle } from "../../constants/authRoutes";
 import { useAuth } from "../../context/useAuth";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import RouteSuspenseFallback from "../../components/ui/RouteSuspenseFallback";
 
 const OpenOrdersMarketplace = lazy(() => import("../../components/open-orders/OpenOrdersMarketplace"));
@@ -11,11 +12,11 @@ const FreelancerMyOrdersPage = lazy(() => import("./FreelancerMyOrdersPage"));
 const SuperAdminVisitorsDashboard = lazy(() => import("./SuperAdminVisitorsDashboard"));
 const AdminDashboardHome = lazy(() => import("./AdminDashboardHome"));
 
-const ROLE_LABEL_AR = {
-  super_admin: "مدير أعلى",
-  admin: "إداري",
-  freelancer: "مستقل",
-  client: "عميل",
+const ROLE_LABEL_KEY = {
+  super_admin: "dashboard.roles.superAdmin",
+  admin: "dashboard.roles.admin",
+  freelancer: "dashboard.roles.freelancer",
+  client: "dashboard.roles.client",
 };
 
 function EmptyState({ title, subtitle, actionLabel, actionTo }) {
@@ -63,9 +64,10 @@ function LazyDashboardView({ children }) {
 const DashboardPage = () => {
   const { pathname } = useLocation();
   const { user } = useAuth();
-  const title = DASHBOARD_TITLE[pathname] || "لوحة التحكم";
+  const { t } = useTranslation();
+  const title = getDashboardTitle(pathname, t);
   const role = user?.primaryRole || user?.role;
-  const roleLabel = role ? ROLE_LABEL_AR[role] || role : "";
+  const roleLabel = role ? (ROLE_LABEL_KEY[role] ? t(ROLE_LABEL_KEY[role]) : role) : "";
 
   const isFreelancerRoute = pathname.startsWith("/dashboard/freelancer");
   const isClientMarketplace =
@@ -120,9 +122,9 @@ const DashboardPage = () => {
       <div className="dash">
         <header className="dash-hero dash-hero--compact">
           <div className="dash-hero__copy">
-            <p className="dash-hero__kicker">لوحة التحكم</p>
+            <p className="dash-hero__kicker">{t("dashboard.nav.common.dashboard")}</p>
             <h1 className="dash-hero__title oh-orders-sidebar-title">{title}</h1>
-            {user ? <p className="dash-hero__subtitle">الدور: {roleLabel}</p> : null}
+            {user ? <p className="dash-hero__subtitle">{t("dashboard.nav.common.role")}: {roleLabel}</p> : null}
           </div>
         </header>
         <div className="dash-grid">

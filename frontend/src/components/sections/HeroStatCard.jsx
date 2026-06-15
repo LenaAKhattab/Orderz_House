@@ -11,7 +11,6 @@ export default function HeroStatCard({ value, label, hint, tone = "emerald", chi
   return (
     <article
       className="hero-stat-card relative flex min-w-0 flex-row items-center gap-3 rounded-xl border border-slate-200/70 bg-white/80 px-3 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-8px_rgba(15,23,42,0.08)] backdrop-blur-sm transition-[transform,box-shadow,border-color] duration-300 ease-out will-change-transform sm:gap-3.5 sm:px-4 sm:py-3.5 md:rounded-2xl"
-      dir="rtl"
     >
       <div
         className={`hero-stat-card__icon-wrap flex size-11 shrink-0 items-center justify-center rounded-full sm:size-12 ${toneClass}`}

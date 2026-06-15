@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import * as tw from "./authTw";
+import BrandLogo from "../brand/BrandLogo";
 
-const AuthFormCard = ({
-  title,
+const AuthFormCard = ({  title,
   subtitle,
   helperText,
   helperLinkText,
@@ -15,16 +15,8 @@ const AuthFormCard = ({
   return (
     <section className="oh-auth-form-panel">
       <div className="oh-auth-brand oh-auth-brand--full-logo">
-        <img
-          src="/hero/fullLogp.png"
-          alt="أوردرز هاوس"
-          className="oh-auth-brand__logo"
-          width={200}
-          height={48}
-          decoding="async"
-        />
+        <BrandLogo variant="auth" />
       </div>
-
       <div className="oh-auth-form-header">
         <h1 className="oh-auth-form-title">{title}</h1>
         <p className="oh-auth-form-subtitle">{subtitle}</p>

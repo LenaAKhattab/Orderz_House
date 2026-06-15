@@ -1,18 +1,21 @@
-import { PARTNER_LOGOS, PARTNERS_SECTION_SUBTITLE } from "../../../constants/partnerLogos";
+import { PARTNER_LOGOS } from "../../../constants/partnerLogos";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 
 /** Mobile-only partners showcase. */
 export default function HomeMobilePartners() {
+  const { t, dir } = useTranslation();
+
   return (
-    <section className="hm-partners" dir="rtl" aria-labelledby="hm-partners-heading">
+    <section className="hm-partners" dir={dir} aria-labelledby="hm-partners-heading">
       <div className="hm-partners__container">
         <header className="hm-partners__copy">
           <h2 id="hm-partners-heading" className="hm-partners__title">
-            شركاء النجاح
+            {t("home.partners.title")}
           </h2>
-          <p className="hm-partners__subtitle">{PARTNERS_SECTION_SUBTITLE}</p>
+          <p className="hm-partners__subtitle">{t("home.partners.subtitle")}</p>
         </header>
 
-        <ul id="home-partners-anchor" className="hm-partners__grid" aria-label="شعارات الشركاء">
+        <ul id="home-partners-anchor" className="hm-partners__grid" aria-label={t("home.partners.logosAria")}>
           {PARTNER_LOGOS.map((item) => (
             <li key={item.id} className="hm-partners__grid-cell">
               <a
@@ -20,7 +23,7 @@ export default function HomeMobilePartners() {
                 className="hm-partners__logo-link"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`زيارة موقع ${item.alt}`}
+                aria-label={t("home.partners.visitSite", { name: item.alt })}
               >
                 <img
                   className="hm-partners__logo"

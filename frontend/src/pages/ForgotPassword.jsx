@@ -9,13 +9,12 @@ import {
   resetPasswordRequest,
   verifyForgotPasswordOtpRequest,
 } from "../services/api";
+import { useTranslation } from "../i18n/LanguageProvider";
 import { getSafeApiErrorMessage } from "../utils/apiErrorMessage";
-
-function mapError(err) {
-  return getSafeApiErrorMessage(err, "حدث خطأ. حاول مجدداً.");
-}
+import { AUTH_TOAST_PASSWORD_RESET } from "../utils/guestPoolLoginToast";
 
 const ForgotPassword = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
@@ -26,31 +25,32 @@ const ForgotPassword = () => {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const mapError = (err) => getSafeApiErrorMessage(err, t("auth.forgot.error"));
+
   const visualContent = {
-    title: "استعد الوصول لحسابك بسهولة",
-    description:
-      "لا تقلق، يمكنك استرجاع حسابك خلال دقائق ومتابعة إدارة طلباتك من نفس لوحة العمل.",
-    quote: "إجراء الاستعادة كان سريع وواضح، وقدرت أرجع لحسابي بدون أي تعقيد.",
-    personName: "سارة محمود",
-    personRole: "عميلة - إدارة الطلبات",
+    title: t("auth.forgot.visualTitle"),
+    description: t("auth.forgot.visualDesc"),
+    quote: t("auth.forgot.visualQuote"),
+    personName: t("auth.forgot.visualPersonName"),
+    personRole: t("auth.forgot.visualPersonRole"),
   };
 
   const passwordLocalError = () => {
-    if (newPassword.length < 8) return "كلمة المرور يجب ألا تقل عن 8 أحرف.";
+    if (newPassword.length < 8) return t("auth.forgot.validation.passwordMin");
     if (!/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
-      return "كلمة المرور يجب أن تحتوي حرفاً ورقماً على الأقل.";
+      return t("auth.forgot.validation.passwordComplexity");
     }
-    if (newPassword !== confirmPassword) return "تأكيد كلمة المرور غير مطابق.";
+    if (newPassword !== confirmPassword) return t("auth.forgot.validation.passwordMismatch");
     return null;
   };
 
   useEffect(() => {
     if (step !== 3) return undefined;
-    const t = window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
       const el = document.getElementById("forgot-new-password");
       el?.focus?.();
     }, 100);
-    return () => window.clearTimeout(t);
+    return () => window.clearTimeout(timer);
   }, [step]);
 
   const handleSubmit = async (e) => {
@@ -60,7 +60,7 @@ const ForgotPassword = () => {
 
     if (step === 1) {
       if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
-        setError("أدخل بريداً إلكترونياً صالحاً.");
+        setError(t("auth.forgot.validation.emailInvalid"));
         return;
       }
       setSubmitting(true);
@@ -79,7 +79,7 @@ const ForgotPassword = () => {
     if (step === 2) {
       const code = otp.trim();
       if (!/^\d{6}$/.test(code)) {
-        setError("أدخل رمز التحقق المكوّن من 6 أرقام.");
+        setError(t("auth.forgot.validation.otpRequired"));
         return;
       }
       setSubmitting(true);
@@ -87,7 +87,7 @@ const ForgotPassword = () => {
         const data = await verifyForgotPasswordOtpRequest(em, code);
         const token = data?.data?.resetToken;
         if (!token) {
-          setError("استجابة غير صالحة من الخادم.");
+          setError(t("auth.forgot.validation.invalidServerResponse"));
           return;
         }
         setResetToken(token);
@@ -110,7 +110,7 @@ const ForgotPassword = () => {
     setSubmitting(true);
     try {
       await resetPasswordRequest(em, resetToken, newPassword);
-      navigate("/login", { replace: true, state: { message: "تم تحديث كلمة المرور. يمكنك تسجيل الدخول." } });
+      navigate("/login", { replace: true, state: { authToast: AUTH_TOAST_PASSWORD_RESET } });
     } catch (err) {
       setError(mapError(err));
     } finally {
@@ -119,21 +119,25 @@ const ForgotPassword = () => {
   };
 
   const title =
-    step === 1 ? "استعادة كلمة المرور" : step === 2 ? "رمز التحقق" : "كلمة مرور جديدة";
+    step === 1
+      ? t("auth.forgot.emailStep.title")
+      : step === 2
+        ? t("auth.forgot.otpStep.title")
+        : t("auth.forgot.passwordStep.title");
   const subtitle =
     step === 1
-      ? "أدخل بريدك الإلكتروني لإرسال رمز التحقق"
+      ? t("auth.forgot.emailStep.subtitle")
       : step === 2
-        ? "أدخل الرمز المكوّن من 6 أرقام المرسل إلى بريدك"
-        : "اختر كلمة مرور قوية لحسابك";
+        ? t("auth.forgot.otpStep.subtitle")
+        : t("auth.forgot.passwordStep.subtitle");
 
   return (
     <AuthLayout visualContent={visualContent}>
       <AuthFormCard
         title={title}
         subtitle={subtitle}
-        footerText="تذكرت كلمة المرور؟"
-        footerLinkText="تسجيل الدخول"
+        footerText={t("auth.forgot.footerRemembered")}
+        footerLinkText={t("auth.forgot.footerLogin")}
         footerLinkTo="/login"
       >
         <form className={tw.authFormGrid} onSubmit={handleSubmit} noValidate>
@@ -142,7 +146,7 @@ const ForgotPassword = () => {
           {step === 1 ? (
             <>
               <label className={tw.authField}>
-                <span className={tw.authFieldLabel}>البريد الإلكتروني</span>
+                <span className={tw.authFieldLabel}>{t("auth.forgot.fields.email")}</span>
                 <div className={tw.authInputWrap}>
                   <i className={tw.authInputIcon} aria-hidden="true">
                     @
@@ -159,7 +163,7 @@ const ForgotPassword = () => {
                 </div>
               </label>
               <Button unstyled type="submit" className={tw.authSubmitBtn} disabled={submitting}>
-                {submitting ? "جارٍ الإرسال..." : "إرسال رمز التحقق"}
+                {submitting ? t("auth.forgot.loading.sending") : t("auth.forgot.buttons.sendCode")}
               </Button>
             </>
           ) : null}
@@ -167,10 +171,10 @@ const ForgotPassword = () => {
           {step === 2 ? (
             <>
               <p className={tw.authHelperText} style={{ margin: 0 }}>
-                إذا كان البريد مسجّلاً لدينا، ستصلك رسالة. الرمز صالح لمدة 10 دقائق.
+                {t("auth.forgot.otpStep.hint")}
               </p>
               <label className={tw.authField}>
-                <span className={tw.authFieldLabel}>رمز التحقق</span>
+                <span className={tw.authFieldLabel}>{t("auth.forgot.fields.otp")}</span>
                 <div className={`${tw.authInputWrap} ${tw.authLtr}`}>
                   <input
                     className={tw.authInputNoIcon}
@@ -186,7 +190,7 @@ const ForgotPassword = () => {
                 </div>
               </label>
               <Button unstyled type="submit" className={tw.authSubmitBtn} disabled={submitting}>
-                {submitting ? "جارٍ التحقق..." : "متابعة"}
+                {submitting ? t("auth.forgot.loading.verifying") : t("auth.forgot.buttons.verifyContinue")}
               </Button>
               <button
                 type="button"
@@ -199,7 +203,7 @@ const ForgotPassword = () => {
                   setError("");
                 }}
               >
-                تغيير البريد الإلكتروني
+                {t("auth.forgot.buttons.changeEmail")}
               </button>
             </>
           ) : null}
@@ -207,7 +211,7 @@ const ForgotPassword = () => {
           {step === 3 ? (
             <>
               <label className={tw.authField}>
-                <span className={tw.authFieldLabel}>كلمة المرور الجديدة</span>
+                <span className={tw.authFieldLabel}>{t("auth.forgot.fields.newPassword")}</span>
                 <div className={tw.authInputWrap}>
                   <input
                     id="forgot-new-password"
@@ -221,7 +225,7 @@ const ForgotPassword = () => {
                 </div>
               </label>
               <label className={tw.authField}>
-                <span className={tw.authFieldLabel}>تأكيد كلمة المرور</span>
+                <span className={tw.authFieldLabel}>{t("auth.forgot.fields.confirmPassword")}</span>
                 <div className={tw.authInputWrap}>
                   <input
                     className={tw.authInputNoIcon}
@@ -234,13 +238,13 @@ const ForgotPassword = () => {
                 </div>
               </label>
               <Button unstyled type="submit" className={tw.authSubmitBtn} disabled={submitting}>
-                {submitting ? "جارٍ الحفظ..." : "حفظ كلمة المرور"}
+                {submitting ? t("auth.forgot.loading.saving") : t("auth.forgot.buttons.resetPassword")}
               </Button>
             </>
           ) : null}
 
           <Link to="/register" className={tw.authSubtleLink}>
-            إنشاء حساب جديد
+            {t("auth.forgot.footerCreateAccount")}
           </Link>
         </form>
       </AuthFormCard>

@@ -1,0 +1,37 @@
+{
+  "title": "Services",
+  "hero": {
+    "title": "Services",
+    "subtitle": "Explore the services available on the platform — integrated solutions for business and project needs, from writing and editing to development and design."
+  },
+  "lede": "Explore the services available on the platform — integrated solutions for business and project needs, from writing and editing to development and design.",
+  "benefitsAria": "Platform benefits",
+  "specialtiesWithin": "Specialties in",
+  "specialtiesAria": "Specialties",
+  "emptySubcategories": "No subcategories for this section.",
+  "emptyDetails": "No detailed items.",
+  "card": {
+    "explore": "Explore service"
+  },
+  "categories": {
+    "programming": {
+      "description": "Professional programming services for businesses, academic research, and personal projects."
+    },
+    "design": {
+      "description": "Professional design services for businesses, academic work, and personal needs."
+    },
+    "content-writing": {
+      "description": "Professional writing services for businesses, academic research, and personal needs."
+    }
+  },
+  "benefits": {
+    "qualityTitle": "Guaranteed quality",
+    "qualityDesc": "High standards in every service",
+    "executionTitle": "Professional delivery",
+    "executionDesc": "Specialists in every field",
+    "communicationTitle": "Direct communication",
+    "communicationDesc": "Easy contact and ongoing follow-up",
+    "paymentTitle": "Trusted payments",
+    "paymentDesc": "Secure, flexible payment options"
+  }
+}

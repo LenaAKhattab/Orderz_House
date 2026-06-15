@@ -1,0 +1,62 @@
+.brand-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Hero — shared frame; locale scale on img (AR slightly larger than EN) */
+.brand-logo--hero {
+  width: min(100%, clamp(200px, 55vw, 250px));
+  height: clamp(82px, 12vw, 96px);
+  margin-inline: auto;
+  background: transparent;
+}
+
+.brand-logo__img--hero {
+  display: block;
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  transform-origin: center center;
+}
+
+.brand-logo__img--hero-ar {
+  transform: scale(1.12);
+}
+
+.brand-logo__img--hero-en {
+  transform: scale(1.04);
+}
+
+@media (min-width: 640px) {
+  .brand-logo--hero {
+    width: min(100%, clamp(230px, 20vw, 310px));
+    height: clamp(90px, 8vw, 120px);
+  }
+}
+
+.brand-logo--default {
+  width: min(100%, 12rem);
+  height: 3rem;
+}
+
+.brand-logo--footer {
+  width: min(100%, 10rem);
+  height: 2.5rem;
+}
+
+.brand-logo--auth {
+  width: min(100%, 200px);
+  height: 44px;
+  justify-content: flex-start;
+}
+
+.brand-logo__img--en {
+  transform: scale(1.08);
+}
+
+.brand-logo__img--auth-en {
+  transform: scale(1.1);
+}

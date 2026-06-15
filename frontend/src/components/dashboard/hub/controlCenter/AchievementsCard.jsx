@@ -1,4 +1,9 @@
+import { useTranslation } from "../../../../i18n/LanguageProvider";
+import { getLocalizedField } from "../../../../lib/i18n/getLocalizedField";
+
 export default function AchievementsCard({ achievements = [], loading }) {
+  const { t, locale } = useTranslation();
+
   if (loading) {
     return (
       <article className="fdash-cc-card fdash-cc-card--achievements">
@@ -14,10 +19,10 @@ export default function AchievementsCard({ achievements = [], loading }) {
   return (
     <article className="fdash-cc-card fdash-cc-card--achievements">
       <header className="fdash-cc-card__head">
-        <h3 className="fdash-cc-card__title">إنجازات</h3>
+        <h3 className="fdash-cc-card__title">{t("freelancerDashboard.controlCenter.achievements.title")}</h3>
       </header>
       {achieved.length === 0 && upcoming.length === 0 ? (
-        <p className="fdash-cc-card__muted">أكمل طلباتك ودوراتك لتحصل على إنجازات مهنية.</p>
+        <p className="fdash-cc-card__muted">{t("freelancerDashboard.controlCenter.achievements.empty")}</p>
       ) : (
         <ul className="fdash-growth-achievements">
           {achieved.map((a) => (
@@ -26,8 +31,8 @@ export default function AchievementsCard({ achievements = [], loading }) {
                 ✓
               </span>
               <div>
-                <strong>{a.titleAr}</strong>
-                <p>{a.descriptionAr}</p>
+                <strong>{getLocalizedField(a, "title", locale)}</strong>
+                <p>{getLocalizedField(a, "description", locale)}</p>
               </div>
             </li>
           ))}
@@ -37,8 +42,8 @@ export default function AchievementsCard({ achievements = [], loading }) {
                 ○
               </span>
               <div>
-                <strong>{a.titleAr}</strong>
-                <p>{a.descriptionAr}</p>
+                <strong>{getLocalizedField(a, "title", locale)}</strong>
+                <p>{getLocalizedField(a, "description", locale)}</p>
                 {a.target != null && a.progress != null ? (
                   <div className="fdash-growth-bar fdash-growth-bar--sm">
                     <span

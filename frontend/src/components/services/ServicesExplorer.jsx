@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import PublicPageHeader from "../layout/PublicPageHeader";
 import { getCategoriesRequest, getSubcategoriesRequest, getSubSubcategoriesRequest } from "../../services/api";
 import { filterServiceCategories } from "../../utils/homeCategoryCards";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
+import { getLocalizedServiceCategoryDescription } from "../../lib/i18n/getLocalizedServiceCategoryDescription";
 import ServicesBenefitsStrip from "./ServicesBenefitsStrip";
 import ServicesRefCard from "./ServicesRefCard";
 
@@ -40,7 +43,16 @@ function resolveBackendAssetUrl(maybeUrl) {
   }
 }
 
-function ServicesRefCardSkeleton() {
+function ServicesRefCardSkeleton({ compact = false }) {
+  if (compact) {
+    return (
+      <div className="services-ref-skel-card services-ref-skel-card--compact" aria-hidden>
+        <span className="services-ref-skel-card__compact-icon" />
+        <span className="services-ref-skel-card__compact-title" />
+      </div>
+    );
+  }
+
   return (
     <div className="services-ref-skel-card" aria-hidden>
       <span className="services-ref-skel-card__media" />
@@ -52,9 +64,6 @@ function ServicesRefCardSkeleton() {
     </div>
   );
 }
-
-const HEADER_LEDE =
-  "استكشف مجموعة الخدمات المتاحة داخل المنصة، حيث نوفر حلولاً متكاملة تلبي احتياجات الأعمال والمشاريع بكفاءة واحترافية من كتابة وتحرير إلى برمجة وتصميم.";
 
 function ServicesSubSkeleton() {
   return (
@@ -79,7 +88,118 @@ function ServicesPillSkeleton() {
   );
 }
 
+function ServicesMobileSubSkeleton() {
+  return (
+    <div className="services-mobile-subcategory-list" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="services-mobile-subcategory-row services-mobile-subcategory-row--skeleton">
+          <span className="services-mobile-subcategory-skel-trigger" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ServicesMobilePillSkeleton() {
+  return (
+    <div className="services-mobile-specialty-grid services-mobile-specialty-grid--skeleton" aria-hidden>
+      {[0, 1, 2, 3].map((i) => (
+        <span key={i} className="services-mobile-specialty-skel-chip" />
+      ))}
+    </div>
+  );
+}
+
+function SubcategoryChevron() {
+  return (
+    <span className="services-mobile-subcategory-trigger__chevron" aria-hidden>
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
+function SubSpecialtiesContent({
+  subId,
+  sub,
+  subSubsBySub,
+  subSubsLoading,
+  subSubsError,
+  locale,
+  t,
+  mobile = false,
+}) {
+  const subName = getLocalizedField(sub, "name", locale);
+  const ariaLabel = subName ? `${t("services.specialtiesAria")} ${subName}` : t("services.specialtiesAria");
+
+  if (subSubsLoading[subId] || !Array.isArray(subSubsBySub[subId])) {
+    return mobile ? <ServicesMobilePillSkeleton /> : <ServicesPillSkeleton />;
+  }
+
+  if (subSubsError[subId]) {
+    return (
+      <p className="services-error services-error--inline" role="alert">
+        {subSubsError[subId]}
+      </p>
+    );
+  }
+
+  if (subSubsBySub[subId].length === 0) {
+    return (
+      <p className={mobile ? "services-mobile-specialty-empty" : "services-muted services-muted--center"}>
+        {t("services.emptyDetails")}
+      </p>
+    );
+  }
+
+  if (mobile) {
+    return (
+      <div className="services-mobile-specialty-grid" aria-label={ariaLabel}>
+        {subSubsBySub[subId].map((ss) => (
+          <span key={String(ss.id)} className="services-mobile-specialty-chip">
+            {getLocalizedField(ss, "name", locale) || "—"}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="services-pill-row" aria-label={ariaLabel}>
+      {subSubsBySub[subId].map((ss) => (
+        <span key={String(ss.id)} className="services-pill-tag">
+          {getLocalizedField(ss, "name", locale) || "—"}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+const MOBILE_SERVICES_MQ = "(max-width: 620px)";
+
+function getMobileServicesLayoutSnapshot() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia(MOBILE_SERVICES_MQ).matches;
+}
+
+function subscribeMobileServicesLayout(onStoreChange) {
+  const mq = window.matchMedia(MOBILE_SERVICES_MQ);
+  mq.addEventListener("change", onStoreChange);
+  return () => mq.removeEventListener("change", onStoreChange);
+}
+
+function useMobileServicesLayout() {
+  return useSyncExternalStore(
+    subscribeMobileServicesLayout,
+    getMobileServicesLayoutSnapshot,
+    () => false,
+  );
+}
+
 const ServicesExplorer = () => {
+  const { t, dir, locale } = useTranslation();
+  const isMobileLayout = useMobileServicesLayout();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -117,7 +237,7 @@ const ServicesExplorer = () => {
       } catch {
         if (!cancelled) {
           setCategories([]);
-          setError("تعذر تحميل التصنيفات. حاول لاحقاً.");
+          setError(t("common.errors.loadCategories"));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -139,7 +259,7 @@ const ServicesExplorer = () => {
       setSubsByCat((m) => ({ ...m, [id]: Array.isArray(list) ? list : [] }));
     } catch {
       setSubsByCat((m) => ({ ...m, [id]: [] }));
-      setSubsError((m) => ({ ...m, [id]: "تعذر تحميل التصنيفات الفرعية." }));
+      setSubsError((m) => ({ ...m, [id]: t("common.errors.loadSubcategories") }));
     } finally {
       setSubsLoading((m) => ({ ...m, [id]: false }));
     }
@@ -156,7 +276,7 @@ const ServicesExplorer = () => {
       setSubSubsBySub((m) => ({ ...m, [id]: Array.isArray(list) ? list : [] }));
     } catch {
       setSubSubsBySub((m) => ({ ...m, [id]: [] }));
-      setSubSubsError((m) => ({ ...m, [id]: "تعذر تحميل التصنيفات التفصيلية." }));
+      setSubSubsError((m) => ({ ...m, [id]: t("common.errors.loadSubSubcategories") }));
     } finally {
       setSubSubsLoading((m) => ({ ...m, [id]: false }));
     }
@@ -194,6 +314,7 @@ const ServicesExplorer = () => {
   }, [categories]);
 
   const openCat = openCategoryId ? sortedCategories.find((c) => String(c.id) === openCategoryId) : null;
+  const openCategoryDescription = openCat ? getLocalizedServiceCategoryDescription(openCat, locale) : "";
   const openSubs = openCategoryId ? subsByCat[openCategoryId] : undefined;
 
   const activeSub = useMemo(() => {
@@ -204,10 +325,10 @@ const ServicesExplorer = () => {
   if (loading) {
     return (
       <div className="services-ref-shell" aria-busy="true" aria-live="polite">
-        <PublicPageHeader title="الخدمات" description={HEADER_LEDE} />
-        <div className="services-ref-cards">
+        <PublicPageHeader title={t("services.hero.title")} subtitle={t("services.hero.subtitle")} />
+        <div className={`services-ref-cards${isMobileLayout ? " services-ref-cards--compact" : ""}`.trim()}>
           {[0, 1, 2].map((i) => (
-            <ServicesRefCardSkeleton key={i} />
+            <ServicesRefCardSkeleton key={i} compact={isMobileLayout} />
           ))}
         </div>
         <div className="services-ref-skel-benefits" aria-hidden />
@@ -217,8 +338,8 @@ const ServicesExplorer = () => {
 
   if (error && categories.length === 0) {
     return (
-      <div className="services-ref-shell">
-        <PublicPageHeader title="الخدمات" description={HEADER_LEDE} />
+      <div className="services-ref-shell" dir={dir}>
+        <PublicPageHeader title={t("services.hero.title")} subtitle={t("services.hero.subtitle")} />
         <p className="services-ref-error" role="alert">
           {error}
         </p>
@@ -227,14 +348,14 @@ const ServicesExplorer = () => {
   }
 
   return (
-    <div className="services-ref-shell">
-      <PublicPageHeader title="الخدمات" description={HEADER_LEDE} />
+    <div className="services-ref-shell" dir={dir}>
+      <PublicPageHeader title={t("services.hero.title")} subtitle={t("services.hero.subtitle")} />
 
       {!sortedCategories.length ? (
-        <p className="services-ref-muted">لا توجد تصنيفات متاحة حالياً.</p>
+        <p className="services-ref-muted">{t("common.empty.categories")}</p>
       ) : (
         <>
-          <div className="services-ref-cards">
+          <div className={`services-ref-cards${isMobileLayout ? " services-ref-cards--compact" : ""}`.trim()}>
             {sortedCategories.map((cat, idx) => {
               const id = String(cat.id);
               const isOpen = openCategoryId === id;
@@ -249,6 +370,7 @@ const ServicesExplorer = () => {
                   tone={tone}
                   isOpen={isOpen}
                   imageSrc={img}
+                  compact={isMobileLayout}
                   onToggle={() => toggleCat(id)}
                 />
               );
@@ -269,20 +391,72 @@ const ServicesExplorer = () => {
                 {openCategoryId && openCat ? (
                   <>
                     <div className="services-detail-head">
-                      <h2 className="services-detail-head__title">{openCat.name || openCat.title || "—"}</h2>
-                      {openCat.description ? <p className="services-detail-head__desc">{openCat.description}</p> : null}
+                      <h2 className="services-detail-head__title">
+                        {getLocalizedField(openCat, "name", locale) || getLocalizedField(openCat, "title", locale) || "—"}
+                      </h2>
+                      {openCategoryDescription ? (
+                        <p className="services-detail-head__desc">{openCategoryDescription}</p>
+                      ) : null}
                     </div>
 
                     {subsLoading[openCategoryId] ? (
                       <div aria-busy="true">
-                        <ServicesSubSkeleton />
+                        {isMobileLayout ? <ServicesMobileSubSkeleton /> : <ServicesSubSkeleton />}
                       </div>
                     ) : subsError[openCategoryId] ? (
                       <p className="services-error services-error--inline" role="alert">
                         {subsError[openCategoryId]}
                       </p>
                     ) : !openSubs || openSubs.length === 0 ? (
-                      <p className="services-muted services-muted--center">لا توجد تصنيفات فرعية لهذا القسم.</p>
+                      <p className="services-muted services-muted--center">{t("services.emptySubcategories")}</p>
+                    ) : isMobileLayout ? (
+                      <div className="services-mobile-subcategory-list">
+                        {openSubs.map((sub) => {
+                          const sid = String(sub.id);
+                          const subOpen = openSubcategoryId === sid;
+                          const panelId = `services-mobile-sub-panel-${sid}`;
+
+                          return (
+                            <div
+                              key={sid}
+                              className={`services-mobile-subcategory-row${subOpen ? " services-mobile-subcategory-row--open" : ""}`.trim()}
+                            >
+                              <button
+                                type="button"
+                                className="services-mobile-subcategory-trigger"
+                                onClick={() => toggleSub(sid)}
+                                aria-expanded={subOpen}
+                                aria-controls={panelId}
+                                id={`services-sub-trigger-${sid}`}
+                              >
+                                <span className="services-mobile-subcategory-trigger__label">
+                                  {getLocalizedField(sub, "name", locale) || "—"}
+                                </span>
+                                <SubcategoryChevron />
+                              </button>
+                              {subOpen ? (
+                                <div
+                                  id={panelId}
+                                  className="services-mobile-subcategory-panel"
+                                  role="region"
+                                  aria-labelledby={`services-sub-trigger-${sid}`}
+                                >
+                                  <SubSpecialtiesContent
+                                    subId={sid}
+                                    sub={sub}
+                                    subSubsBySub={subSubsBySub}
+                                    subSubsLoading={subSubsLoading}
+                                    subSubsError={subSubsError}
+                                    locale={locale}
+                                    t={t}
+                                    mobile
+                                  />
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
                     ) : (
                       <div className="services-sub-grid">
                         {openSubs.map((sub) => {
@@ -300,9 +474,9 @@ const ServicesExplorer = () => {
                               id={`services-sub-trigger-${sid}`}
                             >
                               <span className="services-sub-card__stack">
-                                <span className="services-sub-card__title">{sub.name || "—"}</span>
-                                {sub.description ? (
-                                  <span className="services-sub-card__desc">{sub.description}</span>
+                                <span className="services-sub-card__title">{getLocalizedField(sub, "name", locale) || "—"}</span>
+                                {getLocalizedField(sub, "description", locale) ? (
+                                  <span className="services-sub-card__desc">{getLocalizedField(sub, "description", locale)}</span>
                                 ) : null}
                               </span>
                             </button>
@@ -314,7 +488,8 @@ const ServicesExplorer = () => {
                 ) : null}
               </div>
 
-              {openCategoryId &&
+              {!isMobileLayout &&
+              openCategoryId &&
               openCat &&
               !subsLoading[openCategoryId] &&
               !subsError[openCategoryId] &&
@@ -333,33 +508,20 @@ const ServicesExplorer = () => {
                         <div key={openSubcategoryId} className="services-subsub-panel__animate">
                           {activeSub ? (
                             <p className="services-subsub-panel__label">
-                              <span className="services-subsub-panel__label-muted">التخصصات ضمن</span>
-                              <span className="services-subsub-panel__label-strong">{activeSub.name || "—"}</span>
+                              <span className="services-subsub-panel__label-muted">{t("services.specialtiesWithin")}</span>
+                              <span className="services-subsub-panel__label-strong">{getLocalizedField(activeSub, "name", locale) || "—"}</span>
                             </p>
                           ) : null}
 
-                          {subSubsLoading[openSubcategoryId] || !Array.isArray(subSubsBySub[openSubcategoryId]) ? (
-                            <div aria-busy="true">
-                              <ServicesPillSkeleton />
-                            </div>
-                          ) : subSubsError[openSubcategoryId] ? (
-                            <p className="services-error services-error--inline" role="alert">
-                              {subSubsError[openSubcategoryId]}
-                            </p>
-                          ) : subSubsBySub[openSubcategoryId].length === 0 ? (
-                            <p className="services-muted services-muted--center">لا توجد عناصر تفصيلية.</p>
-                          ) : (
-                            <div
-                              className="services-pill-row"
-                              aria-label={activeSub?.name ? `تخصصات ${activeSub.name}` : "تخصصات"}
-                            >
-                              {subSubsBySub[openSubcategoryId].map((ss) => (
-                                <span key={String(ss.id)} className="services-pill-tag">
-                                  {ss.name || "—"}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                          <SubSpecialtiesContent
+                            subId={openSubcategoryId}
+                            sub={activeSub}
+                            subSubsBySub={subSubsBySub}
+                            subSubsLoading={subSubsLoading}
+                            subSubsError={subSubsError}
+                            locale={locale}
+                            t={t}
+                          />
                         </div>
                       ) : null}
                     </div>

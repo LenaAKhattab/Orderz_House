@@ -1,5 +1,9 @@
+import { useTranslation } from "../../i18n/LanguageProvider";
+
 const AuthVisualPanel = ({ title, description, quote, personName, personRole }) => {
-  const initial = personName?.trim()?.charAt(0) || "؟";
+  const { t, locale } = useTranslation();
+  const fallbackInitial = locale === "en" ? "?" : "؟";
+  const initial = personName?.trim()?.charAt(0) || fallbackInitial;
 
   return (
     <aside className="oh-auth-visual">
@@ -7,18 +11,19 @@ const AuthVisualPanel = ({ title, description, quote, personName, personRole }) 
       <div className="oh-auth-visual__glow-secondary" aria-hidden />
       <div className="oh-auth-visual__glow" aria-hidden />
       <div className="oh-auth-visual__content">
-        <div className="oh-auth-visual__badge">
-          <img
-            src="/hero/fullLogp.png"
-            alt="أوردرز هاوس"
-            className="oh-auth-visual__badge-logo"
-            width={160}
-            height={40}
-            decoding="async"
-          />
-        </div>
-        <h2 className="oh-auth-visual__title">{title}</h2>
-        <p className="oh-auth-visual__desc">{description}</p>
+        {locale === "ar" ? (
+          <div className="oh-auth-visual__badge">
+            <img
+              src="/hero/fullLogp.png"
+              alt={t("common.brand")}
+              className="oh-auth-visual__badge-logo"
+              width={160}
+              height={40}
+              decoding="async"
+            />
+          </div>
+        ) : null}
+        <h2 className="oh-auth-visual__title">{title}</h2>        <p className="oh-auth-visual__desc">{description}</p>
 
         <article className="oh-auth-quote">
           <p className="oh-auth-quote__text">{quote}</p>

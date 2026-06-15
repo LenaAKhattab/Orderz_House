@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import { resolveBreadcrumbLabel } from "../../lib/i18n/resolveNavLabel";
 
 /**
  * Reusable top header for admin dashboard pages (RTL-first).
@@ -13,7 +15,7 @@ import { Link } from "react-router-dom";
  * @param {string} [props.eyebrow] — small label above title, e.g. "لوحة التحكم"
  * @param {string} props.title
  * @param {string} [props.description]
- * @param {{ label: string, href?: string }[]} [props.breadcrumbs] — last item may omit href
+ * @param {{ label?: string, labelKey?: string, href?: string }[]} [props.breadcrumbs] — last item may omit href
  * @param {import("react").ReactNode} [props.actions] — primary buttons / controls
  * @param {import("react").ReactNode} [props.secondaryActions] — optional second row in actions column
  * @param {import("react").ReactNode} [props.statusBadge] — pill or custom node beside title
@@ -31,7 +33,10 @@ export default function DashboardPageHeader({
   alert,
   className = "",
 }) {
-  const crumbs = Array.isArray(breadcrumbs) ? breadcrumbs.filter((c) => c && String(c.label || "").trim()) : [];
+  const { t } = useTranslation();
+  const crumbs = Array.isArray(breadcrumbs)
+    ? breadcrumbs.filter((c) => c && (c.labelKey || String(c.label || "").trim()))
+    : [];
 
   const actionsRowClass =
     "flex flex-wrap justify-end gap-2 max-sm:justify-stretch max-sm:[&_.btn]:flex-1 max-sm:[&_.btn]:justify-center";
@@ -43,10 +48,10 @@ export default function DashboardPageHeader({
     <header className={`mb-5 w-full min-w-0 [direction:inherit] [text-align:inherit] ${className}`.trim()} role="banner">
       <div data-dashboard-header className={cardShell}>
         {crumbs.length > 0 ? (
-          <nav className="mb-3.5" aria-label="مسار التنقل">
+          <nav className="mb-3.5" aria-label={t("dashboard.nav.common.breadcrumbNav")}>
             <ol className="m-0 flex list-none flex-wrap items-center gap-x-1.5 gap-y-0.5 p-0 text-[0.75rem] font-semibold text-slate-400">
               {crumbs.map((cr, i) => {
-                const label = String(cr.label || "").trim();
+                const label = resolveBreadcrumbLabel(cr, t);
                 const hasHref = Boolean(cr.href && String(cr.href).trim());
                 return (
                   <li

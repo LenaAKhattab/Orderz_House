@@ -252,7 +252,7 @@ export default function SuperAdminFinancialClaimsPage() {
         eyebrow="لوحة المدير الأعلى"
         title="إدارة المطالبات المالية"
         description="مراجعة المطالبات، تحديث الحالة والتسعير، وتسجيل الدفعات."
-        breadcrumbs={superAdminBreadcrumbs("المطالبات المالية")}
+        breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.financialClaims")}
       />
 
       <DashboardSection title="البحث والتصفية" description="اضبط المعايير ثم اضغط «تحديث» لإعادة جلب البيانات من الخادم.">

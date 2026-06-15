@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import { IconLightbulb } from "./icons/DashboardIcons";
 
 export default function DashboardTipCard({
-  title = "نصيحة اليوم",
+  title: titleProp,
   headline,
   description,
   progress,
@@ -10,6 +11,8 @@ export default function DashboardTipCard({
   actionLabel,
   embedded = false,
 }) {
+  const { t } = useTranslation();
+  const title = titleProp ?? t("freelancerDashboard.tip.title");
   const pct = progress != null ? Math.min(100, Math.max(0, Number(progress) || 0)) : null;
 
   return (
@@ -25,8 +28,8 @@ export default function DashboardTipCard({
       {pct != null ? (
         <div className="fdash-tip__progress-wrap">
           <div className="fdash-tip__progress-meta">
-            <span>اكتمال الملف</span>
-            <strong>{pct}% مكتمل</strong>
+            <span>{t("freelancerDashboard.tip.profileCompletion")}</span>
+            <strong>{t("freelancerDashboard.tip.percentComplete", { pct })}</strong>
           </div>
           <div className="fdash-tip__progress" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
             <span className="fdash-tip__progress-fill" style={{ width: `${pct}%` }} />

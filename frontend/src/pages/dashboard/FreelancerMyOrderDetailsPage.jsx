@@ -2,7 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useToast } from "../../components/ui/toastContext";
 import { getMyAssignedOrderByIdRequest, submitFreelancerOrderDeliveryRequest } from "../../services/api";
-import { arabicDurationUnit } from "../../utils/arTime";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import {
+  formatOrderDuration,
+  formatOrderProjectType,
+  categoryLine,
+} from "../../lib/orders/orderDisplayFormatters";
+import {
+  getLocalizedOrderDescription,
+  getLocalizedOrderTitle,
+  resolveUserContentDir,
+} from "../../lib/i18n/getLocalizedMarketplaceOrderText";
+import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 import { OrderDetailsPageSkeleton } from "../../components/ui/Skeleton";
 import OrderDeliveryTimingBanner from "../../components/orders/OrderDeliveryTimingBanner";
 import "../../components/orders/order-details/order-details-page.css";
@@ -19,34 +30,27 @@ import {
   formatJoDateTime,
   formatMoneyJod,
 } from "../../components/orders/order-details/orderDetailsUtils";
-import {
-  ORDER_UPLOAD_TOTAL_SIZE_HELPER_AR,
-  ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR,
-  validateOrderFilesSize,
-} from "../../utils/orderUploadLimits";
+import { validateOrderFilesSize } from "../../utils/orderUploadLimits";
 
-function typeLabel(projectType) {
-  if (projectType === "fixed") return "سعر ثابت";
-  if (projectType === "bidding") return "مزايدة";
-  return "—";
+function typeLabel(projectType, t) {
+  return formatOrderProjectType(projectType, t);
 }
 
-function revisionRequesterAr(order) {
-  if (order?.revisionRequestedBy === "admin") return "الإدارة";
-  if (order?.revisionRequestedBy === "client") return "العميل";
-  return order?.sourceType === "admin_created" || order?.sourceType === "super_admin_created" ? "الإدارة" : "العميل";
+function revisionRequesterLabel(order, t) {
+  if (order?.revisionRequestedBy === "admin") return t("freelancerDashboard.myOrders.details.revisionRequesterAdmin");
+  if (order?.revisionRequestedBy === "client") return t("freelancerDashboard.myOrders.details.revisionRequesterClient");
+  return order?.sourceType === "admin_created" || order?.sourceType === "super_admin_created"
+    ? t("freelancerDashboard.myOrders.details.revisionRequesterAdmin")
+    : t("freelancerDashboard.myOrders.details.revisionRequesterClient");
 }
 
-function revisionStatusAr(order) {
+function revisionStatusLabel(order, t) {
   const s = String(order?.orderStatus || "");
-  if (s === "pending_client_review") return "تم تسليم التعديل";
-  if (s === "in_progress" || s === "ready_for_work") return "قيد تنفيذ التعديل";
-  return "بانتظار تنفيذ التعديل";
-}
-
-function durationLabel(order) {
-  if (!order?.durationValue || !order?.durationUnit) return "—";
-  return `${order.durationValue} ${arabicDurationUnit(order.durationValue, order.durationUnit)}`;
+  if (s === "pending_client_review") return t("freelancerDashboard.myOrders.details.revisionDelivered");
+  if (s === "in_progress" || s === "ready_for_work") {
+    return t("freelancerDashboard.myOrders.details.revisionInProgress");
+  }
+  return t("freelancerDashboard.myOrders.details.revisionPending");
 }
 
 const DELIVERY_UPLOAD_ALLOWED_STATUSES = new Set(["in_progress", "assigned", "ready_for_work"]);
@@ -55,6 +59,7 @@ export default function FreelancerMyOrderDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { push } = useToast();
+  const { t, locale, dir } = useTranslation();
 
   const [order, setOrder] = useState(null);
   const [busy, setBusy] = useState(true);
@@ -70,7 +75,11 @@ export default function FreelancerMyOrderDetailsPage() {
         if (!cancelled) setOrder(res?.data?.order || null);
       } catch (e) {
         if (!cancelled) {
-          push({ type: "error", title: "تعذر تحميل تفاصيل الطلب", message: e?.response?.data?.message || e?.message });
+          push({
+            type: "error",
+            title: t("freelancerDashboard.myOrders.details.loadErrorTitle"),
+            message: e?.response?.data?.message || e?.message,
+          });
           navigate("/dashboard/freelancer/my-orders", { replace: true });
         }
       } finally {
@@ -80,7 +89,7 @@ export default function FreelancerMyOrderDetailsPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, push, navigate]);
+  }, [id, push, navigate, t]);
 
   useEffect(() => {
     if (busy || !id || !order) return undefined;
@@ -136,13 +145,13 @@ export default function FreelancerMyOrderDetailsPage() {
   const orderPhaseLabel = useMemo(() => {
     const s = order?.orderStatus;
     if (order?.clientRevisionNote && (s === "in_progress" || s === "ready_for_work")) {
-      return "قيد تنفيذ التعديل";
+      return t("freelancerDashboard.myOrders.details.phaseRevisionInProgress");
     }
-    if (s === "pending_client_review") return "بانتظار اعتماد العميل على التسليم";
-    if (s === "completed") return "مكتمل";
-    if (s === "in_progress") return "قيد التنفيذ — يمكنك تسليم الملفات";
-    return s || "—";
-  }, [order?.orderStatus, order?.clientRevisionNote]);
+    if (s === "pending_client_review") return t("freelancerDashboard.myOrders.details.phasePendingClientApproval");
+    if (s === "completed") return t("freelancerDashboard.myOrders.details.phaseCompleted");
+    if (s === "in_progress") return t("freelancerDashboard.myOrders.details.phaseInProgressDeliver");
+    return s || t("freelancerDashboard.common.emDash");
+  }, [order?.orderStatus, order?.clientRevisionNote, t]);
 
   const deliveryFilesSizeOk = useMemo(
     () => (deliveryFiles.length ? validateOrderFilesSize(deliveryFiles).ok : true),
@@ -152,11 +161,19 @@ export default function FreelancerMyOrderDetailsPage() {
   const submitDelivery = async (e) => {
     e.preventDefault();
     if (!deliveryFiles.length) {
-      push({ type: "error", title: "تنبيه", message: "اختر ملفاً واحداً على الأقل." });
+      push({
+        type: "error",
+        title: t("freelancerDashboard.myOrders.details.alertTitle"),
+        message: t("freelancerDashboard.myOrders.details.selectFileRequired"),
+      });
       return;
     }
     if (!validateOrderFilesSize(deliveryFiles).ok) {
-      push({ type: "error", title: "حجم الملفات", message: ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR });
+      push({
+        type: "error",
+        title: t("freelancerDashboard.myOrders.details.fileSizeTitle"),
+        message: t("freelancerDashboard.myOrders.details.uploadSizeError"),
+      });
       return;
     }
     setDeliveryBusy(true);
@@ -167,61 +184,78 @@ export default function FreelancerMyOrderDetailsPage() {
       const next = res?.data?.order ?? res?.order;
       if (next) setOrder(next);
       setDeliveryFiles([]);
-      push({ type: "success", title: "تم التسليم", message: "أُرسلت المرفقات للعميل للمراجعة." });
+      push({
+        type: "success",
+        title: t("freelancerDashboard.myOrders.details.deliverySuccessTitle"),
+        message: t("freelancerDashboard.myOrders.details.deliverySuccessMessage"),
+      });
     } catch (err) {
-      push({ type: "error", title: "تعذّر التسليم", message: err?.response?.data?.message || err?.message });
+      push({
+        type: "error",
+        title: t("freelancerDashboard.myOrders.details.deliveryErrorTitle"),
+        message: err?.response?.data?.message || err?.message,
+      });
     } finally {
       setDeliveryBusy(false);
     }
   };
 
-  const categoryText = useMemo(() => {
-    if (!order) return "—";
-    return `${order?.category?.name || "—"} — ${order?.subSubcategory?.name || "—"}`;
-  }, [order]);
+  const categoryText = useMemo(
+    () => categoryLine(order, locale) || t("freelancerDashboard.common.emDash"),
+    [order, locale, t],
+  );
+  const localizedTitle = useMemo(() => getLocalizedOrderTitle(order, locale), [order, locale]);
+  const localizedDescription = useMemo(() => getLocalizedOrderDescription(order, locale), [order, locale]);
+  const descriptionDir = resolveUserContentDir(localizedDescription, dir);
 
   const typeAndBudgetText = useMemo(() => {
-    if (!order) return "—";
-    const budgetLine = order?.projectType === "bidding" ? "—" : formatMoneyJod(order?.budget);
-    return order?.projectType === "bidding" ? `${typeLabel(order?.projectType)}` : `${typeLabel(order?.projectType)} — ${budgetLine}`;
-  }, [order]);
+    if (!order) return t("freelancerDashboard.common.emDash");
+    const budgetLine = order?.projectType === "bidding" ? t("freelancerDashboard.common.emDash") : formatMoneyJod(order?.budget);
+    return order?.projectType === "bidding"
+      ? `${typeLabel(order?.projectType, t)}`
+      : `${typeLabel(order?.projectType, t)} — ${budgetLine}`;
+  }, [order, t]);
 
   const summaryRows = useMemo(() => {
     if (!order) return [];
     const receivedAt = order?.receivedAt || null;
     const rows = [
-      { label: "مدة التسليم", value: durationLabel(order) },
-      { label: "التصنيف", value: categoryText },
-      { label: "تاريخ الاستلام", value: formatJoDateTime(receivedAt) },
-      { label: "حالة التنفيذ", value: orderPhaseLabel },
+      { label: t("orders.details.deliveryTime"), value: formatOrderDuration(order, locale, t) },
+      { label: t("orders.details.category"), value: categoryText },
+      { label: t("orders.details.receivedAt"), value: formatJoDateTime(receivedAt) },
+      { label: t("orders.details.executionStatus"), value: orderPhaseLabel },
     ];
     if (Array.isArray(order?.extraCategories) && order.extraCategories.length) {
       rows.push({
-        label: "تصنيفات إضافية",
+        label: t("orders.details.extraCategories"),
         value: order.extraCategories
-          .map((x) => `${x?.category?.name || "—"}${x?.subSubcategory?.name ? ` • ${x.subSubcategory.name}` : ""}`)
+          .map((x) => {
+            const c = getLocalizedField(x?.category, "name", locale);
+            const ss = getLocalizedField(x?.subSubcategory, "name", locale);
+            return `${c || t("freelancerDashboard.common.emDash")}${ss ? ` • ${ss}` : ""}`;
+          })
           .join(" | "),
       });
     }
     return rows;
-  }, [order, categoryText, orderPhaseLabel]);
+  }, [order, categoryText, orderPhaseLabel, locale, t]);
 
   const skillsLine = useMemo(() => {
-    if (!order) return "لا توجد مهارات مفضلة لهذا المشروع.";
+    if (!order) return t("orders.details.noPreferredSkills");
     const names = Array.isArray(order.preferredSkills) ? order.preferredSkills.map((s) => s.name).filter(Boolean) : [];
-    return names.length ? names.join("، ") : "لا توجد مهارات مفضلة لهذا المشروع.";
-  }, [order]);
+    return names.length ? names.join(locale === "en" ? ", " : "، ") : t("orders.details.noPreferredSkills");
+  }, [order, locale, t]);
 
   return (
-    <main className="container page-content dash-shell od-page od-page--pool od-page--pool-has-main" dir="rtl">
+    <main className="container page-content dash-shell od-page od-page--pool od-page--pool-has-main" dir={dir}>
       <div className="od-pool-toolbar od-pool-toolbar--bare">
         <Link className="btn btn-secondary" to="/dashboard/freelancer/my-orders">
-          العودة لطلباتي
+          {t("orders.details.backToMyOrders")}
         </Link>
       </div>
 
       <p className="od-pool-hint" style={{ margin: 0 }}>
-        لوحة المستقل • طلباتي
+        {t("orders.details.freelancerHub")}
       </p>
 
       {!busy && order ? <OrderDeliveryTimingBanner order={order} className="od-delivery-banner" /> : null}
@@ -232,52 +266,65 @@ export default function FreelancerMyOrderDetailsPage() {
         <div className="od-pool-shell">
           <div className="od-pool-title">
             <div className="od-title-desc-group">
-              <OrderTitleCard title={order.title} />
-              <OrderDescriptionCard text={order.description} />
-              <OrderDescriptionCard label="المهارات المطلوبة" text={skillsLine} />
+              <OrderTitleCard title={localizedTitle} />
+              <div dir={descriptionDir}>
+                <OrderDescriptionCard text={localizedDescription} />
+              </div>
+              <OrderDescriptionCard label={t("orders.details.skillsLabel")} text={skillsLine} />
             </div>
           </div>
 
           <div className="od-pool-summary">
             <div className="od-aside-col">
               <OrderSummaryCard
-                title="ملخص الطلب"
-                primaryBlock={{ label: "نوع المشروع / السعر", value: typeAndBudgetText, dir: "ltr" }}
+                title={t("orders.details.summaryTitle")}
+                primaryBlock={{ label: t("orders.details.projectTypeBudget"), value: typeAndBudgetText, dir: "ltr" }}
                 rows={summaryRows}
               />
               <OrderFilesCard
-                title="مرفقات وصف الطلب"
+                title={t("orders.details.attachmentsTitle")}
                 orderId={String(id)}
                 fileAccess="freelancer"
                 files={briefFiles}
-                emptyText="لا توجد ملفات في الوصف"
+                emptyText={t("orders.details.noAttachments")}
               />
             </div>
           </div>
 
           <div className="od-pool-main">
             {order?.clientRevisionNote ? (
-              <OrderSection title="تفاصيل طلب التعديل / المراجعة" accent>
+              <OrderSection title={t("freelancerDashboard.myOrders.details.revisionSectionTitle")} accent>
                 <OrderMetadataBlock
                   rows={[
-                    { label: "الجهة الطالبة", value: revisionRequesterAr(order) },
-                    { label: "رسالة الطلب", value: order.clientRevisionNote },
-                    { label: "تاريخ الطلب", value: formatJoDate(order?.revisionRequestedAt || order?.updatedAt) },
-                    { label: "الموعد النهائي", value: formatJoDate(order?.revisionDeadlineAt || order?.dueAt) },
-                    { label: "الحالة", value: revisionStatusAr(order) },
+                    { label: t("freelancerDashboard.myOrders.details.requestedBy"), value: revisionRequesterLabel(order, t) },
+                    { label: t("freelancerDashboard.myOrders.details.requestMessage"), value: order.clientRevisionNote },
+                    {
+                      label: t("freelancerDashboard.myOrders.details.requestDate"),
+                      value: formatJoDate(order?.revisionRequestedAt || order?.updatedAt),
+                    },
+                    {
+                      label: t("freelancerDashboard.myOrders.details.deadline"),
+                      value: formatJoDate(order?.revisionDeadlineAt || order?.dueAt),
+                    },
+                    { label: t("freelancerDashboard.myOrders.details.status"), value: revisionStatusLabel(order, t) },
                   ]}
                 />
                 <div style={{ marginTop: "0.85rem" }}>
                   <p className="od-meta-label" style={{ marginBottom: "0.35rem" }}>
-                    مرفقات مرتبطة
+                    {t("freelancerDashboard.myOrders.details.linkedAttachments")}
                   </p>
-                  <FileList orderId={String(id)} fileAccess="freelancer" files={requestAttachments} emptyText="لا توجد مرفقات إضافية." />
+                  <FileList
+                    orderId={String(id)}
+                    fileAccess="freelancer"
+                    files={requestAttachments}
+                    emptyText={t("freelancerDashboard.myOrders.details.noExtraAttachments")}
+                  />
                 </div>
               </OrderSection>
             ) : null}
 
             {order?.submissionHistory?.submissions?.length ? (
-              <OrderSection title="سجل التسليمات والتعديلات" accent>
+              <OrderSection title={t("freelancerDashboard.myOrders.details.submissionHistory")} accent>
                 <SubmissionHistoryTimeline
                   submissionHistory={order.submissionHistory}
                   orderId={String(id)}
@@ -285,20 +332,26 @@ export default function FreelancerMyOrderDetailsPage() {
                 />
               </OrderSection>
             ) : submittedDeliveryFiles.length ? (
-              <OrderSection title="ما قمت بتسليمه">
-                <FileList orderId={String(id)} fileAccess="freelancer" files={submittedDeliveryFiles} emptyText="—" />
+              <OrderSection title={t("freelancerDashboard.myOrders.details.yourDelivery")}>
+                <FileList
+                  orderId={String(id)}
+                  fileAccess="freelancer"
+                  files={submittedDeliveryFiles}
+                  emptyText={t("freelancerDashboard.common.emDash")}
+                />
               </OrderSection>
             ) : null}
 
             {DELIVERY_UPLOAD_ALLOWED_STATUSES.has(String(order?.orderStatus || "")) ? (
-              <OrderSection title="تسليم الطلب">
+              <OrderSection title={t("freelancerDashboard.myOrders.details.deliverOrder")}>
                 <p className="od-muted" style={{ marginTop: 0 }}>
-                  ارفع الملفات أو الصور النهائية (حتى خمس ملفات). {ORDER_UPLOAD_TOTAL_SIZE_HELPER_AR}
+                  {t("freelancerDashboard.myOrders.details.deliveryHint")}{" "}
+                  {t("freelancerDashboard.myOrders.details.uploadSizeHelper")}
                 </p>
                 <form onSubmit={submitDelivery}>
                   <div className="field">
                     <label className="label" htmlFor="delivery-input">
-                      اختيار الملفات
+                      {t("freelancerDashboard.myOrders.details.selectFiles")}
                     </label>
                     <input
                       id="delivery-input"
@@ -313,7 +366,7 @@ export default function FreelancerMyOrderDetailsPage() {
                     />
                     {deliveryFiles.length > 0 && !deliveryFilesSizeOk ? (
                       <p className="help" style={{ color: "#b91c1c", marginTop: 6, marginBottom: 0 }}>
-                        {ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR}
+                        {t("freelancerDashboard.myOrders.details.uploadSizeError")}
                       </p>
                     ) : null}
                   </div>
@@ -322,16 +375,18 @@ export default function FreelancerMyOrderDetailsPage() {
                     className="btn btn-primary"
                     disabled={deliveryBusy || !deliveryFiles.length || !deliveryFilesSizeOk}
                   >
-                    {deliveryBusy ? "جارٍ الإرسال…" : "تسليم الطلب"}
+                    {deliveryBusy
+                      ? t("freelancerDashboard.myOrders.details.submitting")
+                      : t("freelancerDashboard.myOrders.details.submitDelivery")}
                   </button>
                 </form>
               </OrderSection>
             ) : null}
 
             {order?.orderStatus === "pending_client_review" ? (
-              <OrderSection title="حالة التسليم">
+              <OrderSection title={t("freelancerDashboard.myOrders.details.deliveryStatus")}>
                 <p className="od-muted" style={{ margin: 0 }}>
-                  تم إرسال تسليمك للمراجعة. بانتظار الاعتماد النهائي (عميل/إدارة).
+                  {t("freelancerDashboard.myOrders.details.pendingReviewMessage")}
                 </p>
               </OrderSection>
             ) : null}

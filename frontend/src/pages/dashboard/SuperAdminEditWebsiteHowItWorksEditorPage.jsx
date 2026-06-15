@@ -255,8 +255,8 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
         title={sectionLabel}
         description="أضف وعدّل ورتّب محتوى الصفحة. التصميم ثابت ولا يمكن تغييره من هنا."
         breadcrumbs={[
-          ...editWebsiteBreadcrumbs("طريقة العمل").slice(0, -1),
-          { label: "طريقة العمل", href: `${EDIT_WEBSITE_BASE}/how-it-works` },
+          ...editWebsiteBreadcrumbs("dashboard.breadcrumbs.howItWorks").slice(0, -1),
+          { labelKey: "dashboard.breadcrumbs.howItWorks", href: `${EDIT_WEBSITE_BASE}/how-it-works` },
           { label: sectionLabel },
         ]}
         actions={

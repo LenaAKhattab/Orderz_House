@@ -1,0 +1,89 @@
+{
+  "title": "Orderz House freelance plans",
+  "hero": {
+    "title": "Orderz House freelance plans",
+    "subtitle": "Choose the right plan for your work, compare features, and start or upgrade your subscription in one place."
+  },
+  "sectionAria": "Subscription plans",
+  "mobile": {
+    "compareTitle": "Compare packages",
+    "packageCount": "{{count}} packages",
+    "footnote": "Plans are for freelancers registered on the platform."
+  },
+  "errors": {
+    "loadFailed": "Could not load plans right now. Please try again later."
+  },
+  "mobileLabel": "Subscription plans",
+  "lede": "Choose the right plan for your work, compare features, and start or upgrade your subscription in one place.",
+  "featuresAria": "Plan features",
+  "showFeatures": "Show features ({{count}})",
+  "hideFeatures": "Hide features",
+  "showMoreFeatures": "Show {{count}} more features",
+  "extraFeaturesAria": "Additional features",
+  "extraDetails": "More details",
+  "fullYear": "Full year",
+  "days": "{{count}} days",
+  "priceTotal": "Total: {{amount}} JOD",
+  "installmentAtSignup": "{{amount}} JOD at signup",
+  "installmentMonthly": "{{amount}} JOD monthly × {{months}} months",
+  "badges": {
+    "mostPopular": "Most popular",
+    "premium": "Premium package"
+  },
+  "cta": {
+    "freelancersOnly": "Freelancers only",
+    "currentPlan": "Your current plan",
+    "lowerPlan": "Lower plan",
+    "alreadySubscribed": "Already subscribed",
+    "upgrade": "Upgrade plan",
+    "autoActivated": "Activated automatically",
+    "companyActivation": "Activated through company",
+    "startNow": "Start now"
+  },
+  "cards": {
+    "free": {
+      "title": "Free package",
+      "description": "Subscription duration: Full year on the freelance platform",
+      "orderValue": "Request value: 3 to 7 JOD",
+      "activationRequirements": "After completing training and exams, results are sent via STUDYZHOUSE. When the result shows \"Pass\", your account is activated on the platform.",
+      "features": [
+        "Free content writing training – Level 1",
+        "No contract signing required",
+        "No company office visit required",
+        "No direct follow-up"
+      ]
+    },
+    "standard": {
+      "title": "50 JOD package",
+      "description": "Subscription duration: Full year on the freelance platform",
+      "orderValue": "Request value: 7 to 20 JOD",
+      "paymentNotes": "One payment of 50 JOD at subscription.",
+      "offerLabel": "Subscription fee refunded when you receive your first order (offer valid until 30 Sep 2026)",
+      "activationRequirements": "Activated after payment is completed and company approval; the term starts from your first accepted order.",
+      "refundPolicy": "Subscription fee refunded when you receive your first order (within the offer period).",
+      "features": [
+        "Free content writing training – Level 1",
+        "Free content writing training – Level 2",
+        "Free design training",
+        "Contract signing at the company office",
+        "Follow-up after completing Level 1 and starting Level 2"
+      ]
+    },
+    "platinum": {
+      "title": "Platinum package",
+      "description": "Digital freelance operations diploma — full year on the platform",
+      "orderValue": "Request value: 10 JOD and above",
+      "paymentNotes": "300 JOD at signup + 50 JOD monthly for 12 months (600 JOD additional). Total program cost 900 JOD.",
+      "installment": "300 JOD at signup · 50 JOD monthly × 12 months",
+      "activationRequirements": "Activated after the registration payment (300 JOD) and company approval; monthly installments are tracked outside the platform for now.",
+      "refundPolicy": "Fees paid are refundable only after starting work on the second subscription (50 JOD plan).",
+      "features": [
+        "Digital freelance operations diploma",
+        "Content writing training – Levels 1 & 2",
+        "Graphic design training",
+        "Programming with AI training",
+        "Contract signing at the company office"
+      ]
+    }
+  }
+}

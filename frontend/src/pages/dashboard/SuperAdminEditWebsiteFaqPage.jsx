@@ -155,7 +155,7 @@ export default function SuperAdminEditWebsiteFaqPage() {
       <DashboardPageHeader
         title="الأسئلة الشائعة"
         description="إدارة الأسئلة والأجوبة المعروضة في قسم «الأسئلة الشائعة» على الصفحة الرئيسية."
-        breadcrumbs={editWebsiteBreadcrumbs("الأسئلة الشائعة")}
+        breadcrumbs={editWebsiteBreadcrumbs("dashboard.breadcrumbs.faq")}
       />
 
       <DashboardSection title="قائمة الأسئلة">

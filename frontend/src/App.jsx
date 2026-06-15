@@ -5,6 +5,7 @@ import { ToastProvider } from "./components/ui/ToastProvider";
 import { useToast } from "./components/ui/toastContext";
 import RouteSuspenseFallback from "./components/ui/RouteSuspenseFallback";
 import ScrollToTop from "./components/routing/ScrollToTop";
+import LocaleTransitionOverlay from "./components/layout/LocaleTransitionOverlay";
 import PublicLayout from "./components/layout/PublicLayout";
 import Home from "./pages/Home";
 
@@ -156,6 +157,7 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <LocaleTransitionOverlay />
       <ToastProvider>
         <AuthProvider>
           <AnalyticsBridge />

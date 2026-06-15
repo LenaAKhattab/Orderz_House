@@ -12,6 +12,13 @@ import DashboardToolbar from "../../../components/dashboard/DashboardToolbar";
 import DashboardLoadingState from "../../../components/dashboard/DashboardLoadingState";
 import DashboardEmptyState from "../../../components/dashboard/DashboardEmptyState";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
+import { useTranslation } from "../../../i18n/LanguageProvider";
+import { getLocalizedField } from "../../../lib/i18n/getLocalizedField";
+import {
+  getLocalizedOrderDescription,
+  getLocalizedOrderTitle,
+} from "../../../lib/i18n/getLocalizedMarketplaceOrderText";
+import { buildDurationLabels, formatDurationRange } from "../../../lib/orders/orderDisplayFormatters";
 import "./trainingOrdersAdmin.css";
 
 function errMsg(e) {
@@ -59,17 +66,9 @@ function templateToWizardInitial(t) {
   };
 }
 
-function formatDuration(minDuration, maxDuration, durationUnit) {
-  const min = Number(minDuration);
-  const max = Number(maxDuration);
-  const unit = durationUnit || "days";
-  if (Number.isFinite(min) && Number.isFinite(max) && min === max) {
-    return `${min} ${unit}`;
-  }
-  return `${minDuration}–${maxDuration} ${unit}`;
-}
-
 export default function TrainingOrderTemplatesPage() {
+  const { t, locale } = useTranslation();
+  const durationLabels = buildDurationLabels(t);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
@@ -169,10 +168,10 @@ export default function TrainingOrderTemplatesPage() {
     }
   };
 
-  const toggleActive = async (t) => {
+  const toggleActive = async (template) => {
     setError("");
     try {
-      await adminPatchTrainingTemplateRequest(t.id, { isActive: !t.isActive });
+      await adminPatchTrainingTemplateRequest(template.id, { isActive: !template.isActive });
       await loadList();
     } catch (e) {
       setError(errMsg(e));
@@ -185,96 +184,106 @@ export default function TrainingOrderTemplatesPage() {
     <>
       <DashboardSection
         className="oh-training-page-section"
-        title="القوالب"
-        description="القوالب تُستخدم لتوليد طلبات وهمية في الجولات — لا تُحفظ في جدول الطلبات الحقيقية."
+        title={t("trainingOrders.templates.title")}
+        description={t("trainingOrders.templates.description")}
         actions={
           <button type="button" className="btn btn-primary" onClick={openCreate}>
-            + قالب جديد
+            + {t("trainingOrders.templates.colTitle")}
           </button>
         }
       >
         {error ? <p className="auth-form-error">{error}</p> : null}
         <DashboardToolbar className="oh-training-filters">
           <label>
-            بحث بالعنوان
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="عنوان أو وصف" />
+            {t("trainingOrders.templates.colTitle")}
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={t("trainingOrders.templates.searchPlaceholder")}
+            />
           </label>
           <label>
-            التصنيف
+            {t("trainingOrders.templates.category")}
             <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-              <option value="">الكل</option>
+              <option value="">{t("trainingOrders.templates.all")}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {getLocalizedField(c, "name", locale)}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            الحالة
+            {t("trainingOrders.templates.status")}
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="">الكل</option>
-              <option value="active">نشط</option>
-              <option value="inactive">معطّل</option>
+              <option value="">{t("trainingOrders.templates.all")}</option>
+              <option value="active">{t("trainingOrders.templates.active")}</option>
+              <option value="inactive">{t("trainingOrders.templates.inactive")}</option>
             </select>
           </label>
           <button type="button" className="btn btn-secondary" onClick={search}>
-            تطبيق
+            {t("trainingOrders.templates.apply")}
           </button>
         </DashboardToolbar>
 
         {loading ? (
-          <DashboardLoadingState label="جاري التحميل…" />
+          <DashboardLoadingState label={t("trainingOrders.templates.loading")} />
         ) : templates.length === 0 ? (
-          <DashboardEmptyState title="لا توجد قوالب." />
+          <DashboardEmptyState title={t("trainingOrders.templates.empty")} />
         ) : (
           <div className="oh-training-table-wrap">
             <table className="oh-training-table">
               <thead>
                 <tr>
-                  <th>العنوان</th>
-                  <th>التصنيف</th>
-                  <th>الميزانية</th>
-                  <th>المدة</th>
-                  <th>الحالة</th>
+                  <th>{t("trainingOrders.templates.colTitle")}</th>
+                  <th>{t("trainingOrders.templates.colCategory")}</th>
+                  <th>{t("trainingOrders.templates.colBudget")}</th>
+                  <th>{t("trainingOrders.templates.colDuration")}</th>
+                  <th>{t("trainingOrders.templates.colStatus")}</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
-                {templates.map((t) => (
-                  <tr key={t.id}>
+                {templates.map((template) => {
+                  const title = getLocalizedOrderTitle(template, locale);
+                  const description = getLocalizedOrderDescription(template, locale);
+                  return (
+                  <tr key={template.id}>
                     <td>
-                      <strong>{t.title}</strong>
+                      <strong>{title}</strong>
                       <div className="help" style={{ marginTop: 4 }}>
-                        {(t.description || "").slice(0, 80)}
-                        {(t.description || "").length > 80 ? "…" : ""}
+                        {description.slice(0, 80)}
+                        {description.length > 80 ? "…" : ""}
                       </div>
                     </td>
-                    <td>{t.categoryName || "—"}</td>
+                    <td>{template.categoryName || "—"}</td>
                     <td dir="ltr">
-                      {t.minBudget} – {t.maxBudget} JOD
+                      {template.minBudget} – {template.maxBudget} JOD
                     </td>
-                    <td dir="ltr">{formatDuration(t.minDuration, t.maxDuration, t.durationUnit)}</td>
+                    <td dir="ltr">
+                      {formatDurationRange(template.minDuration, template.maxDuration, template.durationUnit, locale, durationLabels)}
+                    </td>
                     <td>
-                      {t.isActive ? (
-                        <StatusBadge tone="active">نشط</StatusBadge>
+                      {template.isActive ? (
+                        <StatusBadge tone="active">{t("trainingOrders.templates.active")}</StatusBadge>
                       ) : (
-                        <StatusBadge tone="inactive">معطّل</StatusBadge>
+                        <StatusBadge tone="inactive">{t("trainingOrders.templates.inactive")}</StatusBadge>
                       )}
                     </td>
                     <td style={{ whiteSpace: "nowrap" }}>
-                      <button type="button" className="btn btn-secondary" style={{ marginLeft: 6 }} onClick={() => openEdit(t)}>
-                        تعديل
+                      <button type="button" className="btn btn-secondary" style={{ marginLeft: 6 }} onClick={() => openEdit(template)}>
+                        {t("trainingOrders.templates.edit")}
                       </button>
-                      <button type="button" className="btn btn-secondary" style={{ marginLeft: 6 }} onClick={() => toggleActive(t)}>
-                        {t.isActive ? "تعطيل" : "تفعيل"}
+                      <button type="button" className="btn btn-secondary" style={{ marginLeft: 6 }} onClick={() => toggleActive(template)}>
+                        {template.isActive ? t("trainingOrders.templates.disable") : t("trainingOrders.templates.enable")}
                       </button>
-                      <button type="button" className="btn btn-secondary" onClick={() => remove(t)}>
-                        حذف
+                      <button type="button" className="btn btn-secondary" onClick={() => remove(template)}>
+                        {t("trainingOrders.templates.delete")}
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

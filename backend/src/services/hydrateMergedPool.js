@@ -14,8 +14,10 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
         o.*,
         c.slug AS category_slug,
         c.name AS category_name,
+        c.name_en AS category_name_en,
         ss.slug AS sub_subcategory_slug,
         ss.name AS sub_subcategory_name,
+        ss.name_en AS sub_subcategory_name_en,
         ss.subcategory_id AS sub_subcategory_parent_id,
         COALESCE(ofc.files_count, 0)::int AS files_count,
         COALESCE(ac.applicants_count, 0)::int AS applicants_count,
@@ -55,8 +57,10 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
         o.*,
         c.slug AS category_slug,
         c.name AS category_name,
+        c.name_en AS category_name_en,
         ss.slug AS sub_subcategory_slug,
         ss.name AS sub_subcategory_name,
+        ss.name_en AS sub_subcategory_name_en,
         ss.subcategory_id AS sub_subcategory_parent_id,
         COALESCE(ofc.files_count, 0)::int AS files_count,
         COALESCE(ac.applicants_count, 0)::int AS applicants_count
@@ -92,8 +96,10 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
         ri.visible_from AS pool_listed_at,
         c.slug AS category_slug,
         c.name AS category_name,
+        c.name_en AS category_name_en,
         ss.slug AS sub_subcategory_slug,
         ss.name AS sub_subcategory_name,
+        ss.name_en AS sub_subcategory_name_en,
         ss.subcategory_id AS sub_subcategory_parent_id,
         0::int AS files_count,
         ${FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT},
@@ -102,7 +108,7 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
         fa.status AS my_bid_status
       FROM fake_orders fo
       INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id AND ri.status = 'active'
-        AND ri.visible_from <= NOW() AND ri.visible_until >= NOW()
+        AND ri.visible_from <= NOW() AND ri.visible_until > NOW()
       INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id AND fr.status = 'active'
       LEFT JOIN categories c ON c.id = fo.category_id
       LEFT JOIN sub_subcategories ss ON ss.id = fo.sub_subcategory_id
@@ -122,14 +128,16 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
         ri.visible_from AS pool_listed_at,
         c.slug AS category_slug,
         c.name AS category_name,
+        c.name_en AS category_name_en,
         ss.slug AS sub_subcategory_slug,
         ss.name AS sub_subcategory_name,
+        ss.name_en AS sub_subcategory_name_en,
         ss.subcategory_id AS sub_subcategory_parent_id,
         0::int AS files_count,
         ${FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT}
       FROM fake_orders fo
       INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id AND ri.status = 'active'
-        AND ri.visible_from <= NOW() AND ri.visible_until >= NOW()
+        AND ri.visible_from <= NOW() AND ri.visible_until > NOW()
       INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id AND fr.status = 'active'
       LEFT JOIN categories c ON c.id = fo.category_id
       LEFT JOIN sub_subcategories ss ON ss.id = fo.sub_subcategory_id

@@ -13,15 +13,13 @@ import {
   mergeApiPlansWithCatalog,
 } from "../constants/orderzhousePlansCatalog";
 import { useAuth } from "../context/useAuth";
+import { useTranslation } from "../i18n/LanguageProvider";
 import { useToast } from "../components/ui/toastContext";
 import { trackEvent } from "../services/analytics";
 import { isBlockingSubscription } from "../utils/planSubscriptionUtils";
 
-function checkoutErrorMessage(err) {
-  return err?.response?.data?.message || "تعذر تحميل الباقات حالياً. حاول لاحقاً.";
-}
-
 export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer/plans" } = {}) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { push } = useToast();
   const location = useLocation();
@@ -217,7 +215,7 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
       if (import.meta.env?.DEV) {
         console.error("[freelancer checkout]", err?.response?.data ?? err);
       }
-      setError(checkoutErrorMessage(err));
+      setError(err?.response?.data?.message || t("plans.errors.loadFailed"));
     } finally {
       setCheckoutBusyPlanId(null);
     }

@@ -120,7 +120,7 @@ async function tryMergedPoolMeta({
     `fo.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')`,
     `ri.status = 'active'`,
     `ri.visible_from <= NOW()`,
-    `ri.visible_until >= NOW()`,
+    `ri.visible_until > NOW()`,
     `fr.status = 'active'`,
     ...wf,
     `
@@ -191,21 +191,42 @@ async function tryMergedPoolMeta({
     pool.query(listSql, listParams),
   ]);
 
-  const total = Number(cRows[0]?.total || 0);
-  const fakeCount = idRows.filter((r) => String(r.src) === "fake").length;
+  let total = Number(cRows[0]?.total || 0);
+  let idOrder = idRows.map((r) => ({ id: String(r.sort_id), source: r.src }));
+
+  if (total === 0) {
+    try {
+      const ensured = await fakeOrdersService.ensureMinimumVisibleFakeOrders({
+        reason: "pool_list_empty",
+        minVisible: 1,
+      });
+      if (ensured.generated) {
+        const [{ rows: cRows2 }, { rows: idRows2 }] = await Promise.all([
+          pool.query(countSql, baseParams),
+          pool.query(listSql, listParams),
+        ]);
+        total = Number(cRows2[0]?.total || 0);
+        idOrder = idRows2.map((r) => ({ id: String(r.sort_id), source: r.src }));
+      }
+    } catch (e) {
+      console.warn("[trainingPoolList] ensureMinimumVisibleFakeOrders failed:", e?.message || e);
+    }
+  }
+
+  const fakeCount = idOrder.filter((r) => String(r.source) === "fake").length;
   if (fakeCount === 0) {
     console.warn("[trainingPoolList] No active fake orders found in merged pool result.");
   }
   debugTrainingPoolLog("merged_result", {
     total,
     fakeInPage: fakeCount,
-    realInPage: idRows.length - fakeCount,
+    realInPage: idOrder.length - fakeCount,
     page: Math.floor(off / lim) + 1,
     limit: lim,
   });
   return {
     total,
-    idOrder: idRows.map((r) => ({ id: String(r.sort_id), source: r.src })),
+    idOrder,
     page: Math.floor(off / lim) + 1,
     limit: lim,
   };

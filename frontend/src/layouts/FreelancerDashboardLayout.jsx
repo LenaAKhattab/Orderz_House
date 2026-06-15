@@ -19,7 +19,7 @@ import {
 
 } from "../constants/authRoutes";
 
-import { FREELANCER_NAV_FOOTER, FREELANCER_NAV_MAIN } from "../constants/freelancerNav";
+import { FREELANCER_NAV_FOOTER, FREELANCER_NAV_MAIN, freelancerPageTitle } from "../constants/freelancerNav";
 
 import {
 
@@ -41,6 +41,9 @@ import {
   getFreelancerCoursesFocusCached,
   subscribeFreelancerCoursesFocus,
 } from "../utils/freelancerCoursesFocusCache";
+
+import { useTranslation } from "../i18n/LanguageProvider";
+import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
 
 import "../styles/freelancerDashboardShell.css";
 
@@ -88,32 +91,6 @@ function useOnClickOutside(ref, handler) {
 
 
 
-function freelancerPageTitle(pathname) {
-
-  const item = FREELANCER_NAV_MAIN.find((n) =>
-
-    n.end ? pathname === n.to : pathname === n.to || pathname.startsWith(`${n.to}/`),
-
-  );
-
-  if (item) return item.label;
-
-  if (pathname.includes("/settings")) return "الإعدادات";
-
-  if (pathname.includes("/financial-claims")) return "المحفظة";
-
-  if (pathname.includes("/orders/")) return "تفاصيل الطلب";
-
-  if (pathname.includes("/my-orders/")) return "طلباتي";
-
-  if (pathname.includes("/courses/")) return "الدورة";
-
-  return "لوحة المستقل";
-
-}
-
-
-
 function readSidebarCollapsedPreference(storageKey) {
 
   try {
@@ -133,6 +110,8 @@ function readSidebarCollapsedPreference(storageKey) {
 export default function FreelancerDashboardLayout() {
 
   const { user, logout } = useAuth();
+
+  const { t, dir, locale } = useTranslation();
 
   const { pathname } = useLocation();
 
@@ -158,13 +137,11 @@ export default function FreelancerDashboardLayout() {
 
         homePath: "/dashboard/client",
 
-        roleLabel: "عميل",
+        roleLabelKey: "dashboard.roles.client",
 
-        sidebarAria: "قائمة لوحة العميل",
+        sidebarAriaKey: "dashboard.nav.client.sidebarAria",
 
         sidebarCollapsedKey: "clientSidebarCollapsed",
-
-        pageTitle: clientPageTitle,
 
       };
 
@@ -178,13 +155,11 @@ export default function FreelancerDashboardLayout() {
 
       homePath: "/dashboard/freelancer",
 
-      roleLabel: "مستقل",
+      roleLabelKey: "dashboard.roles.freelancer",
 
-      sidebarAria: "قائمة لوحة المستقل",
+      sidebarAriaKey: "dashboard.nav.freelancer.sidebarAria",
 
       sidebarCollapsedKey: "freelancerSidebarCollapsed",
-
-      pageTitle: freelancerPageTitle,
 
     };
 
@@ -203,18 +178,20 @@ export default function FreelancerDashboardLayout() {
   const userMenuRef = useRef(null);
 
   const { count: unreadCount } = useUnreadNotificationsCount(Boolean(user));
-  const [coursesNavBadge, setCoursesNavBadge] = useState(
-    () => getFreelancerCoursesFocusCached()?.sidebarBadge || null,
+  const [coursesNavBadgeKey, setCoursesNavBadgeKey] = useState(
+    () => getFreelancerCoursesFocusCached()?.sidebarBadgeKey || null,
   );
 
   useEffect(() => {
     if (isClient) return undefined;
-    const sync = (focus) => setCoursesNavBadge(focus?.sidebarBadge || null);
+    const sync = (focus) => setCoursesNavBadgeKey(focus?.sidebarBadgeKey || null);
     const unsub = subscribeFreelancerCoursesFocus(sync);
     sync(getFreelancerCoursesFocusCached());
     void ensureFreelancerCoursesFocus().then(sync);
     return unsub;
   }, [isClient]);
+
+  const coursesNavBadge = coursesNavBadgeKey ? t(coursesNavBadgeKey) : null;
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -253,15 +230,18 @@ export default function FreelancerDashboardLayout() {
 
   const displayName = useMemo(
 
-    () => fullNameAr(user) || user?.email || (isClient ? "عميل" : "مستقل"),
+    () => fullNameAr(user) || user?.email || t(isClient ? "dashboard.roles.client" : "dashboard.roles.freelancer"),
 
-    [user, isClient],
+    [user, isClient, t],
 
   );
 
   const initial = (user?.firstName || user?.email || (isClient ? "C" : "F")).trim().slice(0, 1).toUpperCase();
 
-  const title = useMemo(() => shellConfig.pageTitle(pathname), [pathname, shellConfig]);
+  const title = useMemo(() => {
+    if (isClient) return clientPageTitle(pathname, t);
+    return freelancerPageTitle(pathname, t);
+  }, [pathname, isClient, t]);
 
   const notificationsPath = getNotificationsPath(role);
 
@@ -359,7 +339,7 @@ export default function FreelancerDashboardLayout() {
 
   return (
 
-    <div className={shellClassName} dir="rtl" lang="ar">
+    <div className={shellClassName} dir={dir} lang={locale}>
 
       <div
 
@@ -385,7 +365,7 @@ export default function FreelancerDashboardLayout() {
 
             onClick={toggleSidebarCollapsed}
 
-            aria-label={sidebarCollapsed ? "فتح القائمة الجانبية" : "طي القائمة الجانبية"}
+            aria-label={sidebarCollapsed ? t("dashboard.nav.common.expandSidebar") : t("dashboard.nav.common.collapseSidebar")}
 
             aria-expanded={!sidebarCollapsed}
 
@@ -405,12 +385,12 @@ export default function FreelancerDashboardLayout() {
 
 
 
-          <aside className={sidebarClassName} aria-label={shellConfig.sidebarAria}>
+          <aside className={sidebarClassName} aria-label={t(shellConfig.sidebarAriaKey)}>
 
             <button
               type="button"
               className="fdl-sidebar__close fdl-icon-button-3d"
-              aria-label="إغلاق القائمة"
+              aria-label={t("dashboard.nav.common.closeMenu")}
               onClick={() => setSidebarOpen(false)}
             >
               <X className="fdl-sidebar__close-icon" size={20} strokeWidth={2} aria-hidden />
@@ -420,7 +400,7 @@ export default function FreelancerDashboardLayout() {
 
               <NavLink to={shellConfig.homePath} onClick={() => setSidebarOpen(false)}>
 
-                <img src="/hero/fullLogp.png" alt="أوردرز هاوس" className="fdl-sidebar__logo" decoding="async" />
+                <img src="/hero/fullLogp.png" alt={t("common.brand")} className="fdl-sidebar__logo" decoding="async" />
 
               </NavLink>
 
@@ -436,9 +416,11 @@ export default function FreelancerDashboardLayout() {
 
                 const badge = navBadge(item.badgeKey);
 
+                const label = resolveNavLabel(item, t);
+
                 return (
 
-                  <li key={`${item.to}-${item.label}`}>
+                  <li key={`${item.to}-${item.labelKey || item.to}`}>
 
                     <NavLink
 
@@ -448,7 +430,7 @@ export default function FreelancerDashboardLayout() {
 
                       className={`fdl-navlink${active ? " fdl-navlink--active" : ""}`}
 
-                      title={item.label}
+                      title={label}
 
                       onClick={() => setSidebarOpen(false)}
 
@@ -456,7 +438,7 @@ export default function FreelancerDashboardLayout() {
 
                       <FreelancerNavIcon name={item.icon} active={active} />
 
-                      <span className="fdl-navlink__label">{item.label}</span>
+                      <span className="fdl-navlink__label">{label}</span>
 
                       {!isClient && item.to === FREELANCER_COURSES_PATH && coursesNavBadge ? (
                         <span className="fdl-nav-badge fdl-nav-badge--courses">{coursesNavBadge}</span>
@@ -478,7 +460,11 @@ export default function FreelancerDashboardLayout() {
 
             <ul className="fdl-sidebar__nav fdl-sidebar__nav--foot">
 
-              {shellConfig.navFooter.map((item) => (
+              {shellConfig.navFooter.map((item) => {
+
+                const label = resolveNavLabel(item, t);
+
+                return (
 
                 <li key={item.to}>
 
@@ -488,7 +474,7 @@ export default function FreelancerDashboardLayout() {
 
                     className={({ isActive: active }) => `fdl-navlink${active ? " fdl-navlink--active" : ""}`}
 
-                    title={item.label}
+                    title={label}
 
                     onClick={() => setSidebarOpen(false)}
 
@@ -500,7 +486,7 @@ export default function FreelancerDashboardLayout() {
 
                         <FreelancerNavIcon name={item.icon} active={active} />
 
-                        <span className="fdl-navlink__label">{item.label}</span>
+                        <span className="fdl-navlink__label">{label}</span>
 
                       </>
 
@@ -510,7 +496,9 @@ export default function FreelancerDashboardLayout() {
 
                 </li>
 
-              ))}
+                );
+
+              })}
 
             </ul>
 
@@ -532,7 +520,7 @@ export default function FreelancerDashboardLayout() {
 
                 className="fdl-topbar__menu fdl-icon-button-3d"
 
-                aria-label="فتح القائمة"
+                aria-label={t("dashboard.nav.common.openMenu")}
 
                 aria-expanded={sidebarOpen}
 
@@ -590,7 +578,7 @@ export default function FreelancerDashboardLayout() {
 
                     <span className="fdl-topbar__name">{displayName}</span>
 
-                    <span className="fdl-topbar__role">{shellConfig.roleLabel}</span>
+                    <span className="fdl-topbar__role">{t(shellConfig.roleLabelKey)}</span>
 
                   </span>
 
@@ -614,7 +602,7 @@ export default function FreelancerDashboardLayout() {
 
                       <NavLink to={profilePath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
 
-                        الملف الشخصي
+                        {t("dashboard.nav.common.profile")}
 
                       </NavLink>
 
@@ -622,13 +610,13 @@ export default function FreelancerDashboardLayout() {
 
                     <NavLink to={settingsPath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
 
-                      الإعدادات
+                      {t("dashboard.nav.common.settings")}
 
                     </NavLink>
 
                     <NavLink to={notificationsPath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
 
-                      الإشعارات
+                      {t("dashboard.nav.common.notifications")}
 
                     </NavLink>
 
@@ -650,7 +638,7 @@ export default function FreelancerDashboardLayout() {
 
                     >
 
-                      تسجيل الخروج
+                      {t("dashboard.nav.common.logout")}
 
                     </button>
 

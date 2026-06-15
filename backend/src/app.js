@@ -26,6 +26,7 @@ const superAdminAnalyticsRoutes = require("./routes/superAdminAnalyticsRoutes");
 const superAdminAdminsRoutes = require("./routes/superAdminAdminsRoutes");
 const superAdminWebsiteRoutes = require("./routes/superAdminWebsiteRoutes");
 const publicRoutes = require("./routes/publicRoutes");
+const translationRoutes = require("./routes/translationRoutes");
 const internalAutomationRoutes = require("./routes/internalAutomationRoutes");
 const { notFoundMiddleware, errorMiddleware } = require("./middleware/errorMiddleware");
 const { requestTimingMiddleware } = require("./middleware/requestTimingMiddleware");
@@ -93,6 +94,7 @@ app.use("/images", express.static(path.join(__dirname, "..", "images")));
 // Versioned API mounting keeps future domains modular (auth/orders/users/etc.).
 app.use("/api", healthRoutes);
 app.use("/api", publicRoutes);
+app.use("/api", translationRoutes);
 // Optional: automation tick for external cron (see FAKE_ORDERS_AUTOMATION_CRON_SECRET).
 app.use("/api/internal", internalAutomationRoutes);
 app.use("/api/auth", authRoutes);

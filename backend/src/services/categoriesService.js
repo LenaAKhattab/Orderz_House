@@ -2,7 +2,7 @@ const { pool } = require("../config/db");
 
 async function listCategories() {
   const { rows } = await pool.query(
-    `SELECT id, slug, name, description, image_url, sort_order, is_active,
+    `SELECT id, slug, name, name_en, description, image_url, sort_order, is_active,
             show_on_homepage, card_action, external_url, button_label, is_service_category,
             created_at, updated_at
      FROM categories

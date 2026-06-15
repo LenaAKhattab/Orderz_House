@@ -11,6 +11,7 @@
     "db:seed-client-orders": "node scripts/seedRandomClientOrders.js",
     "db:seed-pool-orders": "node scripts/seedRandomClientOrders.js --for-pool",
     "db:migrate": "node scripts/runAllMigrations.js",
+    "db:backfill-order-translations": "node scripts/backfillOrderTranslations.js",
     "db:seed-public-pageviews-from-posthog": "node scripts/seedPublicPageViewTotalFromPosthog.js",
     "db:migrate:orders": "node scripts/runSqlFile.js sql/migrations/002_orders_internal.sql",
     "db:migrate:categories3": "node scripts/runSqlFile.js sql/migrations/003_categories_level3_programming_seed.sql",

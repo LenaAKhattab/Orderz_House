@@ -11,6 +11,10 @@ const notificationEventsService = require("./notificationEventsService");
 const { baseUploadsDir } = require("../middleware/ordersUploadMiddleware");
 const { uploadBuffer, destroyByPublicId } = require("./cloudinaryUploadService");
 const orderSubmissionHistoryService = require("./orderSubmissionHistoryService");
+const {
+  mapCachedEnglishFields,
+  scheduleRealOrderTranslation,
+} = require("./orderTranslationHelper");
 async function safeNotify(run) {
   try {
     await run();
@@ -130,6 +134,7 @@ function mapOrderBase(row) {
     orderCode: row.order_code,
     title: row.title,
     description: row.description,
+    ...mapCachedEnglishFields(row),
     categoryId: String(row.category_id),
     subcategoryId: row.subcategory_id ? String(row.subcategory_id) : null,
     subSubcategoryId: row.sub_subcategory_id ? String(row.sub_subcategory_id) : null,
@@ -792,6 +797,7 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
     }
 
     await client.query("COMMIT");
+    scheduleRealOrderTranslation(orderRow.id, orderRow.title, orderRow.description);
     return await getOrderById(orderRow.id);
   } catch (err) {
     await client.query("ROLLBACK");
@@ -958,6 +964,7 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
     }
 
     await client.query("COMMIT");
+    scheduleRealOrderTranslation(orderRow.id, orderRow.title, orderRow.description);
     return await getOrderById(orderRow.id);
   } catch (err) {
     await client.query("ROLLBACK");
@@ -1322,13 +1329,19 @@ function mapListOrderRow(row) {
   const base = mapOrderBase(row);
   if (!base) return null;
   const category = row.category_id
-    ? { id: String(row.category_id), slug: row.category_slug || null, name: row.category_name || null }
+    ? {
+        id: String(row.category_id),
+        slug: row.category_slug || null,
+        name: row.category_name || null,
+        name_en: row.category_name_en || null,
+      }
     : null;
   const subSubcategory = row.sub_subcategory_id
     ? {
         id: String(row.sub_subcategory_id),
         slug: row.sub_subcategory_slug || null,
         name: row.sub_subcategory_name || null,
+        name_en: row.sub_subcategory_name_en || null,
         subcategoryId: row.sub_subcategory_parent_id ? String(row.sub_subcategory_parent_id) : null,
       }
     : null;
@@ -1450,8 +1463,10 @@ async function listPoolOrders({
       o.*,
       c.slug AS category_slug,
       c.name AS category_name,
+      c.name_en AS category_name_en,
       ss.slug AS sub_subcategory_slug,
       ss.name AS sub_subcategory_name,
+      ss.name_en AS sub_subcategory_name_en,
       ss.subcategory_id AS sub_subcategory_parent_id,
       COALESCE(${POOL_ORDER_FILES_COUNT_SQL}, 0)::int AS files_count,
       COALESCE(${POOL_ORDER_APPLICANTS_COUNT_SQL}, 0)::int AS applicants_count
@@ -1614,8 +1629,10 @@ async function listPoolOrdersForFreelancer({
       o.*,
       c.slug AS category_slug,
       c.name AS category_name,
+      c.name_en AS category_name_en,
       ss.slug AS sub_subcategory_slug,
       ss.name AS sub_subcategory_name,
+      ss.name_en AS sub_subcategory_name_en,
       ss.subcategory_id AS sub_subcategory_parent_id,
       COALESCE(${POOL_ORDER_FILES_COUNT_SQL}, 0)::int AS files_count,
       COALESCE(${POOL_ORDER_APPLICANTS_COUNT_SQL}, 0)::int AS applicants_count,
@@ -1733,8 +1750,10 @@ async function listFreelancerAssignedOrders({
       b.*,
       c.slug AS category_slug,
       c.name AS category_name,
+      c.name_en AS category_name_en,
       ss.slug AS sub_subcategory_slug,
       ss.name AS sub_subcategory_name,
+      ss.name_en AS sub_subcategory_name_en,
       ss.subcategory_id AS sub_subcategory_parent_id,
       0::int AS applicants_count
     FROM base b
@@ -3550,8 +3569,10 @@ async function getFreelancerDashboardOrderSnapshot(freelancerUserId) {
       b.*,
       c.slug AS category_slug,
       c.name AS category_name,
+      c.name_en AS category_name_en,
       ss.slug AS sub_subcategory_slug,
       ss.name AS sub_subcategory_name,
+      ss.name_en AS sub_subcategory_name_en,
       ss.subcategory_id AS sub_subcategory_parent_id,
       0::int AS applicants_count
     FROM base b

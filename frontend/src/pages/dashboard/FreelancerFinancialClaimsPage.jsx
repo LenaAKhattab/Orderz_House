@@ -18,53 +18,60 @@ import {
   listPortalFinancialClaimsRequest,
 } from "../../services/api";
 import { useToast } from "../../components/ui/toastContext";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
 import "../../styles/dashboardHub.css";
 import "./freelancerFinancialClaims.css";
 
-function formatDate(value) {
-  if (!value) return "—";
+function formatDate(value, locale, emDash) {
+  if (!value) return emDash;
   const d = new Date(value);
-  if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium" }).format(d);
+  if (!Number.isFinite(d.getTime())) return emDash;
+  const tag = locale === "ar" ? "ar-JO-u-nu-latn" : "en-GB";
+  return new Intl.DateTimeFormat(tag, { dateStyle: "medium" }).format(d);
 }
 
-function formatMoney(value) {
-  if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
+function formatMoney(value, emDash) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return emDash;
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Number(value));
 }
 
-function payoutWindowText(claim) {
-  if (!claim?.actualCompletionDate) return "—";
+function payoutWindowText(claim, locale, emDash) {
+  if (!claim?.actualCompletionDate) return emDash;
   const d = new Date(claim.actualCompletionDate);
-  if (!Number.isFinite(d.getTime())) return "—";
+  if (!Number.isFinite(d.getTime())) return emDash;
   const y = d.getUTCFullYear();
   const m = d.getUTCMonth() + 1;
   const ny = m === 12 ? y + 1 : y;
   const nm = m === 12 ? 1 : m + 1;
   const start = new Date(Date.UTC(ny, nm - 1, 1));
   const end = new Date(Date.UTC(ny, nm - 1, 10));
-  return `${formatDate(start)} → ${formatDate(end)}`;
+  return `${formatDate(start, locale, emDash)} → ${formatDate(end, locale, emDash)}`;
 }
 
-function claimGroupTitle(key) {
-  if (key === "under_review") return "قيد المراجعة";
-  if (key === "not_due") return "غير مستحقة بعد";
-  if (key === "due") return "مستحقة للدفع";
-  if (key === "paid") return "مدفوعة";
-  return "مرفوضة / مجمدة / تحتاج مراجعة حضورية";
+function claimGroupTitle(key, t) {
+  const map = {
+    under_review: "freelancerDashboard.financialClaims.groups.underReview",
+    not_due: "freelancerDashboard.financialClaims.groups.notDue",
+    due: "freelancerDashboard.financialClaims.groups.due",
+    paid: "freelancerDashboard.financialClaims.groups.paid",
+    blocked: "freelancerDashboard.financialClaims.groups.blocked",
+  };
+  return t(map[key] || map.blocked);
 }
 
-function mapStatusAr(status) {
+function mapStatusLabel(status, t, emDash) {
   const s = String(status || "");
-  if (s === "pending") return "قيد المراجعة";
-  if (s === "accepted") return "مقبولة";
-  if (s === "rejected") return "مرفوضة";
-  if (s === "frozen") return "مجمدة";
-  if (s === "requires_in_person_review") return "تحتاج مراجعة حضورية";
-  if (s === "paid") return "مدفوعة";
-  return s || "—";
+  const map = {
+    pending: "freelancerDashboard.status.claim.pending",
+    accepted: "freelancerDashboard.status.claim.accepted",
+    rejected: "freelancerDashboard.status.claim.rejected",
+    frozen: "freelancerDashboard.status.claim.frozen",
+    requires_in_person_review: "freelancerDashboard.status.claim.requiresInPersonReview",
+    paid: "freelancerDashboard.status.claim.paid",
+  };
+  return map[s] ? t(map[s]) : s || emDash;
 }
 
 function statusBadgeClass(status) {
@@ -95,26 +102,30 @@ function StatSegment({ tone, Icon, value, label, loading }) {
   );
 }
 
-function mapPayoutAr(status) {
+function mapPayoutLabel(status, t, emDash) {
   const s = String(status || "");
-  if (s === "missing_completion_date") return "بدون تاريخ إنجاز";
-  if (s === "not_due_yet") return "غير مستحقة بعد";
-  if (s === "within_payout_window") return "داخل نافذة الاستحقاق";
-  if (s === "late_after_payout_window") return "متأخرة بعد نافذة الاستحقاق";
-  if (s === "paid") return "مدفوعة";
-  return s || "—";
+  const map = {
+    missing_completion_date: "freelancerDashboard.status.payout.missingCompletionDate",
+    not_due_yet: "freelancerDashboard.status.payout.notDueYet",
+    within_payout_window: "freelancerDashboard.status.payout.withinWindow",
+    late_after_payout_window: "freelancerDashboard.status.payout.lateAfterWindow",
+    paid: "freelancerDashboard.status.payout.paid",
+  };
+  return map[s] ? t(map[s]) : s || emDash;
 }
 
-function mapPaymentStatusAr(status) {
+function mapPaymentStatusLabel(status, t, emDash) {
   const s = String(status || "");
-  if (s === "paid") return "مدفوع";
-  if (s === "pending") return "قيد الانتظار";
-  if (s === "unpaid") return "غير مدفوع";
-  if (s === "not_required") return "غير مطلوب";
-  if (s === "failed") return "فشل الدفع";
-  if (s === "refunded") return "تم الاسترجاع";
-  if (s === "skipped_by_admin") return "تم تجاوز الدفع (إدارة)";
-  return s || "—";
+  const map = {
+    paid: "freelancerDashboard.status.payment.paid",
+    pending: "freelancerDashboard.status.payment.pending",
+    unpaid: "freelancerDashboard.status.payment.unpaid",
+    not_required: "freelancerDashboard.status.payment.notRequired",
+    failed: "freelancerDashboard.status.payment.failed",
+    refunded: "freelancerDashboard.status.payment.refunded",
+    skipped_by_admin: "freelancerDashboard.status.payment.skippedByAdmin",
+  };
+  return map[s] ? t(map[s]) : s || emDash;
 }
 
 function groupClaims(claims) {
@@ -157,6 +168,9 @@ function extractDoneProjects(responseData) {
 
 export default function FreelancerFinancialClaimsPage() {
   const { push } = useToast();
+  const { t, locale, dir } = useTranslation();
+  const emDash = t("freelancerDashboard.common.emDash");
+  const fc = "freelancerDashboard.financialClaims";
   const [claims, setClaims] = useState([]);
   const [doneProjects, setDoneProjects] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -189,7 +203,11 @@ export default function FreelancerFinancialClaimsPage() {
       const categoryList = categoriesRes?.data?.categories || [];
       setCategories(Array.isArray(categoryList) ? categoryList : []);
     } catch (e) {
-      push({ type: "error", title: "تعذر تحميل المطالبات", message: e?.response?.data?.message || e?.message });
+      push({
+        type: "error",
+        title: t(`${fc}.loadErrorTitle`),
+        message: e?.response?.data?.message || e?.message,
+      });
     } finally {
       setBusy(false);
     }
@@ -286,7 +304,11 @@ export default function FreelancerFinancialClaimsPage() {
               actualCompletionDate: form.actualCompletionDate || null,
             };
       await createPortalFinancialClaimRequest(payload);
-      push({ type: "success", title: "تم إنشاء المطالبة", message: "تم إرسال المطالبة المالية بنجاح." });
+      push({
+        type: "success",
+        title: t(`${fc}.createSuccessTitle`),
+        message: t(`${fc}.createSuccessMessage`),
+      });
       setCreateOpen(false);
       setSelectedProjectId("");
       setForm({
@@ -299,7 +321,11 @@ export default function FreelancerFinancialClaimsPage() {
       });
       await reload();
     } catch (e) {
-      push({ type: "error", title: "تعذر إنشاء المطالبة", message: e?.response?.data?.message || e?.message });
+      push({
+        type: "error",
+        title: t(`${fc}.createErrorTitle`),
+        message: e?.response?.data?.message || e?.message,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -309,10 +335,8 @@ export default function FreelancerFinancialClaimsPage() {
     <DashboardHubPage className="fdash-page--financial-claims">
       <header className="ffc-surface ffc-header">
         <div className="ffc-header__copy">
-          <h1 className="ffc-header__title">المطالبات المالية</h1>
-          <p className="ffc-header__subtitle">
-            أنشئ مطالبة جديدة، وتابع المراجعة، ونافذة الاستحقاق، والمبالغ المدفوعة والمتبقية لكل طلب.
-          </p>
+          <h1 className="ffc-header__title">{t(`${fc}.title`)}</h1>
+          <p className="ffc-header__subtitle">{t(`${fc}.subtitle`)}</p>
         </div>
         <div className="ffc-header__art">
           <span className="ffc-header__icon-chip" aria-hidden>
@@ -320,26 +344,38 @@ export default function FreelancerFinancialClaimsPage() {
           </span>
           <button type="button" className="ffc-header__cta" onClick={() => setCreateOpen(true)}>
             <Plus size={16} strokeWidth={2.2} aria-hidden />
-            <span>مطالبة جديدة</span>
+            <span>{t(`${fc}.newClaim`)}</span>
           </button>
         </div>
       </header>
 
-      <div className="ffc-surface ffc-stats-bar" aria-label="ملخص المطالبات">
+      <div className="ffc-surface ffc-stats-bar" aria-label={t("freelancerDashboard.stats.financialClaims.summaryAria")}>
         <StatSegment
           tone="slate"
           Icon={Files}
           value={summary.total}
-          label="إجمالي المطالبات"
+          label={t("freelancerDashboard.stats.financialClaims.total")}
           loading={busy}
         />
-        <StatSegment tone="amber" Icon={Hourglass} value={summary.pending} label="قيد المراجعة" loading={busy} />
-        <StatSegment tone="emerald" Icon={CircleCheck} value={summary.paid} label="مدفوعة" loading={busy} />
+        <StatSegment
+          tone="amber"
+          Icon={Hourglass}
+          value={summary.pending}
+          label={t("freelancerDashboard.stats.financialClaims.underReview")}
+          loading={busy}
+        />
+        <StatSegment
+          tone="emerald"
+          Icon={CircleCheck}
+          value={summary.paid}
+          label={t("freelancerDashboard.stats.financialClaims.paid")}
+          loading={busy}
+        />
       </div>
 
       {busy ? (
         <section className="ffc-surface ffc-content" aria-busy="true">
-          <p className="ffc-loading">جارٍ تحميل المطالبات…</p>
+          <p className="ffc-loading">{t(`${fc}.loading`)}</p>
         </section>
       ) : claims.length === 0 ? (
         <section className="ffc-surface ffc-content">
@@ -347,13 +383,11 @@ export default function FreelancerFinancialClaimsPage() {
             <span className="ffc-empty__icon-chip" aria-hidden>
               <Inbox size={36} strokeWidth={1.6} />
             </span>
-            <h2 className="ffc-empty__title">لا توجد مطالبات بعد</h2>
-            <p className="ffc-empty__sub">
-              أنشئ أول مطالبة مالية لتظهر هنا ضمن المجموعات حسب الحالة.
-            </p>
+            <h2 className="ffc-empty__title">{t(`${fc}.emptyTitle`)}</h2>
+            <p className="ffc-empty__sub">{t(`${fc}.emptySub`)}</p>
             <button type="button" className="ffc-empty__cta" onClick={() => setCreateOpen(true)}>
               <Plus size={16} strokeWidth={2.2} aria-hidden />
-              <span>مطالبة جديدة</span>
+              <span>{t(`${fc}.newClaim`)}</span>
             </button>
           </div>
         </section>
@@ -363,61 +397,63 @@ export default function FreelancerFinancialClaimsPage() {
             <section key={groupKey} className="ffc-surface ffc-group">
               <div className="ffc-group__head">
                 <h2 className="ffc-group__title">
-                  {claimGroupTitle(groupKey)} <span className="ffc-group__count">({items.length})</span>
+                  {claimGroupTitle(groupKey, t)} <span className="ffc-group__count">({items.length})</span>
                 </h2>
               </div>
               <div className="ffc-group__body">
                 {items.length === 0 ? (
-                  <p className="ffc-group__empty">لا توجد عناصر في هذه المجموعة.</p>
+                  <p className="ffc-group__empty">{t(`${fc}.groupEmpty`)}</p>
                 ) : (
                   <div className="ffc-claims-grid">
                     {items.map((claim) => (
                       <article key={claim.id} className="ffc-claim-card">
                         <div className="ffc-claim-card__head">
-                          <h3 className="ffc-claim-card__title">{claim.requestTitle || "—"}</h3>
-                          <span className={statusBadgeClass(claim.status)}>{mapStatusAr(claim.status)}</span>
+                          <h3 className="ffc-claim-card__title">{claim.requestTitle || emDash}</h3>
+                          <span className={statusBadgeClass(claim.status)}>
+                            {mapStatusLabel(claim.status, t, emDash)}
+                          </span>
                         </div>
                         <dl className="ffc-dl">
                           <div className="ffc-dl-row">
-                            <dt>رقم الطلب</dt>
-                            <dd dir="ltr">{claim.orderNumber || "—"}</dd>
+                            <dt>{t(`${fc}.fields.orderNumber`)}</dt>
+                            <dd dir="ltr">{claim.orderNumber || emDash}</dd>
                           </div>
                           <div className="ffc-dl-row">
-                            <dt>تاريخ الإنجاز الفعلي</dt>
-                            <dd>{formatDate(claim.actualCompletionDate)}</dd>
+                            <dt>{t(`${fc}.fields.completionDate`)}</dt>
+                            <dd>{formatDate(claim.actualCompletionDate, locale, emDash)}</dd>
                           </div>
                           <div className="ffc-dl-row">
-                            <dt>تاريخ التقديم</dt>
-                            <dd>{formatDate(claim.submittedAt)}</dd>
+                            <dt>{t(`${fc}.fields.submittedAt`)}</dt>
+                            <dd>{formatDate(claim.submittedAt, locale, emDash)}</dd>
                           </div>
                           <div className="ffc-dl-row">
-                            <dt>نافذة الاستحقاق</dt>
-                            <dd>{payoutWindowText(claim)}</dd>
+                            <dt>{t(`${fc}.fields.payoutWindow`)}</dt>
+                            <dd>{payoutWindowText(claim, locale, emDash)}</dd>
                           </div>
                           <div className="ffc-dl-row">
-                            <dt>حالة الاستحقاق</dt>
-                            <dd>{mapPayoutAr(claim.payoutStatus)}</dd>
+                            <dt>{t(`${fc}.fields.payoutStatus`)}</dt>
+                            <dd>{mapPayoutLabel(claim.payoutStatus, t, emDash)}</dd>
                           </div>
                           <div className="ffc-dl-row ffc-dl-row--money">
-                            <dt>السعر الإجمالي</dt>
-                            <dd dir="ltr">{formatMoney(claim.totalPriceSnapshot)}</dd>
+                            <dt>{t(`${fc}.fields.totalPrice`)}</dt>
+                            <dd dir="ltr">{formatMoney(claim.totalPriceSnapshot, emDash)}</dd>
                           </div>
                           <div className="ffc-dl-row ffc-dl-row--money">
-                            <dt>مستحق المستقل</dt>
-                            <dd dir="ltr">{formatMoney(claim.userAmountSnapshot)}</dd>
+                            <dt>{t(`${fc}.fields.freelancerAmount`)}</dt>
+                            <dd dir="ltr">{formatMoney(claim.userAmountSnapshot, emDash)}</dd>
                           </div>
                           <div className="ffc-dl-row ffc-dl-row--money">
-                            <dt>المدفوع</dt>
-                            <dd dir="ltr">{formatMoney(claim.paidAmount)}</dd>
+                            <dt>{t(`${fc}.fields.paid`)}</dt>
+                            <dd dir="ltr">{formatMoney(claim.paidAmount, emDash)}</dd>
                           </div>
                           <div className="ffc-dl-row ffc-dl-row--money">
-                            <dt>المتبقي</dt>
-                            <dd dir="ltr">{formatMoney(claim.remainingAmount)}</dd>
+                            <dt>{t(`${fc}.fields.remaining`)}</dt>
+                            <dd dir="ltr">{formatMoney(claim.remainingAmount, emDash)}</dd>
                           </div>
                         </dl>
                         {claim.adminNote ? (
                           <div className="ffc-claim-card__note">
-                            <strong>ملاحظة الإدارة:</strong> {claim.adminNote}
+                            <strong>{t(`${fc}.fields.adminNote`)}</strong> {claim.adminNote}
                           </div>
                         ) : null}
                       </article>
@@ -432,12 +468,12 @@ export default function FreelancerFinancialClaimsPage() {
 
       {createOpen ? (
         <div className="ffc-claim-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="ffc-claim-modal-title">
-          <div className="ffc-claim-modal" dir="rtl" onMouseDown={(e) => e.stopPropagation()}>
+          <div className="ffc-claim-modal" dir={dir} onMouseDown={(e) => e.stopPropagation()}>
             <button
               type="button"
               className="ffc-claim-modal__close"
               onClick={() => setCreateOpen(false)}
-              aria-label="إغلاق"
+              aria-label={t(`${fc}.modal.close`)}
             >
               <X size={18} strokeWidth={1.75} aria-hidden />
             </button>
@@ -447,13 +483,13 @@ export default function FreelancerFinancialClaimsPage() {
                 <FileText size={22} strokeWidth={1.5} />
               </span>
               <h2 id="ffc-claim-modal-title" className="ffc-claim-modal__title">
-                مطالبة جديدة
+                {t(`${fc}.modal.title`)}
               </h2>
-              <p className="ffc-claim-modal__subtitle">أدخل تفاصيل الطلب لإرسال المطالبة للمراجعة</p>
+              <p className="ffc-claim-modal__subtitle">{t(`${fc}.modal.subtitle`)}</p>
             </header>
 
             <div className="ffc-claim-modal__body">
-              <div className="ffc-claim-modal__mode" role="tablist" aria-label="نوع المطالبة">
+              <div className="ffc-claim-modal__mode" role="tablist" aria-label={t(`${fc}.modal.modeAria`)}>
                 <button
                   type="button"
                   role="tab"
@@ -463,7 +499,7 @@ export default function FreelancerFinancialClaimsPage() {
                 >
                   {mode === "done_project" ? <Plus size={14} strokeWidth={2} aria-hidden /> : null}
                   <FolderOpen size={15} strokeWidth={1.5} aria-hidden />
-                  <span>مطالبة من مشروع منجز</span>
+                  <span>{t(`${fc}.modal.fromDoneProject`)}</span>
                 </button>
                 <button
                   type="button"
@@ -474,7 +510,7 @@ export default function FreelancerFinancialClaimsPage() {
                 >
                   {mode === "manual" ? <Plus size={14} strokeWidth={2} aria-hidden /> : null}
                   <Calendar size={15} strokeWidth={1.5} aria-hidden />
-                  <span>مطالبة لأوردر جديد يدوياً</span>
+                  <span>{t(`${fc}.modal.manual`)}</span>
                 </button>
               </div>
 
@@ -492,25 +528,27 @@ export default function FreelancerFinancialClaimsPage() {
                   {mode === "done_project" ? (
                     <>
                       <label className="ffc-claim-field">
-                        <span className="ffc-claim-field__label">بحث في المشاريع المنجزة</span>
+                        <span className="ffc-claim-field__label">{t(`${fc}.modal.searchDoneProjects`)}</span>
                         <input
                           className="ffc-claim-field__input"
                           value={searchDone}
                           onChange={(e) => setSearchDone(e.target.value)}
-                          placeholder="ابحث برقم الطلب أو العنوان..."
+                          placeholder={t(`${fc}.modal.searchPlaceholder`)}
                         />
                       </label>
                       <label className="ffc-claim-field">
-                        <span className="ffc-claim-field__label">اختر مشروعًا منجزًا</span>
+                        <span className="ffc-claim-field__label">{t(`${fc}.modal.selectProject`)}</span>
                         <select
                           className="ffc-claim-field__input ffc-claim-field__select"
                           value={selectedProjectId}
                           onChange={(e) => setSelectedProjectId(e.target.value)}
                         >
-                          <option value="">اختر مشروعًا...</option>
+                          <option value="">{t(`${fc}.modal.selectProjectPlaceholder`)}</option>
                           {doneProjects.map((p) => (
                             <option key={p.projectId} value={p.projectId}>
-                              {(p.orderNumber || `#${p.projectId}`) + " — " + (p.requestTitle || "بدون عنوان")}
+                              {(p.orderNumber || `#${p.projectId}`) +
+                                " — " +
+                                (p.requestTitle || t(`${fc}.modal.noTitle`))}
                             </option>
                           ))}
                         </select>
@@ -522,12 +560,19 @@ export default function FreelancerFinancialClaimsPage() {
                           return (
                             <p className="ffc-claim-modal__hint">
                               {p.hasMissingCompletionDate
-                                ? "هذا المشروع لا يحتوي على تاريخ إنجاز فعلي. أضف التاريخ قبل إنشاء المطالبة."
-                                : `تاريخ الإنجاز: ${formatDate(p.actualCompletionDate)} | الحالة: ${p.orderStatus}`}
+                                ? t(`${fc}.modal.missingCompletionDate`)
+                                : t(`${fc}.modal.projectHint`, {
+                                    date: formatDate(p.actualCompletionDate, locale, emDash),
+                                    status: p.orderStatus,
+                                  })}
                               <br />
-                              {`المصدر: ${p.sourceType || "—"} | الدفع: ${mapPaymentStatusAr(p.paymentStatus)} | المبلغ: ${
-                                p.totalPriceSnapshot != null ? formatMoney(p.totalPriceSnapshot) : "—"
-                              }${p.currencyCode ? ` ${p.currencyCode}` : ""}`}
+                              {t(`${fc}.modal.projectMeta`, {
+                                source: p.sourceType || emDash,
+                                payment: mapPaymentStatusLabel(p.paymentStatus, t, emDash),
+                                amount:
+                                  p.totalPriceSnapshot != null ? formatMoney(p.totalPriceSnapshot, emDash) : emDash,
+                                currency: p.currencyCode ? ` ${p.currencyCode}` : "",
+                              })}
                             </p>
                           );
                         })()
@@ -537,37 +582,37 @@ export default function FreelancerFinancialClaimsPage() {
 
                   {mode === "manual" ? (
                     <label className="ffc-claim-field">
-                      <span className="ffc-claim-field__label">رقم الطلب</span>
+                      <span className="ffc-claim-field__label">{t(`${fc}.modal.orderNumber`)}</span>
                       <input
                         className="ffc-claim-field__input"
                         value={form.orderNumber}
                         onChange={(e) => setForm((p) => ({ ...p, orderNumber: e.target.value }))}
-                        placeholder="مثال: ORD-2024-001"
+                        placeholder={t(`${fc}.modal.orderNumberPlaceholder`)}
                       />
                     </label>
                   ) : (
                     <label className="ffc-claim-field">
-                      <span className="ffc-claim-field__label">رقم الطلب</span>
-                      <input className="ffc-claim-field__input" value={form.orderNumber || "—"} readOnly disabled />
+                      <span className="ffc-claim-field__label">{t(`${fc}.modal.orderNumber`)}</span>
+                      <input className="ffc-claim-field__input" value={form.orderNumber || emDash} readOnly disabled />
                     </label>
                   )}
 
                   {mode === "manual" ? (
                     <>
                       <label className="ffc-claim-field">
-                        <span className="ffc-claim-field__label">عنوان الطلب</span>
+                        <span className="ffc-claim-field__label">{t(`${fc}.modal.requestTitle`)}</span>
                         <input
                           className="ffc-claim-field__input"
                           value={form.requestTitle}
                           onChange={(e) => setForm((p) => ({ ...p, requestTitle: e.target.value }))}
-                          placeholder="عنوان واضح للطلب"
+                          placeholder={t(`${fc}.modal.requestTitlePlaceholder`)}
                         />
                       </label>
                       <div className="ffc-claim-field">
-                        <span className="ffc-claim-field__label">التصنيفات</span>
+                        <span className="ffc-claim-field__label">{t(`${fc}.modal.categories`)}</span>
                         <div className="ffc-claim-modal__categories">
                           {categories.length === 0 ? (
-                            <p className="ffc-claim-modal__hint">لا توجد تصنيفات متاحة حالياً.</p>
+                            <p className="ffc-claim-modal__hint">{t(`${fc}.modal.noCategories`)}</p>
                           ) : (
                             categories.map((cat) => {
                               const checked = (form.selectedCategoryIds || []).includes(String(cat.id));
@@ -596,7 +641,7 @@ export default function FreelancerFinancialClaimsPage() {
                         </div>
                       </div>
                       <label className="ffc-claim-field">
-                        <span className="ffc-claim-field__label">عدد الدقائق المنفذة</span>
+                        <span className="ffc-claim-field__label">{t(`${fc}.modal.durationMinutes`)}</span>
                         <input
                           className="ffc-claim-field__input"
                           type="number"
@@ -607,7 +652,7 @@ export default function FreelancerFinancialClaimsPage() {
                         />
                       </label>
                       <label className="ffc-claim-field">
-                        <span className="ffc-claim-field__label">تاريخ الإنجاز الفعلي</span>
+                        <span className="ffc-claim-field__label">{t(`${fc}.modal.completionDate`)}</span>
                         <input
                           className="ffc-claim-field__input"
                           type="date"
@@ -619,22 +664,22 @@ export default function FreelancerFinancialClaimsPage() {
                   ) : (
                     <>
                       <label className="ffc-claim-field">
-                        <span className="ffc-claim-field__label">عنوان الطلب (من المشروع المنجز)</span>
-                        <input className="ffc-claim-field__input" value={form.requestTitle || "—"} readOnly disabled />
+                        <span className="ffc-claim-field__label">{t(`${fc}.modal.requestTitleFromProject`)}</span>
+                        <input className="ffc-claim-field__input" value={form.requestTitle || emDash} readOnly disabled />
                       </label>
                       <label className="ffc-claim-field">
-                        <span className="ffc-claim-field__label">التصنيفات</span>
-                        <input className="ffc-claim-field__input" value={form.categoriesText || "—"} readOnly disabled />
+                        <span className="ffc-claim-field__label">{t(`${fc}.modal.categories`)}</span>
+                        <input className="ffc-claim-field__input" value={form.categoriesText || emDash} readOnly disabled />
                       </label>
                       <label className="ffc-claim-field">
-                        <span className="ffc-claim-field__label">عدد الدقائق المنفذة</span>
-                        <input className="ffc-claim-field__input" value={form.durationMinutes || "—"} readOnly disabled />
+                        <span className="ffc-claim-field__label">{t(`${fc}.modal.durationMinutes`)}</span>
+                        <input className="ffc-claim-field__input" value={form.durationMinutes || emDash} readOnly disabled />
                       </label>
                       <label className="ffc-claim-field">
-                        <span className="ffc-claim-field__label">تاريخ الإنجاز الفعلي</span>
+                        <span className="ffc-claim-field__label">{t(`${fc}.modal.completionDate`)}</span>
                         <input
                           className="ffc-claim-field__input"
-                          value={form.actualCompletionDate ? formatDate(form.actualCompletionDate) : "—"}
+                          value={form.actualCompletionDate ? formatDate(form.actualCompletionDate, locale, emDash) : emDash}
                           readOnly
                           disabled
                         />
@@ -652,7 +697,7 @@ export default function FreelancerFinancialClaimsPage() {
                 disabled={submitting}
                 onClick={() => setCreateOpen(false)}
               >
-                إلغاء
+                {t(`${fc}.modal.cancel`)}
               </button>
               <button
                 type="button"
@@ -660,7 +705,7 @@ export default function FreelancerFinancialClaimsPage() {
                 disabled={!canSubmitClaim}
                 onClick={createClaim}
               >
-                {submitting ? "جارٍ الإرسال..." : "إرسال المطالبة"}
+                {submitting ? t(`${fc}.modal.submitting`) : t(`${fc}.modal.submit`)}
               </button>
             </footer>
           </div>

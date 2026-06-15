@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import { runDashboardShellDevLayoutCheck } from "./dashboardShellDevLayoutCheck.js";
 
 /**
@@ -17,7 +18,10 @@ import { runDashboardShellDevLayoutCheck } from "./dashboardShellDevLayoutCheck.
  *
  * @param {{ children: import("react").ReactNode; className?: string; dir?: "rtl" | "ltr"; lang?: string }} p
  */
-export default function DashboardShell({ children, className = "", dir = "rtl", lang = "ar" }) {
+export default function DashboardShell({ children, className = "", dir: dirProp, lang: langProp }) {
+  const { dir: localeDir, locale } = useTranslation();
+  const dir = dirProp ?? localeDir;
+  const lang = langProp ?? locale;
   const shellRef = useRef(null);
   const { pathname } = useLocation();
 

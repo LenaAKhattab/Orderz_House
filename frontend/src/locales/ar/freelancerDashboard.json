@@ -1,0 +1,1007 @@
+{
+  "header": {
+    "loadErrorTitle": "تعذر تحميل لوحة التحكم",
+    "loadErrorDefault": "تعذر تحميل لوحة التحكم.",
+    "retry": "إعادة المحاولة"
+  },
+  "hero": {
+    "ariaLabel": "مرحباً بك في لوحة التحكم",
+    "title": "أهلاً بك في لوحة التحكم",
+    "subtitle": "منصة متكاملة لإدارة عملك الحر، متابعة طلباتك، وتطوير مهاراتك وزيادة دخلك.",
+    "browseOrders": "تصفح الطلبات المتاحة",
+    "myOrders": "استعراض طلباتي",
+    "metricsAria": "ملخص سريع",
+    "welcomeName": "مرحباً، {{name}}",
+    "controlCenterTitle": "مركز التحكم",
+    "controlCenterSubtitle": "نظرة شاملة على عملك واشتراكك وطلباتك."
+  },
+  "stats": {
+    "trustLevel": "مستوى الثقة",
+    "trustLevelNumber": "مستوى {{level}}",
+    "totalEarnings": "إجمالي الأرباح",
+    "fromClaims": "من المطالبات المالية",
+    "paidTotal": "إجمالي مدفوع",
+    "activeOrders": "الطلبات النشطة",
+    "activeOrdersSub": "طلبات جارية",
+    "overallRating": "التقييم العام",
+    "noRatingYet": "لا يوجد بعد",
+    "outOfFive": "من 5",
+    "reviewCount": "{{count}} تقييم",
+    "reviewCount_plural": "{{count}} تقييم",
+    "beginner": "مبتدئ",
+    "trustLevels": {
+      "beginner": "مبتدئ",
+      "active": "نشط",
+      "professional": "محترف",
+      "trusted": "موثوق",
+      "expert": "خبير"
+    },
+    "performance": {
+      "title": "الأداء",
+      "completed": "مكتملة",
+      "completionRate": "معدل الإكمال",
+      "onTime": "في الموعد",
+      "revisions": "تعديلات",
+      "avgDelivery": "متوسط التسليم",
+      "days": "{{count}} يوم",
+      "days_plural": "{{count}} يوم",
+      "paidClaims": "مدفوع (مطالبات)",
+      "completedLast30": "{{count}} طلباً مكتملاً خلال آخر 30 يوماً.",
+      "completedLast30_plural": "{{count}} طلباً مكتملاً خلال آخر 30 يوماً."
+    },
+    "courses": {
+      "assigned": "مسندة",
+      "inProgress": "قيد التنفيذ",
+      "completed": "مكتملة",
+      "finalTest": "اختبار نهائي",
+      "totalCourses": "إجمالي الدورات",
+      "inProgressLabel": "في تقدم",
+      "avgProgress": "متوسط التقدم"
+    },
+    "earnings": {
+      "paid": "مدفوع",
+      "pending": "مستحق / معلّق",
+      "openClaims": "مطالبات مفتوحة"
+    },
+    "myOrders": {
+      "summaryAria": "ملخص الطلبات",
+      "total": "إجمالي الطلبات",
+      "active": "نشطة",
+      "pendingReview": "بانتظار المراجعة",
+      "completed": "مكتملة",
+      "cancelled": "ملغاة",
+      "showing": "عرض {{shown}} من {{total}} طلب",
+      "showing_plural": "عرض {{shown}} من {{total}} طلب",
+      "perPage": "{{limit}} / صفحة"
+    },
+    "financialClaims": {
+      "summaryAria": "ملخص المطالبات",
+      "total": "إجمالي المطالبات",
+      "underReview": "قيد المراجعة",
+      "paid": "مدفوعة"
+    },
+    "workload": {
+      "activeCount": "{{count}} طلب نشط",
+      "activeCount_plural": "{{count}} طلبات نشطة"
+    }
+  },
+  "tip": {
+    "title": "نصيحة اليوم",
+    "profileCompletion": "اكتمال الملف",
+    "percentComplete": "{{pct}}% مكتمل",
+    "defaultHeadline": "استمر في التميز",
+    "defaultDescription": "ركّز على جودة التسليم وبناء تقييمات قوية من العملاء.",
+    "browseOrders": "تصفح الطلبات"
+  },
+  "actions": {
+    "noUrgentTitle": "لا توجد إجراءات عاجلة حالياً",
+    "noUrgentSubtitle": "أنت على اطلاع بجميع طلباتك وإشعاراتك.",
+    "moreCount": "(+{{count}} أخرى)",
+    "moreCount_plural": "(+{{count}} أخرى)",
+    "continue": "متابعة",
+    "viewCourse": "عرض الدورة"
+  },
+  "training": {
+    "coursesTitle": "الدورات والتدريب",
+    "allCourses": "جميع الدورات",
+    "eligibilityNote": "إكمال الدورات لا يغيّر أهلية المعرض تلقائياً — للتطوير المهني فقط.",
+    "pendingFinalTest": "لديك {{count}} دورة بانتظار الاختبار النهائي.",
+    "pendingFinalTest_plural": "لديك {{count}} دورات بانتظار الاختبار النهائي.",
+    "continueCourse": "متابعة: {{title}}",
+    "defaultCourseTitle": "الدورة",
+    "noAssignedCourses": "لا توجد دورات مسندة حالياً.",
+    "pageTitle": "طور مهاراتك، وارتق بمستواك",
+    "pageSubtitle": "استكشف الدورات المسندة لك، تابع تقدمك، وأكمل دروسك واختباراتك النهائية في تجربة تعلم متصلة بلوحة التحكم.",
+    "searchPlaceholder": "ابحث عن دورة أو مهارة...",
+    "searchAria": "ابحث عن دورة",
+    "coursesSummaryAria": "ملخص الدورات",
+    "filterAria": "تصفية الدورات",
+    "sortPrefix": "ترتيب:",
+    "sortAria": "ترتيب الدورات",
+    "yourCourses": "دوراتك",
+    "courseCount": "{{count}} دورة",
+    "courseCount_plural": "{{count}} دورات",
+    "tabs": {
+      "all": "الكل",
+      "inProgress": "في تقدم",
+      "completed": "مكتملة",
+      "notStarted": "لم تبدأ",
+      "favorites": "المفضلة"
+    },
+    "sort": {
+      "newest": "الأحدث",
+      "oldest": "الأقدم",
+      "progressHigh": "الأعلى تقدماً",
+      "progressLow": "الأقل تقدماً",
+      "title": "الاسم (أ–ي)"
+    },
+    "card": {
+      "untitled": "دورة بدون عنوان",
+      "defaultDescription": "تابع دروس الفيديو وأكمل متطلبات الدورة خطوة بخطوة.",
+      "lessonCount": "{{count}} درس",
+      "lessonCount_plural": "{{count}} دروس",
+      "noLessons": "بدون دروس",
+      "levelIntermediate": "متوسط",
+      "lastUpdated": "آخر تحديث {{date}}",
+      "progressAria": "التقدم {{pct}}%",
+      "lessonsCompleted": "{{completed}}/{{total}} درس مكتمل",
+      "lessonsCompleted_plural": "{{completed}}/{{total}} دروس مكتملة",
+      "lessonsShort": "{{completed}}/{{total}} درس",
+      "reviewCourse": "مراجعة الدورة",
+      "startCourse": "ابدأ الدورة",
+      "continueLearning": "متابعة التعلم",
+      "review": "مراجعة",
+      "start": "ابدأ",
+      "continue": "متابعة",
+      "addFavorite": "إضافة إلى المفضلة",
+      "removeFavorite": "إزالة من المفضلة",
+      "statusCompleted": "مكتملة",
+      "statusInProgress": "في تقدم",
+      "statusNotStarted": "لم تبدأ بعد",
+      "testCompleted": "اكتمل الاختبار النهائي",
+      "testPending": "بانتظار الاختبار النهائي",
+      "testIncluded": "يتضمن اختبار نهائي"
+    },
+    "loadError": "تعذر تحميل الدورات."
+  },
+  "orders": {
+    "backToList": "العودة للقائمة",
+    "orderNotFound": "لم يتم العثور على الطلب",
+    "noFiles": "لا توجد ملفات مضافة",
+    "alreadyParticipated": "سبق أن سجّلت مشاركتك في هذا الطلب.",
+    "alreadyBid": "لقد قدمت عرضاً لهذا الطلب.",
+    "submitting": "جارٍ الإرسال…",
+    "bidSubmitted": "عرضك مُرسل",
+    "submitBid": "تقديم عرض سعر",
+    "taking": "جارٍ الاستلام…",
+    "registered": "تم التسجيل",
+    "takeOrder": "استلام الطلب"
+  },
+  "myOrders": {
+    "title": "طلباتي الحالية",
+    "subtitle": "تابع كل أعمالك المسندة، والمواعيد النهائية، وحالة التنفيذ بسهولة.",
+    "searchPlaceholder": "ابحث في الطلبات (العنوان أو رقم الطلب)",
+    "searchAria": "ابحث في الطلبات (العنوان أو رقم الطلب)",
+    "sortPrefix": "ترتيب:",
+    "sortAria": "ترتيب الطلبات",
+    "refreshAria": "تحديث القائمة",
+    "refreshTitle": "تحديث القائمة",
+    "listAria": "قائمة الطلبات",
+    "loadError": "تعذر تحميل الطلبات حاليًا. يرجى المحاولة مرة أخرى.",
+    "loadErrorTitle": "تعذر تحميل الطلبات",
+    "filterAria": "تصفية الطلبات حسب الحالة",
+    "filters": {
+      "all": "الكل",
+      "revisionRequired": "تعديلات مطلوبة",
+      "assigned": "مُسند",
+      "inProgress": "قيد التنفيذ",
+      "pendingReview": "بانتظار المراجعة",
+      "completed": "مكتمل",
+      "cancelled": "ملغي"
+    },
+    "sort": {
+      "newest": "الأحدث",
+      "oldest": "الأقدم",
+      "priceHigh": "السعر الأعلى",
+      "priceLow": "السعر الأقل"
+    },
+    "details": {
+      "loadErrorTitle": "تعذر تحميل تفاصيل الطلب",
+      "revisionSectionTitle": "تفاصيل طلب التعديل / المراجعة",
+      "requestedBy": "الجهة الطالبة",
+      "requestMessage": "رسالة الطلب",
+      "requestDate": "تاريخ الطلب",
+      "deadline": "الموعد النهائي",
+      "status": "الحالة",
+      "linkedAttachments": "مرفقات مرتبطة",
+      "noExtraAttachments": "لا توجد مرفقات إضافية.",
+      "submissionHistory": "سجل التسليمات والتعديلات",
+      "yourDelivery": "ما قمت بتسليمه",
+      "deliverOrder": "تسليم الطلب",
+      "deliveryHint": "ارفع الملفات أو الصور النهائية (حتى خمس ملفات).",
+      "selectFiles": "اختيار الملفات",
+      "submitDelivery": "تسليم الطلب",
+      "submitting": "جارٍ الإرسال…",
+      "deliveryStatus": "حالة التسليم",
+      "pendingReviewMessage": "تم إرسال تسليمك للمراجعة. بانتظار الاعتماد النهائي (عميل/إدارة).",
+      "alertTitle": "تنبيه",
+      "selectFileRequired": "اختر ملفاً واحداً على الأقل.",
+      "fileSizeTitle": "حجم الملفات",
+      "uploadSizeHelper": "الحد الأقصى لإجمالي الملفات: 5 ميجابايت.",
+      "uploadSizeError": "حجم الملفات يجب ألا يتجاوز 5 ميجابايت إجمالاً.",
+      "deliverySuccessTitle": "تم التسليم",
+      "deliverySuccessMessage": "أُرسلت المرفقات للعميل للمراجعة.",
+      "deliveryErrorTitle": "تعذّر التسليم",
+      "revisionRequesterAdmin": "الإدارة",
+      "revisionRequesterClient": "العميل",
+      "revisionDelivered": "تم تسليم التعديل",
+      "revisionInProgress": "قيد تنفيذ التعديل",
+      "revisionPending": "بانتظار تنفيذ التعديل",
+      "phaseRevisionInProgress": "قيد تنفيذ التعديل",
+      "phasePendingClientApproval": "بانتظار اعتماد العميل على التسليم",
+      "phaseCompleted": "مكتمل",
+      "phaseInProgressDeliver": "قيد التنفيذ — يمكنك تسليم الملفات"
+    }
+  },
+  "plans": {
+    "eyebrow": "باقتك الحالية",
+    "freePlanTitle": "الاشتراك المجاني",
+    "freePlanSubtitle": "يمكنك الترقية لباقة أعلى للوصول إلى طلبات بقيمة أكبر ومزايا إضافية.",
+    "paidPlanSubtitle": "تابع حالة اشتراكك وادفع للترقية للباقة التالية عند الجاهزية.",
+    "nextPlanHint": "الباقة التالية: {{title}} — اخترها من القائمة أدناه للترقية.",
+    "summaryAria": "ملخص الاشتراك",
+    "upgradeSectionAria": "باقات الترقية",
+    "subscriptionStatus": "حالة الاشتراك",
+    "payment": "الدفع",
+    "companyActivation": "تفعيل الشركة",
+    "marketplaceEligibility": "أهلية المعرض",
+    "orderValueRange": "نطاق قيمة الطلبات",
+    "expiresOn": "ينتهي في",
+    "canApply": "يمكنك التقديم",
+    "notEligible": "غير مؤهل",
+    "planAndEligibility": "الباقة والأهلية",
+    "choosePlan": "اختيار باقة",
+    "noActiveSubscription": "لا يوجد اشتراك نشط — اختر باقة للبدء.",
+    "subscriptionLabel": "اشتراك",
+    "realOrders": "طلبات حقيقية",
+    "realOrdersFreeRange": "متاحة ضمن نطاق 3–7 د.أ",
+    "realOrdersPerPlan": "متاحة وفق الباقة",
+    "trainingOrders": "طلبات تدريبية",
+    "trainingOrdersNote": "متاحة وفق إعدادات المنصة",
+    "currentWorkload": "عبء العمل الحالي",
+    "remainingTime": "المدة المتبقية",
+    "rangeFreePlan": "من 3 إلى 7 د.أ (طلبات حقيقية وتدريبية)",
+    "rangeMinMax": "من {{min}} إلى {{max}} د.أ",
+    "rangeMinOnly": "من {{min}} د.أ وأكثر"
+  },
+  "financialClaims": {
+    "title": "المطالبات المالية",
+    "subtitle": "أنشئ مطالبة جديدة، وتابع المراجعة، ونافذة الاستحقاق، والمبالغ المدفوعة والمتبقية لكل طلب.",
+    "newClaim": "مطالبة جديدة",
+    "loading": "جارٍ تحميل المطالبات…",
+    "loadErrorTitle": "تعذر تحميل المطالبات",
+    "emptyTitle": "لا توجد مطالبات بعد",
+    "emptySub": "أنشئ أول مطالبة مالية لتظهر هنا ضمن المجموعات حسب الحالة.",
+    "groupEmpty": "لا توجد عناصر في هذه المجموعة.",
+    "wallet": "المستحقات والمحفظة",
+    "walletLink": "المحفظة",
+    "earningsNote": "الأرقام من مطالباتك المالية المعتمدة — وليست قيمة الطلبات على المنصة.",
+    "latestClaim": "آخر مطالبة",
+    "noClaimsYet": "لا توجد مطالبات مالية بعد.",
+    "createSuccessTitle": "تم إنشاء المطالبة",
+    "createSuccessMessage": "تم إرسال المطالبة المالية بنجاح.",
+    "createErrorTitle": "تعذر إنشاء المطالبة",
+    "modal": {
+      "title": "مطالبة جديدة",
+      "subtitle": "أدخل تفاصيل الطلب لإرسال المطالبة للمراجعة",
+      "close": "إغلاق",
+      "modeAria": "نوع المطالبة",
+      "fromDoneProject": "مطالبة من مشروع منجز",
+      "manual": "مطالبة لأوردر جديد يدوياً",
+      "searchDoneProjects": "بحث في المشاريع المنجزة",
+      "searchPlaceholder": "ابحث برقم الطلب أو العنوان...",
+      "selectProject": "اختر مشروعًا منجزًا",
+      "selectProjectPlaceholder": "اختر مشروعًا...",
+      "noTitle": "بدون عنوان",
+      "missingCompletionDate": "هذا المشروع لا يحتوي على تاريخ إنجاز فعلي. أضف التاريخ قبل إنشاء المطالبة.",
+      "projectHint": "تاريخ الإنجاز: {{date}} | الحالة: {{status}}",
+      "projectMeta": "المصدر: {{source}} | الدفع: {{payment}} | المبلغ: {{amount}}{{currency}}",
+      "orderNumber": "رقم الطلب",
+      "orderNumberPlaceholder": "مثال: ORD-2024-001",
+      "requestTitle": "عنوان الطلب",
+      "requestTitlePlaceholder": "عنوان واضح للطلب",
+      "requestTitleFromProject": "عنوان الطلب (من المشروع المنجز)",
+      "categories": "التصنيفات",
+      "noCategories": "لا توجد تصنيفات متاحة حالياً.",
+      "durationMinutes": "عدد الدقائق المنفذة",
+      "completionDate": "تاريخ الإنجاز الفعلي",
+      "cancel": "إلغاء",
+      "submit": "إرسال المطالبة",
+      "submitting": "جارٍ الإرسال..."
+    },
+    "fields": {
+      "orderNumber": "رقم الطلب",
+      "completionDate": "تاريخ الإنجاز الفعلي",
+      "submittedAt": "تاريخ التقديم",
+      "payoutWindow": "نافذة الاستحقاق",
+      "payoutStatus": "حالة الاستحقاق",
+      "totalPrice": "السعر الإجمالي",
+      "freelancerAmount": "مستحق المستقل",
+      "paid": "المدفوع",
+      "remaining": "المتبقي",
+      "adminNote": "ملاحظة الإدارة:"
+    },
+    "groups": {
+      "underReview": "قيد المراجعة",
+      "notDue": "غير مستحقة بعد",
+      "due": "مستحقة للدفع",
+      "paid": "مدفوعة",
+      "blocked": "مرفوضة / مجمدة / تحتاج مراجعة حضورية"
+    }
+  },
+  "settings": {
+    "eyebrow": "إعدادات المستقل",
+    "title": "إعدادات الحساب",
+    "description": "حدّث معلوماتك العامة، أمان الحساب، والإشعارات. جميع الحقول تُحفظ عبر واجهة برمجة التطبيقات.",
+    "breadcrumb": "إعدادات الحساب",
+    "loadError": "تعذّر التحميل.",
+    "avatar": {
+      "title": "الصورة الشخصية",
+      "upload": "رفع صورة",
+      "uploading": "جاري…",
+      "remove": "إزالة الصورة",
+      "hint": "JPEG أو PNG أو WebP، بحد أقصى 2 ميغابايت.",
+      "sizeError": "حجم الصورة يجب ألا يتجاوز 2 ميغابايت.",
+      "success": "تم تحديث الصورة.",
+      "uploadError": "فشل رفع الصورة.",
+      "removeSuccess": "تمت إزالة الصورة.",
+      "removeError": "تعذّر الإزالة."
+    },
+    "basic": {
+      "title": "المعلومات الأساسية",
+      "firstName": "الاسم الأول",
+      "fatherName": "اسم الأب",
+      "familyName": "العائلة",
+      "professionalTitle": "العنوان المهني",
+      "phone": "رقم الجوال (E.164)",
+      "whatsapp": "واتساب (E.164)",
+      "bio": "نبذة (حد أقصى 2000 حرف)",
+      "skills": "المهارات (مفصولة بفواصل)",
+      "website": "موقع",
+      "portfolio": "معرض أعمال / Portfolio",
+      "save": "حفظ المعلومات",
+      "saving": "جاري الحفظ…",
+      "saveSuccess": "تم حفظ الإعدادات.",
+      "saveError": "تعذّر الحفظ.",
+      "nameTooShort": "الاسم الكامل يجب أن يكون حرفين على الأقل.",
+      "phoneInvalid": "رقم الجوال يجب أن يكون بالصيغة الدولية +966…",
+      "whatsappInvalid": "رقم واتساب يجب أن يكون بالصيغة الدولية.",
+      "urlInvalid": "{{label}}: رابط غير صالح (استخدم http أو https).",
+      "bioTooLong": "النبذة أطول من الحد المسموح."
+    },
+    "payout": {
+      "title": "السحب والمطالبات",
+      "hint": "يعرض هذا القسم تفضيلات آمنة فقط — لا تُخزَّن أرقام حسابات كاملة أو بيانات حساسة هنا.",
+      "method": "طريقة السحب المفضلة",
+      "methodPlaceholder": "— اختر —",
+      "bankTransfer": "تحويل بنكي",
+      "wallet": "محفظة إلكترونية",
+      "cash": "استلام نقدي",
+      "other": "أخرى",
+      "notes": "ملاحظات مختصرة آمنة",
+      "notesPlaceholder": "مثال: اسم البنك فقط، دون رقم الحساب الكامل",
+      "save": "حفظ قسم السحب"
+    },
+    "security": {
+      "title": "الأمان",
+      "currentPassword": "كلمة المرور الحالية",
+      "newPassword": "كلمة المرور الجديدة",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "hint": "يجب أن تحتوي كلمة المرور الجديدة على حرف ورقم على الأقل (8 أحرف كحد أدنى).",
+      "update": "تحديث كلمة المرور",
+      "updating": "جاري التحديث…",
+      "mismatch": "كلمتا المرور غير متطابقتين.",
+      "tooShort": "كلمة المرور الجديدة قصيرة جداً.",
+      "success": "تم تحديث كلمة المرور.",
+      "error": "تعذّر تغيير كلمة المرور."
+    },
+    "notifications": {
+      "title": "إعدادات الإشعارات",
+      "orders": "إشعارات الطلبات",
+      "claims": "إشعارات المطالبات المالية",
+      "courses": "إشعارات الدورات",
+      "save": "حفظ تفضيلات الإشعارات"
+    }
+  },
+  "courseDetails": {
+    "finalTestTitle": "الاختبار النهائي بعد الدورة",
+    "examMarkMaxError": "لا يمكن أن تكون العلامة أكبر من العلامة القصوى لهذا السؤال",
+    "examMarkNegativeError": "لا يمكن أن تكون الدرجة سالبة.",
+    "stepStatus": {
+      "done": "مكتملة",
+      "available": "متاحة الآن",
+      "locked": "مقفلة",
+      "waitingUpload": "بانتظار رفع الملف",
+      "waitingChatgpt": "بانتظار نتيجة ChatGPT",
+      "waitingMarks": "بانتظار إدخال العلامات"
+    },
+    "fileLegacy": "هذا الملف يحتاج إلى إعادة رفع من الإدارة.",
+    "fileOpenFailed": "تعذر فتح الملف. يرجى إبلاغ الإدارة لإعادة رفعه.",
+    "progress": {
+      "fullyCompleted": "تم إكمال الدورة بالكامل",
+      "readyForTest": "جاهز للاختبار النهائي",
+      "lessonsCompleted": "تم إكمال جميع الدروس",
+      "lessonsProgress": "{{done}} من {{total}} درس مكتمل",
+      "lessonsProgress_plural": "{{done}} من {{total}} دروس مكتملة",
+      "notStarted": "لم يبدأ التقدم بعد",
+      "ringCaption": "التقدم الكلي",
+      "completed": "مكتمل",
+      "ready": "جاهز",
+      "lessons": "الدروس"
+    },
+    "loadError": "تعذر تحميل الدورة.",
+    "completeLessonsFirst": "أكمل جميع دروس الفيديو أولاً لفتح الاختبار النهائي.",
+    "saveProgressInfo": "يتم حفظ تقدمك ونقلك للدرس التالي...",
+    "lessonCompleteSuccess": "تم تسجيل إكمال المشاهدة.",
+    "testUnlocked": "تم فتح الاختبار النهائي — أكمل التسليم الآن.",
+    "saveProgressError": "تعذر حفظ التقدم، حاول مرة أخرى.",
+    "mustCompleteLessons": "يجب إكمال جميع دروس الفيديو قبل التسليم.",
+    "chatgptRequired": "يرجى لصق نتيجة تقييم ChatGPT أو رفع ملف تقرير التقييم.",
+    "completeAllMarks": "أكمل درجات جميع الأسئلة قبل الإرسال.",
+    "uploadCompletedFirst": "يجب رفع الملف المنجز أولاً قبل الإرسال.",
+    "courseFinishedSuccess": "تم إنهاء الدورة بنجاح.",
+    "courseFinishError": "تعذر إنهاء الدورة.",
+    "uploadError": "تعذر رفع الملف. تأكد أن الملف PDF وحاول مرة أخرى.",
+    "uploadSuccess": "تم رفع الملف المنجز بنجاح",
+    "uploadCompletedError": "تعذر رفع الملف المنجز.",
+    "duration": {
+      "minute": "{{count}} دقيقة",
+      "minute_plural": "{{count}} دقيقة",
+      "hour": "{{count}} ساعة",
+      "hour_plural": "{{count}} ساعة",
+      "hoursAndMinutes": "{{hours}} ساعة و {{minutes}} دقيقة",
+      "hoursOnly": "{{count}} ساعة",
+      "hoursOnly_plural": "{{count}} ساعة"
+    },
+    "activity": {
+      "now": "الآن",
+      "minutesAgo": "منذ {{count}} دقيقة",
+      "minutesAgo_plural": "منذ {{count}} دقيقة",
+      "hoursAgo": "منذ {{count}} ساعة",
+      "hoursAgo_plural": "منذ {{count}} ساعة",
+      "daysAgo": "منذ {{count}} يوم",
+      "daysAgo_plural": "منذ {{count}} يوم"
+    },
+    "fileSize": {
+      "bytes": "{{count}} بايت",
+      "kb": "{{size}} ك.ب",
+      "mb": "{{size}} م.ب"
+    },
+    "file": {
+      "viewFile": "عرض الملف",
+      "downloadFile": "تحميل الملف",
+      "copyInstructions": "نسخ التعليمات",
+      "needsReuploadShort": "يحتاج إعادة رفع",
+      "available": "متاح",
+      "unavailable": "غير متوفر",
+      "needsReuploadBadge": "يحتاج إعادة رفع الملف",
+      "notAttachedByAdmin": "لم يُرفق هذا الملف من الإدارة بعد.",
+      "openFailedTryDownload": "تعذر فتح الملف. جرّب التحميل.",
+      "completedWorkFile": "الملف المنجز",
+      "completedWorkFileDefault": "تم رفع ملف الاختبار المنجز",
+      "uploadedSuccessfully": "تم رفعه بنجاح",
+      "replaceFile": "استبدال الملف",
+      "removeFile": "إزالة",
+      "removeFileAria": "إزالة الملف",
+      "chooseFile": "اختيار ملف",
+      "replace": "استبدال",
+      "remove": "إزالة",
+      "defaultCompletedPdf": "الملف-المنجز.pdf"
+    },
+    "flow": {
+      "phaseTag": "المرحلة {{num}}",
+      "trackAria": "مسار الخطوات 1 إلى 5"
+    },
+    "completed": {
+      "congratsTitle": "أحسنت! اكتملت الدورة بنجاح",
+      "congratsSub": "تم تسجيل استجابة الاختبار النهائي وإتمام الدورة. يمكنك مراجعة ملفات الاختبار والتسليم في أي وقت.",
+      "finalGrade": "الدرجة النهائية: {{grade}}%",
+      "submittedAt": " — تاريخ التسليم: {{date}}",
+      "questionGrades": "درجات الأسئلة",
+      "questionCount": " ({{count}} أسئلة)",
+      "questionLabel": "سؤال {{num}}",
+      "filesAndSubmission": "ملفات وتسليم الاختبار",
+      "downloadTestFile": "تحميل ملف الاختبار",
+      "downloadInstructionsFile": "تحميل ملف التعليمات",
+      "downloadModelAnswer": "تحميل ملف الإجابة النموذجية",
+      "viewAnswerFile": "عرض ملف الإجابة المرفوع",
+      "downloadAnswerFile": "تحميل ملف الإجابة المرفوع",
+      "submissionSummary": "ملخص التسليم",
+      "viewAnswerText": "عرض نص الإجابة",
+      "answerText": "نص الإجابة",
+      "hideText": "إخفاء النص",
+      "answerFileOnlyNote": "تم إرسال ملف الإجابة. استخدم الأزرار أعلاه لعرضه أو تحميله."
+    },
+    "sidebar": {
+      "finalStepBadge": "الخطوة الأخيرة",
+      "statusCompleted": "مكتمل",
+      "statusLocked": "أكمل جميع الدروس لفتح الاختبار النهائي",
+      "statusReady": "جاهز للتسليم",
+      "contentAria": "محتوى الدورة",
+      "contentTitle": "محتوى الدورة",
+      "completedWithDuration": "{{duration}} • مكتمل",
+      "completed": "مكتمل",
+      "watchingWithDuration": "{{duration}} • قيد المشاهدة",
+      "watching": "قيد المشاهدة",
+      "noDuration": "بدون مدة",
+      "showAllLessons": "عرض جميع الدروس ({{count}})"
+    },
+    "header": {
+      "trainingChip": "دورة تدريبية",
+      "backToCourses": "العودة إلى الدورات",
+      "summaryAria": "ملخص الدورة",
+      "lessonsCompleted": "الدروس المكتملة: {{completed}} من {{total}} درس",
+      "totalDuration": "المدة الإجمالية: {{duration}}",
+      "lastActivity": "آخر نشاط: {{activity}}",
+      "durationUnknown": "غير محددة",
+      "noActivity": "لا يوجد",
+      "courseFinishedBanner": "تم إنهاء هذه الدورة بنجاح.",
+      "completionRecorded": "تاريخ الإنهاء مسجّل في النظام."
+    },
+    "lesson": {
+      "noVideo": "لا يوجد فيديو متاح لهذا الدرس.",
+      "untitled": "درس بدون عنوان",
+      "videoChip": "فيديو",
+      "lessonOf": "الدرس {{current}} من {{total}}",
+      "finalTestReadyHint": "أكملت جميع الفيديوهات — الاختبار النهائي جاهز في القائمة الجانبية.",
+      "prevLesson": "الدرس السابق",
+      "nextLesson": "الدرس التالي",
+      "finalTestNav": "الاختبار النهائي",
+      "markComplete": "تعليم الدرس كمكتمل",
+      "savingProgress": "جارٍ حفظ التقدم...",
+      "summaryTitle": "ملخص الدرس / استجابتك",
+      "summaryPlaceholder": "اكتب ملخصك هنا...",
+      "summaryAria": "ملخص الدرس"
+    },
+    "finish": {
+      "allLessonsDone": "أكملت جميع الدروس. إذا لم يُسجَّل الإنهاء تلقائياً، اضغط الزر أدناه.",
+      "submitting": "جارٍ التسجيل…",
+      "finishCourse": "إنهاء الدورة"
+    },
+    "empty": {
+      "loadFailed": "تعذر عرض الدورة. عد إلى قائمة الدورات وحاول مجدداً.",
+      "backToCourses": "الدورات التدريبية"
+    },
+    "exam": {
+      "lockedTitle": "الاختبار النهائي مقفول",
+      "lockedSub": "أكمل جميع دروس الفيديو ({{completed}}/{{total}}) لفتح هذه الخطوة النهائية وإتمام الدورة.",
+      "lessonsDoneBanner": "🎉 مبروك! أنهيت جميع الدروس.",
+      "lessonsDoneBannerSub": "أكمل الخطوات الثلاث بالترتيب لإتمام الاختبار النهائي.",
+      "lessonsCompletedCount": "({{completed}}/{{total}} درس مكتمل)",
+      "introSub": "حمّل ملف الاختبار وأنجز العمل، ارفع الملف المنجز، ثم استخدم ChatGPT مع ملفات التقييم، وأدخل علامات الأسئلة قبل الإرسال النهائي.",
+      "step1Title": "الخطوة 1: تحميل ملف الاختبار ورفع الملف المنجز",
+      "testFileTitle": "ملف الاختبار",
+      "testFileDesc": "حمّل ملف الاختبار وأنجز الإجابة خارج المنصة.",
+      "downloadTestFile": "تحميل ملف الاختبار",
+      "uploadCompletedTitle": "ارفع الملف المنجز بعد حل الاختبار",
+      "uploadCompletedHint": "PDF فقط — حتى 5 ميجابايت",
+      "uploadCompletedBtn": "رفع الملف المنجز",
+      "uploading": "جاري الرفع...",
+      "uploadCompletedSuccess": "تم رفع الملف المنجز بنجاح",
+      "step1Required": "يجب رفع الملف المنجز أولاً قبل الانتقال للخطوة التالية.",
+      "step2Title": "الخطوة 2: تحميل ملف البرومبت والإجابة النموذجية",
+      "step2Note": "يرجى إعطاء ChatGPT الملفات التالية: الملف المنجز، ملف البرومبت، والإجابة النموذجية، ثم انسخ نتيجة ChatGPT هنا أو ارفعها كملف.",
+      "promptFileTitle": "ملف تعليمات / Prompt التقييم",
+      "promptFileDesc": "حمّل ملف البرومبت لاستخدامه مع ChatGPT.",
+      "downloadPromptFile": "تحميل ملف البرومبت",
+      "modelAnswerTitle": "ملف الإجابة النموذجية",
+      "modelAnswerDesc": "حمّل الإجابة النموذجية لاستخدامها مع ChatGPT.",
+      "downloadModelAnswer": "تحميل الإجابة النموذجية",
+      "chatgptFileSelected": "تم اختيار ملف نتيجة ChatGPT",
+      "uploadChatgptTitle": "ارفع نتيجة ChatGPT كملف",
+      "pasteChatgptLabel": "أو الصق نتيجة ChatGPT",
+      "pasteChatgptPlaceholder": "الصق هنا نتيجة تقييم ChatGPT…",
+      "step3Title": "الخطوة 3: إدخال علامات الأسئلة",
+      "step3Note": "أدخل علامة كل سؤال بناءً على نتيجة ChatGPT. تُحسب النتيجة النهائية من مجموع العلامات ÷ مجموع العلامات القصوى.",
+      "questionWithText": "السؤال {{num}}: {{text}}",
+      "questionNumber": "السؤال {{num}}",
+      "markLabel": "العلامة",
+      "noGradedQuestions": "لا توجد أسئلة بدرجات لهذه الدورة. يكفي إكمال الخطوتين السابقتين ثم الإرسال.",
+      "submitting": "جاري الإرسال...",
+      "submitFinale": "إرسال النتيجة وإتمام الدورة",
+      "hintUploadFirst": "يجب رفع الملف المنجز أولاً.",
+      "hintChatgptRequired": "أضف نص نتيجة ChatGPT أو ارفع ملف النتيجة.",
+      "hintCompleteMarks": "أكمل إدخال علامات جميع الأسئلة.",
+      "hintCompleteAllSteps": "أكمل جميع الخطوات قبل الإرسال."
+    }
+  },
+  "apiInsights": {
+    "profileIncomplete": {
+      "title": "أكمل ملفك الشخصي",
+      "description": "اكتمالك {{percent}}% — الملفات المكتملة تزيد فرص قبولك.",
+      "actionLabel": "تحديث الملف"
+    },
+    "revisionsPending": {
+      "title": "طلبات تحتاج مراجعة",
+      "description": "لديك {{count}} طلباً يحتاج تعديلاً أو تسليماً محدثاً.",
+      "description_plural": "لديك {{count}} طلبات تحتاج تعديلاً أو تسليماً محدثاً.",
+      "actionLabel": "عرض التعديلات"
+    },
+    "courseProgress": {
+      "title": "أنت قريب من إنهاء الدورة",
+      "description": "أكملت {{percent}}% من {{course}}.",
+      "actionLabel": "متابعة الدورة"
+    },
+    "finalTest": {
+      "title": "اختبار نهائي بانتظارك",
+      "description": "{{count}} دورة بانتظار الاختبار النهائي.",
+      "description_plural": "{{count}} دورات بانتظار الاختبار النهائي.",
+      "actionLabel": "إكمال الاختبار"
+    },
+    "deliveryExcellent": {
+      "title": "معدّل التسليم لديك ممتاز",
+      "description": "{{percent}}% من طلباتك المكتملة سُلِّمت في الموعد."
+    },
+    "subExpiring": {
+      "title": "اشتراكك ينتهي قريباً",
+      "description": "راجع باقتك قبل تغيّر صلاحية الوصول.",
+      "actionLabel": "مراجعة الباقات"
+    },
+    "addPortfolio": {
+      "title": "أضف أعمالاً إلى معرضك",
+      "description": "اربط معرض Behance أو موقعك لبناء ثقة العملاء.",
+      "actionLabel": "تحديث الروابط"
+    },
+    "startFirstOrder": {
+      "title": "ابدأ أول مشروع",
+      "description": "تصفح الطلبات المتاحة وابنِ سجلّك على المنصة.",
+      "actionLabel": "الطلبات المتاحة"
+    },
+    "reviewsStrong": {
+      "title": "تقييماتك ممتازة",
+      "description": "متوسط {{rating}} من {{count}} تقييم.",
+      "description_plural": "متوسط {{rating}} من {{count}} تقييمات.",
+      "actionLabel": "عرض التفاصيل"
+    },
+    "claimsHint": {
+      "title": "تذكير: المستحقات عبر المحفظة",
+      "description": "بعد إتمام المشاريع، قدّم مطالباتك المالية من قسم المحفظة.",
+      "actionLabel": "المحفظة"
+    },
+    "reviewAnalytics": {
+      "title": "رؤية من تقييمات العملاء",
+      "description": "بناءً على تقييمات عملائك الموثّقة.",
+      "actionLabel": "عرض التقييمات"
+    }
+  },
+  "recommendations": {
+    "title": "رؤى وتوصيات",
+    "finalTestPending": "اختبار نهائي بانتظارك",
+    "completeTest": "إكمال الاختبار"
+  },
+  "status": {
+    "subscription": {
+      "active": "نشط",
+      "assignedNotStarted": "بانتظار أول طلب",
+      "expired": "منتهي",
+      "inactive": "غير نشط"
+    },
+    "payment": {
+      "paid": "مدفوع",
+      "pending": "قيد المعالجة",
+      "failed": "فشل",
+      "notRequired": "غير مطلوب",
+      "unpaid": "غير مدفوع",
+      "refunded": "تم الاسترجاع",
+      "skippedByAdmin": "تم تجاوز الدفع (إدارة)"
+    },
+    "activation": {
+      "approved": "مفعّل",
+      "pending": "بانتظار الشركة"
+    },
+    "claim": {
+      "paid": "مدفوعة",
+      "pending": "قيد المراجعة",
+      "accepted": "مقبولة",
+      "rejected": "مرفوضة",
+      "frozen": "مجمدة",
+      "inPersonReview": "مراجعة حضورية",
+      "requiresInPersonReview": "تحتاج مراجعة حضورية"
+    },
+    "payout": {
+      "missingCompletionDate": "بدون تاريخ إنجاز",
+      "notDueYet": "غير مستحقة بعد",
+      "withinWindow": "داخل نافذة الاستحقاق",
+      "lateAfterWindow": "متأخرة بعد نافذة الاستحقاق",
+      "paid": "مدفوعة"
+    },
+    "chips": {
+      "trainingAndLimitedMarketplace": "تدريب + معرض محدود",
+      "marketplaceEligible": "مؤهل للمعرض",
+      "notEligibleNow": "غير مؤهل حالياً",
+      "activeSubscription": "اشتراك نشط",
+      "waitingFirstOrder": "بانتظار أول طلب",
+      "expired": "منتهي"
+    },
+    "marketplace": {
+      "canApply": "يمكنك التقديم",
+      "notEligible": "غير مؤهل"
+    },
+    "timeRemaining": {
+      "expired": "الاشتراك منتهي",
+      "remaining": "متبقي {{parts}}",
+      "day": "{{count}} يوم",
+      "day_plural": "{{count}} يوم",
+      "hour": "{{count}} ساعة",
+      "hour_plural": "{{count}} ساعة",
+      "minute": "{{count}} دقيقة",
+      "minute_plural": "{{count}} دقيقة",
+      "joiner": " و "
+    },
+    "eligibility": {
+      "adminApprovalPending": "بانتظار موافقة الإدارة قبل بدء استلام الطلبات",
+      "noSubscription": "لا يمكنك استلام الطلبات حالياً لأنك غير مشترك. يرجى الاشتراك أولاً.",
+      "inactive": "اشتراكك غير نشط حالياً. يرجى الاشتراك أولاً.",
+      "paymentIncomplete": "تعذر تفعيل استلام الطلبات لأن حالة الدفع للاشتراك غير مكتملة.",
+      "expired": "اشتراكك منتهي. يرجى تجديد الاشتراك لاستلام الطلبات.",
+      "generic": "حسابك غير مؤهل حالياً لاستلام طلبات من المعرض (تحقق من الاشتراك)."
+    }
+  },
+  "emptyStates": {
+    "myOrders": {
+      "noneTitle": "لا توجد طلبات حالياً",
+      "noneSub": "لم يتم إسناد أي طلب إليك بعد. تصفح الطلبات المتاحة وتقدّم على ما يناسب مهاراتك.",
+      "browseOrders": "استعرض الطلبات المتاحة",
+      "searchTitle": "لا توجد نتائج للبحث",
+      "searchSub": "جرّب كلمات أخرى أو امسح البحث لعرض القائمة كاملة.",
+      "clearSearch": "مسح البحث",
+      "filterTitle": "لا توجد طلبات بهذه الحالة",
+      "filterSub": "اختر تصفية أخرى أو عرض «الكل» لرؤية كامل القائمة.",
+      "showAll": "عرض الكل"
+    },
+    "courses": {
+      "noneTitle": "لا توجد دورات مسندة",
+      "noneSub": "عند إسناد دورة لحسابك ستظهر هنا مع التقدم والاختبار النهائي إن وُجد.",
+      "searchTitle": "لا توجد نتائج للبحث",
+      "searchSub": "جرّب كلمات أخرى أو امسح البحث لعرض القائمة كاملة.",
+      "clearSearch": "مسح البحث",
+      "favoritesTitle": "لا توجد دورات في المفضلة",
+      "favoritesSub": "اضغط على نجمة أي دورة لإضافتها إلى قائمتك المفضلة.",
+      "completedTitle": "لا توجد دورات مكتملة بعد",
+      "completedSub": "أكمل دروس الدورة والاختبار النهائي إن وُجد لتظهر هنا.",
+      "inProgressTitle": "لا توجد دورات قيد التنفيذ",
+      "inProgressSub": "ابدأ درساً في إحدى دوراتك لتظهر في هذا التبويب.",
+      "notStartedTitle": "لا توجد دورات لم تبدأ",
+      "notStartedSub": "جميع دوراتك المسندة بدأت أو اكتملت.",
+      "genericTitle": "لا توجد نتائج",
+      "genericSub": "جرّب تبويباً أو تصفية أخرى."
+    },
+    "performance": {
+      "noHistory": "لا يوجد سجل طلبات بعد — ابدأ مشروعك الأول لرؤية المؤشرات."
+    },
+    "reviews": {
+      "empty": "لا توجد تقييمات بعد — ستظهر بعد أن يقيّمك العملاء على مشاريع مكتملة.",
+      "clientLabel": "عميل"
+    },
+    "reputation": {
+      "empty": "أكمل طلباتك وملفك لرفع مستوى الثقة."
+    },
+    "achievements": {
+      "empty": "أكمل طلباتك ودوراتك لتحصل على إنجازات مهنية."
+    },
+    "profile": {
+      "complete": "ملفك مكتمل — أحسنت!",
+      "completeProfile": "إكمال الملف"
+    }
+  },
+  "notifications": {
+    "title": "رسائلي",
+    "viewAll": "عرض الكل",
+    "empty": "لا توجد رسائل حديثة.",
+    "defaultTitle": "إشعار",
+    "loadError": "تعذر تحميل الرسائل."
+  },
+  "sidebar": {
+    "badges": {
+      "required": "مطلوب",
+      "startHere": "ابدأ هنا"
+    }
+  },
+  "controlCenter": {
+    "reputation": {
+      "title": "مؤشر الثقة",
+      "note": "يُحسب من إنجازاتك الحقيقية على المنصة — وليس تقييمات وهمية.",
+      "improveProfile": "تحسين الملف والحضور"
+    },
+    "reviews": {
+      "title": "التقييمات",
+      "viewAll": "عرض الكل",
+      "recommendationRate": "نسبة التوصية: {{rate}}%",
+      "loadError": "تعذر تحميل التقييمات."
+    },
+    "profile": {
+      "title": "اكتمال الملف",
+      "update": "تحديث"
+    },
+    "achievements": {
+      "title": "إنجازات"
+    },
+    "earnings": {
+      "loadError": "تعذر تحميل المستحقات. لن نعرض أرقاماً قد تكون مضللة."
+    },
+    "courses": {
+      "loadError": "تعذر تحميل الدورات."
+    },
+    "performance": {
+      "loadError": "تعذر تحميل مؤشرات الأداء."
+    },
+    "widgetLoadError": "تعذر تحميل هذا القسم."
+  },
+  "pendingActions": {
+    "title": "الإجراءات المطلوبة",
+    "clear": "لا توجد إجراءات عاجلة — أنت على اطلاع.",
+    "choosePlan": {
+      "title": "اختر باقة اشتراك",
+      "description": "لا يوجد اشتراك نشط — ابدأ باختيار الباقة المناسبة.",
+      "cta": "عرض الباقات"
+    },
+    "completePayment": {
+      "title": "إكمال الدفع",
+      "description": "الدفع قيد المعالجة أو لم يُستكمل بعد.",
+      "cta": "إكمال الدفع"
+    },
+    "companyApproval": {
+      "title": "موافقة الإدارة",
+      "description": "بانتظار موافقة الإدارة قبل بدء استلام الطلبات.",
+      "cta": "مراجعة الحساب"
+    },
+    "renewSubscription": {
+      "title": "تجديد الاشتراك",
+      "description": "انتهت صلاحية اشتراكك — جدّد للعودة للمعرض.",
+      "cta": "تجديد"
+    },
+    "reviewPlans": {
+      "cta": "مراجعة الباقات"
+    },
+    "revisionRequired": {
+      "title": "تعديلات مطلوبة ({{count}})",
+      "title_plural": "تعديلات مطلوبة ({{count}})",
+      "descriptionWithOrder": "طلب #{{code}} يحتاج مراجعة وتسليماً محدثاً.",
+      "descriptionGeneric": "لديك طلبات تحتاج تعديلاً — راجعها في طلباتي.",
+      "cta": "متابعة التعديل"
+    },
+    "finalTest": {
+      "title": "اختبار نهائي بانتظارك ({{count}})",
+      "title_plural": "اختبارات نهائية بانتظارك ({{count}})",
+      "descriptionWithCourse": "أكمل الاختبار النهائي لدورة «{{course}}».",
+      "descriptionGeneric": "أكمل الاختبار النهائي لإنهاء الدورة.",
+      "descriptionActivation": "أكمل الاختبار النهائي لدورة {{course}} لإتمام متطلبات التفعيل.",
+      "descriptionActivationGeneric": "أكمل الاختبار النهائي لدورتك الحالية لإتمام متطلبات التفعيل.",
+      "cta": "إكمال الاختبار",
+      "viewCourse": "عرض الدورة"
+    },
+    "coursesPending": {
+      "title": "دورات مطلوبة بانتظارك ({{count}})",
+      "title_plural": "دورات مطلوبة بانتظارك ({{count}})",
+      "description": "أكمل الدورات المطلوبة للانتقال إلى الاختبار النهائي.",
+      "cta": "متابعة الدورات"
+    },
+    "claimsReview": {
+      "title": "مطالبات قيد المراجعة ({{count}})",
+      "title_plural": "مطالبات قيد المراجعة ({{count}})",
+      "description": "مطالباتك المالية بانتظار موافقة الإدارة.",
+      "cta": "عرض المحفظة"
+    },
+    "claimsAcceptedPayout": {
+      "title": "مطالبات مقبولة بانتظار الصرف ({{count}})",
+      "title_plural": "مطالبات مقبولة بانتظار الصرف ({{count}})",
+      "description": "مبالغ مقبولة ولم تُصرف بالكامل بعد — راجع المحفظة.",
+      "cta": "عرض المحفظة"
+    }
+  },
+  "statusHeadline": {
+    "noSubscription": {
+      "headline": "لم يُفعَّل اشتراكك بعد",
+      "sub": "اختر باقة للبدء على المنصة."
+    },
+    "expired": {
+      "headline": "اشتراكك منتهي",
+      "sub": "جدّد الاشتراك لاستقبال طلبات جديدة."
+    },
+    "paymentPending": {
+      "headline": "أكمل الدفع لتفعيل الحساب",
+      "sub": "لا يمكن استقبال طلبات من المعرض قبل إتمام الدفع."
+    },
+    "companyPending": {
+      "headline": "بانتظار موافقة الإدارة",
+      "sub": "بانتظار موافقة الإدارة قبل بدء استلام الطلبات."
+    },
+    "expiringDays": {
+      "headline": "اشتراكك ينتهي خلال {{count}} يوم",
+      "headline_plural": "اشتراكك ينتهي خلال {{count}} يوم"
+    },
+    "expiringTomorrow": {
+      "headline": "اشتراكك ينتهي غداً"
+    },
+    "expiringHours": {
+      "headline": "اشتراكك ينتهي خلال {{count}} ساعة",
+      "headline_plural": "اشتراكك ينتهي خلال {{count}} ساعة"
+    },
+    "expiringToday": {
+      "headline": "اشتراكك ينتهي اليوم"
+    },
+    "freePlanExplore": {
+      "headline": "يمكنك استكشاف الطلبات المتاحة في المعرض",
+      "sub": "الطلبات الحقيقية في المعرض تتطلب ترقية الاشتراك."
+    },
+    "firstOrder": {
+      "headline": "يمكنك استقبال أول طلب",
+      "sub": "يبدأ عدّ مدة الاشتراك عند قبول أول طلب."
+    },
+    "eligible": {
+      "headline": "يمكنك استقبال الطلبات",
+      "sub": "حسابك مؤهل للتقديم على الطلبات المتاحة وفق باقتك."
+    },
+    "notEligible": {
+      "headline": "لا يمكنك استقبال طلبات حالياً",
+      "sub": "راجع تفاصيل الاشتراك أدناه."
+    }
+  },
+  "notificationsPage": {
+    "titleFreelancer": "إشعاراتك",
+    "titleAdmin": "إشعارات الإدارة",
+    "titleSuperAdmin": "إشعارات المدير الأعلى",
+    "subtitleHub": "تابع تحديثات الطلبات، الرسائل، والمدفوعات من مكان واحد.",
+    "subtitleStaff": "تابع تحديثات الطلبات، المدفوعات، والمطالبات في مكان واحد.",
+    "summaryAria": "ملخص الإشعارات",
+    "total": "إجمالي الإشعارات",
+    "unread": "غير المقروء",
+    "searchPlaceholder": "ابحث في الإشعارات...",
+    "searchAria": "ابحث في الإشعارات",
+    "filterAria": "تصفية الإشعارات",
+    "filterAll": "الكل",
+    "filterUnread": "غير المقروء",
+    "markAllRead": "تعليم الكل كمقروء",
+    "listAria": "قائمة الإشعارات",
+    "emptySearch": "لا توجد نتائج للبحث",
+    "emptyUnread": "لا توجد إشعارات غير مقروءة",
+    "emptyAll": "لا توجد إشعارات حالياً",
+    "emptySearchSub": "جرّب كلمات بحث مختلفة أو امسح حقل البحث.",
+    "emptyDefaultSub": "ستظهر التحديثات الجديدة هنا عند توفرها.",
+    "newNotification": "إشعار جديد",
+    "unreadSuffix": " — غير مقروء",
+    "unreadTitle": "غير مقروء",
+    "categoryMessages": "رسائل",
+    "categoryClaims": "مطالبات",
+    "categoryCourses": "دورات",
+    "categoryOrders": "طلبات",
+    "categoryAlert": "تنبيه",
+    "relativeNow": "الآن",
+    "relativeMinutes": "منذ {{count}} دقيقة",
+    "relativeMinutes_plural": "منذ {{count}} دقيقة",
+    "relativeHours": "منذ {{count}} ساعة",
+    "relativeHours_plural": "منذ {{count}} ساعة",
+    "relativeDays": "منذ {{count}} يوم",
+    "relativeDays_plural": "منذ {{count}} يوم"
+  },
+  "common": {
+    "retry": "إعادة المحاولة",
+    "loading": "جارٍ التحميل",
+    "unavailable": "غير متاح",
+    "loadFailed": "تعذر التحميل",
+    "emDash": "—",
+    "currencyJod": "د.أ",
+    "currencyJodLabel": "JOD",
+    "defaultCourse": "الدورة",
+    "client": "عميل",
+    "cancel": "إلغاء",
+    "submit": "إرسال",
+    "submitting": "جارٍ الإرسال…",
+    "save": "حفظ",
+    "saving": "جاري الحفظ…",
+    "close": "إغلاق",
+    "viewAll": "عرض الكل",
+    "update": "تحديث",
+    "alert": "تنبيه"
+  }
+}

@@ -1,0 +1,125 @@
+/* Full-viewport overlay during EN ⇄ AR language switch */
+
+html.oh-locale-switching {
+  overflow: hidden;
+}
+
+.locale-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-x: clip;
+  overflow-y: auto;
+  background: var(--page-bg, #f8fafc);
+  -webkit-overflow-scrolling: touch;
+}
+
+.locale-transition-skeleton {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.locale-transition-skeleton__nav {
+  flex-shrink: 0;
+  width: 100%;
+  min-width: 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(255, 255, 255, 0.96);
+  padding: 0.65rem clamp(1rem, 3vw, 2.5rem);
+}
+
+.locale-transition-skeleton__nav-inner {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1536px;
+}
+
+.locale-transition-skeleton__body {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  margin-inline: auto;
+  max-width: 1536px;
+  padding: clamp(1rem, 3vw, 2rem) clamp(1rem, 3vw, 2.5rem) 2.5rem;
+  box-sizing: border-box;
+}
+
+.locale-transition-skeleton__hero {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+  max-width: 42rem;
+}
+
+.locale-transition-skeleton__cards {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+}
+
+.locale-transition-skeleton__cards--plans {
+  grid-template-columns: 1fr;
+  max-width: 28rem;
+  margin-inline: auto;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .locale-transition-skeleton__cards--plans {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 56rem;
+  }
+}
+
+.locale-transition-skeleton__plan-card {
+  min-height: 14rem;
+  border-radius: 1rem;
+}
+
+.locale-transition-skeleton__service-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 620px) {
+  .locale-transition-skeleton__service-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+}
+
+.locale-transition-skeleton__service-chip {
+  aspect-ratio: 1;
+  border-radius: 0.875rem;
+}
+
+.locale-transition-skeleton__order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.locale-transition-skeleton__order-row {
+  min-height: 5.5rem;
+  border-radius: 1rem;
+}
+
+.locale-transition-skeleton__block {
+  min-height: 7.5rem;
+  border-radius: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .locale-transition-overlay .home-sk-shimmer::after {
+    animation: none;
+    opacity: 0;
+  }
+}

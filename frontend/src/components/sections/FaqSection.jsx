@@ -1,6 +1,13 @@
 import { useState } from "react";
+
 import { FAQ_SCROLL_THRESHOLD, usePublicFaq } from "../../hooks/usePublicFaq";
+
+import { useTranslation } from "../../i18n/LanguageProvider";
+
+import { getFaqLocalizedText } from "../../lib/i18n/getFaqLocalizedText";
+
 import FaqSkeleton from "../skeletons/FaqSkeleton";
+
 import "./home-faq-scroll.css";
 
 function Chevron({ open }) {
@@ -16,9 +23,52 @@ function Chevron({ open }) {
   );
 }
 
+function FaqAccordionItem({ item, open, onToggle, locale, t, index, isRtl }) {
+  const question = getFaqLocalizedText(item, "question", locale, t, index);
+  const answer = getFaqLocalizedText(item, "answer", locale, t, index);
+  const panelId = `faq-panel-${item.id}`;
+  const buttonId = `faq-trigger-${item.id}`;
+
+  return (
+    <li>
+      <button
+        id={buttonId}
+        type="button"
+        className={[
+          "flex w-full items-center gap-3 px-1 py-4 text-start transition-colors sm:gap-4 sm:px-0 sm:py-[1.15rem]",
+          isRtl ? "flex-row-reverse" : "",
+          open ? "bg-violet-50/85 hover:bg-violet-50/90" : "bg-transparent hover:bg-slate-100/60",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={onToggle}
+      >
+        <span className="min-w-0 flex-1 text-[0.95rem] font-semibold leading-relaxed text-[#1e293b] sm:text-base">
+          {question}
+        </span>
+        <Chevron open={open} />
+      </button>
+      <div
+        id={panelId}
+        role="region"
+        aria-labelledby={buttonId}
+        hidden={!open}
+        className="border-t border-slate-200/70 bg-violet-50/40"
+      >
+        <p className="m-0 px-1 pb-5 pt-3.5 text-start text-[0.9rem] leading-[1.75] text-slate-600 sm:px-0 sm:text-[0.95rem]">
+          {answer}
+        </p>
+      </div>
+    </li>
+  );
+}
+
 const FaqSection = () => {
   const { items, loading } = usePublicFaq();
   const [openId, setOpenId] = useState(null);
+  const { t, dir, locale, isRtl } = useTranslation();
 
   const toggle = (id) => {
     setOpenId((prev) => (prev === id ? null : id));
@@ -29,81 +79,69 @@ const FaqSection = () => {
   }
 
   const scrollable = items.length > FAQ_SCROLL_THRESHOLD;
+  const textColumnOrder = isRtl ? "md:order-2" : "md:order-1";
+  const imageColumnOrder = isRtl ? "md:order-1" : "md:order-2";
 
   return (
     <section
       className="relative w-full border-t border-slate-200/60 px-4 py-12 sm:px-6 sm:py-14 md:px-8 md:py-16 lg:px-10"
       aria-labelledby="home-faq-heading"
-      dir="rtl"
+      dir={dir}
     >
       <div className="mx-auto w-full max-w-6xl pb-2">
-        <header className="mb-8 text-right sm:mb-10">
-          <h2
-            id="home-faq-heading"
-            className="m-0 text-[clamp(1.45rem,3.2vw,1.9rem)] font-extrabold leading-tight tracking-tight text-[#1e293b]"
-          >
-            الأسئلة الشائعة
-          </h2>
-          <p className="mt-2.5 mb-0 max-w-xl text-[0.92rem] leading-relaxed text-slate-600 sm:text-[0.95rem]">
-            إجابات سريعة وواضحة على أكثر الأسئلة شيوعًا.
-          </p>
-        </header>
+        <div
+          dir="ltr"
+          className="grid grid-cols-1 items-start gap-6 md:grid-cols-[minmax(0,1fr)_auto] md:gap-8 lg:gap-10"
+        >
+          <div className={`min-w-0 ${textColumnOrder}`} dir={dir}>
+            <header className="mb-6 text-start sm:mb-8">
+              <h2
+                id="home-faq-heading"
+                className="m-0 text-[clamp(1.45rem,3.2vw,1.9rem)] font-extrabold leading-tight tracking-tight text-[#1e293b]"
+              >
+                {t("home.faq.title")}
+              </h2>
+              <p className="mt-2.5 mb-0 max-w-xl text-[0.92rem] leading-relaxed text-slate-600 sm:text-[0.95rem]">
+                {t("home.faq.subtitle")}
+              </p>
+            </header>
 
-        <div className="flex flex-col items-stretch gap-8 md:flex-row md:items-start md:gap-8 lg:gap-12">
-          {items.length === 0 ? (
-            <p className="m-0 flex-1 text-right text-[0.95rem] leading-relaxed text-slate-500">
-              لا توجد أسئلة شائعة حالياً.
-            </p>
-          ) : (
-            <ul
-              className={[
-                "m-0 min-w-0 flex-1 list-none divide-y divide-slate-200/80 p-0",
-                scrollable ? "home-faq-list--scroll" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              role="list"
-            >
-              {items.map((item) => {
-                const open = openId === item.id;
-                const panelId = `faq-panel-${item.id}`;
-                const buttonId = `faq-trigger-${item.id}`;
-                return (
-                  <li key={item.id}>
-                    <button
-                      id={buttonId}
-                      type="button"
-                      className={`flex w-full items-center gap-3 px-1 py-4 text-right transition-colors sm:gap-4 sm:px-0 sm:py-[1.15rem] ${
-                        open ? "bg-violet-50/85 hover:bg-violet-50/90" : "bg-transparent hover:bg-slate-100/60"
-                      }`}
-                      aria-expanded={open}
-                      aria-controls={panelId}
-                      onClick={() => toggle(item.id)}
-                    >
-                      <span className="min-w-0 flex-1 text-[0.95rem] font-semibold leading-relaxed text-[#1e293b] sm:text-base">
-                        {item.question}
-                      </span>
-                      <Chevron open={open} />
-                    </button>
-                    <div
-                      id={panelId}
-                      role="region"
-                      aria-labelledby={buttonId}
-                      hidden={!open}
-                      className="border-t border-slate-200/70 bg-violet-50/40"
-                    >
-                      <p className="m-0 px-1 pb-5 pt-3.5 text-right text-[0.9rem] leading-[1.75] text-slate-600 sm:px-0 sm:text-[0.95rem]">
-                        {item.answer}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+            {items.length === 0 ? (
+              <p className="m-0 text-start text-[0.95rem] leading-relaxed text-slate-500">
+                {t("common.empty.faq")}
+              </p>
+            ) : (
+              <ul
+                className={[
+                  "m-0 min-w-0 list-none divide-y divide-slate-200/80 p-0",
+                  scrollable ? "home-faq-list--scroll" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                role="list"
+              >
+                {items.map((item, index) => (
+                  <FaqAccordionItem
+                    key={item.id}
+                    item={item}
+                    open={openId === item.id}
+                    onToggle={() => toggle(item.id)}
+                    locale={locale}
+                    t={t}
+                    index={index}
+                    isRtl={isRtl}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
 
           <div
-            className="flex shrink-0 items-start justify-center md:w-[min(42%,14rem)] md:-translate-x-10 md:justify-end lg:w-[min(38%,16rem)] lg:-translate-x-12"
+            className={[
+              "flex shrink-0 items-start justify-center",
+              imageColumnOrder,
+              isRtl ? "md:justify-start" : "md:justify-end",
+            ].join(" ")}
             aria-hidden
           >
             <img

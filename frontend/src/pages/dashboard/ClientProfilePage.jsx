@@ -4,11 +4,13 @@ import { useAuth } from "../../context/useAuth";
 import { getProfileMeRequest } from "../../services/api";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import { fullNameAr } from "../../utils/accountDisplay";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../styles/dashboardHub.css";
 import "./shared/account-pages.css";
 
 export default function ClientProfilePage() {
   const { user: authUser } = useAuth();
+  const { dir } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [payload, setPayload] = useState(null);
@@ -38,7 +40,7 @@ export default function ClientProfilePage() {
   if (loading) {
     return (
       <DashboardHubPage className="fdash-page--account">
-        <div className="oh-account-page" dir="rtl">
+        <div className="oh-account-page" dir={dir}>
           <div className="oh-account-hero">
             <div className="oh-account-skel" style={{ height: 14, width: "40%" }} />
             <div className="oh-account-skel" style={{ height: 32, width: "55%" }} />
@@ -52,7 +54,7 @@ export default function ClientProfilePage() {
   if (error) {
     return (
       <DashboardHubPage className="fdash-page--account">
-        <div className="oh-account-page" dir="rtl">
+        <div className="oh-account-page" dir={dir}>
           <div className="oh-account-card">
             <p className="oh-account-error" style={{ margin: 0 }}>
               {error}
@@ -68,7 +70,7 @@ export default function ClientProfilePage() {
 
   return (
     <DashboardHubPage className="fdash-page--account">
-    <div className="oh-account-page" dir="rtl">
+    <div className="oh-account-page" dir={dir}>
       <div className="oh-account-hero">
         <p className="oh-account-hero__kicker">حساب العميل</p>
         <h1 className="oh-account-hero__title">الملف الشخصي</h1>

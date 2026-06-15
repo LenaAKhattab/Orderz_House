@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import HeroAnalyticsStrip from "./HeroAnalyticsStrip";
-
-function IconCtaArrow() {
+import { useTranslation } from "../../i18n/LanguageProvider";
+import BrandLogo from "../brand/BrandLogo";function IconCtaArrow({ isRtl }) {
   return (
     <svg
       className="home-hero__cta-arrow"
@@ -12,7 +12,7 @@ function IconCtaArrow() {
       aria-hidden="true"
     >
       <path
-        d="M15 18l-6-6 6-6"
+        d={isRtl ? "M15 18l-6-6 6-6" : "M9 18l6-6-6-6"}
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
@@ -27,25 +27,17 @@ function IconCtaArrow() {
  * @param {{ statsPayload: object | null }} p
  */
 export default function HeroMainContent({ statsPayload }) {
+  const { t, isRtl } = useTranslation();
+
   return (
     <div className="hero-main-content relative z-[1] flex min-h-0 w-full flex-col items-center justify-start">
       <div className="home-hero__copy flex min-w-0 w-full flex-col items-center gap-3 text-center">
-        <img
-          src="/hero/fullLogp.png"
-          alt="أوردرز هاوس"
-          width={760}
-          height={220}
-          loading="eager"
-          fetchPriority="high"
-          decoding="async"
-          className="home-hero__logo object-contain"
-        />
-        <h1 id="home-hero-heading" className="home-hero__ref-title home-hero-marketing__title-ipad w-full min-w-0">
-          <span className="home-hero-marketing__title-sub block">منصة واحدة تجمعك بالخدمات والمستقلين المناسبين</span>
+        <BrandLogo variant="hero" />        <h1 id="home-hero-heading" className="home-hero__ref-title home-hero-marketing__title-ipad w-full min-w-0">
+          <span className="home-hero-marketing__title-sub block">{t("home.hero.title")}</span>
         </h1>
 
         <p className="home-hero__lead w-full min-w-0">
-          ابدأ بطلبك بسهولة، قارن الخدمات المتاحة، وتابع كل خطوة من مكان واحد حتى تصل للنتيجة التي تحتاجها.
+          {t("home.hero.lead")}
         </p>
 
         <div className="home-hero__inline-stats w-full min-w-0">
@@ -54,11 +46,11 @@ export default function HeroMainContent({ statsPayload }) {
 
         <div className="home-hero__cta home-hero-marketing__cta-row flex w-full min-w-0 flex-wrap justify-center gap-2 sm:mt-5">
           <Link to="/register" className="home-hero__cta-primary home-hero-marketing__cta-primary">
-            ابدأ طلبك الآن
+            {t("home.hero.ctaPrimary")}
           </Link>
           <Link to="/services" className="home-hero__cta-secondary">
-            <span className="home-hero__cta-secondary-label">استكشف الخدمات</span>
-            <IconCtaArrow />
+            <span className="home-hero__cta-secondary-label">{t("home.hero.ctaSecondary")}</span>
+            <IconCtaArrow isRtl={isRtl} />
           </Link>
         </div>
       </div>

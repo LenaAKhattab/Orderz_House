@@ -22,7 +22,7 @@ export default function useHowItWorksNav() {
               if (res?.data?.page) {
                 return {
                   to: page.path,
-                  label: page.navLabel,
+                  labelKey: page.labelKey,
                 };
               }
             } catch {

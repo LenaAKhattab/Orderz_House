@@ -50,8 +50,7 @@
   min-height: 300px;
   overflow: hidden;
   padding: clamp(28px, 5vw, 56px);
-  text-align: right;
-  direction: rtl;
+  text-align: start;
   color: #f4f7ff;
   background:
     radial-gradient(ellipse 100% 80% at 100% 0%, rgba(118, 207, 223, 0.22), transparent 55%),
@@ -231,9 +230,18 @@
   align-content: center;
   gap: 1.35rem;
   padding: clamp(26px, 4vw, 52px);
-  text-align: right;
-  direction: rtl;
+  text-align: start;
   background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+}
+
+html[dir="rtl"] .oh-auth-visual,
+html[dir="rtl"] .oh-auth-form-panel {
+  direction: rtl;
+}
+
+html[dir="ltr"] .oh-auth-visual,
+html[dir="ltr"] .oh-auth-form-panel {
+  direction: ltr;
 }
 
 @media (max-width: 767px) {
@@ -277,6 +285,11 @@
   .oh-auth-brand__logo {
     max-width: min(176px, 46vw);
     max-height: 42px;
+  }
+
+  .oh-auth-brand--full-logo .brand-logo--auth {
+    width: min(100%, 176px);
+    height: 42px;
   }
 
   .oh-auth-form-header {

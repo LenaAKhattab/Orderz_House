@@ -6,9 +6,11 @@ import {
   HOME_FEATURED_SERVICES,
   isHomeFeaturedServiceExternal,
 } from "../../constants/homeFeaturedServices";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
-function FeaturedServiceCell({ item, index, iconSize = 28, iconStrokeWidth = HOME_FEATURED_ICON_STROKE_WIDTH }) {
+function FeaturedServiceCell({ item, index, iconSize = 28, iconStrokeWidth = HOME_FEATURED_ICON_STROKE_WIDTH, t }) {
   const Icon = getHomeFeaturedServiceIcon(item);
+  const label = t(item.translationKey);
   const className = "home-categories-icon-item group";
   const content = (
     <>
@@ -20,20 +22,20 @@ function FeaturedServiceCell({ item, index, iconSize = 28, iconStrokeWidth = HOM
           strokeLinejoin="round"
         />
       </span>
-      <span className="home-categories-icon-item__label">{item.label}</span>
+      <span className="home-categories-icon-item__label">{label}</span>
     </>
   );
 
   if (isHomeFeaturedServiceExternal(item)) {
     return (
       <a
-        href={getHomeFeaturedServiceHref(item)}
+        href={getHomeFeaturedServiceHref(item, { t })}
         target="_blank"
         rel="noopener noreferrer"
         className={className}
         role="listitem"
         style={{ animationDelay: `${index * 24}ms` }}
-        aria-label={item.label}
+        aria-label={label}
       >
         {content}
       </a>
@@ -46,7 +48,7 @@ function FeaturedServiceCell({ item, index, iconSize = 28, iconStrokeWidth = HOM
       className={className}
       role="listitem"
       style={{ animationDelay: `${index * 24}ms` }}
-      aria-label={item.label}
+      aria-label={label}
     >
       {content}
     </Link>
@@ -61,10 +63,13 @@ export default function HomeFeaturedServicesGrid({
   className = "home-categories-icon-grid home-categories-icon-grid--featured",
   iconSize = 28,
   iconStrokeWidth = HOME_FEATURED_ICON_STROKE_WIDTH,
-  listLabel = "الخدمات المميزة",
+  listLabel,
 }) {
+  const { t, dir } = useTranslation();
+  const ariaLabel = listLabel || t("home.categories.featuredTitle");
+
   return (
-    <div className={className} role="list" aria-label={listLabel} dir="rtl">
+    <div className={className} role="list" aria-label={ariaLabel} dir={dir}>
       {HOME_FEATURED_SERVICES.map((item, index) => (
         <FeaturedServiceCell
           key={item.id}
@@ -72,6 +77,7 @@ export default function HomeFeaturedServicesGrid({
           index={index}
           iconSize={iconSize}
           iconStrokeWidth={iconStrokeWidth}
+          t={t}
         />
       ))}
     </div>

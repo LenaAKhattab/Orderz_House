@@ -1,15 +1,22 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import heroImage from "../../../assets/hero.png";
 import HomeFeaturedServicesGrid from "../HomeFeaturedServicesGrid";
 import { HOME_FEATURED_ICON_STROKE_WIDTH_MOBILE } from "../../../constants/homeFeaturedServices";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import { mapHomeMobileOrderCards } from "../../../utils/homeMobileOrderCards";
 
 const ORDER_SKELETON_COUNT = 3;
 
-function ChevronLeftSmall() {
+function ListCardChevron({ isRtl }) {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d={isRtl ? "M15 18l-6-6 6-6" : "M9 18l6-6-6-6"}
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -27,19 +34,29 @@ export default function HomeMobileCategories({
   recentOrdersLoading = false,
   recentOrdersError = false,
 }) {
-  const orderCards = mapHomeMobileOrderCards(recentOrders, []);
+  const { t, locale, dir, isRtl } = useTranslation();
+
+  const orderCards = useMemo(
+    () =>
+      mapHomeMobileOrderCards(recentOrders, [], locale, {
+        fallbackTitle: t("home.orders.fallbackTitle"),
+        fallbackCategory: t("home.orders.fallbackCategory"),
+      }),
+    [recentOrders, locale, t],
+  );
 
   return (
-    <section className="hm-categories" dir="rtl" aria-labelledby="hm-categories-heading">
+    <section className="hm-categories" dir={dir} aria-labelledby="hm-categories-heading">
+      <div className="hm-categories__divider" aria-hidden="true" />
       <header className="hm-section-head hm-section-head--categories">
         <div className="hm-categories-intro-copy">
           <h2 id="hm-categories-heading" className="hm-section-head__title hm-section-head__title--categories">
-            اكتشف التصنيفات خلال ثوانٍ
+            {t("home.categories.title")} {t("home.categories.titleAccent")}
           </h2>
-          <p className="hm-section-head__subtitle">اختر المجال المناسب وابدأ الطلب خلال دقائق</p>
+          <p className="hm-section-head__subtitle">{t("home.categories.subtitle")}</p>
         </div>
         <Link to="/orders" className="hm-section-head__link">
-          عرض الكل
+          {t("home.categories.viewAll")}
         </Link>
       </header>
 
@@ -47,23 +64,22 @@ export default function HomeMobileCategories({
         className="hm-categories-icon-grid hm-categories-icon-grid--featured"
         iconSize={38}
         iconStrokeWidth={HOME_FEATURED_ICON_STROKE_WIDTH_MOBILE}
-        listLabel="الخدمات المميزة"
       />
 
       <header className="hm-section-head hm-section-head--sub">
-        <h3 className="hm-section-head__title hm-section-head__title--sm">أحدث الطلبات</h3>
+        <h3 className="hm-section-head__title hm-section-head__title--sm">{t("home.categories.latestOrders")}</h3>
         <Link to="/orders" className="hm-section-head__link">
-          عرض الكل
+          {t("home.categories.viewAll")}
         </Link>
       </header>
 
       {recentOrdersError && !recentOrdersLoading && orderCards.length === 0 ? (
         <p className="hm-categories__fallback" role="status">
-          تعذّر تحميل الطلبات. جرّب لاحقاً أو تصفّح معرض الطلبات.
+          {t("home.categories.loadError")}
         </p>
       ) : null}
 
-      <div className="hm-categories__featured" role="list" aria-label="أحدث الطلبات في المعرض">
+      <div className="hm-categories__featured" role="list" aria-label={t("home.categories.ordersListAria")}>
         {recentOrdersLoading
           ? Array.from({ length: ORDER_SKELETON_COUNT }, (_, i) => (
               <div key={`order-skel-${i}`} className="hm-list-card hm-list-card--skeleton" aria-hidden />
@@ -76,20 +92,10 @@ export default function HomeMobileCategories({
                   role="listitem"
                   className={`hm-list-card${index === 0 ? " hm-list-card--highlight" : ""}`}
                 >
-                  <div className="hm-list-card__thumb">
-                    <img
-                      src={order.imgSrc || heroImage}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = heroImage;
-                      }}
-                    />
-                  </div>
                   <div className="hm-list-card__body">
-                    <h4 className="hm-list-card__title">{order.title}</h4>
+                    <h4 className="hm-list-card__title" dir="auto">
+                      {order.title}
+                    </h4>
                     <div className="hm-list-card__tags">
                       <span className="hm-list-card__tag hm-list-card__tag--accent">{order.categoryTag}</span>
                       <span className="hm-list-card__tag hm-list-card__tag--muted" dir="ltr">
@@ -98,13 +104,13 @@ export default function HomeMobileCategories({
                     </div>
                   </div>
                   <span className="hm-list-card__action" aria-hidden>
-                    <ChevronLeftSmall />
+                    <ListCardChevron isRtl={isRtl} />
                   </span>
                 </Link>
               ))
             : !recentOrdersError ? (
                 <p className="hm-categories__empty-orders" role="status">
-                  لا توجد طلبات في المعرض حالياً.
+                  {t("home.categories.emptyOrders")}
                 </p>
               ) : null}
       </div>

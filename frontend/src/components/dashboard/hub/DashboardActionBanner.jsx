@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "../../../i18n/LanguageProvider";
+import { resolveFreelancerDashboardItem } from "../../../lib/i18n/resolveFreelancerDashboardItem";
 import DashboardBannerIllustration from "./DashboardBannerIllustration";
 import { IconBell } from "./icons/DashboardIcons";
 
@@ -28,27 +30,34 @@ function BannerShell({ variant, title, subtitle, children, titleId = "fdash-bann
 }
 
 export default function DashboardActionBanner({ actions = [] }) {
+  const { t, locale } = useTranslation();
+
   if (!actions.length) {
     return (
       <BannerShell
         variant="clear"
-        title="لا توجد إجراءات عاجلة حالياً"
-        subtitle="أنت على اطلاع بجميع طلباتك وإشعاراتك."
+        title={t("freelancerDashboard.actions.noUrgentTitle")}
+        subtitle={t("freelancerDashboard.actions.noUrgentSubtitle")}
       />
     );
   }
 
   const top = actions[0];
   const more = actions.length - 1;
+  const topTitle = resolveFreelancerDashboardItem(top, "title", t, locale);
+  const topDescription = resolveFreelancerDashboardItem(top, "description", t, locale);
+  const topCta = resolveFreelancerDashboardItem(top, "cta", t, locale) || t("freelancerDashboard.actions.continue");
+  const topSecondaryCta =
+    resolveFreelancerDashboardItem(top, "secondaryCta", t, locale) || t("freelancerDashboard.actions.viewCourse");
 
   return (
     <BannerShell
       variant={top.isActivationBanner ? "activation" : "alert"}
-      title={top.title}
+      title={topTitle}
       subtitle={
         <>
-          {top.description}
-          {more > 0 ? ` (+${more} أخرى)` : ""}
+          {topDescription}
+          {more > 0 ? ` ${t("freelancerDashboard.actions.moreCount", { count: more })}` : ""}
         </>
       }
     >
@@ -59,12 +68,12 @@ export default function DashboardActionBanner({ actions = [] }) {
               to={top.to}
               className={`fdash-banner__cta${top.isActivationBanner ? " fdash-banner__cta--primary" : ""}`}
             >
-              {top.cta || "متابعة"}
+              {topCta}
             </Link>
           ) : null}
           {top.secondaryTo ? (
             <Link to={top.secondaryTo} className="fdash-banner__cta fdash-banner__cta--secondary">
-              {top.secondaryCta || "عرض الدورة"}
+              {topSecondaryCta}
             </Link>
           ) : null}
         </div>

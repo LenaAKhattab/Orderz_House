@@ -7,6 +7,7 @@ function mapSubcategory(row) {
     categoryId: String(row.category_id),
     slug: row.slug,
     name: row.name,
+    name_en: row.name_en || null,
     sortOrder: row.sort_order,
     isActive: row.is_active,
     createdAt: row.created_at,

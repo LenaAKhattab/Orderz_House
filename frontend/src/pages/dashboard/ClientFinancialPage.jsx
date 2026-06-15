@@ -5,7 +5,8 @@ import { useToast } from "../../components/ui/toastContext";
 import { listClientMyOrdersRequest } from "../../services/api";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
-import { orderStatusLabelAr } from "../../utils/orderFlowUi";
+import { getOrderStatusLabel } from "../../utils/orderFlowUi";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../styles/dashboardHub.css";
 import "./freelancerMyOrders.css";
 
@@ -39,6 +40,7 @@ function StatSegment({ tone, label, value, loading }) {
 
 export default function ClientFinancialPage() {
   const { push } = useToast();
+  const { t } = useTranslation();
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(true);
 
@@ -159,7 +161,7 @@ export default function ClientFinancialPage() {
                       </td>
                       <td>{o.paymentRequired ? "نعم" : "لا"}</td>
                       <td>{paymentStatusAr(o.paymentStatus)}</td>
-                      <td>{orderStatusLabelAr(o.orderStatus)}</td>
+                      <td>{getOrderStatusLabel(o.orderStatus, t)}</td>
                     </tr>
                   ))}
                 </tbody>

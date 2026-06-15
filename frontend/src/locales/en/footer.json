@@ -1,0 +1,32 @@
+{
+  "explore": "Explore",
+  "home": "Home",
+  "forClients": "For clients",
+  "addRequest": "Post a request",
+  "forFreelancers": "For freelancers",
+  "projects": "Projects",
+  "joinFreelancer": "Join as a freelancer",
+  "importantLinks": {
+    "title": "Important links",
+    "rightsGuarantee": "Your rights guarantee",
+    "terms": "Terms of use",
+    "privacy": "Privacy policy",
+    "helpCenter": "Help center",
+    "enterprise": "Orderz House for Business",
+    "findWork": "Find work",
+    "community": "Orderz House Community",
+    "blog": "Orderz House Blog"
+  },
+  "company": "Company",
+  "contactUs": "Contact us",
+  "phone": "Phone",
+  "email": "Email",
+  "whatsapp": "WhatsApp",
+  "location": "Location",
+  "locationValue": "Dubai, United Arab Emirates",
+  "workingHours": "Working hours",
+  "workingHoursValue": "We work around the clock for you",
+  "phoneValue": "+971 522857808",
+  "emailValue": "info@orderzhouse.com",
+  "whatsappValue": "+971 522857808"
+}

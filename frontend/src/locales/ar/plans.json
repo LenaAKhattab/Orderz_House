@@ -1,0 +1,40 @@
+{
+  "title": "باقات أوردرز هاوس للعمل الحر",
+  "hero": {
+    "title": "باقات أوردرز هاوس للعمل الحر",
+    "subtitle": "اختر الباقة المناسبة لنشاطك، قارن المزايا، وابدأ أو رقِّ اشتراكك من مكان واحد."
+  },
+  "sectionAria": "خطط الاشتراك",
+  "mobile": {
+    "compareTitle": "قارن الباقات",
+    "packageCount": "{{count}} باقة",
+    "footnote": "الباقات مخصّصة للمستقلين المسجّلين في المنصة."
+  },
+  "errors": {
+    "loadFailed": "تعذر تحميل الباقات حالياً. حاول لاحقاً."
+  },
+  "mobileLabel": "خطط الاشتراك",
+  "lede": "اختر الباقة المناسبة لنشاطك، قارن المزايا، وابدأ أو رقِّ اشتراكك من مكان واحد.",
+  "featuresAria": "مميزات الباقة",
+  "showFeatures": "عرض المزايا ({{count}})",
+  "hideFeatures": "إخفاء المزايا",
+  "showMoreFeatures": "عرض {{count}} ميزة إضافية",
+  "extraFeaturesAria": "مزايا إضافية",
+  "extraDetails": "تفاصيل إضافية",
+  "fullYear": "سنة كاملة",
+  "days": "{{count}} يوم",
+  "badges": {
+    "mostPopular": "الأكثر شيوعًا",
+    "premium": "باقة مميزة"
+  },
+  "cta": {
+    "freelancersOnly": "للمستقلين فقط",
+    "currentPlan": "باقتك الحالية",
+    "lowerPlan": "باقة أقل",
+    "alreadySubscribed": "مشترك بالفعل",
+    "upgrade": "ترقية الاشتراك",
+    "autoActivated": "مفعّل تلقائياً",
+    "companyActivation": "يتم التفعيل عبر الشركة",
+    "startNow": "ابدأ الآن"
+  }
+}
