@@ -190,8 +190,13 @@ function MarketplaceOrderRow({
           <p className="oh-order-row__summary text-start" dir={locale === "en" ? "ltr" : "auto"}>
             {shortDescription(description, 120, { emptyLabel: t("orders.marketplace.card.noDescription") })}
           </p>
-          {chips.length ? (
+          {order?.showTrainingBadge || chips.length ? (
             <div className="oh-order-row__chips">
+              {order?.showTrainingBadge ? (
+                <span className="oh-order-row__chip oh-order-row__chip--training">
+                  {t("orders.marketplace.trainingBadge")}
+                </span>
+              ) : null}
               {chips.map((chip) => (
                 <span key={chip} className="oh-order-row__chip">
                   {chip}

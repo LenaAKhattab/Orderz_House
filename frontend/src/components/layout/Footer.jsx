@@ -265,7 +265,7 @@ const Footer = ({ homeBlend = false }) => {
                 <a
                   href={`mailto:${t("footer.emailValue")}`}
                   dir="ltr"
-                  className="site-footer__contact-value text-[#202020] no-underline [unicode-bidi:plaintext] [direction:ltr]"
+                  className="site-footer__contact-value site-footer__contact-value--email text-[#202020] no-underline [unicode-bidi:plaintext] [direction:ltr]"
                 >
                   {t("footer.emailValue")}
                 </a>

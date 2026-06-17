@@ -68,6 +68,24 @@ function PlanFilterEmptyState() {
   );
 }
 
+function CategoryFilterEmptyState({ onClearFilters }) {
+  const { t } = useTranslation();
+  return (
+    <div className="dash-empty">
+      <div className="dash-empty__icon" aria-hidden="true">
+        ◌
+      </div>
+      <div className="dash-empty__copy">
+        <h3 className="dash-empty__title">{t("orders.empty.filtersTitle")}</h3>
+        <p className="dash-empty__subtitle">{t("orders.empty.filtersSubtitle")}</p>
+      </div>
+      <button type="button" className="btn btn-secondary dash-empty__action" onClick={onClearFilters}>
+        {t("orders.empty.filtersClearCta")}
+      </button>
+    </div>
+  );
+}
+
 function CategoryFiltersPanel({
   className = "",
   filtersView,
@@ -147,6 +165,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
 
   const [orders, setOrders] = useState([]);
   const [busy, setBusy] = useState(true);
+  const [refetching, setRefetching] = useState(false);
   const [takingId, setTakingId] = useState(null);
   const [bidBusyId, setBidBusyId] = useState(null);
   const [bidModalOrder, setBidModalOrder] = useState(null);
@@ -179,8 +198,11 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const [subscription, setSubscription] = useState(null);
   const listWrapperRef = useRef(null);
   const poolFetchGenRef = useRef(0);
+  const poolListVersionRef = useRef(0);
+  const lastBgRefreshErrorToastRef = useRef(0);
   const categoryFiltersCacheRef = useRef(null);
   const guestLoginNavLockRef = useRef(false);
+  const hasCategoryFilters = selectedSubSubIds.length > 0;
 
   const showIneligibleNotice = isFreelancer && eligibilityFetched && eligibility && eligibility.eligible === false;
   const ineligibleMessage = showIneligibleNotice
@@ -214,6 +236,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   useEffect(() => {
     if (layout === "dashboard" && loading) return undefined;
     const fetchGen = ++poolFetchGenRef.current;
+    const listVersion = ++poolListVersionRef.current;
     const abortController = new AbortController();
     async function load() {
       setBusy(true);
@@ -221,22 +244,26 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       try {
         const res = await listPoolOrdersRequest(poolListParams(page), { signal: abortController.signal });
         if (fetchGen !== poolFetchGenRef.current) return;
+        if (listVersion !== poolListVersionRef.current) return;
         setOrders(res?.data?.orders || []);
         setPagination(res?.data?.pagination || { page, limit: POOL_PAGE_LIMIT, total: 0, totalPages: 1 });
       } catch (err) {
         if (abortController.signal.aborted || err?.code === "ERR_CANCELED") return;
         if (fetchGen !== poolFetchGenRef.current) return;
+        if (listVersion !== poolListVersionRef.current) return;
         setLoadError(POOL_LOAD_ERROR);
         push({ type: "error", title: t("orders.marketplace.loadErrorTitle"), message: POOL_LOAD_ERROR });
       } finally {
-        if (fetchGen === poolFetchGenRef.current) setBusy(false);
+        if (fetchGen === poolFetchGenRef.current && listVersion === poolListVersionRef.current) {
+          setBusy(false);
+        }
       }
     }
     void load();
     return () => {
       abortController.abort();
     };
-  }, [push, page, reloadTick, poolListParams, layout, loading, user?.id]);
+  }, [push, page, reloadTick, poolListParams, layout, loading, user?.id, POOL_LOAD_ERROR, t]);
 
   useEffect(() => {
     const onPoolList =
@@ -244,29 +271,68 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       location.pathname === "/dashboard/freelancer/orders" ||
       location.pathname === "/dashboard/client/orders";
     if (!onPoolList) return undefined;
+    if (layout === "dashboard" && loading) return undefined;
 
     const pollMs = Math.min(
       Math.max(Number(import.meta.env.VITE_PUBLIC_POOL_PREVIEW_POLL_MS) || 30_000, 20_000),
       60_000,
     );
 
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        setReloadTick((n) => n + 1);
+    let cancelled = false;
+    let intervalId = null;
+    let abortController = null;
+
+    const loadSilent = async () => {
+      if (cancelled || document.visibilityState === "hidden") return;
+
+      abortController?.abort();
+      abortController = new AbortController();
+      const listVersionAtStart = poolListVersionRef.current;
+      setRefetching(true);
+
+      try {
+        const res = await listPoolOrdersRequest(poolListParams(page), { signal: abortController.signal });
+        if (cancelled || listVersionAtStart !== poolListVersionRef.current) return;
+        setOrders(res?.data?.orders || []);
+        setPagination(res?.data?.pagination || { page, limit: POOL_PAGE_LIMIT, total: 0, totalPages: 1 });
+        setLoadError("");
+      } catch (err) {
+        if (cancelled || abortController?.signal.aborted || err?.code === "ERR_CANCELED") return;
+        if (listVersionAtStart !== poolListVersionRef.current) return;
+        // Keep existing orders visible; non-blocking notice only (throttled).
+        const now = Date.now();
+        if (now - lastBgRefreshErrorToastRef.current > 120_000) {
+          lastBgRefreshErrorToastRef.current = now;
+          push({
+            type: "warning",
+            title: t("orders.marketplace.backgroundRefreshTitle"),
+            message: t("orders.marketplace.backgroundRefreshFailed"),
+          });
+        }
+      } finally {
+        if (!cancelled && listVersionAtStart === poolListVersionRef.current) {
+          setRefetching(false);
+        }
       }
     };
 
-    const intervalId = window.setInterval(() => {
-      if (document.visibilityState === "hidden") return;
-      setReloadTick((n) => n + 1);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") void loadSilent();
+    };
+
+    intervalId = window.setInterval(() => {
+      void loadSilent();
     }, pollMs);
 
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
-      window.clearInterval(intervalId);
+      cancelled = true;
+      if (intervalId) window.clearInterval(intervalId);
+      abortController?.abort();
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      setRefetching(false);
     };
-  }, [location.pathname]);
+  }, [location.pathname, page, poolListParams, layout, loading, user?.id, push, t]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -476,6 +542,12 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     setSelectedSubSubIds((prev) => (isChecked ? [...new Set([...prev, id])] : prev.filter((x) => x !== id)));
   };
 
+  const clearCategoryFilters = useCallback(() => {
+    setFiltersView("all");
+    setPage(1);
+    setSelectedSubSubIds([]);
+  }, []);
+
   const handlePageChange = useCallback((nextPage) => {
     setPage(nextPage);
     window.requestAnimationFrame(() => {
@@ -551,11 +623,13 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     toggleSubSub,
   };
 
+  const showHardError = Boolean(loadError) && orders.length === 0 && !busy;
+
   const ordersList = (
     <div className="oh-orders-list-wrapper" ref={listWrapperRef}>
       {busy ? (
         <PoolOrderListSkeleton count={5} />
-      ) : loadError ? (
+      ) : showHardError ? (
         <div className="oh-orders-load-error fdash-surface-3d fdash-surface-3d--soft">
           <p className="oh-orders-load-error__text">{loadError}</p>
           <button type="button" className="oh-orders-retry-btn" onClick={() => setReloadTick((x) => x + 1)}>
@@ -563,11 +637,15 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
           </button>
         </div>
       ) : orders.length === 0 ? (
-        <PoolEmptyState title={t("common.empty.orders")} subtitle={t("common.empty.ordersHint")} />
+        hasCategoryFilters ? (
+          <CategoryFilterEmptyState onClearFilters={clearCategoryFilters} />
+        ) : (
+          <PoolEmptyState title={t("common.empty.orders")} subtitle={t("common.empty.ordersHint")} />
+        )
       ) : planAvailableOnly && isFreelancer && displayedOrders.length === 0 ? (
         <PlanFilterEmptyState />
       ) : (
-        <ul className="oh-orders-list">
+        <ul className="oh-orders-list" aria-busy={refetching || undefined}>
           {displayedOrders.map((order) => (
             <MarketplaceOrderListRow
               key={order.id}
@@ -661,7 +739,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     </div>
   );
 
-  const paginationBlock = !loadError ? (
+  const paginationBlock = !showHardError ? (
     <>
       {hasNextPage ? (
         <div className="oh-orders-more-wrap">
@@ -700,6 +778,11 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
 
             <div className="oh-orders-toolbar-neu">
               {toolbarControls}
+              {refetching ? (
+                <p className="oh-orders-refresh-hint help" role="status" aria-live="polite">
+                  {t("orders.marketplace.refreshing")}
+                </p>
+              ) : null}
               <button
                 type="button"
                 className="oh-orders-mobile-filters-btn"

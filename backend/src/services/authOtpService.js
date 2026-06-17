@@ -18,6 +18,16 @@ const RESEND_COOLDOWN_SEC = 60;
 const MAX_OTP_ATTEMPTS = 5;
 const RESET_TOKEN_TTL_MIN = 15;
 
+/** Sentinel: OTP row exists but email has not been delivered yet (allows immediate resend). */
+const OTP_EMAIL_NOT_SENT_SENTINEL = new Date(0);
+
+function isRegistrationOtpResendCooldownActive(lastSentAt) {
+  if (!lastSentAt) return false;
+  const sentMs = new Date(lastSentAt).getTime();
+  if (sentMs <= OTP_EMAIL_NOT_SENT_SENTINEL.getTime() + 1000) return false;
+  return sentMs + RESEND_COOLDOWN_SEC * 1000 > Date.now();
+}
+
 function normalizeEmail(e) {
   return String(e || "")
     .trim()
@@ -47,42 +57,99 @@ async function invalidateOpenOtps(client, emailNorm, purpose) {
   );
 }
 
-/**
- * @param {import("pg").PoolClient} [client]
- */
-async function insertRegistrationOtp({ userId, email }, client = null) {
-  const emailNorm = normalizeEmail(email);
+async function persistRegistrationOtpRow(client, emailNorm, userId) {
   const otpPlain = generateSixDigitOtp();
   const otpHash = await bcrypt.hash(otpPlain, BCRYPT_OTP_ROUNDS);
   const expiresAt = new Date(Date.now() + OTP_REGISTER_TTL_MIN * 60 * 1000);
   const now = new Date();
 
-  const run = async (c) => {
-    await invalidateOpenOtps(c, emailNorm, PURPOSE_REGISTER);
-    await c.query(
-      `INSERT INTO auth_otps (
+  await invalidateOpenOtps(client, emailNorm, PURPOSE_REGISTER);
+  const { rows } = await client.query(
+    `INSERT INTO auth_otps (
         email, user_id, purpose, otp_hash, expires_at, last_sent_at, created_at, updated_at
-      ) VALUES (lower($1::text), $2::bigint, $3::text, $4::text, $5::timestamptz, $6::timestamptz, $6::timestamptz, $6::timestamptz)`,
-      [String(emailNorm), Number(userId), PURPOSE_REGISTER, otpHash, expiresAt, now],
-    );
+      ) VALUES (lower($1::text), $2::bigint, $3::text, $4::text, $5::timestamptz, $6::timestamptz, $7::timestamptz, $7::timestamptz)
+      RETURNING id`,
+    [
+      String(emailNorm),
+      Number(userId),
+      PURPOSE_REGISTER,
+      otpHash,
+      expiresAt,
+      OTP_EMAIL_NOT_SENT_SENTINEL,
+      now,
+    ],
+  );
+  return { otpId: Number(rows[0].id), otpPlain };
+}
+
+async function markRegistrationOtpEmailSent(otpId) {
+  await pool.query(
+    `UPDATE auth_otps SET last_sent_at = NOW(), updated_at = NOW() WHERE id = $1::bigint`,
+    [Number(otpId)],
+  );
+}
+
+async function sendRegistrationOtpEmailAfterPersist(emailNorm, otpPlain, otpId) {
+  try {
     await emailService.sendRegisterOtpEmail(emailNorm, otpPlain);
+    await markRegistrationOtpEmailSent(otpId);
+  } catch (e) {
+    if (e && typeof e.statusCode === "number") {
+      e.otpPersisted = true;
+      throw e;
+    }
+    const wrapped = createAppError(
+      "تعذر إرسال رسالة رمز التحقق. يمكنك إعادة إرسال الرمز من نفس الصفحة.",
+      503,
+      {
+        exposeToClient: true,
+        publicCode: "FAILED_TO_SEND_OTP",
+        otpPersisted: true,
+        cause: e,
+      },
+    );
+    throw wrapped;
+  }
+}
+
+/**
+ * @param {import("pg").PoolClient} [client]
+ */
+async function insertRegistrationOtp({ userId, email }, client = null) {
+  const emailNorm = normalizeEmail(email);
+  let otpId;
+  let otpPlain;
+
+  const persist = async (c) => {
+    const row = await persistRegistrationOtpRow(c, emailNorm, userId);
+    otpId = row.otpId;
+    otpPlain = row.otpPlain;
   };
 
   if (client) {
-    await run(client);
-  } else {
-    const c = await pool.connect();
-    try {
-      await c.query("BEGIN");
-      await run(c);
-      await c.query("COMMIT");
-    } catch (e) {
-      await c.query("ROLLBACK");
-      throw e;
-    } finally {
-      c.release();
-    }
+    // TODO(auth-otp): This branch is unused today. It sends email before the caller COMMITs,
+    // which can reintroduce email-before-commit timeouts and leave OTP rows visible if the
+    // outer transaction rolls back. If needed later: persist only here, require caller COMMIT,
+    // then call sendRegistrationOtpEmailAfterPersist() outside the transaction (same as the
+    // pool.connect path below).
+    await persist(client);
+    await sendRegistrationOtpEmailAfterPersist(emailNorm, otpPlain, otpId);
+    return;
   }
+
+  const c = await pool.connect();
+  try {
+    await c.query("BEGIN");
+    await persist(c);
+    await c.query("COMMIT");
+  } catch (e) {
+    await c.query("ROLLBACK");
+    throw e;
+  } finally {
+    c.release();
+  }
+
+  await sendRegistrationOtpEmailAfterPersist(emailNorm, otpPlain, otpId);
 }
 
 async function verifyRegistrationOtp(emailRaw, otpPlain) {
@@ -173,6 +240,9 @@ async function verifyRegistrationOtp(emailRaw, otpPlain) {
  */
 async function resendRegistrationOtp(emailRaw) {
   const emailNorm = normalizeEmail(emailRaw);
+  let otpId;
+  let otpPlain;
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -200,24 +270,14 @@ async function resendRegistrationOtp(emailRaw) {
       [String(emailNorm), String(PURPOSE_REGISTER)],
     );
     const last = lastRows[0];
-    if (last && new Date(last.last_sent_at).getTime() + RESEND_COOLDOWN_SEC * 1000 > Date.now()) {
+    if (last && isRegistrationOtpResendCooldownActive(last.last_sent_at)) {
       await client.query("ROLLBACK");
       throw createPublicApiError(`يرجى الانتظار ${RESEND_COOLDOWN_SEC} ثانية قبل إعادة الإرسال.`, 429, "RATE_LIMITED");
     }
 
-    const otpPlain = generateSixDigitOtp();
-    const otpHash = await bcrypt.hash(otpPlain, BCRYPT_OTP_ROUNDS);
-    const expiresAt = new Date(Date.now() + OTP_REGISTER_TTL_MIN * 60 * 1000);
-    const now = new Date();
-
-    await invalidateOpenOtps(client, emailNorm, PURPOSE_REGISTER);
-    await client.query(
-      `INSERT INTO auth_otps (
-        email, user_id, purpose, otp_hash, expires_at, last_sent_at, created_at, updated_at
-      ) VALUES (lower($1::text), $2::bigint, $3::text, $4::text, $5::timestamptz, $6::timestamptz, $6::timestamptz, $6::timestamptz)`,
-      [String(emailNorm), Number(user.id), PURPOSE_REGISTER, otpHash, expiresAt, now],
-    );
-    await emailService.sendRegisterOtpEmail(emailNorm, otpPlain);
+    const persisted = await persistRegistrationOtpRow(client, emailNorm, user.id);
+    otpId = persisted.otpId;
+    otpPlain = persisted.otpPlain;
     await client.query("COMMIT");
   } catch (e) {
     try {
@@ -229,6 +289,8 @@ async function resendRegistrationOtp(emailRaw) {
   } finally {
     client.release();
   }
+
+  await sendRegistrationOtpEmailAfterPersist(emailNorm, otpPlain, otpId);
 }
 
 /**

@@ -14,6 +14,8 @@ const {
 } = require("../validators/authValidators");
 const { ROLES } = require("../constants/roles");
 const {
+  registerLimiter,
+  registerRateLimitDebugMiddleware,
   loginLimiter,
   otpVerifyLimiter,
   otpSendLimiter,
@@ -22,7 +24,14 @@ const {
 
 const router = express.Router();
 
-router.post("/register", otpSendLimiter, registerValidators, validateRequest, authController.register);
+router.post(
+  "/register",
+  registerRateLimitDebugMiddleware,
+  registerLimiter,
+  registerValidators,
+  validateRequest,
+  authController.register,
+);
 router.post(
   "/verify-register-otp",
   otpVerifyLimiter,

@@ -1933,6 +1933,7 @@
   }
 
   .site-footer--public .site-footer__contact-label {
+    display: block;
     font-size: inherit;
     font-weight: 600;
     color: #64748b;
@@ -1943,12 +1944,19 @@
   }
 
   .site-footer--public .site-footer__contact-copy {
-    display: inline;
+    display: block;
   }
 
   .site-footer--public .site-footer__contact-value {
-    display: inline;
+    display: block;
+    margin-top: 0.15rem;
     font-size: 0.9rem;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+  .site-footer--public .site-footer__contact-value--email {
+    white-space: nowrap;
   }
 
   .site-footer--public .site-footer__hours {

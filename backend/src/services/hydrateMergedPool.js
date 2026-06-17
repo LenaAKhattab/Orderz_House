@@ -166,6 +166,7 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
     if (!mapped) continue;
     if (source === "fake") {
       mapped.orderSource = "fake";
+      mapped.showTrainingBadge = Boolean(row.show_fake_badge);
       if (mapped.projectType === "bidding") {
         const min = Number(mapped.bidBudgetMin);
         const max = Number(mapped.bidBudgetMax);

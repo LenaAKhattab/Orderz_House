@@ -4,7 +4,7 @@
  *
  * @param {string} message Safe text for JSON `message` when exposeToClient is true
  * @param {number} [statusCode=500]
- * @param {{ exposeToClient?: boolean, publicCode?: string, cause?: unknown }} [options]
+ * @param {{ exposeToClient?: boolean, publicCode?: string, cause?: unknown, otpPersisted?: boolean }} [options]
  */
 function createAppError(message, statusCode = 500, options = {}) {
   const err = new Error(message);
@@ -14,6 +14,9 @@ function createAppError(message, statusCode = 500, options = {}) {
   }
   if (options.publicCode) {
     err.publicCode = options.publicCode;
+  }
+  if (options.otpPersisted === true) {
+    err.otpPersisted = true;
   }
   if (options.cause !== undefined) {
     err.cause = options.cause;

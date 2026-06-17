@@ -529,6 +529,17 @@
   line-height: 1.2;
 }
 
+.oh-orders-market--modern .oh-order-row__chip--training {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.oh-orders-refresh-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
 .oh-orders-market--modern .oh-order-row__side {
   display: flex;
   flex-direction: column;

@@ -13,6 +13,7 @@ const TRAINING_POOL_ITEM_CORE_SQL = `
   AND ri.status = 'active'
   AND fr.status = 'active'
   AND ri.visible_from <= NOW()
+  -- Exclusive end boundary: item is visible while visible_until > NOW() (not >=).
   AND ri.visible_until > NOW()
   AND (SELECT training_orders_enabled FROM fake_order_settings WHERE id = 1) = TRUE
 `;

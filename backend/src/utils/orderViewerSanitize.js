@@ -150,6 +150,7 @@ function sanitizePublicPoolOrder(order) {
     filesCount: fc,
     files: [],
     hasAssignedFreelancer: Boolean(order.assignedFreelancerId),
+    ...(order.showTrainingBadge === true ? { showTrainingBadge: true } : {}),
   };
 }
 

@@ -22,7 +22,10 @@
   "empty": {
     "planTitle": "No requests available on your current plan",
     "planSubtitle": "Requests in the marketplace may exceed your plan's value range. Upgrade your subscription to unlock more.",
-    "upgradeCta": "Upgrade plan"
+    "upgradeCta": "Upgrade plan",
+    "filtersTitle": "No requests match these filters",
+    "filtersSubtitle": "Try clearing category filters or choose different categories.",
+    "filtersClearCta": "Show all requests"
   },
   "status": {
     "unknown": "Unknown",
@@ -130,6 +133,10 @@
     "loginRequiredFreelancer": "Log in as a freelancer with an active subscription to take orders.",
     "clientViewOnly": "Only eligible freelancers can take orders.",
     "loadErrorTitle": "Could not load orders",
+    "refreshing": "Updating list…",
+    "backgroundRefreshTitle": "Could not refresh",
+    "backgroundRefreshFailed": "The list could not be updated. Showing the last loaded requests.",
+    "trainingBadge": "Training order",
     "planLocked": "Not available on your plan",
     "orderAssigned": {
       "title": "Order assigned",

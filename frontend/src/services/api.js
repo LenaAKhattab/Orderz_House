@@ -64,13 +64,16 @@ export const getHealthStatus = async () => {
   return response.data;
 };
 
+/** Register/resend wait for bcrypt + DB + email; allow more than the default 10s client timeout. */
+const AUTH_REGISTER_TIMEOUT_MS = 25000;
+
 export const loginRequest = async (email, password) => {
   const { data } = await api.post("/auth/login", { email, password });
   return data;
 };
 
 export const registerRequest = async (body) => {
-  const { data } = await api.post("/auth/register", body);
+  const { data } = await api.post("/auth/register", body, { timeout: AUTH_REGISTER_TIMEOUT_MS });
   return data;
 };
 
@@ -80,7 +83,7 @@ export const verifyRegisterOtpRequest = async (email, otp) => {
 };
 
 export const resendRegisterOtpRequest = async (email) => {
-  const { data } = await api.post("/auth/resend-register-otp", { email });
+  const { data } = await api.post("/auth/resend-register-otp", { email }, { timeout: AUTH_REGISTER_TIMEOUT_MS });
   return data;
 };
 

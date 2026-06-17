@@ -267,6 +267,45 @@ async function buildRegistrationRowData(payload) {
   };
 }
 
+function isOtpEmailSendFailureAfterPersist(error) {
+  if (!error) return false;
+  if (error.otpPersisted === true) return true;
+  const code = error.publicCode;
+  return code === "FAILED_TO_SEND_OTP" || code === "EMAIL_SERVICE_UNAVAILABLE";
+}
+
+async function resumeUnverifiedRegistration(userId, data, role, passwordHash, freelancerCategories, phone, whatsApp, email) {
+  await pool.query(
+    `UPDATE users SET
+      first_name = $1::text, father_name = $2::text, family_name = $3::text,
+      password_hash = $4::text, role = $5::text, country = $6::text, phone = $7::text, whatsapp = $8::text,
+      gender = $9::text, terms_accepted = $10::boolean, freelancer_categories = $11::text[],
+      email_verified = FALSE, updated_at = NOW()
+    WHERE id = $12::bigint`,
+    [
+      data.firstName,
+      data.fatherName,
+      data.familyName,
+      passwordHash,
+      role,
+      data.country,
+      phone,
+      whatsApp,
+      data.gender,
+      data.termsAccepted,
+      freelancerCategories,
+      userId,
+    ],
+  );
+  await ensureUserRole({ userId, roleName: role });
+  await authOtpService.insertRegistrationOtp({ userId, email });
+  return { requiresEmailVerification: true, email };
+}
+
+function isEmailUniqueViolation(error) {
+  return error?.code === "23505" && String(error.detail || "").includes("(email)");
+}
+
 async function registerUser(payload) {
   ensureJwtSecret();
 
@@ -280,31 +319,16 @@ async function registerUser(payload) {
 
   try {
     if (existing && !existing.email_verified) {
-      await pool.query(
-        `UPDATE users SET
-          first_name = $1::text, father_name = $2::text, family_name = $3::text,
-          password_hash = $4::text, role = $5::text, country = $6::text, phone = $7::text, whatsapp = $8::text,
-          gender = $9::text, terms_accepted = $10::boolean, freelancer_categories = $11::text[],
-          email_verified = FALSE, updated_at = NOW()
-        WHERE id = $12::bigint`,
-        [
-          data.firstName,
-          data.fatherName,
-          data.familyName,
-          passwordHash,
-          role,
-          data.country,
-          phone,
-          whatsApp,
-          data.gender,
-          data.termsAccepted,
-          freelancerCategories,
-          existing.id,
-        ],
+      return resumeUnverifiedRegistration(
+        existing.id,
+        data,
+        role,
+        passwordHash,
+        freelancerCategories,
+        phone,
+        whatsApp,
+        email,
       );
-      await ensureUserRole({ userId: existing.id, roleName: role });
-      await authOtpService.insertRegistrationOtp({ userId: existing.id, email });
-      return { requiresEmailVerification: true, email };
     }
 
     const accountId = await generateUniqueAccountId();
@@ -336,11 +360,29 @@ async function registerUser(payload) {
       await ensureUserRole({ userId: row.id, roleName: row.role });
       await authOtpService.insertRegistrationOtp({ userId: row.id, email: row.email });
     } catch (e) {
-      await pool.query(`DELETE FROM users WHERE id = $1::bigint`, [row.id]);
+      if (!isOtpEmailSendFailureAfterPersist(e)) {
+        await pool.query(`DELETE FROM users WHERE id = $1::bigint`, [row.id]);
+      }
       throw e;
     }
     return { requiresEmailVerification: true, email: row.email };
   } catch (error) {
+    if (isEmailUniqueViolation(error)) {
+      const raced = await findUserByEmail(email);
+      if (raced && !raced.email_verified) {
+        return resumeUnverifiedRegistration(
+          raced.id,
+          data,
+          role,
+          passwordHash,
+          freelancerCategories,
+          phone,
+          whatsApp,
+          email,
+        );
+      }
+    }
+
     const mapped = handleUniqueViolation(error);
     if (mapped) throw mapped;
 

@@ -88,7 +88,7 @@ describe("auth rate limit coverage", () => {
   it("login, register, OTP, and reset-password routes use limiters", () => {
     const src = fs.readFileSync(path.join(__dirname, "..", "src", "routes", "authRoutes.js"), "utf8");
     assert.ok(src.includes("loginLimiter"), "login limited");
-    assert.ok(src.includes('"/register"') && src.includes("otpSendLimiter"), "register limited");
+    assert.ok(src.includes('"/register"') && src.includes("registerLimiter"), "register limited");
     assert.ok(src.includes('"/verify-register-otp"') && src.includes("otpVerifyLimiter"), "register OTP verify limited");
     assert.ok(src.includes('"/forgot-password"') && src.includes("otpSendLimiter"), "forgot-password limited");
     assert.ok(src.includes("resetPasswordLimiter"), "reset-password limited");

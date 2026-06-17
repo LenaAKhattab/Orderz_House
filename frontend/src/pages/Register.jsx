@@ -8,7 +8,7 @@ import { useAuth } from "../context/useAuth";
 import { getDashboardPath } from "../constants/authRoutes";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { resendRegisterOtpRequest } from "../services/api";
-import { getSafeApiErrorMessage } from "../utils/apiErrorMessage";
+import { getAuthApiErrorMessage, isEmailAlreadyRegisteredError, isOtpEmailSendError, isRateLimitedError } from "../utils/apiErrorMessage";
 import { ARAB_COUNTRIES, DEFAULT_DIAL_CODE } from "../constants/arabCountries";
 
 const CATEGORY_SLUGS = [
@@ -158,9 +158,19 @@ const Register = () => {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState("");
+  const [emailAlreadyRegistered, setEmailAlreadyRegistered] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
-  const registerErrorMessage = (err) => getSafeApiErrorMessage(err, t("auth.register.error"));
+  const registerErrorMessage = (err) => {
+    if (isRateLimitedError(err)) {
+      return t("auth.register.rateLimited");
+    }
+    if (isEmailAlreadyRegisteredError(err)) {
+      return t("auth.register.emailAlreadyRegistered");
+    }
+    return getAuthApiErrorMessage(err, t, "auth.register.error");
+  };
 
   const visualContent = {
     title: t("auth.register.visualTitle"),
@@ -277,32 +287,44 @@ const Register = () => {
   };
 
   const handleResendOtp = async () => {
+    if (submittingRef.current) return;
     setError("");
+    setEmailAlreadyRegistered(false);
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
       await resendRegisterOtpRequest(email.trim().toLowerCase());
       setResendCooldown(60);
     } catch (err) {
       setError(registerErrorMessage(err));
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     setError("");
+    setEmailAlreadyRegistered(false);
     if (showOtpStep) {
       const code = otp.trim();
       if (!/^\d{6}$/.test(code)) {
         setError(t("auth.register.validation.otpRequired"));
         return;
       }
+      submittingRef.current = true;
       setSubmitting(true);
       try {
         const user = await completeRegisterWithOtp(email.trim().toLowerCase(), code);
         const role = user?.primaryRole || user?.role;
         navigate(getDashboardPath(role), { replace: true });
       } catch (err) {
+        setEmailAlreadyRegistered(isEmailAlreadyRegisteredError(err));
         setError(registerErrorMessage(err));
       } finally {
+        submittingRef.current = false;
         setSubmitting(false);
       }
       return;
@@ -336,6 +358,7 @@ const Register = () => {
       body.categories = categories;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       const result = await register(body);
@@ -349,8 +372,14 @@ const Register = () => {
       const role = user?.primaryRole || user?.role;
       navigate(getDashboardPath(role), { replace: true });
     } catch (err) {
+      if (isOtpEmailSendError(err)) {
+        setShowOtpStep(true);
+        setOtp("");
+      }
+      setEmailAlreadyRegistered(isEmailAlreadyRegisteredError(err));
       setError(registerErrorMessage(err));
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };
@@ -369,7 +398,16 @@ const Register = () => {
         footerLinkTo="/login"
       >
         <form className={tw.authFormGrid} onSubmit={handleSubmit} noValidate>
-          {error ? <p className={tw.authFormError}>{error}</p> : null}
+          {error ? (
+            <div className="grid gap-2">
+              <p className={tw.authFormError}>{error}</p>
+              {emailAlreadyRegistered ? (
+                <Link to="/login" className={tw.authSubtleLink}>
+                  {t("auth.register.loginLink")}
+                </Link>
+              ) : null}
+            </div>
+          ) : null}
 
           {showOtpStep ? (
             <>

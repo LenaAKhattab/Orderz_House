@@ -29,6 +29,11 @@ function installMocks(scenario) {
   const sent = [];
 
   const mockPool = {
+    query: async (sql) => {
+      const s = String(sql);
+      if (s.includes("UPDATE auth_otps SET last_sent_at")) return { rowCount: 1 };
+      throw new Error(`unexpected pool.query in mock: ${s.slice(0, 100)}`);
+    },
     connect: async () => ({
       query: async (sql) => {
         const s = String(sql);

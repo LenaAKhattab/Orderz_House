@@ -8,7 +8,7 @@ import { useToast } from "../components/ui/toastContext";
 import { useAuth } from "../context/useAuth";
 import { canRoleAccessPath, getDashboardPath } from "../constants/authRoutes";
 import { useTranslation } from "../i18n/LanguageProvider";
-import { getSafeApiErrorMessage } from "../utils/apiErrorMessage";
+import { getAuthApiErrorMessage } from "../utils/apiErrorMessage";
 import {
   AUTH_TOAST_PASSWORD_RESET,
   getPasswordResetLoginToast,
@@ -17,7 +17,7 @@ import {
 } from "../utils/guestPoolLoginToast";
 
 function loginErrorMessage(err, t) {
-  return getSafeApiErrorMessage(err, t("auth.login.error"));
+  return getAuthApiErrorMessage(err, t, "auth.login.error");
 }
 
 const Login = () => {
@@ -32,6 +32,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const handledRouteMessageKeyRef = useRef(null);
 
   useEffect(() => {
@@ -86,7 +87,9 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     setError("");
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       const user = await login(email.trim(), password);
@@ -101,6 +104,7 @@ const Login = () => {
       setError(msg);
       showError({ title: t("auth.login.errorTitle"), message: msg, autoClose: false });
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };

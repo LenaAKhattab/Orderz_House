@@ -28,3 +28,4 @@ services:
       - PORT=5000
       - NODE_ENV=production
       - CLIENT_URL=https://orderzhouse.com
+      - TRUST_PROXY=1

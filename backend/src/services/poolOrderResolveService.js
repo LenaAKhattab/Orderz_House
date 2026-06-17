@@ -10,7 +10,8 @@ async function isFakeOrderInActivePool(orderId) {
     `SELECT 1
      FROM fake_orders fo
      INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id AND ri.status = 'active'
-       AND ri.visible_from <= NOW() AND ri.visible_until >= NOW()
+       -- Exclusive end: visible_until > NOW() matches pool list / trainingPoolEligibility.
+       AND ri.visible_from <= NOW() AND ri.visible_until > NOW()
      INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id AND fr.status = 'active'
      WHERE fo.id = $1 AND fo.fake_status = 'active'
      LIMIT 1`,

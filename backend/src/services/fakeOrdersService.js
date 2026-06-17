@@ -20,6 +20,114 @@ const {
 /** Session advisory lock: cross-process generation guard (PostgreSQL). */
 const AUTOMATION_GENERATION_LOCK_KEY = 882947361;
 
+const LOCK_BUSY_BACKOFF_MS = [250, 500, 1000];
+const LOCK_BUSY_RETRY_REASONS = new Set([
+  "server_startup",
+  "pool_list_empty",
+  "runtime",
+  "automation_tick",
+  "manual_start",
+]);
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function isPgTransactionAbortedError(err) {
+  const msg = String(err?.message || err || "");
+  return msg.includes("current transaction is aborted") || msg.includes("commands ignored until end of transaction block");
+}
+
+async function safeRollback(client) {
+  try {
+    await client.query("ROLLBACK");
+  } catch (_) {
+    /* ignore — connection may already be idle */
+  }
+}
+
+/**
+ * Run `fn` inside a named SAVEPOINT so failures do not abort the outer transaction.
+ */
+async function withSavepoint(client, savepointName, fn) {
+  const sp = String(savepointName || "training_gen").replace(/[^a-z0-9_]/gi, "_");
+  await client.query(`SAVEPOINT ${sp}`);
+  try {
+    const result = await fn();
+    await client.query(`RELEASE SAVEPOINT ${sp}`);
+    return result;
+  } catch (e) {
+    try {
+      await client.query(`ROLLBACK TO SAVEPOINT ${sp}`);
+    } catch (rbErr) {
+      logAutomationEvent("savepoint_rollback_failed", {
+        savepoint: sp,
+        message: String(rbErr?.message || rbErr).slice(0, 200),
+      });
+      throw rbErr;
+    }
+    throw e;
+  }
+}
+
+/** Best-effort: clear a leaked session lock on this pooled connection before acquiring. */
+async function clearStaleSessionGenerationLock(client) {
+  try {
+    const { rows } = await client.query(`SELECT pg_advisory_unlock($1::bigint) AS released`, [
+      AUTOMATION_GENERATION_LOCK_KEY,
+    ]);
+    if (rows[0]?.released) {
+      logAutomationEvent("stale_session_lock_cleared", {});
+    }
+  } catch (_) {
+    /* ignore */
+  }
+}
+
+/**
+ * Transaction-scoped advisory lock (auto-released on COMMIT/ROLLBACK).
+ * Clears any stale session lock on this connection first (legacy leak guard).
+ */
+async function tryAcquireGenerationLock(client, { reason = "" } = {}) {
+  await clearStaleSessionGenerationLock(client);
+  const { rows } = await client.query(`SELECT pg_try_advisory_xact_lock($1::bigint) AS got`, [
+    AUTOMATION_GENERATION_LOCK_KEY,
+  ]);
+  const acquired = Boolean(rows[0]?.got);
+  logAutomationEvent(acquired ? "lock_acquired" : "lock_busy", { reason, lockType: "xact" });
+  return acquired;
+}
+
+/** xact locks auto-release at transaction end; also clear legacy session locks safely. */
+async function releaseGenerationLock(client, { acquired = false, reason = "" } = {}) {
+  if (!acquired) return;
+  logAutomationEvent("lock_release_xact", { reason, note: "released_on_commit_or_rollback" });
+  try {
+    const { rows } = await client.query(`SELECT pg_advisory_unlock($1::bigint) AS released`, [
+      AUTOMATION_GENERATION_LOCK_KEY,
+    ]);
+    if (rows[0]?.released) {
+      logAutomationEvent("stale_session_lock_cleared_on_release", { reason });
+    }
+  } catch (e) {
+    logAutomationEvent("lock_release_error", { reason, message: String(e?.message || e).slice(0, 200) });
+    if (isPgTransactionAbortedError(e)) {
+      await safeRollback(client);
+      try {
+        await client.query(`SELECT pg_advisory_unlock($1::bigint)`, [AUTOMATION_GENERATION_LOCK_KEY]);
+        logAutomationEvent("lock_released_after_rollback", { reason });
+      } catch (e2) {
+        logAutomationEvent("lock_release_failed_after_rollback", {
+          reason,
+          message: String(e2?.message || e2).slice(0, 200),
+        });
+      }
+    }
+  }
+}
+
 function logAutomationEvent(event, fields = {}) {
   // eslint-disable-next-line no-console
   console.log(
@@ -511,74 +619,94 @@ async function generateTrainingRoundInternal(client, { actorUserId, roundSource,
   return { ok: true, round: mapRound(outRound[0]), generatedCount: generated };
 }
 
-async function startTrainingRoundManual({ actorUserId }) {
+async function startTrainingRoundManualOnce({ actorUserId, attempt = 0 }) {
   const runStartedAt = new Date();
   const client = await pool.connect();
+  let lockAcquired = false;
   try {
     await client.query("BEGIN");
-    const { rows: lockRows } = await client.query(`SELECT pg_try_advisory_lock($1::bigint) AS got`, [
-      AUTOMATION_GENERATION_LOCK_KEY,
-    ]);
-    if (!lockRows[0]?.got) {
-      await client.query("ROLLBACK");
+    lockAcquired = await tryAcquireGenerationLock(client, { reason: "manual_start" });
+    if (!lockAcquired) {
+      await safeRollback(client);
       const err = new Error("عملية توليد جولة قيد التنفيذ. حاول بعد لحظات.");
       err.statusCode = 409;
+      err.code = "LOCK_BUSY";
       throw err;
     }
-    try {
-      await assertAdminOrSuperAdmin(actorUserId, client);
-      const actor = Number(actorUserId);
-      const result = await generateTrainingRoundInternal(client, { actorUserId: actor, roundSource: "manual" });
-      if (!result.ok && result.code === "NO_TEMPLATES") {
-        await client.query("ROLLBACK");
-        await insertAutomationLogSafe(pool, {
-          runStartedAt,
-          status: "skipped_no_templates",
-          errorMessage: null,
-          roundId: null,
-          generatedCount: null,
-          source: "manual",
-        });
-        const err = new Error("لا توجد قوالب طلبات نشطة. أضف قوالبًا أو فعّل القوالب والتصنيفات قبل بدء الجولة.");
-        err.statusCode = 400;
-        throw err;
-      }
-      const roundId = result.round?.id ? Number(result.round.id) : null;
-      const genCount = result.generatedCount != null ? Number(result.generatedCount) : null;
-      await client.query(
-        `UPDATE fake_order_settings SET
-           last_automation_run_at = NOW(),
-           last_automation_status = $1,
-           last_automation_error = NULL,
-           last_automation_round_id = $2,
-           last_automation_generated_count = $3,
-           updated_at = NOW()
-         WHERE id = 1`,
-        ["success", roundId, genCount],
-      );
-      await client.query("COMMIT");
+
+    await assertAdminOrSuperAdmin(actorUserId, client);
+    const actor = Number(actorUserId);
+    const result = await withSavepoint(client, "manual_round_gen", () =>
+      generateTrainingRoundInternal(client, { actorUserId: actor, roundSource: "manual" }),
+    );
+    if (!result.ok && result.code === "NO_TEMPLATES") {
+      await safeRollback(client);
       await insertAutomationLogSafe(pool, {
         runStartedAt,
-        status: "success",
+        status: "skipped_no_templates",
         errorMessage: null,
-        roundId,
-        generatedCount: genCount,
+        roundId: null,
+        generatedCount: null,
         source: "manual",
       });
-      return result;
-    } finally {
-      await client.query(`SELECT pg_advisory_unlock($1::bigint)`, [AUTOMATION_GENERATION_LOCK_KEY]);
+      const err = new Error("لا توجد قوالب طلبات نشطة. أضف قوالبًا أو فعّل القوالب والتصنيفات قبل بدء الجولة.");
+      err.statusCode = 400;
+      throw err;
     }
+    const roundId = result.round?.id ? Number(result.round.id) : null;
+    const genCount = result.generatedCount != null ? Number(result.generatedCount) : null;
+    await client.query(
+      `UPDATE fake_order_settings SET
+         last_automation_run_at = NOW(),
+         last_automation_status = $1,
+         last_automation_error = NULL,
+         last_automation_round_id = $2,
+         last_automation_generated_count = $3,
+         updated_at = NOW()
+       WHERE id = 1`,
+      ["success", roundId, genCount],
+    );
+    await client.query("COMMIT");
+    await insertAutomationLogSafe(pool, {
+      runStartedAt,
+      status: "success",
+      errorMessage: null,
+      roundId,
+      generatedCount: genCount,
+      source: "manual",
+    });
+    return result;
   } catch (e) {
-    try {
-      await client.query("ROLLBACK");
-    } catch (_) {
-      /* transaction may already be closed */
-    }
+    await safeRollback(client);
     throw e;
   } finally {
+    await releaseGenerationLock(client, { acquired: lockAcquired, reason: "manual_start" });
     client.release();
   }
+}
+
+async function startTrainingRoundManual({ actorUserId }) {
+  const maxAttempts = LOCK_BUSY_RETRY_REASONS.has("manual_start") ? LOCK_BUSY_BACKOFF_MS.length + 1 : 1;
+  let lastErr = null;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    if (attempt > 0) {
+      const delayMs = LOCK_BUSY_BACKOFF_MS[attempt - 1] || 1000;
+      logAutomationEvent("manual_start_retry", { attempt, delayMs });
+      // eslint-disable-next-line no-await-in-loop
+      await sleep(delayMs);
+    }
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      return await startTrainingRoundManualOnce({ actorUserId, attempt });
+    } catch (e) {
+      lastErr = e;
+      if (e?.code === "LOCK_BUSY" && attempt < maxAttempts - 1) {
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw lastErr || new Error("تعذر بدء الجولة.");
 }
 
 async function assertAdminOrSuperAdmin(userId, client) {
@@ -916,6 +1044,7 @@ async function getFakePoolOrderMapped({ orderId, freelancerUserId }) {
   const mapped = mapListOrderRow(row);
   if (!mapped) return null;
   mapped.orderSource = "fake";
+  mapped.showTrainingBadge = Boolean(row.show_fake_badge);
   if (row.pool_listed_at != null) {
     mapped.createdAt = row.pool_listed_at;
     mapped.poolListedAt = row.pool_listed_at;
@@ -1240,56 +1369,52 @@ async function runAutomationTick() {
 
     const scheduledDue = now >= nextRun;
     if (!didGenerate && scheduledDue) {
-      const { rows: lockRows } = await client.query(`SELECT pg_try_advisory_lock($1::bigint) AS got`, [
-        AUTOMATION_GENERATION_LOCK_KEY,
-      ]);
-      if (!lockRows[0]?.got) {
-        await client.query("ROLLBACK");
-        logAutomationEvent("skipped_lock", { reason: "advisory_lock_active" });
-        await insertAutomationLogSafe(pool, {
-          runStartedAt,
-          status: "skipped_lock",
-          errorMessage: null,
-          roundId: null,
-          generatedCount: null,
-          source: "automation",
-        });
-        return;
-      }
-
+      let scheduledLockAcquired = false;
       try {
-        await client.query("SAVEPOINT training_round_gen");
-        try {
-          const result = await generateTrainingRoundInternal(client, {
+        scheduledLockAcquired = await tryAcquireGenerationLock(client, { reason: "automation_scheduled" });
+        if (!scheduledLockAcquired) {
+          await safeRollback(client);
+          logAutomationEvent("skipped_lock", { reason: "advisory_lock_active" });
+          await insertAutomationLogSafe(pool, {
+            runStartedAt,
+            status: "skipped_lock",
+            errorMessage: null,
+            roundId: null,
+            generatedCount: null,
+            source: "automation",
+          });
+          return;
+        }
+
+        const result = await withSavepoint(client, "training_round_gen", () =>
+          generateTrainingRoundInternal(client, {
             actorUserId,
             roundSource: "automation",
             supersedeExisting: true,
-          });
-          if (result.ok) {
-            didGenerate = true;
-            roundId = result.round?.id ? Number(result.round.id) : null;
-            genCount = result.generatedCount ?? null;
-            genStatus = "success";
-            invalidatePublicHomeOrderStatsCache();
-          } else if (result.code === "NO_TEMPLATES") {
-            genStatus = "skipped_no_templates";
-            logAutomationEvent("skipped_no_templates", { code: "NO_TEMPLATES", phase: "scheduled" });
-            console.error("[fakeOrders] automation: no active templates — skipping round generation");
-          }
-          await client.query("RELEASE SAVEPOINT training_round_gen");
-        } catch (e) {
-          await client.query("ROLLBACK TO SAVEPOINT training_round_gen");
-          genStatus = "failed";
-          genError = String(e?.message || e).slice(0, 5000);
-          logAutomationEvent("generation_failed", { message: genError.slice(0, 200) });
-          console.error("[fakeOrders] automation: round generation failed:", e?.message || e);
-        }
-
-        if (genStatus === "success" && roundId) {
+          }),
+        );
+        if (result.ok) {
+          didGenerate = true;
+          roundId = result.round?.id ? Number(result.round.id) : null;
+          genCount = result.generatedCount ?? null;
+          genStatus = "success";
+          invalidatePublicHomeOrderStatsCache();
           logAutomationEvent("generated_round", { roundId, generatedCount: genCount, phase: "scheduled" });
+        } else if (result.code === "NO_TEMPLATES") {
+          genStatus = "skipped_no_templates";
+          logAutomationEvent("skipped_no_templates", { code: "NO_TEMPLATES", phase: "scheduled" });
+          console.error("[fakeOrders] automation: no active templates — skipping round generation");
         }
+      } catch (e) {
+        genStatus = "failed";
+        genError = String(e?.message || e).slice(0, 5000);
+        logAutomationEvent("generation_failed", { message: genError.slice(0, 200) });
+        console.error("[fakeOrders] automation: round generation failed:", e?.message || e);
       } finally {
-        await client.query(`SELECT pg_advisory_unlock($1::bigint)`, [AUTOMATION_GENERATION_LOCK_KEY]);
+        await releaseGenerationLock(client, {
+          acquired: scheduledLockAcquired,
+          reason: "automation_scheduled",
+        });
       }
     } else if (!didGenerate && !scheduledDue && isFakeOrdersAutomationVerbose()) {
       logAutomationEvent("skipped_not_due", { nextRunAtMs: nextRun });
@@ -1325,11 +1450,7 @@ async function runAutomationTick() {
 
     await client.query("COMMIT");
   } catch (e) {
-    try {
-      await client.query("ROLLBACK");
-    } catch (r) {
-      /* ignore */
-    }
+    await safeRollback(client);
     console.error("[fakeOrders] automation tick transaction failed:", e?.message || e);
   } finally {
     client.release();
@@ -1373,15 +1494,14 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
     return { ok: true, action: "none", visible: coverage.visibleCount, coverage };
   }
 
-  const { rows: lockRows } = await client.query(`SELECT pg_try_advisory_lock($1::bigint) AS got`, [
-    AUTOMATION_GENERATION_LOCK_KEY,
-  ]);
-  if (!lockRows[0]?.got) {
-    logAutomationEvent("rotation_skipped_lock", { reason, rotationReason, visible: coverage.visibleCount });
-    return { ok: false, code: "LOCK_BUSY", visible: coverage.visibleCount, coverage };
-  }
-
+  let lockAcquired = false;
   try {
+    lockAcquired = await tryAcquireGenerationLock(client, { reason: `rotation:${reason}:${rotationReason}` });
+    if (!lockAcquired) {
+      logAutomationEvent("rotation_skipped_lock", { reason, rotationReason, visible: coverage.visibleCount });
+      return { ok: false, code: "LOCK_BUSY", visible: coverage.visibleCount, coverage, retryable: true };
+    }
+
     const afterLock = await getTrainingPoolCoverage(client);
     if (rotationReason === "replenish" && afterLock.visibleCount >= minVisibleCount) {
       return { ok: true, action: "none", visible: afterLock.visibleCount, coverage: afterLock };
@@ -1395,11 +1515,13 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
       return { ok: true, action: "none", visible: afterLock.visibleCount, coverage: afterLock };
     }
 
-    const result = await generateTrainingRoundInternal(client, {
-      actorUserId,
-      roundSource: "automation",
-      supersedeExisting,
-    });
+    const result = await withSavepoint(client, "training_round_generation", () =>
+      generateTrainingRoundInternal(client, {
+        actorUserId,
+        roundSource: "automation",
+        supersedeExisting,
+      }),
+    );
     if (!result.ok) {
       logAutomationEvent("rotation_skipped_no_templates", { reason, rotationReason });
       return { ok: false, code: result.code || "NO_TEMPLATES", visible: afterLock.visibleCount, coverage: afterLock };
@@ -1423,7 +1545,10 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
       coverage: afterLock,
     };
   } finally {
-    await client.query(`SELECT pg_advisory_unlock($1::bigint)`, [AUTOMATION_GENERATION_LOCK_KEY]);
+    await releaseGenerationLock(client, {
+      acquired: lockAcquired,
+      reason: `rotation:${reason}:${rotationReason || "none"}`,
+    });
   }
 }
 
@@ -1432,6 +1557,31 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
  * Safe for repeated calls (advisory lock + transactional checks).
  */
 async function ensureMinimumVisibleFakeOrders({ reason = "runtime", minVisible = null } = {}) {
+  const maxAttempts = LOCK_BUSY_RETRY_REASONS.has(String(reason)) ? LOCK_BUSY_BACKOFF_MS.length + 1 : 1;
+  let lastResult = null;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    if (attempt > 0) {
+      const delayMs = LOCK_BUSY_BACKOFF_MS[attempt - 1] || 1000;
+      logAutomationEvent("ensure_min_visible_retry", { reason, attempt, delayMs });
+      // eslint-disable-next-line no-await-in-loop
+      await sleep(delayMs);
+    }
+    // eslint-disable-next-line no-await-in-loop
+    lastResult = await ensureMinimumVisibleFakeOrdersOnce({ reason, minVisible, attempt });
+    if (lastResult.code !== "LOCK_BUSY") {
+      return lastResult;
+    }
+  }
+
+  return {
+    ...lastResult,
+    retryable: true,
+    status: "lock_busy_retryable",
+  };
+}
+
+async function ensureMinimumVisibleFakeOrdersOnce({ reason = "runtime", minVisible = null, attempt = 0 } = {}) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -1439,7 +1589,7 @@ async function ensureMinimumVisibleFakeOrders({ reason = "runtime", minVisible =
     const s = sRows[0];
     if (!s || !s.training_orders_enabled) {
       await client.query("COMMIT");
-      return { ok: false, code: "TRAINING_DISABLED" };
+      return { ok: false, code: "TRAINING_DISABLED", status: "training_disabled" };
     }
 
     const thresholdFromSettings = Math.max(1, Number(s.min_orders) || 20);
@@ -1447,14 +1597,20 @@ async function ensureMinimumVisibleFakeOrders({ reason = "runtime", minVisible =
     const currentVisible = await getVisibleFakeOrdersCount(client);
     if (currentVisible >= threshold) {
       await client.query("COMMIT");
-      return { ok: true, generated: false, visible: currentVisible, threshold };
+      return {
+        ok: true,
+        generated: false,
+        visible: currentVisible,
+        threshold,
+        status: "already_visible",
+      };
     }
 
     const actorUserId = await resolveAutomationActorUserId(client);
     if (!actorUserId) {
       await client.query("COMMIT");
-      logAutomationEvent("ensure_min_visible_no_actor", { reason, currentVisible, threshold });
-      return { ok: false, code: "NO_ADMIN_ACTOR", visible: currentVisible, threshold };
+      logAutomationEvent("ensure_min_visible_no_actor", { reason, currentVisible, threshold, attempt });
+      return { ok: false, code: "NO_ADMIN_ACTOR", visible: currentVisible, threshold, status: "failed" };
     }
 
     const rotation = await ensureSeamlessTrainingRotation(client, s, {
@@ -1463,34 +1619,58 @@ async function ensureMinimumVisibleFakeOrders({ reason = "runtime", minVisible =
       minVisible: threshold,
     });
     if (rotation.code === "LOCK_BUSY") {
-      await client.query("ROLLBACK");
-      logAutomationEvent("ensure_min_visible_skipped_lock", { reason, currentVisible, threshold });
-      return { ok: false, code: "LOCK_BUSY", visible: currentVisible, threshold };
+      await safeRollback(client);
+      logAutomationEvent("ensure_min_visible_skipped_lock", { reason, currentVisible, threshold, attempt });
+      return {
+        ok: false,
+        code: "LOCK_BUSY",
+        visible: currentVisible,
+        threshold,
+        retryable: true,
+        status: attempt < LOCK_BUSY_BACKOFF_MS.length ? "lock_busy_retryable" : "lock_busy_retryable",
+      };
     }
     if (!rotation.generated) {
       await client.query("COMMIT");
       if (rotation.code === "NO_TEMPLATES") {
-        logAutomationEvent("ensure_min_visible_no_templates", { reason, currentVisible, threshold });
-        return { ok: false, code: "NO_TEMPLATES", visible: currentVisible, threshold };
+        logAutomationEvent("ensure_min_visible_no_templates", { reason, currentVisible, threshold, attempt });
+        return { ok: false, code: "NO_TEMPLATES", visible: currentVisible, threshold, status: "failed" };
       }
-      return { ok: true, generated: false, visible: currentVisible, threshold };
+      return {
+        ok: true,
+        generated: false,
+        visible: currentVisible,
+        threshold,
+        status: rotation.action === "none" ? "already_visible" : "no_generation",
+      };
     }
 
     await client.query("COMMIT");
+    const visibleAfter = await getVisibleFakeOrdersCount(pool);
     return {
       ok: true,
       generated: true,
       roundId: rotation.roundId ?? null,
       generatedCount: rotation.generatedCount ?? null,
       threshold,
+      visible: visibleAfter,
+      status: "generated",
     };
   } catch (e) {
-    try {
-      await client.query("ROLLBACK");
-    } catch (_) {
-      /* ignore */
-    }
-    throw e;
+    await safeRollback(client);
+    logAutomationEvent("ensure_min_visible_failed", {
+      reason,
+      attempt,
+      message: String(e?.message || e).slice(0, 500),
+    });
+    return {
+      ok: false,
+      code: "GENERATION_FAILED",
+      visible: 0,
+      threshold: Number(minVisible) || null,
+      error: String(e?.message || e).slice(0, 500),
+      status: "failed",
+    };
   } finally {
     client.release();
   }

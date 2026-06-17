@@ -54,12 +54,17 @@ function isDevLocalOrigin(origin) {
   }
 }
 
-// Behind nginx/Render/Fly/etc., set TRUST_PROXY=1 so req.ip uses X-Forwarded-For (rate limits + logs).
+// Behind nginx/Render/Fly/Cloudflare/etc., trust proxy so req.ip uses X-Forwarded-For (rate limits + logs).
+// Set TRUST_PROXY=0 only when the API is reached directly without a reverse proxy.
 const trustProxy = process.env.TRUST_PROXY;
-if (trustProxy === "1" || trustProxy === "true") {
+if (trustProxy === "0" || trustProxy === "false") {
+  /* direct connection — do not trust X-Forwarded-For */
+} else if (trustProxy === "1" || trustProxy === "true") {
   app.set("trust proxy", 1);
 } else if (trustProxy && /^\d+$/.test(String(trustProxy))) {
   app.set("trust proxy", Number(trustProxy));
+} else if (isProduction()) {
+  app.set("trust proxy", 1);
 }
 
 // Stripe webhooks require the raw body for signature verification (must run before express.json()).

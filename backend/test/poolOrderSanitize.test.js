@@ -73,4 +73,26 @@ describe("sanitizePublicPoolOrder", () => {
     assert.strictEqual(out.hasAssignedFreelancer, true);
     assert.ok(!Object.prototype.hasOwnProperty.call(out, "bidUsers"));
   });
+
+  it("exposes showTrainingBadge when enabled; never exposes orderSource", () => {
+    const safe = sanitizePublicPoolOrder({
+      id: "9",
+      title: "Training job",
+      description: "D",
+      categoryId: "1",
+      orderSource: "fake",
+      showTrainingBadge: true,
+    });
+    assert.strictEqual(safe.showTrainingBadge, true);
+    assert.ok(!Object.prototype.hasOwnProperty.call(safe, "orderSource"));
+    const hidden = sanitizePublicPoolOrder({
+      id: "10",
+      title: "Job",
+      description: "D",
+      categoryId: "1",
+      orderSource: "fake",
+      showTrainingBadge: false,
+    });
+    assert.ok(!Object.prototype.hasOwnProperty.call(hidden, "showTrainingBadge"));
+  });
 });
