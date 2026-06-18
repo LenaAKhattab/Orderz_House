@@ -1,6 +1,7 @@
 /**
  * Environment controls for the fake-orders automation runner (setInterval in server.js).
- * Production-safe default: in-process tick is OFF unless explicitly enabled.
+ * Production: in-process tick OFF unless FAKE_ORDERS_AUTOMATION_ENABLED=true (single instance).
+ * Development: in-process tick ON by default unless explicitly disabled.
  */
 
 function parseBoolEnv(name, defaultValue = false) {
@@ -14,12 +15,30 @@ function parseBoolEnv(name, defaultValue = false) {
   return defaultValue;
 }
 
-/** When true, server.js registers setInterval(runAutomationTick). Default false (prod-safe). */
-function isInProcessAutomationIntervalEnabled() {
-  return parseBoolEnv("FAKE_ORDERS_AUTOMATION_ENABLED", false);
+function isProductionNodeEnv() {
+  return String(process.env.NODE_ENV || "").toLowerCase() === "production";
 }
 
-/** Minimum 15s; default 60s. */
+/**
+ * When true, server.js registers setInterval(runAutomationTick).
+ * - Production default: false (use external cron on multi-instance).
+ * - Non-production default: true (local single backend).
+ * Set FAKE_ORDERS_AUTOMATION_ENABLED explicitly to override either default.
+ */
+function isInProcessAutomationIntervalEnabled() {
+  const raw = process.env.FAKE_ORDERS_AUTOMATION_ENABLED;
+  if (raw !== undefined && String(raw).trim() !== "") {
+    return parseBoolEnv("FAKE_ORDERS_AUTOMATION_ENABLED", false);
+  }
+  return !isProductionNodeEnv();
+}
+
+/** True when in-process ticks or a valid cron secret is configured. */
+function isAutomationDriverConfigured() {
+  return isInProcessAutomationIntervalEnabled() || Boolean(getAutomationCronSecret());
+}
+
+/** Minimum 15s; default 60s. Tick frequency — not round duration (see fake_order_settings.duration_value/unit). */
 function getFakeOrdersTickMs() {
   return Math.max(15_000, Number(process.env.FAKE_ORDERS_TICK_MS) || 60_000);
 }
@@ -57,6 +76,8 @@ function getAutomationCronSecret() {
 
 module.exports = {
   isInProcessAutomationIntervalEnabled,
+  isAutomationDriverConfigured,
+  isProductionNodeEnv,
   getFakeOrdersTickMs,
   isFakeOrdersAutomationVerbose,
   getAutomationCronSecret,

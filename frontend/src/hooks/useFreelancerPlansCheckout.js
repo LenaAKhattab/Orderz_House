@@ -4,14 +4,15 @@ import {
   confirmFreelancerSubscriptionCheckoutRequest,
   createFreelancerSubscriptionCheckoutRequest,
   getMySubscriptionRequest,
-  listPublicPlansRequest,
   notifyFreelancerSubscriptionCheckoutCancelledRequest,
   NOTIFICATIONS_REFRESH_EVENT,
 } from "../services/api";
 import {
-  getOrderzhousePlansCatalog,
-  mergeApiPlansWithCatalog,
-} from "../constants/orderzhousePlansCatalog";
+  fetchFreelancerSubscriptionCached,
+  fetchPublicPlansCached,
+  getCachedFreelancerSubscription,
+  getCachedPublicPlans,
+} from "../services/freelancerSessionCache";
 import { useAuth } from "../context/useAuth";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { useToast } from "../components/ui/toastContext";
@@ -24,28 +25,31 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
   const { push } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
-  const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [plans, setPlans] = useState(() => getCachedPublicPlans() || []);
+  const [plansFetching, setPlansFetching] = useState(() => !getCachedPublicPlans()?.length);
   const [error, setError] = useState("");
-  const [mySubscription, setMySubscription] = useState(null);
+  const [mySubscription, setMySubscription] = useState(() =>
+    user?.id ? getCachedFreelancerSubscription(user.id) ?? null : null,
+  );
   const [checkoutBusyPlanId, setCheckoutBusyPlanId] = useState(null);
   const handledToastSearchesRef = useRef(new Set());
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const data = await listPublicPlansRequest();
-        const items = data?.data?.plans || [];
-        if (!cancelled) setPlans(mergeApiPlansWithCatalog(items));
-      } catch {
-        if (!cancelled) setPlans(getOrderzhousePlansCatalog());
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+    const cached = getCachedPublicPlans();
+    if (cached?.length) {
+      setPlans(cached);
+      setPlansFetching(false);
+    } else {
+      setPlansFetching(true);
+    }
+    void fetchPublicPlansCached({ force: !cached?.length })
+      .then((merged) => {
+        if (!cancelled) setPlans(merged);
+      })
+      .finally(() => {
+        if (!cancelled) setPlansFetching(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -53,21 +57,18 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const role = user?.primaryRole || user?.role;
-      const roles = Array.isArray(user?.roles) ? user.roles : [];
-      const isFreelancer = role === "freelancer" || roles.includes("freelancer");
-      if (!user || !isFreelancer) {
-        setMySubscription(null);
-        return;
-      }
-      try {
-        const res = await getMySubscriptionRequest();
-        if (!cancelled) setMySubscription(res?.data?.subscription || null);
-      } catch {
-        if (!cancelled) setMySubscription(null);
-      }
-    })();
+    const role = user?.primaryRole || user?.role;
+    const roles = Array.isArray(user?.roles) ? user.roles : [];
+    const isFreelancer = role === "freelancer" || roles.includes("freelancer");
+    if (!user?.id || !isFreelancer) {
+      setMySubscription(null);
+      return undefined;
+    }
+    const cached = getCachedFreelancerSubscription(user.id);
+    if (cached !== undefined) setMySubscription(cached);
+    void fetchFreelancerSubscriptionCached(user.id).then((sub) => {
+      if (!cancelled) setMySubscription(sub);
+    });
     return () => {
       cancelled = true;
     };
@@ -150,9 +151,11 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
       (async () => {
         try {
           await confirmFreelancerSubscriptionCheckoutRequest(sessionId);
-          const res = await getMySubscriptionRequest();
+          const sub = user?.id
+            ? await fetchFreelancerSubscriptionCached(user.id, { force: true })
+            : (await getMySubscriptionRequest())?.data?.subscription ?? null;
           if (!cancelledEffect) {
-            setMySubscription(res?.data?.subscription ?? null);
+            setMySubscription(sub);
           }
           trackEvent("subscription_purchased", {
             checkout_session_id: String(sessionId),
@@ -201,7 +204,7 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
     }
 
     return undefined;
-  }, [location.pathname, location.search, navigate, push]);
+  }, [location.pathname, location.search, navigate, push, user?.id]);
 
   const startCheckout = async (plan) => {
     if (!plan?.id || checkoutBusyPlanId) return;
@@ -223,7 +226,7 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
 
   return {
     plans,
-    loading,
+    loading: plansFetching && plans.length === 0,
     error,
     mySubscription,
     hasBlockingSubscription,

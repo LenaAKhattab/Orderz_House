@@ -94,6 +94,14 @@ function validateEnv() {
         "in-process tick enabled without FAKE_ORDERS_AUTOMATION_CRON_SECRET — risky on multiple instances",
       );
     }
+
+    const { isAutomationDriverConfigured } = require("./fakeOrdersAutomation");
+    if (!isAutomationDriverConfigured()) {
+      warnProduction(
+        "FAKE_ORDERS_AUTOMATION",
+        "no automation driver — set FAKE_ORDERS_AUTOMATION_ENABLED=true (single instance) or FAKE_ORDERS_AUTOMATION_CRON_SECRET + external cron POST /api/internal/fake-orders/automation-tick every 1–2 min",
+      );
+    }
   }
 
   if (missing.length === 0) {

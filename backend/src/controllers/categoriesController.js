@@ -14,6 +14,18 @@ const listCategories = async (req, res, next) => {
   }
 };
 
+const listCategoryTree = async (req, res, next) => {
+  try {
+    const categories = await categoriesService.listCategoryFilterTree();
+    return res.status(200).json({
+      success: true,
+      data: { categories },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const getCategoryImage = async (req, res, next) => {
   try {
     const row = await categoriesService.getCategoryImageBySlug(req.params.slug);
@@ -48,6 +60,7 @@ const getCategoryImage = async (req, res, next) => {
 
 module.exports = {
   listCategories,
+  listCategoryTree,
   getCategoryImage,
 };
 

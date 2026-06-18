@@ -9,6 +9,16 @@ async function getDashboardSummary(req, res, next) {
   }
 }
 
+async function getCoursesFocus(req, res, next) {
+  try {
+    const data = await freelancerDashboardService.getFreelancerCoursesFocus(req.auth.userId);
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   getDashboardSummary,
+  getCoursesFocus,
 };

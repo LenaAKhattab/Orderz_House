@@ -1,5 +1,5 @@
 const express = require("express");
-const { listCategories, getCategoryImage } = require("../controllers/categoriesController");
+const { listCategories, listCategoryTree, getCategoryImage } = require("../controllers/categoriesController");
 const { listSubcategoriesByCategory } = require("../controllers/subcategoriesController");
 const { listSubSubcategoriesByCategory, listSubSubcategoriesBySubcategory } = require("../controllers/subSubcategoriesController");
 const validateRequest = require("../middleware/validateRequest");
@@ -8,6 +8,7 @@ const { categoryIdParam, subcategoryIdParam, categorySlugParam } = require("../v
 const router = express.Router();
 
 // Public: categories shown on landing page
+router.get("/categories/tree", listCategoryTree);
 router.get("/categories", listCategories);
 router.get("/categories/images/:slug", categorySlugParam, validateRequest, getCategoryImage);
 router.get("/categories/:categoryId/subcategories", categoryIdParam, validateRequest, listSubcategoriesByCategory);

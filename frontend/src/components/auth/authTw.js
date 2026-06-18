@@ -179,6 +179,17 @@ export const authFieldHint = "mt-2 block text-[0.82rem] leading-normal text-[#6f
 
 export const authFieldHintWarn = "text-[#8b2222]";
 
+export const authChoiceGroup = "grid grid-cols-1 gap-2.5 sm:grid-cols-2";
+
+export const authChoiceBtn =
+  "min-h-[50px] w-full cursor-pointer rounded-[14px] border-[1.5px] px-4 py-3 text-[0.92rem] font-semibold transition-[border-color,background-color,box-shadow,transform] duration-150 focus:outline-none focus-visible:shadow-[0_0_0_4px_rgba(47,59,101,0.14)] disabled:cursor-not-allowed disabled:opacity-60";
+
+export const authChoiceBtnSelected =
+  "border-[#2f3b65] bg-[rgba(47,59,101,0.07)] text-[#223069] shadow-[0_8px_22px_rgba(47,59,101,0.08)]";
+
+export const authChoiceBtnIdle =
+  "border-[rgba(47,59,101,0.16)] bg-white text-[#3f4a67] hover:border-[rgba(47,59,101,0.32)] hover:bg-[rgba(47,59,101,0.02)]";
+
 export const authSrOnly =
   "absolute m-[-1px] h-px w-px overflow-hidden border-0 p-0 [clip:rect(0,0,0,0)] whitespace-nowrap";
 

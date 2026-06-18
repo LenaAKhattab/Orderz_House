@@ -1018,12 +1018,31 @@ async function ensureFreelancerDefaultFreePlan(freelancerUserId, { actorUserId =
 
 /**
  * Non-throwing bootstrap for auth/profile paths.
+ * Skips heavy ensure when a retainable current subscription already exists.
  */
+const bootstrapFastPathCache = new Map();
+const BOOTSTRAP_FAST_PATH_TTL_MS = 60_000;
+
 async function maybeEnsureFreelancerDefaultFreePlan(freelancerUserId) {
+  const uid = Number(freelancerUserId);
+  if (!Number.isInteger(uid) || uid < 1) return null;
+
+  const cached = bootstrapFastPathCache.get(uid);
+  if (cached && Date.now() - cached.at < BOOTSTRAP_FAST_PATH_TTL_MS) {
+    return cached.subscription;
+  }
+
   try {
-    const snap = await getFreelancerIdentitySnapshot(freelancerUserId);
+    const current = await getCurrentSubscriptionForFreelancer(uid);
+    if (shouldRetainCurrentSubscription(current)) {
+      bootstrapFastPathCache.set(uid, { at: Date.now(), subscription: current });
+      return current;
+    }
+
+    const snap = await getFreelancerIdentitySnapshot(uid);
     if (!snap?.isFreelancer) return null;
-    const out = await ensureFreelancerDefaultFreePlan(freelancerUserId);
+    const out = await ensureFreelancerDefaultFreePlan(uid);
+    bootstrapFastPathCache.set(uid, { at: Date.now(), subscription: out.subscription });
     return out.subscription;
   } catch (e) {
     // eslint-disable-next-line no-console

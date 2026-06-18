@@ -582,20 +582,32 @@ const Register = () => {
                     </div>
                   </label>
 
-                  <label className={tw.authField}>
-                    <span className={tw.authFieldLabel}>{t("auth.register.fields.accountType")}</span>
-                    <PremiumSelect
-                      id="register-account-type"
-                      value={accountType}
-                      onChange={(v) => {
-                        setAccountType(v);
-                        setCategories([]);
-                      }}
-                      placeholder={t("auth.register.placeholders.accountType")}
-                      options={accountTypeOptions}
-                      disabled={submitting}
-                    />
-                  </label>
+                  <div className={tw.authField} role="radiogroup" aria-labelledby="register-account-type-label">
+                    <span id="register-account-type-label" className={tw.authFieldLabel}>
+                      {t("auth.register.fields.accountType")}
+                    </span>
+                    <div className={tw.authChoiceGroup}>
+                      {accountTypeOptions.map((opt) => {
+                        const selected = accountType === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            disabled={submitting}
+                            className={`${tw.authChoiceBtn} ${selected ? tw.authChoiceBtnSelected : tw.authChoiceBtnIdle}`}
+                            onClick={() => {
+                              setAccountType(opt.value);
+                              setCategories([]);
+                            }}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
                   <div className={tw.authActionsRow}>
                     <Button unstyled type="submit" className={tw.authSubmitBtn} disabled={submitting}>

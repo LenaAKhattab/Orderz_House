@@ -87,6 +87,8 @@ async function tryMergedPoolMeta({
   q = "",
   includeRealOrders = true,
 }) {
+  const { perfStart } = require("../utils/perfLog");
+  const totalTimer = perfStart("training_pool_list", "tryMergedPoolMeta");
   const canSee = await fakeOrdersService.poolViewerMaySeeFakeOrders({ userId: viewerUserId, role: viewerRole });
   debugTrainingPoolLog("visibility_gate", {
     viewerUserId: viewerUserId ?? null,
@@ -94,6 +96,7 @@ async function tryMergedPoolMeta({
     canSee,
   });
   if (!canSee) {
+    totalTimer.end({ canSee: false });
     return null;
   }
 
@@ -196,44 +199,22 @@ async function tryMergedPoolMeta({
 
   let fakeCount = idOrder.filter((r) => String(r.source) === "fake").length;
 
-  const tryRecoverEmptyTrainingPool = async () => {
+  if (fakeCount === 0) {
+    debugTrainingPoolLog("no_fake_in_page", { note: "recovery_deferred_to_automation" });
+  }
+
+  const fakeIdsToMark = idOrder
+    .filter((r) => String(r.source) === "fake")
+    .map((r) => Number(r.id))
+    .filter((n) => Number.isInteger(n) && n > 0);
+  if (fakeIdsToMark.length) {
     try {
-      const dbVisible = await fakeOrdersService.getVisibleFakeOrdersCount(pool);
-      if (dbVisible > 0) {
-        return;
-      }
-      const ensured = await fakeOrdersService.ensureMinimumVisibleFakeOrders({
-        reason: "pool_list_empty",
-        minVisible: 1,
-      });
-      if (ensured.generated) {
-        const [{ rows: cRows2 }, { rows: idRows2 }] = await Promise.all([
-          pool.query(countSql, baseParams),
-          pool.query(listSql, listParams),
-        ]);
-        total = Number(cRows2[0]?.total || 0);
-        idOrder = idRows2.map((r) => ({ id: String(r.sort_id), source: r.src }));
-        fakeCount = idOrder.filter((r) => String(r.source) === "fake").length;
-      } else if (ensured.code === "LOCK_BUSY") {
-        debugTrainingPoolLog("ensure_min_visible_lock_busy", {
-          retryable: Boolean(ensured.retryable),
-          visible: ensured.visible,
-        });
-      } else if (ensured.code === "GENERATION_FAILED") {
-        console.warn("[trainingPoolList] ensureMinimumVisibleFakeOrders failed:", ensured.error || ensured.code);
-      }
+      await fakeOrdersService.recordMarketplaceVisibleFakeOrders(pool, { fakeOrderIds: fakeIdsToMark });
     } catch (e) {
-      console.warn("[trainingPoolList] ensureMinimumVisibleFakeOrders failed:", e?.message || e);
+      console.warn("[trainingPoolList] recordMarketplaceVisibleFakeOrders failed:", e?.message || e);
     }
-  };
-
-  if (fakeCount === 0) {
-    await tryRecoverEmptyTrainingPool();
   }
 
-  if (fakeCount === 0) {
-    console.warn("[trainingPoolList] No active fake orders found in merged pool result.");
-  }
   debugTrainingPoolLog("merged_result", {
     total,
     fakeInPage: fakeCount,
@@ -241,6 +222,7 @@ async function tryMergedPoolMeta({
     page: Math.floor(off / lim) + 1,
     limit: lim,
   });
+  totalTimer.end({ total, fakeInPage: fakeCount, realInPage: idOrder.length - fakeCount });
   return {
     total,
     idOrder,

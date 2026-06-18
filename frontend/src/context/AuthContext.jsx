@@ -14,6 +14,7 @@ import { getDashboardPath } from "../constants/authRoutes";
 import { userHasPermission, userHasAnyPermission } from "../constants/dashboardPermissions";
 import { AuthContext } from "./authContext";
 import { clearAnalyticsUser, trackEvent } from "../services/analytics";
+import { invalidateFreelancerSessionCache, invalidatePublicPlansCache } from "../services/freelancerSessionCache";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -24,6 +25,8 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(AUTH_SESSION_HINT_KEY);
     setUser(null);
     clearAnalyticsUser();
+    invalidateFreelancerSessionCache();
+    invalidatePublicPlansCache();
   }, []);
 
   const clearSession = useCallback(async () => {

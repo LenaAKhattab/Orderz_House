@@ -30,7 +30,7 @@ import { useToast } from "../../components/ui/toastContext";
 
 import { useTranslation } from "../../i18n/LanguageProvider";
 
-import { getLocaleField } from "../../lib/i18n/getLocalizedField";
+import { getLocalizedTrustLevelLabel } from "../../utils/freelancerTrustLevelUi";
 
 import { enrichFreelancerDashboardItem, resolveFreelancerDashboardItem } from "../../lib/i18n/resolveFreelancerDashboardItem";
 
@@ -112,17 +112,7 @@ function trustLevelNumber(reputation) {
 
 function buildWelcomeMetrics({ reputation, earningsSummary, earningsLoadState, activeWorkload, reviews, t, locale }) {
 
-  const trustEnum = String(reputation?.trustLevel || "").trim();
-  const trustFromEnum =
-    trustEnum && t(`freelancerDashboard.stats.trustLevels.${trustEnum}`) !==
-      `freelancerDashboard.stats.trustLevels.${trustEnum}`
-      ? t(`freelancerDashboard.stats.trustLevels.${trustEnum}`)
-      : "";
-  const trustLabel =
-    getLocaleField(reputation, "trustLevel", locale) ||
-    trustFromEnum ||
-    (locale === "ar" ? reputation?.trustLevelAr : "") ||
-    t("freelancerDashboard.stats.beginner");
+  const trustLabel = getLocalizedTrustLevelLabel(reputation, locale, t);
 
   const trustSub = t("freelancerDashboard.stats.trustLevelNumber", { level: trustLevelNumber(reputation) });
 

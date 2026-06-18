@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 
 import {
 
+  adminGetTrainingOrdersAutomationHealthRequest,
+
   adminGetTrainingOrdersSettingsRequest,
 
   adminListTrainingApplicationsSummaryRequest,
@@ -11,6 +13,8 @@ import {
   adminListTrainingRoundsRequest,
 
   adminListTrainingTemplatesRequest,
+
+  adminRunTrainingOrdersAutomationTickRequest,
 
 } from "../../../services/api";
 
@@ -141,6 +145,10 @@ export default function TrainingOrdersOverviewPage() {
   const [applicantsW, setApplicantsW] = useState(WIDGET_IDLE);
 
   const [roundsTotalW, setRoundsTotalW] = useState(WIDGET_IDLE);
+
+  const [automationHealthW, setAutomationHealthW] = useState(WIDGET_IDLE);
+
+  const [tickBusy, setTickBusy] = useState(false);
 
 
 
@@ -294,6 +302,52 @@ export default function TrainingOrdersOverviewPage() {
 
 
 
+  const loadAutomationHealth = useCallback(async () => {
+
+    setAutomationHealthW({ status: "loading", data: null, error: "" });
+
+    const result = await loadWidget(async () => {
+
+      const res = await adminGetTrainingOrdersAutomationHealthRequest();
+
+      return unwrapTrainingPayload(res);
+
+    });
+
+    setAutomationHealthW({
+
+      status: result.status,
+
+      data: result.status === "success" ? result.data : null,
+
+      error: result.error || "",
+
+    });
+
+  }, []);
+
+
+
+  const runAutomationTick = useCallback(async () => {
+
+    setTickBusy(true);
+
+    try {
+
+      await adminRunTrainingOrdersAutomationTickRequest();
+
+      await Promise.all([loadAutomationHealth(), loadSettings(), loadActiveRound()]);
+
+    } finally {
+
+      setTickBusy(false);
+
+    }
+
+  }, [loadAutomationHealth, loadSettings, loadActiveRound]);
+
+
+
   const loadRoundsTotal = useCallback(async () => {
 
     setRoundsTotalW({ status: "loading", data: null, error: "" });
@@ -338,6 +392,8 @@ export default function TrainingOrdersOverviewPage() {
 
     void loadRoundsTotal();
 
+    void loadAutomationHealth();
+
   }, [
 
     loadSettings,
@@ -353,6 +409,8 @@ export default function TrainingOrdersOverviewPage() {
     loadApplicants,
 
     loadRoundsTotal,
+
+    loadAutomationHealth,
 
   ]);
 
@@ -715,6 +773,126 @@ export default function TrainingOrdersOverviewPage() {
               </Link>
 
             </div>
+
+          </OverviewWidgetFrame>
+
+        </DashboardFormCard>
+
+
+
+        <DashboardFormCard title="صحة الأتمتة" className="oh-training-overview__card">
+
+          <OverviewWidgetFrame
+
+            status={automationHealthW.status}
+
+            error={automationHealthW.error}
+
+            onRetry={() => void loadAutomationHealth()}
+
+            loadingLabel="جاري تحميل صحة الأتمتة…"
+
+          >
+
+            {(() => {
+
+              const h = automationHealthW.data;
+
+              if (!h) return null;
+
+              const driverOn = Boolean(h.driver?.anyDriverActive);
+
+              const schedulerOn = Boolean(h.driver?.inProcessTicksEnabled && h.driver?.schedulerRunning);
+
+              return (
+
+                <>
+
+                  <ul className="oh-training-overview__facts oh-training-overview__facts--program">
+
+                    <li>
+
+                      <span>محرّك الأتمتة</span>
+
+                      <StatusBadge tone={driverOn ? "success" : "warning"}>
+
+                        {driverOn ? "مضبوط" : "غير مضبوط"}
+
+                      </StatusBadge>
+
+                    </li>
+
+                    <li>
+
+                      <span>جدولة داخل الخادم</span>
+
+                      <strong>{schedulerOn ? `نشطة (كل ${Math.round((h.driver?.tickIntervalMs || 0) / 1000)}ث)` : "متوقفة"}</strong>
+
+                    </li>
+
+                    <li>
+
+                      <span>مدة الجولة</span>
+
+                      <strong>{h.rotation?.label || "—"}</strong>
+
+                    </li>
+
+                    <li>
+
+                      <span>طلبات ظاهرة (أي جمهور)</span>
+
+                      <strong dir="ltr">{h.pool?.visibleAnyAudience ?? 0}</strong>
+
+                    </li>
+
+                    <li>
+
+                      <span>طلبات ظاهرة (عام)</span>
+
+                      <strong dir="ltr">{h.pool?.visiblePublicAudience ?? 0}</strong>
+
+                    </li>
+
+                    {h.warnings?.length ? (
+
+                      <li>
+
+                        <span>تحذيرات</span>
+
+                        <strong className="oh-training-overview__warn">{h.warnings.join(" · ")}</strong>
+
+                      </li>
+
+                    ) : null}
+
+                  </ul>
+
+                  <div className="oh-training-overview__card-actions">
+
+                    <button
+
+                      type="button"
+
+                      className="btn btn-secondary"
+
+                      disabled={tickBusy}
+
+                      onClick={() => void runAutomationTick()}
+
+                    >
+
+                      {tickBusy ? "جاري التشغيل…" : "تشغيل دورة الأتمتة الآن"}
+
+                    </button>
+
+                  </div>
+
+                </>
+
+              );
+
+            })()}
 
           </OverviewWidgetFrame>
 

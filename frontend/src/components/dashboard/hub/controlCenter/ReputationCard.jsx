@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "../../../../i18n/LanguageProvider";
 import { getLocalizedField } from "../../../../lib/i18n/getLocalizedField";
+import { getLocalizedTrustLevelLabel } from "../../../../utils/freelancerTrustLevelUi";
 
 export default function ReputationCard({ reputation, loading }) {
   const { t, locale } = useTranslation();
@@ -15,9 +16,7 @@ export default function ReputationCard({ reputation, loading }) {
 
   const rep = reputation || { trustScore: 0, trustLevel: "beginner", factors: [] };
   const score = Math.min(100, Math.max(0, Number(rep.trustScore) || 0));
-  const trustLevel =
-    getLocalizedField(rep, "trustLevel", locale) ||
-    t("freelancerDashboard.controlCenter.reputation.beginner");
+  const trustLevel = getLocalizedTrustLevelLabel(rep, locale, t);
   const emDash = t("freelancerDashboard.common.emDash");
 
   return (

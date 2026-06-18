@@ -170,6 +170,12 @@ export const getCategoriesRequest = async () => {
   return data;
 };
 
+/** Marketplace filter tree — one request instead of N+1 sub-subcategory fetches. */
+export const getCategoriesTreeRequest = async () => {
+  const { data } = await api.get("/categories/tree");
+  return data;
+};
+
 export const getSubcategoriesRequest = async (categoryId) => {
   const { data } = await api.get(`/categories/${categoryId}/subcategories`);
   return data;
@@ -259,6 +265,12 @@ export const getMySubscriptionRequest = async () => {
 /** Freelancer control-center dashboard: single aggregated summary (Phase 2). */
 export const getFreelancerDashboardSummaryRequest = async () => {
   const { data } = await api.get("/freelancer/dashboard-summary", { timeout: 20000 });
+  return data;
+};
+
+/** Lightweight courses sidebar badge — avoids full dashboard-summary on every page. */
+export const getFreelancerCoursesFocusRequest = async () => {
+  const { data } = await api.get("/freelancer/courses-focus", { timeout: 15000 });
   return data;
 };
 
@@ -423,6 +435,16 @@ export const submitPoolOrderBidRequest = async (orderId, payload) => {
 };
 
 // Admin — الطلبات التجريبية (Training / fake orders)
+export const adminGetTrainingOrdersAutomationHealthRequest = async () => {
+  const { data } = await api.get("/admin/training-orders/automation/health");
+  return data;
+};
+
+export const adminRunTrainingOrdersAutomationTickRequest = async () => {
+  const { data } = await api.post("/admin/training-orders/automation/tick");
+  return data;
+};
+
 export const adminGetTrainingOrdersSettingsRequest = async () => {
   const { data } = await api.get("/admin/training-orders/settings");
   return data;

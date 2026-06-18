@@ -8,6 +8,7 @@ const router = express.Router();
 router.use(requireAuth, requireRole("freelancer"));
 
 router.get("/dashboard-summary", freelancerDashboardController.getDashboardSummary);
+router.get("/courses-focus", freelancerDashboardController.getCoursesFocus);
 
 router.get("/reviews", freelancerReviewsController.listMyFreelancerReviews);
 router.get("/reviews/summary", freelancerReviewsController.getMyFreelancerReviewsSummary);

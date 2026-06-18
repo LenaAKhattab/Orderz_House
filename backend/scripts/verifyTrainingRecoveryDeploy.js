@@ -74,18 +74,25 @@ async function main() {
   }
 
   // 4. Automation config
-  const autoEnabled = String(process.env.FAKE_ORDERS_AUTOMATION_ENABLED || "").toLowerCase() === "true";
-  const cronSecret = String(process.env.FAKE_ORDERS_AUTOMATION_CRON_SECRET || "").trim();
+  const {
+    isAutomationDriverConfigured,
+    isInProcessAutomationIntervalEnabled,
+    getAutomationCronSecret,
+  } = require("../src/config/fakeOrdersAutomation");
+  const autoEnabled = isInProcessAutomationIntervalEnabled();
+  const cronSecret = getAutomationCronSecret();
   const tickMs = process.env.FAKE_ORDERS_TICK_MS || "(default)";
-  if (autoEnabled) {
-    check("Automation mode", true, `Option A: FAKE_ORDERS_AUTOMATION_ENABLED=true, TICK_MS=${tickMs}`);
-  } else if (cronSecret && cronSecret.length >= 16) {
-    check("Automation mode", true, "Option B: external cron + secret configured");
+  if (isAutomationDriverConfigured()) {
+    if (autoEnabled) {
+      check("Automation mode", true, `In-process: FAKE_ORDERS_AUTOMATION_ENABLED=true (or dev default), TICK_MS=${tickMs}`);
+    } else if (cronSecret) {
+      check("Automation mode", true, "External cron + FAKE_ORDERS_AUTOMATION_CRON_SECRET configured");
+    }
   } else {
     check(
       "Automation mode",
       false,
-      "Neither Option A (FAKE_ORDERS_AUTOMATION_ENABLED=true) nor Option B (cron secret set) — expected local dev gap",
+      "No driver — set FAKE_ORDERS_AUTOMATION_ENABLED=true (single instance) or FAKE_ORDERS_AUTOMATION_CRON_SECRET + cron",
     );
   }
 
@@ -179,14 +186,15 @@ async function main() {
   }
 
   // 8. Automation endpoint security (if secret configured)
-  if (cronSecret) {
+  const cronSecretForTick = getAutomationCronSecret();
+  if (cronSecretForTick) {
     try {
       const noSecret = await fetchJson(`${API_BASE}/api/internal/fake-orders/automation-tick`, { method: "POST" });
       check("Automation rejects missing secret", noSecret.status === 401 || noSecret.status === 403, `status=${noSecret.status}`);
 
       const withSecret = await fetchJson(`${API_BASE}/api/internal/fake-orders/automation-tick`, {
         method: "POST",
-        headers: { "X-Fake-Orders-Automation-Secret": cronSecret },
+        headers: { "X-Fake-Orders-Automation-Secret": cronSecretForTick },
       });
       check("Automation accepts valid secret", withSecret.status === 200, `status=${withSecret.status}`);
     } catch (e) {

@@ -8,29 +8,28 @@ validateEnv();
 
 const { connectDB } = require("./src/config/db");
 const app = require("./src/app");
-const {
-  isInProcessAutomationIntervalEnabled,
-  getFakeOrdersTickMs,
-} = require("./src/config/fakeOrdersAutomation");
+const { isInProcessAutomationIntervalEnabled } = require("./src/config/fakeOrdersAutomation");
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   await connectDB();
 
   const fakeOrdersService = require("./src/services/fakeOrdersService");
-  const tickMs = getFakeOrdersTickMs();
-  if (isInProcessAutomationIntervalEnabled()) {
-    setInterval(() => {
-      fakeOrdersService.runAutomationTick().catch((err) => {
-        console.error("[fakeOrders] automation tick failed:", err?.message || err);
-      });
-    }, tickMs);
+
+  try {
+    await fakeOrdersService.syncLocalDevAutomationFlags();
+  } catch (err) {
+    console.error("[fakeOrders] syncLocalDevAutomationFlags failed:", err?.message || err);
+  }
+
+  const scheduler = fakeOrdersService.startFakeOrdersAutomationScheduler();
+  if (scheduler.enabled) {
     // eslint-disable-next-line no-console
     console.log(
       JSON.stringify({
         component: "fake_orders_automation",
         event: "interval_started",
-        tickMs,
+        tickMs: scheduler.tickMs,
       }),
     );
   } else {
@@ -42,6 +41,17 @@ const startServer = async () => {
         hint: "Set FAKE_ORDERS_AUTOMATION_ENABLED=true for in-process ticks (single instance only), or use POST /api/internal/fake-orders/automation-tick with FAKE_ORDERS_AUTOMATION_CRON_SECRET.",
       }),
     );
+  }
+
+  try {
+    const health = await fakeOrdersService.getFakeOrdersAutomationHealth();
+    // eslint-disable-next-line no-console
+    console.log(JSON.stringify({ component: "fake_orders_automation", event: "startup_health", health }));
+    if (health.warnings?.length) {
+      console.warn(`[fakeOrders] startup warnings: ${health.warnings.join(", ")}`);
+    }
+  } catch (err) {
+    console.error("[fakeOrders] startup health check failed:", err?.message || err);
   }
 
   // Bootstrap guarantee: when training display is enabled but there are no visible fake orders, generate immediately.
@@ -60,6 +70,13 @@ const startServer = async () => {
     .catch((err) => {
       console.error("[fakeOrders] startup ensureMinimumVisibleFakeOrders failed:", err?.message || err);
     });
+
+  if (!isInProcessAutomationIntervalEnabled()) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[fakeOrders] In-process automation ticks are disabled — scheduled 12h rotation requires FAKE_ORDERS_AUTOMATION_ENABLED=true or external cron hitting /api/internal/fake-orders/automation-tick.",
+    );
+  }
 
   app.listen(PORT, () => {
     console.log(`Backend server listening on port ${PORT}`);

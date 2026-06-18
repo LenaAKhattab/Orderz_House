@@ -2,6 +2,7 @@ const { pool } = require("../config/db");
 const { isFakeOrdersAutomationVerbose, getFakeOrdersTickMs } = require("../config/fakeOrdersAutomation");
 const {
   TRAINING_POOL_VISIBLE_FROM_SQL,
+  trainingPoolVisibleFromSql,
   trainingPoolVisibleWhereSql,
 } = require("./trainingPoolEligibility");
 const { invalidatePublicHomeOrderStatsCache } = require("./publicHomeOrderStatsService");
@@ -194,6 +195,63 @@ function getOverlapThresholdMs() {
   return Math.max(tickMs * 2, configured, 60_000);
 }
 
+/**
+ * Minimum visible training orders from settings (defaults to min_orders).
+ * @param {object} settings
+ * @param {number|null|undefined} minVisibleOverride
+ */
+function resolveMinVisibleFromSettings(settings, minVisibleOverride) {
+  if (Number.isFinite(Number(minVisibleOverride))) {
+    return Math.max(1, Math.floor(Number(minVisibleOverride)));
+  }
+  return Math.max(1, Number(settings?.min_orders) || 1);
+}
+
+/**
+ * True when the current visible wave is within the preemptive overlap window.
+ * @param {{ earliestUntil?: string|Date|null }} coverage
+ * @param {number} [nowMs]
+ */
+function needsPreemptiveOverlapWindow(coverage, nowMs = Date.now()) {
+  if (!coverage?.earliestUntil) return false;
+  const overlapMs = getOverlapThresholdMs();
+  return new Date(coverage.earliestUntil).getTime() - nowMs <= overlapMs;
+}
+
+/**
+ * Schedule the next automation check near (earliest visible_until − overlap), not at full round end.
+ * @param {{ earliestUntil?: string|Date|null }} coverage
+ * @param {object} settings DB row or mapped settings
+ * @param {number} [nowMs]
+ */
+function computeNextAutomationRunAt(coverage, settings, nowMs = Date.now()) {
+  const overlapMs = getOverlapThresholdMs();
+  const tickMs = getFakeOrdersTickMs();
+  const dv = Number(settings?.duration_value ?? settings?.durationValue);
+  const du = String((settings?.duration_unit ?? settings?.durationUnit) || "hours");
+  const intervalMs = msFromDurationSettings(dv, du) || 12 * 60 * 60 * 1000;
+
+  if (coverage?.earliestUntil) {
+    const overlapAt = new Date(coverage.earliestUntil).getTime() - overlapMs;
+    return new Date(Math.max(nowMs + tickMs, overlapAt));
+  }
+  return new Date(nowMs + intervalMs);
+}
+
+/** Another currently-visible item expires after the given boundary (overlap already present). */
+async function hasVisibleItemsExpiringAfter(client, boundaryUntil) {
+  if (!boundaryUntil) return false;
+  const { rows } = await client.query(
+    `SELECT 1
+     ${TRAINING_POOL_VISIBLE_FROM_SQL}
+     WHERE ${trainingPoolVisibleWhereSql({ anyAudience: true })}
+       AND ri.visible_until > $1::timestamptz
+     LIMIT 1`,
+    [boundaryUntil],
+  );
+  return Boolean(rows[0]);
+}
+
 async function getTrainingPoolCoverage(clientOrPool) {
   const runner = clientOrPool || pool;
   const { rows } = await runner.query(
@@ -202,7 +260,7 @@ async function getTrainingPoolCoverage(clientOrPool) {
        COUNT(DISTINCT fr.id)::int AS active_rounds,
        MIN(ri.visible_until) AS earliest_until
      ${TRAINING_POOL_VISIBLE_FROM_SQL}
-     WHERE ${trainingPoolVisibleWhereSql()}`,
+     WHERE ${trainingPoolVisibleWhereSql({ anyAudience: true })}`,
   );
   const row = rows[0] || {};
   return {
@@ -667,6 +725,12 @@ async function startTrainingRoundManualOnce({ actorUserId, attempt = 0 }) {
       ["success", roundId, genCount],
     );
     await client.query("COMMIT");
+    try {
+      await recordMarketplaceVisibleFakeOrders(pool);
+      invalidatePublicHomeOrderStatsCache();
+    } catch (markErr) {
+      console.warn("[fakeOrders] recordMarketplaceVisibleFakeOrders after manual round:", markErr?.message || markErr);
+    }
     await insertAutomationLogSafe(pool, {
       runStartedAt,
       status: "success",
@@ -923,7 +987,11 @@ async function updateSettings({ actorUserId, patch }) {
     if (!autoOn) {
       nextAutomationRunAt = null;
     } else if (turnedAutomationOn || !current.next_automation_run_at || durationChanged) {
-      nextAutomationRunAt = new Date(Date.now() + msFromDurationSettings(durationValue, durationUnit));
+      const coverage = await getTrainingPoolCoverage(client);
+      nextAutomationRunAt = computeNextAutomationRunAt(coverage, {
+        duration_value: durationValue,
+        duration_unit: durationUnit,
+      });
     }
 
     await client.query(
@@ -1185,13 +1253,15 @@ async function submitFakeTrainingClaim({ freelancerUserId, orderId, message = nu
 
 /**
  * Time-based expiry. Idempotent: only rows that still match predicates are updated.
- * Runs in one transaction so related updates are consistent for a single pass.
- * Safe under multi-instance: concurrent runs may repeat the same updates (no-op).
+ * When `externalClient` is passed, runs inside the caller's transaction (no nested BEGIN).
  */
-async function expireStaleItems() {
-  const client = await pool.connect();
+async function expireStaleItems(externalClient = null) {
+  const ownClient = externalClient ? null : await pool.connect();
+  const client = externalClient || ownClient;
   try {
-    await client.query("BEGIN");
+    if (!externalClient) {
+      await client.query("BEGIN");
+    }
     const r1 = await client.query(
       `UPDATE fake_order_round_items ri
        SET status = 'expired', updated_at = NOW()
@@ -1215,29 +1285,37 @@ async function expireStaleItems() {
        SET status = 'expired', updated_at = NOW()
        WHERE fr.status = 'active' AND fr.expires_at <= NOW()`,
     );
-    await client.query("COMMIT");
+    if (!externalClient) {
+      await client.query("COMMIT");
+    }
     const rowsItems = Number(r1.rowCount || 0);
     const rowsOrders = Number(r2.rowCount || 0);
     const rowsRounds = Number(r3.rowCount || 0);
     if (rowsItems + rowsOrders + rowsRounds > 0) {
       invalidatePublicHomeOrderStatsCache();
     }
-    if (rowsItems + rowsOrders + rowsRounds > 0 && isFakeOrdersAutomationVerbose()) {
+    if (rowsItems + rowsOrders + rowsRounds > 0) {
       logAutomationEvent("expire_pass", {
         rowsItems,
         rowsOrders,
         rowsRounds,
+        inTransaction: Boolean(externalClient),
       });
     }
+    return { rowsItems, rowsOrders, rowsRounds };
   } catch (e) {
-    try {
-      await client.query("ROLLBACK");
-    } catch (_) {
-      /* ignore */
+    if (!externalClient) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (_) {
+        /* ignore */
+      }
     }
     throw e;
   } finally {
-    client.release();
+    if (ownClient) {
+      ownClient.release();
+    }
   }
 }
 
@@ -1269,14 +1347,20 @@ async function runAutomationTick() {
   logAutomationEvent("tick_started");
 
   try {
-    await expireStaleItems();
+    await recordMarketplaceVisibleFakeOrders(pool);
   } catch (e) {
-    logAutomationEvent("expire_failed", { message: String(e?.message || e).slice(0, 200) });
-    console.error("[fakeOrders] expireStaleItems failed (non-fatal):", e?.message || e);
+    logAutomationEvent("record_visible_failed", { message: String(e?.message || e).slice(0, 200) });
+    console.error("[fakeOrders] recordMarketplaceVisibleFakeOrders failed (non-fatal):", e?.message || e);
   }
 
   const runStartedAt = new Date();
   const client = await pool.connect();
+  let didGenerate = false;
+  let genStatus = "success";
+  let genError = null;
+  let roundId = null;
+  let genCount = null;
+
   try {
     await client.query("BEGIN");
     const { rows: sRows } = await client.query(`SELECT * FROM fake_order_settings WHERE id = 1 FOR UPDATE`);
@@ -1286,6 +1370,11 @@ async function runAutomationTick() {
       logAutomationEvent("skipped_settings", {
         training_orders_enabled: Boolean(s?.training_orders_enabled),
         automation_enabled: Boolean(s?.automation_enabled),
+        reason: !s
+          ? "no_settings"
+          : !s.training_orders_enabled
+            ? "training_disabled"
+            : "automation_disabled",
       });
       return;
     }
@@ -1297,25 +1386,39 @@ async function runAutomationTick() {
       return;
     }
 
-    const intervalMs = msFromDurationSettings(dv, du);
+    const minVisible = resolveMinVisibleFromSettings(s);
+    const overlapMs = getOverlapThresholdMs();
+    let coverageBefore = await getTrainingPoolCoverage(client);
+    logAutomationEvent("tick_coverage_before", {
+      visibleCount: coverageBefore.visibleCount,
+      minVisible,
+      activeRounds: coverageBefore.activeRounds,
+      earliestUntil: coverageBefore.earliestUntil,
+      overlapMs,
+    });
+
     let nextRun = s.next_automation_run_at ? new Date(s.next_automation_run_at).getTime() : null;
     if (nextRun == null) {
-      const initAt = new Date(Date.now() + intervalMs);
+      const initAt = computeNextAutomationRunAt(coverageBefore, s);
       await client.query(
         `UPDATE fake_order_settings SET next_automation_run_at = $1, last_automation_next_at = $1, updated_at = NOW() WHERE id = 1`,
         [initAt],
       );
       await client.query("COMMIT");
-      logAutomationEvent("next_run_initialized", { nextAtMs: initAt.getTime() });
+      logAutomationEvent("next_run_initialized", {
+        nextAt: initAt.toISOString(),
+        earliestUntil: coverageBefore.earliestUntil,
+        overlapMs,
+      });
       return;
     }
 
     const now = Date.now();
-    const nextAtDate = new Date(Date.now() + intervalMs);
     const actorUserId = await resolveAutomationActorUserId(client);
     if (!actorUserId) {
       logAutomationEvent("no_admin_actor", { reason: "no_admin_user" });
       console.error("[fakeOrders] automation: no admin user found for training round generation");
+      const nextAtDate = computeNextAutomationRunAt(coverageBefore, s, now);
       await client.query(
         `UPDATE fake_order_settings SET
            next_automation_run_at = $1,
@@ -1341,16 +1444,10 @@ async function runAutomationTick() {
       return;
     }
 
-    let genStatus = "success";
-    let genError = null;
-    let roundId = null;
-    let genCount = null;
-    let didGenerate = false;
-
     const seamless = await ensureSeamlessTrainingRotation(client, s, {
       actorUserId,
       reason: "automation_tick",
-      minVisible: 1,
+      minVisible,
     });
     if (seamless.generated) {
       didGenerate = true;
@@ -1361,10 +1458,18 @@ async function runAutomationTick() {
         action: seamless.action,
         roundId,
         generatedCount: genCount,
+        visibleBefore: coverageBefore.visibleCount,
+        minVisible,
       });
     } else if (seamless.code === "NO_TEMPLATES") {
       genStatus = "skipped_no_templates";
       logAutomationEvent("skipped_no_templates", { code: "NO_TEMPLATES", phase: "seamless" });
+    } else if (seamless.code === "LOCK_BUSY") {
+      logAutomationEvent("rotation_skipped_lock", {
+        phase: "seamless",
+        visible: seamless.visible,
+        minVisible,
+      });
     }
 
     const scheduledDue = now >= nextRun;
@@ -1373,8 +1478,7 @@ async function runAutomationTick() {
       try {
         scheduledLockAcquired = await tryAcquireGenerationLock(client, { reason: "automation_scheduled" });
         if (!scheduledLockAcquired) {
-          await safeRollback(client);
-          logAutomationEvent("skipped_lock", { reason: "advisory_lock_active" });
+          logAutomationEvent("skipped_lock", { reason: "advisory_lock_active", phase: "scheduled" });
           await insertAutomationLogSafe(pool, {
             runStartedAt,
             status: "skipped_lock",
@@ -1383,32 +1487,44 @@ async function runAutomationTick() {
             generatedCount: null,
             source: "automation",
           });
-          return;
-        }
+        } else {
+          const scheduleCoverage = await getTrainingPoolCoverage(client);
+          const supersedeExisting = scheduleCoverage.visibleCount === 0;
+          logAutomationEvent("scheduled_rotation_start", {
+            visibleCount: scheduleCoverage.visibleCount,
+            supersedeExisting,
+            scheduledDue: true,
+          });
 
-        const result = await withSavepoint(client, "training_round_gen", () =>
-          generateTrainingRoundInternal(client, {
-            actorUserId,
-            roundSource: "automation",
-            supersedeExisting: true,
-          }),
-        );
-        if (result.ok) {
-          didGenerate = true;
-          roundId = result.round?.id ? Number(result.round.id) : null;
-          genCount = result.generatedCount ?? null;
-          genStatus = "success";
-          invalidatePublicHomeOrderStatsCache();
-          logAutomationEvent("generated_round", { roundId, generatedCount: genCount, phase: "scheduled" });
-        } else if (result.code === "NO_TEMPLATES") {
-          genStatus = "skipped_no_templates";
-          logAutomationEvent("skipped_no_templates", { code: "NO_TEMPLATES", phase: "scheduled" });
-          console.error("[fakeOrders] automation: no active templates — skipping round generation");
+          const result = await withSavepoint(client, "training_round_gen", () =>
+            generateTrainingRoundInternal(client, {
+              actorUserId,
+              roundSource: "automation",
+              supersedeExisting,
+            }),
+          );
+          if (result.ok) {
+            didGenerate = true;
+            roundId = result.round?.id ? Number(result.round.id) : null;
+            genCount = result.generatedCount ?? null;
+            genStatus = "success";
+            invalidatePublicHomeOrderStatsCache();
+            logAutomationEvent("generated_round", {
+              roundId,
+              generatedCount: genCount,
+              phase: "scheduled",
+              supersedeExisting,
+            });
+          } else if (result.code === "NO_TEMPLATES") {
+            genStatus = "skipped_no_templates";
+            logAutomationEvent("skipped_no_templates", { code: "NO_TEMPLATES", phase: "scheduled" });
+            console.error("[fakeOrders] automation: no active templates — skipping round generation");
+          }
         }
       } catch (e) {
         genStatus = "failed";
         genError = String(e?.message || e).slice(0, 5000);
-        logAutomationEvent("generation_failed", { message: genError.slice(0, 200) });
+        logAutomationEvent("generation_failed", { message: genError.slice(0, 200), phase: "scheduled" });
         console.error("[fakeOrders] automation: round generation failed:", e?.message || e);
       } finally {
         await releaseGenerationLock(client, {
@@ -1416,8 +1532,26 @@ async function runAutomationTick() {
           reason: "automation_scheduled",
         });
       }
-    } else if (!didGenerate && !scheduledDue && isFakeOrdersAutomationVerbose()) {
-      logAutomationEvent("skipped_not_due", { nextRunAtMs: nextRun });
+    } else if (!didGenerate && !scheduledDue) {
+      logAutomationEvent("scheduled_rotation_not_due", {
+        nextRunAt: new Date(nextRun).toISOString(),
+        visibleCount: coverageBefore.visibleCount,
+        verbose: isFakeOrdersAutomationVerbose(),
+      });
+    }
+
+    await expireStaleItems(client);
+
+    const coverageAfter = await getTrainingPoolCoverage(client);
+    const nextAtDate = computeNextAutomationRunAt(coverageAfter, s, Date.now());
+
+    if (coverageAfter.visibleCount < minVisible) {
+      logAutomationEvent("visible_below_minimum_after_tick", {
+        visibleCount: coverageAfter.visibleCount,
+        minVisible,
+        didGenerate,
+        earliestUntil: coverageAfter.earliestUntil,
+      });
     }
 
     if (didGenerate || scheduledDue) {
@@ -1434,21 +1568,46 @@ async function runAutomationTick() {
          WHERE id = 1`,
         [nextAtDate, genStatus, genError, roundId, genCount],
       );
-      await client.query("COMMIT");
-      if (didGenerate || genStatus !== "success") {
-        await insertAutomationLogSafe(pool, {
-          runStartedAt,
-          status: genStatus,
-          errorMessage: genError,
-          roundId,
-          generatedCount: genCount,
-          source: "automation",
-        });
-      }
-      return;
+    } else {
+      await client.query(
+        `UPDATE fake_order_settings SET
+           next_automation_run_at = $1,
+           last_automation_next_at = $1,
+           updated_at = NOW()
+         WHERE id = 1`,
+        [nextAtDate],
+      );
     }
 
     await client.query("COMMIT");
+
+    logAutomationEvent("tick_coverage_after", {
+      visibleCount: coverageAfter.visibleCount,
+      minVisible,
+      activeRounds: coverageAfter.activeRounds,
+      earliestUntil: coverageAfter.earliestUntil,
+      nextAutomationRunAt: nextAtDate.toISOString(),
+      overlapMs,
+    });
+
+    if (didGenerate) {
+      try {
+        await recordMarketplaceVisibleFakeOrders(pool);
+        invalidatePublicHomeOrderStatsCache();
+      } catch (markErr) {
+        console.warn("[fakeOrders] recordMarketplaceVisibleFakeOrders after tick:", markErr?.message || markErr);
+      }
+    }
+    if (didGenerate || genStatus !== "success") {
+      await insertAutomationLogSafe(pool, {
+        runStartedAt,
+        status: genStatus,
+        errorMessage: genError,
+        roundId,
+        generatedCount: genCount,
+        source: "automation",
+      });
+    }
   } catch (e) {
     await safeRollback(client);
     console.error("[fakeOrders] automation tick transaction failed:", e?.message || e);
@@ -1462,9 +1621,54 @@ async function getVisibleFakeOrdersCount(clientOrPool) {
   const { rows } = await runner.query(
     `SELECT COUNT(*)::int AS c
      ${TRAINING_POOL_VISIBLE_FROM_SQL}
-     WHERE ${trainingPoolVisibleWhereSql()}`,
+     WHERE ${trainingPoolVisibleWhereSql({ anyAudience: true })}`,
   );
   return Number(rows[0]?.c || 0);
+}
+
+/**
+ * Mark fake orders that are (or were just) marketplace-visible under the full audience-aware predicate.
+ * @param {import('pg').Pool | import('pg').PoolClient} [clientOrPool]
+ * @param {{ fakeOrderIds?: number[] }} [options]
+ */
+async function recordMarketplaceVisibleFakeOrders(clientOrPool, options = {}) {
+  const runner = clientOrPool || pool;
+  const ids = Array.isArray(options.fakeOrderIds)
+    ? options.fakeOrderIds.map((id) => Number(id)).filter((n) => Number.isInteger(n) && n > 0)
+    : [];
+
+  if (ids.length) {
+    await runner.query(
+      `UPDATE fake_orders fo
+       SET was_marketplace_visible = TRUE,
+           first_visible_at = COALESCE(first_visible_at, NOW()),
+           updated_at = NOW()
+       WHERE fo.id = ANY($1::bigint[])
+         AND fo.was_marketplace_visible IS NOT TRUE
+         AND EXISTS (
+           SELECT 1
+           ${trainingPoolVisibleFromSql("fo_vis")}
+           WHERE fo_vis.id = fo.id
+             AND ${trainingPoolVisibleWhereSql({ anyAudience: true, alias: "fo_vis" })}
+         )`,
+      [ids],
+    );
+    return;
+  }
+
+  await runner.query(
+    `UPDATE fake_orders fo
+     SET was_marketplace_visible = TRUE,
+         first_visible_at = COALESCE(first_visible_at, NOW()),
+         updated_at = NOW()
+     WHERE fo.was_marketplace_visible IS NOT TRUE
+       AND EXISTS (
+         SELECT 1
+         ${TRAINING_POOL_VISIBLE_FROM_SQL}
+         WHERE fo.id = ri.fake_order_id
+           AND ${trainingPoolVisibleWhereSql({ anyAudience: true })}
+       )`,
+  );
 }
 
 /**
@@ -1472,25 +1676,47 @@ async function getVisibleFakeOrdersCount(clientOrPool) {
  * Idempotent via advisory lock + coverage checks (no duplicate overlap rounds).
  */
 async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, reason = "rotation", minVisible = null } = {}) {
-  const minVisibleCount = Number.isFinite(Number(minVisible)) ? Math.max(1, Number(minVisible)) : 1;
+  const minVisibleCount = resolveMinVisibleFromSettings(settings, minVisible);
   const coverage = await getTrainingPoolCoverage(client);
   const overlapMs = getOverlapThresholdMs();
   const now = Date.now();
 
-  let supersedeExisting = true;
+  let supersedeExisting = false;
   let rotationReason = null;
 
   if (coverage.visibleCount < minVisibleCount) {
     rotationReason = "replenish";
-    supersedeExisting = true;
+    supersedeExisting = coverage.visibleCount === 0;
+    logAutomationEvent("rotation_replenish_triggered", {
+      reason,
+      visibleCount: coverage.visibleCount,
+      minVisible: minVisibleCount,
+      supersedeExisting,
+    });
   } else if (
-    coverage.activeRounds === 1 &&
     coverage.earliestUntil &&
-    new Date(coverage.earliestUntil).getTime() - now <= overlapMs
+    needsPreemptiveOverlapWindow(coverage, now) &&
+    !(await hasVisibleItemsExpiringAfter(client, coverage.earliestUntil))
   ) {
     rotationReason = "preemptive_overlap";
     supersedeExisting = false;
+    logAutomationEvent("rotation_overlap_triggered", {
+      reason,
+      visibleCount: coverage.visibleCount,
+      earliestUntil: coverage.earliestUntil,
+      overlapMs,
+      activeRounds: coverage.activeRounds,
+    });
   } else {
+    logAutomationEvent("rotation_not_needed", {
+      reason,
+      visibleCount: coverage.visibleCount,
+      minVisible: minVisibleCount,
+      activeRounds: coverage.activeRounds,
+      earliestUntil: coverage.earliestUntil,
+      overlapMs,
+      withinOverlapWindow: needsPreemptiveOverlapWindow(coverage, now),
+    });
     return { ok: true, action: "none", visible: coverage.visibleCount, coverage };
   }
 
@@ -1504,14 +1730,24 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
 
     const afterLock = await getTrainingPoolCoverage(client);
     if (rotationReason === "replenish" && afterLock.visibleCount >= minVisibleCount) {
+      logAutomationEvent("rotation_replenish_aborted", {
+        reason,
+        visibleAfterLock: afterLock.visibleCount,
+        minVisible: minVisibleCount,
+      });
       return { ok: true, action: "none", visible: afterLock.visibleCount, coverage: afterLock };
     }
     if (
       rotationReason === "preemptive_overlap" &&
-      (afterLock.activeRounds >= 2 ||
-        !afterLock.earliestUntil ||
-        new Date(afterLock.earliestUntil).getTime() - Date.now() > overlapMs)
+      (!afterLock.earliestUntil ||
+        !needsPreemptiveOverlapWindow(afterLock, Date.now()) ||
+        (await hasVisibleItemsExpiringAfter(client, afterLock.earliestUntil)))
     ) {
+      logAutomationEvent("rotation_overlap_aborted", {
+        reason,
+        visibleAfterLock: afterLock.visibleCount,
+        earliestUntil: afterLock.earliestUntil,
+      });
       return { ok: true, action: "none", visible: afterLock.visibleCount, coverage: afterLock };
     }
 
@@ -1527,6 +1763,7 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
       return { ok: false, code: result.code || "NO_TEMPLATES", visible: afterLock.visibleCount, coverage: afterLock };
     }
 
+    const visibleAfterGen = await getVisibleFakeOrdersCount(client);
     invalidatePublicHomeOrderStatsCache();
     logAutomationEvent("rotation_generated", {
       reason,
@@ -1534,6 +1771,8 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
       supersedeExisting,
       roundId: result.round?.id ? Number(result.round.id) : null,
       generatedCount: Number(result.generatedCount || 0),
+      visibleAfterGen,
+      minVisible: minVisibleCount,
     });
     return {
       ok: true,
@@ -1541,7 +1780,7 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
       generated: true,
       roundId: result.round?.id ? Number(result.round.id) : null,
       generatedCount: Number(result.generatedCount || 0),
-      visible: afterLock.visibleCount,
+      visible: visibleAfterGen,
       coverage: afterLock,
     };
   } finally {
@@ -1646,6 +1885,7 @@ async function ensureMinimumVisibleFakeOrdersOnce({ reason = "runtime", minVisib
     }
 
     await client.query("COMMIT");
+    await recordMarketplaceVisibleFakeOrders(pool);
     const visibleAfter = await getVisibleFakeOrdersCount(pool);
     return {
       ok: true,
@@ -1989,9 +2229,20 @@ async function cancelRound({ actorUserId, roundId }) {
       err.statusCode = 409;
       throw err;
     }
+    await client.query(
+      `UPDATE fake_order_round_items SET status = 'expired', updated_at = NOW()
+       WHERE round_id = $1 AND status = 'active'`,
+      [rid],
+    );
+    await client.query(
+      `UPDATE fake_orders SET fake_status = 'expired', updated_at = NOW()
+       WHERE fake_round_id = $1 AND fake_status = 'active'`,
+      [rid],
+    );
     await client.query(`UPDATE fake_order_rounds SET status = 'stopped', updated_at = NOW() WHERE id = $1`, [rid]);
     const { rows: out } = await client.query(`SELECT * FROM fake_order_rounds WHERE id = $1`, [rid]);
     await client.query("COMMIT");
+    invalidatePublicHomeOrderStatsCache();
     return mapRound(out[0]);
   } catch (e) {
     await client.query("ROLLBACK");
@@ -2193,6 +2444,171 @@ async function listApplicationsForFakeOrder({ actorUserId, fakeOrderId }) {
   return rows.map(mapApplication);
 }
 
+/** @type {ReturnType<typeof setInterval> | null} */
+let automationIntervalId = null;
+
+/**
+ * Non-production helper: when training is on but DB automation flag is off, enable automation
+ * so local dev rotation matches Super Admin intent without a manual settings toggle.
+ */
+async function syncLocalDevAutomationFlags() {
+  const { isInProcessAutomationIntervalEnabled, isProductionNodeEnv } = require("../config/fakeOrdersAutomation");
+  if (isProductionNodeEnv() || !isInProcessAutomationIntervalEnabled()) {
+    return { synced: false };
+  }
+  const { rowCount } = await pool.query(
+    `UPDATE fake_order_settings
+     SET automation_enabled = TRUE, updated_at = NOW()
+     WHERE id = 1
+       AND training_orders_enabled = TRUE
+       AND automation_enabled = FALSE`,
+  );
+  if (rowCount > 0) {
+    logAutomationEvent("local_dev_automation_enabled", { reason: "training_on_automation_off" });
+  }
+  return { synced: rowCount > 0 };
+}
+
+/**
+ * Diagnostics for Super Admin / ops — safe aggregates only.
+ */
+async function getFakeOrdersAutomationHealth() {
+  const {
+    isInProcessAutomationIntervalEnabled,
+    isAutomationDriverConfigured,
+    getAutomationCronSecret,
+    getFakeOrdersTickMs,
+  } = require("../config/fakeOrdersAutomation");
+
+  const settings = await getSettings();
+  const coverage = await getTrainingPoolCoverage(pool);
+
+  const [
+    templatesRes,
+    roundsRes,
+    itemsRes,
+    publicVisibleRes,
+    plansRes,
+  ] = await Promise.all([
+    pool.query(`SELECT COUNT(*)::int AS c FROM fake_order_templates WHERE is_active = TRUE`),
+    pool.query(`SELECT status, COUNT(*)::int AS c FROM fake_order_rounds GROUP BY status`),
+    pool.query(`SELECT status, COUNT(*)::int AS c FROM fake_order_round_items GROUP BY status`),
+    pool.query(
+      `SELECT COUNT(DISTINCT fo.id)::int AS c
+       ${TRAINING_POOL_VISIBLE_FROM_SQL}
+       WHERE ${trainingPoolVisibleWhereSql({ publicAudienceOnly: true })}`,
+    ),
+    pool.query(`SELECT COUNT(*)::int AS c FROM fake_order_settings_plans`),
+  ]);
+
+  const inProcess = isInProcessAutomationIntervalEnabled();
+  const cronConfigured = Boolean(getAutomationCronSecret());
+  const driverActive = isAutomationDriverConfigured();
+
+  const warnings = [];
+  if (!driverActive) {
+    warnings.push("no_automation_driver");
+  }
+  if (!settings?.trainingOrdersEnabled) {
+    warnings.push("training_orders_disabled");
+  }
+  if (!settings?.automationEnabled) {
+    warnings.push("db_automation_disabled");
+  }
+  if (driverActive && settings?.trainingOrdersEnabled && !settings?.automationEnabled) {
+    warnings.push("driver_on_but_db_automation_off");
+  }
+  if (Number(templatesRes.rows[0]?.c || 0) < 1) {
+    warnings.push("no_active_templates");
+  }
+  if (coverage.visibleCount < 1 && settings?.trainingOrdersEnabled) {
+    warnings.push("no_visible_fake_orders");
+  }
+  if (
+    settings?.trainingOrdersEnabled &&
+    !settings?.showToAllVisitors &&
+    !settings?.showToAllFreelancers &&
+    Number(plansRes.rows[0]?.c || 0) < 1
+  ) {
+    warnings.push("audience_gating_no_public_or_plans");
+  }
+  if (settings?.lastAutomationStatus === "failed" && settings?.lastAutomationError) {
+    warnings.push("last_automation_failed");
+  }
+
+  return {
+    checkedAt: new Date().toISOString(),
+    driver: {
+      inProcessTicksEnabled: inProcess,
+      tickIntervalMs: getFakeOrdersTickMs(),
+      cronSecretConfigured: cronConfigured,
+      cronEndpoint: "/api/internal/fake-orders/automation-tick",
+      anyDriverActive: driverActive,
+      schedulerRunning: automationIntervalId != null,
+    },
+    rotation: {
+      durationValue: settings?.durationValue ?? null,
+      durationUnit: settings?.durationUnit ?? null,
+      overlapMs: getOverlapThresholdMs(),
+      minVisibleOrders: settings?.minOrders ?? null,
+      label:
+        settings?.durationValue != null && settings?.durationUnit
+          ? `${settings.durationValue} ${settings.durationUnit}`
+          : null,
+      note: "next_automation_run_at is scheduled near earliest visible_until − overlapMs. FAKE_ORDERS_TICK_MS controls tick frequency only.",
+    },
+    db: {
+      trainingOrdersEnabled: Boolean(settings?.trainingOrdersEnabled),
+      automationEnabled: Boolean(settings?.automationEnabled),
+      showToAllVisitors: Boolean(settings?.showToAllVisitors),
+      showToAllFreelancers: Boolean(settings?.showToAllFreelancers),
+      eligiblePlanLinks: Number(plansRes.rows[0]?.c || 0),
+      nextAutomationRunAt: settings?.nextAutomationRunAt ?? null,
+      lastAutomationRunAt: settings?.lastAutomationRunAt ?? null,
+      lastAutomationStatus: settings?.lastAutomationStatus ?? null,
+      lastAutomationError: settings?.lastAutomationError ?? null,
+      lastAutomationRoundId: settings?.lastAutomationRoundId ?? null,
+      lastAutomationGeneratedCount: settings?.lastAutomationGeneratedCount ?? null,
+    },
+    pool: {
+      visibleAnyAudience: coverage.visibleCount,
+      visiblePublicAudience: Number(publicVisibleRes.rows[0]?.c || 0),
+      activeRounds: coverage.activeRounds,
+      earliestVisibleUntil: coverage.earliestUntil ?? null,
+    },
+    templates: { activeCount: Number(templatesRes.rows[0]?.c || 0) },
+    roundsByStatus: Object.fromEntries(roundsRes.rows.map((r) => [r.status, Number(r.c)])),
+    roundItemsByStatus: Object.fromEntries(itemsRes.rows.map((r) => [r.status, Number(r.c)])),
+    warnings,
+  };
+}
+
+/**
+ * Start in-process automation scheduler (idempotent). First tick after short delay.
+ * @returns {{ enabled: boolean, tickMs: number }}
+ */
+function startFakeOrdersAutomationScheduler() {
+  const { isInProcessAutomationIntervalEnabled, getFakeOrdersTickMs } = require("../config/fakeOrdersAutomation");
+  const tickMs = getFakeOrdersTickMs();
+  if (!isInProcessAutomationIntervalEnabled()) {
+    return { enabled: false, tickMs };
+  }
+  if (automationIntervalId != null) {
+    return { enabled: true, tickMs, alreadyRunning: true };
+  }
+
+  const runTick = () => {
+    runAutomationTick().catch((err) => {
+      console.error("[fakeOrders] automation tick failed:", err?.message || err);
+    });
+  };
+
+  setTimeout(runTick, 3_000);
+  automationIntervalId = setInterval(runTick, tickMs);
+  logAutomationEvent("interval_started", { tickMs, firstTickDelayMs: 3_000 });
+  return { enabled: true, tickMs };
+}
+
 module.exports = {
   randomInt,
   classifyMainCategory,
@@ -2210,8 +2626,17 @@ module.exports = {
   ensureMinimumVisibleFakeOrders,
   getVisibleFakeOrdersCount,
   getTrainingPoolCoverage,
+  recordMarketplaceVisibleFakeOrders,
+  generateTrainingRoundInternal,
+  hasVisibleItemsExpiringAfter,
   getOverlapThresholdMs,
+  computeNextAutomationRunAt,
+  needsPreemptiveOverlapWindow,
+  resolveMinVisibleFromSettings,
   runAutomationTick,
+  startFakeOrdersAutomationScheduler,
+  getFakeOrdersAutomationHealth,
+  syncLocalDevAutomationFlags,
   startTrainingRoundManual,
   getFakePoolOrderMapped,
   submitFakeTrainingBid,

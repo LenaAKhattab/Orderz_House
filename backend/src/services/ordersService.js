@@ -1536,18 +1536,24 @@ async function listPoolOrdersForFreelancer({
   sort = "newest",
   q = "",
 } = {}) {
+  const { perfStart } = require("../utils/perfLog");
+  const totalTimer = perfStart("pool_list_freelancer", "listPoolOrdersForFreelancer");
   const uid = Number(freelancerUserId);
   if (!Number.isInteger(uid) || uid < 1) {
+    totalTimer.end({ skipped: true });
     return {
       orders: [],
       pagination: { page: 1, limit: Number(limit) || POOL_LIST_DEFAULT_LIMIT, total: 0, totalPages: 1 },
     };
   }
+  const bootstrapTimer = perfStart("pool_list_freelancer", "bootstrap_subscription");
   await subscriptionsService.maybeEnsureFreelancerDefaultFreePlan(uid);
+  bootstrapTimer.end({ userId: uid });
   const planOrderValueEligibility = require("./planOrderValueEligibility");
   const pg = parsePageLimitOffset({ page, limit, offset, defaultLimit: POOL_LIST_DEFAULT_LIMIT });
   const trainingPoolList = require("./trainingPoolList");
   const { hydrateMergedPoolOrders } = require("./hydrateMergedPool");
+  const metaTimer = perfStart("pool_list_freelancer", "training_pool_meta");
   const merged = await trainingPoolList.tryMergedPoolMeta({
     viewerUserId: uid,
     viewerRole,
@@ -1562,9 +1568,15 @@ async function listPoolOrdersForFreelancer({
     q,
     includeRealOrders: true,
   });
+  metaTimer.end({ userId: uid, merged: Boolean(merged) });
   if (merged) {
+    const hydrateTimer = perfStart("pool_list_freelancer", "hydrate_merged_pool");
     const mapped = await hydrateMergedPoolOrders(merged.idOrder, mapListOrderRow, { freelancerUserId: uid });
+    hydrateTimer.end({ userId: uid, count: mapped.length });
+    const enrichTimer = perfStart("pool_list_freelancer", "plan_eligibility_enrichment");
     const orders = await planOrderValueEligibility.enrichFreelancerPoolOrdersPlanEligibility(mapped, uid);
+    enrichTimer.end({ userId: uid, count: orders.length });
+    totalTimer.end({ userId: uid, path: "merged", orderCount: orders.length });
     return {
       orders,
       pagination: {
@@ -1662,7 +1674,10 @@ async function listPoolOrdersForFreelancer({
   ]);
   const total = Number(countRows[0]?.total || 0);
   const mapped = rows.map(mapListOrderRow).filter(Boolean);
+  const enrichTimer = perfStart("pool_list_freelancer", "plan_eligibility_enrichment");
   const orders = await planOrderValueEligibility.enrichFreelancerPoolOrdersPlanEligibility(mapped, uid);
+  enrichTimer.end({ userId: uid, count: orders.length });
+  totalTimer.end({ userId: uid, path: "real_only", orderCount: orders.length });
   return {
     orders,
     pagination: {
@@ -1686,8 +1701,11 @@ async function listFreelancerAssignedOrders({
   sort = "newest",
   q = "",
 } = {}) {
+  const { perfStart } = require("../utils/perfLog");
+  const totalTimer = perfStart("freelancer_my_orders", "listFreelancerAssignedOrders");
   const uid = Number(freelancerUserId);
   if (!Number.isInteger(uid) || uid < 1) {
+    totalTimer.end({ skipped: true });
     return {
       orders: [],
       pagination: { page: 1, limit: Number(limit) || 12, total: 0, totalPages: 1 },
@@ -1736,10 +1754,11 @@ async function listFreelancerAssignedOrders({
 
   const baseCte = `
     WITH base AS (
-      SELECT o.*
-      FROM orders o
-      WHERE o.assigned_freelancer_id = $1
-         OR o.accepted_freelancer_id = $1
+      SELECT o.* FROM orders o WHERE o.assigned_freelancer_id = $1
+      UNION
+      SELECT o.* FROM orders o
+      WHERE o.accepted_freelancer_id = $1
+        AND (o.assigned_freelancer_id IS NULL OR o.assigned_freelancer_id <> $1)
     )
   `;
 
@@ -1755,7 +1774,8 @@ async function listFreelancerAssignedOrders({
       ss.name AS sub_subcategory_name,
       ss.name_en AS sub_subcategory_name_en,
       ss.subcategory_id AS sub_subcategory_parent_id,
-      0::int AS applicants_count
+      0::int AS applicants_count,
+      COUNT(*) OVER()::int AS __filter_total
     FROM base b
     LEFT JOIN categories c ON c.id = b.category_id
     LEFT JOIN sub_subcategories ss ON ss.id = b.sub_subcategory_id
@@ -1777,14 +1797,33 @@ async function listFreelancerAssignedOrders({
     FROM base b
   `;
 
-  const [countRes, rowsRes, countsRes] = await Promise.all([
-    pool.query(countSql, params),
+  const rowsTimer = perfStart("freelancer_my_orders", "rows_query");
+  const countsTimer = perfStart("freelancer_my_orders", "status_summary_query");
+  const [rowsRes, countsRes] = await Promise.all([
     pool.query(rowsSql, [...params, pg.limit, pg.offset]),
     pool.query(countsSql, [uid]),
   ]);
-  const total = Number(countRes.rows[0]?.total || 0);
+  rowsTimer.end({ userId: uid, rowCount: rowsRes.rows.length });
+  countsTimer.end({ userId: uid });
+
+  let total = Number(rowsRes.rows[0]?.__filter_total || 0);
+  if (rowsRes.rows.length === 0 && pg.page > 1) {
+    const countTimer = perfStart("freelancer_my_orders", "filtered_count_query");
+    const countRes = await pool.query(countSql, params);
+    countTimer.end({ userId: uid, page: pg.page });
+    total = Number(countRes.rows[0]?.total || 0);
+  }
+
   const orders = rowsRes.rows.map(mapListOrderRow).filter(Boolean);
   const c = countsRes.rows[0] || {};
+
+  totalTimer.end({
+    userId: uid,
+    orderCount: orders.length,
+    total,
+    status: normalizedStatus,
+    page: pg.page,
+  });
 
   return {
     orders,

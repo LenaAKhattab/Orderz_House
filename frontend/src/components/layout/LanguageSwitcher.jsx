@@ -1,6 +1,7 @@
 import { useTranslation } from "../../i18n/LanguageProvider";
 
-
+/** Set to true to show the ENG/Arabic toggle in the navbar again. */
+const LANGUAGE_SWITCHER_VISIBLE = false;
 
 export default function LanguageSwitcher({ className = "" }) {
 
@@ -19,9 +20,8 @@ export default function LanguageSwitcher({ className = "" }) {
       type="button"
 
       className={[
-
+        !LANGUAGE_SWITCHER_VISIBLE && "hidden",
         "inline-flex min-h-[36px] shrink-0 items-center justify-center rounded-full border border-[rgba(56,82,180,0.2)] bg-white/90 px-3 py-1.5 text-[0.82rem] font-bold text-[#2f3b65] transition-colors hover:border-[rgba(56,82,180,0.35)] hover:bg-[rgba(56,82,180,0.04)] focus:outline-none focus:shadow-[0_0_0_3px_rgba(56,82,180,0.12)] sm:px-3.5 sm:text-[0.85rem]",
-
         className,
 
       ]

@@ -1961,7 +1961,7 @@
 .fdash-welcome__actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-start;
+  justify-content: flex-end;
   gap: 8px;
   margin-top: 18px;
   padding-top: 4px;

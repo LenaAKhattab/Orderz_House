@@ -41,7 +41,39 @@ Copy `backend/.env.example` → host env / `.env` and set:
 | `EMAIL_FROM` | Verified sender in Resend |
 | `CLOUDINARY_*` | Required before upload E2E |
 | `COOKIE_SAME_SITE` | `none` if SPA and API are on **different** HTTPS hosts |
-| `FAKE_ORDERS_AUTOMATION_ENABLED` | `false` unless single instance + intentional |
+| `FAKE_ORDERS_AUTOMATION_ENABLED` | `false` on multi-instance — use external cron (see below) |
+| `FAKE_ORDERS_AUTOMATION_CRON_SECRET` | **Required for production cron** (≥ 16 chars, not a placeholder) |
+| `FAKE_ORDERS_TICK_MS` | `60000` — how often `runAutomationTick` runs (not round duration) |
+
+**Training round duration (12 hours)** is **not** an env var — set in Super Admin → Training → Settings (`duration_value` + `duration_unit`, default `12` / `hours`). Migration `082` restores 12h if DB was left at `2 minutes` from testing.
+
+#### Fake orders automation cron (production / multi-instance)
+
+0. Run migrations **`081`**, **`082`**, **`083`** (`npm run db:migrate` from `backend/`):
+   - `081` — marketplace visibility proof columns (`was_marketplace_visible`)
+   - `082` — restore 12h round duration if DB was left at 2-minute test values
+   - `083` — realign `next_automation_run_at` to ~12h ahead after duration restore
+1. Set `FAKE_ORDERS_AUTOMATION_CRON_SECRET` in backend secrets (generate a random 32+ char string).
+2. Keep `FAKE_ORDERS_AUTOMATION_ENABLED=false` when more than one backend instance may run.
+3. Schedule **every 1–2 minutes**:
+
+```bash
+curl -sS -X POST "https://<API_HOST>/api/internal/fake-orders/automation-tick" \
+  -H "X-Fake-Orders-Automation-Secret: <FAKE_ORDERS_AUTOMATION_CRON_SECRET>"
+```
+
+4. In Super Admin → Training → Settings: enable **training orders** and **automation**; set duration to **12 hours**.
+5. After deploy, run: `npm run verify:fake-orders-automation` (from `backend/` with `DATABASE_URL` + optional `VERIFY_API_BASE`). Confirm **Super Admin → Training → صحة الأتمتة** shows driver active.
+
+| Check | Expected |
+|-------|----------|
+| Automation driver | Configured (cron secret or single-instance in-process) |
+| `lastAutomationRunAt` | Updates every 1–2 min |
+| `nextAutomationRunAt` | ~12h after last scheduled rotation |
+| Visible fake orders | > 0 |
+| `GET /api/orders/pool` | Includes training rows |
+| Homepage `completedOrders` | Real completed + proven ended training rotations |
+| `trainingRotationsCompleted` | Increases only after proven visible cycle ends |
 
 ### 3. Frontend environment
 

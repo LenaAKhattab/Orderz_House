@@ -1,8 +1,9 @@
-import { getFreelancerDashboardSummaryRequest } from "../services/api";
+import { getFreelancerCoursesFocusRequest } from "../services/api";
 import { deriveFreelancerCoursesFocus } from "./freelancerDashboardData";
 
 let cachedFocus = null;
 const listeners = new Set();
+let focusPromise = null;
 
 function notify() {
   for (const listener of listeners) {
@@ -27,7 +28,20 @@ export function subscribeFreelancerCoursesFocus(listener) {
 
 export async function ensureFreelancerCoursesFocus() {
   if (cachedFocus) return cachedFocus;
-  const res = await getFreelancerDashboardSummaryRequest();
-  const summary = res?.data ?? res;
-  return setFreelancerCoursesFocusFromSummary(summary);
+  if (focusPromise) return focusPromise;
+  focusPromise = getFreelancerCoursesFocusRequest()
+    .then((res) => {
+      const payload = res?.data ?? res;
+      const summary = {
+        subscription: payload?.subscription ?? null,
+        courses: payload?.courses ?? null,
+      };
+      focusPromise = null;
+      return setFreelancerCoursesFocusFromSummary(summary);
+    })
+    .catch(() => {
+      focusPromise = null;
+      return cachedFocus;
+    });
+  return focusPromise;
 }

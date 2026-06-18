@@ -17,6 +17,7 @@ const {
 const freelancerPerformanceService = require("./freelancerPerformanceService");
 const freelancerReviewsService = require("./freelancerReviewsService");
 const { buildGrowthBundle } = require("./freelancerDashboardGrowth");
+const { perfStart } = require("../utils/perfLog");
 
 const SECTION_TIMEOUT_MS = Number(process.env.DASHBOARD_SECTION_TIMEOUT_MS || 5000);
 
@@ -112,7 +113,23 @@ function mapEligibilitySummary(eligibility, subscription, planRange, canAccessTr
   };
 }
 
+async function getFreelancerCoursesFocus(freelancerUserId) {
+  const uid = Number(freelancerUserId);
+  const timer = perfStart("freelancer-dashboard", "courses_focus");
+  const subscription = await subscriptionsService.getCurrentSubscriptionForFreelancer(uid);
+  const coursesList = await coursesService.listAssignedCoursesForFreelancerDashboard({ freelancerUserId: uid });
+  const coursesAgg = aggregateCourses(coursesList);
+  timer.end({ userId: uid, courseCount: coursesAgg.total });
+  return {
+    subscription: subscription
+      ? { activationStatus: subscription.activationStatus }
+      : null,
+    courses: { loadState: "ok", ...coursesAgg },
+  };
+}
+
 async function getFreelancerDashboardSummary(freelancerUserId) {
+  const summaryTimer = perfStart("freelancer-dashboard", "dashboard_summary");
   const started = Date.now();
   const uid = Number(freelancerUserId);
   const sectionErrors = {};
@@ -287,6 +304,7 @@ async function getFreelancerDashboardSummary(freelancerUserId) {
   });
 
   const durationMs = Date.now() - started;
+  summaryTimer.end({ userId: uid, durationMs, sectionErrorCount: Object.keys(sectionErrors).length });
   if (durationMs > 1500) {
     // eslint-disable-next-line no-console
     console.warn(
@@ -347,4 +365,5 @@ async function getFreelancerDashboardSummary(freelancerUserId) {
 
 module.exports = {
   getFreelancerDashboardSummary,
+  getFreelancerCoursesFocus,
 };

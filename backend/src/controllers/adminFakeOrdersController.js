@@ -167,6 +167,25 @@ const forceGenerateTrainingRound = async (req, res, next) => {
   }
 };
 
+const getAutomationHealth = async (req, res, next) => {
+  try {
+    const health = await fakeOrdersService.getFakeOrdersAutomationHealth();
+    return res.status(200).json({ success: true, data: health });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const runAutomationTickNow = async (req, res, next) => {
+  try {
+    await fakeOrdersService.runAutomationTick();
+    const health = await fakeOrdersService.getFakeOrdersAutomationHealth();
+    return res.status(200).json({ success: true, data: { health } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   getTrainingSettings,
   patchTrainingSettings,
@@ -182,4 +201,6 @@ module.exports = {
   listApplicationsByFakeOrder,
   startTrainingRound,
   forceGenerateTrainingRound,
+  getAutomationHealth,
+  runAutomationTickNow,
 };

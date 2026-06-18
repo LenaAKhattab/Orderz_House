@@ -51,6 +51,9 @@ import "../styles/dashboardHub.css";
 
 const FREELANCER_COURSES_PATH = "/dashboard/freelancer/courses";
 
+/** Settings route remains available; hidden from profile menu for now. */
+const SHOW_PROFILE_MENU_SETTINGS = false;
+
 function fullNameAr(user) {
 
   const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
@@ -187,8 +190,29 @@ export default function FreelancerDashboardLayout() {
     const sync = (focus) => setCoursesNavBadgeKey(focus?.sidebarBadgeKey || null);
     const unsub = subscribeFreelancerCoursesFocus(sync);
     sync(getFreelancerCoursesFocusCached());
-    void ensureFreelancerCoursesFocus().then(sync);
-    return unsub;
+
+    let cancelled = false;
+    const loadFocus = () => {
+      if (cancelled) return;
+      void ensureFreelancerCoursesFocus().then(sync);
+    };
+
+    let idleId = null;
+    let timerId = null;
+    if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+      idleId = window.requestIdleCallback(loadFocus, { timeout: 4000 });
+    } else if (typeof window !== "undefined") {
+      timerId = window.setTimeout(loadFocus, 1500);
+    }
+
+    return () => {
+      cancelled = true;
+      unsub();
+      if (idleId != null && typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timerId != null) window.clearTimeout(timerId);
+    };
   }, [isClient]);
 
   const coursesNavBadge = coursesNavBadgeKey ? t(coursesNavBadgeKey) : null;
@@ -247,7 +271,7 @@ export default function FreelancerDashboardLayout() {
 
   const profilePath = getProfilePagePath(role);
 
-  const settingsPath = getAccountSettingsPath(role);
+  const settingsPath = SHOW_PROFILE_MENU_SETTINGS ? getAccountSettingsPath(role) : null;
 
 
 
@@ -608,11 +632,11 @@ export default function FreelancerDashboardLayout() {
 
                     ) : null}
 
-                    <NavLink to={settingsPath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
-
-                      {t("dashboard.nav.common.settings")}
-
-                    </NavLink>
+                    {settingsPath ? (
+                      <NavLink to={settingsPath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
+                        {t("dashboard.nav.common.settings")}
+                      </NavLink>
+                    ) : null}
 
                     <NavLink to={notificationsPath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
 

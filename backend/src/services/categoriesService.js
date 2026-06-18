@@ -12,6 +12,39 @@ async function listCategories() {
   return rows;
 }
 
+/** Single-query tree for marketplace category filters (category → sub-subcategories). */
+async function listCategoryFilterTree() {
+  const { rows } = await pool.query(
+    `SELECT c.id AS category_id, c.name AS category_name, c.name_en AS category_name_en,
+            ss.id AS sub_sub_id, ss.name AS sub_sub_name, ss.name_en AS sub_sub_name_en
+     FROM categories c
+     INNER JOIN subcategories s ON s.category_id = c.id AND s.is_active = TRUE
+     INNER JOIN sub_subcategories ss ON ss.subcategory_id = s.id AND ss.is_active = TRUE
+     WHERE c.is_active = TRUE
+     ORDER BY c.sort_order ASC, c.id ASC, ss.sort_order ASC, ss.id ASC`,
+  );
+
+  const byCategory = new Map();
+  for (const row of rows) {
+    const catId = String(row.category_id);
+    if (!byCategory.has(catId)) {
+      byCategory.set(catId, {
+        id: catId,
+        name: String(row.category_name || ""),
+        name_en: row.category_name_en || null,
+        subSubs: [],
+      });
+    }
+    byCategory.get(catId).subSubs.push({
+      id: String(row.sub_sub_id),
+      name: String(row.sub_sub_name || ""),
+      name_en: row.sub_sub_name_en || null,
+    });
+  }
+
+  return [...byCategory.values()];
+}
+
 async function getCategoryImageBySlug(slug) {
   const { rows } = await pool.query(
     `SELECT image_data, image_mime, image_url
@@ -25,6 +58,7 @@ async function getCategoryImageBySlug(slug) {
 
 module.exports = {
   listCategories,
+  listCategoryFilterTree,
   getCategoryImageBySlug,
 };
 

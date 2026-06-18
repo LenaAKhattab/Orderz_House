@@ -5,7 +5,7 @@ import DashboardToolbar from "../../../components/dashboard/DashboardToolbar";
 import DashboardLoadingState from "../../../components/dashboard/DashboardLoadingState";
 import DashboardEmptyState from "../../../components/dashboard/DashboardEmptyState";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
-import { formatRoundPeriod, getRoundStatusLabel } from "./trainingOrdersDisplayUtils";
+import { formatRoundPeriod, getRoundStatusLabel, roundSourceAr } from "./trainingOrdersDisplayUtils";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import "./trainingOrdersAdmin.css";
 

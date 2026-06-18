@@ -5,10 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../components/ui/toastContext";
 import {
-  getCategoriesRequest,
-  getCategorySubSubcategoriesRequest,
-  getMyEligibilityRequest,
-  getMySubscriptionRequest,
+  getCategoriesTreeRequest,
   listPoolOrdersRequest,
   submitPoolOrderBidRequest,
   takePoolOrderRequest,
@@ -18,6 +15,7 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 import { getLocalizedMarketplaceOrderTitle } from "../../lib/i18n/getLocalizedMarketplaceOrderText";
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
+import { useFreelancerMarketplaceContext } from "../../hooks/useFreelancerMarketplaceContext";
 import BidAmountModal from "../../components/orders/BidAmountModal";
 import TakePoolOrderConfirmModal from "../../components/orders/TakePoolOrderConfirmModal";
 import Pagination from "../../components/common/Pagination";
@@ -162,6 +160,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const isFreelancer = role === "freelancer";
   const isClient = role === "client";
   const showPoolRowActions = Boolean(!user || isFreelancer);
+  const { subscription, eligibility, eligibilityFetched } = useFreelancerMarketplaceContext();
 
   const [orders, setOrders] = useState([]);
   const [busy, setBusy] = useState(true);
@@ -193,10 +192,9 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const [reloadTick, setReloadTick] = useState(0);
   const [planAvailableOnly, setPlanAvailableOnly] = useState(false);
   const [loadError, setLoadError] = useState("");
-  const [eligibility, setEligibility] = useState(null);
-  const [eligibilityFetched, setEligibilityFetched] = useState(false);
-  const [subscription, setSubscription] = useState(null);
   const listWrapperRef = useRef(null);
+  const ordersRef = useRef(orders);
+  ordersRef.current = orders;
   const poolFetchGenRef = useRef(0);
   const poolListVersionRef = useRef(0);
   const lastBgRefreshErrorToastRef = useRef(0);
@@ -239,7 +237,12 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     const listVersion = ++poolListVersionRef.current;
     const abortController = new AbortController();
     async function load() {
-      setBusy(true);
+      const isInitialEmpty = ordersRef.current.length === 0;
+      if (isInitialEmpty) {
+        setBusy(true);
+      } else {
+        setRefetching(true);
+      }
       setLoadError("");
       try {
         const res = await listPoolOrdersRequest(poolListParams(page), { signal: abortController.signal });
@@ -256,6 +259,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       } finally {
         if (fetchGen === poolFetchGenRef.current && listVersion === poolListVersionRef.current) {
           setBusy(false);
+          setRefetching(false);
         }
       }
     }
@@ -382,41 +386,29 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
         return;
       }
       try {
-        const categoriesRes = await getCategoriesRequest();
-        const categories = Array.isArray(categoriesRes?.data?.categories)
-          ? categoriesRes.data.categories
-          : Array.isArray(categoriesRes?.data)
-            ? categoriesRes.data
+        const treeRes = await getCategoriesTreeRequest();
+        const grouped = Array.isArray(treeRes?.data?.categories)
+          ? treeRes.data.categories
+          : Array.isArray(treeRes?.categories)
+            ? treeRes.categories
             : [];
 
-        const settled = await Promise.allSettled(
-          categories.map(async (category) => {
-            const subSubsRes = await getCategorySubSubcategoriesRequest(category.id);
-            const list = Array.isArray(subSubsRes?.data?.subSubcategories)
-              ? subSubsRes.data.subSubcategories
-              : Array.isArray(subSubsRes?.data)
-                ? subSubsRes.data
-                : [];
-            return {
-              id: String(category.id),
-              name: String(category.name || ""),
-              name_en: category.name_en || null,
-              subSubs: list
-                .map((item) => ({
-                  id: String(item.id),
-                  name: String(item.name || ""),
-                  name_en: item.name_en || null,
-                }))
-                .sort((a, b) => a.name.localeCompare(b.name, "ar")),
-            };
-          }),
-        );
-
-        const grouped = settled.filter((x) => x.status === "fulfilled").map((x) => x.value);
-
         const normalized = grouped
+          .map((category) => ({
+            id: String(category.id),
+            name: String(category.name || ""),
+            name_en: category.name_en || null,
+            subSubs: (Array.isArray(category.subSubs) ? category.subSubs : Array.isArray(category.subSubcategories) ? category.subSubcategories : [])
+              .map((item) => ({
+                id: String(item.id),
+                name: String(item.name || ""),
+                name_en: item.name_en || null,
+              }))
+              .sort((a, b) => a.name.localeCompare(b.name, "ar")),
+          }))
           .filter((g) => g.subSubs.length > 0)
           .sort((a, b) => a.name.localeCompare(b.name, "ar"));
+
         if (!cancelled) {
           categoryFiltersCacheRef.current = normalized;
           setCategoryFilters(normalized);
@@ -430,49 +422,6 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       cancelled = true;
     };
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadEligibility() {
-      if (!user || loading || !isFreelancer) {
-        if (!cancelled) setEligibilityFetched(false);
-        return;
-      }
-      if (!cancelled) setEligibilityFetched(false);
-      try {
-        const res = await getMyEligibilityRequest();
-        if (!cancelled) setEligibility(res?.data || null);
-      } catch {
-        if (!cancelled) setEligibility(null);
-      } finally {
-        if (!cancelled) setEligibilityFetched(true);
-      }
-    }
-    loadEligibility();
-    return () => {
-      cancelled = true;
-    };
-  }, [user, loading, isFreelancer]);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadSubscription() {
-      if (!user || loading || !isFreelancer) {
-        if (!cancelled) setSubscription(null);
-        return;
-      }
-      try {
-        const res = await getMySubscriptionRequest();
-        if (!cancelled) setSubscription(res?.data?.subscription || null);
-      } catch {
-        if (!cancelled) setSubscription(null);
-      }
-    }
-    loadSubscription();
-    return () => {
-      cancelled = true;
-    };
-  }, [user, loading, isFreelancer]);
 
   const take = async (orderId) => {
     setTakingId(orderId);
@@ -624,10 +573,11 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   };
 
   const showHardError = Boolean(loadError) && orders.length === 0 && !busy;
+  const showListSkeleton = busy && orders.length === 0;
 
   const ordersList = (
     <div className="oh-orders-list-wrapper" ref={listWrapperRef}>
-      {busy ? (
+      {showListSkeleton ? (
         <PoolOrderListSkeleton count={5} />
       ) : showHardError ? (
         <div className="oh-orders-load-error fdash-surface-3d fdash-surface-3d--soft">
@@ -696,14 +646,16 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
 
   const planFilterButton =
     isFreelancer ? (
-      <div className="oh-orders-plan-filter-wrap">
+      <div className={`oh-orders-plan-filter-wrap${planAvailableOnly ? " is-active" : ""}`}>
         <button
           type="button"
           className={`oh-orders-plan-filter-btn${planAvailableOnly ? " is-active" : ""}`}
           aria-pressed={planAvailableOnly}
-          aria-describedby="oh-plan-filter-tooltip"
-          title={t("orders.planFilter.title")}
-          onClick={() => setPlanAvailableOnly((v) => !v)}
+          aria-label={t("orders.planFilter.title")}
+          onClick={(e) => {
+            setPlanAvailableOnly((v) => !v);
+            e.currentTarget.blur();
+          }}
         >
           <Filter
             size={16}
@@ -719,9 +671,11 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
             aria-hidden
           />
         </button>
-        <span id="oh-plan-filter-tooltip" className="oh-orders-plan-filter-tooltip" role="tooltip">
-          {t("orders.planFilter.title")}
-        </span>
+        {!planAvailableOnly ? (
+          <span className="oh-orders-plan-filter-tooltip" role="tooltip">
+            {t("orders.planFilter.title")}
+          </span>
+        ) : null}
       </div>
     ) : null;
 

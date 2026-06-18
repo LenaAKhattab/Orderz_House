@@ -231,8 +231,7 @@
   border-color: transparent transparent #334155;
 }
 
-.oh-orders-plan-filter-wrap:hover .oh-orders-plan-filter-tooltip,
-.oh-orders-plan-filter-wrap:focus-within .oh-orders-plan-filter-tooltip {
+.oh-orders-plan-filter-wrap:hover .oh-orders-plan-filter-tooltip {
   opacity: 1;
   visibility: visible;
 }

@@ -98,7 +98,7 @@
     "availableOrders": "Available requests",
     "availableSub": "Open for applications now",
     "completedOrders": "Completed requests",
-    "completedSub": "Total completed requests",
+    "completedSub": "Real completed plus training orders that finished their cycle",
     "zeroViews": "No views recorded yet",
     "zeroActive": "No activity in the last 7 days",
     "statsAria": "Platform statistics",

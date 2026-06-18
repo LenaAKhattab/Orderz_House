@@ -7,6 +7,9 @@ const router = express.Router();
 // Scope super_admin guard to training-order routes only — do not block other /api/admin/* routers.
 const trainingOrdersGuard = [requireAuth, requireSuperAdmin];
 
+router.get("/training-orders/automation/health", ...trainingOrdersGuard, adminFakeOrdersController.getAutomationHealth);
+router.post("/training-orders/automation/tick", ...trainingOrdersGuard, adminFakeOrdersController.runAutomationTickNow);
+
 router.get("/training-orders/settings", ...trainingOrdersGuard, adminFakeOrdersController.getTrainingSettings);
 router.patch("/training-orders/settings", ...trainingOrdersGuard, adminFakeOrdersController.patchTrainingSettings);
 

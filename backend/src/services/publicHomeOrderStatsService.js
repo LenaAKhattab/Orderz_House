@@ -1,7 +1,7 @@
 const { pool } = require("../config/db");
 const { ORDER_STATUSES } = require("./orderFlowService");
 const {
-  TRAINING_POOL_VISIBLE_FROM_SQL,
+  trainingPoolVisibleFromSql,
   trainingPoolVisibleWhereSql,
 } = require("./trainingPoolEligibility");
 
@@ -56,8 +56,8 @@ async function queryHeroOrderCounts() {
       ) AS available_real,
       (
         SELECT COUNT(DISTINCT fo.id)::int
-        ${TRAINING_POOL_VISIBLE_FROM_SQL}
-        WHERE ${trainingPoolVisibleWhereSql({ publicAudienceOnly: true })}
+        ${trainingPoolVisibleFromSql("fo")}
+        WHERE ${trainingPoolVisibleWhereSql({ publicAudienceOnly: true, alias: "fo" })}
       ) AS available_training,
       (
         SELECT COUNT(*)::int
@@ -68,23 +68,15 @@ async function queryHeroOrderCounts() {
       (
         SELECT COUNT(*)::int
         FROM fake_orders fo
-        WHERE EXISTS (
-          SELECT 1 FROM fake_order_round_items ri WHERE ri.fake_order_id = fo.id
-        )
-          AND NOT (
-            fo.fake_status = 'active'
-            AND EXISTS (
-              SELECT 1
-              FROM fake_order_round_items ri
-              INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
-              WHERE ri.fake_order_id = fo.id
-                AND ri.status = 'active'
-                AND fr.status = 'active'
-                AND ri.visible_from <= NOW()
-                AND ri.visible_until > NOW()
-            )
+        WHERE fo.was_marketplace_visible = TRUE
+          AND fo.first_visible_at IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1
+            ${trainingPoolVisibleFromSql("fo_vis")}
+            WHERE fo_vis.id = fo.id
+              AND ${trainingPoolVisibleWhereSql({ anyAudience: true, alias: "fo_vis" })}
           )
-      ) AS completed_training,
+      ) AS training_rotations_completed,
       COUNT(*) FILTER (WHERE order_status = ANY($3::text[]))::int AS open_projects,
       COUNT(*) FILTER (WHERE order_status = ANY($4::text[]))::int AS in_progress_projects,
       COUNT(*) FILTER (WHERE order_status = $2)::int AS completed_projects
@@ -99,21 +91,29 @@ async function queryHeroOrderCounts() {
   );
 
   const row = rows[0] || {};
+  return aggregateHeroOrderCounts(row);
+}
+
+/**
+ * Map raw SQL row → homepage hero counts (testable aggregation).
+ * @param {Record<string, unknown>} row
+ */
+function aggregateHeroOrderCounts(row = {}) {
   const availableReal = Number(row.available_real) || 0;
   const availableTraining = Number(row.available_training) || 0;
   const completedReal = Number(row.completed_real) || 0;
-  const completedTraining = Number(row.completed_training) || 0;
+  const trainingRotationsCompleted = Number(row.training_rotations_completed) || 0;
 
   return {
     openProjects: Number(row.open_projects) || 0,
     inProgressProjects: Number(row.in_progress_projects) || 0,
     completedProjects: Number(row.completed_projects) || 0,
     availableOrdersNow: availableReal + availableTraining,
-    completedOrders: completedReal + completedTraining,
+    completedOrders: completedReal + trainingRotationsCompleted,
     availableOrdersNowReal: availableReal,
     availableOrdersNowTraining: availableTraining,
     completedOrdersReal: completedReal,
-    completedOrdersTraining: completedTraining,
+    trainingRotationsCompleted,
   };
 }
 
@@ -144,4 +144,5 @@ module.exports = {
   IN_PROGRESS_PROJECT_STATUSES,
   AVAILABLE_REAL_STATUSES,
   queryHeroOrderCounts,
+  aggregateHeroOrderCounts,
 };

@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Crown, Sparkles } from "lucide-react";
-import { getMyEligibilityRequest } from "../../services/api";
 import PricingSection from "../../components/plans/PricingSection";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import { useFreelancerPlansCheckout } from "../../hooks/useFreelancerPlansCheckout";
+import { useFreelancerMarketplaceContext } from "../../hooks/useFreelancerMarketplaceContext";
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
 import { formatJoDateMedium, getPlanOrderValueRangeLabel } from "../../utils/freelancerDashboardData";
 import { isOrderzhouseFreePlan } from "../../constants/orderzhousePlansCatalog";
@@ -12,15 +12,6 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 import "../../styles/dashboardHub.css";
 import "./freelancerPlans.css";
-
-function paymentLabel(status, t) {
-  const s = String(status || "");
-  if (s === "paid") return t("freelancerDashboard.status.payment.paid");
-  if (s === "pending") return t("freelancerDashboard.status.payment.pending");
-  if (s === "failed") return t("freelancerDashboard.status.payment.failed");
-  if (s === "not_required") return t("freelancerDashboard.status.payment.notRequired");
-  return s || t("freelancerDashboard.common.emDash");
-}
 
 function activationLabel(status, t) {
   const s = String(status || "");
@@ -49,22 +40,7 @@ export default function FreelancerPlansPage() {
     startCheckout,
   } = useFreelancerPlansCheckout({ returnPath: "/dashboard/freelancer/plans" });
 
-  const [eligibility, setEligibility] = useState(null);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await getMyEligibilityRequest();
-        if (mounted) setEligibility(res?.data?.eligibility || null);
-      } catch {
-        if (mounted) setEligibility(null);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [mySubscription?.id, mySubscription?.status, mySubscription?.paymentStatus]);
+  const { eligibility } = useFreelancerMarketplaceContext();
 
   const nextPlan = useMemo(() => getNextUpgradePlan(plans, mySubscription), [plans, mySubscription]);
   const rangeLabel =
@@ -111,21 +87,9 @@ export default function FreelancerPlansPage() {
               <dd className="fp-hero__stat-value--accent">{subscriptionStatusLabel(mySubscription?.status, t)}</dd>
             </div>
             <div className="fp-hero__stat">
-              <dt>{t("freelancerDashboard.plans.payment")}</dt>
-              <dd>{paymentLabel(mySubscription?.paymentStatus, t)}</dd>
-            </div>
-            <div className="fp-hero__stat">
               <dt>{t("freelancerDashboard.plans.companyActivation")}</dt>
               <dd className={mySubscription?.activationStatus === "company_approved" ? "fp-hero__stat-value--ok" : "fp-hero__stat-value--warn"}>
                 {activationLabel(mySubscription?.activationStatus, t)}
-              </dd>
-            </div>
-            <div className="fp-hero__stat">
-              <dt>{t("freelancerDashboard.plans.marketplaceEligibility")}</dt>
-              <dd className={eligibility?.eligible ? "fp-hero__stat-value--ok" : "fp-hero__stat-value--warn"}>
-                {eligibility?.eligible
-                  ? t("freelancerDashboard.plans.canApply")
-                  : t("freelancerDashboard.plans.notEligible")}
               </dd>
             </div>
             {rangeLabel ? (

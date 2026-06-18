@@ -23,6 +23,7 @@ async function getPublicHomeStats(req, res, next) {
             completedProjects: null,
             availableOrdersNow: null,
             completedOrders: null,
+            trainingRotationsCompleted: null,
             orderCountsDegraded: true,
           }
         : {
@@ -31,6 +32,8 @@ async function getPublicHomeStats(req, res, next) {
             completedProjects: orderCounts.completedProjects,
             availableOrdersNow: orderCounts.availableOrdersNow,
             completedOrders: orderCounts.completedOrders,
+            completedOrdersReal: orderCounts.completedOrdersReal,
+            trainingRotationsCompleted: orderCounts.trainingRotationsCompleted,
           };
 
     if (!showVisitorsCount && !showActiveUsersCount) {

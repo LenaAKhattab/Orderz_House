@@ -59,6 +59,7 @@ function mapHomeStats(d) {
     completedProjects: d?.completedProjects,
     availableOrdersNow: d?.availableOrdersNow,
     completedOrders: d?.completedOrders,
+    trainingRotationsCompleted: d?.trainingRotationsCompleted,
     orderCountsDegraded: Boolean(d?.orderCountsDegraded),
   };
 }

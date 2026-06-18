@@ -22,6 +22,9 @@ import "../skeletons/home-skeleton.css";
 import "../../styles/servicesPage.css";
 import "../../styles/howItWorksPage.css";
 
+/** Language switcher remains in codebase; hidden from public nav for now. */
+const SHOW_NAV_LANGUAGE_SWITCHER = false;
+
 const publicExploreItems = [
   { labelKey: "nav.about", to: "/about" },
   { labelKey: "nav.services", to: "/services" },
@@ -345,7 +348,7 @@ const Navbar = () => {
 
         <div className="public-nav-header__actions flex min-w-0 shrink-0 items-center justify-end gap-2 lg:gap-6">
           <div className={`hidden items-center gap-2 lg:flex lg:gap-4${isRtl ? " flex-row-reverse" : ""}`}>
-          <LanguageSwitcher />
+          {SHOW_NAV_LANGUAGE_SWITCHER ? <LanguageSwitcher /> : null}
           {loading ? (
             <span className="min-h-11 min-w-[140px]" aria-hidden="true" />
           ) : user ? (
@@ -448,7 +451,7 @@ const Navbar = () => {
             </NavLink>
           )}
           </div>
-          <LanguageSwitcher className="lg:hidden" />
+          {SHOW_NAV_LANGUAGE_SWITCHER ? <LanguageSwitcher className="lg:hidden" /> : null}
           <button
             type="button"
             className="public-nav-menu-btn lg:hidden"

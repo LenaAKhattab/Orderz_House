@@ -97,7 +97,9 @@ export default function FreelancerMyOrdersPage() {
   );
 
   const [orders, setOrders] = useState([]);
-  const [busy, setBusy] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isRefetching, setIsRefetching] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [statusFilter, setStatusFilter] = useState(() => parseStatusFromSearch(searchParams));
   const [sortBy, setSortBy] = useState("newest");
   const [searchInput, setSearchInput] = useState("");
@@ -116,14 +118,20 @@ export default function FreelancerMyOrdersPage() {
   const [loadError, setLoadError] = useState("");
   const [reloadTick, setReloadTick] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const [cache, setCache] = useState({});
   const listRef = useRef(null);
+  const cacheRef = useRef({});
+  const forceRefreshRef = useRef(false);
+  const fetchGenRef = useRef(0);
+  const hasLoadedOnceRef = useRef(false);
+  const ordersRef = useRef(orders);
+  ordersRef.current = orders;
 
   const activePage = pagination?.page || page || 1;
   const totalPages = Math.max(1, Number(pagination?.totalPages || 1));
   const pageLimit = Number(pagination?.limit) || 12;
-  const cacheKey = `${statusFilter}:${sortBy}:${activePage}:${searchQuery}`;
-  const statsLoading = busy && !cache[cacheKey];
+  const cacheKey = `${statusFilter}:${sortBy}:${page}:${searchQuery}`;
+  const statsLoading = initialLoading && !hasLoadedOnce;
+  const listSkeletonVisible = initialLoading && !orders.length;
 
   const statusCounts = useMemo(
     () => ({
@@ -167,24 +175,45 @@ export default function FreelancerMyOrdersPage() {
   }, [statusFilter, sortBy, searchQuery]);
 
   useEffect(() => {
+    if (!user || authLoading || !isFreelancer) return undefined;
+
     let cancelled = false;
+    const fetchGen = ++fetchGenRef.current;
+
     async function load() {
-      if (!user || authLoading || !isFreelancer) return;
       setLoadError("");
-      const cached = cache[cacheKey];
+
+      const skipCache = forceRefreshRef.current;
+      if (skipCache) forceRefreshRef.current = false;
+
+      const cached = !skipCache ? cacheRef.current[cacheKey] : null;
       if (cached) {
+        if (cancelled || fetchGen !== fetchGenRef.current) return;
         setOrders(cached.orders);
         setPagination(cached.pagination);
         setCounts(cached.counts);
-        setBusy(false);
+        setInitialLoading(false);
+        setIsRefetching(false);
+        setRefreshing(false);
+        if (!hasLoadedOnceRef.current) {
+          hasLoadedOnceRef.current = true;
+          setHasLoadedOnce(true);
+        }
         return;
       }
-      setBusy(true);
+
+      const showInitialSkeleton = !hasLoadedOnceRef.current && ordersRef.current.length === 0;
+      if (showInitialSkeleton) {
+        setInitialLoading(true);
+      } else {
+        setIsRefetching(true);
+      }
+
       try {
         const params = { page, limit: 12, status: statusFilter, sort: sortBy };
         if (searchQuery) params.q = searchQuery;
         const res = await listMyAssignedOrdersRequest(params);
-        if (cancelled) return;
+        if (cancelled || fetchGen !== fetchGenRef.current) return;
         const nextOrders = res?.data?.orders || [];
         const nextPagination = res?.data?.pagination || {
           page,
@@ -196,56 +225,77 @@ export default function FreelancerMyOrdersPage() {
         setOrders(nextOrders);
         setPagination(nextPagination);
         setCounts(nextCounts);
-        setCache((prev) => ({
-          ...prev,
+        cacheRef.current = {
+          ...cacheRef.current,
           [cacheKey]: { orders: nextOrders, pagination: nextPagination, counts: nextCounts },
-        }));
+        };
+        hasLoadedOnceRef.current = true;
+        setHasLoadedOnce(true);
       } catch {
-        if (!cancelled) {
+        if (!cancelled && fetchGen === fetchGenRef.current) {
           const msg = t("freelancerDashboard.myOrders.loadError");
           setLoadError(msg);
           push({ type: "error", title: t("freelancerDashboard.myOrders.loadErrorTitle"), message: msg });
         }
       } finally {
-        if (!cancelled) {
-          setBusy(false);
+        if (!cancelled && fetchGen === fetchGenRef.current) {
+          setInitialLoading(false);
+          setIsRefetching(false);
           setRefreshing(false);
         }
       }
     }
+
     void load();
     return () => {
       cancelled = true;
     };
-  }, [user, authLoading, isFreelancer, page, statusFilter, sortBy, searchQuery, push, reloadTick, cacheKey, cache, t]);
+  }, [user, authLoading, isFreelancer, page, statusFilter, sortBy, searchQuery, push, reloadTick, cacheKey, t]);
 
   useEffect(() => {
-    if (!user || authLoading || !isFreelancer || busy) return undefined;
-    const timer = setInterval(() => {
-      setCache({});
+    if (!user || authLoading || !isFreelancer || !hasLoadedOnce) return undefined;
+
+    const POLL_MS = 45_000;
+    let intervalId = null;
+    let visTimer = null;
+    let lastBackgroundFetchAt = 0;
+
+    const triggerBackgroundRefresh = () => {
+      const now = Date.now();
+      if (now - lastBackgroundFetchAt < 5_000) return;
+      lastBackgroundFetchAt = now;
+      forceRefreshRef.current = true;
       setReloadTick((x) => x + 1);
-    }, 20_000);
-    const onVis = () => {
-      if (document.visibilityState === "visible") {
-        setCache({});
-        setReloadTick((x) => x + 1);
-      }
     };
+
+    intervalId = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        triggerBackgroundRefresh();
+      }
+    }, POLL_MS);
+
+    const onVis = () => {
+      if (document.visibilityState !== "visible") return;
+      clearTimeout(visTimer);
+      visTimer = setTimeout(triggerBackgroundRefresh, 1_500);
+    };
+
     document.addEventListener("visibilitychange", onVis);
     return () => {
-      clearInterval(timer);
+      clearInterval(intervalId);
+      clearTimeout(visTimer);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [busy, user, authLoading, isFreelancer]);
+  }, [hasLoadedOnce, user, authLoading, isFreelancer]);
 
   const retryLoad = () => {
-    setCache({});
+    forceRefreshRef.current = true;
     setReloadTick((x) => x + 1);
   };
 
   const handleRefresh = () => {
     setRefreshing(true);
-    setCache({});
+    forceRefreshRef.current = true;
     setReloadTick((x) => x + 1);
   };
 
@@ -281,8 +331,8 @@ export default function FreelancerMyOrdersPage() {
     };
   }, [counts.all, searchQuery, statusFilter, handleStatusFilterChange, t]);
 
-  const shownCount = busy && !orders.length ? 0 : orders.length;
-  const totalCount = busy && !orders.length ? 0 : Number(pagination.total || 0);
+  const shownCount = listSkeletonVisible ? 0 : orders.length;
+  const totalCount = listSkeletonVisible ? 0 : Number(pagination.total || 0);
   const EmptyCtaArrow = dir === "rtl" ? ArrowLeft : ArrowRight;
 
   return (
@@ -391,19 +441,29 @@ export default function FreelancerMyOrdersPage() {
           </label>
           <button
             type="button"
-            className={`fmo-toolbar__refresh${refreshing || busy ? " is-spinning" : ""}`}
+            className={`fmo-toolbar__refresh${refreshing || isRefetching ? " is-spinning" : ""}`}
             onClick={handleRefresh}
-            disabled={refreshing || busy}
+            disabled={refreshing || initialLoading}
             aria-label={t("freelancerDashboard.myOrders.refreshAria")}
             title={t("freelancerDashboard.myOrders.refreshTitle")}
           >
             <RefreshCw size={17} strokeWidth={2.2} />
           </button>
         </div>
+        {isRefetching ? (
+          <p className="fmo-toolbar__hint help" role="status" aria-live="polite">
+            {t("orders.marketplace.refreshing")}
+          </p>
+        ) : null}
       </div>
 
-      <section className="fmo-surface fmo-content" ref={listRef} aria-label={t("freelancerDashboard.myOrders.listAria")}>
-        {busy && !orders.length ? (
+      <section
+        className="fmo-surface fmo-content"
+        ref={listRef}
+        aria-label={t("freelancerDashboard.myOrders.listAria")}
+        aria-busy={isRefetching || undefined}
+      >
+        {listSkeletonVisible ? (
           <DashboardHubSkeletonCards count={4} variant="order-row" />
         ) : loadError ? (
           <div className="fmo-alert">
@@ -457,7 +517,7 @@ export default function FreelancerMyOrdersPage() {
                 currentPage={activePage}
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
-                isLoading={busy || refreshing}
+                isLoading={initialLoading || isRefetching || refreshing}
                 siblingCount={1}
                 className="fmo-pagination app-pagination"
               />
