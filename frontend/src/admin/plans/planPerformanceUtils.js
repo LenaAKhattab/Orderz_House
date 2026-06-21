@@ -11,6 +11,9 @@ import {
 
 export const LABEL_UNAVAILABLE = "غير متاح";
 export const LABEL_LOAD_FAILED = "تعذر تحميل البيانات";
+export const LABEL_EMPTY_NO_SUBS = "لا اشتراكات سارية بعد";
+export const LABEL_EMPTY_NO_REVENUE = "لا قيمة مدفوعة بعد";
+export const SUMMARY_VALUE_PLACEHOLDER = "—";
 
 /** Show concentration warning on card when plan revenue share ≥ this (percent). */
 export const CONCENTRATION_RISK_THRESHOLD = 50;
@@ -19,6 +22,7 @@ export const CONCENTRATION_RISK_THRESHOLD = 50;
 export const COMPARISON_QUARTILE = 0.75;
 
 export const SORT_MODES = {
+  display: "display",
   revenue: "revenue",
   subscribers: "subscribers",
   active: "active",
@@ -53,19 +57,25 @@ export function formatTrendDisplay(trendObj) {
 
 function toMetric(value, state) {
   if (state === "failed") return { value: null, display: LABEL_LOAD_FAILED };
-  if (state === "unavailable" || value === null || value === undefined || Number.isNaN(Number(value))) {
+  if (state === "unavailable") {
     return { value: null, display: LABEL_UNAVAILABLE };
+  }
+  if (value === null || value === undefined || Number.isNaN(Number(value))) {
+    return { value: 0, display: formatInt(0) };
   }
   return { value: Number(value), display: formatInt(value) };
 }
 
 function toMoneyMetric(value, state) {
   if (state === "failed") return { value: null, display: LABEL_LOAD_FAILED };
-  if (state === "unavailable" || value === null || value === undefined || Number.isNaN(Number(value))) {
+  if (state === "unavailable") {
     return { value: null, display: LABEL_UNAVAILABLE };
   }
+  if (value === null || value === undefined || Number.isNaN(Number(value))) {
+    return { value: 0, display: formatPriceJod(0) ?? "0 د.أ" };
+  }
   const n = Number(value);
-  return { value: n, display: formatPriceJod(n) ?? LABEL_UNAVAILABLE };
+  return { value: n, display: formatPriceJod(n) ?? "0 د.أ" };
 }
 
 function quartileValue(sortedValues, q) {
@@ -240,8 +250,38 @@ export function getPlatformPerformanceContext(plansWithStats) {
   return { maxActive, totalRevenue, strongActiveFloor, okPlans };
 }
 
+/** Unwrap subscriptions intelligence from API / home bundle shapes. */
+export function extractSubscriptionsIntelligenceData(intelligencePayload) {
+  if (!intelligencePayload) return null;
+  if (Array.isArray(intelligencePayload?.byPlan)) return intelligencePayload;
+  if (Array.isArray(intelligencePayload?.data?.byPlan)) return intelligencePayload.data;
+  if (Array.isArray(intelligencePayload?.data?.data?.byPlan)) return intelligencePayload.data.data;
+  return null;
+}
+
+/** Normalize axios / bundle response into `{ byPlan, totals }` or null. */
+export function normalizeSubscriptionsIntelligenceResponse(apiBody) {
+  if (!apiBody) {
+    return { intel: null, sectionError: null };
+  }
+
+  const sectionEnvelope =
+    apiBody?.success != null && apiBody?.data != null && apiBody?.section == null ? apiBody.data : apiBody;
+
+  const sectionError =
+    sectionEnvelope?.meta?.sectionErrors?.subscriptions ??
+    apiBody?.meta?.sectionErrors?.subscriptions ??
+    null;
+
+  const intel =
+    extractSubscriptionsIntelligenceData(sectionEnvelope) ?? extractSubscriptionsIntelligenceData(apiBody);
+
+  return { intel, sectionError };
+}
+
 export function mergePlansWithPerformanceStats(plans, intelligencePayload, { statsFailed = false } = {}) {
-  const byPlan = intelligencePayload?.data?.byPlan;
+  const intelData = extractSubscriptionsIntelligenceData(intelligencePayload);
+  const byPlan = intelData?.byPlan;
   const statsAvailable = !statsFailed && Array.isArray(byPlan);
   const statsByPlanId = new Map();
 
@@ -255,15 +295,15 @@ export function mergePlansWithPerformanceStats(plans, intelligencePayload, { sta
   const merged = (plans || []).map((plan) => {
     let state = "unavailable";
     if (statsFailed) state = "failed";
-    else if (statsAvailable && statsByPlanId.has(String(plan.id))) state = "ok";
+    else if (statsAvailable) state = "ok";
 
     const stats = statsByPlanId.get(String(plan.id));
     const performance = {
       state,
       available: state === "ok",
-      subscribers: toMetric(state === "ok" ? stats.subscribers : null, state),
-      activeSubscribers: toMetric(state === "ok" ? stats.activeSubscribers : null, state),
-      revenueJod: toMoneyMetric(state === "ok" ? stats.revenueJod : null, state),
+      subscribers: toMetric(state === "ok" ? stats?.subscribers ?? 0 : null, state),
+      activeSubscribers: toMetric(state === "ok" ? stats?.activeSubscribers ?? 0 : null, state),
+      revenueJod: toMoneyMetric(state === "ok" ? stats?.revenueJod ?? 0 : null, state),
       revenueContribution: null,
       subscriberPeriodTrend: state === "ok" ? stats.subscriberPeriodTrend ?? null : null,
       revenuePeriodTrend: state === "ok" ? stats.revenuePeriodTrend ?? null : null,
@@ -412,11 +452,16 @@ export function computePortfolioInsightStrip(plansWithStats, { statsAvailable, s
   return { items, concentrationPlatform };
 }
 
-export function sortPlansForDisplay(plans, sortMode = SORT_MODES.revenue) {
+export function sortPlansForDisplay(plans, sortMode = SORT_MODES.display) {
   const list = [...(plans || [])];
   const byId = (a, b) => Number(a.id) - Number(b.id);
 
   switch (sortMode) {
+    case SORT_MODES.display:
+      return list.sort((a, b) => {
+        const diff = Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0);
+        return diff !== 0 ? diff : byId(a, b);
+      });
     case SORT_MODES.subscribers:
       return list.sort((a, b) => {
         const diff = (b.performance?.subscribers?.value ?? -1) - (a.performance?.subscribers?.value ?? -1);
@@ -442,24 +487,39 @@ export function sortPlansForDisplay(plans, sortMode = SORT_MODES.revenue) {
   }
 }
 
-export function computePlansBusinessSummary(plansWithStats, { statsAvailable, statsFailed, platformContext } = {}) {
+export function computePlansBusinessSummary(plansWithStats, { statsAvailable, statsFailed, statsLoading = false, platformContext } = {}) {
+  if (statsLoading) {
+    return {
+      loading: true,
+      totalSubscribers: { display: null },
+      totalRevenue: { display: null },
+      topPlanByUsage: { display: null },
+      topPlanByRevenue: { display: null },
+      topRevenueShare: { display: null },
+    };
+  }
+
   if (statsFailed) {
     return {
-      totalSubscribers: { display: LABEL_LOAD_FAILED },
-      totalRevenue: { display: LABEL_LOAD_FAILED },
-      topPlanByUsage: { display: LABEL_LOAD_FAILED },
-      topPlanByRevenue: { display: LABEL_LOAD_FAILED },
-      topRevenueShare: { display: LABEL_LOAD_FAILED },
+      loading: false,
+      failed: true,
+      totalSubscribers: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
+      totalRevenue: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
+      topPlanByUsage: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
+      topPlanByRevenue: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
+      topRevenueShare: { display: null, helper: LABEL_LOAD_FAILED },
     };
   }
 
   if (!statsAvailable) {
     return {
-      totalSubscribers: { display: LABEL_UNAVAILABLE },
-      totalRevenue: { display: LABEL_UNAVAILABLE },
-      topPlanByUsage: { display: LABEL_UNAVAILABLE },
-      topPlanByRevenue: { display: LABEL_UNAVAILABLE },
-      topRevenueShare: { display: LABEL_UNAVAILABLE },
+      loading: false,
+      failed: false,
+      totalSubscribers: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
+      totalRevenue: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
+      topPlanByUsage: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
+      topPlanByRevenue: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
+      topRevenueShare: { display: null, helper: LABEL_LOAD_FAILED },
     };
   }
 
@@ -475,7 +535,7 @@ export function computePlansBusinessSummary(plansWithStats, { statsAvailable, st
   const topUsage = pickTopPlan(okPlans, (p) => p.performance.subscribers.value);
   const topRevenue = pickTopPlan(okPlans, (p) => p.performance.revenueJod.value);
 
-  let topRevenueShare = { display: LABEL_UNAVAILABLE };
+  let topRevenueShare = { display: null };
   if (topRevenue && ctx.totalRevenue > 0) {
     const pct = (topRevenue.val / ctx.totalRevenue) * 100;
     topRevenueShare = {
@@ -484,17 +544,21 @@ export function computePlansBusinessSummary(plansWithStats, { statsAvailable, st
       pct,
     };
   } else if (topRevenue && ctx.totalRevenue === 0) {
-    topRevenueShare = { display: `${topRevenue.plan.title} — لا قيمة مدفوعة مسجّلة بعد` };
+    topRevenueShare = { display: `${topRevenue.plan.title} — ${LABEL_EMPTY_NO_REVENUE}` };
   }
 
   return {
+    loading: false,
+    failed: false,
     totalSubscribers: { display: formatInt(totalSubscribers) },
-    totalRevenue: { display: formatPriceJod(ctx.totalRevenue) ?? `${formatInt(0)} د.أ` },
+    totalRevenue: { display: formatPriceJod(ctx.totalRevenue) ?? "0 د.أ" },
     topPlanByUsage: {
-      display: topUsage ? `${topUsage.plan.title} (${formatInt(topUsage.val)} ساري)` : LABEL_UNAVAILABLE,
+      display: topUsage ? `${topUsage.plan.title} (${formatInt(topUsage.val)} ساري)` : LABEL_EMPTY_NO_SUBS,
     },
     topPlanByRevenue: {
-      display: topRevenue ? `${topRevenue.plan.title} (${formatPriceJod(topRevenue.val)} مدفوع)` : LABEL_UNAVAILABLE,
+      display: topRevenue
+        ? `${topRevenue.plan.title} (${formatPriceJod(topRevenue.val) ?? "0 د.أ"} مدفوع)`
+        : LABEL_EMPTY_NO_REVENUE,
     },
     topRevenueShare,
   };

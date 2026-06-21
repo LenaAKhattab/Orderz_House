@@ -889,14 +889,17 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
     const successUrl = `${clientUrl}/dashboard/freelancer/plans?freelancer_sub_paid=1&session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${clientUrl}/dashboard/freelancer/plans?freelancer_sub_cancelled=1&session_id={CHECKOUT_SESSION_ID}`;
 
-    const subscription = await subscriptionsService.createFreelancerSelfSubscriptionPendingPayment(
-      { freelancerUserId: uid, planId: pid, stripeSessionId: null },
-      db,
-    );
-    const internalSubId = Number(subscription?.id);
-    if (!Number.isInteger(internalSubId) || internalSubId < 1) {
-      const err = new Error("Could not create pending subscription record.");
-      err.statusCode = 500;
+    const snap = await subscriptionsService.getFreelancerIdentitySnapshot(uid, db);
+    if (!snap) {
+      const err = new Error("User not found.");
+      err.statusCode = 404;
+      err.exposeToClient = true;
+      throw err;
+    }
+    if (!snap.isFreelancer) {
+      const err = new Error("Target user must be a freelancer.");
+      err.statusCode = 400;
+      err.exposeToClient = true;
       throw err;
     }
 
@@ -904,7 +907,6 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       purpose: "freelancer_subscription_purchase",
       freelancerUserId: String(uid),
       planId: String(pid),
-      subscriptionId: String(internalSubId),
       expectedAmountMinor: String(amountMinor),
       currency: currency.toUpperCase(),
     };
@@ -931,10 +933,6 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       cancel_url: cancelUrl,
     });
 
-    await db.query(`UPDATE freelancer_subscriptions SET stripe_session_id = $1, updated_at = NOW() WHERE id = $2`, [
-      session.id,
-      internalSubId,
-    ]);
     await safeNotify(() =>
       notificationService.createIfNotExists(
         {
@@ -944,13 +942,13 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
           type: "subscription.payment.started",
           title: "تم بدء دفع الاشتراك",
           message: "تم إنشاء جلسة دفع الاشتراك، أكمل الدفع للمتابعة.",
-          entityType: "subscription",
-          entityId: Number(subscription?.id),
+          entityType: "plan",
+          entityId: Number(pid),
           link: "/dashboard/freelancer/plans",
           priority: "high",
-          metadata: { subscriptionId: String(subscription?.id || ""), planId: String(pid) },
+          metadata: { planId: String(pid), stripeSessionId: session.id },
         },
-        `subscription_payment_started_${String(subscription?.id || "")}`,
+        `subscription_payment_started_${String(session.id)}`,
         db,
       ),
     );
@@ -964,7 +962,6 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
     return {
       checkoutUrl: session.url,
       sessionId: session.id,
-      subscription: { ...subscription, stripeSessionId: session.id },
     };
   } catch (e) {
     await db.query("ROLLBACK");
@@ -976,7 +973,7 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
 
 /**
  * After returning from Stripe Checkout, verify the session server-side and mark the subscription paid.
- * Idempotent with webhooks: `markFreelancerSubscriptionStripePaymentPaid` + notification dedupe keys.
+ * Idempotent with webhooks: `fulfillFreelancerSubscriptionStripePayment` + notification dedupe keys.
  */
 async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeSessionId }) {
   const stripe = getStripeOrNull();
@@ -1060,18 +1057,13 @@ async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeS
     await db.query("BEGIN");
 
     const { rows: preRows } = await db.query(
-      `SELECT id, payment_status FROM freelancer_subscriptions
-       WHERE freelancer_user_id = $1 AND plan_id = $2 AND is_current = TRUE AND source = 'stripe'
-         AND ($3::text IS NULL OR stripe_session_id = $3)
-         AND ($4::bigint IS NULL OR id = $4::bigint)
-       ORDER BY id DESC LIMIT 1
-       FOR UPDATE`,
-      [Number(freelancerUserId), planId, session.id || null, narrowSubscriptionId],
+      `SELECT id, payment_status FROM freelancer_subscriptions WHERE stripe_session_id = $1 LIMIT 1`,
+      [session.id || null],
     );
     const pre = preRows[0];
     const wasAlreadyPaid = pre && String(pre.payment_status || "").toLowerCase() === "paid";
 
-    const sub = await subscriptionsService.markFreelancerSubscriptionStripePaymentPaid(
+    const sub = await subscriptionsService.fulfillFreelancerSubscriptionStripePayment(
       {
         freelancerUserId,
         planId,
@@ -1085,8 +1077,8 @@ async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeS
 
     if (!sub) {
       await db.query("ROLLBACK");
-      const err = new Error("No pending subscription found for this checkout.");
-      err.statusCode = 404;
+      const err = new Error("Could not create subscription for this checkout.");
+      err.statusCode = 500;
       err.exposeToClient = true;
       throw err;
     }

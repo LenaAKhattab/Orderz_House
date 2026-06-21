@@ -1,5 +1,8 @@
 /** UI constants for the admin ad builder (labels stay Arabic; values match backend). */
 
+/** Single public placement for all ads — not editable in the builder. */
+export const FIXED_AD_PLACEMENT = "home_right_panel";
+
 export const LAYOUT_OPTIONS = [
   {
     value: "image_top",

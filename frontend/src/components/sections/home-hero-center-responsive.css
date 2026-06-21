@@ -64,6 +64,11 @@
   line-height: 1.62;
 }
 
+/* Mobile-only primary CTA — login, between hero subtitle and stats/cards */
+.home-hero__start-cta {
+  display: none;
+}
+
 .home-hero--marketing.home-hero--bg-image .home-hero__inline-stats {
   width: 100%;
   max-width: 100%;
@@ -182,9 +187,24 @@
   .home-hero--marketing.home-hero--bg-image .home-hero__lead {
     max-width: 21.5rem;
     margin-inline: auto;
-    margin-bottom: clamp(0.5rem, 2vw, 0.75rem);
+    margin-bottom: clamp(0.35rem, 1.5vw, 0.5rem);
     font-size: clamp(0.88rem, 3.85vw, 0.98rem);
     line-height: 1.62;
+  }
+
+  .home-hero__start-cta {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin: clamp(0.65rem, 2.5vw, 0.85rem) 0 clamp(0.75rem, 2.8vw, 1rem);
+  }
+
+  .home-hero__start-cta .home-hero__cta-primary {
+    width: auto;
+    min-width: 10rem;
+    max-width: 12.5rem;
+    padding-inline: 1.75rem;
+    white-space: nowrap;
   }
 
   .home-hero--marketing.home-hero--bg-image .home-hero__inline-stats {

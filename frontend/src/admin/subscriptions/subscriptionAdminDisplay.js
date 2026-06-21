@@ -1,5 +1,37 @@
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
 
+const SUBSCRIPTION_ADMIN_TZ = "Asia/Amman";
+
+/**
+ * Stable Arabic admin date/time: DD/MM/YYYY، h:mm م|ص (Latin digits, Amman TZ).
+ */
+export function formatSubscriptionAdminDateTime(value) {
+  if (!value) return "—";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  try {
+    const datePart = new Intl.DateTimeFormat("en-GB", {
+      timeZone: SUBSCRIPTION_ADMIN_TZ,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(date);
+
+    const timePart = new Intl.DateTimeFormat("ar", {
+      timeZone: SUBSCRIPTION_ADMIN_TZ,
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(date);
+
+    return `${datePart}، ${timePart}`;
+  } catch {
+    return "—";
+  }
+}
+
 export function activationStatusLabel(status) {
   const s = String(status || "").trim().toLowerCase();
   if (s === "company_pending") return "بانتظار تفعيل الشركة";
@@ -10,7 +42,7 @@ export function activationStatusLabel(status) {
 
 export function paymentStatusLabel(status) {
   const p = String(status || "").trim().toLowerCase();
-  if (p === "pending") return "قيد الانتظار";
+  if (p === "pending") return "بانتظار الدفع";
   if (p === "paid") return "مدفوع";
   if (p === "not_required") return "لا يتطلب دفعاً";
   if (p === "failed" || p === "unpaid") return "غير مكتمل";

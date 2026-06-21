@@ -4,7 +4,7 @@ import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader"
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
 import { breadcrumbHomeCrumb, superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
-import { activateSubscriptionCompanyRequest, listSubscriptionsRequest } from "../../services/api";
+import { activateSubscriptionCompanyRequest, listAllSubscriptionsRequest } from "../../services/api";
 import { useAuth } from "../../context/useAuth";
 import { AdminInlineGridSkeleton } from "../../components/ui/Skeleton";
 import { formatSubscriptionPaymentCountry } from "../../utils/countryDisplay";
@@ -37,7 +37,7 @@ function planLabel(s) {
 
 function paymentStatusLabel(status) {
   const p = String(status || "").trim().toLowerCase();
-  if (p === "pending") return "قيد الانتظار";
+  if (p === "pending") return "بانتظار الدفع";
   if (p === "paid") return "مدفوع";
   if (p === "not_required") return "لا يتطلب دفعاً";
   if (p === "failed" || p === "unpaid") return "غير مكتمل";
@@ -74,7 +74,7 @@ export default function AdminSubscriptionsActivationPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await listSubscriptionsRequest({});
+      const res = await listAllSubscriptionsRequest({});
       setSubs(res?.data?.subscriptions || []);
     } catch (err) {
       setError(errorMessage(err));

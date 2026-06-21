@@ -3,7 +3,6 @@ import AdVisualImagePicker from "./AdVisualImagePicker";
 import AdUrlThumb from "./AdUrlThumb";
 import AdBuilderStepNav from "./AdBuilderStepNav";
 import AdBuilderQuickPresets from "./AdBuilderQuickPresets";
-import { PLACEMENT_OPTIONS } from "./adFormConstants";
 import { PRIORITY_OPTIONS } from "../../components/ads/bannerAdMeta";
 
 const OPEN_MODE_OPTIONS = [
@@ -261,17 +260,6 @@ export default function AdBuilderForm({
             </Field>
 
             <Field>
-              <label htmlFor="ad-placement">مكان العرض</label>
-              <select id="ad-placement" value={data.placement || "home_right_panel"} onChange={(e) => patch({ placement: e.target.value })}>
-                {PLACEMENT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <Field>
               <label htmlFor="ad-priority">الأولوية</label>
               <select id="ad-priority" value={String(data.priority ?? 0)} onChange={(e) => patch({ priority: Number(e.target.value) })}>
                 {PRIORITY_OPTIONS.map((o) => (
@@ -333,10 +321,6 @@ export default function AdBuilderForm({
               <div className="oh-admin-ads__stat-chip">
                 <span className="oh-admin-ads__stat-chip-label">نقرات</span>
                 <strong dir="ltr">{Number(editingAd.clickCount) || 0}</strong>
-              </div>
-              <div className="oh-admin-ads__stat-chip">
-                <span className="oh-admin-ads__stat-chip-label">مكان العرض</span>
-                <strong>{PLACEMENT_OPTIONS.find((p) => p.value === editingAd.placement)?.label || editingAd.placement}</strong>
               </div>
             </div>
           ) : (

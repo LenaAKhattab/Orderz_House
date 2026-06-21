@@ -7,6 +7,7 @@ import CategoriesSection from "../components/sections/CategoriesSection";
 import FaqSection from "../components/sections/FaqSection";
 import HomeMobilePage from "../components/sections/mobile/HomeMobilePage";
 import "../components/sections/home-landing-top.css";
+import "../components/sections/mobile/home-mobile-page.css";
 
 /**
  * Public homepage — desktop layout + radical mobile-only layout (≤640px).

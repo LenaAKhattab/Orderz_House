@@ -1,4 +1,5 @@
 import { suggestPlanInternalName } from "./planNameAuto";
+import { computeNextPlanSortOrder } from "./planOrderUtils";
 
 function linesToArray(text) {
   return String(text || "")
@@ -49,8 +50,12 @@ function extendedFieldsFromForm(form) {
   };
 }
 
-export function normalizeCreatePayload(form, existingNames = []) {
+export function normalizeCreatePayload(form, existingNames = [], plansForOrder = []) {
   const name = suggestPlanInternalName(form.title, existingNames);
+  const sortOrder =
+    plansForOrder.length > 0
+      ? computeNextPlanSortOrder(plansForOrder)
+      : Number(form.sortOrder) || 0;
   return {
     name,
     title: form.title.trim(),
@@ -61,7 +66,7 @@ export function normalizeCreatePayload(form, existingNames = []) {
     selfSubscribeAllowed: Boolean(form.selfSubscribeAllowed),
     isActive: Boolean(form.isActive),
     isVisible: Boolean(form.isVisible),
-    sortOrder: Number(form.sortOrder),
+    sortOrder,
     ...extendedFieldsFromForm(form),
   };
 }

@@ -379,7 +379,7 @@ export default function FreelancerDashboardLayout() {
 
       <div className="fdl-shell__grid">
 
-        <div className={sidebarWrapClassName}>
+        <div className={sidebarWrapClassName} aria-hidden={!sidebarOpen}>
 
           <button
 

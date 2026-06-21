@@ -118,6 +118,11 @@
     "orders": "الطلبات",
     "profile": "الملف الشخصي"
   },
+  "permissions": {
+    "groups": {
+      "platform": "صفحات لوحة التحكم"
+    }
+  },
   "titles": {
     "superAdminPanel": "لوحة المدير الأعلى",
     "adminPanel": "لوحة الإدارة",

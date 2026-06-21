@@ -18,6 +18,8 @@ import { COLOR_PRESET_DB_PATCH } from "../../components/ads/homeOffersTheme";
 
 import { PREMIUM_THEME_EXTRAS } from "../../components/ads/bannerDesignSystem";
 
+import { FIXED_AD_PLACEMENT } from "./adFormConstants";
+
 
 
 export const FIXED_BANNER_TEMPLATE = "classic_split";
@@ -249,7 +251,7 @@ export function emptyAdForm() {
 
     isClickableCard: false,
 
-    placement: "home_right_panel",
+    placement: FIXED_AD_PLACEMENT,
 
     sortOrder: 0,
 
@@ -387,7 +389,7 @@ export function mapApiAdToForm(ad) {
 
     endDate: dt(ad.endDate),
 
-    placement: ad.placement || "home_right_panel",
+    placement: FIXED_AD_PLACEMENT,
 
     isFeatured: Boolean(ad.isFeatured),
 
@@ -639,7 +641,7 @@ export function buildPayloadFromForm(f, opts = {}) {
 
     isClickableCard: Boolean(f.isClickableCard),
 
-    placement: f.placement || "home_right_panel",
+    placement: FIXED_AD_PLACEMENT,
 
     sortOrder: Number(f.sortOrder) || 0,
 

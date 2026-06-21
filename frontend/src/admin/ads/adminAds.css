@@ -2685,7 +2685,6 @@
 
 .oh-admin-ads__studio {
   position: relative;
-  padding-bottom: 88px;
 }
 
 .oh-admin-ads__studio-head {
@@ -2957,39 +2956,66 @@
   color: #0f172a;
 }
 
-.oh-admin-ads__action-bar {
-  position: fixed;
-  inset-inline: 0;
-  bottom: 0;
-  z-index: 90;
+.oh-admin-ads__builder-actions {
+  margin-top: 1.25rem;
+  padding: 1rem 0 0;
+  border-top: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.oh-admin-ads__builder-actions-head {
+  margin-bottom: 0.75rem;
+}
+
+.oh-admin-ads__builder-actions-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.oh-admin-ads__builder-actions-hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.oh-admin-ads__builder-actions-buttons {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 16px;
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(226, 232, 240, 0.95);
-  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
+  align-items: center;
+  gap: 0.55rem;
 }
 
-@media (min-width: 900px) {
-  .oh-admin-ads__action-bar {
-    inset-inline: auto;
-    inset-inline-end: 24px;
-    inset-inline-start: auto;
-    bottom: 16px;
-    width: min(720px, calc(100% - 48px));
-    border-radius: 14px;
-    border: 1px solid rgba(226, 232, 240, 0.95);
+.oh-admin-ads__builder-actions-btn--reset {
+  color: #64748b;
+  border-color: #e2e8f0;
+  background: #f8fafc;
+}
+
+.oh-admin-ads__builder-actions-btn--reset:hover:not(:disabled) {
+  color: #475569;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+@media (max-width: 639px) {
+  .oh-admin-ads__builder-actions-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .oh-admin-ads__builder-actions-buttons .btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 
 .oh-admin-ads__preview-fab {
   display: inline-flex;
   position: fixed;
-  bottom: 96px;
+  bottom: 16px;
   inset-inline-start: 16px;
   z-index: 85;
   border: none;

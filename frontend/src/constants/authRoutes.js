@@ -170,13 +170,15 @@ export function isDashboardPath(pathname) {
   return pathname.startsWith("/dashboard");
 }
 
-/** Which role may open which dashboard URL (exact path). */
+const STAFF_DASHBOARD_ROLES = [ROLE.SUPER_ADMIN, ROLE.ADMIN];
+
+/** Which role may open which dashboard URL (exact path). Permission checks apply separately in route guards. */
 const DASHBOARD_PATH_TO_ROLES = {
-  [DASHBOARD_PATH[ROLE.SUPER_ADMIN]]: [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/plans": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/subscriptions": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/subscriptions/activation": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/financial-claims": [ROLE.SUPER_ADMIN],
+  [DASHBOARD_PATH[ROLE.SUPER_ADMIN]]: STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/plans": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/subscriptions": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/subscriptions/activation": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/financial-claims": STAFF_DASHBOARD_ROLES,
   [DASHBOARD_PATH[ROLE.ADMIN]]: [ROLE.ADMIN],
   "/dashboard/admin/subscriptions": [ROLE.ADMIN],
   "/dashboard/admin/courses": [ROLE.ADMIN],
@@ -198,25 +200,27 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/freelancer/courses": [ROLE.FREELANCER],
   "/dashboard/freelancer/notifications": [ROLE.FREELANCER],
   "/dashboard/super-admin/notifications": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/courses": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/ads": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/training-orders": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/training-orders/settings": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/training-orders/templates": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/training-orders/rounds": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/training-orders/applications": [ROLE.SUPER_ADMIN],
+  "/dashboard/super-admin/courses": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/ads": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/training-orders": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/training-orders/settings": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/training-orders/templates": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/training-orders/rounds": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/training-orders/applications": STAFF_DASHBOARD_ROLES,
   "/dashboard/freelancer/settings": [ROLE.FREELANCER],
   "/dashboard/client/profile": [ROLE.CLIENT],
   "/dashboard/client/settings": [ROLE.CLIENT],
   "/dashboard/admin/settings": [ROLE.ADMIN],
   "/dashboard/super-admin/settings": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/admins": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/edit-website": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/edit-website/faq": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/edit-website/how-it-works": [ROLE.SUPER_ADMIN],
-  "/dashboard/super-admin/edit-website/pages": [ROLE.SUPER_ADMIN],
+  "/dashboard/super-admin/admins": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/edit-website": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/edit-website/faq": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/edit-website/how-it-works": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/edit-website/pages": STAFF_DASHBOARD_ROLES,
   "/dashboard/admin/orders": [ROLE.ADMIN],
   "/dashboard/admin/orders/create": [ROLE.ADMIN],
+  "/dashboard/super-admin/orders": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/orders/create": STAFF_DASHBOARD_ROLES,
 };
 
 /**
@@ -224,7 +228,7 @@ const DASHBOARD_PATH_TO_ROLES = {
  * Most specific prefixes first.
  */
 const DASHBOARD_PREFIX_RULES = [
-  { prefix: "/dashboard/super-admin", roles: [ROLE.SUPER_ADMIN] },
+  { prefix: "/dashboard/super-admin", roles: STAFF_DASHBOARD_ROLES },
   { prefix: "/dashboard/admin", roles: [ROLE.ADMIN] },
   { prefix: "/dashboard/freelancer/orders", roles: [ROLE.FREELANCER, ROLE.CLIENT] },
   { prefix: "/dashboard/freelancer/my-orders", roles: [ROLE.FREELANCER] },

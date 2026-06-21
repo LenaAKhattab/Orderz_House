@@ -123,10 +123,11 @@ describe("notifications routes — self-access (auth only)", () => {
 });
 
 describe("route wiring — high-risk admin APIs", () => {
-  it("training orders API is super_admin only", () => {
+  it("training orders API requires delegated training_orders permission", () => {
     const src = fs.readFileSync(path.join(__dirname, "..", "src", "routes", "adminFakeOrdersRoutes.js"), "utf8");
-    assert.ok(src.includes("requireSuperAdmin"));
-    assert.ok(!src.includes('"admin"'));
+    assert.ok(src.includes("PERMISSION_KEYS.TRAINING_ORDERS") || src.includes("dashboard.super_admin.training_orders"));
+    assert.ok(src.includes('requireAnyRole(["admin", "super_admin"])'));
+    assert.ok(!src.includes("requireSuperAdmin"));
   });
 
   it("profile mutations use auth only (settings page not exposed for admin)", () => {
@@ -136,9 +137,10 @@ describe("route wiring — high-risk admin APIs", () => {
     assert.ok(src.includes("router.patch(\"/me\", profileController.patchProfile)"));
   });
 
-  it("admin plans router does not globally block other /api/admin routes", () => {
+  it("admin plans router uses delegated plans permission", () => {
     const src = fs.readFileSync(path.join(__dirname, "..", "src", "routes", "adminPlansRoutes.js"), "utf8");
     assert.ok(!src.includes("router.use(requireAuth, requireRole(\"super_admin\"))"));
+    assert.ok(src.includes("PERMISSION_KEYS.PLANS") || src.includes("dashboard.super_admin.plans"));
     assert.ok(src.includes('router.get("/plans"'));
   });
 

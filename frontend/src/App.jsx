@@ -15,11 +15,13 @@ import { ClientCreateOrderModalProvider } from "./context/ClientCreateOrderModal
 import {
   DashboardRedirect,
   GuestOnly,
+  HomeForGuestsOnly,
   RequireAuth,
   RequirePermission,
   RequireRole,
+  RequireStaffPage,
 } from "./components/auth/AuthGuards";
-import { ADMIN_PAGE_PERMISSIONS } from "./constants/dashboardPermissions";
+import { ADMIN_PAGE_PERMISSIONS, SUPER_ADMIN_PAGE_PERMISSIONS } from "./constants/dashboardPermissions";
 import {
   About,
   Services,
@@ -167,7 +169,14 @@ function App() {
           <ToastGuestPoolBridge />
           <Routes>
             <Route element={<PublicLayout />}>
-              <Route path="/" element={<Home />} />
+              <Route
+                path="/"
+                element={
+                  <HomeForGuestsOnly>
+                    <Home />
+                  </HomeForGuestsOnly>
+                }
+              />
               <Route path="/about" element={<About />} />
               <Route path="/services" element={<Services />} />
               <Route path="/orders" element={<Orders />} />
@@ -217,41 +226,41 @@ function App() {
                 <Route
                   path="/dashboard/super-admin"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.overview}>
                       <DashboardPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
                   path="/dashboard/super-admin/plans"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.plans}>
                       <SuperAdminPlansPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
                   path="/dashboard/super-admin/subscriptions"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.subscriptions}>
                       <SuperAdminSubscriptionsPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
                   path="/dashboard/super-admin/subscriptions/activation"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={ADMIN_PAGE_PERMISSIONS.subscriptionActivation}>
                       <AdminSubscriptionsActivationPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
                   path="/dashboard/super-admin/financial-claims"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims}>
                       <SuperAdminFinancialClaimsPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
@@ -273,98 +282,98 @@ function App() {
                 <Route
                   path="/dashboard/super-admin/courses"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={ADMIN_PAGE_PERMISSIONS.courses}>
                       <AdminCoursesPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
                   path="/dashboard/super-admin/ads"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={ADMIN_PAGE_PERMISSIONS.ads}>
                       <AdminAdsPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
                   path="/dashboard/super-admin/orders"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={ADMIN_PAGE_PERMISSIONS.orders}>
                       <AdminOrdersPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
                   path="/dashboard/super-admin/orders/create"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={ADMIN_PAGE_PERMISSIONS.createOrder}>
                       <AdminCreateOrderPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
 
                 <Route
                   path="/dashboard/super-admin/admins"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage}>
                       <SuperAdminAdminsPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
                   path="/dashboard/super-admin/edit-website"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
                       <SuperAdminEditWebsitePage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
                   path="/dashboard/super-admin/edit-website/faq"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
                       <SuperAdminEditWebsiteFaqPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
                   path="/dashboard/super-admin/edit-website/pages"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
                       <SuperAdminSitePagesPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
                   path="/dashboard/super-admin/edit-website/pages/:id"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
                       <SuperAdminSitePageEditPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
                   path="/dashboard/super-admin/edit-website/how-it-works/:slug"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
                       <SuperAdminEditWebsiteHowItWorksEditorPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
                   path="/dashboard/super-admin/edit-website/how-it-works"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
                       <SuperAdminEditWebsiteHowItWorksPage />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 />
                 <Route
                   path="/dashboard/super-admin/training-orders"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders}>
                       <TrainingOrdersAdminShell />
-                    </RequireRole>
+                    </RequireStaffPage>
                   }
                 >
                   <Route index element={<TrainingOrdersOverviewPage />} />

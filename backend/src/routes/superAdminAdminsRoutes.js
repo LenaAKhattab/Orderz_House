@@ -1,6 +1,7 @@
 const express = require("express");
-const { requireAuth, requireSuperAdmin } = require("../middleware/rbacMiddleware");
+const { requireAuth, requireAnyRole, requirePermission } = require("../middleware/rbacMiddleware");
 const validateRequest = require("../middleware/validateRequest");
+const { PERMISSION_KEYS } = require("../constants/dashboardPermissions");
 const superAdminAdminsController = require("../controllers/superAdminAdminsController");
 const {
   adminIdParam,
@@ -10,11 +11,15 @@ const {
 
 const router = express.Router();
 
-router.use(requireAuth, requireSuperAdmin);
+const adminsManageGuard = [
+  requireAuth,
+  requireAnyRole(["admin", "super_admin"]),
+  requirePermission(PERMISSION_KEYS.ADMINS_MANAGE),
+];
 
-router.get("/admin-permissions", superAdminAdminsController.listAdminPermissions);
-router.get("/admins", superAdminAdminsController.listAdmins);
-router.post("/admins", createAdminValidators, validateRequest, superAdminAdminsController.createAdmin);
-router.patch("/admins/:id", updateAdminValidators, validateRequest, superAdminAdminsController.updateAdmin);
+router.get("/admin-permissions", ...adminsManageGuard, superAdminAdminsController.listAdminPermissions);
+router.get("/admins", ...adminsManageGuard, superAdminAdminsController.listAdmins);
+router.post("/admins", ...adminsManageGuard, createAdminValidators, validateRequest, superAdminAdminsController.createAdmin);
+router.patch("/admins/:id", ...adminsManageGuard, updateAdminValidators, validateRequest, superAdminAdminsController.updateAdmin);
 
 module.exports = router;

@@ -32,11 +32,22 @@ const updateSubscription = async (req, res, next) => {
 
 const listSubscriptions = async (req, res, next) => {
   try {
-    const subs = await subscriptionsService.listSubscriptions({
+    const result = await subscriptionsService.listSubscriptions({
+      page: req.query.page != null ? Number(req.query.page) : 1,
+      limit: req.query.limit != null ? Number(req.query.limit) : 20,
       freelancerUserId: req.query.freelancerUserId ? Number(req.query.freelancerUserId) : null,
+      planId: req.query.planId ? Number(req.query.planId) : null,
       status: req.query.status ? String(req.query.status) : null,
+      search: req.query.search ? String(req.query.search).trim() : null,
     });
-    return res.status(200).json({ success: true, data: { subscriptions: subs } });
+    return res.status(200).json({
+      success: true,
+      data: {
+        subscriptions: result.subscriptions,
+        pagination: result.pagination,
+        aggregates: result.aggregates,
+      },
+    });
   } catch (err) {
     return next(err);
   }

@@ -467,33 +467,7 @@ async function activateCurrentSubscriptionOnFirstAcceptedOrder(
   return mapSubscription(result);
 }
 
-async function createFreelancerSelfSubscriptionPendingPayment({ freelancerUserId, planId, stripeSessionId = null }, client) {
-  const runner = client || pool;
-  await assertUserIsFreelancer(freelancerUserId, runner);
-  await getPlanDurationDays(planId, runner);
-  await endCurrentSubscription({ freelancerUserId }, runner);
-
-  const { rows } = await runner.query(
-    `INSERT INTO freelancer_subscriptions (
-      freelancer_user_id, plan_id, assigned_by_user_id, notes,
-      status, has_first_order, first_order_date, actual_start_date, expiry_date, is_current,
-      source, payment_status, activation_status, stripe_session_id
-    ) VALUES ($1,$2,NULL,NULL,$3,FALSE,NULL,NULL,NULL,TRUE,$4,$5,$6,$7)
-    RETURNING *`,
-    [
-      Number(freelancerUserId),
-      Number(planId),
-      SUBSCRIPTION_STATUSES.INACTIVE,
-      SUBSCRIPTION_SOURCES.STRIPE,
-      SUBSCRIPTION_PAYMENT_STATUSES.PENDING,
-      SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_PENDING,
-      stripeSessionId,
-    ],
-  );
-  return mapSubscription(rows[0]);
-}
-
-async function markFreelancerSubscriptionStripePaymentPaid(
+async function fulfillFreelancerSubscriptionStripePayment(
   {
     freelancerUserId,
     planId,
@@ -505,43 +479,84 @@ async function markFreelancerSubscriptionStripePaymentPaid(
   client,
 ) {
   const runner = client || pool;
+  const uid = Number(freelancerUserId);
+  const pid = Number(planId);
   const sid =
     stripeSessionId != null && String(stripeSessionId).trim() !== "" ? String(stripeSessionId).trim() : null;
-  const subId =
+  const legacySubId =
     subscriptionId != null && Number.isInteger(Number(subscriptionId)) && Number(subscriptionId) > 0
       ? Number(subscriptionId)
       : null;
-  const { rows } = await runner.query(
-    `SELECT * FROM freelancer_subscriptions
-     WHERE freelancer_user_id = $1
-       AND plan_id = $2
-       AND is_current = TRUE
-       AND source = 'stripe'
-       AND ($3::text IS NULL OR stripe_session_id = $3)
-       AND ($4::bigint IS NULL OR id = $4::bigint)
-     ORDER BY id DESC
-     LIMIT 1
-     FOR UPDATE`,
-    [Number(freelancerUserId), Number(planId), sid, subId],
-  );
-  const sub = rows[0];
-  if (!sub) return null;
-  if (sub.payment_status === SUBSCRIPTION_PAYMENT_STATUSES.PAID) return mapSubscription(sub);
+  const paidAtDate = paidAt instanceof Date ? paidAt : new Date(paidAt);
 
-  const { rows: updated } = await runner.query(
-    `UPDATE freelancer_subscriptions
-     SET payment_status = 'paid',
-         activation_status = 'company_pending',
-         status = 'inactive',
-         stripe_session_id = COALESCE($2, stripe_session_id),
-         stripe_payment_intent_id = COALESCE($3, stripe_payment_intent_id),
-         paid_at = COALESCE($4, paid_at),
-         updated_at = NOW()
-     WHERE id = $1
-     RETURNING *`,
-    [Number(sub.id), stripeSessionId || null, stripePaymentIntentId || null, paidAt],
+  if (sid) {
+    const { rows: bySession } = await runner.query(
+      `SELECT * FROM freelancer_subscriptions WHERE stripe_session_id = $1 LIMIT 1 FOR UPDATE`,
+      [sid],
+    );
+    if (bySession[0]) {
+      return mapSubscription(bySession[0]);
+    }
+  }
+
+  if (legacySubId) {
+    const { rows: legacyRows } = await runner.query(
+      `SELECT * FROM freelancer_subscriptions WHERE id = $1 LIMIT 1 FOR UPDATE`,
+      [legacySubId],
+    );
+    const legacy = legacyRows[0];
+    if (legacy) {
+      if (legacy.payment_status === SUBSCRIPTION_PAYMENT_STATUSES.PAID) {
+        return mapSubscription(legacy);
+      }
+      if (legacy.payment_status === SUBSCRIPTION_PAYMENT_STATUSES.PENDING) {
+        const { rows: upgraded } = await runner.query(
+          `UPDATE freelancer_subscriptions
+           SET payment_status = 'paid',
+               activation_status = 'company_pending',
+               status = 'inactive',
+               stripe_session_id = COALESCE($2, stripe_session_id),
+               stripe_payment_intent_id = COALESCE($3, stripe_payment_intent_id),
+               paid_at = COALESCE($4, paid_at),
+               updated_at = NOW()
+           WHERE id = $1
+           RETURNING *`,
+          [legacySubId, sid, stripePaymentIntentId || null, paidAtDate],
+        );
+        return mapSubscription(upgraded[0]);
+      }
+    }
+  }
+
+  await assertUserIsFreelancer(uid, runner);
+  await getPlanDurationDays(pid, runner);
+  await endCurrentSubscription({ freelancerUserId: uid }, runner);
+
+  const { rows: inserted } = await runner.query(
+    `INSERT INTO freelancer_subscriptions (
+      freelancer_user_id, plan_id, assigned_by_user_id, notes,
+      status, has_first_order, first_order_date, actual_start_date, expiry_date, is_current,
+      source, payment_status, activation_status, stripe_session_id, stripe_payment_intent_id, paid_at
+    ) VALUES ($1,$2,NULL,NULL,$3,FALSE,NULL,NULL,NULL,TRUE,$4,$5,$6,$7,$8,$9)
+    RETURNING *`,
+    [
+      uid,
+      pid,
+      SUBSCRIPTION_STATUSES.INACTIVE,
+      SUBSCRIPTION_SOURCES.STRIPE,
+      SUBSCRIPTION_PAYMENT_STATUSES.PAID,
+      SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_PENDING,
+      sid,
+      stripePaymentIntentId || null,
+      paidAtDate,
+    ],
   );
-  return mapSubscription(updated[0]);
+  return mapSubscription(inserted[0]);
+}
+
+/** @deprecated Legacy name — creates/fulfills paid Stripe subscription after checkout completes. */
+async function markFreelancerSubscriptionStripePaymentPaid(params, client) {
+  return fulfillFreelancerSubscriptionStripePayment(params, client);
 }
 
 async function markFreelancerSubscriptionStripePaymentFailed(
@@ -549,37 +564,56 @@ async function markFreelancerSubscriptionStripePaymentFailed(
   client,
 ) {
   const runner = client || pool;
+  const sid = stripeSessionId != null && String(stripeSessionId).trim() !== "" ? String(stripeSessionId).trim() : null;
+
+  if (sid) {
+    const { rows: bySession } = await runner.query(
+      `SELECT id, freelancer_user_id, plan_id FROM freelancer_subscriptions
+       WHERE stripe_session_id = $1 AND payment_status = 'pending' AND source = 'stripe'
+       LIMIT 1 FOR UPDATE`,
+      [sid],
+    );
+    if (bySession[0]) {
+      await runner.query(`DELETE FROM freelancer_subscriptions WHERE id = $1`, [Number(bySession[0].id)]);
+      await safeNotify(() =>
+        freelancerSubscriptionPaymentNotifications.notifyFreelancerSubscriptionPaymentFailed(
+          {
+            freelancerUserId: Number(bySession[0].freelancer_user_id),
+            planId: Number(bySession[0].plan_id),
+            subscriptionId: Number(bySession[0].id),
+            stripeSessionId: sid,
+            stripePaymentIntentId: stripePaymentIntentId || null,
+            source: "mark_freelancer_subscription_stripe_payment_failed",
+          },
+          runner,
+        ),
+      );
+      return null;
+    }
+  }
+
   const { rows } = await runner.query(
-    `SELECT * FROM freelancer_subscriptions
+    `SELECT id, freelancer_user_id, plan_id FROM freelancer_subscriptions
      WHERE freelancer_user_id = $1
        AND plan_id = $2
        AND is_current = TRUE
        AND source = 'stripe'
+       AND payment_status = 'pending'
      ORDER BY id DESC
      LIMIT 1
      FOR UPDATE`,
     [Number(freelancerUserId), Number(planId)],
   );
-  const sub = rows[0];
-  if (!sub) return null;
-  const { rows: updated } = await runner.query(
-    `UPDATE freelancer_subscriptions
-     SET payment_status = 'failed',
-         status = 'inactive',
-         stripe_session_id = COALESCE($2, stripe_session_id),
-         stripe_payment_intent_id = COALESCE($3, stripe_payment_intent_id),
-         updated_at = NOW()
-     WHERE id = $1
-     RETURNING *`,
-    [Number(sub.id), stripeSessionId || null, stripePaymentIntentId || null],
-  );
-  const mapped = mapSubscription(updated[0]);
+  const legacyPending = rows[0];
+  if (!legacyPending) return null;
+
+  await runner.query(`DELETE FROM freelancer_subscriptions WHERE id = $1`, [Number(legacyPending.id)]);
   await safeNotify(() =>
     freelancerSubscriptionPaymentNotifications.notifyFreelancerSubscriptionPaymentFailed(
       {
-        freelancerUserId: Number(updated[0].freelancer_user_id),
-        planId: Number(updated[0].plan_id),
-        subscriptionId: Number(updated[0].id),
+        freelancerUserId: Number(legacyPending.freelancer_user_id),
+        planId: Number(legacyPending.plan_id),
+        subscriptionId: Number(legacyPending.id),
         stripeSessionId: stripeSessionId || null,
         stripePaymentIntentId: stripePaymentIntentId || null,
         source: "mark_freelancer_subscription_stripe_payment_failed",
@@ -587,7 +621,7 @@ async function markFreelancerSubscriptionStripePaymentFailed(
       runner,
     ),
   );
-  return mapped;
+  return null;
 }
 
 async function activateCompanyApprovalForSubscription({ actorUserId, subscriptionId }, client) {
@@ -796,23 +830,107 @@ async function updateSubscription({ actorUserId, subscriptionId, patch }) {
   }
 }
 
-async function listSubscriptions({ freelancerUserId = null, status = null } = {}) {
+async function listSubscriptions({
+  page = 1,
+  limit = 20,
+  freelancerUserId = null,
+  planId = null,
+  status = null,
+  search = null,
+} = {}) {
   const { enrichSubscriptionsWithPaymentCountry } = require("./stripeSubscriptionCountryService");
+
+  const pg = Math.max(1, Number(page) || 1);
+  const lim = Math.min(100, Math.max(1, Number(limit) || 20));
+  const offset = (pg - 1) * lim;
+
   const values = [];
   const where = ["1=1"];
   let i = 1;
 
+  where.push(`NOT (
+    fs.payment_status = 'pending'
+    AND fs.source = 'stripe'
+  )`);
+
   if (freelancerUserId) {
-    where.push(`freelancer_user_id = $${i}`);
+    where.push(`fs.freelancer_user_id = $${i}`);
     values.push(Number(freelancerUserId));
     i += 1;
   }
   if (status) {
-    where.push(`status = $${i}`);
+    where.push(`fs.status = $${i}`);
     values.push(String(status));
     i += 1;
   }
+  if (planId) {
+    where.push(`fs.plan_id = $${i}`);
+    values.push(Number(planId));
+    i += 1;
+  }
 
+  const searchTerm = search != null ? String(search).trim() : "";
+  if (searchTerm) {
+    const pattern = `%${searchTerm.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_")}%`;
+    const idNum = /^\d+$/.test(searchTerm) ? Number.parseInt(searchTerm, 10) : null;
+    if (idNum != null) {
+      where.push(`(
+        fs.id = $${i}
+        OR fs.freelancer_user_id = $${i}
+        OR u.first_name ILIKE $${i + 1}
+        OR u.father_name ILIKE $${i + 1}
+        OR u.family_name ILIKE $${i + 1}
+        OR u.email ILIKE $${i + 1}
+        OR u.account_id ILIKE $${i + 1}
+      )`);
+      values.push(idNum, pattern);
+      i += 2;
+    } else {
+      where.push(`(
+        u.first_name ILIKE $${i}
+        OR u.father_name ILIKE $${i}
+        OR u.family_name ILIKE $${i}
+        OR u.email ILIKE $${i}
+        OR u.account_id ILIKE $${i}
+      )`);
+      values.push(pattern);
+      i += 1;
+    }
+  }
+
+  const whereSql = where.join(" AND ");
+  const fromJoin = `FROM freelancer_subscriptions fs
+     LEFT JOIN users u ON u.id = fs.freelancer_user_id`;
+
+  const countRes = await pool.query(
+    `SELECT COUNT(*)::int AS total ${fromJoin} WHERE ${whereSql}`,
+    values,
+  );
+  const total = countRes.rows[0]?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / lim));
+
+  const aggRes = await pool.query(
+    `SELECT
+       COUNT(*) FILTER (WHERE fs.status = 'active')::int AS active,
+       COUNT(*) FILTER (WHERE fs.status = 'assigned_not_started')::int AS not_started,
+       COUNT(*) FILTER (WHERE fs.status IN ('inactive', 'cancelled'))::int AS inactive_cancelled,
+       COUNT(*) FILTER (WHERE
+         fs.activation_status = 'company_pending'
+         OR (fs.payment_status = 'paid' AND COALESCE(fs.activation_status, '') <> 'company_approved')
+       )::int AS pending_activation,
+       COUNT(*) FILTER (WHERE
+         fs.status = 'active'
+         AND fs.expiry_date IS NOT NULL
+         AND fs.expiry_date > NOW()
+         AND fs.expiry_date <= NOW() + INTERVAL '7 days'
+       )::int AS expiring_soon
+     ${fromJoin}
+     WHERE ${whereSql}`,
+    values,
+  );
+  const agg = aggRes.rows[0] || {};
+
+  const listValues = [...values, lim, offset];
   const { rows } = await pool.query(
     `SELECT
        fs.*,
@@ -821,16 +939,35 @@ async function listSubscriptions({ freelancerUserId = null, status = null } = {}
        u.family_name AS freelancer_family_name,
        u.email AS freelancer_email,
        u.account_id AS freelancer_account_id
-     FROM freelancer_subscriptions fs
-     LEFT JOIN users u ON u.id = fs.freelancer_user_id
-     WHERE ${where.join(" AND ")}
+     ${fromJoin}
+     WHERE ${whereSql}
      ORDER BY fs.id DESC
-     LIMIT 200`,
-    values,
+     LIMIT $${i} OFFSET $${i + 1}`,
+    listValues,
   );
+
   const mapped = rows.map(mapSubscription);
   const enriched = await enrichSubscriptionsWithPaymentCountry(mapped);
-  return collapseSupersededPendingAttempts(enriched);
+
+  return {
+    subscriptions: enriched,
+    pagination: {
+      page: pg,
+      limit: lim,
+      total,
+      totalPages,
+      hasNextPage: pg < totalPages,
+      hasPrevPage: pg > 1,
+    },
+    aggregates: {
+      total,
+      active: agg.active ?? 0,
+      notStarted: agg.not_started ?? 0,
+      inactiveCancelled: agg.inactive_cancelled ?? 0,
+      pendingActivation: agg.pending_activation ?? 0,
+      expiringSoon: agg.expiring_soon ?? 0,
+    },
+  };
 }
 
 /**
@@ -863,10 +1000,9 @@ function collapseSupersededPendingAttempts(subscriptions) {
 /**
  * Pool / bids eligibility from a mapped subscription (same rules as canFreelancerTakeOrders).
  *
- * Payment (self-service Stripe): `createFreelancerSubscriptionCheckoutSession` sets `payment_status`
- * to `pending`; webhook `markFreelancerSubscriptionStripePaymentPaid` sets `paid`. Only `paid` or
- * admin/comp paths (`not_required`) may take marketplace work — not `pending` (checkout started
- * but unpaid). No grace window: starting checkout does not unlock the pool.
+ * Payment (self-service Stripe): checkout does not create a subscription row until Stripe confirms
+ * payment. `fulfillFreelancerSubscriptionStripePayment` inserts a paid row. Only `paid` or
+ * admin/comp paths (`not_required`) may take marketplace work.
  */
 function evaluateFreelancerTakeOrdersEligibility(sub) {
   if (!sub) {
@@ -1057,6 +1193,165 @@ async function isFreelancerOnFreePlan(freelancerUserId) {
   return isOrderzhouseFreePlan(sub.plan || { id: sub.planId, name: sub.plan?.name });
 }
 
+/**
+ * Legacy Stripe checkout placeholders (unpaid). Shared by cleanup script and ops preview.
+ * @param {{ minAgeHours?: number }} [options]
+ */
+async function findAbandonedStripePendingSubscriptionRows({ minAgeHours = 24 } = {}) {
+  const values = [];
+  let ageClause = "";
+  if (minAgeHours != null && Number(minAgeHours) > 0) {
+    values.push(Number(minAgeHours));
+    ageClause = `AND fs.created_at < NOW() - ($${values.length}::int * INTERVAL '1 hour')`;
+  }
+
+  const { rows } = await pool.query(
+    `SELECT
+       fs.id,
+       fs.freelancer_user_id,
+       fs.plan_id,
+       fs.is_current,
+       fs.status,
+       fs.payment_status,
+       fs.source,
+       fs.paid_at,
+       fs.created_at,
+       fs.stripe_session_id,
+       fs.stripe_payment_intent_id
+     FROM freelancer_subscriptions fs
+     WHERE fs.payment_status = 'pending'
+       AND fs.source = 'stripe'
+       AND fs.paid_at IS NULL
+       AND fs.first_order_id IS NULL
+       AND COALESCE(fs.has_first_order, FALSE) = FALSE
+       AND (fs.stripe_payment_intent_id IS NULL OR TRIM(fs.stripe_payment_intent_id) = '')
+       ${ageClause}
+     ORDER BY fs.id ASC`,
+    values,
+  );
+  return rows;
+}
+
+/**
+ * Delete abandoned Stripe pending checkout rows, then ensure default free plan for affected freelancers
+ * who no longer have a retainable current subscription. Does NOT convert pending rows to free plans.
+ *
+ * @param {{ dryRun?: boolean, minAgeHours?: number }} [options]
+ */
+async function cleanupAbandonedStripePendingSubscriptionsWithFreePlanFallback({
+  dryRun = true,
+  minAgeHours = 24,
+} = {}) {
+  const rows = await findAbandonedStripePendingSubscriptionRows({ minAgeHours });
+  const affectedFreelancerIds = [
+    ...new Set(rows.map((r) => Number(r.freelancer_user_id)).filter((n) => Number.isInteger(n) && n > 0)),
+  ];
+
+  if (dryRun) {
+    const deleteIds = new Set(rows.map((r) => String(r.id)));
+    const previewBootstrap = [];
+    for (const uid of affectedFreelancerIds) {
+      const current = await getCurrentSubscriptionForFreelancer(uid);
+      const currentRowWouldBeDeleted = current?.id != null && deleteIds.has(String(current.id));
+      const wouldBootstrap =
+        !current ||
+        currentRowWouldBeDeleted ||
+        !shouldRetainCurrentSubscription(current);
+      previewBootstrap.push({
+        freelancerUserId: uid,
+        wouldBootstrap,
+        currentSubscriptionId: current?.id ? String(current.id) : null,
+        currentPaymentStatus: current?.paymentStatus || null,
+        currentSource: current?.source || null,
+        currentRowWouldBeDeleted,
+      });
+    }
+    return {
+      dryRun: true,
+      minAgeHours,
+      rowsMatched: rows.length,
+      rows,
+      affectedFreelancerIds,
+      previewBootstrap,
+    };
+  }
+
+  const client = await pool.connect();
+  let deletedCount = 0;
+  try {
+    await client.query("BEGIN");
+    const values = [];
+    let ageClause = "";
+    if (minAgeHours != null && Number(minAgeHours) > 0) {
+      values.push(Number(minAgeHours));
+      ageClause = `AND fs.created_at < NOW() - ($${values.length}::int * INTERVAL '1 hour')`;
+    }
+    const deleteRes = await client.query(
+      `DELETE FROM freelancer_subscriptions fs
+       WHERE fs.payment_status = 'pending'
+         AND fs.source = 'stripe'
+         AND fs.paid_at IS NULL
+         AND fs.first_order_id IS NULL
+         AND COALESCE(fs.has_first_order, FALSE) = FALSE
+         AND (fs.stripe_payment_intent_id IS NULL OR TRIM(fs.stripe_payment_intent_id) = '')
+         ${ageClause}
+       RETURNING fs.id, fs.freelancer_user_id`,
+      values,
+    );
+    deletedCount = deleteRes.rowCount || 0;
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+
+  const bootstrapResults = [];
+  for (const uid of affectedFreelancerIds) {
+    const current = await getCurrentSubscriptionForFreelancer(uid);
+    if (shouldRetainCurrentSubscription(current)) {
+      bootstrapResults.push({
+        freelancerUserId: uid,
+        action: "skipped",
+        reason: "valid_current_subscription",
+        subscriptionId: current?.id ? String(current.id) : null,
+        paymentStatus: current?.paymentStatus || null,
+        source: current?.source || null,
+      });
+      continue;
+    }
+
+    const snap = await getFreelancerIdentitySnapshot(uid);
+    if (!snap?.isFreelancer) {
+      bootstrapResults.push({
+        freelancerUserId: uid,
+        action: "skipped",
+        reason: "not_freelancer",
+      });
+      continue;
+    }
+
+    const out = await ensureFreelancerDefaultFreePlan(uid);
+    bootstrapResults.push({
+      freelancerUserId: uid,
+      action: out.created ? "created_default_free" : "unchanged",
+      subscriptionId: out.subscription?.id ? String(out.subscription.id) : null,
+      planId: out.subscription?.planId ? String(out.subscription.planId) : null,
+      paymentStatus: out.subscription?.paymentStatus || null,
+      source: out.subscription?.source || null,
+    });
+  }
+
+  return {
+    dryRun: false,
+    minAgeHours,
+    deletedCount,
+    affectedFreelancerIds,
+    bootstrapResults,
+  };
+}
+
 /** @deprecated Real pool access is gated by plan value range in planOrderValueEligibility only. */
 async function assertFreelancerMayAccessRealPoolOrders(_freelancerUserId) {}
 
@@ -1073,16 +1368,18 @@ module.exports = {
   getCurrentSubscriptionForFreelancer,
   activateCurrentSubscriptionOnFirstOrder,
   activateCurrentSubscriptionOnFirstAcceptedOrder,
-  createFreelancerSelfSubscriptionPendingPayment,
+  fulfillFreelancerSubscriptionStripePayment,
   markFreelancerSubscriptionStripePaymentPaid,
   markFreelancerSubscriptionStripePaymentFailed,
   activateCompanyApprovalForSubscription,
   canFreelancerTakeOrders,
   evaluateFreelancerTakeOrdersEligibility,
-  ORDERZHOUSE_FREE_PLAN_ID,
   shouldRetainCurrentSubscription,
+  ORDERZHOUSE_FREE_PLAN_ID,
   ensureFreelancerDefaultFreePlan,
   maybeEnsureFreelancerDefaultFreePlan,
+  findAbandonedStripePendingSubscriptionRows,
+  cleanupAbandonedStripePendingSubscriptionsWithFreePlanFallback,
   isFreelancerOnFreePlan,
   assertFreelancerMayAccessRealPoolOrders,
   ensureFreePlanInFakeSettingsPlans,

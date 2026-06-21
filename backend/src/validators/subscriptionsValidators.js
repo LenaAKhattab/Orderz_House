@@ -24,8 +24,15 @@ const updateSubscriptionValidators = [
 ];
 
 const listSubscriptionsValidators = [
+  query("page").optional().isInt({ min: 1 }).withMessage("Invalid page."),
+  query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("Invalid limit."),
   query("freelancerUserId").optional().isInt({ min: 1 }).withMessage("Invalid freelancerUserId."),
-  query("status").optional().isString().trim().isLength({ min: 2, max: 40 }).withMessage("Invalid status."),
+  query("planId").optional().isInt({ min: 1 }).withMessage("Invalid planId."),
+  query("search").optional().isString().trim().isLength({ max: 120 }).withMessage("Invalid search."),
+  query("status")
+    .optional()
+    .isIn(["assigned_not_started", "active", "expired", "inactive", "cancelled"])
+    .withMessage("Invalid status."),
 ];
 
 const freelancerSelfSubscribeValidators = [

@@ -40,6 +40,36 @@ function isAdminDashboardPermission(permissionKey) {
 
 
 
+function isDashboardPermission(permissionKey) {
+
+  return String(permissionKey || "").startsWith("dashboard.");
+
+}
+
+
+
+function requireAdminRoleForDashboardPermission(req, res, permissionKey) {
+
+  if (!isDashboardPermission(permissionKey)) return true;
+
+  const roles = resolvedRoleNames(req);
+
+  if (!roles.includes("admin")) {
+
+    logAccessDenied(req, { type: "role", permissionKey, requiredRoles: ["admin"] });
+
+    sendForbidden(res, PERMISSION_FORBIDDEN_MESSAGE);
+
+    return false;
+
+  }
+
+  return true;
+
+}
+
+
+
 /**
 
  * Hydrate req.auth with roles + permissions from DB.
@@ -270,19 +300,7 @@ function requirePermission(permissionKey) {
 
 
 
-    if (isAdminDashboardPermission(key)) {
-
-      const roles = resolvedRoleNames(req);
-
-      if (!roles.includes("admin")) {
-
-        logAccessDenied(req, { type: "role", permissionKey: key, requiredRoles: ["admin"] });
-
-        return sendForbidden(res, PERMISSION_FORBIDDEN_MESSAGE);
-
-      }
-
-    }
+    if (!requireAdminRoleForDashboardPermission(req, res, key)) return;
 
 
 
@@ -316,7 +334,7 @@ function requireAnyPermission(permissionKeys) {
 
 
 
-    const needsAdminRole = allowed.some(isAdminDashboardPermission);
+    const needsAdminRole = allowed.some(isDashboardPermission);
 
     if (needsAdminRole) {
 

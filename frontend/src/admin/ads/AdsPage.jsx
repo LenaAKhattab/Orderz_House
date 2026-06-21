@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useDeferredValue } from "react";
 import AdBuilderForm from "./AdBuilderForm";
 import { buildPayloadFromForm, emptyAdForm, mapApiAdToForm } from "./adFormUtils";
-import { PLACEMENT_OPTIONS } from "./adFormConstants";
+import { FIXED_AD_PLACEMENT } from "./adFormConstants";
 import { hasBlockingErrors, validateAdFormFrontend } from "./adFormValidation";
 import AdPreview from "./AdPreview";
 import AdsManagementTable from "./AdsManagementTable";
@@ -53,7 +53,6 @@ export default function AdsPage() {
   const [saving, setSaving] = useState(false);
   const [attemptedSave, setAttemptedSave] = useState(false);
   const [reorderBusy, setReorderBusy] = useState(false);
-  const [reorderPlacement, setReorderPlacement] = useState("home_right_panel");
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [activeStep, setActiveStep] = useState(1);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
@@ -88,10 +87,6 @@ export default function AdsPage() {
     return () => window.clearInterval(t);
   }, []);
 
-  useEffect(() => {
-    if (form.placement) setReorderPlacement(form.placement);
-  }, [form.placement]);
-
   const patchForm = useCallback((next) => {
     setForm(next);
     setLastEditedAt(Date.now());
@@ -108,6 +103,11 @@ export default function AdsPage() {
     setActiveStep(1);
     setLastEditedAt(null);
   }, []);
+
+  const handleResetClick = useCallback(() => {
+    if (isDirty && !window.confirm("سيتم مسح التغييرات غير المحفوظة. متابعة؟")) return;
+    resetBuilder();
+  }, [isDirty, resetBuilder]);
 
   const startNewAd = useCallback(() => {
     const empty = emptyAdForm();
@@ -129,7 +129,6 @@ export default function AdsPage() {
     setFormBaseline(JSON.stringify(mapped));
     setAttemptedSave(false);
     setActiveStep(1);
-    setReorderPlacement(ad.placement || "home_right_panel");
     requestAnimationFrame(() => {
       builderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
@@ -214,9 +213,9 @@ export default function AdsPage() {
   const placementAds = useMemo(
     () =>
       [...ads]
-        .filter((a) => a.placement === reorderPlacement)
+        .filter((a) => a.placement === FIXED_AD_PLACEMENT)
         .sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)),
-    [ads, reorderPlacement],
+    [ads],
   );
 
   const tableAds = useMemo(() => [...ads].sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)), [ads]);
@@ -240,12 +239,12 @@ export default function AdsPage() {
       setAds((prev) => {
         const map = new Map(items.map((it) => [String(it.id), it.sortOrder]));
         return prev.map((a) =>
-          a.placement === reorderPlacement && map.has(String(a.id)) ? { ...a, sortOrder: map.get(String(a.id)) } : a,
+          a.placement === FIXED_AD_PLACEMENT && map.has(String(a.id)) ? { ...a, sortOrder: map.get(String(a.id)) } : a,
         );
       });
       setReorderBusy(true);
       try {
-        await adminReorderAdsRequest({ placement: reorderPlacement, items, adminNote: note });
+        await adminReorderAdsRequest({ placement: FIXED_AD_PLACEMENT, items, adminNote: note });
         toast.push({ type: "success", title: "تم تحديث الترتيب", message: "" });
       } catch (err) {
         setAds(snapshot);
@@ -254,7 +253,7 @@ export default function AdsPage() {
         setReorderBusy(false);
       }
     },
-    [placementAds, ads, reorderPlacement, toast],
+    [placementAds, ads, toast],
   );
 
   const fieldErrorsForForm = attemptedSave ? validationResult.errors : {};
@@ -263,21 +262,6 @@ export default function AdsPage() {
   const orderStepSlot = (
     <>
       <div className="oh-admin-ads__reorder-toolbar oh-admin-ads__reorder-toolbar--studio">
-        <label htmlFor="reorder-placement" className="oh-admin-ads__reorder-label">
-          مكان العرض
-        </label>
-        <select
-          id="reorder-placement"
-          value={reorderPlacement}
-          onChange={(e) => setReorderPlacement(e.target.value)}
-          className="oh-admin-ads__reorder-select"
-        >
-          {PLACEMENT_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
         <span className="oh-admin-ads__field-hint">اسحب البطاقات لإعادة الترتيب</span>
       </div>
       <AdsReorderSection ads={placementAds} onReorder={applyReorder} busy={reorderBusy} nowTick={nowTick} />
@@ -353,6 +337,34 @@ export default function AdsPage() {
             </aside>
           </div>
 
+          <footer className="oh-admin-ads__builder-actions" aria-label="إجراءات الإعلان">
+            <div className="oh-admin-ads__builder-actions-head">
+              <h3 className="oh-admin-ads__builder-actions-title">إجراءات الإعلان</h3>
+              <p className="oh-admin-ads__builder-actions-hint" lang="en">
+                Ad actions
+              </p>
+            </div>
+            <div className="oh-admin-ads__builder-actions-buttons">
+              <button
+                type="button"
+                className="btn btn-secondary oh-admin-ads__builder-actions-btn--reset"
+                disabled={saving}
+                onClick={handleResetClick}
+              >
+                إعادة تعيين
+              </button>
+              <button type="button" className="btn btn-secondary" disabled={saving} onClick={() => setMobilePreviewOpen(true)}>
+                معاينة كاملة
+              </button>
+              <button type="button" className="btn btn-secondary" disabled={saving} onClick={() => saveWithMode(false)}>
+                {saving ? "جارٍ…" : "حفظ كمسودة"}
+              </button>
+              <button type="button" className="btn btn-primary" disabled={saving} onClick={() => saveWithMode(true)}>
+                {saving ? "جارٍ…" : "نشر الإعلان"}
+              </button>
+            </div>
+          </footer>
+
           <button
             type="button"
             className="oh-admin-ads__preview-fab"
@@ -376,21 +388,6 @@ export default function AdsPage() {
               </div>
             </div>
           ) : null}
-
-          <footer className="oh-admin-ads__action-bar">
-            <button type="button" className="btn btn-secondary" disabled={saving} onClick={resetBuilder}>
-              إعادة تعيين
-            </button>
-            <button type="button" className="btn btn-secondary" disabled={saving} onClick={() => setMobilePreviewOpen(true)}>
-              معاينة كاملة
-            </button>
-            <button type="button" className="btn btn-secondary" disabled={saving} onClick={() => saveWithMode(false)}>
-              {saving ? "جارٍ…" : "حفظ كمسودة"}
-            </button>
-            <button type="button" className="btn btn-primary" disabled={saving} onClick={() => saveWithMode(true)}>
-              {saving ? "جارٍ…" : "نشر الإعلان"}
-            </button>
-          </footer>
         </div>
       </DashboardSection>
 

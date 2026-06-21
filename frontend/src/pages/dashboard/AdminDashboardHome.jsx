@@ -9,7 +9,7 @@ import {
   adminListCoursesRequest,
   adminListInternalOrdersRequest,
   listMyNotificationsRequest,
-  listSubscriptionsRequest,
+  listAllSubscriptionsRequest,
 } from "../../services/api";
 import "./adminDashboardHome.css";
 
@@ -180,7 +180,7 @@ export default function AdminDashboardHome({ user }) {
 
     if (can(ADMIN_PAGE_PERMISSIONS.subscriptionActivation)) {
       tasks.push(
-        listSubscriptionsRequest({})
+        listAllSubscriptionsRequest({})
           .then((res) => {
             const subs = safeArray(res, "subscriptions");
             nextMiniStats.subscriptionsPending = countPendingSubscriptions(subs);

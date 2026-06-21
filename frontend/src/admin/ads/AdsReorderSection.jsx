@@ -3,7 +3,6 @@ import StatusBadge from "../../components/dashboard/StatusBadge";
 import SafeAdImage from "../../components/ads/SafeAdImage";
 import { getAdAdminStatus, formatCtr } from "./adAdminStatus";
 import { priorityLabel } from "../../components/ads/bannerAdMeta";
-import { PLACEMENT_OPTIONS } from "./adFormConstants";
 
 function fmtDate(iso) {
   if (!iso) return "—";
@@ -14,8 +13,6 @@ function fmtDate(iso) {
     return "—";
   }
 }
-
-const PLACEMENT_LABEL = Object.fromEntries(PLACEMENT_OPTIONS.map((p) => [p.value, p.label]));
 
 /**
  * @param {object} p
@@ -29,7 +26,7 @@ export default function AdsReorderSection({ ads, onReorder, busy, nowTick }) {
   const [overIdx, setOverIdx] = useState(null);
 
   if (!ads.length) {
-    return <p className="oh-admin-ads__reorder-empty">لا توجد إعلانات في هذا المكان بعد.</p>;
+    return <p className="oh-admin-ads__reorder-empty">لا توجد إعلانات بعد.</p>;
   }
 
   const handleDrop = (targetIdx) => {
@@ -85,7 +82,6 @@ export default function AdsReorderSection({ ads, onReorder, busy, nowTick }) {
               <span className="oh-admin-ads__reorder-sub">{ad.companyName || "—"}</span>
               <div className="oh-admin-ads__reorder-meta-row">
                 <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
-                <span className="oh-admin-ads__reorder-placement">{PLACEMENT_LABEL[ad.placement] || ad.placement}</span>
                 {ad.priority > 0 ? <span className="oh-admin-ads__mini-tag">{priorityLabel(ad.priority)}</span> : null}
               </div>
               <div className="oh-admin-ads__reorder-stats" dir="ltr">

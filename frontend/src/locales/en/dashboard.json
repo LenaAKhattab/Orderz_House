@@ -118,6 +118,11 @@
     "orders": "Requests",
     "profile": "Profile"
   },
+  "permissions": {
+    "groups": {
+      "platform": "Dashboard pages"
+    }
+  },
   "titles": {
     "superAdminPanel": "Super admin dashboard",
     "adminPanel": "Admin dashboard",

@@ -3,7 +3,7 @@ const crypto = require("node:crypto");
 const { pool } = require("../config/db");
 const { ROLES } = require("../constants/roles");
 const { ASSIGNABLE_ADMIN_PERMISSIONS } = require("../constants/dashboardPermissions");
-const { ensureUserRole, setUserPermissions } = require("./rbacService");
+const { ensureUserRole, setUserPermissions, getUserDirectPermissionKeys } = require("./rbacService");
 const { createPublicApiError } = require("../utils/publicApiError");
 
 const BCRYPT_ROUNDS = 12;
@@ -41,6 +41,26 @@ function normalizePermissionKeys(raw) {
     throw createPublicApiError("صلاحيات غير صالحة.", 400, "VALIDATION_ERROR");
   }
   return [...new Set(keys)];
+}
+
+async function assertDelegatorCanGrantPermissions({ grantedBy, permissionKeys, targetUserId, isSuperAdmin }) {
+  if (!grantedBy || isSuperAdmin) return;
+
+  const grantorId = Number(grantedBy);
+  if (!Number.isInteger(grantorId) || grantorId < 1) {
+    throw createPublicApiError("جلسة غير صالحة.", 401, "UNAUTHORIZED");
+  }
+
+  if (targetUserId != null && grantorId === Number(targetUserId)) {
+    throw createPublicApiError("لا يمكنك تعديل صلاحيات حسابك.", 403, "FORBIDDEN");
+  }
+
+  const keys = normalizePermissionKeys(permissionKeys);
+  const grantorKeys = new Set(await getUserDirectPermissionKeys(grantorId));
+  const cannotGrant = keys.filter((key) => !grantorKeys.has(key));
+  if (cannotGrant.length) {
+    throw createPublicApiError("لا يمكنك منح صلاحيات لا تملكها.", 403, "FORBIDDEN");
+  }
 }
 
 function validatePassword(password) {
@@ -117,7 +137,7 @@ async function listAdmins() {
   return rows.map((row) => mapAdminPublic(row, permsByUser.get(Number(row.id)) || []));
 }
 
-async function createAdmin({ name, email, password, permissionKeys, grantedBy }) {
+async function createAdmin({ name, email, password, permissionKeys, grantedBy, isSuperAdmin = false }) {
   const normalizedEmail = String(email || "").trim().toLowerCase();
   if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
     throw createPublicApiError("البريد الإلكتروني غير صالح.", 400, "VALIDATION_ERROR");
@@ -128,6 +148,12 @@ async function createAdmin({ name, email, password, permissionKeys, grantedBy })
   }
   const validPassword = validatePassword(password);
   const keys = normalizePermissionKeys(permissionKeys);
+  await assertDelegatorCanGrantPermissions({
+    grantedBy,
+    permissionKeys: keys,
+    targetUserId: null,
+    isSuperAdmin,
+  });
 
   const { rows: existing } = await pool.query(
     `SELECT id FROM users WHERE lower(email::text) = lower($1::text) LIMIT 1`,
@@ -166,7 +192,7 @@ async function createAdmin({ name, email, password, permissionKeys, grantedBy })
   return mapAdminPublic(row, assigned);
 }
 
-async function updateAdmin({ id, name, email, isActive, permissionKeys, grantedBy }) {
+async function updateAdmin({ id, name, email, isActive, permissionKeys, grantedBy, isSuperAdmin = false }) {
   const row = await getAdminUserRowById(id);
   if (!row) {
     throw createPublicApiError("حساب الأدمن غير موجود.", 404, "NOT_FOUND");
@@ -225,6 +251,12 @@ async function updateAdmin({ id, name, email, isActive, permissionKeys, grantedB
   let assigned;
   if (permissionKeys !== undefined) {
     const keys = normalizePermissionKeys(permissionKeys);
+    await assertDelegatorCanGrantPermissions({
+      grantedBy,
+      permissionKeys: keys,
+      targetUserId: updatedRow.id,
+      isSuperAdmin,
+    });
     assigned = await setUserPermissions({ userId: updatedRow.id, permissionKeys: keys, grantedBy });
   } else {
     const { rows: permRows } = await pool.query(

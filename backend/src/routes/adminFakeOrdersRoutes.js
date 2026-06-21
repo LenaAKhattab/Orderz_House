@@ -1,11 +1,15 @@
 const express = require("express");
+const { requireAuth, requireAnyRole, requirePermission } = require("../middleware/rbacMiddleware");
+const { PERMISSION_KEYS } = require("../constants/dashboardPermissions");
 const adminFakeOrdersController = require("../controllers/adminFakeOrdersController");
-const { requireAuth, requireSuperAdmin } = require("../middleware/rbacMiddleware");
 
 const router = express.Router();
 
-// Scope super_admin guard to training-order routes only — do not block other /api/admin/* routers.
-const trainingOrdersGuard = [requireAuth, requireSuperAdmin];
+const trainingOrdersGuard = [
+  requireAuth,
+  requireAnyRole(["admin", "super_admin"]),
+  requirePermission(PERMISSION_KEYS.TRAINING_ORDERS),
+];
 
 router.get("/training-orders/automation/health", ...trainingOrdersGuard, adminFakeOrdersController.getAutomationHealth);
 router.post("/training-orders/automation/tick", ...trainingOrdersGuard, adminFakeOrdersController.runAutomationTickNow);

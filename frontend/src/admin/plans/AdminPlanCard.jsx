@@ -2,7 +2,7 @@ import PlanStatusBadge from "./PlanStatusBadge";
 import PlanToggle from "./PlanToggle";
 import { formatOrderValueRange, formatPriceJod, buildPlanBenefits } from "./planDisplayUtils";
 import { KPI_LABELS } from "./planMetricTerminology";
-import { computePlanHealth, LABEL_LOAD_FAILED, LABEL_UNAVAILABLE } from "./planPerformanceUtils";
+import { computePlanHealth, formatInt, LABEL_LOAD_FAILED, LABEL_UNAVAILABLE } from "./planPerformanceUtils";
 
 /**
  * @param {{
@@ -12,8 +12,13 @@ import { computePlanHealth, LABEL_LOAD_FAILED, LABEL_UNAVAILABLE } from "./planP
  *   submitting: boolean;
  *   onActiveChange: (plan: Record<string, unknown>, nextActive: boolean) => void;
  *   onEdit: () => void;
- *   onManageDetails: () => void;
  *   onDelete: () => void;
+ *   showOrderControls?: boolean;
+ *   canMoveUp?: boolean;
+ *   canMoveDown?: boolean;
+ *   reorderBusy?: boolean;
+ *   onMoveUp?: () => void;
+ *   onMoveDown?: () => void;
  * }} p
  */
 export default function AdminPlanCard({
@@ -23,15 +28,31 @@ export default function AdminPlanCard({
   submitting,
   onActiveChange,
   onEdit,
-  onManageDetails,
   onDelete,
+  showOrderControls = false,
+  canMoveUp = false,
+  canMoveDown = false,
+  reorderBusy = false,
+  onMoveUp,
+  onMoveDown,
 }) {
   const priceLabel = formatPriceJod(plan.priceJod);
   const orderRange = formatOrderValueRange(plan.orderValueMinJod, plan.orderValueMaxJod);
   const benefits = buildPlanBenefits(plan);
   const health = plan.portfolioHealth ?? computePlanHealth(plan, platformContext);
   const perf = plan.performance;
-  const kpiFallback = perf?.state === "failed" ? LABEL_LOAD_FAILED : LABEL_UNAVAILABLE;
+  const kpiFallback =
+    perf?.state === "failed"
+      ? LABEL_LOAD_FAILED
+      : perf?.state === "ok"
+        ? formatInt(0)
+        : LABEL_UNAVAILABLE;
+  const kpiMoneyFallback =
+    perf?.state === "failed"
+      ? LABEL_LOAD_FAILED
+      : perf?.state === "ok"
+        ? (formatPriceJod(0) ?? "0 د.أ")
+        : LABEL_UNAVAILABLE;
   const alerts = perf?.comparisonAlerts ?? [];
   const portfolioActions = plan.portfolioActions;
   const actionSignals = portfolioActions?.signals ?? [];
@@ -106,7 +127,7 @@ export default function AdminPlanCard({
             compact
             ariaLabel={`${plan.isActive ? "تعطيل" : "تفعيل"} الباقة «${plan.title}»`}
             checked={Boolean(plan.isActive)}
-            disabled={submitting}
+            disabled={submitting || reorderBusy}
             onChange={(next) => onActiveChange(plan, next)}
           />
         </div>
@@ -117,10 +138,6 @@ export default function AdminPlanCard({
 
         <div className="oh-sapl-card__meta-row">
           <span>{plan.durationDays} يوم</span>
-          <span className="oh-sapl-card__meta-sep" aria-hidden>
-            ·
-          </span>
-          <span>ترتيب #{plan.sortOrder ?? 0}</span>
         </div>
 
         <div className="oh-sapl-card__kpi-row" aria-label="مؤشرات الاشتراك">
@@ -149,7 +166,7 @@ export default function AdminPlanCard({
             <span className="oh-sapl-card__kpi-label" title={KPI_LABELS.paidSubscriptionValue.title}>
               {KPI_LABELS.paidSubscriptionValue.label}
             </span>
-            <strong className="oh-sapl-card__kpi-value">{perf?.revenueJod?.display ?? kpiFallback}</strong>
+            <strong className="oh-sapl-card__kpi-value">{perf?.revenueJod?.display ?? kpiMoneyFallback}</strong>
             {perf?.revenueTrendDisplay ? (
               <span
                 className={`oh-sapl-card__trend oh-sapl-card__trend--${perf.revenueTrendDisplay.trend}`}
@@ -218,16 +235,39 @@ export default function AdminPlanCard({
         )}
       </div>
 
-      <footer className="oh-sapl-card__footer">
-        <button type="button" className="oh-sapl-card__action oh-sapl-card__action--primary" disabled={submitting} onClick={onEdit}>
-          تعديل
-        </button>
-        <button type="button" className="oh-sapl-card__action" disabled={submitting} onClick={onManageDetails}>
-          التفاصيل
-        </button>
-        <button type="button" className="oh-sapl-card__action oh-sapl-card__action--danger" disabled={submitting} onClick={onDelete}>
-          حذف
-        </button>
+      <footer className={`oh-sapl-card__footer${showOrderControls ? " oh-sapl-card__footer--reorderable" : ""}`}>
+        {showOrderControls ? (
+          <button
+            type="button"
+            className="oh-sapl-card__reorder-btn oh-sapl-card__reorder-btn--up"
+            title="رفع الباقة"
+            aria-label="رفع الباقة"
+            disabled={submitting || reorderBusy || !canMoveUp}
+            onClick={() => onMoveUp?.()}
+          >
+            ↑
+          </button>
+        ) : null}
+        <div className="oh-sapl-card__footer-actions">
+          <button type="button" className="oh-sapl-card__action oh-sapl-card__action--primary" disabled={submitting || reorderBusy} onClick={onEdit}>
+            تعديل
+          </button>
+          <button type="button" className="oh-sapl-card__action oh-sapl-card__action--danger" disabled={submitting || reorderBusy} onClick={onDelete}>
+            حذف
+          </button>
+        </div>
+        {showOrderControls ? (
+          <button
+            type="button"
+            className="oh-sapl-card__reorder-btn oh-sapl-card__reorder-btn--down"
+            title="خفض الباقة"
+            aria-label="خفض الباقة"
+            disabled={submitting || reorderBusy || !canMoveDown}
+            onClick={() => onMoveDown?.()}
+          >
+            ↓
+          </button>
+        ) : null}
       </footer>
     </article>
   );

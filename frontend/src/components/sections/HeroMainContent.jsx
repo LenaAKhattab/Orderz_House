@@ -40,6 +40,12 @@ export default function HeroMainContent({ statsPayload }) {
           {t("home.hero.lead")}
         </p>
 
+        <div className="home-hero__start-cta">
+          <Link to="/login" className="home-hero__cta-primary home-hero-marketing__cta-primary">
+            {t("home.hero.startNow")}
+          </Link>
+        </div>
+
         <div className="home-hero__inline-stats w-full min-w-0">
           <HeroAnalyticsStrip statsPayload={statsPayload} />
         </div>

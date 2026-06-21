@@ -37,7 +37,7 @@ function PlayIcon() {
  * @param {{ statsPayload: object | null; ads?: import("../../../types/ad.js").Ad[]; adsLoading?: boolean }} p
  */
 export default function HomeMobileHero({ statsPayload, ads = [], adsLoading = false }) {
-  const { t, dir } = useTranslation();
+  const { t, dir, isRtl } = useTranslation();
   const showAds = adsLoading || (Array.isArray(ads) && ads.length > 0);
 
   const featured = useMemo(
@@ -82,6 +82,15 @@ export default function HomeMobileHero({ statsPayload, ads = [], adsLoading = fa
       <div className="hm-hero__intro">
         <h2 className="hm-hero__headline">{t("home.hero.title")}</h2>
         <p className="hm-hero__subline">{t("home.hero.leadShort")}</p>
+      </div>
+
+      <div className="hm-hero__cta-wrap">
+        <Link to="/login" className="home-hero-mobile-start-cta">
+          <span className="home-hero-mobile-start-cta__label">{t("home.hero.startNow")}</span>
+          <span className="home-hero-mobile-start-cta__icon" aria-hidden="true">
+            {isRtl ? "←" : "→"}
+          </span>
+        </Link>
       </div>
 
       <div className="hm-hero__featured" aria-label={t("home.hero.featuredAria")}>

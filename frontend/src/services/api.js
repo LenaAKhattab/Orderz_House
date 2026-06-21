@@ -232,6 +232,34 @@ export const listSubscriptionsRequest = async (params = {}) => {
   return data;
 };
 
+/** Fetches all subscription pages (for admin screens that need the full filtered set). */
+export const listAllSubscriptionsRequest = async (filters = {}) => {
+  const all = [];
+  let page = 1;
+  const limit = 100;
+  let pagination = null;
+
+  for (;;) {
+    const res = await listSubscriptionsRequest({ ...filters, page, limit });
+    const batch = res?.data?.subscriptions || [];
+    all.push(...batch);
+    pagination = res?.data?.pagination || null;
+    if (!pagination?.hasNextPage || batch.length === 0) break;
+    page += 1;
+    if (page > 500) break;
+  }
+
+  return {
+    success: true,
+    data: {
+      subscriptions: all,
+      pagination: pagination
+        ? { ...pagination, page: 1, limit: all.length, total: pagination.total, totalPages: 1 }
+        : { page: 1, limit: all.length, total: all.length, totalPages: 1, hasNextPage: false, hasPrevPage: false },
+    },
+  };
+};
+
 export const updateSubscriptionRequest = async (id, patch) => {
   const { data } = await api.patch(`/admin/subscriptions/${id}`, patch);
   return data;

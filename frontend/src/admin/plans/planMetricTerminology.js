@@ -5,9 +5,6 @@
  * Month trend: COUNT/SUM by COALESCE(paid_at, assigned_at) in calendar month vs previous month.
  */
 
-export const METRIC_SCOPE_NOTE =
-  "الأرقام من سجلات الاشتراك الحالية (is_current). الإيراد = مجموع سعر الباقة للاشتراكات المسجّلة «مدفوعة» — ليس إيراداً محاسبياً ولا تحويلات Stripe. اتجاه الشهر = نشاط ذلك الشهر مقابل الشهر السابق.";
-
 export const KPI_LABELS = {
   currentSubscriptions: {
     label: "اشتراكات سارية",
@@ -82,6 +79,7 @@ export const SUMMARY_LABELS = {
 };
 
 export const SORT_LABELS = {
+  display: "ترتيب الظهور",
   revenue: "أعلى قيمة مدفوعة",
   subscribers: "أكثر اشتراكات سارية",
   active: "أكثر اشتراكات نشطة",
@@ -90,8 +88,6 @@ export const SORT_LABELS = {
 
 export const PAGE_COPY = {
   title: "محفظة الباقات والاشتراكات",
-  description:
-    "اشتراكات سارية وقيمة مسجّلة حسب سعر الباقة (ليست تحويلات Stripe). اتجاه الشهر = نشاط ذلك الشهر مقابل السابق.",
   summaryAria: "ملخص اشتراكات الباقات",
   portfolioStripAria: "رؤى محفظة الاشتراكات",
 };

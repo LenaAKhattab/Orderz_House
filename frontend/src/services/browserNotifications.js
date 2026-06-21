@@ -30,7 +30,7 @@ export function showBrowserNotification({ title, body, link, tag }) {
   const n = new Notification(title || "إشعار جديد", {
     body: body || "",
     tag: tag || undefined,
-    icon: "/favicon.ico",
+    icon: "/logo.png",
     dir: "rtl",
     lang: "ar",
   });

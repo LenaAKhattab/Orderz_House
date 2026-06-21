@@ -295,7 +295,7 @@ async function applyCheckoutSessionFreelancerSubscriptionCompleted(session, meta
       await db.query("COMMIT");
       return { status: "ignored", reason: "subscription_checkout_not_paid" };
     }
-    const sub = await subscriptionsService.markFreelancerSubscriptionStripePaymentPaid(
+    const sub = await subscriptionsService.fulfillFreelancerSubscriptionStripePayment(
       {
         freelancerUserId,
         planId,
@@ -698,7 +698,7 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool
     try {
       await db.query("BEGIN");
       if (outcomePaymentStatus === "paid") {
-        const sub = await subscriptionsService.markFreelancerSubscriptionStripePaymentPaid(
+        const sub = await subscriptionsService.fulfillFreelancerSubscriptionStripePayment(
           {
             freelancerUserId,
             planId,

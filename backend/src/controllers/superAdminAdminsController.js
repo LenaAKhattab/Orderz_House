@@ -18,6 +18,7 @@ async function createAdmin(req, res, next) {
       password: req.body.password,
       permissionKeys: req.body.permissions,
       grantedBy: req.auth?.userId ? Number(req.auth.userId) : null,
+      isSuperAdmin: Boolean(req.auth?.isSuperAdmin),
     });
     return res.status(201).json({ success: true, data: { admin } });
   } catch (err) {
@@ -34,6 +35,7 @@ async function updateAdmin(req, res, next) {
       isActive: req.body.isActive,
       permissionKeys: req.body.permissions,
       grantedBy: req.auth?.userId ? Number(req.auth.userId) : null,
+      isSuperAdmin: Boolean(req.auth?.isSuperAdmin),
     });
     return res.json({ success: true, data: { admin } });
   } catch (err) {

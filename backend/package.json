@@ -27,6 +27,7 @@
     "db:seed-youtube-course": "node scripts/seedYoutubePlaylistCourse.js",
     "db:promote-super-admin": "node scripts/promoteUserToSuperAdminByEmail.js",
     "db:cleanup:test-data": "node scripts/cleanupTestData.js",
+    "db:cleanup:stripe-pending": "node scripts/cleanupAbandonedStripePendingSubscriptions.js",
     "api:smoke": "node scripts/smokeApiEndpoints.js",
     "verify:homepage-order-stats": "node scripts/verifyHomepageOrderStats.js",
     "test:stripe-webhook": "node --test test/stripeWebhookIdempotency.test.js",

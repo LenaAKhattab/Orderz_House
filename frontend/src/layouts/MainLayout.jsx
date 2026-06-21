@@ -9,6 +9,7 @@ import { ROLE } from "../constants/authRoutes";
 import { isFreelancerDashboardPath } from "../constants/freelancerNav";
 import { isClientDashboardShellPath } from "../constants/clientNav";
 import { isAdminDashboardPath } from "../constants/adminNav";
+import { adminUsesSuperAdminShell } from "../constants/dashboardPermissions";
 import { NotificationRealtimeProvider } from "../context/NotificationRealtimeContext.jsx";
 import NotificationPermissionPrompt from "../components/notifications/NotificationPermissionPrompt";
 
@@ -24,8 +25,10 @@ const MainLayout = () => {
   const { user } = useAuth();
   const { pathname } = useLocation();
   const role = user?.primaryRole || user?.role;
-  const useSuperShell = role === ROLE.SUPER_ADMIN && pathname.startsWith("/dashboard/super-admin");
-  const useAdminShell = role === ROLE.ADMIN && isAdminDashboardPath(pathname);
+  const useSuperShell =
+    pathname.startsWith("/dashboard/super-admin") &&
+    (role === ROLE.SUPER_ADMIN || (role === ROLE.ADMIN && adminUsesSuperAdminShell(pathname)));
+  const useAdminShell = role === ROLE.ADMIN && isAdminDashboardPath(pathname) && !adminUsesSuperAdminShell(pathname);
   const useFreelancerShell = role === ROLE.FREELANCER && isFreelancerDashboardPath(pathname);
   const useClientShell = role === ROLE.CLIENT && isClientDashboardShellPath(pathname);
 

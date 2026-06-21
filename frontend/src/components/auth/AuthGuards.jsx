@@ -1,7 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { getDashboardPathByRole, ROLE } from "../../constants/authRoutes";
-import { userHasPermission } from "../../constants/dashboardPermissions";
+import { getFirstAccessibleDashboardPath, userHasPermission } from "../../constants/dashboardPermissions";
 import { AuthRouteSkeleton } from "../ui/AuthRouteSkeleton";
 import Unauthorized from "../../pages/Unauthorized";
 
@@ -20,6 +20,9 @@ export function DashboardRedirect() {
   }
 
   const role = user?.primaryRole || user?.role;
+  if (role === ROLE.ADMIN) {
+    return <Navigate to={getFirstAccessibleDashboardPath(user)} replace />;
+  }
   return <Navigate to={getDashboardPathByRole(role)} replace />;
 }
 
@@ -135,5 +138,16 @@ export function RequirePermission({ permission, children }) {
       title="ليس لديك صلاحية"
       message="ليس لديك صلاحية الوصول إلى هذه الصفحة"
     />
+  );
+}
+
+/**
+ * Staff dashboard page: super_admin always; admin must hold `permission`.
+ */
+export function RequireStaffPage({ permission, children }) {
+  return (
+    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN, ROLE.ADMIN]}>
+      <RequirePermission permission={permission}>{children}</RequirePermission>
+    </RequireRole>
   );
 }

@@ -14,6 +14,7 @@ import {
   listSuperAdminAdminsRequest,
   updateSuperAdminAdminRequest,
 } from "../../services/api";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import "./superAdminAdminsPage.css";
 
 function errorMessage(err) {
@@ -30,7 +31,13 @@ function formatJoDate(value) {
   }).format(d);
 }
 
+function resolvePermissionLabel(perm, t) {
+  if (perm?.labelKey) return t(perm.labelKey);
+  return perm?.label || perm?.key || "";
+}
+
 function PermissionsChecklist({ groups, selected, onChange, disabled }) {
+  const { t } = useTranslation();
   const set = useMemo(() => new Set(selected), [selected]);
   const toggle = (key) => {
     if (disabled) return;
@@ -44,7 +51,9 @@ function PermissionsChecklist({ groups, selected, onChange, disabled }) {
     <div className="oh-admins-perms">
       {(groups || []).map((group) => (
         <div key={group.id} className="oh-admins-perms__group">
-          <div className="oh-admins-perms__group-title">{group.label}</div>
+          <div className="oh-admins-perms__group-title">
+            {group.labelKey ? t(group.labelKey) : group.label}
+          </div>
           <ul className="oh-admins-perms__list">
             {(group.permissions || []).map((perm) => (
               <li key={perm.key}>
@@ -55,7 +64,7 @@ function PermissionsChecklist({ groups, selected, onChange, disabled }) {
                     disabled={disabled}
                     onChange={() => toggle(perm.key)}
                   />
-                  <span>{perm.label}</span>
+                  <span>{resolvePermissionLabel(perm, t)}</span>
                 </label>
               </li>
             ))}

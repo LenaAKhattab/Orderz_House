@@ -1,7 +1,7 @@
 const express = require("express");
 const adminOrdersController = require("../controllers/adminOrdersController");
 const validateRequest = require("../middleware/validateRequest");
-const { requireAuth, requireAnyRole, requirePermission } = require("../middleware/rbacMiddleware");
+const { requireAuth, requireAnyRole, requirePermission, requireAnyPermission } = require("../middleware/rbacMiddleware");
 const { uploadOrderFiles, handleOrderUploadErrors, enforceOrderUploadTotalSize } = require("../middleware/ordersUploadMiddleware");
 const {
   listOrdersValidators,
@@ -22,10 +22,14 @@ router.use(requireAuth, requireAnyRole(["super_admin", "admin"]));
 
 const ordersPerm = requirePermission("dashboard.admin.orders");
 const createOrderPerm = requirePermission("dashboard.admin.create_order");
+const freelancersSearchPerm = requireAnyPermission([
+  "dashboard.admin.orders",
+  "dashboard.super_admin.subscriptions",
+]);
 
 router.get("/orders", ordersPerm, listOrdersValidators, validateRequest, adminOrdersController.listInternalOrders);
 router.get("/orders/:id", ordersPerm, orderIdParam, validateRequest, adminOrdersController.getInternalOrder);
-router.get("/freelancers", ordersPerm, adminFreelancersSearchValidators, validateRequest, adminOrdersController.searchFreelancers);
+router.get("/freelancers", freelancersSearchPerm, adminFreelancersSearchValidators, validateRequest, adminOrdersController.searchFreelancers);
 router.get(
   "/freelancers/:id/registration",
   ordersPerm,

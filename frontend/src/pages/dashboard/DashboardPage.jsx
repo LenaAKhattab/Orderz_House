@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { getDashboardTitle } from "../../constants/authRoutes";
+import { SUPER_ADMIN_PAGE_PERMISSIONS, userHasPermission } from "../../constants/dashboardPermissions";
 import { useAuth } from "../../context/useAuth";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import RouteSuspenseFallback from "../../components/ui/RouteSuspenseFallback";
@@ -94,6 +95,17 @@ const DashboardPage = () => {
     );
   }
   if (role === "super_admin" && pathname === "/dashboard/super-admin") {
+    return (
+      <LazyDashboardView>
+        <SuperAdminVisitorsDashboard />
+      </LazyDashboardView>
+    );
+  }
+  if (
+    role === "admin" &&
+    pathname === "/dashboard/super-admin" &&
+    userHasPermission(user, SUPER_ADMIN_PAGE_PERMISSIONS.overview)
+  ) {
     return (
       <LazyDashboardView>
         <SuperAdminVisitorsDashboard />

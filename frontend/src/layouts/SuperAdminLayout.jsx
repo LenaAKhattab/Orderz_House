@@ -5,7 +5,13 @@ import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 import { useAuth } from "../context/useAuth";
 import { useClientCreateOrderModal } from "../context/ClientCreateOrderModalContext";
 import { getAccountSettingsPath, getNotificationsPath } from "../constants/authRoutes";
-import { SUPER_ADMIN_NAV_MAIN, superAdminBreadcrumb } from "../constants/superAdminNav";
+import {
+  SUPER_ADMIN_NAV_CREATE_ORDER,
+  SUPER_ADMIN_NAV_MAIN,
+  filterSuperAdminNavItems,
+  superAdminBreadcrumb,
+} from "../constants/superAdminNav";
+import { userHasPermission } from "../constants/dashboardPermissions";
 import NotificationsBell from "../components/notifications/NotificationsBell";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
@@ -94,6 +100,13 @@ export default function SuperAdminLayout() {
   const role = user?.primaryRole || user?.role;
   const notificationsPath = getNotificationsPath(role);
   const accountSettingsPath = getAccountSettingsPath(role);
+  const businessNav = useMemo(
+    () => filterSuperAdminNavItems(SUPER_ADMIN_NAV_MAIN, user, userHasPermission),
+    [user],
+  );
+  const showCreateOrder = userHasPermission(user, SUPER_ADMIN_NAV_CREATE_ORDER.permission);
+  const panelTitleKey =
+    role === "admin" ? "dashboard.nav.admin.panelTitle" : "dashboard.nav.superAdmin.panelTitle";
 
   const shellClassName = `oh-sa-shell${sidebarCollapsed ? " oh-sa-shell--sidebar-collapsed" : ""}`;
   const navClassName = `oh-sa-nav${sidebarCollapsed ? " oh-sa-nav--collapsed" : ""}`;
@@ -134,12 +147,12 @@ export default function SuperAdminLayout() {
                 height={56}
                 decoding="async"
               />
-              <div className="oh-sa-brand__sub">{t("dashboard.nav.superAdmin.panelTitle")}</div>
+              <div className="oh-sa-brand__sub">{t(panelTitleKey)}</div>
             </div>
 
             <div className="oh-sa-nav__scroll">
               <ul className="oh-sa-nav__list">
-                {SUPER_ADMIN_NAV_MAIN.map((item) => (
+                {businessNav.map((item) => (
                   <li key={item.to}>
                     <NavLink
                       to={item.to}
@@ -158,21 +171,23 @@ export default function SuperAdminLayout() {
                     </NavLink>
                   </li>
                 ))}
-                <li>
-                  <button
-                    type="button"
-                    className="oh-sa-navlink oh-sa-navlink--button"
-                    onClick={() => {
-                      setSidebarOpen(false);
-                      openClientCreateOrderModal();
-                    }}
-                  >
-                    <span className="oh-sa-navlink__icon" aria-hidden>
-                      +
-                    </span>
-                    <span className="oh-sa-navlink__label">{t("dashboard.nav.superAdmin.createRequest")}</span>
-                  </button>
-                </li>
+                {showCreateOrder ? (
+                  <li>
+                    <button
+                      type="button"
+                      className="oh-sa-navlink oh-sa-navlink--button"
+                      onClick={() => {
+                        setSidebarOpen(false);
+                        openClientCreateOrderModal();
+                      }}
+                    >
+                      <span className="oh-sa-navlink__icon" aria-hidden>
+                        +
+                      </span>
+                      <span className="oh-sa-navlink__label">{t("dashboard.nav.superAdmin.createRequest")}</span>
+                    </button>
+                  </li>
+                ) : null}
               </ul>
 
               <ul className="oh-sa-nav__list oh-sa-nav__list--muted">

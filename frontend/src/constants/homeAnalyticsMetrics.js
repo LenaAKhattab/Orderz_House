@@ -39,7 +39,7 @@ export const HOME_PUBLIC_METRICS = Object.freeze({
   completedOrders: {
     key: "completedOrders",
     label: "الطلبات المنجزة",
-    sub: "طلبات حقيقية مكتملة وطلبات تدريبية انتهت دورتها",
+    sub: "طلبات العملاء المنجزة و المكتملة",
     tooltip:
       "طلبات حقيقية مكتملة، بالإضافة إلى طلبات تدريبية ظهرت في السوق وانتهت دورتها.",
     tone: "completed",
