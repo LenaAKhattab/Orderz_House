@@ -1,6 +1,7 @@
 /**
  * Policy (see adminSubscriptionsRoutes.js): admin + super_admin may assign/manage freelancer
- * subscriptions; super_admin alone retains plan *template* CRUD (adminPlansRoutes).
+ * subscriptions; plan template CRUD uses delegated dashboard.super_admin.plans permission
+ * (adminPlansRoutes + adminPlanPagesRoutes).
  *
  * Run: npm run test:admin-subscriptions-auth  |  npm test
  */
@@ -46,10 +47,17 @@ describe("admin subscription routes authorization policy", () => {
     assert.ok(!src.includes("requireRole"), "this router uses requireAnyRole only (no super_admin-only requireRole)");
   });
 
-  it("plan template CRUD stays documented as super_admin scope (adminPlansRoutes)", () => {
+  it("plan template CRUD uses delegated plans permission (adminPlansRoutes)", () => {
     const p = path.join(__dirname, "..", "src", "routes", "adminPlansRoutes.js");
     const src = fs.readFileSync(p, "utf8");
-    assert.ok(src.includes('requireRole("super_admin")'), "plan templates remain super_admin-only");
+    assert.ok(
+      src.includes("PERMISSION_KEYS.PLANS") || src.includes("dashboard.super_admin.plans"),
+      "plan CRUD requires dashboard.super_admin.plans permission",
+    );
+    assert.ok(
+      !src.includes('requireRole("super_admin")'),
+      "plan CRUD must not be hard-coded super_admin-only requireRole",
+    );
   });
 });
 

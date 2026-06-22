@@ -5,6 +5,7 @@ const planIdParam = [param("id").isInt({ min: 1 }).withMessage("Invalid plan id.
 
 const listPlansValidators = [
   query("includeDeleted").optional().isBoolean().withMessage("includeDeleted must be boolean."),
+  query("planPageId").optional().isInt({ min: 1 }).withMessage("planPageId must be a positive integer."),
 ];
 
 function optionalStringArray(fieldName) {
@@ -62,6 +63,16 @@ const extendedPlanFields = [
     .optional({ nullable: true })
     .isFloat({ min: 0 })
     .withMessage("stripeCheckoutAmountJod must be >= 0."),
+  body("planPageId").optional({ nullable: true }).isInt({ min: 1 }).withMessage("planPageId must be a positive integer."),
+  body("subscriptionPlanId")
+    .optional({ nullable: true })
+    .isInt({ min: 1 })
+    .withMessage("subscriptionPlanId must be a positive integer."),
+  body("label").optional({ nullable: true }).isString().trim().isLength({ max: 200 }),
+  body("billingText").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
+  body("buttonText").optional({ nullable: true }).isString().trim().isLength({ max: 200 }),
+  body("buttonUrl").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
+  body("currency").optional().isString().trim().isLength({ min: 3, max: 3 }).withMessage("currency must be a 3-letter code."),
 ];
 
 const createPlanValidators = [

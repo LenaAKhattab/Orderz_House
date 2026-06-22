@@ -42,6 +42,7 @@ import {
   resolveExamQuestions,
   validateClientExamMarks,
 } from "../../utils/courseExamQuestions";
+import LinkifiedText from "../../components/ui/LinkifiedText";
 import { useToast } from "../../components/ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
@@ -419,7 +420,9 @@ function FinalExamFileCard({
           </span>
           <div className="fcd-final__file-card-titles">
             <h4 className="fcd-final__file-card-title">{title}</h4>
-            <p className="fcd-final__file-card-desc">{description}</p>
+            <p className="fcd-final__file-card-desc">
+              <LinkifiedText text={description} />
+            </p>
           </div>
         </div>
         <span className={`fcd-final__status ${statusClass}`}>{statusLabel}</span>
@@ -1745,7 +1748,11 @@ export default function FreelancerCourseDetailsPage() {
             <div className="fcd-header__main">
               <div className="fcd-header__copy">
                 <h1 className="fcd-header__title">{course.title}</h1>
-                {course.description ? <p className="fcd-header__desc">{course.description}</p> : null}
+                {course.description ? (
+                  <p className="fcd-header__desc">
+                    <LinkifiedText text={course.description} />
+                  </p>
+                ) : null}
                 <div
                   className={`fcd-header__status-rail fcd-header__status-rail--${headerCompletion.tone}`}
                   role="status"
@@ -1972,7 +1979,9 @@ export default function FreelancerCourseDetailsPage() {
                       </div>
 
                       {activeLesson?.description ? (
-                        <p className="fcd-lesson-card__desc">{activeLesson.description}</p>
+                        <p className="fcd-lesson-card__desc">
+                          <LinkifiedText text={activeLesson.description} />
+                        </p>
                       ) : null}
 
                       {finalTestReady ? (

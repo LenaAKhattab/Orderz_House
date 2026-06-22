@@ -830,13 +830,31 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
   try {
     await db.query("BEGIN");
     const { rows: planRows } = await db.query(
-      `SELECT id, title, price_jod, stripe_checkout_amount_jod, is_active, is_visible, deleted_at, self_subscribe_allowed
+      `SELECT id, title, price_jod, stripe_checkout_amount_jod, is_active, is_visible, deleted_at,
+              self_subscribe_allowed, subscription_plan_id
        FROM plans
        WHERE id = $1
        LIMIT 1`,
       [pid],
     );
-    const plan = planRows[0];
+    const displayPlan = planRows[0];
+    if (!displayPlan) {
+      const err = new Error(`No plan found for checkout (planId=${pid}).`);
+      err.statusCode = 400;
+      err.exposeToClient = true;
+      throw err;
+    }
+    const checkoutPlanId = displayPlan.subscription_plan_id
+      ? Number(displayPlan.subscription_plan_id)
+      : Number(displayPlan.id);
+    const { rows: checkoutRows } = await db.query(
+      `SELECT id, title, price_jod, stripe_checkout_amount_jod, is_active, is_visible, deleted_at, self_subscribe_allowed
+       FROM plans
+       WHERE id = $1
+       LIMIT 1`,
+      [checkoutPlanId],
+    );
+    const plan = checkoutRows[0];
     if (!plan) {
       const err = new Error(`No plan found for checkout (planId=${pid}).`);
       err.statusCode = 400;

@@ -14,6 +14,7 @@ import {
   listSuperAdminAdminsRequest,
   updateSuperAdminAdminRequest,
 } from "../../services/api";
+import { useAuth } from "../../context/useAuth";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "./superAdminAdminsPage.css";
 
@@ -75,7 +76,7 @@ function PermissionsChecklist({ groups, selected, onChange, disabled }) {
   );
 }
 
-function AdminFormModal({ mode, open, onClose, groups, initial, onSaved }) {
+function AdminFormModal({ mode, open, onClose, groups, initial, onSaved, currentUserId, onSelfPermissionsSaved }) {
   const isEdit = mode === "edit";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -100,6 +101,9 @@ function AdminFormModal({ mode, open, onClose, groups, initial, onSaved }) {
     try {
       if (isEdit) {
         await updateSuperAdminAdminRequest(initial.id, { name, email, permissions });
+        if (currentUserId && String(initial.id) === String(currentUserId)) {
+          await onSelfPermissionsSaved?.();
+        }
       } else {
         await createSuperAdminAdminRequest({ name, email, password, permissions });
       }
@@ -166,6 +170,7 @@ function AdminFormModal({ mode, open, onClose, groups, initial, onSaved }) {
 }
 
 export default function SuperAdminAdminsPage() {
+  const { user, refreshUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [admins, setAdmins] = useState([]);
@@ -306,6 +311,8 @@ export default function SuperAdminAdminsPage() {
         groups={groups}
         initial={editingAdmin}
         onSaved={load}
+        currentUserId={user?.id}
+        onSelfPermissionsSaved={refreshUser}
       />
     </DashboardShell>
   );

@@ -23,12 +23,14 @@ export default function PlansMobilePage({
   hasBlockingSubscription = false,
   checkoutBusyPlanId = null,
   onCta,
+  pageTitle = null,
+  pageSubtitle = null,
 }) {
   const { t, dir } = useTranslation();
 
   return (
     <div className="plans-mobile-page" dir={dir}>
-      <PlansMobileHero />
+      <PlansMobileHero title={pageTitle} subtitle={pageSubtitle} />
       <PlansMobilePlans
         loading={loading}
         plans={plans}

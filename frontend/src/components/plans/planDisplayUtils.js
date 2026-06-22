@@ -19,6 +19,13 @@ function isRedundantPlanBullet(candidate, existingNormalized) {
 }
 
 export function planListItems(plan) {
+  if (Array.isArray(plan?.planFeatures) && plan.planFeatures.length > 0) {
+    return plan.planFeatures
+      .filter((item) => item?.isIncluded !== false)
+      .map((item) => String(item.featureText || item))
+      .filter(Boolean)
+      .slice(0, 14);
+  }
   const features = Array.isArray(plan?.features) ? plan.features.filter(Boolean).map(String) : [];
   const trainings = Array.isArray(plan?.trainings) ? plan.trainings.filter(Boolean).map(String) : [];
   if (features.length > 0 || trainings.length > 0) {

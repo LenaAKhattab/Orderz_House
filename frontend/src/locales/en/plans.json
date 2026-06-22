@@ -13,6 +13,10 @@
   "errors": {
     "loadFailed": "Could not load plans right now. Please try again later."
   },
+  "pageUnavailable": {
+    "title": "Plans page unavailable",
+    "message": "This page may be inactive, expired, or the link may be incorrect."
+  },
   "mobileLabel": "Subscription plans",
   "lede": "Choose the right plan for your work, compare features, and start or upgrade your subscription in one place.",
   "featuresAria": "Plan features",

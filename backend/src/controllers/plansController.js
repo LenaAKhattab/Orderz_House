@@ -1,9 +1,26 @@
 const plansService = require("../services/plansService");
+const planFeaturesService = require("../services/planFeaturesService");
+
+async function syncPlanFeaturesFromPayload(planId, payload) {
+  if (!Array.isArray(payload.features)) return;
+  await planFeaturesService.replaceFeaturesForPlan({
+    planId,
+    features: payload.features.map((text, idx) => ({
+      featureText: text,
+      sortOrder: idx,
+      isIncluded: true,
+    })),
+  });
+}
 
 const listAdminPlans = async (req, res, next) => {
   try {
     const includeDeleted = String(req.query.includeDeleted || "false") === "true";
-    const plans = await plansService.listPlans({ includeDeleted });
+    const planPageId = req.query.planPageId != null ? Number(req.query.planPageId) : null;
+    const plans = await plansService.listPlans({
+      includeDeleted,
+      planPageId: Number.isInteger(planPageId) && planPageId > 0 ? planPageId : null,
+    });
     return res.status(200).json({ success: true, data: { plans } });
   } catch (err) {
     return next(err);
@@ -22,6 +39,11 @@ const listPublicPlans = async (req, res, next) => {
 const createPlan = async (req, res, next) => {
   try {
     const plan = await plansService.createPlan({ actorUserId: req.auth?.userId, payload: req.body });
+    if (Array.isArray(req.body.features)) {
+      await syncPlanFeaturesFromPayload(plan.id, req.body);
+      const refreshed = await plansService.getPlanById(plan.id);
+      return res.status(201).json({ success: true, data: { plan: refreshed } });
+    }
     return res.status(201).json({ success: true, data: { plan } });
   } catch (err) {
     return next(err);
@@ -35,6 +57,11 @@ const updatePlan = async (req, res, next) => {
       id: req.params.id,
       patch: req.body,
     });
+    if (Array.isArray(req.body.features)) {
+      await syncPlanFeaturesFromPayload(req.params.id, req.body);
+      const refreshed = await plansService.getPlanById(req.params.id);
+      return res.status(200).json({ success: true, data: { plan: refreshed } });
+    }
     return res.status(200).json({ success: true, data: { plan } });
   } catch (err) {
     return next(err);

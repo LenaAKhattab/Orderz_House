@@ -10,6 +10,7 @@ import {
   ADMIN_NAV_NOTIFICATIONS,
   adminBreadcrumb,
   filterAdminNavItems,
+  getAdminDelegatedSuperAdminNav,
 } from "../constants/adminNav";
 import { userHasPermission } from "../constants/dashboardPermissions";
 import NotificationsBell from "../components/notifications/NotificationsBell";
@@ -71,8 +72,12 @@ export default function AdminLayout() {
   const role = user?.primaryRole || user?.role;
   const notificationsPath = getNotificationsPath(role);
   const businessNav = useMemo(() => filterAdminNavItems(ADMIN_NAV_MAIN, user, userHasPermission), [user]);
+  const delegatedSuperNav = useMemo(
+    () => getAdminDelegatedSuperAdminNav(user, userHasPermission),
+    [user],
+  );
   const showCreateOrder = userHasPermission(user, ADMIN_NAV_CREATE_ORDER.permission);
-  const hasBusinessPermissions = businessNav.length > 0 || showCreateOrder;
+  const hasBusinessPermissions = businessNav.length > 0 || delegatedSuperNav.length > 0 || showCreateOrder;
   const sidebarWrapClassName = ["oh-sa-sidebar-wrap", sidebarOpen ? "oh-sa-sidebar-wrap--open" : ""]
     .filter(Boolean)
     .join(" ");
@@ -114,6 +119,25 @@ export default function AdminLayout() {
             </NavLink>
           </li>
           {businessNav.map((item) => (
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                end={Boolean(item.end)}
+                className={({ isActive }) => {
+                  const prefix = item.matchPrefix && pathname.startsWith(item.matchPrefix);
+                  const active = isActive || prefix;
+                  return `oh-sa-navlink${active ? " oh-sa-navlink--active" : ""}`.trim();
+                }}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <span className="oh-sa-navlink__icon" aria-hidden>
+                  {item.icon}
+                </span>
+                {resolveNavLabel(item, t)}
+              </NavLink>
+            </li>
+          ))}
+          {delegatedSuperNav.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}

@@ -132,6 +132,7 @@ function getLocalizedPriceHeadline(plan, locale, t) {
  * @param {(key: string, values?: Record<string, string | number>) => string} t
  */
 export function getLocalizedPlanBadge(plan, featured, locale, t) {
+  if (plan?.label) return String(plan.label);
   if (featured && plan?.isPopular) return t("plans.badges.mostPopular");
   if (featured && plan?.isFeatured) return t("plans.badges.premium");
   if (featured) return t("plans.badges.mostPopular");

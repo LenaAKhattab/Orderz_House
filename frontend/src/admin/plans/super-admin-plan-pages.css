@@ -1,0 +1,59 @@
+.admin-plan-pages-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.admin-plan-page-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+}
+
+.admin-plan-page-card__head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-plan-page-card__head h3 {
+  margin: 0;
+}
+
+.admin-plan-page-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-plan-page-card__subtitle,
+.admin-plan-page-card__link {
+  margin: 0;
+}
+
+.admin-plan-page-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.admin-plan-page-modal {
+  width: min(560px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-plan-page-modal label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-plan-page-modal .checkbox-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}

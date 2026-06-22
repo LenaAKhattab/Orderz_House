@@ -1,0 +1,15 @@
+.oh-linkified-text__link {
+  color: var(--oh-link-color, #2563eb);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+}
+
+.oh-linkified-text__link:hover {
+  color: var(--oh-link-hover-color, #1d4ed8);
+}
+
+.oh-linkified-text__link:focus-visible {
+  outline: 2px solid var(--oh-link-focus-color, #2563eb);
+  outline-offset: 2px;
+}

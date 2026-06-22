@@ -197,8 +197,40 @@ export const listPublicPlansRequest = async () => {
   return data;
 };
 
-export const listAdminPlansRequest = async (includeDeleted = false) => {
-  const { data } = await api.get("/admin/plans", { params: { includeDeleted } });
+export const getPublicPlanPageBySlugRequest = async (slug) => {
+  const { data } = await api.get(`/plan-pages/${encodeURIComponent(slug)}`);
+  return data;
+};
+
+export const listAdminPlanPagesRequest = async () => {
+  const { data } = await api.get("/admin/plan-pages");
+  return data;
+};
+
+export const createPlanPageRequest = async (payload) => {
+  const { data } = await api.post("/admin/plan-pages", payload);
+  return data;
+};
+
+export const updatePlanPageRequest = async (id, patch) => {
+  const { data } = await api.patch(`/admin/plan-pages/${id}`, patch);
+  return data;
+};
+
+export const deletePlanPageRequest = async (id) => {
+  const { data } = await api.delete(`/admin/plan-pages/${id}`);
+  return data;
+};
+
+export const listAdminPlansRequest = async (includeDeleted = false, planPageId = null) => {
+  const params = { includeDeleted };
+  if (planPageId != null) params.planPageId = planPageId;
+  const { data } = await api.get("/admin/plans", { params });
+  return data;
+};
+
+export const replacePlanFeaturesRequest = async (planId, features) => {
+  const { data } = await api.put(`/admin/plans/${planId}/features`, { features });
   return data;
 };
 
@@ -463,78 +495,114 @@ export const submitPoolOrderBidRequest = async (orderId, payload) => {
 };
 
 // Admin — الطلبات التجريبية (Training / fake orders)
+const TRAINING_ORDERS_API_TIMEOUT_MS = 30000;
+
 export const adminGetTrainingOrdersAutomationHealthRequest = async () => {
-  const { data } = await api.get("/admin/training-orders/automation/health");
+  const { data } = await api.get("/admin/training-orders/automation/health", {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const adminRunTrainingOrdersAutomationTickRequest = async () => {
-  const { data } = await api.post("/admin/training-orders/automation/tick");
+  const { data } = await api.post("/admin/training-orders/automation/tick", {}, {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const adminGetTrainingOrdersSettingsRequest = async () => {
-  const { data } = await api.get("/admin/training-orders/settings");
+  const { data } = await api.get("/admin/training-orders/settings", {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const adminPatchTrainingOrdersSettingsRequest = async (payload) => {
-  const { data } = await api.patch("/admin/training-orders/settings", payload);
+  const { data } = await api.patch("/admin/training-orders/settings", payload, {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const adminListTrainingTemplatesRequest = async (params = {}) => {
-  const { data } = await api.get("/admin/training-orders/templates", { params });
+  const { data } = await api.get("/admin/training-orders/templates", {
+    params,
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const adminGetTrainingTemplateRequest = async (id) => {
-  const { data } = await api.get(`/admin/training-orders/templates/${id}`);
+  const { data } = await api.get(`/admin/training-orders/templates/${id}`, {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const adminCreateTrainingTemplateRequest = async (payload) => {
-  const { data } = await api.post("/admin/training-orders/templates", payload);
+  const { data } = await api.post("/admin/training-orders/templates", payload, {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const adminPatchTrainingTemplateRequest = async (id, payload) => {
-  const { data } = await api.patch(`/admin/training-orders/templates/${id}`, payload);
+  const { data } = await api.patch(`/admin/training-orders/templates/${id}`, payload, {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const adminDeleteTrainingTemplateRequest = async (id) => {
-  const { data } = await api.delete(`/admin/training-orders/templates/${id}`);
+  const { data } = await api.delete(`/admin/training-orders/templates/${id}`, {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const adminListTrainingRoundsRequest = async (params = {}) => {
-  const { data } = await api.get("/admin/training-orders/rounds", { params });
+  const { data } = await api.get("/admin/training-orders/rounds", {
+    params,
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const adminStartTrainingRoundRequest = async () => {
-  const { data } = await api.post("/admin/training-orders/rounds/start");
+  const { data } = await api.post("/admin/training-orders/rounds/start", {}, {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const adminCancelTrainingRoundRequest = async (id) => {
-  const { data } = await api.post(`/admin/training-orders/rounds/${id}/cancel`);
+  const { data } = await api.post(`/admin/training-orders/rounds/${id}/cancel`, {}, {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const adminListTrainingApplicationsRequest = async (params = {}) => {
-  const { data } = await api.get("/admin/training-orders/applications", { params });
+  const { data } = await api.get("/admin/training-orders/applications", {
+    params,
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const adminListTrainingApplicationsSummaryRequest = async (params = {}) => {
-  const { data } = await api.get("/admin/training-orders/applications/summary", { params });
+  const { data } = await api.get("/admin/training-orders/applications/summary", {
+    params,
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const adminListTrainingApplicationsByFakeOrderRequest = async (fakeOrderId) => {
-  const { data } = await api.get(`/admin/training-orders/fake-orders/${fakeOrderId}/applications`);
+  const { data } = await api.get(`/admin/training-orders/fake-orders/${fakeOrderId}/applications`, {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
   return data;
 };
 

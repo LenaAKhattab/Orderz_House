@@ -10,7 +10,7 @@ import {
   registerRequest,
   verifyRegisterOtpRequest,
 } from "../services/api";
-import { getDashboardPath } from "../constants/authRoutes";
+import { getDashboardPath, ROLE } from "../constants/authRoutes";
 import { userHasPermission, userHasAnyPermission } from "../constants/dashboardPermissions";
 import { AuthContext } from "./authContext";
 import { clearAnalyticsUser, trackEvent } from "../services/analytics";
@@ -131,6 +131,28 @@ export function AuthProvider({ children }) {
       resetSessionBootstrap();
     }
   }, [applySession, clearLocalSession]);
+
+  // Admin accounts: re-sync permissions when the tab regains focus (e.g. after a super admin updates access).
+  useEffect(() => {
+    if (!user) return;
+    const role = user?.primaryRole || user?.role;
+    if (role !== ROLE.ADMIN) return;
+
+    let timer;
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        void refreshUser();
+      }, 400);
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [user?.id, user?.primaryRole, user?.role, refreshUser]);
 
   const isAuthenticated = Boolean(user);
 

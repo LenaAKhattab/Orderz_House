@@ -45,10 +45,16 @@ describe("canRoleAccessPath", () => {
     assert.equal(canRoleAccessPath("/dashboard/super-admin/training-orders/settings", ROLE.SUPER_ADMIN), true);
   });
 
+  it("allows admin role on delegated super-admin paths (page permission enforced separately)", () => {
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/plan-pages", ROLE.ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/admins", ROLE.ADMIN), true);
+  });
+
   it("denies cross-role dashboard access", () => {
-    assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.ADMIN), false);
     assert.equal(canRoleAccessPath("/dashboard/admin/orders", ROLE.FREELANCER), false);
     assert.equal(canRoleAccessPath("/dashboard/client/my-orders", ROLE.FREELANCER), false);
     assert.equal(canRoleAccessPath("/dashboard/freelancer", ROLE.CLIENT), false);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.CLIENT), false);
   });
 });

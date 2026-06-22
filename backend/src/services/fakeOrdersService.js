@@ -7,9 +7,9 @@ const {
 } = require("./trainingPoolEligibility");
 const { invalidatePublicHomeOrderStatsCache } = require("./publicHomeOrderStatsService");
 const {
-  isAllowedCleanBudgetRange,
   inferComplexityProfile,
   normalizeToCleanBudgetRange,
+  normalizeTemplateBudget,
 } = require("../utils/fakeBudgetRanges");
 const { FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT } = require("../utils/fakeMarketplaceApplicantsSql");
 const {
@@ -2009,6 +2009,16 @@ async function getTemplateById(id, { actorUserId } = {}) {
   return mapTemplate(rows[0]);
 }
 
+function resolveTemplateBudgetSync(minB, maxB, { title = "", description = "" } = {}) {
+  const result = normalizeTemplateBudget(minB, maxB, inferComplexityProfile({ title, description }));
+  if (!result.ok) {
+    const err = new Error("نطاق الميزانية غير صالح.");
+    err.statusCode = 400;
+    throw err;
+  }
+  return { minB: result.min, maxB: result.max };
+}
+
 async function createTemplate({ actorUserId, payload }) {
   const client = await pool.connect();
   try {
@@ -2024,8 +2034,8 @@ async function createTemplate({ actorUserId, payload }) {
     const categoryId = Number(payload.categoryId);
     const subcategoryId = payload.subcategoryId != null ? Number(payload.subcategoryId) : null;
     const subSubcategoryId = payload.subSubcategoryId != null ? Number(payload.subSubcategoryId) : null;
-    const minB = Number(payload.minBudget);
-    const maxB = Number(payload.maxBudget);
+    let minB = Number(payload.minBudget);
+    let maxB = Number(payload.maxBudget);
     const minD = Number(payload.minDuration);
     const maxD = Number(payload.maxDuration);
     const currency = "JOD";
@@ -2040,11 +2050,7 @@ async function createTemplate({ actorUserId, payload }) {
       err.statusCode = 400;
       throw err;
     }
-    if (!Number.isInteger(minB) || !Number.isInteger(maxB) || !isAllowedCleanBudgetRange(minB, maxB)) {
-      const err = new Error("نطاق الميزانية يجب أن يكون من الأزواج المعتمدة فقط (بدون كسور).");
-      err.statusCode = 400;
-      throw err;
-    }
+    ({ minB, maxB } = resolveTemplateBudgetSync(minB, maxB, { title, description }));
     if (!Number.isFinite(minD) || !Number.isFinite(maxD) || minD < 1 || maxD < minD) {
       const err = new Error("نطاق المدة غير صالح.");
       err.statusCode = 400;
@@ -2126,8 +2132,16 @@ async function updateTemplate({ actorUserId, id, payload }) {
       vals.push(JSON.stringify(skillsArr.slice(0, 50)));
       fields.push(`skills = $${vals.length}::jsonb`);
     }
-    if (payload.minBudget != null) push(`min_budget =`, Number(payload.minBudget));
-    if (payload.maxBudget != null) push(`max_budget =`, Number(payload.maxBudget));
+    const nextTitle = payload.title != null ? String(payload.title).trim() : String(current.title || "").trim();
+    const nextDescription = payload.description != null ? String(payload.description).trim() : String(current.description || "").trim();
+    const draftMin = payload.minBudget != null ? Number(payload.minBudget) : Number(current.min_budget);
+    const draftMax = payload.maxBudget != null ? Number(payload.maxBudget) : Number(current.max_budget);
+    const { minB: resolvedMin, maxB: resolvedMax } = resolveTemplateBudgetSync(draftMin, draftMax, {
+      title: nextTitle,
+      description: nextDescription,
+    });
+    if (payload.minBudget != null) push(`min_budget =`, resolvedMin);
+    if (payload.maxBudget != null) push(`max_budget =`, resolvedMax);
     if (payload.minDuration != null) push(`min_duration =`, Number(payload.minDuration));
     if (payload.maxDuration != null) push(`max_duration =`, Number(payload.maxDuration));
     if (payload.durationUnit != null) push(`duration_unit =`, String(payload.durationUnit));
@@ -2136,20 +2150,11 @@ async function updateTemplate({ actorUserId, id, payload }) {
       await client.query("COMMIT");
       return getTemplateById(tid);
     }
-    const finalMin = payload.minBudget != null ? Number(payload.minBudget) : Number(current.min_budget);
-    const finalMax = payload.maxBudget != null ? Number(payload.maxBudget) : Number(current.max_budget);
-    if (!Number.isInteger(finalMin) || !Number.isInteger(finalMax) || !isAllowedCleanBudgetRange(finalMin, finalMax)) {
-      const err = new Error("نطاق الميزانية يجب أن يكون من الأزواج المعتمدة فقط (بدون كسور).");
-      err.statusCode = 400;
-      throw err;
-    }
     fields.push(`updated_at = NOW()`);
     vals.push(tid);
     await client.query(`UPDATE fake_order_templates SET ${fields.join(", ")} WHERE id = $${vals.length}`, vals);
     const titleChanged = payload.title != null;
     const descriptionChanged = payload.description != null;
-    const nextTitle = titleChanged ? String(payload.title).trim() : String(current.title || "").trim();
-    const nextDescription = descriptionChanged ? String(payload.description).trim() : String(current.description || "").trim();
     await client.query("COMMIT");
     if (titleChanged || descriptionChanged) {
       scheduleTemplateTranslation(tid, nextTitle, nextDescription);

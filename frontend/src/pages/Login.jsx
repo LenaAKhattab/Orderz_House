@@ -6,7 +6,8 @@ import * as tw from "../components/auth/authTw";
 import Button from "../components/ui/Button";
 import { useToast } from "../components/ui/toastContext";
 import { useAuth } from "../context/useAuth";
-import { canRoleAccessPath, getDashboardPath } from "../constants/authRoutes";
+import { canRoleAccessPath, getDashboardPath, ROLE } from "../constants/authRoutes";
+import { getFirstAccessibleDashboardPath } from "../constants/dashboardPermissions";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { getAuthApiErrorMessage } from "../utils/apiErrorMessage";
 import {
@@ -96,8 +97,9 @@ const Login = () => {
       success({ title: t("auth.login.successTitle"), message: t("auth.login.successMessage") });
       const from = location.state?.from?.pathname;
       const role = user?.primaryRole || user?.role;
-      const target =
-        from && canRoleAccessPath(from, role) ? from : getDashboardPath(role);
+      const defaultDashboard =
+        role === ROLE.ADMIN ? getFirstAccessibleDashboardPath(user) : getDashboardPath(role);
+      const target = from && canRoleAccessPath(from, role) ? from : defaultDashboard;
       navigate(target, { replace: true });
     } catch (err) {
       const msg = loginErrorMessage(err, t);

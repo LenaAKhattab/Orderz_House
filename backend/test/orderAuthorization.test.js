@@ -21,10 +21,17 @@ describe("orderAuthorizationService role helpers", () => {
 });
 
 describe("plan range blocks free real orders", () => {
-  it("free plan cannot access real fixed order in catalog logic", () => {
+  it("free plan cannot access real fixed order below catalog min (3 JOD)", () => {
+    assert.strictEqual(
+      planEligibility.isOrderValueAllowedForPlan(1, { project_type: "fixed", budget: 2 }),
+      false,
+    );
+  });
+
+  it("free plan allows in-band fixed orders per catalog (3–7 JOD)", () => {
     assert.strictEqual(
       planEligibility.isOrderValueAllowedForPlan(1, { project_type: "fixed", budget: 5 }),
-      false,
+      true,
     );
   });
 });

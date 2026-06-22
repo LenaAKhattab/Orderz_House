@@ -1,5 +1,6 @@
 const { pool } = require("../config/db");
 const notificationEventsService = require("./notificationEventsService");
+const planFeaturesService = require("./planFeaturesService");
 const {
   jsonArrayToDb,
   installmentPlanToDb,
@@ -11,6 +12,28 @@ const {
   ORDERZHOUSE_PLAN_IDS,
   mergeApiPlansWithCatalog,
 } = require("../constants/orderzhousePlansCatalog");
+
+function resolveCheckoutPlanId(row) {
+  if (!row) return null;
+  if (row.subscription_plan_id != null) return Number(row.subscription_plan_id);
+  return Number(row.id);
+}
+
+async function attachFeaturesToPlans(rows) {
+  const planIds = rows.map((r) => Number(r.id));
+  const featureMap = await planFeaturesService.loadFeaturesByPlanIds(planIds);
+  return rows.map((row) => {
+    const plan = mapPlan(row);
+    const dbFeatures = featureMap.get(String(row.id)) || [];
+    if (dbFeatures.length > 0) {
+      plan.features = dbFeatures
+        .filter((f) => f.isIncluded)
+        .map((f) => f.featureText);
+      plan.planFeatures = dbFeatures;
+    }
+    return plan;
+  });
+}
 
 async function safeNotify(run) {
   try {
@@ -50,6 +73,13 @@ function mapPlan(row) {
     adminNotes: row.admin_notes || null,
     isPopular: Boolean(row.is_popular),
     isFeatured: Boolean(row.is_featured),
+    planPageId: row.plan_page_id != null ? String(row.plan_page_id) : null,
+    subscriptionPlanId: row.subscription_plan_id != null ? String(row.subscription_plan_id) : null,
+    label: row.label || null,
+    billingText: row.billing_text || null,
+    buttonText: row.button_text || null,
+    buttonUrl: row.button_url || null,
+    currency: row.currency || "JOD",
     deletedAt: row.deleted_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -66,15 +96,21 @@ function planEligibleForFreelancerSelfCheckout(row) {
   return true;
 }
 
-async function listPlans({ includeDeleted = false } = {}) {
+async function listPlans({ includeDeleted = false, planPageId = null } = {}) {
+  const values = [Boolean(includeDeleted)];
+  let where = "($1::boolean = TRUE OR deleted_at IS NULL)";
+  if (planPageId != null) {
+    values.push(Number(planPageId));
+    where += ` AND plan_page_id = $${values.length}`;
+  }
   const { rows } = await pool.query(
     `SELECT *
      FROM plans
-     WHERE ($1::boolean = TRUE OR deleted_at IS NULL)
+     WHERE ${where}
      ORDER BY sort_order ASC, id ASC`,
-    [Boolean(includeDeleted)],
+    values,
   );
-  return rows.map(mapPlan);
+  return attachFeaturesToPlans(rows);
 }
 
 async function listVisibleActivePlans() {
@@ -92,8 +128,44 @@ async function listVisibleActivePlans() {
   return rows.map(mapPlan);
 }
 
-/** Marketing /pricing page: fixed ORDERZHOUSE tiers (ids 1, 2, 3) merged with hard-coded catalog. */
+/** Marketing /pricing page: default plan page or fixed ORDERZHOUSE tiers merged with catalog. */
 async function listPublicCatalogPlans() {
+  const { rows: pageRows } = await pool.query(
+    `SELECT id, page_type
+     FROM plan_pages
+     WHERE page_type = 'default' AND is_active = TRUE
+     ORDER BY id ASC
+     LIMIT 1`,
+  );
+  const defaultPage = pageRows[0];
+
+  if (defaultPage) {
+    const { rows } = await pool.query(
+      `SELECT *
+       FROM plans
+       WHERE deleted_at IS NULL
+         AND is_visible = TRUE
+         AND is_active = TRUE
+         AND plan_page_id = $1
+       ORDER BY sort_order ASC, id ASC`,
+      [Number(defaultPage.id)],
+    );
+    if (rows.length > 0) {
+      const plans = await attachFeaturesToPlans(rows);
+      const apiPlans = plans.map((plan, idx) => {
+        const row = rows[idx];
+        const mapped = { ...plan };
+        delete mapped.adminNotes;
+        return {
+          ...mapped,
+          checkoutPlanId: String(resolveCheckoutPlanId(row)),
+          selfCheckoutEligible: planEligibleForFreelancerSelfCheckout(row),
+        };
+      });
+      return mergeApiPlansWithCatalog(apiPlans);
+    }
+  }
+
   const { rows } = await pool.query(
     `SELECT *
      FROM plans
@@ -109,6 +181,7 @@ async function listPublicCatalogPlans() {
     delete plan.adminNotes;
     return {
       ...plan,
+      checkoutPlanId: String(resolveCheckoutPlanId(row)),
       selfCheckoutEligible: planEligibleForFreelancerSelfCheckout(row),
     };
   });
@@ -117,7 +190,18 @@ async function listPublicCatalogPlans() {
 
 async function getPlanById(id) {
   const { rows } = await pool.query(`SELECT * FROM plans WHERE id = $1 LIMIT 1`, [id]);
-  return mapPlan(rows[0]);
+  const [plan] = await attachFeaturesToPlans(rows);
+  return plan || null;
+}
+
+async function resolvePlanRowForCheckout(planId) {
+  const { rows } = await pool.query(`SELECT * FROM plans WHERE id = $1 LIMIT 1`, [Number(planId)]);
+  const row = rows[0];
+  if (!row) return null;
+  const checkoutId = resolveCheckoutPlanId(row);
+  if (checkoutId === Number(row.id)) return row;
+  const { rows: subRows } = await pool.query(`SELECT * FROM plans WHERE id = $1 LIMIT 1`, [checkoutId]);
+  return subRows[0] || null;
 }
 
 function pickExtendedPayload(payload) {
@@ -137,6 +221,13 @@ function pickExtendedPayload(payload) {
     isPopular: payload.isPopular,
     isFeatured: payload.isFeatured,
     stripeCheckoutAmountJod: payload.stripeCheckoutAmountJod,
+    planPageId: payload.planPageId,
+    subscriptionPlanId: payload.subscriptionPlanId,
+    label: payload.label,
+    billingText: payload.billingText,
+    buttonText: payload.buttonText,
+    buttonUrl: payload.buttonUrl,
+    currency: payload.currency,
   };
 }
 
@@ -152,6 +243,13 @@ async function createPlan({ actorUserId, payload }) {
     isActive = true,
     isVisible = true,
     sortOrder = 0,
+    planPageId = null,
+    subscriptionPlanId = null,
+    label = null,
+    billingText = null,
+    buttonText = null,
+    buttonUrl = null,
+    currency = "JOD",
   } = payload;
 
   const ext = pickExtendedPayload(payload);
@@ -164,6 +262,7 @@ async function createPlan({ actorUserId, payload }) {
       offer_expires_at, offer_label, order_value_min_jod, order_value_max_jod,
       activation_requirements, refund_policy, admin_notes,
       is_popular, is_featured,
+      plan_page_id, subscription_plan_id, label, billing_text, button_text, button_url, currency,
       created_by_user_id, updated_by_user_id
     ) VALUES (
       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,
@@ -173,7 +272,8 @@ async function createPlan({ actorUserId, payload }) {
       $16,$17,$18,$19,
       $20,$21,$22,
       COALESCE($23, FALSE), COALESCE($24, FALSE),
-      $25,$25
+      $25,$26,$27,$28,$29,$30,COALESCE($31, 'JOD'),
+      $32,$32
     )
     RETURNING *`,
     [
@@ -201,11 +301,18 @@ async function createPlan({ actorUserId, payload }) {
       ext.adminNotes !== undefined ? ext.adminNotes : null,
       ext.isPopular !== undefined ? Boolean(ext.isPopular) : false,
       ext.isFeatured !== undefined ? Boolean(ext.isFeatured) : false,
+      planPageId != null ? Number(planPageId) : null,
+      subscriptionPlanId != null ? Number(subscriptionPlanId) : null,
+      label,
+      billingText,
+      buttonText,
+      buttonUrl,
+      currency,
       actorUserId ? Number(actorUserId) : null,
     ],
   );
 
-  const plan = mapPlan(rows[0]);
+  const [plan] = await attachFeaturesToPlans(rows);
   await safeNotify(() =>
     notificationEventsService.notifySuperAdmins({
       recipientRole: "super_admin",
@@ -268,6 +375,15 @@ async function updatePlan({ actorUserId, id, patch }) {
   if (patch.adminNotes !== undefined) set("admin_notes", patch.adminNotes);
   if (patch.isPopular !== undefined) set("is_popular", Boolean(patch.isPopular));
   if (patch.isFeatured !== undefined) set("is_featured", Boolean(patch.isFeatured));
+  if (patch.planPageId !== undefined) set("plan_page_id", patch.planPageId == null ? null : Number(patch.planPageId));
+  if (patch.subscriptionPlanId !== undefined) {
+    set("subscription_plan_id", patch.subscriptionPlanId == null ? null : Number(patch.subscriptionPlanId));
+  }
+  if (patch.label !== undefined) set("label", patch.label);
+  if (patch.billingText !== undefined) set("billing_text", patch.billingText);
+  if (patch.buttonText !== undefined) set("button_text", patch.buttonText);
+  if (patch.buttonUrl !== undefined) set("button_url", patch.buttonUrl);
+  if (patch.currency !== undefined) set("currency", patch.currency || "JOD");
 
   set("updated_by_user_id", actorUserId ? Number(actorUserId) : null);
   set("updated_at", new Date());
@@ -287,7 +403,7 @@ async function updatePlan({ actorUserId, id, patch }) {
     err.statusCode = 404;
     throw err;
   }
-  const plan = mapPlan(rows[0]);
+  const [plan] = await attachFeaturesToPlans(rows);
   await safeNotify(() =>
     notificationEventsService.notifySuperAdmins({
       recipientRole: "super_admin",
@@ -339,6 +455,10 @@ async function softDeletePlan({ actorUserId, id }) {
 }
 
 module.exports = {
+  mapPlan,
+  attachFeaturesToPlans,
+  resolveCheckoutPlanId,
+  resolvePlanRowForCheckout,
   listPlans,
   listVisibleActivePlans,
   listPublicCatalogPlans,

@@ -8,6 +8,11 @@ import { getLocalizedPlanBadge, getLocalizedPlanCardDisplay } from "../../lib/i1
 
 const MOBILE_FEATURE_PREVIEW = 3;
 
+function getSubscriptionPlanRef(plan) {
+  const id = plan?.checkoutPlanId || plan?.subscriptionPlanId || plan?.id;
+  return { ...plan, id };
+}
+
 function FeatureItem({ text }) {
   return (
     <li className="pricing-card__feature">
@@ -80,12 +85,13 @@ const PlanCard = ({
   const isGuest = !user;
   const isFreelancer = role === "freelancer" || roles.includes("freelancer");
   const isLoggedNonFreelancer = Boolean(user) && !isFreelancer;
+  const subscriptionRef = getSubscriptionPlanRef(plan);
   const isCurrentPlan =
-    Boolean(currentSubscription) && String(currentSubscription.planId) === String(plan.id);
-  const isUpgradeTarget = isUpgradePlan(currentSubscription, plan);
+    Boolean(currentSubscription) && String(currentSubscription.planId) === String(subscriptionRef.id);
+  const isUpgradeTarget = isUpgradePlan(currentSubscription, subscriptionRef);
   const isLowerTier =
     Boolean(currentSubscription) &&
-    planTierRank(plan) < planTierRank(currentSubscription.plan ?? currentSubscription.planId);
+    planTierRank(subscriptionRef) < planTierRank(currentSubscription.plan ?? currentSubscription.planId);
   const isBlockedBySubscription =
     Boolean(user) && isFreelancer && hasBlockingSubscription && !isUpgradeTarget;
   const isFreePlan = isOrderzhouseFreePlan(plan);
@@ -103,8 +109,9 @@ const PlanCard = ({
   const planTitle = display.title;
   const badge = getLocalizedPlanBadge(plan, featured, locale, t);
   const durationDays = Number(plan?.durationDays);
-  const durationLabel =
-    Number.isFinite(durationDays) && durationDays >= 365
+  const durationLabel = plan?.billingText
+    ? String(plan.billingText)
+    : Number.isFinite(durationDays) && durationDays >= 365
       ? t("plans.fullYear")
       : Number.isFinite(durationDays) && durationDays > 0
         ? t("plans.days", { count: durationDays })

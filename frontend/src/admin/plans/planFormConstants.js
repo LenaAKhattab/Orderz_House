@@ -27,6 +27,13 @@ export function getInitialPlanFormState() {
     adminNotes: "",
     isPopular: false,
     isFeatured: false,
+    planPageId: "",
+    subscriptionPlanId: "",
+    label: "",
+    billingText: "",
+    buttonText: "",
+    buttonUrl: "",
+    currency: "JOD",
   };
 }
 
@@ -71,5 +78,12 @@ export function planToEditForm(plan) {
     adminNotes: plan.adminNotes ?? "",
     isPopular: Boolean(plan.isPopular),
     isFeatured: Boolean(plan.isFeatured),
+    planPageId: plan.planPageId != null ? String(plan.planPageId) : "",
+    subscriptionPlanId: plan.subscriptionPlanId != null ? String(plan.subscriptionPlanId) : "",
+    label: plan.label ?? "",
+    billingText: plan.billingText ?? "",
+    buttonText: plan.buttonText ?? "",
+    buttonUrl: plan.buttonUrl ?? "",
+    currency: plan.currency ?? "JOD",
   };
 }

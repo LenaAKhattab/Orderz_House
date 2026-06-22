@@ -343,6 +343,43 @@ export default function PlanFormModalBody({
           />
         </div>
         <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
+          <Field label={isEn ? "Badge label" : "نص الشارة"}>
+            <input
+              className="oh-sapl-input"
+              value={form.label}
+              onChange={(e) => set("label", e.target.value)}
+              disabled={submitting}
+            />
+          </Field>
+          <Field label={isEn ? "Billing text" : "نص الفوترة"}>
+            <input
+              className="oh-sapl-input"
+              value={form.billingText}
+              onChange={(e) => set("billingText", e.target.value)}
+              placeholder={isEn ? "e.g. Full year" : "مثال: سنة كاملة"}
+              disabled={submitting}
+            />
+          </Field>
+        </Grid>
+        <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
+          <Field label={isEn ? "Plan page id" : "معرّف صفحة الباقات"}>
+            <input
+              className="oh-sapl-input"
+              value={form.planPageId}
+              onChange={(e) => set("planPageId", e.target.value)}
+              disabled={submitting}
+            />
+          </Field>
+          <Field label={isEn ? "Subscription plan id (checkout)" : "معرّف باقة الاشتراك (للدفع)"}>
+            <input
+              className="oh-sapl-input"
+              value={form.subscriptionPlanId}
+              onChange={(e) => set("subscriptionPlanId", e.target.value)}
+              disabled={submitting}
+            />
+          </Field>
+        </Grid>
+        <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
           <Field label={isEn ? "Special offer label" : "نص العرض الخاص"}>
             <input
               className="oh-sapl-input"

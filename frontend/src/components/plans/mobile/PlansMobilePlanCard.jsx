@@ -8,6 +8,11 @@ import { useTranslation } from "../../../i18n/LanguageProvider";
 
 const FEATURE_PREVIEW = 4;
 
+function getSubscriptionPlanRef(plan) {
+  const id = plan?.checkoutPlanId || plan?.subscriptionPlanId || plan?.id;
+  return { ...plan, id };
+}
+
 function CheckIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -44,12 +49,13 @@ export default function PlansMobilePlanCard({
   const isGuest = !user;
   const isFreelancer = role === "freelancer" || roles.includes("freelancer");
   const isLoggedNonFreelancer = Boolean(user) && !isFreelancer;
+  const subscriptionRef = getSubscriptionPlanRef(plan);
   const isCurrentPlan =
-    Boolean(currentSubscription) && String(currentSubscription.planId) === String(plan.id);
-  const isUpgradeTarget = isUpgradePlan(currentSubscription, plan);
+    Boolean(currentSubscription) && String(currentSubscription.planId) === String(subscriptionRef.id);
+  const isUpgradeTarget = isUpgradePlan(currentSubscription, subscriptionRef);
   const isLowerTier =
     Boolean(currentSubscription) &&
-    planTierRank(plan) < planTierRank(currentSubscription.plan ?? currentSubscription.planId);
+    planTierRank(subscriptionRef) < planTierRank(currentSubscription.plan ?? currentSubscription.planId);
   const isBlockedBySubscription =
     Boolean(user) && isFreelancer && hasBlockingSubscription && !isUpgradeTarget;
   const isFreePlan = isOrderzhouseFreePlan(plan);

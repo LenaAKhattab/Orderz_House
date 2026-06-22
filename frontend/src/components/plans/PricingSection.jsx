@@ -13,10 +13,14 @@ const PricingSection = ({
   loading = false,
   checkoutBusyPlanId = null,
   variant = "public",
+  pageTitle = null,
+  pageSubtitle = null,
 }) => {
   const { t } = useTranslation();
   const featuredIndex = pickFeaturedPlanIndex(plans);
   const isDashboard = variant === "dashboard";
+  const title = pageTitle || t("plans.hero.title");
+  const subtitle = pageSubtitle || t("plans.hero.subtitle");
 
   return (
     <section
@@ -24,7 +28,7 @@ const PricingSection = ({
       aria-label={t("plans.sectionAria")}
     >
       {isDashboard ? null : (
-        <PublicPageHeader title={t("plans.hero.title")} subtitle={t("plans.hero.subtitle")} />
+        <PublicPageHeader title={title} subtitle={subtitle} />
       )}
 
       {loading ? (

@@ -47,10 +47,17 @@ function extendedFieldsFromForm(form) {
     isPopular: Boolean(form.isPopular),
     isFeatured: Boolean(form.isFeatured),
     stripeCheckoutAmountJod: optionalNum(form.stripeCheckoutAmountJod),
+    planPageId: optionalNum(form.planPageId),
+    subscriptionPlanId: optionalNum(form.subscriptionPlanId),
+    label: form.label.trim() || null,
+    billingText: form.billingText.trim() || null,
+    buttonText: form.buttonText.trim() || null,
+    buttonUrl: form.buttonUrl.trim() || null,
+    currency: form.currency?.trim() || "JOD",
   };
 }
 
-export function normalizeCreatePayload(form, existingNames = [], plansForOrder = []) {
+export function normalizeCreatePayload(form, existingNames = [], plansForOrder = [], options = {}) {
   const name = suggestPlanInternalName(form.title, existingNames);
   const sortOrder =
     plansForOrder.length > 0
@@ -68,6 +75,10 @@ export function normalizeCreatePayload(form, existingNames = [], plansForOrder =
     isVisible: Boolean(form.isVisible),
     sortOrder,
     ...extendedFieldsFromForm(form),
+    planPageId:
+      options.planPageId != null
+        ? Number(options.planPageId)
+        : optionalNum(form.planPageId),
   };
 }
 

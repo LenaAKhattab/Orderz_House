@@ -3,6 +3,7 @@ import { Gavel, Plus, Tag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../ui/toastContext";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import {
   adminCreateInternalOrderRequest,
   createClientOrderRequest,
@@ -20,6 +21,7 @@ import {
   ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR,
   validateOrderFilesSize,
 } from "../../utils/orderUploadLimits";
+import { isFixedBudgetInAllowedSpan, normalizeTemplateBudget } from "../../utils/fakeBudgetRanges";
 
 const ADMIN_STEPS = [
   { key: "core", label: "بيانات الطلب" },
@@ -34,13 +36,8 @@ const CLIENT_STEPS = [
   { key: "review", label: "مراجعة وإرسال" },
 ];
 
-/** Same step keys/labels as admin internal order flow; used for fake training templates only. */
-const FAKE_TEMPLATE_STEPS = [
-  { key: "core", label: "بيانات الطلب" },
-  { key: "assignment", label: "الإسناد" },
-  { key: "files", label: "الملفات" },
-  { key: "review", label: "مراجعة وإرسال" },
-];
+/** Training template wizard — no assignment step (templates are not assigned to freelancers). */
+const FAKE_TEMPLATE_STEP_KEYS = ["core", "files", "review"];
 
 /** Skills used before on this browser — suggestions only; not auto-filled on new orders. */
 const SKILLS_HISTORY_STORAGE_KEY = "orderz_admin_skills_history_v1";
@@ -361,13 +358,25 @@ export default function AdminInternalOrderWizard({
   onSubmitFakeTemplate,
   resetToken = 0,
   modalOnClose,
+  fakeTemplateIsEdit = false,
 } = {}) {
   const { user } = useAuth();
   const { push } = useToast();
+  const { t } = useTranslation();
+  const tpl = (key) => t(`trainingOrders.templateWizard.${key}`);
+  const tplErr = (key) => t(`trainingOrders.templateWizard.errors.${key}`);
   const role = user?.primaryRole || user?.role;
   const isClientAudience = audience === "client";
   const isFakeTemplate = mode === "fake-template";
-  const steps = isFakeTemplate ? FAKE_TEMPLATE_STEPS : isClientAudience ? CLIENT_STEPS : ADMIN_STEPS;
+  const fakeTemplateSteps = useMemo(
+    () =>
+      FAKE_TEMPLATE_STEP_KEYS.map((key) => ({
+        key,
+        label: t(`trainingOrders.templateWizard.steps.${key}`),
+      })),
+    [t],
+  );
+  const steps = isFakeTemplate ? fakeTemplateSteps : isClientAudience ? CLIENT_STEPS : ADMIN_STEPS;
   const base = role ? getDashboardPath(role) : "/dashboard";
   const listPath = role === "super_admin" ? "/dashboard/super-admin/orders" : "/dashboard/admin/orders";
 
@@ -388,6 +397,7 @@ export default function AdminInternalOrderWizard({
 
   const fileInputRef = useRef(null);
   const explicitSubmitClickRef = useRef(false);
+  const hydratingCategoryRef = useRef(false);
   const [files, setFiles] = useState([]);
   const [stepIdx, setStepIdx] = useState(0);
   const [attempted, setAttempted] = useState({});
@@ -398,6 +408,7 @@ export default function AdminInternalOrderWizard({
 
   useEffect(() => {
     if (!isFakeTemplate) return;
+    hydratingCategoryRef.current = true;
     setForm(makeInitialForm(initialValues));
     setStepIdx(0);
     setFiles([]);
@@ -426,42 +437,59 @@ export default function AdminInternalOrderWizard({
   const errorsByStep = useMemo(() => {
     const out = {};
 
-    // Step 1 (merged): Basic + Classification + Pricing/Type + Duration
+    // Step 1: order details (type, classification, budget, duration)
     out.core = {};
     if (!isClientAudience && !isFakeTemplate && String(form.orderCode || "").trim().length < 2) out.core.orderCode = "رقم الطلب مطلوب.";
-    if (form.title.trim().length < 2) out.core.title = "عنوان المشروع مطلوب.";
-    if (form.description.trim().length < 10) out.core.description = "وصف المشروع مطلوب (10 أحرف على الأقل).";
-    if (!String(form.categoryId).trim()) out.core.categoryId = "يرجى اختيار التصنيف.";
-    if (!["fixed", "bidding"].includes(form.projectType)) out.core.projectType = "يرجى اختيار نوع المشروع.";
+    if (form.title.trim().length < 2) {
+      out.core.title = isFakeTemplate ? tplErr("title") : "عنوان المشروع مطلوب.";
+    }
+    if (form.description.trim().length < 10) {
+      out.core.description = isFakeTemplate ? tplErr("description") : "وصف المشروع مطلوب (10 أحرف على الأقل).";
+    }
+    if (!String(form.categoryId).trim()) {
+      out.core.categoryId = isFakeTemplate ? tplErr("categoryId") : "يرجى اختيار التصنيف.";
+    }
+    if (!["fixed", "bidding"].includes(form.projectType)) {
+      out.core.projectType = isFakeTemplate ? tplErr("projectType") : "يرجى اختيار نوع المشروع.";
+    }
     if (form.projectType === "fixed") {
-      if (!(Number(form.budget) > 0)) out.core.budget = "يرجى إدخال ميزانية صحيحة أكبر من 0.";
+      if (!(Number(form.budget) > 0)) out.core.budget = isFakeTemplate ? tplErr("budget") : "يرجى إدخال ميزانية صحيحة أكبر من 0.";
+      else if (isFakeTemplate) {
+        const b = Math.round(Number(String(form.budget).replace(/,/g, ".")));
+        if (!Number.isInteger(b)) out.core.budget = tplErr("budgetInteger");
+        else if (!isFixedBudgetInAllowedSpan(b)) out.core.budget = tplErr("budgetFixedRange");
+      }
     } else {
-      if (!(Number(form.bidBudgetMin) > 0)) out.core.bidBudgetMin = "يرجى إدخال حد أدنى صحيح.";
-      if (!(Number(form.bidBudgetMax) > 0)) out.core.bidBudgetMax = "يرجى إدخال حد أعلى صحيح.";
-      if (Number(form.bidBudgetMax) < Number(form.bidBudgetMin)) out.core.bidBudgetMax = "الحد الأعلى يجب أن يكون >= الحد الأدنى.";
+      if (!(Number(form.bidBudgetMin) > 0)) out.core.bidBudgetMin = isFakeTemplate ? tplErr("bidBudgetMin") : "يرجى إدخال حد أدنى صحيح.";
+      if (!(Number(form.bidBudgetMax) > 0)) out.core.bidBudgetMax = isFakeTemplate ? tplErr("bidBudgetMax") : "يرجى إدخال حد أعلى صحيح.";
+      if (Number(form.bidBudgetMax) < Number(form.bidBudgetMin)) {
+        out.core.bidBudgetMax = isFakeTemplate ? tplErr("bidBudgetMaxOrder") : "الحد الأعلى يجب أن يكون >= الحد الأدنى.";
+      }
     }
     if (isFakeTemplate && form.projectType === "bidding") {
-      if (!(Number(form.durationMin) > 0)) out.core.durationMin = "يرجى إدخال أدنى مدة صحيحة أكبر من 0.";
-      if (!(Number(form.durationMax) > 0)) out.core.durationMax = "يرجى إدخال أقصى مدة صحيحة أكبر من 0.";
-      if (Number(form.durationMax) < Number(form.durationMin)) out.core.durationMax = "أقصى المدة يجب أن يكون >= الأدنى.";
+      if (!(Number(form.durationMin) > 0)) out.core.durationMin = tplErr("durationMin");
+      if (!(Number(form.durationMax) > 0)) out.core.durationMax = tplErr("durationMax");
+      if (Number(form.durationMax) < Number(form.durationMin)) out.core.durationMax = tplErr("durationMaxOrder");
     } else if (!(Number(form.durationValue) > 0)) {
-      out.core.durationValue = "يرجى إدخال مدة صحيحة أكبر من 0.";
+      out.core.durationValue = isFakeTemplate ? tplErr("durationValue") : "يرجى إدخال مدة صحيحة أكبر من 0.";
     }
-    if (!["days", "hours", "minutes"].includes(form.durationUnit)) out.core.durationUnit = "يرجى اختيار وحدة الزمن.";
+    if (!["days", "hours", "minutes"].includes(form.durationUnit)) {
+      out.core.durationUnit = isFakeTemplate ? tplErr("durationUnit") : "يرجى اختيار وحدة الزمن.";
+    }
 
-    // Step 5: Assignment (optional)
-    out.assignment = {};
+    if (!isFakeTemplate && !isClientAudience) out.assignment = {};
 
-    // Step 6: Files
+    // Step 2: files (real orders only — templates do not persist attachments)
     out.files = {};
-    if (files.length > 5) out.files.files = "الحد الأقصى 5 ملفات.";
-    else if (!validateOrderFilesSize(files).ok) out.files.files = ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR;
+    if (!isFakeTemplate) {
+      if (files.length > 5) out.files.files = "الحد الأقصى 5 ملفات.";
+      else if (!validateOrderFilesSize(files).ok) out.files.files = ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR;
+    }
 
-    // Step 7: Review
     out.review = {};
 
     return out;
-  }, [form, files, isClientAudience, isFakeTemplate]);
+  }, [form, files, isClientAudience, isFakeTemplate, t]);
 
   useEffect(() => {
     if (form.projectType === "bidding" && form.budget) {
@@ -477,14 +505,15 @@ export default function AdminInternalOrderWizard({
   const stepFirstErrorMessage = useMemo(() => {
     const keys = Object.keys(currentErrors);
     if (keys.length === 0) return "";
-    if (keys.length > 1) return "يرجى إكمال جميع الحقول المطلوبة في هذه الخطوة.";
+    if (keys.length > 1) return isFakeTemplate ? tplErr("stepMultiple") : "يرجى إكمال جميع الحقول المطلوبة في هذه الخطوة.";
     return currentErrors[keys[0]] || "";
-  }, [currentErrors]);
+  }, [currentErrors, isFakeTemplate, t]);
 
   const canSubmit = useMemo(() => {
-    // Full-form validity (same rules as before)
-    return Object.keys(errorsByStep.core).length === 0 && Object.keys(errorsByStep.files).length === 0;
-  }, [errorsByStep]);
+    const coreOk = Object.keys(errorsByStep.core).length === 0;
+    if (isFakeTemplate) return coreOk;
+    return coreOk && Object.keys(errorsByStep.files).length === 0;
+  }, [errorsByStep, isFakeTemplate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -503,27 +532,27 @@ export default function AdminInternalOrderWizard({
   }, [push]);
 
   useEffect(() => {
-    // Category change resets detailed selection; detailed list is fetched below.
-    setSubSubcategories([]);
-    setSubSubBusy(false);
-    setForm((prev) => ({ ...prev, subSubcategoryId: "" }));
-  }, [form.categoryId]);
-
-  useEffect(() => {
-    // If the admin assigns a freelancer, archiving no longer applies.
-    if (form.assignedFreelancerId) setArchiveOnCreate(false);
-  }, [form.assignedFreelancerId]);
-
-  useEffect(() => {
     let cancelled = false;
+    const catId = form.categoryId;
+    const preserveSubSub = hydratingCategoryRef.current;
+    hydratingCategoryRef.current = false;
+
     async function loadSubSubs() {
-      setSubSubcategories([]);
-      setForm((prev) => ({ ...prev, subSubcategoryId: "" }));
-      if (!form.categoryId) return;
+      if (!catId) {
+        setSubSubcategories([]);
+        setSubSubBusy(false);
+        if (!preserveSubSub) {
+          setForm((prev) => (prev.subSubcategoryId ? { ...prev, subSubcategoryId: "" } : prev));
+        }
+        return;
+      }
       setSubSubBusy(true);
+      if (!preserveSubSub) {
+        setSubSubcategories([]);
+        setForm((prev) => ({ ...prev, subSubcategoryId: "" }));
+      }
       try {
-        // New behavior: fetch detailed list by category directly (no subcategory select)
-        const res = await getCategorySubSubcategoriesRequest(form.categoryId);
+        const res = await getCategorySubSubcategoriesRequest(catId);
         if (!cancelled) setSubSubcategories(res?.data?.subSubcategories || []);
       } catch {
         if (!cancelled) setSubSubcategories([]);
@@ -536,6 +565,11 @@ export default function AdminInternalOrderWizard({
       cancelled = true;
     };
   }, [form.categoryId]);
+
+  useEffect(() => {
+    // If the admin assigns a freelancer, archiving no longer applies.
+    if (form.assignedFreelancerId) setArchiveOnCreate(false);
+  }, [form.assignedFreelancerId]);
 
   const addFiles = (incoming) => {
     const list = Array.from(incoming || []);
@@ -559,12 +593,20 @@ export default function AdminInternalOrderWizard({
     }
     explicitSubmitClickRef.current = false;
     if (!canSubmit) {
-      push({ type: "error", title: "تحقق من الحقول", message: "يرجى إكمال البيانات المطلوبة بشكل صحيح." });
+      push({
+        type: "error",
+        title: isFakeTemplate ? tpl("toast.validationTitle") : "تحقق من الحقول",
+        message: isFakeTemplate ? tpl("toast.validationMessage") : "يرجى إكمال البيانات المطلوبة بشكل صحيح.",
+      });
       return;
     }
     if (isFakeTemplate) {
       if (typeof onSubmitFakeTemplate !== "function") {
-        push({ type: "error", title: "إعدادات القالب", message: "لم يتم تهيئة حفظ القالب." });
+        push({
+          type: "error",
+          title: tpl("toast.configTitle"),
+          message: tpl("toast.configMessage"),
+        });
         return;
       }
       setBusy(true);
@@ -577,11 +619,25 @@ export default function AdminInternalOrderWizard({
         let minD;
         let maxD;
         if (form.projectType === "fixed") {
-          minB = maxB = Number(String(form.budget).replace(/,/g, "."));
+          const budgetVal = Math.round(Number(String(form.budget).replace(/,/g, ".")));
+          const budgetNorm = normalizeTemplateBudget(budgetVal, budgetVal);
+          if (!budgetNorm.ok) {
+            push({ type: "error", title: tpl("toast.validationTitle"), message: tplErr("budgetFixedRange") });
+            return;
+          }
+          minB = budgetNorm.min;
+          maxB = budgetNorm.max;
           minD = maxD = Number(String(form.durationValue).replace(/,/g, "."));
         } else {
-          minB = Number(String(form.bidBudgetMin).replace(/,/g, "."));
-          maxB = Number(String(form.bidBudgetMax).replace(/,/g, "."));
+          const rawMin = Math.round(Number(String(form.bidBudgetMin).replace(/,/g, ".")));
+          const rawMax = Math.round(Number(String(form.bidBudgetMax).replace(/,/g, ".")));
+          const budgetNorm = normalizeTemplateBudget(rawMin, rawMax);
+          if (!budgetNorm.ok) {
+            push({ type: "error", title: tpl("toast.validationTitle"), message: tplErr("budget") });
+            return;
+          }
+          minB = budgetNorm.min;
+          maxB = budgetNorm.max;
           minD = Number(String(form.durationMin).replace(/,/g, "."));
           maxD = Number(String(form.durationMax).replace(/,/g, "."));
         }
@@ -597,13 +653,21 @@ export default function AdminInternalOrderWizard({
           minDuration: minD,
           maxDuration: maxD,
           durationUnit: form.durationUnit,
-          isActive: form.isActiveTemplate !== false,
+          isActive: fakeTemplateIsEdit ? form.isActiveTemplate !== false : true,
         };
         await onSubmitFakeTemplate(payload);
-        push({ type: "success", title: "تم حفظ القالب", message: "تم تحديث قالب الطلبات التجريبية." });
+        push({
+          type: "success",
+          title: fakeTemplateIsEdit ? tpl("toast.updatedTitle") : tpl("toast.createdTitle"),
+          message: fakeTemplateIsEdit ? tpl("toast.updatedMessage") : tpl("toast.createdMessage"),
+        });
         if (typeof onCreated === "function") onCreated({ ok: true });
       } catch (e2) {
-        push({ type: "error", title: "تعذر حفظ القالب", message: e2?.response?.data?.message || e2?.message });
+        push({
+          type: "error",
+          title: tpl("toast.saveFailedTitle"),
+          message: e2?.response?.data?.message || e2?.message,
+        });
       } finally {
         setBusy(false);
       }
@@ -832,9 +896,13 @@ export default function AdminInternalOrderWizard({
         >
           <div className={isModal ? "co-modal-ref__form-card" : "co-modal-ref__form-card--page"}>
           {currentStepKey === "core" ? (
+            <>
+              {isFakeTemplate ? (
+                <h2 style={{ marginBottom: 10 }}>{`${stepIdx + 1}) ${tpl("steps.core")}`}</h2>
+              ) : null}
             <div className="admin-co-fields">
               <div className="field admin-co-fields__span2">
-                <span className="label">نوع الطلب</span>
+                <span className="label">{isFakeTemplate ? tpl("projectTypeLabel") : "نوع الطلب"}</span>
                 <div className={`client-co-type-row${isModal ? " co-modal-ref__type-toggle" : ""}`.trim()}>
                   <button
                     type="button"
@@ -848,7 +916,7 @@ export default function AdminInternalOrderWizard({
                     onClick={() => set("projectType", "fixed")}
                   >
                     {isModal ? <Tag size={18} strokeWidth={2.25} aria-hidden="true" /> : null}
-                    <span>سعر ثابت</span>
+                    <span>{isFakeTemplate ? tpl("projectTypeFixed") : "سعر ثابت"}</span>
                   </button>
                   <button
                     type="button"
@@ -862,14 +930,14 @@ export default function AdminInternalOrderWizard({
                     onClick={() => set("projectType", "bidding")}
                   >
                     {isModal ? <Gavel size={18} strokeWidth={2.25} aria-hidden="true" /> : null}
-                    <span>مزايدة</span>
+                    <span>{isFakeTemplate ? tpl("projectTypeBidding") : "مزايدة"}</span>
                   </button>
                 </div>
                 <div className="help">
                   {isFakeTemplate
                     ? form.projectType === "fixed"
-                      ? "سعر ثابت: ميزانية واحدة ومدة واحدة تُستخدم كنموذج للطلب التجريبي."
-                      : "مزايدة: نطاق ميزانية ونطاق مدة يُستخدمان عند توليد الطلب الوهمي."
+                      ? tpl("projectTypeHelpFixed")
+                      : tpl("projectTypeHelpBidding")
                     : form.projectType === "fixed"
                       ? "سعر ثابت: يُنشر في المعرض ويستلمه المستقل حسب تدفق الموافقات."
                       : isClientAudience
@@ -897,13 +965,15 @@ export default function AdminInternalOrderWizard({
 
               <div className="field admin-co-fields__span2">
                 <label className="label" htmlFor="adm-co-title">
-                  عنوان المشروع
+                  {isFakeTemplate ? t("trainingOrders.templateWizard.titleLabel") : "عنوان المشروع"}
                 </label>
                 <input
                   id="adm-co-title"
                   className="input"
                   value={form.title}
-                  placeholder="أدخل عنوان المشروع"
+                  placeholder={
+                    isFakeTemplate ? t("trainingOrders.templateWizard.titlePlaceholder") : "أدخل عنوان المشروع"
+                  }
                   maxLength={200}
                   onChange={(e) => set("title", e.target.value)}
                 />
@@ -912,14 +982,14 @@ export default function AdminInternalOrderWizard({
 
               <div className="field admin-co-fields__span2">
                 <label className="label" htmlFor="adm-co-desc">
-                  وصف المطلوب
+                  {isFakeTemplate ? tpl("descriptionLabel") : "وصف المطلوب"}
                 </label>
                 <textarea
                   id="adm-co-desc"
                   className="input"
                   rows={3}
                   value={form.description}
-                  placeholder="اكتب وصف المشروع بشكل واضح ومفصل"
+                  placeholder={isFakeTemplate ? tpl("descriptionPlaceholder") : "اكتب وصف المشروع بشكل واضح ومفصل"}
                   onChange={(e) => set("description", e.target.value)}
                 />
                 <FieldError message={attempted.core ? errorsByStep.core.description : ""} />
@@ -928,7 +998,7 @@ export default function AdminInternalOrderWizard({
               <div className="admin-co-fields__row4 admin-co-fields__span2">
                 <div className="field" style={{ order: 10, gridColumn: "span 2" }}>
                   <label className="label" htmlFor="adm-co-cat">
-                    التصنيف
+                    {isFakeTemplate ? tpl("categoryLabel") : "التصنيف"}
                   </label>
                   <select
                     id="adm-co-cat"
@@ -946,7 +1016,7 @@ export default function AdminInternalOrderWizard({
                       }));
                     }}
                   >
-                    <option value="">— اختر —</option>
+                    <option value="">{isFakeTemplate ? tpl("categoryPlaceholder") : "— اختر —"}</option>
                     {categoryOptions.map((c) => (
                       <option key={c.value} value={c.value}>
                         {c.label}
@@ -1087,7 +1157,7 @@ export default function AdminInternalOrderWizard({
 
                 <div className="field" style={{ order: 11, gridColumn: "span 2" }}>
                   <label className="label" htmlFor="adm-co-ss">
-                    تفصيلي
+                    {isFakeTemplate ? tpl("subSubcategoryLabel") : "تفصيلي"}
                   </label>
                   <select
                     id="adm-co-ss"
@@ -1096,7 +1166,15 @@ export default function AdminInternalOrderWizard({
                     onChange={(e) => set("subSubcategoryId", e.target.value)}
                     disabled={!form.categoryId || subSubBusy}
                   >
-                    <option value="">{subSubBusy ? "…" : "— بدون —"}</option>
+                    <option value="">
+                      {subSubBusy
+                        ? isFakeTemplate
+                          ? tpl("subSubcategoryLoading")
+                          : "…"
+                        : isFakeTemplate
+                          ? tpl("subSubcategoryNone")
+                          : "— بدون —"}
+                    </option>
                     {subSubcategoryOptions.map((ss) => (
                       <option key={ss.value} value={ss.value}>
                         {ss.label}
@@ -1108,7 +1186,7 @@ export default function AdminInternalOrderWizard({
                 {form.projectType === "fixed" ? (
                   <div className="field" style={{ order: 41, gridColumn: "span 2" }}>
                     <label className="label" htmlFor="adm-co-budget">
-                      الميزانية
+                      {isFakeTemplate ? tpl("budgetLabel") : "الميزانية"}
                     </label>
                     <div className="oh-price-with-unit">
                       <input
@@ -1118,7 +1196,7 @@ export default function AdminInternalOrderWizard({
                         inputMode="decimal"
                         type="text"
                         value={form.budget}
-                        placeholder="250"
+                        placeholder={isFakeTemplate ? tpl("budgetPlaceholder") : "250"}
                         onChange={(e) => set("budget", e.target.value)}
                       />
                       <span className="oh-price-with-unit__suffix" dir="ltr">
@@ -1126,10 +1204,11 @@ export default function AdminInternalOrderWizard({
                       </span>
                     </div>
                     <FieldError message={attempted.core ? errorsByStep.core.budget : ""} />
+                    {isFakeTemplate ? <p className="help">{tpl("budgetFixedHelp")}</p> : null}
                   </div>
                 ) : (
                   <div className="field" style={{ order: 41, gridColumn: "span 2" }}>
-                    <span className="label">نطاق الميزانية</span>
+                    <span className="label">{isFakeTemplate ? tpl("budgetRangeLabel") : "نطاق الميزانية"}</span>
                     <div className="client-order-modal__bid-pair client-order-modal__bid-pair--with-currency">
                       <input
                         className="input"
@@ -1137,7 +1216,7 @@ export default function AdminInternalOrderWizard({
                         inputMode="decimal"
                         type="text"
                         value={form.bidBudgetMin}
-                        placeholder="الحد الأدنى"
+                        placeholder={isFakeTemplate ? tpl("budgetMinPlaceholder") : "الحد الأدنى"}
                         onChange={(e) => set("bidBudgetMin", e.target.value)}
                       />
                       <span className="client-order-modal__bid-sep">–</span>
@@ -1147,7 +1226,7 @@ export default function AdminInternalOrderWizard({
                         inputMode="decimal"
                         type="text"
                         value={form.bidBudgetMax}
-                        placeholder="الحد الأعلى"
+                        placeholder={isFakeTemplate ? tpl("budgetMaxPlaceholder") : "الحد الأعلى"}
                         onChange={(e) => set("bidBudgetMax", e.target.value)}
                       />
                       <span className="oh-price-with-unit__suffix" dir="ltr">
@@ -1155,6 +1234,7 @@ export default function AdminInternalOrderWizard({
                       </span>
                     </div>
                     <FieldError message={attempted.core ? errorsByStep.core.bidBudgetMin || errorsByStep.core.bidBudgetMax : ""} />
+                    {isFakeTemplate ? <p className="help">{tpl("budgetBiddingHelp")}</p> : null}
                   </div>
                 )}
               </div>
@@ -1162,7 +1242,7 @@ export default function AdminInternalOrderWizard({
               {isFakeTemplate && form.projectType === "bidding" ? (
                 <>
                   <div className="field admin-co-fields__span2">
-                    <span className="label">نطاق مدة التسليم</span>
+                    <span className="label">{tpl("durationRangeLabel")}</span>
                     <div className="client-order-modal__bid-pair">
                       <input
                         className="input"
@@ -1170,7 +1250,7 @@ export default function AdminInternalOrderWizard({
                         inputMode="numeric"
                         type="text"
                         value={form.durationMin}
-                        placeholder="الأدنى"
+                        placeholder={tpl("durationMinPlaceholder")}
                         onChange={(e) => set("durationMin", e.target.value)}
                       />
                       <span className="client-order-modal__bid-sep">–</span>
@@ -1180,7 +1260,7 @@ export default function AdminInternalOrderWizard({
                         inputMode="numeric"
                         type="text"
                         value={form.durationMax}
-                        placeholder="الأعلى"
+                        placeholder={tpl("durationMaxPlaceholder")}
                         onChange={(e) => set("durationMax", e.target.value)}
                       />
                     </div>
@@ -1195,7 +1275,7 @@ export default function AdminInternalOrderWizard({
 
                   <div className="field">
                     <label className="label" htmlFor="adm-co-unit-tpl">
-                      الوحدة
+                      {tpl("unitLabel")}
                     </label>
                     <select
                       id="adm-co-unit-tpl"
@@ -1203,9 +1283,9 @@ export default function AdminInternalOrderWizard({
                       value={form.durationUnit}
                       onChange={(e) => set("durationUnit", e.target.value)}
                     >
-                      <option value="days">أيام</option>
-                      <option value="hours">ساعات</option>
-                      <option value="minutes">دقائق</option>
+                      <option value="days">{tpl("unitDays")}</option>
+                      <option value="hours">{tpl("unitHours")}</option>
+                      <option value="minutes">{tpl("unitMinutes")}</option>
                     </select>
                     <FieldError message={attempted.core ? errorsByStep.core.durationUnit : ""} />
                   </div>
@@ -1214,7 +1294,7 @@ export default function AdminInternalOrderWizard({
                 <>
                   <div className="field">
                     <label className="label" htmlFor="adm-co-dur">
-                      مدة التسليم
+                      {isFakeTemplate ? tpl("durationLabel") : "مدة التسليم"}
                     </label>
                     <input
                       id="adm-co-dur"
@@ -1223,7 +1303,7 @@ export default function AdminInternalOrderWizard({
                       inputMode="numeric"
                       type="text"
                       value={form.durationValue}
-                      placeholder="7"
+                      placeholder={isFakeTemplate ? tpl("durationPlaceholder") : "7"}
                       onChange={(e) => set("durationValue", e.target.value)}
                     />
                     <FieldError message={attempted.core ? errorsByStep.core.durationValue : ""} />
@@ -1231,12 +1311,12 @@ export default function AdminInternalOrderWizard({
 
                   <div className="field">
                     <label className="label" htmlFor="adm-co-unit">
-                      الوحدة
+                      {isFakeTemplate ? tpl("unitLabel") : "الوحدة"}
                     </label>
                     <select id="adm-co-unit" className="input" value={form.durationUnit} onChange={(e) => set("durationUnit", e.target.value)}>
-                      <option value="days">أيام</option>
-                      <option value="hours">ساعات</option>
-                      <option value="minutes">دقائق</option>
+                      <option value="days">{isFakeTemplate ? tpl("unitDays") : "أيام"}</option>
+                      <option value="hours">{isFakeTemplate ? tpl("unitHours") : "ساعات"}</option>
+                      <option value="minutes">{isFakeTemplate ? tpl("unitMinutes") : "دقائق"}</option>
                     </select>
                     <FieldError message={attempted.core ? errorsByStep.core.durationUnit : ""} />
                   </div>
@@ -1244,15 +1324,16 @@ export default function AdminInternalOrderWizard({
               )}
 
               <div className="field admin-co-fields__span2">
-                <span className="label">المهارات المطلوبة</span>
+                <span className="label">{isFakeTemplate ? tpl("skillsLabel") : "المهارات المطلوبة"}</span>
                 <SkillsTagsInput
                   value={form.preferredSkills}
                   onChange={(v) => set("preferredSkills", v)}
-                  placeholder="أضف المهارات المطلوبة"
+                  placeholder={isFakeTemplate ? tpl("skillsPlaceholder") : "أضف المهارات المطلوبة"}
                   historySkills={skillHistory}
                 />
               </div>
             </div>
+            </>
           ) : null}
 
           {!isClientAudience && currentStepKey === "assignment" && !isFakeTemplate ? (
@@ -1280,35 +1361,23 @@ export default function AdminInternalOrderWizard({
             </>
           ) : null}
 
-          {isFakeTemplate && currentStepKey === "assignment" ? (
-            <>
-              <h2 style={{ marginBottom: 10 }}>5) الإسناد</h2>
-              <div className="form-grid">
-                <div className="field" style={{ gridColumn: "span 12" }}>
-                  <p className="help" style={{ marginBottom: 12 }}>
-                    قوالب الطلبات التجريبية لا تدعم إسناد مستقل؛ تُستخدم فقط كأساس لتوليد طلبات وهمية في الجولات.
-                  </p>
-                  <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800 }}>
-                    <input
-                      type="checkbox"
-                      checked={form.isActiveTemplate !== false}
-                      onChange={(e) => set("isActiveTemplate", e.target.checked)}
-                    />
-                    القالب نشط ويُستخدم عند توليد الجولات
-                  </label>
-                </div>
-              </div>
-            </>
-          ) : null}
-
           {currentStepKey === "files" ? (
             <>
-              <h2 style={{ marginBottom: 10 }}>6) الملفات (اختياري)</h2>
+              <h2 style={{ marginBottom: 10 }}>
+                {isFakeTemplate
+                  ? `${stepIdx + 1}) ${tpl("stepFilesOptional")}`
+                  : "6) الملفات (اختياري)"}
+              </h2>
               {isFakeTemplate ? (
-                <p className="help" style={{ marginBottom: 12 }}>
-                  المرفقات لا تُخزَّن مع قوالب الطلبات التجريبية حالياً؛ يمكنك تجاوز هذه الخطوة.
-                </p>
-              ) : null}
+                <div className="oh-review" style={{ marginTop: 4 }}>
+                  <p className="help" style={{ marginBottom: 8 }}>
+                    {tpl("filesSkipHelp")}
+                  </p>
+                  <p className="help" style={{ marginBottom: 0 }}>
+                    {tpl("filesInfoBody")}
+                  </p>
+                </div>
+              ) : (
               <div
                 className="dropzone"
                 onDragOver={(e) => e.preventDefault()}
@@ -1377,37 +1446,52 @@ export default function AdminInternalOrderWizard({
                   </div>
                 ) : null}
               </div>
+              )}
             </>
           ) : null}
 
           {currentStepKey === "review" ? (
             <>
-              <h2 style={{ marginBottom: 10 }}>7) مراجعة وإرسال</h2>
+              <h2 style={{ marginBottom: 10 }}>
+                {isFakeTemplate ? `${stepIdx + 1}) ${tpl("steps.review")}` : "7) مراجعة وإرسال"}
+              </h2>
               <div className="oh-review">
-                <CreateOrderReviewRow label="العنوان">{form.title.trim() || "—"}</CreateOrderReviewRow>
-                <CreateOrderReviewRow label="الوصف" multiline>
-                  {form.description.trim() || "—"}
+                <CreateOrderReviewRow label={isFakeTemplate ? tpl("reviewTitle") : "العنوان"}>
+                  {form.title.trim() || tpl("emDash")}
+                </CreateOrderReviewRow>
+                <CreateOrderReviewRow label={isFakeTemplate ? tpl("reviewDescription") : "الوصف"} multiline>
+                  {form.description.trim() || tpl("emDash")}
                 </CreateOrderReviewRow>
                 <div className="oh-review__2col">
-                  <CreateOrderReviewRow label="التصنيف">
-                    {categories.find((c) => String(c.id) === String(form.categoryId))?.name || "—"}
+                  <CreateOrderReviewRow label={isFakeTemplate ? tpl("reviewCategory") : "التصنيف"}>
+                    {categories.find((c) => String(c.id) === String(form.categoryId))?.name || tpl("emDash")}
                   </CreateOrderReviewRow>
-                  <CreateOrderReviewRow label="التصنيف التفصيلي">
+                  <CreateOrderReviewRow label={isFakeTemplate ? tpl("reviewSubSubcategory") : "التصنيف التفصيلي"}>
                     {form.subSubcategoryId
-                      ? subSubcategories.find((ss) => String(ss.id) === String(form.subSubcategoryId))?.name || "—"
-                      : "—"}
+                      ? subSubcategories.find((ss) => String(ss.id) === String(form.subSubcategoryId))?.name || tpl("emDash")
+                      : tpl("emDash")}
                   </CreateOrderReviewRow>
                 </div>
-                <CreateOrderReviewRow label="المهارات المطلوبة">
+                <CreateOrderReviewRow label={isFakeTemplate ? tpl("reviewSkills") : "المهارات المطلوبة"}>
                   {Array.isArray(form.preferredSkills) && form.preferredSkills.length
-                    ? form.preferredSkills.join("، ")
-                    : "لا توجد مهارات محددة مطلوبة"}
+                    ? form.preferredSkills.join(isFakeTemplate ? ", " : "، ")
+                    : isFakeTemplate
+                      ? tpl("reviewSkillsNone")
+                      : "لا توجد مهارات محددة مطلوبة"}
                 </CreateOrderReviewRow>
                 <div className="oh-review__2col">
-                  <CreateOrderReviewRow label="نوع المشروع">
-                    {form.projectType === "fixed" ? "سعر ثابت" : form.projectType === "bidding" ? "مزايدة" : "—"}
+                  <CreateOrderReviewRow label={isFakeTemplate ? tpl("reviewProjectType") : "نوع المشروع"}>
+                    {form.projectType === "fixed"
+                      ? isFakeTemplate
+                        ? tpl("projectTypeFixed")
+                        : "سعر ثابت"
+                      : form.projectType === "bidding"
+                        ? isFakeTemplate
+                          ? tpl("projectTypeBidding")
+                          : "مزايدة"
+                        : tpl("emDash")}
                   </CreateOrderReviewRow>
-                  <CreateOrderReviewRow label="الميزانية">
+                  <CreateOrderReviewRow label={isFakeTemplate ? tpl("reviewBudget") : "الميزانية"}>
                     <span dir="ltr" style={{ display: "inline-block", textAlign: "right", width: "100%" }}>
                       {form.projectType === "bidding"
                         ? isClientAudience || isFakeTemplate
@@ -1417,13 +1501,25 @@ export default function AdminInternalOrderWizard({
                     </span>
                   </CreateOrderReviewRow>
                 </div>
-                <CreateOrderReviewRow label="مدة التسليم">
+                <CreateOrderReviewRow label={isFakeTemplate ? tpl("reviewDuration") : "مدة التسليم"}>
                   {isFakeTemplate && form.projectType === "bidding"
                     ? form.durationMin && form.durationMax
                       ? `${form.durationMin} – ${form.durationMax} ${
-                          form.durationUnit === "days" ? "أيام" : form.durationUnit === "hours" ? "ساعات" : "دقائق"
+                          form.durationUnit === "days"
+                            ? tpl("unitDays")
+                            : form.durationUnit === "hours"
+                              ? tpl("unitHours")
+                              : tpl("unitMinutes")
                         }`
-                      : "—"
+                      : tpl("emDash")
+                    : isFakeTemplate && form.durationValue
+                      ? `${form.durationValue} ${
+                          form.durationUnit === "days"
+                            ? tpl("unitDays")
+                            : form.durationUnit === "hours"
+                              ? tpl("unitHours")
+                              : tpl("unitMinutes")
+                        }`
                     : form.durationValue
                       ? `${form.durationValue} ${
                           form.durationUnit === "days"
@@ -1444,23 +1540,22 @@ export default function AdminInternalOrderWizard({
                                   ? "دقيقتين"
                                   : "دقيقة"
                         }`
-                      : "—"}
+                      : isFakeTemplate
+                        ? tpl("emDash")
+                        : "—"}
                 </CreateOrderReviewRow>
                 {!isClientAudience && !isFakeTemplate ? (
                   <CreateOrderReviewRow label="المستقل">{selectedFreelancerLabel || "غير معين"}</CreateOrderReviewRow>
                 ) : null}
-                {isFakeTemplate ? (
-                  <CreateOrderReviewRow label="حالة القالب">
-                    {form.isActiveTemplate !== false ? "نشط" : "معطّل"}
-                  </CreateOrderReviewRow>
-                ) : null}
+                {!isFakeTemplate ? (
                 <CreateOrderReviewRow label="الملفات">
                   {files.length ? `${files.length} ملفات` : "لا توجد ملفات مضافة"}
                 </CreateOrderReviewRow>
+                ) : null}
 
                 <div className="oh-review__note">
                   {isFakeTemplate
-                    ? "سيتم حفظ القالب في قوالب الطلبات التجريبية فقط — دون إنشاء طلب حقيقي."
+                    ? t("trainingOrders.templateWizard.reviewNote")
                     : isClientAudience
                       ? form.projectType === "fixed"
                         ? "بعد المتابعة للدفع، سيتم تفعيل الطلب ونشره في المعرض."
@@ -1508,7 +1603,7 @@ export default function AdminInternalOrderWizard({
               </button>
             ) : null}
             <button type="button" className="btn btn-secondary" onClick={goPrev} disabled={stepIdx === 0 || busy}>
-              السابق
+              {isFakeTemplate ? tpl("previous") : "السابق"}
             </button>
             {currentStepKey !== "review" ? (
               <button
@@ -1521,7 +1616,7 @@ export default function AdminInternalOrderWizard({
                 }}
                 disabled={busy}
               >
-                التالي
+                {isFakeTemplate ? tpl("next") : "التالي"}
               </button>
             ) : (
               <button
@@ -1535,10 +1630,10 @@ export default function AdminInternalOrderWizard({
               >
                 {busy
                   ? isFakeTemplate
-                    ? "جارٍ الحفظ…"
+                    ? t("trainingOrders.templateWizard.saving")
                     : "جارٍ الإنشاء…"
                   : isFakeTemplate
-                    ? "حفظ القالب"
+                    ? t("trainingOrders.templateWizard.save")
                     : isClientAudience
                       ? form.projectType === "fixed"
                         ? "المتابعة إلى الدفع"
@@ -1550,7 +1645,8 @@ export default function AdminInternalOrderWizard({
 
           {!stepValid && currentStepKey !== "review" && attempted[currentStepKey] ? (
             <div className="oh-inline-alert" role="status" aria-live="polite">
-              {stepFirstErrorMessage || "أكمل الحقول المطلوبة في هذه الخطوة للمتابعة."}
+              {stepFirstErrorMessage ||
+                (isFakeTemplate ? tplErr("stepIncomplete") : "أكمل الحقول المطلوبة في هذه الخطوة للمتابعة.")}
             </div>
           ) : null}
         </section>

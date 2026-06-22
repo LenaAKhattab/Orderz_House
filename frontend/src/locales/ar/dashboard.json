@@ -56,6 +56,7 @@
     "superAdmin": {
       "overview": "نظرة عامة",
       "plans": "الباقات",
+      "planPages": "صفحات الباقات",
       "courses": "الدورات",
       "ads": "الإعلانات",
       "subscriptions": "الاشتراكات",
@@ -88,6 +89,7 @@
     "courses": "الدورات",
     "courseDetails": "الدورة",
     "plans": "الباقات",
+    "planPages": "صفحات الباقات",
     "internalRequests": "الطلبات الداخلية",
     "createInternalRequest": "إنشاء طلب",
     "ads": "الإعلانات",

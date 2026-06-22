@@ -42,6 +42,7 @@ import {
   NotFoundPage,
   DashboardPage,
   SuperAdminPlansPage,
+  SuperAdminPlanPagesPage,
   SuperAdminSubscriptionsPage,
   SuperAdminFinancialClaimsPage,
   SuperAdminSettingsPage,
@@ -181,6 +182,7 @@ function App() {
               <Route path="/services" element={<Services />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/plans" element={<Plans />} />
+              <Route path="/plans/:slug" element={<Plans />} />
               <Route
                 path="/login"
                 element={
@@ -228,6 +230,14 @@ function App() {
                   element={
                     <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.overview}>
                       <DashboardPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/plan-pages"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.plans}>
+                      <SuperAdminPlanPagesPage />
                     </RequireStaffPage>
                   }
                 />

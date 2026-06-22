@@ -97,10 +97,46 @@ function normalizeToCleanBudgetRange(min, max, profile = "simple") {
   return { min: best[0], max: best[1], profile };
 }
 
+function isFixedBudgetInAllowedSpan(value) {
+  const v = Number(value);
+  if (!Number.isInteger(v) || v <= 0) return false;
+  return ALLOWED_CLEAN_BUDGET_PAIRS.some(([x, y]) => v >= x && v <= y);
+}
+
+/**
+ * Normalize admin template budgets before save.
+ * - Fixed (min === max): allow any integer within an allowed pair span (e.g. 120 in 100–150).
+ * - Bidding: exact allowed pair, or snap to nearest allowed pair by midpoint.
+ */
+function normalizeTemplateBudget(min, max, profile = "simple") {
+  const a = Math.round(Number(min));
+  const b = Math.round(Number(max));
+  if (!Number.isInteger(a) || !Number.isInteger(b) || a <= 0 || b < a) {
+    return { ok: false, code: "invalid_range" };
+  }
+  if (a === b) {
+    if (isFixedBudgetInAllowedSpan(a)) return { ok: true, min: a, max: b };
+    const norm = normalizeToCleanBudgetRange(a, b, profile);
+    const mid = Math.round((norm.min + norm.max) / 2);
+    if (isFixedBudgetInAllowedSpan(mid)) return { ok: true, min: mid, max: mid };
+    return { ok: true, min: norm.min, max: norm.max };
+  }
+  if (isAllowedCleanBudgetRange(a, b)) return { ok: true, min: a, max: b };
+  const norm = normalizeToCleanBudgetRange(a, b, profile);
+  return { ok: true, min: norm.min, max: norm.max };
+}
+
+function formatAllowedBudgetPairsHint() {
+  return ALLOWED_CLEAN_BUDGET_PAIRS.map(([x, y]) => `${x}–${y}`).join("، ");
+}
+
 module.exports = {
   ALLOWED_CLEAN_BUDGET_PAIRS,
   isAllowedCleanBudgetRange,
+  isFixedBudgetInAllowedSpan,
   inferComplexityProfile,
   pickCleanBudgetRange,
   normalizeToCleanBudgetRange,
+  normalizeTemplateBudget,
+  formatAllowedBudgetPairsHint,
 };

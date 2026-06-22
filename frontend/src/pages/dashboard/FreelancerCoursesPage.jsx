@@ -13,6 +13,7 @@ import {
   Star,
 } from "lucide-react";
 import { freelancerListMyCoursesRequest } from "../../services/api";
+import LinkifiedText from "../../components/ui/LinkifiedText";
 import { useToast } from "../../components/ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
@@ -242,7 +243,9 @@ function CourseCard({ course, isFavorite, onToggleFavorite, t, locale }) {
         </div>
 
         <p className="fc-course-card__desc">
-          {course.description?.trim() || t("freelancerDashboard.training.card.defaultDescription")}
+          <LinkifiedText
+            text={course.description?.trim() || t("freelancerDashboard.training.card.defaultDescription")}
+          />
         </p>
 
         <ul className="fc-course-card__meta">

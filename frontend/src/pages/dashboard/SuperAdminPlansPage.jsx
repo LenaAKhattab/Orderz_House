@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import Button from "../../components/ui/Button";
 import { AdminInlineGridSkeleton } from "../../components/ui/Skeleton";
 import {
   createPlanRequest,
   deletePlanRequest,
   getSuperadminDashboardIntelligenceSubscriptionsRequest,
+  listAdminPlanPagesRequest,
   listAdminPlansRequest,
   updatePlanRequest,
 } from "../../services/api";
@@ -31,8 +33,18 @@ import {
 import { getInitialPlanFormState } from "../../admin/plans/planFormConstants";
 import {
   PAGE_COPY,
+  SECTION_COPY,
   SORT_LABELS,
 } from "../../admin/plans/planMetricTerminology";
+import {
+  PLAN_ADMIN_SECTION,
+  buildPlanPagesIndex,
+  filterPlansByAdminSection,
+  getDefaultPlanPage,
+  getSpecialPlanPages,
+  parsePlanAdminSection,
+} from "../../admin/plans/planAdminSections";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import { suggestPlanInternalName } from "../../admin/plans/planNameAuto";
 import { canSubmitCreate, normalizeCreatePayload } from "../../admin/plans/planPayloadUtils";
 import {
@@ -65,6 +77,12 @@ function PlansEmptyIcon() {
 }
 
 const SuperAdminPlansPage = () => {
+  const { locale } = useTranslation();
+  const isEn = locale === "en";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeSection = parsePlanAdminSection(searchParams.get("section"));
+  const selectedPageId = activeSection === PLAN_ADMIN_SECTION.PAGES ? searchParams.get("pageId") || "" : "";
+  const [planPages, setPlanPages] = useState([]);
   const [plans, setPlans] = useState([]);
   const [subscriptionIntel, setSubscriptionIntel] = useState(null);
   const [intelError, setIntelError] = useState("");
@@ -94,13 +112,31 @@ const SuperAdminPlansPage = () => {
 
   const statsFailed = Boolean(intelError);
 
+  const planPagesById = useMemo(() => buildPlanPagesIndex(planPages), [planPages]);
+  const specialPlanPages = useMemo(() => getSpecialPlanPages(planPages), [planPages]);
+  const defaultPlanPage = useMemo(() => getDefaultPlanPage(planPages), [planPages]);
+
+  const sectionPlans = useMemo(
+    () => filterPlansByAdminSection(plans, activeSection, planPagesById),
+    [plans, activeSection, planPagesById],
+  );
+
+  const scopedPlans = useMemo(() => {
+    if (activeSection !== PLAN_ADMIN_SECTION.PAGES || !selectedPageId) return sectionPlans;
+    return sectionPlans.filter((plan) => String(plan.planPageId) === String(selectedPageId));
+  }, [sectionPlans, activeSection, selectedPageId]);
+
+  const sectionCopy = SECTION_COPY[activeSection];
+  const sectionLabel = isEn ? sectionCopy.en : sectionCopy.ar;
+  const sectionHint = isEn ? sectionCopy.hintEn : sectionCopy.hintAr;
+
   const { plans: plansWithStats, statsAvailable, platformContext } = useMemo(() => {
-    const merged = mergePlansWithPerformanceStats(plans, subscriptionIntel, { statsFailed });
-    if (!statsFailed && merged.statsAvailable) {
+    const merged = mergePlansWithPerformanceStats(scopedPlans, subscriptionIntel, { statsFailed });
+    if (!statsFailed && merged.statsAvailable && activeSection === PLAN_ADMIN_SECTION.CORE) {
       enrichPlansWithPortfolioActions(merged.plans, merged.platformContext);
     }
     return merged;
-  }, [plans, subscriptionIntel, statsFailed]);
+  }, [scopedPlans, subscriptionIntel, statsFailed, activeSection]);
 
   const portfolioActionChips = useMemo(
     () => (statsAvailable && !statsFailed ? computePortfolioActionChips(plansWithStats, platformContext) : []),
@@ -166,17 +202,19 @@ const SuperAdminPlansPage = () => {
     setIntelError("");
     setLoading(true);
     try {
-      const [visibleRes, allRes, intelRes] = await Promise.all([
+      const [visibleRes, allRes, intelRes, pagesRes] = await Promise.all([
         listAdminPlansRequest(false),
         listAdminPlansRequest(true),
         getSuperadminDashboardIntelligenceSubscriptionsRequest().catch((err) => {
           setIntelError(errorMessage(err));
           return null;
         }),
+        listAdminPlanPagesRequest().catch(() => null),
       ]);
       setPlans(visibleRes?.data?.plans || []);
       const allPlans = allRes?.data?.plans || [];
       setReservedPlanNames(allPlans.map((p) => p.name).filter(Boolean));
+      setPlanPages(pagesRes?.data?.pages || []);
       if (intelRes) {
         const { intel, sectionError } = normalizeSubscriptionsIntelligenceResponse(intelRes);
         setSubscriptionIntel(intel);
@@ -197,7 +235,42 @@ const SuperAdminPlansPage = () => {
     void refresh();
   }, [refresh]);
 
+  const selectedPlanPage = useMemo(
+    () => specialPlanPages.find((page) => String(page.id) === String(selectedPageId)) || null,
+    [specialPlanPages, selectedPageId],
+  );
+
+  const setActiveSection = (nextSection) => {
+    const next = parsePlanAdminSection(nextSection);
+    const params = new URLSearchParams(searchParams);
+    params.set("section", next);
+    if (next === PLAN_ADMIN_SECTION.CORE) {
+      params.delete("pageId");
+    }
+    setSearchParams(params, { replace: true });
+  };
+
+  const handlePageFilterChange = (event) => {
+    const next = event.target.value;
+    const params = new URLSearchParams(searchParams);
+    params.set("section", PLAN_ADMIN_SECTION.PAGES);
+    if (!next) {
+      params.delete("pageId");
+    } else {
+      params.set("pageId", next);
+    }
+    setSearchParams(params, { replace: true });
+  };
+
   const openCreateModal = () => {
+    const initial = getInitialPlanFormState();
+    if (activeSection === PLAN_ADMIN_SECTION.PAGES) {
+      initial.planPageId = selectedPageId || String(specialPlanPages[0]?.id || "");
+    } else if (defaultPlanPage?.id) {
+      initial.planPageId = String(defaultPlanPage.id);
+      initial.subscriptionPlanId = "";
+    }
+    setForm(initial);
     setCreateModalOpen(true);
   };
 
@@ -214,7 +287,21 @@ const SuperAdminPlansPage = () => {
     setError("");
     setSubmitting(true);
     try {
-      await createPlanRequest(normalizeCreatePayload(form, reservedPlanNames, plans));
+      const targetPageId =
+        activeSection === PLAN_ADMIN_SECTION.PAGES
+          ? selectedPageId || form.planPageId || specialPlanPages[0]?.id || null
+          : defaultPlanPage?.id || form.planPageId || null;
+
+      if (activeSection === PLAN_ADMIN_SECTION.PAGES && !targetPageId) {
+        setError(isEn ? "Select a plan page before creating a page plan." : "اختر صفحة باقات قبل إنشاء باقة للصفحات.");
+        return;
+      }
+
+      await createPlanRequest(
+        normalizeCreatePayload(form, reservedPlanNames, scopedPlans, {
+          planPageId: targetPageId,
+        }),
+      );
       setForm(getInitialPlanFormState());
       setCreateModalOpen(false);
       await refresh();
@@ -298,11 +385,66 @@ const SuperAdminPlansPage = () => {
         title={PAGE_COPY.title}
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.plans")}
         actions={
-          <Button type="button" className="oh-sapl-header-cta" onClick={openCreateModal}>
-            + إنشاء باقة جديدة
-          </Button>
+          <div className="oh-sapl-header-actions">
+            <Button type="button" variant="secondary" as={Link} to="/dashboard/super-admin/plan-pages">
+              صفحات الباقات
+            </Button>
+            <Button type="button" className="oh-sapl-header-cta" onClick={openCreateModal}>
+              + إنشاء باقة جديدة
+            </Button>
+          </div>
         }
       />
+
+      {planPages.length > 0 ? (
+        <div className="oh-sapl-section-toggle">
+          <div className="oh-sapl-section-toggle__tabs" role="tablist" aria-label={isEn ? "Plan sections" : "أقسام الباقات"}>
+            <button
+              type="button"
+              role="tab"
+              className="oh-sapl-section-toggle__tab"
+              aria-selected={activeSection === PLAN_ADMIN_SECTION.CORE}
+              onClick={() => setActiveSection(PLAN_ADMIN_SECTION.CORE)}
+            >
+              {isEn ? SECTION_COPY.core.en : SECTION_COPY.core.ar}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              className="oh-sapl-section-toggle__tab"
+              aria-selected={activeSection === PLAN_ADMIN_SECTION.PAGES}
+              onClick={() => setActiveSection(PLAN_ADMIN_SECTION.PAGES)}
+            >
+              {isEn ? SECTION_COPY.pages.en : SECTION_COPY.pages.ar}
+            </button>
+          </div>
+          <p className="oh-sapl-section-toggle__hint">{sectionHint}</p>
+        </div>
+      ) : null}
+
+      {activeSection === PLAN_ADMIN_SECTION.PAGES && specialPlanPages.length > 0 ? (
+        <div className="oh-sapl-page-filter-inline">
+          <label>
+            <span>{isEn ? SECTION_COPY.pages.pageFilterLabelEn : SECTION_COPY.pages.pageFilterLabelAr}</span>
+            <select value={selectedPageId} onChange={handlePageFilterChange}>
+              <option value="">{isEn ? SECTION_COPY.pages.pageFilterAllEn : SECTION_COPY.pages.pageFilterAllAr}</option>
+              {specialPlanPages.map((page) => (
+                <option key={page.id} value={page.id}>
+                  {page.title}
+                  {page.slug ? ` (/plans/${page.slug})` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          {selectedPlanPage ? (
+            <p className="oh-sapl-section-toggle__hint" style={{ margin: 0 }}>
+              {isEn
+                ? `Showing plans for: ${selectedPlanPage.title}`
+                : `تعرض باقات صفحة: ${selectedPlanPage.title}`}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {error ? (
         <DashboardErrorState
@@ -315,7 +457,7 @@ const SuperAdminPlansPage = () => {
         />
       ) : null}
 
-      {!loading && portfolioStrip.items.length > 0 ? (
+      {!loading && activeSection === PLAN_ADMIN_SECTION.CORE && portfolioStrip.items.length > 0 ? (
         <section className="oh-sapl-portfolio-strip" aria-label={PAGE_COPY.portfolioStripAria}>
           {portfolioStrip.items.map((item) => (
             <div key={item.key} className={`oh-sapl-portfolio-strip__item${item.key === "risk" ? " oh-sapl-portfolio-strip__item--risk" : ""}`}>
@@ -326,8 +468,8 @@ const SuperAdminPlansPage = () => {
         </section>
       ) : null}
 
-      <DashboardSection title="الباقات" className="oh-sapl-section--plans oh-sapl-section--tight">
-        {!loading && statsAvailable ? (
+      <DashboardSection title={sectionLabel} className="oh-sapl-section--plans oh-sapl-section--tight">
+        {!loading && activeSection === PLAN_ADMIN_SECTION.CORE && statsAvailable ? (
           <PlanPortfolioActionBar
             chips={portfolioActionChips}
             summarySentence={portfolioSummarySentence}
@@ -395,7 +537,7 @@ const SuperAdminPlansPage = () => {
             <option value={SORT_MODES.attention}>{SORT_LABELS.attention}</option>
           </select>
           <StatusBadge tone="neutral" className="oh-sapl-toolbar-compact__count">
-            {loading ? "…" : `${filteredPlans.length} / ${plans.length}`}
+            {loading ? "…" : `${filteredPlans.length} / ${scopedPlans.length}`}
           </StatusBadge>
         </div>
 
@@ -422,20 +564,20 @@ const SuperAdminPlansPage = () => {
           </DashboardLoadingState>
         ) : null}
 
-        {!loading && plans.length === 0 ? (
+        {!loading && scopedPlans.length === 0 ? (
           <DashboardEmptyState
-            title="لا توجد باقات بعد"
-            description="أنشئ أول باقة من زر «إنشاء باقة جديدة»."
+            title={isEn ? sectionCopy.emptyTitleEn : sectionCopy.emptyTitleAr}
+            description={isEn ? sectionCopy.emptyDescEn : sectionCopy.emptyDescAr}
             icon={<PlansEmptyIcon />}
             actions={
               <Button type="button" onClick={openCreateModal}>
-                إنشاء باقة جديدة
+                {isEn ? "Create plan" : "إنشاء باقة جديدة"}
               </Button>
             }
           />
         ) : null}
 
-        {!loading && plans.length > 0 && filteredPlans.length === 0 ? (
+        {!loading && scopedPlans.length > 0 && filteredPlans.length === 0 ? (
           <DashboardEmptyState title="لا توجد نتائج" description="جرّب تغيير البحث أو عوامل التصفية." />
         ) : null}
 

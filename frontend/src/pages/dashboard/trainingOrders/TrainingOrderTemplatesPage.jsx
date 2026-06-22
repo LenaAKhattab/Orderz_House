@@ -19,10 +19,12 @@ import {
   getLocalizedOrderTitle,
 } from "../../../lib/i18n/getLocalizedMarketplaceOrderText";
 import { buildDurationLabels, formatDurationRange } from "../../../lib/orders/orderDisplayFormatters";
+import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
+import "../../../styles/createOrderModal.css";
 import "./trainingOrdersAdmin.css";
 
 function errMsg(e) {
-  return e?.response?.data?.message || e?.message || "حدث خطأ.";
+  return getSafeApiErrorMessage(e);
 }
 
 /** Map API template row → AdminInternalOrderWizard initialValues (mode=fake-template). */
@@ -67,7 +69,7 @@ function templateToWizardInitial(t) {
 }
 
 export default function TrainingOrderTemplatesPage() {
-  const { t, locale } = useTranslation();
+  const { t, locale, dir } = useTranslation();
   const durationLabels = buildDurationLabels(t);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -75,6 +77,7 @@ export default function TrainingOrderTemplatesPage() {
   const [templates, setTemplates] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [q, setQ] = useState("");
+  const [appliedQ, setAppliedQ] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
@@ -85,27 +88,29 @@ export default function TrainingOrderTemplatesPage() {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [wizardReset, setWizardReset] = useState(0);
 
-  const loadList = useCallback(async () => {
+  const loadList = useCallback(async ({ signal } = {}) => {
     setError("");
     setLoading(true);
     try {
       const params = {
         page,
         limit: 20,
-        q: q.trim() || undefined,
+        q: appliedQ.trim() || undefined,
         categoryId: categoryFilter || undefined,
         isActive: statusFilter === "active" ? true : statusFilter === "inactive" ? false : undefined,
       };
       const res = await adminListTrainingTemplatesRequest(params);
+      if (signal?.aborted) return;
       const payload = res?.data ?? res;
       setTemplates(payload?.templates || []);
       setPagination(payload?.pagination || { page: 1, totalPages: 1, total: 0 });
     } catch (e) {
+      if (signal?.aborted) return;
       setError(errMsg(e));
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
-  }, [page, q, categoryFilter, statusFilter]);
+  }, [page, appliedQ, categoryFilter, statusFilter]);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,12 +130,14 @@ export default function TrainingOrderTemplatesPage() {
   }, []);
 
   useEffect(() => {
-    void loadList();
+    const controller = new AbortController();
+    void loadList({ signal: controller.signal });
+    return () => controller.abort();
   }, [loadList]);
 
   const search = () => {
     setPage(1);
-    loadList();
+    setAppliedQ(q);
   };
 
   const wizardInitial = useMemo(() => templateToWizardInitial(editingTemplate), [editingTemplate]);
@@ -158,7 +165,7 @@ export default function TrainingOrderTemplatesPage() {
   };
 
   const remove = async (t) => {
-    if (!window.confirm(`حذف القالب «${t.title}»؟`)) return;
+    if (!window.confirm(`حذف الطلب «${t.title}»؟`)) return;
     setError("");
     try {
       await adminDeleteTrainingTemplateRequest(t.id);
@@ -188,7 +195,7 @@ export default function TrainingOrderTemplatesPage() {
         description={t("trainingOrders.templates.description")}
         actions={
           <button type="button" className="btn btn-primary" onClick={openCreate}>
-            + {t("trainingOrders.templates.colTitle")}
+            + {t("trainingOrders.templates.addTemplate")}
           </button>
         }
       >
@@ -229,7 +236,14 @@ export default function TrainingOrderTemplatesPage() {
         {loading ? (
           <DashboardLoadingState label={t("trainingOrders.templates.loading")} />
         ) : templates.length === 0 ? (
-          <DashboardEmptyState title={t("trainingOrders.templates.empty")} />
+          <DashboardEmptyState
+            title={t("trainingOrders.templates.empty")}
+            actions={
+              <button type="button" className="btn btn-primary" onClick={openCreate}>
+                + {t("trainingOrders.templates.addTemplate")}
+              </button>
+            }
+          />
         ) : (
           <div className="oh-training-table-wrap">
             <table className="oh-training-table">
@@ -314,23 +328,27 @@ export default function TrainingOrderTemplatesPage() {
             className="client-order-modal client-order-modal--admin-wizard"
             role="dialog"
             aria-labelledby="training-template-wizard-title"
-            dir="rtl"
+            dir={dir}
+            lang={locale}
             onMouseDown={(e) => e.stopPropagation()}
           >
             <header className="client-order-modal__head">
               <div>
                 <h2 id="training-template-wizard-title" className="client-order-modal__title">
-                  {editingId ? "تعديل قالب طلب تجريبي" : "قالب طلب تجريبي جديد"}
+                  {editingId
+                    ? t("trainingOrders.templateWizard.modalEditTitle")
+                    : t("trainingOrders.templateWizard.modalCreateTitle")}
                 </h2>
               </div>
               <button type="button" className="btn btn-secondary client-order-modal__close" onClick={() => setModalOpen(false)}>
-                إغلاق
+                {t("trainingOrders.templateWizard.modalClose")}
               </button>
             </header>
             <div className="client-order-modal__body client-order-modal__body--admin-wizard">
               <AdminInternalOrderWizard
                 variant="modal"
                 mode="fake-template"
+                fakeTemplateIsEdit={Boolean(editingId)}
                 resetToken={wizardReset}
                 initialValues={wizardInitial}
                 onSubmitFakeTemplate={submitFakeTemplate}

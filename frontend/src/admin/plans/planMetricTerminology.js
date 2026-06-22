@@ -92,6 +92,33 @@ export const PAGE_COPY = {
   portfolioStripAria: "رؤى محفظة الاشتراكات",
 };
 
+export const SECTION_COPY = {
+  core: {
+    ar: "الباقات الأساسية",
+    en: "Core subscription plans",
+    hintAr: "باقات الاشتراك الأصلية المستخدمة في الدفع وإدارة الاشتراكات.",
+    hintEn: "Original subscription plans used for checkout and subscription management.",
+    emptyTitleAr: "لا توجد باقات أساسية",
+    emptyTitleEn: "No core plans",
+    emptyDescAr: "الباقات الأساسية هي باقات الاشتراك الأصلية في النظام.",
+    emptyDescEn: "Core plans are the canonical subscription tiers in the system.",
+  },
+  pages: {
+    ar: "باقات الصفحات",
+    en: "Page plans",
+    hintAr: "باقات العرض المرتبطة بصفحات مخصصة مثل /plans/freelancers.",
+    hintEn: "Marketing plans for custom pages such as /plans/freelancers.",
+    emptyTitleAr: "لا توجد باقات للصفحات",
+    emptyTitleEn: "No page plans yet",
+    emptyDescAr: "أنشئ باقة واربطها بصفحة من «صفحات الباقات».",
+    emptyDescEn: "Create a plan and attach it to a page from Plan pages.",
+    pageFilterLabelAr: "صفحة الباقات",
+    pageFilterLabelEn: "Plan page",
+    pageFilterAllAr: "كل صفحات الباقات",
+    pageFilterAllEn: "All plan pages",
+  },
+};
+
 export const STRIP_LABELS = {
   growth: "أكثر نشاط اشتراك (هذا الشهر)",
   revenue: "أعلى قيمة مدفوعة",
