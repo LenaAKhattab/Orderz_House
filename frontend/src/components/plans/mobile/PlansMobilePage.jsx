@@ -1,6 +1,8 @@
 import PlansMobileHero from "./PlansMobileHero";
 import PlansMobilePlans from "./PlansMobilePlans";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import PlansActivationFeeNote from "../PlansActivationFeeNote";
+import { getPlansLayoutConfig, PLANS_LAYOUT_VARIANT } from "../plansLayoutUtils";
 import "./plans-mobile-page.css";
 
 /**
@@ -25,12 +27,16 @@ export default function PlansMobilePage({
   onCta,
   pageTitle = null,
   pageSubtitle = null,
+  trustPills = [],
+  pageSlug = null,
+  layoutVariant = PLANS_LAYOUT_VARIANT.MAIN_FIVE_CARD,
 }) {
   const { t, dir } = useTranslation();
+  const layout = getPlansLayoutConfig(layoutVariant);
 
   return (
     <div className="plans-mobile-page" dir={dir}>
-      <PlansMobileHero title={pageTitle} subtitle={pageSubtitle} />
+      <PlansMobileHero title={pageTitle} subtitle={pageSubtitle} trustPills={trustPills} />
       <PlansMobilePlans
         loading={loading}
         plans={plans}
@@ -38,6 +44,7 @@ export default function PlansMobilePage({
         hasBlockingSubscription={hasBlockingSubscription}
         checkoutBusyPlanId={checkoutBusyPlanId}
         onCta={onCta}
+        skeletonCount={layout.skeletonCount}
       />
 
       {error ? (
@@ -52,7 +59,12 @@ export default function PlansMobilePage({
         </p>
       ) : null}
 
-      <p className="pm-footnote">{t("plans.mobile.footnote")}</p>
+      {layout.showActivationFeeNote ? (
+        <PlansActivationFeeNote className="plans-activation-fee-note--mobile" />
+      ) : null}
+      <p className="pm-footnote pm-footnote--secondary">
+        {pageSlug === "freelancers" ? t("plans.pages.freelancers.footnote") : t("plans.mobile.footnote")}
+      </p>
     </div>
   );
 }

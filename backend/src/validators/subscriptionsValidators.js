@@ -51,6 +51,11 @@ const freelancerConfirmCheckoutValidators = [
 
 const activateSubscriptionValidators = [...subscriptionIdParam];
 
+const markActivationFeePaidOfflineValidators = [
+  body("freelancerUserId").isInt({ min: 1 }).withMessage("freelancerUserId is required."),
+  body("notes").optional({ nullable: true }).isString().trim().isLength({ max: 5000 }).withMessage("Invalid notes."),
+];
+
 module.exports = {
   subscriptionIdParam,
   freelancerIdParam,
@@ -60,5 +65,6 @@ module.exports = {
   freelancerSelfSubscribeValidators,
   freelancerConfirmCheckoutValidators,
   activateSubscriptionValidators,
+  markActivationFeePaidOfflineValidators,
 };
 

@@ -5,7 +5,6 @@ import { AdminInlineGridSkeleton } from "../../components/ui/Skeleton";
 import {
   createPlanRequest,
   deletePlanRequest,
-  getSuperadminDashboardIntelligenceSubscriptionsRequest,
   listAdminPlanPagesRequest,
   listAdminPlansRequest,
   updatePlanRequest,
@@ -14,27 +13,10 @@ import AdminPlanCard from "../../admin/plans/AdminPlanCard";
 import PlanCreateModal from "../../admin/plans/PlanCreateModal";
 import PlanEditModal from "../../admin/plans/PlanEditModal";
 import { filterPlans } from "../../admin/plans/planDisplayUtils";
-import {
-  computePlanBadges,
-  computePortfolioInsightStrip,
-  mergePlansWithPerformanceStats,
-  normalizeSubscriptionsIntelligenceResponse,
-  sortPlansForDisplay,
-  SORT_MODES,
-} from "../../admin/plans/planPerformanceUtils";
-import PlanPortfolioActionBar from "../../admin/plans/PlanPortfolioActionBar";
-import {
-  computePortfolioActionChips,
-  computePortfolioSummarySentence,
-  DECISION_FILTERS,
-  enrichPlansWithPortfolioActions,
-  filterPlansByDecision,
-} from "../../admin/plans/planPortfolioActions";
 import { getInitialPlanFormState } from "../../admin/plans/planFormConstants";
 import {
   PAGE_COPY,
   SECTION_COPY,
-  SORT_LABELS,
 } from "../../admin/plans/planMetricTerminology";
 import {
   PLAN_ADMIN_SECTION,
@@ -42,6 +24,7 @@ import {
   filterPlansByAdminSection,
   getDefaultPlanPage,
   getSpecialPlanPages,
+  isCanonicalSubscriptionPlan,
   parsePlanAdminSection,
 } from "../../admin/plans/planAdminSections";
 import { useTranslation } from "../../i18n/LanguageProvider";
@@ -50,7 +33,6 @@ import { canSubmitCreate, normalizeCreatePayload } from "../../admin/plans/planP
 import {
   buildPlanReorderPatches,
   getPlanDisplayOrderMeta,
-  plansListFiltersAreDefault,
 } from "../../admin/plans/planOrderUtils";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
@@ -84,37 +66,36 @@ const SuperAdminPlansPage = () => {
   const selectedPageId = activeSection === PLAN_ADMIN_SECTION.PAGES ? searchParams.get("pageId") || "" : "";
   const [planPages, setPlanPages] = useState([]);
   const [plans, setPlans] = useState([]);
-  const [subscriptionIntel, setSubscriptionIntel] = useState(null);
-  const [intelError, setIntelError] = useState("");
   const [reservedPlanNames, setReservedPlanNames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [visibilityFilter, setVisibilityFilter] = useState("all");
-  const [selfPurchaseFilter, setSelfPurchaseFilter] = useState("all");
-  const [sortMode, setSortMode] = useState(SORT_MODES.display);
-  const [decisionFilter, setDecisionFilter] = useState(DECISION_FILTERS.all);
   const [reorderingPlanId, setReorderingPlanId] = useState(null);
 
   const [form, setForm] = useState(getInitialPlanFormState);
   const [editPlan, setEditPlan] = useState(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
-  const canCreate = useMemo(() => canSubmitCreate(form), [form]);
+  const planPagesById = useMemo(() => buildPlanPagesIndex(planPages), [planPages]);
+  const specialPlanPages = useMemo(() => getSpecialPlanPages(planPages), [planPages]);
+  const defaultPlanPage = useMemo(() => getDefaultPlanPage(planPages), [planPages]);
+
+  const canCreate = useMemo(
+    () => canSubmitCreate(form, { planPagesById }),
+    [form, planPagesById],
+  );
+
+  const canonicalPlans = useMemo(
+    () => plans.filter((plan) => isCanonicalSubscriptionPlan(plan)),
+    [plans],
+  );
 
   const generatedInternalName = useMemo(() => {
     if (form.title.trim().length < 2) return "";
     return suggestPlanInternalName(form.title, reservedPlanNames);
   }, [form.title, reservedPlanNames]);
-
-  const statsFailed = Boolean(intelError);
-
-  const planPagesById = useMemo(() => buildPlanPagesIndex(planPages), [planPages]);
-  const specialPlanPages = useMemo(() => getSpecialPlanPages(planPages), [planPages]);
-  const defaultPlanPage = useMemo(() => getDefaultPlanPage(planPages), [planPages]);
 
   const sectionPlans = useMemo(
     () => filterPlansByAdminSection(plans, activeSection, planPagesById),
@@ -130,100 +111,29 @@ const SuperAdminPlansPage = () => {
   const sectionLabel = isEn ? sectionCopy.en : sectionCopy.ar;
   const sectionHint = isEn ? sectionCopy.hintEn : sectionCopy.hintAr;
 
-  const { plans: plansWithStats, statsAvailable, platformContext } = useMemo(() => {
-    const merged = mergePlansWithPerformanceStats(scopedPlans, subscriptionIntel, { statsFailed });
-    if (!statsFailed && merged.statsAvailable && activeSection === PLAN_ADMIN_SECTION.CORE) {
-      enrichPlansWithPortfolioActions(merged.plans, merged.platformContext);
-    }
-    return merged;
-  }, [scopedPlans, subscriptionIntel, statsFailed, activeSection]);
-
-  const portfolioActionChips = useMemo(
-    () => (statsAvailable && !statsFailed ? computePortfolioActionChips(plansWithStats, platformContext) : []),
-    [plansWithStats, statsAvailable, statsFailed, platformContext],
-  );
-
-  const portfolioSummarySentence = useMemo(
-    () => (statsAvailable && !statsFailed ? computePortfolioSummarySentence(plansWithStats, platformContext) : null),
-    [plansWithStats, statsAvailable, statsFailed, platformContext],
-  );
-
-  const planBadges = useMemo(() => computePlanBadges(plansWithStats), [plansWithStats]);
-
-  const portfolioStrip = useMemo(
-    () =>
-      computePortfolioInsightStrip(plansWithStats, {
-        statsAvailable,
-        statsFailed,
-        platformContext,
-      }),
-    [plansWithStats, statsAvailable, statsFailed, platformContext],
-  );
-
-  const handleActionChipClick = useCallback((key) => {
-    setDecisionFilter((prev) => (prev === key ? DECISION_FILTERS.all : key));
-  }, []);
-
   const filteredPlans = useMemo(() => {
-    const filtered = filterPlans(plansWithStats, {
-      search,
-      status: statusFilter,
-      visibility: visibilityFilter,
-      selfPurchase: selfPurchaseFilter,
+    const filtered = filterPlans(scopedPlans, { search });
+    return [...filtered].sort((a, b) => {
+      const diff = Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0);
+      return diff !== 0 ? diff : Number(a.id) - Number(b.id);
     });
-    const byDecision = filterPlansByDecision(filtered, decisionFilter, platformContext);
-    return sortPlansForDisplay(byDecision, sortMode);
-  }, [
-    plansWithStats,
-    search,
-    statusFilter,
-    visibilityFilter,
-    selfPurchaseFilter,
-    decisionFilter,
-    platformContext,
-    sortMode,
-  ]);
+  }, [scopedPlans, search]);
 
-  const canReorderPlans = useMemo(
-    () =>
-      sortMode === SORT_MODES.display &&
-      plansListFiltersAreDefault({
-        search,
-        statusFilter,
-        visibilityFilter,
-        selfPurchaseFilter,
-        decisionFilter,
-      }),
-    [sortMode, search, statusFilter, visibilityFilter, selfPurchaseFilter, decisionFilter],
-  );
+  const canReorderPlans = useMemo(() => !String(search || "").trim(), [search]);
 
   const refresh = useCallback(async () => {
     setError("");
-    setIntelError("");
     setLoading(true);
     try {
-      const [visibleRes, allRes, intelRes, pagesRes] = await Promise.all([
+      const [visibleRes, allRes, pagesRes] = await Promise.all([
         listAdminPlansRequest(false),
         listAdminPlansRequest(true),
-        getSuperadminDashboardIntelligenceSubscriptionsRequest().catch((err) => {
-          setIntelError(errorMessage(err));
-          return null;
-        }),
         listAdminPlanPagesRequest().catch(() => null),
       ]);
       setPlans(visibleRes?.data?.plans || []);
       const allPlans = allRes?.data?.plans || [];
       setReservedPlanNames(allPlans.map((p) => p.name).filter(Boolean));
       setPlanPages(pagesRes?.data?.pages || []);
-      if (intelRes) {
-        const { intel, sectionError } = normalizeSubscriptionsIntelligenceResponse(intelRes);
-        setSubscriptionIntel(intel);
-        if (sectionError) {
-          setIntelError(typeof sectionError === "string" ? sectionError : "تعذر تحميل بيانات الاشتراكات.");
-        }
-      } else {
-        setSubscriptionIntel(null);
-      }
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -360,7 +270,7 @@ const SuperAdminPlansPage = () => {
 
   const movePlanInDisplayOrder = useCallback(
     async (plan, direction) => {
-      const patches = buildPlanReorderPatches(plansWithStats, plan.id, direction);
+      const patches = buildPlanReorderPatches(scopedPlans, plan.id, direction);
       if (!patches?.length) return;
 
       setError("");
@@ -374,7 +284,7 @@ const SuperAdminPlansPage = () => {
         setReorderingPlanId(null);
       }
     },
-    [plansWithStats, refresh],
+    [scopedPlans, refresh],
   );
 
   return (
@@ -386,9 +296,9 @@ const SuperAdminPlansPage = () => {
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.plans")}
         actions={
           <div className="oh-sapl-header-actions">
-            <Button type="button" variant="secondary" as={Link} to="/dashboard/super-admin/plan-pages">
+            <Link className="btn btn-secondary" to="/dashboard/super-admin/plan-pages">
               صفحات الباقات
-            </Button>
+            </Link>
             <Button type="button" className="oh-sapl-header-cta" onClick={openCreateModal}>
               + إنشاء باقة جديدة
             </Button>
@@ -457,29 +367,7 @@ const SuperAdminPlansPage = () => {
         />
       ) : null}
 
-      {!loading && activeSection === PLAN_ADMIN_SECTION.CORE && portfolioStrip.items.length > 0 ? (
-        <section className="oh-sapl-portfolio-strip" aria-label={PAGE_COPY.portfolioStripAria}>
-          {portfolioStrip.items.map((item) => (
-            <div key={item.key} className={`oh-sapl-portfolio-strip__item${item.key === "risk" ? " oh-sapl-portfolio-strip__item--risk" : ""}`}>
-              <span className="oh-sapl-portfolio-strip__label">{item.label}</span>
-              <span className="oh-sapl-portfolio-strip__value">{item.value}</span>
-            </div>
-          ))}
-        </section>
-      ) : null}
-
       <DashboardSection title={sectionLabel} className="oh-sapl-section--plans oh-sapl-section--tight">
-        {!loading && activeSection === PLAN_ADMIN_SECTION.CORE && statsAvailable ? (
-          <PlanPortfolioActionBar
-            chips={portfolioActionChips}
-            summarySentence={portfolioSummarySentence}
-            decisionFilter={decisionFilter}
-            onDecisionFilterChange={setDecisionFilter}
-            onChipClick={handleActionChipClick}
-            disabled={loading}
-          />
-        ) : null}
-
         <div className="oh-sapl-toolbar-compact" role="search">
           <input
             type="search"
@@ -490,71 +378,14 @@ const SuperAdminPlansPage = () => {
             disabled={loading}
             aria-label="بحث"
           />
-          <select
-            className="oh-sapl-toolbar-compact__select"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            disabled={loading}
-            aria-label="الحالة"
-          >
-            <option value="all">كل الحالات</option>
-            <option value="active">نشطة</option>
-            <option value="inactive">معطلة</option>
-          </select>
-          <select
-            className="oh-sapl-toolbar-compact__select"
-            value={visibilityFilter}
-            onChange={(e) => setVisibilityFilter(e.target.value)}
-            disabled={loading}
-            aria-label="الظهور"
-          >
-            <option value="all">كل الظهور</option>
-            <option value="visible">ظاهرة</option>
-            <option value="hidden">مخفية</option>
-          </select>
-          <select
-            className="oh-sapl-toolbar-compact__select"
-            value={selfPurchaseFilter}
-            onChange={(e) => setSelfPurchaseFilter(e.target.value)}
-            disabled={loading}
-            aria-label="الشراء الذاتي"
-          >
-            <option value="all">الشراء الذاتي</option>
-            <option value="allowed">متاح</option>
-            <option value="blocked">غير متاح</option>
-          </select>
-          <select
-            className="oh-sapl-toolbar-compact__select oh-sapl-toolbar-compact__sort"
-            value={sortMode}
-            onChange={(e) => setSortMode(e.target.value)}
-            disabled={loading}
-            aria-label="ترتيب العرض"
-          >
-            <option value={SORT_MODES.display}>{SORT_LABELS.display}</option>
-            <option value={SORT_MODES.revenue}>{SORT_LABELS.revenue}</option>
-            <option value={SORT_MODES.subscribers}>{SORT_LABELS.subscribers}</option>
-            <option value={SORT_MODES.active}>{SORT_LABELS.active}</option>
-            <option value={SORT_MODES.attention}>{SORT_LABELS.attention}</option>
-          </select>
           <StatusBadge tone="neutral" className="oh-sapl-toolbar-compact__count">
             {loading ? "…" : `${filteredPlans.length} / ${scopedPlans.length}`}
           </StatusBadge>
         </div>
 
-        {!canReorderPlans && sortMode !== SORT_MODES.display ? (
+        {!canReorderPlans ? (
           <p className="oh-sapl-order-hint oh-sapl-order-hint--muted m-0">
-            لترتيب الباقات، اختر «ترتيب الظهور» من قائمة الترتيب.
-          </p>
-        ) : !canReorderPlans &&
-          !plansListFiltersAreDefault({
-            search,
-            statusFilter,
-            visibilityFilter,
-            selfPurchaseFilter,
-            decisionFilter,
-          }) ? (
-          <p className="oh-sapl-order-hint oh-sapl-order-hint--muted m-0">
-            امسح البحث والفلاتر لإظهار أسهم ترتيب الباقات.
+            امسح البحث لإظهار أسهم ترتيب الباقات.
           </p>
         ) : null}
 
@@ -578,20 +409,18 @@ const SuperAdminPlansPage = () => {
         ) : null}
 
         {!loading && scopedPlans.length > 0 && filteredPlans.length === 0 ? (
-          <DashboardEmptyState title="لا توجد نتائج" description="جرّب تغيير البحث أو عوامل التصفية." />
+          <DashboardEmptyState title="لا توجد نتائج" description="جرّب تغيير البحث." />
         ) : null}
 
         {!loading && filteredPlans.length > 0 ? (
           <div className="oh-sapl-cards">
             {filteredPlans.map((p) => {
-              const orderMeta = getPlanDisplayOrderMeta(plansWithStats, p.id);
+              const orderMeta = getPlanDisplayOrderMeta(scopedPlans, p.id);
               const reorderBusy = reorderingPlanId != null;
               return (
               <AdminPlanCard
                 key={p.id}
                 plan={p}
-                badge={planBadges.get(String(p.id)) || null}
-                platformContext={platformContext}
                 submitting={submitting}
                 showOrderControls={canReorderPlans}
                 canMoveUp={orderMeta.canMoveUp}
@@ -619,6 +448,8 @@ const SuperAdminPlansPage = () => {
         onClose={closeCreateModal}
         onCreate={createPlan}
         onReset={resetForm}
+        planPages={planPages}
+        canonicalPlans={canonicalPlans}
       />
 
       <PlanEditModal
@@ -627,6 +458,8 @@ const SuperAdminPlansPage = () => {
         submitting={submitting}
         onClose={() => setEditPlan(null)}
         onSave={saveEdit}
+        planPages={planPages}
+        canonicalPlans={canonicalPlans}
       />
     </DashboardShell>
   );

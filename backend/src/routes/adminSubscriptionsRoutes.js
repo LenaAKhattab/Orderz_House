@@ -48,6 +48,8 @@ const {
 
   activateSubscriptionValidators,
 
+  markActivationFeePaidOfflineValidators,
+
 } = require("../validators/subscriptionsValidators");
 
 
@@ -165,6 +167,22 @@ router.patch(
   validateRequest,
 
   subscriptionsController.activateSubscriptionCompanyApproval,
+
+);
+
+router.post(
+
+  "/subscriptions/activation-fee/mark-paid-offline",
+
+  requireAnyRole(ASSIGN_AND_MANAGE_SUBSCRIPTION_ROLES),
+
+  subscriptionsPerm,
+
+  markActivationFeePaidOfflineValidators,
+
+  validateRequest,
+
+  subscriptionsController.markActivationFeePaidOfflineAdmin,
 
 );
 

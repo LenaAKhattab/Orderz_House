@@ -2,8 +2,6 @@ import { useTranslation } from "../../../i18n/LanguageProvider";
 import PlansMobilePlanCard from "./PlansMobilePlanCard";
 import { pickFeaturedPlanIndex } from "../plansFeaturedUtils";
 
-const SKELETON_COUNT = 3;
-
 /**
  * @param {{
  *   loading?: boolean;
@@ -12,6 +10,7 @@ const SKELETON_COUNT = 3;
  *   hasBlockingSubscription?: boolean;
  *   checkoutBusyPlanId?: string | number | null;
  *   onCta?: (plan: object) => void;
+ *   skeletonCount?: number;
  * }} p
  */
 export default function PlansMobilePlans({
@@ -21,6 +20,7 @@ export default function PlansMobilePlans({
   hasBlockingSubscription = false,
   checkoutBusyPlanId = null,
   onCta,
+  skeletonCount = 5,
 }) {
   const { t } = useTranslation();
   const featuredIndex = pickFeaturedPlanIndex(plans);
@@ -36,7 +36,7 @@ export default function PlansMobilePlans({
 
       <div className="pm-plans__list">
         {loading
-          ? Array.from({ length: SKELETON_COUNT }, (_, i) => (
+          ? Array.from({ length: skeletonCount }, (_, i) => (
               <div key={`pm-skel-${i}`} className="pm-plan-card pm-plan-card--skeleton" aria-hidden />
             ))
           : plans.map((plan, idx) => (

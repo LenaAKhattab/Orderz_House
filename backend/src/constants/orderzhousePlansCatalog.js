@@ -140,7 +140,18 @@ function getOrderzhousePlansCatalog() {
 }
 
 function mergeApiPlansWithCatalog(apiPlans) {
-  const byId = new Map((apiPlans || []).map((p) => [String(p.id), p]));
+  const list = apiPlans || [];
+  if (!list.length) {
+    return ORDERZHOUSE_PLAN_IDS.map((id) => ({ ...ORDERZHOUSE_PLANS_BY_ID[id] }));
+  }
+  const ids = new Set(list.map((p) => String(p.id)));
+  const isLegacyDefaultSet =
+    list.length === ORDERZHOUSE_PLAN_IDS.length &&
+    ORDERZHOUSE_PLAN_IDS.every((id) => ids.has(String(id)));
+  if (!isLegacyDefaultSet) {
+    return list;
+  }
+  const byId = new Map(list.map((p) => [String(p.id), p]));
   return ORDERZHOUSE_PLAN_IDS.map((id) => {
     const base = { ...ORDERZHOUSE_PLANS_BY_ID[id] };
     const api = byId.get(String(id));

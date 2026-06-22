@@ -1,6 +1,8 @@
 const subscriptionsService = require("../services/subscriptionsService");
 const plansService = require("../services/plansService");
 const stripeCheckoutService = require("../services/stripeCheckoutService");
+const { markActivationFeePaidOffline } = require("../services/subscriptionActivationFeeService");
+const { pool } = require("../config/db");
 
 const assignPlan = async (req, res, next) => {
   try {
@@ -92,6 +94,7 @@ const createFreelancerSubscriptionCheckout = async (req, res, next) => {
     const result = await stripeCheckoutService.createFreelancerSubscriptionCheckoutSession({
       freelancerUserId,
       planId,
+      locale: String(req.headers["accept-language"] || "ar").toLowerCase().startsWith("en") ? "en" : "ar",
     });
     return res.status(201).json({ success: true, data: result });
   } catch (err) {
@@ -156,6 +159,26 @@ const activateSubscriptionCompanyApproval = async (req, res, next) => {
   }
 };
 
+const markActivationFeePaidOfflineAdmin = async (req, res, next) => {
+  const client = await pool.connect();
+  try {
+    const { freelancerUserId, notes } = req.body;
+    await client.query("BEGIN");
+    const result = await markActivationFeePaidOffline({
+      adminUserId: req.auth?.userId,
+      freelancerUserId,
+      notes,
+    }, client);
+    await client.query("COMMIT");
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    return next(err);
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   assignPlan,
   listAssignablePlans,
@@ -167,5 +190,6 @@ module.exports = {
   confirmFreelancerSubscriptionCheckout,
   recordFreelancerSubscriptionCheckoutCancelledNotify,
   activateSubscriptionCompanyApproval,
+  markActivationFeePaidOfflineAdmin,
 };
 

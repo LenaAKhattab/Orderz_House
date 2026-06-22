@@ -6,6 +6,7 @@ function mapFeature(row) {
     id: String(row.id),
     planId: String(row.plan_id),
     featureText: row.feature_text,
+    featureTextEn: row.feature_text_en || null,
     sortOrder: row.sort_order,
     isIncluded: Boolean(row.is_included),
     createdAt: row.created_at,

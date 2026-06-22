@@ -151,9 +151,20 @@ export function getOrderzhousePlansCatalog() {
   return ORDERZHOUSE_PLAN_IDS.map((id) => ({ ...ORDERZHOUSE_PLANS_BY_ID[id] }));
 }
 
-/** Overlay API checkout flags when available; catalog content always wins. */
+/** Overlay API checkout flags when legacy default set (ids 1–3); otherwise return API plans as-is. */
 export function mergeApiPlansWithCatalog(apiPlans) {
-  const byId = new Map((apiPlans || []).map((p) => [String(p.id), p]));
+  const list = apiPlans || [];
+  if (!list.length) {
+    return getOrderzhousePlansCatalog();
+  }
+  const ids = new Set(list.map((p) => String(p.id)));
+  const isLegacyDefaultSet =
+    list.length === ORDERZHOUSE_PLAN_IDS.length &&
+    ORDERZHOUSE_PLAN_IDS.every((id) => ids.has(String(id)));
+  if (!isLegacyDefaultSet) {
+    return list;
+  }
+  const byId = new Map(list.map((p) => [String(p.id), p]));
   return ORDERZHOUSE_PLAN_IDS.map((id) => {
     const base = { ...ORDERZHOUSE_PLANS_BY_ID[id] };
     const api = byId.get(String(id));

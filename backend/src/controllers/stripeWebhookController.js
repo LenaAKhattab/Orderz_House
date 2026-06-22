@@ -4,6 +4,7 @@ const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPa
 const { assertCheckoutSessionAuthorizedForOrder } = require("../utils/stripeCheckoutReconcile");
 const orderFlowService = require("../services/orderFlowService");
 const subscriptionsService = require("../services/subscriptionsService");
+const { recordActivationFeeFromStripeSession, markCheckoutSessionStatus, supersedeOpenCheckoutSessions, CHECKOUT_SESSION_STATUS, PURPOSE_ACTIVATION_FEE_ONLY } = require("../services/subscriptionActivationFeeService");
 const notificationService = require("../services/notificationService");
 const freelancerSubscriptionPaymentNotifications = require("../services/freelancerSubscriptionPaymentNotifications");
 const notificationEventsService = require("../services/notificationEventsService");
@@ -307,6 +308,24 @@ async function applyCheckoutSessionFreelancerSubscriptionCompleted(session, meta
       db,
     );
     if (sub?.id) {
+      const activationMinor = meta.activationFeeMinor != null ? Number(meta.activationFeeMinor) : 0;
+      if (Number.isFinite(activationMinor) && activationMinor > 0) {
+        await recordActivationFeeFromStripeSession(
+          {
+            freelancerUserId,
+            stripeSessionId: session.id || null,
+            stripePaymentIntentId: paymentIntentId,
+            activationFeeMinor,
+            paidAt: new Date(),
+          },
+          db,
+        );
+      }
+      await markCheckoutSessionStatus(session.id, CHECKOUT_SESSION_STATUS.COMPLETED, db);
+      await supersedeOpenCheckoutSessions(
+        { stripe: null, freelancerUserId, exceptStripeSessionId: session.id, feeBearingOnly: true },
+        db,
+      );
       await safeNotify(() =>
         freelancerSubscriptionPaymentNotifications.notifyFreelancerSubscriptionPaymentSuccess(
           {
@@ -664,11 +683,64 @@ async function applyCheckoutSessionClientOrderCompleted(session, meta, purpose, 
   }
 }
 
+async function applyCheckoutSessionFreelancerActivationFeeOnlyCompleted(session, meta, dbPool) {
+  const freelancerUserId = Number(meta.freelancerUserId);
+  if (!Number.isInteger(freelancerUserId) || freelancerUserId < 1) {
+    return { status: "ignored", reason: "activation_fee_invalid_meta" };
+  }
+  const expectedMinor = meta.expectedAmountMinor != null ? Number(meta.expectedAmountMinor) : null;
+  const total = session.amount_total != null ? Number(session.amount_total) : null;
+  if (
+    expectedMinor != null &&
+    Number.isFinite(expectedMinor) &&
+    total != null &&
+    Number.isFinite(total) &&
+    expectedMinor !== total
+  ) {
+    return { status: "ignored", reason: "activation_fee_amount_mismatch" };
+  }
+  const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null;
+  const db = await dbPool.connect();
+  try {
+    await db.query("BEGIN");
+    if (!isCheckoutSessionPaymentSuccessful(session)) {
+      await db.query("COMMIT");
+      return { status: "ignored", reason: "activation_fee_checkout_not_paid" };
+    }
+    const activationMinor = meta.activationFeeMinor != null ? Number(meta.activationFeeMinor) : 0;
+    await recordActivationFeeFromStripeSession(
+      {
+        freelancerUserId,
+        stripeSessionId: session.id || null,
+        stripePaymentIntentId: paymentIntentId,
+        activationFeeMinor,
+        paidAt: new Date(),
+      },
+      db,
+    );
+    await markCheckoutSessionStatus(session.id, CHECKOUT_SESSION_STATUS.COMPLETED, db);
+    await supersedeOpenCheckoutSessions(
+      { stripe: null, freelancerUserId, exceptStripeSessionId: session.id, feeBearingOnly: true },
+      db,
+    );
+    await db.query("COMMIT");
+    return { status: "applied" };
+  } catch (e) {
+    await db.query("ROLLBACK");
+    throw e;
+  } finally {
+    db.release();
+  }
+}
+
 async function applyCheckoutSessionCompleted(session, dbPool = pool) {
   const meta = session.metadata || {};
   const purpose = String(meta.purpose || "");
   if (purpose === "freelancer_subscription_purchase") {
     return applyCheckoutSessionFreelancerSubscriptionCompleted(session, meta, dbPool);
+  }
+  if (purpose === PURPOSE_ACTIVATION_FEE_ONLY) {
+    return applyCheckoutSessionFreelancerActivationFeeOnlyCompleted(session, meta, dbPool);
   }
   if (!["client_fixed_order", "client_selected_bid"].includes(purpose)) {
     return { status: "ignored", reason: "unknown_checkout_purpose" };

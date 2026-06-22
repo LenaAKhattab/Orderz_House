@@ -7,44 +7,75 @@ const assert = require("node:assert");
 
 const PLAN_ADMIN_SECTION = { CORE: "core", PAGES: "pages" };
 
+const CANONICAL_CHECKOUT_NAMES = new Set([
+  "orderzhouse_free",
+  "orderzhouse_50_jod",
+  "orderzhouse_platinum",
+  "freelancers_1_month",
+  "freelancers_1_year",
+  "freelancers_2_year",
+]);
+
 function buildPlanPagesIndex(planPages) {
   return new Map((planPages || []).map((page) => [String(page.id), page]));
 }
 
-function isPageDisplayPlan(plan, planPagesById) {
-  if (plan?.subscriptionPlanId != null && String(plan.subscriptionPlanId).trim() !== "") {
-    return true;
-  }
+function getDefaultPlanPage(planPages) {
+  return (planPages || []).find((page) => page.pageType === "default") || null;
+}
+
+function isOnDefaultPlanPage(plan, planPagesById) {
   const pageId = plan?.planPageId;
   if (!pageId) return false;
   const page = planPagesById.get(String(pageId));
-  return Boolean(page && page.pageType === "special");
+  return page?.pageType === "default";
 }
 
-function isCanonicalSubscriptionPlan(plan, planPagesById) {
-  return !isPageDisplayPlan(plan, planPagesById);
+function isOnSpecialPlanPage(plan, planPagesById) {
+  const pageId = plan?.planPageId;
+  if (!pageId) return false;
+  const page = planPagesById.get(String(pageId));
+  return page?.pageType === "special";
+}
+
+function isCanonicalSubscriptionPlan(plan) {
+  if (plan?.subscriptionPlanId != null && String(plan.subscriptionPlanId).trim() !== "") {
+    return false;
+  }
+  const name = String(plan?.name || "").trim();
+  return CANONICAL_CHECKOUT_NAMES.has(name);
+}
+
+function filterPlansByAdminSection(plans, section, planPagesById) {
+  if (section === PLAN_ADMIN_SECTION.PAGES) {
+    return (plans || []).filter((plan) => isOnSpecialPlanPage(plan, planPagesById));
+  }
+  return (plans || []).filter((plan) => isOnDefaultPlanPage(plan, planPagesById));
 }
 
 describe("plan admin section classification", () => {
   const pages = buildPlanPagesIndex([
     { id: "1", pageType: "default", slug: null },
-    { id: "2", pageType: "special", slug: "freelancers" },
+    { id: "2", pageType: "special", slug: "flf" },
+    { id: "3", pageType: "special", slug: "freelancers", isActive: false },
   ]);
 
-  it("treats canonical plans without subscription_plan_id as core", () => {
-    const core = { id: "1", planPageId: "1", subscriptionPlanId: null };
-    assert.strictEqual(isCanonicalSubscriptionPlan(core, pages), true);
-    assert.strictEqual(isPageDisplayPlan(core, pages), false);
+  it("groups main /plans tiers on the default page (core section)", () => {
+    const main = { id: "20", planPageId: "1", name: "freelancers_1_month", subscriptionPlanId: null };
+    const core = filterPlansByAdminSection([main], PLAN_ADMIN_SECTION.CORE, pages);
+    assert.strictEqual(core.length, 1);
+    assert.strictEqual(isOnDefaultPlanPage(main, pages), true);
   });
 
-  it("treats display clones with subscription_plan_id as page plans", () => {
-    const display = { id: "16", planPageId: "2", subscriptionPlanId: "1" };
-    assert.strictEqual(isPageDisplayPlan(display, pages), true);
-    assert.strictEqual(isCanonicalSubscriptionPlan(display, pages), false);
+  it("groups legacy canonical plans on flf direct page (pages section)", () => {
+    const legacy = { id: "2", planPageId: "2", name: "orderzhouse_50_jod", subscriptionPlanId: null };
+    const pagePlans = filterPlansByAdminSection([legacy], PLAN_ADMIN_SECTION.PAGES, pages);
+    assert.strictEqual(pagePlans.length, 1);
+    assert.strictEqual(isCanonicalSubscriptionPlan(legacy), true);
   });
 
-  it("treats special-page plans without subscription_plan_id as page plans", () => {
-    const marketing = { id: "20", planPageId: "2", subscriptionPlanId: null };
-    assert.strictEqual(isPageDisplayPlan(marketing, pages), true);
+  it("treats display clones with subscription_plan_id as non-canonical checkout rows", () => {
+    const display = { id: "19", planPageId: "1", name: "freelancers_free", subscriptionPlanId: "1" };
+    assert.strictEqual(isCanonicalSubscriptionPlan(display), false);
   });
 });

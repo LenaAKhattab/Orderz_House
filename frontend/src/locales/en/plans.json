@@ -34,6 +34,19 @@
     "mostPopular": "Most popular",
     "premium": "Premium package"
   },
+  "tierLabels": {
+    "basic": "Basic",
+    "advance": "Advance",
+    "premium": "Premium",
+    "popular": "Popular",
+    "proPlus": "Pro+",
+    "platinum": "Platinum"
+  },
+  "activationFeeNote": {
+    "prefix": "Subscription activation fee:",
+    "amount": "25 JOD",
+    "suffix": "paid once yearly"
+  },
   "cta": {
     "freelancersOnly": "Freelancers only",
     "currentPlan": "Your current plan",
@@ -43,6 +56,13 @@
     "autoActivated": "Activated automatically",
     "companyActivation": "Activated through company",
     "startNow": "Start now"
+  },
+  "pages": {
+    "freelancers": {
+      "trustSimple": "Simple pricing",
+      "trustNoFees": "No hidden fees",
+      "footnote": "A contract is signed after subscription. Account verification is a one-time fee of 25 JOD across all plans."
+    }
   },
   "cards": {
     "free": {

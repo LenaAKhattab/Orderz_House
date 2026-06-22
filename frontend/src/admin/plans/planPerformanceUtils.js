@@ -4,6 +4,7 @@ import {
   BADGE_LABELS,
   concentrationPlatformPhrase,
   HEALTH_LABELS,
+  PAGE_COPY,
   RECOMMENDATION_LABELS,
   revenueSharePhrase,
   STRIP_LABELS,
@@ -13,7 +14,61 @@ export const LABEL_UNAVAILABLE = "غير متاح";
 export const LABEL_LOAD_FAILED = "تعذر تحميل البيانات";
 export const LABEL_EMPTY_NO_SUBS = "لا اشتراكات سارية بعد";
 export const LABEL_EMPTY_NO_REVENUE = "لا قيمة مدفوعة بعد";
+
+/** Admin-safe message when subscription KPI analytics fail — never expose raw API/SQL errors. */
+export function planStatsLoadFailedMessage(isEn = false) {
+  return isEn ? PAGE_COPY.analyticsFailedEn : PAGE_COPY.analyticsFailedAr;
+}
 export const SUMMARY_VALUE_PLACEHOLDER = "—";
+
+/** Display clones linked via subscription_plan_id should not duplicate canonical KPIs. */
+export function shouldShowPlanKpis(plan) {
+  const linkedId = plan?.subscriptionPlanId;
+  return !(linkedId != null && String(linkedId).trim() !== "");
+}
+
+export function formatPlanKpiFallback(perf, { money = false } = {}) {
+  if (!perf || perf.state === "failed" || perf.state === "unavailable") {
+    return SUMMARY_VALUE_PLACEHOLDER;
+  }
+  if (perf.state === "ok") {
+    return money ? formatPriceJod(0) ?? "0 د.أ" : formatInt(0);
+  }
+  return SUMMARY_VALUE_PLACEHOLDER;
+}
+
+export function resolvePlanKpiDisplay(metric, perf, { money = false } = {}) {
+  const display = metric?.display;
+  if (
+    display &&
+    display !== LABEL_LOAD_FAILED &&
+    display !== LABEL_UNAVAILABLE
+  ) {
+    return display;
+  }
+  return formatPlanKpiFallback(perf, { money });
+}
+
+function toMetric(value, state) {
+  if (state === "failed" || state === "unavailable") {
+    return { value: null, display: SUMMARY_VALUE_PLACEHOLDER };
+  }
+  if (value === null || value === undefined || Number.isNaN(Number(value))) {
+    return { value: 0, display: formatInt(0) };
+  }
+  return { value: Number(value), display: formatInt(value) };
+}
+
+function toMoneyMetric(value, state) {
+  if (state === "failed" || state === "unavailable") {
+    return { value: null, display: SUMMARY_VALUE_PLACEHOLDER };
+  }
+  if (value === null || value === undefined || Number.isNaN(Number(value))) {
+    return { value: 0, display: formatPriceJod(0) ?? "0 د.أ" };
+  }
+  const n = Number(value);
+  return { value: n, display: formatPriceJod(n) ?? "0 د.أ" };
+}
 
 /** Show concentration warning on card when plan revenue share ≥ this (percent). */
 export const CONCENTRATION_RISK_THRESHOLD = 50;
@@ -53,29 +108,6 @@ export function formatTrendDisplay(trendObj) {
   if (trendObj.trend === "up") return { display: `↑ +${formatInt(pct)}٪`, trend: "up" };
   if (trendObj.trend === "down") return { display: `↓ -${formatInt(pct)}٪`, trend: "down" };
   return { display: "→ 0٪", trend: "flat" };
-}
-
-function toMetric(value, state) {
-  if (state === "failed") return { value: null, display: LABEL_LOAD_FAILED };
-  if (state === "unavailable") {
-    return { value: null, display: LABEL_UNAVAILABLE };
-  }
-  if (value === null || value === undefined || Number.isNaN(Number(value))) {
-    return { value: 0, display: formatInt(0) };
-  }
-  return { value: Number(value), display: formatInt(value) };
-}
-
-function toMoneyMetric(value, state) {
-  if (state === "failed") return { value: null, display: LABEL_LOAD_FAILED };
-  if (state === "unavailable") {
-    return { value: null, display: LABEL_UNAVAILABLE };
-  }
-  if (value === null || value === undefined || Number.isNaN(Number(value))) {
-    return { value: 0, display: formatPriceJod(0) ?? "0 د.أ" };
-  }
-  const n = Number(value);
-  return { value: n, display: formatPriceJod(n) ?? "0 د.أ" };
 }
 
 function quartileValue(sortedValues, q) {

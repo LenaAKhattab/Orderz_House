@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import Button from "../../components/ui/Button";
 import { planToEditForm } from "./planFormConstants";
 import { canSubmitEdit, normalizeEditPayload } from "./planPayloadUtils";
+import { buildPlanPagesIndex } from "./planAdminSections";
 import PlanFormModalBody from "./PlanFormModalBody";
 
-function PlanEditForm({ plan, submitting, onClose, onSave }) {
+function PlanEditForm({ plan, submitting, onClose, onSave, planPages, canonicalPlans }) {
   const [form, setForm] = useState(() => planToEditForm(plan));
 
   return (
@@ -27,6 +28,9 @@ function PlanEditForm({ plan, submitting, onClose, onSave }) {
           setForm={setForm}
           submitting={submitting}
           mode="edit"
+          planPages={planPages}
+          canonicalPlans={canonicalPlans}
+          excludePlanId={plan?.id}
         />
       </div>
 
@@ -36,7 +40,7 @@ function PlanEditForm({ plan, submitting, onClose, onSave }) {
         </Button>
         <Button
           type="button"
-          disabled={submitting || !canSubmitEdit(form)}
+          disabled={submitting || !canSubmitEdit(form, { planPagesById: buildPlanPagesIndex(planPages) })}
           onClick={() => void onSave(normalizeEditPayload(form))}
         >
           حفظ التعديلات
@@ -53,9 +57,11 @@ function PlanEditForm({ plan, submitting, onClose, onSave }) {
  *   submitting: boolean;
  *   onClose: () => void;
  *   onSave: (payload: Record<string, unknown>) => Promise<void> | void;
+ *   planPages?: object[];
+ *   canonicalPlans?: object[];
  * }} p
  */
-export default function PlanEditModal({ plan, open, submitting, onClose, onSave }) {
+export default function PlanEditModal({ plan, open, submitting, onClose, onSave, planPages = [], canonicalPlans = [] }) {
   useEffect(() => {
     if (!open) return undefined;
 
@@ -94,6 +100,8 @@ export default function PlanEditModal({ plan, open, submitting, onClose, onSave 
           submitting={submitting}
           onClose={onClose}
           onSave={onSave}
+          planPages={planPages}
+          canonicalPlans={canonicalPlans}
         />
       </div>
     </div>

@@ -3,7 +3,12 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 import PlanCollapsibleSection from "./PlanCollapsibleSection";
 import PlanFormSection from "./PlanFormSection";
 import PlanToggle from "./PlanToggle";
-import { PLAN_FORM_SECTIONS, getPlanFormCopy } from "./planFormUiCopy";
+import {
+  formatCheckoutPlanOptionLabel,
+  formatPlanPageOptionLabel,
+  isLinkedCheckoutRequired,
+  shouldShowLinkedCheckoutField,
+} from "./planFormLinkingUtils";
 import { getPlanFormWarnings } from "./planFormWarnings";
 
 function Field({ label, hint, children, style }) {
@@ -46,6 +51,9 @@ function useMobileAccordionLayout() {
  *   setForm: import("react").Dispatch<import("react").SetStateAction<Record<string, unknown>>>;
  *   submitting?: boolean;
  *   mode: "create" | "edit";
+ *   planPages?: object[];
+ *   canonicalPlans?: object[];
+ *   excludePlanId?: string | number | null;
  * }} p
  */
 export default function PlanFormModalBody({
@@ -53,6 +61,9 @@ export default function PlanFormModalBody({
   setForm,
   submitting = false,
   mode,
+  planPages = [],
+  canonicalPlans = [],
+  excludePlanId = null,
 }) {
   const { locale } = useTranslation();
   const isEn = locale === "en";
@@ -62,6 +73,16 @@ export default function PlanFormModalBody({
   const [activeTab, setActiveTab] = useState("basic");
 
   const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
+
+  const showLinkedCheckout = shouldShowLinkedCheckoutField(form, planPages);
+  const linkedCheckoutRequired = isLinkedCheckoutRequired(form, planPages);
+  const checkoutPlanOptions = useMemo(
+    () =>
+      (canonicalPlans || []).filter(
+        (plan) => excludePlanId == null || String(plan.id) !== String(excludePlanId),
+      ),
+    [canonicalPlans, excludePlanId],
+  );
 
   const sectionLabel = (section) => (isEn ? section.labelEn : section.labelAr);
 
@@ -362,22 +383,70 @@ export default function PlanFormModalBody({
           </Field>
         </Grid>
         <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
-          <Field label={isEn ? "Plan page id" : "معرّف صفحة الباقات"}>
-            <input
+          <Field
+            label={isEn ? "Plans page" : "صفحة الباقات"}
+            hint={
+              isEn
+                ? "Which public plans URL shows this package."
+                : "صفحة العرض العامة التي تظهر فيها هذه الباقة."
+            }
+          >
+            <select
               className="oh-sapl-input"
               value={form.planPageId}
               onChange={(e) => set("planPageId", e.target.value)}
-              disabled={submitting}
-            />
+              disabled={submitting || planPages.length === 0}
+              required={showLinkedCheckout}
+            >
+              {planPages.length === 0 ? (
+                <option value="">{isEn ? "No pages available" : "لا توجد صفحات"}</option>
+              ) : (
+                <>
+                  {!form.planPageId ? (
+                    <option value="">{isEn ? "Select a page…" : "اختر صفحة…"}</option>
+                  ) : null}
+                  {planPages.map((page) => (
+                    <option key={page.id} value={String(page.id)}>
+                      {formatPlanPageOptionLabel(page, isEn)}
+                    </option>
+                  ))}
+                </>
+              )}
+            </select>
           </Field>
-          <Field label={isEn ? "Subscription plan id (checkout)" : "معرّف باقة الاشتراك (للدفع)"}>
-            <input
-              className="oh-sapl-input"
-              value={form.subscriptionPlanId}
-              onChange={(e) => set("subscriptionPlanId", e.target.value)}
-              disabled={submitting}
-            />
-          </Field>
+          {showLinkedCheckout ? (
+            <Field
+              label={isEn ? "Linked checkout plan" : "باقة الدفع المرتبطة"}
+              hint={
+                isEn
+                  ? "This plan is used for checkout and is not shown to customers as a technical ID."
+                  : "تُستخدم هذه الباقة عند الدفع، ولا تظهر للعميل كرقم تقني."
+              }
+            >
+              <select
+                className="oh-sapl-input"
+                value={form.subscriptionPlanId}
+                onChange={(e) => set("subscriptionPlanId", e.target.value)}
+                disabled={submitting || checkoutPlanOptions.length === 0}
+                required={linkedCheckoutRequired}
+              >
+                {!linkedCheckoutRequired ? (
+                  <option value="">
+                    {isEn ? "— Standalone checkout (this plan)" : "— دفع مباشر (هذه الباقة)"}
+                  </option>
+                ) : (
+                  <option value="">
+                    {isEn ? "Select linked checkout plan…" : "اختر باقة الدفع…"}
+                  </option>
+                )}
+                {checkoutPlanOptions.map((plan) => (
+                  <option key={plan.id} value={String(plan.id)}>
+                    {formatCheckoutPlanOptionLabel(plan, isEn)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          ) : null}
         </Grid>
         <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
           <Field label={isEn ? "Special offer label" : "نص العرض الخاص"}>

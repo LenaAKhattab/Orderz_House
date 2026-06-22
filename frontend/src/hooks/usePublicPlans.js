@@ -3,11 +3,11 @@ import { listPublicPlansRequest } from "../services/api";
 import { getOrderzhousePlansCatalog, mergeApiPlansWithCatalog } from "../constants/orderzhousePlansCatalog";
 
 /**
- * Public catalog: hard-coded ORDERZHOUSE plans (ids 1, 2, 3), optional API overlay for checkout flags.
+ * Public catalog from GET /api/plans (default plan page). Legacy catalog fallback only when API returns ids 1–3.
  * @returns {{ items: unknown[]; loading: boolean; error: boolean }}
  */
 export default function usePublicPlans() {
-  const [items, setItems] = useState(() => getOrderzhousePlansCatalog());
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 

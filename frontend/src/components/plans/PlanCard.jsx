@@ -5,8 +5,10 @@ import { useAuth } from "../../context/useAuth";
 import { isOrderzhouseFreePlan } from "../../constants/orderzhousePlansCatalog";
 import { isUpgradePlan, planTierRank } from "../../utils/planSubscriptionUtils";
 import { getLocalizedPlanBadge, getLocalizedPlanCardDisplay } from "../../lib/i18n/getLocalizedPlanDisplay";
+import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 
 const MOBILE_FEATURE_PREVIEW = 3;
+const DESKTOP_PUBLIC_FEATURE_LIMIT = 5;
 
 function getSubscriptionPlanRef(plan) {
   const id = plan?.checkoutPlanId || plan?.subscriptionPlanId || plan?.id;
@@ -94,30 +96,37 @@ const PlanCard = ({
     planTierRank(subscriptionRef) < planTierRank(currentSubscription.plan ?? currentSubscription.planId);
   const isBlockedBySubscription =
     Boolean(user) && isFreelancer && hasBlockingSubscription && !isUpgradeTarget;
-  const isFreePlan = isOrderzhouseFreePlan(plan);
+  const isFreePlan =
+    isOrderzhouseFreePlan(subscriptionRef) ||
+    (Number(plan?.priceJod) === 0 && !canSelfCheckout);
   const canSelfCheckout =
     plan?.selfCheckoutEligible == null ? true : Boolean(plan.selfCheckoutEligible);
+  const customButtonLabel = getLocalizedField(plan, "buttonText", locale);
 
   const display = getLocalizedPlanCardDisplay(plan, locale, t);
   const { main: priceMain, sub: priceSub } = display.price;
   const features = display.features;
   const extraFeatures = features.slice(MOBILE_FEATURE_PREVIEW);
+  const desktopFeatures = features.slice(0, DESKTOP_PUBLIC_FEATURE_LIMIT);
   const orderRange = display.orderRange;
   const installment = display.installment;
   const paymentNotes = display.paymentNotes;
   const offerLabel = display.offerLabel;
   const planTitle = display.title;
   const badge = getLocalizedPlanBadge(plan, featured, locale, t);
+  const billingText = getLocalizedField(plan, "billingText", locale);
   const durationDays = Number(plan?.durationDays);
-  const durationLabel = plan?.billingText
-    ? String(plan.billingText)
+  const durationLabel = billingText
+    ? billingText
     : Number.isFinite(durationDays) && durationDays >= 365
       ? t("plans.fullYear")
       : Number.isFinite(durationDays) && durationDays > 0
         ? t("plans.days", { count: durationDays })
         : null;
 
-  const ctaLabel = isLoggedNonFreelancer
+  const ctaLabel = customButtonLabel
+    ? customButtonLabel
+    : isLoggedNonFreelancer
     ? t("plans.cta.freelancersOnly")
     : isCurrentPlan
       ? t("plans.cta.currentPlan")
@@ -153,6 +162,9 @@ const PlanCard = ({
   const hasExtras = Boolean(
     offerLabel || orderRange || display.activationRequirements || display.refundPolicy,
   );
+
+  const showPopularChip =
+    featured && (plan?.isPopular === true || plan?.is_popular === true);
 
   const handleCtaClick = () => {
     if (isGuest) {
@@ -196,22 +208,26 @@ const PlanCard = ({
         {!installment && paymentNotes ? <p className="pricing-card__price-note">{paymentNotes}</p> : null}
       </div>
 
-      <div className="pricing-card__cta">
-        <Button
-          type="button"
-          className={`pricing-card__btn ${usePrimaryCta ? "pricing-card__btn--featured pricing-card__btn--fill" : "pricing-card__btn--outline"} ${isLocked ? "pricing-card__btn--locked" : ""}`.trim()}
-          variant={usePrimaryCta ? "primary" : "secondary"}
-          disabled={isLocked}
-          onClick={handleCtaClick}
-        >
-          {ctaLabel}
-        </Button>
-      </div>
-
       <div className="pricing-card__divider pricing-card__divider--features" aria-hidden="true" />
 
       <div className="pricing-card__benefits">
-        <ul className="pricing-card__features" aria-label={t("plans.featuresAria")}>
+        {showPopularChip ? (
+          <p className="pricing-card__popular-chip">
+            <span className="pricing-card__popular-chip-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                <path d="M12 2l2.39 4.84L20 7.77l-3.64 3.55.86 5.02L12 14.77l-5.22 2.57.86-5.02L4 7.77l5.61-.93L12 2z" />
+              </svg>
+            </span>
+            {t("plans.badges.mostPopular")}
+          </p>
+        ) : null}
+
+        <ul className="pricing-card__features pricing-card__features--desktop" aria-label={t("plans.featuresAria")}>
+          {desktopFeatures.map((f, idx) => (
+            <FeatureItem key={`desk-${String(f)}-${idx}`} text={f} />
+          ))}
+        </ul>
+        <ul className="pricing-card__features pricing-card__features--mobile" aria-label={t("plans.featuresAria")}>
           {features.map((f, idx) => (
             <FeatureItem key={`${String(f)}-${idx}`} text={f} />
           ))}
@@ -268,6 +284,18 @@ const PlanCard = ({
           </div>
         </details>
       ) : null}
+
+      <div className="pricing-card__cta">
+        <Button
+          type="button"
+          className={`pricing-card__btn ${usePrimaryCta ? "pricing-card__btn--featured pricing-card__btn--fill" : "pricing-card__btn--outline"} ${isLocked ? "pricing-card__btn--locked" : ""}`.trim()}
+          variant={usePrimaryCta ? "primary" : "secondary"}
+          disabled={isLocked}
+          onClick={handleCtaClick}
+        >
+          {ctaLabel}
+        </Button>
+      </div>
     </article>
   );
 };

@@ -12,6 +12,21 @@ const ordersService = require("./ordersService");
 const notificationService = require("./notificationService");
 const notificationEventsService = require("./notificationEventsService");
 const { planEligibleForFreelancerSelfCheckout, effectiveCheckoutPriceJod } = require("./plansService");
+const {
+  activationFeeMinorUnits,
+  buildActivationFeeStripeLineItem,
+  freelancerNeedsSubscriptionActivationFee,
+  recordActivationFeeFromStripeSession,
+  prepareFreelancerCheckoutSessionCreation,
+  trackFreelancerCheckoutSession,
+  markCheckoutSessionStatus,
+  supersedeOpenCheckoutSessions,
+  CHECKOUT_KIND,
+  CHECKOUT_SESSION_STATUS,
+  PURPOSE_ACTIVATION_FEE_ONLY,
+  PURPOSE_SUBSCRIPTION_PURCHASE,
+  isFreeDisplayPlanEligibleForActivationFeeCheckout,
+} = require("./subscriptionActivationFeeService");
 const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPaymentStatus");
 const { getPrimaryClientUrl } = require("../config/clientUrl");
 const { isProduction } = require("../config/env");
@@ -805,7 +820,99 @@ async function cancelClientFixedOrderPaymentAttempt({ clientUserId, orderId }) {
   return ordersService.purgeClientUnpaidFixedOrderDraft({ clientUserId, orderId });
 }
 
-async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, planId }) {
+async function createFreelancerActivationFeeOnlyCheckoutSession({ freelancerUserId, displayPlanId = null, locale = "ar" }, db) {
+  const stripe = getStripeOrNull();
+  if (!stripe) {
+    throwStripeNotConfigured();
+  }
+  const uid = Number(freelancerUserId);
+  const clientUrl = requireStripeClientUrl();
+  const currency = "jod";
+  const activationMinor = activationFeeMinorUnits();
+  if (activationMinor == null || activationMinor < 1) {
+    const err = new Error("Invalid subscription activation fee amount.");
+    err.statusCode = 500;
+    err.exposeToClient = true;
+    throw err;
+  }
+
+  const { needsActivationFee } = await prepareFreelancerCheckoutSessionCreation(
+    { stripe, freelancerUserId: uid },
+    db,
+  );
+  if (!needsActivationFee) {
+    const err = new Error("Subscription activation fee is already paid for the current yearly period.");
+    err.statusCode = 409;
+    err.publicCode = "ACTIVATION_FEE_ALREADY_PAID";
+    err.exposeToClient = true;
+    throw err;
+  }
+
+  const baseMeta = {
+    purpose: PURPOSE_ACTIVATION_FEE_ONLY,
+    freelancerUserId: String(uid),
+    displayPlanId: displayPlanId != null ? String(displayPlanId) : "",
+    expectedAmountMinor: String(activationMinor),
+    activationFeeMinor: String(activationMinor),
+    currency: currency.toUpperCase(),
+  };
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    metadata: baseMeta,
+    payment_intent_data: { metadata: { ...baseMeta } },
+    line_items: [buildActivationFeeStripeLineItem(locale)],
+    success_url: `${clientUrl}/dashboard/freelancer/plans?freelancer_activation_fee_paid=1&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${clientUrl}/dashboard/freelancer/plans?freelancer_activation_fee_cancelled=1&session_id={CHECKOUT_SESSION_ID}`,
+  });
+
+  if (!session?.id) {
+    const err = new Error("Stripe did not return a checkout session.");
+    err.statusCode = 502;
+    throw err;
+  }
+
+  await trackFreelancerCheckoutSession(
+    {
+      freelancerUserId: uid,
+      stripeSessionId: session.id,
+      displayPlanId,
+      checkoutPlanId: null,
+      checkoutKind: CHECKOUT_KIND.ACTIVATION_FEE_ONLY,
+      includesActivationFee: true,
+    },
+    db,
+  );
+
+  if (!session.url) {
+    const err = new Error("Stripe did not return a checkout URL.");
+    err.statusCode = 502;
+    throw err;
+  }
+
+  return { checkoutUrl: session.url, sessionId: session.id, activationFeeOnly: true };
+}
+
+async function fulfillFreelancerActivationFeeOnlyCheckout({ freelancerUserId, stripeSessionId, stripePaymentIntentId, paidAt, activationFeeMinor }, db) {
+  const feeResult = await recordActivationFeeFromStripeSession(
+    {
+      freelancerUserId,
+      stripeSessionId,
+      stripePaymentIntentId,
+      activationFeeMinor,
+      paidAt,
+    },
+    db,
+  );
+  await markCheckoutSessionStatus(stripeSessionId, CHECKOUT_SESSION_STATUS.COMPLETED, db);
+  await supersedeOpenCheckoutSessions(
+    { stripe: null, freelancerUserId, exceptStripeSessionId: stripeSessionId, feeBearingOnly: true },
+    db,
+  );
+  return feeResult;
+}
+
+async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, planId, locale = "ar" }) {
   const stripe = getStripeOrNull();
   if (!stripe) {
     throwStripeNotConfigured();
@@ -867,12 +974,30 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       plan.is_visible &&
       !plan.self_subscribe_allowed
     ) {
+      const needsFee = await freelancerNeedsSubscriptionActivationFee(uid, db);
+      if (needsFee && isFreeDisplayPlanEligibleForActivationFeeCheckout(displayPlan)) {
+        const activationOnly = await createFreelancerActivationFeeOnlyCheckoutSession(
+          { freelancerUserId: uid, displayPlanId: pid, locale },
+          db,
+        );
+        await db.query("COMMIT");
+        return activationOnly;
+      }
       const err = new Error("This plan is not available for self-service purchase.");
       err.statusCode = 400;
       err.exposeToClient = true;
       throw err;
     }
     if (!planEligibleForFreelancerSelfCheckout(plan)) {
+      const needsFee = await freelancerNeedsSubscriptionActivationFee(uid, db);
+      if (needsFee && isFreeDisplayPlanEligibleForActivationFeeCheckout(displayPlan)) {
+        const activationOnly = await createFreelancerActivationFeeOnlyCheckoutSession(
+          { freelancerUserId: uid, displayPlanId: pid, locale },
+          db,
+        );
+        await db.query("COMMIT");
+        return activationOnly;
+      }
       const err = new Error(
         `Selected plan is not available for self-checkout (planId=${pid}). It must be active, visible, self_subscribe_allowed, and have price_jod > 0.`,
       );
@@ -883,8 +1008,8 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
     const priceJod = effectiveCheckoutPriceJod(plan);
 
     const currency = "jod";
-    const amountMinor = amountMajorToStripeMinor(priceJod, "JOD");
-    if (amountMinor == null || !Number.isFinite(amountMinor) || amountMinor < 1) {
+    const planAmountMinor = amountMajorToStripeMinor(priceJod, "JOD");
+    if (planAmountMinor == null || !Number.isFinite(planAmountMinor) || planAmountMinor < 1) {
       const err = new Error(
         `Invalid subscription amount for planId=${pid} (check price_jod / currency). Checkout uses dynamic price_data, not a static Stripe Price ID.`,
       );
@@ -892,6 +1017,19 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       err.exposeToClient = true;
       throw err;
     }
+
+    const { needsActivationFee } = await prepareFreelancerCheckoutSessionCreation(
+      { stripe, freelancerUserId: uid },
+      db,
+    );
+    const activationMinor = needsActivationFee ? activationFeeMinorUnits() : 0;
+    if (needsActivationFee && (activationMinor == null || activationMinor < 1)) {
+      const err = new Error("Invalid subscription activation fee amount.");
+      err.statusCode = 500;
+      err.exposeToClient = true;
+      throw err;
+    }
+    const totalAmountMinor = planAmountMinor + (needsActivationFee ? activationMinor : 0);
     const debugCheckout =
       process.env.NODE_ENV !== "production" || String(process.env.DEBUG_FREELANCER_CHECKOUT || "") === "1";
     if (debugCheckout) {
@@ -900,7 +1038,9 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
         planId: pid,
         freelancerUserId: uid,
         priceJod,
-        amountMinor,
+        planAmountMinor,
+        activationMinor,
+        totalAmountMinor,
         lineItems: "price_data (no env Stripe Price ID for freelancer subscription)",
       });
     }
@@ -922,12 +1062,31 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
     }
 
     const baseMeta = {
-      purpose: "freelancer_subscription_purchase",
+      purpose: PURPOSE_SUBSCRIPTION_PURCHASE,
       freelancerUserId: String(uid),
-      planId: String(pid),
-      expectedAmountMinor: String(amountMinor),
+      planId: String(checkoutPlanId),
+      displayPlanId: String(pid),
+      expectedAmountMinor: String(totalAmountMinor),
+      planAmountMinor: String(planAmountMinor),
+      activationFeeMinor: String(needsActivationFee ? activationMinor : 0),
       currency: currency.toUpperCase(),
     };
+
+    const lineItems = [
+      {
+        quantity: 1,
+        price_data: {
+          currency,
+          unit_amount: planAmountMinor,
+          product_data: {
+            name: `Freelancer Subscription - ${String(plan.title || `Plan #${pid}`).slice(0, 100)}`,
+          },
+        },
+      },
+    ];
+    if (needsActivationFee) {
+      lineItems.push(buildActivationFeeStripeLineItem(locale));
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -935,21 +1094,22 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       payment_intent_data: {
         metadata: { ...baseMeta },
       },
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency,
-            unit_amount: amountMinor,
-            product_data: {
-              name: `Freelancer Subscription - ${String(plan.title || `Plan #${pid}`).slice(0, 100)}`,
-            },
-          },
-        },
-      ],
+      line_items: lineItems,
       success_url: successUrl,
       cancel_url: cancelUrl,
     });
+
+    await trackFreelancerCheckoutSession(
+      {
+        freelancerUserId: uid,
+        stripeSessionId: session.id,
+        displayPlanId: pid,
+        checkoutPlanId,
+        checkoutKind: CHECKOUT_KIND.SUBSCRIPTION,
+        includesActivationFee: needsActivationFee,
+      },
+      db,
+    );
 
     await safeNotify(() =>
       notificationService.createIfNotExists(
@@ -1017,15 +1177,64 @@ async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeS
   }
 
   const meta = session.metadata || {};
-  if (String(meta.purpose || "") !== "freelancer_subscription_purchase") {
-    const err = new Error("This checkout session is not for a freelancer subscription.");
-    err.statusCode = 400;
-    err.exposeToClient = true;
-    throw err;
-  }
+  const purpose = String(meta.purpose || "");
   if (Number(meta.freelancerUserId) !== Number(freelancerUserId)) {
     const err = new Error("You cannot confirm this checkout session.");
     err.statusCode = 403;
+    err.exposeToClient = true;
+    throw err;
+  }
+
+  if (purpose === PURPOSE_ACTIVATION_FEE_ONLY) {
+    const expectedMinor = meta.expectedAmountMinor != null ? Number(meta.expectedAmountMinor) : null;
+    const total = session.amount_total != null ? Number(session.amount_total) : null;
+    if (
+      expectedMinor != null &&
+      Number.isFinite(expectedMinor) &&
+      total != null &&
+      Number.isFinite(total) &&
+      expectedMinor !== total
+    ) {
+      const err = new Error("Payment amount does not match activation fee.");
+      err.statusCode = 409;
+      err.exposeToClient = true;
+      throw err;
+    }
+    if (!isCheckoutSessionPaymentSuccessful(session)) {
+      const err = new Error("Payment is not completed yet.");
+      err.statusCode = 402;
+      err.exposeToClient = true;
+      err.publicCode = "PAYMENT_NOT_COMPLETED";
+      throw err;
+    }
+    const piId =
+      typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null;
+    const db = await pool.connect();
+    try {
+      await db.query("BEGIN");
+      const feeResult = await fulfillFreelancerActivationFeeOnlyCheckout(
+        {
+          freelancerUserId,
+          stripeSessionId: session.id,
+          stripePaymentIntentId: piId,
+          paidAt: new Date(),
+          activationFeeMinor: meta.activationFeeMinor,
+        },
+        db,
+      );
+      await db.query("COMMIT");
+      return { ok: true, activationFeeOnly: true, feeResult, alreadyApplied: feeResult.duplicate === true };
+    } catch (e) {
+      await db.query("ROLLBACK");
+      throw e;
+    } finally {
+      db.release();
+    }
+  }
+
+  if (purpose !== PURPOSE_SUBSCRIPTION_PURCHASE && purpose !== "freelancer_subscription_purchase") {
+    const err = new Error("This checkout session is not for a freelancer subscription.");
+    err.statusCode = 400;
     err.exposeToClient = true;
     throw err;
   }
@@ -1101,6 +1310,25 @@ async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeS
       throw err;
     }
 
+    const activationMinor = meta.activationFeeMinor != null ? Number(meta.activationFeeMinor) : 0;
+    if (Number.isFinite(activationMinor) && activationMinor > 0) {
+      await recordActivationFeeFromStripeSession(
+        {
+          freelancerUserId,
+          stripeSessionId: session.id || null,
+          stripePaymentIntentId: piId,
+          activationFeeMinor: activationMinor,
+          paidAt: new Date(),
+        },
+        db,
+      );
+    }
+    await markCheckoutSessionStatus(session.id, CHECKOUT_SESSION_STATUS.COMPLETED, db);
+    await supersedeOpenCheckoutSessions(
+      { stripe: null, freelancerUserId, exceptStripeSessionId: session.id, feeBearingOnly: true },
+      db,
+    );
+
     await db.query("COMMIT");
 
     if (!wasAlreadyPaid) {
@@ -1154,7 +1382,12 @@ async function recordFreelancerSubscriptionCheckoutCancelled({ freelancerUserId,
   }
 
   const meta = session.metadata || {};
-  if (String(meta.purpose || "") !== "freelancer_subscription_purchase") {
+  const purpose = String(meta.purpose || "");
+  if (
+    purpose !== PURPOSE_SUBSCRIPTION_PURCHASE &&
+    purpose !== "freelancer_subscription_purchase" &&
+    purpose !== PURPOSE_ACTIVATION_FEE_ONLY
+  ) {
     const err = new Error("This checkout session is not for a freelancer subscription.");
     err.statusCode = 400;
     err.exposeToClient = true;
@@ -1183,6 +1416,8 @@ async function recordFreelancerSubscriptionCheckoutCancelled({ freelancerUserId,
 
   const planId = meta.planId != null ? Number(meta.planId) : null;
   const subscriptionId = meta.subscriptionId != null ? Number(meta.subscriptionId) : null;
+
+  await markCheckoutSessionStatus(sid, CHECKOUT_SESSION_STATUS.EXPIRED);
 
   await freelancerSubscriptionPaymentNotifications.notifyFreelancerSubscriptionPaymentCancelled(
     {

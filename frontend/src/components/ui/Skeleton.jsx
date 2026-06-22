@@ -236,38 +236,35 @@ export function OrderDetailsPageSkeleton() {
 export function PlanCardSkeleton({ featured = false }) {
   return (
     <article className={`pricing-card pricing-card--skeleton ${featured ? "pricing-card--featured" : ""}`.trim()} aria-hidden>
-      {featured ? (
-        <span className="pricing-card__badge" style={{ opacity: 0.45 }}>
-          الأكثر شيوعًا
-        </span>
-      ) : null}
+      <span className="pricing-card__badge" style={{ opacity: 0.35, minWidth: 48, minHeight: 22 }} />
       <header className="pricing-card__head">
-        <SkelBar style={{ height: 20, width: "58%", marginBottom: 10 }} />
-        <SkelBar style={{ height: 12, width: "100%", marginBottom: 6 }} />
-        <SkelBar style={{ height: 12, width: "85%" }} />
+        <SkelBar style={{ height: 18, width: "62%", marginBottom: 8 }} />
+        <SkelBar style={{ height: 28, width: "48%", marginTop: 4 }} />
       </header>
-      <div className="pricing-card__price" style={{ marginTop: 8 }}>
-        <SkelBar style={{ height: 36, width: "52%" }} />
-      </div>
-      <div className="pricing-card__divider" aria-hidden style={{ margin: "14px 0 12px", opacity: 0.35 }} />
-      <ul className="pricing-card__features" style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10, flex: 1 }}>
+      <div className="pricing-card__divider" aria-hidden style={{ margin: "12px 0 10px", opacity: 0.35 }} />
+      <ul className="pricing-card__features pricing-card__features--desktop" style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 7, flex: 1 }}>
         {[0, 1, 2, 3, 4].map((i) => (
-          <li key={i} className="pricing-card__feature" style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <SkelBar style={{ height: 14, width: 14, borderRadius: 4, flexShrink: 0 }} />
-            <SkelBar style={{ height: 12, flex: 1, minWidth: 0 }} />
+          <li key={i} className="pricing-card__feature" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <SkelBar style={{ height: 14, width: 14, borderRadius: 999, flexShrink: 0 }} />
+            <SkelBar style={{ height: 11, flex: 1, minWidth: 0 }} />
           </li>
         ))}
       </ul>
-      <div className="pricing-card__cta" style={{ marginTop: "auto", paddingTop: 18 }}>
-        <SkelBar style={{ height: 44, width: "100%", borderRadius: 14 }} />
+      <div className="pricing-card__cta" style={{ marginTop: "auto", paddingTop: 14 }}>
+        <SkelBar style={{ height: 42, width: "100%", borderRadius: 999 }} />
       </div>
     </article>
   );
 }
 
-export function PlanCardsRowSkeleton({ count = 3 }) {
+export function PlanCardsRowSkeleton({ count = 5, className = "" }) {
   return (
-    <div className="pricing__grid" role="status" aria-busy="true" aria-label="جارٍ التحميل">
+    <div
+      className={["pricing__grid", className].filter(Boolean).join(" ")}
+      role="status"
+      aria-busy="true"
+      aria-label="جارٍ التحميل"
+    >
       {Array.from({ length: count }).map((_, i) => (
         <PlanCardSkeleton key={i} featured={i === Math.floor(count / 2)} />
       ))}

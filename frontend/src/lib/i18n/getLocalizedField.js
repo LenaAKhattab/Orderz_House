@@ -18,6 +18,14 @@ export function getLocalizedField(item, field, locale = "ar") {
   const localizedKey = `${field}_${locale}`;
   const arabicKey = `${field}_ar`;
 
+  if (locale === "en") {
+    const camelKey = `${field}En`;
+    const camel = item[camelKey];
+    if (camel != null && String(camel).trim() !== "") {
+      return String(camel);
+    }
+  }
+
   const localized = item[localizedKey];
   if (localized != null && String(localized).trim() !== "") {
     return String(localized);

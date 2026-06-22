@@ -9,6 +9,7 @@ export default function PublicPageHeader({
   subtitle,
   description,
   eyebrow,
+  trustPills = [],
   className = "",
 }) {
   const { dir } = useTranslation();
@@ -24,6 +25,15 @@ export default function PublicPageHeader({
         <span className="public-page-hero__divider-line" />
       </div>
       {lede ? <p className="public-page-hero__lede">{lede}</p> : null}
+      {trustPills.length > 0 ? (
+        <div className="public-page-hero__trust" role="list">
+          {trustPills.map((pill) => (
+            <span key={pill} className="public-page-hero__trust-pill" role="listitem">
+              {pill}
+            </span>
+          ))}
+        </div>
+      ) : null}
     </header>
   );
 }

@@ -87,6 +87,26 @@
   text-align: start;
 }
 
+.pm-hero__trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-inline: 1rem;
+}
+
+.pm-hero__trust-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--pm-primary-soft);
+  border: 1px solid rgba(47, 59, 101, 0.12);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--pm-primary-mid);
+}
+
 /* —— Section head —— */
 .pm-section-head {
   display: flex;
@@ -381,6 +401,12 @@
   line-height: 1.5;
   text-align: center;
   color: rgba(100, 116, 139, 0.9);
+}
+
+.pm-footnote--secondary {
+  margin-top: 0.5rem;
+  font-size: 0.68rem;
+  color: rgba(100, 116, 139, 0.75);
 }
 
 @media (prefers-reduced-motion: reduce) {

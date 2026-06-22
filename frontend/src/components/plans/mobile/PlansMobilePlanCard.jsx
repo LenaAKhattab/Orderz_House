@@ -4,6 +4,7 @@ import { useAuth } from "../../../context/useAuth";
 import { isOrderzhouseFreePlan } from "../../../constants/orderzhousePlansCatalog";
 import { isUpgradePlan, planTierRank } from "../../../utils/planSubscriptionUtils";
 import { getLocalizedPlanBadge, getLocalizedPlanCardDisplay } from "../../../lib/i18n/getLocalizedPlanDisplay";
+import { getLocalizedField } from "../../../lib/i18n/getLocalizedField";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 
 const FEATURE_PREVIEW = 4;
@@ -58,9 +59,12 @@ export default function PlansMobilePlanCard({
     planTierRank(subscriptionRef) < planTierRank(currentSubscription.plan ?? currentSubscription.planId);
   const isBlockedBySubscription =
     Boolean(user) && isFreelancer && hasBlockingSubscription && !isUpgradeTarget;
-  const isFreePlan = isOrderzhouseFreePlan(plan);
+  const isFreePlan =
+    isOrderzhouseFreePlan(subscriptionRef) ||
+    (Number(plan?.priceJod) === 0 && !canSelfCheckout);
   const canSelfCheckout =
     plan?.selfCheckoutEligible == null ? true : Boolean(plan.selfCheckoutEligible);
+  const customButtonLabel = getLocalizedField(plan, "buttonText", locale);
 
   const display = getLocalizedPlanCardDisplay(plan, locale, t);
   const { main: priceMain, sub: priceSub } = display.price;
@@ -73,15 +77,19 @@ export default function PlansMobilePlanCard({
   const offerLabel = display.offerLabel;
   const planTitle = display.title;
   const badge = getLocalizedPlanBadge(plan, featured, locale, t);
+  const billingText = getLocalizedField(plan, "billingText", locale);
   const durationDays = Number(plan?.durationDays);
-  const durationLabel =
-    Number.isFinite(durationDays) && durationDays >= 365
+  const durationLabel = billingText
+    ? billingText
+    : Number.isFinite(durationDays) && durationDays >= 365
       ? t("plans.fullYear")
       : Number.isFinite(durationDays) && durationDays > 0
         ? t("plans.days", { count: durationDays })
         : null;
 
-  const ctaLabel = isLoggedNonFreelancer
+  const ctaLabel = customButtonLabel
+    ? customButtonLabel
+    : isLoggedNonFreelancer
     ? t("plans.cta.freelancersOnly")
     : isCurrentPlan
       ? t("plans.cta.currentPlan")

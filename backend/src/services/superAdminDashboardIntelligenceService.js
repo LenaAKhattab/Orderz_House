@@ -39,12 +39,21 @@ async function withTimeout(label, fn, timeoutMs = SECTION_TIMEOUT_MS) {
   }
 }
 
+function sanitizeSectionError(raw) {
+  if (!raw) return null;
+  const msg = String(raw);
+  if (msg.includes("timed out") || msg.includes("SECTION_TIMEOUT")) {
+    return "Section load timed out.";
+  }
+  return "Section temporarily unavailable.";
+}
+
 function buildResult(section, result, fallback = {}) {
   return {
     section,
     updatedAt: new Date().toISOString(),
     data: result.ok ? result.data : fallback,
-    ...(result.ok ? {} : { meta: { sectionErrors: { [section]: result.error } } }),
+    ...(result.ok ? {} : { meta: { sectionErrors: { [section]: sanitizeSectionError(result.error) } } }),
   };
 }
 
@@ -629,14 +638,14 @@ async function getSubscriptionsIntelligence() {
       pool.query(
         `SELECT
            fs.plan_id,
-           COUNT(*)::int FILTER (
+           COUNT(*) FILTER (
              WHERE COALESCE(fs.paid_at, fs.assigned_at) >= date_trunc('month', CURRENT_TIMESTAMP)
                AND COALESCE(fs.paid_at, fs.assigned_at) < date_trunc('month', CURRENT_TIMESTAMP) + interval '1 month'
-           ) AS subs_current_month,
-           COUNT(*)::int FILTER (
+           )::int AS subs_current_month,
+           COUNT(*) FILTER (
              WHERE COALESCE(fs.paid_at, fs.assigned_at) >= date_trunc('month', CURRENT_TIMESTAMP) - interval '1 month'
                AND COALESCE(fs.paid_at, fs.assigned_at) < date_trunc('month', CURRENT_TIMESTAMP)
-           ) AS subs_prev_month,
+           )::int AS subs_prev_month,
            COALESCE(SUM(
              CASE WHEN fs.payment_status = 'paid'
                AND COALESCE(fs.paid_at, fs.assigned_at) >= date_trunc('month', CURRENT_TIMESTAMP)

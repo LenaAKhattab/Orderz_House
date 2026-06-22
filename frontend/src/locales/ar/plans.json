@@ -31,6 +31,19 @@
     "mostPopular": "الأكثر شيوعًا",
     "premium": "باقة مميزة"
   },
+  "tierLabels": {
+    "basic": "أساسي",
+    "advance": "متقدم",
+    "premium": "مميز",
+    "popular": "الأكثر شيوعًا",
+    "proPlus": "برو بلس",
+    "platinum": "بلاتيني"
+  },
+  "activationFeeNote": {
+    "prefix": "رسوم تفعيل الاشتراك:",
+    "amount": "25 د.أ.",
+    "suffix": "تُدفع مرة واحدة سنوياً"
+  },
   "cta": {
     "freelancersOnly": "للمستقلين فقط",
     "currentPlan": "باقتك الحالية",
@@ -40,5 +53,12 @@
     "autoActivated": "مفعّل تلقائياً",
     "companyActivation": "يتم التفعيل عبر الشركة",
     "startNow": "ابدأ الآن"
+  },
+  "pages": {
+    "freelancers": {
+      "trustSimple": "أسعار بسيطة",
+      "trustNoFees": "بدون رسوم مخفية",
+      "footnote": "يتم توقيع عقد بعد الاشتراك. رسوم توثيق الحساب دفعة واحدة بقيمة 25 ديناراً على جميع الباقات."
+    }
   }
 }

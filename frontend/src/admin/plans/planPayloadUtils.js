@@ -1,5 +1,6 @@
 import { suggestPlanInternalName } from "./planNameAuto";
 import { computeNextPlanSortOrder } from "./planOrderUtils";
+import { isPlanFormLinkingValid } from "./planFormLinkingUtils";
 
 function linesToArray(text) {
   return String(text || "")
@@ -98,10 +99,18 @@ export function normalizeEditPayload(form) {
   };
 }
 
-export function canSubmitCreate(form) {
-  return form.title.trim().length >= 2 && Number(form.durationDays) > 0;
+export function canSubmitCreate(form, options = {}) {
+  return (
+    form.title.trim().length >= 2 &&
+    Number(form.durationDays) > 0 &&
+    isPlanFormLinkingValid(form, options.planPagesById)
+  );
 }
 
-export function canSubmitEdit(form) {
-  return form.title.trim().length >= 2 && Number(form.durationDays) > 0;
+export function canSubmitEdit(form, options = {}) {
+  return (
+    form.title.trim().length >= 2 &&
+    Number(form.durationDays) > 0 &&
+    isPlanFormLinkingValid(form, options.planPagesById)
+  );
 }

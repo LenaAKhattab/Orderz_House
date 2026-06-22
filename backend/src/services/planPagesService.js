@@ -22,6 +22,8 @@ function mapPlanPage(row) {
     isActive: Boolean(row.is_active),
     startsAt: row.starts_at || null,
     endsAt: row.ends_at || null,
+    titleEn: row.title_en || null,
+    subtitleEn: row.subtitle_en || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

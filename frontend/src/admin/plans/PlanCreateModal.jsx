@@ -29,31 +29,22 @@ import PlanFormModalBody from "./PlanFormModalBody";
  *   onCreate: () => void | Promise<void>;
 
  *   onReset: () => void;
-
+ *   planPages?: object[];
+ *   canonicalPlans?: object[];
  * }} p
-
  */
-
 export default function PlanCreateModal({
-
   open,
-
   submitting,
-
   form,
-
   setForm,
-
   generatedInternalName,
-
   canCreate,
-
   onClose,
-
   onCreate,
-
   onReset,
-
+  planPages = [],
+  canonicalPlans = [],
 }) {
 
   const { dir, locale } = useTranslation();
@@ -191,6 +182,8 @@ export default function PlanCreateModal({
             setForm={setForm}
             submitting={submitting}
             mode="create"
+            planPages={planPages}
+            canonicalPlans={canonicalPlans}
           />
 
         </div>

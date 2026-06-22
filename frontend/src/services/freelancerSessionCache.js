@@ -1,5 +1,5 @@
 import { getMyEligibilityRequest, getMySubscriptionRequest, listPublicPlansRequest } from "./api";
-import { mergeApiPlansWithCatalog, getOrderzhousePlansCatalog } from "../constants/orderzhousePlansCatalog";
+import { mergeApiPlansWithCatalog } from "../constants/orderzhousePlansCatalog";
 
 const subscriptionCache = { userId: null, data: undefined, promise: null };
 const eligibilityCache = { userId: null, data: undefined, promise: null };
@@ -100,9 +100,7 @@ export async function fetchPublicPlansCached({ force = false } = {}) {
     })
     .catch((err) => {
       plansCache.promise = null;
-      const fallback = getOrderzhousePlansCatalog();
-      plansCache.data = fallback;
-      return fallback;
+      throw err;
     });
   return plansCache.promise;
 }

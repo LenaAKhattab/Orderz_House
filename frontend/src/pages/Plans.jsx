@@ -1,8 +1,11 @@
-import { useParams } from "react-router-dom";
+import { useMemo } from "react";
+import { useParams, Navigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { useTranslation } from "../i18n/LanguageProvider";
+import { getLocalizedField } from "../lib/i18n/getLocalizedField";
 import PricingSection from "../components/plans/PricingSection";
 import PlansMobilePage from "../components/plans/mobile/PlansMobilePage";
+import { getPlansLayoutConfig, PLANS_LAYOUT_VARIANT, LEGACY_DIRECT_PLANS_URL_SEGMENT, resolvePlansLayoutVariant } from "../components/plans/plansLayoutUtils";
 import { usePlansPage } from "../hooks/usePlansPage";
 
 const Plans = () => {
@@ -20,7 +23,29 @@ const Plans = () => {
     checkoutBusyPlanId,
     startCheckout,
   } = usePlansPage({ slug, returnPath });
-  const { t, dir } = useTranslation();
+  const { t, dir, locale } = useTranslation();
+
+  if (slug === "freelancers") {
+    return <Navigate to="/plans" replace />;
+  }
+
+  if (slug === "client-offer") {
+    return <Navigate to={`/plans/${LEGACY_DIRECT_PLANS_URL_SEGMENT}`} replace />;
+  }
+
+  const trustPills = [];
+
+  const layoutVariant = resolvePlansLayoutVariant({ slug, page });
+  const layoutConfig = useMemo(() => getPlansLayoutConfig(layoutVariant), [layoutVariant]);
+
+  const pageTitle =
+    !layoutConfig.useMainPlansHero && slug && page
+      ? getLocalizedField(page, "title", locale) || page.title
+      : null;
+  const pageSubtitle =
+    !layoutConfig.useMainPlansHero && slug && page
+      ? getLocalizedField(page, "subtitle", locale) || page.subtitle
+      : null;
 
   const handlePlanCta = async (plan) => {
     if (authLoading || !plan?.id || checkoutBusyPlanId) return;
@@ -30,9 +55,6 @@ const Plans = () => {
     if (!user || !isFreelancer) return;
     await startCheckout(plan);
   };
-
-  const pageTitle = slug && page?.title ? page.title : null;
-  const pageSubtitle = slug && page?.subtitle ? page.subtitle : null;
 
   if (notFound) {
     return (
@@ -46,7 +68,11 @@ const Plans = () => {
   }
 
   return (
-    <main className="container page-content plans-page plans-page--ref" lang={dir === "rtl" ? "ar" : "en"} dir={dir}>
+    <main
+      className={`container page-content plans-page plans-page--ref ${layoutConfig.pageModifierClass}`.trim()}
+      lang={dir === "rtl" ? "ar" : "en"}
+      dir={dir}
+    >
       <div className="plans-desktop-only">
         <PricingSection
           loading={loading}
@@ -57,6 +83,8 @@ const Plans = () => {
           onCta={handlePlanCta}
           pageTitle={pageTitle}
           pageSubtitle={pageSubtitle}
+          trustPills={trustPills}
+          layoutVariant={layoutVariant}
         />
         {error ? (
           <section className="card" style={{ marginTop: 14 }}>
@@ -81,6 +109,9 @@ const Plans = () => {
         onCta={handlePlanCta}
         pageTitle={pageTitle}
         pageSubtitle={pageSubtitle}
+        trustPills={trustPills}
+        pageSlug={slug || null}
+        layoutVariant={layoutVariant}
       />
     </main>
   );

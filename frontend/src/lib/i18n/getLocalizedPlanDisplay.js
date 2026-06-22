@@ -16,6 +16,36 @@ const PLAN_LOCALE_KEYS = {
   orderzhouse_platinum: "platinum",
 };
 
+const TIER_LABEL_ALIASES = {
+  basic: "basic",
+  advance: "advance",
+  advanced: "advance",
+  premium: "premium",
+  popular: "popular",
+  "pro+": "proPlus",
+  proplus: "proPlus",
+  platinum: "platinum",
+};
+
+function normalizeTierLabelToken(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
+}
+
+function resolveTierLabelKey(rawLabel) {
+  const token = normalizeTierLabelToken(rawLabel);
+  if (!token) return null;
+  return TIER_LABEL_ALIASES[token] || null;
+}
+
+function localizeTierLabel(rawLabel, locale, t) {
+  const tierKey = resolveTierLabelKey(rawLabel);
+  if (tierKey) return t(`plans.tierLabels.${tierKey}`);
+  return rawLabel || null;
+}
+
 /**
  * Maps catalog/API plan id or slug to `plans.cards.*` locale keys.
  * id 1 → free, id 2 → standard, id 3 → platinum (also by `name` slug).
@@ -68,6 +98,16 @@ export function formatPlanPriceJod(priceJod, locale = "ar") {
 function getLocalizedFeatures(plan, locale, localeKey, cardBundle) {
   if (locale === "en" && Array.isArray(cardBundle?.features) && cardBundle.features.length > 0) {
     return cardBundle.features.map((item) => String(item));
+  }
+  if (Array.isArray(plan?.planFeatures) && plan.planFeatures.length > 0) {
+    return plan.planFeatures
+      .filter((item) => item?.isIncluded !== false)
+      .map((item) => {
+        if (locale === "en" && item?.featureTextEn) return String(item.featureTextEn);
+        return String(item.featureText || item);
+      })
+      .filter(Boolean)
+      .slice(0, 14);
   }
   // Arabic: catalog `features` / API fields via planListItems — no en/plans.json cards mirror.
   return planListItems(plan);
@@ -132,7 +172,18 @@ function getLocalizedPriceHeadline(plan, locale, t) {
  * @param {(key: string, values?: Record<string, string | number>) => string} t
  */
 export function getLocalizedPlanBadge(plan, featured, locale, t) {
-  if (plan?.label) return String(plan.label);
+  const englishTierSource =
+    plan?.labelEn || plan?.label_en || (locale === "en" ? getLocalizedField(plan, "label", locale) : plan?.label);
+  const localizedFromTier = localizeTierLabel(englishTierSource, locale, t);
+  if (localizedFromTier && resolveTierLabelKey(englishTierSource)) {
+    return localizedFromTier;
+  }
+
+  const label = getLocalizedField(plan, "label", locale);
+  const mappedLabel = localizeTierLabel(label, locale, t);
+  if (mappedLabel && resolveTierLabelKey(label)) return mappedLabel;
+  if (label) return label;
+
   if (featured && plan?.isPopular) return t("plans.badges.mostPopular");
   if (featured && plan?.isFeatured) return t("plans.badges.premium");
   if (featured) return t("plans.badges.mostPopular");

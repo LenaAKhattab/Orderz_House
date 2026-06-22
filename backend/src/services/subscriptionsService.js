@@ -6,6 +6,7 @@ const {
 const notificationEventsService = require("./notificationEventsService");
 const notificationService = require("./notificationService");
 const freelancerSubscriptionPaymentNotifications = require("./freelancerSubscriptionPaymentNotifications");
+const { getActivationFeeStatus } = require("./subscriptionActivationFeeService");
 
 function isMissingTableError(err) {
   return err && (err.code === "42P01" || String(err.message || "").includes("does not exist"));
@@ -297,8 +298,9 @@ async function assignPlanToFreelancer({ actorUserId, freelancerUserId, planId, n
         client,
       ),
     );
+    const activationFeeStatus = await getActivationFeeStatus(freelancerUserId, client);
     await client.query("COMMIT");
-    return { subscription, durationDays };
+    return { subscription, durationDays, activationFeeStatus };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
