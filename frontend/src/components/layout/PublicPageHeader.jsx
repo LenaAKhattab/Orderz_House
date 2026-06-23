@@ -10,6 +10,7 @@ export default function PublicPageHeader({
   description,
   eyebrow,
   trustPills = [],
+  afterLede = null,
   className = "",
 }) {
   const { dir } = useTranslation();
@@ -25,6 +26,7 @@ export default function PublicPageHeader({
         <span className="public-page-hero__divider-line" />
       </div>
       {lede ? <p className="public-page-hero__lede">{lede}</p> : null}
+      {afterLede}
       {trustPills.length > 0 ? (
         <div className="public-page-hero__trust" role="list">
           {trustPills.map((pill) => (

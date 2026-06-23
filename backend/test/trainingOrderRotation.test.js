@@ -9,6 +9,9 @@ const {
   needsPreemptiveOverlapWindow,
   resolveMinVisibleFromSettings,
   getOverlapThresholdMs,
+  resolveRoundOrderBounds,
+  pickRoundTargetCount,
+  selectFakeOrdersFromPool,
 } = require("../src/services/fakeOrdersService");
 
 describe("trainingPoolEligibility", () => {
@@ -128,13 +131,63 @@ describe("fakeOrders automation gap prevention", () => {
     assert.match(src, /fo_vis\.id = fo\.id[\s\S]*anyAudience: true/);
   });
 
-  it("publicHomeOrderStats still requires was_marketplace_visible for completed training", () => {
+  it("publicHomeOrderStats uses cutoff-based training completed for display", () => {
     const src = fs.readFileSync(
       path.join(__dirname, "..", "src", "services", "publicHomeOrderStatsService.js"),
       "utf8",
     );
     assert.match(src, /was_marketplace_visible = TRUE/);
     assert.match(src, /first_visible_at IS NOT NULL/);
-    assert.match(src, /completedOrders: completedReal \+ trainingRotationsCompleted/);
+    assert.match(src, /trainingRotationsCompletedSinceCutoff/);
+    assert.match(src, /completedOrders: completedReal \+ trainingRotationsCompletedSinceCutoff/);
+    assert.doesNotMatch(src, /completedOrders: completedReal,/);
+  });
+});
+
+describe("training round pool selection", () => {
+  it("resolveRoundOrderBounds defaults to settings min/max", () => {
+    const bounds = resolveRoundOrderBounds({ min_orders: 50, max_orders: 100 });
+    assert.equal(bounds.minOrders, 50);
+    assert.equal(bounds.maxOrders, 100);
+  });
+
+  it("pickRoundTargetCount stays within configured bounds", () => {
+    const settings = { min_orders: 50, max_orders: 100 };
+    for (let i = 0; i < 40; i += 1) {
+      const n = pickRoundTargetCount(settings);
+      assert.ok(n >= 50 && n <= 100, `out of range: ${n}`);
+    }
+  });
+
+  it("selectFakeOrdersFromPool returns unique ids up to target", () => {
+    const eligible = Array.from({ length: 120 }, (_, i) => ({
+      id: i + 1,
+      categoryName: i % 3 === 0 ? "محتوى" : i % 3 === 1 ? "برمجة" : "تصميم",
+      categorySlug: "x",
+    }));
+    const picked = selectFakeOrdersFromPool(eligible, 63, { content: 34, programming: 33, design: 33 });
+    assert.equal(picked.length, 63);
+    const ids = picked.map((o) => o.id);
+    assert.equal(new Set(ids).size, ids.length);
+  });
+
+  it("generateTrainingRoundInternal uses existing fake_orders pool", () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "..", "src", "services", "fakeOrdersService.js"),
+      "utf8",
+    );
+    assert.match(src, /loadEligibleFakeOrderPool/);
+    assert.match(src, /selection_mode: "existing_fake_orders_pool"/);
+    assert.match(src, /gaplessSupersede/);
+    assert.match(src, /visible_until = LEAST\(visible_until, NOW\(\)\)/);
+  });
+
+  it("forced rotation creates new round before superseding when gapless", () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "..", "src", "services", "fakeOrdersService.js"),
+      "utf8",
+    );
+    assert.match(src, /if \(supersedeExisting && gaplessSupersede\)/);
+    assert.match(src, /exceptRoundId: roundId/);
   });
 });

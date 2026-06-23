@@ -300,15 +300,25 @@ function randomBidRangeFromTemplate(t) {
  * End all active training rounds (items + fake_orders + round row) so a new sole-active round can start.
  * Replaced rounds use status `stopped` (superseded); time-expired rounds remain `expired` via expireStaleItems.
  */
-async function supersedeActiveTrainingRounds(client) {
+async function supersedeActiveTrainingRounds(client, { exceptRoundId = null } = {}) {
+  const params = [];
+  let exceptSql = "";
+  if (exceptRoundId != null) {
+    params.push(Number(exceptRoundId));
+    exceptSql = ` AND id <> $${params.length}`;
+  }
   const { rows: active } = await client.query(
-    `SELECT id FROM fake_order_rounds WHERE status = 'active' ORDER BY id ASC FOR UPDATE`,
+    `SELECT id FROM fake_order_rounds WHERE status = 'active'${exceptSql} ORDER BY id ASC FOR UPDATE`,
+    params,
   );
   for (const row of active) {
     const rid = Number(row.id);
     // eslint-disable-next-line no-await-in-loop
     await client.query(
-      `UPDATE fake_order_round_items SET status = 'expired', updated_at = NOW()
+      `UPDATE fake_order_round_items
+       SET status = 'expired',
+           visible_until = LEAST(visible_until, NOW()),
+           updated_at = NOW()
        WHERE round_id = $1 AND status = 'active'`,
       [rid],
     );
@@ -321,6 +331,7 @@ async function supersedeActiveTrainingRounds(client) {
     // eslint-disable-next-line no-await-in-loop
     await client.query(`UPDATE fake_order_rounds SET status = 'stopped', updated_at = NOW() WHERE id = $1`, [rid]);
   }
+  return active.length;
 }
 
 function allocateBucketSlots(total, dist) {
@@ -502,10 +513,153 @@ function pickTemplateForBucketWithExclusion(bucket, byBucket, allRows, excludedL
   return allRows.length ? pick(allRows) : null;
 }
 
+/** Optional env override for per-round size (falls back to fake_order_settings min/max). */
+function resolveRoundOrderBounds(settings = {}) {
+  const envMin = Number(process.env.FAKE_ORDERS_ROUND_MIN);
+  const envMax = Number(process.env.FAKE_ORDERS_ROUND_MAX);
+  const settingsMin = Number(settings.min_orders);
+  const settingsMax = Number(settings.max_orders);
+  const minOrders =
+    Number.isFinite(envMin) && envMin >= 1 ? Math.floor(envMin) : Math.max(1, settingsMin || 1);
+  const maxOrders =
+    Number.isFinite(envMax) && envMax >= minOrders
+      ? Math.floor(envMax)
+      : Math.max(minOrders, settingsMax || minOrders);
+  return { minOrders, maxOrders };
+}
+
+/** One random target count per round (inclusive), stored on the round snapshot. */
+function pickRoundTargetCount(settings = {}) {
+  const { minOrders, maxOrders } = resolveRoundOrderBounds(settings);
+  return randomInt(minOrders, maxOrders);
+}
+
 /**
- * @returns {Promise<{ ok: boolean, code?: string, round?: object, generatedCount?: number }>}
+ * Fake orders eligible for a new training round (existing pool only — no new inserts).
  */
-async function generateTrainingRoundInternal(client, { actorUserId, roundSource, supersedeExisting = true }) {
+async function loadEligibleFakeOrderPool(client) {
+  const { rows } = await client.query(
+    `SELECT
+       fo.id,
+       fo.template_id,
+       fo.category_id,
+       c.name AS category_name,
+       c.slug AS category_slug
+     FROM fake_orders fo
+     INNER JOIN categories c ON c.id = fo.category_id AND c.is_active = TRUE
+     WHERE COALESCE(fo.is_archived, FALSE) = FALSE
+       AND fo.is_published = TRUE
+       AND fo.is_open_for_pool = TRUE
+       AND fo.assigned_freelancer_id IS NULL
+       AND fo.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')
+       AND NOT EXISTS (
+         SELECT 1
+         FROM fake_order_round_items ri
+         INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
+         WHERE ri.fake_order_id = fo.id
+           AND ri.status = 'active'
+           AND fr.status = 'active'
+           AND ri.visible_from <= NOW()
+           AND ri.visible_until > NOW()
+       )
+     ORDER BY fo.id ASC`,
+  );
+  return rows.map((r) => ({
+    id: Number(r.id),
+    templateId: r.template_id != null ? Number(r.template_id) : null,
+    categoryId: Number(r.category_id),
+    categoryName: r.category_name,
+    categorySlug: r.category_slug,
+  }));
+}
+
+/**
+ * Pick unique fake orders for one round (fixed count, category-weighted when possible).
+ */
+function selectFakeOrdersFromPool(eligibleRows, targetCount, categoryDistribution) {
+  const eligible = Array.isArray(eligibleRows) ? eligibleRows : [];
+  const n = Math.min(Math.max(0, Number(targetCount) || 0), eligible.length);
+  if (n < 1) return [];
+
+  const byBucket = { content: [], programming: [], design: [], other: [] };
+  for (const row of eligible) {
+    const bucket = classifyMainCategory({
+      categoryName: row.categoryName,
+      categorySlug: row.categorySlug,
+    });
+    if (bucket === "other") byBucket.other.push(row);
+    else byBucket[bucket].push(row);
+  }
+
+  const slots = allocateBucketSlots(n, categoryDistribution);
+  const selected = [];
+  const usedIds = new Set();
+
+  function takeFromList(list) {
+    const shuffled = shuffleArray(list.filter((row) => !usedIds.has(row.id)));
+    for (const row of shuffled) {
+      if (usedIds.has(row.id)) continue;
+      usedIds.add(row.id);
+      selected.push(row);
+      return true;
+    }
+    return false;
+  }
+
+  for (const bucket of slots) {
+    if (selected.length >= n) break;
+    if (!takeFromList(byBucket[bucket] || [])) {
+      takeFromList([...byBucket.content, ...byBucket.programming, ...byBucket.design, ...byBucket.other]);
+    }
+  }
+
+  if (selected.length < n) {
+    for (const row of shuffleArray(eligible)) {
+      if (usedIds.has(row.id)) continue;
+      usedIds.add(row.id);
+      selected.push(row);
+      if (selected.length >= n) break;
+    }
+  }
+
+  return selected.slice(0, n);
+}
+
+async function activateFakeOrdersInRound(client, { roundId, orders, visibleUntil, settings }) {
+  const rid = Number(roundId);
+  const showBadge = Boolean(settings.show_fake_badge_to_freelancers);
+  let activated = 0;
+  for (const order of orders) {
+    const fakeOrderId = Number(order.id);
+    // eslint-disable-next-line no-await-in-loop
+    await client.query(
+      `UPDATE fake_orders
+       SET fake_round_id = $1,
+           fake_status = 'active',
+           fake_expires_at = $2,
+           show_fake_badge = $3,
+           updated_at = NOW()
+       WHERE id = $4`,
+      [rid, visibleUntil, showBadge, fakeOrderId],
+    );
+    // eslint-disable-next-line no-await-in-loop
+    await client.query(
+      `INSERT INTO fake_order_round_items (round_id, fake_order_id, visible_from, visible_until, status, created_at, updated_at)
+       VALUES ($1, $2, NOW(), $3, 'active', NOW(), NOW())`,
+      [rid, fakeOrderId, visibleUntil],
+    );
+    activated += 1;
+  }
+  return activated;
+}
+
+/**
+ * @returns {Promise<{ ok: boolean, code?: string, round?: object, generatedCount?: number, requestedCount?: number, eligiblePoolSize?: number, selectedFakeOrderIds?: number[] }>}
+ */
+async function generateTrainingRoundInternal(
+  client,
+  { actorUserId, roundSource, supersedeExisting = true, gaplessSupersede = false } = {},
+) {
   const uid = Number(actorUserId);
   if (!Number.isInteger(uid) || uid < 1) {
     const err = new Error("معرّف المستخدم غير صالح لتوليد الجولة.");
@@ -527,37 +681,50 @@ async function generateTrainingRoundInternal(client, { actorUserId, roundSource,
     throw err;
   }
 
-  const minOrders = Number(s.min_orders);
-  const maxOrders = Number(s.max_orders);
+  const { minOrders, maxOrders } = resolveRoundOrderBounds(s);
   if (!(minOrders >= 1) || !(maxOrders >= minOrders)) {
     const err = new Error("نطاق عدد الطلبات غير صالح.");
     err.statusCode = 400;
     throw err;
   }
 
-  const templateRows = await loadActiveTemplatesForGeneration(client);
-  if (!templateRows.length) {
-    return { ok: false, code: "NO_TEMPLATES" };
+  const desiredN = pickRoundTargetCount(s);
+  const eligiblePool = await loadEligibleFakeOrderPool(client);
+  if (eligiblePool.length < minOrders) {
+    return {
+      ok: false,
+      code: "INSUFFICIENT_ELIGIBLE_POOL",
+      eligiblePoolSize: eligiblePool.length,
+      requestedCount: desiredN,
+      minOrders,
+    };
   }
 
-  const desiredN = randomInt(minOrders, maxOrders);
-  const n = Math.min(desiredN, templateRows.length);
+  const n = Math.min(desiredN, eligiblePool.length);
   if (!(n >= 1)) {
-    return { ok: false, code: "NO_TEMPLATES" };
+    return {
+      ok: false,
+      code: "INSUFFICIENT_ELIGIBLE_POOL",
+      eligiblePoolSize: eligiblePool.length,
+      requestedCount: desiredN,
+      minOrders,
+    };
   }
 
-  const excludedLastRoundIds = supersedeExisting ? await loadTemplateIdsUsedInActiveRound(client) : new Set();
-
-  if (supersedeExisting) {
+  if (supersedeExisting && !gaplessSupersede) {
     await supersedeActiveTrainingRounds(client);
   }
 
   const dist = normalizeCategoryDistribution(s.category_distribution || {});
-  const slots = allocateBucketSlots(n, dist);
-  const byBucket = buildTemplateBuckets(templateRows);
-  const picks = [];
-  for (const bucket of slots) {
-    picks.push(pickTemplateForBucketWithExclusion(bucket, byBucket, templateRows, excludedLastRoundIds));
+  const selectedOrders = selectFakeOrdersFromPool(eligiblePool, n, dist);
+  if (selectedOrders.length < 1) {
+    return {
+      ok: false,
+      code: "INSUFFICIENT_ELIGIBLE_POOL",
+      eligiblePoolSize: eligiblePool.length,
+      requestedCount: desiredN,
+      minOrders,
+    };
   }
 
   const visMs = msFromDurationSettings(s.duration_value, s.duration_unit);
@@ -574,11 +741,6 @@ async function generateTrainingRoundInternal(client, { actorUserId, roundSource,
   const { rows: planRows } = await client.query(`SELECT plan_id FROM fake_order_settings_plans ORDER BY id ASC`);
   const planIds = planRows.map((r) => Number(r.plan_id)).filter((x) => Number.isInteger(x) && x > 0);
 
-  const { rows: actorRows } = await client.query(`SELECT role FROM users WHERE id = $1 LIMIT 1`, [uid]);
-  const actorRole = String(actorRows[0]?.role || "admin");
-  const createdByRole = actorRole === "super_admin" ? "super_admin" : "admin";
-  const orderSourceType = createdByRole === "super_admin" ? "super_admin_created" : "admin_created";
-
   const titleBase =
     s.optional_round_name && String(s.optional_round_name).trim()
       ? String(s.optional_round_name).trim()
@@ -590,8 +752,9 @@ async function generateTrainingRoundInternal(client, { actorUserId, roundSource,
     min_orders: minOrders,
     max_orders: maxOrders,
     requested_order_count: desiredN,
-    generated_order_count_cap: n,
-    template_pool_size: templateRows.length,
+    selected_order_count: selectedOrders.length,
+    eligible_pool_size: eligiblePool.length,
+    selection_mode: "existing_fake_orders_pool",
     duration_value: Number(s.duration_value),
     duration_unit: String(s.duration_unit || "hours"),
     automation_interval_value: Number(s.duration_value),
@@ -601,6 +764,7 @@ async function generateTrainingRoundInternal(client, { actorUserId, roundSource,
     show_to_all_freelancers: Boolean(s.show_to_all_freelancers),
     eligible_plan_ids: planIds,
     round_source: src,
+    gapless_supersede: Boolean(gaplessSupersede),
   };
 
   const { rows: rIns } = await client.query(
@@ -643,38 +807,34 @@ async function generateTrainingRoundInternal(client, { actorUserId, roundSource,
     );
   }
 
-  let generated = 0;
-  for (const tpl of picks) {
-    if (!tpl) continue;
-    // eslint-disable-next-line no-await-in-loop
-    const fakeOrderId = await insertFakeOrderFromTemplate(client, {
-      template: tpl,
-      roundId,
-      actorUserId: uid,
-      settings: s,
-      visibleUntil,
-      createdByRole,
-      sourceType: orderSourceType,
-    });
-    // eslint-disable-next-line no-await-in-loop
-    await client.query(
-      `INSERT INTO fake_order_round_items (round_id, fake_order_id, visible_from, visible_until, status, created_at, updated_at)
-       VALUES ($1, $2, NOW(), $3, 'active', NOW(), NOW())`,
-      [roundId, fakeOrderId, visibleUntil],
-    );
-    generated += 1;
-  }
+  const generated = await activateFakeOrdersInRound(client, {
+    roundId,
+    orders: selectedOrders,
+    visibleUntil,
+    settings: s,
+  });
 
   if (generated < 1) {
-    const err = new Error("تعذر توليد طلبات وهمية — لم يُنشأ أي طلب.");
+    const err = new Error("تعذر تفعيل طلبات تجريبية — لم يُضف أي طلب للجولة.");
     err.statusCode = 500;
     throw err;
+  }
+
+  if (supersedeExisting && gaplessSupersede) {
+    await supersedeActiveTrainingRounds(client, { exceptRoundId: roundId });
   }
 
   await client.query(`UPDATE fake_order_rounds SET generated_count = $1, updated_at = NOW() WHERE id = $2`, [generated, roundId]);
 
   const { rows: outRound } = await client.query(`SELECT * FROM fake_order_rounds WHERE id = $1`, [roundId]);
-  return { ok: true, round: mapRound(outRound[0]), generatedCount: generated };
+  return {
+    ok: true,
+    round: mapRound(outRound[0]),
+    generatedCount: generated,
+    requestedCount: desiredN,
+    eligiblePoolSize: eligiblePool.length,
+    selectedFakeOrderIds: selectedOrders.map((o) => o.id),
+  };
 }
 
 async function startTrainingRoundManualOnce({ actorUserId, attempt = 0 }) {
@@ -695,19 +855,28 @@ async function startTrainingRoundManualOnce({ actorUserId, attempt = 0 }) {
     await assertAdminOrSuperAdmin(actorUserId, client);
     const actor = Number(actorUserId);
     const result = await withSavepoint(client, "manual_round_gen", () =>
-      generateTrainingRoundInternal(client, { actorUserId: actor, roundSource: "manual" }),
+      generateTrainingRoundInternal(client, {
+        actorUserId: actor,
+        roundSource: "manual",
+        supersedeExisting: true,
+        gaplessSupersede: true,
+      }),
     );
-    if (!result.ok && result.code === "NO_TEMPLATES") {
+    if (!result.ok && (result.code === "NO_TEMPLATES" || result.code === "INSUFFICIENT_ELIGIBLE_POOL")) {
       await safeRollback(client);
       await insertAutomationLogSafe(pool, {
         runStartedAt,
-        status: "skipped_no_templates",
-        errorMessage: null,
+        status: result.code === "INSUFFICIENT_ELIGIBLE_POOL" ? "skipped_insufficient_pool" : "skipped_no_templates",
+        errorMessage: result.code,
         roundId: null,
         generatedCount: null,
         source: "manual",
       });
-      const err = new Error("لا توجد قوالب طلبات نشطة. أضف قوالبًا أو فعّل القوالب والتصنيفات قبل بدء الجولة.");
+      const err = new Error(
+        result.code === "INSUFFICIENT_ELIGIBLE_POOL"
+          ? `لا توجد طلبات تجريبية كافية في المخزون (متاح: ${result.eligiblePoolSize ?? 0}، الحد الأدنى: ${result.minOrders ?? "—"}).`
+          : "لا توجد قوالب طلبات نشطة. أضف قوالبًا أو فعّل القوالب والتصنيفات قبل بدء الجولة.",
+      );
       err.statusCode = 400;
       throw err;
     }
@@ -1501,6 +1670,7 @@ async function runAutomationTick() {
               actorUserId,
               roundSource: "automation",
               supersedeExisting,
+              gaplessSupersede: supersedeExisting,
             }),
           );
           if (result.ok) {
@@ -1515,10 +1685,10 @@ async function runAutomationTick() {
               phase: "scheduled",
               supersedeExisting,
             });
-          } else if (result.code === "NO_TEMPLATES") {
-            genStatus = "skipped_no_templates";
-            logAutomationEvent("skipped_no_templates", { code: "NO_TEMPLATES", phase: "scheduled" });
-            console.error("[fakeOrders] automation: no active templates — skipping round generation");
+          } else if (result.code === "NO_TEMPLATES" || result.code === "INSUFFICIENT_ELIGIBLE_POOL") {
+            genStatus = result.code === "INSUFFICIENT_ELIGIBLE_POOL" ? "skipped_insufficient_pool" : "skipped_no_templates";
+            logAutomationEvent(genStatus, { code: result.code, phase: "scheduled", eligiblePoolSize: result.eligiblePoolSize });
+            console.error(`[fakeOrders] automation: round generation skipped (${result.code})`);
           }
         }
       } catch (e) {
@@ -1756,11 +1926,17 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
         actorUserId,
         roundSource: "automation",
         supersedeExisting,
+        gaplessSupersede: supersedeExisting,
       }),
     );
     if (!result.ok) {
-      logAutomationEvent("rotation_skipped_no_templates", { reason, rotationReason });
-      return { ok: false, code: result.code || "NO_TEMPLATES", visible: afterLock.visibleCount, coverage: afterLock };
+      logAutomationEvent("rotation_skipped_no_pool", { reason, rotationReason, code: result.code || "UNKNOWN" });
+      return {
+        ok: false,
+        code: result.code || "INSUFFICIENT_ELIGIBLE_POOL",
+        visible: afterLock.visibleCount,
+        coverage: afterLock,
+      };
     }
 
     const visibleAfterGen = await getVisibleFakeOrdersCount(client);
@@ -1995,6 +2171,12 @@ async function listTemplates({ actorUserId, page = 1, limit = 20, categoryId = n
     templates: rows.map(mapTemplate),
     pagination: { page: pg, limit: lim, total, totalPages: Math.max(1, Math.ceil(total / lim)) },
   };
+}
+
+async function countFakeOrdersPool({ actorUserId } = {}) {
+  await assertAdminOrSuperAdmin(actorUserId, pool);
+  const { rows } = await pool.query(`SELECT COUNT(*)::int AS c FROM fake_orders`);
+  return { total: Number(rows[0]?.c || 0) };
 }
 
 async function getTemplateById(id, { actorUserId } = {}) {
@@ -2588,10 +2770,643 @@ async function getFakeOrdersAutomationHealth() {
   };
 }
 
+async function buildRotateTrainingRoundPlan(client) {
+  const { rows: activeRounds } = await client.query(
+    `SELECT
+       fr.id,
+       fr.generated_count,
+       fr.starts_at,
+       (
+         SELECT COUNT(*)::int
+         FROM fake_order_round_items ri
+         WHERE ri.round_id = fr.id
+           AND ri.status = 'active'
+           AND ri.visible_until > NOW()
+       ) AS visible_items
+     FROM fake_order_rounds fr
+     WHERE fr.status = 'active'
+     ORDER BY fr.id DESC`,
+  );
+  const coverage = await getTrainingPoolCoverage(client);
+  const { rows: sRows } = await client.query(`SELECT * FROM fake_order_settings WHERE id = 1 LIMIT 1`);
+  const settings = sRows[0] || {};
+  const { minOrders, maxOrders } = resolveRoundOrderBounds(settings);
+  const requestedCount = pickRoundTargetCount(settings);
+  const eligiblePool = await loadEligibleFakeOrderPool(client);
+  const targetCount = Math.min(requestedCount, eligiblePool.length);
+  const previewOrders = selectFakeOrdersFromPool(
+    eligiblePool,
+    targetCount,
+    normalizeCategoryDistribution(settings.category_distribution || {}),
+  );
+  const visibleToExpire = activeRounds.reduce((sum, r) => sum + Number(r.visible_items || 0), 0);
+  return {
+    activeRounds,
+    coverage,
+    settings,
+    minOrders,
+    maxOrders,
+    requestedCount,
+    targetCount,
+    eligiblePoolSize: eligiblePool.length,
+    previewFakeOrderIds: previewOrders.map((o) => o.id),
+    visibleItemsToExpire: visibleToExpire,
+    sufficientPool: eligiblePool.length >= minOrders && previewOrders.length >= 1,
+  };
+}
+
+/**
+ * Force-rotate training pool: gapless new round from existing fake_orders, then stop prior actives.
+ * @param {{ actorUserId?: number, dryRun?: boolean }} [opts]
+ */
+async function rotateTrainingRoundNow({ actorUserId = null, dryRun = true } = {}) {
+  const client = await pool.connect();
+  try {
+    const plan = await buildRotateTrainingRoundPlan(client);
+    const publicHomeOrderStatsService = require("./publicHomeOrderStatsService");
+    publicHomeOrderStatsService.invalidatePublicHomeOrderStatsCache();
+    const heroBefore = await publicHomeOrderStatsService.queryHeroOrderCounts();
+
+    const report = {
+      dryRun: Boolean(dryRun),
+      activeRounds: plan.activeRounds,
+      visibleItemsToExpire: plan.visibleItemsToExpire,
+      currentVisibleCount: plan.coverage.visibleCount,
+      minOrders: plan.minOrders,
+      maxOrders: plan.maxOrders,
+      requestedRandomCount: plan.requestedCount,
+      selectedTargetCount: plan.targetCount,
+      eligiblePoolSize: plan.eligiblePoolSize,
+      previewFakeOrderIds: plan.previewFakeOrderIds,
+      homepageBefore: {
+        availableOrdersNow: heroBefore.availableOrdersNow,
+        completedOrders: heroBefore.completedOrders,
+      },
+      sufficientPool: plan.sufficientPool,
+    };
+
+    if (dryRun) {
+      report.estimatedAvailableOrdersNow = plan.targetCount + (heroBefore.availableOrdersNowReal || 0);
+      return report;
+    }
+
+    const uid = actorUserId != null ? Number(actorUserId) : await resolveAutomationActorUserId(client);
+    if (!uid) {
+      const err = new Error("لا يوجد مستخدم أدمن لتنفيذ التدوير.");
+      err.statusCode = 500;
+      throw err;
+    }
+
+    await client.query("BEGIN");
+    let lockAcquired = false;
+    try {
+      lockAcquired = await tryAcquireGenerationLock(client, { reason: "rotate_now" });
+      if (!lockAcquired) {
+        const err = new Error("عملية تدوير قيد التنفيذ. حاول بعد لحظات.");
+        err.statusCode = 409;
+        err.code = "LOCK_BUSY";
+        throw err;
+      }
+
+      if (!plan.sufficientPool) {
+        const err = new Error(
+          `مخزون الطلبات التجريبية غير كافٍ (متاح: ${plan.eligiblePoolSize}، الحد الأدنى: ${plan.minOrders}).`,
+        );
+        err.statusCode = 400;
+        throw err;
+      }
+
+      const result = await withSavepoint(client, "rotate_training_round_now", () =>
+        generateTrainingRoundInternal(client, {
+          actorUserId: uid,
+          roundSource: "manual",
+          supersedeExisting: true,
+          gaplessSupersede: true,
+        }),
+      );
+
+      if (!result.ok) {
+        const err = new Error(result.code || "ROTATION_FAILED");
+        err.statusCode = 400;
+        err.code = result.code;
+        throw err;
+      }
+
+      await client.query(
+        `UPDATE fake_order_settings SET
+           last_automation_run_at = NOW(),
+           last_automation_status = 'success',
+           last_automation_error = NULL,
+           last_automation_round_id = $1,
+           last_automation_generated_count = $2,
+           updated_at = NOW()
+         WHERE id = 1`,
+        [result.round?.id ? Number(result.round.id) : null, result.generatedCount ?? null],
+      );
+
+      await client.query("COMMIT");
+      lockAcquired = false;
+
+      try {
+        await recordMarketplaceVisibleFakeOrders(pool);
+        invalidatePublicHomeOrderStatsCache();
+      } catch (markErr) {
+        console.warn("[fakeOrders] recordMarketplaceVisibleFakeOrders after rotate:", markErr?.message || markErr);
+      }
+
+      const heroAfter = await publicHomeOrderStatsService.queryHeroOrderCounts();
+      const coverageAfter = await getTrainingPoolCoverage(pool);
+
+      return {
+        ...report,
+        executed: true,
+        roundId: result.round?.id ? Number(result.round.id) : null,
+        generatedCount: result.generatedCount,
+        requestedCount: result.requestedCount,
+        selectedFakeOrderIds: result.selectedFakeOrderIds || [],
+        homepageAfter: {
+          availableOrdersNow: heroAfter.availableOrdersNow,
+          completedOrders: heroAfter.completedOrders,
+        },
+        visibleAfter: coverageAfter.visibleCount,
+      };
+    } catch (e) {
+      await safeRollback(client);
+      throw e;
+    } finally {
+      await releaseGenerationLock(client, { acquired: lockAcquired, reason: "rotate_now" });
+    }
+  } finally {
+    client.release();
+  }
+}
+
 /**
  * Start in-process automation scheduler (idempotent). First tick after short delay.
  * @returns {{ enabled: boolean, tickMs: number }}
  */
+const FAKE_ORDER_VISIBLE_NOW_SQL = `
+  EXISTS (
+    SELECT 1
+    FROM fake_order_round_items ri
+    INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
+    WHERE ri.fake_order_id = fo.id
+      AND ri.status = 'active'
+      AND fr.status = 'active'
+      AND ri.visible_from <= NOW()
+      AND ri.visible_until > NOW()
+  )`;
+
+function mapFakeOrderAdmin(row) {
+  if (!row) return null;
+  const minB = row.bid_budget_min != null ? Number(row.bid_budget_min) : row.budget != null ? Number(row.budget) : null;
+  const maxB = row.bid_budget_max != null ? Number(row.bid_budget_max) : row.budget != null ? Number(row.budget) : null;
+  return {
+    id: String(row.id),
+    orderCode: row.order_code,
+    title: row.title,
+    description: row.description,
+    ...mapCachedEnglishFields(row),
+    categoryId: String(row.category_id),
+    subcategoryId: row.subcategory_id ? String(row.subcategory_id) : null,
+    subSubcategoryId: row.sub_subcategory_id ? String(row.sub_subcategory_id) : null,
+    categoryName: row.category_name || null,
+    projectType: row.project_type || "bidding",
+    budget: row.budget != null ? Number(row.budget) : null,
+    bidBudgetMin: minB,
+    bidBudgetMax: maxB,
+    currency: row.currency_code || "JOD",
+    durationValue: Number(row.duration_value),
+    durationUnit: row.duration_unit,
+    orderStatus: row.order_status,
+    fakeStatus: row.fake_status,
+    isPublished: Boolean(row.is_published),
+    isOpenForPool: Boolean(row.is_open_for_pool),
+    isArchived: Boolean(row.is_archived),
+    isActive: Boolean(row.is_published) && Boolean(row.is_open_for_pool) && !Boolean(row.is_archived),
+    templateId: row.template_id != null ? String(row.template_id) : null,
+    fakeRoundId: row.fake_round_id != null ? String(row.fake_round_id) : null,
+    visibleNow: Boolean(row.visible_now),
+    currentRoundId: row.current_round_id != null ? String(row.current_round_id) : null,
+    currentRoundTitle: row.current_round_title || null,
+    applicantsCount: Number(row.applicants_count || 0),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function isFakeOrderCurrentlyVisible(client, fakeOrderId) {
+  const db = client || pool;
+  const { rows } = await db.query(
+    `SELECT EXISTS (
+      SELECT 1
+      FROM fake_order_round_items ri
+      INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
+      WHERE ri.fake_order_id = $1
+        AND ri.status = 'active'
+        AND fr.status = 'active'
+        AND ri.visible_from <= NOW()
+        AND ri.visible_until > NOW()
+    ) AS visible`,
+    [Number(fakeOrderId)],
+  );
+  return Boolean(rows[0]?.visible);
+}
+
+function resolveFakeOrderBudgetFields(payload) {
+  const projectType = payload.projectType === "fixed" ? "fixed" : "bidding";
+  let bidMin;
+  let bidMax;
+  let budget = null;
+  if (projectType === "fixed") {
+    const b = Math.round(Number(payload.budget ?? payload.minBudget ?? payload.maxBudget));
+    if (!Number.isFinite(b) || b <= 0) {
+      const err = new Error("الميزانية غير صالحة.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const norm = normalizeTemplateBudget(b, b, inferComplexityProfile({ title: payload.title, description: payload.description }));
+    if (!norm.ok) {
+      const err = new Error("نطاق الميزانية غير صالح.");
+      err.statusCode = 400;
+      throw err;
+    }
+    bidMin = norm.min;
+    bidMax = norm.max;
+    budget = norm.min;
+  } else {
+    let minB = Math.round(Number(payload.bidBudgetMin ?? payload.minBudget));
+    let maxB = Math.round(Number(payload.bidBudgetMax ?? payload.maxBudget));
+    const norm = normalizeTemplateBudget(minB, maxB, inferComplexityProfile({ title: payload.title, description: payload.description }));
+    if (!norm.ok) {
+      const err = new Error("نطاق الميزانية غير صالح.");
+      err.statusCode = 400;
+      throw err;
+    }
+    bidMin = norm.min;
+    bidMax = norm.max;
+  }
+  return { projectType, bidMin, bidMax, budget };
+}
+
+function resolveFakeOrderDurationFields(payload) {
+  const durationUnit = String(payload.durationUnit || "days");
+  if (!["days", "hours", "minutes"].includes(durationUnit)) {
+    const err = new Error("وحدة المدة غير صالحة.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const minD = Number(payload.durationValue ?? payload.minDuration ?? payload.durationMin);
+  const maxD = Number(payload.durationMax ?? payload.maxDuration ?? minD);
+  if (!Number.isFinite(minD) || minD < 1) {
+    const err = new Error("المدة غير صالحة.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const durationValue = Number.isFinite(maxD) && maxD >= minD ? Math.round((minD + maxD) / 2) : Math.round(minD);
+  return { durationValue, durationUnit };
+}
+
+async function listFakeOrders({
+  actorUserId,
+  page = 1,
+  limit = 20,
+  categoryId = null,
+  isActive = null,
+  visibleNow = null,
+  q = "",
+} = {}) {
+  await assertAdminOrSuperAdmin(actorUserId, pool);
+  const lim = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const pg = Math.max(Number(page) || 1, 1);
+  const off = (pg - 1) * lim;
+  const params = [];
+  const where = ["1=1"];
+  if (categoryId) {
+    params.push(Number(categoryId));
+    where.push(`fo.category_id = $${params.length}`);
+  }
+  if (isActive === true) {
+    where.push(`COALESCE(fo.is_archived, FALSE) = FALSE AND fo.is_published = TRUE AND fo.is_open_for_pool = TRUE`);
+  } else if (isActive === false) {
+    where.push(`(COALESCE(fo.is_archived, FALSE) = TRUE OR fo.is_published = FALSE OR fo.is_open_for_pool = FALSE)`);
+  }
+  if (visibleNow === true) {
+    where.push(FAKE_ORDER_VISIBLE_NOW_SQL);
+  } else if (visibleNow === false) {
+    where.push(`NOT (${FAKE_ORDER_VISIBLE_NOW_SQL})`);
+  }
+  if (String(q || "").trim()) {
+    params.push(`%${String(q).trim()}%`);
+    where.push(`(fo.title ILIKE $${params.length} OR fo.description ILIKE $${params.length} OR fo.order_code ILIKE $${params.length})`);
+  }
+  const whereSql = where.join(" AND ");
+  const { rows: cRows } = await pool.query(`SELECT COUNT(*)::int AS c FROM fake_orders fo WHERE ${whereSql}`, params);
+  const total = Number(cRows[0]?.c || 0);
+  const limPh = params.length + 1;
+  const offPh = params.length + 2;
+  const { rows } = await pool.query(
+    `SELECT
+       fo.*,
+       c.name AS category_name,
+       (${FAKE_ORDER_VISIBLE_NOW_SQL}) AS visible_now,
+       (
+         SELECT ri.round_id
+         FROM fake_order_round_items ri
+         INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
+         WHERE ri.fake_order_id = fo.id
+           AND ri.status = 'active'
+           AND fr.status = 'active'
+           AND ri.visible_from <= NOW()
+           AND ri.visible_until > NOW()
+         ORDER BY ri.id DESC
+         LIMIT 1
+       ) AS current_round_id,
+       (
+         SELECT fr.title
+         FROM fake_order_round_items ri
+         INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
+         WHERE ri.fake_order_id = fo.id
+           AND ri.status = 'active'
+           AND fr.status = 'active'
+           AND ri.visible_from <= NOW()
+           AND ri.visible_until > NOW()
+         ORDER BY ri.id DESC
+         LIMIT 1
+       ) AS current_round_title,
+       (
+         SELECT COUNT(*)::int
+         FROM fake_order_applications fa
+         WHERE fa.fake_order_id = fo.id
+       ) AS applicants_count
+     FROM fake_orders fo
+     LEFT JOIN categories c ON c.id = fo.category_id
+     WHERE ${whereSql}
+     ORDER BY fo.id DESC
+     LIMIT $${limPh} OFFSET $${offPh}`,
+    [...params, lim, off],
+  );
+  return {
+    fakeOrders: rows.map(mapFakeOrderAdmin),
+    pagination: { page: pg, limit: lim, total, totalPages: Math.max(1, Math.ceil(total / lim)) },
+  };
+}
+
+async function getFakeOrderById(id, { actorUserId } = {}) {
+  if (actorUserId) await assertAdminOrSuperAdmin(actorUserId, pool);
+  const { rows } = await pool.query(
+    `SELECT
+       fo.*,
+       c.name AS category_name,
+       (${FAKE_ORDER_VISIBLE_NOW_SQL}) AS visible_now,
+       (
+         SELECT ri.round_id
+         FROM fake_order_round_items ri
+         INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
+         WHERE ri.fake_order_id = fo.id
+           AND ri.status = 'active'
+           AND fr.status = 'active'
+           AND ri.visible_from <= NOW()
+           AND ri.visible_until > NOW()
+         ORDER BY ri.id DESC
+         LIMIT 1
+       ) AS current_round_id,
+       (
+         SELECT fr.title
+         FROM fake_order_round_items ri
+         INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
+         WHERE ri.fake_order_id = fo.id
+           AND ri.status = 'active'
+           AND fr.status = 'active'
+           AND ri.visible_from <= NOW()
+           AND ri.visible_until > NOW()
+         ORDER BY ri.id DESC
+         LIMIT 1
+       ) AS current_round_title,
+       (
+         SELECT COUNT(*)::int
+         FROM fake_order_applications fa
+         WHERE fa.fake_order_id = fo.id
+       ) AS applicants_count
+     FROM fake_orders fo
+     LEFT JOIN categories c ON c.id = fo.category_id
+     WHERE fo.id = $1
+     LIMIT 1`,
+    [Number(id)],
+  );
+  return mapFakeOrderAdmin(rows[0]);
+}
+
+async function createFakeOrder({ actorUserId, payload }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertAdminOrSuperAdmin(actorUserId, client);
+    const title = String(payload.title || "").trim();
+    const description = String(payload.description || "").trim();
+    if (title.length < 2 || description.length < 2) {
+      const err = new Error("العنوان والوصف مطلوبان.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const categoryId = Number(payload.categoryId);
+    const subcategoryId = payload.subcategoryId != null ? Number(payload.subcategoryId) : null;
+    const subSubcategoryId = payload.subSubcategoryId != null ? Number(payload.subSubcategoryId) : null;
+    const { projectType, bidMin, bidMax, budget } = resolveFakeOrderBudgetFields({ ...payload, title, description });
+    const { durationValue, durationUnit } = resolveFakeOrderDurationFields(payload);
+    const { rowCount: catOk } = await client.query(`SELECT 1 FROM categories WHERE id = $1 AND is_active = TRUE`, [categoryId]);
+    if (catOk === 0) {
+      const err = new Error("تصنيف غير صالح.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const settingsRes = await client.query(`SELECT show_fake_badge_to_freelancers FROM fake_order_settings WHERE id = 1 LIMIT 1`);
+    const showBadge = Boolean(settingsRes.rows[0]?.show_fake_badge_to_freelancers);
+    const isActive = payload.isActive !== false;
+    const orderCode = await generateUniqueOrderCode(client);
+    const baselineApplicantsCount = randomInt(3, 12);
+    const uid = Number(actorUserId);
+    const cbr = "super_admin";
+    const st = "admin_created";
+
+    const { rows } = await client.query(
+      `INSERT INTO fake_orders (
+        order_code, title, description, title_en, description_en,
+        category_id, subcategory_id, sub_subcategory_id,
+        extra_category_ids, extra_category_details,
+        project_type, budget, currency_code, duration_value, duration_unit,
+        created_by_user_id, created_by_role, source_type,
+        assigned_freelancer_id,
+        is_direct_admin_assignment,
+        received_at, started_at, due_at,
+        is_published, is_open_for_pool,
+        is_archived,
+        payment_required, payment_status,
+        order_status,
+        bid_budget_min, bid_budget_max,
+        template_id,
+        fake_status, is_fake, fake_round_id, show_fake_badge, fake_expires_at,
+        baseline_applicants_count
+      ) VALUES (
+        $1, $2, $3, NULL, NULL,
+        $4, $5, $6,
+        '{}'::bigint[], '{}'::jsonb,
+        $7, $8, 'JOD', $9, $10,
+        $11, $12, $13,
+        NULL,
+        FALSE,
+        NULL, NULL, NULL,
+        $14, $15,
+        FALSE,
+        FALSE, 'not_required',
+        'published',
+        $16, $17,
+        NULL,
+        'active', TRUE, NULL, $18, NULL,
+        $19
+      )
+      RETURNING id`,
+      [
+        orderCode,
+        title,
+        description,
+        categoryId,
+        Number.isInteger(subcategoryId) && subcategoryId > 0 ? subcategoryId : null,
+        Number.isInteger(subSubcategoryId) && subSubcategoryId > 0 ? subSubcategoryId : null,
+        projectType,
+        projectType === "fixed" ? budget : null,
+        durationValue,
+        durationUnit,
+        uid,
+        cbr,
+        st,
+        isActive,
+        isActive,
+        bidMin,
+        bidMax,
+        showBadge,
+        baselineApplicantsCount,
+      ],
+    );
+    const newId = Number(rows[0].id);
+    await client.query("COMMIT");
+    scheduleFakeOrderTranslation(newId, title, description);
+    return getFakeOrderById(newId);
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+async function updateFakeOrder({ actorUserId, id, payload }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertAdminOrSuperAdmin(actorUserId, client);
+    const fid = Number(id);
+    const { rows: curRows } = await client.query(`SELECT id, title, description FROM fake_orders WHERE id = $1 FOR UPDATE`, [fid]);
+    if (!curRows[0]) {
+      const err = new Error("الطلب التجريبي غير موجود.");
+      err.statusCode = 404;
+      throw err;
+    }
+    const visible = await isFakeOrderCurrentlyVisible(client, fid);
+    const fields = [];
+    const vals = [];
+    const push = (sql, v) => {
+      vals.push(v);
+      fields.push(`${sql} $${vals.length}`);
+    };
+
+    if (visible) {
+      const blocked = ["categoryId", "subcategoryId", "subSubcategoryId", "projectType", "budget", "bidBudgetMin", "bidBudgetMax", "minBudget", "maxBudget", "durationValue", "durationUnit", "minDuration", "maxDuration", "isActive", "isPublished", "isOpenForPool", "isArchived"];
+      for (const key of blocked) {
+        if (payload[key] !== undefined) {
+          const err = new Error("لا يمكن تعديل بيانات الطلب التجريبي أثناء ظهوره في جولة نشطة. انتظر انتهاء الجولة أو أوقفها أولاً.");
+          err.statusCode = 409;
+          throw err;
+        }
+      }
+    }
+
+    if (payload.title != null) push(`title =`, String(payload.title).trim());
+    if (payload.description != null) push(`description =`, String(payload.description).trim());
+    if (!visible) {
+      if (payload.categoryId != null) push(`category_id =`, Number(payload.categoryId));
+      if (payload.subcategoryId !== undefined) push(`subcategory_id =`, payload.subcategoryId ? Number(payload.subcategoryId) : null);
+      if (payload.subSubcategoryId !== undefined) push(`sub_subcategory_id =`, payload.subSubcategoryId ? Number(payload.subSubcategoryId) : null);
+      if (payload.projectType != null || payload.budget != null || payload.bidBudgetMin != null || payload.minBudget != null) {
+        const merged = {
+          ...curRows[0],
+          ...payload,
+          title: payload.title ?? curRows[0].title,
+          description: payload.description ?? curRows[0].description,
+        };
+        const { projectType, bidMin, bidMax, budget } = resolveFakeOrderBudgetFields(merged);
+        push(`project_type =`, projectType);
+        push(`budget =`, projectType === "fixed" ? budget : null);
+        push(`bid_budget_min =`, bidMin);
+        push(`bid_budget_max =`, bidMax);
+      }
+      if (payload.durationValue != null || payload.durationUnit != null || payload.minDuration != null) {
+        const { durationValue, durationUnit } = resolveFakeOrderDurationFields({ ...payload, durationValue: payload.durationValue ?? payload.minDuration });
+        push(`duration_value =`, durationValue);
+        push(`duration_unit =`, durationUnit);
+      }
+      if (payload.isActive !== undefined) {
+        const active = payload.isActive !== false;
+        push(`is_published =`, active);
+        push(`is_open_for_pool =`, active);
+        push(`is_archived =`, false);
+      }
+    }
+
+    if (!fields.length) {
+      await client.query("COMMIT");
+      return getFakeOrderById(fid);
+    }
+    vals.push(fid);
+    await client.query(`UPDATE fake_orders SET ${fields.join(", ")} WHERE id = $${vals.length}`, vals);
+    await client.query("COMMIT");
+    return getFakeOrderById(fid);
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+async function deleteFakeOrder({ actorUserId, id }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertAdminOrSuperAdmin(actorUserId, client);
+    const fid = Number(id);
+    const visible = await isFakeOrderCurrentlyVisible(client, fid);
+    if (visible) {
+      const err = new Error("لا يمكن حذف طلب تجريبي ظاهر حالياً في المعرض. أوقف الجولة أو انتظر انتهاءها.");
+      err.statusCode = 409;
+      throw err;
+    }
+    const { rowCount } = await client.query(`DELETE FROM fake_orders WHERE id = $1`, [fid]);
+    if (rowCount === 0) {
+      const err = new Error("الطلب التجريبي غير موجود.");
+      err.statusCode = 404;
+      throw err;
+    }
+    await client.query("COMMIT");
+    return { ok: true };
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 function startFakeOrdersAutomationScheduler() {
   const { isInProcessAutomationIntervalEnabled, getFakeOrdersTickMs } = require("../config/fakeOrdersAutomation");
   const tickMs = getFakeOrdersTickMs();
@@ -2633,6 +3448,12 @@ module.exports = {
   getTrainingPoolCoverage,
   recordMarketplaceVisibleFakeOrders,
   generateTrainingRoundInternal,
+  resolveRoundOrderBounds,
+  pickRoundTargetCount,
+  loadEligibleFakeOrderPool,
+  selectFakeOrdersFromPool,
+  buildRotateTrainingRoundPlan,
+  rotateTrainingRoundNow,
   hasVisibleItemsExpiringAfter,
   getOverlapThresholdMs,
   computeNextAutomationRunAt,
@@ -2649,6 +3470,7 @@ module.exports = {
   mapRound,
   mapApplication,
   listTemplates,
+  countFakeOrdersPool,
   getTemplateById,
   createTemplate,
   updateTemplate,
@@ -2658,4 +3480,10 @@ module.exports = {
   listTrainingApplications,
   listApplicationsForFakeOrder,
   listFakeOrdersApplicantSummary,
+  mapFakeOrderAdmin,
+  listFakeOrders,
+  getFakeOrderById,
+  createFakeOrder,
+  updateFakeOrder,
+  deleteFakeOrder,
 };

@@ -533,6 +533,49 @@ export const adminListTrainingTemplatesRequest = async (params = {}) => {
   return data;
 };
 
+export const adminGetTrainingFakeOrdersCountRequest = async () => {
+  const { data } = await api.get("/admin/training-orders/fake-orders/count", {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminListTrainingFakeOrdersRequest = async (params = {}) => {
+  const { data } = await api.get("/admin/training-orders/fake-orders", {
+    params,
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminGetTrainingFakeOrderRequest = async (id) => {
+  const { data } = await api.get(`/admin/training-orders/fake-orders/${id}`, {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminCreateTrainingFakeOrderRequest = async (payload) => {
+  const { data } = await api.post("/admin/training-orders/fake-orders", payload, {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminPatchTrainingFakeOrderRequest = async (id, payload) => {
+  const { data } = await api.patch(`/admin/training-orders/fake-orders/${id}`, payload, {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminDeleteTrainingFakeOrderRequest = async (id) => {
+  const { data } = await api.delete(`/admin/training-orders/fake-orders/${id}`, {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
 export const adminGetTrainingTemplateRequest = async (id) => {
   const { data } = await api.get(`/admin/training-orders/templates/${id}`, {
     timeout: TRAINING_ORDERS_API_TIMEOUT_MS,

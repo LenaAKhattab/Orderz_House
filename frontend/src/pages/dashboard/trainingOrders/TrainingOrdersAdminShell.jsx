@@ -9,10 +9,10 @@ import "./trainingOrdersAdmin.css";
 
 function trainingSectionLabelKey(pathname) {
   if (pathname.includes("/applications")) return "dashboard.breadcrumbs.trainingApplications";
-  if (pathname.includes("/templates")) return "dashboard.breadcrumbs.trainingTemplates";
+  if (pathname.includes("/templates")) return "dashboard.breadcrumbs.trainingPool";
   if (pathname.includes("/rounds")) return "dashboard.breadcrumbs.trainingRounds";
   if (pathname.includes("/settings")) return "dashboard.breadcrumbs.trainingSettings";
-  return "dashboard.nav.superAdmin.overview";
+  return "dashboard.breadcrumbs.trainingOverview";
 }
 
 export default function TrainingOrdersAdminShell() {

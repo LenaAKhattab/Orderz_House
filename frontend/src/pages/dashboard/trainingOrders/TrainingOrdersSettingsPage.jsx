@@ -7,6 +7,7 @@ import {
 import DashboardSection from "../../../components/dashboard/DashboardSection";
 import DashboardFormCard from "../../../components/dashboard/DashboardFormCard";
 import DashboardLoadingState from "../../../components/dashboard/DashboardLoadingState";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import "./trainingOrdersAdmin.css";
 
 function errMsg(e) {
@@ -14,6 +15,7 @@ function errMsg(e) {
 }
 
 export default function TrainingOrdersSettingsPage() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [visibilitySaving, setVisibilitySaving] = useState(false);
@@ -129,7 +131,9 @@ export default function TrainingOrdersSettingsPage() {
       const res = await adminPatchTrainingOrdersSettingsRequest({ trainingOrdersEnabled: next });
       const enabled = Boolean(res?.data?.trainingOrdersEnabled ?? next);
       setForm((f) => ({ ...f, trainingOrdersEnabled: enabled }));
-      setVisibilitySuccess(enabled ? "تم تشغيل ظهور الطلبات التدريبية." : "تم إيقاف ظهور الطلبات التدريبية.");
+      setVisibilitySuccess(
+        enabled ? t("trainingOrders.settings.visibilityShownSuccess") : t("trainingOrders.settings.visibilityHiddenSuccess"),
+      );
       await load();
     } catch (e) {
       setVisibilityError(errMsg(e));
@@ -142,15 +146,15 @@ export default function TrainingOrdersSettingsPage() {
     setError("");
     setSuccess("");
     if (orderRangeInvalid) {
-      setError("أقل عدد طلبات لا يمكن أن يتجاوز أقصى عدد طلبات.");
+      setError(t("trainingOrders.settings.orderRangeSaveError"));
       return;
     }
     if (pctSum !== 100) {
-      setError("مجموع نسب المحتوى / البرمجة / التصميم يجب أن يساوي 100٪.");
+      setError(t("trainingOrders.settings.distributionSaveError"));
       return;
     }
     if (!form.showToAllVisitors && !form.showToAllFreelancers && form.planIds.length === 0) {
-      setError("فعّل إظهار المستقلين أو الزوار، أو اختر باقة واحدة على الأقل (من الإعدادات المتقدمة).");
+      setError(t("trainingOrders.settings.visibilitySaveError"));
       return;
     }
     setSaving(true);
@@ -172,7 +176,7 @@ export default function TrainingOrdersSettingsPage() {
         planIds: form.planIds.map((x) => Number(x)),
         optionalRoundName: form.optionalRoundName.trim() || null,
       });
-      setSuccess("تم حفظ الإعدادات بنجاح.");
+      setSuccess(t("trainingOrders.settings.saveSuccess"));
       await load();
     } catch (e) {
       setError(errMsg(e));
@@ -185,10 +189,10 @@ export default function TrainingOrdersSettingsPage() {
     return (
       <DashboardSection
         className="oh-training-page-section"
-        title="إعدادات الطلبات التجريبية"
-        description="تفعيل المعرض، أتمتة الجولات، التوزيع بين التصنيفات، وخيارات الظهور."
+        title={t("trainingOrders.settings.title")}
+        description={t("trainingOrders.settings.description")}
       >
-        <DashboardLoadingState label="جاري تحميل الإعدادات…" />
+        <DashboardLoadingState label={t("trainingOrders.settings.loading")} />
       </DashboardSection>
     );
   }
@@ -200,25 +204,23 @@ export default function TrainingOrdersSettingsPage() {
   return (
     <DashboardSection
       className="oh-training-page-section"
-      title="إعدادات الطلبات التجريبية"
-      description="تفعيل المعرض، أتمتة الجولات، التوزيع بين التصنيفات، وخيارات الظهور."
+      title={t("trainingOrders.settings.title")}
+      description={t("trainingOrders.settings.description")}
     >
       {error ? <p className="auth-form-error">{error}</p> : null}
       {success ? (
         <p style={{ color: "#15803d", fontWeight: 700, margin: error ? "8px 0 0" : 0 }}>{success}</p>
       ) : null}
 
-      <DashboardFormCard title="ظهور الطلبات التدريبية في المعرض">
+      <DashboardFormCard title={t("trainingOrders.settings.visibilityCardTitle")}>
         <div
           className={`oh-training-visibility-control ${form.trainingOrdersEnabled ? "oh-training-visibility-control--on" : "oh-training-visibility-control--off"}`.trim()}
         >
           <p className="oh-training-visibility-control__status" role="status">
-            {form.trainingOrdersEnabled ? "الطلبات التدريبية ظاهرة الآن" : "الطلبات التدريبية مخفية الآن"}
+            {form.trainingOrdersEnabled ? t("trainingOrders.settings.visibilityOn") : t("trainingOrders.settings.visibilityOff")}
           </p>
           <p className="oh-training-visibility-control__help">
-            {form.trainingOrdersEnabled
-              ? "يظهر للمستقلين ما يطابق إعدادات الظهور والباقات أدناه. إيقاف هذا الخيار يخفي الطلبات التدريبية من المعرض دون حذف القوالب أو الجولات."
-              : "الطلبات التدريبية مخفية عن المعرض والمستقلين. القوالب والجولات والتقديمات تبقى محفوظة."}
+            {form.trainingOrdersEnabled ? t("trainingOrders.settings.visibilityOnHelp") : t("trainingOrders.settings.visibilityOffHelp")}
           </p>
           {visibilityError ? <p className="auth-form-error">{visibilityError}</p> : null}
           {visibilitySuccess ? (
@@ -231,23 +233,23 @@ export default function TrainingOrdersSettingsPage() {
             onClick={() => void toggleTrainingVisibility()}
           >
             {visibilitySaving
-              ? "جاري التحديث…"
+              ? t("trainingOrders.settings.updating")
               : form.trainingOrdersEnabled
-                ? "إيقاف ظهور الطلبات التدريبية"
-                : "تشغيل ظهور الطلبات التدريبية"}
+                ? t("trainingOrders.settings.hideFromMarketplace")
+                : t("trainingOrders.settings.showInMarketplace")}
           </button>
         </div>
       </DashboardFormCard>
 
-      <DashboardFormCard title="الأساسيات">
+      <DashboardFormCard title={t("trainingOrders.settings.basics")}>
           <div className="oh-training-settings">
 
         <section className="oh-training-settings-section">
-          <h3 className="oh-training-settings-section__title">عدد الطلبات في الجولة</h3>
-          <p className="oh-training-settings-section__help">يتم إنشاء عدد عشوائي ضمن هذا النطاق.</p>
+          <h3 className="oh-training-settings-section__title">{t("trainingOrders.settings.ordersPerRound")}</h3>
+          <p className="oh-training-settings-section__help">{t("trainingOrders.settings.ordersPerRoundHelp")}</p>
           <div className="oh-training-settings-row">
             <div className="oh-training-settings-field">
-              <span>أقل عدد طلبات في الجولة</span>
+              <span>{t("trainingOrders.settings.minOrders")}</span>
               <input
                 type="number"
                 min={1}
@@ -258,7 +260,7 @@ export default function TrainingOrdersSettingsPage() {
               />
             </div>
             <div className="oh-training-settings-field">
-              <span>أقصى عدد طلبات في الجولة</span>
+              <span>{t("trainingOrders.settings.maxOrders")}</span>
               <input
                 type="number"
                 min={1}
@@ -271,18 +273,18 @@ export default function TrainingOrdersSettingsPage() {
           </div>
           {orderRangeInvalid ? (
             <p className="oh-training-inline-msg oh-training-inline-msg--error" role="alert">
-              أقل عدد يجب أن يكون ≤ أقصى عدد.
+              {t("trainingOrders.settings.orderRangeError")}
             </p>
           ) : null}
         </section>
 
         <section className="oh-training-settings-section">
-          <h3 className="oh-training-settings-section__title">توزيع الطلبات بين التصنيفات</h3>
-          <p className="oh-training-settings-section__help">يجب أن يكون المجموع 100٪.</p>
+          <h3 className="oh-training-settings-section__title">{t("trainingOrders.settings.categoryDistribution")}</h3>
+          <p className="oh-training-settings-section__help">{t("trainingOrders.settings.categoryDistributionHelp")}</p>
 
           <div className="oh-training-pct-row">
             <div className="oh-training-pct-item">
-              <span className="oh-training-pct-item__label">المحتوى</span>
+              <span className="oh-training-pct-item__label">{t("trainingOrders.settings.content")}</span>
               <div className={`oh-training-pct-item__wrap ${pctDistributionInvalid ? "oh-training-input--error" : ""}`.trim()}>
                 <input
                   type="number"
@@ -297,7 +299,7 @@ export default function TrainingOrdersSettingsPage() {
               </div>
             </div>
             <div className="oh-training-pct-item">
-              <span className="oh-training-pct-item__label">البرمجة</span>
+              <span className="oh-training-pct-item__label">{t("trainingOrders.settings.programming")}</span>
               <div className={`oh-training-pct-item__wrap ${pctDistributionInvalid ? "oh-training-input--error" : ""}`.trim()}>
                 <input
                   type="number"
@@ -312,7 +314,7 @@ export default function TrainingOrdersSettingsPage() {
               </div>
             </div>
             <div className="oh-training-pct-item">
-              <span className="oh-training-pct-item__label">التصميم</span>
+              <span className="oh-training-pct-item__label">{t("trainingOrders.settings.design")}</span>
               <div className={`oh-training-pct-item__wrap ${pctDistributionInvalid ? "oh-training-input--error" : ""}`.trim()}>
                 <input
                   type="number"
@@ -361,28 +363,28 @@ export default function TrainingOrdersSettingsPage() {
           <p
             className={`oh-training-inline-msg ${pctDistributionInvalid ? "oh-training-inline-msg--error" : "oh-training-inline-msg--ok"}`}
           >
-            المجموع: <strong dir="ltr">{pctSum}</strong>٪{" "}
-            {pctDistributionInvalid ? "— يجب أن يساوي 100٪" : "✓ صحيح"}
+            {t("trainingOrders.settings.distributionSum")} <strong dir="ltr">{pctSum}</strong>٪{" "}
+            {pctDistributionInvalid ? t("trainingOrders.settings.distributionMustBe100") : t("trainingOrders.settings.distributionOk")}
           </p>
         </section>
 
         <section className="oh-training-settings-section">
-          <h3 className="oh-training-settings-section__title">الظهور</h3>
-          <p className="oh-training-settings-section__help">من يمكنه رؤية الطلبات التجريبية في المعرض.</p>
+          <h3 className="oh-training-settings-section__title">{t("trainingOrders.settings.visibility")}</h3>
+          <p className="oh-training-settings-section__help">{t("trainingOrders.settings.visibilityHelp")}</p>
           <label className="oh-training-checkbox-row">
             <input
               type="checkbox"
               checked={form.showToAllFreelancers}
               onChange={(e) => setForm((f) => ({ ...f, showToAllFreelancers: e.target.checked }))}
             />
-            <span>إظهار لجميع المستقلين المسجلين</span>
+            <span>{t("trainingOrders.settings.showAllFreelancers")}</span>
           </label>
           <p className="oh-training-settings-section__help" style={{ marginBottom: 0, marginTop: 10 }}>
-            لإظهار الزوار أو ربط الباقات أو تسمية الجولة، افتح «إعدادات متقدمة» أدناه.
+            {t("trainingOrders.settings.advancedHint")}
           </p>
           {visibilityInvalid ? (
             <p className="oh-training-inline-msg oh-training-inline-msg--error" role="alert">
-              يجب تفعيل إظهار للمستقلين، أو للزوار، أو اختيار باقة — راجع الإعدادات المتقدمة.
+              {t("trainingOrders.settings.visibilityRequired")}
             </p>
           ) : null}
         </section>
@@ -394,7 +396,7 @@ export default function TrainingOrdersSettingsPage() {
                 disabled={saving || orderRangeInvalid || pctDistributionInvalid || visibilityInvalid}
                 onClick={save}
               >
-                {saving ? "جاري الحفظ…" : "حفظ الإعدادات"}
+                {saving ? t("trainingOrders.settings.saving") : t("trainingOrders.settings.save")}
               </button>
             </div>
           </div>

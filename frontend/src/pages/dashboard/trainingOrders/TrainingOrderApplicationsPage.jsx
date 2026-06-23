@@ -10,24 +10,13 @@ import DashboardToolbar from "../../../components/dashboard/DashboardToolbar";
 import DashboardLoadingState from "../../../components/dashboard/DashboardLoadingState";
 import DashboardEmptyState from "../../../components/dashboard/DashboardEmptyState";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
+import { useTranslation } from "../../../i18n/LanguageProvider";
+import { getFakeOrderStatusLabel, getRoundStatusLabel } from "./trainingOrdersDisplayUtils";
 import "./trainingOrdersAdmin.css";
 
 function errMsg(e) {
   return e?.response?.data?.message || e?.message || "حدث خطأ.";
 }
-
-const ROUND_STATUS_AR = {
-  scheduled: "مجدولة",
-  active: "نشطة",
-  expired: "منتهية",
-  stopped: "متوقفة",
-};
-
-const FAKE_ORDER_STATUS_AR = {
-  active: "نشط",
-  expired: "منتهٍ",
-  stopped: "متوقف",
-};
 
 function roundStatusTone(status) {
   if (status === "active") return "success";
@@ -44,7 +33,11 @@ function fakeOrderStatusTone(status) {
   return "neutral";
 }
 
+const ROUND_STATUS_PREFIX = { ar: "جولة:", en: "Round:" };
+const ORDER_STATUS_PREFIX = { ar: "طلب:", en: "Order:" };
+
 export default function TrainingOrderApplicationsPage() {
+  const { t, locale } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -156,21 +149,33 @@ export default function TrainingOrderApplicationsPage() {
     <>
       <DashboardSection
         className="oh-training-page-section"
-        title="متقدمو الطلبات التجريبية"
-        description="قائمة بالطلبات الوهمية التي تلقّت تقديماً — اختر «عرض المتقدمين» لرؤية أسماء المستقلين وتفاصيل العروض. لا يشمل طلبات المعرض الحقيقي."
+        title={t("trainingOrders.applications.title")}
+        description={t("trainingOrders.applications.description")}
       >
+        <p className="help oh-training-applications__note">{t("trainingOrders.applications.monitoringNote")}</p>
         {error ? <p className="auth-form-error">{error}</p> : null}
         <DashboardToolbar className="oh-training-filters">
           <label>
-            معرّف الطلب
-            <input value={fakeOrderId} onChange={(e) => setFakeOrderId(e.target.value)} dir="ltr" title="معرّف السجل" />
+            {t("trainingOrders.applications.orderIdLabel")}
+            <input
+              value={fakeOrderId}
+              onChange={(e) => setFakeOrderId(e.target.value)}
+              placeholder={t("trainingOrders.applications.orderIdPlaceholder")}
+              dir="ltr"
+            />
           </label>
           <label>
-            رقم الجولة
-            <input value={roundId} onChange={(e) => setRoundId(e.target.value)} placeholder="مثال: 12" dir="ltr" />
+            {t("trainingOrders.applications.roundIdLabel")}
+            <input
+              value={roundId}
+              onChange={(e) => setRoundId(e.target.value)}
+              placeholder={t("trainingOrders.applications.roundIdPlaceholder")}
+              title={t("trainingOrders.applications.roundIdExample")}
+              dir="ltr"
+            />
           </label>
           <label>
-            التصنيف
+            {t("trainingOrders.applications.category")}
             <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
               <option value="">الكل</option>
               {categories.map((c) => (
@@ -181,14 +186,14 @@ export default function TrainingOrderApplicationsPage() {
             </select>
           </label>
           <button type="button" className="btn btn-primary" onClick={applyFilters}>
-            تصفية
+            {t("trainingOrders.applications.filter")}
           </button>
         </DashboardToolbar>
 
         {loading ? (
-          <DashboardLoadingState label="جاري التحميل…" />
+          <DashboardLoadingState label={t("trainingOrders.applications.loading")} />
         ) : rows.length === 0 ? (
-          <DashboardEmptyState title="لا توجد طلبات تجريبية بمتقدمين ضمن المرشحات." />
+          <DashboardEmptyState title={t("trainingOrders.applications.empty")} />
         ) : (
           <div className="oh-training-table-wrap">
             <table className="oh-training-table">
@@ -221,10 +226,12 @@ export default function TrainingOrderApplicationsPage() {
                     <td>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "flex-end" }}>
                         <StatusBadge tone={roundStatusTone(r.roundStatus)}>
-                          جولة: {ROUND_STATUS_AR[r.roundStatus] || r.roundStatus || "—"}
+                          {ROUND_STATUS_PREFIX[locale] || ROUND_STATUS_PREFIX.ar}{" "}
+                          {getRoundStatusLabel(r.roundStatus, t)}
                         </StatusBadge>
                         <StatusBadge tone={fakeOrderStatusTone(r.fakeOrderStatus)}>
-                          طلب: {FAKE_ORDER_STATUS_AR[r.fakeOrderStatus] || r.fakeOrderStatus || "—"}
+                          {ORDER_STATUS_PREFIX[locale] || ORDER_STATUS_PREFIX.ar}{" "}
+                          {getFakeOrderStatusLabel(r.fakeOrderStatus, t)}
                         </StatusBadge>
                       </div>
                     </td>
@@ -241,7 +248,7 @@ export default function TrainingOrderApplicationsPage() {
                     </td>
                     <td>
                       <button type="button" className="btn btn-secondary" onClick={() => openApplicantsModal(r)}>
-                        عرض المتقدمين
+                        {t("trainingOrders.applications.viewApplicants")}
                       </button>
                     </td>
                   </tr>
@@ -275,23 +282,23 @@ export default function TrainingOrderApplicationsPage() {
               <div className="oh-training-modal__head">
                 <div>
                   <h3 id="training-apps-modal-title" className="oh-training-modal__title">
-                    المتقدمون على الطلب التجريبي
+                    {t("trainingOrders.applications.modalTitle")}
                   </h3>
                   <p className="help" style={{ margin: "6px 0 0" }}>
                     {modalTitle} <span dir="ltr">#{modalFakeOrderId}</span>
                   </p>
                 </div>
                 <button type="button" className="btn btn-secondary oh-training-modal__close" onClick={closeModal}>
-                  إغلاق
+                  {t("trainingOrders.applications.close")}
                 </button>
               </div>
 
               {modalLoading ? (
-                <DashboardLoadingState label="جاري تحميل المتقدمين…" rows={3} />
+                <DashboardLoadingState label={t("trainingOrders.applications.loadingApplicants")} rows={3} />
               ) : modalError ? (
                 <p className="auth-form-error">{modalError}</p>
               ) : modalApps.length === 0 ? (
-                <DashboardEmptyState title="لا يوجد متقدمون لهذا الطلب." />
+                <DashboardEmptyState title={t("trainingOrders.applications.noApplicants")} />
               ) : (
                 <div className="oh-training-table-wrap" style={{ marginTop: 0 }}>
                   <table className="oh-training-table">

@@ -110,6 +110,44 @@ export function PoolOrderListSkeleton({ count = 4 }) {
   );
 }
 
+/** Marketplace toolbar — sort card placeholder (initial load). */
+export function OpenOrdersToolbarSkeleton() {
+  return (
+    <div className="oh-orders-toolbar-neu__controls oh-orders-toolbar-skeleton" aria-hidden>
+      <div className="oh-orders-sort-card-sk fdash-surface-3d fdash-surface-3d--soft">
+        <SkelBar style={{ height: 12, width: 52 }} />
+        <SkelBar style={{ height: 32, width: 118, borderRadius: 9 }} />
+      </div>
+    </div>
+  );
+}
+
+/** Marketplace filters sidebar placeholder (initial load). */
+export function OpenOrdersFiltersPanelSkeleton({ className = "" }) {
+  return (
+    <aside
+      className={`oh-orders-filters oh-orders-filters--sticky oh-orders-filters--skeleton fdash-surface-3d fdash-surface-3d--soft ${className}`.trim()}
+      aria-hidden
+    >
+      <SkelBar style={{ height: 16, width: "48%", marginBottom: 14 }} />
+      <div className="oh-orders-filters-sk-switch">
+        <SkelBar style={{ height: 36, flex: 1, borderRadius: 999 }} />
+        <SkelBar style={{ height: 36, flex: 1, borderRadius: 999 }} />
+      </div>
+      <div className="oh-orders-filters-sk-list">
+        {Array.from({ length: 4 }).map((_, gi) => (
+          <div key={gi} className="oh-orders-filters-sk-group">
+            <SkelBar style={{ height: 14, width: "62%" }} />
+            {Array.from({ length: 3 }).map((__, ii) => (
+              <SkelBar key={ii} style={{ height: 12, width: ii % 2 ? "78%" : "88%" }} />
+            ))}
+          </div>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
 export function AssignedOrderCardSkeleton() {
   return (
     <article className="oh-assigned-card oh-assigned-card--skeleton" aria-hidden>

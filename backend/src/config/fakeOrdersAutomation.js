@@ -74,6 +74,20 @@ function getAutomationCronSecret() {
   return trimmed;
 }
 
+function resolveRoundOrderBoundsFromEnv(settings = {}) {
+  const envMin = Number(process.env.FAKE_ORDERS_ROUND_MIN);
+  const envMax = Number(process.env.FAKE_ORDERS_ROUND_MAX);
+  const settingsMin = Number(settings.min_orders);
+  const settingsMax = Number(settings.max_orders);
+  const minOrders =
+    Number.isFinite(envMin) && envMin >= 1 ? Math.floor(envMin) : Math.max(1, settingsMin || 1);
+  const maxOrders =
+    Number.isFinite(envMax) && envMax >= minOrders
+      ? Math.floor(envMax)
+      : Math.max(minOrders, settingsMax || minOrders);
+  return { minOrders, maxOrders };
+}
+
 module.exports = {
   isInProcessAutomationIntervalEnabled,
   isAutomationDriverConfigured,
@@ -81,4 +95,5 @@ module.exports = {
   getFakeOrdersTickMs,
   isFakeOrdersAutomationVerbose,
   getAutomationCronSecret,
+  resolveRoundOrderBoundsFromEnv,
 };

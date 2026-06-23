@@ -85,3 +85,23 @@ export function getRoundSourceLabel(source, t) {
   const label = t(key);
   return label === key ? roundSourceAr(source) : label;
 }
+
+/**
+ * @param {string} code
+ * @param {(key: string) => string} t
+ */
+export function getAutomationHealthWarningLabel(code, t) {
+  if (!code) return "—";
+  const key = `trainingOrders.healthWarnings.${code}`;
+  const label = t(key);
+  return label === key ? t("trainingOrders.healthWarnings._fallback") : label;
+}
+
+/**
+ * @param {string[]} warnings
+ * @param {(key: string) => string} t
+ */
+export function formatAutomationHealthWarnings(warnings, t) {
+  if (!Array.isArray(warnings) || warnings.length === 0) return [];
+  return warnings.map((code) => getAutomationHealthWarningLabel(code, t));
+}

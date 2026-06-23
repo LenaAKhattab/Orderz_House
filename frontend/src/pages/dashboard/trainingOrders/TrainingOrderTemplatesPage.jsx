@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  adminCreateTrainingTemplateRequest,
-  adminDeleteTrainingTemplateRequest,
-  adminListTrainingTemplatesRequest,
-  adminPatchTrainingTemplateRequest,
+  adminCreateTrainingFakeOrderRequest,
+  adminDeleteTrainingFakeOrderRequest,
+  adminListTrainingFakeOrdersRequest,
+  adminPatchTrainingFakeOrderRequest,
   getCategoriesRequest,
 } from "../../../services/api";
 import AdminInternalOrderWizard from "../../../components/orders/AdminInternalOrderWizard";
@@ -27,31 +27,28 @@ function errMsg(e) {
   return getSafeApiErrorMessage(e);
 }
 
-/** Map API template row → AdminInternalOrderWizard initialValues (mode=fake-template). */
-function templateToWizardInitial(t) {
-  if (!t) return {};
-  const minB = Number(t.minBudget);
-  const maxB = Number(t.maxBudget);
-  const minD = Number(t.minDuration);
-  const maxD = Number(t.maxDuration);
-  const budgetFixed = minB === maxB;
+function fakeOrderToWizardInitial(row) {
+  if (!row) return {};
+  const minB = Number(row.bidBudgetMin ?? row.budget);
+  const maxB = Number(row.bidBudgetMax ?? row.budget);
+  const fixed = row.projectType === "fixed" || minB === maxB;
   const base = {
-    title: t.title || "",
-    description: t.description || "",
-    categoryId: String(t.categoryId || ""),
-    subSubcategoryId: String(t.subSubcategoryId || ""),
-    durationUnit: t.durationUnit || "days",
-    preferredSkills: Array.isArray(t.skills) ? t.skills : [],
-    isActiveTemplate: t.isActive !== false,
+    title: row.title || "",
+    description: row.description || "",
+    categoryId: String(row.categoryId || ""),
+    subSubcategoryId: String(row.subSubcategoryId || ""),
+    durationUnit: row.durationUnit || "days",
+    preferredSkills: [],
+    isActiveTemplate: row.isActive !== false,
   };
-  if (budgetFixed) {
+  if (fixed) {
     return {
       ...base,
       projectType: "fixed",
       budget: String(minB),
       bidBudgetMin: "",
       bidBudgetMax: "",
-      durationValue: String(minD),
+      durationValue: String(row.durationValue),
       durationMin: "",
       durationMax: "",
     };
@@ -63,8 +60,8 @@ function templateToWizardInitial(t) {
     bidBudgetMin: String(minB),
     bidBudgetMax: String(maxB),
     durationValue: "",
-    durationMin: String(minD),
-    durationMax: String(maxD),
+    durationMin: String(row.durationValue),
+    durationMax: String(row.durationValue),
   };
 }
 
@@ -74,43 +71,47 @@ export default function TrainingOrderTemplatesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
-  const [templates, setTemplates] = useState([]);
+  const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [q, setQ] = useState("");
   const [appliedQ, setAppliedQ] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [visibleFilter, setVisibleFilter] = useState("");
 
   const [categories, setCategories] = useState([]);
-
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [editingRow, setEditingRow] = useState(null);
   const [wizardReset, setWizardReset] = useState(0);
 
-  const loadList = useCallback(async ({ signal } = {}) => {
-    setError("");
-    setLoading(true);
-    try {
-      const params = {
-        page,
-        limit: 20,
-        q: appliedQ.trim() || undefined,
-        categoryId: categoryFilter || undefined,
-        isActive: statusFilter === "active" ? true : statusFilter === "inactive" ? false : undefined,
-      };
-      const res = await adminListTrainingTemplatesRequest(params);
-      if (signal?.aborted) return;
-      const payload = res?.data ?? res;
-      setTemplates(payload?.templates || []);
-      setPagination(payload?.pagination || { page: 1, totalPages: 1, total: 0 });
-    } catch (e) {
-      if (signal?.aborted) return;
-      setError(errMsg(e));
-    } finally {
-      if (!signal?.aborted) setLoading(false);
-    }
-  }, [page, appliedQ, categoryFilter, statusFilter]);
+  const loadList = useCallback(
+    async ({ signal } = {}) => {
+      setError("");
+      setLoading(true);
+      try {
+        const params = {
+          page,
+          limit: 20,
+          q: appliedQ.trim() || undefined,
+          categoryId: categoryFilter || undefined,
+          isActive: statusFilter === "active" ? true : statusFilter === "inactive" ? false : undefined,
+          visibleNow: visibleFilter === "visible" ? true : visibleFilter === "hidden" ? false : undefined,
+        };
+        const res = await adminListTrainingFakeOrdersRequest(params);
+        if (signal?.aborted) return;
+        const payload = res?.data ?? res;
+        setRows(payload?.fakeOrders || []);
+        setPagination(payload?.pagination || { page: 1, totalPages: 1, total: 0 });
+      } catch (e) {
+        if (signal?.aborted) return;
+        setError(errMsg(e));
+      } finally {
+        if (!signal?.aborted) setLoading(false);
+      }
+    },
+    [page, appliedQ, categoryFilter, statusFilter, visibleFilter],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -140,45 +141,45 @@ export default function TrainingOrderTemplatesPage() {
     setAppliedQ(q);
   };
 
-  const wizardInitial = useMemo(() => templateToWizardInitial(editingTemplate), [editingTemplate]);
+  const wizardInitial = useMemo(() => fakeOrderToWizardInitial(editingRow), [editingRow]);
 
   const openCreate = () => {
     setEditingId(null);
-    setEditingTemplate(null);
+    setEditingRow(null);
     setWizardReset((x) => x + 1);
     setModalOpen(true);
   };
 
-  const openEdit = (t) => {
-    setEditingId(t.id);
-    setEditingTemplate(t);
+  const openEdit = (row) => {
+    setEditingId(row.id);
+    setEditingRow(row);
     setWizardReset((x) => x + 1);
     setModalOpen(true);
   };
 
-  const submitFakeTemplate = async (payload) => {
+  const submitFakeOrder = async (payload) => {
     if (editingId) {
-      await adminPatchTrainingTemplateRequest(editingId, payload);
+      await adminPatchTrainingFakeOrderRequest(editingId, payload);
     } else {
-      await adminCreateTrainingTemplateRequest(payload);
+      await adminCreateTrainingFakeOrderRequest(payload);
     }
   };
 
-  const remove = async (t) => {
-    if (!window.confirm(`حذف الطلب «${t.title}»؟`)) return;
+  const remove = async (row) => {
+    if (!window.confirm(t("trainingOrders.pool.deleteConfirm"))) return;
     setError("");
     try {
-      await adminDeleteTrainingTemplateRequest(t.id);
+      await adminDeleteTrainingFakeOrderRequest(row.id);
       await loadList();
     } catch (e) {
       setError(errMsg(e));
     }
   };
 
-  const toggleActive = async (template) => {
+  const toggleActive = async (row) => {
     setError("");
     try {
-      await adminPatchTrainingTemplateRequest(template.id, { isActive: !template.isActive });
+      await adminPatchTrainingFakeOrderRequest(row.id, { isActive: !row.isActive });
       await loadList();
     } catch (e) {
       setError(errMsg(e));
@@ -191,28 +192,29 @@ export default function TrainingOrderTemplatesPage() {
     <>
       <DashboardSection
         className="oh-training-page-section"
-        title={t("trainingOrders.templates.title")}
-        description={t("trainingOrders.templates.description")}
+        title={t("trainingOrders.pool.title")}
+        description={t("trainingOrders.pool.description")}
         actions={
           <button type="button" className="btn btn-primary" onClick={openCreate}>
-            + {t("trainingOrders.templates.addTemplate")}
+            + {t("trainingOrders.pool.addOrder")}
           </button>
         }
       >
+        <p className="help oh-training-pool__intro">{t("trainingOrders.pool.helper")}</p>
         {error ? <p className="auth-form-error">{error}</p> : null}
         <DashboardToolbar className="oh-training-filters">
           <label>
-            {t("trainingOrders.templates.colTitle")}
+            {t("trainingOrders.pool.colTitle")}
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder={t("trainingOrders.templates.searchPlaceholder")}
+              placeholder={t("trainingOrders.pool.searchPlaceholder")}
             />
           </label>
           <label>
-            {t("trainingOrders.templates.category")}
+            {t("trainingOrders.pool.category")}
             <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-              <option value="">{t("trainingOrders.templates.all")}</option>
+              <option value="">{t("trainingOrders.pool.all")}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {getLocalizedField(c, "name", locale)}
@@ -221,26 +223,34 @@ export default function TrainingOrderTemplatesPage() {
             </select>
           </label>
           <label>
-            {t("trainingOrders.templates.status")}
+            {t("trainingOrders.pool.status")}
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="">{t("trainingOrders.templates.all")}</option>
-              <option value="active">{t("trainingOrders.templates.active")}</option>
-              <option value="inactive">{t("trainingOrders.templates.inactive")}</option>
+              <option value="">{t("trainingOrders.pool.all")}</option>
+              <option value="active">{t("trainingOrders.pool.active")}</option>
+              <option value="inactive">{t("trainingOrders.pool.inactive")}</option>
+            </select>
+          </label>
+          <label>
+            {t("trainingOrders.pool.visibility")}
+            <select value={visibleFilter} onChange={(e) => setVisibleFilter(e.target.value)}>
+              <option value="">{t("trainingOrders.pool.all")}</option>
+              <option value="visible">{t("trainingOrders.pool.visibleNow")}</option>
+              <option value="hidden">{t("trainingOrders.pool.notVisibleNow")}</option>
             </select>
           </label>
           <button type="button" className="btn btn-secondary" onClick={search}>
-            {t("trainingOrders.templates.apply")}
+            {t("trainingOrders.pool.apply")}
           </button>
         </DashboardToolbar>
 
         {loading ? (
-          <DashboardLoadingState label={t("trainingOrders.templates.loading")} />
-        ) : templates.length === 0 ? (
+          <DashboardLoadingState label={t("trainingOrders.pool.loading")} />
+        ) : rows.length === 0 ? (
           <DashboardEmptyState
-            title={t("trainingOrders.templates.empty")}
+            title={t("trainingOrders.pool.empty")}
             actions={
               <button type="button" className="btn btn-primary" onClick={openCreate}>
-                + {t("trainingOrders.templates.addTemplate")}
+                + {t("trainingOrders.pool.addOrder")}
               </button>
             }
           />
@@ -249,53 +259,70 @@ export default function TrainingOrderTemplatesPage() {
             <table className="oh-training-table">
               <thead>
                 <tr>
-                  <th>{t("trainingOrders.templates.colTitle")}</th>
-                  <th>{t("trainingOrders.templates.colCategory")}</th>
-                  <th>{t("trainingOrders.templates.colBudget")}</th>
-                  <th>{t("trainingOrders.templates.colDuration")}</th>
-                  <th>{t("trainingOrders.templates.colStatus")}</th>
+                  <th>{t("trainingOrders.pool.colTitle")}</th>
+                  <th>{t("trainingOrders.pool.colCategory")}</th>
+                  <th>{t("trainingOrders.pool.colBudget")}</th>
+                  <th>{t("trainingOrders.pool.colDuration")}</th>
+                  <th>{t("trainingOrders.pool.colVisibility")}</th>
+                  <th>{t("trainingOrders.pool.colStatus")}</th>
+                  <th>{t("trainingOrders.pool.colApplicants")}</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
-                {templates.map((template) => {
-                  const title = getLocalizedOrderTitle(template, locale);
-                  const description = getLocalizedOrderDescription(template, locale);
+                {rows.map((row) => {
+                  const title = getLocalizedOrderTitle(row, locale);
+                  const description = getLocalizedOrderDescription(row, locale);
+                  const minB = row.bidBudgetMin ?? row.budget;
+                  const maxB = row.bidBudgetMax ?? row.budget;
                   return (
-                  <tr key={template.id}>
-                    <td>
-                      <strong>{title}</strong>
-                      <div className="help" style={{ marginTop: 4 }}>
-                        {description.slice(0, 80)}
-                        {description.length > 80 ? "…" : ""}
-                      </div>
-                    </td>
-                    <td>{template.categoryName || "—"}</td>
-                    <td dir="ltr">
-                      {template.minBudget} – {template.maxBudget} JOD
-                    </td>
-                    <td dir="ltr">
-                      {formatDurationRange(template.minDuration, template.maxDuration, template.durationUnit, locale, durationLabels)}
-                    </td>
-                    <td>
-                      {template.isActive ? (
-                        <StatusBadge tone="active">{t("trainingOrders.templates.active")}</StatusBadge>
-                      ) : (
-                        <StatusBadge tone="inactive">{t("trainingOrders.templates.inactive")}</StatusBadge>
-                      )}
-                    </td>
-                    <td style={{ whiteSpace: "nowrap" }}>
-                      <button type="button" className="btn btn-secondary" style={{ marginLeft: 6 }} onClick={() => openEdit(template)}>
-                        {t("trainingOrders.templates.edit")}
-                      </button>
-                      <button type="button" className="btn btn-secondary" style={{ marginLeft: 6 }} onClick={() => toggleActive(template)}>
-                        {template.isActive ? t("trainingOrders.templates.disable") : t("trainingOrders.templates.enable")}
-                      </button>
-                      <button type="button" className="btn btn-secondary" onClick={() => remove(template)}>
-                        {t("trainingOrders.templates.delete")}
-                      </button>
-                    </td>
-                  </tr>
+                    <tr key={row.id}>
+                      <td>
+                        <strong>{title}</strong>
+                        <div className="help" style={{ marginTop: 4 }}>
+                          #{row.id} — {description.slice(0, 60)}
+                          {description.length > 60 ? "…" : ""}
+                        </div>
+                      </td>
+                      <td>{row.categoryName || "—"}</td>
+                      <td dir="ltr">
+                        {minB} – {maxB} JOD
+                      </td>
+                      <td dir="ltr">
+                        {row.durationValue} {row.durationUnit}
+                      </td>
+                      <td>
+                        {row.visibleNow ? (
+                          <StatusBadge tone="success">{t("trainingOrders.pool.visibleNow")}</StatusBadge>
+                        ) : (
+                          <StatusBadge tone="inactive">{t("trainingOrders.pool.notVisibleNow")}</StatusBadge>
+                        )}
+                        {row.currentRoundId ? (
+                          <div className="help" dir="ltr" style={{ marginTop: 4 }}>
+                            {t("trainingOrders.pool.round")} #{row.currentRoundId}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td>
+                        {row.isActive ? (
+                          <StatusBadge tone="active">{t("trainingOrders.pool.active")}</StatusBadge>
+                        ) : (
+                          <StatusBadge tone="inactive">{t("trainingOrders.pool.inactive")}</StatusBadge>
+                        )}
+                      </td>
+                      <td dir="ltr">{row.applicantsCount ?? 0}</td>
+                      <td style={{ whiteSpace: "nowrap" }}>
+                        <button type="button" className="btn btn-secondary" style={{ marginLeft: 6 }} onClick={() => openEdit(row)}>
+                          {t("trainingOrders.pool.edit")}
+                        </button>
+                        <button type="button" className="btn btn-secondary" style={{ marginLeft: 6 }} onClick={() => toggleActive(row)}>
+                          {row.isActive ? t("trainingOrders.pool.disable") : t("trainingOrders.pool.enable")}
+                        </button>
+                        <button type="button" className="btn btn-secondary" onClick={() => remove(row)}>
+                          {t("trainingOrders.pool.delete")}
+                        </button>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
@@ -305,13 +332,13 @@ export default function TrainingOrderTemplatesPage() {
 
         <DashboardToolbar className="oh-training-pagination">
           <button type="button" className="btn btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-            السابق
+            {t("trainingOrders.pool.prev")}
           </button>
           <span className="help">
-            صفحة {page} من {totalPages} — إجمالي {pagination?.total ?? 0}
+            {t("trainingOrders.pool.pageOf", { page, totalPages, total: pagination?.total ?? 0 })}
           </span>
           <button type="button" className="btn btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-            التالي
+            {t("trainingOrders.pool.next")}
           </button>
         </DashboardToolbar>
       </DashboardSection>
@@ -327,31 +354,29 @@ export default function TrainingOrderTemplatesPage() {
           <div
             className="client-order-modal client-order-modal--admin-wizard"
             role="dialog"
-            aria-labelledby="training-template-wizard-title"
+            aria-labelledby="training-pool-wizard-title"
             dir={dir}
             lang={locale}
             onMouseDown={(e) => e.stopPropagation()}
           >
             <header className="client-order-modal__head">
               <div>
-                <h2 id="training-template-wizard-title" className="client-order-modal__title">
-                  {editingId
-                    ? t("trainingOrders.templateWizard.modalEditTitle")
-                    : t("trainingOrders.templateWizard.modalCreateTitle")}
+                <h2 id="training-pool-wizard-title" className="client-order-modal__title">
+                  {editingId ? t("trainingOrders.poolWizard.modalEditTitle") : t("trainingOrders.poolWizard.modalCreateTitle")}
                 </h2>
               </div>
               <button type="button" className="btn btn-secondary client-order-modal__close" onClick={() => setModalOpen(false)}>
-                {t("trainingOrders.templateWizard.modalClose")}
+                {t("trainingOrders.poolWizard.modalClose")}
               </button>
             </header>
             <div className="client-order-modal__body client-order-modal__body--admin-wizard">
               <AdminInternalOrderWizard
                 variant="modal"
-                mode="fake-template"
-                fakeTemplateIsEdit={Boolean(editingId)}
+                mode="fake-order"
+                fakeOrderIsEdit={Boolean(editingId)}
                 resetToken={wizardReset}
                 initialValues={wizardInitial}
-                onSubmitFakeTemplate={submitFakeTemplate}
+                onSubmitFakeOrder={submitFakeOrder}
                 onCreated={() => {
                   setModalOpen(false);
                   loadList();

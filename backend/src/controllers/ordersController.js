@@ -41,6 +41,7 @@ const listPoolOrders = async (req, res, next) => {
       status: req.query.status,
       projectType: req.query.projectType,
       categoryId: req.query.categoryId,
+      categoryIds: req.query.categoryIds,
       subSubCategoryIds: req.query.subSubCategoryIds,
       sort: req.query.sort,
       q: req.query.q,

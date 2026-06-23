@@ -47,7 +47,6 @@ describe("canRoleAccessPath", () => {
 
   it("allows admin role on delegated super-admin paths (page permission enforced separately)", () => {
     assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.ADMIN), true);
-    assert.equal(canRoleAccessPath("/dashboard/super-admin/plan-pages", ROLE.ADMIN), true);
     assert.equal(canRoleAccessPath("/dashboard/super-admin/admins", ROLE.ADMIN), true);
   });
 

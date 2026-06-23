@@ -42,7 +42,6 @@ import {
   NotFoundPage,
   DashboardPage,
   SuperAdminPlansPage,
-  SuperAdminPlanPagesPage,
   SuperAdminSubscriptionsPage,
   SuperAdminFinancialClaimsPage,
   SuperAdminSettingsPage,
@@ -230,14 +229,6 @@ function App() {
                   element={
                     <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.overview}>
                       <DashboardPage />
-                    </RequireStaffPage>
-                  }
-                />
-                <Route
-                  path="/dashboard/super-admin/plan-pages"
-                  element={
-                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.plans}>
-                      <SuperAdminPlanPagesPage />
                     </RequireStaffPage>
                   }
                 />

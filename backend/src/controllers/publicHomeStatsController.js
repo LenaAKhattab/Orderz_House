@@ -31,9 +31,14 @@ async function getPublicHomeStats(req, res, next) {
             inProgressProjects: orderCounts.inProgressProjects,
             completedProjects: orderCounts.completedProjects,
             availableOrdersNow: orderCounts.availableOrdersNow,
+            availableOrdersNowReal: orderCounts.availableOrdersNowReal,
+            availableOrdersNowTraining: orderCounts.availableOrdersNowTraining,
             completedOrders: orderCounts.completedOrders,
             completedOrdersReal: orderCounts.completedOrdersReal,
-            trainingRotationsCompleted: orderCounts.trainingRotationsCompleted,
+            trainingRotationsCompleted: orderCounts.trainingRotationsCompletedTotal,
+            trainingRotationsCompletedTotal: orderCounts.trainingRotationsCompletedTotal,
+            trainingRotationsCompletedSinceCutoff: orderCounts.trainingRotationsCompletedSinceCutoff,
+            homepageTrainingCompletedCutoffAt: orderCounts.homepageTrainingCompletedCutoffAt,
           };
 
     if (!showVisitorsCount && !showActiveUsersCount) {

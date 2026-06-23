@@ -30,6 +30,12 @@ router.post("/training-orders/rounds/:id/cancel", ...trainingOrdersGuard, adminF
 
 router.get("/training-orders/applications/summary", ...trainingOrdersGuard, adminFakeOrdersController.listApplicationsSummary);
 router.get("/training-orders/applications", ...trainingOrdersGuard, adminFakeOrdersController.listApplications);
+router.get("/training-orders/fake-orders/count", ...trainingOrdersGuard, adminFakeOrdersController.getFakeOrdersCount);
+router.get("/training-orders/fake-orders", ...trainingOrdersGuard, adminFakeOrdersController.listFakeOrders);
+router.post("/training-orders/fake-orders", ...trainingOrdersGuard, adminFakeOrdersController.createFakeOrder);
 router.get("/training-orders/fake-orders/:fakeOrderId/applications", ...trainingOrdersGuard, adminFakeOrdersController.listApplicationsByFakeOrder);
+router.get("/training-orders/fake-orders/:id", ...trainingOrdersGuard, adminFakeOrdersController.getFakeOrder);
+router.patch("/training-orders/fake-orders/:id", ...trainingOrdersGuard, adminFakeOrdersController.patchFakeOrder);
+router.delete("/training-orders/fake-orders/:id", ...trainingOrdersGuard, adminFakeOrdersController.removeFakeOrder);
 
 module.exports = router;

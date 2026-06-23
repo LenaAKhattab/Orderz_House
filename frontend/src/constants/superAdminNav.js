@@ -10,12 +10,6 @@ export const SUPER_ADMIN_NAV_MAIN = [
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.overview,
   },
   {
-    to: "/dashboard/super-admin/plan-pages",
-    labelKey: "dashboard.nav.superAdmin.planPages",
-    icon: "◇",
-    permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
-  },
-  {
     to: "/dashboard/super-admin/plans",
     labelKey: "dashboard.nav.superAdmin.plans",
     icon: "◆",
@@ -97,7 +91,6 @@ export function superAdminBreadcrumbKeys(pathname) {
   if (pathname.includes("/subscriptions/activation")) {
     return [...base, "dashboard.breadcrumbs.subscriptionActivation"];
   }
-  if (pathname.includes("/plan-pages")) return [...base, "dashboard.breadcrumbs.planPages"];
   if (pathname.includes("/plans")) return [...base, "dashboard.breadcrumbs.plans"];
   if (pathname.includes("/courses")) return [...base, "dashboard.breadcrumbs.courses"];
   if (pathname.includes("/super-admin/ads")) return [...base, "dashboard.breadcrumbs.ads"];

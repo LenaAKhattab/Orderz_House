@@ -23,9 +23,9 @@ export default function PlansActivationFeeNote({ className = "" }) {
         <PriceTagIcon />
       </span>
       <span className="plans-activation-fee-note__text">
-        {t("plans.activationFeeNote.prefix")}{" "}
-        <span className="plans-activation-fee-note__amount">{t("plans.activationFeeNote.amount")}</span>{" "}
-        {t("plans.activationFeeNote.suffix")}
+        <span className="plans-activation-fee-note__label">{t("plans.activationFeeNote.prefix")}</span>{" "}
+        <span className="plans-activation-fee-note__amount">{t("plans.activationFeeNote.amount")}</span>
+        <span className="plans-activation-fee-note__suffix">{t("plans.activationFeeNote.suffix")}</span>
       </span>
     </p>
   );

@@ -134,6 +134,7 @@
     "clientViewOnly": "Only eligible freelancers can take orders.",
     "loadErrorTitle": "Could not load orders",
     "refreshing": "Updating list…",
+    "updating": "Updating",
     "backgroundRefreshTitle": "Could not refresh",
     "backgroundRefreshFailed": "The list could not be updated. Showing the last loaded requests.",
     "trainingBadge": "Training order",

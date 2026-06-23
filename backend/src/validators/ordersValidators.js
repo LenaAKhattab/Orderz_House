@@ -30,6 +30,10 @@ const listOrdersValidators = [
     .withMessage("Invalid status filter."),
   query("projectType").optional().isIn(["fixed", "bidding"]).withMessage("Invalid projectType filter."),
   query("categoryId").optional().isInt({ min: 1 }).withMessage("categoryId must be a positive integer."),
+  query("categoryIds")
+    .optional()
+    .matches(/^\d+(,\d+)*$/)
+    .withMessage("categoryIds must be comma-separated positive integers."),
   query("subSubCategoryIds")
     .optional()
     .matches(/^\d+(,\d+)*$/)

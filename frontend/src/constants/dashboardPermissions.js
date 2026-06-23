@@ -45,7 +45,6 @@ const SUPER_ADMIN_ROUTE_RULES = [
   { prefix: "/dashboard/super-admin/subscriptions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.subscriptions },
   { prefix: "/dashboard/super-admin/financial-claims", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims },
   { prefix: "/dashboard/super-admin/admins", permission: SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage },
-  { prefix: "/dashboard/super-admin/plan-pages", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { prefix: "/dashboard/super-admin/plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { prefix: "/dashboard/super-admin/courses", permission: ADMIN_PAGE_PERMISSIONS.courses },
   { prefix: "/dashboard/super-admin/ads", permission: ADMIN_PAGE_PERMISSIONS.ads },

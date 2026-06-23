@@ -134,6 +134,7 @@
     "clientViewOnly": "يمكن للمستقلين المؤهلين فقط استلام الطلبات.",
     "loadErrorTitle": "تعذر تحميل الطلبات",
     "refreshing": "جارٍ تحديث القائمة…",
+    "updating": "جار التحديث",
     "backgroundRefreshTitle": "تعذر التحديث",
     "backgroundRefreshFailed": "لم يتم تحديث القائمة. نعرض آخر الطلبات المحمّلة.",
     "trainingBadge": "طلب تدريبي",

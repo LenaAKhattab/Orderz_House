@@ -79,20 +79,20 @@ export default function TrainingOrderRoundsPage() {
       {error ? <p className="auth-form-error">{error}</p> : null}
       <DashboardToolbar className="oh-training-filters">
           <label>
-            حالة الجولة
+            {t("trainingOrders.rounds.statusFilterLabel")}
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="">الكل</option>
-              <option value="scheduled">مجدولة</option>
-              <option value="active">نشطة</option>
-              <option value="expired">منتهية</option>
-              <option value="stopped">متوقفة</option>
+              <option value="">{t("trainingOrders.rounds.all")}</option>
+              <option value="scheduled">{t("trainingOrders.roundStatus.scheduled")}</option>
+              <option value="active">{t("trainingOrders.roundStatus.active")}</option>
+              <option value="expired">{t("trainingOrders.roundStatus.expired")}</option>
+              <option value="stopped">{t("trainingOrders.roundStatus.stopped")}</option>
             </select>
           </label>
         </DashboardToolbar>
         {loading ? (
-          <DashboardLoadingState label="جاري التحميل…" />
+          <DashboardLoadingState label={t("trainingOrders.rounds.loading")} />
         ) : rounds.length === 0 ? (
-          <DashboardEmptyState title="لا توجد جولات مسجّلة بعد." />
+          <DashboardEmptyState title={t("trainingOrders.rounds.emptyList")} />
         ) : (
           <div className="oh-training-table-wrap">
             <table className="oh-training-table">
@@ -130,7 +130,7 @@ export default function TrainingOrderRoundsPage() {
                           disabled={busyId === r.id}
                           onClick={() => cancel(r)}
                         >
-                          {busyId === r.id ? "…" : "إيقاف"}
+                          {busyId === r.id ? "…" : t("trainingOrders.rounds.stopRound")}
                         </button>
                       ) : (
                         "—"
@@ -145,13 +145,13 @@ export default function TrainingOrderRoundsPage() {
 
         <DashboardToolbar className="oh-training-pagination">
           <button type="button" className="btn btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-            السابق
+            {t("trainingOrders.rounds.prev")}
           </button>
           <span className="help">
-            صفحة {page} من {totalPages}
+            {t("trainingOrders.rounds.pageOf", { page, totalPages })}
           </span>
           <button type="button" className="btn btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-            التالي
+            {t("trainingOrders.rounds.next")}
           </button>
         </DashboardToolbar>
       </DashboardSection>

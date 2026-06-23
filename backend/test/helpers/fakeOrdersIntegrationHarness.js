@@ -176,6 +176,7 @@ async function generateTestRound(client, actorUserId, opts = {}) {
     actorUserId,
     roundSource: "automation",
     supersedeExisting,
+    gaplessSupersede: supersedeExisting,
   });
   if (!result.ok) {
     const err = new Error(result.code || "GENERATION_FAILED");
@@ -194,6 +195,11 @@ async function requireIntegrationPrereqs(pool, t) {
   }
   if ((await activeTemplateCount(pool)) < 1) {
     t.skip("no active fake_order_templates");
+    return false;
+  }
+  const { rows: foRows } = await pool.query(`SELECT COUNT(*)::int AS c FROM fake_orders`);
+  if (Number(foRows[0]?.c || 0) < 1) {
+    t.skip("no fake_orders in pool");
     return false;
   }
   const adminId = await resolveAdminActorId(pool);

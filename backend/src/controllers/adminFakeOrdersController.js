@@ -36,6 +36,77 @@ const listTemplates = async (req, res, next) => {
   }
 };
 
+const getFakeOrdersCount = async (req, res, next) => {
+  try {
+    const out = await fakeOrdersService.countFakeOrdersPool({ actorUserId: req.auth.userId });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const listFakeOrders = async (req, res, next) => {
+  try {
+    const isActiveQ = req.query.isActive;
+    const isActive = isActiveQ === "true" ? true : isActiveQ === "false" ? false : null;
+    const visibleNowQ = req.query.visibleNow;
+    const visibleNow = visibleNowQ === "true" ? true : visibleNowQ === "false" ? false : null;
+    const out = await fakeOrdersService.listFakeOrders({
+      actorUserId: req.auth.userId,
+      page: req.query.page,
+      limit: req.query.limit,
+      categoryId: req.query.categoryId || null,
+      isActive,
+      visibleNow,
+      q: req.query.q || "",
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const getFakeOrder = async (req, res, next) => {
+  try {
+    const fakeOrder = await fakeOrdersService.getFakeOrderById(req.params.id, { actorUserId: req.auth.userId });
+    if (!fakeOrder) return res.status(404).json({ success: false, message: "الطلب التجريبي غير موجود." });
+    return res.status(200).json({ success: true, data: { fakeOrder } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const createFakeOrder = async (req, res, next) => {
+  try {
+    const fakeOrder = await fakeOrdersService.createFakeOrder({ actorUserId: req.auth.userId, payload: req.body || {} });
+    return res.status(201).json({ success: true, data: { fakeOrder } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const patchFakeOrder = async (req, res, next) => {
+  try {
+    const fakeOrder = await fakeOrdersService.updateFakeOrder({
+      actorUserId: req.auth.userId,
+      id: req.params.id,
+      payload: req.body || {},
+    });
+    return res.status(200).json({ success: true, data: { fakeOrder } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const removeFakeOrder = async (req, res, next) => {
+  try {
+    await fakeOrdersService.deleteFakeOrder({ actorUserId: req.auth.userId, id: req.params.id });
+    return res.status(200).json({ success: true, data: { ok: true } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const getTemplate = async (req, res, next) => {
   try {
     const t = await fakeOrdersService.getTemplateById(req.params.id, { actorUserId: req.auth.userId });
@@ -190,6 +261,12 @@ module.exports = {
   getTrainingSettings,
   patchTrainingSettings,
   listTemplates,
+  getFakeOrdersCount,
+  listFakeOrders,
+  getFakeOrder,
+  createFakeOrder,
+  patchFakeOrder,
+  removeFakeOrder,
   getTemplate,
   createTemplate,
   patchTemplate,

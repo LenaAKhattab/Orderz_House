@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import Button from "../../components/ui/Button";
 import { AdminInlineGridSkeleton } from "../../components/ui/Skeleton";
 import {
@@ -296,9 +296,6 @@ const SuperAdminPlansPage = () => {
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.plans")}
         actions={
           <div className="oh-sapl-header-actions">
-            <Link className="btn btn-secondary" to="/dashboard/super-admin/plan-pages">
-              صفحات الباقات
-            </Link>
             <Button type="button" className="oh-sapl-header-cta" onClick={openCreateModal}>
               + إنشاء باقة جديدة
             </Button>

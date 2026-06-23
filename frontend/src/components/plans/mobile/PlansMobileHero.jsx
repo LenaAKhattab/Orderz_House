@@ -1,6 +1,6 @@
 import { useTranslation } from "../../../i18n/LanguageProvider";
 
-export default function PlansMobileHero({ title = null, subtitle = null, trustPills = [] }) {
+export default function PlansMobileHero({ title = null, subtitle = null, trustPills = [], afterLede = null }) {
   const { t } = useTranslation();
 
   return (
@@ -10,6 +10,7 @@ export default function PlansMobileHero({ title = null, subtitle = null, trustPi
         <h1 className="pm-hero__title">{title || t("plans.hero.title")}</h1>
       </div>
       <p className="pm-hero__lede">{subtitle || t("plans.hero.subtitle")}</p>
+      {afterLede}
       {trustPills.length > 0 ? (
         <div className="pm-hero__trust" role="list">
           {trustPills.map((pill) => (

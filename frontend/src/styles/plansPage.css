@@ -518,7 +518,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   margin: 24px auto 0;
   max-width: min(760px, 100%);
   padding: 0 16px;
@@ -542,18 +542,82 @@
 }
 
 .plans-activation-fee-note__text {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35rem 0.5rem;
   color: #3d4a63;
 }
 
-.plans-activation-fee-note__amount {
+.plans-activation-fee-note__label {
   font-weight: 800;
-  color: #3852b4;
+  color: #1e2a4a;
+}
+
+.plans-activation-fee-note__amount {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 1.05em;
+  line-height: 1.2;
+  color: #ffffff;
+  background: linear-gradient(135deg, #3852b4 0%, #2f3b65 100%);
+  box-shadow: 0 4px 14px rgba(56, 82, 180, 0.28);
+}
+
+.plans-activation-fee-note__suffix {
+  font-weight: 700;
+  color: #4a5672;
+}
+
+.plans-activation-fee-note--under-lede {
+  display: inline-flex;
+  margin: 18px auto 0;
+  padding: 14px 22px;
+  max-width: min(680px, calc(100% - 32px));
+  border-radius: 16px;
+  border: 1.5px solid rgba(56, 82, 180, 0.22);
+  background: linear-gradient(180deg, rgba(56, 82, 180, 0.1) 0%, rgba(56, 82, 180, 0.05) 100%);
+  box-shadow: 0 10px 28px rgba(47, 59, 101, 0.1);
+  font-size: clamp(0.92rem, 1.1vw, 1.02rem);
+  line-height: 1.5;
+}
+
+.plans-activation-fee-note--under-lede .plans-activation-fee-note__icon {
+  width: 36px;
+  height: 36px;
+  border-color: rgba(56, 82, 180, 0.28);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.plans-activation-fee-note--under-lede .plans-activation-fee-note__amount {
+  font-size: clamp(1rem, 1.25vw, 1.12rem);
+  padding: 0.2rem 0.7rem;
 }
 
 .plans-activation-fee-note--mobile {
-  margin: 1rem 1rem 0;
-  font-size: 0.78rem;
-  padding: 0;
+  font-size: 0.82rem;
+}
+
+.plans-activation-fee-note--mobile.plans-activation-fee-note--under-lede {
+  display: flex;
+  margin: 14px 1rem 0;
+  padding: 12px 14px;
+  gap: 10px;
+  max-width: none;
+}
+
+.plans-activation-fee-note--mobile.plans-activation-fee-note--under-lede .plans-activation-fee-note__text {
+  text-align: start;
+  justify-content: flex-start;
+}
+
+.plans-activation-fee-note--mobile.plans-activation-fee-note--under-lede .plans-activation-fee-note__icon {
+  width: 32px;
+  height: 32px;
 }
 
 /* Skeleton cards match public layout */
@@ -748,7 +812,7 @@
     font-size: 0.88rem;
   }
 
-  .plans-activation-fee-note {
+  .plans-activation-fee-note:not(.plans-activation-fee-note--under-lede) {
     margin-top: 16px;
     font-size: 0.8rem;
     padding-inline: 16px;

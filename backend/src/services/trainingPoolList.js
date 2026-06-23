@@ -13,8 +13,35 @@ function parseIdCsv(input) {
   return [...new Set(s.split(",").map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0))];
 }
 
+function mergeCategoryIds(categoryId, categoryIds) {
+  const ids = parseIdCsv(categoryIds);
+  const single = Number(categoryId);
+  if (Number.isInteger(single) && single > 0 && !ids.includes(single)) ids.push(single);
+  return ids;
+}
+
+function pushCategoryOrSubSubFilter(vals, wr, wf, catIds, subSubIds) {
+  if (!catIds.length && !subSubIds.length) return;
+  const oParts = [];
+  const fParts = [];
+  if (catIds.length) {
+    vals.push(catIds);
+    const i = vals.length;
+    oParts.push(`o.category_id = ANY($${i}::int[])`);
+    fParts.push(`fo.category_id = ANY($${i}::int[])`);
+  }
+  if (subSubIds.length) {
+    vals.push(subSubIds);
+    const i = vals.length;
+    oParts.push(`o.sub_subcategory_id = ANY($${i}::int[])`);
+    fParts.push(`fo.sub_subcategory_id = ANY($${i}::int[])`);
+  }
+  wr.push(oParts.length === 1 ? oParts[0] : `(${oParts.join(" OR ")})`);
+  wf.push(fParts.length === 1 ? fParts[0] : `(${fParts.join(" OR ")})`);
+}
+
 /** Shared filter values; parallel WHERE fragments for o.* and fo.* */
-function buildDualFilters(status, projectType, categoryId, subSubIds, q) {
+function buildDualFilters(status, projectType, categoryId, categoryIds, subSubIds, q) {
   const vals = [];
   const wr = [];
   const wf = [];
@@ -48,20 +75,7 @@ function buildDualFilters(status, projectType, categoryId, subSubIds, q) {
       );
     }
   }
-  if (categoryId) {
-    pushBoth(
-      (i) => `o.category_id = $${i}`,
-      (i) => `fo.category_id = $${i}`,
-      Number(categoryId),
-    );
-  }
-  if (subSubIds.length) {
-    const arr = subSubIds;
-    vals.push(arr);
-    const i = vals.length;
-    wr.push(`o.sub_subcategory_id = ANY($${i}::int[])`);
-    wf.push(`fo.sub_subcategory_id = ANY($${i}::int[])`);
-  }
+  pushCategoryOrSubSubFilter(vals, wr, wf, mergeCategoryIds(categoryId, categoryIds), subSubIds);
   if (String(q || "").trim()) {
     const qq = `%${String(q).trim()}%`;
     vals.push(qq);
@@ -82,6 +96,7 @@ async function tryMergedPoolMeta({
   status = null,
   projectType = null,
   categoryId = null,
+  categoryIds = "",
   subSubCategoryIds = "",
   sort = "newest",
   q = "",
@@ -103,7 +118,7 @@ async function tryMergedPoolMeta({
   const lim = Math.min(Math.max(Number(limit) || 8, 1), 200);
   const off = Number.isFinite(Number(offset)) ? Math.max(Number(offset), 0) : Math.max(((Number(page) || 1) - 1) * lim, 0);
   const subSubIds = parseIdCsv(subSubCategoryIds);
-  const { vals: fvals, wr, wf } = buildDualFilters(status, projectType, categoryId, subSubIds, q);
+  const { vals: fvals, wr, wf } = buildDualFilters(status, projectType, categoryId, categoryIds, subSubIds, q);
 
   const realExtra = [
     `o.is_published = TRUE`,

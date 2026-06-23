@@ -902,6 +902,46 @@
   margin-top: 16px;
 }
 
+.oh-training-overview__card-actions--stacked {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.oh-training-overview__action-help {
+  margin: 0;
+  max-width: 36rem;
+}
+
+.oh-training-overview__technical {
+  margin-top: 12px;
+  font-size: 0.88rem;
+}
+
+.oh-training-overview__technical summary {
+  cursor: pointer;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.oh-training-overview__technical[open] summary {
+  margin-bottom: 8px;
+}
+
+.oh-training-overview__warn {
+  font-weight: 600;
+  color: #b45309;
+}
+
+.oh-training-applications__note {
+  margin: 0 0 12px;
+  max-width: 42rem;
+}
+
+.oh-training-pool__intro {
+  margin: 0 0 12px;
+  max-width: 44rem;
+}
+
 .oh-training-overview__empty-card p {
   margin: 0;
 }

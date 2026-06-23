@@ -144,19 +144,27 @@ async function main() {
     }
   }
 
-  // Homepage stats: completedOrders = real + proven ended training rotations
+  // Homepage stats: completedOrders = real + training since cutoff (historical total is breakdown-only)
   try {
     const counts = await publicHomeOrderStatsService.queryHeroOrderCounts();
-    const expectedCompleted = counts.completedOrdersReal + counts.trainingRotationsCompleted;
     check(
-      "completedOrders equals real + trainingRotationsCompleted",
-      counts.completedOrders === expectedCompleted,
-      `completedOrders=${counts.completedOrders} real=${counts.completedOrdersReal} training=${counts.trainingRotationsCompleted}`,
+      "completedOrders equals completedOrdersReal + trainingRotationsCompletedSinceCutoff",
+      counts.completedOrders ===
+        counts.completedOrdersReal + counts.trainingRotationsCompletedSinceCutoff,
+      `completedOrders=${counts.completedOrders} real=${counts.completedOrdersReal} sinceCutoff=${counts.trainingRotationsCompletedSinceCutoff}`,
     );
     check(
-      "trainingRotationsCompleted is separate breakdown field",
-      typeof counts.trainingRotationsCompleted === "number",
-      `trainingRotationsCompleted=${counts.trainingRotationsCompleted}`,
+      "trainingRotationsCompletedTotal is separate historical breakdown",
+      typeof counts.trainingRotationsCompletedTotal === "number",
+      `total=${counts.trainingRotationsCompletedTotal} sinceCutoff=${counts.trainingRotationsCompletedSinceCutoff}`,
+    );
+    check(
+      "historical training total is not added wholesale to completedOrders",
+      counts.trainingRotationsCompletedTotal === 0 ||
+        counts.completedOrders !==
+          counts.completedOrdersReal + counts.trainingRotationsCompletedTotal ||
+        counts.trainingRotationsCompletedSinceCutoff === 0,
+      `display=${counts.completedOrders} total=${counts.trainingRotationsCompletedTotal}`,
     );
     check(
       "availableOrdersNow includes visible training pool",

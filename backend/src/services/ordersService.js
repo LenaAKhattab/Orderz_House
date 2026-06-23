@@ -1377,6 +1377,27 @@ function parseIdCsv(input) {
   return [...new Set(s.split(",").map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0))];
 }
 
+function mergeCategoryIds(categoryId, categoryIds) {
+  const ids = parseIdCsv(categoryIds);
+  const single = Number(categoryId);
+  if (Number.isInteger(single) && single > 0 && !ids.includes(single)) ids.push(single);
+  return ids;
+}
+
+function appendCategoryOrSubSubFilter(where, params, catIds, subSubIds, alias = "o") {
+  if (!catIds.length && !subSubIds.length) return;
+  const parts = [];
+  if (catIds.length) {
+    params.push(catIds);
+    parts.push(`${alias}.category_id = ANY($${params.length}::int[])`);
+  }
+  if (subSubIds.length) {
+    params.push(subSubIds);
+    parts.push(`${alias}.sub_subcategory_id = ANY($${params.length}::int[])`);
+  }
+  where.push(parts.length === 1 ? parts[0] : `(${parts.join(" OR ")})`);
+}
+
 async function listPoolOrders({
   page = 1,
   limit = POOL_LIST_DEFAULT_LIMIT,
@@ -1384,6 +1405,7 @@ async function listPoolOrders({
   status = null,
   projectType = null,
   categoryId = null,
+  categoryIds = "",
   subSubCategoryIds = "",
   sort = "newest",
   q = "",
@@ -1402,6 +1424,7 @@ async function listPoolOrders({
     status,
     projectType,
     categoryId,
+    categoryIds,
     subSubCategoryIds,
     sort,
     q,
@@ -1441,15 +1464,9 @@ async function listPoolOrders({
       where.push(`o.project_type = $${params.length}`);
     }
   }
-  if (categoryId) {
-    params.push(Number(categoryId));
-    where.push(`o.category_id = $${params.length}`);
-  }
+  const catIds = mergeCategoryIds(categoryId, categoryIds);
   const subSubIds = parseIdCsv(subSubCategoryIds);
-  if (subSubIds.length) {
-    params.push(subSubIds);
-    where.push(`o.sub_subcategory_id = ANY($${params.length}::int[])`);
-  }
+  appendCategoryOrSubSubFilter(where, params, catIds, subSubIds);
   if (String(q || "").trim()) {
     params.push(`%${String(q).trim()}%`);
     where.push(`(o.order_code ILIKE $${params.length} OR o.title ILIKE $${params.length})`);
@@ -1532,6 +1549,7 @@ async function listPoolOrdersForFreelancer({
   status = null,
   projectType = null,
   categoryId = null,
+  categoryIds = "",
   subSubCategoryIds = "",
   sort = "newest",
   q = "",
@@ -1563,6 +1581,7 @@ async function listPoolOrdersForFreelancer({
     status,
     projectType,
     categoryId,
+    categoryIds,
     subSubCategoryIds,
     sort,
     q,
@@ -1620,12 +1639,27 @@ async function listPoolOrdersForFreelancer({
       addFilter((i) => `o.project_type = $${i}`, (i) => `o.project_type = $${i}`, pt);
     }
   }
-  if (categoryId) {
-    addFilter((i) => `o.category_id = $${i}`, (i) => `o.category_id = $${i}`, Number(categoryId));
-  }
+  const catIds = mergeCategoryIds(categoryId, categoryIds);
   const subSubIds = parseIdCsv(subSubCategoryIds);
-  if (subSubIds.length) {
-    addFilter((i) => `o.sub_subcategory_id = ANY($${i}::int[])`, (i) => `o.sub_subcategory_id = ANY($${i}::int[])`, subSubIds);
+  if (catIds.length || subSubIds.length) {
+    const countParts = [];
+    const listParts = [];
+    if (catIds.length) {
+      filterParams.push(catIds);
+      const idx = filterParams.length;
+      countParts.push(`o.category_id = ANY($${idx}::int[])`);
+      listParts.push(`o.category_id = ANY($${idx + 1}::int[])`);
+    }
+    if (subSubIds.length) {
+      filterParams.push(subSubIds);
+      const idx = filterParams.length;
+      countParts.push(`o.sub_subcategory_id = ANY($${idx}::int[])`);
+      listParts.push(`o.sub_subcategory_id = ANY($${idx + 1}::int[])`);
+    }
+    const countExpr = countParts.length === 1 ? countParts[0] : `(${countParts.join(" OR ")})`;
+    const listExpr = listParts.length === 1 ? listParts[0] : `(${listParts.join(" OR ")})`;
+    whereCount.push(countExpr);
+    whereList.push(listExpr);
   }
   if (String(q || "").trim()) {
     const v = `%${String(q).trim()}%`;

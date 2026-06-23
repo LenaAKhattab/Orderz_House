@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Briefcase, Filter, Sparkles } from "lucide-react";
+import { Briefcase, Filter, Loader2, Sparkles } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../components/ui/toastContext";
@@ -10,7 +10,11 @@ import {
   submitPoolOrderBidRequest,
   takePoolOrderRequest,
 } from "../../services/api";
-import { PoolOrderListSkeleton } from "../../components/ui/Skeleton";
+import {
+  OpenOrdersFiltersPanelSkeleton,
+  OpenOrdersToolbarSkeleton,
+  PoolOrderListSkeleton,
+} from "../../components/ui/Skeleton";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 import { getLocalizedMarketplaceOrderTitle } from "../../lib/i18n/getLocalizedMarketplaceOrderText";
@@ -84,13 +88,35 @@ function CategoryFilterEmptyState({ onClearFilters }) {
   );
 }
 
+function OpenOrdersUpdatingBadge() {
+  const { t } = useTranslation();
+  return (
+    <span className="oh-orders-updating-badge fdash-surface-3d fdash-surface-3d--soft" role="status" aria-live="polite">
+      <Loader2 className="oh-orders-updating-badge__icon" size={14} strokeWidth={2.4} aria-hidden />
+      <span className="oh-orders-updating-badge__label">{t("orders.marketplace.updating")}</span>
+    </span>
+  );
+}
+
+function parseIdListFromSearch(params, ...keys) {
+  for (const key of keys) {
+    const raw = String(params.get(key) || "").trim();
+    if (!raw) continue;
+    return [...new Set(raw.split(",").map((x) => x.trim()).filter(Boolean))];
+  }
+  return [];
+}
+
 function CategoryFiltersPanel({
   className = "",
   filtersView,
   setFiltersView,
+  setSelectedCategoryIds,
   setSelectedSubSubIds,
   categoryFilters,
+  selectedCategoryIds,
   selectedSubSubIds,
+  toggleCategory,
   toggleSubSub,
 }) {
   const { t, locale } = useTranslation();
@@ -105,6 +131,7 @@ function CategoryFiltersPanel({
           className={`oh-orders-filters__switch-btn ${filtersView === "all" ? "is-active" : ""}`.trim()}
           onClick={() => {
             setFiltersView("all");
+            setSelectedCategoryIds([]);
             setSelectedSubSubIds([]);
           }}
         >
@@ -121,22 +148,32 @@ function CategoryFiltersPanel({
         </button>
       </div>
       <div className="oh-orders-filters__list">
-        {categoryFilters.map((category) => (
-          <div key={category.id} className="oh-orders-filters__group">
-            <div className="oh-orders-filters__category-title">{getLocalizedField(category, "name", locale)}</div>
-            <div className="oh-orders-filters__sublist">
-              {category.subSubs.map((sub) => {
-                const checked = selectedSubSubIds.includes(sub.id);
-                return (
-                  <label key={sub.id} className="oh-orders-filters__item">
-                    <span>{getLocalizedField(sub, "name", locale)}</span>
-                    <input type="checkbox" checked={checked} onChange={(e) => toggleSubSub(sub.id, e.target.checked)} />
-                  </label>
-                );
-              })}
+        {categoryFilters.map((category) => {
+          const parentChecked = selectedCategoryIds.includes(category.id);
+          return (
+            <div key={category.id} className="oh-orders-filters__group">
+              <label className="oh-orders-filters__item oh-orders-filters__item--parent">
+                <span className="oh-orders-filters__category-title">{getLocalizedField(category, "name", locale)}</span>
+                <input
+                  type="checkbox"
+                  checked={parentChecked}
+                  onChange={(e) => toggleCategory(category.id, e.target.checked)}
+                />
+              </label>
+              <div className="oh-orders-filters__sublist">
+                {category.subSubs.map((sub) => {
+                  const checked = selectedSubSubIds.includes(sub.id);
+                  return (
+                    <label key={sub.id} className="oh-orders-filters__item">
+                      <span>{getLocalizedField(sub, "name", locale)}</span>
+                      <input type="checkbox" checked={checked} onChange={(e) => toggleSubSub(sub.id, e.target.checked)} />
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </aside>
   );
@@ -163,19 +200,19 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const { subscription, eligibility, eligibilityFetched } = useFreelancerMarketplaceContext();
 
   const [orders, setOrders] = useState([]);
-  const [busy, setBusy] = useState(true);
-  const [refetching, setRefetching] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isRefetching, setIsRefetching] = useState(false);
   const [takingId, setTakingId] = useState(null);
   const [bidBusyId, setBidBusyId] = useState(null);
   const [bidModalOrder, setBidModalOrder] = useState(null);
   const [takeConfirmOrder, setTakeConfirmOrder] = useState(null);
   const [categoryFilters, setCategoryFilters] = useState([]);
-  const [selectedSubSubIds, setSelectedSubSubIds] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    const raw = String(params.get("filters") || "").trim();
-    if (!raw) return [];
-    return [...new Set(raw.split(",").map((x) => x.trim()).filter(Boolean))];
-  });
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState(() =>
+    parseIdListFromSearch(new URLSearchParams(window.location.search), "categoryIds"),
+  );
+  const [selectedSubSubIds, setSelectedSubSubIds] = useState(() =>
+    parseIdListFromSearch(new URLSearchParams(window.location.search), "filters", "subSubCategoryIds"),
+  );
   const [filtersView, setFiltersView] = useState("categories");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortBy, setSortBy] = useState(() => {
@@ -200,7 +237,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const lastBgRefreshErrorToastRef = useRef(0);
   const categoryFiltersCacheRef = useRef(null);
   const guestLoginNavLockRef = useRef(false);
-  const hasCategoryFilters = selectedSubSubIds.length > 0;
+  const hasCategoryFilters = selectedCategoryIds.length > 0 || selectedSubSubIds.length > 0;
 
   const showIneligibleNotice = isFreelancer && eligibilityFetched && eligibility && eligibility.eligible === false;
   const ineligibleMessage = showIneligibleNotice
@@ -220,9 +257,10 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       page: pageNum,
       limit: POOL_PAGE_LIMIT,
       sort: sortBy,
+      ...(selectedCategoryIds.length ? { categoryIds: selectedCategoryIds.join(",") } : {}),
       ...(selectedSubSubIds.length ? { subSubCategoryIds: selectedSubSubIds.join(",") } : {}),
     }),
-    [sortBy, selectedSubSubIds],
+    [sortBy, selectedCategoryIds, selectedSubSubIds],
   );
 
   const reloadPool = async () => {
@@ -239,9 +277,9 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     async function load() {
       const isInitialEmpty = ordersRef.current.length === 0;
       if (isInitialEmpty) {
-        setBusy(true);
+        setInitialLoading(true);
       } else {
-        setRefetching(true);
+        setIsRefetching(true);
       }
       setLoadError("");
       try {
@@ -258,8 +296,8 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
         push({ type: "error", title: t("orders.marketplace.loadErrorTitle"), message: POOL_LOAD_ERROR });
       } finally {
         if (fetchGen === poolFetchGenRef.current && listVersion === poolListVersionRef.current) {
-          setBusy(false);
-          setRefetching(false);
+          setInitialLoading(false);
+          setIsRefetching(false);
         }
       }
     }
@@ -292,7 +330,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       abortController?.abort();
       abortController = new AbortController();
       const listVersionAtStart = poolListVersionRef.current;
-      setRefetching(true);
+      setIsRefetching(true);
 
       try {
         const res = await listPoolOrdersRequest(poolListParams(page), { signal: abortController.signal });
@@ -315,7 +353,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
         }
       } finally {
         if (!cancelled && listVersionAtStart === poolListVersionRef.current) {
-          setRefetching(false);
+          setIsRefetching(false);
         }
       }
     };
@@ -334,7 +372,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       if (intervalId) window.clearInterval(intervalId);
       abortController?.abort();
       document.removeEventListener("visibilitychange", onVisibilityChange);
-      setRefetching(false);
+      setIsRefetching(false);
     };
   }, [location.pathname, page, poolListParams, layout, loading, user?.id, push, t]);
 
@@ -342,13 +380,15 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     const params = new URLSearchParams(location.search);
     params.set("page", String(page));
     params.set("sort", String(sortBy || "newest"));
+    if (selectedCategoryIds.length) params.set("categoryIds", selectedCategoryIds.join(","));
+    else params.delete("categoryIds");
     if (selectedSubSubIds.length) params.set("filters", selectedSubSubIds.join(","));
     else params.delete("filters");
     const nextSearch = `?${params.toString()}`;
     if (nextSearch !== location.search) {
       navigate({ pathname: location.pathname, search: nextSearch }, { replace: true });
     }
-  }, [location.pathname, location.search, navigate, page, selectedSubSubIds, sortBy]);
+  }, [location.pathname, location.search, navigate, page, selectedCategoryIds, selectedSubSubIds, sortBy]);
 
   useEffect(() => {
     const onPoolList =
@@ -485,6 +525,13 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     }
   };
 
+  const toggleCategory = (id, isChecked) => {
+    setFiltersView("categories");
+    setPage(1);
+    const sid = String(id);
+    setSelectedCategoryIds((prev) => (isChecked ? [...new Set([...prev, sid])] : prev.filter((x) => x !== sid)));
+  };
+
   const toggleSubSub = (id, isChecked) => {
     setFiltersView("categories");
     setPage(1);
@@ -494,6 +541,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const clearCategoryFilters = useCallback(() => {
     setFiltersView("all");
     setPage(1);
+    setSelectedCategoryIds([]);
     setSelectedSubSubIds([]);
   }, []);
 
@@ -566,18 +614,22 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const filtersPanelProps = {
     filtersView,
     setFiltersView,
+    setSelectedCategoryIds,
     setSelectedSubSubIds,
     categoryFilters,
+    selectedCategoryIds,
     selectedSubSubIds,
+    toggleCategory,
     toggleSubSub,
   };
 
-  const showHardError = Boolean(loadError) && orders.length === 0 && !busy;
-  const showListSkeleton = busy && orders.length === 0;
+  const showHardError = Boolean(loadError) && orders.length === 0 && !initialLoading;
+  const showInitialSkeleton = initialLoading && orders.length === 0;
+  const showUpdatingBadge = isRefetching && orders.length > 0;
 
   const ordersList = (
     <div className="oh-orders-list-wrapper" ref={listWrapperRef}>
-      {showListSkeleton ? (
+      {showInitialSkeleton ? (
         <PoolOrderListSkeleton count={5} />
       ) : showHardError ? (
         <div className="oh-orders-load-error fdash-surface-3d fdash-surface-3d--soft">
@@ -595,7 +647,10 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       ) : planAvailableOnly && isFreelancer && displayedOrders.length === 0 ? (
         <PlanFilterEmptyState />
       ) : (
-        <ul className="oh-orders-list" aria-busy={refetching || undefined}>
+        <ul
+          className={`oh-orders-list${showUpdatingBadge ? " oh-orders-list--refetching" : ""}`.trim()}
+          aria-busy={showUpdatingBadge || undefined}
+        >
           {displayedOrders.map((order) => (
             <MarketplaceOrderListRow
               key={order.id}
@@ -629,8 +684,9 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
 
   const sortSelect = (
     <select
-      className="oh-orders-sort"
+      className={`oh-orders-sort${showUpdatingBadge ? " oh-orders-sort--refetching" : ""}`.trim()}
       value={sortBy}
+      disabled={showUpdatingBadge}
       onChange={(e) => {
         setPage(1);
         setSortBy(e.target.value);
@@ -680,7 +736,9 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     ) : null;
 
   const sortControl = (
-    <div className="oh-orders-sort-card fdash-surface-3d fdash-surface-3d--soft">
+    <div
+      className={`oh-orders-sort-card fdash-surface-3d fdash-surface-3d--soft${showUpdatingBadge ? " oh-orders-sort-card--refetching" : ""}`.trim()}
+    >
       <span className="oh-orders-sort-card__label">{t("orders.sort.label")}</span>
       {sortSelect}
     </div>
@@ -690,6 +748,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     <div className="oh-orders-toolbar-neu__controls">
       {sortControl}
       {planFilterButton}
+      {showUpdatingBadge ? <OpenOrdersUpdatingBadge /> : null}
     </div>
   );
 
@@ -700,7 +759,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
           <button
             type="button"
             className="oh-orders-more-btn fdash-surface-3d fdash-surface-3d--soft"
-            disabled={busy}
+            disabled={initialLoading || isRefetching}
             onClick={() => handlePageChange(currentPage + 1)}
           >
             {t("common.actions.showMore")}
@@ -713,7 +772,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
-          isLoading={busy}
+          isLoading={initialLoading}
           siblingCount={1}
           className="oh-orders-pagination"
         />
@@ -731,12 +790,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
             ) : null}
 
             <div className="oh-orders-toolbar-neu">
-              {toolbarControls}
-              {refetching ? (
-                <p className="oh-orders-refresh-hint help" role="status" aria-live="polite">
-                  {t("orders.marketplace.refreshing")}
-                </p>
-              ) : null}
+              {showInitialSkeleton ? <OpenOrdersToolbarSkeleton /> : toolbarControls}
               <button
                 type="button"
                 className="oh-orders-mobile-filters-btn"
@@ -747,10 +801,14 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
             </div>
 
             <div className={`oh-orders-filters--mobile${filtersOpen ? " is-open" : ""}`}>
-              <CategoryFiltersPanel
-                className="oh-orders-filters oh-orders-filters--sticky fdash-surface-3d fdash-surface-3d--soft"
-                {...filtersPanelProps}
-              />
+              {showInitialSkeleton ? (
+                <OpenOrdersFiltersPanelSkeleton className="oh-orders-filters oh-orders-filters--sticky fdash-surface-3d fdash-surface-3d--soft" />
+              ) : (
+                <CategoryFiltersPanel
+                  className="oh-orders-filters oh-orders-filters--sticky fdash-surface-3d fdash-surface-3d--soft"
+                  {...filtersPanelProps}
+                />
+              )}
             </div>
 
             {ordersList}
@@ -758,10 +816,14 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
           </div>
 
           <div className="oh-orders-filters-col">
-            <CategoryFiltersPanel
-              className="oh-orders-filters oh-orders-filters--sticky fdash-surface-3d fdash-surface-3d--soft"
-              {...filtersPanelProps}
-            />
+            {showInitialSkeleton ? (
+              <OpenOrdersFiltersPanelSkeleton className="oh-orders-filters oh-orders-filters--sticky fdash-surface-3d fdash-surface-3d--soft" />
+            ) : (
+              <CategoryFiltersPanel
+                className="oh-orders-filters oh-orders-filters--sticky fdash-surface-3d fdash-surface-3d--soft"
+                {...filtersPanelProps}
+              />
+            )}
           </div>
         </div>
       </div>

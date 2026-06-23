@@ -36,7 +36,16 @@ export default function PlansMobilePage({
 
   return (
     <div className="plans-mobile-page" dir={dir}>
-      <PlansMobileHero title={pageTitle} subtitle={pageSubtitle} trustPills={trustPills} />
+      <PlansMobileHero
+        title={pageTitle}
+        subtitle={pageSubtitle}
+        trustPills={trustPills}
+        afterLede={
+          layout.showActivationFeeNote ? (
+            <PlansActivationFeeNote className="plans-activation-fee-note--under-lede plans-activation-fee-note--mobile" />
+          ) : null
+        }
+      />
       <PlansMobilePlans
         loading={loading}
         plans={plans}
@@ -59,9 +68,6 @@ export default function PlansMobilePage({
         </p>
       ) : null}
 
-      {layout.showActivationFeeNote ? (
-        <PlansActivationFeeNote className="plans-activation-fee-note--mobile" />
-      ) : null}
       <p className="pm-footnote pm-footnote--secondary">
         {pageSlug === "freelancers" ? t("plans.pages.freelancers.footnote") : t("plans.mobile.footnote")}
       </p>
