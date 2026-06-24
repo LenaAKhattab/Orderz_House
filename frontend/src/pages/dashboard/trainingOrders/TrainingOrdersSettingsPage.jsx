@@ -7,30 +7,20 @@ import {
 import DashboardSection from "../../../components/dashboard/DashboardSection";
 import DashboardFormCard from "../../../components/dashboard/DashboardFormCard";
 import DashboardLoadingState from "../../../components/dashboard/DashboardLoadingState";
+import { useToast } from "../../../components/ui/toastContext";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
-import { formatAdminNumber, formatJoDateTime, getAutomationStatusLabel, trainingAdminT } from "./trainingOrdersDisplayUtils";
+import { formatAdminNumber, trainingAdminT } from "./trainingOrdersDisplayUtils";
 import "./trainingOrdersAdmin.css";
 
 export default function TrainingOrdersSettingsPage() {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
+  const { push } = useToast();
   const errMsg = (e) => getSafeApiErrorMessage(e) || t("trainingOrders.settings.genericError");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [visibilitySaving, setVisibilitySaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [visibilityError, setVisibilityError] = useState("");
-  const [visibilitySuccess, setVisibilitySuccess] = useState("");
   const [plans, setPlans] = useState([]);
-  const [autoMeta, setAutoMeta] = useState({
-    nextAutomationRunAt: null,
-    lastAutomationRunAt: null,
-    lastAutomationStatus: null,
-    lastAutomationError: null,
-    lastAutomationGeneratedCount: null,
-    lastAutomationNextAt: null,
-  });
 
   const [form, setForm] = useState({
     trainingOrdersEnabled: false,
@@ -68,7 +58,6 @@ export default function TrainingOrdersSettingsPage() {
   );
 
   const load = async () => {
-    setError("");
     setLoading(true);
     try {
       const [setRes, plansRes] = await Promise.all([
@@ -77,14 +66,6 @@ export default function TrainingOrdersSettingsPage() {
       ]);
       const d = setRes?.data;
       const dist = d?.categoryDistribution || {};
-      setAutoMeta({
-        nextAutomationRunAt: d?.nextAutomationRunAt ?? null,
-        lastAutomationRunAt: d?.lastAutomationRunAt ?? null,
-        lastAutomationStatus: d?.lastAutomationStatus ?? null,
-        lastAutomationError: d?.lastAutomationError ?? null,
-        lastAutomationGeneratedCount: d?.lastAutomationGeneratedCount ?? null,
-        lastAutomationNextAt: d?.lastAutomationNextAt ?? null,
-      });
       setForm((prev) => ({
         ...prev,
         trainingOrdersEnabled: Boolean(d?.trainingOrdersEnabled),
@@ -103,7 +84,7 @@ export default function TrainingOrdersSettingsPage() {
       }));
       setPlans(plansRes?.data?.plans || []);
     } catch (e) {
-      setError(errMsg(e));
+      push({ type: "error", message: errMsg(e) });
     } finally {
       setLoading(false);
     }
@@ -123,39 +104,27 @@ export default function TrainingOrdersSettingsPage() {
 
   const toggleTrainingVisibility = async () => {
     const next = !form.trainingOrdersEnabled;
-    setVisibilityError("");
-    setVisibilitySuccess("");
     setVisibilitySaving(true);
     try {
       const res = await adminPatchTrainingOrdersSettingsRequest({ trainingOrdersEnabled: next });
       const enabled = Boolean(res?.data?.trainingOrdersEnabled ?? next);
       setForm((f) => ({ ...f, trainingOrdersEnabled: enabled }));
-      setVisibilitySuccess(
-        enabled ? t("trainingOrders.settings.visibilityShownSuccess") : t("trainingOrders.settings.visibilityHiddenSuccess"),
-      );
+      push({
+        type: "success",
+        message: enabled
+          ? t("trainingOrders.settings.visibilityShownSuccess")
+          : t("trainingOrders.settings.visibilityHiddenSuccess"),
+      });
       await load();
     } catch (e) {
-      setVisibilityError(errMsg(e));
+      push({ type: "error", message: errMsg(e) });
     } finally {
       setVisibilitySaving(false);
     }
   };
 
   const save = async () => {
-    setError("");
-    setSuccess("");
-    if (orderRangeInvalid) {
-      setError(t("trainingOrders.settings.orderRangeSaveError"));
-      return;
-    }
-    if (pctSum !== 100) {
-      setError(t("trainingOrders.settings.distributionSaveError"));
-      return;
-    }
-    if (!form.showToAllVisitors && !form.showToAllFreelancers && form.planIds.length === 0) {
-      setError(t("trainingOrders.settings.visibilitySaveError"));
-      return;
-    }
+    if (orderRangeInvalid || pctSum !== 100 || visibilityInvalid) return;
     setSaving(true);
     try {
       await adminPatchTrainingOrdersSettingsRequest({
@@ -175,10 +144,13 @@ export default function TrainingOrdersSettingsPage() {
         planIds: form.planIds.map((x) => Number(x)),
         optionalRoundName: form.optionalRoundName.trim() || null,
       });
-      setSuccess(t("trainingOrders.settings.saveSuccess"));
+      push({ type: "success", message: t("trainingOrders.settings.saveSuccess") });
       await load();
     } catch (e) {
-      setError(errMsg(e));
+      push({
+        type: "error",
+        message: getSafeApiErrorMessage(e) || t("trainingOrders.settings.saveError"),
+      });
     } finally {
       setSaving(false);
     }
@@ -187,7 +159,7 @@ export default function TrainingOrdersSettingsPage() {
   if (loading) {
     return (
       <DashboardSection
-        className="oh-training-page-section"
+        className="oh-training-page-section oh-training-settings-page"
         title={t("trainingOrders.settings.title")}
         description={t("trainingOrders.settings.description")}
       >
@@ -199,19 +171,15 @@ export default function TrainingOrdersSettingsPage() {
   const c = Number(form.contentPct) || 0;
   const p = Number(form.programmingPct) || 0;
   const d = Number(form.designPct) || 0;
+  const cardClass = "oh-training-overview__card oh-training-overview__card--compact";
 
   return (
     <DashboardSection
-      className="oh-training-page-section"
+      className="oh-training-page-section oh-training-settings-page"
       title={t("trainingOrders.settings.title")}
       description={t("trainingOrders.settings.description")}
     >
-      {error ? <p className="auth-form-error">{error}</p> : null}
-      {success ? (
-        <p style={{ color: "#15803d", fontWeight: 700, margin: error ? "8px 0 0" : 0 }}>{success}</p>
-      ) : null}
-
-      <DashboardFormCard title={t("trainingOrders.settings.visibilityCardTitle")}>
+      <DashboardFormCard title={t("trainingOrders.settings.visibilityCardTitle")} className={cardClass}>
         <div
           className={`oh-training-visibility-control ${form.trainingOrdersEnabled ? "oh-training-visibility-control--on" : "oh-training-visibility-control--off"}`.trim()}
         >
@@ -221,10 +189,6 @@ export default function TrainingOrdersSettingsPage() {
           <p className="oh-training-visibility-control__help">
             {form.trainingOrdersEnabled ? t("trainingOrders.settings.visibilityOnHelp") : t("trainingOrders.settings.visibilityOffHelp")}
           </p>
-          {visibilityError ? <p className="auth-form-error">{visibilityError}</p> : null}
-          {visibilitySuccess ? (
-            <p className="oh-training-visibility-control__success">{visibilitySuccess}</p>
-          ) : null}
           <button
             type="button"
             className={`btn ${form.trainingOrdersEnabled ? "btn-secondary" : "btn-primary"} oh-training-visibility-control__btn`}
@@ -240,13 +204,10 @@ export default function TrainingOrdersSettingsPage() {
         </div>
       </DashboardFormCard>
 
-      <DashboardFormCard title={t("trainingOrders.settings.basics")}>
-          <div className="oh-training-settings">
-
-        <section className="oh-training-settings-section">
-          <h3 className="oh-training-settings-section__title">{t("trainingOrders.settings.ordersPerRound")}</h3>
-          <p className="oh-training-settings-section__help">{t("trainingOrders.settings.ordersPerRoundHelp")}</p>
-          <div className="oh-training-settings-row">
+      <div className="oh-training-settings-grid">
+        <DashboardFormCard title={t("trainingOrders.settings.roundSettings")} className={cardClass}>
+          <p className="oh-training-settings-card-help">{t("trainingOrders.settings.ordersPerRoundHelp")}</p>
+          <div className="oh-training-settings-row oh-training-settings-row--pair">
             <div className="oh-training-settings-field">
               <span>{t("trainingOrders.settings.minOrders")}</span>
               <input
@@ -275,13 +236,10 @@ export default function TrainingOrdersSettingsPage() {
               {t("trainingOrders.settings.orderRangeError")}
             </p>
           ) : null}
-        </section>
+        </DashboardFormCard>
 
-        <section className="oh-training-settings-section">
-          <h3 className="oh-training-settings-section__title">{t("trainingOrders.settings.categoryDistribution")}</h3>
-          <p className="oh-training-settings-section__help">{t("trainingOrders.settings.categoryDistributionHelp")}</p>
-
-          <div className="oh-training-pct-row">
+        <DashboardFormCard title={t("trainingOrders.settings.categoryDistribution")} className={cardClass}>
+          <div className="oh-training-pct-row oh-training-pct-row--compact">
             <div className="oh-training-pct-item">
               <span className="oh-training-pct-item__label">{t("trainingOrders.settings.content")}</span>
               <div className={`oh-training-pct-item__wrap ${pctDistributionInvalid ? "oh-training-input--error" : ""}`.trim()}>
@@ -330,179 +288,150 @@ export default function TrainingOrdersSettingsPage() {
           </div>
 
           <div
-            className="oh-training-pct-bar"
+            className="oh-training-pct-bar oh-training-pct-bar--compact"
             role="img"
             aria-label={trainingAdminT(t, "trainingOrders.settings.distributionLegendAria", { content: c, programming: p, design: d })}
           >
-            <div
-              className="oh-training-pct-bar__seg oh-training-pct-bar__seg--content"
-              style={{ flex: Math.max(0, c) }}
-            />
-            <div
-              className="oh-training-pct-bar__seg oh-training-pct-bar__seg--programming"
-              style={{ flex: Math.max(0, p) }}
-            />
-            <div
-              className="oh-training-pct-bar__seg oh-training-pct-bar__seg--design"
-              style={{ flex: Math.max(0, d) }}
-            />
-          </div>
-          <div className="oh-training-pct-legend">
-            <span>
-              <span className="oh-training-pct-dot oh-training-pct-dot--content" aria-hidden /> {t("trainingOrders.settings.content")}
-            </span>
-            <span>
-              <span className="oh-training-pct-dot oh-training-pct-dot--programming" aria-hidden /> {t("trainingOrders.settings.programming")}
-            </span>
-            <span>
-              <span className="oh-training-pct-dot oh-training-pct-dot--design" aria-hidden /> {t("trainingOrders.settings.design")}
-            </span>
+            <div className="oh-training-pct-bar__seg oh-training-pct-bar__seg--content" style={{ flex: Math.max(0, c) }} />
+            <div className="oh-training-pct-bar__seg oh-training-pct-bar__seg--programming" style={{ flex: Math.max(0, p) }} />
+            <div className="oh-training-pct-bar__seg oh-training-pct-bar__seg--design" style={{ flex: Math.max(0, d) }} />
           </div>
 
           <p
-            className={`oh-training-inline-msg ${pctDistributionInvalid ? "oh-training-inline-msg--error" : "oh-training-inline-msg--ok"}`}
+            className={`oh-training-inline-msg oh-training-settings-total ${pctDistributionInvalid ? "oh-training-inline-msg--error" : "oh-training-inline-msg--ok"}`}
           >
-            {t("trainingOrders.settings.distributionSum")} <strong className="oh-training-num" dir="ltr">{formatAdminNumber(pctSum)}</strong>٪{" "}
-            {pctDistributionInvalid ? t("trainingOrders.settings.distributionMustBe100") : t("trainingOrders.settings.distributionOk")}
+            {pctDistributionInvalid ? (
+              <>
+                {t("trainingOrders.settings.distributionSum")}{" "}
+                <strong className="oh-training-num" dir="ltr">
+                  {formatAdminNumber(pctSum)}%
+                </strong>{" "}
+                {t("trainingOrders.settings.distributionMustBe100")}
+              </>
+            ) : (
+              t("trainingOrders.settings.distributionTotalValid")
+            )}
           </p>
-        </section>
+        </DashboardFormCard>
+      </div>
 
-        <section className="oh-training-settings-section">
-          <h3 className="oh-training-settings-section__title">{t("trainingOrders.settings.visibility")}</h3>
-          <p className="oh-training-settings-section__help">{t("trainingOrders.settings.visibilityHelp")}</p>
-          <label className="oh-training-checkbox-row">
-            <input
-              type="checkbox"
-              checked={form.showToAllFreelancers}
-              onChange={(e) => setForm((f) => ({ ...f, showToAllFreelancers: e.target.checked }))}
-            />
-            <span>{t("trainingOrders.settings.showAllFreelancers")}</span>
-          </label>
-          <p className="oh-training-settings-section__help" style={{ marginBottom: 0, marginTop: 10 }}>
-            {t("trainingOrders.settings.advancedHint")}
+      <DashboardFormCard title={t("trainingOrders.settings.audienceTitle")} className={cardClass}>
+        <label className="oh-training-checkbox-row">
+          <input
+            type="checkbox"
+            checked={form.showToAllFreelancers}
+            onChange={(e) => setForm((f) => ({ ...f, showToAllFreelancers: e.target.checked }))}
+          />
+          <span>{t("trainingOrders.settings.showAllFreelancers")}</span>
+        </label>
+        {(form.showToAllVisitors || form.planIds.length > 0) && (
+          <div className="oh-training-audience-chips" aria-label={t("trainingOrders.settings.audienceChipsLabel")}>
+            {form.showToAllVisitors ? (
+              <span className="oh-training-audience-chip">{t("trainingOrders.settings.audienceChipVisitors")}</span>
+            ) : null}
+            {form.planIds.length > 0 ? (
+              <span className="oh-training-audience-chip">
+                {trainingAdminT(t, "trainingOrders.settings.audienceChipPlans", { count: form.planIds.length })}
+              </span>
+            ) : null}
+          </div>
+        )}
+        {visibilityInvalid ? (
+          <p className="oh-training-inline-msg oh-training-inline-msg--error" role="alert">
+            {t("trainingOrders.settings.visibilityRequired")}
           </p>
-          {visibilityInvalid ? (
-            <p className="oh-training-inline-msg oh-training-inline-msg--error" role="alert">
-              {t("trainingOrders.settings.visibilityRequired")}
-            </p>
-          ) : null}
-        </section>
+        ) : null}
+      </DashboardFormCard>
 
-            <div className="oh-training-settings-actions">
-              <button
-                type="button"
-                className="btn btn-primary"
-                disabled={saving || orderRangeInvalid || pctDistributionInvalid || visibilityInvalid}
-                onClick={save}
-              >
-                {saving ? t("trainingOrders.settings.saving") : t("trainingOrders.settings.save")}
-              </button>
+      <div className="oh-training-settings-footer">
+        <details className="oh-training-settings-advanced">
+          <summary>{t("trainingOrders.settings.advanced.summary")}</summary>
+          <div className="oh-training-settings-advanced__body">
+            <div className="oh-training-settings-advanced__grid">
+              <section className="oh-training-settings-advanced-card" aria-labelledby="oh-training-advanced-automation-title">
+                <h3 id="oh-training-advanced-automation-title" className="oh-training-settings-advanced-card__title">
+                  {t("trainingOrders.settings.advanced.automaticRoundsCard")}
+                </h3>
+                <label className="oh-training-checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={form.automationEnabled}
+                    onChange={(e) => setForm((f) => ({ ...f, automationEnabled: e.target.checked }))}
+                  />
+                  <span>{t("trainingOrders.settings.advanced.enableScheduling")}</span>
+                </label>
+                <div className="oh-training-settings-row oh-training-settings-row--pair">
+                  <div className="oh-training-settings-field">
+                    <span>{t("trainingOrders.settings.advanced.roundDuration")}</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={form.durationValue}
+                      onChange={(e) => setForm((f) => ({ ...f, durationValue: e.target.value }))}
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="oh-training-settings-field">
+                    <span>{t("trainingOrders.settings.advanced.unit")}</span>
+                    <select value={form.durationUnit} onChange={(e) => setForm((f) => ({ ...f, durationUnit: e.target.value }))}>
+                      <option value="minutes">{t("trainingOrders.settings.advanced.unitMinutes")}</option>
+                      <option value="hours">{t("trainingOrders.settings.advanced.unitHours")}</option>
+                      <option value="days">{t("trainingOrders.settings.advanced.unitDays")}</option>
+                    </select>
+                  </div>
+                </div>
+                <p className="oh-training-settings-advanced-hint">{t("trainingOrders.settings.advanced.schedulingStatusHint")}</p>
+              </section>
+
+              <section className="oh-training-settings-advanced-card" aria-labelledby="oh-training-advanced-visibility-title">
+                <h3 id="oh-training-advanced-visibility-title" className="oh-training-settings-advanced-card__title">
+                  {t("trainingOrders.settings.advanced.visibilityOptionsCard")}
+                </h3>
+                <label className="oh-training-checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={form.showToAllVisitors}
+                    onChange={(e) => setForm((f) => ({ ...f, showToAllVisitors: e.target.checked }))}
+                  />
+                  <span>{t("trainingOrders.settings.advanced.showVisitors")}</span>
+                </label>
+                <div className="oh-training-settings-field oh-training-settings-field--full">
+                  <span>{t("trainingOrders.settings.advanced.eligiblePlans")}</span>
+                  <div className="oh-training-plans-box">
+                    {plans.length === 0 ? (
+                      <p className="oh-training-plans-box__empty">{t("trainingOrders.settings.advanced.noPlans")}</p>
+                    ) : (
+                      plans.map((pl) => {
+                        const selected = form.planIds.includes(String(pl.id));
+                        return (
+                          <label
+                            key={pl.id}
+                            className={`oh-training-plan-option ${selected ? "oh-training-plan-option--selected" : ""}`.trim()}
+                          >
+                            <input type="checkbox" checked={selected} onChange={() => togglePlan(pl.id)} />
+                            <span>{pl.title || pl.name || pl.id}</span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </section>
             </div>
           </div>
-        </DashboardFormCard>
-
-        <details className="oh-training-settings-advanced">
-        <summary>{t("trainingOrders.settings.advanced.summary")}</summary>
-        <div className="oh-training-settings-advanced__body">
-          <section className="oh-training-settings-section">
-            <h3 className="oh-training-settings-section__title">{t("trainingOrders.settings.advanced.schedulingTitle")}</h3>
-            <p className="oh-training-settings-section__help">{t("trainingOrders.settings.advanced.schedulingHelp")}</p>
-            <label className="oh-training-checkbox-row">
-              <input
-                type="checkbox"
-                checked={form.automationEnabled}
-                onChange={(e) => setForm((f) => ({ ...f, automationEnabled: e.target.checked }))}
-              />
-              <span>{t("trainingOrders.settings.advanced.enableScheduling")}</span>
-            </label>
-            <div className="oh-training-settings-row">
-              <div className="oh-training-settings-field">
-                <span>{t("trainingOrders.settings.advanced.roundDuration")}</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={form.durationValue}
-                  onChange={(e) => setForm((f) => ({ ...f, durationValue: e.target.value }))}
-                  dir="ltr"
-                />
-              </div>
-              <div className="oh-training-settings-field">
-                <span>{t("trainingOrders.settings.advanced.unit")}</span>
-                <select value={form.durationUnit} onChange={(e) => setForm((f) => ({ ...f, durationUnit: e.target.value }))}>
-                  <option value="minutes">{t("trainingOrders.settings.advanced.unitMinutes")}</option>
-                  <option value="hours">{t("trainingOrders.settings.advanced.unitHours")}</option>
-                  <option value="days">{t("trainingOrders.settings.advanced.unitDays")}</option>
-                </select>
-              </div>
-            </div>
-          </section>
-
-          <section className="oh-training-settings-section oh-training-settings-section--muted">
-            <h3 className="oh-training-settings-section__title">{t("trainingOrders.settings.advanced.schedulingStatusTitle")}</h3>
-            <p className="help" style={{ margin: "4px 0" }}>
-              <strong>{t("trainingOrders.settings.advanced.nextRun")}</strong>{" "}
-              {autoMeta.nextAutomationRunAt ? formatJoDateTime(autoMeta.nextAutomationRunAt, locale) : "—"}
-            </p>
-            <p className="help" style={{ margin: "4px 0" }}>
-              <strong>{t("trainingOrders.settings.advanced.lastRun")}</strong>{" "}
-              {autoMeta.lastAutomationRunAt ? formatJoDateTime(autoMeta.lastAutomationRunAt, locale) : "—"}
-            </p>
-            <p className="help" style={{ margin: "4px 0" }}>
-              <strong>{t("trainingOrders.settings.advanced.status")}</strong>{" "}
-              {autoMeta.lastAutomationStatus
-                ? getAutomationStatusLabel(autoMeta.lastAutomationStatus, t)
-                : "—"}
-            </p>
-            {autoMeta.lastAutomationStatus === "failed" ? (
-              <p className="auth-form-error" style={{ marginTop: 8, marginBottom: 0 }}>
-                {t("trainingOrders.settings.advanced.lastRunFailed")}
-              </p>
-            ) : null}
-            {autoMeta.lastAutomationError ? (
-              <details className="oh-training-settings-technical-error" style={{ marginTop: 8 }}>
-                <summary>{t("trainingOrders.settings.advanced.technicalErrorSummary")}</summary>
-                <p className="help" style={{ margin: "8px 0 0", wordBreak: "break-word" }}>
-                  {String(autoMeta.lastAutomationError)}
-                </p>
-              </details>
-            ) : null}
-          </section>
-
-          <section className="oh-training-settings-section">
-            <h3 className="oh-training-settings-section__title">{t("trainingOrders.settings.advanced.extraVisibility")}</h3>
-            <label className="oh-training-checkbox-row">
-              <input
-                type="checkbox"
-                checked={form.showToAllVisitors}
-                onChange={(e) => setForm((f) => ({ ...f, showToAllVisitors: e.target.checked }))}
-              />
-              <span>{t("trainingOrders.settings.advanced.showVisitors")}</span>
-            </label>
-            <div style={{ marginTop: 12 }}>
-              <span className="oh-training-settings-section__title" style={{ fontSize: "0.9rem", display: "block", marginBottom: 6 }}>
-                {t("trainingOrders.settings.advanced.eligiblePlans")}
-              </span>
-              <div className="oh-training-plans-box">
-                {plans.length === 0 ? <span className="help">{t("trainingOrders.settings.advanced.noPlans")}</span> : null}
-                {plans.map((pl) => (
-                  <label key={pl.id} className="oh-training-checkbox-row" style={{ marginBottom: 8 }}>
-                    <input type="checkbox" checked={form.planIds.includes(String(pl.id))} onChange={() => togglePlan(pl.id)} />
-                    <span>{pl.title || pl.name || pl.id}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="oh-training-settings-field" style={{ maxWidth: "100%", marginTop: 12 }}>
-              <span>{t("trainingOrders.settings.advanced.roundNameOptional")}</span>
-              <input
-                value={form.optionalRoundName}
-                onChange={(e) => setForm((f) => ({ ...f, optionalRoundName: e.target.value }))}
-                placeholder={t("trainingOrders.settings.advanced.roundNamePlaceholder")}
-              />
-            </div>
-          </section>
-        </div>
         </details>
+
+        <div className="oh-training-settings-save">
+          <button
+            type="button"
+            className="btn btn-primary oh-training-settings-save__btn"
+            disabled={saving || orderRangeInvalid || pctDistributionInvalid || visibilityInvalid}
+            onClick={save}
+          >
+            {saving ? t("trainingOrders.settings.saving") : t("trainingOrders.settings.save")}
+          </button>
+        </div>
+      </div>
     </DashboardSection>
   );
 }

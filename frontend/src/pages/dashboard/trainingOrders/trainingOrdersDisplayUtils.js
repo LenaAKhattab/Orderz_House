@@ -1,4 +1,4 @@
-import { arabicDurationUnit } from "../../../utils/arTime";
+import { arabicDurationUnit } from "../../../utils/arTime.js";
 
 const ADMIN_DATE_PART_FMT = new Intl.DateTimeFormat("en-US", {
   timeZone: "Asia/Amman",
@@ -56,7 +56,45 @@ export function formatAdminRange(min, max, separator = " – ") {
   const lo = formatAdminNumber(min);
   const hi = formatAdminNumber(max);
   if (lo === "—" && hi === "—") return "—";
+  if (lo === hi) return lo;
   return `${lo}${separator}${hi}`;
+}
+
+/**
+ * Training-order admin budget display — fixed price vs min–max range.
+ * @param {{ projectType?: string, project_type?: string, budget?: number|string|null, bidBudgetMin?: number|string|null, bidBudgetMax?: number|string|null }} [order]
+ * @param {{ currency?: string }} [options]
+ */
+export function formatTrainingOrderBudget(order, { currency = "JOD" } = {}) {
+  if (!order) return "—";
+  const projectType = String(order.projectType || order.project_type || "").toLowerCase();
+  const minRaw = order.bidBudgetMin ?? order.budget;
+  const maxRaw = order.bidBudgetMax ?? order.budget;
+  const minN = Number(minRaw);
+  const maxN = Number(maxRaw);
+  const hasMin = Number.isFinite(minN);
+  const hasMax = Number.isFinite(maxN);
+  const suffix = currency ? ` ${currency}` : "";
+
+  if (projectType === "fixed") {
+    const amount = hasMin ? minN : hasMax ? maxN : NaN;
+    return Number.isFinite(amount) ? `${formatAdminNumber(amount)}${suffix}` : "—";
+  }
+
+  if (projectType === "bidding") {
+    if (hasMin && hasMax) {
+      if (minN === maxN) return `${formatAdminNumber(minN)}${suffix}`;
+      return `${formatAdminNumber(minN)} – ${formatAdminNumber(maxN)}${suffix}`;
+    }
+  }
+
+  if (hasMin && hasMax) {
+    if (minN === maxN) return `${formatAdminNumber(minN)}${suffix}`;
+    return `${formatAdminNumber(minN)} – ${formatAdminNumber(maxN)}${suffix}`;
+  }
+  if (hasMin) return `${formatAdminNumber(minN)}${suffix}`;
+  if (hasMax) return `${formatAdminNumber(maxN)}${suffix}`;
+  return "—";
 }
 
 /**

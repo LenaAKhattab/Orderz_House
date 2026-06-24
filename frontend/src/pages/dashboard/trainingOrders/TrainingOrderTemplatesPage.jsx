@@ -23,7 +23,7 @@ import {
 import { buildDurationLabels, formatDurationRange } from "../../../lib/orders/orderDisplayFormatters";
 import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
 import { useToast } from "../../../components/ui/toastContext";
-import { formatAdminDuration, formatAdminNumber, formatAdminRange, trainingAdminT } from "./trainingOrdersDisplayUtils";
+import { formatAdminDuration, formatAdminNumber, formatTrainingOrderBudget, trainingAdminT } from "./trainingOrdersDisplayUtils";
 import "../../../styles/createOrderModal.css";
 import "./trainingOrdersAdmin.css";
 
@@ -166,6 +166,15 @@ export default function TrainingOrderTemplatesPage() {
   const search = () => {
     setPage(1);
     setAppliedQ(q);
+  };
+
+  const resetFilters = () => {
+    setQ("");
+    setAppliedQ("");
+    setCategoryFilter("");
+    setStatusFilter("");
+    setVisibleFilter("");
+    setPage(1);
   };
 
   const wizardInitial = useMemo(() => fakeOrderToWizardInitial(editingRow), [editingRow]);
@@ -320,9 +329,14 @@ export default function TrainingOrderTemplatesPage() {
               <option value="hidden">{t("trainingOrders.pool.notVisibleNow")}</option>
             </select>
           </label>
-          <button type="button" className="btn btn-secondary" onClick={search}>
-            {t("trainingOrders.pool.apply")}
-          </button>
+          <div className="oh-training-filters__actions">
+            <button type="button" className="btn btn-primary oh-training-filters__apply" onClick={search}>
+              {t("trainingOrders.pool.apply")}
+            </button>
+            <button type="button" className="btn btn-secondary oh-training-filters__reset" onClick={resetFilters}>
+              {t("trainingOrders.pool.reset")}
+            </button>
+          </div>
         </DashboardToolbar>
 
         {loading ? (
@@ -356,8 +370,6 @@ export default function TrainingOrderTemplatesPage() {
                 {rows.map((row, index) => {
                   const title = getLocalizedOrderTitle(row, locale);
                   const description = getLocalizedOrderDescription(row, locale);
-                  const minB = row.bidBudgetMin ?? row.budget;
-                  const maxB = row.bidBudgetMax ?? row.budget;
                   const rowNumber = rowOffset + index + 1;
                   return (
                     <tr key={row.id}>
@@ -366,14 +378,15 @@ export default function TrainingOrderTemplatesPage() {
                       </td>
                       <td>
                         <strong>{title}</strong>
-                        <div className="help oh-training-num" style={{ marginTop: 4 }} dir="ltr">
-                          #{formatAdminNumber(row.id)} — {description.slice(0, 60)}
-                          {description.length > 60 ? "…" : ""}
-                        </div>
+                        {description ? (
+                          <div className="help" style={{ marginTop: 4 }}>
+                            {description.length > 60 ? `${description.slice(0, 60)}…` : description}
+                          </div>
+                        ) : null}
                       </td>
                       <td>{row.categoryName || "—"}</td>
                       <td className="oh-training-num" dir="ltr">
-                        {formatAdminRange(minB, maxB)} JOD
+                        {formatTrainingOrderBudget(row)}
                       </td>
                       <td className="oh-training-num" dir="ltr">
                         {formatAdminDuration(row.durationValue, row.durationUnit, locale, durationLabels)}

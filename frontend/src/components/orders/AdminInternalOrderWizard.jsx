@@ -22,6 +22,7 @@ import {
   validateOrderFilesSize,
 } from "../../utils/orderUploadLimits";
 import { isFixedBudgetInAllowedSpan, normalizeTemplateBudget } from "../../utils/fakeBudgetRanges";
+import { formatTrainingOrderBudget } from "../../pages/dashboard/trainingOrders/trainingOrdersDisplayUtils";
 
 const ADMIN_STEPS = [
   { key: "core", label: "بيانات الطلب" },
@@ -1511,11 +1512,18 @@ export default function AdminInternalOrderWizard({
                   </CreateOrderReviewRow>
                   <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewBudget") : "الميزانية"}>
                     <span dir="ltr" style={{ display: "inline-block", textAlign: "right", width: "100%" }}>
-                      {form.projectType === "bidding"
-                        ? isClientAudience || isFakePoolMode
-                          ? `${formatMoney(form.bidBudgetMin)} – ${formatMoney(form.bidBudgetMax)} JOD`
-                          : "—"
-                        : `${formatMoney(form.budget)} JOD`}
+                      {isFakePoolMode
+                        ? formatTrainingOrderBudget({
+                            projectType: form.projectType,
+                            budget: form.budget,
+                            bidBudgetMin: form.bidBudgetMin,
+                            bidBudgetMax: form.bidBudgetMax,
+                          })
+                        : form.projectType === "bidding"
+                          ? isClientAudience
+                            ? `${formatMoney(form.bidBudgetMin)} – ${formatMoney(form.bidBudgetMax)} JOD`
+                            : "—"
+                          : `${formatMoney(form.budget)} JOD`}
                     </span>
                   </CreateOrderReviewRow>
                 </div>
