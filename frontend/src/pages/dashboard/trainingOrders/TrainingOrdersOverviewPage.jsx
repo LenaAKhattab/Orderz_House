@@ -526,7 +526,6 @@ export default function TrainingOrdersOverviewPage() {
                   </StatusBadge>
                   <span className="oh-training-overview__meta">{getRoundSourceLabel(activeRound.roundSource, t)}</span>
                 </div>
-                <h3 className="oh-training-overview__card-title">{activeRound.title || "—"}</h3>
                 <ul className="oh-training-metric-list">
                   <li className="oh-training-metric-row">
                     <span>{t("trainingOrders.overview.activeRound.orderCount")}</span>
