@@ -169,18 +169,17 @@
 
 .home-hero-mobile-start-cta {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   width: min(235px, 78vw);
   min-height: 58px;
-  padding: 0.45rem 3.75rem;
+  padding: 0.5rem 1rem 0.55rem;
   border-radius: 999px;
   background: linear-gradient(135deg, #5368e8 0%, #344b9f 52%, #243663 100%);
   color: #fff;
   font-weight: 800;
-  font-size: 1.05rem;
-  line-height: 1;
+  font-size: 1.0625rem;
+  line-height: 1.3;
   text-decoration: none;
   box-shadow:
     0 16px 34px rgba(36, 54, 99, 0.28),
@@ -213,33 +212,38 @@
 }
 
 .home-hero-mobile-start-cta__label {
+  grid-area: 1 / 1;
   position: relative;
   z-index: 1;
   width: 100%;
+  margin: 0;
+  padding-inline: 0.15rem;
   text-align: center;
 }
 
 .home-hero-mobile-start-cta__icon {
-  position: absolute;
-  top: 50%;
-  left: 18px;
-  transform: translateY(-50%);
+  grid-area: 1 / 1;
+  position: relative;
+  align-self: end;
+  justify-self: end;
+  margin: 0 10px 6px 0;
   display: inline-grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
-  font-size: 1.35rem;
+  font-size: 0.9rem;
   font-weight: 900;
   line-height: 1;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  pointer-events: none;
 }
 
 html[dir="ltr"] .home-hero-mobile-start-cta__icon {
-  left: auto;
-  right: 18px;
+  justify-self: end;
+  margin: 0 10px 6px 0;
 }
 
 .hm-hero__headline {
@@ -276,8 +280,8 @@ html[dir="ltr"] .home-hero-mobile-start-cta__icon {
   flex-direction: column;
   justify-content: space-between;
   min-width: 0;
-  min-height: 6.75rem;
-  padding: 0.65rem 0.6rem;
+  min-height: 7.1rem;
+  padding: 0.7rem 0.55rem 0.65rem;
   border: none;
   border-radius: 1.15rem;
   text-align: start;
@@ -312,13 +316,17 @@ html[dir="ltr"] .home-hero-mobile-start-cta__icon {
 }
 
 .hm-featured-card__title {
-  font-size: clamp(0.68rem, 3.1vw, 0.78rem);
+  font-size: clamp(0.875rem, 3.5vw, 1rem);
   font-weight: 800;
-  line-height: 1.35;
+  line-height: 1.42;
+  text-align: center;
+  text-wrap: balance;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   overflow: hidden;
+  width: 100%;
+  margin-inline: auto;
 }
 
 .hm-featured-card__footer {

@@ -253,13 +253,23 @@ async function markActivationFeePaidOffline(
   };
 }
 
+function activationFeeValidUntil(paidAt, now = new Date()) {
+  if (!paidAt) return null;
+  const paid = paidAt instanceof Date ? paidAt : new Date(paidAt);
+  if (Number.isNaN(paid.getTime())) return null;
+  if (!isActivationFeeCurrent(paid, now)) return null;
+  return new Date(paid.getTime() + ACTIVATION_FEE_VALIDITY_DAYS * 24 * 60 * 60 * 1000);
+}
+
 async function getActivationFeeStatus(userId, client) {
   const paidAt = await getLatestActivationFeePaidAt(userId, client);
   const isCurrent = isActivationFeeCurrent(paidAt);
+  const validUntil = activationFeeValidUntil(paidAt);
   return {
     amountJod: SUBSCRIPTION_ACTIVATION_FEE_JOD,
     validityDays: ACTIVATION_FEE_VALIDITY_DAYS,
     paidAt: paidAt || null,
+    validUntil: validUntil || null,
     isCurrent,
     needsPayment: !isCurrent,
   };
@@ -442,6 +452,7 @@ module.exports = {
   PURPOSE_SUBSCRIPTION_PURCHASE,
   activationFeeMinorUnits,
   isActivationFeeCurrent,
+  activationFeeValidUntil,
   getActivationFeePaidAt,
   getLatestActivationFeePaidAt,
   freelancerNeedsSubscriptionActivationFee,

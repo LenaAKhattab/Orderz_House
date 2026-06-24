@@ -1051,9 +1051,21 @@ function evaluateFreelancerTakeOrdersEligibility(sub) {
   return { eligible: true, reason: "active" };
 }
 
+function applyActivationFeeEligibilityGate(eligibility, feeStatus) {
+  if (!eligibility?.eligible) return eligibility;
+  if (!feeStatus?.needsPayment) return eligibility;
+  return {
+    eligible: false,
+    reason: "activation_fee_unpaid",
+    activationFeeStatus: feeStatus,
+  };
+}
+
 async function canFreelancerTakeOrders(freelancerUserId) {
   const sub = await getCurrentSubscriptionForFreelancer(freelancerUserId);
-  return evaluateFreelancerTakeOrdersEligibility(sub);
+  const base = evaluateFreelancerTakeOrdersEligibility(sub);
+  const feeStatus = await getActivationFeeStatus(freelancerUserId);
+  return applyActivationFeeEligibilityGate(base, feeStatus);
 }
 
 function shouldRetainCurrentSubscription(sub) {
@@ -1375,6 +1387,7 @@ module.exports = {
   markFreelancerSubscriptionStripePaymentFailed,
   activateCompanyApprovalForSubscription,
   canFreelancerTakeOrders,
+  applyActivationFeeEligibilityGate,
   evaluateFreelancerTakeOrdersEligibility,
   shouldRetainCurrentSubscription,
   ORDERZHOUSE_FREE_PLAN_ID,

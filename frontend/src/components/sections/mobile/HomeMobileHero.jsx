@@ -43,17 +43,17 @@ export default function HomeMobileHero({ statsPayload, ads = [], adsLoading = fa
   const featured = useMemo(
     () => [
       {
-        id: "start-order",
+        id: "register-client",
         title: t("home.hero.featured.startOrder"),
         tag: t("home.hero.featured.startOrderTag"),
-        to: "/register",
+        to: "/register?role=client",
         tone: "dark",
       },
       {
-        id: "explore-services",
+        id: "register-freelancer",
         title: t("home.hero.featured.exploreServices"),
         tag: t("home.hero.featured.exploreTag"),
-        to: "/services",
+        to: "/register?role=freelancer",
         tone: "accent",
       },
     ],
@@ -85,8 +85,8 @@ export default function HomeMobileHero({ statsPayload, ads = [], adsLoading = fa
       </div>
 
       <div className="hm-hero__cta-wrap">
-        <Link to="/login" className="home-hero-mobile-start-cta">
-          <span className="home-hero-mobile-start-cta__label">{t("home.hero.startNow")}</span>
+        <Link to="/orders" className="home-hero-mobile-start-cta">
+          <span className="home-hero-mobile-start-cta__label">{t("home.hero.browseServicesNow")}</span>
           <span className="home-hero-mobile-start-cta__icon" aria-hidden="true">
             {isRtl ? "←" : "→"}
           </span>

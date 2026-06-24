@@ -2,6 +2,7 @@ const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const {
   resolveDestructiveScriptMode,
+  assertMutatingScriptAllowed,
 } = require("../scripts/lib/destructiveScriptSafety");
 
 const ROTATE_OPTS = {
@@ -78,5 +79,41 @@ describe("destructiveScriptSafety", () => {
     });
     assert.equal(m.execute, false);
     assert.equal(m.dryRun, true);
+  });
+
+  it("assertMutatingScriptAllowed blocks production without confirm", () => {
+    const origExit = process.exit;
+    const origEnv = process.env.NODE_ENV;
+    let exitCode = null;
+    process.exit = (code) => {
+      exitCode = code;
+      throw new Error("exit");
+    };
+    process.env.NODE_ENV = "production";
+    try {
+      assert.throws(
+        () =>
+          assertMutatingScriptAllowed({
+            scriptName: "cleanupProbeFakeOrders.js",
+            confirmVar: "CONFIRM_CLEANUP_PROBE_FAKE_ORDERS",
+            env: process.env,
+          }),
+        /exit/,
+      );
+      assert.equal(exitCode, 1);
+    } finally {
+      process.exit = origExit;
+      process.env.NODE_ENV = origEnv;
+    }
+  });
+
+  it("assertMutatingScriptAllowed allows production with confirm", () => {
+    const out = assertMutatingScriptAllowed({
+      scriptName: "cleanupProbeFakeOrders.js",
+      confirmVar: "CONFIRM_CLEANUP_PROBE_FAKE_ORDERS",
+      env: { NODE_ENV: "production", CONFIRM_CLEANUP_PROBE_FAKE_ORDERS: "true" },
+    });
+    assert.equal(out.isProduction, true);
+    assert.equal(out.confirmed, true);
   });
 });

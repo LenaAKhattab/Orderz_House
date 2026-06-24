@@ -979,14 +979,14 @@ export default function AdminInternalOrderWizard({
 
               <div className="field admin-co-fields__span2">
                 <label className="label" htmlFor="adm-co-title">
-                  {isFakePoolMode ? t("trainingOrders.templateWizard.titleLabel") : "عنوان المشروع"}
+                  {isFakePoolMode ? tpl("titleLabel") : "عنوان المشروع"}
                 </label>
                 <input
                   id="adm-co-title"
                   className="input"
                   value={form.title}
                   placeholder={
-                    isFakePoolMode ? t("trainingOrders.templateWizard.titlePlaceholder") : "أدخل عنوان المشروع"
+                    isFakePoolMode ? tpl("titlePlaceholder") : "أدخل عنوان المشروع"
                   }
                   maxLength={200}
                   onChange={(e) => set("title", e.target.value)}
@@ -1337,6 +1337,7 @@ export default function AdminInternalOrderWizard({
                 </>
               )}
 
+              {!isFakeOrder ? (
               <div className="field admin-co-fields__span2">
                 <span className="label">{isFakePoolMode ? tpl("skillsLabel") : "المهارات المطلوبة"}</span>
                 <SkillsTagsInput
@@ -1346,6 +1347,7 @@ export default function AdminInternalOrderWizard({
                   historySkills={skillHistory}
                 />
               </div>
+              ) : null}
             </div>
             </>
           ) : null}
@@ -1486,6 +1488,7 @@ export default function AdminInternalOrderWizard({
                       : tpl("emDash")}
                   </CreateOrderReviewRow>
                 </div>
+                {!isFakeOrder ? (
                 <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewSkills") : "المهارات المطلوبة"}>
                   {Array.isArray(form.preferredSkills) && form.preferredSkills.length
                     ? form.preferredSkills.join(isFakePoolMode ? ", " : "، ")
@@ -1493,6 +1496,7 @@ export default function AdminInternalOrderWizard({
                       ? tpl("reviewSkillsNone")
                       : "لا توجد مهارات محددة مطلوبة"}
                 </CreateOrderReviewRow>
+                ) : null}
                 <div className="oh-review__2col">
                   <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewProjectType") : "نوع المشروع"}>
                     {form.projectType === "fixed"
@@ -1569,7 +1573,7 @@ export default function AdminInternalOrderWizard({
 
                 <div className="oh-review__note">
                   {isFakePoolMode
-                    ? t("trainingOrders.templateWizard.reviewNote")
+                    ? tpl("reviewNote")
                     : isClientAudience
                       ? form.projectType === "fixed"
                         ? "بعد المتابعة للدفع، سيتم تفعيل الطلب ونشره في المعرض."
@@ -1644,10 +1648,10 @@ export default function AdminInternalOrderWizard({
               >
                 {busy
                   ? isFakePoolMode
-                    ? t("trainingOrders.templateWizard.saving")
+                    ? tpl("saving")
                     : "جارٍ الإنشاء…"
                   : isFakePoolMode
-                    ? t("trainingOrders.templateWizard.save")
+                    ? tpl("save")
                     : isClientAudience
                       ? form.projectType === "fixed"
                         ? "المتابعة إلى الدفع"

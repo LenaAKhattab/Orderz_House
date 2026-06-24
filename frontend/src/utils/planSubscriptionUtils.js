@@ -1,4 +1,4 @@
-import { isOrderzhouseFreePlan } from "../constants/orderzhousePlansCatalog";
+import { isOrderzhouseFreePlan } from "../constants/orderzhousePlansCatalog.js";
 
 export function planTierRank(planOrId) {
   if (planOrId == null) return 0;
@@ -40,4 +40,9 @@ export function getNextUpgradePlan(plans, currentSubscription) {
   const currentRank = currentSubscription ? planTierRank(currentSubscription.plan ?? currentSubscription.planId) : 0;
   const sorted = [...plans].sort((a, b) => planTierRank(a) - planTierRank(b));
   return sorted.find((plan) => planTierRank(plan) > currentRank && !isOrderzhouseFreePlan(plan)) || null;
+}
+
+/** Free tier + unpaid yearly activation fee → show pay-fee CTA and allow checkout. */
+export function freePlanNeedsActivationFeeCheckout({ isFreePlan, isFreelancer, activationFeeNeedsPayment }) {
+  return Boolean(isFreePlan && isFreelancer && activationFeeNeedsPayment);
 }

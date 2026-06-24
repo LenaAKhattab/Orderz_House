@@ -1,13 +1,19 @@
 import { getMyEligibilityRequest, getMySubscriptionRequest, listPublicPlansRequest } from "./api";
 import { mergeApiPlansWithCatalog } from "../constants/orderzhousePlansCatalog";
 
-const subscriptionCache = { userId: null, data: undefined, promise: null };
+const subscriptionCache = {
+  userId: null,
+  subscription: undefined,
+  activationFeeStatus: undefined,
+  promise: null,
+};
 const eligibilityCache = { userId: null, data: undefined, promise: null };
 const plansCache = { data: null, promise: null };
 
 export function invalidateFreelancerSessionCache() {
   subscriptionCache.userId = null;
-  subscriptionCache.data = undefined;
+  subscriptionCache.subscription = undefined;
+  subscriptionCache.activationFeeStatus = undefined;
   subscriptionCache.promise = null;
   eligibilityCache.userId = null;
   eligibilityCache.data = undefined;
@@ -21,7 +27,12 @@ export function invalidatePublicPlansCache() {
 
 export function getCachedFreelancerSubscription(userId) {
   if (!userId || subscriptionCache.userId !== userId) return undefined;
-  return subscriptionCache.data;
+  return subscriptionCache.subscription;
+}
+
+export function getCachedFreelancerActivationFeeStatus(userId) {
+  if (!userId || subscriptionCache.userId !== userId) return undefined;
+  return subscriptionCache.activationFeeStatus;
 }
 
 export function getCachedFreelancerEligibility(userId) {
@@ -36,11 +47,16 @@ export function getCachedPublicPlans() {
 export function fetchFreelancerSubscriptionCached(userId, { force = false } = {}) {
   if (!userId) {
     subscriptionCache.userId = null;
-    subscriptionCache.data = null;
+    subscriptionCache.subscription = null;
+    subscriptionCache.activationFeeStatus = null;
     return Promise.resolve(null);
   }
-  if (!force && subscriptionCache.userId === userId && subscriptionCache.data !== undefined) {
-    return Promise.resolve(subscriptionCache.data);
+  if (
+    !force &&
+    subscriptionCache.userId === userId &&
+    subscriptionCache.subscription !== undefined
+  ) {
+    return Promise.resolve(subscriptionCache.subscription);
   }
   if (!force && subscriptionCache.userId === userId && subscriptionCache.promise) {
     return subscriptionCache.promise;
@@ -49,7 +65,9 @@ export function fetchFreelancerSubscriptionCached(userId, { force = false } = {}
   subscriptionCache.promise = getMySubscriptionRequest()
     .then((res) => {
       const sub = res?.data?.subscription ?? null;
-      subscriptionCache.data = sub;
+      const activationFeeStatus = res?.data?.activationFeeStatus ?? null;
+      subscriptionCache.subscription = sub;
+      subscriptionCache.activationFeeStatus = activationFeeStatus;
       subscriptionCache.promise = null;
       return sub;
     })
@@ -58,6 +76,20 @@ export function fetchFreelancerSubscriptionCached(userId, { force = false } = {}
       throw err;
     });
   return subscriptionCache.promise;
+}
+
+export function fetchFreelancerActivationFeeStatusCached(userId, { force = false } = {}) {
+  if (!userId) return Promise.resolve(null);
+  if (
+    !force &&
+    subscriptionCache.userId === userId &&
+    subscriptionCache.activationFeeStatus !== undefined
+  ) {
+    return Promise.resolve(subscriptionCache.activationFeeStatus);
+  }
+  return fetchFreelancerSubscriptionCached(userId, { force }).then(
+    () => subscriptionCache.activationFeeStatus ?? null,
+  );
 }
 
 export function fetchFreelancerEligibilityCached(userId, { force = false } = {}) {

@@ -494,6 +494,12 @@ function nextBatchId() {
 }
 
 async function runGenerator(args) {
+  if (args.insert) {
+    throw new Error(
+      "Template generation is disabled. fake_order_templates is deprecated. " +
+        "Add training orders via admin fake_orders pool or use createFakeOrder.",
+    );
+  }
   const [schemaMap, hierarchy, existing] = await Promise.all([loadSchemaMap(), loadHierarchy(), loadExistingFingerprintSets()]);
   const batchId = args.batchId || nextBatchId();
   const actorId = await getActorId();
@@ -578,6 +584,12 @@ async function runRollback(batchId) {
 async function main() {
   const args = parseArgs(process.argv);
   assertArgs(args);
+  const { assertMutatingScriptAllowed } = require("./lib/destructiveScriptSafety");
+  assertMutatingScriptAllowed({
+    scriptName: args.rollback ? "generateFakeOrders.js (rollback)" : "generateFakeOrders.js",
+    confirmVar: args.rollback ? "CONFIRM_GENERATE_FAKE_ORDERS_ROLLBACK" : "CONFIRM_GENERATE_FAKE_ORDERS",
+    requireConfirmAlways: true,
+  });
   if (args.rollback) await runRollback(args.batchId);
   else await runGenerator(args);
   await pool.end();

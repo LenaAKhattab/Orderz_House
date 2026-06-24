@@ -30,6 +30,7 @@ export default function PlansMobilePage({
   trustPills = [],
   pageSlug = null,
   layoutVariant = PLANS_LAYOUT_VARIANT.MAIN_FIVE_CARD,
+  activationFeeNeedsPayment = false,
 }) {
   const { t, dir } = useTranslation();
   const layout = getPlansLayoutConfig(layoutVariant);
@@ -52,6 +53,7 @@ export default function PlansMobilePage({
         currentSubscription={currentSubscription}
         hasBlockingSubscription={hasBlockingSubscription}
         checkoutBusyPlanId={checkoutBusyPlanId}
+        activationFeeNeedsPayment={activationFeeNeedsPayment}
         onCta={onCta}
         skeletonCount={layout.skeletonCount}
       />

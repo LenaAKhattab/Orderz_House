@@ -47,12 +47,30 @@
     "amount": "25 JOD",
     "suffix": "paid once yearly"
   },
+  "freePlanActivationFeeNote": "The plan is free, but the 25 JOD yearly activation fee is required.",
+  "activationFee": {
+    "paidSuccessTitle": "Activation fee paid",
+    "paidSuccessMessage": "Activation fee paid successfully.",
+    "cancelledTitle": "Payment cancelled",
+    "cancelledMessage": "Activation fee payment was not completed."
+  },
+  "checkout": {
+    "paidSuccessTitle": "Payment received",
+    "paidSuccessMessage": "Payment verified on the server. Your account is awaiting company activation.",
+    "cancelledTitle": "Payment cancelled",
+    "cancelledMessage": "Payment was not completed.",
+    "verifyFailedTitle": "Could not verify payment",
+    "verifyFailedMessage": "No Stripe session ID was received. Wait a moment and refresh, or check the plans page after the payment webhook arrives.",
+    "confirmPendingTitle": "Payment not confirmed yet",
+    "confirmPendingMessage": "Wait a moment and refresh, or ensure the Stripe webhook reaches the server. Payment is not confirmed from the browser alone."
+  },
   "cta": {
     "freelancersOnly": "Freelancers only",
     "currentPlan": "Your current plan",
     "lowerPlan": "Lower plan",
     "alreadySubscribed": "Already subscribed",
     "upgrade": "Upgrade plan",
+    "payActivationFee": "Pay activation fee",
     "autoActivated": "Activated automatically",
     "companyActivation": "Activated through company",
     "startNow": "Start now"

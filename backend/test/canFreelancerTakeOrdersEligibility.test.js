@@ -9,6 +9,7 @@ const { describe, it } = require("node:test");
 const assert = require("node:assert");
 const {
   evaluateFreelancerTakeOrdersEligibility,
+  applyActivationFeeEligibilityGate,
   SUBSCRIPTION_PAYMENT_STATUSES,
   SUBSCRIPTION_ACTIVATION_STATUSES,
   SUBSCRIPTION_STATUSES,
@@ -143,5 +144,38 @@ describe("evaluateFreelancerTakeOrdersEligibility", () => {
     const r = evaluateFreelancerTakeOrdersEligibility(sub({ expiryDate: past }));
     assert.strictEqual(r.eligible, false);
     assert.strictEqual(r.reason, "expired");
+  });
+});
+
+describe("applyActivationFeeEligibilityGate", () => {
+  it("blocks otherwise eligible freelancer when activation fee is unpaid", () => {
+    const base = evaluateFreelancerTakeOrdersEligibility(sub({}));
+    assert.strictEqual(base.eligible, true);
+    const gated = applyActivationFeeEligibilityGate(base, {
+      needsPayment: true,
+      amountJod: 25,
+      isCurrent: false,
+    });
+    assert.strictEqual(gated.eligible, false);
+    assert.strictEqual(gated.reason, "activation_fee_unpaid");
+    assert.strictEqual(gated.activationFeeStatus.needsPayment, true);
+  });
+
+  it("passes through when activation fee is current", () => {
+    const base = evaluateFreelancerTakeOrdersEligibility(sub({}));
+    const gated = applyActivationFeeEligibilityGate(base, {
+      needsPayment: false,
+      isCurrent: true,
+    });
+    assert.deepStrictEqual(gated, base);
+  });
+
+  it("does not override subscription ineligibility with activation fee reason", () => {
+    const base = evaluateFreelancerTakeOrdersEligibility(
+      sub({ activationStatus: SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_PENDING }),
+    );
+    assert.strictEqual(base.eligible, false);
+    const gated = applyActivationFeeEligibilityGate(base, { needsPayment: true });
+    assert.deepStrictEqual(gated, base);
   });
 });

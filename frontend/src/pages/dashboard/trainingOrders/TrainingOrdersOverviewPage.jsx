@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  adminCancelTrainingRoundRequest,
   adminGetTrainingOrdersAutomationHealthRequest,
   adminGetTrainingFakeOrdersCountRequest,
+  adminGetTrainingOrdersReadinessRequest,
   adminGetTrainingOrdersSettingsRequest,
   adminListTrainingApplicationsSummaryRequest,
   adminListTrainingRoundsRequest,
-  adminRunTrainingOrdersAutomationTickRequest,
 } from "../../../services/api";
 import DashboardSection from "../../../components/dashboard/DashboardSection";
 import DashboardFormCard from "../../../components/dashboard/DashboardFormCard";
@@ -15,19 +16,67 @@ import DashboardStatCard from "../../../components/dashboard/DashboardStatCard";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import OverviewWidgetFrame from "./OverviewWidgetFrame";
+import TrainingOrderRoundsSection from "./TrainingOrderRoundsSection";
+import TrainingOrdersOverviewSkeleton from "./TrainingOrdersOverviewSkeleton";
+import TrainingOrdersVisiblePreview from "./TrainingOrdersVisiblePreview";
 import {
+  formatAdminDateTime,
+  formatAdminNumber,
+  formatAdminRange,
   formatAutomationHealthWarnings,
-  formatJoDateTime,
-  formatRoundPeriod,
+  formatReadinessWarnings,
+  formatTimeRemaining,
   getAutomationStatusLabel,
+  getCanCreateNextRoundLabel,
+  getReadinessStatusLabel,
   getRoundSourceLabel,
   getRoundStatusLabel,
+  readinessStatusTone,
+  trainingAdminT,
   unwrapTrainingPayload,
 } from "./trainingOrdersDisplayUtils";
-import { loadWidget, WIDGET_IDLE } from "./trainingOrdersAsyncWidget";
+import { runWidgetLoad, loadWidget, WIDGET_IDLE } from "./trainingOrdersAsyncWidget";
+import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
+import { useToast } from "../../../components/ui/toastContext";
 import "./trainingOrdersAdmin.css";
 
 const BASE = "/dashboard/super-admin/training-orders";
+
+function OperationalDateTime({ value }) {
+  const formatted = formatAdminDateTime(value);
+  if (formatted === "—") return <span>—</span>;
+  return (
+    <span className="oh-training-num" dir="ltr">
+      {formatted}
+    </span>
+  );
+}
+
+function OperationalPeriodLines({ startsAt, expiresAt, t }) {
+  const from = startsAt ? formatAdminDateTime(startsAt) : null;
+  const to = expiresAt ? formatAdminDateTime(expiresAt) : null;
+  if (!from && !to) return <span>—</span>;
+  return (
+    <span className="oh-training-period-lines oh-training-metric-row__value">
+      {from ? (
+        <span className="oh-training-period-lines__line">
+          <span className="oh-training-period-lines__label">{t("trainingOrders.rounds.periodFrom")}</span>{" "}
+          <span className="oh-training-period-lines__value oh-training-num" dir="ltr">
+            {from}
+          </span>
+        </span>
+      ) : null}
+      {to ? (
+        <span className="oh-training-period-lines__line">
+          <span className="oh-training-period-lines__label">{t("trainingOrders.rounds.periodTo")}</span>{" "}
+          <span className="oh-training-period-lines__value oh-training-num" dir="ltr">
+            {to}
+          </span>
+        </span>
+      ) : null}
+    </span>
+  );
+}
 
 function roundStatusTone(status) {
   if (status === "active") return "success";
@@ -37,193 +86,276 @@ function roundStatusTone(status) {
   return "neutral";
 }
 
-function StatWidgetCard({ label, hint, widget, onRetry, loadingLabel }) {
+function StatWidgetCard({ label, hint, widget, onRetry, suppressLoading, inlineError }) {
+  const displayValue =
+    widget.data === null || widget.data === undefined || widget.data === ""
+      ? "—"
+      : formatAdminNumber(widget.data);
   return (
-    <OverviewWidgetFrame status={widget.status} error={widget.error} onRetry={onRetry} loadingLabel={loadingLabel} compact>
-      <DashboardStatCard label={label} value={widget.data ?? "—"} hint={hint} />
+    <OverviewWidgetFrame status={widget.status} error={widget.error} onRetry={onRetry} suppressLoading={suppressLoading} compact>
+      {inlineError ? <p className="oh-training-widget-inline-error help">{inlineError}</p> : null}
+      <DashboardStatCard label={label} value={displayValue} hint={hint} className="oh-training-kpi-card" />
     </OverviewWidgetFrame>
   );
 }
 
-function QuickNavigationCard({ t }) {
-  return (
-    <DashboardFormCard title={t("trainingOrders.overview.quickNav.title")} className="oh-training-overview__card">
-      <div className="oh-training-overview__quick-links">
-        <Link to={`${BASE}/rounds`} className="oh-training-overview__quick-link">
-          {t("trainingOrders.overview.quickNav.rounds")}
-        </Link>
-        <Link to={`${BASE}/templates`} className="oh-training-overview__quick-link">
-          {t("trainingOrders.overview.quickNav.templates")}
-        </Link>
-        <Link to={`${BASE}/applications`} className="oh-training-overview__quick-link">
-          {t("trainingOrders.overview.quickNav.applications")}
-        </Link>
-        <Link to={`${BASE}/settings`} className="oh-training-overview__quick-link">
-          {t("trainingOrders.overview.quickNav.settings")}
-        </Link>
-      </div>
-    </DashboardFormCard>
-  );
+function marketplaceWidgetStatus(settingsW, automationHealthW) {
+  if (settingsW.status === "error") return "error";
+  if (automationHealthW.status === "error") return "error";
+  if (settingsW.status === "loading" || automationHealthW.status === "loading") return "loading";
+  return "success";
 }
 
 export default function TrainingOrdersOverviewPage() {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
+  const { push } = useToast();
+  const initialLoadDoneRef = useRef(false);
+  const [dashboardReady, setDashboardReady] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [settingsW, setSettingsW] = useState(WIDGET_IDLE);
   const [activeRoundW, setActiveRoundW] = useState(WIDGET_IDLE);
-  const [recentRoundsW, setRecentRoundsW] = useState(WIDGET_IDLE);
   const [fakeOrdersTotalW, setFakeOrdersTotalW] = useState(WIDGET_IDLE);
   const [visibleNowW, setVisibleNowW] = useState(WIDGET_IDLE);
   const [applicantsW, setApplicantsW] = useState(WIDGET_IDLE);
   const [roundsTotalW, setRoundsTotalW] = useState(WIDGET_IDLE);
   const [automationHealthW, setAutomationHealthW] = useState(WIDGET_IDLE);
-  const [tickBusy, setTickBusy] = useState(false);
+  const [readinessW, setReadinessW] = useState(WIDGET_IDLE);
+  const [stopBusy, setStopBusy] = useState(false);
+  const [roundsRefreshKey, setRoundsRefreshKey] = useState(0);
+  const [clockTick, setClockTick] = useState(0);
 
-  const loadSettings = useCallback(async () => {
-    setSettingsW({ status: "loading", data: null, error: "" });
-    const result = await loadWidget(async () => {
-      const res = await adminGetTrainingOrdersSettingsRequest();
-      return unwrapTrainingPayload(res);
-    });
-    setSettingsW({ status: result.status, data: result.status === "success" ? result.data : null, error: result.error || "" });
-  }, []);
+  const loadOpts = useCallback(() => ({ initialLoadDone: initialLoadDoneRef.current }), []);
 
-  const loadActiveRound = useCallback(async () => {
-    setActiveRoundW({ status: "loading", data: null, error: "" });
-    const result = await loadWidget(async () => {
-      const res = await adminListTrainingRoundsRequest({ status: "active", limit: 1 });
-      const payload = unwrapTrainingPayload(res);
-      return payload?.rounds?.[0] || null;
-    });
-    setActiveRoundW({ status: result.status, data: result.status === "success" ? result.data : null, error: result.error || "" });
-  }, []);
+  const loadSettings = useCallback(async (options = {}) => {
+    await runWidgetLoad(
+      setSettingsW,
+      async () => {
+        const res = await adminGetTrainingOrdersSettingsRequest();
+        return unwrapTrainingPayload(res);
+      },
+      { ...loadOpts(), ...options },
+    );
+  }, [loadOpts]);
 
-  const loadRecentRounds = useCallback(async () => {
-    setRecentRoundsW({ status: "loading", data: null, error: "" });
-    const result = await loadWidget(async () => {
-      const res = await adminListTrainingRoundsRequest({ limit: 5 });
-      const payload = unwrapTrainingPayload(res);
-      return payload?.rounds || [];
-    });
-    setRecentRoundsW({
-      status: result.status,
-      data: result.status === "success" ? result.data : null,
-      error: result.error || "",
-    });
-  }, []);
+  const loadActiveRound = useCallback(async (options = {}) => {
+    await runWidgetLoad(
+      setActiveRoundW,
+      async () => {
+        const res = await adminListTrainingRoundsRequest({ status: "active", limit: 1 });
+        const payload = unwrapTrainingPayload(res);
+        return payload?.rounds?.[0] || null;
+      },
+      { ...loadOpts(), ...options },
+    );
+  }, [loadOpts]);
 
-  const loadVisibleNow = useCallback(async () => {
-    setVisibleNowW({ status: "loading", data: null, error: "" });
-    const result = await loadWidget(async () => {
-      const res = await adminGetTrainingOrdersAutomationHealthRequest();
-      const payload = unwrapTrainingPayload(res);
-      return payload?.pool?.visibleAnyAudience ?? 0;
-    });
-    setVisibleNowW({
-      status: result.status,
-      data: result.status === "success" ? result.data : null,
-      error: result.error || "",
-    });
-  }, []);
+  const loadFakeOrdersTotal = useCallback(async (options = {}) => {
+    await runWidgetLoad(
+      setFakeOrdersTotalW,
+      async () => {
+        const res = await adminGetTrainingFakeOrdersCountRequest();
+        const payload = unwrapTrainingPayload(res);
+        return payload?.total ?? 0;
+      },
+      { ...loadOpts(), ...options },
+    );
+  }, [loadOpts]);
 
-  const loadFakeOrdersTotal = useCallback(async () => {
-    setFakeOrdersTotalW({ status: "loading", data: null, error: "" });
-    const result = await loadWidget(async () => {
-      const res = await adminGetTrainingFakeOrdersCountRequest();
-      const payload = unwrapTrainingPayload(res);
-      return payload?.total ?? 0;
-    });
-    setFakeOrdersTotalW({
-      status: result.status,
-      data: result.status === "success" ? result.data : null,
-      error: result.error || "",
-    });
-  }, []);
-
-  const loadApplicants = useCallback(async () => {
-    setApplicantsW({ status: "loading", data: null, error: "" });
-    const result = await loadWidget(async () => {
-      const res = await adminListTrainingApplicationsSummaryRequest({ limit: 1 });
-      const payload = unwrapTrainingPayload(res);
-      return payload?.pagination?.total ?? 0;
-    });
-    setApplicantsW({
-      status: result.status,
-      data: result.status === "success" ? result.data : null,
-      error: result.error || "",
-    });
-  }, []);
-
-  const loadAutomationHealth = useCallback(async () => {
-    setAutomationHealthW({ status: "loading", data: null, error: "" });
-    const result = await loadWidget(async () => {
-      const res = await adminGetTrainingOrdersAutomationHealthRequest();
-      return unwrapTrainingPayload(res);
-    });
-    setAutomationHealthW({
-      status: result.status,
-      data: result.status === "success" ? result.data : null,
-      error: result.error || "",
-    });
-  }, []);
-
-  const runAutomationTick = useCallback(async () => {
-    setTickBusy(true);
-    try {
-      await adminRunTrainingOrdersAutomationTickRequest();
-      await Promise.all([loadAutomationHealth(), loadSettings(), loadActiveRound()]);
-    } finally {
-      setTickBusy(false);
+  const loadAutomationHealthBundle = useCallback(async (options = {}) => {
+    const keepStale = options.silent || initialLoadDoneRef.current;
+    if (!keepStale) {
+      setAutomationHealthW(WIDGET_IDLE);
+      setVisibleNowW(WIDGET_IDLE);
     }
-  }, [loadAutomationHealth, loadSettings, loadActiveRound]);
-
-  const loadRoundsTotal = useCallback(async () => {
-    setRoundsTotalW({ status: "loading", data: null, error: "" });
     const result = await loadWidget(async () => {
-      const res = await adminListTrainingRoundsRequest({ limit: 1 });
-      const payload = unwrapTrainingPayload(res);
-      return payload?.pagination?.total ?? 0;
+      const res = await adminGetTrainingOrdersAutomationHealthRequest();
+      return unwrapTrainingPayload(res);
     });
-    setRoundsTotalW({
-      status: result.status,
-      data: result.status === "success" ? result.data : null,
-      error: result.error || "",
-    });
+    if (result.status === "success") {
+      setAutomationHealthW({ status: "success", data: result.data, error: "" });
+      setVisibleNowW({
+        status: "success",
+        data: result.data?.pool?.visibleAnyAudience ?? 0,
+        error: "",
+      });
+    } else {
+      setAutomationHealthW((prev) => ({
+        status: keepStale && prev.data != null ? "success" : "error",
+        data: prev.data,
+        error: result.error,
+      }));
+      setVisibleNowW((prev) => ({
+        status: keepStale && prev.data != null ? "success" : "error",
+        data: prev.data,
+        error: result.error,
+      }));
+    }
+    return result;
   }, []);
 
-  const loadAll = useCallback(() => {
-    void loadSettings();
-    void loadActiveRound();
-    void loadRecentRounds();
-    void loadFakeOrdersTotal();
-    void loadVisibleNow();
-    void loadApplicants();
-    void loadRoundsTotal();
-    void loadAutomationHealth();
+  const loadApplicants = useCallback(async (options = {}) => {
+    await runWidgetLoad(
+      setApplicantsW,
+      async () => {
+        const res = await adminListTrainingApplicationsSummaryRequest({ limit: 1 });
+        const payload = unwrapTrainingPayload(res);
+        return payload?.pagination?.total ?? 0;
+      },
+      { ...loadOpts(), ...options },
+    );
+  }, [loadOpts]);
+
+  const loadReadiness = useCallback(async (options = {}) => {
+    await runWidgetLoad(
+      setReadinessW,
+      async () => {
+        const res = await adminGetTrainingOrdersReadinessRequest();
+        return unwrapTrainingPayload(res);
+      },
+      { ...loadOpts(), ...options },
+    );
+  }, [loadOpts]);
+
+  const loadRoundsTotal = useCallback(async (options = {}) => {
+    await runWidgetLoad(
+      setRoundsTotalW,
+      async () => {
+        const res = await adminListTrainingRoundsRequest({ limit: 1 });
+        const payload = unwrapTrainingPayload(res);
+        return payload?.pagination?.total ?? 0;
+      },
+      { ...loadOpts(), ...options },
+    );
+  }, [loadOpts]);
+
+  const pushActionError = useCallback(
+    (e, failedKey = "serverError") => {
+      const status = e?.response?.status;
+      const message = getSafeApiErrorMessage(e) || t(`trainingOrders.actions.toast.${failedKey}`);
+      push({
+        type: "error",
+        title:
+          status === 403
+            ? t("trainingOrders.actions.toast.permissionDenied")
+            : t(`trainingOrders.actions.toast.${failedKey}`),
+        message,
+      });
+    },
+    [push, t],
+  );
+
+  const loadAll = useCallback(async () => {
+    if (initialLoadDoneRef.current) {
+      setIsRefreshing(true);
+    }
+    try {
+      const critical = Promise.all([
+        loadSettings({ silent: true }),
+        loadActiveRound({ silent: true }),
+        loadReadiness({ silent: true }),
+      ]);
+      const secondary = Promise.all([
+        loadFakeOrdersTotal({ silent: true }),
+        loadAutomationHealthBundle({ silent: true }),
+        loadApplicants({ silent: true }),
+        loadRoundsTotal({ silent: true }),
+      ]);
+      await critical;
+      void secondary;
+    } finally {
+      setIsRefreshing(false);
+    }
   }, [
     loadSettings,
     loadActiveRound,
-    loadRecentRounds,
+    loadReadiness,
     loadFakeOrdersTotal,
-    loadVisibleNow,
+    loadAutomationHealthBundle,
     loadApplicants,
     loadRoundsTotal,
-    loadAutomationHealth,
   ]);
 
   useEffect(() => {
-    loadAll();
+    void loadAll();
   }, [loadAll]);
+
+  const criticalWidgets = useMemo(
+    () => [settingsW, activeRoundW, readinessW],
+    [settingsW, activeRoundW, readinessW],
+  );
+
+  useEffect(() => {
+    if (dashboardReady) return;
+    if (criticalWidgets.every((w) => w.status !== "loading")) {
+      initialLoadDoneRef.current = true;
+      setDashboardReady(true);
+    }
+  }, [criticalWidgets, dashboardReady]);
+
+  const isInitialDashboardLoading = !dashboardReady;
+  const suppressCardLoading = dashboardReady;
+
+  useEffect(() => {
+    if (window.location.hash !== "#round-history") return undefined;
+    const el = document.getElementById("round-history");
+    if (!el) return undefined;
+    const timer = window.setTimeout(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const activeRound = activeRoundW.status === "success" ? activeRoundW.data : null;
+    if (!activeRound?.expiresAt) return undefined;
+    const id = window.setInterval(() => setClockTick((n) => n + 1), 60_000);
+    return () => window.clearInterval(id);
+  }, [activeRoundW.data, activeRoundW.status]);
 
   const settings = settingsW.status === "success" ? settingsW.data : null;
   const activeRound = activeRoundW.status === "success" ? activeRoundW.data : null;
-  const recentRounds = recentRoundsW.status === "success" ? recentRoundsW.data || [] : [];
+  const canStopRound = activeRound && (activeRound.status === "active" || activeRound.status === "scheduled");
+
+  const stopActiveRound = async () => {
+    if (!activeRound || !canStopRound || stopBusy) return;
+    if (!window.confirm(t("trainingOrders.actions.confirm.stopCurrentRound"))) return;
+    setStopBusy(true);
+    setIsRefreshing(true);
+    try {
+      await adminCancelTrainingRoundRequest(activeRound.id);
+      push({
+        type: "success",
+        title: t("trainingOrders.rounds.stopRound"),
+        message: t("trainingOrders.actions.toast.roundStopped"),
+      });
+      await Promise.all([loadActiveRound({ silent: true }), loadRoundsTotal({ silent: true }), loadReadiness({ silent: true }), loadAutomationHealthBundle({ silent: true })]);
+      setRoundsRefreshKey((k) => k + 1);
+    } catch (e) {
+      pushActionError(e, "roundStopFailed");
+    } finally {
+      setStopBusy(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  const refreshVisibleCounts = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([loadReadiness({ silent: true }), loadAutomationHealthBundle({ silent: true })]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadReadiness, loadAutomationHealthBundle]);
 
   const warnings = useMemo(() => {
     if (settingsW.status !== "success" || !settings) return [];
     const items = [];
     const poolVisible = visibleNowW.status === "success" ? visibleNowW.data : null;
     const health = automationHealthW.status === "success" ? automationHealthW.data : null;
-    const hasInsufficientWarning = health?.warnings?.includes("insufficient_eligible_pool") || health?.warnings?.includes("insufficient_pool") || health?.warnings?.includes("no_active_templates");
+    const hasInsufficientWarning =
+      health?.warnings?.includes("insufficient_eligible_pool") ||
+      health?.warnings?.includes("insufficient_pool") ||
+      health?.warnings?.includes("no_active_templates");
 
     if (!settings.trainingOrdersEnabled) {
       items.push({
@@ -274,12 +406,56 @@ export default function TrainingOrdersOverviewPage() {
     return formatAutomationHealthWarnings(h.warnings, t);
   }, [automationHealthW.data, t]);
 
+  const handleRoundsChanged = useCallback(() => {
+    void loadActiveRound({ silent: true });
+    void loadRoundsTotal({ silent: true });
+    void loadReadiness({ silent: true });
+    void loadAutomationHealthBundle({ silent: true });
+  }, [loadActiveRound, loadRoundsTotal, loadReadiness, loadAutomationHealthBundle]);
+
+  const readiness = readinessW.status === "success" ? readinessW.data : null;
+  const readinessWarningMessages = useMemo(() => {
+    if (!readiness?.readinessWarnings?.length) return [];
+    const codes = readiness.readinessWarnings.filter((code) => code !== "insufficient_eligible_pool");
+    return formatReadinessWarnings(codes, t);
+  }, [readiness?.readinessWarnings, t]);
+
+  const readinessPoolBanner = useMemo(() => {
+    if (!readiness) return null;
+    if (readiness.nextRoundReadinessStatus === "warning") {
+      return {
+        tone: "warning",
+        text: t("trainingOrders.overview.nextRoundReadiness.limitedVarietyWarning"),
+      };
+    }
+    if (readiness.nextRoundReadinessStatus === "blocked") {
+      return {
+        tone: "danger",
+        text: t("trainingOrders.overview.nextRoundReadiness.insufficientPoolDanger"),
+        to: `${BASE}/templates`,
+      };
+    }
+    return null;
+  }, [readiness, t]);
+
+  const marketplaceStatus = marketplaceWidgetStatus(settingsW, automationHealthW);
+
   return (
     <DashboardSection
       className="oh-training-page-section oh-training-overview"
       title={t("trainingOrders.overview.title")}
       description={t("trainingOrders.overview.description")}
     >
+      {isRefreshing ? (
+        <p className="oh-training-overview__refresh-note" role="status" aria-live="polite">
+          {t("trainingOrders.overview.updatingData")}
+        </p>
+      ) : null}
+
+      {isInitialDashboardLoading ? (
+        <TrainingOrdersOverviewSkeleton />
+      ) : (
+        <>
       {warnings.length > 0 ? (
         <div className="oh-training-overview__warnings" role="list">
           {warnings.map((w) => (
@@ -295,13 +471,52 @@ export default function TrainingOrdersOverviewPage() {
         </div>
       ) : null}
 
-      <div className="oh-training-overview__grid">
-        <DashboardFormCard title={t("trainingOrders.overview.activeRound.title")} className="oh-training-overview__card">
+      <section className="oh-training-overview__section oh-training-overview__section--kpis" aria-label={t("trainingOrders.overview.title")}>
+        <DashboardStatsGrid className="oh-training-overview__stats oh-training-overview__stats--top oh-training-overview__kpi-strip">
+          <StatWidgetCard
+            label={t("trainingOrders.overview.stats.visibleNow")}
+            hint={t("trainingOrders.overview.stats.visibleNowHint")}
+            widget={visibleNowW}
+            onRetry={() => void loadAutomationHealthBundle()}
+            suppressLoading={suppressCardLoading}
+            inlineError={suppressCardLoading && visibleNowW.error ? visibleNowW.error : ""}
+          />
+          <StatWidgetCard
+            label={t("trainingOrders.overview.stats.totalFakeOrders")}
+            hint={t("trainingOrders.overview.stats.totalFakeOrdersHint")}
+            widget={fakeOrdersTotalW}
+            onRetry={() => void loadFakeOrdersTotal()}
+            suppressLoading={suppressCardLoading}
+            inlineError={suppressCardLoading && fakeOrdersTotalW.error ? fakeOrdersTotalW.error : ""}
+          />
+          <StatWidgetCard
+            label={t("trainingOrders.overview.stats.ordersWithApplicants")}
+            hint={t("trainingOrders.overview.stats.ordersWithApplicantsHint")}
+            widget={applicantsW}
+            onRetry={() => void loadApplicants()}
+            suppressLoading={suppressCardLoading}
+            inlineError={suppressCardLoading && applicantsW.error ? applicantsW.error : ""}
+          />
+          <StatWidgetCard
+            label={t("trainingOrders.overview.stats.totalRounds")}
+            hint={t("trainingOrders.overview.stats.totalRoundsHint")}
+            widget={roundsTotalW}
+            onRetry={() => void loadRoundsTotal()}
+            suppressLoading={suppressCardLoading}
+            inlineError={suppressCardLoading && roundsTotalW.error ? roundsTotalW.error : ""}
+          />
+        </DashboardStatsGrid>
+      </section>
+
+      <section className="oh-training-overview__section oh-training-overview__section--ops">
+        <div className="oh-training-overview__ops-panel">
+          <div className="oh-training-overview__ops-item oh-training-overview__ops-item--current">
+            <DashboardFormCard title={t("trainingOrders.overview.activeRound.title")} className="oh-training-overview__card oh-training-overview__card--compact">
           <OverviewWidgetFrame
             status={activeRoundW.status}
             error={activeRoundW.error}
             onRetry={() => void loadActiveRound()}
-            loadingLabel={t("trainingOrders.overview.activeRound.loading")}
+            suppressLoading={suppressCardLoading}
           >
             {activeRound ? (
               <div className="oh-training-overview__active-round">
@@ -312,26 +527,42 @@ export default function TrainingOrdersOverviewPage() {
                   <span className="oh-training-overview__meta">{getRoundSourceLabel(activeRound.roundSource, t)}</span>
                 </div>
                 <h3 className="oh-training-overview__card-title">{activeRound.title || "—"}</h3>
-                <ul className="oh-training-overview__facts">
-                  <li>
+                <ul className="oh-training-metric-list">
+                  <li className="oh-training-metric-row">
                     <span>{t("trainingOrders.overview.activeRound.orderCount")}</span>
-                    <strong dir="ltr">{activeRound.generatedCount ?? "—"}</strong>
+                    <strong className="oh-training-num" dir="ltr">{formatAdminNumber(activeRound.generatedCount)}</strong>
                   </li>
-                  <li>
+                  <li className="oh-training-metric-row">
                     <span>{t("trainingOrders.overview.activeRound.range")}</span>
-                    <strong dir="ltr">
-                      {activeRound.minOrders} – {activeRound.maxOrders}
+                    <strong className="oh-training-num" dir="ltr">
+                      {formatAdminRange(activeRound.minOrders, activeRound.maxOrders)}
                     </strong>
                   </li>
-                  <li>
+                  <li className="oh-training-metric-row oh-training-metric-row--period">
                     <span>{t("trainingOrders.overview.activeRound.period")}</span>
-                    <strong>{formatRoundPeriod(activeRound.startsAt, activeRound.expiresAt, locale)}</strong>
+                    <OperationalPeriodLines startsAt={activeRound.startsAt} expiresAt={activeRound.expiresAt} t={t} />
                   </li>
+                  {activeRound.expiresAt ? (
+                    <>
+                      <li className="oh-training-metric-row">
+                        <span>{t("trainingOrders.overview.activeRound.endsAt")}</span>
+                        <strong>
+                          <OperationalDateTime value={activeRound.expiresAt} />
+                        </strong>
+                      </li>
+                      <li className="oh-training-metric-row">
+                        <span>{t("trainingOrders.overview.activeRound.timeRemaining")}</span>
+                        <strong key={clockTick}>{formatTimeRemaining(activeRound.expiresAt, t)}</strong>
+                      </li>
+                    </>
+                  ) : null}
                 </ul>
-                <div className="oh-training-overview__card-actions">
-                  <Link to={`${BASE}/rounds`} className="btn btn-secondary">
-                    {t("trainingOrders.overview.activeRound.viewRound")}
-                  </Link>
+                <div className="oh-training-overview__card-actions oh-training-overview__card-actions--inline">
+                  {canStopRound ? (
+                    <button type="button" className="btn btn-secondary" disabled={stopBusy} onClick={() => void stopActiveRound()}>
+                      {stopBusy ? t("trainingOrders.rounds.busy") : t("trainingOrders.rounds.stopRound")}
+                    </button>
+                  ) : null}
                   <Link to={`${BASE}/applications`} className="btn btn-secondary">
                     {t("trainingOrders.shell.applications")}
                   </Link>
@@ -341,223 +572,178 @@ export default function TrainingOrdersOverviewPage() {
               <div className="oh-training-overview__empty-card">
                 <p>{t("trainingOrders.overview.activeRound.none")}</p>
                 {settings?.automationEnabled && settings?.nextAutomationRunAt ? (
-                  <p className="help">
+                  <p className="help oh-training-overview__pool-hint">
                     {t("trainingOrders.overview.activeRound.nextRun")}{" "}
-                    <strong>{formatJoDateTime(settings.nextAutomationRunAt, locale)}</strong>
+                    <OperationalDateTime value={settings.nextAutomationRunAt} />
                   </p>
                 ) : null}
-                <Link to={`${BASE}/rounds`} className="btn btn-secondary">
-                  {t("trainingOrders.overview.activeRound.viewHistory")}
-                </Link>
               </div>
             )}
           </OverviewWidgetFrame>
         </DashboardFormCard>
+          </div>
 
-        <DashboardFormCard title={t("trainingOrders.overview.programStatus.title")} className="oh-training-overview__card">
+          <div className="oh-training-overview__ops-item oh-training-overview__ops-item--readiness">
+            <DashboardFormCard title={t("trainingOrders.overview.nextRoundReadiness.title")} className="oh-training-overview__card oh-training-overview__card--compact">
           <OverviewWidgetFrame
-            status={settingsW.status}
-            error={settingsW.error}
-            onRetry={() => void loadSettings()}
-            loadingLabel={t("trainingOrders.overview.programStatus.loading")}
+            status={readinessW.status}
+            error={readinessW.error}
+            onRetry={() => void loadReadiness()}
+            suppressLoading={suppressCardLoading}
           >
-            <ul className="oh-training-overview__facts oh-training-overview__facts--program">
-              <li>
-                <span>{t("trainingOrders.overview.programStatus.marketplace")}</span>
-                <StatusBadge tone={settings?.trainingOrdersEnabled ? "success" : "inactive"}>
-                  {settings?.trainingOrdersEnabled
-                    ? t("trainingOrders.overview.programStatus.marketplaceOn")
-                    : t("trainingOrders.overview.programStatus.marketplaceOff")}
-                </StatusBadge>
-              </li>
-              <li>
-                <span>{t("trainingOrders.overview.programStatus.automation")}</span>
-                <StatusBadge tone={settings?.automationEnabled ? "success" : "inactive"}>
-                  {settings?.automationEnabled
-                    ? t("trainingOrders.overview.programStatus.automationOn")
-                    : t("trainingOrders.overview.programStatus.automationOff")}
-                </StatusBadge>
-              </li>
-              <li>
-                <span>{t("trainingOrders.overview.programStatus.lastRun")}</span>
-                <strong>
-                  {settings?.lastAutomationRunAt
-                    ? `${getAutomationStatusLabel(settings.lastAutomationStatus, t)} — ${formatJoDateTime(settings.lastAutomationRunAt, locale)}`
-                    : "—"}
-                </strong>
-              </li>
-              {settings?.lastAutomationGeneratedCount != null ? (
-                <li>
-                  <span>{t("trainingOrders.overview.programStatus.lastRoundOrders")}</span>
-                  <strong dir="ltr">{settings.lastAutomationGeneratedCount}</strong>
-                </li>
-              ) : null}
-              <li>
-                <span>{t("trainingOrders.overview.programStatus.nextRun")}</span>
-                <strong>{settings?.nextAutomationRunAt ? formatJoDateTime(settings.nextAutomationRunAt, locale) : "—"}</strong>
-              </li>
-            </ul>
-            <div className="oh-training-overview__card-actions">
-              <Link to={`${BASE}/settings`} className="btn btn-secondary">
-                {t("trainingOrders.overview.programStatus.openSettings")}
-              </Link>
-            </div>
-          </OverviewWidgetFrame>
-        </DashboardFormCard>
-
-        <DashboardFormCard title={t("trainingOrders.overview.marketplaceStatus.title")} className="oh-training-overview__card">
-          <OverviewWidgetFrame
-            status={automationHealthW.status}
-            error={automationHealthW.error}
-            onRetry={() => void loadAutomationHealth()}
-            loadingLabel={t("trainingOrders.overview.marketplaceStatus.loading")}
-          >
-            {(() => {
-              const h = automationHealthW.data;
-              if (!h) return null;
-              const driverOn = Boolean(h.driver?.anyDriverActive);
-              const schedulerOn = Boolean(h.driver?.inProcessTicksEnabled && h.driver?.schedulerRunning);
-              const ms = h.driver?.tickIntervalMs || 0;
-
-              return (
-                <>
-                  <ul className="oh-training-overview__facts oh-training-overview__facts--program">
-                    <li>
-                      <span>{t("trainingOrders.overview.marketplaceStatus.automaticScheduling")}</span>
-                      <StatusBadge tone={schedulerOn ? "success" : "inactive"}>
-                        {schedulerOn
-                          ? t("trainingOrders.overview.marketplaceStatus.automaticSchedulingActive")
-                          : t("trainingOrders.overview.marketplaceStatus.automaticSchedulingInactive")}
-                      </StatusBadge>
-                    </li>
-                    <li>
-                      <span>{t("trainingOrders.overview.marketplaceStatus.roundDuration")}</span>
-                      <strong>{h.rotation?.label || "—"}</strong>
-                    </li>
-                    <li>
-                      <span>{t("trainingOrders.overview.marketplaceStatus.visibleEligible")}</span>
-                      <strong dir="ltr">{h.pool?.visibleAnyAudience ?? 0}</strong>
-                    </li>
-                    <li>
-                      <span>{t("trainingOrders.overview.marketplaceStatus.visiblePublic")}</span>
-                      <strong dir="ltr">{h.pool?.visiblePublicAudience ?? 0}</strong>
-                    </li>
-                    {healthWarnings.length ? (
-                      <li>
-                        <span>{t("trainingOrders.overview.marketplaceStatus.warnings")}</span>
-                        <strong className="oh-training-overview__warn">{healthWarnings.join(" · ")}</strong>
-                      </li>
-                    ) : null}
-                  </ul>
-
-                  <details className="oh-training-overview__technical">
-                    <summary>{t("trainingOrders.overview.marketplaceStatus.technicalDetails")}</summary>
-                    <ul className="oh-training-overview__facts oh-training-overview__facts--program">
-                      <li>
-                        <span>{t("trainingOrders.overview.marketplaceStatus.automationDriver")}</span>
-                        <StatusBadge tone={driverOn ? "success" : "warning"}>
-                          {driverOn
-                            ? t("trainingOrders.overview.marketplaceStatus.driverConfigured")
-                            : t("trainingOrders.overview.marketplaceStatus.driverNotConfigured")}
-                        </StatusBadge>
-                      </li>
-                      <li>
-                        <span>{t("trainingOrders.overview.marketplaceStatus.serverScheduler")}</span>
-                        <strong>
-                          {schedulerOn
-                            ? t("trainingOrders.overview.marketplaceStatus.schedulerEvery", {
-                                seconds: Math.round(ms / 1000),
-                              })
-                            : t("trainingOrders.overview.marketplaceStatus.automaticSchedulingInactive")}
-                        </strong>
-                      </li>
-                    </ul>
-                  </details>
-
-                  <div className="oh-training-overview__card-actions oh-training-overview__card-actions--stacked">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      disabled={tickBusy}
-                      onClick={() => void runAutomationTick()}
-                    >
-                      {tickBusy
-                        ? t("trainingOrders.overview.marketplaceStatus.checkingRotation")
-                        : t("trainingOrders.overview.marketplaceStatus.checkRotationNow")}
-                    </button>
-                    <p className="help oh-training-overview__action-help">
-                      {t("trainingOrders.overview.marketplaceStatus.checkRotationNowHelp")}
-                    </p>
+            {readiness ? (
+              <>
+                <div className="oh-training-readiness-summary">
+                  <div className="oh-training-overview__active-round-head">
+                    <StatusBadge tone={readinessStatusTone(readiness.nextRoundReadinessStatus)}>
+                      {getReadinessStatusLabel(readiness.nextRoundReadinessStatus, t)}
+                    </StatusBadge>
                   </div>
-                </>
-              );
-            })()}
-          </OverviewWidgetFrame>
-        </DashboardFormCard>
-      </div>
-
-      <DashboardStatsGrid className="oh-training-overview__stats">
-        <StatWidgetCard
-          label={t("trainingOrders.overview.stats.totalFakeOrders")}
-          hint={t("trainingOrders.overview.stats.totalFakeOrdersHint")}
-          widget={fakeOrdersTotalW}
-          onRetry={() => void loadFakeOrdersTotal()}
-          loadingLabel={t("trainingOrders.overview.stats.totalFakeOrdersLoading")}
-        />
-        <StatWidgetCard
-          label={t("trainingOrders.overview.stats.visibleNow")}
-          hint={t("trainingOrders.overview.stats.visibleNowHint")}
-          widget={visibleNowW}
-          onRetry={() => void loadVisibleNow()}
-          loadingLabel={t("trainingOrders.overview.stats.visibleNowLoading")}
-        />
-        <StatWidgetCard
-          label={t("trainingOrders.overview.stats.ordersWithApplicants")}
-          hint={t("trainingOrders.overview.stats.ordersWithApplicantsHint")}
-          widget={applicantsW}
-          onRetry={() => void loadApplicants()}
-          loadingLabel={t("trainingOrders.overview.stats.ordersWithApplicantsLoading")}
-        />
-        <StatWidgetCard
-          label={t("trainingOrders.overview.stats.totalRounds")}
-          hint={t("trainingOrders.overview.stats.totalRoundsHint")}
-          widget={roundsTotalW}
-          onRetry={() => void loadRoundsTotal()}
-          loadingLabel={t("trainingOrders.overview.stats.totalRoundsLoading")}
-        />
-      </DashboardStatsGrid>
-
-      <div className="oh-training-overview__bottom">
-        <DashboardFormCard title={t("trainingOrders.overview.recentRounds.title")} className="oh-training-overview__card">
-          <OverviewWidgetFrame
-            status={recentRoundsW.status}
-            error={recentRoundsW.error}
-            onRetry={() => void loadRecentRounds()}
-            loadingLabel={t("trainingOrders.overview.recentRounds.loading")}
-          >
-            {recentRounds.length === 0 ? (
-              <p className="help">{t("trainingOrders.overview.recentRounds.empty")}</p>
-            ) : (
-              <ul className="oh-training-overview__activity">
-                {recentRounds.map((r) => (
-                  <li key={r.id} className="oh-training-overview__activity-item">
-                    <StatusBadge tone={roundStatusTone(r.status)}>{getRoundStatusLabel(r.status, t)}</StatusBadge>
-                    <span className="oh-training-overview__activity-title">{r.title || "—"}</span>
-                    <span className="oh-training-overview__activity-meta">{formatJoDateTime(r.startsAt, locale)}</span>
+                </div>
+                {readinessPoolBanner ? (
+                  readinessPoolBanner.to ? (
+                    <Link
+                      to={readinessPoolBanner.to}
+                      className={`oh-training-overview__readiness-banner oh-training-overview__readiness-banner--${readinessPoolBanner.tone}`}
+                    >
+                      {readinessPoolBanner.text}
+                    </Link>
+                  ) : (
+                    <p className={`oh-training-overview__readiness-banner oh-training-overview__readiness-banner--${readinessPoolBanner.tone}`}>
+                      {readinessPoolBanner.text}
+                    </p>
+                  )
+                ) : null}
+                <ul className="oh-training-metric-list">
+                  <li className="oh-training-metric-row">
+                    <span>{t("trainingOrders.overview.nextRoundReadiness.eligible")}</span>
+                    <strong className="oh-training-num" dir="ltr">{formatAdminNumber(readiness.eligibleForNextRound)}</strong>
                   </li>
-                ))}
-              </ul>
-            )}
-            <div className="oh-training-overview__card-actions">
-              <Link to={`${BASE}/rounds`} className="btn btn-secondary">
-                {t("trainingOrders.overview.recentRounds.viewAll")}
-              </Link>
-            </div>
+                  <li className="oh-training-metric-row">
+                    <span>{t("trainingOrders.overview.nextRoundReadiness.minimum")}</span>
+                    <strong className="oh-training-num" dir="ltr">{formatAdminNumber(readiness.minOrdersPerRound)}</strong>
+                  </li>
+                  <li className="oh-training-metric-row">
+                    <span>{t("trainingOrders.overview.nextRoundReadiness.range")}</span>
+                    <strong className="oh-training-num" dir="ltr">
+                      {formatAdminRange(readiness.minOrdersPerRound, readiness.maxOrdersPerRound)}
+                    </strong>
+                  </li>
+                  <li className="oh-training-metric-row oh-training-metric-row--wrap">
+                    <span>{t("trainingOrders.overview.nextRoundReadiness.canCreateQuestion")}</span>
+                    <strong>{getCanCreateNextRoundLabel(readiness, t)}</strong>
+                  </li>
+                </ul>
+                {readinessWarningMessages.length ? (
+                  <ul className="oh-training-overview__readiness-warnings">
+                    {readinessWarningMessages.map((msg) => (
+                      <li key={msg}>{msg}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                <p className="oh-training-overview__pool-hint">{t("trainingOrders.overview.nextRoundReadiness.helper")}</p>
+              </>
+            ) : null}
           </OverviewWidgetFrame>
         </DashboardFormCard>
+          </div>
 
-        <QuickNavigationCard t={t} />
-      </div>
+          <div className="oh-training-overview__ops-item oh-training-overview__ops-item--marketplace">
+            <DashboardFormCard title={t("trainingOrders.overview.marketplaceStatus.title")} className="oh-training-overview__card oh-training-overview__card--compact">
+          <OverviewWidgetFrame
+            status={marketplaceStatus}
+            error={settingsW.error || automationHealthW.error}
+            onRetry={() => {
+              void loadSettings();
+              void loadAutomationHealthBundle();
+            }}
+            suppressLoading={suppressCardLoading}
+          >
+            {settings ? (
+              <>
+                <ul className="oh-training-metric-list">
+                  <li className="oh-training-metric-row">
+                    <span>{t("trainingOrders.overview.programStatus.marketplace")}</span>
+                    <StatusBadge tone={settings.trainingOrdersEnabled ? "success" : "inactive"}>
+                      {settings.trainingOrdersEnabled
+                        ? t("trainingOrders.overview.programStatus.marketplaceOn")
+                        : t("trainingOrders.overview.programStatus.marketplaceOff")}
+                    </StatusBadge>
+                  </li>
+                  <li className="oh-training-metric-row">
+                    <span>{t("trainingOrders.overview.stats.visibleNow")}</span>
+                    <strong className="oh-training-num" dir="ltr">
+                      {visibleNowW.status === "success" ? formatAdminNumber(visibleNowW.data ?? 0) : "—"}
+                    </strong>
+                  </li>
+                  {(() => {
+                    const h = automationHealthW.data;
+                    if (!h) return null;
+                    const schedulerOn = Boolean(h.driver?.inProcessTicksEnabled && h.driver?.schedulerRunning);
+                    return (
+                      <>
+                        <li className="oh-training-metric-row">
+                          <span>{t("trainingOrders.overview.marketplaceStatus.automaticScheduling")}</span>
+                          <StatusBadge tone={schedulerOn && settings.automationEnabled ? "success" : "inactive"}>
+                            {schedulerOn && settings.automationEnabled
+                              ? t("trainingOrders.overview.marketplaceStatus.automaticSchedulingActive")
+                              : t("trainingOrders.overview.marketplaceStatus.automaticSchedulingInactive")}
+                          </StatusBadge>
+                        </li>
+                        <li className="oh-training-metric-row oh-training-metric-row--wrap">
+                          <span>{t("trainingOrders.overview.programStatus.lastRun")}</span>
+                          <strong className="oh-training-metric-row__value">
+                            {settings.lastAutomationRunAt ? (
+                              <span className="oh-training-period-lines">
+                                <span className="oh-training-period-lines__line">
+                                  {getAutomationStatusLabel(settings.lastAutomationStatus, t)}
+                                </span>
+                                <span className="oh-training-period-lines__line oh-training-num" dir="ltr">
+                                  {formatAdminDateTime(settings.lastAutomationRunAt)}
+                                </span>
+                              </span>
+                            ) : (
+                              "—"
+                            )}
+                          </strong>
+                        </li>
+                        <li className="oh-training-metric-row">
+                          <span>{t("trainingOrders.overview.programStatus.nextRun")}</span>
+                          <strong>
+                            {settings.nextAutomationRunAt ? (
+                              <OperationalDateTime value={settings.nextAutomationRunAt} />
+                            ) : (
+                              "—"
+                            )}
+                          </strong>
+                        </li>
+                        {healthWarnings.length ? (
+                          <li className="oh-training-metric-row oh-training-metric-row--wrap">
+                            <span>{t("trainingOrders.overview.marketplaceStatus.warnings")}</span>
+                            <strong className="oh-training-overview__warn">{healthWarnings.join(" · ")}</strong>
+                          </li>
+                        ) : null}
+                      </>
+                    );
+                  })()}
+                </ul>
+              </>
+            ) : null}
+          </OverviewWidgetFrame>
+            </DashboardFormCard>
+          </div>
+        </div>
+      </section>
+
+      <TrainingOrdersVisiblePreview
+        refreshKey={roundsRefreshKey}
+        onAfterHide={refreshVisibleCounts}
+        suppressLoading={suppressCardLoading}
+      />
+
+      <TrainingOrderRoundsSection refreshKey={roundsRefreshKey} onRoundsChanged={handleRoundsChanged} />
+        </>
+      )}
     </DashboardSection>
   );
 }

@@ -21,6 +21,7 @@ const Plans = () => {
     mySubscription,
     hasBlockingSubscription,
     checkoutBusyPlanId,
+    activationFeeNeedsPayment,
     startCheckout,
   } = usePlansPage({ slug, returnPath });
   const { t, dir, locale } = useTranslation();
@@ -80,6 +81,7 @@ const Plans = () => {
           currentSubscription={mySubscription}
           hasBlockingSubscription={hasBlockingSubscription}
           checkoutBusyPlanId={checkoutBusyPlanId}
+          activationFeeNeedsPayment={activationFeeNeedsPayment}
           onCta={handlePlanCta}
           pageTitle={pageTitle}
           pageSubtitle={pageSubtitle}
@@ -106,6 +108,7 @@ const Plans = () => {
         currentSubscription={mySubscription}
         hasBlockingSubscription={hasBlockingSubscription}
         checkoutBusyPlanId={checkoutBusyPlanId}
+        activationFeeNeedsPayment={activationFeeNeedsPayment}
         onCta={handlePlanCta}
         pageTitle={pageTitle}
         pageSubtitle={pageSubtitle}

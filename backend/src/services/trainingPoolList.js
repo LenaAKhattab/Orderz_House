@@ -86,7 +86,7 @@ function buildDualFilters(status, projectType, categoryId, categoryIds, subSubId
   return { vals, wr, wf };
 }
 
-/** Pool list is read-only; fake maintenance runs via automation/cron (`runAutomationTick`). */
+/** Pool list triggers synchronous handoff recovery when the marketplace would otherwise be empty. */
 async function tryMergedPoolMeta({
   viewerUserId,
   viewerRole,
@@ -215,7 +215,31 @@ async function tryMergedPoolMeta({
   let fakeCount = idOrder.filter((r) => String(r.source) === "fake").length;
 
   if (fakeCount === 0) {
-    debugTrainingPoolLog("no_fake_in_page", { note: "recovery_deferred_to_automation" });
+    debugTrainingPoolLog("no_fake_in_page", { note: "attempting_handoff_recovery" });
+    try {
+      const recovery = await fakeOrdersService.ensureMinimumVisibleFakeOrders({ reason: "pool_list_handoff" });
+      if (recovery?.generated || (Number(recovery?.visible) || 0) > 0) {
+        const [{ rows: cRows2 }, { rows: idRows2 }] = await Promise.all([
+          pool.query(countSql, baseParams),
+          pool.query(listSql, listParams),
+        ]);
+        total = Number(cRows2[0]?.total || 0);
+        idOrder = idRows2.map((r) => ({ id: String(r.sort_id), source: r.src }));
+        fakeCount = idOrder.filter((r) => String(r.source) === "fake").length;
+        debugTrainingPoolLog("handoff_recovery_result", {
+          generated: Boolean(recovery?.generated),
+          visible: recovery?.visible ?? null,
+          fakeInPage: fakeCount,
+          total,
+        });
+      }
+    } catch (e) {
+      console.warn("[trainingPoolList] handoff recovery failed:", e?.message || e);
+    }
+  }
+
+  if (fakeCount === 0) {
+    debugTrainingPoolLog("no_fake_in_page", { note: "handoff_recovery_exhausted" });
   }
 
   const fakeIdsToMark = idOrder

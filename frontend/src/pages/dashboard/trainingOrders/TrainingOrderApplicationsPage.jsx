@@ -11,12 +11,10 @@ import DashboardLoadingState from "../../../components/dashboard/DashboardLoadin
 import DashboardEmptyState from "../../../components/dashboard/DashboardEmptyState";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
 import { useTranslation } from "../../../i18n/LanguageProvider";
-import { getFakeOrderStatusLabel, getRoundStatusLabel } from "./trainingOrdersDisplayUtils";
+import { getLocalizedField } from "../../../lib/i18n/getLocalizedField";
+import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
+import { formatAdminNumber, formatJoDateTime, getFakeOrderStatusLabel, getRoundStatusLabel, trainingAdminT } from "./trainingOrdersDisplayUtils";
 import "./trainingOrdersAdmin.css";
-
-function errMsg(e) {
-  return e?.response?.data?.message || e?.message || "حدث خطأ.";
-}
 
 function roundStatusTone(status) {
   if (status === "active") return "success";
@@ -32,9 +30,6 @@ function fakeOrderStatusTone(status) {
   if (status === "stopped") return "warning";
   return "neutral";
 }
-
-const ROUND_STATUS_PREFIX = { ar: "جولة:", en: "Round:" };
-const ORDER_STATUS_PREFIX = { ar: "طلب:", en: "Order:" };
 
 export default function TrainingOrderApplicationsPage() {
   const { t, locale } = useTranslation();
@@ -56,6 +51,8 @@ export default function TrainingOrderApplicationsPage() {
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
   const [modalApps, setModalApps] = useState([]);
+
+  const errMsg = (e) => getSafeApiErrorMessage(e) || t("trainingOrders.applications.genericError");
 
   useEffect(() => {
     const q = searchParams.get("fakeOrderId");
@@ -102,7 +99,7 @@ export default function TrainingOrderApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, roundId, fakeOrderId, categoryId, searchParams]);
+  }, [page, roundId, fakeOrderId, categoryId, searchParams, t]);
 
   useEffect(() => {
     load();
@@ -120,14 +117,14 @@ export default function TrainingOrderApplicationsPage() {
   const openApplicantsModal = async (row) => {
     setModalOpen(true);
     setModalFakeOrderId(row.fakeOrderId);
-    setModalTitle(row.title || `طلب #${row.fakeOrderId}`);
+    setModalTitle(row.title || t("trainingOrders.applications.fallbackOrderTitle", { id: row.fakeOrderId }));
     setModalError("");
     setModalApps([]);
     setModalLoading(true);
     try {
-      const res = await adminListTrainingApplicationsByFakeOrderRequest(row.fakeOrderId);
+      const res = await adminListTrainingApplicationsByFakeOrderRequest(row.fakeOrderId, { page: 1, limit: 100 });
       const payload = res?.data ?? res;
-      setModalApps(payload?.applications || []);
+      setModalApps(payload?.applications ?? payload?.applicants ?? []);
     } catch (e) {
       setModalError(errMsg(e));
     } finally {
@@ -177,10 +174,10 @@ export default function TrainingOrderApplicationsPage() {
           <label>
             {t("trainingOrders.applications.category")}
             <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-              <option value="">الكل</option>
+              <option value="">{t("trainingOrders.applications.all")}</option>
               {categories.map((c) => (
                 <option key={c.id} value={String(c.id)}>
-                  {c.name}
+                  {getLocalizedField(c, "name", locale)}
                 </option>
               ))}
             </select>
@@ -199,50 +196,54 @@ export default function TrainingOrderApplicationsPage() {
             <table className="oh-training-table">
               <thead>
                 <tr>
-                  <th>معرّف الطلب</th>
-                  <th>العنوان</th>
-                  <th>التصنيف</th>
-                  <th>الجولة</th>
-                  <th>الحالة (جولة / طلب)</th>
-                  <th>عدد المتقدمين</th>
-                  <th>التاريخ</th>
+                  <th>{t("trainingOrders.applications.colOrderId")}</th>
+                  <th>{t("trainingOrders.applications.colTitle")}</th>
+                  <th>{t("trainingOrders.applications.colCategory")}</th>
+                  <th>{t("trainingOrders.applications.colRound")}</th>
+                  <th>{t("trainingOrders.applications.colStatus")}</th>
+                  <th className="oh-col-applicants">{t("trainingOrders.applications.colApplicants")}</th>
+                  <th>{t("trainingOrders.applications.colDate")}</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.fakeOrderId}>
-                    <td dir="ltr">#{r.fakeOrderId}</td>
+                    <td className="oh-training-num" dir="ltr">#{formatAdminNumber(r.fakeOrderId)}</td>
                     <td>
                       <strong>{r.title || "—"}</strong>
                     </td>
                     <td>{r.categoryName || "—"}</td>
                     <td>
                       <div>{r.roundTitle || "—"}</div>
-                      <div className="help" dir="ltr">
-                        #{r.roundId}
+                      <div className="help oh-training-num" dir="ltr">
+                        #{formatAdminNumber(r.roundId)}
                       </div>
                     </td>
                     <td>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "flex-end" }}>
                         <StatusBadge tone={roundStatusTone(r.roundStatus)}>
-                          {ROUND_STATUS_PREFIX[locale] || ROUND_STATUS_PREFIX.ar}{" "}
+                          {t("trainingOrders.applications.roundPrefix")}{" "}
                           {getRoundStatusLabel(r.roundStatus, t)}
                         </StatusBadge>
                         <StatusBadge tone={fakeOrderStatusTone(r.fakeOrderStatus)}>
-                          {ORDER_STATUS_PREFIX[locale] || ORDER_STATUS_PREFIX.ar}{" "}
+                          {t("trainingOrders.applications.orderPrefix")}{" "}
                           {getFakeOrderStatusLabel(r.fakeOrderStatus, t)}
                         </StatusBadge>
                       </div>
                     </td>
-                    <td>
-                      <strong>{r.applicantsCount}</strong>
+                    <td className="oh-col-applicants">
+                      <strong className="oh-num" dir="ltr">{formatAdminNumber(r.applicantsCount)}</strong>
                     </td>
                     <td style={{ whiteSpace: "nowrap", fontSize: "0.82rem" }}>
-                      <div>إنشاء الطلب: {r.orderCreatedAt ? new Date(r.orderCreatedAt).toLocaleString("ar-JO") : "—"}</div>
+                      <div>
+                        {t("trainingOrders.applications.orderCreatedAt")}{" "}
+                        {r.orderCreatedAt ? formatJoDateTime(r.orderCreatedAt, locale) : "—"}
+                      </div>
                       {r.lastApplicationAt ? (
                         <div className="help" style={{ marginTop: 4 }}>
-                          آخر تقديم: {new Date(r.lastApplicationAt).toLocaleString("ar-JO")}
+                          {t("trainingOrders.applications.lastApplicationAt")}{" "}
+                          {formatJoDateTime(r.lastApplicationAt, locale)}
                         </div>
                       ) : null}
                     </td>
@@ -260,13 +261,13 @@ export default function TrainingOrderApplicationsPage() {
 
         <DashboardToolbar className="oh-training-pagination">
           <button type="button" className="btn btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-            السابق
+            {t("trainingOrders.applications.prev")}
           </button>
           <span className="help">
-            صفحة {page} من {totalPages} — إجمالي طلبات بمتقدمين: {pagination?.total ?? 0}
+            {trainingAdminT(t, "trainingOrders.applications.pageOf", { page, totalPages, total: pagination?.total ?? 0 })}
           </span>
           <button type="button" className="btn btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-            التالي
+            {t("trainingOrders.applications.next")}
           </button>
         </DashboardToolbar>
 
@@ -278,14 +279,19 @@ export default function TrainingOrderApplicationsPage() {
               if (e.target === e.currentTarget) closeModal();
             }}
           >
-            <div className="oh-training-modal oh-training-modal--applicants oh-training-modal__card" role="dialog" aria-modal="true" aria-labelledby="training-apps-modal-title">
+            <div
+              className="oh-training-modal oh-training-modal--applicants oh-training-modal__card"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="training-apps-modal-title"
+            >
               <div className="oh-training-modal__head">
                 <div>
                   <h3 id="training-apps-modal-title" className="oh-training-modal__title">
                     {t("trainingOrders.applications.modalTitle")}
                   </h3>
                   <p className="help" style={{ margin: "6px 0 0" }}>
-                    {modalTitle} <span dir="ltr">#{modalFakeOrderId}</span>
+                    {modalTitle} <span className="oh-training-num" dir="ltr">#{formatAdminNumber(modalFakeOrderId)}</span>
                   </p>
                 </div>
                 <button type="button" className="btn btn-secondary oh-training-modal__close" onClick={closeModal}>
@@ -304,23 +310,27 @@ export default function TrainingOrderApplicationsPage() {
                   <table className="oh-training-table">
                     <thead>
                       <tr>
-                        <th>المتقدم</th>
-                        <th>رقم الحساب</th>
-                        <th>الباقة</th>
-                        <th>المبلغ</th>
-                        <th>رسالة التقديم</th>
-                        <th>تاريخ التقديم</th>
+                        <th>{t("trainingOrders.applications.modalColApplicant")}</th>
+                        <th>{t("trainingOrders.applications.modalColAccount")}</th>
+                        <th>{t("trainingOrders.applications.modalColPlan")}</th>
+                        <th>{t("trainingOrders.applications.modalColAmount")}</th>
+                        <th>{t("trainingOrders.applications.modalColMessage")}</th>
+                        <th>{t("trainingOrders.applications.modalColSubmittedAt")}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {modalApps.map((a) => (
                         <tr key={a.id}>
                           <td>{a.freelancerName || "—"}</td>
-                          <td dir="ltr">{a.accountId || a.freelancerUserId}</td>
+                          <td className="oh-training-num" dir="ltr">{formatAdminNumber(a.accountId || a.freelancerUserId)}</td>
                           <td>{a.planTitle || "—"}</td>
-                          <td dir="ltr">{a.amount != null ? `${a.amount} JOD` : "—"}</td>
+                          <td className="oh-training-num" dir="ltr">
+                            {a.amount != null ? `${formatAdminNumber(a.amount, { maximumFractionDigits: 2 })} JOD` : "—"}
+                          </td>
                           <td style={{ maxWidth: 220, wordBreak: "break-word" }}>{a.proposalMessage || "—"}</td>
-                          <td style={{ whiteSpace: "nowrap" }}>{a.createdAt ? new Date(a.createdAt).toLocaleString("ar-JO") : "—"}</td>
+                          <td style={{ whiteSpace: "nowrap" }}>
+                            {a.createdAt ? formatJoDateTime(a.createdAt, locale) : "—"}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

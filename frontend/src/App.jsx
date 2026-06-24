@@ -63,7 +63,6 @@ import {
   TrainingOrdersOverviewPage,
   TrainingOrdersSettingsPage,
   TrainingOrderTemplatesPage,
-  TrainingOrderRoundsPage,
   TrainingOrderApplicationsPage,
   ClientCreateOrderOpenAndRedirect,
   ClientMyOrdersPage,
@@ -380,7 +379,10 @@ function App() {
                   <Route index element={<TrainingOrdersOverviewPage />} />
                   <Route path="settings" element={<TrainingOrdersSettingsPage />} />
                   <Route path="templates" element={<TrainingOrderTemplatesPage />} />
-                  <Route path="rounds" element={<TrainingOrderRoundsPage />} />
+                  <Route
+                    path="rounds"
+                    element={<Navigate to="/dashboard/super-admin/training-orders#round-history" replace />}
+                  />
                   <Route path="applications" element={<TrainingOrderApplicationsPage />} />
                 </Route>
 

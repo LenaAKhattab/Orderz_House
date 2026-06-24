@@ -4,6 +4,7 @@
     "lead": "Start your request easily, compare available services, and track every step in one place until you get the results you need.",
     "leadShort": "Start your request easily, compare available services, and track every step in one place.",
     "startNow": "Start now",
+    "browseServicesNow": "Browse our services now",
     "ctaPrimary": "Start your request now",
     "ctaSecondary": "Explore services",
     "greeting": "Welcome to",
@@ -14,10 +15,10 @@
     "adsAria": "Promotions",
     "logoAlt": "Orderz House logo",
     "featured": {
-      "startOrder": "Start your request easily",
-      "startOrderTag": "One step",
-      "exploreServices": "Compare available services",
-      "exploreTag": "Explore"
+      "startOrder": "Order our services as a client",
+      "startOrderTag": "As client",
+      "exploreServices": "Join us now as a freelancer",
+      "exploreTag": "As freelancer"
     }
   },
   "categories": {

@@ -379,6 +379,9 @@ export default function FreelancerOrderDetailsPage() {
           <BidAmountModal
             open={bidOpen}
             busy={bidBusy}
+            projectTitle={localizedTitle}
+            categoryName={categoryText}
+            durationText={formatOrderDuration(order, locale, t)}
             min={order.bidBudgetMin}
             max={order.bidBudgetMax}
             onClose={() => setBidOpen(false)}

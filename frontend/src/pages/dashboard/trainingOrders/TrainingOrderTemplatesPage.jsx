@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   adminCreateTrainingFakeOrderRequest,
   adminDeleteTrainingFakeOrderRequest,
+  adminHideTrainingFakeOrderFromRoundRequest,
   adminListTrainingFakeOrdersRequest,
   adminPatchTrainingFakeOrderRequest,
   getCategoriesRequest,
@@ -20,8 +22,12 @@ import {
 } from "../../../lib/i18n/getLocalizedMarketplaceOrderText";
 import { buildDurationLabels, formatDurationRange } from "../../../lib/orders/orderDisplayFormatters";
 import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
+import { useToast } from "../../../components/ui/toastContext";
+import { formatAdminDuration, formatAdminNumber, formatAdminRange, trainingAdminT } from "./trainingOrdersDisplayUtils";
 import "../../../styles/createOrderModal.css";
 import "./trainingOrdersAdmin.css";
+
+const PAGE_SIZE = 10;
 
 function errMsg(e) {
   return getSafeApiErrorMessage(e);
@@ -67,6 +73,8 @@ function fakeOrderToWizardInitial(row) {
 
 export default function TrainingOrderTemplatesPage() {
   const { t, locale, dir } = useTranslation();
+  const { push } = useToast();
+  const [searchParams] = useSearchParams();
   const durationLabels = buildDurationLabels(t);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -84,6 +92,19 @@ export default function TrainingOrderTemplatesPage() {
   const [editingId, setEditingId] = useState(null);
   const [editingRow, setEditingRow] = useState(null);
   const [wizardReset, setWizardReset] = useState(0);
+  const [actionBusyId, setActionBusyId] = useState(null);
+
+  const pushActionError = (e, failedKey = "serverError", row = null) => {
+    const status = e?.response?.status;
+    let title = t(`trainingOrders.actions.toast.${failedKey}`);
+    if (status === 403) title = t("trainingOrders.actions.toast.permissionDenied");
+    if (status === 409 && row?.visibleNow) title = t("trainingOrders.actions.toast.orderDeleteBlockedVisible");
+    push({
+      type: "error",
+      title,
+      message: getSafeApiErrorMessage(e) || title,
+    });
+  };
 
   const loadList = useCallback(
     async ({ signal } = {}) => {
@@ -92,7 +113,7 @@ export default function TrainingOrderTemplatesPage() {
       try {
         const params = {
           page,
-          limit: 20,
+          limit: PAGE_SIZE,
           q: appliedQ.trim() || undefined,
           categoryId: categoryFilter || undefined,
           isActive: statusFilter === "active" ? true : statusFilter === "inactive" ? false : undefined,
@@ -131,6 +152,12 @@ export default function TrainingOrderTemplatesPage() {
   }, []);
 
   useEffect(() => {
+    const visibleParam = searchParams.get("visibleNow");
+    if (visibleParam === "true") setVisibleFilter("visible");
+    else if (visibleParam === "false") setVisibleFilter("hidden");
+  }, [searchParams]);
+
+  useEffect(() => {
     const controller = new AbortController();
     void loadList({ signal: controller.signal });
     return () => controller.abort();
@@ -166,27 +193,83 @@ export default function TrainingOrderTemplatesPage() {
   };
 
   const remove = async (row) => {
-    if (!window.confirm(t("trainingOrders.pool.deleteConfirm"))) return;
+    if (row.visibleNow) {
+      push({
+        type: "error",
+        title: t("trainingOrders.actions.toast.orderDeleteBlockedVisible"),
+        message: t("trainingOrders.pool.deleteBlockedVisible"),
+      });
+      return;
+    }
+    if (actionBusyId) return;
+    if (!window.confirm(t("trainingOrders.actions.confirm.deleteOrder"))) return;
     setError("");
+    setActionBusyId(row.id);
     try {
       await adminDeleteTrainingFakeOrderRequest(row.id);
+      push({
+        type: "success",
+        title: t("trainingOrders.pool.delete"),
+        message: t("trainingOrders.actions.toast.orderDeleted"),
+      });
       await loadList();
     } catch (e) {
       setError(errMsg(e));
+      pushActionError(e, "orderDeleteFailed", row);
+    } finally {
+      setActionBusyId(null);
+    }
+  };
+
+  const hideFromRound = async (row) => {
+    if (!row?.visibleNow || actionBusyId) return;
+    if (!window.confirm(t("trainingOrders.actions.confirm.hideFromCurrentRound"))) return;
+    setError("");
+    setActionBusyId(row.id);
+    try {
+      await adminHideTrainingFakeOrderFromRoundRequest(row.id);
+      push({
+        type: "success",
+        title: t("trainingOrders.pool.hideFromRound"),
+        message: t("trainingOrders.actions.toast.orderHiddenFromRound"),
+      });
+      await loadList();
+    } catch (e) {
+      setError(errMsg(e));
+      pushActionError(e, "orderHideFailed", row);
+    } finally {
+      setActionBusyId(null);
     }
   };
 
   const toggleActive = async (row) => {
+    if (actionBusyId) return;
+    const nextActive = !row.isActive;
+    if (!nextActive && row.isActive && !row.visibleNow) {
+      if (!window.confirm(t("trainingOrders.actions.confirm.disableOrder"))) return;
+    }
     setError("");
+    setActionBusyId(row.id);
     try {
-      await adminPatchTrainingFakeOrderRequest(row.id, { isActive: !row.isActive });
+      await adminPatchTrainingFakeOrderRequest(row.id, { isActive: nextActive });
+      push({
+        type: "success",
+        title: nextActive ? t("trainingOrders.pool.enable") : t("trainingOrders.pool.disable"),
+        message: nextActive
+          ? t("trainingOrders.actions.toast.orderEnabled")
+          : t("trainingOrders.actions.toast.orderDisabled"),
+      });
       await loadList();
     } catch (e) {
       setError(errMsg(e));
+      pushActionError(e, "orderToggleFailed", row);
+    } finally {
+      setActionBusyId(null);
     }
   };
 
   const totalPages = useMemo(() => Math.max(1, pagination?.totalPages || 1), [pagination]);
+  const rowOffset = (page - 1) * PAGE_SIZE;
 
   return (
     <>
@@ -200,7 +283,6 @@ export default function TrainingOrderTemplatesPage() {
           </button>
         }
       >
-        <p className="help oh-training-pool__intro">{t("trainingOrders.pool.helper")}</p>
         {error ? <p className="auth-form-error">{error}</p> : null}
         <DashboardToolbar className="oh-training-filters">
           <label>
@@ -259,37 +341,42 @@ export default function TrainingOrderTemplatesPage() {
             <table className="oh-training-table">
               <thead>
                 <tr>
+                  <th className="oh-training-table__col-num">{t("trainingOrders.overview.visiblePreview.colNumber")}</th>
                   <th>{t("trainingOrders.pool.colTitle")}</th>
                   <th>{t("trainingOrders.pool.colCategory")}</th>
                   <th>{t("trainingOrders.pool.colBudget")}</th>
                   <th>{t("trainingOrders.pool.colDuration")}</th>
                   <th>{t("trainingOrders.pool.colVisibility")}</th>
                   <th>{t("trainingOrders.pool.colStatus")}</th>
-                  <th>{t("trainingOrders.pool.colApplicants")}</th>
+                  <th className="oh-col-applicants">{t("trainingOrders.pool.colApplicants")}</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => {
+                {rows.map((row, index) => {
                   const title = getLocalizedOrderTitle(row, locale);
                   const description = getLocalizedOrderDescription(row, locale);
                   const minB = row.bidBudgetMin ?? row.budget;
                   const maxB = row.bidBudgetMax ?? row.budget;
+                  const rowNumber = rowOffset + index + 1;
                   return (
                     <tr key={row.id}>
+                      <td className="oh-training-table__col-num oh-training-num" dir="ltr">
+                        {formatAdminNumber(rowNumber)}
+                      </td>
                       <td>
                         <strong>{title}</strong>
-                        <div className="help" style={{ marginTop: 4 }}>
-                          #{row.id} — {description.slice(0, 60)}
+                        <div className="help oh-training-num" style={{ marginTop: 4 }} dir="ltr">
+                          #{formatAdminNumber(row.id)} — {description.slice(0, 60)}
                           {description.length > 60 ? "…" : ""}
                         </div>
                       </td>
                       <td>{row.categoryName || "—"}</td>
-                      <td dir="ltr">
-                        {minB} – {maxB} JOD
+                      <td className="oh-training-num" dir="ltr">
+                        {formatAdminRange(minB, maxB)} JOD
                       </td>
-                      <td dir="ltr">
-                        {row.durationValue} {row.durationUnit}
+                      <td className="oh-training-num" dir="ltr">
+                        {formatAdminDuration(row.durationValue, row.durationUnit, locale, durationLabels)}
                       </td>
                       <td>
                         {row.visibleNow ? (
@@ -297,11 +384,6 @@ export default function TrainingOrderTemplatesPage() {
                         ) : (
                           <StatusBadge tone="inactive">{t("trainingOrders.pool.notVisibleNow")}</StatusBadge>
                         )}
-                        {row.currentRoundId ? (
-                          <div className="help" dir="ltr" style={{ marginTop: 4 }}>
-                            {t("trainingOrders.pool.round")} #{row.currentRoundId}
-                          </div>
-                        ) : null}
                       </td>
                       <td>
                         {row.isActive ? (
@@ -310,15 +392,48 @@ export default function TrainingOrderTemplatesPage() {
                           <StatusBadge tone="inactive">{t("trainingOrders.pool.inactive")}</StatusBadge>
                         )}
                       </td>
-                      <td dir="ltr">{row.applicantsCount ?? 0}</td>
-                      <td style={{ whiteSpace: "nowrap" }}>
-                        <button type="button" className="btn btn-secondary" style={{ marginLeft: 6 }} onClick={() => openEdit(row)}>
+                      <td className="oh-col-applicants oh-num" dir="ltr">{formatAdminNumber(row.applicantsCount ?? 0)}</td>
+                      <td style={{ whiteSpace: "nowrap" }} className="oh-training-pool__actions">
+                        <button type="button" className="btn btn-secondary oh-training-table__action" onClick={() => openEdit(row)}>
                           {t("trainingOrders.pool.edit")}
                         </button>
-                        <button type="button" className="btn btn-secondary" style={{ marginLeft: 6 }} onClick={() => toggleActive(row)}>
-                          {row.isActive ? t("trainingOrders.pool.disable") : t("trainingOrders.pool.enable")}
-                        </button>
-                        <button type="button" className="btn btn-secondary" onClick={() => remove(row)}>
+                        {row.visibleNow ? (
+                          <button
+                            type="button"
+                            className="btn btn-secondary oh-training-table__action"
+                            disabled={actionBusyId === row.id}
+                            title={t("trainingOrders.pool.hideFromRoundHint")}
+                            onClick={() => hideFromRound(row)}
+                          >
+                            {t("trainingOrders.pool.hideFromRound")}
+                          </button>
+                        ) : row.isActive ? (
+                          <button
+                            type="button"
+                            className="btn btn-secondary oh-training-table__action"
+                            disabled={actionBusyId === row.id}
+                            title={t("trainingOrders.pool.disableHint")}
+                            onClick={() => toggleActive(row)}
+                          >
+                            {t("trainingOrders.pool.disable")}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-secondary oh-training-table__action"
+                            disabled={actionBusyId === row.id}
+                            onClick={() => toggleActive(row)}
+                          >
+                            {t("trainingOrders.pool.enable")}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="btn btn-secondary oh-training-table__action"
+                          disabled={row.visibleNow || actionBusyId === row.id}
+                          title={row.visibleNow ? t("trainingOrders.pool.deleteBlockedVisible") : undefined}
+                          onClick={() => remove(row)}
+                        >
                           {t("trainingOrders.pool.delete")}
                         </button>
                       </td>
@@ -335,7 +450,7 @@ export default function TrainingOrderTemplatesPage() {
             {t("trainingOrders.pool.prev")}
           </button>
           <span className="help">
-            {t("trainingOrders.pool.pageOf", { page, totalPages, total: pagination?.total ?? 0 })}
+            {trainingAdminT(t, "trainingOrders.pool.pageOf", { page, totalPages, total: pagination?.total ?? 0 })}
           </span>
           <button type="button" className="btn btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
             {t("trainingOrders.pool.next")}

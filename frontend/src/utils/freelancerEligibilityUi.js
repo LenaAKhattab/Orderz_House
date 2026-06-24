@@ -26,6 +26,9 @@ export function getFreelancerOrderEligibilityMessage(eligibility, subscription =
     if (reason === "expired") {
       return t("freelancerDashboard.status.eligibility.expired");
     }
+    if (reason === "activation_fee_unpaid") {
+      return t("freelancerDashboard.status.eligibility.activationFeeUnpaid");
+    }
     return t("freelancerDashboard.status.eligibility.generic");
   }
 
@@ -47,6 +50,10 @@ export function getFreelancerOrderEligibilityMessage(eligibility, subscription =
 
   if (reason === "expired") {
     return "اشتراكك منتهي. يرجى تجديد الاشتراك لاستلام الطلبات.";
+  }
+
+  if (reason === "activation_fee_unpaid") {
+    return "يجب دفع رسوم التفعيل السنوية قبل استلام الطلبات.";
   }
 
   return "حسابك غير مؤهل حالياً لاستلام طلبات من المعرض (تحقق من الاشتراك).";

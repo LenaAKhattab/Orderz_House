@@ -1,4 +1,26 @@
 const fakeOrdersService = require("../services/fakeOrdersService");
+const { perfStart } = require("../utils/perfLog");
+
+/** HTTP header required for legacy template mutations (bulk/internal tooling only). */
+const INTERNAL_TEMPLATE_MUTATION_HEADER = "x-internal-template-mutation";
+
+/**
+ * Admin manual training orders must use POST /training-orders/fake-orders (fake_orders table).
+ * Legacy template HTTP mutations return 410 Gone.
+ */
+function rejectAdminTemplateHttpMutationUnlessInternal(req, res) {
+  if (process.env.ALLOW_ADMIN_TEMPLATE_HTTP_MUTATION === "true") return false;
+  const header = String(req.headers[INTERNAL_TEMPLATE_MUTATION_HEADER] || "").trim().toLowerCase();
+  if (header === "allow") return false;
+  res.status(410).json({
+    success: false,
+    code: "template_http_mutation_disabled",
+    message:
+      "Legacy templates are disabled. Create training orders directly in the pool.",
+    messageAr: "تم إيقاف القوالب القديمة. أضف الطلبات التجريبية مباشرة في المخزون.",
+  });
+  return true;
+}
 
 const getTrainingSettings = async (req, res, next) => {
   try {
@@ -107,6 +129,18 @@ const removeFakeOrder = async (req, res, next) => {
   }
 };
 
+const hideFakeOrderFromCurrentRound = async (req, res, next) => {
+  try {
+    const result = await fakeOrdersService.hideFakeOrderFromCurrentRound({
+      actorUserId: req.auth.userId,
+      id: req.params.id,
+    });
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const getTemplate = async (req, res, next) => {
   try {
     const t = await fakeOrdersService.getTemplateById(req.params.id, { actorUserId: req.auth.userId });
@@ -119,6 +153,7 @@ const getTemplate = async (req, res, next) => {
 
 const createTemplate = async (req, res, next) => {
   try {
+    if (rejectAdminTemplateHttpMutationUnlessInternal(req, res)) return;
     const template = await fakeOrdersService.createTemplate({ actorUserId: req.auth.userId, payload: req.body || {} });
     return res.status(201).json({ success: true, data: { template } });
   } catch (err) {
@@ -128,6 +163,7 @@ const createTemplate = async (req, res, next) => {
 
 const patchTemplate = async (req, res, next) => {
   try {
+    if (rejectAdminTemplateHttpMutationUnlessInternal(req, res)) return;
     const template = await fakeOrdersService.updateTemplate({ actorUserId: req.auth.userId, id: req.params.id, payload: req.body || {} });
     return res.status(200).json({ success: true, data: { template } });
   } catch (err) {
@@ -137,6 +173,7 @@ const patchTemplate = async (req, res, next) => {
 
 const removeTemplate = async (req, res, next) => {
   try {
+    if (rejectAdminTemplateHttpMutationUnlessInternal(req, res)) return;
     await fakeOrdersService.deleteTemplate({ actorUserId: req.auth.userId, id: req.params.id });
     return res.status(200).json({ success: true, data: { ok: true } });
   } catch (err) {
@@ -204,11 +241,24 @@ const listApplications = async (req, res, next) => {
 
 const listApplicationsByFakeOrder = async (req, res, next) => {
   try {
-    const applications = await fakeOrdersService.listApplicationsForFakeOrder({
+    const out = await fakeOrdersService.listApplicationsForFakeOrder({
       actorUserId: req.auth.userId,
       fakeOrderId: req.params.fakeOrderId,
+      page: req.query.page,
+      limit: req.query.limit,
     });
-    return res.status(200).json({ success: true, data: { applications } });
+    const fakeOrderId = String(req.params.fakeOrderId);
+    return res.status(200).json({
+      success: true,
+      data: {
+        fakeOrderId,
+        title: out.title || out.applicants[0]?.fakeOrderTitle || null,
+        applicantsTotal: out.applicantsTotal,
+        applicants: out.applicants,
+        applications: out.applications,
+        pagination: out.pagination,
+      },
+    });
   } catch (err) {
     return next(err);
   }
@@ -239,10 +289,41 @@ const forceGenerateTrainingRound = async (req, res, next) => {
 };
 
 const getAutomationHealth = async (req, res, next) => {
+  const timing = perfStart("adminTrainingOrders", "GET /automation/health");
   try {
     const health = await fakeOrdersService.getFakeOrdersAutomationHealth();
+    timing.end({ ok: true });
     return res.status(200).json({ success: true, data: health });
   } catch (err) {
+    timing.end({ ok: false });
+    return next(err);
+  }
+};
+
+const getTrainingReadiness = async (req, res, next) => {
+  const timing = perfStart("adminTrainingOrders", "GET /health/readiness");
+  try {
+    const readiness = await fakeOrdersService.getTrainingOrdersReadiness();
+    timing.end({ ok: true });
+    return res.status(200).json({ success: true, data: readiness });
+  } catch (err) {
+    timing.end({ ok: false });
+    return next(err);
+  }
+};
+
+const listVisibleOrders = async (req, res, next) => {
+  const timing = perfStart("adminTrainingOrders", "GET /visible-orders");
+  try {
+    const data = await fakeOrdersService.listCurrentlyVisibleFakeOrders({
+      actorUserId: req.auth.userId,
+      page: req.query.page,
+      limit: req.query.limit,
+    });
+    timing.end({ ok: true, page: req.query.page, limit: req.query.limit });
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    timing.end({ ok: false });
     return next(err);
   }
 };
@@ -266,6 +347,7 @@ module.exports = {
   getFakeOrder,
   createFakeOrder,
   patchFakeOrder,
+  hideFakeOrderFromCurrentRound,
   removeFakeOrder,
   getTemplate,
   createTemplate,
@@ -279,5 +361,7 @@ module.exports = {
   startTrainingRound,
   forceGenerateTrainingRound,
   getAutomationHealth,
+  getTrainingReadiness,
+  listVisibleOrders,
   runAutomationTickNow,
 };

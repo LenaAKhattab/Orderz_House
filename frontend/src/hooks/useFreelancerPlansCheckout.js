@@ -8,10 +8,13 @@ import {
   NOTIFICATIONS_REFRESH_EVENT,
 } from "../services/api";
 import {
+  fetchFreelancerActivationFeeStatusCached,
   fetchFreelancerSubscriptionCached,
   fetchPublicPlansCached,
+  getCachedFreelancerActivationFeeStatus,
   getCachedFreelancerSubscription,
   getCachedPublicPlans,
+  invalidateFreelancerSessionCache,
 } from "../services/freelancerSessionCache";
 import { useAuth } from "../context/useAuth";
 import { useTranslation } from "../i18n/LanguageProvider";
@@ -31,8 +34,16 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
   const [mySubscription, setMySubscription] = useState(() =>
     user?.id ? getCachedFreelancerSubscription(user.id) ?? null : null,
   );
+  const [activationFeeStatus, setActivationFeeStatus] = useState(() =>
+    user?.id ? getCachedFreelancerActivationFeeStatus(user.id) ?? null : null,
+  );
   const [checkoutBusyPlanId, setCheckoutBusyPlanId] = useState(null);
   const handledToastSearchesRef = useRef(new Set());
+
+  const activationFeeNeedsPayment = useMemo(
+    () => Boolean(activationFeeStatus?.needsPayment),
+    [activationFeeStatus],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -62,12 +73,18 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
     const isFreelancer = role === "freelancer" || roles.includes("freelancer");
     if (!user?.id || !isFreelancer) {
       setMySubscription(null);
+      setActivationFeeStatus(null);
       return undefined;
     }
-    const cached = getCachedFreelancerSubscription(user.id);
-    if (cached !== undefined) setMySubscription(cached);
+    const cachedSub = getCachedFreelancerSubscription(user.id);
+    const cachedFee = getCachedFreelancerActivationFeeStatus(user.id);
+    if (cachedSub !== undefined) setMySubscription(cachedSub);
+    if (cachedFee !== undefined) setActivationFeeStatus(cachedFee);
     void fetchFreelancerSubscriptionCached(user.id).then((sub) => {
-      if (!cancelled) setMySubscription(sub);
+      if (!cancelled) {
+        setMySubscription(sub);
+        setActivationFeeStatus(getCachedFreelancerActivationFeeStatus(user.id) ?? null);
+      }
     });
     return () => {
       cancelled = true;
@@ -78,13 +95,20 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
 
   useEffect(() => {
     const q = new URLSearchParams(location.search || "");
-    const paid = q.get("freelancer_sub_paid") === "1";
-    const cancelled = q.get("freelancer_sub_cancelled") === "1";
+    const subPaid = q.get("freelancer_sub_paid") === "1";
+    const subCancelled = q.get("freelancer_sub_cancelled") === "1";
+    const feePaid = q.get("freelancer_activation_fee_paid") === "1";
+    const feeCancelled = q.get("freelancer_activation_fee_cancelled") === "1";
+    const paid = subPaid || feePaid;
+    const cancelled = subCancelled || feeCancelled;
+    const isActivationFeeFlow = feePaid || feeCancelled;
     const sessionId = (q.get("session_id") || "").trim();
 
     const stripCheckoutParams = () => {
       q.delete("freelancer_sub_paid");
       q.delete("freelancer_sub_cancelled");
+      q.delete("freelancer_activation_fee_paid");
+      q.delete("freelancer_activation_fee_cancelled");
       q.delete("session_id");
       const nextSearch = q.toString();
       navigate(
@@ -105,11 +129,15 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
       const cancelSessionId = (q.get("session_id") || "").trim();
       push({
         type: "warning",
-        title: "تم إلغاء الدفع",
-        message: "لم تكتمل عملية الدفع.",
+        title: isActivationFeeFlow
+          ? t("plans.activationFee.cancelledTitle")
+          : t("plans.checkout.cancelledTitle"),
+        message: isActivationFeeFlow
+          ? t("plans.activationFee.cancelledMessage")
+          : t("plans.checkout.cancelledMessage"),
       });
       stripCheckoutParams();
-      if (cancelSessionId && typeof window !== "undefined") {
+      if (cancelSessionId && typeof window !== "undefined" && !isActivationFeeFlow) {
         void notifyFreelancerSubscriptionCheckoutCancelledRequest(cancelSessionId)
           .then(() => {
             window.dispatchEvent(new CustomEvent(NOTIFICATIONS_REFRESH_EVENT));
@@ -120,14 +148,13 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
     }
 
     if (paid && !sessionId) {
-      const key = "paid:missing_session";
+      const key = `paid:missing_session:${isActivationFeeFlow ? "fee" : "sub"}`;
       if (handledToastSearchesRef.current.has(key)) return undefined;
       handledToastSearchesRef.current.add(key);
       push({
         type: "warning",
-        title: "تعذر التحقق من الدفع",
-        message:
-          "لم يُستلم رقم جلسة Stripe في الرابط. انتظر قليلاً ثم حدّث الصفحة، أو راجع صفحة الباقات بعد وصول ويب هوك الدفع.",
+        title: t("plans.checkout.verifyFailedTitle"),
+        message: t("plans.checkout.verifyFailedMessage"),
       });
       stripCheckoutParams();
       return undefined;
@@ -151,13 +178,18 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
       (async () => {
         try {
           await confirmFreelancerSubscriptionCheckoutRequest(sessionId);
+          invalidateFreelancerSessionCache();
           const sub = user?.id
             ? await fetchFreelancerSubscriptionCached(user.id, { force: true })
             : (await getMySubscriptionRequest())?.data?.subscription ?? null;
+          const feeStatus = user?.id
+            ? await fetchFreelancerActivationFeeStatusCached(user.id, { force: true })
+            : (await getMySubscriptionRequest())?.data?.activationFeeStatus ?? null;
           if (!cancelledEffect) {
             setMySubscription(sub);
+            setActivationFeeStatus(feeStatus);
           }
-          trackEvent("subscription_purchased", {
+          trackEvent(isActivationFeeFlow ? "activation_fee_paid" : "subscription_purchased", {
             checkout_session_id: String(sessionId),
             source: "stripe_checkout_confirm",
           });
@@ -165,11 +197,19 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
             sessionStorage.setItem(storageKey, "done");
           }
           if (!cancelledEffect) {
-            push({
-              type: "success",
-              title: "تم استلام الدفع",
-              message: "تم التحقق من الخادم. حسابك بانتظار تفعيل الشركة.",
-            });
+            if (isActivationFeeFlow) {
+              push({
+                type: "success",
+                title: t("plans.activationFee.paidSuccessTitle"),
+                message: t("plans.activationFee.paidSuccessMessage"),
+              });
+            } else {
+              push({
+                type: "success",
+                title: t("plans.checkout.paidSuccessTitle"),
+                message: t("plans.checkout.paidSuccessMessage"),
+              });
+            }
             if (typeof window !== "undefined") {
               window.dispatchEvent(new CustomEvent(NOTIFICATIONS_REFRESH_EVENT));
             }
@@ -182,10 +222,8 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
           if (!cancelledEffect) {
             push({
               type: "warning",
-              title: "لم يُؤكَّد الدفع بعد",
-              message:
-                msg ||
-                "انتظر قليلاً ثم حدّث الصفحة؛ أو تأكد أن ويب هوك Stripe يصل إلى الخادم. الدفع لا يُعتمد من المتصفح فقط.",
+              title: t("plans.checkout.confirmPendingTitle"),
+              message: msg || t("plans.checkout.confirmPendingMessage"),
             });
           }
         } finally {
@@ -204,7 +242,7 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
     }
 
     return undefined;
-  }, [location.pathname, location.search, navigate, push, user?.id]);
+  }, [location.pathname, location.search, navigate, push, t, user?.id]);
 
   const startCheckout = async (plan) => {
     if (!plan?.id || checkoutBusyPlanId) return;
@@ -229,6 +267,8 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
     loading: plansFetching && plans.length === 0,
     error,
     mySubscription,
+    activationFeeStatus,
+    activationFeeNeedsPayment,
     hasBlockingSubscription,
     checkoutBusyPlanId,
     startCheckout,

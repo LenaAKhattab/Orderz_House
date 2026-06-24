@@ -110,7 +110,7 @@
     "manageCourses": "Course management",
     "manageAds": "Ad management",
     "trainingSettings": "Training request settings",
-    "trainingOverview": "General status",
+    "trainingStatusRounds": "Status & rounds",
     "trainingPool": "Training orders pool",
     "trainingTemplates": "Training orders pool",
     "trainingRounds": "Round history",

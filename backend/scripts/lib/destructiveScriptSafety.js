@@ -123,6 +123,49 @@ function printSafetyBanner(safety, opts = {}) {
   }
 }
 
+/**
+ * Guards mutating maintenance/QA scripts. Always prints the DB target.
+ * In production, requires confirmVar=true or the process exits.
+ *
+ * @param {{ scriptName: string, confirmVar: string, requireConfirmAlways?: boolean, env?: NodeJS.ProcessEnv }} options
+ */
+function assertMutatingScriptAllowed(options) {
+  const { scriptName, confirmVar, requireConfirmAlways = false, env = process.env } = options;
+  const databaseTarget = getDatabaseTargetHint(env);
+  const confirmed = envBool(confirmVar, false, env);
+  const isProduction = env.NODE_ENV === "production";
+
+  // eslint-disable-next-line no-console
+  console.log("\n=== Mutating script guard ===");
+  // eslint-disable-next-line no-console
+  console.log(`Script:          ${scriptName}`);
+  // eslint-disable-next-line no-console
+  console.log(`Database target: ${databaseTarget}`);
+  // eslint-disable-next-line no-console
+  console.log(`NODE_ENV:        ${env.NODE_ENV || "(unset)"}`);
+
+  if (isProduction && !confirmed) {
+    // eslint-disable-next-line no-console
+    console.error(
+      `Refusing to run in production without ${confirmVar}=true.`,
+    );
+    process.exit(1);
+  }
+
+  if (requireConfirmAlways && !confirmed) {
+    // eslint-disable-next-line no-console
+    console.error(`Refusing to run without ${confirmVar}=true.`);
+    process.exit(1);
+  }
+
+  if (isProduction && confirmed) {
+    // eslint-disable-next-line no-console
+    console.warn(`WARNING: Running mutating script in production (${scriptName}).`);
+  }
+
+  return { databaseTarget, confirmed, isProduction };
+}
+
 function printDryRunExecuteHint(safety, extraEnv = "") {
   // eslint-disable-next-line no-console
   console.log("\nDry-run complete. No changes were made.");
@@ -137,6 +180,7 @@ module.exports = {
   envBool,
   getDatabaseTargetHint,
   resolveDestructiveScriptMode,
+  assertMutatingScriptAllowed,
   printSafetyBanner,
   printDryRunExecuteHint,
 };

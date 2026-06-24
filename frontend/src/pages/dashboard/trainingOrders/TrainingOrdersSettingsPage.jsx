@@ -8,14 +8,13 @@ import DashboardSection from "../../../components/dashboard/DashboardSection";
 import DashboardFormCard from "../../../components/dashboard/DashboardFormCard";
 import DashboardLoadingState from "../../../components/dashboard/DashboardLoadingState";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
+import { formatAdminNumber, formatJoDateTime, getAutomationStatusLabel, trainingAdminT } from "./trainingOrdersDisplayUtils";
 import "./trainingOrdersAdmin.css";
 
-function errMsg(e) {
-  return e?.response?.data?.message || e?.message || "حدث خطأ غير متوقع.";
-}
-
 export default function TrainingOrdersSettingsPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const errMsg = (e) => getSafeApiErrorMessage(e) || t("trainingOrders.settings.genericError");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [visibilitySaving, setVisibilitySaving] = useState(false);
@@ -333,7 +332,7 @@ export default function TrainingOrdersSettingsPage() {
           <div
             className="oh-training-pct-bar"
             role="img"
-            aria-label={`توزيع: محتوى ${c}٪، برمجة ${p}٪، تصميم ${d}٪`}
+            aria-label={trainingAdminT(t, "trainingOrders.settings.distributionLegendAria", { content: c, programming: p, design: d })}
           >
             <div
               className="oh-training-pct-bar__seg oh-training-pct-bar__seg--content"
@@ -350,20 +349,20 @@ export default function TrainingOrdersSettingsPage() {
           </div>
           <div className="oh-training-pct-legend">
             <span>
-              <span className="oh-training-pct-dot oh-training-pct-dot--content" aria-hidden /> محتوى
+              <span className="oh-training-pct-dot oh-training-pct-dot--content" aria-hidden /> {t("trainingOrders.settings.content")}
             </span>
             <span>
-              <span className="oh-training-pct-dot oh-training-pct-dot--programming" aria-hidden /> برمجة
+              <span className="oh-training-pct-dot oh-training-pct-dot--programming" aria-hidden /> {t("trainingOrders.settings.programming")}
             </span>
             <span>
-              <span className="oh-training-pct-dot oh-training-pct-dot--design" aria-hidden /> تصميم
+              <span className="oh-training-pct-dot oh-training-pct-dot--design" aria-hidden /> {t("trainingOrders.settings.design")}
             </span>
           </div>
 
           <p
             className={`oh-training-inline-msg ${pctDistributionInvalid ? "oh-training-inline-msg--error" : "oh-training-inline-msg--ok"}`}
           >
-            {t("trainingOrders.settings.distributionSum")} <strong dir="ltr">{pctSum}</strong>٪{" "}
+            {t("trainingOrders.settings.distributionSum")} <strong className="oh-training-num" dir="ltr">{formatAdminNumber(pctSum)}</strong>٪{" "}
             {pctDistributionInvalid ? t("trainingOrders.settings.distributionMustBe100") : t("trainingOrders.settings.distributionOk")}
           </p>
         </section>
@@ -403,24 +402,22 @@ export default function TrainingOrdersSettingsPage() {
         </DashboardFormCard>
 
         <details className="oh-training-settings-advanced">
-        <summary>إعدادات متقدمة</summary>
+        <summary>{t("trainingOrders.settings.advanced.summary")}</summary>
         <div className="oh-training-settings-advanced__body">
           <section className="oh-training-settings-section">
-            <h3 className="oh-training-settings-section__title">الجدولة والمدة</h3>
-            <p className="oh-training-settings-section__help">
-              مدة الجولة تحدد الظهور وانتهاء الجولة وموعد الجولة التلقائية التالية.
-            </p>
+            <h3 className="oh-training-settings-section__title">{t("trainingOrders.settings.advanced.schedulingTitle")}</h3>
+            <p className="oh-training-settings-section__help">{t("trainingOrders.settings.advanced.schedulingHelp")}</p>
             <label className="oh-training-checkbox-row">
               <input
                 type="checkbox"
                 checked={form.automationEnabled}
                 onChange={(e) => setForm((f) => ({ ...f, automationEnabled: e.target.checked }))}
               />
-              <span>تشغيل الجدولة التلقائية للجولات (الخادم)</span>
+              <span>{t("trainingOrders.settings.advanced.enableScheduling")}</span>
             </label>
             <div className="oh-training-settings-row">
               <div className="oh-training-settings-field">
-                <span>مدة الجولة</span>
+                <span>{t("trainingOrders.settings.advanced.roundDuration")}</span>
                 <input
                   type="number"
                   min={1}
@@ -430,61 +427,63 @@ export default function TrainingOrdersSettingsPage() {
                 />
               </div>
               <div className="oh-training-settings-field">
-                <span>الوحدة</span>
+                <span>{t("trainingOrders.settings.advanced.unit")}</span>
                 <select value={form.durationUnit} onChange={(e) => setForm((f) => ({ ...f, durationUnit: e.target.value }))}>
-                  <option value="minutes">دقائق</option>
-                  <option value="hours">ساعات</option>
-                  <option value="days">أيام</option>
+                  <option value="minutes">{t("trainingOrders.settings.advanced.unitMinutes")}</option>
+                  <option value="hours">{t("trainingOrders.settings.advanced.unitHours")}</option>
+                  <option value="days">{t("trainingOrders.settings.advanced.unitDays")}</option>
                 </select>
               </div>
             </div>
           </section>
 
           <section className="oh-training-settings-section oh-training-settings-section--muted">
-            <h3 className="oh-training-settings-section__title">حالة الأتمتة (قراءة فقط)</h3>
+            <h3 className="oh-training-settings-section__title">{t("trainingOrders.settings.advanced.schedulingStatusTitle")}</h3>
             <p className="help" style={{ margin: "4px 0" }}>
-              <strong>موعد التشغيل القادم:</strong>{" "}
-              {autoMeta.nextAutomationRunAt ? new Date(autoMeta.nextAutomationRunAt).toLocaleString("ar-JO") : "—"}
+              <strong>{t("trainingOrders.settings.advanced.nextRun")}</strong>{" "}
+              {autoMeta.nextAutomationRunAt ? formatJoDateTime(autoMeta.nextAutomationRunAt, locale) : "—"}
             </p>
             <p className="help" style={{ margin: "4px 0" }}>
-              <strong>آخر تشغيل:</strong>{" "}
-              {autoMeta.lastAutomationRunAt ? new Date(autoMeta.lastAutomationRunAt).toLocaleString("ar-JO") : "—"}
+              <strong>{t("trainingOrders.settings.advanced.lastRun")}</strong>{" "}
+              {autoMeta.lastAutomationRunAt ? formatJoDateTime(autoMeta.lastAutomationRunAt, locale) : "—"}
             </p>
             <p className="help" style={{ margin: "4px 0" }}>
-              <strong>الحالة:</strong>{" "}
-              {autoMeta.lastAutomationStatus === "success"
-                ? "نجاح"
-                : autoMeta.lastAutomationStatus === "skipped_no_templates"
-                  ? "تخطي — لا قوالب"
-                  : autoMeta.lastAutomationStatus === "skipped_lock"
-                    ? "تخطي — قفل"
-                    : autoMeta.lastAutomationStatus === "failed"
-                      ? "فشل"
-                      : autoMeta.lastAutomationStatus || "—"}
+              <strong>{t("trainingOrders.settings.advanced.status")}</strong>{" "}
+              {autoMeta.lastAutomationStatus
+                ? getAutomationStatusLabel(autoMeta.lastAutomationStatus, t)
+                : "—"}
             </p>
-            {autoMeta.lastAutomationError ? (
+            {autoMeta.lastAutomationStatus === "failed" ? (
               <p className="auth-form-error" style={{ marginTop: 8, marginBottom: 0 }}>
-                {String(autoMeta.lastAutomationError)}
+                {t("trainingOrders.settings.advanced.lastRunFailed")}
               </p>
+            ) : null}
+            {autoMeta.lastAutomationError ? (
+              <details className="oh-training-settings-technical-error" style={{ marginTop: 8 }}>
+                <summary>{t("trainingOrders.settings.advanced.technicalErrorSummary")}</summary>
+                <p className="help" style={{ margin: "8px 0 0", wordBreak: "break-word" }}>
+                  {String(autoMeta.lastAutomationError)}
+                </p>
+              </details>
             ) : null}
           </section>
 
           <section className="oh-training-settings-section">
-            <h3 className="oh-training-settings-section__title">ظهور إضافي</h3>
+            <h3 className="oh-training-settings-section__title">{t("trainingOrders.settings.advanced.extraVisibility")}</h3>
             <label className="oh-training-checkbox-row">
               <input
                 type="checkbox"
                 checked={form.showToAllVisitors}
                 onChange={(e) => setForm((f) => ({ ...f, showToAllVisitors: e.target.checked }))}
               />
-              <span>إظهار لجميع الزوار (مشاهدة فقط)</span>
+              <span>{t("trainingOrders.settings.advanced.showVisitors")}</span>
             </label>
             <div style={{ marginTop: 12 }}>
               <span className="oh-training-settings-section__title" style={{ fontSize: "0.9rem", display: "block", marginBottom: 6 }}>
-                الباقات المؤهلة
+                {t("trainingOrders.settings.advanced.eligiblePlans")}
               </span>
               <div className="oh-training-plans-box">
-                {plans.length === 0 ? <span className="help">لا توجد باقات.</span> : null}
+                {plans.length === 0 ? <span className="help">{t("trainingOrders.settings.advanced.noPlans")}</span> : null}
                 {plans.map((pl) => (
                   <label key={pl.id} className="oh-training-checkbox-row" style={{ marginBottom: 8 }}>
                     <input type="checkbox" checked={form.planIds.includes(String(pl.id))} onChange={() => togglePlan(pl.id)} />
@@ -494,11 +493,11 @@ export default function TrainingOrdersSettingsPage() {
               </div>
             </div>
             <div className="oh-training-settings-field" style={{ maxWidth: "100%", marginTop: 12 }}>
-              <span>اسم الجولة (اختياري)</span>
+              <span>{t("trainingOrders.settings.advanced.roundNameOptional")}</span>
               <input
                 value={form.optionalRoundName}
                 onChange={(e) => setForm((f) => ({ ...f, optionalRoundName: e.target.value }))}
-                placeholder="مثال: جولة تدريب صباحية"
+                placeholder={t("trainingOrders.settings.advanced.roundNamePlaceholder")}
               />
             </div>
           </section>

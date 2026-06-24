@@ -9,6 +9,7 @@ const {
   needsPreemptiveOverlapWindow,
   resolveMinVisibleFromSettings,
   getOverlapThresholdMs,
+  getHandoffLeadTimeMs,
   resolveRoundOrderBounds,
   pickRoundTargetCount,
   selectFakeOrdersFromPool,
@@ -43,34 +44,43 @@ describe("trainingPoolEligibility", () => {
     assert.doesNotMatch(src, /visible_until >= NOW\(\)/);
   });
 
-  it("trainingPoolList does not recover fake orders during page request", () => {
+  it("trainingPoolList recovers fake orders synchronously when page would be empty", () => {
     const src = fs.readFileSync(
       path.join(__dirname, "..", "src", "services", "trainingPoolList.js"),
       "utf8",
     );
-    assert.doesNotMatch(src, /ensureMinimumVisibleFakeOrders/);
-    assert.match(src, /recovery_deferred_to_automation/);
+    assert.match(src, /ensureMinimumVisibleFakeOrders/);
+    assert.match(src, /pool_list_handoff/);
     assert.match(src, /fakeCount === 0/);
+    assert.doesNotMatch(src, /recovery_deferred_to_automation/);
   });
 });
 
 describe("fakeOrders automation gap prevention", () => {
   const settings12h = { duration_value: 12, duration_unit: "hours", min_orders: 40 };
 
-  it("computeNextAutomationRunAt schedules before earliest visible_until (overlap window)", () => {
+  it("getHandoffLeadTimeMs includes overlap buffer plus one automation tick", () => {
     const overlapMs = getOverlapThresholdMs();
+    const handoffMs = getHandoffLeadTimeMs();
+    assert.ok(handoffMs > overlapMs);
+    assert.equal(handoffMs, overlapMs + Number(process.env.FAKE_ORDERS_TICK_MS || 60_000));
+  });
+
+  it("computeNextAutomationRunAt schedules before earliest visible_until (handoff window)", () => {
+    const handoffMs = getHandoffLeadTimeMs();
+    const tickMs = Number(process.env.FAKE_ORDERS_TICK_MS || 60_000);
     const now = Date.UTC(2026, 5, 17, 12, 0, 0);
     const earliestUntil = new Date(now + 2 * 60 * 60 * 1000).toISOString();
     const next = computeNextAutomationRunAt({ earliestUntil }, settings12h, now);
-    const expectedOverlapAt = new Date(earliestUntil).getTime() - overlapMs;
-    assert.equal(next.getTime(), expectedOverlapAt);
+    const expectedHandoffAt = new Date(earliestUntil).getTime() - handoffMs;
+    assert.equal(next.getTime(), Math.max(now + tickMs, expectedHandoffAt));
     assert.ok(next.getTime() < new Date(earliestUntil).getTime());
   });
 
-  it("needsPreemptiveOverlapWindow is true inside overlap lead time", () => {
-    const overlapMs = getOverlapThresholdMs();
+  it("needsPreemptiveOverlapWindow is true inside handoff lead time", () => {
+    const handoffMs = getHandoffLeadTimeMs();
     const now = Date.now();
-    const earliestUntil = new Date(now + overlapMs - 30_000).toISOString();
+    const earliestUntil = new Date(now + handoffMs - 30_000).toISOString();
     assert.equal(needsPreemptiveOverlapWindow({ earliestUntil }, now), true);
   });
 
@@ -96,6 +106,25 @@ describe("fakeOrders automation gap prevention", () => {
     assert.doesNotMatch(tickBody, /await expireStaleItems\(\);\s*[\s\S]*?recordMarketplaceVisibleFakeOrders/);
     assert.match(tickBody, /ensureSeamlessTrainingRotation/);
     assert.match(tickBody, /await expireStaleItems\(client\)/);
+    assert.match(tickBody, /automation_post_expire/);
+  });
+
+  it("buildTrainingOrdersReadinessPayload warns when next rotation is after round end", () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "..", "src", "services", "fakeOrdersService.js"),
+      "utf8",
+    );
+    assert.match(src, /rotation_scheduled_after_round_end/);
+    const { buildTrainingOrdersReadinessPayload } = require("../src/services/fakeOrdersService");
+    const out = buildTrainingOrdersReadinessPayload({
+      eligibleForNextRound: 120,
+      minOrders: 50,
+      maxOrders: 100,
+      currentlyVisibleFakeOrders: 69,
+      nextAutomationRunAt: "2026-06-25T12:00:00.000Z",
+      activeRoundVisibleUntil: "2026-06-24T12:00:00.000Z",
+    });
+    assert.ok(out.readinessWarnings.includes("rotation_scheduled_after_round_end"));
   });
 
   it("replenish only supersedes when visible count is already zero", () => {

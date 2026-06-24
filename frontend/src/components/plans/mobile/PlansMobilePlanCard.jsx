@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/useAuth";
 import { isOrderzhouseFreePlan } from "../../../constants/orderzhousePlansCatalog";
-import { isUpgradePlan, planTierRank } from "../../../utils/planSubscriptionUtils";
+import { isUpgradePlan, planTierRank, freePlanNeedsActivationFeeCheckout } from "../../../utils/planSubscriptionUtils";
 import { getLocalizedPlanBadge, getLocalizedPlanCardDisplay } from "../../../lib/i18n/getLocalizedPlanDisplay";
 import { getLocalizedField } from "../../../lib/i18n/getLocalizedField";
 import { useTranslation } from "../../../i18n/LanguageProvider";
@@ -39,6 +39,7 @@ export default function PlansMobilePlanCard({
   onCta,
   hasBlockingSubscription = false,
   checkoutBusy = false,
+  activationFeeNeedsPayment = false,
 }) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -59,11 +60,17 @@ export default function PlansMobilePlanCard({
     planTierRank(subscriptionRef) < planTierRank(currentSubscription.plan ?? currentSubscription.planId);
   const isBlockedBySubscription =
     Boolean(user) && isFreelancer && hasBlockingSubscription && !isUpgradeTarget;
+  const canSelfCheckout =
+    plan?.selfCheckoutEligible == null ? true : Boolean(plan.selfCheckoutEligible);
   const isFreePlan =
     isOrderzhouseFreePlan(subscriptionRef) ||
     (Number(plan?.priceJod) === 0 && !canSelfCheckout);
-  const canSelfCheckout =
-    plan?.selfCheckoutEligible == null ? true : Boolean(plan.selfCheckoutEligible);
+  const freePlanPayFee = freePlanNeedsActivationFeeCheckout({
+    isFreePlan,
+    isFreelancer,
+    activationFeeNeedsPayment,
+  });
+  const isCurrentPlanLocked = isCurrentPlan && !freePlanPayFee;
   const customButtonLabel = getLocalizedField(plan, "buttonText", locale);
 
   const display = getLocalizedPlanCardDisplay(plan, locale, t);
@@ -87,11 +94,13 @@ export default function PlansMobilePlanCard({
         ? t("plans.days", { count: durationDays })
         : null;
 
-  const ctaLabel = customButtonLabel
+  const ctaLabel = freePlanPayFee
+    ? t("plans.cta.payActivationFee")
+    : customButtonLabel
     ? customButtonLabel
     : isLoggedNonFreelancer
     ? t("plans.cta.freelancersOnly")
-    : isCurrentPlan
+    : isCurrentPlanLocked
       ? t("plans.cta.currentPlan")
       : isLowerTier
         ? t("plans.cta.lowerPlan")
@@ -111,18 +120,18 @@ export default function PlansMobilePlanCard({
 
   const usePrimaryCta =
     featured &&
-    (isGuest || (isFreelancer && canSelfCheckout)) &&
+    (isGuest || (isFreelancer && (canSelfCheckout || freePlanPayFee))) &&
     !isBlockedBySubscription &&
-    !isCurrentPlan;
+    !isCurrentPlanLocked;
 
   const isLocked =
     isLoggedNonFreelancer ||
-    isCurrentPlan ||
+    isCurrentPlanLocked ||
     isLowerTier ||
     isBlockedBySubscription ||
     checkoutBusy ||
-    (isFreelancer && isFreePlan) ||
-    (isFreelancer && !canSelfCheckout && !isCurrentPlan && !isUpgradeTarget);
+    (isFreelancer && isFreePlan && !freePlanPayFee) ||
+    (isFreelancer && !canSelfCheckout && !isCurrentPlan && !isUpgradeTarget && !freePlanPayFee);
 
   const handleCtaClick = () => {
     if (isGuest) {
@@ -131,6 +140,10 @@ export default function PlansMobilePlanCard({
     }
     if (!isFreelancer) return;
     if (isBlockedBySubscription) return;
+    if (freePlanPayFee) {
+      onCta?.(plan);
+      return;
+    }
     if (!canSelfCheckout) return;
     onCta?.(plan);
   };
@@ -160,6 +173,11 @@ export default function PlansMobilePlanCard({
         {priceSub ? <span className="pm-plan-card__price-sub">{priceSub}</span> : null}
         {installment ? <p className="pm-plan-card__price-note">{installment}</p> : null}
         {!installment && paymentNotes ? <p className="pm-plan-card__price-note">{paymentNotes}</p> : null}
+        {freePlanPayFee ? (
+          <p className="pm-plan-card__price-note pm-plan-card__activation-fee-required">
+            {t("plans.freePlanActivationFeeNote")}
+          </p>
+        ) : null}
       </div>
 
       {offerLabel ? <p className="pm-plan-card__offer">{offerLabel}</p> : null}

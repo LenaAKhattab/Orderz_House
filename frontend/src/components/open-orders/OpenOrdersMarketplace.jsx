@@ -24,6 +24,7 @@ import BidAmountModal from "../../components/orders/BidAmountModal";
 import TakePoolOrderConfirmModal from "../../components/orders/TakePoolOrderConfirmModal";
 import Pagination from "../../components/common/Pagination";
 import MarketplaceOrderListRow from "./MarketplaceOrderListRow";
+import { categoryLine, durationLabel } from "./openOrdersFormatters";
 import { trackEvent } from "../../services/analytics";
 import {
   filterPoolOrdersAccessibleForPlan,
@@ -197,7 +198,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const isFreelancer = role === "freelancer";
   const isClient = role === "client";
   const showPoolRowActions = Boolean(!user || isFreelancer);
-  const { subscription, eligibility, eligibilityFetched } = useFreelancerMarketplaceContext();
+  const { subscription, eligibility } = useFreelancerMarketplaceContext();
 
   const [orders, setOrders] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -239,10 +240,6 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const guestLoginNavLockRef = useRef(false);
   const hasCategoryFilters = selectedCategoryIds.length > 0 || selectedSubSubIds.length > 0;
 
-  const showIneligibleNotice = isFreelancer && eligibilityFetched && eligibility && eligibility.eligible === false;
-  const ineligibleMessage = showIneligibleNotice
-    ? getFreelancerOrderEligibilityMessage(eligibility, subscription, t)
-    : "";
   const canTake = Boolean(isFreelancer && eligibility?.eligible);
   const loginRequiredMessage = t("orders.marketplace.loginRequiredFreelancer");
   const clientViewOnlyMessage = t("orders.marketplace.clientViewOnly");
@@ -497,6 +494,18 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       setTakingId(null);
     }
   };
+
+  const bidDurationLabels = useMemo(
+    () => ({
+      day: t("orders.marketplace.card.day"),
+      days: t("orders.marketplace.card.days"),
+      hour: t("orders.marketplace.card.hour"),
+      hours: t("orders.marketplace.card.hours"),
+      minute: t("orders.marketplace.card.minute"),
+      minutes: t("orders.marketplace.card.minutes"),
+    }),
+    [t],
+  );
 
   const submitBid = async (amount) => {
     if (!bidModalOrder?.id) return;
@@ -785,10 +794,6 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       <div className="dash-grid">
         <div className="oh-orders-page-layout oh-orders-page-layout--neu">
           <div className="oh-orders-main">
-            {isFreelancer && showIneligibleNotice ? (
-              <p className="help oh-orders-ineligible-note">{ineligibleMessage}</p>
-            ) : null}
-
             <div className="oh-orders-toolbar-neu">
               {showInitialSkeleton ? <OpenOrdersToolbarSkeleton /> : toolbarControls}
               <button
@@ -830,11 +835,9 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
 
       <BidAmountModal
         open={Boolean(bidModalOrder)}
-        title={
-          bidModalOrder
-            ? t("orders.bid.titleWithOrder", { title: getLocalizedMarketplaceOrderTitle(bidModalOrder, locale) })
-            : ""
-        }
+        projectTitle={bidModalOrder ? getLocalizedMarketplaceOrderTitle(bidModalOrder, locale) : ""}
+        categoryName={bidModalOrder ? categoryLine(bidModalOrder, locale) : ""}
+        durationText={bidModalOrder ? durationLabel(bidModalOrder, locale, bidDurationLabels) : ""}
         min={bidModalOrder?.bidBudgetMin}
         max={bidModalOrder?.bidBudgetMax}
         currency="JOD"

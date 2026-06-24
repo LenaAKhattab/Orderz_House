@@ -13,3 +13,28 @@ export async function loadWidget(fetcher) {
 }
 
 export const WIDGET_IDLE = { status: "loading", data: null, error: "" };
+
+/**
+ * Load a dashboard widget; keeps previous data during silent/background refresh.
+ * @param {import("react").Dispatch<import("react").SetStateAction<{ status: string, data: unknown, error: string }>>} setter
+ * @param {() => Promise<unknown>} fetcher
+ * @param {{ silent?: boolean, initialLoadDone?: boolean }} [options]
+ */
+export async function runWidgetLoad(setter, fetcher, { silent = false, initialLoadDone = false } = {}) {
+  const keepStale = silent || initialLoadDone;
+  if (!keepStale) {
+    setter({ status: "loading", data: null, error: "" });
+  }
+  const result = await loadWidget(fetcher);
+  setter((prev) => ({
+    status:
+      result.status === "success"
+        ? "success"
+        : keepStale && prev.data != null
+          ? "success"
+          : "error",
+    data: result.status === "success" ? result.data : prev.data,
+    error: result.status === "error" ? result.error : "",
+  }));
+  return result;
+}

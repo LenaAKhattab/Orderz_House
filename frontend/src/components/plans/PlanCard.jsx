@@ -3,7 +3,7 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 import Button from "../ui/Button";
 import { useAuth } from "../../context/useAuth";
 import { isOrderzhouseFreePlan } from "../../constants/orderzhousePlansCatalog";
-import { isUpgradePlan, planTierRank } from "../../utils/planSubscriptionUtils";
+import { isUpgradePlan, planTierRank, freePlanNeedsActivationFeeCheckout } from "../../utils/planSubscriptionUtils";
 import { getLocalizedPlanBadge, getLocalizedPlanCardDisplay } from "../../lib/i18n/getLocalizedPlanDisplay";
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 
@@ -78,6 +78,7 @@ const PlanCard = ({
   onCta,
   hasBlockingSubscription = false,
   checkoutBusy = false,
+  activationFeeNeedsPayment = false,
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -96,11 +97,17 @@ const PlanCard = ({
     planTierRank(subscriptionRef) < planTierRank(currentSubscription.plan ?? currentSubscription.planId);
   const isBlockedBySubscription =
     Boolean(user) && isFreelancer && hasBlockingSubscription && !isUpgradeTarget;
+  const canSelfCheckout =
+    plan?.selfCheckoutEligible == null ? true : Boolean(plan.selfCheckoutEligible);
   const isFreePlan =
     isOrderzhouseFreePlan(subscriptionRef) ||
     (Number(plan?.priceJod) === 0 && !canSelfCheckout);
-  const canSelfCheckout =
-    plan?.selfCheckoutEligible == null ? true : Boolean(plan.selfCheckoutEligible);
+  const freePlanPayFee = freePlanNeedsActivationFeeCheckout({
+    isFreePlan,
+    isFreelancer,
+    activationFeeNeedsPayment,
+  });
+  const isCurrentPlanLocked = isCurrentPlan && !freePlanPayFee;
   const customButtonLabel = getLocalizedField(plan, "buttonText", locale);
 
   const display = getLocalizedPlanCardDisplay(plan, locale, t);
@@ -124,11 +131,13 @@ const PlanCard = ({
         ? t("plans.days", { count: durationDays })
         : null;
 
-  const ctaLabel = customButtonLabel
+  const ctaLabel = freePlanPayFee
+    ? t("plans.cta.payActivationFee")
+    : customButtonLabel
     ? customButtonLabel
     : isLoggedNonFreelancer
     ? t("plans.cta.freelancersOnly")
-    : isCurrentPlan
+    : isCurrentPlanLocked
       ? t("plans.cta.currentPlan")
       : isLowerTier
         ? t("plans.cta.lowerPlan")
@@ -147,17 +156,17 @@ const PlanCard = ({
                     : t("plans.cta.startNow");
   const usePrimaryCta =
     featured &&
-    (isGuest || (isFreelancer && canSelfCheckout)) &&
+    (isGuest || (isFreelancer && (canSelfCheckout || freePlanPayFee))) &&
     !isBlockedBySubscription &&
-    !isCurrentPlan;
+    !isCurrentPlanLocked;
   const isLocked =
     isLoggedNonFreelancer ||
-    isCurrentPlan ||
+    isCurrentPlanLocked ||
     isLowerTier ||
     isBlockedBySubscription ||
     checkoutBusy ||
-    (isFreelancer && isFreePlan) ||
-    (isFreelancer && !canSelfCheckout && !isCurrentPlan && !isUpgradeTarget);
+    (isFreelancer && isFreePlan && !freePlanPayFee) ||
+    (isFreelancer && !canSelfCheckout && !isCurrentPlan && !isUpgradeTarget && !freePlanPayFee);
 
   const hasExtras = Boolean(
     offerLabel || orderRange || display.activationRequirements || display.refundPolicy,
@@ -173,6 +182,10 @@ const PlanCard = ({
     }
     if (!isFreelancer) return;
     if (isBlockedBySubscription) return;
+    if (freePlanPayFee) {
+      onCta?.(plan);
+      return;
+    }
     if (!canSelfCheckout) return;
     onCta?.(plan);
   };
@@ -206,6 +219,11 @@ const PlanCard = ({
         {priceSub ? <div className="pricing-card__price-sub">{priceSub}</div> : null}
         {installment ? <p className="pricing-card__price-note">{installment}</p> : null}
         {!installment && paymentNotes ? <p className="pricing-card__price-note">{paymentNotes}</p> : null}
+        {freePlanPayFee ? (
+          <p className="pricing-card__price-note pricing-card__activation-fee-required">
+            {t("plans.freePlanActivationFeeNote")}
+          </p>
+        ) : null}
       </div>
 
       <div className="pricing-card__divider pricing-card__divider--features" aria-hidden="true" />

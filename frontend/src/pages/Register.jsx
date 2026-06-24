@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AuthFormCard from "../components/auth/AuthFormCard";
 import AuthLayout from "../components/auth/AuthLayout";
 import * as tw from "../components/auth/authTw";
@@ -18,6 +18,13 @@ const CATEGORY_SLUGS = [
 ];
 
 const ARABIC_ONLY = /^[\u0600-\u06FF\s]+$/;
+
+const REGISTER_DEFAULT_ROLES = new Set(["client", "freelancer"]);
+
+function parseRegisterDefaultRole(searchParams) {
+  const raw = String(searchParams.get("role") || "").trim().toLowerCase();
+  return REGISTER_DEFAULT_ROLES.has(raw) ? raw : "client";
+}
 
 function normalizePhonePart(value) {
   return String(value ?? "")
@@ -138,6 +145,7 @@ const Register = () => {
   const { register, completeRegisterWithOtp } = useAuth();
   const { t, locale } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
   const [showOtpStep, setShowOtpStep] = useState(false);
   const [otp, setOtp] = useState("");
@@ -148,7 +156,7 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [accountType, setAccountType] = useState("client");
+  const [accountType, setAccountType] = useState(() => parseRegisterDefaultRole(searchParams));
   const [country, setCountry] = useState("");
   const [phoneCountryCode, setPhoneCountryCode] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");

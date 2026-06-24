@@ -44,12 +44,30 @@
     "amount": "25 د.أ.",
     "suffix": "تُدفع مرة واحدة سنوياً"
   },
+  "freePlanActivationFeeNote": "الباقة مجانية، لكن رسوم التفعيل السنوية 25 د.أ مطلوبة.",
+  "activationFee": {
+    "paidSuccessTitle": "تم دفع رسوم التفعيل",
+    "paidSuccessMessage": "تم دفع رسوم التفعيل بنجاح.",
+    "cancelledTitle": "تم إلغاء الدفع",
+    "cancelledMessage": "لم تكتمل عملية دفع رسوم التفعيل."
+  },
+  "checkout": {
+    "paidSuccessTitle": "تم استلام الدفع",
+    "paidSuccessMessage": "تم التحقق من الخادم. حسابك بانتظار تفعيل الشركة.",
+    "cancelledTitle": "تم إلغاء الدفع",
+    "cancelledMessage": "لم تكتمل عملية الدفع.",
+    "verifyFailedTitle": "تعذر التحقق من الدفع",
+    "verifyFailedMessage": "لم يُستلم رقم جلسة Stripe في الرابط. انتظر قليلاً ثم حدّث الصفحة، أو راجع صفحة الباقات بعد وصول ويب هوك الدفع.",
+    "confirmPendingTitle": "لم يُؤكَّد الدفع بعد",
+    "confirmPendingMessage": "انتظر قليلاً ثم حدّث الصفحة؛ أو تأكد أن ويب هوك Stripe يصل إلى الخادم. الدفع لا يُعتمد من المتصفح فقط."
+  },
   "cta": {
     "freelancersOnly": "للمستقلين فقط",
     "currentPlan": "باقتك الحالية",
     "lowerPlan": "باقة أقل",
     "alreadySubscribed": "مشترك بالفعل",
     "upgrade": "ترقية الاشتراك",
+    "payActivationFee": "ادفع رسوم التفعيل",
     "autoActivated": "مفعّل تلقائياً",
     "companyActivation": "يتم التفعيل عبر الشركة",
     "startNow": "ابدأ الآن"

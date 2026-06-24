@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getPublicPlanPageBySlugRequest } from "../services/api";
+import { isOrderzhouseFreePlan } from "../constants/orderzhousePlansCatalog";
 import { useFreelancerPlansCheckout } from "./useFreelancerPlansCheckout";
 
 export function usePlansPage({ slug, returnPath }) {
@@ -53,13 +54,17 @@ export function usePlansPage({ slug, returnPath }) {
 
   const startCheckout = useCallback(
     async (plan) => {
+      const resolvedId = plan.checkoutPlanId || plan.subscriptionPlanId || plan.id;
+      const isFree =
+        isOrderzhouseFreePlan({ id: resolvedId }) ||
+        (Number(plan?.priceJod) === 0 && plan?.selfCheckoutEligible === false);
       const checkoutPlan = {
         ...plan,
-        id: plan.checkoutPlanId || plan.subscriptionPlanId || plan.id,
+        id: defaultCheckout.activationFeeNeedsPayment && isFree ? plan.id : resolvedId,
       };
       return defaultCheckout.startCheckout(checkoutPlan);
     },
-    [defaultCheckout.startCheckout],
+    [defaultCheckout.startCheckout, defaultCheckout.activationFeeNeedsPayment],
   );
 
   return useMemo(
@@ -70,6 +75,8 @@ export function usePlansPage({ slug, returnPath }) {
       error: slug ? slugError : defaultCheckout.error,
       notFound,
       mySubscription: defaultCheckout.mySubscription,
+      activationFeeStatus: defaultCheckout.activationFeeStatus,
+      activationFeeNeedsPayment: defaultCheckout.activationFeeNeedsPayment,
       hasBlockingSubscription: defaultCheckout.hasBlockingSubscription,
       checkoutBusyPlanId: defaultCheckout.checkoutBusyPlanId,
       startCheckout,
@@ -86,6 +93,8 @@ export function usePlansPage({ slug, returnPath }) {
       defaultCheckout.loading,
       defaultCheckout.error,
       defaultCheckout.mySubscription,
+      defaultCheckout.activationFeeStatus,
+      defaultCheckout.activationFeeNeedsPayment,
       defaultCheckout.hasBlockingSubscription,
       defaultCheckout.checkoutBusyPlanId,
       startCheckout,

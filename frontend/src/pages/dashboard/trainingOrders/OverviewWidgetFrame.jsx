@@ -11,9 +11,14 @@ export default function OverviewWidgetFrame({
   loadingLabel = "جاري التحميل…",
   children,
   compact = false,
+  suppressLoading = false,
 }) {
-  if (status === "loading") {
+  if (status === "loading" && !suppressLoading) {
     return <DashboardLoadingState label={loadingLabel} rows={compact ? 2 : 3} />;
+  }
+
+  if (status === "loading" && suppressLoading) {
+    return children ?? null;
   }
 
   if (status === "error") {

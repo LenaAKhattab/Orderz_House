@@ -372,6 +372,15 @@ describe("checkout and webhook wiring", () => {
     assert.ok(sql.includes("includes_activation_fee"));
   });
 
+  it("freelancer subscription route exposes activationFeeStatus", () => {
+    const routes = fs.readFileSync(
+      path.join(__dirname, "..", "src", "routes", "freelancerSubscriptionsRoutes.js"),
+      "utf8",
+    );
+    assert.ok(routes.includes("activationFeeStatus"));
+    assert.ok(routes.includes("getActivationFeeStatus"));
+  });
+
   it("subscription purchase purpose constant matches Stripe metadata", () => {
     assert.strictEqual(PURPOSE_SUBSCRIPTION_PURCHASE, "freelancer_subscription_purchase");
     assert.strictEqual(PURPOSE_ACTIVATION_FEE_ONLY, "freelancer_activation_fee_only");

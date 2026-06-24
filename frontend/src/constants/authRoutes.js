@@ -94,7 +94,7 @@ export const DASHBOARD_TITLE_KEYS = {
   "/dashboard/super-admin/training-orders": "dashboard.breadcrumbs.trainingRequests",
   "/dashboard/super-admin/training-orders/settings": "dashboard.breadcrumbs.trainingSettings",
   "/dashboard/super-admin/training-orders/templates": "dashboard.breadcrumbs.trainingPool",
-  "/dashboard/super-admin/training-orders/rounds": "dashboard.breadcrumbs.trainingRounds",
+  "/dashboard/super-admin/training-orders/rounds": "dashboard.breadcrumbs.trainingStatusRounds",
   "/dashboard/super-admin/training-orders/applications": "dashboard.breadcrumbs.trainingApplications",
   "/dashboard/admin/notifications": "dashboard.breadcrumbs.notifications",
   "/dashboard/admin/orders": "dashboard.breadcrumbs.internalRequests",

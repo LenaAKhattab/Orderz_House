@@ -3,6 +3,7 @@ const validateRequest = require("../middleware/validateRequest");
 const { requireAuth, requireRole } = require("../middleware/rbacMiddleware");
 const subscriptionsService = require("../services/subscriptionsService");
 const subscriptionsController = require("../controllers/subscriptionsController");
+const { getActivationFeeStatus } = require("../services/subscriptionActivationFeeService");
 const {
   freelancerSelfSubscribeValidators,
   freelancerConfirmCheckoutValidators,
@@ -16,8 +17,12 @@ router.use(requireAuth, requireRole("freelancer"));
 router.get("/subscription", async (req, res, next) => {
   try {
     await subscriptionsService.maybeEnsureFreelancerDefaultFreePlan(req.auth.userId);
-    const subscription = await subscriptionsService.getCurrentSubscriptionForFreelancer(req.auth.userId);
-    return res.status(200).json({ success: true, data: { subscription } });
+    const uid = req.auth.userId;
+    const [subscription, activationFeeStatus] = await Promise.all([
+      subscriptionsService.getCurrentSubscriptionForFreelancer(uid),
+      getActivationFeeStatus(uid),
+    ]);
+    return res.status(200).json({ success: true, data: { subscription, activationFeeStatus } });
   } catch (err) {
     return next(err);
   }

@@ -40,6 +40,8 @@ const PricingSection = ({
 
   layoutVariant = PLANS_LAYOUT_VARIANT.MAIN_FIVE_CARD,
 
+  activationFeeNeedsPayment = false,
+
 }) => {
 
   const { t } = useTranslation();
@@ -110,6 +112,8 @@ const PricingSection = ({
               hasBlockingSubscription={hasBlockingSubscription}
 
               checkoutBusy={checkoutBusyPlanId != null && String(checkoutBusyPlanId) === String(p.id)}
+
+              activationFeeNeedsPayment={activationFeeNeedsPayment}
 
             />
 

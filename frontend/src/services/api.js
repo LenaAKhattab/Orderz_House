@@ -504,6 +504,21 @@ export const adminGetTrainingOrdersAutomationHealthRequest = async () => {
   return data;
 };
 
+export const adminGetTrainingOrdersReadinessRequest = async () => {
+  const { data } = await api.get("/admin/training-orders/health/readiness", {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminListTrainingVisibleOrdersRequest = async (params = {}) => {
+  const { data } = await api.get("/admin/training-orders/visible-orders", {
+    params,
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
 export const adminRunTrainingOrdersAutomationTickRequest = async () => {
   const { data } = await api.post("/admin/training-orders/automation/tick", {}, {
     timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
@@ -569,6 +584,13 @@ export const adminPatchTrainingFakeOrderRequest = async (id, payload) => {
   return data;
 };
 
+export const adminHideTrainingFakeOrderFromRoundRequest = async (id) => {
+  const { data } = await api.patch(`/admin/training-orders/fake-orders/${id}/hide-current-round`, {}, {
+    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
 export const adminDeleteTrainingFakeOrderRequest = async (id) => {
   const { data } = await api.delete(`/admin/training-orders/fake-orders/${id}`, {
     timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
@@ -576,6 +598,7 @@ export const adminDeleteTrainingFakeOrderRequest = async (id) => {
   return data;
 };
 
+/** @deprecated Legacy template read — admin pool UI uses fake-orders, not templates. */
 export const adminGetTrainingTemplateRequest = async (id) => {
   const { data } = await api.get(`/admin/training-orders/templates/${id}`, {
     timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
@@ -583,25 +606,25 @@ export const adminGetTrainingTemplateRequest = async (id) => {
   return data;
 };
 
-export const adminCreateTrainingTemplateRequest = async (payload) => {
-  const { data } = await api.post("/admin/training-orders/templates", payload, {
-    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
-  });
-  return data;
+/** Blocked — admin manual orders must use adminCreateTrainingFakeOrderRequest (fake_orders). */
+export const adminCreateTrainingTemplateRequest = async () => {
+  throw new Error(
+    "Template creation from the admin UI is disabled. Use adminCreateTrainingFakeOrderRequest (POST /admin/training-orders/fake-orders).",
+  );
 };
 
-export const adminPatchTrainingTemplateRequest = async (id, payload) => {
-  const { data } = await api.patch(`/admin/training-orders/templates/${id}`, payload, {
-    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
-  });
-  return data;
+/** Blocked — admin pool edits use adminPatchTrainingFakeOrderRequest. */
+export const adminPatchTrainingTemplateRequest = async () => {
+  throw new Error(
+    "Template updates from the admin UI are disabled. Use adminPatchTrainingFakeOrderRequest.",
+  );
 };
 
-export const adminDeleteTrainingTemplateRequest = async (id) => {
-  const { data } = await api.delete(`/admin/training-orders/templates/${id}`, {
-    timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
-  });
-  return data;
+/** Blocked — admin pool deletes use adminDeleteTrainingFakeOrderRequest. */
+export const adminDeleteTrainingTemplateRequest = async () => {
+  throw new Error(
+    "Template deletion from the admin UI is disabled. Use adminDeleteTrainingFakeOrderRequest.",
+  );
 };
 
 export const adminListTrainingRoundsRequest = async (params = {}) => {
@@ -642,8 +665,9 @@ export const adminListTrainingApplicationsSummaryRequest = async (params = {}) =
   return data;
 };
 
-export const adminListTrainingApplicationsByFakeOrderRequest = async (fakeOrderId) => {
+export const adminListTrainingApplicationsByFakeOrderRequest = async (fakeOrderId, { page = 1, limit = 5 } = {}) => {
   const { data } = await api.get(`/admin/training-orders/fake-orders/${fakeOrderId}/applications`, {
+    params: { page, limit },
     timeout: TRAINING_ORDERS_API_TIMEOUT_MS,
   });
   return data;
