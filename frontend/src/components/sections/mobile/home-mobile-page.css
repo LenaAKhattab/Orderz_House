@@ -276,15 +276,16 @@ html[dir="ltr"] .home-hero-mobile-start-cta__icon {
 }
 
 .hm-featured-card {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
-  min-height: 7.1rem;
-  padding: 0.7rem 0.55rem 0.65rem;
+  min-height: 5.5rem;
+  padding: 14px 12px 30px;
   border: none;
   border-radius: 1.15rem;
-  text-align: start;
+  text-align: center;
   text-decoration: none;
   cursor: pointer;
   box-shadow: 0 6px 20px -12px rgba(15, 23, 42, 0.14);
@@ -318,23 +319,22 @@ html[dir="ltr"] .home-hero-mobile-start-cta__icon {
 .hm-featured-card__title {
   font-size: clamp(0.875rem, 3.5vw, 1rem);
   font-weight: 800;
-  line-height: 1.42;
+  line-height: 1.38;
   text-align: center;
   text-wrap: balance;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  overflow: hidden;
   width: 100%;
-  margin-inline: auto;
+  margin: 0;
 }
 
 .hm-featured-card__footer {
+  position: absolute;
+  inset-inline: 0.55rem;
+  bottom: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.35rem;
-  margin-top: 0.5rem;
+  margin-top: 0;
 }
 
 .hm-featured-card__tag {
