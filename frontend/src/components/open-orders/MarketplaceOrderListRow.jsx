@@ -12,6 +12,7 @@ import {
   orderPriceText,
   shortDescription,
 } from "./openOrdersFormatters";
+import { DurationValue, MoneyValue } from "./OrderNumericValue";
 import {
   isPoolOrderLockedByPlan,
 } from "../../utils/poolOrderPlanEligibility";
@@ -169,14 +170,14 @@ function MarketplaceOrderRow({
         <div className="oh-order-row__budget">
           <div className="oh-order-row__stat">
             <span className="oh-order-row__stat-label">{t("orders.row.budget")}</span>
-            <strong className="oh-order-row__stat-value oh-order-row__stat-value--price" dir="ltr">
-              {orderPriceText(order, locale)}
+            <strong className="oh-order-row__stat-value oh-order-row__stat-value--price">
+              <MoneyValue>{orderPriceText(order, locale)}</MoneyValue>
             </strong>
           </div>
           <div className="oh-order-row__stat">
             <span className="oh-order-row__stat-label">{t("orders.row.duration")}</span>
-            <strong className="oh-order-row__stat-value" dir={locale === "en" ? "ltr" : undefined}>
-              {durationLabel(order, locale, durationLabels)}
+            <strong className="oh-order-row__stat-value">
+              <DurationValue>{durationLabel(order, locale, durationLabels)}</DurationValue>
             </strong>
           </div>
         </div>

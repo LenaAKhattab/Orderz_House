@@ -1,5 +1,13 @@
 import { arabicDurationUnit } from "../../utils/arTime";
 import { getLocaleField, getLocalizedField } from "../../lib/i18n/getLocalizedField";
+import {
+  formatBudgetRange,
+  formatMarketplaceBudget,
+  formatMoney,
+  orderPriceText,
+} from "../../lib/orders/formatMarketplaceBudget";
+
+export { formatBudgetRange, formatMarketplaceBudget, formatMoney, orderPriceText };
 
 function getCategoryName(item, locale = "ar") {
   if (locale === "en") {
@@ -8,29 +16,10 @@ function getCategoryName(item, locale = "ar") {
   return getLocalizedField(item, "name", locale);
 }
 
-export function formatMoney(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(n));
-}
-
-function currencySuffix(locale = "ar") {
-  return locale === "en" ? "JOD" : "د.أ";
-}
-
 export function typeLabelAr(projectType) {
   if (projectType === "fixed") return "سعر ثابت";
   if (projectType === "bidding") return "مزايدة";
   return "—";
-}
-
-export function orderPriceText(order, locale = "ar") {
-  const currency = currencySuffix(locale);
-  if (order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null) {
-    return `${formatMoney(order.bidBudgetMin)} ${currency} - ${formatMoney(order.bidBudgetMax)} ${currency}`;
-  }
-  if (order?.projectType === "bidding") return "—";
-  return `${formatMoney(order?.budget)} ${currency}`;
 }
 
 export function shortDescription(text, max = 180, { emptyLabel = "لا يوجد وصف." } = {}) {

@@ -1233,3 +1233,15 @@
   background: var(--oh-pool-card-bg);
   box-shadow: var(--oh-pool-card-shadow);
 }
+
+/* LTR-isolated numbers for RTL marketplace cards */
+.oh-num {
+  font-variant-numeric: tabular-nums;
+  unicode-bidi: isolate;
+}
+
+.oh-money {
+  direction: ltr;
+  white-space: nowrap;
+  display: inline-block;
+}

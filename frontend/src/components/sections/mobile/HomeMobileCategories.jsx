@@ -98,7 +98,7 @@ export default function HomeMobileCategories({
                     </h4>
                     <div className="hm-list-card__tags">
                       <span className="hm-list-card__tag hm-list-card__tag--accent">{order.categoryTag}</span>
-                      <span className="hm-list-card__tag hm-list-card__tag--muted" dir="ltr">
+                      <span className="hm-list-card__tag hm-list-card__tag--muted oh-num oh-money" dir="ltr">
                         {order.priceTag}
                       </span>
                     </div>
