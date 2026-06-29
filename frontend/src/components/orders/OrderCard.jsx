@@ -6,9 +6,11 @@ import {
   formatOrderBudget,
   formatOrderDuration,
   formatOrderProjectType,
+  formatMoney,
   categoryLine,
   shortDescription,
 } from "../../lib/orders/orderDisplayFormatters";
+import { MoneyValue, DurationValue } from "../open-orders/OrderNumericValue";
 import {
   getLocalizedOrderDescription,
   getLocalizedOrderTitle,
@@ -20,31 +22,13 @@ import {
 } from "../../utils/orderFlowUi";
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
 
-const ORDER_CURRENCY = "JOD";
-
-function formatMoney(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "";
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
-}
-
-function priceLabel(order) {
+function priceLabel(order, locale) {
   if (order?.projectType === "bidding" && (order?.paymentAmount != null || order?.paymentCurrency)) {
     const paid = order?.paymentAmount != null ? formatMoney(order.paymentAmount) : "—";
-    const cur = ORDER_CURRENCY;
-    return `${paid}${cur ? ` ${cur}` : ""}`.trim();
+    const cur = locale === "en" ? " JOD" : " د.أ";
+    return `${paid}${cur}`.trim();
   }
-  if (order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null) {
-    const a = formatMoney(order.bidBudgetMin);
-    const b = formatMoney(order.bidBudgetMax);
-    const cur = ORDER_CURRENCY;
-    return `${a} – ${b}${cur ? ` ${cur}` : ""}`.trim();
-  }
-  if (order?.projectType === "bidding") return "—";
-  const amt = order?.budget != null ? formatMoney(order.budget) : "";
-  const cur = ORDER_CURRENCY;
-  if (!amt && !cur) return "—";
-  return `${amt || "—"}${cur ? ` ${cur}` : ""}`.trim();
+  return formatOrderBudget(order, locale);
 }
 
 function shortText(text, max = 140, emptyLabel = "—") {
@@ -200,13 +184,10 @@ export default function OrderCard({
             {t("orders.card.type")}: {typeLabel(order?.projectType, t)}
           </span>
           <span className="oh-mini-chip">
-            {t("orders.card.price")}:{" "}
-            <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>
-              {priceChipBody}
-            </span>
+            {t("orders.card.price")}: <MoneyValue>{priceChipBody}</MoneyValue>
           </span>
           <span className="oh-mini-chip">
-            {t("orders.card.deliveryDuration")}: {formatOrderDuration(order, locale, t)}
+            {t("orders.card.deliveryDuration")}: <DurationValue>{formatOrderDuration(order, locale, t)}</DurationValue>
           </span>
           <span className="oh-mini-chip">
             {t("orders.card.filesLabel")}: {filesCount ? String(filesCount) : t("orders.card.noFiles")}
@@ -233,13 +214,10 @@ export default function OrderCard({
         <>
           <div className="oh-pool-card__meta oh-pool-card__meta--keyonly" aria-label="ملخص الطلب">
             <span className="oh-mini-chip oh-mini-chip--emph">
-              {t("orders.card.price")}:{" "}
-              <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>
-                {priceChipBody}
-              </span>
+              {t("orders.card.price")}: <MoneyValue>{priceChipBody}</MoneyValue>
             </span>
             <span className="oh-mini-chip oh-mini-chip--emph">
-              {t("orders.card.deliveryDuration")}: {formatOrderDuration(order, locale, t)}
+              {t("orders.card.deliveryDuration")}: <DurationValue>{formatOrderDuration(order, locale, t)}</DurationValue>
             </span>
           </div>
           <p className="oh-pool-card__desc oh-pool-card__desc--compact-preview">
@@ -277,9 +255,7 @@ export default function OrderCard({
             <div className="oh-meta">
               <div className="oh-meta__label">السعر (ملخص)</div>
               <div className="oh-meta__value oh-meta__value--strong">
-                <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>
-                  {priceLabel(order)}
-                </span>
+                <MoneyValue>{priceLabel(order, locale)}</MoneyValue>
               </div>
             </div>
             <div className="oh-meta">

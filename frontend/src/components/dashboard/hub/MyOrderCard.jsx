@@ -10,6 +10,7 @@ import {
   resolveUserContentDir,
 } from "../../../lib/i18n/getLocalizedMarketplaceOrderText";
 import { shortDescription } from "../../open-orders/openOrdersFormatters";
+import { DurationValue, MoneyValue } from "../../open-orders/OrderNumericValue";
 import { orderStatusDisplayBadge } from "../../../utils/orderFlowUi";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { fdashBadgeClassFromOh } from "./orderBadgeUi";
@@ -118,8 +119,8 @@ export default function MyOrderCard({ order, detailsPath }) {
           <span className={badgeClass}>{badge.label}</span>
           <div className="fmo-order-row__stat">
             <span className="fmo-order-row__stat-label">{t("orders.card.value")}</span>
-            <strong className="fmo-order-row__stat-value fmo-order-row__stat-value--price" dir="ltr">
-              {formatOrderBudget(order, locale)}
+            <strong className="fmo-order-row__stat-value fmo-order-row__stat-value--price">
+              <MoneyValue>{formatOrderBudget(order, locale)}</MoneyValue>
             </strong>
           </div>
           <div className="fmo-order-row__stat">
@@ -128,8 +129,8 @@ export default function MyOrderCard({ order, detailsPath }) {
           </div>
           <div className="fmo-order-row__stat">
             <span className="fmo-order-row__stat-label">{t("orders.card.deliveryDuration")}</span>
-            <strong className="fmo-order-row__stat-value" dir={locale === "en" ? "ltr" : undefined}>
-              {formatOrderDuration(order, locale, t)}
+            <strong className="fmo-order-row__stat-value">
+              <DurationValue>{formatOrderDuration(order, locale, t)}</DurationValue>
             </strong>
           </div>
         </div>

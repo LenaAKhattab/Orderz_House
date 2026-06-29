@@ -2,7 +2,9 @@ import {
   categoryChips,
   categoryLine,
   durationLabel,
+  formatBudgetRange,
   formatDuration,
+  formatMarketplaceBudget,
   formatMoney,
   orderPriceText,
   shortDescription,
@@ -12,7 +14,9 @@ export {
   categoryChips,
   categoryLine,
   durationLabel,
+  formatBudgetRange,
   formatDuration,
+  formatMarketplaceBudget,
   formatMoney,
   orderPriceText,
   shortDescription,
@@ -46,7 +50,7 @@ export function formatOrderDuration(order, locale, t) {
  * @param {string} locale
  */
 export function formatOrderBudget(order, locale) {
-  return orderPriceText(order, locale);
+  return formatMarketplaceBudget(order, locale);
 }
 
 /**

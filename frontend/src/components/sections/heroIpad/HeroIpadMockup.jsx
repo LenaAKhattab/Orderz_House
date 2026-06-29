@@ -379,7 +379,7 @@ function ScreenOrders({ orders = [], loading = false, error = false }) {
                   {title}
                 </span>
                 <span className="home-hero-ipad-table__status home-hero-ipad-table__status--stack">{statusLine}</span>
-                <span className="home-hero-ipad-table__num" dir="ltr">
+                <span className="home-hero-ipad-table__num oh-num oh-money" dir="ltr">
                   {budget}
                 </span>
               </div>

@@ -128,3 +128,15 @@
     appearance: textfield;
   }
 }
+
+/* LTR-isolated numbers for RTL marketplace/order cards */
+.oh-num {
+  font-variant-numeric: tabular-nums;
+  unicode-bidi: isolate;
+}
+
+.oh-money {
+  direction: ltr;
+  white-space: nowrap;
+  display: inline-block;
+}
