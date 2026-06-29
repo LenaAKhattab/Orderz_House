@@ -8983,14 +8983,29 @@ p {
 }
 
 /* Password visibility toggle on login (merged from lena branch) */
-.auth-input-wrap--password-toggle input {
+.auth-input-wrap--password-toggle input[dir="ltr"] {
+  padding-left: 48px;
+  padding-right: 14px;
+}
+
+.auth-input-wrap--password-toggle input:not([dir="ltr"]) {
   padding-inline-start: 14px;
   padding-inline-end: 48px;
 }
 
+.auth-input-wrap--password-toggle:has(input[dir="ltr"]) .auth-password-toggle {
+  left: 8px;
+  right: auto;
+  inset-inline-start: auto;
+  inset-inline-end: auto;
+}
+
+.auth-input-wrap--password-toggle:not(:has(input[dir="ltr"])) .auth-password-toggle {
+  inset-inline-end: 8px;
+}
+
 .auth-password-toggle {
   position: absolute;
-  inset-inline-end: 8px;
   top: 50%;
   transform: translateY(-50%);
   display: inline-flex;

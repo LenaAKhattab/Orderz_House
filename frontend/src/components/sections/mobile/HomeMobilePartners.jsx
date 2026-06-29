@@ -25,13 +25,25 @@ export default function HomeMobilePartners() {
                 rel="noopener noreferrer"
                 aria-label={t("home.partners.visitSite", { name: item.alt })}
               >
-                <img
-                  className="hm-partners__logo"
-                  src={item.src}
-                  alt={item.alt}
-                  loading="lazy"
-                  decoding="async"
-                />
+                {item.logoBadge === "circle" ? (
+                  <span className="hm-partners__logo-badge">
+                    <img
+                      className="hm-partners__logo hm-partners__logo--badged"
+                      src={item.src}
+                      alt={item.alt}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </span>
+                ) : (
+                  <img
+                    className="hm-partners__logo"
+                    src={item.src}
+                    alt={item.alt}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )}
               </a>
             </li>
           ))}

@@ -152,8 +152,10 @@ const ForgotPassword = () => {
                     @
                   </i>
                   <input
-                    className={tw.authInput}
+                    className={tw.authInputCredentialWithIcon}
                     type="email"
+                    dir="ltr"
+                    inputMode="email"
                     placeholder="name@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -215,8 +217,9 @@ const ForgotPassword = () => {
                 <div className={tw.authInputWrap}>
                   <input
                     id="forgot-new-password"
-                    className={tw.authInputNoIcon}
+                    className={tw.authInputCredential}
                     type="password"
+                    dir="ltr"
                     autoComplete="new-password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
@@ -228,8 +231,9 @@ const ForgotPassword = () => {
                 <span className={tw.authFieldLabel}>{t("auth.forgot.fields.confirmPassword")}</span>
                 <div className={tw.authInputWrap}>
                   <input
-                    className={tw.authInputNoIcon}
+                    className={tw.authInputCredential}
                     type="password"
+                    dir="ltr"
                     autoComplete="new-password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}

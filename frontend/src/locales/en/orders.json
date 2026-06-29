@@ -151,6 +151,7 @@
     "backgroundRefreshFailed": "The list could not be updated. Showing the last loaded requests.",
     "trainingBadge": "Training order",
     "planLocked": "Not available on your plan",
+    "loginFirst": "Log in first",
     "orderAssigned": {
       "title": "Order assigned",
       "message": "The order is now in My orders and you can start working."

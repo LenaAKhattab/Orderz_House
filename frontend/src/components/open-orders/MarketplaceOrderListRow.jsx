@@ -40,9 +40,9 @@ function ApplicantsIcon() {
   );
 }
 
-function actionBtnClass({ planLocked, actionsDisabled, disabled }) {
+function actionBtnClass({ planLocked, actionsDisabled, disabled, isGuest }) {
   const parts = ["oh-order-row__action-btn"];
-  if (planLocked) parts.push("oh-order-row__action-btn--locked");
+  if (planLocked || isGuest) parts.push("oh-order-row__action-btn--locked");
   else if (!actionsDisabled && !disabled) parts.push("oh-order-row__action-btn--cta");
   return parts.join(" ");
 }
@@ -60,21 +60,28 @@ function ActionButton({
   onTake,
   t,
   planLockedLabel,
+  isGuest,
+  guestLoginLabel,
 }) {
   if (bidding) {
     const bidDisabled = rowDisabled || bidBusy || order?.myBid?.status === "pending";
     return (
       <button
         type="button"
-        className={actionBtnClass({ planLocked, actionsDisabled, disabled: bidDisabled })}
+        className={actionBtnClass({ planLocked, actionsDisabled, disabled: bidDisabled, isGuest })}
         disabled={bidDisabled}
         onClick={(e) => {
           e.stopPropagation();
           if (!rowDisabled) onBid?.();
         }}
-        title={rowDisabledReason || (order?.myBid?.status === "pending" ? t("orders.row.bidSubmitted") : "")}
+        title={isGuest ? guestLoginLabel : rowDisabledReason || (order?.myBid?.status === "pending" ? t("orders.row.bidSubmitted") : "")}
       >
-        {planLocked ? (
+        {isGuest ? (
+          <>
+            <LockIcon />
+            {guestLoginLabel}
+          </>
+        ) : planLocked ? (
           <>
             <LockIcon />
             {planLockedLabel}
@@ -96,15 +103,20 @@ function ActionButton({
   return (
     <button
       type="button"
-      className={actionBtnClass({ planLocked, actionsDisabled, disabled: takeDisabled })}
+      className={actionBtnClass({ planLocked, actionsDisabled, disabled: takeDisabled, isGuest })}
       disabled={takeDisabled}
       onClick={(e) => {
         e.stopPropagation();
         if (!rowDisabled) onTake?.();
       }}
-      title={rowDisabledReason || ""}
+      title={isGuest ? guestLoginLabel : rowDisabledReason || ""}
     >
-      {planLocked ? (
+      {isGuest ? (
+        <>
+          <LockIcon />
+          {guestLoginLabel}
+        </>
+      ) : planLocked ? (
         <>
           <LockIcon />
           {planLockedLabel}
@@ -135,9 +147,14 @@ function MarketplaceOrderRow({
   const planLocked = isPoolOrderLockedByPlan(order);
   const { user } = useAuth();
   const { t, locale, dir } = useTranslation();
-  const rowDisabled = actionsDisabled || planLocked;
-  const rowDisabledReason = planLocked ? t("orders.marketplace.planLocked") : actionsDisabledReason;
   const isAuthenticated = Boolean(user);
+  const isGuest = !isAuthenticated;
+  const planLockedForUser = isAuthenticated && planLocked;
+  const rowDisabled = actionsDisabled || planLockedForUser;
+  const guestLoginLabel = t("orders.marketplace.loginFirst");
+  const rowDisabledReason = planLockedForUser
+    ? t("orders.marketplace.planLocked")
+    : actionsDisabledReason;
   const applicants = Number(order?.applicantsCount ?? order?.bidsCount ?? 0);
   const durationLabels = {
     day: t("orders.marketplace.card.day"),
@@ -152,7 +169,7 @@ function MarketplaceOrderRow({
   const description = getLocalizedMarketplaceOrderDescription(order, locale);
 
   return (
-    <li className={`oh-order-row-item${planLocked ? " oh-order-row-item--plan-locked" : ""}`}>
+    <li className={`oh-order-row-item${planLockedForUser ? " oh-order-row-item--plan-locked" : ""}`}>
       <div
         className="oh-order-row oh-order-row--neu fdash-surface-3d fdash-surface-3d--soft"
         role="button"
@@ -229,7 +246,7 @@ function MarketplaceOrderRow({
           {showActions ? (
             <ActionButton
               bidding={bidding}
-              planLocked={planLocked}
+              planLocked={planLockedForUser}
               actionsDisabled={actionsDisabled}
               rowDisabled={rowDisabled}
               rowDisabledReason={rowDisabledReason}
@@ -240,6 +257,8 @@ function MarketplaceOrderRow({
               onTake={onTake}
               t={t}
               planLockedLabel={t("orders.marketplace.planLocked")}
+              isGuest={isGuest}
+              guestLoginLabel={guestLoginLabel}
             />
           ) : null}
         </div>

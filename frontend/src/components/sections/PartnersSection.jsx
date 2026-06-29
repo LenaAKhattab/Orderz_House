@@ -34,13 +34,25 @@ const PartnersSection = () => {
                   rel="noopener noreferrer"
                   aria-label={t("home.partners.visitSite", { name: item.alt })}
                 >
-                  <img
-                    className="partners-section__logo"
-                    src={item.src}
-                    alt={item.alt}
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  {item.logoBadge === "circle" ? (
+                    <span className="partners-section__logo-badge">
+                      <img
+                        className="partners-section__logo partners-section__logo--badged"
+                        src={item.src}
+                        alt={item.alt}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </span>
+                  ) : (
+                    <img
+                      className="partners-section__logo"
+                      src={item.src}
+                      alt={item.alt}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  )}
                 </a>
               </li>
             ))}

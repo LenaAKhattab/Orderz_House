@@ -549,8 +549,10 @@ const Register = () => {
                     <span className={tw.authFieldLabel}>{t("auth.register.fields.email")}</span>
                     <div className={tw.authInputWrap}>
                       <input
-                        className={tw.authInputNoIcon}
+                        className={tw.authInputCredential}
                         type="email"
+                        dir="ltr"
+                        inputMode="email"
                         placeholder="name@email.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -564,8 +566,9 @@ const Register = () => {
                     <span className={tw.authFieldLabel}>{t("auth.register.fields.password")}</span>
                     <div className={tw.authInputWrap}>
                       <input
-                        className={tw.authInputNoIcon}
+                        className={tw.authInputCredential}
                         type="password"
+                        dir="ltr"
                         placeholder="********"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -579,8 +582,9 @@ const Register = () => {
                     <span className={tw.authFieldLabel}>{t("auth.register.fields.confirmPassword")}</span>
                     <div className={tw.authInputWrap}>
                       <input
-                        className={tw.authInputNoIcon}
+                        className={tw.authInputCredential}
                         type="password"
+                        dir="ltr"
                         placeholder="********"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}

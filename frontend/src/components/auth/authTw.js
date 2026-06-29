@@ -92,6 +92,15 @@ export const authInput = `${inputBase} ps-10 pe-3.5`;
 /** No leading icon */
 export const authInputNoIcon = `${inputBase} px-3.5`;
 
+/** Email / password values — LTR typing inside RTL forms */
+export const authInputCredential = `${authInputNoIcon} ltr text-left`;
+
+/** Password with visibility toggle — extra start padding for eye icon (physical left) */
+export const authInputCredentialPassword = `${inputBase} ltr text-left pl-12 pr-3.5`;
+
+/** Email field with leading icon */
+export const authInputCredentialWithIcon = `${authInput} ltr text-left`;
+
 export const authSelectRoot = "relative w-full";
 
 export const authSelectBtn =

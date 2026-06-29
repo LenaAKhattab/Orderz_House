@@ -127,9 +127,11 @@ const Login = () => {
             <span className={tw.authFieldLabel}>{t("auth.login.email")}</span>
             <div className={tw.authInputWrap}>
               <input
-                className={tw.authInputNoIcon}
+                className={tw.authInputCredential}
                 type="email"
                 name="email"
+                dir="ltr"
+                inputMode="email"
                 autoComplete="email"
                 placeholder="name@email.com"
                 value={email}
@@ -149,9 +151,10 @@ const Login = () => {
             </div>
             <div className={`${tw.authInputWrap} auth-input-wrap--password-toggle`}>
               <input
-                className={tw.authInputNoIcon}
+                className={tw.authInputCredentialPassword}
                 type={showPassword ? "text" : "password"}
                 name="password"
+                dir="ltr"
                 autoComplete="current-password"
                 placeholder="********"
                 value={password}
