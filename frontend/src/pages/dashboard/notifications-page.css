@@ -6,7 +6,7 @@
   --fn-radius-md: 26px;
   --fn-radius-sm: 14px;
   --fn-surface-bg: rgba(255, 255, 255, 0.82);
-  --fn-surface-border: 1px solid rgba(226, 232, 240, 0.75);
+  --fn-surface-border: 1px solid rgba(148, 163, 184, 0.78);
   --fn-surface-shadow:
     0 12px 32px rgba(148, 163, 184, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.75);
@@ -89,7 +89,7 @@
   gap: 12px;
   padding: 12px 14px;
   text-align: right;
-  border-inline-end: 1px solid rgba(226, 232, 240, 0.55);
+  border-inline-end: 1px solid rgba(148, 163, 184, 0.7);
   border-radius: calc(var(--fn-radius-lg) - 8px);
   transition:
     background 0.22s var(--fn-ease),
@@ -365,7 +365,7 @@
   padding-inline-end: clamp(16px, 2.2vw, 20px);
   border-radius: 0;
   border: none;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.62);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.72);
   background: rgba(255, 255, 255, 0.78);
   font-family: inherit;
   font-size: inherit;

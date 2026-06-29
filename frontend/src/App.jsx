@@ -85,6 +85,7 @@ import {
   clearGuestPoolLoginToastFlag,
   isGuestPoolLoginToast,
 } from "./utils/guestPoolLoginToast";
+import PopupAdsHost from "./components/ads/PopupAdsHost";
 
 function AnalyticsBridge() {
   const location = useLocation();
@@ -166,6 +167,7 @@ function App() {
           <AnalyticsBridge />
           <ToastDashboardExitBridge />
           <ToastGuestPoolBridge />
+          <PopupAdsHost />
           <Routes>
             <Route element={<PublicLayout />}>
               <Route

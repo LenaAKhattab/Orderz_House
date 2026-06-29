@@ -11,6 +11,8 @@ const {
   duplicateAdValidatorsWithNote,
   adIdParam,
 } = require("../validators/adsValidators");
+const popupAdsController = require("../controllers/popupAdsController");
+const { popupAdBodyValidators, popupAdIdParam } = require("../validators/popupAdsValidators");
 
 const router = express.Router();
 
@@ -25,5 +27,17 @@ router.get("/ads/:id", ...adsGuard, adIdParam, validateRequest, adminAdsControll
 router.patch("/ads/:id", ...adsGuard, updateAdValidatorsWithNote, validateRequest, adminAdsController.updateAd);
 router.delete("/ads/:id", ...adsGuard, deleteAdValidators, validateRequest, adminAdsController.deleteAd);
 router.post("/ads/:id/duplicate", ...adsGuard, duplicateAdValidatorsWithNote, validateRequest, adminAdsController.duplicateAd);
+
+router.get("/popup-ads", ...adsGuard, popupAdsController.listAds);
+router.post("/popup-ads", ...adsGuard, popupAdBodyValidators, validateRequest, popupAdsController.createAd);
+router.patch(
+  "/popup-ads/:id",
+  ...adsGuard,
+  popupAdIdParam,
+  popupAdBodyValidators,
+  validateRequest,
+  popupAdsController.updateAd,
+);
+router.delete("/popup-ads/:id", ...adsGuard, popupAdIdParam, validateRequest, popupAdsController.deleteAd);
 
 module.exports = router;

@@ -3199,3 +3199,128 @@
 .oh-admin-ads__reorder-toolbar--studio {
   margin-bottom: 12px;
 }
+
+/* Course side text ad settings */
+.oh-course-side-ad-settings {
+  display: grid;
+  gap: 1rem;
+}
+
+.oh-course-side-ad-settings__grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 960px) {
+  .oh-course-side-ad-settings__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+    align-items: start;
+  }
+}
+
+.oh-course-side-ad-settings__form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.oh-course-side-ad-settings__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.oh-course-side-ad-settings__field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.oh-course-side-ad-settings__field input,
+.oh-course-side-ad-settings__field textarea,
+.oh-course-side-ad-settings__field select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0.5rem 0.65rem;
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: #fff;
+  font: inherit;
+  font-weight: 600;
+  color: #1e293b;
+  box-sizing: border-box;
+}
+
+.oh-course-side-ad-settings__field textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.oh-course-side-ad-settings__row {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 720px) {
+  .oh-course-side-ad-settings__row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.oh-course-side-ad-settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+.oh-course-side-ad-settings__error {
+  margin: 0 0 0.75rem;
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.oh-course-side-ad-settings__preview {
+  border-radius: 16px;
+  border: 1px dashed rgba(191, 219, 254, 0.85);
+  background: linear-gradient(165deg, #f8fafc 0%, #ffffff 100%);
+  padding: 0.85rem;
+}
+
+.oh-course-side-ad-settings__preview-title {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #1e40af;
+}
+
+.oh-course-side-ad-settings__preview-stage {
+  position: relative;
+  min-height: 200px;
+  border-radius: 14px;
+  background: rgba(239, 246, 255, 0.45);
+  overflow: hidden;
+}
+
+.oh-course-side-ad-settings__preview-stage .fc-side-ad {
+  display: block !important;
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.oh-course-side-ad-settings__preview-hint {
+  position: absolute;
+  inset-inline-end: 12px;
+  bottom: 10px;
+  margin: 0;
+  max-width: 12rem;
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: #64748b;
+  line-height: 1.45;
+}

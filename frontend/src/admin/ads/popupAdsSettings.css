@@ -1,0 +1,187 @@
+.oh-popup-ads-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.oh-popup-ads-settings__list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.oh-popup-ads-settings__list-title {
+  font-weight: 800;
+  color: #334155;
+}
+
+.oh-popup-ads-settings__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow: auto;
+}
+
+.oh-popup-ads-settings__list-item {
+  width: 100%;
+  text-align: right;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.oh-popup-ads-settings__list-item.is-active {
+  border-color: rgba(47, 59, 101, 0.45);
+  background: rgba(47, 59, 101, 0.06);
+}
+
+.oh-popup-ads-settings__list-item-title {
+  display: block;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.oh-popup-ads-settings__list-item-meta {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.oh-popup-ads-settings__empty {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.oh-popup-ads-settings__grid {
+  display: grid;
+  grid-template-columns: 1fr min(260px, 32%);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .oh-popup-ads-settings__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.oh-popup-ads-settings__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.oh-popup-ads-settings__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: right;
+}
+
+.oh-popup-ads-settings__field > span {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.oh-popup-ads-settings__field input,
+.oh-popup-ads-settings__field textarea,
+.oh-popup-ads-settings__field select {
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.oh-popup-ads-settings__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .oh-popup-ads-settings__row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.oh-popup-ads-settings__toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #334155;
+}
+
+.oh-popup-ads-settings__upload-row {
+  margin-top: 6px;
+}
+
+.oh-popup-ads-settings__upload-btn {
+  cursor: pointer;
+}
+
+.oh-popup-ads-settings__error {
+  font-size: 0.78rem;
+  color: #b91c1c;
+}
+
+.oh-popup-ads-settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.oh-popup-ads-settings__hint {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.oh-popup-ads-settings__hint-title {
+  margin: 0 0 10px;
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: #334155;
+}
+
+.oh-popup-ads-settings__hint-list {
+  margin: 0;
+  padding: 0 18px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: #64748b;
+}
+
+/* Popup ads management modal */
+.oh-popup-ads-modal .dash-ui-modal__panel {
+  max-width: min(920px, 96vw);
+}
+
+.oh-popup-ads-modal .dash-ui-modal__body {
+  padding-top: 0.5rem;
+}
+
+.oh-popup-ads-modal .oh-popup-ads-settings__grid {
+  max-height: min(62vh, 640px);
+  overflow: auto;
+  padding-inline-end: 2px;
+}
+
+@media (max-width: 900px) {
+  .oh-popup-ads-modal .oh-popup-ads-settings__grid {
+    max-height: none;
+    overflow: visible;
+  }
+}

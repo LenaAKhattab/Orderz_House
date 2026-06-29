@@ -20,6 +20,7 @@ import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import DashboardHubEmpty from "../../components/dashboard/hub/DashboardHubEmpty";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
 import CoursesPageSkeleton from "../../components/dashboard/courses/CoursesPageSkeleton";
+import CourseSideTextAd from "../../components/dashboard/courses/CourseSideTextAd";
 import DashboardBannerIllustration from "../../components/dashboard/hub/DashboardBannerIllustration";
 import "../../styles/dashboardHub.css";
 import "./freelancerCourses.css";
@@ -477,6 +478,8 @@ export default function FreelancerCoursesPage() {
               <DashboardBannerIllustration className="fc-hero__art-img" />
             </div>
           </header>
+
+          <CourseSideTextAd context="courses_list" />
 
           <div className="fc-surface fc-stats-bar" aria-label={t("freelancerDashboard.training.coursesSummaryAria")}>
             <StatSegment

@@ -6,6 +6,7 @@ import { hasBlockingErrors, validateAdFormFrontend } from "./adFormValidation";
 import AdPreview from "./AdPreview";
 import AdsManagementTable from "./AdsManagementTable";
 import AdsReorderSection from "./AdsReorderSection";
+import PopupAdsManagementModal from "./PopupAdsManagementModal";
 import "./adminAds.css";
 import {
   adminCreateAdRequest,
@@ -56,6 +57,7 @@ export default function AdsPage() {
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [activeStep, setActiveStep] = useState(1);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
+  const [popupAdsOpen, setPopupAdsOpen] = useState(false);
   const [lastEditedAt, setLastEditedAt] = useState(null);
   const [formBaseline, setFormBaseline] = useState(() => JSON.stringify(emptyAdForm()));
   const previewDraft = useDeferredValue(form);
@@ -283,12 +285,17 @@ export default function AdsPage() {
             <button type="button" className="btn btn-primary" onClick={startNewAd}>
               إعلان جديد
             </button>
+            <button type="button" className="btn btn-secondary" onClick={() => setPopupAdsOpen(true)}>
+              الإعلانات المنبثقة
+            </button>
             <button type="button" className="btn btn-secondary" disabled={loading} onClick={() => load()}>
               تحديث
             </button>
           </>
         }
       />
+
+      <PopupAdsManagementModal open={popupAdsOpen} onClose={() => setPopupAdsOpen(false)} />
 
       {loadError ? (
         <DashboardErrorState

@@ -20,6 +20,8 @@ const {
   courseIdParam,
   courseFileStreamValidators,
 } = require("../validators/coursesValidators");
+const courseTextAdsController = require("../controllers/courseTextAdsController");
+const { adBodyValidators, adIdParam } = require("../validators/courseTextAdsValidators");
 
 const router = express.Router();
 
@@ -31,6 +33,23 @@ const coursesGuard = [
 ];
 
 router.get("/courses/freelancers", ...coursesGuard, adminCoursesController.listFreelancers);
+router.get("/course-text-ads", ...coursesGuard, courseTextAdsController.listAds);
+router.post("/course-text-ads", ...coursesGuard, adBodyValidators, validateRequest, courseTextAdsController.createAd);
+router.patch(
+  "/course-text-ads/:id",
+  ...coursesGuard,
+  adIdParam,
+  adBodyValidators,
+  validateRequest,
+  courseTextAdsController.updateAd,
+);
+router.delete(
+  "/course-text-ads/:id",
+  ...coursesGuard,
+  adIdParam,
+  validateRequest,
+  courseTextAdsController.deleteAd,
+);
 router.get("/courses", ...coursesGuard, listCoursesValidators, validateRequest, adminCoursesController.listCourses);
 router.post("/courses", ...coursesGuard, createCourseValidators, validateRequest, adminCoursesController.createCourse);
 router.get(

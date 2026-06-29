@@ -34,6 +34,7 @@ import WidgetLoadError from "../../components/dashboard/hub/controlCenter/Widget
 import AdminCourseCreateComposer from "../../admin/courses/AdminCourseCreateComposer";
 import ExamQuestionsEditor, { isExamQuestionsEditorValid } from "../../admin/courses/ExamQuestionsEditor";
 import { parseExamQuestions } from "../../utils/courseExamQuestions";
+import CourseTextAdsModal from "../../admin/courses/CourseTextAdsModal";
 import CourseFileManagerSection from "../../admin/courses/CourseFileManagerSection";
 import CourseUrlField from "../../admin/courses/CourseUrlField";
 import "../../admin/courses/adminCourseComposer.css";
@@ -113,6 +114,7 @@ export default function AdminCoursesPage() {
   const [testFileUploading, setTestFileUploading] = useState(false);
   const [promptFileUploading, setPromptFileUploading] = useState(false);
   const [modelAnswerFileUploading, setModelAnswerFileUploading] = useState(false);
+  const [courseTextAdsModalOpen, setCourseTextAdsModalOpen] = useState(false);
   const [fileRemoveBusy, setFileRemoveBusy] = useState(false);
   /** PDF files chosen during create — uploaded right after the course is created. */
   const [createPendingTestFile, setCreatePendingTestFile] = useState(null);
@@ -1131,9 +1133,14 @@ export default function AdminCoursesPage() {
             { label: "الكورسات" },
           ]}
           actions={
-            <button type="button" className="btn btn-primary" onClick={openCreateComposerModal}>
-              إنشاء دورة جديدة
-            </button>
+            <>
+              <button type="button" className="btn btn-secondary" onClick={() => setCourseTextAdsModalOpen(true)}>
+                إدارة إعلان الدورات
+              </button>
+              <button type="button" className="btn btn-primary" onClick={openCreateComposerModal}>
+                إنشاء دورة جديدة
+              </button>
+            </>
           }
         />
 
@@ -2072,6 +2079,12 @@ export default function AdminCoursesPage() {
           </div>
         </div>
       ) : null}
+
+      <CourseTextAdsModal
+        open={courseTextAdsModalOpen}
+        onClose={() => setCourseTextAdsModalOpen(false)}
+        courses={courses}
+      />
     </>
   );
 }

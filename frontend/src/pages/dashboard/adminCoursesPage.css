@@ -1293,3 +1293,238 @@
   font-weight: 700;
   line-height: 1.5;
 }
+
+/* Course text ads modal */
+.oh-course-text-ads-modal .dash-ui-modal__panel {
+  max-width: min(560px, 96vw);
+}
+
+.oh-course-text-ads-modal__tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin: -0.25rem 0 0.85rem;
+  padding: 0.25rem;
+  border-radius: 12px;
+  background: rgba(241, 245, 249, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.oh-course-text-ads-modal__tab {
+  flex: 1 1 0;
+  min-height: 38px;
+  padding: 0.45rem 0.65rem;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #64748b;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.oh-course-text-ads-modal__tab:hover {
+  color: #334155;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.oh-course-text-ads-modal__tab.is-active {
+  color: #1e40af;
+  background: #fff;
+  box-shadow: 0 4px 14px -8px rgba(59, 130, 246, 0.35);
+}
+
+.oh-course-text-ads-modal__body {
+  display: grid;
+  gap: 0.5rem;
+  min-height: 0;
+}
+
+.oh-course-text-ads-modal__panel {
+  min-width: 0;
+}
+
+.oh-course-text-ads-modal__cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.oh-course-text-ads-modal__card {
+  border-radius: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: #fff;
+  padding: 0.75rem 0.8rem;
+  box-shadow: 0 4px 14px -12px rgba(15, 23, 42, 0.18);
+}
+
+.oh-course-text-ads-modal__card.is-editing {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: linear-gradient(165deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.oh-course-text-ads-modal__card-head {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.oh-course-text-ads-modal__card-text {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.5;
+  color: #1e293b;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.oh-course-text-ads-modal__card-meta {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.oh-course-text-ads-modal__chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #475569;
+  background: rgba(241, 245, 249, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.oh-course-text-ads-modal__chip--on {
+  color: #047857;
+  background: rgba(209, 250, 229, 0.65);
+  border-color: rgba(167, 243, 208, 0.75);
+}
+
+.oh-course-text-ads-modal__chip--off {
+  color: #64748b;
+  background: rgba(248, 250, 252, 0.95);
+}
+
+.oh-course-text-ads-modal__chip--course {
+  color: #1e40af;
+  background: rgba(219, 234, 254, 0.55);
+  border-color: rgba(191, 219, 254, 0.75);
+}
+
+.oh-course-text-ads-modal__card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+}
+
+.oh-course-text-ads-modal__card-edit {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(191, 219, 254, 0.75);
+}
+
+.oh-course-text-ads-modal__card-edit-label {
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #1e40af;
+}
+
+.oh-course-text-ads-modal__empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 0.5rem;
+  text-align: center;
+}
+
+.oh-course-text-ads-modal__empty-state p {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 650;
+  color: #64748b;
+}
+
+.oh-course-text-ads-modal__form {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.oh-course-text-ads-modal__form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+  padding-top: 0.25rem;
+}
+
+.oh-course-text-ads-modal__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.oh-course-text-ads-modal__field {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.oh-course-text-ads-modal__field input,
+.oh-course-text-ads-modal__field textarea,
+.oh-course-text-ads-modal__field select {
+  width: 100%;
+  min-height: 38px;
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: #fff;
+  font: inherit;
+  font-weight: 600;
+  color: #1e293b;
+  box-sizing: border-box;
+}
+
+.oh-course-text-ads-modal__field textarea {
+  min-height: 68px;
+  resize: vertical;
+}
+
+.oh-course-text-ads-modal__row {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 480px) {
+  .oh-course-text-ads-modal__row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.oh-course-text-ads-modal__error {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #b91c1c;
+}

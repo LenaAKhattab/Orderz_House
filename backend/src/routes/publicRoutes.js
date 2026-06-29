@@ -7,11 +7,16 @@ const publicFaqController = require("../controllers/publicFaqController");
 const publicWebsitePageController = require("../controllers/publicWebsitePageController");
 const publicSitePageController = require("../controllers/publicSitePageController");
 const publicAdsController = require("../controllers/publicAdsController");
+const publicPopupAdsController = require("../controllers/publicPopupAdsController");
 const publicSubSubcategoriesController = require("../controllers/publicSubSubcategoriesController");
 const {
   publicListAdsValidators,
   publicAdEventValidators,
 } = require("../validators/adsValidators");
+const {
+  publicListPopupAdsValidators,
+  publicPopupAdEventValidators,
+} = require("../validators/popupAdsValidators");
 const { recordPublicPageViewValidators } = require("../validators/publicPageViewValidators");
 const { sitePageSlugParam } = require("../validators/publicSitePageValidators");
 const { publicSubSubcategoriesListValidators } = require("../validators/categoriesValidators");
@@ -54,6 +59,26 @@ router.post(
   publicAdEventValidators,
   validateRequest,
   publicAdsController.recordClick,
+);
+
+router.get(
+  "/public/popup-ads",
+  optionalAuth,
+  publicListPopupAdsValidators,
+  validateRequest,
+  publicPopupAdsController.listActive,
+);
+router.post(
+  "/public/popup-ads/:id/impression",
+  publicPopupAdEventValidators,
+  validateRequest,
+  publicPopupAdsController.recordImpression,
+);
+router.post(
+  "/public/popup-ads/:id/click",
+  publicPopupAdEventValidators,
+  validateRequest,
+  publicPopupAdsController.recordClick,
 );
 
 module.exports = router;

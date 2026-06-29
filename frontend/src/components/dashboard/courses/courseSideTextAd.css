@@ -1,0 +1,144 @@
+/* Freelancer courses — inline horizontal text ticker (fc-text-ad) */
+
+.fc-text-ad {
+  --fc-text-ad-duration: 18s;
+  --fc-text-ad-font-size: 1.05rem;
+  --fc-text-ad-line-height: 2rem;
+
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.fc-text-ad__shell {
+  width: 100%;
+  min-width: 0;
+}
+
+.fc-text-ad__card {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 22px;
+  padding: 0.75rem 0.9rem;
+  background: linear-gradient(165deg, #ffffff 0%, #f8fbff 48%, #eff6ff 100%);
+  border: 1px solid rgba(147, 197, 253, 0.5);
+  box-shadow:
+    0 10px 28px -14px rgba(37, 99, 235, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.fc-text-ad__card:hover {
+  border-color: rgba(59, 130, 246, 0.42);
+  box-shadow:
+    0 14px 32px -12px rgba(37, 99, 235, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+
+.fc-text-ad__track {
+  container-type: inline-size;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: var(--fc-text-ad-line-height);
+}
+
+.fc-text-ad__text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-block;
+  white-space: nowrap;
+  will-change: transform;
+  height: 100%;
+  line-height: var(--fc-text-ad-line-height);
+  font-size: var(--fc-text-ad-font-size);
+  font-weight: 750;
+  color: var(--fc-text-ad-color, #1e40af);
+  letter-spacing: 0.01em;
+}
+
+.fc-text-ad--color-blue {
+  --fc-text-ad-color: #1e40af;
+}
+
+.fc-text-ad--color-black {
+  --fc-text-ad-color: #0f172a;
+}
+
+.fc-text-ad--color-red {
+  --fc-text-ad-color: #dc2626;
+}
+
+.fc-text-ad--speed-slow {
+  --fc-text-ad-duration: 24s;
+}
+
+.fc-text-ad--speed-normal {
+  --fc-text-ad-duration: 16s;
+}
+
+.fc-text-ad--speed-fast {
+  --fc-text-ad-duration: 10s;
+}
+
+/* English LTR: enter from the right, exit to the left */
+.fc-text-ad--ltr .fc-text-ad__text {
+  animation: fc-text-ad-pass-ltr var(--fc-text-ad-duration) linear infinite;
+}
+
+@keyframes fc-text-ad-pass-ltr {
+  from {
+    transform: translateX(100cqi);
+  }
+  to {
+    transform: translateX(calc(-100%));
+  }
+}
+
+/* Arabic RTL: enter from the left, exit to the right */
+.fc-text-ad--rtl .fc-text-ad__text {
+  animation: fc-text-ad-pass-rtl var(--fc-text-ad-duration) linear infinite;
+}
+
+@keyframes fc-text-ad-pass-rtl {
+  from {
+    transform: translateX(calc(-100%));
+  }
+  to {
+    transform: translateX(100cqi);
+  }
+}
+
+.fc-text-ad:hover .fc-text-ad__text {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-text-ad__track {
+    height: auto;
+    overflow: visible;
+    text-align: center;
+  }
+
+  .fc-text-ad__text {
+    position: static;
+    animation: none !important;
+    transform: none !important;
+    will-change: auto;
+    white-space: normal;
+    height: auto;
+    line-height: 1.45;
+    width: 100%;
+  }
+}

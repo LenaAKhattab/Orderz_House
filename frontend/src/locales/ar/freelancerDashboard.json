@@ -11,6 +11,12 @@
     "browseOrders": "تصفح الطلبات المتاحة",
     "myOrders": "استعراض طلباتي",
     "metricsAria": "ملخص سريع",
+    "coursesStart": {
+      "ariaLabel": "ابدأ من الدورات",
+      "title": "ابدأ من الدورات",
+      "body": "الدورات هي خطوتك الأولى لفهم طريقة العمل واستلام الطلبات.",
+      "cta": "عرض الدورات"
+    },
     "welcomeName": "مرحباً، {{name}}",
     "controlCenterTitle": "مركز التحكم",
     "controlCenterSubtitle": "نظرة شاملة على عملك واشتراكك وطلباتك."

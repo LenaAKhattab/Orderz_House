@@ -47,6 +47,7 @@ import { useToast } from "../../components/ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import CourseDetailsPageSkeleton from "../../components/dashboard/courses/CourseDetailsPageSkeleton";
+import CourseSideTextAd from "../../components/dashboard/courses/CourseSideTextAd";
 import {
   getStudentCourseFileDownloadName,
   isLegacyBrokenCloudinaryPdfUrl,
@@ -1800,6 +1801,8 @@ export default function FreelancerCourseDetailsPage() {
               </li>
             </ul>
           </header>
+
+          <CourseSideTextAd context="course_details" courseId={id} />
 
           {courseDone && !isFinalTestView ? (
             <div className="fcd-banner fcd-banner--success fdash-surface-3d fdash-surface-3d--soft" role="status">

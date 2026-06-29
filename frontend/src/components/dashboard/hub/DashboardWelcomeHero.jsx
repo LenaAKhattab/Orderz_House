@@ -2,6 +2,7 @@ import { useTranslation } from "../../../i18n/LanguageProvider";
 import DashboardIllustration from "./DashboardIllustration";
 import DashboardMetricItem from "./DashboardMetricItem";
 import DashboardTipCard from "./DashboardTipCard";
+import DashboardCoursesStartCard from "./DashboardCoursesStartCard";
 import DashboardButton from "./DashboardButton";
 import { IconBriefcase, IconChevronStart } from "./icons/DashboardIcons";
 
@@ -12,6 +13,7 @@ export default function DashboardWelcomeHero({
   subtitle,
   primaryCta,
   secondaryCta,
+  showCoursesStartCard = false,
 }) {
   const { t } = useTranslation();
 
@@ -27,7 +29,10 @@ export default function DashboardWelcomeHero({
   };
 
   return (
-    <section className="fdash-welcome fdash-surface-3d" aria-label={t("freelancerDashboard.hero.ariaLabel")}>
+    <section
+      className={`fdash-welcome fdash-surface-3d${showCoursesStartCard ? " fdash-welcome--freelancer" : ""}`}
+      aria-label={t("freelancerDashboard.hero.ariaLabel")}
+    >
       <div className="fdash-welcome__hero">
         <div className="fdash-welcome__content">
           <h2 className="fdash-welcome__title">{resolvedTitle}</h2>
@@ -39,14 +44,24 @@ export default function DashboardWelcomeHero({
       </div>
 
       <div className="fdash-welcome__panel fdash-surface-inset">
-        {tip ? (
+        {tip && !showCoursesStartCard ? (
           <div className="fdash-welcome__aside">
             <DashboardTipCard {...tip} embedded />
           </div>
         ) : null}
 
         <div className="fdash-welcome__main">
-          <div className="fdash-welcome__metrics" role="list" aria-label={t("freelancerDashboard.hero.metricsAria")}>
+          <div
+            className={`fdash-welcome__metrics${showCoursesStartCard ? " fdash-welcome__metrics--with-courses" : ""}${showCoursesStartCard && tip ? " fdash-welcome__metrics--with-tip" : ""}`}
+            role="list"
+            aria-label={t("freelancerDashboard.hero.metricsAria")}
+          >
+            {showCoursesStartCard ? <DashboardCoursesStartCard /> : null}
+            {showCoursesStartCard && tip ? (
+              <div className="fdash-welcome__tip-partition">
+                <DashboardTipCard {...tip} embedded />
+              </div>
+            ) : null}
             {metrics.map((m) => (
               <DashboardMetricItem key={m.id} {...m} inline />
             ))}

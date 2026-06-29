@@ -1315,6 +1315,24 @@ export const postPublicAdClickRequest = async (adId, params = {}) => {
   });
 };
 
+/** Active popup ads for current pathname (optional auth for audience targeting). */
+export const getPublicPopupAdsRequest = async ({ pathname = "/" } = {}) => {
+  const { data } = await api.get("/public/popup-ads", { params: { pathname }, timeout: 12000 });
+  return data;
+};
+
+export const postPublicPopupAdImpressionRequest = async (adId) => {
+  await api.post(`/public/popup-ads/${adId}/impression`, {}, {
+    validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
+  });
+};
+
+export const postPublicPopupAdClickRequest = async (adId) => {
+  await api.post(`/public/popup-ads/${adId}/click`, {}, {
+    validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
+  });
+};
+
 // Ads (admin / super_admin)
 export const adminListAdsRequest = async () => {
   const { data } = await api.get("/admin/ads");
@@ -1357,6 +1375,27 @@ export const adminUploadAdImageRequest = async (file, purpose = "background") =>
   fd.append("image", file);
   fd.append("purpose", purpose === "main" ? "main" : "background");
   const { data } = await api.post("/admin/ads/upload-image", fd, { timeout: 120000 });
+  return data;
+};
+
+// Popup ads (admin / super_admin)
+export const adminListPopupAdsRequest = async () => {
+  const { data } = await api.get("/admin/popup-ads");
+  return data;
+};
+
+export const adminCreatePopupAdRequest = async (payload) => {
+  const { data } = await api.post("/admin/popup-ads", payload);
+  return data;
+};
+
+export const adminUpdatePopupAdRequest = async (id, payload) => {
+  const { data } = await api.patch(`/admin/popup-ads/${id}`, payload);
+  return data;
+};
+
+export const adminDeletePopupAdRequest = async (id) => {
+  const { data } = await api.delete(`/admin/popup-ads/${id}`);
   return data;
 };
 
@@ -1474,6 +1513,33 @@ export const adminListCourseFreelancersRequest = async (params = {}) => {
 // Courses (freelancer)
 export const freelancerListMyCoursesRequest = async () => {
   const { data } = await api.get("/freelancer/courses");
+  return data;
+};
+
+export const freelancerGetCourseSideTextAdRequest = async ({ context, courseId } = {}) => {
+  const params = { context };
+  if (courseId != null) params.courseId = courseId;
+  const { data } = await api.get("/freelancer/course-side-text-ad", { params, timeout: 12000 });
+  return data;
+};
+
+export const adminListCourseTextAdsRequest = async () => {
+  const { data } = await api.get("/admin/course-text-ads");
+  return data;
+};
+
+export const adminCreateCourseTextAdRequest = async (payload) => {
+  const { data } = await api.post("/admin/course-text-ads", payload);
+  return data;
+};
+
+export const adminUpdateCourseTextAdRequest = async (id, payload) => {
+  const { data } = await api.patch(`/admin/course-text-ads/${id}`, payload);
+  return data;
+};
+
+export const adminDeleteCourseTextAdRequest = async (id) => {
+  const { data } = await api.delete(`/admin/course-text-ads/${id}`);
   return data;
 };
 

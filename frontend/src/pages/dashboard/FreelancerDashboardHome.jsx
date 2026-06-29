@@ -579,7 +579,7 @@ export default function FreelancerDashboardHome({ user }) {
 
     <DashboardHubPage>
 
-      <DashboardWelcomeHero welcomeName={welcomeName} metrics={metrics} tip={tip} />
+      <DashboardWelcomeHero welcomeName={welcomeName} metrics={metrics} tip={tip} showCoursesStartCard />
 
       {showAccountReadinessNotice ? (
 

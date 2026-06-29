@@ -11,6 +11,12 @@
     "browseOrders": "Browse available orders",
     "myOrders": "View my orders",
     "metricsAria": "Quick summary",
+    "coursesStart": {
+      "ariaLabel": "Start with courses",
+      "title": "Start with Courses",
+      "body": "Courses are your first step to understand the workflow and receive orders.",
+      "cta": "View courses"
+    },
     "welcomeName": "Hello, {{name}}",
     "controlCenterTitle": "Control center",
     "controlCenterSubtitle": "A complete view of your work, subscription, and orders."
