@@ -107,14 +107,6 @@ export default function ClientProfilePage() {
             <span className="oh-account-label">رقم الجوال</span>
             <p className="oh-account-value">{user?.phone || "—"}</p>
           </div>
-          <div>
-            <span className="oh-account-label">اسم الشركة</span>
-            {user?.companyName ? (
-              <p className="oh-account-value">{user.companyName}</p>
-            ) : (
-              <p className="oh-account-empty">لم يُذكر اسم شركة — يمكن إضافته من الإعدادات.</p>
-            )}
-          </div>
         </div>
       </div>
 
