@@ -22,9 +22,8 @@ export function buildTopRisks({ intelligence, attention }) {
       severity: SEVERITY.urgent,
       icon: "🔴",
       label: "عاجل",
-      text: `${formatInt(staleOrders)} طلب متأخر أكثر من 72 ساعة`,
-      description: "طلبات مفتوحة منذ أكثر من 72 ساعة دون إغلاق أو تقدم",
-      to: SA_ROUTES.orders,
+      text: `${formatInt(staleOrders)} طلب منصة متأخر أكثر من 72 ساعة`,
+      description: "طلبات منصة مفتوحة منذ أكثر من 72 ساعة دون إغلاق أو تقدم — لا توجد صفحة إدارة مخصصة حالياً",
     });
   }
 
@@ -75,8 +74,7 @@ export function buildTopRisks({ intelligence, attention }) {
       icon: "🟡",
       label: "متوسط",
       text: `فئة «${shortage.name}» تعاني نقصاً في المستقلين`,
-      description: "عدد الطلبات في الفئة أعلى من عدد المستقلين المسجّلين فيها",
-      to: SA_ROUTES.orders,
+      description: "عدد طلبات المنصة في الفئة أعلى من عدد المستقلين المسجّلين فيها",
     });
   }
 

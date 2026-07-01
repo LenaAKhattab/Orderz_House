@@ -3,14 +3,11 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 import { useAuth } from "../context/useAuth";
 import { getNotificationsPath } from "../constants/authRoutes";
+import AdminGroupedNavList from "../components/dashboard/AdminGroupedNavList";
 import {
-  ADMIN_NAV_CREATE_ORDER,
-  ADMIN_NAV_HOME,
-  ADMIN_NAV_MAIN,
   ADMIN_NAV_NOTIFICATIONS,
   adminBreadcrumb,
-  filterAdminNavItems,
-  getAdminDelegatedSuperAdminNav,
+  filterAdminNavSections,
 } from "../constants/adminNav";
 import { userHasPermission } from "../constants/dashboardPermissions";
 import NotificationsBell from "../components/notifications/NotificationsBell";
@@ -71,13 +68,10 @@ export default function AdminLayout() {
   const crumb = useMemo(() => adminBreadcrumb(pathname, t), [pathname, t]);
   const role = user?.primaryRole || user?.role;
   const notificationsPath = getNotificationsPath(role);
-  const businessNav = useMemo(() => filterAdminNavItems(ADMIN_NAV_MAIN, user, userHasPermission), [user]);
-  const delegatedSuperNav = useMemo(
-    () => getAdminDelegatedSuperAdminNav(user, userHasPermission),
-    [user],
+  const navSections = useMemo(() => filterAdminNavSections(user, userHasPermission), [user]);
+  const hasBusinessPermissions = navSections.some(
+    (section) => section.id !== "overview" && section.items.length > 0,
   );
-  const showCreateOrder = userHasPermission(user, ADMIN_NAV_CREATE_ORDER.permission);
-  const hasBusinessPermissions = businessNav.length > 0 || delegatedSuperNav.length > 0 || showCreateOrder;
   const sidebarWrapClassName = ["oh-sa-sidebar-wrap", sidebarOpen ? "oh-sa-sidebar-wrap--open" : ""]
     .filter(Boolean)
     .join(" ");
@@ -104,94 +98,35 @@ export default function AdminLayout() {
           <div className="oh-sa-brand__sub">{t("dashboard.nav.admin.panelTitle")}</div>
         </div>
 
-        <ul className="oh-sa-nav__list">
-          <li>
-            <NavLink
-              to={ADMIN_NAV_HOME.to}
-              end={Boolean(ADMIN_NAV_HOME.end)}
-              className={({ isActive }) => `oh-sa-navlink${isActive ? " oh-sa-navlink--active" : ""}`.trim()}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <span className="oh-sa-navlink__icon" aria-hidden>
-                {ADMIN_NAV_HOME.icon}
-              </span>
-              {resolveNavLabel(ADMIN_NAV_HOME, t)}
-            </NavLink>
-          </li>
-          {businessNav.map((item) => (
-            <li key={item.to}>
-              <NavLink
-                to={item.to}
-                end={Boolean(item.end)}
-                className={({ isActive }) => {
-                  const prefix = item.matchPrefix && pathname.startsWith(item.matchPrefix);
-                  const active = isActive || prefix;
-                  return `oh-sa-navlink${active ? " oh-sa-navlink--active" : ""}`.trim();
-                }}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <span className="oh-sa-navlink__icon" aria-hidden>
-                  {item.icon}
-                </span>
-                {resolveNavLabel(item, t)}
-              </NavLink>
-            </li>
-          ))}
-          {delegatedSuperNav.map((item) => (
-            <li key={item.to}>
-              <NavLink
-                to={item.to}
-                end={Boolean(item.end)}
-                className={({ isActive }) => {
-                  const prefix = item.matchPrefix && pathname.startsWith(item.matchPrefix);
-                  const active = isActive || prefix;
-                  return `oh-sa-navlink${active ? " oh-sa-navlink--active" : ""}`.trim();
-                }}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <span className="oh-sa-navlink__icon" aria-hidden>
-                  {item.icon}
-                </span>
-                {resolveNavLabel(item, t)}
-              </NavLink>
-            </li>
-          ))}
-          {showCreateOrder ? (
+        <div className="oh-sa-nav__scroll">
+          <AdminGroupedNavList
+            sections={navSections}
+            pathname={pathname}
+            t={t}
+            onNavigate={() => setSidebarOpen(false)}
+          />
+
+          <ul className="oh-sa-nav__list oh-sa-nav__list--muted">
             <li>
               <NavLink
-                to={ADMIN_NAV_CREATE_ORDER.to}
+                to={ADMIN_NAV_NOTIFICATIONS.to}
                 className={({ isActive }) => `oh-sa-navlink${isActive ? " oh-sa-navlink--active" : ""}`.trim()}
                 onClick={() => setSidebarOpen(false)}
               >
                 <span className="oh-sa-navlink__icon" aria-hidden>
-                  {ADMIN_NAV_CREATE_ORDER.icon}
+                  {ADMIN_NAV_NOTIFICATIONS.icon}
                 </span>
-                {resolveNavLabel(ADMIN_NAV_CREATE_ORDER, t)}
+                <span className="oh-sa-navlink__label">{resolveNavLabel(ADMIN_NAV_NOTIFICATIONS, t)}</span>
               </NavLink>
             </li>
+          </ul>
+
+          {!hasBusinessPermissions ? (
+            <p className="oh-admin-nav-empty" style={{ padding: "12px 16px", fontSize: "0.82rem", color: "#5b6684", lineHeight: 1.6 }}>
+              {t("dashboard.nav.admin.noPermissions")}
+            </p>
           ) : null}
-        </ul>
-
-        <ul className="oh-sa-nav__list">
-          <li>
-            <NavLink
-              to={ADMIN_NAV_NOTIFICATIONS.to}
-              className={({ isActive }) => `oh-sa-navlink${isActive ? " oh-sa-navlink--active" : ""}`.trim()}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <span className="oh-sa-navlink__icon" aria-hidden>
-                {ADMIN_NAV_NOTIFICATIONS.icon}
-              </span>
-              {resolveNavLabel(ADMIN_NAV_NOTIFICATIONS, t)}
-            </NavLink>
-          </li>
-        </ul>
-
-        {!hasBusinessPermissions ? (
-          <p className="oh-admin-nav-empty" style={{ padding: "12px 16px", fontSize: "0.82rem", color: "#5b6684", lineHeight: 1.6 }}>
-            {t("dashboard.nav.admin.noPermissions")}
-          </p>
-        ) : null}
+        </div>
 
           </aside>
         </div>

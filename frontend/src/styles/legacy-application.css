@@ -701,6 +701,16 @@ html[dir="ltr"] .toast-stack {
   width: 100%;
 }
 
+.oh-internal-orders__empty-desc {
+  max-width: 520px;
+  margin-inline: auto;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.8;
+  font-weight: 400;
+  color: #64748b;
+}
+
 .oh-internal-orders__table-card {
   width: 100%;
 }

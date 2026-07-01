@@ -5,16 +5,15 @@ import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 import { useAuth } from "../context/useAuth";
 import { useClientCreateOrderModal } from "../context/ClientCreateOrderModalContext";
 import { getAccountSettingsPath, getNotificationsPath } from "../constants/authRoutes";
+import AdminGroupedNavList from "../components/dashboard/AdminGroupedNavList";
 import {
   SUPER_ADMIN_NAV_CREATE_ORDER,
-  SUPER_ADMIN_NAV_MAIN,
-  filterSuperAdminNavItems,
+  filterSuperAdminNavSections,
   superAdminBreadcrumb,
 } from "../constants/superAdminNav";
 import { userHasPermission } from "../constants/dashboardPermissions";
 import NotificationsBell from "../components/notifications/NotificationsBell";
 import { useTranslation } from "../i18n/LanguageProvider";
-import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
 
 import "../styles/dashboardHub.css";
 import "../styles/adminDashboardShell.css";
@@ -100,11 +99,11 @@ export default function SuperAdminLayout() {
   const role = user?.primaryRole || user?.role;
   const notificationsPath = getNotificationsPath(role);
   const accountSettingsPath = getAccountSettingsPath(role);
-  const businessNav = useMemo(
-    () => filterSuperAdminNavItems(SUPER_ADMIN_NAV_MAIN, user, userHasPermission),
-    [user],
-  );
   const showCreateOrder = userHasPermission(user, SUPER_ADMIN_NAV_CREATE_ORDER.permission);
+  const navSections = useMemo(() => {
+    const sections = filterSuperAdminNavSections(user, userHasPermission);
+    return sections.filter((section) => section.items.length > 0 || (section.showCreateOrder && showCreateOrder));
+  }, [user, showCreateOrder]);
   const panelTitleKey =
     role === "admin" ? "dashboard.nav.admin.panelTitle" : "dashboard.nav.superAdmin.panelTitle";
 
@@ -151,55 +150,31 @@ export default function SuperAdminLayout() {
             </div>
 
             <div className="oh-sa-nav__scroll">
-              <ul className="oh-sa-nav__list">
-                {businessNav.map((item) => (
-                  <li key={item.to}>
-                    <NavLink
-                      to={item.to}
-                      end={Boolean(item.end)}
-                      className={({ isActive }) => {
-                        const prefix = item.matchPrefix && pathname.startsWith(item.matchPrefix);
-                        const active = isActive || prefix;
-                        return `oh-sa-navlink${active ? " oh-sa-navlink--active" : ""}`.trim();
-                      }}
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      <span className="oh-sa-navlink__icon" aria-hidden>
-                        {item.icon}
-                      </span>
-                      <span className="oh-sa-navlink__label">{resolveNavLabel(item, t)}</span>
-                    </NavLink>
-                  </li>
-                ))}
-                {showCreateOrder ? (
-                  <li>
-                    <button
-                      type="button"
-                      className="oh-sa-navlink oh-sa-navlink--button"
-                      onClick={() => {
-                        setSidebarOpen(false);
-                        openClientCreateOrderModal();
-                      }}
-                    >
-                      <span className="oh-sa-navlink__icon" aria-hidden>
-                        +
-                      </span>
-                      <span className="oh-sa-navlink__label">{t("dashboard.nav.superAdmin.createRequest")}</span>
-                    </button>
-                  </li>
-                ) : null}
-              </ul>
-
-              <ul className="oh-sa-nav__list oh-sa-nav__list--muted">
-                <li>
-                  <NavLink to="/" className="oh-sa-navlink" onClick={() => setSidebarOpen(false)}>
-                    <span className="oh-sa-navlink__icon" aria-hidden>
-                      ↗
-                    </span>
-                    <span className="oh-sa-navlink__label">{t("dashboard.nav.common.backToWebsite")}</span>
-                  </NavLink>
-                </li>
-              </ul>
+              <AdminGroupedNavList
+                sections={navSections}
+                pathname={pathname}
+                t={t}
+                onNavigate={() => setSidebarOpen(false)}
+                renderSectionExtra={(section) =>
+                  section.showCreateOrder && showCreateOrder ? (
+                    <li>
+                      <button
+                        type="button"
+                        className="oh-sa-navlink oh-sa-navlink--button"
+                        onClick={() => {
+                          setSidebarOpen(false);
+                          openClientCreateOrderModal();
+                        }}
+                      >
+                        <span className="oh-sa-navlink__icon" aria-hidden>
+                          +
+                        </span>
+                        <span className="oh-sa-navlink__label">{t("dashboard.nav.superAdmin.createRequest")}</span>
+                      </button>
+                    </li>
+                  ) : null
+                }
+              />
             </div>
           </aside>
         </div>

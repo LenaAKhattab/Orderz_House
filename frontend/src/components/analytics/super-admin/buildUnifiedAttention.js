@@ -1,5 +1,6 @@
 import { buildTopRisks } from "./buildTopRisks";
 import { formatInt } from "./superAdminHomeBundleUi";
+import { resolveSuperAdminAttentionLink, resolveSuperAdminDashboardHomeLink } from "./superAdminHomeDataUtils";
 
 const SEVERITY = { urgent: 3, medium: 2, info: 1 };
 
@@ -33,7 +34,10 @@ const ALERT_SEVERITY = {
  * Single executive attention list: Top Risks + non-duplicate alerts.
  */
 export function buildUnifiedAttention({ intelligence, attention }) {
-  const risks = buildTopRisks({ intelligence, attention });
+  const risks = buildTopRisks({ intelligence, attention }).map((risk) => ({
+    ...risk,
+    to: resolveSuperAdminDashboardHomeLink(risk.to),
+  }));
   const coveredRiskIds = new Set(risks.map((r) => r.id));
   const items = [...risks];
 
@@ -55,7 +59,7 @@ export function buildUnifiedAttention({ intelligence, attention }) {
       label: meta.label,
       text: alert.title,
       description: `${formatInt(count)} بانتظار المتابعة`,
-      to: alert.path,
+      to: resolveSuperAdminAttentionLink(alert.path, alert.key),
       count,
     });
   }

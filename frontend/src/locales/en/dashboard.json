@@ -53,6 +53,14 @@
       "noPermissions": "You do not have any active permissions. Please contact the super admin.",
       "sidebarAria": "Admin menu"
     },
+    "sections": {
+      "overview": "Overview",
+      "ordersOps": "Orders & operations",
+      "usersSubscriptions": "Users & subscriptions",
+      "contentTraining": "Content & training",
+      "websiteSettings": "Website settings",
+      "administration": "Administration"
+    },
     "superAdmin": {
       "overview": "Overview",
       "plans": "Packages",

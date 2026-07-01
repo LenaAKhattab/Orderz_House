@@ -242,8 +242,10 @@ export default function AdminOrdersPage() {
               </DashboardLoadingState>
             ) : orders.length === 0 ? (
               <DashboardEmptyState
+                className="oh-internal-orders__empty"
                 title="لا توجد طلبات داخلية بعد"
                 description="ابدأ بإنشاء طلب إداري وسيظهر هنا فوراً، ويمكنك إسناده لفريلانسر أو نشره في المعرض."
+                descriptionClassName="oh-internal-orders__empty-desc"
                 icon={
                   <span className="text-3xl" aria-hidden>
                     📦

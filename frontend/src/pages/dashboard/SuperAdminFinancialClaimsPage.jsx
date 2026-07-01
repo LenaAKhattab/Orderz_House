@@ -161,9 +161,12 @@ export default function SuperAdminFinancialClaimsPage() {
   };
 
   useEffect(() => {
-    load();
+    const handle = setTimeout(() => {
+      void load();
+    }, 300);
+    return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [filters.q, filters.status, filters.payoutStatus]);
 
   const filteredClaims = useMemo(() => claims, [claims]);
 
@@ -255,7 +258,7 @@ export default function SuperAdminFinancialClaimsPage() {
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.financialClaims")}
       />
 
-      <DashboardSection title="البحث والتصفية" description="اضبط المعايير ثم اضغط «تحديث» لإعادة جلب البيانات من الخادم.">
+      <DashboardSection title="البحث والتصفية" description="ابحث وصفِّ المطالبات حسب الحالة واستحقاق الدفع.">
         <DashboardToolbar>
           <div className="oh-row-2col min-w-0 w-full">
             <input
@@ -286,11 +289,6 @@ export default function SuperAdminFinancialClaimsPage() {
             </div>
           </div>
         </DashboardToolbar>
-        <div className="mt-2.5 flex flex-wrap gap-2">
-          <button type="button" className="btn btn-primary" onClick={load}>
-            تحديث
-          </button>
-        </div>
       </DashboardSection>
 
       <DashboardSection title="المطالبات" description="بطاقات لكل مطالبة مع إجراءات سريعة.">

@@ -1,9 +1,14 @@
 import { ADMIN_PAGE_PERMISSIONS, SUPER_ADMIN_PAGE_PERMISSIONS } from "./dashboardPermissions";
-import { SUPER_ADMIN_NAV_MAIN } from "./superAdminNav";
+import {
+  SUPER_ADMIN_NAV_ITEM_DEFS,
+  SUPER_ADMIN_NAV_MAIN,
+  filterSuperAdminNavItems,
+} from "./superAdminNav";
 import { formatBreadcrumbTrail } from "../lib/i18n/resolveNavLabel";
 
 /** Always visible — admin home shell (no page permission). */
 export const ADMIN_NAV_HOME = {
+  key: "home",
   to: "/dashboard/admin",
   labelKey: "dashboard.nav.admin.home",
   icon: "⌂",
@@ -13,29 +18,40 @@ export const ADMIN_NAV_HOME = {
 
 /** Always visible — personal notifications (no page permission). */
 export const ADMIN_NAV_NOTIFICATIONS = {
+  key: "notifications",
   to: "/dashboard/admin/notifications",
   labelKey: "dashboard.nav.common.notifications",
   icon: "✉",
   permission: null,
 };
 
-/** Permission-gated business pages only. */
-export const ADMIN_NAV_MAIN = [
-  {
+export const ADMIN_NAV_ITEM_DEFS = {
+  home: ADMIN_NAV_HOME,
+  internalRequests: {
+    key: "internalRequests",
     to: "/dashboard/admin/orders",
     labelKey: "dashboard.nav.admin.internalRequests",
     icon: "▣",
     matchPrefix: "/dashboard/admin/orders",
     permission: ADMIN_PAGE_PERMISSIONS.orders,
   },
-  {
+  createOrder: {
+    key: "createOrder",
+    to: "/dashboard/admin/orders/create",
+    labelKey: "dashboard.nav.admin.createInternalRequest",
+    icon: "+",
+    permission: ADMIN_PAGE_PERMISSIONS.createOrder,
+  },
+  courses: {
+    key: "courses",
     to: "/dashboard/admin/courses",
     labelKey: "dashboard.nav.admin.courses",
     icon: "▶",
     matchPrefix: "/dashboard/admin/courses",
     permission: ADMIN_PAGE_PERMISSIONS.courses,
   },
-  {
+  ads: {
+    key: "ads",
     to: "/dashboard/admin/ads",
     labelKey: "dashboard.nav.admin.ads",
     icon: "✴",
@@ -43,20 +59,67 @@ export const ADMIN_NAV_MAIN = [
     matchPrefix: "/dashboard/admin/ads",
     permission: ADMIN_PAGE_PERMISSIONS.ads,
   },
-  {
+  subscriptionActivation: {
+    key: "subscriptionActivation",
     to: "/dashboard/admin/subscriptions",
     labelKey: "dashboard.nav.admin.subscriptions",
     icon: "✓",
     permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation,
   },
+  plans: SUPER_ADMIN_NAV_ITEM_DEFS.plans,
+  subscriptions: SUPER_ADMIN_NAV_ITEM_DEFS.subscriptions,
+  trainingRequests: SUPER_ADMIN_NAV_ITEM_DEFS.trainingRequests,
+  financialClaims: SUPER_ADMIN_NAV_ITEM_DEFS.financialClaims,
+  editWebsite: SUPER_ADMIN_NAV_ITEM_DEFS.editWebsite,
+  admins: SUPER_ADMIN_NAV_ITEM_DEFS.admins,
+};
+
+export const ADMIN_NAV_SECTION_DEFS = [
+  {
+    id: "overview",
+    labelKey: "dashboard.nav.sections.overview",
+    itemKeys: ["home"],
+  },
+  {
+    id: "ordersOps",
+    labelKey: "dashboard.nav.sections.ordersOps",
+    itemKeys: ["internalRequests", "createOrder", "trainingRequests", "financialClaims"],
+  },
+  {
+    id: "usersSubscriptions",
+    labelKey: "dashboard.nav.sections.usersSubscriptions",
+    itemKeys: ["plans", "subscriptions", "subscriptionActivation"],
+  },
+  {
+    id: "contentTraining",
+    labelKey: "dashboard.nav.sections.contentTraining",
+    itemKeys: ["courses", "ads"],
+  },
+  {
+    id: "websiteSettings",
+    labelKey: "dashboard.nav.sections.websiteSettings",
+    itemKeys: ["editWebsite"],
+  },
+  {
+    id: "administration",
+    labelKey: "dashboard.nav.sections.administration",
+    itemKeys: ["admins"],
+  },
 ];
 
-export const ADMIN_NAV_CREATE_ORDER = {
-  to: "/dashboard/admin/orders/create",
-  labelKey: "dashboard.nav.admin.createInternalRequest",
-  icon: "+",
-  permission: ADMIN_PAGE_PERMISSIONS.createOrder,
-};
+function resolveAdminNavItems(itemKeys) {
+  return itemKeys.map((key) => ADMIN_NAV_ITEM_DEFS[key]).filter(Boolean);
+}
+
+/** Permission-gated business pages on /dashboard/admin/* (flat list). */
+export const ADMIN_NAV_MAIN = resolveAdminNavItems([
+  "internalRequests",
+  "courses",
+  "ads",
+  "subscriptionActivation",
+]);
+
+export const ADMIN_NAV_CREATE_ORDER = ADMIN_NAV_ITEM_DEFS.createOrder;
 
 /** Permission keys already represented in the admin shell (/dashboard/admin/*). */
 export const ADMIN_SHELL_PERMISSION_KEYS = new Set(
@@ -68,6 +131,13 @@ export const ADMIN_SHELL_PERMISSION_KEYS = new Set(
 
 export function filterAdminNavItems(items, user, hasPermission) {
   return items.filter((item) => !item.permission || hasPermission(user, item.permission));
+}
+
+export function filterAdminNavSections(user, hasPermission) {
+  return ADMIN_NAV_SECTION_DEFS.map((section) => ({
+    ...section,
+    items: filterAdminNavItems(resolveAdminNavItems(section.itemKeys), user, hasPermission),
+  })).filter((section) => section.items.length > 0);
 }
 
 /** Primary super-admin route per permission for delegated admin sidebar (avoids duplicate nav). */

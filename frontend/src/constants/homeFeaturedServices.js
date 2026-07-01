@@ -13,21 +13,10 @@ import {
 /** WhatsApp business number for طلبات خاصة (fixed, not admin-editable for now). */
 export const HOME_SPECIAL_REQUESTS_WHATSAPP_PHONE = "971543266550";
 
-const EDIT_WEBSITE_FEATURED_SERVICES_PATH = "/dashboard/super-admin/edit-website/featured-services";
-
 /**
  * Homepage featured services — static config (admin API later).
  * `subSubcategoryId` maps to real DB records for order filtering via `/orders?filters=`.
  */
-export const HOME_FEATURED_SERVICES_SECTION = {
-  id: "featured-services",
-  title: "الخدمات المميزة",
-  description: "تعديل الخدمات المعروضة في قسم التصنيفات بالصفحة الرئيسية",
-  editLabel: "تعديل القسم",
-  path: EDIT_WEBSITE_FEATURED_SERVICES_PATH,
-  source: "static",
-};
-
 export const HOME_FEATURED_SERVICE_ICON_MAP = {
   AppWindow,
   Server,

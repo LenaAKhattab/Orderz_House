@@ -1,22 +1,20 @@
 import StatusBadge from "../../components/dashboard/StatusBadge";
-import { paymentStatusLabel, subscriptionStatusLabel, formatSubscriptionAdminDateTime } from "../../admin/subscriptions/subscriptionAdminDisplay";
+import {
+  paymentStatusLabel,
+  subscriptionStatusLabel,
+  formatSubscriptionAdminDateTime,
+  formatFreelancerDisplayName,
+  formatFreelancerDisplaySubline,
+} from "../../admin/subscriptions/subscriptionAdminDisplay";
 import { formatSubscriptionPaymentCountry } from "../../utils/countryDisplay";
 
-function formatFreelancerName(sub) {
-  const f = sub?.freelancer;
-  if (!f) return `مستقل · ${sub.freelancerUserId}`;
-  const name = [f.firstName, f.fatherName, f.familyName].filter(Boolean).join(" ").trim();
-  if (name) return name;
-  if (f.email) return f.email;
-  return `مستقل · ${sub.freelancerUserId}`;
-}
-
-function freelancerSubline(sub) {
-  const f = sub?.freelancer;
-  const parts = [];
-  if (f?.accountId) parts.push(f.accountId);
-  if (f?.email && !String(formatFreelancerName(sub)).includes("@")) parts.push(f.email);
-  return parts.join(" · ") || "—";
+function subscriptionCountryLine(sub) {
+  const text = formatSubscriptionPaymentCountry({
+    countryCode: sub.paymentCountryCode,
+    paymentStatus: sub.paymentStatus,
+  });
+  if (!text || text === "غير معروف") return null;
+  return text;
 }
 
 export function subscriptionStatusTone(status) {
@@ -34,30 +32,46 @@ export function paymentStatusTone(status) {
   return "neutral";
 }
 
-function SubscriptionActions({ sub, submitting, onDisable, onCancel, onFirstOrder, onCompanyActivate }) {
+function SubscriptionActions({ sub, submitting, onDisable, onCancel, onFirstOrder, onCompanyActivate, layout = "wrap" }) {
   const hasFirstOrderRecorded = Boolean(sub?.hasFirstOrder || sub?.firstOrderDate || sub?.actualStartDate);
   const showCompanyActivate = sub.paymentStatus === "paid" && sub.activationStatus !== "company_approved";
+  const compact = layout === "compact";
 
   return (
-    <div className="oh-sa-subs-actions">
-      <button type="button" className="btn btn-secondary btn-sm" disabled={submitting} onClick={() => onDisable(sub)}>
+    <div className={`oh-sa-subs-actions${compact ? " oh-sa-subs-actions--compact" : ""}`}>
+      <button
+        type="button"
+        className="btn btn-secondary btn-sm oh-sa-subs-actions__btn"
+        disabled={submitting}
+        onClick={() => onDisable(sub)}
+      >
         تعطيل
       </button>
       <button
         type="button"
-        className="btn btn-secondary btn-sm oh-sa-subs-actions__danger"
+        className="btn btn-secondary btn-sm oh-sa-subs-actions__btn oh-sa-subs-actions__btn--danger"
         disabled={submitting}
         onClick={() => onCancel(sub)}
       >
         إلغاء
       </button>
       {!hasFirstOrderRecorded ? (
-        <button type="button" className="btn btn-primary btn-sm" disabled={submitting} onClick={() => onFirstOrder(sub)}>
+        <button
+          type="button"
+          className="btn btn-primary btn-sm oh-sa-subs-actions__btn oh-sa-subs-actions__btn--primary"
+          disabled={submitting}
+          onClick={() => onFirstOrder(sub)}
+        >
           تسجيل أول طلب
         </button>
       ) : null}
       {showCompanyActivate ? (
-        <button type="button" className="btn btn-secondary btn-sm" disabled={submitting} onClick={() => onCompanyActivate(sub)}>
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm oh-sa-subs-actions__btn"
+          disabled={submitting}
+          onClick={() => onCompanyActivate(sub)}
+        >
           تفعيل الشركة
         </button>
       ) : null}
@@ -83,52 +97,79 @@ export default function SuperAdminSubscriptionsList({
     <>
       <div className="oh-sa-subs-table-wrap">
         <table className="oh-sa-subs-table">
+          <colgroup>
+            <col className="oh-sa-subs-col-id" />
+            <col className="oh-sa-subs-col-freelancer" />
+            <col className="oh-sa-subs-col-plan" />
+            <col className="oh-sa-subs-col-status" />
+            <col className="oh-sa-subs-col-payment" />
+            <col className="oh-sa-subs-col-assigned" />
+            <col className="oh-sa-subs-col-start" />
+            <col className="oh-sa-subs-col-expiry" />
+            <col className="oh-sa-subs-col-actions" />
+          </colgroup>
           <thead>
             <tr>
-              <th>رقم الاشتراك</th>
-              <th>المستقل</th>
-              <th>الباقة</th>
-              <th>الحالة</th>
-              <th>الدفع</th>
-              <th>تاريخ الإسناد</th>
-              <th>بداية التفعيل</th>
-              <th>الانتهاء</th>
-              <th className="oh-sa-subs-table__actions-head">إجراءات</th>
+              <th className="oh-sa-subs-col-id">رقم الاشتراك</th>
+              <th className="oh-sa-subs-col-freelancer">المستقل</th>
+              <th className="oh-sa-subs-col-plan">الباقة</th>
+              <th className="oh-sa-subs-col-status">الحالة</th>
+              <th className="oh-sa-subs-col-payment">الدفع</th>
+              <th className="oh-sa-subs-col-assigned">تاريخ الإسناد</th>
+              <th className="oh-sa-subs-col-start">بداية التفعيل</th>
+              <th className="oh-sa-subs-col-expiry">الانتهاء</th>
+              <th className="oh-sa-subs-col-actions">إجراءات</th>
             </tr>
           </thead>
           <tbody>
-            {subscriptions.map((s) => (
+            {subscriptions.map((s) => {
+              const name = formatFreelancerDisplayName(s);
+              const subline = formatFreelancerDisplaySubline(s);
+              const countryLine = subscriptionCountryLine(s);
+              const plan = planName(s);
+              return (
               <tr key={s.id}>
-                <td className="oh-sa-subs-table__id" dir="ltr">
+                <td className="oh-sa-subs-col-id oh-sa-subs-table__id" dir="ltr">
                   #{s.id}
                 </td>
-                <td className="oh-sa-subs-table__freelancer">
-                  <span className="oh-sa-subs-table__name">{formatFreelancerName(s)}</span>
-                  <span className="oh-sa-subs-table__sub">{freelancerSubline(s)}</span>
-                  <span className="oh-sa-subs-table__sub sa-sub-country">
-                    {formatSubscriptionPaymentCountry({
-                      countryCode: s.paymentCountryCode,
-                      paymentStatus: s.paymentStatus,
-                    })}
+                <td className="oh-sa-subs-col-freelancer oh-sa-subs-table__freelancer">
+                  <span className="oh-sa-subs-table__name" title={name}>
+                    {name}
                   </span>
+                  {subline ? (
+                    <span className="oh-sa-subs-table__sub" title={subline}>
+                      {subline}
+                    </span>
+                  ) : null}
+                  {countryLine ? (
+                    <span className="oh-sa-subs-table__sub sa-sub-country" title={countryLine}>
+                      {countryLine}
+                    </span>
+                  ) : null}
                 </td>
-                <td>{planName(s)}</td>
-                <td>
-                  <StatusBadge tone={subscriptionStatusTone(s.status)}>{subscriptionStatusLabel(s.status)}</StatusBadge>
+                <td className="oh-sa-subs-col-plan oh-sa-subs-table__plan" title={plan}>
+                  {plan}
                 </td>
-                <td>
-                  <StatusBadge tone={paymentStatusTone(s.paymentStatus)}>{paymentStatusLabel(s.paymentStatus)}</StatusBadge>
+                <td className="oh-sa-subs-col-status oh-sa-subs-table__status">
+                  <StatusBadge tone={subscriptionStatusTone(s.status)} className="oh-sa-subs-table__badge">
+                    {subscriptionStatusLabel(s.status)}
+                  </StatusBadge>
                 </td>
-                <td className="oh-sa-subs-table__date" dir="ltr">
+                <td className="oh-sa-subs-col-payment oh-sa-subs-table__payment">
+                  <StatusBadge tone={paymentStatusTone(s.paymentStatus)} className="oh-sa-subs-table__badge">
+                    {paymentStatusLabel(s.paymentStatus)}
+                  </StatusBadge>
+                </td>
+                <td className="oh-sa-subs-col-assigned oh-sa-subs-table__date" dir="ltr">
                   {formatSubscriptionAdminDateTime(s.assignedAt)}
                 </td>
-                <td className="oh-sa-subs-table__date" dir="ltr">
+                <td className="oh-sa-subs-col-start oh-sa-subs-table__date" dir="ltr">
                   {formatSubscriptionAdminDateTime(s.actualStartDate)}
                 </td>
-                <td className="oh-sa-subs-table__date" dir="ltr">
+                <td className="oh-sa-subs-col-expiry oh-sa-subs-table__date" dir="ltr">
                   {formatSubscriptionAdminDateTime(s.expiryDate)}
                 </td>
-                <td className="oh-sa-subs-table__actions">
+                <td className="oh-sa-subs-col-actions oh-sa-subs-table__actions">
                   <SubscriptionActions
                     sub={s}
                     submitting={submitting}
@@ -136,10 +177,12 @@ export default function SuperAdminSubscriptionsList({
                     onCancel={onCancel}
                     onFirstOrder={onFirstOrder}
                     onCompanyActivate={onCompanyActivate}
+                    layout="compact"
                   />
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>
@@ -154,14 +197,13 @@ export default function SuperAdminSubscriptionsList({
               <StatusBadge tone={subscriptionStatusTone(s.status)}>{subscriptionStatusLabel(s.status)}</StatusBadge>
             </div>
             <div className="oh-sa-subs-mobile-card__body">
-              <p className="oh-sa-subs-mobile-card__name">{formatFreelancerName(s)}</p>
-              <p className="oh-sa-subs-mobile-card__meta">{freelancerSubline(s)}</p>
-              <p className="oh-sa-subs-mobile-card__meta sa-sub-country">
-                {formatSubscriptionPaymentCountry({
-                  countryCode: s.paymentCountryCode,
-                  paymentStatus: s.paymentStatus,
-                })}
-              </p>
+              <p className="oh-sa-subs-mobile-card__name">{formatFreelancerDisplayName(s)}</p>
+              {formatFreelancerDisplaySubline(s) ? (
+                <p className="oh-sa-subs-mobile-card__meta">{formatFreelancerDisplaySubline(s)}</p>
+              ) : null}
+              {subscriptionCountryLine(s) ? (
+                <p className="oh-sa-subs-mobile-card__meta sa-sub-country">{subscriptionCountryLine(s)}</p>
+              ) : null}
               <div className="oh-sa-subs-mobile-card__row">
                 <span>الباقة</span>
                 <strong>{planName(s)}</strong>

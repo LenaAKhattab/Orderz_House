@@ -53,6 +53,14 @@
       "noPermissions": "ليس لديك صلاحيات مفعلة حالياً. يرجى التواصل مع المدير الأعلى.",
       "sidebarAria": "قائمة الإدارة"
     },
+    "sections": {
+      "overview": "نظرة عامة",
+      "ordersOps": "الطلبات والعمليات",
+      "usersSubscriptions": "المستخدمون والاشتراكات",
+      "contentTraining": "المحتوى والتدريب",
+      "websiteSettings": "إعدادات الموقع",
+      "administration": "الإدارة والتحكم"
+    },
     "superAdmin": {
       "overview": "نظرة عامة",
       "plans": "الباقات",

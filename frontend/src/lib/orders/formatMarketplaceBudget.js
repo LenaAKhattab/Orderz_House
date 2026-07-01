@@ -10,13 +10,19 @@ function currencySuffix(locale = "ar") {
   return locale === "en" ? " JOD" : " د.أ";
 }
 
+function toBudgetNumber(value) {
+  if (value === null || value === undefined || value === "") return NaN;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : NaN;
+}
+
 /**
  * Min–max budget string for marketplace cards (single currency suffix, LTR-friendly).
  * Arabic: 1 - 2 د.أ · English: 1 - 2 JOD
  */
 export function formatBudgetRange(min, max, locale = "ar") {
-  const minN = Number(min);
-  const maxN = Number(max);
+  const minN = toBudgetNumber(min);
+  const maxN = toBudgetNumber(max);
   const hasMin = Number.isFinite(minN);
   const hasMax = Number.isFinite(maxN);
   const suffix = currencySuffix(locale);

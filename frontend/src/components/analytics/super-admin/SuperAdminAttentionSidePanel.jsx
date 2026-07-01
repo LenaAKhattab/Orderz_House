@@ -1,7 +1,5 @@
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
 import { formatInt } from "./superAdminHomeBundleUi";
-import { SA_ROUTES } from "./superAdminHomeDataUtils";
 import {
   AttentionSummaryBadge,
   UnifiedAttentionPanel,
@@ -27,9 +25,6 @@ export default function SuperAdminAttentionSidePanel({ items, loading }) {
         </div>
         <div className="sa-attention-side-panel__head-actions">
           <AttentionSummaryBadge total={attentionTotal} loading={loading} compact />
-          <Link to={SA_ROUTES.orders} className="sa-command-panel__view-all">
-            عرض الكل
-          </Link>
         </div>
       </header>
       <div className="sa-attention-side-panel__body">

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { NavLink } from "react-router-dom";
+import { resolveSuperAdminDashboardHomeLink } from "./superAdminHomeDataUtils";
 import { formatInt } from "./superAdminHomeBundleUi";
 import { AttentionTypeIcon } from "./attentionIcons";
 
@@ -40,6 +41,7 @@ function AttentionCard({ item }) {
   const tone = item.severity === SEVERITY.urgent ? "urgent" : item.severity === SEVERITY.medium ? "medium" : "info";
   const group = GROUPS.find((g) => g.key === item.severity) || GROUPS[1];
   const suffix = countSuffix(count, item);
+  const safeTo = resolveSuperAdminDashboardHomeLink(item.to);
 
   const inner = (
     <>
@@ -55,7 +57,7 @@ function AttentionCard({ item }) {
         <span className="sa-attention-card__count">
           {formatInt(count)} {suffix}
         </span>
-        {item.to ? (
+        {safeTo ? (
           <span className="sa-attention-card__chevron" aria-hidden>
             ‹
           </span>
@@ -66,10 +68,10 @@ function AttentionCard({ item }) {
 
   const className = `sa-attention-card sa-attention-card--${tone}`;
 
-  if (item.to) {
+  if (safeTo) {
     return (
       <li className="sa-attention-panel__item">
-        <NavLink to={item.to} className={className}>
+        <NavLink to={safeTo} className={className}>
           {inner}
         </NavLink>
       </li>

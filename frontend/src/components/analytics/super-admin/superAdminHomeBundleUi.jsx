@@ -12,6 +12,7 @@ import {
 import DashboardStatCard, { DashboardStatCardSkeleton } from "../../dashboard/DashboardStatCard";
 import DashboardChartCard from "../../dashboard/DashboardChartCard";
 import DashboardEmptyState from "../../dashboard/DashboardEmptyState";
+import { resolveSuperAdminDashboardHomeLink } from "./superAdminHomeDataUtils";
 
 export const LABEL_UNAVAILABLE = "غير متاح";
 export const LABEL_LOAD_FAILED = "تعذر تحميل البيانات";
@@ -74,9 +75,10 @@ export function trendBadge(trend, changePct) {
 }
 
 export function StatCardLink({ to, children, className = "" }) {
-  if (!to) return children;
+  const safeTo = resolveSuperAdminDashboardHomeLink(to);
+  if (!safeTo) return children;
   return (
-    <NavLink to={to} className={`sa-stat-card-link block no-underline ${className}`.trim()}>
+    <NavLink to={safeTo} className={`sa-stat-card-link block no-underline ${className}`.trim()}>
       {children}
     </NavLink>
   );

@@ -6,7 +6,7 @@
  * @param {import("react").ReactNode} [p.actions]
  * @param {string} [p.className]
  */
-export default function DashboardEmptyState({ title, description, icon, actions, className = "" }) {
+export default function DashboardEmptyState({ title, description, icon, actions, className = "", descriptionClassName = "" }) {
   const shell = "dash-ui-surface--soft dash-ui-empty";
 
   return (
@@ -19,7 +19,13 @@ export default function DashboardEmptyState({ title, description, icon, actions,
       ) : null}
       <p className="dash-ui-empty__title m-0 text-base font-bold text-slate-800">{title}</p>
       {description ? (
-        <p className="dash-ui-empty__desc mx-auto mt-2 max-w-md text-[0.88rem] font-medium leading-relaxed text-slate-500">
+        <p
+          className={
+            descriptionClassName
+              ? `dash-ui-empty__desc mt-2 ${descriptionClassName}`.trim()
+              : "dash-ui-empty__desc mx-auto mt-2 max-w-md text-[0.88rem] font-medium leading-relaxed text-slate-500"
+          }
+        >
           {description}
         </p>
       ) : null}

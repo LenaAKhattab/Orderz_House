@@ -79,3 +79,50 @@ export function formatPlanPriceLabel(plan) {
   if (price == null || !Number.isFinite(Number(price))) return "—";
   return `${Number(price)} د.أ`;
 }
+
+/** Admin subscription list: freelancer display name with sensible fallbacks. */
+export function formatFreelancerDisplayName(sub) {
+  const f = sub?.freelancer;
+  if (!f) {
+    const uid = sub?.freelancerUserId;
+    return uid ? `مستقل · ${uid}` : "بدون اسم";
+  }
+  const name = [f.firstName, f.fatherName, f.familyName].filter(Boolean).join(" ").trim();
+  if (name) return name;
+  if (f.email) return f.email;
+  if (f.accountId) return f.accountId;
+  const uid = f.id || sub.freelancerUserId;
+  return uid ? `مستقل · ${uid}` : "بدون اسم";
+}
+
+/** Secondary line under freelancer name (account id / email when not already in title). */
+export function formatFreelancerDisplaySubline(sub) {
+  const f = sub?.freelancer;
+  if (!f) return null;
+  const name = formatFreelancerDisplayName(sub);
+  const parts = [];
+  if (f.accountId && !name.includes(f.accountId)) parts.push(f.accountId);
+  if (f.email && !name.includes("@")) parts.push(f.email);
+  return parts.length ? parts.join(" · ") : null;
+}
+
+/** Resolve plan title from nested subscription data or a preloaded id→title map. */
+export function resolveSubscriptionPlanTitle(sub, planTitleById = {}) {
+  const nested = sub?.plan?.title || sub?.plan?.name;
+  if (nested && String(nested).trim()) return String(nested).trim();
+  const mapped = planTitleById[String(sub?.planId || "")];
+  if (mapped && String(mapped).trim()) return String(mapped).trim();
+  return null;
+}
+
+/** Formatted payment timestamp when recorded; otherwise null (do not substitute payment status text). */
+export function formatSubscriptionPaymentDate(sub, formatDateTime = formatSubscriptionAdminDateTime) {
+  if (!sub?.paidAt) return null;
+  const formatted = formatDateTime(sub.paidAt);
+  return formatted === "—" ? null : formatted;
+}
+
+/** Table cell for payment date column: actual timestamp or em dash. */
+export function subscriptionPaymentDateTableCell(sub, formatDateTime = formatSubscriptionAdminDateTime) {
+  return formatSubscriptionPaymentDate(sub, formatDateTime) || "—";
+}

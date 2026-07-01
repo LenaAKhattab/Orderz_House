@@ -1,112 +1,105 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Button from "../../components/ui/Button";
+import Pagination from "../../components/common/Pagination";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
+import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
+import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
 import { breadcrumbHomeCrumb, superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
-import { activateSubscriptionCompanyRequest, listAllSubscriptionsRequest } from "../../services/api";
+import {
+  activateSubscriptionCompanyRequest,
+  listAllSubscriptionsRequest,
+  listAssignablePlansAdminRequest,
+} from "../../services/api";
 import { useAuth } from "../../context/useAuth";
-import { AdminInlineGridSkeleton } from "../../components/ui/Skeleton";
-import { formatSubscriptionPaymentCountry } from "../../utils/countryDisplay";
+import SubscriptionsActivationList from "./SubscriptionsActivationList";
+import "./superAdminSubscriptionsPage.css";
+
+const PAGE_SIZE = 20;
 
 function errorMessage(err) {
   return err?.response?.data?.message || "تعذر تنفيذ العملية. حاول مجدداً.";
 }
 
-function formatJoDateTime(value) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", {
-    timeZone: "Asia/Amman",
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(d);
+function isPendingCompanyActivation(sub) {
+  const payment = String(sub?.paymentStatus || "");
+  const activation = String(sub?.activationStatus || "");
+  const eligiblePaymentState =
+    payment === "paid" || payment === "pending" || payment === "not_required" || payment === "";
+  return activation === "company_pending" && eligiblePaymentState;
 }
 
-function fullNameAr(user) {
-  const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
-  return parts.join(" ").trim();
-}
-
-function planLabel(s) {
-  if (s?.plan?.title) return s.plan.title;
-  if (s?.planId != null && String(s.planId).trim() !== "") return `الباقة #${String(s.planId)}`;
-  return "—";
-}
-
-function paymentStatusLabel(status) {
-  const p = String(status || "").trim().toLowerCase();
-  if (p === "pending") return "بانتظار الدفع";
-  if (p === "paid") return "مدفوع";
-  if (p === "not_required") return "لا يتطلب دفعاً";
-  if (p === "failed" || p === "unpaid") return "غير مكتمل";
-  return status || "—";
-}
-
-function activationStatusLabel(status) {
-  const s = String(status || "").trim().toLowerCase();
-  if (s === "company_pending") return "بانتظار تفعيل الشركة";
-  if (s === "company_approved") return "مفعّل";
-  if (s === "company_rejected") return "مرفوض";
-  return status || "—";
-}
-
-function paymentDateLabel(s) {
-  const payment = String(s?.paymentStatus || "").trim().toLowerCase();
-  if (s?.paidAt) return formatJoDateTime(s.paidAt);
-  if (payment === "pending") return "بانتظار الدفع";
-  if (payment === "not_required") return "لا يتطلب دفعاً";
-  if (payment === "paid") return "تم الدفع (الوقت غير مسجل)";
-  return "—";
+function sortPendingNewestFirst(a, b) {
+  const ta = new Date(a?.assignedAt || a?.createdAt || 0).getTime();
+  const tb = new Date(b?.assignedAt || b?.createdAt || 0).getTime();
+  if (tb !== ta) return tb - ta;
+  return Number(b?.id || 0) - Number(a?.id || 0);
 }
 
 export default function AdminSubscriptionsActivationPage() {
   const { user } = useAuth();
   const role = user?.primaryRole || user?.role;
   const isSuperAdmin = role === "super_admin";
+
   const [loading, setLoading] = useState(true);
   const [submittingId, setSubmittingId] = useState(null);
   const [error, setError] = useState("");
   const [subs, setSubs] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [page, setPage] = useState(1);
+  const [view, setView] = useState("cards");
 
-  const refresh = async () => {
+  const planTitleById = useMemo(() => {
+    const map = {};
+    for (const p of plans || []) map[String(p.id)] = p.title || String(p.id);
+    return map;
+  }, [plans]);
+
+  const loadData = useCallback(async () => {
     setError("");
     setLoading(true);
     try {
-      const res = await listAllSubscriptionsRequest({});
-      setSubs(res?.data?.subscriptions || []);
+      const [subsRes, plansRes] = await Promise.all([
+        listAllSubscriptionsRequest({}),
+        listAssignablePlansAdminRequest(),
+      ]);
+      setSubs(subsRes?.data?.subscriptions || []);
+      setPlans(plansRes?.data?.plans || []);
     } catch (err) {
       setError(errorMessage(err));
       setSubs([]);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    refresh();
   }, []);
 
-  const pendingCompanyActivation = useMemo(() => {
-    return (subs || []).filter((s) => {
-      const payment = String(s?.paymentStatus || "");
-      const activation = String(s?.activationStatus || "");
-      const eligiblePaymentState =
-        payment === "paid" ||
-        payment === "pending" ||
-        payment === "not_required" ||
-        payment === "";
-      return activation === "company_pending" && eligiblePaymentState;
-    });
-  }, [subs]);
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
+  const pendingCompanyActivation = useMemo(
+    () => (subs || []).filter(isPendingCompanyActivation).sort(sortPendingNewestFirst),
+    [subs],
+  );
+
+  const totalPages = Math.max(1, Math.ceil(pendingCompanyActivation.length / PAGE_SIZE));
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const pageItems = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return pendingCompanyActivation.slice(start, start + PAGE_SIZE);
+  }, [pendingCompanyActivation, page]);
 
   const activate = async (subscriptionId) => {
     setError("");
     setSubmittingId(String(subscriptionId));
     try {
       await activateSubscriptionCompanyRequest(subscriptionId);
-      await refresh();
+      await loadData();
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -116,74 +109,96 @@ export default function AdminSubscriptionsActivationPage() {
 
   const breadcrumbs = isSuperAdmin
     ? superAdminBreadcrumbs("dashboard.breadcrumbs.subscriptionActivation")
-    : [
-        breadcrumbHomeCrumb(user),
-        { labelKey: "dashboard.breadcrumbs.subscriptionActivation" },
-      ];
+    : [breadcrumbHomeCrumb(user), { labelKey: "dashboard.breadcrumbs.subscriptionActivation" }];
+
+  const showPagination = !loading && pendingCompanyActivation.length > PAGE_SIZE;
 
   return (
-    <DashboardShell>
+    <DashboardShell className="oh-sa-subs oh-sa-activation-page">
       <DashboardPageHeader
         eyebrow={isSuperAdmin ? "لوحة المدير الأعلى" : "لوحة التحكم"}
         title="تفعيل اشتراكات المستقلين"
         description="يمكنك تفعيل الحسابات المشتركة بعد مراجعة الشركة، ليصبح المستقل مؤهلاً لاستلام الطلبات."
         breadcrumbs={breadcrumbs}
-        alert={
-          error ? (
-            <div className="auth-actions-row" style={{ flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-              <p className="auth-form-error" style={{ margin: 0 }}>
-                {error}
-              </p>
-              <Button type="button" variant="secondary" onClick={() => void refresh()}>
-                إعادة المحاولة
-              </Button>
-            </div>
-          ) : null
-        }
       />
 
-      <DashboardSection title="بانتظار تفعيل الشركة">
-        {loading ? <AdminInlineGridSkeleton count={3} /> : null}
+      {error ? (
+        <DashboardErrorState
+          message={error}
+          actions={
+            <Button type="button" variant="secondary" onClick={() => void loadData()}>
+              إعادة المحاولة
+            </Button>
+          }
+        />
+      ) : null}
+
+      <DashboardSection
+        title="بانتظار تفعيل الشركة"
+        description={
+          !loading && pendingCompanyActivation.length > 0
+            ? `عرض ${pageItems.length} من ${pendingCompanyActivation.length} اشتراك بانتظار التفعيل`
+            : undefined
+        }
+        actions={
+          <>
+            <button
+              type="button"
+              className={`btn btn-secondary ${view === "cards" ? "nav-link-active" : ""}`.trim()}
+              onClick={() => setView("cards")}
+            >
+              عرض بطاقات
+            </button>
+            <button
+              type="button"
+              className={`btn btn-secondary ${view === "table" ? "nav-link-active" : ""}`.trim()}
+              onClick={() => setView("table")}
+            >
+              عرض جدول
+            </button>
+            <Button type="button" variant="secondary" disabled={loading} onClick={() => void loadData()}>
+              تحديث
+            </Button>
+          </>
+        }
+      >
+        {loading ? (
+          <SubscriptionsActivationList
+            items={[]}
+            view={view}
+            planTitleById={planTitleById}
+            submittingId={submittingId}
+            onActivate={activate}
+            loading
+          />
+        ) : null}
+
         {!loading && pendingCompanyActivation.length === 0 ? (
-          <p>لا توجد اشتراكات بانتظار التفعيل حالياً.</p>
+          <DashboardEmptyState title="لا توجد اشتراكات بانتظار التفعيل حالياً" />
         ) : null}
 
         {!loading && pendingCompanyActivation.length > 0 ? (
-          <div className="cards-grid">
-            {pendingCompanyActivation.map((s) => (
-              <article className="card" key={s.id}>
-                <h3>اشتراك #{s.id}</h3>
-                <p>
-                  الاسم: {fullNameAr(s?.freelancer) || "—"}
-                  <span className="block text-sm font-semibold text-slate-500" style={{ marginTop: 4 }}>
-                    {formatSubscriptionPaymentCountry({
-                      countryCode: s.paymentCountryCode,
-                      paymentStatus: s.paymentStatus,
-                    })}
-                  </span>
-                </p>
-                <p>البريد: {s?.freelancer?.email || "—"}</p>
-                <p>الباقة: {planLabel(s)}</p>
-                <p>حالة الدفع: {paymentStatusLabel(s.paymentStatus)}</p>
-                <p>حالة التفعيل: {activationStatusLabel(s.activationStatus)}</p>
-                <p>تاريخ الإسناد: {formatJoDateTime(s.assignedAt)}</p>
-                <p>تاريخ الدفع: {paymentDateLabel(s)}</p>
-                <div className="auth-actions-row auth-actions-row--split" style={{ marginTop: 10 }}>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={submittingId === String(s.id)}
-                    onClick={() => activate(s.id)}
-                  >
-                    {submittingId === String(s.id) ? "جارٍ التفعيل..." : "تفعيل الآن"}
-                  </Button>
-                </div>
-              </article>
-            ))}
-          </div>
+          <>
+            <SubscriptionsActivationList
+              items={pageItems}
+              view={view}
+              planTitleById={planTitleById}
+              submittingId={submittingId}
+              onActivate={activate}
+            />
+            {showPagination ? (
+              <div className="oh-sa-subs-pagination-wrap">
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  className="oh-sa-subs-pagination"
+                />
+              </div>
+            ) : null}
+          </>
         ) : null}
       </DashboardSection>
     </DashboardShell>
   );
 }
-
