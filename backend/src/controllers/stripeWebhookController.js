@@ -9,6 +9,7 @@ const notificationService = require("../services/notificationService");
 const freelancerSubscriptionPaymentNotifications = require("../services/freelancerSubscriptionPaymentNotifications");
 const notificationEventsService = require("../services/notificationEventsService");
 const { capture } = require("../config/posthog");
+const { pickFazaatTrackingLogFields } = require("../utils/fazaatStripeMetadata");
 
 async function safeNotify(run) {
   try {
@@ -735,6 +736,10 @@ async function applyCheckoutSessionFreelancerActivationFeeOnlyCompleted(session,
 
 async function applyCheckoutSessionCompleted(session, dbPool = pool) {
   const meta = session.metadata || {};
+  logStripeWebhook({
+    outcome: "checkout_session_apply_start",
+    ...pickFazaatTrackingLogFields(meta),
+  });
   const purpose = String(meta.purpose || "");
   if (purpose === "freelancer_subscription_purchase") {
     return applyCheckoutSessionFreelancerSubscriptionCompleted(session, meta, dbPool);
@@ -754,6 +759,11 @@ async function applyCheckoutSessionCompleted(session, dbPool = pool) {
 
 async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool) {
   const meta = pi.metadata || {};
+  logStripeWebhook({
+    outcome: "payment_intent_apply_start",
+    paymentIntentStatus: outcomePaymentStatus,
+    ...pickFazaatTrackingLogFields(meta),
+  });
   const purpose = String(meta.purpose || "");
   if (purpose === "freelancer_subscription_purchase") {
     const freelancerUserId = Number(meta.freelancerUserId);

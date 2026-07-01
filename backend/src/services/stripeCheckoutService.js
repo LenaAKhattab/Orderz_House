@@ -31,6 +31,13 @@ const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPa
 const { getPrimaryClientUrl } = require("../config/clientUrl");
 const { isProduction } = require("../config/env");
 const freelancerSubscriptionPaymentNotifications = require("./freelancerSubscriptionPaymentNotifications");
+const {
+  PAYMENT_CONTEXT,
+  buildFazaatStripeMetadata,
+  mergeStripeCheckoutMetadata,
+  paymentIntentDescriptionForContext,
+  lineItemProductNameForContext,
+} = require("../utils/fazaatStripeMetadata");
 
 /** Stripe redirect URLs must use one origin; CLIENT_URL may list multiple values for CORS — take first via getPrimaryClientUrl. */
 function requireStripeClientUrl() {
@@ -85,6 +92,21 @@ function hasPricedBiddingRow(order) {
   const min = Number(order.bid_budget_min);
   const max = Number(order.bid_budget_max);
   return Number.isFinite(min) && Number.isFinite(max) && min > 0 && max >= min;
+}
+
+async function getUserEmailById(userId, db) {
+  const runner = db || pool;
+  const uid = Number(userId);
+  if (!Number.isInteger(uid) || uid < 1) return null;
+  const { rows } = await runner.query(`SELECT email FROM users WHERE id = $1 LIMIT 1`, [uid]);
+  return rows[0]?.email ? String(rows[0].email).trim() : null;
+}
+
+function buildCheckoutPaymentIntentData(sessionMetadata, paymentContext) {
+  const description = paymentIntentDescriptionForContext(paymentContext);
+  return description
+    ? { metadata: sessionMetadata, description }
+    : { metadata: sessionMetadata };
 }
 
 async function insertPendingPayment({
@@ -173,27 +195,36 @@ async function createClientFixedOrderCheckoutSession({ clientUserId, orderId }) 
       throw err;
     }
 
+    const userEmail = await getUserEmailById(uid, db);
+    const currencyUpper = stripeCurrency.toUpperCase();
+    const legacyMeta = {
+      orderId: String(oid),
+      purpose: "client_fixed_order",
+      clientUserId: String(uid),
+      expectedAmountMinor: String(amountMinor),
+      currency: currencyUpper,
+    };
+    const sessionMetadata = mergeStripeCheckoutMetadata(
+      buildFazaatStripeMetadata({
+        paymentContext: PAYMENT_CONTEXT.CLIENT_FIXED_ORDER,
+        purpose: "client_fixed_order",
+        userId: uid,
+        userEmail,
+        orderId: oid,
+        expectedAmountMinor: amountMinor,
+        currency: currencyUpper,
+      }),
+      legacyMeta,
+    );
+
     const successUrl = `${clientUrl}/dashboard/client/my-orders?paid=1&orderId=${encodeURIComponent(String(oid))}`;
     const cancelUrl = `${clientUrl}/dashboard/client/my-orders?cancelled=1&orderId=${encodeURIComponent(String(oid))}`;
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       client_reference_id: String(oid),
-      metadata: {
-        orderId: String(oid),
-        purpose: "client_fixed_order",
-        clientUserId: String(uid),
-        expectedAmountMinor: String(amountMinor),
-        currency: stripeCurrency.toUpperCase(),
-      },
-      payment_intent_data: {
-        metadata: {
-          orderId: String(oid),
-          purpose: "client_fixed_order",
-          expectedAmountMinor: String(amountMinor),
-          currency: stripeCurrency.toUpperCase(),
-        },
-      },
+      metadata: sessionMetadata,
+      payment_intent_data: buildCheckoutPaymentIntentData(sessionMetadata, PAYMENT_CONTEXT.CLIENT_FIXED_ORDER),
       line_items: [
         {
           quantity: 1,
@@ -201,7 +232,8 @@ async function createClientFixedOrderCheckoutSession({ clientUserId, orderId }) 
             currency: stripeCurrency,
             unit_amount: amountMinor,
             product_data: {
-              name: String(order.title || "Order").slice(0, 120),
+              name: lineItemProductNameForContext(PAYMENT_CONTEXT.CLIENT_FIXED_ORDER).slice(0, 120),
+              description: String(order.title || "Order").slice(0, 500),
             },
           },
         },
@@ -376,26 +408,35 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
       String(bid),
     )}`;
 
+    const userEmail = await getUserEmailById(uid, db);
+    const currencyUpper = stripeCurrency.toUpperCase();
+    const legacyMeta = {
+      orderId: String(oid),
+      bidId: String(bid),
+      purpose: "client_selected_bid",
+      clientUserId: String(uid),
+      expectedAmountMinor: String(amountMinor),
+      currency: currencyUpper,
+    };
+    const sessionMetadata = mergeStripeCheckoutMetadata(
+      buildFazaatStripeMetadata({
+        paymentContext: PAYMENT_CONTEXT.CLIENT_SELECTED_BID,
+        purpose: "client_selected_bid",
+        userId: uid,
+        userEmail,
+        orderId: oid,
+        bidId: bid,
+        expectedAmountMinor: amountMinor,
+        currency: currencyUpper,
+      }),
+      legacyMeta,
+    );
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       client_reference_id: `${oid}:${bid}`,
-      metadata: {
-        orderId: String(oid),
-        bidId: String(bid),
-        purpose: "client_selected_bid",
-        clientUserId: String(uid),
-        expectedAmountMinor: String(amountMinor),
-        currency: stripeCurrency.toUpperCase(),
-      },
-      payment_intent_data: {
-        metadata: {
-          orderId: String(oid),
-          bidId: String(bid),
-          purpose: "client_selected_bid",
-          expectedAmountMinor: String(amountMinor),
-          currency: stripeCurrency.toUpperCase(),
-        },
-      },
+      metadata: sessionMetadata,
+      payment_intent_data: buildCheckoutPaymentIntentData(sessionMetadata, PAYMENT_CONTEXT.CLIENT_SELECTED_BID),
       line_items: [
         {
           quantity: 1,
@@ -403,7 +444,8 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
             currency: stripeCurrency,
             unit_amount: amountMinor,
             product_data: {
-              name: `Bid payment - ${String(order.title || "Order").slice(0, 110)}`,
+              name: lineItemProductNameForContext(PAYMENT_CONTEXT.CLIENT_SELECTED_BID).slice(0, 120),
+              description: String(order.title || "Order").slice(0, 500),
             },
           },
         },
@@ -848,20 +890,36 @@ async function createFreelancerActivationFeeOnlyCheckoutSession({ freelancerUser
     throw err;
   }
 
-  const baseMeta = {
-    purpose: PURPOSE_ACTIVATION_FEE_ONLY,
-    freelancerUserId: String(uid),
-    displayPlanId: displayPlanId != null ? String(displayPlanId) : "",
-    expectedAmountMinor: String(activationMinor),
-    activationFeeMinor: String(activationMinor),
-    currency: currency.toUpperCase(),
-  };
+  const baseMeta = mergeStripeCheckoutMetadata(
+    buildFazaatStripeMetadata({
+      paymentContext: PAYMENT_CONTEXT.ACTIVATION_FEE_ONLY,
+      purpose: PURPOSE_ACTIVATION_FEE_ONLY,
+      userId: uid,
+      userEmail: await getUserEmailById(uid, db),
+      displayPlanId: displayPlanId != null ? displayPlanId : null,
+      expectedAmountMinor: activationMinor,
+      activationFeeMinor: activationMinor,
+      currency: currency.toUpperCase(),
+    }),
+    {
+      purpose: PURPOSE_ACTIVATION_FEE_ONLY,
+      freelancerUserId: String(uid),
+      displayPlanId: displayPlanId != null ? String(displayPlanId) : "",
+      expectedAmountMinor: String(activationMinor),
+      activationFeeMinor: String(activationMinor),
+      currency: currency.toUpperCase(),
+    },
+  );
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     metadata: baseMeta,
-    payment_intent_data: { metadata: { ...baseMeta } },
-    line_items: [buildActivationFeeStripeLineItem(locale)],
+    payment_intent_data: buildCheckoutPaymentIntentData(baseMeta, PAYMENT_CONTEXT.ACTIVATION_FEE_ONLY),
+    line_items: [
+      buildActivationFeeStripeLineItem(locale, {
+        productName: lineItemProductNameForContext(PAYMENT_CONTEXT.ACTIVATION_FEE_ONLY),
+      }),
+    ],
     success_url: `${clientUrl}/dashboard/freelancer/plans?freelancer_activation_fee_paid=1&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${clientUrl}/dashboard/freelancer/plans?freelancer_activation_fee_cancelled=1&session_id={CHECKOUT_SESSION_ID}`,
   });
@@ -1061,7 +1119,9 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       throw err;
     }
 
-    const baseMeta = {
+    const currencyUpper = currency.toUpperCase();
+    const userEmail = await getUserEmailById(uid, db);
+    const legacyMeta = {
       purpose: PURPOSE_SUBSCRIPTION_PURCHASE,
       freelancerUserId: String(uid),
       planId: String(checkoutPlanId),
@@ -1069,9 +1129,26 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       expectedAmountMinor: String(totalAmountMinor),
       planAmountMinor: String(planAmountMinor),
       activationFeeMinor: String(needsActivationFee ? activationMinor : 0),
-      currency: currency.toUpperCase(),
+      currency: currencyUpper,
     };
+    const baseMeta = mergeStripeCheckoutMetadata(
+      buildFazaatStripeMetadata({
+        paymentContext: PAYMENT_CONTEXT.FREELANCER_SUBSCRIPTION,
+        purpose: PURPOSE_SUBSCRIPTION_PURCHASE,
+        userId: uid,
+        userEmail,
+        planId: checkoutPlanId,
+        displayPlanId: pid,
+        expectedAmountMinor: totalAmountMinor,
+        planAmountMinor,
+        activationFeeMinor: needsActivationFee ? activationMinor : 0,
+        currency: currencyUpper,
+      }),
+      legacyMeta,
+    );
 
+    const subscriptionProductName = lineItemProductNameForContext(PAYMENT_CONTEXT.FREELANCER_SUBSCRIPTION);
+    const planTitleSuffix = String(plan.title || `Plan #${pid}`).slice(0, 80);
     const lineItems = [
       {
         quantity: 1,
@@ -1079,7 +1156,7 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
           currency,
           unit_amount: planAmountMinor,
           product_data: {
-            name: `Freelancer Subscription - ${String(plan.title || `Plan #${pid}`).slice(0, 100)}`,
+            name: `${subscriptionProductName} - ${planTitleSuffix}`.slice(0, 120),
           },
         },
       },
@@ -1091,9 +1168,7 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       metadata: baseMeta,
-      payment_intent_data: {
-        metadata: { ...baseMeta },
-      },
+      payment_intent_data: buildCheckoutPaymentIntentData(baseMeta, PAYMENT_CONTEXT.FREELANCER_SUBSCRIPTION),
       line_items: lineItems,
       success_url: successUrl,
       cancel_url: cancelUrl,

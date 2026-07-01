@@ -416,20 +416,21 @@ function activationFeeLineItemName(locale = "ar") {
   return ACTIVATION_FEE_LINE_ITEM_NAMES[key];
 }
 
-function buildActivationFeeStripeLineItem(locale = "ar") {
+function buildActivationFeeStripeLineItem(locale = "ar", { productName = null } = {}) {
   const unitAmount = activationFeeMinorUnits();
   if (unitAmount == null || unitAmount < 1) {
     const err = new Error("Invalid subscription activation fee amount.");
     err.statusCode = 500;
     throw err;
   }
+  const name = productName != null && String(productName).trim() !== "" ? String(productName) : activationFeeLineItemName(locale);
   return {
     quantity: 1,
     price_data: {
       currency: "jod",
       unit_amount: unitAmount,
       product_data: {
-        name: activationFeeLineItemName(locale),
+        name: String(name).slice(0, 120),
       },
     },
   };
