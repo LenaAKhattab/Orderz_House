@@ -2,7 +2,16 @@ const subscriptionsService = require("../services/subscriptionsService");
 const plansService = require("../services/plansService");
 const stripeCheckoutService = require("../services/stripeCheckoutService");
 const { markActivationFeePaidOffline } = require("../services/subscriptionActivationFeeService");
+const systemSettingsService = require("../services/systemSettingsService");
+const {
+  PAID_NOTIFICATION_EMAIL_KEY,
+  ADMIN_EMAIL_ENV,
+} = require("../services/subscriptionAdminNotificationService");
 const { pool } = require("../config/db");
+
+function envFallbackEmail() {
+  return String(process.env[ADMIN_EMAIL_ENV] || "").trim() || null;
+}
 
 const assignPlan = async (req, res, next) => {
   try {
@@ -48,6 +57,44 @@ const listSubscriptions = async (req, res, next) => {
         subscriptions: result.subscriptions,
         pagination: result.pagination,
         aggregates: result.aggregates,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const getSubscriptionNotificationEmail = async (req, res, next) => {
+  try {
+    const email = await systemSettingsService.getSetting(PAID_NOTIFICATION_EMAIL_KEY);
+    const envFallback = envFallbackEmail();
+    return res.status(200).json({
+      success: true,
+      data: {
+        email: email || null,
+        envFallback,
+        effectiveEmail: email || envFallback || null,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const updateSubscriptionNotificationEmail = async (req, res, next) => {
+  try {
+    const raw = req.body.email;
+    const value = raw == null ? "" : String(raw).trim();
+    const saved = await systemSettingsService.setSetting(PAID_NOTIFICATION_EMAIL_KEY, value, {
+      updatedByUserId: req.auth?.userId ?? null,
+    });
+    const envFallback = envFallbackEmail();
+    return res.status(200).json({
+      success: true,
+      data: {
+        email: saved,
+        envFallback,
+        effectiveEmail: saved || envFallback || null,
       },
     });
   } catch (err) {
@@ -184,6 +231,8 @@ module.exports = {
   listAssignablePlans,
   updateSubscription,
   listSubscriptions,
+  getSubscriptionNotificationEmail,
+  updateSubscriptionNotificationEmail,
   getFreelancerCurrentSubscription,
   getFreelancerEligibility,
   createFreelancerSubscriptionCheckout,

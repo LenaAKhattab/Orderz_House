@@ -113,6 +113,10 @@ function mapSubscription(row) {
           familyName: row.freelancer_family_name || null,
           email: row.freelancer_email || null,
           accountId: row.freelancer_account_id || null,
+          phone: row.freelancer_phone || null,
+          whatsapp: row.freelancer_whatsapp || null,
+          country: row.freelancer_country || null,
+          billingCountry: row.freelancer_billing_country || null,
         }
       : null,
     planId: String(row.plan_id),
@@ -122,6 +126,8 @@ function mapSubscription(row) {
       title: row.plan_title || null,
       durationDays: row.plan_duration_days ?? null,
       priceJod: row.plan_price_jod != null ? Number(row.plan_price_jod) : null,
+      description: row.plan_description || null,
+      requiresCompanyVisit: row.plan_requires_company_visit ?? null,
     } : null,
     assignedByUserId: row.assigned_by_user_id ? String(row.assigned_by_user_id) : null,
     assignedAt: row.assigned_at,
@@ -497,7 +503,10 @@ async function fulfillFreelancerSubscriptionStripePayment(
       [sid],
     );
     if (bySession[0]) {
-      return mapSubscription(bySession[0]);
+      // Row already exists for this Stripe session → previously processed (retry / duplicate event).
+      const existing = mapSubscription(bySession[0]);
+      if (existing) existing.freshlyPaid = false;
+      return existing;
     }
   }
 
@@ -509,7 +518,10 @@ async function fulfillFreelancerSubscriptionStripePayment(
     const legacy = legacyRows[0];
     if (legacy) {
       if (legacy.payment_status === SUBSCRIPTION_PAYMENT_STATUSES.PAID) {
-        return mapSubscription(legacy);
+        // Already paid → not a fresh transition (idempotent).
+        const existing = mapSubscription(legacy);
+        if (existing) existing.freshlyPaid = false;
+        return existing;
       }
       if (legacy.payment_status === SUBSCRIPTION_PAYMENT_STATUSES.PENDING) {
         const { rows: upgraded } = await runner.query(
@@ -525,7 +537,10 @@ async function fulfillFreelancerSubscriptionStripePayment(
            RETURNING *`,
           [legacySubId, sid, stripePaymentIntentId || null, paidAtDate],
         );
-        return mapSubscription(upgraded[0]);
+        // Pending → paid: a genuine paid transition for this subscription.
+        const upgradedSub = mapSubscription(upgraded[0]);
+        if (upgradedSub) upgradedSub.freshlyPaid = true;
+        return upgradedSub;
       }
     }
   }
@@ -553,7 +568,10 @@ async function fulfillFreelancerSubscriptionStripePayment(
       paidAtDate,
     ],
   );
-  return mapSubscription(inserted[0]);
+  // Brand-new paid row inserted: a genuine paid transition.
+  const insertedSub = mapSubscription(inserted[0]);
+  if (insertedSub) insertedSub.freshlyPaid = true;
+  return insertedSub;
 }
 
 /** @deprecated Legacy name — creates/fulfills paid Stripe subscription after checkout completes. */
@@ -855,6 +873,20 @@ async function listSubscriptions({
     AND fs.source = 'stripe'
   )`);
 
+  // Hide superseded pending attempts: a pending row is a historical attempt when a
+  // paid row already exists for the same freelancer + plan. Keeps the list free of
+  // duplicate rows while pagination/total counts stay consistent.
+  where.push(`NOT (
+    fs.payment_status = 'pending'
+    AND COALESCE(fs.activation_status, '') IN ('', 'company_pending')
+    AND EXISTS (
+      SELECT 1 FROM freelancer_subscriptions fs_paid
+      WHERE fs_paid.freelancer_user_id = fs.freelancer_user_id
+        AND fs_paid.plan_id = fs.plan_id
+        AND fs_paid.payment_status = 'paid'
+    )
+  )`);
+
   if (freelancerUserId) {
     where.push(`fs.freelancer_user_id = $${i}`);
     values.push(Number(freelancerUserId));
@@ -902,7 +934,8 @@ async function listSubscriptions({
 
   const whereSql = where.join(" AND ");
   const fromJoin = `FROM freelancer_subscriptions fs
-     LEFT JOIN users u ON u.id = fs.freelancer_user_id`;
+     LEFT JOIN users u ON u.id = fs.freelancer_user_id
+     LEFT JOIN plans p ON p.id = fs.plan_id`;
 
   const countRes = await pool.query(
     `SELECT COUNT(*)::int AS total ${fromJoin} WHERE ${whereSql}`,
@@ -940,10 +973,16 @@ async function listSubscriptions({
        u.father_name AS freelancer_father_name,
        u.family_name AS freelancer_family_name,
        u.email AS freelancer_email,
-       u.account_id AS freelancer_account_id
+       u.account_id AS freelancer_account_id,
+       u.phone AS freelancer_phone,
+       u.whatsapp AS freelancer_whatsapp,
+       p.name AS plan_name,
+       p.title AS plan_title,
+       p.duration_days AS plan_duration_days,
+       p.price_jod AS plan_price_jod
      ${fromJoin}
      WHERE ${whereSql}
-     ORDER BY fs.id DESC
+     ORDER BY fs.created_at DESC, fs.id DESC
      LIMIT $${i} OFFSET $${i + 1}`,
     listValues,
   );
@@ -970,6 +1009,41 @@ async function listSubscriptions({
       expiringSoon: agg.expiring_soon ?? 0,
     },
   };
+}
+
+/**
+ * Load a single subscription with freelancer + plan detail joined. Read-only.
+ * Used by the paid-subscription admin notification. Returns a mapped subscription or null.
+ */
+async function getSubscriptionWithDetailsById(subscriptionId, client) {
+  const runner = client || pool;
+  const id = Number(subscriptionId);
+  if (!Number.isInteger(id) || id < 1) return null;
+  const { rows } = await runner.query(
+    `SELECT
+       fs.*,
+       u.first_name AS freelancer_first_name,
+       u.father_name AS freelancer_father_name,
+       u.family_name AS freelancer_family_name,
+       u.email AS freelancer_email,
+       u.account_id AS freelancer_account_id,
+       u.phone AS freelancer_phone,
+       u.whatsapp AS freelancer_whatsapp,
+       u.country AS freelancer_country,
+       p.name AS plan_name,
+       p.title AS plan_title,
+       p.duration_days AS plan_duration_days,
+       p.price_jod AS plan_price_jod,
+       p.description AS plan_description,
+       p.requires_company_visit AS plan_requires_company_visit
+     FROM freelancer_subscriptions fs
+     LEFT JOIN users u ON u.id = fs.freelancer_user_id
+     LEFT JOIN plans p ON p.id = fs.plan_id
+     WHERE fs.id = $1
+     LIMIT 1`,
+    [id],
+  );
+  return mapSubscription(rows[0]);
 }
 
 /**
@@ -1379,6 +1453,7 @@ module.exports = {
   assignPlanToFreelancer,
   updateSubscription,
   listSubscriptions,
+  getSubscriptionWithDetailsById,
   getCurrentSubscriptionForFreelancer,
   activateCurrentSubscriptionOnFirstOrder,
   activateCurrentSubscriptionOnFirstAcceptedOrder,

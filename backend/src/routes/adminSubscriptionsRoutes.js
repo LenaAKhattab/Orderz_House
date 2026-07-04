@@ -4,7 +4,7 @@ const subscriptionsController = require("../controllers/subscriptionsController"
 
 const validateRequest = require("../middleware/validateRequest");
 
-const { requireAuth, requireAnyRole, requirePermission, requireAnyPermission } = require("../middleware/rbacMiddleware");
+const { requireAuth, requireAnyRole, requireSuperAdmin, requirePermission, requireAnyPermission } = require("../middleware/rbacMiddleware");
 
 const { PERMISSION_KEYS } = require("../constants/dashboardPermissions");
 
@@ -44,6 +44,8 @@ const {
 
   listSubscriptionsValidators,
 
+  updateSubscriptionNotificationEmailValidators,
+
   freelancerIdParam,
 
   activateSubscriptionValidators,
@@ -75,6 +77,30 @@ router.get(
   validateRequest,
 
   subscriptionsController.listSubscriptions,
+
+);
+
+router.get(
+
+  "/subscriptions/notification-email",
+
+  requireSuperAdmin,
+
+  subscriptionsController.getSubscriptionNotificationEmail,
+
+);
+
+router.put(
+
+  "/subscriptions/notification-email",
+
+  requireSuperAdmin,
+
+  updateSubscriptionNotificationEmailValidators,
+
+  validateRequest,
+
+  subscriptionsController.updateSubscriptionNotificationEmail,
 
 );
 

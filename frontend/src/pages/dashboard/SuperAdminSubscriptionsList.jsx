@@ -6,6 +6,10 @@ import {
   formatFreelancerDisplayName,
   formatFreelancerDisplaySubline,
 } from "../../admin/subscriptions/subscriptionAdminDisplay";
+import {
+  isWhatsappEligibleSubscription,
+  resolveFreelancerWhatsapp,
+} from "../../admin/subscriptions/subscriptionWhatsApp";
 import { formatSubscriptionPaymentCountry } from "../../utils/countryDisplay";
 
 function subscriptionCountryLine(sub) {
@@ -32,10 +36,21 @@ export function paymentStatusTone(status) {
   return "neutral";
 }
 
-function SubscriptionActions({ sub, submitting, onDisable, onCancel, onFirstOrder, onCompanyActivate, layout = "wrap" }) {
+function SubscriptionActions({
+  sub,
+  submitting,
+  onDisable,
+  onCancel,
+  onFirstOrder,
+  onCompanyActivate,
+  onWhatsApp,
+  layout = "wrap",
+}) {
   const hasFirstOrderRecorded = Boolean(sub?.hasFirstOrder || sub?.firstOrderDate || sub?.actualStartDate);
   const showCompanyActivate = sub.paymentStatus === "paid" && sub.activationStatus !== "company_approved";
   const compact = layout === "compact";
+  const showWhatsApp = Boolean(onWhatsApp) && isWhatsappEligibleSubscription(sub);
+  const whatsappNumber = showWhatsApp ? resolveFreelancerWhatsapp(sub).normalized : null;
 
   return (
     <div className={`oh-sa-subs-actions${compact ? " oh-sa-subs-actions--compact" : ""}`}>
@@ -75,6 +90,17 @@ function SubscriptionActions({ sub, submitting, onDisable, onCancel, onFirstOrde
           تفعيل الشركة
         </button>
       ) : null}
+      {showWhatsApp ? (
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm oh-sa-subs-actions__btn oh-sa-subs-actions__btn--wa"
+          disabled={submitting || !whatsappNumber}
+          title={whatsappNumber ? "إرسال رسالة واتساب" : "لا يوجد رقم واتساب"}
+          onClick={() => onWhatsApp(sub)}
+        >
+          واتساب
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -90,6 +116,7 @@ export default function SuperAdminSubscriptionsList({
   onCancel,
   onFirstOrder,
   onCompanyActivate,
+  onWhatsApp,
 }) {
   const planName = (sub) => sub?.plan?.title || planTitleById[String(sub?.planId || "")] || "—";
 
@@ -177,6 +204,7 @@ export default function SuperAdminSubscriptionsList({
                     onCancel={onCancel}
                     onFirstOrder={onFirstOrder}
                     onCompanyActivate={onCompanyActivate}
+                    onWhatsApp={onWhatsApp}
                     layout="compact"
                   />
                 </td>
@@ -225,6 +253,7 @@ export default function SuperAdminSubscriptionsList({
               onCancel={onCancel}
               onFirstOrder={onFirstOrder}
               onCompanyActivate={onCompanyActivate}
+              onWhatsApp={onWhatsApp}
             />
           </li>
         ))}

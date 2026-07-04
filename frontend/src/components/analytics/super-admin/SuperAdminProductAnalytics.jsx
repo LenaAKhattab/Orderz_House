@@ -1,22 +1,28 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   AlertCircle,
   AlertTriangle,
+  ArrowLeft,
   Banknote,
   BookOpen,
   Briefcase,
+  Check,
   CheckCircle2,
   ChevronLeft,
   ClipboardList,
   Clock,
+  Copy,
   CreditCard,
+  ExternalLink,
   FilePlus2,
   FolderOpen,
   Globe,
   Info,
   LayoutGrid,
   Megaphone,
+  MessageCircle,
+  Phone,
   RefreshCw,
   UserRound,
   Users,
@@ -29,10 +35,24 @@ import { buildUnifiedAttention } from "./buildUnifiedAttention";
 import { computeAttentionTotalCount } from "./UnifiedAttentionPanel";
 import { formatInt, formatMoneyJod, LABEL_UNAVAILABLE } from "./superAdminHomeBundleUi";
 import { SA_ROUTES, resolveSuperAdminDashboardHomeLink } from "./superAdminHomeDataUtils";
+import {
+  activationStatusLabel,
+  formatFreelancerDisplayName,
+  formatPlanPriceLabel,
+  formatSubscriptionAdminDateTime,
+  resolveSubscriptionPlanTitle,
+  subscriptionStatusLabel,
+} from "../../../admin/subscriptions/subscriptionAdminDisplay";
+import {
+  resolveFreelancerCountryLabel,
+  resolveFreelancerWhatsapp,
+} from "../../../admin/subscriptions/subscriptionWhatsApp";
+import SubscriptionWhatsAppModal from "../../../pages/dashboard/SubscriptionWhatsAppModal";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import "../../../styles/adminControlCenter.css";
 
 const MAX_ATTENTION = 6;
+const MAX_PAID_SUBSCRIPTIONS = 4;
 
 const QUICK_ACTIONS = [
   {
@@ -279,6 +299,196 @@ function QuickActionCard({ action, onCreateOrder }) {
   );
 }
 
+function paidSubscriptionDate(sub) {
+  const value = sub?.paidAt || sub?.assignedAt || sub?.createdAt || null;
+  const formatted = formatSubscriptionAdminDateTime(value);
+  return formatted === "—" ? "" : formatted;
+}
+
+function buildPaidSubscriptionCopyText(sub) {
+  const lines = [`الاسم: ${formatFreelancerDisplayName(sub)}`];
+  const email = sub?.freelancer?.email;
+  if (email) lines.push(`البريد: ${email}`);
+  const phone = sub?.freelancer?.phone;
+  const whatsapp = sub?.freelancer?.whatsapp;
+  if (phone) lines.push(`الهاتف: ${phone}`);
+  if (whatsapp) lines.push(`واتساب: ${whatsapp}`);
+  const country = resolveFreelancerCountryLabel(sub);
+  if (country) lines.push(`الدولة: ${country}`);
+  if (sub?.freelancer?.accountId) lines.push(`رقم الحساب: ${sub.freelancer.accountId}`);
+  if (sub?.freelancerUserId) lines.push(`معرّف المستخدم: ${sub.freelancerUserId}`);
+  if (sub?.id) lines.push(`رقم الاشتراك: #${sub.id}`);
+  const planTitle = resolveSubscriptionPlanTitle(sub);
+  if (planTitle) lines.push(`الباقة: ${planTitle}`);
+  const price = formatPlanPriceLabel(sub?.plan);
+  if (price && price !== "—") lines.push(`سعر الباقة: ${price}`);
+  const activationFee = sub?.activationFee;
+  if (activationFee && activationFee.amountJod != null) {
+    lines.push(
+      `رسوم التفعيل: ${formatMoneyJod(activationFee.amountJod)} ${activationFee.paid ? "(مدفوعة)" : "(غير مدفوعة)"}`,
+    );
+  }
+  lines.push("حالة الدفع: مدفوع");
+  lines.push(`حالة التفعيل: ${activationStatusLabel(sub?.activationStatus)}`);
+  lines.push(`حالة الاشتراك: ${subscriptionStatusLabel(sub?.status)}`);
+  const date = paidSubscriptionDate(sub);
+  if (date) lines.push(`تاريخ الدفع: ${date}`);
+  return lines.join("\n");
+}
+
+function PaidSubscriptionCard({ sub, onWhatsApp }) {
+  const [copied, setCopied] = useState(false);
+  const fullName = formatFreelancerDisplayName(sub);
+  const email = sub?.freelancer?.email || "";
+  const phone = sub?.freelancer?.phone || "";
+  const whatsapp = sub?.freelancer?.whatsapp || "";
+  const countryLabel = resolveFreelancerCountryLabel(sub);
+  const accountId = sub?.freelancer?.accountId || "";
+  const userId = sub?.freelancerUserId || sub?.freelancer?.id || "";
+  const planTitle = resolveSubscriptionPlanTitle(sub) || "—";
+  const price = formatPlanPriceLabel(sub?.plan);
+  const activationFee = sub?.activationFee || null;
+  const hasActivationFee = activationFee && activationFee.amountJod != null;
+  const date = paidSubscriptionDate(sub);
+  const activation = activationStatusLabel(sub?.activationStatus);
+  const status = subscriptionStatusLabel(sub?.status);
+  const wa = resolveFreelancerWhatsapp(sub);
+  const viewTo = `${SA_ROUTES.subscriptions}?search=${encodeURIComponent(sub?.id ?? "")}`;
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard?.writeText(buildPaidSubscriptionCopyText(sub));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable — ignore */
+    }
+  }, [sub]);
+
+  return (
+    <article className="acc-paid-card">
+      <div className="acc-paid-card__body">
+        <div className="acc-paid-card__head">
+          <span className="acc-paid-card__name" title={fullName}>
+            {fullName}
+          </span>
+          <span className="acc-paid-badge acc-paid-badge--paid">مدفوع</span>
+        </div>
+        <div className="acc-paid-card__contact">
+          {email ? (
+            <span className="acc-paid-card__contact-item" dir="ltr" title={email}>
+              {email}
+            </span>
+          ) : null}
+          {accountId ? <span className="acc-paid-card__contact-item">#{accountId}</span> : null}
+          {userId ? <span className="acc-paid-card__contact-item">معرّف: {userId}</span> : null}
+        </div>
+        <div className="acc-paid-card__meta">
+          <span className="acc-paid-meta">
+            <Phone size={12} strokeWidth={2} aria-hidden />
+            <span className="acc-paid-meta__label">الهاتف:</span>
+            {phone ? (
+              <span className="acc-paid-meta__value" dir="ltr" title={phone}>
+                {phone}
+              </span>
+            ) : (
+              <span className="acc-paid-meta__value acc-paid-meta__value--muted">غير متوفر</span>
+            )}
+          </span>
+          <span className="acc-paid-meta">
+            <MessageCircle size={12} strokeWidth={2} aria-hidden />
+            <span className="acc-paid-meta__label">واتساب:</span>
+            {whatsapp ? (
+              <span className="acc-paid-meta__value" dir="ltr" title={whatsapp}>
+                {whatsapp}
+              </span>
+            ) : (
+              <span className="acc-paid-meta__value acc-paid-meta__value--muted">غير متوفر</span>
+            )}
+          </span>
+          <span className="acc-paid-meta">
+            <Globe size={12} strokeWidth={2} aria-hidden />
+            <span className="acc-paid-meta__label">الدولة:</span>
+            {countryLabel ? (
+              <span className="acc-paid-meta__value">{countryLabel}</span>
+            ) : (
+              <span className="acc-paid-meta__value acc-paid-meta__value--muted">غير متوفر</span>
+            )}
+          </span>
+        </div>
+        <div className="acc-paid-card__plan">
+          <span className="acc-paid-card__plan-title" title={planTitle}>
+            {planTitle}
+          </span>
+          {price && price !== "—" ? (
+            <span className="acc-paid-card__price">الباقة: {price}</span>
+          ) : null}
+          {hasActivationFee ? (
+            <span
+              className={`acc-paid-card__fee ${activationFee.paid ? "" : "acc-paid-card__fee--unpaid"}`.trim()}
+            >
+              رسوم التفعيل: {formatMoneyJod(activationFee.amountJod)}
+              {activationFee.paid ? " (مدفوعة)" : " (غير مدفوعة)"}
+            </span>
+          ) : null}
+          {date ? <span className="acc-paid-card__date">{date}</span> : null}
+        </div>
+        <div className="acc-paid-card__chips">
+          <span className="acc-paid-chip">{activation}</span>
+          <span className="acc-paid-chip">{status}</span>
+        </div>
+      </div>
+      <div className="acc-paid-card__actions">
+        <NavLink to={viewTo} className="acc-paid-btn acc-paid-btn--primary">
+          <ExternalLink size={13} strokeWidth={2} aria-hidden />
+          عرض الاشتراك
+        </NavLink>
+        {wa.normalized ? (
+          <button type="button" className="acc-paid-btn acc-paid-btn--wa" onClick={() => onWhatsApp?.(sub)}>
+            <MessageCircle size={13} strokeWidth={2} aria-hidden />
+            واتساب
+          </button>
+        ) : null}
+        <button type="button" className="acc-paid-btn acc-paid-btn--ghost" onClick={handleCopy}>
+          {copied ? <Check size={13} strokeWidth={2} aria-hidden /> : <Copy size={13} strokeWidth={2} aria-hidden />}
+          {copied ? "تم النسخ" : "نسخ البيانات"}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function PaidSubscriptionsSkeleton() {
+  return (
+    <div className="acc-paid-list" aria-busy="true" aria-label="جارٍ تحميل الاشتراكات المدفوعة">
+      {Array.from({ length: MAX_PAID_SUBSCRIPTIONS }).map((_, i) => (
+        <div key={i} className="acc-paid-card acc-paid-card--skeleton">
+          <span className="acc-paid-skel-line" />
+          <span className="acc-paid-skel-line acc-paid-skel-line--short" />
+          <span className="acc-paid-skel-line acc-paid-skel-line--short" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PaidSubscriptionsList({ items, loading, failed, onWhatsApp }) {
+  if (loading) return <PaidSubscriptionsSkeleton />;
+  if (failed) {
+    return <p className="acc-empty acc-empty--inline">تعذر تحميل الاشتراكات المدفوعة. حاول التحديث مرة أخرى.</p>;
+  }
+  if (!items?.length) {
+    return <p className="acc-empty acc-empty--inline">لا توجد اشتراكات مدفوعة جديدة حالياً.</p>;
+  }
+  return (
+    <div className="acc-paid-list">
+      {items.slice(0, MAX_PAID_SUBSCRIPTIONS).map((sub) => (
+        <PaidSubscriptionCard key={sub.id} sub={sub} onWhatsApp={onWhatsApp} />
+      ))}
+    </div>
+  );
+}
+
 export default function SuperAdminProductAnalytics() {
   const { dir, locale } = useTranslation();
   const { openModal: openCreateOrderModal } = useClientCreateOrderModal();
@@ -359,6 +569,17 @@ export default function SuperAdminProductAnalytics() {
 
   const platformSummaryLoading = isInitialLoad || (fastLoading && !platformOrders);
   const platformSummaryFailed = kpiFailed && !platformOrders;
+
+  const paidSubscriptions = bundle?.paidSubscriptions;
+  const paidSubsRecent = paidSubscriptions?.recent || [];
+  const paidSubsLoading = isInitialLoad || (fastLoading && !paidSubscriptions);
+  const paidSubsFailed = kpiFailed && !paidSubscriptions;
+  const paidSubsToday = Number(paidSubscriptions?.countToday) || 0;
+  const paidSubsWeek = Number(paidSubscriptions?.countThisWeek) || 0;
+  const paidSubsFollowUp = Number(paidSubscriptions?.needsFollowUpCount) || 0;
+  const paidSubsHasMetrics = paidSubsToday > 0 || paidSubsWeek > 0 || paidSubsFollowUp > 0;
+
+  const [whatsAppSub, setWhatsAppSub] = useState(null);
 
   const handleRefresh = useCallback(() => {
     void refresh();
@@ -483,6 +704,45 @@ export default function SuperAdminProductAnalytics() {
         </div>
       </section>
 
+      <section className="acc-section" aria-labelledby="acc-paid-heading">
+        <div className="acc-section__head acc-section__head--stacked">
+          <div className="acc-section__head-main">
+            <h2 id="acc-paid-heading" className="acc-section__title">
+              الاشتراكات المدفوعة الجديدة
+            </h2>
+            <p className="acc-section__desc">آخر الاشتراكات التي تم دفعها وتحتاج متابعة من الإدارة.</p>
+            {!paidSubsLoading && !paidSubsFailed && paidSubsHasMetrics ? (
+              <div className="acc-paid-metrics">
+                <span className="acc-paid-metric">
+                  اليوم: <strong>{formatInt(paidSubsToday)}</strong>
+                </span>
+                <span className="acc-paid-metric">
+                  هذا الأسبوع: <strong>{formatInt(paidSubsWeek)}</strong>
+                </span>
+                {paidSubsFollowUp > 0 ? (
+                  <span className="acc-paid-metric acc-paid-metric--alert">
+                    بحاجة متابعة: <strong>{formatInt(paidSubsFollowUp)}</strong>
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+          <NavLink
+            to={SA_ROUTES.subscriptions}
+            className="acc-section__link acc-section__hint acc-section__link--action"
+          >
+            عرض الكل
+            <ArrowLeft size={14} strokeWidth={2.25} aria-hidden />
+          </NavLink>
+        </div>
+        <PaidSubscriptionsList
+          items={paidSubsRecent}
+          loading={paidSubsLoading}
+          failed={paidSubsFailed}
+          onWhatsApp={setWhatsAppSub}
+        />
+      </section>
+
       <section className="acc-section" aria-labelledby="acc-attention-heading">
         <div className="acc-section__head">
           <h2 id="acc-attention-heading" className="acc-section__title">
@@ -550,6 +810,13 @@ export default function SuperAdminProductAnalytics() {
         </div>
       </section>
       </div>
+
+      <SubscriptionWhatsAppModal
+        open={Boolean(whatsAppSub)}
+        subscription={whatsAppSub}
+        planTitle={whatsAppSub ? resolveSubscriptionPlanTitle(whatsAppSub) || "" : ""}
+        onClose={() => setWhatsAppSub(null)}
+      />
     </>
   );
 }

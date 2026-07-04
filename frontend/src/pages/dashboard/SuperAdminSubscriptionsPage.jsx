@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Button from "../../components/ui/Button";
 import Pagination from "../../components/common/Pagination";
 import {
@@ -6,8 +7,10 @@ import {
   assignPlanToFreelancerRequest,
   adminSearchFreelancersRequest,
   getFreelancerCurrentSubscriptionAdminRequest,
+  getSubscriptionNotificationEmailRequest,
   listAssignablePlansAdminRequest,
   listSubscriptionsRequest,
+  updateSubscriptionNotificationEmailRequest,
   updateSubscriptionRequest,
 } from "../../services/api";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
@@ -21,6 +24,7 @@ import StatusBadge from "../../components/dashboard/StatusBadge";
 import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
 import DashboardModal from "../../components/dashboard/DashboardModal";
 import SuperAdminSubscriptionsList from "./SuperAdminSubscriptionsList";
+import SubscriptionWhatsAppModal from "./SubscriptionWhatsAppModal";
 import "./superAdminSubscriptionsPage.css";
 
 const PAGE_LIMIT = 20;
@@ -53,6 +57,7 @@ function errorMessage(err) {
   const apiMsg = err?.response?.data?.message;
   return apiMsg || "تعذر تنفيذ العملية. حاول مجدداً.";
 }
+
 
 function formatDisplayRange(pagination) {
   const total = Number(pagination?.total) || 0;
@@ -95,8 +100,20 @@ const SuperAdminSubscriptionsPage = () => {
   const [actionConfirm, setActionConfirm] = useState(null);
   const [actionConfirmContinue, setActionConfirmContinue] = useState(null);
 
-  const [listSearch, setListSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [whatsAppSub, setWhatsAppSub] = useState(null);
+
+  const [notifyModalOpen, setNotifyModalOpen] = useState(false);
+  const [notifyEmail, setNotifyEmail] = useState("");
+  const [notifyEnvFallback, setNotifyEnvFallback] = useState(null);
+  const [notifyLoading, setNotifyLoading] = useState(false);
+  const [notifyBusy, setNotifyBusy] = useState(false);
+  const [notifyError, setNotifyError] = useState("");
+  const [notifySuccess, setNotifySuccess] = useState("");
+
+  const [searchParams] = useSearchParams();
+  const initialSearch = (searchParams.get("search") || "").trim();
+  const [listSearch, setListSearch] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [filterStatus, setFilterStatus] = useState("");
   const [filterPlanId, setFilterPlanId] = useState("");
 
@@ -243,6 +260,58 @@ const SuperAdminSubscriptionsPage = () => {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [assignModalOpen, submitting, assignConfirmOpen, closeAssignModal]);
+
+  const openNotifyModal = useCallback(async () => {
+    setNotifyError("");
+    setNotifySuccess("");
+    setNotifyModalOpen(true);
+    setNotifyLoading(true);
+    try {
+      const res = await getSubscriptionNotificationEmailRequest();
+      setNotifyEmail(res?.data?.email || "");
+      setNotifyEnvFallback(res?.data?.envFallback || null);
+    } catch (err) {
+      setNotifyError(errorMessage(err));
+    } finally {
+      setNotifyLoading(false);
+    }
+  }, []);
+
+  const closeNotifyModal = useCallback(() => {
+    if (notifyBusy) return;
+    setNotifyModalOpen(false);
+  }, [notifyBusy]);
+
+  const saveNotifyEmail = useCallback(async () => {
+    const email = notifyEmail.trim();
+    if (email !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setNotifySuccess("");
+      setNotifyError("يرجى إدخال بريد إلكتروني صحيح");
+      return;
+    }
+    setNotifyBusy(true);
+    setNotifyError("");
+    setNotifySuccess("");
+    try {
+      const res = await updateSubscriptionNotificationEmailRequest(email);
+      setNotifyEmail(res?.data?.email || "");
+      setNotifyEnvFallback(res?.data?.envFallback || null);
+      setNotifySuccess("تم حفظ بريد إشعارات الاشتراكات بنجاح");
+    } catch (err) {
+      setNotifyError(errorMessage(err) || "تعذر حفظ البريد الإلكتروني");
+    } finally {
+      setNotifyBusy(false);
+    }
+  }, [notifyEmail]);
+
+  useEffect(() => {
+    if (!notifyModalOpen || notifyBusy) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") closeNotifyModal();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [notifyModalOpen, notifyBusy, closeNotifyModal]);
 
   const askConfirm = useCallback((config) => {
     return new Promise((resolve) => {
@@ -611,6 +680,87 @@ const SuperAdminSubscriptionsPage = () => {
         </div>
       </DashboardModal>
 
+      <SubscriptionWhatsAppModal
+        open={Boolean(whatsAppSub)}
+        subscription={whatsAppSub}
+        planTitle={whatsAppSub ? planTitleById[String(whatsAppSub.planId || "")] : ""}
+        onClose={() => setWhatsAppSub(null)}
+      />
+
+      <DashboardModal
+        open={notifyModalOpen}
+        title="إعداد بريد إشعارات الاشتراكات"
+        ariaLabel="Subscription Notification Email — إعداد بريد إشعارات الاشتراكات"
+        onClose={closeNotifyModal}
+        footer={
+          <>
+            <Button type="button" variant="secondary" disabled={notifyBusy} onClick={closeNotifyModal}>
+              إلغاء
+            </Button>
+            <Button type="button" variant="primary" disabled={notifyBusy || notifyLoading} onClick={() => void saveNotifyEmail()}>
+              {notifyBusy ? "جارٍ الحفظ…" : "حفظ"}
+            </Button>
+          </>
+        }
+      >
+        <div className="grid gap-4">
+          <p className="m-0 text-sm leading-relaxed text-slate-600">
+            هذا هو البريد الإلكتروني الذي يستقبل إشعار كل اشتراك مدفوع جديد تلقائياً.
+          </p>
+          {notifyLoading ? (
+            <div className="text-sm text-slate-500">جارٍ تحميل البريد الحالي…</div>
+          ) : (
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <label className={fieldLabelClass} htmlFor="sa-subs-notify-email">
+                بريد الإشعارات الحالي
+              </label>
+              <input
+                id="sa-subs-notify-email"
+                className={controlClass}
+                type="email"
+                dir="ltr"
+                value={notifyEmail}
+                placeholder="name@example.com"
+                autoComplete="off"
+                disabled={notifyBusy}
+                onChange={(e) => {
+                  setNotifyEmail(e.target.value);
+                  if (notifyError) setNotifyError("");
+                  if (notifySuccess) setNotifySuccess("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !notifyBusy) {
+                    e.preventDefault();
+                    void saveNotifyEmail();
+                  }
+                }}
+              />
+              {notifyEnvFallback ? (
+                <p className="m-0 text-xs text-slate-500">
+                  الإعداد الافتراضي (متغير البيئة): <span dir="ltr">{notifyEnvFallback}</span>
+                </p>
+              ) : null}
+            </div>
+          )}
+          {notifyError ? (
+            <div
+              role="alert"
+              className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm font-semibold text-rose-700"
+            >
+              {notifyError}
+            </div>
+          ) : null}
+          {notifySuccess ? (
+            <div
+              role="status"
+              className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-semibold text-emerald-700"
+            >
+              {notifySuccess}
+            </div>
+          ) : null}
+        </div>
+      </DashboardModal>
+
       <DashboardPageHeader
         eyebrow="لوحة المدير الأعلى"
         title="اشتراكات المستقلين"
@@ -644,9 +794,14 @@ const SuperAdminSubscriptionsPage = () => {
         title="إدارة الاشتراكات"
         description="استعرض سجلات الاشتراكات وابحث وفلتر النتائج."
         actions={
-          <Button type="button" variant="primary" disabled={submitting} onClick={() => setAssignModalOpen(true)}>
-            إسناد باقة لمستقل
-          </Button>
+          <>
+            <Button type="button" variant="secondary" disabled={submitting} onClick={() => void openNotifyModal()}>
+              إعداد بريد إشعارات الاشتراكات
+            </Button>
+            <Button type="button" variant="primary" disabled={submitting} onClick={() => setAssignModalOpen(true)}>
+              إسناد باقة لمستقل
+            </Button>
+          </>
         }
       >
         {initialLoading ? <DashboardLoadingState label="جارٍ تحميل الاشتراكات…" /> : null}
@@ -761,6 +916,7 @@ const SuperAdminSubscriptionsPage = () => {
               onCancel={handleCancel}
               onFirstOrder={handleFirstOrder}
               onCompanyActivate={companyActivate}
+              onWhatsApp={setWhatsAppSub}
             />
             <div className="oh-sa-subs-pagination-wrap">
               <Pagination

@@ -6,7 +6,6 @@ import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
-import { breadcrumbHomeCrumb, superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import {
   activateSubscriptionCompanyRequest,
   listAllSubscriptionsRequest,
@@ -107,10 +106,6 @@ export default function AdminSubscriptionsActivationPage() {
     }
   };
 
-  const breadcrumbs = isSuperAdmin
-    ? superAdminBreadcrumbs("dashboard.breadcrumbs.subscriptionActivation")
-    : [breadcrumbHomeCrumb(user), { labelKey: "dashboard.breadcrumbs.subscriptionActivation" }];
-
   const showPagination = !loading && pendingCompanyActivation.length > PAGE_SIZE;
 
   return (
@@ -119,7 +114,6 @@ export default function AdminSubscriptionsActivationPage() {
         eyebrow={isSuperAdmin ? "لوحة المدير الأعلى" : "لوحة التحكم"}
         title="تفعيل اشتراكات المستقلين"
         description="يمكنك تفعيل الحسابات المشتركة بعد مراجعة الشركة، ليصبح المستقل مؤهلاً لاستلام الطلبات."
-        breadcrumbs={breadcrumbs}
       />
 
       {error ? (

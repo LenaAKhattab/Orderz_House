@@ -297,6 +297,18 @@ export const updateSubscriptionRequest = async (id, patch) => {
   return data;
 };
 
+/** Super-admin only: read the admin email that receives paid-subscription notifications. */
+export const getSubscriptionNotificationEmailRequest = async () => {
+  const { data } = await api.get("/admin/subscriptions/notification-email");
+  return data;
+};
+
+/** Super-admin only: update (or clear) the paid-subscription notification email. */
+export const updateSubscriptionNotificationEmailRequest = async (email) => {
+  const { data } = await api.put("/admin/subscriptions/notification-email", { email });
+  return data;
+};
+
 export const activateSubscriptionCompanyRequest = async (id) => {
   const { data } = await api.patch(`/admin/subscriptions/${id}/company-activate`);
   return data;
@@ -1506,7 +1518,7 @@ export const adminRemoveCourseFreelancerRequest = async (courseId, freelancerUse
 };
 
 export const adminListCourseFreelancersRequest = async (params = {}) => {
-  const { data } = await api.get("/admin/courses/freelancers", { params });
+  const { data } = await api.get("/admin/courses/freelancers", { params, timeout: 30000 });
   return data;
 };
 

@@ -7,6 +7,7 @@ const subscriptionsService = require("../services/subscriptionsService");
 const { recordActivationFeeFromStripeSession, markCheckoutSessionStatus, supersedeOpenCheckoutSessions, CHECKOUT_SESSION_STATUS, PURPOSE_ACTIVATION_FEE_ONLY } = require("../services/subscriptionActivationFeeService");
 const notificationService = require("../services/notificationService");
 const freelancerSubscriptionPaymentNotifications = require("../services/freelancerSubscriptionPaymentNotifications");
+const subscriptionAdminNotificationService = require("../services/subscriptionAdminNotificationService");
 const notificationEventsService = require("../services/notificationEventsService");
 const { capture } = require("../config/posthog");
 const { pickFazaatTrackingLogFields } = require("../utils/fazaatStripeMetadata");
@@ -384,6 +385,12 @@ async function applyCheckoutSessionFreelancerSubscriptionCompleted(session, meta
       subscriptionId: sub?.id ? String(sub.id) : undefined,
     });
     await db.query("COMMIT");
+    // Internal admin email — after commit, only on a genuine paid transition (idempotent).
+    if (sub?.id && sub.freshlyPaid) {
+      await safeNotify(() =>
+        subscriptionAdminNotificationService.sendPaidSubscriptionAdminNotification(sub.id),
+      );
+    }
     return { status: "applied" };
   } catch (e) {
     await db.query("ROLLBACK");
@@ -777,6 +784,7 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool
         ? subscriptionMetaId
         : null;
     const db = await dbPool.connect();
+    let paidSub = null;
     try {
       await db.query("BEGIN");
       if (outcomePaymentStatus === "paid") {
@@ -791,6 +799,7 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool
           },
           db,
         );
+        paidSub = sub;
         if (sub?.id) {
           await safeNotify(() =>
             freelancerSubscriptionPaymentNotifications.notifyFreelancerSubscriptionPaymentSuccess(
@@ -817,6 +826,12 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool
         );
       }
       await db.query("COMMIT");
+      // Internal admin email — after commit, only on a genuine paid transition (idempotent).
+      if (paidSub?.id && paidSub.freshlyPaid) {
+        await safeNotify(() =>
+          subscriptionAdminNotificationService.sendPaidSubscriptionAdminNotification(paidSub.id),
+        );
+      }
       return { status: "applied" };
     } catch (e) {
       await db.query("ROLLBACK");

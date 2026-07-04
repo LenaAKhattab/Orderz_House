@@ -42,6 +42,7 @@ function mergeDashboardParts(fast, executive, intelligence, posthog) {
     updatedAt: intelligence?.updatedAt || executive?.updatedAt || fast?.updatedAt || posthog?.updatedAt,
     summary: fast?.summary,
     businessKpis: fast?.businessKpis,
+    paidSubscriptions: fast?.paidSubscriptions || null,
     posthog: posthog || null,
     intelligence: {
       ...(intelligence?.intelligence || {}),

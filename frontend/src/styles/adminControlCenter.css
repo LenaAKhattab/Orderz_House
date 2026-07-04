@@ -87,6 +87,25 @@
   text-decoration: none;
 }
 
+.acc-section__link--action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-weight: 800;
+}
+
+.acc-section__link--action svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.15s var(--acc-ease);
+}
+
+.acc-section__link--action:hover svg {
+  transform: translateX(-2px);
+}
+
 /* —— KPI grid —— */
 /* —— KPI grid (flex: last row stretches when fewer than N cards) —— */
 .acc-kpi-grid {
@@ -753,6 +772,305 @@ a.acc-summary-card:hover {
   cursor: pointer;
 }
 
+/* —— Paid subscriptions feed —— */
+.acc-paid-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 6px;
+}
+
+.acc-paid-metric {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--acc-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.acc-paid-metric strong {
+  color: var(--acc-primary);
+  font-weight: 800;
+}
+
+.acc-paid-metric--alert strong {
+  color: #b45309;
+}
+
+.acc-paid-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+.acc-paid-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--acc-border);
+  border-inline-start: 3px solid rgba(22, 163, 74, 0.5);
+  background: var(--acc-surface);
+  box-shadow: var(--acc-shadow);
+  min-height: 150px;
+  transition:
+    border-color 0.15s var(--acc-ease),
+    box-shadow 0.15s var(--acc-ease);
+}
+
+.acc-paid-card:hover {
+  border-color: rgba(47, 59, 101, 0.18);
+  box-shadow: var(--acc-shadow-hover);
+}
+
+.acc-paid-card__body {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.acc-paid-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.acc-paid-card__name {
+  min-width: 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--acc-ink);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acc-paid-badge {
+  flex-shrink: 0;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.acc-paid-badge--paid {
+  background: rgba(22, 163, 74, 0.12);
+  color: #166534;
+}
+
+.acc-paid-card__contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--acc-muted);
+}
+
+.acc-paid-card__contact-item {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acc-paid-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 6px;
+}
+
+.acc-paid-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(47, 59, 101, 0.05);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.acc-paid-meta svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  color: var(--acc-primary);
+  opacity: 0.7;
+}
+
+.acc-paid-meta__label {
+  flex-shrink: 0;
+  color: var(--acc-muted);
+}
+
+.acc-paid-meta__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--acc-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.acc-paid-meta__value--muted {
+  color: var(--acc-muted);
+  font-weight: 600;
+}
+
+.acc-paid-card__plan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+}
+
+.acc-paid-card__plan-title {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--acc-primary);
+}
+
+.acc-paid-card__price {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--acc-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.acc-paid-card__fee {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #166534;
+  font-variant-numeric: tabular-nums;
+}
+
+.acc-paid-card__fee--unpaid {
+  color: #b45309;
+}
+
+.acc-paid-card__date {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--acc-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.acc-paid-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.acc-paid-chip {
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: var(--acc-muted);
+  background: rgba(47, 59, 101, 0.06);
+}
+
+.acc-paid-card__actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--acc-border);
+}
+
+.acc-paid-card__actions .acc-paid-btn {
+  flex: 1 1 auto;
+  min-width: 90px;
+}
+
+.acc-paid-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--acc-border);
+  background: var(--acc-surface);
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--acc-primary);
+  text-decoration: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    border-color 0.15s var(--acc-ease),
+    background 0.15s var(--acc-ease),
+    box-shadow 0.15s var(--acc-ease);
+}
+
+.acc-paid-btn svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.acc-paid-btn--primary {
+  background: var(--acc-primary);
+  border-color: var(--acc-primary);
+  color: #fff;
+}
+
+.acc-paid-btn--primary:hover {
+  box-shadow: var(--acc-shadow-hover);
+}
+
+.acc-paid-btn--wa {
+  color: #128c7e;
+  border-color: rgba(18, 140, 126, 0.3);
+  background: rgba(18, 140, 126, 0.08);
+}
+
+.acc-paid-btn--wa:hover {
+  border-color: rgba(18, 140, 126, 0.5);
+}
+
+.acc-paid-btn--ghost:hover {
+  border-color: rgba(47, 59, 101, 0.2);
+  background: rgba(47, 59, 101, 0.04);
+}
+
+.acc-paid-card--skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 10px;
+  min-height: 150px;
+}
+
+.acc-paid-skel-line {
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, rgba(226, 232, 240, 0.95) 0%, rgba(241, 245, 249, 1) 50%, rgba(226, 232, 240, 0.95) 100%);
+  background-size: 200% 100%;
+  animation: acc-shimmer 1.2s ease-in-out infinite;
+}
+
+.acc-paid-skel-line--short {
+  width: 55%;
+}
+
 /* —— Responsive —— */
 @media (max-width: 640px) {
   .acc-page {
@@ -769,5 +1087,13 @@ a.acc-summary-card:hover {
 
   .acc-kpi-card {
     min-height: 70px;
+  }
+
+  .acc-paid-list {
+    grid-template-columns: 1fr;
+  }
+
+  .acc-paid-card {
+    min-height: 0;
   }
 }

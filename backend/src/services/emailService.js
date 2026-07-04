@@ -146,8 +146,58 @@ async function sendForgotPasswordOtpEmail(email, otpPlain) {
   }
 }
 
+/**
+ * Sends an internal admin notification email (HTML) for a newly-paid subscription.
+ * Best-effort: callers wrap this in try/catch (safeNotify) so a delivery failure never breaks the payment flow.
+ * In development without RESEND_API_KEY, logs a safe summary to the console instead of sending.
+ * @param {{ to: string, subject: string, html: string }} params
+ */
+async function sendPaidSubscriptionAdminEmail({ to, subject, html } = {}) {
+  const recipient = String(to || "").trim();
+  if (!recipient) {
+    throw createAppError("Missing admin notification recipient.", 400, {
+      publicCode: "MISSING_ADMIN_NOTIFICATION_RECIPIENT",
+    });
+  }
+
+  if (process.env.NODE_ENV === "development" && !process.env.RESEND_API_KEY) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[email:dev] paid_subscription_admin_notification → ${recipient} | ${subject} (set RESEND_API_KEY to send real mail)`,
+    );
+    return { id: "dev_console" };
+  }
+
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    throw createAppError("Email service is not configured (RESEND_API_KEY missing).", 503, {
+      publicCode: "EMAIL_SERVICE_UNAVAILABLE",
+    });
+  }
+
+  const resend = new Resend(key);
+  const { data, error } = await withEmailSendTimeout(
+    resend.emails.send({
+      from: fromAddress(),
+      to: [recipient],
+      subject,
+      html,
+    }),
+  );
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("[Resend] sendPaidSubscriptionAdminEmail failed", { to: recipient, error });
+    throw createAppError("Failed to send admin subscription notification email.", 503, {
+      publicCode: "FAILED_TO_SEND_ADMIN_SUBSCRIPTION_EMAIL",
+      cause: error,
+    });
+  }
+  return data;
+}
+
 module.exports = {
   sendRegisterOtpEmail,
   sendForgotPasswordOtpEmail,
+  sendPaidSubscriptionAdminEmail,
   EMAIL_SEND_TIMEOUT_MS,
 };

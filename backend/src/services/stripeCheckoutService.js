@@ -31,6 +31,7 @@ const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPa
 const { getPrimaryClientUrl } = require("../config/clientUrl");
 const { isProduction } = require("../config/env");
 const freelancerSubscriptionPaymentNotifications = require("./freelancerSubscriptionPaymentNotifications");
+const subscriptionAdminNotificationService = require("./subscriptionAdminNotificationService");
 const {
   PAYMENT_CONTEXT,
   buildFazaatStripeMetadata,
@@ -1417,6 +1418,13 @@ async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeS
             source: "confirm_checkout",
           },
         ),
+      );
+    }
+
+    // Internal admin email — only on a genuine paid transition (idempotent across confirm + webhooks).
+    if (sub.freshlyPaid) {
+      await safeNotify(() =>
+        subscriptionAdminNotificationService.sendPaidSubscriptionAdminNotification(sub.id),
       );
     }
 

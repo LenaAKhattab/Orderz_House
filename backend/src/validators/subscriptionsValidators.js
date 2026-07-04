@@ -35,6 +35,18 @@ const listSubscriptionsValidators = [
     .withMessage("Invalid status."),
 ];
 
+const updateSubscriptionNotificationEmailValidators = [
+  body("email").custom((value) => {
+    if (value == null) throw new Error("يرجى إدخال بريد إلكتروني صحيح");
+    const str = String(value).trim();
+    if (str === "") return true; // empty clears the setting (falls back to env)
+    if (str.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str)) {
+      throw new Error("يرجى إدخال بريد إلكتروني صحيح");
+    }
+    return true;
+  }),
+];
+
 const freelancerSelfSubscribeValidators = [
   body("planId")
     .custom((value) => {
@@ -62,6 +74,7 @@ module.exports = {
   assignSubscriptionValidators,
   updateSubscriptionValidators,
   listSubscriptionsValidators,
+  updateSubscriptionNotificationEmailValidators,
   freelancerSelfSubscribeValidators,
   freelancerConfirmCheckoutValidators,
   activateSubscriptionValidators,

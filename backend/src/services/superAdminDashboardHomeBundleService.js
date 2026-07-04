@@ -1,5 +1,6 @@
 const superAdminDashboardSummaryService = require("./superAdminDashboardSummaryService");
 const superAdminBusinessMetricsService = require("./superAdminBusinessMetricsService");
+const superAdminDashboardPaidSubscriptionsService = require("./superAdminDashboardPaidSubscriptionsService");
 const superAdminAnalyticsOverviewService = require("./superAdminAnalyticsOverviewService");
 const intelligence = require("./superAdminDashboardIntelligenceService");
 const { getOrSet } = require("../utils/superAdminDashboardCache");
@@ -43,8 +44,17 @@ function mergeSectionErrors(...sections) {
   return Object.keys(sectionErrors).length ? { sectionErrors } : {};
 }
 
-function buildUnifiedAttention(attentionSection, summaryAttention) {
+function buildUnifiedAttention(attentionSection, summaryAttention, paidSubscriptions) {
   const alerts = (attentionSection?.data?.alerts || []).filter((a) => toInt(a.count) > 0);
+
+  if (toInt(paidSubscriptions?.needsFollowUpCount) > 0) {
+    alerts.push({
+      key: "paid_subscriptions_follow_up",
+      title: "اشتراكات مدفوعة جديدة تحتاج متابعة",
+      count: toInt(paidSubscriptions.needsFollowUpCount),
+      path: "/dashboard/super-admin/subscriptions",
+    });
+  }
 
   if (toInt(summaryAttention?.unreadNotifications) > 0) {
     alerts.push({
@@ -77,8 +87,8 @@ function normalizePosthogRange(range) {
   return "7d";
 }
 
-function buildAttentionPayload(attentionIntel, summary) {
-  const unifiedAttention = buildUnifiedAttention(attentionIntel, summary?.attention);
+function buildAttentionPayload(attentionIntel, summary, paidSubscriptions) {
+  const unifiedAttention = buildUnifiedAttention(attentionIntel, summary?.attention, paidSubscriptions);
   return {
     section: "attention",
     updatedAt: attentionIntel.updatedAt,
@@ -95,7 +105,7 @@ async function getDashboardHomeFast({ userId }) {
     cacheKey,
     FAST_CACHE_TTL_MS,
     async () => {
-      const [summary, businessKpis, attentionIntel] = await Promise.all([
+      const [summary, businessKpis, attentionIntel, paidSubscriptions] = await Promise.all([
         timedDashboardSection(ENDPOINT_FAST, "summary", () =>
           superAdminDashboardSummaryService.getDashboardSummary({ userId }),
         ),
@@ -105,15 +115,19 @@ async function getDashboardHomeFast({ userId }) {
         timedDashboardSection(ENDPOINT_FAST, "attention", () =>
           intelligence.getAttentionIntelligence(),
         ),
+        timedDashboardSection(ENDPOINT_FAST, "paidSubscriptions", () =>
+          superAdminDashboardPaidSubscriptionsService.getPaidSubscriptionsFocus({ limit: 4 }),
+        ),
       ]);
 
-      const attention = buildAttentionPayload(attentionIntel, summary);
+      const attention = buildAttentionPayload(attentionIntel, summary, paidSubscriptions);
       const meta = mergeSectionErrors(attentionIntel);
 
       return {
         updatedAt: new Date().toISOString(),
         summary,
         businessKpis,
+        paidSubscriptions,
         intelligence: { attention },
         meta,
       };
@@ -266,6 +280,7 @@ function composeHomeBundle({ fast, executive, intel, posthogWrap }) {
     updatedAt: new Date().toISOString(),
     summary: fast?.summary,
     businessKpis: fast?.businessKpis,
+    paidSubscriptions: fast?.paidSubscriptions,
     posthog,
     intelligence: intelligencePayload,
     meta: {

@@ -62,10 +62,19 @@
   flex-direction: column;
   width: var(--oh-sa-sidebar-w);
   height: var(--oh-sa-shell-pane-h);
+  min-height: var(--oh-sa-shell-pane-h);
   max-height: var(--oh-sa-shell-pane-h);
-  min-height: 0;
   transition: width 0.28s var(--oh-sa-ease);
   direction: ltr;
+}
+
+.oh-sa-sidebar-wrap > .oh-sa-nav {
+  position: absolute;
+  inset: 0;
+  flex: none;
+  width: 100%;
+  height: auto;
+  min-height: 0;
 }
 
 .oh-sa-sidebar-wrap > .oh-sa-sidebar__collapse {
@@ -894,8 +903,8 @@ button.oh-sa-navlink.oh-sa-navlink--button {
     order: 0;
     width: min(300px, calc(100vw - 20px));
     height: calc(var(--oh-sa-viewport-h) - 20px);
+    min-height: calc(var(--oh-sa-viewport-h) - 20px);
     max-height: calc(var(--oh-sa-viewport-h) - 20px);
-    min-height: 0;
     transform: translateX(calc(100% + 20px));
     transition: transform 0.28s var(--oh-sa-ease);
     z-index: 45;

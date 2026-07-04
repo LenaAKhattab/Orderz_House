@@ -286,7 +286,7 @@ export default function AdminCoursesPage() {
     [toast, editingCourseId, syncServerFileUrls],
   );
 
-  const loadFreelancers = useCallback(async () => {
+  const loadFreelancers = useCallback(async ({ silent = true } = {}) => {
     const gen = ++freelancersFetchGenRef.current;
     try {
       const res = await adminListCourseFreelancersRequest({ q: "", limit: 200 });
@@ -298,7 +298,7 @@ export default function AdminCoursesPage() {
       if (gen !== freelancersFetchGenRef.current) return;
       const msg = err?.response?.data?.message || FREELANCERS_LOAD_ERROR_MSG;
       setFreelancersLoadError(msg);
-      toast.error(msg);
+      if (!silent) toast.error(msg);
     }
   }, [toast]);
 
@@ -309,12 +309,17 @@ export default function AdminCoursesPage() {
 
   const retryFreelancersLoad = useCallback(() => {
     toast.clearSessionErrorToast(FREELANCERS_LOAD_ERROR_MSG);
-    void loadFreelancers();
+    void loadFreelancers({ silent: false });
   }, [toast, loadFreelancers]);
 
   useEffect(() => {
-    void loadFreelancers();
-  }, [loadFreelancers]);
+    if (!manageModalOpen || manageTab !== "assign") return undefined;
+    if (selectedCourse?.course?.isVisibleToAllFreelancers) return undefined;
+    void loadFreelancers({ silent: false });
+    return () => {
+      freelancersFetchGenRef.current += 1;
+    };
+  }, [manageModalOpen, manageTab, selectedCourse?.course?.isVisibleToAllFreelancers, loadFreelancers]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

@@ -396,6 +396,18 @@
   color: #991b1b !important;
 }
 
+.oh-sa-subs-actions__btn--wa {
+  border-color: rgba(187, 247, 208, 0.9) !important;
+  color: #15803d !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.oh-sa-subs-actions__btn--wa:hover:not(:disabled) {
+  background: #f0fdf4 !important;
+  border-color: #bbf7d0 !important;
+  color: #166534 !important;
+}
+
 /* —— Mobile cards (hidden from lg upward) —— */
 .oh-sa-subs-mobile-list {
   list-style: none;

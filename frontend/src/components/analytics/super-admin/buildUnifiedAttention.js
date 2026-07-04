@@ -25,6 +25,7 @@ const ALERT_SEVERITY = {
   pending_claims_review: SEVERITY.urgent,
   orders_waiting_too_long: SEVERITY.urgent,
   inactive_subscribed_freelancers: SEVERITY.medium,
+  paid_subscriptions_follow_up: SEVERITY.urgent,
   internal_orders_pending: SEVERITY.urgent,
   unread_notifications: SEVERITY.info,
   low_performing_courses: SEVERITY.info,
