@@ -168,6 +168,10 @@ export default function PlansMobilePlanCard({
         {durationLabel ? <p className="pm-plan-card__duration">{durationLabel}</p> : null}
       </div>
 
+      {display.priceIntroText ? (
+        <p className="pm-plan-card__price-intro">{display.priceIntroText}</p>
+      ) : null}
+
       <div className="pm-plan-card__price">
         <span className="pm-plan-card__price-main">{priceMain}</span>
         {priceSub ? <span className="pm-plan-card__price-sub">{priceSub}</span> : null}
@@ -182,6 +186,7 @@ export default function PlansMobilePlanCard({
 
       {offerLabel ? <p className="pm-plan-card__offer">{offerLabel}</p> : null}
 
+      <div className="pm-plan-card__body">
       <ul className="pm-plan-card__features" aria-label={t("plans.featuresAria")}>
         {previewFeatures.map((text, idx) => (
           <li key={`${text}-${idx}`} className="pm-plan-card__feature">
@@ -224,6 +229,7 @@ export default function PlansMobilePlanCard({
           {display.refundPolicy ? <p>{display.refundPolicy}</p> : null}
         </div>
       ) : null}
+      </div>
 
       <button
         type="button"

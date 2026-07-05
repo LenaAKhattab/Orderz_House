@@ -2,7 +2,9 @@
 export function getInitialPlanFormState() {
   return {
     title: "",
+    titleEn: "",
     description: "",
+    descriptionEn: "",
     durationDays: "365",
     priceJod: "",
     stripeCheckoutAmountJod: "",
@@ -12,7 +14,9 @@ export function getInitialPlanFormState() {
     isVisible: true,
     sortOrder: "0",
     featuresText: "",
+    featuresTextEn: "",
     trainingsText: "",
+    trainingsTextEn: "",
     paymentNotes: "",
     installmentUpfrontJod: "",
     installmentMonthlyJod: "",
@@ -20,6 +24,7 @@ export function getInitialPlanFormState() {
     installmentNotes: "",
     offerExpiresAt: "",
     offerLabel: "",
+    offerLabelEn: "",
     orderValueMinJod: "",
     orderValueMaxJod: "",
     activationRequirements: "",
@@ -30,8 +35,13 @@ export function getInitialPlanFormState() {
     planPageId: "",
     subscriptionPlanId: "",
     label: "",
+    labelEn: "",
     billingText: "",
+    billingTextEn: "",
+    priceIntroText: "",
+    priceIntroTextEn: "",
     buttonText: "",
+    buttonTextEn: "",
     buttonUrl: "",
     currency: "JOD",
   };
@@ -40,6 +50,25 @@ export function getInitialPlanFormState() {
 function linesFromArray(arr) {
   if (!Array.isArray(arr) || arr.length === 0) return "";
   return arr.map(String).join("\n");
+}
+
+function sortedIncludedFeatures(plan) {
+  if (!Array.isArray(plan?.planFeatures) || plan.planFeatures.length === 0) return null;
+  return [...plan.planFeatures]
+    .filter((f) => f?.isIncluded !== false)
+    .sort((a, b) => Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0));
+}
+
+function featuresTextFromPlan(plan) {
+  const rows = sortedIncludedFeatures(plan);
+  if (rows) return rows.map((f) => String(f.featureText || "")).join("\n");
+  return linesFromArray(plan.features);
+}
+
+function featuresTextEnFromPlan(plan) {
+  const rows = sortedIncludedFeatures(plan);
+  if (rows) return rows.map((f) => String(f.featureTextEn || "")).join("\n");
+  return "";
 }
 
 function dateInputFromIso(iso) {
@@ -51,8 +80,11 @@ function dateInputFromIso(iso) {
 export function planToEditForm(plan) {
   const inst = plan?.installmentPlan && typeof plan.installmentPlan === "object" ? plan.installmentPlan : null;
   return {
+    internalName: plan.name ?? "",
     title: plan.title ?? "",
+    titleEn: plan.titleEn ?? "",
     description: plan.description ?? "",
+    descriptionEn: plan.descriptionEn ?? "",
     durationDays: String(plan.durationDays ?? 365),
     priceJod: plan.priceJod == null ? "" : String(plan.priceJod),
     stripeCheckoutAmountJod:
@@ -62,8 +94,10 @@ export function planToEditForm(plan) {
     isActive: Boolean(plan.isActive),
     isVisible: Boolean(plan.isVisible),
     sortOrder: String(plan.sortOrder ?? 0),
-    featuresText: linesFromArray(plan.features),
+    featuresText: featuresTextFromPlan(plan),
+    featuresTextEn: featuresTextEnFromPlan(plan),
     trainingsText: linesFromArray(plan.trainings),
+    trainingsTextEn: linesFromArray(plan.trainingsEn),
     paymentNotes: plan.paymentNotes ?? "",
     installmentUpfrontJod: inst?.upfrontJod != null ? String(inst.upfrontJod) : "",
     installmentMonthlyJod: inst?.monthlyJod != null ? String(inst.monthlyJod) : "",
@@ -71,6 +105,7 @@ export function planToEditForm(plan) {
     installmentNotes: inst?.notes ?? "",
     offerExpiresAt: dateInputFromIso(plan.offerExpiresAt),
     offerLabel: plan.offerLabel ?? "",
+    offerLabelEn: plan.offerLabelEn ?? "",
     orderValueMinJod: plan.orderValueMinJod == null ? "" : String(plan.orderValueMinJod),
     orderValueMaxJod: plan.orderValueMaxJod == null ? "" : String(plan.orderValueMaxJod),
     activationRequirements: plan.activationRequirements ?? "",
@@ -81,8 +116,13 @@ export function planToEditForm(plan) {
     planPageId: plan.planPageId != null ? String(plan.planPageId) : "",
     subscriptionPlanId: plan.subscriptionPlanId != null ? String(plan.subscriptionPlanId) : "",
     label: plan.label ?? "",
+    labelEn: plan.labelEn ?? "",
     billingText: plan.billingText ?? "",
+    billingTextEn: plan.billingTextEn ?? "",
+    priceIntroText: plan.priceIntroText ?? "",
+    priceIntroTextEn: plan.priceIntroTextEn ?? "",
     buttonText: plan.buttonText ?? "",
+    buttonTextEn: plan.buttonTextEn ?? "",
     buttonUrl: plan.buttonUrl ?? "",
     currency: plan.currency ?? "JOD",
   };

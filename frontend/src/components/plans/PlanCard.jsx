@@ -212,6 +212,10 @@ const PlanCard = ({
         {durationLabel ? <p className="pricing-card__duration">{durationLabel}</p> : null}
       </header>
 
+      {display.priceIntroText ? (
+        <p className="pricing-card__price-intro">{display.priceIntroText}</p>
+      ) : null}
+
       {offerLabel ? <OfferBlock label={offerLabel} className="pricing-card__offer--inline" /> : null}
 
       <div className="pricing-card__price">

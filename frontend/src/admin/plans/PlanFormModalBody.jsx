@@ -3,6 +3,7 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 import PlanCollapsibleSection from "./PlanCollapsibleSection";
 import PlanFormSection from "./PlanFormSection";
 import PlanToggle from "./PlanToggle";
+import { PLAN_FORM_SECTIONS, getPlanFormCopy } from "./planFormUiCopy";
 import {
   formatCheckoutPlanOptionLabel,
   formatPlanPageOptionLabel,
@@ -54,6 +55,7 @@ function useMobileAccordionLayout() {
  *   planPages?: object[];
  *   canonicalPlans?: object[];
  *   excludePlanId?: string | number | null;
+ *   readOnlyInternalName?: string;
  * }} p
  */
 export default function PlanFormModalBody({
@@ -64,6 +66,7 @@ export default function PlanFormModalBody({
   planPages = [],
   canonicalPlans = [],
   excludePlanId = null,
+  readOnlyInternalName = "",
 }) {
   const { locale } = useTranslation();
   const isEn = locale === "en";
@@ -86,6 +89,11 @@ export default function PlanFormModalBody({
 
   const sectionLabel = (section) => (isEn ? section.labelEn : section.labelAr);
 
+  const internalNamePreview =
+    mode === "edit"
+      ? String(form.internalName || "").trim()
+      : String(readOnlyInternalName || "").trim();
+
   const sections = {
     basic: (
       <PlanFormSection
@@ -95,6 +103,25 @@ export default function PlanFormModalBody({
             : "العنوان والوصف كما يظهران للمستقلين."
         }
       >
+        {internalNamePreview ? (
+          <Field
+            label={isEn ? "Internal name (read-only)" : "الاسم الداخلي (للقراءة فقط)"}
+            hint={
+              isEn
+                ? "Used by checkout and subscriptions. Cannot be changed after creation."
+                : "يُستخدم في الدفع والاشتراكات. لا يمكن تغييره بعد الإنشاء."
+            }
+          >
+            <input
+              className="oh-sapl-input oh-sapl-input--readonly"
+              dir="ltr"
+              value={internalNamePreview}
+              readOnly
+              tabIndex={-1}
+              aria-readonly="true"
+            />
+          </Field>
+        ) : null}
         <Field label={isEn ? "Title" : "العنوان"}>
           <input
             className="oh-sapl-input"
@@ -122,6 +149,30 @@ export default function PlanFormModalBody({
             max={3650}
             value={form.durationDays}
             onChange={(e) => set("durationDays", e.target.value)}
+            disabled={submitting}
+          />
+        </Field>
+        <p className="oh-sapl-form-subhint" style={{ marginTop: 16 }}>
+          {isEn ? "English copy (optional — shown on EN locale)" : "النسخة الإنجليزية (اختياري — تظهر عند اختيار الإنجليزية)"}
+        </p>
+        <Field label={isEn ? "Title (English)" : "العنوان (إنجليزي)"}>
+          <input
+            className="oh-sapl-input"
+            dir="ltr"
+            value={form.titleEn}
+            onChange={(e) => set("titleEn", e.target.value)}
+            placeholder="Professional freelancer plan"
+            disabled={submitting}
+          />
+        </Field>
+        <Field label={isEn ? "Short description (English)" : "وصف مختصر (إنجليزي)"} style={{ marginTop: 12 }}>
+          <textarea
+            className="oh-sapl-input oh-sapl-input--textarea"
+            dir="ltr"
+            rows={3}
+            value={form.descriptionEn}
+            onChange={(e) => set("descriptionEn", e.target.value)}
+            placeholder={isEn ? "Optional" : "اختياري"}
             disabled={submitting}
           />
         </Field>
@@ -165,6 +216,55 @@ export default function PlanFormModalBody({
             />
           </Field>
         </Grid>
+        <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
+          <Field label={isEn ? "Currency" : "العملة"}>
+            <input
+              className="oh-sapl-input"
+              dir="ltr"
+              maxLength={3}
+              value={form.currency}
+              onChange={(e) => set("currency", e.target.value.toUpperCase())}
+              placeholder="JOD"
+              disabled={submitting}
+            />
+          </Field>
+        </Grid>
+        <Field
+          label={isEn ? "Text between billing period and price" : "النص بين مدة الباقة والسعر"}
+          hint={
+            isEn
+              ? "Shown on the public plan card between the billing period and the price."
+              : "يظهر في بطاقة الباقة العامة بين مدة الاشتراك والسعر."
+          }
+          style={{ marginTop: 12 }}
+        >
+          <textarea
+            className="oh-sapl-input oh-sapl-input--textarea"
+            rows={3}
+            value={form.priceIntroText}
+            onChange={(e) => set("priceIntroText", e.target.value)}
+            placeholder={
+              isEn
+                ? "Example: Suitable for beginners or freelancers"
+                : "مثال: مناسب للمبتدئين أو مناسب للعمل الحر"
+            }
+            disabled={submitting}
+          />
+        </Field>
+        <Field
+          label={isEn ? "Text between billing period and price (English)" : "النص بين مدة الباقة والسعر (إنجليزي)"}
+          style={{ marginTop: 12 }}
+        >
+          <textarea
+            className="oh-sapl-input oh-sapl-input--textarea"
+            dir="ltr"
+            rows={3}
+            value={form.priceIntroTextEn}
+            onChange={(e) => set("priceIntroTextEn", e.target.value)}
+            placeholder="Example: Suitable for beginners or freelancers"
+            disabled={submitting}
+          />
+        </Field>
         <Field label={isEn ? "Payment notes" : "ملاحظات الدفع"} style={{ marginTop: 12 }}>
           <textarea
             className="oh-sapl-input oh-sapl-input--textarea"
@@ -324,6 +424,19 @@ export default function PlanFormModalBody({
             onChange={(v) => set("requiresCompanyVisit", v)}
           />
         </div>
+        <Field
+          label={isEn ? "Admin notes (internal)" : "ملاحظات إدارية (داخلية)"}
+          hint={isEn ? "Not shown on public plans page." : "لا تظهر في صفحة الباقات العامة."}
+          style={{ marginTop: 12 }}
+        >
+          <textarea
+            className="oh-sapl-input oh-sapl-input--textarea"
+            rows={2}
+            value={form.adminNotes}
+            onChange={(e) => set("adminNotes", e.target.value)}
+            disabled={submitting}
+          />
+        </Field>
       </PlanFormSection>
     ),
 
@@ -339,6 +452,20 @@ export default function PlanFormModalBody({
             disabled={submitting}
           />
         </Field>
+        <Field
+          label={isEn ? "Includes (English, one per line)" : "يشمل (إنجليزي — سطر لكل ميزة)"}
+          style={{ marginTop: 12 }}
+        >
+          <textarea
+            className="oh-sapl-input oh-sapl-input--textarea"
+            dir="ltr"
+            rows={5}
+            value={form.featuresTextEn}
+            onChange={(e) => set("featuresTextEn", e.target.value)}
+            placeholder="e.g. Contract signing at company office"
+            disabled={submitting}
+          />
+        </Field>
         <Field label={isEn ? "Included trainings" : "التدريبات المشمولة"} style={{ marginTop: 12 }}>
           <textarea
             className="oh-sapl-input oh-sapl-input--textarea"
@@ -346,6 +473,20 @@ export default function PlanFormModalBody({
             value={form.trainingsText}
             onChange={(e) => set("trainingsText", e.target.value)}
             placeholder={isEn ? "One line per training" : "سطر لكل تدريب"}
+            disabled={submitting}
+          />
+        </Field>
+        <Field
+          label={isEn ? "Included trainings (English, one per line)" : "التدريبات المشمولة (إنجليزي — سطر لكل تدريب)"}
+          style={{ marginTop: 12 }}
+        >
+          <textarea
+            className="oh-sapl-input oh-sapl-input--textarea"
+            dir="ltr"
+            rows={4}
+            value={form.trainingsTextEn}
+            onChange={(e) => set("trainingsTextEn", e.target.value)}
+            placeholder="One line per training"
             disabled={submitting}
           />
         </Field>
@@ -378,6 +519,48 @@ export default function PlanFormModalBody({
               value={form.billingText}
               onChange={(e) => set("billingText", e.target.value)}
               placeholder={isEn ? "e.g. Full year" : "مثال: سنة كاملة"}
+              disabled={submitting}
+            />
+          </Field>
+        </Grid>
+        <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
+          <Field label={isEn ? "Badge label (English)" : "نص الشارة (إنجليزي)"}>
+            <input
+              className="oh-sapl-input"
+              dir="ltr"
+              value={form.labelEn}
+              onChange={(e) => set("labelEn", e.target.value)}
+              disabled={submitting}
+            />
+          </Field>
+          <Field label={isEn ? "Billing text (English)" : "نص الفوترة (إنجليزي)"}>
+            <input
+              className="oh-sapl-input"
+              dir="ltr"
+              value={form.billingTextEn}
+              onChange={(e) => set("billingTextEn", e.target.value)}
+              placeholder="Full year"
+              disabled={submitting}
+            />
+          </Field>
+        </Grid>
+        <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
+          <Field label={isEn ? "Button label (Arabic)" : "نص زر الإجراء (عربي)"}>
+            <input
+              className="oh-sapl-input"
+              value={form.buttonText}
+              onChange={(e) => set("buttonText", e.target.value)}
+              placeholder={isEn ? "e.g. Start now" : "مثال: ابدأ الآن"}
+              disabled={submitting}
+            />
+          </Field>
+          <Field label={isEn ? "Button label (English)" : "نص زر الإجراء (إنجليزي)"}>
+            <input
+              className="oh-sapl-input"
+              dir="ltr"
+              value={form.buttonTextEn}
+              onChange={(e) => set("buttonTextEn", e.target.value)}
+              placeholder="Start now"
               disabled={submitting}
             />
           </Field>
@@ -467,6 +650,15 @@ export default function PlanFormModalBody({
             />
           </Field>
         </Grid>
+        <Field label={isEn ? "Special offer label (English)" : "نص العرض الخاص (إنجليزي)"} style={{ marginTop: 12 }}>
+          <input
+            className="oh-sapl-input"
+            dir="ltr"
+            value={form.offerLabelEn}
+            onChange={(e) => set("offerLabelEn", e.target.value)}
+            disabled={submitting}
+          />
+        </Field>
       </PlanFormSection>
     ),
   };
