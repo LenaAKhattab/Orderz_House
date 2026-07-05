@@ -64,6 +64,7 @@ const PERMISSION_KEYS = Object.freeze({
   TRAINING_ORDERS: "dashboard.super_admin.training_orders",
   ADMINS_MANAGE: "dashboard.super_admin.admins_manage",
   EDIT_WEBSITE: "dashboard.super_admin.edit_website",
+  ANALYTICS: "dashboard.super_admin.analytics",
 });
 
 module.exports = {

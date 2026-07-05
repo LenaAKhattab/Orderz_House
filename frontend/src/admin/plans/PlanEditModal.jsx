@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import Button from "../../components/ui/Button";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import { planToEditForm } from "./planFormConstants";
 import { canSubmitEdit, normalizeEditPayload } from "./planPayloadUtils";
 import { buildPlanPagesIndex } from "./planAdminSections";
 import PlanFormModalBody from "./PlanFormModalBody";
 
 function PlanEditForm({ plan, submitting, onClose, onSave, planPages, canonicalPlans }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en";
   const [form, setForm] = useState(() => planToEditForm(plan));
 
   return (
@@ -13,9 +16,11 @@ function PlanEditForm({ plan, submitting, onClose, onSave, planPages, canonicalP
       <header className="oh-sapl-modal__head">
         <div>
           <h2 id="oh-sapl-edit-title" className="oh-sapl-modal__title">
-            تعديل الباقة
+            {isEn ? "Edit plan" : "تعديل الباقة"}
           </h2>
-          <p className="oh-sapl-modal__subtitle">عدّل أقسام الباقة من التبويبات أدناه.</p>
+          <p className="oh-sapl-modal__subtitle">
+            {isEn ? "Edit plan sections using the tabs below." : "عدّل أقسام الباقة من التبويبات أدناه."}
+          </p>
         </div>
         <button type="button" className="oh-sapl-modal__close" onClick={onClose} aria-label="إغلاق">
           ×
@@ -36,14 +41,14 @@ function PlanEditForm({ plan, submitting, onClose, onSave, planPages, canonicalP
 
       <footer className="oh-sapl-modal__foot">
         <Button type="button" variant="secondary" disabled={submitting} onClick={onClose}>
-          إلغاء
+          {isEn ? "Cancel" : "إلغاء"}
         </Button>
         <Button
           type="button"
           disabled={submitting || !canSubmitEdit(form, { planPagesById: buildPlanPagesIndex(planPages) })}
           onClick={() => void onSave(normalizeEditPayload(form))}
         >
-          حفظ التعديلات
+          {submitting ? (isEn ? "Saving…" : "جارٍ الحفظ…") : isEn ? "Save changes" : "حفظ التعديلات"}
         </Button>
       </footer>
     </>

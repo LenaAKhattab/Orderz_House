@@ -16,6 +16,11 @@ const plansIntelGuard = [
   requireAnyRole(["admin", "super_admin"]),
   requireAnyPermission([PERMISSION_KEYS.OVERVIEW, PERMISSION_KEYS.PLANS]),
 ];
+const analyticsGuard = [
+  requireAuth,
+  requireAnyRole(["admin", "super_admin"]),
+  requirePermission(PERMISSION_KEYS.ANALYTICS),
+];
 
 router.get("/analytics/visitors", ...overviewGuard, superAdminAnalyticsController.getVisitorsAnalytics);
 
@@ -30,6 +35,8 @@ router.get("/dashboard/home-bundle", ...overviewGuard, superAdminAnalyticsContro
 router.get("/dashboard/home-fast", ...overviewGuard, superAdminAnalyticsController.getDashboardHomeFast);
 router.get("/dashboard/executive-kpis", ...overviewGuard, superAdminAnalyticsController.getDashboardHomeExecutiveKpis);
 router.get("/dashboard/home-intelligence", ...overviewGuard, superAdminAnalyticsController.getDashboardHomeIntelligence);
+
+router.get("/dashboard/analysis", ...analyticsGuard, superAdminAnalyticsController.getDashboardAnalysis);
 
 router.get("/dashboard/intelligence/summary", ...overviewGuard, superAdminAnalyticsController.getDashboardIntelligenceSummary);
 router.get("/dashboard/intelligence/orders", ...overviewGuard, superAdminAnalyticsController.getDashboardIntelligenceOrders);

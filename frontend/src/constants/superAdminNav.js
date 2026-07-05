@@ -11,6 +11,13 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.overview,
   },
+  analytics: {
+    key: "analytics",
+    to: "/dashboard/super-admin/analysis",
+    labelKey: "dashboard.nav.superAdmin.analysis",
+    icon: "◈",
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics,
+  },
   internalRequests: {
     key: "internalRequests",
     to: "/dashboard/super-admin/orders",
@@ -93,7 +100,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "overview",
     labelKey: "dashboard.nav.sections.overview",
-    itemKeys: ["overview"],
+    itemKeys: ["overview", "analytics"],
   },
   {
     id: "ordersOps",
@@ -150,6 +157,7 @@ export function filterSuperAdminNavSections(user, hasPermission) {
 
 export function superAdminBreadcrumbKeys(pathname) {
   const base = ["dashboard.breadcrumbs.home"];
+  if (pathname.includes("/analysis")) return [...base, "dashboard.breadcrumbs.analytics"];
   if (pathname.includes("/subscriptions/activation")) {
     return [...base, "dashboard.breadcrumbs.subscriptionActivation"];
   }

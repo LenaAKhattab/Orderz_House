@@ -158,6 +158,7 @@ function mergeApiPlansWithCatalog(apiPlans) {
     if (!api) return base;
     return {
       ...base,
+      ...api,
       selfCheckoutEligible:
         api.selfCheckoutEligible != null ? Boolean(api.selfCheckoutEligible) : base.selfCheckoutEligible,
     };

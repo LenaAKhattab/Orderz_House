@@ -39,6 +39,7 @@ export const ASSIGNABLE_DASHBOARD_PERMISSIONS = [
 
 /** Longest-prefix-first route → permission (super-admin shell paths). */
 const SUPER_ADMIN_ROUTE_RULES = [
+  { prefix: "/dashboard/super-admin/analysis", permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics },
   { prefix: "/dashboard/super-admin/edit-website", permission: SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite },
   { prefix: "/dashboard/super-admin/training-orders", permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders },
   { prefix: "/dashboard/super-admin/subscriptions/activation", permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation },
@@ -64,6 +65,7 @@ const ADMIN_SHELL_NAV_ORDER = [
 
 const SUPER_ADMIN_SHELL_NAV_ORDER = [
   { to: "/dashboard/super-admin", permission: SUPER_ADMIN_PAGE_PERMISSIONS.overview },
+  { to: "/dashboard/super-admin/analysis", permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics },
   { to: "/dashboard/super-admin/plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { to: "/dashboard/super-admin/courses", permission: ADMIN_PAGE_PERMISSIONS.courses },
   { to: "/dashboard/super-admin/ads", permission: ADMIN_PAGE_PERMISSIONS.ads },

@@ -63,6 +63,7 @@
     },
     "superAdmin": {
       "overview": "نظرة عامة",
+      "analysis": "التحليلات",
       "plans": "الباقات",
       "planPages": "صفحات الباقات",
       "courses": "الدورات",

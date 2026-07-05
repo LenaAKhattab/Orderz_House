@@ -63,6 +63,7 @@
     },
     "superAdmin": {
       "overview": "Overview",
+      "analysis": "Analytics",
       "plans": "Packages",
       "planPages": "Plan pages",
       "courses": "Courses",

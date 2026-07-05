@@ -50,6 +50,72 @@ export function paymentStatusLabel(status) {
   return status || "—";
 }
 
+function isDashboardAdminAssignedSubscription(sub) {
+  const source = String(sub?.source || "").trim().toLowerCase();
+  const payment = String(sub?.paymentStatus || sub?.payment_status || "").trim().toLowerCase();
+  const assignedBy = sub?.assignedByUserId ?? sub?.assigned_by_user_id ?? null;
+  const hasAssignedBy =
+    assignedBy !== null &&
+    assignedBy !== undefined &&
+    String(assignedBy).trim() !== "";
+  const notes = String(sub?.notes || "").trim();
+  return (
+    source === "admin" &&
+    payment === "not_required" &&
+    hasAssignedBy &&
+    notes !== "auto_default_free_plan"
+  );
+}
+
+export { isDashboardAdminAssignedSubscription };
+
+export function isPaidCompanyPendingActivation(sub) {
+  const payment = String(sub?.paymentStatus || sub?.payment_status || "").trim().toLowerCase();
+  const activation = String(sub?.activationStatus || sub?.activation_status || "").trim().toLowerCase();
+  return payment === "paid" && activation === "company_pending";
+}
+
+/** Legacy activation page: company approval still required (paid, pending, or not_required). */
+export function needsCompanyActivationAction(sub) {
+  if (sub?.needsCompanyActivation === true) return true;
+  const payment = String(sub?.paymentStatus || sub?.payment_status || "").trim().toLowerCase();
+  const activation = String(sub?.activationStatus || sub?.activation_status || "").trim().toLowerCase();
+  if (activation !== "company_pending") return false;
+  return payment === "paid" || payment === "pending" || payment === "not_required" || payment === "";
+}
+
+/** Admin who assigned the subscription (activation queue). */
+export function formatAssignedByAdminLabel(sub) {
+  const ab = sub?.assignedBy;
+  if (ab) {
+    const name = [ab.firstName, ab.fatherName, ab.familyName].filter(Boolean).join(" ").trim();
+    if (name) return name;
+    if (ab.email) return ab.email;
+    if (ab.id) return `مدير #${ab.id}`;
+  }
+  const id = sub?.assignedByUserId;
+  return id ? `مدير #${id}` : null;
+}
+
+/** Admin subscriptions table: dashboard manual assign only (not auto free-plan bootstrap). */
+export function subscriptionPaymentLabel(sub) {
+  if (isDashboardAdminAssignedSubscription(sub)) {
+    return "إسناد إداري";
+  }
+  return paymentStatusLabel(sub?.paymentStatus || sub?.payment_status);
+}
+
+/** Payment badge tone for admin subscriptions table. */
+export function subscriptionPaymentTone(sub) {
+  if (isDashboardAdminAssignedSubscription(sub)) {
+    return "admin_assigned";
+  }
+  const payment = String(sub?.paymentStatus || sub?.payment_status || "").trim().toLowerCase();
+  if (payment === "pending") return "pending";
+  if (payment === "paid") return "success";
+  return "neutral";
+}
+
 export function subscriptionStatusLabel(status) {
   const st = String(status || "").trim().toLowerCase();
   if (st === "assigned_not_started") return "معيّن — لم يبدأ";

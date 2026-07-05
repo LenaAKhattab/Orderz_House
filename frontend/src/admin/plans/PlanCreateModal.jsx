@@ -184,6 +184,7 @@ export default function PlanCreateModal({
             mode="create"
             planPages={planPages}
             canonicalPlans={canonicalPlans}
+            readOnlyInternalName={generatedInternalName}
           />
 
         </div>
@@ -205,9 +206,13 @@ export default function PlanCreateModal({
           </Button>
 
           <Button type="button" disabled={submitting || !canCreate} onClick={() => void onCreate()}>
-
-            {isEn ? "Save and add plan" : "حفظ وإضافة الباقة"}
-
+            {submitting
+              ? isEn
+                ? "Saving…"
+                : "جارٍ الحفظ…"
+              : isEn
+                ? "Save and add plan"
+                : "حفظ وإضافة الباقة"}
           </Button>
 
         </footer>

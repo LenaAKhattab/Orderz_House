@@ -23,6 +23,11 @@ const updateSubscriptionValidators = [
   body("notes").optional({ nullable: true }).isString().trim().isLength({ max: 5000 }).withMessage("Invalid notes."),
 ];
 
+const listActivationQueueValidators = [
+  query("page").optional().isInt({ min: 1 }).withMessage("Invalid page."),
+  query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("Invalid limit."),
+];
+
 const listSubscriptionsValidators = [
   query("page").optional().isInt({ min: 1 }).withMessage("Invalid page."),
   query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("Invalid limit."),
@@ -73,6 +78,7 @@ module.exports = {
   freelancerIdParam,
   assignSubscriptionValidators,
   updateSubscriptionValidators,
+  listActivationQueueValidators,
   listSubscriptionsValidators,
   updateSubscriptionNotificationEmailValidators,
   freelancerSelfSubscribeValidators,

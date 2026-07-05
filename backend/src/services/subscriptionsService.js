@@ -100,6 +100,12 @@ async function hasFreelancerEverHadAcceptedOrder({ freelancerUserId, excludeOrde
   return Boolean(rows[0]);
 }
 
+function normalizeSubscriptionSource(raw) {
+  if (raw === null || raw === undefined) return null;
+  const value = String(raw).trim();
+  return value || null;
+}
+
 function mapSubscription(row) {
   if (!row) return null;
   return {
@@ -137,7 +143,7 @@ function mapSubscription(row) {
     expiryDate: row.expiry_date,
     status: row.status,
     isCurrent: row.is_current,
-    source: row.source || SUBSCRIPTION_SOURCES.ADMIN,
+    source: normalizeSubscriptionSource(row.source),
     paymentStatus: normalizePaymentStatus(row.payment_status),
     activationStatus: normalizeActivationStatus(row.activation_status),
     companyActivatedAt: row.company_activated_at,
@@ -1011,6 +1017,134 @@ async function listSubscriptions({
   };
 }
 
+const ACTIVATION_QUEUE_WHERE_SQL = `fs.is_current = TRUE
+  AND fs.status NOT IN ('expired', 'cancelled')
+  AND (
+    (
+      fs.activation_status = 'company_pending'
+      AND fs.payment_status IN ('paid', 'pending', 'not_required')
+    )
+    OR
+    (
+      fs.source = 'admin'
+      AND fs.payment_status = 'not_required'
+      AND fs.assigned_by_user_id IS NOT NULL
+      AND COALESCE(fs.notes, '') <> 'auto_default_free_plan'
+      AND fs.status IN ('assigned_not_started', 'active')
+      AND fs.activation_status = 'company_approved'
+    )
+  )`;
+
+const ACTIVATION_QUEUE_ORDER_SQL = `COALESCE(fs.assigned_at, fs.paid_at, fs.created_at) DESC,
+     fs.id DESC`;
+
+function mapActivationQueueSubscription(row) {
+  const base = mapSubscription(row);
+  if (!base) return null;
+  const payment = normalizePaymentStatus(row.payment_status);
+  const activation = normalizeActivationStatus(row.activation_status);
+  const source = normalizeSubscriptionSource(row.source);
+  const notes = String(row.notes || "").trim();
+  const st = String(row.status || "").trim().toLowerCase();
+  const isAdminAssigned =
+    source === SUBSCRIPTION_SOURCES.ADMIN &&
+    payment === SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED &&
+    row.assigned_by_user_id != null &&
+    notes !== "auto_default_free_plan" &&
+    activation === SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED &&
+    (st === SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED || st === SUBSCRIPTION_STATUSES.ACTIVE);
+
+  const needsCompanyActivation =
+    activation === SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_PENDING &&
+    (payment === SUBSCRIPTION_PAYMENT_STATUSES.PAID ||
+      payment === SUBSCRIPTION_PAYMENT_STATUSES.PENDING ||
+      payment === SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED);
+
+  let activationQueueKind = "company_pending";
+  if (isAdminAssigned) {
+    activationQueueKind = "admin_assigned";
+  } else if (payment === SUBSCRIPTION_PAYMENT_STATUSES.PAID && needsCompanyActivation) {
+    activationQueueKind = "paid_company_pending";
+  }
+
+  return {
+    ...base,
+    assignedBy: row.assigned_by_user_id
+      ? {
+          id: String(row.assigned_by_user_id),
+          firstName: row.assigned_by_first_name || null,
+          fatherName: row.assigned_by_father_name || null,
+          familyName: row.assigned_by_family_name || null,
+          email: row.assigned_by_email || null,
+        }
+      : null,
+    activationQueueKind,
+    needsCompanyActivation,
+  };
+}
+
+/**
+ * Activation dashboard queue: company-pending activations + dashboard admin-assigned follow-up.
+ */
+async function listActivationQueueSubscriptions({ page = 1, limit = 20 } = {}) {
+  const { enrichSubscriptionsWithPaymentCountry } = require("./stripeSubscriptionCountryService");
+
+  const pg = Math.max(1, Number(page) || 1);
+  const lim = Math.min(100, Math.max(1, Number(limit) || 20));
+  const offset = (pg - 1) * lim;
+
+  const fromJoin = `FROM freelancer_subscriptions fs
+     LEFT JOIN users u ON u.id = fs.freelancer_user_id
+     LEFT JOIN plans p ON p.id = fs.plan_id
+     LEFT JOIN users ab ON ab.id = fs.assigned_by_user_id`;
+
+  const countRes = await pool.query(
+    `SELECT COUNT(*)::int AS total ${fromJoin} WHERE ${ACTIVATION_QUEUE_WHERE_SQL}`,
+  );
+  const total = countRes.rows[0]?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / lim));
+
+  const { rows } = await pool.query(
+    `SELECT
+       fs.*,
+       u.first_name AS freelancer_first_name,
+       u.father_name AS freelancer_father_name,
+       u.family_name AS freelancer_family_name,
+       u.email AS freelancer_email,
+       u.account_id AS freelancer_account_id,
+       u.phone AS freelancer_phone,
+       u.whatsapp AS freelancer_whatsapp,
+       p.name AS plan_name,
+       p.title AS plan_title,
+       p.duration_days AS plan_duration_days,
+       p.price_jod AS plan_price_jod,
+       ab.first_name AS assigned_by_first_name,
+       ab.father_name AS assigned_by_father_name,
+       ab.family_name AS assigned_by_family_name,
+       ab.email AS assigned_by_email
+     ${fromJoin}
+     WHERE ${ACTIVATION_QUEUE_WHERE_SQL}
+     ORDER BY ${ACTIVATION_QUEUE_ORDER_SQL}
+     LIMIT $1 OFFSET $2`,
+    [lim, offset],
+  );
+
+  const mapped = rows.map(mapActivationQueueSubscription).filter(Boolean);
+  const enriched = await enrichSubscriptionsWithPaymentCountry(mapped);
+
+  return {
+    subscriptions: enriched,
+    pagination: {
+      page: pg,
+      limit: lim,
+      total,
+      totalPages,
+      hasNextPage: pg < totalPages,
+      hasPrevPage: pg > 1,
+    },
+  };
+}
+
 /**
  * Load a single subscription with freelancer + plan detail joined. Read-only.
  * Used by the paid-subscription admin notification. Returns a mapped subscription or null.
@@ -1453,6 +1587,7 @@ module.exports = {
   assignPlanToFreelancer,
   updateSubscription,
   listSubscriptions,
+  listActivationQueueSubscriptions,
   getSubscriptionWithDetailsById,
   getCurrentSubscriptionForFreelancer,
   activateCurrentSubscriptionOnFirstOrder,

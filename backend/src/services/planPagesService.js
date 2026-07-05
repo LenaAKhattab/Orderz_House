@@ -204,6 +204,8 @@ async function updatePlanPage({ id, patch }) {
   if (patch.isActive !== undefined) set("is_active", Boolean(patch.isActive));
   if (patch.startsAt !== undefined) set("starts_at", patch.startsAt || null);
   if (patch.endsAt !== undefined) set("ends_at", patch.endsAt || null);
+  if (patch.titleEn !== undefined) set("title_en", patch.titleEn);
+  if (patch.subtitleEn !== undefined) set("subtitle_en", patch.subtitleEn);
   set("updated_at", new Date());
 
   values.push(Number(id));

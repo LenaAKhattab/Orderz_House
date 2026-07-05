@@ -41,10 +41,14 @@ async function replaceFeaturesForPlan({ planId, features }) {
         typeof item === "object" && item?.sortOrder != null ? Number(item.sortOrder) : idx;
       const isIncluded =
         typeof item === "object" && item?.isIncluded != null ? Boolean(item.isIncluded) : true;
+      const featureTextEn =
+        typeof item === "object" && item?.featureTextEn != null
+          ? String(item.featureTextEn).trim() || null
+          : null;
       await client.query(
-        `INSERT INTO plan_features (plan_id, feature_text, sort_order, is_included)
-         VALUES ($1, $2, $3, $4)`,
-        [pid, String(text).trim(), sortOrder, isIncluded],
+        `INSERT INTO plan_features (plan_id, feature_text, feature_text_en, sort_order, is_included)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [pid, String(text).trim(), featureTextEn, sortOrder, isIncluded],
       );
     }
 

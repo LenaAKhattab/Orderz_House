@@ -44,6 +44,8 @@ const {
 
   listSubscriptionsValidators,
 
+  listActivationQueueValidators,
+
   updateSubscriptionNotificationEmailValidators,
 
   freelancerIdParam,
@@ -77,6 +79,22 @@ router.get(
   validateRequest,
 
   subscriptionsController.listSubscriptions,
+
+);
+
+router.get(
+
+  "/subscriptions/activation-queue",
+
+  requireAnyRole(ASSIGN_AND_MANAGE_SUBSCRIPTION_ROLES),
+
+  subscriptionsOrActivation,
+
+  listActivationQueueValidators,
+
+  validateRequest,
+
+  subscriptionsController.listActivationQueue,
 
 );
 

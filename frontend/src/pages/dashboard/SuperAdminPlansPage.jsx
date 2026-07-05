@@ -7,11 +7,13 @@ import {
   deletePlanRequest,
   listAdminPlanPagesRequest,
   listAdminPlansRequest,
+  updatePlanPageRequest,
   updatePlanRequest,
 } from "../../services/api";
 import AdminPlanCard from "../../admin/plans/AdminPlanCard";
 import PlanCreateModal from "../../admin/plans/PlanCreateModal";
 import PlanEditModal from "../../admin/plans/PlanEditModal";
+import PlanPageMetadataPanel from "../../admin/plans/PlanPageMetadataPanel";
 import { filterPlans } from "../../admin/plans/planDisplayUtils";
 import { getInitialPlanFormState } from "../../admin/plans/planFormConstants";
 import {
@@ -70,6 +72,7 @@ const SuperAdminPlansPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [pageMetaSubmitting, setPageMetaSubmitting] = useState(false);
 
   const [search, setSearch] = useState("");
   const [reorderingPlanId, setReorderingPlanId] = useState(null);
@@ -266,6 +269,20 @@ const SuperAdminPlansPage = () => {
     }
   };
 
+  const savePlanPageMetadata = async (patch) => {
+    if (!selectedPlanPage?.id) return;
+    setError("");
+    setPageMetaSubmitting(true);
+    try {
+      await updatePlanPageRequest(selectedPlanPage.id, patch);
+      await refresh();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setPageMetaSubmitting(false);
+    }
+  };
+
   const openEdit = (plan) => setEditPlan(plan);
 
   const movePlanInDisplayOrder = useCallback(
@@ -351,6 +368,15 @@ const SuperAdminPlansPage = () => {
             </p>
           ) : null}
         </div>
+      ) : null}
+
+      {activeSection === PLAN_ADMIN_SECTION.PAGES && selectedPlanPage ? (
+        <PlanPageMetadataPanel
+          page={selectedPlanPage}
+          isEn={isEn}
+          submitting={pageMetaSubmitting}
+          onSave={savePlanPageMetadata}
+        />
       ) : null}
 
       {error ? (

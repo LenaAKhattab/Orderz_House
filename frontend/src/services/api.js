@@ -264,6 +264,11 @@ export const listSubscriptionsRequest = async (params = {}) => {
   return data;
 };
 
+export const listActivationQueueRequest = async (params = {}) => {
+  const { data } = await api.get("/admin/subscriptions/activation-queue", { params });
+  return data;
+};
+
 /** Fetches all subscription pages (for admin screens that need the full filtered set). */
 export const listAllSubscriptionsRequest = async (filters = {}) => {
   const all = [];
@@ -1167,6 +1172,17 @@ export const getSuperadminDashboardIntelligenceActivityRequest = async (options 
   const { signal, ...axiosOptions } = options;
   const { data } = await api.get("/superadmin/dashboard/intelligence/activity", {
     timeout: 12000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+export const getSuperadminDashboardAnalysisRequest = async (options = {}) => {
+  const { signal, params, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/analysis", {
+    params,
+    timeout: 20000,
     signal,
     ...axiosOptions,
   });
