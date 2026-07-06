@@ -15,6 +15,7 @@ import { userHasPermission, userHasAnyPermission } from "../constants/dashboardP
 import { AuthContext } from "./authContext";
 import { clearAnalyticsUser, trackEvent } from "../services/analytics";
 import { invalidateFreelancerSessionCache, invalidatePublicPlansCache } from "../services/freelancerSessionCache";
+import { clearEveryLoginPopupDismissals } from "../utils/popupAdDismiss";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -119,8 +120,9 @@ export function AuthProvider({ children }) {
   }, [applySession]);
 
   const logout = useCallback(async () => {
+    clearEveryLoginPopupDismissals(user?.id);
     await clearSession();
-  }, [clearSession]);
+  }, [user?.id, clearSession]);
 
   const refreshUser = useCallback(async () => {
     const data = await meRequest();

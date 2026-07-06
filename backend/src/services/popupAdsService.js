@@ -7,7 +7,7 @@ const CTA_TEXT_MAX = 120;
 
 const AUDIENCES = new Set(["all", "guests", "freelancer", "client", "staff"]);
 const PAGE_SCOPES = new Set(["all", "home", "public", "dashboard"]);
-const FREQUENCIES = new Set(["every_visit", "session", "day"]);
+const FREQUENCIES = new Set(["every_visit", "session", "day", "first_login_only", "every_login"]);
 const STAFF_ROLES = new Set(["admin", "super_admin"]);
 
 function trimText(value, max) {
@@ -26,6 +26,7 @@ function mapRow(row) {
     bodyEn: row.bodyEn || "",
     imageUrl: row.imageUrl || null,
     ctaText: row.ctaText || null,
+    ctaTextEn: row.ctaTextEn || null,
     ctaUrl: row.ctaUrl || null,
     openInNewTab: Boolean(row.openInNewTab),
     audience: row.audience,
@@ -51,6 +52,7 @@ function toPublicAd(ad) {
     bodyEn: ad.bodyEn || "",
     imageUrl: ad.imageUrl,
     ctaText: ad.ctaText,
+    ctaTextEn: ad.ctaTextEn || "",
     ctaUrl: ad.ctaUrl,
     openInNewTab: ad.openInNewTab,
     frequency: ad.frequency,
@@ -68,6 +70,7 @@ const ADMIN_SELECT = `
          body_en AS "bodyEn",
          image_url AS "imageUrl",
          cta_text AS "ctaText",
+         cta_text_en AS "ctaTextEn",
          cta_url AS "ctaUrl",
          open_in_new_tab AS "openInNewTab",
          audience,
@@ -146,6 +149,7 @@ function normalizeInput(body = {}) {
     bodyEn: trimText(body.bodyEn ?? body.body_en, BODY_MAX),
     imageUrl: body.imageUrl !== undefined ? sanitizeOptionalUrl(body.imageUrl) : null,
     ctaText: body.ctaText !== undefined ? trimText(body.ctaText, CTA_TEXT_MAX) || null : null,
+    ctaTextEn: body.ctaTextEn !== undefined ? trimText(body.ctaTextEn, CTA_TEXT_MAX) || null : null,
     ctaUrl: body.ctaUrl !== undefined ? sanitizeOptionalUrl(body.ctaUrl) : null,
     openInNewTab: Boolean(body.openInNewTab ?? body.open_in_new_tab),
     audience: AUDIENCES.has(body.audience) ? body.audience : "all",
@@ -183,9 +187,6 @@ function validateInput(input, { rawCtaUrl, rawImageUrl } = {}) {
       errors.imageUrl = "رابط الصورة غير صالح.";
     }
   }
-  if (input.ctaText && !input.ctaUrl) {
-    errors.ctaUrl = "أدخل رابطاً للزر أو احذف نص الزر.";
-  }
   if (input.ctaUrl && !input.ctaText) {
     errors.ctaText = "أدخل نص الزر عند إضافة رابط.";
   }
@@ -218,10 +219,10 @@ async function createAd(body) {
   const { rows } = await pool.query(
     `INSERT INTO popup_ads (
        enabled, title_ar, title_en, body_ar, body_en,
-       image_url, cta_text, cta_url, open_in_new_tab,
+       image_url, cta_text, cta_text_en, cta_url, open_in_new_tab,
        audience, page_scope, frequency, sort_order,
        start_date, end_date, updated_at
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,NOW())
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,NOW())
      RETURNING id`,
     [
       input.enabled,
@@ -231,6 +232,7 @@ async function createAd(body) {
       input.bodyEn || null,
       input.imageUrl,
       input.ctaText,
+      input.ctaTextEn,
       input.ctaUrl,
       input.openInNewTab,
       input.audience,
@@ -260,6 +262,7 @@ async function updateAd(id, body) {
     bodyEn: body.bodyEn !== undefined ? body.bodyEn : existing.bodyEn,
     imageUrl: body.imageUrl !== undefined ? body.imageUrl : existing.imageUrl,
     ctaText: body.ctaText !== undefined ? body.ctaText : existing.ctaText,
+    ctaTextEn: body.ctaTextEn !== undefined ? body.ctaTextEn : existing.ctaTextEn,
     ctaUrl: body.ctaUrl !== undefined ? body.ctaUrl : existing.ctaUrl,
     openInNewTab: body.openInNewTab !== undefined ? body.openInNewTab : existing.openInNewTab,
     audience: body.audience !== undefined ? body.audience : existing.audience,
@@ -290,14 +293,15 @@ async function updateAd(id, body) {
          body_en = $6,
          image_url = $7,
          cta_text = $8,
-         cta_url = $9,
-         open_in_new_tab = $10,
-         audience = $11,
-         page_scope = $12,
-         frequency = $13,
-         sort_order = $14,
-         start_date = $15,
-         end_date = $16,
+         cta_text_en = $9,
+         cta_url = $10,
+         open_in_new_tab = $11,
+         audience = $12,
+         page_scope = $13,
+         frequency = $14,
+         sort_order = $15,
+         start_date = $16,
+         end_date = $17,
          updated_at = NOW()
      WHERE id = $1`,
     [
@@ -309,6 +313,7 @@ async function updateAd(id, body) {
       input.bodyEn || null,
       input.imageUrl,
       input.ctaText,
+      input.ctaTextEn,
       input.ctaUrl,
       input.openInNewTab,
       input.audience,
@@ -348,6 +353,12 @@ async function listPublicActive({ pathname = "/", role = null, isAuthenticated =
     .filter((ad) => hasTitle(ad) && isWithinSchedule(ad, now))
     .filter((ad) => matchesAudience(ad, { role, isAuthenticated }))
     .filter((ad) => matchesPageScope(ad, pathname))
+    .filter((ad) => {
+      if ((ad.frequency === "first_login_only" || ad.frequency === "every_login") && !isAuthenticated) {
+        return false;
+      }
+      return true;
+    })
     .map(toPublicAd);
 }
 

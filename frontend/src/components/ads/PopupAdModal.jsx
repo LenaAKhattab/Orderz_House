@@ -61,7 +61,7 @@ export default function PopupAdModal({ ad, onClose }) {
   const title = pickLocalized({ locale, ar: ad.titleAr, en: ad.titleEn });
   const body = pickLocalized({ locale, ar: ad.bodyAr, en: ad.bodyEn });
   const href = ad.ctaUrl && String(ad.ctaUrl).trim() ? String(ad.ctaUrl).trim() : null;
-  const ctaText = ad.ctaText?.trim() || "";
+  const ctaText = pickLocalized({ locale, ar: ad.ctaText, en: ad.ctaTextEn }) || ad.ctaText?.trim() || "";
   const linkProps = href
     ? linkTargetRel({ openInNewTab: ad.openInNewTab }, href)
     : { target: "_self", rel: undefined };
@@ -126,6 +126,16 @@ export default function PopupAdModal({ ad, onClose }) {
               >
                 {ctaText}
               </a>
+            </div>
+          ) : ctaText ? (
+            <div className="oh-popup-ad-modal__actions">
+              <button
+                type="button"
+                className="oh-popup-ad-modal__cta btn btn-primary"
+                onClick={() => ref.current?.close()}
+              >
+                {ctaText}
+              </button>
             </div>
           ) : null}
         </div>
