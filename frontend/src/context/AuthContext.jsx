@@ -16,6 +16,7 @@ import { AuthContext } from "./authContext";
 import { clearAnalyticsUser, trackEvent } from "../services/analytics";
 import { invalidateFreelancerSessionCache, invalidatePublicPlansCache } from "../services/freelancerSessionCache";
 import { clearEveryLoginPopupDismissals } from "../utils/popupAdDismiss";
+import { clearLoginSessionId, createLoginSessionId } from "../utils/loginSession";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -85,6 +86,7 @@ export function AuthProvider({ children }) {
     }
     resetSessionBootstrap();
     applySession(nextUser);
+    createLoginSessionId(nextUser.id);
     trackEvent("user_logged_in", { method: "password", role: String(nextUser?.primaryRole || nextUser?.role || "unknown") });
     return nextUser;
   }, [applySession]);
@@ -103,6 +105,7 @@ export function AuthProvider({ children }) {
     }
     resetSessionBootstrap();
     applySession(nextUser);
+    createLoginSessionId(nextUser.id);
     trackEvent("signup_completed", { method: "registration", role: String(nextUser?.primaryRole || nextUser?.role || "unknown") });
     return nextUser;
   }, [applySession]);
@@ -115,12 +118,15 @@ export function AuthProvider({ children }) {
     }
     resetSessionBootstrap();
     applySession(nextUser);
+    createLoginSessionId(nextUser.id);
     trackEvent("signup_completed", { method: "registration_otp", role: String(nextUser?.primaryRole || nextUser?.role || "unknown") });
     return nextUser;
   }, [applySession]);
 
   const logout = useCallback(async () => {
-    clearEveryLoginPopupDismissals(user?.id);
+    const uid = user?.id;
+    clearEveryLoginPopupDismissals(uid);
+    clearLoginSessionId(uid);
     await clearSession();
   }, [user?.id, clearSession]);
 

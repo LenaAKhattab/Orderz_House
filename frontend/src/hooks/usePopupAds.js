@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { getPublicPopupAdsRequest, postPublicPopupAdImpressionRequest } from "../services/api";
+import { getLoginSessionId } from "../utils/loginSession";
 import { markPopupAdDismissed, pickPopupAdToShow } from "../utils/popupAdDismiss";
 import { canShowPopupOnRoute } from "../utils/popupAdRouteSafety";
 
@@ -18,13 +19,16 @@ export default function usePopupAds() {
   const routeAllowed = useMemo(() => canShowPopupOnRoute(pathname, search), [pathname, search]);
   const activeAd = routeAllowed ? fetchedAd : null;
   const userId = user?.id ?? null;
+  const loginSessionId = userId != null ? getLoginSessionId(userId) : null;
 
   const dismiss = useCallback(() => {
     setFetchedAd((ad) => {
-      if (ad) markPopupAdDismissed(ad, pathname, { userId });
+      if (ad) {
+        markPopupAdDismissed(ad, pathname, { userId, loginSessionId });
+      }
       return null;
     });
-  }, [pathname, userId]);
+  }, [pathname, userId, loginSessionId]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -34,7 +38,10 @@ export default function usePopupAds() {
   }, []);
 
   useEffect(() => {
-    if (authLoading || !routeAllowed) return undefined;
+    if (authLoading || !routeAllowed || !isAuthenticated || userId == null) {
+      if (!authLoading) setFetchedAd(null);
+      return undefined;
+    }
 
     let cancelled = false;
 
@@ -44,10 +51,12 @@ export default function usePopupAds() {
         if (cancelled || !mountedRef.current) return;
         if (!canShowPopupOnRoute(pathname, search)) return;
         const list = res?.data?.ads || [];
+        const sessionId = getLoginSessionId(userId);
         setFetchedAd(
           pickPopupAdToShow(list, pathname, {
             userId,
-            isAuthenticated,
+            loginSessionId: sessionId,
+            isAuthenticated: true,
           }),
         );
       } catch {
@@ -69,8 +78,12 @@ export default function usePopupAds() {
     if (trackedImpression.current.has(key)) return;
     trackedImpression.current.add(key);
     postPublicPopupAdImpressionRequest(id).catch(() => {});
-    if (activeAd.frequency === "first_login_only" && userId != null) {
-      markPopupAdDismissed(activeAd, pathname, { userId });
+
+    const sessionId = userId != null ? getLoginSessionId(userId) : null;
+    if (userId != null && sessionId) {
+      if (activeAd.frequency === "first_login_only" || activeAd.frequency === "every_login") {
+        markPopupAdDismissed(activeAd, pathname, { userId, loginSessionId: sessionId });
+      }
     }
   }, [activeAd, pathname, userId]);
 
