@@ -1,6 +1,11 @@
 /**
  * QA: Financial Center (backend API + service checks)
  * Run: node scripts/qaFinancialCenter.js
+ *
+ * Creates temporary QA rows (QA NoAcct, QA Row, etc.). Does NOT auto-run on server start.
+ * Cleanup after testing:
+ *   node scripts/cleanup-financial-center-qa-data.js          # dry-run report
+ *   node scripts/cleanup-financial-center-qa-data.js --confirm  # delete QA data
  */
 require("dotenv").config();
 const jwt = require("jsonwebtoken");

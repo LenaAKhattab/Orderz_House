@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Plus, Trash2 } from "lucide-react";
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import DashboardSection from "../../components/dashboard/DashboardSection";
@@ -179,17 +180,57 @@ function emptyBonusForm(monthKey) {
   };
 }
 
-function ShareHint({ shareTotal, t }) {
+function AllocationShareSummary({ shareTotal, t }) {
+  const total = roundMoney(shareTotal);
+
   if (shareTotal > 100) {
-    return <p className="fc-share-hint fc-share-hint--err m-0">{t("dashboard.financialCenter.shareError")}</p>;
+    return (
+      <div className="fc-allocation-summary fc-allocation-summary--err" role="status">
+        <span className="fc-allocation-summary__main">
+          {t("dashboard.financialCenter.shareTotalLabel")}: <strong>{total}%</strong>
+        </span>
+        <span className="fc-allocation-summary__sub">{t("dashboard.financialCenter.shareError")}</span>
+      </div>
+    );
   }
+
   if (shareTotal === 100) {
-    return <p className="fc-share-hint fc-share-hint--ok m-0">{t("dashboard.financialCenter.shareSuccess")}</p>;
+    return (
+      <div className="fc-allocation-summary fc-allocation-summary--ok" role="status">
+        <span className="fc-allocation-summary__main">{t("dashboard.financialCenter.shareComplete", { percent: 100 })}</span>
+        <span className="fc-allocation-summary__sub">{t("dashboard.financialCenter.shareSuccess")}</span>
+      </div>
+    );
   }
+
   if (shareTotal > 0) {
-    return <p className="fc-share-hint fc-share-hint--warn m-0">{t("dashboard.financialCenter.shareWarning")}</p>;
+    const remaining = roundMoney(100 - shareTotal);
+    return (
+      <div className="fc-allocation-summary fc-allocation-summary--warn" role="status">
+        <span className="fc-allocation-summary__main">
+          {t("dashboard.financialCenter.shareTotalWithRemaining", { total, remaining })}
+        </span>
+        <span className="fc-allocation-summary__sub">{t("dashboard.financialCenter.shareWarning")}</span>
+      </div>
+    );
   }
-  return null;
+
+  return (
+    <div className="fc-allocation-summary fc-allocation-summary--neutral" role="status">
+      <span className="fc-allocation-summary__main">
+        {t("dashboard.financialCenter.shareTotal")}: <strong>{total}%</strong>
+      </span>
+    </div>
+  );
+}
+
+function AllocationAddButton({ onClick, t }) {
+  return (
+    <button type="button" className="btn btn-secondary btn-sm fc-allocation-add-btn" onClick={onClick}>
+      <Plus size={14} strokeWidth={2.25} aria-hidden />
+      {t("dashboard.financialCenter.addEmployee")}
+    </button>
+  );
 }
 
 export default function SuperAdminFinancialCenterPage() {
@@ -1223,7 +1264,7 @@ export default function SuperAdminFinancialCenterPage() {
         open={Boolean(bonusModal)}
         title={bonusModal === "create" ? t("dashboard.financialCenter.createBonusRow") : t("dashboard.financialCenter.editBonusRow")}
         onClose={() => setBonusModal(null)}
-        className="fc-modal fc-modal--wide"
+        className="fc-modal fc-modal--wide fc-modal--bonus"
         footer={
           <>
             <button type="button" className="btn btn-secondary" onClick={() => setBonusModal(null)}>
@@ -1376,47 +1417,102 @@ export default function SuperAdminFinancialCenterPage() {
             </div>
           </div>
 
-          <div>
+          <div className="fc-allocation-block">
             <div className="fc-section__head">
-              <strong>{t("dashboard.financialCenter.allocations")}</strong>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={addAllocationRow}>
-                {t("dashboard.financialCenter.addEmployee")}
-              </button>
+              <strong className="fc-section__title">{t("dashboard.financialCenter.allocations")}</strong>
             </div>
-            {(bonusForm.allocations || []).map((a, idx) => (
-              <div key={idx} className="fc-allocation-row">
-                <select
-                  className="input"
-                  value={a.personId}
-                  onChange={(e) => updateAllocation(idx, { personId: e.target.value })}
-                >
-                  <option value="">{t("dashboard.financialCenter.selectEmployee")}</option>
-                  {allocationPeople.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.fullName}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  className="input"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  placeholder="%"
-                  value={a.percentageShare}
-                  onChange={(e) => updateAllocation(idx, { percentageShare: e.target.value })}
-                />
-                <span>{formatMoney(preview.allocations[idx]?.calculatedAmount, currency)}</span>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => removeAllocation(idx)}>
-                  ×
-                </button>
+
+            {(bonusForm.allocations || []).length === 0 ? (
+              <div className="fc-allocation-empty">
+                <p className="fc-allocation-empty__text">{t("dashboard.financialCenter.allocationEmpty")}</p>
+                <AllocationAddButton onClick={addAllocationRow} t={t} />
               </div>
-            ))}
-            <p className="m-0 text-sm">
-              {t("dashboard.financialCenter.shareTotal")}: {roundMoney(preview.shareTotal)}%
-            </p>
-            <ShareHint shareTotal={preview.shareTotal} t={t} />
+            ) : (
+              <>
+                <div className="fc-allocation-list-head" aria-hidden="true">
+                  <span>{t("dashboard.financialCenter.selectEmployee")}</span>
+                  <span>{t("dashboard.financialCenter.colPercentage")}</span>
+                  <span>{t("dashboard.financialCenter.colAmount")}</span>
+                  <span />
+                </div>
+                <div className="fc-allocation-list">
+                  {(bonusForm.allocations || []).map((a, idx) => {
+                    const pct = Number(a.percentageShare);
+                    const personInvalid = !a.personId;
+                    const pctInvalid = !String(a.percentageShare ?? "").trim() || !Number.isFinite(pct) || pct <= 0;
+
+                    return (
+                      <div key={idx} className="fc-allocation-row">
+                        <div className="fc-allocation-row__field fc-allocation-row__person">
+                          <label className="fc-allocation-row__label">{t("dashboard.financialCenter.selectEmployee")}</label>
+                          <select
+                            className={`input fc-allocation-select${personInvalid ? " fc-allocation-select--invalid" : ""}`}
+                            value={a.personId}
+                            onChange={(e) => updateAllocation(idx, { personId: e.target.value })}
+                          >
+                            <option value="">{t("dashboard.financialCenter.selectEmployee")}</option>
+                            {allocationPeople.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.fullName}
+                              </option>
+                            ))}
+                          </select>
+                          {personInvalid ? (
+                            <span className="fc-allocation-row__hint">{t("dashboard.financialCenter.allocationPersonRequired")}</span>
+                          ) : null}
+                        </div>
+
+                        <div className="fc-allocation-row__field fc-allocation-row__pct">
+                          <label className="fc-allocation-row__label">{t("dashboard.financialCenter.colPercentage")}</label>
+                          <div className={`fc-allocation-pct-wrap${pctInvalid ? " fc-allocation-pct-wrap--invalid" : ""}`}>
+                            <input
+                              className="input fc-allocation-pct-input"
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              placeholder="0"
+                              inputMode="decimal"
+                              value={a.percentageShare}
+                              onChange={(e) => updateAllocation(idx, { percentageShare: e.target.value })}
+                            />
+                            <span className="fc-allocation-pct-suffix" aria-hidden>
+                              %
+                            </span>
+                          </div>
+                          {pctInvalid ? (
+                            <span className="fc-allocation-row__hint">{t("dashboard.financialCenter.allocationPctRequired")}</span>
+                          ) : null}
+                        </div>
+
+                        <div className="fc-allocation-row__field fc-allocation-row__amount">
+                          <label className="fc-allocation-row__label">{t("dashboard.financialCenter.colAmount")}</label>
+                          <div className="fc-allocation-amount-pill" aria-live="polite">
+                            {formatMoney(preview.allocations[idx]?.calculatedAmount, currency)}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="fc-allocation-remove"
+                          title={t("dashboard.financialCenter.removeAllocation")}
+                          aria-label={t("dashboard.financialCenter.removeAllocation")}
+                          onClick={() => removeAllocation(idx)}
+                        >
+                          <Trash2 size={15} strokeWidth={2} aria-hidden />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="fc-allocation-actions">
+                  <AllocationAddButton onClick={addAllocationRow} t={t} />
+                </div>
+
+                <AllocationShareSummary shareTotal={preview.shareTotal} t={t} />
+              </>
+            )}
           </div>
         </div>
       </DashboardModal>
