@@ -45,6 +45,8 @@ import {
   SuperAdminAnalysisPage,
   SuperAdminSubscriptionsPage,
   SuperAdminFinancialClaimsPage,
+  SuperAdminFinancialCenterPage,
+  FinancialEmployeeDetailPage,
   SuperAdminSettingsPage,
   SuperAdminAdminsPage,
   SuperAdminEditWebsitePage,
@@ -78,6 +80,7 @@ import {
   FreelancerCourseDetailsPage,
   FreelancerSettingsPage,
   NotificationsPage,
+  FinancialUserMyBonusesPage,
 } from "./routes/lazyPages";
 import { ROLE } from "./constants/authRoutes";
 import { useAuth } from "./context/useAuth";
@@ -263,6 +266,22 @@ function App() {
                   element={
                     <RequireStaffPage permission={ADMIN_PAGE_PERMISSIONS.subscriptionActivation}>
                       <AdminSubscriptionsActivationPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/financial-center/employees/:personId"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.financialCenter}>
+                      <FinancialEmployeeDetailPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/financial-center"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.financialCenter}>
+                      <SuperAdminFinancialCenterPage />
                     </RequireStaffPage>
                   }
                 />
@@ -625,6 +644,15 @@ function App() {
                     </RequireRole>
                   }
                 />
+                <Route
+                  path="/dashboard/my-bonuses"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FINANCIAL_USER]}>
+                      <FinancialUserMyBonusesPage />
+                    </RequireRole>
+                  }
+                />
+                <Route path="/dashboard/financial-user" element={<Navigate to="/dashboard/my-bonuses" replace />} />
                 <Route path="/dashboard/*" element={<NotFoundPage />} />
               </Route>
             </Route>

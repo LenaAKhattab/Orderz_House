@@ -427,7 +427,7 @@ async function loginUser(emailRaw, password) {
     throw createPublicApiError("يرجى تأكيد البريد الإلكتروني قبل تسجيل الدخول.", 403, "EMAIL_NOT_VERIFIED");
   }
   if (!user.is_active) {
-    throw createPublicApiError("تم تعطيل هذا الحساب.", 403, "ACCOUNT_DISABLED");
+    throw createPublicApiError("تم إيقاف هذا الحساب، يرجى التواصل مع الإدارة.", 403, "ACCOUNT_DISABLED");
   }
 
   const match = await bcrypt.compare(password, user.password_hash);
