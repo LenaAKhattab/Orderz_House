@@ -192,6 +192,11 @@ export const getCategorySubSubcategoriesRequest = async (categoryId) => {
 };
 
 // Plans / Subscriptions (RBAC-protected on backend)
+export const getPublicGeoRequest = async () => {
+  const { data } = await api.get("/public/geo", { timeout: 8000 });
+  return data;
+};
+
 export const listPublicPlansRequest = async () => {
   const { data } = await api.get("/plans");
   return data;

@@ -47,7 +47,11 @@
     "amount": "25 JOD",
     "suffix": "paid once yearly"
   },
-  "freePlanActivationFeeNote": "The plan is free, but the 25 JOD yearly activation fee is required.",
+  "currency": {
+    "equivalentJod": "Equivalent to {{amount}}",
+    "checkoutChargedInJod": "Payment is processed in Jordanian dinar (JOD)"
+  },
+  "freePlanActivationFeeNote": "The plan is free, but the {{amount}} yearly activation fee is required.",
   "activationFee": {
     "paidSuccessTitle": "Activation fee paid",
     "paidSuccessMessage": "Activation fee paid successfully.",
