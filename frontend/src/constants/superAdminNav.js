@@ -41,6 +41,13 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     icon: "◍",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims,
   },
+  financialCenter: {
+    key: "financialCenter",
+    to: "/dashboard/super-admin/financial-center",
+    labelKey: "dashboard.nav.superAdmin.financialCenter",
+    icon: "₪",
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialCenter,
+  },
   plans: {
     key: "plans",
     to: "/dashboard/super-admin/plans",
@@ -105,8 +112,13 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "ordersOps",
     labelKey: "dashboard.nav.sections.ordersOps",
-    itemKeys: ["internalRequests", "trainingRequests", "financialClaims"],
+    itemKeys: ["internalRequests", "trainingRequests"],
     showCreateOrder: true,
+  },
+  {
+    id: "financeAdmin",
+    labelKey: "dashboard.nav.sections.financeAdmin",
+    itemKeys: ["financialCenter", "financialClaims"],
   },
   {
     id: "usersSubscriptions",
@@ -185,6 +197,10 @@ export function superAdminBreadcrumbKeys(pathname) {
   }
   if (pathname.includes("/edit-website")) return [...base, "dashboard.breadcrumbs.editWebsite"];
   if (pathname.includes("/training-orders")) return [...base, "dashboard.breadcrumbs.trainingRequests"];
+  if (pathname.includes("/financial-center/employees/")) {
+    return [...base, "dashboard.breadcrumbs.financialCenter", "dashboard.financialCenter.employeeDetail.breadcrumb"];
+  }
+  if (pathname.includes("/financial-center")) return [...base, "dashboard.breadcrumbs.financialCenter"];
   if (pathname.includes("/financial-claims")) return [...base, "dashboard.breadcrumbs.financialClaims"];
   if (pathname.includes("/orders")) return [...base, "dashboard.breadcrumbs.internalRequests"];
   return base;

@@ -9,11 +9,17 @@ export const PUBLIC_SITE_PAGE_SLUGS = [
   "terms-conditions",
   "privacy-policy",
   "help-center",
-  "enterprise",
   "find-work",
   "community",
   "blog",
 ];
+
+/** Removed public CMS pages — never show in nav/footer even if still present in an old API response. */
+export const REMOVED_PUBLIC_SITE_PAGE_SLUGS = new Set(["enterprise"]);
+
+export function isRemovedPublicSitePageSlug(slug) {
+  return REMOVED_PUBLIC_SITE_PAGE_SLUGS.has(String(slug || "").trim());
+}
 
 export function getPublicSitePagePath(slug) {
   if (!slug) return "/";

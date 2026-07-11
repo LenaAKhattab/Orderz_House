@@ -78,7 +78,7 @@ export const authFieldLabel = "text-[0.86rem] font-bold text-[#2c3658]";
 
 export const authFieldHead = "flex items-center justify-between gap-2.5";
 
-export const authInputWrap = "relative";
+export const authInputWrap = "relative w-full";
 
 export const authInputIcon =
   "pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-[0.88rem] not-italic text-[#7c86a4]";
@@ -95,8 +95,17 @@ export const authInputNoIcon = `${inputBase} px-3.5`;
 /** Email / password values — LTR typing inside RTL forms */
 export const authInputCredential = `${authInputNoIcon} ltr text-left`;
 
-/** Password with visibility toggle — extra start padding for eye icon (physical left) */
-export const authInputCredentialPassword = `${inputBase} ltr text-left pl-12 pr-3.5`;
+/** Password field shell — border wraps input + eye so the icon stays inside on the right */
+export const authPasswordFieldShell =
+  "flex w-full min-h-[52px] items-center overflow-hidden rounded-2xl border border-[rgba(47,59,101,0.14)] bg-[#f9fafc] transition-[border-color,box-shadow,background-color] duration-200 focus-within:border-[var(--secondary,#76cfdf)] focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(118,207,223,0.18)]";
+
+/** Borderless password input inside authPasswordFieldShell */
+export const authInputCredentialPassword =
+  "min-h-[52px] min-w-0 flex-1 border-0 bg-transparent py-3 pl-3.5 pr-2 text-left text-[0.92rem] text-[#1a2238] outline-none placeholder:text-[#8e96ae] disabled:cursor-not-allowed disabled:opacity-90";
+
+/** Eye toggle sitting inside the password shell (physical right) */
+export const authPasswordToggleBtn =
+  "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border-0 bg-transparent text-[#7c86a4] transition-[color,background-color] duration-150 hover:bg-[rgba(56,82,180,0.08)] hover:text-[#4a5680] disabled:cursor-not-allowed disabled:opacity-65 me-1.5";
 
 /** Email field with leading icon */
 export const authInputCredentialWithIcon = `${authInput} ltr text-left`;

@@ -9,7 +9,8 @@
  * @property {string|null} [ctaText]
  * @property {string|null} [ctaUrl]
  * @property {boolean} [openInNewTab]
- * @property {"every_visit"|"session"|"day"} [frequency]
+ * @property {"every_visit"|"session"|"day"|"first_login_only"|"every_login"} [frequency]
+ * @property {string|null} [ctaTextEn]
  * @property {"all"|"guests"|"freelancer"|"client"|"staff"} [audience]
  * @property {"all"|"home"|"public"|"dashboard"} [pageScope]
  */

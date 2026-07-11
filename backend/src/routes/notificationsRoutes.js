@@ -7,11 +7,9 @@ const router = express.Router();
 
 router.get("/notifications/stream", requireNotificationStreamAuth, notificationsController.streamNotifications);
 
-router.use(requireAuth);
-
-router.get("/notifications", notificationsController.listMyNotifications);
-router.get("/notifications/unread-count", notificationsController.getMyUnreadCount);
-router.post("/notifications/:id/read", notificationsController.readNotification);
-router.post("/notifications/read-all", notificationsController.readAllNotifications);
+router.get("/notifications", requireAuth, notificationsController.listMyNotifications);
+router.get("/notifications/unread-count", requireAuth, notificationsController.getMyUnreadCount);
+router.post("/notifications/:id/read", requireAuth, notificationsController.readNotification);
+router.post("/notifications/read-all", requireAuth, notificationsController.readAllNotifications);
 
 module.exports = router;

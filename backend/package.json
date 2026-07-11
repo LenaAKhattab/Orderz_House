@@ -30,6 +30,7 @@
     "db:seed-youtube-course": "node scripts/seedYoutubePlaylistCourse.js",
     "db:promote-super-admin": "node scripts/promoteUserToSuperAdminByEmail.js",
     "db:cleanup:test-data": "node scripts/cleanupTestData.js",
+    "db:cleanup:financial-center-qa": "node scripts/cleanup-financial-center-qa-data.js",
     "db:cleanup:stripe-pending": "node scripts/cleanupAbandonedStripePendingSubscriptions.js",
     "api:smoke": "node scripts/smokeApiEndpoints.js",
     "verify:homepage-order-stats": "node scripts/verifyHomepageOrderStats.js",
@@ -58,7 +59,7 @@
     "test:fake-orders-integration": "node --test test/trainingOrderRotation.integration.test.js",
     "qa:fake-orders-gap": "node scripts/qaFakeOrdersAutomationGap.js near-expiry",
     "test:integration": "node --test test/internalPricedBiddingLifecycle.integration.test.js",
-    "test:unit": "node --test test/stripeWebhookIdempotency.test.js test/stripeWebhookCheckoutApplyOutcome.test.js test/stripeCheckoutReconcile.test.js test/clientBiddingPaymentGate.test.js test/clientBiddingCreateNotifications.test.js test/processLifecycleLogging.test.js test/authorizeRoles.test.js test/adminAcceptPoolClaim.validation.test.js test/canFreelancerTakeOrdersEligibility.test.js test/adminSubscriptionsAuthorization.test.js test/planSelfSubscribeCheckout.test.js test/subscriptionActivationFee.test.js test/subscriptionActivationFeeHardening.test.js test/planAdminSections.test.js test/resendRegistrationOtp.enumeration.test.js test/resetPasswordRateLimit.test.js test/registerRateLimit.test.js test/registerConflict.test.js test/internalBiddingPoolConsistency.test.js test/poolOrderSanitize.test.js test/orderNumberVisibility.test.js test/notificationSanitize.test.js test/adminInternalBidAward.test.js test/planOrderValueEligibility.test.js test/freelancerDefaultFreePlan.test.js test/orderAuthorization.test.js test/phase2bProtection.test.js test/phase4aSecurity.test.js test/publicSitePageService.test.js test/mobileAuthSession.test.js",
+    "test:unit": "node --test test/stripeWebhookIdempotency.test.js test/stripeWebhookCheckoutApplyOutcome.test.js test/stripeCheckoutReconcile.test.js test/clientBiddingPaymentGate.test.js test/clientBiddingCreateNotifications.test.js test/processLifecycleLogging.test.js test/authorizeRoles.test.js test/adminAcceptPoolClaim.validation.test.js test/canFreelancerTakeOrdersEligibility.test.js test/adminSubscriptionsAuthorization.test.js test/planSelfSubscribeCheckout.test.js test/subscriptionActivationFee.test.js test/subscriptionActivationFeeHardening.test.js test/planAdminSections.test.js test/resendRegistrationOtp.enumeration.test.js test/resetPasswordRateLimit.test.js test/registerRateLimit.test.js test/registerConflict.test.js test/internalBiddingPoolConsistency.test.js test/poolOrderSanitize.test.js test/orderNumberVisibility.test.js test/notificationSanitize.test.js test/adminInternalBidAward.test.js test/planOrderValueEligibility.test.js test/freelancerDefaultFreePlan.test.js test/orderAuthorization.test.js test/phase2bProtection.test.js test/phase4aSecurity.test.js test/publicSitePageService.test.js test/publicGeoCountry.test.js test/mobileAuthSession.test.js",
     "test:all": "npm run test:unit && npm run test:integration",
     "test": "npm run test:unit"
   },
