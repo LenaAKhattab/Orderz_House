@@ -34,7 +34,6 @@ import {
   TermsConditions,
   PublicGuaranteePage,
   PublicHelpCenterPage,
-  PublicEnterprisePage,
   PublicFindWorkPage,
   PublicCommunityPage,
   PublicBlogPage,
@@ -204,7 +203,6 @@ function App() {
               <Route path="/terms-conditions" element={<TermsConditions />} />
               <Route path="/guarantee" element={<PublicGuaranteePage />} />
               <Route path="/help-center" element={<PublicHelpCenterPage />} />
-              <Route path="/enterprise" element={<PublicEnterprisePage />} />
               <Route path="/find-work" element={<PublicFindWorkPage />} />
               <Route path="/community" element={<PublicCommunityPage />} />
               <Route path="/blog" element={<PublicBlogPage />} />

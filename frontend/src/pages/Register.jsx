@@ -65,7 +65,9 @@ function PremiumSelect({
 
   const selected = options.find((o) => o.value === value) || null;
 
-  const commit = (next) => {
+  const commit = (next, e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     onChange(next);
     setOpen(false);
   };
@@ -75,18 +77,6 @@ function PremiumSelect({
       ref={wrapRef}
       dir={ltr ? "ltr" : undefined}
       className={[tw.authSelectRoot, ltr ? tw.authSelectLtrRoot : ""].filter(Boolean).join(" ")}
-      onKeyDown={(e) => {
-        if (disabled) return;
-        if (e.key === "Escape") setOpen(false);
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          setOpen((v) => !v);
-        }
-        if (e.key === "ArrowDown") {
-          e.preventDefault();
-          setOpen(true);
-        }
-      }}
     >
       <button
         type="button"
@@ -97,8 +87,22 @@ function PremiumSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         disabled={disabled}
-        onClick={() => {
+        onKeyDown={(e) => {
           if (disabled) return;
+          if (e.key === "Escape") {
+            e.preventDefault();
+            setOpen(false);
+            return;
+          }
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setOpen(true);
+          }
+        }}
+        onClick={(e) => {
+          if (disabled) return;
+          e.preventDefault();
+          e.stopPropagation();
           setOpen((v) => !v);
         }}
       >
@@ -129,7 +133,11 @@ function PremiumSelect({
                   .join(" ")}
                 role="option"
                 aria-selected={o.value === value}
-                onClick={() => commit(o.value)}
+                onMouseDown={(e) => {
+                  // Prevent parent <label> from re-activating the trigger (which re-opens the list).
+                  e.preventDefault();
+                }}
+                onClick={(e) => commit(o.value, e)}
               >
                 <span className={tw.authSelectOptText}>{o.label}</span>
               </button>
@@ -629,7 +637,7 @@ const Register = () => {
                 </>
               ) : (
                 <>
-                  <label className={tw.authField}>
+                  <div className={tw.authField}>
                     <span className={tw.authFieldLabel}>{t("auth.register.fields.country")}</span>
                     <PremiumSelect
                       id="register-country"
@@ -639,12 +647,12 @@ const Register = () => {
                       options={countryOptions}
                       disabled={submitting}
                     />
-                  </label>
+                  </div>
 
                   <div className={tw.authField}>
                     <span className={tw.authFieldLabel}>{t("auth.register.fields.phone")}</span>
                     <div className={tw.authSplitRow}>
-                      <label className={tw.authSplitItem}>
+                      <div className={tw.authSplitItem}>
                         <span className={tw.authSrOnly}>{t("auth.register.fields.countryCode")}</span>
                         <PremiumSelect
                           id="register-phone-cc"
@@ -655,7 +663,7 @@ const Register = () => {
                           disabled={submitting}
                           ltr
                         />
-                      </label>
+                      </div>
                       <label className={tw.authSplitItem}>
                         <span className={tw.authSrOnly}>{t("auth.register.fields.phoneNumber")}</span>
                         <div className={`${tw.authInputWrap} ${tw.authLtr}`}>
@@ -676,7 +684,7 @@ const Register = () => {
                   <div className={tw.authField}>
                     <span className={tw.authFieldLabel}>{t("auth.register.fields.whatsapp")}</span>
                     <div className={tw.authSplitRow}>
-                      <label className={tw.authSplitItem}>
+                      <div className={tw.authSplitItem}>
                         <span className={tw.authSrOnly}>{t("auth.register.fields.countryCode")}</span>
                         <PremiumSelect
                           id="register-wa-cc"
@@ -687,7 +695,7 @@ const Register = () => {
                           disabled={submitting}
                           ltr
                         />
-                      </label>
+                      </div>
                       <label className={tw.authSplitItem}>
                         <span className={tw.authSrOnly}>{t("auth.register.fields.phoneNumber")}</span>
                         <div className={`${tw.authInputWrap} ${tw.authLtr}`}>
@@ -705,7 +713,7 @@ const Register = () => {
                     </div>
                   </div>
 
-                  <label className={tw.authField}>
+                  <div className={tw.authField}>
                     <span className={tw.authFieldLabel}>{t("auth.register.fields.gender")}</span>
                     <PremiumSelect
                       id="register-gender"
@@ -715,7 +723,7 @@ const Register = () => {
                       options={genderOptions}
                       disabled={submitting}
                     />
-                  </label>
+                  </div>
 
                   {isFreelancer ? (
                     <div className={tw.authField}>

@@ -16,9 +16,6 @@ export const PublicGuaranteePage = lazy(() =>
 export const PublicHelpCenterPage = lazy(() =>
   import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicHelpCenterPage })),
 );
-export const PublicEnterprisePage = lazy(() =>
-  import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicEnterprisePage })),
-);
 export const PublicFindWorkPage = lazy(() =>
   import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicFindWorkPage })),
 );

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { getPublicSitePagesRequest } from "../services/api";
-import { getPublicSitePagePath } from "../constants/publicSitePages";
+import { getPublicSitePagePath, isRemovedPublicSitePageSlug } from "../constants/publicSitePages";
 
 /**
- * Published site pages for footer / mobile nav.
+ * Published site pages for footer / mobile nav / desktop More.
  * On failure, returns empty list (callers hide the section).
  */
 export function usePublicSitePages() {
@@ -23,16 +23,18 @@ export function usePublicSitePages() {
         const list = Array.isArray(res?.data?.pages) ? res.data.pages : [];
         if (!cancelled) {
           setPages(
-            list.map((page) => ({
-              id: page.id,
-              slug: page.slug,
-              title: page.title,
-              menuLabel: page.menuLabel,
-              sortOrder: page.sortOrder,
-              showInMobileMenu: page.showInMobileMenu,
-              showInFooter: page.showInFooter,
-              path: getPublicSitePagePath(page.slug),
-            })),
+            list
+              .filter((page) => page?.slug && !isRemovedPublicSitePageSlug(page.slug))
+              .map((page) => ({
+                id: page.id,
+                slug: page.slug,
+                title: page.title,
+                menuLabel: page.menuLabel,
+                sortOrder: page.sortOrder,
+                showInMobileMenu: page.showInMobileMenu,
+                showInFooter: page.showInFooter,
+                path: getPublicSitePagePath(page.slug),
+              })),
           );
         }
       } catch (err) {

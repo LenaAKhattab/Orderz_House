@@ -251,19 +251,6 @@ html[dir="ltr"] .oh-auth-form-panel {
   unicode-bidi: isolate;
 }
 
-/* Password visibility toggle — LTR value in RTL auth forms (icon on physical left) */
-html[dir="rtl"] .oh-auth-form-panel .auth-input-wrap--password-toggle input[dir="ltr"] {
-  padding-left: 48px;
-  padding-right: 14px;
-}
-
-html[dir="rtl"] .oh-auth-form-panel .auth-input-wrap--password-toggle .auth-password-toggle {
-  left: 8px;
-  right: auto;
-  inset-inline-start: auto;
-  inset-inline-end: auto;
-}
-
 @media (max-width: 767px) {
   .oh-auth-page {
     min-height: calc(100vh - 100px);

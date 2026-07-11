@@ -4,7 +4,6 @@ const FOOTER_IMPORTANT_LINK_LABEL_KEYS = {
   "terms-conditions": "footer.importantLinks.terms",
   "privacy-policy": "footer.importantLinks.privacy",
   "help-center": "footer.importantLinks.helpCenter",
-  enterprise: "footer.importantLinks.enterprise",
   "find-work": "footer.importantLinks.findWork",
   community: "footer.importantLinks.community",
   blog: "footer.importantLinks.blog",

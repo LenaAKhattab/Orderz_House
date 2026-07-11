@@ -74,6 +74,21 @@ function useOnClickOutside(ref, handler) {
   }, [ref, handler]);
 }
 
+/** Normalize paths for duplicate route comparison. */
+function normalizeNavPath(path) {
+  if (!path) return "";
+  const bare = String(path).split("?")[0].split("#")[0].trim();
+  if (!bare) return "";
+  if (bare.length > 1 && bare.endsWith("/")) return bare.slice(0, -1);
+  return bare;
+}
+
+function dropdownItemLabel(item, t) {
+  if (item?.labelKey) return t(item.labelKey);
+  if (item?.page) return getFooterImportantLinkLabel(item.page, t);
+  return item?.label || "";
+}
+
 const Navbar = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -82,12 +97,15 @@ const Navbar = () => {
   const { openModal: openClientCreateOrderModal } = useClientCreateOrderModal();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
+  /** Only one desktop nav dropdown open at a time: "how-it-works" | "more" | null */
+  const [openDesktopDropdownId, setOpenDesktopDropdownId] = useState(null);
   const userMenuRef = useRef(null);
   const howItWorksRef = useRef(null);
-  const howItWorksCloseTimerRef = useRef(null);
+  const moreDropdownRef = useRef(null);
+  const desktopDropdownCloseTimerRef = useRef(null);
 
   const closeMobileDrawer = useCallback(() => setMobileDrawerOpen(false), []);
+  const closeDesktopDropdowns = useCallback(() => setOpenDesktopDropdownId(null), []);
 
   const role = user?.primaryRole || user?.role;
   const roles = Array.isArray(user?.roles) ? user.roles : [];
@@ -101,46 +119,95 @@ const Navbar = () => {
   const showAdminCreateOrderButton = role === "super_admin" || role === "admin";
 
   useOnClickOutside(userMenuRef, () => setUserMenuOpen(false));
-  useOnClickOutside(howItWorksRef, () => setHowItWorksOpen(false));
 
   useEffect(() => {
     return () => {
-      if (howItWorksCloseTimerRef.current) {
-        window.clearTimeout(howItWorksCloseTimerRef.current);
+      if (desktopDropdownCloseTimerRef.current) {
+        window.clearTimeout(desktopDropdownCloseTimerRef.current);
       }
     };
   }, []);
 
-  const openHowItWorksMenu = useCallback(() => {
-    if (howItWorksCloseTimerRef.current) {
-      window.clearTimeout(howItWorksCloseTimerRef.current);
-      howItWorksCloseTimerRef.current = null;
+  const clearDesktopDropdownCloseTimer = useCallback(() => {
+    if (desktopDropdownCloseTimerRef.current) {
+      window.clearTimeout(desktopDropdownCloseTimerRef.current);
+      desktopDropdownCloseTimerRef.current = null;
     }
-    setHowItWorksOpen(true);
   }, []);
 
-  const scheduleCloseHowItWorksMenu = useCallback(() => {
-    if (howItWorksCloseTimerRef.current) {
-      window.clearTimeout(howItWorksCloseTimerRef.current);
-    }
-    howItWorksCloseTimerRef.current = window.setTimeout(() => {
-      howItWorksCloseTimerRef.current = null;
-      setHowItWorksOpen(false);
-    }, 150);
+  const openDesktopDropdown = useCallback(
+    (id) => {
+      clearDesktopDropdownCloseTimer();
+      setOpenDesktopDropdownId(id);
+      setUserMenuOpen(false);
+    },
+    [clearDesktopDropdownCloseTimer],
+  );
+
+  const scheduleCloseDesktopDropdown = useCallback(
+    (id) => {
+      clearDesktopDropdownCloseTimer();
+      desktopDropdownCloseTimerRef.current = window.setTimeout(() => {
+        desktopDropdownCloseTimerRef.current = null;
+        setOpenDesktopDropdownId((current) => (current === id ? null : current));
+      }, 150);
+    },
+    [clearDesktopDropdownCloseTimer],
+  );
+
+  const toggleDesktopDropdown = useCallback((id) => {
+    setOpenDesktopDropdownId((current) => (current === id ? null : id));
+    setUserMenuOpen(false);
   }, []);
 
   const { items: howItWorksItems, showNav: showHowItWorksNav } = useHowItWorksNav();
   const { mobileMenuPages, error: sitePagesError } = usePublicSitePages();
-  const showImportantLinks = !sitePagesError && mobileMenuPages.length > 0;
+
+  /** Shared CMS important links for mobile drawer + desktop More dropdown. */
+  const importantNavLinks = useMemo(() => {
+    if (sitePagesError) return [];
+    return mobileMenuPages
+      .filter((page) => page?.path)
+      .map((page) => ({
+        id: page.id,
+        to: page.path,
+        slug: page.slug,
+        page,
+      }));
+  }, [mobileMenuPages, sitePagesError]);
+
+  const showImportantLinks = importantNavLinks.length > 0;
 
   useEffect(() => {
-    const t = window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
       setUserMenuOpen(false);
-      setHowItWorksOpen(false);
+      setOpenDesktopDropdownId(null);
       setMobileDrawerOpen(false);
     }, 0);
-    return () => window.clearTimeout(t);
+    return () => window.clearTimeout(timer);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!openDesktopDropdownId) return undefined;
+    const onDown = (e) => {
+      const target = e.target;
+      if (howItWorksRef.current?.contains(target) || moreDropdownRef.current?.contains(target)) {
+        return;
+      }
+      setOpenDesktopDropdownId(null);
+    };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setOpenDesktopDropdownId(null);
+    };
+    document.addEventListener("mousedown", onDown, true);
+    document.addEventListener("touchstart", onDown, true);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onDown, true);
+      document.removeEventListener("touchstart", onDown, true);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [openDesktopDropdownId]);
 
   useEffect(() => {
     if (!mobileDrawerOpen) return undefined;
@@ -210,23 +277,81 @@ const Navbar = () => {
 
   const showPublicHowItWorks = showHowItWorksNav && role !== "admin" && role !== "super_admin";
 
+  /** CMS links for desktop More — exclude anything already in primary desktop nav or account chrome. */
+  const moreDropdownLinks = useMemo(() => {
+    const occupied = new Set();
+
+    for (const item of navItems) {
+      const path = normalizeNavPath(item.to);
+      if (path) occupied.add(path);
+    }
+
+    if (showPublicHowItWorks) {
+      for (const sub of howItWorksItems) {
+        const path = normalizeNavPath(sub.to);
+        if (path) occupied.add(path);
+      }
+    }
+
+    for (const route of [
+      "/login",
+      "/register",
+      dashboardPath,
+      profilePagePath,
+      accountSettingsPath,
+      notificationsPath,
+    ]) {
+      const path = normalizeNavPath(route);
+      if (path) occupied.add(path);
+    }
+
+    return importantNavLinks.filter((link) => {
+      const path = normalizeNavPath(link.to);
+      return Boolean(path) && !occupied.has(path);
+    });
+  }, [
+    importantNavLinks,
+    navItems,
+    showPublicHowItWorks,
+    howItWorksItems,
+    dashboardPath,
+    profilePagePath,
+    accountSettingsPath,
+    notificationsPath,
+  ]);
+
   const desktopNavEntries = useMemo(() => {
     const entries = navItems.map((item) => ({ type: "link", ...item }));
-    if (!showPublicHowItWorks) return entries;
+    if (showPublicHowItWorks) {
+      const howEntry = {
+        type: "dropdown",
+        id: "how-it-works",
+        labelKey: "nav.howItWorks",
+        items: howItWorksItems,
+      };
+      const ordersIdx = entries.findIndex((e) => e.type === "link" && e.to === "/orders");
+      if (ordersIdx >= 0) entries.splice(ordersIdx, 0, howEntry);
+      else entries.push(howEntry);
+    }
 
-    const howEntry = {
-      type: "dropdown",
-      id: "how-it-works",
-      labelKey: "nav.howItWorks",
-      items: howItWorksItems,
-    };
-    const ordersIdx = entries.findIndex((e) => e.type === "link" && e.to === "/orders");
-    if (ordersIdx >= 0) entries.splice(ordersIdx, 0, howEntry);
-    else entries.push(howEntry);
+    if (moreDropdownLinks.length > 0) {
+      entries.push({
+        type: "dropdown",
+        id: "more",
+        labelKey: "nav.more",
+        items: moreDropdownLinks,
+      });
+    }
+
     return entries;
-  }, [navItems, showPublicHowItWorks, howItWorksItems]);
+  }, [navItems, showPublicHowItWorks, howItWorksItems, moreDropdownLinks]);
 
-  const isHowItWorksActive = howItWorksItems.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
+  const isHowItWorksActive = howItWorksItems.some(
+    (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
+  );
+  const isMoreActive = moreDropdownLinks.some(
+    (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
+  );
 
   const userName = fullNameAr(user) || user?.email || "";
   const userInitial = (user?.firstName || user?.email || "U").trim().slice(0, 1).toUpperCase();
@@ -286,45 +411,52 @@ const Navbar = () => {
           <ul className="m-0 flex list-none flex-nowrap items-center justify-center gap-x-4 px-1 py-0.5 md:gap-x-6 lg:gap-x-8 xl:gap-x-10">
             {desktopNavEntries.map((entry) => {
               if (entry.type === "dropdown") {
+                const isOpen = openDesktopDropdownId === entry.id;
+                const isActive = entry.id === "how-it-works" ? isHowItWorksActive : isMoreActive;
+                const wrapRef = entry.id === "how-it-works" ? howItWorksRef : moreDropdownRef;
+                const menuId = `public-nav-dropdown-${entry.id}`;
+
                 return (
                   <li
                     key={entry.id}
-                    className={`public-nav-dropdown shrink-0${howItWorksOpen ? " public-nav-dropdown--open" : ""}`}
+                    className={`public-nav-dropdown shrink-0${isOpen ? " public-nav-dropdown--open" : ""}`}
                   >
                     <div
                       className="public-nav-dropdown__wrap"
-                      ref={howItWorksRef}
-                      onMouseEnter={openHowItWorksMenu}
-                      onMouseLeave={scheduleCloseHowItWorksMenu}
+                      ref={wrapRef}
+                      onMouseEnter={() => openDesktopDropdown(entry.id)}
+                      onMouseLeave={() => scheduleCloseDesktopDropdown(entry.id)}
                     >
                       <button
                         type="button"
-                        className={`${navLinkBase} public-nav-dropdown__trigger${isHowItWorksActive ? ` ${navLinkActive}` : ""}`}
+                        className={`${navLinkBase} public-nav-dropdown__trigger${isActive ? ` ${navLinkActive}` : ""}`}
                         aria-haspopup="menu"
-                        aria-expanded={howItWorksOpen}
-                        onClick={() => setHowItWorksOpen((v) => !v)}
+                        aria-expanded={isOpen}
+                        aria-controls={menuId}
+                        aria-label={entry.id === "more" ? t("nav.moreMenuAria") : undefined}
+                        onClick={() => toggleDesktopDropdown(entry.id)}
                       >
                         {entry.labelKey ? t(entry.labelKey) : entry.label}
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden>
                           <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </button>
-                      {howItWorksOpen ? (
-                        <div className="public-nav-dropdown__menu" role="menu">
+                      {isOpen ? (
+                        <div id={menuId} className="public-nav-dropdown__menu" role="menu">
                           <div className="public-nav-dropdown__menu-panel">
                             {entry.items.map((sub) => (
                               <NavLink
-                                key={sub.to}
+                                key={sub.id || sub.to}
                                 to={sub.to}
-                                className={({ isActive }) =>
-                                  ["public-nav-dropdown__item", isActive ? "public-nav-dropdown__item--active" : ""]
+                                className={({ isActive: linkActive }) =>
+                                  ["public-nav-dropdown__item", linkActive ? "public-nav-dropdown__item--active" : ""]
                                     .filter(Boolean)
                                     .join(" ")
                                 }
                                 role="menuitem"
-                                onClick={() => setHowItWorksOpen(false)}
+                                onClick={closeDesktopDropdowns}
                               >
-                                {t(sub.labelKey)}
+                                {dropdownItemLabel(sub, t)}
                               </NavLink>
                             ))}
                           </div>
@@ -376,7 +508,10 @@ const Navbar = () => {
                   className="inline-flex cursor-pointer items-center gap-3 rounded-full border border-[rgba(56,82,180,0.16)] bg-white py-2 pe-3 ps-2.5 transition-[background-color,border-color,box-shadow] duration-200 hover:border-[rgba(56,82,180,0.28)] hover:bg-[rgba(56,82,180,0.04)] focus:outline-none focus:shadow-[0_0_0_4px_rgba(56,82,180,0.14)] sm:py-2.5 sm:pe-3.5 sm:ps-3"
                   aria-haspopup="menu"
                   aria-expanded={userMenuOpen}
-                  onClick={() => setUserMenuOpen((v) => !v)}
+                  onClick={() => {
+                    setUserMenuOpen((v) => !v);
+                    closeDesktopDropdowns();
+                  }}
                 >
                   {user?.avatarUrl ? (
                     <img
@@ -575,14 +710,14 @@ const Navbar = () => {
                           {t("nav.importantLinks")}
                         </p>
                         <ul className="public-nav-drawer__list">
-                          {mobileMenuPages.map((item) => (
+                          {importantNavLinks.map((item) => (
                             <li key={item.id}>
                               <NavLink
-                                to={item.path}
+                                to={item.to}
                                 className={drawerLinkClass}
                                 onClick={closeMobileDrawer}
                               >
-                                <span className="public-nav-drawer__link-text">{getFooterImportantLinkLabel(item, t)}</span>
+                                <span className="public-nav-drawer__link-text">{getFooterImportantLinkLabel(item.page, t)}</span>
                                 <span className="public-nav-drawer__link-chevron" aria-hidden>
                                   <DrawerLinkChevron isRtl={isRtl} />
                                 </span>
