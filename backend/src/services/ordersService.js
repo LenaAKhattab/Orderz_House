@@ -24,6 +24,40 @@ async function safeNotify(run) {
   }
 }
 
+/** Fire-and-forget: notify all freelancers about a new client bidding order (after COMMIT). */
+function scheduleClientBiddingPoolFreelancerNotifications({ orderId, actorUserId }) {
+  const oid = Number(orderId);
+  const aid = Number(actorUserId);
+  if (!Number.isInteger(oid) || oid < 1) return;
+  setImmediate(() => {
+    void (async () => {
+      try {
+        const freelancerIds = await notificationEventsService.getRoleUserIds(["freelancer"]);
+        await notificationEventsService.notifyUsers({
+          userIds: freelancerIds,
+          recipientRole: "freelancer",
+          actorUserId: aid,
+          type: "order.created",
+          title: "مشروع مزايدة جديد",
+          message: "تم نشر مشروع جديد بنظام المزايدة.",
+          entityType: "order",
+          entityId: oid,
+          link: `/dashboard/freelancer/orders/${encodeURIComponent(String(oid))}`,
+          priority: "medium",
+          metadata: { orderId: String(oid), projectType: "bidding" },
+          dedupeKey: `order_bidding_created_${String(oid)}`,
+        });
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("[notifications] client bidding pool broadcast failed", {
+          orderId: oid,
+          message: err?.message || err,
+        });
+      }
+    })();
+  });
+}
+
 /** Multer/busboy often stores UTF-8 filenames as latin1 bytes; fix for DB display and downloads. */
 function decodeMultipartOriginalName(name) {
   const s = String(name ?? "");
@@ -929,28 +963,6 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
         client,
       ),
     );
-    if (!isFixed) {
-      await safeNotify(async () => {
-        const freelancerIds = await notificationEventsService.getRoleUserIds(["freelancer"], client);
-        await notificationEventsService.notifyUsers(
-          {
-            userIds: freelancerIds,
-            recipientRole: "freelancer",
-            actorUserId: Number(clientUserId),
-            type: "order.created",
-            title: "مشروع مزايدة جديد",
-            message: "تم نشر مشروع جديد بنظام المزايدة.",
-            entityType: "order",
-            entityId: Number(orderRow.id),
-            link: `/dashboard/freelancer/orders/${encodeURIComponent(String(orderRow.id))}`,
-            priority: "medium",
-            metadata: { orderId: String(orderRow.id), projectType: "bidding" },
-            dedupeKey: `order_bidding_created_${String(orderRow.id)}`,
-          },
-          client,
-        );
-      });
-    }
     await upsertSkillsAndAttach({ orderId: orderRow.id, skills: payload.preferredSkills }, client);
 
     const files = Array.isArray(uploadedFiles) ? uploadedFiles : [];
@@ -965,6 +977,12 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
 
     await client.query("COMMIT");
     scheduleRealOrderTranslation(orderRow.id, orderRow.title, orderRow.description);
+    if (!isFixed) {
+      scheduleClientBiddingPoolFreelancerNotifications({
+        orderId: orderRow.id,
+        actorUserId: clientUserId,
+      });
+    }
     return await getOrderById(orderRow.id);
   } catch (err) {
     await client.query("ROLLBACK");
@@ -3766,5 +3784,6 @@ module.exports = {
   adminRequestInternalDeliveryRevision,
   activateArchivedInternalOrder,
   purgeClientUnpaidFixedOrderDraft,
+  scheduleClientBiddingPoolFreelancerNotifications,
 };
 

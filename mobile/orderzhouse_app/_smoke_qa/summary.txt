@@ -1,0 +1,17 @@
+fresh_goes_to_login: true
+bottom_nav_hidden: true
+guest_browse_gone: true
+register_opens: true
+register_back_ok: true
+no_auth_loop: true
+payment_return_guest_login: true
+payment_not_guest_home: true
+payment_no_bottom_nav: true
+payment_not_browsing: true
+api_ok: true
+client_login: false
+client_bottom_nav: false
+logout_confirm: null
+logout_to_login: null
+back_no_home: null
+freelancer_login: false

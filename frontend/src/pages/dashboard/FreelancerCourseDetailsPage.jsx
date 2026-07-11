@@ -641,7 +641,7 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
         downloadExternalFile(answerFileUrl, getStudentCourseFileDownloadName("answer"));
       }
     } catch {
-      toast.error(COURSE_FILE_OPEN_FAILED_TOAST);
+      toast.error(t(`${CD}.file.openFailedTryDownload`));
     } finally {
       setFileAction((prev) => ({ ...prev, answer: null }));
     }

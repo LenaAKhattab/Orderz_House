@@ -67,10 +67,6 @@ function assignmentBadge(order, t) {
   return { label: t("orders.card.inPool"), className: "oh-pill oh-pill--pool" };
 }
 
-function isPricedBiddingOrder(order) {
-  return order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null;
-}
-
 function bidderDisplayName(bidUser) {
   if (bidUser?.displayName) return bidUser.displayName;
   const u = bidUser?.user || {};
@@ -127,7 +123,6 @@ export default function OrderCard({
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const categoryText = categoryLine(order, locale);
-  const pricedBidding = useMemo(() => isPricedBiddingOrder(order), [order]);
   const filesCount =
     Array.isArray(order?.files) && order.files.length
       ? order.files.length

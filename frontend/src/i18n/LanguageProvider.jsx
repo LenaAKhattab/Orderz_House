@@ -93,7 +93,6 @@ export function LanguageProvider({ children }) {
 
       await waitForPaint();
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("[i18n] locale switch failed:", err);
       applyDocumentLocale(previous);
       persistLocale(previous);

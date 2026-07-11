@@ -1,0 +1,8 @@
+red_screen: false
+login_visible: false
+bottom_nav: true
+guest_browse: false
+register_opens: false
+register_back: false
+payment_no_goex: true
+payment_safe: false

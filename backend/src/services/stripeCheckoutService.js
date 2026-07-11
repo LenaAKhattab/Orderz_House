@@ -29,6 +29,7 @@ const {
 } = require("./subscriptionActivationFeeService");
 const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPaymentStatus");
 const { getPrimaryClientUrl } = require("../config/clientUrl");
+const { buildClientOrderCheckoutReturnUrls } = require("../utils/checkoutReturnUrls");
 const { isProduction } = require("../config/env");
 const freelancerSubscriptionPaymentNotifications = require("./freelancerSubscriptionPaymentNotifications");
 const subscriptionAdminNotificationService = require("./subscriptionAdminNotificationService");
@@ -128,7 +129,7 @@ async function insertPendingPayment({
   );
 }
 
-async function createClientFixedOrderCheckoutSession({ clientUserId, orderId }) {
+async function createClientFixedOrderCheckoutSession({ clientUserId, orderId, isMobile = false }) {
   const stripe = getStripeOrNull();
   if (!stripe) {
     throwStripeNotConfigured();
@@ -218,8 +219,11 @@ async function createClientFixedOrderCheckoutSession({ clientUserId, orderId }) 
       legacyMeta,
     );
 
-    const successUrl = `${clientUrl}/dashboard/client/my-orders?paid=1&orderId=${encodeURIComponent(String(oid))}`;
-    const cancelUrl = `${clientUrl}/dashboard/client/my-orders?cancelled=1&orderId=${encodeURIComponent(String(oid))}`;
+    const { successUrl, cancelUrl } = buildClientOrderCheckoutReturnUrls({
+      isMobile: Boolean(isMobile),
+      orderId: oid,
+      clientUrl,
+    });
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",

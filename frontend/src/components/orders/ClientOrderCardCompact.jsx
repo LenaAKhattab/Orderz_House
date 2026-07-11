@@ -4,10 +4,8 @@ import {
   formatOrderDuration,
   formatOrderProjectType,
   categoryLine,
-  shortDescription,
 } from "../../lib/orders/orderDisplayFormatters";
 import {
-  getLocalizedOrderDescription,
   getLocalizedOrderTitle,
   resolveUserContentDir,
 } from "../../lib/i18n/getLocalizedMarketplaceOrderText";
@@ -92,9 +90,7 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
   const badge = useMemo(() => clientStatusMeta(order, t), [order, t]);
   const pricedBidding = useMemo(() => isPricedBidding(order), [order]);
   const localizedTitle = getLocalizedOrderTitle(order, locale);
-  const localizedDescription = getLocalizedOrderDescription(order, locale);
   const titleDir = resolveUserContentDir(localizedTitle, dir);
-  const descriptionDir = resolveUserContentDir(localizedDescription, dir);
   const filesCount = Array.isArray(order?.files) ? order.files.length : 0;
   const deliveryFilesCount = useMemo(
     () => (Array.isArray(order?.files) ? order.files.filter((f) => f.purpose === "delivery").length : 0),
