@@ -16,6 +16,7 @@ const DASHBOARD_PERMISSION_OPTIONS = Object.freeze([
   { key: "dashboard.super_admin.subscriptions", labelKey: "dashboard.nav.superAdmin.subscriptions" },
   { key: "dashboard.admin.subscription_activation", labelKey: "dashboard.nav.superAdmin.subscriptionActivation" },
   { key: "dashboard.super_admin.financial_claims", labelKey: "dashboard.nav.superAdmin.financialClaims" },
+  { key: "dashboard.super_admin.financial_center", labelKey: "dashboard.nav.superAdmin.financialCenter" },
   { key: "dashboard.admin.orders", labelKey: "dashboard.nav.superAdmin.internalRequests" },
   { key: "dashboard.admin.create_order", labelKey: "dashboard.nav.superAdmin.createRequest" },
   { key: "dashboard.super_admin.training_orders", labelKey: "dashboard.nav.superAdmin.trainingRequests" },
@@ -59,11 +60,13 @@ const PERMISSION_KEYS = Object.freeze({
   SUBSCRIPTIONS: "dashboard.super_admin.subscriptions",
   SUBSCRIPTION_ACTIVATION: "dashboard.admin.subscription_activation",
   FINANCIAL_CLAIMS: "dashboard.super_admin.financial_claims",
+  FINANCIAL_CENTER: "dashboard.super_admin.financial_center",
   ORDERS: "dashboard.admin.orders",
   CREATE_ORDER: "dashboard.admin.create_order",
   TRAINING_ORDERS: "dashboard.super_admin.training_orders",
   ADMINS_MANAGE: "dashboard.super_admin.admins_manage",
   EDIT_WEBSITE: "dashboard.super_admin.edit_website",
+  ANALYTICS: "dashboard.super_admin.analytics",
 });
 
 module.exports = {

@@ -73,6 +73,16 @@ const extendedPlanFields = [
   body("buttonText").optional({ nullable: true }).isString().trim().isLength({ max: 200 }),
   body("buttonUrl").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
   body("currency").optional().isString().trim().isLength({ min: 3, max: 3 }).withMessage("currency must be a 3-letter code."),
+  body("titleEn").optional({ nullable: true }).isString().trim().isLength({ max: 140 }),
+  body("descriptionEn").optional({ nullable: true }).isString().trim().isLength({ max: 5000 }),
+  body("labelEn").optional({ nullable: true }).isString().trim().isLength({ max: 200 }),
+  body("billingTextEn").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
+  body("priceIntroText").optional({ nullable: true }).isString().trim().isLength({ max: 5000 }),
+  body("priceIntroTextEn").optional({ nullable: true }).isString().trim().isLength({ max: 5000 }),
+  body("buttonTextEn").optional({ nullable: true }).isString().trim().isLength({ max: 200 }),
+  optionalStringArray("featuresEn"),
+  optionalStringArray("trainingsEn"),
+  body("offerLabelEn").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
 ];
 
 const createPlanValidators = [

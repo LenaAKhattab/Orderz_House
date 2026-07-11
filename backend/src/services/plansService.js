@@ -62,10 +62,12 @@ function mapPlan(row) {
     sortOrder: row.sort_order,
     features: readJsonArrayFromRow(row, "features"),
     trainings: readJsonArrayFromRow(row, "trainings"),
+    trainingsEn: readJsonArrayFromRow(row, "trainings_en"),
     paymentNotes: row.payment_notes || null,
     installmentPlan: readInstallmentFromRow(row),
     offerExpiresAt: row.offer_expires_at || null,
     offerLabel: row.offer_label || null,
+    offerLabelEn: row.offer_label_en || null,
     orderValueMinJod: row.order_value_min_jod != null ? Number(row.order_value_min_jod) : null,
     orderValueMaxJod: row.order_value_max_jod != null ? Number(row.order_value_max_jod) : null,
     activationRequirements: row.activation_requirements || null,
@@ -77,6 +79,8 @@ function mapPlan(row) {
     subscriptionPlanId: row.subscription_plan_id != null ? String(row.subscription_plan_id) : null,
     label: row.label || null,
     billingText: row.billing_text || null,
+    priceIntroText: row.price_intro_text || null,
+    priceIntroTextEn: row.price_intro_text_en || null,
     buttonText: row.button_text || null,
     buttonUrl: row.button_url || null,
     currency: row.currency || "JOD",
@@ -213,11 +217,13 @@ function pickExtendedPayload(payload) {
   return {
     features: payload.features !== undefined ? jsonArrayToDb(payload.features) : undefined,
     trainings: payload.trainings !== undefined ? jsonArrayToDb(payload.trainings) : undefined,
+    trainingsEn: payload.trainingsEn !== undefined ? jsonArrayToDb(payload.trainingsEn) : undefined,
     paymentNotes: payload.paymentNotes,
     installmentPlan:
       payload.installmentPlan !== undefined ? installmentPlanToDb(payload.installmentPlan) : undefined,
     offerExpiresAt: payload.offerExpiresAt,
     offerLabel: payload.offerLabel,
+    offerLabelEn: payload.offerLabelEn,
     orderValueMinJod: payload.orderValueMinJod,
     orderValueMaxJod: payload.orderValueMaxJod,
     activationRequirements: payload.activationRequirements,
@@ -230,9 +236,16 @@ function pickExtendedPayload(payload) {
     subscriptionPlanId: payload.subscriptionPlanId,
     label: payload.label,
     billingText: payload.billingText,
+    priceIntroText: payload.priceIntroText,
+    priceIntroTextEn: payload.priceIntroTextEn,
     buttonText: payload.buttonText,
     buttonUrl: payload.buttonUrl,
     currency: payload.currency,
+    titleEn: payload.titleEn,
+    descriptionEn: payload.descriptionEn,
+    labelEn: payload.labelEn,
+    billingTextEn: payload.billingTextEn,
+    buttonTextEn: payload.buttonTextEn,
   };
 }
 
@@ -255,36 +268,46 @@ async function createPlan({ actorUserId, payload }) {
     buttonText = null,
     buttonUrl = null,
     currency = "JOD",
+    titleEn = null,
+    descriptionEn = null,
+    labelEn = null,
+    billingTextEn = null,
+    buttonTextEn = null,
   } = payload;
 
   const ext = pickExtendedPayload(payload);
 
   const { rows } = await pool.query(
     `INSERT INTO plans (
-      name, title, description, duration_days, price_jod, stripe_checkout_amount_jod,
+      name, title, title_en, description, description_en, duration_days, price_jod, stripe_checkout_amount_jod,
       requires_company_visit, self_subscribe_allowed, is_active, is_visible, sort_order,
-      features, trainings, payment_notes, installment_plan,
-      offer_expires_at, offer_label, order_value_min_jod, order_value_max_jod,
+      features, trainings, trainings_en, payment_notes, installment_plan,
+      offer_expires_at, offer_label, offer_label_en, order_value_min_jod, order_value_max_jod,
       activation_requirements, refund_policy, admin_notes,
       is_popular, is_featured,
-      plan_page_id, subscription_plan_id, label, billing_text, button_text, button_url, currency,
+      plan_page_id, subscription_plan_id, label, label_en, billing_text, billing_text_en,
+      price_intro_text, price_intro_text_en,
+      button_text, button_text_en, button_url, currency,
       created_by_user_id, updated_by_user_id
     ) VALUES (
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,
-      COALESCE($12::jsonb, '[]'::jsonb),
-      COALESCE($13::jsonb, '[]'::jsonb),
-      $14,$15::jsonb,
-      $16,$17,$18,$19,
-      $20,$21,$22,
-      COALESCE($23, FALSE), COALESCE($24, FALSE),
-      $25,$26,$27,$28,$29,$30,COALESCE($31, 'JOD'),
-      $32,$32
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,
+      COALESCE($14::jsonb, '[]'::jsonb),
+      COALESCE($15::jsonb, '[]'::jsonb),
+      COALESCE($16::jsonb, '[]'::jsonb),
+      $17,$18::jsonb,
+      $19,$20,$21,$22,$23,
+      $24,$25,$26,
+      COALESCE($27, FALSE), COALESCE($28, FALSE),
+      $29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,COALESCE($40, 'JOD'),
+      $41,$41
     )
     RETURNING *`,
     [
       name,
       title,
+      ext.titleEn !== undefined ? ext.titleEn : titleEn,
       description,
+      ext.descriptionEn !== undefined ? ext.descriptionEn : descriptionEn,
       durationDays,
       priceJod != null ? Number(priceJod) : null,
       ext.stripeCheckoutAmountJod != null ? Number(ext.stripeCheckoutAmountJod) : null,
@@ -295,10 +318,12 @@ async function createPlan({ actorUserId, payload }) {
       sortOrder,
       ext.features !== undefined ? ext.features : "[]",
       ext.trainings !== undefined ? ext.trainings : "[]",
+      ext.trainingsEn !== undefined ? ext.trainingsEn : "[]",
       ext.paymentNotes !== undefined ? ext.paymentNotes : null,
       ext.installmentPlan,
       ext.offerExpiresAt !== undefined ? ext.offerExpiresAt || null : null,
       ext.offerLabel !== undefined ? ext.offerLabel : null,
+      ext.offerLabelEn !== undefined ? ext.offerLabelEn : null,
       ext.orderValueMinJod !== undefined && ext.orderValueMinJod != null ? Number(ext.orderValueMinJod) : null,
       ext.orderValueMaxJod !== undefined && ext.orderValueMaxJod != null ? Number(ext.orderValueMaxJod) : null,
       ext.activationRequirements !== undefined ? ext.activationRequirements : null,
@@ -309,8 +334,13 @@ async function createPlan({ actorUserId, payload }) {
       planPageId != null ? Number(planPageId) : null,
       subscriptionPlanId != null ? Number(subscriptionPlanId) : null,
       label,
+      ext.labelEn !== undefined ? ext.labelEn : labelEn,
       billingText,
+      ext.billingTextEn !== undefined ? ext.billingTextEn : billingTextEn,
+      ext.priceIntroText !== undefined ? ext.priceIntroText : null,
+      ext.priceIntroTextEn !== undefined ? ext.priceIntroTextEn : null,
       buttonText,
+      ext.buttonTextEn !== undefined ? ext.buttonTextEn : buttonTextEn,
       buttonUrl,
       currency,
       actorUserId ? Number(actorUserId) : null,
@@ -365,10 +395,12 @@ async function updatePlan({ actorUserId, id, patch }) {
 
   if (patch.features !== undefined) set("features", jsonArrayToDb(patch.features));
   if (patch.trainings !== undefined) set("trainings", jsonArrayToDb(patch.trainings));
+  if (patch.trainingsEn !== undefined) set("trainings_en", jsonArrayToDb(patch.trainingsEn));
   if (patch.paymentNotes !== undefined) set("payment_notes", patch.paymentNotes);
   if (patch.installmentPlan !== undefined) set("installment_plan", installmentPlanToDb(patch.installmentPlan));
   if (patch.offerExpiresAt !== undefined) set("offer_expires_at", patch.offerExpiresAt || null);
   if (patch.offerLabel !== undefined) set("offer_label", patch.offerLabel);
+  if (patch.offerLabelEn !== undefined) set("offer_label_en", patch.offerLabelEn);
   if (patch.orderValueMinJod !== undefined) {
     set("order_value_min_jod", patch.orderValueMinJod == null ? null : Number(patch.orderValueMinJod));
   }
@@ -386,9 +418,16 @@ async function updatePlan({ actorUserId, id, patch }) {
   }
   if (patch.label !== undefined) set("label", patch.label);
   if (patch.billingText !== undefined) set("billing_text", patch.billingText);
+  if (patch.priceIntroText !== undefined) set("price_intro_text", patch.priceIntroText);
+  if (patch.priceIntroTextEn !== undefined) set("price_intro_text_en", patch.priceIntroTextEn);
   if (patch.buttonText !== undefined) set("button_text", patch.buttonText);
   if (patch.buttonUrl !== undefined) set("button_url", patch.buttonUrl);
   if (patch.currency !== undefined) set("currency", patch.currency || "JOD");
+  if (patch.titleEn !== undefined) set("title_en", patch.titleEn);
+  if (patch.descriptionEn !== undefined) set("description_en", patch.descriptionEn);
+  if (patch.labelEn !== undefined) set("label_en", patch.labelEn);
+  if (patch.billingTextEn !== undefined) set("billing_text_en", patch.billingTextEn);
+  if (patch.buttonTextEn !== undefined) set("button_text_en", patch.buttonTextEn);
 
   set("updated_by_user_id", actorUserId ? Number(actorUserId) : null);
   set("updated_at", new Date());

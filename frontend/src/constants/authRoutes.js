@@ -4,6 +4,7 @@ export const ROLE = {
   ADMIN: "admin",
   FREELANCER: "freelancer",
   CLIENT: "client",
+  FINANCIAL_USER: "financial_user",
 };
 
 /** يُطلق بعد إنشاء طلب داخلي من النافذة لتحديث صفحة «الطلبات الداخلية» حتى لو بقي نفس المسار في React Router. */
@@ -15,6 +16,7 @@ export const DASHBOARD_PATH = {
   [ROLE.ADMIN]: "/dashboard/admin",
   [ROLE.FREELANCER]: "/dashboard/freelancer",
   [ROLE.CLIENT]: "/dashboard/client",
+  [ROLE.FINANCIAL_USER]: "/dashboard/my-bonuses",
 };
 
 export const DASHBOARD_TITLE = {
@@ -22,6 +24,8 @@ export const DASHBOARD_TITLE = {
   [DASHBOARD_PATH[ROLE.ADMIN]]: "لوحة الإدارة",
   [DASHBOARD_PATH[ROLE.FREELANCER]]: "لوحة المستقل",
   [DASHBOARD_PATH[ROLE.CLIENT]]: "لوحة العميل",
+  [DASHBOARD_PATH[ROLE.FINANCIAL_USER]]: "بونصاتي",
+  "/dashboard/my-bonuses": "بونصاتي",
   "/dashboard/client/my-orders": "طلباتي",
   "/dashboard/client/my_orders": "طلباتي",
   "/dashboard/client/financial": "المالية",
@@ -72,6 +76,8 @@ export const DASHBOARD_TITLE_KEYS = {
   [DASHBOARD_PATH[ROLE.ADMIN]]: "dashboard.titles.adminPanel",
   [DASHBOARD_PATH[ROLE.FREELANCER]]: "dashboard.titles.freelancerPanel",
   [DASHBOARD_PATH[ROLE.CLIENT]]: "dashboard.titles.clientPanel",
+  [DASHBOARD_PATH[ROLE.FINANCIAL_USER]]: "dashboard.titles.financialUserPanel",
+  "/dashboard/my-bonuses": "dashboard.financialUser.myBonuses",
   "/dashboard/client/my-orders": "dashboard.breadcrumbs.myRequests",
   "/dashboard/client/my_orders": "dashboard.breadcrumbs.myRequests",
   "/dashboard/client/financial": "dashboard.breadcrumbs.finance",
@@ -145,6 +151,7 @@ export function getNotificationsPath(role) {
   if (role === ROLE.ADMIN) return "/dashboard/admin/notifications";
   if (role === ROLE.CLIENT) return "/dashboard/client/notifications";
   if (role === ROLE.FREELANCER) return "/dashboard/freelancer/notifications";
+  if (role === ROLE.FINANCIAL_USER) return "/dashboard/my-bonuses";
   return "/dashboard";
 }
 
@@ -186,6 +193,8 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/admin/notifications": [ROLE.ADMIN],
   [DASHBOARD_PATH[ROLE.FREELANCER]]: [ROLE.FREELANCER],
   [DASHBOARD_PATH[ROLE.CLIENT]]: [ROLE.CLIENT],
+  "/dashboard/my-bonuses": [ROLE.FINANCIAL_USER],
+  "/dashboard/financial-user": [ROLE.FINANCIAL_USER],
   "/dashboard/client/my-orders": [ROLE.CLIENT],
   "/dashboard/client/my_orders": [ROLE.CLIENT],
   "/dashboard/client/financial": [ROLE.CLIENT],
@@ -236,6 +245,8 @@ const DASHBOARD_PREFIX_RULES = [
   { prefix: "/dashboard/freelancer/plans", roles: [ROLE.FREELANCER] },
   { prefix: "/dashboard/freelancer/courses", roles: [ROLE.FREELANCER] },
   { prefix: "/dashboard/freelancer", roles: [ROLE.FREELANCER] },
+  { prefix: "/dashboard/my-bonuses", roles: [ROLE.FINANCIAL_USER] },
+  { prefix: "/dashboard/financial-user", roles: [ROLE.FINANCIAL_USER] },
   { prefix: "/dashboard/client", roles: [ROLE.CLIENT] },
 ];
 

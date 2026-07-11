@@ -3,10 +3,12 @@ const planFeaturesService = require("../services/planFeaturesService");
 
 async function syncPlanFeaturesFromPayload(planId, payload) {
   if (!Array.isArray(payload.features)) return;
+  const enFeatures = Array.isArray(payload.featuresEn) ? payload.featuresEn : [];
   await planFeaturesService.replaceFeaturesForPlan({
     planId,
     features: payload.features.map((text, idx) => ({
       featureText: text,
+      featureTextEn: enFeatures[idx] || null,
       sortOrder: idx,
       isIncluded: true,
     })),

@@ -67,17 +67,23 @@ function getCardLocaleBundle(locale, localeKey) {
 }
 
 function resolveCardString(plan, field, locale, localeKey, cardBundle) {
-  const fromApi = getLocalizedField(plan, field, locale);
-  const base = plan?.[field] != null ? String(plan[field]) : "";
+  const base = plan?.[field] != null ? String(plan[field]).trim() : "";
 
   if (locale === "en") {
-    if (fromApi && fromApi !== base) return fromApi;
+    const enExplicit = plan?.[`${field}En`] ?? plan?.[`${field}_en`];
+    if (enExplicit != null && String(enExplicit).trim() !== "") {
+      return String(enExplicit).trim();
+    }
+    // API/base column beats hardcoded locale cards when DB has content.
+    if (base) return base;
     const fromLocale = cardBundle?.[field];
-    if (fromLocale != null && String(fromLocale).trim() !== "") return String(fromLocale);
-    // Unmapped plans (no localeKey / cards.* entry, no *_en API fields) keep Arabic catalog text.
-    return base;
+    if (fromLocale != null && String(fromLocale).trim() !== "") {
+      return String(fromLocale).trim();
+    }
+    return "";
   }
 
+  const fromApi = getLocalizedField(plan, field, locale);
   return fromApi || base;
 }
 
@@ -96,52 +102,65 @@ export function formatPlanPriceJod(priceJod, locale = "ar") {
 }
 
 function getLocalizedFeatures(plan, locale, localeKey, cardBundle) {
-  if (locale === "en" && Array.isArray(cardBundle?.features) && cardBundle.features.length > 0) {
-    return cardBundle.features.map((item) => String(item));
-  }
   if (Array.isArray(plan?.planFeatures) && plan.planFeatures.length > 0) {
-    return plan.planFeatures
+    const fromDb = plan.planFeatures
       .filter((item) => item?.isIncluded !== false)
+      .sort((a, b) => Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0))
       .map((item) => {
         if (locale === "en" && item?.featureTextEn) return String(item.featureTextEn);
         return String(item.featureText || item);
       })
-      .filter(Boolean)
-      .slice(0, 14);
+      .filter(Boolean);
+    if (fromDb.length > 0) return fromDb.slice(0, 14);
   }
-  // Arabic: catalog `features` / API fields via planListItems — no en/plans.json cards mirror.
-  return planListItems(plan);
+
+  const apiFeatures = planListItems(plan, locale);
+  if (apiFeatures.length > 0) {
+    return apiFeatures.slice(0, 14);
+  }
+
+  if (locale === "en" && Array.isArray(cardBundle?.features) && cardBundle.features.length > 0) {
+    return cardBundle.features.map((item) => String(item));
+  }
+
+  return apiFeatures.slice(0, 14);
 }
 
 function getLocalizedOrderValueRange(plan, locale, cardBundle) {
+  const fromApi = formatOrderValueRange(plan);
+  if (fromApi) return fromApi;
   if (locale === "en" && cardBundle?.orderValue) {
     return String(cardBundle.orderValue);
   }
-  return formatOrderValueRange(plan);
+  return fromApi;
 }
 
 function getLocalizedInstallmentSummary(plan, locale, t, cardBundle) {
+  const fromApi =
+    locale === "en"
+      ? (() => {
+          const inst = plan?.installmentPlan;
+          if (!inst || typeof inst !== "object") return null;
+          const parts = [];
+          if (inst.upfrontJod != null) {
+            parts.push(t("plans.installmentAtSignup", { amount: Number(inst.upfrontJod) }));
+          }
+          if (inst.monthlyJod != null && inst.months != null) {
+            parts.push(
+              t("plans.installmentMonthly", {
+                amount: Number(inst.monthlyJod),
+                months: inst.months,
+              }),
+            );
+          }
+          return parts.length > 0 ? parts.join(" · ") : null;
+        })()
+      : formatInstallmentSummary(plan);
+  if (fromApi) return fromApi;
   if (locale === "en" && cardBundle?.installment) {
     return String(cardBundle.installment);
   }
-  if (locale === "en") {
-    const inst = plan?.installmentPlan;
-    if (!inst || typeof inst !== "object") return null;
-    const parts = [];
-    if (inst.upfrontJod != null) {
-      parts.push(t("plans.installmentAtSignup", { amount: Number(inst.upfrontJod) }));
-    }
-    if (inst.monthlyJod != null && inst.months != null) {
-      parts.push(
-        t("plans.installmentMonthly", {
-          amount: Number(inst.monthlyJod),
-          months: inst.months,
-        }),
-      );
-    }
-    return parts.length > 0 ? parts.join(" · ") : null;
-  }
-  return formatInstallmentSummary(plan);
+  return fromApi;
 }
 
 function getLocalizedPriceHeadline(plan, locale, t) {
@@ -193,9 +212,8 @@ export function getLocalizedPlanBadge(plan, featured, locale, t) {
 /**
  * Resolve localized plan card copy for public Plans UI.
  *
- * English copy for ids 1–3 comes from `en/plans.json` → `cards.{free|standard|platinum}`.
- * Arabic copy comes from the merged catalog / API fields.
- * New plan ids need either `cards.*` locale entries, API `*_en` fields, or will show Arabic in EN.
+ * Priority for English: API `*En` columns → API base (Arabic) fields → `en/plans.json` cards fallback.
+ * Arabic copy comes from API/DB fields directly.
  *
  * @param {Record<string, unknown>} plan
  * @param {string} locale
@@ -206,9 +224,11 @@ export function getLocalizedPlanCardDisplay(plan, locale, t) {
   const cardBundle = locale === "en" ? getCardLocaleBundle("en", localeKey) : null;
 
   const offerActive = isOfferActive(plan);
-  const offerFromPlan = offerActive && plan?.offerLabel ? String(plan.offerLabel).trim() : "";
   const offerLabel = resolveCardString(
-    { offerLabel: offerFromPlan },
+    {
+      offerLabel: offerActive && plan?.offerLabel ? String(plan.offerLabel).trim() : "",
+      offerLabelEn: offerActive && plan?.offerLabelEn ? String(plan.offerLabelEn).trim() : "",
+    },
     "offerLabel",
     locale,
     localeKey,
@@ -218,6 +238,7 @@ export function getLocalizedPlanCardDisplay(plan, locale, t) {
   return {
     title: resolveCardString(plan, "title", locale, localeKey, cardBundle) || plan?.name || "—",
     description: resolveCardString(plan, "description", locale, localeKey, cardBundle),
+    priceIntroText: resolveCardString(plan, "priceIntroText", locale, localeKey, cardBundle),
     features: getLocalizedFeatures(plan, locale, localeKey, cardBundle),
     orderRange: getLocalizedOrderValueRange(plan, locale, cardBundle),
     installment: getLocalizedInstallmentSummary(plan, locale, t, cardBundle),

@@ -6,6 +6,7 @@ import { isUpgradePlan, planTierRank, freePlanNeedsActivationFeeCheckout } from 
 import { getLocalizedPlanBadge, getLocalizedPlanCardDisplay } from "../../../lib/i18n/getLocalizedPlanDisplay";
 import { getLocalizedField } from "../../../lib/i18n/getLocalizedField";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import { useDisplayCurrency } from "../../../hooks/useDisplayCurrency";
 
 const FEATURE_PREVIEW = 4;
 
@@ -44,6 +45,7 @@ export default function PlansMobilePlanCard({
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t, locale } = useTranslation();
+  const { resolvePlanPriceDisplay, formatFreePlanActivationFeeNote, isEgyptDisplay } = useDisplayCurrency();
   const [expanded, setExpanded] = useState(false);
 
   const role = user ? user.primaryRole || user.role : null;
@@ -74,7 +76,8 @@ export default function PlansMobilePlanCard({
   const customButtonLabel = getLocalizedField(plan, "buttonText", locale);
 
   const display = getLocalizedPlanCardDisplay(plan, locale, t);
-  const { main: priceMain, sub: priceSub } = display.price;
+  const displayedPrice = resolvePlanPriceDisplay(plan, display.price);
+  const { main: priceMain, sub: priceSub, checkoutHint } = displayedPrice;
   const features = display.features;
   const previewFeatures = features.slice(0, FEATURE_PREVIEW);
   const moreFeatures = features.slice(FEATURE_PREVIEW);
@@ -168,20 +171,28 @@ export default function PlansMobilePlanCard({
         {durationLabel ? <p className="pm-plan-card__duration">{durationLabel}</p> : null}
       </div>
 
+      {display.priceIntroText ? (
+        <p className="pm-plan-card__price-intro">{display.priceIntroText}</p>
+      ) : null}
+
       <div className="pm-plan-card__price">
         <span className="pm-plan-card__price-main">{priceMain}</span>
         {priceSub ? <span className="pm-plan-card__price-sub">{priceSub}</span> : null}
+        {checkoutHint && isEgyptDisplay ? (
+          <p className="pm-plan-card__price-note pm-plan-card__checkout-hint">{checkoutHint}</p>
+        ) : null}
         {installment ? <p className="pm-plan-card__price-note">{installment}</p> : null}
         {!installment && paymentNotes ? <p className="pm-plan-card__price-note">{paymentNotes}</p> : null}
         {freePlanPayFee ? (
           <p className="pm-plan-card__price-note pm-plan-card__activation-fee-required">
-            {t("plans.freePlanActivationFeeNote")}
+            {formatFreePlanActivationFeeNote()}
           </p>
         ) : null}
       </div>
 
       {offerLabel ? <p className="pm-plan-card__offer">{offerLabel}</p> : null}
 
+      <div className="pm-plan-card__body">
       <ul className="pm-plan-card__features" aria-label={t("plans.featuresAria")}>
         {previewFeatures.map((text, idx) => (
           <li key={`${text}-${idx}`} className="pm-plan-card__feature">
@@ -224,6 +235,7 @@ export default function PlansMobilePlanCard({
           {display.refundPolicy ? <p>{display.refundPolicy}</p> : null}
         </div>
       ) : null}
+      </div>
 
       <button
         type="button"

@@ -1,6 +1,7 @@
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import {
-  paymentStatusLabel,
+  subscriptionPaymentLabel,
+  subscriptionPaymentTone,
   subscriptionStatusLabel,
   formatSubscriptionAdminDateTime,
   formatFreelancerDisplayName,
@@ -183,8 +184,8 @@ export default function SuperAdminSubscriptionsList({
                   </StatusBadge>
                 </td>
                 <td className="oh-sa-subs-col-payment oh-sa-subs-table__payment">
-                  <StatusBadge tone={paymentStatusTone(s.paymentStatus)} className="oh-sa-subs-table__badge">
-                    {paymentStatusLabel(s.paymentStatus)}
+                  <StatusBadge tone={subscriptionPaymentTone(s)} className="oh-sa-subs-table__badge">
+                    {subscriptionPaymentLabel(s)}
                   </StatusBadge>
                 </td>
                 <td className="oh-sa-subs-col-assigned oh-sa-subs-table__date" dir="ltr">
@@ -238,7 +239,7 @@ export default function SuperAdminSubscriptionsList({
               </div>
               <div className="oh-sa-subs-mobile-card__row">
                 <span>الدفع</span>
-                <StatusBadge tone={paymentStatusTone(s.paymentStatus)}>{paymentStatusLabel(s.paymentStatus)}</StatusBadge>
+                <StatusBadge tone={subscriptionPaymentTone(s)}>{subscriptionPaymentLabel(s)}</StatusBadge>
               </div>
               <div className="oh-sa-subs-mobile-card__dates">
                 <span dir="ltr">إسناد: {formatSubscriptionAdminDateTime(s.assignedAt)}</span>

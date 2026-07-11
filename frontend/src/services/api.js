@@ -192,6 +192,11 @@ export const getCategorySubSubcategoriesRequest = async (categoryId) => {
 };
 
 // Plans / Subscriptions (RBAC-protected on backend)
+export const getPublicGeoRequest = async () => {
+  const { data } = await api.get("/public/geo", { timeout: 8000 });
+  return data;
+};
+
 export const listPublicPlansRequest = async () => {
   const { data } = await api.get("/plans");
   return data;
@@ -261,6 +266,11 @@ export const listAssignablePlansAdminRequest = async () => {
 
 export const listSubscriptionsRequest = async (params = {}) => {
   const { data } = await api.get("/admin/subscriptions", { params });
+  return data;
+};
+
+export const listActivationQueueRequest = async (params = {}) => {
+  const { data } = await api.get("/admin/subscriptions/activation-queue", { params });
   return data;
 };
 
@@ -1170,6 +1180,158 @@ export const getSuperadminDashboardIntelligenceActivityRequest = async (options 
     signal,
     ...axiosOptions,
   });
+  return data;
+};
+
+export const getSuperadminDashboardAnalysisRequest = async (options = {}) => {
+  const { signal, params, ...axiosOptions } = options;
+  const { data } = await api.get("/superadmin/dashboard/analysis", {
+    params,
+    timeout: 20000,
+    signal,
+    ...axiosOptions,
+  });
+  return data;
+};
+
+/** Super Admin — Financial Center */
+const fc = "/superadmin/financial-center";
+
+export const getFinancialCenterSummaryRequest = async (params = {}) => {
+  const { data } = await api.get(`${fc}/summary`, { params });
+  return data;
+};
+
+export const listFinancialCenterPeopleRequest = async (params = {}) => {
+  const { data } = await api.get(`${fc}/people`, { params });
+  return data;
+};
+
+export const getFinancialCenterPersonRequest = async (id) => {
+  const { data } = await api.get(`${fc}/people/${id}`);
+  return data;
+};
+
+export const getFinancialCenterPersonBonusDetailsRequest = async (id, params = {}) => {
+  const { data } = await api.get(`${fc}/people/${id}/bonus-details`, { params });
+  return data;
+};
+
+export const createFinancialCenterPersonRequest = async (payload) => {
+  const { data } = await api.post(`${fc}/people`, payload);
+  return data;
+};
+
+export const updateFinancialCenterPersonRequest = async (id, payload) => {
+  const { data } = await api.patch(`${fc}/people/${id}`, payload);
+  return data;
+};
+
+export const deactivateFinancialCenterPersonRequest = async (id) => {
+  const { data } = await api.post(`${fc}/people/${id}/deactivate`);
+  return data;
+};
+
+export const listFinancialCenterBonusRowsRequest = async (params = {}) => {
+  const { data } = await api.get(`${fc}/bonus-rows`, { params });
+  return data;
+};
+
+export const getFinancialCenterBonusRowRequest = async (id) => {
+  const { data } = await api.get(`${fc}/bonus-rows/${id}`);
+  return data;
+};
+
+export const createFinancialCenterBonusRowRequest = async (payload) => {
+  const { data } = await api.post(`${fc}/bonus-rows`, payload);
+  return data;
+};
+
+export const updateFinancialCenterBonusRowRequest = async (id, payload) => {
+  const { data } = await api.patch(`${fc}/bonus-rows/${id}`, payload);
+  return data;
+};
+
+export const approveFinancialCenterBonusRowRequest = async (id) => {
+  const { data } = await api.post(`${fc}/bonus-rows/${id}/approve`);
+  return data;
+};
+
+export const markFinancialCenterBonusRowReceivedRequest = async (id, payload = {}) => {
+  const { data } = await api.post(`${fc}/bonus-rows/${id}/mark-received`, payload);
+  return data;
+};
+
+export const markFinancialCenterBonusRowPaidRequest = async (id) => {
+  const { data } = await api.post(`${fc}/bonus-rows/${id}/mark-paid`);
+  return data;
+};
+
+export const cancelFinancialCenterBonusRowRequest = async (id) => {
+  const { data } = await api.post(`${fc}/bonus-rows/${id}/cancel`);
+  return data;
+};
+
+export const markFinancialCenterAllocationPaidRequest = async (allocationId, payload = {}) => {
+  const { data } = await api.post(`${fc}/allocations/${allocationId}/mark-paid`, payload);
+  return data;
+};
+
+export const markFinancialCenterAllocationUnpaidRequest = async (allocationId, payload = {}) => {
+  const { data } = await api.post(`${fc}/allocations/${allocationId}/mark-unpaid`, payload);
+  return data;
+};
+
+export const markFinancialCenterAllocationHeldRequest = async (allocationId, payload = {}) => {
+  const { data } = await api.post(`${fc}/allocations/${allocationId}/mark-held`, payload);
+  return data;
+};
+
+export const listFinancialCenterSubscriptionPaymentsRequest = async (params = {}) => {
+  const { data } = await api.get(`${fc}/source-payments/subscriptions`, { params });
+  return data;
+};
+
+export const listFinancialCenterOrderPaymentsRequest = async (params = {}) => {
+  const { data } = await api.get(`${fc}/source-payments/orders`, { params });
+  return data;
+};
+
+export const listFinancialCenterDepartmentsRequest = async (params = {}) => {
+  const { data } = await api.get(`${fc}/departments`, { params });
+  return data;
+};
+
+export const createFinancialCenterDepartmentRequest = async (payload) => {
+  const { data } = await api.post(`${fc}/departments`, payload);
+  return data;
+};
+
+export const createFinancialCenterPersonAccountRequest = async (id, payload) => {
+  const { data } = await api.post(`${fc}/people/${id}/create-account`, payload);
+  return data;
+};
+
+export const suspendFinancialCenterPersonAccountRequest = async (id) => {
+  const { data } = await api.post(`${fc}/people/${id}/suspend-account`);
+  return data;
+};
+
+export const activateFinancialCenterPersonAccountRequest = async (id) => {
+  const { data } = await api.post(`${fc}/people/${id}/activate-account`);
+  return data;
+};
+
+/** Financial user — own bonuses only (backend-filtered by user_id) */
+const fu = "/financial-user";
+
+export const getFinancialUserSummaryRequest = async () => {
+  const { data } = await api.get(`${fu}/summary`);
+  return data;
+};
+
+export const getFinancialUserMyBonusesRequest = async (params = {}) => {
+  const { data } = await api.get(`${fu}/my-bonuses`, { params });
   return data;
 };
 

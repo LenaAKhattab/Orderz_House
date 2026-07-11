@@ -20,6 +20,8 @@ const createPlanPageValidators = [
   body("isActive").optional().isBoolean(),
   body("startsAt").optional({ nullable: true }).isISO8601({ strict: false }),
   body("endsAt").optional({ nullable: true }).isISO8601({ strict: false }),
+  body("titleEn").optional({ nullable: true }).isString().trim().isLength({ max: 200 }),
+  body("subtitleEn").optional({ nullable: true }).isString().trim().isLength({ max: 5000 }),
 ];
 
 const updatePlanPageValidators = [
@@ -38,6 +40,8 @@ const updatePlanPageValidators = [
   body("isActive").optional().isBoolean(),
   body("startsAt").optional({ nullable: true }).isISO8601({ strict: false }),
   body("endsAt").optional({ nullable: true }).isISO8601({ strict: false }),
+  body("titleEn").optional({ nullable: true }).isString().trim().isLength({ max: 200 }),
+  body("subtitleEn").optional({ nullable: true }).isString().trim().isLength({ max: 5000 }),
 ];
 
 const replacePlanFeaturesValidators = [
@@ -50,6 +54,7 @@ const replacePlanFeaturesValidators = [
     .isLength({ min: 1, max: 500 }),
   body("features.*.sortOrder").optional().isInt({ min: 0, max: 1000 }),
   body("features.*.isIncluded").optional().isBoolean(),
+  body("features.*.featureTextEn").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
 ];
 
 module.exports = {

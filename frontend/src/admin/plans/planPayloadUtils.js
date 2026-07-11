@@ -35,11 +35,14 @@ function buildInstallmentPlan(form) {
 function extendedFieldsFromForm(form) {
   return {
     features: linesToArray(form.featuresText),
+    featuresEn: linesToArray(form.featuresTextEn),
     trainings: linesToArray(form.trainingsText),
+    trainingsEn: linesToArray(form.trainingsTextEn),
     paymentNotes: form.paymentNotes.trim() || null,
     installmentPlan: buildInstallmentPlan(form),
     offerExpiresAt: form.offerExpiresAt.trim() || null,
     offerLabel: form.offerLabel.trim() || null,
+    offerLabelEn: form.offerLabelEn.trim() || null,
     orderValueMinJod: optionalNum(form.orderValueMinJod),
     orderValueMaxJod: optionalNum(form.orderValueMaxJod),
     activationRequirements: form.activationRequirements.trim() || null,
@@ -51,10 +54,17 @@ function extendedFieldsFromForm(form) {
     planPageId: optionalNum(form.planPageId),
     subscriptionPlanId: optionalNum(form.subscriptionPlanId),
     label: form.label.trim() || null,
+    labelEn: form.labelEn.trim() || null,
     billingText: form.billingText.trim() || null,
+    billingTextEn: form.billingTextEn.trim() || null,
+    priceIntroText: form.priceIntroText.trim() || null,
+    priceIntroTextEn: form.priceIntroTextEn.trim() || null,
     buttonText: form.buttonText.trim() || null,
+    buttonTextEn: form.buttonTextEn.trim() || null,
     buttonUrl: form.buttonUrl.trim() || null,
     currency: form.currency?.trim() || "JOD",
+    titleEn: form.titleEn.trim() || null,
+    descriptionEn: form.descriptionEn.trim() || null,
   };
 }
 

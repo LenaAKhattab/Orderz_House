@@ -15,6 +15,7 @@ export const SUPER_ADMIN_PAGE_PERMISSIONS = {
   plans: "dashboard.super_admin.plans",
   subscriptions: "dashboard.super_admin.subscriptions",
   financialClaims: "dashboard.super_admin.financial_claims",
+  financialCenter: "dashboard.super_admin.financial_center",
   analytics: "dashboard.super_admin.analytics",
   adminsManage: "dashboard.super_admin.admins_manage",
   trainingOrders: "dashboard.super_admin.training_orders",
@@ -30,6 +31,7 @@ export const ASSIGNABLE_DASHBOARD_PERMISSIONS = [
   SUPER_ADMIN_PAGE_PERMISSIONS.subscriptions,
   ADMIN_PAGE_PERMISSIONS.subscriptionActivation,
   SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims,
+  SUPER_ADMIN_PAGE_PERMISSIONS.financialCenter,
   ADMIN_PAGE_PERMISSIONS.orders,
   ADMIN_PAGE_PERMISSIONS.createOrder,
   SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders,
@@ -39,10 +41,12 @@ export const ASSIGNABLE_DASHBOARD_PERMISSIONS = [
 
 /** Longest-prefix-first route → permission (super-admin shell paths). */
 const SUPER_ADMIN_ROUTE_RULES = [
+  { prefix: "/dashboard/super-admin/analysis", permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics },
   { prefix: "/dashboard/super-admin/edit-website", permission: SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite },
   { prefix: "/dashboard/super-admin/training-orders", permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders },
   { prefix: "/dashboard/super-admin/subscriptions/activation", permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation },
   { prefix: "/dashboard/super-admin/subscriptions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.subscriptions },
+  { prefix: "/dashboard/super-admin/financial-center", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialCenter },
   { prefix: "/dashboard/super-admin/financial-claims", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims },
   { prefix: "/dashboard/super-admin/admins", permission: SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage },
   { prefix: "/dashboard/super-admin/plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
@@ -64,11 +68,13 @@ const ADMIN_SHELL_NAV_ORDER = [
 
 const SUPER_ADMIN_SHELL_NAV_ORDER = [
   { to: "/dashboard/super-admin", permission: SUPER_ADMIN_PAGE_PERMISSIONS.overview },
+  { to: "/dashboard/super-admin/analysis", permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics },
   { to: "/dashboard/super-admin/plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { to: "/dashboard/super-admin/courses", permission: ADMIN_PAGE_PERMISSIONS.courses },
   { to: "/dashboard/super-admin/ads", permission: ADMIN_PAGE_PERMISSIONS.ads },
   { to: "/dashboard/super-admin/subscriptions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.subscriptions },
   { to: "/dashboard/super-admin/subscriptions/activation", permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation },
+  { to: "/dashboard/super-admin/financial-center", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialCenter },
   { to: "/dashboard/super-admin/financial-claims", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims },
   { to: "/dashboard/super-admin/orders", permission: ADMIN_PAGE_PERMISSIONS.orders },
   { to: "/dashboard/super-admin/training-orders", permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders },

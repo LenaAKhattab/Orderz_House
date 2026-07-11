@@ -33,10 +33,18 @@ export const DashboardPage = lazy(() => import("../pages/dashboard/DashboardPage
 
 /** Super admin */
 export const SuperAdminPlansPage = lazy(() => import("../pages/dashboard/SuperAdminPlansPage"));
+export const SuperAdminAnalysisPage = lazy(() => import("../pages/dashboard/SuperAdminAnalysisPage"));
 export const SuperAdminSubscriptionsPage = lazy(() => import("../pages/dashboard/SuperAdminSubscriptionsPage"));
 export const SuperAdminFinancialClaimsPage = lazy(
   () => import("../pages/dashboard/SuperAdminFinancialClaimsPage"),
 );
+export const SuperAdminFinancialCenterPage = lazy(
+  () => import("../pages/dashboard/SuperAdminFinancialCenterPage"),
+);
+export const FinancialEmployeeDetailPage = lazy(
+  () => import("../pages/dashboard/financialCenter/FinancialEmployeeDetailPage"),
+);
+export const FinancialUserMyBonusesPage = lazy(() => import("../pages/dashboard/FinancialUserMyBonusesPage"));
 export const SuperAdminSettingsPage = lazy(() => import("../pages/dashboard/SuperAdminSettingsPage"));
 export const SuperAdminAdminsPage = lazy(() => import("../pages/dashboard/SuperAdminAdminsPage"));
 export const SuperAdminEditWebsitePage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsitePage"));

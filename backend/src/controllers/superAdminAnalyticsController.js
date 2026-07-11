@@ -3,6 +3,7 @@ const superAdminDashboardSummaryService = require("../services/superAdminDashboa
 const superAdminDashboardBusinessKpisService = require("../services/superAdminDashboardBusinessKpisService");
 const superAdminDashboardIntelligenceService = require("../services/superAdminDashboardIntelligenceService");
 const superAdminDashboardHomeBundleService = require("../services/superAdminDashboardHomeBundleService");
+const superAdminDashboardAnalysisService = require("../services/superAdminDashboardAnalysisService");
 const platformUiSettingsService = require("../services/platformUiSettingsService");
 const analyticsHealthService = require("../services/analyticsHealthService");
 const { timedDashboardEndpoint } = require("../utils/superAdminDashboardTiming");
@@ -233,6 +234,20 @@ async function getDashboardIntelligenceActivity(req, res, next) {
   }
 }
 
+async function getDashboardAnalysis(req, res, next) {
+  try {
+    const data = await timedDashboardEndpoint("dashboard/analysis", () =>
+      superAdminDashboardAnalysisService.getDashboardAnalysis({
+        range: req.query?.range,
+        currentOnly: req.query?.currentOnly,
+      }),
+    );
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   getVisitorsAnalytics,
   getDashboardBusinessKpis,
@@ -254,4 +269,5 @@ module.exports = {
   getDashboardIntelligenceFinancial,
   getDashboardIntelligenceAttention,
   getDashboardIntelligenceActivity,
+  getDashboardAnalysis,
 };

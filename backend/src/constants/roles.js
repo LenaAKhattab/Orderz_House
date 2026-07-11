@@ -3,6 +3,7 @@ const ROLES = Object.freeze({
   ADMIN: "admin",
   CLIENT: "client",
   FREELANCER: "freelancer",
+  FINANCIAL_USER: "financial_user",
 });
 
 /** Public signup may only assign these roles (see auth service). */

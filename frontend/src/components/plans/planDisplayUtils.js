@@ -18,16 +18,26 @@ function isRedundantPlanBullet(candidate, existingNormalized) {
   });
 }
 
-export function planListItems(plan) {
+export function planListItems(plan, locale = "ar") {
   if (Array.isArray(plan?.planFeatures) && plan.planFeatures.length > 0) {
     return plan.planFeatures
       .filter((item) => item?.isIncluded !== false)
-      .map((item) => String(item.featureText || item))
+      .map((item) => {
+        if (locale === "en" && item?.featureTextEn) return String(item.featureTextEn);
+        return String(item.featureText || item);
+      })
       .filter(Boolean)
       .slice(0, 14);
   }
   const features = Array.isArray(plan?.features) ? plan.features.filter(Boolean).map(String) : [];
-  const trainings = Array.isArray(plan?.trainings) ? plan.trainings.filter(Boolean).map(String) : [];
+  const trainingsEn =
+    Array.isArray(plan?.trainingsEn) && plan.trainingsEn.length > 0
+      ? plan.trainingsEn.filter(Boolean).map(String)
+      : [];
+  const trainingsAr = Array.isArray(plan?.trainings) ? plan.trainings.filter(Boolean).map(String) : [];
+  const trainings =
+    locale === "en" && trainingsEn.length > 0 ? trainingsEn : trainingsAr;
+  const trainingPrefix = locale === "en" ? "Training: " : "تدريب: ";
   if (features.length > 0 || trainings.length > 0) {
     const items = [];
     const normalized = [];
@@ -39,7 +49,7 @@ export function planListItems(plan) {
     }
 
     for (const training of trainings) {
-      const labelled = `تدريب: ${training}`;
+      const labelled = `${trainingPrefix}${training}`;
       if (isRedundantPlanBullet(training, normalized) || isRedundantPlanBullet(labelled, normalized)) {
         continue;
       }
@@ -85,7 +95,8 @@ export function formatInstallmentSummary(plan) {
 
 export function isOfferActive(plan) {
   const label = plan?.offerLabel;
-  if (!label) return false;
+  const labelEn = plan?.offerLabelEn;
+  if (!label && !labelEn) return false;
   const exp = plan?.offerExpiresAt;
   if (!exp) return true;
   const t = new Date(exp).getTime();

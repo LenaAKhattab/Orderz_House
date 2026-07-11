@@ -215,6 +215,16 @@
   color: #6f7992;
 }
 
+.plans-page--ref .pricing-card__price-intro {
+  margin: 6px 0 4px;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  font-weight: 600;
+  color: #5b6684;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
 .plans-page--ref .pricing-card__price {
   margin-top: 4px;
   margin-bottom: 2px;
@@ -418,6 +428,16 @@
   font-size: 0.9rem;
   font-weight: 800;
   color: #3852b4;
+}
+
+.plans-page--legacy-offer .pricing-card__price-intro {
+  margin: 6px 0 4px;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  font-weight: 600;
+  color: #5b6684;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .plans-page--legacy-offer .pricing-card__price {

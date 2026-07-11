@@ -16,6 +16,7 @@ import NotificationPermissionPrompt from "../components/notifications/Notificati
 const SuperAdminLayout = lazy(() => import("./SuperAdminLayout"));
 const AdminLayout = lazy(() => import("./AdminLayout"));
 const FreelancerDashboardLayout = lazy(() => import("./FreelancerDashboardLayout"));
+const FinancialUserLayout = lazy(() => import("./FinancialUserLayout"));
 
 function DashboardShellSuspense({ children }) {
   return <Suspense fallback={<RouteSuspenseFallback />}>{children}</Suspense>;
@@ -31,6 +32,20 @@ const MainLayout = () => {
   const useAdminShell = role === ROLE.ADMIN && isAdminDashboardPath(pathname) && !adminUsesSuperAdminShell(pathname);
   const useFreelancerShell = role === ROLE.FREELANCER && isFreelancerDashboardPath(pathname);
   const useClientShell = role === ROLE.CLIENT && isClientDashboardShellPath(pathname);
+  const useFinancialUserShell =
+    role === ROLE.FINANCIAL_USER &&
+    (pathname === "/dashboard/my-bonuses" || pathname.startsWith("/dashboard/financial-user"));
+
+  if (useFinancialUserShell) {
+    return (
+      <NotificationRealtimeProvider>
+        <DashboardShellSuspense>
+          <FinancialUserLayout />
+        </DashboardShellSuspense>
+        {user ? <NotificationPermissionPrompt /> : null}
+      </NotificationRealtimeProvider>
+    );
+  }
 
   if (useSuperShell) {
     return (

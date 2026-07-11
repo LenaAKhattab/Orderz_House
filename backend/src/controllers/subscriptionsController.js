@@ -41,6 +41,24 @@ const updateSubscription = async (req, res, next) => {
   }
 };
 
+const listActivationQueue = async (req, res, next) => {
+  try {
+    const result = await subscriptionsService.listActivationQueueSubscriptions({
+      page: req.query.page != null ? Number(req.query.page) : 1,
+      limit: req.query.limit != null ? Number(req.query.limit) : 20,
+    });
+    return res.status(200).json({
+      success: true,
+      data: {
+        subscriptions: result.subscriptions,
+        pagination: result.pagination,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const listSubscriptions = async (req, res, next) => {
   try {
     const result = await subscriptionsService.listSubscriptions({
@@ -230,6 +248,7 @@ module.exports = {
   assignPlan,
   listAssignablePlans,
   updateSubscription,
+  listActivationQueue,
   listSubscriptions,
   getSubscriptionNotificationEmail,
   updateSubscriptionNotificationEmail,

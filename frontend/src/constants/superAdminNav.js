@@ -11,6 +11,13 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.overview,
   },
+  analytics: {
+    key: "analytics",
+    to: "/dashboard/super-admin/analysis",
+    labelKey: "dashboard.nav.superAdmin.analysis",
+    icon: "◈",
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics,
+  },
   internalRequests: {
     key: "internalRequests",
     to: "/dashboard/super-admin/orders",
@@ -33,6 +40,13 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     labelKey: "dashboard.nav.superAdmin.financialClaims",
     icon: "◍",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims,
+  },
+  financialCenter: {
+    key: "financialCenter",
+    to: "/dashboard/super-admin/financial-center",
+    labelKey: "dashboard.nav.superAdmin.financialCenter",
+    icon: "₪",
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialCenter,
   },
   plans: {
     key: "plans",
@@ -93,13 +107,18 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "overview",
     labelKey: "dashboard.nav.sections.overview",
-    itemKeys: ["overview"],
+    itemKeys: ["overview", "analytics"],
   },
   {
     id: "ordersOps",
     labelKey: "dashboard.nav.sections.ordersOps",
-    itemKeys: ["internalRequests", "trainingRequests", "financialClaims"],
+    itemKeys: ["internalRequests", "trainingRequests"],
     showCreateOrder: true,
+  },
+  {
+    id: "financeAdmin",
+    labelKey: "dashboard.nav.sections.financeAdmin",
+    itemKeys: ["financialCenter", "financialClaims"],
   },
   {
     id: "usersSubscriptions",
@@ -150,6 +169,7 @@ export function filterSuperAdminNavSections(user, hasPermission) {
 
 export function superAdminBreadcrumbKeys(pathname) {
   const base = ["dashboard.breadcrumbs.home"];
+  if (pathname.includes("/analysis")) return [...base, "dashboard.breadcrumbs.analytics"];
   if (pathname.includes("/subscriptions/activation")) {
     return [...base, "dashboard.breadcrumbs.subscriptionActivation"];
   }
@@ -177,6 +197,10 @@ export function superAdminBreadcrumbKeys(pathname) {
   }
   if (pathname.includes("/edit-website")) return [...base, "dashboard.breadcrumbs.editWebsite"];
   if (pathname.includes("/training-orders")) return [...base, "dashboard.breadcrumbs.trainingRequests"];
+  if (pathname.includes("/financial-center/employees/")) {
+    return [...base, "dashboard.breadcrumbs.financialCenter", "dashboard.financialCenter.employeeDetail.breadcrumb"];
+  }
+  if (pathname.includes("/financial-center")) return [...base, "dashboard.breadcrumbs.financialCenter"];
   if (pathname.includes("/financial-claims")) return [...base, "dashboard.breadcrumbs.financialClaims"];
   if (pathname.includes("/orders")) return [...base, "dashboard.breadcrumbs.internalRequests"];
   return base;
