@@ -32,7 +32,6 @@ import {
   getRoundSourceLabel,
   getRoundStatusLabel,
   readinessStatusTone,
-  trainingAdminT,
   unwrapTrainingPayload,
 } from "./trainingOrdersDisplayUtils";
 import { runWidgetLoad, loadWidget, WIDGET_IDLE } from "./trainingOrdersAsyncWidget";

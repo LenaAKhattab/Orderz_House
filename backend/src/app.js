@@ -27,6 +27,7 @@ const superAdminFinancialClaimsRoutes = require("./routes/superAdminFinancialCla
 const superAdminAnalyticsRoutes = require("./routes/superAdminAnalyticsRoutes");
 const superAdminAdminsRoutes = require("./routes/superAdminAdminsRoutes");
 const superAdminWebsiteRoutes = require("./routes/superAdminWebsiteRoutes");
+const mobilePaymentReturnRoutes = require("./routes/mobilePaymentReturnRoutes");
 const publicRoutes = require("./routes/publicRoutes");
 const translationRoutes = require("./routes/translationRoutes");
 const internalAutomationRoutes = require("./routes/internalAutomationRoutes");
@@ -126,6 +127,9 @@ app.use("/api/super-admin", superAdminWebsiteRoutes);
 app.use("/api/superadmin", superAdminAnalyticsRoutes);
 app.use("/api", ordersRoutes);
 app.use("/api", notificationsRoutes);
+
+// Mobile Stripe return bridge (HTTPS → custom scheme). Not under /api — public GET for Stripe redirect.
+app.use(mobilePaymentReturnRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

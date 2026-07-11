@@ -1,0 +1,15 @@
+fresh_to_login: true
+bottom_nav_hidden: true
+guest_browse_gone: true
+register_cta: true
+register_opens: true
+register_back_login: true
+no_loop: true
+payment_guest_screen: false
+payment_invalid_or_guest: false
+payment_not_home_shell: true
+payment_no_bottom_nav: true
+payment_not_browsing: true
+client_login: false
+client_bottom_nav: false
+freelancer_login: true

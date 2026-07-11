@@ -1,0 +1,4249 @@
+{
+  "REJECT": {
+    "orderId": "30113",
+    "bidId": "75"
+  },
+  "ACCEPT": {
+    "orderId": "30114",
+    "bidId": "76"
+  },
+  "events": [
+    {
+      "at": "2026-07-11T14:41:11.798Z",
+      "type": "READY",
+      "msg": "Monitoring API + backend logs. Start emulator and click Reject then Accept.",
+      "reject": {
+        "orderId": "30113",
+        "bidId": "75"
+      },
+      "accept": {
+        "orderId": "30114",
+        "bidId": "76"
+      }
+    },
+    {
+      "at": "2026-07-11T14:41:17.939Z",
+      "type": "BASELINE",
+      "reject": {
+        "orderStatus": "open_for_bids",
+        "paymentStatus": "unpaid",
+        "assigned": false,
+        "openListHas75": true,
+        "openStatus75": "pending",
+        "userStatus75": "pending",
+        "openCount": 1,
+        "hasOpenPool": true
+      },
+      "accept": {
+        "orderStatus": "open_for_bids",
+        "paymentStatus": "unpaid",
+        "assigned": false,
+        "openListHas76": true,
+        "openStatus76": "pending",
+        "userStatus76": "pending",
+        "openCount": 1,
+        "hasOpenPool": true
+      }
+    },
+    {
+      "at": "2026-07-11T14:41:18.941Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3512.801 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:18.942Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3513,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:18.943Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2250.754 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:18.943Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2251,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:18.944Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3685.785 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:18.944Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3686,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:18.945Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2378.683 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:18.945Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2380,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:18.946Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 3895.020 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:18.946Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":3895,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:18.947Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 4547.186 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:18.947Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":4547,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:18.947Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 5982.650 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:18.948Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":5983,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:18.948Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 6131.181 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:18.949Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":6131,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:20.941Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2259.521 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:20.941Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2260,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:20.942Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2264.046 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:20.943Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2264,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:22.941Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3348.597 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:22.942Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3349,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:22.942Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3494.005 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:22.943Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3494,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:26.941Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 1975.443 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:26.942Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":1976,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:26.943Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2260.472 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:26.944Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2261,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:27.942Z",
+      "type": "BACKEND_LOG",
+      "line": "ers/30113 200 3724.825 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:27.944Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3725,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:31.949Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3436.488 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:31.950Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3437,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:31.951Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3724.825 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:31.952Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2085.113 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:31.953Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2087,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:31.953Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2090.984 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:31.954Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2093,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:37.990Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3293.863 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:37.994Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3299,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:37.995Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3462.851 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:37.998Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3470,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:37.998Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2123.658 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:37.999Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2127,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:38.000Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2138.279 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:38.001Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2139,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:38.989Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3457.428 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:38.990Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3463,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:38.991Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3464.810 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:38.991Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3466,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:43.007Z",
+      "type": "BACKEND_LOG",
+      "line": "ethod\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2233,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:45.034Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2227.006 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:45.036Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2229,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:45.037Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2232.044 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:45.037Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2233,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:45.038Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3308.785 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:45.039Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3309,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:45.039Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3465.307 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:50.058Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1994.286 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:50.058Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":1995,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:50.059Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2009.660 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:50.065Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2010,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:50.066Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3501.776 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:50.067Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3503,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:51.059Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 4158.662 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:51.059Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":4160,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:55.076Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2195.188 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:55.077Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2196,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:56.081Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2186.989 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:41:56.082Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2188,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:56.084Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3500.639 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:56.085Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3508,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:41:56.086Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3511.475 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:41:56.086Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3516,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:01.091Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2295.002 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:01.092Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2294,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:01.093Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2313.431 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:01.094Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2314,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:06.103Z",
+      "type": "BACKEND_LOG",
+      "line": "lient/orders/30114/bids 200 2037.618 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:06.104Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2038,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:07.107Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3638.835 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:07.108Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3640,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:07.109Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3640.346 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:07.112Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3641,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:07.118Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2012.816 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:07.120Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2013,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:07.121Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2037.618 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:07.122Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3235.100 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:07.122Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3237,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:07.123Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3347.238 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:07.124Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3350,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:14.125Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2027.923 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:14.129Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2030,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:14.130Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2031.748 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:14.131Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2036,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:14.132Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3292.180 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:14.134Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3293,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:15.132Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 4174.973 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:15.136Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":4177,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:19.144Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2144.886 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:19.145Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2145,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:19.149Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2144.022 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:19.150Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2144,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:19.151Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3225.161 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:19.152Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3226,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:19.153Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3394.872 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:19.154Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3395,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:23.145Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2212.229 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:23.146Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2212,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:25.146Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2140.124 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:25.147Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2141,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:25.148Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3499.140 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:25.149Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3500,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:25.150Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3652.564 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:25.151Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3653,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:30.152Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2021.683 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:30.153Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2022,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:30.155Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2024.893 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:30.155Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2025,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:30.157Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3235.957 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:30.157Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3236,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:30.159Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3419.563 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:30.159Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3420,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:36.162Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2077.431 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:36.163Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2078,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:36.164Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2095.516 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:36.166Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2096,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:36.166Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3457.291 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:36.167Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3458,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:36.168Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3640.024 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:41.166Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2031.178 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:41.168Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2031,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:41.168Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2030.264 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:41.169Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2030,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:41.169Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3212.539 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:41.170Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3214,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:41.171Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3248.017 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:41.171Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3248,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:46.172Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2008.567 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:46.175Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2009,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:46.176Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2053.343 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:46.176Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2054,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:46.181Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3556.179 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:46.182Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3557,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:46.183Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3558.462 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:46.183Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3559,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:58.204Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2116.838 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:58.208Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2118,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:58.209Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2123.727 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:58.210Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2125,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:58.212Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3288.450 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:58.213Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3291,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:58.215Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3344.483 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:58.216Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3345,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:58.216Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2082.599 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:58.217Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2083,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:58.217Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2116.106 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:42:58.218Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2118,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:58.219Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3489.929 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:58.220Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3493,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:42:58.221Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3498.963 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:42:58.221Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3501,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:03.212Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2291.418 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:03.214Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2292,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:03.216Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2292.235 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:03.217Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2293,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:03.218Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3623.018 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:03.219Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3624,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:03.220Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3628.364 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:03.221Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3629,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:08.221Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2112.726 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:08.223Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2113,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:08.224Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2542.989 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:08.225Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2544,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:09.235Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3497.658 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:09.236Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3498,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:09.237Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3511.616 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:12.238Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2132.457 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:12.238Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2133,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:12.239Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2132.922 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:12.240Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2133,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:14.241Z",
+      "type": "BACKEND_LOG",
+      "line": "ers/30113 200 3453.298 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:14.242Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3453,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:18.244Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3440.987 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:18.245Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3441,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:18.246Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3453.298 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:18.247Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1992.595 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:18.247Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":1993,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:18.248Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2323.808 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:18.249Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2325,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:19.245Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3388.114 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:19.249Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3388,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:19.250Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3390.588 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:19.251Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3391,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:30.264Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2082.143 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:30.265Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2082,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:30.266Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2082.385 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:30.267Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3307.518 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:30.268Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3308,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:30.269Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3437.488 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:30.270Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3439,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:30.271Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2133.825 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:30.272Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2135,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:30.273Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2149.318 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:30.274Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2150,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:30.275Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3576.338 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:30.276Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3577,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:30.276Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3578.421 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:30.277Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3579,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:36.274Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2111.772 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:36.275Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2112,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:36.276Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2430.154 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:36.277Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2431,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:36.277Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3326.470 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:36.278Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3328,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:36.279Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3340.072 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:36.280Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3341,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:41.283Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2055.747 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:41.285Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2056,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:41.287Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2094.953 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:41.288Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2095,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:41.289Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3330.261 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:41.290Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3331,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:41.292Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3333.675 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:41.292Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3334,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:47.299Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2249.865 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:47.300Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2250,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:47.301Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2412.552 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:47.302Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2414,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:47.303Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3531.506 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:47.305Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3535,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:47.307Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3669.219 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:47.309Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3670,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:52.303Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 1975.474 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:52.304Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2009.598 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:52.305Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2010,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:52.305Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3251.882 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:52.306Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3248,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:52.306Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3256.126 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:52.307Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3258,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:57.327Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2131.498 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:57.328Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2132,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:57.338Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2134.643 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:43:57.339Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2135,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:57.341Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3323.836 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:57.342Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3325,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:43:57.344Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3455.187 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:43:57.344Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3456,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:03.331Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2330.149 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:03.333Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2331,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:03.334Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2347.746 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:03.335Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2348,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:03.335Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3626.364 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:03.336Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3628,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:03.337Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3631.418 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:03.338Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3632,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:07.340Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2036.874 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:07.341Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2037,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:07.341Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2045.696 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:07.342Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2048,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:09.347Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3281.538 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:09.348Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3282,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:09.350Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3310.091 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:09.351Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3310,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:12.350Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2196.801 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:12.351Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2198,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:12.354Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2198.654 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:12.355Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2199,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:14.355Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3346.264 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:14.357Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3347,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:14.358Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3469.198 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:14.359Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3470,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:24.365Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1993.884 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:24.367Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2043.022 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:24.368Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2044,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:24.369Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3261.404 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:24.370Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3262,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:24.371Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3279.215 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:24.375Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3280,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:24.377Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2093.702 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:24.378Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2094,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:24.379Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2093.121 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:24.379Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3330.127 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:24.380Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3330,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:24.384Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3501.318 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:24.386Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3497,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:30.381Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2060.749 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:30.383Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2061,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:30.384Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2178.748 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:30.385Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2179,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:30.386Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3486.604 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:30.387Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3488,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:30.388Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3939.681 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:30.389Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3941,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:36.387Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2084.007 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:36.388Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2084,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:36.392Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2087.493 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:36.394Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2088,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:36.395Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3310.996 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:36.396Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3312,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:36.397Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3488.336 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:36.398Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3489,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:41.394Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2126.415 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:41.395Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2130.697 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:41.397Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2131,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:41.398Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3474.786 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:41.399Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3475,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:41.401Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3483.702 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:41.402Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3479,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:47.400Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2097.351 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:47.402Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2101,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:47.403Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2105.246 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:47.404Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2105,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:47.405Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3366.843 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:47.406Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3368,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:47.407Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3387.383 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:47.408Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3388,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:52.405Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1999.593 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:52.406Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2000,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:52.407Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2029.294 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:52.409Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2029,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:52.410Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3316.676 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:52.411Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3318,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:52.412Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3320.316 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:52.413Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3321,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:57.409Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2037.104 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:57.410Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2346.383 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:44:57.411Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2347,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:57.413Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3248.995 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:57.413Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3249,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:44:57.419Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3356.518 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:44:57.420Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3352,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:03.420Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2220.725 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:03.422Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2221,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:03.423Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2231.079 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:03.424Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2231,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:03.424Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3587.148 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:03.425Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3588,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:03.426Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3770.728 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:03.427Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3771,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:07.427Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2121.977 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:07.433Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2122,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:07.437Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2122.978 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:07.438Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2123,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:13.432Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3354.558 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:13.438Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3356,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:13.440Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3363.548 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:13.443Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3366,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:13.444Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2006.049 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:13.446Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2006,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:13.448Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2020.584 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:13.450Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2021,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:14.433Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3232.207 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:14.436Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3234,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:14.438Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3253.070 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:14.440Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3254,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:25.449Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1960.888 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:25.453Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":1962,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:25.454Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2138.780 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:25.457Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2140,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:25.460Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3196.773 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:25.462Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3197,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:25.463Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3357.828 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:25.468Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3359,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:25.477Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2064.663 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:25.479Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2067,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:25.484Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2070.925 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:25.485Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2072,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:25.487Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3388.483 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:25.489Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3389,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:25.496Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3437.185 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:30.454Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2060.707 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:30.456Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2085.293 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:30.458Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3352.375 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:30.459Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3354,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:30.463Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3675.030 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:30.464Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3676,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:36.466Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2056.116 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:36.468Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2103.666 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:36.470Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3278.802 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:36.474Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3276,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:36.476Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3472.649 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:36.478Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3473,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:41.481Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1983.048 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:41.482Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":1984,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:41.483Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2025.039 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:41.485Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3199.825 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:41.485Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3201,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:41.486Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3250.213 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:41.487Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3251,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:46.494Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2122.753 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:46.497Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2125.602 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:46.500Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2126,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:46.502Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3324.569 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:46.504Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3329,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:46.505Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3353.690 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:46.507Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3358,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:52.511Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2126.113 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:52.512Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2164.769 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:52.513Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2165,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:52.515Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3356.273 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:52.517Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3357,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:52.518Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3398.395 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:52.521Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3397,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:57.518Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2115.595 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:57.520Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2116,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:45:57.522Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2132.358 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:45:57.525Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3327.237 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:57.526Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3445.494 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:45:57.528Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3447,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:03.524Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2149.035 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:03.529Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2150,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:03.533Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2316.315 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:03.535Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2317,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:03.536Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3347.290 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:03.538Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3350,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:03.541Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3538.551 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:03.544Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3539,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:07.532Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2147.007 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:07.541Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2147,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:07.545Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2161.693 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:07.546Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2164,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:09.539Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3396.644 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:09.541Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3398,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:09.543Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3401.088 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:09.545Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3402,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:18.548Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2031.446 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:18.550Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2032,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:18.551Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2183.782 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:18.554Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2184,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:18.555Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3333.914 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:18.560Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3514.134 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:18.562Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3517,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:18.570Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1975.128 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:18.574Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":1976,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:18.576Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2191.601 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:18.578Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2192,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:25.557Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3292.168 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:25.560Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3292,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:25.566Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3569.584 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:25.567Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3570,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:25.569Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1984.204 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:25.570Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 1988.704 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:25.571Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":1989,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:25.572Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3216.621 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:25.573Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3217,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:25.574Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3361.928 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:25.575Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3363,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:30.568Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2026.965 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:30.574Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2028,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:30.577Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2056.670 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:30.580Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2057,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:30.592Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3699.242 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:30.594Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3700,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:30.595Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3702.274 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:30.600Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3702,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:36.573Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1998.985 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:36.707Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":1999,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:36.709Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2012.197 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:36.710Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2012,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:36.712Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3239.540 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:36.714Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3241,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:36.715Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3548.316 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:36.717Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3549,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:45.765Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2425.813 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:45.766Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2426,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:45.768Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2449.192 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:45.769Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2451,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:45.770Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3292.887 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:45.772Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3294,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:45.774Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3822.016 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:45.775Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3825,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:47.765Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2042.691 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:47.767Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2043,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:47.770Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2337.035 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:47.774Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2337,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:47.776Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3232.584 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:47.778Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3233,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:47.782Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3408.661 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:47.790Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3409,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:53.773Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2302.383 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:53.775Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2303,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:53.777Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2463.820 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:53.779Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2465,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:53.781Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3547.508 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:53.784Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3548,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:53.785Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3851.695 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:53.786Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3852,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:59.784Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2025.405 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:59.786Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2026,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:59.789Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2100.502 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:46:59.791Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2101,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:59.793Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3333.028 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:59.796Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3334,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:46:59.797Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3497.640 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:46:59.798Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3500,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:04.790Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1990.429 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:04.794Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":1991,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:04.797Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2026.303 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:04.802Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2028,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:04.805Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3264.173 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:04.807Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3266,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:04.818Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3305.475 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:04.830Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3306,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:10.799Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2087.924 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:10.801Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2089,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:10.803Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2387.832 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:10.805Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2389,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:10.808Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3365.430 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:10.810Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3622.188 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:10.822Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3622,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:19.824Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2005.706 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:19.825Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2032.244 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:19.827Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2033,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:19.828Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3241.807 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:19.830Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3243,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:19.832Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3370.528 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:19.833Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3371,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:19.835Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2120.942 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:19.848Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2121,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:19.850Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2153.948 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:19.854Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2155,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:26.833Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3369.836 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:26.835Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3370,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:26.843Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3515.311 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:26.846Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2004.935 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:26.848Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2006,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:26.850Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2127.379 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:26.852Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2128,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:26.853Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3270.816 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:26.855Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3271,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:26.857Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3599.707 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:26.858Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3602,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:32.847Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2330.921 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:32.849Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2361.042 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:32.852Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2362,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:32.862Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3634.373 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:32.880Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3635,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:32.882Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3773.242 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:32.894Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3775,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:38.857Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 1997.659 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:38.859Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":1998,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:38.860Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2007.477 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:38.862Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2008,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:38.863Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3256.789 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:38.864Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3257,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:38.866Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3568.014 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:38.867Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3568,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:43.863Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2138.408 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:43.864Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2139,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:43.865Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2143.261 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:43.866Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2143,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:43.868Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3371.262 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:43.868Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3372,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:43.870Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3461.281 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:43.870Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3462,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:48.882Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2128.626 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:48.883Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2130,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:48.885Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2147.753 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:48.887Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2148,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:48.890Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3427.300 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:48.891Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3426,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:48.892Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3430.376 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:48.894Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3431,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:54.886Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2092.111 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:54.887Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2096.093 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:54.888Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3233.849 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:54.890Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3234,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:54.890Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3347.685 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:54.891Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3348,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:59.894Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1965.579 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:59.895Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":1969,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:59.897Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2053.938 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:47:59.899Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2055,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:59.902Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3305.674 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:59.903Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3306,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:47:59.905Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3369.079 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:47:59.905Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3370,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:04.913Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2007.606 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:04.916Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2029.585 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:04.918Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3202.497 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:04.920Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3204,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:04.922Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3353.764 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:04.923Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3354,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:09.905Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 1984.187 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:09.907Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":1985,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:09.908Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2019.732 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:15.925Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3276.678 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:15.928Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3279,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:15.930Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 4184.310 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:15.933Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":4184,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:15.935Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2143.523 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:15.937Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2144,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:15.941Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2145.319 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:16.927Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3400.441 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:16.929Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3428.658 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:16.931Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3430,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:20.929Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2131.198 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:21.930Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2128.359 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:21.932Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2129,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:21.934Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3315.925 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:21.936Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3317,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:21.937Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3330.242 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:21.938Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3330,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:27.939Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2181.275 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:27.942Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2183,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:27.943Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2186.034 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:27.947Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2186,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:27.948Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3535.824 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:27.949Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3536,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:27.951Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3537.946 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:27.953Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3538,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:32.943Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2299.237 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:32.945Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2300,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:32.948Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2318.721 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:32.951Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2319,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:32.952Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3528.566 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:32.954Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3529,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:32.956Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3537.348 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:38.947Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1985.323 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:38.948Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":1986,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:38.949Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 1990.062 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:38.951Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":1991,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:38.952Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3349.859 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:38.953Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3352.118 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:43.954Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2054.185 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:43.955Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2055,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:43.956Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2057.774 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:43.957Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2059,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:43.958Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3235.474 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:43.960Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3235,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:43.961Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3242.663 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:49.961Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2188.545 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:49.966Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2189,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:49.969Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2203.325 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:49.970Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2204,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:49.973Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3739.847 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:49.975Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3740,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:49.979Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 4065.250 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:49.981Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":4066,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:54.967Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2075.036 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:54.969Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2075,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:54.971Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2090.571 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:48:54.972Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2091,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:54.974Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3284.984 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:54.976Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3286,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:48:54.977Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3288.747 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:48:54.979Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3290,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:00.971Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2129.248 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:00.973Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2132.643 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:00.975Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3789.773 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:00.976Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3790,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:00.977Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3789.070 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:00.979Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3789,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:06.974Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2055.246 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:06.975Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2057,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:06.976Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2059.851 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:06.978Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2060,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:06.980Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3291.271 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:06.981Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3293.603 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:06.982Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3294,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:10.977Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2002.254 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:10.981Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2003,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:10.983Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2168.993 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:10.984Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2169,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:11.977Z",
+      "type": "BACKEND_LOG",
+      "line": "ing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3427,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:12.979Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3426.565 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:12.983Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3427,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:12.986Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 4691.598 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:12.990Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":4692,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:16.983Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2212.816 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:16.985Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2213,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:16.987Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2213.682 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:16.989Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2214,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:18.983Z",
+      "type": "BACKEND_LOG",
+      "line": "/client/orders/30113 200 3634.339 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:18.985Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3634,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:22.986Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3297.891 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:22.989Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3298,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:22.993Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3634.339 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:22.994Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2148.739 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:22.997Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2149,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:22.999Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2280.463 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:23.003Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2281,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:23.987Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3496.891 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:23.989Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3498,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:23.991Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3497.855 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:29.990Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2172.372 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:29.993Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2172,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:29.995Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2171.651 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:29.998Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2172,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:30.001Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3225.258 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:30.003Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3226,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:30.004Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3486.316 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:30.006Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3486,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:35.992Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1991.343 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:35.993Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":1992,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:35.995Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2047.032 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:35.997Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2047,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:35.998Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3365.034 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:35.999Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3666.834 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:36.000Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3667,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:40.998Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2210.758 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:40.999Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2211,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:41.001Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2210.926 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:41.002Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2211,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:41.004Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3292.159 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:41.005Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3491.662 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:41.006Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3492,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:46.015Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2113.618 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:46.018Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2114,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:46.020Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2116.706 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:46.022Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2117,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:46.023Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3460.321 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:46.025Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3461,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:46.026Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3473.528 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:46.028Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3475,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:52.006Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2047.328 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:52.009Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2058.593 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:52.011Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3322.690 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:52.013Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3323,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:52.014Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3543.725 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:52.016Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3545,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:58.011Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1983.268 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:58.013Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2118.744 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:49:58.016Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2119,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:49:58.018Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3528.620 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:58.020Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3840.960 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:49:58.022Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3841,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:04.013Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2321.090 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:04.014Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2321,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:04.016Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2456.445 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:04.017Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2458,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:04.019Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3515.373 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:04.021Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3516,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:04.022Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3641.732 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:04.024Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3642,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:08.018Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2253.706 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:08.020Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2254,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:08.023Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2257.135 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:08.025Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2258,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:13.021Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3701.379 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:13.023Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3702,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:13.025Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3704.595 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:13.027Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3705,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:13.028Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2185.897 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:13.032Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2199.530 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:13.034Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2200,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:15.026Z",
+      "type": "BACKEND_LOG",
+      "line": "\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3544,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:19.029Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3540.207 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:19.030Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3541,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:19.031Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3543.320 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:19.033Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3544,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:19.035Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2123.136 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:19.037Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2128.601 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:19.038Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2129,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:26.033Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3199.893 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:26.035Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3200,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:26.036Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3360.240 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:26.038Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3361,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:26.041Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 1990.733 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:26.043Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2187.476 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:26.044Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3537.973 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:26.046Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3537.693 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:26.048Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3538,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:31.038Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2142.816 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:31.039Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2143.284 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:31.041Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2143,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:31.042Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3240.813 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:31.043Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3399.582 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:31.045Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3400,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:37.041Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2420.017 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:37.044Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2420,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:37.046Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2433.207 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:37.048Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2433,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:37.050Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3376.932 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:37.051Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3378,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:37.054Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3689.917 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:37.056Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3690,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:42.043Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2012.747 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:42.045Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2013.197 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:42.047Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2014,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:42.050Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3214.414 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:42.053Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3215,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:42.055Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3264.504 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:42.058Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3264,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:48.046Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2600.592 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:48.048Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2601,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:48.050Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2603.596 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:48.052Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2604,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:48.054Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3614.707 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:48.057Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3616,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:48.059Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3618.063 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:48.061Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3619,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:53.049Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2158.309 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:53.051Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2158,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:53.053Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2172.985 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:53.056Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2173,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:53.057Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3282.854 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:53.059Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3283,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:53.061Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3450.434 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:53.062Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3452,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:59.054Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2083.499 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:59.057Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2138.806 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:50:59.060Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3390.358 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:59.063Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3391,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:50:59.065Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3393.043 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:50:59.069Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3393,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:51:04.054Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2118.033 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:51:04.057Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2119,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:51:04.060Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2122.459 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:51:04.062Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2123,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:51:04.065Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3280.950 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:51:04.068Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3281,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:51:04.071Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3307.931 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:51:10.056Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2108.786 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:51:10.058Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2110,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:51:10.060Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 2126.771 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:51:10.061Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":2127,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:51:10.062Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113 200 3505.769 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:51:10.063Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113\",\"status\":200,\"durationMs\":3506,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:51:10.065Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114 200 3506.720 ms - 1361"
+    },
+    {
+      "at": "2026-07-11T14:51:10.066Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114\",\"status\":200,\"durationMs\":3507,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:51:14.060Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30113/bids 200 1989.359 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:51:14.062Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30113/bids\",\"status\":200,\"durationMs\":1992,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:51:14.064Z",
+      "type": "BACKEND_LOG",
+      "line": "GET /api/client/orders/30114/bids 200 2316.949 ms - 331"
+    },
+    {
+      "at": "2026-07-11T14:51:14.066Z",
+      "type": "BACKEND_LOG",
+      "line": "{\"component\":\"api_timing\",\"method\":\"GET\",\"path\":\"/api/client/orders/30114/bids\",\"status\":200,\"durationMs\":2318,\"userId\":\"2225\"}"
+    },
+    {
+      "at": "2026-07-11T14:51:15.752Z",
+      "type": "STATE_CHANGE",
+      "reject": {
+        "assigned": false,
+        "openListHas75": false,
+        "openStatus75": null,
+        "userStatus75": null,
+        "openCount": 0
+      },
+      "accept": {
+        "assigned": false,
+        "openListHas76": false,
+        "openStatus76": null,
+        "userStatus76": null,
+        "openCount": 0
+      }
+    },
+    {
+      "at": "2026-07-11T14:51:15.755Z",
+      "type": "REJECT_DONE",
+      "assigned": false,
+      "openListHas75": false,
+      "openStatus75": null,
+      "userStatus75": null,
+      "openCount": 0
+    },
+    {
+      "at": "2026-07-11T14:51:15.757Z",
+      "type": "ACCEPT_DONE",
+      "assigned": false,
+      "openListHas76": false,
+      "openStatus76": null,
+      "userStatus76": null,
+      "openCount": 0
+    },
+    {
+      "at": "2026-07-11T14:51:15.759Z",
+      "type": "BOTH_DONE"
+    },
+    {
+      "at": "2026-07-11T14:51:15.766Z",
+      "type": "FINAL",
+      "reject": {
+        "assigned": false,
+        "openListHas75": false,
+        "openStatus75": null,
+        "userStatus75": null,
+        "openCount": 0
+      },
+      "accept": {
+        "assigned": false,
+        "openListHas76": false,
+        "openStatus76": null,
+        "userStatus76": null,
+        "openCount": 0
+      }
+    }
+  ],
+  "latestType": "FINAL",
+  "latest": {
+    "reject": {
+      "assigned": false,
+      "openListHas75": false,
+      "openStatus75": null,
+      "userStatus75": null,
+      "openCount": 0
+    },
+    "accept": {
+      "assigned": false,
+      "openListHas76": false,
+      "openStatus76": null,
+      "userStatus76": null,
+      "openCount": 0
+    }
+  }
+}

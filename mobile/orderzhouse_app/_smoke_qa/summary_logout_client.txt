@@ -1,0 +1,8 @@
+logout_visible: true
+logout_confirm: true
+logout_to_login: true
+bottom_nav_after_logout: false
+back_no_home: true
+client_login: true
+client_bottom_nav: true
+services_tab: true

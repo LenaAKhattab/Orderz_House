@@ -166,7 +166,6 @@ export default function SuperAdminHomeIntelligenceSections({
   const freelancersFailed = sectionFailed(sectionErrors, "freelancers");
   const subscriptionsFailed = sectionFailed(sectionErrors, "subscriptions");
   const coursesFailed = sectionFailed(sectionErrors, "courses");
-  const categoriesFailed = sectionFailed(sectionErrors, "categories");
   const financialFailed = sectionFailed(sectionErrors, "financial");
 
   const posthogOff = isPosthogUnavailable(posthog, meta);

@@ -1266,6 +1266,19 @@ export const getPublicWebsitePageRequest = async (slug, { signal } = {}) => {
   return data;
 };
 
+/** Nav-only probe: treats inactive/missing pages as null without throwing on 404. */
+export const probePublicWebsitePageForNav = async (slug, { signal } = {}) => {
+  const { data, status } = await api.get(`/public/pages/${encodeURIComponent(slug)}`, {
+    signal,
+    timeout: 8000,
+    validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
+  });
+  if (status === 404 || !data?.success || !data?.data?.page) {
+    return null;
+  }
+  return data;
+};
+
 export const listSuperAdminWebsitePagesRequest = async () => {
   const { data } = await api.get("/super-admin/website/pages");
   return data;

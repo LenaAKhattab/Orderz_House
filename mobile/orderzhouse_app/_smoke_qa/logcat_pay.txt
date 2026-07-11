@@ -1,0 +1,3 @@
+--------- beginning of system
+07-11 13:12:02.773   769  2044 W ActivityTaskManager: callingPackage for (uid=2000, pid=17191) has no WPC
+07-11 13:12:02.780   769  2044 I ActivityTaskManager: START u0 {act=android.intent.action.VIEW dat=orderzhouse://payment/... flg=0x10000000 xflg=0x4 cmp=com.orderzhouse.orderzhouse_app/.MainActivity} with LAUNCH_SINGLE_TOP from uid 2000 (com.android.shell) (BAL_ALLOW_PERMISSION) result code=3

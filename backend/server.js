@@ -5,6 +5,8 @@ const dotenv = require("dotenv");
 dotenv.config({ path: path.join(__dirname, ".env"), override: true });
 const { validateEnv } = require("./src/config/env");
 validateEnv();
+const { registerProcessLifecycleLogging } = require("./src/config/processLifecycleLogging");
+registerProcessLifecycleLogging();
 
 const { connectDB } = require("./src/config/db");
 const app = require("./src/app");
@@ -83,4 +85,15 @@ const startServer = async () => {
   });
 };
 
-startServer();
+startServer().catch((err) => {
+  // eslint-disable-next-line no-console
+  console.error(
+    JSON.stringify({
+      component: "process_lifecycle",
+      event: "startServer_failed",
+      message: err?.message || String(err),
+      stack: err?.stack || null,
+    }),
+  );
+  process.exit(1);
+});

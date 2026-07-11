@@ -1,0 +1,94 @@
+{
+  "rows": [
+    {
+      "step": "take_fixed_already_mine",
+      "ok": true,
+      "status": 200
+    },
+    {
+      "step": "freelancer_order_detail",
+      "ok": true,
+      "status": 200,
+      "orderStatus": "in_progress"
+    },
+    {
+      "step": "delivery_no_file",
+      "ok": true,
+      "status": 400,
+      "message": "يرجى إرفاق ملف واحد على الأقل."
+    },
+    {
+      "step": "delivery_with_file",
+      "ok": true,
+      "status": 200,
+      "orderStatus": "pending_client_review"
+    },
+    {
+      "step": "revision_short",
+      "ok": true,
+      "status": 200
+    },
+    {
+      "step": "revision_ok",
+      "ok": true,
+      "status": 200,
+      "orderStatus": "in_progress"
+    },
+    {
+      "step": "redelivery",
+      "ok": true,
+      "status": 200,
+      "orderStatus": "pending_client_review"
+    },
+    {
+      "step": "approve",
+      "ok": true,
+      "status": 200,
+      "orderStatus": "completed"
+    },
+    {
+      "step": "review",
+      "ok": true,
+      "status": 201
+    },
+    {
+      "step": "dup_review",
+      "ok": true,
+      "status": 409,
+      "message": "تم إرسال تقييم لهذا الطلب مسبقاً."
+    },
+    {
+      "step": "done_projects",
+      "ok": true,
+      "status": 200,
+      "count": 0,
+      "hasFixed": false
+    },
+    {
+      "step": "create_claim",
+      "ok": false,
+      "status": 400,
+      "message": "projectId is required for done project claim."
+    },
+    {
+      "step": "bid_again",
+      "ok": true,
+      "status": 200
+    },
+    {
+      "step": "accept_bid",
+      "ok": false,
+      "status": 400,
+      "message": "يرجى تحديد العرض.",
+      "bidId": null,
+      "hasCheckout": false,
+      "live": false,
+      "note": "Expected blocked: no mobile accept UI + Stripe live keys"
+    },
+    {
+      "step": "mobile_accept_bid_ui_exists",
+      "ok": false,
+      "note": "Grep found no acceptBid/bids/accept in Flutter lib — High gap"
+    }
+  ]
+}

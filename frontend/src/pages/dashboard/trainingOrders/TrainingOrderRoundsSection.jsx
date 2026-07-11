@@ -119,7 +119,7 @@ export default function TrainingOrderRoundsSection({ onRoundsChanged, refreshKey
 
   const hasLoadedOnceRef = useRef(false);
   const [loading, setLoading] = useState(true);
-  const [pageRefreshing, setPageRefreshing] = useState(false);
+  const [, setPageRefreshing] = useState(false);
 
   const [error, setError] = useState("");
 

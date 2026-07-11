@@ -20,7 +20,7 @@ import {
   getLocalizedOrderDescription,
   getLocalizedOrderTitle,
 } from "../../../lib/i18n/getLocalizedMarketplaceOrderText";
-import { buildDurationLabels, formatDurationRange } from "../../../lib/orders/orderDisplayFormatters";
+import { buildDurationLabels } from "../../../lib/orders/orderDisplayFormatters";
 import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
 import { useToast } from "../../../components/ui/toastContext";
 import { formatAdminDuration, formatAdminNumber, formatTrainingOrderBudget, trainingAdminT } from "./trainingOrdersDisplayUtils";

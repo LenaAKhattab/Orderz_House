@@ -1,0 +1,71 @@
+{
+  "results": [
+    {
+      "step": "health",
+      "ok": true,
+      "at": "2026-07-11T12:32:35.085Z"
+    },
+    {
+      "step": "client_login",
+      "ok": true,
+      "status": 200,
+      "at": "2026-07-11T12:32:38.018Z"
+    },
+    {
+      "step": "freelancer_login",
+      "ok": true,
+      "status": 200,
+      "at": "2026-07-11T12:32:38.018Z"
+    },
+    {
+      "step": "client_create_bidding",
+      "ok": true,
+      "status": 201,
+      "orderId": "30099",
+      "orderStatus": "open_for_bids",
+      "at": "2026-07-11T12:32:43.370Z"
+    },
+    {
+      "step": "freelancer_bid",
+      "ok": true,
+      "status": 200,
+      "bidsCount": 1,
+      "at": "2026-07-11T12:32:50.720Z"
+    },
+    {
+      "step": "client_sees_bid",
+      "ok": true,
+      "status": 200,
+      "count": 1,
+      "bidId": "65",
+      "amount": 70,
+      "displayName": "مستقل اختبار QA",
+      "hasOpenPool": true,
+      "at": "2026-07-11T12:32:53.039Z"
+    },
+    {
+      "step": "client_reject_bid",
+      "ok": true,
+      "status": 200,
+      "orderId": "30100",
+      "bidId": "66",
+      "at": "2026-07-11T12:33:09.701Z"
+    },
+    {
+      "step": "client_accept_bid",
+      "ok": true,
+      "status": 200,
+      "requiresPayment": true,
+      "isLive": true,
+      "isTest": false,
+      "checkoutPrefix": "https://checkout.stripe.com/c/pay/cs_live_a1R1I7STkAO2ZG",
+      "at": "2026-07-11T12:33:13.975Z"
+    },
+    {
+      "step": "flutter_live_guard_would_block_cs_live",
+      "ok": true,
+      "note": "launchStripeCheckoutUrl blocks in debug/profile",
+      "at": "2026-07-11T12:33:13.976Z"
+    }
+  ]
+}

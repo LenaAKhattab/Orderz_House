@@ -1,0 +1,229 @@
+{
+  "results": [
+    {
+      "step": "health",
+      "ok": true,
+      "body": {
+        "success": true,
+        "message": "API is running",
+        "status": "ok",
+        "database": "connected",
+        "timestamp": "2026-07-11T12:13:39.999Z"
+      },
+      "at": "2026-07-11T12:13:40.007Z"
+    },
+    {
+      "step": "client_login",
+      "ok": true,
+      "status": 200,
+      "role": "client",
+      "hasToken": true,
+      "keys": [
+        "user",
+        "accessToken",
+        "tokenType",
+        "expiresIn"
+      ],
+      "at": "2026-07-11T12:13:41.400Z"
+    },
+    {
+      "step": "freelancer_login",
+      "ok": true,
+      "status": 200,
+      "role": "freelancer",
+      "hasToken": true,
+      "at": "2026-07-11T12:13:43.163Z"
+    },
+    {
+      "step": "freelancer_eligibility",
+      "ok": true,
+      "status": 200,
+      "data": {
+        "eligible": true,
+        "reason": "assigned_not_started"
+      },
+      "at": "2026-07-11T12:13:44.761Z"
+    },
+    {
+      "step": "client_create_bidding",
+      "ok": true,
+      "status": 201,
+      "orderId": "30094",
+      "statusName": "open_for_bids",
+      "requiresPayment": false,
+      "checkoutUrl": null,
+      "at": "2026-07-11T12:13:50.252Z"
+    },
+    {
+      "step": "client_my_orders_contains_bidding",
+      "ok": true,
+      "count": 8,
+      "at": "2026-07-11T12:13:53.356Z"
+    },
+    {
+      "step": "freelancer_pool_sees_bidding",
+      "ok": true,
+      "createdInPool": true,
+      "at": "2026-07-11T12:13:56.076Z"
+    },
+    {
+      "step": "freelancer_bid_out_of_range_rejected",
+      "ok": true,
+      "status": 400,
+      "message": "يجب أن يكون مبلغ العرض بين 50 و 100.",
+      "at": "2026-07-11T12:14:00.711Z"
+    },
+    {
+      "step": "freelancer_bid_in_range",
+      "ok": true,
+      "status": 200,
+      "at": "2026-07-11T12:14:07.691Z"
+    },
+    {
+      "step": "client_accept_bid",
+      "ok": false,
+      "status": 400,
+      "message": "يرجى تحديد العرض.",
+      "hasCheckoutUrl": false,
+      "isLiveCheckout": false,
+      "note": "Mobile app has no accept-bid UI; Stripe env is live — E2E accept blocked",
+      "at": "2026-07-11T12:14:08.716Z"
+    },
+    {
+      "step": "freelancer_take_fixed",
+      "ok": false,
+      "status": 404,
+      "message": "المسار غير موجود.",
+      "at": "2026-07-11T12:14:09.756Z"
+    },
+    {
+      "step": "freelancer_my_orders_has_fixed",
+      "ok": false,
+      "count": 0,
+      "at": "2026-07-11T12:14:14.008Z"
+    },
+    {
+      "step": "delivery_without_file_rejected",
+      "ok": true,
+      "status": 404,
+      "message": "المسار غير موجود.",
+      "at": "2026-07-11T12:14:17.872Z"
+    },
+    {
+      "step": "delivery_with_file",
+      "ok": false,
+      "status": 404,
+      "message": "المسار غير موجود.",
+      "at": "2026-07-11T12:14:21.666Z"
+    },
+    {
+      "step": "client_sees_delivery_order",
+      "ok": true,
+      "status": 200,
+      "at": "2026-07-11T12:14:24.185Z"
+    },
+    {
+      "step": "revision_short_note",
+      "ok": true,
+      "status": 404,
+      "message": "المسار غير موجود.",
+      "note": "document whether min length enforced",
+      "at": "2026-07-11T12:14:25.138Z"
+    },
+    {
+      "step": "revision_requested",
+      "ok": false,
+      "status": 404,
+      "message": "المسار غير موجود.",
+      "at": "2026-07-11T12:14:26.144Z"
+    },
+    {
+      "step": "redelivery",
+      "ok": false,
+      "status": 404,
+      "at": "2026-07-11T12:14:30.159Z"
+    },
+    {
+      "step": "client_approve_delivery",
+      "ok": false,
+      "status": 404,
+      "message": "المسار غير موجود.",
+      "at": "2026-07-11T12:14:31.068Z"
+    },
+    {
+      "step": "client_review",
+      "ok": false,
+      "status": 404,
+      "message": "المسار غير موجود.",
+      "at": "2026-07-11T12:14:31.984Z"
+    },
+    {
+      "step": "duplicate_review_rejected",
+      "ok": true,
+      "status": 404,
+      "message": "المسار غير موجود.",
+      "at": "2026-07-11T12:14:33.041Z"
+    },
+    {
+      "step": "done_projects_lists_completed",
+      "ok": true,
+      "status": 200,
+      "count": 0,
+      "hasFixed": false,
+      "at": "2026-07-11T12:14:34.340Z"
+    },
+    {
+      "step": "create_financial_claim",
+      "ok": false,
+      "status": 400,
+      "message": "mode must be manual or done_project.",
+      "dataKeys": [],
+      "at": "2026-07-11T12:14:35.269Z"
+    },
+    {
+      "step": "list_financial_claims",
+      "ok": true,
+      "status": 200,
+      "count": 1,
+      "at": "2026-07-11T12:14:36.616Z"
+    },
+    {
+      "step": "client_notifications",
+      "ok": true,
+      "status": 200,
+      "unread": {
+        "unreadCount": 22
+      },
+      "at": "2026-07-11T12:14:42.598Z"
+    },
+    {
+      "step": "freelancer_notifications",
+      "ok": true,
+      "status": 200,
+      "unread": {
+        "unreadCount": 22
+      },
+      "at": "2026-07-11T12:14:42.598Z"
+    },
+    {
+      "step": "freelancer_cannot_create_client_order",
+      "ok": true,
+      "status": 403,
+      "message": "ليس لديك صلاحية لهذا الإجراء.",
+      "at": "2026-07-11T12:14:43.679Z"
+    },
+    {
+      "step": "unauthenticated_client_orders_rejected",
+      "ok": true,
+      "status": 401,
+      "at": "2026-07-11T12:14:43.684Z"
+    },
+    {
+      "step": "client_cannot_take_pool_order",
+      "ok": true,
+      "status": 404,
+      "message": "المسار غير موجود.",
+      "at": "2026-07-11T12:14:44.712Z"
+    }
+  ]
+}
