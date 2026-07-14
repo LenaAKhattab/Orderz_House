@@ -61,6 +61,34 @@
   font-size: 0.9rem;
 }
 
+.oh-popup-ads-settings__placeholder {
+  padding: 20px 16px;
+  border-radius: 12px;
+  border: 1px dashed rgba(203, 213, 225, 0.95);
+  background: rgba(248, 250, 252, 0.72);
+  text-align: center;
+}
+
+.oh-popup-ads-settings__placeholder-text {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #475569;
+  font-weight: 600;
+}
+
+.oh-popup-ads-settings__placeholder-text-en {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.oh-popup-ads-settings__list-head .btn.is-active {
+  border-color: rgba(47, 59, 101, 0.45);
+  background: rgba(47, 59, 101, 0.06);
+}
+
 .oh-popup-ads-settings__grid {
   display: grid;
   grid-template-columns: 1fr min(260px, 32%);
@@ -78,6 +106,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
 
 .oh-popup-ads-settings__field {
@@ -135,6 +164,12 @@
   color: #b91c1c;
 }
 
+.oh-popup-ads-settings__field-note {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
 .oh-popup-ads-settings__actions {
   display: flex;
   flex-wrap: wrap;
@@ -165,23 +200,49 @@
 }
 
 /* Popup ads management modal */
+.oh-sa-outlet .oh-popup-ads-modal .dash-ui-modal__panel,
 .oh-popup-ads-modal .dash-ui-modal__panel {
-  max-width: min(920px, 96vw);
+  width: 100%;
+  max-width: min(920px, calc(100vw - 32px));
+  max-height: min(90vh, 840px);
 }
 
 .oh-popup-ads-modal .dash-ui-modal__body {
   padding-top: 0.5rem;
+  padding-bottom: 0.75rem;
+  overflow-x: hidden;
+}
+
+.oh-popup-ads-modal .oh-popup-ads-settings__list {
+  max-height: none;
+  overflow: visible;
 }
 
 .oh-popup-ads-modal .oh-popup-ads-settings__grid {
-  max-height: min(62vh, 640px);
-  overflow: auto;
-  padding-inline-end: 2px;
+  grid-template-columns: 1fr;
+  gap: 16px;
 }
 
-@media (max-width: 900px) {
-  .oh-popup-ads-modal .oh-popup-ads-settings__grid {
-    max-height: none;
-    overflow: visible;
+.oh-popup-ads-modal .oh-popup-ads-settings__hint {
+  order: 1;
+}
+
+.oh-popup-ads-modal__foot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .oh-popup-ads-modal__foot-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .oh-popup-ads-modal__foot-actions .btn {
+    width: 100%;
+    justify-content: center;
   }
 }

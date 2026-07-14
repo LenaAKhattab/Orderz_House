@@ -20,9 +20,11 @@ const {
 const { recordPublicPageViewValidators } = require("../validators/publicPageViewValidators");
 const { sitePageSlugParam } = require("../validators/publicSitePageValidators");
 const { publicSubSubcategoriesListValidators } = require("../validators/categoriesValidators");
+const publicGeoController = require("../controllers/publicGeoController");
 
 const router = express.Router();
 
+router.get("/public/geo", publicGeoController.getPublicGeo);
 router.get("/public/home-stats", publicHomeStatsController.getPublicHomeStats);
 router.get(
   "/public/sub-subcategories",

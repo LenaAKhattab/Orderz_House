@@ -8992,10 +8992,10 @@ p {
   gap: 8px;
 }
 
-/* Password visibility toggle on login (merged from lena branch) */
+/* Password visibility toggle — eye inside the field on the right */
 .auth-input-wrap--password-toggle input[dir="ltr"] {
-  padding-left: 48px;
-  padding-right: 14px;
+  padding-left: 14px;
+  padding-right: 48px;
 }
 
 .auth-input-wrap--password-toggle input:not([dir="ltr"]) {
@@ -9003,15 +9003,11 @@ p {
   padding-inline-end: 48px;
 }
 
-.auth-input-wrap--password-toggle:has(input[dir="ltr"]) .auth-password-toggle {
-  left: 8px;
-  right: auto;
+.auth-input-wrap--password-toggle .auth-password-toggle {
+  right: 8px;
+  left: auto;
   inset-inline-start: auto;
   inset-inline-end: auto;
-}
-
-.auth-input-wrap--password-toggle:not(:has(input[dir="ltr"])) .auth-password-toggle {
-  inset-inline-end: 8px;
 }
 
 .auth-password-toggle {

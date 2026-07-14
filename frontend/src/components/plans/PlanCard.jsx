@@ -6,6 +6,7 @@ import { isOrderzhouseFreePlan } from "../../constants/orderzhousePlansCatalog";
 import { isUpgradePlan, planTierRank, freePlanNeedsActivationFeeCheckout } from "../../utils/planSubscriptionUtils";
 import { getLocalizedPlanBadge, getLocalizedPlanCardDisplay } from "../../lib/i18n/getLocalizedPlanDisplay";
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
+import { useDisplayCurrency } from "../../hooks/useDisplayCurrency";
 
 const MOBILE_FEATURE_PREVIEW = 3;
 const DESKTOP_PUBLIC_FEATURE_LIMIT = 5;
@@ -83,6 +84,7 @@ const PlanCard = ({
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t, locale } = useTranslation();
+  const { resolvePlanPriceDisplay, formatFreePlanActivationFeeNote, isEgyptDisplay } = useDisplayCurrency();
   const role = user ? user.primaryRole || user.role : null;
   const roles = Array.isArray(user?.roles) ? user.roles : [];
   const isGuest = !user;
@@ -111,7 +113,8 @@ const PlanCard = ({
   const customButtonLabel = getLocalizedField(plan, "buttonText", locale);
 
   const display = getLocalizedPlanCardDisplay(plan, locale, t);
-  const { main: priceMain, sub: priceSub } = display.price;
+  const displayedPrice = resolvePlanPriceDisplay(plan, display.price);
+  const { main: priceMain, sub: priceSub, checkoutHint } = displayedPrice;
   const features = display.features;
   const extraFeatures = features.slice(MOBILE_FEATURE_PREVIEW);
   const desktopFeatures = features.slice(0, DESKTOP_PUBLIC_FEATURE_LIMIT);
@@ -221,11 +224,14 @@ const PlanCard = ({
       <div className="pricing-card__price">
         <div className="pricing-card__price-main">{priceMain}</div>
         {priceSub ? <div className="pricing-card__price-sub">{priceSub}</div> : null}
+        {checkoutHint && isEgyptDisplay ? (
+          <p className="pricing-card__price-note pricing-card__checkout-hint">{checkoutHint}</p>
+        ) : null}
         {installment ? <p className="pricing-card__price-note">{installment}</p> : null}
         {!installment && paymentNotes ? <p className="pricing-card__price-note">{paymentNotes}</p> : null}
         {freePlanPayFee ? (
           <p className="pricing-card__price-note pricing-card__activation-fee-required">
-            {t("plans.freePlanActivationFeeNote")}
+            {formatFreePlanActivationFeeNote()}
           </p>
         ) : null}
       </div>

@@ -239,6 +239,7 @@
   top: 100%;
   z-index: 9999;
   min-width: 220px;
+  max-width: min(280px, calc(100vw - 1.5rem));
   padding-top: 10px;
   pointer-events: auto;
   background: transparent;
@@ -255,6 +256,12 @@
   background: #fff;
   box-shadow: 0 18px 40px rgba(24, 36, 85, 0.14);
   pointer-events: auto;
+  max-width: 100%;
+}
+
+.public-nav-dropdown__trigger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(56, 82, 180, 0.14);
 }
 
 .public-nav-dropdown__item {
@@ -263,11 +270,16 @@
   padding: 10px 12px;
   border-radius: 12px;
   text-decoration: none;
-  text-align: right;
+  text-align: start;
   font-size: 0.9rem;
   font-weight: 600;
   color: #202020;
   transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.public-nav-dropdown__item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(56, 82, 180, 0.18);
 }
 
 .public-nav-dropdown__item:hover,

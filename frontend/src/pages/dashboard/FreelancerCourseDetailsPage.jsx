@@ -561,7 +561,7 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
   const hasAnswerText = Boolean(submittedText);
   const completedExamUrl = String(assignment?.completedExamFileUrl || "").trim();
   const hasCompletedExamFile = Boolean(completedExamUrl);
-  const completedExamLabel = hasCompletedExamFile ? fileNameFromCompletedUrl(completedExamUrl) : null;
+  const completedExamLabel = hasCompletedExamFile ? fileNameFromCompletedUrl(completedExamUrl, t) : null;
 
   const testDownloadName = getStudentCourseFileDownloadName("test");
   const promptDownloadName = getStudentCourseFileDownloadName("prompt");
@@ -1431,7 +1431,8 @@ function FinalTestPanel({
 }
 
 function fileNameFromCompletedUrl(url, t) {
-  const fallback = t(`${CD}.file.defaultCompletedPdf`);
+  const fallback =
+    typeof t === "function" ? t(`${CD}.file.defaultCompletedPdf`) : "completed-exam.pdf";
   try {
     const tail = decodeURIComponent(new URL(url).pathname.split("/").pop() || "");
     return tail && tail.length < 120 ? tail : fallback;

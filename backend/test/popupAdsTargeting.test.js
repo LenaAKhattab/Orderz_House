@@ -45,6 +45,13 @@ function matchesAudience(audience, { role, isAuthenticated }) {
   }
 }
 
+function shouldIncludePublicAd(ad, { role, isAuthenticated }) {
+  if (!matchesAudience(ad.audience || "all", { role, isAuthenticated })) return false;
+  if (!matchesPageScope(ad.pageScope || "all", ad.pathname || "/")) return false;
+  if ((ad.frequency === "first_login_only" || ad.frequency === "every_login") && !isAuthenticated) return false;
+  return true;
+}
+
 describe("popupAdsService targeting", () => {
   it("dashboard scope is client/freelancer dashboards only", () => {
     assert.equal(matchesPageScope("dashboard", "/dashboard/client"), true);
@@ -67,5 +74,30 @@ describe("popupAdsService targeting", () => {
     assert.equal(matchesAudience("staff", { role: "admin", isAuthenticated: true }), true);
     assert.equal(matchesAudience("staff", { role: "super_admin", isAuthenticated: true }), true);
     assert.equal(matchesAudience("staff", { role: "freelancer", isAuthenticated: true }), false);
+  });
+
+  it("first_login_only ads are excluded for guests on public API", () => {
+    const ad = { audience: "all", pageScope: "all", frequency: "first_login_only", pathname: "/" };
+    assert.equal(shouldIncludePublicAd(ad, { role: null, isAuthenticated: false }), false);
+    assert.equal(shouldIncludePublicAd(ad, { role: "client", isAuthenticated: true }), true);
+  });
+
+  it("existing session frequency still works for guests", () => {
+    const ad = { audience: "guests", pageScope: "public", frequency: "session", pathname: "/" };
+    assert.equal(shouldIncludePublicAd(ad, { role: null, isAuthenticated: false }), true);
+    assert.equal(shouldIncludePublicAd(ad, { role: "client", isAuthenticated: true }), false);
+  });
+
+  it("every_login ads are excluded for guests on public API", () => {
+    const ad = {
+      audience: "freelancer",
+      pageScope: "dashboard",
+      frequency: "every_login",
+      pathname: "/dashboard/freelancer",
+    };
+    assert.equal(shouldIncludePublicAd(ad, { role: null, isAuthenticated: false }), false);
+    assert.equal(shouldIncludePublicAd(ad, { role: "freelancer", isAuthenticated: true }), true);
+    assert.equal(shouldIncludePublicAd(ad, { role: "client", isAuthenticated: true }), false);
+    assert.equal(shouldIncludePublicAd(ad, { role: "admin", isAuthenticated: true }), false);
   });
 });

@@ -8,6 +8,7 @@ const popupAdBodyValidators = [
   body("bodyEn").optional().isString().withMessage("bodyEn must be a string"),
   body("imageUrl").optional({ nullable: true }).isString().withMessage("imageUrl must be a string"),
   body("ctaText").optional({ nullable: true }).isString().withMessage("ctaText must be a string"),
+  body("ctaTextEn").optional({ nullable: true }).isString().withMessage("ctaTextEn must be a string"),
   body("ctaUrl").optional({ nullable: true }).isString().withMessage("ctaUrl must be a string"),
   body("openInNewTab").optional().isBoolean().withMessage("openInNewTab must be a boolean"),
   body("audience")
@@ -20,7 +21,7 @@ const popupAdBodyValidators = [
     .withMessage("invalid pageScope"),
   body("frequency")
     .optional()
-    .isIn(["every_visit", "session", "day"])
+    .isIn(["every_visit", "session", "day", "first_login_only", "every_login"])
     .withMessage("invalid frequency"),
   body("sortOrder").optional().isInt({ min: 0 }).withMessage("invalid sortOrder"),
   body("startDate").optional({ nullable: true }).isISO8601().withMessage("invalid startDate"),

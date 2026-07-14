@@ -92,9 +92,30 @@ function buildPayload(form) {
 }
 
 /**
- * @param {{ open?: boolean }} props
+ * @param {{
+ *   open?: boolean;
+ *   actionsInFooter?: boolean;
+ *   actionHandlersRef?: import("react").MutableRefObject<{
+ *     onSave?: () => void | Promise<void>;
+ *     onDelete?: () => void | Promise<void>;
+ *     onPreview?: () => void;
+ *   }>;
+ *   onActionMetaChange?: (meta: {
+ *     saving: boolean;
+ *     deleting: boolean;
+ *     editingId: number | null;
+ *     canPreview: boolean;
+ *     isCreating: boolean;
+ *     detailOpen: boolean;
+ *   }) => void;
+ * }} props
  */
-export default function PopupAdsSettings({ open = true }) {
+export default function PopupAdsSettings({
+  open = true,
+  actionsInFooter = false,
+  actionHandlersRef,
+  onActionMetaChange,
+}) {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -102,6 +123,7 @@ export default function PopupAdsSettings({ open = true }) {
   const [uploading, setUploading] = useState(false);
   const [ads, setAds] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -113,13 +135,9 @@ export default function PopupAdsSettings({ open = true }) {
       const list = res?.data?.ads || [];
       setAds(list);
       if (!keepSelection) {
-        if (list.length > 0) {
-          setEditingId(list[0].id);
-          setForm(mapAdToForm(list[0]));
-        } else {
-          setEditingId(null);
-          setForm({ ...EMPTY_FORM });
-        }
+        setEditingId(null);
+        setIsCreating(false);
+        setForm({ ...EMPTY_FORM });
       } else {
         setEditingId((id) => {
           if (id != null) {
@@ -140,6 +158,7 @@ export default function PopupAdsSettings({ open = true }) {
   useEffect(() => {
     if (!open) {
       setEditingId(null);
+      setIsCreating(false);
       setForm({ ...EMPTY_FORM });
       setFieldErrors({});
       setPreviewOpen(false);
@@ -159,16 +178,20 @@ export default function PopupAdsSettings({ open = true }) {
   };
 
   const startNew = () => {
+    setIsCreating(true);
     setEditingId(null);
     setForm({ ...EMPTY_FORM });
     setFieldErrors({});
   };
 
   const selectAd = (ad) => {
+    setIsCreating(false);
     setEditingId(ad.id);
     setForm(mapAdToForm(ad));
     setFieldErrors({});
   };
+
+  const detailOpen = isCreating || editingId != null;
 
   const payload = useMemo(() => buildPayload(form), [form]);
 
@@ -180,6 +203,8 @@ export default function PopupAdsSettings({ open = true }) {
     };
   }, [form, payload, editingId]);
 
+  const canPreview = Boolean(previewAd);
+
   const onSave = async () => {
     setSaving(true);
     setFieldErrors({});
@@ -190,7 +215,10 @@ export default function PopupAdsSettings({ open = true }) {
       } else {
         const res = await adminCreatePopupAdRequest(payload);
         const created = res?.data?.ad;
-        if (created?.id) setEditingId(created.id);
+        if (created?.id) {
+          setEditingId(created.id);
+          setIsCreating(false);
+        }
         toast.push({ type: "success", title: "تم الإنشاء", message: "تم إنشاء إعلان النافذة المنبثقة." });
       }
       await load();
@@ -215,8 +243,9 @@ export default function PopupAdsSettings({ open = true }) {
       await adminDeletePopupAdRequest(editingId);
       toast.push({ type: "success", title: "تم الحذف", message: "" });
       setEditingId(null);
+      setIsCreating(false);
       setForm({ ...EMPTY_FORM });
-      await load();
+      await load({ keepSelection: false });
     } catch (err) {
       toast.push({ type: "error", title: "تعذر الحذف", message: err?.response?.data?.message || "" });
     } finally {
@@ -241,6 +270,26 @@ export default function PopupAdsSettings({ open = true }) {
     }
   };
 
+  useEffect(() => {
+    if (!actionHandlersRef) return;
+    actionHandlersRef.current = {
+      onSave,
+      onDelete,
+      onPreview: () => setPreviewOpen(true),
+    };
+  });
+
+  useEffect(() => {
+    onActionMetaChange?.({
+      saving,
+      deleting,
+      editingId,
+      canPreview,
+      isCreating,
+      detailOpen,
+    });
+  }, [onActionMetaChange, saving, deleting, editingId, canPreview, isCreating, detailOpen]);
+
   if (!open) return null;
 
   if (loading) {
@@ -251,7 +300,7 @@ export default function PopupAdsSettings({ open = true }) {
     <div className="oh-popup-ads-settings">
       <div className="oh-popup-ads-settings__list-head">
         <span className="oh-popup-ads-settings__list-title">الإعلانات الحالية</span>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={startNew}>
+        <button type="button" className={`btn btn-secondary btn-sm${isCreating ? " is-active" : ""}`} onClick={startNew}>
           إعلان جديد
         </button>
       </div>
@@ -278,6 +327,16 @@ export default function PopupAdsSettings({ open = true }) {
         <p className="oh-popup-ads-settings__empty">لا توجد نوافذ منبثقة بعد. أنشئ إعلاناً جديداً.</p>
       )}
 
+      {!detailOpen ? (
+        <div className="oh-popup-ads-settings__placeholder" role="status">
+          <p className="oh-popup-ads-settings__placeholder-text">
+            اختر إعلاناً من القائمة لعرض التفاصيل أو اضغط إعلان جديد لإنشاء إعلان.
+          </p>
+          <p className="oh-popup-ads-settings__placeholder-text-en" lang="en" dir="ltr">
+            Select an ad from the list to view details, or click New Ad to create one.
+          </p>
+        </div>
+      ) : (
       <div className="oh-popup-ads-settings__grid">
         <div className="oh-popup-ads-settings__form">
           <label className="oh-popup-ads-settings__toggle">
@@ -359,25 +418,30 @@ export default function PopupAdsSettings({ open = true }) {
             </label>
           </div>
 
-          <div className="oh-popup-ads-settings__row">
-            <label className="oh-popup-ads-settings__field">
-              <span>تكرار الظهور</span>
-              <select value={form.frequency} onChange={(e) => patch("frequency", e.target.value)}>
-                <option value="session">مرة لكل جلسة</option>
-                <option value="day">مرة يومياً</option>
-                <option value="every_visit">كل زيارة لصفحة</option>
-              </select>
-            </label>
-            <label className="oh-popup-ads-settings__field">
-              <span>ترتيب العرض</span>
-              <input
-                type="number"
-                min={0}
-                value={form.sortOrder}
-                onChange={(e) => patch("sortOrder", e.target.value)}
-              />
-            </label>
-          </div>
+          <label className="oh-popup-ads-settings__field">
+            <span>تكرار الظهور</span>
+            <select value={form.frequency} onChange={(e) => patch("frequency", e.target.value)}>
+              <option value="session">مرة لكل جلسة</option>
+              <option value="day">مرة يومياً</option>
+              <option value="every_visit">كل زيارة لصفحة</option>
+              <option value="first_login_only">عند أول تسجيل دخول فقط</option>
+              <option value="every_login">عند كل تسجيل دخول</option>
+            </select>
+            {form.frequency === "first_login_only" ? (
+              <span className="oh-popup-ads-settings__field-note">
+                يعمل هذا الخيار للمستخدمين المسجّلين فقط. يظهر الإعلان مرة واحدة بعد تسجيل الدخول ولن يُعرض مرة أخرى بعد
+                إغلاقه أو مشاهدته. لن يظهر للزوار غير المسجّلين.
+                {form.audience === "guests" ? " مع جمهور «الزوار فقط» لن يظهر هذا الإعلان." : ""}
+              </span>
+            ) : null}
+            {form.frequency === "every_login" ? (
+              <span className="oh-popup-ads-settings__field-note">
+                يعمل هذا الخيار للمستخدمين المسجّلين فقط. يظهر الإعلان بعد كل تسجيل دخول، ولا يُعرض مرة أخرى خلال نفس
+                جلسة الدخول بعد إغلاقه. لن يظهر للزوار غير المسجّلين.
+                {form.audience === "guests" ? " مع جمهور «الزوار فقط» لن يظهر هذا الإعلان." : ""}
+              </span>
+            ) : null}
+          </label>
 
           <div className="oh-popup-ads-settings__row">
             <label className="oh-popup-ads-settings__field">
@@ -390,31 +454,42 @@ export default function PopupAdsSettings({ open = true }) {
             </label>
           </div>
 
-          <div className="oh-popup-ads-settings__actions">
-            <button type="button" className="btn btn-secondary" disabled={!previewAd} onClick={() => setPreviewOpen(true)}>
-              معاينة
-            </button>
-            {editingId ? (
-              <button type="button" className="btn btn-secondary" disabled={saving || deleting} onClick={() => void onDelete()}>
-                {deleting ? "جارٍ الحذف…" : "حذف"}
+          {actionsInFooter ? null : (
+            <div className="oh-popup-ads-settings__actions">
+              <button type="button" className="btn btn-secondary" disabled={!canPreview} onClick={() => setPreviewOpen(true)}>
+                معاينة
               </button>
-            ) : null}
-            <button type="button" className="btn btn-primary" disabled={saving || deleting} onClick={() => void onSave()}>
-              {saving ? "جارٍ الحفظ…" : "حفظ"}
-            </button>
-          </div>
+              {editingId ? (
+                <button type="button" className="btn btn-secondary" disabled={saving || deleting} onClick={() => void onDelete()}>
+                  {deleting ? "جارٍ الحذف…" : "حذف"}
+                </button>
+              ) : null}
+              <button type="button" className="btn btn-primary" disabled={saving || deleting} onClick={() => void onSave()}>
+                {saving ? "جارٍ الحفظ…" : "حفظ"}
+              </button>
+            </div>
+          )}
         </div>
 
         <aside className="oh-popup-ads-settings__hint" aria-label="إرشادات">
           <p className="oh-popup-ads-settings__hint-title">كيف تعمل النوافذ المنبثقة؟</p>
           <ul className="oh-popup-ads-settings__hint-list">
             <li>يُعرض إعلان واحد فقط في كل مرة حسب الترتيب.</li>
-            <li>بعد الإغلاق، يُحترم خيار «تكرار الظهور» (جلسة / يوم / زيارة).</li>
+            <li>بعد الإغلاق، يُحترم خيار «تكرار الظهور» (جلسة / يوم / زيارة / أول تسجيل دخول / كل تسجيل دخول).</li>
+            <li>
+              عند اختيار «عند أول تسجيل دخول فقط»، يظهر الإعلان مرة واحدة فقط للمستخدم بعد أول تسجيل دخول، ولن يظهر له
+              مرة أخرى بعد إغلاقه أو مشاهدته.
+            </li>
+            <li>
+              عند اختيار «عند كل تسجيل دخول»، يظهر الإعلان بعد كل تسجيل دخول ولا يُعرض مرة أخرى خلال نفس جلسة الدخول
+              بعد إغلاقه.
+            </li>
             <li>الجمهور يُحدَّد حسب دور المستخدم أو كونه زائراً.</li>
             <li>يمكن جدولة العرض بتواريخ البداية والنهاية.</li>
           </ul>
         </aside>
       </div>
+      )}
 
       {previewOpen && previewAd ? (
         <PopupAdModal

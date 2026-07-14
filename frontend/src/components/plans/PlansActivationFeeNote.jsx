@@ -1,4 +1,5 @@
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { useDisplayCurrency } from "../../hooks/useDisplayCurrency";
 
 function PriceTagIcon() {
   return (
@@ -16,6 +17,7 @@ function PriceTagIcon() {
 
 export default function PlansActivationFeeNote({ className = "" }) {
   const { t } = useTranslation();
+  const { formatActivationFeeAmount } = useDisplayCurrency();
 
   return (
     <p className={["plans-activation-fee-note", className].filter(Boolean).join(" ")} role="note">
@@ -24,7 +26,7 @@ export default function PlansActivationFeeNote({ className = "" }) {
       </span>
       <span className="plans-activation-fee-note__text">
         <span className="plans-activation-fee-note__label">{t("plans.activationFeeNote.prefix")}</span>{" "}
-        <span className="plans-activation-fee-note__amount">{t("plans.activationFeeNote.amount")}</span>
+        <span className="plans-activation-fee-note__amount">{formatActivationFeeAmount()}</span>
         <span className="plans-activation-fee-note__suffix">{t("plans.activationFeeNote.suffix")}</span>
       </span>
     </p>

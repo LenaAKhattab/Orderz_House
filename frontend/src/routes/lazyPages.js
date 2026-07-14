@@ -17,9 +17,6 @@ export const PublicGuaranteePage = lazy(() =>
 export const PublicHelpCenterPage = lazy(() =>
   import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicHelpCenterPage })),
 );
-export const PublicEnterprisePage = lazy(() =>
-  import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicEnterprisePage })),
-);
 export const PublicFindWorkPage = lazy(() =>
   import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicFindWorkPage })),
 );
@@ -42,6 +39,13 @@ export const SuperAdminSubscriptionsPage = lazy(() => import("../pages/dashboard
 export const SuperAdminFinancialClaimsPage = lazy(
   () => import("../pages/dashboard/SuperAdminFinancialClaimsPage"),
 );
+export const SuperAdminFinancialCenterPage = lazy(
+  () => import("../pages/dashboard/SuperAdminFinancialCenterPage"),
+);
+export const FinancialEmployeeDetailPage = lazy(
+  () => import("../pages/dashboard/financialCenter/FinancialEmployeeDetailPage"),
+);
+export const FinancialUserMyBonusesPage = lazy(() => import("../pages/dashboard/FinancialUserMyBonusesPage"));
 export const SuperAdminSettingsPage = lazy(() => import("../pages/dashboard/SuperAdminSettingsPage"));
 export const SuperAdminAdminsPage = lazy(() => import("../pages/dashboard/SuperAdminAdminsPage"));
 export const SuperAdminEditWebsitePage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsitePage"));

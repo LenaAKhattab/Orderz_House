@@ -44,7 +44,11 @@
     "amount": "25 د.أ.",
     "suffix": "تُدفع مرة واحدة سنوياً"
   },
-  "freePlanActivationFeeNote": "الباقة مجانية، لكن رسوم التفعيل السنوية 25 د.أ مطلوبة.",
+  "currency": {
+    "equivalentJod": "يعادل {{amount}}",
+    "checkoutChargedInJod": "يتم الدفع بالدينار الأردني عبر بوابة الدفع"
+  },
+  "freePlanActivationFeeNote": "الباقة مجانية، لكن رسوم التفعيل السنوية {{amount}} مطلوبة.",
   "activationFee": {
     "paidSuccessTitle": "تم دفع رسوم التفعيل",
     "paidSuccessMessage": "تم دفع رسوم التفعيل بنجاح.",
