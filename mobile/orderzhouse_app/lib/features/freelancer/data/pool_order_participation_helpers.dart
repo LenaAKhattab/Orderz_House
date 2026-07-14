@@ -1,15 +1,18 @@
 import '../../orders/data/pool_order_models.dart';
 
-const poolPlanLockMessageAr = 'غير متاح لباقتك';
+const poolPlanLockMessageAr = 'هذا الطلب غير متاح لحسابك حاليًا.';
 
 bool isPoolOrderLockedByPlan(PoolOrder order) => order.isPlanLocked;
 
 String poolPlanLockUserMessage(PoolOrder order) {
   final reason = order.poolEligibility?.lockReason?.trim();
-  if (reason != null && reason.isNotEmpty) return reason;
-  final label = order.poolEligibility?.requiredPlanLabel?.trim();
-  if (label != null && label.isNotEmpty) {
-    return '$poolPlanLockMessageAr — يتطلب باقة: $label';
+  if (reason != null && reason.isNotEmpty) {
+    // Strip purchase-oriented phrasing when API returns plan-oriented copy.
+    final lower = reason.toLowerCase();
+    if (lower.contains('باق') || lower.contains('اشتراك') || lower.contains('plan')) {
+      return poolPlanLockMessageAr;
+    }
+    return reason;
   }
   return poolPlanLockMessageAr;
 }

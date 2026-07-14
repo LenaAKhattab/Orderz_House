@@ -91,12 +91,12 @@ void main() {
   });
 
   group('Eligibility display', () {
-    test('maps known reason to Arabic message', () {
+    test('maps known reason to neutral Arabic message without purchase CTA', () {
       const eligibility = FreelancerEligibility(eligible: false, reason: 'no_subscription');
-      expect(
-        freelancerPlansEligibilityHeadlineAr(eligibility),
-        contains('غير مشترك'),
-      );
+      final message = freelancerEligibilityMessageAr(eligibility);
+      expect(message, contains('مراجعة الإدارة'));
+      expect(message, isNot(contains('باقات')));
+      expect(message, isNot(contains('اشترك')));
     });
   });
 

@@ -103,6 +103,16 @@ class AuthController extends Notifier<AuthState> {
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
+  /// Refresh authenticated user from GET /auth/me without clearing the token.
+  Future<void> refreshSessionUser() async {
+    try {
+      final user = await _repository.fetchMe();
+      state = AuthState(status: AuthStatus.authenticated, user: user);
+    } catch (_) {
+      // Keep existing session user on transient failures.
+    }
+  }
+
   void handleUnauthorized() {
     _repository.clearLocalSession();
     state = const AuthState(status: AuthStatus.unauthenticated);

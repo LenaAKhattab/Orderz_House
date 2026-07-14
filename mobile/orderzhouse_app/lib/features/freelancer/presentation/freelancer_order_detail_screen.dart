@@ -53,57 +53,68 @@ class _FreelancerOrderDetailBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
       children: [
-        Text(
-          order.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 22,
-            color: AppColors.textInk,
-            height: 1.35,
-          ),
+        OrderDetailHeroCard(
+          title: order.title,
+          orderId: orderId,
+          statusLabel: order.statusLabel,
+          statusKey: order.orderStatus,
+          projectTypeLabel: order.projectTypeLabel,
+          budgetLabel: order.budgetLabel,
+          dateLabel: formatOrderDateLabel(order.updatedAt ?? order.createdAt),
+          dateCaption: 'آخر تحديث',
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         OrderSectionCard(
           title: 'معلومات الطلب',
+          icon: Icons.info_outline_rounded,
           children: [
-            if (order.category?.name != null)
-              OrderInfoRow(label: 'التصنيف', value: order.category!.name!, icon: Icons.category_outlined),
-            OrderInfoRow(label: 'نوع الطلب', value: order.projectTypeLabel, icon: Icons.layers_outlined),
-            OrderInfoRow(label: 'الحالة', value: order.statusLabel, icon: Icons.flag_outlined),
-            if (order.budgetLabel != null)
-              OrderInfoRow(label: 'الميزانية', value: order.budgetLabel!, icon: Icons.payments_outlined),
-            if (order.durationText != null)
-              OrderInfoRow(label: 'المدة', value: order.durationText!, icon: Icons.schedule_outlined),
-            if (order.dueAt != null)
-              OrderInfoRow(
-                label: 'موعد التسليم',
-                value: formatOrderDateLabel(order.dueAt),
-                icon: Icons.event_outlined,
-              ),
-            if (order.createdAt != null)
-              OrderInfoRow(
-                label: 'تاريخ الإنشاء',
-                value: formatOrderDateLabel(order.createdAt),
-                icon: Icons.calendar_today_outlined,
-              ),
-            if (order.updatedAt != null)
-              OrderInfoRow(
-                label: 'آخر تحديث',
-                value: formatOrderDateLabel(order.updatedAt),
-                icon: Icons.update,
-              ),
+            OrderInfoGrid(
+              items: [
+                if (order.category?.name != null)
+                  OrderMetaItem(
+                    label: 'التصنيف',
+                    value: order.category!.name!,
+                    icon: Icons.category_outlined,
+                  ),
+                OrderMetaItem(
+                  label: 'نوع الطلب',
+                  value: order.projectTypeLabel,
+                  icon: Icons.layers_outlined,
+                ),
+                if (order.durationText != null)
+                  OrderMetaItem(
+                    label: 'المدة',
+                    value: order.durationText!,
+                    icon: Icons.schedule_outlined,
+                  ),
+                if (order.dueAt != null)
+                  OrderMetaItem(
+                    label: 'موعد التسليم',
+                    value: formatOrderDateLabel(order.dueAt),
+                    icon: Icons.event_outlined,
+                  ),
+                if (order.createdAt != null)
+                  OrderMetaItem(
+                    label: 'تاريخ الإنشاء',
+                    value: formatOrderDateLabel(order.createdAt),
+                    icon: Icons.calendar_today_outlined,
+                  ),
+              ],
+            ),
           ],
         ),
         if (order.description != null && order.description!.trim().isNotEmpty) ...[
           const SizedBox(height: 12),
           OrderSectionCard(
             title: 'الوصف',
+            icon: Icons.notes_rounded,
             children: [
               Text(
                 order.description!.trim(),
-                style: const TextStyle(color: AppColors.textInk, height: 1.7, fontSize: 15),
+                style: const TextStyle(color: AppColors.textInk, height: 1.75, fontSize: 14),
+                textAlign: TextAlign.right,
               ),
             ],
           ),
@@ -112,6 +123,7 @@ class _FreelancerOrderDetailBody extends ConsumerWidget {
           const SizedBox(height: 12),
           OrderSectionCard(
             title: 'مرفقات الطلب',
+            icon: Icons.attach_file_rounded,
             children: order.briefFiles
                 .map(
                   (file) => OrderFileDownloadTile(
@@ -127,6 +139,7 @@ class _FreelancerOrderDetailBody extends ConsumerWidget {
           const SizedBox(height: 12),
           OrderSectionCard(
             title: 'سجل التسليم',
+            icon: Icons.history_rounded,
             children: order.submissionHistory!.submissions
                 .map((s) => _SubmissionHistoryRow(orderId: orderId, submission: s))
                 .toList(),
@@ -135,6 +148,7 @@ class _FreelancerOrderDetailBody extends ConsumerWidget {
         const SizedBox(height: 12),
         OrderSectionCard(
           title: 'التسليم',
+          icon: Icons.upload_file_outlined,
           children: [
             _FreelancerDeliverySection(orderId: orderId, order: order),
           ],
@@ -161,20 +175,27 @@ class _SubmissionHistoryRow extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.iconChipBg,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.cardBorder),
+          color: const Color(0xFFF7F9FC),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.cardBorder.withValues(alpha: 0.6)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              submission.statusLabel,
-              style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textInk),
-              textAlign: TextAlign.right,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'التسليم',
+                    style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textMuted, fontSize: 12),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+                OrderStatusBadge(label: submission.statusLabel, compact: true),
+              ],
             ),
             if (submission.submittedAt != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
                 'تاريخ التسليم: ${formatOrderDateLabel(submission.submittedAt)}',
                 style: const TextStyle(color: AppColors.textMuted, fontSize: 13),

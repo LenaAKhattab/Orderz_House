@@ -10,6 +10,7 @@ export const Register = lazy(() => import("../pages/Register"));
 export const ForgotPassword = lazy(() => import("../pages/ForgotPassword"));
 export const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
 export const TermsConditions = lazy(() => import("../pages/TermsConditions"));
+export const AccountDeletion = lazy(() => import("../pages/AccountDeletion"));
 export const PublicGuaranteePage = lazy(() =>
   import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicGuaranteePage })),
 );

@@ -32,7 +32,6 @@ void main() {
       expect(ids, contains(ProfileActionId.notifications));
       expect(ids, contains(ProfileActionId.legalHelp));
       expect(ids, isNot(contains(ProfileActionId.financialClaims)));
-      expect(ids, isNot(contains(ProfileActionId.freelancerPlans)));
     });
 
     test('create order route points to client create screen', () {
@@ -49,16 +48,18 @@ void main() {
   });
 
   group('profile quick actions — freelancer', () {
-    test('includes freelancer orders, plans, claims, notifications, marketplace', () {
+    test('includes freelancer orders, claims, notifications, marketplace — no plans', () {
       final actions = profileQuickActionsForUser(_user(role: 'freelancer'));
       final ids = actions.map((a) => a.id).toSet();
+      final labels = actions.map((a) => a.label).toList();
 
       expect(ids, contains(ProfileActionId.myOrders));
-      expect(ids, contains(ProfileActionId.freelancerPlans));
       expect(ids, contains(ProfileActionId.financialClaims));
       expect(ids, contains(ProfileActionId.notifications));
       expect(ids, contains(ProfileActionId.marketplace));
       expect(ids, isNot(contains(ProfileActionId.createOrder)));
+      expect(labels, isNot(contains('الباقات')));
+      expect(actions.any((a) => a.route == AppRoutes.freelancerPlans), isFalse);
     });
 
     test('financial claims route is freelancer path', () {

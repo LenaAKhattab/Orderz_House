@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test src/utils/clientMyOrdersPaymentReturn.test.js src/constants/canRoleAccessPath.test.js src/pages/dashboard/trainingOrders/trainingOrderAdminCreate.test.js src/pages/dashboard/trainingOrders/trainingOrderVisiblePreview.test.js src/pages/dashboard/trainingOrders/trainingOrdersApplicantsCount.test.js src/pages/dashboard/trainingOrders/trainingOrdersBudgetDisplay.test.js src/components/orders/bidAmountModal.test.js src/utils/planSubscriptionUtils.test.js src/lib/orders/formatMarketplaceBudget.test.js src/utils/currencyDisplay.test.js"
+"test": "node --test src/utils/clientMyOrdersPaymentReturn.test.js src/utils/apiErrorMessage.test.js src/constants/canRoleAccessPath.test.js src/pages/dashboard/trainingOrders/trainingOrderAdminCreate.test.js src/pages/dashboard/trainingOrders/trainingOrderVisiblePreview.test.js src/pages/dashboard/trainingOrders/trainingOrdersApplicantsCount.test.js src/pages/dashboard/trainingOrders/trainingOrdersBudgetDisplay.test.js src/components/orders/bidAmountModal.test.js src/utils/planSubscriptionUtils.test.js src/lib/orders/formatMarketplaceBudget.test.js src/utils/currencyDisplay.test.js test/accountDeletionPage.test.js"
   },
   "dependencies": {
     "axios": "^1.15.0",

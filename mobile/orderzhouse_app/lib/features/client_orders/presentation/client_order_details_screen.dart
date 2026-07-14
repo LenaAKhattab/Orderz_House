@@ -77,82 +77,91 @@ class _ClientOrderDetailBody extends ConsumerWidget {
     );
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
       children: [
-        Text(
-          order.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 22,
-            color: AppColors.textInk,
-            height: 1.35,
-          ),
-        ),
-        const SizedBox(height: 16),
-        OrderSectionCard(
-          title: 'معلومات الطلب',
-          children: [
-            if (order.category?.name != null)
-              OrderInfoRow(label: 'التصنيف', value: order.category!.name!, icon: Icons.category_outlined),
-            OrderInfoRow(label: 'نوع الطلب', value: order.projectTypeLabel, icon: Icons.layers_outlined),
-            OrderInfoRow(label: 'حالة الطلب', value: order.statusLabel, icon: Icons.flag_outlined),
-            OrderInfoRow(
-              label: 'تاريخ الإنشاء',
-              value: formatOrderDateLabel(order.createdAt),
-              icon: Icons.calendar_today_outlined,
-            ),
-            if (order.durationText != null)
-              OrderInfoRow(label: 'المدة', value: order.durationText!, icon: Icons.schedule_outlined),
-            if (order.dueAt != null)
-              OrderInfoRow(
-                label: 'موعد التسليم',
-                value: formatOrderDateLabel(order.dueAt),
-                icon: Icons.event_outlined,
-              ),
-          ],
+        OrderDetailHeroCard(
+          title: order.title,
+          orderId: order.id,
+          statusLabel: order.statusLabel,
+          statusKey: order.orderStatus,
+          projectTypeLabel: order.projectTypeLabel,
+          budgetLabel: order.budgetLabel,
+          dateLabel: formatOrderDateLabel(order.createdAt),
+          dateCaption: 'تاريخ الإنشاء',
         ),
         const SizedBox(height: 12),
-        if (order.description != null && order.description!.trim().isNotEmpty)
+        OrderSectionCard(
+          title: 'معلومات الطلب',
+          icon: Icons.info_outline_rounded,
+          children: [
+            OrderInfoGrid(
+              items: [
+                if (order.category?.name != null)
+                  OrderMetaItem(
+                    label: 'التصنيف',
+                    value: order.category!.name!,
+                    icon: Icons.category_outlined,
+                  ),
+                OrderMetaItem(
+                  label: 'نوع الطلب',
+                  value: order.projectTypeLabel,
+                  icon: Icons.layers_outlined,
+                ),
+                if (order.durationText != null)
+                  OrderMetaItem(
+                    label: 'المدة',
+                    value: order.durationText!,
+                    icon: Icons.schedule_outlined,
+                  ),
+                if (order.dueAt != null)
+                  OrderMetaItem(
+                    label: 'موعد التسليم',
+                    value: formatOrderDateLabel(order.dueAt),
+                    icon: Icons.event_outlined,
+                  ),
+                if (order.paymentStatus != null)
+                  OrderMetaItem(
+                    label: 'حالة الدفع',
+                    value: order.paymentStatusLabel,
+                    icon: Icons.credit_card_outlined,
+                    accent: AppColors.success,
+                  ),
+                OrderMetaItem(
+                  label: 'التنفيذ',
+                  value: order.hasAssignedFreelancer ? 'معيّن' : 'بانتظار التعيين',
+                  icon: Icons.engineering_outlined,
+                ),
+                if (order.assignedFreelancerLabel != null)
+                  OrderMetaItem(
+                    label: 'المستقل',
+                    value: order.assignedFreelancerLabel!,
+                    icon: Icons.person_outline,
+                  ),
+                if (order.paymentAmount != null)
+                  OrderMetaItem(
+                    label: 'مبلغ الدفع',
+                    value: '${order.paymentAmount!.toStringAsFixed(0)} ${order.currencyCode ?? 'JOD'}',
+                    icon: Icons.paid_outlined,
+                    accent: AppColors.success,
+                  ),
+              ],
+            ),
+          ],
+        ),
+        if (order.description != null && order.description!.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
           OrderSectionCard(
             title: 'الوصف',
+            icon: Icons.notes_rounded,
             children: [
               Text(
                 order.description!.trim(),
-                style: const TextStyle(color: AppColors.textInk, height: 1.7, fontSize: 15),
+                style: const TextStyle(color: AppColors.textInk, height: 1.75, fontSize: 14),
+                textAlign: TextAlign.right,
               ),
             ],
           ),
-        if (order.description != null && order.description!.trim().isNotEmpty) const SizedBox(height: 12),
-        OrderSectionCard(
-          title: 'الميزانية والحالة',
-          children: [
-            if (order.budgetLabel != null)
-              OrderInfoRow(label: 'الميزانية', value: order.budgetLabel!, icon: Icons.payments_outlined),
-            if (order.paymentStatus != null)
-              OrderInfoRow(
-                label: 'حالة الدفع',
-                value: order.paymentStatusLabel,
-                icon: Icons.credit_card_outlined,
-              ),
-            if (order.paymentAmount != null)
-              OrderInfoRow(
-                label: 'مبلغ الدفع',
-                value: '${order.paymentAmount!.toStringAsFixed(0)} ${order.currencyCode ?? 'JOD'}',
-                icon: Icons.paid_outlined,
-              ),
-            OrderInfoRow(
-              label: 'حالة التنفيذ',
-              value: order.hasAssignedFreelancer ? 'قيد التنفيذ / معيّن' : 'بانتظار التعيين',
-              icon: Icons.engineering_outlined,
-            ),
-            if (order.assignedFreelancerLabel != null)
-              OrderInfoRow(
-                label: 'المستقل',
-                value: order.assignedFreelancerLabel!,
-                icon: Icons.person_outline,
-              ),
-          ],
-        ),
+        ],
         if (showBids) ...[
           const SizedBox(height: 12),
           ClientOrderBidsSection(
@@ -164,6 +173,7 @@ class _ClientOrderDetailBody extends ConsumerWidget {
           const SizedBox(height: 12),
           OrderSectionCard(
             title: 'مراجعة التسليم',
+            icon: Icons.inventory_2_outlined,
             children: [
               _ClientDeliveryReviewSection(orderId: orderId, order: order),
             ],
@@ -173,6 +183,7 @@ class _ClientOrderDetailBody extends ConsumerWidget {
           const SizedBox(height: 12),
           OrderSectionCard(
             title: 'تقييم المستقل',
+            icon: Icons.star_outline_rounded,
             children: [
               _ClientFreelancerReviewSection(orderId: orderId, order: order),
             ],
@@ -181,6 +192,7 @@ class _ClientOrderDetailBody extends ConsumerWidget {
         const SizedBox(height: 12),
         OrderSectionCard(
           title: 'الإجراءات',
+          icon: Icons.bolt_outlined,
           children: [
             if (order.needsPayment)
               ClientOrderPaymentSection(
@@ -188,15 +200,9 @@ class _ClientOrderDetailBody extends ConsumerWidget {
                 needsPayment: true,
               )
             else if (!isClient)
-              const Text(
-                'مراجعة التسليم متاحة لحساب العميل فقط.',
-                style: TextStyle(color: AppColors.textMuted),
-              )
+              const OrderEmptyHint(message: 'مراجعة التسليم متاحة لحساب العميل فقط.')
             else if (!clientCanApproveDelivery(order) && !clientCanRequestRevision(order))
-              const Text(
-                'لا توجد إجراءات متاحة حالياً.',
-                style: TextStyle(color: AppColors.textMuted),
-              ),
+              const OrderEmptyHint(message: 'لا توجد إجراءات متاحة حالياً.'),
           ],
         ),
       ],
@@ -508,20 +514,27 @@ class _DeliverySummaryCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.iconChipBg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.cardBorder),
+        color: const Color(0xFFF7F9FC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.cardBorder.withValues(alpha: 0.6)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'الحالة: ${submission.displayStatus}',
-            style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textInk),
-            textAlign: TextAlign.right,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'حالة التسليم',
+                  style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textMuted, fontSize: 12),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+              OrderStatusBadge(label: submission.displayStatus, compact: true),
+            ],
           ),
           if (submission.displayDate != null) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
               'تاريخ التسليم: ${formatOrderDateLabel(submission.displayDate)}',
               style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
@@ -535,13 +548,13 @@ class _DeliverySummaryCard extends StatelessWidget {
             textAlign: TextAlign.right,
           ),
           if (submission.files.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             const Text(
-              'ملفات التسليم:',
-              style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textInk, fontSize: 13),
+              'ملفات التسليم',
+              style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDeep, fontSize: 13),
               textAlign: TextAlign.right,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             ...submission.files.map(
               (file) => OrderFileDownloadTile(
                 orderId: orderId,

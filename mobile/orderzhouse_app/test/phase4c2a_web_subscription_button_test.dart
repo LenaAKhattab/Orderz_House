@@ -69,4 +69,34 @@ void main() {
       expect(src.contains('confirm-checkout'), isFalse);
     });
   });
+
+  group('Phase 5K — web subscription launcher unused by live UI', () {
+    test('no live screen opens freelancer plans on web', () {
+      final roots = [
+        'lib/features/profile',
+        'lib/features/home',
+        'lib/features/shell',
+        'lib/features/orders',
+        'lib/features/freelancer/presentation/freelancer_home_screen.dart',
+        'lib/features/freelancer/presentation/freelancer_eligibility_banner.dart',
+        'lib/features/freelancer/presentation/freelancer_order_detail_screen.dart',
+        'lib/core/router/app_router.dart',
+      ];
+      for (final path in roots) {
+        final entity = FileSystemEntity.typeSync(path);
+        if (entity == FileSystemEntityType.directory) {
+          for (final file in Directory(path).listSync(recursive: true).whereType<File>()) {
+            if (!file.path.endsWith('.dart')) continue;
+            final src = file.readAsStringSync();
+            expect(src, isNot(contains('launchFreelancerPlansOnWeb')), reason: file.path);
+            expect(src, isNot(contains('FreelancerPlansScreen')), reason: file.path);
+          }
+        } else if (entity == FileSystemEntityType.file) {
+          final src = File(path).readAsStringSync();
+          expect(src, isNot(contains('launchFreelancerPlansOnWeb')), reason: path);
+          expect(src, isNot(contains('FreelancerPlansScreen')), reason: path);
+        }
+      }
+    });
+  });
 }

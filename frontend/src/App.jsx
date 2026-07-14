@@ -32,6 +32,7 @@ import {
   ForgotPassword,
   PrivacyPolicy,
   TermsConditions,
+  AccountDeletion,
   PublicGuaranteePage,
   PublicHelpCenterPage,
   PublicFindWorkPage,
@@ -205,6 +206,7 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-conditions" element={<TermsConditions />} />
+              <Route path="/account-deletion" element={<AccountDeletion />} />
               <Route path="/guarantee" element={<PublicGuaranteePage />} />
               <Route path="/help-center" element={<PublicHelpCenterPage />} />
               <Route path="/find-work" element={<PublicFindWorkPage />} />

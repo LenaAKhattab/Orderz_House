@@ -14,6 +14,10 @@ const {
   freelancerUserIdParam,
   clientOrderBidIdParamValidators,
 } = require("../validators/ordersValidators");
+const { adminOrderCreateLimiter } = require("../middleware/orderWriteRateLimiters");
+const { createOrderConcurrencyGuard } = require("../middleware/orderCreateConcurrency");
+
+const adminOrderCreateConcurrency = createOrderConcurrencyGuard({ maxConcurrent: 2 });
 
 const router = express.Router();
 
@@ -40,6 +44,8 @@ router.get(
 router.post(
   "/orders",
   createOrderPerm,
+  adminOrderCreateLimiter,
+  adminOrderCreateConcurrency,
   uploadOrderFiles,
   handleOrderUploadErrors,
   enforceOrderUploadTotalSize,

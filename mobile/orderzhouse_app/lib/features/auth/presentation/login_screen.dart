@@ -8,6 +8,7 @@ import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import 'auth_controller.dart';
+import 'auth_form_widgets.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key, this.redirectLocation});
@@ -56,115 +57,80 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          children: [
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: [AppColors.primaryDeep, AppColors.primary, AppColors.primaryMid],
-                ),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'مرحباً بعودتك',
-                    style: textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'سجّل الدخول لمتابعة طلباتك وإدارة حسابك.',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      height: 1.6,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            OhCard(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'تسجيل الدخول',
-                      style: textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textInk,
+    return AuthScaffold(
+      child: Form(
+        key: _formKey,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const AuthHeroHeader(
+                        title: 'تسجيل الدخول',
+                        subtitle: 'أدخل بريدك وكلمة المرور للمتابعة إلى حسابك.',
                       ),
-                      textAlign: TextAlign.right,
-                    ),
-                    const SizedBox(height: 16),
-                    if (_error != null) ...[
-                      OhErrorBanner(message: _error!),
-                      const SizedBox(height: 12),
-                    ],
-                    OhTextField(
-                      controller: _emailController,
-                      label: 'البريد الإلكتروني',
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'البريد الإلكتروني مطلوب.';
-                        if (!v.contains('@')) return 'صيغة البريد غير صالحة.';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    OhTextField(
-                      controller: _passwordController,
-                      label: 'كلمة المرور',
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _submit(),
-                      suffixIcon: IconButton(
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                        icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                      ),
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'كلمة المرور مطلوبة.';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    OhButton(
-                      label: 'تسجيل الدخول',
-                      isLoading: _submitting,
-                      onPressed: _submit,
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TextButton(
-                          onPressed: () => context.push(AppRoutes.register),
-                          child: const Text('إنشاء حساب جديد'),
-                        ),
+                      const SizedBox(height: 32),
+                      if (_error != null) ...[
+                        OhErrorBanner(message: _error!),
+                        const SizedBox(height: 14),
                       ],
-                    ),
-                  ],
+                      AuthPillField(
+                        controller: _emailController,
+                        hint: 'البريد الإلكتروني',
+                        prefixIcon: Icons.mail_outline_rounded,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        textDirection: TextDirection.ltr,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return 'البريد الإلكتروني مطلوب.';
+                          if (!v.contains('@')) return 'صيغة البريد غير صالحة.';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                      AuthPillField(
+                        controller: _passwordController,
+                        hint: 'كلمة المرور',
+                        prefixIcon: Icons.lock_outline_rounded,
+                        obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.done,
+                        textDirection: TextDirection.ltr,
+                        onFieldSubmitted: (_) => _submit(),
+                        suffix: IconButton(
+                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'كلمة المرور مطلوبة.';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 28),
+                      AuthPrimaryButton(
+                        label: 'تسجيل الدخول',
+                        isLoading: _submitting,
+                        onPressed: _submit,
+                      ),
+                      const SizedBox(height: 28),
+                      AuthFooterLink(
+                        prompt: 'ليس لديك حساب؟',
+                        actionLabel: 'إنشاء حساب',
+                        onTap: () => context.push(AppRoutes.register),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

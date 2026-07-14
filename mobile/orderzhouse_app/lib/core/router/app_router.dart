@@ -2,19 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/account/presentation/account_settings_screen.dart';
+import '../../features/account/presentation/change_password_screen.dart';
+import '../../features/account/presentation/delete_account_screen.dart';
+import '../../features/account/presentation/edit_profile_screen.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/otp_verification_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/categories/presentation/services_screen.dart';
+import '../../features/courses/presentation/course_details_screen.dart';
+import '../../features/courses/presentation/courses_screen.dart';
 import '../../features/client_orders/presentation/client_order_details_screen.dart';
 import '../../features/client_orders/presentation/create_order_screen.dart';
 import '../../features/client_orders/presentation/payment_return_screen.dart';
 import '../../features/client_orders/data/payment_return_parser.dart';
 import '../../features/freelancer/presentation/freelancer_order_detail_screen.dart';
 import '../../features/freelancer/financial_claims/presentation/financial_claims_screen.dart';
-import '../../features/freelancer/presentation/freelancer_plans_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/orders/presentation/orders_marketplace_screen.dart';
 import '../../features/orders/presentation/pool_order_detail_screen.dart';
@@ -148,7 +153,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.freelancerPlans,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const FreelancerPlansScreen(),
+        // Phase 5K: plans/subscription UI removed for Play Store compliance.
+        redirect: (context, state) => AppRoutes.profile,
       ),
       GoRoute(
         path: AppRoutes.freelancerFinancialClaims,
@@ -182,6 +188,39 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const NotificationsScreen(),
       ),
       GoRoute(
+        path: AppRoutes.accountSettings,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AccountSettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.accountEditProfile,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.accountChangePassword,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ChangePasswordScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.accountDelete,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const DeleteAccountScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.services,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ServicesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.courseDetails,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return CourseDetailsScreen(courseId: id);
+        },
+      ),
+      GoRoute(
         path: AppRoutes.publicPage,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
@@ -206,8 +245,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.services,
-                builder: (context, state) => const ServicesScreen(),
+                path: AppRoutes.myOrders,
+                builder: (context, state) => const RoleAwareMyOrdersScreen(),
               ),
             ],
           ),
@@ -222,8 +261,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.myOrders,
-                builder: (context, state) => const RoleAwareMyOrdersScreen(),
+                path: AppRoutes.courses,
+                builder: (context, state) => const CoursesScreen(),
               ),
             ],
           ),

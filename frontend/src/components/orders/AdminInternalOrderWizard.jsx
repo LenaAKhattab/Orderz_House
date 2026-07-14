@@ -21,6 +21,7 @@ import {
   ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR,
   validateOrderFilesSize,
 } from "../../utils/orderUploadLimits";
+import { getOrderCreateErrorMessage } from "../../utils/apiErrorMessage";
 import { isFixedBudgetInAllowedSpan, normalizeTemplateBudget } from "../../utils/fakeBudgetRanges";
 import { formatTrainingOrderBudget } from "../../pages/dashboard/trainingOrders/trainingOrdersDisplayUtils";
 
@@ -403,6 +404,7 @@ export default function AdminInternalOrderWizard({
 
   const fileInputRef = useRef(null);
   const explicitSubmitClickRef = useRef(false);
+  const submitInFlightRef = useRef(false);
   const hydratingCategoryRef = useRef(false);
   const [files, setFiles] = useState([]);
   const [stepIdx, setStepIdx] = useState(0);
@@ -598,6 +600,9 @@ export default function AdminInternalOrderWizard({
       return;
     }
     explicitSubmitClickRef.current = false;
+    if (busy || submitInFlightRef.current) {
+      return;
+    }
     if (!canSubmit) {
       push({
         type: "error",
@@ -617,6 +622,7 @@ export default function AdminInternalOrderWizard({
         return;
       }
       setBusy(true);
+      submitInFlightRef.current = true;
       try {
         const finalDescription = form.description.trim();
         const selectedSs = subSubcategories.find((ss) => String(ss.id) === String(form.subSubcategoryId));
@@ -681,14 +687,16 @@ export default function AdminInternalOrderWizard({
         push({
           type: "error",
           title: tpl("toast.saveFailedTitle"),
-          message: e2?.response?.data?.message || e2?.message,
+          message: getOrderCreateErrorMessage(e2),
         });
       } finally {
+        submitInFlightRef.current = false;
         setBusy(false);
       }
       return;
     }
     setBusy(true);
+    submitInFlightRef.current = true;
     try {
       const fd = new FormData();
       if (!isClientAudience) {
@@ -749,8 +757,13 @@ export default function AdminInternalOrderWizard({
       setAssignedFreelancer(null);
       // Stay on the create page to allow fast creation of the next order.
     } catch (e2) {
-      push({ type: "error", title: "تعذر إنشاء الطلب", message: e2?.response?.data?.message || e2?.message });
+      push({
+        type: "error",
+        title: "تعذر إنشاء الطلب",
+        message: getOrderCreateErrorMessage(e2),
+      });
     } finally {
+      submitInFlightRef.current = false;
       setBusy(false);
     }
   };

@@ -1,15 +1,12 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/branding/app_branding.dart';
-import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/web_constants.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/oh_widgets.dart';
 import '../../auth/domain/auth_user.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../notifications/presentation/unread_notifications_controller.dart';
@@ -23,19 +20,10 @@ class ProfileScreen extends ConsumerWidget {
     final auth = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('حسابي')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-        children: [
-          if (auth.isAuthenticated && auth.user != null)
-            _AuthenticatedProfileBody(user: auth.user!)
-          else
-            const Padding(
-              padding: EdgeInsets.only(top: 48),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-        ],
-      ),
+      backgroundColor: AppColors.homeMobileBg,
+      body: auth.isAuthenticated && auth.user != null
+          ? _AuthenticatedProfileBody(user: auth.user!)
+          : const Center(child: CircularProgressIndicator()),
     );
   }
 }
@@ -48,60 +36,89 @@ class _AuthenticatedProfileBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final quickActions = profileQuickActionsForUser(user);
+    final accountManagement = profileAccountManagementItems();
     final settings = profileSettingsItems(isAuthenticated: true);
     final unreadAsync = ref.watch(unreadNotificationsControllerProvider);
+    final unread = unreadAsync.maybeWhen(data: (v) => v, orElse: () => 0);
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Stack(
       children: [
-        _UserCard(user: user),
-        const SizedBox(height: 20),
-        _SectionTitle(title: 'إجراءات سريعة'),
-        const SizedBox(height: 8),
-        OhCard(
-          padding: EdgeInsets.zero,
-          child: Column(
+        const _ProfileAtmosphere(),
+        SafeArea(
+          bottom: false,
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(20, 8, 20, 28 + bottomInset),
             children: [
-              for (var i = 0; i < quickActions.length; i++) ...[
-                _ProfileActionTile(
-                  action: quickActions[i],
-                  unreadCount: quickActions[i].id == ProfileActionId.notifications
-                      ? unreadAsync.maybeWhen(data: (v) => v, orElse: () => 0)
-                      : null,
-                  onTap: () => _openAction(context, quickActions[i]),
+              _ProfileHeader(unread: unread),
+              const SizedBox(height: 18),
+              _ProfileHeroCard(user: user, unread: unread),
+              const SizedBox(height: 14),
+              _SoftMenuCard(
+                children: [
+                  for (var i = 0; i < quickActions.length; i++) ...[
+                    _SoftMenuTile(
+                      icon: quickActions[i].icon,
+                      label: quickActions[i].label,
+                      badge: quickActions[i].id == ProfileActionId.notifications && unread > 0
+                          ? (unread > 99 ? '99+' : '$unread')
+                          : null,
+                      onTap: () => _openAction(context, quickActions[i]),
+                    ),
+                    if (i < quickActions.length - 1) const _SoftDivider(),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 14),
+              const Padding(
+                padding: EdgeInsetsDirectional.only(start: 4, bottom: 8),
+                child: Text(
+                  'إدارة الحساب',
+                  style: TextStyle(
+                    color: AppColors.primaryDeep,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
                 ),
-                if (i < quickActions.length - 1) const Divider(height: 1, indent: 56),
-              ],
+              ),
+              _SoftMenuCard(
+                children: [
+                  for (var i = 0; i < accountManagement.length; i++) ...[
+                    _SoftMenuTile(
+                      icon: accountManagement[i].icon,
+                      label: accountManagement[i].label,
+                      onTap: () => _handleSettingsTap(context, accountManagement[i]),
+                    ),
+                    if (i < accountManagement.length - 1) const _SoftDivider(),
+                  ],
+                  const _SoftDivider(),
+                  _SoftMenuTile(
+                    icon: Icons.logout_rounded,
+                    label: 'تسجيل الخروج',
+                    accent: AppColors.error,
+                    onTap: () => _confirmLogout(context, ref),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _SoftMenuCard(
+                children: [
+                  for (var i = 0; i < settings.length; i++) ...[
+                    _SoftMenuTile(
+                      icon: settings[i].icon,
+                      label: settings[i].label,
+                      subtitle: settings[i].isPlaceholder ? settings[i].placeholderHint : null,
+                      trailingHint: settings[i].isPlaceholder ? 'قريباً' : null,
+                      enabled: !settings[i].isPlaceholder,
+                      onTap: () => _handleSettingsTap(context, settings[i]),
+                    ),
+                    if (i < settings.length - 1) const _SoftDivider(),
+                  ],
+                ],
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 20),
-        _SectionTitle(title: 'الإعدادات'),
-        const SizedBox(height: 8),
-        OhCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              for (var i = 0; i < settings.length; i++) ...[
-                _SettingsTile(
-                  item: settings[i],
-                  onTap: () => _handleSettingsTap(context, settings[i]),
-                ),
-                if (i < settings.length - 1) const Divider(height: 1, indent: 56),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        _SectionTitle(title: 'الحساب'),
-        const SizedBox(height: 8),
-        OhButton(
-          label: 'تسجيل الخروج',
-          outlined: true,
-          onPressed: () => _confirmLogout(context, ref),
-        ),
-        const SizedBox(height: 16),
-        if (!kReleaseMode) _DevEnvCard(),
       ],
     );
   }
@@ -111,7 +128,9 @@ class _AuthenticatedProfileBody extends ConsumerWidget {
       context.push(action.route);
       return;
     }
-    if (action.route == AppRoutes.myOrders || action.route == AppRoutes.marketplace) {
+    if (action.route == AppRoutes.myOrders ||
+        action.route == AppRoutes.marketplace ||
+        action.route == AppRoutes.courses) {
       context.go(action.route);
       return;
     }
@@ -139,198 +158,272 @@ class _AuthenticatedProfileBody extends ConsumerWidget {
   }
 }
 
-class _UserCard extends StatelessWidget {
-  const _UserCard({required this.user});
-
-  final AuthUser user;
+class _ProfileAtmosphere extends StatelessWidget {
+  const _ProfileAtmosphere();
 
   @override
   Widget build(BuildContext context) {
-    final status = profileStatusLabelAr(user);
-
-    return OhCard(
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: AppColors.iconChipBg,
-            child: Text(
-              profileInitials(user),
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w800,
-                fontSize: 22,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user.displayName,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
-                ),
-                const SizedBox(height: 4),
-                Text(user.email, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    _ChipLabel(
-                      label: profileRoleLabelAr(user),
-                      color: AppColors.primary,
-                      background: AppColors.iconChipBg,
-                    ),
-                    if (status != null)
-                      _ChipLabel(
-                        label: status,
-                        color: user.isActive ? AppColors.primary : AppColors.error,
-                        background: user.isActive
-                            ? AppColors.secondary.withValues(alpha: 0.12)
-                            : AppColors.errorSurface,
-                      ),
-                  ],
-                ),
+    return IgnorePointer(
+      child: SizedBox.expand(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppColors.secondary.withValues(alpha: 0.18),
+                AppColors.homeMobileBg,
+                AppColors.homeMobileBg,
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({required this.unread});
+
+  final int unread;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Expanded(
+          child: Text(
+            'حسابي',
+            style: TextStyle(
+              color: AppColors.primaryDeep,
+              fontSize: 30,
+              fontWeight: FontWeight.w800,
+              height: 1.15,
+            ),
+            textAlign: TextAlign.right,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => context.push(AppRoutes.notifications),
+            customBorder: const CircleBorder(),
+            child: Ink(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.notifications_none_rounded, color: AppColors.textInk, size: 22),
+                  if (unread > 0)
+                    Positioned(
+                      top: 10,
+                      left: 10,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AppColors.error,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfileHeroCard extends StatelessWidget {
+  const _ProfileHeroCard({required this.user, required this.unread});
+
+  final AuthUser user;
+  final int unread;
+
+  @override
+  Widget build(BuildContext context) {
+    final role = profileRoleLabelAr(user);
+    final status = profileStatusLabelAr(user) ?? 'الحساب نشط';
+    final isFreelancer = user.usesFreelancerExperience;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 22, 18, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppColors.secondary.withValues(alpha: 0.55),
+                width: 2,
+              ),
+            ),
+            child: CircleAvatar(
+              radius: 44,
+              backgroundColor: AppColors.iconChipBg,
+              child: Text(
+                profileInitials(user),
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 30,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  user.displayName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.textInk,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryDeep,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isFreelancer ? Icons.workspace_premium_rounded : Icons.verified_rounded,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      role,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            user.email,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _StatBox(value: role, label: 'الدور'),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatBox(value: unread > 0 ? '$unread' : '0', label: 'إشعارات'),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatBox(
+                  value: user.isActive ? 'نشط' : 'موقوف',
+                  label: 'الحالة',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _ProfileCtaBanner(
+            title: isFreelancer ? 'تابع أعمالك ومستحقاتك من مكان واحد' : 'أنشئ طلبك التالي بسهولة',
+            actionLabel: isFreelancer ? 'طلباتي' : 'طلب جديد',
+            onPressed: () {
+              if (isFreelancer) {
+                context.go(AppRoutes.myOrders);
+              } else {
+                context.push(AppRoutes.clientCreateOrder);
+              }
+            },
+          ),
+          if (status.isNotEmpty && !user.isActive) ...[
+            const SizedBox(height: 8),
+            Text(
+              status,
+              style: const TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _ChipLabel extends StatelessWidget {
-  const _ChipLabel({
-    required this.label,
-    required this.color,
-    required this.background,
-  });
+class _StatBox extends StatelessWidget {
+  const _StatBox({required this.value, required this.label});
 
+  final String value;
   final String label;
-  final Color color;
-  final Color background;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(999),
+        color: const Color(0xFFF7F8FB),
+        borderRadius: BorderRadius.circular(18),
       ),
-      child: Text(
-        label,
-        style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
-      ),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textInk),
-      textAlign: TextAlign.right,
-    );
-  }
-}
-
-class _ProfileActionTile extends StatelessWidget {
-  const _ProfileActionTile({
-    required this.action,
-    required this.onTap,
-    this.unreadCount,
-  });
-
-  final ProfileActionItem action;
-  final VoidCallback onTap;
-  final int? unreadCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final unread = unreadCount ?? 0;
-
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      leading: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Icon(action.icon, color: AppColors.primary),
-          if (unread > 0)
-            Positioned(
-              top: -4,
-              left: -4,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.error,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                constraints: const BoxConstraints(minWidth: 18),
-                child: Text(
-                  unread > 99 ? '99+' : '$unread',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
-                ),
-              ),
-            ),
-        ],
-      ),
-      title: Text(action.label, style: const TextStyle(fontWeight: FontWeight.w700)),
-      trailing: const Icon(Icons.chevron_left, color: AppColors.primary, size: 22),
-      onTap: onTap,
-    );
-  }
-}
-
-class _SettingsTile extends StatelessWidget {
-  const _SettingsTile({required this.item, required this.onTap});
-
-  final ProfileSettingsItem item;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      leading: Icon(item.icon, color: AppColors.primary),
-      title: Text(item.label, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: item.isPlaceholder
-          ? Text(
-              item.placeholderHint ?? '',
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
-            )
-          : null,
-      trailing: item.isPlaceholder
-          ? const Text('قريباً', style: TextStyle(color: AppColors.textMuted, fontSize: 12))
-          : const Icon(Icons.chevron_left, color: AppColors.primary, size: 22),
-      onTap: item.isPlaceholder ? null : onTap,
-    );
-  }
-}
-
-class _DevEnvCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return OhCard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('بيئة التطوير', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-          const SizedBox(height: 6),
           Text(
-            ApiConstants.baseUrl,
-            textDirection: TextDirection.ltr,
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.primaryDeep,
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
             style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
           ),
         ],
@@ -339,8 +432,203 @@ class _DevEnvCard extends StatelessWidget {
   }
 }
 
+class _ProfileCtaBanner extends StatelessWidget {
+  const _ProfileCtaBanner({
+    required this.title,
+    required this.actionLabel,
+    required this.onPressed,
+  });
+
+  final String title;
+  final String actionLabel;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+      decoration: BoxDecoration(
+        color: AppColors.primaryDeep,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.92),
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            child: InkWell(
+              onTap: onPressed,
+              borderRadius: BorderRadius.circular(999),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                child: Text(
+                  actionLabel,
+                  style: const TextStyle(
+                    color: AppColors.primaryDeep,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SoftMenuCard extends StatelessWidget {
+  const _SoftMenuCard({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _SoftDivider extends StatelessWidget {
+  const _SoftDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 18),
+      child: Divider(height: 1, color: Color(0xFFE8ECF2)),
+    );
+  }
+}
+
+class _SoftMenuTile extends StatelessWidget {
+  const _SoftMenuTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.subtitle,
+    this.trailingHint,
+    this.badge,
+    this.accent,
+    this.enabled = true,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final String? subtitle;
+  final String? trailingHint;
+  final String? badge;
+  final Color? accent;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = accent ?? AppColors.textInk;
+
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(28),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+        child: Row(
+          children: [
+            Icon(icon, color: enabled ? color : AppColors.textMuted, size: 22),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    label,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      color: enabled ? color : AppColors.textMuted,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (badge != null) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  badge!,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+            if (trailingHint != null) ...[
+              const SizedBox(width: 8),
+              Text(
+                trailingHint!,
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              ),
+            ] else if (enabled) ...[
+              const SizedBox(width: 6),
+              Icon(
+                Icons.chevron_left_rounded,
+                color: AppColors.textMuted.withValues(alpha: 0.7),
+                size: 20,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 Future<void> _handleSettingsTap(BuildContext context, ProfileSettingsItem item) async {
   switch (item.id) {
+    case ProfileSettingsId.accountSettings:
+      context.push(item.route ?? AppRoutes.accountSettings);
+      return;
     case ProfileSettingsId.openWebsite:
       final uri = Uri.tryParse(WebConstants.baseUrl);
       if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
@@ -365,8 +653,32 @@ Future<void> _handleSettingsTap(BuildContext context, ProfileSettingsItem item) 
       return;
     case ProfileSettingsId.terms:
     case ProfileSettingsId.privacy:
-    case ProfileSettingsId.helpCenter:
       if (item.route != null) context.push(item.route!);
+      return;
+    case ProfileSettingsId.contactUs:
+      if (!context.mounted) return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('تواصل معنا'),
+          content: const Text(
+            'هل تريد الانتقال إلى واتساب للتواصل مع فريق Orderz House؟',
+            textAlign: TextAlign.right,
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('إلغاء')),
+            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('فتح واتساب')),
+          ],
+        ),
+      );
+      if (confirmed != true || !context.mounted) return;
+      final uri = Uri.parse(AppBranding.whatsappContactUrl);
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تعذر فتح واتساب. تأكد من تثبيته على الجهاز.')),
+        );
+      }
       return;
     case ProfileSettingsId.language:
       return;

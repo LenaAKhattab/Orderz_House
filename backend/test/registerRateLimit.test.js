@@ -52,12 +52,16 @@ describe("registerLimiter", () => {
   it("429 handler returns English registration message and RATE_LIMITED code", () => {
     const p = path.join(__dirname, "..", "src", "middleware", "rateLimiters.js");
     const src = fs.readFileSync(p, "utf8");
+    const helpers = fs.readFileSync(path.join(__dirname, "..", "src", "middleware", "rateLimitHelpers.js"), "utf8");
     assert.ok(src.includes("registerRateLimitHandler"), "dedicated register handler");
     assert.ok(
       src.includes("Too many registration attempts. Please try again later."),
       "registration 429 uses English message",
     );
-    assert.ok(src.includes('res.set("Retry-After"'), "429 includes Retry-After header");
+    assert.ok(
+      src.includes("setRetryAfterHeader") || helpers.includes('res.set("Retry-After"'),
+      "429 includes Retry-After header",
+    );
     assert.ok(src.includes("success: false") && src.includes("code: RATE_LIMITED_CODE"));
   });
 

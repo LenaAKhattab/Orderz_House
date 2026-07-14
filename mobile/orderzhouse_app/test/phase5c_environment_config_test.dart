@@ -192,9 +192,11 @@ void main() {
   });
 
   group('profile dev env card', () {
-    test('hidden in release via kReleaseMode guard', () {
+    test('dev environment card is not shown on profile', () {
       final src = File('lib/features/profile/presentation/profile_screen.dart').readAsStringSync();
-      expect(src, contains('if (!kReleaseMode) _DevEnvCard()'));
+      expect(src, isNot(contains('_DevEnvCard')));
+      expect(src, isNot(contains('بيئة التطوير')));
+      expect(src, isNot(contains('ApiConstants.baseUrl')));
     });
   });
 

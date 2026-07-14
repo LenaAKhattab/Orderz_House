@@ -7,6 +7,8 @@ abstract final class AppRoutes {
   static const shell = '/';
   static const home = '/home';
   static const services = '/services';
+  static const courses = '/courses';
+  static const courseDetails = '/courses/:id';
   static const marketplace = '/marketplace';
   static const myOrders = '/my-orders';
   static const profile = '/profile';
@@ -21,6 +23,12 @@ abstract final class AppRoutes {
   static const freelancerFinancialClaims = '/freelancer/financial-claims';
   static const notifications = '/notifications';
 
+  static const accountSettings = '/account/settings';
+  static const accountEditProfile = '/account/edit-profile';
+  static const accountChangePassword = '/account/change-password';
+  static const accountDelete = '/account/delete';
+
+  static String courseDetailsPath(String id) => '/courses/$id';
   static String poolOrderPath(String id) => '/orders/pool/$id';
   static String clientOrderPath(String id) => '/client/orders/$id';
   static String freelancerOrderPath(String id) => '/freelancer/my-orders/$id';

@@ -35,10 +35,12 @@ describe("api rate limit config", () => {
     process.env.API_RATE_LIMIT_MAX = prevM;
   });
 
-  it("skips Stripe webhook and health paths", () => {
+  it("skips Stripe webhook, health, and auth paths from global bucket", () => {
     assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/webhooks/stripe" }), true);
     assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/health" }), true);
-    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/auth/login" }), false);
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/auth/login" }), true);
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/auth/logout" }), true);
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/public/popup-ads" }), false);
   });
 });
 

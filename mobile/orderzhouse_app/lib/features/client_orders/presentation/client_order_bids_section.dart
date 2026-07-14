@@ -166,6 +166,7 @@ class _ClientOrderBidsSectionState extends ConsumerState<ClientOrderBidsSection>
 
     return OrderSectionCard(
       title: 'عروض المستقلين',
+      icon: Icons.handshake_outlined,
       children: [
         if (_actionError != null) ...[
           OhErrorBanner(message: _actionError!),
@@ -196,17 +197,15 @@ class _ClientOrderBidsSectionState extends ConsumerState<ClientOrderBidsSection>
           ),
           data: (result) {
             if (!result.hasOpenPool && result.bids.isEmpty) {
-              return const Text(
-                'لا يمكن عرض العروض حاليًا (الطلب ليس مفتوحًا للمزايدة، أو تم إسناده).',
-                style: TextStyle(color: AppColors.textMuted, height: 1.5),
-                textAlign: TextAlign.right,
+              return const OrderEmptyHint(
+                message: 'لا يمكن عرض العروض حاليًا (الطلب ليس مفتوحًا للمزايدة، أو تم إسناده).',
+                icon: Icons.lock_outline_rounded,
               );
             }
             if (result.bids.isEmpty) {
-              return const Text(
-                'لم تصل عروض بعد',
-                style: TextStyle(color: AppColors.textMuted, height: 1.5),
-                textAlign: TextAlign.right,
+              return const OrderEmptyHint(
+                message: 'لم تصل عروض بعد',
+                icon: Icons.inbox_outlined,
               );
             }
 
@@ -255,44 +254,76 @@ class _BidCard extends StatelessWidget {
         : '—';
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.cardBorder),
-        borderRadius: BorderRadius.circular(12),
         color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cardBorder.withValues(alpha: 0.65)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            bid.freelancerLabel,
-            style: const TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 15,
-              color: AppColors.textInk,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  bid.freelancerLabel,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    color: AppColors.primaryDeep,
+                  ),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+              const SizedBox(width: 8),
+              OrderStatusBadge(label: bid.statusLabel, statusKey: bid.status, compact: true),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.payments_outlined, color: AppColors.success, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    amountText,
+                    style: const TextStyle(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 8),
-          OrderInfoRow(
-            label: 'مبلغ العرض',
-            value: amountText,
-            icon: Icons.payments_outlined,
-          ),
-          OrderInfoRow(
-            label: 'الحالة',
-            value: bid.statusLabel,
-            icon: Icons.flag_outlined,
-          ),
-          OrderInfoRow(
-            label: 'تاريخ العرض',
-            value: formatOrderDateLabel(bid.createdAt),
-            icon: Icons.calendar_today_outlined,
+          Text(
+            'تاريخ العرض: ${formatOrderDateLabel(bid.createdAt)}',
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+            textAlign: TextAlign.right,
           ),
           if (bid.message != null && bid.message!.trim().isNotEmpty) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 10),
             Text(
               bid.message!.trim(),
-              style: const TextStyle(color: AppColors.textInk, height: 1.5, fontSize: 14),
+              style: const TextStyle(color: AppColors.textInk, height: 1.55, fontSize: 13),
               textAlign: TextAlign.right,
             ),
           ],

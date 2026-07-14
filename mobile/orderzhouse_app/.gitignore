@@ -53,3 +53,6 @@ app.*.map.json
 !**/key.properties.example
 **/*.jks
 **/*.keystore
+android/key.properties
+android/keystores/*.jks
+android/app/*.jks

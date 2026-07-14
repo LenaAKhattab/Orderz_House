@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/oh_widgets.dart';
 import '../data/freelancer_eligibility_models.dart';
 import 'freelancer_eligibility_provider.dart';
 
+/// Shows eligibility status without any subscription / plans CTA (Play policy).
 class FreelancerEligibilityBanner extends ConsumerWidget {
   const FreelancerEligibilityBanner({super.key, this.compact = false});
 
@@ -25,7 +23,6 @@ class FreelancerEligibilityBanner extends ConsumerWidget {
         return _EligibilityCard(
           eligibility: eligibility,
           compact: compact,
-          onPlans: () => context.push(AppRoutes.freelancerPlans),
         );
       },
     );
@@ -36,12 +33,10 @@ class _EligibilityCard extends StatelessWidget {
   const _EligibilityCard({
     required this.eligibility,
     required this.compact,
-    required this.onPlans,
   });
 
   final FreelancerEligibility eligibility;
   final bool compact;
-  final VoidCallback onPlans;
 
   @override
   Widget build(BuildContext context) {
@@ -59,39 +54,26 @@ class _EligibilityCard extends StatelessWidget {
           color: isOk ? AppColors.secondary : AppColors.error.withValues(alpha: 0.35),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                isOk ? Icons.verified_outlined : Icons.info_outline,
-                color: isOk ? AppColors.primary : AppColors.error,
-                size: 22,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  message,
-                  style: TextStyle(
-                    color: AppColors.textInk,
-                    fontWeight: FontWeight.w600,
-                    height: 1.5,
-                    fontSize: compact ? 13 : 14,
-                  ),
-                ),
-              ),
-            ],
+          Icon(
+            isOk ? Icons.verified_outlined : Icons.info_outline,
+            color: isOk ? AppColors.primary : AppColors.error,
+            size: 22,
           ),
-          if (!isOk) ...[
-            const SizedBox(height: 10),
-            OhButton(
-              label: 'عرض الباقات',
-              outlined: true,
-              onPressed: onPlans,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: AppColors.textInk,
+                fontWeight: FontWeight.w600,
+                height: 1.5,
+                fontSize: compact ? 13 : 14,
+              ),
             ),
-          ],
+          ),
         ],
       ),
     );

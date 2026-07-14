@@ -120,7 +120,7 @@ void main() {
       expect(target?.route, AppRoutes.freelancerFinancialClaims);
     });
 
-    test('freelancer plans via link', () {
+    test('freelancer plans link opens profile (no plans UI)', () {
       final target = resolveNotificationAction(
         _notification(
           actionUrl: '/dashboard/freelancer/plans',
@@ -129,7 +129,8 @@ void main() {
         currentUserRole: 'freelancer',
       );
 
-      expect(target?.route, AppRoutes.freelancerPlans);
+      expect(target?.route, AppRoutes.profile);
+      expect(target?.buttonLabel, 'فتح حسابي');
     });
 
     test('financial_claim entity fallback', () {
@@ -145,7 +146,7 @@ void main() {
       expect(target?.route, AppRoutes.freelancerFinancialClaims);
     });
 
-    test('subscription entity fallback', () {
+    test('subscription entity fallback opens profile', () {
       final target = resolveNotificationAction(
         _notification(
           entityType: 'subscription',
@@ -155,10 +156,10 @@ void main() {
         currentUserRole: 'freelancer',
       );
 
-      expect(target?.route, AppRoutes.freelancerPlans);
+      expect(target?.route, AppRoutes.profile);
     });
 
-    test('plan entity fallback for freelancer', () {
+    test('plan entity fallback opens profile', () {
       final target = resolveNotificationAction(
         _notification(
           entityType: 'plan',
@@ -168,7 +169,7 @@ void main() {
         currentUserRole: 'freelancer',
       );
 
-      expect(target?.route, AppRoutes.freelancerPlans);
+      expect(target?.route, AppRoutes.profile);
     });
   });
 
@@ -240,14 +241,22 @@ void main() {
       );
     });
 
-    test('unsupported freelancer courses and profile', () {
-      expect(
-        resolveNotificationAction(
-          _notification(actionUrl: '/dashboard/freelancer/courses/1'),
-          currentUserRole: 'freelancer',
-        ),
-        isNull,
+    test('freelancer courses deep link and unsupported profile', () {
+      final course = resolveNotificationAction(
+        _notification(actionUrl: '/dashboard/freelancer/courses/1'),
+        currentUserRole: 'freelancer',
       );
+      expect(course, isNotNull);
+      expect(course!.route, AppRoutes.courseDetailsPath('1'));
+      expect(course.buttonLabel, 'فتح الدورة');
+
+      final coursesList = resolveNotificationAction(
+        _notification(actionUrl: '/dashboard/freelancer/courses'),
+        currentUserRole: 'freelancer',
+      );
+      expect(coursesList, isNotNull);
+      expect(coursesList!.route, AppRoutes.courses);
+
       expect(
         resolveNotificationAction(
           _notification(actionUrl: '/dashboard/freelancer/profile'),

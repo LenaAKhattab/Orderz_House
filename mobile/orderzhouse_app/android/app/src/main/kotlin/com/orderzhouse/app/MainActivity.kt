@@ -1,4 +1,4 @@
-package com.orderzhouse.orderzhouse_app
+package com.orderzhouse.app
 
 import io.flutter.embedding.android.FlutterActivity
 
