@@ -1,7 +1,7 @@
 name: orderzhouse_app
 description: Orderz House — client mobile app (Flutter MVP).
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.2+5
 
 environment:
   sdk: ^3.11.0
@@ -25,6 +25,10 @@ dependencies:
   flutter_dotenv: ^5.2.1
   path_provider: ^2.1.5
   open_filex: ^4.7.0
+  shared_preferences: ^2.5.5
+  webview_flutter: ^4.14.1
+  webview_flutter_android: ^4.12.0
+  webview_flutter_wkwebview: ^3.25.1
 
 dev_dependencies:
   flutter_test:
@@ -36,8 +40,10 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/branding/app_icon.png
-  adaptive_icon_background: "#2F3B65"
+  adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: assets/branding/app_icon.png
+  # Extra inset so the circular launch mask does not clip the mark.
+  adaptive_icon_foreground_inset: 22
   remove_alpha_ios: true
 
 flutter:

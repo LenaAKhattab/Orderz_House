@@ -1,3 +1,4 @@
+const bcrypt = require("bcrypt");
 const { pool } = require("../config/db");
 const { invalidateUserNotificationPreferences } = require("./notificationPreferenceCache");
 const { ROLES } = require("../constants/roles");
@@ -283,10 +284,61 @@ async function setAvatar(userId, { secureUrl, publicId }) {
   );
 }
 
+/**
+ * Self-service soft deactivate. Keeps orders/payments rows; blocks future login.
+ * Does not hard-delete the user row.
+ */
+async function deactivateOwnAccount(userId, legacyRole, { currentPassword, confirmation } = {}) {
+  const role = String(legacyRole || "").trim().toLowerCase();
+  if (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) {
+    throw createPublicApiError(
+      "لا يمكن تعطيل حساب إداري من هذه الواجهة. تواصل مع الدعم.",
+      403,
+      "FORBIDDEN",
+    );
+  }
+
+  const conf = String(confirmation || "").trim();
+  if (conf !== "حذف" && conf.toUpperCase() !== "DELETE") {
+    throw createPublicApiError('اكتب كلمة «حذف» للتأكيد.', 400, "CONFIRMATION_REQUIRED");
+  }
+
+  const { rows } = await pool.query(
+    `SELECT id, password_hash, is_active FROM users WHERE id = $1::bigint LIMIT 1`,
+    [userId],
+  );
+  const row = rows[0];
+  if (!row) {
+    throw createPublicApiError("المستخدم غير موجود.", 404, "NOT_FOUND");
+  }
+  if (row.is_active === false) {
+    throw createPublicApiError("هذا الحساب معطّل بالفعل.", 400, "ACCOUNT_ALREADY_DISABLED");
+  }
+
+  const match = await bcrypt.compare(String(currentPassword || ""), row.password_hash);
+  if (!match) {
+    throw createPublicApiError("كلمة المرور الحالية غير صحيحة.", 400, "INVALID_PASSWORD");
+  }
+
+  // Soft deactivate + clear optional contact/avatar fields. Preserve email, names, order history.
+  await pool.query(
+    `UPDATE users
+     SET is_active = FALSE,
+         phone = NULL,
+         whatsapp = NULL,
+         avatar_url = NULL,
+         avatar_public_id = NULL,
+         updated_at = NOW()
+     WHERE id = $1::bigint`,
+    [userId],
+  );
+}
+
 module.exports = {
   patchUserProfile,
   clearAvatar,
   setAvatar,
   patchBrowserNotificationStatus,
   markBrowserPromptAnswered,
+  deactivateOwnAccount,
 };

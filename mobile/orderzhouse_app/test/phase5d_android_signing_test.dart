@@ -9,7 +9,7 @@ void main() {
       expect(example, contains('YOUR_STORE_PASSWORD'));
       expect(example, contains('YOUR_KEY_PASSWORD'));
       expect(example, contains('keyAlias=upload'));
-      expect(example, contains('storeFile=app/upload-keystore.jks'));
+      expect(example, contains('storeFile=keystores/pitchbook-upload.jks'));
     });
 
     test('gitignore protects key.properties and keystores', () {
@@ -38,9 +38,10 @@ void main() {
       expect(gradle, isNot(contains('signingConfigs.getByName("debug")')));
     });
 
-    test('applicationId unchanged', () {
+    test('applicationId matches Google Play', () {
       final gradle = File('android/app/build.gradle.kts').readAsStringSync();
-      expect(gradle, contains('applicationId = "com.orderzhouse.orderzhouse_app"'));
+      expect(gradle, contains('applicationId = "com.orderzhouse.app"'));
+      expect(gradle, contains('namespace = "com.orderzhouse.app"'));
     });
 
     test('tracked files do not contain real store passwords', () {

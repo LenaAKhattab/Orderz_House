@@ -7,6 +7,7 @@ import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import 'auth_controller.dart';
+import 'auth_form_widgets.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -24,6 +25,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _password = TextEditingController();
   final _confirmPassword = TextEditingController();
   final _phoneNumber = TextEditingController(text: '790000000');
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
   bool _submitting = false;
   String? _error;
 
@@ -72,86 +75,114 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('إنشاء حساب')),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Text(
-            'حساب عميل جديد',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textInk,
-                ),
-            textAlign: TextAlign.right,
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'أدخل بياناتك بالعربية ثم أكّد بريدك برمز التحقق.',
-            textAlign: TextAlign.right,
-            style: TextStyle(color: AppColors.textMuted, height: 1.6),
-          ),
-          const SizedBox(height: 16),
-          OhCard(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  if (_error != null) ...[
-                    OhErrorBanner(message: _error!),
-                    const SizedBox(height: 12),
-                  ],
-                  OhTextField(
-                    controller: _firstName,
-                    label: 'الاسم الأول',
-                    validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  OhTextField(
-                    controller: _fatherName,
-                    label: 'اسم الأب',
-                    validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  OhTextField(
-                    controller: _familyName,
-                    label: 'اسم العائلة',
-                    validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  OhTextField(
-                    controller: _email,
-                    label: 'البريد الإلكتروني',
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (v) => v == null || !v.contains('@') ? 'بريد غير صالح' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  OhTextField(
-                    controller: _phoneNumber,
-                    label: 'رقم الجوال (بدون +962)',
-                    keyboardType: TextInputType.phone,
-                  ),
-                  const SizedBox(height: 12),
-                  OhTextField(
-                    controller: _password,
-                    label: 'كلمة المرور',
-                    obscureText: true,
-                    validator: (v) => v == null || v.length < 8 ? '8 أحرف على الأقل' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  OhTextField(
-                    controller: _confirmPassword,
-                    label: 'تأكيد كلمة المرور',
-                    obscureText: true,
-                    validator: (v) => v != _password.text ? 'غير مطابق' : null,
-                  ),
-                  const SizedBox(height: 20),
-                  OhButton(label: 'متابعة', isLoading: _submitting, onPressed: _submit),
-                ],
-              ),
+    return AuthScaffold(
+      showBack: true,
+      child: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+          children: [
+            const AuthHeroHeader(
+              title: 'إنشاء حساب',
+              subtitle: 'أدخل بياناتك ثم أكّد بريدك برمز التحقق.',
+              showLogo: false,
             ),
-          ),
-        ],
+            const SizedBox(height: 28),
+            if (_error != null) ...[
+              OhErrorBanner(message: _error!),
+              const SizedBox(height: 14),
+            ],
+            AuthPillField(
+              controller: _firstName,
+              hint: 'الاسم الأول',
+              prefixIcon: Icons.person_outline_rounded,
+              textInputAction: TextInputAction.next,
+              validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null,
+            ),
+            const SizedBox(height: 12),
+            AuthPillField(
+              controller: _fatherName,
+              hint: 'اسم الأب',
+              prefixIcon: Icons.badge_outlined,
+              textInputAction: TextInputAction.next,
+              validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null,
+            ),
+            const SizedBox(height: 12),
+            AuthPillField(
+              controller: _familyName,
+              hint: 'اسم العائلة',
+              prefixIcon: Icons.groups_outlined,
+              textInputAction: TextInputAction.next,
+              validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null,
+            ),
+            const SizedBox(height: 12),
+            AuthPillField(
+              controller: _email,
+              hint: 'البريد الإلكتروني',
+              prefixIcon: Icons.mail_outline_rounded,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              textDirection: TextDirection.ltr,
+              validator: (v) => v == null || !v.contains('@') ? 'بريد غير صالح' : null,
+            ),
+            const SizedBox(height: 12),
+            AuthPillField(
+              controller: _phoneNumber,
+              hint: 'رقم الجوال (بدون +962)',
+              prefixIcon: Icons.phone_iphone_rounded,
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+              textDirection: TextDirection.ltr,
+            ),
+            const SizedBox(height: 12),
+            AuthPillField(
+              controller: _password,
+              hint: 'كلمة المرور',
+              prefixIcon: Icons.lock_outline_rounded,
+              obscureText: _obscurePassword,
+              textInputAction: TextInputAction.next,
+              textDirection: TextDirection.ltr,
+              suffix: IconButton(
+                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  color: AppColors.textMuted,
+                ),
+              ),
+              validator: (v) => v == null || v.length < 8 ? '8 أحرف على الأقل' : null,
+            ),
+            const SizedBox(height: 12),
+            AuthPillField(
+              controller: _confirmPassword,
+              hint: 'تأكيد كلمة المرور',
+              prefixIcon: Icons.lock_outline_rounded,
+              obscureText: _obscureConfirm,
+              textInputAction: TextInputAction.done,
+              textDirection: TextDirection.ltr,
+              onFieldSubmitted: (_) => _submit(),
+              suffix: IconButton(
+                onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                icon: Icon(
+                  _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  color: AppColors.textMuted,
+                ),
+              ),
+              validator: (v) => v != _password.text ? 'غير مطابق' : null,
+            ),
+            const SizedBox(height: 28),
+            AuthPrimaryButton(
+              label: 'إنشاء حساب',
+              isLoading: _submitting,
+              onPressed: _submit,
+            ),
+            const SizedBox(height: 24),
+            AuthFooterLink(
+              prompt: 'لديك حساب بالفعل؟',
+              actionLabel: 'تسجيل الدخول',
+              onTap: () => context.go(AppRoutes.login),
+            ),
+          ],
+        ),
       ),
     );
   }

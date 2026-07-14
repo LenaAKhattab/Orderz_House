@@ -28,6 +28,14 @@ const {
   submitClientReviewValidators,
   updateClientReviewValidators,
 } = require("../validators/freelancerReviewsValidators");
+const {
+  clientOrderCreateBurstLimiter,
+  clientOrderCreateHourlyLimiter,
+  orderBidTakeLimiter,
+} = require("../middleware/orderWriteRateLimiters");
+const { createOrderConcurrencyGuard } = require("../middleware/orderCreateConcurrency");
+
+const clientOrderCreateConcurrency = createOrderConcurrencyGuard({ maxConcurrent: 1 });
 
 const router = express.Router();
 
@@ -54,6 +62,9 @@ router.post(
   "/client/orders",
   requireAuth,
   requireRole("client"),
+  clientOrderCreateBurstLimiter,
+  clientOrderCreateHourlyLimiter,
+  clientOrderCreateConcurrency,
   uploadOrderFiles,
   handleOrderUploadErrors,
   enforceOrderUploadTotalSize,
@@ -249,6 +260,7 @@ router.post(
   "/orders/pool/fake/:id/bids",
   requireAuth,
   requireRole("freelancer"),
+  orderBidTakeLimiter,
   orderIdParam,
   submitPoolOrderBidValidators,
   validateRequest,
@@ -258,6 +270,7 @@ router.post(
   "/orders/pool/fake/:id/take",
   requireAuth,
   requireRole("freelancer"),
+  orderBidTakeLimiter,
   orderIdParam,
   validateRequest,
   ordersController.takeFakePoolOrder,
@@ -266,6 +279,7 @@ router.post(
   "/orders/pool/:id/take",
   requireAuth,
   requireRole("freelancer"),
+  orderBidTakeLimiter,
   orderIdParam,
   validateRequest,
   ordersController.takeUnifiedPoolOrder,
@@ -274,6 +288,7 @@ router.post(
   "/orders/pool/:id/bids",
   requireAuth,
   requireRole("freelancer"),
+  orderBidTakeLimiter,
   orderIdParam,
   submitPoolOrderBidValidators,
   validateRequest,
@@ -284,6 +299,7 @@ router.post(
   "/orders/:id/take",
   requireAuth,
   requireRole("freelancer"),
+  orderBidTakeLimiter,
   orderIdParam,
   validateRequest,
   requireFreelancerCanClaimOrderParam,

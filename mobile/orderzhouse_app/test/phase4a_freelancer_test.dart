@@ -65,7 +65,7 @@ void main() {
       expect(eligibility.reason, 'no_subscription');
       expect(
         freelancerEligibilityMessageAr(eligibility),
-        contains('غير مشترك'),
+        contains('مراجعة الإدارة'),
       );
     });
 

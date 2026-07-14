@@ -8,9 +8,10 @@ enum ProfileActionId {
   createOrder,
   notifications,
   legalHelp,
-  freelancerPlans,
   financialClaims,
   marketplace,
+  services,
+  courses,
   login,
   register,
 }
@@ -35,7 +36,8 @@ enum ProfileSettingsId {
   aboutApp,
   terms,
   privacy,
-  helpCenter,
+  contactUs,
+  accountSettings,
 }
 
 class ProfileSettingsItem {
@@ -93,10 +95,16 @@ List<ProfileActionItem> profileQuickActionsForUser(AuthUser user) {
         route: AppRoutes.myOrders,
       ),
       ProfileActionItem(
-        id: ProfileActionId.freelancerPlans,
-        label: 'الباقات',
-        icon: Icons.workspace_premium_outlined,
-        route: AppRoutes.freelancerPlans,
+        id: ProfileActionId.courses,
+        label: 'دوراتي التدريبية',
+        icon: Icons.school_outlined,
+        route: AppRoutes.courses,
+      ),
+      ProfileActionItem(
+        id: ProfileActionId.services,
+        label: 'الخدمات والتصنيفات',
+        icon: Icons.grid_view_rounded,
+        route: AppRoutes.services,
       ),
       ProfileActionItem(
         id: ProfileActionId.financialClaims,
@@ -131,6 +139,12 @@ List<ProfileActionItem> profileQuickActionsForUser(AuthUser user) {
       label: 'إنشاء طلب',
       icon: Icons.add_circle_outline,
       route: AppRoutes.clientCreateOrder,
+    ),
+    ProfileActionItem(
+      id: ProfileActionId.services,
+      label: 'الخدمات والتصنيفات',
+      icon: Icons.grid_view_rounded,
+      route: AppRoutes.services,
     ),
     ProfileActionItem(
       id: ProfileActionId.notifications,
@@ -172,6 +186,17 @@ List<ProfileActionItem> profileGuestQuickActions() {
   ];
 }
 
+List<ProfileSettingsItem> profileAccountManagementItems() {
+  return const [
+    ProfileSettingsItem(
+      id: ProfileSettingsId.accountSettings,
+      label: 'إعدادات الحساب',
+      icon: Icons.manage_accounts_outlined,
+      route: AppRoutes.accountSettings,
+    ),
+  ];
+}
+
 List<ProfileSettingsItem> profileSettingsItems({required bool isAuthenticated}) {
   return [
     if (isAuthenticated)
@@ -204,11 +229,10 @@ List<ProfileSettingsItem> profileSettingsItems({required bool isAuthenticated}) 
       icon: Icons.privacy_tip_outlined,
       route: AppRoutes.publicPagePath(AppRoutes.privacyPolicy),
     ),
-    ProfileSettingsItem(
-      id: ProfileSettingsId.helpCenter,
-      label: 'مركز المساعدة',
-      icon: Icons.support_agent_outlined,
-      route: AppRoutes.helpCenterPublicRoute,
+    const ProfileSettingsItem(
+      id: ProfileSettingsId.contactUs,
+      label: 'تواصل معنا',
+      icon: Icons.chat_outlined,
     ),
   ];
 }
@@ -218,12 +242,13 @@ bool profileActionAllowedForUser(ProfileActionId id, AuthUser user) {
     case ProfileActionId.createOrder:
       return user.usesClientExperience;
     case ProfileActionId.financialClaims:
-    case ProfileActionId.freelancerPlans:
+    case ProfileActionId.courses:
       return user.usesFreelancerExperience;
     case ProfileActionId.myOrders:
     case ProfileActionId.notifications:
     case ProfileActionId.legalHelp:
     case ProfileActionId.marketplace:
+    case ProfileActionId.services:
     case ProfileActionId.login:
     case ProfileActionId.register:
       return true;

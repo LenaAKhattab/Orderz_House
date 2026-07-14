@@ -93,6 +93,23 @@ const deleteAvatar = async (req, res, next) => {
   }
 };
 
+const deactivateAccount = async (req, res, next) => {
+  try {
+    const { currentPassword, confirmation } = req.body || {};
+    await profileService.deactivateOwnAccount(req.auth.userId, req.auth.legacyRole, {
+      currentPassword,
+      confirmation,
+    });
+    return res.status(200).json({
+      success: true,
+      message: "تم تعطيل حسابك بنجاح. لن تتمكن من تسجيل الدخول بعد الآن.",
+      data: { deactivated: true },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const patchBrowserNotifications = async (req, res, next) => {
   try {
     const status = req.body?.status;
@@ -140,4 +157,5 @@ module.exports = {
   patchPassword,
   patchAvatar,
   deleteAvatar,
+  deactivateAccount,
 };

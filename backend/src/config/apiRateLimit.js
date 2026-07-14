@@ -1,5 +1,7 @@
 /**
- * General /api rate limit — configurable via env. Does not replace auth-specific limiters.
+ * General /api rate limit — configurable via env. Does not replace auth-specific
+ * or order-write limiters. Auth and dedicated write paths are skipped so one
+ * user's create-order flood cannot block login/logout for the same IP.
  */
 
 function parsePositiveInt(name, fallback) {
@@ -14,8 +16,11 @@ function parsePositiveInt(name, fallback) {
 
 /** 15 minutes */
 const DEFAULT_WINDOW_MS = 15 * 60 * 1000;
-/** ~20 req/min average — enough for normal SPA use without choking dashboards */
-const DEFAULT_MAX = 300;
+/**
+ * General read/browse budget per IP after auth + write endpoints are excluded.
+ * SPA dashboards (notifications, ads, site-pages) share this bucket.
+ */
+const DEFAULT_MAX = 450;
 
 function getApiRateLimitWindowMs() {
   return parsePositiveInt("API_RATE_LIMIT_WINDOW_MS", DEFAULT_WINDOW_MS);
@@ -34,4 +39,5 @@ module.exports = {
   getApiRateLimitWindowMs,
   getApiRateLimitMax,
   isApiRateLimitEnabled,
+  DEFAULT_MAX,
 };

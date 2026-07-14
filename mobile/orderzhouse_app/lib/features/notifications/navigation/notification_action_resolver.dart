@@ -68,7 +68,6 @@ bool _isBlockedDashboardPath(String link) {
   if (normalized == '/dashboard') return true;
   if (normalized.startsWith('/dashboard/admin')) return true;
   if (normalized.startsWith('/dashboard/super-admin')) return true;
-  if (normalized.startsWith('/dashboard/freelancer/courses')) return true;
   if (normalized == '/dashboard/freelancer/profile' ||
       normalized.startsWith('/dashboard/freelancer/profile/')) {
     return true;
@@ -94,10 +93,29 @@ NotificationActionTarget? _resolveFromDashboardLink(
   }
 
   if (path == '/dashboard/freelancer/plans') {
+    // Phase 5K: no in-app plans screen — open profile instead of subscription UI.
     if (role != 'freelancer') return null;
     return const NotificationActionTarget(
-      route: AppRoutes.freelancerPlans,
-      buttonLabel: 'فتح الخطط',
+      route: AppRoutes.profile,
+      buttonLabel: 'فتح حسابي',
+    );
+  }
+
+  if (path == '/dashboard/freelancer/courses') {
+    if (role != 'freelancer') return null;
+    return const NotificationActionTarget(
+      route: AppRoutes.courses,
+      buttonLabel: 'فتح الدورات',
+    );
+  }
+
+  final courseMatch = RegExp(r'^/dashboard/freelancer/courses/(\d+)$').firstMatch(path);
+  if (courseMatch != null) {
+    if (role != 'freelancer') return null;
+    final id = courseMatch.group(1)!;
+    return NotificationActionTarget(
+      route: AppRoutes.courseDetailsPath(id),
+      buttonLabel: 'فتح الدورة',
     );
   }
 
@@ -146,10 +164,11 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
   }
 
   if (entityType == 'subscription' || entityType == 'plan') {
+    // Phase 5K: do not deep-link into removed plans UI.
     if (role != 'freelancer') return null;
     return const NotificationActionTarget(
-      route: AppRoutes.freelancerPlans,
-      buttonLabel: 'فتح الخطط',
+      route: AppRoutes.profile,
+      buttonLabel: 'فتح حسابي',
     );
   }
 

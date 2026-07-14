@@ -218,6 +218,11 @@ const Footer = ({ homeBlend = false }) => {
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link to="/account-deletion" className={footerLinkClass(pathname, "/account-deletion")}>
+                  {t("footer.importantLinks.accountDeletion")}
+                </Link>
+              </li>
             </ul>
           </details>
         ) : null}

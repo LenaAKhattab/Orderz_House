@@ -34,17 +34,13 @@ String freelancerEligibilityMessageAr(FreelancerEligibility eligibility) {
     case 'company_activation_pending':
       return 'بانتظار موافقة الإدارة قبل بدء استلام الطلبات.';
     case 'no_subscription':
-      return 'لا يمكنك استلام الطلبات حالياً لأنك غير مشترك. راجع الباقات.';
     case 'status_inactive':
     case 'status_cancelled':
-      return 'اشتراكك غير نشط حالياً. راجع الباقات.';
     case 'payment_not_completed':
-      return 'تعذر تفعيل استلام الطلبات لأن حالة الدفع للاشتراك غير مكتملة.';
     case 'expired':
-      return 'اشتراكك منتهٍ. راجع الباقات لتجديد الاشتراك.';
     case 'activation_fee_unpaid':
-      return 'يجب دفع رسوم التفعيل السنوية قبل استلام الطلبات.';
+      return 'حسابك غير مؤهل حاليًا لتنفيذ هذا الإجراء. يرجى مراجعة الإدارة.';
     default:
-      return 'حسابك غير مؤهل حالياً لاستلام طلبات من السوق (تحقق من الاشتراك).';
+      return 'حسابك غير مؤهل حاليًا لتنفيذ هذا الإجراء. يرجى مراجعة الإدارة.';
   }
 }

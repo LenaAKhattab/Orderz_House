@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -8,6 +7,7 @@ import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import 'auth_controller.dart';
+import 'auth_form_widgets.dart';
 
 class OtpVerificationScreen extends ConsumerStatefulWidget {
   const OtpVerificationScreen({super.key, required this.email});
@@ -19,18 +19,12 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
 }
 
 class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
-  final _otpController = TextEditingController();
+  String _otp = '';
   bool _submitting = false;
   String? _error;
 
-  @override
-  void dispose() {
-    _otpController.dispose();
-    super.dispose();
-  }
-
   Future<void> _submit() async {
-    final otp = _otpController.text.trim();
+    final otp = _otp.trim();
     if (otp.length != 6) {
       setState(() => _error = 'أدخل رمز التحقق المكوّن من 6 أرقام.');
       return;
@@ -55,49 +49,39 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('تأكيد البريد')),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+    return AuthScaffold(
+      showBack: true,
+      onBack: () => context.go(AppRoutes.login),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
         children: [
-          OhCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'أدخل رمز التحقق',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textInk,
-                      ),
-                  textAlign: TextAlign.right,
+          AuthHeroHeader(
+            title: 'أدخل رمز التحقق',
+            subtitle: 'أرسلنا رمزًا مكوّنًا من 6 أرقام إلى\n${widget.email}',
+          ),
+          const SizedBox(height: 32),
+          if (_error != null) ...[
+            OhErrorBanner(message: _error!),
+            const SizedBox(height: 14),
+          ],
+          AuthOtpBoxes(
+            length: 6,
+            onChanged: (value) => setState(() => _otp = value),
+          ),
+          const SizedBox(height: 28),
+          AuthPrimaryButton(
+            label: 'تأكيد',
+            isLoading: _submitting,
+            onPressed: _submit,
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'لم يصلك الرمز؟ تحقق من البريد الوارد أو مجلد الرسائل غير المرغوب فيها.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textMuted,
+                  height: 1.5,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'أرسلنا رمزاً إلى ${widget.email}',
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(color: AppColors.textMuted, height: 1.6),
-                ),
-                const SizedBox(height: 16),
-                if (_error != null) ...[
-                  OhErrorBanner(message: _error!),
-                  const SizedBox(height: 12),
-                ],
-                TextFormField(
-                  controller: _otpController,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  maxLength: 6,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: const InputDecoration(
-                    labelText: 'رمز التحقق',
-                    counterText: '',
-                  ),
-                ),
-                const SizedBox(height: 20),
-                OhButton(label: 'تأكيد', isLoading: _submitting, onPressed: _submit),
-              ],
-            ),
           ),
         ],
       ),

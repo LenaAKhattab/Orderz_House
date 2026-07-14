@@ -1,6 +1,8 @@
-# Temporary brand assets (Phase 5B)
+# Brand assets
 
-- `app_icon.png` — interim launcher icon (OH mark on Orderz House navy `#2F3B65`).
-- Replace with the official logo when brand assets are delivered.
+- `company_logo.png` — official Orderz House mark (transparent; for in-app auth/splash).
+- `app_icon.png` — launcher icon (same mark on white background).
+- `splash_mark.png` — Android splash drawable source.
 
-Generated via `flutter_launcher_icons` for Android/iOS platform icons.
+Used via `AppBranding.logoAsset` (`company_logo.png`) in auth, splash, and brand surfaces.
+Launcher icons generated from `app_icon.png` via `flutter_launcher_icons`.
