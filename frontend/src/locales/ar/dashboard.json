@@ -60,6 +60,7 @@
       "usersSubscriptions": "المستخدمون والاشتراكات",
       "contentTraining": "المحتوى والتدريب",
       "websiteSettings": "إعدادات الموقع",
+      "institutions": "المؤسسات",
       "administration": "الإدارة والتحكم"
     },
     "superAdmin": {
@@ -77,6 +78,8 @@
       "trainingRequests": "الطلبات التجريبية",
       "admins": "إدارة الأدمن",
       "rateLimitExemptions": "استثناءات Rate Limit",
+      "institutions": "المؤسسات",
+      "institutionsManagement": "إدارة المؤسسات",
       "editWebsite": "تعديل الموقع",
       "createRequest": "إنشاء طلب",
       "panelTitle": "لوحة المدير الأعلى",
@@ -119,6 +122,7 @@
     "trainingRequests": "الطلبات التجريبية",
     "admins": "إدارة الأدمن",
     "rateLimitExemptions": "استثناءات Rate Limit",
+    "institutions": "المؤسسات",
     "adminHome": "لوحة الإدارة",
     "managePlans": "إدارة الباقات",
     "manageCourses": "إدارة الدورات",
@@ -140,6 +144,13 @@
     "groups": {
       "platform": "صفحات لوحة التحكم"
     }
+  },
+  "institutions": {
+    "title": "المؤسسات",
+    "description": "إدارة المؤسسات والجهات المرتبطة بالمنصة",
+    "sectionTitle": "المؤسسات",
+    "placeholderTitle": "قريباً",
+    "placeholderDescription": "سيتم إضافة إدارة المؤسسات وبياناتها في المرحلة القادمة"
   },
   "financialCenter": {
     "title": "المركز المالي",

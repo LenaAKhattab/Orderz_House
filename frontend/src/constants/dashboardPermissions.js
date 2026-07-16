@@ -22,6 +22,8 @@ export const SUPER_ADMIN_PAGE_PERMISSIONS = {
   editWebsite: "dashboard.super_admin.edit_website",
   /** Super Admin only — not in ASSIGNABLE_DASHBOARD_PERMISSIONS */
   rateLimitExemptions: "dashboard.super_admin.rate_limit_exemptions",
+  /** Super Admin only — placeholder page; not in ASSIGNABLE_DASHBOARD_PERMISSIONS */
+  institutions: "dashboard.super_admin.institutions",
 };
 
 /** All assignable dashboard page permission keys (mirrors backend ASSIGNABLE_ADMIN_PERMISSIONS). */
@@ -52,6 +54,7 @@ const SUPER_ADMIN_ROUTE_RULES = [
   { prefix: "/dashboard/super-admin/financial-claims", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims },
   { prefix: "/dashboard/super-admin/admins", permission: SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage },
   { prefix: "/dashboard/super-admin/rate-limit-exemptions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.rateLimitExemptions },
+  { prefix: "/dashboard/super-admin/institutions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutions },
   { prefix: "/dashboard/super-admin/plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { prefix: "/dashboard/super-admin/courses", permission: ADMIN_PAGE_PERMISSIONS.courses },
   { prefix: "/dashboard/super-admin/ads", permission: ADMIN_PAGE_PERMISSIONS.ads },
@@ -83,6 +86,7 @@ const SUPER_ADMIN_SHELL_NAV_ORDER = [
   { to: "/dashboard/super-admin/training-orders", permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders },
   { to: "/dashboard/super-admin/admins", permission: SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage },
   { to: "/dashboard/super-admin/rate-limit-exemptions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.rateLimitExemptions },
+  { to: "/dashboard/super-admin/institutions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutions },
   { to: "/dashboard/super-admin/edit-website", permission: SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite },
 ];
 

@@ -51,6 +51,9 @@ export const SuperAdminAdminsPage = lazy(() => import("../pages/dashboard/SuperA
 export const SuperAdminRateLimitExemptionsPage = lazy(
   () => import("../pages/dashboard/SuperAdminRateLimitExemptionsPage"),
 );
+export const SuperAdminInstitutionsPage = lazy(
+  () => import("../pages/dashboard/SuperAdminInstitutionsPage"),
+);
 export const SuperAdminEditWebsitePage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsitePage"));
 export const SuperAdminEditWebsiteFaqPage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsiteFaqPage"));
 export const SuperAdminSitePagesPage = lazy(() => import("../pages/dashboard/SuperAdminSitePagesPage"));

@@ -751,6 +751,7 @@
       "paymentIncomplete": "Order intake could not be enabled because subscription payment is incomplete.",
       "expired": "Your subscription has expired. Please renew to receive orders.",
       "activationFeeUnpaid": "Pay the yearly activation fee before receiving orders.",
+      "planConfigurationError": "Your plan configuration needs correction before orders are available.",
       "generic": "Your account is not currently eligible for marketplace orders (check your subscription)."
     }
   },

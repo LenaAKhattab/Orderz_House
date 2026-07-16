@@ -19,6 +19,109 @@ function resolveCheckoutPlanId(row) {
   return Number(row.id);
 }
 
+/**
+ * Resolve the plan id that should be stored on freelancer_subscriptions.
+ * Display/marketing clones with subscription_plan_id map to the canonical subscription plan.
+ * Does not invent ids — follows the DB relationship only.
+ *
+ * @returns {Promise<{
+ *   assignmentPlanId: number,
+ *   selectedPlanId: number,
+ *   displayPlanId: number | null,
+ *   durationDays: number,
+ *   resolvedFromDisplay: boolean,
+ * }>}
+ */
+async function resolveAssignableSubscriptionPlanId(selectedPlanId, client) {
+  const runner = client || pool;
+  const pid = Number(selectedPlanId);
+  if (!Number.isInteger(pid) || pid < 1) {
+    const err = new Error("Invalid plan id.");
+    err.statusCode = 400;
+    err.reason = "invalid_plan_id";
+    throw err;
+  }
+
+  const { rows } = await runner.query(
+    `SELECT id, is_active, deleted_at, subscription_plan_id, duration_days, name, title
+     FROM plans
+     WHERE id = $1::bigint
+     LIMIT 1`,
+    [pid],
+  );
+  const selected = rows[0];
+  if (!selected || selected.deleted_at) {
+    const err = new Error("Plan not found.");
+    err.statusCode = 404;
+    err.reason = "plan_not_found";
+    throw err;
+  }
+  if (!selected.is_active) {
+    const err = new Error("Plan is inactive.");
+    err.statusCode = 400;
+    err.reason = "plan_inactive";
+    throw err;
+  }
+
+  const linkedRaw = selected.subscription_plan_id;
+  if (linkedRaw == null || linkedRaw === "") {
+    return {
+      assignmentPlanId: pid,
+      selectedPlanId: pid,
+      displayPlanId: null,
+      durationDays: Number(selected.duration_days),
+      resolvedFromDisplay: false,
+    };
+  }
+
+  const linkedId = Number(linkedRaw);
+  if (!Number.isInteger(linkedId) || linkedId < 1) {
+    const err = new Error("الخطة المحددة مرتبطة بمعرّف اشتراك غير صالح.");
+    err.statusCode = 400;
+    err.reason = "invalid_subscription_plan_id";
+    throw err;
+  }
+
+  if (linkedId === pid) {
+    return {
+      assignmentPlanId: pid,
+      selectedPlanId: pid,
+      displayPlanId: null,
+      durationDays: Number(selected.duration_days),
+      resolvedFromDisplay: false,
+    };
+  }
+
+  const { rows: canonRows } = await runner.query(
+    `SELECT id, is_active, deleted_at, duration_days, subscription_plan_id, name, title
+     FROM plans
+     WHERE id = $1::bigint
+     LIMIT 1`,
+    [linkedId],
+  );
+  const canon = canonRows[0];
+  if (!canon || canon.deleted_at) {
+    const err = new Error("الخطة الأساسية المرتبطة بهذه الباقة غير موجودة.");
+    err.statusCode = 400;
+    err.reason = "canonical_plan_not_found";
+    throw err;
+  }
+  if (!canon.is_active) {
+    const err = new Error("الخطة الأساسية المرتبطة بهذه الباقة غير نشطة.");
+    err.statusCode = 400;
+    err.reason = "canonical_plan_inactive";
+    throw err;
+  }
+
+  return {
+    assignmentPlanId: linkedId,
+    selectedPlanId: pid,
+    displayPlanId: pid,
+    durationDays: Number(canon.duration_days),
+    resolvedFromDisplay: true,
+  };
+}
+
 async function attachFeaturesToPlans(rows) {
   const planIds = rows.map((r) => Number(r.id));
   const featureMap = await planFeaturesService.loadFeaturesByPlanIds(planIds);
@@ -502,6 +605,7 @@ module.exports = {
   mapPlan,
   attachFeaturesToPlans,
   resolveCheckoutPlanId,
+  resolveAssignableSubscriptionPlanId,
   resolvePlanRowForCheckout,
   listPlans,
   listVisibleActivePlans,

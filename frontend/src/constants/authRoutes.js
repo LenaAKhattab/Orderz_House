@@ -209,6 +209,7 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/freelancer/courses": [ROLE.FREELANCER],
   "/dashboard/freelancer/notifications": [ROLE.FREELANCER],
   "/dashboard/super-admin/notifications": [ROLE.SUPER_ADMIN],
+  "/dashboard/super-admin/institutions": [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/courses": STAFF_DASHBOARD_ROLES,
   "/dashboard/super-admin/ads": STAFF_DASHBOARD_ROLES,
   "/dashboard/super-admin/training-orders": STAFF_DASHBOARD_ROLES,

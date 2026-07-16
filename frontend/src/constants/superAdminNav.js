@@ -109,6 +109,15 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.rateLimitExemptions,
   },
+  institutions: {
+    key: "institutions",
+    to: "/dashboard/super-admin/institutions",
+    labelKey: "dashboard.nav.superAdmin.institutionsManagement",
+    icon: "🏢",
+    end: true,
+    matchPrefix: "/dashboard/super-admin/institutions",
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutions,
+  },
 };
 
 export const SUPER_ADMIN_NAV_SECTION_DEFS = [
@@ -142,6 +151,11 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
     id: "websiteSettings",
     labelKey: "dashboard.nav.sections.websiteSettings",
     itemKeys: ["editWebsite"],
+  },
+  {
+    id: "institutions",
+    labelKey: "dashboard.nav.sections.institutions",
+    itemKeys: ["institutions"],
   },
   {
     id: "administration",
@@ -190,6 +204,9 @@ export function superAdminBreadcrumbKeys(pathname) {
   }
   if (pathname.includes("/rate-limit-exemptions")) {
     return [...base, "dashboard.breadcrumbs.rateLimitExemptions"];
+  }
+  if (pathname.includes("/institutions")) {
+    return [...base, "dashboard.breadcrumbs.institutions"];
   }
   if (pathname.includes("/admins")) return [...base, "dashboard.breadcrumbs.admins"];
   if (pathname.includes("/edit-website/how-it-works/")) {

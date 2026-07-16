@@ -29,6 +29,9 @@ export function getFreelancerOrderEligibilityMessage(eligibility, subscription =
     if (reason === "activation_fee_unpaid") {
       return t("freelancerDashboard.status.eligibility.activationFeeUnpaid");
     }
+    if (reason === "plan_configuration_error") {
+      return t("freelancerDashboard.status.eligibility.planConfigurationError");
+    }
     return t("freelancerDashboard.status.eligibility.generic");
   }
 
@@ -54,6 +57,10 @@ export function getFreelancerOrderEligibilityMessage(eligibility, subscription =
 
   if (reason === "activation_fee_unpaid") {
     return "يجب دفع رسوم التفعيل السنوية قبل استلام الطلبات.";
+  }
+
+  if (reason === "plan_configuration_error") {
+    return "الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات.";
   }
 
   return "حسابك غير مؤهل حالياً لاستلام طلبات من المعرض (تحقق من الاشتراك).";

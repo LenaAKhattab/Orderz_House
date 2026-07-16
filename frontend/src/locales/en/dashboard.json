@@ -60,6 +60,7 @@
       "usersSubscriptions": "Users & subscriptions",
       "contentTraining": "Content & training",
       "websiteSettings": "Website settings",
+      "institutions": "Institutions",
       "administration": "Administration"
     },
     "superAdmin": {
@@ -77,6 +78,8 @@
       "trainingRequests": "Training requests",
       "admins": "Admin management",
       "rateLimitExemptions": "Rate limit exemptions",
+      "institutions": "Institutions",
+      "institutionsManagement": "Institutions Management",
       "editWebsite": "Edit website",
       "createRequest": "Create request",
       "panelTitle": "Super admin dashboard",
@@ -119,6 +122,7 @@
     "trainingRequests": "Training requests",
     "admins": "Admin management",
     "rateLimitExemptions": "Rate limit exemptions",
+    "institutions": "Institutions",
     "adminHome": "Admin dashboard",
     "managePlans": "Package management",
     "manageCourses": "Course management",
@@ -140,6 +144,13 @@
     "groups": {
       "platform": "Dashboard pages"
     }
+  },
+  "institutions": {
+    "title": "Institutions",
+    "description": "Manage institutions and entities linked to the platform",
+    "sectionTitle": "Institutions",
+    "placeholderTitle": "Coming soon",
+    "placeholderDescription": "Institution management and data will be added in the next phase"
   },
   "financialCenter": {
     "title": "Financial center",

@@ -50,6 +50,7 @@ import {
   SuperAdminSettingsPage,
   SuperAdminAdminsPage,
   SuperAdminRateLimitExemptionsPage,
+  SuperAdminInstitutionsPage,
   SuperAdminEditWebsitePage,
   SuperAdminEditWebsiteFaqPage,
   SuperAdminSitePagesPage,
@@ -356,6 +357,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
                       <SuperAdminRateLimitExemptionsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/institutions"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminInstitutionsPage />
                     </RequireRole>
                   }
                 />
