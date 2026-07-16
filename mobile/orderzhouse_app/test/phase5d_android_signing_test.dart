@@ -44,6 +44,40 @@ void main() {
       expect(gradle, contains('namespace = "com.orderzhouse.app"'));
     });
 
+    test('AndroidManifest removes broad photo/video storage permissions', () {
+      final manifest =
+          File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+      expect(manifest, contains('xmlns:tools="http://schemas.android.com/tools"'));
+      expect(manifest, contains('android.permission.READ_MEDIA_IMAGES'));
+      expect(manifest, contains('android.permission.READ_MEDIA_VIDEO'));
+      expect(manifest, contains('android.permission.READ_EXTERNAL_STORAGE'));
+      expect(manifest, contains('android.permission.MANAGE_EXTERNAL_STORAGE'));
+      expect(
+        RegExp(
+          r'android:name="android\.permission\.READ_MEDIA_IMAGES"\s+tools:node="remove"',
+        ).hasMatch(manifest),
+        isTrue,
+      );
+      expect(
+        RegExp(
+          r'android:name="android\.permission\.READ_MEDIA_VIDEO"\s+tools:node="remove"',
+        ).hasMatch(manifest),
+        isTrue,
+      );
+      expect(
+        RegExp(
+          r'android:name="android\.permission\.READ_EXTERNAL_STORAGE"\s+tools:node="remove"',
+        ).hasMatch(manifest),
+        isTrue,
+      );
+      expect(
+        RegExp(
+          r'android:name="android\.permission\.MANAGE_EXTERNAL_STORAGE"\s+tools:node="remove"',
+        ).hasMatch(manifest),
+        isTrue,
+      );
+    });
+
     test('tracked files do not contain real store passwords', () {
       final example = File('android/key.properties.example').readAsStringSync();
       final gradle = File('android/app/build.gradle.kts').readAsStringSync();
