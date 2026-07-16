@@ -1,0 +1,154 @@
+.oh-rle-warning {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #e2b86b;
+  background: #fff8e8;
+  color: #5c4813;
+  border-radius: 8px;
+  line-height: 1.55;
+  font-size: 0.92rem;
+}
+
+.oh-rle-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.oh-rle-table-wrap {
+  overflow-x: auto;
+}
+
+.oh-rle-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.oh-rle-table th,
+.oh-rle-table td {
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid #e8e6e1;
+  text-align: right;
+  vertical-align: top;
+}
+
+.oh-rle-user {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.oh-rle-user small {
+  color: #6b7280;
+}
+
+.oh-rle-reason {
+  max-width: 220px;
+  white-space: pre-wrap;
+}
+
+.oh-rle-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 20, 20, 0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4vh 1rem;
+  z-index: 80;
+  overflow: auto;
+}
+
+.oh-rle-modal {
+  width: min(560px, 100%);
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem 1.35rem 1.4rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.oh-rle-modal h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.oh-rle-modal__hint {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.oh-rle-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.oh-rle-field input,
+.oh-rle-field select,
+.oh-rle-field textarea {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+}
+
+.oh-rle-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.oh-rle-user-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 160px;
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.oh-rle-user-results button {
+  width: 100%;
+  text-align: right;
+  border: 0;
+  background: transparent;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.oh-rle-user-results button:hover,
+.oh-rle-user-results button.is-selected {
+  background: #f3f4f6;
+}
+
+.oh-rle-selected {
+  font-size: 0.88rem;
+  color: #065f46;
+}
+
+.oh-rle-muted {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.oh-rle-form-error {
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
+.oh-rle-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}

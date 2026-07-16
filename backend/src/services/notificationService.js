@@ -3,6 +3,7 @@ const { sanitizeNotificationForViewer } = require("../utils/notificationViewerSa
 const { isAllowedByPreferences } = require("../utils/notificationPreferenceRules");
 const { getUserNotificationPreferences } = require("./notificationPreferenceCache");
 const realtimeHub = require("./notificationRealtimeHub");
+const { queuePushForNotification } = require("./fcmPushService");
 
 function getRunner(client) {
   return client || pool;
@@ -144,6 +145,7 @@ async function createNotification(data, client) {
   );
   const mapped = mapNotification(rows[0]);
   publishRealtime(mapped);
+  queuePushForNotification(mapped);
   return mapped;
 }
 
@@ -185,7 +187,10 @@ async function createManyNotifications(items, client) {
     values,
   );
   const mapped = rows.map(mapNotification);
-  mapped.forEach(publishRealtime);
+  mapped.forEach((n) => {
+    publishRealtime(n);
+    queuePushForNotification(n);
+  });
   return mapped;
 }
 
@@ -220,6 +225,7 @@ async function createIfNotExists(data, dedupeKey, client) {
   if (rows[0]) {
     const mapped = mapNotification(rows[0]);
     publishRealtime(mapped);
+    queuePushForNotification(mapped);
     return mapped;
   }
   if (!input.dedupeKey) return null;

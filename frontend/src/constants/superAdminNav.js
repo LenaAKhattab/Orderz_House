@@ -101,6 +101,14 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage,
   },
+  rateLimitExemptions: {
+    key: "rateLimitExemptions",
+    to: "/dashboard/super-admin/rate-limit-exemptions",
+    labelKey: "dashboard.nav.superAdmin.rateLimitExemptions",
+    icon: "🛡",
+    end: true,
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.rateLimitExemptions,
+  },
 };
 
 export const SUPER_ADMIN_NAV_SECTION_DEFS = [
@@ -138,7 +146,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "administration",
     labelKey: "dashboard.nav.sections.administration",
-    itemKeys: ["admins"],
+    itemKeys: ["admins", "rateLimitExemptions"],
   },
 ];
 
@@ -179,6 +187,9 @@ export function superAdminBreadcrumbKeys(pathname) {
   if (pathname.includes("/subscriptions")) return [...base, "dashboard.breadcrumbs.freelancerSubscriptions"];
   if (pathname.includes("/orders/create")) {
     return [...base, "dashboard.breadcrumbs.internalRequests", "dashboard.breadcrumbs.createInternalRequest"];
+  }
+  if (pathname.includes("/rate-limit-exemptions")) {
+    return [...base, "dashboard.breadcrumbs.rateLimitExemptions"];
   }
   if (pathname.includes("/admins")) return [...base, "dashboard.breadcrumbs.admins"];
   if (pathname.includes("/edit-website/how-it-works/")) {

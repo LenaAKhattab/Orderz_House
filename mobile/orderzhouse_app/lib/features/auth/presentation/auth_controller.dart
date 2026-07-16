@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/unauthorized_bus.dart';
+import '../../push/data/device_token_repository.dart';
 import '../data/auth_repository.dart';
 import '../domain/auth_user.dart';
 
@@ -99,6 +100,10 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> logout() async {
+    // Deactivate push token while access token is still available.
+    try {
+      await ref.read(deviceTokenRepositoryProvider).deactivateCurrentToken();
+    } catch (_) {}
     await _repository.logout();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
@@ -114,7 +119,15 @@ class AuthController extends Notifier<AuthState> {
   }
 
   void handleUnauthorized() {
-    _repository.clearLocalSession();
+    final tokens = ref.read(deviceTokenRepositoryProvider);
+    final repo = _repository;
+    // Deactivate while the access token is still readable by Dio, then clear.
+    Future<void>(() async {
+      try {
+        await tokens.deactivateCurrentToken();
+      } catch (_) {}
+      await repo.clearLocalSession();
+    });
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 }

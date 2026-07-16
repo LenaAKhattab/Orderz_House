@@ -27,4 +27,10 @@ frontend/dist/
 .DS_Store
 Thumbs.db
 backend/google/service-account.json
+backend/secrets/
+backend/**/firebase-service-account*.json
+backend/**/serviceAccount*.json
 backend/data/translation-cache.json
+mobile/orderzhouse_app/android/app/google-services.json
+mobile/orderzhouse_app/ios/Runner/GoogleService-Info.plist
+mobile/orderzhouse_app/lib/firebase_options.dart

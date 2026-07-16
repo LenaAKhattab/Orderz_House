@@ -1001,6 +1001,39 @@ export const updateSuperAdminAdminRequest = async (id, payload) => {
   return data;
 };
 
+// Super Admin — rate limit exemptions (scoped trusted users)
+export const listRateLimitExemptionsRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/rate-limit-exemptions", {
+    params: {
+      includeInactive: params.includeInactive ? "1" : undefined,
+      userId: params.userId || undefined,
+    },
+  });
+  return data;
+};
+
+export const searchRateLimitExemptionUsersRequest = async (q) => {
+  const { data } = await api.get("/super-admin/rate-limit-exemptions/users", {
+    params: { q },
+  });
+  return data;
+};
+
+export const createRateLimitExemptionRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/rate-limit-exemptions", payload);
+  return data;
+};
+
+export const updateRateLimitExemptionRequest = async (id, payload) => {
+  const { data } = await api.patch(`/super-admin/rate-limit-exemptions/${id}`, payload);
+  return data;
+};
+
+export const revokeRateLimitExemptionRequest = async (id) => {
+  const { data } = await api.post(`/super-admin/rate-limit-exemptions/${id}/revoke`);
+  return data;
+};
+
 export const getSuperadminVisitorsAnalyticsRequest = async (params = {}, options = {}) => {
   const { signal, ...axiosOptions } = options;
   const { data } = await api.get("/superadmin/analytics/visitors", {

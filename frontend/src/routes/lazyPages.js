@@ -48,6 +48,9 @@ export const FinancialEmployeeDetailPage = lazy(
 export const FinancialUserMyBonusesPage = lazy(() => import("../pages/dashboard/FinancialUserMyBonusesPage"));
 export const SuperAdminSettingsPage = lazy(() => import("../pages/dashboard/SuperAdminSettingsPage"));
 export const SuperAdminAdminsPage = lazy(() => import("../pages/dashboard/SuperAdminAdminsPage"));
+export const SuperAdminRateLimitExemptionsPage = lazy(
+  () => import("../pages/dashboard/SuperAdminRateLimitExemptionsPage"),
+);
 export const SuperAdminEditWebsitePage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsitePage"));
 export const SuperAdminEditWebsiteFaqPage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsiteFaqPage"));
 export const SuperAdminSitePagesPage = lazy(() => import("../pages/dashboard/SuperAdminSitePagesPage"));
