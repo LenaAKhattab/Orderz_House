@@ -13,6 +13,8 @@ const {
   resolveRoundOrderBounds,
   pickRoundTargetCount,
   selectFakeOrdersFromPool,
+  buildStaggeredVisibilitySchedule,
+  resolveStaggerInitialBatchCount,
 } = require("../src/services/fakeOrdersService");
 
 describe("trainingPoolEligibility", () => {
@@ -127,20 +129,26 @@ describe("fakeOrders automation gap prevention", () => {
     assert.ok(out.readinessWarnings.includes("rotation_scheduled_after_round_end"));
   });
 
-  it("replenish only supersedes when visible count is already zero", () => {
+  it("replenish only supersedes when nothing visible and nothing scheduled", () => {
     const src = fs.readFileSync(
       path.join(__dirname, "..", "src", "services", "fakeOrdersService.js"),
       "utf8",
     );
-    assert.match(src, /supersedeExisting = coverage\.visibleCount === 0/);
+    assert.match(
+      src,
+      /supersedeExisting = coverage\.visibleCount === 0 && coverage\.scheduledFutureCount === 0/,
+    );
   });
 
-  it("scheduled rotation uses overlap-first when orders are still visible", () => {
+  it("scheduled rotation uses overlap-first when orders are still visible or scheduled", () => {
     const src = fs.readFileSync(
       path.join(__dirname, "..", "src", "services", "fakeOrdersService.js"),
       "utf8",
     );
-    assert.match(src, /const supersedeExisting = scheduleCoverage\.visibleCount === 0/);
+    assert.match(
+      src,
+      /scheduleCoverage\.visibleCount === 0 && scheduleCoverage\.scheduledFutureCount === 0/,
+    );
   });
 
   it("preemptive overlap does not require exactly one active round", () => {
@@ -218,5 +226,104 @@ describe("training round pool selection", () => {
     );
     assert.match(src, /if \(supersedeExisting && gaplessSupersede\)/);
     assert.match(src, /exceptRoundId: roundId/);
+  });
+});
+
+describe("staggered fake-order rollout", () => {
+  const twelveHoursMs = 12 * 60 * 60 * 1000;
+  const startsAtMs = Date.UTC(2026, 6, 16, 0, 0, 0);
+  const expiresAtMs = startsAtMs + twelveHoursMs;
+
+  it("resolveStaggerInitialBatchCount is ~20% with a floor of 10", () => {
+    assert.equal(resolveStaggerInitialBatchCount(72), 15);
+    assert.equal(resolveStaggerInitialBatchCount(50), 10);
+    assert.equal(resolveStaggerInitialBatchCount(8), 8);
+    assert.equal(resolveStaggerInitialBatchCount(1), 1);
+  });
+
+  it("buildStaggeredVisibilitySchedule keeps an immediate first batch", () => {
+    const schedule = buildStaggeredVisibilitySchedule({
+      orderCount: 60,
+      startsAtMs,
+      expiresAtMs,
+    });
+    assert.equal(schedule.length, 60);
+    const initial = resolveStaggerInitialBatchCount(60);
+    const immediate = schedule.filter((s) => s.visibleFromMs === startsAtMs);
+    assert.ok(immediate.length >= initial);
+    assert.ok(immediate.length < 60, "not all orders should appear immediately");
+  });
+
+  it("staggered visible_from values are not all identical for a large round", () => {
+    const schedule = buildStaggeredVisibilitySchedule({
+      orderCount: 72,
+      startsAtMs,
+      expiresAtMs,
+    });
+    const uniqueFrom = new Set(schedule.map((s) => s.visibleFromMs));
+    assert.ok(uniqueFrom.size > 1, "expected multiple visible_from timestamps");
+  });
+
+  it("all visible_from stay within starts_at → expires_at and before visible_until", () => {
+    const schedule = buildStaggeredVisibilitySchedule({
+      orderCount: 72,
+      startsAtMs,
+      expiresAtMs,
+    });
+    for (const slot of schedule) {
+      assert.ok(slot.visibleFromMs >= startsAtMs);
+      assert.ok(slot.visibleFromMs < expiresAtMs);
+      assert.ok(slot.visibleUntilMs === expiresAtMs);
+      assert.ok(slot.visibleFromMs < slot.visibleUntilMs);
+    }
+  });
+
+  it("short duration falls back to all-at-once visibility", () => {
+    const schedule = buildStaggeredVisibilitySchedule({
+      orderCount: 40,
+      startsAtMs,
+      expiresAtMs: startsAtMs + 10 * 60 * 1000,
+    });
+    assert.equal(schedule.length, 40);
+    assert.ok(schedule.every((s) => s.visibleFromMs === startsAtMs));
+  });
+
+  it("activateFakeOrdersInRound uses staggered schedule helper", () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "..", "src", "services", "fakeOrdersService.js"),
+      "utf8",
+    );
+    assert.match(src, /buildStaggeredVisibilitySchedule/);
+    assert.match(src, /stagger_rollout: true/);
+    assert.match(src, /promoteEmergencyStaggerBatch/);
+    assert.match(src, /activeOrScheduledCount/);
+    assert.match(src, /scheduledFutureCount/);
+  });
+
+  it("ensureMinimumVisibleFakeOrders respects scheduled future coverage", () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "..", "src", "services", "fakeOrdersService.js"),
+      "utf8",
+    );
+    assert.match(src, /activeOrScheduled >= threshold/);
+    assert.match(src, /status: currentVisible > 0 \? "already_visible" : "scheduled_covered"/);
+    assert.match(src, /emergency_promote/);
+  });
+
+  it("eligible pool excludes committed future scheduled items", () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "..", "src", "services", "fakeOrdersService.js"),
+      "utf8",
+    );
+    const eligibleStart = src.indexOf("async function loadEligibleFakeOrderPool");
+    const eligibleEnd = src.indexOf("const ELIGIBLE_FAKE_ORDER_POOL_WHERE_SQL", eligibleStart);
+    const body = src.slice(eligibleStart, eligibleEnd);
+    assert.match(body, /ri\.visible_until > NOW\(\)/);
+    assert.doesNotMatch(body, /ri\.visible_from <= NOW\(\)/);
+  });
+
+  it("pool listing still requires visible_from <= NOW()", () => {
+    const sql = trainingPoolVisibleWhereSql({ anyAudience: true });
+    assert.match(sql, /visible_from <= NOW\(\)/);
   });
 });

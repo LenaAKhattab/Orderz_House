@@ -1,5 +1,5 @@
 /**
- * Safe structured logging for rate-limit 429 responses.
+ * Safe structured logging for rate-limit 429 responses and exemptions.
  * Never logs Authorization, cookies, tokens, or passwords.
  */
 
@@ -47,8 +47,42 @@ function logRateLimitExceeded({ limiterName, req, retryAfterSec }) {
   );
 }
 
+function logRateLimitExemptionUsed({ req, scope, exemptionId, mode }) {
+  // eslint-disable-next-line no-console
+  console.info(
+    JSON.stringify({
+      event: "rate_limit_exemption_used",
+      userId: req?.auth?.userId != null ? String(req.auth.userId) : null,
+      scope: String(scope || ""),
+      exemptionId: exemptionId != null ? String(exemptionId) : null,
+      mode: mode != null ? String(mode) : null,
+      method: String(req?.method || ""),
+      path: String(req?.originalUrl || req?.url || req?.path || "").split("?")[0],
+      timestamp: new Date().toISOString(),
+    }),
+  );
+}
+
+function logRateLimitExemptionAudit(payload = {}) {
+  // eslint-disable-next-line no-console
+  console.info(
+    JSON.stringify({
+      event: String(payload.event || "rate_limit_exemption_audit"),
+      exemptionId: payload.exemptionId != null ? String(payload.exemptionId) : null,
+      userId: payload.userId != null ? String(payload.userId) : null,
+      scope: payload.scope != null ? String(payload.scope) : null,
+      mode: payload.mode != null ? String(payload.mode) : null,
+      actorUserId: payload.actorUserId != null ? String(payload.actorUserId) : null,
+      permanent: payload.permanent === true,
+      timestamp: new Date().toISOString(),
+    }),
+  );
+}
+
 module.exports = {
   maskIp,
   resolveClientIp,
   logRateLimitExceeded,
+  logRateLimitExemptionUsed,
+  logRateLimitExemptionAudit,
 };

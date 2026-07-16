@@ -21,6 +21,7 @@ const freelancerCoursesRoutes = require("./routes/freelancerCoursesRoutes");
 const freelancerDashboardRoutes = require("./routes/freelancerDashboardRoutes");
 const ordersRoutes = require("./routes/ordersRoutes");
 const notificationsRoutes = require("./routes/notificationsRoutes");
+const deviceTokensRoutes = require("./routes/deviceTokensRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const portalFinancialClaimsRoutes = require("./routes/portalFinancialClaimsRoutes");
 const superAdminFinancialCenterRoutes = require("./routes/superAdminFinancialCenterRoutes");
@@ -28,6 +29,7 @@ const financialUserRoutes = require("./routes/financialUserRoutes");
 const superAdminFinancialClaimsRoutes = require("./routes/superAdminFinancialClaimsRoutes");
 const superAdminAnalyticsRoutes = require("./routes/superAdminAnalyticsRoutes");
 const superAdminAdminsRoutes = require("./routes/superAdminAdminsRoutes");
+const rateLimitExemptionsRoutes = require("./routes/rateLimitExemptionsRoutes");
 const superAdminWebsiteRoutes = require("./routes/superAdminWebsiteRoutes");
 const mobilePaymentReturnRoutes = require("./routes/mobilePaymentReturnRoutes");
 const publicRoutes = require("./routes/publicRoutes");
@@ -128,9 +130,11 @@ app.use("/api/financial-user", financialUserRoutes);
 app.use("/api/super-admin", superAdminFinancialClaimsRoutes);
 app.use("/api/super-admin", superAdminAdminsRoutes);
 app.use("/api/super-admin", superAdminWebsiteRoutes);
+app.use("/api/super-admin", rateLimitExemptionsRoutes);
 app.use("/api/superadmin", superAdminAnalyticsRoutes);
 app.use("/api", ordersRoutes);
 app.use("/api", notificationsRoutes);
+app.use("/api", deviceTokensRoutes);
 
 // Mobile Stripe return bridge (HTTPS → custom scheme). Not under /api — public GET for Stripe redirect.
 app.use(mobilePaymentReturnRoutes);

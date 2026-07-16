@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Strip broad media/storage permissions merged by open_filex (SAF + FileProvider only). -->
     <uses-permission
         android:name="android.permission.READ_MEDIA_IMAGES"
@@ -55,6 +56,10 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Default FCM channel (also created at runtime as orderzhouse_default). -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="orderzhouse_default" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

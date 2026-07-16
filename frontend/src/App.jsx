@@ -49,6 +49,7 @@ import {
   FinancialEmployeeDetailPage,
   SuperAdminSettingsPage,
   SuperAdminAdminsPage,
+  SuperAdminRateLimitExemptionsPage,
   SuperAdminEditWebsitePage,
   SuperAdminEditWebsiteFaqPage,
   SuperAdminSitePagesPage,
@@ -348,6 +349,14 @@ function App() {
                     <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage}>
                       <SuperAdminAdminsPage />
                     </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/rate-limit-exemptions"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminRateLimitExemptionsPage />
+                    </RequireRole>
                   }
                 />
                 <Route

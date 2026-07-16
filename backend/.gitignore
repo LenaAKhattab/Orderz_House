@@ -1,1 +1,5 @@
 .env
+secrets/
+**/firebase-service-account*.json
+**/serviceAccount*.json
+google-services.json

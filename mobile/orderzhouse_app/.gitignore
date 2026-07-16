@@ -48,6 +48,11 @@ app.*.map.json
 .env
 .env.local
 
+# Firebase client config (download from Firebase Console; keep example only)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
+
 # Android signing (never commit)
 **/key.properties
 !**/key.properties.example
