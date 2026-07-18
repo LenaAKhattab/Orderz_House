@@ -10,11 +10,26 @@ const getHealthStatus = async () => {
     database = "degraded";
   }
 
+  let institutionalReleaseScheduler = null;
+  try {
+    const {
+      isInstitutionalReleaseIntervalEnabled,
+      getInstitutionalReleaseTickMs,
+    } = require("../config/institutionalReleaseScheduler");
+    institutionalReleaseScheduler = {
+      processEnabled: isInstitutionalReleaseIntervalEnabled(),
+      tickMs: getInstitutionalReleaseTickMs(),
+    };
+  } catch {
+    institutionalReleaseScheduler = { processEnabled: null, tickMs: null };
+  }
+
   return {
     success: true,
     message: "API is running",
     status: "ok",
     database,
+    institutionalReleaseScheduler,
     timestamp: new Date().toISOString(),
   };
 };

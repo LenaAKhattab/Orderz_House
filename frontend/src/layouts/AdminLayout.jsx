@@ -4,6 +4,7 @@ import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 import { useAuth } from "../context/useAuth";
 import { getNotificationsPath } from "../constants/authRoutes";
 import AdminGroupedNavList from "../components/dashboard/AdminGroupedNavList";
+import AdminNavIcon from "../components/dashboard/AdminNavIcon";
 import {
   ADMIN_NAV_NOTIFICATIONS,
   adminBreadcrumb,
@@ -114,7 +115,7 @@ export default function AdminLayout() {
                 onClick={() => setSidebarOpen(false)}
               >
                 <span className="oh-sa-navlink__icon" aria-hidden>
-                  {ADMIN_NAV_NOTIFICATIONS.icon}
+                  <AdminNavIcon name={ADMIN_NAV_NOTIFICATIONS.icon} />
                 </span>
                 <span className="oh-sa-navlink__label">{resolveNavLabel(ADMIN_NAV_NOTIFICATIONS, t)}</span>
               </NavLink>

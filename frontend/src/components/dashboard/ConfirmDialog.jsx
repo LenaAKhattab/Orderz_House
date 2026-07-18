@@ -17,10 +17,11 @@ const CONFIRM_VARIANT_CLASS = {
  * @param {() => void} p.onConfirm
  * @param {() => void} p.onCancel
  * @param {string} [p.className]
- * @param {boolean} [p.confirmFirst] — render primary confirm before cancel (matches legacy flows)
+ * @param {string} [p.panelClassName]
+ * @param {boolean} [p.confirmFirst]
  * @param {"primary"|"danger"} [p.confirmVariant]
- * @param {string} [p.layerClassName] — stacking, e.g. z-[1300] above nested modals
- * @param {boolean} [p.confirmBusy] — disables actions while async confirm is in progress
+ * @param {string} [p.layerClassName]
+ * @param {boolean} [p.confirmBusy]
  */
 export default function ConfirmDialog({
   open,
@@ -31,6 +32,7 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
   className = "",
+  panelClassName = "",
   confirmFirst = false,
   confirmVariant = "primary",
   layerClassName = "z-[1200]",
@@ -39,12 +41,50 @@ export default function ConfirmDialog({
   const { dir } = useTranslation();
   const titleId = useId();
   const cancelRef = useRef(null);
+  const panelRef = useRef(null);
+  const previousFocusRef = useRef(null);
 
   useEffect(() => {
     if (!open) return undefined;
+    previousFocusRef.current = document.activeElement;
     const t = window.setTimeout(() => cancelRef.current?.focus(), 0);
-    return () => window.clearTimeout(t);
-  }, [open]);
+
+    const onKeyDown = (e) => {
+      if (e.key === "Escape" && !confirmBusy) {
+        e.preventDefault();
+        onCancel?.();
+        return;
+      }
+      if (e.key !== "Tab" || !panelRef.current) return;
+      const focusable = panelRef.current.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.clearTimeout(t);
+      document.removeEventListener("keydown", onKeyDown);
+      const prev = previousFocusRef.current;
+      if (prev && typeof prev.focus === "function") {
+        try {
+          prev.focus();
+        } catch {
+          /* ignore */
+        }
+      }
+    };
+  }, [open, confirmBusy, onCancel]);
 
   if (!open) return null;
 
@@ -69,12 +109,13 @@ export default function ConfirmDialog({
       <button
         type="button"
         className="dash-ui-confirm-dialog__backdrop absolute inset-0 bg-slate-900/40"
-        aria-label="إلغاء"
+        aria-label={cancelLabel}
         onClick={confirmBusy ? undefined : onCancel}
         disabled={confirmBusy}
       />
       <div
-        className="dash-ui-confirm-dialog__panel relative z-[1] w-full max-w-[420px] rounded-2xl border border-slate-300/25 bg-white px-[18px] pb-4 pt-[18px] text-start shadow-[0_20px_44px_rgba(15,23,42,0.16)]"
+        ref={panelRef}
+        className={`dash-ui-confirm-dialog__panel relative z-[1] w-full max-h-[min(90vh,40rem)] overflow-y-auto rounded-2xl border border-slate-300/25 bg-white px-[18px] pb-4 pt-[18px] text-start shadow-[0_20px_44px_rgba(15,23,42,0.16)] ${panelClassName || "max-w-[420px]"}`.trim()}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}

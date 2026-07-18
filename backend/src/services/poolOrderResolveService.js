@@ -20,11 +20,17 @@ async function isFakeOrderInActivePool(orderId) {
   return rows.length > 0;
 }
 
-async function loadRealPoolOrder(orderId) {
+async function loadRealPoolOrder(orderId, freelancerUserId = null) {
   const order = await ordersService.getOrderById(orderId);
   if (!order) return null;
   if (!["admin_created", "super_admin_created", "client_created"].includes(order.sourceType)) return null;
   if (!orderFlowService.orderApiEligibleForFreelancerPool(order)) return null;
+  if (String(order.visibilityScope || "public") === "institution") {
+    if (!freelancerUserId) return null;
+    const stored = require("./institutionalStoredOrdersService");
+    const access = await stored.assertUserCanViewInstitutionalOrder(freelancerUserId, order.id);
+    if (!access.allowed) return null;
+  }
   return { kind: "real", order };
 }
 
@@ -48,7 +54,7 @@ async function loadFakePoolOrder(orderId, freelancerUserId, role) {
  */
 async function resolvePoolOrderForViewer(orderId, { userId = null, role = null } = {}) {
   const [realHit, fakeHit] = await Promise.all([
-    loadRealPoolOrder(orderId),
+    loadRealPoolOrder(orderId, userId),
     loadFakePoolOrder(orderId, userId, role),
   ]);
   if (!realHit && !fakeHit) return null;

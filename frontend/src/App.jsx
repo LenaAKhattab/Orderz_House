@@ -51,6 +51,11 @@ import {
   SuperAdminAdminsPage,
   SuperAdminRateLimitExemptionsPage,
   SuperAdminInstitutionsPage,
+  SuperAdminInstitutionDetailPage,
+  InstitutionalOrderStorageListPage,
+  InstitutionalOrderStorageDetailPage,
+  InstitutionalPendingApprovalsPage,
+  InstitutionOrdersPoolPage,
   SuperAdminEditWebsitePage,
   SuperAdminEditWebsiteFaqPage,
   SuperAdminSitePagesPage,
@@ -363,9 +368,41 @@ function App() {
                 <Route
                   path="/dashboard/super-admin/institutions"
                   element={
-                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.institutions}>
                       <SuperAdminInstitutionsPage />
-                    </RequireRole>
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/institutions/:institutionId"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.institutions}>
+                      <SuperAdminInstitutionDetailPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/institutional-order-storage"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage}>
+                      <InstitutionalOrderStorageListPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/institutional-order-storage/pending"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage}>
+                      <InstitutionalPendingApprovalsPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/institutional-order-storage/:storageId"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage}>
+                      <InstitutionalOrderStorageDetailPage />
+                    </RequireStaffPage>
                   }
                 />
                 <Route
@@ -501,6 +538,14 @@ function App() {
                   }
                 />
 
+                <Route
+                  path="/dashboard/freelancer/institution-orders"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <InstitutionOrdersPoolPage />
+                    </RequireRole>
+                  }
+                />
                 <Route
                   path="/dashboard/freelancer/orders"
                   element={

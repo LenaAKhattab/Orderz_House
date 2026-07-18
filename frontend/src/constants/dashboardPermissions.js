@@ -22,8 +22,10 @@ export const SUPER_ADMIN_PAGE_PERMISSIONS = {
   editWebsite: "dashboard.super_admin.edit_website",
   /** Super Admin only — not in ASSIGNABLE_DASHBOARD_PERMISSIONS */
   rateLimitExemptions: "dashboard.super_admin.rate_limit_exemptions",
-  /** Super Admin only — placeholder page; not in ASSIGNABLE_DASHBOARD_PERMISSIONS */
+  /** Institutions catalog — assignable to delegated Admin */
   institutions: "dashboard.super_admin.institutions",
+  /** Institutional order storage module */
+  institutionalOrderStorage: "dashboard.super_admin.institutional_order_storage",
 };
 
 /** All assignable dashboard page permission keys (mirrors backend ASSIGNABLE_ADMIN_PERMISSIONS). */
@@ -39,6 +41,8 @@ export const ASSIGNABLE_DASHBOARD_PERMISSIONS = [
   ADMIN_PAGE_PERMISSIONS.orders,
   ADMIN_PAGE_PERMISSIONS.createOrder,
   SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders,
+  SUPER_ADMIN_PAGE_PERMISSIONS.institutions,
+  SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage,
   SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage,
   SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite,
 ];
@@ -48,6 +52,7 @@ const SUPER_ADMIN_ROUTE_RULES = [
   { prefix: "/dashboard/super-admin/analysis", permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics },
   { prefix: "/dashboard/super-admin/edit-website", permission: SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite },
   { prefix: "/dashboard/super-admin/training-orders", permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders },
+  { prefix: "/dashboard/super-admin/institutional-order-storage", permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage },
   { prefix: "/dashboard/super-admin/subscriptions/activation", permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation },
   { prefix: "/dashboard/super-admin/subscriptions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.subscriptions },
   { prefix: "/dashboard/super-admin/financial-center", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialCenter },
@@ -84,6 +89,7 @@ const SUPER_ADMIN_SHELL_NAV_ORDER = [
   { to: "/dashboard/super-admin/financial-claims", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims },
   { to: "/dashboard/super-admin/orders", permission: ADMIN_PAGE_PERMISSIONS.orders },
   { to: "/dashboard/super-admin/training-orders", permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders },
+  { to: "/dashboard/super-admin/institutional-order-storage", permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage },
   { to: "/dashboard/super-admin/admins", permission: SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage },
   { to: "/dashboard/super-admin/rate-limit-exemptions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.rateLimitExemptions },
   { to: "/dashboard/super-admin/institutions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutions },

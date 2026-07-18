@@ -573,6 +573,52 @@
     -6px -6px 18px rgba(255, 255, 255, 0.9);
 }
 
+.fdl-topbar .notif-bell__head {
+  background: transparent;
+  border-bottom-color: rgba(56, 82, 180, 0.07);
+}
+
+.fdl-topbar .notif-bell__body {
+  background: transparent;
+}
+
+.fdl-topbar .notif-bell__item {
+  background: #fff;
+  border-bottom-color: rgba(56, 82, 180, 0.04);
+}
+
+.fdl-topbar .notif-bell__item:hover {
+  background: #f8fafc;
+}
+
+.fdl-topbar .notif-bell__item--unread {
+  background: #f5f3ff;
+}
+
+.fdl-topbar .notif-bell__item--unread:hover {
+  background: #efeaff;
+}
+
+.fdl-topbar .notif-bell__item--unread .notif-bell__item-dot {
+  background: #2f3f7a;
+  box-shadow: 0 0 0 3px rgba(47, 63, 122, 0.12);
+}
+
+.fdl-topbar .notif-bell__all {
+  border-radius: 0 0 18px 18px;
+  background: #f3f5fb;
+  border-top-color: rgba(56, 82, 180, 0.09);
+}
+
+.fdl-topbar .notif-bell__all:hover {
+  background: #e9eef8;
+}
+
+.fdl-topbar .notif-bell__all:focus-visible {
+  background: #e4eaf6;
+  box-shadow: inset 0 0 0 2px rgba(56, 82, 180, 0.28);
+}
+
 .fdl-topbar .notif-bell__badge {
   position: absolute;
   top: -4px;

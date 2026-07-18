@@ -695,6 +695,382 @@ export const adminListTrainingApplicationsByFakeOrderRequest = async (fakeOrderI
   return data;
 };
 
+// Institutions + Institutional Order Storage
+/** Institutions admin reads — remote DB latency; keep above default 10s after query fixes. */
+const INSTITUTIONS_ADMIN_READ_TIMEOUT_MS = 20000;
+
+export const adminListInstitutionsRequest = async (params = {}, options = {}) => {
+  const { signal, ...rest } = options;
+  const { data } = await api.get("/admin/institutions", {
+    params,
+    signal,
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+    ...rest,
+  });
+  return data;
+};
+
+export const adminCreateInstitutionRequest = async (payload) => {
+  const { data } = await api.post("/admin/institutions", payload, {
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+  });
+  return data;
+};
+
+/** In-flight dedupe for institution detail bundle (Strict Mode remount / rapid remount). */
+const institutionBundleInflight = new Map();
+
+export const adminGetInstitutionRequest = async (id, options = {}) => {
+  const { signal, bundle, membersPage, storagesPage, membersLimit, storagesLimit, ...rest } = options;
+  const params = bundle
+    ? {
+        bundle: 1,
+        membersPage,
+        storagesPage,
+        membersLimit,
+        storagesLimit,
+      }
+    : undefined;
+
+  if (bundle) {
+    const key = `${id}:${membersPage || 1}:${storagesPage || 1}:${membersLimit || 20}:${storagesLimit || 20}`;
+    const existing = institutionBundleInflight.get(key);
+    if (existing) {
+      // Share the same network call; still honor abort for this consumer's state updates.
+      return new Promise((resolve, reject) => {
+        const onAbort = () => {
+          const err = new Error("canceled");
+          err.code = "ERR_CANCELED";
+          err.name = "CanceledError";
+          reject(err);
+        };
+        if (signal?.aborted) {
+          onAbort();
+          return;
+        }
+        signal?.addEventListener("abort", onAbort, { once: true });
+        existing.then(
+          (data) => {
+            signal?.removeEventListener("abort", onAbort);
+            if (signal?.aborted) onAbort();
+            else resolve(data);
+          },
+          (err) => {
+            signal?.removeEventListener("abort", onAbort);
+            if (signal?.aborted) onAbort();
+            else reject(err);
+          },
+        );
+      });
+    }
+    const promise = api
+      .get(`/admin/institutions/${id}`, {
+        params,
+        timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+        ...rest,
+      })
+      .then((res) => res.data)
+      .finally(() => {
+        if (institutionBundleInflight.get(key) === promise) institutionBundleInflight.delete(key);
+      });
+    institutionBundleInflight.set(key, promise);
+    return new Promise((resolve, reject) => {
+      const onAbort = () => {
+        const err = new Error("canceled");
+        err.code = "ERR_CANCELED";
+        err.name = "CanceledError";
+        reject(err);
+      };
+      if (signal?.aborted) {
+        onAbort();
+        return;
+      }
+      signal?.addEventListener("abort", onAbort, { once: true });
+      promise.then(
+        (data) => {
+          signal?.removeEventListener("abort", onAbort);
+          if (signal?.aborted) onAbort();
+          else resolve(data);
+        },
+        (err) => {
+          signal?.removeEventListener("abort", onAbort);
+          if (signal?.aborted) onAbort();
+          else reject(err);
+        },
+      );
+    });
+  }
+
+  const { data } = await api.get(`/admin/institutions/${id}`, {
+    params,
+    signal,
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+    ...rest,
+  });
+  return data;
+};
+
+export const adminPatchInstitutionRequest = async (id, payload) => {
+  const { data } = await api.patch(`/admin/institutions/${id}`, payload, {
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminGetInstitutionStatisticsRequest = async (id, options = {}) => {
+  const { signal, ...rest } = options;
+  const { data } = await api.get(`/admin/institutions/${id}/statistics`, {
+    signal,
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+    ...rest,
+  });
+  return data;
+};
+
+export const adminFreezeInstitutionRequest = async (id, payload = {}) => {
+  const { data } = await api.post(`/admin/institutions/${id}/freeze`, payload, {
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminUnfreezeInstitutionRequest = async (id, payload = {}) => {
+  const { data } = await api.post(`/admin/institutions/${id}/unfreeze`, payload, {
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminGetInstitutionDeactivationImpactRequest = async (id, options = {}) => {
+  const { signal, ...rest } = options;
+  const { data } = await api.get(`/admin/institutions/${id}/deactivation-impact`, {
+    signal,
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+    ...rest,
+  });
+  return data;
+};
+
+export const adminListInstitutionStoragesRequest = async (id, params = {}, options = {}) => {
+  const { signal, ...rest } = options;
+  const { data } = await api.get(`/admin/institutions/${id}/storages`, {
+    params,
+    signal,
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+    ...rest,
+  });
+  return data;
+};
+
+export const adminListInstitutionMembersRequest = async (id, params = {}, options = {}) => {
+  const { signal, ...rest } = options;
+  const { data } = await api.get(`/admin/institutions/${id}/members`, {
+    params,
+    signal,
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+    ...rest,
+  });
+  return data;
+};
+
+export const adminAddInstitutionMemberRequest = async (id, payload) => {
+  const { data } = await api.post(`/admin/institutions/${id}/members`, payload, {
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminRemoveInstitutionMemberRequest = async (id, userId) => {
+  const { data } = await api.delete(`/admin/institutions/${id}/members/${userId}`, {
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminSearchUsersForInstitutionRequest = async (params = {}, options = {}) => {
+  const { signal, ...rest } = options;
+  const { data } = await api.get("/admin/institutions/users/search", {
+    params,
+    signal,
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+    ...rest,
+  });
+  return data;
+};
+
+/** Institutional storage list/detail can hit remote DB latency; keep above default 10s but rely on query fixes. */
+const INSTITUTIONAL_STORAGE_API_TIMEOUT_MS = 20000;
+
+export const adminListInstitutionalStoragesRequest = async (params = {}, options = {}) => {
+  const { signal, ...rest } = options;
+  const { data } = await api.get("/admin/institutional-order-storage", {
+    params,
+    signal,
+    timeout: INSTITUTIONAL_STORAGE_API_TIMEOUT_MS,
+    ...rest,
+  });
+  return data;
+};
+
+export const adminCreateInstitutionalStorageRequest = async (payload) => {
+  const { data } = await api.post("/admin/institutional-order-storage", payload, {
+    timeout: INSTITUTIONAL_STORAGE_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminGetInstitutionalStorageRequest = async (storageId, options = {}) => {
+  const { signal, ...rest } = options;
+  const { data } = await api.get(`/admin/institutional-order-storage/${storageId}`, {
+    signal,
+    timeout: INSTITUTIONAL_STORAGE_API_TIMEOUT_MS,
+    ...rest,
+  });
+  return data;
+};
+
+export const adminPatchInstitutionalStorageRequest = async (storageId, payload) => {
+  const { data } = await api.patch(`/admin/institutional-order-storage/${storageId}`, payload, {
+    timeout: INSTITUTIONAL_STORAGE_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminListInstitutionalStorageOrdersRequest = async (storageId, params = {}, options = {}) => {
+  const { signal, ...rest } = options;
+  const { data } = await api.get(`/admin/institutional-order-storage/${storageId}/orders`, {
+    params,
+    signal,
+    timeout: INSTITUTIONAL_STORAGE_API_TIMEOUT_MS,
+    ...rest,
+  });
+  return data;
+};
+
+export const adminCreateInstitutionalStorageOrderRequest = async (storageId, formData) => {
+  const { data } = await api.post(`/admin/institutional-order-storage/${storageId}/orders`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    timeout: 120000,
+  });
+  return data;
+};
+
+export const adminSubmitInstitutionalOrderRequest = async (orderId) => {
+  const { data } = await api.post(`/admin/institutional-order-storage/orders/${orderId}/submit`, {}, {
+    timeout: INSTITUTIONAL_STORAGE_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminApproveInstitutionalOrderRequest = async (orderId, payload = {}) => {
+  const { data } = await api.post(`/admin/institutional-order-storage/orders/${orderId}/approve`, payload, {
+    timeout: INSTITUTIONAL_STORAGE_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminTransferInstitutionalOrderRequest = async (orderId, payload = {}) => {
+  const { data } = await api.post(
+    `/admin/institutional-order-storage/orders/${orderId}/transfer-to-training`,
+    payload,
+    { timeout: INSTITUTIONAL_STORAGE_API_TIMEOUT_MS },
+  );
+  return data;
+};
+
+export const adminArchiveInstitutionalOrderRequest = async (orderId, payload = {}) => {
+  const { data } = await api.post(`/admin/institutional-order-storage/orders/${orderId}/archive`, payload, {
+    timeout: INSTITUTIONAL_STORAGE_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminDeleteInstitutionalOrderRequest = async (orderId) => {
+  const { data } = await api.delete(`/admin/institutional-order-storage/orders/${orderId}`, {
+    timeout: INSTITUTIONAL_STORAGE_API_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminListInstitutionalPendingApprovalsRequest = async (params = {}, options = {}) => {
+  const { signal, ...rest } = options;
+  const { data } = await api.get("/admin/institutional-order-storage/pending-approvals", {
+    params,
+    signal,
+    timeout: INSTITUTIONAL_STORAGE_API_TIMEOUT_MS,
+    ...rest,
+  });
+  return data;
+};
+
+export const adminGetInstitutionalScheduleRequest = async (storageId) => {
+  const { data } = await api.get(`/admin/institutional-order-storage/${storageId}/schedule`);
+  return data;
+};
+
+export const adminGenerateInstitutionalScheduleRequest = async (storageId, payload = {}) => {
+  const { data } = await api.post(
+    `/admin/institutional-order-storage/${storageId}/schedule/generate`,
+    payload,
+  );
+  return data;
+};
+
+export const adminRetryInstitutionalBatchRequest = async (batchId) => {
+  const { data } = await api.post(`/admin/institutional-order-storage/batches/${batchId}/retry`, {});
+  return data;
+};
+
+export const adminTransitionInstitutionalStorageStatusRequest = async (storageId, payload) => {
+  const { data } = await api.post(`/admin/institutional-order-storage/${storageId}/status`, payload);
+  return data;
+};
+
+export const adminListInstitutionalBatchOrdersRequest = async (batchId) => {
+  const { data } = await api.get(`/admin/institutional-order-storage/batches/${batchId}/orders`);
+  return data;
+};
+
+export const adminUpdateInstitutionalBatchRequest = async (batchId, payload) => {
+  const { data } = await api.patch(`/admin/institutional-order-storage/batches/${batchId}`, payload);
+  return data;
+};
+
+export const adminCancelInstitutionalBatchRequest = async (batchId) => {
+  const { data } = await api.post(`/admin/institutional-order-storage/batches/${batchId}/cancel`, {});
+  return data;
+};
+
+export const adminRemoveInstitutionalOrderFromBatchRequest = async (batchId, orderId) => {
+  const { data } = await api.delete(`/admin/institutional-order-storage/batches/${batchId}/orders/${orderId}`);
+  return data;
+};
+
+export const adminMoveInstitutionalOrderToBatchRequest = async (orderId, payload) => {
+  const { data } = await api.post(`/admin/institutional-order-storage/orders/${orderId}/move-to-batch`, payload);
+  return data;
+};
+
+export const adminListInstitutionalReleaseLogsRequest = async (storageId, params = {}) => {
+  const { data } = await api.get(`/admin/institutional-order-storage/${storageId}/release-logs`, { params });
+  return data;
+};
+
+export const adminGetInstitutionalSchedulerHealthRequest = async () => {
+  const { data } = await api.get("/admin/institutional-order-storage/scheduler/health");
+  return data;
+};
+
+export const getInstitutionMembershipRequest = async () => {
+  const { data } = await api.get("/institution/membership");
+  return data;
+};
+
+export const getInstitutionPoolOrdersRequest = async (params = {}) => {
+  const { data } = await api.get("/institution/orders/pool", { params });
+  return data;
+};
+
 // Admin/Super Admin internal order creation
 export const adminListInternalOrdersRequest = async (params = {}) => {
   // Avoid 304 with empty body in browsers (would clear the list on the client).

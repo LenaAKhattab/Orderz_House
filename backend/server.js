@@ -80,6 +80,21 @@ const startServer = async () => {
     );
   }
 
+  try {
+    const { startInstitutionalReleaseScheduler } = require("./src/config/institutionalReleaseScheduler");
+    const instScheduler = startInstitutionalReleaseScheduler();
+    // eslint-disable-next-line no-console
+    console.log(
+      JSON.stringify({
+        component: "institutional_release",
+        event: instScheduler.enabled ? "interval_started" : "interval_disabled",
+        tickMs: instScheduler.tickMs,
+      }),
+    );
+  } catch (err) {
+    console.error("[institutionalRelease] scheduler start failed:", err?.message || err);
+  }
+
   app.listen(PORT, () => {
     console.log(`Backend server listening on port ${PORT}`);
   });

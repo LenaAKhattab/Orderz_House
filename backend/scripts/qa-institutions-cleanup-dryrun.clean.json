@@ -1,0 +1,148 @@
+{
+  "mode": "dry-run",
+  "discovered": [
+    {
+      "id": 6,
+      "name": "Inst Rel 1784367113815",
+      "status": "active",
+      "createdAt": "2026-07-18T09:31:53.653Z",
+      "createdBy": "2804",
+      "createdByName": "Inst T Test",
+      "createdByEmail": "inst_test_1784367113205_372863@example.com",
+      "classification": "safe_test_residue",
+      "reason": "QA-prefixed name with no ambiguous live marketplace activity",
+      "dependencies": {
+        "membersTotal": 0,
+        "membersActive": 0,
+        "linkedStorages": 1,
+        "storageIds": [
+          5
+        ],
+        "storageDetails": [
+          {
+            "id": 5,
+            "name": "Storage Rel 1784367114121",
+            "status": "active",
+            "storedOrders": 1,
+            "releasedOrders": 1,
+            "looksQa": true,
+            "peerInstitutions": [],
+            "peerNonQaCount": 0
+          }
+        ],
+        "storedOrders": 1,
+        "releasedLive": 1,
+        "bids": 0,
+        "claims": 0,
+        "nonQaActiveStorages": 0,
+        "sharedWithNonQa": false
+      }
+    },
+    {
+      "id": 10,
+      "name": "Inst Rel 1784367209556",
+      "status": "active",
+      "createdAt": "2026-07-18T09:33:29.398Z",
+      "createdBy": "2809",
+      "createdByName": "Inst T Test",
+      "createdByEmail": "inst_test_1784367208929_508617@example.com",
+      "classification": "safe_test_residue",
+      "reason": "QA-prefixed name with no ambiguous live marketplace activity",
+      "dependencies": {
+        "membersTotal": 0,
+        "membersActive": 0,
+        "linkedStorages": 1,
+        "storageIds": [
+          8
+        ],
+        "storageDetails": [
+          {
+            "id": 8,
+            "name": "Storage Rel 1784367209863",
+            "status": "active",
+            "storedOrders": 1,
+            "releasedOrders": 1,
+            "looksQa": true,
+            "peerInstitutions": [],
+            "peerNonQaCount": 0
+          }
+        ],
+        "storedOrders": 1,
+        "releasedLive": 1,
+        "bids": 0,
+        "claims": 0,
+        "nonQaActiveStorages": 0,
+        "sharedWithNonQa": false
+      }
+    }
+  ],
+  "deleted": [],
+  "skipped": [
+    {
+      "id": 6,
+      "name": "Inst Rel 1784367113815",
+      "reason": "Dry-run: would delete (safe_test_residue)",
+      "classification": "safe_test_residue",
+      "dependencies": {
+        "membersTotal": 0,
+        "membersActive": 0,
+        "linkedStorages": 1,
+        "storageIds": [
+          5
+        ],
+        "storageDetails": [
+          {
+            "id": 5,
+            "name": "Storage Rel 1784367114121",
+            "status": "active",
+            "storedOrders": 1,
+            "releasedOrders": 1,
+            "looksQa": true,
+            "peerInstitutions": [],
+            "peerNonQaCount": 0
+          }
+        ],
+        "storedOrders": 1,
+        "releasedLive": 1,
+        "bids": 0,
+        "claims": 0,
+        "nonQaActiveStorages": 0,
+        "sharedWithNonQa": false
+      }
+    },
+    {
+      "id": 10,
+      "name": "Inst Rel 1784367209556",
+      "reason": "Dry-run: would delete (safe_test_residue)",
+      "classification": "safe_test_residue",
+      "dependencies": {
+        "membersTotal": 0,
+        "membersActive": 0,
+        "linkedStorages": 1,
+        "storageIds": [
+          8
+        ],
+        "storageDetails": [
+          {
+            "id": 8,
+            "name": "Storage Rel 1784367209863",
+            "status": "active",
+            "storedOrders": 1,
+            "releasedOrders": 1,
+            "looksQa": true,
+            "peerInstitutions": [],
+            "peerNonQaCount": 0
+          }
+        ],
+        "storedOrders": 1,
+        "releasedLive": 1,
+        "bids": 0,
+        "claims": 0,
+        "nonQaActiveStorages": 0,
+        "sharedWithNonQa": false
+      }
+    }
+  ],
+  "failed": [],
+  "preserved": []
+}

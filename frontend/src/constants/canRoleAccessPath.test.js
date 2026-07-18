@@ -19,6 +19,11 @@ describe("canRoleAccessPath", () => {
     assert.equal(canRoleAccessPath("/dashboard/super-admin", ROLE.SUPER_ADMIN), true);
   });
 
+  it("allows freelancer on institution pool path", () => {
+    assert.equal(canRoleAccessPath("/dashboard/freelancer/institution-orders", ROLE.FREELANCER), true);
+    assert.equal(canRoleAccessPath("/dashboard/freelancer/institution-orders", ROLE.CLIENT), false);
+  });
+
   it("allows client and freelancer on shared orders browse path", () => {
     assert.equal(canRoleAccessPath("/dashboard/freelancer/orders", ROLE.CLIENT), true);
     assert.equal(canRoleAccessPath("/dashboard/freelancer/orders", ROLE.FREELANCER), true);

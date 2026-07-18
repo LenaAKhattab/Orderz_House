@@ -6,6 +6,8 @@ if (!process.env.DATABASE_URL) {
 
 /** Must match fakeOrdersService AUTOMATION_GENERATION_LOCK_KEY — cleared on pool client release. */
 const GENERATION_ADVISORY_LOCK_KEY = 882947361;
+/** Must match institutionalStorageService ADVISORY_LOCK_KEY — cleared on pool client release. */
+const INSTITUTIONAL_RELEASE_ADVISORY_LOCK_KEY = 913847201;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -15,7 +17,14 @@ const pool = new Pool({
 /** Clear leaked session advisory locks when a pooled connection is returned. */
 pool.on("release", (_err, client) => {
   if (!client || typeof client.query !== "function") return;
-  client.query(`SELECT pg_advisory_unlock($1::bigint)`, [GENERATION_ADVISORY_LOCK_KEY]).catch(() => {});
+  // Defer unlock so we never race with an in-flight query on the same client (pg@9).
+  setImmediate(() => {
+    if (typeof client.query !== "function") return;
+    client.query(`SELECT pg_advisory_unlock($1::bigint)`, [GENERATION_ADVISORY_LOCK_KEY]).catch(() => {});
+    client
+      .query(`SELECT pg_advisory_unlock($1::bigint)`, [INSTITUTIONAL_RELEASE_ADVISORY_LOCK_KEY])
+      .catch(() => {});
+  });
 });
 
 const connectDB = async () => {

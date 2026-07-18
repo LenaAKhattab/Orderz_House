@@ -7,7 +7,7 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     key: "overview",
     to: "/dashboard/super-admin",
     labelKey: "dashboard.nav.superAdmin.overview",
-    icon: "⌂",
+    icon: "overview",
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.overview,
   },
@@ -15,21 +15,21 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     key: "analytics",
     to: "/dashboard/super-admin/analysis",
     labelKey: "dashboard.nav.superAdmin.analysis",
-    icon: "◈",
+    icon: "analytics",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics,
   },
   internalRequests: {
     key: "internalRequests",
     to: "/dashboard/super-admin/orders",
     labelKey: "dashboard.nav.superAdmin.internalRequests",
-    icon: "▣",
+    icon: "internal-requests",
     permission: ADMIN_PAGE_PERMISSIONS.orders,
   },
   trainingRequests: {
     key: "trainingRequests",
     to: "/dashboard/super-admin/training-orders",
     labelKey: "dashboard.nav.superAdmin.trainingRequests",
-    icon: "✦",
+    icon: "training-requests",
     end: false,
     matchPrefix: "/dashboard/super-admin/training-orders",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders,
@@ -38,49 +38,49 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     key: "financialClaims",
     to: "/dashboard/super-admin/financial-claims",
     labelKey: "dashboard.nav.superAdmin.financialClaims",
-    icon: "◍",
+    icon: "financial-claims",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims,
   },
   financialCenter: {
     key: "financialCenter",
     to: "/dashboard/super-admin/financial-center",
     labelKey: "dashboard.nav.superAdmin.financialCenter",
-    icon: "₪",
+    icon: "financial-center",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialCenter,
   },
   plans: {
     key: "plans",
     to: "/dashboard/super-admin/plans",
     labelKey: "dashboard.nav.superAdmin.plans",
-    icon: "◆",
+    icon: "plans",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
   },
   subscriptions: {
     key: "subscriptions",
     to: "/dashboard/super-admin/subscriptions",
     labelKey: "dashboard.nav.superAdmin.subscriptions",
-    icon: "◎",
+    icon: "subscriptions",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.subscriptions,
   },
   subscriptionActivation: {
     key: "subscriptionActivation",
     to: "/dashboard/super-admin/subscriptions/activation",
     labelKey: "dashboard.nav.superAdmin.subscriptionActivation",
-    icon: "✓",
+    icon: "subscription-activation",
     permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation,
   },
   courses: {
     key: "courses",
     to: "/dashboard/super-admin/courses",
     labelKey: "dashboard.nav.superAdmin.courses",
-    icon: "▶",
+    icon: "courses",
     permission: ADMIN_PAGE_PERMISSIONS.courses,
   },
   ads: {
     key: "ads",
     to: "/dashboard/super-admin/ads",
     labelKey: "dashboard.nav.superAdmin.ads",
-    icon: "✴",
+    icon: "ads",
     end: true,
     permission: ADMIN_PAGE_PERMISSIONS.ads,
   },
@@ -88,7 +88,7 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     key: "editWebsite",
     to: "/dashboard/super-admin/edit-website",
     labelKey: "dashboard.nav.superAdmin.editWebsite",
-    icon: "✎",
+    icon: "edit-website",
     end: false,
     matchPrefix: "/dashboard/super-admin/edit-website",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite,
@@ -97,7 +97,7 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     key: "admins",
     to: "/dashboard/super-admin/admins",
     labelKey: "dashboard.nav.superAdmin.admins",
-    icon: "👤",
+    icon: "admins",
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage,
   },
@@ -105,7 +105,7 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     key: "rateLimitExemptions",
     to: "/dashboard/super-admin/rate-limit-exemptions",
     labelKey: "dashboard.nav.superAdmin.rateLimitExemptions",
-    icon: "🛡",
+    icon: "rate-limit-exemptions",
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.rateLimitExemptions,
   },
@@ -113,10 +113,19 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     key: "institutions",
     to: "/dashboard/super-admin/institutions",
     labelKey: "dashboard.nav.superAdmin.institutionsManagement",
-    icon: "🏢",
+    icon: "institutions",
     end: true,
     matchPrefix: "/dashboard/super-admin/institutions",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutions,
+  },
+  institutionalOrderStorage: {
+    key: "institutionalOrderStorage",
+    to: "/dashboard/super-admin/institutional-order-storage",
+    labelKey: "dashboard.nav.superAdmin.institutionalOrderStorage",
+    icon: "institutional-order-storage",
+    end: false,
+    matchPrefix: "/dashboard/super-admin/institutional-order-storage",
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage,
   },
 };
 
@@ -155,7 +164,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "institutions",
     labelKey: "dashboard.nav.sections.institutions",
-    itemKeys: ["institutions"],
+    itemKeys: ["institutions", "institutionalOrderStorage"],
   },
   {
     id: "administration",
@@ -204,6 +213,9 @@ export function superAdminBreadcrumbKeys(pathname) {
   }
   if (pathname.includes("/rate-limit-exemptions")) {
     return [...base, "dashboard.breadcrumbs.rateLimitExemptions"];
+  }
+  if (pathname.includes("/institutional-order-storage")) {
+    return [...base, "dashboard.nav.superAdmin.institutionalOrderStorage"];
   }
   if (pathname.includes("/institutions")) {
     return [...base, "dashboard.breadcrumbs.institutions"];

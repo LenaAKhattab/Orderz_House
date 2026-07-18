@@ -54,6 +54,21 @@ export const SuperAdminRateLimitExemptionsPage = lazy(
 export const SuperAdminInstitutionsPage = lazy(
   () => import("../pages/dashboard/SuperAdminInstitutionsPage"),
 );
+export const SuperAdminInstitutionDetailPage = lazy(
+  () => import("../pages/dashboard/SuperAdminInstitutionDetailPage"),
+);
+export const InstitutionalOrderStorageListPage = lazy(
+  () => import("../pages/dashboard/institutionalStorage/InstitutionalOrderStorageListPage"),
+);
+export const InstitutionalOrderStorageDetailPage = lazy(
+  () => import("../pages/dashboard/institutionalStorage/InstitutionalOrderStorageDetailPage"),
+);
+export const InstitutionalPendingApprovalsPage = lazy(
+  () => import("../pages/dashboard/institutionalStorage/InstitutionalPendingApprovalsPage"),
+);
+export const InstitutionOrdersPoolPage = lazy(
+  () => import("../pages/dashboard/InstitutionOrdersPoolPage"),
+);
 export const SuperAdminEditWebsitePage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsitePage"));
 export const SuperAdminEditWebsiteFaqPage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsiteFaqPage"));
 export const SuperAdminSitePagesPage = lazy(() => import("../pages/dashboard/SuperAdminSitePagesPage"));

@@ -456,6 +456,12 @@ button.oh-sa-navlink {
   transition: color 0.18s var(--oh-sa-ease);
 }
 
+.oh-sa-navlink__icon-svg {
+  display: block;
+  flex-shrink: 0;
+  color: inherit;
+}
+
 .oh-sa-navlink:hover .oh-sa-navlink__icon {
   color: #64748b;
   background: transparent;
@@ -713,6 +719,52 @@ button.oh-sa-navlink.oh-sa-navlink--button {
   box-shadow:
     12px 12px 32px rgba(163, 177, 198, 0.2),
     -6px -6px 18px rgba(255, 255, 255, 0.9);
+}
+
+.oh-sa-topbar .notif-bell__head {
+  background: transparent;
+  border-bottom-color: rgba(56, 82, 180, 0.07);
+}
+
+.oh-sa-topbar .notif-bell__body {
+  background: transparent;
+}
+
+.oh-sa-topbar .notif-bell__item {
+  background: #fff;
+  border-bottom-color: rgba(56, 82, 180, 0.04);
+}
+
+.oh-sa-topbar .notif-bell__item:hover {
+  background: #f8fafc;
+}
+
+.oh-sa-topbar .notif-bell__item--unread {
+  background: #f5f3ff;
+}
+
+.oh-sa-topbar .notif-bell__item--unread:hover {
+  background: #efeaff;
+}
+
+.oh-sa-topbar .notif-bell__item--unread .notif-bell__item-dot {
+  background: #2f3f7a;
+  box-shadow: 0 0 0 3px rgba(47, 63, 122, 0.12);
+}
+
+.oh-sa-topbar .notif-bell__all {
+  border-radius: 0 0 18px 18px;
+  background: #f3f5fb;
+  border-top-color: rgba(56, 82, 180, 0.09);
+}
+
+.oh-sa-topbar .notif-bell__all:hover {
+  background: #e9eef8;
+}
+
+.oh-sa-topbar .notif-bell__all:focus-visible {
+  background: #e4eaf6;
+  box-shadow: inset 0 0 0 2px rgba(56, 82, 180, 0.28);
 }
 
 .oh-sa-user {
@@ -1090,4 +1142,99 @@ button.oh-sa-navlink.oh-sa-navlink--button {
     width: 40px;
     height: 40px;
   }
+}
+
+/* Institutions list table — scoped polish only (SuperAdminInstitutionsPage) */
+.oh-institutions-desktop-table .dash-ui-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.oh-institutions-desktop-table .oh-inst-col-name {
+  width: 28%;
+  min-width: 9rem;
+  max-width: 16rem;
+}
+
+.oh-institutions-desktop-table .oh-inst-col-status {
+  width: 7.5rem;
+  min-width: 6.5rem;
+}
+
+.oh-institutions-desktop-table .oh-inst-col-count {
+  width: 6.5rem;
+  min-width: 5rem;
+}
+
+.oh-institutions-desktop-table .oh-inst-col-linked {
+  width: 8rem;
+  min-width: 6rem;
+}
+
+.oh-institutions-desktop-table .oh-inst-col-date {
+  width: 7.5rem;
+  min-width: 6.5rem;
+}
+
+.oh-institutions-desktop-table .oh-inst-col-actions {
+  width: 6.5rem;
+  min-width: 5.5rem;
+}
+
+.oh-institutions-desktop-table td.oh-inst-cell-name,
+.oh-institutions-desktop-table th.oh-inst-col-name {
+  overflow: hidden;
+}
+
+.oh-institutions-desktop-table .oh-inst-name-link {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 4px;
+  outline-offset: 2px;
+}
+
+.oh-institutions-desktop-table .oh-inst-name-link:hover {
+  text-decoration: underline;
+  color: var(--oh-sa-primary, #2f3b65);
+}
+
+.oh-institutions-desktop-table .oh-inst-name-link:focus-visible {
+  outline: 2px solid var(--oh-sa-secondary, #76cfdf);
+  outline-offset: 2px;
+}
+
+.oh-institutions-desktop-table .oh-inst-cell-status,
+.oh-institutions-desktop-table .oh-inst-cell-count,
+.oh-institutions-desktop-table .oh-inst-cell-date,
+.oh-institutions-desktop-table .oh-inst-cell-actions {
+  vertical-align: middle;
+}
+
+.oh-institutions-desktop-table .oh-inst-cell-actions .btn {
+  min-width: 4.75rem;
+  justify-content: center;
+}
+
+.oh-institutions-mobile-cards .oh-inst-name-link {
+  font-weight: 700;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 4px;
+  outline-offset: 2px;
+}
+
+.oh-institutions-mobile-cards .oh-inst-name-link:hover {
+  text-decoration: underline;
+  color: var(--oh-sa-primary, #2f3b65);
+}
+
+.oh-institutions-mobile-cards .oh-inst-name-link:focus-visible {
+  outline: 2px solid var(--oh-sa-secondary, #76cfdf);
+  outline-offset: 2px;
 }

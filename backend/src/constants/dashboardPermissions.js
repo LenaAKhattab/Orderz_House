@@ -20,6 +20,8 @@ const DASHBOARD_PERMISSION_OPTIONS = Object.freeze([
   { key: "dashboard.admin.orders", labelKey: "dashboard.nav.superAdmin.internalRequests" },
   { key: "dashboard.admin.create_order", labelKey: "dashboard.nav.superAdmin.createRequest" },
   { key: "dashboard.super_admin.training_orders", labelKey: "dashboard.nav.superAdmin.trainingRequests" },
+  { key: "dashboard.super_admin.institutions", labelKey: "dashboard.nav.superAdmin.institutionsManagement" },
+  { key: "dashboard.super_admin.institutional_order_storage", labelKey: "dashboard.nav.superAdmin.institutionalOrderStorage" },
   { key: "dashboard.super_admin.admins_manage", labelKey: "dashboard.nav.superAdmin.admins" },
   { key: "dashboard.super_admin.edit_website", labelKey: "dashboard.nav.superAdmin.editWebsite" },
 ]);
@@ -67,6 +69,12 @@ const PERMISSION_KEYS = Object.freeze({
   ADMINS_MANAGE: "dashboard.super_admin.admins_manage",
   EDIT_WEBSITE: "dashboard.super_admin.edit_website",
   ANALYTICS: "dashboard.super_admin.analytics",
+  INSTITUTIONS: "dashboard.super_admin.institutions",
+  INSTITUTIONAL_ORDER_STORAGE: "dashboard.super_admin.institutional_order_storage",
+  INSTITUTIONAL_STORAGE_VIEW: "institutional_order_storage.view",
+  INSTITUTIONAL_STORAGE_APPROVE: "institutional_order_storage.approve",
+  INSTITUTIONAL_STORAGE_TRANSFER: "institutional_order_storage.transfer_to_training",
+  INSTITUTIONAL_STORAGE_RETRY_RELEASE: "institutional_order_storage.retry_release",
 });
 
 module.exports = {

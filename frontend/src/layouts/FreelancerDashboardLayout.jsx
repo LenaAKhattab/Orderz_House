@@ -44,6 +44,7 @@ import {
 
 import { useTranslation } from "../i18n/LanguageProvider";
 import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
+import { getInstitutionMembershipRequest } from "../services/api";
 
 import "../styles/freelancerDashboardShell.css";
 
@@ -126,7 +127,25 @@ export default function FreelancerDashboardLayout() {
 
   const isClient = role === ROLE.CLIENT;
 
+  const [isInstitutionMember, setIsInstitutionMember] = useState(false);
 
+  useEffect(() => {
+    if (isClient || !user) {
+      setIsInstitutionMember(false);
+      return undefined;
+    }
+    let cancelled = false;
+    void getInstitutionMembershipRequest()
+      .then((res) => {
+        if (!cancelled) setIsInstitutionMember(Boolean(res?.data?.isMember));
+      })
+      .catch(() => {
+        if (!cancelled) setIsInstitutionMember(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isClient, user]);
 
   const shellConfig = useMemo(() => {
 
@@ -152,7 +171,9 @@ export default function FreelancerDashboardLayout() {
 
     return {
 
-      navMain: FREELANCER_NAV_MAIN,
+      navMain: FREELANCER_NAV_MAIN.filter(
+        (item) => !item.requiresInstitutionMembership || isInstitutionMember,
+      ),
 
       navFooter: FREELANCER_NAV_FOOTER,
 
@@ -166,7 +187,7 @@ export default function FreelancerDashboardLayout() {
 
     };
 
-  }, [isClient]);
+  }, [isClient, isInstitutionMember]);
 
 
 

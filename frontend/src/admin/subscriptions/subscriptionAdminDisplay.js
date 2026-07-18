@@ -3,6 +3,27 @@ import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerElig
 const SUBSCRIPTION_ADMIN_TZ = "Asia/Amman";
 
 /**
+ * Stable Super Admin date-only: DD/MM/YYYY (Latin digits, Amman TZ).
+ */
+export function formatSubscriptionAdminDate(value) {
+  if (!value) return "—";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  try {
+    return new Intl.DateTimeFormat("en-GB", {
+      timeZone: SUBSCRIPTION_ADMIN_TZ,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(date);
+  } catch {
+    return "—";
+  }
+}
+
+/**
  * Stable Arabic admin date/time: DD/MM/YYYY، h:mm م|ص (Latin digits, Amman TZ).
  */
 export function formatSubscriptionAdminDateTime(value) {
@@ -12,12 +33,8 @@ export function formatSubscriptionAdminDateTime(value) {
   if (Number.isNaN(date.getTime())) return "—";
 
   try {
-    const datePart = new Intl.DateTimeFormat("en-GB", {
-      timeZone: SUBSCRIPTION_ADMIN_TZ,
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(date);
+    const datePart = formatSubscriptionAdminDate(value);
+    if (datePart === "—") return "—";
 
     const timePart = new Intl.DateTimeFormat("ar", {
       timeZone: SUBSCRIPTION_ADMIN_TZ,

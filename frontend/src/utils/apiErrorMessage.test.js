@@ -3,6 +3,8 @@ import { describe, it } from "node:test";
 import {
   getOrderCreateErrorMessage,
   getRetryAfterSeconds,
+  isAxiosCanceledError,
+  isAxiosTimeoutError,
   isRateLimitedError,
 } from "./apiErrorMessage.js";
 
@@ -34,5 +36,15 @@ describe("apiErrorMessage rate limit helpers", () => {
     assert.match(msg, /تم إرسال عدد كبير من الطلبات/);
     assert.match(msg, /8/);
     assert.equal(/retry/i.test(msg), false);
+  });
+});
+
+describe("apiErrorMessage cancel vs timeout", () => {
+  it("detects canceled requests separately from timeouts", () => {
+    assert.equal(isAxiosCanceledError({ code: "ERR_CANCELED", name: "CanceledError" }), true);
+    assert.equal(isAxiosCanceledError({ name: "AbortError", message: "aborted" }), true);
+    assert.equal(isAxiosCanceledError({ code: "ECONNABORTED", message: "timeout of 10000ms exceeded" }), false);
+    assert.equal(isAxiosTimeoutError({ code: "ECONNABORTED", message: "timeout of 10000ms exceeded" }), true);
+    assert.equal(isAxiosTimeoutError({ code: "ERR_CANCELED", name: "CanceledError" }), false);
   });
 });

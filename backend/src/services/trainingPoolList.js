@@ -126,6 +126,7 @@ async function tryMergedPoolMeta({
     `o.assigned_freelancer_id IS NULL`,
     `o.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')`,
     `o.source_type IN ('admin_created','super_admin_created','client_created')`,
+    `COALESCE(o.visibility_scope, 'public') = 'public'`,
     ...wr,
   ];
   const uid = viewerUserId != null && Number(viewerUserId) > 0 ? Number(viewerUserId) : null;

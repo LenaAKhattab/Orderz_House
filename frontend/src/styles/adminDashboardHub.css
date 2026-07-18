@@ -417,6 +417,34 @@
   max-width: min(560px, calc(100vw - 32px));
 }
 
+.oh-sa-outlet .dash-ui-modal--institution-add-member .dash-ui-modal__panel {
+  max-width: min(620px, 92vw);
+}
+
+.oh-sa-outlet .oh-inst-add-member__results {
+  max-height: min(42vh, 360px);
+  overflow: auto;
+  padding-inline-end: 2px;
+}
+
+@media (max-width: 640px) {
+  .oh-sa-outlet .dash-ui-modal--institution-add-member {
+    padding: 8px;
+    align-items: stretch;
+  }
+
+  .oh-sa-outlet .dash-ui-modal--institution-add-member .dash-ui-modal__panel {
+    max-width: none;
+    width: 100%;
+    max-height: min(96vh, 100%);
+  }
+
+  .oh-sa-outlet .oh-inst-add-member__row .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 .oh-sa-outlet .dash-ui-modal__head {
   border-bottom-color: rgba(226, 232, 240, 0.85);
 }

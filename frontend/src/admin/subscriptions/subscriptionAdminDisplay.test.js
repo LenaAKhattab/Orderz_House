@@ -8,6 +8,7 @@ import {
   activationStatusLabel,
   adminSubscriptionActivationMenuLabel,
   describeFreelancerAdminEligibilityState,
+  formatSubscriptionAdminDate,
 } from "./subscriptionAdminDisplay.js";
 
 describe("activationStatusLabel", () => {
@@ -62,5 +63,15 @@ describe("adminSubscriptionActivationMenuLabel", () => {
     assert.match(label, /رسوم التفعيل غير مدفوعة/);
     assert.ok(!label.includes("مفعّل بالكامل"));
     assert.ok(!label.includes("مفعّل بالفعل"));
+  });
+});
+
+describe("formatSubscriptionAdminDate", () => {
+  it("formats date-only as DD/MM/YYYY and handles null/invalid", () => {
+    assert.equal(formatSubscriptionAdminDate(null), "—");
+    assert.equal(formatSubscriptionAdminDate(""), "—");
+    assert.equal(formatSubscriptionAdminDate("not-a-date"), "—");
+    const formatted = formatSubscriptionAdminDate("2026-07-18T12:00:00.000Z");
+    assert.match(formatted, /^\d{2}\/\d{2}\/\d{4}$/);
   });
 });

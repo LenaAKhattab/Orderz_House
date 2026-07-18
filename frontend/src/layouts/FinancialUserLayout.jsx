@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
+import AdminNavIcon from "../components/dashboard/AdminNavIcon";
 import { useAuth } from "../context/useAuth";
 import { useTranslation } from "../i18n/LanguageProvider";
 
@@ -86,7 +87,7 @@ export default function FinancialUserLayout() {
                     onClick={() => setSidebarOpen(false)}
                   >
                     <span className="oh-sa-navlink__icon" aria-hidden>
-                      💰
+                      <AdminNavIcon name="bonuses" />
                     </span>
                     <span className="oh-sa-navlink__label">{t("dashboard.financialUser.myBonuses")}</span>
                   </NavLink>

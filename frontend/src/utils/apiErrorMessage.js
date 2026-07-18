@@ -51,6 +51,14 @@ export function isAxiosTimeoutError(err) {
   return /timeout/i.test(msg) || /exceeded/i.test(msg);
 }
 
+/** True when the request was deliberately cancelled (AbortController / navigation). */
+export function isAxiosCanceledError(err) {
+  if (!err) return false;
+  if (err.code === "ERR_CANCELED" || err.name === "CanceledError" || err.name === "AbortError") return true;
+  if (typeof err.message === "string" && /canceled|cancelled|aborted/i.test(err.message)) return true;
+  return false;
+}
+
 /** True when the OTP row exists but the verification email could not be sent. */
 export function isOtpEmailSendError(err) {
   if (err?.response?.status !== 503) return false;
