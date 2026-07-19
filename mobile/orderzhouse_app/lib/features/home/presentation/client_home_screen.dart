@@ -11,7 +11,7 @@ import '../../notifications/presentation/unread_notifications_controller.dart';
 import '../../profile/domain/profile_actions.dart';
 import 'home_dashboard_chrome.dart';
 
-/// Client home — same chrome as freelancer home, with client actions.
+/// Client home — same chrome & layout patterns as freelancer home.
 class ClientHomeScreen extends ConsumerWidget {
   const ClientHomeScreen({super.key});
 
@@ -72,11 +72,6 @@ class ClientHomeScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
-                HomeSearchField(
-                  hint: 'ابحث عن خدمة أو تصنيف...',
-                  onTap: () => context.push(AppRoutes.services),
-                ),
                 const SizedBox(height: 22),
                 const Text(
                   'أنجز طلباتك باحتراف\nمن مكان واحد',
@@ -103,9 +98,8 @@ class ClientHomeScreen extends ConsumerWidget {
                   label: 'إنشاء طلب جديد',
                   onPressed: () => context.push(AppRoutes.clientCreateOrder),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
                 const HomePromoAdsSection(),
-                const SizedBox(height: 18),
                 Row(
                   children: [
                     Expanded(
@@ -145,50 +139,31 @@ class ClientHomeScreen extends ConsumerWidget {
                   textAlign: TextAlign.right,
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: HomeInfoChipCard(
-                        icon: Icons.add_circle_outline_rounded,
-                        title: 'طلب جديد',
-                        subtitle: 'ابدأ مشروعك الآن',
-                        accent: AppColors.primary,
-                        onTap: () => context.push(AppRoutes.clientCreateOrder),
-                      ),
+                HomeCircleShortcutsRow(
+                  items: [
+                    HomeCircleShortcut(
+                      icon: Icons.add_circle_outline_rounded,
+                      label: 'طلب جديد',
+                      accent: AppColors.primary,
+                      onTap: () => context.push(AppRoutes.clientCreateOrder),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: HomeInfoChipCard(
-                        icon: Icons.notifications_active_outlined,
-                        title: 'الإشعارات',
-                        subtitle: 'تابع المستجدات',
-                        accent: AppColors.primaryMid,
-                        onTap: () => context.push(AppRoutes.notifications),
-                      ),
+                    HomeCircleShortcut(
+                      icon: Icons.notifications_active_outlined,
+                      label: 'الإشعارات',
+                      accent: AppColors.primaryMid,
+                      onTap: () => context.push(AppRoutes.notifications),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: HomeInfoChipCard(
-                        icon: Icons.storefront_rounded,
-                        title: 'سوق الطلبات',
-                        subtitle: 'اطّلع على الفرص',
-                        accent: const Color(0xFF027A48),
-                        onTap: () => context.go(AppRoutes.marketplace),
-                      ),
+                    HomeCircleShortcut(
+                      icon: Icons.receipt_long_outlined,
+                      label: 'طلباتي',
+                      accent: const Color(0xFF027A48),
+                      onTap: () => context.go(AppRoutes.myOrders),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: HomeInfoChipCard(
-                        icon: Icons.person_outline_rounded,
-                        title: 'حسابي',
-                        subtitle: 'الملف والإعدادات',
-                        accent: AppColors.primaryDeep,
-                        onTap: () => context.go(AppRoutes.profile),
-                      ),
+                    HomeCircleShortcut(
+                      icon: Icons.person_outline_rounded,
+                      label: 'حسابي',
+                      accent: AppColors.primaryDeep,
+                      onTap: () => context.go(AppRoutes.profile),
                     ),
                   ],
                 ),

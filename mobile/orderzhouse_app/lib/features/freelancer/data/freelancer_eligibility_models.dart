@@ -44,3 +44,30 @@ String freelancerEligibilityMessageAr(FreelancerEligibility eligibility) {
       return 'حسابك غير مؤهل حاليًا لتنفيذ هذا الإجراء. يرجى مراجعة الإدارة.';
   }
 }
+
+/// Home / list banner copy: clear ineligible headline + specific reason.
+String freelancerIneligibleBannerMessageAr(FreelancerEligibility eligibility) {
+  final reason = freelancerIneligibleReasonAr(eligibility.reason);
+  return 'أنت غير مؤهل لاستلام الطلبات من السوق.\n$reason';
+}
+
+String freelancerIneligibleReasonAr(String? reason) {
+  switch (reason) {
+    case 'company_activation_pending':
+      return 'السبب: بانتظار موافقة الإدارة على تفعيل حسابك.';
+    case 'no_subscription':
+      return 'السبب: لا يوجد اشتراك فعّال على حسابك.';
+    case 'status_inactive':
+      return 'السبب: الاشتراك غير نشط.';
+    case 'status_cancelled':
+      return 'السبب: تم إلغاء الاشتراك.';
+    case 'payment_not_completed':
+      return 'السبب: لم يكتمل دفع الاشتراك.';
+    case 'expired':
+      return 'السبب: انتهت صلاحية الاشتراك.';
+    case 'activation_fee_unpaid':
+      return 'السبب: رسوم تفعيل الحساب غير مدفوعة. يرجى مراجعة الإدارة.';
+    default:
+      return 'السبب: يرجى مراجعة الإدارة لتفعيل أهليتك.';
+  }
+}

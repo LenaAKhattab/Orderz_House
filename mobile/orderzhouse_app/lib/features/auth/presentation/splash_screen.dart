@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/branding/app_brand_mark.dart';
+import '../../../core/branding/app_branding.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../push/data/push_notification_service.dart';
@@ -49,14 +49,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final logoWidth = (MediaQuery.sizeOf(context).width * 0.62).clamp(200.0, 320.0);
+
     return Scaffold(
-      backgroundColor: AppColors.primary,
+      backgroundColor: Colors.white,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const AppBrandMark(showWhitePlate: true, size: 76),
-            const SizedBox(height: 24),
+            Image.asset(
+              AppBranding.fullLogoAsset,
+              width: logoWidth,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+            ),
+            const SizedBox(height: 28),
             const CircularProgressIndicator(color: AppColors.secondary),
           ],
         ),

@@ -32,13 +32,18 @@ class AuthUser {
     return email;
   }
 
-  String get effectiveRole => primaryRole ?? role ?? 'client';
+  String get effectiveRole {
+    final raw = (primaryRole ?? role ?? 'client').trim().toLowerCase();
+    return raw.isEmpty ? 'client' : raw;
+  }
 
   bool get isFreelancerAccount =>
-      effectiveRole == 'freelancer' || roles.contains('freelancer');
+      effectiveRole == 'freelancer' ||
+      roles.any((r) => r.trim().toLowerCase() == 'freelancer');
 
   bool get isClientAccount =>
-      effectiveRole == 'client' || roles.contains('client');
+      effectiveRole == 'client' ||
+      roles.any((r) => r.trim().toLowerCase() == 'client');
 
   /// Navigation: freelancer tab when primary role is freelancer.
   bool get usesFreelancerExperience => effectiveRole == 'freelancer';
@@ -49,14 +54,20 @@ class AuthUser {
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     final rolesRaw = json['roles'];
     final permissionsRaw = json['permissions'];
+    String? asRole(dynamic value) {
+      if (value == null) return null;
+      final s = '$value'.trim();
+      return s.isEmpty ? null : s;
+    }
+
     return AuthUser(
       id: '${json['id'] ?? json['sub'] ?? ''}',
       email: '${json['email'] ?? ''}',
       firstName: json['firstName'] as String?,
       fatherName: json['fatherName'] as String?,
       familyName: json['familyName'] as String?,
-      primaryRole: json['primaryRole'] as String?,
-      role: json['role'] as String?,
+      primaryRole: asRole(json['primaryRole'] ?? json['primary_role']),
+      role: asRole(json['role']),
       roles: rolesRaw is List
           ? rolesRaw.map((e) => e is String ? e : '$e').toList()
           : const [],

@@ -237,6 +237,7 @@ function sanitizeBidUsersForClient(bidUsers) {
 /** Client-owned order payloads: hide freelancer user/account IDs; keep safe display for bids. */
 function sanitizeOrderForClient(order) {
   if (!order || typeof order !== "object") return order;
+  const { attachClientOrderUiFlags } = require("./clientOrderUiFlags");
   const o = { ...order };
   delete o.assignedFreelancerId;
   o.hasAssignedFreelancer = Boolean(order.assignedFreelancerId);
@@ -252,7 +253,7 @@ function sanitizeOrderForClient(order) {
   if (Array.isArray(o.files)) {
     o.files = o.files.map(stripInternalFileFields);
   }
-  return o;
+  return attachClientOrderUiFlags(o);
 }
 
 function sanitizeBidsForClient(bids) {

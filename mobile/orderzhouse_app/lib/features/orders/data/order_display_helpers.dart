@@ -30,6 +30,10 @@ String clientOrderStatusLabel(String? status) {
   switch (status) {
     case 'pending_payment':
       return 'بانتظار الدفع';
+    case 'pending_admin_review':
+      return 'بانتظار مراجعة الإدارة';
+    case 'awaiting_payment_after_bid_selection':
+      return 'بانتظار الدفع';
     case 'published':
       return 'منشور';
     case 'open_for_freelancers':

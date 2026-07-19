@@ -76,135 +76,145 @@ class _ClientOrderDetailBody extends ConsumerWidget {
       hasAssignedFreelancer: order.hasAssignedFreelancer,
     );
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-      children: [
-        OrderDetailHeroCard(
-          title: order.title,
-          orderId: order.id,
-          statusLabel: order.statusLabel,
-          statusKey: order.orderStatus,
-          projectTypeLabel: order.projectTypeLabel,
-          budgetLabel: order.budgetLabel,
-          dateLabel: formatOrderDateLabel(order.createdAt),
-          dateCaption: 'تاريخ الإنشاء',
-        ),
+    final showBottomPayment = order.needsPayment;
+
+    final listChildren = <Widget>[
+      OrderDetailHeroCard(
+        title: order.title,
+        orderId: order.id,
+        statusLabel: order.statusLabel,
+        statusKey: order.orderStatus,
+        projectTypeLabel: order.projectTypeLabel,
+        budgetLabel: order.budgetLabel,
+        dateLabel: formatOrderDateLabel(order.createdAt),
+        dateCaption: 'تاريخ الإنشاء',
+      ),
+      const SizedBox(height: 12),
+      OrderSectionCard(
+        title: 'معلومات الطلب',
+        icon: Icons.info_outline_rounded,
+        children: [
+          OrderInfoGrid(
+            items: [
+              if (order.category?.name != null)
+                OrderMetaItem(
+                  label: 'التصنيف',
+                  value: order.category!.name!,
+                  icon: Icons.category_outlined,
+                ),
+              OrderMetaItem(
+                label: 'نوع الطلب',
+                value: order.projectTypeLabel,
+                icon: Icons.layers_outlined,
+              ),
+              if (order.durationText != null)
+                OrderMetaItem(
+                  label: 'المدة',
+                  value: order.durationText!,
+                  icon: Icons.schedule_outlined,
+                ),
+              if (order.dueAt != null)
+                OrderMetaItem(
+                  label: 'موعد التسليم',
+                  value: formatOrderDateLabel(order.dueAt),
+                  icon: Icons.event_outlined,
+                ),
+              if (order.paymentStatus != null)
+                OrderMetaItem(
+                  label: 'حالة الدفع',
+                  value: order.paymentStatusLabel,
+                  icon: Icons.credit_card_outlined,
+                  accent: AppColors.success,
+                ),
+              OrderMetaItem(
+                label: 'التنفيذ',
+                value: order.hasAssignedFreelancer ? 'معيّن' : 'بانتظار التعيين',
+                icon: Icons.engineering_outlined,
+              ),
+              if (order.assignedFreelancerLabel != null)
+                OrderMetaItem(
+                  label: 'المستقل',
+                  value: order.assignedFreelancerLabel!,
+                  icon: Icons.person_outline,
+                ),
+              if (order.paymentAmount != null)
+                OrderMetaItem(
+                  label: 'مبلغ الدفع',
+                  value: '${order.paymentAmount!.toStringAsFixed(0)} ${order.currencyCode ?? 'JOD'}',
+                  icon: Icons.paid_outlined,
+                  accent: AppColors.success,
+                ),
+            ],
+          ),
+        ],
+      ),
+      if (order.description != null && order.description!.trim().isNotEmpty) ...[
         const SizedBox(height: 12),
         OrderSectionCard(
-          title: 'معلومات الطلب',
-          icon: Icons.info_outline_rounded,
+          title: 'الوصف',
+          icon: Icons.notes_rounded,
           children: [
-            OrderInfoGrid(
-              items: [
-                if (order.category?.name != null)
-                  OrderMetaItem(
-                    label: 'التصنيف',
-                    value: order.category!.name!,
-                    icon: Icons.category_outlined,
-                  ),
-                OrderMetaItem(
-                  label: 'نوع الطلب',
-                  value: order.projectTypeLabel,
-                  icon: Icons.layers_outlined,
-                ),
-                if (order.durationText != null)
-                  OrderMetaItem(
-                    label: 'المدة',
-                    value: order.durationText!,
-                    icon: Icons.schedule_outlined,
-                  ),
-                if (order.dueAt != null)
-                  OrderMetaItem(
-                    label: 'موعد التسليم',
-                    value: formatOrderDateLabel(order.dueAt),
-                    icon: Icons.event_outlined,
-                  ),
-                if (order.paymentStatus != null)
-                  OrderMetaItem(
-                    label: 'حالة الدفع',
-                    value: order.paymentStatusLabel,
-                    icon: Icons.credit_card_outlined,
-                    accent: AppColors.success,
-                  ),
-                OrderMetaItem(
-                  label: 'التنفيذ',
-                  value: order.hasAssignedFreelancer ? 'معيّن' : 'بانتظار التعيين',
-                  icon: Icons.engineering_outlined,
-                ),
-                if (order.assignedFreelancerLabel != null)
-                  OrderMetaItem(
-                    label: 'المستقل',
-                    value: order.assignedFreelancerLabel!,
-                    icon: Icons.person_outline,
-                  ),
-                if (order.paymentAmount != null)
-                  OrderMetaItem(
-                    label: 'مبلغ الدفع',
-                    value: '${order.paymentAmount!.toStringAsFixed(0)} ${order.currencyCode ?? 'JOD'}',
-                    icon: Icons.paid_outlined,
-                    accent: AppColors.success,
-                  ),
-              ],
+            Text(
+              order.description!.trim(),
+              style: const TextStyle(color: AppColors.textInk, height: 1.75, fontSize: 14),
+              textAlign: TextAlign.right,
             ),
           ],
         ),
-        if (order.description != null && order.description!.trim().isNotEmpty) ...[
-          const SizedBox(height: 12),
-          OrderSectionCard(
-            title: 'الوصف',
-            icon: Icons.notes_rounded,
-            children: [
-              Text(
-                order.description!.trim(),
-                style: const TextStyle(color: AppColors.textInk, height: 1.75, fontSize: 14),
-                textAlign: TextAlign.right,
-              ),
-            ],
-          ),
-        ],
-        if (showBids) ...[
-          const SizedBox(height: 12),
-          ClientOrderBidsSection(
-            orderId: orderId,
-            currencyCode: order.currencyCode,
-          ),
-        ],
-        if (showDeliveryReview) ...[
-          const SizedBox(height: 12),
-          OrderSectionCard(
-            title: 'مراجعة التسليم',
-            icon: Icons.inventory_2_outlined,
-            children: [
-              _ClientDeliveryReviewSection(orderId: orderId, order: order),
-            ],
-          ),
-        ],
-        if (showFreelancerReview) ...[
-          const SizedBox(height: 12),
-          OrderSectionCard(
-            title: 'تقييم المستقل',
-            icon: Icons.star_outline_rounded,
-            children: [
-              _ClientFreelancerReviewSection(orderId: orderId, order: order),
-            ],
-          ),
-        ],
+      ],
+      if (showBids) ...[
+        const SizedBox(height: 12),
+        ClientOrderBidsSection(
+          orderId: orderId,
+          currencyCode: order.currencyCode,
+        ),
+      ],
+      if (showDeliveryReview) ...[
         const SizedBox(height: 12),
         OrderSectionCard(
-          title: 'الإجراءات',
-          icon: Icons.bolt_outlined,
+          title: 'مراجعة التسليم',
+          icon: Icons.inventory_2_outlined,
           children: [
-            if (order.needsPayment)
-              ClientOrderPaymentSection(
-                orderId: order.id,
-                needsPayment: true,
-              )
-            else if (!isClient)
-              const OrderEmptyHint(message: 'مراجعة التسليم متاحة لحساب العميل فقط.')
-            else if (!clientCanApproveDelivery(order) && !clientCanRequestRevision(order))
-              const OrderEmptyHint(message: 'لا توجد إجراءات متاحة حالياً.'),
+            _ClientDeliveryReviewSection(orderId: orderId, order: order),
           ],
         ),
+      ],
+      if (showFreelancerReview) ...[
+        const SizedBox(height: 12),
+        OrderSectionCard(
+          title: 'تقييم المستقل',
+          icon: Icons.star_outline_rounded,
+          children: [
+            _ClientFreelancerReviewSection(orderId: orderId, order: order),
+          ],
+        ),
+      ],
+    ];
+
+    return Column(
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            children: listChildren,
+          ),
+        ),
+        if (showBottomPayment)
+          Material(
+            color: Colors.white,
+            elevation: 10,
+            shadowColor: AppColors.primary.withValues(alpha: 0.18),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: ClientOrderPaymentSection(
+                  orderId: order.id,
+                  needsPayment: true,
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

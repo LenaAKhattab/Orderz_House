@@ -16,6 +16,18 @@ String apiErrorMessage(Object error, {String fallback = 'حدث خطأ غير م
       if (message is String && message.trim().isNotEmpty) {
         return message.trim();
       }
+      // Some non-Orderz / legacy APIs use `error` instead of `message`.
+      final alt = data['error'];
+      if (alt is String && alt.trim().isNotEmpty) {
+        return alt.trim();
+      }
+    }
+    final status = error.response?.statusCode;
+    if (status == 401) {
+      return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+    }
+    if (status == 429) {
+      return 'تم تجاوز عدد المحاولات. انتظر قليلًا ثم حاول مرة أخرى.';
     }
   }
   return fallback;

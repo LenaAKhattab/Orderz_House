@@ -741,7 +741,7 @@ async function confirmClientSelectedBidPayment({ clientUserId, orderId, bidId })
   }
 }
 
-async function confirmClientFixedOrderPayment({ clientUserId, orderId }) {
+async function confirmClientFixedOrderPayment({ clientUserId, orderId, sessionId = null }) {
   const stripe = getStripeOrNull();
   if (!stripe) {
     throwStripeNotConfigured();
@@ -753,6 +753,11 @@ async function confirmClientFixedOrderPayment({ clientUserId, orderId }) {
     err.statusCode = 400;
     throw err;
   }
+
+  const preferredSessionId =
+    sessionId && /^cs_[A-Za-z0-9_]+$/.test(String(sessionId).trim())
+      ? String(sessionId).trim()
+      : null;
 
   const db = await pool.connect();
   try {
@@ -789,6 +794,7 @@ async function confirmClientFixedOrderPayment({ clientUserId, orderId }) {
       orderId: oid,
       purpose: PURPOSE_FIXED,
       bidId: null,
+      preferredSessionId,
     });
     if (!session) {
       const err = new Error("Payment is not completed yet.");

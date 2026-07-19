@@ -96,6 +96,13 @@ class ClientOrder {
     this.bidsCount = 0,
     this.clientRevisionNote,
     this.files = const [],
+    this.isPublished,
+    this.isOpenForPool,
+    this.requiresPaymentFlag,
+    this.canPayNowFlag,
+    this.requiresAdminReviewFlag,
+    this.clientDisplayStatus,
+    this.clientDisplayStatusLabelAr,
   });
 
   final String id;
@@ -120,10 +127,23 @@ class ClientOrder {
   final int bidsCount;
   final String? clientRevisionNote;
   final List<OrderFileDescriptor> files;
+  final bool? isPublished;
+  final bool? isOpenForPool;
+  final bool? requiresPaymentFlag;
+  final bool? canPayNowFlag;
+  final bool? requiresAdminReviewFlag;
+  final String? clientDisplayStatus;
+  final String? clientDisplayStatusLabelAr;
 
   String get projectTypeLabel => display.projectTypeLabel(projectType);
 
-  String get statusLabel => display.clientOrderStatusLabel(orderStatus);
+  String get statusLabel {
+    final fromApi = clientDisplayStatusLabelAr?.trim();
+    if (fromApi != null && fromApi.isNotEmpty) return fromApi;
+    if (requiresAdminReview) return 'بانتظار مراجعة الإدارة';
+    if (needsPayment) return 'بانتظار الدفع';
+    return display.clientOrderStatusLabel(orderStatus);
+  }
 
   String get paymentStatusLabel => display.paymentStatusLabel(paymentStatus);
 
@@ -141,7 +161,30 @@ class ClientOrder {
         projectType: projectType,
         paymentStatus: paymentStatus,
         orderStatus: orderStatus,
+        requiresPaymentFlag: requiresPaymentFlag,
       );
+
+  bool get canPayNow => orderCanPayNow(
+        needsPayment: needsPayment,
+        canPayNowFlag: canPayNowFlag,
+      );
+
+  bool get requiresAdminReview => orderRequiresAdminReview(
+        paymentStatus: paymentStatus,
+        isPublished: isPublished,
+        isOpenForPool: isOpenForPool,
+        orderStatus: orderStatus,
+        requiresAdminReviewFlag: requiresAdminReviewFlag,
+        clientDisplayStatus: clientDisplayStatus,
+      );
+
+  String? get statusHintAr {
+    if (needsPayment) return 'أكمل الدفع حتى يبدأ معالجة الطلب';
+    if (requiresAdminReview) {
+      return 'تم استلام الدفع، وسيتم نشر الطلب بعد مراجعته من الإدارة';
+    }
+    return null;
+  }
 
   String? get assignedFreelancerLabel {
     if (!hasAssignedFreelancer) return null;
@@ -180,6 +223,11 @@ class ClientOrder {
       }
     }
 
+    bool? readNullableBool(String camel, String snake) {
+      if (!json.containsKey(camel) && !json.containsKey(snake)) return null;
+      return readBool(json, camel, snake);
+    }
+
     return ClientOrder(
       id: readString(json, 'id', 'id'),
       title: readString(json, 'title', 'title'),
@@ -205,6 +253,14 @@ class ClientOrder {
       bidsCount: readInt(json, 'bidsCount', 'bids_count') ?? bids.length,
       clientRevisionNote: readMapField<String>(json, 'clientRevisionNote', 'client_revision_note'),
       files: parseOrderFilesList(json['files']),
+      isPublished: readNullableBool('isPublished', 'is_published'),
+      isOpenForPool: readNullableBool('isOpenForPool', 'is_open_for_pool'),
+      requiresPaymentFlag: readNullableBool('requiresPayment', 'requires_payment'),
+      canPayNowFlag: readNullableBool('canPayNow', 'can_pay_now'),
+      requiresAdminReviewFlag: readNullableBool('requiresAdminReview', 'requires_admin_review'),
+      clientDisplayStatus: readMapField<String>(json, 'clientDisplayStatus', 'client_display_status'),
+      clientDisplayStatusLabelAr:
+          readMapField<String>(json, 'clientDisplayStatusLabelAr', 'client_display_status_label_ar'),
     );
   }
 

@@ -17,7 +17,7 @@ void main() {
     });
 
     test('general settings do not include plans/subscriptions', () {
-      final settings = profileSettingsItems(isAuthenticated: true);
+      final settings = profileSettingsItems();
       final labels = settings.map((s) => s.label).join(' ');
       expect(labels.contains('باقات'), isFalse);
       expect(labels.contains('اشتراك'), isFalse);

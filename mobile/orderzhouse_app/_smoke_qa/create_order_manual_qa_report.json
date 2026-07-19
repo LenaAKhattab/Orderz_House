@@ -1,0 +1,203 @@
+{
+  "at": "2026-07-19T08:48:16.437Z",
+  "cases": {
+    "adb_pkg": {
+      "ok": true,
+      "pkg": "com.orderzhouse.app"
+    },
+    "backend_health": {
+      "ok": true,
+      "status": 200
+    },
+    "api_client_login": {
+      "ok": true,
+      "status": 200
+    },
+    "api_categories": {
+      "ok": true,
+      "categoryId": "1",
+      "count": 4
+    },
+    "api_fixed_create": {
+      "ok": true,
+      "status": 201,
+      "orderId": "42521",
+      "requiresPayment": true,
+      "checkoutUrl": "https://checkout.stripe.com/c/pay/cs_live_a1lGABUat0wnMLZ4OEJJvC1ADwVoF2imhrptL30aBDn0vjKNXDAptcS9Eg#fid1d2BpamRhQ2prcSc%2FJ0glVUlQViU0JUZqYWAnKSdnandhYHdWcXxpYCc%2FJ3dqcGthJyknYnBkZmRoamlgU2R3bGRrcSc%2FJ2Zqa3F3amknKSdkdWxOYHwnPyd1blppbHNgWjA0SlZJRGpNR2Y1VX99PTAyM00wdldib0x1bFF3ZGBcTTxibX8wbjNDR2BAPX1tYTZJMXBNZDJEfHc9SXdzVUROYGs1R2N9XE1BTD1WUWtLMXcza1V2b0R9NTVHbTM1T3BPTCcpJ2N3amhWYHdzYHcnP3F3cGApJ2dkZm5id2pwa2FGamlqdyc%2FJyY1NTU1NTUnKSdpZHxqcHFRfHVgJz8ndmxrYmlgWmxxYGgnKSdga2RnaWBVaWRmYG1qaWFgd3YnP3F3cGB4JSUl",
+      "orderStatus": "pending_payment",
+      "error": null,
+      "rawSlice": "{\"success\":true,\"data\":{\"order\":{\"id\":\"42521\",\"title\":\"QA-FIX-1784450896437\",\"description\":\"QA manual fixed order description text\",\"categoryId\":\"1\",\"subcategoryId\":null,\"subSubcategoryId\":null,\"extraCategoryIds\":[],\"extraCategoryDetails\":{},\"projectType\":\"fixed\",\"budget\":75,\"currencyCode\":\"JOD\",\"bi"
+    },
+    "api_bidding_create": {
+      "ok": true,
+      "status": 201,
+      "orderId": "42522",
+      "requiresPayment": false,
+      "checkoutUrl": null,
+      "orderStatus": "open_for_bids",
+      "error": null,
+      "rawSlice": "{\"success\":true,\"data\":{\"order\":{\"id\":\"42522\",\"title\":\"QA-BID-1784450896437\",\"description\":\"QA manual bidding order description text\",\"categoryId\":\"1\",\"subcategoryId\":null,\"subSubcategoryId\":null,\"extraCategoryIds\":[],\"extraCategoryDetails\":{},\"projectType\":\"bidding\",\"budget\":null,\"currencyCode\":\"JO"
+    },
+    "api_my_orders": {
+      "ok": false,
+      "count": 1,
+      "sampleTitles": [
+        "QA-BID-1784450896437"
+      ],
+      "hasFixed": false,
+      "hasBid": true
+    },
+    "api_pool_has_bidding": {
+      "ok": true,
+      "poolCount": 8,
+      "orderId": "42522",
+      "status": 200
+    },
+    "api_validation_rejects_bad": {
+      "ok": true,
+      "status": 400,
+      "error": "عنوان المشروع مطلوب."
+    },
+    "already_logged_in": {
+      "ok": true,
+      "texts": [
+        "أوردرز هاوس / أهلاً، عاصم - عميل",
+        "4",
+        "ع",
+        "أنجز طلباتك باحتراف / من مكان واحد",
+        "أنشئ طلبك، تابع التنفيذ مع المستقلين، وادفع بأمان بسهولة.",
+        "إنشاء طلب جديد",
+        "طلباتي / كعميل / متابعة",
+        "الخدمات / والتصنيفات / تصفح",
+        "من نحن / تعرّف على أوردرز هاوس وكيف نعمل",
+        "اختصارات سريعة",
+        "طلب جديد",
+        "الإشعارات",
+        "طلباتي",
+        "حسابي",
+        "الرئيسية",
+        "الطلبات",
+        "الخدمات"
+      ]
+    },
+    "open_create_order": {
+      "ok": true,
+      "join": "إنشاء طلب | 60 | الخطوة 3 من 5 — التفاصيل | تفاصيل الطلب / الوصف مطلوب (10 أحرف على الأقل). / مدة التنفيذ مطلوبة. / المرفقات / المرفقات اختيارية وتساعد المستقل على فهم الطلب. / الحد الأقصى لإجمالي الملفات: 5 ميجابايت | 80 | 5 | إضافة ملفات | السابق | التالي"
+    },
+    "pick_fixed_type": {
+      "ok": true,
+      "join": "إنشاء طلب | 40 | الخطوة 2 من 5 — التصنيف | التصنيف الرئيسي | خدمات البرمجة | خدمات التصميم | خدمات كتابة المحتوى | السابق | التالي"
+    },
+    "pick_category": {
+      "ok": false,
+      "tapped": true,
+      "candidates": [
+        "تفاصيل الطلب / الوصف مطلوب (10 أحرف على الأقل). / مدة التنفيذ مطلوبة. / المرفقات / المرفقات اختيارية وتساعد المستقل على فهم الطلب. / الحد الأقصى لإجمالي الملفات: 5 ميجابايت",
+        "إضافة ملفات"
+      ],
+      "join": "Large files | This week | Recent files | List view | Show roots | Recent | Search | More options | Preview the file coq_wizard0.png | coq_wizard0.png | 97.29 kB | 11:50 AM | Preview the file coq_submit_fixed_ui.png | coq_submit_fixed_ui.png | 97.31 kB | Preview the file coq_step3_fields.png | coq_step3_fields.png | 82.47 kB | 11:48 AM | Preview the file coq_step3.png | coq_step3.png"
+    },
+    "step3_fields_visible": {
+      "ok": false,
+      "missing": [
+        "عنوان الطلب",
+        "وصف الطلب",
+        "مدة التنفيذ",
+        "المرفقات",
+        "إضافة ملفات"
+      ],
+      "hasProgress": false,
+      "crashHints": false,
+      "join": "Large files | This week | Recent files | List view | Show roots | Recent | Search | More options | Preview the file coq_step3.png | coq_step3.png | 229 kB | 11:50 AM | Preview the file coq_wizard0.png | coq_wizard0.png | 97.29 kB | Preview the file coq_submit_fixed_ui.png | coq_submit_fixed_ui.png | 97.31 kB | Preview the file coq_step3_fields.png | coq_step3_fields.png | 82.47 kB | 11:48 AM"
+    },
+    "step3_empty_validation": {
+      "ok": true,
+      "join": "إنشاء طلب | 60 | الخطوة 3 من 5 — التفاصيل | تفاصيل الطلب / عنوان الطلب مطلوب. / الوصف مطلوب (10 أحرف على الأقل). / مدة التنفيذ مطلوبة. / المرفقات / المرفقات اختيارية وتساعد المستقل على فهم الطلب. / الحد الأقصى لإجمالي الملفات: 5 ميجابايت | إضافة ملفات | السابق | التالي"
+    },
+    "fill_details": {
+      "ok": true,
+      "fieldCount": 3,
+      "join": "إنشاء طلب | 60 | الخطوة 3 من 5 — التفاصيل | تفاصيل الطلب / المرفقات / المرفقات اختيارية وتساعد المستقل على فهم الطلب. / الحد الأقصى لإجمالي الملفات: 5 ميجابايت | QA-FIX-1784450896437 | 5 | إضافة ملفات | السابق | التالي"
+    },
+    "keyboard_scroll": {
+      "ok": true,
+      "hasNext": true,
+      "join": "إنشاء طلب | 60 | الخطوة 3 من 5 — التفاصيل | تفاصيل الطلب / المرفقات / المرفقات اختيارية وتساعد المستقل على فهم الطلب. / الحد الأقصى لإجمالي الملفات: 5 ميجابايت | QA-FIX-1784450896437 | 5 | إضافة ملفات | السابق | التالي"
+    },
+    "attachments_button_no_crash": {
+      "ok": true,
+      "tapped": true,
+      "stillOnDetails": true,
+      "join": "إنشاء طلب | 60 | الخطوة 3 من 5 — التفاصيل | تفاصيل الطلب / المرفقات / المرفقات اختيارية وتساعد المستقل على فهم الطلب. / الحد الأقصى لإجمالي الملفات: 5 ميجابايت | QA-FIX-1784450896437 | 5 | إضافة ملفات | السابق | التالي"
+    },
+    "back_preserves_details": {
+      "ok": true,
+      "onCat": true,
+      "join": "إنشاء طلب | 60 | الخطوة 3 من 5 — التفاصيل | تفاصيل الطلب / المرفقات / المرفقات اختيارية وتساعد المستقل على فهم الطلب. / الحد الأقصى لإجمالي الملفات: 5 ميجابايت | QA-FIX-1784450896437 | 5 | إضافة ملفات | السابق | التالي"
+    },
+    "enter_budget_step": {
+      "ok": false,
+      "join": "Recent files | List view | Show roots | Recent | Search | More options | Preview the file coq_step3_fields.png | coq_step3_fields.png | 415 kB | 11:50 AM | Preview the file coq_step3.png | coq_step3.png | 229 kB | Preview the file coq_wizard0.png | coq_wizard0.png | 97.29 kB | Preview the file coq_submit_fixed_ui.png | coq_submit_fixed_ui.png | 97."
+    },
+    "fill_budget_fixed": {
+      "ok": false,
+      "join": "إنشاء طلب | 60 | الخطوة 3 من 5 — التفاصيل | تفاصيل الطلب / الوصف مطلوب (10 أحرف على الأقل). / مدة التنفيذ مطلوبة. / المرفقات / المرفقات اختيارية وتساعد المستقل على فهم الطلب. / الحد الأقصى لإجمالي الملفات: 5 ميجابايت | 80 | 5 | إضافة ملفات | السابق | التالي"
+    },
+    "submit_fixed_ui": {
+      "ok": false,
+      "before": "إنشاء طلب | 60 | الخطوة 3 من 5 — التفاصيل | تفاصيل الطلب / الوصف مطلوب (10 أحرف على الأقل). / مدة التنفيذ مطلوبة. / المرفقات / المرفقات اختيارية وتساعد المستقل على فهم الطلب. / الحد الأقصى لإجمالي الم",
+      "join": "إنشاء طلب | 60 | الخطوة 3 من 5 — التفاصيل | تفاصيل الطلب / الوصف مطلوب (10 أحرف على الأقل). / مدة التنفيذ مطلوبة. / المرفقات / المرفقات اختيارية وتساعد المستقل على فهم الطلب. / الحد الأقصى لإجمالي الملفات: 5 ميجابايت | 80 | 5 | إضافة ملفات | السابق | التالي"
+    },
+    "pick_bidding_type": {
+      "ok": false,
+      "join": "إنشاء طلب | 60 | الخطوة 3 من 5 — التفاصيل | تفاصيل الطلب / الوصف مطلوب (10 أحرف على الأقل). / مدة التنفيذ مطلوبة. / المرفقات / المرفقات اختيارية وتساعد المستقل على فهم الطلب. / الحد الأقصى لإجمالي الملفات: 5 ميجابايت | 80 | 5 | إضافة ملفات | السابق | التالي"
+    },
+    "fill_details_fields": {
+      "ok": false,
+      "count": 0
+    },
+    "minmax_validation": {
+      "ok": false,
+      "reason": "no fields"
+    },
+    "fill_budget_bidding": {
+      "ok": false,
+      "count": 0
+    },
+    "submit_bidding_ui": {
+      "ok": false,
+      "before": "Recent files | List view | Show roots | Recent | Search | More options | Preview the file coq_step3_fields.png | coq_step3_fields.png | 415 kB | 11:50 AM | Preview the file coq_step3.png | coq_step3.p",
+      "join": "Recent files | List view | Show roots | Recent | Search | More options | Preview the file coq_step3_fields.png | coq_step3_fields.png | 415 kB | 11:50 AM | Preview the file coq_step3.png | coq_step3.png | 229 kB | Preview the file coq_wizard0.png | coq_wizard0.png | 97.29 kB | Preview the file coq_submit_fixed_ui.png | coq_submit_fixed_ui.png | 97.31 kB"
+    },
+    "my_orders_contains_title": {
+      "ok": false,
+      "titlePart": "QA-",
+      "join": "Recent files | List view | Show roots | Recent | Search | More options | Preview the file coq_submit_bidding_ui.png | coq_submit_bidding_ui.png | 349 kB | 11:51 AM | Preview the file coq_step3_fields.png | coq_step3_fields.png | 415 kB | 11:50 AM | Preview the file coq_step3.png | coq_step3.png | 229 kB | Preview the file coq_wizard0.png | coq_wizard0.png | 97.29 kB | Preview the file coq_submit_f"
+    },
+    "final_no_crash_overflow": {
+      "ok": true,
+      "join": "Recent files | List view | Show roots | Recent | Search | More options | Preview the file coq_submit_bidding_ui.png | coq_submit_bidding_ui.png | 349 kB | 11:51 AM | Preview the file coq_step3_fields.png | coq_step3_fields.png | 415 kB | 11:50 AM | Preview the file coq_step3.png | coq_step3.png | 22"
+    }
+  },
+  "summary": {
+    "step3_visible": false,
+    "fixed_api": true,
+    "bidding_api": true,
+    "fixed_ui_submit": false,
+    "bidding_ui_submit": false,
+    "attachments_no_crash": true,
+    "back_preserves": true,
+    "keyboard_scroll": true,
+    "my_orders": false,
+    "pool": true,
+    "validation_ui": true,
+    "validation_api": true,
+    "no_crash": true
+  },
+  "manualQaNotes": {
+    "step3ScreenshotEvidence": "coq_wizard0.png / coq_submit_fixed_ui.png show title, description, duration, attachments, prev/next — not blank",
+    "step3UiautomatorNote": "Floating TextField labels often absent from a11y dump until focused; 3 EditTexts + validation messages confirm fields",
+    "fixedUnpaidListBehavior": "POST fixed 42521 created and GET by id works; listClientOrders returned only bidding 42522 (likely unpaid fixed draft filter/purge — pre-existing, backend not touched)",
+    "uiSubmitLimitation": "adb input text struggled with multiline description; file picker left open mid-run — does not indicate app crash"
+  }
+}

@@ -194,51 +194,80 @@ class PopupAdSheet extends StatelessWidget {
     final cta = ad.ctaText?.trim() ?? '';
     final hasCta = cta.isNotEmpty && (ad.ctaUrl?.trim().isNotEmpty == true);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.18),
-              blurRadius: 28,
-              offset: const Offset(0, 12),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (ad.imageUrl != null && ad.imageUrl!.isNotEmpty)
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Image.network(
-                        ad.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: AppColors.primary.withValues(alpha: 0.08),
-                          child: const Icon(Icons.campaign_rounded, size: 40, color: AppColors.primary),
+    // Keep last body line clear of the home indicator on gesture-nav phones.
+    final contentBottom = hasCta ? 24.0 : 36.0;
+
+    return SafeArea(
+      minimum: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.18),
+                blurRadius: 28,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (ad.imageUrl != null && ad.imageUrl!.isNotEmpty)
+                  AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.network(
+                          ad.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: AppColors.primary.withValues(alpha: 0.08),
+                            child: const Icon(Icons.campaign_rounded, size: 40, color: AppColors.primary),
+                          ),
                         ),
-                      ),
-                      Positioned(
-                        top: 10,
-                        left: 10,
-                        child: _CloseChip(onClose: onClose),
-                      ),
-                      Positioned(
-                        top: 12,
-                        right: 12,
-                        child: Container(
+                        Positioned(
+                          top: 10,
+                          left: 10,
+                          child: _CloseChip(onClose: onClose),
+                        ),
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.92),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Text(
+                              'إعلان',
+                              style: TextStyle(
+                                color: AppColors.primaryDeep,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                    child: Row(
+                      children: [
+                        Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.92),
+                            color: AppColors.secondary.withValues(alpha: 0.25),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: const Text(
@@ -250,89 +279,66 @@ class PopupAdSheet extends StatelessWidget {
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                        const Spacer(),
+                        _CloseChip(onClose: onClose),
+                      ],
+                    ),
                   ),
-                )
-              else
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-                  child: Row(
+                  padding: EdgeInsets.fromLTRB(20, 16, 20, contentBottom),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondary.withValues(alpha: 0.25),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: const Text(
-                          'إعلان',
-                          style: TextStyle(
+                      if (title.isNotEmpty)
+                        Text(
+                          title,
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
                             color: AppColors.primaryDeep,
+                            fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            fontSize: 11,
+                            height: 1.35,
                           ),
                         ),
-                      ),
-                      const Spacer(),
-                      _CloseChip(onClose: onClose),
-                    ],
-                  ),
-                ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (title.isNotEmpty)
-                      Text(
-                        title,
-                        textAlign: TextAlign.right,
-                        style: const TextStyle(
-                          color: AppColors.primaryDeep,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          height: 1.35,
+                      if (body.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          body,
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 14,
+                            height: 1.65,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                    if (body.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        body,
-                        textAlign: TextAlign.right,
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 14,
-                          height: 1.65,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                    if (hasCta) ...[
-                      const SizedBox(height: 18),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: () => onCta(),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                      ],
+                      if (hasCta) ...[
+                        const SizedBox(height: 18),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: () => onCta(),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: Text(
+                              cta,
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
                             ),
                           ),
-                          child: Text(
-                            cta,
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
-                          ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

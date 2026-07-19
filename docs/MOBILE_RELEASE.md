@@ -202,7 +202,8 @@ flutter build appbundle --release \
 ## 9. Backend dependencies (قبل الإطلاق الحقيقي)
 
 - `https://orderzhouse.com/api` (production API — verified `/api/health`)
-- `BACKEND_PUBLIC_URL` HTTPS — bridge `/mobile/payment-return`
+- `BACKEND_PUBLIC_URL` HTTPS — bridge `/mobile/payment-return` (مطلوب للموبايل؛ بدونها في الإنتاج يُستخدم أصل `CLIENT_URL` HTTPS إن وُجد، ويُرفض localhost)
+- لا تضع `localhost` أو `10.0.2.2` في `BACKEND_PUBLIC_URL` على السيرفر الإنتاجي
 - `CLIENT_URL` HTTPS واحد
 - `MOBILE_APP_SCHEME=orderzhouse`
 - Stripe **live** keys + webhook production على السيرفر فقط

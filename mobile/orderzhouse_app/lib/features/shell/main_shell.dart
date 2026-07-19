@@ -11,42 +11,12 @@ class MainShell extends ConsumerWidget {
 
   final StatefulNavigationShell navigationShell;
 
-  static const _destinations = <_ShellDestination>[
-    _ShellDestination(
-      label: 'الرئيسية',
-      icon: Icons.home_outlined,
-      selectedIcon: Icons.home_rounded,
-      wellShape: _NavWellShape.rounded,
-    ),
-    _ShellDestination(
-      label: 'طلباتي',
-      icon: Icons.receipt_long_outlined,
-      selectedIcon: Icons.receipt_long_rounded,
-      wellShape: _NavWellShape.circle,
-    ),
-    _ShellDestination(
-      label: 'الطلبات',
-      icon: Icons.storefront_outlined,
-      selectedIcon: Icons.storefront_rounded,
-      wellShape: _NavWellShape.rounded,
-    ),
-    _ShellDestination(
-      label: 'الدورات',
-      icon: Icons.school_outlined,
-      selectedIcon: Icons.school_rounded,
-      wellShape: _NavWellShape.rounded,
-    ),
-    _ShellDestination(
-      label: 'حسابي',
-      icon: Icons.person_outline_rounded,
-      selectedIcon: Icons.person_rounded,
-      wellShape: _NavWellShape.circle,
-    ),
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authControllerProvider);
+    // Match tab content: courses only for freelancers; everyone else sees services.
+    final isFreelancer = auth.user?.usesFreelancerExperience == true;
+    final destinations = _destinationsFor(isClient: !isFreelancer);
 
     return Scaffold(
       body: Stack(
@@ -59,11 +29,53 @@ class MainShell extends ConsumerWidget {
       bottomNavigationBar: auth.isAuthenticated
           ? _SoftBottomNavBar(
               selectedIndex: navigationShell.currentIndex,
-              destinations: _destinations,
+              destinations: destinations,
               onDestinationSelected: navigationShell.goBranch,
             )
           : null,
     );
+  }
+
+  static List<_ShellDestination> _destinationsFor({required bool isClient}) {
+    return [
+      const _ShellDestination(
+        label: 'الرئيسية',
+        icon: Icons.home_outlined,
+        selectedIcon: Icons.home_rounded,
+        wellShape: _NavWellShape.rounded,
+      ),
+      const _ShellDestination(
+        label: 'طلباتي',
+        icon: Icons.receipt_long_outlined,
+        selectedIcon: Icons.receipt_long_rounded,
+        wellShape: _NavWellShape.circle,
+      ),
+      const _ShellDestination(
+        label: 'الطلبات',
+        icon: Icons.storefront_outlined,
+        selectedIcon: Icons.storefront_rounded,
+        wellShape: _NavWellShape.rounded,
+      ),
+      isClient
+          ? const _ShellDestination(
+              label: 'الخدمات',
+              icon: Icons.grid_view_outlined,
+              selectedIcon: Icons.grid_view_rounded,
+              wellShape: _NavWellShape.rounded,
+            )
+          : const _ShellDestination(
+              label: 'الدورات',
+              icon: Icons.school_outlined,
+              selectedIcon: Icons.school_rounded,
+              wellShape: _NavWellShape.rounded,
+            ),
+      const _ShellDestination(
+        label: 'حسابي',
+        icon: Icons.person_outline_rounded,
+        selectedIcon: Icons.person_rounded,
+        wellShape: _NavWellShape.circle,
+      ),
+    ];
   }
 }
 

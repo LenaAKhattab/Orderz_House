@@ -109,7 +109,10 @@ class _SubmitPoolBidSheetState extends State<_SubmitPoolBidSheet> {
             controller: _messageController,
             label: 'رسالة اختيارية',
             hint: 'أضف تفاصيلاً لعرضك...',
+            minLines: 3,
+            maxLines: 6,
             keyboardType: TextInputType.multiline,
+            textInputAction: TextInputAction.newline,
           ),
           const SizedBox(height: 16),
           OhButton(

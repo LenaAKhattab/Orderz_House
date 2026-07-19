@@ -37,8 +37,8 @@ class ClientOrdersRepository {
   Future<OrderCheckoutSession> requestFixedOrderPayCheckout(String orderId) =>
       _api.requestFixedOrderPayCheckout(orderId);
 
-  Future<void> confirmFixedOrderPayment(String orderId) =>
-      _api.confirmFixedOrderPayment(orderId);
+  Future<void> confirmFixedOrderPayment(String orderId, {String? sessionId}) =>
+      _api.confirmFixedOrderPayment(orderId, sessionId: sessionId);
 }
 
 final clientOrdersRepositoryProvider = Provider<ClientOrdersRepository>((ref) {

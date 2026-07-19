@@ -19,7 +19,10 @@ class HomePromoAdsSection extends ConsumerWidget {
       error: (e, st) => const SizedBox.shrink(),
       data: (ads) {
         if (ads.isEmpty) return const SizedBox.shrink();
-        return _PromoAdsCarousel(ads: ads);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _PromoAdsCarousel(ads: ads),
+        );
       },
     );
   }

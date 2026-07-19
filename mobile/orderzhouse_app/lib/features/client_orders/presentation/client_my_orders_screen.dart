@@ -151,6 +151,17 @@ class _ClientOrderCard extends StatelessWidget {
 
   final ClientOrder order;
 
+  Color get _chipBg {
+    if (order.needsPayment) return const Color(0xFFFFF4E5);
+    if (order.requiresAdminReview) return AppColors.secondary.withValues(alpha: 0.18);
+    return AppColors.secondary.withValues(alpha: 0.18);
+  }
+
+  Color get _chipFg {
+    if (order.needsPayment) return const Color(0xFFB45309);
+    return AppColors.primary;
+  }
+
   @override
   Widget build(BuildContext context) {
     return OhCard(
@@ -169,9 +180,16 @@ class _ClientOrderCard extends StatelessWidget {
                   ),
                 ),
               ),
-              _StatusChip(label: order.statusLabel),
+              _StatusChip(label: order.statusLabel, background: _chipBg, foreground: _chipFg),
             ],
           ),
+          if (order.statusHintAr != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              order.statusHintAr!,
+              style: const TextStyle(color: AppColors.textMuted, height: 1.45, fontSize: 13),
+            ),
+          ],
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
@@ -187,11 +205,23 @@ class _ClientOrderCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          OhButton(
-            label: 'التفاصيل',
-            outlined: true,
-            onPressed: () => context.push(AppRoutes.clientOrderPath(order.id)),
-          ),
+          if (order.canPayNow) ...[
+            OhButton(
+              label: 'ادفع الآن',
+              onPressed: () => context.push(AppRoutes.clientOrderPath(order.id)),
+            ),
+            const SizedBox(height: 8),
+            OhButton(
+              label: 'التفاصيل',
+              outlined: true,
+              onPressed: () => context.push(AppRoutes.clientOrderPath(order.id)),
+            ),
+          ] else
+            OhButton(
+              label: 'التفاصيل',
+              outlined: true,
+              onPressed: () => context.push(AppRoutes.clientOrderPath(order.id)),
+            ),
         ],
       ),
     );
@@ -199,22 +229,28 @@ class _ClientOrderCard extends StatelessWidget {
 }
 
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.label});
+  const _StatusChip({
+    required this.label,
+    required this.background,
+    required this.foreground,
+  });
 
   final String label;
+  final Color background;
+  final Color foreground;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.secondary.withValues(alpha: 0.18),
+        color: background,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: AppColors.primary,
+        style: TextStyle(
+          color: foreground,
           fontWeight: FontWeight.w700,
           fontSize: 12,
         ),

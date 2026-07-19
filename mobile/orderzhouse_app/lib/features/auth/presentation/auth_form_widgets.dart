@@ -80,7 +80,7 @@ class AuthHeroHeader extends StatelessWidget {
         if (showLogo) ...[
           const AppBrandMark(
             size: 72,
-            showTitle: true,
+            showTitle: false,
             titleColor: AppColors.primaryDeep,
             showGroundShadow: true,
           ),
@@ -205,37 +205,26 @@ class AuthPrimaryButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: 54,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AuthUi.pillRadius),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.28),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: FilledButton(
-          onPressed: isLoading ? null : onPressed,
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: AppColors.primaryMid,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AuthUi.pillRadius),
-            ),
-            textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+      child: FilledButton(
+        onPressed: isLoading ? null : onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: AppColors.primaryMid,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AuthUi.pillRadius),
           ),
-          child: isLoading
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                )
-              : Text(label),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
+        child: isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              )
+            : Text(label),
       ),
     );
   }

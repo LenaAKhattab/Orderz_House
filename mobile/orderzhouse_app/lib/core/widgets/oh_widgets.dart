@@ -9,25 +9,32 @@ class OhButton extends StatelessWidget {
     required this.onPressed,
     this.isLoading = false,
     this.outlined = false,
+    this.expand = true,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final bool isLoading;
   final bool outlined;
+  /// When true (default), stretches to parent width. Set false inside Rows.
+  final bool expand;
 
   @override
   Widget build(BuildContext context) {
+    final Widget button;
     if (outlined) {
-      return OutlinedButton(
+      button = OutlinedButton(
+        onPressed: isLoading ? null : onPressed,
+        child: _child(),
+      );
+    } else {
+      button = FilledButton(
         onPressed: isLoading ? null : onPressed,
         child: _child(),
       );
     }
-    return FilledButton(
-      onPressed: isLoading ? null : onPressed,
-      child: _child(),
-    );
+    if (!expand) return button;
+    return SizedBox(width: double.infinity, child: button);
   }
 
   Widget _child() {
@@ -83,6 +90,9 @@ class OhTextField extends StatelessWidget {
     this.validator,
     this.suffixIcon,
     this.onFieldSubmitted,
+    this.onChanged,
+    this.minLines,
+    this.maxLines = 1,
   });
 
   final TextEditingController controller;
@@ -94,20 +104,28 @@ class OhTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final Widget? suffixIcon;
   final void Function(String)? onFieldSubmitted;
+  final void Function(String)? onChanged;
+  final int? minLines;
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
+    final isMultiline = (maxLines ?? 1) != 1 || (minLines != null && minLines! > 1);
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
+      keyboardType: keyboardType ?? (isMultiline ? TextInputType.multiline : null),
+      textInputAction: textInputAction ?? (isMultiline ? TextInputAction.newline : null),
+      minLines: minLines,
+      maxLines: maxLines,
       validator: validator,
-      onFieldSubmitted: onFieldSubmitted,
+      onChanged: onChanged,
+      onFieldSubmitted: isMultiline ? null : onFieldSubmitted,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         suffixIcon: suffixIcon,
+        alignLabelWithHint: isMultiline,
       ),
     );
   }

@@ -9,6 +9,7 @@ import '../../../core/utils/stripe_checkout_launcher.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../data/client_orders_repository.dart';
 import '../data/create_order_models.dart';
+import '../data/payment_return_flow.dart';
 import 'client_orders_controller.dart';
 
 class CreateOrderSuccessView extends ConsumerStatefulWidget {
@@ -133,8 +134,17 @@ class _PaymentPendingSuccessBody extends StatelessWidget {
                 ),
                 if (checkoutOpened) ...[
                   const SizedBox(height: 12),
-                  const OhErrorBanner(
-                    message: 'لم يتم تأكيد الدفع بعد. يمكنك المحاولة لاحقًا من تفاصيل الطلب.',
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.iconChipBg,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      paymentCheckoutOpenedNoteAr,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(color: AppColors.textMuted, height: 1.5, fontSize: 13),
+                    ),
                   ),
                 ],
                 if (payError != null) ...[
@@ -325,8 +335,17 @@ class _ClientOrderPaymentSectionState extends ConsumerState<ClientOrderPaymentSe
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_checkoutOpened) ...[
-          const OhErrorBanner(
-            message: 'لم يتم تأكيد الدفع بعد. يمكنك المحاولة لاحقًا.',
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.iconChipBg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text(
+              paymentCheckoutOpenedNoteAr,
+              textAlign: TextAlign.right,
+              style: TextStyle(color: AppColors.textMuted, height: 1.5, fontSize: 13),
+            ),
           ),
           const SizedBox(height: 10),
         ],

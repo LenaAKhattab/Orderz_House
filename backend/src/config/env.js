@@ -102,6 +102,24 @@ function validateEnv() {
         "no automation driver — set FAKE_ORDERS_AUTOMATION_ENABLED=true (single instance) or FAKE_ORDERS_AUTOMATION_CRON_SECRET + external cron POST /api/internal/fake-orders/automation-tick every 1–2 min",
       );
     }
+
+    const {
+      getBackendPublicUrl,
+      isUnsafeMobileCheckoutPublicUrl,
+    } = require("./backendPublicUrl");
+    const bridgeOrigin = getBackendPublicUrl();
+    if (!String(process.env.BACKEND_PUBLIC_URL || "").trim()) {
+      warnProduction(
+        "BACKEND_PUBLIC_URL",
+        "unset — mobile Stripe return uses CLIENT_URL HTTPS origin when available; set BACKEND_PUBLIC_URL explicitly",
+      );
+    }
+    if (isUnsafeMobileCheckoutPublicUrl(bridgeOrigin)) {
+      warnProduction(
+        "BACKEND_PUBLIC_URL",
+        "resolves to a loopback host — mobile Stripe success/cancel URLs will be unreachable on devices",
+      );
+    }
   }
 
   if (missing.length === 0) {

@@ -21,20 +21,9 @@ class OrderAttachmentsSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            const Expanded(
-              child: Text(
-                'المرفقات',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textInk),
-              ),
-            ),
-            OhButton(
-              label: 'إضافة ملفات',
-              outlined: true,
-              onPressed: state.isSubmitting ? null : () => _pickFiles(context, ref),
-            ),
-          ],
+        const Text(
+          'المرفقات',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textInk),
         ),
         const SizedBox(height: 6),
         const Text(
@@ -45,6 +34,13 @@ class OrderAttachmentsSection extends ConsumerWidget {
         const Text(
           orderAttachmentHelperAr,
           style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
+        ),
+        const SizedBox(height: 12),
+        OhButton(
+          label: 'إضافة ملفات',
+          outlined: true,
+          expand: false,
+          onPressed: state.isSubmitting ? null : () => _pickFiles(context, ref),
         ),
         if (error != null) ...[
           const SizedBox(height: 8),

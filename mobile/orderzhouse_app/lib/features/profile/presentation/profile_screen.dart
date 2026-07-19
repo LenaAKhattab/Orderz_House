@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/branding/app_branding.dart';
-import '../../../core/constants/web_constants.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/domain/auth_user.dart';
@@ -37,7 +36,7 @@ class _AuthenticatedProfileBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final quickActions = profileQuickActionsForUser(user);
     final accountManagement = profileAccountManagementItems();
-    final settings = profileSettingsItems(isAuthenticated: true);
+    final settings = profileSettingsItems();
     final unreadAsync = ref.watch(unreadNotificationsControllerProvider);
     final unread = unreadAsync.maybeWhen(data: (v) => v, orElse: () => 0);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
@@ -630,10 +629,8 @@ Future<void> _handleSettingsTap(BuildContext context, ProfileSettingsItem item) 
       context.push(item.route ?? AppRoutes.accountSettings);
       return;
     case ProfileSettingsId.openWebsite:
-      final uri = Uri.tryParse(WebConstants.baseUrl);
-      if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
+      final uri = Uri.parse(AppBranding.publicWebsiteUrl);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
       return;
     case ProfileSettingsId.aboutApp:
       if (!context.mounted) return;
@@ -679,8 +676,6 @@ Future<void> _handleSettingsTap(BuildContext context, ProfileSettingsItem item) 
           const SnackBar(content: Text('تعذر فتح واتساب. تأكد من تثبيته على الجهاز.')),
         );
       }
-      return;
-    case ProfileSettingsId.language:
       return;
   }
 }
