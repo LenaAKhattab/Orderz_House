@@ -61,6 +61,7 @@ class CreateClientOrderScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text('إنشاء طلب'),
         leading: IconButton(
@@ -79,7 +80,12 @@ class CreateClientOrderScreen extends ConsumerWidget {
           _StepProgress(current: state.step, total: CreateOrderState.stepCount),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                12,
+                16,
+                24 + MediaQuery.viewInsetsOf(context).bottom,
+              ),
               children: [
                 if (state.submitError != null) ...[
                   OhErrorBanner(message: state.submitError!),
@@ -296,7 +302,19 @@ class _StepCategory extends ConsumerWidget {
     final error = state.stepErrors['categoryId'];
 
     if (state.categoriesLoading) {
-      return const OhLoadingBody(message: 'جاري تحميل التصنيفات...');
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 48),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 12),
+              Text('جاري تحميل التصنيفات...', style: TextStyle(color: AppColors.textMuted)),
+            ],
+          ),
+        ),
+      );
     }
     if (state.categoriesError != null) {
       return OhErrorBody(message: state.categoriesError!, onRetry: notifier.loadCategories);
@@ -431,16 +449,10 @@ class _StepDetailsState extends ConsumerState<_StepDetails> {
     _title = TextEditingController(text: widget.state.draft.title);
     _description = TextEditingController(text: widget.state.draft.description);
     _duration = TextEditingController(text: widget.state.draft.durationValue);
-    _title.addListener(_sync);
-    _description.addListener(_sync);
-    _duration.addListener(_sync);
   }
 
   @override
   void dispose() {
-    _title.removeListener(_sync);
-    _description.removeListener(_sync);
-    _duration.removeListener(_sync);
     _title.dispose();
     _description.dispose();
     _duration.dispose();
@@ -474,7 +486,8 @@ class _StepDetailsState extends ConsumerState<_StepDetails> {
             controller: _title,
             label: 'عنوان الطلب',
             hint: 'مثال: تصميم شعار احترافي',
-            onFieldSubmitted: (_) => _sync(),
+            textInputAction: TextInputAction.next,
+            onChanged: (_) => _sync(),
           ),
           if (errors['title'] != null)
             Padding(
@@ -487,7 +500,10 @@ class _StepDetailsState extends ConsumerState<_StepDetails> {
             label: 'وصف الطلب',
             hint: 'اشرح المطلوب بوضوح...',
             keyboardType: TextInputType.multiline,
-            onFieldSubmitted: (_) => _sync(),
+            textInputAction: TextInputAction.newline,
+            minLines: 4,
+            maxLines: 8,
+            onChanged: (_) => _sync(),
           ),
           if (errors['description'] != null)
             Padding(
@@ -500,13 +516,14 @@ class _StepDetailsState extends ConsumerState<_StepDetails> {
             label: 'مدة التنفيذ (بالأيام)',
             hint: 'مثال: 5',
             keyboardType: TextInputType.number,
-            onFieldSubmitted: (_) => _sync(),
+            textInputAction: TextInputAction.done,
+            onChanged: (_) => _sync(),
           ),
-            if (errors['durationValue'] != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(errors['durationValue']!, style: const TextStyle(color: AppColors.error)),
-              ),
+          if (errors['durationValue'] != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(errors['durationValue']!, style: const TextStyle(color: AppColors.error)),
+            ),
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 16),
@@ -537,16 +554,10 @@ class _StepBudgetState extends ConsumerState<_StepBudget> {
     _budget = TextEditingController(text: widget.state.draft.budget);
     _min = TextEditingController(text: widget.state.draft.bidBudgetMin);
     _max = TextEditingController(text: widget.state.draft.bidBudgetMax);
-    _budget.addListener(_sync);
-    _min.addListener(_sync);
-    _max.addListener(_sync);
   }
 
   @override
   void dispose() {
-    _budget.removeListener(_sync);
-    _min.removeListener(_sync);
-    _max.removeListener(_sync);
     _budget.dispose();
     _min.dispose();
     _max.dispose();
@@ -582,7 +593,7 @@ class _StepBudgetState extends ConsumerState<_StepBudget> {
               controller: _budget,
               label: 'الميزانية (JOD)',
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              onFieldSubmitted: (_) => _sync(),
+              onChanged: (_) => _sync(),
             ),
             if (errors['budget'] != null)
               Text(errors['budget']!, style: const TextStyle(color: AppColors.error)),
@@ -591,7 +602,7 @@ class _StepBudgetState extends ConsumerState<_StepBudget> {
               controller: _min,
               label: 'الحد الأدنى (JOD)',
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              onFieldSubmitted: (_) => _sync(),
+              onChanged: (_) => _sync(),
             ),
             if (errors['bidBudgetMin'] != null)
               Text(errors['bidBudgetMin']!, style: const TextStyle(color: AppColors.error)),
@@ -600,7 +611,7 @@ class _StepBudgetState extends ConsumerState<_StepBudget> {
               controller: _max,
               label: 'الحد الأعلى (JOD)',
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              onFieldSubmitted: (_) => _sync(),
+              onChanged: (_) => _sync(),
             ),
             if (errors['bidBudgetMax'] != null)
               Text(errors['bidBudgetMax']!, style: const TextStyle(color: AppColors.error)),

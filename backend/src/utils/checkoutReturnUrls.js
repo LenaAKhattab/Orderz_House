@@ -1,4 +1,8 @@
-const { getBackendPublicUrl } = require("../config/backendPublicUrl");
+const {
+  getBackendPublicUrl,
+  isUnsafeMobileCheckoutPublicUrl,
+  isProductionEnv,
+} = require("../config/backendPublicUrl");
 
 /**
  * Stripe success/cancel URLs for client fixed-order checkout only.
@@ -15,6 +19,15 @@ function buildClientOrderCheckoutReturnUrls({ isMobile, orderId, clientUrl }) {
   }
 
   const apiBase = getBackendPublicUrl();
+  if (isUnsafeMobileCheckoutPublicUrl(apiBase) && isProductionEnv()) {
+    const err = new Error(
+      "Mobile checkout misconfigured: BACKEND_PUBLIC_URL must be a public HTTPS origin (not localhost).",
+    );
+    err.statusCode = 500;
+    err.publicCode = "MOBILE_CHECKOUT_URL_MISCONFIGURED";
+    throw err;
+  }
+
   const q = `orderId=${oid}&session_id={CHECKOUT_SESSION_ID}`;
   return {
     successUrl: `${apiBase}/mobile/payment-return?status=success&${q}`,

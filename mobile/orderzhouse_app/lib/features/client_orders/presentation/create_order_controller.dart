@@ -125,7 +125,9 @@ class CreateOrderController extends AutoDisposeNotifier<CreateOrderState> {
 
   void selectSubSubcategory(ServiceSubSubcategory? item) {
     state = state.copyWith(
-      draft: state.draft.copyWith(subSubcategoryId: item?.id),
+      draft: item == null
+          ? state.draft.copyWith(clearSubSubcategory: true)
+          : state.draft.copyWith(subSubcategoryId: item.id),
       clearStepErrors: true,
     );
   }

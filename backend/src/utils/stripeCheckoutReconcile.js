@@ -69,12 +69,17 @@ async function assertCheckoutSessionAuthorizedForOrder(client, { order, session,
 
 /**
  * Confirm endpoint: find a Checkout Session for this order that is paid and matches metadata.
- * Tries pending client_order_payments sessions (oldest first), then orders.stripe_checkout_session_id (latest pointer).
+ * Tries optional preferredSessionId first (from mobile deep link), then pending payment rows,
+ * then orders.stripe_checkout_session_id (latest pointer).
  *
  * @param {import('stripe').Stripe} stripe
  * @param {*} db pg client in transaction
  */
-async function resolvePaidCheckoutSessionForClientOrder(stripe, db, { order, orderId, purpose, bidId }) {
+async function resolvePaidCheckoutSessionForClientOrder(
+  stripe,
+  db,
+  { order, orderId, purpose, bidId, preferredSessionId = null },
+) {
   const oid = Number(orderId);
   const purposeRow = purpose === PURPOSE_FIXED ? ROW_PURPOSE_FIXED : ROW_PURPOSE_BID;
   const { rows: pendingRows } = await db.query(
@@ -91,7 +96,11 @@ async function resolvePaidCheckoutSessionForClientOrder(stripe, db, { order, ord
 
   const fromPending = pendingRows.map((r) => r.provider_checkout_session_id).filter(Boolean);
   const ptr = order.stripe_checkout_session_id ? String(order.stripe_checkout_session_id) : null;
-  const candidates = [...new Set([...fromPending, ptr].filter(Boolean))];
+  const preferred =
+    preferredSessionId && /^cs_[A-Za-z0-9_]+$/.test(String(preferredSessionId).trim())
+      ? String(preferredSessionId).trim()
+      : null;
+  const candidates = [...new Set([preferred, ...fromPending, ptr].filter(Boolean))];
 
   const uid = Number(order.created_by_user_id);
 

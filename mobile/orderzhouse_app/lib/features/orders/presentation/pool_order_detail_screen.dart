@@ -61,117 +61,127 @@ class _PoolOrderDetailBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final participationLabel = poolParticipationStatusLabelAr(order);
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+    return Column(
       children: [
-        OrderDetailHeroCard(
-          title: order.title,
-          orderId: order.id,
-          statusLabel: order.statusLabel,
-          statusKey: order.orderStatus,
-          projectTypeLabel: order.projectTypeLabel,
-          budgetLabel: order.budgetLabel,
-          dateLabel: formatOrderDateLabel(order.publishedAtLabel),
-          dateCaption: 'تاريخ النشر',
-        ),
-        const SizedBox(height: 12),
-        OrderSectionCard(
-          title: 'معلومات الطلب',
-          icon: Icons.info_outline_rounded,
-          children: [
-            OrderInfoGrid(
-              items: [
-                if (order.category?.name != null)
-                  OrderMetaItem(
-                    label: 'التصنيف',
-                    value: order.category!.name!,
-                    icon: Icons.category_outlined,
-                  ),
-                OrderMetaItem(
-                  label: 'نوع الطلب',
-                  value: order.projectTypeLabel,
-                  icon: Icons.layers_outlined,
-                ),
-                if (order.durationText != null)
-                  OrderMetaItem(
-                    label: 'المدة',
-                    value: order.durationText!,
-                    icon: Icons.schedule_outlined,
-                  ),
-                if (order.dueAt != null)
-                  OrderMetaItem(
-                    label: 'موعد التسليم',
-                    value: formatOrderDateLabel(order.dueAt),
-                    icon: Icons.event_outlined,
-                  ),
-                if (order.applicantsCount > 0)
-                  OrderMetaItem(
-                    label: 'المتقدمون',
-                    value: '${order.applicantsCount}',
-                    icon: Icons.people_outline,
-                    accent: const Color(0xFFB54708),
-                  ),
-                if (order.filesCount > 0)
-                  OrderMetaItem(
-                    label: 'المرفقات',
-                    value: '${order.filesCount} ملف',
-                    icon: Icons.attach_file,
-                  ),
-                if (order.hasAssignedFreelancer)
-                  const OrderMetaItem(
-                    label: 'التنفيذ',
-                    value: 'تم تعيين مستقل',
-                    icon: Icons.person_outline,
-                  ),
-              ],
-            ),
-          ],
-        ),
-        if (order.description != null && order.description!.trim().isNotEmpty) ...[
-          const SizedBox(height: 12),
-          OrderSectionCard(
-            title: 'الوصف',
-            icon: Icons.notes_rounded,
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             children: [
-              Text(
-                order.description!.trim(),
-                style: const TextStyle(color: AppColors.textInk, height: 1.75, fontSize: 14),
-                textAlign: TextAlign.right,
+              OrderDetailHeroCard(
+                title: order.title,
+                orderId: order.id,
+                statusLabel: order.statusLabel,
+                statusKey: order.orderStatus,
+                projectTypeLabel: order.projectTypeLabel,
+                budgetLabel: order.budgetLabel,
+                dateLabel: formatOrderDateLabel(order.publishedAtLabel),
+                dateCaption: 'تاريخ النشر',
               ),
+              const SizedBox(height: 12),
+              OrderSectionCard(
+                title: 'معلومات الطلب',
+                icon: Icons.info_outline_rounded,
+                children: [
+                  OrderInfoGrid(
+                    items: [
+                      if (order.category?.name != null)
+                        OrderMetaItem(
+                          label: 'التصنيف',
+                          value: order.category!.name!,
+                          icon: Icons.category_outlined,
+                        ),
+                      OrderMetaItem(
+                        label: 'نوع الطلب',
+                        value: order.projectTypeLabel,
+                        icon: Icons.layers_outlined,
+                      ),
+                      if (order.durationText != null)
+                        OrderMetaItem(
+                          label: 'المدة',
+                          value: order.durationText!,
+                          icon: Icons.schedule_outlined,
+                        ),
+                      if (order.dueAt != null)
+                        OrderMetaItem(
+                          label: 'موعد التسليم',
+                          value: formatOrderDateLabel(order.dueAt),
+                          icon: Icons.event_outlined,
+                        ),
+                      if (order.applicantsCount > 0)
+                        OrderMetaItem(
+                          label: 'المتقدمون',
+                          value: '${order.applicantsCount}',
+                          icon: Icons.people_outline,
+                          accent: const Color(0xFFB54708),
+                        ),
+                      if (order.filesCount > 0)
+                        OrderMetaItem(
+                          label: 'المرفقات',
+                          value: '${order.filesCount} ملف',
+                          icon: Icons.attach_file,
+                        ),
+                      if (order.hasAssignedFreelancer)
+                        const OrderMetaItem(
+                          label: 'التنفيذ',
+                          value: 'تم تعيين مستقل',
+                          icon: Icons.person_outline,
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+              if (order.description != null && order.description!.trim().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                OrderSectionCard(
+                  title: 'الوصف',
+                  icon: Icons.notes_rounded,
+                  children: [
+                    Text(
+                      order.description!.trim(),
+                      style: const TextStyle(color: AppColors.textInk, height: 1.75, fontSize: 14),
+                      textAlign: TextAlign.right,
+                    ),
+                  ],
+                ),
+              ],
+              if (participationLabel != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.secondary.withValues(alpha: 0.5)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle_outline, color: AppColors.primary),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          participationLabel,
+                          style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textInk, height: 1.4),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
-        ],
-        if (participationLabel != null) ...[
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.secondary.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.secondary.withValues(alpha: 0.5)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.check_circle_outline, color: AppColors.primary),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    participationLabel,
-                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textInk, height: 1.4),
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-              ],
+        ),
+        Material(
+          color: Colors.white,
+          elevation: 10,
+          shadowColor: AppColors.primary.withValues(alpha: 0.18),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: _PoolOrderActions(orderId: orderId, order: order, auth: auth),
             ),
           ),
-        ],
-        const SizedBox(height: 12),
-        OrderSectionCard(
-          title: 'الإجراءات',
-          icon: Icons.bolt_outlined,
-          children: [
-            _PoolOrderActions(orderId: orderId, order: order, auth: auth),
-          ],
         ),
       ],
     );

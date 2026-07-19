@@ -10,8 +10,14 @@ abstract final class AppBranding {
   /// Official mark synced from `frontend/public/logo.png`.
   static const logoAsset = 'assets/branding/company_logo.png';
 
+  /// Full vertical logo (mark + Arabic wordmark + tagline) from `frontend/public/hero/fullLogp.png`.
+  static const fullLogoAsset = 'assets/branding/full_logo.png';
+
   static const aboutBody =
       '$displayNameAr\nالإصدار $versionLabel\n\nمنصة لإدارة الطلبات بين العملاء والمستقلين.';
+
+  /// Public marketing website (always production — not the local Vite URL).
+  static const publicWebsiteUrl = 'https://orderzhouse.com/';
 
   /// Support WhatsApp — E.164 without `+` for `wa.me` links.
   static const supportWhatsappE164 = '962791433341';

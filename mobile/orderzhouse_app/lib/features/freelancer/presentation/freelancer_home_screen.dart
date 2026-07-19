@@ -74,11 +74,6 @@ class FreelancerHomeScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
-                HomeSearchField(
-                  hint: 'ابحث عن طلب أو تصنيف...',
-                  onTap: () => context.go(AppRoutes.marketplace),
-                ),
                 const SizedBox(height: 22),
                 const Text(
                   'فرص جديدة بانتظارك\nفي سوق الطلبات',
@@ -105,11 +100,9 @@ class FreelancerHomeScreen extends ConsumerWidget {
                   label: 'تصفح الطلبات الآن',
                   onPressed: () => context.go(AppRoutes.marketplace),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
                 const FreelancerEligibilityBanner(compact: true),
-                const SizedBox(height: 18),
                 const HomePromoAdsSection(),
-                const SizedBox(height: 18),
                 Row(
                   children: [
                     Expanded(
@@ -123,10 +116,10 @@ class FreelancerHomeScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: HomeActionTile(
-                        title: 'استكشف\nالسوق',
-                        badge: 'فرص',
-                        icon: Icons.travel_explore_rounded,
-                        onTap: () => context.go(AppRoutes.marketplace),
+                        title: 'الخدمات\nوالتصنيفات',
+                        badge: 'مجالات',
+                        icon: Icons.grid_view_rounded,
+                        onTap: () => context.push(AppRoutes.services),
                       ),
                     ),
                   ],
@@ -145,13 +138,6 @@ class FreelancerHomeScreen extends ConsumerWidget {
                   icon: Icons.school_rounded,
                   onTap: () => context.go(AppRoutes.courses),
                 ),
-                const SizedBox(height: 12),
-                HomeWideActionTile(
-                  title: 'الخدمات والتصنيفات',
-                  subtitle: 'تصفح مجالات العمل المتاحة',
-                  icon: Icons.grid_view_rounded,
-                  onTap: () => context.push(AppRoutes.services),
-                ),
                 const SizedBox(height: 22),
                 const Text(
                   'اختصارات سريعة',
@@ -163,50 +149,31 @@ class FreelancerHomeScreen extends ConsumerWidget {
                   textAlign: TextAlign.right,
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: HomeInfoChipCard(
-                        icon: Icons.travel_explore_rounded,
-                        title: 'استكشف',
-                        subtitle: 'طلبات جديدة يوميًا',
-                        accent: AppColors.primary,
-                        onTap: () => context.go(AppRoutes.marketplace),
-                      ),
+                HomeCircleShortcutsRow(
+                  items: [
+                    HomeCircleShortcut(
+                      icon: Icons.travel_explore_rounded,
+                      label: 'استكشف',
+                      accent: AppColors.primary,
+                      onTap: () => context.go(AppRoutes.marketplace),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: HomeInfoChipCard(
-                        icon: Icons.notifications_active_outlined,
-                        title: 'الإشعارات',
-                        subtitle: 'تابع المستجدات',
-                        accent: AppColors.primaryMid,
-                        onTap: () => context.push(AppRoutes.notifications),
-                      ),
+                    HomeCircleShortcut(
+                      icon: Icons.notifications_active_outlined,
+                      label: 'الإشعارات',
+                      accent: AppColors.primaryMid,
+                      onTap: () => context.push(AppRoutes.notifications),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: HomeInfoChipCard(
-                        icon: Icons.school_rounded,
-                        title: 'الدورات',
-                        subtitle: 'تدريب المنصة',
-                        accent: const Color(0xFF027A48),
-                        onTap: () => context.go(AppRoutes.courses),
-                      ),
+                    HomeCircleShortcut(
+                      icon: Icons.school_rounded,
+                      label: 'الدورات',
+                      accent: const Color(0xFF027A48),
+                      onTap: () => context.go(AppRoutes.courses),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: HomeInfoChipCard(
-                        icon: Icons.person_outline_rounded,
-                        title: 'حسابي',
-                        subtitle: 'الملف والإعدادات',
-                        accent: AppColors.primaryDeep,
-                        onTap: () => context.go(AppRoutes.profile),
-                      ),
+                    HomeCircleShortcut(
+                      icon: Icons.person_outline_rounded,
+                      label: 'حسابي',
+                      accent: AppColors.primaryDeep,
+                      onTap: () => context.go(AppRoutes.profile),
                     ),
                   ],
                 ),

@@ -126,9 +126,12 @@ const createClientOrder = async (req, res, next) => {
 
 const confirmFixedOrderPayment = async (req, res, next) => {
   try {
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+    const sessionId = body.sessionId || body.session_id || null;
     const out = await stripeCheckoutService.confirmClientFixedOrderPayment({
       clientUserId: req.auth.userId,
       orderId: req.params.id,
+      sessionId,
     });
     return res.status(200).json({ success: true, data: out });
   } catch (err) {

@@ -29,6 +29,7 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
   String? _errorMessage;
   ClientOrder? _order;
   bool _bootstrapDone = false;
+  bool _confirmInFlight = false;
 
   @override
   void initState() {
@@ -60,37 +61,55 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
     }
   }
 
-  Future<void> _confirmAndRefresh() async {
+  Future<void> _confirmAndRefresh({bool poll = true}) async {
     if (!ref.read(authControllerProvider).isAuthenticated) {
       setState(() => _state = PaymentReturnUiState.guestNeedsLogin);
       return;
     }
+    if (_confirmInFlight) return;
+    _confirmInFlight = true;
 
     setState(() {
       _state = PaymentReturnUiState.confirming;
       _errorMessage = null;
     });
 
+    final attempts = poll ? paymentConfirmPollAttempts : 1;
+    final repo = ref.read(clientOrdersRepositoryProvider);
+    final orderId = widget.params.orderId;
+    final sessionId = widget.params.sessionId;
+
     try {
-      try {
-        await ref.read(clientOrdersRepositoryProvider).confirmFixedOrderPayment(widget.params.orderId);
-      } on DioException catch (e) {
-        final status = e.response?.statusCode;
-        if (status != 402) {
-          rethrow;
+      ClientOrder? order;
+      for (var i = 0; i < attempts; i++) {
+        try {
+          await repo.confirmFixedOrderPayment(orderId, sessionId: sessionId);
+        } on DioException catch (e) {
+          final status = e.response?.statusCode;
+          if (status != 402) {
+            rethrow;
+          }
+        }
+
+        order = await repo.fetchMyOrderById(orderId);
+        if (isOrderPaidFromBackend(order.paymentStatus)) {
+          break;
+        }
+        if (i < attempts - 1) {
+          await Future<void>.delayed(paymentConfirmPollInterval);
+          if (!mounted) return;
         }
       }
 
-      final order = await ref.read(clientOrdersRepositoryProvider).fetchMyOrderById(widget.params.orderId);
-      ref.invalidate(clientOrderDetailProvider(widget.params.orderId));
+      ref.invalidate(clientOrderDetailProvider(orderId));
       ref.invalidate(clientOrdersControllerProvider);
 
       if (!mounted) return;
       setState(() {
         _order = order;
-        _state = isOrderPaidFromBackend(order.paymentStatus)
-            ? PaymentReturnUiState.paid
-            : PaymentReturnUiState.pending;
+        _state = paymentReturnStateAfterConfirmAttempts(
+          paymentStatus: order?.paymentStatus,
+        );
       });
     } catch (e) {
       if (!mounted) return;
@@ -98,6 +117,8 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
         _state = PaymentReturnUiState.error;
         _errorMessage = apiErrorMessage(e, fallback: 'تعذر تأكيد حالة الدفع.');
       });
+    } finally {
+      _confirmInFlight = false;
     }
   }
 
@@ -177,22 +198,37 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
           ],
         );
       case PaymentReturnUiState.paid:
+        final adminReview = _order?.requiresAdminReview == true;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.check_circle_outline, color: AppColors.primary, size: 56),
+            Icon(
+              adminReview ? Icons.hourglass_top_outlined : Icons.check_circle_outline,
+              color: AppColors.primary,
+              size: 56,
+            ),
             const SizedBox(height: 12),
-            const Text(
-              'تم تأكيد الدفع',
+            Text(
+              adminReview ? 'تم استلام الدفع' : 'تم تأكيد الدفع',
               textAlign: TextAlign.center,
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'تم استلام الدفع وفتح الطلب للمستقلين.',
+            Text(
+              adminReview
+                  ? 'تم استلام الدفع، وسيتم نشر الطلب بعد مراجعته من الإدارة.'
+                  : 'تم استلام الدفع وفتح الطلب للمستقلين.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textMuted, height: 1.6),
+              style: const TextStyle(color: AppColors.textMuted, height: 1.6),
             ),
+            if (adminReview) ...[
+              const SizedBox(height: 8),
+              Text(
+                _order?.statusLabel ?? 'بانتظار مراجعة الإدارة',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary),
+              ),
+            ],
             const SizedBox(height: 20),
             OhButton(
               label: 'عرض تفاصيل الطلب',
@@ -218,6 +254,12 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
             ),
             const SizedBox(height: 8),
+            const Text(
+              paymentReturnPendingMessageAr,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textMuted, height: 1.6),
+            ),
+            const SizedBox(height: 12),
             const PaymentConfirmationNote(),
             if (_order?.paymentStatusLabel != null) ...[
               const SizedBox(height: 8),
@@ -230,7 +272,7 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
             const SizedBox(height: 20),
             OhButton(
               label: 'تحديث حالة الطلب',
-              onPressed: _confirmAndRefresh,
+              onPressed: () => _confirmAndRefresh(poll: true),
             ),
             const SizedBox(height: 10),
             OhButton(
@@ -247,19 +289,25 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
             const Icon(Icons.info_outline, color: AppColors.textMuted, size: 56),
             const SizedBox(height: 12),
             const Text(
-              'لم يتم تأكيد الدفع',
+              paymentReturnCancelTitleAr,
               textAlign: TextAlign.center,
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
             ),
             const SizedBox(height: 8),
             const Text(
-              'لم يتم تأكيد الدفع بعد. يمكنك المحاولة لاحقًا من تفاصيل الطلب.',
+              paymentReturnCancelBodyAr,
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textMuted, height: 1.6),
             ),
             const SizedBox(height: 20),
             OhButton(
-              label: 'العودة لتفاصيل الطلب',
+              label: 'المحاولة مرة أخرى',
+              onPressed: () => context.go(AppRoutes.clientOrderPath(widget.params.orderId)),
+            ),
+            const SizedBox(height: 10),
+            OhButton(
+              label: 'العودة إلى الطلب',
+              outlined: true,
               onPressed: () => context.go(AppRoutes.clientOrderPath(widget.params.orderId)),
             ),
             const SizedBox(height: 10),
@@ -276,7 +324,10 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
           children: [
             OhErrorBanner(message: _errorMessage ?? 'حدث خطأ.'),
             const SizedBox(height: 16),
-            OhButton(label: 'إعادة المحاولة', onPressed: _confirmAndRefresh),
+            OhButton(
+              label: 'إعادة المحاولة',
+              onPressed: () => _confirmAndRefresh(poll: true),
+            ),
             const SizedBox(height: 10),
             OhButton(
               label: 'عرض تفاصيل الطلب',

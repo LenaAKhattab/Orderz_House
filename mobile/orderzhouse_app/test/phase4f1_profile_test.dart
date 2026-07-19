@@ -110,15 +110,8 @@ void main() {
       expect(actions.any((a) => a.label.contains('تصفح السوق')), isFalse);
     });
 
-    test('guest settings omit language placeholder', () {
-      final settings = profileSettingsItems(isAuthenticated: false);
-      expect(settings.any((s) => s.id == ProfileSettingsId.language), isFalse);
-    });
-
-    test('authenticated settings include language placeholder', () {
-      final settings = profileSettingsItems(isAuthenticated: true);
-      final language = settings.firstWhere((s) => s.id == ProfileSettingsId.language);
-      expect(language.isPlaceholder, isTrue);
+    test('settings omit language placeholder', () {
+      expect(profileSettingsItems().any((s) => s.label == 'اللغة'), isFalse);
     });
 
     test('unauthenticated /profile requires login redirect (auth-first)', () {

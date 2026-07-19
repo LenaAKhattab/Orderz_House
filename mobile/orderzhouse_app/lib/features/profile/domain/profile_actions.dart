@@ -31,7 +31,6 @@ class ProfileActionItem {
 }
 
 enum ProfileSettingsId {
-  language,
   openWebsite,
   aboutApp,
   terms,
@@ -197,16 +196,8 @@ List<ProfileSettingsItem> profileAccountManagementItems() {
   ];
 }
 
-List<ProfileSettingsItem> profileSettingsItems({required bool isAuthenticated}) {
+List<ProfileSettingsItem> profileSettingsItems() {
   return [
-    if (isAuthenticated)
-      const ProfileSettingsItem(
-        id: ProfileSettingsId.language,
-        label: 'اللغة',
-        icon: Icons.language_outlined,
-        isPlaceholder: true,
-        placeholderHint: 'العربية — قريباً',
-      ),
     const ProfileSettingsItem(
       id: ProfileSettingsId.openWebsite,
       label: 'فتح الموقع',

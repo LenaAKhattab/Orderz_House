@@ -13,7 +13,6 @@ import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/categories/presentation/services_screen.dart';
 import '../../features/courses/presentation/course_details_screen.dart';
-import '../../features/courses/presentation/courses_screen.dart';
 import '../../features/client_orders/presentation/client_order_details_screen.dart';
 import '../../features/client_orders/presentation/create_order_screen.dart';
 import '../../features/client_orders/presentation/payment_return_screen.dart';
@@ -27,6 +26,7 @@ import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/public_pages/presentation/public_page_screen.dart';
 import '../../features/shell/main_shell.dart';
+import '../../features/shell/role_aware_courses_or_services_tab.dart';
 import '../../features/shell/role_aware_my_orders_screen.dart';
 import 'auth_redirect_policy.dart';
 import 'deep_link_normalization.dart';
@@ -262,7 +262,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.courses,
-                builder: (context, state) => const CoursesScreen(),
+                builder: (context, state) => const RoleAwareCoursesOrServicesTab(),
               ),
             ],
           ),

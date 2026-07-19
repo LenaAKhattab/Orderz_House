@@ -102,7 +102,15 @@ class ClientOrdersApi {
     );
   }
 
-  Future<void> confirmFixedOrderPayment(String orderId) async {
-    await _dio.post<dynamic>('/client/orders/$orderId/pay-confirm');
+  Future<void> confirmFixedOrderPayment(String orderId, {String? sessionId}) async {
+    final data = <String, dynamic>{};
+    final sid = sessionId?.trim();
+    if (sid != null && sid.isNotEmpty) {
+      data['sessionId'] = sid;
+    }
+    await _dio.post<dynamic>(
+      '/client/orders/$orderId/pay-confirm',
+      data: data.isEmpty ? null : data,
+    );
   }
 }

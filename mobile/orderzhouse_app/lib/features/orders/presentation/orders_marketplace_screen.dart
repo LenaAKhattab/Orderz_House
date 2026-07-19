@@ -12,6 +12,82 @@ import 'pool_orders_controller.dart';
 
 enum MarketplaceProjectFilter { all, bidding, fixed }
 
+enum MarketplaceBudgetFilter {
+  all,
+  upTo100,
+  from100To500,
+  from500To1000,
+  over1000;
+
+  String get labelAr => switch (this) {
+        MarketplaceBudgetFilter.all => 'كل الأسعار',
+        MarketplaceBudgetFilter.upTo100 => 'من 0 إلى 100 د.أ',
+        MarketplaceBudgetFilter.from100To500 => 'من 100 إلى 500 د.أ',
+        MarketplaceBudgetFilter.from500To1000 => 'من 500 إلى 1000 د.أ',
+        MarketplaceBudgetFilter.over1000 => 'أكثر من 1000 د.أ',
+      };
+
+  String get chipLabelAr => switch (this) {
+        MarketplaceBudgetFilter.all => '',
+        MarketplaceBudgetFilter.upTo100 => '0–100 د.أ',
+        MarketplaceBudgetFilter.from100To500 => '100–500 د.أ',
+        MarketplaceBudgetFilter.from500To1000 => '500–1000 د.أ',
+        MarketplaceBudgetFilter.over1000 => '+1000 د.أ',
+      };
+
+  bool containsValue(double value) => switch (this) {
+        MarketplaceBudgetFilter.all => true,
+        MarketplaceBudgetFilter.upTo100 => value >= 0 && value <= 100,
+        MarketplaceBudgetFilter.from100To500 => value > 100 && value <= 500,
+        MarketplaceBudgetFilter.from500To1000 => value > 500 && value <= 1000,
+        MarketplaceBudgetFilter.over1000 => value > 1000,
+      };
+
+  /// Selected band as [min, max] with null max = open-ended.
+  (double, double?) get band => switch (this) {
+        MarketplaceBudgetFilter.all => (0, null),
+        MarketplaceBudgetFilter.upTo100 => (0, 100),
+        MarketplaceBudgetFilter.from100To500 => (100, 500),
+        MarketplaceBudgetFilter.from500To1000 => (500, 1000),
+        MarketplaceBudgetFilter.over1000 => (1000, null),
+      };
+}
+
+class _MarketplaceFilters {
+  const _MarketplaceFilters({
+    required this.project,
+    required this.budget,
+  });
+
+  final MarketplaceProjectFilter project;
+  final MarketplaceBudgetFilter budget;
+}
+
+bool _orderMatchesBudgetFilter(PoolOrder order, MarketplaceBudgetFilter filter) {
+  if (filter == MarketplaceBudgetFilter.all) return true;
+
+  if (order.isBidding) {
+    final oMin = order.bidBudgetMin;
+    final oMax = order.bidBudgetMax;
+    if (oMin == null && oMax == null) return false;
+    final rangeMin = oMin ?? oMax!;
+    final rangeMax = oMax ?? oMin!;
+    final (bandMin, bandMax) = filter.band;
+    // Treat adjacent bands as half-open on the shared edge except 0–100 includes 100.
+    if (filter == MarketplaceBudgetFilter.upTo100) {
+      return rangeMin <= 100 && rangeMax >= 0;
+    }
+    if (bandMax == null) {
+      return rangeMax > bandMin;
+    }
+    return rangeMin <= bandMax && rangeMax > bandMin;
+  }
+
+  final budget = order.budget;
+  if (budget == null) return false;
+  return filter.containsValue(budget);
+}
+
 class OrdersMarketplaceScreen extends ConsumerStatefulWidget {
   const OrdersMarketplaceScreen({super.key});
 
@@ -23,6 +99,7 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
   final _searchController = TextEditingController();
   String _query = '';
   MarketplaceProjectFilter _filter = MarketplaceProjectFilter.all;
+  MarketplaceBudgetFilter _budgetFilter = MarketplaceBudgetFilter.all;
 
   @override
   void dispose() {
@@ -35,6 +112,7 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
     return orders.where((order) {
       if (_filter == MarketplaceProjectFilter.bidding && !order.isBidding) return false;
       if (_filter == MarketplaceProjectFilter.fixed && order.isBidding) return false;
+      if (!_orderMatchesBudgetFilter(order, _budgetFilter)) return false;
       if (q.isEmpty) return true;
       final haystack = [
         order.title,
@@ -49,65 +127,134 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
   }
 
   Future<void> _openFilterSheet() async {
-    final selected = await showModalBottomSheet<MarketplaceProjectFilter>(
+    var draftProject = _filter;
+    var draftBudget = _budgetFilter;
+
+    final selected = await showModalBottomSheet<_MarketplaceFilters>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 42,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBorder,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
+          child: StatefulBuilder(
+            builder: (context, setSheetState) {
+              return SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 42,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppColors.cardBorder,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'تصفية الطلبات',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          color: AppColors.primaryDeep,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'نوع الطلب',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      _FilterOption(
+                        label: 'كل الأنواع',
+                        selected: draftProject == MarketplaceProjectFilter.all,
+                        onTap: () => setSheetState(() => draftProject = MarketplaceProjectFilter.all),
+                      ),
+                      _FilterOption(
+                        label: 'مناقصة',
+                        selected: draftProject == MarketplaceProjectFilter.bidding,
+                        onTap: () => setSheetState(() => draftProject = MarketplaceProjectFilter.bidding),
+                      ),
+                      _FilterOption(
+                        label: 'سعر ثابت',
+                        selected: draftProject == MarketplaceProjectFilter.fixed,
+                        onTap: () => setSheetState(() => draftProject = MarketplaceProjectFilter.fixed),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'نطاق السعر',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      for (final option in MarketplaceBudgetFilter.values)
+                        _FilterOption(
+                          label: option.labelAr,
+                          selected: draftBudget == option,
+                          onTap: () => setSheetState(() => draftBudget = option),
+                        ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(ctx).pop(
+                                const _MarketplaceFilters(
+                                  project: MarketplaceProjectFilter.all,
+                                  budget: MarketplaceBudgetFilter.all,
+                                ),
+                              ),
+                              child: const Text('إعادة ضبط'),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: FilledButton(
+                              onPressed: () => Navigator.of(ctx).pop(
+                                _MarketplaceFilters(project: draftProject, budget: draftBudget),
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('تطبيق'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'تصفية الطلبات',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    color: AppColors.primaryDeep,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _FilterOption(
-                  label: 'كل الأنواع',
-                  selected: _filter == MarketplaceProjectFilter.all,
-                  onTap: () => Navigator.of(ctx).pop(MarketplaceProjectFilter.all),
-                ),
-                _FilterOption(
-                  label: 'مناقصة',
-                  selected: _filter == MarketplaceProjectFilter.bidding,
-                  onTap: () => Navigator.of(ctx).pop(MarketplaceProjectFilter.bidding),
-                ),
-                _FilterOption(
-                  label: 'سعر ثابت',
-                  selected: _filter == MarketplaceProjectFilter.fixed,
-                  onTap: () => Navigator.of(ctx).pop(MarketplaceProjectFilter.fixed),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         );
       },
     );
 
     if (selected != null && mounted) {
-      setState(() => _filter = selected);
+      setState(() {
+        _filter = selected.project;
+        _budgetFilter = selected.budget;
+      });
     }
   }
 
@@ -116,7 +263,9 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
     final state = ref.watch(poolOrdersControllerProvider);
     final notifier = ref.read(poolOrdersControllerProvider.notifier);
     final filtered = _filtered(state.orders);
-    final hasActiveFilter = _filter != MarketplaceProjectFilter.all || _query.trim().isNotEmpty;
+    final hasProjectFilter = _filter != MarketplaceProjectFilter.all;
+    final hasBudgetFilter = _budgetFilter != MarketplaceBudgetFilter.all;
+    final hasActiveFilter = hasProjectFilter || hasBudgetFilter || _query.trim().isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
@@ -161,27 +310,47 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
                       ),
                       const SizedBox(width: 10),
                       _FilterButton(
-                        active: _filter != MarketplaceProjectFilter.all,
+                        active: hasProjectFilter || hasBudgetFilter,
                         onTap: _openFilterSheet,
                       ),
                     ],
                   ),
-                  if (_filter != MarketplaceProjectFilter.all) ...[
+                  if (hasProjectFilter || hasBudgetFilter) ...[
                     const SizedBox(height: 10),
                     Align(
                       alignment: AlignmentDirectional.centerStart,
-                      child: InputChip(
-                        label: Text(
-                          _filter == MarketplaceProjectFilter.bidding ? 'مناقصة' : 'سعر ثابت',
-                        ),
-                        onDeleted: () => setState(() => _filter = MarketplaceProjectFilter.all),
-                        deleteIconColor: AppColors.primary,
-                        backgroundColor: AppColors.secondary.withValues(alpha: 0.18),
-                        side: BorderSide.none,
-                        labelStyle: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (hasProjectFilter)
+                            InputChip(
+                              label: Text(
+                                _filter == MarketplaceProjectFilter.bidding ? 'مناقصة' : 'سعر ثابت',
+                              ),
+                              onDeleted: () => setState(() => _filter = MarketplaceProjectFilter.all),
+                              deleteIconColor: AppColors.primary,
+                              backgroundColor: AppColors.secondary.withValues(alpha: 0.18),
+                              side: BorderSide.none,
+                              labelStyle: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          if (hasBudgetFilter)
+                            InputChip(
+                              label: Text(_budgetFilter.chipLabelAr),
+                              onDeleted: () =>
+                                  setState(() => _budgetFilter = MarketplaceBudgetFilter.all),
+                              deleteIconColor: AppColors.primary,
+                              backgroundColor: AppColors.secondary.withValues(alpha: 0.18),
+                              side: BorderSide.none,
+                              labelStyle: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ],
@@ -227,8 +396,10 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
       );
     }
 
-    final showLoadMore = !(_query.trim().isNotEmpty || _filter != MarketplaceProjectFilter.all) &&
-        state.hasMore;
+    final clientFilterActive = _query.trim().isNotEmpty ||
+        _filter != MarketplaceProjectFilter.all ||
+        _budgetFilter != MarketplaceBudgetFilter.all;
+    final showLoadMore = !clientFilterActive && state.hasMore;
 
     return RefreshIndicator(
       color: AppColors.primary,

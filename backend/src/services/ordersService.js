@@ -1107,10 +1107,6 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
      FROM orders
      WHERE created_by_user_id = $1
        AND source_type = 'client_created'
-       AND (
-         order_status <> 'pending_payment'
-         OR payment_status IN ('paid', 'skipped_by_admin')
-       )
      ORDER BY id DESC
      LIMIT $2 OFFSET $3`,
     [uid, lim, off],
