@@ -16,6 +16,7 @@ import { userHasPermission } from "../constants/dashboardPermissions";
 import NotificationsBell from "../components/notifications/NotificationsBell";
 import { useTranslation } from "../i18n/LanguageProvider";
 
+import "../styles/dashboardTokens.css";
 import "../styles/dashboardHub.css";
 import "../styles/adminDashboardShell.css";
 import "../styles/adminDashboardHub.css";

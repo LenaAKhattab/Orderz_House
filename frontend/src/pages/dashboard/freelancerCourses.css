@@ -1,4 +1,4 @@
-/* Freelancer courses list — light neumorphic hub (matches my-orders / notifications) */
+﻿/* Freelancer courses list — light neumorphic hub (matches my-orders / notifications) */
 
 .fdash-page--courses {
   max-width: 100%;
@@ -121,7 +121,7 @@
   font-size: clamp(1.35rem, 2.6vw, 1.85rem);
   font-weight: 800;
   line-height: 1.28;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   letter-spacing: -0.02em;
 }
 
@@ -130,7 +130,7 @@
   max-width: 52ch;
   font-size: clamp(0.88rem, 1.5vw, 0.96rem);
   line-height: 1.65;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 550;
 }
 
@@ -144,7 +144,7 @@
   top: 50%;
   inset-inline-end: 14px;
   transform: translateY(-50%);
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   pointer-events: none;
 }
 
@@ -159,7 +159,7 @@
   font-family: inherit;
   font-size: 0.88rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--dash-text, #172033);
   box-sizing: border-box;
   transition:
     border-color 0.2s ease,
@@ -167,7 +167,7 @@
 }
 
 .fc-hero__search-input::placeholder {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .fc-hero__search-input:focus {
@@ -237,7 +237,7 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   background: linear-gradient(160deg, #ffffff 0%, #f8fafc 55%, #f1f5f9 100%);
   border: 1px solid rgba(226, 232, 240, 0.85);
   box-shadow:
@@ -279,7 +279,7 @@
 .fc-stat-segment__value {
   font-size: clamp(1.1rem, 2vw, 1.35rem);
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   line-height: 1.05;
   font-variant-numeric: tabular-nums;
 }
@@ -287,7 +287,7 @@
 .fc-stat-segment__label {
   font-size: 0.76rem;
   font-weight: 650;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .fc-stat-segment__copy .hub-metric-skel--stat {
@@ -324,7 +324,7 @@
   border: none;
   border-radius: 999px;
   background: transparent;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-family: inherit;
   font-size: 0.82rem;
   font-weight: 750;
@@ -360,7 +360,7 @@
   font-size: 0.72rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   background: rgba(241, 245, 249, 0.95);
 }
 
@@ -379,7 +379,7 @@
 .fc-toolbar__sort-prefix {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   white-space: nowrap;
 }
 
@@ -422,7 +422,7 @@
 .fc-list__count {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   padding: 4px 12px;
   border-radius: 999px;
   background: rgba(241, 245, 249, 0.95);
@@ -544,7 +544,7 @@
   border: none;
   border-radius: 11px;
   background: rgba(255, 255, 255, 0.94);
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   cursor: pointer;
   box-shadow: 0 4px 12px -6px rgba(15, 23, 42, 0.15);
   transition:
@@ -583,7 +583,7 @@
   min-width: 0;
   font-size: clamp(1rem, 1.8vw, 1.12rem);
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   line-height: 1.35;
 }
 
@@ -621,7 +621,7 @@
   overflow: hidden;
   font-size: 0.86rem;
   line-height: 1.55;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 550;
 }
 
@@ -641,7 +641,7 @@
   gap: 6px;
   font-size: 0.76rem;
   font-weight: 650;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .fc-course-card__meta-dot {
@@ -682,7 +682,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #60a5fa 0%, #2563eb 100%);
+  background: var(--dash-primary, #2f3b65);
   transition: width 0.55s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
@@ -706,7 +706,7 @@
 .fc-course-card__progress-sub {
   font-size: 0.72rem;
   font-weight: 650;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .fc-course-card__cta {
@@ -837,7 +837,7 @@
     gap: 12px 14px;
     padding: 14px 16px;
     border-radius: 16px;
-    background: #ffffff;
+    background: var(--dash-card, #fcfcfd);
     border: 1px solid rgba(226, 232, 240, 0.95);
     box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
   }
@@ -975,7 +975,7 @@
   .fc-course-card__progress-sub {
     font-size: 0.8rem;
     font-weight: 650;
-    color: #94a3b8;
+    color: var(--dash-text-muted, #667085);
   }
 
   .fc-course-card__cta {

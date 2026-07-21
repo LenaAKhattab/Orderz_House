@@ -1,4 +1,4 @@
-/* Freelancer course details — matches courses list (fc-*) neumorphic hub */
+﻿/* Freelancer course details — matches courses list (fc-*) neumorphic hub */
 
 .fdash-page--course-details .fdash-page__inner {
   display: flex;
@@ -191,7 +191,7 @@
 .fcd-ring__caption {
   font-size: 0.62rem;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .fcd-header__status-rail {
@@ -218,7 +218,7 @@
 
 .fcd-header__status-check {
   flex-shrink: 0;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .fcd-header__status-label {
@@ -271,7 +271,7 @@
 }
 
 .fcd-header__status-rail--final-test .fcd-header__status-check {
-  color: #7c3aed;
+  color: var(--dash-primary, #2f3b65);
 }
 
 .fcd-header__status-rail--final-test .fcd-header__status-accent--full {
@@ -290,7 +290,7 @@
 }
 
 .fcd-header__status-rail--lessons-done .fcd-header__status-check {
-  color: #2563eb;
+  color: var(--dash-primary, #2f3b65);
 }
 
 .fcd-header__status-rail--in-progress .fcd-header__status-accent--muted {
@@ -333,12 +333,12 @@
   gap: 8px;
   font-size: 0.8rem;
   font-weight: 650;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .fcd-header__meta li svg {
   flex-shrink: 0;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .fcd-header__meta strong {
@@ -490,12 +490,12 @@
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   background: rgba(241, 245, 249, 0.95);
 }
 
 .fcd-sidebar__item--active .fcd-sidebar__status {
-  color: #2563eb;
+  color: var(--dash-primary, #2f3b65);
   background: rgba(219, 234, 254, 0.65);
 }
 
@@ -518,7 +518,7 @@
 .fcd-sidebar__lesson-title {
   font-size: 0.84rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--dash-text, #172033);
   line-height: 1.35;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -529,7 +529,7 @@
 .fcd-sidebar__lesson-meta {
   font-size: 0.72rem;
   font-weight: 650;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .fcd-sidebar__item--active .fcd-sidebar__lesson-meta {
@@ -578,7 +578,7 @@
 }
 
 .fcd-sidebar__expand:hover {
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border-color: rgba(191, 219, 254, 0.8);
 }
 
@@ -640,7 +640,7 @@
   min-height: min(42vh, 320px);
   border-radius: var(--fcd-radius-md);
   background: linear-gradient(165deg, #f1f5f9 0%, #e2e8f0 100%);
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 700;
 }
 
@@ -676,7 +676,7 @@
   font-size: 0.9rem;
   font-weight: 900;
   color: #fff;
-  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  background: var(--dash-primary, #2f3b65);
   box-shadow: 0 8px 18px -10px rgba(37, 99, 235, 0.45);
 }
 
@@ -775,7 +775,7 @@
 
 .fcd-btn--ghost:hover:not(:disabled) {
   border-color: rgba(191, 219, 254, 0.85);
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   transform: translateY(-1px);
 }
 
@@ -861,7 +861,7 @@
 }
 
 .fcd-summary-card__textarea::placeholder {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .fcd-summary-card__field:focus-within {
@@ -883,7 +883,7 @@
   width: 36px;
   height: 36px;
   border-radius: 12px;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--fcd-line);
   pointer-events: none;
@@ -1068,7 +1068,7 @@
 .fcd-final-item__badge {
   font-size: 0.66rem;
   font-weight: 900;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .fcd-final-item__title {
@@ -1081,7 +1081,7 @@
 .fcd-final-item__status {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .fcd-final-item__chev {
@@ -1186,8 +1186,8 @@
   border-radius: 50%;
   font-size: 0.78rem;
   font-weight: 900;
-  color: #64748b;
-  background: #fff;
+  color: var(--dash-text-secondary, #4b5563);
+  background: var(--dash-card, #fcfcfd);
   border: 2px solid rgba(226, 232, 240, 0.95);
   box-shadow: 0 2px 8px -4px rgba(15, 23, 42, 0.12);
   transition:
@@ -1199,14 +1199,14 @@
 .fcd-flow__track-label {
   font-size: 0.68rem;
   font-weight: 750;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   line-height: 1.25;
   max-width: 5.5rem;
 }
 
 .fcd-flow__track-item--active .fcd-flow__track-dot {
   color: #fff;
-  border-color: #2563eb;
+  border-color: var(--dash-primary, #2f3b65);
   background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
   box-shadow: 0 6px 16px -8px rgba(37, 99, 235, 0.55);
 }
@@ -1300,7 +1300,7 @@
 
 .fcd-flow__phase--submit .fcd-flow__phase-tag {
   color: #fff;
-  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  background: var(--dash-primary, #2f3b65);
   border-color: transparent;
 }
 
@@ -1370,8 +1370,8 @@
   border-radius: 50%;
   font-size: 0.8rem;
   font-weight: 900;
-  color: #64748b;
-  background: #fff;
+  color: var(--dash-text-secondary, #4b5563);
+  background: var(--dash-card, #fcfcfd);
   border: 2px solid rgba(226, 232, 240, 0.95);
   box-shadow: 0 4px 12px -8px rgba(15, 23, 42, 0.15);
   z-index: 1;
@@ -1570,7 +1570,7 @@
   font-size: 0.82rem;
   font-weight: 900;
   color: #fff;
-  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  background: var(--dash-primary, #2f3b65);
   box-shadow: 0 6px 14px -10px rgba(37, 99, 235, 0.55);
 }
 
@@ -1662,7 +1662,7 @@
 }
 
 .fcd-final__status--empty {
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   background: rgba(241, 245, 249, 0.95);
   border: 1px solid var(--fcd-line);
 }
@@ -1679,7 +1679,7 @@
   gap: 10px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border: 1px solid var(--fcd-line);
 }
 
@@ -1714,13 +1714,13 @@
   display: block;
   font-size: 0.9rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--dash-text, #172033);
 }
 
 .fcd-final__file-updated {
   font-size: 0.74rem;
   font-weight: 650;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .fcd-final__file-ready {
@@ -1774,7 +1774,7 @@
 
 .fcd-final__action-btn--outline {
   color: var(--fcd-navy);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border: 1px solid var(--fcd-line);
 }
 
@@ -1873,8 +1873,8 @@
   border-radius: 999px;
   font-size: 0.76rem;
   font-weight: 700;
-  color: #64748b;
-  background: #fff;
+  color: var(--dash-text-secondary, #4b5563);
+  background: var(--dash-card, #fcfcfd);
   border: 1px solid var(--fcd-line);
 }
 
@@ -1887,7 +1887,7 @@
 .fcd-final__delivery-or {
   font-size: 0.76rem;
   font-weight: 800;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .fcd-final__upload-zone--filled {
@@ -1919,7 +1919,7 @@
 .fcd-final__upload-selected-copy strong {
   font-size: 0.86rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--dash-text, #172033);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1928,7 +1928,7 @@
 .fcd-final__upload-selected-size {
   font-size: 0.76rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .fcd-final__upload-selected-ok {
@@ -1948,7 +1948,7 @@
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--fcd-line);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   font-family: inherit;
   font-size: 0.78rem;
   font-weight: 800;
@@ -2014,7 +2014,7 @@
 }
 
 .fcd-sidebar__item--faded .fcd-sidebar__lesson-title {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .fcd-final__hero {
@@ -2117,7 +2117,7 @@
 
 .fcd-final__completed-btn--outline {
   color: var(--fcd-navy);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border: 1px solid var(--fcd-line);
 }
 
@@ -2158,7 +2158,7 @@
   font-family: inherit;
   font-size: 0.8rem;
   font-weight: 800;
-  color: #2563eb;
+  color: var(--dash-primary, #2f3b65);
   cursor: pointer;
   text-decoration: underline;
 }
@@ -2298,7 +2298,7 @@
   font-weight: 800;
   color: #fff;
   cursor: pointer;
-  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  background: var(--dash-primary, #2f3b65);
   box-shadow: 0 14px 32px -14px rgba(30, 58, 138, 0.5);
   transition:
     transform 0.2s var(--fcd-ease),
@@ -2397,7 +2397,7 @@
 .fcd-final__milestone--done,
 .fcd-final__milestone--current {
   opacity: 1;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border: 1px solid var(--fcd-line);
 }
 
@@ -2414,13 +2414,13 @@
 .fcd-final__milestone-text strong {
   display: block;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--dash-text, #172033);
 }
 
 .fcd-final__milestone-text small {
   display: block;
   margin-top: 2px;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-size: 0.72rem;
 }
 
@@ -2478,14 +2478,14 @@
   gap: 12px;
   padding: 12px;
   border-radius: 12px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border: 1px solid var(--fcd-line);
 }
 
 .fcd-final__prompt-box {
   padding: 12px;
   border-radius: 12px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border: 1px dashed rgba(191, 219, 254, 0.65);
 }
 
@@ -2513,7 +2513,7 @@
 }
 
 .fcd-final__download-btn--outline {
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   color: var(--fcd-navy);
   border: 1px solid var(--fcd-line);
 }
@@ -2542,7 +2542,7 @@
   border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   background: rgba(241, 245, 249, 0.95);
   border: 1px dashed var(--fcd-line);
 }
@@ -2594,7 +2594,7 @@
 .fcd-final__char-count {
   justify-self: end;
   font-size: 0.76rem;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   font-weight: 700;
 }
 
@@ -2609,7 +2609,7 @@
   padding: 0 16px;
   border-radius: 999px;
   border: 1px solid var(--fcd-line);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   font-weight: 800;
   font-family: inherit;
   cursor: pointer;
@@ -2855,13 +2855,13 @@
 
 .fcd-final__mark-input:hover:not(:disabled) {
   border-color: rgba(148, 163, 184, 0.95);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
 }
 
 .fcd-final__mark-input:focus {
   outline: none;
-  border-color: #2563eb;
-  background: #fff;
+  border-color: var(--dash-primary, #2f3b65);
+  background: var(--dash-card, #fcfcfd);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
 }
 

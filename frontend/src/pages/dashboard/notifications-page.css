@@ -1,4 +1,4 @@
-/* Notifications — aligned with fmo/ffc hub neumorphism */
+﻿/* Notifications — aligned with fmo/ffc hub neumorphism */
 
 .fdash-page--notifications {
   --fn-radius-xl: 30px;
@@ -58,7 +58,7 @@
   font-size: clamp(1.32rem, 2.4vw, 1.72rem);
   font-weight: 800;
   line-height: 1.22;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   letter-spacing: -0.025em;
 }
 
@@ -67,7 +67,7 @@
   max-width: 44ch;
   font-size: clamp(0.86rem, 1.45vw, 0.94rem);
   line-height: 1.58;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 550;
 }
 
@@ -111,7 +111,7 @@
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   background: linear-gradient(160deg, #ffffff 0%, #f8fafc 55%, #f1f5f9 100%);
   border: 1px solid rgba(226, 232, 240, 0.8);
   box-shadow:
@@ -128,7 +128,7 @@
 }
 
 .fn-stat-segment--slate .fn-stat-segment__icon {
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .fn-stat-segment--blue .fn-stat-segment__icon {
@@ -147,14 +147,14 @@
 .fn-stat-segment__label {
   font-size: 0.76rem;
   font-weight: 650;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   line-height: 1.3;
 }
 
 .fn-stat-segment__value {
   font-size: clamp(1.2rem, 2vw, 1.45rem);
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   line-height: 1.05;
   font-variant-numeric: tabular-nums;
 }
@@ -234,7 +234,7 @@
 }
 
 .fn-toolbar__search-input::placeholder {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   font-weight: 550;
 }
 
@@ -262,7 +262,7 @@
   font-family: inherit;
   font-size: 0.8rem;
   font-weight: 750;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   padding: 8px 16px;
   border-radius: 999px;
   white-space: nowrap;
@@ -314,7 +314,7 @@
 .fn-toolbar__mark-all:hover:not(:disabled) {
   color: var(--fn-blue-deep);
   border-color: rgba(191, 219, 254, 0.8);
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   transform: translateY(-1px);
   box-shadow: 0 6px 16px -8px rgba(59, 130, 246, 0.2);
 }
@@ -569,7 +569,7 @@
   margin: 0;
   font-size: 0.94rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   line-height: 1.32;
   letter-spacing: -0.01em;
 }
@@ -583,7 +583,7 @@
   font-size: 0.72rem;
   font-weight: 650;
   line-height: 1.35;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .fn-notif-card__details-dot {
@@ -596,7 +596,7 @@
 }
 
 .fn-notif-card__details-category {
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .fn-notif-card--unread .fn-notif-card__details-category {
@@ -610,7 +610,7 @@
 }
 
 .fn-notif-card__details-time {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   font-variant-numeric: tabular-nums;
   transition: color 0.2s var(--fn-ease);
 }
@@ -624,7 +624,7 @@
   margin: 2px 0 0;
   font-size: 0.8rem;
   line-height: 1.52;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 550;
   opacity: 0.92;
   display: -webkit-box;
@@ -634,7 +634,7 @@
 }
 
 .fn-notif-card--read .fn-notif-card__desc {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   opacity: 0.85;
 }
 
@@ -654,7 +654,7 @@
   font-size: 0.72rem;
   font-weight: 650;
   line-height: 1.35;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   transition: color 0.2s var(--fn-ease);
@@ -715,7 +715,7 @@
   width: 64px;
   height: 64px;
   border-radius: 20px;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   background: linear-gradient(160deg, #ffffff 0%, #f1f5f9 100%);
   border: 1px solid rgba(226, 232, 240, 0.85);
   box-shadow:
@@ -727,7 +727,7 @@
   margin: 0;
   font-size: 1.05rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .fn-empty__sub {
@@ -735,7 +735,7 @@
   max-width: 36ch;
   font-size: 0.86rem;
   line-height: 1.55;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 550;
 }
 

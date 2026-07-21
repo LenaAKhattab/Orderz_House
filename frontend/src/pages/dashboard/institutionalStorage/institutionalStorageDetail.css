@@ -1,11 +1,11 @@
-/* Institutional order storage detail — scoped presentation only */
+﻿/* Institutional order storage detail — scoped presentation only */
 
 .oh-ios-create-order-subtitle {
   margin: 0.2rem 0 0;
   font-size: 0.82rem;
   font-weight: 600;
   line-height: 1.45;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .client-order-modal.client-order-modal--institutional {
@@ -72,7 +72,7 @@
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.01em;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 @media (min-width: 900px) {
@@ -93,7 +93,7 @@
   font-size: clamp(1.2rem, 2.2vw, 1.55rem);
   font-weight: 800;
   line-height: 1.35;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
   word-break: break-word;
 }
 
@@ -102,7 +102,7 @@
   max-width: 46rem;
   font-size: 0.9rem;
   line-height: 1.55;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-ios-detail__hero-meta {
@@ -129,7 +129,7 @@
 
 .oh-ios-detail__meta-chip svg {
   flex-shrink: 0;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-ios-detail__hero-actions {
@@ -188,7 +188,7 @@
 
 .oh-ios-detail__status--archived {
   border-color: #e2e8f0;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   color: #475569;
 }
 
@@ -267,7 +267,7 @@
   flex-shrink: 0;
   border-radius: 10px;
   border: 1px solid rgba(226, 232, 240, 0.95);
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   color: #475569;
 }
 
@@ -276,7 +276,7 @@
   font-size: 0.72rem;
   font-weight: 700;
   line-height: 1.35;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-ios-detail__kpi-value {
@@ -284,7 +284,7 @@
   font-size: 1.2rem;
   font-weight: 800;
   line-height: 1.2;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
   font-variant-numeric: tabular-nums;
   word-break: break-word;
 }
@@ -293,7 +293,7 @@
   margin: 0.25rem 0 0;
   font-size: 0.7rem;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .oh-ios-detail__tabs {
@@ -324,7 +324,7 @@
   border: 1px solid transparent;
   border-radius: 10px;
   background: transparent;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font: inherit;
   font-size: 0.86rem;
   font-weight: 700;
@@ -344,7 +344,7 @@
 }
 
 .oh-ios-detail__tab:hover {
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
   background: rgba(255, 255, 255, 0.85);
 }
 
@@ -355,7 +355,7 @@
 
 .oh-ios-detail__tab--active {
   color: #1d4ed8;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border-color: rgba(191, 219, 254, 0.9);
   box-shadow: 0 1px 3px rgba(148, 163, 184, 0.12);
 }
@@ -396,7 +396,7 @@
   margin: 0 0 0.75rem;
   font-size: 0.92rem;
   font-weight: 800;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-ios-detail__dl {
@@ -423,14 +423,14 @@
   margin: 0;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-ios-detail__dl-row dd {
   margin: 0;
   font-size: 0.88rem;
   font-weight: 700;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
   text-align: end;
   word-break: break-word;
 }
@@ -452,13 +452,13 @@
   padding: 0.7rem 0.8rem;
   border-radius: 12px;
   border: 1px solid rgba(226, 232, 240, 0.95);
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
 }
 
 .oh-ios-detail__inst-name {
   font-size: 0.9rem;
   font-weight: 750;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
   text-decoration: none;
 }
 
@@ -495,14 +495,14 @@
   padding: 0.9rem 1rem;
   border-radius: 14px;
   border: 1px solid rgba(224, 231, 242, 0.95);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
 }
 
 .oh-ios-detail__order-card-title {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 800;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
   word-break: break-word;
 }
 
@@ -511,7 +511,7 @@
   flex-wrap: wrap;
   gap: 0.35rem 0.75rem;
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-ios-detail__order-actions {
@@ -548,7 +548,7 @@
   margin: 0 0 0.65rem;
   font-size: 0.95rem;
   font-weight: 800;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-ios-detail__scheduler-grid {
@@ -569,19 +569,19 @@
   padding: 0.75rem 0.85rem;
   border-radius: 12px;
   border: 1px solid rgba(226, 232, 240, 0.95);
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
 }
 
 .oh-ios-detail__scheduler-item span {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-ios-detail__scheduler-item strong {
   font-size: 0.88rem;
   font-weight: 750;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
   word-break: break-word;
 }
 
@@ -602,7 +602,7 @@
   padding: 0.12rem 0.5rem;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   font-size: 0.75rem;
   font-weight: 700;
   color: #334155;

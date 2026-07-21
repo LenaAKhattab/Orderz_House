@@ -46,8 +46,8 @@ import { useTranslation } from "../i18n/LanguageProvider";
 import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
 import { getInstitutionMembershipRequest } from "../services/api";
 
+import "../styles/dashboardTokens.css";
 import "../styles/freelancerDashboardShell.css";
-
 import "../styles/dashboardHub.css";
 
 const FREELANCER_COURSES_PATH = "/dashboard/freelancer/courses";

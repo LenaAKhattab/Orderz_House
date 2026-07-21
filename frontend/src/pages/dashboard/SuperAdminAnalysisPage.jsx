@@ -259,27 +259,36 @@ export default function SuperAdminAnalysisPage() {
   const hasData = Boolean(data);
 
   const filterToolbar = (
-    <div className="sa-analysis-toolbar">
+    <div className="sa-analysis-toolbar" role="toolbar" aria-label="أدوات التحليلات">
       <div className="sa-analysis-toolbar__filters">
-        <label className="sa-analysis-toolbar__range">
-          <span className="sa-analysis-toolbar__range-label">الفترة</span>
-          <select
-            className="input sa-analysis-toolbar__select"
-            value={range}
-            onChange={(e) => setRange(e.target.value)}
-          >
-            {RANGE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="sa-analysis-toolbar__checkbox">
-          <input type="checkbox" checked={currentOnly} onChange={(e) => setCurrentOnly(e.target.checked)} />
-          <span>الاشتراكات الحالية فقط</span>
-        </label>
+        <div className="sa-analysis-toolbar__group sa-analysis-toolbar__group--period">
+          <label className="sa-analysis-toolbar__range" htmlFor="sa-analysis-range">
+            <span className="sa-analysis-toolbar__range-label">الفترة</span>
+            <select
+              id="sa-analysis-range"
+              className="input sa-analysis-toolbar__select"
+              value={range}
+              onChange={(e) => setRange(e.target.value)}
+            >
+              {RANGE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="sa-analysis-toolbar__group sa-analysis-toolbar__group--scope">
+          <label className="sa-analysis-toolbar__checkbox">
+            <input type="checkbox" checked={currentOnly} onChange={(e) => setCurrentOnly(e.target.checked)} />
+            <span>الاشتراكات الحالية فقط</span>
+          </label>
+        </div>
       </div>
+
+      <div className="sa-analysis-toolbar__divider" aria-hidden="true" />
+
       <button
         type="button"
         className={`btn btn-secondary sa-analysis-toolbar__refresh${refreshing ? " acc-btn--refreshing" : ""}`}
@@ -287,7 +296,7 @@ export default function SuperAdminAnalysisPage() {
         disabled={refreshing}
       >
         <RefreshCw size={16} className={refreshing ? "acc-spin" : undefined} aria-hidden />
-        {refreshing ? "جارٍ التحديث…" : "تحديث"}
+        <span>{refreshing ? "جارٍ التحديث…" : "تحديث"}</span>
       </button>
     </div>
   );

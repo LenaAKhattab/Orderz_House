@@ -1,0 +1,143 @@
+/**
+ * Unified Orderz House dashboard surface system (Super Admin / Freelancer / Client).
+ * Scoped to dashboard shells only — does not change public marketing pages.
+ */
+
+.oh-sa-shell,
+.fdl-shell {
+  /* —— Surfaces (neutral gray hierarchy) —— */
+  --dash-bg: #f1f3f5;
+  --dash-surface: #f8f9fa;
+  --dash-surface-raised: #f7f8fa;
+  --dash-card: #fcfcfd;
+  --dash-card-muted: #f9fafb;
+  --dash-input: #ffffff;
+  --dash-hover: #eef1f4;
+  --dash-active: #e8ecf1;
+  --dash-disabled: #f3f4f6;
+
+  /* —— Brand (single primary) —— */
+  --dash-primary: #2f3b65;
+  --dashboard-primary: var(--dash-primary);
+  --dash-primary-hover: #253156;
+  --dash-primary-soft: rgba(47, 59, 101, 0.1);
+  --dash-primary-soft-border: rgba(47, 59, 101, 0.32);
+  --dash-secondary: #76cfdf;
+  --dash-secondary-soft: rgba(118, 207, 223, 0.18);
+
+  /* —— Borders (clear separation; soft → strong by role) —— */
+  --dashboard-border-soft: #d8dde5;
+  --dashboard-border-default: #c9d0da;
+  --dashboard-border-strong: #aeb8c6;
+  --dashboard-border-interactive: #a9b4c3;
+  --dashboard-border-focus: var(--dashboard-primary);
+
+  /* Legacy dash-* aliases (keep existing CSS working) */
+  --dash-border-muted: var(--dashboard-border-soft);
+  --dash-border: var(--dashboard-border-default);
+  --dash-border-strong: var(--dashboard-border-strong);
+  --dash-border-interactive: var(--dashboard-border-interactive);
+  --dash-border-focus: var(--dashboard-border-focus);
+
+  /* —— Text —— */
+  --dash-text: #172033;
+  --dash-text-secondary: #4b5563;
+  --dash-text-muted: #667085;
+  --dash-text-inverse: #ffffff;
+
+  /* —— Semantic status —— */
+  --dash-success: #0f7a4f;
+  --dash-success-bg: #e8f7f0;
+  --dash-success-border: #b7e4ce;
+  --dash-warning: #b86a00;
+  --dash-warning-bg: #fff6e8;
+  --dash-warning-border: #f0d4a8;
+  --dash-danger: #c03535;
+  --dash-danger-bg: #fdecec;
+  --dash-danger-border: #f0b4b4;
+  --dash-info: #2f3b65;
+  --dash-info-bg: #eef1f6;
+  --dash-info-border: #cfd5e0;
+
+  /* —— Focus / shadow / radius —— */
+  --dash-focus-ring: 0 0 0 3px rgba(47, 59, 101, 0.28);
+  --dash-focus-ring-secondary: 0 0 0 3px rgba(118, 207, 223, 0.45);
+  --dash-shadow-sm: 0 1px 2px rgba(23, 32, 51, 0.06);
+  --dash-shadow-md: 0 4px 14px -4px rgba(23, 32, 51, 0.12);
+  --dash-shadow-lg: 0 12px 28px -10px rgba(23, 32, 51, 0.16);
+  --dash-radius-sm: 8px;
+  --dash-radius-md: 12px;
+  --dash-radius-lg: 16px;
+
+  /* —— Skeletons —— */
+  --dash-skel-from: #e5e9ef;
+  --dash-skel-to: #f3f5f8;
+
+  /* —— Map legacy shell aliases —— */
+  --oh-sa-bg: var(--dash-bg);
+  --oh-sa-surface: var(--dash-card);
+  --oh-sa-border: var(--dash-border);
+  --oh-sa-primary: var(--dash-primary);
+  --oh-sa-secondary: var(--dash-secondary);
+  --oh-sa-surface-radius: var(--dash-radius-lg);
+  --oh-sa-surface-bg: var(--dash-surface);
+  --oh-sa-surface-border: 1px solid var(--dash-border);
+  --oh-sa-surface-shadow: var(--dash-shadow-md);
+  --oh-sa-surface-highlight: transparent;
+
+  --fdl-bg: var(--dash-bg);
+  --fdl-surface: var(--dash-card);
+  --fdl-border: var(--dash-border);
+  --fdl-border-soft: var(--dash-border-muted);
+  --fdl-border-muted: var(--dash-border-muted);
+  --fdl-primary: var(--dash-primary);
+  --fdl-secondary: var(--dash-secondary);
+  --fdl-shadow: var(--dash-shadow-md);
+  --fdl-surface-3d-bg: var(--dash-surface);
+  --fdl-surface-3d-radius: var(--dash-radius-lg);
+  --fdl-surface-3d-border: 1px solid var(--dash-border);
+  --fdl-surface-3d-shadow: var(--dash-shadow-md);
+  --fdl-surface-3d-highlight: transparent;
+
+  /* Hub / ACC / dash-ui aliases used inside shells */
+  --page-bg: var(--dash-bg);
+  --dash-shell-bg: var(--dash-bg);
+  --dash-shell-bg-top-fade: var(--dash-bg);
+  --dash-card-border: var(--dash-border);
+  --dash-card-shadow: var(--dash-shadow-sm);
+  --dash-surface-radius: var(--dash-radius-lg);
+  --dash-icon-chip-bg: var(--dash-hover);
+  --text-main: var(--dash-text);
+  --text-muted: var(--dash-text-muted);
+  --line: var(--dash-border);
+  --primary: var(--dash-primary);
+  --secondary: var(--dash-secondary);
+
+  color: var(--dash-text);
+  background: var(--dash-bg);
+}
+
+/* Shared focus utility for dashboard interactive chrome */
+.oh-sa-shell :is(a, button, [role="button"], [role="tab"], input, select, textarea, summary):focus-visible,
+.fdl-shell :is(a, button, [role="button"], [role="tab"], input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--dash-primary);
+  outline-offset: 2px;
+}
+
+.oh-sa-shell :is(input, select, textarea):focus-visible,
+.fdl-shell :is(input, select, textarea):focus-visible {
+  outline: none;
+  border-color: var(--dash-border-focus);
+  box-shadow: var(--dash-focus-ring);
+}
+
+/* Inputs / filters: stronger interactive borders than passive cards */
+.oh-sa-shell :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+.fdl-shell :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]) {
+  border-color: var(--dash-border-interactive);
+}
+
+.oh-sa-shell :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):hover:not(:disabled):not([readonly]),
+.fdl-shell :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):hover:not(:disabled):not([readonly]) {
+  border-color: var(--dash-border-strong);
+}

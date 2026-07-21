@@ -1,4 +1,4 @@
-/* Freelancer My Orders — polished reference layout (UI only) */
+﻿/* Freelancer My Orders — polished reference layout (UI only) */
 
 .fdash-page--my-orders {
   --fmo-radius-xl: 30px;
@@ -58,7 +58,7 @@
   font-size: clamp(1.35rem, 2.4vw, 1.75rem);
   font-weight: 800;
   line-height: 1.25;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   letter-spacing: -0.02em;
 }
 
@@ -67,7 +67,7 @@
   max-width: 48ch;
   font-size: clamp(0.88rem, 1.5vw, 0.96rem);
   line-height: 1.65;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 550;
 }
 
@@ -136,7 +136,7 @@
 }
 
 .fmo-stat-segment--purple .fmo-stat-segment__icon {
-  color: #7c3aed;
+  color: var(--dash-primary, #2f3b65);
   background: rgba(245, 243, 255, 0.95);
   border: 1px solid rgba(221, 214, 254, 0.75);
 }
@@ -193,7 +193,7 @@
   border: none;
   border-radius: 12px;
   background: transparent;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-family: inherit;
   font-size: 0.8rem;
   font-weight: 750;
@@ -288,7 +288,7 @@
 }
 
 .fmo-toolbar__search-input::placeholder {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   font-weight: 550;
 }
 
@@ -464,7 +464,7 @@ a.fmo-toolbar__refresh--label:hover {
   margin: 0;
   font-size: 1.08rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .fmo-empty__sub {
@@ -472,7 +472,7 @@ a.fmo-toolbar__refresh--label:hover {
   max-width: 40ch;
   font-size: 0.9rem;
   line-height: 1.65;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 550;
 }
 
@@ -485,7 +485,7 @@ a.fmo-toolbar__refresh--label:hover {
   padding: 0 20px;
   border-radius: 999px;
   border: 1px solid rgba(59, 130, 246, 0.45);
-  background: #ffffff;
+  background: var(--dash-card, #fcfcfd);
   color: var(--fmo-blue-deep);
   font-size: 0.88rem;
   font-weight: 800;
@@ -535,7 +535,7 @@ a.fmo-toolbar__refresh--label:hover {
 .fmo-list-footer__pagesize {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   padding: 6px 12px;
   border-radius: 10px;
   border: 1px solid rgba(226, 232, 240, 0.85);
@@ -656,7 +656,7 @@ a.fmo-toolbar__refresh--label:hover {
 }
 
 .fmo-order-row__stat-value--muted {
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 650;
 }
 
@@ -679,7 +679,7 @@ a.fmo-toolbar__refresh--label:hover {
   min-width: 0;
   font-size: clamp(0.98rem, 1.15vw, 1.08rem);
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   line-height: 1.38;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -727,7 +727,7 @@ a.fmo-toolbar__refresh--label:hover {
   gap: 8px 12px;
   font-size: 0.72rem;
   font-weight: 650;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .fmo-order-row__revision {
@@ -768,7 +768,7 @@ a.fmo-toolbar__refresh--label:hover {
 }
 
 .fmo-order-row__action-btn--review {
-  background: linear-gradient(145deg, #8b5cf6 0%, #7c3aed 100%);
+  background: var(--dash-primary, #2f3b65);
 }
 
 .fmo-order-row__action-btn--done {

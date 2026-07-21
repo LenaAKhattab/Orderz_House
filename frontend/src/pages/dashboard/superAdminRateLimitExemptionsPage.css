@@ -1,4 +1,4 @@
-.oh-rle-warning {
+﻿.oh-rle-warning {
   margin: 0 0 1rem;
   padding: 0.85rem 1rem;
   border: 1px solid #e2b86b;
@@ -63,7 +63,7 @@
 
 .oh-rle-modal {
   width: min(560px, 100%);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border-radius: 12px;
   padding: 1.25rem 1.35rem 1.4rem;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
@@ -128,7 +128,7 @@
 
 .oh-rle-user-results button:hover,
 .oh-rle-user-results button.is-selected {
-  background: #f3f4f6;
+  background: var(--dash-disabled, #f3f4f6);
 }
 
 .oh-rle-selected {

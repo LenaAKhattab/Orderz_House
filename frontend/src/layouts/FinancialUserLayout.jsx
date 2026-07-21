@@ -5,6 +5,7 @@ import AdminNavIcon from "../components/dashboard/AdminNavIcon";
 import { useAuth } from "../context/useAuth";
 import { useTranslation } from "../i18n/LanguageProvider";
 
+import "../styles/dashboardTokens.css";
 import "../styles/dashboardHub.css";
 import "../styles/adminDashboardShell.css";
 import "../styles/adminDashboardHub.css";

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from "react";
+﻿import { useEffect, useId, useRef } from "react";
 import { useTranslation } from "../../i18n/LanguageProvider";
 
 /**
@@ -109,7 +109,7 @@ export default function DashboardModal({
       />
       <div
         ref={panelRef}
-        className={`dash-ui-modal__panel relative z-[1] flex max-h-[min(88vh,720px)] w-full min-h-0 max-w-[520px] flex-col overflow-hidden rounded-2xl border border-slate-300/25 bg-white shadow-[0_24px_48px_rgba(15,23,42,0.18)] ${panelClassName}`.trim()}
+        className={`dash-ui-modal__panel relative z-[1] flex max-h-[min(88vh,720px)] w-full min-h-0 max-w-[520px] flex-col overflow-hidden rounded-2xl border border-[color:var(--dash-border-strong,#aeb8c6)] bg-[color:var(--dash-card,#fcfcfd)] shadow-[var(--dash-shadow-lg)] ${panelClassName}`.trim()}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
@@ -118,24 +118,24 @@ export default function DashboardModal({
         dir={dir}
         onMouseDown={(ev) => ev.stopPropagation()}
       >
-        <div className="dash-ui-modal__head flex shrink-0 items-start justify-between gap-3 border-b border-slate-200/95 px-[18px] pb-3 pt-4">
+        <div className="dash-ui-modal__head flex shrink-0 items-start justify-between gap-3 border-b border-[color:var(--dash-border,#c9d0da)] px-[18px] pb-3 pt-4">
           <div className="min-w-0 flex-1">
             {title ? (
-              <h2 id={titleId} className="dash-ui-modal__title m-0 text-[1.05rem] font-black text-slate-900">
+              <h2 id={titleId} className="dash-ui-modal__title m-0 text-[1.05rem] font-black text-[color:var(--dash-text,#172033)]">
                 {title}
               </h2>
             ) : (
               <span />
             )}
             {subtitle ? (
-              <p id={subtitleId} className="dash-ui-modal__hint mb-0 mt-1.5">
+              <p id={subtitleId} className="dash-ui-modal__hint mb-0 mt-1.5 text-[color:var(--dash-text-secondary,#4b5563)]">
                 {subtitle}
               </p>
             ) : null}
           </div>
           <button
             type="button"
-            className="dash-ui-modal__close cursor-pointer rounded-lg border-0 bg-transparent p-1 px-1.5 text-2xl leading-none text-slate-500 hover:bg-slate-400/15 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+            className="dash-ui-modal__close cursor-pointer rounded-lg border-0 bg-transparent p-1 px-1.5 text-2xl leading-none text-[color:var(--dash-text-secondary,#4b5563)] hover:bg-[color:var(--dash-hover,#eef1f4)] hover:text-[color:var(--dash-text,#172033)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--dash-primary,#2f3b65)] disabled:cursor-not-allowed disabled:opacity-50"
             onClick={onClose}
             aria-label={closeLabel}
             disabled={closeDisabled}
@@ -145,7 +145,7 @@ export default function DashboardModal({
         </div>
         <div className="dash-ui-modal__body min-h-0 flex-1 overflow-auto px-[18px] py-4">{children}</div>
         {footer ? (
-          <div className="dash-ui-modal__foot flex shrink-0 flex-wrap justify-end gap-2 border-t border-slate-200/95 px-[18px] pb-4 pt-3">
+          <div className="dash-ui-modal__foot flex shrink-0 flex-wrap justify-end gap-2 border-t border-[color:var(--dash-border,#c9d0da)] px-[18px] pb-4 pt-3">
             {footer}
           </div>
         ) : null}

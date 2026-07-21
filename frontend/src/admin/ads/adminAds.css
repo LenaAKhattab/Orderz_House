@@ -1,7 +1,7 @@
-/* Admin ads management — form/modal/table utilities (page shell uses dashboard primitives) */
+﻿/* Admin ads management — form/modal/table utilities (page shell uses dashboard primitives) */
 
 .oh-admin-ads__card {
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border-radius: 14px;
   padding: 20px 22px;
   margin-bottom: 18px;
@@ -30,7 +30,7 @@
 }
 
 .oh-admin-ads__table th {
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   font-weight: 800;
   color: #334155;
 }
@@ -49,7 +49,7 @@
 
 .oh-admin-ads__modal-card {
   width: min(1100px, 100%);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border-radius: 16px;
   box-shadow: 0 18px 50px rgba(15, 23, 42, 0.16);
   border: 1px solid rgba(226, 232, 240, 0.95);
@@ -90,7 +90,7 @@
   border: 1px solid rgba(203, 213, 225, 0.95);
   padding: 8px 10px;
   width: 100%;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
 }
 
 .oh-admin-ads__field textarea {
@@ -117,7 +117,7 @@
   border-radius: 12px;
   border: 1px dashed rgba(148, 163, 184, 0.6);
   padding: 12px;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   min-width: 0;
   max-width: 100%;
 }
@@ -128,7 +128,7 @@
 .oh-admin-ads__field-hint {
   font-size: 0.8rem;
   line-height: 1.45;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   margin: 0 0 4px;
 }
 
@@ -182,7 +182,7 @@
   margin: 0 0 6px;
   font-size: 1rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-admin-ads__soft-warn-banner {
@@ -210,7 +210,7 @@
   border-radius: 12px;
   border: 2px solid rgba(226, 232, 240, 0.95);
   padding: 10px 12px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -220,7 +220,7 @@
 }
 
 .oh-admin-ads__layout-card--selected {
-  border-color: #2563eb;
+  border-color: var(--dash-primary, #2f3b65);
   box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
 }
 
@@ -228,7 +228,7 @@
   display: block;
   font-weight: 800;
   font-size: 0.84rem;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   margin-bottom: 6px;
 }
 
@@ -236,7 +236,7 @@
   display: block;
   font-size: 0.72rem;
   line-height: 1.4;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-admin-ads__layout-hint {
@@ -266,7 +266,7 @@
 
 .oh-admin-ads__preview-pointer {
   font-size: 0.82rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   margin: 0;
   padding: 0 8px 8px;
 }
@@ -339,11 +339,11 @@
 
 .oh-admin-ads__preview-placeholder {
   font-size: 0.82rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   line-height: 1.5;
   padding: 14px;
   border-radius: 12px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border: 1px dashed #cbd5e1;
 }
 
@@ -356,14 +356,14 @@
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   padding: 10px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
 }
 
 .oh-admin-ads__preview-frame-label {
   display: block;
   font-size: 0.68rem;
   font-weight: 800;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   margin-bottom: 8px;
 }
 
@@ -399,7 +399,7 @@
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 8px;
-  background: #f1f5f9;
+  background: var(--dash-hover, #eef1f4);
   color: #475569;
   max-width: 140px;
   overflow: hidden;
@@ -447,14 +447,14 @@
 
 .oh-admin-ads__appear-primary {
   font-weight: 700;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   font-size: 0.82rem;
   line-height: 1.25;
 }
 
 .oh-admin-ads__appear-sub {
   font-size: 0.72rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   line-height: 1.2;
 }
 
@@ -490,7 +490,7 @@
   margin: 0 0 8px;
   font-size: 1.12rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   line-height: 1.35;
 }
 
@@ -498,7 +498,7 @@
   margin: 0 0 14px;
   font-size: 0.86rem;
   line-height: 1.5;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-ad-reschedule__badges {
@@ -516,7 +516,7 @@
   font-size: 0.84rem;
   color: #334155;
   padding: 8px 12px;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   border-radius: 10px;
   border: 1px solid #e2e8f0;
   max-width: 100%;
@@ -524,18 +524,18 @@
 
 .oh-ad-reschedule__badge-label {
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-ad-reschedule__badge-value {
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   word-break: break-word;
 }
 
 .oh-ad-reschedule__badge-status {
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-ad-reschedule__body {
@@ -549,7 +549,7 @@
   margin: 0 0 12px;
   font-size: 0.92rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-ad-reschedule__cards {
@@ -567,7 +567,7 @@
   padding: 14px 14px 12px;
   border-radius: 14px;
   border: 2px solid #e2e8f0;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   cursor: pointer;
   transition:
     border-color 0.15s ease,
@@ -578,7 +578,7 @@
 }
 
 .oh-ad-reschedule-card:hover:not(:disabled) {
-  border-color: #94a3b8;
+  border-color: var(--dash-text-muted, #667085);
   background: #fafafa;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
 }
@@ -594,7 +594,7 @@
 }
 
 .oh-ad-reschedule-card--selected {
-  border-color: #2563eb;
+  border-color: var(--dash-primary, #2f3b65);
   background: linear-gradient(160deg, rgba(239, 246, 255, 0.95) 0%, #fff 55%);
   box-shadow: 0 2px 12px rgba(37, 99, 235, 0.12);
 }
@@ -609,7 +609,7 @@
 
 .oh-ad-reschedule-card__icon {
   flex-shrink: 0;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   margin-top: 2px;
 }
 
@@ -622,7 +622,7 @@
   min-width: 0;
   font-size: 0.88rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   line-height: 1.35;
 }
 
@@ -657,7 +657,7 @@
 .oh-ad-reschedule-card__desc {
   font-size: 0.75rem;
   line-height: 1.45;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   margin: 0;
 }
 
@@ -682,7 +682,7 @@
   flex-shrink: 0;
   font-size: 0.72rem;
   font-weight: 800;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   margin: 0;
 }
 
@@ -709,7 +709,7 @@
   margin: 4px 0 0;
   font-size: 0.72rem;
   line-height: 1.4;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-ad-reschedule__error {
@@ -734,7 +734,7 @@
   margin-top: 18px;
   padding: 12px 14px;
   border-radius: 12px;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   border: 1px solid #e2e8f0;
 }
 
@@ -743,7 +743,7 @@
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.02em;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   margin-bottom: 6px;
 }
 
@@ -751,7 +751,7 @@
   margin: 0;
   font-size: 0.84rem;
   line-height: 1.55;
-  color: #1e293b;
+  color: var(--dash-text, #172033);
   font-weight: 600;
 }
 
@@ -832,7 +832,7 @@
   align-items: center;
   justify-content: center;
   font-size: 0.78rem;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   background: linear-gradient(135deg, #f8fafc, #f1f5f9);
   padding: 12px;
   text-align: center;
@@ -852,13 +852,13 @@
   padding: 6px 10px;
   border-radius: 999px;
   border: 1px solid #cbd5e1;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   cursor: pointer;
   color: #334155;
 }
 
 .oh-admin-ads__preset-chip:hover {
-  border-color: #2563eb;
+  border-color: var(--dash-primary, #2f3b65);
   color: #1d4ed8;
 }
 
@@ -902,12 +902,12 @@
 
 .oh-admin-color-field__name {
   font-weight: 700;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-admin-color-field__muted {
   font-size: 0.76rem;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .oh-admin-color-field__muted--narrow {
@@ -931,7 +931,7 @@
 
 .oh-admin-color-hex {
   font-size: 0.68rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-family: ui-monospace, monospace;
   direction: ltr;
 }
@@ -949,7 +949,7 @@
   padding: 6px 12px;
   border-radius: 999px;
   border: 2px solid #e2e8f0;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   cursor: pointer;
   color: #475569;
 }
@@ -959,7 +959,7 @@
 }
 
 .oh-admin-color-chip--selected {
-  border-color: #2563eb;
+  border-color: var(--dash-primary, #2f3b65);
   color: #1d4ed8;
   background: #eff6ff;
 }
@@ -984,7 +984,7 @@
 }
 
 .oh-admin-color-swatch--selected {
-  border-color: #2563eb;
+  border-color: var(--dash-primary, #2f3b65);
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
 }
 
@@ -1045,7 +1045,7 @@
   border-radius: 14px;
   border: 2px solid #e2e8f0;
   padding: 10px 12px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -1055,7 +1055,7 @@
 }
 
 .oh-admin-preset-card--selected {
-  border-color: #2563eb;
+  border-color: var(--dash-primary, #2f3b65);
   box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
 }
 
@@ -1063,7 +1063,7 @@
   display: block;
   font-size: 0.78rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   margin-bottom: 8px;
 }
 
@@ -1093,7 +1093,7 @@
   margin: 0 0 6px;
   font-size: 0.88rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-admin-gradient-block__hint {
@@ -1116,7 +1116,7 @@
   padding: 8px 12px;
   border-radius: 999px;
   border: 2px solid #e2e8f0;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   cursor: pointer;
   color: #334155;
 }
@@ -1126,7 +1126,7 @@
 }
 
 .oh-admin-gradient-chip--selected {
-  border-color: #2563eb;
+  border-color: var(--dash-primary, #2f3b65);
   background: #eff6ff;
   color: #1e40af;
 }
@@ -1172,7 +1172,7 @@
   margin: 14px 0 8px;
   font-size: 0.8rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-admin-ads__color-stack--simple .oh-admin-ads__color-section-label:first-of-type {
@@ -1218,7 +1218,7 @@
 .oh-admin-color-compact-row__note {
   margin: 0;
   font-size: 0.68rem;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   line-height: 1.35;
 }
 
@@ -1242,7 +1242,7 @@
   margin-top: 14px;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
 }
 
 .oh-admin-colors-advanced-block__summary {
@@ -1282,7 +1282,7 @@
 .oh-admin-ads__text-card__color-hint {
   margin: -4px 0 8px;
   font-size: 0.68rem;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   line-height: 1.35;
 }
 
@@ -1365,7 +1365,7 @@
 .oh-admin-field-color__label {
   font-size: 0.68rem;
   font-weight: 800;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   line-height: 1.3;
 }
 
@@ -1376,7 +1376,7 @@
   padding: 4px 8px 4px 6px;
   border-radius: 10px;
   border: 1px solid #e2e8f0;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
 }
 
 .oh-admin-field-color__swatch {
@@ -1442,7 +1442,7 @@
   display: block;
   font-size: 0.72rem;
   font-weight: 800;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   margin-bottom: 8px;
 }
 
@@ -1499,7 +1499,7 @@
 }
 
 .oh-admin-inline-colors__dot--selected {
-  border-color: #2563eb;
+  border-color: var(--dash-primary, #2f3b65);
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
 }
 
@@ -1512,14 +1512,14 @@
 }
 
 .oh-admin-inline-colors__dot--light .oh-admin-inline-colors__check {
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   text-shadow: none;
 }
 
 .oh-admin-inline-colors__note {
   margin: 8px 0 0;
   font-size: 0.65rem;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   line-height: 1.35;
 }
 
@@ -1537,7 +1537,7 @@
 .oh-admin-ads__admin-status-sub {
   font-size: 0.65rem;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .oh-admin-ads__schedule-expired-note {
@@ -1556,7 +1556,7 @@
 .oh-admin-ads__home-rail-section .oh-admin-ads__step-num {
   font-size: 0.78rem;
   font-weight: 900;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-admin-ads__theme-pills {
@@ -1568,7 +1568,7 @@
 
 .oh-admin-ads__theme-pill {
   border: 1px solid rgba(148, 163, 184, 0.45);
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   color: #334155;
   font-size: 0.76rem;
   font-weight: 700;
@@ -1592,7 +1592,7 @@
 .oh-admin-ads__theme-pill--selected {
   border-color: rgba(47, 59, 101, 0.55);
   background: rgba(47, 59, 101, 0.08);
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   box-shadow: 0 2px 10px rgba(47, 59, 101, 0.1);
 }
 
@@ -1608,7 +1608,7 @@
   display: block;
   font-size: 0.68rem;
   font-weight: 800;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   margin-bottom: 8px;
 }
 
@@ -1624,7 +1624,7 @@
   border-bottom: 1px solid rgba(226, 232, 240, 0.95);
   font-size: 1.05rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-admin-ads__simple-fields {
@@ -1659,7 +1659,7 @@
   padding: 0.55rem 0.65rem;
   border-radius: 10px;
   border: 1px solid rgba(148, 163, 184, 0.55);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   font-size: 0.95rem;
 }
 
@@ -1736,14 +1736,14 @@
   margin: 0 0 8px;
   font-size: 1.28rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-admin-ads__template-picker-sub {
   margin: 0;
   font-size: 0.92rem;
   line-height: 1.55;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-admin-ads__template-picker-grid {
@@ -1774,7 +1774,7 @@
   text-align: right;
   font: inherit;
   color: inherit;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border-radius: 14px;
   border: 2px solid rgba(226, 232, 240, 0.95);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -1785,7 +1785,7 @@
 }
 
 .oh-admin-ads__template-picker-choice--selected {
-  border-color: #2563eb;
+  border-color: var(--dash-primary, #2f3b65);
   box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
 }
 
@@ -1911,7 +1911,7 @@
   gap: 10px;
   padding: 14px 20px 18px;
   border-top: 1px solid rgba(226, 232, 240, 0.95);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
 }
 
 @media (min-width: 900px) {
@@ -1939,7 +1939,7 @@
   margin: 0;
   font-size: 1.15rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-admin-ads__workspace-actions {
@@ -2027,7 +2027,7 @@
 }
 
 .oh-admin-ads__thumb-empty {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .oh-admin-ads__row-actions {
@@ -2075,14 +2075,14 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border: 1px solid #e2e8f0;
   border-radius: 10px;
 }
 
 .oh-admin-ads__reorder-rank {
   font-weight: 800;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   min-width: 1.5rem;
 }
 
@@ -2100,7 +2100,7 @@
 
 .oh-admin-ads__reorder-sub {
   font-size: 0.78rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-admin-ads__reorder-arrows {
@@ -2109,7 +2109,7 @@
 }
 
 .oh-admin-ads__reorder-empty {
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-size: 0.9rem;
 }
 
@@ -2131,20 +2131,20 @@
   margin: 0;
   font-size: 0.95rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--dash-text, #172033);
 }
 
 .oh-admin-ads__live-preview-hint {
   margin: 0.35rem 0 0;
   font-size: 0.78rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-admin-ads__live-preview-stage {
   padding: 0.65rem;
   padding-bottom: 0.85rem;
   border-radius: 12px;
-  background: #f1f5f9;
+  background: var(--dash-hover, #eef1f4);
   border: 1px dashed rgba(100, 116, 139, 0.35);
   overflow: visible;
 }
@@ -2202,7 +2202,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 1rem 1.1rem 1.15rem;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
 }
 
 .oh-admin-ads__form-card-head {
@@ -2221,7 +2221,7 @@
 .oh-admin-ads__form-card-hint {
   margin: 0.3rem 0 0;
   font-size: 0.78rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-admin-ads__status-radios {
@@ -2247,7 +2247,7 @@
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
 }
 
 .oh-admin-ads__url-thumb--logo {
@@ -2260,7 +2260,7 @@
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .oh-admin-ads__url-thumb-inner,
@@ -2275,7 +2275,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 1rem 1.1rem 1.15rem;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   margin-bottom: 0.25rem;
 }
 
@@ -2309,31 +2309,31 @@
   padding: 0.65rem;
   border: 2px solid #e2e8f0;
   border-radius: 14px;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   cursor: pointer;
   text-align: right;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .oh-admin-ads__template-tile:hover {
-  border-color: #94a3b8;
+  border-color: var(--dash-text-muted, #667085);
 }
 
 .oh-admin-ads__template-tile--active {
   border-color: #2f3b65;
   box-shadow: 0 0 0 3px rgba(47, 59, 101, 0.12);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
 }
 
 .oh-admin-ads__template-tile-label {
   font-size: 0.82rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--dash-text, #172033);
 }
 
 .oh-admin-ads__template-tile-hint {
   font-size: 0.68rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   line-height: 1.35;
 }
 
@@ -2389,7 +2389,7 @@
   padding: 0.35rem 0.75rem 0.35rem 0.55rem;
   border: 2px solid #e2e8f0;
   border-radius: 999px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   cursor: pointer;
   font-size: 0.78rem;
   font-weight: 700;
@@ -2399,8 +2399,8 @@
 
 .oh-admin-ads__theme-swatch--active {
   border-color: #2f3b65;
-  background: #f1f5f9;
-  color: #1e293b;
+  background: var(--dash-hover, #eef1f4);
+  color: var(--dash-text, #172033);
 }
 
 .oh-admin-ads__theme-swatch-dots {
@@ -2518,13 +2518,13 @@
   padding: 0.55rem;
   border: 2px solid #e2e8f0;
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .oh-admin-ads__asset-tile:hover {
-  border-color: #94a3b8;
+  border-color: var(--dash-text-muted, #667085);
 }
 
 .oh-admin-ads__asset-tile--active {
@@ -2608,7 +2608,7 @@
   border-radius: 0.65rem;
   overflow: hidden;
   border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
 }
 
 .oh-admin-ads__bg-preview-overlay {
@@ -2771,8 +2771,8 @@
   align-items: center;
   gap: 6px;
   border: 1px solid transparent;
-  background: #f8fafc;
-  color: #64748b;
+  background: var(--dash-card-muted, #f9fafb);
+  color: var(--dash-text-secondary, #4b5563);
   border-radius: 999px;
   padding: 6px 12px;
   font-size: 0.78rem;
@@ -2782,7 +2782,7 @@
 }
 
 .oh-admin-ads__step-tab:hover {
-  background: #f1f5f9;
+  background: var(--dash-hover, #eef1f4);
   color: #334155;
 }
 
@@ -2815,7 +2815,7 @@
   gap: 8px;
   padding: 8px 10px;
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
 }
 
 .oh-admin-ads__preset-bar--compact {
@@ -2825,11 +2825,11 @@
 .oh-admin-ads__preset-bar-label {
   font-size: 0.75rem;
   font-weight: 800;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-admin-ads__step-panel {
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border-radius: 12px;
   padding: 14px 14px 16px;
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
@@ -2849,7 +2849,7 @@
   display: block;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   margin-bottom: 6px;
 }
 
@@ -2870,7 +2870,7 @@
 
 .oh-admin-ads__advanced {
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   overflow: hidden;
 }
 
@@ -2905,12 +2905,12 @@
 .oh-admin-ads__status-pill {
   flex: 1;
   border: 1px solid #e2e8f0;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   cursor: pointer;
 }
 
@@ -2939,7 +2939,7 @@
   min-width: 90px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -2947,13 +2947,13 @@
 
 .oh-admin-ads__stat-chip-label {
   font-size: 0.72rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 700;
 }
 
 .oh-admin-ads__stat-chip strong {
   font-size: 0.95rem;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-admin-ads__builder-actions {
@@ -2970,14 +2970,14 @@
   margin: 0;
   font-size: 0.92rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-admin-ads__builder-actions-hint {
   margin: 0.25rem 0 0;
   font-size: 0.74rem;
   font-weight: 500;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-admin-ads__builder-actions-buttons {
@@ -2989,14 +2989,14 @@
 }
 
 .oh-admin-ads__builder-actions-btn--reset {
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   border-color: #e2e8f0;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
 }
 
 .oh-admin-ads__builder-actions-btn--reset:hover:not(:disabled) {
   color: #475569;
-  background: #f1f5f9;
+  background: var(--dash-hover, #eef1f4);
   border-color: #cbd5e1;
 }
 
@@ -3055,7 +3055,7 @@
   width: min(100%, 520px);
   max-height: 88vh;
   overflow: auto;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border-radius: 16px 16px 0 0;
   padding: 12px 14px 20px;
   box-shadow: 0 -12px 40px rgba(15, 23, 42, 0.18);
@@ -3142,7 +3142,7 @@
   gap: 10px;
   align-items: start;
   padding: 12px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border-radius: 12px;
   border: 1px solid #e8edf3;
   cursor: grab;
@@ -3159,7 +3159,7 @@
 }
 
 .oh-admin-ads__reorder-grip {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   font-size: 1rem;
   line-height: 1;
   padding-top: 4px;
@@ -3183,7 +3183,7 @@
 
 .oh-admin-ads__reorder-placement {
   font-size: 0.72rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 600;
 }
 
@@ -3192,7 +3192,7 @@
   flex-wrap: wrap;
   gap: 8px;
   font-size: 0.72rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   margin-top: 6px;
 }
 
@@ -3247,10 +3247,10 @@
   padding: 0.5rem 0.65rem;
   border-radius: 12px;
   border: 1px solid rgba(226, 232, 240, 0.95);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   font: inherit;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--dash-text, #172033);
   box-sizing: border-box;
 }
 
@@ -3321,6 +3321,6 @@
   max-width: 12rem;
   font-size: 0.72rem;
   font-weight: 650;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   line-height: 1.45;
 }

@@ -1,7 +1,12 @@
-.hub-metric-skel {
+﻿.hub-metric-skel {
   display: inline-block;
   flex-shrink: 0;
-  background: linear-gradient(90deg, #e2e8f0 0%, #f1f5f9 50%, #e2e8f0 100%);
+  background: linear-gradient(
+    90deg,
+    var(--dash-skel-from, #e5e9ef) 0%,
+    var(--dash-skel-to, #f3f5f8) 50%,
+    var(--dash-skel-from, #e5e9ef) 100%
+  );
   background-size: 200% 100%;
   animation: hub-metric-shimmer 1.35s ease-in-out infinite;
   vertical-align: middle;

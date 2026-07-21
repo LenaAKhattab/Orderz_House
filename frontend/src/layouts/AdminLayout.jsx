@@ -15,6 +15,7 @@ import NotificationsBell from "../components/notifications/NotificationsBell";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
 
+import "../styles/dashboardTokens.css";
 import "../styles/dashboardHub.css";
 import "../styles/adminDashboardShell.css";
 import "../styles/adminDashboardHub.css";

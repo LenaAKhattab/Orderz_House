@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from "react";
+﻿import { useEffect, useId, useRef } from "react";
 import { useTranslation } from "../../i18n/LanguageProvider";
 
 const CONFIRM_VARIANT_CLASS = {
@@ -115,7 +115,7 @@ export default function ConfirmDialog({
       />
       <div
         ref={panelRef}
-        className={`dash-ui-confirm-dialog__panel relative z-[1] w-full max-h-[min(90vh,40rem)] overflow-y-auto rounded-2xl border border-slate-300/25 bg-white px-[18px] pb-4 pt-[18px] text-start shadow-[0_20px_44px_rgba(15,23,42,0.16)] ${panelClassName || "max-w-[420px]"}`.trim()}
+        className={`dash-ui-confirm-dialog__panel relative z-[1] w-full max-h-[min(90vh,40rem)] overflow-y-auto rounded-2xl border border-[color:var(--dash-border-strong,#aeb8c6)] bg-[color:var(--dash-card,#fcfcfd)] px-[18px] pb-4 pt-[18px] text-start shadow-[var(--dash-shadow-lg)] ${panelClassName || "max-w-[420px]"}`.trim()}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}

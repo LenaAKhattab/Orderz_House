@@ -1,29 +1,33 @@
-/* Admin / Super-admin inner pages — freelancer hub visual parity (scoped to outlet) */
+﻿/* Admin / Super-admin inner pages — freelancer hub visual parity (scoped to outlet) */
 
 .oh-sa-outlet {
-  --dash-surface-radius: clamp(26px, 2.8vw, 30px);
-  --dash-card-border: rgba(224, 231, 242, 0.75);
-  --dash-card-shadow:
-    10px 10px 26px rgba(163, 177, 198, 0.14),
-    -8px -8px 20px rgba(255, 255, 255, 0.95);
-  --dash-icon-chip-bg: linear-gradient(145deg, #fbfdff, #eef3f8);
-  --dash-icon-chip-border: 1px solid rgba(255, 255, 255, 0.78);
-  --dash-icon-chip-shadow:
-    4px 4px 12px rgba(163, 177, 198, 0.14),
-    -4px -4px 10px rgba(255, 255, 255, 0.92),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.88);
-  --dash-input-border: rgba(224, 231, 242, 0.95);
-  --dash-input-focus: rgba(118, 207, 223, 0.55);
+  --dash-surface-radius: var(--dash-radius-lg, 16px);
+  --dash-card-border: var(--dash-border, #c9d0da);
+  --dash-card-shadow: var(--dash-shadow-sm);
+  --dash-icon-chip-bg: var(--dash-hover, #eef1f4);
+  --dash-icon-chip-border: 1px solid var(--dash-border, #c9d0da);
+  --dash-icon-chip-shadow: none;
+  --dash-input-border: var(--dash-border-interactive, #a9b4c3);
+  --dash-input-focus: var(--dash-primary, #2f3b65);
   --dash-ease: cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 /* —— Page wrapper (DashboardShell) —— */
 .oh-sa-outlet .dash-ui-shell {
   gap: 0.35rem;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
   /* Outlet already pads horizontally — avoid triple inset from Tailwind px-* on the shell */
   padding-inline: 0;
   padding-top: clamp(6px, 1vw, 10px);
   padding-bottom: clamp(16px, 2.5vw, 28px);
+}
+
+.oh-sa-outlet .acc-page {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
 }
 
 .oh-sa-outlet .fdash-page {
@@ -41,28 +45,19 @@
 /* —— Shared soft surfaces —— */
 .oh-sa-outlet .dash-ui-surface--soft {
   border-radius: var(--dash-surface-radius);
-  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  background: var(--dash-card, #fcfcfd);
   border: 1px solid var(--dash-card-border);
-  box-shadow: var(--dash-card-shadow), inset 1px 1px 0 rgba(255, 255, 255, 0.86);
+  box-shadow: var(--dash-card-shadow);
 }
 
 .oh-sa-outlet [data-dashboard-header].dash-ui-surface--soft {
   position: relative;
   overflow: hidden;
+  background: var(--dash-surface, #f8f9fa);
 }
 
 .oh-sa-outlet [data-dashboard-header].dash-ui-surface--soft::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  background: linear-gradient(
-    155deg,
-    rgba(255, 255, 255, 0.42) 0%,
-    rgba(255, 255, 255, 0.06) 30%,
-    transparent 50%
-  );
+  display: none;
 }
 
 .oh-sa-outlet [data-dashboard-header] > * {
@@ -71,12 +66,12 @@
 }
 
 .oh-sa-outlet .dash-ui-section__head {
-  border-bottom-color: rgba(226, 232, 240, 0.75);
+  border-bottom-color: var(--dash-border, #c9d0da);
 }
 
 .oh-sa-outlet .dash-ui-section__title,
 .oh-sa-outlet [data-dashboard-header] h1 {
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 /* —— Stat cards —— */
@@ -86,11 +81,11 @@
   background: var(--dash-icon-chip-bg);
   border: var(--dash-icon-chip-border);
   box-shadow: var(--dash-icon-chip-shadow);
-  color: #2563eb;
+  color: var(--dash-primary, #2f3b65);
 }
 
 .oh-sa-outlet .dash-ui-stat-card__value {
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-sa-outlet .dash-ui-stats-grid {
@@ -107,13 +102,10 @@
 .oh-sa-outlet .dash-ui-toolbar {
   margin-bottom: 1.15rem;
   padding: 0.85rem 1rem;
-  border-radius: clamp(20px, 2.5vw, 26px);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.88) 100%);
-  border: 1px solid rgba(224, 231, 242, 0.85);
-  box-shadow:
-    6px 6px 18px rgba(163, 177, 198, 0.1),
-    -5px -5px 14px rgba(255, 255, 255, 0.92),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.88);
+  border-radius: var(--dash-radius-md, 12px);
+  background: var(--dash-surface, #f8f9fa);
+  border: 1px solid var(--dash-border, #c9d0da);
+  box-shadow: var(--dash-shadow-sm);
 }
 
 .oh-sa-outlet .dash-ui-toolbar input:not([type="checkbox"]):not([type="radio"]),
@@ -126,14 +118,24 @@
 .oh-sa-outlet .dash-ui-form-card select,
 .oh-sa-outlet .dash-ui-form-card textarea {
   min-height: 42px;
-  border-radius: 12px;
+  border-radius: var(--dash-radius-sm, 8px);
   border: 1px solid var(--dash-input-border);
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--dash-input, #ffffff);
   font-family: inherit;
   font-size: 0.88rem;
   font-weight: 600;
-  color: var(--primary, #2f3b65);
-  transition: border-color 0.15s var(--dash-ease), box-shadow 0.15s var(--dash-ease);
+  color: var(--dash-text, #172033);
+  transition: border-color 0.15s var(--dash-ease), box-shadow 0.15s var(--dash-ease), background 0.15s var(--dash-ease);
+}
+
+.oh-sa-outlet .dash-ui-toolbar input:hover:not(:disabled),
+.oh-sa-outlet .dash-ui-toolbar select:hover:not(:disabled),
+.oh-sa-outlet .dash-ui-section input:hover:not(:disabled),
+.oh-sa-outlet .dash-ui-section select:hover:not(:disabled),
+.oh-sa-outlet .dash-ui-form-card input:hover:not(:disabled),
+.oh-sa-outlet .dash-ui-form-card select:hover:not(:disabled) {
+  border-color: var(--dash-border-strong, #aeb8c6);
+  background: var(--dash-card, #fcfcfd);
 }
 
 .oh-sa-outlet .dash-ui-toolbar input:focus,
@@ -141,10 +143,35 @@
 .oh-sa-outlet .dash-ui-section input:focus,
 .oh-sa-outlet .dash-ui-section select:focus,
 .oh-sa-outlet .dash-ui-form-card input:focus,
-.oh-sa-outlet .dash-ui-form-card select:focus {
+.oh-sa-outlet .dash-ui-form-card select:focus,
+.oh-sa-outlet .dash-ui-toolbar input:focus-visible,
+.oh-sa-outlet .dash-ui-toolbar select:focus-visible,
+.oh-sa-outlet .dash-ui-section input:focus-visible,
+.oh-sa-outlet .dash-ui-section select:focus-visible,
+.oh-sa-outlet .dash-ui-form-card input:focus-visible,
+.oh-sa-outlet .dash-ui-form-card select:focus-visible {
   outline: none;
   border-color: var(--dash-input-focus);
-  box-shadow: 0 0 0 3px rgba(118, 207, 223, 0.22);
+  box-shadow: var(--dash-focus-ring);
+}
+
+.oh-sa-outlet .dash-ui-toolbar input:disabled,
+.oh-sa-outlet .dash-ui-toolbar select:disabled,
+.oh-sa-outlet .dash-ui-section input:disabled,
+.oh-sa-outlet .dash-ui-section select:disabled,
+.oh-sa-outlet .dash-ui-form-card input:disabled,
+.oh-sa-outlet .dash-ui-form-card select:disabled {
+  background: var(--dash-disabled, #f3f4f6);
+  color: var(--dash-text-muted, #667085);
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.oh-sa-outlet .dash-ui-toolbar input[readonly],
+.oh-sa-outlet .dash-ui-section input[readonly],
+.oh-sa-outlet .dash-ui-form-card input[readonly] {
+  background: var(--dash-card-muted, #f9fafb);
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 /* —— Tabs —— */
@@ -152,50 +179,46 @@
   margin-bottom: 1rem;
   padding: 4px;
   border-radius: 999px;
-  border: 1px solid rgba(224, 231, 242, 0.85);
-  background: rgba(255, 255, 255, 0.55);
-  box-shadow: inset 1px 1px 4px rgba(148, 163, 184, 0.06);
+  border: 1px solid var(--dash-border-strong, #aeb8c6);
+  background: var(--dash-hover, #eef1f4);
+  box-shadow: none;
 }
 
 .oh-sa-outlet .dash-ui-tab {
   border-radius: 999px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-sa-outlet .dash-ui-tab:hover {
-  color: var(--primary, #2f3b65);
-  background: rgba(255, 255, 255, 0.72);
+  color: var(--dash-primary, #2f3b65);
+  background: var(--dash-card, #fcfcfd);
 }
 
 .oh-sa-outlet .dash-ui-tab--selected {
-  color: #2563eb;
-  background: linear-gradient(145deg, rgba(239, 246, 255, 0.95), rgba(224, 242, 254, 0.75));
-  border: 1px solid rgba(191, 219, 254, 0.65);
-  box-shadow:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.9),
-    2px 2px 8px rgba(163, 177, 198, 0.08);
+  color: var(--dash-primary, #2f3b65);
+  background: var(--dash-card, #fcfcfd);
+  border: 1px solid var(--dash-primary-soft-border);
+  box-shadow: var(--dash-shadow-sm);
 }
 
 /* —— Tables —— */
 .oh-sa-outlet .dash-ui-table-wrap {
   overflow-x: auto;
-  border-radius: clamp(18px, 2.2vw, 22px);
-  border: 1px solid rgba(224, 231, 242, 0.85);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.96) 100%);
-  box-shadow:
-    8px 8px 22px rgba(163, 177, 198, 0.1),
-    -6px -6px 16px rgba(255, 255, 255, 0.9),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.88);
+  border-radius: var(--dash-radius-md, 12px);
+  border: 1px solid var(--dash-border-strong, #aeb8c6);
+  background: var(--dash-card, #fcfcfd);
+  box-shadow: var(--dash-shadow-sm);
 }
 
 .oh-sa-outlet .dash-ui-table thead th {
-  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
-  background: rgba(248, 250, 252, 0.95);
+  border-bottom: 1px solid var(--dash-border, #c9d0da);
+  background: var(--dash-hover, #eef1f4);
   padding: 0.65rem 0.75rem;
   text-align: start;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text, #172033);
+  font-size: 0.8125rem;
 }
 
 .oh-sa-outlet .dash-ui-table tbody td {
@@ -213,7 +236,7 @@
 }
 
 .oh-sa-outlet .dash-ui-chart-card__head {
-  border-bottom-color: rgba(226, 232, 240, 0.75);
+  border-bottom-color: var(--dash-border, #c9d0da);
 }
 
 /* —— Empty / loading / error —— */
@@ -235,11 +258,11 @@
   background: var(--dash-icon-chip-bg);
   border: var(--dash-icon-chip-border);
   box-shadow: var(--dash-icon-chip-shadow);
-  color: #2563eb;
+  color: var(--dash-primary, #2f3b65);
 }
 
 .oh-sa-outlet .dash-ui-empty__title {
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-sa-outlet .dash-ui-loading {
@@ -283,7 +306,7 @@
 
 .oh-sa-outlet .btn-primary,
 .oh-sa-outlet .btn:not(.btn-secondary):not(.btn-link) {
-  background: linear-gradient(135deg, #2b59c3, #3d6fd4);
+  background: var(--dash-primary, #2f3b65);
   color: #fff;
   border: none;
   box-shadow: 0 10px 24px -12px rgba(43, 89, 195, 0.55);
@@ -298,7 +321,7 @@
 
 .oh-sa-outlet .btn-secondary {
   background: #fff;
-  color: #2b59c3;
+  color: var(--dash-primary, #2f3b65);
   border: 1.5px solid rgba(43, 89, 195, 0.35);
   box-shadow: 0 4px 14px -8px rgba(43, 89, 195, 0.15);
 }
@@ -306,8 +329,8 @@
 .oh-sa-outlet .btn-secondary:hover:not(:disabled) {
   transform: translateY(-1px);
   background: #f8faff;
-  border-color: #2b59c3;
-  color: #2b59c3;
+  border-color: var(--dash-primary, #2f3b65);
+  color: var(--dash-primary, #2f3b65);
 }
 
 .oh-sa-outlet .btn[style*="background"][style*="red"],
@@ -362,7 +385,7 @@
   padding: clamp(14px, 2vw, 18px);
   border-radius: clamp(20px, 2.4vw, 26px);
   border: 1px solid var(--dash-card-border);
-  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  background: var(--dash-card, #fcfcfd);
   box-shadow: var(--dash-card-shadow), inset 1px 1px 0 rgba(255, 255, 255, 0.86);
   min-width: 0;
   max-width: 100%;
@@ -373,7 +396,7 @@
   margin: 0 0 8px;
   font-size: 1rem;
   font-weight: 700;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-sa-outlet .cards-grid > .card p {
@@ -405,7 +428,7 @@
 .oh-sa-outlet .dash-ui-modal__panel {
   border-radius: clamp(22px, 2.6vw, 28px);
   border: 1px solid var(--dash-card-border);
-  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  background: var(--dash-card, #fcfcfd);
   box-shadow:
     12px 12px 34px rgba(163, 177, 198, 0.18),
     -8px -8px 24px rgba(255, 255, 255, 0.92),
@@ -450,7 +473,7 @@
 }
 
 .oh-sa-outlet .dash-ui-modal__title {
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
   font-weight: 800;
 }
 
@@ -474,7 +497,7 @@
   margin: 0 0 14px;
   font-size: 0.84rem;
   line-height: 1.5;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-sa-outlet .dash-ui-modal__form {
@@ -538,7 +561,7 @@
 
 .oh-sa-outlet .admin-dash-modal__bid-name {
   font-weight: 800;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -548,7 +571,7 @@
   margin: 4px 0 0;
   font-size: 0.82rem;
   line-height: 1.45;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 /* Admin courses inline dialogs */
@@ -561,7 +584,7 @@
 .oh-sa-outlet .oh-admin-courses__modal {
   border-radius: clamp(22px, 2.6vw, 28px);
   border: 1px solid var(--dash-card-border);
-  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  background: var(--dash-card, #fcfcfd);
   box-shadow:
     12px 12px 34px rgba(163, 177, 198, 0.18),
     -8px -8px 24px rgba(255, 255, 255, 0.92),
@@ -582,11 +605,11 @@
 .oh-sa-outlet .oh-admin-courses__modal-tab {
   border-radius: 999px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-sa-outlet .oh-admin-courses__modal-tab--active {
-  color: #2563eb;
+  color: var(--dash-primary, #2f3b65);
   background: linear-gradient(145deg, rgba(239, 246, 255, 0.95), rgba(224, 242, 254, 0.75));
   border: 1px solid rgba(191, 219, 254, 0.65);
   box-shadow:
@@ -597,7 +620,7 @@
 .oh-sa-outlet .oh-admin-courses__modal-close {
   border-radius: 12px;
   background: linear-gradient(145deg, #fbfdff, #eef3f8);
-  border: 1px solid rgba(224, 231, 242, 0.85);
+  border: 1px solid var(--dash-border-strong, #aeb8c6);
   box-shadow:
     2px 2px 8px rgba(163, 177, 198, 0.08),
     inset 1px 1px 0 rgba(255, 255, 255, 0.88);
@@ -620,7 +643,7 @@
   margin: 0;
   font-size: 1.06rem;
   font-weight: 800;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-sa-outlet .admin-dash-inline-dialog__search-panel {
@@ -686,7 +709,7 @@
 .oh-sa-outlet .oh-sapl-modal {
   border-radius: clamp(22px, 2.6vw, 28px);
   border: 1px solid var(--dash-card-border);
-  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  background: var(--dash-card, #fcfcfd);
   box-shadow:
     12px 12px 34px rgba(163, 177, 198, 0.18),
     -8px -8px 24px rgba(255, 255, 255, 0.92),
@@ -725,7 +748,7 @@
 /* —— Form cards —— */
 .oh-sa-outlet .dash-ui-form-card {
   border-radius: clamp(20px, 2.4vw, 24px);
-  border-color: rgba(224, 231, 242, 0.85);
+  border-color: var(--dash-border-strong, #aeb8c6);
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 250, 252, 0.9) 100%);
   box-shadow:
     6px 6px 18px rgba(163, 177, 198, 0.08),
@@ -735,7 +758,7 @@
 /* —— Action menu —— */
 .oh-sa-outlet .dash-ui-action-menu__panel {
   border-radius: 16px;
-  border-color: rgba(224, 231, 242, 0.85);
+  border-color: var(--dash-border-strong, #aeb8c6);
   box-shadow:
     10px 10px 28px rgba(163, 177, 198, 0.16),
     -6px -6px 16px rgba(255, 255, 255, 0.92);
@@ -744,8 +767,8 @@
 /* —— Admin home (DashboardHubPage) quick cards —— */
 .oh-sa-outlet .admin-dash-quick__card {
   border-radius: clamp(22px, 2.6vw, 28px);
-  border: 1px solid rgba(224, 231, 242, 0.85);
-  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  border: 1px solid var(--dash-border-strong, #aeb8c6);
+  background: var(--dash-card, #fcfcfd);
   box-shadow:
     8px 8px 22px rgba(163, 177, 198, 0.12),
     -6px -6px 16px rgba(255, 255, 255, 0.92),
@@ -766,7 +789,7 @@
 
 .oh-sa-outlet .admin-dash-summary__item {
   border-radius: clamp(20px, 2.4vw, 26px);
-  border: 1px solid rgba(224, 231, 242, 0.85);
+  border: 1px solid var(--dash-border-strong, #aeb8c6);
   background: linear-gradient(160deg, #ffffff 0%, #f8fafc 100%);
   box-shadow:
     6px 6px 18px rgba(163, 177, 198, 0.1),
@@ -779,7 +802,7 @@
 }
 
 .oh-sa-outlet .oh-training-hub__tab.dash-ui-tab--selected {
-  color: #2563eb;
+  color: var(--dash-primary, #2f3b65);
 }
 
 .oh-sa-outlet .dash-ui-toolbar.oh-training-filters input,
@@ -806,7 +829,7 @@
 
 .oh-sa-outlet .oh-admin-courses__course-card {
   border-radius: clamp(22px, 2.6vw, 28px);
-  border-color: rgba(224, 231, 242, 0.85);
+  border-color: var(--dash-border-strong, #aeb8c6);
   box-shadow:
     8px 8px 22px rgba(163, 177, 198, 0.1),
     -6px -6px 16px rgba(255, 255, 255, 0.9);
@@ -816,7 +839,7 @@
 .oh-sa-outlet .sa-event-pill,
 .oh-sa-outlet .sa-pages-list__row {
   border-radius: 14px;
-  border-color: rgba(224, 231, 242, 0.85);
+  border-color: var(--dash-border-strong, #aeb8c6);
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
 }
 
@@ -887,7 +910,7 @@
   gap: 8px;
   padding: 4px;
   border-radius: clamp(20px, 2.5vw, 26px);
-  border: 1px solid rgba(224, 231, 242, 0.85);
+  border: 1px solid var(--dash-border-strong, #aeb8c6);
   background: rgba(255, 255, 255, 0.55);
   box-shadow: inset 1px 1px 4px rgba(148, 163, 184, 0.06);
 }
@@ -931,7 +954,7 @@
   background: var(--dash-icon-chip-bg);
   border: var(--dash-icon-chip-border);
   box-shadow: var(--dash-icon-chip-shadow);
-  color: #2563eb;
+  color: var(--dash-primary, #2f3b65);
 }
 
 .oh-sa-outlet .admin-co-wizard__stepper-panel .oh-step--active .oh-step__num {
@@ -975,7 +998,7 @@
 .oh-sa-outlet .admin-co-wizard__form-panel .admin-co-fields .label {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-sa-outlet .admin-co-wizard__form-panel .admin-co-fields .client-co-type-row .btn {
@@ -988,7 +1011,7 @@
 .oh-sa-outlet .admin-co-wizard__form-panel .oh-review,
 .oh-sa-outlet .admin-co-wizard__form-panel .oh-wizard-section {
   border-radius: clamp(18px, 2.2vw, 22px);
-  border: 1px solid rgba(224, 231, 242, 0.85);
+  border: 1px solid var(--dash-border-strong, #aeb8c6);
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
   box-shadow:
     4px 4px 14px rgba(163, 177, 198, 0.08),
@@ -1059,13 +1082,13 @@
 .oh-sa-outlet .oh-account-page--staff .oh-account-label {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-sa-outlet .oh-account-page--staff .oh-account-page__hint {
   margin-top: 10px;
   font-size: 0.82rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-sa-outlet .oh-account-page--staff .oh-account-toggle__label {
@@ -1077,14 +1100,14 @@
 }
 
 .oh-sa-outlet .oh-account-page--staff .oh-account-switch:checked {
-  background: linear-gradient(135deg, #2b59c3, #3d6fd4);
+  background: var(--dash-primary, #2f3b65);
 }
 
 .oh-sa-outlet .oh-account-page--staff .oh-account-empty {
   border-radius: 14px;
   border: 1px dashed rgba(191, 219, 254, 0.65);
   background: linear-gradient(160deg, rgba(248, 250, 252, 0.95), rgba(255, 255, 255, 0.98));
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-sa-outlet .oh-account-page--staff .oh-account-avatar-row .btn-secondary {
@@ -1097,7 +1120,7 @@
   padding: clamp(16px, 2.2vw, 22px);
   border-radius: var(--dash-surface-radius);
   border: 1px solid var(--dash-card-border);
-  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
+  background: var(--dash-card, #fcfcfd);
   box-shadow: var(--dash-card-shadow), inset 1px 1px 0 rgba(255, 255, 255, 0.86);
 }
 
@@ -1105,7 +1128,7 @@
   margin: 0 0 12px;
   font-size: 1.06rem;
   font-weight: 700;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-sa-outlet .oh-account-page--staff .oh-account-btn-primary {
@@ -1115,7 +1138,7 @@
   font-weight: 700;
   font-family: inherit;
   border: none;
-  background: linear-gradient(135deg, #2b59c3, #3d6fd4);
+  background: var(--dash-primary, #2f3b65);
   color: #fff;
   box-shadow: 0 10px 24px -12px rgba(43, 89, 195, 0.55);
 }
@@ -1127,7 +1150,7 @@
   font-weight: 700;
   font-family: inherit;
   background: #fff;
-  color: #2b59c3;
+  color: var(--dash-primary, #2f3b65);
   border: 1.5px solid rgba(43, 89, 195, 0.35);
   box-shadow: 0 4px 14px -8px rgba(43, 89, 195, 0.15);
 }

@@ -1,4 +1,4 @@
-.oh-site-pages-toolbar {
+﻿.oh-site-pages-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -18,7 +18,7 @@
   overflow-x: auto;
   border: 1px solid rgba(224, 231, 242, 0.95);
   border-radius: 16px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
 }
 
 .oh-site-pages-table {
@@ -36,7 +36,7 @@
 }
 
 .oh-site-pages-table th {
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   color: #475569;
   font-weight: 700;
 }
@@ -47,11 +47,11 @@
 
 .oh-site-pages-table__title {
   font-weight: 700;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-site-pages-table__slug {
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.82rem;
 }
@@ -71,8 +71,8 @@
 }
 
 .oh-site-pages-badge--off {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--dash-hover, #eef1f4);
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 /* —— Edit page form —— */
@@ -100,7 +100,7 @@
   border: 1px solid rgba(226, 232, 240, 0.95);
   font-size: 0.84rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-site-page-form__path-value {
@@ -150,8 +150,8 @@
   border-radius: 12px;
   padding: 11px 13px;
   font: inherit;
-  color: #1e293b;
-  background: #fff;
+  color: var(--dash-text, #172033);
+  background: var(--dash-card, #fcfcfd);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -179,7 +179,7 @@
   font-size: 0.82rem;
   font-weight: 500;
   line-height: 1.6;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-site-page-form__toggle {
@@ -190,7 +190,7 @@
   padding: 0 14px;
   border-radius: 12px;
   border: 1px solid rgba(203, 213, 225, 0.95);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   font-size: 0.88rem;
   font-weight: 600;
   color: #475569;

@@ -232,5 +232,3 @@ export default function InstitutionAddMemberModal({
     </DashboardModal>
   );
 }
-
-export default InstitutionAddMemberModal;
