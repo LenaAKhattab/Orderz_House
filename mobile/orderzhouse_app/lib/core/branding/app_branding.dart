@@ -4,8 +4,8 @@ abstract final class AppBranding {
   static const displayNameEn = 'Orderz House';
   /// Wordmark under the logo on splash / auth headers.
   static const markWordmark = 'ORDERZHOUSE';
-  static const versionLabel = '1.0.0';
-  static const buildNumber = '1';
+  static const versionLabel = '8.1.1';
+  static const buildNumber = '8102';
 
   /// Official mark synced from `frontend/public/logo.png`.
   static const logoAsset = 'assets/branding/company_logo.png';
