@@ -18,7 +18,7 @@ class OrderzHouseApp extends ConsumerWidget {
     return PushBootstrapListener(
       child: DeepLinkListener(
         child: MaterialApp.router(
-          title: AppBranding.displayNameAr,
+          title: AppBranding.displayNameEn,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
           locale: const Locale('ar'),
