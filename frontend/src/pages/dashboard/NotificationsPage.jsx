@@ -81,6 +81,14 @@ function notificationDetails(n, canShowOrderReference) {
   const orderId = String(n?.metadata?.orderId || n?.entityId || "").trim();
 
   if (type === "order.created") {
+    const categoryName = String(n?.metadata?.categoryName || "").trim();
+    const subcategoryName = String(n?.metadata?.subcategoryName || "").trim();
+    if (categoryName && subcategoryName && projectName) {
+      return `«${categoryName}» — «${subcategoryName}»: ${projectName}`;
+    }
+    if (categoryName && projectName) {
+      return `«${categoryName}»: ${projectName}`;
+    }
     return projectName;
   }
 

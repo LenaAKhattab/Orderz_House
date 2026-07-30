@@ -269,8 +269,19 @@ export const listSubscriptionsRequest = async (params = {}) => {
   return data;
 };
 
-export const listActivationQueueRequest = async (params = {}) => {
-  const { data } = await api.get("/admin/subscriptions/activation-queue", { params });
+export const listActivationQueueRequest = async (params = {}, options = {}) => {
+  const { signal, ...rest } = options;
+  const query = { ...params };
+  if (query.search != null) {
+    const trimmed = String(query.search).trim();
+    if (trimmed) query.search = trimmed;
+    else delete query.search;
+  }
+  const { data } = await api.get("/admin/subscriptions/activation-queue", {
+    params: query,
+    signal,
+    ...rest,
+  });
   return data;
 };
 

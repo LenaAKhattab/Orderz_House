@@ -17,6 +17,9 @@ const {
   scheduleFakeOrderTranslation,
   scheduleTemplateTranslation,
 } = require("./orderTranslationHelper");
+const {
+  scheduleDispatchNewlyVisibleFakeOrderNotifications,
+} = require("./fakeOrderPoolNotificationService");
 
 /** Session advisory lock: cross-process generation guard (PostgreSQL). */
 const AUTOMATION_GENERATION_LOCK_KEY = 882947361;
@@ -1102,6 +1105,7 @@ async function startTrainingRoundManualOnce({ actorUserId, attempt = 0 }) {
     } catch (markErr) {
       console.warn("[fakeOrders] recordMarketplaceVisibleFakeOrders after manual round:", markErr?.message || markErr);
     }
+    scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: "manual_round_start" });
     await insertAutomationLogSafe(pool, {
       runStartedAt,
       status: "success",
@@ -1736,17 +1740,24 @@ async function runAutomationTick() {
     await client.query("BEGIN");
     const { rows: sRows } = await client.query(`SELECT * FROM fake_order_settings WHERE id = 1 FOR UPDATE`);
     const s = sRows[0];
-    if (!s || !s.training_orders_enabled || !s.automation_enabled) {
+    if (!s || !s.training_orders_enabled) {
       await client.query("COMMIT");
       logAutomationEvent("skipped_settings", {
         training_orders_enabled: Boolean(s?.training_orders_enabled),
         automation_enabled: Boolean(s?.automation_enabled),
-        reason: !s
-          ? "no_settings"
-          : !s.training_orders_enabled
-            ? "training_disabled"
-            : "automation_disabled",
+        reason: !s ? "no_settings" : "training_disabled",
       });
+      return;
+    }
+    // Still notify newly visible staggered groups even when round generation automation is off.
+    if (!s.automation_enabled) {
+      await client.query("COMMIT");
+      logAutomationEvent("skipped_settings", {
+        training_orders_enabled: true,
+        automation_enabled: false,
+        reason: "automation_disabled",
+      });
+      scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: "automation_tick_notify_only" });
       return;
     }
     const dv = Number(s.duration_value);
@@ -1781,6 +1792,7 @@ async function runAutomationTick() {
         earliestUntil: coverageBefore.earliestUntil,
         overlapMs,
       });
+      scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: "automation_tick_init_next_run" });
       return;
     }
 
@@ -1812,6 +1824,7 @@ async function runAutomationTick() {
         generatedCount: null,
         source: "automation",
       });
+      scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: "automation_tick_no_actor" });
       return;
     }
 
@@ -2021,6 +2034,8 @@ async function runAutomationTick() {
         console.warn("[fakeOrders] recordMarketplaceVisibleFakeOrders after tick:", markErr?.message || markErr);
       }
     }
+    // Always scan after tick COMMIT: delayed stagger batches become due by wall clock.
+    scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: "automation_tick" });
     if (didGenerate || genStatus !== "success") {
       await insertAutomationLogSafe(pool, {
         runStartedAt,
@@ -2318,6 +2333,7 @@ async function ensureMinimumVisibleFakeOrdersOnce({ reason = "runtime", minVisib
       await client.query("COMMIT");
       if (promoted > 0) {
         await recordMarketplaceVisibleFakeOrders(pool);
+        scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: `ensure_min_promote:${reason}` });
         const visibleAfter = await getVisibleFakeOrdersCount(pool);
         logAutomationEvent("ensure_min_visible_emergency_promote", {
           reason,
@@ -2393,6 +2409,7 @@ async function ensureMinimumVisibleFakeOrdersOnce({ reason = "runtime", minVisib
 
     await client.query("COMMIT");
     await recordMarketplaceVisibleFakeOrders(pool);
+    scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: `ensure_min_generated:${reason}` });
     const visibleAfter = await getVisibleFakeOrdersCount(pool);
     return {
       ok: true,
@@ -3609,6 +3626,7 @@ async function rotateTrainingRoundNow({ actorUserId = null, dryRun = true } = {}
       } catch (markErr) {
         console.warn("[fakeOrders] recordMarketplaceVisibleFakeOrders after rotate:", markErr?.message || markErr);
       }
+      scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: "rotate_training_round_now" });
 
       const heroAfter = await publicHomeOrderStatsService.queryHeroOrderCounts();
       const coverageAfter = await getTrainingPoolCoverage(pool);

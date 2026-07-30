@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Button from "../../components/ui/Button";
 import Pagination from "../../components/common/Pagination";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
@@ -12,10 +12,12 @@ import {
   listAssignablePlansAdminRequest,
 } from "../../services/api";
 import { useAuth } from "../../context/useAuth";
+import { isAxiosCanceledError } from "../../utils/apiErrorMessage";
 import SubscriptionsActivationList from "./SubscriptionsActivationList";
 import "./superAdminSubscriptionsPage.css";
 
 const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 350;
 
 const EMPTY_PAGINATION = {
   page: 1,
@@ -40,12 +42,22 @@ function formatDisplayRange(pagination) {
   return `عرض ${start}–${end} من أصل ${total} اشتراك`;
 }
 
+function SearchIcon() {
+  return (
+    <svg className="oh-sa-activation-search__icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+      <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function AdminSubscriptionsActivationPage() {
   const { user } = useAuth();
   const role = user?.primaryRole || user?.role;
   const isSuperAdmin = role === "super_admin";
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [submittingId, setSubmittingId] = useState(null);
   const [error, setError] = useState("");
   const [subs, setSubs] = useState([]);
@@ -53,6 +65,13 @@ export default function AdminSubscriptionsActivationPage() {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(EMPTY_PAGINATION);
   const [view, setView] = useState("cards");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  const skipSearchPageReset = useRef(true);
+  const hasLoadedOnceRef = useRef(false);
+  const abortRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   const planTitleById = useMemo(() => {
     const map = {};
@@ -69,49 +88,94 @@ export default function AdminSubscriptionsActivationPage() {
     }
   }, []);
 
-  const loadQueue = useCallback(async (pageOverride) => {
-    const targetPage = pageOverride ?? page;
-    setError("");
-    setLoading(true);
-    try {
-      const res = await listActivationQueueRequest({ page: targetPage, limit: PAGE_SIZE });
-      const nextSubs = res?.data?.subscriptions || [];
-      const nextPagination = res?.data?.pagination || EMPTY_PAGINATION;
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(searchInput.trim()), SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
 
-      if (nextSubs.length === 0 && targetPage > 1 && (nextPagination.total ?? 0) > 0) {
-        setPage(targetPage - 1);
-        setLoading(false);
-        return;
-      }
-
-      setSubs(nextSubs);
-      setPagination(nextPagination);
-      if (pageOverride == null && targetPage !== page) {
-        setPage(targetPage);
-      }
-    } catch (err) {
-      setError(errorMessage(err));
-      setSubs([]);
-      setPagination(EMPTY_PAGINATION);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (skipSearchPageReset.current) {
+      skipSearchPageReset.current = false;
+      return;
     }
-  }, [page]);
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const loadQueue = useCallback(
+    async (pageOverride, { soft = false } = {}) => {
+      const targetPage = pageOverride ?? page;
+
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      setError("");
+      if (soft) setRefreshing(true);
+      else setLoading(true);
+
+      try {
+        const res = await listActivationQueueRequest(
+          {
+            page: targetPage,
+            limit: PAGE_SIZE,
+            ...(debouncedSearch ? { search: debouncedSearch } : {}),
+          },
+          { signal: controller.signal },
+        );
+
+        if (controller.signal.aborted) return;
+
+        const nextSubs = res?.data?.subscriptions || [];
+        const nextPagination = res?.data?.pagination || EMPTY_PAGINATION;
+
+        if (nextSubs.length === 0 && targetPage > 1 && (nextPagination.total ?? 0) > 0) {
+          setPage(targetPage - 1);
+          setLoading(false);
+          setRefreshing(false);
+          return;
+        }
+
+        setSubs(nextSubs);
+        setPagination(nextPagination);
+        hasLoadedOnceRef.current = true;
+        if (pageOverride == null && targetPage !== page) {
+          setPage(targetPage);
+        }
+      } catch (err) {
+        if (isAxiosCanceledError(err) || controller.signal.aborted) return;
+        setError(errorMessage(err));
+        if (!soft) {
+          setSubs([]);
+          setPagination(EMPTY_PAGINATION);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
+    },
+    [page, debouncedSearch],
+  );
 
   useEffect(() => {
     void loadPlans();
   }, [loadPlans]);
 
   useEffect(() => {
-    void loadQueue(page);
-  }, [page, loadQueue]);
+    const soft = hasLoadedOnceRef.current;
+    void loadQueue(page, { soft });
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, [page, debouncedSearch, loadQueue]);
 
   const activate = async (subscriptionId) => {
     setError("");
     setSubmittingId(String(subscriptionId));
     try {
       await activateSubscriptionCompanyRequest(subscriptionId);
-      await loadQueue(page);
+      await loadQueue(page, { soft: true });
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -120,12 +184,30 @@ export default function AdminSubscriptionsActivationPage() {
   };
 
   const refresh = useCallback(() => {
-    void loadQueue(page);
+    void loadQueue(page, { soft: hasLoadedOnceRef.current });
   }, [loadQueue, page]);
+
+  const clearSearch = useCallback(() => {
+    setSearchInput("");
+    searchInputRef.current?.focus();
+  }, []);
+
+  const onSearchKeyDown = (event) => {
+    if (event.key === "Escape" && searchInput) {
+      event.preventDefault();
+      clearSearch();
+    }
+  };
 
   const total = Number(pagination?.total) || 0;
   const totalPages = Math.max(1, Number(pagination?.totalPages) || 1);
-  const showPagination = !loading && total > PAGE_SIZE;
+  const showPagination = !loading && !error && total > PAGE_SIZE;
+  const hasActiveSearch = Boolean(debouncedSearch);
+  const busy = loading || refreshing;
+  const showInitialSkeleton = loading && !hasLoadedOnceRef.current;
+  const showSearchEmpty = !busy && !error && total === 0 && hasActiveSearch;
+  const showQueueEmpty = !busy && !error && total === 0 && !hasActiveSearch;
+  const showList = !error && !showInitialSkeleton && subs.length > 0;
 
   return (
     <DashboardShell className="oh-sa-subs oh-sa-activation-page">
@@ -135,22 +217,9 @@ export default function AdminSubscriptionsActivationPage() {
         description="متابعة الاشتراكات بانتظار تفعيل الشركة، والإسناد الإداري، ومتابعة الاشتراكات غير المفعّلة بعد."
       />
 
-      {error ? (
-        <DashboardErrorState
-          message={error}
-          actions={
-            <Button type="button" variant="secondary" onClick={() => void refresh()}>
-              إعادة المحاولة
-            </Button>
-          }
-        />
-      ) : null}
-
       <DashboardSection
         title="بانتظار تفعيل الشركة"
-        description={
-          !loading && total > 0 ? formatDisplayRange(pagination) : undefined
-        }
+        description={!busy && !error && total > 0 ? formatDisplayRange(pagination) : undefined}
         actions={
           <>
             <button
@@ -167,13 +236,67 @@ export default function AdminSubscriptionsActivationPage() {
             >
               عرض جدول
             </button>
-            <Button type="button" variant="secondary" disabled={loading} onClick={() => void refresh()}>
+            <Button type="button" variant="secondary" disabled={busy} onClick={() => void refresh()}>
               تحديث
             </Button>
           </>
         }
       >
-        {loading ? (
+        <div className="oh-sa-activation-search" role="search">
+          <label className="oh-sa-activation-search__label" htmlFor="sa-activation-search">
+            البحث عن مستقل
+          </label>
+          <div className={`oh-sa-activation-search__control${busy ? " is-loading" : ""}`.trim()}>
+            <span className="oh-sa-activation-search__icon" aria-hidden="true">
+              <SearchIcon />
+            </span>
+            <input
+              ref={searchInputRef}
+              id="sa-activation-search"
+              className="oh-sa-activation-search__input"
+              type="search"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={onSearchKeyDown}
+              placeholder="ابحث بالاسم أو البريد الإلكتروني..."
+              aria-label="البحث عن مستقل"
+              autoComplete="off"
+              spellCheck={false}
+            />
+            {searchInput ? (
+              <button
+                type="button"
+                className="oh-sa-activation-search__clear"
+                onClick={clearSearch}
+                aria-label="مسح البحث"
+              >
+                مسح
+              </button>
+            ) : null}
+            {refreshing ? (
+              <span className="oh-sa-activation-search__spinner" aria-hidden="true" />
+            ) : null}
+          </div>
+        </div>
+
+        {error ? (
+          <DashboardErrorState
+            message={error}
+            actions={
+              <Button type="button" variant="secondary" onClick={() => void refresh()}>
+                إعادة المحاولة
+              </Button>
+            }
+          />
+        ) : null}
+
+        {!error && refreshing && hasLoadedOnceRef.current ? (
+          <div className="oh-sa-subs-list-loading" aria-live="polite">
+            جارٍ تحديث النتائج…
+          </div>
+        ) : null}
+
+        {showInitialSkeleton ? (
           <SubscriptionsActivationList
             items={[]}
             view={view}
@@ -184,11 +307,21 @@ export default function AdminSubscriptionsActivationPage() {
           />
         ) : null}
 
-        {!loading && total === 0 ? (
-          <DashboardEmptyState title="لا توجد اشتراكات بانتظار التفعيل حالياً" />
+        {showQueueEmpty ? <DashboardEmptyState title="لا توجد اشتراكات بانتظار التفعيل حالياً" /> : null}
+
+        {showSearchEmpty ? (
+          <DashboardEmptyState
+            title="لم يتم العثور على نتائج"
+            description="لا يوجد مستقل يطابق الاسم أو البريد الإلكتروني الذي أدخلته."
+            actions={
+              <Button type="button" variant="secondary" onClick={clearSearch}>
+                مسح البحث
+              </Button>
+            }
+          />
         ) : null}
 
-        {!loading && subs.length > 0 ? (
+        {showList ? (
           <>
             <SubscriptionsActivationList
               items={subs}
@@ -203,7 +336,7 @@ export default function AdminSubscriptionsActivationPage() {
                   currentPage={pagination.page}
                   totalPages={totalPages}
                   onPageChange={setPage}
-                  isLoading={loading}
+                  isLoading={busy}
                   className="oh-sa-subs-pagination"
                 />
               </div>

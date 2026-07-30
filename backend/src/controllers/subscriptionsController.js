@@ -43,9 +43,11 @@ const updateSubscription = async (req, res, next) => {
 
 const listActivationQueue = async (req, res, next) => {
   try {
+    const searchRaw = req.query.search != null ? String(req.query.search).trim() : "";
     const result = await subscriptionsService.listActivationQueueSubscriptions({
       page: req.query.page != null ? Number(req.query.page) : 1,
       limit: req.query.limit != null ? Number(req.query.limit) : 20,
+      search: searchRaw || null,
     });
     return res.status(200).json({
       success: true,

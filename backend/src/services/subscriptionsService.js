@@ -1367,9 +1367,18 @@ function mapActivationQueueSubscription(row) {
 }
 
 /**
- * Activation dashboard queue: company-pending activations + dashboard admin-assigned follow-up.
+ * Escape `%`, `_`, and `\` for PostgreSQL ILIKE … ESCAPE '\' patterns.
+ * Literal wildcards in the user query must not broaden the match unintentionally.
  */
-async function listActivationQueueSubscriptions({ page = 1, limit = 20 } = {}) {
+function escapeIlikePattern(raw) {
+  return String(raw).replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
+/**
+ * Activation dashboard queue: company-pending activations + dashboard admin-assigned follow-up.
+ * Optional `search` filters freelancers by name parts, full name, or email within the same queue WHERE.
+ */
+async function listActivationQueueSubscriptions({ page = 1, limit = 20, search = null } = {}) {
   const { enrichSubscriptionsWithPaymentCountry } = require("./stripeSubscriptionCountryService");
 
   const pg = Math.max(1, Number(page) || 1);
@@ -1381,11 +1390,34 @@ async function listActivationQueueSubscriptions({ page = 1, limit = 20 } = {}) {
      LEFT JOIN plans p ON p.id = fs.plan_id
      LEFT JOIN users ab ON ab.id = fs.assigned_by_user_id`;
 
+  const values = [];
+  let whereSql = ACTIVATION_QUEUE_WHERE_SQL;
+
+  const searchTerm = search != null ? String(search).trim() : "";
+  if (searchTerm) {
+    const pattern = `%${escapeIlikePattern(searchTerm)}%`;
+    values.push(pattern);
+    const p = `$${values.length}`;
+    // ILIKE is case-insensitive for Latin; Arabic is matched as stored. ESCAPE keeps %/_ literal.
+    whereSql = `${ACTIVATION_QUEUE_WHERE_SQL}
+  AND (
+    u.first_name ILIKE ${p} ESCAPE '\\'
+    OR u.father_name ILIKE ${p} ESCAPE '\\'
+    OR u.family_name ILIKE ${p} ESCAPE '\\'
+    OR u.email ILIKE ${p} ESCAPE '\\'
+    OR CONCAT_WS(' ', u.first_name, u.father_name, u.family_name) ILIKE ${p} ESCAPE '\\'
+  )`;
+  }
+
   const countRes = await pool.query(
-    `SELECT COUNT(*)::int AS total ${fromJoin} WHERE ${ACTIVATION_QUEUE_WHERE_SQL}`,
+    `SELECT COUNT(*)::int AS total ${fromJoin} WHERE ${whereSql}`,
+    values,
   );
   const total = countRes.rows[0]?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / lim));
+
+  const limitParam = values.length + 1;
+  const offsetParam = values.length + 2;
 
   const { rows } = await pool.query(
     `SELECT
@@ -1406,10 +1438,10 @@ async function listActivationQueueSubscriptions({ page = 1, limit = 20 } = {}) {
        ab.family_name AS assigned_by_family_name,
        ab.email AS assigned_by_email
      ${fromJoin}
-     WHERE ${ACTIVATION_QUEUE_WHERE_SQL}
+     WHERE ${whereSql}
      ORDER BY ${ACTIVATION_QUEUE_ORDER_SQL}
-     LIMIT $1 OFFSET $2`,
-    [lim, offset],
+     LIMIT $${limitParam} OFFSET $${offsetParam}`,
+    [...values, lim, offset],
   );
 
   const mapped = rows.map(mapActivationQueueSubscription).filter(Boolean);
@@ -1871,6 +1903,7 @@ module.exports = {
   SUBSCRIPTION_ACTIVATION_STATUSES,
   ADMIN_ASSIGNMENT_OFFLINE_PAYMENT_NOTE,
   ADMIN_ASSIGNMENT_ACTIVATION_FEE_NOTE,
+  escapeIlikePattern,
   mapSubscription,
   getFreelancerIdentitySnapshot,
   assignPlanToFreelancer,

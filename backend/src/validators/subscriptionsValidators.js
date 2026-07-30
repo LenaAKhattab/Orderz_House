@@ -26,6 +26,7 @@ const updateSubscriptionValidators = [
 const listActivationQueueValidators = [
   query("page").optional().isInt({ min: 1 }).withMessage("Invalid page."),
   query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("Invalid limit."),
+  query("search").optional().isString().trim().isLength({ max: 120 }).withMessage("Invalid search."),
 ];
 
 const listSubscriptionsValidators = [

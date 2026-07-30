@@ -7,6 +7,7 @@ const TYPE_CATEGORY = {
   "user.account.suspended": "general",
   "user.account.reactivated": "general",
   "order.created": "orders",
+  "training.order.visible": "orders",
   "order.assigned": "orders",
   "order.freelancer.assigned": "orders",
   "order.freelancer.rejected": "orders",
