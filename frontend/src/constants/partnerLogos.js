@@ -1,6 +1,6 @@
 /** Partner logos — files in `public/partners/`. */
 export const PARTNER_LOGOS = [
-  { id: "fazaat", src: "/partners/Fazaat.png", alt: "فزعة", href: "https://faz3at.com/" },
+  { id: "gigz", src: "/partners/GIGZ.png", alt: "GIGZHOUSE", href: "https://gigzhouse.com/" },
   {
     id: "bildazo",
     src: "/partners/Bildazo.png",
