@@ -24,11 +24,15 @@ function formatError(err) {
 }
 
 /**
- * Register once at server startup. Safe for local + production (logging only).
+ * Register once at server startup. Safe for local + production (logging only
+ * unless a shutdown handler is provided).
+ * @param {{ onShutdown?: (signal: string) => void }} [options]
  */
-function registerProcessLifecycleLogging() {
+function registerProcessLifecycleLogging(options = {}) {
   if (registerProcessLifecycleLogging._registered) return;
   registerProcessLifecycleLogging._registered = true;
+
+  const onShutdown = typeof options.onShutdown === "function" ? options.onShutdown : null;
 
   process.on("unhandledRejection", (reason) => {
     logProcessEvent("unhandledRejection", formatError(reason));
@@ -41,10 +45,12 @@ function registerProcessLifecycleLogging() {
 
   process.on("SIGTERM", () => {
     logProcessEvent("SIGTERM", { hint: "external shutdown (orchestrator, taskkill, host sleep)" });
+    if (onShutdown) onShutdown("SIGTERM");
   });
 
   process.on("SIGINT", () => {
     logProcessEvent("SIGINT", { hint: "Ctrl+C or terminal interrupt" });
+    if (onShutdown) onShutdown("SIGINT");
   });
 }
 

@@ -4,9 +4,14 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is missing. Please configure backend/.env.");
 }
 
-/** Must match fakeOrdersService AUTOMATION_GENERATION_LOCK_KEY — cleared on pool client release. */
+/**
+ * Session advisory lock key constants (kept for callers / docs).
+ * Generation work uses transaction-scoped locks in fakeOrdersService.
+ * Institutional release uses explicit acquire/release on the same client.
+ * Do NOT unlock from pool "release" asynchronously — the client may already
+ * be checked out by another request (pg concurrent-query race under load).
+ */
 const GENERATION_ADVISORY_LOCK_KEY = 882947361;
-/** Must match institutionalStorageService ADVISORY_LOCK_KEY — cleared on pool client release. */
 const INSTITUTIONAL_RELEASE_ADVISORY_LOCK_KEY = 913847201;
 
 const pool = new Pool({
@@ -14,17 +19,16 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: true } : { rejectUnauthorized: false },
 });
 
-/** Clear leaked session advisory locks when a pooled connection is returned. */
-pool.on("release", (_err, client) => {
-  if (!client || typeof client.query !== "function") return;
-  // Defer unlock so we never race with an in-flight query on the same client (pg@9).
-  setImmediate(() => {
-    if (typeof client.query !== "function") return;
-    client.query(`SELECT pg_advisory_unlock($1::bigint)`, [GENERATION_ADVISORY_LOCK_KEY]).catch(() => {});
-    client
-      .query(`SELECT pg_advisory_unlock($1::bigint)`, [INSTITUTIONAL_RELEASE_ADVISORY_LOCK_KEY])
-      .catch(() => {});
-  });
+pool.on("error", (err) => {
+  // Idle client errors must not crash the process silently; log and keep serving.
+  // eslint-disable-next-line no-console
+  console.error(
+    JSON.stringify({
+      component: "db_pool",
+      event: "idle_client_error",
+      message: err?.message || String(err),
+    }),
+  );
 });
 
 const connectDB = async () => {
@@ -40,4 +44,6 @@ const connectDB = async () => {
 module.exports = {
   pool,
   connectDB,
+  GENERATION_ADVISORY_LOCK_KEY,
+  INSTITUTIONAL_RELEASE_ADVISORY_LOCK_KEY,
 };

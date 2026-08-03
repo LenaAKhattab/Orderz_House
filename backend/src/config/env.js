@@ -79,6 +79,20 @@ function validateEnv() {
     process.exit(1);
   }
 
+  if (missing.length === 0 && !isProduction()) {
+    const clientUrl = String(process.env.CLIENT_URL || "").trim();
+    const looksPublicHttps =
+      /^https:\/\//i.test(clientUrl) && !/localhost|127\.0\.0\.1/i.test(clientUrl);
+    if (looksPublicHttps) {
+      // eslint-disable-next-line no-console
+      console.error(
+        "[env] CRITICAL: CLIENT_URL is a public HTTPS origin but NODE_ENV is not \"production\". " +
+          "Origin guard, secure cookies, Stripe startup checks, and in-process schedulers will use development defaults. " +
+          "Set NODE_ENV=production on the API host.",
+      );
+    }
+  }
+
   if (missing.length === 0 && isProduction()) {
     const trustProxy = process.env.TRUST_PROXY;
     if (!trustProxy || !String(trustProxy).trim()) {

@@ -2,19 +2,71 @@ const path = require("node:path");
 const dotenv = require("dotenv");
 
 // Load `.env` next to this file — do not rely on `process.cwd()` (breaks if Node is started from repo root).
-dotenv.config({ path: path.join(__dirname, ".env"), override: true });
+// Never use override:true: Docker/PM2/systemd production env (NODE_ENV, PORT, secrets) must win over a
+// leftover backend/.env on the host. File values only fill variables that are not already set.
+dotenv.config({ path: path.join(__dirname, ".env") });
 const { validateEnv } = require("./src/config/env");
 validateEnv();
-const { registerProcessLifecycleLogging } = require("./src/config/processLifecycleLogging");
-registerProcessLifecycleLogging();
 
-const { connectDB } = require("./src/config/db");
+const { registerProcessLifecycleLogging, logProcessEvent } = require("./src/config/processLifecycleLogging");
+const { connectDB, pool } = require("./src/config/db");
 const app = require("./src/app");
 const { isInProcessAutomationIntervalEnabled } = require("./src/config/fakeOrdersAutomation");
-const PORT = process.env.PORT || 5000;
+
+const PORT = Number(process.env.PORT) || 5000;
+const HOST = process.env.HOST || "0.0.0.0";
+
+let server = null;
+let shuttingDown = false;
+
+function gracefulShutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logProcessEvent("graceful_shutdown_begin", { signal, host: HOST, port: PORT });
+
+  const forceTimer = setTimeout(() => {
+    logProcessEvent("graceful_shutdown_forced", { signal });
+    process.exit(1);
+  }, 10_000);
+  forceTimer.unref?.();
+
+  const closeServer = () =>
+    new Promise((resolve) => {
+      if (!server) return resolve();
+      server.close((err) => {
+        if (err) {
+          logProcessEvent("server_close_error", { message: err.message });
+        } else {
+          logProcessEvent("server_closed", {});
+        }
+        resolve();
+      });
+    });
+
+  closeServer()
+    .then(() => pool.end())
+    .then(() => {
+      logProcessEvent("db_pool_ended", {});
+      process.exit(0);
+    })
+    .catch((err) => {
+      logProcessEvent("graceful_shutdown_failed", { message: err?.message || String(err) });
+      process.exit(1);
+    });
+}
+
+registerProcessLifecycleLogging({ onShutdown: gracefulShutdown });
 
 const startServer = async () => {
+  logProcessEvent("startup_begin", {
+    node: process.version,
+    nodeEnv: process.env.NODE_ENV || "unset",
+    host: HOST,
+    port: PORT,
+  });
+
   await connectDB();
+  logProcessEvent("startup_db_ready", {});
 
   const fakeOrdersService = require("./src/services/fakeOrdersService");
 
@@ -95,8 +147,9 @@ const startServer = async () => {
     console.error("[institutionalRelease] scheduler start failed:", err?.message || err);
   }
 
-  app.listen(PORT, () => {
-    console.log(`Backend server listening on port ${PORT}`);
+  server = app.listen(PORT, HOST, () => {
+    logProcessEvent("startup_listening", { host: HOST, port: PORT });
+    console.log(`Backend server listening on ${HOST}:${PORT}`);
   });
 };
 
