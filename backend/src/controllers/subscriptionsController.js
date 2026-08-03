@@ -246,6 +246,19 @@ const markActivationFeePaidOfflineAdmin = async (req, res, next) => {
   }
 };
 
+const clearFreelancerPaymentFailureHold = async (req, res, next) => {
+  try {
+    const result = await subscriptionsService.adminClearPaymentFailureHold({
+      actorUserId: req.auth?.userId,
+      freelancerUserId: req.params.freelancerUserId,
+      reason: req.body?.reason || null,
+    });
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   assignPlan,
   listAssignablePlans,
@@ -261,5 +274,6 @@ module.exports = {
   recordFreelancerSubscriptionCheckoutCancelledNotify,
   activateSubscriptionCompanyApproval,
   markActivationFeePaidOfflineAdmin,
+  clearFreelancerPaymentFailureHold,
 };
 

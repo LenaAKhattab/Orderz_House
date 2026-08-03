@@ -192,6 +192,11 @@ function mapPlan(row) {
     labelEn: row.label_en || null,
     billingTextEn: row.billing_text_en || null,
     buttonTextEn: row.button_text_en || null,
+    isRecurring: Boolean(row.is_recurring),
+    billingInterval: row.billing_interval || null,
+    billingIntervalCount: row.billing_interval_count != null ? Number(row.billing_interval_count) : null,
+    stripeProductId: row.stripe_product_id || null,
+    stripePriceId: row.stripe_price_id || null,
     deletedAt: row.deleted_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -268,6 +273,8 @@ async function listPublicCatalogPlans() {
         const row = rows[idx];
         const mapped = { ...plan };
         delete mapped.adminNotes;
+        delete mapped.stripeProductId;
+        delete mapped.stripePriceId;
         return {
           ...mapped,
           checkoutPlanId: String(resolveCheckoutPlanId(row)),
@@ -484,6 +491,19 @@ async function updatePlan({ actorUserId, id, patch }) {
   if (patch.description !== undefined) set("description", patch.description);
   if (patch.durationDays !== undefined) set("duration_days", patch.durationDays);
   if (patch.priceJod !== undefined) set("price_jod", patch.priceJod == null ? null : Number(patch.priceJod));
+  // Never mutate a live Stripe Price amount in place — force a new Price on next checkout.
+  if (patch.priceJod !== undefined) {
+    set("stripe_price_id", null);
+    set("stripe_price_amount_minor", null);
+  }
+  if (patch.isRecurring !== undefined) set("is_recurring", Boolean(patch.isRecurring));
+  if (patch.billingInterval !== undefined) set("billing_interval", patch.billingInterval || null);
+  if (patch.billingIntervalCount !== undefined) {
+    set(
+      "billing_interval_count",
+      patch.billingIntervalCount == null ? null : Number(patch.billingIntervalCount),
+    );
+  }
   if (patch.stripeCheckoutAmountJod !== undefined) {
     set(
       "stripe_checkout_amount_jod",

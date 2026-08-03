@@ -13,6 +13,7 @@ const ACTIVATION_FEE_SOURCES = {
 const CHECKOUT_KIND = {
   SUBSCRIPTION: "subscription",
   ACTIVATION_FEE_ONLY: "activation_fee_only",
+  RECURRING_SUBSCRIPTION: "recurring_subscription",
 };
 
 const CHECKOUT_SESSION_STATUS = {

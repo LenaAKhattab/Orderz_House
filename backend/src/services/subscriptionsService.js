@@ -7,6 +7,12 @@ const notificationEventsService = require("./notificationEventsService");
 const notificationService = require("./notificationService");
 const freelancerSubscriptionPaymentNotifications = require("./freelancerSubscriptionPaymentNotifications");
 const { getActivationFeeStatus, markActivationFeePaidOffline } = require("./subscriptionActivationFeeService");
+const {
+  getActiveMarketplaceBlockingHold,
+  RENEWAL_FAILED_COPY,
+  clearPaymentFailureHoldsForFreelancer,
+  CLEAR_SOURCE,
+} = require("./freelancerAccountHoldsService");
 
 function isMissingTableError(err) {
   return err && (err.code === "42P01" || String(err.message || "").includes("does not exist"));
@@ -152,6 +158,16 @@ function mapSubscription(row) {
     stripePaymentIntentId: row.stripe_payment_intent_id || null,
     paidAt: row.paid_at || null,
     firstOrderId: row.first_order_id ? String(row.first_order_id) : null,
+    billingMode: row.billing_mode || null,
+    stripeSubscriptionId: row.stripe_subscription_id || null,
+    stripeCustomerId: row.stripe_customer_id || null,
+    stripePriceId: row.stripe_price_id || null,
+    currentPeriodStart: row.current_period_start || null,
+    currentPeriodEnd: row.current_period_end || null,
+    lastPaymentAt: row.last_payment_at || null,
+    nextRenewalAt: row.next_renewal_at || null,
+    paymentFailureAt: row.payment_failure_at || null,
+    paymentFailureCode: row.payment_failure_code || null,
     notes: row.notes,
     cancelledAt: row.cancelled_at,
     endedAt: row.ended_at,
@@ -1585,6 +1601,18 @@ function applyActivationFeeEligibilityGate(eligibility, feeStatus) {
 }
 
 async function canFreelancerTakeOrders(freelancerUserId) {
+  const hold = await getActiveMarketplaceBlockingHold(freelancerUserId);
+  if (hold) {
+    const feeStatus = await getActivationFeeStatus(freelancerUserId);
+    return {
+      eligible: false,
+      reason: "account_hold_payment_failed",
+      hold,
+      freezeMessage: RENEWAL_FAILED_COPY.ar,
+      freezeMessageEn: RENEWAL_FAILED_COPY.en,
+      activationFeeStatus: feeStatus,
+    };
+  }
   const sub = await getCurrentSubscriptionForFreelancer(freelancerUserId);
   const base = evaluateFreelancerTakeOrdersEligibility(sub);
   const feeStatus = await getActivationFeeStatus(freelancerUserId);
@@ -1893,6 +1921,67 @@ async function cleanupAbandonedStripePendingSubscriptionsWithFreePlanFallback({
   };
 }
 
+async function adminClearPaymentFailureHold({
+  actorUserId,
+  freelancerUserId,
+  reason = null,
+}) {
+  const uid = Number(freelancerUserId);
+  const actor = Number(actorUserId);
+  if (!Number.isInteger(uid) || uid < 1) {
+    const err = new Error("Invalid freelancer user id.");
+    err.statusCode = 400;
+    throw err;
+  }
+  if (!Number.isInteger(actor) || actor < 1) {
+    const err = new Error("Invalid admin user id.");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const holds = await clearPaymentFailureHoldsForFreelancer(
+      {
+        freelancerUserId: uid,
+        clearSource: CLEAR_SOURCE.ADMIN,
+        actorAdminId: actor,
+        clearReason: reason || "Admin manual reactivation (does not fabricate Stripe payment)",
+      },
+      client,
+    );
+
+    // Restore payment_status only when Stripe later confirms payment — admin clears hold only.
+    // Optionally mark notes on current recurring sub.
+    await client.query(
+      `UPDATE freelancer_subscriptions
+       SET notes = CONCAT(COALESCE(notes, ''), CASE WHEN notes IS NULL OR notes = '' THEN '' ELSE E'\n' END,
+                          $2::text),
+           updated_at = NOW()
+       WHERE freelancer_user_id = $1
+         AND is_current = TRUE
+         AND billing_mode = 'recurring_stripe'`,
+      [
+        uid,
+        `Admin cleared payment-failure marketplace hold at ${new Date().toISOString()} by user ${actor}` +
+          (reason ? `: ${String(reason).slice(0, 500)}` : ""),
+      ],
+    );
+
+    await client.query("COMMIT");
+    return {
+      clearedHolds: holds,
+      note: "Marketplace hold cleared. This does not mark a Stripe invoice as paid.",
+    };
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 /** @deprecated Real pool access is gated by plan value range in planOrderValueEligibility only. */
 async function assertFreelancerMayAccessRealPoolOrders(_freelancerUserId) {}
 
@@ -1920,6 +2009,7 @@ module.exports = {
   fulfillFreelancerSubscriptionStripePayment,
   markFreelancerSubscriptionStripePaymentPaid,
   markFreelancerSubscriptionStripePaymentFailed,
+  endCurrentSubscription,
   activateCompanyApprovalForSubscription,
   canFreelancerTakeOrders,
   applyActivationFeeEligibilityGate,
@@ -1933,5 +2023,6 @@ module.exports = {
   isFreelancerOnFreePlan,
   assertFreelancerMayAccessRealPoolOrders,
   ensureFreePlanInFakeSettingsPlans,
+  adminClearPaymentFailureHold,
 };
 

@@ -28,6 +28,10 @@ const {
   isFreeDisplayPlanEligibleForActivationFeeCheckout,
 } = require("./subscriptionActivationFeeService");
 const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPaymentStatus");
+const {
+  isRecurringPlanRow,
+  createRecurringSubscriptionCheckoutSession,
+} = require("./stripeRecurringSubscriptionService");
 const { getPrimaryClientUrl } = require("../config/clientUrl");
 const { buildClientOrderCheckoutReturnUrls } = require("../utils/checkoutReturnUrls");
 const { isProduction } = require("../config/env");
@@ -1002,6 +1006,27 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
 
   const clientUrl = requireStripeClientUrl();
 
+  // Recurring Stripe Billing path (mode=subscription) — do not use one-time payment Checkout.
+  const { rows: earlyPlanRows } = await pool.query(`SELECT * FROM plans WHERE id = $1 LIMIT 1`, [pid]);
+  const earlyPlan = earlyPlanRows[0];
+  if (earlyPlan && isRecurringPlanRow(earlyPlan)) {
+    if (!planEligibleForFreelancerSelfCheckout(earlyPlan)) {
+      const err = new Error(
+        `Selected plan is not available for self-checkout (planId=${pid}). It must be active, visible, self_subscribe_allowed, and have price_jod > 0.`,
+      );
+      err.statusCode = 400;
+      err.exposeToClient = true;
+      throw err;
+    }
+    return createRecurringSubscriptionCheckoutSession({
+      stripe,
+      freelancerUserId: uid,
+      planRow: earlyPlan,
+      locale,
+      clientUrl,
+    });
+  }
+
   const db = await pool.connect();
   try {
     await db.query("BEGIN");
@@ -1319,6 +1344,76 @@ async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeS
   }
 
   if (purpose !== PURPOSE_SUBSCRIPTION_PURCHASE && purpose !== "freelancer_subscription_purchase") {
+    if (purpose === "freelancer_recurring_subscription") {
+      const planId = Number(meta.planId);
+      if (!Number.isInteger(planId) || planId < 1) {
+        const err = new Error("Invalid subscription metadata.");
+        err.statusCode = 400;
+        err.exposeToClient = true;
+        throw err;
+      }
+      if (!isCheckoutSessionPaymentSuccessful(session)) {
+        const err = new Error("Payment is not completed yet.");
+        err.statusCode = 402;
+        err.exposeToClient = true;
+        err.publicCode = "PAYMENT_NOT_COMPLETED";
+        throw err;
+      }
+      const stripeSubscriptionId =
+        typeof session.subscription === "string" ? session.subscription : session.subscription?.id || null;
+      if (!stripeSubscriptionId) {
+        const err = new Error("Recurring subscription id missing from checkout session.");
+        err.statusCode = 409;
+        err.exposeToClient = true;
+        throw err;
+      }
+      let stripeSubscription = null;
+      try {
+        stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+      } catch (_) {
+        /* period dates optional on confirm */
+      }
+      const {
+        fulfillRecurringSubscriptionFromCheckout,
+        periodFromStripeSubscription,
+      } = require("./stripeRecurringSubscriptionService");
+      const { currentPeriodStart, currentPeriodEnd } = periodFromStripeSubscription(stripeSubscription || {});
+      const piId =
+        typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null;
+      const db = await pool.connect();
+      try {
+        await db.query("BEGIN");
+        const result = await fulfillRecurringSubscriptionFromCheckout(
+          {
+            freelancerUserId,
+            planId,
+            stripeSessionId: session.id || null,
+            stripeSubscriptionId,
+            stripeCustomerId:
+              typeof session.customer === "string" ? session.customer : session.customer?.id || null,
+            stripePriceId: meta.stripePriceId || null,
+            stripePaymentIntentId: piId,
+            currentPeriodStart,
+            currentPeriodEnd,
+            activationFeeMinor: meta.activationFeeMinor != null ? Number(meta.activationFeeMinor) : 0,
+            paidAt: new Date(),
+          },
+          db,
+        );
+        await db.query("COMMIT");
+        return {
+          ok: true,
+          recurring: true,
+          subscription: result.subscription,
+          alreadyApplied: result.created === false,
+        };
+      } catch (e) {
+        await db.query("ROLLBACK");
+        throw e;
+      } finally {
+        db.release();
+      }
+    }
     const err = new Error("This checkout session is not for a freelancer subscription.");
     err.statusCode = 400;
     err.exposeToClient = true;
