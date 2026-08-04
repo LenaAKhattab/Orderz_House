@@ -37,6 +37,7 @@ const mobilePaymentReturnRoutes = require("./routes/mobilePaymentReturnRoutes");
 const publicRoutes = require("./routes/publicRoutes");
 const translationRoutes = require("./routes/translationRoutes");
 const internalAutomationRoutes = require("./routes/internalAutomationRoutes");
+const fazatIntegrationRoutes = require("./routes/fazatIntegrationRoutes");
 const { notFoundMiddleware, errorMiddleware } = require("./middleware/errorMiddleware");
 const { requestTimingMiddleware } = require("./middleware/requestTimingMiddleware");
 const { applySecurityHeaders } = require("./middleware/securityHeaders");
@@ -78,6 +79,17 @@ if (trustProxy === "0" || trustProxy === "false") {
 
 // Stripe webhooks require the raw body for signature verification (must run before express.json()).
 app.use("/api/webhooks/stripe", express.raw({ type: "application/json" }), stripeWebhookRoutes);
+
+// FAZ3AT partner API: capture raw body for HMAC before the global JSON parser.
+app.use(
+  "/api/integrations/fazat",
+  express.json({
+    verify: (req, _res, buf) => {
+      req.rawBody = Buffer.isBuffer(buf) ? buf : Buffer.from(buf || "");
+    },
+  }),
+  fazatIntegrationRoutes,
+);
 
 applySecurityHeaders(app);
 

@@ -3213,7 +3213,25 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
     );
 
     await client.query("COMMIT");
-    return await getOrderById(orderId);
+    const out = await getOrderById(orderId);
+    try {
+      const fazatWebhookOutboundService = require("./fazatWebhookOutboundService");
+      const { writePartnerAudit } = require("./fazatAuditService");
+      await fazatWebhookOutboundService.notifyIfPartnerOrderByOrderzId(
+        orderId,
+        "orderz.partner_delivery.submitted",
+        { status: "delivery_submitted", submissionId: String(submissionRow.id) },
+      );
+      await writePartnerAudit({
+        action: "fazat.partner_delivery.submitted",
+        entityType: "order",
+        entityId: String(orderId),
+        detail: { submissionId: String(submissionRow.id) },
+      });
+    } catch {
+      /* partner webhook is best-effort */
+    }
+    return out;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -3393,7 +3411,18 @@ async function adminRequestInternalDeliveryRevision({ orderId, note, uploadedFil
       );
     }
     await client.query("COMMIT");
-    return await getOrderById(orderId);
+    const out = await getOrderById(orderId);
+    try {
+      const fazatWebhookOutboundService = require("./fazatWebhookOutboundService");
+      await fazatWebhookOutboundService.notifyIfPartnerOrderByOrderzId(
+        orderId,
+        "orderz.partner_order.status_changed",
+        { status: "revision_requested" },
+      );
+    } catch {
+      /* best-effort */
+    }
+    return out;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
