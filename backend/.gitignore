@@ -1,4 +1,7 @@
 .env
+.env.fazat-e2e
+.env.fazat-e2e.local
+.env.fazat-pilot.local
 secrets/
 **/firebase-service-account*.json
 **/serviceAccount*.json

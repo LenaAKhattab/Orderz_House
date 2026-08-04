@@ -197,7 +197,57 @@ function sanitizeLockedFreelancerPoolOrder(order, poolEligibility = null) {
 }
 
 /** Freelancer assigned / in-progress: hide client identity and competitor bid roster; keep payment summary for their job. */
-const FREELANCER_ASSIGNED_STRIP_KEYS = new Set(["createdByUserId", "assignedFreelancerId", "bidUsers", "bids"]);
+const FREELANCER_ASSIGNED_STRIP_KEYS = new Set([
+  "createdByUserId",
+  "assignedFreelancerId",
+  "bidUsers",
+  "bids",
+  // Partner / FAZAT integration fields — never show source platform to freelancers.
+  "partnerCode",
+  "partnerOrderId",
+  "externalAssignmentId",
+  "externalOrderId",
+  "sourcePartner",
+  "integrationSource",
+  "fazat",
+  "FAZAT",
+  "FAZ3AT",
+  "settlementStatus",
+  "webhookUrl",
+]);
+
+/**
+ * Apply white-label client alias for partner-managed orders.
+ * Mutates a shallow copy; never exposes FAZAT identity.
+ */
+function applyPartnerWhiteLabelForFreelancer(order, out) {
+  const meta = order && (order.partnerMeta || order.integrationMeta || null);
+  const isPartner =
+    Boolean(order?.isPartnerManaged) ||
+    Boolean(meta) ||
+    String(order?.sourcePartner || "").toUpperCase() === "FAZAT" ||
+    String(order?.partnerCode || "").toUpperCase() === "FAZAT";
+  if (!isPartner) return out;
+  out.clientDisplayName = "طلب مُدار من Orderz";
+  out.managedByOrderz = true;
+  delete out.isPartnerManaged;
+  delete out.partnerMeta;
+  delete out.integrationMeta;
+  delete out.sourcePartner;
+  delete out.partnerCode;
+  delete out.externalAssignmentId;
+  delete out.externalOrderId;
+  // Hide payment/finance linkage from freelancers on partner-managed work.
+  delete out.paymentAmount;
+  delete out.paymentCurrency;
+  delete out.paymentRequired;
+  delete out.paymentStatus;
+  delete out.budget;
+  delete out.bidBudgetMin;
+  delete out.bidBudgetMax;
+  delete out.currencyCode;
+  return out;
+}
 
 /** Freelancer assigned order detail: never expose client account / user id or other bidders' PII. */
 function sanitizeOrderForFreelancerAssigned(order) {
@@ -216,7 +266,7 @@ function sanitizeOrderForFreelancerAssigned(order) {
   if (Array.isArray(o.files)) {
     o.files = o.files.map(stripDirectFileUrls);
   }
-  return o;
+  return applyPartnerWhiteLabelForFreelancer(order, o);
 }
 
 function sanitizeBidUsersForClient(bidUsers) {
@@ -317,4 +367,6 @@ module.exports = {
   sanitizeClaimsForClient,
   sanitizeBidUsersForClient,
   joinDisplayName,
+  applyPartnerWhiteLabelForFreelancer,
+  FREELANCER_ASSIGNED_STRIP_KEYS,
 };

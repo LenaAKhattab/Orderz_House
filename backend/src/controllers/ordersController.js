@@ -221,9 +221,11 @@ const listMyAssignedOrders = async (req, res, next) => {
       sort: req.query.sort,
       q: req.query.q,
     });
-    const orders = Array.isArray(result.orders)
-      ? result.orders.map((o) => sanitizeOrderForFreelancerAssigned(o))
-      : [];
+    const fazatOrderEnrichmentService = require("../services/fazatOrderEnrichmentService");
+    const enriched = await fazatOrderEnrichmentService.attachPartnerMetaToOrders(
+      Array.isArray(result.orders) ? result.orders : [],
+    );
+    const orders = enriched.map((o) => sanitizeOrderForFreelancerAssigned(o));
     return res.status(200).json({ success: true, data: { ...result, orders } });
   } catch (err) {
     return next(err);
@@ -234,7 +236,9 @@ const getMyAssignedOrderById = async (req, res, next) => {
   try {
     const order = await ordersService.getFreelancerAssignedOrderById({ freelancerUserId: req.auth.userId, orderId: req.params.id });
     if (!order) return res.status(404).json({ success: false, message: "الطلب غير موجود." });
-    const safe = sanitizeOrderForFreelancerAssigned(order);
+    const fazatOrderEnrichmentService = require("../services/fazatOrderEnrichmentService");
+    const enriched = await fazatOrderEnrichmentService.attachPartnerMetaToOrder(order);
+    const safe = sanitizeOrderForFreelancerAssigned(enriched);
     return res.status(200).json({ success: true, data: { order: safe } });
   } catch (err) {
     return next(err);
@@ -253,7 +257,9 @@ const submitMyOrderDelivery = async (req, res, next) => {
       orderId: String(req.params.id),
       projectType: order.projectType || order.project_type,
     });
-    const safe = sanitizeOrderForFreelancerAssigned(order);
+    const fazatOrderEnrichmentService = require("../services/fazatOrderEnrichmentService");
+    const enriched = await fazatOrderEnrichmentService.attachPartnerMetaToOrder(order);
+    const safe = sanitizeOrderForFreelancerAssigned(enriched);
     return res.status(200).json({ success: true, data: { order: safe } });
   } catch (err) {
     return next(err);
