@@ -20,7 +20,7 @@ export default function PlansMobilePlans({
   hasBlockingSubscription = false,
   checkoutBusyPlanId = null,
   onCta,
-  skeletonCount = 5,
+  skeletonCount = 6,
   activationFeeNeedsPayment = false,
 }) {
   const { t } = useTranslation();

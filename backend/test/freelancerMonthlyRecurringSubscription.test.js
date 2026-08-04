@@ -61,6 +61,30 @@ describe("migration and frontend hardcoding guards", () => {
     assert.doesNotMatch(sql, /WHERE id\s*=\s*\d+/);
   });
 
+  it("public monthly plan copy renews with saved card and omits freeze marketing", () => {
+    const seed122 = fs.readFileSync(
+      path.join(__dirname, "../sql/migrations/122_freelancer_monthly_recurring_subscription.sql"),
+      "utf8",
+    );
+    const seed123 = fs.readFileSync(
+      path.join(__dirname, "../sql/migrations/123_monthly_plan_public_copy_no_freeze_marketing.sql"),
+      "utf8",
+    );
+    for (const sql of [seed122, seed123]) {
+      assert.match(sql, /يُجدَّد الاشتراك تلقائيًا شهريًا باستخدام البطاقة المسجلة/);
+      assert.doesNotMatch(sql, /يسحب تلقائياً من البطاقة كل شهر/);
+      assert.doesNotMatch(sql, /إيقاف تلقائي عند تعذر السحب حتى إعادة التفعيل/);
+      assert.doesNotMatch(sql, /Access freezes if renewal payment fails/);
+    }
+    const seed124 = fs.readFileSync(
+      path.join(__dirname, "../sql/migrations/124_monthly_plan_arabic_label.sql"),
+      "utf8",
+    );
+    assert.match(seed122, /label = EXCLUDED\.label|^\s*'شهريًا',\s*\n\s*'Monthly'/m);
+    assert.match(seed124, /label = 'شهريًا'/);
+    assert.match(seed124, /label_en = 'Monthly'/);
+  });
+
   it("frontend PlanCard / Plans page do not hardcode the new plan title or 15 JOD", () => {
     const plansPage = fs.readFileSync(path.join(__dirname, "../../frontend/src/pages/Plans.jsx"), "utf8");
     const planCard = fs.readFileSync(path.join(__dirname, "../../frontend/src/components/plans/PlanCard.jsx"), "utf8");
@@ -70,6 +94,8 @@ describe("migration and frontend hardcoding guards", () => {
     );
     assert.doesNotMatch(plansPage, /الاشتراك الشهري المدفوع/);
     assert.doesNotMatch(planCard, /الاشتراك الشهري المدفوع/);
+    assert.doesNotMatch(plansPage, /إيقاف تلقائي عند تعذر السحب/);
+    assert.doesNotMatch(planCard, /إيقاف تلقائي عند تعذر السحب/);
     assert.doesNotMatch(catalog, /freelancers_monthly_paid_15/);
     assert.doesNotMatch(planCard, /priceJod:\s*15/);
   });

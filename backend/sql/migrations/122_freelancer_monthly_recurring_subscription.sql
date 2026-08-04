@@ -141,8 +141,8 @@ SELECT
   'freelancers_monthly_paid_15',
   'الاشتراك الشهري المدفوع',
   'Paid Monthly Subscription',
-  'اشتراك شهري متجدد يسحب تلقائياً من البطاقة كل شهر',
-  'Recurring monthly subscription charged automatically to your card each month',
+  NULL,
+  NULL,
   30,
   15,
   NULL,
@@ -153,15 +153,15 @@ SELECT
   15,
   dp.id,
   NULL,
-  'Monthly',
+  'شهريًا',
   'Monthly',
   'شهريًا',
   'Monthly',
   'اختر الباقة',
   'Choose Plan',
   'JOD',
-  'يسحب تلقائياً من البطاقة كل شهر',
-  'Charged automatically to your card every month',
+  'يُجدَّد الاشتراك تلقائيًا شهريًا باستخدام البطاقة المسجلة',
+  'Subscription renews automatically each month using your saved card',
   FALSE,
   FALSE,
   TRUE,
@@ -218,9 +218,8 @@ FROM plans p
 CROSS JOIN (
   VALUES
     (0, 'اشتراك شهري متجدد تلقائياً', 'Automatically renewing monthly subscription'),
-    (1, 'يسحب تلقائياً من البطاقة كل شهر', 'Charged automatically to your card every month'),
-    (2, '15 دينار أردني شهرياً', '15 JOD per month'),
-    (3, 'إيقاف تلقائي عند تعذر السحب حتى إعادة التفعيل', 'Access freezes if renewal payment fails until reactivation')
+    (1, 'يُجدَّد الاشتراك تلقائيًا شهريًا باستخدام البطاقة المسجلة', 'Subscription renews automatically each month using your saved card'),
+    (2, '15 دينار أردني شهرياً', '15 JOD per month')
 ) AS f(sort_order, feature_text, feature_text_en)
 WHERE p.name = 'freelancers_monthly_paid_15'
   AND p.deleted_at IS NULL;
