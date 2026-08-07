@@ -82,7 +82,30 @@ function FooterLocationIcon() {
   );
 }
 
+/** Apple silhouette — local inline SVG (no CDN). */
+function FooterAppStoreIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden focusable="false">
+      <path d="M16.365 1.43c0 1.14-.493 2.2-1.29 2.98-.837.83-2.211 1.47-3.366 1.385-.15-1.086.42-2.23 1.23-3.01C13.81.97 15.22.4 16.365.43ZM20.7 17.48c-.55 1.2-.81 1.73-1.52 2.79-.99 1.48-2.38 3.32-4.1 3.34-1.53.02-1.93-.99-4.02-.98-2.09.01-2.53 1-4.07.98-1.72-.02-3.04-1.68-4.03-3.16C.91 17.34-.62 12.28 1.7 8.85c1.14-1.7 2.95-2.7 4.64-2.7 1.73 0 2.82 1 4.77 1 1.88 0 2.86-1.01 4.82-1.01 1.52 0 3.13.83 4.26 2.26-3.74 2.05-3.14 7.4-.5 9.08Z" />
+    </svg>
+  );
+}
+
+/** Google Play triangle — local multicolor SVG (no generic play-circle). */
+function FooterGooglePlayIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden focusable="false">
+      <path fill="#32BBFF" d="M2.91 1.62A.75.75 0 0 0 2.5 2.3v19.4c0 .5.37.8.75.62L14.5 12 2.91 1.62Z" />
+      <path fill="#FBBF24" d="m14.5 12 2.7 2.7 5.05-2.88a.8.8 0 0 0 0-1.4L17.2 7.54 14.5 10.24V12Z" />
+      <path fill="#F04438" d="M14.5 12 2.91 22.38c.24.12.52.1.76-.04L16.4 15.5 14.5 12Z" />
+      <path fill="#22C55E" d="M14.5 12 16.4 8.5 3.67 1.66A.8.8 0 0 0 2.91 1.62L14.5 12Z" />
+    </svg>
+  );
+}
+
 const FOOTER_WHATSAPP_HREF = "https://wa.me/971522857808";
+const FOOTER_APP_STORE_HREF = "https://apps.apple.com/ae/app/orderzhouse/id6762045683";
+const FOOTER_GOOGLE_PLAY_HREF = "https://play.google.com/store/apps/details?id=com.orderzhouse.app";
 
 const Footer = ({ homeBlend = false }) => {
   const { pathname } = useLocation();
@@ -123,8 +146,8 @@ const Footer = ({ homeBlend = false }) => {
       <div
         ref={gridRef}
         className={[
-          "site-footer__grid mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-x-4 gap-y-8 px-4 py-8 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:gap-x-6 xl:gap-x-4",
-          showImportantLinks ? "xl:grid-cols-6" : "xl:grid-cols-5",
+          "site-footer__grid mx-auto grid w-full max-w-7xl grid-cols-1 items-start gap-y-8 px-4 py-8 sm:grid-cols-2 sm:px-6 lg:grid-cols-3",
+          showImportantLinks ? "xl:grid-cols-7" : "xl:grid-cols-6",
         ].join(" ")}
       >
         <details className={`site-footer__group ${panelClass}`} open>
@@ -236,7 +259,7 @@ const Footer = ({ homeBlend = false }) => {
           </ul>
         </details>
 
-        <section className="site-footer__contact site-footer__panel min-w-0 border-s border-dashed border-[rgba(100,116,139,0.28)] ps-[18px] max-xl:border-0 max-xl:ps-0">
+        <section className="site-footer__contact site-footer__panel min-w-0">
           <h3 className="site-footer__panel-title mb-3 text-[0.98rem] font-bold text-[#475569] text-start">
             {t("footer.contactUs")}
           </h3>
@@ -307,6 +330,46 @@ const Footer = ({ homeBlend = false }) => {
             </p>
           </div>
         </section>
+
+        <details
+          className={`site-footer__group site-footer__group--apps ${panelClass} border-s border-dashed border-[rgba(100,116,139,0.28)] ps-[18px] max-xl:border-0 max-xl:ps-0`}
+          open
+        >
+          <summary className="site-footer__group-summary text-start">
+            <span>{t("footer.downloadApp")}</span>
+            <FooterGroupChevron />
+          </summary>
+          <div className="site-footer__apps-list">
+            <a
+              href={FOOTER_APP_STORE_HREF}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t("footer.appStoreAria")}
+              className="site-footer__app-link"
+            >
+              <span className="site-footer__app-link-inner">
+                <span className="site-footer__app-link-icon" aria-hidden="true">
+                  <FooterAppStoreIcon />
+                </span>
+                <span className="site-footer__app-link-text">{t("footer.appStore")}</span>
+              </span>
+            </a>
+            <a
+              href={FOOTER_GOOGLE_PLAY_HREF}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t("footer.googlePlayAria")}
+              className="site-footer__app-link"
+            >
+              <span className="site-footer__app-link-inner">
+                <span className="site-footer__app-link-icon" aria-hidden="true">
+                  <FooterGooglePlayIcon />
+                </span>
+                <span className="site-footer__app-link-text">{t("footer.googlePlay")}</span>
+              </span>
+            </a>
+          </div>
+        </details>
       </div>
 
       <div
