@@ -1,10 +1,10 @@
-/* Shared freelancer dashboard hub — hero, stats, tabs, list chrome, empty, toolbar */
+﻿/* Shared freelancer / client / admin hub — neutral gray surface hierarchy */
 
 .fdash-page {
-  --fd-primary: var(--primary, #2f3b65);
-  --fd-secondary: var(--secondary, #76cfdf);
-  --fd-radius: 18px;
-  --fd-shadow: 0 14px 40px -18px rgba(24, 36, 64, 0.16);
+  --fd-primary: var(--dash-primary, var(--primary, #2f3b65));
+  --fd-secondary: var(--dash-secondary, var(--secondary, #76cfdf));
+  --fd-radius: var(--dash-radius-lg, 16px);
+  --fd-shadow: var(--dash-shadow-md);
   --fd-ease: cubic-bezier(0.33, 1, 0.68, 1);
   --fdash-content-width: 100%;
   --fdash-content-max: none;
@@ -13,79 +13,69 @@
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  color: var(--dash-text, #172033);
 
-  /* Soft neumorphic surfaces (reusable) — light source top-start */
-  --fd-border-slate: rgba(148, 163, 184, 0.78);
-  --fd-border-slate-soft: rgba(148, 163, 184, 0.7);
-  --fd-card-border: rgba(47, 59, 101, 0.3);
-  --fd-surface-3d-bg: linear-gradient(145deg, #f8fbff 0%, #f4f7fb 42%, #eaf0f7 100%);
-  --fd-surface-3d-radius: clamp(34px, 4vw, 42px);
-  --fd-surface-3d-border: 1px solid rgba(148, 163, 184, 0.78);
-  --fd-surface-3d-shadow:
-    18px 18px 45px rgba(148, 163, 184, 0.24),
-    -14px -14px 38px rgba(255, 255, 255, 0.95);
-  --fd-surface-3d-highlight: inset 1px 1px 0 rgba(255, 255, 255, 0.92);
-  --fd-surface-inset-bg: rgba(246, 248, 252, 0.72);
-  --fd-surface-inset-border: 1px solid rgba(148, 163, 184, 0.58);
-  --fd-surface-inset-shadow:
-    inset 1px 1px 5px rgba(148, 163, 184, 0.06),
-    inset -1px -1px 4px rgba(255, 255, 255, 0.8);
-  --fd-surface-divider: rgba(148, 163, 184, 0.72);
+  /* Flat neutral surfaces (no neumorphism) */
+  --fd-border-slate: var(--dash-border, #c9d0da);
+  --fd-border-slate-soft: var(--dash-border-muted, #d8dde5);
+  --fd-card-border: var(--dash-border, #c9d0da);
+  --fd-surface-3d-bg: var(--dash-surface, #f8f9fa);
+  --fd-surface-3d-radius: var(--dash-radius-lg, 16px);
+  --fd-surface-3d-border: 1px solid var(--dash-border, #c9d0da);
+  --fd-surface-3d-shadow: var(--dash-shadow-sm);
+  --fd-surface-3d-highlight: none;
+  --fd-surface-inset-bg: var(--dash-hover, #eef1f4);
+  --fd-surface-inset-border: 1px solid var(--dash-border, #c9d0da);
+  --fd-surface-inset-shadow: none;
+  --fd-surface-divider: var(--dash-border, #c9d0da);
 
-  /* Softer variants (insight cards, banners) */
-  --fd-surface-3d-soft-bg: linear-gradient(160deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%);
-  --fd-surface-3d-soft-radius: clamp(26px, 2.8vw, 30px);
-  --fd-surface-3d-soft-border: 1px solid rgba(148, 163, 184, 0.7);
-  --fd-surface-3d-soft-shadow:
-    10px 10px 26px rgba(163, 177, 198, 0.14),
-    -8px -8px 20px rgba(255, 255, 255, 0.95);
+  --fd-surface-3d-soft-bg: var(--dash-card, #fcfcfd);
+  --fd-surface-3d-soft-radius: var(--dash-radius-md, 12px);
+  --fd-surface-3d-soft-border: 1px solid var(--dash-border, #c9d0da);
+  --fd-surface-3d-soft-shadow: var(--dash-shadow-sm);
   --fd-insight-icon-size: 60px;
-  --fd-surface-3d-thin-bg: linear-gradient(145deg, #fdfdfd 0%, #f6f8fc 100%);
-  --fd-surface-3d-thin-radius: clamp(26px, 3vw, 30px);
-  --fd-surface-3d-thin-shadow:
-    10px 10px 26px rgba(163, 177, 198, 0.16),
-    -8px -8px 20px rgba(255, 255, 255, 0.95);
-  --fd-surface-3d-thin-border: 1px solid rgba(148, 163, 184, 0.68);
+  --fd-surface-3d-thin-bg: var(--dash-card-muted, #f9fafb);
+  --fd-surface-3d-thin-radius: var(--dash-radius-md, 12px);
+  --fd-surface-3d-thin-shadow: var(--dash-shadow-sm);
+  --fd-surface-3d-thin-border: 1px solid var(--dash-border, #c9d0da);
 }
 
-/* Reusable raised card (hero — strongest) */
+/* Major panel — lighter than page bg */
 .fdash-surface-3d {
-  --fd-surface-3d-bg: linear-gradient(145deg, #f8fbff 0%, #f4f7fb 42%, #eaf0f7 100%);
-  --fd-surface-3d-radius: clamp(34px, 4vw, 42px);
-  --fd-surface-3d-border: 1px solid rgba(148, 163, 184, 0.78);
-  --fd-surface-3d-shadow:
-    18px 18px 45px rgba(148, 163, 184, 0.24),
-    -14px -14px 38px rgba(255, 255, 255, 0.95);
-  --fd-surface-3d-highlight: inset 1px 1px 0 rgba(255, 255, 255, 0.92);
+  --fd-surface-3d-bg: var(--dash-surface, #f8f9fa);
+  --fd-surface-3d-radius: var(--dash-radius-lg, 16px);
+  --fd-surface-3d-border: 1px solid var(--dash-border, #c9d0da);
+  --fd-surface-3d-shadow: var(--dash-shadow-sm);
+  --fd-surface-3d-highlight: none;
   border-radius: var(--fd-surface-3d-radius);
   background: var(--fd-surface-3d-bg);
   border: var(--fd-surface-3d-border);
-  box-shadow: var(--fd-surface-3d-shadow), var(--fd-surface-3d-highlight);
+  box-shadow: var(--fd-surface-3d-shadow);
 }
 
-/* Insight / small cards — lighter elevation */
+/* Cards / important content */
 .fdash-surface-3d--soft {
   --fd-surface-3d-bg: var(--fd-surface-3d-soft-bg);
   --fd-surface-3d-radius: var(--fd-surface-3d-soft-radius);
   --fd-surface-3d-border: var(--fd-surface-3d-soft-border);
   --fd-surface-3d-shadow: var(--fd-surface-3d-soft-shadow);
-  --fd-surface-3d-highlight: inset 1px 1px 0 rgba(255, 255, 255, 0.86);
+  --fd-surface-3d-highlight: none;
 }
 
-/* Thin horizontal banners — subtle lift */
+/* Thin banners / list rows */
 .fdash-surface-3d--thin {
   --fd-surface-3d-bg: var(--fd-surface-3d-thin-bg);
   --fd-surface-3d-radius: var(--fd-surface-3d-thin-radius);
-  --fd-surface-3d-border: var(--fd-surface-3d-thin-border, 1px solid rgba(148, 163, 184, 0.68));
+  --fd-surface-3d-border: var(--fd-surface-3d-thin-border, 1px solid var(--dash-border, #c9d0da));
   --fd-surface-3d-shadow: var(--fd-surface-3d-thin-shadow);
-  --fd-surface-3d-highlight: inset 1px 1px 0 rgba(255, 255, 255, 0.88);
+  --fd-surface-3d-highlight: none;
 }
 
 .fdash-surface-inset {
-  border-radius: clamp(16px, 2vw, 20px);
+  border-radius: var(--dash-radius-md, 12px);
   background: var(--fd-surface-inset-bg);
   border: var(--fd-surface-inset-border);
-  box-shadow: var(--fd-surface-inset-shadow);
+  box-shadow: none;
 }
 
 @media (max-width: 768px) {
@@ -284,7 +274,7 @@
   gap: 14px;
   padding: 16px 18px;
   border-radius: var(--fd-radius);
-  border: 1px solid var(--fd-card-border, rgba(47, 59, 101, 0.3));
+  border: 1px solid var(--fd-card-border, var(--dash-border-strong, #aeb8c6));
   background: #fff;
   box-shadow: var(--fd-shadow);
   transition:
@@ -349,7 +339,7 @@
 
 .fdash-stat--purple .fdash-stat__icon {
   background: rgba(139, 92, 246, 0.15);
-  color: #7c3aed;
+  color: var(--dash-primary, #2f3b65);
 }
 
 .fdash-stat--rose .fdash-stat__icon {
@@ -387,7 +377,7 @@
   padding: 6px;
   border-radius: 16px;
   background: #f1f5f9;
-  border: 1px solid var(--fd-card-border, rgba(47, 59, 101, 0.3));
+  border: 1px solid var(--fd-card-border, var(--dash-border-strong, #aeb8c6));
 }
 
 .fdash-tabs--scroll {
@@ -479,7 +469,7 @@
   min-height: 42px;
   padding: 0 40px 0 14px;
   border-radius: 12px;
-  border: 1px solid rgba(47, 59, 101, 0.3);
+  border: 1px solid var(--dash-border-strong, #aeb8c6);
   background: #fff;
   font-family: inherit;
   font-size: 0.88rem;
@@ -505,7 +495,7 @@
   min-height: 42px;
   padding: 0 12px;
   border-radius: 12px;
-  border: 1px solid rgba(47, 59, 101, 0.3);
+  border: 1px solid var(--dash-border-strong, #aeb8c6);
   background: #fff;
   font-family: inherit;
   font-size: 0.86rem;
@@ -784,7 +774,12 @@
 
 .fdash-skel {
   border-radius: 8px;
-  background: linear-gradient(90deg, #e2e8f0 0%, #f1f5f9 50%, #e2e8f0 100%);
+  background: linear-gradient(
+    90deg,
+    var(--dash-skel-from, #e5e9ef) 0%,
+    var(--dash-skel-to, #f3f5f8) 50%,
+    var(--dash-skel-from, #e5e9ef) 100%
+  );
   background-size: 200% 100%;
   animation: fdash-shimmer 1.4s ease-in-out infinite;
 }
@@ -992,7 +987,7 @@
   font-weight: 700;
   color: #64748b;
   background: rgba(47, 59, 101, 0.04);
-  border: 1px solid var(--fd-card-border, rgba(47, 59, 101, 0.3));
+  border: 1px solid var(--fd-card-border, var(--dash-border-strong, #aeb8c6));
 }
 
 .fdash-cc-active-fallback {
@@ -1029,7 +1024,7 @@
 .fdash-cc-card {
   padding: clamp(16px, 2vw, 20px);
   border-radius: var(--fd-radius);
-  border: 1px solid var(--fd-card-border, rgba(47, 59, 101, 0.3));
+  border: 1px solid var(--fd-card-border, var(--dash-border-strong, #aeb8c6));
   background: #fff;
   box-shadow: var(--fd-shadow);
 }
@@ -1122,7 +1117,7 @@
 .fdash-cc-card__footer {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid var(--fd-card-border, rgba(47, 59, 101, 0.3));
+  border-top: 1px solid var(--fd-card-border, var(--dash-border-strong, #aeb8c6));
 }
 
 .fdash-cc-kv {
@@ -1395,7 +1390,7 @@
   border-radius: 12px;
   text-decoration: none;
   color: inherit;
-  border: 1px solid var(--fd-card-border, rgba(47, 59, 101, 0.3));
+  border: 1px solid var(--fd-card-border, var(--dash-border-strong, #aeb8c6));
   transition: background 0.15s ease;
 }
 
@@ -1437,7 +1432,7 @@
 
 /* —— Phase 3: growth & performance —— */
 .fdash-cc-card--growth {
-  border-color: var(--fd-card-border, rgba(47, 59, 101, 0.3));
+  border-color: var(--fd-card-border, var(--dash-border-strong, #aeb8c6));
 }
 
 .fdash-growth-ring {
@@ -1581,7 +1576,7 @@
   padding: clamp(16px, 2vw, 22px);
   border-radius: var(--fd-radius, 18px);
   background: linear-gradient(135deg, rgba(47, 59, 101, 0.04), rgba(118, 207, 223, 0.08));
-  border: 1px solid var(--fd-card-border, rgba(47, 59, 101, 0.3));
+  border: 1px solid var(--fd-card-border, var(--dash-border-strong, #aeb8c6));
 }
 
 .fdash-growth-insights__title {
@@ -1869,7 +1864,7 @@
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 800;
-  color: #2b59c3;
+  color: var(--dash-primary, #2f3b65);
   background: rgba(255, 255, 255, 0.65);
   border: 1px solid rgba(148, 163, 184, 0.72);
 }
@@ -1949,7 +1944,7 @@
   height: 32px;
   flex-shrink: 0;
   border-radius: 10px;
-  color: #2b59c3;
+  color: var(--dash-primary, #2f3b65);
   background: #e8f0ff;
 }
 
@@ -1980,7 +1975,7 @@
   margin-top: 0;
   font-size: 0.76rem;
   font-weight: 800;
-  color: #2b59c3;
+  color: var(--dash-primary, #2f3b65);
   text-decoration: none;
 }
 
@@ -2223,7 +2218,7 @@
 
 .fdash-metric--blue .fdash-metric__icon {
   background: #e8f0ff;
-  color: #2b59c3;
+  color: var(--dash-primary, #2f3b65);
 }
 .fdash-metric--green .fdash-metric__icon {
   background: #e8faf0;
@@ -2235,7 +2230,7 @@
 }
 .fdash-metric--purple .fdash-metric__icon {
   background: #f3eeff;
-  color: #7c3aed;
+  color: var(--dash-primary, #2f3b65);
 }
 
 .fdash-metric__body {
@@ -2322,7 +2317,7 @@
   margin: 0 0 6px;
   font-size: 0.88rem;
   font-weight: 700;
-  color: #2b59c3;
+  color: var(--dash-primary, #2f3b65);
 }
 
 .fdash-tip--embedded .fdash-tip__title {
@@ -2381,7 +2376,7 @@
   margin-top: 8px;
   font-size: 0.76rem;
   font-weight: 800;
-  color: #2b59c3;
+  color: var(--dash-primary, #2f3b65);
   text-decoration: none;
 }
 
@@ -2411,28 +2406,39 @@
 }
 
 .fdash-btn--primary {
-  background: linear-gradient(135deg, #2b59c3, #3d6fd4);
-  color: #fff;
-  box-shadow: 0 10px 24px -12px rgba(43, 89, 195, 0.55);
+  background: var(--dash-primary, #2f3b65);
+  color: var(--dash-text-inverse, #fff);
+  box-shadow: var(--dash-shadow-sm);
 }
 
 .fdash-btn--primary:hover {
   transform: translateY(-1px);
-  color: #fff;
-  box-shadow: 0 14px 28px -10px rgba(43, 89, 195, 0.6);
+  background: var(--dash-primary-hover, #253156);
+  color: var(--dash-text-inverse, #fff);
+  box-shadow: var(--dash-shadow-md);
+}
+
+.fdash-btn--primary:focus-visible {
+  outline: none;
+  box-shadow: var(--dash-focus-ring);
 }
 
 .fdash-btn--secondary {
-  background: #fff;
-  color: #2b59c3;
-  border: 1.5px solid rgba(43, 89, 195, 0.35);
-  box-shadow: 0 4px 14px -8px rgba(43, 89, 195, 0.15);
+  background: var(--dash-card, #fcfcfd);
+  color: var(--dash-primary, #2f3b65);
+  border: 1.5px solid var(--dash-border-strong, #aeb8c6);
+  box-shadow: var(--dash-shadow-sm);
 }
 
 .fdash-btn--secondary:hover {
-  background: #f8faff;
-  color: #2b59c3;
-  border-color: #2b59c3;
+  background: var(--dash-hover, #eef1f4);
+  color: var(--dash-primary, #2f3b65);
+  border-color: var(--dash-primary, #2f3b65);
+}
+
+.fdash-btn--secondary:focus-visible {
+  outline: none;
+  box-shadow: var(--dash-focus-ring);
 }
 
 .fdash-btn__icon {
@@ -2605,7 +2611,7 @@
   font-size: 0.78rem;
   font-weight: 800;
   line-height: 1.35;
-  color: #2b59c3;
+  color: var(--dash-primary, #2f3b65);
   text-decoration: none;
 }
 
@@ -2616,7 +2622,7 @@
 .fdash-banner__cta--primary {
   padding: 7px 14px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #2b59c3, #3d6fd4);
+  background: var(--dash-primary, #2f3b65);
   color: #fff;
   text-decoration: none;
   box-shadow: 0 6px 16px -8px rgba(43, 89, 195, 0.55);
@@ -2783,7 +2789,7 @@
 
 .fdash-insight-card--blue .fdash-insight-card__icon {
   background: linear-gradient(145deg, #eef4ff, #e0ebff);
-  color: #2b59c3;
+  color: var(--dash-primary, #2f3b65);
 }
 .fdash-insight-card--green .fdash-insight-card__icon {
   background: linear-gradient(145deg, #ecfdf3, #dcfce7);
@@ -2795,7 +2801,7 @@
 }
 .fdash-insight-card--purple .fdash-insight-card__icon {
   background: linear-gradient(145deg, #f5f0ff, #ede9fe);
-  color: #7c3aed;
+  color: var(--dash-primary, #2f3b65);
 }
 .fdash-insight-card--rose .fdash-insight-card__icon {
   background: linear-gradient(145deg, #fff1f2, #ffe4e6);
@@ -2846,7 +2852,7 @@
   font-size: 0.74rem;
   font-weight: 700;
   line-height: 1.4;
-  color: #2563eb;
+  color: var(--dash-primary, #2f3b65);
   text-decoration: none;
   width: fit-content;
 }

@@ -1,4 +1,4 @@
-/* Order details — SaaS-style layout (od-*). Mobile-first; stacks < 960px. */
+﻿/* Order details — SaaS-style layout (od-*). Mobile-first; stacks < 960px. */
 
 .od-page {
   display: flex;
@@ -392,7 +392,7 @@
   padding: 0.32rem 0.6rem;
   border-radius: 8px;
   border: 1px solid rgba(56, 82, 180, 0.22);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   color: #2a3b8f;
   text-decoration: none;
   cursor: pointer;

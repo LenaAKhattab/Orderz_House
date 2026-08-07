@@ -17,6 +17,9 @@ const {
   scheduleFakeOrderTranslation,
   scheduleTemplateTranslation,
 } = require("./orderTranslationHelper");
+const {
+  scheduleDispatchNewlyVisibleFakeOrderNotifications,
+} = require("./fakeOrderPoolNotificationService");
 
 /** Session advisory lock: cross-process generation guard (PostgreSQL). */
 const AUTOMATION_GENERATION_LOCK_KEY = 882947361;
@@ -257,22 +260,143 @@ async function hasVisibleItemsExpiringAfter(client, boundaryUntil) {
   return Boolean(rows[0]);
 }
 
+/**
+ * Committed training items: currently visible OR scheduled for later in an active round window.
+ * Excludes the visible_from <= NOW() gate used by marketplace listing.
+ */
+function trainingPoolCommittedWhereSql() {
+  return `
+  fo.fake_status = 'active'
+  AND fo.is_published = TRUE
+  AND fo.is_open_for_pool = TRUE
+  AND fo.assigned_freelancer_id IS NULL
+  AND fo.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')
+  AND ri.status = 'active'
+  AND fr.status = 'active'
+  AND ri.visible_until > NOW()
+  AND (SELECT training_orders_enabled FROM fake_order_settings WHERE id = 1) = TRUE
+  AND (
+    (SELECT show_to_all_visitors FROM fake_order_settings WHERE id = 1) = TRUE
+    OR (SELECT show_to_all_freelancers FROM fake_order_settings WHERE id = 1) = TRUE
+    OR EXISTS (
+      SELECT 1
+      FROM fake_order_settings_plans sp
+      INNER JOIN freelancer_subscriptions fs ON fs.plan_id = sp.plan_id
+      WHERE fs.is_current = TRUE
+        AND fs.status IN ('active', 'assigned_not_started')
+    )
+  )`;
+}
+
 async function getTrainingPoolCoverage(clientOrPool) {
   const runner = clientOrPool || pool;
   const { rows } = await runner.query(
     `SELECT
-       COUNT(*)::int AS visible_count,
+       COUNT(*) FILTER (WHERE ri.visible_from <= NOW())::int AS visible_count,
+       COUNT(*) FILTER (WHERE ri.visible_from > NOW())::int AS scheduled_future_count,
        COUNT(DISTINCT fr.id)::int AS active_rounds,
-       MIN(ri.visible_until) AS earliest_until
+       MIN(ri.visible_until) FILTER (WHERE ri.visible_from <= NOW()) AS earliest_until,
+       MIN(ri.visible_from) FILTER (WHERE ri.visible_from > NOW()) AS earliest_scheduled_from
      ${TRAINING_POOL_VISIBLE_FROM_SQL}
-     WHERE ${trainingPoolVisibleWhereSql({ anyAudience: true })}`,
+     WHERE ${trainingPoolCommittedWhereSql()}`,
   );
   const row = rows[0] || {};
+  const visibleCount = Number(row.visible_count) || 0;
+  const scheduledFutureCount = Number(row.scheduled_future_count) || 0;
   return {
-    visibleCount: Number(row.visible_count) || 0,
+    visibleCount,
+    scheduledFutureCount,
+    activeOrScheduledCount: visibleCount + scheduledFutureCount,
     activeRounds: Number(row.active_rounds) || 0,
     earliestUntil: row.earliest_until || null,
+    earliestScheduledFrom: row.earliest_scheduled_from || null,
   };
+}
+
+/** Preferred stagger interval between batches (30 minutes). */
+const STAGGER_PREFERRED_BATCH_INTERVAL_MS = 30 * 60 * 1000;
+/** ~20% of the round appears immediately. */
+const STAGGER_INITIAL_BATCH_PERCENT = 0.2;
+/** Floor for initial batch size when target is large enough. */
+const STAGGER_INITIAL_BATCH_MIN = 10;
+/** Emergency promote size when marketplace is empty but schedule exists. */
+const STAGGER_EMERGENCY_BATCH_SIZE = 10;
+
+/**
+ * Initial immediate batch size for staggered rollout.
+ * ≈20% of target, at least min(10, n), never more than n.
+ */
+function resolveStaggerInitialBatchCount(orderCount) {
+  const n = Math.max(0, Math.floor(Number(orderCount) || 0));
+  if (n < 1) return 0;
+  const percentCount = Math.ceil(n * STAGGER_INITIAL_BATCH_PERCENT);
+  const floorCount = Math.min(STAGGER_INITIAL_BATCH_MIN, n);
+  return Math.min(n, Math.max(percentCount, floorCount));
+}
+
+/**
+ * Build per-order visibility windows for staggered marketplace rollout.
+ * All items share the same visibleUntil (round end). Initial batch starts at startsAt;
+ * remaining items are spaced across the round duration.
+ *
+ * @returns {{ visibleFromMs: number, visibleUntilMs: number }[]}
+ */
+function buildStaggeredVisibilitySchedule({ orderCount, startsAtMs, expiresAtMs }) {
+  const n = Math.max(0, Math.floor(Number(orderCount) || 0));
+  const start = Number(startsAtMs);
+  const end = Number(expiresAtMs);
+  const durationMs = end - start;
+  if (n < 1 || !Number.isFinite(start) || !Number.isFinite(end) || !(durationMs > 0)) {
+    return [];
+  }
+
+  const allImmediate = () =>
+    Array.from({ length: n }, () => ({ visibleFromMs: start, visibleUntilMs: end }));
+
+  // Short rounds or tiny pools: keep previous all-at-once behavior.
+  if (n === 1 || durationMs < STAGGER_PREFERRED_BATCH_INTERVAL_MS) {
+    return allImmediate();
+  }
+
+  const initialCount = resolveStaggerInitialBatchCount(n);
+  const schedule = [];
+  for (let i = 0; i < initialCount; i += 1) {
+    schedule.push({ visibleFromMs: start, visibleUntilMs: end });
+  }
+
+  const remaining = n - initialCount;
+  if (remaining < 1) return schedule;
+
+  // Keep a trailing visibility buffer so late batches are not instant-expired.
+  const lastStartLatest = Math.max(start, end - STAGGER_PREFERRED_BATCH_INTERVAL_MS);
+  const staggerWindow = lastStartLatest - start;
+  if (staggerWindow < STAGGER_PREFERRED_BATCH_INTERVAL_MS) {
+    for (let i = 0; i < remaining; i += 1) {
+      schedule.push({ visibleFromMs: start, visibleUntilMs: end });
+    }
+    return schedule;
+  }
+
+  const maxBatches = Math.max(1, Math.floor(staggerWindow / STAGGER_PREFERRED_BATCH_INTERVAL_MS));
+  const batchCount = Math.min(maxBatches, remaining);
+  const stepMs = Math.floor(staggerWindow / batchCount);
+  let assigned = 0;
+  for (let b = 0; b < batchCount; b += 1) {
+    const left = remaining - assigned;
+    const batchesLeft = batchCount - b;
+    const batchSize = Math.ceil(left / batchesLeft);
+    const fromMs = Math.min(lastStartLatest, start + (b + 1) * stepMs);
+    for (let j = 0; j < batchSize; j += 1) {
+      schedule.push({ visibleFromMs: fromMs, visibleUntilMs: end });
+      assigned += 1;
+    }
+  }
+  while (assigned < remaining) {
+    schedule.push({ visibleFromMs: lastStartLatest, visibleUntilMs: end });
+    assigned += 1;
+  }
+
+  return schedule;
 }
 
 /** Wall-clock offset for visibility / automation scheduling */
@@ -564,7 +688,6 @@ async function loadEligibleFakeOrderPool(client) {
          WHERE ri.fake_order_id = fo.id
            AND ri.status = 'active'
            AND fr.status = 'active'
-           AND ri.visible_from <= NOW()
            AND ri.visible_until > NOW()
        )
      ORDER BY fo.id ASC`,
@@ -591,7 +714,6 @@ const ELIGIBLE_FAKE_ORDER_POOL_WHERE_SQL = `
     WHERE ri.fake_order_id = fo.id
       AND ri.status = 'active'
       AND fr.status = 'active'
-      AND ri.visible_from <= NOW()
       AND ri.visible_until > NOW()
   )`;
 
@@ -660,12 +782,31 @@ function selectFakeOrdersFromPool(eligibleRows, targetCount, categoryDistributio
   return selected.slice(0, n);
 }
 
-async function activateFakeOrdersInRound(client, { roundId, orders, visibleUntil, settings }) {
+async function activateFakeOrdersInRound(client, { roundId, orders, startsAt, visibleUntil, settings }) {
   const rid = Number(roundId);
   const showBadge = Boolean(settings.show_fake_badge_to_freelancers);
+  const startsAtMs = new Date(startsAt || Date.now()).getTime();
+  const untilMs = new Date(visibleUntil).getTime();
+  const schedule = buildStaggeredVisibilitySchedule({
+    orderCount: orders.length,
+    startsAtMs,
+    expiresAtMs: untilMs,
+  });
   let activated = 0;
-  for (const order of orders) {
+  for (let i = 0; i < orders.length; i += 1) {
+    const order = orders[i];
     const fakeOrderId = Number(order.id);
+    const slot = schedule[i] || { visibleFromMs: startsAtMs, visibleUntilMs: untilMs };
+    const itemUntil = new Date(slot.visibleUntilMs);
+    // Immediate batch must use DB NOW() — Node/Postgres clock skew can make JS timestamps
+    // appear slightly in the future and empty the marketplace until emergency promote.
+    const isImmediateBatch = Math.abs(Number(slot.visibleFromMs) - startsAtMs) < 2000;
+    const visibleFrom = isImmediateBatch
+      ? null
+      : new Date(Math.min(slot.visibleFromMs, slot.visibleUntilMs - 1));
+    if (!isImmediateBatch && !(visibleFrom.getTime() < itemUntil.getTime())) {
+      continue;
+    }
     // eslint-disable-next-line no-await-in-loop
     await client.query(
       `UPDATE fake_orders
@@ -675,17 +816,42 @@ async function activateFakeOrdersInRound(client, { roundId, orders, visibleUntil
            show_fake_badge = $3,
            updated_at = NOW()
        WHERE id = $4`,
-      [rid, visibleUntil, showBadge, fakeOrderId],
+      [rid, itemUntil, showBadge, fakeOrderId],
     );
     // eslint-disable-next-line no-await-in-loop
     await client.query(
       `INSERT INTO fake_order_round_items (round_id, fake_order_id, visible_from, visible_until, status, created_at, updated_at)
-       VALUES ($1, $2, NOW(), $3, 'active', NOW(), NOW())`,
-      [rid, fakeOrderId, visibleUntil],
+       VALUES ($1, $2, COALESCE($3::timestamptz, NOW()), $4, 'active', NOW(), NOW())`,
+      [rid, fakeOrderId, visibleFrom, itemUntil],
     );
     activated += 1;
   }
   return activated;
+}
+
+/**
+ * When the marketplace is empty but future staggered items exist, promote a small emergency batch now.
+ */
+async function promoteEmergencyStaggerBatch(client, { limit = STAGGER_EMERGENCY_BATCH_SIZE } = {}) {
+  const batchLimit = Math.max(1, Math.min(50, Math.floor(Number(limit) || STAGGER_EMERGENCY_BATCH_SIZE)));
+  const { rows } = await client.query(
+    `WITH promote AS (
+       SELECT ri.id
+       ${TRAINING_POOL_VISIBLE_FROM_SQL}
+       WHERE ${trainingPoolCommittedWhereSql()}
+         AND ri.visible_from > NOW()
+       ORDER BY ri.visible_from ASC, ri.id ASC
+       LIMIT $1
+     )
+     UPDATE fake_order_round_items ri
+     SET visible_from = NOW(),
+         updated_at = NOW()
+     FROM promote
+     WHERE ri.id = promote.id
+     RETURNING ri.id`,
+    [batchLimit],
+  );
+  return rows.length;
 }
 
 /**
@@ -790,6 +956,9 @@ async function generateTrainingRoundInternal(
     selected_order_count: selectedOrders.length,
     eligible_pool_size: eligiblePool.length,
     selection_mode: "existing_fake_orders_pool",
+    stagger_rollout: true,
+    stagger_initial_batch_count: resolveStaggerInitialBatchCount(selectedOrders.length),
+    stagger_preferred_batch_interval_ms: STAGGER_PREFERRED_BATCH_INTERVAL_MS,
     duration_value: Number(s.duration_value),
     duration_unit: String(s.duration_unit || "hours"),
     automation_interval_value: Number(s.duration_value),
@@ -845,6 +1014,7 @@ async function generateTrainingRoundInternal(
   const generated = await activateFakeOrdersInRound(client, {
     roundId,
     orders: selectedOrders,
+    startsAt,
     visibleUntil,
     settings: s,
   });
@@ -935,6 +1105,7 @@ async function startTrainingRoundManualOnce({ actorUserId, attempt = 0 }) {
     } catch (markErr) {
       console.warn("[fakeOrders] recordMarketplaceVisibleFakeOrders after manual round:", markErr?.message || markErr);
     }
+    scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: "manual_round_start" });
     await insertAutomationLogSafe(pool, {
       runStartedAt,
       status: "success",
@@ -1569,17 +1740,24 @@ async function runAutomationTick() {
     await client.query("BEGIN");
     const { rows: sRows } = await client.query(`SELECT * FROM fake_order_settings WHERE id = 1 FOR UPDATE`);
     const s = sRows[0];
-    if (!s || !s.training_orders_enabled || !s.automation_enabled) {
+    if (!s || !s.training_orders_enabled) {
       await client.query("COMMIT");
       logAutomationEvent("skipped_settings", {
         training_orders_enabled: Boolean(s?.training_orders_enabled),
         automation_enabled: Boolean(s?.automation_enabled),
-        reason: !s
-          ? "no_settings"
-          : !s.training_orders_enabled
-            ? "training_disabled"
-            : "automation_disabled",
+        reason: !s ? "no_settings" : "training_disabled",
       });
+      return;
+    }
+    // Still notify newly visible staggered groups even when round generation automation is off.
+    if (!s.automation_enabled) {
+      await client.query("COMMIT");
+      logAutomationEvent("skipped_settings", {
+        training_orders_enabled: true,
+        automation_enabled: false,
+        reason: "automation_disabled",
+      });
+      scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: "automation_tick_notify_only" });
       return;
     }
     const dv = Number(s.duration_value);
@@ -1614,6 +1792,7 @@ async function runAutomationTick() {
         earliestUntil: coverageBefore.earliestUntil,
         overlapMs,
       });
+      scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: "automation_tick_init_next_run" });
       return;
     }
 
@@ -1645,6 +1824,7 @@ async function runAutomationTick() {
         generatedCount: null,
         source: "automation",
       });
+      scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: "automation_tick_no_actor" });
       return;
     }
 
@@ -1662,6 +1842,15 @@ async function runAutomationTick() {
         action: seamless.action,
         roundId,
         generatedCount: genCount,
+        visibleBefore: coverageBefore.visibleCount,
+        minVisible,
+      });
+    } else if (seamless.action === "emergency_promote") {
+      didGenerate = true;
+      genStatus = "success";
+      logAutomationEvent("seamless_rotation", {
+        action: seamless.action,
+        promoted: seamless.promoted,
         visibleBefore: coverageBefore.visibleCount,
         minVisible,
       });
@@ -1693,9 +1882,24 @@ async function runAutomationTick() {
           });
         } else {
           const scheduleCoverage = await getTrainingPoolCoverage(client);
-          const supersedeExisting = scheduleCoverage.visibleCount === 0;
+          if (scheduleCoverage.visibleCount === 0 && scheduleCoverage.scheduledFutureCount > 0) {
+            const promoted = await promoteEmergencyStaggerBatch(client, {
+              limit: Math.min(STAGGER_EMERGENCY_BATCH_SIZE, scheduleCoverage.scheduledFutureCount),
+            });
+            logAutomationEvent("scheduled_emergency_promote", {
+              promoted,
+              scheduledFutureCount: scheduleCoverage.scheduledFutureCount,
+            });
+            if (promoted > 0) {
+              didGenerate = false;
+              genStatus = "success";
+            }
+          } else {
+          const supersedeExisting =
+            scheduleCoverage.visibleCount === 0 && scheduleCoverage.scheduledFutureCount === 0;
           logAutomationEvent("scheduled_rotation_start", {
             visibleCount: scheduleCoverage.visibleCount,
+            scheduledFutureCount: scheduleCoverage.scheduledFutureCount,
             supersedeExisting,
             scheduledDue: true,
           });
@@ -1725,7 +1929,8 @@ async function runAutomationTick() {
             logAutomationEvent(genStatus, { code: result.code, phase: "scheduled", eligiblePoolSize: result.eligiblePoolSize });
             console.error(`[fakeOrders] automation: round generation skipped (${result.code})`);
           }
-        }
+          } // end generate-vs-promote else
+        } // end scheduledLockAcquired else
       } catch (e) {
         genStatus = "failed";
         genError = String(e?.message || e).slice(0, 5000);
@@ -1748,20 +1953,23 @@ async function runAutomationTick() {
     await expireStaleItems(client);
 
     let coverageAfter = await getTrainingPoolCoverage(client);
-    if (coverageAfter.visibleCount < minVisible) {
+    if (coverageAfter.activeOrScheduledCount < minVisible) {
       const postExpireRotation = await ensureSeamlessTrainingRotation(client, s, {
         actorUserId,
         reason: "automation_post_expire",
         minVisible,
       });
-      if (postExpireRotation.generated) {
-        didGenerate = true;
+      if (postExpireRotation.generated || postExpireRotation.action === "emergency_promote") {
+        didGenerate = Boolean(postExpireRotation.generated) || didGenerate;
         roundId = postExpireRotation.roundId ?? roundId;
         genCount = postExpireRotation.generatedCount ?? genCount;
-        genStatus = "success";
+        if (postExpireRotation.generated || postExpireRotation.action === "emergency_promote") {
+          genStatus = "success";
+        }
         logAutomationEvent("post_expire_replenish", {
           roundId,
           generatedCount: genCount,
+          action: postExpireRotation.action,
           visibleBefore: coverageAfter.visibleCount,
           minVisible,
         });
@@ -1771,9 +1979,11 @@ async function runAutomationTick() {
 
     const nextAtDate = computeNextAutomationRunAt(coverageAfter, s, Date.now());
 
-    if (coverageAfter.visibleCount < minVisible) {
+    if (coverageAfter.activeOrScheduledCount < minVisible) {
       logAutomationEvent("visible_below_minimum_after_tick", {
         visibleCount: coverageAfter.visibleCount,
+        scheduledFutureCount: coverageAfter.scheduledFutureCount,
+        activeOrScheduled: coverageAfter.activeOrScheduledCount,
         minVisible,
         didGenerate,
         earliestUntil: coverageAfter.earliestUntil,
@@ -1824,6 +2034,8 @@ async function runAutomationTick() {
         console.warn("[fakeOrders] recordMarketplaceVisibleFakeOrders after tick:", markErr?.message || markErr);
       }
     }
+    // Always scan after tick COMMIT: delayed stagger batches become due by wall clock.
+    scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: "automation_tick" });
     if (didGenerate || genStatus !== "success") {
       await insertAutomationLogSafe(pool, {
         runStartedAt,
@@ -1906,16 +2118,44 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
   const coverage = await getTrainingPoolCoverage(client);
   const overlapMs = getOverlapThresholdMs();
   const now = Date.now();
+  const activeOrScheduled = coverage.activeOrScheduledCount;
+
+  // Empty marketplace but staggered schedule still pending → promote a small batch only.
+  if (coverage.visibleCount === 0 && coverage.scheduledFutureCount > 0) {
+    const promoted = await promoteEmergencyStaggerBatch(client, {
+      limit: Math.min(STAGGER_EMERGENCY_BATCH_SIZE, coverage.scheduledFutureCount),
+    });
+    logAutomationEvent("rotation_emergency_promote", {
+      reason,
+      promoted,
+      scheduledFutureCount: coverage.scheduledFutureCount,
+      minVisible: minVisibleCount,
+    });
+    if (promoted > 0) {
+      const afterPromote = await getTrainingPoolCoverage(client);
+      return {
+        ok: true,
+        action: "emergency_promote",
+        generated: false,
+        promoted,
+        visible: afterPromote.visibleCount,
+        coverage: afterPromote,
+      };
+    }
+  }
 
   let supersedeExisting = false;
   let rotationReason = null;
 
-  if (coverage.visibleCount < minVisibleCount) {
+  // Staggered rounds intentionally keep visibleCount < min early on; count scheduled future too.
+  if (activeOrScheduled < minVisibleCount) {
     rotationReason = "replenish";
-    supersedeExisting = coverage.visibleCount === 0;
+    supersedeExisting = coverage.visibleCount === 0 && coverage.scheduledFutureCount === 0;
     logAutomationEvent("rotation_replenish_triggered", {
       reason,
       visibleCount: coverage.visibleCount,
+      scheduledFutureCount: coverage.scheduledFutureCount,
+      activeOrScheduled,
       minVisible: minVisibleCount,
       supersedeExisting,
     });
@@ -1929,6 +2169,7 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
     logAutomationEvent("rotation_overlap_triggered", {
       reason,
       visibleCount: coverage.visibleCount,
+      scheduledFutureCount: coverage.scheduledFutureCount,
       earliestUntil: coverage.earliestUntil,
       overlapMs,
       activeRounds: coverage.activeRounds,
@@ -1937,6 +2178,8 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
     logAutomationEvent("rotation_not_needed", {
       reason,
       visibleCount: coverage.visibleCount,
+      scheduledFutureCount: coverage.scheduledFutureCount,
+      activeOrScheduled,
       minVisible: minVisibleCount,
       activeRounds: coverage.activeRounds,
       earliestUntil: coverage.earliestUntil,
@@ -1955,10 +2198,14 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
     }
 
     const afterLock = await getTrainingPoolCoverage(client);
-    if (rotationReason === "replenish" && afterLock.visibleCount >= minVisibleCount) {
+    if (
+      rotationReason === "replenish" &&
+      afterLock.activeOrScheduledCount >= minVisibleCount
+    ) {
       logAutomationEvent("rotation_replenish_aborted", {
         reason,
         visibleAfterLock: afterLock.visibleCount,
+        scheduledAfterLock: afterLock.scheduledFutureCount,
         minVisible: minVisibleCount,
       });
       return { ok: true, action: "none", visible: afterLock.visibleCount, coverage: afterLock };
@@ -1977,7 +2224,9 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
       return { ok: true, action: "none", visible: afterLock.visibleCount, coverage: afterLock };
     }
 
-    const result = await withSavepoint(client, "training_round_generation", () =>
+    // Continue with generation below (existing logic uses supersedeExisting / gapless).
+    // Re-read settings row fields already passed in `settings`.
+    const result = await withSavepoint(client, "training_round_rotation", () =>
       generateTrainingRoundInternal(client, {
         actorUserId,
         roundSource: "automation",
@@ -1985,35 +2234,41 @@ async function ensureSeamlessTrainingRotation(client, settings, { actorUserId, r
         gaplessSupersede: supersedeExisting,
       }),
     );
+
     if (!result.ok) {
-      logAutomationEvent("rotation_skipped_no_pool", { reason, rotationReason, code: result.code || "UNKNOWN" });
+      logAutomationEvent("rotation_generation_failed", {
+        reason,
+        rotationReason,
+        code: result.code || "INSUFFICIENT_ELIGIBLE_POOL",
+        visible: afterLock.visibleCount,
+      });
       return {
         ok: false,
         code: result.code || "INSUFFICIENT_ELIGIBLE_POOL",
         visible: afterLock.visibleCount,
         coverage: afterLock,
+        generated: false,
       };
     }
 
-    const visibleAfterGen = await getVisibleFakeOrdersCount(client);
     invalidatePublicHomeOrderStatsCache();
+    const visibleAfterGen = await getVisibleFakeOrdersCount(client);
     logAutomationEvent("rotation_generated", {
       reason,
       rotationReason,
+      roundId: result.round?.id ?? null,
+      generatedCount: result.generatedCount ?? null,
       supersedeExisting,
-      roundId: result.round?.id ? Number(result.round.id) : null,
-      generatedCount: Number(result.generatedCount || 0),
-      visibleAfterGen,
-      minVisible: minVisibleCount,
+      visibleAfter: visibleAfterGen,
     });
     return {
       ok: true,
       action: rotationReason,
       generated: true,
       roundId: result.round?.id ? Number(result.round.id) : null,
-      generatedCount: Number(result.generatedCount || 0),
+      generatedCount: result.generatedCount ?? null,
       visible: visibleAfterGen,
-      coverage: afterLock,
+      coverage: await getTrainingPoolCoverage(client),
     };
   } finally {
     await releaseGenerationLock(client, {
@@ -2065,15 +2320,51 @@ async function ensureMinimumVisibleFakeOrdersOnce({ reason = "runtime", minVisib
 
     const thresholdFromSettings = Math.max(1, Number(s.min_orders) || 20);
     const threshold = Number.isFinite(Number(minVisible)) ? Math.max(1, Number(minVisible)) : thresholdFromSettings;
-    const currentVisible = await getVisibleFakeOrdersCount(client);
-    if (currentVisible >= threshold) {
+    const coverage = await getTrainingPoolCoverage(client);
+    const currentVisible = coverage.visibleCount;
+    const scheduledFuture = coverage.scheduledFutureCount;
+    const activeOrScheduled = coverage.activeOrScheduledCount;
+
+    // Marketplace empty but staggered items pending → promote a small batch, do not start a full round.
+    if (currentVisible === 0 && scheduledFuture > 0) {
+      const promoted = await promoteEmergencyStaggerBatch(client, {
+        limit: Math.min(STAGGER_EMERGENCY_BATCH_SIZE, scheduledFuture),
+      });
+      await client.query("COMMIT");
+      if (promoted > 0) {
+        await recordMarketplaceVisibleFakeOrders(pool);
+        scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: `ensure_min_promote:${reason}` });
+        const visibleAfter = await getVisibleFakeOrdersCount(pool);
+        logAutomationEvent("ensure_min_visible_emergency_promote", {
+          reason,
+          promoted,
+          scheduledFuture,
+          threshold,
+          attempt,
+        });
+        return {
+          ok: true,
+          generated: false,
+          promoted,
+          visible: visibleAfter,
+          scheduledFuture: scheduledFuture - promoted,
+          threshold,
+          status: "emergency_promote",
+        };
+      }
+    }
+
+    // Staggered rollout: scheduled future counts toward the minimum commitment.
+    if (activeOrScheduled >= threshold) {
       await client.query("COMMIT");
       return {
         ok: true,
         generated: false,
         visible: currentVisible,
+        scheduledFuture,
+        activeOrScheduled,
         threshold,
-        status: "already_visible",
+        status: currentVisible > 0 ? "already_visible" : "scheduled_covered",
       };
     }
 
@@ -2118,6 +2409,7 @@ async function ensureMinimumVisibleFakeOrdersOnce({ reason = "runtime", minVisib
 
     await client.query("COMMIT");
     await recordMarketplaceVisibleFakeOrders(pool);
+    scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: `ensure_min_generated:${reason}` });
     const visibleAfter = await getVisibleFakeOrdersCount(pool);
     return {
       ok: true,
@@ -3334,6 +3626,7 @@ async function rotateTrainingRoundNow({ actorUserId = null, dryRun = true } = {}
       } catch (markErr) {
         console.warn("[fakeOrders] recordMarketplaceVisibleFakeOrders after rotate:", markErr?.message || markErr);
       }
+      scheduleDispatchNewlyVisibleFakeOrderNotifications({ reason: "rotate_training_round_now" });
 
       const heroAfter = await publicHomeOrderStatsService.queryHeroOrderCounts();
       const coverageAfter = await getTrainingPoolCoverage(pool);
@@ -4204,6 +4497,9 @@ module.exports = {
   generateTrainingRoundInternal,
   resolveRoundOrderBounds,
   pickRoundTargetCount,
+  buildStaggeredVisibilitySchedule,
+  resolveStaggerInitialBatchCount,
+  promoteEmergencyStaggerBatch,
   loadEligibleFakeOrderPool,
   countEligibleFakeOrderPool,
   selectFakeOrdersFromPool,

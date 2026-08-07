@@ -5,6 +5,14 @@ const { assertCheckoutSessionAuthorizedForOrder } = require("../utils/stripeChec
 const orderFlowService = require("../services/orderFlowService");
 const subscriptionsService = require("../services/subscriptionsService");
 const { recordActivationFeeFromStripeSession, markCheckoutSessionStatus, supersedeOpenCheckoutSessions, CHECKOUT_SESSION_STATUS, PURPOSE_ACTIVATION_FEE_ONLY } = require("../services/subscriptionActivationFeeService");
+const {
+  PURPOSE_RECURRING_SUBSCRIPTION,
+  fulfillRecurringSubscriptionFromCheckout,
+  applyRecurringInvoicePaid,
+  applyRecurringInvoicePaymentFailed,
+  syncRecurringSubscriptionStatus,
+  periodFromStripeSubscription,
+} = require("../services/stripeRecurringSubscriptionService");
 const notificationService = require("../services/notificationService");
 const freelancerSubscriptionPaymentNotifications = require("../services/freelancerSubscriptionPaymentNotifications");
 const subscriptionAdminNotificationService = require("../services/subscriptionAdminNotificationService");
@@ -209,6 +217,15 @@ async function handleStripeWebhook(req, res) {
       applyResult = await applyPaymentIntentOutcome(event.data.object, "paid");
     } else if (eventType === "payment_intent.payment_failed") {
       applyResult = await applyPaymentIntentOutcome(event.data.object, "failed");
+    } else if (eventType === "invoice.paid" || eventType === "invoice.payment_succeeded") {
+      applyResult = await applyInvoicePaidEvent(event.data.object);
+    } else if (eventType === "invoice.payment_failed") {
+      applyResult = await applyInvoicePaymentFailedEvent(event.data.object);
+    } else if (
+      eventType === "customer.subscription.updated" ||
+      eventType === "customer.subscription.deleted"
+    ) {
+      applyResult = await applyCustomerSubscriptionEvent(event.data.object, eventType);
     } else {
       logStripeWebhook({ eventId, type: eventType, outcome: "unhandled_type" });
       applyResult = { status: "ignored", reason: "unhandled_event_type" };
@@ -265,6 +282,203 @@ async function handleStripeWebhook(req, res) {
     // eslint-disable-next-line no-console
     console.error("[stripe webhook] handler failed:", safeMsg);
     return res.status(500).json({ received: false });
+  }
+}
+
+async function applyCheckoutSessionFreelancerRecurringCompleted(session, meta, dbPool) {
+  const freelancerUserId = Number(meta.freelancerUserId || meta.user_id);
+  const planId = Number(meta.planId || meta.plan_id);
+  if (!Number.isInteger(freelancerUserId) || freelancerUserId < 1 || !Number.isInteger(planId) || planId < 1) {
+    return { status: "ignored", reason: "recurring_invalid_meta" };
+  }
+  if (String(session.mode || "") !== "subscription") {
+    return { status: "ignored", reason: "recurring_wrong_mode" };
+  }
+  if (!isCheckoutSessionPaymentSuccessful(session)) {
+    return { status: "ignored", reason: "recurring_checkout_not_paid" };
+  }
+
+  const expectedMinor = meta.expectedAmountMinor != null ? Number(meta.expectedAmountMinor) : null;
+  const total = session.amount_total != null ? Number(session.amount_total) : null;
+  if (
+    expectedMinor != null &&
+    Number.isFinite(expectedMinor) &&
+    total != null &&
+    Number.isFinite(total) &&
+    expectedMinor !== total
+  ) {
+    return { status: "ignored", reason: "recurring_amount_mismatch" };
+  }
+
+  const stripe = getStripeOrNull();
+  const stripeSubscriptionId =
+    typeof session.subscription === "string" ? session.subscription : session.subscription?.id || null;
+  if (!stripeSubscriptionId) {
+    return { status: "retryable_failure", reason: "recurring_missing_subscription_id" };
+  }
+
+  let stripeSubscription = null;
+  try {
+    if (stripe) {
+      stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+    }
+  } catch (err) {
+    return { status: "retryable_failure", reason: "recurring_subscription_retrieve_failed" };
+  }
+
+  const { currentPeriodStart, currentPeriodEnd } = periodFromStripeSubscription(stripeSubscription || {});
+  const stripeCustomerId =
+    typeof session.customer === "string" ? session.customer : session.customer?.id || null;
+  const stripePriceId = meta.stripePriceId || stripeSubscription?.items?.data?.[0]?.price?.id || null;
+  const paymentIntentId =
+    typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null;
+  const activationMinor = meta.activationFeeMinor != null ? Number(meta.activationFeeMinor) : 0;
+
+  const db = await dbPool.connect();
+  try {
+    await db.query("BEGIN");
+    const { subscription, created } = await fulfillRecurringSubscriptionFromCheckout(
+      {
+        freelancerUserId,
+        planId,
+        stripeSessionId: session.id || null,
+        stripeSubscriptionId,
+        stripeCustomerId,
+        stripePriceId,
+        stripePaymentIntentId: paymentIntentId,
+        currentPeriodStart,
+        currentPeriodEnd,
+        activationFeeMinor,
+        paidAt: new Date(),
+      },
+      db,
+    );
+    if (subscription?.id) {
+      await safeNotify(() =>
+        freelancerSubscriptionPaymentNotifications.notifyFreelancerSubscriptionPaymentSuccess(
+          {
+            freelancerUserId,
+            planId,
+            subscriptionId: subscription.id,
+            stripeSessionId: session.id || null,
+            source: "stripe_webhook_recurring_checkout",
+          },
+          db,
+        ),
+      );
+      await safeNotify(() =>
+        notificationEventsService.notifyAdmins(
+          {
+            recipientRole: "admin",
+            actorUserId: null,
+            type: "subscription.company.activation.pending",
+            title: "اشتراك شهري جديد بانتظار تفعيل الشركة",
+            message: "تم دفع اشتراك شهري متجدد وهو بانتظار تفعيل الشركة.",
+            entityType: "subscription",
+            entityId: Number(subscription.id),
+            link: "/dashboard/super-admin/subscriptions",
+            priority: "high",
+            metadata: {
+              subscriptionId: String(subscription.id),
+              freelancerUserId: String(freelancerUserId),
+              planId: String(planId),
+              billingMode: "recurring_stripe",
+            },
+          },
+          `subscription_company_pending_${String(subscription.id)}`,
+          db,
+        ),
+      );
+    }
+    await db.query("COMMIT");
+    return { status: created ? "applied" : "already_applied" };
+  } catch (e) {
+    await db.query("ROLLBACK");
+    throw e;
+  } finally {
+    db.release();
+  }
+}
+
+async function retrieveSubscriptionForInvoice(invoice) {
+  const stripe = getStripeOrNull();
+  const subId = typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription?.id;
+  if (!subId || !stripe) return { stripeSubscription: null, subId: subId || null };
+  try {
+    const stripeSubscription = await stripe.subscriptions.retrieve(subId);
+    return { stripeSubscription, subId };
+  } catch (_) {
+    return { stripeSubscription: null, subId };
+  }
+}
+
+async function applyInvoicePaidEvent(invoice) {
+  const meta = invoice?.subscription_details?.metadata || invoice?.metadata || {};
+  const purpose = String(meta.purpose || "");
+  if (purpose && purpose !== PURPOSE_RECURRING_SUBSCRIPTION && purpose !== "freelancer_recurring_subscription") {
+    // Still try by Stripe subscription id lookup for renewals where invoice metadata is sparse.
+  }
+  const { stripeSubscription, subId } = await retrieveSubscriptionForInvoice(invoice);
+  if (!subId) return { status: "ignored", reason: "invoice_no_subscription" };
+  const db = await pool.connect();
+  try {
+    await db.query("BEGIN");
+    const result = await applyRecurringInvoicePaid(
+      { stripeSubscription: stripeSubscription || { id: subId }, invoice },
+      db,
+    );
+    await db.query("COMMIT");
+    if (!result.ok && result.reason === "subscription_row_not_found") {
+      return { status: "ignored", reason: result.reason };
+    }
+    return { status: result.ok ? "applied" : "ignored", reason: result.reason };
+  } catch (e) {
+    await db.query("ROLLBACK");
+    throw e;
+  } finally {
+    db.release();
+  }
+}
+
+async function applyInvoicePaymentFailedEvent(invoice) {
+  const { stripeSubscription, subId } = await retrieveSubscriptionForInvoice(invoice);
+  if (!subId) return { status: "ignored", reason: "invoice_no_subscription" };
+  const db = await pool.connect();
+  try {
+    await db.query("BEGIN");
+    const result = await applyRecurringInvoicePaymentFailed(
+      { stripeSubscription: stripeSubscription || { id: subId }, invoice },
+      db,
+    );
+    await db.query("COMMIT");
+    if (!result.ok && result.reason === "subscription_row_not_found") {
+      return { status: "ignored", reason: result.reason };
+    }
+    return { status: result.ok ? "applied" : "ignored", reason: result.reason };
+  } catch (e) {
+    await db.query("ROLLBACK");
+    throw e;
+  } finally {
+    db.release();
+  }
+}
+
+async function applyCustomerSubscriptionEvent(stripeSubscription, eventType) {
+  if (!stripeSubscription?.id) return { status: "ignored", reason: "missing_subscription" };
+  const db = await pool.connect();
+  try {
+    await db.query("BEGIN");
+    const result = await syncRecurringSubscriptionStatus({ stripeSubscription }, db);
+    if (eventType === "customer.subscription.deleted" && result.ok) {
+      // status sync already marks cancelled
+    }
+    await db.query("COMMIT");
+    return { status: result.ok ? "applied" : "ignored", reason: result.reason };
+  } catch (e) {
+    await db.query("ROLLBACK");
+    throw e;
+  } finally {
+    db.release();
   }
 }
 
@@ -748,6 +962,9 @@ async function applyCheckoutSessionCompleted(session, dbPool = pool) {
     ...pickFazaatTrackingLogFields(meta),
   });
   const purpose = String(meta.purpose || "");
+  if (purpose === PURPOSE_RECURRING_SUBSCRIPTION || purpose === "freelancer_recurring_subscription") {
+    return applyCheckoutSessionFreelancerRecurringCompleted(session, meta, dbPool);
+  }
   if (purpose === "freelancer_subscription_purchase") {
     return applyCheckoutSessionFreelancerSubscriptionCompleted(session, meta, dbPool);
   }

@@ -10,6 +10,7 @@ import {
 /**
  * Shared subscription + eligibility for freelancer marketplace pages.
  * Dedupes in-flight requests and reuses session cache across route changes.
+ * Refetches on window focus so Admin plan/fee updates appear without logout.
  */
 export function useFreelancerMarketplaceContext() {
   const { user, loading: authLoading } = useAuth();
@@ -48,20 +49,35 @@ export function useFreelancerMarketplaceContext() {
     }
 
     let cancelled = false;
-    void fetchFreelancerSubscriptionCached(userId).then((sub) => {
-      if (!cancelled) setSubscription(sub);
-    });
 
-    void fetchFreelancerEligibilityCached(userId)
-      .then((data) => {
-        if (!cancelled) setEligibility(data);
-      })
-      .finally(() => {
-        if (!cancelled) setEligibilityFetched(true);
+    const load = ({ force = false } = {}) => {
+      void fetchFreelancerSubscriptionCached(userId, { force }).then((sub) => {
+        if (!cancelled) setSubscription(sub);
       });
+
+      void fetchFreelancerEligibilityCached(userId, { force })
+        .then((data) => {
+          if (!cancelled) setEligibility(data);
+        })
+        .finally(() => {
+          if (!cancelled) setEligibilityFetched(true);
+        });
+    };
+
+    load({ force: false });
+
+    const onVisible = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      load({ force: true });
+    };
+
+    window.addEventListener("focus", onVisible);
+    document.addEventListener("visibilitychange", onVisible);
 
     return () => {
       cancelled = true;
+      window.removeEventListener("focus", onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [userId, authLoading, isFreelancer]);
 

@@ -5,6 +5,7 @@
  * - Fixed orders: compare `orders.budget` (JOD) to plan [minOrderValue, maxOrderValue].
  * - Bidding orders: compare plan range to order [bid_budget_min, bid_budget_max] via interval overlap.
  * - Real and fake/training pool rows use the same value band (e.g. free plan 3–7 د.أ for both).
+ * - Display/marketing clones with null bands resolve via `subscription_plan_id` when present.
  */
 const { ORDERZHOUSE_PLANS_BY_ID } = require("../constants/orderzhousePlansCatalog");
 
@@ -28,6 +29,12 @@ function normalizePlanRange(planId, row) {
   };
 }
 
+/** A usable marketplace band requires a finite minimum (max may be open-ended/null). */
+function isUsableOrderValueRange(range) {
+  if (!range) return false;
+  return parseJod(range.minOrderValue) != null;
+}
+
 function getPlanOrderValueRange(planId) {
   const id = Number(planId);
   if (!Number.isInteger(id) || id < 1) return null;
@@ -36,23 +43,74 @@ function getPlanOrderValueRange(planId) {
   return null;
 }
 
-async function getPlanOrderValueRangeFromDb(planId) {
-  const { pool } = require("../config/db");
+async function getPlanRowForOrderValue(planId, client) {
+  const runner = client || require("../config/db").pool;
   const id = Number(planId);
   if (!Number.isInteger(id) || id < 1) return null;
-  const { rows } = await pool.query(
-    `SELECT id, name, order_value_min_jod, order_value_max_jod
+  const { rows } = await runner.query(
+    `SELECT id, name, order_value_min_jod, order_value_max_jod, subscription_plan_id, deleted_at
      FROM plans
-     WHERE id = $1::bigint AND deleted_at IS NULL
+     WHERE id = $1::bigint
      LIMIT 1`,
     [id],
   );
-  if (!rows[0]) return null;
-  return normalizePlanRange(id, rows[0]);
+  const row = rows[0];
+  if (!row || row.deleted_at) return null;
+  return row;
 }
 
-async function resolvePlanOrderValueRange(planId) {
-  return getPlanOrderValueRange(planId) || (await getPlanOrderValueRangeFromDb(planId));
+async function getPlanOrderValueRangeFromDb(planId, client) {
+  const row = await getPlanRowForOrderValue(planId, client);
+  if (!row) return null;
+  return normalizePlanRange(row.id, row);
+}
+
+/**
+ * Resolve order-value band for a stored subscription plan id.
+ * Prefer the plan's own usable band; otherwise follow subscription_plan_id once.
+ * Null mins on display clones are never treated as a valid open band.
+ */
+async function resolvePlanOrderValueRange(planId, client) {
+  const id = Number(planId);
+  if (!Number.isInteger(id) || id < 1) return null;
+
+  const catalogOwn = getPlanOrderValueRange(id);
+  if (isUsableOrderValueRange(catalogOwn)) return catalogOwn;
+
+  const row = await getPlanRowForOrderValue(id, client);
+  if (!row) return null;
+
+  const dbOwn = normalizePlanRange(row.id, row);
+  if (isUsableOrderValueRange(dbOwn)) return dbOwn;
+
+  const linkedRaw = row.subscription_plan_id;
+  if (linkedRaw == null || linkedRaw === "") {
+    return null;
+  }
+  const linkedId = Number(linkedRaw);
+  if (!Number.isInteger(linkedId) || linkedId < 1 || linkedId === id) {
+    return null;
+  }
+
+  const catalogCanon = getPlanOrderValueRange(linkedId);
+  if (isUsableOrderValueRange(catalogCanon)) {
+    return {
+      ...catalogCanon,
+      sourcePlanId: id,
+      resolvedFromPlanId: linkedId,
+    };
+  }
+
+  const dbCanon = await getPlanOrderValueRangeFromDb(linkedId, client);
+  if (isUsableOrderValueRange(dbCanon)) {
+    return {
+      ...dbCanon,
+      sourcePlanId: id,
+      resolvedFromPlanId: linkedId,
+    };
+  }
+
+  return null;
 }
 
 /**
@@ -108,11 +166,11 @@ function isOrderValueAllowedForPlan(planId, orderLike) {
   return isPlanValueAllowedForOrder(orderLike, range);
 }
 
-async function getFreelancerPlanOrderValueRange(freelancerUserId) {
+async function getFreelancerPlanOrderValueRange(freelancerUserId, client) {
   const subscriptionsService = require("./subscriptionsService");
   const sub = await subscriptionsService.getCurrentSubscriptionForFreelancer(freelancerUserId);
   if (!sub?.planId) return null;
-  return resolvePlanOrderValueRange(sub.planId);
+  return resolvePlanOrderValueRange(sub.planId, client);
 }
 
 function buildPlanOrderValueWhereClause(alias, minParamIndex, maxParamIndex) {
@@ -170,7 +228,7 @@ function normalizeOrderLikeForPlanCheck(orderLike) {
 }
 
 function isPlanValueAllowedForOrder(orderLike, range) {
-  if (!range) return false;
+  if (!isUsableOrderValueRange(range)) return false;
   const norm = normalizeOrderLikeForPlanCheck(orderLike);
   return isOrderRowAllowedForPlanRange(norm, range);
 }
@@ -180,13 +238,17 @@ function isPlanValueAllowedForOrder(orderLike, range) {
  */
 function computePoolOrderPlanEligibility(orderLike, range) {
   const norm = normalizeOrderLikeForPlanCheck(orderLike);
-  const allowed = isPlanValueAllowedForOrder(orderLike, range);
+  const usable = isUsableOrderValueRange(range);
+  const allowed = usable && isPlanValueAllowedForOrder(orderLike, range);
   const locked = !allowed;
 
-  const lockReason = locked ? "غير متاح لباقتك" : null;
+  let lockReason = null;
+  if (locked) {
+    lockReason = usable ? "غير متاح لباقتك" : "الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات";
+  }
 
   const requiredPlanLabel = formatPlanRangeLabel(range);
-  const requiredPlanRange = range
+  const requiredPlanRange = usable
     ? {
         minOrderValue: parseJod(range.minOrderValue),
         maxOrderValue: parseJod(range.maxOrderValue),
@@ -207,6 +269,7 @@ function computePoolOrderPlanEligibility(orderLike, range) {
     lockReason,
     requiredPlanRange,
     requiredPlanLabel,
+    planConfigurationError: usable ? false : true,
   };
 }
 
@@ -228,6 +291,14 @@ async function loadFakeOrderRow(orderId, clientMaybe) {
   return rows[0] || null;
 }
 
+function throwPlanRangeUnavailableError() {
+  const err = new Error("الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات.");
+  err.statusCode = 403;
+  err.reason = "plan_configuration_error";
+  err.exposeToClient = true;
+  throw err;
+}
+
 async function assertFreelancerMayAccessFakeOrderByPlan(freelancerUserId, orderOrId, client) {
   const runner = client || require("../config/db").pool;
   let order = orderOrId;
@@ -241,13 +312,16 @@ async function assertFreelancerMayAccessFakeOrderByPlan(freelancerUserId, orderO
     throw err;
   }
 
-  const range = await getFreelancerPlanOrderValueRange(freelancerUserId);
+  const range = await getFreelancerPlanOrderValueRange(freelancerUserId, runner);
   if (!range) {
     const err = new Error("لا يوجد اشتراك نشط يسمح بالوصول إلى هذا الطلب.");
     err.statusCode = 403;
     err.reason = "no_subscription";
     err.exposeToClient = true;
     throw err;
+  }
+  if (!isUsableOrderValueRange(range)) {
+    throwPlanRangeUnavailableError();
   }
 
   const orderLike = { ...order, orderSource: "fake" };
@@ -281,13 +355,16 @@ async function assertFreelancerMayAccessOrderByPlan(freelancerUserId, orderOrId,
     throw err;
   }
 
-  const range = await getFreelancerPlanOrderValueRange(freelancerUserId);
+  const range = await getFreelancerPlanOrderValueRange(freelancerUserId, runner);
   if (!range) {
     const err = new Error("لا يوجد اشتراك نشط يسمح بالوصول إلى هذا الطلب.");
     err.statusCode = 403;
     err.reason = "no_subscription";
     err.exposeToClient = true;
     throw err;
+  }
+  if (!isUsableOrderValueRange(range)) {
+    throwPlanRangeUnavailableError();
   }
 
   const orderLike = { ...order, orderSource: "real" };
@@ -304,8 +381,10 @@ async function assertFreelancerMayAccessOrderByPlan(freelancerUserId, orderOrId,
 
 module.exports = {
   parseJod,
+  isUsableOrderValueRange,
   getPlanOrderValueRange,
   getPlanOrderValueRangeFromDb,
+  getPlanRowForOrderValue,
   resolvePlanOrderValueRange,
   isOrderValueAllowedForPlan,
   isOrderRowAllowedForPlanRange,

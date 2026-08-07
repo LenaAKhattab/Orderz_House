@@ -57,10 +57,30 @@ export default function FreelancerPlansPage() {
     eligibility && !eligibility.eligible
       ? getFreelancerOrderEligibilityMessage(eligibility, mySubscription, t)
       : "";
+  const renewalFrozen = eligibility?.reason === "account_hold_payment_failed";
+  const freezeTitle =
+    eligibility?.freezeMessage?.title || t("freelancerDashboard.status.eligibility.subscriptionRenewalFailedTitle", {
+      defaultValue: "تعذر تجديد الاشتراك",
+    });
 
   return (
     <DashboardHubPage className="fdash-page--plans">
       <div className="fp-page">
+        {renewalFrozen ? (
+          <section
+            className="fp-surface"
+            role="alert"
+            style={{
+              marginBottom: 16,
+              borderColor: "rgba(180, 60, 60, 0.45)",
+              background: "rgba(180, 60, 60, 0.08)",
+              padding: "16px 18px",
+            }}
+          >
+            <h2 style={{ margin: "0 0 8px", fontSize: "1.05rem" }}>{freezeTitle}</h2>
+            <p style={{ margin: 0 }}>{blockMsg}</p>
+          </section>
+        ) : null}
         <header className="fp-surface fp-hero">
           <div className="fp-hero__copy">
             <span className="fp-hero__eyebrow">

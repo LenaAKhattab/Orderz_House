@@ -10,6 +10,7 @@ export const Register = lazy(() => import("../pages/Register"));
 export const ForgotPassword = lazy(() => import("../pages/ForgotPassword"));
 export const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
 export const TermsConditions = lazy(() => import("../pages/TermsConditions"));
+export const AccountDeletion = lazy(() => import("../pages/AccountDeletion"));
 export const PublicGuaranteePage = lazy(() =>
   import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicGuaranteePage })),
 );
@@ -47,6 +48,27 @@ export const FinancialEmployeeDetailPage = lazy(
 export const FinancialUserMyBonusesPage = lazy(() => import("../pages/dashboard/FinancialUserMyBonusesPage"));
 export const SuperAdminSettingsPage = lazy(() => import("../pages/dashboard/SuperAdminSettingsPage"));
 export const SuperAdminAdminsPage = lazy(() => import("../pages/dashboard/SuperAdminAdminsPage"));
+export const SuperAdminRateLimitExemptionsPage = lazy(
+  () => import("../pages/dashboard/SuperAdminRateLimitExemptionsPage"),
+);
+export const SuperAdminInstitutionsPage = lazy(
+  () => import("../pages/dashboard/SuperAdminInstitutionsPage"),
+);
+export const SuperAdminInstitutionDetailPage = lazy(
+  () => import("../pages/dashboard/SuperAdminInstitutionDetailPage"),
+);
+export const InstitutionalOrderStorageListPage = lazy(
+  () => import("../pages/dashboard/institutionalStorage/InstitutionalOrderStorageListPage"),
+);
+export const InstitutionalOrderStorageDetailPage = lazy(
+  () => import("../pages/dashboard/institutionalStorage/InstitutionalOrderStorageDetailPage"),
+);
+export const InstitutionalPendingApprovalsPage = lazy(
+  () => import("../pages/dashboard/institutionalStorage/InstitutionalPendingApprovalsPage"),
+);
+export const InstitutionOrdersPoolPage = lazy(
+  () => import("../pages/dashboard/InstitutionOrdersPoolPage"),
+);
 export const SuperAdminEditWebsitePage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsitePage"));
 export const SuperAdminEditWebsiteFaqPage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsiteFaqPage"));
 export const SuperAdminSitePagesPage = lazy(() => import("../pages/dashboard/SuperAdminSitePagesPage"));

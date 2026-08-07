@@ -15,12 +15,15 @@ const adminSubscriptionsRoutes = require("./routes/adminSubscriptionsRoutes");
 const adminOrdersRoutes = require("./routes/adminOrdersRoutes");
 const adminCoursesRoutes = require("./routes/adminCoursesRoutes");
 const adminFakeOrdersRoutes = require("./routes/adminFakeOrdersRoutes");
+const institutionalStorageRoutes = require("./routes/institutionalStorageRoutes");
+const institutionPoolRoutes = require("./routes/institutionPoolRoutes");
 const adminAdsRoutes = require("./routes/adminAdsRoutes");
 const freelancerSubscriptionsRoutes = require("./routes/freelancerSubscriptionsRoutes");
 const freelancerCoursesRoutes = require("./routes/freelancerCoursesRoutes");
 const freelancerDashboardRoutes = require("./routes/freelancerDashboardRoutes");
 const ordersRoutes = require("./routes/ordersRoutes");
 const notificationsRoutes = require("./routes/notificationsRoutes");
+const deviceTokensRoutes = require("./routes/deviceTokensRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const portalFinancialClaimsRoutes = require("./routes/portalFinancialClaimsRoutes");
 const superAdminFinancialCenterRoutes = require("./routes/superAdminFinancialCenterRoutes");
@@ -28,10 +31,13 @@ const financialUserRoutes = require("./routes/financialUserRoutes");
 const superAdminFinancialClaimsRoutes = require("./routes/superAdminFinancialClaimsRoutes");
 const superAdminAnalyticsRoutes = require("./routes/superAdminAnalyticsRoutes");
 const superAdminAdminsRoutes = require("./routes/superAdminAdminsRoutes");
+const rateLimitExemptionsRoutes = require("./routes/rateLimitExemptionsRoutes");
 const superAdminWebsiteRoutes = require("./routes/superAdminWebsiteRoutes");
+const mobilePaymentReturnRoutes = require("./routes/mobilePaymentReturnRoutes");
 const publicRoutes = require("./routes/publicRoutes");
 const translationRoutes = require("./routes/translationRoutes");
 const internalAutomationRoutes = require("./routes/internalAutomationRoutes");
+const fazatIntegrationRoutes = require("./routes/fazatIntegrationRoutes");
 const { notFoundMiddleware, errorMiddleware } = require("./middleware/errorMiddleware");
 const { requestTimingMiddleware } = require("./middleware/requestTimingMiddleware");
 const { applySecurityHeaders } = require("./middleware/securityHeaders");
@@ -73,6 +79,17 @@ if (trustProxy === "0" || trustProxy === "false") {
 
 // Stripe webhooks require the raw body for signature verification (must run before express.json()).
 app.use("/api/webhooks/stripe", express.raw({ type: "application/json" }), stripeWebhookRoutes);
+
+// FAZ3AT partner API: capture raw body for HMAC before the global JSON parser.
+app.use(
+  "/api/integrations/fazat",
+  express.json({
+    verify: (req, _res, buf) => {
+      req.rawBody = Buffer.isBuffer(buf) ? buf : Buffer.from(buf || "");
+    },
+  }),
+  fazatIntegrationRoutes,
+);
 
 applySecurityHeaders(app);
 
@@ -117,6 +134,8 @@ app.use("/api/admin", adminSubscriptionsRoutes);
 app.use("/api/admin", adminOrdersRoutes);
 app.use("/api/admin", adminCoursesRoutes);
 app.use("/api/admin", adminFakeOrdersRoutes);
+app.use("/api/admin", institutionalStorageRoutes);
+app.use("/api/institution", institutionPoolRoutes);
 app.use("/api/admin", adminAdsRoutes);
 app.use("/api/freelancer", freelancerSubscriptionsRoutes);
 app.use("/api/freelancer", freelancerCoursesRoutes);
@@ -127,9 +146,14 @@ app.use("/api/financial-user", financialUserRoutes);
 app.use("/api/super-admin", superAdminFinancialClaimsRoutes);
 app.use("/api/super-admin", superAdminAdminsRoutes);
 app.use("/api/super-admin", superAdminWebsiteRoutes);
+app.use("/api/super-admin", rateLimitExemptionsRoutes);
 app.use("/api/superadmin", superAdminAnalyticsRoutes);
 app.use("/api", ordersRoutes);
 app.use("/api", notificationsRoutes);
+app.use("/api", deviceTokensRoutes);
+
+// Mobile Stripe return bridge (HTTPS → custom scheme). Not under /api — public GET for Stripe redirect.
+app.use(mobilePaymentReturnRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

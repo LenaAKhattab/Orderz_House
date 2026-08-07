@@ -6,7 +6,13 @@ const {
 const notificationEventsService = require("./notificationEventsService");
 const notificationService = require("./notificationService");
 const freelancerSubscriptionPaymentNotifications = require("./freelancerSubscriptionPaymentNotifications");
-const { getActivationFeeStatus } = require("./subscriptionActivationFeeService");
+const { getActivationFeeStatus, markActivationFeePaidOffline } = require("./subscriptionActivationFeeService");
+const {
+  getActiveMarketplaceBlockingHold,
+  RENEWAL_FAILED_COPY,
+  clearPaymentFailureHoldsForFreelancer,
+  CLEAR_SOURCE,
+} = require("./freelancerAccountHoldsService");
 
 function isMissingTableError(err) {
   return err && (err.code === "42P01" || String(err.message || "").includes("does not exist"));
@@ -152,6 +158,16 @@ function mapSubscription(row) {
     stripePaymentIntentId: row.stripe_payment_intent_id || null,
     paidAt: row.paid_at || null,
     firstOrderId: row.first_order_id ? String(row.first_order_id) : null,
+    billingMode: row.billing_mode || null,
+    stripeSubscriptionId: row.stripe_subscription_id || null,
+    stripeCustomerId: row.stripe_customer_id || null,
+    stripePriceId: row.stripe_price_id || null,
+    currentPeriodStart: row.current_period_start || null,
+    currentPeriodEnd: row.current_period_end || null,
+    lastPaymentAt: row.last_payment_at || null,
+    nextRenewalAt: row.next_renewal_at || null,
+    paymentFailureAt: row.payment_failure_at || null,
+    paymentFailureCode: row.payment_failure_code || null,
     notes: row.notes,
     cancelledAt: row.cancelled_at,
     endedAt: row.ended_at,
@@ -264,34 +280,187 @@ async function endCurrentSubscription({ freelancerUserId, endedAt = new Date() }
   );
 }
 
+const ADMIN_ASSIGNMENT_OFFLINE_PAYMENT_NOTE = "Plan assigned and paid offline by staff";
+const ADMIN_ASSIGNMENT_ACTIVATION_FEE_NOTE =
+  "Activation fee included with Admin plan assignment (offline)";
+
+async function loadPlanPricingForAssignment(planId, client) {
+  const runner = client || pool;
+  const { rows } = await runner.query(
+    `SELECT id, name, title, price_jod, currency, duration_days, is_active, deleted_at
+     FROM plans
+     WHERE id = $1::bigint
+     LIMIT 1`,
+    [Number(planId)],
+  );
+  const plan = rows[0];
+  if (!plan || plan.deleted_at) {
+    const err = new Error("Plan not found.");
+    err.statusCode = 404;
+    throw err;
+  }
+  if (!plan.is_active) {
+    const err = new Error("Plan is inactive.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const priceJod = plan.price_jod != null ? Number(plan.price_jod) : 0;
+  const isFree =
+    isOrderzhouseFreePlan({ id: plan.id, name: plan.name }) ||
+    (Number.isFinite(priceJod) && priceJod <= 0);
+  return {
+    id: Number(plan.id),
+    name: plan.name,
+    title: plan.title,
+    priceJod: Number.isFinite(priceJod) ? priceJod : 0,
+    currency: String(plan.currency || "JOD").toUpperCase(),
+    durationDays: Number(plan.duration_days),
+    isFree,
+  };
+}
+
+/**
+ * Mark subscription + yearly activation fee as paid offline for staff assignment.
+ * Idempotent for activation fee via markActivationFeePaidOffline.
+ */
+async function applyAdminAssignmentOfflinePayments(
+  {
+    actorUserId,
+    freelancerUserId,
+    subscriptionId,
+    planPricing,
+    paidAt = new Date(),
+  },
+  client,
+) {
+  const runner = client || pool;
+  const when = paidAt instanceof Date ? paidAt : new Date(paidAt);
+  const uid = Number(freelancerUserId);
+  const sid = Number(subscriptionId);
+  const actor = actorUserId != null ? Number(actorUserId) : null;
+
+  const paymentStatus = planPricing.isFree
+    ? SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED
+    : SUBSCRIPTION_PAYMENT_STATUSES.PAID;
+
+  const { rows: updated } = await runner.query(
+    `UPDATE freelancer_subscriptions
+     SET payment_status = $2::varchar,
+         paid_at = CASE
+           WHEN $2::text = 'paid' THEN COALESCE(paid_at, $3::timestamptz)
+           ELSE paid_at
+         END,
+         activation_status = 'company_approved',
+         company_activated_at = COALESCE(company_activated_at, $3::timestamptz),
+         company_activated_by_user_id = COALESCE(company_activated_by_user_id, $4),
+         notes = CASE
+           WHEN notes IS NULL OR btrim(notes) = '' THEN $5::text
+           WHEN position($5::text in notes) > 0 THEN notes
+           ELSE notes || E'\n' || $5::text
+         END,
+         updated_at = NOW()
+     WHERE id = $1::bigint
+       AND freelancer_user_id = $6::bigint
+     RETURNING *`,
+    [
+      sid,
+      paymentStatus,
+      when,
+      actor,
+      ADMIN_ASSIGNMENT_OFFLINE_PAYMENT_NOTE,
+      uid,
+    ],
+  );
+
+  if (!updated[0]) {
+    const err = new Error("Subscription not found for offline payment update.");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const feeResult = await markActivationFeePaidOffline(
+    {
+      adminUserId: actor,
+      freelancerUserId: uid,
+      notes: ADMIN_ASSIGNMENT_ACTIVATION_FEE_NOTE,
+      paidAt: when,
+    },
+    runner,
+  );
+
+  return {
+    subscription: mapSubscription(updated[0]),
+    paymentStatus,
+    subscriptionFee: planPricing.isFree
+      ? { required: false, amountJod: 0, status: SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED }
+      : {
+          required: true,
+          amountJod: planPricing.priceJod,
+          currency: planPricing.currency,
+          status: SUBSCRIPTION_PAYMENT_STATUSES.PAID,
+          method: "admin_offline",
+          paidAt: when,
+        },
+    activationFee: feeResult,
+  };
+}
+
 async function assignPlanToFreelancer({ actorUserId, freelancerUserId, planId, notes = null }) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
     await assertUserIsFreelancer(freelancerUserId, client);
-    const durationDays = await getPlanDurationDays(planId, client);
+    const plansService = require("./plansService");
+    const resolved = await plansService.resolveAssignableSubscriptionPlanId(planId, client);
+    const assignmentPlanId = resolved.assignmentPlanId;
+    const planPricing = await loadPlanPricingForAssignment(assignmentPlanId, client);
+    const durationDays = planPricing.durationDays;
+    const paidAt = new Date();
+
+    const assignmentNotes = [notes, ADMIN_ASSIGNMENT_OFFLINE_PAYMENT_NOTE]
+      .map((n) => (n != null ? String(n).trim() : ""))
+      .filter(Boolean)
+      .join("\n");
 
     // End any current subscription (history preserved)
     await endCurrentSubscription({ freelancerUserId }, client);
+
+    const paymentStatus = planPricing.isFree
+      ? SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED
+      : SUBSCRIPTION_PAYMENT_STATUSES.PAID;
 
     const { rows } = await client.query(
       `INSERT INTO freelancer_subscriptions (
         freelancer_user_id, plan_id, assigned_by_user_id, notes,
         status, has_first_order, first_order_date, actual_start_date, expiry_date,
-        is_current, source, payment_status, activation_status
-      ) VALUES ($1,$2,$3,$4,$5,FALSE,NULL,NULL,NULL,TRUE,$6,$7,$8)
+        is_current, source, payment_status, activation_status,
+        paid_at, company_activated_at, company_activated_by_user_id
+      ) VALUES ($1,$2,$3,$4,$5,FALSE,NULL,NULL,NULL,TRUE,$6,$7,$8,$9,$10,$11)
       RETURNING *`,
       [
         Number(freelancerUserId),
-        Number(planId),
+        Number(assignmentPlanId),
         actorUserId ? Number(actorUserId) : null,
-        notes,
+        assignmentNotes || null,
         SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED,
         SUBSCRIPTION_SOURCES.ADMIN,
-        SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED,
+        paymentStatus,
         SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED,
+        planPricing.isFree ? null : paidAt,
+        paidAt,
+        actorUserId ? Number(actorUserId) : null,
       ],
+    );
+
+    const feeResult = await markActivationFeePaidOffline(
+      {
+        adminUserId: actorUserId ? Number(actorUserId) : null,
+        freelancerUserId: Number(freelancerUserId),
+        notes: ADMIN_ASSIGNMENT_ACTIVATION_FEE_NOTE,
+        paidAt,
+      },
+      client,
     );
 
     const subscription = mapSubscription(rows[0]);
@@ -302,17 +471,147 @@ async function assignPlanToFreelancer({ actorUserId, freelancerUserId, planId, n
           actorUserId: actorUserId ? Number(actorUserId) : null,
           type: "subscription.assigned",
           title: "تم تعيين اشتراك لك",
-          message: "تم تعيين باقة اشتراك لك من الإدارة.",
+          message: "تم تعيين باقة اشتراك لك من الإدارة (مدفوعة أوفلاين).",
           priority: "high",
           dedupeKey: `subscription_assigned_${String(rows[0].id)}`,
-          metadata: { subscriptionId: String(rows[0].id), planId: String(planId) },
+          metadata: {
+            subscriptionId: String(rows[0].id),
+            planId: String(assignmentPlanId),
+            selectedPlanId: String(resolved.selectedPlanId),
+            displayPlanId: resolved.displayPlanId != null ? String(resolved.displayPlanId) : null,
+            resolvedFromDisplay: resolved.resolvedFromDisplay === true,
+            subscriptionPaymentStatus: paymentStatus,
+            activationFeeRecorded: feeResult.recorded === true,
+            offlinePaidByStaff: true,
+          },
         },
         client,
       ),
     );
-    const activationFeeStatus = await getActivationFeeStatus(freelancerUserId, client);
+
     await client.query("COMMIT");
-    return { subscription, durationDays, activationFeeStatus };
+
+    const activationFeeStatus = await getActivationFeeStatus(freelancerUserId);
+    const eligibility = await canFreelancerTakeOrders(String(freelancerUserId));
+
+    return {
+      subscription,
+      durationDays,
+      activationFeeStatus,
+      eligibility,
+      offlinePayments: {
+        subscriptionFee: planPricing.isFree
+          ? { required: false, amountJod: 0, status: SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED }
+          : {
+              required: true,
+              amountJod: planPricing.priceJod,
+              currency: planPricing.currency,
+              status: SUBSCRIPTION_PAYMENT_STATUSES.PAID,
+              method: "admin_offline",
+              paidAt,
+            },
+        activationFee: {
+          recorded: feeResult.recorded === true,
+          alreadyPaid: feeResult.alreadyPaid === true,
+          amountJod: activationFeeStatus?.amountJod ?? null,
+          status: "paid_offline",
+        },
+      },
+      resolvedPlan: {
+        assignmentPlanId: String(assignmentPlanId),
+        selectedPlanId: String(resolved.selectedPlanId),
+        displayPlanId: resolved.displayPlanId != null ? String(resolved.displayPlanId) : null,
+        resolvedFromDisplay: resolved.resolvedFromDisplay === true,
+        planTitle: planPricing.title || planPricing.name || null,
+      },
+    };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Apply offline subscription + activation payments to an existing current admin subscription
+ * without creating a new subscription row (data correction / backfill).
+ */
+async function applyOfflinePaymentsToExistingAdminAssignment({
+  actorUserId,
+  freelancerUserId,
+  subscriptionId,
+  expectedPlanId = null,
+}) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const { rows } = await client.query(
+      `SELECT fs.*, p.price_jod, p.name AS plan_name, p.title AS plan_title, p.currency
+       FROM freelancer_subscriptions fs
+       JOIN plans p ON p.id = fs.plan_id
+       WHERE fs.id = $1::bigint
+       FOR UPDATE`,
+      [Number(subscriptionId)],
+    );
+    const sub = rows[0];
+    if (!sub) {
+      const err = new Error("Subscription not found.");
+      err.statusCode = 404;
+      throw err;
+    }
+    if (Number(sub.freelancer_user_id) !== Number(freelancerUserId)) {
+      const err = new Error("Subscription does not belong to the specified freelancer.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (sub.is_current !== true) {
+      const err = new Error("Subscription is not the current subscription.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (String(sub.source || "").toLowerCase() !== SUBSCRIPTION_SOURCES.ADMIN) {
+      const err = new Error("Subscription is not an Admin assignment.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (expectedPlanId != null && Number(sub.plan_id) !== Number(expectedPlanId)) {
+      const err = new Error("Subscription plan does not match expected canonical plan.");
+      err.statusCode = 409;
+      throw err;
+    }
+    if (String(sub.status) !== SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED) {
+      const err = new Error("Subscription status is not assigned_not_started.");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const planPricing = await loadPlanPricingForAssignment(sub.plan_id, client);
+    const offline = await applyAdminAssignmentOfflinePayments(
+      {
+        actorUserId,
+        freelancerUserId,
+        subscriptionId: sub.id,
+        planPricing,
+      },
+      client,
+    );
+
+    await client.query("COMMIT");
+
+    const activationFeeStatus = await getActivationFeeStatus(freelancerUserId);
+    const eligibility = await canFreelancerTakeOrders(String(freelancerUserId));
+
+    return {
+      subscription: offline.subscription,
+      offlinePayments: {
+        subscriptionFee: offline.subscriptionFee,
+        activationFee: offline.activationFee,
+      },
+      activationFeeStatus,
+      eligibility,
+    };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -1084,9 +1383,18 @@ function mapActivationQueueSubscription(row) {
 }
 
 /**
- * Activation dashboard queue: company-pending activations + dashboard admin-assigned follow-up.
+ * Escape `%`, `_`, and `\` for PostgreSQL ILIKE … ESCAPE '\' patterns.
+ * Literal wildcards in the user query must not broaden the match unintentionally.
  */
-async function listActivationQueueSubscriptions({ page = 1, limit = 20 } = {}) {
+function escapeIlikePattern(raw) {
+  return String(raw).replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
+/**
+ * Activation dashboard queue: company-pending activations + dashboard admin-assigned follow-up.
+ * Optional `search` filters freelancers by name parts, full name, or email within the same queue WHERE.
+ */
+async function listActivationQueueSubscriptions({ page = 1, limit = 20, search = null } = {}) {
   const { enrichSubscriptionsWithPaymentCountry } = require("./stripeSubscriptionCountryService");
 
   const pg = Math.max(1, Number(page) || 1);
@@ -1098,11 +1406,34 @@ async function listActivationQueueSubscriptions({ page = 1, limit = 20 } = {}) {
      LEFT JOIN plans p ON p.id = fs.plan_id
      LEFT JOIN users ab ON ab.id = fs.assigned_by_user_id`;
 
+  const values = [];
+  let whereSql = ACTIVATION_QUEUE_WHERE_SQL;
+
+  const searchTerm = search != null ? String(search).trim() : "";
+  if (searchTerm) {
+    const pattern = `%${escapeIlikePattern(searchTerm)}%`;
+    values.push(pattern);
+    const p = `$${values.length}`;
+    // ILIKE is case-insensitive for Latin; Arabic is matched as stored. ESCAPE keeps %/_ literal.
+    whereSql = `${ACTIVATION_QUEUE_WHERE_SQL}
+  AND (
+    u.first_name ILIKE ${p} ESCAPE '\\'
+    OR u.father_name ILIKE ${p} ESCAPE '\\'
+    OR u.family_name ILIKE ${p} ESCAPE '\\'
+    OR u.email ILIKE ${p} ESCAPE '\\'
+    OR CONCAT_WS(' ', u.first_name, u.father_name, u.family_name) ILIKE ${p} ESCAPE '\\'
+  )`;
+  }
+
   const countRes = await pool.query(
-    `SELECT COUNT(*)::int AS total ${fromJoin} WHERE ${ACTIVATION_QUEUE_WHERE_SQL}`,
+    `SELECT COUNT(*)::int AS total ${fromJoin} WHERE ${whereSql}`,
+    values,
   );
   const total = countRes.rows[0]?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / lim));
+
+  const limitParam = values.length + 1;
+  const offsetParam = values.length + 2;
 
   const { rows } = await pool.query(
     `SELECT
@@ -1123,10 +1454,10 @@ async function listActivationQueueSubscriptions({ page = 1, limit = 20 } = {}) {
        ab.family_name AS assigned_by_family_name,
        ab.email AS assigned_by_email
      ${fromJoin}
-     WHERE ${ACTIVATION_QUEUE_WHERE_SQL}
+     WHERE ${whereSql}
      ORDER BY ${ACTIVATION_QUEUE_ORDER_SQL}
-     LIMIT $1 OFFSET $2`,
-    [lim, offset],
+     LIMIT $${limitParam} OFFSET $${offsetParam}`,
+    [...values, lim, offset],
   );
 
   const mapped = rows.map(mapActivationQueueSubscription).filter(Boolean);
@@ -1270,10 +1601,26 @@ function applyActivationFeeEligibilityGate(eligibility, feeStatus) {
 }
 
 async function canFreelancerTakeOrders(freelancerUserId) {
+  const hold = await getActiveMarketplaceBlockingHold(freelancerUserId);
+  if (hold) {
+    const feeStatus = await getActivationFeeStatus(freelancerUserId);
+    return {
+      eligible: false,
+      reason: "account_hold_payment_failed",
+      hold,
+      freezeMessage: RENEWAL_FAILED_COPY.ar,
+      freezeMessageEn: RENEWAL_FAILED_COPY.en,
+      activationFeeStatus: feeStatus,
+    };
+  }
   const sub = await getCurrentSubscriptionForFreelancer(freelancerUserId);
   const base = evaluateFreelancerTakeOrdersEligibility(sub);
   const feeStatus = await getActivationFeeStatus(freelancerUserId);
-  return applyActivationFeeEligibilityGate(base, feeStatus);
+  const gated = applyActivationFeeEligibilityGate(base, feeStatus);
+  return {
+    ...gated,
+    activationFeeStatus: feeStatus,
+  };
 }
 
 function shouldRetainCurrentSubscription(sub) {
@@ -1574,6 +1921,67 @@ async function cleanupAbandonedStripePendingSubscriptionsWithFreePlanFallback({
   };
 }
 
+async function adminClearPaymentFailureHold({
+  actorUserId,
+  freelancerUserId,
+  reason = null,
+}) {
+  const uid = Number(freelancerUserId);
+  const actor = Number(actorUserId);
+  if (!Number.isInteger(uid) || uid < 1) {
+    const err = new Error("Invalid freelancer user id.");
+    err.statusCode = 400;
+    throw err;
+  }
+  if (!Number.isInteger(actor) || actor < 1) {
+    const err = new Error("Invalid admin user id.");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const holds = await clearPaymentFailureHoldsForFreelancer(
+      {
+        freelancerUserId: uid,
+        clearSource: CLEAR_SOURCE.ADMIN,
+        actorAdminId: actor,
+        clearReason: reason || "Admin manual reactivation (does not fabricate Stripe payment)",
+      },
+      client,
+    );
+
+    // Restore payment_status only when Stripe later confirms payment — admin clears hold only.
+    // Optionally mark notes on current recurring sub.
+    await client.query(
+      `UPDATE freelancer_subscriptions
+       SET notes = CONCAT(COALESCE(notes, ''), CASE WHEN notes IS NULL OR notes = '' THEN '' ELSE E'\n' END,
+                          $2::text),
+           updated_at = NOW()
+       WHERE freelancer_user_id = $1
+         AND is_current = TRUE
+         AND billing_mode = 'recurring_stripe'`,
+      [
+        uid,
+        `Admin cleared payment-failure marketplace hold at ${new Date().toISOString()} by user ${actor}` +
+          (reason ? `: ${String(reason).slice(0, 500)}` : ""),
+      ],
+    );
+
+    await client.query("COMMIT");
+    return {
+      clearedHolds: holds,
+      note: "Marketplace hold cleared. This does not mark a Stripe invoice as paid.",
+    };
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 /** @deprecated Real pool access is gated by plan value range in planOrderValueEligibility only. */
 async function assertFreelancerMayAccessRealPoolOrders(_freelancerUserId) {}
 
@@ -1582,9 +1990,15 @@ module.exports = {
   SUBSCRIPTION_SOURCES,
   SUBSCRIPTION_PAYMENT_STATUSES,
   SUBSCRIPTION_ACTIVATION_STATUSES,
+  ADMIN_ASSIGNMENT_OFFLINE_PAYMENT_NOTE,
+  ADMIN_ASSIGNMENT_ACTIVATION_FEE_NOTE,
+  escapeIlikePattern,
   mapSubscription,
   getFreelancerIdentitySnapshot,
   assignPlanToFreelancer,
+  applyAdminAssignmentOfflinePayments,
+  applyOfflinePaymentsToExistingAdminAssignment,
+  loadPlanPricingForAssignment,
   updateSubscription,
   listSubscriptions,
   listActivationQueueSubscriptions,
@@ -1595,6 +2009,7 @@ module.exports = {
   fulfillFreelancerSubscriptionStripePayment,
   markFreelancerSubscriptionStripePaymentPaid,
   markFreelancerSubscriptionStripePaymentFailed,
+  endCurrentSubscription,
   activateCompanyApprovalForSubscription,
   canFreelancerTakeOrders,
   applyActivationFeeEligibilityGate,
@@ -1608,5 +2023,6 @@ module.exports = {
   isFreelancerOnFreePlan,
   assertFreelancerMayAccessRealPoolOrders,
   ensureFreePlanInFakeSettingsPlans,
+  adminClearPaymentFailureHold,
 };
 

@@ -49,29 +49,26 @@ describe("resetPasswordLimiter", () => {
     const src = fs.readFileSync(p, "utf8");
     assert.ok(src.includes("resetPasswordLimiter"), "resetPasswordLimiter defined");
     assert.ok(
-      src.includes("ipKeyGenerator"),
-      "keyGenerator must use ipKeyGenerator for IPv6-safe limiting (express-rate-limit)",
+      src.includes("clientIpKey") || src.includes("ipKeyGenerator"),
+      "keyGenerator must use IPv6-safe IP key helper",
     );
     assert.ok(
-      src.includes('rateLimitJsonHandler("تم تجاوز عدد محاولات إعادة تعيين كلمة المرور، حاول لاحقاً")'),
-      "reset password uses Arabic handler like other limiters",
+      src.includes("auth_reset_password") &&
+        src.includes("تم تجاوز عدد محاولات إعادة تعيين كلمة المرور، حاول لاحقاً"),
+      "reset password uses named Arabic handler",
     );
     assert.ok(src.includes("RATE_LIMITED_CODE"), "handler uses RATE_LIMITED_CODE via rateLimitJsonHandler");
   });
 
   it("429 response contract matches otpVerifyLimiter (success/message/code)", () => {
     assert.strictEqual(RATE_LIMITED_CODE, "RATE_LIMITED");
-    const limitersSrc = fs.readFileSync(path.join(__dirname, "..", "src", "middleware", "rateLimiters.js"), "utf8");
+    const helpersSrc = fs.readFileSync(path.join(__dirname, "..", "src", "middleware", "rateLimitHelpers.js"), "utf8");
+    assert.ok(helpersSrc.includes("res.status(429).json"), "handler uses 429 + JSON body like other limiters");
     assert.ok(
-      limitersSrc.includes("res.status(429).json"),
-      "handler uses 429 + JSON body like other limiters",
-    );
-    assert.ok(
-      limitersSrc.includes("success: false") && limitersSrc.includes("code: RATE_LIMITED_CODE"),
+      helpersSrc.includes("success: false") && helpersSrc.includes("code: RATE_LIMITED_CODE"),
       "429 payload includes success false and code",
     );
   });
-
   it("resetPasswordLimiter mirrors otpVerifyLimiter window and max (5 / 10 min)", () => {
     const p = path.join(__dirname, "..", "src", "middleware", "rateLimiters.js");
     const src = fs.readFileSync(p, "utf8");

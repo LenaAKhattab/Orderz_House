@@ -6,6 +6,28 @@ const SAFE_OTP_EMAIL_AR = "تعذر إرسال رسالة رمز التحقق. �
 
 const EMAIL_SEND_TIMEOUT_MS = Number(process.env.EMAIL_SEND_TIMEOUT_MS || 12000);
 
+/**
+ * Explicit local mock email delivery.
+ * Production can never mock — even if EMAIL_DELIVERY_MODE=mock is mis-set.
+ * Also activates in development when RESEND_API_KEY is unset (legacy local path).
+ * Does NOT activate merely because Resend returns an error.
+ */
+function isMockEmailDeliveryEnabled() {
+  if (process.env.NODE_ENV === "production") return false;
+
+  const mode = String(process.env.EMAIL_DELIVERY_MODE || "")
+    .trim()
+    .toLowerCase();
+  if (mode === "mock") {
+    return process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
+  }
+
+  if (process.env.NODE_ENV === "development" && !process.env.RESEND_API_KEY) {
+    return true;
+  }
+  return false;
+}
+
 function getResend() {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
@@ -22,13 +44,17 @@ function fromAddress() {
   return process.env.EMAIL_FROM || "noreply@orderzhouse.com";
 }
 
-function devLogOtp(kind, email) {
-  if (process.env.NODE_ENV === "development" && !process.env.RESEND_API_KEY) {
-    // eslint-disable-next-line no-console
-    console.warn(`[email:dev] ${kind} → ${email} | OTP redacted (set RESEND_API_KEY to send real mail)`);
-    return true;
-  }
-  return false;
+/**
+ * Development-only mock: log OTP to the local backend console (never in production).
+ * @returns {boolean} true when mock handled the send
+ */
+function mockSendOtp(kind, email, otpPlain) {
+  if (!isMockEmailDeliveryEnabled()) return false;
+  // eslint-disable-next-line no-console
+  console.warn(
+    `[email:dev-mock] DEVELOPMENT ONLY — no Resend call | kind=${kind} | to=${email} | otp=${otpPlain}`,
+  );
+  return true;
 }
 
 /**
@@ -80,7 +106,7 @@ function wrapOtpEmailError(error) {
  * @param {string} otpPlain six digits
  */
 async function sendRegisterOtpEmail(email, otpPlain) {
-  if (devLogOtp("register", email)) {
+  if (mockSendOtp("register", email, otpPlain)) {
     return { id: "dev_console" };
   }
   const resend = getResend();
@@ -115,7 +141,7 @@ async function sendRegisterOtpEmail(email, otpPlain) {
  * @param {string} otpPlain six digits
  */
 async function sendForgotPasswordOtpEmail(email, otpPlain) {
-  if (devLogOtp("forgot_password", email)) {
+  if (mockSendOtp("forgot_password", email, otpPlain)) {
     return { id: "dev_console" };
   }
   const resend = getResend();
@@ -149,7 +175,7 @@ async function sendForgotPasswordOtpEmail(email, otpPlain) {
 /**
  * Sends an internal admin notification email (HTML) for a newly-paid subscription.
  * Best-effort: callers wrap this in try/catch (safeNotify) so a delivery failure never breaks the payment flow.
- * In development without RESEND_API_KEY, logs a safe summary to the console instead of sending.
+ * In development mock mode, logs a safe summary to the console instead of sending.
  * @param {{ to: string, subject: string, html: string }} params
  */
 async function sendPaidSubscriptionAdminEmail({ to, subject, html } = {}) {
@@ -160,10 +186,10 @@ async function sendPaidSubscriptionAdminEmail({ to, subject, html } = {}) {
     });
   }
 
-  if (process.env.NODE_ENV === "development" && !process.env.RESEND_API_KEY) {
+  if (isMockEmailDeliveryEnabled()) {
     // eslint-disable-next-line no-console
     console.warn(
-      `[email:dev] paid_subscription_admin_notification → ${recipient} | ${subject} (set RESEND_API_KEY to send real mail)`,
+      `[email:dev-mock] DEVELOPMENT ONLY — no Resend call | kind=paid_subscription_admin_notification | to=${recipient} | subject=${subject}`,
     );
     return { id: "dev_console" };
   }
@@ -200,4 +226,5 @@ module.exports = {
   sendForgotPasswordOtpEmail,
   sendPaidSubscriptionAdminEmail,
   EMAIL_SEND_TIMEOUT_MS,
+  isMockEmailDeliveryEnabled,
 };

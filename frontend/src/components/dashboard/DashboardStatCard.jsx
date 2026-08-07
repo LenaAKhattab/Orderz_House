@@ -1,4 +1,4 @@
-const skelBar = "dash-ui-skeleton-rows__bar block rounded-md bg-slate-200/90";
+const skelBar = "dash-ui-skeleton-rows__bar block rounded-md bg-[color:var(--dash-skel-from,#e5e9ef)]";
 
 /**
  * KPI tile — optional icon chip, label, value, hint and/or trend (presentation only).
@@ -26,22 +26,22 @@ export default function DashboardStatCard({ label, value, hint, scopeLabel, tren
           </div>
         ) : null}
         <div className="min-w-0 flex-1">
-          <p className="dash-ui-stat-card__label m-0 text-[0.72rem] font-semibold leading-snug text-slate-500">{label}</p>
+          <p className="dash-ui-stat-card__label m-0 text-[0.8125rem] font-semibold leading-snug text-[color:var(--dash-text-secondary,#4b5563)]">{label}</p>
           {scopeLabel ? (
             <p className="sa-metric-scope m-0 mt-0.5" aria-label={`نطاق البيانات: ${scopeLabel}`}>
               {scopeLabel}
             </p>
           ) : null}
-          <p className="dash-ui-stat-card__value m-0 mt-1 text-2xl font-bold tracking-tight text-slate-900 tabular-nums">
+          <p className="dash-ui-stat-card__value m-0 mt-1 text-2xl font-bold tracking-tight text-[color:var(--dash-text,#172033)] tabular-nums">
             {value}
           </p>
         </div>
       </div>
       {trend ? (
-        <div className="dash-ui-stat-card__trend mt-3 text-[0.78rem] font-semibold leading-snug text-slate-600">{trend}</div>
+        <div className="dash-ui-stat-card__trend mt-3 text-[0.8125rem] font-semibold leading-snug text-[color:var(--dash-text-secondary,#4b5563)]">{trend}</div>
       ) : null}
       {hint ? (
-        <p className={`dash-ui-stat-card__hint m-0 text-[0.75rem] leading-snug text-slate-400 ${trend ? "mt-1.5" : "mt-3"}`}>
+        <p className={`dash-ui-stat-card__hint m-0 text-[0.8125rem] leading-snug text-[color:var(--dash-text-muted,#667085)] ${trend ? "mt-1.5" : "mt-3"}`}>
           {hint}
         </p>
       ) : null}

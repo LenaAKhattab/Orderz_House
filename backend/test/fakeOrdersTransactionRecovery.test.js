@@ -11,7 +11,8 @@ const fakeOrdersSrc = fs.readFileSync(
 
 describe("fakeOrders transaction recovery", () => {
   it("uses SAVEPOINT around training round generation", () => {
-    assert.match(fakeOrdersSrc, /withSavepoint\(client, "training_round_generation"/);
+    assert.match(fakeOrdersSrc, /withSavepoint\(client, "training_round_gen"/);
+    assert.match(fakeOrdersSrc, /withSavepoint\(client, "training_round_rotation"/);
     assert.match(fakeOrdersSrc, /withSavepoint\(client, "manual_round_gen"/);
   });
 
@@ -22,11 +23,12 @@ describe("fakeOrders transaction recovery", () => {
     assert.match(fakeOrdersSrc, /isPgTransactionAbortedError/);
   });
 
-  it("clears session advisory lock when pool client is released", () => {
+  it("does not unlock advisory locks asynchronously on pool release (avoids pg concurrent-query race)", () => {
     const dbSrc = fs.readFileSync(path.join(__dirname, "..", "src", "config", "db.js"), "utf8");
-    assert.match(dbSrc, /pool\.on\("release"/);
-    assert.match(dbSrc, /pg_advisory_unlock/);
+    assert.doesNotMatch(dbSrc, /pool\.on\(\s*["']release["']/);
     assert.match(dbSrc, /GENERATION_ADVISORY_LOCK_KEY/);
+    assert.match(dbSrc, /INSTITUTIONAL_RELEASE_ADVISORY_LOCK_KEY/);
+    assert.match(dbSrc, /Do NOT unlock from pool "release"/);
   });
 
   it("ensureMinimumVisibleFakeOrders retries on LOCK_BUSY for pool recovery", () => {

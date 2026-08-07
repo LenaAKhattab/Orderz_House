@@ -1,6 +1,27 @@
-import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
+import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi.js";
 
 const SUBSCRIPTION_ADMIN_TZ = "Asia/Amman";
+
+/**
+ * Stable Super Admin date-only: DD/MM/YYYY (Latin digits, Amman TZ).
+ */
+export function formatSubscriptionAdminDate(value) {
+  if (!value) return "—";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  try {
+    return new Intl.DateTimeFormat("en-GB", {
+      timeZone: SUBSCRIPTION_ADMIN_TZ,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(date);
+  } catch {
+    return "—";
+  }
+}
 
 /**
  * Stable Arabic admin date/time: DD/MM/YYYY، h:mm م|ص (Latin digits, Amman TZ).
@@ -12,12 +33,8 @@ export function formatSubscriptionAdminDateTime(value) {
   if (Number.isNaN(date.getTime())) return "—";
 
   try {
-    const datePart = new Intl.DateTimeFormat("en-GB", {
-      timeZone: SUBSCRIPTION_ADMIN_TZ,
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(date);
+    const datePart = formatSubscriptionAdminDate(value);
+    if (datePart === "—") return "—";
 
     const timePart = new Intl.DateTimeFormat("ar", {
       timeZone: SUBSCRIPTION_ADMIN_TZ,
@@ -34,10 +51,158 @@ export function formatSubscriptionAdminDateTime(value) {
 
 export function activationStatusLabel(status) {
   const s = String(status || "").trim().toLowerCase();
-  if (s === "company_pending") return "بانتظار تفعيل الشركة";
-  if (s === "company_approved") return "مفعّل";
-  if (s === "company_rejected") return "مرفوض";
+  if (s === "company_pending") return "بانتظار موافقة الشركة";
+  if (s === "company_approved") return "موافقة الشركة مكتملة";
+  if (s === "company_rejected") return "مرفوض من الشركة";
   return status || "—";
+}
+
+/**
+ * Distinguishes company approval vs fee vs full marketplace eligibility.
+ * Prefer this over a single "مفعّل" badge when eligibility is known.
+ */
+export function describeFreelancerAdminEligibilityState({
+  eligibility = null,
+  subscription = null,
+  activationFeeStatus = null,
+} = {}) {
+  const reason = String(eligibility?.reason || "").trim().toLowerCase();
+  const activation = String(
+    subscription?.activationStatus || subscription?.activation_status || "",
+  )
+    .trim()
+    .toLowerCase();
+  const status = String(subscription?.status || subscription?.subscriptionStatus || "")
+    .trim()
+    .toLowerCase();
+  const feeNeedsPayment =
+    activationFeeStatus?.needsPayment === true ||
+    eligibility?.activationFeeStatus?.needsPayment === true ||
+    reason === "activation_fee_unpaid";
+  const feePaid =
+    activationFeeStatus?.isCurrent === true ||
+    eligibility?.activationFeeStatus?.isCurrent === true ||
+    (activationFeeStatus?.needsPayment === false && activationFeeStatus != null);
+
+  if (eligibility?.eligible === true) {
+    return {
+      code: "fully_eligible",
+      label: "المستخدم مؤهل لاستلام الطلبات",
+      tone: "success",
+      canTakeOrders: true,
+    };
+  }
+
+  if (reason === "plan_configuration_error" || reason === "order_value_outside_plan_range") {
+    return {
+      code: "plan_configuration_error",
+      label: "الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات",
+      tone: "warning",
+      canTakeOrders: false,
+    };
+  }
+
+  if (["expired", "status_inactive", "status_cancelled", "invalid_status"].includes(reason) ||
+      ["expired", "inactive", "cancelled"].includes(status)) {
+    return {
+      code: "blocked_or_ended",
+      label: subscriptionStatusLabel(status) !== "—"
+        ? `الاشتراك: ${subscriptionStatusLabel(status)}`
+        : eligibilityReasonAdminMessage(reason, subscription),
+      tone: "danger",
+      canTakeOrders: false,
+    };
+  }
+
+  if (activation === "company_pending" || reason === "company_activation_pending") {
+    return {
+      code: "company_pending",
+      label: "بانتظار موافقة الشركة",
+      tone: "warning",
+      canTakeOrders: false,
+    };
+  }
+
+  if (feeNeedsPayment) {
+    return {
+      code: "activation_fee_unpaid",
+      label: "موافقة الشركة مكتملة، لكن رسوم التفعيل غير مدفوعة",
+      tone: "warning",
+      canTakeOrders: false,
+    };
+  }
+
+  if (activation === "company_approved" && status === "assigned_not_started" && !feeNeedsPayment) {
+    if (eligibility?.eligible === false && reason && reason !== "assigned_not_started") {
+      return {
+        code: reason || "not_eligible",
+        label: eligibilityReasonAdminMessage(reason, subscription),
+        tone: "warning",
+        canTakeOrders: false,
+      };
+    }
+    return {
+      code: "awaiting_first_order",
+      label: "بانتظار أول طلب مقبول لبدء الاشتراك",
+      tone: "info",
+      canTakeOrders: eligibility?.eligible === true,
+    };
+  }
+
+  if (feePaid && activation === "company_approved" && eligibility?.eligible !== true) {
+    return {
+      code: reason || "not_eligible",
+      label: eligibilityReasonAdminMessage(reason, subscription),
+      tone: "warning",
+      canTakeOrders: false,
+    };
+  }
+
+  if (activation === "company_approved") {
+    return {
+      code: "company_approved_incomplete",
+      label: eligibility?.reason
+        ? eligibilityReasonAdminMessage(eligibility.reason, subscription)
+        : "موافقة الشركة مكتملة — تحقق من الأهلية ورسوم التفعيل",
+      tone: "warning",
+      canTakeOrders: false,
+    };
+  }
+
+  return {
+    code: reason || "unknown",
+    label: eligibilityReasonAdminMessage(reason, subscription),
+    tone: "neutral",
+    canTakeOrders: false,
+  };
+}
+
+/** Short menu/badge text: never claim full activation unless eligible. */
+export function adminSubscriptionActivationMenuLabel({
+  isApproved,
+  canActivate,
+  eligibility = null,
+  subscription = null,
+  activationFeeStatus = null,
+} = {}) {
+  if (canActivate) return null;
+  if (!isApproved) return "لا يوجد اشتراك للتفعيل";
+  const state = describeFreelancerAdminEligibilityState({
+    eligibility,
+    subscription,
+    activationFeeStatus,
+  });
+  if (state.code === "fully_eligible") return "المستخدم مؤهل لاستلام الطلبات";
+  if (state.code === "activation_fee_unpaid") {
+    return "موافقة الشركة مكتملة، لكن رسوم التفعيل غير مدفوعة";
+  }
+  if (state.code === "plan_configuration_error") {
+    return "الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات";
+  }
+  if (state.code === "awaiting_first_order" && state.canTakeOrders) {
+    return "موافقة الشركة مكتملة — بانتظار أول طلب";
+  }
+  return state.label || "موافقة الشركة مكتملة";
 }
 
 export function paymentStatusLabel(status) {
@@ -61,7 +226,7 @@ function isDashboardAdminAssignedSubscription(sub) {
   const notes = String(sub?.notes || "").trim();
   return (
     source === "admin" &&
-    payment === "not_required" &&
+    (payment === "not_required" || payment === "paid") &&
     hasAssignedBy &&
     notes !== "auto_default_free_plan"
   );
@@ -100,6 +265,8 @@ export function formatAssignedByAdminLabel(sub) {
 /** Admin subscriptions table: dashboard manual assign only (not auto free-plan bootstrap). */
 export function subscriptionPaymentLabel(sub) {
   if (isDashboardAdminAssignedSubscription(sub)) {
+    const payment = String(sub?.paymentStatus || sub?.payment_status || "").trim().toLowerCase();
+    if (payment === "paid") return "مدفوع أوفلاين (إسناد إداري)";
     return "إسناد إداري";
   }
   return paymentStatusLabel(sub?.paymentStatus || sub?.payment_status);

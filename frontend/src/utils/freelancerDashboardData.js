@@ -593,7 +593,7 @@ function insightSortRank(item) {
   return 5;
 }
 
-export function prioritizeCoursesInsights(insights = [], coursesFocusActive = false, t) {
+export function prioritizeCoursesInsights(insights = [], coursesFocusActive = false, _t) {
   const boosted = insights.map((item) => {
     if (item.id === "final-test") {
       return {

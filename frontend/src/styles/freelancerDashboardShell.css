@@ -1,33 +1,19 @@
-/* Freelancer dashboard shell — soft 3D sidebar + top bar */
+﻿/* Freelancer / Client dashboard shell — neutral gray surfaces (see dashboardTokens.css) */
 
 .fdl-shell {
   --fdl-sidebar-expanded-w: 280px;
   --fdl-sidebar-collapsed-w: 92px;
   --fdl-sidebar-w: var(--fdl-sidebar-expanded-w);
   --fdl-topbar-h: 80px;
-  --fdl-bg: #eef2f7;
-  --fdl-surface: #ffffff;
-  --fdl-border: rgba(148, 163, 184, 0.78);
-  --fdl-border-soft: rgba(148, 163, 184, 0.7);
-  --fdl-border-muted: rgba(148, 163, 184, 0.64);
-  --fdl-primary: var(--primary, #2f3b65);
-  --fdl-secondary: var(--secondary, #76cfdf);
-  --fdl-shadow: 0 12px 40px -20px rgba(24, 36, 64, 0.18);
   --fdl-ease: cubic-bezier(0.33, 1, 0.68, 1);
   --fdl-shell-gap: clamp(12px, 1.5vw, 18px);
-  --fdl-surface-3d-bg: linear-gradient(145deg, #fbfdff 0%, #eef3f8 100%);
-  --fdl-surface-3d-radius: clamp(28px, 3vw, 34px);
-  --fdl-surface-3d-border: 1px solid rgba(148, 163, 184, 0.78);
-  --fdl-surface-3d-shadow:
-    14px 14px 34px rgba(163, 177, 198, 0.18),
-    -10px -10px 28px rgba(255, 255, 255, 0.95);
-  --fdl-surface-3d-highlight: inset 1px 1px 0 rgba(255, 255, 255, 0.9);
+  /* Surface tokens inherited from dashboardTokens.css (--fdl-* aliases) */
 
   width: 100%;
   max-width: 100%;
   min-height: 100dvh;
   background: var(--fdl-bg);
-  color: var(--fdl-primary);
+  color: var(--dash-text, var(--fdl-primary));
   box-sizing: border-box;
 }
 
@@ -48,12 +34,12 @@
   --fdl-sidebar-w: var(--fdl-sidebar-collapsed-w);
 }
 
-/* Reusable shell neumorphism */
+/* Reusable shell surface */
 .fdl-surface-3d {
   border-radius: var(--fdl-surface-3d-radius);
   background: var(--fdl-surface-3d-bg);
   border: var(--fdl-surface-3d-border);
-  box-shadow: var(--fdl-surface-3d-shadow), var(--fdl-surface-3d-highlight);
+  box-shadow: var(--fdl-surface-3d-shadow);
 }
 
 .fdl-shell__grid {
@@ -133,7 +119,7 @@
 }
 
 .fdl-sidebar__collapse:hover {
-  color: #2563eb;
+  color: var(--dash-primary, var(--fdl-primary));
 }
 
 .fdl-sidebar__collapse-icon {
@@ -296,7 +282,7 @@
   border: 1px solid transparent;
   border-radius: 16px;
   background: transparent;
-  color: #64748b;
+  color: var(--dash-text-secondary);
   font-size: 0.86rem;
   font-weight: 600;
   font-family: inherit;
@@ -311,25 +297,20 @@
 
 .fdl-navlink:hover {
   color: var(--fdl-primary);
-  background: rgba(255, 255, 255, 0.55);
-  border-color: rgba(148, 163, 184, 0.78);
-  box-shadow:
-    2px 2px 8px rgba(163, 177, 198, 0.08),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.75);
+  background: var(--dash-hover, #eef1f4);
+  border-color: var(--dash-border, #c9d0da);
+  box-shadow: none;
 }
 
 .fdl-navlink--active {
-  color: #2563eb;
+  color: var(--dash-primary, var(--fdl-primary));
   font-weight: 700;
-  background: linear-gradient(145deg, rgba(239, 246, 255, 0.95), rgba(224, 242, 254, 0.75));
-  border-color: rgba(147, 197, 253, 0.85);
-  box-shadow:
-    inset 2px 2px 6px rgba(163, 177, 198, 0.06),
-    inset -1px -1px 0 rgba(255, 255, 255, 0.9),
-    2px 2px 10px rgba(163, 177, 198, 0.08);
+  background: var(--dash-primary-soft);
+  border-color: var(--dash-primary-soft-border);
+  box-shadow: none;
 }
 
-/* Sidebar nav icons — unified Lucide + soft 3D surfaces */
+/* Sidebar nav icons — flat neutral surfaces */
 .fdl-nav-icon__surface {
   flex-shrink: 0;
   width: 40px;
@@ -337,12 +318,9 @@
   display: grid;
   place-items: center;
   border-radius: 13px;
-  background: linear-gradient(145deg, #fbfdff, #eef3f8);
-  border: 1px solid rgba(148, 163, 184, 0.64);
-  box-shadow:
-    4px 4px 12px rgba(163, 177, 198, 0.14),
-    -4px -4px 10px rgba(255, 255, 255, 0.92),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.88);
+  background: var(--dash-card, #fcfcfd);
+  border: 1px solid var(--dash-border, #c9d0da);
+  box-shadow: none;
   transition:
     background 0.2s var(--fdl-ease),
     box-shadow 0.2s var(--fdl-ease),
@@ -352,35 +330,29 @@
 .fdl-nav-icon {
   width: 20px;
   height: 20px;
-  color: #94a3b8;
+  color: var(--dash-text-muted);
   stroke-width: 1.75;
 }
 
 .fdl-navlink:hover .fdl-nav-icon__surface {
-  border-color: rgba(148, 163, 184, 0.8);
-  box-shadow:
-    5px 5px 14px rgba(163, 177, 198, 0.16),
-    -4px -4px 11px rgba(255, 255, 255, 0.94),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.92);
+  border-color: var(--dash-border-strong, #aeb8c6);
+  background: var(--dash-hover, #eef1f4);
+  box-shadow: none;
 }
 
 .fdl-navlink:hover .fdl-nav-icon {
-  color: #64748b;
+  color: var(--dash-text-secondary);
 }
 
 .fdl-nav-icon__surface--active,
 .fdl-navlink--active .fdl-nav-icon__surface {
-  background: linear-gradient(145deg, #ffffff, #eff6ff);
-  border-color: rgba(147, 197, 253, 0.88);
-  box-shadow:
-    4px 4px 12px rgba(163, 177, 198, 0.12),
-    -3px -3px 9px rgba(255, 255, 255, 0.95),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.95),
-    inset 0 0 0 1px rgba(191, 219, 254, 0.35);
+  background: var(--dash-card, #fcfcfd);
+  border-color: var(--dash-primary-soft-border);
+  box-shadow: none;
 }
 
 .fdl-navlink--active .fdl-nav-icon {
-  color: #2563eb;
+  color: var(--dash-primary, var(--fdl-primary));
 }
 
 .fdl-navlink__label {
@@ -402,10 +374,10 @@
   font-weight: 700;
   line-height: 1;
   color: #fff;
-  background: linear-gradient(145deg, #a78bfa, #7c3aed);
+  background: var(--dash-primary);
   border: 1.5px solid rgba(255, 255, 255, 0.9);
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.28);
+  box-shadow: var(--dash-shadow-sm);
 }
 
 .fdl-nav-badge--courses {
@@ -452,17 +424,7 @@
 }
 
 .fdl-topbar::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(
-    155deg,
-    rgba(255, 255, 255, 0.42) 0%,
-    rgba(255, 255, 255, 0.06) 30%,
-    transparent 50%
-  );
+  display: none;
 }
 
 .fdl-topbar__start {
@@ -480,7 +442,7 @@
   height: 44px;
   padding: 0;
   border: var(--fdl-surface-3d-border);
-  background: linear-gradient(145deg, #ffffff, #f4f7fb);
+  background: var(--dash-card);
   border-radius: 14px;
   box-shadow:
     3px 3px 10px rgba(163, 177, 198, 0.12),
@@ -499,7 +461,7 @@
   margin: 0;
   font-size: 0.92rem;
   font-weight: 700;
-  color: #1e2a4a;
+  color: var(--dash-text);
 }
 
 .fdl-topbar__actions {
@@ -523,8 +485,8 @@
   padding: 0;
   border: 1px solid rgba(148, 163, 184, 0.68);
   border-radius: 14px;
-  background: linear-gradient(145deg, #ffffff, #f4f7fb);
-  color: #64748b;
+  background: var(--dash-card);
+  color: var(--dash-text-secondary);
   box-shadow:
     3px 3px 10px rgba(163, 177, 198, 0.14),
     -2px -2px 8px rgba(255, 255, 255, 0.9),
@@ -567,10 +529,56 @@
 .fdl-topbar .notif-bell__menu {
   border-radius: 18px;
   border: var(--fdl-surface-3d-border);
-  background: linear-gradient(160deg, #ffffff, #f8fafc);
+  background: var(--dash-surface);
   box-shadow:
     12px 12px 32px rgba(163, 177, 198, 0.2),
     -6px -6px 18px rgba(255, 255, 255, 0.9);
+}
+
+.fdl-topbar .notif-bell__head {
+  background: transparent;
+  border-bottom-color: rgba(56, 82, 180, 0.07);
+}
+
+.fdl-topbar .notif-bell__body {
+  background: transparent;
+}
+
+.fdl-topbar .notif-bell__item {
+  background: #fff;
+  border-bottom-color: rgba(56, 82, 180, 0.04);
+}
+
+.fdl-topbar .notif-bell__item:hover {
+  background: var(--dash-card-muted);
+}
+
+.fdl-topbar .notif-bell__item--unread {
+  background: var(--dash-hover);
+}
+
+.fdl-topbar .notif-bell__item--unread:hover {
+  background: #efeaff;
+}
+
+.fdl-topbar .notif-bell__item--unread .notif-bell__item-dot {
+  background: #2f3f7a;
+  box-shadow: 0 0 0 3px rgba(47, 63, 122, 0.12);
+}
+
+.fdl-topbar .notif-bell__all {
+  border-radius: 0 0 18px 18px;
+  background: var(--dash-hover);
+  border-top-color: rgba(56, 82, 180, 0.09);
+}
+
+.fdl-topbar .notif-bell__all:hover {
+  background: #e9eef8;
+}
+
+.fdl-topbar .notif-bell__all:focus-visible {
+  background: #e4eaf6;
+  box-shadow: inset 0 0 0 2px rgba(56, 82, 180, 0.28);
 }
 
 .fdl-topbar .notif-bell__badge {
@@ -591,9 +599,9 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
   color: #fff;
-  background: linear-gradient(145deg, #a78bfa, #7c3aed);
+  background: var(--dash-primary);
   border: 1.5px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.32);
+  box-shadow: var(--dash-shadow-sm);
   pointer-events: none;
 }
 
@@ -680,21 +688,21 @@
   font-size: 0.86rem;
   font-weight: 700;
   line-height: 1.3;
-  color: #1e2a4a;
+  color: var(--dash-text);
 }
 
 .fdl-topbar__role {
   font-size: 0.74rem;
   font-weight: 500;
   line-height: 1.3;
-  color: #2563eb;
+  color: var(--dash-primary, var(--fdl-primary));
 }
 
 .fdl-topbar__chevron {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  color: #94a3b8;
+  color: var(--dash-text-muted);
 }
 
 .fdl-topbar__menu-dropdown {
@@ -706,7 +714,7 @@
   padding: 8px;
   border-radius: 18px;
   border: var(--fdl-surface-3d-border);
-  background: linear-gradient(160deg, #ffffff, #f8fafc);
+  background: var(--dash-surface);
   box-shadow:
     12px 12px 32px rgba(163, 177, 198, 0.2),
     -6px -6px 18px rgba(255, 255, 255, 0.9);
@@ -910,7 +918,7 @@
   margin: 0 0 12px;
   font-size: 0.82rem;
   line-height: 1.55;
-  color: #64748b;
+  color: var(--dash-text-secondary);
 }
 
 @media (max-width: 1023px) {
@@ -1149,4 +1157,51 @@ main.app-shell:has(.fdl-shell) {
 
 .page-shell:has(.fdl-shell) footer {
   display: none;
+}
+
+/* —— Freelancer/Client outlet form controls (shared gray hierarchy) —— */
+.fdl-outlet input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+.fdl-outlet select,
+.fdl-outlet textarea {
+  background: var(--dash-input, #ffffff);
+  border: 1px solid var(--dash-border-interactive, #a9b4c3);
+  color: var(--dash-text, #172033);
+  border-radius: var(--dash-radius-sm, 8px);
+}
+
+.fdl-outlet input:not([type="checkbox"]):not([type="radio"]):hover:not(:disabled):not([readonly]),
+.fdl-outlet select:hover:not(:disabled),
+.fdl-outlet textarea:hover:not(:disabled):not([readonly]) {
+  border-color: var(--dash-border-strong, #aeb8c6);
+  background: var(--dash-card, #fcfcfd);
+}
+
+.fdl-outlet input:focus-visible,
+.fdl-outlet select:focus-visible,
+.fdl-outlet textarea:focus-visible {
+  outline: none;
+  border-color: var(--dash-primary, #2f3b65);
+  box-shadow: var(--dash-focus-ring);
+}
+
+.fdl-outlet input:disabled,
+.fdl-outlet select:disabled,
+.fdl-outlet textarea:disabled {
+  background: var(--dash-disabled, #f3f4f6);
+  color: var(--dash-text-muted, #667085);
+  cursor: not-allowed;
+}
+
+.fdl-outlet input[readonly],
+.fdl-outlet textarea[readonly] {
+  background: var(--dash-card-muted, #f9fafb);
+  color: var(--dash-text-secondary, #4b5563);
+}
+
+.fdl-outlet .fdl-navlink:focus-visible,
+.fdl-outlet .fdl-sidebar__collapse:focus-visible,
+.fdl-shell .fdl-navlink:focus-visible,
+.fdl-shell .fdl-sidebar__collapse:focus-visible {
+  outline: 2px solid var(--dash-primary, #2f3b65);
+  outline-offset: 2px;
 }

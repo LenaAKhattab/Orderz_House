@@ -216,6 +216,22 @@ router.patch(
 
 router.post(
 
+  "/freelancers/:freelancerUserId/clear-payment-failure-hold",
+
+  requireAnyRole(ASSIGN_AND_MANAGE_SUBSCRIPTION_ROLES),
+
+  subscriptionsPerm,
+
+  freelancerIdParam,
+
+  validateRequest,
+
+  subscriptionsController.clearFreelancerPaymentFailureHold,
+
+);
+
+router.post(
+
   "/subscriptions/activation-fee/mark-paid-offline",
 
   requireAnyRole(ASSIGN_AND_MANAGE_SUBSCRIPTION_ROLES),

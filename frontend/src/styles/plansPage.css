@@ -66,28 +66,26 @@
   padding: 0;
 }
 
-/* ——— Grid: main 5-plan page ——— */
+/* ——— Grid: main public plans — wider centered 3 × 2; equal card cells ——— */
 .plans-page--ref .pricing__grid--public-five {
   display: grid;
-  gap: clamp(14px, 1.6vw, 18px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* Equalize every row to the tallest card so all six cells match */
+  grid-auto-rows: 1fr;
+  gap: 12px 14px;
   width: 100%;
-  max-width: 1240px;
+  max-width: 1040px;
   margin-inline: auto;
   align-items: stretch;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-content: center;
 }
 
-@media (min-width: 981px) {
+/* Narrow desktop / tablet shell (mobile component takes over ≤640px) */
+@media (max-width: 899px) {
   .plans-page--ref .pricing__grid--public-five {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 14px;
-  }
-}
-
-@media (min-width: 641px) and (max-width: 980px) {
-  .plans-page--ref .pricing__grid--public-five {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    max-width: 920px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 720px;
+    gap: 12px;
   }
 }
 
@@ -115,16 +113,17 @@
   }
 }
 
-/* ——— Cards: main 5-plan page ——— */
+/* ——— Cards: main public catalog (uniform cell fill; CTA pinned to bottom) ——— */
 .plans-page--ref .pricing-card {
   position: relative;
   display: flex;
   flex-direction: column;
+  height: 100%;
   min-height: 100%;
   background: #ffffff;
   border: 1px solid rgba(56, 82, 180, 0.1);
-  border-radius: 18px;
-  padding: clamp(20px, 2vw, 24px) clamp(16px, 1.6vw, 20px);
+  border-radius: 16px;
+  padding: 16px 18px 14px;
   box-shadow:
     0 8px 24px rgba(15, 26, 58, 0.05),
     0 2px 8px rgba(56, 82, 180, 0.04);
@@ -171,10 +170,10 @@
   transform: none;
   display: inline-flex;
   align-self: flex-start;
-  margin: 0 0 12px;
-  padding: 4px 12px;
+  margin: 0 0 8px;
+  padding: 3px 10px;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 800;
   line-height: 1.3;
   color: #ffffff;
@@ -189,15 +188,15 @@
 }
 
 .plans-page--ref .pricing-card__head {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .plans-page--ref .pricing-card__title {
-  margin: 0 0 6px;
-  font-size: clamp(0.95rem, 1.1vw, 1.08rem);
+  margin: 0 0 4px;
+  font-size: clamp(0.92rem, 1.05vw, 1.05rem);
   font-weight: 900;
   color: #0f1a3a;
-  line-height: 1.35;
+  line-height: 1.3;
 }
 
 .plans-page--ref .pricing-card__desc {
@@ -210,15 +209,15 @@
 
 .plans-page--ref .pricing-card__duration {
   margin-top: 0;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 700;
   color: #6f7992;
 }
 
 .plans-page--ref .pricing-card__price-intro {
-  margin: 6px 0 4px;
-  font-size: 0.8rem;
-  line-height: 1.55;
+  margin: 6px 0 2px;
+  font-size: 0.78rem;
+  line-height: 1.4;
   font-weight: 600;
   color: #5b6684;
   word-wrap: break-word;
@@ -226,22 +225,22 @@
 }
 
 .plans-page--ref .pricing-card__price {
-  margin-top: 4px;
-  margin-bottom: 2px;
+  margin-top: 6px;
+  margin-bottom: 0;
 }
 
 .plans-page--ref .pricing-card__price-main {
-  font-size: clamp(1.55rem, 2vw, 1.85rem);
+  font-size: clamp(1.4rem, 1.85vw, 1.7rem);
   font-weight: 950;
   color: #0f1a3a;
-  line-height: 1.1;
+  line-height: 1.08;
 }
 
 .plans-page--ref .pricing-card__price-sub,
 .plans-page--ref .pricing-card__price-note {
-  margin-top: 4px;
-  font-size: 0.72rem;
-  line-height: 1.45;
+  margin-top: 3px;
+  font-size: 0.7rem;
+  line-height: 1.4;
   color: #6f7992;
   font-weight: 600;
 }
@@ -254,9 +253,9 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   padding: 0;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 800;
   line-height: 1.3;
   color: #3852b4;
@@ -268,12 +267,16 @@
 }
 
 .plans-page--ref .pricing-card__divider {
-  margin: 12px 0 10px;
+  margin: 10px 0 8px;
   background: linear-gradient(90deg, transparent, rgba(56, 82, 180, 0.12), transparent);
 }
 
+.plans-page--ref .pricing-card__divider--features {
+  margin: 10px 0 6px;
+}
+
 .plans-page--ref .pricing-card__features {
-  gap: 7px;
+  gap: 6px;
   list-style: none;
   padding: 0;
   margin: 0;
@@ -285,16 +288,16 @@
 
 .plans-page--ref .pricing-card__feature {
   display: grid;
-  grid-template-columns: 18px 1fr;
-  gap: 8px;
-  font-size: 0.78rem;
-  line-height: 1.45;
+  grid-template-columns: 16px 1fr;
+  gap: 7px;
+  font-size: 0.76rem;
+  line-height: 1.4;
   color: #334155;
 }
 
 .plans-page--ref .pricing-card__check {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   background: rgba(56, 82, 180, 0.09);
   color: #3852b4;
@@ -304,8 +307,8 @@
 }
 
 .plans-page--ref .pricing-card__check svg {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
 }
 
 .plans-page--ref .pricing-card__benefits {
@@ -313,6 +316,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  gap: 0;
 }
 
 .plans-page--ref .pricing-card__meta-desktop {
@@ -321,16 +325,16 @@
 
 .plans-page--ref .pricing-card__cta {
   margin-top: auto;
-  padding-top: 14px;
+  padding-top: 12px;
 }
 
 .plans-page--ref .pricing-card__btn {
   width: 100%;
   border-radius: 999px;
-  padding: 11px 14px;
-  font-size: 0.84rem;
+  padding: 8px 12px;
+  font-size: 0.82rem;
   font-weight: 800;
-  min-height: 42px;
+  min-height: 38px;
 }
 
 .plans-page--ref .pricing-card__btn--outline.btn-secondary {

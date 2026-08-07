@@ -24,6 +24,40 @@ async function safeNotify(run) {
   }
 }
 
+/** Fire-and-forget: notify all freelancers about a new client bidding order (after COMMIT). */
+function scheduleClientBiddingPoolFreelancerNotifications({ orderId, actorUserId }) {
+  const oid = Number(orderId);
+  const aid = Number(actorUserId);
+  if (!Number.isInteger(oid) || oid < 1) return;
+  setImmediate(() => {
+    void (async () => {
+      try {
+        const freelancerIds = await notificationEventsService.getRoleUserIds(["freelancer"]);
+        await notificationEventsService.notifyUsers({
+          userIds: freelancerIds,
+          recipientRole: "freelancer",
+          actorUserId: aid,
+          type: "order.created",
+          title: "مشروع مزايدة جديد",
+          message: "تم نشر مشروع جديد بنظام المزايدة.",
+          entityType: "order",
+          entityId: oid,
+          link: `/dashboard/freelancer/orders/${encodeURIComponent(String(oid))}`,
+          priority: "medium",
+          metadata: { orderId: String(oid), projectType: "bidding" },
+          dedupeKey: `order_bidding_created_${String(oid)}`,
+        });
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("[notifications] client bidding pool broadcast failed", {
+          orderId: oid,
+          message: err?.message || err,
+        });
+      }
+    })();
+  });
+}
+
 /** Multer/busboy often stores UTF-8 filenames as latin1 bytes; fix for DB display and downloads. */
 function decodeMultipartOriginalName(name) {
   const s = String(name ?? "");
@@ -154,6 +188,16 @@ function mapOrderBase(row) {
     isArchived: Boolean(row.is_archived),
     isPublished: row.is_published,
     isOpenForPool: row.is_open_for_pool,
+    visibilityScope: row.visibility_scope || "public",
+    institutionalStorageId: row.institutional_storage_id != null ? String(row.institutional_storage_id) : null,
+    institutionalStoredOrderId:
+      row.institutional_stored_order_id != null ? String(row.institutional_stored_order_id) : null,
+    institutionalStorageName: row.institutional_storage_name || null,
+    institutionalInstitutionNames: Array.isArray(row.institutional_institution_names)
+      ? row.institutional_institution_names.filter(Boolean)
+      : [],
+    institutionalReleasedAt: row.institutional_released_at || null,
+    isInstitutionalOrder: String(row.visibility_scope || "public") === "institution",
     paymentRequired: row.payment_required,
     paymentStatus: row.payment_status,
     paymentAmount: row.payment_amount != null ? Number(row.payment_amount) : null,
@@ -423,7 +467,23 @@ async function uploadFilesToCloudinary({ orderId, files, purpose }) {
 
 async function getOrderById(orderId, client) {
   const runner = client || pool;
-  const { rows } = await runner.query(`SELECT * FROM orders WHERE id = $1 LIMIT 1`, [Number(orderId)]);
+  const { rows } = await runner.query(
+    `SELECT o.*,
+       ios.name AS institutional_storage_name,
+       iso.released_at AS institutional_released_at,
+       (
+         SELECT COALESCE(array_agg(i.name ORDER BY i.name), ARRAY[]::text[])
+         FROM institutional_storage_institutions si
+         INNER JOIN institutions i ON i.id = si.institution_id
+         WHERE si.storage_id = o.institutional_storage_id
+       ) AS institutional_institution_names
+     FROM orders o
+     LEFT JOIN institutional_order_storages ios ON ios.id = o.institutional_storage_id
+     LEFT JOIN institutional_stored_orders iso ON iso.id = o.institutional_stored_order_id
+     WHERE o.id = $1
+     LIMIT 1`,
+    [Number(orderId)],
+  );
   const base = mapOrderBase(rows[0]);
   if (!base) return null;
 
@@ -579,7 +639,7 @@ async function getOrderById(orderId, client) {
   };
 }
 
-async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFiles = [] }) {
+async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFiles = [], options = {} }) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -588,6 +648,23 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
     const sourceType = createdByRole === "super_admin" ? "super_admin_created" : "admin_created";
     const assignedFreelancerId = payload.assignedFreelancerId ? Number(payload.assignedFreelancerId) : null;
     const wantsArchive = Boolean(payload.archive);
+    const visibilityScope = options.visibilityScope === "institution" ? "institution" : "public";
+    const skipFreelancerBroadcast = Boolean(options.skipFreelancerBroadcast) || visibilityScope === "institution";
+    const institutionalStorageId =
+      options.institutionalStorageId != null ? Number(options.institutionalStorageId) : null;
+    const institutionalStoredOrderId =
+      options.institutionalStoredOrderId != null ? Number(options.institutionalStoredOrderId) : null;
+
+    if (Number.isInteger(institutionalStoredOrderId) && institutionalStoredOrderId > 0) {
+      const { rows: existingInst } = await client.query(
+        `SELECT id FROM orders WHERE institutional_stored_order_id = $1 ORDER BY id ASC LIMIT 1`,
+        [institutionalStoredOrderId],
+      );
+      if (existingInst[0]) {
+        await client.query("COMMIT");
+        return await getOrderById(existingInst[0].id);
+      }
+    }
 
     const chainResult = await assertCategoryChain(
       {
@@ -691,7 +768,10 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         is_archived,
         payment_required, payment_status,
         order_status,
-        bid_budget_min, bid_budget_max
+        bid_budget_min, bid_budget_max,
+        visibility_scope,
+        institutional_storage_id,
+        institutional_stored_order_id
       ) VALUES (
         $1,$2,$3,
         $4,$5,
@@ -707,7 +787,8 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         $24,
         FALSE,'not_required',
         $25,
-        $26, $27
+        $26, $27,
+        $28, $29, $30
       )
       RETURNING *`,
       [
@@ -738,6 +819,13 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         orderStatus,
         bidMinIns,
         bidMaxIns,
+        visibilityScope,
+        Number.isInteger(institutionalStorageId) && institutionalStorageId > 0
+          ? institutionalStorageId
+          : null,
+        Number.isInteger(institutionalStoredOrderId) && institutionalStoredOrderId > 0
+          ? institutionalStoredOrderId
+          : null,
       ],
     );
 
@@ -773,7 +861,7 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         ),
       );
     }
-    if (!assignedFreelancerId && !shouldArchive) {
+    if (!assignedFreelancerId && !shouldArchive && !skipFreelancerBroadcast) {
       await safeNotify(async () => {
         const freelancerIds = await notificationEventsService.getRoleUserIds(["freelancer"], client);
         await notificationEventsService.notifyUsers(
@@ -801,6 +889,22 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
     return await getOrderById(orderRow.id);
   } catch (err) {
     await client.query("ROLLBACK");
+    const institutionalStoredOrderId =
+      options.institutionalStoredOrderId != null ? Number(options.institutionalStoredOrderId) : null;
+    if (
+      err &&
+      err.code === "23505" &&
+      Number.isInteger(institutionalStoredOrderId) &&
+      institutionalStoredOrderId > 0
+    ) {
+      const { rows: existingInst } = await pool.query(
+        `SELECT id FROM orders WHERE institutional_stored_order_id = $1 ORDER BY id ASC LIMIT 1`,
+        [institutionalStoredOrderId],
+      );
+      if (existingInst[0]) {
+        return await getOrderById(existingInst[0].id);
+      }
+    }
     throw err;
   } finally {
     client.release();
@@ -929,28 +1033,6 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
         client,
       ),
     );
-    if (!isFixed) {
-      await safeNotify(async () => {
-        const freelancerIds = await notificationEventsService.getRoleUserIds(["freelancer"], client);
-        await notificationEventsService.notifyUsers(
-          {
-            userIds: freelancerIds,
-            recipientRole: "freelancer",
-            actorUserId: Number(clientUserId),
-            type: "order.created",
-            title: "مشروع مزايدة جديد",
-            message: "تم نشر مشروع جديد بنظام المزايدة.",
-            entityType: "order",
-            entityId: Number(orderRow.id),
-            link: `/dashboard/freelancer/orders/${encodeURIComponent(String(orderRow.id))}`,
-            priority: "medium",
-            metadata: { orderId: String(orderRow.id), projectType: "bidding" },
-            dedupeKey: `order_bidding_created_${String(orderRow.id)}`,
-          },
-          client,
-        );
-      });
-    }
     await upsertSkillsAndAttach({ orderId: orderRow.id, skills: payload.preferredSkills }, client);
 
     const files = Array.isArray(uploadedFiles) ? uploadedFiles : [];
@@ -965,6 +1047,12 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
 
     await client.query("COMMIT");
     scheduleRealOrderTranslation(orderRow.id, orderRow.title, orderRow.description);
+    if (!isFixed) {
+      scheduleClientBiddingPoolFreelancerNotifications({
+        orderId: orderRow.id,
+        actorUserId: clientUserId,
+      });
+    }
     return await getOrderById(orderRow.id);
   } catch (err) {
     await client.query("ROLLBACK");
@@ -1089,10 +1177,6 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
      FROM orders
      WHERE created_by_user_id = $1
        AND source_type = 'client_created'
-       AND (
-         order_status <> 'pending_payment'
-         OR payment_status IN ('paid', 'skipped_by_admin')
-       )
      ORDER BY id DESC
      LIMIT $2 OFFSET $3`,
     [uid, lim, off],
@@ -1448,6 +1532,7 @@ async function listPoolOrders({
     `o.assigned_freelancer_id IS NULL`,
     `o.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')`,
     `o.source_type IN ('admin_created','super_admin_created','client_created')`,
+    `COALESCE(o.visibility_scope, 'public') = 'public'`,
   ];
   if (status && ["published", "open_for_freelancers", "open_for_bids"].includes(String(status))) {
     params.push(String(status));
@@ -1614,6 +1699,7 @@ async function listPoolOrdersForFreelancer({
     `o.assigned_freelancer_id IS NULL`,
     `o.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')`,
     `o.source_type IN ('admin_created','super_admin_created','client_created')`,
+    `COALESCE(o.visibility_scope, 'public') = 'public'`,
   ];
   const whereCount = [...whereBase];
   const whereList = [...whereBase];
@@ -1924,6 +2010,15 @@ async function submitPoolOrderBid({ freelancerUserId, orderId, amount, message =
       err.statusCode = 404;
       throw err;
     }
+    if (String(order.visibility_scope || "public") === "institution") {
+      const stored = require("./institutionalStoredOrdersService");
+      const access = await stored.assertUserCanViewInstitutionalOrder(freelancerUserId, order.id);
+      if (!access.allowed) {
+        const err = new Error("Order is not available.");
+        err.statusCode = 403;
+        throw err;
+      }
+    }
     await orderAuthz.assertFreelancerCanBidOrder(freelancerUserId, order, client);
     const planOrderValueEligibility = require("./planOrderValueEligibility");
     const bidPlanRange = await planOrderValueEligibility.getFreelancerPlanOrderValueRange(freelancerUserId);
@@ -2030,6 +2125,15 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
       const err = new Error("Order not found.");
       err.statusCode = 404;
       throw err;
+    }
+    if (String(order.visibility_scope || "public") === "institution") {
+      const stored = require("./institutionalStoredOrdersService");
+      const access = await stored.assertUserCanViewInstitutionalOrder(freelancerUserId, order.id);
+      if (!access.allowed) {
+        const err = new Error("Order is not available in the pool.");
+        err.statusCode = 403;
+        throw err;
+      }
     }
     await orderAuthz.assertFreelancerCanClaimOrder(freelancerUserId, order, client);
 
@@ -3109,7 +3213,25 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
     );
 
     await client.query("COMMIT");
-    return await getOrderById(orderId);
+    const out = await getOrderById(orderId);
+    try {
+      const fazatWebhookOutboundService = require("./fazatWebhookOutboundService");
+      const { writePartnerAudit } = require("./fazatAuditService");
+      await fazatWebhookOutboundService.notifyIfPartnerOrderByOrderzId(
+        orderId,
+        "orderz.partner_delivery.submitted",
+        { status: "delivery_submitted", submissionId: String(submissionRow.id) },
+      );
+      await writePartnerAudit({
+        action: "fazat.partner_delivery.submitted",
+        entityType: "order",
+        entityId: String(orderId),
+        detail: { submissionId: String(submissionRow.id) },
+      });
+    } catch {
+      /* partner webhook is best-effort */
+    }
+    return out;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -3289,7 +3411,18 @@ async function adminRequestInternalDeliveryRevision({ orderId, note, uploadedFil
       );
     }
     await client.query("COMMIT");
-    return await getOrderById(orderId);
+    const out = await getOrderById(orderId);
+    try {
+      const fazatWebhookOutboundService = require("./fazatWebhookOutboundService");
+      await fazatWebhookOutboundService.notifyIfPartnerOrderByOrderzId(
+        orderId,
+        "orderz.partner_order.status_changed",
+        { status: "revision_requested" },
+      );
+    } catch {
+      /* best-effort */
+    }
+    return out;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -3716,7 +3849,8 @@ async function getPoolMarketplaceCountSummary() {
        AND o.is_open_for_pool = TRUE
        AND o.assigned_freelancer_id IS NULL
        AND o.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')
-       AND o.source_type IN ('admin_created', 'super_admin_created', 'client_created')`,
+       AND o.source_type IN ('admin_created', 'super_admin_created', 'client_created')
+       AND COALESCE(o.visibility_scope, 'public') = 'public'`,
   );
   return {
     totalVisible: Number(rows[0]?.total || 0),
@@ -3765,6 +3899,9 @@ module.exports = {
   adminApproveInternalDelivery,
   adminRequestInternalDeliveryRevision,
   activateArchivedInternalOrder,
+  uploadFilesToCloudinary,
+  attachFiles,
   purgeClientUnpaidFixedOrderDraft,
+  scheduleClientBiddingPoolFreelancerNotifications,
 };
 

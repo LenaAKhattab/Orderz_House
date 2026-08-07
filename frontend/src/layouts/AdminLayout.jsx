@@ -4,6 +4,7 @@ import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 import { useAuth } from "../context/useAuth";
 import { getNotificationsPath } from "../constants/authRoutes";
 import AdminGroupedNavList from "../components/dashboard/AdminGroupedNavList";
+import AdminNavIcon from "../components/dashboard/AdminNavIcon";
 import {
   ADMIN_NAV_NOTIFICATIONS,
   adminBreadcrumb,
@@ -14,6 +15,7 @@ import NotificationsBell from "../components/notifications/NotificationsBell";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
 
+import "../styles/dashboardTokens.css";
 import "../styles/dashboardHub.css";
 import "../styles/adminDashboardShell.css";
 import "../styles/adminDashboardHub.css";
@@ -114,7 +116,7 @@ export default function AdminLayout() {
                 onClick={() => setSidebarOpen(false)}
               >
                 <span className="oh-sa-navlink__icon" aria-hidden>
-                  {ADMIN_NAV_NOTIFICATIONS.icon}
+                  <AdminNavIcon name={ADMIN_NAV_NOTIFICATIONS.icon} />
                 </span>
                 <span className="oh-sa-navlink__label">{resolveNavLabel(ADMIN_NAV_NOTIFICATIONS, t)}</span>
               </NavLink>

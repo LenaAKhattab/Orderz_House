@@ -36,6 +36,14 @@ function notificationDetails(n, canShowOrderReference) {
   const orderId = String(n?.metadata?.orderId || n?.entityId || "").trim();
 
   if (type === "order.created") {
+    const categoryName = String(n?.metadata?.categoryName || "").trim();
+    const subcategoryName = String(n?.metadata?.subcategoryName || "").trim();
+    if (categoryName && subcategoryName && projectName) {
+      return `«${categoryName}» — «${subcategoryName}»: ${projectName}`;
+    }
+    if (categoryName && projectName) {
+      return `«${categoryName}»: ${projectName}`;
+    }
     return projectName;
   }
 
@@ -193,21 +201,26 @@ export default function NotificationsBell({ notificationsPagePath, variant = "na
             {loading ? (
               <div className="notif-bell__empty">جاري التحميل…</div>
             ) : items.length ? (
-              items.map((n) => (
-                <button
-                  key={n.id}
-                  type="button"
-                  className={`notif-bell__item ${n.isRead ? "" : "notif-bell__item--unread"}`.trim()}
-                  onClick={() => handleGo(n)}
-                >
-                  <div className="notif-bell__item-title">{n.title || "إشعار جديد"}</div>
-                  {notificationDetails(n, canShowOrderReference) ? (
-                    <div className="notif-bell__item-actor">{notificationDetails(n, canShowOrderReference)}</div>
-                  ) : null}
-                  <div className="notif-bell__item-msg">{n.message || ""}</div>
-                  <div className="notif-bell__item-time">{fmtDate(n.createdAt)}</div>
-                </button>
-              ))
+              items.map((n) => {
+                const details = notificationDetails(n, canShowOrderReference);
+                const unread = !n.isRead;
+                return (
+                  <button
+                    key={n.id}
+                    type="button"
+                    className={`notif-bell__item ${unread ? "notif-bell__item--unread" : ""}`.trim()}
+                    onClick={() => handleGo(n)}
+                  >
+                    <div className="notif-bell__item-top">
+                      <span className="notif-bell__item-dot" aria-hidden />
+                      <div className="notif-bell__item-title">{n.title || "إشعار جديد"}</div>
+                    </div>
+                    {details ? <div className="notif-bell__item-actor">{details}</div> : null}
+                    {n.message ? <div className="notif-bell__item-msg">{n.message}</div> : null}
+                    <div className="notif-bell__item-time">{fmtDate(n.createdAt)}</div>
+                  </button>
+                );
+              })
             ) : (
               <div className="notif-bell__empty">لا توجد إشعارات حالياً.</div>
             )}

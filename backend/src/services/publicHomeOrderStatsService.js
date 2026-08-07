@@ -111,6 +111,7 @@ async function queryHeroOrderCounts() {
           AND o.is_published = TRUE
           AND o.is_open_for_pool = TRUE
           AND COALESCE(o.is_archived, FALSE) = FALSE
+          AND COALESCE(o.visibility_scope, 'public') = 'public'
       ) AS available_real,
       (
         SELECT COUNT(DISTINCT fo.id)::int
@@ -122,12 +123,22 @@ async function queryHeroOrderCounts() {
         FROM orders o
         WHERE o.order_status = $2
           AND COALESCE(o.is_archived, FALSE) = FALSE
+          AND COALESCE(o.visibility_scope, 'public') = 'public'
       ) AS completed_real,
       (${TRAINING_ROTATIONS_COMPLETED_TOTAL_SQL}) AS training_rotations_completed,
       (${sinceCutoffSql}) AS training_rotations_completed_since_cutoff,
-      COUNT(*) FILTER (WHERE order_status = ANY($3::text[]))::int AS open_projects,
-      COUNT(*) FILTER (WHERE order_status = ANY($4::text[]))::int AS in_progress_projects,
-      COUNT(*) FILTER (WHERE order_status = $2)::int AS completed_projects
+      COUNT(*) FILTER (
+        WHERE order_status = ANY($3::text[])
+          AND COALESCE(visibility_scope, 'public') = 'public'
+      )::int AS open_projects,
+      COUNT(*) FILTER (
+        WHERE order_status = ANY($4::text[])
+          AND COALESCE(visibility_scope, 'public') = 'public'
+      )::int AS in_progress_projects,
+      COUNT(*) FILTER (
+        WHERE order_status = $2
+          AND COALESCE(visibility_scope, 'public') = 'public'
+      )::int AS completed_projects
     FROM orders
     `,
     params,

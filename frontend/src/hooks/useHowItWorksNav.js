@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getPublicWebsitePageRequest } from "../services/api";
+import { probePublicWebsitePageForNav } from "../services/api";
 import { HOW_IT_WORKS_PAGES } from "../constants/howItWorksPages";
 
 /**
@@ -17,16 +17,12 @@ export default function useHowItWorksNav() {
       try {
         const results = await Promise.all(
           HOW_IT_WORKS_PAGES.map(async (page) => {
-            try {
-              const res = await getPublicWebsitePageRequest(page.slug, { signal: undefined });
-              if (res?.data?.page) {
-                return {
-                  to: page.path,
-                  labelKey: page.labelKey,
-                };
-              }
-            } catch {
-              // Hidden or unavailable — omit from nav.
+            const res = await probePublicWebsitePageForNav(page.slug);
+            if (res?.data?.page) {
+              return {
+                to: page.path,
+                labelKey: page.labelKey,
+              };
             }
             return null;
           }),

@@ -19,6 +19,109 @@ function resolveCheckoutPlanId(row) {
   return Number(row.id);
 }
 
+/**
+ * Resolve the plan id that should be stored on freelancer_subscriptions.
+ * Display/marketing clones with subscription_plan_id map to the canonical subscription plan.
+ * Does not invent ids — follows the DB relationship only.
+ *
+ * @returns {Promise<{
+ *   assignmentPlanId: number,
+ *   selectedPlanId: number,
+ *   displayPlanId: number | null,
+ *   durationDays: number,
+ *   resolvedFromDisplay: boolean,
+ * }>}
+ */
+async function resolveAssignableSubscriptionPlanId(selectedPlanId, client) {
+  const runner = client || pool;
+  const pid = Number(selectedPlanId);
+  if (!Number.isInteger(pid) || pid < 1) {
+    const err = new Error("Invalid plan id.");
+    err.statusCode = 400;
+    err.reason = "invalid_plan_id";
+    throw err;
+  }
+
+  const { rows } = await runner.query(
+    `SELECT id, is_active, deleted_at, subscription_plan_id, duration_days, name, title
+     FROM plans
+     WHERE id = $1::bigint
+     LIMIT 1`,
+    [pid],
+  );
+  const selected = rows[0];
+  if (!selected || selected.deleted_at) {
+    const err = new Error("Plan not found.");
+    err.statusCode = 404;
+    err.reason = "plan_not_found";
+    throw err;
+  }
+  if (!selected.is_active) {
+    const err = new Error("Plan is inactive.");
+    err.statusCode = 400;
+    err.reason = "plan_inactive";
+    throw err;
+  }
+
+  const linkedRaw = selected.subscription_plan_id;
+  if (linkedRaw == null || linkedRaw === "") {
+    return {
+      assignmentPlanId: pid,
+      selectedPlanId: pid,
+      displayPlanId: null,
+      durationDays: Number(selected.duration_days),
+      resolvedFromDisplay: false,
+    };
+  }
+
+  const linkedId = Number(linkedRaw);
+  if (!Number.isInteger(linkedId) || linkedId < 1) {
+    const err = new Error("الخطة المحددة مرتبطة بمعرّف اشتراك غير صالح.");
+    err.statusCode = 400;
+    err.reason = "invalid_subscription_plan_id";
+    throw err;
+  }
+
+  if (linkedId === pid) {
+    return {
+      assignmentPlanId: pid,
+      selectedPlanId: pid,
+      displayPlanId: null,
+      durationDays: Number(selected.duration_days),
+      resolvedFromDisplay: false,
+    };
+  }
+
+  const { rows: canonRows } = await runner.query(
+    `SELECT id, is_active, deleted_at, duration_days, subscription_plan_id, name, title
+     FROM plans
+     WHERE id = $1::bigint
+     LIMIT 1`,
+    [linkedId],
+  );
+  const canon = canonRows[0];
+  if (!canon || canon.deleted_at) {
+    const err = new Error("الخطة الأساسية المرتبطة بهذه الباقة غير موجودة.");
+    err.statusCode = 400;
+    err.reason = "canonical_plan_not_found";
+    throw err;
+  }
+  if (!canon.is_active) {
+    const err = new Error("الخطة الأساسية المرتبطة بهذه الباقة غير نشطة.");
+    err.statusCode = 400;
+    err.reason = "canonical_plan_inactive";
+    throw err;
+  }
+
+  return {
+    assignmentPlanId: linkedId,
+    selectedPlanId: pid,
+    displayPlanId: pid,
+    durationDays: Number(canon.duration_days),
+    resolvedFromDisplay: true,
+  };
+}
+
 async function attachFeaturesToPlans(rows) {
   const planIds = rows.map((r) => Number(r.id));
   const featureMap = await planFeaturesService.loadFeaturesByPlanIds(planIds);
@@ -89,6 +192,11 @@ function mapPlan(row) {
     labelEn: row.label_en || null,
     billingTextEn: row.billing_text_en || null,
     buttonTextEn: row.button_text_en || null,
+    isRecurring: Boolean(row.is_recurring),
+    billingInterval: row.billing_interval || null,
+    billingIntervalCount: row.billing_interval_count != null ? Number(row.billing_interval_count) : null,
+    stripeProductId: row.stripe_product_id || null,
+    stripePriceId: row.stripe_price_id || null,
     deletedAt: row.deleted_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -165,6 +273,8 @@ async function listPublicCatalogPlans() {
         const row = rows[idx];
         const mapped = { ...plan };
         delete mapped.adminNotes;
+        delete mapped.stripeProductId;
+        delete mapped.stripePriceId;
         return {
           ...mapped,
           checkoutPlanId: String(resolveCheckoutPlanId(row)),
@@ -381,6 +491,19 @@ async function updatePlan({ actorUserId, id, patch }) {
   if (patch.description !== undefined) set("description", patch.description);
   if (patch.durationDays !== undefined) set("duration_days", patch.durationDays);
   if (patch.priceJod !== undefined) set("price_jod", patch.priceJod == null ? null : Number(patch.priceJod));
+  // Never mutate a live Stripe Price amount in place — force a new Price on next checkout.
+  if (patch.priceJod !== undefined) {
+    set("stripe_price_id", null);
+    set("stripe_price_amount_minor", null);
+  }
+  if (patch.isRecurring !== undefined) set("is_recurring", Boolean(patch.isRecurring));
+  if (patch.billingInterval !== undefined) set("billing_interval", patch.billingInterval || null);
+  if (patch.billingIntervalCount !== undefined) {
+    set(
+      "billing_interval_count",
+      patch.billingIntervalCount == null ? null : Number(patch.billingIntervalCount),
+    );
+  }
   if (patch.stripeCheckoutAmountJod !== undefined) {
     set(
       "stripe_checkout_amount_jod",
@@ -502,6 +625,7 @@ module.exports = {
   mapPlan,
   attachFeaturesToPlans,
   resolveCheckoutPlanId,
+  resolveAssignableSubscriptionPlanId,
   resolvePlanRowForCheckout,
   listPlans,
   listVisibleActivePlans,

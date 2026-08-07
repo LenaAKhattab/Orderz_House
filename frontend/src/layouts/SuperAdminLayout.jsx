@@ -6,6 +6,7 @@ import { useAuth } from "../context/useAuth";
 import { useClientCreateOrderModal } from "../context/ClientCreateOrderModalContext";
 import { getAccountSettingsPath, getNotificationsPath } from "../constants/authRoutes";
 import AdminGroupedNavList from "../components/dashboard/AdminGroupedNavList";
+import AdminNavIcon from "../components/dashboard/AdminNavIcon";
 import {
   SUPER_ADMIN_NAV_CREATE_ORDER,
   filterSuperAdminNavSections,
@@ -15,6 +16,7 @@ import { userHasPermission } from "../constants/dashboardPermissions";
 import NotificationsBell from "../components/notifications/NotificationsBell";
 import { useTranslation } from "../i18n/LanguageProvider";
 
+import "../styles/dashboardTokens.css";
 import "../styles/dashboardHub.css";
 import "../styles/adminDashboardShell.css";
 import "../styles/adminDashboardHub.css";
@@ -167,7 +169,7 @@ export default function SuperAdminLayout() {
                         }}
                       >
                         <span className="oh-sa-navlink__icon" aria-hidden>
-                          +
+                          <AdminNavIcon name="create-order" />
                         </span>
                         <span className="oh-sa-navlink__label">{t("dashboard.nav.superAdmin.createRequest")}</span>
                       </button>

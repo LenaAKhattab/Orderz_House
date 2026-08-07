@@ -1,4 +1,4 @@
-/* Super Admin — product analytics: RTL-first helpers (skeleton shimmer, dense grids).
+﻿/* Super Admin — product analytics: RTL-first helpers (skeleton shimmer, dense grids).
    Section/chart shells use dashboard tokens (--dash-*) + Tailwind in JSX. */
 
 .sa-analytics {
@@ -497,7 +497,7 @@
 
 .sa-stat-card--business .dash-ui-stat-card__value {
   font-size: clamp(1.55rem, 2.5vw, 1.85rem);
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 .sa-stat-card--activity {
@@ -510,12 +510,12 @@
 }
 
 .sa-stat-card--unavailable .dash-ui-stat-card__value {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   font-weight: 700;
 }
 
 .sa-stat-card--unavailable .dash-ui-stat-card__hint {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   font-weight: 600;
 }
 
@@ -792,7 +792,7 @@
 .sa-chart--primary .dash-ui-chart-card__title {
   font-size: 1rem;
   font-weight: 800;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 .sa-chart--secondary .dash-ui-chart-card__head {
@@ -1070,7 +1070,7 @@
   font-weight: 900;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 .sa-home-preview__metric--visitors .sa-home-preview__value {
@@ -1148,7 +1148,7 @@
   width: 1.05rem;
   height: 1.05rem;
   border-radius: 50%;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
   transition:
     inset-inline-start 0.15s ease,
@@ -1421,7 +1421,7 @@
   font-size: 0.88rem;
   font-weight: 600;
   line-height: 1.45;
-  color: #1e293b;
+  color: var(--dash-text, #172033);
 }
 
 .sa-section-highlights {
@@ -1486,7 +1486,7 @@
   padding: 0.3rem 0.65rem;
   border-radius: 999px;
   border: 1px solid color-mix(in oklab, var(--sa-line) 80%, transparent);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   font-size: 0.75rem;
   font-weight: 700;
   color: #475569;
@@ -1496,7 +1496,7 @@
 .sa-date-filter__btn--active {
   background: color-mix(in oklab, var(--primary, #2f3b65) 12%, #fff);
   border-color: color-mix(in oklab, var(--primary, #2f3b65) 35%, transparent);
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 .sa-date-filter__btn:disabled {
@@ -1517,7 +1517,7 @@
   gap: 0.4rem;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .sa-date-filter__current {
@@ -1561,13 +1561,13 @@
 .sa-health-card__num {
   font-size: 2.25rem;
   font-weight: 900;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 .sa-health-card__max {
   font-size: 1rem;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .sa-health-card__status {
@@ -1589,7 +1589,7 @@
   font-weight: 700;
   padding: 0.35rem 0.5rem;
   border-radius: 8px;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
 }
 
 .sa-snapshot-list__item--positive {
@@ -1646,13 +1646,13 @@
 .sa-attention-summary__label {
   font-size: 0.62rem;
   font-weight: 800;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .sa-attention-summary__value {
   font-size: 1.15rem;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -1728,7 +1728,7 @@
   margin-inline-start: auto;
   font-size: 0.72rem;
   font-weight: 900;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1750,7 +1750,7 @@
   padding: 0.55rem 0.65rem;
   border-radius: 12px;
   border: 1px solid color-mix(in oklab, var(--sa-line) 90%, transparent);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   text-decoration: none;
   color: inherit;
   text-align: right;
@@ -1813,7 +1813,7 @@ a.sa-attention-card:hover {
 .sa-attention-card__title {
   font-size: 0.8rem;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   line-height: 1.35;
   text-align: right;
   unicode-bidi: plaintext;
@@ -1822,7 +1822,7 @@ a.sa-attention-card:hover {
 .sa-attention-card__desc {
   font-size: 0.72rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   line-height: 1.4;
   text-align: right;
 }
@@ -1873,14 +1873,14 @@ a.sa-attention-card:hover {
 .sa-attention-card__chevron {
   font-size: 1rem;
   font-weight: 900;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   line-height: 1;
 }
 
 .sa-attention-panel__footer {
   font-size: 0.68rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   padding: 0.35rem 0.5rem;
   border-radius: 8px;
   background: color-mix(in oklab, #eff6ff 35%, #f8fafc);
@@ -1922,7 +1922,7 @@ a.sa-attention-card:hover {
 .sa-attention-panel__empty-desc {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .sa-attention-panel--loading .sa-attention-panel__summary-skel {
@@ -2007,7 +2007,7 @@ a.sa-attention-card:hover {
 }
 
 .sa-risks-list__link:hover {
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
 }
 
 .sa-forecast-row {
@@ -2026,13 +2026,13 @@ a.sa-attention-card:hover {
 .sa-forecast-card__label {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .sa-forecast-card__value {
   font-size: 1rem;
   font-weight: 900;
-  color: #1e293b;
+  color: var(--dash-text, #172033);
 }
 
 .sa-forecast-disclaimer {
@@ -2054,7 +2054,7 @@ a.sa-attention-card:hover {
   border: 1px solid var(--sa-line);
   text-decoration: none;
   color: inherit;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
 }
 
 .sa-priority-attention__card--s3 {
@@ -2126,7 +2126,7 @@ a.sa-attention-card:hover {
 
 .sa-leaderboard__rank {
   font-weight: 900;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .sa-leaderboard__name {
@@ -2143,7 +2143,7 @@ a.sa-attention-card:hover {
 
 .sa-leaderboard__sub {
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   font-size: 0.68rem;
 }
 
@@ -2153,7 +2153,7 @@ a.sa-attention-card:hover {
   font-size: 0.65rem;
   font-weight: 700;
   line-height: 1.25;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   letter-spacing: 0.01em;
 }
 
@@ -2174,7 +2174,7 @@ a.sa-attention-card:hover {
 
 .sa-period-banner__note {
   font-weight: 600;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .sa-insights-list__text {
@@ -2208,7 +2208,7 @@ a.sa-attention-card:hover {
 .sa-health-factors li {
   margin-bottom: 0.35rem;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .sa-health-factors li strong {
@@ -2248,7 +2248,7 @@ a.sa-attention-card:hover {
 .sa-risks-list__desc {
   font-size: 0.72rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   line-height: 1.35;
 }
 
@@ -2269,7 +2269,7 @@ a.sa-attention-card:hover {
 .sa-leaderboard__criteria {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .sa-chart-card__desc {
@@ -2359,12 +2359,12 @@ a.sa-attention-card:hover {
 
 .sa-hero-status-chip__label {
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .sa-hero-status-chip__value {
   font-weight: 900;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   font-variant-numeric: tabular-nums;
 }
 
@@ -2408,7 +2408,7 @@ a.sa-attention-card:hover {
 
 .oh-sa-outlet .sa-control-header--premium .sa-header-refresh.btn {
   border-radius: 11px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border-color: color-mix(in oklab, #93c5fd 45%, var(--sa-line));
 }
 
@@ -2459,7 +2459,7 @@ a.sa-attention-card:hover {
 .sa-date-filter__module-desc {
   font-size: 0.72rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .sa-date-filter--control .sa-date-filter__presets {
@@ -2491,7 +2491,7 @@ a.sa-attention-card:hover {
 
 .sa-date-filter__current-label {
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .sa-date-filter--control .sa-date-filter__custom {
@@ -2620,7 +2620,7 @@ a.sa-attention-card:hover {
 .sa-attention-side-panel__title {
   font-size: 0.98rem;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   line-height: 1.3;
 }
 
@@ -2629,7 +2629,7 @@ a.sa-attention-card:hover {
   font-size: 0.74rem;
   font-weight: 600;
   line-height: 1.45;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .sa-attention-side-panel__head-actions {
@@ -2655,7 +2655,7 @@ a.sa-attention-card:hover {
   padding: 0.28rem 0.55rem;
   border-radius: 8px;
   border: 1px solid color-mix(in oklab, #93c5fd 45%, transparent);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   transition: background 0.12s, color 0.12s;
   white-space: nowrap;
 }
@@ -2681,9 +2681,9 @@ a.sa-attention-card:hover {
   font-size: 0.64rem;
   font-weight: 600;
   line-height: 1.4;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   border-top: 1px solid color-mix(in oklab, #e2e8f0 75%, #bfdbfe);
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
 }
 
 .sa-attention-side-panel__body::-webkit-scrollbar {
@@ -3073,7 +3073,7 @@ a.sa-attention-card:hover {
 }
 
 .sa-forecast-premium__empty {
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 /* Premium accordions */
@@ -3137,12 +3137,12 @@ a.sa-attention-card:hover {
 .sa-collapsible--premium .sa-collapsible__title {
   font-size: 0.86rem;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .sa-collapsible--premium .sa-collapsible__desc {
   font-size: 0.7rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   margin-top: 0.1rem !important;
   line-height: 1.35;
   display: -webkit-box;
@@ -3185,7 +3185,7 @@ a.sa-attention-card:hover {
 .sa-action-card--premium {
   border-radius: 13px;
   border: 1px solid color-mix(in oklab, #e2e8f0 88%, #bfdbfe);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   min-height: 6.5rem;
 }

@@ -1,4 +1,4 @@
-/* Freelancer dashboard — open pool orders (premium soft UI, matches shell + reference) */
+﻿/* Freelancer dashboard — open pool orders (premium soft UI, matches shell + reference) */
 
 /* Dashboard pool shell padding (fdl-outlet only — public page uses separate gutters below) */
 .oh-orders-market--modern {
@@ -186,7 +186,7 @@
 }
 
 .oh-orders-plan-filter-btn.is-active .oh-orders-plan-filter-btn__icon {
-  color: #2563eb;
+  color: var(--dash-primary, #2f3b65);
 }
 
 .oh-orders-plan-filter-btn:focus-visible {

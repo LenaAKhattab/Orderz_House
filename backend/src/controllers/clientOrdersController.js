@@ -2,6 +2,7 @@ const ordersService = require("../services/ordersService");
 const freelancerReviewsService = require("../services/freelancerReviewsService");
 const stripeCheckoutService = require("../services/stripeCheckoutService");
 const { sanitizeOrderForClient } = require("../utils/orderViewerSanitize");
+const { isMobileClient } = require("../utils/clientType");
 const { pipeOrderFileToResponse } = require("../utils/pipeOrderFileDownload");
 const { capture, captureException } = require("../config/posthog");
 
@@ -86,6 +87,7 @@ const createClientOrder = async (req, res, next) => {
         checkout = await stripeCheckoutService.createClientFixedOrderCheckoutSession({
           clientUserId: req.auth.userId,
           orderId: order.id,
+          isMobile: isMobileClient(req),
         });
       } catch (checkoutErr) {
         try {
@@ -124,9 +126,12 @@ const createClientOrder = async (req, res, next) => {
 
 const confirmFixedOrderPayment = async (req, res, next) => {
   try {
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+    const sessionId = body.sessionId || body.session_id || null;
     const out = await stripeCheckoutService.confirmClientFixedOrderPayment({
       clientUserId: req.auth.userId,
       orderId: req.params.id,
+      sessionId,
     });
     return res.status(200).json({ success: true, data: out });
   } catch (err) {
@@ -316,6 +321,7 @@ const createFixedOrderStripeCheckout = async (req, res, next) => {
     const out = await stripeCheckoutService.createClientFixedOrderCheckoutSession({
       clientUserId: req.auth.userId,
       orderId: req.params.id,
+      isMobile: isMobileClient(req),
     });
     return res.status(200).json({ success: true, data: out });
   } catch (err) {

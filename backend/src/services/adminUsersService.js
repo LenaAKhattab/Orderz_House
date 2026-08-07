@@ -214,6 +214,75 @@ async function searchFreelancers({
   return out.slice(0, lim);
 }
 
+/**
+ * Generic admin user search (any role) for institution membership and similar flows.
+ */
+async function searchUsers({ search = "", q = "", limit = 20, role = null } = {}) {
+  const queryText = String(search || q || "").trim();
+  const lim = Math.min(Math.max(Number(limit) || 20, 1), 50);
+  if (!queryText || queryText.length < 1) return [];
+
+  const values = [];
+  const where = [`u.is_active = TRUE`];
+  let i = 1;
+
+  if (role) {
+    values.push(String(role));
+    where.push(`u.role = $${i}`);
+    i += 1;
+  }
+
+  const like = `%${queryText.toLowerCase()}%`;
+  values.push(like);
+  const p = `$${i}`;
+  i += 1;
+  if (/^\d+$/.test(queryText)) {
+    values.push(Number(queryText));
+    where.push(`(
+      lower(u.email) LIKE ${p}
+      OR lower(COALESCE(u.first_name, '')) LIKE ${p}
+      OR lower(COALESCE(u.father_name, '')) LIKE ${p}
+      OR lower(COALESCE(u.family_name, '')) LIKE ${p}
+      OR CAST(u.id AS TEXT) LIKE ${p}
+      OR u.id = $${i}
+    )`);
+    i += 1;
+  } else {
+    where.push(`(
+      lower(u.email) LIKE ${p}
+      OR lower(COALESCE(u.first_name, '')) LIKE ${p}
+      OR lower(COALESCE(u.father_name, '')) LIKE ${p}
+      OR lower(COALESCE(u.family_name, '')) LIKE ${p}
+      OR lower(COALESCE(u.account_id::text, '')) LIKE ${p}
+    )`);
+  }
+
+  values.push(lim);
+  const orderSql = /^\d+$/.test(queryText)
+    ? `ORDER BY CASE WHEN u.id = $${i - 1} THEN 0 ELSE 1 END, u.id DESC`
+    : `ORDER BY u.id DESC`;
+  const { rows } = await pool.query(
+    `SELECT u.id, u.account_id, u.first_name, u.father_name, u.family_name, u.email, u.role, u.is_active
+     FROM users u
+     WHERE ${where.join(" AND ")}
+     ${orderSql}
+     LIMIT $${i}`,
+    values,
+  );
+
+  return rows.map((r) => ({
+    id: String(r.id),
+    accountId: r.account_id != null ? String(r.account_id) : null,
+    firstName: r.first_name,
+    fatherName: r.father_name,
+    familyName: r.family_name,
+    fullName: [r.first_name, r.father_name, r.family_name].filter(Boolean).join(" "),
+    email: r.email,
+    role: r.role,
+    isActive: Boolean(r.is_active),
+  }));
+}
+
 async function getFreelancerRegistrationProfileForAdmin(userId) {
   const id = Number(userId);
   if (!Number.isInteger(id) || id < 1) return null;
@@ -237,5 +306,6 @@ async function getFreelancerRegistrationProfileForAdmin(userId) {
 
 module.exports = {
   searchFreelancers,
+  searchUsers,
   getFreelancerRegistrationProfileForAdmin,
 };

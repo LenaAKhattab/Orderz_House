@@ -489,6 +489,9 @@ const SuperAdminSubscriptionsPage = () => {
         بعض المستقلين لديهم اشتراك حالي. إذا أكملت، سيتم <strong className="text-slate-900">تغيير باقتهم</strong> إلى:{" "}
         <strong className="text-[color:var(--primary,#2f3b65)]">{confirmPlanTitle}</strong>
       </p>
+      <p className="m-0 mb-3 text-sm leading-relaxed text-amber-950">
+        سيُعتبر اشتراك الخطة ورسوم التفعيل مدفوعين أوفلاين، وسيتمكن المستقل من استلام الطلبات مباشرة وفق حدود الخطة.
+      </p>
       <div className="mt-1 grid gap-2.5">
         {confirmItems.map((x) => (
           <div
@@ -561,6 +564,9 @@ const SuperAdminSubscriptionsPage = () => {
         }
       >
         <div className="oh-sa-subs-assign">
+          <p className="mb-3 rounded-xl border border-amber-200/80 bg-amber-50/90 px-3 py-2.5 text-sm font-semibold text-amber-950" role="note">
+            عند تعيين الخطة يدويًا، سيُعتبر اشتراك الخطة ورسوم التفعيل مدفوعين أوفلاين، وسيتمكن المستقل من استلام الطلبات مباشرة وفق حدود الخطة.
+          </p>
           <div className="oh-sa-subs-assign__fields">
             <div className="flex min-w-0 flex-col gap-1.5">
               <span className={fieldLabelClass}>البحث عن مستقل</span>

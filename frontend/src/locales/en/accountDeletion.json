@@ -1,0 +1,23 @@
+{
+  "title": "Delete your Orderz House account",
+  "intro": "You can request deletion of your Orderz House account and associated personal data from inside the mobile app via:",
+  "inAppPath": "My Account → Account settings → Delete account",
+  "fallbackIntro": "If you can no longer access the app, you can request account deletion by email using the address below.",
+  "whatHappensTitle": "What happens when an account is deleted?",
+  "bullets": {
+    "deactivate": "The account is deactivated and sign-in is blocked.",
+    "personalData": "Unnecessary personal data such as phone number and profile photo is deleted or hidden when possible.",
+    "retention": "We may retain some records related to orders, payments, disputes, invoices, or legal/operational requirements for security, fraud prevention, legal compliance, and accounting.",
+    "ordersPayments": "Orders and payments are not deleted in a way that harms clients, freelancers, or financial records."
+  },
+  "howToTitle": "How to request account deletion",
+  "howToBody": "Please email the address below, include the email address linked to your account, and write the phrase:",
+  "requestPhrase": "Orderz House account deletion request",
+  "supportEmail": "support@orderzhouse.com",
+  "ctaMailto": "Request account deletion by email",
+  "privacyLink": "Also see our Privacy Policy",
+  "homeLink": "Back to home",
+  "privacyAppendixTitle": "Account deletion and data retention",
+  "privacyAppendixBody": "You can request deletion of your Orderz House account in the mobile app or via our public account-deletion page. Deletion deactivates the account and removes or hides unnecessary personal data where possible, while order, payment, and legally required records may be retained.",
+  "privacyAppendixLink": "Account deletion / deletion request page"
+}

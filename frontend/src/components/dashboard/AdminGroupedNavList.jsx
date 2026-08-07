@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { resolveNavLabel } from "../../lib/i18n/resolveNavLabel";
+import AdminNavIcon from "./AdminNavIcon";
 
 function navLinkClassName(pathname, item) {
   return ({ isActive }) => {
@@ -38,7 +39,7 @@ export default function AdminGroupedNavList({
                     onClick={onNavigate}
                   >
                     <span className="oh-sa-navlink__icon" aria-hidden>
-                      {item.icon}
+                      <AdminNavIcon name={item.icon} />
                     </span>
                     <span className="oh-sa-navlink__label">{resolveNavLabel(item, t)}</span>
                   </NavLink>

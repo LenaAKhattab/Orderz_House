@@ -1,0 +1,37 @@
+{
+  "stamp": 1783778270686,
+  "health": {
+    "success": true,
+    "message": "API is running",
+    "status": "ok",
+    "database": "connected",
+    "timestamp": "2026-07-11T13:57:52.090Z"
+  },
+  "reject": {
+    "orderId": "30113",
+    "title": "QA5J3-REJECT-1783778270686",
+    "orderStatus": "open_for_bids",
+    "bidId": "75",
+    "amount": 60,
+    "message": "QA5J3 reject bid — please reject this offer",
+    "status": "pending",
+    "displayName": "مستقل اختبار QA",
+    "bidCreateStatus": 200
+  },
+  "accept": {
+    "orderId": "30114",
+    "title": "QA5J3-ACCEPT-1783778270686",
+    "orderStatus": "open_for_bids",
+    "bidId": "76",
+    "amount": 75,
+    "message": "QA5J3 accept bid — please accept this offer",
+    "status": "pending",
+    "displayName": "مستقل اختبار QA",
+    "bidCreateStatus": 200
+  },
+  "login": {
+    "client": "qa.client@orderzhouse.test",
+    "freelancer": "qa.freelancer@orderzhouse.test",
+    "password": "Test123456!"
+  }
+}

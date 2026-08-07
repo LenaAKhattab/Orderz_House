@@ -1,4 +1,4 @@
-.oh-bid-modal-overlay {
+﻿.oh-bid-modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 1000;
@@ -13,7 +13,7 @@
 .oh-bid-modal {
   width: min(100%, 36rem);
   max-width: calc(100vw - 2rem);
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border-radius: 1.5rem;
   border: 1px solid rgba(56, 82, 180, 0.1);
   box-shadow:
@@ -55,7 +55,7 @@
   font-size: 1.2rem;
   line-height: 1.35;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-bid-modal__close {
@@ -67,8 +67,8 @@
   justify-content: center;
   border: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 0.65rem;
-  background: #f8fafc;
-  color: #64748b;
+  background: var(--dash-card-muted, #f9fafb);
+  color: var(--dash-text-secondary, #4b5563);
   font-size: 1.15rem;
   line-height: 1;
   cursor: pointer;
@@ -76,7 +76,7 @@
 }
 
 .oh-bid-modal__close:hover:not(:disabled) {
-  background: #f1f5f9;
+  background: var(--dash-hover, #eef1f4);
   border-color: rgba(100, 116, 139, 0.45);
   color: #334155;
 }
@@ -98,7 +98,7 @@
   margin: 0 0 0.35rem;
   font-size: 0.74rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-bid-modal__summary-title {
@@ -106,7 +106,7 @@
   font-size: 0.95rem;
   font-weight: 800;
   line-height: 1.45;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   word-break: break-word;
 }
 
@@ -124,7 +124,7 @@
 }
 
 .oh-bid-modal__summary-row strong {
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   font-weight: 800;
 }
 
@@ -146,7 +146,7 @@
   border: 1px solid rgba(148, 163, 184, 0.45);
   border-radius: 0.85rem;
   overflow: hidden;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -171,12 +171,12 @@
   padding: 0.8rem 0.95rem;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   outline: none;
 }
 
 .oh-bid-modal__input::placeholder {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   font-weight: 500;
 }
 
@@ -187,7 +187,7 @@
   font-size: 0.82rem;
   font-weight: 800;
   color: #475569;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   border-inline-start: 1px solid rgba(148, 163, 184, 0.28);
   white-space: nowrap;
 }
@@ -196,7 +196,7 @@
   margin: 0.45rem 0 0;
   font-size: 0.78rem;
   line-height: 1.45;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-bid-modal__error {
@@ -235,13 +235,13 @@
 }
 
 .oh-bid-modal__actions .btn-secondary {
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border: 1px solid rgba(148, 163, 184, 0.45);
   color: #334155;
 }
 
 .oh-bid-modal__actions .btn-secondary:hover:not(:disabled) {
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
 }
 
 @media (max-width: 520px) {

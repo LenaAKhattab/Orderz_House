@@ -217,7 +217,6 @@ export default function FreelancerOrderDetailsPage() {
 
   const localizedTitle = useMemo(() => getLocalizedOrderTitle(order, locale), [order, locale]);
   const localizedDescription = useMemo(() => getLocalizedOrderDescription(order, locale), [order, locale]);
-  const titleDir = resolveUserContentDir(localizedTitle, dir);
   const descriptionDir = resolveUserContentDir(localizedDescription, dir);
 
   const typeAndBudgetText = useMemo(() => {

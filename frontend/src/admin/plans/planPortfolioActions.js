@@ -217,7 +217,7 @@ export function enrichPlansWithPortfolioActions(plans, platformContext) {
   }
 }
 
-export function filterPlansByDecision(plans, decisionFilter, platformContext) {
+export function filterPlansByDecision(plans, decisionFilter, _platformContext) {
   if (!decisionFilter || decisionFilter === DECISION_FILTERS.all) return plans;
 
   const okPlans = (plans || []).filter((p) => p.performance?.state === "ok");

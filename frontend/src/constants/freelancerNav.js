@@ -4,6 +4,12 @@ import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
 export const FREELANCER_NAV_MAIN = [
   { to: "/dashboard/freelancer", labelKey: "dashboard.nav.freelancer.home", icon: "dashboard", end: true },
   { to: "/dashboard/freelancer/orders", labelKey: "dashboard.nav.freelancer.availableRequests", icon: "orders" },
+  {
+    to: "/dashboard/freelancer/institution-orders",
+    labelKey: "dashboard.nav.freelancer.institutionOrders",
+    icon: "orders",
+    requiresInstitutionMembership: true,
+  },
   { to: "/dashboard/freelancer/my-orders", labelKey: "dashboard.nav.freelancer.myRequests", icon: "my-orders" },
   { to: "/dashboard/freelancer/financial-claims", labelKey: "dashboard.nav.freelancer.wallet", icon: "wallet" },
   { to: "/dashboard/freelancer/plans", labelKey: "dashboard.nav.freelancer.plans", icon: "plans" },
@@ -31,6 +37,7 @@ export function freelancerPageTitle(pathname, t) {
   );
   if (item) return resolveNavLabel(item, t);
   if (pathname.includes("/settings")) return t("dashboard.nav.common.settings");
+  if (pathname.includes("/institution-orders")) return t("dashboard.nav.freelancer.institutionOrders");
   if (pathname.includes("/financial-claims")) return t("dashboard.nav.freelancer.wallet");
   if (pathname.includes("/orders/")) return t("dashboard.nav.freelancer.requestDetails");
   if (pathname.includes("/my-orders/")) return t("dashboard.nav.freelancer.myRequests");

@@ -1,4 +1,4 @@
-/* Shell width/padding: `DashboardShell` — this file composes training hub chrome only. */
+﻿/* Shell width/padding: `DashboardShell` — this file composes training hub chrome only. */
 
 .oh-training-hub__inner {
   width: 100%;
@@ -25,7 +25,7 @@
   background: transparent;
   font-weight: 800;
   font-size: 0.82rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   border-radius: 10px;
   transition: background 0.15s ease, color 0.15s ease;
 }
@@ -47,7 +47,7 @@
 .oh-training-hub__tabs a.oh-training-hub__tab.oh-training-hub__tab--active {
   background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
   color: #fff;
-  border-color: #0f172a;
+  border-color: var(--dash-text, #172033);
   box-shadow: none;
 }
 
@@ -150,7 +150,7 @@
   margin: 0;
   font-size: 1.05rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-training-visibility-control--on .oh-training-visibility-control__status {
@@ -165,7 +165,7 @@
   margin: 0;
   font-size: 0.88rem;
   line-height: 1.55;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-training-visibility-control__btn {
@@ -195,7 +195,7 @@
 .oh-training-table th {
   font-weight: 800;
   color: #475569;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
 }
 
 .oh-training-table th.oh-col-applicants,
@@ -239,7 +239,7 @@
 }
 
 .oh-training-applicants-modal {
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border-radius: 16px;
   padding: 1.35rem 1.5rem 1.25rem;
   box-shadow:
@@ -268,7 +268,7 @@
   margin: 0;
   font-size: 1.12rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-training-applicants-modal__close {
@@ -280,15 +280,15 @@
   justify-content: center;
   border: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 0.65rem;
-  background: #f8fafc;
-  color: #64748b;
+  background: var(--dash-card-muted, #f9fafb);
+  color: var(--dash-text-secondary, #4b5563);
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
 }
 
 .oh-training-applicants-modal__close:hover {
-  background: #f1f5f9;
+  background: var(--dash-hover, #eef1f4);
   color: #334155;
 }
 
@@ -403,7 +403,7 @@
 }
 
 .oh-training-modal__card {
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
@@ -421,7 +421,7 @@
   margin: 0;
   font-size: 1.05rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-training-modal__close {
@@ -439,8 +439,8 @@
 }
 
 .oh-training-badge--muted {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--dash-hover, #eef1f4);
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 /* Settings: pool visibility switch (RTL-safe) */
@@ -480,7 +480,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
   inset-inline-start: 3px;
   transition: inset-inline-start 0.2s ease;
@@ -494,7 +494,7 @@
 .oh-training-toggle__state {
   font-size: 0.9rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   min-width: 4.5rem;
 }
 
@@ -514,7 +514,7 @@
   margin: 0 0 12px;
   font-size: 0.82rem;
   line-height: 1.45;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 600;
 }
 
@@ -589,7 +589,7 @@
   padding: 6px;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -599,7 +599,7 @@
   margin: 0;
   padding: 10px 8px;
   font-size: 0.84rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 600;
   text-align: start;
 }
@@ -622,7 +622,7 @@
 }
 
 .oh-training-plan-option:hover {
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
 }
 
 .oh-training-plan-option--selected {
@@ -658,7 +658,7 @@
   margin: 0;
   font-size: 0.8rem;
   line-height: 1.45;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 600;
 }
 
@@ -694,7 +694,7 @@
   padding: 14px 16px;
   border: 1px solid #eef2f7;
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   text-align: start;
 }
 
@@ -706,7 +706,7 @@
   margin: 0;
   font-size: 0.92rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   letter-spacing: -0.01em;
 }
 
@@ -793,7 +793,7 @@
 }
 
 .oh-training-settings-section {
-  background: #ffffff;
+  background: var(--dash-card, #fcfcfd);
   border: 1px solid #eef2f7;
   border-radius: 12px;
   padding: 18px 20px;
@@ -802,14 +802,14 @@
 }
 
 .oh-training-settings-section--muted {
-  background: #ffffff;
+  background: var(--dash-card, #fcfcfd);
 }
 
 .oh-training-settings-section__title {
   margin: 0 0 6px;
   font-size: 1.05rem;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   letter-spacing: -0.01em;
 }
 
@@ -817,7 +817,7 @@
   margin: 0 0 14px;
   font-size: 0.84rem;
   line-height: 1.45;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 600;
 }
 
@@ -852,14 +852,14 @@
   border-radius: 8px;
   border: 1px solid #e8ecf1;
   font-size: 0.9rem;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .oh-training-settings-field input:focus,
 .oh-training-settings-field select:focus {
   outline: none;
-  border-color: #94a3b8;
+  border-color: var(--dash-text-muted, #667085);
   box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.12);
 }
 
@@ -911,7 +911,7 @@
   gap: 4px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   padding: 4px 8px;
 }
 
@@ -935,7 +935,7 @@
 .oh-training-pct-suffix {
   font-size: 0.8rem;
   font-weight: 800;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 /* Stacked bar */
@@ -958,11 +958,11 @@
 }
 
 .oh-training-pct-bar__seg--content {
-  background: #2563eb;
+  background: var(--dash-primary, #2f3b65);
 }
 
 .oh-training-pct-bar__seg--programming {
-  background: #7c3aed;
+  background: var(--dash-primary, #2f3b65);
 }
 
 .oh-training-pct-bar__seg--design {
@@ -976,7 +976,7 @@
   margin-top: 10px;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-training-pct-legend span {
@@ -993,11 +993,11 @@
 }
 
 .oh-training-pct-dot--content {
-  background: #2563eb;
+  background: var(--dash-primary, #2f3b65);
 }
 
 .oh-training-pct-dot--programming {
-  background: #7c3aed;
+  background: var(--dash-primary, #2f3b65);
 }
 
 .oh-training-pct-dot--design {
@@ -1031,7 +1031,7 @@
   margin-top: 0;
   border: 1px solid #eef2f7;
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--dash-card, #fcfcfd);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
   overflow: hidden;
 }
@@ -1079,7 +1079,7 @@
   margin: 0 0 10px;
   font-size: 1.08rem;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 /* —— Mobile: filters, tabs, tables —— */
@@ -1314,7 +1314,7 @@
 .oh-training-status-bar__meta {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   white-space: nowrap;
 }
 
@@ -1329,7 +1329,7 @@
   margin: 0 0 0.75rem;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   text-align: start;
 }
 
@@ -1349,7 +1349,7 @@
   margin: 0;
   font-size: 0.84rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   text-align: center;
 }
 
@@ -1393,7 +1393,7 @@
   margin: 0.35rem 0 0;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-training-visible-preview__body--refreshing {
@@ -1537,13 +1537,13 @@
 }
 
 .oh-training-period-lines__label {
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 500;
 }
 
 .oh-training-period-lines__value {
   font-weight: 700;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-training-metric-row--wrap .oh-training-metric-row__value {
@@ -1584,7 +1584,7 @@
   margin: 6px 0 0;
   font-size: 0.98rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 /* Compact metric rows (RTL/LTR-safe) */
@@ -1609,7 +1609,7 @@
 }
 
 .oh-training-metric-row > span:first-child {
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 700;
   flex: 1 1 auto;
   min-width: 0;
@@ -1619,7 +1619,7 @@
 .oh-training-metric-row .dash-ui-status-badge {
   flex-shrink: 0;
   text-align: end;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   font-weight: 800;
 }
 
@@ -1657,12 +1657,12 @@
 }
 
 .oh-training-overview__facts li > span:first-child {
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-weight: 700;
 }
 
 .oh-training-overview__facts li strong {
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   font-weight: 800;
   text-align: end;
   flex-shrink: 0;
@@ -1681,7 +1681,7 @@
 .oh-training-overview__meta {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-training-overview__card-actions {
@@ -1747,14 +1747,14 @@
 
 .oh-training-overview__activity-title {
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   min-width: 0;
 }
 
 .oh-training-overview__activity-meta {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   white-space: nowrap;
 }
 
@@ -1772,8 +1772,8 @@
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid rgba(148, 163, 184, 0.35);
-  background: #fff;
-  color: #0f172a;
+  background: var(--dash-card, #fcfcfd);
+  color: var(--dash-text, #172033);
   font-size: 0.88rem;
   font-weight: 800;
   text-decoration: none;
@@ -1781,7 +1781,7 @@
 }
 
 .oh-training-overview__quick-link:hover {
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   border-color: rgba(30, 58, 95, 0.35);
 }
 
@@ -1839,14 +1839,14 @@
 .oh-training-overview__pool-hint {
   margin: 6px 0 0;
   font-size: 0.76rem;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   line-height: 1.45;
   cursor: default;
   text-decoration: none;
 }
 
 .oh-training-overview__pool-hint:hover {
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   text-decoration: none;
 }
 
@@ -1883,12 +1883,12 @@
   margin: 0;
   font-size: 1.02rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-training-rounds-section__description {
   margin: 0;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-size: 0.82rem;
   line-height: 1.45;
 }
@@ -1920,7 +1920,7 @@
   border-radius: 8px;
   border: 1px solid #cbd5e1;
   font-size: 0.84rem;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
 }
 
 .oh-training-visible-preview {
@@ -1937,19 +1937,19 @@
   margin: 0;
   font-size: 1.02rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-training-visible-preview__helper {
   margin: 4px 0 0;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   font-size: 0.82rem;
   line-height: 1.45;
 }
 
 .oh-training-visible-preview__sort-hint {
   margin: 2px 0 0;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   font-size: 0.76rem;
   line-height: 1.4;
 }
@@ -2216,14 +2216,14 @@
   flex-shrink: 0;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-period-value {
   display: block;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -2305,16 +2305,16 @@
 }
 
 .oh-training-table__row--muted td {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .oh-training-table__row--muted strong {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
   font-weight: 700;
 }
 
 .oh-training-table__row--muted .oh-period-value {
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .oh-training-table__row--muted .dash-ui-status-badge {
@@ -2449,7 +2449,7 @@
 
 .oh-training-pool__count-note {
   display: inline;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-training-pool__actions .btn[disabled] {

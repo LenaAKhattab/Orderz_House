@@ -192,7 +192,7 @@ function legacyLocaleField(item, field, locale) {
  * @param {string} locale
  * @param {(key: string) => string} t
  */
-export function enrichFreelancerDashboardItem(item, summary, locale, t) {
+export function enrichFreelancerDashboardItem(item, summary, locale, _t) {
   if (!item) return item;
 
   const params = { ...(item.i18nParams && typeof item.i18nParams === "object" ? item.i18nParams : {}) };

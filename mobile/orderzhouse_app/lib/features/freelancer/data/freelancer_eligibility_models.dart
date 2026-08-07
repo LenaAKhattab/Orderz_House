@@ -1,0 +1,73 @@
+import '../../../core/network/json_helpers.dart';
+
+class FreelancerEligibility {
+  const FreelancerEligibility({
+    required this.eligible,
+    this.reason,
+  });
+
+  final bool eligible;
+  final String? reason;
+
+  factory FreelancerEligibility.fromJson(Map<String, dynamic> json) {
+    return FreelancerEligibility(
+      eligible: json['eligible'] == true,
+      reason: readMapField<String>(json, 'reason', 'reason'),
+    );
+  }
+
+  factory FreelancerEligibility.fromResponse(Map<String, dynamic> json) {
+    final data = json['data'];
+    if (data is Map) {
+      return FreelancerEligibility.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw FormatException('استجابة الأهلية غير متوقعة.');
+  }
+}
+
+String freelancerEligibilityMessageAr(FreelancerEligibility eligibility) {
+  if (eligibility.eligible) {
+    return 'حسابك مؤهل لاستلام الطلبات من السوق.';
+  }
+
+  switch (eligibility.reason) {
+    case 'company_activation_pending':
+      return 'بانتظار موافقة الإدارة قبل بدء استلام الطلبات.';
+    case 'no_subscription':
+    case 'status_inactive':
+    case 'status_cancelled':
+    case 'payment_not_completed':
+    case 'expired':
+    case 'activation_fee_unpaid':
+      return 'حسابك غير مؤهل حاليًا لتنفيذ هذا الإجراء. يرجى مراجعة الإدارة.';
+    default:
+      return 'حسابك غير مؤهل حاليًا لتنفيذ هذا الإجراء. يرجى مراجعة الإدارة.';
+  }
+}
+
+/// Home / list banner copy: clear ineligible headline + specific reason.
+String freelancerIneligibleBannerMessageAr(FreelancerEligibility eligibility) {
+  final reason = freelancerIneligibleReasonAr(eligibility.reason);
+  return 'أنت غير مؤهل لاستلام الطلبات من السوق.\n$reason';
+}
+
+String freelancerIneligibleReasonAr(String? reason) {
+  switch (reason) {
+    case 'company_activation_pending':
+      return 'السبب: بانتظار موافقة الإدارة على تفعيل حسابك.';
+    case 'no_subscription':
+      return 'السبب: لا يوجد اشتراك فعّال على حسابك.';
+    case 'status_inactive':
+      return 'السبب: الاشتراك غير نشط.';
+    case 'status_cancelled':
+      return 'السبب: تم إلغاء الاشتراك.';
+    case 'payment_not_completed':
+      return 'السبب: لم يكتمل دفع الاشتراك.';
+    case 'expired':
+      return 'السبب: انتهت صلاحية الاشتراك.';
+    case 'activation_fee_unpaid':
+      return 'السبب: رسوم تفعيل الحساب غير مدفوعة. يرجى مراجعة الإدارة.';
+    default:
+      return 'السبب: يرجى مراجعة الإدارة لتفعيل أهليتك.';
+  }
+}

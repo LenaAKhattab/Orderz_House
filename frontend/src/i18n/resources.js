@@ -10,6 +10,7 @@ import arOrders from "../locales/ar/orders.json";
 import arDashboard from "../locales/ar/dashboard.json";
 import arTrainingOrders from "../locales/ar/trainingOrders.json";
 import arFreelancerDashboard from "../locales/ar/freelancerDashboard.json";
+import arAccountDeletion from "../locales/ar/accountDeletion.json";
 
 import enCommon from "../locales/en/common.json";
 import enNav from "../locales/en/nav.json";
@@ -23,6 +24,7 @@ import enOrders from "../locales/en/orders.json";
 import enDashboard from "../locales/en/dashboard.json";
 import enTrainingOrders from "../locales/en/trainingOrders.json";
 import enFreelancerDashboard from "../locales/en/freelancerDashboard.json";
+import enAccountDeletion from "../locales/en/accountDeletion.json";
 
 export const DEFAULT_LOCALE = "ar";
 export const SUPPORTED_LOCALES = ["ar", "en"];
@@ -43,6 +45,7 @@ export const resources = {
     dashboard: arDashboard,
     trainingOrders: arTrainingOrders,
     freelancerDashboard: arFreelancerDashboard,
+    accountDeletion: arAccountDeletion,
   },
   en: {
     common: enCommon,
@@ -57,6 +60,7 @@ export const resources = {
     dashboard: enDashboard,
     trainingOrders: enTrainingOrders,
     freelancerDashboard: enFreelancerDashboard,
+    accountDeletion: enAccountDeletion,
   },
 };
 

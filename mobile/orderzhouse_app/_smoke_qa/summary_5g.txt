@@ -1,0 +1,7 @@
+success_no_go_exception: true
+success_not_guest_home: true
+success_auth_gate: true
+cancel_no_go_exception: true
+cancel_safe: true
+unknown_no_go_exception: true
+unknown_safe: true

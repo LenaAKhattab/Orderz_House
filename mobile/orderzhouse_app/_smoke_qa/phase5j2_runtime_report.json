@@ -1,0 +1,81 @@
+{
+  "stamp": 1783775892017,
+  "TITLE_A": "QA5J2A1783775892017",
+  "TITLE_R": "QA5J2R1783775892017",
+  "results": {
+    "env_health": {
+      "ok": true
+    },
+    "env_analyze": {
+      "ok": true,
+      "note": "No issues found"
+    },
+    "env_test": {
+      "ok": true,
+      "note": "329/329"
+    },
+    "env_debug_apk": {
+      "ok": true
+    },
+    "client_create_bidding_api": {
+      "ok": true,
+      "acceptId": "30111",
+      "rejectId": "30112",
+      "status": "open_for_bids",
+      "noCheckout": true
+    },
+    "freelancer_bid_api_setup": {
+      "ok": true,
+      "acceptStatus": 200,
+      "rejectStatus": 200
+    },
+    "launch_ok": {
+      "ok": true
+    },
+    "auth_first": {
+      "ok": false,
+      "texts": [
+        "أوردرز هاوس / مرحباً، عميل اختبار QA",
+        "أنجز طلباتك باحتراف / اطلب خدمة، تابع التنفيذ، وادفع بأمان — من مكان واحد.",
+        "طلباتي",
+        "إنشاء طلب جديد",
+        "الخدمات",
+        "سوق الطلبات",
+        "من نحن",
+        "لماذا أوردرز هاوس؟"
+      ]
+    },
+    "payment_deeplink": {
+      "ok": true,
+      "texts": [
+        "أوردرز هاوس / مرحباً، عميل اختبار QA",
+        "أنجز طلباتك باحتراف / اطلب خدمة، تابع التنفيذ، وادفع بأمان — من مكان واحد.",
+        "طلباتي",
+        "إنشاء طلب جديد",
+        "الخدمات",
+        "سوق الطلبات",
+        "من نحن",
+        "لماذا أوردرز هاوس؟",
+        "طلبات موثوقة / متابعة واضحة من الإنشاء حتى التسليم. / دفع آمن / Stripe — قريباً في التطبيق. / دعم عربي / واجهة RTL وتجربة قريبة من الويب.",
+        "الرئيسية / علامة التبويب 1 من 5"
+      ]
+    },
+    "client_login": {
+      "ok": true
+    },
+    "client_opened_reject_order": {
+      "ok": false
+    },
+    "client_opened_accept_order": {
+      "ok": false
+    },
+    "client_create_bidding_ui": {
+      "ok": false,
+      "note": "UI wizard automation unreliable on emulator after category step; create verified via API + earlier partial UI taps (مناقصة/تصنيف)."
+    },
+    "freelancer_bid_ui": {
+      "ok": false,
+      "note": "Skipped in this resilient run; bids seeded via API so client accept/reject UI can be validated. Freelancer bid UI covered by unit tests + prior API E2E."
+    }
+  }
+}

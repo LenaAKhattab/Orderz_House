@@ -27,4 +27,14 @@ frontend/dist/
 .DS_Store
 Thumbs.db
 backend/google/service-account.json
+backend/secrets/
+# Firebase / GCP service accounts (never commit — any path, any double .json typo)
+firebase-service-account*.json
+**/firebase-service-account*.json
+**/serviceAccount*.json
+backend/**/firebase-service-account*.json
+backend/**/serviceAccount*.json
 backend/data/translation-cache.json
+mobile/orderzhouse_app/android/app/google-services.json
+mobile/orderzhouse_app/ios/Runner/GoogleService-Info.plist
+mobile/orderzhouse_app/lib/firebase_options.dart

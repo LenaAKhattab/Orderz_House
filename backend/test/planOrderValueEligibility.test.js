@@ -131,6 +131,13 @@ describe("computePoolOrderPlanEligibility", () => {
     assert.strictEqual(ok.canBid, true);
   });
 
+  it("null range is a plan configuration error, not a universal open band", () => {
+    const bad = computePoolOrderPlanEligibility({ project_type: "fixed", budget: 50 }, null);
+    assert.strictEqual(bad.isLockedByPlan, true);
+    assert.strictEqual(bad.planConfigurationError, true);
+    assert.match(String(bad.lockReason || ""), /تصحيح/);
+  });
+
   it("free plan unlocks in-band real orders, locks out-of-band", () => {
     const range = getPlanOrderValueRange(1);
     const inBand = computePoolOrderPlanEligibility({ project_type: "fixed", budget: 5, orderSource: "real" }, range);

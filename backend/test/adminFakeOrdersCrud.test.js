@@ -201,15 +201,16 @@ describe("admin fake orders routes policy", () => {
     assert.match(routesSrc, /trainingOrdersGuard/);
     assert.match(routesSrc, /PERMISSION_KEYS\.TRAINING_ORDERS/);
     assert.match(routesSrc, /router\.get\("\/training-orders\/fake-orders"/);
-    assert.match(routesSrc, /router\.post\("\/training-orders\/fake-orders"/);
-    assert.match(routesSrc, /router\.patch\("\/training-orders\/fake-orders\/:id"/);
+    // Multiline router.post( path, ... ) — match path token, not single-line form.
+    assert.match(routesSrc, /router\.post\(\s*\n\s*"\/training-orders\/fake-orders"/);
+    assert.match(routesSrc, /router\.patch\(\s*\n\s*"\/training-orders\/fake-orders\/:id"/);
     assert.match(routesSrc, /hide-current-round/);
     assert.match(routesSrc, /hideFakeOrderFromCurrentRound/);
-    assert.match(routesSrc, /router\.delete\("\/training-orders\/fake-orders\/:id"/);
+    assert.match(routesSrc, /router\.delete\(\s*\n\s*"\/training-orders\/fake-orders\/:id"/);
   });
 
   it("keeps legacy template routes separate from fake-orders create", () => {
-    assert.match(routesSrc, /router\.post\("\/training-orders\/templates"/);
+    assert.match(routesSrc, /router\.post\(\s*\n\s*"\/training-orders\/templates"/);
     assert.match(routesSrc, /createFakeOrder/);
     assert.match(routesSrc, /createTemplate/);
     assert.match(routesSrc, /fake-orders/);

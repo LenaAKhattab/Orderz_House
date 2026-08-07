@@ -294,6 +294,12 @@ export default function AdminOrdersPage() {
                 compactSummary
                 footerInline={
                   <>
+                    {o?.isInstitutionalOrder || o?.visibilityScope === "institution" ? (
+                      <span className="oh-mini-chip oh-mini-chip--emph" title={o.institutionalStorageName || ""}>
+                        طلب مؤسسي
+                        {o.institutionalStorageName ? ` · ${o.institutionalStorageName}` : ""}
+                      </span>
+                    ) : null}
                     {shouldShowApplicants ? (
                       <span className="help">تدفق المطالبات غير متاح للطلبات الثابتة.</span>
                     ) : null}
@@ -342,6 +348,7 @@ export default function AdminOrdersPage() {
                   {[
                     "رقم الطلب",
                     "العنوان",
+                    "النطاق",
                     "الوصف",
                     "التصنيف",
                     "التصنيف التفصيلي",
@@ -396,6 +403,16 @@ export default function AdminOrdersPage() {
                     <tr key={o.id}>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.orderCode || "—"}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.title || "—"}</td>
+                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>
+                        {o?.isInstitutionalOrder || o?.visibilityScope === "institution" ? (
+                          <span title={[o.institutionalStorageName, ...(o.institutionalInstitutionNames || [])].filter(Boolean).join(" · ")}>
+                            طلب مؤسسي
+                            {o.institutionalStoredOrderId ? ` (#${o.institutionalStoredOrderId})` : ""}
+                          </span>
+                        ) : (
+                          "عام"
+                        )}
+                      </td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", maxWidth: 420 }}>{o.description || "—"}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.category?.name || "—"}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.subSubcategory?.name || "—"}</td>

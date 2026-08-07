@@ -28,7 +28,7 @@ Copy `backend/.env.example` → host env / `.env` and set:
 
 | Variable | Staging notes |
 |----------|----------------|
-| `NODE_ENV` | `production` (recommended for cookie/security behaviour) |
+| `NODE_ENV` | **`production` (mandatory on the live API host)** — set in the process manager / Docker `environment`, not only in a file. A host `backend/.env` with `NODE_ENV=development` previously overrode orchestrator env because `dotenv` used `override: true` (fixed). Confirm `GET /api/health` → `runtime.nodeEnv === "production"`. |
 | `PORT` | Host port (e.g. `5000`) |
 | `DATABASE_URL` | Staging Postgres connection string |
 | `JWT_SECRET` | Strong random secret (≥ 16 chars) |
@@ -89,17 +89,24 @@ Copy `frontend/.env.example` → build-time env:
 ### 4. Build & run
 
 ```bash
-# Backend (from backend/)
-npm install
+# Backend (from backend/) — plain Node, no compile step
+npm ci
 npm run test:unit
-npm start
+NODE_ENV=production npm start
+# Verify: GET /api/health → runtime.nodeEnv === "production"
 
 # Frontend (from frontend/)
-npm install
+npm ci
 npm run lint
 npm run build
 npm test
 # Deploy dist/ to static host; point SPA to staging API
+```
+
+Optional Docker (requires `backend/Dockerfile` + `frontend/Dockerfile`):
+
+```bash
+docker compose up --build -d
 ```
 
 ### 5. Smoke checks
@@ -147,6 +154,15 @@ BASE_URL=https://api.staging.your-domain.com npm run api:smoke
 - [ ] `TRUST_PROXY=1` on API behind load balancer
 
 ### Migrations
+
+| Command | Purpose | Production-safe? |
+|---------|---------|------------------|
+| `npm run db:migrate` | Applies pending SQL files from `sql/migrations` via `scripts/runAllMigrations.js`, tracked in `schema_migrations` | **Yes** — use this on staging/production |
+| `npm run db:verify-schema` | Read-only schema sanity checks | **Yes** |
+| `npm run db:migrate:deploy` | **Does not exist** in this repo | N/A |
+| Prisma migrate | **Not used** — backend is raw `pg` + SQL files | Never |
+
+There is **no Prisma** in this backend. Never run `prisma migrate dev` or any Prisma command for Orderz House.
 
 ```bash
 cd backend

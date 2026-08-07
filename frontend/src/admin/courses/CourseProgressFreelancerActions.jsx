@@ -10,6 +10,8 @@ import {
 import { useToast } from "../../components/ui/toastContext";
 import {
   activationStatusLabel,
+  adminSubscriptionActivationMenuLabel,
+  describeFreelancerAdminEligibilityState,
   eligibilityReasonAdminMessage,
   formatPlanOrderValueRange,
   formatPlanPriceLabel,
@@ -194,13 +196,18 @@ export default function CourseProgressFreelancerActions({
     if (!Number.isInteger(planId) || planId < 1 || busy) return;
     setBusy("plan");
     try {
-      await assignPlanToFreelancerRequest({
+      const res = await assignPlanToFreelancerRequest({
         freelancerUserId: assignment.freelancerId,
         planId,
         notes: null,
       });
       await refreshSummary();
-      toast.success("تم تغيير خطة المستقل بنجاح");
+      const eligible = res?.data?.eligibility?.eligible === true;
+      toast.success(
+        eligible
+          ? "تم تعيين الخطة أوفلاين — المستقل مؤهل لاستلام الطلبات وفق حدود الباقة"
+          : "تم تعيين الخطة أوفلاين (اشتراك + رسوم تفعيل). راجع أهلية استلام الطلبات.",
+      );
       setModal(null);
       setPlanPick("");
     } catch (err) {
@@ -266,8 +273,27 @@ export default function CourseProgressFreelancerActions({
     expiryDate: sub.expiryDate,
   } : null);
   const displayEligibility = detailsEligibility || (sub
-    ? { eligible: sub.canTakeOrders, reason: sub.eligibilityReason }
+    ? {
+        eligible: sub.canTakeOrders,
+        reason: sub.eligibilityReason,
+        activationFeeStatus: detailsEligibility?.activationFeeStatus || null,
+      }
     : null);
+  const eligibilityState = describeFreelancerAdminEligibilityState({
+    eligibility: displayEligibility,
+    subscription: displaySub || sub,
+    activationFeeStatus: displayEligibility?.activationFeeStatus || null,
+  });
+  const activationMenuLabel = adminSubscriptionActivationMenuLabel({
+    isApproved,
+    canActivate,
+    eligibility: displayEligibility || {
+      eligible: sub?.canTakeOrders,
+      reason: sub?.eligibilityReason,
+    },
+    subscription: displaySub || sub,
+    activationFeeStatus: displayEligibility?.activationFeeStatus || null,
+  });
 
   const menuPanel = menuOpen && menuPosition ? (
     <div
@@ -293,13 +319,9 @@ export default function CourseProgressFreelancerActions({
         >
           {busy === "activate" ? "جاري التفعيل…" : "تفعيل الاشتراك"}
         </button>
-      ) : isApproved ? (
-        <span className="oh-admin-courses__progress-actions-item oh-admin-courses__progress-actions-item--muted" role="menuitem">
-          مفعّل بالفعل
-        </span>
       ) : (
         <span className="oh-admin-courses__progress-actions-item oh-admin-courses__progress-actions-item--muted" role="menuitem">
-          لا يوجد اشتراك للتفعيل
+          {activationMenuLabel || "لا يوجد اشتراك للتفعيل"}
         </span>
       )}
       <button type="button" role="menuitem" className="oh-admin-courses__progress-actions-item" disabled={!!busy} onClick={openChangePlan}>
@@ -343,7 +365,7 @@ export default function CourseProgressFreelancerActions({
                 <dd>{displaySub?.plan?.title || displaySub?.plan?.name || sub?.planName || "—"}</dd>
               </div>
               <div>
-                <dt>حالة التفعيل</dt>
+                <dt>موافقة الشركة</dt>
                 <dd>{activationStatusLabel(displaySub?.activationStatus || sub?.activationStatus)}</dd>
               </div>
               <div>
@@ -359,17 +381,33 @@ export default function CourseProgressFreelancerActions({
                 <dd>{formatJoDate(displaySub?.expiryDate || sub?.expiryDate)}</dd>
               </div>
               <div>
-                <dt>استلام الطلبات</dt>
+                <dt>أهلية استلام الطلبات</dt>
+                <dd>{eligibilityState.label}</dd>
+              </div>
+              <div>
+                <dt>يمكن استلام الطلبات</dt>
                 <dd>{displayEligibility?.eligible ? "نعم" : "لا"}</dd>
               </div>
-              {!displayEligibility?.eligible ? (
+              {displayEligibility?.reason ? (
                 <div>
-                  <dt>السبب</dt>
+                  <dt>رمز الأهلية</dt>
                   <dd>
                     {eligibilityReasonAdminMessage(
                       displayEligibility?.reason || sub?.eligibilityReason,
                       displaySub,
                     )}
+                  </dd>
+                </div>
+              ) : null}
+              {displayEligibility?.activationFeeStatus ? (
+                <div>
+                  <dt>رسوم التفعيل</dt>
+                  <dd>
+                    {displayEligibility.activationFeeStatus.needsPayment
+                      ? "غير مدفوعة"
+                      : displayEligibility.activationFeeStatus.isCurrent
+                        ? "مدفوعة وسارية"
+                        : "—"}
                   </dd>
                 </div>
               ) : null}
@@ -381,6 +419,9 @@ export default function CourseProgressFreelancerActions({
       {modal === "plan" ? (
         <InlineModal title="تغيير الخطة" busy={busy === "plan"} onClose={() => busy !== "plan" && setModal(null)}>
           <p className="help oh-admin-courses__progress-action-hint">تغيير الباقة لا يؤثر على تقدم الدورة أو درجة الاختبار.</p>
+          <p className="help oh-admin-courses__progress-action-hint" role="note">
+            عند تعيين الخطة يدويًا، سيُعتبر اشتراك الخطة ورسوم التفعيل مدفوعين أوفلاين، وسيتمكن المستقل من استلام الطلبات مباشرة وفق حدود الخطة.
+          </p>
           <label className="oh-admin-courses__progress-action-label" htmlFor={planSelectId}>
             اختر الباقة
           </label>

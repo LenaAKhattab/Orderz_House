@@ -21,6 +21,7 @@ import {
   ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR,
   validateOrderFilesSize,
 } from "../../utils/orderUploadLimits";
+import { getOrderCreateErrorMessage } from "../../utils/apiErrorMessage";
 import { isFixedBudgetInAllowedSpan, normalizeTemplateBudget } from "../../utils/fakeBudgetRanges";
 import { formatTrainingOrderBudget } from "../../pages/dashboard/trainingOrders/trainingOrdersDisplayUtils";
 
@@ -360,6 +361,9 @@ export default function AdminInternalOrderWizard({
   onSubmitFakeOrder,
   resetToken = 0,
   modalOnClose,
+  modalCloseLabel = null,
+  onBusyChange = null,
+  onDirtyChange = null,
   fakeTemplateIsEdit = false,
   fakeOrderIsEdit = false,
 } = {}) {
@@ -368,6 +372,7 @@ export default function AdminInternalOrderWizard({
   const { t } = useTranslation();
   const isFakeTemplate = mode === "fake-template";
   const isFakeOrder = mode === "fake-order";
+  const isInstitutionalMode = mode === "institutional";
   const isFakePoolMode = isFakeTemplate || isFakeOrder;
   const poolWizardNs = isFakeOrder ? "trainingOrders.poolWizard" : "trainingOrders.templateWizard";
   const tpl = (key) => t(`${poolWizardNs}.${key}`);
@@ -403,6 +408,7 @@ export default function AdminInternalOrderWizard({
 
   const fileInputRef = useRef(null);
   const explicitSubmitClickRef = useRef(false);
+  const submitInFlightRef = useRef(false);
   const hydratingCategoryRef = useRef(false);
   const [files, setFiles] = useState([]);
   const [stepIdx, setStepIdx] = useState(0);
@@ -413,7 +419,6 @@ export default function AdminInternalOrderWizard({
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
 
   useEffect(() => {
-    if (!isFakePoolMode) return;
     hydratingCategoryRef.current = true;
     setForm(makeInitialForm(initialValues));
     setStepIdx(0);
@@ -421,7 +426,29 @@ export default function AdminInternalOrderWizard({
     setAttempted({});
     setArchiveOnCreate(false);
     setAssignedFreelancer(null);
-  }, [resetToken, isFakePoolMode, initialValues]);
+    setExtraCategoryDetails({});
+    setExtraCategoryPickerOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when token changes
+  }, [resetToken]);
+
+  useEffect(() => {
+    if (typeof onBusyChange === "function") onBusyChange(Boolean(busy));
+  }, [busy, onBusyChange]);
+
+  useEffect(() => {
+    if (typeof onDirtyChange !== "function") return;
+    const baseline = makeInitialForm(initialValues);
+    const formDirty = Object.keys(baseline).some(
+      (k) => String(form[k] ?? "") !== String(baseline[k] ?? ""),
+    );
+    const dirty =
+      formDirty ||
+      stepIdx > 0 ||
+      files.length > 0 ||
+      Boolean(assignedFreelancer) ||
+      (Array.isArray(form.extraCategoryIds) && form.extraCategoryIds.length > 0);
+    onDirtyChange(dirty);
+  }, [form, files, stepIdx, assignedFreelancer, initialValues, onDirtyChange]);
 
   // Remember skill *names* for searchable suggestions; each new order starts with empty skills.
   useEffect(() => {
@@ -598,6 +625,9 @@ export default function AdminInternalOrderWizard({
       return;
     }
     explicitSubmitClickRef.current = false;
+    if (busy || submitInFlightRef.current) {
+      return;
+    }
     if (!canSubmit) {
       push({
         type: "error",
@@ -617,6 +647,7 @@ export default function AdminInternalOrderWizard({
         return;
       }
       setBusy(true);
+      submitInFlightRef.current = true;
       try {
         const finalDescription = form.description.trim();
         const selectedSs = subSubcategories.find((ss) => String(ss.id) === String(form.subSubcategoryId));
@@ -681,14 +712,16 @@ export default function AdminInternalOrderWizard({
         push({
           type: "error",
           title: tpl("toast.saveFailedTitle"),
-          message: e2?.response?.data?.message || e2?.message,
+          message: getOrderCreateErrorMessage(e2),
         });
       } finally {
+        submitInFlightRef.current = false;
         setBusy(false);
       }
       return;
     }
     setBusy(true);
+    submitInFlightRef.current = true;
     try {
       const fd = new FormData();
       if (!isClientAudience) {
@@ -710,7 +743,7 @@ export default function AdminInternalOrderWizard({
       fd.append("durationValue", String(Number(form.durationValue)));
       fd.append("durationUnit", form.durationUnit);
       fd.append("preferredSkills", JSON.stringify(form.preferredSkills || []));
-      if (!isClientAudience) {
+      if (!isClientAudience && !isFakePoolMode && !isInstitutionalMode) {
         if (form.assignedFreelancerId) fd.append("assignedFreelancerId", String(form.assignedFreelancerId));
         fd.append("archive", String(!form.assignedFreelancerId && archiveOnCreate));
       }
@@ -729,10 +762,12 @@ export default function AdminInternalOrderWizard({
       const created = res?.data?.order ?? res?.order;
       push({
         type: "success",
-        title: "تم إنشاء الطلب",
-        message: isClientAudience
-          ? `تم إنشاء الطلب «${form.title.trim()}».`
-          : `رقم الطلب: ${created?.orderCode || ""}`.trim(),
+        title: isInstitutionalMode ? "تم إنشاء الطلب المؤسسي" : "تم إنشاء الطلب",
+        message: isInstitutionalMode
+          ? `تم إنشاء «${form.title.trim()}» داخل المخزن.`
+          : isClientAudience
+            ? `تم إنشاء الطلب «${form.title.trim()}».`
+            : `رقم الطلب: ${created?.orderCode || ""}`.trim(),
       });
       if (typeof onCreated === "function") {
         onCreated(res);
@@ -749,8 +784,13 @@ export default function AdminInternalOrderWizard({
       setAssignedFreelancer(null);
       // Stay on the create page to allow fast creation of the next order.
     } catch (e2) {
-      push({ type: "error", title: "تعذر إنشاء الطلب", message: e2?.response?.data?.message || e2?.message });
+      push({
+        type: "error",
+        title: "تعذر إنشاء الطلب",
+        message: getOrderCreateErrorMessage(e2),
+      });
     } finally {
+      submitInFlightRef.current = false;
       setBusy(false);
     }
   };
@@ -1355,7 +1395,19 @@ export default function AdminInternalOrderWizard({
 
           {!isClientAudience && currentStepKey === "assignment" && !isFakePoolMode ? (
             <>
-              <h2 style={{ marginBottom: 10 }}>5) الإسناد (اختياري)</h2>
+              <h2 style={{ marginBottom: 10 }}>
+                {isInstitutionalMode ? "2) الإسناد" : "5) الإسناد (اختياري)"}
+              </h2>
+              {isInstitutionalMode ? (
+                <div className="oh-review" style={{ marginTop: 4 }}>
+                  <p className="help" style={{ marginBottom: 8 }}>
+                    في مخزون الطلبات المؤسسية لا يتم إسناد الطلب لمستقل عند الإنشاء.
+                  </p>
+                  <p className="help" style={{ marginBottom: 0 }}>
+                    بعد موافقة المدير الأعلى وإطلاق الطلب للمؤسسة، يتم التقديم والإسناد عبر مسار الطلب الحقيقي المعتاد.
+                  </p>
+                </div>
+              ) : (
               <div className="form-grid">
                 <div className="field" style={{ gridColumn: "span 12" }}>
                   <label>اختيار المستقل</label>
@@ -1375,6 +1427,7 @@ export default function AdminInternalOrderWizard({
                   />
                 </div>
               </div>
+              )}
             </>
           ) : null}
 
@@ -1624,8 +1677,13 @@ export default function AdminInternalOrderWizard({
         >
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {typeof modalOnClose === "function" ? (
-              <button type="button" className="btn btn-secondary co-modal-ref__foot-close" onClick={modalOnClose}>
-                إغلاق
+              <button
+                type="button"
+                className="btn btn-secondary co-modal-ref__foot-close"
+                onClick={modalOnClose}
+                disabled={busy}
+              >
+                {modalCloseLabel || (isInstitutionalMode ? "إلغاء" : "إغلاق")}
               </button>
             ) : null}
             <button type="button" className="btn btn-secondary" onClick={goPrev} disabled={stepIdx === 0 || busy}>

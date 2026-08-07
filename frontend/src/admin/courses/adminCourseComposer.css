@@ -1,4 +1,4 @@
-/* Course creation workflow — hub-aligned (scoped under .oh-admin-courses) */
+﻿/* Course creation workflow — hub-aligned (scoped under .oh-admin-courses) */
 
 .oh-admin-courses__composer {
   display: flex;
@@ -24,8 +24,8 @@
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #64748b;
-  background: #f1f5f9;
+  color: var(--dash-text-secondary, #4b5563);
+  background: var(--dash-hover, #eef1f4);
   border: 1px solid transparent;
 }
 
@@ -101,7 +101,7 @@
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.96);
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   font-size: 0.9rem;
   font-weight: 600;
 }
@@ -165,14 +165,14 @@
   margin: 0 0 0.25rem;
   font-size: 0.95rem;
   font-weight: 800;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-admin-courses__composer-surface-desc {
   margin: 0 0 0.85rem;
   font-size: 0.78rem;
   line-height: 1.5;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-admin-courses__composer-fields {
@@ -186,7 +186,7 @@
   margin-top: 0.2rem;
   font-size: 0.8rem;
   font-weight: 500;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   line-height: 1.45;
 }
 
@@ -201,7 +201,7 @@
   max-width: 320px;
   border-radius: 14px;
   overflow: hidden;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border: 1px solid rgba(226, 232, 240, 0.95);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
@@ -225,7 +225,7 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .oh-admin-courses__composer-preview-placeholder svg {
@@ -243,7 +243,7 @@
   margin: 0 0 0.35rem;
   font-size: 0.92rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   line-height: 1.35;
 }
 
@@ -251,7 +251,7 @@
   margin: 0;
   font-size: 0.78rem;
   line-height: 1.5;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -279,7 +279,7 @@
 .oh-admin-courses__composer-summary-stat {
   padding: 0.65rem 0.75rem;
   border-radius: 14px;
-  background: #fff;
+  background: var(--dash-card, #fcfcfd);
   border: 1px solid rgba(226, 232, 240, 0.95);
   min-height: 4.5rem;
 }
@@ -288,14 +288,14 @@
   margin: 0 0 0.25rem;
   font-size: 0.7rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
 }
 
 .oh-admin-courses__composer-summary-value {
   margin: 0;
   font-size: 1.05rem;
   font-weight: 800;
-  color: #1e2a4a;
+  color: var(--dash-text, #172033);
   line-height: 1.3;
 }
 
@@ -340,7 +340,7 @@
   margin: 0;
   font-size: 0.9rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -356,14 +356,14 @@
   text-align: center;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--dash-text-muted, #667085);
 }
 
 .oh-admin-courses__exam-help {
   margin: 0;
   font-size: 0.8rem;
   font-weight: 500;
-  color: #64748b;
+  color: var(--dash-text-secondary, #4b5563);
   line-height: 1.45;
 }
 
@@ -390,7 +390,7 @@
   gap: 0.5rem;
   padding: 0.55rem 0.75rem;
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
   border: 1px solid #e2e8f0;
   width: fit-content;
   max-width: 100%;
@@ -428,12 +428,12 @@
   padding: 0.75rem;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  background: var(--dash-card-muted, #f9fafb);
 }
 
 .oh-admin-courses__exam-question-row-head strong {
   font-size: 0.88rem;
-  color: #0f172a;
+  color: var(--dash-text, #172033);
 }
 
 .oh-admin-courses__textarea--sm {

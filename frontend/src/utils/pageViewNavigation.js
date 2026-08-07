@@ -62,80 +62,32 @@ export const VISIT_COUNTER_SESSION_TTL_MS = 30 * 60 * 1000;
  * @returns {boolean}
  */
 export function shouldIncrementVisitCounter() {
-  console.log("SESSION GATE VERSION 1");
-  const origin = typeof window !== "undefined" ? window.location.origin : "(no window)";
   const now = Date.now();
 
   if (typeof localStorage === "undefined") {
-    console.log("[visit-counter-gate]", {
-      origin,
-      raw: null,
-      parsed: null,
-      now,
-      diffMinutes: null,
-      enteringCatch: false,
-      result: true,
-      reason: "localStorage undefined",
-    });
     return true;
   }
 
-  let enteringCatch = false;
   try {
     const raw = localStorage.getItem(VISIT_COUNTER_SESSION_KEY);
-    let parsed = null;
-    let diffMinutes = null;
-    let result = true;
-    let reason = "default increment";
 
     if (raw) {
-      parsed = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
       if (typeof parsed?.lastActivityAt === "number") {
-        diffMinutes = (now - parsed.lastActivityAt) / 60000;
         if (now - parsed.lastActivityAt < VISIT_COUNTER_SESSION_TTL_MS) {
           localStorage.setItem(VISIT_COUNTER_SESSION_KEY, JSON.stringify({ lastActivityAt: now }));
-          result = false;
-          reason = "within 30min window";
-        } else {
-          localStorage.setItem(VISIT_COUNTER_SESSION_KEY, JSON.stringify({ lastActivityAt: now }));
-          result = true;
-          reason = "session expired";
+          return false;
         }
-      } else {
         localStorage.setItem(VISIT_COUNTER_SESSION_KEY, JSON.stringify({ lastActivityAt: now }));
-        result = true;
-        reason = "lastActivityAt missing or not a number";
+        return true;
       }
-    } else {
       localStorage.setItem(VISIT_COUNTER_SESSION_KEY, JSON.stringify({ lastActivityAt: now }));
-      result = true;
-      reason = "no stored session";
+      return true;
     }
 
-    console.log("[visit-counter-gate]", {
-      origin,
-      raw,
-      parsed,
-      now,
-      diffMinutes,
-      enteringCatch: false,
-      result,
-      reason,
-    });
-    return result;
-  } catch (err) {
-    enteringCatch = true;
-    console.log("[visit-counter-gate]", {
-      origin,
-      raw: localStorage.getItem(VISIT_COUNTER_SESSION_KEY),
-      parsed: null,
-      now,
-      diffMinutes: null,
-      enteringCatch: true,
-      parseError: err?.message || String(err),
-      result: true,
-      reason: "catch fail-open",
-    });
+    localStorage.setItem(VISIT_COUNTER_SESSION_KEY, JSON.stringify({ lastActivityAt: now }));
+    return true;
+  } catch {
     return true;
   }
 }

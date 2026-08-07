@@ -361,7 +361,7 @@ export function IntelligenceTrendCharts({ charts, loading, periodLabel }) {
   );
 }
 
-export function buildOperationalCharts(intelligence, periodLabel) {
+export function buildOperationalCharts(intelligence, _periodLabel) {
   const orders = intelligence?.orders?.data;
   const subscriptions = intelligence?.subscriptions?.data;
   const financial = intelligence?.financial?.data;

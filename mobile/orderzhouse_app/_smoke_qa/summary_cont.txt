@@ -1,0 +1,9 @@
+freelancer_session_active: true
+freelancer_profile_has_plans: true
+freelancer_profile_has_claims: true
+logout_confirm: false
+logout_to_login: false
+logout_no_bottom_nav: false
+back_no_home: true
+payment_ui: false
+payment_still_no_guest_home: true

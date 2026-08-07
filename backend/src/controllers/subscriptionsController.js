@@ -43,9 +43,11 @@ const updateSubscription = async (req, res, next) => {
 
 const listActivationQueue = async (req, res, next) => {
   try {
+    const searchRaw = req.query.search != null ? String(req.query.search).trim() : "";
     const result = await subscriptionsService.listActivationQueueSubscriptions({
       page: req.query.page != null ? Number(req.query.page) : 1,
       limit: req.query.limit != null ? Number(req.query.limit) : 20,
+      search: searchRaw || null,
     });
     return res.status(200).json({
       success: true,
@@ -244,6 +246,19 @@ const markActivationFeePaidOfflineAdmin = async (req, res, next) => {
   }
 };
 
+const clearFreelancerPaymentFailureHold = async (req, res, next) => {
+  try {
+    const result = await subscriptionsService.adminClearPaymentFailureHold({
+      actorUserId: req.auth?.userId,
+      freelancerUserId: req.params.freelancerUserId,
+      reason: req.body?.reason || null,
+    });
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   assignPlan,
   listAssignablePlans,
@@ -259,5 +274,6 @@ module.exports = {
   recordFreelancerSubscriptionCheckoutCancelledNotify,
   activateSubscriptionCompanyApproval,
   markActivationFeePaidOfflineAdmin,
+  clearFreelancerPaymentFailureHold,
 };
 

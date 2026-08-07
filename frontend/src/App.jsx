@@ -32,6 +32,7 @@ import {
   ForgotPassword,
   PrivacyPolicy,
   TermsConditions,
+  AccountDeletion,
   PublicGuaranteePage,
   PublicHelpCenterPage,
   PublicFindWorkPage,
@@ -48,6 +49,13 @@ import {
   FinancialEmployeeDetailPage,
   SuperAdminSettingsPage,
   SuperAdminAdminsPage,
+  SuperAdminRateLimitExemptionsPage,
+  SuperAdminInstitutionsPage,
+  SuperAdminInstitutionDetailPage,
+  InstitutionalOrderStorageListPage,
+  InstitutionalOrderStorageDetailPage,
+  InstitutionalPendingApprovalsPage,
+  InstitutionOrdersPoolPage,
   SuperAdminEditWebsitePage,
   SuperAdminEditWebsiteFaqPage,
   SuperAdminSitePagesPage,
@@ -205,6 +213,7 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-conditions" element={<TermsConditions />} />
+              <Route path="/account-deletion" element={<AccountDeletion />} />
               <Route path="/guarantee" element={<PublicGuaranteePage />} />
               <Route path="/help-center" element={<PublicHelpCenterPage />} />
               <Route path="/find-work" element={<PublicFindWorkPage />} />
@@ -349,6 +358,54 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/super-admin/rate-limit-exemptions"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminRateLimitExemptionsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/institutions"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.institutions}>
+                      <SuperAdminInstitutionsPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/institutions/:institutionId"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.institutions}>
+                      <SuperAdminInstitutionDetailPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/institutional-order-storage"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage}>
+                      <InstitutionalOrderStorageListPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/institutional-order-storage/pending"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage}>
+                      <InstitutionalPendingApprovalsPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/institutional-order-storage/:storageId"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage}>
+                      <InstitutionalOrderStorageDetailPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
                   path="/dashboard/super-admin/edit-website"
                   element={
                     <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
@@ -481,6 +538,14 @@ function App() {
                   }
                 />
 
+                <Route
+                  path="/dashboard/freelancer/institution-orders"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <InstitutionOrdersPoolPage />
+                    </RequireRole>
+                  }
+                />
                 <Route
                   path="/dashboard/freelancer/orders"
                   element={
