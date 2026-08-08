@@ -11,8 +11,11 @@ import {
   listAssignablePlansAdminRequest,
   listSubscriptionsRequest,
   updateSubscriptionNotificationEmailRequest,
+  getSubscriptionActivationFeeSettingsRequest,
+  updateSubscriptionActivationFeeSettingsRequest,
   updateSubscriptionRequest,
 } from "../../services/api";
+import { invalidatePublicPlansCache } from "../../services/freelancerSessionCache";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import DashboardShell from "../../components/dashboard/DashboardShell";
@@ -109,6 +112,15 @@ const SuperAdminSubscriptionsPage = () => {
   const [notifyBusy, setNotifyBusy] = useState(false);
   const [notifyError, setNotifyError] = useState("");
   const [notifySuccess, setNotifySuccess] = useState("");
+
+  const [feeModalOpen, setFeeModalOpen] = useState(false);
+  const [feeEnabled, setFeeEnabled] = useState(true);
+  const [feeAmountJod, setFeeAmountJod] = useState("25");
+  const [feeValidityDays, setFeeValidityDays] = useState(365);
+  const [feeLoading, setFeeLoading] = useState(false);
+  const [feeBusy, setFeeBusy] = useState(false);
+  const [feeError, setFeeError] = useState("");
+  const [feeSuccess, setFeeSuccess] = useState("");
 
   const [searchParams] = useSearchParams();
   const initialSearch = (searchParams.get("search") || "").trim();
@@ -304,6 +316,63 @@ const SuperAdminSubscriptionsPage = () => {
     }
   }, [notifyEmail]);
 
+  const openFeeModal = useCallback(async () => {
+    setFeeError("");
+    setFeeSuccess("");
+    setFeeModalOpen(true);
+    setFeeLoading(true);
+    try {
+      const res = await getSubscriptionActivationFeeSettingsRequest();
+      setFeeEnabled(res?.data?.enabled !== false);
+      const amount = res?.data?.amountJod;
+      setFeeAmountJod(amount != null && Number.isFinite(Number(amount)) ? String(amount) : "25");
+      setFeeValidityDays(Number(res?.data?.validityDays) || 365);
+    } catch (err) {
+      setFeeError(errorMessage(err));
+    } finally {
+      setFeeLoading(false);
+    }
+  }, []);
+
+  const closeFeeModal = useCallback(() => {
+    if (feeBusy) return;
+    setFeeModalOpen(false);
+  }, [feeBusy]);
+
+  const saveFeeSettings = useCallback(async () => {
+    const amount = Number(String(feeAmountJod).trim());
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setFeeSuccess("");
+      setFeeError("يرجى إدخال قيمة صحيحة أكبر من صفر لرسوم التفعيل");
+      return;
+    }
+    setFeeBusy(true);
+    setFeeError("");
+    setFeeSuccess("");
+    try {
+      const res = await updateSubscriptionActivationFeeSettingsRequest({
+        enabled: Boolean(feeEnabled),
+        amountJod: amount,
+      });
+      setFeeEnabled(res?.data?.enabled !== false);
+      const savedAmount = res?.data?.amountJod;
+      setFeeAmountJod(
+        savedAmount != null && Number.isFinite(Number(savedAmount)) ? String(savedAmount) : String(amount),
+      );
+      setFeeValidityDays(Number(res?.data?.validityDays) || 365);
+      invalidatePublicPlansCache();
+      setFeeSuccess(
+        res?.data?.enabled
+          ? "تم حفظ إعدادات رسوم التفعيل بنجاح"
+          : "تم تعطيل رسوم التفعيل مع الإبقاء على القيمة المحفوظة",
+      );
+    } catch (err) {
+      setFeeError(errorMessage(err) || "تعذر حفظ إعدادات رسوم التفعيل");
+    } finally {
+      setFeeBusy(false);
+    }
+  }, [feeAmountJod, feeEnabled]);
+
   useEffect(() => {
     if (!notifyModalOpen || notifyBusy) return undefined;
     const onKeyDown = (event) => {
@@ -312,6 +381,15 @@ const SuperAdminSubscriptionsPage = () => {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [notifyModalOpen, notifyBusy, closeNotifyModal]);
+
+  useEffect(() => {
+    if (!feeModalOpen || feeBusy) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") closeFeeModal();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [feeModalOpen, feeBusy, closeFeeModal]);
 
   const askConfirm = useCallback((config) => {
     return new Promise((resolve) => {
@@ -767,6 +845,96 @@ const SuperAdminSubscriptionsPage = () => {
         </div>
       </DashboardModal>
 
+      <DashboardModal
+        open={feeModalOpen}
+        title="رسوم التفعيل"
+        ariaLabel="Subscription Activation Fee Settings"
+        onClose={closeFeeModal}
+        footer={
+          <>
+            <Button type="button" variant="secondary" disabled={feeBusy} onClick={closeFeeModal}>
+              إلغاء
+            </Button>
+            <Button type="button" variant="primary" disabled={feeBusy || feeLoading} onClick={() => void saveFeeSettings()}>
+              {feeBusy ? "جارٍ الحفظ…" : "حفظ التغييرات"}
+            </Button>
+          </>
+        }
+      >
+        <div className="grid gap-4">
+          <p className="m-0 text-sm leading-relaxed text-slate-600">
+            تطبق على المستخدم عند الحاجة وفق سياسة الصلاحية الحالية ({feeValidityDays} يومًا). تعطيل الرسوم لا يغيّر السجلات التاريخية.
+          </p>
+          {feeLoading ? (
+            <div className="text-sm text-slate-500">جارٍ تحميل الإعدادات…</div>
+          ) : (
+            <>
+              <label className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                <span className="text-sm font-bold text-slate-800">تفعيل رسوم التفعيل</span>
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 accent-[color:var(--primary,#2f3b65)]"
+                  checked={feeEnabled}
+                  disabled={feeBusy}
+                  onChange={(e) => {
+                    setFeeEnabled(e.target.checked);
+                    if (feeError) setFeeError("");
+                    if (feeSuccess) setFeeSuccess("");
+                  }}
+                />
+              </label>
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <label className={fieldLabelClass} htmlFor="sa-subs-activation-fee-amount">
+                  قيمة رسوم التفعيل
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="sa-subs-activation-fee-amount"
+                    className={controlClass}
+                    type="number"
+                    min="0.001"
+                    step="0.001"
+                    dir="ltr"
+                    value={feeAmountJod}
+                    disabled={feeBusy}
+                    aria-disabled={!feeEnabled}
+                    style={feeEnabled ? undefined : { opacity: 0.65 }}
+                    onChange={(e) => {
+                      setFeeAmountJod(e.target.value);
+                      if (feeError) setFeeError("");
+                      if (feeSuccess) setFeeSuccess("");
+                    }}
+                  />
+                  <span className="shrink-0 text-sm font-bold text-slate-600">د.أ</span>
+                </div>
+                {!feeEnabled ? (
+                  <p className="m-0 text-xs text-slate-500">الرسوم معطّلة حالياً — تُحفظ القيمة لاستخدامها عند إعادة التفعيل.</p>
+                ) : null}
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-600">
+                مدة الصلاحية: <strong>{feeValidityDays}</strong> يومًا (للقراءة فقط)
+              </div>
+            </>
+          )}
+          {feeError ? (
+            <div
+              role="alert"
+              className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm font-semibold text-rose-700"
+            >
+              {feeError}
+            </div>
+          ) : null}
+          {feeSuccess ? (
+            <div
+              role="status"
+              className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-semibold text-emerald-700"
+            >
+              {feeSuccess}
+            </div>
+          ) : null}
+        </div>
+      </DashboardModal>
+
       <DashboardPageHeader
         eyebrow="لوحة المدير الأعلى"
         title="اشتراكات المستقلين"
@@ -801,6 +969,9 @@ const SuperAdminSubscriptionsPage = () => {
         description="استعرض سجلات الاشتراكات وابحث وفلتر النتائج."
         actions={
           <>
+            <Button type="button" variant="secondary" disabled={submitting} onClick={() => void openFeeModal()}>
+              رسوم التفعيل
+            </Button>
             <Button type="button" variant="secondary" disabled={submitting} onClick={() => void openNotifyModal()}>
               إعداد بريد إشعارات الاشتراكات
             </Button>

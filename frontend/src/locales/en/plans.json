@@ -34,6 +34,17 @@
     "mostPopular": "Most popular",
     "premium": "Premium package"
   },
+  "sale": {
+    "percentOff": "{{percent}}% OFF",
+    "sectionTitle": "Plan discount",
+    "enable": "Enable discount",
+    "percentage": "Discount percentage (%)",
+    "reason": "Sale reason (Arabic)",
+    "reasonEn": "Sale reason",
+    "previewOriginal": "Original price: {{amount}} JOD",
+    "previewPercent": "Discount: {{percent}}%",
+    "previewFinal": "Price after discount: {{amount}} JOD"
+  },
   "tierLabels": {
     "basic": "Basic",
     "advance": "Advance",
@@ -44,7 +55,6 @@
   },
   "activationFeeNote": {
     "prefix": "Subscription activation fee:",
-    "amount": "25 JOD",
     "suffix": "paid once yearly"
   },
   "currency": {
@@ -83,7 +93,7 @@
     "freelancers": {
       "trustSimple": "Simple pricing",
       "trustNoFees": "No hidden fees",
-      "footnote": "A contract is signed after subscription. Account verification is a one-time fee of 25 JOD across all plans."
+      "footnote": "A contract is signed after subscription. Account verification is a one-time fee of {{amount}} across all plans."
     }
   },
   "cards": {

@@ -109,6 +109,15 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.rateLimitExemptions,
   },
+  problemsSuggestions: {
+    key: "problemsSuggestions",
+    to: "/dashboard/super-admin/feedback",
+    labelKey: "dashboard.nav.superAdmin.problemsSuggestions",
+    icon: "problems-suggestions",
+    end: false,
+    matchPrefix: "/dashboard/super-admin/feedback",
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.problemsSuggestions,
+  },
   institutions: {
     key: "institutions",
     to: "/dashboard/super-admin/institutions",
@@ -169,7 +178,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "administration",
     labelKey: "dashboard.nav.sections.administration",
-    itemKeys: ["admins", "rateLimitExemptions"],
+    itemKeys: ["admins", "rateLimitExemptions", "problemsSuggestions"],
   },
 ];
 
@@ -214,6 +223,12 @@ export function superAdminBreadcrumbKeys(pathname) {
   if (pathname.includes("/rate-limit-exemptions")) {
     return [...base, "dashboard.breadcrumbs.rateLimitExemptions"];
   }
+  if (pathname.includes("/feedback/")) {
+    return [...base, "dashboard.breadcrumbs.problemsSuggestions", "dashboard.breadcrumbs.feedbackDetails"];
+  }
+  if (pathname.includes("/feedback")) {
+    return [...base, "dashboard.breadcrumbs.problemsSuggestions"];
+  }
   if (pathname.includes("/institutional-order-storage")) {
     return [...base, "dashboard.nav.superAdmin.institutionalOrderStorage"];
   }
@@ -234,6 +249,44 @@ export function superAdminBreadcrumbKeys(pathname) {
   }
   if (pathname.includes("/edit-website/faq")) {
     return [...base, "dashboard.breadcrumbs.editWebsite", "dashboard.breadcrumbs.faq"];
+  }
+  if (pathname.includes("/edit-website/footer/contact-center")) {
+    return [
+      ...base,
+      "dashboard.breadcrumbs.editWebsite",
+      "dashboard.breadcrumbs.editFooter",
+      "dashboard.breadcrumbs.footerContactCenter",
+    ];
+  }
+  if (pathname.includes("/edit-website/footer/contact")) {
+    return [
+      ...base,
+      "dashboard.breadcrumbs.editWebsite",
+      "dashboard.breadcrumbs.editFooter",
+      "dashboard.breadcrumbs.footerContact",
+    ];
+  }
+  if (pathname.includes("/edit-website/footer/working-hours")) {
+    return [
+      ...base,
+      "dashboard.breadcrumbs.editWebsite",
+      "dashboard.breadcrumbs.editFooter",
+      "dashboard.breadcrumbs.footerWorkingHours",
+    ];
+  }
+  if (
+    pathname.includes("/edit-website/footer/app-downloads") ||
+    pathname.includes("/edit-website/footer-app-downloads")
+  ) {
+    return [
+      ...base,
+      "dashboard.breadcrumbs.editWebsite",
+      "dashboard.breadcrumbs.editFooter",
+      "dashboard.breadcrumbs.footerAppDownloads",
+    ];
+  }
+  if (pathname.includes("/edit-website/footer")) {
+    return [...base, "dashboard.breadcrumbs.editWebsite", "dashboard.breadcrumbs.editFooter"];
   }
   if (pathname.includes("/edit-website")) return [...base, "dashboard.breadcrumbs.editWebsite"];
   if (pathname.includes("/training-orders")) return [...base, "dashboard.breadcrumbs.trainingRequests"];

@@ -80,6 +80,7 @@ const PlanCard = ({
   hasBlockingSubscription = false,
   checkoutBusy = false,
   activationFeeNeedsPayment = false,
+  activationFee = null,
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -109,12 +110,13 @@ const PlanCard = ({
     isFreelancer,
     activationFeeNeedsPayment,
   });
+  const activationFeeAmountJod = activationFee?.amountJod;
   const isCurrentPlanLocked = isCurrentPlan && !freePlanPayFee;
   const customButtonLabel = getLocalizedField(plan, "buttonText", locale);
 
   const display = getLocalizedPlanCardDisplay(plan, locale, t);
   const displayedPrice = resolvePlanPriceDisplay(plan, display.price);
-  const { main: priceMain, sub: priceSub, checkoutHint } = displayedPrice;
+  const { main: priceMain, sub: priceSub, checkoutHint, sale: salePrice } = displayedPrice;
   const features = display.features;
   const extraFeatures = features.slice(MOBILE_FEATURE_PREVIEW);
   const desktopFeatures = features.slice(0, DESKTOP_PUBLIC_FEATURE_LIMIT);
@@ -199,6 +201,7 @@ const PlanCard = ({
         "pricing-card",
         featured ? "pricing-card--featured" : "",
         isCurrentPlan ? "pricing-card--current" : "",
+        salePrice?.active ? "pricing-card--sale" : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -222,8 +225,29 @@ const PlanCard = ({
       {offerLabel ? <OfferBlock label={offerLabel} className="pricing-card__offer--inline" /> : null}
 
       <div className="pricing-card__price">
-        <div className="pricing-card__price-main">{priceMain}</div>
-        {priceSub ? <div className="pricing-card__price-sub">{priceSub}</div> : null}
+        {salePrice?.active ? (
+          <div className="pricing-card__price-sale">
+            <div className="pricing-card__price-main">{priceMain}</div>
+            {salePrice.original || salePrice.badge ? (
+              <p className="pricing-card__price-sale-meta">
+                {salePrice.original ? (
+                  <s className="pricing-card__price-original">{salePrice.original}</s>
+                ) : null}
+                {salePrice.badge ? (
+                  <span className="pricing-card__sale-badge">{salePrice.badge}</span>
+                ) : null}
+              </p>
+            ) : null}
+            {salePrice.reason ? (
+              <p className="pricing-card__sale-reason">{salePrice.reason}</p>
+            ) : null}
+          </div>
+        ) : (
+          <>
+            <div className="pricing-card__price-main">{priceMain}</div>
+            {priceSub ? <div className="pricing-card__price-sub">{priceSub}</div> : null}
+          </>
+        )}
         {checkoutHint && isEgyptDisplay ? (
           <p className="pricing-card__price-note pricing-card__checkout-hint">{checkoutHint}</p>
         ) : null}
@@ -231,7 +255,7 @@ const PlanCard = ({
         {!installment && paymentNotes ? <p className="pricing-card__price-note">{paymentNotes}</p> : null}
         {freePlanPayFee ? (
           <p className="pricing-card__price-note pricing-card__activation-fee-required">
-            {formatFreePlanActivationFeeNote()}
+            {formatFreePlanActivationFeeNote(activationFeeAmountJod)}
           </p>
         ) : null}
       </div>

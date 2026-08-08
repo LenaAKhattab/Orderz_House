@@ -1951,3 +1951,8 @@
 .oh-sapl-form-accordion__section .oh-sapl-collapse__body {
   padding-top: 4px;
 }
+
+.oh-sapl-sale-block__title { margin: 0 0 10px; font-size: 0.95rem; font-weight: 800; color: #0f1a3a; }
+.oh-sapl-sale-preview { padding: 10px 12px; border-radius: 12px; background: rgba(234, 88, 12, 0.06); border: 1px solid rgba(234, 88, 12, 0.18); font-size: 0.85rem; line-height: 1.5; }
+.oh-sapl-sale-preview p { margin: 0 0 4px; }
+

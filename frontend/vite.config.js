@@ -6,6 +6,11 @@ import react from '@vitejs/plugin-react'
 // as a bogus filesystem path (e.g. frontend/tailwindcss on Windows).
 export default defineConfig({
   plugins: [react()],
+  server: {
+    port: 5173,
+    // Keep Stripe CLIENT_URL and browser origin aligned; do not silently drift to 5174.
+    strictPort: true,
+  },
   build: {
     rollupOptions: {
       output: {

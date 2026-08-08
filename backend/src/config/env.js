@@ -79,6 +79,17 @@ function validateEnv() {
     process.exit(1);
   }
 
+  if (missing.length === 0 && isProduction()) {
+    const clientUrl = String(process.env.CLIENT_URL || "").trim();
+    if (/localhost|127\.0\.0\.1/i.test(clientUrl)) {
+      // eslint-disable-next-line no-console
+      console.error(
+        "Production CLIENT_URL must not point at localhost/127.0.0.1 (Stripe success/cancel redirects would break for real users).",
+      );
+      process.exit(1);
+    }
+  }
+
   if (missing.length === 0 && !isProduction()) {
     const clientUrl = String(process.env.CLIENT_URL || "").trim();
     const looksPublicHttps =

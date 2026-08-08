@@ -10,6 +10,7 @@ frontend/node_modules/
 .env.production
 *.env.local
 backend/.env
+backend/.env.sandbox
 frontend/.env
 frontend/.env.local
 frontend/.env.production

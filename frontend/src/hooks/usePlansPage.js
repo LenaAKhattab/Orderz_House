@@ -7,6 +7,7 @@ export function usePlansPage({ slug, returnPath }) {
   const defaultCheckout = useFreelancerPlansCheckout({ returnPath });
   const [page, setPage] = useState(null);
   const [slugPlans, setSlugPlans] = useState([]);
+  const [slugActivationFee, setSlugActivationFee] = useState(null);
   const [slugLoading, setSlugLoading] = useState(Boolean(slug));
   const [slugError, setSlugError] = useState("");
   const [notFound, setNotFound] = useState(false);
@@ -15,6 +16,7 @@ export function usePlansPage({ slug, returnPath }) {
     if (!slug) {
       setPage(null);
       setSlugPlans([]);
+      setSlugActivationFee(null);
       setSlugLoading(false);
       setSlugError("");
       setNotFound(false);
@@ -31,6 +33,7 @@ export function usePlansPage({ slug, returnPath }) {
         if (cancelled) return;
         setPage(res?.data?.page ?? null);
         setSlugPlans(Array.isArray(res?.data?.plans) ? res.data.plans : []);
+        setSlugActivationFee(res?.data?.activationFee ?? null);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -39,6 +42,7 @@ export function usePlansPage({ slug, returnPath }) {
           setNotFound(true);
           setPage(null);
           setSlugPlans([]);
+          setSlugActivationFee(null);
           return;
         }
         setSlugError(err?.response?.data?.message || "تعذر تحميل صفحة الباقات.");
@@ -67,6 +71,8 @@ export function usePlansPage({ slug, returnPath }) {
     [defaultCheckout.startCheckout, defaultCheckout.activationFeeNeedsPayment],
   );
 
+  const activationFee = slug && slugActivationFee ? slugActivationFee : defaultCheckout.activationFee;
+
   return useMemo(
     () => ({
       page,
@@ -76,6 +82,7 @@ export function usePlansPage({ slug, returnPath }) {
       notFound,
       mySubscription: defaultCheckout.mySubscription,
       activationFeeStatus: defaultCheckout.activationFeeStatus,
+      activationFee,
       activationFeeNeedsPayment: defaultCheckout.activationFeeNeedsPayment,
       hasBlockingSubscription: defaultCheckout.hasBlockingSubscription,
       checkoutBusyPlanId: defaultCheckout.checkoutBusyPlanId,
@@ -89,6 +96,7 @@ export function usePlansPage({ slug, returnPath }) {
       slugLoading,
       slugError,
       notFound,
+      activationFee,
       defaultCheckout.plans,
       defaultCheckout.loading,
       defaultCheckout.error,

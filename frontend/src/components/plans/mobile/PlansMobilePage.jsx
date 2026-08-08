@@ -3,19 +3,11 @@ import PlansMobilePlans from "./PlansMobilePlans";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import PlansActivationFeeNote from "../PlansActivationFeeNote";
 import { getPlansLayoutConfig, PLANS_LAYOUT_VARIANT } from "../plansLayoutUtils";
+import { useDisplayCurrency } from "../../../hooks/useDisplayCurrency";
 import "./plans-mobile-page.css";
 
 /**
  * Radical mobile-only plans layout (≤640px). Desktop unchanged.
- * @param {{
- *   loading?: boolean;
- *   plans?: object[];
- *   error?: string;
- *   currentSubscription?: object | null;
- *   hasBlockingSubscription?: boolean;
- *   checkoutBusyPlanId?: string | number | null;
- *   onCta?: (plan: object) => void;
- * }} p
  */
 export default function PlansMobilePage({
   loading = false,
@@ -31,9 +23,13 @@ export default function PlansMobilePage({
   pageSlug = null,
   layoutVariant = PLANS_LAYOUT_VARIANT.MAIN_FIVE_CARD,
   activationFeeNeedsPayment = false,
+  activationFee = null,
 }) {
   const { t, dir } = useTranslation();
+  const { formatActivationFeeAmount } = useDisplayCurrency();
   const layout = getPlansLayoutConfig(layoutVariant);
+  const feeEnabled = activationFee?.enabled === true;
+  const feeAmountLabel = feeEnabled ? formatActivationFeeAmount(activationFee?.amountJod) : "";
 
   return (
     <div className="plans-mobile-page" dir={dir}>
@@ -42,8 +38,12 @@ export default function PlansMobilePage({
         subtitle={pageSubtitle}
         trustPills={trustPills}
         afterLede={
-          layout.showActivationFeeNote ? (
-            <PlansActivationFeeNote className="plans-activation-fee-note--under-lede plans-activation-fee-note--mobile" />
+          layout.showActivationFeeNote && feeEnabled ? (
+            <PlansActivationFeeNote
+              className="plans-activation-fee-note--under-lede plans-activation-fee-note--mobile"
+              enabled={feeEnabled}
+              amountJod={activationFee?.amountJod}
+            />
           ) : null
         }
       />
@@ -54,6 +54,7 @@ export default function PlansMobilePage({
         hasBlockingSubscription={hasBlockingSubscription}
         checkoutBusyPlanId={checkoutBusyPlanId}
         activationFeeNeedsPayment={activationFeeNeedsPayment}
+        activationFee={activationFee}
         onCta={onCta}
         skeletonCount={layout.skeletonCount}
       />
@@ -71,7 +72,9 @@ export default function PlansMobilePage({
       ) : null}
 
       <p className="pm-footnote pm-footnote--secondary">
-        {pageSlug === "freelancers" ? t("plans.pages.freelancers.footnote") : t("plans.mobile.footnote")}
+        {pageSlug === "freelancers" && feeEnabled && feeAmountLabel
+          ? t("plans.pages.freelancers.footnote", { amount: feeAmountLabel })
+          : t("plans.mobile.footnote")}
       </p>
     </div>
   );

@@ -49,8 +49,13 @@ const extendedPlanFields = [
   optionalInstallmentPlan(),
   body("offerExpiresAt")
     .optional({ nullable: true })
-    .isISO8601({ strict: false })
-    .withMessage("offerExpiresAt must be a valid date."),
+    .customSanitizer((value) => (value === "" ? null : value))
+    .custom((value) => {
+      if (value == null || value === "") return true;
+      const ok = !Number.isNaN(Date.parse(String(value)));
+      if (!ok) throw new Error("offerExpiresAt must be a valid date.");
+      return true;
+    }),
   body("offerLabel").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
   body("orderValueMinJod").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("orderValueMinJod must be >= 0."),
   body("orderValueMaxJod").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("orderValueMaxJod must be >= 0."),
@@ -83,6 +88,20 @@ const extendedPlanFields = [
   optionalStringArray("featuresEn"),
   optionalStringArray("trainingsEn"),
   body("offerLabelEn").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
+  body("saleEnabled").optional().isBoolean().withMessage("saleEnabled must be boolean."),
+  body("salePercentage")
+    .optional({ nullable: true })
+    .customSanitizer((value) => (value === "" ? null : value))
+    .custom((value) => {
+      if (value === null || value === undefined) return true;
+      const n = Number(value);
+      if (!Number.isFinite(n) || n <= 0 || n >= 100) {
+        throw new Error("نسبة الخصم يجب أن تكون أكبر من 0 وأقل من 100.");
+      }
+      return true;
+    }),
+  body("saleReason").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
+  body("saleReasonEn").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
 ];
 
 const createPlanValidators = [

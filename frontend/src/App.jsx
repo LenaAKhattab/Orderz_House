@@ -50,6 +50,9 @@ import {
   SuperAdminSettingsPage,
   SuperAdminAdminsPage,
   SuperAdminRateLimitExemptionsPage,
+  SuperAdminFeedbackPage,
+  SuperAdminFeedbackDetailPage,
+  ProblemsSuggestionsPage,
   SuperAdminInstitutionsPage,
   SuperAdminInstitutionDetailPage,
   InstitutionalOrderStorageListPage,
@@ -60,6 +63,11 @@ import {
   SuperAdminEditWebsiteFaqPage,
   SuperAdminSitePagesPage,
   SuperAdminSitePageEditPage,
+  SuperAdminEditWebsiteFooterPage,
+  SuperAdminEditWebsiteFooterContactPage,
+  SuperAdminEditWebsiteFooterHoursPage,
+  SuperAdminEditWebsiteFooterAppsPage,
+  SuperAdminEditWebsiteFooterContactCenterPage,
   SuperAdminEditWebsiteHowItWorksPage,
   SuperAdminEditWebsiteHowItWorksEditorPage,
   HowItWorksFreelancerPage,
@@ -366,6 +374,22 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/super-admin/feedback"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminFeedbackPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/feedback/:id"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminFeedbackDetailPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/super-admin/institutions"
                   element={
                     <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.institutions}>
@@ -418,6 +442,54 @@ function App() {
                   element={
                     <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
                       <SuperAdminEditWebsiteFaqPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website/footer"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
+                      <SuperAdminEditWebsiteFooterPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website/footer/contact"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
+                      <SuperAdminEditWebsiteFooterContactPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website/footer/working-hours"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
+                      <SuperAdminEditWebsiteFooterHoursPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website/footer/app-downloads"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
+                      <SuperAdminEditWebsiteFooterAppsPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website/footer/contact-center"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
+                      <SuperAdminEditWebsiteFooterContactCenterPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website/footer-app-downloads"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
+                      <SuperAdminEditWebsiteFooterAppsPage />
                     </RequireStaffPage>
                   }
                 />
@@ -611,6 +683,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/freelancer/feedback"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <ProblemsSuggestionsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/freelancer/plans"
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
@@ -680,6 +760,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.CLIENT]}>
                       <ClientFinancialPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/client/feedback"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.CLIENT]}>
+                      <ProblemsSuggestionsPage />
                     </RequireRole>
                   }
                 />

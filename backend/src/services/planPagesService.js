@@ -112,11 +112,15 @@ async function getPublicPlanPageBySlug(slug) {
     err.statusCode = 404;
     throw err;
   }
-  const plans = await listPlansForPageRow(
-    { id: page.id, page_type: page.pageType },
-    { mergeCatalog: false },
-  );
-  return { page, plans };
+  const { getPublicActivationFeeConfig } = require("./subscriptionActivationFeeService");
+  const [plans, activationFee] = await Promise.all([
+    listPlansForPageRow(
+      { id: page.id, page_type: page.pageType },
+      { mergeCatalog: false },
+    ),
+    getPublicActivationFeeConfig(),
+  ]);
+  return { page, plans, activationFee };
 }
 
 async function getPublicDefaultPlanPage() {

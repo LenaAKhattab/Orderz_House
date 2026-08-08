@@ -16,6 +16,7 @@ import {
   RefreshCw,
   Receipt,
   Shield,
+  MessageCircleWarning,
   Sparkles,
   UserCog,
 } from "lucide-react";
@@ -40,6 +41,7 @@ const ICON_MAP = {
   "edit-website": PenLine,
   admins: UserCog,
   "rate-limit-exemptions": Shield,
+  "problems-suggestions": MessageCircleWarning,
   institutions: Building2,
   "institutional-order-storage": Package,
   notifications: Bell,

@@ -513,8 +513,15 @@ async function assignPlanToFreelancer({ actorUserId, freelancerUserId, planId, n
         activationFee: {
           recorded: feeResult.recorded === true,
           alreadyPaid: feeResult.alreadyPaid === true,
+          skipped: feeResult.skipped === true,
+          reason: feeResult.reason || null,
           amountJod: activationFeeStatus?.amountJod ?? null,
-          status: "paid_offline",
+          status:
+            feeResult.skipped === true
+              ? "not_required_disabled"
+              : feeResult.recorded === true || feeResult.alreadyPaid === true
+                ? "paid_offline"
+                : "unknown",
         },
       },
       resolvedPlan: {

@@ -19,7 +19,7 @@ export function isLegacyOfferSlug(slug) {
 
 /**
  * Resolve public plans page layout from route slug and plan-page metadata.
- * Default `/plans` uses a compact centered 3×2 catalog grid (~6 API plans).
+ * Default `/plans` uses a count-driven catalog grid (API plans.length).
  * Special direct-offer pages use the legacy 3-card layout.
  */
 export function resolvePlansLayoutVariant({ slug, page }) {
@@ -32,12 +32,33 @@ export function resolvePlansLayoutVariant({ slug, page }) {
   return PLANS_LAYOUT_VARIANT.MAIN_FIVE_CARD;
 }
 
+/**
+ * Desktop grid class from visible API plan count (not plan ids/names).
+ * 1–4 → that many columns; 5+ → max 3 columns per row.
+ * @param {number} planCount
+ * @returns {string}
+ */
+export function resolvePublicPlansGridClassName(planCount) {
+  const n = Number(planCount);
+  const count = Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+  const base = "pricing__grid--public-dynamic";
+  if (count <= 0) {
+    // Loading / empty: prefer the 3-column catalog shell
+    return `${base} pricing__grid--plans-three-columns`;
+  }
+  if (count <= 4) {
+    return `${base} pricing__grid--plans-${count}`;
+  }
+  return `${base} pricing__grid--plans-three-columns`;
+}
+
 export function getPlansLayoutConfig(layoutVariant) {
   const isLegacy = layoutVariant === PLANS_LAYOUT_VARIANT.LEGACY_THREE_CARD;
   return {
     layoutVariant,
     skeletonCount: isLegacy ? 3 : 6,
-    gridClassName: isLegacy ? "pricing__grid--legacy-three" : "pricing__grid--public-five",
+    /** Legacy keeps a fixed class; main public grid is count-driven at render time. */
+    gridClassName: isLegacy ? "pricing__grid--legacy-three" : "pricing__grid--public-dynamic pricing__grid--plans-three-columns",
     showActivationFeeNote: !isLegacy,
     pageModifierClass: isLegacy ? "plans-page--legacy-offer" : "plans-page--main-five",
     useMainPlansHero: isLegacy,

@@ -6,6 +6,7 @@ const publicPageViewController = require("../controllers/publicPageViewControlle
 const publicFaqController = require("../controllers/publicFaqController");
 const publicWebsitePageController = require("../controllers/publicWebsitePageController");
 const publicSitePageController = require("../controllers/publicSitePageController");
+const publicFooterAppDownloadsController = require("../controllers/publicFooterAppDownloadsController");
 const publicAdsController = require("../controllers/publicAdsController");
 const publicPopupAdsController = require("../controllers/publicPopupAdsController");
 const publicSubSubcategoriesController = require("../controllers/publicSubSubcategoriesController");
@@ -33,6 +34,8 @@ router.get(
   publicSubSubcategoriesController.listPublicPaginated,
 );
 router.get("/public/faq", publicFaqController.listPublicFaq);
+router.get("/public/footer-app-downloads", publicFooterAppDownloadsController.getPublicFooterAppDownloads);
+router.get("/public/footer-settings", publicFooterAppDownloadsController.getPublicFooterSettings);
 router.get("/public/site-pages", publicSitePageController.listPublicSitePages);
 router.get(
   "/public/site-pages/:slug",

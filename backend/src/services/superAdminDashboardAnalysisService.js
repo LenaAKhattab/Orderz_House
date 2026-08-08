@@ -5,7 +5,6 @@
 
 const { pool } = require("../config/db");
 const { formatCountryRow, normalizeCountryCode } = require("../utils/countryDisplay");
-const { SUBSCRIPTION_ACTIVATION_FEE_JOD } = require("./subscriptionActivationFeeService");
 
 const VALID_RANGES = new Set(["all", "today", "7d", "30d", "this_month", "last_month"]);
 
@@ -17,19 +16,23 @@ const IS_ADMIN_ASSIGNED_SQL = `
   AND COALESCE(fs.notes, '') <> 'auto_default_free_plan'
 `.trim();
 
-/** Paid plan catalog price + activation fee when the freelancer paid it. */
+/**
+ * Historical activation-fee revenue for a paid subscription row.
+ * Uses the freelancer's latest stored payment amount_minor (immutable), never the live setting.
+ */
 const PAID_ACTIVATION_FEE_SQL = `
   CASE
     WHEN fs.payment_status = 'paid'
-      AND (
-        u.subscription_activation_fee_paid_at IS NOT NULL
-        OR EXISTS (
-          SELECT 1
-          FROM subscription_activation_fee_payments afp
-          WHERE afp.user_id = fs.freelancer_user_id
-        )
-      )
-    THEN ${SUBSCRIPTION_ACTIVATION_FEE_JOD}
+    THEN COALESCE(
+      (
+        SELECT (afp.amount_minor::numeric / 1000)
+        FROM subscription_activation_fee_payments afp
+        WHERE afp.user_id = fs.freelancer_user_id
+        ORDER BY afp.paid_at DESC, afp.id DESC
+        LIMIT 1
+      ),
+      0
+    )
     ELSE 0
   END
 `.trim();
@@ -471,8 +474,17 @@ async function getSubscriptionsByCountry(scope) {
          CASE
            WHEN payment_status = 'paid'
            THEN COALESCE(price_jod, 0) + CASE
-             WHEN subscription_activation_fee_paid_at IS NOT NULL OR has_activation_fee_payment
-             THEN ${SUBSCRIPTION_ACTIVATION_FEE_JOD}
+             WHEN has_activation_fee_payment
+             THEN COALESCE(
+               (
+                 SELECT (afp.amount_minor::numeric / 1000)
+                 FROM subscription_activation_fee_payments afp
+                 WHERE afp.user_id = freelancer_user_id
+                 ORDER BY afp.paid_at DESC, afp.id DESC
+                 LIMIT 1
+               ),
+               0
+             )
              ELSE 0
            END
            ELSE 0
@@ -561,7 +573,7 @@ async function getDashboardAnalysis(query = {}) {
       subscriptionScope: currentOnly ? "is_current = TRUE" : "all subscription rows",
       planGroupLogic: "plan_pages.page_type: default = الباقات الأساسية, special = باقات الصفحات",
       revenueNote:
-        "paidRevenueJod = سعر الباقة + رسوم التفعيل (25 د.أ) عند وجود دفع تفعيل للمستقل",
+        "paidRevenueJod = سعر الباقة + مبلغ رسوم التفعيل التاريخي (amount_minor من آخر دفعة تفعيل للمستقل)، وليس القيمة الحالية للإعداد",
     },
     usersByCountry,
     subscriptionOverview,

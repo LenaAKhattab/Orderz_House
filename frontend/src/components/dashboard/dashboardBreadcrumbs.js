@@ -34,6 +34,16 @@ export function editWebsiteBreadcrumbs(sectionLabelKey) {
   ];
 }
 
+/** Footer subsections under edit-website/footer. */
+export function editWebsiteFooterBreadcrumbs(sectionLabelKey) {
+  return [
+    { labelKey: "dashboard.breadcrumbs.home", href: SUPER_ADMIN_HOME },
+    { labelKey: "dashboard.breadcrumbs.editWebsite", href: `${SUPER_ADMIN_HOME}/edit-website` },
+    { labelKey: "dashboard.breadcrumbs.editFooter", href: `${SUPER_ADMIN_HOME}/edit-website/footer` },
+    { labelKey: sectionLabelKey },
+  ];
+}
+
 /** Training-orders hub (tabs under super-admin). */
 export function trainingOrdersBreadcrumbs(sectionLabelKey) {
   return [

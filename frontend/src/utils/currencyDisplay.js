@@ -2,7 +2,6 @@ import {
   COUNTRY_OVERRIDE_STORAGE_KEY,
   DISPLAY_CURRENCY,
   JOD_TO_EGP_RATE,
-  SUBSCRIPTION_ACTIVATION_FEE_JOD,
 } from "../config/currencyDisplayConfig.js";
 
 const EGYPT_COUNTRY_CODES = new Set(["EG", "EGY", "EGYPT"]);
@@ -120,13 +119,29 @@ export function formatPriceFromJod(amountJod, { locale = "ar", displayCurrency =
  * @param {string} displayCurrency
  */
 export function resolvePlanPriceDisplay(plan, basePrice, locale, t, displayCurrency) {
+  const sale = basePrice?.sale || null;
   if (displayCurrency !== DISPLAY_CURRENCY.EGP) {
-    return { main: basePrice.main, sub: basePrice.sub, checkoutHint: null };
+    return { main: basePrice.main, sub: basePrice.sub, checkoutHint: null, sale };
+  }
+
+  if (sale?.active && plan?.effectivePriceJod != null && plan?.originalPriceJod != null) {
+    const main =
+      formatPriceFromJod(plan.effectivePriceJod, { locale, displayCurrency: DISPLAY_CURRENCY.EGP }) ||
+      basePrice.main;
+    const original =
+      formatPriceFromJod(plan.originalPriceJod, { locale, displayCurrency: DISPLAY_CURRENCY.EGP }) ||
+      sale.original;
+    return {
+      main,
+      sub: null,
+      checkoutHint: t("plans.currency.checkoutChargedInJod"),
+      sale: { ...sale, original },
+    };
   }
 
   const totalJod = Number(plan?.priceJod);
   if (!Number.isFinite(totalJod) || totalJod === 0) {
-    return { main: basePrice.main, sub: basePrice.sub, checkoutHint: null };
+    return { main: basePrice.main, sub: basePrice.sub, checkoutHint: null, sale };
   }
 
   const checkoutJodRaw = plan?.stripeCheckoutAmountJod;
@@ -152,17 +167,19 @@ export function resolvePlanPriceDisplay(plan, basePrice, locale, t, displayCurre
     main,
     sub,
     checkoutHint: t("plans.currency.checkoutChargedInJod"),
+    sale,
   };
 }
 
-export function formatActivationFeeAmount(locale, displayCurrency) {
-  return (
-    formatPriceFromJod(SUBSCRIPTION_ACTIVATION_FEE_JOD, { locale, displayCurrency }) ||
-    formatJodAmount(SUBSCRIPTION_ACTIVATION_FEE_JOD, locale)
-  );
+export function formatActivationFeeAmount(amountJod, locale, displayCurrency) {
+  if (amountJod === null || amountJod === undefined || amountJod === "") return "";
+  const n = Number(amountJod);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  return formatPriceFromJod(n, { locale, displayCurrency }) || formatJodAmount(n, locale);
 }
 
-export function formatFreePlanActivationFeeNote(locale, t, displayCurrency) {
-  const amount = formatActivationFeeAmount(locale, displayCurrency);
+export function formatFreePlanActivationFeeNote(amountJod, locale, t, displayCurrency) {
+  const amount = formatActivationFeeAmount(amountJod, locale, displayCurrency);
+  if (!amount) return "";
   return t("plans.freePlanActivationFeeNote", { amount });
 }

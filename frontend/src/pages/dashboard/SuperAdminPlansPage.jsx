@@ -46,9 +46,27 @@ import DashboardErrorState from "../../components/dashboard/DashboardErrorState"
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import "../../admin/plans/super-admin-plans.css";
 
+const SALE_ERROR_MESSAGES = {
+  INVALID_SALE_PERCENTAGE: "نسبة الخصم يجب أن تكون أكبر من 0 وأقل من 100.",
+  SALE_REASON_REQUIRED: "يرجى إدخال سبب الخصم.",
+  SALE_NOT_ALLOWED_ON_FREE_PLAN: "لا يمكن تفعيل خصم نسبة مئوية على باقة مجانية أو بلا مبلغ مستحق.",
+  SALE_EFFECTIVE_AMOUNT_INVALID: "الخصم ينتج مبلغاً غير صالح للدفع.",
+};
+
 function errorMessage(err) {
+  const code = err?.response?.data?.code;
+  if (code && SALE_ERROR_MESSAGES[code]) return SALE_ERROR_MESSAGES[code];
+
   const apiMsg = err?.response?.data?.message;
-  return apiMsg || "تعذر تنفيذ العملية. حاول مجدداً.";
+  if (apiMsg) return apiMsg;
+
+  if (err?.code === "ECONNABORTED") {
+    return "انتهت مهلة الطلب، حاول مجددًا.";
+  }
+  if (!err?.response) {
+    return "تعذر الاتصال بالخادم. تأكد أن الخادم يعمل ثم حاول مجددًا.";
+  }
+  return "تعذر تنفيذ العملية. حاول مجدداً.";
 }
 
 function PlansEmptyIcon() {

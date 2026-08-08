@@ -403,7 +403,9 @@ export default function CourseProgressFreelancerActions({
                 <div>
                   <dt>رسوم التفعيل</dt>
                   <dd>
-                    {displayEligibility.activationFeeStatus.needsPayment
+                    {displayEligibility.activationFeeStatus.enabled === false
+                      ? "غير مطلوبة (معطّلة)"
+                      : displayEligibility.activationFeeStatus.needsPayment
                       ? "غير مدفوعة"
                       : displayEligibility.activationFeeStatus.isCurrent
                         ? "مدفوعة وسارية"

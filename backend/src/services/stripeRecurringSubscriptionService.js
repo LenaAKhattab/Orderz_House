@@ -5,6 +5,7 @@
 
 const { pool } = require("../config/db");
 const { amountMajorToStripeMinor } = require("../utils/stripeMoney");
+const { resolvePlanPayablePricing } = require("../utils/planSalePricing");
 const {
   buildFazaatStripeMetadata,
   mergeStripeCheckoutMetadata,
@@ -26,8 +27,13 @@ const {
   CLEAR_SOURCE,
   RENEWAL_FAILED_COPY,
 } = require("./freelancerAccountHoldsService");
+const { buildFreelancerPlansCheckoutReturnUrls } = require("../config/clientUrl");
 const notificationService = require("./notificationService");
 const subscriptionsService = require("./subscriptionsService");
+const {
+  assertStripeObjectMatchesSecretKey,
+  getStripeSecretKey,
+} = require("../utils/stripeModeGuard");
 
 const METADATA_VERSION = "1";
 const PURPOSE_RECURRING_SUBSCRIPTION = "freelancer_recurring_subscription";
@@ -53,7 +59,25 @@ async function ensureStripeCustomerForUser({ stripe, userId, email }, client) {
     err.statusCode = 404;
     throw err;
   }
-  if (user.stripe_customer_id) return String(user.stripe_customer_id);
+  if (user.stripe_customer_id) {
+    try {
+      const existing = await stripe.customers.retrieve(String(user.stripe_customer_id));
+      assertStripeObjectMatchesSecretKey(existing, {
+        label: "customer",
+        key: getStripeSecretKey(),
+      });
+      return String(existing.id);
+    } catch (err) {
+      if (err && err.code === "STRIPE_MODE_MISMATCH") throw err;
+      const missing =
+        (err && (err.statusCode === 404 || err.code === "resource_missing")) ||
+        (err && String(err.message || "").includes("No such customer"));
+      if (!missing) throw err;
+      await runner.query("UPDATE users SET stripe_customer_id = NULL, updated_at = NOW() WHERE id = $1", [
+        uid,
+      ]);
+    }
+  }
   const customer = await stripe.customers.create({
     email: email || user.email || undefined,
     metadata: {
@@ -63,6 +87,7 @@ async function ensureStripeCustomerForUser({ stripe, userId, email }, client) {
       metadata_version: METADATA_VERSION,
     },
   });
+  assertStripeObjectMatchesSecretKey(customer, { label: "customer", key: getStripeSecretKey() });
   await runner.query("UPDATE users SET stripe_customer_id = $2, updated_at = NOW() WHERE id = $1", [
     uid,
     customer.id,
@@ -74,8 +99,12 @@ async function ensureStripeRecurringPriceForPlan({ stripe, planRow }, client) {
   const runner = client || pool;
   const planId = Number(planRow.id);
   const currency = String(planRow.currency || "JOD").toUpperCase();
-  const amountMajor = Number(planRow.price_jod);
-  const amountMinor = amountMajorToStripeMinor(amountMajor, currency);
+  const payable = resolvePlanPayablePricing(planRow, { mode: "recurring" });
+  const amountMajor = payable.effectivePriceJod;
+  const amountMinor =
+    payable.effectiveMinor != null
+      ? payable.effectiveMinor
+      : amountMajorToStripeMinor(amountMajor, currency);
   if (amountMinor == null || amountMinor < 1) {
     const err = new Error("Invalid recurring plan amount.");
     err.statusCode = 400;
@@ -96,7 +125,31 @@ async function ensureStripeRecurringPriceForPlan({ stripe, planRow }, client) {
     planRow.stripe_price_amount_minor != null ? Number(planRow.stripe_price_amount_minor) : null;
 
   if (priceId && storedMinor === amountMinor) {
-    return { productId, priceId, amountMinor, currency, interval, intervalCount };
+    try {
+      const priceObj = await stripe.prices.retrieve(priceId);
+      assertStripeObjectMatchesSecretKey(priceObj, {
+        label: "price",
+        key: getStripeSecretKey(),
+      });
+    } catch (err) {
+      if (err && err.code === "STRIPE_MODE_MISMATCH") throw err;
+      // Stale/missing price: fall through to create a new Price for this key mode
+      priceId = null;
+    }
+  }
+
+  if (priceId && storedMinor === amountMinor) {
+    return {
+      productId,
+      priceId,
+      amountMinor,
+      currency,
+      interval,
+      intervalCount,
+      originalAmountMinor: payable.originalMinor,
+      saleActive: payable.active,
+      salePercentage: payable.salePercentage,
+    };
   }
 
   if (!productId) {
@@ -110,7 +163,31 @@ async function ensureStripeRecurringPriceForPlan({ stripe, planRow }, client) {
         metadata_version: METADATA_VERSION,
       },
     });
+    assertStripeObjectMatchesSecretKey(product, { label: "product", key: getStripeSecretKey() });
     productId = product.id;
+  } else {
+    try {
+      const productObj = await stripe.products.retrieve(productId);
+      assertStripeObjectMatchesSecretKey(productObj, {
+        label: "product",
+        key: getStripeSecretKey(),
+      });
+    } catch (err) {
+      if (err && err.code === "STRIPE_MODE_MISMATCH") throw err;
+      productId = null;
+      const product = await stripe.products.create({
+        name: String(planRow.title || planRow.name || `Plan ${planId}`).slice(0, 120),
+        metadata: {
+          platform: "FAZAAT",
+          project: "Orderz House",
+          plan_id: String(planId),
+          plan_name: String(planRow.name || ""),
+          metadata_version: METADATA_VERSION,
+        },
+      });
+      assertStripeObjectMatchesSecretKey(product, { label: "product", key: getStripeSecretKey() });
+      productId = product.id;
+    }
   }
 
   const price = await stripe.prices.create({
@@ -123,6 +200,9 @@ async function ensureStripeRecurringPriceForPlan({ stripe, planRow }, client) {
       plan_id: String(planId),
       plan_name: String(planRow.name || ""),
       metadata_version: METADATA_VERSION,
+      sale_active: payable.active ? "1" : "0",
+      sale_percentage: payable.active ? String(payable.salePercentage) : "",
+      original_amount_minor: payable.originalMinor != null ? String(payable.originalMinor) : "",
     },
   });
   priceId = price.id;
@@ -137,7 +217,17 @@ async function ensureStripeRecurringPriceForPlan({ stripe, planRow }, client) {
     [planId, productId, priceId, amountMinor],
   );
 
-  return { productId, priceId, amountMinor, currency, interval, intervalCount };
+  return {
+    productId,
+    priceId,
+    amountMinor,
+    currency,
+    interval,
+    intervalCount,
+    originalAmountMinor: payable.originalMinor,
+    saleActive: payable.active,
+    salePercentage: payable.salePercentage,
+  };
 }
 
 async function findActiveRecurringSubscriptionForPlan({ freelancerUserId, planId }, client) {
@@ -206,7 +296,7 @@ async function createRecurringSubscriptionCheckoutSession({
       { stripe, freelancerUserId: uid },
       db,
     );
-    const activationMinor = needsActivationFee ? activationFeeMinorUnits() : 0;
+    const activationMinor = needsActivationFee ? await activationFeeMinorUnits(db) : 0;
     if (needsActivationFee && (activationMinor == null || activationMinor < 1)) {
       const err = new Error("Invalid subscription activation fee amount.");
       err.statusCode = 500;
@@ -229,6 +319,15 @@ async function createRecurringSubscriptionCheckoutSession({
       currency: currencyUpper,
       metadataVersion: METADATA_VERSION,
       stripePriceId: priceInfo.priceId,
+      originalPlanAmountMinor:
+        priceInfo.originalAmountMinor != null
+          ? String(priceInfo.originalAmountMinor)
+          : String(priceInfo.amountMinor),
+      saleActive: priceInfo.saleActive ? "1" : "0",
+      salePercentage:
+        priceInfo.saleActive && priceInfo.salePercentage != null
+          ? String(priceInfo.salePercentage)
+          : "",
     };
     const baseMeta = mergeStripeCheckoutMetadata(
       buildFazaatStripeMetadata({
@@ -253,11 +352,15 @@ async function createRecurringSubscriptionCheckoutSession({
 
     const lineItems = [{ price: priceInfo.priceId, quantity: 1 }];
     if (needsActivationFee) {
-      lineItems.push(buildActivationFeeStripeLineItem(locale));
+      lineItems.push(
+        await buildActivationFeeStripeLineItem(locale, {
+          amountMinor: activationMinor,
+          client: db,
+        }),
+      );
     }
 
-    const successUrl = `${clientUrl}/dashboard/freelancer/plans?freelancer_sub_paid=1&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${clientUrl}/dashboard/freelancer/plans?freelancer_sub_cancelled=1&session_id={CHECKOUT_SESSION_ID}`;
+    const { successUrl, cancelUrl } = buildFreelancerPlansCheckoutReturnUrls(clientUrl);
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -300,15 +403,142 @@ async function createRecurringSubscriptionCheckoutSession({
   }
 }
 
-function periodFromStripeSubscription(sub) {
-  const start =
-    sub?.current_period_start != null ? new Date(Number(sub.current_period_start) * 1000) : null;
-  const end =
-    sub?.current_period_end != null ? new Date(Number(sub.current_period_end) * 1000) : null;
-  return {
-    currentPeriodStart: start && !Number.isNaN(start.getTime()) ? start : null,
-    currentPeriodEnd: end && !Number.isNaN(end.getTime()) ? end : null,
-  };
+/**
+ * Convert Stripe unix seconds → Date, or null if missing/invalid.
+ * @param {unknown} unix
+ * @returns {Date|null}
+ */
+function unixSecondsToDate(unix) {
+  if (unix == null || unix === "") return null;
+  const n = Number(unix);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const d = new Date(n * 1000);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function subscriptionItemPriceId(item) {
+  if (!item) return null;
+  if (typeof item.price === "string") return String(item.price);
+  if (item.price && item.price.id != null) return String(item.price.id);
+  return null;
+}
+
+/**
+ * Whether a subscription item is a recurring (or period-bearing) billing line.
+ * Skips expanded one_time prices. Items with period timestamps but unexpanded price are kept.
+ */
+function isPeriodBearingSubscriptionItem(item) {
+  if (!item) return false;
+  const start = unixSecondsToDate(item.current_period_start);
+  const end = unixSecondsToDate(item.current_period_end);
+  if (!start || !end) return false;
+  const price = item.price;
+  if (price && typeof price === "object") {
+    if (price.type === "one_time") return false;
+    if (price.recurring == null && price.type === "recurring") return true;
+    if (price.recurring) return true;
+    // Expanded non-recurring without type — exclude
+    if (price.recurring == null && price.type && price.type !== "recurring") return false;
+  }
+  return true;
+}
+
+/**
+ * Billing period from a Stripe Subscription (legacy top-level OR Basil+ item-level).
+ *
+ * Strategy:
+ * 1. Legacy: subscription.current_period_start / current_period_end (pre-Basil).
+ * 2. Else: subscription.items.data[*] periods (API 2025-03-31.basil+).
+ * 3. Prefer item matching options.preferredPriceId (stored stripe_price_id).
+ * 4. If exactly one period-bearing item → use it.
+ * 5. If multiple items share identical periods → use that shared period.
+ * 6. If multiple items have conflicting periods → throw STRIPE_PERIOD_AMBIGUOUS
+ *    (Orderz House does not support mixed-interval Billing).
+ *
+ * @param {object|null|undefined} sub Stripe Subscription object
+ * @param {{ preferredPriceId?: string|null }} [options]
+ * @returns {{ currentPeriodStart: Date|null, currentPeriodEnd: Date|null }}
+ */
+function periodFromStripeSubscription(sub, options = {}) {
+  const preferredPriceId =
+    options.preferredPriceId != null && String(options.preferredPriceId).trim()
+      ? String(options.preferredPriceId).trim()
+      : null;
+
+  const legacyStart = unixSecondsToDate(sub?.current_period_start);
+  const legacyEnd = unixSecondsToDate(sub?.current_period_end);
+  if (legacyStart && legacyEnd) {
+    return { currentPeriodStart: legacyStart, currentPeriodEnd: legacyEnd };
+  }
+
+  const items = Array.isArray(sub?.items?.data) ? sub.items.data : [];
+  const candidates = items.filter(isPeriodBearingSubscriptionItem).map((item) => ({
+    priceId: subscriptionItemPriceId(item),
+    currentPeriodStart: unixSecondsToDate(item.current_period_start),
+    currentPeriodEnd: unixSecondsToDate(item.current_period_end),
+  }));
+
+  if (candidates.length === 0) {
+    return {
+      currentPeriodStart: legacyStart,
+      currentPeriodEnd: legacyEnd,
+    };
+  }
+
+  if (preferredPriceId) {
+    const matched = candidates.filter((c) => c.priceId === preferredPriceId);
+    if (matched.length === 1) {
+      return {
+        currentPeriodStart: matched[0].currentPeriodStart,
+        currentPeriodEnd: matched[0].currentPeriodEnd,
+      };
+    }
+    if (matched.length > 1) {
+      const same = matched.every(
+        (c) =>
+          c.currentPeriodStart.getTime() === matched[0].currentPeriodStart.getTime() &&
+          c.currentPeriodEnd.getTime() === matched[0].currentPeriodEnd.getTime(),
+      );
+      if (same) {
+        return {
+          currentPeriodStart: matched[0].currentPeriodStart,
+          currentPeriodEnd: matched[0].currentPeriodEnd,
+        };
+      }
+      const err = new Error(
+        "Ambiguous Stripe subscription item periods for preferred price (mixed intervals unsupported).",
+      );
+      err.code = "STRIPE_PERIOD_AMBIGUOUS";
+      err.statusCode = 409;
+      throw err;
+    }
+  }
+
+  if (candidates.length === 1) {
+    return {
+      currentPeriodStart: candidates[0].currentPeriodStart,
+      currentPeriodEnd: candidates[0].currentPeriodEnd,
+    };
+  }
+
+  const samePeriod = candidates.every(
+    (c) =>
+      c.currentPeriodStart.getTime() === candidates[0].currentPeriodStart.getTime() &&
+      c.currentPeriodEnd.getTime() === candidates[0].currentPeriodEnd.getTime(),
+  );
+  if (samePeriod) {
+    return {
+      currentPeriodStart: candidates[0].currentPeriodStart,
+      currentPeriodEnd: candidates[0].currentPeriodEnd,
+    };
+  }
+
+  const err = new Error(
+    "Ambiguous Stripe subscription item billing periods (mixed-interval subscriptions are not supported).",
+  );
+  err.code = "STRIPE_PERIOD_AMBIGUOUS";
+  err.statusCode = 409;
+  throw err;
 }
 
 async function fulfillRecurringSubscriptionFromCheckout(
@@ -369,7 +599,7 @@ async function fulfillRecurringSubscriptionFromCheckout(
       current_period_start, current_period_end, last_payment_at, next_renewal_at
     ) VALUES (
       $1,$2,NULL,NULL,
-      'inactive', FALSE, NULL, NULL, $10, TRUE,
+      'inactive', FALSE, NULL, NULL, NULL, TRUE,
       'stripe', 'paid', 'company_pending',
       $3,$4,$5,
       'recurring_stripe', $6, $7, $8,
@@ -428,7 +658,9 @@ async function applyRecurringInvoicePaid({ stripeSubscription, invoice }, client
   const row = rows[0];
   if (!row) return { ok: false, reason: "subscription_row_not_found" };
 
-  const { currentPeriodStart, currentPeriodEnd } = periodFromStripeSubscription(stripeSubscription);
+  const { currentPeriodStart, currentPeriodEnd } = periodFromStripeSubscription(stripeSubscription, {
+    preferredPriceId: row.stripe_price_id || null,
+  });
   const paidAt = invoice?.status_transitions?.paid_at
     ? new Date(Number(invoice.status_transitions.paid_at) * 1000)
     : new Date();
@@ -444,7 +676,10 @@ async function applyRecurringInvoicePaid({ stripeSubscription, invoice }, client
          current_period_start = COALESCE($3, current_period_start),
          current_period_end = COALESCE($4, current_period_end),
          next_renewal_at = COALESCE($4, next_renewal_at),
-         expiry_date = COALESCE($4, expiry_date),
+         expiry_date = CASE
+           WHEN has_first_order = TRUE THEN COALESCE($4, expiry_date)
+           ELSE expiry_date
+         END,
          updated_at = NOW()
      WHERE id = $1`,
     [Number(row.id), paidAt, currentPeriodStart, currentPeriodEnd],
@@ -553,7 +788,9 @@ async function syncRecurringSubscriptionStatus({ stripeSubscription }, client) {
   if (!row) return { ok: false, reason: "not_found" };
 
   const status = String(stripeSubscription.status || "").toLowerCase();
-  const { currentPeriodStart, currentPeriodEnd } = periodFromStripeSubscription(stripeSubscription);
+  const { currentPeriodStart, currentPeriodEnd } = periodFromStripeSubscription(stripeSubscription, {
+    preferredPriceId: row.stripe_price_id || null,
+  });
 
   if (status === "canceled" || status === "incomplete_expired") {
     await runner.query(
@@ -564,6 +801,10 @@ async function syncRecurringSubscriptionStatus({ stripeSubscription }, client) {
            current_period_start = COALESCE($2, current_period_start),
            current_period_end = COALESCE($3, current_period_end),
            next_renewal_at = COALESCE($3, next_renewal_at),
+           expiry_date = CASE
+             WHEN has_first_order = TRUE THEN COALESCE($3, expiry_date)
+             ELSE expiry_date
+           END,
            updated_at = NOW()
        WHERE id = $1`,
       [Number(row.id), currentPeriodStart, currentPeriodEnd],
@@ -575,6 +816,10 @@ async function syncRecurringSubscriptionStatus({ stripeSubscription }, client) {
            current_period_start = COALESCE($2, current_period_start),
            current_period_end = COALESCE($3, current_period_end),
            next_renewal_at = COALESCE($3, next_renewal_at),
+           expiry_date = CASE
+             WHEN has_first_order = TRUE THEN COALESCE($3, expiry_date)
+             ELSE expiry_date
+           END,
            updated_at = NOW()
        WHERE id = $1`,
       [Number(row.id), currentPeriodStart, currentPeriodEnd],
@@ -586,13 +831,17 @@ async function syncRecurringSubscriptionStatus({ stripeSubscription }, client) {
            current_period_start = COALESCE($2, current_period_start),
            current_period_end = COALESCE($3, current_period_end),
            next_renewal_at = COALESCE($3, next_renewal_at),
+           expiry_date = CASE
+             WHEN has_first_order = TRUE THEN COALESCE($3, expiry_date)
+             ELSE expiry_date
+           END,
            updated_at = NOW()
        WHERE id = $1`,
       [Number(row.id), currentPeriodStart, currentPeriodEnd],
     );
   }
 
-  return { ok: true, status };
+  return { ok: true, status, currentPeriodStart, currentPeriodEnd };
 }
 
 module.exports = {
@@ -609,4 +858,5 @@ module.exports = {
   applyRecurringInvoicePaymentFailed,
   syncRecurringSubscriptionStatus,
   periodFromStripeSubscription,
+  unixSecondsToDate,
 };

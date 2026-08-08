@@ -20,6 +20,11 @@ export const FREELANCER_NAV_MAIN = [
     badgeKey: "notifications",
   },
   { to: "/dashboard/freelancer/courses", labelKey: "dashboard.nav.freelancer.courses", icon: "courses" },
+  {
+    to: "/dashboard/freelancer/feedback",
+    labelKey: "dashboard.nav.freelancer.problemsSuggestions",
+    icon: "feedback",
+  },
 ];
 
 export const FREELANCER_NAV_FOOTER = [
@@ -37,6 +42,7 @@ export function freelancerPageTitle(pathname, t) {
   );
   if (item) return resolveNavLabel(item, t);
   if (pathname.includes("/settings")) return t("dashboard.nav.common.settings");
+  if (pathname.includes("/feedback")) return t("dashboard.nav.freelancer.problemsSuggestions");
   if (pathname.includes("/institution-orders")) return t("dashboard.nav.freelancer.institutionOrders");
   if (pathname.includes("/financial-claims")) return t("dashboard.nav.freelancer.wallet");
   if (pathname.includes("/orders/")) return t("dashboard.nav.freelancer.requestDetails");

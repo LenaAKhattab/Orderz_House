@@ -1,30 +1,49 @@
 /**
- * Subscription activation fee (25 JOD yearly) helpers.
+ * Subscription activation fee helpers (config-backed; defaults = 25 JOD).
  * Run: npm run test:subscription-activation-fee  |  npm test
  */
 process.env.DATABASE_URL =
   process.env.DATABASE_URL || "postgresql://127.0.0.1:5432/subscription_activation_fee_test_placeholder";
 
-const { describe, it } = require("node:test");
+const { describe, it, before } = require("node:test");
 const assert = require("node:assert");
 const fs = require("node:fs");
 const path = require("node:path");
+
+const SETTINGS = new Map();
+
+before(() => {
+  const systemSettingsPath = require.resolve("../src/services/systemSettingsService");
+  require.cache[systemSettingsPath] = {
+    id: systemSettingsPath,
+    filename: systemSettingsPath,
+    loaded: true,
+    exports: {
+      getSetting: async (key) => (SETTINGS.has(key) ? SETTINGS.get(key) : null),
+      setSetting: async (key, value) => {
+        const normalized = value == null || String(value).trim() === "" ? null : String(value).trim();
+        if (normalized == null) SETTINGS.delete(key);
+        else SETTINGS.set(key, normalized);
+        return normalized;
+      },
+    },
+  };
+  delete require.cache[require.resolve("../src/services/subscriptionActivationFeeService")];
+});
+
 const {
-  SUBSCRIPTION_ACTIVATION_FEE_JOD,
+  DEFAULT_ACTIVATION_FEE_AMOUNT_MINOR,
   ACTIVATION_FEE_VALIDITY_DAYS,
   activationFeeMinorUnits,
   isActivationFeeCurrent,
   activationFeeLineItemName,
 } = require("../src/services/subscriptionActivationFeeService");
 
-describe("subscriptionActivationFeeService constants", () => {
-  it("uses 25 JOD activation fee", () => {
-    assert.strictEqual(SUBSCRIPTION_ACTIVATION_FEE_JOD, 25);
+describe("subscriptionActivationFeeService defaults", () => {
+  it("defaults to 25 JOD activation fee", async () => {
+    assert.strictEqual(DEFAULT_ACTIVATION_FEE_AMOUNT_MINOR, 25000);
     assert.strictEqual(ACTIVATION_FEE_VALIDITY_DAYS, 365);
-  });
-
-  it("converts activation fee to Stripe minor units for JOD", () => {
-    assert.strictEqual(activationFeeMinorUnits(), 25000);
+    assert.strictEqual(await activationFeeMinorUnits(), 25000);
   });
 });
 

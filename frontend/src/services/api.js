@@ -240,12 +240,12 @@ export const replacePlanFeaturesRequest = async (planId, features) => {
 };
 
 export const createPlanRequest = async (payload) => {
-  const { data } = await api.post("/admin/plans", payload);
+  const { data } = await api.post("/admin/plans", payload, { timeout: 30000 });
   return data;
 };
 
 export const updatePlanRequest = async (id, patch) => {
-  const { data } = await api.patch(`/admin/plans/${id}`, patch);
+  const { data } = await api.patch(`/admin/plans/${id}`, patch, { timeout: 30000 });
   return data;
 };
 
@@ -327,6 +327,18 @@ export const getSubscriptionNotificationEmailRequest = async () => {
 /** Super-admin only: update (or clear) the paid-subscription notification email. */
 export const updateSubscriptionNotificationEmailRequest = async (email) => {
   const { data } = await api.put("/admin/subscriptions/notification-email", { email });
+  return data;
+};
+
+/** Super-admin only: read global subscription activation fee settings. */
+export const getSubscriptionActivationFeeSettingsRequest = async () => {
+  const { data } = await api.get("/admin/subscriptions/activation-fee-settings");
+  return data;
+};
+
+/** Super-admin only: update global subscription activation fee settings. */
+export const updateSubscriptionActivationFeeSettingsRequest = async (payload) => {
+  const { data } = await api.put("/admin/subscriptions/activation-fee-settings", payload);
   return data;
 };
 
@@ -1367,6 +1379,38 @@ export const createSuperAdminFreelancerPaymentRequest = async (payload) => {
   return data;
 };
 
+// Problems & Suggestions (client / freelancer)
+export const createFeedbackRequest = async (payload) => {
+  const { data } = await api.post("/feedback", payload);
+  return data;
+};
+
+export const listMyFeedbackRequest = async (params = {}) => {
+  const { data } = await api.get("/feedback/my", { params });
+  return data;
+};
+
+export const getMyFeedbackByIdRequest = async (id) => {
+  const { data } = await api.get(`/feedback/my/${id}`);
+  return data;
+};
+
+// Super Admin — Problems & Suggestions
+export const listSuperAdminFeedbackRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/feedback", { params });
+  return data;
+};
+
+export const getSuperAdminFeedbackByIdRequest = async (id) => {
+  const { data } = await api.get(`/super-admin/feedback/${id}`);
+  return data;
+};
+
+export const updateSuperAdminFeedbackRequest = async (id, payload) => {
+  const { data } = await api.patch(`/super-admin/feedback/${id}`, payload);
+  return data;
+};
+
 // Super Admin — admin account management
 export const listSuperAdminAdminsRequest = async () => {
   const { data } = await api.get("/super-admin/admins");
@@ -1771,6 +1815,46 @@ export const getPublicSubSubcategoriesRequest = async ({ page = 1, limit = 16 } 
 
 export const getPublicFaqRequest = async ({ signal } = {}) => {
   const { data } = await api.get("/public/faq", { signal, timeout: 8000 });
+  return data;
+};
+
+export const getPublicFooterAppDownloadsRequest = async ({ signal } = {}) => {
+  const { data } = await api.get("/public/footer-app-downloads", { signal, timeout: 8000 });
+  return data;
+};
+
+export const getPublicFooterSettingsRequest = async ({ signal } = {}) => {
+  const { data } = await api.get("/public/footer-settings", { signal, timeout: 8000 });
+  return data;
+};
+
+export const getSuperAdminFooterAppDownloadsRequest = async () => {
+  const { data } = await api.get("/super-admin/website/footer-app-downloads");
+  return data;
+};
+
+export const updateSuperAdminFooterAppDownloadsRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/website/footer-app-downloads", payload);
+  return data;
+};
+
+export const getSuperAdminFooterSettingsRequest = async () => {
+  const { data } = await api.get("/super-admin/website/footer");
+  return data;
+};
+
+export const updateSuperAdminFooterContactRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/website/footer/contact", payload);
+  return data;
+};
+
+export const updateSuperAdminFooterWorkingHoursRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/website/footer/working-hours", payload);
+  return data;
+};
+
+export const updateSuperAdminFooterContactCenterRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/website/footer/contact-center", payload);
   return data;
 };
 

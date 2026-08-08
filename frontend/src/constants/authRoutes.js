@@ -29,17 +29,20 @@ export const DASHBOARD_TITLE = {
   "/dashboard/client/my-orders": "طلباتي",
   "/dashboard/client/my_orders": "طلباتي",
   "/dashboard/client/financial": "المالية",
+  "/dashboard/client/feedback": "المشاكل والاقتراحات",
   "/dashboard/client/orders": "معرض الطلبات",
   "/dashboard/super-admin/plans": "إدارة الباقات",
   "/dashboard/super-admin/subscriptions": "اشتراكات المستقلين",
   "/dashboard/super-admin/subscriptions/activation": "تفعيل الاشتراكات",
   "/dashboard/super-admin/financial-claims": "المطالبات المالية",
+  "/dashboard/super-admin/feedback": "المشاكل والاقتراحات",
   "/dashboard/admin/subscriptions": "تفعيل الاشتراكات",
   "/dashboard/admin/courses": "إدارة الدورات",
   "/dashboard/admin/ads": "إدارة الإعلانات",
   "/dashboard/freelancer/my-orders": "طلباتي",
   "/dashboard/freelancer/orders": "الطلبات",
   "/dashboard/freelancer/financial-claims": "المطالبات المالية",
+  "/dashboard/freelancer/feedback": "المشاكل والاقتراحات",
   "/dashboard/freelancer/plans": "الباقات",
   "/dashboard/freelancer/courses": "الدورات التدريبية",
   "/dashboard/super-admin/notifications": "الإشعارات",
@@ -64,6 +67,12 @@ export const DASHBOARD_TITLE = {
   "/dashboard/super-admin/edit-website/faq": "الأسئلة الشائعة",
   "/dashboard/super-admin/edit-website/how-it-works": "طريقة العمل",
   "/dashboard/super-admin/edit-website/pages": "الصفحات العامة",
+  "/dashboard/super-admin/edit-website/footer": "تعديل تذييل الموقع",
+  "/dashboard/super-admin/edit-website/footer/contact": "تواصل معنا",
+  "/dashboard/super-admin/edit-website/footer/working-hours": "ساعات العمل",
+  "/dashboard/super-admin/edit-website/footer/app-downloads": "تحميل التطبيق",
+  "/dashboard/super-admin/edit-website/footer/contact-center": "مركز التواصل",
+  "/dashboard/super-admin/edit-website/footer-app-downloads": "تحميل التطبيق",
   "/how-it-works/freelancer": "طريقة العمل كمستقل",
   "/how-it-works/client": "طريقة الطلب للعميل",
   "/dashboard/admin/orders": "الطلبات الداخلية",
@@ -81,17 +90,20 @@ export const DASHBOARD_TITLE_KEYS = {
   "/dashboard/client/my-orders": "dashboard.breadcrumbs.myRequests",
   "/dashboard/client/my_orders": "dashboard.breadcrumbs.myRequests",
   "/dashboard/client/financial": "dashboard.breadcrumbs.finance",
+  "/dashboard/client/feedback": "dashboard.breadcrumbs.problemsSuggestions",
   "/dashboard/client/orders": "dashboard.nav.client.requestMarketplace",
   "/dashboard/super-admin/plans": "dashboard.breadcrumbs.managePlans",
   "/dashboard/super-admin/subscriptions": "dashboard.breadcrumbs.freelancerSubscriptions",
   "/dashboard/super-admin/subscriptions/activation": "dashboard.breadcrumbs.subscriptionActivation",
   "/dashboard/super-admin/financial-claims": "dashboard.breadcrumbs.financialClaims",
+  "/dashboard/super-admin/feedback": "dashboard.breadcrumbs.problemsSuggestions",
   "/dashboard/admin/subscriptions": "dashboard.breadcrumbs.subscriptionActivation",
   "/dashboard/admin/courses": "dashboard.breadcrumbs.manageCourses",
   "/dashboard/admin/ads": "dashboard.breadcrumbs.manageAds",
   "/dashboard/freelancer/my-orders": "dashboard.breadcrumbs.myRequests",
   "/dashboard/freelancer/orders": "dashboard.breadcrumbs.orders",
   "/dashboard/freelancer/financial-claims": "dashboard.breadcrumbs.financialClaims",
+  "/dashboard/freelancer/feedback": "dashboard.breadcrumbs.problemsSuggestions",
   "/dashboard/freelancer/plans": "dashboard.breadcrumbs.plans",
   "/dashboard/freelancer/courses": "dashboard.breadcrumbs.trainingCourses",
   "/dashboard/super-admin/notifications": "dashboard.breadcrumbs.notifications",
@@ -116,6 +128,12 @@ export const DASHBOARD_TITLE_KEYS = {
   "/dashboard/super-admin/edit-website/faq": "dashboard.breadcrumbs.faq",
   "/dashboard/super-admin/edit-website/how-it-works": "dashboard.breadcrumbs.howItWorks",
   "/dashboard/super-admin/edit-website/pages": "dashboard.breadcrumbs.websitePages",
+  "/dashboard/super-admin/edit-website/footer": "dashboard.breadcrumbs.editFooter",
+  "/dashboard/super-admin/edit-website/footer/contact": "dashboard.breadcrumbs.footerContact",
+  "/dashboard/super-admin/edit-website/footer/working-hours": "dashboard.breadcrumbs.footerWorkingHours",
+  "/dashboard/super-admin/edit-website/footer/app-downloads": "dashboard.breadcrumbs.footerAppDownloads",
+  "/dashboard/super-admin/edit-website/footer/contact-center": "dashboard.breadcrumbs.footerContactCenter",
+  "/dashboard/super-admin/edit-website/footer-app-downloads": "dashboard.breadcrumbs.footerAppDownloads",
   "/how-it-works/freelancer": "dashboard.breadcrumbs.howItWorksFreelancer",
   "/how-it-works/client": "dashboard.breadcrumbs.howItWorksClient",
   "/dashboard/admin/orders/create": "dashboard.breadcrumbs.createInternalRequest",
@@ -186,6 +204,7 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/super-admin/subscriptions": STAFF_DASHBOARD_ROLES,
   "/dashboard/super-admin/subscriptions/activation": STAFF_DASHBOARD_ROLES,
   "/dashboard/super-admin/financial-claims": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/feedback": [ROLE.SUPER_ADMIN],
   [DASHBOARD_PATH[ROLE.ADMIN]]: [ROLE.ADMIN],
   "/dashboard/admin/subscriptions": [ROLE.ADMIN],
   "/dashboard/admin/courses": [ROLE.ADMIN],
@@ -198,6 +217,7 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/client/my-orders": [ROLE.CLIENT],
   "/dashboard/client/my_orders": [ROLE.CLIENT],
   "/dashboard/client/financial": [ROLE.CLIENT],
+  "/dashboard/client/feedback": [ROLE.CLIENT],
   "/dashboard/client/orders/create": [ROLE.CLIENT],
   "/dashboard/client/orders": [ROLE.CLIENT],
   "/dashboard/client/notifications": [ROLE.CLIENT],
@@ -206,6 +226,7 @@ const DASHBOARD_PATH_TO_ROLES = {
   /** معرض الطلبات: مستقل يتقدّم ويعرض؛ عميل يتصفّح الطلبات المتاحة (نفس مسار الواجهة). */
   "/dashboard/freelancer/orders": [ROLE.FREELANCER, ROLE.CLIENT],
   "/dashboard/freelancer/financial-claims": [ROLE.FREELANCER],
+  "/dashboard/freelancer/feedback": [ROLE.FREELANCER],
   "/dashboard/freelancer/plans": [ROLE.FREELANCER],
   "/dashboard/freelancer/courses": [ROLE.FREELANCER],
   "/dashboard/freelancer/notifications": [ROLE.FREELANCER],
@@ -228,6 +249,12 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/super-admin/edit-website/faq": STAFF_DASHBOARD_ROLES,
   "/dashboard/super-admin/edit-website/how-it-works": STAFF_DASHBOARD_ROLES,
   "/dashboard/super-admin/edit-website/pages": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/edit-website/footer": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/edit-website/footer/contact": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/edit-website/footer/working-hours": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/edit-website/footer/app-downloads": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/edit-website/footer/contact-center": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/edit-website/footer-app-downloads": STAFF_DASHBOARD_ROLES,
   "/dashboard/admin/orders": [ROLE.ADMIN],
   "/dashboard/admin/orders/create": [ROLE.ADMIN],
   "/dashboard/super-admin/orders": STAFF_DASHBOARD_ROLES,
@@ -245,11 +272,13 @@ const DASHBOARD_PREFIX_RULES = [
   { prefix: "/dashboard/freelancer/institution-orders", roles: [ROLE.FREELANCER] },
   { prefix: "/dashboard/freelancer/my-orders", roles: [ROLE.FREELANCER] },
   { prefix: "/dashboard/freelancer/financial-claims", roles: [ROLE.FREELANCER] },
+  { prefix: "/dashboard/freelancer/feedback", roles: [ROLE.FREELANCER] },
   { prefix: "/dashboard/freelancer/plans", roles: [ROLE.FREELANCER] },
   { prefix: "/dashboard/freelancer/courses", roles: [ROLE.FREELANCER] },
   { prefix: "/dashboard/freelancer", roles: [ROLE.FREELANCER] },
   { prefix: "/dashboard/my-bonuses", roles: [ROLE.FINANCIAL_USER] },
   { prefix: "/dashboard/financial-user", roles: [ROLE.FINANCIAL_USER] },
+  { prefix: "/dashboard/client/feedback", roles: [ROLE.CLIENT] },
   { prefix: "/dashboard/client", roles: [ROLE.CLIENT] },
 ];
 
@@ -271,5 +300,21 @@ export function canRoleAccessPath(pathname, role) {
     }
   }
   return false;
+}
+
+/** Login `location.state.problemsSuggestions` — post-login continue to role feedback. */
+export const LOGIN_PROBLEMS_SUGGESTIONS_INTENT = "problemsSuggestions";
+
+/**
+ * Existing Problems & Suggestions (or admin feedback) path for a role, or null if none.
+ * @param {string|null|undefined} role
+ * @returns {string|null}
+ */
+export function getProblemsSuggestionsPathForRole(role) {
+  const r = String(role || "").toLowerCase();
+  if (r === ROLE.FREELANCER) return "/dashboard/freelancer/feedback";
+  if (r === ROLE.CLIENT) return "/dashboard/client/feedback";
+  if (r === ROLE.SUPER_ADMIN) return "/dashboard/super-admin/feedback";
+  return null;
 }
 

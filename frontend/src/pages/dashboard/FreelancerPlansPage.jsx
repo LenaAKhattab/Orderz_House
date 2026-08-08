@@ -38,6 +38,7 @@ export default function FreelancerPlansPage() {
     hasBlockingSubscription,
     checkoutBusyPlanId,
     activationFeeNeedsPayment,
+    activationFee,
     startCheckout,
   } = useFreelancerPlansCheckout({ returnPath: "/dashboard/freelancer/plans" });
 
@@ -138,6 +139,7 @@ export default function FreelancerPlansPage() {
             hasBlockingSubscription={hasBlockingSubscription}
             checkoutBusyPlanId={checkoutBusyPlanId}
             activationFeeNeedsPayment={activationFeeNeedsPayment}
+            activationFee={activationFee}
             onCta={startCheckout}
           />
         </section>

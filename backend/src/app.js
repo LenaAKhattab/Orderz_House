@@ -32,6 +32,8 @@ const superAdminFinancialClaimsRoutes = require("./routes/superAdminFinancialCla
 const superAdminAnalyticsRoutes = require("./routes/superAdminAnalyticsRoutes");
 const superAdminAdminsRoutes = require("./routes/superAdminAdminsRoutes");
 const rateLimitExemptionsRoutes = require("./routes/rateLimitExemptionsRoutes");
+const superAdminFeedbackRoutes = require("./routes/superAdminFeedbackRoutes");
+const feedbackRoutes = require("./routes/feedbackRoutes");
 const superAdminWebsiteRoutes = require("./routes/superAdminWebsiteRoutes");
 const mobilePaymentReturnRoutes = require("./routes/mobilePaymentReturnRoutes");
 const publicRoutes = require("./routes/publicRoutes");
@@ -147,6 +149,8 @@ app.use("/api/super-admin", superAdminFinancialClaimsRoutes);
 app.use("/api/super-admin", superAdminAdminsRoutes);
 app.use("/api/super-admin", superAdminWebsiteRoutes);
 app.use("/api/super-admin", rateLimitExemptionsRoutes);
+app.use("/api/super-admin", superAdminFeedbackRoutes);
+app.use("/api", feedbackRoutes);
 app.use("/api/superadmin", superAdminAnalyticsRoutes);
 app.use("/api", ordersRoutes);
 app.use("/api", notificationsRoutes);

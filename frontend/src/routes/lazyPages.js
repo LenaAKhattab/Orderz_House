@@ -51,6 +51,11 @@ export const SuperAdminAdminsPage = lazy(() => import("../pages/dashboard/SuperA
 export const SuperAdminRateLimitExemptionsPage = lazy(
   () => import("../pages/dashboard/SuperAdminRateLimitExemptionsPage"),
 );
+export const SuperAdminFeedbackPage = lazy(() => import("../pages/dashboard/SuperAdminFeedbackPage"));
+export const SuperAdminFeedbackDetailPage = lazy(
+  () => import("../pages/dashboard/SuperAdminFeedbackDetailPage"),
+);
+export const ProblemsSuggestionsPage = lazy(() => import("../pages/dashboard/ProblemsSuggestionsPage"));
 export const SuperAdminInstitutionsPage = lazy(
   () => import("../pages/dashboard/SuperAdminInstitutionsPage"),
 );
@@ -73,6 +78,21 @@ export const SuperAdminEditWebsitePage = lazy(() => import("../pages/dashboard/S
 export const SuperAdminEditWebsiteFaqPage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsiteFaqPage"));
 export const SuperAdminSitePagesPage = lazy(() => import("../pages/dashboard/SuperAdminSitePagesPage"));
 export const SuperAdminSitePageEditPage = lazy(() => import("../pages/dashboard/SuperAdminSitePageEditPage"));
+export const SuperAdminEditWebsiteFooterPage = lazy(
+  () => import("../pages/dashboard/SuperAdminEditWebsiteFooterPage"),
+);
+export const SuperAdminEditWebsiteFooterContactPage = lazy(
+  () => import("../pages/dashboard/SuperAdminEditWebsiteFooterContactPage"),
+);
+export const SuperAdminEditWebsiteFooterHoursPage = lazy(
+  () => import("../pages/dashboard/SuperAdminEditWebsiteFooterHoursPage"),
+);
+export const SuperAdminEditWebsiteFooterAppsPage = lazy(
+  () => import("../pages/dashboard/SuperAdminEditWebsiteFooterAppsPage"),
+);
+export const SuperAdminEditWebsiteFooterContactCenterPage = lazy(
+  () => import("../pages/dashboard/SuperAdminEditWebsiteFooterContactCenterPage"),
+);
 export const SuperAdminEditWebsiteHowItWorksPage = lazy(
   () => import("../pages/dashboard/SuperAdminEditWebsiteHowItWorksPage"),
 );

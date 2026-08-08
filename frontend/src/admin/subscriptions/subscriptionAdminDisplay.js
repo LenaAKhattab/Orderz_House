@@ -75,14 +75,19 @@ export function describeFreelancerAdminEligibilityState({
   const status = String(subscription?.status || subscription?.subscriptionStatus || "")
     .trim()
     .toLowerCase();
+  const feeDisabled =
+    activationFeeStatus?.enabled === false ||
+    eligibility?.activationFeeStatus?.enabled === false;
   const feeNeedsPayment =
-    activationFeeStatus?.needsPayment === true ||
-    eligibility?.activationFeeStatus?.needsPayment === true ||
-    reason === "activation_fee_unpaid";
+    !feeDisabled &&
+    (activationFeeStatus?.needsPayment === true ||
+      eligibility?.activationFeeStatus?.needsPayment === true ||
+      reason === "activation_fee_unpaid");
   const feePaid =
-    activationFeeStatus?.isCurrent === true ||
-    eligibility?.activationFeeStatus?.isCurrent === true ||
-    (activationFeeStatus?.needsPayment === false && activationFeeStatus != null);
+    !feeDisabled &&
+    (activationFeeStatus?.isCurrent === true ||
+      eligibility?.activationFeeStatus?.isCurrent === true ||
+      (activationFeeStatus?.needsPayment === false && activationFeeStatus != null));
 
   if (eligibility?.eligible === true) {
     return {

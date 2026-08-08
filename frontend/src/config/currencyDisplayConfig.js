@@ -10,9 +10,6 @@ export const JOD_TO_EGP_RATE = (() => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 70.5;
 })();
 
-/** Mirrors backend SUBSCRIPTION_ACTIVATION_FEE_JOD — display only. */
-export const SUBSCRIPTION_ACTIVATION_FEE_JOD = 25;
-
 export const DISPLAY_CURRENCY = {
   JOD: "JOD",
   EGP: "EGP",

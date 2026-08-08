@@ -6,6 +6,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   MessageSquare,
+  MessageCircleWarning,
   Settings2,
   Wallet,
 } from "lucide-react";
@@ -17,6 +18,7 @@ const ICON_MAP = {
   wallet: Wallet,
   plans: Crown,
   messages: MessageSquare,
+  feedback: MessageCircleWarning,
   courses: GraduationCap,
   settings: Settings2,
   external: ExternalLink,

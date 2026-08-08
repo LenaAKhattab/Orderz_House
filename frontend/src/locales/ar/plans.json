@@ -31,6 +31,17 @@
     "mostPopular": "الأكثر شيوعًا",
     "premium": "باقة مميزة"
   },
+  "sale": {
+    "percentOff": "خصم {{percent}}%",
+    "sectionTitle": "خصم على الباقة",
+    "enable": "تفعيل الخصم",
+    "percentage": "نسبة الخصم (%)",
+    "reason": "سبب الخصم",
+    "reasonEn": "Sale reason",
+    "previewOriginal": "السعر الأصلي: {{amount}} د.أ",
+    "previewPercent": "الخصم: {{percent}}%",
+    "previewFinal": "السعر بعد الخصم: {{amount}} د.أ"
+  },
   "tierLabels": {
     "basic": "أساسي",
     "advance": "متقدم",
@@ -41,7 +52,6 @@
   },
   "activationFeeNote": {
     "prefix": "رسوم تفعيل الاشتراك:",
-    "amount": "25 د.أ.",
     "suffix": "تُدفع مرة واحدة سنوياً"
   },
   "currency": {
@@ -80,7 +90,7 @@
     "freelancers": {
       "trustSimple": "أسعار بسيطة",
       "trustNoFees": "بدون رسوم مخفية",
-      "footnote": "يتم توقيع عقد بعد الاشتراك. رسوم توثيق الحساب دفعة واحدة بقيمة 25 ديناراً على جميع الباقات."
+      "footnote": "يتم توقيع عقد بعد الاشتراك. رسوم توثيق الحساب دفعة واحدة بقيمة {{amount}} على جميع الباقات."
     }
   }
 }

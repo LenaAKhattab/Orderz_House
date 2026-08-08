@@ -53,6 +53,30 @@ const updateSubscriptionNotificationEmailValidators = [
   }),
 ];
 
+const updateSubscriptionActivationFeeSettingsValidators = [
+  body("enabled").isBoolean().withMessage("enabled must be a boolean."),
+  body("amountJod")
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === undefined || value === null || value === "") return true;
+      const n = Number(value);
+      if (!Number.isFinite(n) || n <= 0 || n > 10000) {
+        throw new Error("قيمة رسوم التفعيل يجب أن تكون بين 0 و 10000 د.أ");
+      }
+      return true;
+    }),
+  body("amountMinor")
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === undefined || value === null || value === "") return true;
+      const n = Number.parseInt(String(value), 10);
+      if (!Number.isInteger(n) || n < 1 || n > 10_000_000) {
+        throw new Error("Invalid activation fee amountMinor.");
+      }
+      return true;
+    }),
+];
+
 const freelancerSelfSubscribeValidators = [
   body("planId")
     .custom((value) => {
@@ -82,6 +106,7 @@ module.exports = {
   listActivationQueueValidators,
   listSubscriptionsValidators,
   updateSubscriptionNotificationEmailValidators,
+  updateSubscriptionActivationFeeSettingsValidators,
   freelancerSelfSubscribeValidators,
   freelancerConfirmCheckoutValidators,
   activateSubscriptionValidators,

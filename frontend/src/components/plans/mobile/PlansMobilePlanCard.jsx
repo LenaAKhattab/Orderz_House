@@ -41,6 +41,7 @@ export default function PlansMobilePlanCard({
   hasBlockingSubscription = false,
   checkoutBusy = false,
   activationFeeNeedsPayment = false,
+  activationFee = null,
 }) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -77,7 +78,7 @@ export default function PlansMobilePlanCard({
 
   const display = getLocalizedPlanCardDisplay(plan, locale, t);
   const displayedPrice = resolvePlanPriceDisplay(plan, display.price);
-  const { main: priceMain, sub: priceSub, checkoutHint } = displayedPrice;
+  const { main: priceMain, sub: priceSub, checkoutHint, sale: salePrice } = displayedPrice;
   const features = display.features;
   const previewFeatures = features.slice(0, FEATURE_PREVIEW);
   const moreFeatures = features.slice(FEATURE_PREVIEW);
@@ -159,6 +160,7 @@ export default function PlansMobilePlanCard({
         "pm-plan-card",
         featured ? "pm-plan-card--featured" : "",
         isCurrentPlan ? "pm-plan-card--current" : "",
+        salePrice?.active ? "pm-plan-card--sale" : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -176,8 +178,27 @@ export default function PlansMobilePlanCard({
       ) : null}
 
       <div className="pm-plan-card__price">
-        <span className="pm-plan-card__price-main">{priceMain}</span>
-        {priceSub ? <span className="pm-plan-card__price-sub">{priceSub}</span> : null}
+        {salePrice?.active ? (
+          <div className="pm-plan-card__price-sale">
+            <span className="pm-plan-card__price-main">{priceMain}</span>
+            {salePrice.original || salePrice.badge ? (
+              <p className="pm-plan-card__price-sale-meta">
+                {salePrice.original ? (
+                  <s className="pm-plan-card__price-original">{salePrice.original}</s>
+                ) : null}
+                {salePrice.badge ? (
+                  <span className="pm-plan-card__sale-badge">{salePrice.badge}</span>
+                ) : null}
+              </p>
+            ) : null}
+            {salePrice.reason ? <p className="pm-plan-card__sale-reason">{salePrice.reason}</p> : null}
+          </div>
+        ) : (
+          <>
+            <span className="pm-plan-card__price-main">{priceMain}</span>
+            {priceSub ? <span className="pm-plan-card__price-sub">{priceSub}</span> : null}
+          </>
+        )}
         {checkoutHint && isEgyptDisplay ? (
           <p className="pm-plan-card__price-note pm-plan-card__checkout-hint">{checkoutHint}</p>
         ) : null}
@@ -185,7 +206,7 @@ export default function PlansMobilePlanCard({
         {!installment && paymentNotes ? <p className="pm-plan-card__price-note">{paymentNotes}</p> : null}
         {freePlanPayFee ? (
           <p className="pm-plan-card__price-note pm-plan-card__activation-fee-required">
-            {formatFreePlanActivationFeeNote()}
+            {formatFreePlanActivationFeeNote(activationFee?.amountJod)}
           </p>
         ) : null}
       </div>

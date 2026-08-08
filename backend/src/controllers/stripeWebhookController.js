@@ -326,10 +326,17 @@ async function applyCheckoutSessionFreelancerRecurringCompleted(session, meta, d
     return { status: "retryable_failure", reason: "recurring_subscription_retrieve_failed" };
   }
 
-  const { currentPeriodStart, currentPeriodEnd } = periodFromStripeSubscription(stripeSubscription || {});
+  const { currentPeriodStart, currentPeriodEnd } = periodFromStripeSubscription(stripeSubscription || {}, {
+    preferredPriceId: meta.stripePriceId || stripeSubscription?.items?.data?.[0]?.price?.id || null,
+  });
   const stripeCustomerId =
     typeof session.customer === "string" ? session.customer : session.customer?.id || null;
-  const stripePriceId = meta.stripePriceId || stripeSubscription?.items?.data?.[0]?.price?.id || null;
+  const stripePriceId =
+    meta.stripePriceId ||
+    (typeof stripeSubscription?.items?.data?.[0]?.price === "string"
+      ? stripeSubscription.items.data[0].price
+      : stripeSubscription?.items?.data?.[0]?.price?.id) ||
+    null;
   const paymentIntentId =
     typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null;
   const activationMinor = meta.activationFeeMinor != null ? Number(meta.activationFeeMinor) : 0;

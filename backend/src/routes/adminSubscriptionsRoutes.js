@@ -48,6 +48,8 @@ const {
 
   updateSubscriptionNotificationEmailValidators,
 
+  updateSubscriptionActivationFeeSettingsValidators,
+
   freelancerIdParam,
 
   activateSubscriptionValidators,
@@ -119,6 +121,30 @@ router.put(
   validateRequest,
 
   subscriptionsController.updateSubscriptionNotificationEmail,
+
+);
+
+router.get(
+
+  "/subscriptions/activation-fee-settings",
+
+  requireSuperAdmin,
+
+  subscriptionsController.getSubscriptionActivationFeeSettings,
+
+);
+
+router.put(
+
+  "/subscriptions/activation-fee-settings",
+
+  requireSuperAdmin,
+
+  updateSubscriptionActivationFeeSettingsValidators,
+
+  validateRequest,
+
+  subscriptionsController.updateSubscriptionActivationFeeSettings,
 
 );
 

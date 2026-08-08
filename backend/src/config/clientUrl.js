@@ -10,6 +10,39 @@ function getPrimaryClientUrl() {
 }
 
 /**
+ * Freelancer plans Stripe Checkout return URLs (success + cancel).
+ * Origin must come from getPrimaryClientUrl() / validated CLIENT_URL — never hardcode ports here.
+ */
+function buildFreelancerPlansCheckoutReturnUrls(clientUrl) {
+  const base = String(clientUrl || "").replace(/\/$/, "");
+  if (!base) {
+    const err = new Error("CLIENT_URL is not configured (set a single origin, e.g. https://orderzhouse.com).");
+    err.statusCode = 500;
+    throw err;
+  }
+  return {
+    successUrl: `${base}/dashboard/freelancer/plans?freelancer_sub_paid=1&session_id={CHECKOUT_SESSION_ID}`,
+    cancelUrl: `${base}/dashboard/freelancer/plans?freelancer_sub_cancelled=1&session_id={CHECKOUT_SESSION_ID}`,
+  };
+}
+
+/**
+ * Activation-fee-only Checkout return URLs.
+ */
+function buildFreelancerActivationFeeCheckoutReturnUrls(clientUrl) {
+  const base = String(clientUrl || "").replace(/\/$/, "");
+  if (!base) {
+    const err = new Error("CLIENT_URL is not configured (set a single origin, e.g. https://orderzhouse.com).");
+    err.statusCode = 500;
+    throw err;
+  }
+  return {
+    successUrl: `${base}/dashboard/freelancer/plans?freelancer_activation_fee_paid=1&session_id={CHECKOUT_SESSION_ID}`,
+    cancelUrl: `${base}/dashboard/freelancer/plans?freelancer_activation_fee_cancelled=1&session_id={CHECKOUT_SESSION_ID}`,
+  };
+}
+
+/**
  * All allowed browser origins (for CORS). Merges CLIENT_URL and optional CORS_ORIGINS.
  */
 function parseAllowedClientOrigins() {
@@ -27,4 +60,9 @@ function parseAllowedClientOrigins() {
   return [...new Set(out)];
 }
 
-module.exports = { getPrimaryClientUrl, parseAllowedClientOrigins };
+module.exports = {
+  getPrimaryClientUrl,
+  parseAllowedClientOrigins,
+  buildFreelancerPlansCheckoutReturnUrls,
+  buildFreelancerActivationFeeCheckoutReturnUrls,
+};

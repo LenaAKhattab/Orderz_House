@@ -8,7 +8,7 @@ const subscriptionCache = {
   promise: null,
 };
 const eligibilityCache = { userId: null, data: undefined, promise: null };
-const plansCache = { data: null, promise: null };
+const plansCache = { data: null, activationFee: null, promise: null };
 
 export function invalidateFreelancerSessionCache() {
   subscriptionCache.userId = null;
@@ -22,6 +22,7 @@ export function invalidateFreelancerSessionCache() {
 
 export function invalidatePublicPlansCache() {
   plansCache.data = null;
+  plansCache.activationFee = null;
   plansCache.promise = null;
 }
 
@@ -42,6 +43,10 @@ export function getCachedFreelancerEligibility(userId) {
 
 export function getCachedPublicPlans() {
   return plansCache.data;
+}
+
+export function getCachedPublicActivationFee() {
+  return plansCache.activationFee;
 }
 
 export function fetchFreelancerSubscriptionCached(userId, { force = false } = {}) {
@@ -127,6 +132,7 @@ export async function fetchPublicPlansCached({ force = false } = {}) {
       const items = data?.data?.plans || [];
       const merged = mergeApiPlansWithCatalog(items);
       plansCache.data = merged;
+      plansCache.activationFee = data?.data?.activationFee ?? null;
       plansCache.promise = null;
       return merged;
     })
