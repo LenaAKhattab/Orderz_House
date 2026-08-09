@@ -1,5 +1,5 @@
 const { isProduction } = require("../config/env");
-const { parseAllowedClientOrigins } = require("../config/clientUrl");
+const { isTrustedBrowserOrigin } = require("../config/clientUrl");
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -45,19 +45,18 @@ function originGuardMiddleware(req, res, next) {
   if (!MUTATING_METHODS.has(req.method)) return next();
   if (shouldSkipOriginGuard(req)) return next();
 
-  const allowed = parseAllowedClientOrigins();
   const origin = normalizeOriginUrl(req.headers.origin);
   const referer = normalizeOriginUrl(req.headers.referer);
 
-  // Cross-site browser requests always send Origin — enforce allowlist.
+  // Cross-site browser requests always send Origin — same allowlist as CORS (incl. www sibling).
   if (origin) {
-    if (allowed.includes(origin)) return next();
+    if (isTrustedBrowserOrigin(origin)) return next();
     return forbiddenOrigin(res);
   }
 
   // Referer without Origin (some browsers / older clients): still enforce allowlist.
   if (referer) {
-    if (allowed.includes(referer)) return next();
+    if (isTrustedBrowserOrigin(referer)) return next();
     return forbiddenOrigin(res);
   }
 

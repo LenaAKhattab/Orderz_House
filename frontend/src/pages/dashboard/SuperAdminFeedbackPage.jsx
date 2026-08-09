@@ -12,17 +12,17 @@ import Pagination from "../../components/common/Pagination";
 import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { useToast } from "../../components/ui/toastContext";
-import { listSuperAdminFeedbackRequest } from "../../services/api";
+import { listSuperAdminFeedbackCategoriesRequest, listSuperAdminFeedbackRequest } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import {
   FEEDBACK_PRIORITIES,
   FEEDBACK_STATUSES,
   FEEDBACK_TYPES,
+  feedbackCategoryDisplayLabel,
   feedbackPriorityLabel,
   feedbackRoleLabel,
   feedbackStatusLabel,
   feedbackStatusTone,
-  feedbackTypeLabel,
   formatFeedbackDate,
 } from "../../constants/feedback";
 import "./superAdminFeedbackPage.css";
@@ -52,10 +52,13 @@ export default function SuperAdminFeedbackPage() {
   const [limit, setLimit] = useState(20);
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [filterCategories, setFilterCategories] = useState([]);
   const [statusFilter, setStatusFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
+
+  const useDynamicCategoryFilter = filterCategories.length > 0;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQ(searchInput.trim()), 350);
@@ -63,8 +66,32 @@ export default function SuperAdminFeedbackPage() {
   }, [searchInput]);
 
   useEffect(() => {
+    let cancelled = false;
+    void listSuperAdminFeedbackCategoriesRequest()
+      .then((res) => {
+        if (cancelled) return;
+        const list = Array.isArray(res?.data?.items) ? res.data.items : [];
+        setFilterCategories(list);
+        // Drop any stale pre-migration type key once DB categories become authoritative.
+        if (list.length > 0) {
+          setCategoryFilter((prev) => {
+            if (!prev) return "";
+            return list.some((c) => String(c.id) === String(prev)) ? prev : "";
+          });
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setFilterCategories([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     setPage(1);
-  }, [debouncedQ, typeFilter, statusFilter, roleFilter, priorityFilter, limit]);
+  }, [debouncedQ, categoryFilter, statusFilter, roleFilter, priorityFilter, limit]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,7 +99,9 @@ export default function SuperAdminFeedbackPage() {
     try {
       const res = await listSuperAdminFeedbackRequest({
         q: debouncedQ || undefined,
-        type: typeFilter || undefined,
+        ...(useDynamicCategoryFilter
+          ? { categoryId: categoryFilter || undefined }
+          : { type: categoryFilter || undefined }),
         status: statusFilter || undefined,
         userRole: roleFilter || undefined,
         priority: priorityFilter || undefined,
@@ -90,7 +119,18 @@ export default function SuperAdminFeedbackPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedQ, typeFilter, statusFilter, roleFilter, priorityFilter, page, limit, push, t]);
+  }, [
+    debouncedQ,
+    categoryFilter,
+    useDynamicCategoryFilter,
+    statusFilter,
+    roleFilter,
+    priorityFilter,
+    page,
+    limit,
+    push,
+    t,
+  ]);
 
   useEffect(() => {
     void load();
@@ -99,7 +139,7 @@ export default function SuperAdminFeedbackPage() {
   const resetFilters = () => {
     setSearchInput("");
     setDebouncedQ("");
-    setTypeFilter("");
+    setCategoryFilter("");
     setStatusFilter("");
     setRoleFilter("");
     setPriorityFilter("");
@@ -107,7 +147,9 @@ export default function SuperAdminFeedbackPage() {
     setPage(1);
   };
 
-  const hasFilters = Boolean(debouncedQ || typeFilter || statusFilter || roleFilter || priorityFilter || limit !== 20);
+  const hasFilters = Boolean(
+    debouncedQ || categoryFilter || statusFilter || roleFilter || priorityFilter || limit !== 20,
+  );
 
   return (
     <DashboardShell>
@@ -115,6 +157,11 @@ export default function SuperAdminFeedbackPage() {
         title={t("dashboard.feedback.title")}
         description={t("dashboard.feedback.adminIntro")}
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.problemsSuggestions")}
+        actions={
+          <Link className="sa-feedback-link" to="/dashboard/super-admin/feedback/topics">
+            {t("dashboard.feedback.manageTopics")}
+          </Link>
+        }
       />
 
       <DashboardSection title={t("dashboard.feedback.metricTotal")}>
@@ -148,13 +195,24 @@ export default function SuperAdminFeedbackPage() {
           </label>
           <label className="sa-feedback-filter">
             <span>{t("dashboard.feedback.typeLabel")}</span>
-            <select className="input" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+            <select
+              className="input"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
               <option value="">{t("dashboard.feedback.filterAll")}</option>
-              {FEEDBACK_TYPES.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {locale === "en" ? opt.en : opt.ar}
-                </option>
-              ))}
+              {useDynamicCategoryFilter
+                ? filterCategories.map((cat) => (
+                    <option key={cat.id} value={String(cat.id)}>
+                      {cat.label}
+                      {!cat.isActive ? ` (${t("dashboard.feedback.topicsHidden")})` : ""}
+                    </option>
+                  ))
+                : FEEDBACK_TYPES.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {locale === "en" ? opt.en : opt.ar}
+                    </option>
+                  ))}
             </select>
           </label>
           <label className="sa-feedback-filter">
@@ -231,6 +289,7 @@ export default function SuperAdminFeedbackPage() {
                   <th>{t("dashboard.feedback.colUser")}</th>
                   <th>{t("dashboard.feedback.colRole")}</th>
                   <th>{t("dashboard.feedback.colType")}</th>
+                  <th>{t("dashboard.feedback.colTopic")}</th>
                   <th>{t("dashboard.feedback.colSubject")}</th>
                   <th>{t("dashboard.feedback.colStatus")}</th>
                   <th>{t("dashboard.feedback.colPriority")}</th>
@@ -251,7 +310,10 @@ export default function SuperAdminFeedbackPage() {
                       <StatusBadge tone="neutral">{feedbackRoleLabel(row.userRole, locale)}</StatusBadge>
                     </td>
                     <td>
-                      <StatusBadge tone="admin_assigned">{feedbackTypeLabel(row.type, locale)}</StatusBadge>
+                      <StatusBadge tone="admin_assigned">{feedbackCategoryDisplayLabel(row, locale)}</StatusBadge>
+                    </td>
+                    <td className="sa-feedback-topic-cell">
+                      {row.topicLabel ? row.topicLabel : null}
                     </td>
                     <td className="sa-feedback-subject">{row.subject}</td>
                     <td>

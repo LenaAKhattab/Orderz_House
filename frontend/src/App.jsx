@@ -52,6 +52,7 @@ import {
   SuperAdminRateLimitExemptionsPage,
   SuperAdminFeedbackPage,
   SuperAdminFeedbackDetailPage,
+  SuperAdminFeedbackTopicsPage,
   ProblemsSuggestionsPage,
   SuperAdminInstitutionsPage,
   SuperAdminInstitutionDetailPage,
@@ -378,6 +379,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
                       <SuperAdminFeedbackPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/feedback/topics"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminFeedbackTopicsPage />
                     </RequireRole>
                   }
                 />

@@ -83,6 +83,16 @@ describe("originGuardMiddleware production behavior", () => {
     assert.strictEqual(result.nextCalled, true);
   });
 
+  it("allows www sibling Origin when CLIENT_URL is apex (CORS/origin-guard aligned)", () => {
+    const result = runGuard({
+      method: "POST",
+      path: "/auth/register",
+      headers: { origin: "https://www.orderzhouse.com" },
+    });
+    assert.strictEqual(result.nextCalled, true);
+    assert.strictEqual(result.status, null);
+  });
+
   it("rejects unknown browser Origin", () => {
     const result = runGuard({
       method: "POST",

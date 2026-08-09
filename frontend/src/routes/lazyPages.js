@@ -55,6 +55,9 @@ export const SuperAdminFeedbackPage = lazy(() => import("../pages/dashboard/Supe
 export const SuperAdminFeedbackDetailPage = lazy(
   () => import("../pages/dashboard/SuperAdminFeedbackDetailPage"),
 );
+export const SuperAdminFeedbackTopicsPage = lazy(
+  () => import("../pages/dashboard/SuperAdminFeedbackTopicsPage"),
+);
 export const ProblemsSuggestionsPage = lazy(() => import("../pages/dashboard/ProblemsSuggestionsPage"));
 export const SuperAdminInstitutionsPage = lazy(
   () => import("../pages/dashboard/SuperAdminInstitutionsPage"),

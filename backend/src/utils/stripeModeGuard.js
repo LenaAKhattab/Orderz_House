@@ -131,33 +131,32 @@ function assertStripeSandboxQaAllowed(extra = {}) {
   }
 }
 
-/**
- * Hosts known to be the shared Neon used with Live recovery — never for Sandbox QA.
- * Markers only (no credentials).
- */
-const BLOCKED_SHARED_DB_HOST_MARKERS = Object.freeze([
-  "ep-wandering-cherry", // shared Neon pooler used with Live subscription recovery
-]);
+const {
+  KNOWN_PRODUCTION_HOST_MARKERS,
+  classifyDatabaseUrl: classifyDatabaseEnvironmentUrl,
+} = require("./databaseEnvironmentSafety");
 
+/** @deprecated use KNOWN_PRODUCTION_HOST_MARKERS — kept for existing imports/tests */
+const BLOCKED_SHARED_DB_HOST_MARKERS = KNOWN_PRODUCTION_HOST_MARKERS;
+
+/**
+ * Compatibility wrapper for Sandbox QA (class names LOCAL/TEST/SHARED).
+ */
 function classifyDatabaseUrl(databaseUrl = process.env.DATABASE_URL) {
-  const raw = String(databaseUrl || "").trim();
-  if (!raw) return { class: "MISSING", host: null, blockedShared: false };
-  let host = null;
-  try {
-    const u = new URL(raw.replace(/^postgresql:/i, "postgres:"));
-    host = u.hostname || null;
-  } catch {
-    host = null;
-  }
-  const lower = `${host || ""} ${raw}`.toLowerCase();
-  const blockedShared = BLOCKED_SHARED_DB_HOST_MARKERS.some((m) => lower.includes(m.toLowerCase()));
-  const looksLocal = /localhost|127\.0\.0\.1/i.test(lower);
-  const looksQaNamed = /sandbox|stripe.?qa|_test\b|\/orderz_house_test|qa_renewal/i.test(lower);
+  const info = classifyDatabaseEnvironmentUrl(databaseUrl);
   let classification = "SHARED";
-  if (looksQaNamed && !blockedShared) classification = "TEST";
-  if (looksLocal) classification = "LOCAL";
-  if (blockedShared) classification = "SHARED";
-  return { class: classification, host, blockedShared, looksQaNamed, looksLocal };
+  if (info.classification === "MISSING") classification = "MISSING";
+  else if (info.classification === "LOCAL") classification = "LOCAL";
+  else if (info.classification === "ISOLATED_TEST") classification = "TEST";
+  else if (info.isProduction) classification = "SHARED";
+  else if (info.classification === "STAGING_REMOTE") classification = "TEST";
+  return {
+    class: classification,
+    host: info.host,
+    blockedShared: info.isProduction,
+    looksQaNamed: info.classification === "ISOLATED_TEST",
+    looksLocal: info.looksLocal,
+  };
 }
 
 function assertDatabaseIsolatedForSandboxQa(databaseUrl = process.env.DATABASE_URL) {

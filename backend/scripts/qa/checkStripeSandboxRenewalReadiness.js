@@ -19,12 +19,20 @@ const http = require("node:http");
 
 const backendRoot = path.join(__dirname, "..", "..");
 const sandboxEnv = path.join(backendRoot, ".env.sandbox");
-const defaultEnv = path.join(backendRoot, ".env");
 const envFile = process.env.DOTENV_CONFIG_PATH
   ? path.resolve(process.cwd(), process.env.DOTENV_CONFIG_PATH)
-  : fs.existsSync(sandboxEnv)
-    ? sandboxEnv
-    : defaultEnv;
+  : sandboxEnv;
+
+if (!fs.existsSync(envFile)) {
+  // Fail-closed: never fall back to backend/.env (may be production Neon).
+  // eslint-disable-next-line no-console
+  console.error(
+    "SANDBOX_ENV_NOT_LOADED: missing .env.sandbox (or DOTENV_CONFIG_PATH). " +
+      "Copy backend/.env.sandbox.example → backend/.env.sandbox with an isolated DB + sk_test_. " +
+      "Will not fall back to backend/.env.",
+  );
+  process.exit(2);
+}
 
 require("dotenv").config({ path: envFile });
 

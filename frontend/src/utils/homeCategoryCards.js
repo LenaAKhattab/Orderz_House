@@ -1,5 +1,6 @@
 import heroImage from "../assets/hero.png";
 import specialRequestsImage from "../assets/categories/special-requests.png";
+import { getApiAssetOrigin, getApiBaseUrl } from "../config/apiBase";
 
 const SPECIAL_REQUESTS_WHATSAPP_URL =
   "https://wa.me/971543266550?text=لاستلام%20طلبك%20بشكل%20مباشر%20لدى%20فريق%20الدعم%20للموقع";
@@ -63,14 +64,8 @@ export function resolveBackendAssetUrl(maybeUrl) {
     return raw;
   }
 
-  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-  const apiOrigin = (() => {
-    try {
-      return new URL(base).origin;
-    } catch {
-      return "";
-    }
-  })();
+  const base = getApiBaseUrl();
+  const apiOrigin = getApiAssetOrigin();
   const isLocalHost = (host) => ["localhost", "127.0.0.1", "::1"].includes(String(host || "").toLowerCase());
 
   if (/^https?:\/\//i.test(raw)) {
@@ -87,7 +82,12 @@ export function resolveBackendAssetUrl(maybeUrl) {
 
   try {
     const relative = raw.startsWith("/") ? raw : `/${raw}`;
-    return new URL(relative, apiOrigin || base).toString();
+    if (apiOrigin) {
+      return new URL(relative, apiOrigin).toString();
+    }
+    // Relative API base without window (SSR/tests): keep path as-is when already absolute path.
+    if (relative.startsWith("/")) return relative;
+    return `${base}/${relative}`.replace(/\/{2,}/g, "/");
   } catch {
     return raw;
   }

@@ -18,11 +18,11 @@ import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import {
   FEEDBACK_PRIORITIES,
   FEEDBACK_STATUSES,
+  feedbackCategoryDisplayLabel,
   feedbackPriorityLabel,
   feedbackRoleLabel,
   feedbackStatusLabel,
   feedbackStatusTone,
-  feedbackTypeLabel,
   formatFeedbackDate,
 } from "../../constants/feedback";
 import "./superAdminFeedbackPage.css";
@@ -167,9 +167,15 @@ export default function SuperAdminFeedbackDetailPage() {
               <div>
                 <dt>{t("dashboard.feedback.typeLabel")}</dt>
                 <dd>
-                  <StatusBadge tone="admin_assigned">{feedbackTypeLabel(feedback.type, locale)}</StatusBadge>
+                  <StatusBadge tone="admin_assigned">{feedbackCategoryDisplayLabel(feedback, locale)}</StatusBadge>
                 </dd>
               </div>
+              {feedback.topicLabel ? (
+                <div>
+                  <dt>{t("dashboard.feedback.colTopic")}</dt>
+                  <dd>{feedback.topicLabel}</dd>
+                </div>
+              ) : null}
               <div>
                 <dt>{t("dashboard.feedback.statusLabel")}</dt>
                 <dd>

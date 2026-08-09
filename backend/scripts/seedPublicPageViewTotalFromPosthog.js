@@ -1,6 +1,6 @@
-/**
+﻿/**
  * One-time floor for public_page_view_totals from PostHog all-time $pageview count.
- * Uses GREATEST(local_total, posthog_total) — never adds both together.
+ * Uses GREATEST(local_total, posthog_total) â€” never adds both together.
  * Does NOT seed active users (they rebuild from local events over 7 days).
  *
  * Usage (from backend/):
@@ -13,6 +13,9 @@ const path = require("path");
 
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
 
+const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
+guardQaOrSeed(require("path").basename(__filename));
+
 const posthogAnalyticsService = require("../src/services/posthogAnalyticsService");
 const publicPageViewService = require("../src/services/publicPageViewService");
 const { pool } = require("../src/config/db");
@@ -23,7 +26,7 @@ async function main() {
 
   const cfg = posthogAnalyticsService.readPosthogCredentialsLoose();
   if (!cfg) {
-    console.log("[seed] PostHog not configured — nothing to seed.");
+    console.log("[seed] PostHog not configured â€” nothing to seed.");
     console.log(`[seed] Local total remains: ${localBefore}`);
     return;
   }

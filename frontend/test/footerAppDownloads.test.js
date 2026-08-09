@@ -1,13 +1,15 @@
 /**
- * @vitest-environment node
+ * Footer CMS constants / visibility / Contact Center navigation.
+ * Run: node --test test/footerAppDownloads.test.js
  */
-import { describe, expect, it } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import {
   FOOTER_APP_DOWNLOAD_FALLBACKS,
   mergeFooterAppDownloads,
   pickFooterAppDownloadTitle,
   shouldRenderFooterAppDownload,
-} from "../src/constants/footerAppDownloads";
+} from "../src/constants/footerAppDownloads.js";
 import {
   FOOTER_CONTACT_CENTER_FALLBACKS,
   FOOTER_CONTACT_FALLBACKS,
@@ -20,18 +22,18 @@ import {
   shouldRenderFooterContactCenter,
   shouldRenderFooterContactPanel,
   shouldRenderFooterWorkingHours,
-} from "../src/constants/footerSettings";
+} from "../src/constants/footerSettings.js";
 import {
   SUPER_ADMIN_FOOTER_SECTIONS,
   SUPER_ADMIN_WEBSITE_SECTIONS,
-} from "../src/constants/superAdminWebsiteSections";
+} from "../src/constants/superAdminWebsiteSections.js";
 
 describe("footerAppDownloads constants", () => {
   it("keeps production fallback URLs and titles", () => {
-    expect(FOOTER_APP_DOWNLOAD_FALLBACKS.titleAr).toBe("تحميل التطبيق");
-    expect(FOOTER_APP_DOWNLOAD_FALLBACKS.googlePlayUrl).toContain("play.google.com");
-    expect(FOOTER_APP_DOWNLOAD_FALLBACKS.appStoreUrl).toContain("apps.apple.com");
-    expect(FOOTER_APP_DOWNLOAD_FALLBACKS.visible).toBe(true);
+    assert.equal(FOOTER_APP_DOWNLOAD_FALLBACKS.titleAr, "تحميل التطبيق");
+    assert.ok(FOOTER_APP_DOWNLOAD_FALLBACKS.googlePlayUrl.includes("play.google.com"));
+    assert.ok(FOOTER_APP_DOWNLOAD_FALLBACKS.appStoreUrl.includes("apps.apple.com"));
+    assert.equal(FOOTER_APP_DOWNLOAD_FALLBACKS.visible, true);
   });
 
   it("mergeFooterAppDownloads preserves valid CMS values and fills blanks", () => {
@@ -42,27 +44,30 @@ describe("footerAppDownloads constants", () => {
       appStoreUrl: null,
       appStoreVisible: false,
     });
-    expect(merged.titleAr).toBe("حمّل الآن");
-    expect(merged.appStoreUrl).toBe(FOOTER_APP_DOWNLOAD_FALLBACKS.appStoreUrl);
-    expect(merged.visible).toBe(true);
-    expect(merged.appStoreVisible).toBe(false);
-    expect(merged.googlePlayVisible).toBe(true);
+    assert.equal(merged.titleAr, "حمّل الآن");
+    assert.equal(merged.appStoreUrl, FOOTER_APP_DOWNLOAD_FALLBACKS.appStoreUrl);
+    assert.equal(merged.visible, true);
+    assert.equal(merged.appStoreVisible, false);
+    assert.equal(merged.googlePlayVisible, true);
   });
 
   it("pickFooterAppDownloadTitle respects locale", () => {
     const settings = { titleAr: "تحميل التطبيق", titleEn: "Download the app" };
-    expect(pickFooterAppDownloadTitle(settings, "ar")).toBe("تحميل التطبيق");
-    expect(pickFooterAppDownloadTitle(settings, "en")).toBe("Download the app");
+    assert.equal(pickFooterAppDownloadTitle(settings, "ar"), "تحميل التطبيق");
+    assert.equal(pickFooterAppDownloadTitle(settings, "en"), "Download the app");
   });
 
   it("shouldRenderFooterAppDownload hides empty or disabled sections", () => {
-    expect(shouldRenderFooterAppDownload({ visible: true, appStoreVisible: true, googlePlayVisible: false })).toBe(
+    assert.equal(
+      shouldRenderFooterAppDownload({ visible: true, appStoreVisible: true, googlePlayVisible: false }),
       true,
     );
-    expect(shouldRenderFooterAppDownload({ visible: true, appStoreVisible: false, googlePlayVisible: false })).toBe(
+    assert.equal(
+      shouldRenderFooterAppDownload({ visible: true, appStoreVisible: false, googlePlayVisible: false }),
       false,
     );
-    expect(shouldRenderFooterAppDownload({ visible: false, appStoreVisible: true, googlePlayVisible: true })).toBe(
+    assert.equal(
+      shouldRenderFooterAppDownload({ visible: false, appStoreVisible: true, googlePlayVisible: true }),
       false,
     );
   });
@@ -75,27 +80,27 @@ describe("footerSettings merge and hrefs", () => {
       workingHours: { title: "", text: "نص مخصص" },
       appDownload: { titleAr: "تحميل التطبيق" },
     });
-    expect(merged.contact.phone).toBe("+971 111");
-    expect(merged.contact.email).toBe(FOOTER_CONTACT_FALLBACKS.email);
-    expect(merged.contact.location).toBe("دبي");
-    expect(merged.contact.visible).toBe(true);
-    expect(merged.contact.emailVisible).toBe(false);
-    expect(merged.contact.phoneVisible).toBe(true);
-    expect(merged.workingHours.title).toBe(FOOTER_WORKING_HOURS_FALLBACKS.title);
-    expect(merged.workingHours.text).toBe("نص مخصص");
-    expect(merged.workingHours.visible).toBe(true);
-    expect(merged.contactCenter.helperText).toBe(FOOTER_CONTACT_CENTER_FALLBACKS.helperText);
-    expect(merged.contactCenter.buttonText).toBe(FOOTER_CONTACT_CENTER_FALLBACKS.buttonText);
-    expect(merged.contactCenter.visible).toBe(true);
-    expect(merged.appDownload.googlePlayUrl).toBe(FOOTER_APP_DOWNLOAD_FALLBACKS.googlePlayUrl);
+    assert.equal(merged.contact.phone, "+971 111");
+    assert.equal(merged.contact.email, FOOTER_CONTACT_FALLBACKS.email);
+    assert.equal(merged.contact.location, "دبي");
+    assert.equal(merged.contact.visible, true);
+    assert.equal(merged.contact.emailVisible, false);
+    assert.equal(merged.contact.phoneVisible, true);
+    assert.equal(merged.workingHours.title, FOOTER_WORKING_HOURS_FALLBACKS.title);
+    assert.equal(merged.workingHours.text, "نص مخصص");
+    assert.equal(merged.workingHours.visible, true);
+    assert.equal(merged.contactCenter.helperText, FOOTER_CONTACT_CENTER_FALLBACKS.helperText);
+    assert.equal(merged.contactCenter.buttonText, FOOTER_CONTACT_CENTER_FALLBACKS.buttonText);
+    assert.equal(merged.contactCenter.visible, true);
+    assert.equal(merged.appDownload.googlePlayUrl, FOOTER_APP_DOWNLOAD_FALLBACKS.googlePlayUrl);
   });
 
   it("remaps legacy contact-center helper copy to the cleaner default", () => {
     const merged = mergeFooterSettings({
       contactCenter: { helperText: "للاقتراحات والشكاوى اضغط هنا" },
     });
-    expect(merged.contactCenter.helperText).toBe("للاقتراحات والشكاوى");
-    expect(FOOTER_CONTACT_CENTER_FALLBACKS.helperText).toBe("للاقتراحات والشكاوى");
+    assert.equal(merged.contactCenter.helperText, "للاقتراحات والشكاوى");
+    assert.equal(FOOTER_CONTACT_CENTER_FALLBACKS.helperText, "للاقتراحات والشكاوى");
   });
 
   it("visibility helpers respect section and element flags", () => {
@@ -106,97 +111,103 @@ describe("footerSettings merge and hrefs", () => {
       whatsappVisible: true,
       locationVisible: false,
     };
-    expect(getVisibleFooterContactItems(contact)).toEqual(["phone", "whatsapp"]);
-    expect(getVisibleFooterContactItems({ ...contact, visible: false })).toEqual([]);
+    assert.deepEqual(getVisibleFooterContactItems(contact), ["phone", "whatsapp"]);
+    assert.deepEqual(getVisibleFooterContactItems({ ...contact, visible: false }), []);
 
-    expect(shouldRenderFooterWorkingHours({ visible: true, titleVisible: false, textVisible: true })).toBe(true);
-    expect(shouldRenderFooterWorkingHours({ visible: true, titleVisible: false, textVisible: false })).toBe(false);
-    expect(shouldRenderFooterWorkingHours({ visible: false, titleVisible: true, textVisible: true })).toBe(false);
+    assert.equal(shouldRenderFooterWorkingHours({ visible: true, titleVisible: false, textVisible: true }), true);
+    assert.equal(shouldRenderFooterWorkingHours({ visible: true, titleVisible: false, textVisible: false }), false);
+    assert.equal(shouldRenderFooterWorkingHours({ visible: false, titleVisible: true, textVisible: true }), false);
 
-    expect(
+    assert.equal(
       shouldRenderFooterContactCenter({
         visible: true,
         helperTextVisible: false,
         buttonVisible: true,
       }),
-    ).toBe(true);
-    expect(
+      true,
+    );
+    assert.equal(
       shouldRenderFooterContactCenter({
         visible: true,
         helperTextVisible: false,
         buttonVisible: false,
       }),
-    ).toBe(false);
-    expect(
+      false,
+    );
+    assert.equal(
       shouldRenderFooterContactCenter({
         visible: false,
         helperTextVisible: true,
         buttonVisible: true,
       }),
-    ).toBe(false);
+      false,
+    );
 
-    expect(
+    assert.equal(
       shouldRenderFooterContactPanel(
         { visible: false, phoneVisible: true, emailVisible: true, whatsappVisible: true, locationVisible: true },
         { visible: true, titleVisible: true, textVisible: true },
         { visible: false, helperTextVisible: true, buttonVisible: true },
       ),
-    ).toBe(true);
-    expect(
+      true,
+    );
+    assert.equal(
       shouldRenderFooterContactPanel(
         { visible: false, phoneVisible: true, emailVisible: true, whatsappVisible: true, locationVisible: true },
         { visible: false, titleVisible: true, textVisible: true },
         { visible: true, helperTextVisible: true, buttonVisible: false },
       ),
-    ).toBe(true);
-    expect(
+      true,
+    );
+    assert.equal(
       shouldRenderFooterContactPanel(
         { visible: false, phoneVisible: true, emailVisible: true, whatsappVisible: true, locationVisible: true },
         { visible: false, titleVisible: true, textVisible: true },
         { visible: false, helperTextVisible: true, buttonVisible: true },
       ),
-    ).toBe(false);
+      false,
+    );
   });
 
   it("resolves contact-center destination with role-aware Problems & Suggestions workflow", () => {
-    expect(resolveFooterContactCenterDestination(null, true)).toEqual({ kind: "pending" });
-    expect(resolveFooterContactCenterDestination({ role: "freelancer" }, false)).toEqual({
+    assert.deepEqual(resolveFooterContactCenterDestination(null, true), { kind: "pending" });
+    assert.deepEqual(resolveFooterContactCenterDestination({ role: "freelancer" }, false), {
       kind: "internal",
       to: "/dashboard/freelancer/feedback",
     });
-    expect(resolveFooterContactCenterDestination({ role: "client" }, false)).toEqual({
+    assert.deepEqual(resolveFooterContactCenterDestination({ role: "client" }, false), {
       kind: "internal",
       to: "/dashboard/client/feedback",
     });
-    expect(resolveFooterContactCenterDestination({ primaryRole: "super_admin" }, false)).toEqual({
+    assert.deepEqual(resolveFooterContactCenterDestination({ primaryRole: "super_admin" }, false), {
       kind: "internal",
       to: "/dashboard/super-admin/feedback",
     });
-    expect(resolveFooterContactCenterDestination(null, false)).toEqual({
+    assert.deepEqual(resolveFooterContactCenterDestination(null, false), {
       kind: "login",
       to: "/login",
       state: { problemsSuggestions: true },
     });
-    expect(resolveFooterContactCenterDestination({ role: "financial_user" }, false).kind).toBe("dashboard");
+    assert.equal(resolveFooterContactCenterDestination({ role: "financial_user" }, false).kind, "dashboard");
   });
 
   it("builds tel and whatsapp hrefs from display numbers", () => {
-    expect(buildFooterTelHref("+971 522857808")).toBe("tel:+971522857808");
-    expect(buildFooterWhatsAppHref("+971 522857808")).toBe("https://wa.me/971522857808");
+    assert.equal(buildFooterTelHref("+971 522857808"), "tel:+971522857808");
+    assert.equal(buildFooterWhatsAppHref("+971 522857808"), "https://wa.me/971522857808");
   });
 });
 
 describe("edit-website footer hub cards", () => {
   it("top-level list has footer card and no standalone app card", () => {
     const ids = SUPER_ADMIN_WEBSITE_SECTIONS.map((s) => s.id);
-    expect(ids).toContain("footer");
-    expect(ids).not.toContain("footer-app-downloads");
-    expect(SUPER_ADMIN_WEBSITE_SECTIONS.find((s) => s.id === "footer")?.title).toBe("تعديل تذييل الموقع");
+    assert.ok(ids.includes("footer"));
+    assert.equal(ids.includes("footer-app-downloads"), false);
+    assert.equal(SUPER_ADMIN_WEBSITE_SECTIONS.find((s) => s.id === "footer")?.title, "تعديل تذييل الموقع");
   });
 
   it("footer editor exposes four subsections including contact center", () => {
     const ids = SUPER_ADMIN_FOOTER_SECTIONS.map((s) => s.id);
-    expect(ids).toEqual(["contact", "working-hours", "app-downloads", "contact-center"]);
-    expect(SUPER_ADMIN_FOOTER_SECTIONS.find((s) => s.id === "contact-center")?.title).toBe("مركز التواصل");
+    assert.deepEqual(ids, ["contact", "working-hours", "app-downloads", "contact-center"]);
+    assert.equal(SUPER_ADMIN_FOOTER_SECTIONS.find((s) => s.id === "contact-center")?.title, "مركز التواصل");
   });
 });

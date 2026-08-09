@@ -6,7 +6,7 @@ BEGIN;
 
 ALTER TABLE platform_ui_settings
   ADD COLUMN IF NOT EXISTS footer_contact_center_visible BOOLEAN NOT NULL DEFAULT TRUE,
-  ADD COLUMN IF NOT EXISTS footer_contact_center_helper_text TEXT NOT NULL DEFAULT 'للاقتراحات والشكاوى اضغط هنا',
+  ADD COLUMN IF NOT EXISTS footer_contact_center_helper_text TEXT NOT NULL DEFAULT 'للاقتراحات والشكاوى',
   ADD COLUMN IF NOT EXISTS footer_contact_center_helper_text_visible BOOLEAN NOT NULL DEFAULT TRUE,
   ADD COLUMN IF NOT EXISTS footer_contact_center_button_text TEXT NOT NULL DEFAULT 'مركز التواصل',
   ADD COLUMN IF NOT EXISTS footer_contact_center_button_visible BOOLEAN NOT NULL DEFAULT TRUE,
@@ -15,7 +15,7 @@ ALTER TABLE platform_ui_settings
 UPDATE platform_ui_settings
 SET
   footer_contact_center_visible = COALESCE(footer_contact_center_visible, TRUE),
-  footer_contact_center_helper_text = COALESCE(NULLIF(TRIM(footer_contact_center_helper_text), ''), 'للاقتراحات والشكاوى اضغط هنا'),
+  footer_contact_center_helper_text = COALESCE(NULLIF(TRIM(footer_contact_center_helper_text), ''), 'للاقتراحات والشكاوى'),
   footer_contact_center_helper_text_visible = COALESCE(footer_contact_center_helper_text_visible, TRUE),
   footer_contact_center_button_text = COALESCE(NULLIF(TRIM(footer_contact_center_button_text), ''), 'مركز التواصل'),
   footer_contact_center_button_visible = COALESCE(footer_contact_center_button_visible, TRUE),

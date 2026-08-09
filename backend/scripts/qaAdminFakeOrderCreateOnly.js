@@ -1,8 +1,11 @@
-/**
+﻿/**
  * Dev QA: admin create goes to fake_orders only (not fake_order_templates).
  * Run: node scripts/qaAdminFakeOrderCreateOnly.js
  */
 require("dotenv").config({ path: require("path").join(__dirname, "..", ".env"), override: true });
+
+const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
+guardQaOrSeed(require("path").basename(__filename));
 
 const { pool } = require("../src/config/db");
 const fakeOrdersService = require("../src/services/fakeOrdersService");

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { getPublicHomeStatsRequest } from "../services/api";
 import { setPublicHomeStatsRefetchListener, peekLatestVisitorsTotal, peekLatestActiveUsersTotal } from "../services/publicHomeStatsRefetch";
 
+export { formatHomePublicStat } from "../utils/homePublicStatFormat";
+
 /** Poll while homepage tab is visible (ms). Align with backend order-stats cache TTL. */
 const PUBLIC_HOME_STATS_POLL_MS = Math.min(
   Math.max(Number(import.meta.env.VITE_PUBLIC_HOME_STATS_POLL_MS) || 20_000, 15_000),
@@ -35,11 +37,6 @@ function mergePolledHeroStats(prev, next) {
   let merged = { ...next, error: false };
   merged = mergeMonotonicVisitors(prev, merged);
   return merged;
-}
-
-export function formatHomePublicStat(n) {
-  if (n == null || Number.isNaN(Number(n))) return "—";
-  return new Intl.NumberFormat("en-US").format(Math.trunc(Number(n)));
 }
 
 function mapHomeStats(d) {

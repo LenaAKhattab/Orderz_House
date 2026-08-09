@@ -6,6 +6,15 @@
  *   node scripts/applyAdminAssignmentOfflinePayments.js --email=ahmed2002@gmail.com --subscription-id=1900 --expected-plan-id=3 --apply
  */
 require("dotenv").config();
+
+const { assertOperationalScriptAllowed } = require("../src/utils/databaseEnvironmentSafety");
+try {
+  assertOperationalScriptAllowed("applyAdminAssignmentOfflinePayments.js");
+} catch (err) {
+  console.error(err.message || err);
+  process.exit(1);
+}
+
 const { pool } = require("../src/config/db");
 const subscriptionsService = require("../src/services/subscriptionsService");
 const planOrderValueEligibility = require("../src/services/planOrderValueEligibility");

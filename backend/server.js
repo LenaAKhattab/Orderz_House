@@ -1,9 +1,10 @@
 const path = require("node:path");
 const dotenv = require("dotenv");
 
-// Load `.env` next to this file — do not rely on `process.cwd()` (breaks if Node is started from repo root).
-// Never use override:true: Docker/PM2/systemd production env (NODE_ENV, PORT, secrets) must win over a
-// leftover backend/.env on the host. File values only fill variables that are not already set.
+// Load `.env` next to this file — do not rely on `process.cwd()` (breaks if started from repo root).
+// Never pass dotenv override (files must not clobber Docker/PM2/systemd env).
+// File values only fill variables that are not already set.
+// Normal local development uses backend/.env (`.env.local` is not required).
 dotenv.config({ path: path.join(__dirname, ".env") });
 const { validateEnv } = require("./src/config/env");
 validateEnv();

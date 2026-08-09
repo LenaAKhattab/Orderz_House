@@ -33,7 +33,7 @@ const WORKING_HOURS_DEFAULTS = Object.freeze({
 
 const CONTACT_CENTER_DEFAULTS = Object.freeze({
   visible: true,
-  helperText: "للاقتراحات والشكاوى اضغط هنا",
+  helperText: "للاقتراحات والشكاوى",
   helperTextVisible: true,
   buttonText: "مركز التواصل",
   buttonVisible: true,

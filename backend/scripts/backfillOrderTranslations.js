@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Backfill title_en / description_en for orders, fake_orders, and fake_order_templates.
  *
  * Usage:
@@ -10,6 +10,9 @@
  */
 
 require("dotenv").config({ path: require("node:path").join(__dirname, "..", ".env") });
+
+const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
+guardQaOrSeed(require("path").basename(__filename));
 
 const { pool } = require("../src/config/db");
 const { persistCachedTranslations, generateEnglishTranslations } = require("../src/services/orderTranslationHelper");

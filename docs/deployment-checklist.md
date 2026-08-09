@@ -13,12 +13,15 @@ Documentation-only guide for staging and production. No application logic change
 - [ ] Create a **dedicated Postgres** instance for staging (not production data).
 - [ ] Set `DATABASE_URL` in backend secrets (SSL as required by host).
 - [ ] **Do not** run `sql/init.sql` on staging — it drops `users` and `categories`.
-- [ ] From `backend/` run migrations:
+- [ ] From `backend/` run migrations **only against the intended DB**:
 
 ```bash
-npm run db:migrate
+npm run db:migrate:status
+npm run db:migrate          # non-production only — refuses shared Neon
 npm run db:verify-schema
 ```
+
+- [ ] Production schema changes: follow `docs/ENVIRONMENT_SAFETY.md` (`db:migrate:production` + backup confirmation). Do **not** run `npm run db:migrate` from a workstation `.env` that points at production Neon.
 
 - [ ] Optional (staging only, if you need an admin user): `npm run db:create-admin` — never on production without a documented process.
 
@@ -81,7 +84,7 @@ Copy `frontend/.env.example` → build-time env:
 
 | Variable | Staging notes |
 |----------|----------------|
-| `VITE_API_BASE_URL` | `https://<API_HOST>/api` |
+| `VITE_API_BASE_URL` | Prefer `/api` (same-origin). Absolute API hosts are legacy. See `docs/production-origin-canonical.md`. |
 | `VITE_POSTHOG_KEY` | Staging project key (optional) |
 | `VITE_POSTHOG_HOST` | `https://us.i.posthog.com` or `eu.i` |
 | `VITE_POSTHOG_ENABLE_IN_DEV` | `false` for production builds |

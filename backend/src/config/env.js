@@ -7,6 +7,7 @@ const {
   isInProcessAutomationIntervalEnabled,
   getAutomationCronSecret,
 } = require("./fakeOrdersAutomation");
+const { printEnvironmentBanner } = require("../utils/databaseEnvironmentSafety");
 
 function isProduction() {
   return String(process.env.NODE_ENV || "").toLowerCase() === "production";
@@ -36,6 +37,9 @@ function warnProduction(name, detail) {
  * Call immediately after `dotenv.config()` and before loading `db` or `app`.
  * Exits the process when required configuration is missing in production,
  * or when DATABASE_URL is missing in any environment.
+ *
+ * Does NOT block normal npm run dev merely because backend/.env points at a
+ * shared DB or Live Stripe — those risks are gated on migrate/QA tooling instead.
  */
 function validateEnv() {
   const missing = [];
@@ -148,6 +152,11 @@ function validateEnv() {
   }
 
   if (missing.length === 0) {
+    try {
+      printEnvironmentBanner();
+    } catch {
+      /* banner is best-effort */
+    }
     return;
   }
 

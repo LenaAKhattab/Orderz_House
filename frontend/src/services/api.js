@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getApiBaseUrl } from "../config/apiBase";
 
 export const TOKEN_KEY = "orderz_auth_token";
 
@@ -6,7 +7,7 @@ export const TOKEN_KEY = "orderz_auth_token";
 export const AUTH_SESSION_HINT_KEY = "orderz_session_hint";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
+  baseURL: getApiBaseUrl(),
   timeout: 10000,
   withCredentials: true,
 });
@@ -1395,6 +1396,16 @@ export const getMyFeedbackByIdRequest = async (id) => {
   return data;
 };
 
+export const listFeedbackCategoriesRequest = async () => {
+  const { data } = await api.get("/feedback/categories");
+  return data;
+};
+
+export const listFeedbackTopicsRequest = async (params = {}) => {
+  const { data } = await api.get("/feedback/topics", { params });
+  return data;
+};
+
 // Super Admin — Problems & Suggestions
 export const listSuperAdminFeedbackRequest = async (params = {}) => {
   const { data } = await api.get("/super-admin/feedback", { params });
@@ -1408,6 +1419,56 @@ export const getSuperAdminFeedbackByIdRequest = async (id) => {
 
 export const updateSuperAdminFeedbackRequest = async (id, payload) => {
   const { data } = await api.patch(`/super-admin/feedback/${id}`, payload);
+  return data;
+};
+
+export const listSuperAdminFeedbackTopicsRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/feedback/topics", { params });
+  return data;
+};
+
+export const createSuperAdminFeedbackTopicRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/feedback/topics", payload);
+  return data;
+};
+
+export const updateSuperAdminFeedbackTopicRequest = async (id, payload) => {
+  const { data } = await api.patch(`/super-admin/feedback/topics/${id}`, payload);
+  return data;
+};
+
+export const deleteSuperAdminFeedbackTopicRequest = async (id) => {
+  const { data } = await api.delete(`/super-admin/feedback/topics/${id}`);
+  return data;
+};
+
+export const reorderSuperAdminFeedbackTopicsRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/feedback/topics/reorder", payload);
+  return data;
+};
+
+export const listSuperAdminFeedbackCategoriesRequest = async () => {
+  const { data } = await api.get("/super-admin/feedback/categories");
+  return data;
+};
+
+export const createSuperAdminFeedbackCategoryRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/feedback/categories", payload);
+  return data;
+};
+
+export const updateSuperAdminFeedbackCategoryRequest = async (id, payload) => {
+  const { data } = await api.patch(`/super-admin/feedback/categories/${id}`, payload);
+  return data;
+};
+
+export const deleteSuperAdminFeedbackCategoryRequest = async (id) => {
+  const { data } = await api.delete(`/super-admin/feedback/categories/${id}`);
+  return data;
+};
+
+export const reorderSuperAdminFeedbackCategoriesRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/feedback/categories/reorder", payload);
   return data;
 };
 

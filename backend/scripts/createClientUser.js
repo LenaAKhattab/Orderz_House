@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Create a verified client user.
  *
  * Usage (from backend/):
@@ -7,6 +7,9 @@
 const path = require("node:path");
 const crypto = require("node:crypto");
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+
+const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
+guardQaOrSeed(require("path").basename(__filename));
 
 const bcrypt = require("bcrypt");
 const { pool } = require("../src/config/db");
@@ -60,16 +63,16 @@ async function main() {
     RETURNING id, account_id, email, role`,
     [
       accountId,
-      "عاصم",
+      "Ø¹Ø§ØµÙ…",
       "-",
-      "عميل",
+      "Ø¹Ù…ÙŠÙ„",
       email,
       passwordHash,
       "client",
       "JO",
       "+962790000002",
       "+962790000002",
-      "ذكر",
+      "Ø°ÙƒØ±",
       true,
       true,
     ],

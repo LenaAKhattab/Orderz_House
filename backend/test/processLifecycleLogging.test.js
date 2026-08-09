@@ -36,6 +36,10 @@ describe("process lifecycle logging", () => {
   it("server.js dotenv does not override host/orchestrator environment", () => {
     const src = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
     assert.ok(src.includes("dotenv.config"));
-    assert.ok(!/dotenv\.config\(\{[^}]*override:\s*true/.test(src));
+    const configCalls = src.match(/dotenv\.config\s*\([^)]*\)/g) || [];
+    assert.ok(configCalls.length >= 1);
+    for (const call of configCalls) {
+      assert.ok(!/override\s*:\s*true/.test(call));
+    }
   });
 });

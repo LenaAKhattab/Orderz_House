@@ -1,47 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import PublicPageHeader from "../layout/PublicPageHeader";
 import { getCategoriesRequest, getSubcategoriesRequest, getSubSubcategoriesRequest } from "../../services/api";
-import { filterServiceCategories } from "../../utils/homeCategoryCards";
+import { filterServiceCategories, resolveBackendAssetUrl } from "../../utils/homeCategoryCards";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 import { getLocalizedServiceCategoryDescription } from "../../lib/i18n/getLocalizedServiceCategoryDescription";
 import ServicesBenefitsStrip from "./ServicesBenefitsStrip";
 import ServicesRefCard from "./ServicesRefCard";
-
-function resolveBackendAssetUrl(maybeUrl) {
-  if (!maybeUrl) return "";
-  const raw = String(maybeUrl).trim();
-  if (!raw) return "";
-
-  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-  const apiOrigin = (() => {
-    try {
-      return new URL(base).origin;
-    } catch {
-      return "";
-    }
-  })();
-  const isLocalHost = (host) => ["localhost", "127.0.0.1", "::1"].includes(String(host || "").toLowerCase());
-
-  if (/^https?:\/\//i.test(raw)) {
-    try {
-      const parsed = new URL(raw);
-      if (apiOrigin && isLocalHost(parsed.hostname)) {
-        return new URL(`${parsed.pathname}${parsed.search}${parsed.hash}`, apiOrigin).toString();
-      }
-      return parsed.toString();
-    } catch {
-      return raw;
-    }
-  }
-
-  try {
-    const relative = raw.startsWith("/") ? raw : `/${raw}`;
-    return new URL(relative, apiOrigin || base).toString();
-  } catch {
-    return raw;
-  }
-}
 
 function ServicesRefCardSkeleton({ compact = false }) {
   if (compact) {

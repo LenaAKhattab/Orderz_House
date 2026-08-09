@@ -7,6 +7,14 @@
 const path = require("node:path");
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
 
+const { assertOperationalScriptAllowed } = require("../src/utils/databaseEnvironmentSafety");
+try {
+  assertOperationalScriptAllowed("resetPasswordByEmail.js");
+} catch (err) {
+  console.error(err.message || err);
+  process.exit(1);
+}
+
 const bcrypt = require("bcrypt");
 const { pool } = require("../src/config/db");
 

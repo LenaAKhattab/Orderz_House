@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Assign a plan subscription to a freelancer by email.
  *
  * Usage (from backend/):
@@ -6,6 +6,9 @@
  */
 const path = require("node:path");
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+
+const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
+guardQaOrSeed(require("path").basename(__filename));
 
 const { pool } = require("../src/config/db");
 const subscriptionsService = require("../src/services/subscriptionsService");

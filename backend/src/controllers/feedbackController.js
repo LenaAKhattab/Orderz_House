@@ -34,6 +34,7 @@ async function adminListFeedback(req, res, next) {
   try {
     const data = await feedbackService.adminListFeedback({
       q: req.query.q,
+      categoryId: req.query.categoryId || null,
       type: req.query.type || null,
       status: req.query.status || null,
       userRole: req.query.userRole || null,

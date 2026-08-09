@@ -133,18 +133,47 @@ function assertMutatingScriptAllowed(options) {
   const { scriptName, confirmVar, requireConfirmAlways = false, env = process.env } = options;
   const databaseTarget = getDatabaseTargetHint(env);
   const confirmed = envBool(confirmVar, false, env);
-  const isProduction = env.NODE_ENV === "production";
+  const isProductionNode = env.NODE_ENV === "production";
 
-  // eslint-disable-next-line no-console
-  console.log("\n=== Mutating script guard ===");
-  // eslint-disable-next-line no-console
-  console.log(`Script:          ${scriptName}`);
-  // eslint-disable-next-line no-console
-  console.log(`Database target: ${databaseTarget}`);
-  // eslint-disable-next-line no-console
-  console.log(`NODE_ENV:        ${env.NODE_ENV || "(unset)"}`);
+  let dbIsProduction = false;
+  try {
+    const {
+      isProductionDatabase,
+      maskDatabaseTarget,
+    } = require("../../src/utils/databaseEnvironmentSafety");
+    dbIsProduction = isProductionDatabase(env.DATABASE_URL, env);
+    // Prefer masked host/db classification over NODE_ENV-only hints.
+    // eslint-disable-next-line no-console
+    console.log("\n=== Mutating script guard ===");
+    // eslint-disable-next-line no-console
+    console.log(`Script:          ${scriptName}`);
+    // eslint-disable-next-line no-console
+    console.log(`Database target: ${maskDatabaseTarget(env.DATABASE_URL)}`);
+    // eslint-disable-next-line no-console
+    console.log(`NODE_ENV:        ${env.NODE_ENV || "(unset)"}`);
+    // eslint-disable-next-line no-console
+    console.log(`DB production:   ${dbIsProduction ? "YES" : "no"}`);
+  } catch {
+    // eslint-disable-next-line no-console
+    console.log("\n=== Mutating script guard ===");
+    // eslint-disable-next-line no-console
+    console.log(`Script:          ${scriptName}`);
+    // eslint-disable-next-line no-console
+    console.log(`Database target: ${databaseTarget}`);
+    // eslint-disable-next-line no-console
+    console.log(`NODE_ENV:        ${env.NODE_ENV || "(unset)"}`);
+  }
 
-  if (isProduction && !confirmed) {
+  // Hard-block shared/production Neon for QA/maintenance scripts regardless of NODE_ENV.
+  if (dbIsProduction) {
+    // eslint-disable-next-line no-console
+    console.error(
+      `QA_PRODUCTION_DATABASE_BLOCKED: refusing ${scriptName} against production/shared DATABASE_URL.`,
+    );
+    process.exit(1);
+  }
+
+  if (isProductionNode && !confirmed) {
     // eslint-disable-next-line no-console
     console.error(
       `Refusing to run in production without ${confirmVar}=true.`,
@@ -158,12 +187,12 @@ function assertMutatingScriptAllowed(options) {
     process.exit(1);
   }
 
-  if (isProduction && confirmed) {
+  if (isProductionNode && confirmed) {
     // eslint-disable-next-line no-console
     console.warn(`WARNING: Running mutating script in production (${scriptName}).`);
   }
 
-  return { databaseTarget, confirmed, isProduction };
+  return { databaseTarget, confirmed, isProduction: isProductionNode || dbIsProduction };
 }
 
 function printDryRunExecuteHint(safety, extraEnv = "") {

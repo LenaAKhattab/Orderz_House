@@ -14,7 +14,11 @@
 const fs = require("fs");
 const path = require("path");
 
-require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+const { loadBackendEnv } = require("../src/config/loadBackendEnv");
+loadBackendEnv({ profile: "default", failClosed: false, quiet: true });
+
+const { guardNonProductionWrite, logMigrationTarget, scanSqlForDangerousStatements } = require("./lib/assertScriptDatabaseAllowed");
+guardNonProductionWrite("sql file apply (db:run / db:init)");
 
 const { pool } = require("../src/config/db");
 
@@ -75,6 +79,12 @@ async function main() {
     process.exit(1);
   }
 
+  const scan = scanSqlForDangerousStatements(raw);
+  logMigrationTarget({
+    production: false,
+    pendingCount: 1,
+    dangerousFindings: scan.findings,
+  });
   console.log(`Applying ${statements.length} statement(s) from ${path.relative(process.cwd(), filePath)}`);
 
   const client = await pool.connect();

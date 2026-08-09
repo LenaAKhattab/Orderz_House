@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Usage (from backend/):
  *   node scripts/setUserRole.js lena@gmail.com client
  *
@@ -6,6 +6,15 @@
  */
 const path = require("node:path");
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+
+const { assertOperationalScriptAllowed } = require("../src/utils/databaseEnvironmentSafety");
+try {
+  assertOperationalScriptAllowed("setUserRole.js");
+} catch (err) {
+  // eslint-disable-next-line no-console
+  console.error(err.message || err);
+  process.exit(1);
+}
 
 const { pool } = require("../src/config/db");
 

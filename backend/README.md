@@ -13,7 +13,10 @@ Production-ready Express API foundation for Orderz House with Neon PostgreSQL co
 
 - `npm run dev` - Start server with nodemon
 - `npm start` - Start server with node
-- `npm run db:migrate` - Apply pending SQL files from `sql/migrations` in order (tracks `schema_migrations`; safe to run repeatedly). Requires `DATABASE_URL` in `.env`. Per-file runs still use `npm run db:run -- <path>`.
+- `npm run db:migrate` - Apply pending SQL on a **non-production** database only (blocks shared Neon).
+- `npm run db:migrate:status` - Read-only: masked DB target, classification, applied/pending migrations.
+- `npm run db:migrate:production` - Deliberate production migrate (multi-flag approval; see `docs/ENVIRONMENT_SAFETY.md`).
+- `npm run db:verify-schema` - Read-only schema checks. Requires `DATABASE_URL` in `.env`. Per-file runs still use `npm run db:run -- <path>` (also non-production only).
 
 ## Environment Setup
 

@@ -4,6 +4,7 @@ import { HOME_HERO_METRICS_ORDER } from "../../../constants/homeAnalyticsMetrics
 import HomePromoOffersSection from "../../ads/HomePromoOffersSection";
 import AdsBandSkeleton from "../../skeletons/AdsBandSkeleton";
 import HeroStatValue from "../HeroStatValue";
+import { shouldRenderHeroStatsSection } from "../heroHomeStatUtils";
 import HomeMobileHeroMastheadArt from "./HomeMobileHeroMastheadArt";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import "../../ads/home-promo-offers.css";
@@ -113,24 +114,31 @@ export default function HomeMobileHero({ statsPayload, ads = [], adsLoading = fa
         </div>
       </div>
 
-      <div className="hm-hero__stats" role="group" aria-label={t("home.metrics.statsAria")}>
-        {HOME_HERO_METRICS_ORDER.map((row) => {
-          if (statsPayload) {
-            if (row.key === "views" && !statsPayload.showVisitorsCount) return null;
-            if (row.key === "active" && !statsPayload.showActiveUsersCount) return null;
-          }
-          const keys = METRIC_LABEL_KEYS[row.key] || { label: row.label, sub: row.sub };
-          return (
-            <div key={row.key} className={`hm-stat-pill hm-stat-pill--${row.tone}`}>
-              <span className="hm-stat-pill__label">{t(keys.label)}</span>
-              <span className="hm-stat-pill__value">
-                <HeroStatValue statsPayload={statsPayload} metricKey={row.key} />
-              </span>
-              <span className="hm-stat-pill__sub">{t(keys.sub)}</span>
-            </div>
-          );
-        })}
-      </div>
+      {shouldRenderHeroStatsSection(statsPayload) ? (
+        <div
+          className="hm-hero__stats"
+          role="group"
+          aria-label={t("home.metrics.statsAria")}
+          data-testid="home-hero-stats"
+        >
+          {HOME_HERO_METRICS_ORDER.map((row) => {
+            if (statsPayload) {
+              if (row.key === "views" && !statsPayload.showVisitorsCount) return null;
+              if (row.key === "active" && !statsPayload.showActiveUsersCount) return null;
+            }
+            const keys = METRIC_LABEL_KEYS[row.key] || { label: row.label, sub: row.sub };
+            return (
+              <div key={row.key} className={`hm-stat-pill hm-stat-pill--${row.tone}`}>
+                <span className="hm-stat-pill__label">{t(keys.label)}</span>
+                <span className="hm-stat-pill__value">
+                  <HeroStatValue statsPayload={statsPayload} metricKey={row.key} />
+                </span>
+                <span className="hm-stat-pill__sub">{t(keys.sub)}</span>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
 
       {showAds ? (
         <div className="hm-hero__ads" aria-label={t("home.hero.adsAria")}>

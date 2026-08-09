@@ -1,10 +1,13 @@
-/**
+﻿/**
  * Loads backend/images/categories/*.jpg into categories.image_data
  * and sets image_url to the API image route.
  *
  * Usage: node scripts/seedCategoryImagesToDb.js
  */
 require("dotenv").config({ path: require("node:path").join(__dirname, "..", ".env") });
+
+const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
+guardQaOrSeed(require("path").basename(__filename));
 
 const fs = require("node:fs");
 const path = require("node:path");

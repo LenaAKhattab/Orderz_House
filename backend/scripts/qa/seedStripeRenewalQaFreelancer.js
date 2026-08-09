@@ -13,13 +13,16 @@ const fs = require("node:fs");
 const crypto = require("node:crypto");
 
 const sandboxEnv = path.join(__dirname, "..", "..", ".env.sandbox");
-require("dotenv").config({
-  path: process.env.DOTENV_CONFIG_PATH
-    ? path.resolve(process.cwd(), process.env.DOTENV_CONFIG_PATH)
-    : fs.existsSync(sandboxEnv)
-      ? sandboxEnv
-      : path.join(__dirname, "..", "..", ".env"),
-});
+const envFile = process.env.DOTENV_CONFIG_PATH
+  ? path.resolve(process.cwd(), process.env.DOTENV_CONFIG_PATH)
+  : sandboxEnv;
+if (!fs.existsSync(envFile)) {
+  console.error(
+    "SANDBOX_ENV_NOT_LOADED: missing .env.sandbox (or DOTENV_CONFIG_PATH). Will not fall back to backend/.env.",
+  );
+  process.exit(1);
+}
+require("dotenv").config({ path: envFile });
 
 if (String(process.env.ALLOW_QA_SEED || "").trim() !== "true") {
   console.error("Refusing: set ALLOW_QA_SEED=true");

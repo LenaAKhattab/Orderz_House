@@ -75,7 +75,7 @@ describe("migrations footer settings", () => {
     assert.ok(sql.includes("footer_contact_center_helper_text"));
     assert.ok(sql.includes("footer_contact_center_button_text"));
     assert.ok(sql.includes("footer_contact_center_url"));
-    assert.ok(sql.includes("للاقتراحات والشكاوى اضغط هنا"));
+    assert.ok(sql.includes("للاقتراحات والشكاوى"));
     assert.ok(sql.includes("مركز التواصل"));
     assert.ok(!sql.includes("DROP COLUMN"));
     assert.ok(!sql.includes("DROP TABLE"));
@@ -130,7 +130,7 @@ describe("websiteFooterAppDownloadsService validation", () => {
     assert.equal(svc.DEFAULTS.titleAr, "تحميل التطبيق");
     assert.equal(svc.CONTACT_DEFAULTS.email, "info@orderzhouse.com");
     assert.equal(svc.WORKING_HOURS_DEFAULTS.title, "ساعات العمل");
-    assert.equal(svc.CONTACT_CENTER_DEFAULTS.helperText, "للاقتراحات والشكاوى اضغط هنا");
+    assert.equal(svc.CONTACT_CENTER_DEFAULTS.helperText, "للاقتراحات والشكاوى");
     assert.equal(svc.CONTACT_CENTER_DEFAULTS.buttonText, "مركز التواصل");
     assert.equal(svc.CONTACT_CENTER_DEFAULTS.url, "/login");
     assert.equal(
@@ -339,5 +339,200 @@ describe("websiteFooter settings get/update with mocked pool", () => {
     });
     assert.equal(hours.title, "أوقات الدعم");
     assert.equal(hours.text, "متاحون دائماً");
+  });
+
+  it("getFooterSettings returns defaults on missing-column (42703) instead of throwing 503", async () => {
+    poolQuery = mock.fn(async () => {
+      const err = new Error('column "footer_contact_center_helper_text" does not exist');
+      err.code = "42703";
+      throw err;
+    });
+    const dbPath = require.resolve("../src/config/db");
+    require.cache[dbPath].exports = { pool: { query: (...args) => poolQuery(...args) } };
+    delete require.cache[servicePath];
+    const svc = require("../src/services/websiteFooterAppDownloadsService");
+    const settings = await svc.getFooterSettings();
+    assert.equal(settings.contact.email, "info@orderzhouse.com");
+    assert.equal(settings.contactCenter.helperText, "للاقتراحات والشكاوى");
+    assert.equal(settings.contact.visible, true);
+  });
+
+  it("updateFooterContact maps missing-column to 503 FOOTER_CONTACT_SCHEMA_MISSING", async () => {
+    let call = 0;
+    poolQuery = mock.fn(async (sql) => {
+      call += 1;
+      if (String(sql).includes("INSERT INTO platform_ui_settings")) {
+        const err = new Error('column "footer_contact_visible" does not exist');
+        err.code = "42703";
+        throw err;
+      }
+      return {
+        rows: [
+          {
+            footer_contact_phone: "+971 522857808",
+            footer_contact_email: "info@orderzhouse.com",
+            footer_contact_whatsapp: "+971 522857808",
+            footer_contact_location: "دبي",
+            footer_working_hours_title: "ساعات العمل",
+            footer_working_hours_text: "نعمل على مدار الساعة لخدمتك",
+            footer_app_download_title_ar: "تحميل التطبيق",
+            footer_app_download_title_en: "Download the app",
+            footer_google_play_url: "https://play.google.com/store/apps/details?id=com.orderzhouse.app",
+            footer_app_store_url: "https://apps.apple.com/ae/app/orderzhouse/id6762045683",
+            updated_at: null,
+          },
+        ],
+      };
+    });
+    const dbPath = require.resolve("../src/config/db");
+    require.cache[dbPath].exports = { pool: { query: (...args) => poolQuery(...args) } };
+    delete require.cache[servicePath];
+    const svc = require("../src/services/websiteFooterAppDownloadsService");
+    await assert.rejects(
+      () =>
+        svc.updateFooterContact({
+          phone: "+971 522857808",
+          email: "info@orderzhouse.com",
+          whatsapp: "+971 522857808",
+          location: "دبي",
+        }),
+      (err) => err.statusCode === 503 && err.publicCode === "FOOTER_CONTACT_SCHEMA_MISSING",
+    );
+    assert.ok(call >= 1);
+  });
+
+  it("updateFooterContact preserves phone value when phoneVisible is toggled", async () => {
+    const phone = "+971 522857808";
+    let insertArgs = null;
+    poolQuery = mock.fn(async (sql, params) => {
+      if (String(sql).includes("INSERT INTO platform_ui_settings")) {
+        insertArgs = params;
+        return { rows: [] };
+      }
+      return {
+        rows: [
+          {
+            footer_contact_phone: phone,
+            footer_contact_email: "info@orderzhouse.com",
+            footer_contact_whatsapp: phone,
+            footer_contact_location: "دبي",
+            footer_contact_visible: true,
+            footer_contact_phone_visible: false,
+            footer_contact_email_visible: true,
+            footer_contact_whatsapp_visible: true,
+            footer_contact_location_visible: true,
+            footer_working_hours_title: "ساعات العمل",
+            footer_working_hours_text: "نص",
+            footer_working_hours_visible: true,
+            footer_working_hours_title_visible: true,
+            footer_working_hours_text_visible: true,
+            footer_contact_center_visible: true,
+            footer_contact_center_helper_text: "للاقتراحات والشكاوى",
+            footer_contact_center_helper_text_visible: true,
+            footer_contact_center_button_text: "مركز التواصل",
+            footer_contact_center_button_visible: true,
+            footer_contact_center_url: "/login",
+            footer_app_download_title_ar: "تحميل التطبيق",
+            footer_app_download_title_en: "Download the app",
+            footer_google_play_url: "https://play.google.com/store/apps/details?id=com.orderzhouse.app",
+            footer_app_store_url: "https://apps.apple.com/ae/app/orderzhouse/id6762045683",
+            footer_app_download_visible: true,
+            footer_app_download_title_visible: true,
+            footer_google_play_visible: true,
+            footer_app_store_visible: true,
+            updated_at: null,
+          },
+        ],
+      };
+    });
+    const dbPath = require.resolve("../src/config/db");
+    require.cache[dbPath].exports = { pool: { query: (...args) => poolQuery(...args) } };
+    delete require.cache[servicePath];
+    const svc = require("../src/services/websiteFooterAppDownloadsService");
+    const contact = await svc.updateFooterContact({ phoneVisible: false });
+    assert.equal(contact.phone, phone);
+    assert.equal(contact.phoneVisible, false);
+    assert.ok(insertArgs);
+    assert.equal(insertArgs[0], phone);
+    assert.equal(insertArgs[5], false);
+  });
+
+  it("updateFooterContactCenter and updateFooterAppDownloads persist visibility without clearing content", async () => {
+    let lastInsert = null;
+    poolQuery = mock.fn(async (sql, params) => {
+      if (String(sql).includes("INSERT INTO platform_ui_settings")) {
+        lastInsert = { sql: String(sql), params };
+        return { rows: [] };
+      }
+      return {
+        rows: [
+          {
+            footer_contact_phone: "+971 522857808",
+            footer_contact_email: "info@orderzhouse.com",
+            footer_contact_whatsapp: "+971 522857808",
+            footer_contact_location: "دبي",
+            footer_working_hours_title: "ساعات العمل",
+            footer_working_hours_text: "نص",
+            footer_contact_center_visible: false,
+            footer_contact_center_helper_text: "للاقتراحات والشكاوى",
+            footer_contact_center_helper_text_visible: true,
+            footer_contact_center_button_text: "مركز التواصل",
+            footer_contact_center_button_visible: false,
+            footer_contact_center_url: "/login",
+            footer_app_download_title_ar: "تحميل التطبيق",
+            footer_app_download_title_en: "Download the app",
+            footer_google_play_url: "https://play.google.com/store/apps/details?id=com.orderzhouse.app",
+            footer_app_store_url: "https://apps.apple.com/ae/app/orderzhouse/id6762045683",
+            footer_app_download_visible: true,
+            footer_app_download_title_visible: true,
+            footer_google_play_visible: true,
+            footer_app_store_visible: false,
+            updated_at: null,
+          },
+        ],
+      };
+    });
+    const dbPath = require.resolve("../src/config/db");
+    require.cache[dbPath].exports = { pool: { query: (...args) => poolQuery(...args) } };
+    delete require.cache[servicePath];
+    const svc = require("../src/services/websiteFooterAppDownloadsService");
+
+    const cc = await svc.updateFooterContactCenter({ visible: false, buttonVisible: false });
+    assert.equal(cc.visible, false);
+    assert.equal(cc.buttonText, "مركز التواصل");
+    assert.equal(cc.helperText, "للاقتراحات والشكاوى");
+    assert.ok(lastInsert.sql.includes("footer_contact_center_visible"));
+
+    const app = await svc.updateFooterAppDownloads({ appStoreVisible: false });
+    assert.equal(app.appStoreVisible, false);
+    assert.equal(
+      app.appStoreUrl,
+      "https://apps.apple.com/ae/app/orderzhouse/id6762045683",
+    );
+  });
+
+  it("validation errors stay 400 and are not remapped to 503", async () => {
+    poolQuery = mock.fn(async () => ({
+      rows: [
+        {
+          footer_app_download_title_ar: "تحميل التطبيق",
+          footer_app_download_title_en: "Download the app",
+          footer_google_play_url: "https://play.google.com/store/apps/details?id=com.orderzhouse.app",
+          footer_app_store_url: "https://apps.apple.com/ae/app/orderzhouse/id6762045683",
+          updated_at: null,
+        },
+      ],
+    }));
+    const dbPath = require.resolve("../src/config/db");
+    require.cache[dbPath].exports = { pool: { query: (...args) => poolQuery(...args) } };
+    delete require.cache[servicePath];
+    const svc = require("../src/services/websiteFooterAppDownloadsService");
+    await assert.rejects(
+      () =>
+        svc.updateFooterAppDownloads({
+          googlePlayUrl: "https://evil.example/app",
+        }),
+      (err) => err.statusCode === 400 && err.publicCode === "STORE_URL_HOST_NOT_ALLOWED",
+    );
   });
 });

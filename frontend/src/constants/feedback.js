@@ -1,5 +1,6 @@
 /** Shared labels/helpers for Problems & Suggestions (user + Super Admin). */
 
+/** Legacy fallback labels for pre-category rows (type = problem|suggestion|other). */
 export const FEEDBACK_TYPES = [
   { value: "problem", ar: "مشكلة", en: "Problem" },
   { value: "suggestion", ar: "اقتراح", en: "Suggestion" },
@@ -24,6 +25,23 @@ export function feedbackTypeLabel(type, locale = "ar") {
   const row = FEEDBACK_TYPES.find((t) => t.value === type);
   if (!row) return type || "—";
   return locale === "en" ? row.en : row.ar;
+}
+
+/**
+ * Display category for a feedback row.
+ * Prefer frozen categoryLabel snapshot; fall back to legacy type translation.
+ * Never renders null/undefined.
+ */
+export function feedbackCategoryDisplayLabel(item, locale = "ar") {
+  if (!item || typeof item !== "object") return "—";
+  const snapshot =
+    item.categoryLabel != null && String(item.categoryLabel).trim()
+      ? String(item.categoryLabel).trim()
+      : "";
+  if (snapshot) return snapshot;
+  const type = item.type != null ? String(item.type).trim() : "";
+  if (!type) return "—";
+  return feedbackTypeLabel(type, locale);
 }
 
 export function feedbackStatusLabel(status, locale = "ar") {

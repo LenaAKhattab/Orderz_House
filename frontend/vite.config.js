@@ -10,6 +10,30 @@ export default defineConfig({
     port: 5173,
     // Keep Stripe CLIENT_URL and browser origin aligned; do not silently drift to 5174.
     strictPort: true,
+    // Same-origin /api in the browser → local Express (matches production nginx routing).
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+      '/images': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
+  },
+  preview: {
+    port: 4173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+      '/images': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     rollupOptions: {

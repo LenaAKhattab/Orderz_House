@@ -1,6 +1,6 @@
-/**
+﻿/**
 
- * Local mobile QA users — idempotent dev seed only.
+ * Local mobile QA users â€” idempotent dev seed only.
 
  *
 
@@ -27,6 +27,9 @@ const crypto = require("node:crypto");
 
 
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+
+const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
+guardQaOrSeed(require("path").basename(__filename));
 
 
 
@@ -56,7 +59,7 @@ const QA_PASSWORD = "Test123456!";
 
 
 
-/** Stable titles — re-seed updates rows by title (idempotent). */
+/** Stable titles â€” re-seed updates rows by title (idempotent). */
 
 const QA_POOL_FIXED_TITLE = "QA-2C Pool Fixed (mobile QA)";
 
@@ -280,7 +283,7 @@ async function upsertQaUser(
 
       "+962790000001",
 
-      "ذكر",
+      "Ø°ÙƒØ±",
 
       true,
 
@@ -482,7 +485,7 @@ async function upsertPoolOrder(client, { clientUserId, projectType, title }) {
 
   const description =
 
-    "طلب اختبار QA-3A للتطبيق المحمول. مملوك لعميل QA — يمكن حذفه بعد انتهاء الاختبار.";
+    "Ø·Ù„Ø¨ Ø§Ø®ØªØ¨Ø§Ø± QA-3A Ù„Ù„ØªØ·Ø¨ÙŠÙ‚ Ø§Ù„Ù…Ø­Ù…ÙˆÙ„. Ù…Ù…Ù„ÙˆÙƒ Ù„Ø¹Ù…ÙŠÙ„ QA â€” ÙŠÙ…ÙƒÙ† Ø­Ø°ÙÙ‡ Ø¨Ø¹Ø¯ Ø§Ù†ØªÙ‡Ø§Ø¡ Ø§Ù„Ø§Ø®ØªØ¨Ø§Ø±.";
 
 
 
@@ -853,9 +856,9 @@ async function main() {
 
     role: "client",
 
-    firstName: "عميل",
+    firstName: "Ø¹Ù…ÙŠÙ„",
 
-    fatherName: "اختبار",
+    fatherName: "Ø§Ø®ØªØ¨Ø§Ø±",
 
     familyName: "QA",
 
@@ -871,9 +874,9 @@ async function main() {
 
     role: "freelancer",
 
-    firstName: "مستقل",
+    firstName: "Ù…Ø³ØªÙ‚Ù„",
 
-    fatherName: "اختبار",
+    fatherName: "Ø§Ø®ØªØ¨Ø§Ø±",
 
     familyName: "QA",
 
