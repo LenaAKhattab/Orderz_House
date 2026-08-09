@@ -34,6 +34,12 @@ export const DashboardPage = lazy(() => import("../pages/dashboard/DashboardPage
 
 /** Super admin */
 export const SuperAdminPlansPage = lazy(() => import("../pages/dashboard/SuperAdminPlansPage"));
+export const SuperAdminMarketplacePlansPage = lazy(
+  () => import("../pages/dashboard/SuperAdminMarketplacePlansPage"),
+);
+export const SuperAdminMarketplaceEconomyPage = lazy(
+  () => import("../pages/dashboard/SuperAdminMarketplaceEconomyPage"),
+);
 export const SuperAdminAnalysisPage = lazy(() => import("../pages/dashboard/SuperAdminAnalysisPage"));
 export const SuperAdminSubscriptionsPage = lazy(() => import("../pages/dashboard/SuperAdminSubscriptionsPage"));
 export const SuperAdminFinancialClaimsPage = lazy(

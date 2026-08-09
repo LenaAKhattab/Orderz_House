@@ -113,7 +113,11 @@ async function getPublicActivationFeeConfig(client) {
 /**
  * Validate and persist Super Admin activation fee settings.
  * When disabled, preserves the last configured amount (does not force 0).
- * Supersedes open fee-bearing checkout sessions so stale amounts cannot be reused.
+ * Supersedes open fee-bearing checkout sessions locally in the same transaction.
+ *
+ * Stripe remote expire is intentionally NOT awaited inside this request: hundreds of
+ * open sessions would hang the HTTP call past the client timeout and hold a DB
+ * transaction open. Remote expire is best-effort after COMMIT (never fails the save).
  */
 async function updateActivationFeeSettings(
   { enabled, amountJod, amountMinor = null, updatedByUserId = null, stripe = null },
@@ -183,10 +187,29 @@ async function updateActivationFeeSettings(
 
     let superseded = [];
     if (settingsChanged) {
-      superseded = await supersedeAllOpenFeeBearingCheckoutSessions({ stripe }, db);
+      // Local DB only inside the transaction — never call Stripe here.
+      superseded = await supersedeAllOpenFeeBearingCheckoutSessions({ stripe: null }, db);
     }
 
     if (ownClient) await db.query("COMMIT");
+
+    // Best-effort remote expire after settings are durable. Do not await / fail the API.
+    // Only schedule on the owning-transaction path (real HTTP request); injected clients
+    // (tests) skip so hanging Stripe mocks cannot leak into the test runner.
+    if (
+      ownClient &&
+      settingsChanged &&
+      stripe &&
+      Array.isArray(superseded) &&
+      superseded.length > 0
+    ) {
+      const sessionIds = superseded
+        .map((row) => row?.stripeSessionId)
+        .filter((sid) => sid != null && String(sid).trim() !== "");
+      setImmediate(() => {
+        void expireStripeCheckoutSessionsBestEffort(stripe, sessionIds).catch(() => {});
+      });
+    }
 
     const config = normalizeActivationFeeConfig({ enabled: nextEnabled, amountMinor: nextMinor });
     return {
@@ -549,6 +572,22 @@ async function expireStripeCheckoutSession(stripe, stripeSessionId) {
   }
 }
 
+/**
+ * Best-effort remote expire for already-superseded local tracking rows.
+ * Never throws; safe to run after settings COMMIT without blocking the HTTP response.
+ */
+async function expireStripeCheckoutSessionsBestEffort(stripe, stripeSessionIds) {
+  if (!stripe || !Array.isArray(stripeSessionIds) || stripeSessionIds.length === 0) {
+    return { attempted: 0, expired: 0 };
+  }
+  let expired = 0;
+  for (const sid of stripeSessionIds) {
+    const result = await expireStripeCheckoutSession(stripe, sid);
+    if (result?.expired) expired += 1;
+  }
+  return { attempted: stripeSessionIds.length, expired };
+}
+
 async function supersedeOpenCheckoutSessions(
   { stripe, freelancerUserId, exceptStripeSessionId = null, feeBearingOnly = false },
   client,
@@ -590,42 +629,46 @@ async function supersedeOpenCheckoutSessions(
 
 /**
  * After admin changes fee amount/enabled: invalidate all OPEN fee-bearing checkout tracking.
- * Completed/paid sessions are never touched. Best-effort Stripe expire when stripe client provided.
+ * Completed/paid sessions are never touched.
+ *
+ * Uses a single bulk UPDATE for local supersession (fast even with hundreds of rows).
+ * Optional Stripe expire runs only when `stripe` is provided — callers that must not
+ * block (settings save) should pass stripe:null and expire asynchronously afterward.
  */
 async function supersedeAllOpenFeeBearingCheckoutSessions({ stripe = null } = {}, client) {
   const runner = client || pool;
   const { rows } = await runner.query(
-    `SELECT id, stripe_session_id, includes_activation_fee, checkout_kind, freelancer_user_id
-     FROM freelancer_subscription_checkout_sessions
+    `UPDATE freelancer_subscription_checkout_sessions
+     SET status = $2, updated_at = NOW()
      WHERE status = $1
        AND includes_activation_fee = TRUE
-     ORDER BY created_at ASC`,
-    [CHECKOUT_SESSION_STATUS.OPEN],
+     RETURNING id, stripe_session_id, includes_activation_fee, checkout_kind, freelancer_user_id`,
+    [CHECKOUT_SESSION_STATUS.OPEN, CHECKOUT_SESSION_STATUS.SUPERSEDED],
   );
 
   const results = [];
   for (const row of rows) {
     const sid = String(row.stripe_session_id);
-    let stripeResult = { expired: false };
+    let stripeResult = { expired: false, reason: "local_supersede_only" };
+    let status = CHECKOUT_SESSION_STATUS.SUPERSEDED;
     if (stripe) {
       stripeResult = await expireStripeCheckoutSession(stripe, sid);
+      if (stripeResult.expired) {
+        status = CHECKOUT_SESSION_STATUS.EXPIRED;
+        await runner.query(
+          `UPDATE freelancer_subscription_checkout_sessions
+           SET status = $2, updated_at = NOW()
+           WHERE id = $1`,
+          [Number(row.id), CHECKOUT_SESSION_STATUS.EXPIRED],
+        );
+      }
     }
-    const nextStatus = stripeResult.expired
-      ? CHECKOUT_SESSION_STATUS.EXPIRED
-      : CHECKOUT_SESSION_STATUS.SUPERSEDED;
-
-    await runner.query(
-      `UPDATE freelancer_subscription_checkout_sessions
-       SET status = $2, updated_at = NOW()
-       WHERE id = $1 AND status = $3`,
-      [Number(row.id), nextStatus, CHECKOUT_SESSION_STATUS.OPEN],
-    );
 
     results.push({
       stripeSessionId: sid,
       freelancerUserId: Number(row.freelancer_user_id),
       includesActivationFee: true,
-      status: nextStatus,
+      status,
       stripe: stripeResult,
     });
   }
@@ -758,6 +801,7 @@ module.exports = {
   lockFreelancerForCheckout,
   listOpenCheckoutSessionsForFreelancer,
   expireStripeCheckoutSession,
+  expireStripeCheckoutSessionsBestEffort,
   supersedeOpenCheckoutSessions,
   supersedeAllOpenFeeBearingCheckoutSessions,
   trackFreelancerCheckoutSession,

@@ -1,0 +1,183 @@
+/* Super Admin — Marketplace Economy settings (إعدادات اقتصاد العمل) */
+
+.oh-mes-page {
+  min-width: 0;
+}
+
+.oh-mes-notice {
+  margin: 0 0 0.85rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, #b45309 28%, var(--oh-border, #d6dde8));
+  background: color-mix(in srgb, #fff7ed 88%, var(--oh-surface, #fff));
+  color: var(--oh-text, #1a2332);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.oh-mes-notice strong {
+  font-weight: 800;
+}
+
+.oh-mes-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0 0 1rem;
+}
+
+.oh-mes-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.oh-mes-section {
+  min-width: 0;
+  padding: 0.95rem 1rem 1.05rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--oh-border, #d6dde8) 85%, transparent);
+  background: var(--oh-surface, #fff);
+}
+
+.oh-mes-section__title {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.oh-mes-section__lede {
+  margin: 0 0 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  opacity: 0.72;
+}
+
+.oh-mes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+  min-width: 0;
+}
+
+.oh-mes-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.oh-mes-field--full {
+  grid-column: 1 / -1;
+}
+
+.oh-mes-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--oh-text, #1a2332);
+}
+
+.oh-mes-help {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  opacity: 0.68;
+}
+
+.oh-mes-error {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: #b91c1c;
+}
+
+.oh-mes-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--oh-border, #d6dde8) 90%, transparent);
+  background: color-mix(in srgb, var(--oh-surface, #fff) 94%, #f4f7fb);
+  font-size: 0.95rem;
+  color: inherit;
+}
+
+.oh-mes-input:focus {
+  outline: 2px solid color-mix(in srgb, var(--primary, #2f3b65) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.oh-mes-input[dir="ltr"] {
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.oh-mes-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--oh-border, #d6dde8) 85%, transparent);
+  background: color-mix(in srgb, var(--oh-surface, #fff) 92%, #f1f5f9);
+}
+
+.oh-mes-toggle span {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.oh-mes-toggle input {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--primary, #2f3b65);
+  flex-shrink: 0;
+}
+
+.oh-mes-flags {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.55rem;
+}
+
+.oh-mes-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  padding-top: 0.25rem;
+}
+
+.oh-mes-engine-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.85rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 750;
+  border: 1px solid color-mix(in srgb, #15803d 30%, var(--oh-border, #d6dde8));
+  background: color-mix(in srgb, #ecfdf5 85%, var(--oh-surface, #fff));
+  color: #166534;
+}
+
+@media (max-width: 720px) {
+  .oh-mes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .oh-mes-footer {
+    justify-content: stretch;
+  }
+
+  .oh-mes-footer > * {
+    flex: 1 1 auto;
+  }
+}

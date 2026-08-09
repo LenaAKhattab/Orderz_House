@@ -58,7 +58,19 @@ const EMPTY_AGGREGATES = {
 
 function errorMessage(err) {
   const apiMsg = err?.response?.data?.message;
-  return apiMsg || "تعذر تنفيذ العملية. حاول مجدداً.";
+  if (apiMsg) return apiMsg;
+  const status = err?.response?.status;
+  if (status === 401 || status === 403) {
+    return "ليست لديك صلاحية لتنفيذ هذه العملية.";
+  }
+  if (status === 400 || status === 422) {
+    return "بيانات غير صالحة. تحقق من القيم المدخلة.";
+  }
+  // Axios timeout / aborted request (no response) — common when a prior hang occurred.
+  if (err?.code === "ECONNABORTED" || err?.code === "ERR_CANCELED" || !err?.response) {
+    return "انتهت مهلة الطلب. حاول مجددًا.";
+  }
+  return "تعذر تنفيذ العملية. حاول مجدداً.";
 }
 
 

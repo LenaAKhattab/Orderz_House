@@ -42,6 +42,8 @@ import {
   NotFoundPage,
   DashboardPage,
   SuperAdminPlansPage,
+  SuperAdminMarketplacePlansPage,
+  SuperAdminMarketplaceEconomyPage,
   SuperAdminAnalysisPage,
   SuperAdminSubscriptionsPage,
   SuperAdminFinancialClaimsPage,
@@ -267,6 +269,22 @@ function App() {
                     <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.plans}>
                       <SuperAdminPlansPage />
                     </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/marketplace-plans"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminMarketplacePlansPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/marketplace-economy"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminMarketplaceEconomyPage />
+                    </RequireRole>
                   }
                 />
                 <Route

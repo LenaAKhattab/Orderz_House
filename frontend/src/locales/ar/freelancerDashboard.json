@@ -986,6 +986,8 @@
     "categoryCourses": "دورات",
     "categoryOrders": "طلبات",
     "categoryAlert": "تنبيه",
+    "feedbackCategoryPrefix": "التصنيف",
+    "feedbackTopicPrefix": "الموضوع الجاهز",
     "relativeNow": "الآن",
     "relativeMinutes": "منذ {{count}} دقيقة",
     "relativeMinutes_plural": "منذ {{count}} دقيقة",

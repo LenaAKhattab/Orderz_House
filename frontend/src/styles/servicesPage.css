@@ -1888,6 +1888,8 @@
   }
 
   .site-footer--public .site-footer__contact-center-btn {
+    width: 100%;
+    max-width: 100%;
     min-height: 2.5rem;
     padding: 0.5rem 1.05rem;
   }

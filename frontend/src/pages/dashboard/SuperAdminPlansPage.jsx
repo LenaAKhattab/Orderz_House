@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import Button from "../../components/ui/Button";
 import { AdminInlineGridSkeleton } from "../../components/ui/Skeleton";
 import {
@@ -359,6 +359,14 @@ const SuperAdminPlansPage = () => {
             >
               {isEn ? SECTION_COPY.pages.en : SECTION_COPY.pages.ar}
             </button>
+            <Link
+              to="/dashboard/super-admin/marketplace-plans"
+              className="oh-sapl-section-toggle__tab oh-sapl-section-toggle__tab-link"
+              role="tab"
+              aria-selected={false}
+            >
+              {isEn ? "Work memberships" : "باقات العمل"}
+            </Link>
           </div>
           <p className="oh-sapl-section-toggle__hint">{sectionHint}</p>
         </div>

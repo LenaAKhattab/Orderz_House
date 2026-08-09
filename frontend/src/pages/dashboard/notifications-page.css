@@ -633,6 +633,12 @@
   overflow: hidden;
 }
 
+.fn-notif-card__desc--stacked {
+  white-space: pre-line;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
 .fn-notif-card--read .fn-notif-card__desc {
   color: var(--dash-text-muted, #667085);
   opacity: 0.85;

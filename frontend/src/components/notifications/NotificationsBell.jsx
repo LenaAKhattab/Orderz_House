@@ -8,6 +8,8 @@ import {
   NOTIFICATIONS_REFRESH_EVENT,
 } from "../../services/api";
 import { useAuth } from "../../context/useAuth";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import { getNotificationDetails } from "../../utils/notificationDisplay";
 
 function fmtDate(value) {
   if (!value) return "";
@@ -16,46 +18,9 @@ function fmtDate(value) {
   return new Intl.DateTimeFormat("ar", { dateStyle: "short", timeStyle: "short" }).format(d);
 }
 
-function actorLabel(actor) {
-  if (!actor) return "";
-  const name = String(actor.fullName || "").trim();
-  const acc = String(actor.accountId || "").trim();
-  if (name && acc) return `${name} (${acc})`;
-  return name || acc || "";
-}
-
-function notificationDetails(n, canShowOrderReference) {
-  const type = String(n?.type || "").trim();
-  const actor = actorLabel(n?.actor);
-  const actorFallbackName = String(n?.metadata?.actorName || "").trim();
-  const actorFallbackAcc = String(n?.metadata?.actorAccountId || "").trim();
-  const actorFallback = actorFallbackName && actorFallbackAcc ? `${actorFallbackName} (${actorFallbackAcc})` : actorFallbackName || actorFallbackAcc || "";
-  const actorPart = actor || actorFallback;
-  const projectName = String(n?.metadata?.projectName || "").trim();
-  const orderCode = String(n?.metadata?.orderCode || "").trim();
-  const orderId = String(n?.metadata?.orderId || n?.entityId || "").trim();
-
-  if (type === "order.created") {
-    const categoryName = String(n?.metadata?.categoryName || "").trim();
-    const subcategoryName = String(n?.metadata?.subcategoryName || "").trim();
-    if (categoryName && subcategoryName && projectName) {
-      return `«${categoryName}» — «${subcategoryName}»: ${projectName}`;
-    }
-    if (categoryName && projectName) {
-      return `«${categoryName}»: ${projectName}`;
-    }
-    return projectName;
-  }
-
-  const orderPart =
-    canShowOrderReference && (orderCode || orderId) ? (orderCode ? `${orderCode}` : `#${orderId}`) : "";
-  const projectPart = projectName ? projectName : "";
-  const parts = [actorPart, projectPart, orderPart].filter(Boolean);
-  return parts.join(" - ");
-}
-
 export default function NotificationsBell({ notificationsPagePath, variant = "navbar" }) {
   const { user } = useAuth();
+  const { t, locale } = useTranslation();
   const role = user?.primaryRole || user?.role;
   const canShowOrderReference = role === "admin" || role === "super_admin";
   const navigate = useNavigate();
@@ -202,7 +167,11 @@ export default function NotificationsBell({ notificationsPagePath, variant = "na
               <div className="notif-bell__empty">جاري التحميل…</div>
             ) : items.length ? (
               items.map((n) => {
-                const details = notificationDetails(n, canShowOrderReference);
+                const details = getNotificationDetails(n, canShowOrderReference, {
+                  locale,
+                  categoryPrefix: t("freelancerDashboard.notificationsPage.feedbackCategoryPrefix"),
+                  topicPrefix: t("freelancerDashboard.notificationsPage.feedbackTopicPrefix"),
+                });
                 const unread = !n.isRead;
                 return (
                   <button

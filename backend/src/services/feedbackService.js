@@ -169,11 +169,103 @@ function mapAdminFeedback(row) {
 }
 
 function typeLabelAr(type, fallbackLabel = null) {
-  if (fallbackLabel) return fallbackLabel;
+  const snapshot = fallbackLabel != null ? String(fallbackLabel).trim() : "";
+  if (snapshot) return snapshot;
   if (type === "problem") return "مشكلة";
   if (type === "suggestion") return "اقتراح";
   if (type === "other") return "ملاحظة أخرى";
   return type || "ملاحظة";
+}
+
+/**
+ * Arabic in-app copy for Super Admin feedback.created notifications.
+ * Prefers category_label_snapshot; falls back to legacy problem/suggestion/other.
+ */
+function buildFeedbackCreatedNotificationCopy({
+  categoryKey = null,
+  categoryLabel = null,
+  userName = null,
+  topicLabel = null,
+} = {}) {
+  const key = categoryKey != null ? String(categoryKey).trim() : "";
+  const label = typeLabelAr(key, categoryLabel);
+  const name = String(userName || "").trim() || "أحد المستخدمين";
+
+  let message;
+  if (key === "problem") {
+    message = `تم إرسال مشكلة جديدة من ${name}.`;
+  } else if (key === "suggestion") {
+    message = `تم إرسال اقتراح جديد من ${name}.`;
+  } else if (key === "other") {
+    message = `تم إرسال ملاحظة أخرى جديدة من ${name}.`;
+  } else {
+    message = `تم إرسال «${label}» جديد من ${name}.`;
+  }
+
+  const topic = topicLabel != null ? String(topicLabel).trim() : "";
+  if (topic) {
+    message = `${message} الموضوع: ${topic}`;
+  }
+
+  return {
+    title: "ملاحظة جديدة",
+    message,
+  };
+}
+
+function buildFeedbackCreatedNotificationPayload({
+  feedbackId,
+  categoryId = null,
+  categoryKey = null,
+  categoryLabel = null,
+  topicId = null,
+  topicLabel = null,
+  submitterId,
+  submitterRole,
+  submitterName = null,
+  subject = null,
+} = {}) {
+  const id = Number(feedbackId);
+  const copy = buildFeedbackCreatedNotificationCopy({
+    categoryKey,
+    categoryLabel,
+    userName: submitterName,
+    topicLabel,
+  });
+  const resolvedLabel = typeLabelAr(categoryKey, categoryLabel);
+  const meta = {
+    feedbackId: String(id),
+    categoryKey: categoryKey != null ? String(categoryKey) : null,
+    categoryLabel: resolvedLabel || null,
+    submitterId: submitterId != null ? String(submitterId) : null,
+    submitterRole: submitterRole != null ? String(submitterRole) : null,
+    submitterName: submitterName != null && String(submitterName).trim() ? String(submitterName).trim() : null,
+  };
+  if (categoryId != null) meta.categoryId = String(categoryId);
+  if (topicId != null) meta.topicId = String(topicId);
+  if (topicLabel != null && String(topicLabel).trim()) {
+    meta.topicLabel = String(topicLabel).trim();
+  }
+  if (subject != null && String(subject).trim()) {
+    meta.subject = String(subject).trim().slice(0, 200);
+  }
+  // Drop empty optional stamps so UI never renders "null"/"undefined".
+  for (const key of Object.keys(meta)) {
+    if (meta[key] == null || meta[key] === "") delete meta[key];
+  }
+
+  return {
+    recipientRole: "super_admin",
+    type: "feedback.created",
+    title: copy.title,
+    message: copy.message,
+    entityType: "feedback",
+    entityId: id,
+    link: `/dashboard/super-admin/feedback/${id}`,
+    priority: "medium",
+    metadata: meta,
+    dedupeKey: `feedback_created_${String(id)}`,
+  };
 }
 
 function statusLabelAr(status) {
@@ -415,25 +507,22 @@ async function createFeedback(authUserId, body = {}) {
     }
 
     try {
+      const notifyPayload = buildFeedbackCreatedNotificationPayload({
+        feedbackId: created.id,
+        categoryId: category.categoryId,
+        categoryKey: category.type,
+        categoryLabel: category.categoryLabelSnapshot,
+        topicId: topic.topicId,
+        topicLabel: topic.topicLabelSnapshot,
+        submitterId: snapshot.userId,
+        submitterRole: snapshot.userRole,
+        submitterName: snapshot.userName,
+        subject: input.subject,
+      });
       await notificationEventsService.notifySuperAdmins(
         {
-          recipientRole: "super_admin",
+          ...notifyPayload,
           actorUserId: snapshot.userId,
-          type: "feedback.created",
-          title: "ملاحظة جديدة من مستخدم",
-          message: `${snapshot.userName} أرسل ${typeLabelAr(category.type, category.categoryLabelSnapshot)}: ${input.subject}`,
-          entityType: "feedback",
-          entityId: Number(created.id),
-          link: `/dashboard/super-admin/feedback/${created.id}`,
-          priority: "medium",
-          metadata: {
-            feedbackId: String(created.id),
-            feedbackType: category.type,
-            categoryId: category.categoryId != null ? String(category.categoryId) : null,
-            userRole: snapshot.userRole,
-            topicId: topic.topicId != null ? String(topic.topicId) : null,
-          },
-          dedupeKey: `feedback_created_${String(created.id)}`,
         },
         client,
       );
@@ -832,6 +921,9 @@ module.exports = {
   sanitizePlainText,
   normalizeCreateInput,
   buildDisplayName,
+  typeLabelAr,
+  buildFeedbackCreatedNotificationCopy,
+  buildFeedbackCreatedNotificationPayload,
   mapPublicFeedback,
   mapAdminFeedback,
   createFeedback,

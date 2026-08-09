@@ -986,6 +986,8 @@
     "categoryCourses": "Courses",
     "categoryOrders": "Orders",
     "categoryAlert": "Alert",
+    "feedbackCategoryPrefix": "Category",
+    "feedbackTopicPrefix": "Ready-made topic",
     "relativeNow": "Now",
     "relativeMinutes": "{{count}} min ago",
     "relativeMinutes_plural": "{{count}} mins ago",

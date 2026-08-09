@@ -203,6 +203,56 @@ export const listPublicPlansRequest = async () => {
   return data;
 };
 
+/** Marketplace Membership (باقات العمل) — Phase 1 catalog; not wired to public /plans yet. */
+export const listPublicMarketplaceMembershipPlansRequest = async () => {
+  const { data } = await api.get("/marketplace-membership-plans");
+  return data;
+};
+
+export const listAdminMarketplaceMembershipPlansRequest = async ({ includeInactive = true } = {}) => {
+  const { data } = await api.get("/super-admin/marketplace-membership-plans", {
+    params: { includeInactive },
+  });
+  return data;
+};
+
+export const createMarketplaceMembershipPlanRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/marketplace-membership-plans", payload, { timeout: 30000 });
+  return data;
+};
+
+export const updateMarketplaceMembershipPlanRequest = async (id, patch) => {
+  const { data } = await api.patch(`/super-admin/marketplace-membership-plans/${id}`, patch, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const reorderMarketplaceMembershipPlansRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/marketplace-membership-plans/reorder", payload, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const deleteMarketplaceMembershipPlanRequest = async (id) => {
+  const { data } = await api.delete(`/super-admin/marketplace-membership-plans/${id}`);
+  return data;
+};
+
+/** Marketplace Economy settings (باقات العمل) — Phase 2 policy only; Super Admin. */
+export const getMarketplaceEconomySettingsRequest = async () => {
+  const { data } = await api.get("/super-admin/marketplace-economy-settings");
+  return data;
+};
+
+export const updateMarketplaceEconomySettingsRequest = async (payload) => {
+  const { data } = await api.put("/super-admin/marketplace-economy-settings", payload, {
+    timeout: 30000,
+  });
+  return data;
+};
+
 export const getPublicPlanPageBySlugRequest = async (slug) => {
   const { data } = await api.get(`/plan-pages/${encodeURIComponent(slug)}`);
   return data;

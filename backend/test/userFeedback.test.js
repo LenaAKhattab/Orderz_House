@@ -255,6 +255,98 @@ describe("feedbackService pure helpers", () => {
     assert.equal(mapped.adminNote, "Follow up");
     assert.equal(mapped.priority, "high");
   });
+
+  it("buildFeedbackCreatedNotificationCopy uses legacy and dynamic category labels", () => {
+    const svc = require("../src/services/feedbackService");
+    assert.deepEqual(
+      svc.buildFeedbackCreatedNotificationCopy({
+        categoryKey: "problem",
+        userName: "محمد أحمد",
+      }),
+      {
+        title: "ملاحظة جديدة",
+        message: "تم إرسال مشكلة جديدة من محمد أحمد.",
+      },
+    );
+    assert.equal(
+      svc.buildFeedbackCreatedNotificationCopy({
+        categoryKey: "suggestion",
+        userName: "Sara Client",
+      }).message,
+      "تم إرسال اقتراح جديد من Sara Client.",
+    );
+    assert.equal(
+      svc.buildFeedbackCreatedNotificationCopy({
+        categoryKey: "other",
+        userName: "Ali",
+      }).message,
+      "تم إرسال ملاحظة أخرى جديدة من Ali.",
+    );
+    assert.equal(
+      svc.buildFeedbackCreatedNotificationCopy({
+        categoryKey: "cat_12",
+        categoryLabel: "استفسار",
+        userName: "محمد أحمد",
+        topicLabel: "استفسار عن الطلب",
+      }).message,
+      "تم إرسال «استفسار» جديد من محمد أحمد. الموضوع: استفسار عن الطلب",
+    );
+    const noTopic = svc.buildFeedbackCreatedNotificationCopy({
+      categoryKey: "cat_12",
+      categoryLabel: "استفسار",
+      userName: "محمد أحمد",
+      topicLabel: null,
+    });
+    assert.equal(noTopic.message, "تم إرسال «استفسار» جديد من محمد أحمد.");
+    assert.ok(!noTopic.message.includes("null"));
+    assert.ok(!noTopic.message.includes("undefined"));
+  });
+
+  it("buildFeedbackCreatedNotificationPayload targets Super Admin detail route with dedupe", () => {
+    const svc = require("../src/services/feedbackService");
+    const payload = svc.buildFeedbackCreatedNotificationPayload({
+      feedbackId: 77,
+      categoryId: 12,
+      categoryKey: "cat_12",
+      categoryLabel: "استفسار",
+      topicId: 5,
+      topicLabel: "استفسار عن الطلب",
+      submitterId: 42,
+      submitterRole: "freelancer",
+      submitterName: "Omar Freelancer",
+      subject: "سؤال عن الطلب",
+    });
+    assert.equal(payload.type, "feedback.created");
+    assert.equal(payload.recipientRole, "super_admin");
+    assert.equal(payload.entityType, "feedback");
+    assert.equal(payload.entityId, 77);
+    assert.equal(payload.link, "/dashboard/super-admin/feedback/77");
+    assert.equal(payload.dedupeKey, "feedback_created_77");
+    assert.equal(payload.title, "ملاحظة جديدة");
+    assert.match(payload.message, /استفسار/);
+    assert.equal(payload.metadata.feedbackId, "77");
+    assert.equal(payload.metadata.categoryId, "12");
+    assert.equal(payload.metadata.categoryLabel, "استفسار");
+    assert.equal(payload.metadata.topicId, "5");
+    assert.equal(payload.metadata.topicLabel, "استفسار عن الطلب");
+    assert.equal(payload.metadata.submitterId, "42");
+    assert.equal(payload.metadata.submitterRole, "freelancer");
+    assert.equal(payload.metadata.submitterName, "Omar Freelancer");
+    assert.equal(payload.metadata.subject, "سؤال عن الطلب");
+
+    const noTopicPayload = svc.buildFeedbackCreatedNotificationPayload({
+      feedbackId: 8,
+      categoryKey: "problem",
+      categoryLabel: "مشكلة",
+      submitterId: 1,
+      submitterRole: "client",
+      submitterName: "Sara",
+      subject: "عنوان",
+    });
+    assert.equal(noTopicPayload.metadata.topicId, undefined);
+    assert.equal(noTopicPayload.metadata.topicLabel, undefined);
+    assert.ok(!JSON.stringify(noTopicPayload.metadata).includes("null"));
+  });
 });
 
 describe("feedbackService create/list with mocked pool", () => {
@@ -484,6 +576,24 @@ describe("feedbackService create/list with mocked pool", () => {
     assert.equal(created.id, 7);
     assert.equal(created.type, "suggestion");
     assert.equal(notifySuperAdminsMock.mock.callCount(), 1);
+    const notifyArg = notifySuperAdminsMock.mock.calls[0].arguments[0];
+    assert.equal(notifyArg.type, "feedback.created");
+    assert.equal(notifyArg.recipientRole, "super_admin");
+    assert.equal(notifyArg.actorUserId, 42);
+    assert.equal(notifyArg.entityType, "feedback");
+    assert.equal(notifyArg.entityId, 7);
+    assert.equal(notifyArg.link, "/dashboard/super-admin/feedback/7");
+    assert.equal(notifyArg.dedupeKey, "feedback_created_7");
+    assert.equal(notifyArg.title, "ملاحظة جديدة");
+    assert.equal(notifyArg.message, "تم إرسال اقتراح جديد من Sara Client.");
+    assert.equal(notifyArg.metadata.feedbackId, "7");
+    assert.equal(notifyArg.metadata.submitterId, "42");
+    assert.equal(notifyArg.metadata.submitterRole, "client");
+    assert.equal(notifyArg.metadata.submitterName, "Sara Client");
+    assert.equal(notifyArg.metadata.categoryLabel, "اقتراح");
+    assert.equal(notifyArg.metadata.subject, "تحسين الواجهة");
+    assert.equal(notifyArg.metadata.topicId, undefined);
+    assert.equal(notifyArg.metadata.topicLabel, undefined);
     assert.ok(lastClient);
     const insertCall = lastClient.query.mock.calls.find((c) =>
       String(c.arguments[0]).includes("INSERT INTO user_feedback"),
@@ -494,6 +604,292 @@ describe("feedbackService create/list with mocked pool", () => {
     assert.equal(values[1], "Sara Client");
     assert.equal(values[2], "sara@example.com");
     assert.equal(values[3], "client");
+  });
+
+  it("createFeedback notifies Super Admins for freelancer submissions", async () => {
+    poolMock.connect = mock.fn(async () => {
+      lastClient = {
+        query: mock.fn(async (sql) => {
+          const s = String(sql);
+          if (s.includes("BEGIN") || s.includes("COMMIT") || s.includes("ROLLBACK")) {
+            return { rows: [] };
+          }
+          if (s.includes("information_schema.columns")) {
+            return { rows: [] };
+          }
+          if (s.includes("FROM users")) {
+            return {
+              rows: [
+                {
+                  id: 99,
+                  first_name: "Omar",
+                  father_name: "",
+                  family_name: "Freelancer",
+                  email: "omar@example.com",
+                  role: "freelancer",
+                  is_active: true,
+                },
+              ],
+            };
+          }
+          if (s.includes("INSERT INTO user_feedback")) {
+            return {
+              rows: [
+                {
+                  id: 15,
+                  type: "problem",
+                  subject: "مشكلة في الدفع",
+                  description: "لا أستطيع إكمال عملية الدفع حالياً.",
+                  status: "new",
+                  created_at: "2026-08-08T10:00:00.000Z",
+                  updated_at: "2026-08-08T10:00:00.000Z",
+                  reviewed_at: null,
+                  resolved_at: null,
+                },
+              ],
+            };
+          }
+          return { rows: [] };
+        }),
+        release: mock.fn(),
+      };
+      return lastClient;
+    });
+
+    const svc = require("../src/services/feedbackService");
+    const created = await svc.createFeedback(99, {
+      type: "problem",
+      subject: "مشكلة في الدفع",
+      description: "لا أستطيع إكمال عملية الدفع حالياً.",
+    });
+    assert.equal(created.id, 15);
+    assert.equal(notifySuperAdminsMock.mock.callCount(), 1);
+    const notifyArg = notifySuperAdminsMock.mock.calls[0].arguments[0];
+    assert.equal(notifyArg.type, "feedback.created");
+    assert.equal(notifyArg.metadata.submitterRole, "freelancer");
+    assert.equal(notifyArg.metadata.submitterId, "99");
+    assert.equal(notifyArg.message, "تم إرسال مشكلة جديدة من Omar Freelancer.");
+    assert.equal(notifyArg.link, "/dashboard/super-admin/feedback/15");
+  });
+
+  it("createFeedback still commits when Super Admin notify throws", async () => {
+    notifySuperAdminsMock.mock.mockImplementation(async () => {
+      throw new Error("notification bus down");
+    });
+    const svc = require("../src/services/feedbackService");
+    const created = await svc.createFeedback(42, {
+      type: "other",
+      subject: "ملاحظة عامة",
+      description: "هذا وصف مفصل بما يكفي للاختبار الآلي.",
+    });
+    assert.equal(created.id, 7);
+    assert.equal(notifySuperAdminsMock.mock.callCount(), 1);
+    const commitCall = lastClient.query.mock.calls.find((c) => String(c.arguments[0]).includes("COMMIT"));
+    assert.ok(commitCall);
+  });
+
+  it("createFeedback with dynamic category uses category snapshot in notification", async () => {
+    delete require.cache[servicePath];
+    delete require.cache[require.resolve("../src/services/feedbackCategoriesService")];
+    delete require.cache[require.resolve("../src/services/feedbackTopicsService")];
+    delete require.cache[require.resolve("../src/config/db")];
+    delete require.cache[require.resolve("../src/services/notificationEventsService")];
+
+    const notifyMock = mock.fn(async () => []);
+    let client;
+    const pool = {
+      connect: mock.fn(async () => {
+        client = {
+          query: mock.fn(async (sql, params) => {
+            const s = String(sql);
+            if (s.includes("BEGIN") || s.includes("COMMIT") || s.includes("ROLLBACK")) {
+              return { rows: [] };
+            }
+            if (s.includes("information_schema.columns") && s.includes("category_id")) {
+              return { rows: [{ "?column?": 1 }] };
+            }
+            if (s.includes("information_schema.columns") && s.includes("topic_id")) {
+              return { rows: [{ "?column?": 1 }] };
+            }
+            if (s.includes("FROM users")) {
+              return {
+                rows: [
+                  {
+                    id: 42,
+                    first_name: "محمد",
+                    father_name: "",
+                    family_name: "أحمد",
+                    email: "m@example.com",
+                    role: "client",
+                    is_active: true,
+                  },
+                ],
+              };
+            }
+            if (s.includes("FROM user_feedback_categories") && s.includes("WHERE id = $1")) {
+              assert.equal(Number(params[0]), 12);
+              return {
+                rows: [
+                  {
+                    id: 12,
+                    key: "cat_12",
+                    label: "استفسار",
+                    is_active: true,
+                    sort_order: 4,
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                  },
+                ],
+              };
+            }
+            if (s.includes("FROM user_feedback_topics") && s.includes("id = $1")) {
+              assert.equal(Number(params[0]), 5);
+              return {
+                rows: [
+                  {
+                    id: 5,
+                    category_id: 12,
+                    feedback_type: "cat_12",
+                    label: "استفسار عن الطلب",
+                    is_active: true,
+                    sort_order: 1,
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                    category_key: "cat_12",
+                    category_label: "استفسار",
+                  },
+                ],
+              };
+            }
+            if (s.includes("INSERT INTO user_feedback")) {
+              return {
+                rows: [
+                  {
+                    id: 88,
+                    type: "cat_12",
+                    category_id: 12,
+                    category_label_snapshot: "استفسار",
+                    topic_id: 5,
+                    topic_label_snapshot: "استفسار عن الطلب",
+                    subject: "سؤال",
+                    description: "تفاصيل كافية للاختبار الآلي هنا.",
+                    status: "new",
+                    created_at: "2026-08-08T10:00:00.000Z",
+                    updated_at: "2026-08-08T10:00:00.000Z",
+                    reviewed_at: null,
+                    resolved_at: null,
+                  },
+                ],
+              };
+            }
+            return { rows: [] };
+          }),
+          release: mock.fn(),
+        };
+        return client;
+      }),
+      query: mock.fn(async () => ({ rows: [] })),
+    };
+
+    require.cache[require.resolve("../src/config/db")] = {
+      id: require.resolve("../src/config/db"),
+      filename: require.resolve("../src/config/db"),
+      loaded: true,
+      exports: { pool },
+    };
+    require.cache[require.resolve("../src/services/notificationEventsService")] = {
+      id: require.resolve("../src/services/notificationEventsService"),
+      filename: require.resolve("../src/services/notificationEventsService"),
+      loaded: true,
+      exports: {
+        notifySuperAdmins: notifyMock,
+        notifyUsers: mock.fn(async () => []),
+      },
+    };
+
+    const svc = require("../src/services/feedbackService");
+    const created = await svc.createFeedback(42, {
+      categoryId: 12,
+      topicId: 5,
+      subject: "سؤال",
+      description: "تفاصيل كافية للاختبار الآلي هنا.",
+    });
+    assert.equal(created.id, 88);
+    assert.equal(notifyMock.mock.callCount(), 1);
+    const notifyArg = notifyMock.mock.calls[0].arguments[0];
+    assert.equal(notifyArg.type, "feedback.created");
+    assert.equal(notifyArg.metadata.categoryLabel, "استفسار");
+    assert.equal(notifyArg.metadata.topicLabel, "استفسار عن الطلب");
+    assert.equal(
+      notifyArg.message,
+      "تم إرسال «استفسار» جديد من محمد أحمد. الموضوع: استفسار عن الطلب",
+    );
+    assert.ok(!notifyArg.message.includes("مشكلة"));
+    assert.ok(!notifyArg.message.includes("اقتراح"));
+  });
+
+  it("validation failure does not notify Super Admins", async () => {
+    const svc = require("../src/services/feedbackService");
+    await assert.rejects(
+      () =>
+        svc.createFeedback(42, {
+          type: "problem",
+          subject: "a",
+          description: "short",
+        }),
+      (err) => err.publicCode === "SUBJECT_REQUIRED" || err.publicCode === "DESCRIPTION_REQUIRED",
+    );
+    assert.equal(notifySuperAdminsMock.mock.callCount(), 0);
+  });
+
+  it("insert failure rolls back and does not leave a successful notify path", async () => {
+    poolMock.connect = mock.fn(async () => {
+      lastClient = {
+        query: mock.fn(async (sql) => {
+          const s = String(sql);
+          if (s.includes("BEGIN") || s.includes("ROLLBACK")) return { rows: [] };
+          if (s.includes("COMMIT")) throw new Error("unexpected commit");
+          if (s.includes("information_schema.columns")) return { rows: [] };
+          if (s.includes("FROM users")) {
+            return {
+              rows: [
+                {
+                  id: 42,
+                  first_name: "Sara",
+                  father_name: "",
+                  family_name: "Client",
+                  email: "sara@example.com",
+                  role: "client",
+                  is_active: true,
+                },
+              ],
+            };
+          }
+          if (s.includes("INSERT INTO user_feedback")) {
+            throw new Error("insert failed");
+          }
+          return { rows: [] };
+        }),
+        release: mock.fn(),
+      };
+      return lastClient;
+    });
+
+    const svc = require("../src/services/feedbackService");
+    await assert.rejects(
+      () =>
+        svc.createFeedback(42, {
+          type: "suggestion",
+          subject: "تحسين الواجهة",
+          description: "أحتاج تحسينات على لوحة التحكم للمستخدم.",
+        }),
+      /insert failed/,
+    );
+    assert.equal(notifySuperAdminsMock.mock.callCount(), 0);
+    const rollbackCall = lastClient.query.mock.calls.find((c) =>
+      String(c.arguments[0]).includes("ROLLBACK"),
+    );
+    assert.ok(rollbackCall);
   });
 
   it("listMyFeedback returns own public rows without admin note", async () => {
@@ -791,5 +1187,25 @@ describe("frontend navigation remains role-scoped", () => {
     assert.ok(freelancerNav.includes("/dashboard/freelancer/settings"));
     assert.ok(superAdminNav.includes("/dashboard/super-admin/feedback"));
     assert.ok(superAdminNav.includes("problemsSuggestions"));
+  });
+});
+
+describe("feedback.created notification architecture wiring", () => {
+  it("maps feedback.* to general preference category", () => {
+    const rules = require("../src/utils/notificationPreferenceRules");
+    assert.equal(rules.getCategoryForType("feedback.created"), "general");
+    assert.equal(rules.getCategoryForType("feedback.status.resolved"), "general");
+    assert.equal(rules.getCategoryForType("feedback.custom"), "general");
+  });
+
+  it("notifySuperAdmins fans out with per-recipient dedupe keys", () => {
+    const eventsSrc = fs.readFileSync(
+      path.join(__dirname, "..", "src", "services", "notificationEventsService.js"),
+      "utf8",
+    );
+    assert.match(eventsSrc, /async function notifySuperAdmins/);
+    assert.match(eventsSrc, /getRoleUserIds\(\["super_admin"\]/);
+    assert.match(eventsSrc, /\$\{dedupeKey\}_u\$\{uid\}/);
+    assert.match(eventsSrc, /u\.is_active = TRUE/);
   });
 });

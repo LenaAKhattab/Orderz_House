@@ -45,6 +45,8 @@ const TYPE_CATEGORY = {
   "ad.updated": "general",
   "ad.published": "general",
   "ad.unpublished": "general",
+  "feedback.created": "general",
+  "feedback.status.resolved": "general",
   "general.test": "general",
 };
 
@@ -67,6 +69,7 @@ function getCategoryForType(type) {
   if (t.startsWith("financial_claim.")) return "claims";
   if (t.startsWith("course.")) return "courses";
   if (t.startsWith("ad.")) return "general";
+  if (t.startsWith("feedback.")) return "general";
   return "general";
 }
 

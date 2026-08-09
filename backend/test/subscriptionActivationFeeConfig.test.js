@@ -302,4 +302,105 @@ describe("activation fee config defaults and updates", () => {
     assert.ok(mig.includes("'25000'"));
     assert.ok(mig.includes("'true'"));
   });
+
+  it("settings save does not await Stripe expire (sync path uses local supersede only)", async () => {
+    const openRows = Array.from({ length: 5 }, (_, i) => ({
+      id: i + 1,
+      stripe_session_id: `cs_hang_${i + 1}`,
+      includes_activation_fee: true,
+      checkout_kind: "activation_fee_only",
+      freelancer_user_id: 10 + i,
+    }));
+    let stripeCalls = 0;
+    const hangingStripe = {
+      checkout: {
+        sessions: {
+          retrieve: async () => {
+            stripeCalls += 1;
+            await new Promise(() => {});
+          },
+          expire: async () => {
+            stripeCalls += 1;
+            await new Promise(() => {});
+          },
+        },
+      },
+    };
+    const updates = [];
+    const client = {
+      query: async (sql, params) => {
+        const key = String(sql).replace(/\s+/g, " ").trim();
+        if (key.startsWith("UPDATE freelancer_subscription_checkout_sessions")) {
+          updates.push({ sql: key, params });
+          return { rows: openRows };
+        }
+        if (key.includes("freelancer_subscription_checkout_sessions")) {
+          return { rows: openRows };
+        }
+        throw new Error(`Unexpected query: ${key.slice(0, 140)}`);
+      },
+    };
+
+    const started = Date.now();
+    const result = await Promise.race([
+      fee.updateActivationFeeSettings(
+        { enabled: true, amountJod: 30, updatedByUserId: 1, stripe: hangingStripe },
+        client,
+      ),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("settings_save_hung")), 500)),
+    ]);
+    const elapsed = Date.now() - started;
+
+    assert.ok(elapsed < 500, `expected fast save, took ${elapsed}ms`);
+    assert.strictEqual(result.config.amountMinor, 30000);
+    assert.strictEqual(result.config.amountJod, 30);
+    assert.strictEqual(result.supersededCount, 5);
+    assert.strictEqual(stripeCalls, 0, "Stripe must not be called synchronously during settings save");
+    assert.ok(updates.length >= 1);
+    assert.ok(String(SETTINGS.get("subscription_activation_fee_amount_minor")) === "30000");
+  });
+
+  it("JOD major→minor conversion for settings amounts", async () => {
+    const client = mockDbClient();
+    const cases = [
+      [1, 1000],
+      [25, 25000],
+      [25.5, 25500],
+      [30, 30000],
+      [9999.999, 9999999],
+      [10000, 10000000],
+    ];
+    for (const [jod, minor] of cases) {
+      const result = await fee.updateActivationFeeSettings(
+        { enabled: true, amountJod: jod, stripe: null },
+        client,
+      );
+      assert.strictEqual(result.config.amountMinor, minor, `${jod} JOD`);
+      assert.strictEqual(result.config.amountJod, minor / 1000);
+    }
+  });
+
+  it("enable/disable matrix preserves amount and returns config", async () => {
+    const client = mockDbClient();
+    const matrix = [
+      { enabled: true, amountJod: 25 },
+      { enabled: false, amountJod: 25 },
+      { enabled: true, amountJod: 30 },
+      { enabled: false, amountJod: 30 },
+      { enabled: true, amountJod: 30 },
+    ];
+    for (const step of matrix) {
+      const result = await fee.updateActivationFeeSettings({ ...step, stripe: null }, client);
+      assert.strictEqual(result.config.enabled, step.enabled);
+      assert.strictEqual(result.config.amountJod, step.amountJod);
+      assert.strictEqual(
+        SETTINGS.get("subscription_activation_fee_enabled"),
+        step.enabled ? "true" : "false",
+      );
+      assert.strictEqual(
+        SETTINGS.get("subscription_activation_fee_amount_minor"),
+        String(Math.round(step.amountJod * 1000)),
+      );
+    }
+  });
 });

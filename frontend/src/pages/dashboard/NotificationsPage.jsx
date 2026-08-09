@@ -23,6 +23,7 @@ import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
 import NotificationListSkeleton from "../../components/dashboard/hub/NotificationListSkeleton";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { getNotificationDetails, getNotificationTypeIconKind } from "../../utils/notificationDisplay";
 import "../../styles/dashboardHub.css";
 import "./notifications-page.css";
 
@@ -60,48 +61,9 @@ function fmtRelativeTime(value, t, locale) {
   return fmtDate(value, locale);
 }
 
-function actorLabel(actor) {
-  if (!actor) return "";
-  const name = String(actor.fullName || "").trim();
-  const acc = String(actor.accountId || "").trim();
-  if (name && acc) return `${name} (${acc})`;
-  return name || acc || "";
-}
-
-function notificationDetails(n, canShowOrderReference) {
-  const type = String(n?.type || "").trim();
-  const actor = actorLabel(n?.actor);
-  const actorFallbackName = String(n?.metadata?.actorName || "").trim();
-  const actorFallbackAcc = String(n?.metadata?.actorAccountId || "").trim();
-  const actorFallback =
-    actorFallbackName && actorFallbackAcc ? `${actorFallbackName} (${actorFallbackAcc})` : actorFallbackName || actorFallbackAcc || "";
-  const actorPart = actor || actorFallback;
-  const projectName = String(n?.metadata?.projectName || "").trim();
-  const orderCode = String(n?.metadata?.orderCode || "").trim();
-  const orderId = String(n?.metadata?.orderId || n?.entityId || "").trim();
-
-  if (type === "order.created") {
-    const categoryName = String(n?.metadata?.categoryName || "").trim();
-    const subcategoryName = String(n?.metadata?.subcategoryName || "").trim();
-    if (categoryName && subcategoryName && projectName) {
-      return `«${categoryName}» — «${subcategoryName}»: ${projectName}`;
-    }
-    if (categoryName && projectName) {
-      return `«${categoryName}»: ${projectName}`;
-    }
-    return projectName;
-  }
-
-  const orderPart =
-    canShowOrderReference && (orderCode || orderId) ? (orderCode ? `${orderCode}` : `#${orderId}`) : "";
-  const projectPart = projectName ? projectName : "";
-  const parts = [actorPart, projectPart, orderPart].filter(Boolean);
-  return parts.join(" - ");
-}
-
 function notificationCategory(type, t) {
   const raw = String(type || "").toLowerCase();
-  if (raw.includes("message") || raw.includes("chat")) {
+  if (raw.includes("feedback") || raw.includes("message") || raw.includes("chat")) {
     return { label: t("freelancerDashboard.notificationsPage.categoryMessages"), tone: "emerald" };
   }
   if (raw.includes("claim") || raw.includes("financial") || raw.includes("payment") || raw.includes("pay") || raw.includes("stripe") || raw.includes("invoice")) {
@@ -117,15 +79,12 @@ function notificationCategory(type, t) {
 }
 
 function NotifTypeIcon({ type }) {
-  const raw = String(type || "").toLowerCase();
   const props = { size: 21, strokeWidth: 1.5, "aria-hidden": true };
-
-  if (raw.includes("message") || raw.includes("chat")) return <MessageSquare {...props} />;
-  if (raw.includes("claim") || raw.includes("financial") || raw.includes("payment") || raw.includes("pay") || raw.includes("stripe") || raw.includes("invoice")) {
-    return <Wallet {...props} />;
-  }
-  if (raw.includes("course") || raw.includes("lesson")) return <GraduationCap {...props} />;
-  if (raw.includes("order")) return <FileText {...props} />;
+  const kind = getNotificationTypeIconKind(type);
+  if (kind === "message") return <MessageSquare {...props} />;
+  if (kind === "wallet") return <Wallet {...props} />;
+  if (kind === "course") return <GraduationCap {...props} />;
+  if (kind === "order") return <FileText {...props} />;
   return <Bell {...props} />;
 }
 
@@ -241,11 +200,15 @@ export default function NotificationsPage() {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return items;
     return items.filter((n) => {
-      const details = notificationDetails(n, canShowOrderReference);
+      const details = getNotificationDetails(n, canShowOrderReference, {
+        locale,
+        categoryPrefix: t("freelancerDashboard.notificationsPage.feedbackCategoryPrefix"),
+        topicPrefix: t("freelancerDashboard.notificationsPage.feedbackTopicPrefix"),
+      });
       const hay = [n.title, n.message, details, n.type].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
-  }, [items, searchQuery, canShowOrderReference]);
+  }, [items, searchQuery, canShowOrderReference, locale, t]);
 
   const handleRead = useCallback(async (n) => {
     if (!n || n.isRead) return;
@@ -367,12 +330,20 @@ export default function NotificationsPage() {
           <div className="fn-notif-list">
             {filteredItems.map((n) => {
               const unread = !n.isRead;
-              const details = notificationDetails(n, canShowOrderReference);
+              const details = getNotificationDetails(n, canShowOrderReference, {
+                locale,
+                categoryPrefix: t("freelancerDashboard.notificationsPage.feedbackCategoryPrefix"),
+                topicPrefix: t("freelancerDashboard.notificationsPage.feedbackTopicPrefix"),
+              });
               const message = String(n.message || "").trim();
-              const description = message || details || "";
               const category = notificationCategory(n.type, t);
               const relativeTime = fmtRelativeTime(n.createdAt, t, locale);
               const cardTitle = n.title || t("freelancerDashboard.notificationsPage.newNotification");
+              const isFeedbackNotif = String(n?.type || "").startsWith("feedback.");
+              // Feedback: show labeled category/topic details first; keep message as secondary body.
+              const description = isFeedbackNotif
+                ? [details, message].filter(Boolean).join("\n")
+                : message || details || "";
 
               return (
                 <article
@@ -403,7 +374,11 @@ export default function NotificationsPage() {
                           {unread ? <span className="fn-notif-card__details-dot" aria-hidden /> : null}
                           <span className="fn-notif-card__details-category">{category.label}</span>
                         </p>
-                        {description ? <p className="fn-notif-card__desc">{description}</p> : null}
+                        {description ? (
+                          <p className={`fn-notif-card__desc${isFeedbackNotif && details ? " fn-notif-card__desc--stacked" : ""}`}>
+                            {description}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
 
