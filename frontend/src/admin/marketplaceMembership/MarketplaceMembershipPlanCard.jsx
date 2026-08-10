@@ -39,6 +39,13 @@ export default function MarketplaceMembershipPlanCard({
           {plan.eliteDirectOrdersEnabled ? (
             <StatusBadge tone="info">{isEn ? "Elite Direct" : "طلب مباشر"}</StatusBadge>
           ) : null}
+          {plan.priorityBidEnabled ? (
+            <StatusBadge tone="info">
+              {isEn
+                ? `Priority Bid ×${plan.priorityBidUsesPerCycle ?? 0}`
+                : `Priority Bid ×${plan.priorityBidUsesPerCycle ?? 0}`}
+            </StatusBadge>
+          ) : null}
           {saleOn ? <StatusBadge tone="warning">{isEn ? "Sale" : "تخفيض"}</StatusBadge> : null}
         </div>
       </header>
@@ -63,6 +70,16 @@ export default function MarketplaceMembershipPlanCard({
         <div>
           <dt>{isEn ? "Tokens / cycle" : "وحدات العمل / دورة"}</dt>
           <dd>{plan.includedTokensPerCycle ?? 0}</dd>
+        </div>
+        <div>
+          <dt>{isEn ? "Priority Bid uses" : "استخدامات Priority Bid"}</dt>
+          <dd>
+            {plan.priorityBidEnabled
+              ? plan.priorityBidUsesPerCycle ?? 0
+              : isEn
+                ? "Off"
+                : "معطّل"}
+          </dd>
         </div>
         <div>
           <dt>{isEn ? "Cash" : "نقدي"}</dt>

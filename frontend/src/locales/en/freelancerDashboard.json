@@ -280,6 +280,18 @@
     "rangeMinMax": "{{min}} to {{max}} JOD",
     "rangeMinOnly": "{{min}} JOD and above"
   },
+  "marketplaceMembership": {
+    "title": "Marketplace Membership",
+    "subtitle": "Independent from main plans. Usage accounting only — Priority Bid auctions are not available yet.",
+    "loading": "Loading Marketplace membership…",
+    "none": "No active Marketplace membership.",
+    "currentPlan": "Current plan",
+    "status": "Membership status",
+    "cycleStart": "Cycle start",
+    "cycleEnd": "Cycle end",
+    "priorityBidUsage": "Priority Bid uses",
+    "engineComingSoon": "Priority Bid engine coming soon — this view is accounting only."
+  },
   "financialClaims": {
     "title": "Financial claims",
     "subtitle": "Create a new claim and track review, payout window, and paid/remaining amounts for each order.",

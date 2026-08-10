@@ -2,11 +2,19 @@
 
 ## Purpose
 
-Phase 2 adds a **configuration-only** global Marketplace Economy policy layer for **باقات العمل**.
+Phase 2 adds a **configuration-only** global Marketplace Economy policy layer for **باقات العمل**, including:
+
+- Work Token accounting defaults
+- OPTIONAL **normal application** token policy (not Priority Bid)
+- **Priority Bid auction policy** (config only)
+- **Fair Work Distribution** policy (config only; internal)
+- Commission / cash fee / verification / Elite policy knobs
 
 It does **not** execute any marketplace economy:
 
-- no Work Token grants / deductions / refunds
+- no Work Token grants / reservations / consumes
+- no Priority auctions / resolution workers
+- no fairness score computation / assignment override
 - no Elite offers / entitlements / queues
 - no commission calculation
 - no cash membership payments
@@ -14,158 +22,103 @@ It does **not** execute any marketplace economy:
 - no Stripe calls
 - no marketplace subscriptions / cycles / wallets
 
-Changing Super Admin settings in this phase updates **CURRENT POLICY** only.
+See also: `docs/MARKETPLACE_PRIORITY_BID_AND_FAIRNESS.md`.
 
 ## Architecture decision: dedicated singleton table
 
-### Audit summary
+**Use `marketplace_economy_settings` (singleton `id = 1`).**
 
-Existing patterns in the repo:
+Typed money/percents, atomic multi-field updates, domain grouping, audit columns, separation from activation fee / UI settings.
 
-| Pattern | Examples | Shape |
-|---|---|---|
-| Sparse string KV | `system_settings` via `systemSettingsService` | activation fee keys as strings |
-| Typed singleton row | `fake_order_settings`, `platform_ui_settings` | one row (`id = 1`), typed columns, atomic UPDATE |
+## Migrations
 
-### Decision
+| File | Status |
+|---|---|
+| `135_marketplace_economy_settings.sql` | Prepared — **not auto-applied** |
+| `136_marketplace_membership_priority_bid.sql` | Prepared plan capability fields — **not auto-applied** |
+| `134_…` | **Do not modify** (Production applied) |
 
-**Use dedicated table `marketplace_economy_settings` (singleton `id = 1`).**
+## Corrected namespaces (manager update)
 
-### Why not `system_settings`
+| Setting | Meaning |
+|---|---|
+| `normal_application_tokens_per_order_jod` | OPTIONAL future **normal** apply rate — **NOT** Priority Bid amount |
+| `normal_application_token_refund_percentage` | OPTIONAL future **normal** refund — **NOT** Priority Bid loser release |
+| Priority Bid loser release | **Always 100%** of reserved Tokens |
+| Priority Bid amount | Chosen by Freelancer |
 
-1. **Typed values** — money (`NUMERIC(12,3)`), percents, ints with DB CHECK constraints.
-2. **Atomic multi-field updates** — one `UPDATE … WHERE id = 1` in a transaction avoids partial KV writes.
-3. **Domain grouping** — economy policy is a coherent object, not unrelated keys.
-4. **Auditability** — `updated_by_user_id` / `updated_at` on the policy row.
-5. **Separation** — never mix with `subscription_activation_fee_*` or UI settings.
-6. **Future growth** — adding columns/CHECs is clearer than proliferating string keys.
+Legacy patch keys `bidTokensPerOrderJod` / `applicationTokenRefundPercentage` are accepted as aliases and mapped to the normal-application fields.
 
-`system_settings` remains appropriate for sparse flags (e.g. activation fee). Marketplace Economy is a typed multi-field domain → singleton table.
-
-## Migration
-
-File: `backend/sql/migrations/135_marketplace_economy_settings.sql`
-
-- Additive, idempotent seed (`ON CONFLICT DO NOTHING`)
-- Does **not** modify migration 134
-- Does **not** alter legacy `plans` / fake-training / `system_settings`
-- **Do not apply automatically** — review then migrate explicitly
-
-## Default CURRENT POLICY
+## Default CURRENT POLICY (selected)
 
 | Setting | Default |
 |---|---|
 | Work Token value | **0.100 JOD** |
-| Bid rate | **1** token per 1 JOD real order value |
-| Application refund % | **70** |
+| Normal apply tokens / JOD | **1** (policy only) |
+| Normal apply refund % | **70** (policy only) |
 | Platform commission % | **30** |
-| Cash processing fee | **5.000 JOD** per cash **transaction** |
-| Identity bonus policy | enabled, **10** tokens |
-| Payout method bonus policy | enabled, **10** tokens |
-| Elite direct orders / cycle | **1** |
-| Elite offer duration | **10** minutes |
-| Carry forward | enabled, **7** days, max **1** |
-| Declines affect carry-forward | **false** (extensibility only) |
+| Cash processing fee | **5.000 JOD** / cash **transaction** |
+| Priority Bid duration | **30** minutes |
+| Priority Bid min tokens | **1** |
+| Priority Bid allow increase | **true** |
+| Priority Bid allow decrease | **false** |
+| Priority Bid return use on order cancel | **true** |
+| Priority Bid assignment strategy | **HIGHEST_TOKEN_ONLY** |
+| Fairness / Hybrid weights | fairness **0**, token **100** (others 0) |
+| Award reset policy | **RESET_TO_ZERO** |
 
-### Execution feature flags (MUST stay OFF until engines exist)
+### Execution feature flags (MUST stay OFF)
 
 | Flag | Default |
 |---|---|
 | `work_tokens_enabled` | **false** |
+| `priority_bidding_enabled` | **false** |
+| `fair_work_distribution_enabled` | **false** |
 | `marketplace_commission_enabled` | **false** |
 | `cash_membership_payments_enabled` | **false** |
 | `elite_engine_enabled` | **false** |
 | `verification_bonuses_enabled` | **false** |
 
-Policy “enabled” toggles for verification bonuses are **not** the execution engine. Execution requires `verification_bonuses_enabled = true` **and** a future grant flow.
+## Per-plan Priority Bid uses (migration 136)
 
-### Plan capability vs global engine
-
-| Concept | Location |
+| tier_code | uses |
 |---|---|
-| Tier is Elite-capable | `marketplace_membership_plans.elite_direct_orders_enabled` |
-| Elite **system** is operational | `marketplace_economy_settings.elite_engine_enabled` |
+| pay_as_you_work | 1 |
+| active | 2 |
+| pro | 3 |
+| elite | 4 |
 
-## Real Orders Only
+Prices unchanged: 1.99 / 8.99 / 14.99 / 49.99.
 
-Economic features apply **only** to REAL customer-funded orders.
+## Real economic orders
 
-Fake/training systems must never read these settings for execution:
+Applies to **REAL ECONOMIC ORDERS** (customer / FAZ3AT / admin / other authorized real workflows when properly funded/authorized).
 
-- `fakeOrdersService`
-- `fake_order_settings_plans`
-- `fake_order_round_items`
-- `training.order.visible`
-- `planOrderValueEligibility`
+**Never** fake/training.
 
-Service helper: `assertMarketplaceEconomyRealOrdersOnly()`.
+Helper: `assertMarketplaceEconomyRealOrdersOnly()`.
 
-## CURRENT POLICY vs HISTORICAL SNAPSHOT
+## Engine dependencies (blocked until ready)
 
-Settings are dynamic. Future financial/ledger rows **must snapshot** values at write time:
-
-- `workTokenValueJod` / `bidTokensPerOrderJod`
-- `applicationTokenRefundPercentage`
-- `platformCommissionPercentage`
-- `cashProcessingFeeJod`
-- verification bonus amounts when granted
-- Elite entitlement policy values when issued
-
-Phase 2 does **not** create order snapshots yet — only documents the requirement (`MARKETPLACE_ECONOMY_SNAPSHOT_FIELDS`).
-
-## Activation fee separation
-
-Unchanged and independent:
-
-- `subscription_activation_fee_enabled`
-- `subscription_activation_fee_amount_minor`
-
-Distinct concepts:
-
-1. Membership price (plan catalog)
-2. Activation fee (legacy yearly unlock)
-3. Cash processing fee (marketplace cash TRANSACTION admin fee)
-4. Platform commission (% of completed real work)
-
-## APIs (Super Admin only)
-
-| Method | Path |
-|---|---|
-| GET | `/api/super-admin/marketplace-economy-settings` |
-| PUT | `/api/super-admin/marketplace-economy-settings` |
-
-No public settings endpoint in Phase 2.
-
-Service: `marketplaceEconomySettingsService.js`
-
-- `getMarketplaceEconomySettings()`
-- `updateMarketplaceEconomySettings({ actorUserId, patch })` — transactional `FOR UPDATE` + single UPDATE
+`MARKETPLACE_ECONOMY_ENGINE_DEPENDENCIES` in service documents required Phase 3–7 components. Do not enable Priority Bid without wallet AVAILABLE/RESERVED.
 
 ## Super Admin UI
 
-- Route: `/dashboard/super-admin/marketplace-economy`
-- Arabic title: **إعدادات اقتصاد العمل**
-- Linked from `/dashboard/super-admin/marketplace-plans`
-- Sections: Work Tokens, Commission, Cash, Verification bonuses, Elite
-- Warning: belongs to باقات العمل — not الباقات الرئيسية / باقات الصفحات; fake/training excluded
+- `/dashboard/super-admin/marketplace-economy`
+- Sections: Work Tokens + normal apply, Priority Bid, Fair Distribution, Commission, Cash, Verification, Elite
 
-## Explicitly NOT in Phase 2
+## Revised next phases
 
-- `freelancer_marketplace_memberships` / cycles
-- Work Token wallet / ledger / bidding / refunds
-- Elite tables / matching / timers
-- Commission engine / earnings changes
-- Cash payment receipts / activation
-- Verification upload flows
-- Public `/plans` cutover (`GET /api/plans` unchanged)
-- Stripe
-
-## Suggested Phase 3
-
-`freelancer_marketplace_memberships` + membership cycles foundation (still before token wallet / Elite engine / public cutover).
+3 Memberships + cycles + Priority Bid use counters  
+4 Wallet + ledger  
+5 Normal Token participation (if required)  
+6 Priority Auction engine  
+7 Fairness engine + Admin explainability  
+8 Elite Direct Orders  
 
 ## Tests
 
 - `backend/test/marketplaceEconomySettingsService.test.js`
 - `backend/test/marketplaceEconomySettingsMigration.test.js`
+- `backend/test/marketplaceMembershipPriorityBidMigration.test.js`
 - `frontend/src/admin/marketplaceEconomy/marketplaceEconomyFormUtils.test.js`

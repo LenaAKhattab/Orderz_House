@@ -201,12 +201,12 @@ export default function SuperAdminMarketplaceEconomyPage() {
           <div className="oh-mes-sections">
             <section className="oh-mes-section" aria-labelledby="mes-tokens-title">
               <h2 id="mes-tokens-title" className="oh-mes-section__title">
-                {isEn ? "1. Work Tokens" : "أولاً: Work Tokens"}
+                {isEn ? "1. Work Tokens & normal applications" : "أولاً: Work Tokens والتقديم العادي"}
               </h2>
               <p className="oh-mes-section__lede">
                 {isEn
-                  ? "Accounting value, bid rate, and refund policy for real-order applications."
-                  : "القيمة المحاسبية، معدل التقديم، وسياسة الاسترداد لطلبات العمل الحقيقية."}
+                  ? "Accounting value and OPTIONAL normal apply-token policy. Priority Bid amount is chosen by the Freelancer — not this rate."
+                  : "القيمة المحاسبية وسياسة Tokens الاختيارية للتقديم العادي. مبلغ Priority Bid يختاره المستقل — وليس هذا المعدل."}
               </p>
               <div className="oh-mes-grid">
                 <Field
@@ -232,39 +232,47 @@ export default function SuperAdminMarketplaceEconomyPage() {
                   />
                 </Field>
                 <Field
-                  id="mes-bid-rate"
-                  label={isEn ? "Tokens per 1 JOD order value" : "Tokens لكل 1 دينار من قيمة الطلب"}
+                  id="mes-normal-rate"
+                  label={
+                    isEn
+                      ? "Normal apply tokens per 1 JOD (optional future)"
+                      : "Tokens للتقديم العادي لكل 1 دينار (مستقبلي اختياري)"
+                  }
                   help={
                     isEn
-                      ? "Work Tokens required to apply per 1 JOD of real order value."
-                      : "عدد Work Tokens المطلوبة للتقديم مقابل كل 1 دينار من قيمة الطلب الحقيقي."
+                      ? "NOT Priority Bid. Future optional cost for normal applications only."
+                      : "ليست Priority Bid. تكلفة اختيارية مستقبلية للتقديم العادي فقط."
                   }
-                  error={fieldErrors.bidTokensPerOrderJod}
+                  error={fieldErrors.normalApplicationTokensPerOrderJod}
                 >
                   <input
-                    id="mes-bid-rate"
+                    id="mes-normal-rate"
                     className="oh-mes-input"
                     type="number"
                     min="0.001"
                     step="0.001"
                     dir="ltr"
                     disabled={saving}
-                    value={form.bidTokensPerOrderJod}
-                    onChange={(e) => setField("bidTokensPerOrderJod", e.target.value)}
+                    value={form.normalApplicationTokensPerOrderJod}
+                    onChange={(e) => setField("normalApplicationTokensPerOrderJod", e.target.value)}
                   />
                 </Field>
                 <Field
-                  id="mes-refund"
-                  label={isEn ? "Refund % when no freelancer selected" : "نسبة الاسترداد عند عدم اختيار مستقل"}
+                  id="mes-normal-refund"
+                  label={
+                    isEn
+                      ? "Normal apply refund % (no freelancer selected)"
+                      : "نسبة استرداد التقديم العادي (عند عدم اختيار مستقل)"
+                  }
                   help={
                     isEn
-                      ? "Percent refunded if a real order ends without selecting any freelancer."
-                      : "النسبة التي تعاد للمستقل إذا انتهى الطلب الحقيقي دون اختيار أي مستقل."
+                      ? "Does NOT control Priority Bid losers — those always release 100% reserved Tokens."
+                      : "لا تتحكم في خاسري Priority Bid — يُحرَّر دائماً 100% من Tokens المحجوزة."
                   }
-                  error={fieldErrors.applicationTokenRefundPercentage}
+                  error={fieldErrors.normalApplicationTokenRefundPercentage}
                 >
                   <input
-                    id="mes-refund"
+                    id="mes-normal-refund"
                     className="oh-mes-input"
                     type="number"
                     min="0"
@@ -272,30 +280,289 @@ export default function SuperAdminMarketplaceEconomyPage() {
                     step="0.01"
                     dir="ltr"
                     disabled={saving}
-                    value={form.applicationTokenRefundPercentage}
-                    onChange={(e) => setField("applicationTokenRefundPercentage", e.target.value)}
+                    value={form.normalApplicationTokenRefundPercentage}
+                    onChange={(e) =>
+                      setField("normalApplicationTokenRefundPercentage", e.target.value)
+                    }
                   />
                 </Field>
                 <div className="oh-mes-field oh-mes-field--full">
                   <Toggle
                     id="mes-flag-tokens"
-                    label={isEn ? "Enable Work Tokens engine" : "تفعيل نظام Work Tokens"}
+                    label={isEn ? "Enable Work Tokens engine (wallet/ledger)" : "تفعيل نظام Work Tokens (محفظة/سجل)"}
                     checked={form.workTokensEnabled}
                     disabled={saving}
                     onChange={(v) => setField("workTokensEnabled", v)}
                   />
                   <p className="oh-mes-help">
                     {isEn
-                      ? "Master switch. Keep OFF until wallet/ledger phases ship."
-                      : "المفتاح الرئيسي. أبقِه متوقفاً حتى تكتمل مراحل المحفظة والسجل."}
+                      ? "Required before Priority Bid can go live. Keep OFF until wallet AVAILABLE/RESERVED exists."
+                      : "مطلوب قبل تشغيل Priority Bid. أبقِه متوقفاً حتى توجد محفظة AVAILABLE/RESERVED."}
                   </p>
                 </div>
               </div>
             </section>
 
+            <section className="oh-mes-section" aria-labelledby="mes-priority-title">
+              <h2 id="mes-priority-title" className="oh-mes-section__title">
+                {isEn ? "2. Priority Bid (token auction)" : "ثانياً: Priority Bid (مزاد Tokens)"}
+              </h2>
+              <p className="oh-mes-section__lede">
+                {isEn
+                  ? "Freelancer chooses bid amount. Tokens are RESERVED during auction; losers release 100%; winner consumes 100%. Default strategy: HIGHEST_TOKEN_ONLY."
+                  : "المستقل يختار مبلغ المزايدة. تُحجز Tokens أثناء المزاد؛ الخاسر يُحرَّر 100%؛ الفائز يُستهلك 100%. الاستراتيجية الافتراضية: HIGHEST_TOKEN_ONLY."}
+              </p>
+              <div className="oh-mes-grid">
+                <div className="oh-mes-field oh-mes-field--full">
+                  <Toggle
+                    id="mes-flag-priority"
+                    label={isEn ? "Enable Priority Bidding engine" : "تفعيل محرك Priority Bid"}
+                    checked={form.priorityBiddingEnabled}
+                    disabled={saving}
+                    onChange={(v) => setField("priorityBiddingEnabled", v)}
+                  />
+                  <p className="oh-mes-help">
+                    {isEn
+                      ? "Keep OFF until membership cycles + wallet reservation ledger exist."
+                      : "أبقِه متوقفاً حتى توجد دورات العضوية وسجل حجز المحفظة."}
+                  </p>
+                </div>
+                <Field
+                  id="mes-pb-duration"
+                  label={isEn ? "Auction duration (minutes)" : "مدة المزاد (دقائق)"}
+                  help={
+                    isEn
+                      ? "Persistent DB start_at/end_at — not in-memory timers."
+                      : "أوقات DB ثابتة start_at/end_at — وليست مؤقتات في الذاكرة."
+                  }
+                  error={fieldErrors.priorityBidDurationMinutes}
+                >
+                  <input
+                    id="mes-pb-duration"
+                    className="oh-mes-input"
+                    type="number"
+                    min="1"
+                    step="1"
+                    dir="ltr"
+                    disabled={saving}
+                    value={form.priorityBidDurationMinutes}
+                    onChange={(e) => setField("priorityBidDurationMinutes", e.target.value)}
+                  />
+                </Field>
+                <Field
+                  id="mes-pb-min"
+                  label={isEn ? "Minimum bid tokens" : "أدنى Tokens للمزايدة"}
+                  error={fieldErrors.priorityBidMinimumTokens}
+                >
+                  <input
+                    id="mes-pb-min"
+                    className="oh-mes-input"
+                    type="number"
+                    min="1"
+                    step="1"
+                    dir="ltr"
+                    disabled={saving}
+                    value={form.priorityBidMinimumTokens}
+                    onChange={(e) => setField("priorityBidMinimumTokens", e.target.value)}
+                  />
+                </Field>
+                <Field
+                  id="mes-pb-max"
+                  label={isEn ? "Maximum bid tokens (optional)" : "أقصى Tokens للمزايدة (اختياري)"}
+                  error={fieldErrors.priorityBidMaximumTokens}
+                >
+                  <input
+                    id="mes-pb-max"
+                    className="oh-mes-input"
+                    type="number"
+                    min="1"
+                    step="1"
+                    dir="ltr"
+                    disabled={saving}
+                    value={form.priorityBidMaximumTokens}
+                    onChange={(e) => setField("priorityBidMaximumTokens", e.target.value)}
+                  />
+                </Field>
+                <Field
+                  id="mes-pb-strategy"
+                  label={isEn ? "Priority Bid assignment strategy" : "استراتيجية تعيين Priority Bid"}
+                  help={
+                    isEn
+                      ? "Default HIGHEST_TOKEN_ONLY keeps the auction promise. Fairness must not silently override a larger bid."
+                      : "الافتراضي HIGHEST_TOKEN_ONLY يحفظ وعد المزاد. العدالة لا تتجاوز بصمت مزايدة أعلى."
+                  }
+                  error={fieldErrors.priorityBidAssignmentStrategy}
+                >
+                  <select
+                    id="mes-pb-strategy"
+                    className="oh-mes-input"
+                    dir="ltr"
+                    disabled={saving}
+                    value={form.priorityBidAssignmentStrategy}
+                    onChange={(e) => setField("priorityBidAssignmentStrategy", e.target.value)}
+                  >
+                    <option value="HIGHEST_TOKEN_ONLY">HIGHEST_TOKEN_ONLY</option>
+                    <option value="FAIR_DISTRIBUTION_FIRST">FAIR_DISTRIBUTION_FIRST</option>
+                    <option value="HYBRID">HYBRID</option>
+                  </select>
+                </Field>
+                <div className="oh-mes-field">
+                  <Toggle
+                    id="mes-pb-inc"
+                    label={isEn ? "Allow bid increase" : "السماح برفع المزايدة"}
+                    checked={form.priorityBidAllowIncrease}
+                    disabled={saving}
+                    onChange={(v) => setField("priorityBidAllowIncrease", v)}
+                  />
+                  <p className="oh-mes-help">
+                    {isEn ? "Increase reserves the difference only (+80 if 100→180)." : "الرفع يحجز الفرق فقط (+80 إذا 100→180)."}
+                  </p>
+                </div>
+                <div className="oh-mes-field">
+                  <Toggle
+                    id="mes-pb-dec"
+                    label={isEn ? "Allow bid decrease" : "السماح بخفض المزايدة"}
+                    checked={form.priorityBidAllowDecrease}
+                    disabled={saving}
+                    onChange={(v) => setField("priorityBidAllowDecrease", v)}
+                  />
+                </div>
+                <div className="oh-mes-field">
+                  <Toggle
+                    id="mes-pb-show-hi"
+                    label={isEn ? "Show highest Priority Bid" : "إظهار أعلى Priority Bid"}
+                    checked={form.priorityBidShowHighest}
+                    disabled={saving}
+                    onChange={(v) => setField("priorityBidShowHighest", v)}
+                  />
+                </div>
+                <div className="oh-mes-field">
+                  <Toggle
+                    id="mes-pb-show-pos"
+                    label={isEn ? "Show position (no identity)" : "إظهار الترتيب (بدون هوية)"}
+                    checked={form.priorityBidShowPosition}
+                    disabled={saving}
+                    onChange={(v) => setField("priorityBidShowPosition", v)}
+                  />
+                </div>
+                <div className="oh-mes-field">
+                  <Toggle
+                    id="mes-pb-cancel-use"
+                    label={
+                      isEn
+                        ? "Return Priority Use if order cancelled before resolution"
+                        : "إعادة استخدام Priority عند إلغاء الطلب قبل الحسم"
+                    }
+                    checked={form.priorityBidReturnUseOnOrderCancel}
+                    disabled={saving}
+                    onChange={(v) => setField("priorityBidReturnUseOnOrderCancel", v)}
+                  />
+                </div>
+                <div className="oh-mes-field">
+                  <Toggle
+                    id="mes-pb-auto"
+                    label={isEn ? "Auto-assign winner when auction ends" : "تعيين الفائز تلقائياً عند انتهاء المزاد"}
+                    checked={form.priorityBidAutoAssignmentEnabled}
+                    disabled={saving}
+                    onChange={(v) => setField("priorityBidAutoAssignmentEnabled", v)}
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="oh-mes-section" aria-labelledby="mes-fair-title">
+              <h2 id="mes-fair-title" className="oh-mes-section__title">
+                {isEn ? "3. Fair Work Distribution (internal)" : "ثالثاً: توزيع العمل العادل (داخلي)"}
+              </h2>
+              <p className="oh-mes-section__lede">
+                {isEn
+                  ? "INTERNAL ranking factor among already-eligible freelancers. Never exposed on Freelancer APIs. Eligibility always comes first."
+                  : "عامل ترتيب داخلي بين المستقلين المؤهلين أصلاً. لا يُعرَض في واجهات المستقل. الأهلية دائماً أولاً."}
+              </p>
+              <div className="oh-mes-grid">
+                <div className="oh-mes-field oh-mes-field--full">
+                  <Toggle
+                    id="mes-flag-fair"
+                    label={isEn ? "Enable Fair Work Distribution engine" : "تفعيل محرك التوزيع العادل"}
+                    checked={form.fairWorkDistributionEnabled}
+                    disabled={saving}
+                    onChange={(v) => setField("fairWorkDistributionEnabled", v)}
+                  />
+                </div>
+                <Field
+                  id="mes-assign-strategy"
+                  label={isEn ? "General assignment strategy" : "استراتيجية التعيين العامة"}
+                  error={fieldErrors.assignmentStrategy}
+                >
+                  <select
+                    id="mes-assign-strategy"
+                    className="oh-mes-input"
+                    dir="ltr"
+                    disabled={saving}
+                    value={form.assignmentStrategy}
+                    onChange={(e) => setField("assignmentStrategy", e.target.value)}
+                  >
+                    <option value="HIGHEST_TOKEN_ONLY">HIGHEST_TOKEN_ONLY</option>
+                    <option value="FAIR_DISTRIBUTION_FIRST">FAIR_DISTRIBUTION_FIRST</option>
+                    <option value="HYBRID">HYBRID</option>
+                  </select>
+                </Field>
+                <Field id="mes-w-fair" label="fairness_weight" error={fieldErrors.fairnessWeight}>
+                  <input
+                    id="mes-w-fair"
+                    className="oh-mes-input"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    dir="ltr"
+                    disabled={saving}
+                    value={form.fairnessWeight}
+                    onChange={(e) => setField("fairnessWeight", e.target.value)}
+                  />
+                </Field>
+                <Field id="mes-w-token" label="token_weight" error={fieldErrors.tokenWeight}>
+                  <input
+                    id="mes-w-token"
+                    className="oh-mes-input"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    dir="ltr"
+                    disabled={saving}
+                    value={form.tokenWeight}
+                    onChange={(e) => setField("tokenWeight", e.target.value)}
+                  />
+                </Field>
+                <Field
+                  id="mes-award-reset"
+                  label={isEn ? "Award reset policy" : "سياسة إعادة المحاولات بعد الفوز"}
+                >
+                  <select
+                    id="mes-award-reset"
+                    className="oh-mes-input"
+                    dir="ltr"
+                    disabled={saving}
+                    value={form.awardResetPolicy}
+                    onChange={(e) => setField("awardResetPolicy", e.target.value)}
+                  >
+                    <option value="RESET_TO_ZERO">RESET_TO_ZERO</option>
+                    <option value="DECREMENT_ONE">DECREMENT_ONE</option>
+                    <option value="NO_RESET">NO_RESET</option>
+                  </select>
+                </Field>
+                <p className="oh-mes-help oh-mes-field--full">
+                  {isEn
+                    ? "APPLIED_AND_LOST increases fairness; decline / freelancer-cancel after award do not get the same boost."
+                    : "APPLIED_AND_LOST يرفع الأولوية؛ الرفض أو إلغاء المستقل بعد التعيين لا يحصلان على نفس التعزيز."}
+                </p>
+              </div>
+            </section>
+
             <section className="oh-mes-section" aria-labelledby="mes-commission-title">
               <h2 id="mes-commission-title" className="oh-mes-section__title">
-                {isEn ? "2. Commission" : "ثانياً: العمولة"}
+                {isEn ? "4. Commission" : "رابعاً: العمولة"}
               </h2>
               <p className="oh-mes-section__lede">
                 {isEn
@@ -340,7 +607,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
 
             <section className="oh-mes-section" aria-labelledby="mes-cash-title">
               <h2 id="mes-cash-title" className="oh-mes-section__title">
-                {isEn ? "3. Cash membership payments" : "ثالثاً: الدفع النقدي"}
+                {isEn ? "5. Cash membership payments" : "خامساً: الدفع النقدي"}
               </h2>
               <p className="oh-mes-section__lede">
                 {isEn
@@ -384,7 +651,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
 
             <section className="oh-mes-section" aria-labelledby="mes-verify-title">
               <h2 id="mes-verify-title" className="oh-mes-section__title">
-                {isEn ? "4. Verification bonuses" : "رابعاً: مكافآت التوثيق"}
+                {isEn ? "6. Verification bonuses" : "سادساً: مكافآت التوثيق"}
               </h2>
               <p className="oh-mes-section__lede">
                 {isEn
@@ -471,7 +738,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
 
             <section className="oh-mes-section" aria-labelledby="mes-elite-title">
               <h2 id="mes-elite-title" className="oh-mes-section__title">
-                {isEn ? "5. Elite Direct Orders" : "خامساً: Elite"}
+                {isEn ? "7. Elite Direct Orders" : "سابعاً: Elite"}
               </h2>
               <p className="oh-mes-section__lede">
                 {isEn

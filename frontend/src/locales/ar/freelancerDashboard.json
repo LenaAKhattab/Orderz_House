@@ -280,6 +280,18 @@
     "rangeMinMax": "من {{min}} إلى {{max}} د.أ",
     "rangeMinOnly": "من {{min}} د.أ وأكثر"
   },
+  "marketplaceMembership": {
+    "title": "باقات العمل (Marketplace)",
+    "subtitle": "عضوية Marketplace مستقلة عن الباقات الرئيسية. محاسبة الاستخدام فقط — المزاد غير متاح بعد.",
+    "loading": "جارٍ تحميل عضوية Marketplace…",
+    "none": "لا توجد عضوية Marketplace نشطة حالياً.",
+    "currentPlan": "الباقة الحالية",
+    "status": "حالة الاشتراك",
+    "cycleStart": "تاريخ بداية الدورة",
+    "cycleEnd": "تاريخ نهاية الدورة",
+    "priorityBidUsage": "استخدامات Priority Bid",
+    "engineComingSoon": "محرك Priority Bid قريبًا — هذا العرض للمحاسبة فقط."
+  },
   "financialClaims": {
     "title": "المطالبات المالية",
     "subtitle": "أنشئ مطالبة جديدة، وتابع المراجعة، ونافذة الاستحقاق، والمبالغ المدفوعة والمتبقية لكل طلب.",

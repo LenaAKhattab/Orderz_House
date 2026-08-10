@@ -148,6 +148,45 @@ const startServer = async () => {
     console.error("[institutionalRelease] scheduler start failed:", err?.message || err);
   }
 
+  try {
+    const {
+      isInProcessMembershipReconcileEnabled,
+      getMarketplaceMembershipReconcileTickMs,
+    } = require("./src/config/marketplaceMembershipReconcile");
+    if (isInProcessMembershipReconcileEnabled()) {
+      const tickMs = getMarketplaceMembershipReconcileTickMs();
+      const cyclesService = require("./src/services/marketplaceMembershipCyclesService");
+      const timer = setInterval(() => {
+        cyclesService.reconcileAllMarketplaceMembershipCycles().catch((err) => {
+          console.error(
+            "[marketplaceMembership] reconcile tick failed:",
+            err?.message || err,
+          );
+        });
+      }, tickMs);
+      timer.unref?.();
+      // eslint-disable-next-line no-console
+      console.log(
+        JSON.stringify({
+          component: "marketplace_membership_reconcile",
+          event: "interval_started",
+          tickMs,
+        }),
+      );
+    } else {
+      // eslint-disable-next-line no-console
+      console.log(
+        JSON.stringify({
+          component: "marketplace_membership_reconcile",
+          event: "interval_disabled",
+          hint: "Set MARKETPLACE_MEMBERSHIP_RECONCILE_ENABLED=true or POST /api/internal/marketplace-memberships/reconcile-tick",
+        }),
+      );
+    }
+  } catch (err) {
+    console.error("[marketplaceMembership] reconcile scheduler start failed:", err?.message || err);
+  }
+
   server = app.listen(PORT, HOST, () => {
     logProcessEvent("startup_listening", { host: HOST, port: PORT });
     console.log(`Backend server listening on ${HOST}:${PORT}`);

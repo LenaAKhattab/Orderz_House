@@ -40,6 +40,8 @@ export function getInitialMarketplacePlanFormState(overrides = {}) {
     minimumCashMonths: 1,
     maximumPrepaidMonths: 1,
     eliteDirectOrdersEnabled: false,
+    priorityBidEnabled: false,
+    priorityBidUsesPerCycle: 0,
     saleEnabled: false,
     salePercentage: "",
     saleReason: "",
@@ -67,6 +69,8 @@ export function planToMarketplaceFormState(plan) {
     minimumCashMonths: plan.minimumCashMonths ?? 1,
     maximumPrepaidMonths: plan.maximumPrepaidMonths ?? 1,
     eliteDirectOrdersEnabled: Boolean(plan.eliteDirectOrdersEnabled),
+    priorityBidEnabled: Boolean(plan.priorityBidEnabled),
+    priorityBidUsesPerCycle: plan.priorityBidUsesPerCycle ?? 0,
     saleEnabled: Boolean(plan.saleEnabled),
     salePercentage: plan.salePercentage ?? "",
     saleReason: plan.saleReason || "",
@@ -105,6 +109,10 @@ export function validateMarketplacePlanForm(form, { isCreate = false } = {}) {
   const tokens = Number(form.includedTokensPerCycle);
   if (!Number.isInteger(tokens) || tokens < 0) {
     errors.includedTokensPerCycle = "وحدات العمل يجب أن تكون ≥ 0.";
+  }
+  const pbUses = Number(form.priorityBidUsesPerCycle);
+  if (!Number.isInteger(pbUses) || pbUses < 0 || pbUses > 1000) {
+    errors.priorityBidUsesPerCycle = "استخدامات Priority Bid يجب أن تكون بين 0 و 1000.";
   }
   const minM = Number(form.minimumCashMonths);
   const maxM = Number(form.maximumPrepaidMonths);
@@ -146,6 +154,8 @@ export function normalizeMarketplacePlanPayload(form, { isCreate = false } = {})
     minimumCashMonths: Number(form.minimumCashMonths) || 1,
     maximumPrepaidMonths: Number(form.maximumPrepaidMonths) || 1,
     eliteDirectOrdersEnabled: Boolean(form.eliteDirectOrdersEnabled),
+    priorityBidEnabled: Boolean(form.priorityBidEnabled),
+    priorityBidUsesPerCycle: Number(form.priorityBidUsesPerCycle) || 0,
     saleEnabled: Boolean(form.saleEnabled),
     salePercentage: form.saleEnabled ? Number(form.salePercentage) : null,
     saleReason: form.saleEnabled ? String(form.saleReason || "").trim() : null,

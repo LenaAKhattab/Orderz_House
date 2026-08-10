@@ -1,12 +1,12 @@
 /**
  * Client-side helpers for Marketplace Economy settings form (باقات العمل).
- * Mirrors backend validation rules — configuration only; no economy execution.
+ * Mirrors backend validation — configuration only; no economy / auction execution.
  */
 
 export const MARKETPLACE_ECONOMY_DEFAULT_FORM = Object.freeze({
   workTokenValueJod: "0.100",
-  bidTokensPerOrderJod: "1",
-  applicationTokenRefundPercentage: "70",
+  normalApplicationTokensPerOrderJod: "1",
+  normalApplicationTokenRefundPercentage: "70",
   platformCommissionPercentage: "30",
   cashProcessingFeeJod: "5.000",
   identityVerificationBonusEnabled: true,
@@ -19,12 +19,46 @@ export const MARKETPLACE_ECONOMY_DEFAULT_FORM = Object.freeze({
   eliteCarryForwardDays: "7",
   eliteMaximumCarryForward: "1",
   eliteDeclinesAffectCarryForward: false,
+
+  priorityBiddingEnabled: false,
+  priorityBidDurationMinutes: "30",
+  priorityBidMinimumTokens: "1",
+  priorityBidMaximumTokens: "",
+  priorityBidShowHighest: true,
+  priorityBidShowPosition: false,
+  priorityBidAllowIncrease: true,
+  priorityBidAllowDecrease: false,
+  priorityBidAllowWithdrawal: false,
+  priorityBidWithdrawalReleasesTokens: true,
+  priorityBidWithdrawalReturnsUse: false,
+  priorityBidReturnUseOnOrderCancel: true,
+  priorityBidAutoAssignmentEnabled: true,
+  priorityBidAssignmentStrategy: "HIGHEST_TOKEN_ONLY",
+
+  fairWorkDistributionEnabled: false,
+  assignmentStrategy: "HIGHEST_TOKEN_ONLY",
+  fairnessWeight: "0",
+  tokenWeight: "100",
+  performanceWeight: "0",
+  recencyWeight: "0",
+  workloadWeight: "0",
+  eligibleLossPriorityEffect: "INCREASE_PRIORITY",
+  awardResetPolicy: "RESET_TO_ZERO",
+  declinePriorityEffect: "NO_BOOST",
+  freelancerCancelPriorityEffect: "NO_BOOST",
+
   workTokensEnabled: false,
   marketplaceCommissionEnabled: false,
   cashMembershipPaymentsEnabled: false,
   eliteEngineEnabled: false,
   verificationBonusesEnabled: false,
 });
+
+const ASSIGNMENT_STRATEGIES = new Set([
+  "HIGHEST_TOKEN_ONLY",
+  "FAIR_DISTRIBUTION_FIRST",
+  "HYBRID",
+]);
 
 function toFiniteNumber(value) {
   if (value === "" || value === undefined || value === null) return null;
@@ -49,19 +83,20 @@ export function settingsToFormState(settings) {
     if (!Number.isFinite(v)) return "";
     return v.toFixed(digits);
   };
+  const num = (n) =>
+    Number.isFinite(Number(n)) ? String(Number(n)) : "";
+
+  // Prefer renamed fields; accept legacy API aliases if present
+  const normalTokens =
+    settings.normalApplicationTokensPerOrderJod ?? settings.bidTokensPerOrderJod;
+  const normalRefund =
+    settings.normalApplicationTokenRefundPercentage ?? settings.applicationTokenRefundPercentage;
+
   return {
     workTokenValueJod: money(settings.workTokenValueJod),
-    bidTokensPerOrderJod: money(settings.bidTokensPerOrderJod),
-    applicationTokenRefundPercentage: String(
-      Number.isFinite(Number(settings.applicationTokenRefundPercentage))
-        ? Number(settings.applicationTokenRefundPercentage)
-        : "",
-    ),
-    platformCommissionPercentage: String(
-      Number.isFinite(Number(settings.platformCommissionPercentage))
-        ? Number(settings.platformCommissionPercentage)
-        : "",
-    ),
+    normalApplicationTokensPerOrderJod: money(normalTokens),
+    normalApplicationTokenRefundPercentage: num(normalRefund),
+    platformCommissionPercentage: num(settings.platformCommissionPercentage),
     cashProcessingFeeJod: money(settings.cashProcessingFeeJod),
     identityVerificationBonusEnabled: Boolean(settings.identityVerificationBonusEnabled),
     identityVerificationBonusTokens: String(settings.identityVerificationBonusTokens ?? ""),
@@ -73,6 +108,37 @@ export function settingsToFormState(settings) {
     eliteCarryForwardDays: String(settings.eliteCarryForwardDays ?? ""),
     eliteMaximumCarryForward: String(settings.eliteMaximumCarryForward ?? ""),
     eliteDeclinesAffectCarryForward: Boolean(settings.eliteDeclinesAffectCarryForward),
+
+    priorityBiddingEnabled: Boolean(settings.priorityBiddingEnabled),
+    priorityBidDurationMinutes: String(settings.priorityBidDurationMinutes ?? ""),
+    priorityBidMinimumTokens: String(settings.priorityBidMinimumTokens ?? ""),
+    priorityBidMaximumTokens:
+      settings.priorityBidMaximumTokens == null || settings.priorityBidMaximumTokens === ""
+        ? ""
+        : String(settings.priorityBidMaximumTokens),
+    priorityBidShowHighest: Boolean(settings.priorityBidShowHighest),
+    priorityBidShowPosition: Boolean(settings.priorityBidShowPosition),
+    priorityBidAllowIncrease: Boolean(settings.priorityBidAllowIncrease),
+    priorityBidAllowDecrease: Boolean(settings.priorityBidAllowDecrease),
+    priorityBidAllowWithdrawal: Boolean(settings.priorityBidAllowWithdrawal),
+    priorityBidWithdrawalReleasesTokens: Boolean(settings.priorityBidWithdrawalReleasesTokens),
+    priorityBidWithdrawalReturnsUse: Boolean(settings.priorityBidWithdrawalReturnsUse),
+    priorityBidReturnUseOnOrderCancel: Boolean(settings.priorityBidReturnUseOnOrderCancel),
+    priorityBidAutoAssignmentEnabled: Boolean(settings.priorityBidAutoAssignmentEnabled),
+    priorityBidAssignmentStrategy: settings.priorityBidAssignmentStrategy || "HIGHEST_TOKEN_ONLY",
+
+    fairWorkDistributionEnabled: Boolean(settings.fairWorkDistributionEnabled),
+    assignmentStrategy: settings.assignmentStrategy || "HIGHEST_TOKEN_ONLY",
+    fairnessWeight: num(settings.fairnessWeight ?? 0),
+    tokenWeight: num(settings.tokenWeight ?? 100),
+    performanceWeight: num(settings.performanceWeight ?? 0),
+    recencyWeight: num(settings.recencyWeight ?? 0),
+    workloadWeight: num(settings.workloadWeight ?? 0),
+    eligibleLossPriorityEffect: settings.eligibleLossPriorityEffect || "INCREASE_PRIORITY",
+    awardResetPolicy: settings.awardResetPolicy || "RESET_TO_ZERO",
+    declinePriorityEffect: settings.declinePriorityEffect || "NO_BOOST",
+    freelancerCancelPriorityEffect: settings.freelancerCancelPriorityEffect || "NO_BOOST",
+
     workTokensEnabled: Boolean(settings.workTokensEnabled),
     marketplaceCommissionEnabled: Boolean(settings.marketplaceCommissionEnabled),
     cashMembershipPaymentsEnabled: Boolean(settings.cashMembershipPaymentsEnabled),
@@ -83,7 +149,6 @@ export function settingsToFormState(settings) {
 
 /**
  * Validate form state before PUT. Returns { ok, errors, patch }.
- * On failure, patch is null — caller must not apply optimistic UI.
  * @param {Record<string, unknown>} form
  * @param {{ isEn?: boolean }} [opts]
  */
@@ -130,15 +195,34 @@ export function validateMarketplaceEconomyForm(form, { isEn = false } = {}) {
     return n;
   };
 
+  const nullableInt = (key, label, min, max) => {
+    if (form[key] === "" || form[key] == null) return null;
+    return intRange(key, label, min, max);
+  };
+
+  const enumVal = (key, label, allowed) => {
+    const v = String(form[key] || "").trim();
+    if (!allowed.has(v) && !allowed.includes?.(v) && !(allowed instanceof Set ? allowed.has(v) : false)) {
+      const set = allowed instanceof Set ? allowed : new Set(allowed);
+      if (!set.has(v)) {
+        errors[key] = t(`${label}: قيمة غير صالحة.`, `${label}: invalid value.`);
+        return null;
+      }
+    }
+    return v;
+  };
+
+  const strategy = (key, label) => enumVal(key, label, ASSIGNMENT_STRATEGIES);
+
   const patch = {
     workTokenValueJod: moneyPositive("workTokenValueJod", t("قيمة Work Token", "Work Token value")),
-    bidTokensPerOrderJod: moneyPositive(
-      "bidTokensPerOrderJod",
-      t("Tokens لكل دينار", "Tokens per JOD"),
+    normalApplicationTokensPerOrderJod: moneyPositive(
+      "normalApplicationTokensPerOrderJod",
+      t("Tokens للتقديم العادي / دينار", "Normal apply tokens / JOD"),
     ),
-    applicationTokenRefundPercentage: percent(
-      "applicationTokenRefundPercentage",
-      t("نسبة الاسترداد", "Refund %"),
+    normalApplicationTokenRefundPercentage: percent(
+      "normalApplicationTokenRefundPercentage",
+      t("استرداد التقديم العادي", "Normal apply refund %"),
     ),
     platformCommissionPercentage: percent(
       "platformCommissionPercentage",
@@ -188,6 +272,52 @@ export function validateMarketplaceEconomyForm(form, { isEn = false } = {}) {
       1000,
     ),
     eliteDeclinesAffectCarryForward: Boolean(form.eliteDeclinesAffectCarryForward),
+
+    priorityBiddingEnabled: Boolean(form.priorityBiddingEnabled),
+    priorityBidDurationMinutes: intRange(
+      "priorityBidDurationMinutes",
+      t("مدة المزاد", "Auction duration"),
+      1,
+      10080,
+    ),
+    priorityBidMinimumTokens: intRange(
+      "priorityBidMinimumTokens",
+      t("أدنى Priority Bid", "Min Priority Bid"),
+      1,
+      100000000,
+    ),
+    priorityBidMaximumTokens: nullableInt(
+      "priorityBidMaximumTokens",
+      t("أقصى Priority Bid", "Max Priority Bid"),
+      1,
+      100000000,
+    ),
+    priorityBidShowHighest: Boolean(form.priorityBidShowHighest),
+    priorityBidShowPosition: Boolean(form.priorityBidShowPosition),
+    priorityBidAllowIncrease: Boolean(form.priorityBidAllowIncrease),
+    priorityBidAllowDecrease: Boolean(form.priorityBidAllowDecrease),
+    priorityBidAllowWithdrawal: Boolean(form.priorityBidAllowWithdrawal),
+    priorityBidWithdrawalReleasesTokens: Boolean(form.priorityBidWithdrawalReleasesTokens),
+    priorityBidWithdrawalReturnsUse: Boolean(form.priorityBidWithdrawalReturnsUse),
+    priorityBidReturnUseOnOrderCancel: Boolean(form.priorityBidReturnUseOnOrderCancel),
+    priorityBidAutoAssignmentEnabled: Boolean(form.priorityBidAutoAssignmentEnabled),
+    priorityBidAssignmentStrategy: strategy(
+      "priorityBidAssignmentStrategy",
+      t("استراتيجية Priority Bid", "Priority Bid strategy"),
+    ),
+
+    fairWorkDistributionEnabled: Boolean(form.fairWorkDistributionEnabled),
+    assignmentStrategy: strategy("assignmentStrategy", t("استراتيجية التعيين", "Assignment strategy")),
+    fairnessWeight: percent("fairnessWeight", "fairnessWeight"),
+    tokenWeight: percent("tokenWeight", "tokenWeight"),
+    performanceWeight: percent("performanceWeight", "performanceWeight"),
+    recencyWeight: percent("recencyWeight", "recencyWeight"),
+    workloadWeight: percent("workloadWeight", "workloadWeight"),
+    eligibleLossPriorityEffect: String(form.eligibleLossPriorityEffect || "INCREASE_PRIORITY"),
+    awardResetPolicy: String(form.awardResetPolicy || "RESET_TO_ZERO"),
+    declinePriorityEffect: String(form.declinePriorityEffect || "NO_BOOST"),
+    freelancerCancelPriorityEffect: String(form.freelancerCancelPriorityEffect || "NO_BOOST"),
+
     workTokensEnabled: Boolean(form.workTokensEnabled),
     marketplaceCommissionEnabled: Boolean(form.marketplaceCommissionEnabled),
     cashMembershipPaymentsEnabled: Boolean(form.cashMembershipPaymentsEnabled),
@@ -195,11 +325,29 @@ export function validateMarketplaceEconomyForm(form, { isEn = false } = {}) {
     verificationBonusesEnabled: Boolean(form.verificationBonusesEnabled),
   };
 
-  const ok = Object.keys(errors).length === 0 && Object.values(patch).every((v) => v !== null);
-  return { ok, errors, patch: ok ? patch : null };
+  if (
+    patch.priorityBidMaximumTokens != null &&
+    patch.priorityBidMinimumTokens != null &&
+    patch.priorityBidMaximumTokens < patch.priorityBidMinimumTokens
+  ) {
+    errors.priorityBidMaximumTokens = t(
+      "الحد الأقصى يجب أن يكون ≥ الأدنى.",
+      "Max must be >= min.",
+    );
+    patch.priorityBidMaximumTokens = null;
+  }
+
+  const ok = Object.keys(errors).length === 0 && Object.values(patch).every((v) => v !== null || v === null);
+  // Re-evaluate: null is allowed for priorityBidMaximumTokens; other nulls from failed validators block ok
+  const blockingNull = Object.entries(patch).some(([k, v]) => {
+    if (k === "priorityBidMaximumTokens") return false;
+    return v === null;
+  });
+  const finalOk = Object.keys(errors).length === 0 && !blockingNull;
+  return { ok: finalOk, errors, patch: finalOk ? patch : null };
 }
 
-/** True when all unfinished execution engines are off (Phase 2 safety). */
+/** True when unfinished execution engines are off (Phase 2 safety). */
 export function areEconomyEnginesDisabled(settings) {
   if (!settings) return true;
   return (
@@ -207,6 +355,8 @@ export function areEconomyEnginesDisabled(settings) {
     !settings.marketplaceCommissionEnabled &&
     !settings.cashMembershipPaymentsEnabled &&
     !settings.eliteEngineEnabled &&
-    !settings.verificationBonusesEnabled
+    !settings.verificationBonusesEnabled &&
+    !settings.priorityBiddingEnabled &&
+    !settings.fairWorkDistributionEnabled
   );
 }

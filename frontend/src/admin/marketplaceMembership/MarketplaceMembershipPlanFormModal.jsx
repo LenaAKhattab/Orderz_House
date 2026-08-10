@@ -180,6 +180,33 @@ export default function MarketplaceMembershipPlanFormModal({
             </label>
           </div>
 
+          <div className="oh-mmp-form__row">
+            <label className="oh-mmp-form__check oh-mmp-form__check--block">
+              <input
+                type="checkbox"
+                checked={form.priorityBidEnabled}
+                onChange={(e) => setField("priorityBidEnabled", e.target.checked)}
+                disabled={submitting}
+              />
+              {isEn ? "Priority Bid capability" : "قدرة Priority Bid"}
+            </label>
+            <label>
+              {isEn ? "Priority Bid uses / cycle" : "استخدامات Priority Bid / دورة"}
+              <input
+                type="number"
+                min="0"
+                max="1000"
+                step="1"
+                value={form.priorityBidUsesPerCycle}
+                onChange={(e) => setField("priorityBidUsesPerCycle", e.target.value)}
+                disabled={submitting}
+              />
+              {errors.priorityBidUsesPerCycle ? (
+                <span className="oh-mmp-form__error">{errors.priorityBidUsesPerCycle}</span>
+              ) : null}
+            </label>
+          </div>
+
           <fieldset className="oh-mmp-form__fieldset">
             <legend>{isEn ? "Cash / prepaid" : "نقدي / مسبق"}</legend>
             <label className="oh-mmp-form__check">

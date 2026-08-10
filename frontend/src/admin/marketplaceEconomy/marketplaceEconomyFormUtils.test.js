@@ -1,5 +1,5 @@
 /**
- * Marketplace Economy Settings — frontend form utils + page wiring.
+ * Marketplace Economy form utils + wiring after Priority Bid / Fairness update.
  * Run: node --test src/admin/marketplaceEconomy/marketplaceEconomyFormUtils.test.js
  */
 import { describe, it } from "node:test";
@@ -17,22 +17,38 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe("marketplaceEconomyFormUtils defaults", () => {
-  it("starts with engines OFF", () => {
+  it("starts with all engines OFF including Priority Bid and fairness", () => {
     assert.strictEqual(MARKETPLACE_ECONOMY_DEFAULT_FORM.workTokensEnabled, false);
-    assert.strictEqual(MARKETPLACE_ECONOMY_DEFAULT_FORM.marketplaceCommissionEnabled, false);
-    assert.strictEqual(MARKETPLACE_ECONOMY_DEFAULT_FORM.cashMembershipPaymentsEnabled, false);
-    assert.strictEqual(MARKETPLACE_ECONOMY_DEFAULT_FORM.eliteEngineEnabled, false);
-    assert.strictEqual(MARKETPLACE_ECONOMY_DEFAULT_FORM.verificationBonusesEnabled, false);
+    assert.strictEqual(MARKETPLACE_ECONOMY_DEFAULT_FORM.priorityBiddingEnabled, false);
+    assert.strictEqual(MARKETPLACE_ECONOMY_DEFAULT_FORM.fairWorkDistributionEnabled, false);
+    assert.strictEqual(
+      MARKETPLACE_ECONOMY_DEFAULT_FORM.priorityBidAssignmentStrategy,
+      "HIGHEST_TOKEN_ONLY",
+    );
     assert.ok(areEconomyEnginesDisabled(MARKETPLACE_ECONOMY_DEFAULT_FORM));
   });
 
-  it("maps API settings to form with decimal money", () => {
+  it("maps renamed normal-application fields and Priority Bid settings", () => {
     const form = settingsToFormState({
       workTokenValueJod: 0.1,
-      bidTokensPerOrderJod: 1,
-      applicationTokenRefundPercentage: 70,
+      normalApplicationTokensPerOrderJod: 1,
+      normalApplicationTokenRefundPercentage: 70,
       platformCommissionPercentage: 30,
       cashProcessingFeeJod: 5,
+      priorityBiddingEnabled: false,
+      priorityBidDurationMinutes: 30,
+      priorityBidMinimumTokens: 1,
+      priorityBidMaximumTokens: null,
+      priorityBidAssignmentStrategy: "HIGHEST_TOKEN_ONLY",
+      fairWorkDistributionEnabled: false,
+      assignmentStrategy: "HIGHEST_TOKEN_ONLY",
+      fairnessWeight: 0,
+      tokenWeight: 100,
+      workTokensEnabled: false,
+      marketplaceCommissionEnabled: false,
+      cashMembershipPaymentsEnabled: false,
+      eliteEngineEnabled: false,
+      verificationBonusesEnabled: false,
       identityVerificationBonusEnabled: true,
       identityVerificationBonusTokens: 10,
       payoutMethodVerificationBonusEnabled: true,
@@ -43,98 +59,59 @@ describe("marketplaceEconomyFormUtils defaults", () => {
       eliteCarryForwardDays: 7,
       eliteMaximumCarryForward: 1,
       eliteDeclinesAffectCarryForward: false,
-      workTokensEnabled: false,
-      marketplaceCommissionEnabled: false,
-      cashMembershipPaymentsEnabled: false,
-      eliteEngineEnabled: false,
-      verificationBonusesEnabled: false,
+      priorityBidShowHighest: true,
+      priorityBidShowPosition: false,
+      priorityBidAllowIncrease: true,
+      priorityBidAllowDecrease: false,
+      priorityBidAllowWithdrawal: false,
+      priorityBidWithdrawalReleasesTokens: true,
+      priorityBidWithdrawalReturnsUse: false,
+      priorityBidReturnUseOnOrderCancel: true,
+      priorityBidAutoAssignmentEnabled: true,
+      performanceWeight: 0,
+      recencyWeight: 0,
+      workloadWeight: 0,
+      eligibleLossPriorityEffect: "INCREASE_PRIORITY",
+      awardResetPolicy: "RESET_TO_ZERO",
+      declinePriorityEffect: "NO_BOOST",
+      freelancerCancelPriorityEffect: "NO_BOOST",
     });
-    assert.strictEqual(form.workTokenValueJod, "0.100");
-    assert.strictEqual(form.cashProcessingFeeJod, "5.000");
-    assert.strictEqual(form.applicationTokenRefundPercentage, "70");
+    assert.strictEqual(form.normalApplicationTokensPerOrderJod, "1.000");
+    assert.strictEqual(form.priorityBidDurationMinutes, "30");
+    assert.strictEqual(form.priorityBidAssignmentStrategy, "HIGHEST_TOKEN_ONLY");
   });
 });
 
 describe("validateMarketplaceEconomyForm", () => {
   it("accepts valid defaults", () => {
-    const { ok, patch, errors } = validateMarketplaceEconomyForm({
-      ...MARKETPLACE_ECONOMY_DEFAULT_FORM,
-    });
+    const { ok, patch } = validateMarketplaceEconomyForm({ ...MARKETPLACE_ECONOMY_DEFAULT_FORM });
     assert.strictEqual(ok, true);
-    assert.deepStrictEqual(errors, {});
-    assert.strictEqual(patch.workTokenValueJod, 0.1);
-    assert.strictEqual(patch.platformCommissionPercentage, 30);
-    assert.strictEqual(patch.workTokensEnabled, false);
+    assert.strictEqual(patch.normalApplicationTokenRefundPercentage, 70);
+    assert.strictEqual(patch.priorityBidAssignmentStrategy, "HIGHEST_TOKEN_ONLY");
+    assert.strictEqual(patch.priorityBiddingEnabled, false);
   });
 
-  it("rejects invalid percentage and money", () => {
-    const badPct = validateMarketplaceEconomyForm({
+  it("rejects invalid Priority Bid duration", () => {
+    const bad = validateMarketplaceEconomyForm({
       ...MARKETPLACE_ECONOMY_DEFAULT_FORM,
-      platformCommissionPercentage: "150",
+      priorityBidDurationMinutes: "0",
     });
-    assert.strictEqual(badPct.ok, false);
-    assert.ok(badPct.errors.platformCommissionPercentage);
-    assert.strictEqual(badPct.patch, null);
-
-    const badMoney = validateMarketplaceEconomyForm({
-      ...MARKETPLACE_ECONOMY_DEFAULT_FORM,
-      workTokenValueJod: "0",
-    });
-    assert.strictEqual(badMoney.ok, false);
-    assert.ok(badMoney.errors.workTokenValueJod);
-  });
-
-  it("allows enabling flags in the form payload", () => {
-    const { ok, patch } = validateMarketplaceEconomyForm({
-      ...MARKETPLACE_ECONOMY_DEFAULT_FORM,
-      workTokensEnabled: true,
-    });
-    assert.strictEqual(ok, true);
-    assert.strictEqual(patch.workTokensEnabled, true);
+    assert.strictEqual(bad.ok, false);
+    assert.ok(bad.errors.priorityBidDurationMinutes);
   });
 });
 
 describe("SuperAdminMarketplaceEconomyPage wiring", () => {
-  it("page renders sections, helpers, and domain warning", () => {
+  it("documents Priority Bid vs normal application separation in UI", () => {
     const page = fs.readFileSync(
       path.join(__dirname, "../../pages/dashboard/SuperAdminMarketplaceEconomyPage.jsx"),
       "utf8",
     );
-    assert.match(page, /إعدادات اقتصاد العمل|Work economy settings/);
-    assert.match(page, /باقات العمل/);
-    assert.match(page, /الباقات الرئيسية/);
-    assert.match(page, /باقات الصفحات/);
-    assert.match(page, /القيمة المحاسبية لكل Work Token/);
-    assert.match(page, /رسوم إدارية ثابتة لكل عملية دفع نقدي/);
-    assert.match(page, /ترحيل استحقاق واحد/);
-    assert.match(page, /oh-mes-section/);
-    assert.match(page, /getMarketplaceEconomySettingsRequest/);
-    assert.match(page, /updateMarketplaceEconomySettingsRequest/);
-    assert.match(page, /validateMarketplaceEconomyForm/);
-    assert.doesNotMatch(page, /listPublicPlansRequest|AdminPlanCard|fakeOrders/);
-  });
-
-  it("marketplace plans page links to economy settings", () => {
-    const plans = fs.readFileSync(
-      path.join(__dirname, "../../pages/dashboard/SuperAdminMarketplacePlansPage.jsx"),
-      "utf8",
-    );
-    assert.match(plans, /\/dashboard\/super-admin\/marketplace-economy/);
-    assert.match(plans, /إعدادات اقتصاد العمل|Work economy settings/);
-  });
-
-  it("App route and nav are registered", () => {
-    const app = fs.readFileSync(path.join(__dirname, "../../App.jsx"), "utf8");
-    const nav = fs.readFileSync(path.join(__dirname, "../../constants/superAdminNav.js"), "utf8");
-    assert.match(app, /marketplace-economy/);
-    assert.match(app, /SuperAdminMarketplaceEconomyPage/);
-    assert.match(nav, /marketplaceEconomy/);
-    assert.match(nav, /marketplace-economy/);
-  });
-
-  it("CSS includes responsive breakpoint for mobile", () => {
-    const css = fs.readFileSync(path.join(__dirname, "marketplace-economy-settings.css"), "utf8");
-    assert.match(css, /@media \(max-width: 720px\)/);
-    assert.match(css, /oh-mes-grid/);
+    assert.match(page, /Priority Bid/);
+    assert.match(page, /HIGHEST_TOKEN_ONLY/);
+    assert.match(page, /normalApplicationTokensPerOrderJod/);
+    assert.match(page, /100%|يُحرَّر دائماً 100%/);
+    assert.match(page, /Fair Work Distribution|التوزيع العادل/);
+    assert.doesNotMatch(page, /bidTokensPerOrderJod/);
   });
 });

@@ -3,27 +3,44 @@
  *
  * CURRENT POLICY (this table/service) vs HISTORICAL TRANSACTION SNAPSHOT (future):
  * When engines activate, order/membership/ledger records MUST snapshot at write time:
- * - work_token_value_jod / bid_tokens_per_order_jod
- * - application_token_refund_percentage
- * - platform_commission_percentage
- * - cash_processing_fee_jod
+ * - work_token_value_jod
+ * - normal_application_tokens_per_order_jod / normal_application_token_refund_percentage
+ * - priority_bid duration/min/max/strategy (when auction resolves)
+ * - platform_commission_percentage / cash_processing_fee_jod
  * - verification bonus amounts when granted
  * - Elite entitlement policy values when issued
+ * - fair assignment strategy + weights used at decision time
  *
- * REAL ORDERS ONLY — never apply these policies to fake/training orders.
- * Phase 2: no wallets, bids, refunds, Elite, commission, or cash execution.
+ * REAL ECONOMIC ORDERS ONLY — never apply these policies to fake/training orders.
+ * Sources may include customer / FAZ3AT / admin / other authorized real workflows.
+ *
+ * Priority Bid ≠ normal application:
+ * - Priority Bid amount is chosen by the Freelancer (auction).
+ * - Priority Bid losers RELEASE 100% reserved Tokens (never normal refund %).
+ * - Wallet must support AVAILABLE / RESERVED / CONSUMED (not deduct-then-refund).
+ *
+ * Phase 2: configuration only — no wallets, auctions, fairness execution, Elite, commission, or cash.
  */
 
 const { pool } = require("../config/db");
 const { createAppError } = require("../utils/AppError");
+const {
+  ASSIGNMENT_STRATEGIES,
+  AWARD_RESET_POLICIES,
+  ELIGIBLE_LOSS_EFFECTS,
+  DECLINE_PRIORITY_EFFECTS,
+  CANCEL_PRIORITY_EFFECTS,
+  DEFAULT_PRIORITY_BID_ASSIGNMENT_STRATEGY,
+  isValidAssignmentStrategy,
+} = require("../constants/marketplaceEconomy");
 
 const SETTINGS_ID = 1;
 
 /** Documented defaults — must match migration 135 seed/defaults. */
 const MARKETPLACE_ECONOMY_DEFAULTS = Object.freeze({
   workTokenValueJod: 0.1,
-  bidTokensPerOrderJod: 1,
-  applicationTokenRefundPercentage: 70,
+  normalApplicationTokensPerOrderJod: 1,
+  normalApplicationTokenRefundPercentage: 70,
   platformCommissionPercentage: 30,
   cashProcessingFeeJod: 5,
   identityVerificationBonusEnabled: true,
@@ -36,6 +53,34 @@ const MARKETPLACE_ECONOMY_DEFAULTS = Object.freeze({
   eliteCarryForwardDays: 7,
   eliteMaximumCarryForward: 1,
   eliteDeclinesAffectCarryForward: false,
+
+  priorityBiddingEnabled: false,
+  priorityBidDurationMinutes: 30,
+  priorityBidMinimumTokens: 1,
+  priorityBidMaximumTokens: null,
+  priorityBidShowHighest: true,
+  priorityBidShowPosition: false,
+  priorityBidAllowIncrease: true,
+  priorityBidAllowDecrease: false,
+  priorityBidAllowWithdrawal: false,
+  priorityBidWithdrawalReleasesTokens: true,
+  priorityBidWithdrawalReturnsUse: false,
+  priorityBidReturnUseOnOrderCancel: true,
+  priorityBidAutoAssignmentEnabled: true,
+  priorityBidAssignmentStrategy: DEFAULT_PRIORITY_BID_ASSIGNMENT_STRATEGY,
+
+  fairWorkDistributionEnabled: false,
+  assignmentStrategy: DEFAULT_PRIORITY_BID_ASSIGNMENT_STRATEGY,
+  fairnessWeight: 0,
+  tokenWeight: 100,
+  performanceWeight: 0,
+  recencyWeight: 0,
+  workloadWeight: 0,
+  eligibleLossPriorityEffect: "INCREASE_PRIORITY",
+  awardResetPolicy: "RESET_TO_ZERO",
+  declinePriorityEffect: "NO_BOOST",
+  freelancerCancelPriorityEffect: "NO_BOOST",
+
   workTokensEnabled: false,
   marketplaceCommissionEnabled: false,
   cashMembershipPaymentsEnabled: false,
@@ -43,11 +88,11 @@ const MARKETPLACE_ECONOMY_DEFAULTS = Object.freeze({
   verificationBonusesEnabled: false,
 });
 
-/** Values that must be snapshotted onto future financial/ledger rows (not CURRENT POLICY alone). */
+/** Values that must be snapshotted onto future financial/ledger/assignment rows. */
 const MARKETPLACE_ECONOMY_SNAPSHOT_FIELDS = Object.freeze([
   "workTokenValueJod",
-  "bidTokensPerOrderJod",
-  "applicationTokenRefundPercentage",
+  "normalApplicationTokensPerOrderJod",
+  "normalApplicationTokenRefundPercentage",
   "platformCommissionPercentage",
   "cashProcessingFeeJod",
   "identityVerificationBonusTokens",
@@ -56,7 +101,38 @@ const MARKETPLACE_ECONOMY_SNAPSHOT_FIELDS = Object.freeze([
   "eliteOfferDurationMinutes",
   "eliteCarryForwardDays",
   "eliteMaximumCarryForward",
+  "priorityBidDurationMinutes",
+  "priorityBidMinimumTokens",
+  "priorityBidMaximumTokens",
+  "priorityBidAssignmentStrategy",
+  "assignmentStrategy",
+  "fairnessWeight",
+  "tokenWeight",
+  "performanceWeight",
+  "recencyWeight",
+  "workloadWeight",
+  "awardResetPolicy",
 ]);
+
+/**
+ * Dependencies that must exist before enabling Priority Bid / fairness engines in production.
+ * Flagged for roadmap — do not fake with users.tokens.
+ */
+const MARKETPLACE_ECONOMY_ENGINE_DEPENDENCIES = Object.freeze({
+  priorityBid: Object.freeze([
+    "freelancer_marketplace_memberships",
+    "marketplace_membership_cycles",
+    "work_token_wallet (AVAILABLE/RESERVED/CONSUMED)",
+    "work_token_ledger (PRIORITY_BID_RESERVE|INCREASE|RELEASE|CONSUME)",
+    "priority auction tables + persistent end_at",
+    "resolution worker/cron (DB timestamps, not setTimeout)",
+  ]),
+  fairWorkDistribution: Object.freeze([
+    "fairness aggregate stats (category-aware)",
+    "immutable assignment decision snapshots",
+    "Admin explainability APIs (never Freelancer)",
+  ]),
+});
 
 function toFiniteNumber(value) {
   if (value === "" || value === undefined || value === null) return null;
@@ -124,12 +200,28 @@ function assertIntInRange(field, value, { min = 0, max = 1000000 } = {}) {
   return n;
 }
 
+function assertNullableIntInRange(field, value, { min = 1, max = 100000000 } = {}) {
+  if (value === null || value === undefined || value === "") return null;
+  return assertIntInRange(field, value, { min, max });
+}
+
+function assertEnum(field, value, allowed) {
+  const v = String(value || "").trim();
+  if (!allowed.includes(v)) {
+    throw createAppError(`${field} must be one of: ${allowed.join(", ")}.`, 400, {
+      exposeToClient: true,
+      publicCode: "INVALID_ENUM",
+    });
+  }
+  return v;
+}
+
 function mapRow(row) {
   if (!row) return { ...MARKETPLACE_ECONOMY_DEFAULTS };
   return {
     workTokenValueJod: Number(row.work_token_value_jod),
-    bidTokensPerOrderJod: Number(row.bid_tokens_per_order_jod),
-    applicationTokenRefundPercentage: Number(row.application_token_refund_percentage),
+    normalApplicationTokensPerOrderJod: Number(row.normal_application_tokens_per_order_jod),
+    normalApplicationTokenRefundPercentage: Number(row.normal_application_token_refund_percentage),
     platformCommissionPercentage: Number(row.platform_commission_percentage),
     cashProcessingFeeJod: Number(row.cash_processing_fee_jod),
     identityVerificationBonusEnabled: isTruthyFlag(row.identity_verification_bonus_enabled),
@@ -142,6 +234,36 @@ function mapRow(row) {
     eliteCarryForwardDays: Number(row.elite_carry_forward_days),
     eliteMaximumCarryForward: Number(row.elite_maximum_carry_forward),
     eliteDeclinesAffectCarryForward: isTruthyFlag(row.elite_declines_affect_carry_forward),
+
+    priorityBiddingEnabled: isTruthyFlag(row.priority_bidding_enabled),
+    priorityBidDurationMinutes: Number(row.priority_bid_duration_minutes),
+    priorityBidMinimumTokens: Number(row.priority_bid_minimum_tokens),
+    priorityBidMaximumTokens:
+      row.priority_bid_maximum_tokens == null ? null : Number(row.priority_bid_maximum_tokens),
+    priorityBidShowHighest: isTruthyFlag(row.priority_bid_show_highest),
+    priorityBidShowPosition: isTruthyFlag(row.priority_bid_show_position),
+    priorityBidAllowIncrease: isTruthyFlag(row.priority_bid_allow_increase),
+    priorityBidAllowDecrease: isTruthyFlag(row.priority_bid_allow_decrease),
+    priorityBidAllowWithdrawal: isTruthyFlag(row.priority_bid_allow_withdrawal),
+    priorityBidWithdrawalReleasesTokens: isTruthyFlag(row.priority_bid_withdrawal_releases_tokens),
+    priorityBidWithdrawalReturnsUse: isTruthyFlag(row.priority_bid_withdrawal_returns_use),
+    priorityBidReturnUseOnOrderCancel: isTruthyFlag(row.priority_bid_return_use_on_order_cancel),
+    priorityBidAutoAssignmentEnabled: isTruthyFlag(row.priority_bid_auto_assignment_enabled),
+    priorityBidAssignmentStrategy:
+      row.priority_bid_assignment_strategy || DEFAULT_PRIORITY_BID_ASSIGNMENT_STRATEGY,
+
+    fairWorkDistributionEnabled: isTruthyFlag(row.fair_work_distribution_enabled),
+    assignmentStrategy: row.assignment_strategy || DEFAULT_PRIORITY_BID_ASSIGNMENT_STRATEGY,
+    fairnessWeight: Number(row.fairness_weight),
+    tokenWeight: Number(row.token_weight),
+    performanceWeight: Number(row.performance_weight),
+    recencyWeight: Number(row.recency_weight),
+    workloadWeight: Number(row.workload_weight),
+    eligibleLossPriorityEffect: row.eligible_loss_priority_effect || "INCREASE_PRIORITY",
+    awardResetPolicy: row.award_reset_policy || "RESET_TO_ZERO",
+    declinePriorityEffect: row.decline_priority_effect || "NO_BOOST",
+    freelancerCancelPriorityEffect: row.freelancer_cancel_priority_effect || "NO_BOOST",
+
     workTokensEnabled: isTruthyFlag(row.work_tokens_enabled),
     marketplaceCommissionEnabled: isTruthyFlag(row.marketplace_commission_enabled),
     cashMembershipPaymentsEnabled: isTruthyFlag(row.cash_membership_payments_enabled),
@@ -153,8 +275,9 @@ function mapRow(row) {
 }
 
 /**
- * REAL-order-only gate for future callers.
- * Fake/training code must never invoke marketplace economy execution.
+ * REAL ECONOMIC ORDER gate for future callers.
+ * Fake/training must never invoke marketplace economy execution.
+ * Customer-created is NOT the only valid real source.
  */
 function assertMarketplaceEconomyRealOrdersOnly(context = {}) {
   const source = String(context.orderSource || context.source || "").toLowerCase();
@@ -162,25 +285,63 @@ function assertMarketplaceEconomyRealOrdersOnly(context = {}) {
     source === "fake" ||
     source === "training" ||
     context.isFake === true ||
-    context.isTraining === true
+    context.isTraining === true ||
+    context.kind === "fake"
   ) {
-    throw createAppError("Marketplace economy applies to REAL customer-funded orders only.", 403, {
-      exposeToClient: true,
-      publicCode: "MARKETPLACE_ECONOMY_REAL_ORDERS_ONLY",
-    });
+    throw createAppError(
+      "Marketplace economy applies to REAL economic orders only (never fake/training).",
+      403,
+      {
+        exposeToClient: true,
+        publicCode: "MARKETPLACE_ECONOMY_REAL_ORDERS_ONLY",
+      },
+    );
   }
+}
+
+/**
+ * Normalize legacy Phase 2 patch keys that incorrectly implied Priority Bid formula.
+ * bidTokensPerOrderJod / applicationTokenRefundPercentage → normal application only.
+ */
+function normalizeLegacyPatchKeys(patch = {}) {
+  const next = { ...patch };
+  if (next.normalApplicationTokensPerOrderJod === undefined && next.bidTokensPerOrderJod !== undefined) {
+    next.normalApplicationTokensPerOrderJod = next.bidTokensPerOrderJod;
+  }
+  if (
+    next.normalApplicationTokenRefundPercentage === undefined &&
+    next.applicationTokenRefundPercentage !== undefined
+  ) {
+    next.normalApplicationTokenRefundPercentage = next.applicationTokenRefundPercentage;
+  }
+  delete next.bidTokensPerOrderJod;
+  delete next.applicationTokenRefundPercentage;
+  return next;
 }
 
 function ensureExecutionEnginesDisabledInDefaults(settings) {
   return {
     ...settings,
-    // Phase 2 / unset migration safety: unfinished engines stay off unless explicitly enabled later
     workTokensEnabled: Boolean(settings.workTokensEnabled),
     marketplaceCommissionEnabled: Boolean(settings.marketplaceCommissionEnabled),
     cashMembershipPaymentsEnabled: Boolean(settings.cashMembershipPaymentsEnabled),
     eliteEngineEnabled: Boolean(settings.eliteEngineEnabled),
     verificationBonusesEnabled: Boolean(settings.verificationBonusesEnabled),
+    priorityBiddingEnabled: Boolean(settings.priorityBiddingEnabled),
+    fairWorkDistributionEnabled: Boolean(settings.fairWorkDistributionEnabled),
   };
+}
+
+function assertPriorityBidBounds(settings) {
+  if (
+    settings.priorityBidMaximumTokens != null &&
+    settings.priorityBidMaximumTokens < settings.priorityBidMinimumTokens
+  ) {
+    throw createAppError("priorityBidMaximumTokens must be >= priorityBidMinimumTokens.", 400, {
+      exposeToClient: true,
+      publicCode: "INVALID_PRIORITY_BID_BOUNDS",
+    });
+  }
 }
 
 async function ensureSettingsRow(client) {
@@ -201,7 +362,8 @@ async function getMarketplaceEconomySettings(client) {
   return ensureExecutionEnginesDisabledInDefaults(mapRow(rows[0]));
 }
 
-function mergePatch(current, patch = {}) {
+function mergePatch(current, rawPatch = {}) {
+  const patch = normalizeLegacyPatchKeys(rawPatch);
   const next = { ...current };
   const assign = (key, transform) => {
     if (patch[key] === undefined) return;
@@ -209,9 +371,11 @@ function mergePatch(current, patch = {}) {
   };
 
   assign("workTokenValueJod", (v) => assertMoneyPositive("workTokenValueJod", v));
-  assign("bidTokensPerOrderJod", (v) => assertMoneyPositive("bidTokensPerOrderJod", v));
-  assign("applicationTokenRefundPercentage", (v) =>
-    assertPercent("applicationTokenRefundPercentage", v),
+  assign("normalApplicationTokensPerOrderJod", (v) =>
+    assertMoneyPositive("normalApplicationTokensPerOrderJod", v),
+  );
+  assign("normalApplicationTokenRefundPercentage", (v) =>
+    assertPercent("normalApplicationTokenRefundPercentage", v),
   );
   assign("platformCommissionPercentage", (v) => assertPercent("platformCommissionPercentage", v));
   assign("cashProcessingFeeJod", (v) => assertMoneyNonNegative("cashProcessingFeeJod", v));
@@ -237,12 +401,55 @@ function mergePatch(current, patch = {}) {
     assertIntInRange("eliteMaximumCarryForward", v, { min: 0, max: 1000 }),
   );
   assign("eliteDeclinesAffectCarryForward", (v) => coerceBool(v));
+
+  assign("priorityBiddingEnabled", (v) => coerceBool(v));
+  assign("priorityBidDurationMinutes", (v) =>
+    assertIntInRange("priorityBidDurationMinutes", v, { min: 1, max: 10080 }),
+  );
+  assign("priorityBidMinimumTokens", (v) =>
+    assertIntInRange("priorityBidMinimumTokens", v, { min: 1, max: 100000000 }),
+  );
+  assign("priorityBidMaximumTokens", (v) =>
+    assertNullableIntInRange("priorityBidMaximumTokens", v, { min: 1, max: 100000000 }),
+  );
+  assign("priorityBidShowHighest", (v) => coerceBool(v));
+  assign("priorityBidShowPosition", (v) => coerceBool(v));
+  assign("priorityBidAllowIncrease", (v) => coerceBool(v));
+  assign("priorityBidAllowDecrease", (v) => coerceBool(v));
+  assign("priorityBidAllowWithdrawal", (v) => coerceBool(v));
+  assign("priorityBidWithdrawalReleasesTokens", (v) => coerceBool(v));
+  assign("priorityBidWithdrawalReturnsUse", (v) => coerceBool(v));
+  assign("priorityBidReturnUseOnOrderCancel", (v) => coerceBool(v));
+  assign("priorityBidAutoAssignmentEnabled", (v) => coerceBool(v));
+  assign("priorityBidAssignmentStrategy", (v) =>
+    assertEnum("priorityBidAssignmentStrategy", v, ASSIGNMENT_STRATEGIES),
+  );
+
+  assign("fairWorkDistributionEnabled", (v) => coerceBool(v));
+  assign("assignmentStrategy", (v) => assertEnum("assignmentStrategy", v, ASSIGNMENT_STRATEGIES));
+  assign("fairnessWeight", (v) => assertPercent("fairnessWeight", v));
+  assign("tokenWeight", (v) => assertPercent("tokenWeight", v));
+  assign("performanceWeight", (v) => assertPercent("performanceWeight", v));
+  assign("recencyWeight", (v) => assertPercent("recencyWeight", v));
+  assign("workloadWeight", (v) => assertPercent("workloadWeight", v));
+  assign("eligibleLossPriorityEffect", (v) =>
+    assertEnum("eligibleLossPriorityEffect", v, ELIGIBLE_LOSS_EFFECTS),
+  );
+  assign("awardResetPolicy", (v) => assertEnum("awardResetPolicy", v, AWARD_RESET_POLICIES));
+  assign("declinePriorityEffect", (v) =>
+    assertEnum("declinePriorityEffect", v, DECLINE_PRIORITY_EFFECTS),
+  );
+  assign("freelancerCancelPriorityEffect", (v) =>
+    assertEnum("freelancerCancelPriorityEffect", v, CANCEL_PRIORITY_EFFECTS),
+  );
+
   assign("workTokensEnabled", (v) => coerceBool(v));
   assign("marketplaceCommissionEnabled", (v) => coerceBool(v));
   assign("cashMembershipPaymentsEnabled", (v) => coerceBool(v));
   assign("eliteEngineEnabled", (v) => coerceBool(v));
   assign("verificationBonusesEnabled", (v) => coerceBool(v));
 
+  assertPriorityBidBounds(next);
   return next;
 }
 
@@ -272,8 +479,8 @@ async function updateMarketplaceEconomySettings({ actorUserId, patch }) {
     const { rows: updated } = await client.query(
       `UPDATE marketplace_economy_settings SET
          work_token_value_jod = $2,
-         bid_tokens_per_order_jod = $3,
-         application_token_refund_percentage = $4,
+         normal_application_tokens_per_order_jod = $3,
+         normal_application_token_refund_percentage = $4,
          platform_commission_percentage = $5,
          cash_processing_fee_jod = $6,
          identity_verification_bonus_enabled = $7,
@@ -286,20 +493,45 @@ async function updateMarketplaceEconomySettings({ actorUserId, patch }) {
          elite_carry_forward_days = $14,
          elite_maximum_carry_forward = $15,
          elite_declines_affect_carry_forward = $16,
-         work_tokens_enabled = $17,
-         marketplace_commission_enabled = $18,
-         cash_membership_payments_enabled = $19,
-         elite_engine_enabled = $20,
-         verification_bonuses_enabled = $21,
-         updated_by_user_id = $22,
+         priority_bidding_enabled = $17,
+         priority_bid_duration_minutes = $18,
+         priority_bid_minimum_tokens = $19,
+         priority_bid_maximum_tokens = $20,
+         priority_bid_show_highest = $21,
+         priority_bid_show_position = $22,
+         priority_bid_allow_increase = $23,
+         priority_bid_allow_decrease = $24,
+         priority_bid_allow_withdrawal = $25,
+         priority_bid_withdrawal_releases_tokens = $26,
+         priority_bid_withdrawal_returns_use = $27,
+         priority_bid_return_use_on_order_cancel = $28,
+         priority_bid_auto_assignment_enabled = $29,
+         priority_bid_assignment_strategy = $30,
+         fair_work_distribution_enabled = $31,
+         assignment_strategy = $32,
+         fairness_weight = $33,
+         token_weight = $34,
+         performance_weight = $35,
+         recency_weight = $36,
+         workload_weight = $37,
+         eligible_loss_priority_effect = $38,
+         award_reset_policy = $39,
+         decline_priority_effect = $40,
+         freelancer_cancel_priority_effect = $41,
+         work_tokens_enabled = $42,
+         marketplace_commission_enabled = $43,
+         cash_membership_payments_enabled = $44,
+         elite_engine_enabled = $45,
+         verification_bonuses_enabled = $46,
+         updated_by_user_id = $47,
          updated_at = NOW()
        WHERE id = $1
        RETURNING *`,
       [
         SETTINGS_ID,
         next.workTokenValueJod,
-        next.bidTokensPerOrderJod,
-        next.applicationTokenRefundPercentage,
+        next.normalApplicationTokensPerOrderJod,
+        next.normalApplicationTokenRefundPercentage,
         next.platformCommissionPercentage,
         next.cashProcessingFeeJod,
         next.identityVerificationBonusEnabled,
@@ -312,6 +544,31 @@ async function updateMarketplaceEconomySettings({ actorUserId, patch }) {
         next.eliteCarryForwardDays,
         next.eliteMaximumCarryForward,
         next.eliteDeclinesAffectCarryForward,
+        next.priorityBiddingEnabled,
+        next.priorityBidDurationMinutes,
+        next.priorityBidMinimumTokens,
+        next.priorityBidMaximumTokens,
+        next.priorityBidShowHighest,
+        next.priorityBidShowPosition,
+        next.priorityBidAllowIncrease,
+        next.priorityBidAllowDecrease,
+        next.priorityBidAllowWithdrawal,
+        next.priorityBidWithdrawalReleasesTokens,
+        next.priorityBidWithdrawalReturnsUse,
+        next.priorityBidReturnUseOnOrderCancel,
+        next.priorityBidAutoAssignmentEnabled,
+        next.priorityBidAssignmentStrategy,
+        next.fairWorkDistributionEnabled,
+        next.assignmentStrategy,
+        next.fairnessWeight,
+        next.tokenWeight,
+        next.performanceWeight,
+        next.recencyWeight,
+        next.workloadWeight,
+        next.eligibleLossPriorityEffect,
+        next.awardResetPolicy,
+        next.declinePriorityEffect,
+        next.freelancerCancelPriorityEffect,
         next.workTokensEnabled,
         next.marketplaceCommissionEnabled,
         next.cashMembershipPaymentsEnabled,
@@ -334,9 +591,16 @@ async function updateMarketplaceEconomySettings({ actorUserId, patch }) {
   }
 }
 
-/** Future helpers — document intent without executing economy. */
 function isWorkTokensEngineActive(settings) {
   return Boolean(settings?.workTokensEnabled);
+}
+
+function isPriorityBiddingEngineActive(settings) {
+  return Boolean(settings?.priorityBiddingEnabled) && Boolean(settings?.workTokensEnabled);
+}
+
+function isFairWorkDistributionActive(settings) {
+  return Boolean(settings?.fairWorkDistributionEnabled);
 }
 
 function isEliteEngineActive(settings) {
@@ -355,18 +619,32 @@ function isVerificationBonusesEngineActive(settings) {
   return Boolean(settings?.verificationBonusesEnabled);
 }
 
+/**
+ * Priority Bid loser release is always 100% of reserved Tokens.
+ * Normal application refund % must never be used here.
+ */
+function getPriorityBidLoserReleasePercentage() {
+  return 100;
+}
+
 module.exports = {
   SETTINGS_ID,
   MARKETPLACE_ECONOMY_DEFAULTS,
   MARKETPLACE_ECONOMY_SNAPSHOT_FIELDS,
+  MARKETPLACE_ECONOMY_ENGINE_DEPENDENCIES,
   getMarketplaceEconomySettings,
   updateMarketplaceEconomySettings,
   assertMarketplaceEconomyRealOrdersOnly,
+  getPriorityBidLoserReleasePercentage,
   isWorkTokensEngineActive,
+  isPriorityBiddingEngineActive,
+  isFairWorkDistributionActive,
   isEliteEngineActive,
   isMarketplaceCommissionActive,
   isCashMembershipPaymentsActive,
   isVerificationBonusesEngineActive,
+  isValidAssignmentStrategy,
   mapRow,
   mergePatch,
+  normalizeLegacyPatchKeys,
 };

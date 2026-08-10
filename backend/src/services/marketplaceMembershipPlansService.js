@@ -12,6 +12,7 @@ const {
   resolveMarketplaceMembershipPayablePricing,
 } = require("../utils/marketplaceMembershipSalePricing");
 const { isValidMarketplaceTierCode } = require("../constants/marketplaceMembershipPlans");
+const { defaultPriorityBidUsesForTier } = require("../constants/marketplaceEconomy");
 
 function toFiniteNumber(value) {
   if (value === "" || value === undefined || value === null) return null;
@@ -53,6 +54,10 @@ function mapMarketplaceMembershipPlan(row) {
     minimumCashMonths: Number(row.minimum_cash_months) || 1,
     maximumPrepaidMonths: Number(row.maximum_prepaid_months) || 1,
     eliteDirectOrdersEnabled: isTruthyFlag(row.elite_direct_orders_enabled),
+    // Priority Bid capability (migration 136). Distinct from Elite Direct Orders.
+    priorityBidEnabled: row.priority_bid_enabled == null ? false : isTruthyFlag(row.priority_bid_enabled),
+    priorityBidUsesPerCycle:
+      row.priority_bid_uses_per_cycle == null ? 0 : Number(row.priority_bid_uses_per_cycle) || 0,
     saleEnabled: isTruthyFlag(row.sale_enabled),
     salePercentage: toFiniteNumber(row.sale_percentage),
     saleReason: row.sale_reason || null,
@@ -88,9 +93,22 @@ function mapPublicMarketplaceMembershipPlan(row) {
     },
     capabilities: {
       eliteDirectOrders: full.eliteDirectOrdersEnabled,
+      priorityBid: full.priorityBidEnabled,
+      priorityBidUsesPerCycle: full.priorityBidUsesPerCycle,
     },
     sale: full.sale,
   };
+}
+
+function assertPriorityBidUsesPerCycle(value) {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0 || n > 1000) {
+    throw createAppError("priorityBidUsesPerCycle must be an integer between 0 and 1000.", 400, {
+      exposeToClient: true,
+      publicCode: "INVALID_PRIORITY_BID_USES",
+    });
+  }
+  return n;
 }
 
 function assertRealOrderAccessConfig({ unlimitedRealOrderValue, maxRealOrderValueJod }) {
@@ -230,6 +248,15 @@ async function createMarketplaceMembershipPlan(payload) {
   });
   const includedTokensPerCycle = assertTokensPerCycle(payload.includedTokensPerCycle ?? 0);
   const sortOrder = Number.isInteger(Number(payload.sortOrder)) ? Number(payload.sortOrder) : 0;
+  const priorityBidEnabled =
+    payload.priorityBidEnabled !== undefined
+      ? Boolean(payload.priorityBidEnabled)
+      : defaultPriorityBidUsesForTier(tierCode) > 0;
+  const priorityBidUsesPerCycle = assertPriorityBidUsesPerCycle(
+    payload.priorityBidUsesPerCycle !== undefined
+      ? payload.priorityBidUsesPerCycle
+      : defaultPriorityBidUsesForTier(tierCode),
+  );
 
   assertValidMarketplaceSalePatch(
     {
@@ -257,6 +284,7 @@ async function createMarketplaceMembershipPlan(payload) {
          included_tokens_per_cycle,
          cash_allowed, minimum_cash_months, maximum_prepaid_months,
          elite_direct_orders_enabled,
+         priority_bid_enabled, priority_bid_uses_per_cycle,
          sale_enabled, sale_percentage, sale_reason, sale_reason_en
        ) VALUES (
          $1,$2,$3,$4,
@@ -267,7 +295,8 @@ async function createMarketplaceMembershipPlan(payload) {
          $12,
          $13,$14,$15,
          $16,
-         $17,$18,$19,$20
+         $17,$18,
+         $19,$20,$21,$22
        )
        RETURNING *`,
       [
@@ -287,6 +316,8 @@ async function createMarketplaceMembershipPlan(payload) {
         cash.minimumCashMonths,
         cash.maximumPrepaidMonths,
         Boolean(payload.eliteDirectOrdersEnabled),
+        priorityBidEnabled,
+        priorityBidUsesPerCycle,
         saleEnabled,
         salePercentage,
         saleReason,
@@ -374,6 +405,14 @@ async function updateMarketplaceMembershipPlan(id, patch) {
       patch.eliteDirectOrdersEnabled !== undefined
         ? Boolean(patch.eliteDirectOrdersEnabled)
         : existing.eliteDirectOrdersEnabled,
+    priorityBidEnabled:
+      patch.priorityBidEnabled !== undefined
+        ? Boolean(patch.priorityBidEnabled)
+        : existing.priorityBidEnabled,
+    priorityBidUsesPerCycle:
+      patch.priorityBidUsesPerCycle !== undefined
+        ? patch.priorityBidUsesPerCycle
+        : existing.priorityBidUsesPerCycle,
     saleEnabled: patch.saleEnabled !== undefined ? Boolean(patch.saleEnabled) : existing.saleEnabled,
     salePercentage:
       patch.salePercentage !== undefined ? patch.salePercentage : existing.salePercentage,
@@ -404,6 +443,7 @@ async function updateMarketplaceMembershipPlan(id, patch) {
     maximumPrepaidMonths: next.maximumPrepaidMonths,
   });
   const includedTokensPerCycle = assertTokensPerCycle(next.includedTokensPerCycle);
+  const priorityBidUsesPerCycle = assertPriorityBidUsesPerCycle(next.priorityBidUsesPerCycle);
 
   assertValidMarketplaceSalePatch(
     {
@@ -444,10 +484,12 @@ async function updateMarketplaceMembershipPlan(id, patch) {
          minimum_cash_months = $14,
          maximum_prepaid_months = $15,
          elite_direct_orders_enabled = $16,
-         sale_enabled = $17,
-         sale_percentage = $18,
-         sale_reason = $19,
-         sale_reason_en = $20,
+         priority_bid_enabled = $17,
+         priority_bid_uses_per_cycle = $18,
+         sale_enabled = $19,
+         sale_percentage = $20,
+         sale_reason = $21,
+         sale_reason_en = $22,
          updated_at = NOW()
        WHERE id = $1::bigint
        RETURNING *`,
@@ -468,6 +510,8 @@ async function updateMarketplaceMembershipPlan(id, patch) {
         cash.minimumCashMonths,
         cash.maximumPrepaidMonths,
         next.eliteDirectOrdersEnabled,
+        Boolean(next.priorityBidEnabled),
+        priorityBidUsesPerCycle,
         saleEnabled,
         salePercentage,
         saleReason,

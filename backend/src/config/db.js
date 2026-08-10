@@ -14,9 +14,21 @@ if (!process.env.DATABASE_URL) {
 const GENERATION_ADVISORY_LOCK_KEY = 882947361;
 const INSTITUTIONAL_RELEASE_ADVISORY_LOCK_KEY = 913847201;
 
+function resolvePoolSsl(databaseUrl = process.env.DATABASE_URL) {
+  const url = String(databaseUrl || "");
+  // Local / embedded Postgres typically has no TLS — forcing ssl breaks gate tests.
+  if (/@(localhost|127\.0\.0\.1|\[::1\])[:/]/i.test(url) || /host=(localhost|127\.0\.0\.1)/i.test(url)) {
+    return false;
+  }
+  if (String(process.env.NODE_ENV || "").toLowerCase() === "production") {
+    return { rejectUnauthorized: true };
+  }
+  return { rejectUnauthorized: false };
+}
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: true } : { rejectUnauthorized: false },
+  ssl: resolvePoolSsl(),
 });
 
 pool.on("error", (err) => {

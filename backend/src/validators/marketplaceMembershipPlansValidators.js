@@ -57,6 +57,11 @@ const createMarketplaceMembershipPlanValidators = [
   body("minimumCashMonths").optional().isInt({ min: 1 }).withMessage("minimumCashMonths must be >= 1."),
   body("maximumPrepaidMonths").optional().isInt({ min: 1 }).withMessage("maximumPrepaidMonths must be >= 1."),
   body("eliteDirectOrdersEnabled").optional().isBoolean(),
+  body("priorityBidEnabled").optional().isBoolean(),
+  body("priorityBidUsesPerCycle")
+    .optional()
+    .isInt({ min: 0, max: 1000 })
+    .withMessage("priorityBidUsesPerCycle must be an integer between 0 and 1000."),
   body("saleEnabled").optional().isBoolean(),
   body("salePercentage")
     .optional({ nullable: true })
@@ -90,6 +95,11 @@ const updateMarketplaceMembershipPlanValidators = [
   body("minimumCashMonths").optional().isInt({ min: 1 }),
   body("maximumPrepaidMonths").optional().isInt({ min: 1 }),
   body("eliteDirectOrdersEnabled").optional().isBoolean(),
+  body("priorityBidEnabled").optional().isBoolean(),
+  body("priorityBidUsesPerCycle")
+    .optional()
+    .isInt({ min: 0, max: 1000 })
+    .withMessage("priorityBidUsesPerCycle must be an integer between 0 and 1000."),
   body("saleEnabled").optional().isBoolean(),
   body("salePercentage").optional({ nullable: true }).isFloat({ min: 0, max: 100 }),
   body("saleReason").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),

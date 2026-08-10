@@ -253,6 +253,23 @@ export const updateMarketplaceEconomySettingsRequest = async (payload) => {
   return data;
 };
 
+/** Marketplace Membership (باقات العمل) — Phase 3 read-only snapshot for Freelancer. */
+export const getFreelancerMarketplaceMembershipRequest = async () => {
+  const { data } = await api.get("/freelancer/marketplace-membership");
+  return data;
+};
+
+/** Super Admin Marketplace Membership inspection (Phase 3 read-only). */
+export const listAdminMarketplaceMembershipsRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/marketplace-memberships", { params });
+  return data;
+};
+
+export const getAdminMarketplaceMembershipRequest = async (id) => {
+  const { data } = await api.get(`/super-admin/marketplace-memberships/${encodeURIComponent(id)}`);
+  return data;
+};
+
 export const getPublicPlanPageBySlugRequest = async (slug) => {
   const { data } = await api.get(`/plan-pages/${encodeURIComponent(slug)}`);
   return data;
