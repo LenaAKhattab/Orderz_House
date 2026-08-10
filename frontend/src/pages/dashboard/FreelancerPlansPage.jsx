@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Crown, Sparkles } from "lucide-react";
 import PricingSection from "../../components/plans/PricingSection";
 import FreelancerMarketplaceMembershipCard from "../../components/freelancer/FreelancerMarketplaceMembershipCard";
+import FreelancerWorkTokenWalletCard from "../../components/freelancer/FreelancerWorkTokenWalletCard";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import { useFreelancerPlansCheckout } from "../../hooks/useFreelancerPlansCheckout";
 import { useFreelancerMarketplaceContext } from "../../hooks/useFreelancerMarketplaceContext";
@@ -131,6 +132,7 @@ export default function FreelancerPlansPage() {
         </header>
 
         <FreelancerMarketplaceMembershipCard />
+        <FreelancerWorkTokenWalletCard />
 
         <section className="fp-surface fp-pricing-wrap" aria-label={t("freelancerDashboard.plans.upgradeSectionAria")}>
           {error ? <p className="fp-error">{error}</p> : null}

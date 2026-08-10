@@ -31,15 +31,13 @@ const PRIORITY_BID_USES_BY_TIER = Object.freeze({
 });
 
 /**
- * Conceptual ledger event types for future Work Token wallet (Phase 4+).
+ * Work Token ledger event types (Phase 4+).
+ * Canonical list lives in marketplaceWorkTokens.js — re-exported here for economy vocab.
  * Do not invent temporary users.tokens shortcuts.
  */
-const WORK_TOKEN_LEDGER_EVENT_TYPES = Object.freeze([
-  "PRIORITY_BID_RESERVE",
-  "PRIORITY_BID_INCREASE_RESERVE",
-  "PRIORITY_BID_RELEASE",
-  "PRIORITY_BID_CONSUME",
-]);
+const {
+  WORK_TOKEN_LEDGER_EVENT_TYPES,
+} = require("./marketplaceWorkTokens");
 
 /**
  * Future fairness outcome codes (immutable history).

@@ -292,6 +292,15 @@
     "priorityBidUsage": "Priority Bid uses",
     "engineComingSoon": "Priority Bid engine coming soon — this view is accounting only."
   },
+  "workTokenWallet": {
+    "title": "Work Tokens",
+    "subtitle": "Accounting balances only — Token spend and Priority Bid are not available yet.",
+    "loading": "Loading Work Tokens…",
+    "available": "Available",
+    "reserved": "Reserved",
+    "engineComingSoon": "Coming soon — Work Token economy is not active yet.",
+    "engineOn": "Work Token engine is available."
+  },
   "financialClaims": {
     "title": "Financial claims",
     "subtitle": "Create a new claim and track review, payout window, and paid/remaining amounts for each order.",

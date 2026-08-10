@@ -292,6 +292,15 @@
     "priorityBidUsage": "استخدامات Priority Bid",
     "engineComingSoon": "محرك Priority Bid قريبًا — هذا العرض للمحاسبة فقط."
   },
+  "workTokenWallet": {
+    "title": "Work Tokens",
+    "subtitle": "أرصدة محاسبية فقط — الصرف والمزايدة غير متاحين بعد.",
+    "loading": "جارٍ تحميل Work Tokens…",
+    "available": "المتاح",
+    "reserved": "المحجوز",
+    "engineComingSoon": "قريبًا — اقتصاد Work Tokens غير مفعّل بعد.",
+    "engineOn": "محرك Work Tokens متاح."
+  },
   "financialClaims": {
     "title": "المطالبات المالية",
     "subtitle": "أنشئ مطالبة جديدة، وتابع المراجعة، ونافذة الاستحقاق، والمبالغ المدفوعة والمتبقية لكل طلب.",

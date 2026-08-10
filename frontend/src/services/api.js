@@ -259,6 +259,27 @@ export const getFreelancerMarketplaceMembershipRequest = async () => {
   return data;
 };
 
+/** Work Token wallet — Phase 4 read-only snapshot for Freelancer. */
+export const getFreelancerWorkTokenWalletRequest = async () => {
+  const { data } = await api.get("/freelancer/work-token-wallet");
+  return data;
+};
+
+export const getFreelancerWorkTokenTransactionsRequest = async (params = {}) => {
+  const { data } = await api.get("/freelancer/work-token-wallet/transactions", { params });
+  return data;
+};
+
+export const listAdminWorkTokenWalletsRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/work-token-wallets", { params });
+  return data;
+};
+
+export const getAdminWorkTokenWalletRequest = async (id) => {
+  const { data } = await api.get(`/super-admin/work-token-wallets/${encodeURIComponent(id)}`);
+  return data;
+};
+
 /** Super Admin Marketplace Membership inspection (Phase 3 read-only). */
 export const listAdminMarketplaceMembershipsRequest = async (params = {}) => {
   const { data } = await api.get("/super-admin/marketplace-memberships", { params });
