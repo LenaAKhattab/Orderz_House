@@ -82,6 +82,8 @@ import {
   AdminSubscriptionsActivationPage,
   AdminCoursesPage,
   AdminAdsPage,
+  AdminPantryPage,
+  FreelancerPantryPage,
   TrainingOrdersAdminShell,
   TrainingOrdersOverviewPage,
   TrainingOrdersSettingsPage,
@@ -590,6 +592,14 @@ function App() {
                   />
                   <Route path="applications" element={<TrainingOrderApplicationsPage />} />
                 </Route>
+                <Route
+                  path="/dashboard/super-admin/pantry"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.pantry}>
+                      <AdminPantryPage />
+                    </RequireStaffPage>
+                  }
+                />
 
                 <Route
                   path="/dashboard/admin"
@@ -657,6 +667,16 @@ function App() {
                     </RequireRole>
                   }
                 />
+                <Route
+                  path="/dashboard/admin/pantry"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <RequirePermission permission={SUPER_ADMIN_PAGE_PERMISSIONS.pantry}>
+                        <AdminPantryPage />
+                      </RequirePermission>
+                    </RequireRole>
+                  }
+                />
 
                 <Route
                   path="/dashboard/freelancer/institution-orders"
@@ -703,6 +723,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
                       <DashboardPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/pantry"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerPantryPage />
                     </RequireRole>
                   }
                 />

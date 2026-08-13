@@ -2644,4 +2644,80 @@ export const markAllNotificationsReadRequest = async () => {
   return data;
 };
 
+/* ---------- بيت المونة (Pantry House) ---------- */
+export const listAdminPantryRequestsRequest = async (params = {}) => {
+  const { data } = await api.get("/admin/pantry/requests", { params });
+  return data;
+};
+
+export const createAdminPantryRequestRequest = async (payload) => {
+  const { data } = await api.post("/admin/pantry/requests", payload);
+  return data;
+};
+
+export const getAdminPantryRequestRequest = async (id) => {
+  const { data } = await api.get(`/admin/pantry/requests/${id}`);
+  return data;
+};
+
+export const patchAdminPantryRequestRequest = async (id, payload) => {
+  const { data } = await api.patch(`/admin/pantry/requests/${id}`, payload);
+  return data;
+};
+
+export const publishAdminPantryRequestRequest = async (id) => {
+  const { data } = await api.post(`/admin/pantry/requests/${id}/publish`);
+  return data;
+};
+
+export const acceptAdminPantryBidRequest = async (requestId, bidId) => {
+  const { data } = await api.post(`/admin/pantry/requests/${requestId}/bids/${bidId}/accept`);
+  return data;
+};
+
+export const rejectAdminPantryBidRequest = async (requestId, bidId) => {
+  const { data } = await api.post(`/admin/pantry/requests/${requestId}/bids/${bidId}/reject`);
+  return data;
+};
+
+export const listAdminPantryDeliveriesRequest = async (params = {}) => {
+  const { data } = await api.get("/admin/pantry/deliveries", { params });
+  return data;
+};
+
+export const approveAdminPantryDeliveryRequest = async (deliveryId, payload = {}) => {
+  const { data } = await api.post(`/admin/pantry/deliveries/${deliveryId}/approve`, payload);
+  return data;
+};
+
+export const requestRevisionAdminPantryDeliveryRequest = async (deliveryId, payload = {}) => {
+  const { data } = await api.post(`/admin/pantry/deliveries/${deliveryId}/request-revision`, payload);
+  return data;
+};
+
+export const listFreelancerPantryRequestsRequest = async () => {
+  const { data } = await api.get("/freelancer/pantry/requests");
+  return data;
+};
+
+export const getFreelancerPantryRequestRequest = async (id) => {
+  const { data } = await api.get(`/freelancer/pantry/requests/${id}`);
+  return data;
+};
+
+export const submitFreelancerPantryBidRequest = async (id, payload) => {
+  const { data } = await api.post(`/freelancer/pantry/requests/${id}/bids`, payload);
+  return data;
+};
+
+export const listFreelancerPantryMyWorkRequest = async () => {
+  const { data } = await api.get("/freelancer/pantry/my-work");
+  return data;
+};
+
+export const submitFreelancerPantryDeliveryRequest = async (id, payload) => {
+  const { data } = await api.post(`/freelancer/pantry/requests/${id}/deliveries`, payload);
+  return data;
+};
+
 export default api;

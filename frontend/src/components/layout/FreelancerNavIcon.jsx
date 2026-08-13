@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   MessageCircleWarning,
+  Package,
   Settings2,
   Wallet,
 } from "lucide-react";
@@ -15,6 +16,7 @@ const ICON_MAP = {
   dashboard: LayoutDashboard,
   orders: BriefcaseBusiness,
   "my-orders": ClipboardList,
+  pantry: Package,
   wallet: Wallet,
   plans: Crown,
   messages: MessageSquare,
