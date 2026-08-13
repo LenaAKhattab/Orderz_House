@@ -829,7 +829,48 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
       ],
     );
 
-    const orderRow = rows[0];
+    let orderRow = rows[0];
+
+    // Phase E3: snapshot Admin-constrained Normal Order rules onto published bidding Orders.
+    {
+      const e3 = require("./marketplaceNormalOrderRulesService");
+      if (
+        isBidding &&
+        !isAssigned &&
+        isPublished &&
+        (await e3.normalOrderRulesSchemaReady(client))
+      ) {
+        const rules = await e3.getNormalOrderRules(client);
+        const snap = e3.buildOrderRulesSnapshotForCreate({
+          payload,
+          rules,
+          projectType: payload.projectType,
+          isBidding: true,
+        });
+        const { rows: e3Rows } = await client.query(
+          `UPDATE orders
+              SET application_bid_cost = $2,
+                  target_applicant_count = $3,
+                  application_deadline_at = $4::timestamptz,
+                  deadline_incomplete_target_policy = $5,
+                  e3_rules_version = $6,
+                  e3_rules_snapshot = $7::jsonb,
+                  updated_at = NOW()
+            WHERE id = $1
+            RETURNING *`,
+          [
+            orderRow.id,
+            snap.applicationBidCost,
+            snap.targetApplicantCount,
+            snap.applicationDeadlineAt,
+            snap.deadlineIncompleteTargetPolicy,
+            snap.e3RulesVersion,
+            JSON.stringify(snap.e3RulesSnapshot || {}),
+          ],
+        );
+        if (e3Rows[0]) orderRow = e3Rows[0];
+      }
+    }
 
     await upsertSkillsAndAttach({ orderId: orderRow.id, skills: payload.preferredSkills }, client);
 
@@ -1055,7 +1096,44 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
       ],
     );
 
-    const orderRow = rows[0];
+    let orderRow = rows[0];
+
+    // Phase E3: client bidding Orders snapshot Admin rules (same as internal create).
+    if (!isFixed) {
+      const e3 = require("./marketplaceNormalOrderRulesService");
+      if (await e3.normalOrderRulesSchemaReady(client)) {
+        const rules = await e3.getNormalOrderRules(client);
+        const snap = e3.buildOrderRulesSnapshotForCreate({
+          payload,
+          rules,
+          projectType: payload.projectType,
+          isBidding: true,
+        });
+        const { rows: e3Rows } = await client.query(
+          `UPDATE orders
+              SET application_bid_cost = $2,
+                  target_applicant_count = $3,
+                  application_deadline_at = $4::timestamptz,
+                  deadline_incomplete_target_policy = $5,
+                  e3_rules_version = $6,
+                  e3_rules_snapshot = $7::jsonb,
+                  updated_at = NOW()
+            WHERE id = $1
+            RETURNING *`,
+          [
+            orderRow.id,
+            snap.applicationBidCost,
+            snap.targetApplicantCount,
+            snap.applicationDeadlineAt,
+            snap.deadlineIncompleteTargetPolicy,
+            snap.e3RulesVersion,
+            JSON.stringify(snap.e3RulesSnapshot || {}),
+          ],
+        );
+        if (e3Rows[0]) orderRow = e3Rows[0];
+      }
+    }
+
     await safeNotify(() =>
       notificationEventsService.notifyOrderOwner(
         {
@@ -2082,6 +2160,14 @@ async function submitPoolOrderBid({
     const planOrderValueEligibility = require("./planOrderValueEligibility");
     const bidPlanRange = await planOrderValueEligibility.getFreelancerPlanOrderValueRange(freelancerUserId);
 
+    // Phase E3: applicant target / deadline / closed intake (DB-safe under order FOR UPDATE).
+    {
+      const e3 = require("./marketplaceNormalOrderRulesService");
+      if (await e3.normalOrderRulesSchemaReady(client)) {
+        await e3.assertOrderAcceptsApplications(client, order, { now: new Date() });
+      }
+    }
+
     if (!order.is_published || !order.is_open_for_pool || order.assigned_freelancer_id || order.received_at) {
       const err = new Error("Order is not available.");
       err.statusCode = 409;
@@ -2146,13 +2232,16 @@ async function submitPoolOrderBid({
     );
     const bidId = bidRows[0].id;
 
-    // Phase B2: charge exactly 1 Bid Credit on first Freelancer+Order application when bid_credits_enabled.
+    // Phase B2/E3: charge Order snapshotted Bid cost on first application when bid_credits_enabled.
     // Edits/retries skip (hadBidBefore). Fake/training never reach this function.
+    const resolvedBidCost = normalAppBids.resolveChargeAmount
+      ? normalAppBids.resolveChargeAmount(order)
+      : normalAppBids.NORMAL_APPLICATION_BID_COST;
     let bidCreditCharge = {
       charged: false,
       skipped: true,
       reason: hadBidBefore ? "existing_application" : "not_attempted",
-      bidCreditCost: hadBidBefore ? 0 : normalAppBids.NORMAL_APPLICATION_BID_COST,
+      bidCreditCost: hadBidBefore ? 0 : resolvedBidCost,
     };
     if (!hadBidBefore) {
       bidCreditCharge = await normalAppBids.chargeNormalApplicationBidCreditOnFirstBid({
@@ -2164,6 +2253,40 @@ async function submitPoolOrderBid({
         poolKind: poolKind === "real" ? "real" : poolKind,
         actorUserId: freelancerUserId,
       });
+    }
+
+    // Phase E3: auto-close applications when valid applicant target reached (order FOR UPDATE).
+    let applicantCap = null;
+    {
+      const e3 = require("./marketplaceNormalOrderRulesService");
+      if (!hadBidBefore && (await e3.normalOrderRulesSchemaReady(client))) {
+        const closeOut = await e3.maybeAutoCloseOnTargetReached(client, order, {
+          now: new Date(),
+        });
+        const count = await e3.countValidApplicants(client, orderId);
+        applicantCap = e3.applicantCapacityView(closeOut.order || order, count);
+        if (closeOut.closed) {
+          await safeNotify(() =>
+            notificationEventsService.notifyOrderOwner(
+              {
+                order: closeOut.order || order,
+                actorUserId: Number(freelancerUserId),
+                type: "order.applications.target_reached",
+                title: "اكتمل عدد المتقدمين",
+                message: "تم إغلاق باب التقديم تلقائياً بعد الوصول للعدد المطلوب.",
+                priority: "high",
+                dedupeKey: `order_apps_target_${orderId}`,
+                metadata: {
+                  orderId: String(orderId),
+                  targetApplicantCount: applicantCap.targetApplicantCount,
+                  currentApplicantCount: applicantCap.currentApplicantCount,
+                },
+              },
+              client,
+            ),
+          );
+        }
+      }
     }
 
     // Phase B4: optional Priority Application Boost (1 Priority Use; 0 extra Bids; 0 WT).
@@ -2238,7 +2361,7 @@ async function submitPoolOrderBid({
       bidCredit: {
         consumed: Boolean(bidCreditCharge.charged),
         cost: bidCreditCharge.charged
-          ? normalAppBids.NORMAL_APPLICATION_BID_COST
+          ? Number(bidCreditCharge.bidCreditCost) || resolvedBidCost
           : hadBidBefore
             ? 0
             : bidCreditCharge.bidCreditCost || 0,
@@ -2247,6 +2370,7 @@ async function submitPoolOrderBid({
         availableBidsAfter:
           bidCreditCharge.availableBidsAfter != null ? bidCreditCharge.availableBidsAfter : null,
       },
+      applicantCapacity: applicantCap,
       priorityBoost: {
         boosted: Boolean(priorityBoost.boosted),
         skipped: Boolean(priorityBoost.skipped),
@@ -4165,6 +4289,18 @@ module.exports = {
   getFreelancerAssignedOrderById,
   submitPoolOrderBid,
   claimPoolOrder,
+  patchPublishedOrderEconomicFields: async (args) => {
+    const e3 = require("./marketplaceNormalOrderRulesService");
+    return e3.patchPublishedOrderEconomicFields(args);
+  },
+  assertOrderEconomicFieldsMutable: async (args) => {
+    const e3 = require("./marketplaceNormalOrderRulesService");
+    return e3.assertOrderEconomicFieldsMutable(
+      args.client,
+      args.orderId,
+      args.patch || {},
+    );
+  },
   endOpenBiddingOrderWithoutSelection: async (args) => {
     const svc = require("./marketplaceNormalApplicationWorkTokenService");
     return svc.endOpenBiddingOrderWithoutSelection(args);

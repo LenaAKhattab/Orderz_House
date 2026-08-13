@@ -216,7 +216,27 @@ async function runBidCreditReconcileTick(req, res, next) {
   try {
     const limit = req.body?.limit != null ? Number(req.body.limit) : 100;
     const data = await distributionService.runBidCreditReconcileTick({ limit });
-    return res.json({ success: true, data });
+    // Phase E3: idempotent Normal Order application-deadline reconcile (same cron secret).
+    let normalOrderDeadlines = { processed: 0, schemaReady: false };
+    try {
+      const e3 = require("../services/marketplaceNormalOrderRulesService");
+      normalOrderDeadlines = await e3.reconcileNormalOrderApplicationDeadlines({
+        now: new Date(),
+        limit,
+      });
+    } catch (e3Err) {
+      normalOrderDeadlines = {
+        processed: 0,
+        error: e3Err?.message || String(e3Err),
+      };
+    }
+    return res.json({
+      success: true,
+      data: {
+        ...data,
+        normalOrderDeadlines,
+      },
+    });
   } catch (err) {
     return next(err);
   }

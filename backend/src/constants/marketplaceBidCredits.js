@@ -43,11 +43,21 @@ const BID_CREDIT_LEDGER_EVENT_TYPES = Object.freeze([
 
 const BID_CREDIT_LEDGER_EVENT_TYPE_SET = new Set(BID_CREDIT_LEDGER_EVENT_TYPES);
 
-/** Phase B2: first valid normal real-order application costs exactly 1 Bid. */
+/**
+ * Phase B2 default / legacy fallback: 1 Bid per first application.
+ * Phase E3: authoritative cost is Order.application_bid_cost (Admin-constrained snapshot).
+ */
 const NORMAL_APPLICATION_BID_COST = 1;
 
-/** Eligible no-selection refund restores 100% (1 Bid). */
+/** Eligible no-selection refund restores 100% of consumed quantity. */
 const NORMAL_APPLICATION_BID_REFUND_PERCENT = 100;
+
+/**
+ * E3: refunding normal application Bids does NOT restore same-day daily spend capacity.
+ * (Distinct from E2 Article reservation release, which restores daily spend because
+ * reservation is not final consumption.)
+ */
+const NORMAL_ORDER_REFUND_RESTORES_DAILY_CAP = false;
 
 /** Compensating refund grant lifetime when original source grant is already expired. */
 const NORMAL_APPLICATION_BID_REFUND_COMPENSATING_DAYS = 30;
@@ -93,6 +103,7 @@ module.exports = {
   NORMAL_APPLICATION_BID_COST,
   NORMAL_APPLICATION_BID_REFUND_PERCENT,
   NORMAL_APPLICATION_BID_REFUND_COMPENSATING_DAYS,
+  NORMAL_ORDER_REFUND_RESTORES_DAILY_CAP,
   BID_CREDIT_ERROR_CODES,
   BID_CREDIT_PRODUCT_LABEL_EN,
   BID_CREDIT_PRODUCT_LABEL_AR,

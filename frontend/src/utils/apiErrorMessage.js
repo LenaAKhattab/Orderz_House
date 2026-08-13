@@ -143,6 +143,16 @@ export function getSafeApiErrorMessage(err, fallback = DEFAULT_GENERIC_AR) {
     return "تعذر الاتصال بالخادم. تحقق من الاتصال وحاول مجدداً.";
   }
 
+  const code = err?.response?.data?.code;
+  if (
+    code === "WORK_TOKENS_DEPRECATED" ||
+    code === "WORK_TOKENS_ENGINE_DEPRECATED" ||
+    code === "VERIFICATION_WORK_TOKEN_REWARDS_DEPRECATED" ||
+    code === "PRIORITY_BIDDING_ENGINE_DEPRECATED"
+  ) {
+    return "هذا الإجراء غير متاح.";
+  }
+
   const msg = err?.response?.data?.message;
   if (typeof msg !== "string" || !msg.trim()) {
     return fallback;

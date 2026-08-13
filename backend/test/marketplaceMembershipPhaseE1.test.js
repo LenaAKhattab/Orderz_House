@@ -199,12 +199,14 @@ describe("Phase E1 wiring", () => {
     assert.doesNotMatch(dist, /work_token/i);
   });
 
-  it("public plans mapper shows duration/daily/project/withdrawal", () => {
+  it("public plans mapper exposes daily/project/withdrawal via metrics + features", () => {
     const mapper = read(
       path.join("..", "frontend", "src", "lib", "marketplaceMembership", "mapMarketplaceMembershipPlanForPublicPlans.js"),
     );
-    assert.match(mapper, /Daily Bid limit|الحد اليومي/);
-    assert.match(mapper, /Withdrawal disabled|السحب متوقف/);
-    assert.match(mapper, /cycleDurationDays/);
+    // Current /plans UX: daily + project caps live in primaryMetrics; withdrawal in secondary features.
+    assert.match(mapper, /dailyLimit|dailyBidSpendLimit/);
+    assert.match(mapper, /Withdrawal available|Withdrawal unavailable|السحب متاح|السحب غير متاح/);
+    assert.match(mapper, /cycleDurationDays|durationDays/);
+    assert.match(mapper, /primaryMetrics/);
   });
 });

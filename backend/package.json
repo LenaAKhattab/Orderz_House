@@ -104,6 +104,8 @@
     "test:marketplace-bid-distribution-pool-phase-d1": "node --test test/marketplaceBidDistributionPoolPhaseD1.test.js",
     "test:marketplace-bid-distribution-pool-phase-d1-gate": "node scripts/runMarketplaceBidDistributionPoolPhaseD1Gate.js",
     "test:marketplace-membership-e1": "node --test test/marketplaceMembershipPhaseE1.test.js",
+    "test:marketplace-normal-order-rules-e3": "node --test test/marketplaceNormalOrderRulesPhaseE3.test.js",
+    "test:marketplace-normal-order-rules-e3-gate": "node scripts/runMarketplaceNormalOrderRulesPhaseE3Gate.js",
     "test:migrate-production-next": "node --test test/runNextProductionMigration.test.js"
   },
   "keywords": [

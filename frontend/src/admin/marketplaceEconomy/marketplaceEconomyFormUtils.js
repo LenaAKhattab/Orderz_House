@@ -57,6 +57,32 @@ export const MARKETPLACE_ECONOMY_DEFAULT_FORM = Object.freeze({
   cashMembershipPaymentsEnabled: false,
   eliteEngineEnabled: false,
   verificationBonusesEnabled: false,
+
+  // Phase E3 Normal Order Admin limits
+  normalOrderMinValueJod: "1",
+  normalOrderMaxValueJod: "10000",
+  normalOrderMinTargetApplicants: "1",
+  normalOrderMaxTargetApplicants: "200",
+  normalOrderDefaultTargetApplicants: "10",
+  normalOrderMinBidCost: "1",
+  normalOrderMaxBidCost: "20",
+  normalOrderDefaultBidCost: "1",
+  normalOrderMinApplicationPeriodHours: "1",
+  normalOrderMaxApplicationPeriodHours: "720",
+  normalOrderDefaultApplicationPeriodHours: "72",
+  normalOrderMinExecutionDurationHours: "1",
+  normalOrderMaxExecutionDurationHours: "2160",
+  normalOrderDefaultExecutionDurationHours: "72",
+  normalOrderDeadlineIncompleteTargetPolicy: "continue_with_received",
+  normalOrderRefundClientCancelBeforeSelection: "full",
+  normalOrderRefundSystemCancel: "full",
+  normalOrderRefundDeadlineNoSelection: "full",
+  normalOrderRefundNoFreelancerSelected: "full",
+  normalOrderRefundFreelancerWithdrawal: "none",
+  normalOrderRefundRejectedApplication: "none",
+  normalOrderRefundLosingApplicant: "none",
+  normalOrderRefundPostAwardCancel: "none",
+  normalOrderBusinessTimezone: "Asia/Amman",
 });
 
 const ASSIGNMENT_STRATEGIES = new Set([
@@ -66,8 +92,16 @@ const ASSIGNMENT_STRATEGIES = new Set([
 ]);
 
 export const ASSIGNMENT_STRATEGIES_UI = Object.freeze([
-  { value: "HIGHEST_TOKEN_ONLY", label: "HIGHEST_TOKEN_ONLY", available: true },
-  { value: "FAIR_DISTRIBUTION_FIRST", label: "FAIR_DISTRIBUTION_FIRST", available: true },
+  {
+    value: "HIGHEST_TOKEN_ONLY",
+    label: "Highest eligible first",
+    available: true,
+  },
+  {
+    value: "FAIR_DISTRIBUTION_FIRST",
+    label: "Fair distribution first",
+    available: true,
+  },
   {
     value: "HYBRID",
     label: "HYBRID (unavailable — weight policy required)",
@@ -164,6 +198,49 @@ export function settingsToFormState(settings) {
     cashMembershipPaymentsEnabled: Boolean(settings.cashMembershipPaymentsEnabled),
     eliteEngineEnabled: Boolean(settings.eliteEngineEnabled),
     verificationBonusesEnabled: Boolean(settings.verificationBonusesEnabled),
+
+    normalOrderMinValueJod: money(settings.normalOrderMinValueJod ?? 1),
+    normalOrderMaxValueJod: money(settings.normalOrderMaxValueJod ?? 10000),
+    normalOrderMinTargetApplicants: String(settings.normalOrderMinTargetApplicants ?? 1),
+    normalOrderMaxTargetApplicants: String(settings.normalOrderMaxTargetApplicants ?? 200),
+    normalOrderDefaultTargetApplicants: String(settings.normalOrderDefaultTargetApplicants ?? 10),
+    normalOrderMinBidCost: String(settings.normalOrderMinBidCost ?? 1),
+    normalOrderMaxBidCost: String(settings.normalOrderMaxBidCost ?? 20),
+    normalOrderDefaultBidCost: String(settings.normalOrderDefaultBidCost ?? 1),
+    normalOrderMinApplicationPeriodHours: String(
+      settings.normalOrderMinApplicationPeriodHours ?? 1,
+    ),
+    normalOrderMaxApplicationPeriodHours: String(
+      settings.normalOrderMaxApplicationPeriodHours ?? 720,
+    ),
+    normalOrderDefaultApplicationPeriodHours: String(
+      settings.normalOrderDefaultApplicationPeriodHours ?? 72,
+    ),
+    normalOrderMinExecutionDurationHours: String(
+      settings.normalOrderMinExecutionDurationHours ?? 1,
+    ),
+    normalOrderMaxExecutionDurationHours: String(
+      settings.normalOrderMaxExecutionDurationHours ?? 2160,
+    ),
+    normalOrderDefaultExecutionDurationHours: String(
+      settings.normalOrderDefaultExecutionDurationHours ?? 72,
+    ),
+    normalOrderDeadlineIncompleteTargetPolicy:
+      settings.normalOrderDeadlineIncompleteTargetPolicy || "continue_with_received",
+    normalOrderRefundClientCancelBeforeSelection:
+      settings.normalOrderRefundClientCancelBeforeSelection || "full",
+    normalOrderRefundSystemCancel: settings.normalOrderRefundSystemCancel || "full",
+    normalOrderRefundDeadlineNoSelection:
+      settings.normalOrderRefundDeadlineNoSelection || "full",
+    normalOrderRefundNoFreelancerSelected:
+      settings.normalOrderRefundNoFreelancerSelected || "full",
+    normalOrderRefundFreelancerWithdrawal:
+      settings.normalOrderRefundFreelancerWithdrawal || "none",
+    normalOrderRefundRejectedApplication:
+      settings.normalOrderRefundRejectedApplication || "none",
+    normalOrderRefundLosingApplicant: settings.normalOrderRefundLosingApplicant || "none",
+    normalOrderRefundPostAwardCancel: settings.normalOrderRefundPostAwardCancel || "none",
+    normalOrderBusinessTimezone: settings.normalOrderBusinessTimezone || "Asia/Amman",
   };
 }
 
@@ -312,6 +389,114 @@ export function validateMarketplaceEconomyForm(form, { isEn = false } = {}) {
     cashMembershipPaymentsEnabled: Boolean(form.cashMembershipPaymentsEnabled),
     eliteEngineEnabled: Boolean(form.eliteEngineEnabled),
     verificationBonusesEnabled: false,
+
+    // Phase E3
+    normalOrderMinValueJod: (() => {
+      const n = toFiniteNumber(form.normalOrderMinValueJod);
+      if (n == null || n <= 0 || n > 1_000_000) {
+        errors.normalOrderMinValueJod = t(
+          "الحد الأدنى لقيمة الطلب غير صالح.",
+          "Min order value invalid.",
+        );
+        return null;
+      }
+      return roundMoney3(n);
+    })(),
+    normalOrderMaxValueJod: (() => {
+      const n = toFiniteNumber(form.normalOrderMaxValueJod);
+      if (n == null || n <= 0 || n > 1_000_000) {
+        errors.normalOrderMaxValueJod = t(
+          "الحد الأقصى لقيمة الطلب غير صالح.",
+          "Max order value invalid.",
+        );
+        return null;
+      }
+      return roundMoney3(n);
+    })(),
+    normalOrderMinTargetApplicants: intRange(
+      "normalOrderMinTargetApplicants",
+      t("حد أدنى للمتقدمين", "Min applicants"),
+      1,
+      10000,
+    ),
+    normalOrderMaxTargetApplicants: intRange(
+      "normalOrderMaxTargetApplicants",
+      t("حد أقصى للمتقدمين", "Max applicants"),
+      1,
+      10000,
+    ),
+    normalOrderDefaultTargetApplicants: intRange(
+      "normalOrderDefaultTargetApplicants",
+      t("العدد الافتراضي للمتقدمين", "Default applicants"),
+      1,
+      10000,
+    ),
+    normalOrderMinBidCost: intRange("normalOrderMinBidCost", "Min Bid cost", 1, 1000),
+    normalOrderMaxBidCost: intRange("normalOrderMaxBidCost", "Max Bid cost", 1, 1000),
+    normalOrderDefaultBidCost: intRange(
+      "normalOrderDefaultBidCost",
+      t("تكلفة العرض الافتراضية", "Default Bid cost"),
+      1,
+      1000,
+    ),
+    normalOrderMinApplicationPeriodHours: intRange(
+      "normalOrderMinApplicationPeriodHours",
+      "Min application hours",
+      1,
+      8760,
+    ),
+    normalOrderMaxApplicationPeriodHours: intRange(
+      "normalOrderMaxApplicationPeriodHours",
+      "Max application hours",
+      1,
+      8760,
+    ),
+    normalOrderDefaultApplicationPeriodHours: intRange(
+      "normalOrderDefaultApplicationPeriodHours",
+      "Default application hours",
+      1,
+      8760,
+    ),
+    normalOrderMinExecutionDurationHours: intRange(
+      "normalOrderMinExecutionDurationHours",
+      "Min execution hours",
+      1,
+      87600,
+    ),
+    normalOrderMaxExecutionDurationHours: intRange(
+      "normalOrderMaxExecutionDurationHours",
+      "Max execution hours",
+      1,
+      87600,
+    ),
+    normalOrderDefaultExecutionDurationHours: intRange(
+      "normalOrderDefaultExecutionDurationHours",
+      "Default execution hours",
+      1,
+      87600,
+    ),
+    normalOrderDeadlineIncompleteTargetPolicy: String(
+      form.normalOrderDeadlineIncompleteTargetPolicy || "continue_with_received",
+    ),
+    normalOrderRefundClientCancelBeforeSelection: String(
+      form.normalOrderRefundClientCancelBeforeSelection || "full",
+    ),
+    normalOrderRefundSystemCancel: String(form.normalOrderRefundSystemCancel || "full"),
+    normalOrderRefundDeadlineNoSelection: String(
+      form.normalOrderRefundDeadlineNoSelection || "full",
+    ),
+    normalOrderRefundNoFreelancerSelected: String(
+      form.normalOrderRefundNoFreelancerSelected || "full",
+    ),
+    normalOrderRefundFreelancerWithdrawal: String(
+      form.normalOrderRefundFreelancerWithdrawal || "none",
+    ),
+    normalOrderRefundRejectedApplication: String(
+      form.normalOrderRefundRejectedApplication || "none",
+    ),
+    normalOrderRefundLosingApplicant: String(form.normalOrderRefundLosingApplicant || "none"),
+    normalOrderRefundPostAwardCancel: String(form.normalOrderRefundPostAwardCancel || "none"),
+    normalOrderBusinessTimezone: String(form.normalOrderBusinessTimezone || "Asia/Amman"),
   };
 
   const blockingNull = Object.entries(patch).some(([, v]) => v === null);

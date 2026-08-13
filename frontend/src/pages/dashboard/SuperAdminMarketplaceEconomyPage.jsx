@@ -168,14 +168,14 @@ export default function SuperAdminMarketplaceEconomyPage() {
             These settings belong to <strong>Work memberships (باقات العمل)</strong> only. They do{" "}
             <strong>not</strong> control Main packages or Plan pages. Fake/training orders are excluded —
             economy policy applies to real customer-funded orders only. Changing values here does not
-            grant, deduct, or refund tokens and does not run commission or Elite engines.
+            grant, deduct, or refund Bids and does not run commission or Elite engines.
           </>
         ) : (
           <>
             هذه الإعدادات تخص <strong>باقات العمل</strong> فقط، ولا تتحكم في{" "}
             <strong>الباقات الرئيسية</strong> أو <strong>باقات الصفحات</strong>. الطلبات التجريبية
             مستثناة — السياسة الاقتصادية للطلبات الحقيقية المموّلة من العملاء فقط. تغيير القيم هنا لا
-            يمنح ولا يخصم ولا يسترد Tokens ولا يشغّل العمولة أو نظام Elite.
+            يمنح ولا يخصم ولا يسترد العروض ولا يشغّل العمولة أو نظام Elite.
           </>
         )}
       </p>
@@ -200,45 +200,16 @@ export default function SuperAdminMarketplaceEconomyPage() {
       {!loading && !error && form ? (
         <>
           <div className="oh-mes-sections">
-            <section className="oh-mes-section oh-mes-section--deprecated" aria-labelledby="mes-tokens-title">
-              <h2 id="mes-tokens-title" className="oh-mes-section__title">
-                {isEn
-                  ? "1. Work Tokens engine — DEPRECATED (technical)"
-                  : "أولاً: محرك Work Tokens — مهجور (تقني)"}
-              </h2>
-              <p className="oh-mes-section__lede">
-                {isEn
-                  ? "Hidden from normal product workflow. Engine is forced OFF and cannot be re-enabled from this UI. Active Freelancer economy uses Bids + Priority Uses. Schema retained for audit/rollback only."
-                  : "مخفي عن سير المنتج العادي. المحرك مفروض متوقفاً ولا يمكن إعادة تفعيله من هذه الواجهة. اقتصاد المستقل النشط: العروض + مرات الأولوية. المخطط محفوظ للتدقيق/التراجع فقط."}
-              </p>
-              <div className="oh-mes-grid">
-                <div className="oh-mes-field oh-mes-field--full">
-                  <Toggle
-                    id="mes-flag-tokens"
-                    label={isEn ? "Work Tokens engine (locked OFF)" : "محرك Work Tokens (مقفول متوقف)"}
-                    checked={false}
-                    disabled
-                    onChange={() => {}}
-                  />
-                  <p className="oh-mes-help">
-                    {isEn
-                      ? "work_tokens_enabled remains false. Do not repurpose for Bids."
-                      : "work_tokens_enabled يبقى false. لا يُعاد استخدامه للعروض."}
-                  </p>
-                </div>
-              </div>
-            </section>
-
             <section className="oh-mes-section" aria-labelledby="mes-priority-boost-title">
               <h2 id="mes-priority-boost-title" className="oh-mes-section__title">
                 {isEn
-                  ? "2a. Priority Application Boost (active product — dormant)"
-                  : "2أ. تعزيز عرض الأولوية (المنتج النشط — خامل)"}
+                  ? "1. Priority Application Boost (active product — dormant)"
+                  : "أولاً: تعزيز عرض الأولوية (المنتج النشط — خامل)"}
               </h2>
               <p className="oh-mes-section__lede">
                 {isEn
-                  ? "Binary boost: 1 Bid + 1 Priority Use. No extra Bids, no Work Tokens, no automatic assignment. Keep OFF until Phase B4 migration is reviewed and cutover is approved."
-                  : "تعزيز ثنائي: عرض واحد + استخدام أولوية واحد. بلا عروض إضافية، بلا Work Tokens، بلا إسناد تلقائي. أبقِه متوقفاً حتى مراجعة هجرة B4 واعتماد التشغيل."}
+                  ? "Binary boost: 1 Bid + 1 Priority Use. No extra Bids and no automatic assignment. Keep OFF until migration review and cutover are approved."
+                  : "تعزيز ثنائي: عرض واحد + استخدام أولوية واحد. بلا عروض إضافية وبلا إسناد تلقائي. أبقِه متوقفاً حتى مراجعة الهجرة واعتماد التشغيل."}
               </p>
               <div className="oh-mes-grid">
                 <div className="oh-mes-field oh-mes-field--full">
@@ -255,8 +226,8 @@ export default function SuperAdminMarketplaceEconomyPage() {
                   />
                   <p className="oh-mes-help">
                     {isEn
-                      ? "Independent of legacy Token auction (priority_bidding_enabled). Default OFF / DORMANT."
-                      : "مستقل عن مزاد Tokens القديم (priority_bidding_enabled). الافتراضي متوقف / خامل."}
+                      ? "Uses Membership Priority Uses with the normal Bid cost. Default OFF / DORMANT."
+                      : "يستخدم مرات الأولوية من الباقة مع تكلفة العرض العادية. الافتراضي متوقف / خامل."}
                   </p>
                 </div>
               </div>
@@ -265,8 +236,8 @@ export default function SuperAdminMarketplaceEconomyPage() {
             <section className="oh-mes-section" aria-labelledby="mes-bid-purchases-title">
               <h2 id="mes-bid-purchases-title" className="oh-mes-section__title">
                 {isEn
-                  ? "2a+. Bid Credits + package purchases (dormant)"
-                  : "2أ+. العروض المتاحة + شراء الباقات (خامل)"}
+                  ? "2. Bids + package purchases (dormant)"
+                  : "ثانياً: العروض المتاحة + شراء الباقات (خامل)"}
               </h2>
               <p className="oh-mes-section__lede">
                 {isEn
@@ -299,31 +270,140 @@ export default function SuperAdminMarketplaceEconomyPage() {
               </div>
             </section>
 
-            <section className="oh-mes-section oh-mes-section--deprecated" aria-labelledby="mes-priority-title">
-              <h2 id="mes-priority-title" className="oh-mes-section__title">
+            <section className="oh-mes-section" aria-labelledby="mes-e3-orders-title">
+              <h2 id="mes-e3-orders-title" className="oh-mes-section__title">
                 {isEn
-                  ? "2b. Legacy Priority Auction — DEPRECATED (technical)"
-                  : "2ب. مزاد الأولوية القديم — مهجور (تقني)"}
+                  ? "2b. Normal Order Admin rules (E3)"
+                  : "٢ب: قواعد الطلبات العادية (E3)"}
               </h2>
               <p className="oh-mes-section__lede">
                 {isEn
-                  ? "Not an alternative to Priority Application Boost. Token-stake auction config removed from normal Admin workflow. Engine forced OFF; schema retained for historical audit only."
-                  : "ليس بديلاً عن تعزيز عرض الأولوية. إعدادات مزاد Tokens أُزيلت من سير المسؤول العادي. المحرك مفروض متوقفاً؛ المخطط محفوظ للتدقيق التاريخي فقط."}
+                  ? "Global limits snapshotted onto new bidding Orders. Changing these does not rewrite published Orders. Bid Credits engine stays independent."
+                  : "حدود عامة تُحفظ لقطة على الطلبات الجديدة. تغييرها لا يعدّل الطلبات المنشورة. محرك العروض مستقل."}
               </p>
               <div className="oh-mes-grid">
-                <div className="oh-mes-field oh-mes-field--full">
-                  <Toggle
-                    id="mes-flag-priority"
-                    label={
-                      isEn
-                        ? "Legacy Priority Bidding engine (locked OFF)"
-                        : "محرك مزاد الأولوية القديم (مقفول متوقف)"
-                    }
-                    checked={false}
-                    disabled
-                    onChange={() => {}}
+                <Field
+                  id="mes-e3-min-value"
+                  label={isEn ? "Min order value (JOD)" : "حد أدنى لقيمة الطلب"}
+                  error={null}
+                >
+                  <input
+                    id="mes-e3-min-value"
+                    className="oh-mes-input"
+                    value={form.normalOrderMinValueJod || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("normalOrderMinValueJod", e.target.value)}
                   />
-                </div>
+                </Field>
+                <Field
+                  id="mes-e3-max-value"
+                  label={isEn ? "Max order value (JOD)" : "حد أقصى لقيمة الطلب"}
+                >
+                  <input
+                    id="mes-e3-max-value"
+                    className="oh-mes-input"
+                    value={form.normalOrderMaxValueJod || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("normalOrderMaxValueJod", e.target.value)}
+                  />
+                </Field>
+                <Field
+                  id="mes-e3-def-bid"
+                  label={isEn ? "Default Bid cost" : "تكلفة العرض الافتراضية"}
+                >
+                  <input
+                    id="mes-e3-def-bid"
+                    className="oh-mes-input"
+                    value={form.normalOrderDefaultBidCost || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("normalOrderDefaultBidCost", e.target.value)}
+                  />
+                </Field>
+                <Field id="mes-e3-min-bid" label={isEn ? "Min Bid cost" : "حد أدنى لتكلفة العرض"}>
+                  <input
+                    id="mes-e3-min-bid"
+                    className="oh-mes-input"
+                    value={form.normalOrderMinBidCost || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("normalOrderMinBidCost", e.target.value)}
+                  />
+                </Field>
+                <Field id="mes-e3-max-bid" label={isEn ? "Max Bid cost" : "حد أقصى لتكلفة العرض"}>
+                  <input
+                    id="mes-e3-max-bid"
+                    className="oh-mes-input"
+                    value={form.normalOrderMaxBidCost || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("normalOrderMaxBidCost", e.target.value)}
+                  />
+                </Field>
+                <Field
+                  id="mes-e3-def-apps"
+                  label={isEn ? "Default target applicants" : "عدد المتقدمين الافتراضي"}
+                >
+                  <input
+                    id="mes-e3-def-apps"
+                    className="oh-mes-input"
+                    value={form.normalOrderDefaultTargetApplicants || ""}
+                    disabled={saving}
+                    onChange={(e) =>
+                      setField("normalOrderDefaultTargetApplicants", e.target.value)
+                    }
+                  />
+                </Field>
+                <Field
+                  id="mes-e3-min-apps"
+                  label={isEn ? "Min target applicants" : "حد أدنى للمتقدمين"}
+                >
+                  <input
+                    id="mes-e3-min-apps"
+                    className="oh-mes-input"
+                    value={form.normalOrderMinTargetApplicants || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("normalOrderMinTargetApplicants", e.target.value)}
+                  />
+                </Field>
+                <Field
+                  id="mes-e3-max-apps"
+                  label={isEn ? "Max target applicants" : "حد أقصى للمتقدمين"}
+                >
+                  <input
+                    id="mes-e3-max-apps"
+                    className="oh-mes-input"
+                    value={form.normalOrderMaxTargetApplicants || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("normalOrderMaxTargetApplicants", e.target.value)}
+                  />
+                </Field>
+                <Field
+                  id="mes-e3-deadline-policy"
+                  label={
+                    isEn
+                      ? "Deadline before target policy"
+                      : "سياسة الموعد قبل اكتمال المتقدمين"
+                  }
+                  full
+                >
+                  <select
+                    id="mes-e3-deadline-policy"
+                    className="oh-mes-input"
+                    value={form.normalOrderDeadlineIncompleteTargetPolicy || "continue_with_received"}
+                    disabled={saving}
+                    onChange={(e) =>
+                      setField("normalOrderDeadlineIncompleteTargetPolicy", e.target.value)
+                    }
+                  >
+                    <option value="continue_with_received">
+                      {isEn ? "Continue with received" : "المتابعة بالمتقدمين الحاليين"}
+                    </option>
+                    <option value="cancel_and_refund">
+                      {isEn ? "Cancel and refund Bids" : "إلغاء واسترجاع العروض"}
+                    </option>
+                    <option value="require_admin_review">
+                      {isEn ? "Require Admin review" : "مراجعة الإدارة"}
+                    </option>
+                  </select>
+                </Field>
               </div>
             </section>
 
@@ -403,7 +483,11 @@ export default function SuperAdminMarketplaceEconomyPage() {
                     onChange={(e) => setField("fairnessWeight", e.target.value)}
                   />
                 </Field>
-                <Field id="mes-w-token" label="token_weight" error={fieldErrors.tokenWeight}>
+                <Field
+                  id="mes-w-token"
+                  label={isEn ? "Priority ranking weight" : "وزن ترتيب الأولوية"}
+                  error={fieldErrors.tokenWeight}
+                >
                   <input
                     id="mes-w-token"
                     className="oh-mes-input"
@@ -531,37 +615,9 @@ export default function SuperAdminMarketplaceEconomyPage() {
               </div>
             </section>
 
-            <section className="oh-mes-section oh-mes-section--deprecated" aria-labelledby="mes-verify-title">
-              <h2 id="mes-verify-title" className="oh-mes-section__title">
-                {isEn
-                  ? "6. Verification Work Token bonuses — DEPRECATED (technical)"
-                  : "سادساً: مكافآت توثيق Work Tokens — مهجور (تقني)"}
-              </h2>
-              <p className="oh-mes-section__lede">
-                {isEn
-                  ? "Legacy Work Token reward amounts are hidden from normal Admin workflow. No active path grants Work Tokens for verification. DB columns retained for history."
-                  : "مبالغ مكافآت Work Tokens مخفية عن سير المسؤول العادي. لا يوجد مسار نشط يمنح Work Tokens للتوثيق. أعمدة قاعدة البيانات محفوظة للتاريخ."}
-              </p>
-              <div className="oh-mes-grid">
-                <div className="oh-mes-field oh-mes-field--full">
-                  <Toggle
-                    id="mes-flag-verify"
-                    label={
-                      isEn
-                        ? "Verification Work Token rewards engine (locked OFF)"
-                        : "محرك مكافآت توثيق Work Tokens (مقفول متوقف)"
-                    }
-                    checked={false}
-                    disabled
-                    onChange={() => {}}
-                  />
-                </div>
-              </div>
-            </section>
-
             <section className="oh-mes-section" aria-labelledby="mes-elite-title">
               <h2 id="mes-elite-title" className="oh-mes-section__title">
-                {isEn ? "7. Elite Direct Orders" : "سابعاً: Elite"}
+                {isEn ? "6. Elite Direct Orders" : "سادساً: Elite"}
               </h2>
               <p className="oh-mes-section__lede">
                 {isEn

@@ -414,10 +414,10 @@ function humanSummaryEn(reasonCodes, scope) {
     parts.push(`no previous assignment in ${scopeLabel}`);
   }
   if (reasonCodes.includes(FAIR_DISTRIBUTION_REASON_CODES.PRIORITY_TOKEN_TIE_BREAK)) {
-    parts.push("Priority Token bid used only as tie-break");
+    parts.push("priority ranking used only as tie-break");
   }
   if (reasonCodes.includes(FAIR_DISTRIBUTION_REASON_CODES.SELECTED_BY_HIGHEST_TOKEN_ONLY)) {
-    parts.push("selected by HIGHEST_TOKEN_ONLY");
+    parts.push("selected by highest-eligible-first strategy");
   }
   if (!parts.length) parts.push("selected by Fair Distribution lexicographic queue");
   return parts.join("; ");

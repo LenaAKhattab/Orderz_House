@@ -24,16 +24,27 @@ const {
 } = require("../src/utils/marketplaceMembershipSalePricing");
 const {
   MARKETPLACE_MEMBERSHIP_TIER_CODES,
+  MARKETPLACE_MEMBERSHIP_ACTIVE_TIER_CODES,
   isValidMarketplaceTierCode,
 } = require("../src/constants/marketplaceMembershipPlans");
 
 describe("marketplace membership tier codes", () => {
-  it("lists the four initial codes", () => {
-    assert.deepStrictEqual(MARKETPLACE_MEMBERSHIP_TIER_CODES, [
-      "pay_as_you_work",
-      "active",
+  it("lists E1 active codes plus retained legacy codes", () => {
+    assert.deepStrictEqual([...MARKETPLACE_MEMBERSHIP_ACTIVE_TIER_CODES], [
+      "starter",
+      "silver",
       "pro",
       "elite",
+    ]);
+    assert.deepStrictEqual([...MARKETPLACE_MEMBERSHIP_TIER_CODES], [
+      "starter",
+      "silver",
+      "pro",
+      "elite",
+      "free",
+      "start",
+      "active",
+      "pay_as_you_work",
     ]);
   });
 
@@ -197,7 +208,7 @@ describe("isolation from legacy / fake systems", () => {
     assert.doesNotMatch(publicRoutes, /plan-pages/);
   });
 
-  it("public Plans.jsx still uses legacy listPublicPlansRequest only", () => {
+  it("public /plans uses Marketplace Membership; slug path stays legacy-isolated", () => {
     const plansPage = fs.readFileSync(
       path.join(__dirname, "../../frontend/src/pages/Plans.jsx"),
       "utf8",
@@ -210,8 +221,12 @@ describe("isolation from legacy / fake systems", () => {
       path.join(__dirname, "../../frontend/src/hooks/useFreelancerPlansCheckout.js"),
       "utf8",
     );
-    assert.doesNotMatch(plansPage, /marketplace-membership-plans|MarketplaceMembership/);
-    assert.doesNotMatch(usePlans, /marketplace-membership-plans|listPublicMarketplaceMembership/);
-    assert.doesNotMatch(checkout, /marketplace-membership-plans|listPublicMarketplaceMembership/);
+    assert.match(usePlans, /listPublicMarketplaceMembershipPlansRequest/);
+    assert.match(usePlans, /fetchPublicPlans:\s*Boolean\(slug\)/);
+    assert.match(usePlans, /getPublicPlanPageBySlugRequest/);
+    assert.match(usePlans, /marketplace_membership/);
+    assert.match(usePlans, /legacy_page_package/);
+    assert.doesNotMatch(checkout, /listPublicMarketplaceMembership/);
+    assert.doesNotMatch(plansPage, /listPublicPlansRequest/);
   });
 });

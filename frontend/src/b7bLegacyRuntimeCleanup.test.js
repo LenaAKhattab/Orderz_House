@@ -53,10 +53,15 @@ describe("B7B dead WT frontend removed", () => {
     assert.match(hook, /listPublicMarketplaceMembershipPlansRequest/);
   });
 
-  it("economy Admin hides verification WT amount controls", () => {
+  it("economy Admin has no Work Token / verification reward controls", () => {
     const page = read("pages/dashboard/SuperAdminMarketplaceEconomyPage.jsx");
-    assert.match(page, /Verification Work Token bonuses — DEPRECATED/);
+    assert.doesNotMatch(page, /Work Token/i);
+    assert.doesNotMatch(page, /Verification Work Token/i);
+    assert.doesNotMatch(page, /id="mes-flag-tokens"/);
+    assert.doesNotMatch(page, /id="mes-flag-verify"/);
     assert.doesNotMatch(page, /id="mes-id-bonus"/);
     assert.doesNotMatch(page, /id="mes-payout-bonus"/);
+    assert.match(page, /Priority Application Boost/);
+    assert.match(page, /Enable Bid Credits engine/);
   });
 });

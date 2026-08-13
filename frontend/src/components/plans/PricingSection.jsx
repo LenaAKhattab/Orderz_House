@@ -32,14 +32,24 @@ const PricingSection = ({
   layoutVariant = PLANS_LAYOUT_VARIANT.MAIN_FIVE_CARD,
   activationFeeNeedsPayment = false,
   activationFee = null,
+  forceMembershipHero = false,
 }) => {
   const { t } = useTranslation();
   const plansList = Array.isArray(plans) ? plans : [];
   const featuredIndex = pickFeaturedPlanIndex(plansList);
   const isDashboard = variant === "dashboard";
   const layout = isDashboard ? null : getPlansLayoutConfig(layoutVariant);
+  const isMembershipCatalog =
+    !isDashboard &&
+    (forceMembershipHero ||
+      (loading
+        ? layoutVariant !== PLANS_LAYOUT_VARIANT.LEGACY_THREE_CARD && !pageTitle
+        : plansList.some(
+            (p) => p?.catalogSource === "marketplace_membership" || p?.marketplaceMembership,
+          )));
   const title = pageTitle || t("plans.hero.title");
   const subtitle = pageSubtitle || t("plans.hero.subtitle");
+  const eyebrow = isMembershipCatalog ? t("plans.hero.eyebrow") : null;
   const skeletonCount = isDashboard ? 3 : layout.skeletonCount;
   const isLegacyPublic =
     !isDashboard && layoutVariant === PLANS_LAYOUT_VARIANT.LEGACY_THREE_CARD;
@@ -57,7 +67,15 @@ const PricingSection = ({
 
     <section
 
-      className={`pricing ${isDashboard ? "pricing--dashboard" : "pricing-ref-shell"}`.trim()}
+      id={forceMembershipHero ? "plans-panel-membership" : undefined}
+
+      role={forceMembershipHero ? "tabpanel" : undefined}
+
+      aria-labelledby={forceMembershipHero ? "plans-tab-membership" : undefined}
+
+      className={`pricing ${isDashboard ? "pricing--dashboard" : "pricing-ref-shell"} ${
+        isMembershipCatalog ? "pricing--membership" : ""
+      }`.trim()}
 
       aria-label={t("plans.sectionAria")}
 
@@ -65,8 +83,10 @@ const PricingSection = ({
 
       {isDashboard ? null : (
         <PublicPageHeader
+          className={isMembershipCatalog ? "public-page-hero--membership" : ""}
           title={title}
           subtitle={subtitle}
+          eyebrow={eyebrow}
           trustPills={trustPills}
           afterLede={
             layout?.showActivationFeeNote && feeEnabled ? (

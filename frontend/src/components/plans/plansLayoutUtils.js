@@ -43,8 +43,8 @@ export function resolvePublicPlansGridClassName(planCount) {
   const count = Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
   const base = "pricing__grid--public-dynamic";
   if (count <= 0) {
-    // Loading / empty: prefer the 3-column catalog shell
-    return `${base} pricing__grid--plans-three-columns`;
+    // Loading / empty: Marketplace Membership is four active plans.
+    return `${base} pricing__grid--plans-4`;
   }
   if (count <= 4) {
     return `${base} pricing__grid--plans-${count}`;
@@ -56,11 +56,14 @@ export function getPlansLayoutConfig(layoutVariant) {
   const isLegacy = layoutVariant === PLANS_LAYOUT_VARIANT.LEGACY_THREE_CARD;
   return {
     layoutVariant,
-    skeletonCount: isLegacy ? 3 : 6,
+    // Main public /plans is Marketplace Membership: STARTER|SILVER|PRO|ELITE.
+    skeletonCount: isLegacy ? 3 : 4,
     /** Legacy keeps a fixed class; main public grid is count-driven at render time. */
-    gridClassName: isLegacy ? "pricing__grid--legacy-three" : "pricing__grid--public-dynamic pricing__grid--plans-three-columns",
-    showActivationFeeNote: !isLegacy,
-    pageModifierClass: isLegacy ? "plans-page--legacy-offer" : "plans-page--main-five",
+    gridClassName: isLegacy
+      ? "pricing__grid--legacy-three"
+      : "pricing__grid--public-dynamic pricing__grid--plans-4",
+    showActivationFeeNote: false,
+    pageModifierClass: isLegacy ? "plans-page--legacy-offer" : "plans-page--main-membership",
     useMainPlansHero: isLegacy,
   };
 }

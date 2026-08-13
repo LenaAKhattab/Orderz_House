@@ -50,7 +50,6 @@ function mapMarketplaceMembershipPlan(row) {
     stripePriceCurrency: row.stripe_price_currency || "JOD",
     maxRealOrderValueJod: toFiniteNumber(row.max_real_order_value_jod),
     unlimitedRealOrderValue: unlimited,
-    includedTokensPerCycle: Number(row.included_tokens_per_cycle) || 0,
     monthlyBidAllowance:
       row.monthly_bid_allowance == null ? 0 : Number(row.monthly_bid_allowance) || 0,
     articleAccessLevel:

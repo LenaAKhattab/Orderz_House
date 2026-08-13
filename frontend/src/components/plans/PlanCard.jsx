@@ -7,6 +7,7 @@ import { isUpgradePlan, planTierRank, freePlanNeedsActivationFeeCheckout } from 
 import { getLocalizedPlanBadge, getLocalizedPlanCardDisplay } from "../../lib/i18n/getLocalizedPlanDisplay";
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 import { useDisplayCurrency } from "../../hooks/useDisplayCurrency";
+import MembershipPlanCardBody, { MembershipPlanTitle } from "./MembershipPlanCardBody";
 
 const MOBILE_FEATURE_PREVIEW = 3;
 const DESKTOP_PUBLIC_FEATURE_LIMIT = 5;
@@ -184,7 +185,14 @@ const PlanCard = ({
   );
 
   const showPopularChip =
-    featured && (plan?.isPopular === true || plan?.is_popular === true);
+    !isMarketplaceMembership &&
+    featured &&
+    (plan?.isPopular === true || plan?.is_popular === true);
+  const tierModifier = isMarketplaceMembership
+    ? `pricing-card--tier-${String(plan?.tierCode || "")
+        .trim()
+        .toLowerCase()}`
+    : "";
 
   const handleCtaClick = () => {
     if (isMarketplaceMembership) {
@@ -214,6 +222,8 @@ const PlanCard = ({
     <article
       className={[
         "pricing-card",
+        isMarketplaceMembership ? "pricing-card--membership" : "",
+        tierModifier,
         featured ? "pricing-card--featured" : "",
         isCurrentPlan ? "pricing-card--current" : "",
         salePrice?.active ? "pricing-card--sale" : "",
@@ -221,136 +231,145 @@ const PlanCard = ({
         .filter(Boolean)
         .join(" ")}
     >
-      {badge ? (
-        <span className="pricing-card__badge" aria-hidden="true">
-          {badge}
-        </span>
-      ) : null}
+      {isMarketplaceMembership ? (
+        <>
+          <MembershipPlanTitle plan={plan} featured={featured} locale={locale} t={t} />
+          <MembershipPlanCardBody plan={plan} locale={locale} t={t} />
+        </>
+      ) : (
+        <>
+          {badge ? (
+            <span className="pricing-card__badge" aria-hidden="true">
+              {badge}
+            </span>
+          ) : null}
 
-      <header className="pricing-card__head">
-        <h2 className="pricing-card__title">{planTitle}</h2>
-        {display.description ? <p className="pricing-card__desc">{display.description}</p> : null}
-        {durationLabel ? <p className="pricing-card__duration">{durationLabel}</p> : null}
-      </header>
+          <header className="pricing-card__head">
+            <h2 className="pricing-card__title">{planTitle}</h2>
+            {display.description ? <p className="pricing-card__desc">{display.description}</p> : null}
+            {durationLabel ? <p className="pricing-card__duration">{durationLabel}</p> : null}
+          </header>
 
-      {display.priceIntroText ? (
-        <p className="pricing-card__price-intro">{display.priceIntroText}</p>
-      ) : null}
+          {display.priceIntroText ? (
+            <p className="pricing-card__price-intro">{display.priceIntroText}</p>
+          ) : null}
 
-      {offerLabel ? <OfferBlock label={offerLabel} className="pricing-card__offer--inline" /> : null}
+          {offerLabel ? <OfferBlock label={offerLabel} className="pricing-card__offer--inline" /> : null}
 
-      <div className="pricing-card__price">
-        {salePrice?.active ? (
-          <div className="pricing-card__price-sale">
-            <div className="pricing-card__price-main">{priceMain}</div>
-            {salePrice.original || salePrice.badge ? (
-              <p className="pricing-card__price-sale-meta">
-                {salePrice.original ? (
-                  <s className="pricing-card__price-original">{salePrice.original}</s>
+          <div className="pricing-card__price">
+            {salePrice?.active ? (
+              <div className="pricing-card__price-sale">
+                <div className="pricing-card__price-main">{priceMain}</div>
+                {salePrice.original || salePrice.badge ? (
+                  <p className="pricing-card__price-sale-meta">
+                    {salePrice.original ? (
+                      <s className="pricing-card__price-original">{salePrice.original}</s>
+                    ) : null}
+                    {salePrice.badge ? (
+                      <span className="pricing-card__sale-badge">{salePrice.badge}</span>
+                    ) : null}
+                  </p>
                 ) : null}
-                {salePrice.badge ? (
-                  <span className="pricing-card__sale-badge">{salePrice.badge}</span>
+                {salePrice.reason ? (
+                  <p className="pricing-card__sale-reason">{salePrice.reason}</p>
                 ) : null}
+              </div>
+            ) : (
+              <>
+                <div className="pricing-card__price-main">{priceMain}</div>
+                {priceSub ? <div className="pricing-card__price-sub">{priceSub}</div> : null}
+              </>
+            )}
+            {checkoutHint && isEgyptDisplay ? (
+              <p className="pricing-card__price-note pricing-card__checkout-hint">{checkoutHint}</p>
+            ) : null}
+            {installment ? <p className="pricing-card__price-note">{installment}</p> : null}
+            {!installment && paymentNotes ? <p className="pricing-card__price-note">{paymentNotes}</p> : null}
+            {freePlanPayFee ? (
+              <p className="pricing-card__price-note pricing-card__activation-fee-required">
+                {formatFreePlanActivationFeeNote(activationFeeAmountJod)}
               </p>
             ) : null}
-            {salePrice.reason ? (
-              <p className="pricing-card__sale-reason">{salePrice.reason}</p>
-            ) : null}
           </div>
-        ) : (
-          <>
-            <div className="pricing-card__price-main">{priceMain}</div>
-            {priceSub ? <div className="pricing-card__price-sub">{priceSub}</div> : null}
-          </>
-        )}
-        {checkoutHint && isEgyptDisplay ? (
-          <p className="pricing-card__price-note pricing-card__checkout-hint">{checkoutHint}</p>
-        ) : null}
-        {installment ? <p className="pricing-card__price-note">{installment}</p> : null}
-        {!installment && paymentNotes ? <p className="pricing-card__price-note">{paymentNotes}</p> : null}
-        {freePlanPayFee ? (
-          <p className="pricing-card__price-note pricing-card__activation-fee-required">
-            {formatFreePlanActivationFeeNote(activationFeeAmountJod)}
-          </p>
-        ) : null}
-      </div>
 
-      <div className="pricing-card__divider pricing-card__divider--features" aria-hidden="true" />
+          <div className="pricing-card__divider pricing-card__divider--features" aria-hidden="true" />
 
-      <div className="pricing-card__benefits">
-        {showPopularChip ? (
-          <p className="pricing-card__popular-chip">
-            <span className="pricing-card__popular-chip-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
-                <path d="M12 2l2.39 4.84L20 7.77l-3.64 3.55.86 5.02L12 14.77l-5.22 2.57.86-5.02L4 7.77l5.61-.93L12 2z" />
-              </svg>
-            </span>
-            {t("plans.badges.mostPopular")}
-          </p>
-        ) : null}
+          <div className="pricing-card__benefits">
+            {showPopularChip ? (
+              <p className="pricing-card__popular-chip">
+                <span className="pricing-card__popular-chip-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                    <path d="M12 2l2.39 4.84L20 7.77l-3.64 3.55.86 5.02L12 14.77l-5.22 2.57.86-5.02L4 7.77l5.61-.93L12 2z" />
+                  </svg>
+                </span>
+                {t("plans.badges.mostPopular")}
+              </p>
+            ) : null}
 
-        <ul className="pricing-card__features pricing-card__features--desktop" aria-label={t("plans.featuresAria")}>
-          {desktopFeatures.map((f, idx) => (
-            <FeatureItem key={`desk-${String(f)}-${idx}`} text={f} />
-          ))}
-        </ul>
-        <ul className="pricing-card__features pricing-card__features--mobile" aria-label={t("plans.featuresAria")}>
-          {features.map((f, idx) => (
-            <FeatureItem key={`${String(f)}-${idx}`} text={f} />
-          ))}
-        </ul>
-
-        {extraFeatures.length > 0 ? (
-          <details className="pricing-card__more-features">
-            <DetailsSummary className="pricing-card__more-features-summary pricing-card__details-row">
-              {t("plans.showFeatures", { count: extraFeatures.length })}
-            </DetailsSummary>
-            <ul className="pricing-card__features pricing-card__features--more" aria-label={t("plans.extraFeaturesAria")}>
-              {extraFeatures.map((f, idx) => (
-                <FeatureItem key={`more-${String(f)}-${idx}`} text={f} />
+            <ul className="pricing-card__features pricing-card__features--desktop" aria-label={t("plans.featuresAria")}>
+              {desktopFeatures.map((f, idx) => (
+                <FeatureItem key={`desk-${String(f)}-${idx}`} text={f} />
               ))}
             </ul>
-          </details>
-        ) : null}
-      </div>
+            <ul className="pricing-card__features pricing-card__features--mobile" aria-label={t("plans.featuresAria")}>
+              {features.map((f, idx) => (
+                <FeatureItem key={`${String(f)}-${idx}`} text={f} />
+              ))}
+            </ul>
 
-      <div className="pricing-card__meta-desktop">
-        {orderRange ? <p className="pricing-card__order-range">{orderRange}</p> : null}
-        {display.activationRequirements ? (
-          <p className="pricing-card__activation">{display.activationRequirements}</p>
-        ) : null}
-        {display.refundPolicy ? <p className="pricing-card__footnote">{display.refundPolicy}</p> : null}
-      </div>
-
-      {hasExtras ? (
-        <details className="pricing-card__extras">
-          <DetailsSummary className="pricing-card__extras-summary pricing-card__details-row">
-            {t("plans.extraDetails")}
-          </DetailsSummary>
-          <div className="pricing-card__extras-body">
-            {offerLabel ? (
-              <div className="pricing-card__extras-block pricing-card__extras-block--offer">
-                <OfferBlock label={offerLabel} className="pricing-card__offer--in-extras" />
-              </div>
-            ) : null}
-            {orderRange ? (
-              <div className="pricing-card__extras-block">
-                <p className="pricing-card__order-range">{orderRange}</p>
-              </div>
-            ) : null}
-            {display.activationRequirements ? (
-              <div className="pricing-card__extras-block">
-                <p className="pricing-card__activation">{display.activationRequirements}</p>
-              </div>
-            ) : null}
-            {display.refundPolicy ? (
-              <div className="pricing-card__extras-block">
-                <p className="pricing-card__footnote">{display.refundPolicy}</p>
-              </div>
+            {extraFeatures.length > 0 ? (
+              <details className="pricing-card__more-features">
+                <DetailsSummary className="pricing-card__more-features-summary pricing-card__details-row">
+                  {t("plans.showFeatures", { count: extraFeatures.length })}
+                </DetailsSummary>
+                <ul className="pricing-card__features pricing-card__features--more" aria-label={t("plans.extraFeaturesAria")}>
+                  {extraFeatures.map((f, idx) => (
+                    <FeatureItem key={`more-${String(f)}-${idx}`} text={f} />
+                  ))}
+                </ul>
+              </details>
             ) : null}
           </div>
-        </details>
-      ) : null}
+
+          <div className="pricing-card__meta-desktop">
+            {orderRange ? <p className="pricing-card__order-range">{orderRange}</p> : null}
+            {display.activationRequirements ? (
+              <p className="pricing-card__activation">{display.activationRequirements}</p>
+            ) : null}
+            {display.refundPolicy ? <p className="pricing-card__footnote">{display.refundPolicy}</p> : null}
+          </div>
+
+          {hasExtras ? (
+            <details className="pricing-card__extras">
+              <DetailsSummary className="pricing-card__extras-summary pricing-card__details-row">
+                {t("plans.extraDetails")}
+              </DetailsSummary>
+              <div className="pricing-card__extras-body">
+                {offerLabel ? (
+                  <div className="pricing-card__extras-block pricing-card__extras-block--offer">
+                    <OfferBlock label={offerLabel} className="pricing-card__offer--in-extras" />
+                  </div>
+                ) : null}
+                {orderRange ? (
+                  <div className="pricing-card__extras-block">
+                    <p className="pricing-card__order-range">{orderRange}</p>
+                  </div>
+                ) : null}
+                {display.activationRequirements ? (
+                  <div className="pricing-card__extras-block">
+                    <p className="pricing-card__activation">{display.activationRequirements}</p>
+                  </div>
+                ) : null}
+                {display.refundPolicy ? (
+                  <div className="pricing-card__extras-block">
+                    <p className="pricing-card__footnote">{display.refundPolicy}</p>
+                  </div>
+                ) : null}
+              </div>
+            </details>
+          ) : null}
+        </>
+      )}
 
       <div className="pricing-card__cta">
         <Button

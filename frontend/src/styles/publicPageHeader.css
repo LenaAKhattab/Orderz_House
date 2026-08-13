@@ -111,3 +111,50 @@
     line-height: 1.75;
   }
 }
+
+/* Compact premium membership hero */
+.public-page-hero--membership {
+  position: relative;
+  margin-bottom: clamp(28px, 3.5vw, 40px);
+  padding: clamp(8px, 1.4vw, 14px) 12px 4px;
+}
+
+.public-page-hero--membership::before {
+  content: "";
+  position: absolute;
+  inset: -10% 18% auto;
+  height: 120px;
+  margin-inline: auto;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse at center, rgba(56, 82, 180, 0.14), transparent 68%);
+  filter: blur(8px);
+}
+
+.public-page-hero--membership > * {
+  position: relative;
+  z-index: 1;
+}
+
+.public-page-hero--membership .public-page-hero__eyebrow {
+  display: inline-flex;
+  margin-bottom: 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: #3852b4;
+  background: rgba(56, 82, 180, 0.08);
+  border: 1px solid rgba(56, 82, 180, 0.14);
+}
+
+.public-page-hero--membership .public-page-hero__title {
+  margin-bottom: 12px;
+}
+
+.public-page-hero--membership .public-page-hero__lede {
+  max-width: 34rem;
+  margin-top: 14px;
+}
