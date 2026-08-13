@@ -230,12 +230,13 @@ rootDescribe("internal priced bidding lifecycle (Postgres integration)", () => {
           amount: bidAmountA,
           message: null,
         });
-        const orderAfterA = await ordersService.submitPoolOrderBid({
+        const submittedB = await ordersService.submitPoolOrderBid({
           freelancerUserId: freelancerB,
           orderId,
           amount: bidAmountB,
           message: null,
         });
+        const orderAfterA = submittedB.order || submittedB;
 
         const bidA = orderAfterA.bidUsers.find((b) => String(b.user.id) === String(freelancerA));
         const bidB = orderAfterA.bidUsers.find((b) => String(b.user.id) === String(freelancerB));

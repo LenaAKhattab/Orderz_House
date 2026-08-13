@@ -1,8 +1,8 @@
 {
-  "title": "Orderz House freelance plans",
+  "title": "Orderz House Marketplace Membership",
   "hero": {
-    "title": "Orderz House freelance plans",
-    "subtitle": "Choose the right plan for your work, compare features, and start or upgrade your subscription in one place."
+    "title": "Orderz House Marketplace Membership",
+    "subtitle": "Monthly Bids, Priority Uses, and Article access — choose the membership that fits your freelance work."
   },
   "sectionAria": "Subscription plans",
   "mobile": {
@@ -87,6 +87,7 @@
     "payActivationFee": "Pay activation fee",
     "autoActivated": "Activated automatically",
     "companyActivation": "Activated through company",
+    "viewMembership": "View membership",
     "startNow": "Start now"
   },
   "pages": {

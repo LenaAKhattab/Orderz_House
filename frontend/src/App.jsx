@@ -44,6 +44,8 @@ import {
   SuperAdminPlansPage,
   SuperAdminMarketplacePlansPage,
   SuperAdminMarketplaceEconomyPage,
+  SuperAdminMarketplaceArticlesPage,
+  SuperAdminBidCreditsPage,
   SuperAdminAnalysisPage,
   SuperAdminSubscriptionsPage,
   SuperAdminFinancialClaimsPage,
@@ -91,11 +93,14 @@ import {
   ClientProfilePage,
   ClientSettingsPage,
   FreelancerOrderDetailsPage,
+  FreelancerEliteOfferPage,
   FreelancerMyOrderDetailsPage,
   FreelancerFinancialClaimsPage,
   FreelancerPlansPage,
   FreelancerCoursesPage,
   FreelancerCourseDetailsPage,
+  FreelancerMarketplaceArticlesPage,
+  FreelancerMarketplaceArticleDetailPage,
   FreelancerSettingsPage,
   NotificationsPage,
   FinancialUserMyBonusesPage,
@@ -284,6 +289,22 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
                       <SuperAdminMarketplaceEconomyPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/marketplace-articles"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminMarketplaceArticlesPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/bid-credits"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminBidCreditsPage />
                     </RequireRole>
                   }
                 />
@@ -686,6 +707,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/freelancer/elite-offers/:offerId"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerEliteOfferPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/freelancer/my-orders/:id"
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
@@ -738,6 +767,22 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
                       <FreelancerCourseDetailsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/articles"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerMarketplaceArticlesPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/articles/:id"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerMarketplaceArticleDetailPage />
                     </RequireRole>
                   }
                 />

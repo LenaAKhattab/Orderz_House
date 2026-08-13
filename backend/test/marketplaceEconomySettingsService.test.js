@@ -35,7 +35,7 @@ describe("marketplace economy defaults (manager-aligned)", () => {
   it("keeps engines OFF and Priority Bid default strategy HIGHEST_TOKEN_ONLY", () => {
     assert.strictEqual(MARKETPLACE_ECONOMY_DEFAULTS.workTokenValueJod, 0.1);
     assert.strictEqual(MARKETPLACE_ECONOMY_DEFAULTS.normalApplicationTokensPerOrderJod, 1);
-    assert.strictEqual(MARKETPLACE_ECONOMY_DEFAULTS.normalApplicationTokenRefundPercentage, 70);
+    assert.strictEqual(MARKETPLACE_ECONOMY_DEFAULTS.normalApplicationTokenRefundPercentage, 100);
     assert.strictEqual(MARKETPLACE_ECONOMY_DEFAULTS.priorityBiddingEnabled, false);
     assert.strictEqual(MARKETPLACE_ECONOMY_DEFAULTS.fairWorkDistributionEnabled, false);
     assert.strictEqual(MARKETPLACE_ECONOMY_DEFAULTS.workTokensEnabled, false);
@@ -88,7 +88,7 @@ describe("normal application vs Priority Bid separation", () => {
     const mapped = mapRow({
       work_token_value_jod: "0.100",
       normal_application_tokens_per_order_jod: "1.000",
-      normal_application_token_refund_percentage: "70.00",
+      normal_application_token_refund_percentage: "100.00",
       platform_commission_percentage: "30",
       cash_processing_fee_jod: "5",
       identity_verification_bonus_enabled: true,
@@ -149,15 +149,82 @@ describe("normal application vs Priority Bid separation", () => {
     assert.strictEqual(normalized.priorityBiddingEnabled, true);
   });
 
+  it("accepts normalApplicationTokenRefundPercentage = 100", () => {
+    const next = mergePatch(MARKETPLACE_ECONOMY_DEFAULTS, {
+      normalApplicationTokenRefundPercentage: 100,
+    });
+    assert.strictEqual(next.normalApplicationTokenRefundPercentage, 100);
+  });
+
+  it("rejects normalApplicationTokenRefundPercentage = 80 until non-100 policy exists", () => {
+    assert.throws(
+      () =>
+        mergePatch(MARKETPLACE_ECONOMY_DEFAULTS, {
+          normalApplicationTokenRefundPercentage: 80,
+        }),
+      (err) => err.publicCode === "FUTURE_NON_FULL_REFUND_ROUNDING_POLICY_REQUIRED",
+    );
+  });
+
+  it("rejects normalApplicationTokenRefundPercentage = 70 until non-100 policy exists", () => {
+    assert.throws(
+      () =>
+        mergePatch(MARKETPLACE_ECONOMY_DEFAULTS, {
+          normalApplicationTokenRefundPercentage: 70,
+        }),
+      (err) => err.publicCode === "FUTURE_NON_FULL_REFUND_ROUNDING_POLICY_REQUIRED",
+    );
+  });
+
+  it("rejects legacy applicationTokenRefundPercentage alias when not 100", () => {
+    assert.throws(
+      () =>
+        mergePatch(MARKETPLACE_ECONOMY_DEFAULTS, {
+          applicationTokenRefundPercentage: 50,
+        }),
+      (err) => err.publicCode === "FUTURE_NON_FULL_REFUND_ROUNDING_POLICY_REQUIRED",
+    );
+  });
+
+  it("direct assertNormalApplicationTokenRefundPercentageCurrentPolicy rejects non-100", () => {
+    const {
+      assertNormalApplicationTokenRefundPercentageCurrentPolicy,
+      CURRENT_NORMAL_APPLICATION_REFUND_PERCENTAGE_ONLY,
+    } = require("../src/services/marketplaceEconomySettingsService");
+    assert.strictEqual(CURRENT_NORMAL_APPLICATION_REFUND_PERCENTAGE_ONLY, 100);
+    assert.strictEqual(assertNormalApplicationTokenRefundPercentageCurrentPolicy(100), 100);
+    assert.throws(
+      () => assertNormalApplicationTokenRefundPercentageCurrentPolicy(80),
+      (err) => err.publicCode === "FUTURE_NON_FULL_REFUND_ROUNDING_POLICY_REQUIRED",
+    );
+  });
+
   it("accepts Priority Bid strategy updates without enabling engines by default", () => {
     const next = mergePatch(MARKETPLACE_ECONOMY_DEFAULTS, {
-      priorityBidAssignmentStrategy: "HYBRID",
+      priorityBidAssignmentStrategy: "FAIR_DISTRIBUTION_FIRST",
       fairnessWeight: 40,
       tokenWeight: 60,
     });
-    assert.strictEqual(next.priorityBidAssignmentStrategy, "HYBRID");
+    assert.strictEqual(next.priorityBidAssignmentStrategy, "FAIR_DISTRIBUTION_FIRST");
     assert.strictEqual(next.priorityBiddingEnabled, false);
     assert.strictEqual(next.fairWorkDistributionEnabled, false);
+  });
+
+  it("rejects HYBRID assignment strategy until weight policy is defined (Phase 7)", () => {
+    assert.throws(
+      () =>
+        mergePatch(MARKETPLACE_ECONOMY_DEFAULTS, {
+          assignmentStrategy: "HYBRID",
+        }),
+      (err) => err.publicCode === "FAIR_DISTRIBUTION_HYBRID_WEIGHT_POLICY_REQUIRED",
+    );
+    assert.throws(
+      () =>
+        mergePatch(MARKETPLACE_ECONOMY_DEFAULTS, {
+          priorityBidAssignmentStrategy: "HYBRID",
+        }),
+      (err) => err.publicCode === "FAIR_DISTRIBUTION_HYBRID_WEIGHT_POLICY_REQUIRED",
+    );
   });
 
   it("rejects invalid Priority Bid max < min", () => {

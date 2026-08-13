@@ -1,5 +1,5 @@
 /**
- * Marketplace Economy form utils + wiring after Priority Bid / Fairness update.
+ * Marketplace Economy form utils — Phase B7A (WT / legacy auction locked off).
  * Run: node --test src/admin/marketplaceEconomy/marketplaceEconomyFormUtils.test.js
  */
 import { describe, it } from "node:test";
@@ -32,7 +32,7 @@ describe("marketplaceEconomyFormUtils defaults", () => {
     const form = settingsToFormState({
       workTokenValueJod: 0.1,
       normalApplicationTokensPerOrderJod: 1,
-      normalApplicationTokenRefundPercentage: 70,
+      normalApplicationTokenRefundPercentage: 100,
       platformCommissionPercentage: 30,
       cashProcessingFeeJod: 5,
       priorityBiddingEnabled: false,
@@ -83,35 +83,53 @@ describe("marketplaceEconomyFormUtils defaults", () => {
 });
 
 describe("validateMarketplaceEconomyForm", () => {
-  it("accepts valid defaults", () => {
-    const { ok, patch } = validateMarketplaceEconomyForm({ ...MARKETPLACE_ECONOMY_DEFAULT_FORM });
+  it("accepts valid defaults and forces deprecated engines OFF", () => {
+    const { ok, patch } = validateMarketplaceEconomyForm({
+      ...MARKETPLACE_ECONOMY_DEFAULT_FORM,
+      workTokensEnabled: true,
+      priorityBiddingEnabled: true,
+    });
     assert.strictEqual(ok, true);
-    assert.strictEqual(patch.normalApplicationTokenRefundPercentage, 70);
-    assert.strictEqual(patch.priorityBidAssignmentStrategy, "HIGHEST_TOKEN_ONLY");
+    assert.strictEqual(patch.workTokensEnabled, false);
     assert.strictEqual(patch.priorityBiddingEnabled, false);
+    assert.strictEqual(patch.priorityApplicationBoostEnabled, false);
+    assert.strictEqual(patch.bidCreditsEnabled, false);
+    assert.strictEqual(patch.verificationBonusesEnabled, false);
+    assert.ok(!Object.prototype.hasOwnProperty.call(patch, "identityVerificationBonusTokens"));
+    assert.ok(!Object.prototype.hasOwnProperty.call(patch, "workTokenValueJod"));
+    assert.ok(!Object.prototype.hasOwnProperty.call(patch, "priorityBidDurationMinutes"));
+    assert.ok(!Object.prototype.hasOwnProperty.call(patch, "priorityBidAssignmentStrategy"));
   });
 
-  it("rejects invalid Priority Bid duration", () => {
+  it("rejects invalid Fair assignment strategy HYBRID", () => {
     const bad = validateMarketplaceEconomyForm({
       ...MARKETPLACE_ECONOMY_DEFAULT_FORM,
-      priorityBidDurationMinutes: "0",
+      assignmentStrategy: "HYBRID",
     });
     assert.strictEqual(bad.ok, false);
-    assert.ok(bad.errors.priorityBidDurationMinutes);
+    assert.ok(bad.errors.assignmentStrategy);
   });
 });
 
 describe("SuperAdminMarketplaceEconomyPage wiring", () => {
-  it("documents Priority Bid vs normal application separation in UI", () => {
+  it("locks Work Tokens + legacy auction as DEPRECATED; keeps Bid engines", () => {
     const page = fs.readFileSync(
       path.join(__dirname, "../../pages/dashboard/SuperAdminMarketplaceEconomyPage.jsx"),
       "utf8",
     );
-    assert.match(page, /Priority Bid/);
-    assert.match(page, /HIGHEST_TOKEN_ONLY/);
-    assert.match(page, /normalApplicationTokensPerOrderJod/);
-    assert.match(page, /100%|يُحرَّر دائماً 100%/);
+    assert.match(page, /Work Tokens engine — DEPRECATED/);
+    assert.match(page, /Legacy Priority Auction — DEPRECATED/);
+    assert.match(page, /locked OFF/);
+    assert.match(page, /Priority Application Boost/);
+    assert.match(page, /Enable Bid Credits engine/);
     assert.match(page, /Fair Work Distribution|التوزيع العادل/);
-    assert.doesNotMatch(page, /bidTokensPerOrderJod/);
+    assert.doesNotMatch(page, /id="mes-token-value"/);
+    assert.doesNotMatch(page, /id="mes-pb-duration"/);
+    assert.doesNotMatch(page, /id="mes-normal-refund"/);
+    assert.doesNotMatch(page, /Enable Work Tokens engine \(wallet\/ledger\)/);
+    assert.match(page, /Verification Work Token bonuses — DEPRECATED/);
+    assert.doesNotMatch(page, /id="mes-id-bonus"/);
+    assert.doesNotMatch(page, /id="mes-payout-bonus"/);
+    assert.doesNotMatch(page, /Enable verification bonuses engine/);
   });
 });

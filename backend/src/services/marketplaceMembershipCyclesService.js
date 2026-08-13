@@ -33,6 +33,10 @@ function mapCycle(row) {
     priorityBidUsesConsumed: consumed,
     priorityBidUsesRemaining: Math.max(allowed - consumed, 0),
     includedTokensAllowed: Number(row.included_tokens_allowed) || 0,
+    monthlyBidAllowanceSnapshot:
+      row.monthly_bid_allowance_snapshot != null
+        ? Number(row.monthly_bid_allowance_snapshot) || 0
+        : 0,
     createdAt: row.created_at || null,
     activatedAt: row.activated_at || null,
     closedAt: row.closed_at || null,
@@ -140,33 +144,94 @@ async function createAndActivateCycleForMembership({
     );
 
     const allowed = Number(planRow.priorityBidUsesPerCycle) || 0;
-    const tokensAllowed = Number(planRow.includedTokensPerCycle) || 0;
+    // Work Token product DEPRECATED (Phase B1): always snapshot 0; do not grant tokens.
+    const tokensAllowed = 0;
+    const monthlyBidAllowance = Number(planRow.monthlyBidAllowance) || 0;
+
+    // Phase 8: Elite entitlement snapshot (DISTINCT from Priority Bid); 0 if schema/plan not Elite
+    let eliteAllowed = 0;
+    let eliteSchemaReady = false;
+    try {
+      const { rows: col } = await client.query(
+        `SELECT 1 FROM information_schema.columns
+         WHERE table_schema='public' AND table_name='marketplace_membership_cycles'
+           AND column_name='elite_direct_orders_allowed' LIMIT 1`,
+      );
+      eliteSchemaReady = Boolean(col[0]);
+      if (eliteSchemaReady && planRow.eliteDirectOrdersEnabled) {
+        const { getMarketplaceEconomySettings } = require("./marketplaceEconomySettingsService");
+        const { computeEliteAllowanceForNewCycle } = require("./marketplaceEliteDirectOrderEntitlementService");
+        const settings = await getMarketplaceEconomySettings(client);
+        const { rows: prev } = await client.query(
+          `SELECT * FROM marketplace_membership_cycles
+           WHERE membership_id = $1 AND status = 'closed'
+           ORDER BY cycle_number DESC LIMIT 1`,
+          [membershipId],
+        );
+        eliteAllowed = await computeEliteAllowanceForNewCycle({
+          client,
+          membershipId,
+          planEliteEnabled: Boolean(planRow.eliteDirectOrdersEnabled),
+          settings,
+          previousCycleRow: prev[0] || null,
+        });
+      }
+    } catch {
+      eliteAllowed = 0;
+      eliteSchemaReady = false;
+    }
 
     let cycleRow;
     let createdNew = false;
     try {
-      const inserted = await client.query(
-        `INSERT INTO marketplace_membership_cycles (
-           membership_id, cycle_number, starts_at, ends_at, status,
-           marketplace_plan_id, priority_bid_uses_allowed, included_tokens_allowed,
-           priority_bid_uses_consumed, activated_at
-         ) VALUES (
-           $1, $2, $3, $4, 'active',
-           $5, $6, $7,
-           0, $8
-         )
-         RETURNING *`,
-        [
-          membershipId,
-          cycleNumber,
-          window.startsAt.toISOString(),
-          endsAt.toISOString(),
-          planId,
-          allowed,
-          tokensAllowed,
-          instant.toISOString(),
-        ],
-      );
+      const inserted = eliteSchemaReady
+        ? await client.query(
+            `INSERT INTO marketplace_membership_cycles (
+               membership_id, cycle_number, starts_at, ends_at, status,
+               marketplace_plan_id, priority_bid_uses_allowed, included_tokens_allowed,
+               priority_bid_uses_consumed, activated_at,
+               elite_direct_orders_allowed, elite_direct_orders_reserved, elite_direct_orders_consumed
+             ) VALUES (
+               $1, $2, $3, $4, 'active',
+               $5, $6, $7,
+               0, $8,
+               $9, 0, 0
+             )
+             RETURNING *`,
+            [
+              membershipId,
+              cycleNumber,
+              window.startsAt.toISOString(),
+              endsAt.toISOString(),
+              planId,
+              allowed,
+              tokensAllowed,
+              instant.toISOString(),
+              eliteAllowed,
+            ],
+          )
+        : await client.query(
+            `INSERT INTO marketplace_membership_cycles (
+               membership_id, cycle_number, starts_at, ends_at, status,
+               marketplace_plan_id, priority_bid_uses_allowed, included_tokens_allowed,
+               priority_bid_uses_consumed, activated_at
+             ) VALUES (
+               $1, $2, $3, $4, 'active',
+               $5, $6, $7,
+               0, $8
+             )
+             RETURNING *`,
+            [
+              membershipId,
+              cycleNumber,
+              window.startsAt.toISOString(),
+              endsAt.toISOString(),
+              planId,
+              allowed,
+              tokensAllowed,
+              instant.toISOString(),
+            ],
+          );
       cycleRow = inserted.rows[0];
       createdNew = true;
     } catch (err) {
@@ -231,6 +296,48 @@ async function createAndActivateCycleForMembership({
       });
     }
 
+    // Phase B1: Work Token membership grants removed from active product path.
+    // Legacy grantMembershipCycleIncludedWorkTokens remains for DEPRECATED tests only.
+
+    // Phase B1: Bid Credits distribution month + lazy unlock (schema-gated).
+    try {
+      const { marketplaceBidCreditsSchemaReady } = require("../utils/marketplaceBidCreditsSchema");
+      if (await marketplaceBidCreditsSchemaReady(client)) {
+        if (monthlyBidAllowance > 0) {
+          await client.query(
+            `UPDATE marketplace_membership_cycles
+                SET monthly_bid_allowance_snapshot = $2
+              WHERE id = $1
+                AND (monthly_bid_allowance_snapshot IS NULL OR monthly_bid_allowance_snapshot = 0)`,
+            [cycleRow.id, monthlyBidAllowance],
+          );
+          cycleRow.monthly_bid_allowance_snapshot = monthlyBidAllowance;
+        }
+        const dist = require("./marketplaceBidCreditDistributionService");
+        await dist.ensureDistributionMonthForCycle({
+          client,
+          cycleRow,
+          membershipRow: mem,
+          actorUserId,
+        });
+        await dist.reconcileDistributionMonth({
+          client,
+          distributionMonthRow: (
+            await client.query(
+              `SELECT * FROM marketplace_membership_bid_distribution_months WHERE cycle_id = $1`,
+              [cycleRow.id],
+            )
+          ).rows[0],
+          now: instant,
+        });
+      }
+    } catch (bidErr) {
+      // Schema not ready or transient — membership cycle still valid; Bids reconcile later.
+      if (bidErr?.publicCode !== "BID_CREDITS_SCHEMA_NOT_READY") {
+        throw bidErr;
+      }
+    }
+
     if (ownTxn) await client.query("COMMIT");
     return mapCycle(cycleRow);
   } catch (err) {
@@ -272,6 +379,19 @@ async function closeActiveCycle({
         action: MEMBERSHIP_AUDIT_ACTIONS.CYCLE_CLOSED,
         detail: { cycleNumber: row.cycle_number },
       });
+    }
+    // Phase B3: stop further Bid unlocks for this membership (already-unlocked grants keep own expiry).
+    try {
+      const dist = require("./marketplaceBidCreditDistributionService");
+      await dist.closeOpenDistributionMonthsForMembership({
+        membershipId,
+        client,
+        now: instant,
+      });
+    } catch (bidErr) {
+      if (bidErr?.publicCode !== "BID_CREDITS_SCHEMA_NOT_READY") {
+        throw bidErr;
+      }
     }
     if (ownTxn) await client.query("COMMIT");
     return rows.map(mapCycle);

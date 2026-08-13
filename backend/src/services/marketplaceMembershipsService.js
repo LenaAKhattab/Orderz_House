@@ -21,6 +21,10 @@ const {
 } = require("../utils/marketplaceMembershipCycleDates");
 const marketplaceMembershipPlansService = require("./marketplaceMembershipPlansService");
 const marketplaceMembershipCyclesService = require("./marketplaceMembershipCyclesService");
+const {
+  marketplacePlanJoinSelectExtras,
+} = require("../utils/marketplaceMembershipPlanSchema");
+const { defaultArticleAccessLevelForTier } = require("../constants/marketplaceMembershipPlans");
 
 function isTruthyFlag(value) {
   return value === true || value === "t" || value === 1 || value === "1";
@@ -106,6 +110,13 @@ function mapPlanFields(row) {
     priorityBidEnabled: isTruthyFlag(row.plan_priority_bid_enabled),
     priorityBidUsesPerCycle: Number(row.plan_priority_bid_uses_per_cycle) || 0,
     includedTokensPerCycle: Number(row.plan_included_tokens_per_cycle) || 0,
+    articleAccessLevel:
+      row.plan_article_access_level == null
+        ? defaultArticleAccessLevelForTier(row.plan_tier_code)
+        : Number(row.plan_article_access_level) || 1,
+    eliteDirectOrdersEnabled: isTruthyFlag(row.plan_elite_direct_orders_enabled),
+    monthlyPriceJod:
+      row.plan_monthly_price_jod != null ? Number(row.plan_monthly_price_jod) : null,
   };
 }
 
@@ -317,6 +328,7 @@ async function resolveCurrentMarketplaceMembershipForFreelancer(freelancerUserId
   const id = Number(freelancerUserId);
   if (!Number.isInteger(id) || id < 1) return null;
   const db = options.client || pool;
+  const extras = await marketplacePlanJoinSelectExtras(db);
   const { rows } = await db.query(
     `SELECT m.*,
             p.tier_code AS plan_tier_code,
@@ -325,7 +337,8 @@ async function resolveCurrentMarketplaceMembershipForFreelancer(freelancerUserId
             p.slug AS plan_slug,
             p.priority_bid_uses_per_cycle AS plan_priority_bid_uses_per_cycle,
             p.priority_bid_enabled AS plan_priority_bid_enabled,
-            p.included_tokens_per_cycle AS plan_included_tokens_per_cycle
+            p.included_tokens_per_cycle AS plan_included_tokens_per_cycle,
+            ${extras.sql}
      FROM freelancer_marketplace_memberships m
      JOIN marketplace_membership_plans p ON p.id = m.marketplace_plan_id
      WHERE m.freelancer_user_id = $1
@@ -344,6 +357,7 @@ async function getMarketplaceMembershipById(membershipId, options = {}) {
   if (!Number.isInteger(id) || id < 1) return null;
   const db = options.client || pool;
   try {
+    const extras = await marketplacePlanJoinSelectExtras(db);
     const { rows } = await db.query(
       `SELECT m.*,
               p.tier_code AS plan_tier_code,
@@ -352,7 +366,8 @@ async function getMarketplaceMembershipById(membershipId, options = {}) {
               p.slug AS plan_slug,
               p.priority_bid_uses_per_cycle AS plan_priority_bid_uses_per_cycle,
               p.priority_bid_enabled AS plan_priority_bid_enabled,
-              p.included_tokens_per_cycle AS plan_included_tokens_per_cycle
+              p.included_tokens_per_cycle AS plan_included_tokens_per_cycle,
+              ${extras.sql}
        FROM freelancer_marketplace_memberships m
        JOIN marketplace_membership_plans p ON p.id = m.marketplace_plan_id
        WHERE m.id = $1
@@ -428,6 +443,7 @@ async function getFreelancerMarketplaceMembershipSnapshot(freelancerUserId, opti
             startsAt: cycle.startsAt,
             endsAt: cycle.endsAt,
             status: cycle.status,
+            includedTokensAllowed: cycle.includedTokensAllowed,
           }
         : null,
       priorityBid: {
@@ -793,6 +809,7 @@ async function listMarketplaceMembershipsForAdmin({
   }
   params.push(lim, off);
   try {
+    const extras = await marketplacePlanJoinSelectExtras(pool);
     const { rows } = await pool.query(
       `SELECT m.*,
               p.tier_code AS plan_tier_code,
@@ -801,6 +818,7 @@ async function listMarketplaceMembershipsForAdmin({
               p.priority_bid_uses_per_cycle AS plan_priority_bid_uses_per_cycle,
               p.priority_bid_enabled AS plan_priority_bid_enabled,
               p.included_tokens_per_cycle AS plan_included_tokens_per_cycle,
+              ${extras.sql},
               COALESCE(
                 NULLIF(trim(concat_ws(' ', u.first_name, u.father_name, u.family_name)), ''),
                 u.email

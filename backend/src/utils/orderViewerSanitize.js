@@ -316,6 +316,7 @@ function sanitizeBidsForClient(bids) {
     message: b.message ?? null,
     createdAt: b.createdAt,
     updatedAt: b.updatedAt,
+    isPriority: Boolean(b.isPriority),
     displayName: b.freelancer
       ? joinDisplayName([b.freelancer.firstName, b.freelancer.fatherName, b.freelancer.familyName])
       : null,

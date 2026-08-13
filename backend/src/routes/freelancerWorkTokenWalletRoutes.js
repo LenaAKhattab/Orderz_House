@@ -7,8 +7,9 @@ const router = express.Router();
 router.use(requireAuth, requireRole("freelancer"));
 
 /**
+ * LEGACY_DEPRECATED_WORK_TOKEN_MODEL — Phase B7B read-only audit retention.
  * GET /api/freelancer/work-token-wallet
- * Read-only snapshot. Does not create a wallet row when absent.
+ * Read-only snapshot. Does not create a wallet row when absent. No mutations.
  */
 router.get("/work-token-wallet", marketplaceWorkTokenWalletController.getMyWorkTokenWallet);
 

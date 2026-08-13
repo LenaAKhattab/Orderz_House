@@ -24,6 +24,8 @@ const CANCEL_PRIORITY_EFFECTS = Object.freeze(["NO_BOOST", "DECREASE_PRIORITY"])
  * Never key off display names.
  */
 const PRIORITY_BID_USES_BY_TIER = Object.freeze({
+  free: 0,
+  start: 1,
   pay_as_you_work: 1,
   active: 2,
   pro: 3,

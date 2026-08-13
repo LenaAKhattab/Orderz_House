@@ -182,20 +182,169 @@ const submitPoolOrderBid = async (req, res, next) => {
       const safe = await sanitizeResolvedFreelancerPoolOrder(req.params.id, req.auth.userId, viewerRole);
       return res.status(200).json({ success: true, data: { order: safe } });
     }
-    const order = await ordersService.submitPoolOrderBid({
+    const result = await ordersService.submitPoolOrderBid({
       freelancerUserId: req.auth.userId,
       orderId: req.params.id,
       amount: req.body.amount,
       message: req.body.message || null,
+      poolKind: "real",
+      usePriority: Boolean(req.body.usePriority),
     });
+    const order = result?.order || result;
+    const bidCredit = result?.bidCredit || null;
+    const priorityBoost = result?.priorityBoost || null;
     capture(String(req.auth.userId), "bid_submitted", {
       orderId: String(req.params.id),
       amount: req.body.amount,
+      isPriority: Boolean(priorityBoost?.boosted),
     });
     const myBid = await ordersService.getMyOrderBid({ orderId: req.params.id, freelancerUserId: req.auth.userId });
     const myClaim = await ordersService.getMyOrderClaim({ orderId: req.params.id, freelancerUserId: req.auth.userId });
     const safe = sanitizeFreelancerPoolOrder({ ...order, myBid, myClaim });
-    return res.status(200).json({ success: true, data: { order: safe } });
+    return res.status(200).json({
+      success: true,
+      data: {
+        order: safe,
+        bidCredit: bidCredit
+          ? {
+              consumed: Boolean(bidCredit.consumed),
+              cost: Number(bidCredit.cost) || 0,
+              availableBidsAfter: bidCredit.availableBidsAfter,
+              skipped: Boolean(bidCredit.skipped),
+            }
+          : null,
+        priorityBoost: priorityBoost
+          ? {
+              boosted: Boolean(priorityBoost.boosted),
+              skipped: Boolean(priorityBoost.skipped),
+              priorityUseCost: Number(priorityBoost.priorityUseCost) || 0,
+              additionalBidCreditCost: Number(priorityBoost.additionalBidCreditCost) || 0,
+              workTokenCost: Number(priorityBoost.workTokenCost) || 0,
+              remainingPriorityUses: priorityBoost.remainingPriorityUses,
+            }
+          : null,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+/**
+ * Phase 5 LEGACY: normal-application Token quote — permanently deprecated (B7B).
+ * Prefer getPoolOrderNormalApplicationBidQuote for active product UX.
+ */
+const getPoolOrderNormalApplicationTokenQuote = async (_req, res) => {
+  return res.status(410).json({
+    success: false,
+    code: "WORK_TOKENS_DEPRECATED",
+    message: "Work Token application quotes are deprecated. Use Bid quote instead.",
+  });
+};
+
+/**
+ * Phase B2: read-only normal-application Bid Credit quote (cost always 1).
+ * Engine OFF → engineAvailable=false; Freelancer may still submit (dormant charge).
+ * Fake/training → not applicable.
+ */
+const getPoolOrderNormalApplicationBidQuote = async (req, res, next) => {
+  try {
+    const viewerRole = req.auth?.primaryRole || req.auth?.role || null;
+    const resolved = await poolOrderResolveService.resolvePoolOrderForViewer(req.params.id, {
+      userId: req.auth.userId,
+      role: viewerRole,
+    });
+    if (!resolved) {
+      return res.status(404).json({ success: false, message: POOL_ORDER_NOT_FOUND });
+    }
+    if (resolved.kind === "fake") {
+      return res.status(200).json({
+        success: true,
+        data: {
+          applicable: false,
+          engineAvailable: false,
+          reason: "fake_or_training",
+          bidCreditCost: 0,
+          availableBids: null,
+          canApply: true,
+        },
+      });
+    }
+    const bidApp = require("../services/marketplaceNormalApplicationBidCreditService");
+    const quote = await bidApp.quoteNormalApplicationBidCost({
+      order: resolved.order,
+      freelancerUserId: req.auth.userId,
+    });
+    const priorityBoostSvc = require("../services/marketplacePriorityApplicationBoostService");
+    const priorityQuote = await priorityBoostSvc.quotePriorityApplicationBoost({
+      order: resolved.order,
+      freelancerUserId: req.auth.userId,
+      poolKind: "real",
+    });
+    return res.status(200).json({
+      success: true,
+      data: {
+        applicable: true,
+        engineAvailable: Boolean(quote.engineAvailable),
+        schemaReady: Boolean(quote.schemaReady),
+        bidCreditCost: quote.bidCreditCost,
+        availableBids: quote.availableBids,
+        canApply: quote.canApply,
+        reason: quote.reason || null,
+        priorityBoost: {
+          engineAvailable: Boolean(priorityQuote.engineAvailable),
+          schemaReady: Boolean(priorityQuote.schemaReady),
+          canBoost: Boolean(priorityQuote.canBoost),
+          alreadyBoosted: Boolean(priorityQuote.alreadyBoosted),
+          remainingPriorityUses: priorityQuote.remainingPriorityUses,
+          priorityUseCost: priorityQuote.priorityUseCost,
+          additionalBidCreditCost: priorityQuote.additionalBidCreditCost,
+          workTokenCost: priorityQuote.workTokenCost,
+          reason: priorityQuote.reason || null,
+        },
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const upgradePoolOrderBidPriority = async (req, res, next) => {
+  try {
+    const viewerRole = req.auth?.primaryRole || req.auth?.role || null;
+    const resolved = await poolOrderResolveService.resolvePoolOrderForViewer(req.params.id, {
+      userId: req.auth.userId,
+      role: viewerRole,
+    });
+    if (!resolved) {
+      return res.status(404).json({ success: false, message: POOL_ORDER_NOT_FOUND });
+    }
+    if (resolved.kind === "fake") {
+      return res.status(403).json({
+        success: false,
+        message: "Priority Boost is not available for fake/training orders.",
+      });
+    }
+    const priorityBoostSvc = require("../services/marketplacePriorityApplicationBoostService");
+    const result = await priorityBoostSvc.upgradeExistingApplicationToPriority({
+      freelancerUserId: req.auth.userId,
+      orderId: req.params.id,
+      actorUserId: req.auth.userId,
+    });
+    return res.status(200).json({
+      success: true,
+      data: {
+        priorityBoost: {
+          boosted: Boolean(result.boosted),
+          idempotent: Boolean(result.idempotent),
+          priorityUseCost: Number(result.priorityUseCost) || 0,
+          additionalBidCreditCost: Number(result.additionalBidCreditCost) || 0,
+          workTokenCost: Number(result.workTokenCost) || 0,
+          remainingPriorityUses:
+            result.remainingPriorityUses != null ? result.remainingPriorityUses : null,
+        },
+      },
+    });
   } catch (err) {
     return next(err);
   }
@@ -283,6 +432,9 @@ module.exports = {
   listPoolOrders,
   getPoolOrderById,
   submitPoolOrderBid,
+  getPoolOrderNormalApplicationTokenQuote,
+  getPoolOrderNormalApplicationBidQuote,
+  upgradePoolOrderBidPriority,
   submitFakePoolOrderBid,
   takeFakePoolOrder,
   takePoolOrder,

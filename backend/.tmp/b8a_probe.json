@@ -1,0 +1,246 @@
+﻿Γùç injected env (21) from .env // tip: Γîü auth for agents [www.vestauth.com]
+node : (node:16836) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as 
+aliases for 'verify-full'.
+At C:\Users\Batman\AppData\Local\Temp\ps-script-2935d203-2962-4cca-8d2d-b58dbd492cdd.ps1:83 char:1
++ node scripts/b8aPreActivationProductionReadOnlyProbe.js 2>&1 | Out-Fi ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:16836) Wa... 'verify-full'.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq 
+semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+{
+  "classification": "PRODUCTION_READ_ONLY",
+  "migVersions": [
+    "146_marketplace_bid_credits_foundation",
+    "147_normal_application_bid_credit_economics",
+    "148_priority_application_boost",
+    "149_marketplace_article_applications",
+    "150_article_application_bid_credit_economics",
+    "151_bid_credit_package_purchases"
+  ],
+  "tables": {
+    "marketplace_membership_plans": "marketplace_membership_plans",
+    "marketplace_memberships": null,
+    "marketplace_membership_cycles": "marketplace_membership_cycles",
+    "marketplace_bid_credit_grants": "marketplace_bid_credit_grants",
+    "marketplace_bid_credit_ledger_entries": "marketplace_bid_credit_ledger_entries",
+    "marketplace_membership_bid_distribution_months": "marketplace_membership_bid_distribution_months",
+    "order_freelancer_bid_credit_economics": "order_freelancer_bid_credit_economics",
+    "order_freelancer_priority_application_boosts": "order_freelancer_priority_application_boosts",
+    "marketplace_articles": "marketplace_articles",
+    "marketplace_article_applications": "marketplace_article_applications",
+    "marketplace_article_application_bid_credit_economics": "marketplace_article_application_bid_credit_economics",
+    "marketplace_bid_credit_packages": "marketplace_bid_credit_packages",
+    "marketplace_bid_credit_purchases": "marketplace_bid_credit_purchases",
+    "marketplace_economy_settings": "marketplace_economy_settings"
+  },
+  "wrongPriorityNames": {
+    "priority_application_boosts": null,
+    "marketplace_priority_application_boosts": null,
+    "order_priority_application_boosts": null
+  },
+  "keyColumns": {
+    "marketplace_membership_plans": [
+      "article_access_level",
+      "included_tokens_per_cycle",
+      "is_active",
+      "monthly_bid_allowance",
+      "monthly_price_jod",
+      "priority_bid_enabled",
+      "priority_bid_uses_per_cycle"
+    ],
+    "marketplace_membership_cycles": [
+      "monthly_bid_allowance_snapshot"
+    ],
+    "marketplace_bid_credit_grants": [
+      "amount_consumed",
+      "amount_granted",
+      "amount_revoked",
+      "expires_at",
+      "frozen_at",
+      "source_type",
+      "status"
+    ],
+    "marketplace_bid_credit_packages": [
+      "bid_quantity",
+      "is_active",
+      "price_jod",
+      "validity_days"
+    ],
+    "marketplace_economy_settings": [
+      "article_applications_enabled",
+      "bid_credit_purchases_enabled",
+      "bid_credits_enabled",
+      "cash_membership_payments_enabled",
+      "elite_engine_enabled",
+      "fair_work_distribution_enabled",
+      "marketplace_commission_enabled",
+      "priority_application_boost_enabled",
+      "priority_bidding_enabled",
+      "verification_bonuses_enabled",
+      "work_tokens_enabled"
+    ],
+    "order_freelancer_priority_application_boosts": [
+      "freelancer_user_id",
+      "order_id",
+      "priority_use_cost",
+      "status"
+    ]
+  },
+  "constraints": {
+    "marketplace_bid_credit_grants_source_type_check": "CHECK (((source_type)::text = ANY ((ARRAY['membership_daily_unlock'::character varying, 'admin_manual'::character varying, 'admin_adjustment'::character varying, 'normal_application_refund'::character varying, 'article_application_refund'::character varying, 'package_purchase'::character varying])::text[])))",
+    "marketplace_bid_credit_grants_status_check": "CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'exhausted'::character varying, 'expired'::character varying, 'revoked'::character varying, 'frozen'::character varying])::text[])))",
+    "marketplace_bid_credit_grants_amounts_chk": "CHECK ((((amount_consumed + amount_expired) + amount_revoked) <= amount_granted))",
+    "marketplace_bid_credit_packages_validity_days_chk": "CHECK (((validity_days IS NULL) OR ((validity_days >= 1) AND (validity_days <= 3650))))",
+    "marketplace_bid_credit_purchases_status_chk": "CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'checkout_created'::character varying, 'paid'::character varying, 'fulfilled'::character varying, 'cancelled'::character varying, 'failed'::character varying])::text[])))"
+  },
+  "flags": {
+    "bid_credits_enabled": false,
+    "bid_credit_purchases_enabled": false,
+    "priority_application_boost_enabled": false,
+    "article_applications_enabled": false,
+    "work_tokens_enabled": false,
+    "priority_bidding_enabled": false,
+    "fair_work_distribution_enabled": false,
+    "elite_engine_enabled": false,
+    "marketplace_commission_enabled": false,
+    "cash_membership_payments_enabled": false,
+    "verification_bonuses_enabled": false
+  },
+  "membershipPlans": [
+    {
+      "id": "5",
+      "tierCode": "free",
+      "nameAr": "┘à╪¼╪º┘å┘è",
+      "nameEn": "Free",
+      "isActive": true,
+      "monthlyPriceJod": 0,
+      "monthlyBidAllowance": 0,
+      "priorityBidEnabled": false,
+      "priorityUsesPerCycle": 0,
+      "articleAccessLevel": 1,
+      "includedTokensPerCycle": 0,
+      "eliteDirectOrdersEnabled": false,
+      "cashAllowed": false
+    },
+    {
+      "id": "1",
+      "tierCode": "pay_as_you_work",
+      "nameAr": "╪º╪»┘ü╪╣ ╪¡╪│╪¿ ╪╣┘à┘ä┘â",
+      "nameEn": "Pay As You Work",
+      "isActive": false,
+      "monthlyPriceJod": 1.99,
+      "monthlyBidAllowance": 0,
+      "priorityBidEnabled": true,
+      "priorityUsesPerCycle": 1,
+      "articleAccessLevel": 1,
+      "includedTokensPerCycle": 0,
+      "eliteDirectOrdersEnabled": false,
+      "cashAllowed": false
+    },
+    {
+      "id": "6",
+      "tierCode": "start",
+      "nameAr": "╪º╪¿╪»╪ú",
+      "nameEn": "Start",
+      "isActive": true,
+      "monthlyPriceJod": 24.99,
+      "monthlyBidAllowance": 0,
+      "priorityBidEnabled": true,
+      "priorityUsesPerCycle": 1,
+      "articleAccessLevel": 2,
+      "includedTokensPerCycle": 0,
+      "eliteDirectOrdersEnabled": false,
+      "cashAllowed": false
+    },
+    {
+      "id": "2",
+      "tierCode": "active",
+      "nameAr": "Active",
+      "nameEn": "Active",
+      "isActive": true,
+      "monthlyPriceJod": 44.99,
+      "monthlyBidAllowance": 0,
+      "priorityBidEnabled": true,
+      "priorityUsesPerCycle": 2,
+      "articleAccessLevel": 3,
+      "includedTokensPerCycle": 0,
+      "eliteDirectOrdersEnabled": false,
+      "cashAllowed": false
+    },
+    {
+      "id": "3",
+      "tierCode": "pro",
+      "nameAr": "Pro",
+      "nameEn": "Pro",
+      "isActive": true,
+      "monthlyPriceJod": 79.99,
+      "monthlyBidAllowance": 0,
+      "priorityBidEnabled": true,
+      "priorityUsesPerCycle": 3,
+      "articleAccessLevel": 4,
+      "includedTokensPerCycle": 0,
+      "eliteDirectOrdersEnabled": false,
+      "cashAllowed": false
+    },
+    {
+      "id": "4",
+      "tierCode": "elite",
+      "nameAr": "Elite",
+      "nameEn": "Elite",
+      "isActive": true,
+      "monthlyPriceJod": 119.99,
+      "monthlyBidAllowance": 0,
+      "priorityBidEnabled": true,
+      "priorityUsesPerCycle": 4,
+      "articleAccessLevel": 5,
+      "includedTokensPerCycle": 0,
+      "eliteDirectOrdersEnabled": true,
+      "cashAllowed": false
+    }
+  ],
+  "MEMBERSHIP_BID_ALLOWANCES_CONFIGURED": "NO",
+  "packages": [],
+  "BID_PURCHASE_CATALOG_CONFIGURED": "NO",
+  "counts": {
+    "activeFreelancers": null,
+    "activeFreelancersError": "column r.code does not exist",
+    "activeFreelancersAlt": 3497,
+    "usableMarketplaceMemberships": null,
+    "usableMarketplaceMembershipsError": "relation \"marketplace_memberships\" does not exist",
+    "activeMembershipCycles": 0,
+    "freelancersWithSpendableBids": 0,
+    "spendableBidTotal": 0,
+    "realOpenPricedBiddingOrders": null,
+    "realOpenPricedBiddingOrdersError": "column \"is_fake\" does not exist",
+    "pendingRealFreelancerApplications": null,
+    "pendingRealFreelancerApplicationsError": "column o.is_fake does not exist",
+    "articleApplications": 0,
+    "priorityBoosts": 0,
+    "membershipsTotal": null,
+    "membershipsTotalError": "relation \"marketplace_memberships\" does not exist",
+    "cyclesTotal": 0,
+    "bidGrantsTotal": 0,
+    "bidLedgerTotal": 0,
+    "normalBidEconomics": 0,
+    "articlesTotal": 0,
+    "articleEconomics": 0,
+    "bidPurchases": 0,
+    "activeBidPackages": 0,
+    "membershipPlansTotal": 6,
+    "membershipPlansActive": 5,
+    "bidPackagesTotal": 0,
+    "currentlyOpenArticlesBestEffort": 0,
+    "articleStatusDist": []
+  },
+  "bidGrantsBySource": [],
+  "PRIORITY_BOOST_PRODUCTION_SCHEMA": "PRESENT"
+}

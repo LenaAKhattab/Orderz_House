@@ -8,6 +8,7 @@ import {
   getMyEligibilityRequest,
   getMySubscriptionRequest,
   getPoolOrderByIdRequest,
+  getPoolOrderNormalApplicationBidQuoteRequest,
   submitPoolOrderBidRequest,
   takePoolOrderRequest,
 } from "../../services/api";
@@ -37,6 +38,7 @@ import { isPoolOrderLockedByPlan } from "../../utils/poolOrderPlanEligibility";
 import { isPoolOrderAvailable, poolFixedParticipationPending } from "../../utils/poolOrderParticipation";
 import { isPoolOrderTakenAsAssignment } from "../../utils/poolOrderTakeOutcome";
 import { Lock } from "lucide-react";
+import ClientEliteDirectOfferPanel from "./ClientEliteDirectOfferPanel";
 
 function typeLabel(projectType, t) {
   return formatOrderProjectType(projectType, t);
@@ -58,6 +60,8 @@ export default function FreelancerOrderDetailsPage() {
   const [taking, setTaking] = useState(false);
   const [bidOpen, setBidOpen] = useState(false);
   const [bidBusy, setBidBusy] = useState(false);
+  const [bidQuoteLoading, setBidQuoteLoading] = useState(false);
+  const [bidQuote, setBidQuote] = useState(null);
   const [takeConfirmOpen, setTakeConfirmOpen] = useState(false);
   const [eligibility, setEligibility] = useState(null);
   const [subscription, setSubscription] = useState(null);
@@ -183,13 +187,38 @@ export default function FreelancerOrderDetailsPage() {
     }
   };
 
-  const submitBid = async (amount) => {
+  useEffect(() => {
+    if (!bidOpen || !id || !isFreelancer) {
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      setBidQuoteLoading(true);
+      try {
+        const res = await getPoolOrderNormalApplicationBidQuoteRequest(id);
+        if (!cancelled) setBidQuote(res?.data || null);
+      } catch {
+        if (!cancelled) setBidQuote(null);
+      } finally {
+        if (!cancelled) setBidQuoteLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bidOpen, id, isFreelancer]);
+
+  const submitBid = async (amount, options = {}) => {
     setBidBusy(true);
     try {
-      await submitPoolOrderBidRequest(id, { amount });
+      const res = await submitPoolOrderBidRequest(id, {
+        amount,
+        usePriority: Boolean(options.usePriority),
+      });
       trackEvent("bid_submitted", {
         order_id: String(id),
         amount: Number(amount),
+        is_priority: Boolean(options.usePriority),
       });
       push({
         type: "success",
@@ -197,6 +226,10 @@ export default function FreelancerOrderDetailsPage() {
         message: t("orders.marketplace.bidSubmitted.message"),
       });
       setBidOpen(false);
+      const availableAfter = res?.data?.bidCredit?.availableBidsAfter;
+      if (availableAfter != null) {
+        setBidQuote((prev) => (prev ? { ...prev, availableBids: availableAfter } : prev));
+      }
       const resPool = await getPoolOrderByIdRequest(id);
       setOrder(resPool?.data?.order || null);
     } catch (e) {
@@ -385,6 +418,14 @@ export default function FreelancerOrderDetailsPage() {
             max={order.bidBudgetMax}
             onClose={() => setBidOpen(false)}
             onSubmit={submitBid}
+            bidCreditCost={bidQuote?.bidCreditCost ?? 1}
+            availableBids={bidQuote?.availableBids ?? null}
+            engineAvailable={Boolean(bidQuote?.engineAvailable)}
+            bidQuoteLoading={bidQuoteLoading}
+            priorityBoostAvailable={Boolean(bidQuote?.priorityBoost?.engineAvailable && bidQuote?.priorityBoost?.canBoost)}
+            remainingPriorityUses={bidQuote?.priorityBoost?.remainingPriorityUses ?? null}
+            priorityUseCost={bidQuote?.priorityBoost?.priorityUseCost ?? 1}
+            priorityAdditionalBidCost={bidQuote?.priorityBoost?.additionalBidCreditCost ?? 0}
           />
           <TakePoolOrderConfirmModal
             open={takeConfirmOpen}
@@ -392,6 +433,7 @@ export default function FreelancerOrderDetailsPage() {
             onClose={() => setTakeConfirmOpen(false)}
             onConfirm={take}
           />
+          {role === "client" && id ? <ClientEliteDirectOfferPanel orderId={id} /> : null}
         </>
       ) : (
         <p className="od-empty">{t("orders.marketplace.orderNotFound")}</p>

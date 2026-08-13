@@ -53,6 +53,14 @@ const createMarketplaceMembershipPlanValidators = [
     .optional()
     .isInt({ min: 0 })
     .withMessage("includedTokensPerCycle must be an integer >= 0."),
+  body("monthlyBidAllowance")
+    .optional()
+    .isInt({ min: 0, max: 1000000 })
+    .withMessage("monthlyBidAllowance must be an integer between 0 and 1000000."),
+  body("articleAccessLevel")
+    .optional()
+    .isInt({ min: 1, max: 5 })
+    .withMessage("articleAccessLevel must be an integer between 1 and 5."),
   body("cashAllowed").optional().isBoolean(),
   body("minimumCashMonths").optional().isInt({ min: 1 }).withMessage("minimumCashMonths must be >= 1."),
   body("maximumPrepaidMonths").optional().isInt({ min: 1 }).withMessage("maximumPrepaidMonths must be >= 1."),
@@ -91,6 +99,8 @@ const updateMarketplaceMembershipPlanValidators = [
   body("unlimitedRealOrderValue").optional().isBoolean(),
   body("maxRealOrderValueJod").optional({ nullable: true }).isFloat({ min: 0 }),
   body("includedTokensPerCycle").optional().isInt({ min: 0 }),
+  body("monthlyBidAllowance").optional().isInt({ min: 0, max: 1000000 }),
+  body("articleAccessLevel").optional().isInt({ min: 1, max: 5 }),
   body("cashAllowed").optional().isBoolean(),
   body("minimumCashMonths").optional().isInt({ min: 1 }),
   body("maximumPrepaidMonths").optional().isInt({ min: 1 }),

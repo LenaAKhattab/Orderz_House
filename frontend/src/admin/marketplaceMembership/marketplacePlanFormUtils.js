@@ -36,6 +36,8 @@ export function getInitialMarketplacePlanFormState(overrides = {}) {
     maxRealOrderValueJod: "",
     unlimitedRealOrderValue: false,
     includedTokensPerCycle: 0,
+    monthlyBidAllowance: 0,
+    articleAccessLevel: 1,
     cashAllowed: false,
     minimumCashMonths: 1,
     maximumPrepaidMonths: 1,
@@ -64,7 +66,9 @@ export function planToMarketplaceFormState(plan) {
     monthlyPriceJod: plan.monthlyPriceJod ?? "",
     maxRealOrderValueJod: plan.unlimitedRealOrderValue ? "" : plan.maxRealOrderValueJod ?? "",
     unlimitedRealOrderValue: Boolean(plan.unlimitedRealOrderValue),
-    includedTokensPerCycle: plan.includedTokensPerCycle ?? 0,
+    includedTokensPerCycle: 0,
+    monthlyBidAllowance: plan.monthlyBidAllowance ?? 0,
+    articleAccessLevel: plan.articleAccessLevel ?? 1,
     cashAllowed: Boolean(plan.cashAllowed),
     minimumCashMonths: plan.minimumCashMonths ?? 1,
     maximumPrepaidMonths: plan.maximumPrepaidMonths ?? 1,
@@ -106,9 +110,13 @@ export function validateMarketplacePlanForm(form, { isCreate = false } = {}) {
       errors.maxRealOrderValueJod = "حد قيمة الطلب الحقيقي مطلوب.";
     }
   }
-  const tokens = Number(form.includedTokensPerCycle);
-  if (!Number.isInteger(tokens) || tokens < 0) {
-    errors.includedTokensPerCycle = "وحدات العمل يجب أن تكون ≥ 0.";
+  const bids = Number(form.monthlyBidAllowance);
+  if (!Number.isInteger(bids) || bids < 0) {
+    errors.monthlyBidAllowance = "عدد العروض الشهرية يجب أن يكون ≥ 0.";
+  }
+  const articleLevel = Number(form.articleAccessLevel);
+  if (!Number.isInteger(articleLevel) || articleLevel < 1 || articleLevel > 5) {
+    errors.articleAccessLevel = "مستوى الوصول للمقالات يجب أن يكون بين 1 و 5.";
   }
   const pbUses = Number(form.priorityBidUsesPerCycle);
   if (!Number.isInteger(pbUses) || pbUses < 0 || pbUses > 1000) {
@@ -149,7 +157,9 @@ export function normalizeMarketplacePlanPayload(form, { isCreate = false } = {})
     monthlyPriceJod: Number(form.monthlyPriceJod),
     unlimitedRealOrderValue: unlimited,
     maxRealOrderValueJod: unlimited ? null : Number(form.maxRealOrderValueJod),
-    includedTokensPerCycle: Number(form.includedTokensPerCycle) || 0,
+    includedTokensPerCycle: 0,
+    monthlyBidAllowance: Number(form.monthlyBidAllowance) || 0,
+    articleAccessLevel: Number(form.articleAccessLevel) || 1,
     cashAllowed: Boolean(form.cashAllowed),
     minimumCashMonths: Number(form.minimumCashMonths) || 1,
     maximumPrepaidMonths: Number(form.maximumPrepaidMonths) || 1,

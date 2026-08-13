@@ -124,6 +124,27 @@ export default function FreelancerMarketplaceMembershipCard() {
             {benefitsUsable ? `${pb.used} / ${pb.allowed}` : `— / ${pb.allowed || 0}`}
           </dd>
         </div>
+        <div>
+          <dt style={{ opacity: 0.75, fontSize: "0.85rem" }}>
+            {t("freelancerDashboard.marketplaceMembership.bidsPerMonth")}
+          </dt>
+          <dd style={{ margin: "4px 0 0", fontWeight: 600 }}>
+            {cycle?.monthlyBidAllowanceSnapshot ??
+              snap.membership?.plan?.monthlyBidAllowance ??
+              0}
+          </dd>
+        </div>
+        <div>
+          <dt style={{ opacity: 0.75, fontSize: "0.85rem" }}>
+            {t("freelancerDashboard.marketplaceMembership.articleAccessLevel")}
+          </dt>
+          <dd style={{ margin: "4px 0 0", fontWeight: 600 }}>
+            {snap.membership?.plan?.articleAccessLevel ?? 1}
+          </dd>
+          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", opacity: 0.75 }}>
+            {t("freelancerDashboard.marketplaceMembership.articleAccessLevelHint")}
+          </p>
+        </div>
       </dl>
       <p style={{ margin: "12px 0 0", fontSize: "0.88rem", opacity: 0.8 }}>
         {t("freelancerDashboard.marketplaceMembership.engineComingSoon")}

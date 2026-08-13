@@ -6,7 +6,7 @@
 export const MARKETPLACE_ECONOMY_DEFAULT_FORM = Object.freeze({
   workTokenValueJod: "0.100",
   normalApplicationTokensPerOrderJod: "1",
-  normalApplicationTokenRefundPercentage: "70",
+  normalApplicationTokenRefundPercentage: "100",
   platformCommissionPercentage: "30",
   cashProcessingFeeJod: "5.000",
   identityVerificationBonusEnabled: true,
@@ -21,6 +21,10 @@ export const MARKETPLACE_ECONOMY_DEFAULT_FORM = Object.freeze({
   eliteDeclinesAffectCarryForward: false,
 
   priorityBiddingEnabled: false,
+  priorityApplicationBoostEnabled: false,
+  bidCreditsEnabled: false,
+  bidCreditPurchasesEnabled: false,
+  articleApplicationsEnabled: false,
   priorityBidDurationMinutes: "30",
   priorityBidMinimumTokens: "1",
   priorityBidMaximumTokens: "",
@@ -37,6 +41,7 @@ export const MARKETPLACE_ECONOMY_DEFAULT_FORM = Object.freeze({
 
   fairWorkDistributionEnabled: false,
   assignmentStrategy: "HIGHEST_TOKEN_ONLY",
+  fairDistributionLookbackDays: "30",
   fairnessWeight: "0",
   tokenWeight: "100",
   performanceWeight: "0",
@@ -57,7 +62,17 @@ export const MARKETPLACE_ECONOMY_DEFAULT_FORM = Object.freeze({
 const ASSIGNMENT_STRATEGIES = new Set([
   "HIGHEST_TOKEN_ONLY",
   "FAIR_DISTRIBUTION_FIRST",
-  "HYBRID",
+  // HYBRID reserved — not selectable until weight policy is approved
+]);
+
+export const ASSIGNMENT_STRATEGIES_UI = Object.freeze([
+  { value: "HIGHEST_TOKEN_ONLY", label: "HIGHEST_TOKEN_ONLY", available: true },
+  { value: "FAIR_DISTRIBUTION_FIRST", label: "FAIR_DISTRIBUTION_FIRST", available: true },
+  {
+    value: "HYBRID",
+    label: "HYBRID (unavailable — weight policy required)",
+    available: false,
+  },
 ]);
 
 function toFiniteNumber(value) {
@@ -110,6 +125,10 @@ export function settingsToFormState(settings) {
     eliteDeclinesAffectCarryForward: Boolean(settings.eliteDeclinesAffectCarryForward),
 
     priorityBiddingEnabled: Boolean(settings.priorityBiddingEnabled),
+    priorityApplicationBoostEnabled: Boolean(settings.priorityApplicationBoostEnabled),
+    bidCreditsEnabled: Boolean(settings.bidCreditsEnabled),
+    bidCreditPurchasesEnabled: Boolean(settings.bidCreditPurchasesEnabled),
+    articleApplicationsEnabled: Boolean(settings.articleApplicationsEnabled),
     priorityBidDurationMinutes: String(settings.priorityBidDurationMinutes ?? ""),
     priorityBidMinimumTokens: String(settings.priorityBidMinimumTokens ?? ""),
     priorityBidMaximumTokens:
@@ -129,6 +148,7 @@ export function settingsToFormState(settings) {
 
     fairWorkDistributionEnabled: Boolean(settings.fairWorkDistributionEnabled),
     assignmentStrategy: settings.assignmentStrategy || "HIGHEST_TOKEN_ONLY",
+    fairDistributionLookbackDays: String(settings.fairDistributionLookbackDays ?? 30),
     fairnessWeight: num(settings.fairnessWeight ?? 0),
     tokenWeight: num(settings.tokenWeight ?? 100),
     performanceWeight: num(settings.performanceWeight ?? 0),
@@ -212,18 +232,21 @@ export function validateMarketplaceEconomyForm(form, { isEn = false } = {}) {
     return v;
   };
 
-  const strategy = (key, label) => enumVal(key, label, ASSIGNMENT_STRATEGIES);
+  const strategy = (key, label) => {
+    const v = String(form[key] || "").trim();
+    if (v === "HYBRID") {
+      errors[key] = t(
+        `${label}: HYBRID غير متاح حتى تُعرَّف أوزان الدمج.`,
+        `${label}: HYBRID unavailable until weight policy is defined (FAIR_DISTRIBUTION_HYBRID_WEIGHT_POLICY_REQUIRED).`,
+      );
+      return null;
+    }
+    return enumVal(key, label, ASSIGNMENT_STRATEGIES);
+  };
 
+  // Phase B7A: active Admin patch omits deprecated Work Token / legacy auction knobs.
+  // Engines work_tokens_enabled + priority_bidding_enabled are always forced OFF.
   const patch = {
-    workTokenValueJod: moneyPositive("workTokenValueJod", t("قيمة Work Token", "Work Token value")),
-    normalApplicationTokensPerOrderJod: moneyPositive(
-      "normalApplicationTokensPerOrderJod",
-      t("Tokens للتقديم العادي / دينار", "Normal apply tokens / JOD"),
-    ),
-    normalApplicationTokenRefundPercentage: percent(
-      "normalApplicationTokenRefundPercentage",
-      t("استرداد التقديم العادي", "Normal apply refund %"),
-    ),
     platformCommissionPercentage: percent(
       "platformCommissionPercentage",
       t("نسبة العمولة", "Commission %"),
@@ -232,20 +255,7 @@ export function validateMarketplaceEconomyForm(form, { isEn = false } = {}) {
       "cashProcessingFeeJod",
       t("رسوم الدفع النقدي", "Cash processing fee"),
     ),
-    identityVerificationBonusEnabled: Boolean(form.identityVerificationBonusEnabled),
-    identityVerificationBonusTokens: intRange(
-      "identityVerificationBonusTokens",
-      t("مكافأة توثيق الهوية", "Identity bonus tokens"),
-      0,
-      1_000_000,
-    ),
-    payoutMethodVerificationBonusEnabled: Boolean(form.payoutMethodVerificationBonusEnabled),
-    payoutMethodVerificationBonusTokens: intRange(
-      "payoutMethodVerificationBonusTokens",
-      t("مكافأة توثيق الاستلام", "Payout bonus tokens"),
-      0,
-      1_000_000,
-    ),
+    // Phase B7B: omit verification Work Token amount knobs; engine forced OFF.
     eliteDirectOrdersPerCycle: intRange(
       "eliteDirectOrdersPerCycle",
       t("طلبات Elite لكل دورة", "Elite orders / cycle"),
@@ -273,41 +283,21 @@ export function validateMarketplaceEconomyForm(form, { isEn = false } = {}) {
     ),
     eliteDeclinesAffectCarryForward: Boolean(form.eliteDeclinesAffectCarryForward),
 
-    priorityBiddingEnabled: Boolean(form.priorityBiddingEnabled),
-    priorityBidDurationMinutes: intRange(
-      "priorityBidDurationMinutes",
-      t("مدة المزاد", "Auction duration"),
-      1,
-      10080,
-    ),
-    priorityBidMinimumTokens: intRange(
-      "priorityBidMinimumTokens",
-      t("أدنى Priority Bid", "Min Priority Bid"),
-      1,
-      100000000,
-    ),
-    priorityBidMaximumTokens: nullableInt(
-      "priorityBidMaximumTokens",
-      t("أقصى Priority Bid", "Max Priority Bid"),
-      1,
-      100000000,
-    ),
-    priorityBidShowHighest: Boolean(form.priorityBidShowHighest),
-    priorityBidShowPosition: Boolean(form.priorityBidShowPosition),
-    priorityBidAllowIncrease: Boolean(form.priorityBidAllowIncrease),
-    priorityBidAllowDecrease: Boolean(form.priorityBidAllowDecrease),
-    priorityBidAllowWithdrawal: Boolean(form.priorityBidAllowWithdrawal),
-    priorityBidWithdrawalReleasesTokens: Boolean(form.priorityBidWithdrawalReleasesTokens),
-    priorityBidWithdrawalReturnsUse: Boolean(form.priorityBidWithdrawalReturnsUse),
-    priorityBidReturnUseOnOrderCancel: Boolean(form.priorityBidReturnUseOnOrderCancel),
-    priorityBidAutoAssignmentEnabled: Boolean(form.priorityBidAutoAssignmentEnabled),
-    priorityBidAssignmentStrategy: strategy(
-      "priorityBidAssignmentStrategy",
-      t("استراتيجية Priority Bid", "Priority Bid strategy"),
-    ),
+    workTokensEnabled: false,
+    priorityBiddingEnabled: false,
+    priorityApplicationBoostEnabled: Boolean(form.priorityApplicationBoostEnabled),
+    bidCreditsEnabled: Boolean(form.bidCreditsEnabled),
+    bidCreditPurchasesEnabled: Boolean(form.bidCreditPurchasesEnabled),
+    articleApplicationsEnabled: Boolean(form.articleApplicationsEnabled),
 
     fairWorkDistributionEnabled: Boolean(form.fairWorkDistributionEnabled),
     assignmentStrategy: strategy("assignmentStrategy", t("استراتيجية التعيين", "Assignment strategy")),
+    fairDistributionLookbackDays: intRange(
+      "fairDistributionLookbackDays",
+      t("نافذة التوزيع العادل (أيام)", "Fair Distribution lookback (days)"),
+      1,
+      3650,
+    ),
     fairnessWeight: percent("fairnessWeight", "fairnessWeight"),
     tokenWeight: percent("tokenWeight", "tokenWeight"),
     performanceWeight: percent("performanceWeight", "performanceWeight"),
@@ -318,31 +308,13 @@ export function validateMarketplaceEconomyForm(form, { isEn = false } = {}) {
     declinePriorityEffect: String(form.declinePriorityEffect || "NO_BOOST"),
     freelancerCancelPriorityEffect: String(form.freelancerCancelPriorityEffect || "NO_BOOST"),
 
-    workTokensEnabled: Boolean(form.workTokensEnabled),
     marketplaceCommissionEnabled: Boolean(form.marketplaceCommissionEnabled),
     cashMembershipPaymentsEnabled: Boolean(form.cashMembershipPaymentsEnabled),
     eliteEngineEnabled: Boolean(form.eliteEngineEnabled),
-    verificationBonusesEnabled: Boolean(form.verificationBonusesEnabled),
+    verificationBonusesEnabled: false,
   };
 
-  if (
-    patch.priorityBidMaximumTokens != null &&
-    patch.priorityBidMinimumTokens != null &&
-    patch.priorityBidMaximumTokens < patch.priorityBidMinimumTokens
-  ) {
-    errors.priorityBidMaximumTokens = t(
-      "الحد الأقصى يجب أن يكون ≥ الأدنى.",
-      "Max must be >= min.",
-    );
-    patch.priorityBidMaximumTokens = null;
-  }
-
-  const ok = Object.keys(errors).length === 0 && Object.values(patch).every((v) => v !== null || v === null);
-  // Re-evaluate: null is allowed for priorityBidMaximumTokens; other nulls from failed validators block ok
-  const blockingNull = Object.entries(patch).some(([k, v]) => {
-    if (k === "priorityBidMaximumTokens") return false;
-    return v === null;
-  });
+  const blockingNull = Object.entries(patch).some(([, v]) => v === null);
   const finalOk = Object.keys(errors).length === 0 && !blockingNull;
   return { ok: finalOk, errors, patch: finalOk ? patch : null };
 }
@@ -352,11 +324,15 @@ export function areEconomyEnginesDisabled(settings) {
   if (!settings) return true;
   return (
     !settings.workTokensEnabled &&
+    !settings.bidCreditsEnabled &&
+    !settings.bidCreditPurchasesEnabled &&
+    !settings.articleApplicationsEnabled &&
     !settings.marketplaceCommissionEnabled &&
     !settings.cashMembershipPaymentsEnabled &&
     !settings.eliteEngineEnabled &&
     !settings.verificationBonusesEnabled &&
     !settings.priorityBiddingEnabled &&
+    !settings.priorityApplicationBoostEnabled &&
     !settings.fairWorkDistributionEnabled
   );
 }

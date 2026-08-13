@@ -27,6 +27,15 @@ const optionalPercent = (field) =>
     .isFloat({ min: 0, max: 100 })
     .withMessage(`${field} must be between 0 and 100.`);
 
+/** Current product phase: only 100% until non-100 refund rounding policy is approved. */
+const optionalNormalApplicationRefundPercentage100Only = (field) =>
+  body(field)
+    .optional()
+    .isFloat({ min: 100, max: 100 })
+    .withMessage(
+      `${field} must be 100 until a non-100 refund rounding policy is approved (FUTURE_NON_FULL_REFUND_ROUNDING_POLICY_REQUIRED).`,
+    );
+
 const optionalInt = (field, { min = 0, max = 1000000 } = {}) =>
   body(field)
     .optional()
@@ -55,10 +64,10 @@ const optionalEnum = (field, allowed) =>
 const updateMarketplaceEconomySettingsValidators = [
   optionalMoneyPositive("workTokenValueJod"),
   optionalMoneyPositive("normalApplicationTokensPerOrderJod"),
-  optionalPercent("normalApplicationTokenRefundPercentage"),
+  optionalNormalApplicationRefundPercentage100Only("normalApplicationTokenRefundPercentage"),
   // Legacy aliases (normalized in service) — still validate if sent
   optionalMoneyPositive("bidTokensPerOrderJod"),
-  optionalPercent("applicationTokenRefundPercentage"),
+  optionalNormalApplicationRefundPercentage100Only("applicationTokenRefundPercentage"),
   optionalPercent("platformCommissionPercentage"),
   optionalMoneyNonNeg("cashProcessingFeeJod"),
   optionalBoolean("identityVerificationBonusEnabled"),
@@ -89,6 +98,7 @@ const updateMarketplaceEconomySettingsValidators = [
 
   optionalBoolean("fairWorkDistributionEnabled"),
   optionalEnum("assignmentStrategy", ASSIGNMENT_STRATEGIES),
+  optionalInt("fairDistributionLookbackDays", { min: 1, max: 3650 }),
   optionalPercent("fairnessWeight"),
   optionalPercent("tokenWeight"),
   optionalPercent("performanceWeight"),

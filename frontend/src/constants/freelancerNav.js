@@ -11,6 +11,7 @@ export const FREELANCER_NAV_MAIN = [
     requiresInstitutionMembership: true,
   },
   { to: "/dashboard/freelancer/my-orders", labelKey: "dashboard.nav.freelancer.myRequests", icon: "my-orders" },
+  { to: "/dashboard/freelancer/articles", labelKey: "dashboard.nav.freelancer.articles", icon: "orders" },
   { to: "/dashboard/freelancer/financial-claims", labelKey: "dashboard.nav.freelancer.wallet", icon: "wallet" },
   { to: "/dashboard/freelancer/plans", labelKey: "dashboard.nav.freelancer.plans", icon: "plans" },
   {
@@ -48,5 +49,6 @@ export function freelancerPageTitle(pathname, t) {
   if (pathname.includes("/orders/")) return t("dashboard.nav.freelancer.requestDetails");
   if (pathname.includes("/my-orders/")) return t("dashboard.nav.freelancer.myRequests");
   if (pathname.includes("/courses/")) return t("dashboard.nav.freelancer.courseDetails");
+  if (pathname.includes("/articles")) return t("dashboard.nav.freelancer.articles");
   return t("dashboard.nav.freelancer.panelTitle");
 }

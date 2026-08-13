@@ -128,6 +128,32 @@ PRODUCTION_BACKUP_CONFIRMED=1 \
 npm run db:migrate:production
 ```
 
+### Apply exactly one production migration (first pending only)
+
+When multiple migrations are pending and only the next approved migration should apply:
+
+```bash
+cd backend
+npm run db:migrate:status
+
+# Dry-run / pin inspection (no migration SQL executed):
+EXPECTED_MIGRATION_VERSION=145_marketplace_article_level_model \
+npm run db:migrate:production:next -- --dry-run
+
+# Apply ONLY the first pending migration (must match EXPECTED_MIGRATION_VERSION):
+APP_ENV=production \
+ALLOW_PRODUCTION_DB_MIGRATIONS=1 \
+CONFIRM_PRODUCTION_DATABASE=orderzhouse-production \
+PRODUCTION_BACKUP_CONFIRMED=1 \
+EXPECTED_MIGRATION_VERSION=145_marketplace_article_level_model \
+npm run db:migrate:production:next
+```
+
+If `EXPECTED_MIGRATION_VERSION` does not equal the first pending migration, the command
+fails closed with `EXPECTED_MIGRATION_DOES_NOT_MATCH_NEXT_PENDING` (no skip / no reorder).
+
+`npm run db:run` remains blocked against production (`guardNonProductionWrite`).
+
 If pending SQL matches `DROP` / `TRUNCATE` / unconstrained `DELETE` heuristics,
 also set `ALLOW_DANGEROUS_PRODUCTION_SQL=1` after review.
 

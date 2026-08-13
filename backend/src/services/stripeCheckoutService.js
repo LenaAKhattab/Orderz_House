@@ -362,6 +362,9 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
       throw err;
     }
 
+    const priorityAuctionService = require("./marketplacePriorityAuctionService");
+    await priorityAuctionService.assertNoActivePriorityAuctionBlockingAssignment(db, oid);
+
     const { rows: bidRows } = await db.query(`SELECT * FROM order_freelancer_bids WHERE id = $1 AND order_id = $2 FOR UPDATE`, [bid, oid]);
     const selectedBid = bidRows[0];
     if (!selectedBid) {
@@ -413,6 +416,22 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
        WHERE id = $1`,
       [oid, bid, orderFlowService.ORDER_STATUSES.AWAITING_PAYMENT_AFTER_BID_SELECTION],
     );
+
+    // Phase 7.1: AWARDED at soft select (NOT EFFECTIVE — received_at unset)
+    {
+      const fairDist = require("./marketplaceFairDistributionService");
+      await fairDist.recordAwarded({
+        client: db,
+        order,
+        freelancerUserId: selectedBid.freelancer_user_id,
+        referenceType: "order_freelancer_bid",
+        referenceId: bid,
+        actorRole: "client",
+        actorUserId: uid,
+        reason: "client_selected_pending_payment",
+        metadata: { pendingPayment: true },
+      });
+    }
 
     const successUrl = `${clientUrl}/dashboard/client/my-orders?paid=1&orderId=${encodeURIComponent(String(oid))}&bidId=${encodeURIComponent(
       String(bid),
@@ -681,6 +700,23 @@ async function confirmClientSelectedBidPayment({ clientUserId, orderId, bidId })
          AND status = 'rejected'`,
       [Number(oid), Number(bid)],
     );
+
+    // Phase 7.1 Fair history (prospective; engine may be OFF)
+    {
+      const fairDist = require("./marketplaceFairDistributionService");
+      const orderForFair = { ...order, assigned_freelancer_id: selectedBid.freelancer_user_id, received_at: paidAt };
+      await fairDist.recordFinalEffectiveSelectionOutcome({
+        client: db,
+        order: orderForFair,
+        winnerFreelancerUserId: selectedBid.freelancer_user_id,
+        loserFreelancerUserIds: rejectedBidders.map((r) => r.freelancer_user_id),
+        selectionSource: "client_selected_bid_payment_confirm",
+        actorRole: "client",
+        actorUserId: uid,
+        occurredAt: paidAt,
+      });
+    }
+
     await safeNotify(() =>
       notificationEventsService.notifyUsers(
         {

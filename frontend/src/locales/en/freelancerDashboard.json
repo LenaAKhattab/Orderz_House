@@ -290,16 +290,29 @@
     "cycleStart": "Cycle start",
     "cycleEnd": "Cycle end",
     "priorityBidUsage": "Priority Bid uses",
+    "bidsPerMonth": "Bids / month",
+    "articleAccessLevel": "Article access level",
+    "articleAccessLevelHint": "Eligible to access/apply to Article levels up to this level — not free or unlimited applications.",
     "engineComingSoon": "Priority Bid engine coming soon — this view is accounting only."
   },
-  "workTokenWallet": {
-    "title": "Work Tokens",
-    "subtitle": "Accounting balances only — Token spend and Priority Bid are not available yet.",
-    "loading": "Loading Work Tokens…",
+  "bidCredits": {
+    "title": "Available Bids",
+    "subtitle": "1 Bid = 1 normal marketplace offer. Edits do not consume another Bid.",
+    "loading": "Loading Bids…",
     "available": "Available",
-    "reserved": "Reserved",
-    "engineComingSoon": "Coming soon — Work Token economy is not active yet.",
-    "engineOn": "Work Token engine is available."
+    "monthlyAllowance": "Monthly allowance",
+    "unlockedThisMonth": "Unlocked this month",
+    "nextExpiry": "Next expiry",
+    "engineComingSoon": "Coming soon — Bid Credits engine is not active yet.",
+    "engineOn": "Bid Credits engine is available.",
+    "ledgerEvents": {
+      "NORMAL_APPLICATION_BID_REFUND": "Bid refund",
+      "APPLICATION_BID_CONSUME": "Bid used",
+      "MEMBERSHIP_BID_GRANT": "Membership unlock",
+      "ADMIN_BID_GRANT": "Admin grant",
+      "ADMIN_BID_ADJUSTMENT": "Admin adjustment",
+      "BID_EXPIRED": "Bid expired"
+    }
   },
   "financialClaims": {
     "title": "Financial claims",

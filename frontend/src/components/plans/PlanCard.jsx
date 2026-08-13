@@ -91,6 +91,8 @@ const PlanCard = ({
   const isGuest = !user;
   const isFreelancer = role === "freelancer" || roles.includes("freelancer");
   const isLoggedNonFreelancer = Boolean(user) && !isFreelancer;
+  const isMarketplaceMembership =
+    plan?.catalogSource === "marketplace_membership" || Boolean(plan?.marketplaceMembership);
   const subscriptionRef = getSubscriptionPlanRef(plan);
   const isCurrentPlan =
     Boolean(currentSubscription) && String(currentSubscription.planId) === String(subscriptionRef.id);
@@ -136,42 +138,46 @@ const PlanCard = ({
         ? t("plans.days", { count: durationDays })
         : null;
 
-  const ctaLabel = freePlanPayFee
-    ? t("plans.cta.payActivationFee")
-    : customButtonLabel
-    ? customButtonLabel
-    : isLoggedNonFreelancer
-    ? t("plans.cta.freelancersOnly")
-    : isCurrentPlanLocked
-      ? t("plans.cta.currentPlan")
-      : isLowerTier
-        ? t("plans.cta.lowerPlan")
-        : isBlockedBySubscription
-          ? t("plans.cta.alreadySubscribed")
-          : checkoutBusy
-            ? t("common.loading.redirecting")
-            : isFreelancer && isUpgradeTarget && canSelfCheckout
-              ? t("plans.cta.upgrade")
-              : isFreelancer && canSelfCheckout
-                ? t("plans.cta.upgrade")
-                : isFreelancer && isFreePlan
-                  ? t("plans.cta.autoActivated")
-                  : isFreelancer && !canSelfCheckout
-                    ? t("plans.cta.companyActivation")
-                    : t("plans.cta.startNow");
-  const usePrimaryCta =
-    featured &&
-    (isGuest || (isFreelancer && (canSelfCheckout || freePlanPayFee))) &&
-    !isBlockedBySubscription &&
-    !isCurrentPlanLocked;
-  const isLocked =
-    isLoggedNonFreelancer ||
-    isCurrentPlanLocked ||
-    isLowerTier ||
-    isBlockedBySubscription ||
-    checkoutBusy ||
-    (isFreelancer && isFreePlan && !freePlanPayFee) ||
-    (isFreelancer && !canSelfCheckout && !isCurrentPlan && !isUpgradeTarget && !freePlanPayFee);
+  const ctaLabel = isMarketplaceMembership
+    ? customButtonLabel || t("plans.cta.viewMembership")
+    : freePlanPayFee
+      ? t("plans.cta.payActivationFee")
+      : customButtonLabel
+        ? customButtonLabel
+        : isLoggedNonFreelancer
+          ? t("plans.cta.freelancersOnly")
+          : isCurrentPlanLocked
+            ? t("plans.cta.currentPlan")
+            : isLowerTier
+              ? t("plans.cta.lowerPlan")
+              : isBlockedBySubscription
+                ? t("plans.cta.alreadySubscribed")
+                : checkoutBusy
+                  ? t("common.loading.redirecting")
+                  : isFreelancer && isUpgradeTarget && canSelfCheckout
+                    ? t("plans.cta.upgrade")
+                    : isFreelancer && canSelfCheckout
+                      ? t("plans.cta.upgrade")
+                      : isFreelancer && isFreePlan
+                        ? t("plans.cta.autoActivated")
+                        : isFreelancer && !canSelfCheckout
+                          ? t("plans.cta.companyActivation")
+                          : t("plans.cta.startNow");
+  const usePrimaryCta = isMarketplaceMembership
+    ? Boolean(featured && (isGuest || isFreelancer) && !isLoggedNonFreelancer)
+    : featured &&
+      (isGuest || (isFreelancer && (canSelfCheckout || freePlanPayFee))) &&
+      !isBlockedBySubscription &&
+      !isCurrentPlanLocked;
+  const isLocked = isMarketplaceMembership
+    ? isLoggedNonFreelancer
+    : isLoggedNonFreelancer ||
+      isCurrentPlanLocked ||
+      isLowerTier ||
+      isBlockedBySubscription ||
+      checkoutBusy ||
+      (isFreelancer && isFreePlan && !freePlanPayFee) ||
+      (isFreelancer && !canSelfCheckout && !isCurrentPlan && !isUpgradeTarget && !freePlanPayFee);
 
   const hasExtras = Boolean(
     offerLabel || orderRange || display.activationRequirements || display.refundPolicy,
@@ -181,6 +187,15 @@ const PlanCard = ({
     featured && (plan?.isPopular === true || plan?.is_popular === true);
 
   const handleCtaClick = () => {
+    if (isMarketplaceMembership) {
+      if (isGuest) {
+        navigate("/login", { state: { from: { pathname: "/dashboard/freelancer/plans" } } });
+        return;
+      }
+      if (!isFreelancer) return;
+      navigate("/dashboard/freelancer/plans");
+      return;
+    }
     if (isGuest) {
       navigate("/login", { state: { from: { pathname: "/plans" } } });
       return;

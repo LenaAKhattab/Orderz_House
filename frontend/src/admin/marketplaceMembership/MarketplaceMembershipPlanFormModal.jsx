@@ -156,19 +156,37 @@ export default function MarketplaceMembershipPlanFormModal({
 
           <div className="oh-mmp-form__row">
             <label>
-              {isEn ? "Included tokens / cycle" : "وحدات العمل / دورة"}
+              {isEn ? "Bids per month" : "العروض المتاحة / شهر"}
               <input
                 type="number"
                 min="0"
                 step="1"
-                value={form.includedTokensPerCycle}
-                onChange={(e) => setField("includedTokensPerCycle", e.target.value)}
+                value={form.monthlyBidAllowance}
+                onChange={(e) => setField("monthlyBidAllowance", e.target.value)}
                 disabled={submitting}
               />
-              {errors.includedTokensPerCycle ? (
-                <span className="oh-mmp-form__error">{errors.includedTokensPerCycle}</span>
+              {errors.monthlyBidAllowance ? (
+                <span className="oh-mmp-form__error">{errors.monthlyBidAllowance}</span>
               ) : null}
             </label>
+            <label>
+              {isEn ? "Article access level (1–5)" : "مستوى الوصول للمقالات (1–5)"}
+              <input
+                type="number"
+                min="1"
+                max="5"
+                step="1"
+                value={form.articleAccessLevel}
+                onChange={(e) => setField("articleAccessLevel", e.target.value)}
+                disabled={submitting}
+              />
+              {errors.articleAccessLevel ? (
+                <span className="oh-mmp-form__error">{errors.articleAccessLevel}</span>
+              ) : null}
+            </label>
+          </div>
+
+          <div className="oh-mmp-form__row">
             <label className="oh-mmp-form__check oh-mmp-form__check--block">
               <input
                 type="checkbox"
@@ -188,10 +206,12 @@ export default function MarketplaceMembershipPlanFormModal({
                 onChange={(e) => setField("priorityBidEnabled", e.target.checked)}
                 disabled={submitting}
               />
-              {isEn ? "Priority Bid capability" : "قدرة Priority Bid"}
+              {isEn ? "Priority Bid capability (Priority Uses)" : "قدرة عرض الأولوية (استخدامات الأولوية)"}
             </label>
             <label>
-              {isEn ? "Priority Bid uses / cycle" : "استخدامات Priority Bid / دورة"}
+              {isEn
+                ? "Priority Uses per cycle (separate from Bids / month)"
+                : "استخدامات الأولوية / دورة (منفصلة عن العروض / شهر)"}
               <input
                 type="number"
                 min="0"

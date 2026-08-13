@@ -40,7 +40,7 @@ const SETTINGS_ID = 1;
 const MARKETPLACE_ECONOMY_DEFAULTS = Object.freeze({
   workTokenValueJod: 0.1,
   normalApplicationTokensPerOrderJod: 1,
-  normalApplicationTokenRefundPercentage: 70,
+  normalApplicationTokenRefundPercentage: 100,
   platformCommissionPercentage: 30,
   cashProcessingFeeJod: 5,
   identityVerificationBonusEnabled: true,
@@ -55,6 +55,10 @@ const MARKETPLACE_ECONOMY_DEFAULTS = Object.freeze({
   eliteDeclinesAffectCarryForward: false,
 
   priorityBiddingEnabled: false,
+  /** Phase B4 active product flag (Token auction uses priorityBiddingEnabled — LEGACY_DEPRECATED). */
+  priorityApplicationBoostEnabled: false,
+  /** Phase B5 Article Applications (independent; default OFF). */
+  articleApplicationsEnabled: false,
   priorityBidDurationMinutes: 30,
   priorityBidMinimumTokens: 1,
   priorityBidMaximumTokens: null,
@@ -71,6 +75,7 @@ const MARKETPLACE_ECONOMY_DEFAULTS = Object.freeze({
 
   fairWorkDistributionEnabled: false,
   assignmentStrategy: DEFAULT_PRIORITY_BID_ASSIGNMENT_STRATEGY,
+  fairDistributionLookbackDays: 30,
   fairnessWeight: 0,
   tokenWeight: 100,
   performanceWeight: 0,
@@ -82,6 +87,8 @@ const MARKETPLACE_ECONOMY_DEFAULTS = Object.freeze({
   freelancerCancelPriorityEffect: "NO_BOOST",
 
   workTokensEnabled: false,
+  bidCreditsEnabled: false,
+  bidCreditPurchasesEnabled: false,
   marketplaceCommissionEnabled: false,
   cashMembershipPaymentsEnabled: false,
   eliteEngineEnabled: false,
@@ -106,6 +113,7 @@ const MARKETPLACE_ECONOMY_SNAPSHOT_FIELDS = Object.freeze([
   "priorityBidMaximumTokens",
   "priorityBidAssignmentStrategy",
   "assignmentStrategy",
+  "fairDistributionLookbackDays",
   "fairnessWeight",
   "tokenWeight",
   "performanceWeight",
@@ -189,6 +197,28 @@ function assertPercent(field, value) {
   return Math.round(n * 100) / 100;
 }
 
+/**
+ * Current product phase: only 100% normal-application refund is approved.
+ * Partial percentages remain blocked until a non-100 rounding policy is defined
+ * (FUTURE_NON_FULL_REFUND_ROUNDING_POLICY_REQUIRED). DB column + snapshot architecture stay.
+ */
+const CURRENT_NORMAL_APPLICATION_REFUND_PERCENTAGE_ONLY = 100;
+
+function assertNormalApplicationTokenRefundPercentageCurrentPolicy(value) {
+  const n = assertPercent("normalApplicationTokenRefundPercentage", value);
+  if (n !== CURRENT_NORMAL_APPLICATION_REFUND_PERCENTAGE_ONLY) {
+    throw createAppError(
+      "normalApplicationTokenRefundPercentage must be 100 until a non-100 refund rounding policy is approved.",
+      400,
+      {
+        exposeToClient: true,
+        publicCode: "FUTURE_NON_FULL_REFUND_ROUNDING_POLICY_REQUIRED",
+      },
+    );
+  }
+  return n;
+}
+
 function assertIntInRange(field, value, { min = 0, max = 1000000 } = {}) {
   const n = toFiniteNumber(value);
   if (n == null || !Number.isInteger(n) || n < min || n > max) {
@@ -236,6 +266,18 @@ function mapRow(row) {
     eliteDeclinesAffectCarryForward: isTruthyFlag(row.elite_declines_affect_carry_forward),
 
     priorityBiddingEnabled: isTruthyFlag(row.priority_bidding_enabled),
+    priorityApplicationBoostEnabled:
+      row.priority_application_boost_enabled == null
+        ? false
+        : isTruthyFlag(row.priority_application_boost_enabled),
+    articleApplicationsEnabled:
+      row.article_applications_enabled == null
+        ? false
+        : isTruthyFlag(row.article_applications_enabled),
+    bidCreditPurchasesEnabled:
+      row.bid_credit_purchases_enabled == null
+        ? false
+        : isTruthyFlag(row.bid_credit_purchases_enabled),
     priorityBidDurationMinutes: Number(row.priority_bid_duration_minutes),
     priorityBidMinimumTokens: Number(row.priority_bid_minimum_tokens),
     priorityBidMaximumTokens:
@@ -254,6 +296,10 @@ function mapRow(row) {
 
     fairWorkDistributionEnabled: isTruthyFlag(row.fair_work_distribution_enabled),
     assignmentStrategy: row.assignment_strategy || DEFAULT_PRIORITY_BID_ASSIGNMENT_STRATEGY,
+    fairDistributionLookbackDays:
+      row.fair_distribution_lookback_days != null
+        ? Number(row.fair_distribution_lookback_days)
+        : 30,
     fairnessWeight: Number(row.fairness_weight),
     tokenWeight: Number(row.token_weight),
     performanceWeight: Number(row.performance_weight),
@@ -265,6 +311,8 @@ function mapRow(row) {
     freelancerCancelPriorityEffect: row.freelancer_cancel_priority_effect || "NO_BOOST",
 
     workTokensEnabled: isTruthyFlag(row.work_tokens_enabled),
+    bidCreditsEnabled:
+      row.bid_credits_enabled == null ? false : isTruthyFlag(row.bid_credits_enabled),
     marketplaceCommissionEnabled: isTruthyFlag(row.marketplace_commission_enabled),
     cashMembershipPaymentsEnabled: isTruthyFlag(row.cash_membership_payments_enabled),
     eliteEngineEnabled: isTruthyFlag(row.elite_engine_enabled),
@@ -323,11 +371,15 @@ function ensureExecutionEnginesDisabledInDefaults(settings) {
   return {
     ...settings,
     workTokensEnabled: Boolean(settings.workTokensEnabled),
+    bidCreditsEnabled: Boolean(settings.bidCreditsEnabled),
+    bidCreditPurchasesEnabled: Boolean(settings.bidCreditPurchasesEnabled),
     marketplaceCommissionEnabled: Boolean(settings.marketplaceCommissionEnabled),
     cashMembershipPaymentsEnabled: Boolean(settings.cashMembershipPaymentsEnabled),
     eliteEngineEnabled: Boolean(settings.eliteEngineEnabled),
     verificationBonusesEnabled: Boolean(settings.verificationBonusesEnabled),
     priorityBiddingEnabled: Boolean(settings.priorityBiddingEnabled),
+    priorityApplicationBoostEnabled: Boolean(settings.priorityApplicationBoostEnabled),
+    articleApplicationsEnabled: Boolean(settings.articleApplicationsEnabled),
     fairWorkDistributionEnabled: Boolean(settings.fairWorkDistributionEnabled),
   };
 }
@@ -375,7 +427,7 @@ function mergePatch(current, rawPatch = {}) {
     assertMoneyPositive("normalApplicationTokensPerOrderJod", v),
   );
   assign("normalApplicationTokenRefundPercentage", (v) =>
-    assertPercent("normalApplicationTokenRefundPercentage", v),
+    assertNormalApplicationTokenRefundPercentageCurrentPolicy(v),
   );
   assign("platformCommissionPercentage", (v) => assertPercent("platformCommissionPercentage", v));
   assign("cashProcessingFeeJod", (v) => assertMoneyNonNegative("cashProcessingFeeJod", v));
@@ -402,7 +454,23 @@ function mergePatch(current, rawPatch = {}) {
   );
   assign("eliteDeclinesAffectCarryForward", (v) => coerceBool(v));
 
-  assign("priorityBiddingEnabled", (v) => coerceBool(v));
+  assign("priorityBiddingEnabled", (v) => {
+    const enabled = coerceBool(v);
+    // Phase B7A: legacy Token auction cannot be re-enabled via Admin API.
+    if (enabled === true) {
+      throw createAppError(
+        "Legacy Priority Bidding (Token auction) is deprecated and cannot be enabled.",
+        409,
+        {
+          exposeToClient: true,
+          publicCode: "PRIORITY_BIDDING_ENGINE_DEPRECATED",
+        },
+      );
+    }
+    return false;
+  });
+  assign("priorityApplicationBoostEnabled", (v) => coerceBool(v));
+  assign("articleApplicationsEnabled", (v) => coerceBool(v));
   assign("priorityBidDurationMinutes", (v) =>
     assertIntInRange("priorityBidDurationMinutes", v, { min: 1, max: 10080 }),
   );
@@ -427,6 +495,9 @@ function mergePatch(current, rawPatch = {}) {
 
   assign("fairWorkDistributionEnabled", (v) => coerceBool(v));
   assign("assignmentStrategy", (v) => assertEnum("assignmentStrategy", v, ASSIGNMENT_STRATEGIES));
+  assign("fairDistributionLookbackDays", (v) =>
+    assertIntInRange("fairDistributionLookbackDays", v, { min: 1, max: 3650 }),
+  );
   assign("fairnessWeight", (v) => assertPercent("fairnessWeight", v));
   assign("tokenWeight", (v) => assertPercent("tokenWeight", v));
   assign("performanceWeight", (v) => assertPercent("performanceWeight", v));
@@ -443,14 +514,69 @@ function mergePatch(current, rawPatch = {}) {
     assertEnum("freelancerCancelPriorityEffect", v, CANCEL_PRIORITY_EFFECTS),
   );
 
-  assign("workTokensEnabled", (v) => coerceBool(v));
+  assign("workTokensEnabled", (v) => {
+    const enabled = coerceBool(v);
+    // Phase B7A: Work Tokens engine cannot be re-enabled; Bids use bidCreditsEnabled.
+    if (enabled === true) {
+      throw createAppError(
+        "Work Tokens engine is deprecated and cannot be enabled. Use Bid Credits.",
+        409,
+        {
+          exposeToClient: true,
+          publicCode: "WORK_TOKENS_ENGINE_DEPRECATED",
+        },
+      );
+    }
+    return false;
+  });
+  assign("bidCreditsEnabled", (v) => coerceBool(v));
+  assign("bidCreditPurchasesEnabled", (v) => coerceBool(v));
   assign("marketplaceCommissionEnabled", (v) => coerceBool(v));
   assign("cashMembershipPaymentsEnabled", (v) => coerceBool(v));
   assign("eliteEngineEnabled", (v) => coerceBool(v));
-  assign("verificationBonusesEnabled", (v) => coerceBool(v));
+  assign("verificationBonusesEnabled", (v) => {
+    const enabled = coerceBool(v);
+    // Phase B7B: verification Work Token rewards cannot be re-enabled.
+    if (enabled === true) {
+      throw createAppError(
+        "Verification Work Token rewards are deprecated and cannot be enabled.",
+        409,
+        {
+          exposeToClient: true,
+          publicCode: "VERIFICATION_WORK_TOKEN_REWARDS_DEPRECATED",
+        },
+      );
+    }
+    return false;
+  });
 
   assertPriorityBidBounds(next);
+
+  // Phase 7 v1: HYBRID numeric weighting is not approved — fail closed.
+  if (next.assignmentStrategy === "HYBRID" || next.priorityBidAssignmentStrategy === "HYBRID") {
+    throw createAppError(
+      "HYBRID Fair Distribution weighting policy is not defined for Phase 7 v1.",
+      409,
+      {
+        exposeToClient: true,
+        publicCode: "FAIR_DISTRIBUTION_HYBRID_WEIGHT_POLICY_REQUIRED",
+      },
+    );
+  }
+
   return next;
+}
+
+async function hasFairDistributionLookbackColumn(client) {
+  const { rows } = await client.query(
+    `SELECT 1
+       FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'marketplace_economy_settings'
+        AND column_name = 'fair_distribution_lookback_days'
+      LIMIT 1`,
+  );
+  return Boolean(rows[0]);
 }
 
 /**
@@ -475,7 +601,65 @@ async function updateMarketplaceEconomySettings({ actorUserId, patch }) {
     );
     const current = mapRow(rows[0]);
     const next = mergePatch(current, patch);
-
+    // Migration 142 adds lookback column — omit until applied so Admin updates stay safe.
+    const lookbackReady = await hasFairDistributionLookbackColumn(client);
+    const lookbackSql = lookbackReady ? `fair_distribution_lookback_days = $33,` : "";
+    const params = [
+      SETTINGS_ID,
+      next.workTokenValueJod,
+      next.normalApplicationTokensPerOrderJod,
+      next.normalApplicationTokenRefundPercentage,
+      next.platformCommissionPercentage,
+      next.cashProcessingFeeJod,
+      next.identityVerificationBonusEnabled,
+      next.identityVerificationBonusTokens,
+      next.payoutMethodVerificationBonusEnabled,
+      next.payoutMethodVerificationBonusTokens,
+      next.eliteDirectOrdersPerCycle,
+      next.eliteOfferDurationMinutes,
+      next.eliteCarryForwardEnabled,
+      next.eliteCarryForwardDays,
+      next.eliteMaximumCarryForward,
+      next.eliteDeclinesAffectCarryForward,
+      next.priorityBiddingEnabled,
+      next.priorityBidDurationMinutes,
+      next.priorityBidMinimumTokens,
+      next.priorityBidMaximumTokens,
+      next.priorityBidShowHighest,
+      next.priorityBidShowPosition,
+      next.priorityBidAllowIncrease,
+      next.priorityBidAllowDecrease,
+      next.priorityBidAllowWithdrawal,
+      next.priorityBidWithdrawalReleasesTokens,
+      next.priorityBidWithdrawalReturnsUse,
+      next.priorityBidReturnUseOnOrderCancel,
+      next.priorityBidAutoAssignmentEnabled,
+      next.priorityBidAssignmentStrategy,
+      next.fairWorkDistributionEnabled,
+      next.assignmentStrategy,
+    ];
+    if (lookbackReady) {
+      params.push(next.fairDistributionLookbackDays);
+    }
+    params.push(
+      next.fairnessWeight,
+      next.tokenWeight,
+      next.performanceWeight,
+      next.recencyWeight,
+      next.workloadWeight,
+      next.eligibleLossPriorityEffect,
+      next.awardResetPolicy,
+      next.declinePriorityEffect,
+      next.freelancerCancelPriorityEffect,
+      next.workTokensEnabled,
+      next.marketplaceCommissionEnabled,
+      next.cashMembershipPaymentsEnabled,
+      next.eliteEngineEnabled,
+      next.verificationBonusesEnabled,
+      actorUserId != null ? Number(actorUserId) : null,
+    );
+    // When lookback column missing, shift $33+ down by one (fairness_weight becomes $33).
+    const p = (n) => (lookbackReady ? n : n - 1);
     const { rows: updated } = await client.query(
       `UPDATE marketplace_economy_settings SET
          work_token_value_jod = $2,
@@ -509,76 +693,67 @@ async function updateMarketplaceEconomySettings({ actorUserId, patch }) {
          priority_bid_assignment_strategy = $30,
          fair_work_distribution_enabled = $31,
          assignment_strategy = $32,
-         fairness_weight = $33,
-         token_weight = $34,
-         performance_weight = $35,
-         recency_weight = $36,
-         workload_weight = $37,
-         eligible_loss_priority_effect = $38,
-         award_reset_policy = $39,
-         decline_priority_effect = $40,
-         freelancer_cancel_priority_effect = $41,
-         work_tokens_enabled = $42,
-         marketplace_commission_enabled = $43,
-         cash_membership_payments_enabled = $44,
-         elite_engine_enabled = $45,
-         verification_bonuses_enabled = $46,
-         updated_by_user_id = $47,
+         ${lookbackSql}
+         fairness_weight = $${p(34)},
+         token_weight = $${p(35)},
+         performance_weight = $${p(36)},
+         recency_weight = $${p(37)},
+         workload_weight = $${p(38)},
+         eligible_loss_priority_effect = $${p(39)},
+         award_reset_policy = $${p(40)},
+         decline_priority_effect = $${p(41)},
+         freelancer_cancel_priority_effect = $${p(42)},
+         work_tokens_enabled = $${p(43)},
+         marketplace_commission_enabled = $${p(44)},
+         cash_membership_payments_enabled = $${p(45)},
+         elite_engine_enabled = $${p(46)},
+         verification_bonuses_enabled = $${p(47)},
+         updated_by_user_id = $${p(48)},
          updated_at = NOW()
        WHERE id = $1
        RETURNING *`,
-      [
-        SETTINGS_ID,
-        next.workTokenValueJod,
-        next.normalApplicationTokensPerOrderJod,
-        next.normalApplicationTokenRefundPercentage,
-        next.platformCommissionPercentage,
-        next.cashProcessingFeeJod,
-        next.identityVerificationBonusEnabled,
-        next.identityVerificationBonusTokens,
-        next.payoutMethodVerificationBonusEnabled,
-        next.payoutMethodVerificationBonusTokens,
-        next.eliteDirectOrdersPerCycle,
-        next.eliteOfferDurationMinutes,
-        next.eliteCarryForwardEnabled,
-        next.eliteCarryForwardDays,
-        next.eliteMaximumCarryForward,
-        next.eliteDeclinesAffectCarryForward,
-        next.priorityBiddingEnabled,
-        next.priorityBidDurationMinutes,
-        next.priorityBidMinimumTokens,
-        next.priorityBidMaximumTokens,
-        next.priorityBidShowHighest,
-        next.priorityBidShowPosition,
-        next.priorityBidAllowIncrease,
-        next.priorityBidAllowDecrease,
-        next.priorityBidAllowWithdrawal,
-        next.priorityBidWithdrawalReleasesTokens,
-        next.priorityBidWithdrawalReturnsUse,
-        next.priorityBidReturnUseOnOrderCancel,
-        next.priorityBidAutoAssignmentEnabled,
-        next.priorityBidAssignmentStrategy,
-        next.fairWorkDistributionEnabled,
-        next.assignmentStrategy,
-        next.fairnessWeight,
-        next.tokenWeight,
-        next.performanceWeight,
-        next.recencyWeight,
-        next.workloadWeight,
-        next.eligibleLossPriorityEffect,
-        next.awardResetPolicy,
-        next.declinePriorityEffect,
-        next.freelancerCancelPriorityEffect,
-        next.workTokensEnabled,
-        next.marketplaceCommissionEnabled,
-        next.cashMembershipPaymentsEnabled,
-        next.eliteEngineEnabled,
-        next.verificationBonusesEnabled,
-        actorUserId != null ? Number(actorUserId) : null,
-      ],
+      params,
+    );
+    // Phase B1/B4 additive flags (columns may be absent pre-migration).
+    if (await hasEconomyFlagColumn(client, "bid_credits_enabled")) {
+      await client.query(
+        `UPDATE marketplace_economy_settings
+            SET bid_credits_enabled = $2, updated_at = NOW()
+          WHERE id = $1`,
+        [SETTINGS_ID, Boolean(next.bidCreditsEnabled)],
+      );
+    }
+    if (await hasEconomyFlagColumn(client, "priority_application_boost_enabled")) {
+      await client.query(
+        `UPDATE marketplace_economy_settings
+            SET priority_application_boost_enabled = $2, updated_at = NOW()
+          WHERE id = $1`,
+        [SETTINGS_ID, Boolean(next.priorityApplicationBoostEnabled)],
+      );
+    }
+    if (await hasEconomyFlagColumn(client, "article_applications_enabled")) {
+      await client.query(
+        `UPDATE marketplace_economy_settings
+            SET article_applications_enabled = $2, updated_at = NOW()
+          WHERE id = $1`,
+        [SETTINGS_ID, Boolean(next.articleApplicationsEnabled)],
+      );
+    }
+    if (await hasEconomyFlagColumn(client, "bid_credit_purchases_enabled")) {
+      await client.query(
+        `UPDATE marketplace_economy_settings
+            SET bid_credit_purchases_enabled = $2, updated_at = NOW()
+          WHERE id = $1`,
+        [SETTINGS_ID, Boolean(next.bidCreditPurchasesEnabled)],
+      );
+    }
+
+    const { rows: finalRows } = await client.query(
+      `SELECT * FROM marketplace_economy_settings WHERE id = $1`,
+      [SETTINGS_ID],
     );
     await client.query("COMMIT");
-    return ensureExecutionEnginesDisabledInDefaults(mapRow(updated[0]));
+    return ensureExecutionEnginesDisabledInDefaults(mapRow(finalRows[0] || updated[0]));
   } catch (err) {
     try {
       await client.query("ROLLBACK");
@@ -591,12 +766,45 @@ async function updateMarketplaceEconomySettings({ actorUserId, patch }) {
   }
 }
 
+async function hasEconomyFlagColumn(client, columnName) {
+  const { rows } = await client.query(
+    `SELECT 1
+       FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'marketplace_economy_settings'
+        AND column_name = $1
+      LIMIT 1`,
+    [columnName],
+  );
+  return Boolean(rows[0]);
+}
+
 function isWorkTokensEngineActive(settings) {
   return Boolean(settings?.workTokensEnabled);
 }
 
+function isBidCreditsEngineActive(settings) {
+  return Boolean(settings?.bidCreditsEnabled);
+}
+
+/** Phase B6 Bid package commercial purchases (requires Bid Credits engine separately). */
+function isBidCreditPurchasesEngineActive(settings) {
+  return Boolean(settings?.bidCreditPurchasesEnabled);
+}
+
+/** LEGACY_DEPRECATED Phase 6 Token auction — requires WT engine. Keep OFF. */
 function isPriorityBiddingEngineActive(settings) {
   return Boolean(settings?.priorityBiddingEnabled) && Boolean(settings?.workTokensEnabled);
+}
+
+/** Phase B4 active Priority Application Boost (independent of Work Tokens). */
+function isPriorityApplicationBoostEngineActive(settings) {
+  return Boolean(settings?.priorityApplicationBoostEnabled);
+}
+
+/** Phase B5 Article Applications (independent of Bid Credits / Priority Boost). */
+function isArticleApplicationsEngineActive(settings) {
+  return Boolean(settings?.articleApplicationsEnabled);
 }
 
 function isFairWorkDistributionActive(settings) {
@@ -637,7 +845,11 @@ module.exports = {
   assertMarketplaceEconomyRealOrdersOnly,
   getPriorityBidLoserReleasePercentage,
   isWorkTokensEngineActive,
+  isBidCreditsEngineActive,
+  isBidCreditPurchasesEngineActive,
   isPriorityBiddingEngineActive,
+  isPriorityApplicationBoostEngineActive,
+  isArticleApplicationsEngineActive,
   isFairWorkDistributionActive,
   isEliteEngineActive,
   isMarketplaceCommissionActive,
@@ -647,4 +859,6 @@ module.exports = {
   mapRow,
   mergePatch,
   normalizeLegacyPatchKeys,
+  CURRENT_NORMAL_APPLICATION_REFUND_PERCENTAGE_ONLY,
+  assertNormalApplicationTokenRefundPercentageCurrentPolicy,
 };

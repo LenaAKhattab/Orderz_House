@@ -71,6 +71,22 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
   },
+  marketplaceArticles: {
+    key: "marketplaceArticles",
+    to: "/dashboard/super-admin/marketplace-articles",
+    labelKey: "dashboard.nav.superAdmin.marketplaceArticles",
+    icon: "plans",
+    end: true,
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
+  },
+  bidCredits: {
+    key: "bidCredits",
+    to: "/dashboard/super-admin/bid-credits",
+    labelKey: "dashboard.nav.superAdmin.bidCredits",
+    icon: "plans",
+    end: true,
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
+  },
   subscriptions: {
     key: "subscriptions",
     to: "/dashboard/super-admin/subscriptions",
@@ -174,7 +190,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "usersSubscriptions",
     labelKey: "dashboard.nav.sections.usersSubscriptions",
-    itemKeys: ["plans", "marketplacePlans", "marketplaceEconomy", "subscriptions", "subscriptionActivation"],
+    itemKeys: ["plans", "marketplacePlans", "marketplaceEconomy", "marketplaceArticles", "bidCredits", "subscriptions", "subscriptionActivation"],
   },
   {
     id: "contentTraining",
@@ -231,6 +247,12 @@ export function superAdminBreadcrumbKeys(pathname) {
   }
   if (pathname.includes("/marketplace-economy")) {
     return [...base, "dashboard.breadcrumbs.marketplaceEconomy"];
+  }
+  if (pathname.includes("/marketplace-articles")) {
+    return [...base, "dashboard.breadcrumbs.marketplaceArticles"];
+  }
+  if (pathname.includes("/bid-credits")) {
+    return [...base, "dashboard.breadcrumbs.bidCredits"];
   }
   if (pathname.includes("/marketplace-plans")) {
     return [...base, "dashboard.breadcrumbs.marketplacePlans"];

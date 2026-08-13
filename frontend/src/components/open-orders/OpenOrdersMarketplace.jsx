@@ -6,6 +6,7 @@ import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../components/ui/toastContext";
 import {
   getCategoriesTreeRequest,
+  getPoolOrderNormalApplicationBidQuoteRequest,
   listPoolOrdersRequest,
   submitPoolOrderBidRequest,
   takePoolOrderRequest,
@@ -206,6 +207,8 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const [takingId, setTakingId] = useState(null);
   const [bidBusyId, setBidBusyId] = useState(null);
   const [bidModalOrder, setBidModalOrder] = useState(null);
+  const [bidQuoteLoading, setBidQuoteLoading] = useState(false);
+  const [bidQuote, setBidQuote] = useState(null);
   const [takeConfirmOrder, setTakeConfirmOrder] = useState(null);
   const [categoryFilters, setCategoryFilters] = useState([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState(() =>
@@ -507,14 +510,40 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     [t],
   );
 
-  const submitBid = async (amount) => {
+  useEffect(() => {
+    if (!bidModalOrder?.id || !isFreelancer) {
+      setBidQuote(null);
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      setBidQuoteLoading(true);
+      try {
+        const res = await getPoolOrderNormalApplicationBidQuoteRequest(bidModalOrder.id);
+        if (!cancelled) setBidQuote(res?.data || null);
+      } catch {
+        if (!cancelled) setBidQuote(null);
+      } finally {
+        if (!cancelled) setBidQuoteLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bidModalOrder?.id, isFreelancer]);
+
+  const submitBid = async (amount, options = {}) => {
     if (!bidModalOrder?.id) return;
     setBidBusyId(bidModalOrder.id);
     try {
-      await submitPoolOrderBidRequest(bidModalOrder.id, { amount });
+      await submitPoolOrderBidRequest(bidModalOrder.id, {
+        amount,
+        usePriority: Boolean(options.usePriority),
+      });
       trackEvent("bid_submitted", {
         order_id: String(bidModalOrder.id),
         amount: Number(amount),
+        is_priority: Boolean(options.usePriority),
       });
       push({
         type: "success",
@@ -846,6 +875,16 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
           if (!bidBusyId) setBidModalOrder(null);
         }}
         onSubmit={submitBid}
+        bidCreditCost={bidQuote?.bidCreditCost ?? 1}
+        availableBids={bidQuote?.availableBids ?? null}
+        engineAvailable={Boolean(bidQuote?.engineAvailable)}
+        bidQuoteLoading={bidQuoteLoading}
+        priorityBoostAvailable={Boolean(
+          bidQuote?.priorityBoost?.engineAvailable && bidQuote?.priorityBoost?.canBoost,
+        )}
+        remainingPriorityUses={bidQuote?.priorityBoost?.remainingPriorityUses ?? null}
+        priorityUseCost={bidQuote?.priorityBoost?.priorityUseCost ?? 1}
+        priorityAdditionalBidCost={bidQuote?.priorityBoost?.additionalBidCreditCost ?? 0}
       />
 
       <TakePoolOrderConfirmModal

@@ -82,7 +82,18 @@
     "submitShort": "تقديم عرض",
     "submitting": "جارٍ الإرسال...",
     "submitted": "عرضك مُرسل",
-    "cancel": "إلغاء"
+    "cancel": "إلغاء",
+    "applicationCostLabel": "تكلفة التقديم:",
+    "applicationCostOne": "عرض واحد",
+    "applicationCostPriority": "عرض واحد + استخدام أولوية واحد",
+    "availableBidsLabel": "العروض المتاحة:",
+    "remainingPriorityUsesLabel": "استخدامات الأولوية المتبقية:",
+    "priorityBoostLabel": "عرض أولوية",
+    "priorityBoostHelp": "يبرز عرضك أمام العميل. يستهلك عرضاً واحداً + استخدام أولوية واحد (ليس عرضين).",
+    "insufficientBids": "لا تتوفر عروض كافية للتقديم.",
+    "insufficientPriorityUses": "لا تتوفر استخدامات أولوية كافية.",
+    "quoteLoading": "جارٍ التحقق...",
+    "priorityBadge": "عرض أولوية"
   },
   "row": {
     "budget": "ميزانية",

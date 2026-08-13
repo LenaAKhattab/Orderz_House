@@ -11,8 +11,9 @@ const {
   attachSaleFieldsToMappedMarketplacePlan,
   resolveMarketplaceMembershipPayablePricing,
 } = require("../utils/marketplaceMembershipSalePricing");
-const { isValidMarketplaceTierCode } = require("../constants/marketplaceMembershipPlans");
+const { isValidMarketplaceTierCode, defaultArticleAccessLevelForTier } = require("../constants/marketplaceMembershipPlans");
 const { defaultPriorityBidUsesForTier } = require("../constants/marketplaceEconomy");
+const { marketplacePlanHasArticleAccessLevel, marketplacePlanHasMonthlyBidAllowance } = require("../utils/marketplaceMembershipPlanSchema");
 
 function toFiniteNumber(value) {
   if (value === "" || value === undefined || value === null) return null;
@@ -50,6 +51,12 @@ function mapMarketplaceMembershipPlan(row) {
     maxRealOrderValueJod: toFiniteNumber(row.max_real_order_value_jod),
     unlimitedRealOrderValue: unlimited,
     includedTokensPerCycle: Number(row.included_tokens_per_cycle) || 0,
+    monthlyBidAllowance:
+      row.monthly_bid_allowance == null ? 0 : Number(row.monthly_bid_allowance) || 0,
+    articleAccessLevel:
+      row.article_access_level == null
+        ? defaultArticleAccessLevelForTier(row.tier_code)
+        : Number(row.article_access_level) || 1,
     cashAllowed: isTruthyFlag(row.cash_allowed),
     minimumCashMonths: Number(row.minimum_cash_months) || 1,
     maximumPrepaidMonths: Number(row.maximum_prepaid_months) || 1,
@@ -85,7 +92,9 @@ function mapPublicMarketplaceMembershipPlan(row) {
       maxRealOrderValueJod: full.unlimitedRealOrderValue ? null : full.maxRealOrderValueJod,
       unlimited: full.unlimitedRealOrderValue,
     },
-    includedTokensPerCycle: full.includedTokensPerCycle,
+    // Phase B7A: Work Token allowance not exposed on public catalog (always 0 / deprecated).
+    monthlyBidAllowance: full.monthlyBidAllowance,
+    articleAccessLevel: full.articleAccessLevel,
     cash: {
       allowed: full.cashAllowed,
       minimumMonths: full.minimumCashMonths,
@@ -95,9 +104,21 @@ function mapPublicMarketplaceMembershipPlan(row) {
       eliteDirectOrders: full.eliteDirectOrdersEnabled,
       priorityBid: full.priorityBidEnabled,
       priorityBidUsesPerCycle: full.priorityBidUsesPerCycle,
+      articleAccessLevel: full.articleAccessLevel,
     },
     sale: full.sale,
   };
+}
+
+function assertArticleAccessLevel(value) {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > 5) {
+    throw createAppError("articleAccessLevel must be an integer between 1 and 5.", 400, {
+      exposeToClient: true,
+      publicCode: "INVALID_ARTICLE_ACCESS_LEVEL",
+    });
+  }
+  return n;
 }
 
 function assertPriorityBidUsesPerCycle(value) {
@@ -167,6 +188,31 @@ function assertTokensPerCycle(value) {
     });
   }
   return n;
+}
+
+function assertMonthlyBidAllowance(value) {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0 || n > 1000000) {
+    throw createAppError("عدد العروض الشهرية يجب أن يكون عدداً صحيحاً بين 0 و 1000000.", 400, {
+      exposeToClient: true,
+      publicCode: "INVALID_MONTHLY_BID_ALLOWANCE",
+    });
+  }
+  return n;
+}
+
+/** Persist monthly_bid_allowance when migration 146 column exists. */
+async function persistMonthlyBidAllowanceIfReady(planId, monthlyBidAllowance) {
+  const ready = await marketplacePlanHasMonthlyBidAllowance(pool);
+  if (!ready) return null;
+  const { rows } = await pool.query(
+    `UPDATE marketplace_membership_plans
+        SET monthly_bid_allowance = $2, updated_at = NOW()
+      WHERE id = $1::bigint
+      RETURNING *`,
+    [Number(planId), assertMonthlyBidAllowance(monthlyBidAllowance)],
+  );
+  return rows[0] || null;
 }
 
 async function listPublicMarketplaceMembershipPlans() {
@@ -246,7 +292,14 @@ async function createMarketplaceMembershipPlan(payload) {
     minimumCashMonths: payload.minimumCashMonths ?? 1,
     maximumPrepaidMonths: payload.maximumPrepaidMonths ?? 1,
   });
-  const includedTokensPerCycle = assertTokensPerCycle(payload.includedTokensPerCycle ?? 0);
+  // Phase B1: Work Token grants deprecated — always persist 0 on write.
+  const includedTokensPerCycle = assertTokensPerCycle(0);
+  const monthlyBidAllowance = assertMonthlyBidAllowance(payload.monthlyBidAllowance ?? 0);
+  const articleAccessLevel = assertArticleAccessLevel(
+    payload.articleAccessLevel !== undefined
+      ? payload.articleAccessLevel
+      : defaultArticleAccessLevelForTier(tierCode),
+  );
   const sortOrder = Number.isInteger(Number(payload.sortOrder)) ? Number(payload.sortOrder) : 0;
   const priorityBidEnabled =
     payload.priorityBidEnabled !== undefined
@@ -274,57 +327,114 @@ async function createMarketplaceMembershipPlan(payload) {
   const saleReasonEn = saleEnabled ? String(payload.saleReasonEn || "").trim() || null : null;
 
   try {
-    const { rows } = await pool.query(
-      `INSERT INTO marketplace_membership_plans (
-         tier_code, name_ar, name_en, slug,
-         description_ar, description_en,
-         is_active, sort_order,
-         monthly_price_jod,
-         max_real_order_value_jod, unlimited_real_order_value,
-         included_tokens_per_cycle,
-         cash_allowed, minimum_cash_months, maximum_prepaid_months,
-         elite_direct_orders_enabled,
-         priority_bid_enabled, priority_bid_uses_per_cycle,
-         sale_enabled, sale_percentage, sale_reason, sale_reason_en
-       ) VALUES (
-         $1,$2,$3,$4,
-         $5,$6,
-         $7,$8,
-         $9,
-         $10,$11,
-         $12,
-         $13,$14,$15,
-         $16,
-         $17,$18,
-         $19,$20,$21,$22
-       )
-       RETURNING *`,
-      [
-        tierCode,
-        nameAr,
-        payload.nameEn != null ? String(payload.nameEn).trim() || null : null,
-        payload.slug != null ? String(payload.slug).trim().toLowerCase() || null : null,
-        payload.descriptionAr != null ? String(payload.descriptionAr).trim() || null : null,
-        payload.descriptionEn != null ? String(payload.descriptionEn).trim() || null : null,
-        payload.isActive !== false,
-        sortOrder,
-        monthlyPriceJod,
-        access.maxRealOrderValueJod,
-        access.unlimitedRealOrderValue,
-        includedTokensPerCycle,
-        cash.cashAllowed,
-        cash.minimumCashMonths,
-        cash.maximumPrepaidMonths,
-        Boolean(payload.eliteDirectOrdersEnabled),
-        priorityBidEnabled,
-        priorityBidUsesPerCycle,
-        saleEnabled,
-        salePercentage,
-        saleReason,
-        saleReasonEn,
-      ],
-    );
-    return mapMarketplaceMembershipPlan(rows[0]);
+    const hasArticle = await marketplacePlanHasArticleAccessLevel(pool);
+    const { rows } = hasArticle
+      ? await pool.query(
+          `INSERT INTO marketplace_membership_plans (
+             tier_code, name_ar, name_en, slug,
+             description_ar, description_en,
+             is_active, sort_order,
+             monthly_price_jod,
+             max_real_order_value_jod, unlimited_real_order_value,
+             included_tokens_per_cycle,
+             cash_allowed, minimum_cash_months, maximum_prepaid_months,
+             elite_direct_orders_enabled,
+             priority_bid_enabled, priority_bid_uses_per_cycle,
+             article_access_level,
+             sale_enabled, sale_percentage, sale_reason, sale_reason_en
+           ) VALUES (
+             $1,$2,$3,$4,
+             $5,$6,
+             $7,$8,
+             $9,
+             $10,$11,
+             $12,
+             $13,$14,$15,
+             $16,
+             $17,$18,
+             $19,
+             $20,$21,$22,$23
+           )
+           RETURNING *`,
+          [
+            tierCode,
+            nameAr,
+            payload.nameEn != null ? String(payload.nameEn).trim() || null : null,
+            payload.slug != null ? String(payload.slug).trim().toLowerCase() || null : null,
+            payload.descriptionAr != null ? String(payload.descriptionAr).trim() || null : null,
+            payload.descriptionEn != null ? String(payload.descriptionEn).trim() || null : null,
+            payload.isActive !== false,
+            sortOrder,
+            monthlyPriceJod,
+            access.maxRealOrderValueJod,
+            access.unlimitedRealOrderValue,
+            includedTokensPerCycle,
+            cash.cashAllowed,
+            cash.minimumCashMonths,
+            cash.maximumPrepaidMonths,
+            Boolean(payload.eliteDirectOrdersEnabled),
+            priorityBidEnabled,
+            priorityBidUsesPerCycle,
+            articleAccessLevel,
+            saleEnabled,
+            salePercentage,
+            saleReason,
+            saleReasonEn,
+          ],
+        )
+      : await pool.query(
+          `INSERT INTO marketplace_membership_plans (
+             tier_code, name_ar, name_en, slug,
+             description_ar, description_en,
+             is_active, sort_order,
+             monthly_price_jod,
+             max_real_order_value_jod, unlimited_real_order_value,
+             included_tokens_per_cycle,
+             cash_allowed, minimum_cash_months, maximum_prepaid_months,
+             elite_direct_orders_enabled,
+             priority_bid_enabled, priority_bid_uses_per_cycle,
+             sale_enabled, sale_percentage, sale_reason, sale_reason_en
+           ) VALUES (
+             $1,$2,$3,$4,
+             $5,$6,
+             $7,$8,
+             $9,
+             $10,$11,
+             $12,
+             $13,$14,$15,
+             $16,
+             $17,$18,
+             $19,$20,$21,$22
+           )
+           RETURNING *`,
+          [
+            tierCode,
+            nameAr,
+            payload.nameEn != null ? String(payload.nameEn).trim() || null : null,
+            payload.slug != null ? String(payload.slug).trim().toLowerCase() || null : null,
+            payload.descriptionAr != null ? String(payload.descriptionAr).trim() || null : null,
+            payload.descriptionEn != null ? String(payload.descriptionEn).trim() || null : null,
+            payload.isActive !== false,
+            sortOrder,
+            monthlyPriceJod,
+            access.maxRealOrderValueJod,
+            access.unlimitedRealOrderValue,
+            includedTokensPerCycle,
+            cash.cashAllowed,
+            cash.minimumCashMonths,
+            cash.maximumPrepaidMonths,
+            Boolean(payload.eliteDirectOrdersEnabled),
+            priorityBidEnabled,
+            priorityBidUsesPerCycle,
+            saleEnabled,
+            salePercentage,
+            saleReason,
+            saleReasonEn,
+          ],
+        );
+    const created = rows[0];
+    const withBids = await persistMonthlyBidAllowanceIfReady(created.id, monthlyBidAllowance);
+    return mapMarketplaceMembershipPlan(withBids || created);
   } catch (err) {
     if (err && err.code === "23505") {
       throw createAppError("رمز الباقة أو الرابط مستخدم مسبقاً.", 409, {
@@ -391,9 +501,16 @@ async function updateMarketplaceMembershipPlan(id, patch) {
         ? patch.maxRealOrderValueJod
         : existing.maxRealOrderValueJod,
     includedTokensPerCycle:
-      patch.includedTokensPerCycle !== undefined
-        ? patch.includedTokensPerCycle
-        : existing.includedTokensPerCycle,
+      // Phase B1: Work Token grants deprecated — force 0 on update writes.
+      0,
+    monthlyBidAllowance:
+      patch.monthlyBidAllowance !== undefined
+        ? patch.monthlyBidAllowance
+        : existing.monthlyBidAllowance ?? 0,
+    articleAccessLevel:
+      patch.articleAccessLevel !== undefined
+        ? patch.articleAccessLevel
+        : existing.articleAccessLevel,
     cashAllowed: patch.cashAllowed !== undefined ? Boolean(patch.cashAllowed) : existing.cashAllowed,
     minimumCashMonths:
       patch.minimumCashMonths !== undefined ? patch.minimumCashMonths : existing.minimumCashMonths,
@@ -442,7 +559,9 @@ async function updateMarketplaceMembershipPlan(id, patch) {
     minimumCashMonths: next.minimumCashMonths,
     maximumPrepaidMonths: next.maximumPrepaidMonths,
   });
-  const includedTokensPerCycle = assertTokensPerCycle(next.includedTokensPerCycle);
+  const includedTokensPerCycle = assertTokensPerCycle(0);
+  const monthlyBidAllowance = assertMonthlyBidAllowance(next.monthlyBidAllowance ?? 0);
+  const articleAccessLevel = assertArticleAccessLevel(next.articleAccessLevel);
   const priorityBidUsesPerCycle = assertPriorityBidUsesPerCycle(next.priorityBidUsesPerCycle);
 
   assertValidMarketplaceSalePatch(
@@ -467,58 +586,115 @@ async function updateMarketplaceMembershipPlan(id, patch) {
   const saleReasonEn = saleEnabled ? String(next.saleReasonEn || "").trim() || null : null;
 
   try {
-    const { rows } = await pool.query(
-      `UPDATE marketplace_membership_plans SET
-         name_ar = $2,
-         name_en = $3,
-         slug = $4,
-         description_ar = $5,
-         description_en = $6,
-         is_active = $7,
-         sort_order = $8,
-         monthly_price_jod = $9,
-         max_real_order_value_jod = $10,
-         unlimited_real_order_value = $11,
-         included_tokens_per_cycle = $12,
-         cash_allowed = $13,
-         minimum_cash_months = $14,
-         maximum_prepaid_months = $15,
-         elite_direct_orders_enabled = $16,
-         priority_bid_enabled = $17,
-         priority_bid_uses_per_cycle = $18,
-         sale_enabled = $19,
-         sale_percentage = $20,
-         sale_reason = $21,
-         sale_reason_en = $22,
-         updated_at = NOW()
-       WHERE id = $1::bigint
-       RETURNING *`,
-      [
-        Number(id),
-        next.nameAr,
-        next.nameEn,
-        next.slug,
-        next.descriptionAr,
-        next.descriptionEn,
-        next.isActive,
-        next.sortOrder,
-        next.monthlyPriceJod,
-        access.maxRealOrderValueJod,
-        access.unlimitedRealOrderValue,
-        includedTokensPerCycle,
-        cash.cashAllowed,
-        cash.minimumCashMonths,
-        cash.maximumPrepaidMonths,
-        next.eliteDirectOrdersEnabled,
-        Boolean(next.priorityBidEnabled),
-        priorityBidUsesPerCycle,
-        saleEnabled,
-        salePercentage,
-        saleReason,
-        saleReasonEn,
-      ],
-    );
-    return mapMarketplaceMembershipPlan(rows[0]);
+    const hasArticle = await marketplacePlanHasArticleAccessLevel(pool);
+    const { rows } = hasArticle
+      ? await pool.query(
+          `UPDATE marketplace_membership_plans SET
+             name_ar = $2,
+             name_en = $3,
+             slug = $4,
+             description_ar = $5,
+             description_en = $6,
+             is_active = $7,
+             sort_order = $8,
+             monthly_price_jod = $9,
+             max_real_order_value_jod = $10,
+             unlimited_real_order_value = $11,
+             included_tokens_per_cycle = $12,
+             cash_allowed = $13,
+             minimum_cash_months = $14,
+             maximum_prepaid_months = $15,
+             elite_direct_orders_enabled = $16,
+             priority_bid_enabled = $17,
+             priority_bid_uses_per_cycle = $18,
+             article_access_level = $19,
+             sale_enabled = $20,
+             sale_percentage = $21,
+             sale_reason = $22,
+             sale_reason_en = $23,
+             updated_at = NOW()
+           WHERE id = $1::bigint
+           RETURNING *`,
+          [
+            Number(id),
+            next.nameAr,
+            next.nameEn,
+            next.slug,
+            next.descriptionAr,
+            next.descriptionEn,
+            next.isActive,
+            next.sortOrder,
+            next.monthlyPriceJod,
+            access.maxRealOrderValueJod,
+            access.unlimitedRealOrderValue,
+            includedTokensPerCycle,
+            cash.cashAllowed,
+            cash.minimumCashMonths,
+            cash.maximumPrepaidMonths,
+            next.eliteDirectOrdersEnabled,
+            Boolean(next.priorityBidEnabled),
+            priorityBidUsesPerCycle,
+            articleAccessLevel,
+            saleEnabled,
+            salePercentage,
+            saleReason,
+            saleReasonEn,
+          ],
+        )
+      : await pool.query(
+          `UPDATE marketplace_membership_plans SET
+             name_ar = $2,
+             name_en = $3,
+             slug = $4,
+             description_ar = $5,
+             description_en = $6,
+             is_active = $7,
+             sort_order = $8,
+             monthly_price_jod = $9,
+             max_real_order_value_jod = $10,
+             unlimited_real_order_value = $11,
+             included_tokens_per_cycle = $12,
+             cash_allowed = $13,
+             minimum_cash_months = $14,
+             maximum_prepaid_months = $15,
+             elite_direct_orders_enabled = $16,
+             priority_bid_enabled = $17,
+             priority_bid_uses_per_cycle = $18,
+             sale_enabled = $19,
+             sale_percentage = $20,
+             sale_reason = $21,
+             sale_reason_en = $22,
+             updated_at = NOW()
+           WHERE id = $1::bigint
+           RETURNING *`,
+          [
+            Number(id),
+            next.nameAr,
+            next.nameEn,
+            next.slug,
+            next.descriptionAr,
+            next.descriptionEn,
+            next.isActive,
+            next.sortOrder,
+            next.monthlyPriceJod,
+            access.maxRealOrderValueJod,
+            access.unlimitedRealOrderValue,
+            includedTokensPerCycle,
+            cash.cashAllowed,
+            cash.minimumCashMonths,
+            cash.maximumPrepaidMonths,
+            next.eliteDirectOrdersEnabled,
+            Boolean(next.priorityBidEnabled),
+            priorityBidUsesPerCycle,
+            saleEnabled,
+            salePercentage,
+            saleReason,
+            saleReasonEn,
+          ],
+        );
+    const updated = rows[0];
+    const withBids = await persistMonthlyBidAllowanceIfReady(updated.id, monthlyBidAllowance);
+    return mapMarketplaceMembershipPlan(withBids || updated);
   } catch (err) {
     if (err && err.code === "23505") {
       throw createAppError("الرابط مستخدم مسبقاً.", 409, {

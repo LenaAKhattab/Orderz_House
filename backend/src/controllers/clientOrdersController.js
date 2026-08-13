@@ -239,6 +239,21 @@ const rejectFreelancerBid = async (req, res, next) => {
   }
 };
 
+/** Client cancels open bidding order before any Freelancer is selected (Phase 5 refund trigger). */
+const cancelOpenBiddingOrderWithoutSelection = async (req, res, next) => {
+  try {
+    const out = await ordersService.endOpenBiddingOrderWithoutSelection({
+      orderId: req.params.id,
+      actorUserId: req.auth.userId,
+      actorRole: "client",
+      reason: "client_cancelled_before_selection",
+    });
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const selectFreelancerBid = async (req, res, next) => {
   try {
     const out = await stripeCheckoutService.createClientSelectedBidCheckoutSession({
@@ -353,6 +368,7 @@ module.exports = {
   listBidsForOrder,
   acceptFreelancerBid,
   rejectFreelancerBid,
+  cancelOpenBiddingOrderWithoutSelection,
   selectFreelancerBid,
   confirmSelectedBidPayment,
   createFixedOrderStripeCheckout,

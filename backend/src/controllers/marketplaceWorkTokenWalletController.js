@@ -45,6 +45,18 @@ async function getMyWorkTokenTransactions(req, res, next) {
       balanceEffect: row.balanceEffect,
       referenceType: row.referenceType,
       createdAt: row.createdAt,
+      labelAr:
+        row.eventType === "NORMAL_APPLICATION_CONSUME"
+          ? "رسوم التقديم على طلب"
+          : row.eventType === "NORMAL_APPLICATION_REFUND"
+            ? "استرداد جزئي لرسوم التقديم"
+            : null,
+      labelEn:
+        row.eventType === "NORMAL_APPLICATION_CONSUME"
+          ? "Order application fee"
+          : row.eventType === "NORMAL_APPLICATION_REFUND"
+            ? "Partial application fee refund"
+            : null,
     }));
     return res.json({ success: true, data: publicRows });
   } catch (err) {

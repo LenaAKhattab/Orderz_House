@@ -7,8 +7,8 @@ const router = express.Router();
 const guard = [requireAuth, requireSuperAdmin];
 
 /**
- * Super Admin read-only Work Token wallet inspection.
- * No balance mutation endpoints in Phase 4.
+ * LEGACY_DEPRECATED_WORK_TOKEN_MODEL — Phase B7B Super Admin read-only audit.
+ * No balance mutation endpoints.
  */
 router.get(
   "/work-token-wallets",

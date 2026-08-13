@@ -346,6 +346,15 @@ async function creditWorkTokens(input) {
   const amount = assertPositiveTokenAmount(input.amountTokens ?? input.amount, "amountTokens");
   const { referenceType, referenceId } = assertReference(input.referenceType, input.referenceId);
   const eventType = String(input.eventType || DEFAULT_CREDIT_EVENT).trim();
+  if (
+    eventType === "IDENTITY_VERIFICATION_BONUS" ||
+    eventType === "PAYOUT_VERIFICATION_BONUS"
+  ) {
+    throw createAppError("Verification Work Token rewards are deprecated.", 410, {
+      exposeToClient: true,
+      publicCode: "WORK_TOKENS_DEPRECATED",
+    });
+  }
   if (!isValidWorkTokenLedgerEvent(eventType) || eventTypeBalanceEffectOrThrow(eventType) !== "credit_available") {
     throw createAppError("creditWorkTokens requires a credit event type.", 400, {
       exposeToClient: true,

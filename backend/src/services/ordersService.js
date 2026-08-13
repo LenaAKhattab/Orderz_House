@@ -841,6 +841,26 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
     await attachFiles({ orderId: orderRow.id, actorUserId, files: preparedFiles }, client);
 
     if (assignedFreelancerId) {
+      // Phase 7.1: direct admin/partner assignment counts as effective work history
+      {
+        const fairDist = require("./marketplaceFairDistributionService");
+        await fairDist.recordAwarded({
+          client,
+          order: orderRow,
+          freelancerUserId: assignedFreelancerId,
+          reason: "direct_admin_assignment",
+          actorRole: actorRole || "admin",
+          actorUserId,
+        });
+        await fairDist.recordEffectiveAssignment({
+          client,
+          order: orderRow,
+          freelancerUserId: assignedFreelancerId,
+          reason: "direct_admin_assignment",
+          actorRole: actorRole || "admin",
+          actorUserId,
+        });
+      }
       await safeNotify(() =>
         notificationService.createIfNotExists(
           {
@@ -881,6 +901,24 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
           },
           client,
         );
+      });
+    }
+
+    // Phase 6: automatic Priority Auction when REAL priced-bidding Order becomes Freelancer-visible.
+    // Engines OFF → safe no-op. Idempotent; one auction lifetime per order.
+    if (
+      isBidding &&
+      isPublished &&
+      isOpenForPool &&
+      !assignedFreelancerId &&
+      orderStatus === ORDER_STATUSES.OPEN_FOR_BIDS
+    ) {
+      const priorityAuctionService = require("./marketplacePriorityAuctionService");
+      await priorityAuctionService.maybeCreatePriorityAuctionOnPricedBiddingOpen({
+        orderId: orderRow.id,
+        actorUserId,
+        client,
+        orderRow,
       });
     }
 
@@ -1043,6 +1081,17 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
         purpose: "brief",
       });
       await attachFiles({ orderId: orderRow.id, actorUserId: clientUserId, files: preparedFiles }, client);
+    }
+
+    // Phase 6: automatic Priority Auction when client priced-bidding Order opens for Freelancers.
+    if (!isFixed && initialOrderStatus === ORDER_STATUSES.OPEN_FOR_BIDS) {
+      const priorityAuctionService = require("./marketplacePriorityAuctionService");
+      await priorityAuctionService.maybeCreatePriorityAuctionOnPricedBiddingOpen({
+        orderId: orderRow.id,
+        actorUserId: clientUserId,
+        client,
+        orderRow,
+      });
     }
 
     await client.query("COMMIT");
@@ -1992,12 +2041,22 @@ async function getClientOrderByIdForOwner({ clientUserId, orderId }) {
   return order;
 }
 
-async function submitPoolOrderBid({ freelancerUserId, orderId, amount, message = null }) {
+async function submitPoolOrderBid({
+  freelancerUserId,
+  orderId,
+  amount,
+  message = null,
+  poolKind = "real",
+  usePriority = false,
+}) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
     const orderAuthz = require("./orderAuthorizationService");
+    // Phase B2: Bid Credits replace Phase 5 Work Token charge on this path.
+    // LEGACY_DEPRECATED: marketplaceNormalApplicationWorkTokenService remains for rollback/tests only.
+    const normalAppBids = require("./marketplaceNormalApplicationBidCreditService");
     const { rows } = await client.query(
       `SELECT * FROM orders
        WHERE id = $1
@@ -2071,17 +2130,78 @@ async function submitPoolOrderBid({ freelancerUserId, orderId, amount, message =
        FROM order_freelancer_bids
        WHERE order_id = $1
          AND freelancer_user_id = $2
-       LIMIT 1`,
+       LIMIT 1
+       FOR UPDATE`,
       [Number(orderId), Number(freelancerUserId)],
     );
     const hadBidBefore = Boolean(prevBidRows[0]);
-    await client.query(
+
+    const { rows: bidRows } = await client.query(
       `INSERT INTO order_freelancer_bids (order_id, freelancer_user_id, amount, status, is_fake_bid, fake_round_id, proposal_message)
        VALUES ($1, $2, $3, 'pending', FALSE, NULL, $4)
        ON CONFLICT (order_id, freelancer_user_id)
-       DO UPDATE SET amount = EXCLUDED.amount, status = 'pending', proposal_message = EXCLUDED.proposal_message, is_fake_bid = FALSE, fake_round_id = NULL, updated_at = NOW()`,
+       DO UPDATE SET amount = EXCLUDED.amount, status = 'pending', proposal_message = EXCLUDED.proposal_message, is_fake_bid = FALSE, fake_round_id = NULL, updated_at = NOW()
+       RETURNING id`,
       [Number(orderId), Number(freelancerUserId), bid, bidMessage || null],
     );
+    const bidId = bidRows[0].id;
+
+    // Phase B2: charge exactly 1 Bid Credit on first Freelancer+Order application when bid_credits_enabled.
+    // Edits/retries skip (hadBidBefore). Fake/training never reach this function.
+    let bidCreditCharge = {
+      charged: false,
+      skipped: true,
+      reason: hadBidBefore ? "existing_application" : "not_attempted",
+      bidCreditCost: hadBidBefore ? 0 : normalAppBids.NORMAL_APPLICATION_BID_COST,
+    };
+    if (!hadBidBefore) {
+      bidCreditCharge = await normalAppBids.chargeNormalApplicationBidCreditOnFirstBid({
+        client,
+        freelancerUserId,
+        orderId,
+        bidId,
+        orderRow: order,
+        poolKind: poolKind === "real" ? "real" : poolKind,
+        actorUserId: freelancerUserId,
+      });
+    }
+
+    // Phase B4: optional Priority Application Boost (1 Priority Use; 0 extra Bids; 0 WT).
+    // Requested Priority with unavailable entitlement fails closed (full txn rollback).
+    let priorityBoost = {
+      boosted: false,
+      skipped: true,
+      reason: usePriority ? "not_attempted" : "not_requested",
+      priorityUseCost: 0,
+      additionalBidCreditCost: 0,
+      workTokenCost: 0,
+    };
+    if (usePriority) {
+      const priorityBoostSvc = require("./marketplacePriorityApplicationBoostService");
+      const boostResult = await priorityBoostSvc.applyPriorityApplicationBoost({
+        client,
+        freelancerUserId,
+        orderId,
+        bidId,
+        orderRow: order,
+        poolKind: poolKind === "real" ? "real" : poolKind,
+        boostSource: hadBidBefore ? "upgrade" : "submit",
+        actorUserId: freelancerUserId,
+      });
+      priorityBoost = {
+        boosted: Boolean(boostResult.boosted),
+        skipped: false,
+        idempotent: Boolean(boostResult.idempotent),
+        reason: null,
+        priorityUseCost: boostResult.priorityUseCost ?? 0,
+        additionalBidCreditCost: boostResult.additionalBidCreditCost ?? 0,
+        workTokenCost: boostResult.workTokenCost ?? 0,
+        remainingPriorityUses:
+          boostResult.remainingPriorityUses != null ? boostResult.remainingPriorityUses : null,
+        boost: boostResult.boost || null,
+      };
+    }
+
     await safeNotify(() =>
       notificationEventsService.notifyOrderOwner(
         {
@@ -2089,17 +2209,55 @@ async function submitPoolOrderBid({ freelancerUserId, orderId, amount, message =
           actorUserId: Number(freelancerUserId),
           type: hadBidBefore ? "order.bid.updated" : "order.bid.submitted",
           title: hadBidBefore ? "تم تحديث عرض السعر" : "تم استلام عرض سعر جديد",
-          message: hadBidBefore ? "قام مستقل بتحديث عرضه على المشروع." : "تم إرسال عرض سعر جديد على مشروعك.",
+          message: hadBidBefore
+            ? priorityBoost.boosted
+              ? "قام مستقل بترقية عرضه إلى عرض أولوية."
+              : "قام مستقل بتحديث عرضه على المشروع."
+            : priorityBoost.boosted
+              ? "تم إرسال عرض أولوية جديد على مشروعك."
+              : "تم إرسال عرض سعر جديد على مشروعك.",
           priority: "high",
-          dedupeKey: hadBidBefore ? `order_bid_updated_${orderId}_${freelancerUserId}_${bid}` : `order_bid_submitted_${orderId}_${freelancerUserId}`,
-          metadata: { orderId: String(orderId), freelancerUserId: String(freelancerUserId), amount: bid },
+          dedupeKey: hadBidBefore
+            ? `order_bid_updated_${orderId}_${freelancerUserId}_${bid}_${priorityBoost.boosted ? "priority" : "normal"}`
+            : `order_bid_submitted_${orderId}_${freelancerUserId}_${priorityBoost.boosted ? "priority" : "normal"}`,
+          metadata: {
+            orderId: String(orderId),
+            freelancerUserId: String(freelancerUserId),
+            amount: bid,
+            isPriority: Boolean(priorityBoost.boosted),
+          },
         },
         client,
       ),
     );
 
     await client.query("COMMIT");
-    return await getOrderById(orderId);
+    const orderOut = await getOrderById(orderId);
+    return {
+      order: orderOut,
+      bidCredit: {
+        consumed: Boolean(bidCreditCharge.charged),
+        cost: bidCreditCharge.charged
+          ? normalAppBids.NORMAL_APPLICATION_BID_COST
+          : hadBidBefore
+            ? 0
+            : bidCreditCharge.bidCreditCost || 0,
+        skipped: Boolean(bidCreditCharge.skipped),
+        reason: bidCreditCharge.reason || null,
+        availableBidsAfter:
+          bidCreditCharge.availableBidsAfter != null ? bidCreditCharge.availableBidsAfter : null,
+      },
+      priorityBoost: {
+        boosted: Boolean(priorityBoost.boosted),
+        skipped: Boolean(priorityBoost.skipped),
+        reason: priorityBoost.reason || null,
+        priorityUseCost: Number(priorityBoost.priorityUseCost) || 0,
+        additionalBidCreditCost: Number(priorityBoost.additionalBidCreditCost) || 0,
+        workTokenCost: Number(priorityBoost.workTokenCost) || 0,
+        remainingPriorityUses:
+          priorityBoost.remainingPriorityUses != null ? priorityBoost.remainingPriorityUses : null,
+      },
+    };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -2196,6 +2354,28 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
       const err = new Error("This order has already been taken.");
       err.statusCode = 409;
       throw err;
+    }
+
+    // Phase 7.1: fixed-take is not Fair-ranked, but genuine effective work counts for history
+    {
+      const fairDist = require("./marketplaceFairDistributionService");
+      await fairDist.recordAwarded({
+        client,
+        order: updatedRows[0],
+        freelancerUserId,
+        reason: "fixed_take_claim_pool",
+        actorRole: "freelancer",
+        actorUserId: freelancerUserId,
+      });
+      await fairDist.recordEffectiveAssignment({
+        client,
+        order: updatedRows[0],
+        freelancerUserId,
+        reason: "fixed_take_claim_pool",
+        actorRole: "freelancer",
+        actorUserId: freelancerUserId,
+        occurredAt: now,
+      });
     }
 
     await safeNotify(() =>
@@ -2429,6 +2609,29 @@ async function approvePoolClaimAdmin({ actorUserId, orderId, claimId }) {
       [Number(orderId), Number(claim.freelancer_user_id), receivedAt, dueAt, ORDER_STATUSES.IN_PROGRESS],
     );
 
+    // Phase 7.1: claim approval creates genuine effective assignment (not Fair-selected)
+    {
+      const fairDist = require("./marketplaceFairDistributionService");
+      await fairDist.recordAwarded({
+        client,
+        order: updated[0],
+        freelancerUserId: claim.freelancer_user_id,
+        reason: "admin_pool_claim_approved",
+        actorRole: "admin",
+        actorUserId,
+        occurredAt: receivedAt,
+      });
+      await fairDist.recordEffectiveAssignment({
+        client,
+        order: updated[0],
+        freelancerUserId: claim.freelancer_user_id,
+        reason: "admin_pool_claim_approved",
+        actorRole: "admin",
+        actorUserId,
+        occurredAt: receivedAt,
+      });
+    }
+
     // Mark approved claim + reject the rest.
     await client.query(
       `UPDATE order_claims
@@ -2608,6 +2811,9 @@ async function approveInternalPricedBidAdmin({ actorUserId, orderId, bidId }) {
       throw err;
     }
 
+    const priorityAuctionService = require("./marketplacePriorityAuctionService");
+    await priorityAuctionService.assertNoActivePriorityAuctionBlockingAssignment(client, orderId);
+
     const { rows: bidRows } = await client.query(
       `SELECT * FROM order_freelancer_bids
        WHERE id = $1 AND order_id = $2
@@ -2695,6 +2901,22 @@ async function approveInternalPricedBidAdmin({ actorUserId, orderId, bidId }) {
          AND status = 'rejected'`,
       [Number(orderId), Number(bidId)],
     );
+
+    // Phase 7.1: factual Fair history (engine may be OFF)
+    {
+      const fairDist = require("./marketplaceFairDistributionService");
+      await fairDist.recordFinalEffectiveSelectionOutcome({
+        client,
+        order: updated[0],
+        winnerFreelancerUserId: selectedBid.freelancer_user_id,
+        loserFreelancerUserIds: rejectedBidders.map((r) => r.freelancer_user_id),
+        selectionSource: "admin_internal_bid_award",
+        actorRole: "admin",
+        actorUserId: Number(actorUserId),
+        occurredAt: receivedAt,
+      });
+    }
+
     await safeNotify(() =>
       notificationEventsService.notifyUsers(
         {
@@ -2776,15 +2998,39 @@ async function listOrderClaimsForClient({ clientUserId, orderId }) {
 
 async function listOrderBidsWithFreelancers({ orderId }, clientMaybe) {
   const runner = clientMaybe || pool;
-  const { rows } = await runner.query(
-    `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at, b.proposal_message,
-            u.first_name, u.father_name, u.family_name, u.email, u.account_id
-     FROM order_freelancer_bids b
-     JOIN users u ON u.id = b.freelancer_user_id
-     WHERE b.order_id = $1
-     ORDER BY b.amount ASC, b.created_at ASC`,
-    [Number(orderId)],
-  );
+  const priorityBoostSchema = require("../utils/marketplacePriorityApplicationBoostSchema");
+  const schemaReady = await priorityBoostSchema.priorityApplicationBoostSchemaReady(runner);
+  const { rows } = schemaReady
+    ? await runner.query(
+        `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at, b.proposal_message,
+                u.first_name, u.father_name, u.family_name, u.email, u.account_id,
+                CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN TRUE ELSE FALSE END AS is_priority,
+                pab.boosted_at AS priority_boosted_at
+         FROM order_freelancer_bids b
+         JOIN users u ON u.id = b.freelancer_user_id
+         LEFT JOIN order_freelancer_priority_application_boosts pab
+           ON pab.bid_id = b.id AND pab.order_id = b.order_id AND pab.freelancer_user_id = b.freelancer_user_id
+         WHERE b.order_id = $1
+         ORDER BY
+           CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN 0 ELSE 1 END ASC,
+           CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN b.created_at END ASC NULLS LAST,
+           CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN b.id END ASC NULLS LAST,
+           b.amount ASC,
+           b.created_at ASC,
+           b.id ASC`,
+        [Number(orderId)],
+      )
+    : await runner.query(
+        `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at, b.proposal_message,
+                u.first_name, u.father_name, u.family_name, u.email, u.account_id,
+                FALSE AS is_priority,
+                NULL::timestamptz AS priority_boosted_at
+         FROM order_freelancer_bids b
+         JOIN users u ON u.id = b.freelancer_user_id
+         WHERE b.order_id = $1
+         ORDER BY b.amount ASC, b.created_at ASC, b.id ASC`,
+        [Number(orderId)],
+      );
   return rows.map((r) => ({
     id: String(r.id),
     orderId: String(r.order_id),
@@ -2794,6 +3040,8 @@ async function listOrderBidsWithFreelancers({ orderId }, clientMaybe) {
     message: r.proposal_message || null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
+    isPriority: Boolean(r.is_priority),
+    priorityBoostedAt: r.priority_boosted_at || null,
     freelancer: {
       id: String(r.freelancer_user_id),
       accountId: r.account_id,
@@ -3046,6 +3294,34 @@ async function approvePoolClaimClient({ clientUserId, orderId, claimId }) {
        WHERE id = $1`,
       [Number(orderId), Number(claim.freelancer_user_id), receivedAt, dueAt, ORDER_STATUSES.IN_PROGRESS],
     );
+
+    // Phase 7.1: client claim approval → effective assignment history
+    {
+      const fairDist = require("./marketplaceFairDistributionService");
+      const orderForFair = {
+        ...order,
+        assigned_freelancer_id: claim.freelancer_user_id,
+        received_at: receivedAt,
+      };
+      await fairDist.recordAwarded({
+        client,
+        order: orderForFair,
+        freelancerUserId: claim.freelancer_user_id,
+        reason: "client_pool_claim_approved",
+        actorRole: "client",
+        actorUserId: clientUserId,
+        occurredAt: receivedAt,
+      });
+      await fairDist.recordEffectiveAssignment({
+        client,
+        order: orderForFair,
+        freelancerUserId: claim.freelancer_user_id,
+        reason: "client_pool_claim_approved",
+        actorRole: "client",
+        actorUserId: clientUserId,
+        occurredAt: receivedAt,
+      });
+    }
 
     await client.query(
       `UPDATE order_claims
@@ -3728,6 +4004,16 @@ async function activateArchivedInternalOrder({ orderId }) {
       [Number(orderId), reactivatedStatus],
     );
 
+    if (reactivatedStatus === ORDER_STATUSES.OPEN_FOR_BIDS) {
+      const priorityAuctionService = require("./marketplacePriorityAuctionService");
+      await priorityAuctionService.maybeCreatePriorityAuctionOnPricedBiddingOpen({
+        orderId: updated[0].id,
+        actorUserId: null,
+        client,
+        orderRow: updated[0],
+      });
+    }
+
     await client.query("COMMIT");
     return await getOrderById(updated[0].id);
   } catch (err) {
@@ -3879,6 +4165,10 @@ module.exports = {
   getFreelancerAssignedOrderById,
   submitPoolOrderBid,
   claimPoolOrder,
+  endOpenBiddingOrderWithoutSelection: async (args) => {
+    const svc = require("./marketplaceNormalApplicationWorkTokenService");
+    return svc.endOpenBiddingOrderWithoutSelection(args);
+  },
   withdrawPoolClaim,
   listOrderClaimsAdmin,
   approvePoolClaimAdmin,

@@ -146,7 +146,23 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                 }}
               >
-                <div style={{ fontWeight: 800 }}>{applicantDisplayName(b)}</div>
+                <div style={{ fontWeight: 800, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <span>{applicantDisplayName(b)}</span>
+                  {b.isPriority ? (
+                    <span
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 800,
+                        padding: "2px 8px",
+                        borderRadius: 6,
+                        background: "rgba(14, 116, 144, 0.12)",
+                        color: "#0e7490",
+                      }}
+                    >
+                      عرض أولوية
+                    </span>
+                  ) : null}
+                </div>
                 <div style={{ marginTop: 8, fontWeight: 700, unicodeBidi: "plaintext" }} dir="ltr">
                   مبلغ العرض: {formatMoney(b.amount)}
                   {currencyCode ? ` ${currencyCode}` : ""}

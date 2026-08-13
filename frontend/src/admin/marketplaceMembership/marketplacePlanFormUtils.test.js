@@ -73,10 +73,12 @@ describe("marketplacePlanFormUtils", () => {
       tierCode: "active",
       nameAr: "Active",
       nameEn: "Active",
-      monthlyPriceJod: 8.99,
+      monthlyPriceJod: 44.99,
       maxRealOrderValueJod: 25,
       unlimitedRealOrderValue: false,
-      includedTokensPerCycle: 0,
+      includedTokensPerCycle: 220,
+      monthlyBidAllowance: 30,
+      articleAccessLevel: 3,
       cashAllowed: false,
       minimumCashMonths: 1,
       maximumPrepaidMonths: 1,
@@ -86,6 +88,22 @@ describe("marketplacePlanFormUtils", () => {
     });
     assert.strictEqual(form.tierCode, "active");
     assert.strictEqual(form.maxRealOrderValueJod, 25);
+    // Phase B1: Work Token grants deprecated — form always shows 0 tokens.
+    assert.strictEqual(form.includedTokensPerCycle, 0);
+    assert.strictEqual(form.monthlyBidAllowance, 30);
+    assert.strictEqual(form.articleAccessLevel, 3);
+  });
+
+  it("rejects article access level outside 1..5", () => {
+    const base = getInitialMarketplacePlanFormState({
+      tierCode: "start",
+      nameAr: "ابدأ",
+      monthlyPriceJod: "24.99",
+      maxRealOrderValueJod: "15",
+      articleAccessLevel: "9",
+    });
+    const bad = validateMarketplacePlanForm(base, { isCreate: true });
+    assert.ok(bad.articleAccessLevel);
   });
 });
 

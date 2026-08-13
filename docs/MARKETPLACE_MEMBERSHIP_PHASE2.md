@@ -55,7 +55,7 @@ Legacy patch keys `bidTokensPerOrderJod` / `applicationTokenRefundPercentage` ar
 |---|---|
 | Work Token value | **0.100 JOD** |
 | Normal apply tokens / JOD | **1** (policy only) |
-| Normal apply refund % | **70** (policy only) |
+| Normal apply refund % | **100** (policy only; Phase 5 eligible outcomes return full Tokens) |
 | Platform commission % | **30** |
 | Cash processing fee | **5.000 JOD** / cash **transaction** |
 | Priority Bid duration | **30** minutes |

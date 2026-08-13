@@ -15,6 +15,7 @@ import {
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import {
   areEconomyEnginesDisabled,
+  ASSIGNMENT_STRATEGIES_UI,
   settingsToFormState,
   validateMarketplaceEconomyForm,
 } from "../../admin/marketplaceEconomy/marketplaceEconomyFormUtils";
@@ -199,272 +200,128 @@ export default function SuperAdminMarketplaceEconomyPage() {
       {!loading && !error && form ? (
         <>
           <div className="oh-mes-sections">
-            <section className="oh-mes-section" aria-labelledby="mes-tokens-title">
+            <section className="oh-mes-section oh-mes-section--deprecated" aria-labelledby="mes-tokens-title">
               <h2 id="mes-tokens-title" className="oh-mes-section__title">
-                {isEn ? "1. Work Tokens & normal applications" : "أولاً: Work Tokens والتقديم العادي"}
+                {isEn
+                  ? "1. Work Tokens engine — DEPRECATED (technical)"
+                  : "أولاً: محرك Work Tokens — مهجور (تقني)"}
               </h2>
               <p className="oh-mes-section__lede">
                 {isEn
-                  ? "Accounting value and OPTIONAL normal apply-token policy. Priority Bid amount is chosen by the Freelancer — not this rate."
-                  : "القيمة المحاسبية وسياسة Tokens الاختيارية للتقديم العادي. مبلغ Priority Bid يختاره المستقل — وليس هذا المعدل."}
+                  ? "Hidden from normal product workflow. Engine is forced OFF and cannot be re-enabled from this UI. Active Freelancer economy uses Bids + Priority Uses. Schema retained for audit/rollback only."
+                  : "مخفي عن سير المنتج العادي. المحرك مفروض متوقفاً ولا يمكن إعادة تفعيله من هذه الواجهة. اقتصاد المستقل النشط: العروض + مرات الأولوية. المخطط محفوظ للتدقيق/التراجع فقط."}
               </p>
               <div className="oh-mes-grid">
-                <Field
-                  id="mes-token-value"
-                  label={isEn ? "Work Token value (JOD)" : "قيمة Work Token (د.أ)"}
-                  help={
-                    isEn
-                      ? "Accounting value of one Work Token."
-                      : "القيمة المحاسبية لكل Work Token."
-                  }
-                  error={fieldErrors.workTokenValueJod}
-                >
-                  <input
-                    id="mes-token-value"
-                    className="oh-mes-input"
-                    type="number"
-                    min="0.001"
-                    step="0.001"
-                    dir="ltr"
-                    disabled={saving}
-                    value={form.workTokenValueJod}
-                    onChange={(e) => setField("workTokenValueJod", e.target.value)}
-                  />
-                </Field>
-                <Field
-                  id="mes-normal-rate"
-                  label={
-                    isEn
-                      ? "Normal apply tokens per 1 JOD (optional future)"
-                      : "Tokens للتقديم العادي لكل 1 دينار (مستقبلي اختياري)"
-                  }
-                  help={
-                    isEn
-                      ? "NOT Priority Bid. Future optional cost for normal applications only."
-                      : "ليست Priority Bid. تكلفة اختيارية مستقبلية للتقديم العادي فقط."
-                  }
-                  error={fieldErrors.normalApplicationTokensPerOrderJod}
-                >
-                  <input
-                    id="mes-normal-rate"
-                    className="oh-mes-input"
-                    type="number"
-                    min="0.001"
-                    step="0.001"
-                    dir="ltr"
-                    disabled={saving}
-                    value={form.normalApplicationTokensPerOrderJod}
-                    onChange={(e) => setField("normalApplicationTokensPerOrderJod", e.target.value)}
-                  />
-                </Field>
-                <Field
-                  id="mes-normal-refund"
-                  label={
-                    isEn
-                      ? "Normal apply refund % (no freelancer selected)"
-                      : "نسبة استرداد التقديم العادي (عند عدم اختيار مستقل)"
-                  }
-                  help={
-                    isEn
-                      ? "Does NOT control Priority Bid losers — those always release 100% reserved Tokens."
-                      : "لا تتحكم في خاسري Priority Bid — يُحرَّر دائماً 100% من Tokens المحجوزة."
-                  }
-                  error={fieldErrors.normalApplicationTokenRefundPercentage}
-                >
-                  <input
-                    id="mes-normal-refund"
-                    className="oh-mes-input"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    dir="ltr"
-                    disabled={saving}
-                    value={form.normalApplicationTokenRefundPercentage}
-                    onChange={(e) =>
-                      setField("normalApplicationTokenRefundPercentage", e.target.value)
-                    }
-                  />
-                </Field>
                 <div className="oh-mes-field oh-mes-field--full">
                   <Toggle
                     id="mes-flag-tokens"
-                    label={isEn ? "Enable Work Tokens engine (wallet/ledger)" : "تفعيل نظام Work Tokens (محفظة/سجل)"}
-                    checked={form.workTokensEnabled}
-                    disabled={saving}
-                    onChange={(v) => setField("workTokensEnabled", v)}
+                    label={isEn ? "Work Tokens engine (locked OFF)" : "محرك Work Tokens (مقفول متوقف)"}
+                    checked={false}
+                    disabled
+                    onChange={() => {}}
                   />
                   <p className="oh-mes-help">
                     {isEn
-                      ? "Required before Priority Bid can go live. Keep OFF until wallet AVAILABLE/RESERVED exists."
-                      : "مطلوب قبل تشغيل Priority Bid. أبقِه متوقفاً حتى توجد محفظة AVAILABLE/RESERVED."}
+                      ? "work_tokens_enabled remains false. Do not repurpose for Bids."
+                      : "work_tokens_enabled يبقى false. لا يُعاد استخدامه للعروض."}
                   </p>
                 </div>
               </div>
             </section>
 
-            <section className="oh-mes-section" aria-labelledby="mes-priority-title">
-              <h2 id="mes-priority-title" className="oh-mes-section__title">
-                {isEn ? "2. Priority Bid (token auction)" : "ثانياً: Priority Bid (مزاد Tokens)"}
+            <section className="oh-mes-section" aria-labelledby="mes-priority-boost-title">
+              <h2 id="mes-priority-boost-title" className="oh-mes-section__title">
+                {isEn
+                  ? "2a. Priority Application Boost (active product — dormant)"
+                  : "2أ. تعزيز عرض الأولوية (المنتج النشط — خامل)"}
               </h2>
               <p className="oh-mes-section__lede">
                 {isEn
-                  ? "Freelancer chooses bid amount. Tokens are RESERVED during auction; losers release 100%; winner consumes 100%. Default strategy: HIGHEST_TOKEN_ONLY."
-                  : "المستقل يختار مبلغ المزايدة. تُحجز Tokens أثناء المزاد؛ الخاسر يُحرَّر 100%؛ الفائز يُستهلك 100%. الاستراتيجية الافتراضية: HIGHEST_TOKEN_ONLY."}
+                  ? "Binary boost: 1 Bid + 1 Priority Use. No extra Bids, no Work Tokens, no automatic assignment. Keep OFF until Phase B4 migration is reviewed and cutover is approved."
+                  : "تعزيز ثنائي: عرض واحد + استخدام أولوية واحد. بلا عروض إضافية، بلا Work Tokens، بلا إسناد تلقائي. أبقِه متوقفاً حتى مراجعة هجرة B4 واعتماد التشغيل."}
+              </p>
+              <div className="oh-mes-grid">
+                <div className="oh-mes-field oh-mes-field--full">
+                  <Toggle
+                    id="mes-flag-priority-boost"
+                    label={
+                      isEn
+                        ? "Enable Priority Application Boost engine"
+                        : "تفعيل محرك تعزيز عرض الأولوية"
+                    }
+                    checked={Boolean(form.priorityApplicationBoostEnabled)}
+                    disabled={saving}
+                    onChange={(v) => setField("priorityApplicationBoostEnabled", v)}
+                  />
+                  <p className="oh-mes-help">
+                    {isEn
+                      ? "Independent of legacy Token auction (priority_bidding_enabled). Default OFF / DORMANT."
+                      : "مستقل عن مزاد Tokens القديم (priority_bidding_enabled). الافتراضي متوقف / خامل."}
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <section className="oh-mes-section" aria-labelledby="mes-bid-purchases-title">
+              <h2 id="mes-bid-purchases-title" className="oh-mes-section__title">
+                {isEn
+                  ? "2a+. Bid Credits + package purchases (dormant)"
+                  : "2أ+. العروض المتاحة + شراء الباقات (خامل)"}
+              </h2>
+              <p className="oh-mes-section__lede">
+                {isEn
+                  ? "Commercial package Checkout requires BOTH Bid Credits and Bid purchases engines. Keep OFF until Migration 151 is reviewed and cutover is approved. Refund/chargeback Bid reversal is not implemented."
+                  : "شراء الباقات يتطلب تفعيل محرك العروض ومحرك الشراء معاً. أبقِهما متوقفين حتى مراجعة الهجرة 151. استرجاع العروض عند الاسترداد/النزاع غير منفّذ."}
+              </p>
+              <div className="oh-mes-grid">
+                <div className="oh-mes-field oh-mes-field--full">
+                  <Toggle
+                    id="mes-flag-bid-credits"
+                    label={isEn ? "Enable Bid Credits engine" : "تفعيل محرك العروض المتاحة"}
+                    checked={Boolean(form.bidCreditsEnabled)}
+                    disabled={saving}
+                    onChange={(v) => setField("bidCreditsEnabled", v)}
+                  />
+                </div>
+                <div className="oh-mes-field oh-mes-field--full">
+                  <Toggle
+                    id="mes-flag-bid-purchases"
+                    label={
+                      isEn
+                        ? "Enable Bid Credit package purchases"
+                        : "تفعيل شراء باقات العروض"
+                    }
+                    checked={Boolean(form.bidCreditPurchasesEnabled)}
+                    disabled={saving}
+                    onChange={(v) => setField("bidCreditPurchasesEnabled", v)}
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="oh-mes-section oh-mes-section--deprecated" aria-labelledby="mes-priority-title">
+              <h2 id="mes-priority-title" className="oh-mes-section__title">
+                {isEn
+                  ? "2b. Legacy Priority Auction — DEPRECATED (technical)"
+                  : "2ب. مزاد الأولوية القديم — مهجور (تقني)"}
+              </h2>
+              <p className="oh-mes-section__lede">
+                {isEn
+                  ? "Not an alternative to Priority Application Boost. Token-stake auction config removed from normal Admin workflow. Engine forced OFF; schema retained for historical audit only."
+                  : "ليس بديلاً عن تعزيز عرض الأولوية. إعدادات مزاد Tokens أُزيلت من سير المسؤول العادي. المحرك مفروض متوقفاً؛ المخطط محفوظ للتدقيق التاريخي فقط."}
               </p>
               <div className="oh-mes-grid">
                 <div className="oh-mes-field oh-mes-field--full">
                   <Toggle
                     id="mes-flag-priority"
-                    label={isEn ? "Enable Priority Bidding engine" : "تفعيل محرك Priority Bid"}
-                    checked={form.priorityBiddingEnabled}
-                    disabled={saving}
-                    onChange={(v) => setField("priorityBiddingEnabled", v)}
-                  />
-                  <p className="oh-mes-help">
-                    {isEn
-                      ? "Keep OFF until membership cycles + wallet reservation ledger exist."
-                      : "أبقِه متوقفاً حتى توجد دورات العضوية وسجل حجز المحفظة."}
-                  </p>
-                </div>
-                <Field
-                  id="mes-pb-duration"
-                  label={isEn ? "Auction duration (minutes)" : "مدة المزاد (دقائق)"}
-                  help={
-                    isEn
-                      ? "Persistent DB start_at/end_at — not in-memory timers."
-                      : "أوقات DB ثابتة start_at/end_at — وليست مؤقتات في الذاكرة."
-                  }
-                  error={fieldErrors.priorityBidDurationMinutes}
-                >
-                  <input
-                    id="mes-pb-duration"
-                    className="oh-mes-input"
-                    type="number"
-                    min="1"
-                    step="1"
-                    dir="ltr"
-                    disabled={saving}
-                    value={form.priorityBidDurationMinutes}
-                    onChange={(e) => setField("priorityBidDurationMinutes", e.target.value)}
-                  />
-                </Field>
-                <Field
-                  id="mes-pb-min"
-                  label={isEn ? "Minimum bid tokens" : "أدنى Tokens للمزايدة"}
-                  error={fieldErrors.priorityBidMinimumTokens}
-                >
-                  <input
-                    id="mes-pb-min"
-                    className="oh-mes-input"
-                    type="number"
-                    min="1"
-                    step="1"
-                    dir="ltr"
-                    disabled={saving}
-                    value={form.priorityBidMinimumTokens}
-                    onChange={(e) => setField("priorityBidMinimumTokens", e.target.value)}
-                  />
-                </Field>
-                <Field
-                  id="mes-pb-max"
-                  label={isEn ? "Maximum bid tokens (optional)" : "أقصى Tokens للمزايدة (اختياري)"}
-                  error={fieldErrors.priorityBidMaximumTokens}
-                >
-                  <input
-                    id="mes-pb-max"
-                    className="oh-mes-input"
-                    type="number"
-                    min="1"
-                    step="1"
-                    dir="ltr"
-                    disabled={saving}
-                    value={form.priorityBidMaximumTokens}
-                    onChange={(e) => setField("priorityBidMaximumTokens", e.target.value)}
-                  />
-                </Field>
-                <Field
-                  id="mes-pb-strategy"
-                  label={isEn ? "Priority Bid assignment strategy" : "استراتيجية تعيين Priority Bid"}
-                  help={
-                    isEn
-                      ? "Default HIGHEST_TOKEN_ONLY keeps the auction promise. Fairness must not silently override a larger bid."
-                      : "الافتراضي HIGHEST_TOKEN_ONLY يحفظ وعد المزاد. العدالة لا تتجاوز بصمت مزايدة أعلى."
-                  }
-                  error={fieldErrors.priorityBidAssignmentStrategy}
-                >
-                  <select
-                    id="mes-pb-strategy"
-                    className="oh-mes-input"
-                    dir="ltr"
-                    disabled={saving}
-                    value={form.priorityBidAssignmentStrategy}
-                    onChange={(e) => setField("priorityBidAssignmentStrategy", e.target.value)}
-                  >
-                    <option value="HIGHEST_TOKEN_ONLY">HIGHEST_TOKEN_ONLY</option>
-                    <option value="FAIR_DISTRIBUTION_FIRST">FAIR_DISTRIBUTION_FIRST</option>
-                    <option value="HYBRID">HYBRID</option>
-                  </select>
-                </Field>
-                <div className="oh-mes-field">
-                  <Toggle
-                    id="mes-pb-inc"
-                    label={isEn ? "Allow bid increase" : "السماح برفع المزايدة"}
-                    checked={form.priorityBidAllowIncrease}
-                    disabled={saving}
-                    onChange={(v) => setField("priorityBidAllowIncrease", v)}
-                  />
-                  <p className="oh-mes-help">
-                    {isEn ? "Increase reserves the difference only (+80 if 100→180)." : "الرفع يحجز الفرق فقط (+80 إذا 100→180)."}
-                  </p>
-                </div>
-                <div className="oh-mes-field">
-                  <Toggle
-                    id="mes-pb-dec"
-                    label={isEn ? "Allow bid decrease" : "السماح بخفض المزايدة"}
-                    checked={form.priorityBidAllowDecrease}
-                    disabled={saving}
-                    onChange={(v) => setField("priorityBidAllowDecrease", v)}
-                  />
-                </div>
-                <div className="oh-mes-field">
-                  <Toggle
-                    id="mes-pb-show-hi"
-                    label={isEn ? "Show highest Priority Bid" : "إظهار أعلى Priority Bid"}
-                    checked={form.priorityBidShowHighest}
-                    disabled={saving}
-                    onChange={(v) => setField("priorityBidShowHighest", v)}
-                  />
-                </div>
-                <div className="oh-mes-field">
-                  <Toggle
-                    id="mes-pb-show-pos"
-                    label={isEn ? "Show position (no identity)" : "إظهار الترتيب (بدون هوية)"}
-                    checked={form.priorityBidShowPosition}
-                    disabled={saving}
-                    onChange={(v) => setField("priorityBidShowPosition", v)}
-                  />
-                </div>
-                <div className="oh-mes-field">
-                  <Toggle
-                    id="mes-pb-cancel-use"
                     label={
                       isEn
-                        ? "Return Priority Use if order cancelled before resolution"
-                        : "إعادة استخدام Priority عند إلغاء الطلب قبل الحسم"
+                        ? "Legacy Priority Bidding engine (locked OFF)"
+                        : "محرك مزاد الأولوية القديم (مقفول متوقف)"
                     }
-                    checked={form.priorityBidReturnUseOnOrderCancel}
-                    disabled={saving}
-                    onChange={(v) => setField("priorityBidReturnUseOnOrderCancel", v)}
-                  />
-                </div>
-                <div className="oh-mes-field">
-                  <Toggle
-                    id="mes-pb-auto"
-                    label={isEn ? "Auto-assign winner when auction ends" : "تعيين الفائز تلقائياً عند انتهاء المزاد"}
-                    checked={form.priorityBidAutoAssignmentEnabled}
-                    disabled={saving}
-                    onChange={(v) => setField("priorityBidAutoAssignmentEnabled", v)}
+                    checked={false}
+                    disabled
+                    onChange={() => {}}
                   />
                 </div>
               </div>
@@ -502,12 +359,37 @@ export default function SuperAdminMarketplaceEconomyPage() {
                     value={form.assignmentStrategy}
                     onChange={(e) => setField("assignmentStrategy", e.target.value)}
                   >
-                    <option value="HIGHEST_TOKEN_ONLY">HIGHEST_TOKEN_ONLY</option>
-                    <option value="FAIR_DISTRIBUTION_FIRST">FAIR_DISTRIBUTION_FIRST</option>
-                    <option value="HYBRID">HYBRID</option>
+                    {ASSIGNMENT_STRATEGIES_UI.map((opt) => (
+                      <option key={opt.value} value={opt.value} disabled={!opt.available}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 </Field>
-                <Field id="mes-w-fair" label="fairness_weight" error={fieldErrors.fairnessWeight}>
+                <Field
+                  id="mes-fair-lookback"
+                  label={isEn ? "Fair Distribution lookback (days)" : "نافذة التوزيع العادل (أيام)"}
+                  help={
+                    isEn
+                      ? "Lexicographic queue lookback. Approved default: 30. Source of truth for Phase 7 metrics."
+                      : "نافذة الطابور المعجمي. الافتراضي المعتمد: 30. مصدر الحقيقة لمقاييس المرحلة 7."
+                  }
+                  error={fieldErrors.fairDistributionLookbackDays}
+                >
+                  <input
+                    id="mes-fair-lookback"
+                    className="oh-mes-input"
+                    type="number"
+                    min="1"
+                    max="3650"
+                    step="1"
+                    dir="ltr"
+                    disabled={saving}
+                    value={form.fairDistributionLookbackDays}
+                    onChange={(e) => setField("fairDistributionLookbackDays", e.target.value)}
+                  />
+                </Field>
+                <Field id="mes-w-fair" label="fairness_weight (HYBRID future)" error={fieldErrors.fairnessWeight}>
                   <input
                     id="mes-w-fair"
                     className="oh-mes-input"
@@ -649,89 +531,30 @@ export default function SuperAdminMarketplaceEconomyPage() {
               </div>
             </section>
 
-            <section className="oh-mes-section" aria-labelledby="mes-verify-title">
+            <section className="oh-mes-section oh-mes-section--deprecated" aria-labelledby="mes-verify-title">
               <h2 id="mes-verify-title" className="oh-mes-section__title">
-                {isEn ? "6. Verification bonuses" : "سادساً: مكافآت التوثيق"}
+                {isEn
+                  ? "6. Verification Work Token bonuses — DEPRECATED (technical)"
+                  : "سادساً: مكافآت توثيق Work Tokens — مهجور (تقني)"}
               </h2>
               <p className="oh-mes-section__lede">
                 {isEn
-                  ? "Policy amounts only — no tokens are granted in this phase."
-                  : "مبالغ السياسة فقط — لا تُمنح أي Tokens في هذه المرحلة."}
+                  ? "Legacy Work Token reward amounts are hidden from normal Admin workflow. No active path grants Work Tokens for verification. DB columns retained for history."
+                  : "مبالغ مكافآت Work Tokens مخفية عن سير المسؤول العادي. لا يوجد مسار نشط يمنح Work Tokens للتوثيق. أعمدة قاعدة البيانات محفوظة للتاريخ."}
               </p>
               <div className="oh-mes-grid">
-                <Field
-                  id="mes-id-bonus"
-                  label={isEn ? "Identity verification bonus (tokens)" : "مكافأة توثيق الهوية (Tokens)"}
-                  error={fieldErrors.identityVerificationBonusTokens}
-                >
-                  <input
-                    id="mes-id-bonus"
-                    className="oh-mes-input"
-                    type="number"
-                    min="0"
-                    step="1"
-                    dir="ltr"
-                    disabled={saving}
-                    value={form.identityVerificationBonusTokens}
-                    onChange={(e) => setField("identityVerificationBonusTokens", e.target.value)}
-                  />
-                </Field>
-                <div className="oh-mes-field">
-                  <Toggle
-                    id="mes-id-bonus-on"
-                    label={isEn ? "Identity bonus policy enabled" : "تفعيل سياسة مكافأة الهوية"}
-                    checked={form.identityVerificationBonusEnabled}
-                    disabled={saving}
-                    onChange={(v) => setField("identityVerificationBonusEnabled", v)}
-                  />
-                </div>
-                <Field
-                  id="mes-payout-bonus"
-                  label={
-                    isEn
-                      ? "Payout method verification bonus (tokens)"
-                      : "مكافأة توثيق وسيلة استلام الأرباح (Tokens)"
-                  }
-                  error={fieldErrors.payoutMethodVerificationBonusTokens}
-                >
-                  <input
-                    id="mes-payout-bonus"
-                    className="oh-mes-input"
-                    type="number"
-                    min="0"
-                    step="1"
-                    dir="ltr"
-                    disabled={saving}
-                    value={form.payoutMethodVerificationBonusTokens}
-                    onChange={(e) => setField("payoutMethodVerificationBonusTokens", e.target.value)}
-                  />
-                </Field>
-                <div className="oh-mes-field">
-                  <Toggle
-                    id="mes-payout-bonus-on"
-                    label={isEn ? "Payout bonus policy enabled" : "تفعيل سياسة مكافأة وسيلة الاستلام"}
-                    checked={form.payoutMethodVerificationBonusEnabled}
-                    disabled={saving}
-                    onChange={(v) => setField("payoutMethodVerificationBonusEnabled", v)}
-                  />
-                </div>
                 <div className="oh-mes-field oh-mes-field--full">
                   <Toggle
                     id="mes-flag-verify"
                     label={
                       isEn
-                        ? "Enable verification bonuses engine"
-                        : "تفعيل محرك منح مكافآت التوثيق"
+                        ? "Verification Work Token rewards engine (locked OFF)"
+                        : "محرك مكافآت توثيق Work Tokens (مقفول متوقف)"
                     }
-                    checked={form.verificationBonusesEnabled}
-                    disabled={saving}
-                    onChange={(v) => setField("verificationBonusesEnabled", v)}
+                    checked={false}
+                    disabled
+                    onChange={() => {}}
                   />
-                  <p className="oh-mes-help">
-                    {isEn
-                      ? "Keep OFF until verification flows exist. Policy toggles above do not grant tokens alone."
-                      : "أبقِه متوقفاً حتى تُبنى مسارات التوثيق. تفعيل السياسة أعلاه وحده لا يمنح Tokens."}
-                  </p>
                 </div>
               </div>
             </section>

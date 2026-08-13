@@ -42,8 +42,8 @@ export default function MarketplaceMembershipPlanCard({
           {plan.priorityBidEnabled ? (
             <StatusBadge tone="info">
               {isEn
-                ? `Priority Bid ×${plan.priorityBidUsesPerCycle ?? 0}`
-                : `Priority Bid ×${plan.priorityBidUsesPerCycle ?? 0}`}
+                ? `Priority Uses ×${plan.priorityBidUsesPerCycle ?? 0}`
+                : `مرات الأولوية ×${plan.priorityBidUsesPerCycle ?? 0}`}
             </StatusBadge>
           ) : null}
           {saleOn ? <StatusBadge tone="warning">{isEn ? "Sale" : "تخفيض"}</StatusBadge> : null}
@@ -68,11 +68,23 @@ export default function MarketplaceMembershipPlanCard({
           <dd>{accessLabel}</dd>
         </div>
         <div>
-          <dt>{isEn ? "Tokens / cycle" : "وحدات العمل / دورة"}</dt>
-          <dd>{plan.includedTokensPerCycle ?? 0}</dd>
+          <dt>{isEn ? "Bids / month" : "العروض / شهر"}</dt>
+          <dd>{plan.monthlyBidAllowance ?? 0}</dd>
         </div>
         <div>
-          <dt>{isEn ? "Priority Bid uses" : "استخدامات Priority Bid"}</dt>
+          <dt>{isEn ? "Article access level" : "مستوى الوصول للمقالات"}</dt>
+          <dd>{plan.articleAccessLevel ?? 1}</dd>
+        </div>
+        <div style={{ gridColumn: "1 / -1" }}>
+          <dt>{isEn ? "Access meaning" : "معنى الوصول"}</dt>
+          <dd style={{ fontWeight: 400, fontSize: "0.9rem" }}>
+            {isEn
+              ? "Eligible for Article levels up to this level — not free/unlimited applications."
+              : "أهلية لمستويات المقال حتى هذا المستوى — وليس تقديماً مجانياً أو غير محدود."}
+          </dd>
+        </div>
+        <div>
+          <dt>{isEn ? "Priority Uses / cycle" : "مرات الأولوية / دورة"}</dt>
           <dd>
             {plan.priorityBidEnabled
               ? plan.priorityBidUsesPerCycle ?? 0

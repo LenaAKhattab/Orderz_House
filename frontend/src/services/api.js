@@ -203,7 +203,7 @@ export const listPublicPlansRequest = async () => {
   return data;
 };
 
-/** Marketplace Membership (باقات العمل) — Phase 1 catalog; not wired to public /plans yet. */
+/** Marketplace Membership catalog — public `/plans` default source (Phase B7A). */
 export const listPublicMarketplaceMembershipPlansRequest = async () => {
   const { data } = await api.get("/marketplace-membership-plans");
   return data;
@@ -225,6 +225,81 @@ export const updateMarketplaceMembershipPlanRequest = async (id, patch) => {
   const { data } = await api.patch(`/super-admin/marketplace-membership-plans/${id}`, patch, {
     timeout: 30000,
   });
+  return data;
+};
+
+/** Marketplace Articles — Phase A2 Level model (no applications / Token charges). */
+export const listAdminMarketplaceArticlesRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/marketplace-articles", { params });
+  return data;
+};
+
+export const createMarketplaceArticleRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/marketplace-articles", payload, { timeout: 30000 });
+  return data;
+};
+
+export const updateMarketplaceArticleRequest = async (id, patch) => {
+  const { data } = await api.patch(`/super-admin/marketplace-articles/${id}`, patch, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const listPublishedMarketplaceArticlesRequest = async (params = {}) => {
+  const { data } = await api.get("/marketplace-articles", { params });
+  return data;
+};
+
+/** Phase B5 — Freelancer Article applications (no Bid cost displayed until approved). */
+export const getFreelancerArticleApplicationContextRequest = async (articleId) => {
+  const { data } = await api.get(
+    `/freelancer/marketplace-articles/${encodeURIComponent(articleId)}/application`,
+  );
+  return data;
+};
+
+export const submitFreelancerArticleApplicationRequest = async (articleId, payload = {}) => {
+  const { data } = await api.post(
+    `/freelancer/marketplace-articles/${encodeURIComponent(articleId)}/applications`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const withdrawFreelancerArticleApplicationRequest = async (applicationId) => {
+  const { data } = await api.post(
+    `/freelancer/article-applications/${encodeURIComponent(applicationId)}/withdraw`,
+    {},
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const listAdminArticleApplicationsRequest = async (articleId, params = {}) => {
+  const { data } = await api.get(
+    `/super-admin/marketplace-articles/${encodeURIComponent(articleId)}/applications`,
+    { params },
+  );
+  return data;
+};
+
+export const selectAdminArticleApplicationRequest = async (applicationId) => {
+  const { data } = await api.post(
+    `/super-admin/article-applications/${encodeURIComponent(applicationId)}/select`,
+    {},
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const rejectAdminArticleApplicationRequest = async (applicationId) => {
+  const { data } = await api.post(
+    `/super-admin/article-applications/${encodeURIComponent(applicationId)}/reject`,
+    {},
+    { timeout: 30000 },
+  );
   return data;
 };
 
@@ -259,24 +334,76 @@ export const getFreelancerMarketplaceMembershipRequest = async () => {
   return data;
 };
 
-/** Work Token wallet — Phase 4 read-only snapshot for Freelancer. */
-export const getFreelancerWorkTokenWalletRequest = async () => {
-  const { data } = await api.get("/freelancer/work-token-wallet");
+/** Bid Credits — Phase B1 (product replacement for Work Tokens) + B6 packages. */
+export const getFreelancerBidCreditsRequest = async () => {
+  const { data } = await api.get("/freelancer/bid-credits");
   return data;
 };
 
-export const getFreelancerWorkTokenTransactionsRequest = async (params = {}) => {
-  const { data } = await api.get("/freelancer/work-token-wallet/transactions", { params });
+export const listFreelancerBidCreditPackagesRequest = async () => {
+  const { data } = await api.get("/freelancer/bid-credit-packages");
   return data;
 };
 
-export const listAdminWorkTokenWalletsRequest = async (params = {}) => {
-  const { data } = await api.get("/super-admin/work-token-wallets", { params });
+export const createFreelancerBidCreditPurchaseCheckoutRequest = async (payload) => {
+  const { data } = await api.post("/freelancer/bid-credit-purchases/checkout", payload, {
+    timeout: 30000,
+  });
   return data;
 };
 
-export const getAdminWorkTokenWalletRequest = async (id) => {
-  const { data } = await api.get(`/super-admin/work-token-wallets/${encodeURIComponent(id)}`);
+export const confirmFreelancerBidCreditPurchaseRequest = async (payload) => {
+  const { data } = await api.post("/freelancer/bid-credit-purchases/confirm", payload, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const listFreelancerBidCreditPurchasesRequest = async (params = {}) => {
+  const { data } = await api.get("/freelancer/bid-credit-purchases", { params });
+  return data;
+};
+
+export const listAdminBidCreditPackagesRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/bid-credit-packages", { params });
+  return data;
+};
+
+export const listAdminBidCreditPurchasesRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/bid-credit-purchases", { params });
+  return data;
+};
+
+export const resolveAdminBidCreditPurchaseManualReviewRequest = async (purchaseId, payload) => {
+  const { data } = await api.post(
+    `/super-admin/bid-credit-purchases/${encodeURIComponent(purchaseId)}/manual-review`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const createAdminBidCreditPackageRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/bid-credit-packages", payload, { timeout: 30000 });
+  return data;
+};
+
+export const updateAdminBidCreditPackageRequest = async (id, patch) => {
+  const { data } = await api.patch(`/super-admin/bid-credit-packages/${encodeURIComponent(id)}`, patch, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const getAdminFreelancerBidCreditsRequest = async (freelancerUserId) => {
+  const { data } = await api.get(
+    `/super-admin/bid-credits/freelancers/${encodeURIComponent(freelancerUserId)}`,
+  );
+  return data;
+};
+
+export const adminGrantBidCreditsRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/bid-credits/grants", payload, { timeout: 30000 });
   return data;
 };
 
@@ -625,6 +752,18 @@ export const cancelClientFixedOrderPaymentRequest = async (orderId) => {
 
 export const submitPoolOrderBidRequest = async (orderId, payload) => {
   const { data } = await api.post(`/orders/pool/${orderId}/bids`, payload);
+  return data;
+};
+
+/** Phase B4 — upgrade an existing normal application to Priority Boost. */
+export const upgradePoolOrderBidPriorityRequest = async (orderId) => {
+  const { data } = await api.post(`/orders/pool/${orderId}/bids/priority-boost`);
+  return data;
+};
+
+/** Phase B2 — normal application Bid Credit quote (cost = 1 Bid). */
+export const getPoolOrderNormalApplicationBidQuoteRequest = async (orderId) => {
+  const { data } = await api.get(`/orders/pool/${orderId}/normal-application-bid-quote`);
   return data;
 };
 

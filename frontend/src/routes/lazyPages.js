@@ -40,6 +40,18 @@ export const SuperAdminMarketplacePlansPage = lazy(
 export const SuperAdminMarketplaceEconomyPage = lazy(
   () => import("../pages/dashboard/SuperAdminMarketplaceEconomyPage"),
 );
+export const SuperAdminMarketplaceArticlesPage = lazy(
+  () => import("../pages/dashboard/SuperAdminMarketplaceArticlesPage"),
+);
+export const FreelancerMarketplaceArticlesPage = lazy(
+  () => import("../pages/dashboard/FreelancerMarketplaceArticlesPage"),
+);
+export const FreelancerMarketplaceArticleDetailPage = lazy(
+  () => import("../pages/dashboard/FreelancerMarketplaceArticleDetailPage"),
+);
+export const SuperAdminBidCreditsPage = lazy(
+  () => import("../pages/dashboard/SuperAdminBidCreditsPage"),
+);
 export const SuperAdminAnalysisPage = lazy(() => import("../pages/dashboard/SuperAdminAnalysisPage"));
 export const SuperAdminSubscriptionsPage = lazy(() => import("../pages/dashboard/SuperAdminSubscriptionsPage"));
 export const SuperAdminFinancialClaimsPage = lazy(
@@ -157,6 +169,7 @@ export const ClientSettingsPage = lazy(() => import("../pages/dashboard/ClientSe
 
 /** Freelancer */
 export const FreelancerOrderDetailsPage = lazy(() => import("../pages/dashboard/FreelancerOrderDetailsPage"));
+export const FreelancerEliteOfferPage = lazy(() => import("../pages/dashboard/FreelancerEliteOfferPage"));
 export const FreelancerMyOrderDetailsPage = lazy(
   () => import("../pages/dashboard/FreelancerMyOrderDetailsPage"),
 );

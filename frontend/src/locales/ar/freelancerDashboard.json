@@ -290,16 +290,29 @@
     "cycleStart": "تاريخ بداية الدورة",
     "cycleEnd": "تاريخ نهاية الدورة",
     "priorityBidUsage": "استخدامات Priority Bid",
+    "bidsPerMonth": "العروض / شهر",
+    "articleAccessLevel": "مستوى الوصول للمقالات",
+    "articleAccessLevelHint": "يسمح بالوصول/التقدّم لمستويات المقال حتى هذا المستوى — وليس تقديماً مجانياً أو غير محدود.",
     "engineComingSoon": "محرك Priority Bid قريبًا — هذا العرض للمحاسبة فقط."
   },
-  "workTokenWallet": {
-    "title": "Work Tokens",
-    "subtitle": "أرصدة محاسبية فقط — الصرف والمزايدة غير متاحين بعد.",
-    "loading": "جارٍ تحميل Work Tokens…",
+  "bidCredits": {
+    "title": "العروض المتاحة",
+    "subtitle": "عرض واحد = تقديم عادي واحد. تعديل العرض لا يستهلك عرضاً إضافياً.",
+    "loading": "جارٍ تحميل العروض المتاحة…",
     "available": "المتاح",
-    "reserved": "المحجوز",
-    "engineComingSoon": "قريبًا — اقتصاد Work Tokens غير مفعّل بعد.",
-    "engineOn": "محرك Work Tokens متاح."
+    "monthlyAllowance": "الحد الشهري",
+    "unlockedThisMonth": "المفتوح هذا الشهر",
+    "nextExpiry": "أقرب انتهاء",
+    "engineComingSoon": "قريبًا — محرك العروض المتاحة غير مفعّل بعد.",
+    "engineOn": "محرك العروض المتاحة مفعّل.",
+    "ledgerEvents": {
+      "NORMAL_APPLICATION_BID_REFUND": "استرجاع عرض",
+      "APPLICATION_BID_CONSUME": "استخدام عرض",
+      "MEMBERSHIP_BID_GRANT": "فتح عضوية",
+      "ADMIN_BID_GRANT": "منحة إدارية",
+      "ADMIN_BID_ADJUSTMENT": "تعديل إداري",
+      "BID_EXPIRED": "انتهاء عرض"
+    }
   },
   "financialClaims": {
     "title": "المطالبات المالية",

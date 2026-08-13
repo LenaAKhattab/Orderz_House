@@ -33,7 +33,10 @@ function normalizePublicActivationFee(fee) {
   };
 }
 
-export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer/plans" } = {}) {
+export function useFreelancerPlansCheckout({
+  returnPath = "/dashboard/freelancer/plans",
+  fetchPublicPlans = true,
+} = {}) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { push } = useToast();
@@ -76,6 +79,11 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
   );
 
   useEffect(() => {
+    if (!fetchPublicPlans) {
+      setPlans([]);
+      setPlansFetching(false);
+      return undefined;
+    }
     let cancelled = false;
     const cached = getCachedPublicPlans();
     if (cached?.length) {
@@ -98,7 +106,7 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fetchPublicPlans]);
 
   useEffect(() => {
     let cancelled = false;

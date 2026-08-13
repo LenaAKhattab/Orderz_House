@@ -70,6 +70,13 @@ router.post(
   validateRequest,
   adminOrdersController.approveInternalPricedBid,
 );
+router.post(
+  "/orders/:id/cancel-without-selection",
+  ordersPerm,
+  orderIdParam,
+  validateRequest,
+  adminOrdersController.cancelOpenBiddingOrderWithoutSelection,
+);
 router.get("/orders/:id/claims", ordersPerm, orderIdParam, validateRequest, adminOrdersController.listOrderClaims);
 router.patch(
   "/orders/:id/accept",
