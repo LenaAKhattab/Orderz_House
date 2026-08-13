@@ -34,6 +34,15 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     matchPrefix: "/dashboard/super-admin/training-orders",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders,
   },
+  pantry: {
+    key: "pantry",
+    to: "/dashboard/super-admin/pantry",
+    labelKey: "dashboard.nav.superAdmin.pantry",
+    icon: "orders",
+    end: false,
+    matchPrefix: "/dashboard/super-admin/pantry",
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.pantry,
+  },
   financialClaims: {
     key: "financialClaims",
     to: "/dashboard/super-admin/financial-claims",
@@ -179,7 +188,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "ordersOps",
     labelKey: "dashboard.nav.sections.ordersOps",
-    itemKeys: ["internalRequests", "trainingRequests"],
+    itemKeys: ["internalRequests", "trainingRequests", "pantry"],
     showCreateOrder: true,
   },
   {

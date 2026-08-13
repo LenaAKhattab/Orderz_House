@@ -69,6 +69,7 @@ export const ADMIN_NAV_ITEM_DEFS = {
   plans: SUPER_ADMIN_NAV_ITEM_DEFS.plans,
   subscriptions: SUPER_ADMIN_NAV_ITEM_DEFS.subscriptions,
   trainingRequests: SUPER_ADMIN_NAV_ITEM_DEFS.trainingRequests,
+  pantry: SUPER_ADMIN_NAV_ITEM_DEFS.pantry,
   financialClaims: SUPER_ADMIN_NAV_ITEM_DEFS.financialClaims,
   financialCenter: SUPER_ADMIN_NAV_ITEM_DEFS.financialCenter,
   editWebsite: SUPER_ADMIN_NAV_ITEM_DEFS.editWebsite,
@@ -84,7 +85,7 @@ export const ADMIN_NAV_SECTION_DEFS = [
   {
     id: "ordersOps",
     labelKey: "dashboard.nav.sections.ordersOps",
-    itemKeys: ["internalRequests", "createOrder", "trainingRequests"],
+    itemKeys: ["internalRequests", "createOrder", "trainingRequests", "pantry"],
   },
   {
     id: "financeAdmin",

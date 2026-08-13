@@ -19,6 +19,7 @@ export const SUPER_ADMIN_PAGE_PERMISSIONS = {
   analytics: "dashboard.super_admin.analytics",
   adminsManage: "dashboard.super_admin.admins_manage",
   trainingOrders: "dashboard.super_admin.training_orders",
+  pantry: "dashboard.super_admin.pantry",
   editWebsite: "dashboard.super_admin.edit_website",
   /** Super Admin only — not in ASSIGNABLE_DASHBOARD_PERMISSIONS */
   rateLimitExemptions: "dashboard.super_admin.rate_limit_exemptions",
@@ -43,6 +44,7 @@ export const ASSIGNABLE_DASHBOARD_PERMISSIONS = [
   ADMIN_PAGE_PERMISSIONS.orders,
   ADMIN_PAGE_PERMISSIONS.createOrder,
   SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders,
+  SUPER_ADMIN_PAGE_PERMISSIONS.pantry,
   SUPER_ADMIN_PAGE_PERMISSIONS.institutions,
   SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage,
   SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage,
@@ -54,6 +56,7 @@ const SUPER_ADMIN_ROUTE_RULES = [
   { prefix: "/dashboard/super-admin/analysis", permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics },
   { prefix: "/dashboard/super-admin/edit-website", permission: SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite },
   { prefix: "/dashboard/super-admin/training-orders", permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders },
+  { prefix: "/dashboard/super-admin/pantry", permission: SUPER_ADMIN_PAGE_PERMISSIONS.pantry },
   { prefix: "/dashboard/super-admin/institutional-order-storage", permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage },
   { prefix: "/dashboard/super-admin/subscriptions/activation", permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation },
   { prefix: "/dashboard/super-admin/subscriptions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.subscriptions },
@@ -96,6 +99,7 @@ const SUPER_ADMIN_SHELL_NAV_ORDER = [
   { to: "/dashboard/super-admin/financial-claims", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims },
   { to: "/dashboard/super-admin/orders", permission: ADMIN_PAGE_PERMISSIONS.orders },
   { to: "/dashboard/super-admin/training-orders", permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders },
+  { to: "/dashboard/super-admin/pantry", permission: SUPER_ADMIN_PAGE_PERMISSIONS.pantry },
   { to: "/dashboard/super-admin/institutional-order-storage", permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage },
   { to: "/dashboard/super-admin/admins", permission: SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage },
   { to: "/dashboard/super-admin/rate-limit-exemptions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.rateLimitExemptions },
@@ -111,6 +115,7 @@ export const ADMIN_ROUTE_PERMISSIONS = {
   "/dashboard/admin/courses": ADMIN_PAGE_PERMISSIONS.courses,
   "/dashboard/admin/ads": ADMIN_PAGE_PERMISSIONS.ads,
   "/dashboard/admin/subscriptions": ADMIN_PAGE_PERMISSIONS.subscriptionActivation,
+  "/dashboard/admin/pantry": SUPER_ADMIN_PAGE_PERMISSIONS.pantry,
 };
 
 export function isSuperAdminUser(user) {
