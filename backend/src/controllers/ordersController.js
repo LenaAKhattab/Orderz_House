@@ -219,7 +219,6 @@ const submitPoolOrderBid = async (req, res, next) => {
               skipped: Boolean(priorityBoost.skipped),
               priorityUseCost: Number(priorityBoost.priorityUseCost) || 0,
               additionalBidCreditCost: Number(priorityBoost.additionalBidCreditCost) || 0,
-              workTokenCost: Number(priorityBoost.workTokenCost) || 0,
               remainingPriorityUses: priorityBoost.remainingPriorityUses,
             }
           : null,
@@ -238,7 +237,7 @@ const getPoolOrderNormalApplicationTokenQuote = async (_req, res) => {
   return res.status(410).json({
     success: false,
     code: "WORK_TOKENS_DEPRECATED",
-    message: "Work Token application quotes are deprecated. Use Bid quote instead.",
+    message: "This quote endpoint is no longer available. Use the Bid quote instead.",
   });
 };
 
@@ -299,7 +298,6 @@ const getPoolOrderNormalApplicationBidQuote = async (req, res, next) => {
           remainingPriorityUses: priorityQuote.remainingPriorityUses,
           priorityUseCost: priorityQuote.priorityUseCost,
           additionalBidCreditCost: priorityQuote.additionalBidCreditCost,
-          workTokenCost: priorityQuote.workTokenCost,
           reason: priorityQuote.reason || null,
         },
       },
@@ -339,7 +337,6 @@ const upgradePoolOrderBidPriority = async (req, res, next) => {
           idempotent: Boolean(result.idempotent),
           priorityUseCost: Number(result.priorityUseCost) || 0,
           additionalBidCreditCost: Number(result.additionalBidCreditCost) || 0,
-          workTokenCost: Number(result.workTokenCost) || 0,
           remainingPriorityUses:
             result.remainingPriorityUses != null ? result.remainingPriorityUses : null,
         },

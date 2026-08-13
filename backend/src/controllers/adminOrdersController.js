@@ -212,6 +212,20 @@ const cancelOpenBiddingOrderWithoutSelection = async (req, res, next) => {
   }
 };
 
+/** E3: canonical economic-field mutation (locked after first valid application). */
+const patchOrderEconomicFields = async (req, res, next) => {
+  try {
+    const order = await ordersService.patchPublishedOrderEconomicFields({
+      orderId: Number(req.params.id),
+      patch: req.body || {},
+      actorUserId: req.auth?.userId,
+    });
+    return res.status(200).json({ success: true, data: { order } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const listOrderClaims = async (req, res, next) => {
   try {
     const actorRole = req.auth?.primaryRole || req.auth?.legacyRole || req.user?.role;
@@ -294,6 +308,7 @@ module.exports = {
   listInternalOrderBids,
   approveInternalPricedBid,
   cancelOpenBiddingOrderWithoutSelection,
+  patchOrderEconomicFields,
   listOrderClaims,
   approveInternalDelivery,
   requestInternalDeliveryRevision,

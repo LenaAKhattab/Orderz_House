@@ -93,6 +93,32 @@ const MARKETPLACE_ECONOMY_DEFAULTS = Object.freeze({
   cashMembershipPaymentsEnabled: false,
   eliteEngineEnabled: false,
   verificationBonusesEnabled: false,
+
+  // Phase E3 — Normal Order Admin limits (defaults match migration 155)
+  normalOrderMinValueJod: 1,
+  normalOrderMaxValueJod: 10000,
+  normalOrderMinTargetApplicants: 1,
+  normalOrderMaxTargetApplicants: 200,
+  normalOrderDefaultTargetApplicants: 10,
+  normalOrderMinBidCost: 1,
+  normalOrderMaxBidCost: 20,
+  normalOrderDefaultBidCost: 1,
+  normalOrderMinApplicationPeriodHours: 1,
+  normalOrderMaxApplicationPeriodHours: 720,
+  normalOrderDefaultApplicationPeriodHours: 72,
+  normalOrderMinExecutionDurationHours: 1,
+  normalOrderMaxExecutionDurationHours: 2160,
+  normalOrderDefaultExecutionDurationHours: 72,
+  normalOrderDeadlineIncompleteTargetPolicy: "continue_with_received",
+  normalOrderRefundClientCancelBeforeSelection: "full",
+  normalOrderRefundSystemCancel: "full",
+  normalOrderRefundDeadlineNoSelection: "full",
+  normalOrderRefundNoFreelancerSelected: "full",
+  normalOrderRefundFreelancerWithdrawal: "none",
+  normalOrderRefundRejectedApplication: "none",
+  normalOrderRefundLosingApplicant: "none",
+  normalOrderRefundPostAwardCancel: "none",
+  normalOrderBusinessTimezone: "Asia/Amman",
 });
 
 /** Values that must be snapshotted onto future financial/ledger/assignment rows. */
@@ -317,6 +343,94 @@ function mapRow(row) {
     cashMembershipPaymentsEnabled: isTruthyFlag(row.cash_membership_payments_enabled),
     eliteEngineEnabled: isTruthyFlag(row.elite_engine_enabled),
     verificationBonusesEnabled: isTruthyFlag(row.verification_bonuses_enabled),
+
+    normalOrderMinValueJod:
+      row.normal_order_min_value_jod != null
+        ? Number(row.normal_order_min_value_jod)
+        : MARKETPLACE_ECONOMY_DEFAULTS.normalOrderMinValueJod,
+    normalOrderMaxValueJod:
+      row.normal_order_max_value_jod != null
+        ? Number(row.normal_order_max_value_jod)
+        : MARKETPLACE_ECONOMY_DEFAULTS.normalOrderMaxValueJod,
+    normalOrderMinTargetApplicants:
+      row.normal_order_min_target_applicants != null
+        ? Number(row.normal_order_min_target_applicants)
+        : MARKETPLACE_ECONOMY_DEFAULTS.normalOrderMinTargetApplicants,
+    normalOrderMaxTargetApplicants:
+      row.normal_order_max_target_applicants != null
+        ? Number(row.normal_order_max_target_applicants)
+        : MARKETPLACE_ECONOMY_DEFAULTS.normalOrderMaxTargetApplicants,
+    normalOrderDefaultTargetApplicants:
+      row.normal_order_default_target_applicants != null
+        ? Number(row.normal_order_default_target_applicants)
+        : MARKETPLACE_ECONOMY_DEFAULTS.normalOrderDefaultTargetApplicants,
+    normalOrderMinBidCost:
+      row.normal_order_min_bid_cost != null
+        ? Number(row.normal_order_min_bid_cost)
+        : MARKETPLACE_ECONOMY_DEFAULTS.normalOrderMinBidCost,
+    normalOrderMaxBidCost:
+      row.normal_order_max_bid_cost != null
+        ? Number(row.normal_order_max_bid_cost)
+        : MARKETPLACE_ECONOMY_DEFAULTS.normalOrderMaxBidCost,
+    normalOrderDefaultBidCost:
+      row.normal_order_default_bid_cost != null
+        ? Number(row.normal_order_default_bid_cost)
+        : MARKETPLACE_ECONOMY_DEFAULTS.normalOrderDefaultBidCost,
+    normalOrderMinApplicationPeriodHours:
+      row.normal_order_min_application_period_hours != null
+        ? Number(row.normal_order_min_application_period_hours)
+        : MARKETPLACE_ECONOMY_DEFAULTS.normalOrderMinApplicationPeriodHours,
+    normalOrderMaxApplicationPeriodHours:
+      row.normal_order_max_application_period_hours != null
+        ? Number(row.normal_order_max_application_period_hours)
+        : MARKETPLACE_ECONOMY_DEFAULTS.normalOrderMaxApplicationPeriodHours,
+    normalOrderDefaultApplicationPeriodHours:
+      row.normal_order_default_application_period_hours != null
+        ? Number(row.normal_order_default_application_period_hours)
+        : MARKETPLACE_ECONOMY_DEFAULTS.normalOrderDefaultApplicationPeriodHours,
+    normalOrderMinExecutionDurationHours:
+      row.normal_order_min_execution_duration_hours != null
+        ? Number(row.normal_order_min_execution_duration_hours)
+        : MARKETPLACE_ECONOMY_DEFAULTS.normalOrderMinExecutionDurationHours,
+    normalOrderMaxExecutionDurationHours:
+      row.normal_order_max_execution_duration_hours != null
+        ? Number(row.normal_order_max_execution_duration_hours)
+        : MARKETPLACE_ECONOMY_DEFAULTS.normalOrderMaxExecutionDurationHours,
+    normalOrderDefaultExecutionDurationHours:
+      row.normal_order_default_execution_duration_hours != null
+        ? Number(row.normal_order_default_execution_duration_hours)
+        : MARKETPLACE_ECONOMY_DEFAULTS.normalOrderDefaultExecutionDurationHours,
+    normalOrderDeadlineIncompleteTargetPolicy:
+      row.normal_order_deadline_incomplete_target_policy ||
+      MARKETPLACE_ECONOMY_DEFAULTS.normalOrderDeadlineIncompleteTargetPolicy,
+    normalOrderRefundClientCancelBeforeSelection:
+      row.normal_order_refund_client_cancel_before_selection ||
+      MARKETPLACE_ECONOMY_DEFAULTS.normalOrderRefundClientCancelBeforeSelection,
+    normalOrderRefundSystemCancel:
+      row.normal_order_refund_system_cancel ||
+      MARKETPLACE_ECONOMY_DEFAULTS.normalOrderRefundSystemCancel,
+    normalOrderRefundDeadlineNoSelection:
+      row.normal_order_refund_deadline_no_selection ||
+      MARKETPLACE_ECONOMY_DEFAULTS.normalOrderRefundDeadlineNoSelection,
+    normalOrderRefundNoFreelancerSelected:
+      row.normal_order_refund_no_freelancer_selected ||
+      MARKETPLACE_ECONOMY_DEFAULTS.normalOrderRefundNoFreelancerSelected,
+    normalOrderRefundFreelancerWithdrawal:
+      row.normal_order_refund_freelancer_withdrawal ||
+      MARKETPLACE_ECONOMY_DEFAULTS.normalOrderRefundFreelancerWithdrawal,
+    normalOrderRefundRejectedApplication:
+      row.normal_order_refund_rejected_application ||
+      MARKETPLACE_ECONOMY_DEFAULTS.normalOrderRefundRejectedApplication,
+    normalOrderRefundLosingApplicant:
+      row.normal_order_refund_losing_applicant ||
+      MARKETPLACE_ECONOMY_DEFAULTS.normalOrderRefundLosingApplicant,
+    normalOrderRefundPostAwardCancel:
+      row.normal_order_refund_post_award_cancel ||
+      MARKETPLACE_ECONOMY_DEFAULTS.normalOrderRefundPostAwardCancel,
+    normalOrderBusinessTimezone:
+      row.normal_order_business_timezone ||
+      MARKETPLACE_ECONOMY_DEFAULTS.normalOrderBusinessTimezone,
+
     updatedByUserId: row.updated_by_user_id != null ? String(row.updated_by_user_id) : null,
     updatedAt: row.updated_at || null,
   };
@@ -456,10 +570,10 @@ function mergePatch(current, rawPatch = {}) {
 
   assign("priorityBiddingEnabled", (v) => {
     const enabled = coerceBool(v);
-    // Phase B7A: legacy Token auction cannot be re-enabled via Admin API.
+    // Phase B7A: legacy auction cannot be re-enabled via Admin API.
     if (enabled === true) {
       throw createAppError(
-        "Legacy Priority Bidding (Token auction) is deprecated and cannot be enabled.",
+        "This economy engine cannot be enabled.",
         409,
         {
           exposeToClient: true,
@@ -519,7 +633,7 @@ function mergePatch(current, rawPatch = {}) {
     // Phase B7A: Work Tokens engine cannot be re-enabled; Bids use bidCreditsEnabled.
     if (enabled === true) {
       throw createAppError(
-        "Work Tokens engine is deprecated and cannot be enabled. Use Bid Credits.",
+        "This economy engine cannot be enabled.",
         409,
         {
           exposeToClient: true,
@@ -539,7 +653,7 @@ function mergePatch(current, rawPatch = {}) {
     // Phase B7B: verification Work Token rewards cannot be re-enabled.
     if (enabled === true) {
       throw createAppError(
-        "Verification Work Token rewards are deprecated and cannot be enabled.",
+        "This economy engine cannot be enabled.",
         409,
         {
           exposeToClient: true,
@@ -549,6 +663,117 @@ function mergePatch(current, rawPatch = {}) {
     }
     return false;
   });
+
+  // Phase E3 Normal Order Admin limits
+  assign("normalOrderMinValueJod", (v) =>
+    assertMoneyPositive("normalOrderMinValueJod", v, { max: 1_000_000 }),
+  );
+  assign("normalOrderMaxValueJod", (v) =>
+    assertMoneyPositive("normalOrderMaxValueJod", v, { max: 1_000_000 }),
+  );
+  assign("normalOrderMinTargetApplicants", (v) =>
+    assertIntInRange("normalOrderMinTargetApplicants", v, { min: 1, max: 10000 }),
+  );
+  assign("normalOrderMaxTargetApplicants", (v) =>
+    assertIntInRange("normalOrderMaxTargetApplicants", v, { min: 1, max: 10000 }),
+  );
+  assign("normalOrderDefaultTargetApplicants", (v) =>
+    assertIntInRange("normalOrderDefaultTargetApplicants", v, { min: 1, max: 10000 }),
+  );
+  assign("normalOrderMinBidCost", (v) =>
+    assertIntInRange("normalOrderMinBidCost", v, { min: 1, max: 1000 }),
+  );
+  assign("normalOrderMaxBidCost", (v) =>
+    assertIntInRange("normalOrderMaxBidCost", v, { min: 1, max: 1000 }),
+  );
+  assign("normalOrderDefaultBidCost", (v) =>
+    assertIntInRange("normalOrderDefaultBidCost", v, { min: 1, max: 1000 }),
+  );
+  assign("normalOrderMinApplicationPeriodHours", (v) =>
+    assertIntInRange("normalOrderMinApplicationPeriodHours", v, { min: 1, max: 8760 }),
+  );
+  assign("normalOrderMaxApplicationPeriodHours", (v) =>
+    assertIntInRange("normalOrderMaxApplicationPeriodHours", v, { min: 1, max: 8760 }),
+  );
+  assign("normalOrderDefaultApplicationPeriodHours", (v) =>
+    assertIntInRange("normalOrderDefaultApplicationPeriodHours", v, { min: 1, max: 8760 }),
+  );
+  assign("normalOrderMinExecutionDurationHours", (v) =>
+    assertIntInRange("normalOrderMinExecutionDurationHours", v, { min: 1, max: 87600 }),
+  );
+  assign("normalOrderMaxExecutionDurationHours", (v) =>
+    assertIntInRange("normalOrderMaxExecutionDurationHours", v, { min: 1, max: 87600 }),
+  );
+  assign("normalOrderDefaultExecutionDurationHours", (v) =>
+    assertIntInRange("normalOrderDefaultExecutionDurationHours", v, { min: 1, max: 87600 }),
+  );
+  assign("normalOrderDeadlineIncompleteTargetPolicy", (v) =>
+    assertEnum("normalOrderDeadlineIncompleteTargetPolicy", v, [
+      "continue_with_received",
+      "cancel_and_refund",
+      "require_admin_review",
+    ]),
+  );
+  const refundModes = ["full", "none"];
+  assign("normalOrderRefundClientCancelBeforeSelection", (v) =>
+    assertEnum("normalOrderRefundClientCancelBeforeSelection", v, refundModes),
+  );
+  assign("normalOrderRefundSystemCancel", (v) =>
+    assertEnum("normalOrderRefundSystemCancel", v, refundModes),
+  );
+  assign("normalOrderRefundDeadlineNoSelection", (v) =>
+    assertEnum("normalOrderRefundDeadlineNoSelection", v, refundModes),
+  );
+  assign("normalOrderRefundNoFreelancerSelected", (v) =>
+    assertEnum("normalOrderRefundNoFreelancerSelected", v, refundModes),
+  );
+  assign("normalOrderRefundFreelancerWithdrawal", (v) =>
+    assertEnum("normalOrderRefundFreelancerWithdrawal", v, refundModes),
+  );
+  assign("normalOrderRefundRejectedApplication", (v) =>
+    assertEnum("normalOrderRefundRejectedApplication", v, refundModes),
+  );
+  assign("normalOrderRefundLosingApplicant", (v) =>
+    assertEnum("normalOrderRefundLosingApplicant", v, refundModes),
+  );
+  assign("normalOrderRefundPostAwardCancel", (v) =>
+    assertEnum("normalOrderRefundPostAwardCancel", v, refundModes),
+  );
+  assign("normalOrderBusinessTimezone", (v) => {
+    const s = String(v || "").trim();
+    if (!s || s.length > 64) {
+      throw createAppError("Invalid normalOrderBusinessTimezone.", 400, { exposeToClient: true });
+    }
+    return s;
+  });
+
+  if (next.normalOrderMaxValueJod < next.normalOrderMinValueJod) {
+    throw createAppError("normalOrderMaxValueJod must be >= min.", 400, { exposeToClient: true });
+  }
+  if (next.normalOrderMaxTargetApplicants < next.normalOrderMinTargetApplicants) {
+    throw createAppError("normalOrderMaxTargetApplicants must be >= min.", 400, {
+      exposeToClient: true,
+    });
+  }
+  if (
+    next.normalOrderDefaultTargetApplicants < next.normalOrderMinTargetApplicants ||
+    next.normalOrderDefaultTargetApplicants > next.normalOrderMaxTargetApplicants
+  ) {
+    throw createAppError("normalOrderDefaultTargetApplicants out of Admin range.", 400, {
+      exposeToClient: true,
+    });
+  }
+  if (next.normalOrderMaxBidCost < next.normalOrderMinBidCost) {
+    throw createAppError("normalOrderMaxBidCost must be >= min.", 400, { exposeToClient: true });
+  }
+  if (
+    next.normalOrderDefaultBidCost < next.normalOrderMinBidCost ||
+    next.normalOrderDefaultBidCost > next.normalOrderMaxBidCost
+  ) {
+    throw createAppError("normalOrderDefaultBidCost out of Admin range.", 400, {
+      exposeToClient: true,
+    });
+  }
 
   assertPriorityBidBounds(next);
 
@@ -748,6 +973,66 @@ async function updateMarketplaceEconomySettings({ actorUserId, patch }) {
       );
     }
 
+    // Phase E3 Normal Order Admin limits (columns absent pre-155 → skip).
+    if (await hasEconomyFlagColumn(client, "normal_order_default_bid_cost")) {
+      await client.query(
+        `UPDATE marketplace_economy_settings SET
+           normal_order_min_value_jod = $2,
+           normal_order_max_value_jod = $3,
+           normal_order_min_target_applicants = $4,
+           normal_order_max_target_applicants = $5,
+           normal_order_default_target_applicants = $6,
+           normal_order_min_bid_cost = $7,
+           normal_order_max_bid_cost = $8,
+           normal_order_default_bid_cost = $9,
+           normal_order_min_application_period_hours = $10,
+           normal_order_max_application_period_hours = $11,
+           normal_order_default_application_period_hours = $12,
+           normal_order_min_execution_duration_hours = $13,
+           normal_order_max_execution_duration_hours = $14,
+           normal_order_default_execution_duration_hours = $15,
+           normal_order_deadline_incomplete_target_policy = $16,
+           normal_order_refund_client_cancel_before_selection = $17,
+           normal_order_refund_system_cancel = $18,
+           normal_order_refund_deadline_no_selection = $19,
+           normal_order_refund_no_freelancer_selected = $20,
+           normal_order_refund_freelancer_withdrawal = $21,
+           normal_order_refund_rejected_application = $22,
+           normal_order_refund_losing_applicant = $23,
+           normal_order_refund_post_award_cancel = $24,
+           normal_order_business_timezone = $25,
+           updated_at = NOW()
+         WHERE id = $1`,
+        [
+          SETTINGS_ID,
+          next.normalOrderMinValueJod,
+          next.normalOrderMaxValueJod,
+          next.normalOrderMinTargetApplicants,
+          next.normalOrderMaxTargetApplicants,
+          next.normalOrderDefaultTargetApplicants,
+          next.normalOrderMinBidCost,
+          next.normalOrderMaxBidCost,
+          next.normalOrderDefaultBidCost,
+          next.normalOrderMinApplicationPeriodHours,
+          next.normalOrderMaxApplicationPeriodHours,
+          next.normalOrderDefaultApplicationPeriodHours,
+          next.normalOrderMinExecutionDurationHours,
+          next.normalOrderMaxExecutionDurationHours,
+          next.normalOrderDefaultExecutionDurationHours,
+          next.normalOrderDeadlineIncompleteTargetPolicy,
+          next.normalOrderRefundClientCancelBeforeSelection,
+          next.normalOrderRefundSystemCancel,
+          next.normalOrderRefundDeadlineNoSelection,
+          next.normalOrderRefundNoFreelancerSelected,
+          next.normalOrderRefundFreelancerWithdrawal,
+          next.normalOrderRefundRejectedApplication,
+          next.normalOrderRefundLosingApplicant,
+          next.normalOrderRefundPostAwardCancel,
+          next.normalOrderBusinessTimezone,
+        ],
+      );
+    }
+
     const { rows: finalRows } = await client.query(
       `SELECT * FROM marketplace_economy_settings WHERE id = $1`,
       [SETTINGS_ID],
@@ -835,6 +1120,72 @@ function getPriorityBidLoserReleasePercentage() {
   return 100;
 }
 
+/**
+ * Active Admin API projection — omits legacy Work Token / Priority Auction knobs.
+ * Full mapRow remains for internal services and historical audit.
+ */
+function mapActiveEconomySettingsForAdminApi(settings) {
+  const s = settings && typeof settings === "object" ? settings : {};
+  return {
+    platformCommissionPercentage: s.platformCommissionPercentage,
+    cashProcessingFeeJod: s.cashProcessingFeeJod,
+    eliteDirectOrdersPerCycle: s.eliteDirectOrdersPerCycle,
+    eliteOfferDurationMinutes: s.eliteOfferDurationMinutes,
+    eliteCarryForwardEnabled: Boolean(s.eliteCarryForwardEnabled),
+    eliteCarryForwardDays: s.eliteCarryForwardDays,
+    eliteMaximumCarryForward: s.eliteMaximumCarryForward,
+    eliteDeclinesAffectCarryForward: Boolean(s.eliteDeclinesAffectCarryForward),
+    priorityApplicationBoostEnabled: Boolean(s.priorityApplicationBoostEnabled),
+    articleApplicationsEnabled: Boolean(s.articleApplicationsEnabled),
+    bidCreditPurchasesEnabled: Boolean(s.bidCreditPurchasesEnabled),
+    bidCreditsEnabled: Boolean(s.bidCreditsEnabled),
+    fairWorkDistributionEnabled: Boolean(s.fairWorkDistributionEnabled),
+    assignmentStrategy: s.assignmentStrategy,
+    fairDistributionLookbackDays: s.fairDistributionLookbackDays,
+    fairnessWeight: s.fairnessWeight,
+    tokenWeight: s.tokenWeight,
+    performanceWeight: s.performanceWeight,
+    recencyWeight: s.recencyWeight,
+    workloadWeight: s.workloadWeight,
+    eligibleLossPriorityEffect: s.eligibleLossPriorityEffect,
+    awardResetPolicy: s.awardResetPolicy,
+    declinePriorityEffect: s.declinePriorityEffect,
+    freelancerCancelPriorityEffect: s.freelancerCancelPriorityEffect,
+    marketplaceCommissionEnabled: Boolean(s.marketplaceCommissionEnabled),
+    cashMembershipPaymentsEnabled: Boolean(s.cashMembershipPaymentsEnabled),
+    eliteEngineEnabled: Boolean(s.eliteEngineEnabled),
+
+    // Phase E3 — Normal Order Admin configuration (round-trip)
+    normalOrderMinValueJod: s.normalOrderMinValueJod,
+    normalOrderMaxValueJod: s.normalOrderMaxValueJod,
+    normalOrderMinTargetApplicants: s.normalOrderMinTargetApplicants,
+    normalOrderMaxTargetApplicants: s.normalOrderMaxTargetApplicants,
+    normalOrderDefaultTargetApplicants: s.normalOrderDefaultTargetApplicants,
+    normalOrderMinBidCost: s.normalOrderMinBidCost,
+    normalOrderMaxBidCost: s.normalOrderMaxBidCost,
+    normalOrderDefaultBidCost: s.normalOrderDefaultBidCost,
+    normalOrderMinApplicationPeriodHours: s.normalOrderMinApplicationPeriodHours,
+    normalOrderMaxApplicationPeriodHours: s.normalOrderMaxApplicationPeriodHours,
+    normalOrderDefaultApplicationPeriodHours: s.normalOrderDefaultApplicationPeriodHours,
+    normalOrderMinExecutionDurationHours: s.normalOrderMinExecutionDurationHours,
+    normalOrderMaxExecutionDurationHours: s.normalOrderMaxExecutionDurationHours,
+    normalOrderDefaultExecutionDurationHours: s.normalOrderDefaultExecutionDurationHours,
+    normalOrderDeadlineIncompleteTargetPolicy: s.normalOrderDeadlineIncompleteTargetPolicy,
+    normalOrderRefundClientCancelBeforeSelection: s.normalOrderRefundClientCancelBeforeSelection,
+    normalOrderRefundSystemCancel: s.normalOrderRefundSystemCancel,
+    normalOrderRefundDeadlineNoSelection: s.normalOrderRefundDeadlineNoSelection,
+    normalOrderRefundNoFreelancerSelected: s.normalOrderRefundNoFreelancerSelected,
+    normalOrderRefundFreelancerWithdrawal: s.normalOrderRefundFreelancerWithdrawal,
+    normalOrderRefundRejectedApplication: s.normalOrderRefundRejectedApplication,
+    normalOrderRefundLosingApplicant: s.normalOrderRefundLosingApplicant,
+    normalOrderRefundPostAwardCancel: s.normalOrderRefundPostAwardCancel,
+    normalOrderBusinessTimezone: s.normalOrderBusinessTimezone,
+
+    updatedByUserId: s.updatedByUserId != null ? String(s.updatedByUserId) : null,
+    updatedAt: s.updatedAt || null,
+  };
+}
+
 module.exports = {
   SETTINGS_ID,
   MARKETPLACE_ECONOMY_DEFAULTS,
@@ -857,6 +1208,7 @@ module.exports = {
   isVerificationBonusesEngineActive,
   isValidAssignmentStrategy,
   mapRow,
+  mapActiveEconomySettingsForAdminApi,
   mergePatch,
   normalizeLegacyPatchKeys,
   CURRENT_NORMAL_APPLICATION_REFUND_PERCENTAGE_ONLY,

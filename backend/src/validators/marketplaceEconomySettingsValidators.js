@@ -15,6 +15,12 @@ const optionalMoneyPositive = (field) =>
     .isFloat({ gt: 0, max: 1000 })
     .withMessage(`${field} must be > 0 and <= 1000.`);
 
+const optionalMoneyPositiveLarge = (field, { max = 1_000_000 } = {}) =>
+  body(field)
+    .optional()
+    .isFloat({ gt: 0, max })
+    .withMessage(`${field} must be > 0 and <= ${max}.`);
+
 const optionalMoneyNonNeg = (field) =>
   body(field)
     .optional()
@@ -60,6 +66,13 @@ const optionalEnum = (field, allowed) =>
     .isString()
     .isIn(allowed)
     .withMessage(`${field} must be one of: ${allowed.join(", ")}.`);
+
+const REFUND_MODES = ["full", "none"];
+const DEADLINE_POLICIES = [
+  "continue_with_received",
+  "cancel_and_refund",
+  "require_admin_review",
+];
 
 const updateMarketplaceEconomySettingsValidators = [
   optionalMoneyPositive("workTokenValueJod"),
@@ -114,6 +127,40 @@ const updateMarketplaceEconomySettingsValidators = [
   optionalBoolean("cashMembershipPaymentsEnabled"),
   optionalBoolean("eliteEngineEnabled"),
   optionalBoolean("verificationBonusesEnabled"),
+  optionalBoolean("bidCreditsEnabled"),
+  optionalBoolean("bidCreditPurchasesEnabled"),
+  optionalBoolean("articleApplicationsEnabled"),
+  optionalBoolean("priorityApplicationBoostEnabled"),
+
+  // Phase E3 Normal Order Admin limits
+  optionalMoneyPositiveLarge("normalOrderMinValueJod"),
+  optionalMoneyPositiveLarge("normalOrderMaxValueJod"),
+  optionalInt("normalOrderMinTargetApplicants", { min: 1, max: 10000 }),
+  optionalInt("normalOrderMaxTargetApplicants", { min: 1, max: 10000 }),
+  optionalInt("normalOrderDefaultTargetApplicants", { min: 1, max: 10000 }),
+  optionalInt("normalOrderMinBidCost", { min: 1, max: 1000 }),
+  optionalInt("normalOrderMaxBidCost", { min: 1, max: 1000 }),
+  optionalInt("normalOrderDefaultBidCost", { min: 1, max: 1000 }),
+  optionalInt("normalOrderMinApplicationPeriodHours", { min: 1, max: 8760 }),
+  optionalInt("normalOrderMaxApplicationPeriodHours", { min: 1, max: 8760 }),
+  optionalInt("normalOrderDefaultApplicationPeriodHours", { min: 1, max: 8760 }),
+  optionalInt("normalOrderMinExecutionDurationHours", { min: 1, max: 87600 }),
+  optionalInt("normalOrderMaxExecutionDurationHours", { min: 1, max: 87600 }),
+  optionalInt("normalOrderDefaultExecutionDurationHours", { min: 1, max: 87600 }),
+  optionalEnum("normalOrderDeadlineIncompleteTargetPolicy", DEADLINE_POLICIES),
+  optionalEnum("normalOrderRefundClientCancelBeforeSelection", REFUND_MODES),
+  optionalEnum("normalOrderRefundSystemCancel", REFUND_MODES),
+  optionalEnum("normalOrderRefundDeadlineNoSelection", REFUND_MODES),
+  optionalEnum("normalOrderRefundNoFreelancerSelected", REFUND_MODES),
+  optionalEnum("normalOrderRefundFreelancerWithdrawal", REFUND_MODES),
+  optionalEnum("normalOrderRefundRejectedApplication", REFUND_MODES),
+  optionalEnum("normalOrderRefundLosingApplicant", REFUND_MODES),
+  optionalEnum("normalOrderRefundPostAwardCancel", REFUND_MODES),
+  body("normalOrderBusinessTimezone")
+    .optional()
+    .isString()
+    .isLength({ min: 1, max: 64 })
+    .withMessage("normalOrderBusinessTimezone must be 1–64 characters."),
 ];
 
 module.exports = {

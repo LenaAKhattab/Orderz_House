@@ -36,6 +36,23 @@ describe("usePlansPage B7A Marketplace Membership cutover", () => {
       assert.match(src, /isMarketplaceMembership/);
       assert.match(src, /\/dashboard\/freelancer\/plans/);
       assert.match(src, /plans\.cta\.viewMembership/);
+      assert.doesNotMatch(src, /createFreelancerSubscriptionCheckoutRequest/);
     }
+  });
+
+  it("mapper enforces PUBLIC E1 order and rejects legacy main-plan fallback", () => {
+    const mapper = fs.readFileSync(
+      path.join(__dirname, "../lib/marketplaceMembership/mapMarketplaceMembershipPlanForPublicPlans.js"),
+      "utf8",
+    );
+    assert.match(mapper, /PUBLIC_MARKETPLACE_MEMBERSHIP_TIER_ORDER/);
+    assert.match(mapper, /"starter"/);
+    assert.match(mapper, /"silver"/);
+    assert.match(mapper, /"pro"/);
+    assert.match(mapper, /"elite"/);
+    assert.doesNotMatch(mapper, /orderzhousePlansCatalog/);
+    assert.doesNotMatch(mapper, /includedTokensPerCycle/);
+    assert.doesNotMatch(mapper, /billingText:\s*["']شهرياً["']/);
+    assert.doesNotMatch(mapper, /billingTextEn:\s*["']Monthly["']/);
   });
 });

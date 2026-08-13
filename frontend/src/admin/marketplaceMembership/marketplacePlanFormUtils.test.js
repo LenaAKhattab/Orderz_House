@@ -55,6 +55,7 @@ describe("marketplacePlanFormUtils", () => {
       }),
       { isCreate: true },
     );
+    assert.ok(!Object.prototype.hasOwnProperty.call(payload, "includedTokensPerCycle"));
     assert.strictEqual(payload.tierCode, "elite");
     assert.strictEqual(payload.unlimitedRealOrderValue, true);
     assert.strictEqual(payload.maxRealOrderValueJod, null);
@@ -88,8 +89,8 @@ describe("marketplacePlanFormUtils", () => {
     });
     assert.strictEqual(form.tierCode, "active");
     assert.strictEqual(form.maxRealOrderValueJod, 25);
-    // Phase B1: Work Token grants deprecated — form always shows 0 tokens.
-    assert.strictEqual(form.includedTokensPerCycle, 0);
+    // Phase B1: Work Token grants removed from active Membership UI payload.
+    assert.ok(!Object.prototype.hasOwnProperty.call(form, "includedTokensPerCycle"));
     assert.strictEqual(form.monthlyBidAllowance, 30);
     assert.strictEqual(form.articleAccessLevel, 3);
   });

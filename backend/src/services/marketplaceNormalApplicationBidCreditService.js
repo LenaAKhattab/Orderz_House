@@ -1,16 +1,18 @@
 /**
- * Phase B2 — Normal priced-bid application Bid Credit charge + eligible refund.
+ * Phase B2 / E3 — Normal priced-bid application Bid Credit charge + eligible refund.
  *
  * Surface: order_freelancer_bids / submitPoolOrderBid ONLY (not fixed take).
  * Engine gate: bid_credits_enabled (independent of work_tokens_enabled).
  * Fake/training: never called — controller routes fake to fakeOrdersService.
- * Cost: always NORMAL_APPLICATION_BID_COST (1). No budget×rate math.
+ * Cost (E3): Order.application_bid_cost snapshot (Admin-constrained); legacy NULL → 1.
+ * Multi-Bid FEFO consume is atomic; daily E1 cap uses full quantity.
  *
  * Refund (owner-approved):
- *   Eligible ONLY when real Order ends with NO Freelancer selected.
- *   - Unexpired source grant → restore 1 Bid to SAME bucket
- *   - Expired source grant → compensating SYSTEM grant (1 Bid, +30 days)
- *   Withdrawal / another Freelancer wins → NO refund
+ *   Eligible ONLY when real Order ends with NO Freelancer selected (or configured full policy).
+ *   Restores exact consumed quantity (100%):
+ *   - Unexpired source grant slices → restore to SAME buckets (FEFO reverse)
+ *   - Expired / unrestorable → compensating SYSTEM grant (qty, +30 days)
+ *   Withdrawal / another Freelancer wins → NO refund (default policy)
  */
 
 const { pool } = require("../config/db");
@@ -27,12 +29,19 @@ const {
 const accounting = require("./marketplaceBidCreditAccountingService");
 const distribution = require("./marketplaceBidCreditDistributionService");
 const { marketplaceBidCreditsSchemaReady } = require("../utils/marketplaceBidCreditsSchema");
+const {
+  resolveOrderApplicationBidCost,
+} = require("./marketplaceNormalOrderRulesService");
 
 const NORMAL_APPLICATION_BID_CONSUME_IDEMPOTENCY_PREFIX =
   "normal_application_bid_consume";
 const NORMAL_APPLICATION_BID_REFUND_IDEMPOTENCY_PREFIX =
   "normal_application_bid_refund";
 const REFUND_REASON_ORDER_ENDED_WITHOUT_SELECTION = "order_ended_without_selection";
+
+function resolveChargeAmount(orderRow) {
+  return resolveOrderApplicationBidCost(orderRow || {});
+}
 
 function buildNormalApplicationBidConsumeIdempotencyKey(orderId, freelancerUserId) {
   return `${NORMAL_APPLICATION_BID_CONSUME_IDEMPOTENCY_PREFIX}:order:${Number(orderId)}:freelancer:${Number(freelancerUserId)}`;
@@ -125,11 +134,13 @@ async function quoteNormalApplicationBidCost({
     (await marketplaceBidCreditsSchemaReady()) &&
     (await normalApplicationBidEconomicsSchemaReady());
 
+  const bidCreditCost = resolveChargeAmount(order);
+
   const base = {
     applicable: true,
     engineAvailable,
     schemaReady,
-    bidCreditCost: NORMAL_APPLICATION_BID_COST,
+    bidCreditCost,
     availableBids: null,
     canApply: null,
   };
@@ -156,7 +167,7 @@ async function quoteNormalApplicationBidCost({
     return {
       ...base,
       availableBids: available,
-      canApply: available >= NORMAL_APPLICATION_BID_COST,
+      canApply: available >= bidCreditCost,
       orderId: order?.id != null ? String(order.id) : null,
     };
   } finally {
@@ -165,7 +176,8 @@ async function quoteNormalApplicationBidCost({
 }
 
 /**
- * Charge exactly 1 Bid Credit on first Freelancer+Order priced bid when engine ON.
+ * Charge Order snapshotted Bid cost on first Freelancer+Order priced bid when engine ON.
+ * Quantity is atomic via FEFO; daily spend increments by full cost.
  */
 async function chargeNormalApplicationBidCreditOnFirstBid({
   client,
@@ -205,13 +217,15 @@ async function chargeNormalApplicationBidCreditOnFirstBid({
     });
   }
 
+  const bidCreditCost = resolveChargeAmount(orderRow);
+
   const existing = await findEconomicsByOrderFreelancer(client, orderId, freelancerUserId);
   if (existing && existing.charge_status === "charged") {
     return {
       charged: false,
       skipped: true,
       reason: "already_charged",
-      bidCreditCost: NORMAL_APPLICATION_BID_COST,
+      bidCreditCost: Number(existing.bid_credit_cost) || bidCreditCost,
       economics: mapEconomicsRow(existing),
     };
   }
@@ -222,13 +236,13 @@ async function chargeNormalApplicationBidCreditOnFirstBid({
     now,
   });
 
-  // E1: membership daily Bid spend gate (unified wallet — before FEFO).
+  // E1: membership daily Bid spend gate (unified wallet — before FEFO). Quantity-aware.
   try {
     const dailySpend = require("./marketplaceMembershipDailyBidSpendService");
     await dailySpend.assertAndConsumeDailyBidSpend({
       client,
       freelancerUserId: Number(freelancerUserId),
-      amount: NORMAL_APPLICATION_BID_COST,
+      amount: bidCreditCost,
       now,
     });
   } catch (dailyErr) {
@@ -244,7 +258,7 @@ async function chargeNormalApplicationBidCreditOnFirstBid({
   const consume = await accounting.consumeBidCreditsFefo({
     client,
     freelancerUserId: Number(freelancerUserId),
-    amount: NORMAL_APPLICATION_BID_COST,
+    amount: bidCreditCost,
     idempotencyKey,
     referenceType: "order_freelancer_bid",
     referenceId: String(bidId),
@@ -254,7 +268,8 @@ async function chargeNormalApplicationBidCreditOnFirstBid({
       orderId: String(orderId),
       bidId: String(bidId),
       orderSourceType: orderRow?.source_type || null,
-      phase: "B2",
+      phase: "E3",
+      bidCreditCost,
     },
     now,
   });
@@ -264,7 +279,7 @@ async function chargeNormalApplicationBidCreditOnFirstBid({
       charged: false,
       skipped: true,
       reason: "idempotent_replay",
-      bidCreditCost: NORMAL_APPLICATION_BID_COST,
+      bidCreditCost: Number(existing.bid_credit_cost) || bidCreditCost,
       economics: mapEconomicsRow(existing),
       consume,
     };
@@ -298,7 +313,7 @@ async function chargeNormalApplicationBidCreditOnFirstBid({
       Number(bidId),
       Number(orderId),
       Number(freelancerUserId),
-      NORMAL_APPLICATION_BID_COST,
+      bidCreditCost,
       consume.entry?.id ? Number(consume.entry.id) : null,
       primaryGrantId != null ? Number(primaryGrantId) : null,
       grantExpiresAt,
@@ -313,7 +328,7 @@ async function chargeNormalApplicationBidCreditOnFirstBid({
       charged: false,
       skipped: true,
       reason: "concurrent_first_charge",
-      bidCreditCost: NORMAL_APPLICATION_BID_COST,
+      bidCreditCost: Number(again?.bid_credit_cost) || bidCreditCost,
       economics: mapEconomicsRow(again),
       consume,
     };
@@ -328,7 +343,7 @@ async function chargeNormalApplicationBidCreditOnFirstBid({
   return {
     charged: true,
     skipped: false,
-    bidCreditCost: NORMAL_APPLICATION_BID_COST,
+    bidCreditCost,
     availableBidsAfter: availableAfter,
     economics: mapEconomicsRow(rows[0]),
     consume,
@@ -336,8 +351,8 @@ async function chargeNormalApplicationBidCreditOnFirstBid({
 }
 
 /**
- * Refund a single charged Bid economics row (100% / 1 Bid) when Order ended without selection.
- * Same-bucket restore if original grant still unexpired; else compensating 30-day grant.
+ * Refund a single charged Bid economics row (100% of consumed quantity) when eligible.
+ * Restores FEFO slices to same buckets when unexpired; otherwise compensating grant for remainder.
  */
 async function refundSingleNormalApplicationBidEconomics({
   client,
@@ -378,33 +393,38 @@ async function refundSingleNormalApplicationBidEconomics({
     locked.freelancer_user_id,
   );
   const instant = new Date(now);
+  const totalQty =
+    Number(locked.bid_credit_cost) >= 1
+      ? Number(locked.bid_credit_cost)
+      : NORMAL_APPLICATION_BID_COST;
 
-  // Prefer primary grant; fall back to first FEFO allocation.
-  let grantId =
-    locked.primary_grant_id != null
-      ? Number(locked.primary_grant_id)
-      : Number(locked.fefo_allocations?.[0]?.grantId || 0) || null;
+  let allocations = Array.isArray(locked.fefo_allocations) ? locked.fefo_allocations : [];
+  if (!allocations.length && locked.primary_grant_id != null) {
+    allocations = [{ grantId: locked.primary_grant_id, amount: totalQty }];
+  }
 
-  let grant = null;
-  if (grantId) {
+  let restoredTotal = 0;
+  const restoreDetails = [];
+
+  for (const alloc of allocations) {
+    const grantId = Number(alloc.grantId ?? alloc.grant_id);
+    const amount = Number(alloc.amount) || 0;
+    if (!grantId || amount < 1) continue;
+
+    // eslint-disable-next-line no-await-in-loop
     const { rows: gRows } = await client.query(
       `SELECT * FROM marketplace_bid_credit_grants WHERE id = $1 FOR UPDATE`,
       [grantId],
     );
-    grant = gRows[0] || null;
-  }
+    const grant = gRows[0] || null;
+    const sourceStillValid =
+      grant &&
+      new Date(grant.expires_at) > instant &&
+      Number(grant.amount_consumed) >= amount;
 
-  const sourceStillValid =
-    grant &&
-    new Date(grant.expires_at) > instant &&
-    Number(grant.amount_consumed) >= NORMAL_APPLICATION_BID_COST;
+    if (!sourceStillValid) continue;
 
-  let refundMode;
-  let refundLedgerEntryId = null;
-  let compensatingGrantId = null;
-
-  if (sourceStillValid) {
-    refundMode = "same_bucket_restore";
+    // eslint-disable-next-line no-await-in-loop
     const { rows: updatedGrant } = await client.query(
       `UPDATE marketplace_bid_credit_grants
           SET amount_consumed = amount_consumed - $2,
@@ -422,14 +442,20 @@ async function refundSingleNormalApplicationBidEconomics({
         WHERE id = $1
           AND amount_consumed >= $2
         RETURNING *`,
-      [grant.id, NORMAL_APPLICATION_BID_COST],
+      [grant.id, amount],
     );
-    if (!updatedGrant[0]) {
-      throw createAppError("Unable to restore Bid Credit to original grant.", 409, {
-        exposeToClient: false,
-      });
-    }
+    if (!updatedGrant[0]) continue;
+    restoredTotal += amount;
+    restoreDetails.push({ grantId: String(grant.id), amount });
+  }
 
+  const compensatingQty = totalQty - restoredTotal;
+  let refundMode;
+  let refundLedgerEntryId = null;
+  let compensatingGrantId = null;
+
+  if (compensatingQty <= 0) {
+    refundMode = "same_bucket_restore";
     const { rows: ledgerRows } = await client.query(
       `INSERT INTO marketplace_bid_credit_ledger_entries (
          freelancer_user_id, grant_id, event_type, amount, direction,
@@ -444,8 +470,8 @@ async function refundSingleNormalApplicationBidEconomics({
        RETURNING *`,
       [
         locked.freelancer_user_id,
-        grant.id,
-        NORMAL_APPLICATION_BID_COST,
+        restoreDetails[0] ? Number(restoreDetails[0].grantId) : locked.primary_grant_id,
+        totalQty,
         String(locked.id),
         refundKey,
         reason || REFUND_REASON_ORDER_ENDED_WITHOUT_SELECTION,
@@ -455,7 +481,8 @@ async function refundSingleNormalApplicationBidEconomics({
           orderId: String(locked.order_id),
           bidId: String(locked.bid_id),
           refundMode,
-          originalGrantId: String(grant.id),
+          restoreDetails,
+          totalQty,
         }),
       ],
     );
@@ -468,7 +495,7 @@ async function refundSingleNormalApplicationBidEconomics({
       );
       refundLedgerEntryId = existingLedger[0]?.id || null;
     }
-  } else {
+  } else if (restoredTotal === 0) {
     refundMode = "compensating_grant_30d";
     const expiresAt = new Date(
       instant.getTime() + NORMAL_APPLICATION_BID_REFUND_COMPENSATING_DAYS * 86400000,
@@ -477,7 +504,7 @@ async function refundSingleNormalApplicationBidEconomics({
       client,
       freelancerUserId: locked.freelancer_user_id,
       sourceType: "normal_application_refund",
-      amount: NORMAL_APPLICATION_BID_COST,
+      amount: totalQty,
       expiresAt,
       eventType: "NORMAL_APPLICATION_BID_REFUND",
       idempotencyKey: refundKey,
@@ -490,14 +517,13 @@ async function refundSingleNormalApplicationBidEconomics({
         orderId: String(locked.order_id),
         bidId: String(locked.bid_id),
         refundMode,
-        originalGrantId: grantId != null ? String(grantId) : null,
+        totalQty,
         originalGrantExpired: true,
         compensatingDays: NORMAL_APPLICATION_BID_REFUND_COMPENSATING_DAYS,
       },
       grantedAt: instant,
     });
     compensatingGrantId = created.grant?.id ? Number(created.grant.id) : null;
-    // createBidCreditGrant inserts ledger with key ledger:{idempotencyKey}; also store economics refund key.
     const { rows: ledgerRows } = await client.query(
       `SELECT id FROM marketplace_bid_credit_ledger_entries
         WHERE idempotency_key = $1 OR idempotency_key = $2
@@ -505,6 +531,75 @@ async function refundSingleNormalApplicationBidEconomics({
       [refundKey, `ledger:${refundKey}`],
     );
     refundLedgerEntryId = ledgerRows[0]?.id || null;
+  } else {
+    // Partial same-bucket + compensating remainder
+    refundMode = "same_bucket_restore";
+    const expiresAt = new Date(
+      instant.getTime() + NORMAL_APPLICATION_BID_REFUND_COMPENSATING_DAYS * 86400000,
+    );
+    const created = await accounting.createBidCreditGrant({
+      client,
+      freelancerUserId: locked.freelancer_user_id,
+      sourceType: "normal_application_refund",
+      amount: compensatingQty,
+      expiresAt,
+      eventType: "NORMAL_APPLICATION_BID_REFUND",
+      idempotencyKey: `${refundKey}:comp`,
+      reason: reason || REFUND_REASON_ORDER_ENDED_WITHOUT_SELECTION,
+      actorUserId,
+      referenceType: "order_freelancer_bid_credit_economics",
+      referenceId: String(locked.id),
+      metadata: {
+        economicsId: String(locked.id),
+        orderId: String(locked.order_id),
+        bidId: String(locked.bid_id),
+        refundMode: "mixed_restore_and_compensating",
+        restoreDetails,
+        restoredTotal,
+        compensatingQty,
+        totalQty,
+      },
+      grantedAt: instant,
+    });
+    compensatingGrantId = created.grant?.id ? Number(created.grant.id) : null;
+    const { rows: ledgerRows } = await client.query(
+      `INSERT INTO marketplace_bid_credit_ledger_entries (
+         freelancer_user_id, grant_id, event_type, amount, direction,
+         reference_type, reference_id, idempotency_key,
+         reason, actor_user_id, metadata
+       ) VALUES (
+         $1, $2, 'NORMAL_APPLICATION_BID_REFUND', $3, 1,
+         'order_freelancer_bid_credit_economics', $4, $5,
+         $6, $7, $8::jsonb
+       )
+       ON CONFLICT (idempotency_key) DO NOTHING
+       RETURNING *`,
+      [
+        locked.freelancer_user_id,
+        restoreDetails[0] ? Number(restoreDetails[0].grantId) : null,
+        restoredTotal,
+        String(locked.id),
+        refundKey,
+        reason || REFUND_REASON_ORDER_ENDED_WITHOUT_SELECTION,
+        actorUserId,
+        JSON.stringify({
+          economicsId: String(locked.id),
+          restoreDetails,
+          restoredTotal,
+          compensatingQty,
+          compensatingGrantId,
+          totalQty,
+        }),
+      ],
+    );
+    refundLedgerEntryId = ledgerRows[0]?.id || null;
+    if (!refundLedgerEntryId) {
+      const { rows: existingLedger } = await client.query(
+        `SELECT id FROM marketplace_bid_credit_ledger_entries WHERE idempotency_key = $1`,
+        [refundKey],
+      );
+      refundLedgerEntryId = existingLedger[0]?.id || null;
+    }
   }
 
   const { rows: marked } = await client.query(
@@ -515,7 +610,8 @@ async function refundSingleNormalApplicationBidEconomics({
             compensating_grant_id = COALESCE($4, compensating_grant_id),
             refund_idempotency_key = COALESCE(refund_idempotency_key, $5),
             refunded_at = COALESCE(refunded_at, NOW()),
-            updated_at = NOW()
+            updated_at = NOW(),
+            metadata = COALESCE(metadata, '{}'::jsonb) || $6::jsonb
       WHERE id = $1
         AND charge_status = 'charged'
         AND refund_status = 'none'
@@ -526,6 +622,7 @@ async function refundSingleNormalApplicationBidEconomics({
       refundLedgerEntryId,
       compensatingGrantId,
       refundKey,
+      JSON.stringify({ refundQty: totalQty, restoreDetails, compensatingQty }),
     ],
   );
 
@@ -534,10 +631,36 @@ async function refundSingleNormalApplicationBidEconomics({
     return { refunded: false, idempotent: true, economics: mapEconomicsRow(again) };
   }
 
+  // Freelancer notify: eligible Bid refund (deduped; never fail the refund txn).
+  try {
+    const notificationEventsService = require("./notificationEventsService");
+    await notificationEventsService.notifyAssignedFreelancer(
+      {
+        order: { id: locked.order_id },
+        freelancerUserId: locked.freelancer_user_id,
+        type: "order.bid.refunded",
+        title: "تم استرجاع العروض المتاحة",
+        message: `تم استرجاع ${totalQty} عرضاً متاحاً بعد إغلاق/إلغاء الطلب دون اختيار مستقل.`,
+        priority: "high",
+        dedupeKey: `normal_app_bid_refund_${locked.order_id}_${locked.freelancer_user_id}`,
+        metadata: {
+          orderId: String(locked.order_id),
+          freelancerUserId: String(locked.freelancer_user_id),
+          refundQty: totalQty,
+          reason: reason || REFUND_REASON_ORDER_ENDED_WITHOUT_SELECTION,
+        },
+      },
+      client,
+    );
+  } catch {
+    /* ignore notify failures */
+  }
+
   return {
     refunded: true,
     idempotent: false,
     refundMode,
+    refundQty: totalQty,
     economics: mapEconomicsRow(marked[0]),
   };
 }
@@ -613,6 +736,7 @@ module.exports = {
   normalApplicationBidEconomicsSchemaReady,
   clearNormalApplicationBidEconomicsSchemaCache,
   quoteNormalApplicationBidCost,
+  resolveChargeAmount,
   chargeNormalApplicationBidCreditOnFirstBid,
   refundSingleNormalApplicationBidEconomics,
   refundChargedBidApplicationsForOrderEndedWithoutSelection,

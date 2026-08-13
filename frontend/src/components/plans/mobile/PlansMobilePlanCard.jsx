@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/useAuth";
 import { isOrderzhouseFreePlan } from "../../../constants/orderzhousePlansCatalog";
@@ -7,8 +6,8 @@ import { getLocalizedPlanBadge, getLocalizedPlanCardDisplay } from "../../../lib
 import { getLocalizedField } from "../../../lib/i18n/getLocalizedField";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { useDisplayCurrency } from "../../../hooks/useDisplayCurrency";
-
-const FEATURE_PREVIEW = 4;
+import MembershipPlanCardBody, { MembershipPlanTitle } from "../MembershipPlanCardBody";
+import { useState } from "react";
 
 function getSubscriptionPlanRef(plan) {
   const id = plan?.checkoutPlanId || plan?.subscriptionPlanId || plan?.id;
@@ -82,8 +81,8 @@ export default function PlansMobilePlanCard({
   const displayedPrice = resolvePlanPriceDisplay(plan, display.price);
   const { main: priceMain, sub: priceSub, checkoutHint, sale: salePrice } = displayedPrice;
   const features = display.features;
-  const previewFeatures = features.slice(0, FEATURE_PREVIEW);
-  const moreFeatures = features.slice(FEATURE_PREVIEW);
+  const previewFeatures = features.slice(0, 4);
+  const moreFeatures = features.slice(4);
   const orderRange = display.orderRange;
   const installment = display.installment;
   const paymentNotes = display.paymentNotes;
@@ -168,11 +167,18 @@ export default function PlansMobilePlanCard({
   };
 
   const hasMeta = Boolean(offerLabel || orderRange || display.activationRequirements || display.refundPolicy);
+  const tierModifier = isMarketplaceMembership
+    ? `pm-plan-card--tier-${String(plan?.tierCode || "")
+        .trim()
+        .toLowerCase()}`
+    : "";
 
   return (
     <article
       className={[
         "pm-plan-card",
+        isMarketplaceMembership ? "pm-plan-card--membership" : "",
+        tierModifier,
         featured ? "pm-plan-card--featured" : "",
         isCurrentPlan ? "pm-plan-card--current" : "",
         salePrice?.active ? "pm-plan-card--sale" : "",
@@ -180,98 +186,112 @@ export default function PlansMobilePlanCard({
         .filter(Boolean)
         .join(" ")}
     >
-      {badge ? <span className="pm-plan-card__badge">{badge}</span> : null}
+      {isMarketplaceMembership ? (
+        <>
+          <MembershipPlanTitle plan={plan} featured={featured} locale={locale} t={t} />
+          <MembershipPlanCardBody plan={plan} locale={locale} t={t} />
+        </>
+      ) : (
+        <>
+          {badge ? <span className="pm-plan-card__badge">{badge}</span> : null}
 
-      <div className="pm-plan-card__head">
-        <h2 className="pm-plan-card__title">{planTitle}</h2>
-        {display.description ? <p className="pm-plan-card__desc">{display.description}</p> : null}
-        {durationLabel ? <p className="pm-plan-card__duration">{durationLabel}</p> : null}
-      </div>
+          <div className="pm-plan-card__head">
+            <h2 className="pm-plan-card__title">{planTitle}</h2>
+            {display.description ? <p className="pm-plan-card__desc">{display.description}</p> : null}
+            {durationLabel ? <p className="pm-plan-card__duration">{durationLabel}</p> : null}
+          </div>
 
-      {display.priceIntroText ? (
-        <p className="pm-plan-card__price-intro">{display.priceIntroText}</p>
-      ) : null}
+          {display.priceIntroText ? (
+            <p className="pm-plan-card__price-intro">{display.priceIntroText}</p>
+          ) : null}
 
-      <div className="pm-plan-card__price">
-        {salePrice?.active ? (
-          <div className="pm-plan-card__price-sale">
-            <span className="pm-plan-card__price-main">{priceMain}</span>
-            {salePrice.original || salePrice.badge ? (
-              <p className="pm-plan-card__price-sale-meta">
-                {salePrice.original ? (
-                  <s className="pm-plan-card__price-original">{salePrice.original}</s>
+          <div className="pm-plan-card__price">
+            {salePrice?.active ? (
+              <div className="pm-plan-card__price-sale">
+                <span className="pm-plan-card__price-main">{priceMain}</span>
+                {salePrice.original || salePrice.badge ? (
+                  <p className="pm-plan-card__price-sale-meta">
+                    {salePrice.original ? (
+                      <s className="pm-plan-card__price-original">{salePrice.original}</s>
+                    ) : null}
+                    {salePrice.badge ? (
+                      <span className="pm-plan-card__sale-badge">{salePrice.badge}</span>
+                    ) : null}
+                  </p>
                 ) : null}
-                {salePrice.badge ? (
-                  <span className="pm-plan-card__sale-badge">{salePrice.badge}</span>
-                ) : null}
+                {salePrice.reason ? <p className="pm-plan-card__sale-reason">{salePrice.reason}</p> : null}
+              </div>
+            ) : (
+              <>
+                <span className="pm-plan-card__price-main">{priceMain}</span>
+                {priceSub ? <span className="pm-plan-card__price-sub">{priceSub}</span> : null}
+              </>
+            )}
+            {checkoutHint && isEgyptDisplay ? (
+              <p className="pm-plan-card__price-note pm-plan-card__checkout-hint">{checkoutHint}</p>
+            ) : null}
+            {installment ? <p className="pm-plan-card__price-note">{installment}</p> : null}
+            {!installment && paymentNotes ? <p className="pm-plan-card__price-note">{paymentNotes}</p> : null}
+            {freePlanPayFee ? (
+              <p className="pm-plan-card__price-note pm-plan-card__activation-fee-required">
+                {formatFreePlanActivationFeeNote(activationFee?.amountJod)}
               </p>
             ) : null}
-            {salePrice.reason ? <p className="pm-plan-card__sale-reason">{salePrice.reason}</p> : null}
           </div>
-        ) : (
-          <>
-            <span className="pm-plan-card__price-main">{priceMain}</span>
-            {priceSub ? <span className="pm-plan-card__price-sub">{priceSub}</span> : null}
-          </>
-        )}
-        {checkoutHint && isEgyptDisplay ? (
-          <p className="pm-plan-card__price-note pm-plan-card__checkout-hint">{checkoutHint}</p>
-        ) : null}
-        {installment ? <p className="pm-plan-card__price-note">{installment}</p> : null}
-        {!installment && paymentNotes ? <p className="pm-plan-card__price-note">{paymentNotes}</p> : null}
-        {freePlanPayFee ? (
-          <p className="pm-plan-card__price-note pm-plan-card__activation-fee-required">
-            {formatFreePlanActivationFeeNote(activationFee?.amountJod)}
-          </p>
-        ) : null}
-      </div>
 
-      {offerLabel ? <p className="pm-plan-card__offer">{offerLabel}</p> : null}
+          {offerLabel ? <p className="pm-plan-card__offer">{offerLabel}</p> : null}
 
-      <div className="pm-plan-card__body">
-      <ul className="pm-plan-card__features" aria-label={t("plans.featuresAria")}>
-        {previewFeatures.map((text, idx) => (
-          <li key={`${text}-${idx}`} className="pm-plan-card__feature">
-            <span className="pm-plan-card__check">
-              <CheckIcon />
-            </span>
-            <span>{text}</span>
-          </li>
-        ))}
-      </ul>
+          <div className="pm-plan-card__body">
+            <ul className="pm-plan-card__features" aria-label={t("plans.featuresAria")}>
+              {previewFeatures.map((text, idx) => (
+                <li key={`${text}-${idx}`} className="pm-plan-card__feature">
+                  <span className="pm-plan-card__check">
+                    <CheckIcon />
+                  </span>
+                  <span>{text}</span>
+                </li>
+              ))}
+            </ul>
 
-      {moreFeatures.length > 0 ? (
-        <button
-          type="button"
-          className="pm-plan-card__more"
-          aria-expanded={expanded}
-          onClick={() => setExpanded((v) => !v)}
-        >
-          {expanded ? t("plans.hideFeatures") : t("plans.showMoreFeatures", { count: moreFeatures.length })}
-        </button>
-      ) : null}
+            {moreFeatures.length > 0 ? (
+              <button
+                type="button"
+                className="pm-plan-card__more"
+                aria-expanded={expanded}
+                onClick={() => setExpanded((v) => !v)}
+              >
+                {expanded
+                  ? t("plans.hideFeatures")
+                  : t("plans.showMoreFeatures", { count: moreFeatures.length })}
+              </button>
+            ) : null}
 
-      {expanded && moreFeatures.length > 0 ? (
-        <ul className="pm-plan-card__features pm-plan-card__features--more" aria-label={t("plans.extraFeaturesAria")}>
-          {moreFeatures.map((text, idx) => (
-            <li key={`more-${text}-${idx}`} className="pm-plan-card__feature">
-              <span className="pm-plan-card__check">
-                <CheckIcon />
-              </span>
-              <span>{text}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+            {expanded && moreFeatures.length > 0 ? (
+              <ul
+                className="pm-plan-card__features pm-plan-card__features--more"
+                aria-label={t("plans.extraFeaturesAria")}
+              >
+                {moreFeatures.map((text, idx) => (
+                  <li key={`more-${text}-${idx}`} className="pm-plan-card__feature">
+                    <span className="pm-plan-card__check">
+                      <CheckIcon />
+                    </span>
+                    <span>{text}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
 
-      {hasMeta ? (
-        <div className="pm-plan-card__meta">
-          {orderRange ? <p>{orderRange}</p> : null}
-          {display.activationRequirements ? <p>{display.activationRequirements}</p> : null}
-          {display.refundPolicy ? <p>{display.refundPolicy}</p> : null}
-        </div>
-      ) : null}
-      </div>
+            {hasMeta ? (
+              <div className="pm-plan-card__meta">
+                {orderRange ? <p>{orderRange}</p> : null}
+                {display.activationRequirements ? <p>{display.activationRequirements}</p> : null}
+                {display.refundPolicy ? <p>{display.refundPolicy}</p> : null}
+              </div>
+            ) : null}
+          </div>
+        </>
+      )}
 
       <button
         type="button"

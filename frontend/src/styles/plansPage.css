@@ -1,6 +1,6 @@
-/* Plans page — premium RTL pricing (scoped) */
+/* Plans page ? premium RTL pricing (scoped) */
 
-/* Offer guarantee — shared (public + dashboard pricing cards) */
+/* Offer guarantee ? shared (public + dashboard pricing cards) */
 .pricing-card__offer {
   display: flex;
   align-items: flex-start;
@@ -61,12 +61,12 @@
   z-index: 1;
 }
 
-/* ——— Pricing section ——— */
+/* ??? Pricing section ??? */
 .plans-page--ref .pricing {
   padding: 0;
 }
 
-/* ——— Grid: main public plans — columns from visible plans.length ——— */
+/* ??? Grid: main public plans ? columns from visible plans.length ??? */
 .plans-page--ref .pricing__grid--public-dynamic {
   display: grid;
   grid-auto-rows: 1fr;
@@ -94,7 +94,22 @@
 
 .plans-page--ref .pricing__grid--plans-4 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  max-width: 1200px;
+  max-width: min(1280px, 100%);
+  gap: 12px 12px;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card {
+  padding: 14px 14px 12px;
+  min-width: 0;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__title {
+  font-size: clamp(1.05rem, 1.1vw + 0.7rem, 1.25rem);
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__feature-text {
+  font-size: 0.92rem;
+  line-height: 1.45;
 }
 
 /* 5+ plans: max 3 columns per row */
@@ -103,10 +118,18 @@
   max-width: 1040px;
 }
 
-/* Narrow desktop / tablet shell (mobile component takes over ≤640px) */
+/* Four cards: 2�2 before they become unreadably narrow */
+@media (max-width: 1099px) {
+  .plans-page--ref .pricing__grid--plans-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 760px;
+    gap: 14px;
+  }
+}
+
+/* Narrow desktop / tablet shell (mobile component takes over ?640px) */
 @media (max-width: 899px) {
   .plans-page--ref .pricing__grid--plans-3,
-  .plans-page--ref .pricing__grid--plans-4,
   .plans-page--ref .pricing__grid--plans-three-columns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     max-width: 720px;
@@ -122,7 +145,7 @@
   }
 }
 
-/* ——— Grid: legacy 3-plan direct offer ——— */
+/* ??? Grid: legacy 3-plan direct offer ??? */
 .plans-page--ref .pricing__grid--legacy-three {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -146,7 +169,7 @@
   }
 }
 
-/* ——— Cards: main public catalog (uniform cell fill; CTA pinned to bottom) ——— */
+/* ??? Cards: main public catalog (uniform cell fill; CTA pinned to bottom) ??? */
 .plans-page--ref .pricing-card {
   position: relative;
   display: flex;
@@ -175,7 +198,7 @@
     0 4px 14px rgba(56, 82, 180, 0.08);
 }
 
-/* Override legacy featured scale/glow — subtle premium highlight */
+/* Override legacy featured scale/glow ? subtle premium highlight */
 .plans-page--ref .pricing-card--featured {
   z-index: 1;
   transform: none !important;
@@ -197,7 +220,7 @@
     0 0 28px rgba(56, 82, 180, 0.1);
 }
 
-/* Badge — inline pill at top of card (not floating) */
+/* Badge ? inline pill at top of card (not floating) */
 .plans-page--ref .pricing-card__badge {
   position: static;
   transform: none;
@@ -269,7 +292,7 @@
   line-height: 1.08;
 }
 
-/* Sale-only tokens — do not affect non-sale cards */
+/* Sale-only tokens ? do not affect non-sale cards */
 .plans-page--ref .pricing-card--sale {
   --plan-sale-bg: #feecec;
   --plan-sale-text: #c62828;
@@ -488,7 +511,7 @@
   border-color: #2f3b65;
 }
 
-/* ——— Cards: legacy 3-plan direct offer overrides ——— */
+/* ??? Cards: legacy 3-plan direct offer overrides ??? */
 .plans-page--legacy-offer .pricing-card {
   min-height: auto;
   border: 1px solid rgba(56, 82, 180, 0.12);
@@ -781,7 +804,7 @@
   min-height: 22px;
 }
 
-/* ——— Responsive ——— */
+/* ??? Responsive ??? */
 @media (max-width: 980px) {
   .plans-page--ref .pricing-card--featured {
     min-height: 0;
@@ -1149,4 +1172,632 @@
   line-height: 1.75;
   font-weight: 600;
   color: #5b6684;
+}
+
+/* ??? Marketplace Membership visual polish ??? */
+.container.page-content.plans-page--ref.plans-page--main-membership {
+  max-width: min(1280px, calc(100% - 24px));
+  width: min(1280px, calc(100% - 24px));
+}
+
+.plans-page--ref .pricing--membership {
+  position: relative;
+}
+
+.plans-page--ref .pricing--membership::before {
+  content: "";
+  position: absolute;
+  inset: -8px -12px auto;
+  height: min(280px, 42vw);
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 55% 70% at 50% 0%, rgba(56, 82, 180, 0.11), transparent 70%),
+    radial-gradient(ellipse 30% 45% at 12% 30%, rgba(148, 163, 184, 0.1), transparent 70%),
+    radial-gradient(ellipse 28% 40% at 88% 25%, rgba(99, 102, 241, 0.08), transparent 72%);
+}
+
+.plans-page--ref .pricing--membership > * {
+  position: relative;
+  z-index: 1;
+}
+
+.plans-page--ref .pricing-card--membership {
+  overflow: hidden;
+  isolation: isolate;
+  gap: 0;
+}
+
+.plans-page--ref .pricing-card--membership::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 3px;
+  background: rgba(148, 163, 184, 0.35);
+  opacity: 0.9;
+}
+
+.plans-page--ref .pricing-card--tier-starter::after {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.35), rgba(203, 213, 225, 0.55));
+}
+
+.plans-page--ref .pricing-card--tier-silver {
+  border-color: rgba(100, 116, 139, 0.22);
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, 0.95), #ffffff 38%);
+}
+
+.plans-page--ref .pricing-card--tier-silver::after {
+  background: linear-gradient(90deg, #94a3b8, #cbd5e1, #64748b);
+}
+
+.plans-page--ref .pricing-card--tier-pro,
+.plans-page--ref .pricing-card--membership.pricing-card--featured {
+  border-color: rgba(56, 82, 180, 0.42);
+  background:
+    linear-gradient(180deg, rgba(56, 82, 180, 0.055), #ffffff 34%);
+  box-shadow:
+    0 12px 30px rgba(56, 82, 180, 0.12),
+    0 0 0 1px rgba(56, 82, 180, 0.06),
+    0 0 28px rgba(56, 82, 180, 0.08);
+  transform: translateY(-4px);
+}
+
+.plans-page--ref .pricing-card--tier-pro::after,
+.plans-page--ref .pricing-card--membership.pricing-card--featured::after {
+  height: 3.5px;
+  background: linear-gradient(90deg, #3852b4, #5b6fd4, #3852b4);
+}
+
+.plans-page--ref .pricing-card--tier-elite {
+  border-color: rgba(49, 46, 129, 0.2);
+  background:
+    linear-gradient(180deg, rgba(49, 46, 129, 0.045), #ffffff 36%);
+}
+
+.plans-page--ref .pricing-card--tier-elite::after {
+  background: linear-gradient(90deg, #312e81, #6366f1, #1e1b4b);
+}
+
+.plans-page--ref .pricing-card--membership:hover {
+  transform: translateY(-5px);
+  transition-duration: 180ms;
+}
+
+.plans-page--ref .pricing-card--tier-pro:hover,
+.plans-page--ref .pricing-card--membership.pricing-card--featured:hover {
+  transform: translateY(-7px) !important;
+}
+
+.plans-page--ref .pricing-card__head--membership {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 3.4rem;
+}
+
+.plans-page--ref .pricing-card__badge--popular {
+  background: linear-gradient(135deg, #3852b4, #4f63c3);
+  box-shadow: 0 6px 14px rgba(56, 82, 180, 0.22);
+}
+
+.plans-page--ref .pricing-card__title--tier {
+  font-size: clamp(1.05rem, 1.15vw + 0.55rem, 1.28rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 950;
+}
+
+.plans-page--ref .pricing-card__tagline {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  line-height: 1.35;
+  min-height: 1.2em;
+}
+
+.plans-page--ref .pricing-card__price--membership {
+  margin-top: 10px;
+  margin-bottom: 2px;
+  min-height: 4.6rem;
+}
+
+.plans-page--ref .pricing-card__price-stack {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.28rem 0.4rem;
+}
+
+.plans-page--ref .pricing-card__price-amount {
+  font-size: clamp(1.85rem, 2.3vw, 2.25rem);
+  font-weight: 950;
+  line-height: 1;
+  color: #0f1a3a;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.plans-page--ref .pricing-card__price-amount--free {
+  font-size: clamp(1.55rem, 2vw, 1.95rem);
+  letter-spacing: -0.01em;
+}
+
+.plans-page--ref .pricing-card__price-unit {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #475569;
+}
+
+.plans-page--ref .pricing-card__price-period {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6f7992;
+}
+
+.plans-page--ref .pricing-card__metrics {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 0;
+}
+
+.plans-page--ref .pricing-card__metric {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 8px 9px;
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.plans-page--ref .pricing-card__metric-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  color: #3852b4;
+  background: rgba(56, 82, 180, 0.08);
+}
+
+.plans-page--ref .pricing-card--tier-silver .pricing-card__metric-icon {
+  color: #475569;
+  background: rgba(100, 116, 139, 0.12);
+}
+
+.plans-page--ref .pricing-card--tier-elite .pricing-card__metric-icon {
+  color: #4338ca;
+  background: rgba(67, 56, 202, 0.1);
+}
+
+.plans-page--ref .pricing-card__metric-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.plans-page--ref .pricing-card__metric-value {
+  font-size: 1.05rem;
+  font-weight: 950;
+  color: #0f1a3a;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.plans-page--ref .pricing-card__metric-value--text {
+  font-size: 0.98rem;
+}
+
+.plans-page--ref .pricing-card__metric-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.plans-page--ref .pricing-card__metric--elite-cap {
+  background: linear-gradient(135deg, rgba(67, 56, 202, 0.07), rgba(248, 250, 252, 0.95));
+  border-color: rgba(67, 56, 202, 0.18);
+}
+
+.plans-page--ref .pricing-card__secondary {
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+
+.plans-page--ref .pricing-card__withdrawal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.plans-page--ref .pricing-card__withdrawal--on {
+  color: #166534;
+  background: rgba(22, 101, 52, 0.08);
+  border: 1px solid rgba(22, 101, 52, 0.14);
+}
+
+.plans-page--ref .pricing-card__withdrawal--off {
+  color: #64748b;
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.plans-page--ref .pricing-card--membership .pricing-card__cta {
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.plans-page--ref .pricing-card--membership .pricing-card__btn {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.plans-page--ref .pricing-card--membership .pricing-card__btn:focus-visible {
+  outline: 2px solid #3852b4;
+  outline-offset: 2px;
+}
+
+.plans-page--ref .pricing-card--membership .pricing-card__btn--fill:hover:not(:disabled) {
+  box-shadow: 0 8px 18px rgba(56, 82, 180, 0.25);
+}
+
+.plans-page--ref .pricing-card--membership .pricing-card__btn--outline:hover:not(:disabled) {
+  border-color: rgba(56, 82, 180, 0.45);
+  background: rgba(56, 82, 180, 0.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plans-page--ref .pricing-card--membership,
+  .plans-page--ref .pricing-card--tier-pro,
+  .plans-page--ref .pricing-card--membership.pricing-card--featured {
+    transform: none !important;
+  }
+}
+
+/* ??? Plans category toggle + Training packages ??? */
+.plans-category-toggle {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto clamp(18px, 2.4vw, 28px);
+  max-width: min(720px, 100%);
+}
+
+.plans-category-toggle__track {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  width: 100%;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(56, 82, 180, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.plans-category-toggle__btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: clamp(0.82rem, 0.9vw + 0.55rem, 0.95rem);
+  font-weight: 800;
+  line-height: 1.25;
+  padding: 10px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.plans-category-toggle__btn:hover {
+  color: #334155;
+  background: rgba(56, 82, 180, 0.05);
+}
+
+.plans-category-toggle__btn--active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #3852b4, #4f63c3);
+  box-shadow: 0 8px 18px rgba(56, 82, 180, 0.22);
+}
+
+.plans-category-toggle__btn:focus-visible {
+  outline: 2px solid #3852b4;
+  outline-offset: 2px;
+}
+
+.plans-page--ref .pricing__grid--training-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: min(1120px, 100%);
+  gap: 14px;
+  margin-inline: auto;
+}
+
+.plans-page--ref .training-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  padding: 18px 16px 14px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(56, 82, 180, 0.12);
+  box-shadow:
+    0 8px 24px rgba(15, 26, 58, 0.05),
+    0 2px 8px rgba(56, 82, 180, 0.04);
+  text-align: start;
+  overflow: hidden;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.plans-page--ref .training-card::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 3px;
+  background: rgba(56, 82, 180, 0.35);
+}
+
+.plans-page--ref .training-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(56, 82, 180, 0.22);
+  box-shadow:
+    0 14px 32px rgba(15, 26, 58, 0.08),
+    0 4px 14px rgba(56, 82, 180, 0.08);
+}
+
+.plans-page--ref .training-card--basic::after {
+  background: linear-gradient(90deg, #60a5fa, #3852b4);
+}
+
+.plans-page--ref .training-card--professional {
+  border-color: rgba(79, 70, 229, 0.28);
+  background: linear-gradient(180deg, rgba(79, 70, 229, 0.05), #ffffff 34%);
+  transform: translateY(-3px);
+}
+
+.plans-page--ref .training-card--professional::after {
+  background: linear-gradient(90deg, #4f46e5, #7c3aed, #3852b4);
+}
+
+.plans-page--ref .training-card--professional:hover {
+  transform: translateY(-6px);
+}
+
+.plans-page--ref .training-card--premium {
+  border-color: rgba(180, 130, 60, 0.28);
+  background: linear-gradient(180deg, rgba(245, 230, 200, 0.35), #ffffff 36%);
+}
+
+.plans-page--ref .training-card--premium::after {
+  background: linear-gradient(90deg, #d4a017, #c9a227, #b8860b);
+}
+
+.plans-page--ref .training-card__badge {
+  display: inline-flex;
+  align-self: flex-start;
+  margin: 0 0 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  box-shadow: 0 6px 14px rgba(79, 70, 229, 0.22);
+}
+
+.plans-page--ref .training-card__title {
+  margin: 0 0 6px;
+  font-size: clamp(1.05rem, 1.1vw + 0.65rem, 1.28rem);
+  font-weight: 950;
+  color: #0f1a3a;
+  line-height: 1.3;
+}
+
+.plans-page--ref .training-card__desc {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.55;
+  color: #64748b;
+  min-height: 2.6em;
+}
+
+.plans-page--ref .training-card__price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin-top: 14px;
+  min-height: 2.6rem;
+}
+
+.plans-page--ref .training-card__price-amount {
+  font-size: clamp(1.85rem, 2.2vw, 2.2rem);
+  font-weight: 950;
+  line-height: 1;
+  color: #0f1a3a;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.plans-page--ref .training-card__price-unit {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #475569;
+}
+
+.plans-page--ref .training-card__divider {
+  height: 1px;
+  margin: 12px 0 10px;
+  background: linear-gradient(90deg, transparent, rgba(56, 82, 180, 0.14), transparent);
+}
+
+.plans-page--ref .training-card__includes-label {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 850;
+  color: #3852b4;
+}
+
+.plans-page--ref .training-card__features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.plans-page--ref .training-card__feature {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 8px;
+  align-items: start;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #334155;
+  font-weight: 600;
+}
+
+.plans-page--ref .training-card__feature--highlight {
+  padding: 8px 9px;
+  border-radius: 12px;
+  background: rgba(56, 82, 180, 0.06);
+  border: 1px solid rgba(56, 82, 180, 0.12);
+  font-weight: 800;
+  color: #0f1a3a;
+}
+
+.plans-page--ref .training-card__feature-icon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: #3852b4;
+}
+
+.plans-page--ref .training-card__cta {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.plans-page--ref .training-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 850;
+  text-decoration: none;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.plans-page--ref .training-card__btn--primary {
+  color: #fff;
+  background: linear-gradient(135deg, #3852b4, #4f63c3);
+  border: 1px solid transparent;
+  box-shadow: 0 8px 18px rgba(56, 82, 180, 0.22);
+}
+
+.plans-page--ref .training-card__btn--primary:hover {
+  box-shadow: 0 10px 22px rgba(56, 82, 180, 0.28);
+}
+
+.plans-page--ref .training-card__btn--outline {
+  color: #1f2a4d;
+  background: rgba(37, 211, 102, 0.06);
+  border: 1px solid rgba(37, 211, 102, 0.28);
+}
+
+.plans-page--ref .training-card__btn--outline:hover {
+  background: rgba(37, 211, 102, 0.1);
+  border-color: rgba(37, 211, 102, 0.4);
+}
+
+.plans-page--ref .training-card__btn:focus-visible {
+  outline: 2px solid #3852b4;
+  outline-offset: 2px;
+}
+
+.public-page-hero--training .public-page-hero__eyebrow {
+  display: inline-flex;
+  margin-bottom: 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: #3852b4;
+  background: rgba(56, 82, 180, 0.08);
+  border: 1px solid rgba(56, 82, 180, 0.14);
+}
+
+@media (max-width: 1099px) {
+  .plans-page--ref .pricing__grid--training-three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 760px;
+  }
+}
+
+@media (max-width: 699px) {
+  .plans-category-toggle__btn {
+    padding: 9px 10px;
+    font-size: 0.78rem;
+  }
+
+  .plans-page--ref .pricing__grid--training-three {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+  }
+
+  .plans-page--ref .training-card--professional {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plans-page--ref .training-card,
+  .plans-category-toggle__btn {
+    transition: none;
+  }
+
+  .plans-page--ref .training-card:hover,
+  .plans-page--ref .training-card--professional,
+  .plans-page--ref .training-card--professional:hover {
+    transform: none;
+  }
 }

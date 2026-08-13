@@ -55,6 +55,14 @@ function localizeTierLabel(rawLabel, locale, t) {
  */
 export function getPlanLocaleKey(plan) {
   if (!plan) return null;
+  // Marketplace Membership must never inherit legacy free/standard/platinum locale cards
+  // (DB ids can collide with canonical legacy plan ids 1–3).
+  if (
+    plan.catalogSource === "marketplace_membership" ||
+    plan.marketplaceMembership === true
+  ) {
+    return null;
+  }
   const id = String(plan.id ?? "");
   const name = String(plan.name ?? "");
   return PLAN_LOCALE_KEYS[id] || PLAN_LOCALE_KEYS[name] || null;

@@ -228,7 +228,7 @@ export const updateMarketplaceMembershipPlanRequest = async (id, patch) => {
   return data;
 };
 
-/** Marketplace Articles — Phase A2 Level model (no applications / Token charges). */
+/** Marketplace Articles — Phase A2 Level model (applications use Bids). */
 export const listAdminMarketplaceArticlesRequest = async (params = {}) => {
   const { data } = await api.get("/super-admin/marketplace-articles", { params });
   return data;
@@ -334,7 +334,7 @@ export const getFreelancerMarketplaceMembershipRequest = async () => {
   return data;
 };
 
-/** Bid Credits — Phase B1 (product replacement for Work Tokens) + B6 packages. */
+/** Bid Credits — Phase B1 active Bids product + B6 packages. */
 export const getFreelancerBidCreditsRequest = async () => {
   const { data } = await api.get("/freelancer/bid-credits");
   return data;

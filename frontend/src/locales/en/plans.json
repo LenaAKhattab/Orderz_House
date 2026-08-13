@@ -2,9 +2,40 @@
   "title": "Orderz House Marketplace Membership",
   "hero": {
     "title": "Orderz House Marketplace Membership",
-    "subtitle": "Monthly Bids, Priority Uses, and Article access — choose the membership that fits your freelance work."
+    "eyebrow": "Choose the level that fits your path",
+    "subtitle": "Compare Bids, daily limits, and project caps in seconds."
   },
-  "sectionAria": "Subscription plans",
+  "categories": {
+    "aria": "Plan categories",
+    "training": "Training packages",
+    "membership": "Orderz House Marketplace Membership"
+  },
+  "training": {
+    "sectionAria": "Professional training packages",
+    "includes": "Package includes",
+    "featuresAria": "Training package contents",
+    "cta": "Contact us",
+    "mostRequested": "Most requested",
+    "footnote": "Contact us on WhatsApp for registration and payment details.",
+    "whatsappAria": "Contact via WhatsApp about {{package}}",
+    "hero": {
+      "eyebrow": "Build your skills and start your career path",
+      "title": "Professional training packages",
+      "subtitle": "Choose the right package and start your skills and freelancing journey."
+    }
+  },
+  "sectionAria": "Marketplace Membership plans",
+  "membership": {
+    "free": "Free",
+    "metricsAria": "Key membership metrics",
+    "bidsAvailable": "Bids available",
+    "bidsPerDay": "Bids per day",
+    "projectCapMax": "Max project value",
+    "projectCapUnlimited": "Project cap",
+    "unlimitedShort": "No ceiling",
+    "withdrawalOn": "Withdrawal available",
+    "withdrawalOff": "No direct payout of financial amounts"
+  },
   "mobile": {
     "compareTitle": "Compare packages",
     "packageCount": "{{count}} packages",
@@ -58,6 +89,7 @@
     "suffix": "paid once yearly"
   },
   "currency": {
+    "jod": "JOD",
     "equivalentJod": "Equivalent to {{amount}}",
     "checkoutChargedInJod": "Payment is processed in Jordanian dinar (JOD)"
   },

@@ -35,7 +35,6 @@ export function getInitialMarketplacePlanFormState(overrides = {}) {
     monthlyPriceJod: "",
     maxRealOrderValueJod: "",
     unlimitedRealOrderValue: false,
-    includedTokensPerCycle: 0,
     monthlyBidAllowance: 0,
     articleAccessLevel: 1,
     cycleDurationDays: "",
@@ -73,7 +72,6 @@ export function planToMarketplaceFormState(plan) {
     monthlyPriceJod: plan.monthlyPriceJod ?? "",
     maxRealOrderValueJod: plan.unlimitedRealOrderValue ? "" : plan.maxRealOrderValueJod ?? "",
     unlimitedRealOrderValue: Boolean(plan.unlimitedRealOrderValue),
-    includedTokensPerCycle: 0,
     monthlyBidAllowance: plan.monthlyBidAllowance ?? 0,
     articleAccessLevel: plan.articleAccessLevel ?? 1,
     cycleDurationDays: plan.cycleDurationDays ?? "",
@@ -171,7 +169,6 @@ export function normalizeMarketplacePlanPayload(form, { isCreate = false } = {})
     monthlyPriceJod: Number(form.monthlyPriceJod),
     unlimitedRealOrderValue: unlimited,
     maxRealOrderValueJod: unlimited ? null : Number(form.maxRealOrderValueJod),
-    includedTokensPerCycle: 0,
     monthlyBidAllowance: Number(form.monthlyBidAllowance) || 0,
     articleAccessLevel: Number(form.articleAccessLevel) || 1,
     cycleDurationDays:

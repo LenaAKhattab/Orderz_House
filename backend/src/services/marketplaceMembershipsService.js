@@ -109,7 +109,6 @@ function mapPlanFields(row) {
     slug: row.plan_slug || null,
     priorityBidEnabled: isTruthyFlag(row.plan_priority_bid_enabled),
     priorityBidUsesPerCycle: Number(row.plan_priority_bid_uses_per_cycle) || 0,
-    includedTokensPerCycle: Number(row.plan_included_tokens_per_cycle) || 0,
     articleAccessLevel:
       row.plan_article_access_level == null
         ? defaultArticleAccessLevelForTier(row.plan_tier_code)
@@ -476,7 +475,6 @@ async function getFreelancerMarketplaceMembershipSnapshot(freelancerUserId, opti
             startsAt: cycle.startsAt,
             endsAt: cycle.endsAt,
             status: cycle.status,
-            includedTokensAllowed: cycle.includedTokensAllowed,
           }
         : null,
       priorityBid: {

@@ -112,22 +112,23 @@ describe("validateMarketplaceEconomyForm", () => {
 });
 
 describe("SuperAdminMarketplaceEconomyPage wiring", () => {
-  it("locks Work Tokens + legacy auction as DEPRECATED; keeps Bid engines", () => {
+  it("shows active Bid / Priority / Fair engines; no Work Token UI", () => {
     const page = fs.readFileSync(
       path.join(__dirname, "../../pages/dashboard/SuperAdminMarketplaceEconomyPage.jsx"),
       "utf8",
     );
-    assert.match(page, /Work Tokens engine — DEPRECATED/);
-    assert.match(page, /Legacy Priority Auction — DEPRECATED/);
-    assert.match(page, /locked OFF/);
+    assert.doesNotMatch(page, /Work Token/i);
+    assert.doesNotMatch(page, /Verification Work Token/i);
+    assert.doesNotMatch(page, /Legacy Priority Auction/i);
+    assert.doesNotMatch(page, /id="mes-flag-tokens"/);
+    assert.doesNotMatch(page, /id="mes-flag-priority"/);
+    assert.doesNotMatch(page, /id="mes-flag-verify"/);
     assert.match(page, /Priority Application Boost/);
     assert.match(page, /Enable Bid Credits engine/);
     assert.match(page, /Fair Work Distribution|التوزيع العادل/);
     assert.doesNotMatch(page, /id="mes-token-value"/);
     assert.doesNotMatch(page, /id="mes-pb-duration"/);
     assert.doesNotMatch(page, /id="mes-normal-refund"/);
-    assert.doesNotMatch(page, /Enable Work Tokens engine \(wallet\/ledger\)/);
-    assert.match(page, /Verification Work Token bonuses — DEPRECATED/);
     assert.doesNotMatch(page, /id="mes-id-bonus"/);
     assert.doesNotMatch(page, /id="mes-payout-bonus"/);
     assert.doesNotMatch(page, /Enable verification bonuses engine/);

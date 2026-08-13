@@ -4,7 +4,6 @@
 
 const eliteSvc = require("../services/marketplaceEliteDirectOrdersService");
 const { getMarketplaceEconomySettings, isEliteEngineActive } = require("../services/marketplaceEconomySettingsService");
-const { ELITE_DIRECT_ORDER_WORK_TOKEN_COST } = require("../constants/marketplaceEliteDirectOrders");
 
 function parseId(v) {
   const n = Number(v);
@@ -36,7 +35,6 @@ async function createOffer(req, res, next) {
         offer: out.offer,
         created: out.created,
         idempotent: out.idempotent,
-        workTokenCost: ELITE_DIRECT_ORDER_WORK_TOKEN_COST,
       },
     });
   } catch (err) {
@@ -89,7 +87,6 @@ async function acceptOffer(req, res, next) {
       data: {
         offer: out.offer,
         paymentMode: out.paymentMode,
-        workTokenCost: out.workTokenCost,
         idempotent: out.idempotent,
       },
     });
@@ -169,7 +166,6 @@ async function engineStatus(_req, res, next) {
         eliteEngineEnabled: isEliteEngineActive(settings),
         eliteOfferDurationMinutes: settings.eliteOfferDurationMinutes,
         eliteDirectOrdersPerCycle: settings.eliteDirectOrdersPerCycle,
-        workTokenCost: ELITE_DIRECT_ORDER_WORK_TOKEN_COST,
       },
     });
   } catch (err) {

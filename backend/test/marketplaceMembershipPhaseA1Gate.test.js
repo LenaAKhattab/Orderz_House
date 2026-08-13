@@ -240,12 +240,12 @@ describe("Phase A1 — isolated DB gate (Bid Credits product)", () => {
     assert.equal(Boolean(rows[0].is_active), false);
   });
 
-  it("API plan map exposes tier/price/Bids/article/PB/elite; public omits Work Token field", async () => {
+  it("API plan map exposes tier/price/Bids/article/PB/elite; omits Work Token field", async () => {
     const listed = await plansService.listAdminMarketplaceMembershipPlans({ includeInactive: true });
     const start = listed.find((p) => p.tierCode === "start");
     assert.ok(start);
     assert.equal(start.monthlyPriceJod, 24.99);
-    assert.equal(start.includedTokensPerCycle, 0);
+    assert.equal(Object.prototype.hasOwnProperty.call(start, "includedTokensPerCycle"), false);
     assert.equal(start.monthlyBidAllowance, 100);
     assert.equal(start.articleAccessLevel, 2);
     assert.equal(typeof start.priorityBidUsesPerCycle, "number");
@@ -259,12 +259,12 @@ describe("Phase A1 — isolated DB gate (Bid Credits product)", () => {
     assert.equal(pub.capabilities.eliteDirectOrders, true);
   });
 
-  it("FREE cycle: zero Work Tokens and zero Bid unlock while engine OFF", async () => {
+  it("FREE cycle: zero Bid unlock while engine OFF; no Work Token cycle field", async () => {
     await activate(freeUser.id, plans.free.id);
     assert.equal((await wtGrantCount(freeUser.id)).sum, 0);
     assert.equal((await bidGrantSum(freeUser.id)).sum, 0);
     const snap = await membershipsService.getFreelancerMarketplaceMembershipSnapshot(freeUser.id);
-    assert.equal(snap.currentCycle.includedTokensAllowed, 0);
+    assert.equal(Object.prototype.hasOwnProperty.call(snap.currentCycle || {}, "includedTokensAllowed"), false);
     assert.equal(snap.membership.plan.articleAccessLevel, 1);
   });
 
@@ -392,7 +392,8 @@ describe("Phase A1 — isolated DB gate (Bid Credits product)", () => {
   it("Priority Bid uses remain a separate entitlement", async () => {
     const snap = await membershipsService.getFreelancerMarketplaceMembershipSnapshot(startUser.id);
     assert.equal(snap.priorityBid.allowed, Number(plans.start.pb_uses) || 1);
-    assert.notEqual(snap.priorityBid.allowed, snap.currentCycle.includedTokensAllowed);
+    assert.equal(Object.prototype.hasOwnProperty.call(snap.currentCycle || {}, "includedTokensAllowed"), false);
+    assert.ok(snap.priorityBid.allowed >= 0);
   });
 
   it("no grant on registration alone (user without membership)", async () => {

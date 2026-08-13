@@ -77,6 +77,13 @@ router.post(
   validateRequest,
   adminOrdersController.cancelOpenBiddingOrderWithoutSelection,
 );
+router.patch(
+  "/orders/:id/economic-fields",
+  ordersPerm,
+  orderIdParam,
+  validateRequest,
+  adminOrdersController.patchOrderEconomicFields,
+);
 router.get("/orders/:id/claims", ordersPerm, orderIdParam, validateRequest, adminOrdersController.listOrderClaims);
 router.patch(
   "/orders/:id/accept",

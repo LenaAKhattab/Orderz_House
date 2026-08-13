@@ -350,7 +350,7 @@ async function creditWorkTokens(input) {
     eventType === "IDENTITY_VERIFICATION_BONUS" ||
     eventType === "PAYOUT_VERIFICATION_BONUS"
   ) {
-    throw createAppError("Verification Work Token rewards are deprecated.", 410, {
+    throw createAppError("This reward path is no longer available.", 410, {
       exposeToClient: true,
       publicCode: "WORK_TOKENS_DEPRECATED",
     });
