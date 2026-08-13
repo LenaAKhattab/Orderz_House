@@ -6,12 +6,52 @@
 
 function buildFeatures(plan, isEn) {
   const features = [];
+  const duration = Number(plan?.cycleDurationDays ?? plan?.capabilities?.cycleDurationDays) || null;
+  if (duration) {
+    features.push(isEn ? `${duration} day${duration === 1 ? "" : "s"}` : `${duration} يوم`);
+  }
+
   const bids = Number(plan?.monthlyBidAllowance) || 0;
   features.push(
     isEn
-      ? `${bids} Bid${bids === 1 ? "" : "s"} / month`
-      : `${bids} ${bids === 1 ? "عرض" : "عروض"} / شهر`,
+      ? `${bids} Bid${bids === 1 ? "" : "s"} / cycle`
+      : `${bids} ${bids === 1 ? "عرض" : "عروض"} / دورة`,
   );
+
+  const daily =
+    plan?.dailyBidSpendLimit ?? plan?.capabilities?.dailyBidSpendLimit;
+  if (daily != null && Number.isFinite(Number(daily))) {
+    features.push(
+      isEn
+        ? `Daily Bid limit: ${Number(daily)}`
+        : `الحد اليومي للعروض: ${Number(daily)}`,
+    );
+  }
+
+  const unlimited = Boolean(plan?.access?.unlimited ?? plan?.unlimitedRealOrderValue);
+  const maxValue = plan?.access?.maxRealOrderValueJod ?? plan?.maxRealOrderValueJod;
+  const minValue = plan?.projectMinValueJod;
+  if (unlimited) {
+    features.push(
+      isEn
+        ? `Projects from ${minValue != null ? minValue : 1} JOD (no max)`
+        : `مشاريع من ${minValue != null ? minValue : 1} د.أ بلا حد أعلى`,
+    );
+  } else if (maxValue != null && Number.isFinite(Number(maxValue))) {
+    features.push(
+      isEn
+        ? `Projects ${minValue != null ? minValue : 1}–${maxValue} JOD`
+        : `مشاريع ${minValue != null ? minValue : 1}–${maxValue} د.أ`,
+    );
+  }
+
+  const withdrawal =
+    plan?.withdrawalEnabled ?? plan?.capabilities?.withdrawalEnabled;
+  if (withdrawal === false) {
+    features.push(isEn ? "Withdrawal disabled" : "السحب متوقف");
+  } else if (withdrawal === true) {
+    features.push(isEn ? "Withdrawal enabled" : "السحب متاح");
+  }
 
   const priorityOn = Boolean(plan?.capabilities?.priorityBid ?? plan?.priorityBidEnabled);
   const priorityUses = Number(
@@ -23,36 +63,6 @@ function buildFeatures(plan, isEn) {
         ? `${priorityUses} Priority Use${priorityUses === 1 ? "" : "s"} / cycle`
         : `${priorityUses} ${priorityUses === 1 ? "مرة أولوية" : "مرات أولوية"} / دورة`,
     );
-  }
-
-  const articleLevel =
-    plan?.articleAccessLevel ??
-    plan?.capabilities?.articleAccessLevel ??
-    1;
-  features.push(
-    isEn
-      ? `Article access level ${articleLevel}`
-      : `مستوى الوصول للمقالات ${articleLevel}`,
-  );
-
-  const unlimited = Boolean(plan?.access?.unlimited ?? plan?.unlimitedRealOrderValue);
-  const maxValue = plan?.access?.maxRealOrderValueJod ?? plan?.maxRealOrderValueJod;
-  if (unlimited) {
-    features.push(isEn ? "Unlimited real-order access" : "وصول غير محدود للطلبات الحقيقية");
-  } else if (maxValue != null && Number.isFinite(Number(maxValue))) {
-    features.push(
-      isEn
-        ? `Real orders up to ${maxValue} JOD`
-        : `طلبات حقيقية حتى ${maxValue} د.أ`,
-    );
-  }
-
-  if (plan?.capabilities?.eliteDirectOrders || plan?.eliteDirectOrdersEnabled) {
-    features.push(isEn ? "Elite Direct Orders" : "طلبات Elite المباشرة");
-  }
-
-  if (plan?.cash?.allowed || plan?.cashAllowed) {
-    features.push(isEn ? "Cash membership payments" : "دفع عضوية نقدي");
   }
 
   return features;

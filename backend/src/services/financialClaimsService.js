@@ -263,6 +263,44 @@ async function createFinancialClaimForFreelancer({ freelancerUserId, payload }) 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+
+    // E1: Starter Marketplace Membership blocks withdrawal / financial claim cash-out path.
+    try {
+      const { rows: memRows } = await client.query(
+        `SELECT p.tier_code, p.withdrawal_enabled, p.starter_earnings_mode
+           FROM freelancer_marketplace_memberships m
+           JOIN marketplace_membership_plans p ON p.id = m.marketplace_plan_id
+          WHERE m.freelancer_user_id = $1
+            AND m.is_current = TRUE
+            AND m.status IN ('active', 'cancel_at_period_end')
+          LIMIT 1`,
+        [Number(freelancerUserId)],
+      );
+      if (memRows[0]) {
+        const eligibility = require("./marketplaceMembershipEligibilityService");
+        const w = eligibility.evaluateMembershipWithdrawalEligibility({
+          tierCode: memRows[0].tier_code,
+          withdrawalEnabled: memRows[0].withdrawal_enabled,
+          starterEarningsMode: memRows[0].starter_earnings_mode,
+        });
+        if (!w.allowed) {
+          const err = new Error(
+            "السحب غير متاح لعضوية الستارتر. الأرباح تُحفظ بوضع معلّق حتى الترقية وفق قواعد المنصة.",
+          );
+          err.statusCode = 403;
+          err.publicCode = "STARTER_WITHDRAWAL_BLOCKED";
+          err.exposeToClient = true;
+          throw err;
+        }
+      }
+    } catch (gateErr) {
+      if (gateErr?.code === "42703" || gateErr?.code === "42P01") {
+        // Pre-153 schema: skip membership withdrawal gate.
+      } else {
+        throw gateErr;
+      }
+    }
+
     const mode = String(payload.mode || "manual").trim();
     const freelancerId = Number(freelancerUserId);
 

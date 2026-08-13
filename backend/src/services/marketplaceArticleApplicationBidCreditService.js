@@ -183,7 +183,9 @@ async function quoteArticleApplicationBidCost({ freelancerUserId = null, now = n
 }
 
 /**
- * Charge 1 Bid inside caller's transaction after application row exists.
+ * DEPRECATED (E2): immediate Article Bid consume on application.
+ * Active runtime uses reservation → consume on final approval.
+ * Kept for historical B5 table compatibility only — must not be called by submit path.
  */
 async function chargeArticleApplicationBidCredit({
   client,
@@ -193,125 +195,20 @@ async function chargeArticleApplicationBidCredit({
   actorUserId = null,
   now = new Date(),
 } = {}) {
-  if (!client) {
-    throw createAppError("chargeArticleApplicationBidCredit requires an open DB client.", 500);
-  }
-
-  await assertArticleBidEconomyActive(client);
-
-  const existing = await findEconomicsByApplicationId(client, articleApplicationId);
-  if (existing && existing.charge_status === "charged") {
-    return {
-      charged: false,
-      skipped: true,
-      reason: "already_charged",
-      bidCreditCost: ARTICLE_APPLICATION_BID_COST,
-      economics: mapEconomicsRow(existing),
-    };
-  }
-
-  await distribution.reconcileFreelancerBidDistributions({
-    client,
-    freelancerUserId: Number(freelancerUserId),
-    now,
-  });
-
-  const idempotencyKey = buildArticleApplicationBidConsumeIdempotencyKey(
-    articleId,
-    freelancerUserId,
-  );
-
-  const consume = await accounting.consumeBidCreditsFefo({
-    client,
-    freelancerUserId: Number(freelancerUserId),
-    amount: ARTICLE_APPLICATION_BID_COST,
-    idempotencyKey,
-    referenceType: "marketplace_article_application",
-    referenceId: String(articleApplicationId),
-    reason: "article_application_bid_consume",
-    actorUserId: actorUserId != null ? Number(actorUserId) : Number(freelancerUserId),
-    eventType: ARTICLE_APPLICATION_BID_CONSUME_EVENT,
-    metadata: {
-      articleId: String(articleId),
-      articleApplicationId: String(articleApplicationId),
-      phase: "B5",
-    },
-    now,
-  });
-
-  if (consume.idempotent && existing) {
-    return {
-      charged: false,
-      skipped: true,
-      reason: "idempotent_replay",
-      bidCreditCost: ARTICLE_APPLICATION_BID_COST,
-      economics: mapEconomicsRow(existing),
-      consume,
-    };
-  }
-
-  const primaryGrantId = consume.allocations?.[0]?.grantId || null;
-  let grantExpiresAt = null;
-  if (primaryGrantId != null) {
-    const { rows: gRows } = await client.query(
-      `SELECT expires_at FROM marketplace_bid_credit_grants WHERE id = $1`,
-      [Number(primaryGrantId)],
-    );
-    grantExpiresAt = gRows[0]?.expires_at || null;
-  }
-
-  const { rows } = await client.query(
-    `INSERT INTO marketplace_article_application_bid_credit_economics (
-       article_application_id, article_id, freelancer_user_id,
-       bid_credit_cost, charge_status, refund_status,
-       consume_ledger_entry_id, primary_grant_id, grant_expires_at_snapshot,
-       idempotency_key, fefo_allocations, charged_at
-     ) VALUES (
-       $1, $2, $3,
-       $4, 'charged', 'none',
-       $5, $6, $7,
-       $8, $9::jsonb, NOW()
-     )
-     ON CONFLICT (article_application_id) DO NOTHING
-     RETURNING *`,
-    [
-      Number(articleApplicationId),
-      Number(articleId),
-      Number(freelancerUserId),
-      ARTICLE_APPLICATION_BID_COST,
-      consume.entry?.id ? Number(consume.entry.id) : null,
-      primaryGrantId != null ? Number(primaryGrantId) : null,
-      grantExpiresAt,
-      idempotencyKey,
-      JSON.stringify(consume.allocations || []),
-    ],
-  );
-
-  if (!rows[0]) {
-    const again = await findEconomicsByApplicationId(client, articleApplicationId);
-    return {
-      charged: false,
-      skipped: true,
-      reason: "concurrent_first_charge",
-      bidCreditCost: ARTICLE_APPLICATION_BID_COST,
-      economics: mapEconomicsRow(again),
-      consume,
-    };
-  }
-
-  const availableAfter = await accounting.sumAvailableBidCredits({
-    client,
-    freelancerUserId: Number(freelancerUserId),
-    now,
-  });
-
+  void client;
+  void articleId;
+  void freelancerUserId;
+  void articleApplicationId;
+  void actorUserId;
+  void now;
   return {
-    charged: true,
-    skipped: false,
-    bidCreditCost: ARTICLE_APPLICATION_BID_COST,
-    availableBidsAfter: availableAfter,
-    economics: mapEconomicsRow(rows[0]),
-    consume,
+    charged: false,
+    skipped: true,
+    reason: "DEPRECATED_INACTIVE_E2_USE_RESERVATION",
+    bidCreditCost: 0,
+    economics: null,
+    deprecated: true,
+    oldBehavior: "DEPRECATED_INACTIVE",
   };
 }
 

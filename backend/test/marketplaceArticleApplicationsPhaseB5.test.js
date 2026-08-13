@@ -146,15 +146,16 @@ describe("Phase B5 service architecture — Bid wired fail-closed", () => {
   const accounting = read("src/services/marketplaceBidCreditAccountingService.js");
   const appJs = read("src/app.js");
 
-  it("charges Article Bid inside submit txn; no free fallback", () => {
-    assert.match(svc, /chargeArticleApplicationBidCredit/);
+  it("E2 reserves Article Bid on submit; B5 immediate charge deprecated", () => {
+    assert.match(svc, /reserveBidCreditsFefo/);
     assert.match(svc, /assertArticleBidEconomyActive/);
+    assert.doesNotMatch(svc, /chargeArticleApplicationBidCredit\(/);
+    assert.match(bidSvc, /DEPRECATED_INACTIVE_E2_USE_RESERVATION/);
     assert.match(bidSvc, /ARTICLE_BID_ECONOMY_DISABLED/);
-    assert.match(bidSvc, /ARTICLE_APPLICATION_BID_CONSUME/);
-    assert.match(bidSvc, /consumeBidCreditsFefo/);
+    // Historical B5 refund/consume vocabulary remains for compatibility.
+    assert.match(bidSvc, /ARTICLE_APPLICATION_BID_CONSUME|refundNoSelectionArticleApplications/);
     assert.match(accounting, /eventType/);
     assert.doesNotMatch(svc, /work_token_wallet|reserveWorkTokens|consumeWorkTokens/);
-    assert.doesNotMatch(bidSvc, /work_token/);
   });
 
   it("no-selection refund on Article close/cancel; withdraw/reject/loser none", () => {

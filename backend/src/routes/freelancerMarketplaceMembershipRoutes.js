@@ -12,4 +12,16 @@ router.use(requireAuth, requireRole("freelancer"));
  */
 router.get("/marketplace-membership", marketplaceMembershipsController.getMyMarketplaceMembership);
 
+/** E1: Starter free activation after verification (no company queue). */
+router.post(
+  "/marketplace-membership/starter/activate",
+  marketplaceMembershipsController.activateStarter,
+);
+
+/** E1: Paid activation request — waits for company approval ("ابدأ اشتراكي"). */
+router.post(
+  "/marketplace-membership/activation-requests",
+  marketplaceMembershipsController.requestPaidActivation,
+);
+
 module.exports = router;

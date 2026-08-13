@@ -154,15 +154,25 @@ async function createAndActivateMarketplaceMembership(input) {
   if (input.paidTermEndsAt) {
     paidTermEndsAt = toUtcDate(input.paidTermEndsAt);
   } else {
-    const months = Number(input.paidTermMonths);
-    if (!Number.isInteger(months) || months < 1 || months > 120) {
-      throw createAppError("paidTermMonths must be an integer between 1 and 120.", 400, {
-        exposeToClient: true,
-        publicCode: "INVALID_PAID_TERM_MONTHS",
-      });
+    // Prefer plan.cycleDurationDays (E1) when provided by catalog.
+    const planPeek = await marketplaceMembershipPlansService.getMarketplaceMembershipPlanById(
+      marketplacePlanId,
+      input.client || null,
+    );
+    const durationDays = Number(planPeek?.cycleDurationDays);
+    if (Number.isInteger(durationDays) && durationDays >= 1) {
+      paidTermEndsAt = new Date(paidTermStartsAt.getTime() + durationDays * 24 * 60 * 60 * 1000);
+    } else {
+      const months = Number(input.paidTermMonths);
+      if (!Number.isInteger(months) || months < 1 || months > 120) {
+        throw createAppError("paidTermMonths must be an integer between 1 and 120.", 400, {
+          exposeToClient: true,
+          publicCode: "INVALID_PAID_TERM_MONTHS",
+        });
+      }
+      const anchor = resolveCycleAnchorDay(paidTermStartsAt);
+      paidTermEndsAt = addCalendarMonthsAnchored(paidTermStartsAt, months, anchor);
     }
-    const anchor = resolveCycleAnchorDay(paidTermStartsAt);
-    paidTermEndsAt = addCalendarMonthsAnchored(paidTermStartsAt, months, anchor);
   }
   if (!(paidTermEndsAt > paidTermStartsAt)) {
     throw createAppError("paid_term_ends_at must be after paid_term_starts_at.", 400, {
@@ -175,6 +185,9 @@ async function createAndActivateMarketplaceMembership(input) {
   try {
     if (ownTxn) await client.query("BEGIN");
 
+    const eligibility = require("./marketplaceMembershipEligibilityService");
+    await eligibility.assertMarketplaceVerificationComplete(client, freelancerUserId);
+
     const plan = await marketplaceMembershipPlansService.getMarketplaceMembershipPlanById(
       marketplacePlanId,
       client,
@@ -184,6 +197,10 @@ async function createAndActivateMarketplaceMembership(input) {
         exposeToClient: true,
         publicCode: "MARKETPLACE_PLAN_NOT_FOUND",
       });
+    }
+
+    if (String(plan.tierCode).toLowerCase() === "starter" || plan.isOneTimeStarter) {
+      await eligibility.assertStarterNotAlreadyConsumed(client, freelancerUserId);
     }
 
     // Serialize concurrent activations for this freelancer
@@ -304,8 +321,24 @@ async function createAndActivateMarketplaceMembership(input) {
       actorUserId: input.actorUserId || null,
     });
 
+    // E2: paid membership activation releases eligible Starter pending Article earnings.
+    let starterPendingRelease = null;
+    const activatedTier = String(plan.tierCode || "").toLowerCase();
+    if (activatedTier && activatedTier !== "starter") {
+      try {
+        const settlementService = require("./marketplaceArticleSettlementService");
+        starterPendingRelease = await settlementService.releaseStarterPendingArticleEarnings({
+          client,
+          freelancerUserId,
+          now,
+        });
+      } catch (releaseErr) {
+        if (releaseErr?.code !== "42P01") throw releaseErr;
+      }
+    }
+
     if (ownTxn) await client.query("COMMIT");
-    return { membership, currentCycle: cycle };
+    return { membership, currentCycle: cycle, starterPendingRelease };
   } catch (err) {
     if (ownTxn) {
       try {

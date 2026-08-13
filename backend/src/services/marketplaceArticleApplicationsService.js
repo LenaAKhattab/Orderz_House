@@ -1,10 +1,9 @@
 /**
- * Phase B5 — Marketplace Article Applications.
+ * Phase B5/E2 — Marketplace Article Applications.
  *
  * Dedicated domain (NOT order_freelancer_bids / Priority Boost / Fair / Elite).
  * Membership gate: plan.article_access_level >= article.article_level.
- * Bid economics: flat 1 Bid on first valid submit; no-selection refund on Article
- * close/cancel with zero selected (pending charged apps only).
+ * E2 Bid economics: RESERVE on submit; CONSUME on final approval (not immediate B5 charge).
  * Fail-closed: requires article_applications_enabled AND bid_credits_enabled.
  * Work Tokens: CANCELLED — no runtime.
  * Selection: Super Admin explicit select/reject (no automatic winner).
@@ -31,6 +30,11 @@ const {
   buildArticleApplicationIdempotencyKey,
 } = require("../constants/marketplaceArticleApplications");
 const {
+  OLD_ARTICLE_APPLICATION_IMMEDIATE_BID_CHARGE,
+  ARTICLE_APPLICATION_BID_BEHAVIOR,
+  ARTICLE_E2_ERROR_CODES,
+} = require("../constants/marketplaceArticleEconomy");
+const {
   articleApplicationsSchemaReady,
   clearArticleApplicationsSchemaCache,
 } = require("../utils/marketplaceArticleApplicationsSchema");
@@ -38,6 +42,10 @@ const {
   resolveCurrentMarketplaceMembershipForFreelancer,
 } = require("./marketplaceMembershipsService");
 const { isBenefitUsableStatus } = require("../constants/marketplaceMemberships");
+const reservationService = require("./marketplaceBidCreditReservationService");
+const economyService = require("./marketplaceArticleEconomyService");
+const settlementService = require("./marketplaceArticleSettlementService");
+const eligibility = require("./marketplaceMembershipEligibilityService");
 const marketplaceMembershipCyclesService = require("./marketplaceMembershipCyclesService");
 const notificationService = require("./notificationService");
 const articleBidEconomics = require("./marketplaceArticleApplicationBidCreditService");
@@ -191,8 +199,39 @@ async function assertArticleMetadataMutable(articleId, patch, existingArticle = 
   }
 }
 
+async function releaseApplicationReservation(client, applicationRow, reason, now = new Date()) {
+  const reservationId =
+    applicationRow.bid_reservation_id != null ? Number(applicationRow.bid_reservation_id) : null;
+  if (!reservationId) return null;
+  try {
+    return await reservationService.releaseBidCreditReservation({
+      client,
+      reservationId,
+      reason,
+      now,
+      restoreDailyLimit: true,
+    });
+  } catch (err) {
+    if (err?.publicCode === "BID_RESERVATION_ALREADY_CONSUMED") throw err;
+    if (err?.publicCode === "BID_RESERVATION_NOT_FOUND") return null;
+    // Idempotent release already done
+    if (err?.publicCode === "ARTICLE_RESERVATION_NOT_ACTIVE") return null;
+    throw err;
+  }
+}
+
 async function cancelPendingApplicationsForArticle(articleId, client) {
   if (!(await articleApplicationsSchemaReady(client))) return 0;
+  const { rows: pending } = await client.query(
+    `SELECT * FROM marketplace_article_applications
+      WHERE article_id = $1 AND status = 'pending'
+      FOR UPDATE`,
+    [Number(articleId)],
+  );
+  for (const app of pending) {
+    // eslint-disable-next-line no-await-in-loop
+    await releaseApplicationReservation(client, app, "article_cancelled", new Date());
+  }
   const { rowCount } = await client.query(
     `UPDATE marketplace_article_applications
         SET status = 'cancelled',
@@ -441,15 +480,71 @@ async function submitArticleApplication({
       throw err;
     }
 
-    // Same transaction: FEFO consume 1 Bid + economics row (rolls back with application on failure).
-    const charge = await articleBidEconomics.chargeArticleApplicationBidCredit({
+    // E2: reserve Bids (not immediate B5 consume). Final approval consumes reservation.
+    const economy = await economyService.getArticleEconomyConfig(client);
+    const bidCost = economyService.resolveBidCostForCampaign(article, economy);
+    await eligibility.assertMarketplaceVerificationComplete(client, fid);
+
+    // Campaign gates: deadline / target / budget / eligible tiers
+    if (article.application_deadline_at && new Date(article.application_deadline_at) <= new Date(now)) {
+      throw createAppError("Article application deadline has passed.", 409, {
+        exposeToClient: true,
+        publicCode: ARTICLE_E2_ERROR_CODES.ARTICLE_CAMPAIGN_DEADLINE_PASSED,
+      });
+    }
+    if (
+      article.target_article_count != null &&
+      article.accepted_article_count != null &&
+      Number(article.accepted_article_count) >= Number(article.target_article_count)
+    ) {
+      throw createAppError("Campaign target article count exhausted.", 409, {
+        exposeToClient: true,
+        publicCode: ARTICLE_E2_ERROR_CODES.ARTICLE_CAMPAIGN_TARGET_EXHAUSTED,
+      });
+    }
+    let eligibleTiers = article.eligible_tier_codes;
+    if (typeof eligibleTiers === "string") {
+      try {
+        eligibleTiers = JSON.parse(eligibleTiers);
+      } catch {
+        eligibleTiers = null;
+      }
+    }
+    const tierCode = String(membership.plan?.tierCode || "").toLowerCase();
+    if (Array.isArray(eligibleTiers) && eligibleTiers.length && !eligibleTiers.map(String).map((t) => t.toLowerCase()).includes(tierCode)) {
+      throw createAppError("Your membership plan is not eligible for this Article campaign.", 403, {
+        exposeToClient: true,
+        publicCode: ARTICLE_E2_ERROR_CODES.ARTICLE_CAMPAIGN_NOT_ELIGIBLE_TIER,
+      });
+    }
+
+    const reserve = await reservationService.reserveBidCreditsFefo({
       client,
-      articleId: aid,
       freelancerUserId: fid,
+      amount: bidCost,
+      idempotencyKey: `article_app_reserve:${aid}:${fid}`.slice(0, 180),
+      referenceType: "marketplace_article_application",
+      referenceId: String(inserted.id),
+      articleId: aid,
       articleApplicationId: Number(inserted.id),
+      purpose: "article_application",
       actorUserId: fid,
       now,
+      applyDailyLimit: true,
     });
+
+    try {
+      await client.query(
+        `UPDATE marketplace_article_applications
+            SET bid_reservation_id = $2, updated_at = NOW()
+          WHERE id = $1`,
+        [inserted.id, reserve.reservation.id],
+      );
+      inserted.bid_reservation_id = reserve.reservation.id;
+    } catch (colErr) {
+      if (colErr?.code !== "42703") throw colErr;
+      // Pre-154 schema: reservation still held; column link optional.
+    }
 
     if (ownClient) await client.query("COMMIT");
 
@@ -460,12 +555,16 @@ async function submitArticleApplication({
           recipientRole: "freelancer",
           type: "article_application_submitted",
           title: "تم تقديم طلب المقال",
-          message: "تم استلام طلبك للمقال بنجاح.",
+          message: "تم استلام طلبك وحجز العروض المطلوبة.",
           entityType: "marketplace_article_application",
           entityId: Number(inserted.id),
           link: `/dashboard/freelancer/articles/${aid}`,
           priority: "low",
-          metadata: { articleId: aid, applicationId: Number(inserted.id) },
+          metadata: {
+            articleId: aid,
+            applicationId: Number(inserted.id),
+            reservationId: reserve.reservation.id,
+          },
         },
         `article_application_submitted:${inserted.id}`,
       );
@@ -477,19 +576,23 @@ async function submitArticleApplication({
       application: mapApplicationRow(inserted),
       created: true,
       duplicatePrevented: false,
-      approvedBidCost: ARTICLE_APPLICATION_BID_COST,
-      bidCreditConsumed: charge.charged ? ARTICLE_APPLICATION_BID_COST : 0,
+      approvedBidCost: bidCost,
+      bidCreditConsumed: 0,
+      bidCreditReserved: bidCost,
+      bidBehavior: ARTICLE_APPLICATION_BID_BEHAVIOR,
+      oldImmediateCharge: OLD_ARTICLE_APPLICATION_IMMEDIATE_BID_CHARGE,
       bidCredit: {
-        consumed: Boolean(charge.charged),
-        cost: ARTICLE_APPLICATION_BID_COST,
-        availableBidsAfter:
-          charge.availableBidsAfter != null ? charge.availableBidsAfter : null,
-        skipped: Boolean(charge.skipped),
-        reason: charge.reason || null,
+        consumed: false,
+        reserved: true,
+        cost: bidCost,
+        reservationId: reserve.reservation.id,
+        skipped: false,
+        reason: null,
       },
       workTokenConsumed: 0,
       economicsRuntime: ARTICLE_APPLICATION_BID_ECONOMICS_RUNTIME,
-      economics: charge.economics || null,
+      economics: null,
+      reservation: reserve.reservation,
       priorityBoost: ARTICLE_PRIORITY_BOOST,
       fairDistribution: ARTICLE_FAIR_DISTRIBUTION,
       workTokenEntry: ARTICLE_WORK_TOKEN_ENTRY,
@@ -599,6 +702,7 @@ async function withdrawArticleApplication({ applicationId, freelancerUserId } = 
         publicCode: ARTICLE_APPLICATION_ERROR_CODES.ARTICLE_APPLICATION_NOT_WITHDRAWABLE,
       });
     }
+    await releaseApplicationReservation(client, row, "withdrawn", new Date());
     const { rows: updated } = await client.query(
       `UPDATE marketplace_article_applications
           SET status = 'withdrawn',
@@ -609,12 +713,12 @@ async function withdrawArticleApplication({ applicationId, freelancerUserId } = 
       [id],
     );
     await client.query("COMMIT");
-    // No Bid refund — ARTICLE_APPLICATION_WITHDRAWAL_REFUND = NONE.
     return {
       application: mapApplicationRow(updated[0]),
       alreadyWithdrawn: false,
       bidRefunded: 0,
-      withdrawalRefundPolicy: ARTICLE_APPLICATION_WITHDRAWAL_REFUND,
+      bidReservationReleased: true,
+      withdrawalRefundPolicy: "RESERVATION_RELEASE",
     };
   } catch (err) {
     try {
@@ -738,6 +842,91 @@ async function selectArticleApplication({ applicationId, actorUserId } = {}) {
       });
     }
 
+    const economy = await economyService.getArticleEconomyConfig(client);
+    const bidCost = economyService.resolveBidCostForCampaign(article, economy);
+    const tierCode = String(row.membership_tier_code || "").toLowerCase();
+    // Prefer live membership tier at assignment for snapshot.
+    let liveTier = tierCode;
+    try {
+      const memCtx = await resolveUsableMembershipContext(client, row.freelancer_user_id);
+      liveTier = String(memCtx.membership?.plan?.tierCode || memCtx.membership?.tierCode || tierCode).toLowerCase();
+      const snapshot = economyService.buildEconomicSnapshot({
+        tierCode: liveTier,
+        membershipId: memCtx.membership?.id || row.membership_id,
+        planId: memCtx.membership?.marketplacePlanId || memCtx.membership?.plan?.id,
+        economy,
+        bidCost,
+        now: new Date(),
+      });
+      const { rows: updated } = await client.query(
+        `UPDATE marketplace_article_applications
+            SET status = 'selected',
+                selected_at = NOW(),
+                selected_by_user_id = $2,
+                assigned_at = NOW(),
+                economic_snapshot = $3::jsonb,
+                economic_snapshot_at = NOW(),
+                updated_at = NOW()
+          WHERE id = $1
+          RETURNING *`,
+        [id, Number.isInteger(actor) ? actor : null, JSON.stringify(snapshot)],
+      );
+
+      // Reject other pending apps and release their Bid reservations.
+      const { rows: losers } = await client.query(
+        `SELECT * FROM marketplace_article_applications
+          WHERE article_id = $1 AND id <> $2 AND status = 'pending'
+          FOR UPDATE`,
+        [row.article_id, id],
+      );
+      for (const loser of losers) {
+        // eslint-disable-next-line no-await-in-loop
+        await releaseApplicationReservation(client, loser, "not_selected", new Date());
+      }
+      await client.query(
+        `UPDATE marketplace_article_applications
+            SET status = 'rejected',
+                rejected_at = NOW(),
+                rejected_by_user_id = $2,
+                updated_at = NOW()
+          WHERE article_id = $1
+            AND id <> $3
+            AND status = 'pending'`,
+        [row.article_id, Number.isInteger(actor) ? actor : null, id],
+      );
+
+      await client.query("COMMIT");
+
+      try {
+        await notificationService.createIfNotExists(
+          {
+            recipientUserId: Number(row.freelancer_user_id),
+            recipientRole: "freelancer",
+            type: "article_application_selected",
+            title: "تم اختيار طلب المقال",
+            message: "تم اختيارك لمقال على المنصة.",
+            entityType: "marketplace_article_application",
+            entityId: id,
+            link: `/dashboard/freelancer/articles/${row.article_id}`,
+            priority: "medium",
+          },
+          `article_application_selected:${id}`,
+        );
+      } catch {
+        /* non-blocking */
+      }
+
+      return {
+        application: mapApplicationRow(updated[0]),
+        alreadySelected: false,
+        economicSnapshot: snapshot,
+        snapshotPoint: "ASSIGNMENT_SELECTION",
+      };
+    } catch (snapErr) {
+      // Fall through to legacy select if pre-154 columns missing
+      if (snapErr?.code !== "42703") throw snapErr;
+    }
+
     const { rows: updated } = await client.query(
       `UPDATE marketplace_article_applications
           SET status = 'selected',
@@ -829,6 +1018,8 @@ async function rejectArticleApplication({ applicationId, actorUserId } = {}) {
         publicCode: ARTICLE_APPLICATION_ERROR_CODES.ARTICLE_APPLICATION_NOT_SELECTABLE,
       });
     }
+    // E2: release reserved Bids on rejection (automatic; no manual refund).
+    await releaseApplicationReservation(client, row, "rejected", new Date());
     const { rows: updated } = await client.query(
       `UPDATE marketplace_article_applications
           SET status = 'rejected',
@@ -848,7 +1039,7 @@ async function rejectArticleApplication({ applicationId, actorUserId } = {}) {
           recipientRole: "freelancer",
           type: "article_application_rejected",
           title: "تحديث طلب المقال",
-          message: "لم يتم اختيار طلبك لهذا المقال.",
+          message: "لم يتم اختيار طلبك لهذا المقال. تم تحرير العروض المحجوزة.",
           entityType: "marketplace_article_application",
           entityId: id,
           link: `/dashboard/freelancer/articles/${row.article_id}`,
@@ -860,12 +1051,12 @@ async function rejectArticleApplication({ applicationId, actorUserId } = {}) {
       /* non-blocking */
     }
 
-    // ARTICLE_APPLICATION_REJECTION_REFUND = NONE — no Bid restore.
     return {
       application: mapApplicationRow(updated[0]),
       alreadyRejected: false,
       bidRefunded: 0,
-      rejectionRefundPolicy: ARTICLE_APPLICATION_REJECTION_REFUND,
+      bidReservationReleased: true,
+      rejectionRefundPolicy: "RESERVATION_RELEASE",
     };
   } catch (err) {
     try {
@@ -984,6 +1175,31 @@ async function getArticleApplicationEligibility(articleId, freelancerUserId) {
   };
 }
 
+async function finalizeArticleApplicationApproval({ applicationId, actorUserId, now = new Date() } = {}) {
+  await assertSchemaAndEngine();
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await settlementService.finalizeArticleApproval({
+      client,
+      articleApplicationId: applicationId,
+      actorUserId,
+      now,
+    });
+    await client.query("COMMIT");
+    return result;
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   mapApplicationRow,
   assertSchemaAndEngine,
@@ -999,10 +1215,14 @@ module.exports = {
   listApplicationsForArticleAdmin,
   selectArticleApplication,
   rejectArticleApplication,
+  finalizeArticleApplicationApproval,
+  releaseApplicationReservation,
   getArticleApplicationEligibility,
   getApplicationById,
   clearArticleApplicationsSchemaCache,
   ARTICLE_APPLICATION_BID_COST,
   ARTICLE_APPLICATION_BID_ECONOMICS_RUNTIME,
   ARTICLE_APPLICATION_EDIT_ADDITIONAL_BID_COST,
+  ARTICLE_APPLICATION_BID_BEHAVIOR,
+  OLD_ARTICLE_APPLICATION_IMMEDIATE_BID_CHARGE,
 };

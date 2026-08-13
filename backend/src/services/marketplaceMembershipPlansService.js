@@ -65,6 +65,17 @@ function mapMarketplaceMembershipPlan(row) {
     priorityBidEnabled: row.priority_bid_enabled == null ? false : isTruthyFlag(row.priority_bid_enabled),
     priorityBidUsesPerCycle:
       row.priority_bid_uses_per_cycle == null ? 0 : Number(row.priority_bid_uses_per_cycle) || 0,
+    // Phase E1 capability columns (schema-gated via SELECT *; missing cols → undefined)
+    cycleDurationDays:
+      row.cycle_duration_days == null ? null : Number(row.cycle_duration_days) || null,
+    dailyBidSpendLimit:
+      row.daily_bid_spend_limit == null ? null : Number(row.daily_bid_spend_limit),
+    projectMinValueJod: toFiniteNumber(row.project_min_value_jod),
+    withdrawalEnabled:
+      row.withdrawal_enabled == null ? true : isTruthyFlag(row.withdrawal_enabled),
+    starterEarningsMode: row.starter_earnings_mode || null,
+    bidDistributionMode: row.bid_distribution_mode || "progressive_daily",
+    isOneTimeStarter: isTruthyFlag(row.is_one_time_starter),
     saleEnabled: isTruthyFlag(row.sale_enabled),
     salePercentage: toFiniteNumber(row.sale_percentage),
     saleReason: row.sale_reason || null,
@@ -95,6 +106,12 @@ function mapPublicMarketplaceMembershipPlan(row) {
     // Phase B7A: Work Token allowance not exposed on public catalog (always 0 / deprecated).
     monthlyBidAllowance: full.monthlyBidAllowance,
     articleAccessLevel: full.articleAccessLevel,
+    cycleDurationDays: full.cycleDurationDays,
+    dailyBidSpendLimit: full.dailyBidSpendLimit,
+    projectMinValueJod: full.projectMinValueJod,
+    withdrawalEnabled: full.withdrawalEnabled,
+    starterEarningsMode: full.starterEarningsMode,
+    bidDistributionMode: full.bidDistributionMode,
     cash: {
       allowed: full.cashAllowed,
       minimumMonths: full.minimumCashMonths,
@@ -105,6 +122,9 @@ function mapPublicMarketplaceMembershipPlan(row) {
       priorityBid: full.priorityBidEnabled,
       priorityBidUsesPerCycle: full.priorityBidUsesPerCycle,
       articleAccessLevel: full.articleAccessLevel,
+      withdrawalEnabled: full.withdrawalEnabled,
+      dailyBidSpendLimit: full.dailyBidSpendLimit,
+      cycleDurationDays: full.cycleDurationDays,
     },
     sale: full.sale,
   };
@@ -211,6 +231,43 @@ async function persistMonthlyBidAllowanceIfReady(planId, monthlyBidAllowance) {
       WHERE id = $1::bigint
       RETURNING *`,
     [Number(planId), assertMonthlyBidAllowance(monthlyBidAllowance)],
+  );
+  return rows[0] || null;
+}
+
+/** Persist E1 capability columns when migration 153 exists. */
+async function persistE1PlanCapabilitiesIfReady(planId, payload = {}) {
+  const { rows: col } = await pool.query(
+    `SELECT 1
+       FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'marketplace_membership_plans'
+        AND column_name = 'daily_bid_spend_limit'
+      LIMIT 1`,
+  );
+  if (!col[0]) return null;
+  const { rows } = await pool.query(
+    `UPDATE marketplace_membership_plans SET
+       cycle_duration_days = COALESCE($2, cycle_duration_days),
+       daily_bid_spend_limit = COALESCE($3, daily_bid_spend_limit),
+       project_min_value_jod = COALESCE($4::numeric, project_min_value_jod),
+       withdrawal_enabled = COALESCE($5, withdrawal_enabled),
+       starter_earnings_mode = COALESCE($6, starter_earnings_mode),
+       bid_distribution_mode = COALESCE($7, bid_distribution_mode),
+       is_one_time_starter = COALESCE($8, is_one_time_starter),
+       updated_at = NOW()
+     WHERE id = $1::bigint
+     RETURNING *`,
+    [
+      Number(planId),
+      payload.cycleDurationDays != null ? Number(payload.cycleDurationDays) : null,
+      payload.dailyBidSpendLimit != null ? Number(payload.dailyBidSpendLimit) : null,
+      payload.projectMinValueJod != null ? Number(payload.projectMinValueJod) : null,
+      payload.withdrawalEnabled != null ? Boolean(payload.withdrawalEnabled) : null,
+      payload.starterEarningsMode != null ? String(payload.starterEarningsMode) : null,
+      payload.bidDistributionMode != null ? String(payload.bidDistributionMode) : null,
+      payload.isOneTimeStarter != null ? Boolean(payload.isOneTimeStarter) : null,
+    ],
   );
   return rows[0] || null;
 }
@@ -434,7 +491,8 @@ async function createMarketplaceMembershipPlan(payload) {
         );
     const created = rows[0];
     const withBids = await persistMonthlyBidAllowanceIfReady(created.id, monthlyBidAllowance);
-    return mapMarketplaceMembershipPlan(withBids || created);
+    const withE1 = await persistE1PlanCapabilitiesIfReady(created.id, payload);
+    return mapMarketplaceMembershipPlan(withE1 || withBids || created);
   } catch (err) {
     if (err && err.code === "23505") {
       throw createAppError("رمز الباقة أو الرابط مستخدم مسبقاً.", 409, {
@@ -694,7 +752,16 @@ async function updateMarketplaceMembershipPlan(id, patch) {
         );
     const updated = rows[0];
     const withBids = await persistMonthlyBidAllowanceIfReady(updated.id, monthlyBidAllowance);
-    return mapMarketplaceMembershipPlan(withBids || updated);
+    const withE1 = await persistE1PlanCapabilitiesIfReady(updated.id, {
+      cycleDurationDays: patch.cycleDurationDays !== undefined ? patch.cycleDurationDays : next.cycleDurationDays,
+      dailyBidSpendLimit: patch.dailyBidSpendLimit !== undefined ? patch.dailyBidSpendLimit : next.dailyBidSpendLimit,
+      projectMinValueJod: patch.projectMinValueJod !== undefined ? patch.projectMinValueJod : next.projectMinValueJod,
+      withdrawalEnabled: patch.withdrawalEnabled !== undefined ? patch.withdrawalEnabled : next.withdrawalEnabled,
+      starterEarningsMode: patch.starterEarningsMode !== undefined ? patch.starterEarningsMode : next.starterEarningsMode,
+      bidDistributionMode: patch.bidDistributionMode !== undefined ? patch.bidDistributionMode : next.bidDistributionMode,
+      isOneTimeStarter: patch.isOneTimeStarter !== undefined ? patch.isOneTimeStarter : next.isOneTimeStarter,
+    });
+    return mapMarketplaceMembershipPlan(withE1 || withBids || updated);
   } catch (err) {
     if (err && err.code === "23505") {
       throw createAppError("الرابط مستخدم مسبقاً.", 409, {

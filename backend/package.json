@@ -101,6 +101,9 @@
     "test:marketplace-article-applications-phase-b5-gate": "node scripts/runMarketplaceArticleApplicationsPhaseB5Gate.js",
     "test:marketplace-bid-credit-purchases-phase-b6": "node --test test/marketplaceBidCreditPurchasesPhaseB6.test.js",
     "test:marketplace-bid-credit-purchases-phase-b6-gate": "node scripts/runMarketplaceBidCreditPurchasesPhaseB6Gate.js",
+    "test:marketplace-bid-distribution-pool-phase-d1": "node --test test/marketplaceBidDistributionPoolPhaseD1.test.js",
+    "test:marketplace-bid-distribution-pool-phase-d1-gate": "node scripts/runMarketplaceBidDistributionPoolPhaseD1Gate.js",
+    "test:marketplace-membership-e1": "node --test test/marketplaceMembershipPhaseE1.test.js",
     "test:migrate-production-next": "node --test test/runNextProductionMigration.test.js"
   },
   "keywords": [

@@ -140,6 +140,18 @@ async function reject(req, res, next) {
   }
 }
 
+async function finalizeApproval(req, res, next) {
+  try {
+    const result = await articleApplicationsService.finalizeArticleApplicationApproval({
+      applicationId: req.params.applicationId,
+      actorUserId: req.user?.id,
+    });
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function getApplicationAdmin(req, res, next) {
   try {
     const application = await articleApplicationsService.getApplicationById(
@@ -164,5 +176,6 @@ module.exports = {
   listForArticleAdmin,
   select,
   reject,
+  finalizeApproval,
   getApplicationAdmin,
 };

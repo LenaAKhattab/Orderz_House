@@ -38,6 +38,13 @@ export function getInitialMarketplacePlanFormState(overrides = {}) {
     includedTokensPerCycle: 0,
     monthlyBidAllowance: 0,
     articleAccessLevel: 1,
+    cycleDurationDays: "",
+    dailyBidSpendLimit: "",
+    projectMinValueJod: "1",
+    withdrawalEnabled: true,
+    starterEarningsMode: "standard",
+    bidDistributionMode: "full_cycle",
+    isOneTimeStarter: false,
     cashAllowed: false,
     minimumCashMonths: 1,
     maximumPrepaidMonths: 1,
@@ -69,6 +76,13 @@ export function planToMarketplaceFormState(plan) {
     includedTokensPerCycle: 0,
     monthlyBidAllowance: plan.monthlyBidAllowance ?? 0,
     articleAccessLevel: plan.articleAccessLevel ?? 1,
+    cycleDurationDays: plan.cycleDurationDays ?? "",
+    dailyBidSpendLimit: plan.dailyBidSpendLimit ?? "",
+    projectMinValueJod: plan.projectMinValueJod ?? "1",
+    withdrawalEnabled: plan.withdrawalEnabled !== false,
+    starterEarningsMode: plan.starterEarningsMode || "standard",
+    bidDistributionMode: plan.bidDistributionMode || "full_cycle",
+    isOneTimeStarter: Boolean(plan.isOneTimeStarter),
     cashAllowed: Boolean(plan.cashAllowed),
     minimumCashMonths: plan.minimumCashMonths ?? 1,
     maximumPrepaidMonths: plan.maximumPrepaidMonths ?? 1,
@@ -160,6 +174,22 @@ export function normalizeMarketplacePlanPayload(form, { isCreate = false } = {})
     includedTokensPerCycle: 0,
     monthlyBidAllowance: Number(form.monthlyBidAllowance) || 0,
     articleAccessLevel: Number(form.articleAccessLevel) || 1,
+    cycleDurationDays:
+      form.cycleDurationDays === "" || form.cycleDurationDays == null
+        ? null
+        : Number(form.cycleDurationDays),
+    dailyBidSpendLimit:
+      form.dailyBidSpendLimit === "" || form.dailyBidSpendLimit == null
+        ? null
+        : Number(form.dailyBidSpendLimit),
+    projectMinValueJod:
+      form.projectMinValueJod === "" || form.projectMinValueJod == null
+        ? null
+        : Number(form.projectMinValueJod),
+    withdrawalEnabled: form.withdrawalEnabled !== false,
+    starterEarningsMode: String(form.starterEarningsMode || "standard").trim() || null,
+    bidDistributionMode: String(form.bidDistributionMode || "full_cycle").trim(),
+    isOneTimeStarter: Boolean(form.isOneTimeStarter),
     cashAllowed: Boolean(form.cashAllowed),
     minimumCashMonths: Number(form.minimumCashMonths) || 1,
     maximumPrepaidMonths: Number(form.maximumPrepaidMonths) || 1,

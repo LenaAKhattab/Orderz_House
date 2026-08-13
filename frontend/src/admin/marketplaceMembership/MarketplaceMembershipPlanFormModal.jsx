@@ -156,7 +156,7 @@ export default function MarketplaceMembershipPlanFormModal({
 
           <div className="oh-mmp-form__row">
             <label>
-              {isEn ? "Bids per month" : "العروض المتاحة / شهر"}
+              {isEn ? "Bids per cycle" : "العروض / دورة"}
               <input
                 type="number"
                 min="0"
@@ -169,6 +169,91 @@ export default function MarketplaceMembershipPlanFormModal({
                 <span className="oh-mmp-form__error">{errors.monthlyBidAllowance}</span>
               ) : null}
             </label>
+            <label>
+              {isEn ? "Daily Bid spend limit" : "الحد اليومي للعروض"}
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={form.dailyBidSpendLimit}
+                onChange={(e) => setField("dailyBidSpendLimit", e.target.value)}
+                disabled={submitting}
+              />
+            </label>
+          </div>
+
+          <div className="oh-mmp-form__row">
+            <label>
+              {isEn ? "Cycle duration (days)" : "مدة الدورة (أيام)"}
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={form.cycleDurationDays}
+                onChange={(e) => setField("cycleDurationDays", e.target.value)}
+                disabled={submitting}
+              />
+            </label>
+            <label>
+              {isEn ? "Project min value (JOD)" : "أدنى قيمة مشروع (د.أ)"}
+              <input
+                type="number"
+                min="0"
+                step="0.001"
+                value={form.projectMinValueJod}
+                onChange={(e) => setField("projectMinValueJod", e.target.value)}
+                disabled={submitting}
+              />
+            </label>
+          </div>
+
+          <div className="oh-mmp-form__row">
+            <label className="oh-mmp-form__check oh-mmp-form__check--block">
+              <input
+                type="checkbox"
+                checked={form.withdrawalEnabled !== false}
+                onChange={(e) => setField("withdrawalEnabled", e.target.checked)}
+                disabled={submitting}
+              />
+              {isEn ? "Withdrawal enabled" : "السحب مفعّل"}
+            </label>
+            <label>
+              {isEn ? "Bid distribution mode" : "نمط توزيع العروض"}
+              <select
+                value={form.bidDistributionMode || "full_cycle"}
+                onChange={(e) => setField("bidDistributionMode", e.target.value)}
+                disabled={submitting}
+              >
+                <option value="full_cycle">full_cycle</option>
+                <option value="progressive_daily">progressive_daily</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="oh-mmp-form__row">
+            <label>
+              {isEn ? "Starter earnings mode" : "وضع أرباح الستارتر"}
+              <select
+                value={form.starterEarningsMode || "standard"}
+                onChange={(e) => setField("starterEarningsMode", e.target.value)}
+                disabled={submitting}
+              >
+                <option value="standard">standard</option>
+                <option value="pending">pending</option>
+              </select>
+            </label>
+            <label className="oh-mmp-form__check oh-mmp-form__check--block">
+              <input
+                type="checkbox"
+                checked={Boolean(form.isOneTimeStarter)}
+                onChange={(e) => setField("isOneTimeStarter", e.target.checked)}
+                disabled={submitting}
+              />
+              {isEn ? "One-time Starter entitlement" : "ستارتر لمرة واحدة فقط"}
+            </label>
+          </div>
+
+          <div className="oh-mmp-form__row">
             <label>
               {isEn ? "Article access level (1–5)" : "مستوى الوصول للمقالات (1–5)"}
               <input

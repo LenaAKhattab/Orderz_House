@@ -34,21 +34,26 @@ function clearGrantReversalColumnsCache() {
   grantReversalColumnsReadyCache = null;
 }
 
-function remainingExpr(hasRevoked) {
+function remainingExpr(hasRevoked, { includeReserved = true } = {}) {
+  // Spendable excludes reserved when includeReserved=true (default for FEFO consume/balance).
+  const reservedPart = includeReserved ? " - COALESCE(amount_reserved, 0)" : "";
   return hasRevoked
-    ? "(amount_granted - amount_consumed - amount_expired - COALESCE(amount_revoked, 0))"
-    : "(amount_granted - amount_consumed - amount_expired)";
+    ? `(amount_granted - amount_consumed - amount_expired - COALESCE(amount_revoked, 0)${reservedPart})`
+    : `(amount_granted - amount_consumed - amount_expired${reservedPart})`;
 }
 
-function grantRemaining(row) {
+function grantRemaining(row, { includeReserved = true } = {}) {
   if (!row) return 0;
   const revoked = row.amount_revoked != null ? Number(row.amount_revoked) : 0;
+  const reserved =
+    includeReserved && row.amount_reserved != null ? Number(row.amount_reserved) : 0;
   return Math.max(
     0,
     (Number(row.amount_granted) || 0) -
       (Number(row.amount_consumed) || 0) -
       (Number(row.amount_expired) || 0) -
-      revoked,
+      revoked -
+      reserved,
   );
 }
 
@@ -100,13 +105,15 @@ function mapGrant(row) {
   const consumed = Number(row.amount_consumed) || 0;
   const expired = Number(row.amount_expired) || 0;
   const revoked = row.amount_revoked != null ? Number(row.amount_revoked) : 0;
-  const remaining = Math.max(0, granted - consumed - expired - revoked);
+  const reserved = row.amount_reserved != null ? Number(row.amount_reserved) : 0;
+  const remaining = Math.max(0, granted - consumed - expired - revoked - reserved);
   const status = row.status;
   return {
     id: String(row.id),
     freelancerUserId: String(row.freelancer_user_id),
     sourceType: row.source_type,
     amountGranted: granted,
+    amountReserved: reserved,
     amountConsumed: consumed,
     amountExpired: expired,
     amountRevoked: revoked,
@@ -316,7 +323,9 @@ async function expireDueBidCreditGrants({
     await assertSchemaReady(client);
     const instant = new Date(now).toISOString();
     const hasRevoked = await grantReversalColumnsReady(client);
-    const rem = remainingExpr(hasRevoked);
+    // Expire only unreserved spendable remainder. Active Article reservations
+    // protect committed Bids until consume/release (E2).
+    const rem = remainingExpr(hasRevoked, { includeReserved: true });
     // Freeze does NOT extend expiry — frozen grants still expire by expires_at.
     const statusClause = hasRevoked
       ? `status IN ('active', 'frozen')`
@@ -337,8 +346,9 @@ async function expireDueBidCreditGrants({
     let expiredCount = 0;
     let expiredAmount = 0;
     for (const row of rows) {
-      const remaining = grantRemaining(row);
+      const remaining = grantRemaining(row, { includeReserved: true });
       if (remaining <= 0) continue;
+      const reserved = row.amount_reserved != null ? Number(row.amount_reserved) : 0;
       const ledgerKey = `bid_expire:${row.id}:${remaining}`;
       const existing = await client.query(
         `SELECT id FROM marketplace_bid_credit_ledger_entries WHERE idempotency_key = $1`,
@@ -346,25 +356,38 @@ async function expireDueBidCreditGrants({
       );
       if (existing.rows[0]) continue;
 
+      // If reservation remains, expire only free remainder and keep grant active.
+      const nextStatus = reserved > 0 ? row.status : "expired";
       await client.query(
         `UPDATE marketplace_bid_credit_grants
             SET amount_expired = amount_expired + $2,
-                status = 'expired',
-                expired_at = COALESCE(expired_at, $3),
+                status = $4::varchar,
+                expired_at = CASE WHEN $4::varchar = 'expired' THEN COALESCE(expired_at, $3) ELSE expired_at END,
                 updated_at = NOW()
           WHERE id = $1`,
-        [row.id, remaining, instant],
+        [row.id, remaining, instant, nextStatus],
       );
       await client.query(
         `INSERT INTO marketplace_bid_credit_ledger_entries (
            freelancer_user_id, grant_id, event_type, amount, direction,
            reference_type, reference_id, idempotency_key, reason, metadata
-         ) VALUES ($1, $2, 'BID_EXPIRED', $3, -1, 'bid_credit_grant', $4, $5, 'grant_expired', '{}'::jsonb)`,
-        [row.freelancer_user_id, row.id, remaining, String(row.id), ledgerKey],
+         ) VALUES ($1, $2, 'BID_EXPIRED', $3, -1, 'bid_credit_grant', $4, $5, 'grant_expired', $6::jsonb)`,
+        [
+          row.freelancer_user_id,
+          row.id,
+          remaining,
+          String(row.id),
+          ledgerKey,
+          JSON.stringify({ protectedReserved: reserved, phase: "E2" }),
+        ],
       );
       expiredCount += 1;
       expiredAmount += remaining;
     }
+    // Phase D1: admin_distribution_pool unused inventory returns via
+    // marketplaceBidDistributionPoolService.reconcileExpiredPoolAllocationReturns
+    // (called from bid-credits reconcile tick after this expire pass). Same-txn
+    // safe; idempotent; does not double-count amount_expired into pool.
     if (ownTxn) await client.query("COMMIT");
     return { expiredCount, expiredAmount };
   } catch (err) {

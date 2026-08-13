@@ -104,6 +104,49 @@ async function assertFreelancerCanAccessPoolOrder(freelancerUserId, orderOrId, c
     throw notFoundError();
   }
   await planOrderValueEligibility.assertFreelancerMayAccessOrderByPlan(freelancerUserId, order, clientMaybe);
+  // E1: Marketplace Membership project-value gate (additive; does not remove legacy plan gate).
+  try {
+    const runner = clientMaybe || require("../config/db").pool;
+    const { rows } = await runner.query(
+      `SELECT p.tier_code, p.project_min_value_jod, p.max_real_order_value_jod, p.unlimited_real_order_value
+         FROM freelancer_marketplace_memberships m
+         JOIN marketplace_membership_plans p ON p.id = m.marketplace_plan_id
+        WHERE m.freelancer_user_id = $1
+          AND m.is_current = TRUE
+          AND m.status IN ('active', 'cancel_at_period_end')
+        LIMIT 1`,
+      [Number(freelancerUserId)],
+    );
+    if (rows[0]) {
+      const projectValue =
+        order.budget_jod != null
+          ? Number(order.budget_jod)
+          : order.max_budget_jod != null
+            ? Number(order.max_budget_jod)
+            : order.price_jod != null
+              ? Number(order.price_jod)
+              : null;
+      if (projectValue != null && Number.isFinite(projectValue)) {
+        const eligibility = require("./marketplaceMembershipEligibilityService");
+        eligibility.assertProjectValueEligible(
+          {
+            tierCode: rows[0].tier_code,
+            projectMinValueJod: rows[0].project_min_value_jod,
+            maxRealOrderValueJod: rows[0].max_real_order_value_jod,
+            unlimitedRealOrderValue: rows[0].unlimited_real_order_value,
+          },
+          projectValue,
+        );
+      }
+    }
+  } catch (e1Err) {
+    if (e1Err?.publicCode === "MEMBERSHIP_PROJECT_VALUE_BLOCKED") throw e1Err;
+    if (e1Err?.code === "42703" || e1Err?.code === "42P01") {
+      // Pre-153: skip
+    } else if (e1Err?.statusCode) {
+      throw e1Err;
+    }
+  }
   return order;
 }
 

@@ -37,6 +37,7 @@ const freelancerDashboardRoutes = require("./routes/freelancerDashboardRoutes");
 const superAdminMarketplaceMembershipsRoutes = require("./routes/superAdminMarketplaceMembershipsRoutes");
 const superAdminWorkTokenWalletRoutes = require("./routes/superAdminWorkTokenWalletRoutes");
 const superAdminBidCreditsRoutes = require("./routes/superAdminBidCreditsRoutes");
+const superAdminBidDistributionPoolsRoutes = require("./routes/superAdminBidDistributionPoolsRoutes");
 const superAdminPriorityAuctionRoutes = require("./routes/superAdminPriorityAuctionRoutes");
 const superAdminFairDistributionRoutes = require("./routes/superAdminFairDistributionRoutes");
 const superAdminEliteDirectOrdersRoutes = require("./routes/superAdminEliteDirectOrdersRoutes");
@@ -184,6 +185,7 @@ app.use("/api", marketplaceArticlesRoutes);
 app.use("/api/super-admin", superAdminMarketplaceMembershipsRoutes);
 app.use("/api/super-admin", superAdminWorkTokenWalletRoutes); // LEGACY_DEPRECATED_WORK_TOKEN_MODEL
 app.use("/api/super-admin", superAdminBidCreditsRoutes);
+app.use("/api/super-admin", superAdminBidDistributionPoolsRoutes);
 app.use("/api/super-admin", superAdminPriorityAuctionRoutes);
 app.use("/api/super-admin", superAdminFairDistributionRoutes);
 app.use("/api/super-admin", superAdminEliteDirectOrdersRoutes);

@@ -79,11 +79,69 @@ async function runMembershipCyclesReconcileTick(req, res, next) {
   }
 }
 
+async function activateStarter(req, res, next) {
+  try {
+    const activation = require("../services/marketplaceMembershipActivationRequestService");
+    const out = await activation.activateStarterMembership({
+      freelancerUserId: req.auth?.userId || req.user?.id,
+      actorUserId: req.auth?.userId || req.user?.id,
+    });
+    return res.status(201).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function requestPaidActivation(req, res, next) {
+  try {
+    const activation = require("../services/marketplaceMembershipActivationRequestService");
+    const out = await activation.createActivationRequest({
+      freelancerUserId: req.auth?.userId || req.user?.id,
+      marketplacePlanId: Number(req.body.marketplacePlanId),
+      paymentRecordedAt: req.body.paymentRecordedAt || null,
+    });
+    return res.status(201).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function approveActivationRequest(req, res, next) {
+  try {
+    const activation = require("../services/marketplaceMembershipActivationRequestService");
+    const out = await activation.approveActivationRequest({
+      requestId: Number(req.params.requestId),
+      actorUserId: req.user?.id || req.auth?.userId,
+    });
+    return res.json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function rejectActivationRequest(req, res, next) {
+  try {
+    const activation = require("../services/marketplaceMembershipActivationRequestService");
+    const out = await activation.rejectActivationRequest({
+      requestId: Number(req.params.requestId),
+      actorUserId: req.user?.id || req.auth?.userId,
+      reason: req.body?.reason || null,
+    });
+    return res.json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   getMyMarketplaceMembership,
   listAdminMarketplaceMemberships,
   getAdminMarketplaceMembership,
   runMembershipCyclesReconcileTick,
+  activateStarter,
+  requestPaidActivation,
+  approveActivationRequest,
+  rejectActivationRequest,
   // Exported for route wiring clarity — usage mutations stay internal
   _internalUsageService: marketplacePriorityBidUsageService,
 };

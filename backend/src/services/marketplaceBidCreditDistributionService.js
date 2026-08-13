@@ -238,6 +238,85 @@ async function reconcileDistributionMonth({
     const targetDay = resolveCurrentDayIndex(row.window_starts_at, row.window_ends_at, D, now);
     let last = Number(row.last_reconciled_day_index) || 0;
 
+    // E1: full_cycle grants entire allowance once (daily spend limit is separate).
+    let bidDistributionMode = "progressive_daily";
+    try {
+      const { rows: planModeRows } = await client.query(
+        `SELECT bid_distribution_mode FROM marketplace_membership_plans WHERE id = $1`,
+        [Number(row.marketplace_plan_id)],
+      );
+      bidDistributionMode = String(planModeRows[0]?.bid_distribution_mode || "progressive_daily");
+    } catch {
+      bidDistributionMode = "progressive_daily";
+    }
+
+    if (bidDistributionMode === "full_cycle" && engineOn && membershipUsable && N > 0) {
+      const already = Number(row.total_unlocked) || 0;
+      const remaining = Math.max(0, N - already);
+      let unlockedNow = 0;
+      if (remaining > 0) {
+        const grantKey = `membership_full_cycle:${row.cycle_id}:allowance:${N}`.slice(0, 180);
+        await accounting.createBidCreditGrant({
+          client,
+          freelancerUserId: row.freelancer_user_id,
+          sourceType: "membership_daily_unlock",
+          amount: remaining,
+          expiresAt: row.membership_expires_at,
+          eventType: "MEMBERSHIP_BID_GRANT",
+          idempotencyKey: grantKey,
+          membershipId: row.membership_id,
+          cycleId: row.cycle_id,
+          distributionMonthId: row.id,
+          reason: "membership_full_cycle_grant",
+          actorUserId: null,
+          referenceType: "membership_cycle",
+          referenceId: String(row.cycle_id),
+          metadata: {
+            distributionMode: "full_cycle",
+            monthlyAllowance: N,
+            phase: "E1",
+          },
+          grantedAt: now,
+        });
+        unlockedNow = remaining;
+        await client.query(
+          `UPDATE marketplace_membership_bid_distribution_months
+              SET total_unlocked = $2,
+                  last_reconciled_day_index = GREATEST(last_reconciled_day_index, $3),
+                  updated_at = NOW()
+            WHERE id = $1`,
+          [row.id, already + remaining, targetDay],
+        );
+      } else if (targetDay > last) {
+        await client.query(
+          `UPDATE marketplace_membership_bid_distribution_months
+              SET last_reconciled_day_index = $2, updated_at = NOW()
+            WHERE id = $1`,
+          [row.id, targetDay],
+        );
+      }
+      const windowEnded = new Date(now) >= new Date(row.window_ends_at);
+      if (windowEnded) {
+        await client.query(
+          `UPDATE marketplace_membership_bid_distribution_months
+              SET status = 'closed', closed_at = COALESCE(closed_at, NOW()), updated_at = NOW()
+            WHERE id = $1 AND status = 'open'`,
+          [row.id],
+        );
+      }
+      const refreshed = await client.query(
+        `SELECT * FROM marketplace_membership_bid_distribution_months WHERE id = $1`,
+        [row.id],
+      );
+      if (ownTxn) await client.query("COMMIT");
+      return {
+        month: mapDistributionMonth(refreshed.rows[0]),
+        unlockedNow,
+        daysAdvanced: Math.max(0, targetDay - last),
+        distributionMode: "full_cycle",
+      };
+    }
+
     if (mem && mem.is_current === true && memStatus === "suspended") {
       // Pause accrual: advance day index without granting so resume does not backfill suspended days.
       if (targetDay > last) {
@@ -511,12 +590,20 @@ async function runBidCreditReconcileTick({ limit = 100, now = new Date() } = {})
       unlockedNow += out.unlockedNow || 0;
     }
     const expired = await accounting.expireDueBidCreditGrants({ client, now, limit: 500 });
+    // Phase D1: catch exhausted/zero-remainder pool allocations + aggregate Admin return notices.
+    const poolService = require("./marketplaceBidDistributionPoolService");
+    const poolReturns = await poolService.reconcileExpiredPoolAllocationReturns({
+      client,
+      now,
+      limit: 200,
+    });
     await client.query("COMMIT");
     return {
       ok: true,
       monthsProcessed: rows.length,
       unlockedNow,
       expired,
+      poolReturns,
     };
   } catch (err) {
     try {

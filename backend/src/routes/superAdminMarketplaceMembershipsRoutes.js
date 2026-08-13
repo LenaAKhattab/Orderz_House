@@ -21,4 +21,17 @@ router.get(
   marketplaceMembershipsController.getAdminMarketplaceMembership,
 );
 
+/** E1: company approval starts paid membership period. */
+router.post(
+  "/marketplace-membership-activation-requests/:requestId/approve",
+  ...guard,
+  marketplaceMembershipsController.approveActivationRequest,
+);
+
+router.post(
+  "/marketplace-membership-activation-requests/:requestId/reject",
+  ...guard,
+  marketplaceMembershipsController.rejectActivationRequest,
+);
+
 module.exports = router;

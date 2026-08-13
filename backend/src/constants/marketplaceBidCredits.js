@@ -13,6 +13,7 @@ const BID_CREDIT_SOURCE_TYPES = Object.freeze([
   "normal_application_refund",
   "article_application_refund",
   "package_purchase",
+  "admin_distribution_pool",
 ]);
 
 const BID_CREDIT_GRANT_STATUSES = Object.freeze([
@@ -34,6 +35,10 @@ const BID_CREDIT_LEDGER_EVENT_TYPES = Object.freeze([
   "ARTICLE_APPLICATION_BID_REFUND",
   "BID_PACKAGE_PURCHASE_GRANT",
   "BID_PACKAGE_PURCHASE_REVOKE",
+  "ADMIN_DISTRIBUTION_POOL_GRANT",
+  "BID_RESERVE",
+  "BID_RESERVE_RELEASE",
+  "BID_RESERVE_CONSUME",
 ]);
 
 const BID_CREDIT_LEDGER_EVENT_TYPE_SET = new Set(BID_CREDIT_LEDGER_EVENT_TYPES);

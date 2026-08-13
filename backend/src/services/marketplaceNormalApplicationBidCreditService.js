@@ -222,6 +222,23 @@ async function chargeNormalApplicationBidCreditOnFirstBid({
     now,
   });
 
+  // E1: membership daily Bid spend gate (unified wallet — before FEFO).
+  try {
+    const dailySpend = require("./marketplaceMembershipDailyBidSpendService");
+    await dailySpend.assertAndConsumeDailyBidSpend({
+      client,
+      freelancerUserId: Number(freelancerUserId),
+      amount: NORMAL_APPLICATION_BID_COST,
+      now,
+    });
+  } catch (dailyErr) {
+    if (dailyErr?.code === "42P01") {
+      // Table not migrated yet — skip gate until 153 applied.
+    } else {
+      throw dailyErr;
+    }
+  }
+
   const idempotencyKey = buildNormalApplicationBidConsumeIdempotencyKey(orderId, freelancerUserId);
 
   const consume = await accounting.consumeBidCreditsFefo({

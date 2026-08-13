@@ -44,4 +44,12 @@ router.post(
   controller.reject,
 );
 
+router.post(
+  "/article-applications/:applicationId/finalize-approval",
+  ...guard,
+  applicationIdParam,
+  validateRequest,
+  controller.finalizeApproval,
+);
+
 module.exports = router;
