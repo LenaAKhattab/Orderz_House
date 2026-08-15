@@ -93,6 +93,7 @@ const MARKETPLACE_ECONOMY_DEFAULTS = Object.freeze({
   cashMembershipPaymentsEnabled: false,
   eliteEngineEnabled: false,
   verificationBonusesEnabled: false,
+  pantryMembershipBidIntegrationEnabled: false,
 
   // Phase E3 — Normal Order Admin limits (defaults match migration 155)
   normalOrderMinValueJod: 1,
@@ -339,6 +340,10 @@ function mapRow(row) {
     workTokensEnabled: isTruthyFlag(row.work_tokens_enabled),
     bidCreditsEnabled:
       row.bid_credits_enabled == null ? false : isTruthyFlag(row.bid_credits_enabled),
+    pantryMembershipBidIntegrationEnabled:
+      row.pantry_membership_bid_integration_enabled == null
+        ? false
+        : isTruthyFlag(row.pantry_membership_bid_integration_enabled),
     marketplaceCommissionEnabled: isTruthyFlag(row.marketplace_commission_enabled),
     cashMembershipPaymentsEnabled: isTruthyFlag(row.cash_membership_payments_enabled),
     eliteEngineEnabled: isTruthyFlag(row.elite_engine_enabled),
@@ -494,6 +499,7 @@ function ensureExecutionEnginesDisabledInDefaults(settings) {
     priorityBiddingEnabled: Boolean(settings.priorityBiddingEnabled),
     priorityApplicationBoostEnabled: Boolean(settings.priorityApplicationBoostEnabled),
     articleApplicationsEnabled: Boolean(settings.articleApplicationsEnabled),
+    pantryMembershipBidIntegrationEnabled: Boolean(settings.pantryMembershipBidIntegrationEnabled),
     fairWorkDistributionEnabled: Boolean(settings.fairWorkDistributionEnabled),
   };
 }
@@ -808,7 +814,7 @@ async function hasFairDistributionLookbackColumn(client) {
  * Atomic merge-patch update of the singleton settings row.
  * @param {{ actorUserId?: number|string, patch: object }} input
  */
-async function updateMarketplaceEconomySettings({ actorUserId, patch }) {
+async function updateMarketplaceEconomySettings({ actorUserId, patch, client: externalClient = null }) {
   if (!patch || typeof patch !== "object" || Array.isArray(patch)) {
     throw createAppError("Invalid settings patch.", 400, {
       exposeToClient: true,
@@ -816,9 +822,10 @@ async function updateMarketplaceEconomySettings({ actorUserId, patch }) {
     });
   }
 
-  const client = await pool.connect();
+  const own = !externalClient;
+  const client = externalClient || (await pool.connect());
   try {
-    await client.query("BEGIN");
+    if (own) await client.query("BEGIN");
     await ensureSettingsRow(client);
     const { rows } = await client.query(
       `SELECT * FROM marketplace_economy_settings WHERE id = $1 FOR UPDATE`,
@@ -973,81 +980,25 @@ async function updateMarketplaceEconomySettings({ actorUserId, patch }) {
       );
     }
 
-    // Phase E3 Normal Order Admin limits (columns absent pre-155 → skip).
-    if (await hasEconomyFlagColumn(client, "normal_order_default_bid_cost")) {
-      await client.query(
-        `UPDATE marketplace_economy_settings SET
-           normal_order_min_value_jod = $2,
-           normal_order_max_value_jod = $3,
-           normal_order_min_target_applicants = $4,
-           normal_order_max_target_applicants = $5,
-           normal_order_default_target_applicants = $6,
-           normal_order_min_bid_cost = $7,
-           normal_order_max_bid_cost = $8,
-           normal_order_default_bid_cost = $9,
-           normal_order_min_application_period_hours = $10,
-           normal_order_max_application_period_hours = $11,
-           normal_order_default_application_period_hours = $12,
-           normal_order_min_execution_duration_hours = $13,
-           normal_order_max_execution_duration_hours = $14,
-           normal_order_default_execution_duration_hours = $15,
-           normal_order_deadline_incomplete_target_policy = $16,
-           normal_order_refund_client_cancel_before_selection = $17,
-           normal_order_refund_system_cancel = $18,
-           normal_order_refund_deadline_no_selection = $19,
-           normal_order_refund_no_freelancer_selected = $20,
-           normal_order_refund_freelancer_withdrawal = $21,
-           normal_order_refund_rejected_application = $22,
-           normal_order_refund_losing_applicant = $23,
-           normal_order_refund_post_award_cancel = $24,
-           normal_order_business_timezone = $25,
-           updated_at = NOW()
-         WHERE id = $1`,
-        [
-          SETTINGS_ID,
-          next.normalOrderMinValueJod,
-          next.normalOrderMaxValueJod,
-          next.normalOrderMinTargetApplicants,
-          next.normalOrderMaxTargetApplicants,
-          next.normalOrderDefaultTargetApplicants,
-          next.normalOrderMinBidCost,
-          next.normalOrderMaxBidCost,
-          next.normalOrderDefaultBidCost,
-          next.normalOrderMinApplicationPeriodHours,
-          next.normalOrderMaxApplicationPeriodHours,
-          next.normalOrderDefaultApplicationPeriodHours,
-          next.normalOrderMinExecutionDurationHours,
-          next.normalOrderMaxExecutionDurationHours,
-          next.normalOrderDefaultExecutionDurationHours,
-          next.normalOrderDeadlineIncompleteTargetPolicy,
-          next.normalOrderRefundClientCancelBeforeSelection,
-          next.normalOrderRefundSystemCancel,
-          next.normalOrderRefundDeadlineNoSelection,
-          next.normalOrderRefundNoFreelancerSelected,
-          next.normalOrderRefundFreelancerWithdrawal,
-          next.normalOrderRefundRejectedApplication,
-          next.normalOrderRefundLosingApplicant,
-          next.normalOrderRefundPostAwardCancel,
-          next.normalOrderBusinessTimezone,
-        ],
-      );
-    }
+    await persistNormalOrderEconomySettings(client, next);
 
     const { rows: finalRows } = await client.query(
       `SELECT * FROM marketplace_economy_settings WHERE id = $1`,
       [SETTINGS_ID],
     );
-    await client.query("COMMIT");
+    if (own) await client.query("COMMIT");
     return ensureExecutionEnginesDisabledInDefaults(mapRow(finalRows[0] || updated[0]));
   } catch (err) {
-    try {
-      await client.query("ROLLBACK");
-    } catch {
-      /* ignore */
+    if (own) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
     }
     throw err;
   } finally {
-    client.release();
+    if (own) client.release();
   }
 }
 
@@ -1062,6 +1013,73 @@ async function hasEconomyFlagColumn(client, columnName) {
     [columnName],
   );
   return Boolean(rows[0]);
+}
+
+/**
+ * Persist E3 Normal Order Admin settings. No-op when migration 155 columns are absent.
+ * Shared by Super Admin PATCH and isolated round-trip tests.
+ */
+async function persistNormalOrderEconomySettings(client, next) {
+  if (!(await hasEconomyFlagColumn(client, "normal_order_default_bid_cost"))) {
+    return false;
+  }
+  await client.query(
+    `UPDATE marketplace_economy_settings SET
+       normal_order_min_value_jod = $2,
+       normal_order_max_value_jod = $3,
+       normal_order_min_target_applicants = $4,
+       normal_order_max_target_applicants = $5,
+       normal_order_default_target_applicants = $6,
+       normal_order_min_bid_cost = $7,
+       normal_order_max_bid_cost = $8,
+       normal_order_default_bid_cost = $9,
+       normal_order_min_application_period_hours = $10,
+       normal_order_max_application_period_hours = $11,
+       normal_order_default_application_period_hours = $12,
+       normal_order_min_execution_duration_hours = $13,
+       normal_order_max_execution_duration_hours = $14,
+       normal_order_default_execution_duration_hours = $15,
+       normal_order_deadline_incomplete_target_policy = $16,
+       normal_order_refund_client_cancel_before_selection = $17,
+       normal_order_refund_system_cancel = $18,
+       normal_order_refund_deadline_no_selection = $19,
+       normal_order_refund_no_freelancer_selected = $20,
+       normal_order_refund_freelancer_withdrawal = $21,
+       normal_order_refund_rejected_application = $22,
+       normal_order_refund_losing_applicant = $23,
+       normal_order_refund_post_award_cancel = $24,
+       normal_order_business_timezone = $25,
+       updated_at = NOW()
+     WHERE id = $1`,
+    [
+      SETTINGS_ID,
+      next.normalOrderMinValueJod,
+      next.normalOrderMaxValueJod,
+      next.normalOrderMinTargetApplicants,
+      next.normalOrderMaxTargetApplicants,
+      next.normalOrderDefaultTargetApplicants,
+      next.normalOrderMinBidCost,
+      next.normalOrderMaxBidCost,
+      next.normalOrderDefaultBidCost,
+      next.normalOrderMinApplicationPeriodHours,
+      next.normalOrderMaxApplicationPeriodHours,
+      next.normalOrderDefaultApplicationPeriodHours,
+      next.normalOrderMinExecutionDurationHours,
+      next.normalOrderMaxExecutionDurationHours,
+      next.normalOrderDefaultExecutionDurationHours,
+      next.normalOrderDeadlineIncompleteTargetPolicy,
+      next.normalOrderRefundClientCancelBeforeSelection,
+      next.normalOrderRefundSystemCancel,
+      next.normalOrderRefundDeadlineNoSelection,
+      next.normalOrderRefundNoFreelancerSelected,
+      next.normalOrderRefundFreelancerWithdrawal,
+      next.normalOrderRefundRejectedApplication,
+      next.normalOrderRefundLosingApplicant,
+      next.normalOrderRefundPostAwardCancel,
+      next.normalOrderBusinessTimezone,
+    ],
+  );
+  return true;
 }
 
 function isWorkTokensEngineActive(settings) {
@@ -1209,6 +1227,7 @@ module.exports = {
   isValidAssignmentStrategy,
   mapRow,
   mapActiveEconomySettingsForAdminApi,
+  persistNormalOrderEconomySettings,
   mergePatch,
   normalizeLegacyPatchKeys,
   CURRENT_NORMAL_APPLICATION_REFUND_PERCENTAGE_ONLY,

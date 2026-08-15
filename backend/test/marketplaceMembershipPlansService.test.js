@@ -208,7 +208,7 @@ describe("isolation from legacy / fake systems", () => {
     assert.doesNotMatch(publicRoutes, /plan-pages/);
   });
 
-  it("public /plans uses Marketplace Membership; slug path stays legacy-isolated", () => {
+  it("public /plans uses Admin default catalog resolver; slug path stays legacy-isolated", () => {
     const plansPage = fs.readFileSync(
       path.join(__dirname, "../../frontend/src/pages/Plans.jsx"),
       "utf8",
@@ -217,15 +217,20 @@ describe("isolation from legacy / fake systems", () => {
       path.join(__dirname, "../../frontend/src/hooks/usePlansPage.js"),
       "utf8",
     );
+    const fetchCatalog = fs.readFileSync(
+      path.join(__dirname, "../../frontend/src/lib/planCatalog/fetchPlansForCatalog.js"),
+      "utf8",
+    );
     const checkout = fs.readFileSync(
       path.join(__dirname, "../../frontend/src/hooks/useFreelancerPlansCheckout.js"),
       "utf8",
     );
-    assert.match(usePlans, /listPublicMarketplaceMembershipPlansRequest/);
-    assert.match(usePlans, /fetchPublicPlans:\s*Boolean\(slug\)/);
+    assert.match(usePlans, /useDefaultCatalogPlans/);
+    assert.match(usePlans, /fetchPublicPlans:\s*false/);
     assert.match(usePlans, /getPublicPlanPageBySlugRequest/);
     assert.match(usePlans, /marketplace_membership/);
     assert.match(usePlans, /legacy_page_package/);
+    assert.match(fetchCatalog, /listPublicMarketplaceMembershipPlansRequest/);
     assert.doesNotMatch(checkout, /listPublicMarketplaceMembership/);
     assert.doesNotMatch(plansPage, /listPublicPlansRequest/);
   });

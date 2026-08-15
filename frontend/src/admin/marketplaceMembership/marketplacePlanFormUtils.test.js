@@ -118,20 +118,30 @@ describe("SuperAdminMarketplacePlansPage wiring", () => {
       path.join(__dirname, "MarketplaceMembershipPlanCard.jsx"),
       "utf8",
     );
-    assert.match(page, /إدارة باقات العمل|Work membership plans/);
+    assert.match(page, /SECTION_COPY\.marketplace/);
+    assert.match(page, /PlanCatalogAdminShell/);
     assert.match(page, /MarketplaceMembershipPlanCard/);
     assert.match(page, /MarketplaceMembershipPlanFormModal/);
-    assert.doesNotMatch(page, /from [\"'].*admin\/plans|AdminPlanCard|orderzhousePlansCatalog/);
+    assert.match(page, /DefaultPlanCatalogControl/);
+    assert.match(page, /PLAN_CATALOG\.MARKETPLACE_PLANS/);
+    assert.doesNotMatch(page, /كل أقسام الباقات|All plan catalogs/);
+    assert.doesNotMatch(page, /AdminPlanCard|orderzhousePlansCatalog/);
     assert.doesNotMatch(card, /from [\"'].*AdminPlanCard|orderzhousePlansCatalog/);
   });
 
-  it("legacy plans hub links to marketplace page without embedding CRUD", () => {
+  it("legacy plans hub shares catalog navigation without embedding marketplace CRUD", () => {
     const hub = fs.readFileSync(
       path.join(__dirname, "../../pages/dashboard/SuperAdminPlansPage.jsx"),
       "utf8",
     );
-    assert.match(hub, /\/dashboard\/super-admin\/marketplace-plans/);
-    assert.match(hub, /باقات العمل|Work memberships/);
+    const nav = fs.readFileSync(path.join(__dirname, "../plans/planCatalogNav.js"), "utf8");
+    const shell = fs.readFileSync(path.join(__dirname, "../plans/PlanCatalogAdminShell.jsx"), "utf8");
+    const tabs = fs.readFileSync(path.join(__dirname, "../plans/PlanCatalogNavigation.jsx"), "utf8");
+    assert.match(hub, /PlanCatalogAdminShell/);
+    assert.match(nav, /\/dashboard\/super-admin\/marketplace-plans/);
+    assert.match(nav, /PLAN_CATALOG_LABELS\[PLAN_CATALOG\.MARKETPLACE_PLANS\]/);
+    assert.match(shell, /PlanCatalogNavigation/);
+    assert.match(tabs, /PLAN_CATALOG_NAV/);
     assert.doesNotMatch(hub, /listAdminMarketplaceMembershipPlansRequest/);
   });
 

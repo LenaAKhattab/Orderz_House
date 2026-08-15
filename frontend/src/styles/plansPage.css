@@ -118,7 +118,7 @@
   max-width: 1040px;
 }
 
-/* Four cards: 2×2 before they become unreadably narrow */
+/* Four cards: 2ï¿½2 before they become unreadably narrow */
 @media (max-width: 1099px) {
   .plans-page--ref .pricing__grid--plans-4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1378,9 +1378,13 @@
 
 .plans-page--ref .pricing-card__metric-copy {
   display: flex;
-  flex-direction: column;
-  gap: 1px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.35em;
+  row-gap: 0.1em;
   min-width: 0;
+  margin: 0;
 }
 
 .plans-page--ref .pricing-card__metric-value {

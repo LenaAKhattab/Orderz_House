@@ -533,6 +533,25 @@ async function patchPublishedOrderEconomicFields({
       }
       next.deadline_incomplete_target_policy = p;
     }
+    if (next.durationValue != null || next.duration_value != null || next.durationUnit != null || next.duration_unit != null) {
+      const durationValue = next.durationValue ?? next.duration_value ?? order.duration_value;
+      const durationUnit = String(
+        (next.durationUnit ?? next.duration_unit ?? order.duration_unit) || "",
+      ).toLowerCase();
+      let hours = Number(durationValue);
+      if (durationUnit === "days") hours *= 24;
+      else if (durationUnit === "minutes") hours /= 60;
+      if (Number.isFinite(hours)) {
+        assertMoneyInRange(
+          "executionDurationHours",
+          hours,
+          { min: rules.minExecutionDurationHours, max: rules.maxExecutionDurationHours },
+          NORMAL_ORDER_ERROR_CODES.NORMAL_ORDER_EXECUTION_DURATION_OUT_OF_RANGE,
+        );
+      }
+      next.duration_value = Number(durationValue);
+      next.duration_unit = durationUnit || order.duration_unit;
+    }
 
     const sets = [];
     const params = [Number(orderId)];
@@ -545,6 +564,8 @@ async function patchPublishedOrderEconomicFields({
     push("target_applicant_count", next.target_applicant_count);
     push("application_deadline_at", next.application_deadline_at);
     push("deadline_incomplete_target_policy", next.deadline_incomplete_target_policy);
+    push("duration_value", next.duration_value);
+    push("duration_unit", next.duration_unit);
     push("budget", next.budget);
     push("bid_budget_min", next.bid_budget_min);
     push("bid_budget_max", next.bid_budget_max);
@@ -588,6 +609,7 @@ async function notifyDeadlineReconcileOutcome({
   action,
   policy,
   refundResults = null,
+  applicantUserIds = null,
 }) {
   const notificationEventsService = require("./notificationEventsService");
   const orderId = Number(order.id);
@@ -645,6 +667,34 @@ async function notifyDeadlineReconcileOutcome({
         },
         client,
       );
+      let applicantIds = Array.isArray(applicantUserIds) ? applicantUserIds : null;
+      if (!applicantIds) {
+        const { rows: applicants } = await client.query(
+          `SELECT DISTINCT freelancer_user_id
+             FROM order_freelancer_bids
+            WHERE order_id = $1
+              AND COALESCE(is_fake_bid, FALSE) = FALSE
+              AND status = ANY($2::text[])`,
+          [orderId, NORMAL_ORDER_VALID_APPLICATION_STATUSES],
+        );
+        applicantIds = applicants.map((row) => Number(row.freelancer_user_id));
+      }
+      for (const freelancerUserId of applicantIds) {
+        // eslint-disable-next-line no-await-in-loop
+        await notificationEventsService.notifyAssignedFreelancer(
+          {
+            order,
+            freelancerUserId,
+            type: "order.applications.deadline_cancelled",
+            title: "أُلغي الطلب",
+            message: "انتهى موعد التقديم وتم إلغاء الطلب. إن كنت مؤهلاً فسيتم استرجاع العروض المتاحة.",
+            priority: "high",
+            dedupeKey: `order_apps_deadline_cancel_fl_${orderId}_${freelancerUserId}`,
+            metadata: { orderId: String(orderId), policy, action },
+          },
+          client,
+        );
+      }
     }
   } catch {
     /* never fail reconcile on notify */
@@ -778,7 +828,15 @@ async function reconcileSingleOrderDeadline({ client, orderId, now = new Date() 
     return out;
   }
 
-  // cancel_and_refund
+  // cancel_and_refund — snapshot applicants before status flips to rejected
+  const { rows: cancelApplicants } = await client.query(
+    `SELECT DISTINCT freelancer_user_id
+       FROM order_freelancer_bids
+      WHERE order_id = $1
+        AND COALESCE(is_fake_bid, FALSE) = FALSE
+        AND status = ANY($2::text[])`,
+    [Number(orderId), NORMAL_ORDER_VALID_APPLICATION_STATUSES],
+  );
   await closeOrderApplications(client, order.id, "deadline_reached", { now });
   const endSvc = require("./marketplaceNormalApplicationWorkTokenService");
   const refundMode = resolveRefundModeForOutcome(order, "deadline_no_selection", rules);
@@ -815,6 +873,7 @@ async function reconcileSingleOrderDeadline({ client, orderId, now = new Date() 
     action: out.action,
     policy,
     refundResults: refund,
+    applicantUserIds: cancelApplicants.map((r) => Number(r.freelancer_user_id)),
   });
   return out;
 }

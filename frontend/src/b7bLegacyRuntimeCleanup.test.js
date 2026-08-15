@@ -47,10 +47,12 @@ describe("B7B dead WT frontend removed", () => {
     assert.doesNotMatch(nav, /priority-auction/i);
   });
 
-  it("public /plans skips legacy main-plan fetch", () => {
+  it("public /plans uses Admin default catalog resolver; no silent legacy fallback", () => {
     const hook = read("hooks/usePlansPage.js");
-    assert.match(hook, /fetchPublicPlans:\s*Boolean\(slug\)/);
-    assert.match(hook, /listPublicMarketplaceMembershipPlansRequest/);
+    const resolver = read("hooks/useDefaultCatalogPlans.js");
+    assert.match(hook, /useDefaultCatalogPlans/);
+    assert.match(resolver, /fetchResolvedDefaultCatalogPlans/);
+    assert.doesNotMatch(resolver, /listPublicPlansRequest/);
   });
 
   it("economy Admin has no Work Token / verification reward controls", () => {

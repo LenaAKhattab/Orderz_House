@@ -106,6 +106,8 @@
     "test:marketplace-membership-e1": "node --test test/marketplaceMembershipPhaseE1.test.js",
     "test:marketplace-normal-order-rules-e3": "node --test test/marketplaceNormalOrderRulesPhaseE3.test.js",
     "test:marketplace-normal-order-rules-e3-gate": "node scripts/runMarketplaceNormalOrderRulesPhaseE3Gate.js",
+    "test:pantry-house": "node --test test/pantryHouse.test.js",
+    "test:pantry-membership-bid": "node --test test/pantryMembershipBid.test.js",
     "test:migrate-production-next": "node --test test/runNextProductionMigration.test.js"
   },
   "keywords": [

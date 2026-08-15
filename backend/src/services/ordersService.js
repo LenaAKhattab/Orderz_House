@@ -2232,6 +2232,25 @@ async function submitPoolOrderBid({
     );
     const bidId = bidRows[0].id;
 
+    // Phase E3: after insert, refuse last-slot overflow BEFORE charging Bids.
+    // Order row is locked FOR UPDATE, so concurrent applies serialize; this is the
+    // charge-safety check so a loser never consumes Bids or daily spend.
+    if (!hadBidBefore) {
+      const e3 = require("./marketplaceNormalOrderRulesService");
+      if (await e3.normalOrderRulesSchemaReady(client)) {
+        const count = await e3.countValidApplicants(client, orderId);
+        const target =
+          order.target_applicant_count != null ? Number(order.target_applicant_count) : null;
+        if (target != null && Number.isInteger(target) && count > target) {
+          const err = new Error("Order applicant target has been reached.");
+          err.statusCode = 409;
+          err.exposeToClient = true;
+          err.publicCode = e3.NORMAL_ORDER_ERROR_CODES.NORMAL_ORDER_APPLICANT_TARGET_REACHED;
+          throw err;
+        }
+      }
+    }
+
     // Phase B2/E3: charge Order snapshotted Bid cost on first application when bid_credits_enabled.
     // Edits/retries skip (hadBidBefore). Fake/training never reach this function.
     const resolvedBidCost = normalAppBids.resolveChargeAmount

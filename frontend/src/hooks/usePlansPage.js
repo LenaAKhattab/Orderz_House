@@ -1,21 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  getPublicPlanPageBySlugRequest,
-  listPublicMarketplaceMembershipPlansRequest,
-} from "../services/api";
+import { getPublicPlanPageBySlugRequest } from "../services/api";
 import { isOrderzhouseFreePlan } from "../constants/orderzhousePlansCatalog";
-import { mapMarketplaceMembershipPlansForPublicPlans } from "../lib/marketplaceMembership/mapMarketplaceMembershipPlanForPublicPlans";
 import { useFreelancerPlansCheckout } from "./useFreelancerPlansCheckout";
+import { useDefaultCatalogPlans } from "./useDefaultCatalogPlans";
 
 /**
- * Public `/plans` (no slug) uses Marketplace Membership catalog.
+ * Public `/plans` (no slug) uses the Super Admin-selected default catalog.
  * Slugged `/plans/:slug` remains legacy page-package plans (isolated).
  */
 export function usePlansPage({ slug, returnPath }) {
   const defaultCheckout = useFreelancerPlansCheckout({
     returnPath,
-    // Public /plans (no slug) uses Marketplace Membership only — skip legacy main-plan catalog fetch.
-    fetchPublicPlans: Boolean(slug),
+    fetchPublicPlans: false,
   });
   const [page, setPage] = useState(null);
   const [slugPlans, setSlugPlans] = useState([]);
@@ -24,9 +20,7 @@ export function usePlansPage({ slug, returnPath }) {
   const [slugError, setSlugError] = useState("");
   const [notFound, setNotFound] = useState(false);
 
-  const [membershipPlans, setMembershipPlans] = useState([]);
-  const [membershipLoading, setMembershipLoading] = useState(!slug);
-  const [membershipError, setMembershipError] = useState("");
+  const defaultCatalog = useDefaultCatalogPlans({ enabled: !slug });
 
   useEffect(() => {
     if (!slug) {
@@ -72,49 +66,8 @@ export function usePlansPage({ slug, returnPath }) {
     };
   }, [slug]);
 
-  useEffect(() => {
-    if (slug) {
-      setMembershipPlans([]);
-      setMembershipLoading(false);
-      setMembershipError("");
-      return undefined;
-    }
-
-    let cancelled = false;
-    setMembershipLoading(true);
-    setMembershipError("");
-
-    void listPublicMarketplaceMembershipPlansRequest()
-      .then((res) => {
-        if (cancelled) return;
-        const items = Array.isArray(res?.data?.items)
-          ? res.data.items
-          : Array.isArray(res?.data)
-            ? res.data
-            : Array.isArray(res?.items)
-              ? res.items
-              : [];
-        setMembershipPlans(mapMarketplaceMembershipPlansForPublicPlans(items));
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setMembershipError(
-          err?.response?.data?.message || "تعذر تحميل باقات عضوية السوق.",
-        );
-        setMembershipPlans([]);
-      })
-      .finally(() => {
-        if (!cancelled) setMembershipLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [slug]);
-
   const startCheckout = useCallback(
     async (plan) => {
-      // Marketplace Membership is not legacy subscription checkout.
       if (plan?.catalogSource === "marketplace_membership" || plan?.marketplaceMembership) {
         return null;
       }
@@ -131,26 +84,32 @@ export function usePlansPage({ slug, returnPath }) {
     [defaultCheckout.startCheckout, defaultCheckout.activationFeeNeedsPayment],
   );
 
-  const isMarketplaceMembershipCatalog = !slug;
-  const activationFee = slug && slugActivationFee ? slugActivationFee : null;
+  const isMarketplaceMembershipCatalog = !slug && defaultCatalog.isMarketplaceCatalog;
+  const usesLegacyCheckout =
+    Boolean(slug) ||
+    defaultCatalog.catalogSource === "main_plans" ||
+    defaultCatalog.catalogSource === "page_plans";
+  const activationFee = slug
+    ? slugActivationFee
+    : isMarketplaceMembershipCatalog
+      ? null
+      : defaultCatalog.activationFee;
 
   return useMemo(
     () => ({
       page,
-      plans: slug ? slugPlans : membershipPlans,
-      loading: slug ? slugLoading : membershipLoading,
-      error: slug ? slugError : membershipError,
+      plans: slug ? slugPlans : defaultCatalog.plans,
+      loading: slug ? slugLoading : defaultCatalog.loading,
+      error: slug ? slugError : defaultCatalog.error,
       notFound,
-      catalogSource: isMarketplaceMembershipCatalog
-        ? "marketplace_membership"
-        : "legacy_page_package",
+      catalog: slug ? null : defaultCatalog.catalog,
+      catalogSource: slug ? "legacy_page_package" : defaultCatalog.catalogSource,
       mySubscription: defaultCheckout.mySubscription,
       activationFeeStatus: defaultCheckout.activationFeeStatus,
       activationFee,
-      // Main /plans no longer uses legacy activation-fee subscription checkout.
-      activationFeeNeedsPayment: slug ? defaultCheckout.activationFeeNeedsPayment : false,
-      hasBlockingSubscription: slug ? defaultCheckout.hasBlockingSubscription : false,
-      checkoutBusyPlanId: slug ? defaultCheckout.checkoutBusyPlanId : null,
+      activationFeeNeedsPayment: usesLegacyCheckout ? defaultCheckout.activationFeeNeedsPayment : false,
+      hasBlockingSubscription: usesLegacyCheckout ? defaultCheckout.hasBlockingSubscription : false,
+      checkoutBusyPlanId: usesLegacyCheckout ? defaultCheckout.checkoutBusyPlanId : null,
       startCheckout,
       returnPath,
     }),
@@ -161,10 +120,13 @@ export function usePlansPage({ slug, returnPath }) {
       slugLoading,
       slugError,
       notFound,
-      membershipPlans,
-      membershipLoading,
-      membershipError,
+      defaultCatalog.plans,
+      defaultCatalog.loading,
+      defaultCatalog.error,
+      defaultCatalog.catalog,
+      defaultCatalog.catalogSource,
       isMarketplaceMembershipCatalog,
+      usesLegacyCheckout,
       activationFee,
       defaultCheckout.mySubscription,
       defaultCheckout.activationFeeStatus,

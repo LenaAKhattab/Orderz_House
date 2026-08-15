@@ -188,6 +188,8 @@ describe("Phase E3 economic lock + capacity", () => {
     assert.ok(ORDER_ECONOMIC_LOCK_FIELDS.includes("application_bid_cost"));
     assert.ok(ORDER_ECONOMIC_LOCK_FIELDS.includes("target_applicant_count"));
     assert.ok(ORDER_ECONOMIC_LOCK_FIELDS.includes("budget"));
+    assert.ok(ORDER_ECONOMIC_LOCK_FIELDS.includes("duration_value"));
+    assert.ok(ORDER_ECONOMIC_LOCK_FIELDS.includes("duration_unit"));
     assert.strictEqual(
       NORMAL_ORDER_ERROR_CODES.NORMAL_ORDER_ECONOMIC_FIELDS_FROZEN,
       "NORMAL_ORDER_ECONOMIC_FIELDS_FROZEN",
@@ -248,13 +250,19 @@ describe("Phase E3 refund policy matrix + 100%", () => {
     assert.strictEqual(NORMAL_APPLICATION_BID_REFUND_PERCENT, 100);
   });
 
-  it("does not restore daily Bid spend capacity on refund", () => {
+  it("does not restore daily Bid spend capacity on refund (distinct from E2 Article reservation release)", () => {
     const {
       NORMAL_ORDER_REFUND_RESTORES_DAILY_CAP,
     } = require("../src/constants/marketplaceBidCredits");
     assert.strictEqual(NORMAL_ORDER_REFUND_RESTORES_DAILY_CAP, false);
     const refundSrc = read("src/services/marketplaceNormalApplicationBidCreditService.js");
     assert.doesNotMatch(refundSrc, /releaseDailyBidSpend/);
+    // E2 Article: reservation release may restore same-day daily capacity.
+    const articleApps = read("src/services/marketplaceArticleApplicationsService.js");
+    const reserve = read("src/services/marketplaceBidCreditReservationService.js");
+    assert.match(articleApps, /restoreDailyLimit:\s*true/);
+    assert.match(reserve, /releaseDailyBidSpend/);
+    assert.match(reserve, /restoreDailyLimit/);
   });
 
   it("resolves outcome policies from snapshot/Admin", () => {
@@ -285,20 +293,23 @@ describe("Phase E3 economic lock + Admin round-trip wiring", () => {
     assert.match(orders, /patchPublishedOrderEconomicFields/);
     assert.match(adminCtrl, /patchOrderEconomicFields/);
     assert.match(adminRoutes, /economic-fields/);
+    assert.match(orders, /NORMAL_ORDER_APPLICANT_TARGET_REACHED/);
   });
 
   it("Admin API mapper + validators expose E3 fields", () => {
     const svc = read("src/services/marketplaceEconomySettingsService.js");
     const val = read("src/validators/marketplaceEconomySettingsValidators.js");
+    const {
+      NORMAL_ORDER_ADMIN_API_KEYS,
+    } = require("../src/constants/marketplaceNormalOrderRules");
     assert.match(svc, /normalOrderDefaultBidCost/);
     assert.match(svc, /mapActiveEconomySettingsForAdminApi/);
-    // Inside mapActiveEconomySettingsForAdminApi body
     const apiFn = svc.slice(svc.indexOf("function mapActiveEconomySettingsForAdminApi"));
-    assert.match(apiFn, /normalOrderDefaultBidCost/);
-    assert.match(apiFn, /normalOrderDeadlineIncompleteTargetPolicy/);
-    assert.match(val, /normalOrderDefaultBidCost/);
-    assert.match(val, /normalOrderMinValueJod/);
-    assert.match(val, /normalOrderBusinessTimezone/);
+    for (const key of NORMAL_ORDER_ADMIN_API_KEYS) {
+      assert.match(apiFn, new RegExp(key));
+      assert.match(val, new RegExp(key));
+    }
+    assert.match(svc, /persistNormalOrderEconomySettings/);
   });
 
   it("deadline reconcile notifies with dedupe keys; refund notifies Freelancer", () => {
@@ -307,6 +318,7 @@ describe("Phase E3 economic lock + Admin round-trip wiring", () => {
     assert.match(rules, /order_apps_deadline_continue_/);
     assert.match(rules, /order_apps_deadline_admin_review_/);
     assert.match(rules, /notifyDeadlineReconcileOutcome/);
+    assert.match(rules, /order_apps_deadline_cancel_fl_/);
     assert.match(bid, /normal_app_bid_refund_/);
     assert.match(bid, /order\.bid\.refunded/);
   });

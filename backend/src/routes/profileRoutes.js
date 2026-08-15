@@ -32,5 +32,7 @@ router.patch("/password", profileSensitiveLimiter, profileController.patchPasswo
 router.patch("/avatar", uploadProfileAvatar.single("avatar"), profileController.patchAvatar);
 router.delete("/avatar", profileController.deleteAvatar);
 router.post("/deactivate", profileSensitiveLimiter, profileController.deactivateAccount);
+router.get("/role-conversion", profileController.getRoleConversionEligibility);
+router.post("/role-conversion", profileSensitiveLimiter, profileController.convertAccountRole);
 
 module.exports = router;

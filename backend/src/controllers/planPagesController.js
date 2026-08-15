@@ -18,6 +18,19 @@ const getPublicDefaultPlanPage = async (req, res, next) => {
   }
 };
 
+const getPublicSpecialPageCatalog = async (req, res, next) => {
+  try {
+    const { getPublicActivationFeeConfig } = require("../services/subscriptionActivationFeeService");
+    const [plans, activationFee] = await Promise.all([
+      planPagesService.listPublicSpecialPageCatalogPlans(),
+      getPublicActivationFeeConfig(),
+    ]);
+    return res.status(200).json({ success: true, data: { plans, activationFee } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const listAdminPlanPages = async (req, res, next) => {
   try {
     const pages = await planPagesService.listPlanPages();
@@ -60,6 +73,7 @@ const deletePlanPage = async (req, res, next) => {
 module.exports = {
   getPublicPlanPageBySlug,
   getPublicDefaultPlanPage,
+  getPublicSpecialPageCatalog,
   listAdminPlanPages,
   createPlanPage,
   updatePlanPage,

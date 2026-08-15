@@ -182,6 +182,10 @@ export const FreelancerPlansPage = lazy(() => import("../pages/dashboard/Freelan
 export const FreelancerCoursesPage = lazy(() => import("../pages/dashboard/FreelancerCoursesPage"));
 export const FreelancerCourseDetailsPage = lazy(() => import("../pages/dashboard/FreelancerCourseDetailsPage"));
 export const FreelancerSettingsPage = lazy(() => import("../pages/dashboard/FreelancerSettingsPage"));
+export const FreelancerActivateAccountPage = lazy(
+  () => import("../pages/dashboard/FreelancerActivateAccountPage"),
+);
+export const ConvertAccountPage = lazy(() => import("../pages/dashboard/ConvertAccountPage"));
 
 /** Shared dashboard utilities */
 export const NotificationsPage = lazy(() => import("../pages/dashboard/NotificationsPage"));

@@ -185,7 +185,22 @@ async function createAndActivateMarketplaceMembership(input) {
     if (ownTxn) await client.query("BEGIN");
 
     const eligibility = require("./marketplaceMembershipEligibilityService");
-    await eligibility.assertMarketplaceVerificationComplete(client, freelancerUserId);
+    if (input.skipVerification !== true) {
+      await eligibility.assertMarketplaceVerificationComplete(client, freelancerUserId);
+    } else {
+      // Account self-activation path: verification fee is handled by caller; still require freelancer role.
+      const { rows: userRows } = await client.query(
+        `SELECT id, role, is_active FROM users WHERE id = $1`,
+        [freelancerUserId],
+      );
+      const user = userRows[0];
+      if (!user || user.role !== "freelancer" || user.is_active !== true) {
+        throw createAppError("Freelancer account is not eligible for Marketplace Membership.", 403, {
+          exposeToClient: true,
+          publicCode: "MEMBERSHIP_FREELANCER_INVALID",
+        });
+      }
+    }
 
     const plan = await marketplaceMembershipPlansService.getMarketplaceMembershipPlanById(
       marketplacePlanId,

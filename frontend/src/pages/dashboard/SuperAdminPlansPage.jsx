@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import Button from "../../components/ui/Button";
-import { AdminInlineGridSkeleton } from "../../components/ui/Skeleton";
 import {
   createPlanRequest,
   deletePlanRequest,
@@ -14,12 +13,13 @@ import AdminPlanCard from "../../admin/plans/AdminPlanCard";
 import PlanCreateModal from "../../admin/plans/PlanCreateModal";
 import PlanEditModal from "../../admin/plans/PlanEditModal";
 import PlanPageMetadataPanel from "../../admin/plans/PlanPageMetadataPanel";
+import DefaultPlanCatalogControl from "../../admin/plans/DefaultPlanCatalogSelector";
+import PlanCatalogAdminShell from "../../admin/plans/PlanCatalogAdminShell";
+import { PlanCardsGridSkeleton } from "../../admin/plans/PlanCatalogSkeletons";
+import { catalogIdForAdminSection } from "../../admin/plans/planCatalogNav";
 import { filterPlans } from "../../admin/plans/planDisplayUtils";
 import { getInitialPlanFormState } from "../../admin/plans/planFormConstants";
-import {
-  PAGE_COPY,
-  SECTION_COPY,
-} from "../../admin/plans/planMetricTerminology";
+import { SECTION_COPY } from "../../admin/plans/planMetricTerminology";
 import {
   PLAN_ADMIN_SECTION,
   buildPlanPagesIndex,
@@ -36,15 +36,10 @@ import {
   buildPlanReorderPatches,
   getPlanDisplayOrderMeta,
 } from "../../admin/plans/planOrderUtils";
-import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
-import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
-import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
-import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
 import StatusBadge from "../../components/dashboard/StatusBadge";
-import "../../admin/plans/super-admin-plans.css";
 
 const SALE_ERROR_MESSAGES = {
   INVALID_SALE_PERCENTAGE: "نسبة الخصم يجب أن تكون أكبر من 0 وأقل من 100.",
@@ -131,6 +126,7 @@ const SuperAdminPlansPage = () => {
   const sectionCopy = SECTION_COPY[activeSection];
   const sectionLabel = isEn ? sectionCopy.en : sectionCopy.ar;
   const sectionHint = isEn ? sectionCopy.hintEn : sectionCopy.hintAr;
+  const sectionCatalogId = catalogIdForAdminSection(activeSection);
 
   const filteredPlans = useMemo(() => {
     const filtered = filterPlans(scopedPlans, { search });
@@ -170,16 +166,6 @@ const SuperAdminPlansPage = () => {
     () => specialPlanPages.find((page) => String(page.id) === String(selectedPageId)) || null,
     [specialPlanPages, selectedPageId],
   );
-
-  const setActiveSection = (nextSection) => {
-    const next = parsePlanAdminSection(nextSection);
-    const params = new URLSearchParams(searchParams);
-    params.set("section", next);
-    if (next === PLAN_ADMIN_SECTION.CORE) {
-      params.delete("pageId");
-    }
-    setSearchParams(params, { replace: true });
-  };
 
   const handlePageFilterChange = (event) => {
     const next = event.target.value;
@@ -323,55 +309,7 @@ const SuperAdminPlansPage = () => {
   );
 
   return (
-    <DashboardShell className="oh-sapl-page">
-      <DashboardPageHeader
-        className="oh-sapl-header oh-sapl-header--compact"
-        eyebrow="لوحة المدير الأعلى"
-        title={PAGE_COPY.title}
-        breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.plans")}
-        actions={
-          <div className="oh-sapl-header-actions">
-            <Button type="button" className="oh-sapl-header-cta" onClick={openCreateModal}>
-              + إنشاء باقة جديدة
-            </Button>
-          </div>
-        }
-      />
-
-      {planPages.length > 0 ? (
-        <div className="oh-sapl-section-toggle">
-          <div className="oh-sapl-section-toggle__tabs" role="tablist" aria-label={isEn ? "Plan sections" : "أقسام الباقات"}>
-            <button
-              type="button"
-              role="tab"
-              className="oh-sapl-section-toggle__tab"
-              aria-selected={activeSection === PLAN_ADMIN_SECTION.CORE}
-              onClick={() => setActiveSection(PLAN_ADMIN_SECTION.CORE)}
-            >
-              {isEn ? SECTION_COPY.core.en : SECTION_COPY.core.ar}
-            </button>
-            <button
-              type="button"
-              role="tab"
-              className="oh-sapl-section-toggle__tab"
-              aria-selected={activeSection === PLAN_ADMIN_SECTION.PAGES}
-              onClick={() => setActiveSection(PLAN_ADMIN_SECTION.PAGES)}
-            >
-              {isEn ? SECTION_COPY.pages.en : SECTION_COPY.pages.ar}
-            </button>
-            <Link
-              to="/dashboard/super-admin/marketplace-plans"
-              className="oh-sapl-section-toggle__tab oh-sapl-section-toggle__tab-link"
-              role="tab"
-              aria-selected={false}
-            >
-              {isEn ? "Work memberships" : "باقات العمل"}
-            </Link>
-          </div>
-          <p className="oh-sapl-section-toggle__hint">{sectionHint}</p>
-        </div>
-      ) : null}
-
+    <PlanCatalogAdminShell activeCatalog={sectionCatalogId} isEn={isEn} hint={sectionHint}>
       {activeSection === PLAN_ADMIN_SECTION.PAGES && specialPlanPages.length > 0 ? (
         <div className="oh-sapl-page-filter-inline">
           <label>
@@ -416,7 +354,18 @@ const SuperAdminPlansPage = () => {
         />
       ) : null}
 
-      <DashboardSection title={sectionLabel} className="oh-sapl-section--plans oh-sapl-section--tight">
+      <DashboardSection
+        title={sectionLabel}
+        className="oh-sapl-section--plans oh-sapl-section--tight"
+        actions={
+          <div className="oh-sapl-section-heading-actions">
+            <DefaultPlanCatalogControl catalog={sectionCatalogId} isEn={isEn} />
+            <Button type="button" className="oh-sapl-header-cta" onClick={openCreateModal}>
+              {isEn ? "+ Create plan" : "+ إنشاء باقة جديدة"}
+            </Button>
+          </div>
+        }
+      >
         <div className="oh-sapl-toolbar-compact" role="search">
           <input
             type="search"
@@ -428,23 +377,23 @@ const SuperAdminPlansPage = () => {
             aria-label="بحث"
           />
           <StatusBadge tone="neutral" className="oh-sapl-toolbar-compact__count">
-            {loading ? "…" : `${filteredPlans.length} / ${scopedPlans.length}`}
+            {loading ? (
+              <span className="oh-sapl-skel oh-sapl-skel--count" aria-hidden />
+            ) : (
+              `${filteredPlans.length} / ${scopedPlans.length}`
+            )}
           </StatusBadge>
         </div>
 
-        {!canReorderPlans ? (
+        {loading ? <PlanCardsGridSkeleton count={4} isEn={isEn} /> : null}
+
+        {!loading && !canReorderPlans ? (
           <p className="oh-sapl-order-hint oh-sapl-order-hint--muted m-0">
             امسح البحث لإظهار أسهم ترتيب الباقات.
           </p>
         ) : null}
 
-        {loading ? (
-          <DashboardLoadingState label="جارٍ تحميل الباقات…">
-            <AdminInlineGridSkeleton count={4} />
-          </DashboardLoadingState>
-        ) : null}
-
-        {!loading && scopedPlans.length === 0 ? (
+        {!loading && !error && scopedPlans.length === 0 ? (
           <DashboardEmptyState
             title={isEn ? sectionCopy.emptyTitleEn : sectionCopy.emptyTitleAr}
             description={isEn ? sectionCopy.emptyDescEn : sectionCopy.emptyDescAr}
@@ -457,11 +406,11 @@ const SuperAdminPlansPage = () => {
           />
         ) : null}
 
-        {!loading && scopedPlans.length > 0 && filteredPlans.length === 0 ? (
+        {!loading && !error && scopedPlans.length > 0 && filteredPlans.length === 0 ? (
           <DashboardEmptyState title="لا توجد نتائج" description="جرّب تغيير البحث." />
         ) : null}
 
-        {!loading && filteredPlans.length > 0 ? (
+        {!loading && !error && filteredPlans.length > 0 ? (
           <div className="oh-sapl-cards">
             {filteredPlans.map((p) => {
               const orderMeta = getPlanDisplayOrderMeta(scopedPlans, p.id);
@@ -510,7 +459,7 @@ const SuperAdminPlansPage = () => {
         planPages={planPages}
         canonicalPlans={canonicalPlans}
       />
-    </DashboardShell>
+    </PlanCatalogAdminShell>
   );
 };
 

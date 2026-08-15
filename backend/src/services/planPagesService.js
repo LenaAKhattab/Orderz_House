@@ -148,6 +148,32 @@ async function getPublicDefaultPlanPage() {
   return { page, plans };
 }
 
+/**
+ * Active user-visible plans on special plan pages (باقات الصفحات).
+ * Delegates to existing listPlansForPageRow — does not merge with main or marketplace catalogs.
+ */
+async function listPublicSpecialPageCatalogPlans() {
+  const pages = await listPlanPages();
+  const special = (pages || []).filter(
+    (page) => page.pageType === "special" && isPlanPageAccessible(page),
+  );
+  const nested = await Promise.all(
+    special.map(async (page) => {
+      const plans = await listPlansForPageRow(
+        { id: page.id, page_type: page.pageType },
+        { mergeCatalog: false },
+      );
+      return (plans || []).map((plan) => ({
+        ...plan,
+        catalogSource: "page_plans",
+        planPageId: plan.planPageId || page.id,
+        planPageSlug: page.slug || null,
+      }));
+    }),
+  );
+  return nested.flat();
+}
+
 async function createPlanPage({ payload }) {
   const {
     title,
@@ -261,6 +287,7 @@ module.exports = {
   getPlanPageBySlug,
   getPublicPlanPageBySlug,
   getPublicDefaultPlanPage,
+  listPublicSpecialPageCatalogPlans,
   listPlansForPageRow,
   createPlanPage,
   updatePlanPage,

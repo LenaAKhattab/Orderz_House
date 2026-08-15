@@ -205,7 +205,7 @@ const STAFF_DASHBOARD_ROLES = [ROLE.SUPER_ADMIN, ROLE.ADMIN];
 /** Which role may open which dashboard URL (exact path). Permission checks apply separately in route guards. */
 const DASHBOARD_PATH_TO_ROLES = {
   [DASHBOARD_PATH[ROLE.SUPER_ADMIN]]: STAFF_DASHBOARD_ROLES,
-  "/dashboard/super-admin/plans": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/plans": [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/marketplace-plans": [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/marketplace-economy": [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/subscriptions": STAFF_DASHBOARD_ROLES,

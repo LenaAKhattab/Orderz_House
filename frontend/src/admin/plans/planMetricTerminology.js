@@ -100,8 +100,8 @@ export const SECTION_COPY = {
   core: {
     ar: "الباقات الرئيسية",
     en: "Main plans",
-    hintAr: "باقات صفحة /plans العامة (الظاهرة من شريط التنقل).",
-    hintEn: "Plans shown on the public /plans page (navbar).",
+    hintAr: "باقات الصفحة الافتراضية في نظام الباقات الرئيسية (جدول plans). الإدارة مستقلة عن القسم الظاهر للمستخدمين.",
+    hintEn: "Plans on the default page in the main plans system. Management is independent of the user-facing catalog.",
     emptyTitleAr: "لا توجد باقات على الصفحة الرئيسية",
     emptyTitleEn: "No main plans",
     emptyDescAr: "أنشئ باقة واربطها بصفحة الباقات الافتراضية.",
@@ -120,6 +120,16 @@ export const SECTION_COPY = {
     pageFilterLabelEn: "Plan page",
     pageFilterAllAr: "كل صفحات الباقات",
     pageFilterAllEn: "All plan pages",
+  },
+  marketplace: {
+    ar: "إدارة باقات العمل",
+    en: "Work membership plans",
+    hintAr: "باقات عضوية العمل في السوق (Pay As You Work و Active و Pro و Elite). تُدار من هذا القسم فقط.",
+    hintEn: "Marketplace work memberships (Pay As You Work, Active, Pro, Elite). Managed from this section only.",
+    emptyTitleAr: "لا توجد باقات عمل بعد",
+    emptyTitleEn: "No marketplace plans yet",
+    emptyDescAr: "أنشئ باقة عمل جديدة من هذا القسم.",
+    emptyDescEn: "Create a work membership plan from this section.",
   },
 };
 

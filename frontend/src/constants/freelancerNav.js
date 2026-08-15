@@ -4,7 +4,6 @@ import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
 export const FREELANCER_NAV_MAIN = [
   { to: "/dashboard/freelancer", labelKey: "dashboard.nav.freelancer.home", icon: "dashboard", end: true },
   { to: "/dashboard/freelancer/orders", labelKey: "dashboard.nav.freelancer.availableRequests", icon: "orders" },
-  { to: "/dashboard/freelancer/pantry", labelKey: "dashboard.nav.freelancer.pantry", icon: "pantry" },
   {
     to: "/dashboard/freelancer/institution-orders",
     labelKey: "dashboard.nav.freelancer.institutionOrders",
@@ -12,7 +11,6 @@ export const FREELANCER_NAV_MAIN = [
     requiresInstitutionMembership: true,
   },
   { to: "/dashboard/freelancer/my-orders", labelKey: "dashboard.nav.freelancer.myRequests", icon: "my-orders" },
-  { to: "/dashboard/freelancer/articles", labelKey: "dashboard.nav.freelancer.articles", icon: "orders" },
   { to: "/dashboard/freelancer/financial-claims", labelKey: "dashboard.nav.freelancer.wallet", icon: "wallet" },
   { to: "/dashboard/freelancer/plans", labelKey: "dashboard.nav.freelancer.plans", icon: "plans" },
   {
@@ -43,7 +41,8 @@ export function freelancerPageTitle(pathname, t) {
     n.end ? pathname === n.to : pathname === n.to || pathname.startsWith(`${n.to}/`),
   );
   if (item) return resolveNavLabel(item, t);
-  if (pathname.includes("/pantry")) return t("dashboard.nav.freelancer.pantry");
+  if (pathname.includes("/activate-account")) return t("dashboard.nav.common.activateAccount");
+  if (pathname.includes("/convert-account")) return t("dashboard.nav.common.convertAccount");
   if (pathname.includes("/settings")) return t("dashboard.nav.common.settings");
   if (pathname.includes("/feedback")) return t("dashboard.nav.freelancer.problemsSuggestions");
   if (pathname.includes("/institution-orders")) return t("dashboard.nav.freelancer.institutionOrders");

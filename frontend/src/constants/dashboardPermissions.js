@@ -1,4 +1,4 @@
-import { ROLE } from "./authRoutes";
+import { ROLE, canRoleAccessPath } from "./authRoutes";
 
 /** Admin dashboard page permissions (shared with super-admin routes for the same pages). */
 export const ADMIN_PAGE_PERMISSIONS = {
@@ -183,7 +183,9 @@ export function getFirstAccessibleDashboardPath(user) {
     if (userHasPermission(user, item.permission)) return item.to;
   }
   for (const item of SUPER_ADMIN_SHELL_NAV_ORDER) {
-    if (userHasPermission(user, item.permission)) return item.to;
+    if (!userHasPermission(user, item.permission)) continue;
+    if (!canRoleAccessPath(item.to, ROLE.ADMIN)) continue;
+    return item.to;
   }
   return "/dashboard/admin";
 }

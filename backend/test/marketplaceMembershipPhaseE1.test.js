@@ -203,10 +203,17 @@ describe("Phase E1 wiring", () => {
     const mapper = read(
       path.join("..", "frontend", "src", "lib", "marketplaceMembership", "mapMarketplaceMembershipPlanForPublicPlans.js"),
     );
-    // Current /plans UX: daily + project caps live in primaryMetrics; withdrawal in secondary features.
+    const cardBody = read(
+      path.join("..", "frontend", "src", "components", "plans", "MembershipPlanCardBody.jsx"),
+    );
+    // Current /plans UX: daily + project caps live in primaryMetrics; withdrawal in secondary rows.
     assert.match(mapper, /dailyLimit|dailyBidSpendLimit/);
     assert.match(mapper, /Withdrawal available|Withdrawal unavailable|السحب متاح|السحب غير متاح/);
     assert.match(mapper, /cycleDurationDays|durationDays/);
+    assert.match(cardBody, /metrics\.dailyLimit/);
+    assert.match(cardBody, /metrics\.projectMaxJod|unlimitedProjects/);
+    assert.match(cardBody, /withdrawalEnabled/);
+    assert.match(cardBody, /plans\.membership\.bidsPerDay/);
     assert.match(mapper, /primaryMetrics/);
   });
 });

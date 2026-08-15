@@ -233,6 +233,7 @@ async function activateStarterMembership({
   freelancerUserId,
   actorUserId = null,
   now = new Date(),
+  skipVerification = false,
 } = {}) {
   const plan = await plansService.getMarketplaceMembershipPlanByTierCode("starter");
   if (!plan || !plan.isActive) {
@@ -248,7 +249,76 @@ async function activateStarterMembership({
     actorUserId,
     now,
     paidTermStartsAt: now,
+    skipVerification: Boolean(skipVerification),
   });
+}
+
+/**
+ * After platform account activation:
+ * - If freelancer already has a current marketplace membership (any paid/usable plan) → keep it.
+ * - If none → grant free STARTER once (never supersedes an existing current membership).
+ */
+async function ensureMarketplaceMembershipAfterAccountActivation({
+  freelancerUserId,
+  actorUserId = null,
+  now = new Date(),
+} = {}) {
+  const uid = Number(freelancerUserId);
+  if (!Number.isInteger(uid) || uid < 1) {
+    return { grantedStarter: false, keptExisting: false, membership: null };
+  }
+
+  try {
+    const current = await membershipsService.resolveCurrentMarketplaceMembershipForFreelancer(uid);
+    if (current) {
+      return {
+        grantedStarter: false,
+        keptExisting: true,
+        membership: current,
+        tierCode: current.plan?.tierCode || current.plan?.tier_code || null,
+      };
+    }
+
+    const out = await activateStarterMembership({
+      freelancerUserId: uid,
+      actorUserId: actorUserId != null ? Number(actorUserId) : uid,
+      now,
+      skipVerification: true,
+    });
+    return {
+      grantedStarter: true,
+      keptExisting: false,
+      membership: out?.membership || out || null,
+      tierCode: "starter",
+    };
+  } catch (err) {
+    const code = err?.publicCode || err?.code || null;
+    // Starter already used, or marketplace schema missing — account activation still succeeds.
+    if (
+      code === "STARTER_ENTITLEMENT_ALREADY_USED" ||
+      err?.statusCode === 409 ||
+      err?.code === "42P01"
+    ) {
+      return {
+        grantedStarter: false,
+        keptExisting: false,
+        membership: null,
+        skippedReason: code || "starter_unavailable",
+      };
+    }
+    // eslint-disable-next-line no-console
+    console.error(
+      "[membership] ensureMarketplaceMembershipAfterAccountActivation failed:",
+      err?.message || err,
+    );
+    return {
+      grantedStarter: false,
+      keptExisting: false,
+      membership: null,
+      skippedReason: code || "membership_ensure_failed",
+      errorMessage: err?.message || null,
+    };
+  }
 }
 
 module.exports = {
@@ -256,6 +326,7 @@ module.exports = {
   approveActivationRequest,
   rejectActivationRequest,
   activateStarterMembership,
+  ensureMarketplaceMembershipAfterAccountActivation,
   mapRequest,
   PAID_MEMBERSHIP_PERIOD_START,
 };

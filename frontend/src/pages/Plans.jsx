@@ -31,6 +31,7 @@ const Plans = () => {
     loading,
     error,
     notFound,
+    catalogSource,
     mySubscription,
     hasBlockingSubscription,
     checkoutBusyPlanId,
@@ -128,21 +129,30 @@ const Plans = () => {
 
         {showMembership ? (
           <>
-            <PricingSection
-              loading={loading}
-              plans={plans}
-              currentSubscription={mySubscription}
-              hasBlockingSubscription={hasBlockingSubscription}
-              checkoutBusyPlanId={checkoutBusyPlanId}
-              activationFeeNeedsPayment={activationFeeNeedsPayment}
-              activationFee={activationFee}
-              onCta={handlePlanCta}
-              pageTitle={pageTitle}
-              pageSubtitle={pageSubtitle}
-              trustPills={trustPills}
-              layoutVariant={layoutVariant}
-              forceMembershipHero={isMainCatalog}
-            />
+            {loading || !error ? (
+              <PricingSection
+                loading={loading}
+                plans={plans}
+                currentSubscription={mySubscription}
+                hasBlockingSubscription={hasBlockingSubscription}
+                checkoutBusyPlanId={checkoutBusyPlanId}
+                activationFeeNeedsPayment={activationFeeNeedsPayment}
+                activationFee={activationFee}
+                onCta={handlePlanCta}
+                pageTitle={pageTitle}
+                pageSubtitle={pageSubtitle}
+                trustPills={trustPills}
+                layoutVariant={layoutVariant}
+                forceMembershipHero={isMainCatalog}
+                membershipCatalog={
+                isMainCatalog
+                  ? catalogSource == null
+                    ? null
+                    : catalogSource === "marketplace_membership"
+                  : false
+              }
+              />
+            ) : null}
             {error ? (
               <section className="card" style={{ marginTop: 14 }}>
                 <p className="auth-form-error">{error || t("plans.errors.loadFailed")}</p>

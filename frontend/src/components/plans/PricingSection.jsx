@@ -33,24 +33,26 @@ const PricingSection = ({
   activationFeeNeedsPayment = false,
   activationFee = null,
   forceMembershipHero = false,
+  membershipCatalog = null,
 }) => {
   const { t } = useTranslation();
   const plansList = Array.isArray(plans) ? plans : [];
   const featuredIndex = pickFeaturedPlanIndex(plansList);
   const isDashboard = variant === "dashboard";
   const layout = isDashboard ? null : getPlansLayoutConfig(layoutVariant);
+  const plansLookLikeMembership = plansList.some(
+    (p) => p?.catalogSource === "marketplace_membership" || p?.marketplaceMembership,
+  );
   const isMembershipCatalog =
     !isDashboard &&
-    (forceMembershipHero ||
-      (loading
-        ? layoutVariant !== PLANS_LAYOUT_VARIANT.LEGACY_THREE_CARD && !pageTitle
-        : plansList.some(
-            (p) => p?.catalogSource === "marketplace_membership" || p?.marketplaceMembership,
-          )));
+    (membershipCatalog === true ||
+      (membershipCatalog == null &&
+        (plansLookLikeMembership ||
+          (loading && forceMembershipHero && layoutVariant !== PLANS_LAYOUT_VARIANT.LEGACY_THREE_CARD && !pageTitle))));
   const title = pageTitle || t("plans.hero.title");
   const subtitle = pageSubtitle || t("plans.hero.subtitle");
   const eyebrow = isMembershipCatalog ? t("plans.hero.eyebrow") : null;
-  const skeletonCount = isDashboard ? 3 : layout.skeletonCount;
+  const skeletonCount = isDashboard ? Math.max(plansList.length || 4, 4) : layout.skeletonCount;
   const isLegacyPublic =
     !isDashboard && layoutVariant === PLANS_LAYOUT_VARIANT.LEGACY_THREE_CARD;
   const gridClassName = isDashboard

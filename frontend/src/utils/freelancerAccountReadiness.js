@@ -6,7 +6,7 @@ export const ACCOUNT_READINESS_SUPERSEDED_ACTION_IDS = new Set([
 ]);
 
 const FREELANCER_COURSES_PATH = "/dashboard/freelancer/courses";
-const FREELANCER_SETTINGS_PATH = "/dashboard/freelancer/settings";
+const FREELANCER_ACTIVATE_ACCOUNT_PATH = "/dashboard/freelancer/activate-account";
 
 /**
  * Same gate as pool admin-approval messaging: subscription awaiting company approval
@@ -83,7 +83,7 @@ export function resolveFreelancerCoursesActionUrl(coursesSection) {
 }
 
 export function freelancerAccountReviewUrl() {
-  return FREELANCER_SETTINGS_PATH;
+  return FREELANCER_ACTIVATE_ACCOUNT_PATH;
 }
 
 export function filterPendingActionsForAccountReadiness(actions = [], readinessState) {

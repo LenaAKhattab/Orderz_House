@@ -59,5 +59,7 @@ router.post(
   subscriptionsController.recordFreelancerSubscriptionCheckoutCancelledNotify,
 );
 
+router.post("/subscription/activate-account", subscriptionsController.selfActivateFreelancerAccount);
+
 module.exports = router;
 

@@ -285,6 +285,17 @@ const activateSubscriptionCompanyApproval = async (req, res, next) => {
   }
 };
 
+const selfActivateFreelancerAccount = async (req, res, next) => {
+  try {
+    const result = await subscriptionsService.selfActivateFreelancerAccount({
+      freelancerUserId: req.auth?.userId,
+    });
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const markActivationFeePaidOfflineAdmin = async (req, res, next) => {
   const client = await pool.connect();
   try {
@@ -334,6 +345,7 @@ module.exports = {
   confirmFreelancerSubscriptionCheckout,
   recordFreelancerSubscriptionCheckoutCancelledNotify,
   activateSubscriptionCompanyApproval,
+  selfActivateFreelancerAccount,
   markActivationFeePaidOfflineAdmin,
   clearFreelancerPaymentFailureHold,
 };

@@ -87,10 +87,10 @@ export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
             <span className="pricing-card__metric-icon" aria-hidden="true">
               <Target size={15} strokeWidth={2.1} />
             </span>
-            <div className="pricing-card__metric-copy">
+            <p className="pricing-card__metric-copy">
               <span className="pricing-card__metric-value">{bids}</span>
               <span className="pricing-card__metric-label">{t("plans.membership.bidsAvailable")}</span>
-            </div>
+            </p>
           </div>
         ) : null}
 
@@ -99,10 +99,10 @@ export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
             <span className="pricing-card__metric-icon" aria-hidden="true">
               <CalendarDays size={15} strokeWidth={2.1} />
             </span>
-            <div className="pricing-card__metric-copy">
+            <p className="pricing-card__metric-copy">
               <span className="pricing-card__metric-value">{daily}</span>
               <span className="pricing-card__metric-label">{t("plans.membership.bidsPerDay")}</span>
-            </div>
+            </p>
           </div>
         ) : null}
 
@@ -117,7 +117,7 @@ export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
           <span className="pricing-card__metric-icon" aria-hidden="true">
             {unlimited ? <InfinityIcon size={15} strokeWidth={2.1} /> : <Briefcase size={15} strokeWidth={2.1} />}
           </span>
-          <div className="pricing-card__metric-copy">
+          <p className="pricing-card__metric-copy">
             {unlimited ? (
               <>
                 <span className="pricing-card__metric-value pricing-card__metric-value--text">
@@ -130,12 +130,17 @@ export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
             ) : (
               <>
                 <span className="pricing-card__metric-value">
-                  {projectValue != null ? `${projectValue} ${t("plans.currency.jod")}` : "—"}
+                  {projectValue != null
+                    ? t("plans.membership.projectCapValue", {
+                        value: projectValue,
+                        currency: t("plans.currency.jod"),
+                      })
+                    : "—"}
                 </span>
                 <span className="pricing-card__metric-label">{t("plans.membership.projectCapMax")}</span>
               </>
             )}
-          </div>
+          </p>
         </div>
       </div>
 

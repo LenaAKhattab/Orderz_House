@@ -91,6 +91,8 @@ async function bootstrap(client) {
       budget NUMERIC(12,3),
       bid_budget_min NUMERIC(12,3),
       bid_budget_max NUMERIC(12,3),
+      duration_value INTEGER DEFAULT 3,
+      duration_unit VARCHAR(20) DEFAULT 'days',
       order_status VARCHAR(40) NOT NULL DEFAULT 'open_for_bids',
       is_published BOOLEAN NOT NULL DEFAULT TRUE,
       is_open_for_pool BOOLEAN NOT NULL DEFAULT TRUE,
@@ -240,7 +242,7 @@ async function main() {
       `INSERT INTO orders (
          order_code, bid_budget_min, bid_budget_max, target_applicant_count,
          application_bid_cost, is_open_for_pool, order_status, created_by_user_id
-       ) VALUES ('E3A', 1, 10, 2, 2, TRUE, 'open_for_bids', 1) RETURNING id`,
+       ) VALUES ('E3A', 1, 10, 20, 2, TRUE, 'open_for_bids', 1) RETURNING id`,
     );
     const orderA = oA[0].id;
     await client.query(
@@ -262,6 +264,23 @@ async function main() {
        ('f3','f3@t.test','freelancer'),
        ('f4','f4@t.test','freelancer')`,
     );
+    // 18 more pending applicants so current=19, target=20 (user 2 already applied)
+    for (let i = 6; i <= 23; i += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      const { rows: extraU } = await client.query(
+        `INSERT INTO users (account_id, email, role)
+         VALUES ($1, $2, 'freelancer') RETURNING id`,
+        [`f${i}`, `f${i}@t.test`],
+      );
+      // eslint-disable-next-line no-await-in-loop
+      await client.query(
+        `INSERT INTO order_freelancer_bids (order_id, freelancer_user_id, amount, status)
+         VALUES ($1, $2, 5, 'pending')`,
+        [orderA, extraU[0].id],
+      );
+    }
+    const preRaceCount = await e3.countValidApplicants(client, orderA);
+    assert(preRaceCount === 19, `A expected current=19 before race, got ${preRaceCount}`);
     // Give freelancers 4 and 5 enough Bids (cost=2 each) for last-slot race
     for (const fid of [4, 5]) {
       // eslint-disable-next-line no-await-in-loop
@@ -296,6 +315,11 @@ async function main() {
         if (!bidIns[0]) {
           await c.query("ROLLBACK");
           return { ok: false, code: "NO_INSERT", consumed: 0 };
+        }
+        const countAfter = await e3.countValidApplicants(c, orderA);
+        if (countAfter > Number(order.target_applicant_count)) {
+          await c.query("ROLLBACK");
+          return { ok: false, code: "NORMAL_ORDER_APPLICANT_TARGET_REACHED", consumed: 0 };
         }
         // Simulate engine-on charge of Order cost=2
         const consume = await accounting.consumeBidCreditsFefo({
@@ -338,7 +362,7 @@ async function main() {
     assert(wins[0].consumed === 2, "A winner consumes configured Bid cost");
     assert(losses[0].consumed === 0, "A loser consumes 0 Bids");
     const countA = await e3.countValidApplicants(client, orderA);
-    assert(countA === 2, `A expected 2 applicants got ${countA}`);
+    assert(countA === 20, `A expected 20 applicants got ${countA}`);
     const { rows: closedA } = await client.query(
       `SELECT applications_closed_at, applications_close_reason, is_open_for_pool FROM orders WHERE id=$1`,
       [orderA],
@@ -518,8 +542,14 @@ async function main() {
     assert(cont.action === "close_applications_continue", "E continue action");
     const { rows: contOrder } = await client.query(`SELECT * FROM orders WHERE id=$1`, [continueId]);
     assert(contOrder[0].applications_closed_at, "E continue closed");
+    assert(contOrder[0].is_open_for_pool === false, "E continue intake closed");
     assert(contOrder[0].order_status === "open_for_bids", "E continue no cancel");
     assert(contOrder[0].assigned_freelancer_id == null, "E continue no winner");
+    const { rows: contBids } = await client.query(
+      `SELECT status FROM order_freelancer_bids WHERE order_id=$1`,
+      [continueId],
+    );
+    assert(contBids[0].status === "pending", "E continue existing applications remain");
     const { rows: contEcon } = await client.query(
       `SELECT refund_status FROM order_freelancer_bid_credit_economics WHERE order_id=$1`,
       [continueId],
@@ -550,6 +580,9 @@ async function main() {
       now: new Date(),
     });
     assert(cancel1.action === "cancel_and_refund", "E cancel action");
+    const { rows: cancelOrder } = await client.query(`SELECT * FROM orders WHERE id=$1`, [cancelId]);
+    assert(cancelOrder[0].order_status === "cancelled", "E cancel reaches cancelled state");
+    assert(cancelOrder[0].is_open_for_pool === false, "E cancel intake closed");
     const cancel2 = await e3.reconcileSingleOrderDeadline({
       client,
       orderId: cancelId,
@@ -599,9 +632,20 @@ async function main() {
       locked = e.publicCode === "NORMAL_ORDER_ECONOMIC_FIELDS_FROZEN";
     }
     assert(locked, "F economic fields locked after first application");
+    let durationLocked = false;
+    try {
+      await e3.patchPublishedOrderEconomicFields({
+        client,
+        orderId: orderF,
+        patch: { durationValue: 10, durationUnit: "days" },
+      });
+    } catch (e) {
+      durationLocked = e.publicCode === "NORMAL_ORDER_ECONOMIC_FIELDS_FROZEN";
+    }
+    assert(durationLocked, "F duration locked after first application");
     console.log("F_OK ORDER_ECONOMIC_FIELDS_LOCK_AFTER_FIRST_APPLICATION=YES");
 
-    // G: Super Admin E3 settings GET → PATCH persist → GET round-trip (via client + mapper)
+    // G: Super Admin E3 settings GET → mergePatch → persist → GET round-trip
     const beforeSettings = await economySettings.getMarketplaceEconomySettings(client);
     const beforeApi = economySettings.mapActiveEconomySettingsForAdminApi(beforeSettings);
     assert(beforeApi.normalOrderDefaultBidCost != null, "G GET has default Bid cost");
@@ -633,72 +677,16 @@ async function main() {
       normalOrderRefundPostAwardCancel: "none",
       normalOrderBusinessTimezone: "Asia/Amman",
     };
-    // Persist using the same E3 UPDATE block shape as updateMarketplaceEconomySettings (pool-free).
-    await client.query(
-      `UPDATE marketplace_economy_settings SET
-         normal_order_min_value_jod = $2,
-         normal_order_max_value_jod = $3,
-         normal_order_min_target_applicants = $4,
-         normal_order_max_target_applicants = $5,
-         normal_order_default_target_applicants = $6,
-         normal_order_min_bid_cost = $7,
-         normal_order_max_bid_cost = $8,
-         normal_order_default_bid_cost = $9,
-         normal_order_min_application_period_hours = $10,
-         normal_order_max_application_period_hours = $11,
-         normal_order_default_application_period_hours = $12,
-         normal_order_min_execution_duration_hours = $13,
-         normal_order_max_execution_duration_hours = $14,
-         normal_order_default_execution_duration_hours = $15,
-         normal_order_deadline_incomplete_target_policy = $16,
-         normal_order_refund_client_cancel_before_selection = $17,
-         normal_order_refund_system_cancel = $18,
-         normal_order_refund_deadline_no_selection = $19,
-         normal_order_refund_no_freelancer_selected = $20,
-         normal_order_refund_freelancer_withdrawal = $21,
-         normal_order_refund_rejected_application = $22,
-         normal_order_refund_losing_applicant = $23,
-         normal_order_refund_post_award_cancel = $24,
-         normal_order_business_timezone = $25,
-         updated_at = NOW()
-       WHERE id = $1`,
-      [
-        1,
-        patchG.normalOrderMinValueJod,
-        patchG.normalOrderMaxValueJod,
-        patchG.normalOrderMinTargetApplicants,
-        patchG.normalOrderMaxTargetApplicants,
-        patchG.normalOrderDefaultTargetApplicants,
-        patchG.normalOrderMinBidCost,
-        patchG.normalOrderMaxBidCost,
-        patchG.normalOrderDefaultBidCost,
-        patchG.normalOrderMinApplicationPeriodHours,
-        patchG.normalOrderMaxApplicationPeriodHours,
-        patchG.normalOrderDefaultApplicationPeriodHours,
-        patchG.normalOrderMinExecutionDurationHours,
-        patchG.normalOrderMaxExecutionDurationHours,
-        patchG.normalOrderDefaultExecutionDurationHours,
-        patchG.normalOrderDeadlineIncompleteTargetPolicy,
-        patchG.normalOrderRefundClientCancelBeforeSelection,
-        patchG.normalOrderRefundSystemCancel,
-        patchG.normalOrderRefundDeadlineNoSelection,
-        patchG.normalOrderRefundNoFreelancerSelected,
-        patchG.normalOrderRefundFreelancerWithdrawal,
-        patchG.normalOrderRefundRejectedApplication,
-        patchG.normalOrderRefundLosingApplicant,
-        patchG.normalOrderRefundPostAwardCancel,
-        patchG.normalOrderBusinessTimezone,
-      ],
-    );
+    const merged = economySettings.mergePatch(beforeSettings, patchG);
+    assert(merged.normalOrderDefaultBidCost === 4, "G mergePatch Bid cost");
+    assert(merged.normalOrderDeadlineIncompleteTargetPolicy === "require_admin_review", "G mergePatch policy");
+    const persisted = await economySettings.persistNormalOrderEconomySettings(client, merged);
+    assert(persisted === true, "G persist E3 columns");
     const afterSettings = await economySettings.getMarketplaceEconomySettings(client);
     const afterApi = economySettings.mapActiveEconomySettingsForAdminApi(afterSettings);
     for (const [k, v] of Object.entries(patchG)) {
       assert(afterApi[k] === v, `G round-trip mismatch ${k}: got ${afterApi[k]} want ${v}`);
     }
-    // mergePatch validates the same fields Admin PATCH accepts
-    const merged = economySettings.mergePatch(beforeSettings, patchG);
-    assert(merged.normalOrderDefaultBidCost === 4, "G mergePatch Bid cost");
-    assert(merged.normalOrderDeadlineIncompleteTargetPolicy === "require_admin_review", "G mergePatch policy");
     console.log("G_OK NORMAL_ORDER_ADMIN_CONFIGURATION=PASS E3_ADMIN_SETTINGS_ROUND_TRIP=PASS");
 
     // H: deadline + refund notification dedupe
@@ -753,6 +741,20 @@ async function main() {
       [`normal_app_bid_refund_${orderHref}_2`],
     );
     assert(nRef[0].c === 1, `H refund notify dedupe expected 1 got ${nRef[0].c}`);
+
+    const cancelNotifyId = await seedDeadlineOrder("E3H3", "cancel_and_refund");
+    await e3.reconcileSingleOrderDeadline({ client, orderId: cancelNotifyId, now: new Date() });
+    await e3.reconcileSingleOrderDeadline({ client, orderId: cancelNotifyId, now: new Date() });
+    const { rows: nCancelOwner } = await client.query(
+      `SELECT COUNT(*)::int AS c FROM notifications WHERE dedupe_key = $1`,
+      [`order_apps_deadline_cancel_${cancelNotifyId}`],
+    );
+    const { rows: nCancelFl } = await client.query(
+      `SELECT COUNT(*)::int AS c FROM notifications WHERE dedupe_key = $1`,
+      [`order_apps_deadline_cancel_fl_${cancelNotifyId}_2`],
+    );
+    assert(nCancelOwner[0].c === 1, `H cancel owner notify dedupe expected 1 got ${nCancelOwner[0].c}`);
+    assert(nCancelFl[0].c === 1, `H cancel freelancer notify dedupe expected 1 got ${nCancelFl[0].c}`);
     console.log(
       "H_OK NORMAL_ORDER_DEADLINE_NOTIFICATIONS=ENABLED NORMAL_ORDER_REFUND_NOTIFICATION_IDEMPOTENCY=PASS",
     );

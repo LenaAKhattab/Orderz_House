@@ -51,8 +51,14 @@ describe("canRoleAccessPath", () => {
   });
 
   it("allows admin role on delegated super-admin paths (page permission enforced separately)", () => {
-    assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.ADMIN), true);
     assert.equal(canRoleAccessPath("/dashboard/super-admin/admins", ROLE.ADMIN), true);
+  });
+
+  it("restricts Super Admin plans management to super_admin", () => {
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.SUPER_ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.ADMIN), false);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.FREELANCER), false);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.CLIENT), false);
   });
 
   it("denies cross-role dashboard access", () => {

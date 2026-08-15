@@ -1,3 +1,4 @@
+import { ROLE, canRoleAccessPath } from "./authRoutes";
 import { ADMIN_PAGE_PERMISSIONS, SUPER_ADMIN_PAGE_PERMISSIONS } from "./dashboardPermissions";
 import {
   SUPER_ADMIN_NAV_ITEM_DEFS,
@@ -66,7 +67,6 @@ export const ADMIN_NAV_ITEM_DEFS = {
     icon: "subscription-activation",
     permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation,
   },
-  plans: SUPER_ADMIN_NAV_ITEM_DEFS.plans,
   subscriptions: SUPER_ADMIN_NAV_ITEM_DEFS.subscriptions,
   trainingRequests: SUPER_ADMIN_NAV_ITEM_DEFS.trainingRequests,
   pantry: SUPER_ADMIN_NAV_ITEM_DEFS.pantry,
@@ -95,7 +95,7 @@ export const ADMIN_NAV_SECTION_DEFS = [
   {
     id: "usersSubscriptions",
     labelKey: "dashboard.nav.sections.usersSubscriptions",
-    itemKeys: ["plans", "subscriptions", "subscriptionActivation"],
+    itemKeys: ["subscriptions", "subscriptionActivation"],
   },
   {
     id: "contentTraining",
@@ -176,7 +176,9 @@ export function getAdminDelegatedSuperAdminNav(user, hasPermission) {
       !ADMIN_SHELL_PERMISSION_KEYS.has(item.permission) &&
       hasPermission(user, item.permission),
   );
-  return dedupeDelegatedNavByPermission(permitted);
+  return dedupeDelegatedNavByPermission(permitted).filter((item) =>
+    canRoleAccessPath(item.to, ROLE.ADMIN),
+  );
 }
 
 export function isAdminDashboardPath(pathname) {

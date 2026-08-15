@@ -44,7 +44,13 @@ const PANTRY_REQUEST_PATCHABLE_FIELDS = Object.freeze([
   "requirements",
   "attachments",
   "internalNotes",
+  "applicationBidCost",
+  "targetApplicantCount",
+  "eligibleTierCodes",
+  "applicationDeadlineAt",
 ]);
+
+const PANTRY_ELIGIBLE_TIER_CODES = Object.freeze(["starter", "silver", "pro", "elite"]);
 
 function canFreelancerListRequest(status) {
   return FREELANCER_VISIBLE_REQUEST_STATUSES.includes(String(status || ""));
@@ -324,6 +330,53 @@ function validatePantryRequestPayload(payload = {}, { partial = false } = {}) {
     }
   }
 
+  let applicationBidCost = null;
+  if (src.applicationBidCost != null && String(src.applicationBidCost).trim() !== "") {
+    const n = Number(src.applicationBidCost);
+    if (!Number.isInteger(n) || n < 1 || n > 1000) {
+      fieldErrors.applicationBidCost = "تكلفة التقديم بالعرض يجب أن تكون عدداً صحيحاً من 1 إلى 1000.";
+    } else {
+      applicationBidCost = n;
+    }
+  }
+
+  let targetApplicantCount = null;
+  if (src.targetApplicantCount != null && String(src.targetApplicantCount).trim() !== "") {
+    const n = Number(src.targetApplicantCount);
+    if (!Number.isInteger(n) || n < 1 || n > 10000) {
+      fieldErrors.targetApplicantCount = "العدد المستهدف للمتقدمين غير صالح.";
+    } else {
+      targetApplicantCount = n;
+    }
+  }
+
+  let eligibleTierCodes = null;
+  if (src.eligibleTierCodes != null && src.eligibleTierCodes !== "") {
+    const raw = Array.isArray(src.eligibleTierCodes)
+      ? src.eligibleTierCodes
+      : String(src.eligibleTierCodes)
+          .split(",")
+          .map((s) => s.trim());
+    const cleaned = raw
+      .map((t) => String(t || "").toLowerCase())
+      .filter((t) => PANTRY_ELIGIBLE_TIER_CODES.includes(t));
+    if (raw.filter(Boolean).length && !cleaned.length) {
+      fieldErrors.eligibleTierCodes = "الباقات المؤهلة غير صالحة.";
+    } else if (cleaned.length) {
+      eligibleTierCodes = cleaned;
+    }
+  }
+
+  let applicationDeadlineAt = null;
+  if (src.applicationDeadlineAt) {
+    const d = new Date(src.applicationDeadlineAt);
+    if (Number.isNaN(d.getTime())) {
+      fieldErrors.applicationDeadlineAt = "موعد إغلاق التقديم غير صالح.";
+    } else {
+      applicationDeadlineAt = d.toISOString();
+    }
+  }
+
   if (Object.keys(fieldErrors).length) {
     return {
       ok: false,
@@ -349,6 +402,10 @@ function validatePantryRequestPayload(payload = {}, { partial = false } = {}) {
     requirements: requirements === undefined ? null : requirements,
     attachments,
     internalNotes: internalNotes === undefined ? null : internalNotes,
+    applicationBidCost,
+    targetApplicantCount,
+    eligibleTierCodes,
+    applicationDeadlineAt,
     publish: Boolean(src.publish),
   };
 
@@ -363,6 +420,7 @@ module.exports = {
   PANTRY_DURATION_UNITS,
   FREELANCER_VISIBLE_REQUEST_STATUSES,
   PANTRY_REQUEST_PATCHABLE_FIELDS,
+  PANTRY_ELIGIBLE_TIER_CODES,
   canFreelancerListRequest,
   canFreelancerBid,
   canFreelancerDeliver,

@@ -78,6 +78,36 @@ const ORDER_ECONOMIC_LOCK_FIELDS = Object.freeze([
   "bid_budget_min",
   "bid_budget_max",
   "deadline_incomplete_target_policy",
+  "duration_value",
+  "duration_unit",
+]);
+
+/** Admin API keys that must GET → PATCH → GET with identical persisted values. */
+const NORMAL_ORDER_ADMIN_API_KEYS = Object.freeze([
+  "normalOrderMinValueJod",
+  "normalOrderMaxValueJod",
+  "normalOrderMinTargetApplicants",
+  "normalOrderMaxTargetApplicants",
+  "normalOrderDefaultTargetApplicants",
+  "normalOrderMinBidCost",
+  "normalOrderMaxBidCost",
+  "normalOrderDefaultBidCost",
+  "normalOrderMinApplicationPeriodHours",
+  "normalOrderMaxApplicationPeriodHours",
+  "normalOrderDefaultApplicationPeriodHours",
+  "normalOrderMinExecutionDurationHours",
+  "normalOrderMaxExecutionDurationHours",
+  "normalOrderDefaultExecutionDurationHours",
+  "normalOrderDeadlineIncompleteTargetPolicy",
+  "normalOrderRefundClientCancelBeforeSelection",
+  "normalOrderRefundSystemCancel",
+  "normalOrderRefundDeadlineNoSelection",
+  "normalOrderRefundNoFreelancerSelected",
+  "normalOrderRefundFreelancerWithdrawal",
+  "normalOrderRefundRejectedApplication",
+  "normalOrderRefundLosingApplicant",
+  "normalOrderRefundPostAwardCancel",
+  "normalOrderBusinessTimezone",
 ]);
 
 module.exports = {
@@ -89,4 +119,5 @@ module.exports = {
   NORMAL_ORDER_VALID_APPLICATION_STATUSES,
   NORMAL_ORDER_ERROR_CODES,
   ORDER_ECONOMIC_LOCK_FIELDS,
+  NORMAL_ORDER_ADMIN_API_KEYS,
 };

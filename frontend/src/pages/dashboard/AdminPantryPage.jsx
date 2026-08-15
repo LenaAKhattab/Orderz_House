@@ -42,6 +42,10 @@ const EMPTY_FORM = {
   attachmentName: "",
   internalNotes: "",
   publish: true,
+  applicationBidCost: "1",
+  targetApplicantCount: "",
+  applicationDeadlineAt: "",
+  eligibleTiers: { starter: false, silver: false, pro: false, elite: false },
 };
 
 function formatBudget(row) {
@@ -79,6 +83,7 @@ export default function AdminPantryPage() {
   const [categories, setCategories] = useState([]);
   const [subSubs, setSubSubs] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [integrationActive, setIntegrationActive] = useState(false);
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -88,6 +93,7 @@ export default function AdminPantryPage() {
       .then((reqRes) => {
         setRequests(reqRes?.data?.requests || []);
         setStats(reqRes?.data?.stats || null);
+        setIntegrationActive(Boolean(reqRes?.data?.pantryMembershipBidIntegrationActive));
       })
       .catch((err) => {
         setRequests([]);
@@ -157,6 +163,9 @@ export default function AdminPantryPage() {
     try {
       const res = await getAdminPantryRequestRequest(id);
       setDetail(res?.data || null);
+      if (res?.data?.pantryMembershipBidIntegrationActive != null) {
+        setIntegrationActive(Boolean(res.data.pantryMembershipBidIntegrationActive));
+      }
     } catch (err) {
       toast?.error?.(apiErrorMessage(err, "تعذر فتح الطلب"));
     }
@@ -241,6 +250,16 @@ export default function AdminPantryPage() {
       internalNotes: form.internalNotes.trim() || null,
       publish: Boolean(form.publish),
     };
+    if (integrationActive) {
+      payload.applicationBidCost = form.applicationBidCost !== "" ? Number(form.applicationBidCost) : null;
+      payload.targetApplicantCount =
+        form.targetApplicantCount !== "" ? Number(form.targetApplicantCount) : null;
+      payload.applicationDeadlineAt = form.applicationDeadlineAt || null;
+      const codes = Object.entries(form.eligibleTiers || {})
+        .filter(([, on]) => on)
+        .map(([code]) => code);
+      payload.eligibleTierCodes = codes.length ? codes : null;
+    }
 
     setSaving(true);
     try {
@@ -391,6 +410,7 @@ export default function AdminPantryPage() {
                     <th>الحالة</th>
                     <th>الميزانية</th>
                     <th>عدد العروض</th>
+                    {integrationActive ? <th>تكلفة التقديم</th> : null}
                     <th>الفريلانسر</th>
                     <th>تاريخ الإنشاء</th>
                     <th>الإجراءات</th>
@@ -403,7 +423,12 @@ export default function AdminPantryPage() {
                       <td>{row.pricingType === "bidding" ? "عروض" : "ثابت"}</td>
                       <td>{STATUS_LABELS[row.status] || row.status}</td>
                       <td>{formatBudget(row)}</td>
-                      <td>{row.bidsCount ?? 0}</td>
+                      <td>
+                        {integrationActive && row.targetApplicantCount != null
+                          ? `${row.validApplicantCount ?? 0} / ${row.targetApplicantCount}`
+                          : row.bidsCount ?? 0}
+                      </td>
+                      {integrationActive ? <td>{row.applicationBidCost ?? 1}</td> : null}
                       <td>{row.assignedFreelancerName || "—"}</td>
                       <td>{row.createdAt ? new Date(row.createdAt).toLocaleDateString("ar") : "—"}</td>
                       <td className="pantry-actions">
@@ -420,7 +445,7 @@ export default function AdminPantryPage() {
                   ))}
                   {!requests.length && (
                     <tr>
-                      <td colSpan={8}>{requestsError ? "—" : "لا توجد طلبات بعد."}</td>
+                      <td colSpan={integrationActive ? 9 : 8}>{requestsError ? "—" : "لا توجد طلبات بعد."}</td>
                     </tr>
                   )}
                 </tbody>
@@ -671,6 +696,63 @@ export default function AdminPantryPage() {
               </label>
             </section>
 
+            {integrationActive ? (
+            <section className="pantry-form-section">
+              <h3>شروط التقديم</h3>
+              <div className="pantry-form-row">
+                <label>
+                  تكلفة التقديم (عروض متاحة)
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={form.applicationBidCost}
+                    onChange={(e) => setForm((f) => ({ ...f, applicationBidCost: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  العدد المستهدف للمتقدمين
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={form.targetApplicantCount}
+                    onChange={(e) => setForm((f) => ({ ...f, targetApplicantCount: e.target.value }))}
+                    placeholder="اختياري"
+                  />
+                </label>
+              </div>
+              <label>
+                موعد إغلاق التقديم (اختياري)
+                <input
+                  type="datetime-local"
+                  value={form.applicationDeadlineAt}
+                  onChange={(e) => setForm((f) => ({ ...f, applicationDeadlineAt: e.target.value }))}
+                />
+              </label>
+              <div>
+                <span className="muted">الباقات المؤهلة (اتركها فارغة للكل)</span>
+                <div className="pantry-type-row">
+                  {["starter", "silver", "pro", "elite"].map((code) => (
+                    <label key={code} className="pantry-check">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(form.eligibleTiers?.[code])}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            eligibleTiers: { ...f.eligibleTiers, [code]: e.target.checked },
+                          }))
+                        }
+                      />
+                      {code.toUpperCase()}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </section>
+            ) : null}
+
             <section className="pantry-form-section">
               <h3>ملاحظات داخلية</h3>
               <label>
@@ -728,6 +810,22 @@ export default function AdminPantryPage() {
             <p>
               الحالة: <strong>{STATUS_LABELS[detail.request.status] || detail.request.status}</strong>
             </p>
+            {integrationActive ? (
+            <p className="muted">
+              تكلفة التقديم: {detail.request.applicationBidCost ?? 1} عرض متاح
+              {detail.request.targetApplicantCount != null
+                ? ` · المتقدمون: ${detail.request.validApplicantCount ?? 0} / ${detail.request.targetApplicantCount}`
+                : ` · المتقدمون: ${detail.request.validApplicantCount ?? detail.bids?.length ?? 0}`}
+              {detail.request.remainingApplicantSlots != null
+                ? ` · المتبقي: ${detail.request.remainingApplicantSlots}`
+                : ""}
+            </p>
+            ) : null}
+            {integrationActive && !!detail.request.eligibleTierCodes?.length && (
+              <p className="muted">
+                الباقات المؤهلة: {detail.request.eligibleTierCodes.map((t) => String(t).toUpperCase()).join("، ")}
+              </p>
+            )}
             <h3>العروض</h3>
             <ul className="pantry-bid-list">
               {(detail.bids || []).map((b) => (

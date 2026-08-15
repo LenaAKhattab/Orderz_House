@@ -11,6 +11,12 @@ const {
   mapPantryDbError,
 } = require("../constants/pantry");
 const notificationService = require("./notificationService");
+const pantryMembershipBid = require("./pantryMembershipBidService");
+const {
+  resolvePantryApplicationBidCost,
+  PANTRY_INTEGRATION_MODES,
+  pantryIntegrationApiFields,
+} = require("../constants/pantryMembershipBid");
 
 function httpError(status, message, code) {
   const err = new Error(message);
@@ -69,8 +75,77 @@ function mapRequest(row, extras = {}) {
     acceptedBidId: row.accepted_bid_id != null ? String(row.accepted_bid_id) : null,
     internalNotes: row.internal_notes || null,
     bidsCount: row.bids_count != null ? Number(row.bids_count) : extras.bidsCount,
+    validApplicantCount:
+      row.valid_applicants_count != null
+        ? Number(row.valid_applicants_count)
+        : extras.validApplicantCount != null
+          ? Number(extras.validApplicantCount)
+          : null,
+    applicationBidCost:
+      extras.integrationActive === true &&
+      (Object.prototype.hasOwnProperty.call(row, "application_bid_cost") ||
+        extras.applicationBidCost != null)
+        ? resolvePantryApplicationBidCost({
+            application_bid_cost: row.application_bid_cost,
+            applicationBidCost: extras.applicationBidCost,
+          })
+        : null,
+    targetApplicantCount:
+      extras.integrationActive === true
+        ? row.target_applicant_count != null
+          ? Number(row.target_applicant_count)
+          : extras.targetApplicantCount != null
+            ? Number(extras.targetApplicantCount)
+            : null
+        : null,
+    eligibleTierCodes:
+      extras.integrationActive === true
+        ? pantryMembershipBid.parseEligibleTiers(row.eligible_tier_codes ?? extras.eligibleTierCodes)
+        : null,
+    applicationDeadlineAt:
+      extras.integrationActive === true
+        ? row.application_deadline_at || extras.applicationDeadlineAt || null
+        : null,
+    applicationsClosedAt:
+      extras.integrationActive === true
+        ? row.applications_closed_at || extras.applicationsClosedAt || null
+        : null,
+    applicationsCloseReason:
+      extras.integrationActive === true
+        ? row.applications_close_reason || extras.applicationsCloseReason || null
+        : null,
+    remainingApplicantSlots:
+      extras.integrationActive === true
+        ? (() => {
+            const target =
+              row.target_applicant_count != null
+                ? Number(row.target_applicant_count)
+                : extras.targetApplicantCount != null
+                  ? Number(extras.targetApplicantCount)
+                  : null;
+            const current =
+              row.valid_applicants_count != null
+                ? Number(row.valid_applicants_count)
+                : extras.validApplicantCount != null
+                  ? Number(extras.validApplicantCount)
+                  : null;
+            if (target != null && Number.isInteger(target) && current != null) {
+              return Math.max(0, target - current);
+            }
+            return extras.remainingApplicantSlots != null ? extras.remainingApplicantSlots : null;
+          })()
+        : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+async function integrationMapExtras(extra = {}) {
+  const state = await pantryMembershipBid.getPantryMembershipBidIntegrationState();
+  return {
+    integrationActive: state.mode === PANTRY_INTEGRATION_MODES.INTEGRATED,
+    integrationMode: state.mode,
+    ...extra,
   };
 }
 
@@ -152,7 +227,9 @@ async function listAdminRequests({ status } = {}) {
   const { rows } = await pantryQuery(
     `SELECT r.*,
             NULLIF(TRIM(CONCAT_WS(' ', u.first_name, u.father_name, u.family_name)), '') AS assigned_freelancer_name,
-            (SELECT COUNT(*)::int FROM pantry_bids b WHERE b.pantry_request_id = r.id) AS bids_count
+            (SELECT COUNT(*)::int FROM pantry_bids b WHERE b.pantry_request_id = r.id) AS bids_count,
+            (SELECT COUNT(*)::int FROM pantry_bids b
+              WHERE b.pantry_request_id = r.id AND b.status IN ('pending','accepted')) AS valid_applicants_count
      FROM pantry_requests r
      LEFT JOIN users u ON u.id = r.assigned_freelancer_id
      ${where}
@@ -160,14 +237,17 @@ async function listAdminRequests({ status } = {}) {
      LIMIT 200`,
     params,
   );
-  return rows.map((row) => mapRequest(row));
+  const extras = await integrationMapExtras();
+  return rows.map((row) => mapRequest(row, extras));
 }
 
 async function getRequestById(id, { includeBids = false, includeDeliveries = false } = {}) {
   const { rows } = await pantryQuery(
     `SELECT r.*,
             NULLIF(TRIM(CONCAT_WS(' ', u.first_name, u.father_name, u.family_name)), '') AS assigned_freelancer_name,
-            (SELECT COUNT(*)::int FROM pantry_bids b WHERE b.pantry_request_id = r.id) AS bids_count
+            (SELECT COUNT(*)::int FROM pantry_bids b WHERE b.pantry_request_id = r.id) AS bids_count,
+            (SELECT COUNT(*)::int FROM pantry_bids b
+              WHERE b.pantry_request_id = r.id AND b.status IN ('pending','accepted')) AS valid_applicants_count
      FROM pantry_requests r
      LEFT JOIN users u ON u.id = r.assigned_freelancer_id
      WHERE r.id = $1
@@ -175,7 +255,8 @@ async function getRequestById(id, { includeBids = false, includeDeliveries = fal
     [id],
   );
   if (!rows.length) return null;
-  const request = mapRequest(rows[0]);
+  const extras = await integrationMapExtras();
+  const request = mapRequest(rows[0], extras);
   const out = { request };
   if (includeBids) {
     const bids = await listBidsForRequest(id);
@@ -240,8 +321,29 @@ async function createRequest(adminUserId, payload) {
       v.internalNotes,
     ],
   );
+  let row = rows[0];
+  if (await pantryMembershipBid.pantryEconomySchemaReady()) {
+    const extra = await pantryQuery(
+      `UPDATE pantry_requests SET
+         application_bid_cost = $1,
+         target_applicant_count = $2,
+         eligible_tier_codes = $3::jsonb,
+         application_deadline_at = $4,
+         updated_at = NOW()
+       WHERE id = $5
+       RETURNING *`,
+      [
+        v.applicationBidCost,
+        v.targetApplicantCount,
+        v.eligibleTierCodes ? JSON.stringify(v.eligibleTierCodes) : null,
+        v.applicationDeadlineAt,
+        row.id,
+      ],
+    );
+    if (extra.rows[0]) row = extra.rows[0];
+  }
   // TODO: broadcast notify freelancers on publish (avoid mass spam in MVP).
-  return mapRequest(rows[0], { bidsCount: 0 });
+  return mapRequest(row, await integrationMapExtras({ bidsCount: 0, validApplicantCount: 0 }));
 }
 
 async function updateRequest(id, payload) {
@@ -283,6 +385,22 @@ async function updateRequest(id, payload) {
         payload.attachments !== undefined ? payload.attachments : existing.request.attachments,
       internalNotes:
         payload.internalNotes !== undefined ? payload.internalNotes : existing.request.internalNotes,
+      applicationBidCost:
+        payload.applicationBidCost !== undefined
+          ? payload.applicationBidCost
+          : existing.request.applicationBidCost,
+      targetApplicantCount:
+        payload.targetApplicantCount !== undefined
+          ? payload.targetApplicantCount
+          : existing.request.targetApplicantCount,
+      eligibleTierCodes:
+        payload.eligibleTierCodes !== undefined
+          ? payload.eligibleTierCodes
+          : existing.request.eligibleTierCodes,
+      applicationDeadlineAt:
+        payload.applicationDeadlineAt !== undefined
+          ? payload.applicationDeadlineAt
+          : existing.request.applicationDeadlineAt,
     },
     { partial: false },
   );
@@ -335,7 +453,28 @@ async function updateRequest(id, payload) {
       id,
     ],
   );
-  return mapRequest(rows[0]);
+  let row = rows[0];
+  if (await pantryMembershipBid.pantryEconomySchemaReady()) {
+    const extra = await pantryQuery(
+      `UPDATE pantry_requests SET
+         application_bid_cost = $1,
+         target_applicant_count = $2,
+         eligible_tier_codes = $3::jsonb,
+         application_deadline_at = $4,
+         updated_at = NOW()
+       WHERE id = $5
+       RETURNING *`,
+      [
+        v.applicationBidCost,
+        v.targetApplicantCount,
+        v.eligibleTierCodes ? JSON.stringify(v.eligibleTierCodes) : null,
+        v.applicationDeadlineAt,
+        id,
+      ],
+    );
+    if (extra.rows[0]) row = extra.rows[0];
+  }
+  return mapRequest(row, await integrationMapExtras());
 }
 
 async function publishRequest(id) {
@@ -351,7 +490,7 @@ async function publishRequest(id) {
     [id],
   );
   // TODO: notify eligible freelancers about new pantry request.
-  return mapRequest(rows[0]);
+  return mapRequest(rows[0], await integrationMapExtras());
 }
 
 async function listBidsForRequest(requestId) {
@@ -407,6 +546,9 @@ async function acceptBid(requestId, bidId, actorUserId) {
        RETURNING *`,
       [bid.freelancer_id, bidId, requestId],
     );
+    if (await pantryMembershipBid.isPantryMembershipBidIntegrationActive(client)) {
+      await pantryMembershipBid.stampAssignedIntakeClosed(client, requestId);
+    }
     await client.query("COMMIT");
 
     await notifySafe({
@@ -422,7 +564,7 @@ async function acceptBid(requestId, bidId, actorUserId) {
       priority: "normal",
     });
 
-    return mapRequest(rows[0]);
+    return mapRequest(rows[0], await integrationMapExtras());
   } catch (err) {
     try {
       await client.query("ROLLBACK");
@@ -658,16 +800,40 @@ async function requestRevision(deliveryId, actorUserId, feedback) {
 
 /* ---------- Freelancer ---------- */
 
-async function listOpenRequestsForFreelancer() {
+async function listOpenRequestsForFreelancer(freelancerId) {
   const { rows } = await pantryQuery(
     `SELECT r.*,
-            (SELECT COUNT(*)::int FROM pantry_bids b WHERE b.pantry_request_id = r.id) AS bids_count
+            (SELECT COUNT(*)::int FROM pantry_bids b WHERE b.pantry_request_id = r.id) AS bids_count,
+            (SELECT COUNT(*)::int FROM pantry_bids b
+              WHERE b.pantry_request_id = r.id AND b.status IN ('pending','accepted')) AS valid_applicants_count
      FROM pantry_requests r
      WHERE r.status = 'open_for_bids'
      ORDER BY r.created_at DESC
      LIMIT 100`,
   );
-  return rows.map((row) => mapRequest(row));
+  const extras = await integrationMapExtras();
+  if (!freelancerId || extras.integrationMode !== PANTRY_INTEGRATION_MODES.INTEGRATED) {
+    return {
+      requests: rows.map((row) => mapRequest(row, extras)),
+      ...pantryIntegrationApiFields({ mode: extras.integrationMode }),
+    };
+  }
+  const client = await pool.connect();
+  try {
+    const out = [];
+    for (const row of rows) {
+      // eslint-disable-next-line no-await-in-loop
+      const apply = await pantryMembershipBid.buildFreelancerPantryApplyView(
+        client,
+        row,
+        freelancerId,
+      );
+      out.push({ ...mapRequest(row, extras), ...apply });
+    }
+    return { requests: out, ...pantryIntegrationApiFields({ mode: PANTRY_INTEGRATION_MODES.INTEGRATED }) };
+  } finally {
+    client.release();
+  }
 }
 
 async function getFreelancerRequest(id, freelancerId) {
@@ -683,21 +849,32 @@ async function getFreelancerRequest(id, freelancerId) {
     `SELECT * FROM pantry_bids WHERE pantry_request_id = $1 AND freelancer_id = $2 LIMIT 1`,
     [id, freelancerId],
   );
+  let applyView = null;
+  const integration = await pantryMembershipBid.getPantryMembershipBidIntegrationState();
+  const integrationActive = integration.mode === PANTRY_INTEGRATION_MODES.INTEGRATED;
+  if (integrationActive) {
+    const { rows } = await pantryQuery(`SELECT * FROM pantry_requests WHERE id = $1 LIMIT 1`, [id]);
+    if (rows[0]) {
+      applyView = await pantryMembershipBid.buildFreelancerPantryApplyView(
+        pool,
+        rows[0],
+        freelancerId,
+      );
+    }
+  }
   return {
-    request,
+    request: applyView ? { ...request, ...applyView } : request,
     myBid: myBidRes.rows.length ? mapBid(myBidRes.rows[0]) : null,
+    starterOpportunity: integrationActive ? applyView?.starterOpportunity || null : null,
+    ...pantryIntegrationApiFields(integration),
   };
 }
 
-async function submitBid(requestId, freelancerId, payload) {
+async function submitBidLegacy(requestId, freelancerId, payload, amount) {
   const data = await getRequestById(requestId);
   if (!data) throw httpError(404, "طلب بيت المونة غير موجود.", "NOT_FOUND");
   if (!canFreelancerBid(data.request.status)) {
     throw httpError(409, "الطلب غير مفتوح للعروض.", "INVALID_STATUS");
-  }
-  const amount = Number(payload.amount);
-  if (!Number.isFinite(amount) || amount < 0) {
-    throw httpError(400, "مبلغ العرض غير صالح.", "VALIDATION_ERROR");
   }
 
   try {
@@ -706,13 +883,7 @@ async function submitBid(requestId, freelancerId, payload) {
          pantry_request_id, freelancer_id, amount, duration_days, message, status
        ) VALUES ($1,$2,$3,$4,$5,'pending')
        RETURNING *`,
-      [
-        requestId,
-        freelancerId,
-        amount,
-        payload.durationDays || null,
-        payload.message || null,
-      ],
+      [requestId, freelancerId, amount, payload.durationDays || null, payload.message || null],
     );
     const bid = mapBid(rows[0]);
     if (data.request.createdByAdminId) {
@@ -738,11 +909,142 @@ async function submitBid(requestId, freelancerId, payload) {
   }
 }
 
+async function submitBidIntegrated(requestId, freelancerId, payload, amount) {
+  const client = await pool.connect();
+  let closeOut = null;
+  let requestRow = null;
+  try {
+    await client.query("BEGIN");
+    await pantryMembershipBid.assertIntegratedPantryRuntimeReady(client);
+    const reqRes = await client.query(`SELECT * FROM pantry_requests WHERE id = $1 FOR UPDATE`, [
+      requestId,
+    ]);
+    if (!reqRes.rows.length) throw httpError(404, "طلب بيت المونة غير موجود.", "NOT_FOUND");
+    requestRow = reqRes.rows[0];
+    if (!canFreelancerBid(requestRow.status)) {
+      throw httpError(409, "الطلب غير مفتوح للعروض.", "INVALID_STATUS");
+    }
+
+    const existing = await client.query(
+      `SELECT * FROM pantry_bids WHERE pantry_request_id = $1 AND freelancer_id = $2 LIMIT 1`,
+      [requestId, freelancerId],
+    );
+    if (existing.rows[0]) {
+      if (existing.rows[0].status === "pending") {
+        const { rows } = await client.query(
+          `UPDATE pantry_bids
+              SET amount = $1, duration_days = $2, message = $3, updated_at = NOW()
+            WHERE id = $4
+            RETURNING *`,
+          [amount, payload.durationDays || null, payload.message || null, existing.rows[0].id],
+        );
+        await client.query("COMMIT");
+        return mapBid(rows[0]);
+      }
+      throw httpError(409, "لقد قدّمت عرضاً مسبقاً على هذا الطلب.", "DUPLICATE_BID");
+    }
+
+    requestRow = await pantryMembershipBid.assertPantryAcceptsApplications(client, requestRow);
+    await pantryMembershipBid.assertMembershipAndPantryEligibility(client, freelancerId, requestRow);
+    await pantryMembershipBid.assertSpendableBidsIfEngineOn(client, freelancerId, requestRow);
+
+    const { rows } = await client.query(
+      `INSERT INTO pantry_bids (
+         pantry_request_id, freelancer_id, amount, duration_days, message, status
+       ) VALUES ($1,$2,$3,$4,$5,'pending')
+       RETURNING *`,
+      [requestId, freelancerId, amount, payload.durationDays || null, payload.message || null],
+    );
+
+    const fin = await pantryMembershipBid.finalizePantryApplicationAfterInsert({
+      client,
+      requestRow,
+      freelancerUserId: freelancerId,
+      pantryBidId: rows[0].id,
+    });
+    closeOut = fin.closeOut;
+
+    await client.query("COMMIT");
+    const bid = mapBid(rows[0]);
+
+    await notifySafe({
+      recipientUserId: freelancerId,
+      recipientRole: "freelancer",
+      actorUserId: freelancerId,
+      type: "pantry_bid_submitted",
+      title: "تم تقديم طلبك في بيت المونة",
+      message: `تم تقديم طلبك على: ${requestRow.title}`,
+      entityType: "pantry_request",
+      entityId: String(requestId),
+      link: "/dashboard/freelancer/pantry",
+      priority: "normal",
+    });
+    if (requestRow.created_by_admin_id) {
+      await notifySafe({
+        recipientUserId: requestRow.created_by_admin_id,
+        recipientRole: "admin",
+        actorUserId: freelancerId,
+        type: "pantry_bid_submitted",
+        title: "عرض جديد في بيت المونة",
+        message: `تم تقديم عرض على: ${requestRow.title}`,
+        entityType: "pantry_request",
+        entityId: String(requestId),
+        link: "/dashboard/super-admin/pantry",
+        priority: "normal",
+      });
+    }
+    if (closeOut?.closed && requestRow.created_by_admin_id) {
+      await notifySafe({
+        recipientUserId: requestRow.created_by_admin_id,
+        recipientRole: "admin",
+        actorUserId: freelancerId,
+        type: "pantry_applicant_target_reached",
+        title: "اكتمل عدد المتقدمين في بيت المونة",
+        message: `اكتمل باب التقديم على: ${requestRow.title}`,
+        entityType: "pantry_request",
+        entityId: String(requestId),
+        link: "/dashboard/super-admin/pantry",
+        priority: "high",
+      });
+    }
+    return bid;
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    if (err && err.code === "23505") {
+      throw httpError(409, "لقد قدّمت عرضاً مسبقاً على هذا الطلب.", "DUPLICATE_BID");
+    }
+    throw mapPantryDbError(err);
+  } finally {
+    client.release();
+  }
+}
+
+async function submitBid(requestId, freelancerId, payload) {
+  const amount = Number(payload.amount);
+  if (!Number.isFinite(amount) || amount < 0) {
+    throw httpError(400, "مبلغ العرض غير صالح.", "VALIDATION_ERROR");
+  }
+  const integration = await pantryMembershipBid.getPantryMembershipBidIntegrationState();
+  if (integration.mode === PANTRY_INTEGRATION_MODES.LEGACY) {
+    return submitBidLegacy(requestId, freelancerId, payload, amount);
+  }
+  if (integration.mode !== PANTRY_INTEGRATION_MODES.INTEGRATED) {
+    pantryMembershipBid.throwPantryIntegrationPaused();
+  }
+  return submitBidIntegrated(requestId, freelancerId, payload, amount);
+}
+
 async function listMyWork(freelancerId) {
   const { rows } = await pantryQuery(
     `SELECT r.*,
             NULLIF(TRIM(CONCAT_WS(' ', u.first_name, u.father_name, u.family_name)), '') AS assigned_freelancer_name,
-            (SELECT COUNT(*)::int FROM pantry_bids b WHERE b.pantry_request_id = r.id) AS bids_count
+            (SELECT COUNT(*)::int FROM pantry_bids b WHERE b.pantry_request_id = r.id) AS bids_count,
+            (SELECT COUNT(*)::int FROM pantry_bids b
+              WHERE b.pantry_request_id = r.id AND b.status IN ('pending','accepted')) AS valid_applicants_count
      FROM pantry_requests r
      LEFT JOIN users u ON u.id = r.assigned_freelancer_id
      WHERE r.assigned_freelancer_id = $1
@@ -754,7 +1056,8 @@ async function listMyWork(freelancerId) {
      LIMIT 100`,
     [freelancerId],
   );
-  return rows.map((row) => mapRequest(row));
+  const extras = await integrationMapExtras();
+  return rows.map((row) => mapRequest(row, extras));
 }
 
 async function submitDelivery(requestId, freelancerId, payload) {
@@ -848,5 +1151,7 @@ module.exports = {
   mapRequest,
   mapBid,
   mapDelivery,
+  getPantryMembershipBidIntegrationState: pantryMembershipBid.getPantryMembershipBidIntegrationState,
+  isPantryMembershipBidIntegrationActive: pantryMembershipBid.isPantryMembershipBidIntegrationActive,
 };
 

@@ -1013,6 +1013,198 @@ async function activateCompanyApprovalForSubscription({ actorUserId, subscriptio
   return mapSubscription(updated[0]);
 }
 
+/**
+ * Freelancer self-service account activation (replaces admin company approval gate).
+ * No payment/course/admin restrictions: ensures a current plan, marks company-approved,
+ * waives yearly activation fee if due, and starts the subscription period from now.
+ * Also ensures Marketplace Membership: keep existing current membership, else grant STARTER.
+ */
+async function ensureMarketplaceMembershipForSelfActivate(freelancerUserId, now = new Date()) {
+  try {
+    const activation = require("./marketplaceMembershipActivationRequestService");
+    return await activation.ensureMarketplaceMembershipAfterAccountActivation({
+      freelancerUserId,
+      actorUserId: freelancerUserId,
+      now,
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[subscriptions] marketplace ensure after self-activate failed:", err?.message || err);
+    return {
+      grantedStarter: false,
+      keptExisting: false,
+      membership: null,
+      skippedReason: "ensure_failed",
+    };
+  }
+}
+
+async function selfActivateFreelancerAccount({ freelancerUserId }, client) {
+  const uid = Number(freelancerUserId);
+  if (!Number.isInteger(uid) || uid < 1) {
+    const err = new Error("Invalid freelancer user id.");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const ownTxn = !client;
+  const runner = client || (await pool.connect());
+  try {
+    // Ensure a current plan exists before locking (uses its own connection/txn).
+    if (ownTxn) {
+      await ensureFreelancerDefaultFreePlan(uid);
+    }
+
+    if (ownTxn) await runner.query("BEGIN");
+
+    const { rows } = await runner.query(
+      `SELECT
+         fs.*,
+         p.duration_days AS plan_duration_days
+       FROM freelancer_subscriptions fs
+       JOIN plans p ON p.id = fs.plan_id
+       WHERE fs.freelancer_user_id = $1 AND fs.is_current = TRUE
+       ORDER BY fs.id DESC
+       LIMIT 1
+       FOR UPDATE`,
+      [uid],
+    );
+    const existing = rows[0];
+    if (!existing) {
+      const err = new Error("Subscription not found.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const alreadyApproved =
+      normalizeActivationStatus(existing.activation_status) ===
+      SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED;
+    const periodAlreadyStarted =
+      Boolean(existing.actual_start_date) &&
+      String(existing.status || "").toLowerCase() === SUBSCRIPTION_STATUSES.ACTIVE;
+
+    if (alreadyApproved && periodAlreadyStarted) {
+      await markActivationFeePaidOffline(
+        {
+          adminUserId: uid,
+          freelancerUserId: uid,
+          notes: "freelancer_self_activate_idempotent",
+        },
+        runner,
+      );
+      if (ownTxn) await runner.query("COMMIT");
+      bootstrapFastPathCache.delete(uid);
+      const marketplace =
+        await ensureMarketplaceMembershipForSelfActivate(uid);
+      return {
+        alreadyActive: true,
+        periodStarted: false,
+        subscription: mapSubscription(existing),
+        marketplace,
+      };
+    }
+
+    const now = new Date();
+    const durationDays = Number(existing.plan_duration_days);
+    const safeDuration =
+      Number.isFinite(durationDays) && durationDays > 0
+        ? durationDays
+        : await getPlanDurationDays(existing.plan_id, runner);
+    const startPeriod = !periodAlreadyStarted;
+    const startAt = startPeriod
+      ? now
+      : existing.actual_start_date
+        ? new Date(existing.actual_start_date)
+        : now;
+    const expiryDate = startPeriod
+      ? computeExpiry({ startDate: startAt, durationDays: safeDuration })
+      : existing.expiry_date || computeExpiry({ startDate: startAt, durationDays: safeDuration });
+
+    const { rows: updated } = await runner.query(
+      `UPDATE freelancer_subscriptions
+       SET activation_status = 'company_approved',
+           company_activated_at = COALESCE(company_activated_at, $2::timestamptz),
+           company_activated_by_user_id = COALESCE(company_activated_by_user_id, $3),
+           payment_status = CASE
+             WHEN payment_status IN ('pending', 'failed', 'cancelled') THEN 'paid'
+             WHEN payment_status IS NULL OR TRIM(payment_status) = '' THEN 'not_required'
+             ELSE payment_status
+           END,
+           paid_at = CASE
+             WHEN payment_status IN ('pending', 'failed', 'cancelled')
+               OR paid_at IS NULL THEN COALESCE(paid_at, $2::timestamptz)
+             ELSE paid_at
+           END,
+           -- DB check: has_first_order=false ⇒ all dates NULL; true ⇒ all dates set.
+           has_first_order = CASE WHEN $5::boolean THEN TRUE ELSE has_first_order END,
+           actual_start_date = CASE WHEN $5::boolean THEN $2::timestamptz ELSE actual_start_date END,
+           first_order_date = CASE
+             WHEN $5::boolean THEN COALESCE(first_order_date, $2::timestamptz)
+             ELSE first_order_date
+           END,
+           expiry_date = CASE WHEN $5::boolean THEN $4::timestamptz ELSE expiry_date END,
+           status = 'active',
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [Number(existing.id), now, uid, expiryDate, startPeriod],
+    );
+
+    const row = updated[0];
+
+    await markActivationFeePaidOffline(
+      {
+        adminUserId: uid,
+        freelancerUserId: uid,
+        notes: "freelancer_self_activate",
+        paidAt: now,
+      },
+      runner,
+    );
+
+    if (ownTxn) await runner.query("COMMIT");
+    bootstrapFastPathCache.delete(uid);
+
+    if (!alreadyApproved) {
+      await safeNotify(() =>
+        notificationEventsService.notifySubscriptionOwner(
+          {
+            subscription: row,
+            actorUserId: uid,
+            type: "subscription.company.activated",
+            title: "تم تفعيل حسابك",
+            message: "تم تفعيل حسابك وبدأ احتساب مدة الاشتراك من الآن.",
+            priority: "high",
+            dedupeKey: `subscription_self_activated_${String(row.id)}`,
+            metadata: { subscriptionId: String(row.id), source: "freelancer_self_activate" },
+          },
+          pool,
+        ),
+      );
+    }
+
+    const marketplace = await ensureMarketplaceMembershipForSelfActivate(uid, now);
+
+    return {
+      alreadyActive: false,
+      periodStarted: Boolean(startPeriod),
+      subscription: mapSubscription(row),
+      marketplace,
+    };
+  } catch (err) {
+    if (ownTxn) {
+      try {
+        await runner.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+    }
+    throw err;
+  } finally {
+    if (ownTxn) runner.release();
+  }
+}
+
 async function recalculateSubscriptionDates({ subscriptionId }, client) {
   const runner = client || pool;
   const { rows } = await runner.query(`SELECT * FROM freelancer_subscriptions WHERE id = $1 LIMIT 1`, [
@@ -2018,6 +2210,7 @@ module.exports = {
   markFreelancerSubscriptionStripePaymentFailed,
   endCurrentSubscription,
   activateCompanyApprovalForSubscription,
+  selfActivateFreelancerAccount,
   canFreelancerTakeOrders,
   applyActivationFeeEligibilityGate,
   evaluateFreelancerTakeOrdersEligibility,

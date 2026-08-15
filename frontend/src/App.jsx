@@ -101,9 +101,9 @@ import {
   FreelancerPlansPage,
   FreelancerCoursesPage,
   FreelancerCourseDetailsPage,
-  FreelancerMarketplaceArticlesPage,
-  FreelancerMarketplaceArticleDetailPage,
   FreelancerSettingsPage,
+  FreelancerActivateAccountPage,
+  ConvertAccountPage,
   NotificationsPage,
   FinancialUserMyBonusesPage,
 } from "./routes/lazyPages";
@@ -273,9 +273,9 @@ function App() {
                 <Route
                   path="/dashboard/super-admin/plans"
                   element={
-                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.plans}>
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
                       <SuperAdminPlansPage />
-                    </RequireStaffPage>
+                    </RequireRole>
                   }
                 />
                 <Route
@@ -719,6 +719,30 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/freelancer/activate-account"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerActivateAccountPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/convert-account"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <ConvertAccountPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/client/convert-account"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.CLIENT]}>
+                      <ConvertAccountPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/freelancer/my-orders"
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
@@ -802,7 +826,7 @@ function App() {
                   path="/dashboard/freelancer/articles"
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
-                      <FreelancerMarketplaceArticlesPage />
+                      <Navigate to="/dashboard/freelancer" replace />
                     </RequireRole>
                   }
                 />
@@ -810,7 +834,7 @@ function App() {
                   path="/dashboard/freelancer/articles/:id"
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
-                      <FreelancerMarketplaceArticleDetailPage />
+                      <Navigate to="/dashboard/freelancer" replace />
                     </RequireRole>
                   }
                 />

@@ -1,5 +1,11 @@
-import { getMyEligibilityRequest, getMySubscriptionRequest, listPublicPlansRequest } from "./api";
+import {
+  getFreelancerMarketplaceMembershipRequest,
+  getMyEligibilityRequest,
+  getMySubscriptionRequest,
+  listPublicPlansRequest,
+} from "./api";
 import { mergeApiPlansWithCatalog } from "../constants/orderzhousePlansCatalog";
+import { fetchResolvedDefaultCatalogPlans } from "../lib/planCatalog/fetchPlansForCatalog";
 
 const subscriptionCache = {
   userId: null,
@@ -8,7 +14,9 @@ const subscriptionCache = {
   promise: null,
 };
 const eligibilityCache = { userId: null, data: undefined, promise: null };
-const plansCache = { data: null, activationFee: null, promise: null };
+const membershipCache = { userId: null, data: undefined, promise: null };
+const legacyPlansCache = { data: null, activationFee: null, promise: null };
+const plansCache = { catalog: null, data: null, activationFee: null, promise: null };
 
 export function invalidateFreelancerSessionCache() {
   subscriptionCache.userId = null;
@@ -18,9 +26,16 @@ export function invalidateFreelancerSessionCache() {
   eligibilityCache.userId = null;
   eligibilityCache.data = undefined;
   eligibilityCache.promise = null;
+  membershipCache.userId = null;
+  membershipCache.data = undefined;
+  membershipCache.promise = null;
 }
 
 export function invalidatePublicPlansCache() {
+  legacyPlansCache.data = null;
+  legacyPlansCache.activationFee = null;
+  legacyPlansCache.promise = null;
+  plansCache.catalog = null;
   plansCache.data = null;
   plansCache.activationFee = null;
   plansCache.promise = null;
@@ -41,8 +56,17 @@ export function getCachedFreelancerEligibility(userId) {
   return eligibilityCache.data;
 }
 
+export function getCachedFreelancerMarketplaceMembership(userId) {
+  if (!userId || membershipCache.userId !== userId) return undefined;
+  return membershipCache.data;
+}
+
 export function getCachedPublicPlans() {
   return plansCache.data;
+}
+
+export function getCachedDefaultCatalog() {
+  return plansCache.catalog;
 }
 
 export function getCachedPublicActivationFee() {
@@ -124,21 +148,80 @@ export function fetchFreelancerEligibilityCached(userId, { force = false } = {})
   return eligibilityCache.promise;
 }
 
+/** Deduped Marketplace Membership snapshot for Freelancer Plans primary status. */
+export function fetchFreelancerMarketplaceMembershipCached(userId, { force = false } = {}) {
+  if (!userId) {
+    membershipCache.userId = null;
+    membershipCache.data = null;
+    return Promise.resolve(null);
+  }
+  if (!force && membershipCache.userId === userId && membershipCache.data !== undefined) {
+    return Promise.resolve(membershipCache.data);
+  }
+  if (!force && membershipCache.userId === userId && membershipCache.promise) {
+    return membershipCache.promise;
+  }
+  membershipCache.userId = userId;
+  membershipCache.promise = getFreelancerMarketplaceMembershipRequest()
+    .then((res) => {
+      const data = res?.data ?? null;
+      membershipCache.data = data;
+      membershipCache.promise = null;
+      return data;
+    })
+    .catch((err) => {
+      membershipCache.promise = null;
+      throw err;
+    });
+  return membershipCache.promise;
+}
+
 export async function fetchPublicPlansCached({ force = false } = {}) {
-  if (!force && plansCache.data) return plansCache.data;
-  if (!force && plansCache.promise) return plansCache.promise;
-  plansCache.promise = listPublicPlansRequest()
+  if (!force && legacyPlansCache.data) return legacyPlansCache.data;
+  if (!force && legacyPlansCache.promise) return legacyPlansCache.promise;
+  legacyPlansCache.promise = listPublicPlansRequest()
     .then((data) => {
       const items = data?.data?.plans || [];
       const merged = mergeApiPlansWithCatalog(items);
-      plansCache.data = merged;
-      plansCache.activationFee = data?.data?.activationFee ?? null;
-      plansCache.promise = null;
+      legacyPlansCache.data = merged;
+      legacyPlansCache.activationFee = data?.data?.activationFee ?? null;
+      legacyPlansCache.promise = null;
       return merged;
+    })
+    .catch((err) => {
+      legacyPlansCache.promise = null;
+      throw err;
+    });
+  return legacyPlansCache.promise;
+}
+
+/**
+ * Session cache for the Admin-selected default catalog.
+ * Cache key includes `default_plan_catalog` so a Super Admin change does not reuse the old list.
+ */
+export async function fetchDefaultCatalogPlansCached({ force = false } = {}) {
+  if (!force && plansCache.catalog && Array.isArray(plansCache.data) && !plansCache.promise) {
+    return {
+      catalog: plansCache.catalog,
+      plans: plansCache.data,
+      activationFee: plansCache.activationFee,
+      catalogSource: null,
+    };
+  }
+  if (!force && plansCache.promise) return plansCache.promise;
+
+  const pending = fetchResolvedDefaultCatalogPlans()
+    .then((result) => {
+      plansCache.catalog = result.catalog;
+      plansCache.data = result.plans;
+      plansCache.activationFee = result.activationFee ?? null;
+      plansCache.promise = null;
+      return result;
     })
     .catch((err) => {
       plansCache.promise = null;
       throw err;
     });
-  return plansCache.promise;
+  plansCache.promise = pending;
+  return pending;
 }

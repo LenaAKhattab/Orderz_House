@@ -264,7 +264,7 @@ export function superAdminBreadcrumbKeys(pathname) {
     return [...base, "dashboard.breadcrumbs.bidCredits"];
   }
   if (pathname.includes("/marketplace-plans")) {
-    return [...base, "dashboard.breadcrumbs.marketplacePlans"];
+    return [...base, "dashboard.breadcrumbs.managePlans"];
   }
   if (pathname.includes("/plans")) return [...base, "dashboard.breadcrumbs.plans"];
   if (pathname.includes("/courses")) return [...base, "dashboard.breadcrumbs.courses"];

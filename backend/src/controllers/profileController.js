@@ -110,6 +110,38 @@ const deactivateAccount = async (req, res, next) => {
   }
 };
 
+const getRoleConversionEligibility = async (req, res, next) => {
+  try {
+    const accountRoleConversionService = require("../services/accountRoleConversionService");
+    const data = await accountRoleConversionService.getConversionEligibility(req.auth.userId);
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const convertAccountRole = async (req, res, next) => {
+  try {
+    const accountRoleConversionService = require("../services/accountRoleConversionService");
+    const { currentPassword, confirmation } = req.body || {};
+    const result = await accountRoleConversionService.convertOwnAccountRole({
+      userId: req.auth.userId,
+      currentPassword,
+      confirmation,
+    });
+    return res.status(200).json({
+      success: true,
+      message:
+        result.toRole === "client"
+          ? "تم تحويل حسابك إلى عميل. سجّل الدخول مجدداً."
+          : "تم تحويل حسابك إلى مستقل. سجّل الدخول مجدداً.",
+      data: result,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const patchBrowserNotifications = async (req, res, next) => {
   try {
     const status = req.body?.status;
@@ -158,4 +190,6 @@ module.exports = {
   patchAvatar,
   deleteAvatar,
   deactivateAccount,
+  getRoleConversionEligibility,
+  convertAccountRole,
 };

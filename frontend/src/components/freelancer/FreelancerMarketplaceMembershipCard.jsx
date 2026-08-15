@@ -1,154 +1,170 @@
-import { useEffect, useState } from "react";
-import { getFreelancerMarketplaceMembershipRequest } from "../../services/api";
+import { Crown } from "lucide-react";
 import { formatJoDateMedium } from "../../utils/freelancerDashboardData";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 
 /**
- * Read-only Marketplace Membership foundation (Phase 3).
- * Shows allowance accounting only — never a Priority Bid auction action.
+ * Map Marketplace Membership backend statuses to simple user-facing labels.
+ * Do not borrow labels from the legacy/main subscription system.
  */
-export default function FreelancerMarketplaceMembershipCard() {
+function membershipStatusLabel(status, t) {
+  const s = String(status || "").toLowerCase();
+  if (s === "active" || s === "cancel_at_period_end") {
+    return t("freelancerDashboard.marketplaceMembership.statusActive");
+  }
+  if (s === "pending") return t("freelancerDashboard.marketplaceMembership.statusPending");
+  if (s === "suspended") return t("freelancerDashboard.marketplaceMembership.statusSuspended");
+  if (s === "expired") return t("freelancerDashboard.marketplaceMembership.statusExpired");
+  if (s === "cancelled" || s === "superseded") {
+    return t("freelancerDashboard.marketplaceMembership.statusEnded");
+  }
+  return status || t("freelancerDashboard.common.emDash");
+}
+
+/**
+ * Presentational Marketplace Membership status for Freelancer Plans.
+ * Parent owns fetching (useFreelancerPlansScreen) — no independent network here.
+ *
+ * @param {{
+ *   snapshot?: object|null,
+ *   loading?: boolean,
+ *   error?: string|null,
+ *   catalogPlans?: Array,
+ * }} props
+ */
+export default function FreelancerMarketplaceMembershipCard({
+  snapshot = null,
+  loading = false,
+  error = null,
+  catalogPlans = [],
+} = {}) {
   const { t, locale } = useTranslation();
-  const [state, setState] = useState({ loading: true, error: null, data: null });
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await getFreelancerMarketplaceMembershipRequest();
-        if (!cancelled) {
-          setState({ loading: false, error: null, data: res?.data || null });
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setState({
-            loading: false,
-            error: err?.response?.data?.message || err?.message || "error",
-            data: null,
-          });
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (state.loading) {
+  if (loading) {
     return (
-      <section className="fp-surface" style={{ marginTop: 16 }} aria-busy="true">
-        <p style={{ margin: 0 }}>{t("freelancerDashboard.marketplaceMembership.loading")}</p>
-      </section>
+      <header className="fp-surface fp-hero fp-hero--membership" aria-busy="true">
+        <div className="fp-hero__copy">
+          <span className="fp-hero__eyebrow">
+            <Crown size={14} strokeWidth={2} aria-hidden />
+            {t("freelancerDashboard.marketplaceMembership.title")}
+          </span>
+          <p className="fp-hero__subtitle">{t("freelancerDashboard.marketplaceMembership.loading")}</p>
+        </div>
+      </header>
     );
   }
 
-  if (state.error) {
-    return null;
+  if (error && !snapshot) {
+    return (
+      <header className="fp-surface fp-hero fp-hero--membership">
+        <div className="fp-hero__copy">
+          <span className="fp-hero__eyebrow">
+            <Crown size={14} strokeWidth={2} aria-hidden />
+            {t("freelancerDashboard.marketplaceMembership.title")}
+          </span>
+          <h1 className="fp-hero__title">{t("freelancerDashboard.marketplaceMembership.none")}</h1>
+          <p className="fp-hero__subtitle">{t("freelancerDashboard.marketplaceMembership.noneHint")}</p>
+        </div>
+      </header>
+    );
   }
 
-  const snap = state.data;
+  const snap = snapshot;
   if (!snap?.hasMembership) {
     return (
-      <section className="fp-surface" style={{ marginTop: 16 }}>
-        <h2 style={{ margin: "0 0 8px", fontSize: "1.05rem" }}>
-          {t("freelancerDashboard.marketplaceMembership.title")}
-        </h2>
-        <p style={{ margin: 0, opacity: 0.85 }}>
-          {t("freelancerDashboard.marketplaceMembership.none")}
-        </p>
-      </section>
+      <header className="fp-surface fp-hero fp-hero--membership fp-hero--membership-empty">
+        <div className="fp-hero__copy">
+          <span className="fp-hero__eyebrow">
+            <Crown size={14} strokeWidth={2} aria-hidden />
+            {t("freelancerDashboard.marketplaceMembership.title")}
+          </span>
+          <h1 className="fp-hero__title">{t("freelancerDashboard.marketplaceMembership.none")}</h1>
+          <p className="fp-hero__subtitle">{t("freelancerDashboard.marketplaceMembership.noneHint")}</p>
+        </div>
+      </header>
     );
   }
 
+  const plan = snap.membership?.plan || {};
   const planName =
-    getLocalizedField(snap.membership?.plan, "name", locale) ||
-    (locale === "en" ? snap.membership?.plan?.nameEn : snap.membership?.plan?.nameAr) ||
-    snap.membership?.plan?.nameAr ||
-    snap.membership?.plan?.tierCode ||
+    getLocalizedField(plan, "name", locale) ||
+    (locale === "en" ? plan.nameEn : plan.nameAr) ||
+    plan.nameAr ||
+    plan.tierCode ||
     "—";
-
-  const pb = snap.priorityBid || { allowed: 0, used: 0, remaining: 0, engineAvailable: false };
+  const tierCode = plan.tierCode ? String(plan.tierCode).toUpperCase() : null;
+  const catalogMatch = Array.isArray(catalogPlans)
+    ? catalogPlans.find(
+        (p) =>
+          String(p?.tierCode || p?.tier_code || "").toUpperCase() === tierCode ||
+          String(p?.id || "") === String(plan.id || ""),
+      )
+    : null;
   const cycle = snap.currentCycle;
-  const benefitsUsable = pb.membershipBenefitsUsable !== false && snap.membership?.status !== "suspended";
+  const endsAt = cycle?.endsAt || snap.membership?.paidTermEndsAt || null;
+  const bidsAvailable =
+    cycle?.monthlyBidAllowanceSnapshot ??
+    plan.monthlyBidAllowance ??
+    catalogMatch?.monthlyBidAllowance ??
+    catalogMatch?.primaryMetrics?.bids ??
+    null;
+  const dailyLimit =
+    plan.dailyBidSpendLimit ??
+    plan.capabilities?.dailyBidSpendLimit ??
+    catalogMatch?.dailyBidSpendLimit ??
+    catalogMatch?.primaryMetrics?.dailyLimit ??
+    catalogMatch?.capabilities?.dailyBidSpendLimit ??
+    null;
+  const status = snap.membership?.status;
 
   return (
-    <section className="fp-surface" style={{ marginTop: 16 }}>
-      <h2 style={{ margin: "0 0 8px", fontSize: "1.05rem" }}>
-        {t("freelancerDashboard.marketplaceMembership.title")}
-      </h2>
-      <p style={{ margin: "0 0 12px", opacity: 0.85, fontSize: "0.92rem" }}>
-        {t("freelancerDashboard.marketplaceMembership.subtitle")}
-      </p>
+    <header className="fp-surface fp-hero fp-hero--membership">
+      <div className="fp-hero__copy">
+        <span className="fp-hero__eyebrow">
+          <Crown size={14} strokeWidth={2} aria-hidden />
+          {t("freelancerDashboard.marketplaceMembership.currentEyebrow")}
+        </span>
+        {tierCode ? <p className="fp-hero__tier">{tierCode}</p> : null}
+        <h1 className="fp-hero__title">{planName}</h1>
+      </div>
+
       <dl
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-          gap: 12,
-          margin: 0,
-        }}
+        className="fp-hero__stats"
+        aria-label={t("freelancerDashboard.marketplaceMembership.summaryAria")}
       >
-        <div>
-          <dt style={{ opacity: 0.75, fontSize: "0.85rem" }}>
-            {t("freelancerDashboard.marketplaceMembership.currentPlan")}
-          </dt>
-          <dd style={{ margin: "4px 0 0", fontWeight: 600 }}>{planName}</dd>
+        <div className="fp-hero__stat">
+          <dt>{t("freelancerDashboard.marketplaceMembership.status")}</dt>
+          <dd
+            className={
+              status === "active" || status === "cancel_at_period_end"
+                ? "fp-hero__stat-value--ok"
+                : status === "pending"
+                  ? "fp-hero__stat-value--warn"
+                  : "fp-hero__stat-value--accent"
+            }
+          >
+            {membershipStatusLabel(status, t)}
+          </dd>
         </div>
-        <div>
-          <dt style={{ opacity: 0.75, fontSize: "0.85rem" }}>
-            {t("freelancerDashboard.marketplaceMembership.status")}
-          </dt>
-          <dd style={{ margin: "4px 0 0" }}>{snap.membership?.status || "—"}</dd>
-        </div>
-        {cycle ? (
-          <>
-            <div>
-              <dt style={{ opacity: 0.75, fontSize: "0.85rem" }}>
-                {t("freelancerDashboard.marketplaceMembership.cycleStart")}
-              </dt>
-              <dd style={{ margin: "4px 0 0" }}>{formatJoDateMedium(cycle.startsAt, locale)}</dd>
-            </div>
-            <div>
-              <dt style={{ opacity: 0.75, fontSize: "0.85rem" }}>
-                {t("freelancerDashboard.marketplaceMembership.cycleEnd")}
-              </dt>
-              <dd style={{ margin: "4px 0 0" }}>{formatJoDateMedium(cycle.endsAt, locale)}</dd>
-            </div>
-          </>
+        {endsAt ? (
+          <div className="fp-hero__stat">
+            <dt>{t("freelancerDashboard.marketplaceMembership.endsOn")}</dt>
+            <dd>{formatJoDateMedium(endsAt, locale)}</dd>
+          </div>
         ) : null}
-        <div>
-          <dt style={{ opacity: 0.75, fontSize: "0.85rem" }}>
-            {t("freelancerDashboard.marketplaceMembership.priorityBidUsage")}
-          </dt>
-          <dd style={{ margin: "4px 0 0", fontWeight: 600 }}>
-            {benefitsUsable ? `${pb.used} / ${pb.allowed}` : `— / ${pb.allowed || 0}`}
-          </dd>
-        </div>
-        <div>
-          <dt style={{ opacity: 0.75, fontSize: "0.85rem" }}>
-            {t("freelancerDashboard.marketplaceMembership.bidsPerMonth")}
-          </dt>
-          <dd style={{ margin: "4px 0 0", fontWeight: 600 }}>
-            {cycle?.monthlyBidAllowanceSnapshot ??
-              snap.membership?.plan?.monthlyBidAllowance ??
-              0}
-          </dd>
-        </div>
-        <div>
-          <dt style={{ opacity: 0.75, fontSize: "0.85rem" }}>
-            {t("freelancerDashboard.marketplaceMembership.articleAccessLevel")}
-          </dt>
-          <dd style={{ margin: "4px 0 0", fontWeight: 600 }}>
-            {snap.membership?.plan?.articleAccessLevel ?? 1}
-          </dd>
-          <p style={{ margin: "4px 0 0", fontSize: "0.8rem", opacity: 0.75 }}>
-            {t("freelancerDashboard.marketplaceMembership.articleAccessLevelHint")}
-          </p>
-        </div>
+        {bidsAvailable != null ? (
+          <div className="fp-hero__stat">
+            <dt>{t("freelancerDashboard.marketplaceMembership.bidsAvailable")}</dt>
+            <dd>{bidsAvailable}</dd>
+          </div>
+        ) : null}
+        {dailyLimit != null ? (
+          <div className="fp-hero__stat">
+            <dt>{t("freelancerDashboard.marketplaceMembership.dailyLimit")}</dt>
+            <dd>{dailyLimit}</dd>
+          </div>
+        ) : null}
       </dl>
-      <p style={{ margin: "12px 0 0", fontSize: "0.88rem", opacity: 0.8 }}>
-        {t("freelancerDashboard.marketplaceMembership.engineComingSoon")}
-      </p>
-    </section>
+    </header>
   );
 }

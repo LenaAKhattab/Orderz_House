@@ -160,6 +160,16 @@ export const deleteProfileAvatarRequest = async () => {
   return data;
 };
 
+export const getRoleConversionEligibilityRequest = async () => {
+  const { data } = await api.get("/profile/role-conversion");
+  return data;
+};
+
+export const convertAccountRoleRequest = async ({ currentPassword, confirmation }) => {
+  const { data } = await api.post("/profile/role-conversion", { currentPassword, confirmation });
+  return data;
+};
+
 /** Clears HttpOnly session cookie on the server (no body secrets). */
 export const logoutRequest = async () => {
   const { data } = await api.post("/auth/logout");
@@ -203,9 +213,31 @@ export const listPublicPlansRequest = async () => {
   return data;
 };
 
-/** Marketplace Membership catalog — public `/plans` default source (Phase B7A). */
+/** Marketplace Membership catalog — one of three Admin-selectable default catalogs. */
 export const listPublicMarketplaceMembershipPlansRequest = async () => {
   const { data } = await api.get("/marketplace-membership-plans");
+  return data;
+};
+
+/** Public/read-safe: Super Admin-selected default plan catalog id only. */
+export const getPublicDefaultPlanCatalogRequest = async () => {
+  const { data } = await api.get("/default-plan-catalog");
+  return data;
+};
+
+export const getAdminDefaultPlanCatalogRequest = async () => {
+  const { data } = await api.get("/super-admin/default-plan-catalog");
+  return data;
+};
+
+export const updateAdminDefaultPlanCatalogRequest = async (catalog) => {
+  const { data } = await api.patch("/super-admin/default-plan-catalog", { catalog });
+  return data;
+};
+
+/** Active plans on special plan pages (باقات الصفحات) — existing page-package catalog. */
+export const listPublicSpecialPagePlansRequest = async () => {
+  const { data } = await api.get("/plan-pages/special-catalog");
   return data;
 };
 
@@ -580,6 +612,12 @@ export const getMyEligibilityRequest = async () => {
 
 export const getMySubscriptionRequest = async () => {
   const { data } = await api.get("/freelancer/subscription");
+  return data;
+};
+
+/** Freelancer self-service account activation — starts subscription period immediately. */
+export const selfActivateFreelancerAccountRequest = async () => {
+  const { data } = await api.post("/freelancer/subscription/activate-account");
   return data;
 };
 

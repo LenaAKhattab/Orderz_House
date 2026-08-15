@@ -12,6 +12,8 @@
       "profile": "Profile",
       "account": "Account",
       "accountSettings": "Account settings",
+      "activateAccount": "Activate account",
+      "convertAccount": "Convert account",
       "openMenu": "Open menu",
       "closeMenu": "Close menu",
       "expandSidebar": "Expand sidebar",
@@ -103,6 +105,27 @@
     "client": "Client",
     "admin": "Admin",
     "superAdmin": "Super Admin"
+  },
+  "convertAccount": {
+    "title": "Convert account",
+    "subtitle": "Switch your account between freelancer and client once only.",
+    "cardTitle": "Account type conversion",
+    "direction": "You will convert from “{{from}}” to “{{to}}”.",
+    "ruleOnce": "Conversion is allowed once and cannot be undone.",
+    "ruleWipe": "All work in your current role (orders, bids, and related data) will be deleted and you start fresh in the new role.",
+    "ruleRelogin": "You will need to sign in again after conversion.",
+    "password": "Current password",
+    "confirmationLabel": "Type “CONVERT” to confirm",
+    "confirmationPlaceholder": "CONVERT",
+    "agreeCheckbox": "I agree to permanently delete my current-role data and convert my account",
+    "cta": "Convert account now",
+    "converting": "Converting…",
+    "success": "Account converted. Please sign in again.",
+    "error": "Could not convert account",
+    "loadError": "Could not load conversion status.",
+    "alreadyConverted": "This account was already converted and cannot be converted again.",
+    "notAllowed": "Account conversion is not available for this account type.",
+    "retry": "Retry"
   },
   "breadcrumbs": {
     "home": "Home",
@@ -962,8 +985,8 @@
       "completeCoursesMessage": "You need to watch and complete the required courses, including the exam if one is available, before you can start receiving orders.",
       "viewCourses": "View courses",
       "coursesCompletedTitle": "Courses completed",
-      "coursesCompletedPendingApprovalMessage": "You have completed the required courses. Your account is now waiting for admin approval before you can start receiving orders.",
-      "reviewAccount": "Review account"
+      "coursesCompletedPendingApprovalMessage": "You have completed the required courses. You can now activate your account yourself from Activate account; your subscription period starts when you activate.",
+      "reviewAccount": "Activate account"
     }
   }
 }

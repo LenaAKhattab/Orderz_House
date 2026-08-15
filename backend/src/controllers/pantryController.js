@@ -1,5 +1,6 @@
 const pantryService = require("../services/pantryService");
 const { actorId, requireActorId } = require("../constants/pantry");
+const { pantryIntegrationApiFields } = require("../constants/pantryMembershipBid");
 
 function asyncHandler(fn) {
   return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
@@ -15,11 +16,19 @@ function actorRole(req) {
 }
 
 const listAdminRequests = asyncHandler(async (req, res) => {
-  const [requests, stats] = await Promise.all([
+  const [requests, stats, integration] = await Promise.all([
     pantryService.listAdminRequests({ status: req.query.status || undefined }),
     pantryService.getStats(),
+    pantryService.getPantryMembershipBidIntegrationState(),
   ]);
-  return res.json({ success: true, data: { requests, stats } });
+  return res.json({
+    success: true,
+    data: {
+      requests,
+      stats,
+      ...pantryIntegrationApiFields(integration),
+    },
+  });
 });
 
 const createRequest = asyncHandler(async (req, res) => {
@@ -42,7 +51,11 @@ const getAdminRequest = asyncHandler(async (req, res) => {
   if (!data) {
     return res.status(404).json({ success: false, message: "طلب بيت المونة غير موجود.", code: "NOT_FOUND" });
   }
-  return res.json({ success: true, data });
+  const integration = await pantryService.getPantryMembershipBidIntegrationState();
+  return res.json({
+    success: true,
+    data: { ...data, ...pantryIntegrationApiFields(integration) },
+  });
 });
 
 const patchRequest = asyncHandler(async (req, res) => {
@@ -96,8 +109,15 @@ const requestRevision = asyncHandler(async (req, res) => {
 });
 
 const listOpenForFreelancer = asyncHandler(async (req, res) => {
-  const requests = await pantryService.listOpenRequestsForFreelancer();
-  return res.json({ success: true, data: { requests } });
+  const listed = await pantryService.listOpenRequestsForFreelancer(requireActorId(req));
+  return res.json({
+    success: true,
+    data: {
+      requests: listed.requests,
+      pantryMembershipBidIntegrationActive: Boolean(listed.pantryMembershipBidIntegrationActive),
+      pantryMembershipBidIntegrationMode: listed.pantryMembershipBidIntegrationMode || "legacy",
+    },
+  });
 });
 
 const getFreelancerRequest = asyncHandler(async (req, res) => {
@@ -111,8 +131,17 @@ const submitBid = asyncHandler(async (req, res) => {
 });
 
 const listMyWork = asyncHandler(async (req, res) => {
-  const requests = await pantryService.listMyWork(requireActorId(req));
-  return res.json({ success: true, data: { requests } });
+  const [requests, integration] = await Promise.all([
+    pantryService.listMyWork(requireActorId(req)),
+    pantryService.getPantryMembershipBidIntegrationState(),
+  ]);
+  return res.json({
+    success: true,
+    data: {
+      requests,
+      ...pantryIntegrationApiFields(integration),
+    },
+  });
 });
 
 const submitDelivery = asyncHandler(async (req, res) => {

@@ -3,13 +3,16 @@ import { Crown, Sparkles } from "lucide-react";
 import PricingSection from "../../components/plans/PricingSection";
 import FreelancerMarketplaceMembershipCard from "../../components/freelancer/FreelancerMarketplaceMembershipCard";
 import FreelancerBidCreditsCard from "../../components/freelancer/FreelancerBidCreditsCard";
+import FreelancerPlansScreenSkeleton from "../../components/plans/FreelancerPlansScreenSkeleton";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import { useFreelancerPlansCheckout } from "../../hooks/useFreelancerPlansCheckout";
+import { useFreelancerPlansScreen } from "../../hooks/useFreelancerPlansScreen";
 import { useFreelancerMarketplaceContext } from "../../hooks/useFreelancerMarketplaceContext";
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
 import { formatJoDateMedium, getPlanOrderValueRangeLabel } from "../../utils/freelancerDashboardData";
 import { isOrderzhouseFreePlan } from "../../constants/orderzhousePlansCatalog";
 import { getNextUpgradePlan } from "../../utils/planSubscriptionUtils";
+import { PLAN_CATALOG } from "../../constants/planCatalogs";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 import "../../styles/dashboardHub.css";
@@ -30,23 +33,42 @@ function subscriptionStatusLabel(status, t) {
   return status || t("freelancerDashboard.common.emDash");
 }
 
+/**
+ * Freelancer plans page: primary status follows Super Admin default_plan_catalog only.
+ * Screen data is coordinated so catalog + status appear together (no intermediate wrong hero).
+ */
 export default function FreelancerPlansPage() {
   const { t, locale } = useTranslation();
   const {
-    plans,
-    loading,
-    error,
     mySubscription,
     hasBlockingSubscription,
     checkoutBusyPlanId,
     activationFeeNeedsPayment,
     activationFee,
     startCheckout,
-  } = useFreelancerPlansCheckout({ returnPath: "/dashboard/freelancer/plans" });
+  } = useFreelancerPlansCheckout({
+    returnPath: "/dashboard/freelancer/plans",
+    fetchPublicPlans: false,
+  });
+
+  const {
+    catalog,
+    catalogResolved,
+    isMarketplaceCatalog,
+    plans,
+    activationFee: catalogActivationFee,
+    error,
+    screenLoading,
+    membership,
+    membershipError,
+  } = useFreelancerPlansScreen();
 
   const { eligibility } = useFreelancerMarketplaceContext();
 
-  const nextPlan = useMemo(() => getNextUpgradePlan(plans, mySubscription), [plans, mySubscription]);
+  const nextPlan = useMemo(
+    () => (isMarketplaceCatalog ? null : getNextUpgradePlan(plans, mySubscription)),
+    [isMarketplaceCatalog, plans, mySubscription],
+  );
   const rangeLabel =
     getLocalizedField(mySubscription, "label", locale) ||
     getLocalizedField(mySubscription?.planOrderValueRange, "label", locale) ||
@@ -62,9 +84,17 @@ export default function FreelancerPlansPage() {
       : "";
   const renewalFrozen = eligibility?.reason === "account_hold_payment_failed";
   const freezeTitle =
-    eligibility?.freezeMessage?.title || t("freelancerDashboard.status.eligibility.subscriptionRenewalFailedTitle", {
+    eligibility?.freezeMessage?.title ||
+    t("freelancerDashboard.status.eligibility.subscriptionRenewalFailedTitle", {
       defaultValue: "تعذر تجديد الاشتراك",
     });
+
+  const catalogAria =
+    catalog === PLAN_CATALOG.MARKETPLACE_PLANS
+      ? t("freelancerDashboard.plans.marketplaceCatalogAria")
+      : catalog === PLAN_CATALOG.PAGE_PLANS
+        ? t("freelancerDashboard.plans.pageCatalogAria")
+        : t("freelancerDashboard.plans.upgradeSectionAria");
 
   return (
     <DashboardHubPage className="fdash-page--plans">
@@ -84,70 +114,119 @@ export default function FreelancerPlansPage() {
             <p style={{ margin: 0 }}>{blockMsg}</p>
           </section>
         ) : null}
-        <header className="fp-surface fp-hero">
-          <div className="fp-hero__copy">
-            <span className="fp-hero__eyebrow">
-              <Crown size={14} strokeWidth={2} aria-hidden />
-              {t("freelancerDashboard.plans.eyebrow")}
-            </span>
-            <h1 className="fp-hero__title">{planTitle}</h1>
-            <p className="fp-hero__subtitle">
-              {freePlan
-                ? t("freelancerDashboard.plans.freePlanSubtitle")
-                : t("freelancerDashboard.plans.paidPlanSubtitle")}
-            </p>
-            {nextPlan ? (
-              <p className="fp-upgrade-hint" style={{ marginTop: 14 }}>
-                <Sparkles size={15} strokeWidth={2} style={{ verticalAlign: "middle", marginInlineEnd: 6 }} aria-hidden />
-                {t("freelancerDashboard.plans.nextPlanHint", { title: nextPlanTitle })}
-              </p>
-            ) : null}
-            {blockMsg ? <p className="fp-upgrade-hint" style={{ marginTop: 10 }}>{blockMsg}</p> : null}
-          </div>
 
-          <dl className="fp-hero__stats" aria-label={t("freelancerDashboard.plans.summaryAria")}>
-            <div className="fp-hero__stat">
-              <dt>{t("freelancerDashboard.plans.subscriptionStatus")}</dt>
-              <dd className="fp-hero__stat-value--accent">{subscriptionStatusLabel(mySubscription?.status, t)}</dd>
-            </div>
-            <div className="fp-hero__stat">
-              <dt>{t("freelancerDashboard.plans.companyActivation")}</dt>
-              <dd className={mySubscription?.activationStatus === "company_approved" ? "fp-hero__stat-value--ok" : "fp-hero__stat-value--warn"}>
-                {activationLabel(mySubscription?.activationStatus, t)}
-              </dd>
-            </div>
-            {rangeLabel ? (
-              <div className="fp-hero__stat" style={{ gridColumn: "1 / -1" }}>
-                <dt>{t("freelancerDashboard.plans.orderValueRange")}</dt>
-                <dd>{rangeLabel}</dd>
+        {/* Until catalog is known, never render legacy OR marketplace status (prevents flash). */}
+        {screenLoading || !catalogResolved ? (
+          <FreelancerPlansScreenSkeleton catalog={catalog} catalogResolved={catalogResolved} />
+        ) : isMarketplaceCatalog ? (
+          <>
+            <FreelancerMarketplaceMembershipCard
+              snapshot={membership}
+              error={membershipError}
+              catalogPlans={plans}
+            />
+            <FreelancerBidCreditsCard />
+            <section className="fp-surface fp-pricing-wrap" aria-label={catalogAria}>
+              {error ? <p className="fp-error">{error}</p> : null}
+              {!error ? (
+                <PricingSection
+                  variant="dashboard"
+                  loading={false}
+                  plans={plans}
+                  currentSubscription={null}
+                  hasBlockingSubscription={false}
+                  checkoutBusyPlanId={null}
+                  activationFeeNeedsPayment={false}
+                  activationFee={null}
+                  onCta={undefined}
+                />
+              ) : null}
+            </section>
+          </>
+        ) : (
+          <>
+            <header className="fp-surface fp-hero">
+              <div className="fp-hero__copy">
+                <span className="fp-hero__eyebrow">
+                  <Crown size={14} strokeWidth={2} aria-hidden />
+                  {t("freelancerDashboard.plans.eyebrow")}
+                </span>
+                <h1 className="fp-hero__title">{planTitle}</h1>
+                <p className="fp-hero__subtitle">
+                  {freePlan
+                    ? t("freelancerDashboard.plans.freePlanSubtitle")
+                    : t("freelancerDashboard.plans.paidPlanSubtitle")}
+                </p>
+                {nextPlan ? (
+                  <p className="fp-upgrade-hint" style={{ marginTop: 14 }}>
+                    <Sparkles
+                      size={15}
+                      strokeWidth={2}
+                      style={{ verticalAlign: "middle", marginInlineEnd: 6 }}
+                      aria-hidden
+                    />
+                    {t("freelancerDashboard.plans.nextPlanHint", { title: nextPlanTitle })}
+                  </p>
+                ) : null}
+                {blockMsg ? (
+                  <p className="fp-upgrade-hint" style={{ marginTop: 10 }}>
+                    {blockMsg}
+                  </p>
+                ) : null}
               </div>
-            ) : null}
-            {mySubscription?.expiryDate ? (
-              <div className="fp-hero__stat" style={{ gridColumn: "1 / -1" }}>
-                <dt>{t("freelancerDashboard.plans.expiresOn")}</dt>
-                <dd>{formatJoDateMedium(mySubscription.expiryDate, locale)}</dd>
-              </div>
-            ) : null}
-          </dl>
-        </header>
 
-        <FreelancerMarketplaceMembershipCard />
-        <FreelancerBidCreditsCard />
+              <dl className="fp-hero__stats" aria-label={t("freelancerDashboard.plans.summaryAria")}>
+                <div className="fp-hero__stat">
+                  <dt>{t("freelancerDashboard.plans.subscriptionStatus")}</dt>
+                  <dd className="fp-hero__stat-value--accent">
+                    {subscriptionStatusLabel(mySubscription?.status, t)}
+                  </dd>
+                </div>
+                <div className="fp-hero__stat">
+                  <dt>{t("freelancerDashboard.plans.companyActivation")}</dt>
+                  <dd
+                    className={
+                      mySubscription?.activationStatus === "company_approved"
+                        ? "fp-hero__stat-value--ok"
+                        : "fp-hero__stat-value--warn"
+                    }
+                  >
+                    {activationLabel(mySubscription?.activationStatus, t)}
+                  </dd>
+                </div>
+                {rangeLabel ? (
+                  <div className="fp-hero__stat" style={{ gridColumn: "1 / -1" }}>
+                    <dt>{t("freelancerDashboard.plans.orderValueRange")}</dt>
+                    <dd>{rangeLabel}</dd>
+                  </div>
+                ) : null}
+                {mySubscription?.expiryDate ? (
+                  <div className="fp-hero__stat" style={{ gridColumn: "1 / -1" }}>
+                    <dt>{t("freelancerDashboard.plans.expiresOn")}</dt>
+                    <dd>{formatJoDateMedium(mySubscription.expiryDate, locale)}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            </header>
 
-        <section className="fp-surface fp-pricing-wrap" aria-label={t("freelancerDashboard.plans.upgradeSectionAria")}>
-          {error ? <p className="fp-error">{error}</p> : null}
-          <PricingSection
-            variant="dashboard"
-            loading={loading}
-            plans={plans}
-            currentSubscription={mySubscription}
-            hasBlockingSubscription={hasBlockingSubscription}
-            checkoutBusyPlanId={checkoutBusyPlanId}
-            activationFeeNeedsPayment={activationFeeNeedsPayment}
-            activationFee={activationFee}
-            onCta={startCheckout}
-          />
-        </section>
+            <section className="fp-surface fp-pricing-wrap" aria-label={catalogAria}>
+              {error ? <p className="fp-error">{error}</p> : null}
+              {!error ? (
+                <PricingSection
+                  variant="dashboard"
+                  loading={false}
+                  plans={plans}
+                  currentSubscription={mySubscription}
+                  hasBlockingSubscription={hasBlockingSubscription}
+                  checkoutBusyPlanId={checkoutBusyPlanId}
+                  activationFeeNeedsPayment={activationFeeNeedsPayment}
+                  activationFee={activationFee || catalogActivationFee}
+                  onCta={startCheckout}
+                />
+              ) : null}
+            </section>
+          </>
+        )}
       </div>
     </DashboardHubPage>
   );
