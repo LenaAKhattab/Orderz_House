@@ -1,13 +1,30 @@
+import { orderPublicPlansCategoryTabs } from "../../constants/publicPlansContent";
 import { PLANS_CATEGORY } from "../../constants/trainingPlansCatalog";
 
 /**
  * Segmented Training / Membership category toggle for public `/plans`.
+ * Tab order follows the admin-configured default section (RTL first / rightmost).
+ * `value` only controls which tab is active — clicks do not reorder.
  */
-export default function PlansCategoryToggle({ value, onChange, t }) {
-  const options = [
-    { id: PLANS_CATEGORY.TRAINING, label: t("plans.categories.training") },
-    { id: PLANS_CATEGORY.MEMBERSHIP, label: t("plans.categories.membership") },
-  ];
+export default function PlansCategoryToggle({
+  value,
+  onChange,
+  t,
+  trainingLabel,
+  membershipLabel,
+  defaultSection,
+}) {
+  const byId = {
+    [PLANS_CATEGORY.TRAINING]: {
+      id: PLANS_CATEGORY.TRAINING,
+      label: String(trainingLabel || "").trim() || t("plans.categories.training"),
+    },
+    [PLANS_CATEGORY.MEMBERSHIP]: {
+      id: PLANS_CATEGORY.MEMBERSHIP,
+      label: String(membershipLabel || "").trim() || t("plans.categories.membership"),
+    },
+  };
+  const options = orderPublicPlansCategoryTabs(defaultSection).map((id) => byId[id]);
 
   return (
     <div className="plans-category-toggle" role="tablist" aria-label={t("plans.categories.aria")}>

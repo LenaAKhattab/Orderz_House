@@ -204,14 +204,64 @@ export function normalizeMarketplacePlanPayload(form, { isCreate = false } = {})
   return payload;
 }
 
+/** Same field as the Super Admin إظهار / إخفاء control (`plan.isActive`). */
+export function isMarketplacePlanShownToUsers(plan) {
+  return Boolean(plan?.isActive);
+}
+
+/**
+ * Admin-only card order: visible (shown) plans first, hidden last.
+ * Preserves stored `sortOrder` (then id) inside each visibility group.
+ * Do not use this for public /plans or freelancer plan catalogs.
+ */
+export function sortMarketplacePlansForAdmin(plans) {
+  return [...(plans || [])].sort((a, b) => {
+    const visDiff = Number(isMarketplacePlanShownToUsers(b)) - Number(isMarketplacePlanShownToUsers(a));
+    if (visDiff !== 0) return visDiff;
+    const orderDiff = Number(a?.sortOrder ?? 0) - Number(b?.sortOrder ?? 0);
+    if (orderDiff !== 0) return orderDiff;
+    return Number(a?.id) - Number(b?.id);
+  });
+}
+
+export function getMarketplaceAdminMoveMeta(plans, planId) {
+  const displayed = sortMarketplacePlansForAdmin(plans);
+  const idx = displayed.findIndex((p) => String(p.id) === String(planId));
+  if (idx < 0) {
+    return { index: -1, canMoveUp: false, canMoveDown: false, total: displayed.length };
+  }
+  const currentVisible = isMarketplacePlanShownToUsers(displayed[idx]);
+  const prev = displayed[idx - 1];
+  const next = displayed[idx + 1];
+  return {
+    index: idx,
+    canMoveUp: Boolean(prev) && isMarketplacePlanShownToUsers(prev) === currentVisible,
+    canMoveDown: Boolean(next) && isMarketplacePlanShownToUsers(next) === currentVisible,
+    total: displayed.length,
+  };
+}
+
+/**
+ * Swap a plan with its admin-neighbor of the same visibility.
+ * Returns stored-order ids (not the admin grouped view) so public sort_order is not overwritten.
+ */
 export function buildMarketplaceReorderIds(plans, planId, direction) {
-  const list = [...(plans || [])];
-  const idx = list.findIndex((p) => String(p.id) === String(planId));
+  const stored = [...(plans || [])];
+  const displayed = sortMarketplacePlansForAdmin(stored);
+  const idx = displayed.findIndex((p) => String(p.id) === String(planId));
   if (idx < 0) return null;
   const swapWith = direction === "up" ? idx - 1 : idx + 1;
-  if (swapWith < 0 || swapWith >= list.length) return null;
-  const tmp = list[idx];
-  list[idx] = list[swapWith];
-  list[swapWith] = tmp;
-  return list.map((p) => p.id);
+  if (swapWith < 0 || swapWith >= displayed.length) return null;
+  const current = displayed[idx];
+  const neighbor = displayed[swapWith];
+  if (isMarketplacePlanShownToUsers(current) !== isMarketplacePlanShownToUsers(neighbor)) {
+    return null;
+  }
+  const storedIdx = stored.findIndex((p) => String(p.id) === String(current.id));
+  const storedNeighborIdx = stored.findIndex((p) => String(p.id) === String(neighbor.id));
+  if (storedIdx < 0 || storedNeighborIdx < 0) return null;
+  const tmp = stored[storedIdx];
+  stored[storedIdx] = stored[storedNeighborIdx];
+  stored[storedNeighborIdx] = tmp;
+  return stored.map((p) => p.id);
 }

@@ -55,6 +55,8 @@ describe("trainingPlansCatalog", () => {
     assert.match(plansPage, /TrainingPlansSection/);
     assert.match(plansPage, /PlansCategoryToggle/);
     assert.match(plansPage, /PricingSection/);
+    assert.match(plansPage, /usePublicPlansContent/);
+    assert.match(plansPage, /plansCategoryFromDefaultSection/);
     assert.doesNotMatch(plansPage, /Work Token|workToken/);
   });
 });

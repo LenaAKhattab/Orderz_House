@@ -27,19 +27,33 @@ export default function PlansMobilePage({
   activationFeeNeedsPayment = false,
   activationFee = null,
   category = null,
+  trainingEyebrow = null,
+  trainingTitle = null,
+  trainingSubtitle = null,
+  contentPending = false,
 }) {
   const { t, dir, locale } = useTranslation();
   const { formatActivationFeeAmount } = useDisplayCurrency();
   const layout = getPlansLayoutConfig(layoutVariant);
   const feeEnabled = activationFee?.enabled === true;
   const feeAmountLabel = feeEnabled ? formatActivationFeeAmount(activationFee?.amountJod) : "";
-  const isMainCatalog = !pageSlug && category != null;
-  const showTraining = isMainCatalog && category === PLANS_CATEGORY.TRAINING;
-  const showMembership = !isMainCatalog || category === PLANS_CATEGORY.MEMBERSHIP;
+  const isMainCatalog = !pageSlug;
+  const showTraining = !contentPending && isMainCatalog && category === PLANS_CATEGORY.TRAINING;
+  const showMembership = !contentPending && (!isMainCatalog || category === PLANS_CATEGORY.MEMBERSHIP);
 
   return (
     <div className="plans-mobile-page" dir={dir}>
-      {showTraining ? (
+      {contentPending ? (
+        <section className="pm-training" aria-busy="true">
+          <div className="pm-training__list">
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={`pm-content-skel-${i}`} className="pm-plan-card pm-plan-card--skeleton" aria-hidden />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {!contentPending && showTraining ? (
         <section
           id="plans-panel-training-mobile"
           className="pm-training"
@@ -48,9 +62,9 @@ export default function PlansMobilePage({
           aria-label={t("plans.training.sectionAria")}
         >
           <PlansMobileHero
-            title={t("plans.training.hero.title")}
-            subtitle={t("plans.training.hero.subtitle")}
-            eyebrow={t("plans.training.hero.eyebrow")}
+            title={trainingTitle || t("plans.training.hero.title")}
+            subtitle={trainingSubtitle || t("plans.training.hero.subtitle")}
+            eyebrow={trainingEyebrow || t("plans.training.hero.eyebrow")}
             trustPills={trustPills}
           />
           <div className="pm-training__list">

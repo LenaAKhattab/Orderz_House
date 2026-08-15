@@ -235,6 +235,22 @@ export const updateAdminDefaultPlanCatalogRequest = async (catalog) => {
   return data;
 };
 
+/** Public/read-safe: `/plans` hero copy + initial Training/Work section. */
+export const getPublicPlansContentRequest = async () => {
+  const { data } = await api.get("/public-plans-content");
+  return data;
+};
+
+export const getAdminPublicPlansContentRequest = async () => {
+  const { data } = await api.get("/super-admin/public-plans-content");
+  return data;
+};
+
+export const updateAdminPublicPlansContentRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/public-plans-content", payload);
+  return data;
+};
+
 /** Active plans on special plan pages (باقات الصفحات) — existing page-package catalog. */
 export const listPublicSpecialPagePlansRequest = async () => {
   const { data } = await api.get("/plan-pages/special-catalog");

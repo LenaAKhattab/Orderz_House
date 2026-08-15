@@ -13,8 +13,8 @@ import AdminPlanCard from "../../admin/plans/AdminPlanCard";
 import PlanCreateModal from "../../admin/plans/PlanCreateModal";
 import PlanEditModal from "../../admin/plans/PlanEditModal";
 import PlanPageMetadataPanel from "../../admin/plans/PlanPageMetadataPanel";
-import DefaultPlanCatalogControl from "../../admin/plans/DefaultPlanCatalogSelector";
 import PlanCatalogAdminShell from "../../admin/plans/PlanCatalogAdminShell";
+import PlanCatalogActionToolbar from "../../admin/plans/PlanCatalogActionToolbar";
 import { PlanCardsGridSkeleton } from "../../admin/plans/PlanCatalogSkeletons";
 import { catalogIdForAdminSection } from "../../admin/plans/planCatalogNav";
 import { filterPlans } from "../../admin/plans/planDisplayUtils";
@@ -358,12 +358,12 @@ const SuperAdminPlansPage = () => {
         title={sectionLabel}
         className="oh-sapl-section--plans oh-sapl-section--tight"
         actions={
-          <div className="oh-sapl-section-heading-actions">
-            <DefaultPlanCatalogControl catalog={sectionCatalogId} isEn={isEn} />
-            <Button type="button" className="oh-sapl-header-cta" onClick={openCreateModal}>
-              {isEn ? "+ Create plan" : "+ إنشاء باقة جديدة"}
-            </Button>
-          </div>
+          <PlanCatalogActionToolbar
+            isEn={isEn}
+            catalog={sectionCatalogId}
+            onCreate={openCreateModal}
+            createLabel={isEn ? "+ Create plan" : "+ إنشاء باقة جديدة"}
+          />
         }
       >
         <div className="oh-sapl-toolbar-compact" role="search">

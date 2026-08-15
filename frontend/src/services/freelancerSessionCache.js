@@ -2,6 +2,7 @@ import {
   getFreelancerMarketplaceMembershipRequest,
   getMyEligibilityRequest,
   getMySubscriptionRequest,
+  getPublicPlansContentRequest,
   listPublicPlansRequest,
 } from "./api";
 import { mergeApiPlansWithCatalog } from "../constants/orderzhousePlansCatalog";
@@ -17,6 +18,7 @@ const eligibilityCache = { userId: null, data: undefined, promise: null };
 const membershipCache = { userId: null, data: undefined, promise: null };
 const legacyPlansCache = { data: null, activationFee: null, promise: null };
 const plansCache = { catalog: null, data: null, activationFee: null, promise: null };
+const publicPlansContentCache = { data: null, promise: null };
 
 export function invalidateFreelancerSessionCache() {
   subscriptionCache.userId = null;
@@ -31,6 +33,11 @@ export function invalidateFreelancerSessionCache() {
   membershipCache.promise = null;
 }
 
+export function invalidatePublicPlansContentCache() {
+  publicPlansContentCache.data = null;
+  publicPlansContentCache.promise = null;
+}
+
 export function invalidatePublicPlansCache() {
   legacyPlansCache.data = null;
   legacyPlansCache.activationFee = null;
@@ -39,6 +46,7 @@ export function invalidatePublicPlansCache() {
   plansCache.data = null;
   plansCache.activationFee = null;
   plansCache.promise = null;
+  invalidatePublicPlansContentCache();
 }
 
 export function getCachedFreelancerSubscription(userId) {
@@ -224,4 +232,28 @@ export async function fetchDefaultCatalogPlansCached({ force = false } = {}) {
     });
   plansCache.promise = pending;
   return pending;
+}
+
+export function getCachedPublicPlansContent() {
+  return publicPlansContentCache.data;
+}
+
+export async function fetchPublicPlansContentCached({ force = false } = {}) {
+  if (!force && publicPlansContentCache.data && !publicPlansContentCache.promise) {
+    return publicPlansContentCache.data;
+  }
+  if (!force && publicPlansContentCache.promise) return publicPlansContentCache.promise;
+
+  publicPlansContentCache.promise = getPublicPlansContentRequest()
+    .then((res) => {
+      const data = res?.data || null;
+      publicPlansContentCache.data = data;
+      publicPlansContentCache.promise = null;
+      return data;
+    })
+    .catch((err) => {
+      publicPlansContentCache.promise = null;
+      throw err;
+    });
+  return publicPlansContentCache.promise;
 }
