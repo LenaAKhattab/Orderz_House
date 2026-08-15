@@ -1,0 +1,38 @@
+import '../data/pantry_models.dart';
+import '../data/pantry_status.dart';
+
+String pantryBudgetLabel(PantryRequest request) {
+  final accepted = request.acceptedBid?.amount ?? request.myBid?.amount;
+  if (accepted != null) return '${_fmt(accepted)} د.أ';
+  if ((request.pricingType ?? '').toLowerCase() == 'bidding') {
+    final min = request.budgetMin;
+    final max = request.budgetMax;
+    if (min != null && max != null) return '${_fmt(min)} – ${_fmt(max)} د.أ';
+    if (min != null) return 'من ${_fmt(min)} د.أ';
+    if (max != null) return 'حتى ${_fmt(max)} د.أ';
+  }
+  if (request.fixedBudget != null) return '${_fmt(request.fixedBudget!)} د.أ';
+  return '—';
+}
+
+String pantryDurationLabel(PantryRequest request) {
+  final days = request.deliveryDays;
+  if (days == null) return '—';
+  final unit = (request.durationUnit ?? 'days').toLowerCase();
+  if (unit == 'hours') return '$days ساعة';
+  if (unit == 'weeks') return '$days أسبوع';
+  return '$days يوم';
+}
+
+String pantryShortDescription(String? description, {int max = 140}) {
+  final text = (description ?? '').trim();
+  if (text.length <= max) return text;
+  return '${text.substring(0, max).trim()}…';
+}
+
+String pantryPricingLabel(PantryRequest request) => pantryPricingTypeLabelAr(request.pricingType);
+
+String _fmt(double value) {
+  if (value == value.roundToDouble()) return value.round().toString();
+  return value.toStringAsFixed(2);
+}

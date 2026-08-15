@@ -349,4 +349,65 @@ void main() {
       expect(target?.route, startsWith('/client/orders/'));
     });
   });
+
+  group('resolveNotificationAction — pantry', () {
+    test('freelancer pantry list link', () {
+      final target = resolveNotificationAction(
+        _notification(
+          actionUrl: '/dashboard/freelancer/pantry',
+          recipientRole: 'freelancer',
+        ),
+        currentUserRole: 'freelancer',
+      );
+      expect(target?.route, AppRoutes.freelancerPantry);
+    });
+
+    test('freelancer pantry request id in path', () {
+      final target = resolveNotificationAction(
+        _notification(
+          actionUrl: '/dashboard/freelancer/pantry/12',
+          recipientRole: 'freelancer',
+        ),
+        currentUserRole: 'freelancer',
+      );
+      expect(target?.route, AppRoutes.freelancerPantryDetail('12'));
+    });
+
+    test('pantry_request entity opens detail', () {
+      final target = resolveNotificationAction(
+        _notification(
+          entityType: 'pantry_request',
+          entityId: '8',
+          recipientRole: 'freelancer',
+        ),
+        currentUserRole: 'freelancer',
+      );
+      expect(target?.route, AppRoutes.freelancerPantryDetail('8'));
+    });
+
+    test('pantry_delivery entity without request id opens hub', () {
+      final target = resolveNotificationAction(
+        _notification(
+          entityType: 'pantry_delivery',
+          entityId: '44',
+          recipientRole: 'freelancer',
+        ),
+        currentUserRole: 'freelancer',
+      );
+      expect(target?.route, AppRoutes.freelancerPantry);
+    });
+
+    test('client does not open pantry', () {
+      expect(
+        resolveNotificationAction(
+          _notification(
+            actionUrl: '/dashboard/freelancer/pantry',
+            recipientRole: 'freelancer',
+          ),
+          currentUserRole: 'client',
+        ),
+        isNull,
+      );
+    });
+  });
 }

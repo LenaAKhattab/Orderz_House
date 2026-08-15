@@ -3,11 +3,8 @@ import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader"
 import { breadcrumbHomeCrumb } from "../../components/dashboard/dashboardBreadcrumbs";
 import { useToast } from "../../components/ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
-import {
-  getMySubscriptionRequest,
-  getPublicSitePageBySlugRequest,
-  selfActivateFreelancerAccountRequest,
-} from "../../services/api";
+import FreelancerActivationPolicyPanel from "../../components/dashboard/FreelancerActivationPolicyPanel";
+import { getMySubscriptionRequest, selfActivateFreelancerAccountRequest } from "../../services/api";
 import { invalidateFreelancerSessionCache } from "../../services/freelancerSessionCache";
 import { formatJoDateMedium } from "../../utils/freelancerDashboardData";
 import "./shared/account-pages.css";
@@ -29,23 +26,6 @@ function subscriptionStatusLabel(status, t) {
   return status || t("freelancerDashboard.common.emDash");
 }
 
-function renderTermsBlock(block, index) {
-  const trimmed = String(block || "").trim();
-  if (!trimmed) return null;
-  if (trimmed.startsWith("## ")) {
-    return (
-      <h4 key={index} className="oh-activate-terms__heading">
-        {trimmed.slice(3).trim()}
-      </h4>
-    );
-  }
-  return (
-    <p key={index} className="oh-activate-terms__para">
-      {trimmed}
-    </p>
-  );
-}
-
 function ActivateTermsModal({
   open,
   busy,
@@ -55,10 +35,6 @@ function ActivateTermsModal({
   onAgreedChange,
   onClose,
   onConfirm,
-  termsTitle,
-  termsBlocks,
-  termsLoading,
-  termsError,
 }) {
   if (!open) return null;
 
@@ -82,27 +58,7 @@ function ActivateTermsModal({
           {t("freelancerDashboard.activateAccount.termsModalTitle")}
         </h3>
 
-        <div className="oh-activate-terms-panel" tabIndex={0}>
-          {termsLoading ? (
-            <p className="oh-account-value">{t("freelancerDashboard.common.loading")}</p>
-          ) : (
-            <>
-              {termsError ? (
-                <p className="oh-account-error" style={{ margin: "0 0 10px" }}>
-                  {termsError}
-                </p>
-              ) : null}
-              {termsTitle ? <h4 className="oh-activate-terms__doc-title">{termsTitle}</h4> : null}
-              {termsBlocks.length > 0 ? (
-                termsBlocks.map(renderTermsBlock)
-              ) : (
-                <p className="oh-activate-terms__para">
-                  {t("freelancerDashboard.activateAccount.termsFallback")}
-                </p>
-              )}
-            </>
-          )}
-        </div>
+        <FreelancerActivationPolicyPanel />
 
         <label className="oh-activate-terms-check">
           <input
@@ -148,10 +104,6 @@ export default function FreelancerActivateAccountPage() {
   const [subscription, setSubscription] = useState(null);
   const [termsOpen, setTermsOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
-  const [termsLoading, setTermsLoading] = useState(false);
-  const [termsError, setTermsError] = useState("");
-  const [termsTitle, setTermsTitle] = useState("");
-  const [termsBlocks, setTermsBlocks] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -176,27 +128,10 @@ export default function FreelancerActivateAccountPage() {
     String(subscription?.status || "") === "active" &&
     Boolean(subscription?.actualStartDate || subscription?.actual_start_date);
 
-  const openTermsModal = async () => {
+  const openTermsModal = () => {
     if (busy || isActive) return;
     setAgreed(false);
     setTermsOpen(true);
-    setTermsLoading(true);
-    setTermsError("");
-    try {
-      const res = await getPublicSitePageBySlugRequest("terms-conditions");
-      const page = res?.data?.page || null;
-      const content = String(page?.content || "").trim();
-      setTermsTitle(String(page?.title || "").trim());
-      setTermsBlocks(content ? content.split(/\n\n+/) : []);
-    } catch (err) {
-      setTermsTitle("");
-      setTermsBlocks([]);
-      setTermsError(
-        err?.response?.data?.message || t("freelancerDashboard.activateAccount.termsLoadError"),
-      );
-    } finally {
-      setTermsLoading(false);
-    }
   };
 
   const closeTermsModal = () => {
@@ -329,7 +264,7 @@ export default function FreelancerActivateAccountPage() {
               type="button"
               className="oh-account-btn-primary"
               disabled={busy || isActive}
-              onClick={() => void openTermsModal()}
+              onClick={openTermsModal}
             >
               {isActive
                 ? t("freelancerDashboard.activateAccount.activated")
@@ -348,10 +283,6 @@ export default function FreelancerActivateAccountPage() {
         onAgreedChange={setAgreed}
         onClose={closeTermsModal}
         onConfirm={handleActivate}
-        termsTitle={termsTitle}
-        termsBlocks={termsBlocks}
-        termsLoading={termsLoading}
-        termsError={termsError}
       />
     </div>
   );

@@ -43,7 +43,10 @@ class AuthInterceptor extends Interceptor {
     final path = err.requestOptions.path;
     final isAuthEndpoint = path.contains('/auth/login') ||
         path.contains('/auth/register') ||
-        path.contains('/auth/verify-register-otp');
+        path.contains('/auth/verify-register-otp') ||
+        path.contains('/auth/forgot-password') ||
+        path.contains('/auth/verify-forgot-password-otp') ||
+        path.contains('/auth/reset-password');
 
     if (status == 401 && !isAuthEndpoint) {
       await _tokenStorage.clearAccessToken();

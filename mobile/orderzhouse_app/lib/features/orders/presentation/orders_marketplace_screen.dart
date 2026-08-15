@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/presentation/auth_controller.dart';
 import '../../../core/errors/api_error_message.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
@@ -295,6 +296,44 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
                     textAlign: TextAlign.right,
                     style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                   ),
+                  if (ref.watch(authControllerProvider).user?.usesFreelancerExperience == true) ...[
+                    const SizedBox(height: 12),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => context.push(AppRoutes.freelancerPantry),
+                        borderRadius: BorderRadius.circular(14),
+                        child: Ink(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondary.withValues(alpha: 0.22),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.cardBorder),
+                          ),
+                          child: const Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                'بيت المونة',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: AppColors.primaryDeep,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'طلبات داخلية من الشركة لتنفيذ أعمال جاهزة مسبقًا. منفصلة عن طلبات العملاء.',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 14),
                   Row(
                     children: [

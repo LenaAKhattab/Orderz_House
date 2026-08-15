@@ -84,6 +84,21 @@ NotificationActionTarget? _resolveFromDashboardLink(
   final uri = Uri.parse(link);
   final path = uri.path;
 
+  if (_looksLikePantry(path, notification)) {
+    if (role != 'freelancer') return null;
+    final requestId = _extractPantryRequestId(path, uri, notification);
+    if (requestId != null) {
+      return NotificationActionTarget(
+        route: AppRoutes.freelancerPantryDetail(requestId),
+        buttonLabel: 'فتح طلب بيت المونة',
+      );
+    }
+    return const NotificationActionTarget(
+      route: AppRoutes.freelancerPantry,
+      buttonLabel: 'فتح بيت المونة',
+    );
+  }
+
   if (path == '/dashboard/freelancer/financial-claims') {
     if (role != 'freelancer') return null;
     return const NotificationActionTarget(
@@ -154,6 +169,26 @@ NotificationActionTarget? _resolveFromDashboardLink(
 
 NotificationActionTarget? _resolveFromEntity(AppNotification notification, String role) {
   final entityType = notification.entityType?.trim().toLowerCase();
+  final type = notification.type?.trim().toLowerCase() ?? '';
+
+  if (entityType == 'pantry_request' ||
+      entityType == 'pantry_delivery' ||
+      type.contains('pantry')) {
+    if (role != 'freelancer') return null;
+    if (entityType == 'pantry_request') {
+      final id = _numericIdOrNull(notification.entityId);
+      if (id != null) {
+        return NotificationActionTarget(
+          route: AppRoutes.freelancerPantryDetail(id),
+          buttonLabel: 'فتح طلب بيت المونة',
+        );
+      }
+    }
+    return const NotificationActionTarget(
+      route: AppRoutes.freelancerPantry,
+      buttonLabel: 'فتح بيت المونة',
+    );
+  }
 
   if (entityType == 'financial_claim') {
     if (role != 'freelancer') return null;
@@ -199,6 +234,37 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
   }
 
   return null;
+}
+
+String? _extractPantryRequestId(String path, Uri uri, AppNotification notification) {
+  final fromQuery = _numericIdOrNull(
+    uri.queryParameters['requestId'] ??
+        uri.queryParameters['pantryRequestId'] ??
+        uri.queryParameters['id'],
+  );
+  if (fromQuery != null) return fromQuery;
+
+  final match = RegExp(r'/pantry/(?:requests/)?(\d+)(?:/|$)').firstMatch(path);
+  if (match != null) return match.group(1);
+
+  final entityType = notification.entityType?.trim().toLowerCase();
+  if (entityType == 'pantry_request') {
+    return _numericIdOrNull(notification.entityId);
+  }
+  return null;
+}
+
+bool _looksLikePantry(String path, AppNotification notification) {
+  final haystack = [
+    path.toLowerCase(),
+    (notification.actionUrl ?? '').toLowerCase(),
+    (notification.entityType ?? '').toLowerCase(),
+    (notification.type ?? '').toLowerCase(),
+  ].join(' ');
+  return haystack.contains('pantry') ||
+      haystack.contains('pantry_request') ||
+      haystack.contains('pantry_delivery') ||
+      haystack.contains('/freelancer/pantry');
 }
 
 String? _extractOrderIdFromQuery(Uri uri) {

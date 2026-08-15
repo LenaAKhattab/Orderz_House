@@ -4,6 +4,13 @@ abstract final class AppRoutes {
   static const loginRedirectQuery = 'redirect';
   static const register = '/register';
   static const otp = '/otp';
+  static const forgotPassword = '/forgot-password';
+  static const forgotPasswordOtp = '/forgot-password/otp';
+  static const forgotPasswordReset = '/forgot-password/reset';
+  static const freelancerPantry = '/freelancer/pantry';
+  static const freelancerPantryDetails = '/freelancer/pantry/:id';
+
+  static String freelancerPantryDetail(String id) => '/freelancer/pantry/$id';
   static const shell = '/';
   static const home = '/home';
   static const services = '/services';
