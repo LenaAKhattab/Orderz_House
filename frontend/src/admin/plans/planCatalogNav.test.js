@@ -5,10 +5,12 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  DEFAULT_PLAN_CATALOG_TAB_BADGE,
   PLAN_CATALOG_ADMIN_HREF,
   PLAN_CATALOG_ADMIN_TITLE,
   PLAN_CATALOG_NAV,
   catalogIdForAdminSection,
+  orderPlanCatalogNav,
   resolveActivePlanCatalogNavId,
 } from "./planCatalogNav.js";
 import { PLAN_CATALOG } from "../../constants/planCatalogs.js";
@@ -37,6 +39,27 @@ describe("PLAN_CATALOG_NAV", () => {
     assert.equal(PLAN_CATALOG_NAV[1].labelAr, "باقات الصفحات");
     assert.equal(PLAN_CATALOG_NAV[2].labelAr, "باقات العمل");
     assert.equal(PLAN_CATALOG_ADMIN_TITLE.ar, "إدارة الباقات والاشتراكات");
+    assert.equal(DEFAULT_PLAN_CATALOG_TAB_BADGE.ar, "معروض الآن");
+  });
+
+  it("puts the default catalog first and keeps the rest in canonical order", () => {
+    assert.deepEqual(
+      orderPlanCatalogNav(PLAN_CATALOG_NAV, PLAN_CATALOG.MARKETPLACE_PLANS).map((item) => item.id),
+      [PLAN_CATALOG.MARKETPLACE_PLANS, PLAN_CATALOG.MAIN_PLANS, PLAN_CATALOG.PAGE_PLANS],
+    );
+    assert.deepEqual(
+      orderPlanCatalogNav(PLAN_CATALOG_NAV, PLAN_CATALOG.PAGE_PLANS).map((item) => item.id),
+      [PLAN_CATALOG.PAGE_PLANS, PLAN_CATALOG.MAIN_PLANS, PLAN_CATALOG.MARKETPLACE_PLANS],
+    );
+    assert.deepEqual(
+      orderPlanCatalogNav(PLAN_CATALOG_NAV, PLAN_CATALOG.MAIN_PLANS).map((item) => item.id),
+      [PLAN_CATALOG.MAIN_PLANS, PLAN_CATALOG.PAGE_PLANS, PLAN_CATALOG.MARKETPLACE_PLANS],
+    );
+    assert.deepEqual(
+      orderPlanCatalogNav(PLAN_CATALOG_NAV, null).map((item) => item.id),
+      [PLAN_CATALOG.MAIN_PLANS, PLAN_CATALOG.PAGE_PLANS, PLAN_CATALOG.MARKETPLACE_PLANS],
+    );
+    assert.equal(PLAN_CATALOG_NAV[0].id, PLAN_CATALOG.MAIN_PLANS);
   });
 
   it("resolves the selected catalog from the existing routes", () => {

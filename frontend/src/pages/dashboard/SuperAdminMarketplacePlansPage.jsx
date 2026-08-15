@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Button from "../../components/ui/Button";
 import DashboardSection from "../../components/dashboard/DashboardSection";
@@ -15,9 +15,13 @@ import {
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import MarketplaceMembershipPlanCard from "../../admin/marketplaceMembership/MarketplaceMembershipPlanCard";
 import MarketplaceMembershipPlanFormModal from "../../admin/marketplaceMembership/MarketplaceMembershipPlanFormModal";
-import { buildMarketplaceReorderIds } from "../../admin/marketplaceMembership/marketplacePlanFormUtils";
-import DefaultPlanCatalogControl from "../../admin/plans/DefaultPlanCatalogSelector";
+import {
+  buildMarketplaceReorderIds,
+  getMarketplaceAdminMoveMeta,
+  sortMarketplacePlansForAdmin,
+} from "../../admin/marketplaceMembership/marketplacePlanFormUtils";
 import PlanCatalogAdminShell from "../../admin/plans/PlanCatalogAdminShell";
+import PlanCatalogActionToolbar from "../../admin/plans/PlanCatalogActionToolbar";
 import { PlanCardsGridSkeleton } from "../../admin/plans/PlanCatalogSkeletons";
 import { SECTION_COPY } from "../../admin/plans/planMetricTerminology";
 import { PLAN_CATALOG } from "../../constants/planCatalogs";
@@ -36,6 +40,8 @@ export default function SuperAdminMarketplacePlansPage() {
   const [reorderingPlanId, setReorderingPlanId] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [editPlan, setEditPlan] = useState(null);
+
+  const displayedPlans = useMemo(() => sortMarketplacePlansForAdmin(plans), [plans]);
 
   const refresh = useCallback(async () => {
     setError("");
@@ -97,10 +103,20 @@ export default function SuperAdminMarketplacePlansPage() {
   };
 
   const handleToggleActive = async (plan, nextActive) => {
+    if (Boolean(plan.isActive) === Boolean(nextActive)) return;
     setSubmitting(true);
     try {
-      await updateMarketplaceMembershipPlanRequest(plan.id, { isActive: nextActive });
-      await refresh();
+      const res = await updateMarketplaceMembershipPlanRequest(plan.id, { isActive: nextActive });
+      const updated = res?.data?.plan;
+      setPlans((prev) =>
+        prev.map((item) => {
+          if (String(item.id) !== String(plan.id)) return item;
+          if (updated && typeof updated === "object") {
+            return { ...item, ...updated, isActive: updated.isActive ?? Boolean(nextActive) };
+          }
+          return { ...item, isActive: Boolean(nextActive) };
+        }),
+      );
     } catch (err) {
       push({
         type: "error",
@@ -150,15 +166,20 @@ export default function SuperAdminMarketplacePlansPage() {
             : "Pay As You Work و Active و Pro و Elite — تُدار عبر رمز الباقة."
         }
         actions={
-          <div className="oh-sapl-section-heading-actions">
-            <DefaultPlanCatalogControl catalog={PLAN_CATALOG.MARKETPLACE_PLANS} isEn={isEn} />
-            <Link className="btn btn-secondary" to="/dashboard/super-admin/marketplace-economy">
-              {isEn ? "Work economy settings" : "إعدادات اقتصاد العمل"}
-            </Link>
-            <Button type="button" onClick={() => setCreateOpen(true)}>
-              {isEn ? "+ Add plan" : "+ إضافة باقة"}
-            </Button>
-          </div>
+          <PlanCatalogActionToolbar
+            isEn={isEn}
+            catalog={PLAN_CATALOG.MARKETPLACE_PLANS}
+            onCreate={() => setCreateOpen(true)}
+            createLabel={isEn ? "+ Add plan" : "+ إضافة باقة"}
+            extra={
+              <Link
+                className="btn btn-ghost oh-sapl-action-toolbar__tertiary"
+                to="/dashboard/super-admin/marketplace-economy"
+              >
+                {isEn ? "Work economy settings" : "إعدادات اقتصاد العمل"}
+              </Link>
+            }
+          />
         }
       >
         {loading ? (
@@ -177,22 +198,25 @@ export default function SuperAdminMarketplacePlansPage() {
           />
         ) : null}
 
-        {!loading && !error && plans.length > 0 ? (
+        {!loading && !error && displayedPlans.length > 0 ? (
           <div className="oh-mmp-grid">
-            {plans.map((plan, index) => (
-              <MarketplaceMembershipPlanCard
-                key={plan.id}
-                plan={plan}
-                isEn={isEn}
-                busy={submitting}
-                reordering={reorderingPlanId === String(plan.id)}
-                canMoveUp={index > 0}
-                canMoveDown={index < plans.length - 1}
-                onEdit={setEditPlan}
-                onToggleActive={handleToggleActive}
-                onMove={handleMove}
-              />
-            ))}
+            {displayedPlans.map((plan) => {
+              const moveMeta = getMarketplaceAdminMoveMeta(plans, plan.id);
+              return (
+                <MarketplaceMembershipPlanCard
+                  key={plan.id}
+                  plan={plan}
+                  isEn={isEn}
+                  busy={submitting}
+                  reordering={reorderingPlanId === String(plan.id)}
+                  canMoveUp={moveMeta.canMoveUp}
+                  canMoveDown={moveMeta.canMoveDown}
+                  onEdit={setEditPlan}
+                  onToggleActive={handleToggleActive}
+                  onMove={handleMove}
+                />
+              );
+            })}
           </div>
         ) : null}
       </DashboardSection>

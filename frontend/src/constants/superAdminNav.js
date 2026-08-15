@@ -88,6 +88,7 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
   },
+  // Route remains available; hidden from sidebar for now.
   bidCredits: {
     key: "bidCredits",
     to: "/dashboard/super-admin/bid-credits",
@@ -95,6 +96,7 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     icon: "plans",
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
+    hidden: true,
   },
   subscriptions: {
     key: "subscriptions",
@@ -199,7 +201,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "usersSubscriptions",
     labelKey: "dashboard.nav.sections.usersSubscriptions",
-    itemKeys: ["plans", "marketplacePlans", "marketplaceEconomy", "marketplaceArticles", "bidCredits", "subscriptions", "subscriptionActivation"],
+    itemKeys: ["plans", "marketplacePlans", "marketplaceEconomy", "marketplaceArticles", "subscriptions", "subscriptionActivation"],
   },
   {
     id: "contentTraining",
@@ -238,7 +240,9 @@ export const SUPER_ADMIN_NAV_CREATE_ORDER = {
 };
 
 export function filterSuperAdminNavItems(items, user, hasPermission) {
-  return items.filter((item) => !item.permission || hasPermission(user, item.permission));
+  return items.filter(
+    (item) => !item.hidden && (!item.permission || hasPermission(user, item.permission)),
+  );
 }
 
 export function filterSuperAdminNavSections(user, hasPermission) {

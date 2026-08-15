@@ -6,7 +6,11 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 /**
  * Training packages grid for public `/plans` (WhatsApp inquiry CTAs).
  */
-export default function TrainingPlansSection() {
+export default function TrainingPlansSection({
+  eyebrow = null,
+  title = null,
+  subtitle = null,
+}) {
   const { t, locale } = useTranslation();
 
   return (
@@ -19,9 +23,9 @@ export default function TrainingPlansSection() {
     >
       <PublicPageHeader
         className="public-page-hero--training"
-        eyebrow={t("plans.training.hero.eyebrow")}
-        title={t("plans.training.hero.title")}
-        subtitle={t("plans.training.hero.subtitle")}
+        eyebrow={eyebrow || t("plans.training.hero.eyebrow")}
+        title={title || t("plans.training.hero.title")}
+        subtitle={subtitle || t("plans.training.hero.subtitle")}
       />
 
       <div className="pricing__grid pricing__grid--public-dynamic pricing__grid--training-three">

@@ -1,18 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import Button from "../../components/ui/Button";
 import { useToast } from "../../components/ui/toastContext";
-import {
-  getAdminDefaultPlanCatalogRequest,
-  updateAdminDefaultPlanCatalogRequest,
-} from "../../services/api";
+import { updateAdminDefaultPlanCatalogRequest } from "../../services/api";
 import { invalidatePublicPlansCache } from "../../services/freelancerSessionCache";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
-import {
-  DEFAULT_PLAN_CATALOG_INITIAL_VALUE,
-  PLAN_CATALOG_LABELS,
-  isPlanCatalog,
-} from "../../constants/planCatalogs";
+import { PLAN_CATALOG_LABELS, isPlanCatalog } from "../../constants/planCatalogs";
+import { DEFAULT_PLAN_CATALOG_TAB_BADGE } from "./planCatalogNav";
+import { useAdminDefaultPlanCatalog } from "./DefaultPlanCatalogAdminContext";
 import "./super-admin-plans.css";
 import { DefaultPlanControlSkeleton } from "./PlanCatalogSkeletons";
 
@@ -26,10 +21,12 @@ const CONFIRM_BODY_EN =
   "This section will be shown on the public plans page and the freelancer dashboard instead of the current default plans.";
 const SET_BUTTON_AR = "تعيين كافتراضي";
 const SET_BUTTON_EN = "Set as default";
-const BADGE_AR = "الافتراضي حاليًا";
-const BADGE_EN = "Currently default";
+const BADGE_AR = DEFAULT_PLAN_CATALOG_TAB_BADGE.ar;
+const BADGE_EN = DEFAULT_PLAN_CATALOG_TAB_BADGE.en;
 const HELPER_AR = "عرض هذه الباقات للمستخدمين";
 const HELPER_EN = "Show these plans to users";
+const BADGE_TITLE_AR = DEFAULT_PLAN_CATALOG_TAB_BADGE.titleAr;
+const BADGE_TITLE_EN = DEFAULT_PLAN_CATALOG_TAB_BADGE.titleEn;
 
 function catalogLabel(catalogId, isEn) {
   return isEn ? PLAN_CATALOG_LABELS[catalogId]?.en : PLAN_CATALOG_LABELS[catalogId]?.ar;
@@ -42,7 +39,7 @@ function successToastMessage(catalogId, isEn) {
     : `تم تعيين "${label}" كباقات افتراضية للمستخدمين.`;
 }
 
-function DefaultPlanCatalogConfirmModal({ open, catalogId, isEn, submitting, onClose, onConfirm }) {
+function DefaultPlanCatalogConfirmModal({ open, catalogId, isEn, submitting, error, onClose, onConfirm }) {
   if (!open || !catalogId) return null;
   const label = catalogLabel(catalogId, isEn);
 
@@ -86,6 +83,11 @@ function DefaultPlanCatalogConfirmModal({ open, catalogId, isEn, submitting, onC
               {isEn ? "Section:" : "القسم:"} <strong>{label}</strong>
             </p>
           ) : null}
+          {error ? (
+            <p className="oh-sapl-default-control__error" role="alert">
+              {error}
+            </p>
+          ) : null}
         </div>
         <footer className="oh-sapl-modal__foot">
           <Button type="button" variant="secondary" disabled={submitting} onClick={onClose}>
@@ -118,41 +120,15 @@ function DefaultPlanCatalogConfirmModal({ open, catalogId, isEn, submitting, onC
 export default function DefaultPlanCatalogControl({ catalog, catalogId, isEn = false }) {
   const resolvedCatalogId = catalogId || catalog;
   const { push } = useToast();
-  const [currentCatalog, setCurrentCatalog] = useState(DEFAULT_PLAN_CATALOG_INITIAL_VALUE);
-  const [summaries, setSummaries] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [ready, setReady] = useState(false);
-  const [error, setError] = useState("");
+  const adminDefault = useAdminDefaultPlanCatalog();
+  const currentCatalog = adminDefault?.catalog ?? null;
+  const summaries = adminDefault?.catalogs ?? [];
+  const loading = Boolean(adminDefault?.loading) && !adminDefault?.ready;
+  const ready = Boolean(adminDefault?.ready);
+  const loadError = adminDefault?.error || "";
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  const applyPayload = useCallback((data) => {
-    const next = data?.catalog || DEFAULT_PLAN_CATALOG_INITIAL_VALUE;
-    setCurrentCatalog(next);
-    setSummaries(Array.isArray(data?.catalogs) ? data.catalogs : []);
-    setReady(true);
-  }, []);
-
-  const loadCatalog = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await getAdminDefaultPlanCatalogRequest();
-      applyPayload(res?.data);
-    } catch (err) {
-      setReady(false);
-      setError(
-        getSafeApiErrorMessage(err) ||
-          (isEn ? "Could not load plan catalog data." : "تعذر تحميل بيانات الباقات"),
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [applyPayload, isEn]);
-
-  useEffect(() => {
-    void loadCatalog();
-  }, [loadCatalog]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     setConfirmOpen(false);
@@ -162,14 +138,14 @@ export default function DefaultPlanCatalogControl({ catalog, catalogId, isEn = f
 
   const activePlanCount = summaries.find((item) => item.id === resolvedCatalogId)?.activePlanCount;
   const isEmpty = activePlanCount === 0;
-  const isCurrentDefault = currentCatalog === resolvedCatalogId;
+  const isCurrentDefault = ready && currentCatalog === resolvedCatalogId;
 
   const handleConfirm = async () => {
     setSubmitting(true);
     setError("");
     try {
       const res = await updateAdminDefaultPlanCatalogRequest(resolvedCatalogId);
-      applyPayload(res?.data);
+      adminDefault?.applyPayload?.(res?.data);
       invalidatePublicPlansCache();
       setConfirmOpen(false);
       push({
@@ -191,6 +167,15 @@ export default function DefaultPlanCatalogControl({ catalog, catalogId, isEn = f
     }
   };
 
+  const setButtonHint = isEmpty
+    ? isEn
+      ? EMPTY_CATALOG_EN
+      : EMPTY_CATALOG_AR
+    : isEn
+      ? HELPER_EN
+      : HELPER_AR;
+  const setButtonLabel = isEn ? SET_BUTTON_EN : SET_BUTTON_AR;
+
   return (
     <div
       className="oh-sapl-default-control"
@@ -201,61 +186,49 @@ export default function DefaultPlanCatalogControl({ catalog, catalogId, isEn = f
       {loading ? (
         <DefaultPlanControlSkeleton isEn={isEn} />
       ) : !ready ? (
-        <div className="oh-sapl-default-control__error-block" role="alert">
-          <p className="oh-sapl-default-control__error">
-            {error || (isEn ? "Could not load plan catalog data." : "تعذر تحميل بيانات الباقات")}
-          </p>
-          <Button
-            type="button"
-            variant="secondary"
-            className="oh-sapl-default-control__retry"
-            onClick={() => void loadCatalog()}
-          >
-            {isEn ? "Retry" : "إعادة المحاولة"}
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          className="oh-sapl-default-control__retry"
+          title={loadError || error || (isEn ? "Could not load plan catalog data." : "تعذر تحميل بيانات الباقات")}
+          aria-label={loadError || error || (isEn ? "Retry loading default catalog" : "إعادة محاولة تحميل الباقات الافتراضية")}
+          onClick={() => void adminDefault?.reload?.()}
+        >
+          {isEn ? "Retry" : "إعادة المحاولة"}
+        </Button>
       ) : isCurrentDefault ? (
-        <span className="oh-sapl-default-control__badge" data-default-catalog-state="current">
+        <span
+          className="oh-sapl-default-control__badge"
+          data-default-catalog-state="current"
+          title={isEn ? BADGE_TITLE_EN : BADGE_TITLE_AR}
+        >
           <Check size={14} strokeWidth={2.5} aria-hidden />
           {isEn ? BADGE_EN : BADGE_AR}
         </span>
       ) : (
-        <>
-          <Button
-            type="button"
-            variant="secondary"
-            className="oh-sapl-default-control__button"
-            disabled={submitting || isEmpty}
-            title={isEmpty ? (isEn ? EMPTY_CATALOG_EN : EMPTY_CATALOG_AR) : undefined}
-            onClick={() => {
-              if (isEmpty) return;
-              setError("");
-              setConfirmOpen(true);
-            }}
-          >
-            {isEn ? SET_BUTTON_EN : SET_BUTTON_AR}
-          </Button>
-          {isEmpty ? (
-            <p className="oh-sapl-default-control__empty" role="status">
-              {isEn ? EMPTY_CATALOG_EN : EMPTY_CATALOG_AR}
-            </p>
-          ) : (
-            <p className="oh-sapl-default-control__helper">{isEn ? HELPER_EN : HELPER_AR}</p>
-          )}
-        </>
+        <Button
+          type="button"
+          variant="secondary"
+          className="oh-sapl-default-control__button"
+          disabled={submitting || isEmpty}
+          title={setButtonHint}
+          aria-label={`${setButtonLabel}. ${setButtonHint}`}
+          onClick={() => {
+            if (isEmpty) return;
+            setError("");
+            setConfirmOpen(true);
+          }}
+        >
+          {setButtonLabel}
+        </Button>
       )}
-
-      {ready && error ? (
-        <p className="oh-sapl-default-control__error" role="alert">
-          {error}
-        </p>
-      ) : null}
 
       <DefaultPlanCatalogConfirmModal
         open={confirmOpen}
         catalogId={resolvedCatalogId}
         isEn={isEn}
         submitting={submitting}
+        error={error}
         onClose={() => (submitting ? null : setConfirmOpen(false))}
         onConfirm={handleConfirm}
       />

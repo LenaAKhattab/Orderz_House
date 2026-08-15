@@ -7,6 +7,7 @@ import PricingSection from "../components/plans/PricingSection";
 import PlansMobilePage from "../components/plans/mobile/PlansMobilePage";
 import PlansCategoryToggle from "../components/plans/PlansCategoryToggle";
 import TrainingPlansSection from "../components/plans/TrainingPlansSection";
+import { PlanCardsRowSkeleton } from "../components/ui/Skeleton";
 import {
   getPlansLayoutConfig,
   PLANS_LAYOUT_VARIANT,
@@ -14,11 +15,14 @@ import {
   resolvePlansLayoutVariant,
 } from "../components/plans/plansLayoutUtils";
 import { usePlansPage } from "../hooks/usePlansPage";
+import { usePublicPlansContent } from "../hooks/usePublicPlansContent";
 import {
   DEFAULT_PLANS_CATEGORY,
   PLANS_CATEGORY,
   resolvePlansCategory,
 } from "../constants/trainingPlansCatalog";
+import { getCachedPublicPlansContent } from "../services/freelancerSessionCache";
+import { plansCategoryFromDefaultSection } from "../constants/publicPlansContent";
 
 const Plans = () => {
   const { slug } = useParams();
@@ -42,14 +46,26 @@ const Plans = () => {
   const { t, dir, locale } = useTranslation();
 
   const isMainCatalog = !slug;
-  const [category, setCategory] = useState(() =>
-    isMainCatalog ? resolvePlansCategory(searchParams.get("type")) : PLANS_CATEGORY.MEMBERSHIP,
-  );
+  const plansContent = usePublicPlansContent({ enabled: isMainCatalog });
+  const [category, setCategory] = useState(() => {
+    if (!isMainCatalog) return PLANS_CATEGORY.MEMBERSHIP;
+    const urlType = searchParams.get("type");
+    if (urlType) return resolvePlansCategory(urlType);
+    const cached = getCachedPublicPlansContent();
+    if (cached) return plansCategoryFromDefaultSection(cached.defaultSection);
+    return null;
+  });
 
   useEffect(() => {
     if (!isMainCatalog) return;
-    setCategory(resolvePlansCategory(searchParams.get("type")));
-  }, [isMainCatalog, searchParams]);
+    const urlType = searchParams.get("type");
+    if (urlType) {
+      setCategory(resolvePlansCategory(urlType));
+      return;
+    }
+    if (!plansContent.ready) return;
+    setCategory((prev) => prev ?? plansCategoryFromDefaultSection(plansContent.defaultSection));
+  }, [isMainCatalog, searchParams, plansContent.ready, plansContent.defaultSection]);
 
   const handleCategoryChange = useCallback(
     (next) => {
@@ -109,8 +125,9 @@ const Plans = () => {
     );
   }
 
-  const showTraining = isMainCatalog && category === PLANS_CATEGORY.TRAINING;
-  const showMembership = !isMainCatalog || category === PLANS_CATEGORY.MEMBERSHIP;
+  const contentPending = isMainCatalog && (category == null || !plansContent.ready);
+  const showTraining = !contentPending && isMainCatalog && category === PLANS_CATEGORY.TRAINING;
+  const showMembership = !contentPending && (!isMainCatalog || category === PLANS_CATEGORY.MEMBERSHIP);
 
   return (
     <main
@@ -120,12 +137,31 @@ const Plans = () => {
       lang={dir === "rtl" ? "ar" : "en"}
       dir={dir}
     >
-      {isMainCatalog ? (
-        <PlansCategoryToggle value={category} onChange={handleCategoryChange} t={t} />
+      {isMainCatalog && !contentPending ? (
+        <PlansCategoryToggle
+          value={category}
+          onChange={handleCategoryChange}
+          t={t}
+          trainingLabel={plansContent.trainingTabLabel}
+          membershipLabel={plansContent.workTabLabel}
+          defaultSection={plansContent.defaultSection}
+        />
       ) : null}
 
       <div className="plans-desktop-only">
-        {showTraining ? <TrainingPlansSection /> : null}
+        {contentPending ? (
+          <section className="pricing pricing-ref-shell" aria-busy="true">
+            <PlanCardsRowSkeleton count={3} className="pricing__grid--public-dynamic pricing__grid--training-three" />
+          </section>
+        ) : null}
+
+        {showTraining ? (
+          <TrainingPlansSection
+            eyebrow={plansContent.badgeText}
+            title={plansContent.title}
+            subtitle={plansContent.description}
+          />
+        ) : null}
 
         {showMembership ? (
           <>
@@ -184,6 +220,10 @@ const Plans = () => {
         pageSlug={slug || null}
         layoutVariant={layoutVariant}
         category={isMainCatalog ? category : null}
+        trainingEyebrow={plansContent.badgeText}
+        trainingTitle={plansContent.title}
+        trainingSubtitle={plansContent.description}
+        contentPending={contentPending}
       />
     </main>
   );

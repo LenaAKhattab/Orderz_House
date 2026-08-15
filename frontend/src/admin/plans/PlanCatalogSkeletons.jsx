@@ -5,7 +5,27 @@ function Skel({ className = "", style }) {
 }
 
 /**
- * Compact placeholder for تعيين كافتراضي / ✓ الافتراضي حاليًا.
+ * Compact placeholder for the three catalog tabs while default_plan_catalog is unresolved.
+ * Avoids marking the wrong tab as معروض الآن.
+ */
+export function PlanCatalogNavSkeleton({ isEn = false }) {
+  return (
+    <div
+      className="oh-sapl-section-toggle__tabs"
+      role="status"
+      aria-busy="true"
+      aria-label={isEn ? "Plan catalogs" : "أقسام الباقات"}
+      data-plan-catalog-nav-skel="true"
+    >
+      <span className="oh-sapl-skel oh-sapl-section-toggle__tab-skel" />
+      <span className="oh-sapl-skel oh-sapl-section-toggle__tab-skel" />
+      <span className="oh-sapl-skel oh-sapl-section-toggle__tab-skel" />
+    </div>
+  );
+}
+
+/**
+ * Compact placeholder for تعيين كافتراضي / ✓ معروض الآن.
  * Same slot size as the resolved control — no loading copy.
  */
 export function DefaultPlanControlSkeleton({ isEn = false }) {

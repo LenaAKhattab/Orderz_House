@@ -12,8 +12,10 @@ import {
   buildMarketplaceReorderIds,
   formatMarketplaceAccessLabel,
   getInitialMarketplacePlanFormState,
+  getMarketplaceAdminMoveMeta,
   normalizeMarketplacePlanPayload,
   planToMarketplaceFormState,
+  sortMarketplacePlansForAdmin,
   validateMarketplacePlanForm,
 } from "./marketplacePlanFormUtils.js";
 
@@ -69,6 +71,70 @@ describe("marketplacePlanFormUtils", () => {
     assert.strictEqual(buildMarketplaceReorderIds(plans, "1", "up"), null);
   });
 
+  it("sorts admin cards visible first, hidden last, preserving sortOrder within groups", () => {
+    const plans = [
+      { id: 1, nameEn: "FREE", isActive: false, sortOrder: 0 },
+      { id: 2, nameEn: "STARTER", isActive: true, sortOrder: 10 },
+      { id: 3, nameEn: "PAY AS YOU WORK", isActive: false, sortOrder: 20 },
+      { id: 4, nameEn: "SILVER", isActive: true, sortOrder: 30 },
+      { id: 5, nameEn: "START", isActive: false, sortOrder: 40 },
+      { id: 6, nameEn: "PRO", isActive: true, sortOrder: 50 },
+      { id: 7, nameEn: "ACTIVE", isActive: false, sortOrder: 60 },
+      { id: 8, nameEn: "ELITE", isActive: true, sortOrder: 70 },
+    ];
+    const ordered = sortMarketplacePlansForAdmin(plans);
+    assert.deepStrictEqual(
+      ordered.map((p) => p.nameEn),
+      ["STARTER", "SILVER", "PRO", "ELITE", "FREE", "PAY AS YOU WORK", "START", "ACTIVE"],
+    );
+    assert.strictEqual(ordered.length, plans.length);
+    assert.deepStrictEqual(
+      new Set(ordered.map((p) => p.id)),
+      new Set(plans.map((p) => p.id)),
+    );
+  });
+
+  it("moves ↑ / ↓ only within the same visibility group and keeps stored public order otherwise", () => {
+    const plans = [
+      { id: 1, isActive: false, sortOrder: 0 },
+      { id: 2, isActive: true, sortOrder: 10 },
+      { id: 3, isActive: true, sortOrder: 20 },
+      { id: 4, isActive: false, sortOrder: 30 },
+    ];
+    // Visible 2 then 3; hidden 1 then 4. Moving last visible down must not cross into hidden.
+    assert.strictEqual(buildMarketplaceReorderIds(plans, 3, "down"), null);
+    assert.strictEqual(getMarketplaceAdminMoveMeta(plans, 3).canMoveDown, false);
+    // First hidden cannot move up into visible.
+    assert.strictEqual(buildMarketplaceReorderIds(plans, 1, "up"), null);
+    assert.strictEqual(getMarketplaceAdminMoveMeta(plans, 1).canMoveUp, false);
+    // Swap the two visible plans in stored order without grouping hidden last.
+    assert.deepStrictEqual(buildMarketplaceReorderIds(plans, 2, "down"), [1, 3, 2, 4]);
+    // Swap the two hidden plans in stored order.
+    assert.deepStrictEqual(buildMarketplaceReorderIds(plans, 1, "down"), [4, 2, 3, 1]);
+  });
+
+  it("regroups admin cards immediately when isActive is patched locally", () => {
+    const plans = [
+      { id: 1, nameEn: "FREE", isActive: false, sortOrder: 0 },
+      { id: 2, nameEn: "STARTER", isActive: true, sortOrder: 10 },
+      { id: 3, nameEn: "SILVER", isActive: true, sortOrder: 20 },
+    ];
+    assert.deepStrictEqual(
+      sortMarketplacePlansForAdmin(plans).map((p) => p.nameEn),
+      ["STARTER", "SILVER", "FREE"],
+    );
+    const afterHide = plans.map((p) => (p.id === 2 ? { ...p, isActive: false } : p));
+    assert.deepStrictEqual(
+      sortMarketplacePlansForAdmin(afterHide).map((p) => p.nameEn),
+      ["SILVER", "FREE", "STARTER"],
+    );
+    const afterShow = plans.map((p) => (p.id === 1 ? { ...p, isActive: true } : p));
+    assert.deepStrictEqual(
+      sortMarketplacePlansForAdmin(afterShow).map((p) => p.nameEn),
+      ["FREE", "STARTER", "SILVER"],
+    );
+  });
+
   it("round-trips plan → form", () => {
     const form = planToMarketplaceFormState({
       tierCode: "active",
@@ -122,10 +188,12 @@ describe("SuperAdminMarketplacePlansPage wiring", () => {
     assert.match(page, /PlanCatalogAdminShell/);
     assert.match(page, /MarketplaceMembershipPlanCard/);
     assert.match(page, /MarketplaceMembershipPlanFormModal/);
-    assert.match(page, /DefaultPlanCatalogControl/);
+    assert.match(page, /PlanCatalogActionToolbar/);
     assert.match(page, /PLAN_CATALOG\.MARKETPLACE_PLANS/);
     assert.doesNotMatch(page, /كل أقسام الباقات|All plan catalogs/);
-    assert.doesNotMatch(page, /AdminPlanCard|orderzhousePlansCatalog/);
+    assert.match(page, /sortMarketplacePlansForAdmin/);
+    assert.match(page, /getMarketplaceAdminMoveMeta/);
+    assert.doesNotMatch(page, /listPublicMarketplaceMembershipPlansRequest/);
     assert.doesNotMatch(card, /from [\"'].*AdminPlanCard|orderzhousePlansCatalog/);
   });
 
@@ -142,7 +210,14 @@ describe("SuperAdminMarketplacePlansPage wiring", () => {
     assert.match(nav, /PLAN_CATALOG_LABELS\[PLAN_CATALOG\.MARKETPLACE_PLANS\]/);
     assert.match(shell, /PlanCatalogNavigation/);
     assert.match(tabs, /PLAN_CATALOG_NAV/);
+    assert.match(tabs, /orderPlanCatalogNav/);
+    assert.match(shell, /DefaultPlanCatalogAdminProvider/);
     assert.doesNotMatch(hub, /listAdminMarketplaceMembershipPlansRequest/);
+    const publicFetch = fs.readFileSync(
+      path.join(__dirname, "../../lib/planCatalog/fetchPlansForCatalog.js"),
+      "utf8",
+    );
+    assert.doesNotMatch(publicFetch, /sortMarketplacePlansForAdmin/);
   });
 
   it("App route and nav are registered", () => {
