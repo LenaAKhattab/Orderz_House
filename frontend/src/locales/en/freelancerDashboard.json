@@ -1088,8 +1088,8 @@
       "startedAt": "Period start",
       "expiresAt": "Period end"
     },
-    "termsModalTitle": "Terms of use",
-    "agreeCheckbox": "I agree to the terms of use",
+    "termsModalTitle": "Terms for receiving and executing orders and tenders",
+    "agreeCheckbox": "I agree to the terms and policy for receiving and executing orders and tenders, I acknowledge that payment is due only after delivery, review, and approval, and that applying may consume tender credits according to the opportunity policy.",
     "termsFallback": "By continuing, you agree to Orderz House terms of use and platform policies.",
     "termsLoadError": "Could not load the terms of use. You may still agree after reviewing, or try again."
   }

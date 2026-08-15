@@ -7,6 +7,7 @@ import '../../features/account/presentation/change_password_screen.dart';
 import '../../features/account/presentation/delete_account_screen.dart';
 import '../../features/account/presentation/edit_profile_screen.dart';
 import '../../features/auth/presentation/auth_controller.dart';
+import '../../features/auth/presentation/forgot_password_screens.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/otp_verification_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
@@ -23,6 +24,8 @@ import '../../features/home/presentation/home_screen.dart';
 import '../../features/orders/presentation/orders_marketplace_screen.dart';
 import '../../features/orders/presentation/pool_order_detail_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
+import '../../features/pantry/presentation/pantry_hub_screen.dart';
+import '../../features/pantry/presentation/pantry_request_detail_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/public_pages/presentation/public_page_screen.dart';
 import '../../features/shell/main_shell.dart';
@@ -64,7 +67,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isSplash = location == AppRoutes.splash;
       final isAuthRoute = location == AppRoutes.login ||
           location == AppRoutes.register ||
-          location.startsWith(AppRoutes.otp);
+          location.startsWith(AppRoutes.otp) ||
+          location.startsWith(AppRoutes.forgotPassword);
 
       if (auth.status == AuthStatus.unknown) {
         if (isSplash || isPublicPaymentReturnRoute(location)) return null;
@@ -91,6 +95,10 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (auth.status == AuthStatus.authenticated) {
         if (isSplash || isAuthRoute) return AppRoutes.home;
+        if (isFreelancerPantryLocation(location) &&
+            auth.user?.usesFreelancerExperience != true) {
+          return AppRoutes.home;
+        }
       }
 
       return null;
@@ -127,6 +135,43 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final email = state.uri.queryParameters['email'] ?? '';
           return OtpVerificationScreen(email: email);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        builder: (context, state) => const ForgotPasswordEmailScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPasswordOtp,
+        builder: (context, state) {
+          final email = state.uri.queryParameters['email'] ?? '';
+          return ForgotPasswordOtpScreen(email: email);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPasswordReset,
+        builder: (context, state) {
+          final extra = state.extra;
+          var email = state.uri.queryParameters['email'] ?? '';
+          var resetToken = '';
+          if (extra is Map) {
+            email = extra['email']?.toString() ?? email;
+            resetToken = extra['resetToken']?.toString() ?? '';
+          }
+          return ForgotPasswordResetScreen(email: email, resetToken: resetToken);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.freelancerPantry,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PantryHubScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.freelancerPantryDetails,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return PantryRequestDetailScreen(requestId: id);
         },
       ),
       GoRoute(

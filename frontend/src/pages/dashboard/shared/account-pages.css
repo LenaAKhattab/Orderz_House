@@ -161,8 +161,8 @@
 }
 
 .oh-activate-terms-modal {
-  width: min(560px, 100%);
-  max-height: min(88vh, 720px);
+  width: min(720px, 100%);
+  max-height: min(90vh, 820px);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -182,13 +182,46 @@
 
 .oh-activate-terms-panel {
   flex: 1 1 auto;
-  min-height: 160px;
-  max-height: min(42vh, 320px);
+  min-height: 180px;
+  max-height: min(52vh, 420px);
   overflow: auto;
   padding: 12px 14px;
   border-radius: 10px;
   border: 1px solid var(--dash-border-strong, #aeb8c6);
   background: #f8fafc;
+}
+
+.oh-activate-policy-section {
+  margin: 0 0 10px;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 10px 8px;
+}
+
+.oh-activate-policy-section__summary {
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #243153;
+  padding: 10px 4px;
+  list-style: none;
+}
+
+.oh-activate-policy-section__summary::-webkit-details-marker {
+  display: none;
+}
+
+.oh-activate-policy-list {
+  margin: 0 0 6px;
+  padding-inline-start: 1.4em;
+}
+
+.oh-activate-policy-list__item {
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: #4b5563;
 }
 
 .oh-activate-terms__doc-title {

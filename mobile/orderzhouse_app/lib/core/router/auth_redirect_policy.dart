@@ -5,6 +5,7 @@ bool isUnauthenticatedAllowedRoute(String location) {
   if (location == AppRoutes.login ||
       location == AppRoutes.register ||
       location.startsWith(AppRoutes.otp) ||
+      location.startsWith(AppRoutes.forgotPassword) ||
       location == AppRoutes.splash) {
     return true;
   }
@@ -40,8 +41,16 @@ String? sanitizeLoginRedirect(String? raw) {
   if (path == AppRoutes.login ||
       path == AppRoutes.register ||
       path.startsWith(AppRoutes.otp) ||
+      path.startsWith(AppRoutes.forgotPassword) ||
       path == AppRoutes.splash) {
     return null;
   }
   return decoded;
+}
+
+/// Freelancer pantry hub or request detail (not other `/freelancer/...` routes).
+bool isFreelancerPantryLocation(String location) {
+  final path = Uri.tryParse(location)?.path ?? location;
+  return path == AppRoutes.freelancerPantry ||
+      path.startsWith('${AppRoutes.freelancerPantry}/');
 }
