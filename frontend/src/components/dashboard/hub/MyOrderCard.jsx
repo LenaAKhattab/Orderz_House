@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import {
   categoryChips,
-  formatOrderBudget,
   formatOrderDuration,
 } from "../../../lib/orders/orderDisplayFormatters";
 import {
@@ -10,7 +9,8 @@ import {
   resolveUserContentDir,
 } from "../../../lib/i18n/getLocalizedMarketplaceOrderText";
 import { shortDescription } from "../../open-orders/openOrdersFormatters";
-import { DurationValue, MoneyValue } from "../../open-orders/OrderNumericValue";
+import { DurationValue } from "../../open-orders/OrderNumericValue";
+import { JodOrderBudgetDisplay } from "../../money/JodMoneyDisplay";
 import { orderStatusDisplayBadge } from "../../../utils/orderFlowUi";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { fdashBadgeClassFromOh } from "./orderBadgeUi";
@@ -120,7 +120,7 @@ export default function MyOrderCard({ order, detailsPath }) {
           <div className="fmo-order-row__stat">
             <span className="fmo-order-row__stat-label">{t("orders.card.value")}</span>
             <strong className="fmo-order-row__stat-value fmo-order-row__stat-value--price">
-              <MoneyValue>{formatOrderBudget(order, locale)}</MoneyValue>
+              <JodOrderBudgetDisplay order={order} compact />
             </strong>
           </div>
           <div className="fmo-order-row__stat">

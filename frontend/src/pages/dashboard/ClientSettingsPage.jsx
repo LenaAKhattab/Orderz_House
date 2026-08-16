@@ -12,6 +12,7 @@ import { mergeNotificationPrefs } from "../../utils/accountDisplay";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import BrowserNotificationSettings from "../../components/notifications/BrowserNotificationSettings";
+import PreferredDisplayCurrencySettings from "../../components/money/PreferredDisplayCurrencySettings";
 import { breadcrumbHomeCrumb } from "../../components/dashboard/dashboardBreadcrumbs";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../styles/dashboardHub.css";
@@ -349,6 +350,11 @@ export default function ClientSettingsPage() {
       </div>
 
       <BrowserNotificationSettings />
+
+      <div className="oh-account-card" style={{ marginBottom: 16 }}>
+        <h2 className="oh-account-card__title">العملة التقريبية المفضلة</h2>
+        <PreferredDisplayCurrencySettings />
+      </div>
 
       <div className="oh-account-card">
         <h2 className="oh-account-card__title">إعدادات الإشعارات</h2>

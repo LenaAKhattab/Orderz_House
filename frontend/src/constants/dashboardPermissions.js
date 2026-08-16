@@ -1,4 +1,4 @@
-import { ROLE, canRoleAccessPath } from "./authRoutes";
+import { ROLE, canRoleAccessPath, getDashboardPath } from "./authRoutes";
 
 /** Admin dashboard page permissions (shared with super-admin routes for the same pages). */
 export const ADMIN_PAGE_PERMISSIONS = {
@@ -68,6 +68,7 @@ const SUPER_ADMIN_ROUTE_RULES = [
   { prefix: "/dashboard/super-admin/institutions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutions },
   { prefix: "/dashboard/super-admin/marketplace-economy", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { prefix: "/dashboard/super-admin/marketplace-plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { prefix: "/dashboard/super-admin/training-packages", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { prefix: "/dashboard/super-admin/plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { prefix: "/dashboard/super-admin/courses", permission: ADMIN_PAGE_PERMISSIONS.courses },
   { prefix: "/dashboard/super-admin/ads", permission: ADMIN_PAGE_PERMISSIONS.ads },
@@ -90,6 +91,7 @@ const SUPER_ADMIN_SHELL_NAV_ORDER = [
   { to: "/dashboard/super-admin/analysis", permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics },
   { to: "/dashboard/super-admin/plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { to: "/dashboard/super-admin/marketplace-plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { to: "/dashboard/super-admin/training-packages", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { to: "/dashboard/super-admin/marketplace-economy", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { to: "/dashboard/super-admin/courses", permission: ADMIN_PAGE_PERMISSIONS.courses },
   { to: "/dashboard/super-admin/ads", permission: ADMIN_PAGE_PERMISSIONS.ads },
@@ -188,6 +190,14 @@ export function getFirstAccessibleDashboardPath(user) {
     return item.to;
   }
   return "/dashboard/admin";
+}
+
+/** Role home after login/register/guest-only bounce. Admins use the first permitted page. */
+export function getPostAuthHomePath(user) {
+  if (!user) return "/login";
+  const role = user.primaryRole || user.role;
+  if (role === ROLE.ADMIN) return getFirstAccessibleDashboardPath(user);
+  return getDashboardPath(role);
 }
 
 export function adminUsesSuperAdminShell(pathname) {

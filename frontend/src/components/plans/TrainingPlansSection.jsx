@@ -1,13 +1,14 @@
 import PublicPageHeader from "../layout/PublicPageHeader";
-import { TRAINING_PACKAGES } from "../../constants/trainingPlansCatalog";
 import TrainingPlanCard from "./TrainingPlanCard";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { usePublicTrainingPackages } from "../../hooks/usePublicTrainingPackages";
 
 /**
  * Training packages grid for public `/plans` (WhatsApp inquiry CTAs).
  */
 export default function TrainingPlansSection() {
   const { t, locale } = useTranslation();
+  const packages = usePublicTrainingPackages();
 
   return (
     <section
@@ -25,7 +26,7 @@ export default function TrainingPlansSection() {
       />
 
       <div className="pricing__grid pricing__grid--public-dynamic pricing__grid--training-three">
-        {TRAINING_PACKAGES.map((pkg) => (
+        {packages.map((pkg) => (
           <TrainingPlanCard key={pkg.id} pkg={pkg} locale={locale} t={t} />
         ))}
       </div>

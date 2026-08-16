@@ -131,6 +131,16 @@ export const SECTION_COPY = {
     emptyDescAr: "أنشئ باقة عمل جديدة من هذا القسم.",
     emptyDescEn: "Create a work membership plan from this section.",
   },
+  training: {
+    ar: "إدارة باقات التدريب",
+    en: "Training packages",
+    hintAr: "تتحكم هذه الباقات في الباقات التي تظهر ضمن تبويب باقات التدريب في صفحة الباقات العامة.",
+    hintEn: "These packages control the Training tab on the public plans page.",
+    emptyTitleAr: "لا توجد باقات تدريب",
+    emptyTitleEn: "No training packages",
+    emptyDescAr: "أضف باقة تدريب لتظهر في صفحة الباقات العامة.",
+    emptyDescEn: "Add a training package to show it on the public plans page.",
+  },
 };
 
 export const STRIP_LABELS = {

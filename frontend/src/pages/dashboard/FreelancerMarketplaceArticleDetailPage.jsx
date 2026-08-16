@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Button from "../../components/ui/Button";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
@@ -14,6 +14,8 @@ import {
   withdrawFreelancerArticleApplicationRequest,
 } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
+import { formatArticleBidCollectionLabel, isBidCollectionClosedForApply } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 
 function eligibilityMessage(eligibility, isEn) {
   if (!eligibility) return null;
@@ -42,6 +44,21 @@ function eligibilityMessage(eligibility, isEn) {
       ? "Article applications are temporarily unavailable."
       : "تقديم المقالات غير متاح مؤقتاً.";
   }
+  if (eligibility.reason === "ARTICLE_BID_COLLECTION_THRESHOLD_REACHED") {
+    return isEn
+      ? "The required number of applicants has been reached."
+      : "اكتمل العدد المطلوب لهذه المناقصة ولم يعد التقديم متاحًا.";
+  }
+  if (eligibility.reason === "ARTICLE_BID_COLLECTION_MINIMUM_NOT_MET") {
+    return isEn
+      ? "This article did not reach the required number of applicants."
+      : "لم يكتمل الحد الأدنى للمناقصات";
+  }
+  if (eligibility.reason === "ARTICLE_BID_COLLECTION_DEADLINE_PASSED") {
+    return isEn
+      ? "The application deadline has passed."
+      : "انتهت مدة جمع المناقصات لهذا المقال.";
+  }
   return isEn ? "This article is not open for applications." : "هذا المقال غير مفتوح للتقديم.";
 }
 
@@ -57,6 +74,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
   const [error, setError] = useState("");
 
   const refresh = useCallback(async () => {
@@ -85,6 +103,10 @@ export default function FreelancerMarketplaceArticleDetailPage() {
   }, [refresh]);
 
   const handleApply = async () => {
+    if (busy || busyRef.current) return;
+    const collection = article?.bidCollection || eligibility?.bidCollection;
+    if (isBidCollectionClosedForApply(collection)) return;
+    busyRef.current = true;
     setBusy(true);
     try {
       const res = await submitFreelancerArticleApplicationRequest(id, {
@@ -109,12 +131,14 @@ export default function FreelancerMarketplaceArticleDetailPage() {
       });
       await refresh();
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   };
 
   const handleWithdraw = async () => {
-    if (!application?.id) return;
+    if (!application?.id || busy || busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
     try {
       await withdrawFreelancerArticleApplicationRequest(application.id);
@@ -130,6 +154,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
           getSafeApiErrorMessage(err) || (isEn ? "Could not withdraw." : "تعذر سحب الطلب."),
       });
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   };
@@ -148,72 +173,89 @@ export default function FreelancerMarketplaceArticleDetailPage() {
         ]}
       />
       <DashboardSection>
-        <p style={{ marginBottom: 12 }}>
-          <Link to="/dashboard/freelancer/articles">{isEn ? "← Back" : "→ رجوع"}</Link>
+        <p className="mb-3">
+          <Link
+            to="/dashboard/freelancer/articles"
+            className="font-bold text-[color:var(--dash-primary,#2f3b65)] no-underline"
+          >
+            {isEn ? "← Back" : "→ رجوع"}
+          </Link>
         </p>
         {loading ? <DashboardLoadingState /> : null}
         {!loading && error ? <DashboardErrorState message={error} onRetry={refresh} /> : null}
         {!loading && !error && article ? (
-          <div style={{ display: "grid", gap: 16, maxWidth: 720 }}>
+          <div className="grid max-w-[720px] gap-4">
             <div>
-              <h2 style={{ margin: "0 0 8px" }}>{article.title}</h2>
-              <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{article.description || "—"}</p>
+              <h2 className="mb-2 mt-0 text-lg font-extrabold text-[color:var(--dash-text,#172033)]">
+                {article.title}
+              </h2>
+              <p className="m-0 whitespace-pre-wrap text-[color:var(--dash-text-secondary,#4b5563)]">
+                {article.description || "—"}
+              </p>
             </div>
-            <dl
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                gap: 12,
-                margin: 0,
-              }}
-            >
+            <dl className="m-0 grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
               <div>
-                <dt style={{ opacity: 0.7, fontSize: "0.85rem" }}>
+                <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
+                  {isEn ? "Value" : "القيمة"}
+                </dt>
+                <dd className="mt-1 font-extrabold">
+                  {article.articleValueJod != null ? (
+                    <JodMoneyDisplay amount={article.articleValueJod} compact />
+                  ) : (
+                    "—"
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
                   {isEn ? "Article level" : "مستوى المقال"}
                 </dt>
-                <dd style={{ margin: "4px 0 0", fontWeight: 600 }}>{article.articleLevel}</dd>
+                <dd className="mt-1 font-extrabold">{article.articleLevel ?? "—"}</dd>
               </div>
               <div>
-                <dt style={{ opacity: 0.7, fontSize: "0.85rem" }}>
+                <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
                   {isEn ? "Required words" : "عدد الكلمات"}
                 </dt>
-                <dd style={{ margin: "4px 0 0", fontWeight: 600 }}>{article.requiredWordCount}</dd>
+                <dd className="mt-1 font-extrabold">{article.requiredWordCount ?? "—"}</dd>
               </div>
               <div>
-                <dt style={{ opacity: 0.7, fontSize: "0.85rem" }}>
+                <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
                   {isEn ? "Required references" : "عدد المراجع"}
                 </dt>
-                <dd style={{ margin: "4px 0 0", fontWeight: 600 }}>
-                  {article.requiredReferencesCount ?? 0}
+                <dd className="mt-1 font-extrabold">{article.requiredReferencesCount ?? 0}</dd>
+              </div>
+              <div>
+                <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
+                  {isEn ? "Applicants" : "المتقدمون"}
+                </dt>
+                <dd className="mt-1 font-extrabold">
+                  {formatArticleBidCollectionLabel(article.bidCollection || eligibility?.bidCollection, {
+                    isEn,
+                    articleStatus: article.status,
+                  }) || "—"}
                 </dd>
               </div>
               <div>
-                <dt style={{ opacity: 0.7, fontSize: "0.85rem" }}>
+                <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
                   {isEn ? "Category" : "التصنيف"}
                 </dt>
-                <dd style={{ margin: "4px 0 0", fontWeight: 600 }}>
-                  {article.category?.name || "—"}
-                </dd>
+                <dd className="mt-1 font-extrabold">{article.category?.name || "—"}</dd>
               </div>
               <div>
-                <dt style={{ opacity: 0.7, fontSize: "0.85rem" }}>
+                <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
                   {isEn ? "Subcategory" : "الفرعي"}
                 </dt>
-                <dd style={{ margin: "4px 0 0", fontWeight: 600 }}>
-                  {article.subcategory?.name || "—"}
-                </dd>
+                <dd className="mt-1 font-extrabold">{article.subcategory?.name || "—"}</dd>
               </div>
             </dl>
 
-            <p style={{ margin: 0, fontSize: "0.95rem" }}>
-              {eligibilityMessage(eligibility, isEn)}
-            </p>
+            <p className="m-0 text-[0.95rem]">{eligibilityMessage(eligibility, isEn)}</p>
 
-            <p style={{ margin: 0, fontSize: "0.95rem" }}>
+            <p className="m-0 text-[0.95rem]">
               {isEn ? "Application cost: 1 Bid" : "تكلفة التقديم: عرض واحد"}
             </p>
             {eligibility?.availableBids != null ? (
-              <p style={{ margin: 0, fontSize: "0.95rem" }}>
+              <p className="m-0 text-[0.95rem]">
                 {isEn ? "Available Bids:" : "العروض المتاحة:"}{" "}
                 <strong>{eligibility.availableBids}</strong>
               </p>
@@ -221,13 +263,27 @@ export default function FreelancerMarketplaceArticleDetailPage() {
 
             {application ? (
               <div>
-                <p style={{ margin: "0 0 8px" }}>
+                <p className="mb-2 mt-0">
                   {isEn ? "Your application status:" : "حالة طلبك:"}{" "}
-                  <strong>{application.status}</strong>
+                  <strong>
+                    {application.status === "pending"
+                      ? isEn
+                        ? "Pending"
+                        : "قيد المراجعة"
+                      : application.status === "accepted" || application.status === "approved"
+                        ? isEn
+                          ? "Accepted"
+                          : "مقبول"
+                        : application.status === "withdrawn"
+                          ? isEn
+                            ? "Withdrawn"
+                            : "مسحوب"
+                          : application.status || "—"}
+                  </strong>
                 </p>
                 {application.status === "pending" ? (
                   <>
-                    <p style={{ margin: "0 0 8px", fontSize: "0.9rem", opacity: 0.85 }}>
+                    <p className="mb-2 mt-0 text-[0.9rem] text-[color:var(--dash-text-secondary,#4b5563)]">
                       {isEn
                         ? "Editing your proposal does not cost another Bid. Withdrawal does not refund your Bid."
                         : "تعديل الرسالة لا يستهلك عرضاً إضافياً. سحب الطلب لا يسترد العرض."}
@@ -240,11 +296,14 @@ export default function FreelancerMarketplaceArticleDetailPage() {
               </div>
             ) : null}
 
-            {!application && eligibility?.eligible ? (
-              <div style={{ display: "grid", gap: 8 }}>
-                <label style={{ display: "grid", gap: 6 }}>
+            {!application &&
+            eligibility?.eligible &&
+            !isBidCollectionClosedForApply(article.bidCollection || eligibility?.bidCollection) ? (
+              <div className="grid gap-2">
+                <label className="grid gap-1.5">
                   <span>{isEn ? "Proposal message (optional)" : "رسالة العرض (اختياري)"}</span>
                   <textarea
+                    className="w-full rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] p-2.5 font-inherit"
                     rows={4}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
@@ -263,19 +322,15 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                   {isEn ? "Apply" : "تقدّم"}
                 </Button>
                 {eligibility?.canAffordBid === false ? (
-                  <p style={{ margin: 0, color: "#b00020", fontSize: "0.9rem" }}>
-                    {isEn
-                      ? "Insufficient Bids to apply."
-                      : "رصيد العروض غير كافٍ للتقديم."}
+                  <p className="m-0 text-[0.9rem] text-[color:var(--dash-danger,#c03535)]">
+                    {isEn ? "Insufficient Bids to apply." : "رصيد العروض غير كافٍ للتقديم."}
                   </p>
                 ) : null}
               </div>
             ) : null}
             {!application && !eligibility?.eligible && eligibility?.reason === "INSUFFICIENT_BID_CREDITS" ? (
-              <p style={{ margin: 0, color: "#b00020", fontSize: "0.9rem" }}>
-                {isEn
-                  ? "Insufficient Bids to apply."
-                  : "رصيد العروض غير كافٍ للتقديم."}
+              <p className="m-0 text-[0.9rem] text-[color:var(--dash-danger,#c03535)]">
+                {isEn ? "Insufficient Bids to apply." : "رصيد العروض غير كافٍ للتقديم."}
               </p>
             ) : null}
           </div>

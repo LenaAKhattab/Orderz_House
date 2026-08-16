@@ -189,6 +189,8 @@ export function isAdminDashboardPath(pathname) {
 export function adminPageTitle(pathname, t) {
   if (pathname.includes("/orders/create")) return t("dashboard.breadcrumbs.createInternalRequest");
   if (pathname.includes("/orders")) return t("dashboard.breadcrumbs.internalRequests");
+  if (pathname.includes("/pantry")) return t("dashboard.nav.superAdmin.pantry");
+  if (pathname.includes("/settings")) return t("dashboard.nav.common.settings");
   if (pathname.includes("/courses")) return t("dashboard.breadcrumbs.courses");
   if (pathname.includes("/ads")) return t("dashboard.breadcrumbs.ads");
   if (pathname.includes("/subscriptions")) return t("dashboard.breadcrumbs.subscriptionActivation");

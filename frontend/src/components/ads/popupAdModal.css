@@ -5,7 +5,7 @@
 .oh-popup-ad-modal[open] {
   position: fixed;
   inset: 0;
-  z-index: 1300;
+  z-index: var(--oh-z-popup, 1300);
   margin: 0;
   padding: 16px;
   width: 100%;

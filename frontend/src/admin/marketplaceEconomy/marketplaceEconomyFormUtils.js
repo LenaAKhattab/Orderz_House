@@ -83,6 +83,19 @@ export const MARKETPLACE_ECONOMY_DEFAULT_FORM = Object.freeze({
   normalOrderRefundLosingApplicant: "none",
   normalOrderRefundPostAwardCancel: "none",
   normalOrderBusinessTimezone: "Asia/Amman",
+
+  articleMinRequiredBids: "10",
+  articleAllowedRequiredBidCounts: "10,15,20,30",
+  articleDefaultRequiredBidCount: "10",
+  articleAutoCloseWhenThresholdReached: true,
+  articleAutoAssignWhenThresholdReached: false,
+  articleRefundPolicy: "full_on_minimum_not_met",
+  pantryMinRequiredBids: "10",
+  pantryAllowedRequiredBidCounts: "10,15,20,30",
+  pantryDefaultRequiredBidCount: "10",
+  pantryAutoCloseWhenThresholdReached: true,
+  pantryAutoAssignWhenThresholdReached: false,
+  pantryRefundPolicy: "full_on_minimum_not_met",
 });
 
 const ASSIGNMENT_STRATEGIES = new Set([
@@ -241,6 +254,22 @@ export function settingsToFormState(settings) {
     normalOrderRefundLosingApplicant: settings.normalOrderRefundLosingApplicant || "none",
     normalOrderRefundPostAwardCancel: settings.normalOrderRefundPostAwardCancel || "none",
     normalOrderBusinessTimezone: settings.normalOrderBusinessTimezone || "Asia/Amman",
+    articleMinRequiredBids: String(settings.articleMinRequiredBids ?? 10),
+    articleAllowedRequiredBidCounts: Array.isArray(settings.articleAllowedRequiredBidCounts)
+      ? settings.articleAllowedRequiredBidCounts.join(",")
+      : String(settings.articleAllowedRequiredBidCounts || "10,15,20,30"),
+    articleDefaultRequiredBidCount: String(settings.articleDefaultRequiredBidCount ?? 10),
+    articleAutoCloseWhenThresholdReached: settings.articleAutoCloseWhenThresholdReached !== false,
+    articleAutoAssignWhenThresholdReached: false,
+    articleRefundPolicy: settings.articleRefundPolicy || "full_on_minimum_not_met",
+    pantryMinRequiredBids: String(settings.pantryMinRequiredBids ?? 10),
+    pantryAllowedRequiredBidCounts: Array.isArray(settings.pantryAllowedRequiredBidCounts)
+      ? settings.pantryAllowedRequiredBidCounts.join(",")
+      : String(settings.pantryAllowedRequiredBidCounts || "10,15,20,30"),
+    pantryDefaultRequiredBidCount: String(settings.pantryDefaultRequiredBidCount ?? 10),
+    pantryAutoCloseWhenThresholdReached: settings.pantryAutoCloseWhenThresholdReached !== false,
+    pantryAutoAssignWhenThresholdReached: false,
+    pantryRefundPolicy: settings.pantryRefundPolicy || "full_on_minimum_not_met",
   };
 }
 
@@ -497,6 +526,34 @@ export function validateMarketplaceEconomyForm(form, { isEn = false } = {}) {
     normalOrderRefundLosingApplicant: String(form.normalOrderRefundLosingApplicant || "none"),
     normalOrderRefundPostAwardCancel: String(form.normalOrderRefundPostAwardCancel || "none"),
     normalOrderBusinessTimezone: String(form.normalOrderBusinessTimezone || "Asia/Amman"),
+    articleMinRequiredBids: intRange("articleMinRequiredBids", t("حد أدنى لمناقصات المقال", "Article min required bids"), 1, 10000),
+    articleDefaultRequiredBidCount: intRange(
+      "articleDefaultRequiredBidCount",
+      t("الافتراضي لمناقصات المقال", "Article default required bids"),
+      1,
+      10000,
+    ),
+    articleAllowedRequiredBidCounts: String(form.articleAllowedRequiredBidCounts || "10,15,20,30")
+      .split(/[,\s]+/)
+      .map((s) => Number(s))
+      .filter((n) => Number.isInteger(n) && n >= 1),
+    articleAutoCloseWhenThresholdReached: Boolean(form.articleAutoCloseWhenThresholdReached),
+    articleAutoAssignWhenThresholdReached: false,
+    articleRefundPolicy: "full_on_minimum_not_met",
+    pantryMinRequiredBids: intRange("pantryMinRequiredBids", t("حد أدنى لمناقصات بيت المونة", "Pantry min required bids"), 1, 10000),
+    pantryDefaultRequiredBidCount: intRange(
+      "pantryDefaultRequiredBidCount",
+      t("الافتراضي لمناقصات بيت المونة", "Pantry default required bids"),
+      1,
+      10000,
+    ),
+    pantryAllowedRequiredBidCounts: String(form.pantryAllowedRequiredBidCounts || "10,15,20,30")
+      .split(/[,\s]+/)
+      .map((s) => Number(s))
+      .filter((n) => Number.isInteger(n) && n >= 1),
+    pantryAutoCloseWhenThresholdReached: Boolean(form.pantryAutoCloseWhenThresholdReached),
+    pantryAutoAssignWhenThresholdReached: false,
+    pantryRefundPolicy: "full_on_minimum_not_met",
   };
 
   const blockingNull = Object.entries(patch).some(([, v]) => v === null);

@@ -211,7 +211,7 @@ class MarkAllReadResult {
 String notificationTypeLabel(String? type) {
   final raw = (type ?? '').trim().toLowerCase();
   if (raw.isEmpty) return 'إشعار';
-  if (raw.contains('pantry')) return 'بيت المونة';
+  if (raw.contains('pantry')) return 'طلب';
   if (raw.contains('order')) return 'طلب';
   if (raw.contains('claim') || raw.contains('financial')) return 'مطالبة مالية';
   if (raw.contains('subscription') || raw.contains('plan')) return 'اشتراك';

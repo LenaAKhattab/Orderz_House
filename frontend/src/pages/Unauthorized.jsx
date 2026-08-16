@@ -1,14 +1,13 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
-import { getDashboardPathByRole } from "../constants/authRoutes";
+import { getPostAuthHomePath } from "../constants/dashboardPermissions";
 
 const Unauthorized = ({
   title = "غير مصرّح",
   message = "لا يمكنك الوصول إلى هذه الصفحة. إن كنت تعتقد أن هذا خطأ، استخدم حسابًا له الصلاحية أو تواصل مع الدعم.",
 }) => {
   const { user } = useAuth();
-  const role = user?.primaryRole || user?.role;
-  const homeTo = user && role ? getDashboardPathByRole(role) : "/";
+  const homeTo = user ? getPostAuthHomePath(user) : "/";
   const primaryLabel = user ? "العودة للوحة التحكم" : "العودة للرئيسية";
 
   return (

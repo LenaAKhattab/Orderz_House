@@ -85,7 +85,11 @@ export default function FinancialEmployeeDetailPage() {
   const monthKey = currentMonthKey();
 
   const loadData = useCallback(async () => {
-    if (!personId) return;
+    if (!personId) {
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setNotFound(false);
     try {
@@ -214,7 +218,7 @@ export default function FinancialEmployeeDetailPage() {
   };
 
   const toggleAccountStatus = async (suspend) => {
-    if (!person) return;
+    if (!person || actionBusy) return;
     if (suspend && !window.confirm(t("dashboard.financialCenter.confirmSuspendAccount"))) return;
     setActionBusy(true);
     try {

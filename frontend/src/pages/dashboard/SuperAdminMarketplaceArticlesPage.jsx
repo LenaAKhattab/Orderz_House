@@ -190,6 +190,7 @@ export default function SuperAdminMarketplaceArticlesPage() {
             articleId={editArticle.id}
             isEn={isEn}
             onToast={push}
+            onRelisted={refresh}
           />
         </DashboardSection>
       ) : null}

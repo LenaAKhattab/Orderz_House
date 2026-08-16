@@ -26,7 +26,6 @@ export const PublicCommunityPage = lazy(() =>
 export const PublicBlogPage = lazy(() =>
   import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicBlogPage })),
 );
-export const Unauthorized = lazy(() => import("../pages/Unauthorized"));
 export const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 
 /** Shared dashboard hub */
@@ -36,6 +35,9 @@ export const DashboardPage = lazy(() => import("../pages/dashboard/DashboardPage
 export const SuperAdminPlansPage = lazy(() => import("../pages/dashboard/SuperAdminPlansPage"));
 export const SuperAdminMarketplacePlansPage = lazy(
   () => import("../pages/dashboard/SuperAdminMarketplacePlansPage"),
+);
+export const SuperAdminTrainingPackagesPage = lazy(
+  () => import("../pages/dashboard/SuperAdminTrainingPackagesPage"),
 );
 export const SuperAdminMarketplaceEconomyPage = lazy(
   () => import("../pages/dashboard/SuperAdminMarketplaceEconomyPage"),
@@ -76,6 +78,7 @@ export const SuperAdminFeedbackDetailPage = lazy(
 export const SuperAdminFeedbackTopicsPage = lazy(
   () => import("../pages/dashboard/SuperAdminFeedbackTopicsPage"),
 );
+export const SuperAdminOnboardingPage = lazy(() => import("../pages/dashboard/SuperAdminOnboardingPage"));
 export const ProblemsSuggestionsPage = lazy(() => import("../pages/dashboard/ProblemsSuggestionsPage"));
 export const SuperAdminInstitutionsPage = lazy(
   () => import("../pages/dashboard/SuperAdminInstitutionsPage"),
@@ -153,9 +156,6 @@ export const TrainingOrdersSettingsPage = lazy(
 export const TrainingOrderTemplatesPage = lazy(
   () => import("../pages/dashboard/trainingOrders/TrainingOrderTemplatesPage"),
 );
-export const TrainingOrderRoundsPage = lazy(
-  () => import("../pages/dashboard/trainingOrders/TrainingOrderRoundsPage"),
-);
 export const TrainingOrderApplicationsPage = lazy(
   () => import("../pages/dashboard/trainingOrders/TrainingOrderApplicationsPage"),
 );
@@ -184,6 +184,9 @@ export const FreelancerCourseDetailsPage = lazy(() => import("../pages/dashboard
 export const FreelancerSettingsPage = lazy(() => import("../pages/dashboard/FreelancerSettingsPage"));
 export const FreelancerActivateAccountPage = lazy(
   () => import("../pages/dashboard/FreelancerActivateAccountPage"),
+);
+export const FreelancerGettingStartedPage = lazy(
+  () => import("../pages/dashboard/FreelancerGettingStartedPage"),
 );
 export const ConvertAccountPage = lazy(() => import("../pages/dashboard/ConvertAccountPage"));
 

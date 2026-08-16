@@ -4,7 +4,7 @@
 .client-order-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 400;
+  z-index: var(--oh-z-wizard, 1350);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -547,10 +547,18 @@
 }
 
 @media (max-width: 420px) {
-  .client-order-modal__body--admin-wizard .oh-stepper.co-modal-ref__stepper .oh-step__label {
-    font-size: 0.65rem;
+  /* Overlay padding kept here so all create-order overlays (training, institutional, registration) stay aligned. */
+  .client-order-modal-overlay {
+    padding: 8px;
+    overflow-x: clip;
   }
 
+  .client-order-modal.client-order-modal--admin-wizard {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+  }
+
+  /* Stepper connectors are CSS pseudo-elements; Tailwind cannot hide them on this shared class. */
   .client-order-modal__body--admin-wizard .oh-stepper.co-modal-ref__stepper .oh-step:not(:last-child)::after,
   .client-order-modal__body--admin-wizard .oh-stepper.co-modal-ref__stepper .oh-step:not(:first-child)::before {
     display: none;

@@ -7,6 +7,7 @@ import 'core/router/deep_link_listener.dart';
 import 'core/router/push_bootstrap_listener.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/currency/presentation/currency_display_provider.dart';
 
 class OrderzHouseApp extends ConsumerWidget {
   const OrderzHouseApp({super.key});
@@ -14,6 +15,7 @@ class OrderzHouseApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    ref.watch(currencyDisplaySettingsProvider);
 
     return PushBootstrapListener(
       child: DeepLinkListener(

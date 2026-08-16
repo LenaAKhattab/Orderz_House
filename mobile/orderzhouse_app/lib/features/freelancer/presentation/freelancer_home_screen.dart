@@ -126,13 +126,6 @@ class FreelancerHomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 HomeWideActionTile(
-                  title: 'بيت المونة',
-                  subtitle: 'طلبات داخلية من الشركة لتنفيذ أعمال جاهزة مسبقًا.',
-                  icon: Icons.inventory_2_outlined,
-                  onTap: () => context.push(AppRoutes.freelancerPantry),
-                ),
-                const SizedBox(height: 12),
-                HomeWideActionTile(
                   title: 'المطالبات المالية',
                   subtitle: 'تابع مستحقاتك وحالة الصرف',
                   icon: Icons.account_balance_wallet_outlined,

@@ -24,7 +24,6 @@ import '../../features/home/presentation/home_screen.dart';
 import '../../features/orders/presentation/orders_marketplace_screen.dart';
 import '../../features/orders/presentation/pool_order_detail_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
-import '../../features/pantry/presentation/pantry_hub_screen.dart';
 import '../../features/pantry/presentation/pantry_request_detail_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/public_pages/presentation/public_page_screen.dart';
@@ -164,7 +163,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.freelancerPantry,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const PantryHubScreen(),
+        redirect: (context, state) => AppRoutes.marketplace,
       ),
       GoRoute(
         path: AppRoutes.freelancerPantryDetails,

@@ -3,15 +3,15 @@ String pantryStatusLabelAr(String? status) {
     case 'open_for_bids':
       return 'مفتوح للعروض';
     case 'assigned':
-      return 'تم اختيارك';
+      return 'قيد التنفيذ';
     case 'in_progress':
       return 'قيد التنفيذ';
     case 'submitted':
       return 'بانتظار المراجعة';
     case 'revision_requested':
-      return 'مطلوب تعديل';
+      return 'طلب تعديل';
     case 'approved':
-      return 'معتمد / جاهز في بيت المونة';
+      return 'مكتمل';
     case 'archived':
       return 'مؤرشف';
     default:

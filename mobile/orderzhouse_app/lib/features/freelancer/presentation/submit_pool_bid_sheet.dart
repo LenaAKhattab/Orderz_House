@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../../orders/data/pool_order_models.dart';
+import '../../currency/presentation/jod_money_display.dart';
 import '../data/freelancer_pool_actions_models.dart';
 
 Future<SubmitPoolBidPayload?> showSubmitPoolBidSheet(
@@ -64,7 +65,6 @@ class _SubmitPoolBidSheetState extends State<_SubmitPoolBidSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final range = widget.order.budgetLabel;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Padding(
@@ -84,12 +84,13 @@ class _SubmitPoolBidSheetState extends State<_SubmitPoolBidSheet> {
             style: const TextStyle(color: AppColors.textMuted, height: 1.4),
             textAlign: TextAlign.right,
           ),
-          if (range != null) ...[
+          if (widget.order.bidBudgetMin != null || widget.order.budget != null) ...[
             const SizedBox(height: 8),
-            Text(
-              'نطاق الميزانية: $range',
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-              textAlign: TextAlign.right,
+            JodOrderBudgetDisplay(
+              projectType: widget.order.projectType,
+              amount: widget.order.budget,
+              bidMin: widget.order.bidBudgetMin,
+              bidMax: widget.order.bidBudgetMax,
             ),
           ],
           const SizedBox(height: 16),
@@ -98,8 +99,18 @@ class _SubmitPoolBidSheetState extends State<_SubmitPoolBidSheet> {
             label: 'مبلغ العرض (JOD)',
             hint: 'مثال: 150',
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (_) => setState(() {}),
             onFieldSubmitted: (_) => _submit(),
           ),
+          if (double.tryParse(_amountController.text.replaceAll(',', '.')) != null) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: JodMoneyDisplay(
+                amount: double.tryParse(_amountController.text.replaceAll(',', '.')),
+              ),
+            ),
+          ],
           if (_error != null) ...[
             const SizedBox(height: 6),
             Text(_error!, style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600)),

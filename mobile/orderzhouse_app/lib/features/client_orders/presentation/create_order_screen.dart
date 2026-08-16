@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../orders/data/order_display_helpers.dart' as display;
+import '../../currency/presentation/jod_money_display.dart';
 import 'client_orders_controller.dart';
 import 'create_order_controller.dart';
 import 'order_attachments_section.dart';
@@ -648,14 +649,6 @@ class _StepReview extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final draft = state.draft;
-    final budgetLabel = draft.isFixed
-        ? display.budgetLabel(projectType: 'fixed', budget: double.tryParse(draft.budget.replaceAll(',', '.')), currencyCode: 'JOD')
-        : display.budgetLabel(
-            projectType: 'bidding',
-            bidBudgetMin: double.tryParse(draft.bidBudgetMin.replaceAll(',', '.')),
-            bidBudgetMax: double.tryParse(draft.bidBudgetMax.replaceAll(',', '.')),
-            currencyCode: 'JOD',
-          );
 
     return OhCard(
       child: Column(
@@ -671,7 +664,19 @@ class _StepReview extends ConsumerWidget {
           if (_subSubName() != null) _ReviewRow('التصنيف الفرعي', _subSubName()!),
           _ReviewRow('العنوان', draft.title.trim().isEmpty ? '—' : draft.title.trim()),
           _ReviewRow('المدة', '${draft.durationValue} يوم'),
-          if (budgetLabel != null) _ReviewRow('الميزانية', budgetLabel),
+          if (draft.isFixed)
+            _ReviewMoneyRow(
+              'الميزانية',
+              JodMoneyDisplay(amount: double.tryParse(draft.budget.replaceAll(',', '.'))),
+            )
+          else
+            _ReviewMoneyRow(
+              'الميزانية',
+              JodMoneyDisplay(
+                amount: double.tryParse(draft.bidBudgetMin.replaceAll(',', '.')),
+                amountMax: double.tryParse(draft.bidBudgetMax.replaceAll(',', '.')),
+              ),
+            ),
           _ReviewRow(
             'المرفقات',
             state.attachments.isEmpty ? 'لا توجد مرفقات' : '${state.attachments.length} ملف',
@@ -714,6 +719,30 @@ class _ReviewRow extends StatelessWidget {
             flex: 3,
             child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textInk)),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewMoneyRow extends StatelessWidget {
+  const _ReviewMoneyRow(this.label, this.child);
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(label, style: const TextStyle(color: AppColors.textMuted)),
+          ),
+          Expanded(flex: 3, child: child),
         ],
       ),
     );

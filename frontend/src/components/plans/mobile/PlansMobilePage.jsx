@@ -5,7 +5,8 @@ import PlansActivationFeeNote from "../PlansActivationFeeNote";
 import TrainingPlanCard from "../TrainingPlanCard";
 import { getPlansLayoutConfig, PLANS_LAYOUT_VARIANT } from "../plansLayoutUtils";
 import { useDisplayCurrency } from "../../../hooks/useDisplayCurrency";
-import { PLANS_CATEGORY, TRAINING_PACKAGES } from "../../../constants/trainingPlansCatalog";
+import { usePublicTrainingPackages } from "../../../hooks/usePublicTrainingPackages";
+import { PLANS_CATEGORY } from "../../../constants/trainingPlansCatalog";
 import "./plans-mobile-page.css";
 
 /**
@@ -30,6 +31,7 @@ export default function PlansMobilePage({
 }) {
   const { t, dir, locale } = useTranslation();
   const { formatActivationFeeAmount } = useDisplayCurrency();
+  const trainingPackages = usePublicTrainingPackages();
   const layout = getPlansLayoutConfig(layoutVariant);
   const feeEnabled = activationFee?.enabled === true;
   const feeAmountLabel = feeEnabled ? formatActivationFeeAmount(activationFee?.amountJod) : "";
@@ -54,7 +56,7 @@ export default function PlansMobilePage({
             trustPills={trustPills}
           />
           <div className="pm-training__list">
-            {TRAINING_PACKAGES.map((pkg) => (
+            {trainingPackages.map((pkg) => (
               <TrainingPlanCard key={pkg.id} pkg={pkg} locale={locale} t={t} />
             ))}
           </div>

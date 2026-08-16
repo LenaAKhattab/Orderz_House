@@ -9,6 +9,8 @@ import DashboardErrorState from "../../components/dashboard/DashboardErrorState"
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { listPublishedMarketplaceArticlesRequest } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
+import { formatArticleBidCollectionLabel } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 
 export default function FreelancerMarketplaceArticlesPage() {
   const { locale, t } = useTranslation();
@@ -61,32 +63,45 @@ export default function FreelancerMarketplaceArticlesPage() {
           />
         ) : null}
         {!loading && !error && articles.length > 0 ? (
-          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 12 }}>
-            {articles.map((article) => (
-              <li key={article.id}>
-                <Link
-                  to={`/dashboard/freelancer/articles/${article.id}`}
-                  style={{
-                    display: "block",
-                    padding: "14px 16px",
-                    border: "1px solid rgba(0,0,0,0.08)",
-                    textDecoration: "none",
-                    color: "inherit",
-                  }}
-                >
-                  <strong>{article.title}</strong>
-                  <div style={{ marginTop: 6, opacity: 0.8, fontSize: "0.92rem" }}>
-                    {isEn ? `Level ${article.articleLevel}` : `المستوى ${article.articleLevel}`}
-                    {" · "}
-                    {isEn ? `${article.requiredWordCount} words` : `${article.requiredWordCount} كلمة`}
-                    {" · "}
-                    {isEn
-                      ? `${article.requiredReferencesCount ?? 0} refs`
-                      : `${article.requiredReferencesCount ?? 0} مراجع`}
-                  </div>
-                </Link>
-              </li>
-            ))}
+          <ul className="m-0 grid list-none gap-3 p-0">
+            {articles.map((article) => {
+              const progress = formatArticleBidCollectionLabel(article.bidCollection, {
+                isEn,
+                articleStatus: article.status,
+              });
+              return (
+                <li key={article.id}>
+                  <Link
+                    to={`/dashboard/freelancer/articles/${article.id}`}
+                    className="dash-ui-surface--soft block min-w-0 overflow-hidden rounded-[var(--dash-radius-md,12px)] border border-[color:var(--dash-border,#c9d0da)] bg-[color:var(--dash-card,#fcfcfd)] p-4 text-[color:var(--dash-text,#172033)] no-underline shadow-[var(--dash-shadow-sm)]"
+                  >
+                    <strong className="block text-[0.98rem] font-extrabold">{article.title || "—"}</strong>
+                    <div className="mt-2 flex flex-wrap gap-2 text-[0.82rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]">
+                      <span>
+                        {isEn ? `Level ${article.articleLevel ?? "—"}` : `المستوى ${article.articleLevel ?? "—"}`}
+                      </span>
+                      <span aria-hidden="true">·</span>
+                      <span>
+                        {isEn
+                          ? `${article.requiredWordCount ?? "—"} words`
+                          : `${article.requiredWordCount ?? "—"} كلمة`}
+                      </span>
+                      {article.articleValueJod != null ? (
+                        <>
+                          <span aria-hidden="true">·</span>
+                          <JodMoneyDisplay amount={article.articleValueJod} compact />
+                        </>
+                      ) : null}
+                    </div>
+                    {progress ? (
+                      <p className="mb-0 mt-2 rounded-lg bg-[color:var(--dash-info-bg,#eef1f6)] px-2.5 py-1.5 text-[0.8rem] font-bold text-[color:var(--dash-primary,#2f3b65)]">
+                        {progress}
+                      </p>
+                    ) : null}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         ) : null}
       </DashboardSection>

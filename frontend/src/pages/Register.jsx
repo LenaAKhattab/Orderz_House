@@ -372,7 +372,8 @@ const Register = () => {
       termsAccepted,
     };
     if (isFreelancer) {
-      body.categories = categories;
+      const allowed = new Set(CATEGORY_SLUGS.map((c) => c.slug));
+      body.categories = categories.filter((slug) => allowed.has(slug));
     }
 
     submittingRef.current = true;

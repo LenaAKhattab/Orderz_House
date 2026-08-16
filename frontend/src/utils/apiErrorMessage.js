@@ -24,6 +24,14 @@ export function getRetryAfterSeconds(err) {
  * User-facing message for create-order failures. Prefer API Arabic message; no auto-retry.
  */
 export function getOrderCreateErrorMessage(err) {
+  const code = err?.response?.data?.code;
+  if (err?.response?.status === 409 && (code === "PRICING_CHANGED" || code === "PRICING_MISMATCH")) {
+    const fromApi = err?.response?.data?.message;
+    if (typeof fromApi === "string" && fromApi.trim() && !looksTechnicalOrUnsafe(fromApi.trim())) {
+      return fromApi.trim();
+    }
+    return "تغير السعر المعتمد. حدّث الصفحة وراجع المبلغ بالدينار الأردني قبل إعادة الإرسال.";
+  }
   if (isRateLimitedError(err)) {
     const fromApi = err?.response?.data?.message;
     if (typeof fromApi === "string" && fromApi.trim() && !looksTechnicalOrUnsafe(fromApi.trim())) {

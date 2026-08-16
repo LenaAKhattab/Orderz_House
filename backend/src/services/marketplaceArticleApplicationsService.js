@@ -79,6 +79,7 @@ function mapApplicationRow(row) {
     selectedByUserId: row.selected_by_user_id != null ? toIdString(row.selected_by_user_id) : null,
     rejectedByUserId: row.rejected_by_user_id != null ? toIdString(row.rejected_by_user_id) : null,
     idempotencyKey: row.idempotency_key || null,
+    collectionRoundId: row.collection_round_id != null ? toIdString(row.collection_round_id) : null,
     createdAt: row.created_at || null,
     updatedAt: row.updated_at || null,
     // Joined optional fields
@@ -184,6 +185,12 @@ async function assertArticleMetadataMutable(articleId, patch, existingArticle = 
     const next = Number(patch.requiredReferencesCount ?? patch.required_references_count);
     if (next !== Number(existing.requiredReferencesCount)) {
       frozenKeys.push("required_references_count");
+    }
+  }
+  if (patch.requiredBidCount !== undefined || patch.required_bid_count !== undefined) {
+    const next = Number(patch.requiredBidCount ?? patch.required_bid_count);
+    if (existing.requiredBidCount != null && next !== Number(existing.requiredBidCount)) {
+      frozenKeys.push("required_bid_count");
     }
   }
   if (frozenKeys.length) {
@@ -325,10 +332,20 @@ function assertMembershipAccessLevel(accessLevel, articleLevel) {
   }
 }
 
-async function findApplicationByArticleFreelancer(client, articleId, freelancerUserId) {
+async function findApplicationByArticleFreelancer(client, articleId, freelancerUserId, collectionRoundId) {
+  if (collectionRoundId != null) {
+    const { rows } = await client.query(
+      `SELECT * FROM marketplace_article_applications
+        WHERE article_id = $1 AND freelancer_user_id = $2 AND collection_round_id = $3
+        LIMIT 1`,
+      [Number(articleId), Number(freelancerUserId), Number(collectionRoundId)],
+    );
+    return rows[0] || null;
+  }
   const { rows } = await client.query(
     `SELECT * FROM marketplace_article_applications
       WHERE article_id = $1 AND freelancer_user_id = $2
+      ORDER BY id DESC
       LIMIT 1`,
     [Number(articleId), Number(freelancerUserId)],
   );
@@ -395,11 +412,13 @@ async function submitArticleApplication({
 
     const article = await loadArticleForUpdate(client, aid);
     assertArticleOpenForApplications(article);
+    const collectionService = require("./opportunityBidCollectionService");
+    const round = await collectionService.assertArticleIntakeOpen(client, article);
 
     const { membership, accessLevel, cycleId } = await resolveUsableMembershipContext(client, fid);
     assertMembershipAccessLevel(accessLevel, article.article_level);
 
-    const existing = await findApplicationByArticleFreelancer(client, aid, fid);
+    const existing = await findApplicationByArticleFreelancer(client, aid, fid, round?.id);
     if (existing) {
       // Idempotent retry: return existing without additional Bid charge.
       if (ownClient) await client.query("COMMIT");
@@ -421,8 +440,22 @@ async function submitArticleApplication({
       };
     }
 
-    const idem = buildArticleApplicationIdempotencyKey(aid, fid);
+    const idem = buildArticleApplicationIdempotencyKey(aid, fid, round?.id);
     let inserted;
+    const insertParams = [
+      aid,
+      fid,
+      Number(membership.id),
+      cycleId,
+      Number(article.article_level),
+      article.article_value_jod,
+      Number(article.required_word_count),
+      Number(article.required_references_count) || 0,
+      accessLevel,
+      message,
+      idem,
+      round?.id || null,
+    ];
     try {
       const { rows } = await client.query(
         `INSERT INTO marketplace_article_applications (
@@ -430,33 +463,40 @@ async function submitArticleApplication({
            article_level_snapshot, article_value_jod_snapshot,
            required_word_count_snapshot, required_references_count_snapshot,
            membership_article_access_level_snapshot,
-           status, proposal_message, idempotency_key
+           status, proposal_message, idempotency_key, collection_round_id
          ) VALUES (
            $1,$2,$3,$4,
            $5,$6::numeric,
            $7,$8,
            $9,
-           'pending',$10,$11
+           'pending',$10,$11,$12
          )
          RETURNING *`,
-        [
-          aid,
-          fid,
-          Number(membership.id),
-          cycleId,
-          Number(article.article_level),
-          article.article_value_jod,
-          Number(article.required_word_count),
-          Number(article.required_references_count) || 0,
-          accessLevel,
-          message,
-          idem,
-        ],
+        insertParams,
       );
       inserted = rows[0];
     } catch (err) {
-      if (err && (err.code === "23505" || /unique/i.test(String(err.message || "")))) {
-        const raced = await findApplicationByArticleFreelancer(client, aid, fid);
+      if (err?.code === "42703") {
+        const { rows } = await client.query(
+          `INSERT INTO marketplace_article_applications (
+             article_id, freelancer_user_id, membership_id, cycle_id,
+             article_level_snapshot, article_value_jod_snapshot,
+             required_word_count_snapshot, required_references_count_snapshot,
+             membership_article_access_level_snapshot,
+             status, proposal_message, idempotency_key
+           ) VALUES (
+             $1,$2,$3,$4,
+             $5,$6::numeric,
+             $7,$8,
+             $9,
+             'pending',$10,$11
+           )
+           RETURNING *`,
+          insertParams.slice(0, 11),
+        );
+        inserted = rows[0];
+      } else if (err && (err.code === "23505" || /unique/i.test(String(err.message || "")))) {
+        const raced = await findApplicationByArticleFreelancer(client, aid, fid, round?.id);
         if (raced) {
           if (ownClient) await client.query("COMMIT");
           return {
@@ -545,6 +585,13 @@ async function submitArticleApplication({
       if (colErr?.code !== "42703") throw colErr;
       // Pre-154 schema: reservation still held; column link optional.
     }
+
+    await collectionService.onArticleApplicationSubmitted(client, {
+      articleId: aid,
+      applicationId: inserted.id,
+      roundId: round?.id || inserted.collection_round_id || null,
+      now,
+    });
 
     if (ownClient) await client.query("COMMIT");
 
@@ -750,7 +797,12 @@ async function listMyArticleApplications(freelancerUserId, { limit = 50, offset 
 
 async function getMyApplicationForArticle(articleId, freelancerUserId) {
   if (!(await articleApplicationsSchemaReady())) return null;
-  const row = await findApplicationByArticleFreelancer(pool, articleId, freelancerUserId);
+  const { rows: articleRows } = await pool.query(
+    `SELECT current_bid_collection_round_id FROM marketplace_articles WHERE id = $1 LIMIT 1`,
+    [Number(articleId)],
+  );
+  const roundId = articleRows[0]?.current_bid_collection_round_id || null;
+  const row = await findApplicationByArticleFreelancer(pool, articleId, freelancerUserId, roundId);
   return mapApplicationRow(row);
 }
 
@@ -787,7 +839,7 @@ async function listApplicationsForArticleAdmin(articleId, { limit = 100, offset 
   return rows.map(mapApplicationRow);
 }
 
-async function selectArticleApplication({ applicationId, actorUserId } = {}) {
+async function selectArticleApplication({ applicationId, actorUserId, overrideReason } = {}) {
   await assertSchemaAndEngine();
   const id = Number(applicationId);
   const actor = Number(actorUserId);
@@ -841,6 +893,25 @@ async function selectArticleApplication({ applicationId, actorUserId } = {}) {
         publicCode: ARTICLE_APPLICATION_ERROR_CODES.ARTICLE_NOT_OPEN_FOR_APPLICATIONS,
       });
     }
+    const collectionService = require("./opportunityBidCollectionService");
+    await collectionService.assertArticleSelectionAllowed(client, article);
+    const fairAdapter = require("./articleFairDistributionAdapterService");
+    fairAdapter.assertApplicationInCurrentRound(article, row);
+    const ranking = await fairAdapter.getArticleFairRanking(row.article_id, { client });
+    const overrideService = require("./fairDistributionSelectionOverrideService");
+    const override = await overrideService.enforceFairSelectionOverride({
+      client,
+      ranking,
+      selectedCandidateId: id,
+      idKey: "applicationId",
+      overrideReason,
+      opportunityType: overrideService.OPPORTUNITY_TYPES.MINI_BID_ARTICLE,
+      opportunityId: row.article_id,
+      collectionRoundId: article.current_bid_collection_round_id,
+      actorUserId: actor,
+      publicCode: ARTICLE_APPLICATION_ERROR_CODES.ARTICLE_FAIR_SELECTION_OVERRIDE_REASON_REQUIRED,
+    });
+
 
     const economy = await economyService.getArticleEconomyConfig(client);
     const bidCost = economyService.resolveBidCostForCampaign(article, economy);
@@ -895,6 +966,7 @@ async function selectArticleApplication({ applicationId, actorUserId } = {}) {
         [row.article_id, Number.isInteger(actor) ? actor : null, id],
       );
 
+      await collectionService.markRoundAssigned(client, article.current_bid_collection_round_id);
       await client.query("COMMIT");
 
       try {
@@ -921,6 +993,7 @@ async function selectArticleApplication({ applicationId, actorUserId } = {}) {
         alreadySelected: false,
         economicSnapshot: snapshot,
         snapshotPoint: "ASSIGNMENT_SELECTION",
+        overrideRecorded: Boolean(override.overrideRecorded),
       };
     } catch (snapErr) {
       // Fall through to legacy select if pre-154 columns missing
@@ -951,6 +1024,7 @@ async function selectArticleApplication({ applicationId, actorUserId } = {}) {
       [row.article_id, Number.isInteger(actor) ? actor : null, id],
     );
 
+    await collectionService.markRoundAssigned(client, article.current_bid_collection_round_id);
     await client.query("COMMIT");
 
     try {
@@ -972,7 +1046,11 @@ async function selectArticleApplication({ applicationId, actorUserId } = {}) {
       /* non-blocking */
     }
 
-    return { application: mapApplicationRow(updated[0]), alreadySelected: false };
+    return {
+      application: mapApplicationRow(updated[0]),
+      alreadySelected: false,
+      overrideRecorded: Boolean(override.overrideRecorded),
+    };
   } catch (err) {
     try {
       await client.query("ROLLBACK");
@@ -1166,11 +1244,35 @@ async function getArticleApplicationEligibility(articleId, freelancerUserId) {
     };
   }
 
+  const collectionService = require("./opportunityBidCollectionService");
+  const bidCollection = await collectionService.getArticleBidCollectionProgress(articleId);
+  if (bidCollection && bidCollection.canApply === false) {
+    let reason = "ARTICLE_BID_COLLECTION_THRESHOLD_REACHED";
+    if (bidCollection.bidCollectionStatus === "minimum_not_met" || bidCollection.status === "minimum_not_met") {
+      reason = "ARTICLE_BID_COLLECTION_MINIMUM_NOT_MET";
+    } else if (
+      bidCollection.deadline &&
+      new Date(bidCollection.deadline) <= new Date() &&
+      !bidCollection.thresholdReached
+    ) {
+      reason = "ARTICLE_BID_COLLECTION_DEADLINE_PASSED";
+    }
+    return {
+      eligible: false,
+      reason,
+      articleLevel: Number(row.article_level),
+      membershipArticleAccessLevel: membershipAccess,
+      bidCollection,
+      ...baseEcon,
+    };
+  }
+
   return {
     eligible: true,
     reason: null,
     articleLevel: Number(row.article_level),
     membershipArticleAccessLevel: membershipAccess,
+    bidCollection,
     ...baseEcon,
   };
 }
@@ -1219,6 +1321,7 @@ module.exports = {
   releaseApplicationReservation,
   getArticleApplicationEligibility,
   getApplicationById,
+  findApplicationByArticleFreelancer,
   clearArticleApplicationsSchemaCache,
   ARTICLE_APPLICATION_BID_COST,
   ARTICLE_APPLICATION_BID_ECONOMICS_RUNTIME,

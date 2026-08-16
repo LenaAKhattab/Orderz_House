@@ -150,6 +150,13 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.rateLimitExemptions,
   },
+  onboarding: {
+    key: "onboarding",
+    to: "/dashboard/super-admin/onboarding",
+    labelKey: "dashboard.nav.superAdmin.onboarding",
+    icon: "edit-website",
+    end: true,
+  },
   problemsSuggestions: {
     key: "problemsSuggestions",
     to: "/dashboard/super-admin/feedback",
@@ -219,7 +226,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "administration",
     labelKey: "dashboard.nav.sections.administration",
-    itemKeys: ["admins", "rateLimitExemptions", "problemsSuggestions"],
+    itemKeys: ["admins", "rateLimitExemptions", "onboarding", "problemsSuggestions"],
   },
 ];
 
@@ -266,12 +273,18 @@ export function superAdminBreadcrumbKeys(pathname) {
   if (pathname.includes("/marketplace-plans")) {
     return [...base, "dashboard.breadcrumbs.managePlans"];
   }
+  if (pathname.includes("/training-packages")) {
+    return [...base, "dashboard.breadcrumbs.managePlans"];
+  }
   if (pathname.includes("/plans")) return [...base, "dashboard.breadcrumbs.plans"];
   if (pathname.includes("/courses")) return [...base, "dashboard.breadcrumbs.courses"];
   if (pathname.includes("/super-admin/ads")) return [...base, "dashboard.breadcrumbs.ads"];
   if (pathname.includes("/subscriptions")) return [...base, "dashboard.breadcrumbs.freelancerSubscriptions"];
   if (pathname.includes("/orders/create")) {
     return [...base, "dashboard.breadcrumbs.internalRequests", "dashboard.breadcrumbs.createInternalRequest"];
+  }
+  if (pathname.includes("/onboarding")) {
+    return [...base, "dashboard.breadcrumbs.onboarding"];
   }
   if (pathname.includes("/rate-limit-exemptions")) {
     return [...base, "dashboard.breadcrumbs.rateLimitExemptions"];

@@ -598,12 +598,40 @@ async function runBidCreditReconcileTick({ limit = 100, now = new Date() } = {})
       limit: 200,
     });
     await client.query("COMMIT");
+    let articleBidCollection = null;
+    try {
+      const collectionService = require("./opportunityBidCollectionService");
+      articleBidCollection = await collectionService.closeExpiredArticleBidCollections({
+        now,
+        limit: 50,
+      });
+    } catch (collectionErr) {
+      articleBidCollection = {
+        ok: false,
+        error: collectionErr.publicCode || collectionErr.message || "collection_tick_failed",
+      };
+    }
+    let pantryBidCollection = null;
+    try {
+      const collectionService = require("./opportunityBidCollectionService");
+      pantryBidCollection = await collectionService.closeExpiredPantryBidCollections({
+        now,
+        limit: 50,
+      });
+    } catch (pantryCollectionErr) {
+      pantryBidCollection = {
+        ok: false,
+        error: pantryCollectionErr.publicCode || pantryCollectionErr.message || "pantry_collection_tick_failed",
+      };
+    }
     return {
       ok: true,
       monthsProcessed: rows.length,
       unlockedNow,
       expired,
       poolReturns,
+      articleBidCollection,
+      pantryBidCollection,
     };
   } catch (err) {
     try {

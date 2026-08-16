@@ -976,7 +976,7 @@
     height: 100dvh;
     max-height: 100dvh;
     align-self: auto;
-    z-index: 45;
+    z-index: var(--oh-z-drawer, 45);
     pointer-events: none;
     visibility: hidden;
     /* LTR: anchor left, slide off to the left when closed */

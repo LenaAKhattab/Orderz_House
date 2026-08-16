@@ -120,6 +120,19 @@ const MARKETPLACE_ECONOMY_DEFAULTS = Object.freeze({
   normalOrderRefundLosingApplicant: "none",
   normalOrderRefundPostAwardCancel: "none",
   normalOrderBusinessTimezone: "Asia/Amman",
+
+  articleMinRequiredBids: 10,
+  articleAllowedRequiredBidCounts: Object.freeze([10, 15, 20, 30]),
+  articleDefaultRequiredBidCount: 10,
+  articleAutoCloseWhenThresholdReached: true,
+  articleAutoAssignWhenThresholdReached: false,
+  articleRefundPolicy: "full_on_minimum_not_met",
+  pantryMinRequiredBids: 10,
+  pantryAllowedRequiredBidCounts: Object.freeze([10, 15, 20, 30]),
+  pantryDefaultRequiredBidCount: 10,
+  pantryAutoCloseWhenThresholdReached: true,
+  pantryAutoAssignWhenThresholdReached: false,
+  pantryRefundPolicy: "full_on_minimum_not_met",
 });
 
 /** Values that must be snapshotted onto future financial/ledger/assignment rows. */
@@ -301,6 +314,44 @@ function mapRow(row) {
       row.article_applications_enabled == null
         ? false
         : isTruthyFlag(row.article_applications_enabled),
+    articleMinRequiredBids:
+      row.article_min_required_bids != null
+        ? Number(row.article_min_required_bids)
+        : MARKETPLACE_ECONOMY_DEFAULTS.articleMinRequiredBids,
+    articleAllowedRequiredBidCounts: Array.isArray(row.article_allowed_required_bid_counts)
+      ? row.article_allowed_required_bid_counts.map((n) => Number(n))
+      : MARKETPLACE_ECONOMY_DEFAULTS.articleAllowedRequiredBidCounts,
+    articleDefaultRequiredBidCount:
+      row.article_default_required_bid_count != null
+        ? Number(row.article_default_required_bid_count)
+        : MARKETPLACE_ECONOMY_DEFAULTS.articleDefaultRequiredBidCount,
+    articleAutoCloseWhenThresholdReached:
+      row.article_auto_close_when_threshold_reached == null
+        ? MARKETPLACE_ECONOMY_DEFAULTS.articleAutoCloseWhenThresholdReached
+        : isTruthyFlag(row.article_auto_close_when_threshold_reached),
+    articleAutoAssignWhenThresholdReached:
+      row.article_auto_assign_when_threshold_reached == null
+        ? MARKETPLACE_ECONOMY_DEFAULTS.articleAutoAssignWhenThresholdReached
+        : isTruthyFlag(row.article_auto_assign_when_threshold_reached),
+    articleRefundPolicy:
+      row.article_refund_policy || MARKETPLACE_ECONOMY_DEFAULTS.articleRefundPolicy,
+    pantryMinRequiredBids:
+      row.pantry_min_required_bids != null
+        ? Number(row.pantry_min_required_bids)
+        : MARKETPLACE_ECONOMY_DEFAULTS.pantryMinRequiredBids,
+    pantryAllowedRequiredBidCounts: Array.isArray(row.pantry_allowed_required_bid_counts)
+      ? row.pantry_allowed_required_bid_counts.map((n) => Number(n))
+      : MARKETPLACE_ECONOMY_DEFAULTS.pantryAllowedRequiredBidCounts,
+    pantryDefaultRequiredBidCount:
+      row.pantry_default_required_bid_count != null
+        ? Number(row.pantry_default_required_bid_count)
+        : MARKETPLACE_ECONOMY_DEFAULTS.pantryDefaultRequiredBidCount,
+    pantryAutoCloseWhenThresholdReached:
+      row.pantry_auto_close_when_threshold_reached == null
+        ? MARKETPLACE_ECONOMY_DEFAULTS.pantryAutoCloseWhenThresholdReached
+        : isTruthyFlag(row.pantry_auto_close_when_threshold_reached),
+    pantryAutoAssignWhenThresholdReached: false,
+    pantryRefundPolicy: row.pantry_refund_policy || MARKETPLACE_ECONOMY_DEFAULTS.pantryRefundPolicy,
     bidCreditPurchasesEnabled:
       row.bid_credit_purchases_enabled == null
         ? false
@@ -753,6 +804,97 @@ function mergePatch(current, rawPatch = {}) {
     return s;
   });
 
+  assign("articleMinRequiredBids", (v) =>
+    assertIntInRange("articleMinRequiredBids", v, { min: 1, max: 10000 }),
+  );
+  assign("articleDefaultRequiredBidCount", (v) =>
+    assertIntInRange("articleDefaultRequiredBidCount", v, { min: 1, max: 10000 }),
+  );
+  assign("articleAllowedRequiredBidCounts", (v) => {
+    const { parseAllowedRequiredBidCounts } = require("../constants/opportunityBidCollection");
+    const list = parseAllowedRequiredBidCounts(v);
+    if (!list.length) {
+      throw createAppError("articleAllowedRequiredBidCounts must be a non-empty integer list.", 400, {
+        exposeToClient: true,
+      });
+    }
+    return list;
+  });
+  assign("articleAutoCloseWhenThresholdReached", (v) => coerceBool(v));
+  assign("articleAutoAssignWhenThresholdReached", (v) => {
+    const enabled = coerceBool(v);
+    if (enabled === true) {
+      throw createAppError(
+        "articleAutoAssignWhenThresholdReached cannot be enabled until fair assignment adapter exists.",
+        409,
+        { exposeToClient: true, publicCode: "ARTICLE_AUTO_ASSIGN_NOT_IMPLEMENTED" },
+      );
+    }
+    return false;
+  });
+  assign("articleRefundPolicy", (v) =>
+    assertEnum("articleRefundPolicy", v, ["full_on_minimum_not_met"]),
+  );
+
+  assign("pantryMinRequiredBids", (v) =>
+    assertIntInRange("pantryMinRequiredBids", v, { min: 1, max: 10000 }),
+  );
+  assign("pantryDefaultRequiredBidCount", (v) =>
+    assertIntInRange("pantryDefaultRequiredBidCount", v, { min: 1, max: 10000 }),
+  );
+  assign("pantryAllowedRequiredBidCounts", (v) => {
+    const { parseAllowedRequiredBidCounts } = require("../constants/opportunityBidCollection");
+    const list = parseAllowedRequiredBidCounts(v);
+    if (!list.length) {
+      throw createAppError("pantryAllowedRequiredBidCounts must be a non-empty integer list.", 400, {
+        exposeToClient: true,
+      });
+    }
+    return list;
+  });
+  assign("pantryAutoCloseWhenThresholdReached", (v) => coerceBool(v));
+  assign("pantryAutoAssignWhenThresholdReached", (v) => {
+    const enabled = coerceBool(v);
+    if (enabled === true) {
+      throw createAppError(
+        "pantryAutoAssignWhenThresholdReached cannot be enabled until fair assignment exists.",
+        409,
+        { exposeToClient: true, publicCode: "PANTRY_AUTO_ASSIGN_NOT_IMPLEMENTED" },
+      );
+    }
+    return false;
+  });
+  assign("pantryRefundPolicy", (v) =>
+    assertEnum("pantryRefundPolicy", v, ["full_on_minimum_not_met"]),
+  );
+
+  if (next.pantryDefaultRequiredBidCount < next.pantryMinRequiredBids) {
+    throw createAppError("pantryDefaultRequiredBidCount must be >= pantryMinRequiredBids.", 400, {
+      exposeToClient: true,
+    });
+  }
+  if (!next.pantryAllowedRequiredBidCounts.includes(next.pantryDefaultRequiredBidCount)) {
+    throw createAppError("pantryDefaultRequiredBidCount must be in pantryAllowedRequiredBidCounts.", 400, {
+      exposeToClient: true,
+    });
+  }
+
+  if (next.articleDefaultRequiredBidCount < next.articleMinRequiredBids) {
+    throw createAppError("articleDefaultRequiredBidCount must be >= articleMinRequiredBids.", 400, {
+      exposeToClient: true,
+    });
+  }
+  if (!next.articleAllowedRequiredBidCounts.includes(next.articleDefaultRequiredBidCount)) {
+    throw createAppError("articleDefaultRequiredBidCount must be in articleAllowedRequiredBidCounts.", 400, {
+      exposeToClient: true,
+    });
+  }
+  if (next.articleAllowedRequiredBidCounts.some((n) => n < next.articleMinRequiredBids)) {
+    throw createAppError("articleAllowedRequiredBidCounts cannot include values below the minimum.", 400, {
+      exposeToClient: true,
+    });
+  }
+
   if (next.normalOrderMaxValueJod < next.normalOrderMinValueJod) {
     throw createAppError("normalOrderMaxValueJod must be >= min.", 400, { exposeToClient: true });
   }
@@ -981,6 +1123,8 @@ async function updateMarketplaceEconomySettings({ actorUserId, patch, client: ex
     }
 
     await persistNormalOrderEconomySettings(client, next);
+    await persistArticleMinRequiredBidsSettings(client, next);
+    await persistPantryMinRequiredBidsSettings(client, next);
 
     const { rows: finalRows } = await client.query(
       `SELECT * FROM marketplace_economy_settings WHERE id = $1`,
@@ -1013,6 +1157,60 @@ async function hasEconomyFlagColumn(client, columnName) {
     [columnName],
   );
   return Boolean(rows[0]);
+}
+
+async function persistArticleMinRequiredBidsSettings(client, next) {
+  if (!(await hasEconomyFlagColumn(client, "article_min_required_bids"))) {
+    return false;
+  }
+  await client.query(
+    `UPDATE marketplace_economy_settings SET
+       article_min_required_bids = $2,
+       article_allowed_required_bid_counts = $3::int[],
+       article_default_required_bid_count = $4,
+       article_auto_close_when_threshold_reached = $5,
+       article_auto_assign_when_threshold_reached = $6,
+       article_refund_policy = $7,
+       updated_at = NOW()
+     WHERE id = $1`,
+    [
+      SETTINGS_ID,
+      next.articleMinRequiredBids,
+      next.articleAllowedRequiredBidCounts,
+      next.articleDefaultRequiredBidCount,
+      next.articleAutoCloseWhenThresholdReached !== false,
+      false,
+      next.articleRefundPolicy || "full_on_minimum_not_met",
+    ],
+  );
+  return true;
+}
+
+async function persistPantryMinRequiredBidsSettings(client, next) {
+  if (!(await hasEconomyFlagColumn(client, "pantry_min_required_bids"))) {
+    return false;
+  }
+  await client.query(
+    `UPDATE marketplace_economy_settings SET
+       pantry_min_required_bids = $2,
+       pantry_allowed_required_bid_counts = $3::int[],
+       pantry_default_required_bid_count = $4,
+       pantry_auto_close_when_threshold_reached = $5,
+       pantry_auto_assign_when_threshold_reached = $6,
+       pantry_refund_policy = $7,
+       updated_at = NOW()
+     WHERE id = $1`,
+    [
+      SETTINGS_ID,
+      next.pantryMinRequiredBids,
+      next.pantryAllowedRequiredBidCounts,
+      next.pantryDefaultRequiredBidCount,
+      next.pantryAutoCloseWhenThresholdReached !== false,
+      false,
+      next.pantryRefundPolicy || "full_on_minimum_not_met",
+    ],
+  );
+  return true;
 }
 
 /**
@@ -1198,6 +1396,20 @@ function mapActiveEconomySettingsForAdminApi(settings) {
     normalOrderRefundLosingApplicant: s.normalOrderRefundLosingApplicant,
     normalOrderRefundPostAwardCancel: s.normalOrderRefundPostAwardCancel,
     normalOrderBusinessTimezone: s.normalOrderBusinessTimezone,
+
+    articleMinRequiredBids: s.articleMinRequiredBids,
+    articleAllowedRequiredBidCounts: s.articleAllowedRequiredBidCounts,
+    articleDefaultRequiredBidCount: s.articleDefaultRequiredBidCount,
+    articleAutoCloseWhenThresholdReached: Boolean(s.articleAutoCloseWhenThresholdReached),
+    articleAutoAssignWhenThresholdReached: false,
+    articleRefundPolicy: s.articleRefundPolicy,
+
+    pantryMinRequiredBids: s.pantryMinRequiredBids,
+    pantryAllowedRequiredBidCounts: s.pantryAllowedRequiredBidCounts,
+    pantryDefaultRequiredBidCount: s.pantryDefaultRequiredBidCount,
+    pantryAutoCloseWhenThresholdReached: Boolean(s.pantryAutoCloseWhenThresholdReached),
+    pantryAutoAssignWhenThresholdReached: false,
+    pantryRefundPolicy: s.pantryRefundPolicy,
 
     updatedByUserId: s.updatedByUserId != null ? String(s.updatedByUserId) : null,
     updatedAt: s.updatedAt || null,

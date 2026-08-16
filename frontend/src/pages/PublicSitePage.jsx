@@ -56,7 +56,7 @@ export default function PublicSitePage({ slug }) {
   return (
     <main className="container page-content public-site-page">
       <section className="card legal-card public-site-page__card">
-        <h1 className="public-site-page__title">{page?.title}</h1>
+        <h1 className="public-site-page__title">{page?.title || "صفحة عامة"}</h1>
         <div className="public-site-page__content">
           {blocks.map((block, index) => renderContentBlock(block, index))}
         </div>

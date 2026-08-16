@@ -171,6 +171,7 @@ export default function AdminSubscriptionsActivationPage() {
   }, [page, debouncedSearch, loadQueue]);
 
   const activate = async (subscriptionId) => {
+    if (submittingId) return;
     setError("");
     setSubmittingId(String(subscriptionId));
     try {

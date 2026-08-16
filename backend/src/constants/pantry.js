@@ -350,6 +350,16 @@ function validatePantryRequestPayload(payload = {}, { partial = false } = {}) {
     }
   }
 
+  let requiredBidCount = null;
+  if (src.requiredBidCount != null && String(src.requiredBidCount).trim() !== "") {
+    const n = Number(src.requiredBidCount);
+    if (!Number.isInteger(n) || n < 1) {
+      fieldErrors.requiredBidCount = "حد المناقصات الأدنى غير صالح.";
+    } else {
+      requiredBidCount = n;
+    }
+  }
+
   let eligibleTierCodes = null;
   if (src.eligibleTierCodes != null && src.eligibleTierCodes !== "") {
     const raw = Array.isArray(src.eligibleTierCodes)
@@ -406,6 +416,12 @@ function validatePantryRequestPayload(payload = {}, { partial = false } = {}) {
     targetApplicantCount,
     eligibleTierCodes,
     applicationDeadlineAt,
+    requiredBidCount,
+    minRequiredBidsAcknowledged: Boolean(
+      src.minRequiredBidsAcknowledged === true ||
+        src.minRequiredBidsAcknowledged === "true" ||
+        src.minRequiredBidsAcknowledged === 1,
+    ),
     publish: Boolean(src.publish),
   };
 

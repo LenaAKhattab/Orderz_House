@@ -1,5 +1,6 @@
 import { Award, BookOpen, Briefcase, Check, GraduationCap, MessageCircle } from "lucide-react";
 import { buildTrainingWhatsAppUrl } from "../../constants/trainingPlansCatalog";
+import { ApproximateCurrencyLine } from "../money/JodMoneyDisplay";
 
 function featureIcon(text) {
   const value = String(text || "");
@@ -19,6 +20,8 @@ export default function TrainingPlanCard({ pkg, locale = "ar", t }) {
   const features = isEn ? pkg.featuresEn : pkg.featuresAr;
   const href = buildTrainingWhatsAppUrl(pkg);
   const priceLabel = Number(pkg.priceJod).toLocaleString("en-US", { maximumFractionDigits: 0 });
+  const badge = isEn ? pkg.badgeEn || pkg.badgeAr : pkg.badgeAr || pkg.badgeEn;
+  const showBadge = Boolean(pkg.featured || badge);
 
   return (
     <article
@@ -30,8 +33,8 @@ export default function TrainingPlanCard({ pkg, locale = "ar", t }) {
         .filter(Boolean)
         .join(" ")}
     >
-      {pkg.featured ? (
-        <span className="training-card__badge">{t("plans.training.mostRequested")}</span>
+      {showBadge ? (
+        <span className="training-card__badge">{badge || t("plans.training.mostRequested")}</span>
       ) : null}
 
       <header className="training-card__head">
@@ -42,6 +45,7 @@ export default function TrainingPlanCard({ pkg, locale = "ar", t }) {
       <div className="training-card__price">
         <span className="training-card__price-amount">{priceLabel}</span>
         <span className="training-card__price-unit">{t("plans.currency.jod")}</span>
+        <ApproximateCurrencyLine amount={pkg.priceJod} />
       </div>
 
       <div className="training-card__divider" aria-hidden="true" />
@@ -49,7 +53,7 @@ export default function TrainingPlanCard({ pkg, locale = "ar", t }) {
       <div className="training-card__includes">
         <p className="training-card__includes-label">{t("plans.training.includes")}</p>
         <ul className="training-card__features" aria-label={t("plans.training.featuresAria")}>
-          {features.map((text, idx) => {
+          {(features || []).map((text, idx) => {
             const Icon = featureIcon(text);
             const highlight = idx === pkg.highlightFeatureIndex;
             return (

@@ -1,3 +1,23 @@
+import { isBidCollectionClosedForApply } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils.js";
+
+function pantryBidCollectionFromRow(row) {
+  if (row?.bidCollection && typeof row.bidCollection === "object") return row.bidCollection;
+  const required = row?.requiredBidCount != null ? Number(row.requiredBidCount) : null;
+  if (required == null || !Number.isFinite(required) || required < 1) return null;
+  const current =
+    row.validApplicantCount != null
+      ? Number(row.validApplicantCount)
+      : row.bidsCount != null
+        ? Number(row.bidsCount)
+        : 0;
+  return {
+    requiredBidCount: required,
+    currentBidCount: Number.isFinite(current) ? current : 0,
+    bidCollectionOutcome: row.bidCollectionOutcome || null,
+    bidCollectionStatus: row.bidCollectionStatus || null,
+  };
+}
+
 /**
  * Map a Freelancer pantry open-request row into the pool list shape
  * so it renders identically in MarketplaceOrderListRow.
@@ -7,6 +27,11 @@ export function mapPantryRequestToPoolOrder(row) {
   if (!row || row.id == null) return null;
   const pantryRequestId = String(row.id);
   const isBidding = String(row.pricingType || "").toLowerCase() === "bidding";
+  const bidCollection = pantryBidCollectionFromRow(row);
+  const collectionClosed =
+    isBidCollectionClosedForApply(bidCollection) ||
+    Boolean(row.applicationsClosedAt) ||
+    Boolean(row.applicationsCloseReason);
   const locked = row.applyEligible === false;
 
   return {
@@ -39,11 +64,13 @@ export function mapPantryRequestToPoolOrder(row) {
       : row.subSubcategory || null,
     myBid: row.myBid || null,
     applicationBidCost: row.applicationBidCost != null ? Number(row.applicationBidCost) : null,
+    bidCollection,
+    collectionClosed,
+    relistCount: row.relistCount != null ? Number(row.relistCount) : 0,
     poolEligibility: {
       isLockedByPlan: Boolean(locked),
       lockReason: row.applyBlockMessage || null,
     },
-    // Hide plan-range chrome that pool orders sometimes show
     isFake: false,
     sourceType: "admin_created",
   };

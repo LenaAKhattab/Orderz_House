@@ -24,6 +24,7 @@ import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton"
 import NotificationListSkeleton from "../../components/dashboard/hub/NotificationListSkeleton";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getNotificationDetails, getNotificationTypeIconKind } from "../../utils/notificationDisplay";
+import { resolveSafeInternalNavPath } from "../../utils/safeInternalNavPath";
 import "../../styles/dashboardHub.css";
 import "./notifications-page.css";
 
@@ -224,7 +225,7 @@ export default function NotificationsPage() {
   const handleOpen = useCallback(
     async (n) => {
       await handleRead(n);
-      navigate(n?.link || "/dashboard");
+      navigate(resolveSafeInternalNavPath(n?.link, "/dashboard"));
     },
     [handleRead, navigate],
   );

@@ -103,6 +103,8 @@ export const resetPasswordRequest = async (email, resetToken, newPassword) => {
   return data;
 };
 
+/** Forgot-password 401 is a request error only. There is no axios response interceptor that logs the current session out. */
+
 /**
  * Refresh current user (e.g. after profile change). 401 → null without axios throw.
  * Prefer fetchSessionBootstrap() only for the one-time app shell init.
@@ -208,6 +210,15 @@ export const getPublicGeoRequest = async () => {
   return data;
 };
 
+/** Display-only FX settings. Does not change stored JOD amounts or checkout. */
+export const getCurrencyDisplayRequest = async ({ preferred } = {}) => {
+  const { data } = await api.get("/public/currency-display", {
+    timeout: 8000,
+    params: preferred ? { preferred } : undefined,
+  });
+  return data;
+};
+
 export const listPublicPlansRequest = async () => {
   const { data } = await api.get("/plans");
   return data;
@@ -238,6 +249,35 @@ export const updateAdminDefaultPlanCatalogRequest = async (catalog) => {
 /** Active plans on special plan pages (باقات الصفحات) — existing page-package catalog. */
 export const listPublicSpecialPagePlansRequest = async () => {
   const { data } = await api.get("/plan-pages/special-catalog");
+  return data;
+};
+
+export const listPublicTrainingPackagesRequest = async () => {
+  const { data } = await api.get("/public/training-packages");
+  return data;
+};
+
+export const listAdminTrainingPackagesRequest = async () => {
+  const { data } = await api.get("/super-admin/training-packages");
+  return data;
+};
+
+export const createAdminTrainingPackageRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/training-packages", payload, { timeout: 30000 });
+  return data;
+};
+
+export const updateAdminTrainingPackageRequest = async (code, patch) => {
+  const { data } = await api.patch(
+    `/super-admin/training-packages/${encodeURIComponent(code)}`,
+    patch,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const reorderAdminTrainingPackagesRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/training-packages/reorder", payload, { timeout: 30000 });
   return data;
 };
 
@@ -317,10 +357,19 @@ export const listAdminArticleApplicationsRequest = async (articleId, params = {}
   return data;
 };
 
-export const selectAdminArticleApplicationRequest = async (applicationId) => {
+export const relistAdminMarketplaceArticleBidCollectionRequest = async (articleId, payload = {}) => {
+  const { data } = await api.post(
+    `/super-admin/marketplace-articles/${encodeURIComponent(articleId)}/relist-bid-collection`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const selectAdminArticleApplicationRequest = async (applicationId, payload = {}) => {
   const { data } = await api.post(
     `/super-admin/article-applications/${encodeURIComponent(applicationId)}/select`,
-    {},
+    payload,
     { timeout: 30000 },
   );
   return data;
@@ -627,6 +676,46 @@ export const getFreelancerDashboardSummaryRequest = async () => {
   return data;
 };
 
+export const getOnboardingMyCurrentRequest = async () => {
+  const { data } = await api.get("/onboarding/my-current", { timeout: 12000 });
+  return data;
+};
+
+export const getOnboardingGettingStartedRequest = async () => {
+  const { data } = await api.get("/onboarding/getting-started", { timeout: 12000 });
+  return data;
+};
+
+export const postOnboardingEventRequest = async (payload) => {
+  const { data } = await api.post("/onboarding/events", payload);
+  return data;
+};
+
+export const adminListOnboardingItemsRequest = async () => {
+  const { data } = await api.get("/admin/onboarding/items");
+  return data;
+};
+
+export const adminCreateOnboardingItemRequest = async (payload) => {
+  const { data } = await api.post("/admin/onboarding/items", payload);
+  return data;
+};
+
+export const adminUpdateOnboardingItemRequest = async (id, payload) => {
+  const { data } = await api.patch(`/admin/onboarding/items/${id}`, payload);
+  return data;
+};
+
+export const adminEnableOnboardingItemRequest = async (id) => {
+  const { data } = await api.post(`/admin/onboarding/items/${id}/enable`);
+  return data;
+};
+
+export const adminDisableOnboardingItemRequest = async (id) => {
+  const { data } = await api.post(`/admin/onboarding/items/${id}/disable`);
+  return data;
+};
+
 /** Lightweight courses sidebar badge — avoids full dashboard-summary on every page. */
 export const getFreelancerCoursesFocusRequest = async () => {
   const { data } = await api.get("/freelancer/courses-focus", { timeout: 15000 });
@@ -775,6 +864,11 @@ export const createClientOrderRequest = async (payload) => {
   const { data } = await api.post("/client/orders", payload, {
     timeout: isFormData ? 120000 : 10000,
   });
+  return data;
+};
+
+export const createClientFixedOrderCheckoutRequest = async (orderId) => {
+  const { data } = await api.post(`/client/orders/${orderId}/pay-checkout`);
   return data;
 };
 
@@ -2708,8 +2802,22 @@ export const publishAdminPantryRequestRequest = async (id) => {
   return data;
 };
 
-export const acceptAdminPantryBidRequest = async (requestId, bidId) => {
-  const { data } = await api.post(`/admin/pantry/requests/${requestId}/bids/${bidId}/accept`);
+export const relistAdminPantryBidCollectionRequest = async (id) => {
+  const { data } = await api.post(`/admin/pantry/requests/${id}/relist-bid-collection`, {}, { timeout: 30000 });
+  return data;
+};
+
+export const getAdminPantryFairRankingRequest = async (id) => {
+  const { data } = await api.get(`/admin/pantry/requests/${id}/fair-ranking`);
+  return data;
+};
+
+export const acceptAdminPantryBidRequest = async (requestId, bidId, payload = {}) => {
+  const { data } = await api.post(
+    `/admin/pantry/requests/${requestId}/bids/${bidId}/accept`,
+    payload,
+    { timeout: 30000 },
+  );
   return data;
 };
 

@@ -449,6 +449,7 @@ export default function SuperAdminFinancialCenterPage() {
   };
 
   const savePerson = async () => {
+    if (actionBusy) return;
     if (!validatePersonForm()) return;
     setActionBusy(true);
     try {
@@ -525,6 +526,7 @@ export default function SuperAdminFinancialCenterPage() {
   };
 
   const toggleAccountStatus = async (person, suspend) => {
+    if (actionBusy) return;
     if (suspend && !window.confirm(t("dashboard.financialCenter.confirmSuspendAccount"))) return;
     setActionBusy(true);
     try {
@@ -601,6 +603,7 @@ export default function SuperAdminFinancialCenterPage() {
   });
 
   const saveBonus = async () => {
+    if (actionBusy) return;
     if (preview.shareTotal > 100) {
       push(t("dashboard.financialCenter.shareError"), "error");
       return;

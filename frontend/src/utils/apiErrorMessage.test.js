@@ -40,6 +40,16 @@ describe("apiErrorMessage rate limit helpers", () => {
     assert.match(msg, /8/);
     assert.equal(/retry/i.test(msg), false);
   });
+
+  it("maps 409 PRICING_CHANGED to a clear create-order message", () => {
+    const msg = getOrderCreateErrorMessage({
+      response: {
+        status: 409,
+        data: { code: "PRICING_CHANGED", message: "تغير السعر. راجع المبلغ." },
+      },
+    });
+    assert.match(msg, /تغير السعر/);
+  });
 });
 
 describe("apiErrorMessage cancel vs timeout", () => {

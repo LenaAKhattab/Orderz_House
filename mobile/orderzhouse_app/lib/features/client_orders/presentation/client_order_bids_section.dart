@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/stripe_checkout_launcher.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../../orders/presentation/order_detail_widgets.dart';
+import '../../currency/presentation/jod_money_display.dart';
 import '../data/client_order_bid_models.dart';
 import '../data/client_orders_repository.dart';
 import 'client_orders_controller.dart';
@@ -209,7 +210,6 @@ class _ClientOrderBidsSectionState extends ConsumerState<ClientOrderBidsSection>
               );
             }
 
-            final currency = result.currencyCode ?? widget.currencyCode ?? 'JOD';
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -217,7 +217,6 @@ class _ClientOrderBidsSectionState extends ConsumerState<ClientOrderBidsSection>
                   if (i > 0) const SizedBox(height: 10),
                   _BidCard(
                     bid: result.bids[i],
-                    currencyCode: currency,
                     busy: _actionBusy,
                     onAccept: () => _acceptBid(result.bids[i]),
                     onReject: () => _rejectBid(result.bids[i]),
@@ -235,24 +234,18 @@ class _ClientOrderBidsSectionState extends ConsumerState<ClientOrderBidsSection>
 class _BidCard extends StatelessWidget {
   const _BidCard({
     required this.bid,
-    required this.currencyCode,
     required this.busy,
     required this.onAccept,
     required this.onReject,
   });
 
   final ClientOrderBid bid;
-  final String currencyCode;
   final bool busy;
   final VoidCallback onAccept;
   final VoidCallback onReject;
 
   @override
   Widget build(BuildContext context) {
-    final amountText = bid.amount != null
-        ? '${bid.amount!.toStringAsFixed(bid.amount! % 1 == 0 ? 0 : 2)} $currencyCode'
-        : '—';
-
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -300,15 +293,9 @@ class _BidCard extends StatelessWidget {
                 const Icon(Icons.payments_outlined, color: AppColors.success, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    amountText,
-                    style: const TextStyle(
-                      color: AppColors.success,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
+                  child: bid.amount != null
+                      ? JodMoneyDisplay(amount: bid.amount)
+                      : const Text('—', textAlign: TextAlign.right),
                 ),
               ],
             ),

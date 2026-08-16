@@ -8,6 +8,9 @@ import {
   getInitialMarketplaceArticleFormState,
   normalizeMarketplaceArticlePayload,
   validateMarketplaceArticleForm,
+  ARTICLE_ALLOWED_REQUIRED_BID_COUNTS,
+  ARTICLE_MIN_REQUIRED_BIDS_ACK_AR,
+  ARTICLE_MIN_REQUIRED_BIDS_WARNING_AR,
 } from "./marketplaceArticleFormUtils";
 
 export default function MarketplaceArticleFormModal({
@@ -184,6 +187,50 @@ export default function MarketplaceArticleFormModal({
               ))}
             </select>
           </label>
+
+          <label>
+            {isEn ? "Minimum required applicants" : "الحد الأدنى للمتقدمين / المناقصات"} *
+            <select
+              value={form.requiredBidCount}
+              onChange={(e) => setField("requiredBidCount", Number(e.target.value))}
+              disabled={submitting}
+            >
+              {ARTICLE_ALLOWED_REQUIRED_BID_COUNTS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+            {errors.requiredBidCount ? (
+              <span className="oh-mmp-form__error">{errors.requiredBidCount}</span>
+            ) : null}
+          </label>
+
+          <label>
+            {isEn ? "Application deadline (optional)" : "موعد إغلاق التقديم (اختياري)"}
+            <input
+              type="datetime-local"
+              value={form.applicationDeadlineAt || ""}
+              onChange={(e) => setField("applicationDeadlineAt", e.target.value)}
+              disabled={submitting}
+            />
+          </label>
+
+          <p className="oh-mmp-form__hint" style={{ margin: 0, lineHeight: 1.5 }}>
+            {ARTICLE_MIN_REQUIRED_BIDS_WARNING_AR}
+          </p>
+          <label className="oh-mmp-form__check oh-mmp-form__check--block">
+            <input
+              type="checkbox"
+              checked={Boolean(form.minRequiredBidsAcknowledged)}
+              onChange={(e) => setField("minRequiredBidsAcknowledged", e.target.checked)}
+              disabled={submitting}
+            />
+            {ARTICLE_MIN_REQUIRED_BIDS_ACK_AR}
+          </label>
+          {errors.minRequiredBidsAcknowledged ? (
+            <span className="oh-mmp-form__error">{errors.minRequiredBidsAcknowledged}</span>
+          ) : null}
 
           <label className="oh-mmp-form__check oh-mmp-form__check--block">
             <input

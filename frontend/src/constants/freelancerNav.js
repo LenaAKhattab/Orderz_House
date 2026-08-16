@@ -20,6 +20,8 @@ export const FREELANCER_NAV_MAIN = [
     badgeKey: "notifications",
   },
   { to: "/dashboard/freelancer/courses", labelKey: "dashboard.nav.freelancer.courses", icon: "courses" },
+  { to: "/dashboard/freelancer/articles", labelKey: "dashboard.nav.freelancer.articles", icon: "courses" },
+  { to: "/dashboard/freelancer/getting-started", labelKey: "dashboard.nav.freelancer.gettingStarted", icon: "courses" },
   {
     to: "/dashboard/freelancer/feedback",
     labelKey: "dashboard.nav.freelancer.problemsSuggestions",
@@ -41,6 +43,7 @@ export function freelancerPageTitle(pathname, t) {
     n.end ? pathname === n.to : pathname === n.to || pathname.startsWith(`${n.to}/`),
   );
   if (item) return resolveNavLabel(item, t);
+  if (pathname.includes("/getting-started")) return t("dashboard.nav.freelancer.gettingStarted");
   if (pathname.includes("/activate-account")) return t("dashboard.nav.common.activateAccount");
   if (pathname.includes("/convert-account")) return t("dashboard.nav.common.convertAccount");
   if (pathname.includes("/settings")) return t("dashboard.nav.common.settings");

@@ -161,6 +161,26 @@ const updateMarketplaceEconomySettingsValidators = [
     .isString()
     .isLength({ min: 1, max: 64 })
     .withMessage("normalOrderBusinessTimezone must be 1–64 characters."),
+  optionalInt("articleMinRequiredBids", { min: 1, max: 10000 }),
+  optionalInt("articleDefaultRequiredBidCount", { min: 1, max: 10000 }),
+  optionalBoolean("articleAutoCloseWhenThresholdReached"),
+  optionalBoolean("articleAutoAssignWhenThresholdReached"),
+  optionalEnum("articleRefundPolicy", ["full_on_minimum_not_met"]),
+  body("articleAllowedRequiredBidCounts")
+    .optional()
+    .isArray({ min: 1 })
+    .withMessage("articleAllowedRequiredBidCounts must be a non-empty array."),
+  body("articleAllowedRequiredBidCounts.*").optional().isInt({ min: 1 }),
+  optionalInt("pantryMinRequiredBids", { min: 1, max: 10000 }),
+  optionalInt("pantryDefaultRequiredBidCount", { min: 1, max: 10000 }),
+  optionalBoolean("pantryAutoCloseWhenThresholdReached"),
+  optionalBoolean("pantryAutoAssignWhenThresholdReached"),
+  optionalEnum("pantryRefundPolicy", ["full_on_minimum_not_met"]),
+  body("pantryAllowedRequiredBidCounts")
+    .optional()
+    .isArray({ min: 1 })
+    .withMessage("pantryAllowedRequiredBidCounts must be a non-empty array."),
+  body("pantryAllowedRequiredBidCounts.*").optional().isInt({ min: 1 }),
 ];
 
 module.exports = {

@@ -55,6 +55,31 @@ describe("trainingPlansCatalog", () => {
     assert.match(plansPage, /TrainingPlansSection/);
     assert.match(plansPage, /PlansCategoryToggle/);
     assert.match(plansPage, /PricingSection/);
+    const section = fs.readFileSync(path.join(__dirname, "../components/plans/TrainingPlansSection.jsx"), "utf8");
+    assert.match(section, /usePublicTrainingPackages/);
     assert.doesNotMatch(plansPage, /Work Token|workToken/);
+  });
+
+  it("PlanCard imports membership title/body so /plans?type=membership cannot crash", () => {
+    const planCard = fs.readFileSync(
+      path.join(__dirname, "../components/plans/PlanCard.jsx"),
+      "utf8",
+    );
+    assert.match(
+      planCard,
+      /import MembershipPlanCardBody, \{ MembershipPlanTitle \} from "\.\/MembershipPlanCardBody"/,
+    );
+    assert.match(planCard, /<MembershipPlanTitle[\s\S]*plan=\{plan\}/);
+    assert.match(planCard, /<MembershipPlanCardBody[\s\S]*plan=\{plan\}/);
+    const body = fs.readFileSync(
+      path.join(__dirname, "../components/plans/MembershipPlanCardBody.jsx"),
+      "utf8",
+    );
+    assert.match(body, /export function MembershipPlanTitle/);
+    assert.match(body, /export default function MembershipPlanCardBody/);
+    const plansPage = fs.readFileSync(path.join(__dirname, "../pages/Plans.jsx"), "utf8");
+    assert.match(plansPage, /PLANS_CATEGORY\.MEMBERSHIP/);
+    assert.match(plansPage, /PricingSection/);
+    assert.match(plansPage, /TrainingPlansSection/);
   });
 });

@@ -36,7 +36,9 @@ import { enrichFreelancerDashboardItem, resolveFreelancerDashboardItem } from ".
 
 import "../../styles/dashboardHub.css";
 
-import { getFreelancerDashboardSummaryRequest } from "../../services/api";
+import { getFreelancerDashboardSummaryRequest, getOnboardingMyCurrentRequest } from "../../services/api";
+import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
+import FreelancerOnboardingPanel from "../../components/onboarding/FreelancerOnboardingPanel";
 
 import {
 
@@ -45,8 +47,6 @@ import {
   computeActiveWorkloadCount,
 
   deriveFreelancerCoursesFocus,
-
-  formatMoneyJod,
 
   insightsForWelcomeTip,
 
@@ -116,11 +116,7 @@ function buildWelcomeMetrics({ reputation, earningsSummary, earningsLoadState, a
 
   const trustSub = t("freelancerDashboard.stats.trustLevelNumber", { level: trustLevelNumber(reputation) });
 
-  const currency = t("freelancerDashboard.common.currencyJod");
-
-
-
-  let earningsValue = `0 ${currency}`;
+  let earningsValue = <JodMoneyDisplay amount={0} compact />;
 
   let earningsSub = t("freelancerDashboard.stats.fromClaims");
 
@@ -136,7 +132,7 @@ function buildWelcomeMetrics({ reputation, earningsSummary, earningsLoadState, a
 
     if (Number.isFinite(paid) && paid > 0) {
 
-      earningsValue = `${formatMoneyJod(paid)} ${currency}`;
+      earningsValue = <JodMoneyDisplay amount={paid} compact />;
 
       earningsSub = t("freelancerDashboard.stats.paidTotal");
 
@@ -285,8 +281,7 @@ export default function FreelancerDashboardHome({ user }) {
   const [error, setError] = useState("");
 
   const [summary, setSummary] = useState(null);
-
-
+  const [onboarding, setOnboarding] = useState(null);
 
   const load = useCallback(async () => {
 
@@ -301,6 +296,13 @@ export default function FreelancerDashboardHome({ user }) {
       setSummary(data || null);
 
       setFreelancerCoursesFocusFromSummary(data || null);
+
+      try {
+        const onboardRes = await getOnboardingMyCurrentRequest();
+        setOnboarding(onboardRes?.data || null);
+      } catch {
+        setOnboarding(null);
+      }
 
     } catch (e) {
 
@@ -581,7 +583,9 @@ export default function FreelancerDashboardHome({ user }) {
 
       <DashboardWelcomeHero welcomeName={welcomeName} metrics={metrics} tip={tip} showCoursesStartCard />
 
-      {showAccountReadinessNotice ? (
+      {onboarding?.showPanel ? <FreelancerOnboardingPanel payload={onboarding} /> : null}
+
+      {showAccountReadinessNotice && !onboarding?.showPanel ? (
 
         <FreelancerAccountReadinessNotice
 

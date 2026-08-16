@@ -270,6 +270,132 @@ export default function SuperAdminMarketplaceEconomyPage() {
               </div>
             </section>
 
+            <section className="oh-mes-section" aria-labelledby="mes-article-min-bids-title">
+              <h2 id="mes-article-min-bids-title" className="oh-mes-section__title">
+                {isEn
+                  ? "2a. Mini Bid Article — minimum required applicants"
+                  : "٢أ: مقال Mini Bid — الحد الأدنى للمتقدمين"}
+              </h2>
+              <p className="oh-mes-section__lede">
+                {isEn
+                  ? "Creators cannot set a required applicant count below this minimum. Auto-assign stays off."
+                  : "لا يمكن إنشاء مقال بعدد أقل من هذا الحد. الإسناد التلقائي متوقف."}
+              </p>
+              <div className="oh-mes-grid">
+                <Field
+                  id="mes-art-min-bids"
+                  label={isEn ? "Minimum required bids" : "الحد الأدنى للمناقصات"}
+                >
+                  <input
+                    id="mes-art-min-bids"
+                    className="oh-mes-input"
+                    value={form.articleMinRequiredBids || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("articleMinRequiredBids", e.target.value)}
+                  />
+                </Field>
+                <Field
+                  id="mes-art-def-bids"
+                  label={isEn ? "Default required bids" : "العدد الافتراضي"}
+                >
+                  <input
+                    id="mes-art-def-bids"
+                    className="oh-mes-input"
+                    value={form.articleDefaultRequiredBidCount || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("articleDefaultRequiredBidCount", e.target.value)}
+                  />
+                </Field>
+                <Field
+                  id="mes-art-allowed"
+                  label={isEn ? "Allowed counts (comma-separated)" : "القيم المسموحة (مفصولة بفاصلة)"}
+                >
+                  <input
+                    id="mes-art-allowed"
+                    className="oh-mes-input"
+                    value={form.articleAllowedRequiredBidCounts || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("articleAllowedRequiredBidCounts", e.target.value)}
+                  />
+                </Field>
+                <div className="oh-mes-field oh-mes-field--full">
+                  <Toggle
+                    id="mes-art-autoclose"
+                    label={
+                      isEn
+                        ? "Auto-close applications when threshold is reached"
+                        : "إغلاق التقديم تلقائيًا عند اكتمال العدد"
+                    }
+                    checked={form.articleAutoCloseWhenThresholdReached !== false}
+                    disabled={saving}
+                    onChange={(v) => setField("articleAutoCloseWhenThresholdReached", v)}
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="oh-mes-section" aria-labelledby="mes-pantry-bids-title">
+              <h2 id="mes-pantry-bids-title" className="oh-mes-section__title">
+                {isEn ? "2c. Pantry House min required bids" : "٢ج: الحد الأدنى لمناقصات بيت المونة"}
+              </h2>
+              <p className="oh-mes-section__lede">
+                {isEn
+                  ? "Minimum applicants for Pantry House مناقصات. Auto-assign stays off. Legacy requests with no required count keep the current manual accept flow."
+                  : "الحد الأدنى للمتقدمين في مناقصات بيت المونة. الإسناد التلقائي متوقف. الطلبات بدون حد أدنى تبقى على القبول اليدوي الحالي."}
+              </p>
+              <div className="oh-mes-grid">
+                <Field
+                  id="mes-pantry-min-bids"
+                  label={isEn ? "Minimum required bids" : "الحد الأدنى للمناقصات"}
+                >
+                  <input
+                    id="mes-pantry-min-bids"
+                    className="oh-mes-input"
+                    value={form.pantryMinRequiredBids || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("pantryMinRequiredBids", e.target.value)}
+                  />
+                </Field>
+                <Field
+                  id="mes-pantry-def-bids"
+                  label={isEn ? "Default required bids" : "العدد الافتراضي"}
+                >
+                  <input
+                    id="mes-pantry-def-bids"
+                    className="oh-mes-input"
+                    value={form.pantryDefaultRequiredBidCount || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("pantryDefaultRequiredBidCount", e.target.value)}
+                  />
+                </Field>
+                <Field
+                  id="mes-pantry-allowed"
+                  label={isEn ? "Allowed counts (comma-separated)" : "القيم المسموحة (مفصولة بفاصلة)"}
+                >
+                  <input
+                    id="mes-pantry-allowed"
+                    className="oh-mes-input"
+                    value={form.pantryAllowedRequiredBidCounts || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("pantryAllowedRequiredBidCounts", e.target.value)}
+                  />
+                </Field>
+                <div className="oh-mes-field oh-mes-field--full">
+                  <Toggle
+                    id="mes-pantry-autoclose"
+                    label={
+                      isEn
+                        ? "Auto-close applications when threshold is reached"
+                        : "إغلاق التقديم تلقائيًا عند اكتمال العدد"
+                    }
+                    checked={form.pantryAutoCloseWhenThresholdReached !== false}
+                    disabled={saving}
+                    onChange={(v) => setField("pantryAutoCloseWhenThresholdReached", v)}
+                  />
+                </div>
+              </div>
+            </section>
+
             <section className="oh-mes-section" aria-labelledby="mes-e3-orders-title">
               <h2 id="mes-e3-orders-title" className="oh-mes-section__title">
                 {isEn

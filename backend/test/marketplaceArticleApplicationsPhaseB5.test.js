@@ -86,6 +86,10 @@ describe("Phase B5 product constants", () => {
       "article_application:article:7:freelancer:3",
     );
     assert.strictEqual(
+      buildArticleApplicationIdempotencyKey(7, 3, 11),
+      "article_application:article:7:freelancer:3:round:11",
+    );
+    assert.strictEqual(
       buildArticleApplicationBidConsumeIdempotencyKey(7, 3),
       "article_application_bid_consume:article:7:freelancer:3",
     );

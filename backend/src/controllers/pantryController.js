@@ -52,9 +52,17 @@ const getAdminRequest = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: "طلب بيت المونة غير موجود.", code: "NOT_FOUND" });
   }
   const integration = await pantryService.getPantryMembershipBidIntegrationState();
+  let fairRanking = null;
+  try {
+    const fairAdapter = require("../services/pantryFairDistributionAdapterService");
+    fairRanking = await fairAdapter.getPantryFairRanking(req.params.id);
+  } catch (err) {
+    if (err?.statusCode === 404) throw err;
+    fairRanking = null;
+  }
   return res.json({
     success: true,
-    data: { ...data, ...pantryIntegrationApiFields(integration) },
+    data: { ...data, fairRanking, ...pantryIntegrationApiFields(integration) },
   });
 });
 
@@ -68,14 +76,37 @@ const publishRequest = asyncHandler(async (req, res) => {
   return res.json({ success: true, data: { request }, message: "تم نشر الطلب للعروض." });
 });
 
+const relistBidCollection = asyncHandler(async (req, res) => {
+  const data = await pantryService.relistBidCollection(req.params.id);
+  return res.json({
+    success: true,
+    data,
+    message: "تم فتح جولة مناقصات جديدة لطلب بيت المونة.",
+  });
+});
+
 const listBids = asyncHandler(async (req, res) => {
   const bids = await pantryService.listBidsForRequest(req.params.id);
-  return res.json({ success: true, data: { bids } });
+  const fairAdapter = require("../services/pantryFairDistributionAdapterService");
+  const fairRanking = await fairAdapter.getPantryFairRanking(req.params.id);
+  return res.json({ success: true, data: { bids, fairRanking } });
+});
+
+const getFairRanking = asyncHandler(async (req, res) => {
+  const fairAdapter = require("../services/pantryFairDistributionAdapterService");
+  const fairRanking = await fairAdapter.getPantryFairRanking(req.params.id);
+  return res.status(200).json({ success: true, data: { fairRanking } });
 });
 
 const acceptBid = asyncHandler(async (req, res) => {
-  const request = await pantryService.acceptBid(req.params.id, req.params.bidId, requireActorId(req));
-  return res.json({ success: true, data: { request }, message: "تم قبول العرض." });
+  const request = await pantryService.acceptBid(req.params.id, req.params.bidId, requireActorId(req), {
+    overrideReason: req.body?.overrideReason ?? req.body?.override_reason,
+  });
+  return res.json({
+    success: true,
+    data: { request, overrideRecorded: Boolean(request.overrideRecorded) },
+    message: "تم قبول العرض.",
+  });
 });
 
 const rejectBid = asyncHandler(async (req, res) => {
@@ -155,7 +186,9 @@ module.exports = {
   getAdminRequest,
   patchRequest,
   publishRequest,
+  relistBidCollection,
   listBids,
+  getFairRanking,
   acceptBid,
   rejectBid,
   listDeliveries,

@@ -17,7 +17,17 @@ adminPantryRouter.post("/pantry/requests", ...pantryAdminGuard, pantryController
 adminPantryRouter.get("/pantry/requests/:id", ...pantryAdminGuard, pantryController.getAdminRequest);
 adminPantryRouter.patch("/pantry/requests/:id", ...pantryAdminGuard, pantryController.patchRequest);
 adminPantryRouter.post("/pantry/requests/:id/publish", ...pantryAdminGuard, pantryController.publishRequest);
+adminPantryRouter.post(
+  "/pantry/requests/:id/relist-bid-collection",
+  ...pantryAdminGuard,
+  pantryController.relistBidCollection,
+);
 adminPantryRouter.get("/pantry/requests/:id/bids", ...pantryAdminGuard, pantryController.listBids);
+adminPantryRouter.get(
+  "/pantry/requests/:id/fair-ranking",
+  ...pantryAdminGuard,
+  pantryController.getFairRanking,
+);
 adminPantryRouter.post(
   "/pantry/requests/:id/bids/:bidId/accept",
   ...pantryAdminGuard,

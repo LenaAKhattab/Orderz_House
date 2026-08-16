@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthFormCard from "../components/auth/AuthFormCard";
 import AuthLayout from "../components/auth/AuthLayout";
@@ -24,6 +24,7 @@ const ForgotPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const mapError = (err) => getSafeApiErrorMessage(err, t("auth.forgot.error"));
 
@@ -55,6 +56,7 @@ const ForgotPassword = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     setError("");
     const em = email.trim().toLowerCase();
 
@@ -64,6 +66,7 @@ const ForgotPassword = () => {
         return;
       }
       setSubmitting(true);
+      submittingRef.current = true;
       try {
         await forgotPasswordRequest(em);
         setStep(2);
@@ -71,6 +74,7 @@ const ForgotPassword = () => {
       } catch (err) {
         setError(mapError(err));
       } finally {
+        submittingRef.current = false;
         setSubmitting(false);
       }
       return;
@@ -83,6 +87,7 @@ const ForgotPassword = () => {
         return;
       }
       setSubmitting(true);
+      submittingRef.current = true;
       try {
         const data = await verifyForgotPasswordOtpRequest(em, code);
         const token = data?.data?.resetToken;
@@ -97,6 +102,7 @@ const ForgotPassword = () => {
       } catch (err) {
         setError(mapError(err));
       } finally {
+        submittingRef.current = false;
         setSubmitting(false);
       }
       return;
@@ -108,12 +114,14 @@ const ForgotPassword = () => {
       return;
     }
     setSubmitting(true);
+    submittingRef.current = true;
     try {
       await resetPasswordRequest(em, resetToken, newPassword);
       navigate("/login", { replace: true, state: { authToast: AUTH_TOAST_PASSWORD_RESET } });
     } catch (err) {
       setError(mapError(err));
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };

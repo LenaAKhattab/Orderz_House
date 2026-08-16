@@ -135,8 +135,14 @@ function mapRequest(row, extras = {}) {
             return extras.remainingApplicantSlots != null ? extras.remainingApplicantSlots : null;
           })()
         : null,
+    requiredBidCount: row.required_bid_count != null ? Number(row.required_bid_count) : null,
+    currentBidCollectionRoundId:
+      row.current_bid_collection_round_id != null ? String(row.current_bid_collection_round_id) : null,
+    bidCollectionOutcome: row.bid_collection_outcome || null,
+    relistCount: row.relist_count != null ? Number(row.relist_count) : 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    bidCollection: extras.bidCollection || null,
   };
 }
 
@@ -161,6 +167,7 @@ function mapBid(row) {
     durationDays: row.duration_days != null ? Number(row.duration_days) : null,
     message: row.message || null,
     status: row.status,
+    collectionRoundId: row.collection_round_id != null ? String(row.collection_round_id) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -196,6 +203,17 @@ async function notifySafe(payload) {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.warn("[pantry] notification skipped:", err?.message || err);
+  }
+}
+
+async function attachBidCollection(request) {
+  if (!request?.id) return request;
+  try {
+    const collectionService = require("./opportunityBidCollectionService");
+    const bidCollection = await collectionService.getPantryBidCollectionProgress(request.id);
+    return { ...request, bidCollection };
+  } catch {
+    return request;
   }
 }
 
@@ -238,7 +256,8 @@ async function listAdminRequests({ status } = {}) {
     params,
   );
   const extras = await integrationMapExtras();
-  return rows.map((row) => mapRequest(row, extras));
+  const mapped = rows.map((row) => mapRequest(row, extras));
+  return Promise.all(mapped.map((req) => attachBidCollection(req)));
 }
 
 async function getRequestById(id, { includeBids = false, includeDeliveries = false } = {}) {
@@ -256,7 +275,7 @@ async function getRequestById(id, { includeBids = false, includeDeliveries = fal
   );
   if (!rows.length) return null;
   const extras = await integrationMapExtras();
-  const request = mapRequest(rows[0], extras);
+  const request = await attachBidCollection(mapRequest(rows[0], extras));
   const out = { request };
   if (includeBids) {
     const bids = await listBidsForRequest(id);
@@ -289,6 +308,12 @@ async function createRequest(adminUserId, payload) {
   }
   const v = validated.value;
   const status = v.publish === true ? "open_for_bids" : "draft";
+  const collectionService = require("./opportunityBidCollectionService");
+  if (v.requiredBidCount != null && (await collectionService.pantryBidCollectionSchemaReady())) {
+    const settings = await require("./marketplaceEconomySettingsService").getMarketplaceEconomySettings();
+    collectionService.wrapAssertPantryRequiredBidCount(v.requiredBidCount, settings);
+    collectionService.assertPantryMinRequiredBidsAcknowledged(payload || {}, { thresholdMode: true });
+  }
 
   const { rows } = await pantryQuery(
     `INSERT INTO pantry_requests (
@@ -342,8 +367,19 @@ async function createRequest(adminUserId, payload) {
     );
     if (extra.rows[0]) row = extra.rows[0];
   }
+  if (v.requiredBidCount != null && (await collectionService.pantryBidCollectionSchemaReady())) {
+    await collectionService.createInitialPantryRound(
+      row.id,
+      v.requiredBidCount,
+      v.applicationDeadlineAt || v.deadline || null,
+    );
+    const refreshed = await pantryQuery(`SELECT * FROM pantry_requests WHERE id = $1`, [row.id]);
+    if (refreshed.rows[0]) row = refreshed.rows[0];
+  }
   // TODO: broadcast notify freelancers on publish (avoid mass spam in MVP).
-  return mapRequest(row, await integrationMapExtras({ bidsCount: 0, validApplicantCount: 0 }));
+  return attachBidCollection(
+    mapRequest(row, await integrationMapExtras({ bidsCount: 0, validApplicantCount: 0 })),
+  );
 }
 
 async function updateRequest(id, payload) {
@@ -506,7 +542,7 @@ async function listBidsForRequest(requestId) {
   return rows.map(mapBid);
 }
 
-async function acceptBid(requestId, bidId, actorUserId) {
+async function acceptBid(requestId, bidId, actorUserId, { overrideReason } = {}) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -526,6 +562,25 @@ async function acceptBid(requestId, bidId, actorUserId) {
     if (!canAdminAcceptBid(request.status, bid.status)) {
       throw httpError(409, "لا يمكن قبول هذا العرض الآن.", "INVALID_STATUS");
     }
+    const collectionService = require("./opportunityBidCollectionService");
+    await collectionService.assertPantrySelectionAllowed(client, request);
+    collectionService.assertPantryBidInCurrentRound(request, bid);
+    const fairAdapter = require("./pantryFairDistributionAdapterService");
+    const ranking = await fairAdapter.getPantryFairRanking(requestId, { client });
+    const overrideService = require("./fairDistributionSelectionOverrideService");
+    const { BID_COLLECTION_ERROR_CODES } = require("../constants/opportunityBidCollection");
+    const override = await overrideService.enforceFairSelectionOverride({
+      client,
+      ranking,
+      selectedCandidateId: bidId,
+      idKey: "bidId",
+      overrideReason,
+      opportunityType: overrideService.OPPORTUNITY_TYPES.PANTRY_REQUEST,
+      opportunityId: requestId,
+      collectionRoundId: request.current_bid_collection_round_id,
+      actorUserId,
+      publicCode: BID_COLLECTION_ERROR_CODES.PANTRY_FAIR_SELECTION_OVERRIDE_REASON_REQUIRED,
+    });
 
     await client.query(
       `UPDATE pantry_bids SET status = 'rejected', updated_at = NOW()
@@ -549,6 +604,7 @@ async function acceptBid(requestId, bidId, actorUserId) {
     if (await pantryMembershipBid.isPantryMembershipBidIntegrationActive(client)) {
       await pantryMembershipBid.stampAssignedIntakeClosed(client, requestId);
     }
+    await collectionService.markRoundAssigned(client, request.current_bid_collection_round_id);
     await client.query("COMMIT");
 
     await notifySafe({
@@ -564,7 +620,10 @@ async function acceptBid(requestId, bidId, actorUserId) {
       priority: "normal",
     });
 
-    return mapRequest(rows[0], await integrationMapExtras());
+    return {
+      ...mapRequest(rows[0], await integrationMapExtras()),
+      overrideRecorded: Boolean(override.overrideRecorded),
+    };
   } catch (err) {
     try {
       await client.query("ROLLBACK");
@@ -878,29 +937,71 @@ async function submitBidLegacy(requestId, freelancerId, payload, amount) {
   }
 
   try {
-    const { rows } = await pantryQuery(
-      `INSERT INTO pantry_bids (
-         pantry_request_id, freelancer_id, amount, duration_days, message, status
-       ) VALUES ($1,$2,$3,$4,$5,'pending')
-       RETURNING *`,
-      [requestId, freelancerId, amount, payload.durationDays || null, payload.message || null],
-    );
-    const bid = mapBid(rows[0]);
-    if (data.request.createdByAdminId) {
-      await notifySafe({
-        recipientUserId: data.request.createdByAdminId,
-        recipientRole: "admin",
-        actorUserId: freelancerId,
-        type: "pantry_bid_submitted",
-        title: "عرض جديد في بيت المونة",
-        message: `تم تقديم عرض على: ${data.request.title}`,
-        entityType: "pantry_request",
-        entityId: String(requestId),
-        link: "/dashboard/super-admin/pantry",
-        priority: "normal",
+    const collectionService = require("./opportunityBidCollectionService");
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const reqRes = await client.query(`SELECT * FROM pantry_requests WHERE id = $1 FOR UPDATE`, [
+        requestId,
+      ]);
+      if (!reqRes.rows.length) throw httpError(404, "طلب بيت المونة غير موجود.", "NOT_FOUND");
+      const requestRow = reqRes.rows[0];
+      if (!canFreelancerBid(requestRow.status)) {
+        throw httpError(409, "الطلب غير مفتوح للعروض.", "INVALID_STATUS");
+      }
+      const round = await collectionService.assertPantryIntakeOpen(client, requestRow);
+      const { rows } = await client.query(
+        `INSERT INTO pantry_bids (
+           pantry_request_id, freelancer_id, amount, duration_days, message, status, collection_round_id
+         ) VALUES ($1,$2,$3,$4,$5,'pending',$6)
+         RETURNING *`,
+        [requestId, freelancerId, amount, payload.durationDays || null, payload.message || null, round?.id || null],
+      );
+      await collectionService.onPantryBidSubmitted(client, {
+        pantryRequestId: requestId,
+        bidId: rows[0].id,
+        roundId: round?.id || rows[0].collection_round_id || null,
       });
+      await client.query("COMMIT");
+      const bid = mapBid(rows[0]);
+      if (data.request.createdByAdminId) {
+        await notifySafe({
+          recipientUserId: data.request.createdByAdminId,
+          recipientRole: "admin",
+          actorUserId: freelancerId,
+          type: "pantry_bid_submitted",
+          title: "عرض جديد في بيت المونة",
+          message: `تم تقديم عرض على: ${data.request.title}`,
+          entityType: "pantry_request",
+          entityId: String(requestId),
+          link: "/dashboard/super-admin/pantry",
+          priority: "normal",
+        });
+      }
+      return bid;
+    } catch (err) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+      if (err && err.code === "23505") {
+        throw httpError(409, "لقد قدّمت عرضاً مسبقاً على هذا الطلب.", "DUPLICATE_BID");
+      }
+      if (err?.code === "42703") {
+        const { rows } = await pantryQuery(
+          `INSERT INTO pantry_bids (
+             pantry_request_id, freelancer_id, amount, duration_days, message, status
+           ) VALUES ($1,$2,$3,$4,$5,'pending')
+           RETURNING *`,
+          [requestId, freelancerId, amount, payload.durationDays || null, payload.message || null],
+        );
+        return mapBid(rows[0]);
+      }
+      throw err;
+    } finally {
+      client.release();
     }
-    return bid;
   } catch (err) {
     if (err && err.code === "23505") {
       throw httpError(409, "لقد قدّمت عرضاً مسبقاً على هذا الطلب.", "DUPLICATE_BID");
@@ -926,8 +1027,14 @@ async function submitBidIntegrated(requestId, freelancerId, payload, amount) {
     }
 
     const existing = await client.query(
-      `SELECT * FROM pantry_bids WHERE pantry_request_id = $1 AND freelancer_id = $2 LIMIT 1`,
-      [requestId, freelancerId],
+      requestRow.current_bid_collection_round_id
+        ? `SELECT * FROM pantry_bids
+            WHERE pantry_request_id = $1 AND freelancer_id = $2 AND collection_round_id = $3
+            LIMIT 1`
+        : `SELECT * FROM pantry_bids WHERE pantry_request_id = $1 AND freelancer_id = $2 LIMIT 1`,
+      requestRow.current_bid_collection_round_id
+        ? [requestId, freelancerId, requestRow.current_bid_collection_round_id]
+        : [requestId, freelancerId],
     );
     if (existing.rows[0]) {
       if (existing.rows[0].status === "pending") {
@@ -947,25 +1054,46 @@ async function submitBidIntegrated(requestId, freelancerId, payload, amount) {
     requestRow = await pantryMembershipBid.assertPantryAcceptsApplications(client, requestRow);
     await pantryMembershipBid.assertMembershipAndPantryEligibility(client, freelancerId, requestRow);
     await pantryMembershipBid.assertSpendableBidsIfEngineOn(client, freelancerId, requestRow);
+    const collectionService = require("./opportunityBidCollectionService");
+    const round = await collectionService.assertPantryIntakeOpen(client, requestRow);
 
-    const { rows } = await client.query(
-      `INSERT INTO pantry_bids (
-         pantry_request_id, freelancer_id, amount, duration_days, message, status
-       ) VALUES ($1,$2,$3,$4,$5,'pending')
-       RETURNING *`,
-      [requestId, freelancerId, amount, payload.durationDays || null, payload.message || null],
-    );
+    let inserted;
+    try {
+      const { rows } = await client.query(
+        `INSERT INTO pantry_bids (
+           pantry_request_id, freelancer_id, amount, duration_days, message, status, collection_round_id
+         ) VALUES ($1,$2,$3,$4,$5,'pending',$6)
+         RETURNING *`,
+        [requestId, freelancerId, amount, payload.durationDays || null, payload.message || null, round?.id || null],
+      );
+      inserted = rows;
+    } catch (colErr) {
+      if (colErr?.code !== "42703") throw colErr;
+      const { rows } = await client.query(
+        `INSERT INTO pantry_bids (
+           pantry_request_id, freelancer_id, amount, duration_days, message, status
+         ) VALUES ($1,$2,$3,$4,$5,'pending')
+         RETURNING *`,
+        [requestId, freelancerId, amount, payload.durationDays || null, payload.message || null],
+      );
+      inserted = rows;
+    }
 
     const fin = await pantryMembershipBid.finalizePantryApplicationAfterInsert({
       client,
       requestRow,
       freelancerUserId: freelancerId,
-      pantryBidId: rows[0].id,
+      pantryBidId: inserted[0].id,
     });
     closeOut = fin.closeOut;
+    await collectionService.onPantryBidSubmitted(client, {
+      pantryRequestId: requestId,
+      bidId: inserted[0].id,
+      roundId: round?.id || inserted[0].collection_round_id || null,
+    });
 
     await client.query("COMMIT");
-    const bid = mapBid(rows[0]);
+    const bid = mapBid(inserted[0]);
 
     await notifySafe({
       recipientUserId: freelancerId,
@@ -1130,6 +1258,12 @@ async function submitDelivery(requestId, freelancerId, payload) {
   }
 }
 
+async function relistBidCollection(id) {
+  const collectionService = require("./opportunityBidCollectionService");
+  await collectionService.relistPantryBidCollection(id, {});
+  return getRequestById(id, { includeBids: true, includeDeliveries: false });
+}
+
 module.exports = {
   getStats,
   listAdminRequests,
@@ -1153,5 +1287,6 @@ module.exports = {
   mapDelivery,
   getPantryMembershipBidIntegrationState: pantryMembershipBid.getPantryMembershipBidIntegrationState,
   isPantryMembershipBidIntegrationActive: pantryMembershipBid.isPantryMembershipBidIntegrationActive,
+  relistBidCollection,
 };
 

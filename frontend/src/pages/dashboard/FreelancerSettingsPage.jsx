@@ -11,6 +11,7 @@ import {
 import { mergeNotificationPrefs } from "../../utils/accountDisplay";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import BrowserNotificationSettings from "../../components/notifications/BrowserNotificationSettings";
+import PreferredDisplayCurrencySettings from "../../components/money/PreferredDisplayCurrencySettings";
 import { breadcrumbHomeCrumb } from "../../components/dashboard/dashboardBreadcrumbs";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "./shared/account-pages.css";
@@ -468,6 +469,11 @@ export default function FreelancerSettingsPage() {
             {pwSaving ? t(`${s}.security.updating`) : t(`${s}.security.update`)}
           </button>
         </div>
+      </div>
+
+      <div className="oh-account-card" style={{ marginBottom: 16 }}>
+        <h2 className="oh-account-card__title">العملة التقريبية المفضلة</h2>
+        <PreferredDisplayCurrencySettings />
       </div>
 
       <BrowserNotificationSettings />

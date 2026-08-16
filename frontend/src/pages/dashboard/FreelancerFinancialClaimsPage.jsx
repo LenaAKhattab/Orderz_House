@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar,
   CircleCheck,
@@ -23,6 +23,7 @@ import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
 import "../../styles/dashboardHub.css";
 import "./freelancerFinancialClaims.css";
+import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 
 function formatDate(value, locale, emDash) {
   if (!value) return emDash;
@@ -177,6 +178,7 @@ export default function FreelancerFinancialClaimsPage() {
   const [busy, setBusy] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [mode, setMode] = useState("manual");
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [searchDone, setSearchDone] = useState("");
@@ -283,6 +285,8 @@ export default function FreelancerFinancialClaimsPage() {
   }, [mode, selectedProjectId, doneProjects]);
 
   const createClaim = async () => {
+    if (submitting || submittingRef.current || !canSubmitClaim) return;
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       const payload =
@@ -327,6 +331,7 @@ export default function FreelancerFinancialClaimsPage() {
         message: e?.response?.data?.message || e?.message,
       });
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };
@@ -436,19 +441,27 @@ export default function FreelancerFinancialClaimsPage() {
                           </div>
                           <div className="ffc-dl-row ffc-dl-row--money">
                             <dt>{t(`${fc}.fields.totalPrice`)}</dt>
-                            <dd dir="ltr">{formatMoney(claim.totalPriceSnapshot, emDash)}</dd>
+                            <dd>
+                              <JodMoneyDisplay amount={claim.totalPriceSnapshot} compact />
+                            </dd>
                           </div>
                           <div className="ffc-dl-row ffc-dl-row--money">
                             <dt>{t(`${fc}.fields.freelancerAmount`)}</dt>
-                            <dd dir="ltr">{formatMoney(claim.userAmountSnapshot, emDash)}</dd>
+                            <dd>
+                              <JodMoneyDisplay amount={claim.userAmountSnapshot} compact />
+                            </dd>
                           </div>
                           <div className="ffc-dl-row ffc-dl-row--money">
                             <dt>{t(`${fc}.fields.paid`)}</dt>
-                            <dd dir="ltr">{formatMoney(claim.paidAmount, emDash)}</dd>
+                            <dd>
+                              <JodMoneyDisplay amount={claim.paidAmount} compact />
+                            </dd>
                           </div>
                           <div className="ffc-dl-row ffc-dl-row--money">
                             <dt>{t(`${fc}.fields.remaining`)}</dt>
-                            <dd dir="ltr">{formatMoney(claim.remainingAmount, emDash)}</dd>
+                            <dd>
+                              <JodMoneyDisplay amount={claim.remainingAmount} compact />
+                            </dd>
                           </div>
                         </dl>
                         {claim.adminNote ? (

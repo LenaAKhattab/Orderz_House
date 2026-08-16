@@ -7,6 +7,7 @@ import { getLocalizedField } from "../../../lib/i18n/getLocalizedField";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { useDisplayCurrency } from "../../../hooks/useDisplayCurrency";
 import MembershipPlanCardBody, { MembershipPlanTitle } from "../MembershipPlanCardBody";
+import { ApproximateCurrencyLine } from "../../money/JodMoneyDisplay";
 import { useState } from "react";
 
 function getSubscriptionPlanRef(plan) {
@@ -229,6 +230,15 @@ export default function PlansMobilePlanCard({
             )}
             {checkoutHint && isEgyptDisplay ? (
               <p className="pm-plan-card__price-note pm-plan-card__checkout-hint">{checkoutHint}</p>
+            ) : null}
+            {!isEgyptDisplay ? (
+              <ApproximateCurrencyLine
+                amount={
+                  salePrice?.active && plan?.effectivePriceJod != null
+                    ? plan.effectivePriceJod
+                    : plan?.priceJod
+                }
+              />
             ) : null}
             {installment ? <p className="pm-plan-card__price-note">{installment}</p> : null}
             {!installment && paymentNotes ? <p className="pm-plan-card__price-note">{paymentNotes}</p> : null}
