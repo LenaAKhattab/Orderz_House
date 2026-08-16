@@ -90,12 +90,12 @@ NotificationActionTarget? _resolveFromDashboardLink(
     if (requestId != null) {
       return NotificationActionTarget(
         route: AppRoutes.freelancerPantryDetail(requestId),
-        buttonLabel: 'فتح طلب بيت المونة',
+        buttonLabel: 'فتح الطلب',
       );
     }
     return const NotificationActionTarget(
-      route: AppRoutes.freelancerPantry,
-      buttonLabel: 'فتح بيت المونة',
+      route: AppRoutes.marketplace,
+      buttonLabel: 'فتح الطلبات المتاحة',
     );
   }
 
@@ -180,13 +180,13 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
       if (id != null) {
         return NotificationActionTarget(
           route: AppRoutes.freelancerPantryDetail(id),
-          buttonLabel: 'فتح طلب بيت المونة',
+          buttonLabel: 'فتح الطلب',
         );
       }
     }
     return const NotificationActionTarget(
-      route: AppRoutes.freelancerPantry,
-      buttonLabel: 'فتح بيت المونة',
+      route: AppRoutes.marketplace,
+      buttonLabel: 'فتح الطلبات المتاحة',
     );
   }
 

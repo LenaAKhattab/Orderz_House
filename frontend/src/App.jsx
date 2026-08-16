@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useRef } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import { CurrencyDisplayProvider } from "./context/CurrencyDisplayContext.jsx";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { useToast } from "./components/ui/toastContext";
 import RouteSuspenseFallback from "./components/ui/RouteSuspenseFallback";
@@ -9,6 +10,7 @@ import DocumentTitle from "./components/routing/DocumentTitle";
 import LocaleTransitionOverlay from "./components/layout/LocaleTransitionOverlay";
 import PublicLayout from "./components/layout/PublicLayout";
 import Home from "./pages/Home";
+import Unauthorized from "./pages/Unauthorized";
 
 const MainLayout = lazy(() => import("./layouts/MainLayout"));
 import { ClientCreateOrderModalProvider } from "./context/ClientCreateOrderModalContext.jsx";
@@ -38,11 +40,11 @@ import {
   PublicFindWorkPage,
   PublicCommunityPage,
   PublicBlogPage,
-  Unauthorized,
   NotFoundPage,
   DashboardPage,
   SuperAdminPlansPage,
   SuperAdminMarketplacePlansPage,
+  SuperAdminTrainingPackagesPage,
   SuperAdminMarketplaceEconomyPage,
   SuperAdminMarketplaceArticlesPage,
   SuperAdminBidCreditsPage,
@@ -57,6 +59,7 @@ import {
   SuperAdminFeedbackPage,
   SuperAdminFeedbackDetailPage,
   SuperAdminFeedbackTopicsPage,
+  SuperAdminOnboardingPage,
   ProblemsSuggestionsPage,
   SuperAdminInstitutionsPage,
   SuperAdminInstitutionDetailPage,
@@ -83,7 +86,10 @@ import {
   AdminCoursesPage,
   AdminAdsPage,
   AdminPantryPage,
+  AdminSettingsPage,
   FreelancerPantryPage,
+  FreelancerMarketplaceArticlesPage,
+  FreelancerMarketplaceArticleDetailPage,
   TrainingOrdersAdminShell,
   TrainingOrdersOverviewPage,
   TrainingOrdersSettingsPage,
@@ -103,6 +109,7 @@ import {
   FreelancerCourseDetailsPage,
   FreelancerSettingsPage,
   FreelancerActivateAccountPage,
+  FreelancerGettingStartedPage,
   ConvertAccountPage,
   NotificationsPage,
   FinancialUserMyBonusesPage,
@@ -193,6 +200,7 @@ function App() {
       <LocaleTransitionOverlay />
       <ToastProvider>
         <AuthProvider>
+          <CurrencyDisplayProvider>
           <AnalyticsBridge />
           <ToastDashboardExitBridge />
           <ToastGuestPoolBridge />
@@ -283,6 +291,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
                       <SuperAdminMarketplacePlansPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/training-packages"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminTrainingPackagesPage />
                     </RequireRole>
                   }
                 />
@@ -416,6 +432,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/super-admin/onboarding"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminOnboardingPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/super-admin/feedback"
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
@@ -538,9 +562,7 @@ function App() {
                 <Route
                   path="/dashboard/super-admin/edit-website/footer-app-downloads"
                   element={
-                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
-                      <SuperAdminEditWebsiteFooterAppsPage />
-                    </RequireStaffPage>
+                    <Navigate to="/dashboard/super-admin/edit-website/footer/app-downloads" replace />
                   }
                 />
                 <Route
@@ -614,6 +636,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.ADMIN]}>
                       <NotificationsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/settings"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <AdminSettingsPage />
                     </RequireRole>
                   }
                 />
@@ -715,6 +745,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
                       <FreelancerSettingsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/getting-started"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerGettingStartedPage />
                     </RequireRole>
                   }
                 />
@@ -826,7 +864,7 @@ function App() {
                   path="/dashboard/freelancer/articles"
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
-                      <Navigate to="/dashboard/freelancer" replace />
+                      <FreelancerMarketplaceArticlesPage />
                     </RequireRole>
                   }
                 />
@@ -834,7 +872,7 @@ function App() {
                   path="/dashboard/freelancer/articles/:id"
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
-                      <Navigate to="/dashboard/freelancer" replace />
+                      <FreelancerMarketplaceArticleDetailPage />
                     </RequireRole>
                   }
                 />
@@ -932,6 +970,7 @@ function App() {
               </Route>
             </Route>
           </Routes>
+          </CurrencyDisplayProvider>
         </AuthProvider>
       </ToastProvider>
     </BrowserRouter>

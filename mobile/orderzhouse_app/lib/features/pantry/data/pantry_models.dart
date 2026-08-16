@@ -95,6 +95,69 @@ class PantryDelivery {
   }
 }
 
+/// Public bid-collection progress (no admin/fair-ranking fields).
+class PantryBidCollectionProgress {
+  const PantryBidCollectionProgress({
+    this.requiredBidCount,
+    this.currentBidCount,
+    this.status,
+    this.outcome,
+    this.thresholdReached = false,
+    this.label,
+  });
+
+  final int? requiredBidCount;
+  final int? currentBidCount;
+  final String? status;
+  final String? outcome;
+  final bool thresholdReached;
+  final String? label;
+
+  bool get hasRequired => (requiredBidCount ?? 0) > 0;
+
+  bool get isMinimumNotMet {
+    final s = (status ?? '').toLowerCase();
+    final o = (outcome ?? '').toLowerCase();
+    return s == 'minimum_not_met' || o == 'minimum_not_met';
+  }
+
+  bool get isClosedAtThreshold {
+    if (thresholdReached) return true;
+    final s = (status ?? '').toLowerCase();
+    final o = (outcome ?? '').toLowerCase();
+    return s.contains('threshold') || o == 'threshold_reached';
+  }
+
+  factory PantryBidCollectionProgress.fromJson(Map<String, dynamic> json) {
+    final nested = json['bidCollection'] ?? json['bid_collection'];
+    if (nested is Map) {
+      final map = Map<String, dynamic>.from(nested);
+      return PantryBidCollectionProgress(
+        requiredBidCount: readInt(map, 'requiredBidCount', 'required_bid_count') ??
+            readInt(map, 'required', 'required'),
+        currentBidCount: readInt(map, 'currentBidCount', 'current_bid_count') ??
+            readInt(map, 'current', 'current') ??
+            readInt(json, 'validApplicantsCount', 'valid_applicants_count') ??
+            readInt(json, 'bidsCount', 'bids_count'),
+        status: _nullableString(map, 'bidCollectionStatus', 'bid_collection_status') ??
+            _nullableString(map, 'status', 'status'),
+        outcome: _nullableString(map, 'bidCollectionOutcome', 'bid_collection_outcome') ??
+            _nullableString(map, 'outcome', 'outcome'),
+        thresholdReached: map['thresholdReached'] == true || map['threshold_reached'] == true,
+        label: _nullableString(map, 'label', 'label'),
+      );
+    }
+    final required = readInt(json, 'requiredBidCount', 'required_bid_count');
+    if (required == null) return const PantryBidCollectionProgress();
+    return PantryBidCollectionProgress(
+      requiredBidCount: required,
+      currentBidCount: readInt(json, 'validApplicantsCount', 'valid_applicants_count') ??
+          readInt(json, 'bidsCount', 'bids_count'),
+      outcome: _nullableString(json, 'bidCollectionOutcome', 'bid_collection_outcome'),
+    );
+  }
+}
+
 class PantryRequest {
   const PantryRequest({
     required this.id,
@@ -117,6 +180,7 @@ class PantryRequest {
     this.acceptedBid,
     this.delivery,
     this.myBid,
+    this.bidCollection,
   });
 
   final String id;
@@ -139,8 +203,10 @@ class PantryRequest {
   final PantryBid? acceptedBid;
   final PantryDelivery? delivery;
   final PantryBid? myBid;
+  final PantryBidCollectionProgress? bidCollection;
 
   factory PantryRequest.fromJson(Map<String, dynamic> json) {
+    final progress = PantryBidCollectionProgress.fromJson(json);
     return PantryRequest(
       id: readString(json, 'id', 'id'),
       title: readString(json, 'title', 'title'),
@@ -162,6 +228,11 @@ class PantryRequest {
       acceptedBid: _bidOrNull(json['acceptedBid'] ?? json['accepted_bid']),
       delivery: _deliveryOrNull(json['delivery'] ?? json['latestDelivery'] ?? json['latest_delivery']),
       myBid: _bidOrNull(json['myBid'] ?? json['my_bid']),
+      bidCollection: progress.hasRequired || progress.isMinimumNotMet || progress.isClosedAtThreshold
+          ? progress
+          : (json['bidCollection'] is Map || json['requiredBidCount'] != null || json['required_bid_count'] != null
+              ? progress
+              : null),
     );
   }
 
@@ -187,6 +258,7 @@ class PantryRequest {
       acceptedBid: acceptedBid ?? this.acceptedBid,
       delivery: delivery ?? this.delivery,
       myBid: myBid ?? this.myBid,
+      bidCollection: bidCollection,
     );
   }
 }

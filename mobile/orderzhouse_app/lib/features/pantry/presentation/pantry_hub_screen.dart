@@ -51,9 +51,9 @@ class _PantryHubScreenState extends ConsumerState<PantryHubScreen> with SingleTi
     if (!auth.isAuthenticated || auth.user?.usesFreelancerExperience != true) {
       return Scaffold(
         backgroundColor: AppColors.homeMobileBg,
-        appBar: AppBar(title: const Text('بيت المونة')),
+        appBar: AppBar(title: const Text('الطلبات المتاحة')),
         body: const OhEmptyBody(
-          message: 'بيت المونة متاح للمستقلين المسجّلين فقط.',
+          message: 'هذه الصفحة مخصصة لحسابات المستقلين.',
           icon: Icons.lock_outline,
         ),
       );
@@ -62,7 +62,7 @@ class _PantryHubScreenState extends ConsumerState<PantryHubScreen> with SingleTi
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
       appBar: AppBar(
-        title: const Text('بيت المونة'),
+        title: const Text('الطلبات المتاحة'),
         bottom: TabBar(
           controller: _tabs,
           tabs: const [
@@ -71,25 +71,11 @@ class _PantryHubScreenState extends ConsumerState<PantryHubScreen> with SingleTi
           ],
         ),
       ),
-      body: Column(
+      body: TabBarView(
+        controller: _tabs,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Text(
-              'طلبات داخلية من الشركة لتنفيذ أعمال جاهزة مسبقًا. هذه الطلبات منفصلة عن طلبات العملاء في السوق.',
-              textAlign: TextAlign.right,
-              style: TextStyle(color: AppColors.textMuted, height: 1.45),
-            ),
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabs,
-              children: [
-                _OpenList(onRefresh: _refresh),
-                _MyWorkList(onRefresh: _refresh),
-              ],
-            ),
-          ),
+          _OpenList(onRefresh: _refresh),
+          _MyWorkList(onRefresh: _refresh),
         ],
       ),
     );
@@ -105,7 +91,7 @@ class _OpenList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(pantryOpenRequestsProvider);
     return async.when(
-      loading: () => const OhLoadingBody(message: 'جارٍ تحميل طلبات بيت المونة...'),
+      loading: () => const OhLoadingBody(message: 'جاري تحميل الطلبات...'),
       error: (error, _) => OhErrorBody(
         message: apiErrorMessage(error, fallback: 'تعذر تحميل الطلبات. حاول مجددًا.'),
         onRetry: onRefresh,
@@ -117,7 +103,7 @@ class _OpenList extends ConsumerWidget {
             child: ListView(
               children: const [
                 SizedBox(height: 80),
-                OhEmptyBody(message: 'لا توجد طلبات مفتوحة حالياً في بيت المونة.', icon: Icons.inventory_2_outlined),
+                OhEmptyBody(message: 'لا توجد طلبات متاحة حالياً.', icon: Icons.storefront_outlined),
               ],
             ),
           );
@@ -179,7 +165,7 @@ class _MyWorkList extends ConsumerWidget {
               children: const [
                 SizedBox(height: 80),
                 OhEmptyBody(
-                  message: 'لا توجد أعمال معيَّنة لك في بيت المونة حالياً.',
+                  message: 'لا توجد طلبات مسندة إليك حالياً.',
                   icon: Icons.work_outline,
                 ),
               ],

@@ -1,7 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
-import { getDashboardPathByRole, ROLE } from "../../constants/authRoutes";
-import { getFirstAccessibleDashboardPath, userHasPermission } from "../../constants/dashboardPermissions";
+import { ROLE } from "../../constants/authRoutes";
+import { getPostAuthHomePath, userHasPermission } from "../../constants/dashboardPermissions";
 import { AuthRouteSkeleton } from "../ui/AuthRouteSkeleton";
 import Unauthorized from "../../pages/Unauthorized";
 
@@ -19,11 +19,7 @@ export function DashboardRedirect() {
     return <Navigate to="/login" replace />;
   }
 
-  const role = user?.primaryRole || user?.role;
-  if (role === ROLE.ADMIN) {
-    return <Navigate to={getFirstAccessibleDashboardPath(user)} replace />;
-  }
-  return <Navigate to={getDashboardPathByRole(role)} replace />;
+  return <Navigate to={getPostAuthHomePath(user)} replace />;
 }
 
 /**
@@ -62,8 +58,7 @@ export function GuestOnly({ children }) {
   }
 
   if (user) {
-    const role = user?.primaryRole || user?.role;
-    return <Navigate to={getDashboardPathByRole(role)} replace />;
+    return <Navigate to={getPostAuthHomePath(user)} replace />;
   }
 
   return children;
@@ -80,8 +75,7 @@ export function HomeForGuestsOnly({ children }) {
   }
 
   if (user) {
-    const role = user?.primaryRole || user?.role;
-    return <Navigate to={getDashboardPathByRole(role)} replace />;
+    return <Navigate to={getPostAuthHomePath(user)} replace />;
   }
 
   return children;
@@ -104,7 +98,7 @@ export function RequireRole({ allowedRoles, children }) {
 
   const role = user?.primaryRole || user?.role;
   if (!allowedRoles.includes(role)) {
-    return <Navigate to={getDashboardPathByRole(role)} replace />;
+    return <Navigate to={getPostAuthHomePath(user)} replace />;
   }
 
   return children;

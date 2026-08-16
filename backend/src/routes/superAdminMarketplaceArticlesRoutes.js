@@ -44,4 +44,12 @@ router.patch(
   marketplaceArticlesController.update,
 );
 
+router.post(
+  "/marketplace-articles/:id/relist-bid-collection",
+  ...guard,
+  articleIdParam,
+  validateRequest,
+  marketplaceArticlesController.relistBidCollection,
+);
+
 module.exports = router;

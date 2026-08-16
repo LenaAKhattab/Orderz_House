@@ -359,7 +359,7 @@ void main() {
         ),
         currentUserRole: 'freelancer',
       );
-      expect(target?.route, AppRoutes.freelancerPantry);
+      expect(target?.route, AppRoutes.marketplace);
     });
 
     test('freelancer pantry request id in path', () {
@@ -394,7 +394,7 @@ void main() {
         ),
         currentUserRole: 'freelancer',
       );
-      expect(target?.route, AppRoutes.freelancerPantry);
+      expect(target?.route, AppRoutes.marketplace);
     });
 
     test('client does not open pantry', () {

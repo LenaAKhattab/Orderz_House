@@ -10,6 +10,7 @@ import {
 import { useAuth } from "../../context/useAuth";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getNotificationDetails } from "../../utils/notificationDisplay";
+import { resolveSafeInternalNavPath } from "../../utils/safeInternalNavPath";
 
 function fmtDate(value) {
   if (!value) return "";
@@ -108,7 +109,7 @@ export default function NotificationsBell({ notificationsPagePath, variant = "na
       }
       setOpen(false);
       setUnreadCount((v) => Math.max(0, v - (n?.isRead ? 0 : 1)));
-      navigate(n?.link || notificationsPagePath);
+      navigate(resolveSafeInternalNavPath(n?.link, notificationsPagePath));
     },
     [navigate, notificationsPagePath],
   );

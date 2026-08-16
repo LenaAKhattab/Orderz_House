@@ -21,6 +21,14 @@ router.get(
 );
 
 router.get(
+  "/marketplace-articles/:id/fair-ranking",
+  ...guard,
+  articleIdParam,
+  validateRequest,
+  controller.getFairRanking,
+);
+
+router.get(
   "/article-applications/:applicationId",
   ...guard,
   applicationIdParam,

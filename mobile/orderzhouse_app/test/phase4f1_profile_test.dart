@@ -32,7 +32,6 @@ void main() {
       expect(ids, contains(ProfileActionId.notifications));
       expect(ids, contains(ProfileActionId.legalHelp));
       expect(ids, isNot(contains(ProfileActionId.financialClaims)));
-      expect(ids, isNot(contains(ProfileActionId.pantry)));
     });
 
     test('create order route points to client create screen', () {
@@ -58,7 +57,6 @@ void main() {
       expect(ids, contains(ProfileActionId.financialClaims));
       expect(ids, contains(ProfileActionId.notifications));
       expect(ids, contains(ProfileActionId.marketplace));
-      expect(ids, contains(ProfileActionId.pantry));
       expect(ids, isNot(contains(ProfileActionId.createOrder)));
       expect(labels, isNot(contains('الباقات')));
       expect(actions.any((a) => a.route == AppRoutes.freelancerPlans), isFalse);

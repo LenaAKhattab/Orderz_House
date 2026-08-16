@@ -6,11 +6,11 @@ import 'package:orderzhouse_app/features/pantry/data/pantry_status.dart';
 void main() {
   test('pantry status labels', () {
     expect(pantryStatusLabelAr('open_for_bids'), 'مفتوح للعروض');
-    expect(pantryStatusLabelAr('assigned'), 'تم اختيارك');
+    expect(pantryStatusLabelAr('assigned'), 'قيد التنفيذ');
     expect(pantryStatusLabelAr('in_progress'), 'قيد التنفيذ');
     expect(pantryStatusLabelAr('submitted'), 'بانتظار المراجعة');
-    expect(pantryStatusLabelAr('revision_requested'), 'مطلوب تعديل');
-    expect(pantryStatusLabelAr('approved'), 'معتمد / جاهز في بيت المونة');
+    expect(pantryStatusLabelAr('revision_requested'), 'طلب تعديل');
+    expect(pantryStatusLabelAr('approved'), 'مكتمل');
     expect(pantryStatusLabelAr('archived'), 'مؤرشف');
   });
 

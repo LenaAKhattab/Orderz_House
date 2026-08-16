@@ -1,10 +1,5 @@
 import { useMemo } from "react";
-
-function formatMoney(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
-}
+import { JodMoneyDisplay } from "../money/JodMoneyDisplay";
 
 function typeLabel(projectType) {
   if (projectType === "fixed") return "Fixed";
@@ -20,15 +15,6 @@ function summaryText(text, max = 140) {
 }
 
 export default function AssignedOrderCardCompact({ order, onOpenDetails }) {
-  const priceText = useMemo(() => {
-    if (order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null) {
-      return `${formatMoney(order.bidBudgetMin)} JOD - ${formatMoney(order.bidBudgetMax)} JOD`;
-    }
-    if (order?.projectType === "bidding") {
-      return order?.paymentAmount != null ? `${formatMoney(order.paymentAmount)} JOD` : "—";
-    }
-    return `${formatMoney(order?.budget)} JOD`;
-  }, [order]);
   const typeText = useMemo(() => typeLabel(order?.projectType), [order?.projectType]);
   const description = summaryText(order?.description);
 
@@ -49,8 +35,14 @@ export default function AssignedOrderCardCompact({ order, onOpenDetails }) {
         <h3 className="oh-assigned-card__title oh-order-card__title">{order?.title || "—"}</h3>
         <p className="oh-order-card__summary">{description}</p>
         <div className="oh-order-card__meta-row" aria-label="order type and price">
-          <span className="oh-order-card__price" dir="ltr">
-            {priceText}
+          <span className="oh-order-card__price">
+            {order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null ? (
+              <JodMoneyDisplay amount={order.bidBudgetMin} amountMax={order.bidBudgetMax} compact />
+            ) : order?.projectType === "bidding" ? (
+              order?.paymentAmount != null ? <JodMoneyDisplay amount={order.paymentAmount} compact /> : "—"
+            ) : (
+              <JodMoneyDisplay amount={order?.budget} compact />
+            )}
           </span>
           <span className="oh-order-card__type">{typeText}</span>
         </div>

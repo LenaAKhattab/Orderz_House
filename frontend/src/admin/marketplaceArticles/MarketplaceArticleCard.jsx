@@ -1,5 +1,6 @@
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import Button from "../../components/ui/Button";
+import { formatArticleBidCollectionLabel } from "./marketplaceArticleFormUtils";
 
 export default function MarketplaceArticleCard({ article, isEn = false, onEdit, busy = false }) {
   if (!article) return null;
@@ -41,6 +42,20 @@ export default function MarketplaceArticleCard({ article, isEn = false, onEdit, 
         <div>
           <dt>{isEn ? "References" : "المراجع"}</dt>
           <dd>{article.requiredReferencesCount ?? 0}</dd>
+        </div>
+        <div>
+          <dt>{isEn ? "Applicants" : "المتقدمون"}</dt>
+          <dd>
+            {formatArticleBidCollectionLabel(article.bidCollection, {
+              isEn,
+              articleStatus: article.status,
+            }) ||
+              (article.requiredBidCount
+                ? isEn
+                  ? `Required: ${article.requiredBidCount}`
+                  : `المطلوب: ${article.requiredBidCount}`
+                : "—")}
+          </dd>
         </div>
         <div>
           <dt>{isEn ? "Category" : "التصنيف"}</dt>

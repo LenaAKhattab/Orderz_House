@@ -6,6 +6,7 @@ import '../../../core/errors/api_error_message.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
+import '../domain/register_payload.dart';
 import 'auth_controller.dart';
 import 'auth_form_widgets.dart';
 
@@ -29,6 +30,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _obscureConfirm = true;
   bool _submitting = false;
   String? _error;
+  String _accountType = PublicSignupAccountType.client;
+  final Set<String> _categories = {};
 
   @override
   void dispose() {
@@ -42,27 +45,58 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
+  void _selectAccountType(String type) {
+    if (!PublicSignupAccountType.allowed.contains(type)) return;
+    setState(() {
+      _accountType = type;
+      if (type != PublicSignupAccountType.freelancer) {
+        _categories.clear();
+      }
+      _error = null;
+    });
+  }
+
+  void _toggleCategory(String slug) {
+    setState(() {
+      if (_categories.contains(slug)) {
+        _categories.remove(slug);
+      } else {
+        _categories.add(slug);
+      }
+    });
+  }
+
   Future<void> _submit() async {
+    final typeError = validatePublicAccountType(_accountType);
+    if (typeError != null) {
+      setState(() => _error = typeError);
+      return;
+    }
+    final categoryError = validateFreelancerCategories(
+      accountType: _accountType,
+      categories: _categories,
+    );
+    if (categoryError != null) {
+      setState(() => _error = categoryError);
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
     setState(() {
       _submitting = true;
       _error = null;
     });
     try {
-      final body = {
-        'firstName': _firstName.text.trim(),
-        'fatherName': _fatherName.text.trim(),
-        'familyName': _familyName.text.trim(),
-        'email': _email.text.trim(),
-        'password': _password.text,
-        'confirmPassword': _confirmPassword.text,
-        'accountType': 'client',
-        'country': 'JO',
-        'phone': {'countryCode': '+962', 'number': _phoneNumber.text.trim()},
-        'whatsApp': {'countryCode': '+962', 'number': _phoneNumber.text.trim()},
-        'gender': 'ذكر',
-        'termsAccepted': true,
-      };
+      final body = buildRegisterRequestBody(
+        firstName: _firstName.text,
+        fatherName: _fatherName.text,
+        familyName: _familyName.text,
+        email: _email.text,
+        password: _password.text,
+        confirmPassword: _confirmPassword.text,
+        accountType: _accountType,
+        phoneNumber: _phoneNumber.text,
+        categories: _categories.toList(),
+      );
       await ref.read(authControllerProvider.notifier).register(body);
       if (!mounted) return;
       context.go('${AppRoutes.otp}?email=${Uri.encodeComponent(_email.text.trim())}');
@@ -75,19 +109,80 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isFreelancer = _accountType == PublicSignupAccountType.freelancer;
     return AuthScaffold(
       showBack: true,
       child: Form(
         key: _formKey,
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
           children: [
             const AuthHeroHeader(
               title: 'إنشاء حساب',
-              subtitle: 'أدخل بياناتك ثم أكّد بريدك برمز التحقق.',
+              subtitle: 'اختر نوع الحساب ثم أدخل بياناتك وأكّد بريدك برمز التحقق.',
               showLogo: false,
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 20),
+            const Text(
+              'نوع الحساب',
+              key: Key('register_account_type_label'),
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                color: AppColors.textInk,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              key: const Key('register_account_type_selector'),
+              spacing: 10,
+              runSpacing: 10,
+              alignment: WrapAlignment.end,
+              children: [
+                _AccountTypeChip(
+                  key: const Key('register_account_type_client'),
+                  label: 'عميل',
+                  selected: _accountType == PublicSignupAccountType.client,
+                  onTap: () => _selectAccountType(PublicSignupAccountType.client),
+                ),
+                _AccountTypeChip(
+                  key: const Key('register_account_type_freelancer'),
+                  label: 'مستقل',
+                  selected: _accountType == PublicSignupAccountType.freelancer,
+                  onTap: () => _selectAccountType(PublicSignupAccountType.freelancer),
+                ),
+              ],
+            ),
+            if (isFreelancer) ...[
+              const SizedBox(height: 16),
+              const Text(
+                'التخصصات',
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  color: AppColors.textInk,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.end,
+                children: [
+                  for (final slug in FreelancerSignupCategory.slugs)
+                    _AccountTypeChip(
+                      key: Key('register_category_$slug'),
+                      label: FreelancerSignupCategory.labelsAr[slug] ?? slug,
+                      selected: _categories.contains(slug),
+                      onTap: () => _toggleCategory(slug),
+                    ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 20),
             if (_error != null) ...[
               OhErrorBanner(message: _error!),
               const SizedBox(height: 14),
@@ -149,7 +244,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   color: AppColors.textMuted,
                 ),
               ),
-              validator: (v) => v == null || v.length < 8 ? '8 أحرف على الأقل' : null,
+              validator: validateRegisterPassword,
             ),
             const SizedBox(height: 12),
             AuthPillField(
@@ -182,6 +277,48 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               onTap: () => context.go(AppRoutes.login),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountTypeChip extends StatelessWidget {
+  const _AccountTypeChip({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.primary : AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+        side: BorderSide(
+          color: selected ? AppColors.primary : AppColors.primaryMid,
+          width: 1.4,
+        ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+              color: selected ? Colors.white : AppColors.primaryDeep,
+            ),
+          ),
         ),
       ),
     );

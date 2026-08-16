@@ -220,16 +220,18 @@ describe("Pantry integration activation gating", () => {
   });
 
   it("frontend requires server mode and paused UX", () => {
-    const ui = read("../frontend/src/pages/dashboard/FreelancerPantryPage.jsx");
+    const redirectPage = read("../frontend/src/pages/dashboard/FreelancerPantryPage.jsx");
+    const marketplace = read("../frontend/src/components/open-orders/OpenOrdersMarketplace.jsx");
     const admin = read("../frontend/src/pages/dashboard/AdminPantryPage.jsx");
-    assert.match(ui, /pantryMembershipBidIntegrationActive/);
-    assert.match(ui, /pantryMembershipBidIntegrationMode/);
-    assert.match(ui, /integrationActive && starterState/);
-    assert.match(ui, /التقديم على طلبات بيت المونة متوقف مؤقتًا/);
-    assert.match(ui, /integrationPaused/);
-    assert.match(ui, /!integrationPaused/);
+    const constants = read("src/constants/pantryMembershipBid.js");
+    assert.match(redirectPage, /Navigate to="\/dashboard\/freelancer\/orders"/);
+    assert.doesNotMatch(redirectPage, /pantryMembershipBidIntegrationActive/);
+    assert.match(marketplace, /listFreelancerPantryRequestsRequest/);
+    assert.match(marketplace, /submitFreelancerPantryBidRequest/);
     assert.match(admin, /pantryMembershipBidIntegrationActive/);
     assert.match(admin, /integrationActive \? \(/);
+    assert.match(constants, /التقديم على طلبات بيت المونة متوقف مؤقتًا/);
+    assert.match(constants, /PANTRY_INTEGRATION_MODES/);
   });
 });
 
@@ -395,9 +397,11 @@ describe("Isolation + winner preservation + engines dormant", () => {
   it("24. no Work Token runtime in pantry integration", () => {
     const adapter = read("src/services/pantryMembershipBidService.js");
     const service = read("src/services/pantryService.js");
-    const freelancerUi = read("../frontend/src/pages/dashboard/FreelancerPantryPage.jsx");
+    const freelancerRedirect = read("../frontend/src/pages/dashboard/FreelancerPantryPage.jsx");
+    const marketplace = read("../frontend/src/components/open-orders/OpenOrdersMarketplace.jsx");
+    const mapper = read("../frontend/src/components/open-orders/mapPantryRequestToPoolOrder.js");
     const adminUi = read("../frontend/src/pages/dashboard/AdminPantryPage.jsx");
-    for (const src of [adapter, service, freelancerUi, adminUi]) {
+    for (const src of [adapter, service, freelancerRedirect, marketplace, mapper, adminUi]) {
       assert.doesNotMatch(src, /work_tokens_enabled|workTokenService|consumeWorkToken|grantWorkToken/);
     }
   });
@@ -451,12 +455,17 @@ describe("Isolation + winner preservation + engines dormant", () => {
 
 describe("Freelancer / Admin UX copy", () => {
   it("uses approved Arabic block reasons and Starter labels without Token jargon", () => {
-    const ui = read("../frontend/src/pages/dashboard/FreelancerPantryPage.jsx");
-    assert.match(ui, /فرصة بيت المونة متاحة/);
-    assert.match(ui, /متاحة لمرة واحدة بعد توثيق الحساب/);
-    assert.match(ui, /فرصة بيت المونة الخاصة بباقة STARTER مستخدمة/);
-    assert.doesNotMatch(ui, /طلب مضمون|فرصة فوز مضمونة/);
-    assert.doesNotMatch(ui, /Work Token|ledger|grantId/);
+    const adapter = read("src/services/pantryMembershipBidService.js");
+    const constants = read("src/constants/pantryMembershipBid.js");
+    const mapper = read("../frontend/src/components/open-orders/mapPantryRequestToPoolOrder.js");
+    const redirectPage = read("../frontend/src/pages/dashboard/FreelancerPantryPage.jsx");
+    assert.match(adapter, /فرصة بيت المونة متاحة/);
+    assert.match(adapter, /متاحة لمرة واحدة بعد توثيق الحساب/);
+    assert.match(adapter, /فرصة بيت المونة الخاصة بباقة STARTER مستخدمة/);
+    assert.match(constants, /PANTRY_STARTER_OPPORTUNITY_USED/);
+    assert.doesNotMatch(mapper, /بيت المونة/);
+    assert.doesNotMatch(redirectPage, /طلب مضمون|فرصة فوز مضمونة/);
+    assert.doesNotMatch(redirectPage, /Work Token|ledger|grantId/);
     const admin = read("../frontend/src/pages/dashboard/AdminPantryPage.jsx");
     assert.match(admin, /تكلفة التقديم/);
     assert.match(admin, /العدد المستهدف للمتقدمين/);

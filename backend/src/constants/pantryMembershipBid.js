@@ -36,6 +36,7 @@ const PANTRY_REFUND_POLICY = Object.freeze({
   cancelled_before_assignment: "full",
   no_freelancer_selected: "full",
   deadline_system_failure: "full",
+  minimum_not_met: "full",
   freelancer_withdrawal: "none",
   rejected_application: "none",
   losing_applicant: "none",

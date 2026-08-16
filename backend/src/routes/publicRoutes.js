@@ -22,10 +22,18 @@ const { recordPublicPageViewValidators } = require("../validators/publicPageView
 const { sitePageSlugParam } = require("../validators/publicSitePageValidators");
 const { publicSubSubcategoriesListValidators } = require("../validators/categoriesValidators");
 const publicGeoController = require("../controllers/publicGeoController");
+const publicCurrencyDisplayController = require("../controllers/publicCurrencyDisplayController");
+const trainingPackagesController = require("../controllers/trainingPackagesController");
 
 const router = express.Router();
 
 router.get("/public/geo", publicGeoController.getPublicGeo);
+router.get(
+  "/public/currency-display",
+  optionalAuth,
+  publicCurrencyDisplayController.getPublicCurrencyDisplay,
+);
+router.get("/public/training-packages", trainingPackagesController.listPublic);
 router.get("/public/home-stats", publicHomeStatsController.getPublicHomeStats);
 router.get(
   "/public/sub-subcategories",

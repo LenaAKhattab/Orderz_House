@@ -1,4 +1,13 @@
 const marketplaceArticlesService = require("../services/marketplaceArticlesService");
+const opportunityBidCollectionService = require("../services/opportunityBidCollectionService");
+
+async function withBidCollection(article) {
+  if (!article) return article;
+  const bidCollection = await opportunityBidCollectionService.getArticleBidCollectionProgress(
+    article.id,
+  );
+  return { ...article, bidCollection };
+}
 
 async function listAdmin(req, res, next) {
   try {
@@ -9,7 +18,8 @@ async function listAdmin(req, res, next) {
       limit: req.query.limit,
       offset: req.query.offset,
     });
-    return res.status(200).json({ success: true, data: { articles } });
+    const withProgress = await Promise.all(articles.map((article) => withBidCollection(article)));
+    return res.status(200).json({ success: true, data: { articles: withProgress } });
   } catch (err) {
     return next(err);
   }
@@ -23,7 +33,11 @@ async function getAdminById(req, res, next) {
     if (!article) {
       return res.status(404).json({ success: false, message: "المقال غير موجود." });
     }
-    return res.status(200).json({ success: true, data: { article } });
+    const withProgress = await withBidCollection(article);
+    return res.status(200).json({
+      success: true,
+      data: { article: withProgress, bidCollection: withProgress.bidCollection },
+    });
   } catch (err) {
     return next(err);
   }
@@ -34,7 +48,11 @@ async function create(req, res, next) {
     const article = await marketplaceArticlesService.createMarketplaceArticle(req.body || {}, {
       actorUserId: req.user?.id || null,
     });
-    return res.status(201).json({ success: true, data: { article } });
+    const withProgress = await withBidCollection(article);
+    return res.status(201).json({
+      success: true,
+      data: { article: withProgress, bidCollection: withProgress.bidCollection },
+    });
   } catch (err) {
     return next(err);
   }
@@ -47,7 +65,11 @@ async function update(req, res, next) {
       req.body || {},
       { actorUserId: req.user?.id || null },
     );
-    return res.status(200).json({ success: true, data: { article } });
+    const withProgress = await withBidCollection(article);
+    return res.status(200).json({
+      success: true,
+      data: { article: withProgress, bidCollection: withProgress.bidCollection },
+    });
   } catch (err) {
     return next(err);
   }
@@ -61,7 +83,8 @@ async function listPublished(req, res, next) {
       limit: req.query.limit,
       offset: req.query.offset,
     });
-    return res.status(200).json({ success: true, data: { articles } });
+    const withProgress = await Promise.all(articles.map((article) => withBidCollection(article)));
+    return res.status(200).json({ success: true, data: { articles: withProgress } });
   } catch (err) {
     return next(err);
   }
@@ -75,7 +98,28 @@ async function getPublishedById(req, res, next) {
     if (!article || article.status !== "published" || article.isFakeOrTraining) {
       return res.status(404).json({ success: false, message: "المقال غير موجود." });
     }
-    return res.status(200).json({ success: true, data: { article } });
+    const withProgress = await withBidCollection(article);
+    return res.status(200).json({
+      success: true,
+      data: { article: withProgress, bidCollection: withProgress.bidCollection },
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function relistBidCollection(req, res, next) {
+  try {
+    const article = await marketplaceArticlesService.relistMarketplaceArticleBidCollection(
+      req.params.id,
+      req.body || {},
+    );
+    const withProgress = await withBidCollection(article);
+    return res.status(200).json({
+      success: true,
+      data: { article: withProgress, bidCollection: withProgress.bidCollection },
+      message: "تم فتح جولة مناقصات جديدة.",
+    });
   } catch (err) {
     return next(err);
   }
@@ -86,6 +130,7 @@ module.exports = {
   getAdminById,
   create,
   update,
+  relistBidCollection,
   listPublished,
   getPublishedById,
 };

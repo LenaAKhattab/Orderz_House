@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 import { useAuth } from "../context/useAuth";
-import { getNotificationsPath } from "../constants/authRoutes";
+import { getNotificationsPath, getAccountSettingsPath } from "../constants/authRoutes";
 import AdminGroupedNavList from "../components/dashboard/AdminGroupedNavList";
 import AdminNavIcon from "../components/dashboard/AdminNavIcon";
 import {
@@ -70,6 +70,7 @@ export default function AdminLayout() {
   const crumb = useMemo(() => adminBreadcrumb(pathname, t), [pathname, t]);
   const role = user?.primaryRole || user?.role;
   const notificationsPath = getNotificationsPath(role);
+  const settingsPath = getAccountSettingsPath(role);
   const navSections = useMemo(() => filterAdminNavSections(user, userHasPermission), [user]);
   const hasBusinessPermissions = navSections.some(
     (section) => section.id !== "overview" && section.items.length > 0,
@@ -174,6 +175,11 @@ export default function AdminLayout() {
                   <NavLink to={notificationsPath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
                     {t("dashboard.nav.common.notifications")}
                   </NavLink>
+                  {settingsPath ? (
+                    <NavLink to={settingsPath} role="menuitem" onClick={() => setUserMenuOpen(false)}>
+                      {t("dashboard.nav.common.settings")}
+                    </NavLink>
+                  ) : null}
                   <button
                     type="button"
                     role="menuitem"

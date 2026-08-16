@@ -9,6 +9,9 @@ import { getOrderStatusLabel } from "../../utils/orderFlowUi";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../styles/dashboardHub.css";
 import "./freelancerMyOrders.css";
+import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
+import ClientFixedOrderPayNowButton from "../../components/orders/ClientFixedOrderPayNowButton";
+import { isClientFixedOrderAwaitingStripeCheckout } from "../../utils/clientFixedOrderPayNow";
 
 function paymentStatusAr(s) {
   if (s === "not_required") return "لا يتطلب دفعاً حالياً";
@@ -16,12 +19,6 @@ function paymentStatusAr(s) {
   if (s === "paid") return "مدفوع";
   if (s === "refunded") return "مُسترد";
   return s || "—";
-}
-
-function formatMoney(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
 }
 
 function StatSegment({ tone, label, value, loading }) {
@@ -110,7 +107,7 @@ export default function ClientFinancialPage() {
         <StatSegment
           tone="green"
           label="إجمالي المدفوع"
-          value={`${formatMoney(summary.totalPaid)} JOD`}
+          value={<JodMoneyDisplay amount={summary.totalPaid} compact />}
           loading={busy}
         />
         <StatSegment tone="amber" label="بانتظار دفع" value={summary.pendingPayment} loading={busy} />
@@ -137,7 +134,7 @@ export default function ClientFinancialPage() {
               </Link>
               .
             </p>
-            <div className="client-financial-table-scroll">
+            <div className="client-financial-table-scroll max-w-full overflow-x-auto">
               <table className="client-financial-table">
                 <thead>
                   <tr>
@@ -146,22 +143,32 @@ export default function ClientFinancialPage() {
                     <th>يتطلب دفع</th>
                     <th>حالة الدفع</th>
                     <th>حالة الطلب</th>
+                    <th>إجراء</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((o) => (
                     <tr key={o.id}>
                       <td>{o.title || "—"}</td>
-                      <td dir="ltr">
-                        {o.projectType === "bidding" && o.bidBudgetMin != null && o.bidBudgetMax != null
-                          ? `${formatMoney(o.bidBudgetMin)} – ${formatMoney(o.bidBudgetMax)} JOD`
-                          : o.budget != null
-                            ? `${formatMoney(o.budget)} JOD`
-                            : "—"}
+                      <td>
+                        {o.projectType === "bidding" && o.bidBudgetMin != null && o.bidBudgetMax != null ? (
+                          <JodMoneyDisplay amount={o.bidBudgetMin} amountMax={o.bidBudgetMax} compact />
+                        ) : o.budget != null ? (
+                          <JodMoneyDisplay amount={o.budget} compact />
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td>{o.paymentRequired ? "نعم" : "لا"}</td>
                       <td>{paymentStatusAr(o.paymentStatus)}</td>
                       <td>{getOrderStatusLabel(o.orderStatus, t)}</td>
+                      <td>
+                        {isClientFixedOrderAwaitingStripeCheckout(o) ? (
+                          <ClientFixedOrderPayNowButton order={o} className="btn btn-primary" />
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/oh_widgets.dart';
 import '../../../orders/data/order_display_helpers.dart';
 import '../data/done_project_models.dart';
+import '../../../currency/presentation/jod_money_display.dart';
 import 'create_financial_claim_controller.dart';
 import 'create_financial_claim_sheet.dart';
 import 'done_projects_controller.dart';
@@ -224,7 +225,10 @@ class DoneProjectCard extends ConsumerWidget {
           _InfoRow(label: 'التصنيفات', value: formatDoneProjectCategories(project.categories)),
           _InfoRow(label: 'تاريخ الإكمال', value: formatOrderDate(project.actualCompletionDate)),
           _InfoRow(label: 'مدة العمل', value: formatDurationMinutesLabel(project.durationMinutes)),
-          _InfoRow(label: 'المبلغ', value: formatDoneProjectAmount(project)),
+          _InfoRow(
+            label: 'المبلغ',
+            valueWidget: JodMoneyDisplay(amount: project.totalPriceSnapshot),
+          ),
           _InfoRow(
             label: 'حالة الدفع',
             value: doneProjectPaymentStatusLabelAr(project.paymentStatus),
@@ -242,10 +246,11 @@ class DoneProjectCard extends ConsumerWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
+  const _InfoRow({required this.label, this.value, this.valueWidget});
 
   final String label;
-  final String value;
+  final String? value;
+  final Widget? valueWidget;
 
   @override
   Widget build(BuildContext context) {
@@ -255,16 +260,17 @@ class _InfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: AppColors.textInk,
-                fontWeight: FontWeight.w600,
-                height: 1.4,
-                fontSize: 14,
-              ),
-            ),
+            child: valueWidget ??
+                Text(
+                  value ?? '—',
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    color: AppColors.textInk,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                    fontSize: 14,
+                  ),
+                ),
           ),
           const SizedBox(width: 12),
           Text(

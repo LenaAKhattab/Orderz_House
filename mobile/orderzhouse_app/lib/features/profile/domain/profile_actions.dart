@@ -10,7 +10,6 @@ enum ProfileActionId {
   legalHelp,
   financialClaims,
   marketplace,
-  pantry,
   services,
   courses,
   login,
@@ -124,12 +123,6 @@ List<ProfileActionItem> profileQuickActionsForUser(AuthUser user) {
         icon: Icons.storefront_outlined,
         route: AppRoutes.marketplace,
       ),
-      ProfileActionItem(
-        id: ProfileActionId.pantry,
-        label: 'بيت المونة',
-        icon: Icons.inventory_2_outlined,
-        route: AppRoutes.freelancerPantry,
-      ),
     ];
   }
 
@@ -241,7 +234,6 @@ bool profileActionAllowedForUser(ProfileActionId id, AuthUser user) {
       return user.usesClientExperience;
     case ProfileActionId.financialClaims:
     case ProfileActionId.courses:
-    case ProfileActionId.pantry:
       return user.usesFreelancerExperience;
     case ProfileActionId.myOrders:
     case ProfileActionId.notifications:

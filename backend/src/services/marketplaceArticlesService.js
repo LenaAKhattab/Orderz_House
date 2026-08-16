@@ -15,6 +15,8 @@ const {
   ARTICLE_LEVEL_WORD_REFERENCE_GLOBAL_MATRIX,
 } = require("../constants/marketplaceArticles");
 const articleApplicationsService = require("./marketplaceArticleApplicationsService");
+const opportunityBidCollectionService = require("./opportunityBidCollectionService");
+const { getMarketplaceEconomySettings } = require("./marketplaceEconomySettingsService");
 const {
   assertArticleLevel,
   formatArticleValueJodForDb,
@@ -120,6 +122,14 @@ function mapMarketplaceArticle(row) {
     cancelledAt: row.cancelled_at || null,
     createdAt: row.created_at || null,
     updatedAt: row.updated_at || null,
+    requiredBidCount: row.required_bid_count != null ? Number(row.required_bid_count) : null,
+    currentBidCollectionRoundId:
+      row.current_bid_collection_round_id != null
+        ? String(row.current_bid_collection_round_id)
+        : null,
+    relistCount: row.relist_count != null ? Number(row.relist_count) : 0,
+    bidCollectionOutcome: row.bid_collection_outcome || null,
+    applicationDeadlineAt: row.application_deadline_at || null,
   };
 }
 
@@ -144,6 +154,11 @@ function mapMarketplaceArticleReadModel(row) {
     cancelledAt: full.cancelledAt,
     createdAt: full.createdAt,
     updatedAt: full.updatedAt,
+    requiredBidCount: full.requiredBidCount,
+    bidCollectionOutcome: full.bidCollectionOutcome,
+    applicationDeadlineAt: full.applicationDeadlineAt,
+    relistCount: full.relistCount,
+    currentBidCollectionRoundId: full.currentBidCollectionRoundId,
   };
 }
 
@@ -338,42 +353,130 @@ async function createMarketplaceArticle(payload, { actorUserId = null } = {}) {
     categoryId,
   );
   const stamps = resolveLifecycleTimestamps(status);
+  const schemaReady = await opportunityBidCollectionService.articleBidCollectionSchemaReady();
+  let requiredBidCount = null;
+  let deadline = null;
+  if (schemaReady) {
+    const settings = await getMarketplaceEconomySettings();
+    requiredBidCount = opportunityBidCollectionService.wrapAssertRequiredBidCount(
+      payload.requiredBidCount ?? payload.required_bid_count,
+      settings,
+    );
+    opportunityBidCollectionService.assertMinRequiredBidsAcknowledged(payload, {
+      publishing: true,
+    });
+    const deadlineRaw = payload.applicationDeadlineAt ?? payload.application_deadline_at ?? null;
+    deadline = deadlineRaw ? new Date(deadlineRaw) : null;
+    if (deadlineRaw && Number.isNaN(deadline.getTime())) {
+      throw createAppError("applicationDeadlineAt is invalid.", 400, {
+        exposeToClient: true,
+        publicCode: "INVALID_APPLICATION_DEADLINE",
+      });
+    }
+  }
 
-  const { rows } = await pool.query(
-    `INSERT INTO marketplace_articles (
-       title, description, category_id, subcategory_id,
-       article_level, article_value_jod,
-       required_word_count, required_references_count,
-       status, is_fake_or_training,
-       created_by_user_id, updated_by_user_id,
-       published_at, closed_at, cancelled_at
-     ) VALUES (
-       $1,$2,$3,$4,
-       $5,$6::numeric,
-       $7,$8,
-       $9,$10,
-       $11,$11,
-       $12,$13,$14
-     )
-     RETURNING id`,
-    [
-      title,
-      description,
-      categoryId,
-      subcategoryId,
-      articleLevel,
-      valueDb,
-      requiredWordCount,
-      requiredReferencesCount,
-      status,
-      isFakeOrTraining,
-      actorUserId ? Number(actorUserId) : null,
-      stamps.publishedAt,
-      stamps.closedAt,
-      stamps.cancelledAt,
-    ],
-  );
-  return getMarketplaceArticleById(rows[0].id, { forAdmin: true });
+  const client = await pool.connect();
+  let articleId;
+  try {
+    await client.query("BEGIN");
+    let rows;
+    try {
+      const inserted = await client.query(
+        `INSERT INTO marketplace_articles (
+           title, description, category_id, subcategory_id,
+           article_level, article_value_jod,
+           required_word_count, required_references_count,
+           status, is_fake_or_training,
+           created_by_user_id, updated_by_user_id,
+           published_at, closed_at, cancelled_at,
+           required_bid_count, application_deadline_at
+         ) VALUES (
+           $1,$2,$3,$4,
+           $5,$6::numeric,
+           $7,$8,
+           $9,$10,
+           $11,$11,
+           $12,$13,$14,
+           $15,$16
+         )
+         RETURNING id`,
+        [
+          title,
+          description,
+          categoryId,
+          subcategoryId,
+          articleLevel,
+          valueDb,
+          requiredWordCount,
+          requiredReferencesCount,
+          status,
+          isFakeOrTraining,
+          actorUserId ? Number(actorUserId) : null,
+          stamps.publishedAt,
+          stamps.closedAt,
+          stamps.cancelledAt,
+          requiredBidCount,
+          deadline,
+        ],
+      );
+      rows = inserted.rows;
+    } catch (err) {
+      if (err?.code !== "42703") throw err;
+      const inserted = await client.query(
+        `INSERT INTO marketplace_articles (
+           title, description, category_id, subcategory_id,
+           article_level, article_value_jod,
+           required_word_count, required_references_count,
+           status, is_fake_or_training,
+           created_by_user_id, updated_by_user_id,
+           published_at, closed_at, cancelled_at
+         ) VALUES (
+           $1,$2,$3,$4,
+           $5,$6::numeric,
+           $7,$8,
+           $9,$10,
+           $11,$11,
+           $12,$13,$14
+         )
+         RETURNING id`,
+        [
+          title,
+          description,
+          categoryId,
+          subcategoryId,
+          articleLevel,
+          valueDb,
+          requiredWordCount,
+          requiredReferencesCount,
+          status,
+          isFakeOrTraining,
+          actorUserId ? Number(actorUserId) : null,
+          stamps.publishedAt,
+          stamps.closedAt,
+          stamps.cancelledAt,
+        ],
+      );
+      rows = inserted.rows;
+    }
+    articleId = rows[0].id;
+    await opportunityBidCollectionService.createInitialArticleRound(
+      articleId,
+      requiredBidCount,
+      deadline,
+      { client },
+    );
+    await client.query("COMMIT");
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
+  return getMarketplaceArticleById(articleId, { forAdmin: true });
 }
 
 async function updateMarketplaceArticle(id, patch, { actorUserId = null } = {}) {
@@ -500,6 +603,33 @@ async function updateMarketplaceArticle(id, patch, { actorUserId = null } = {}) 
       ],
     );
 
+    if (patch.requiredBidCount !== undefined || patch.required_bid_count !== undefined) {
+      const settings = await getMarketplaceEconomySettings(client);
+      const requiredBidCount = opportunityBidCollectionService.wrapAssertRequiredBidCount(
+        patch.requiredBidCount ?? patch.required_bid_count,
+        settings,
+      );
+      try {
+        await client.query(
+          `UPDATE marketplace_articles SET required_bid_count = $2, updated_at = NOW() WHERE id = $1`,
+          [Number(id), requiredBidCount],
+        );
+        if (!existing.currentBidCollectionRoundId) {
+          await opportunityBidCollectionService.createInitialArticleRound(
+            Number(id),
+            requiredBidCount,
+            existing.applicationDeadlineAt,
+            { client },
+          );
+        }
+      } catch (err) {
+        if (err?.code !== "42703" && err?.code !== "42P01") throw err;
+      }
+    }
+    if (status === "published" && existing.status !== "published") {
+      opportunityBidCollectionService.assertMinRequiredBidsAcknowledged(patch, { publishing: true });
+    }
+
     // Close/cancel with zero selected → refund each pending charged app (1 Bid), then cancel pending.
     // If any selected Freelancer exists, no-selection refunds are skipped.
     if (
@@ -529,6 +659,12 @@ async function updateMarketplaceArticle(id, patch, { actorUserId = null } = {}) 
   return getMarketplaceArticleById(id, { forAdmin: true });
 }
 
+async function relistMarketplaceArticleBidCollection(id, payload = {}) {
+  const opportunityBidCollectionService = require("./opportunityBidCollectionService");
+  await opportunityBidCollectionService.relistArticleBidCollection(id, payload || {});
+  return getMarketplaceArticleById(id, { forAdmin: true });
+}
+
 module.exports = {
   mapMarketplaceArticle,
   mapMarketplaceArticleReadModel,
@@ -537,6 +673,7 @@ module.exports = {
   getMarketplaceArticleById,
   createMarketplaceArticle,
   updateMarketplaceArticle,
+  relistMarketplaceArticleBidCollection,
   assertRequiredWordCount,
   assertRequiredReferencesCount,
   deriveArticleValueJodFromLevel,

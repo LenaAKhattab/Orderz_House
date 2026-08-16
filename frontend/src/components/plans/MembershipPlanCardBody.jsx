@@ -1,5 +1,6 @@
 import { Briefcase, CalendarDays, Check, Infinity as InfinityIcon, MinusCircle, Target } from "lucide-react";
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
+import { ApproximateCurrencyLine } from "../money/JodMoneyDisplay";
 
 /**
  * Presentational membership metrics + secondary rows for public /plans cards.
@@ -76,6 +77,9 @@ export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
         )}
         {Number.isFinite(durationDays) && durationDays > 0 ? (
           <p className="pricing-card__price-period">{t("plans.days", { count: durationDays })}</p>
+        ) : null}
+        {!isFree ? (
+          <ApproximateCurrencyLine amount={saleActive ? sale.effectivePriceJod : priceJod} />
         ) : null}
       </div>
 

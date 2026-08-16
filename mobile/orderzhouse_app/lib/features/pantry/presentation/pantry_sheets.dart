@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/errors/api_error_message.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
+import '../../currency/presentation/jod_money_display.dart';
 import '../data/pantry_repository.dart';
 
 String pantryBidErrorMessage(Object error) {
@@ -102,7 +103,17 @@ Future<bool> showPantryBidSheet(BuildContext context, WidgetRef ref, {required S
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     textDirection: TextDirection.ltr,
                     decoration: const InputDecoration(labelText: 'المبلغ (د.أ)'),
+                    onChanged: (_) => setSheetState(() {}),
                   ),
+                  if (double.tryParse(amountController.text.replaceAll(',', '.')) != null) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: JodMoneyDisplay(
+                        amount: double.tryParse(amountController.text.replaceAll(',', '.')),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 10),
                   TextField(
                     controller: daysController,
@@ -114,7 +125,7 @@ Future<bool> showPantryBidSheet(BuildContext context, WidgetRef ref, {required S
                   TextField(
                     controller: messageController,
                     maxLines: 4,
-                    decoration: const InputDecoration(labelText: 'رسالة للفريق'),
+                    decoration: const InputDecoration(labelText: 'رسالة'),
                   ),
                   const SizedBox(height: 16),
                   OhButton(

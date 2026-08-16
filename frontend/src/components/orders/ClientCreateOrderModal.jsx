@@ -28,7 +28,7 @@ export default function ClientCreateOrderModal({ open, onClose }) {
       accountRole === "super_admin" ? "/dashboard/super-admin/orders" : "/dashboard/admin/orders";
     return (
       <div
-        className="client-order-modal-overlay"
+        className="client-order-modal-overlay max-[420px]:overflow-x-clip max-[420px]:p-2"
         role="presentation"
         onMouseDown={(e) => {
           if (e.target === e.currentTarget) onClose();
@@ -77,7 +77,7 @@ export default function ClientCreateOrderModal({ open, onClose }) {
 
   return (
     <div
-      className="client-order-modal-overlay"
+      className="client-order-modal-overlay max-[420px]:overflow-x-clip max-[420px]:p-2"
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();

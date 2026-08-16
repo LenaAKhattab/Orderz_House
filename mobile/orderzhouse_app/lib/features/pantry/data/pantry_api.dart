@@ -19,7 +19,7 @@ class PantryApi {
     if (requestJson is! Map) {
       throw DioException(
         requestOptions: response.requestOptions,
-        message: 'تعذر قراءة تفاصيل طلب بيت المونة.',
+        message: 'تعذر قراءة تفاصيل الطلب.',
       );
     }
     var request = PantryRequest.fromJson(Map<String, dynamic>.from(requestJson));

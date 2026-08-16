@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageCircleWarning } from "lucide-react";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import DashboardShell from "../../components/dashboard/DashboardShell";
@@ -65,6 +65,7 @@ export default function ProblemsSuggestionsPage() {
   const [description, setDescription] = useState("");
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [successMessage, setSuccessMessage] = useState("");
 
   const [items, setItems] = useState([]);
@@ -179,7 +180,7 @@ export default function ProblemsSuggestionsPage() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (submitting) return;
+    if (submitting || submittingRef.current) return;
 
     if (!categoryId) {
       setFormError(t("dashboard.feedback.categoryEmpty"));
@@ -197,6 +198,7 @@ export default function ProblemsSuggestionsPage() {
       return;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
     setFormError("");
     setSuccessMessage("");
@@ -224,6 +226,7 @@ export default function ProblemsSuggestionsPage() {
       setFormError(msg);
       push({ type: "error", message: msg });
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };

@@ -6,8 +6,8 @@ import * as tw from "../components/auth/authTw";
 import Button from "../components/ui/Button";
 import { useToast } from "../components/ui/toastContext";
 import { useAuth } from "../context/useAuth";
-import { canRoleAccessPath, getDashboardPath, getProblemsSuggestionsPathForRole, LOGIN_PROBLEMS_SUGGESTIONS_INTENT, ROLE } from "../constants/authRoutes";
-import { getFirstAccessibleDashboardPath } from "../constants/dashboardPermissions";
+import { canRoleAccessPath, getProblemsSuggestionsPathForRole, LOGIN_PROBLEMS_SUGGESTIONS_INTENT } from "../constants/authRoutes";
+import { getPostAuthHomePath } from "../constants/dashboardPermissions";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { getAuthApiErrorMessage } from "../utils/apiErrorMessage";
 import {
@@ -102,8 +102,7 @@ const Login = () => {
       success({ title: t("auth.login.successTitle"), message: t("auth.login.successMessage") });
       const from = location.state?.from?.pathname;
       const role = user?.primaryRole || user?.role;
-      const defaultDashboard =
-        role === ROLE.ADMIN ? getFirstAccessibleDashboardPath(user) : getDashboardPath(role);
+      const defaultDashboard = getPostAuthHomePath(user);
       let target = defaultDashboard;
       if (from && canRoleAccessPath(from, role)) {
         target = from;

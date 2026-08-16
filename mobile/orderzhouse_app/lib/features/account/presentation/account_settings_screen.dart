@@ -10,6 +10,7 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../notifications/presentation/unread_notifications_controller.dart';
 import '../data/account_models.dart';
 import '../data/account_repository.dart';
+import '../../currency/presentation/preferred_display_currency_settings.dart';
 
 final accountProfileProvider =
     AsyncNotifierProvider.autoDispose<AccountProfileController, AccountProfile>(
@@ -103,6 +104,10 @@ class _AccountSettingsBody extends ConsumerWidget {
             onTap: () => context.push(AppRoutes.accountChangePassword),
           ),
         ),
+        const SizedBox(height: 18),
+        const _SectionTitle('العرض'),
+        const SizedBox(height: 8),
+        const _WhiteCard(child: PreferredDisplayCurrencySettings()),
         const SizedBox(height: 18),
         const _SectionTitle('الحساب'),
         const SizedBox(height: 8),

@@ -8,6 +8,7 @@ import '../../../core/widgets/oh_widgets.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/client_order_models.dart';
 import '../../orders/data/order_display_helpers.dart' as display;
+import '../../currency/presentation/jod_money_display.dart';
 import 'client_orders_controller.dart';
 
 bool _isClientRole(AuthState auth) => auth.user?.usesClientExperience == true;
@@ -196,7 +197,17 @@ class _ClientOrderCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               _Meta(icon: Icons.layers_outlined, label: order.projectTypeLabel),
-              if (order.budgetLabel != null)
+              if (order.budget != null || order.bidBudgetMin != null)
+                _Meta(
+                  icon: Icons.payments_outlined,
+                  child: JodOrderBudgetDisplay(
+                    projectType: order.projectType,
+                    amount: order.budget,
+                    bidMin: order.bidBudgetMin,
+                    bidMax: order.bidBudgetMax,
+                  ),
+                )
+              else if (order.budgetLabel != null)
                 _Meta(icon: Icons.payments_outlined, label: order.budgetLabel!),
               _Meta(
                 icon: Icons.calendar_today_outlined,
@@ -260,10 +271,11 @@ class _StatusChip extends StatelessWidget {
 }
 
 class _Meta extends StatelessWidget {
-  const _Meta({required this.icon, required this.label});
+  const _Meta({required this.icon, this.label, this.child});
 
   final IconData icon;
-  final String label;
+  final String? label;
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
@@ -272,7 +284,8 @@ class _Meta extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: AppColors.textMuted),
         const SizedBox(width: 4),
-        Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+        child ??
+            Text(label ?? '', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
       ],
     );
   }

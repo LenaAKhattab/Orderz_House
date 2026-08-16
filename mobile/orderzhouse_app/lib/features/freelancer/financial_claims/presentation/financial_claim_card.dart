@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/oh_widgets.dart';
 import '../../../orders/data/order_display_helpers.dart';
 import '../data/financial_claim_models.dart';
+import '../../../currency/presentation/jod_money_display.dart';
 
 class FinancialClaimCard extends StatelessWidget {
   const FinancialClaimCard({super.key, required this.claim});
@@ -51,18 +52,18 @@ class FinancialClaimCard extends StatelessWidget {
           if (claim.hasAdminPricing) ...[
             _InfoRow(
               label: 'المبلغ الإجمالي',
-              value: formatFinancialAmount(claim.totalPriceSnapshot),
+              valueWidget: JodMoneyDisplay(amount: claim.totalPriceSnapshot),
               emphasized: true,
             ),
             _InfoRow(
               label: 'مبلغ المستقل',
-              value: formatFinancialAmount(claim.userAmountSnapshot),
+              valueWidget: JodMoneyDisplay(amount: claim.userAmountSnapshot),
               emphasized: true,
             ),
             if (claim.paidAmount != null && claim.paidAmount! > 0)
-              _InfoRow(label: 'المدفوع', value: formatFinancialAmount(claim.paidAmount)),
+              _InfoRow(label: 'المدفوع', valueWidget: JodMoneyDisplay(amount: claim.paidAmount)),
             if (claim.remainingAmount != null)
-              _InfoRow(label: 'المتبقي', value: formatFinancialAmount(claim.remainingAmount)),
+              _InfoRow(label: 'المتبقي', valueWidget: JodMoneyDisplay(amount: claim.remainingAmount)),
           ] else
             Container(
               width: double.infinity,
@@ -173,12 +174,14 @@ class _StatusChip extends StatelessWidget {
 class _InfoRow extends StatelessWidget {
   const _InfoRow({
     required this.label,
-    required this.value,
+    this.value,
+    this.valueWidget,
     this.emphasized = false,
   });
 
   final String label;
-  final String value;
+  final String? value;
+  final Widget? valueWidget;
   final bool emphasized;
 
   @override
@@ -189,16 +192,17 @@ class _InfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                color: AppColors.textInk,
-                fontWeight: emphasized ? FontWeight.w800 : FontWeight.w600,
-                height: 1.4,
-                fontSize: emphasized ? 15 : 14,
-              ),
-            ),
+            child: valueWidget ??
+                Text(
+                  value ?? '—',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: AppColors.textInk,
+                    fontWeight: emphasized ? FontWeight.w800 : FontWeight.w600,
+                    height: 1.4,
+                    fontSize: emphasized ? 15 : 14,
+                  ),
+                ),
           ),
           const SizedBox(width: 12),
           Text(

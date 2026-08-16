@@ -7,6 +7,7 @@ import { isUpgradePlan, planTierRank, freePlanNeedsActivationFeeCheckout } from 
 import { getLocalizedPlanBadge, getLocalizedPlanCardDisplay } from "../../lib/i18n/getLocalizedPlanDisplay";
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 import { useDisplayCurrency } from "../../hooks/useDisplayCurrency";
+import { ApproximateCurrencyLine } from "../money/JodMoneyDisplay";
 import MembershipPlanCardBody, { MembershipPlanTitle } from "./MembershipPlanCardBody";
 
 const MOBILE_FEATURE_PREVIEW = 3;
@@ -282,6 +283,15 @@ const PlanCard = ({
             )}
             {checkoutHint && isEgyptDisplay ? (
               <p className="pricing-card__price-note pricing-card__checkout-hint">{checkoutHint}</p>
+            ) : null}
+            {!isEgyptDisplay ? (
+              <ApproximateCurrencyLine
+                amount={
+                  salePrice?.active && plan?.effectivePriceJod != null
+                    ? plan.effectivePriceJod
+                    : plan?.priceJod
+                }
+              />
             ) : null}
             {installment ? <p className="pricing-card__price-note">{installment}</p> : null}
             {!installment && paymentNotes ? <p className="pricing-card__price-note">{paymentNotes}</p> : null}

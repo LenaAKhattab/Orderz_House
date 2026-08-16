@@ -463,9 +463,9 @@ async function chargePantryApplicationBids({
 
   const existing = await client.query(
     `SELECT * FROM pantry_application_bid_credit_economics
-      WHERE pantry_request_id = $1 AND freelancer_user_id = $2
+      WHERE pantry_bid_id = $1
       LIMIT 1`,
-    [Number(pantryRequestId), Number(freelancerUserId)],
+    [Number(pantryBidId)],
   );
   if (existing.rows[0]?.charge_status === "charged") {
     return {
@@ -494,7 +494,7 @@ async function chargePantryApplicationBids({
     }
   }
 
-  const idempotencyKey = `pantry_application_bid_consume:${Number(pantryRequestId)}:freelancer:${Number(freelancerUserId)}`;
+  const idempotencyKey = `pantry_application_bid_consume:bid:${Number(pantryBidId)}`;
   let consume;
   try {
     consume = await accounting.consumeBidCreditsFefo({
@@ -524,24 +524,46 @@ async function chargePantryApplicationBids({
   }
 
   const allocations = consume.allocations || consume.fefoAllocations || [];
-  await client.query(
-    `INSERT INTO pantry_application_bid_credit_economics (
-       pantry_bid_id, pantry_request_id, freelancer_user_id, bid_credit_cost,
-       charge_status, refund_status, consume_ledger_entry_id, primary_grant_id,
-       idempotency_key, fefo_allocations, charged_at
-     ) VALUES ($1,$2,$3,$4,'charged','none',$5,$6,$7,$8::jsonb,NOW())
-     ON CONFLICT (pantry_request_id, freelancer_user_id) DO NOTHING`,
-    [
-      Number(pantryBidId),
-      Number(pantryRequestId),
-      Number(freelancerUserId),
-      bidCost,
-      consume.entry?.id || consume.ledgerEntryId || null,
-      allocations[0]?.grantId || null,
-      idempotencyKey,
-      JSON.stringify(allocations),
-    ],
-  );
+  try {
+    await client.query(
+      `INSERT INTO pantry_application_bid_credit_economics (
+         pantry_bid_id, pantry_request_id, freelancer_user_id, bid_credit_cost,
+         charge_status, refund_status, consume_ledger_entry_id, primary_grant_id,
+         idempotency_key, fefo_allocations, charged_at
+       ) VALUES ($1,$2,$3,$4,'charged','none',$5,$6,$7,$8::jsonb,NOW())
+       ON CONFLICT (pantry_bid_id) DO NOTHING`,
+      [
+        Number(pantryBidId),
+        Number(pantryRequestId),
+        Number(freelancerUserId),
+        bidCost,
+        consume.entry?.id || consume.ledgerEntryId || null,
+        allocations[0]?.grantId || null,
+        idempotencyKey,
+        JSON.stringify(allocations),
+      ],
+    );
+  } catch (econErr) {
+    if (econErr?.code !== "42P10" && econErr?.code !== "42703") throw econErr;
+    await client.query(
+      `INSERT INTO pantry_application_bid_credit_economics (
+         pantry_bid_id, pantry_request_id, freelancer_user_id, bid_credit_cost,
+         charge_status, refund_status, consume_ledger_entry_id, primary_grant_id,
+         idempotency_key, fefo_allocations, charged_at
+       ) VALUES ($1,$2,$3,$4,'charged','none',$5,$6,$7,$8::jsonb,NOW())
+       ON CONFLICT (pantry_request_id, freelancer_user_id) DO NOTHING`,
+      [
+        Number(pantryBidId),
+        Number(pantryRequestId),
+        Number(freelancerUserId),
+        bidCost,
+        consume.entry?.id || consume.ledgerEntryId || null,
+        allocations[0]?.grantId || null,
+        idempotencyKey,
+        JSON.stringify(allocations),
+      ],
+    );
+  }
 
   return {
     charged: true,

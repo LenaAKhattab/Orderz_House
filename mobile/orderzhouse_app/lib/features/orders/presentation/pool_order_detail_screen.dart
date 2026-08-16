@@ -14,6 +14,7 @@ import '../../freelancer/presentation/freelancer_my_orders_controller.dart';
 import '../../freelancer/presentation/freelancer_pool_actions_controller.dart';
 import '../../freelancer/presentation/submit_pool_bid_sheet.dart';
 import '../data/pool_order_models.dart';
+import '../../currency/presentation/jod_money_display.dart';
 import 'order_detail_widgets.dart';
 import 'pool_order_detail_provider.dart';
 
@@ -73,7 +74,13 @@ class _PoolOrderDetailBody extends ConsumerWidget {
                 statusLabel: order.statusLabel,
                 statusKey: order.orderStatus,
                 projectTypeLabel: order.projectTypeLabel,
-                budgetLabel: order.budgetLabel,
+                budgetDisplay: JodOrderBudgetDisplay(
+                  projectType: order.projectType,
+                  amount: order.budget,
+                  bidMin: order.bidBudgetMin,
+                  bidMax: order.bidBudgetMax,
+                  onDark: true,
+                ),
                 dateLabel: formatOrderDateLabel(order.publishedAtLabel),
                 dateCaption: 'تاريخ النشر',
               ),

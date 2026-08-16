@@ -74,20 +74,28 @@ const ARTICLE_APPLICATION_ERROR_CODES = Object.freeze({
   ARTICLE_APPLICATION_NOT_EDITABLE: "ARTICLE_APPLICATION_NOT_EDITABLE",
   ARTICLE_APPLICATION_NOT_WITHDRAWABLE: "ARTICLE_APPLICATION_NOT_WITHDRAWABLE",
   ARTICLE_APPLICATION_NOT_SELECTABLE: "ARTICLE_APPLICATION_NOT_SELECTABLE",
+  ARTICLE_APPLICATION_WRONG_COLLECTION_ROUND: "ARTICLE_APPLICATION_WRONG_COLLECTION_ROUND",
+  ARTICLE_FAIR_SELECTION_OVERRIDE_REASON_REQUIRED: "ARTICLE_FAIR_SELECTION_OVERRIDE_REASON_REQUIRED",
   ARTICLE_METADATA_FROZEN: "ARTICLE_METADATA_FROZEN",
   ARTICLE_BID_ECONOMICS_NOT_WIRED: "ARTICLE_BID_ECONOMICS_NOT_WIRED",
 });
 
-function buildArticleApplicationIdempotencyKey(articleId, freelancerUserId) {
-  return `${ARTICLE_APPLICATION_IDEMPOTENCY_PREFIX}:article:${Number(articleId)}:freelancer:${Number(freelancerUserId)}`;
+function roundKeySuffix(collectionRoundId) {
+  return collectionRoundId != null && collectionRoundId !== ""
+    ? `:round:${Number(collectionRoundId)}`
+    : "";
 }
 
-function buildArticleApplicationBidConsumeIdempotencyKey(articleId, freelancerUserId) {
-  return `${ARTICLE_APPLICATION_BID_CONSUME_IDEMPOTENCY_PREFIX}:article:${Number(articleId)}:freelancer:${Number(freelancerUserId)}`;
+function buildArticleApplicationIdempotencyKey(articleId, freelancerUserId, collectionRoundId) {
+  return `${ARTICLE_APPLICATION_IDEMPOTENCY_PREFIX}:article:${Number(articleId)}:freelancer:${Number(freelancerUserId)}${roundKeySuffix(collectionRoundId)}`;
 }
 
-function buildArticleApplicationBidRefundIdempotencyKey(articleId, freelancerUserId) {
-  return `${ARTICLE_APPLICATION_BID_REFUND_IDEMPOTENCY_PREFIX}:article:${Number(articleId)}:freelancer:${Number(freelancerUserId)}`;
+function buildArticleApplicationBidConsumeIdempotencyKey(articleId, freelancerUserId, collectionRoundId) {
+  return `${ARTICLE_APPLICATION_BID_CONSUME_IDEMPOTENCY_PREFIX}:article:${Number(articleId)}:freelancer:${Number(freelancerUserId)}${roundKeySuffix(collectionRoundId)}`;
+}
+
+function buildArticleApplicationBidRefundIdempotencyKey(articleId, freelancerUserId, collectionRoundId) {
+  return `${ARTICLE_APPLICATION_BID_REFUND_IDEMPOTENCY_PREFIX}:article:${Number(articleId)}:freelancer:${Number(freelancerUserId)}${roundKeySuffix(collectionRoundId)}`;
 }
 
 function isValidArticleApplicationStatus(value) {

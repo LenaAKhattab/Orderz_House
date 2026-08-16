@@ -1,5 +1,6 @@
 const articleApplicationsService = require("../services/marketplaceArticleApplicationsService");
 const marketplaceArticlesService = require("../services/marketplaceArticlesService");
+const opportunityBidCollectionService = require("../services/opportunityBidCollectionService");
 
 async function submit(req, res, next) {
   try {
@@ -59,6 +60,16 @@ async function withdraw(req, res, next) {
   }
 }
 
+async function getFairRanking(req, res, next) {
+  try {
+    const fairAdapter = require("../services/articleFairDistributionAdapterService");
+    const fairRanking = await fairAdapter.getArticleFairRanking(req.params.id);
+    return res.status(200).json({ success: true, data: { fairRanking } });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function listMine(req, res, next) {
   try {
     const applications = await articleApplicationsService.listMyArticleApplications(req.user.id, {
@@ -87,12 +98,16 @@ async function getMineForArticle(req, res, next) {
     if (!article || article.status !== "published" || article.isFakeOrTraining) {
       return res.status(404).json({ success: false, message: "المقال غير موجود." });
     }
+    const bidCollection = await opportunityBidCollectionService.getArticleBidCollectionProgress(
+      req.params.id,
+    );
     return res.status(200).json({
       success: true,
       data: {
-        article,
+        article: { ...article, bidCollection },
         application: application || null,
         eligibility,
+        bidCollection,
       },
     });
   } catch (err) {
@@ -107,9 +122,19 @@ async function listForArticleAdmin(req, res, next) {
       { limit: req.query.limit, offset: req.query.offset },
     );
     const count = applications.length;
+    const bidCollection = await opportunityBidCollectionService.getArticleBidCollectionProgress(
+      req.params.id,
+    );
+    const fairAdapter = require("../services/articleFairDistributionAdapterService");
+    let fairRanking = null;
+    try {
+      fairRanking = await fairAdapter.getArticleFairRanking(req.params.id);
+    } catch {
+      fairRanking = fairAdapter.buildNotEligiblePayload(bidCollection);
+    }
     return res.status(200).json({
       success: true,
-      data: { applications, count },
+      data: { applications, count, bidCollection, fairRanking },
     });
   } catch (err) {
     return next(err);
@@ -121,6 +146,7 @@ async function select(req, res, next) {
     const result = await articleApplicationsService.selectArticleApplication({
       applicationId: req.params.applicationId,
       actorUserId: req.user?.id,
+      overrideReason: req.body?.overrideReason ?? req.body?.override_reason,
     });
     return res.status(200).json({ success: true, data: result });
   } catch (err) {
@@ -174,6 +200,7 @@ module.exports = {
   listMine,
   getMineForArticle,
   listForArticleAdmin,
+  getFairRanking,
   select,
   reject,
   finalizeApproval,

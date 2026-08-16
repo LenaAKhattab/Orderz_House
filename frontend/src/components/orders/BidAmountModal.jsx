@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "../../i18n/LanguageProvider";
-import { formatMoney } from "../open-orders/openOrdersFormatters";
+import { JodMoneyDisplay } from "../money/JodMoneyDisplay";
 import "../../styles/bidAmountModal.css";
 
 export default function BidAmountModal({
@@ -52,10 +52,7 @@ export default function BidAmountModal({
 
   const currencyLabel = locale === "en" ? currency || "JOD" : t("orders.bid.currencyShort");
   const summaryTitle = (projectTitle || title || "").trim();
-  const rangeText =
-    min != null && max != null
-      ? `${formatMoney(min)} – ${formatMoney(max)} ${currencyLabel}`
-      : null;
+  const rangeText = min != null && max != null;
   const showCategory = Boolean(categoryName && categoryName !== "—");
   const showDuration = Boolean(durationText && durationText !== "—");
   const insufficient =
@@ -136,9 +133,7 @@ export default function BidAmountModal({
               {rangeText ? (
                 <p className="oh-bid-modal__summary-row">
                   <strong>{t("orders.bid.rangeLabel")}</strong>{" "}
-                  <span className="oh-num" dir="ltr">
-                    {rangeText}
-                  </span>
+                  <JodMoneyDisplay amount={min} amountMax={max} compact />
                 </p>
               ) : null}
               {showCategory ? (
@@ -245,6 +240,11 @@ export default function BidAmountModal({
                 {t("orders.bid.inputHelper")}
               </p>
             )}
+            {Number(String(value).replace(/,/g, ".")) > 0 ? (
+              <div style={{ marginTop: 8 }}>
+                <JodMoneyDisplay amount={Number(String(value).replace(/,/g, "."))} compact />
+              </div>
+            ) : null}
           </div>
 
           <div className="oh-bid-modal__actions">

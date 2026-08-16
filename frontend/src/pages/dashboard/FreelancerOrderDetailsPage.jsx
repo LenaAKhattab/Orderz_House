@@ -32,7 +32,7 @@ import OrderSummaryCard from "../../components/orders/order-details/OrderSummary
 import OrderTitleCard from "../../components/orders/order-details/OrderTitleCard";
 import OrderDescriptionCard from "../../components/orders/order-details/OrderDescriptionCard";
 import OrderFilesCard from "../../components/orders/order-details/OrderFilesCard";
-import { formatMoneyJod, formatMoneyJodRange } from "../../components/orders/order-details/orderDetailsUtils";
+import { JodMoneyDisplay, JodOrderBudgetDisplay } from "../../components/money/JodMoneyDisplay";
 import { trackEvent } from "../../services/analytics";
 import { isPoolOrderLockedByPlan } from "../../utils/poolOrderPlanEligibility";
 import { isPoolOrderAvailable, poolFixedParticipationPending } from "../../utils/poolOrderParticipation";
@@ -53,7 +53,8 @@ export default function FreelancerOrderDetailsPage() {
   const { user, loading } = useAuth();
   const role = user?.primaryRole || user?.role;
   const isFreelancer = role === "freelancer";
-  const backTo = "/dashboard/freelancer/orders";
+  const isClient = role === "client";
+  const backTo = isClient ? "/dashboard/client/orders" : "/dashboard/freelancer/orders";
 
   const [order, setOrder] = useState(null);
   const [busy, setBusy] = useState(true);
@@ -102,7 +103,7 @@ export default function FreelancerOrderDetailsPage() {
       } catch (e) {
         if (!cancelled) {
           push({ type: "error", title: t("orders.details.loadError"), message: e?.response?.data?.message || e?.message });
-          navigate("/dashboard/freelancer/orders", { replace: true });
+          navigate(isClient ? "/dashboard/client/orders" : "/dashboard/freelancer/orders", { replace: true });
         }
       } finally {
         if (!cancelled) setBusy(false);
@@ -112,7 +113,7 @@ export default function FreelancerOrderDetailsPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, push, navigate]);
+  }, [id, push, navigate, isClient, t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -252,20 +253,19 @@ export default function FreelancerOrderDetailsPage() {
   const localizedDescription = useMemo(() => getLocalizedOrderDescription(order, locale), [order, locale]);
   const descriptionDir = resolveUserContentDir(localizedDescription, dir);
 
-  const typeAndBudgetText = useMemo(() => {
-    if (!order) return t("freelancerDashboard.common.emDash");
-    const bt =
-      order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null
-        ? formatMoneyJodRange(order.bidBudgetMin, order.bidBudgetMax)
-        : order?.projectType === "bidding"
-          ? t("freelancerDashboard.common.emDash")
-          : formatMoneyJod(order?.budget);
-    if (order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null) {
-      return `${typeLabel(order?.projectType, t)} — ${bt}`;
-    }
-    if (order?.projectType === "bidding") return `${typeLabel(order?.projectType, t)}`;
-    return `${typeLabel(order?.projectType, t)} — ${bt}`;
-  }, [order, t]);
+  const typeAndBudgetValue = !order ? (
+    t("freelancerDashboard.common.emDash")
+  ) : order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null ? (
+    <>
+      {typeLabel(order?.projectType, t)} — <JodMoneyDisplay amount={order.bidBudgetMin} amountMax={order.bidBudgetMax} compact />
+    </>
+  ) : order?.projectType === "bidding" ? (
+    typeLabel(order?.projectType, t)
+  ) : (
+    <>
+      {typeLabel(order?.projectType, t)} — <JodOrderBudgetDisplay order={order} compact />
+    </>
+  );
 
   const summaryRows = useMemo(() => {
     if (!order) return [];
@@ -376,7 +376,7 @@ export default function FreelancerOrderDetailsPage() {
                     title={t("orders.details.summaryTitle")}
                     primaryBlock={{
                       label: t("orders.details.projectTypeBudget"),
-                      value: typeAndBudgetText,
+                      value: typeAndBudgetValue,
                       dir: "ltr",
                       icon: "price",
                     }}

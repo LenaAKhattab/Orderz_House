@@ -26,7 +26,7 @@ import { useFreelancerMarketplaceContext } from "../../hooks/useFreelancerMarket
 import BidAmountModal from "../../components/orders/BidAmountModal";
 import TakePoolOrderConfirmModal from "../../components/orders/TakePoolOrderConfirmModal";
 import Pagination from "../../components/common/Pagination";
-import MarketplaceOrderListRow from "./MarketplaceOrderListRow";
+import OpportunityHelpTrigger from "../onboarding/OpportunityHelpTrigger";
 import {
   isPantryPoolOrder,
   mapPantryRequestToPoolOrder,
@@ -39,6 +39,7 @@ import {
   isPoolOrderLockedByPlan,
 } from "../../utils/poolOrderPlanEligibility";
 import { isPoolOrderTakenAsAssignment } from "../../utils/poolOrderTakeOutcome";
+import { isBidCollectionClosedForApply } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 import {
   clearGuestPoolLoginToastFlag,
   isGuestPoolLoginToast,
@@ -46,6 +47,10 @@ import {
 } from "../../utils/guestPoolLoginToast";
 import "../../styles/dashboardHub.css";
 import "../../styles/freelancerOpenOrders.css";
+
+function isOpportunityCollectionClosed(order) {
+  return Boolean(order?.collectionClosed) || isBidCollectionClosedForApply(order?.bidCollection);
+}
 
 function PoolEmptyState({ title, subtitle }) {
   return (
@@ -546,6 +551,8 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   }, []);
 
   const take = async (order) => {
+    if (takingId) return;
+    if (isOpportunityCollectionClosed(order)) return;
     const orderId = typeof order === "object" && order != null ? order.id : order;
     const pantryId = typeof order === "object" && order != null ? pantryRequestIdFromPoolOrder(order) : null;
     setTakingId(orderId);
@@ -658,7 +665,8 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   }, [bidModalOrder, isFreelancer]);
 
   const submitBid = async (amount, options = {}) => {
-    if (!bidModalOrder?.id) return;
+    if (!bidModalOrder?.id || bidBusyId) return;
+    if (isOpportunityCollectionClosed(bidModalOrder)) return;
     setBidBusyId(bidModalOrder.id);
     try {
       if (isPantryPoolOrder(bidModalOrder)) {
@@ -739,7 +747,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
 
   const poolDetailsPath = useCallback(
     (orderId) => {
-      if (layout !== "dashboard") return `/orders/${orderId}`;
+      if (layout !== "dashboard") return `/dashboard/freelancer/orders/${orderId}`;
       if (isClient) return `/dashboard/client/orders/${orderId}`;
       return `/dashboard/freelancer/orders/${orderId}`;
     },
@@ -749,8 +757,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const openPoolOrderDetails = useCallback(
     (order) => {
       if (isPantryPoolOrder(order)) {
-        // Pantry has no pool details route — open the same bid/take flow as list actions.
-        if (isPoolOrderLockedByPlan(order)) return;
+        if (isPoolOrderLockedByPlan(order) || isOpportunityCollectionClosed(order)) return;
         if (order.projectType === "bidding") {
           setBidModalOrder(order);
         } else {
@@ -847,10 +854,14 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
               order={order}
               showActions={showPoolRowActions}
               onTake={() => {
-                if (!isPoolOrderLockedByPlan(order)) setTakeConfirmOrder(order);
+                if (!isPoolOrderLockedByPlan(order) && !isOpportunityCollectionClosed(order)) {
+                  setTakeConfirmOrder(order);
+                }
               }}
               onBid={() => {
-                if (!isPoolOrderLockedByPlan(order)) setBidModalOrder(order);
+                if (!isPoolOrderLockedByPlan(order) && !isOpportunityCollectionClosed(order)) {
+                  setBidModalOrder(order);
+                }
               }}
               taking={takingId === order.id}
               bidBusy={bidBusyId === order.id}
@@ -938,6 +949,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     <div className="oh-orders-toolbar-neu__controls">
       {sortControl}
       {planFilterButton}
+      {isFreelancer ? <OpportunityHelpTrigger conditionKey="mini_bid_intro" label="كيف تعمل هذه الفرصة؟" /> : null}
       {showUpdatingBadge ? <OpenOrdersUpdatingBadge /> : null}
     </div>
   );

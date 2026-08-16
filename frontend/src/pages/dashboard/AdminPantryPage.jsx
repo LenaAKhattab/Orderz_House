@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   acceptAdminPantryBidRequest,
   approveAdminPantryDeliveryRequest,
@@ -10,9 +10,20 @@ import {
   listAdminPantryRequestsRequest,
   publishAdminPantryRequestRequest,
   rejectAdminPantryBidRequest,
+  relistAdminPantryBidCollectionRequest,
   requestRevisionAdminPantryDeliveryRequest,
 } from "../../services/api";
 import { useToast } from "../../components/ui/toastContext";
+import {
+  ARTICLE_ALLOWED_REQUIRED_BID_COUNTS,
+  ARTICLE_FAIR_RANKING_PENDING_AR,
+  canSelectArticleApplicant,
+  canRelistBidCollection,
+  formatArticleBidCollectionLabel,
+  isFairRankingEligible,
+  isRecommendedPantryBid,
+} from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
+import FairSelectionOverrideDialog from "../../admin/marketplaceArticles/FairSelectionOverrideDialog";
 import "./pantryPages.css";
 
 const STATUS_LABELS = {
@@ -25,6 +36,15 @@ const STATUS_LABELS = {
   approved: "جاهز في بيت المونة",
   archived: "مؤرشف",
 };
+
+const PANTRY_MIN_REQUIRED_BIDS_WARNING_AR =
+  "العدد الذي تحدده يمثل الحد الأدنى المطلوب لإتمام المناقصة. إذا انتهت مدة طلب بيت المونة دون الوصول إلى هذا العدد، فلن يتم إسناده لأي Freelancer، وسيتم إرجاع المناقصات المستخدمة للمتقدمين، ثم يمكن إعادة طرح الطلب مرة أخرى.";
+
+const PANTRY_FAIR_RANKING_DISCLAIMER_AR =
+  "هذا الترتيب إرشادي مبني على قواعد التوزيع العادل، والإسناد ما زال يتطلب تأكيد الإدارة.";
+
+const PANTRY_MIN_REQUIRED_BIDS_ACK_AR =
+  "أقر بأن العدد المحدد يمثل الحد الأدنى المطلوب لإتمام مناقصة بيت المونة، وأنه في حال عدم اكتمال العدد لن يتم الإسناد وسيتم إرجاع المناقصات للمتقدمين.";
 
 const EMPTY_FORM = {
   title: "",
@@ -45,6 +65,8 @@ const EMPTY_FORM = {
   applicationBidCost: "1",
   targetApplicantCount: "",
   applicationDeadlineAt: "",
+  requiredBidCount: "",
+  minRequiredBidsAcknowledged: false,
   eligibleTiers: { starter: false, silver: false, pro: false, elite: false },
 };
 
@@ -83,6 +105,9 @@ export default function AdminPantryPage() {
   const [categories, setCategories] = useState([]);
   const [subSubs, setSubSubs] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [relisting, setRelisting] = useState(false);
+  const [overrideBidId, setOverrideBidId] = useState(null);
+  const acceptingRef = useRef(false);
   const [integrationActive, setIntegrationActive] = useState(false);
 
   const loadList = useCallback(async () => {
@@ -168,6 +193,21 @@ export default function AdminPantryPage() {
       }
     } catch (err) {
       toast?.error?.(apiErrorMessage(err, "تعذر فتح الطلب"));
+    }
+  };
+
+  const relistBidCollection = async () => {
+    if (!detail?.request?.id || relisting) return;
+    setRelisting(true);
+    try {
+      const res = await relistAdminPantryBidCollectionRequest(detail.request.id);
+      setDetail(res?.data || null);
+      toast?.success?.("تم فتح جولة مناقصات جديدة.");
+      await loadList();
+    } catch (err) {
+      toast?.error?.(apiErrorMessage(err, "تعذر إعادة طرح المناقصة"));
+    } finally {
+      setRelisting(false);
     }
   };
 
@@ -260,6 +300,10 @@ export default function AdminPantryPage() {
         .map(([code]) => code);
       payload.eligibleTierCodes = codes.length ? codes : null;
     }
+    if (form.requiredBidCount !== "") {
+      payload.requiredBidCount = Number(form.requiredBidCount);
+      payload.minRequiredBidsAcknowledged = Boolean(form.minRequiredBidsAcknowledged);
+    }
 
     setSaving(true);
     try {
@@ -289,14 +333,31 @@ export default function AdminPantryPage() {
     }
   };
 
-  const onAcceptBid = async (bidId) => {
+  const onAcceptBid = async (bidId, overrideReason) => {
+    if (acceptingRef.current) return;
+    const fairRanking = detail?.fairRanking;
+    if (
+      overrideReason == null &&
+      isFairRankingEligible(fairRanking) &&
+      !isRecommendedPantryBid(bidId, fairRanking)
+    ) {
+      setOverrideBidId(bidId);
+      return;
+    }
     try {
-      await acceptAdminPantryBidRequest(selectedId, bidId);
+      acceptingRef.current = true;
+      await acceptAdminPantryBidRequest(
+        selectedId,
+        bidId,
+        overrideReason ? { overrideReason } : {},
+      );
       toast?.success?.("تم قبول العرض");
       await loadList();
       await openDetail(selectedId);
     } catch (err) {
       toast?.error?.(apiErrorMessage(err, "فشل قبول العرض"));
+    } finally {
+      acceptingRef.current = false;
     }
   };
 
@@ -364,17 +425,25 @@ export default function AdminPantryPage() {
         </button>
       </header>
 
-      <div className="pantry-page__tabs">
+      <div className="mb-4 flex flex-wrap gap-2">
         <button
           type="button"
-          className={tab === "requests" ? "is-active" : ""}
+          className={
+            tab === "requests"
+              ? "cursor-pointer rounded-lg border border-[var(--dash-primary,#2f3b65)] bg-[var(--dash-primary,#2f3b65)] px-[0.9rem] py-[0.45rem] font-bold text-[var(--dash-text-inverse,#fff)]"
+              : "cursor-pointer rounded-lg border border-[var(--dash-border,#c9d0da)] bg-[var(--dash-card,#fff)] px-[0.9rem] py-[0.45rem] font-bold text-[var(--dash-primary,#2f3b65)]"
+          }
           onClick={() => setTab("requests")}
         >
           طلبات بيت المونة
         </button>
         <button
           type="button"
-          className={tab === "deliveries" ? "is-active" : ""}
+          className={
+            tab === "deliveries"
+              ? "cursor-pointer rounded-lg border border-[var(--dash-primary,#2f3b65)] bg-[var(--dash-primary,#2f3b65)] px-[0.9rem] py-[0.45rem] font-bold text-[var(--dash-text-inverse,#fff)]"
+              : "cursor-pointer rounded-lg border border-[var(--dash-border,#c9d0da)] bg-[var(--dash-card,#fff)] px-[0.9rem] py-[0.45rem] font-bold text-[var(--dash-primary,#2f3b65)]"
+          }
           onClick={() => setTab("deliveries")}
         >
           منجزات بيت المونة
@@ -424,9 +493,12 @@ export default function AdminPantryPage() {
                       <td>{STATUS_LABELS[row.status] || row.status}</td>
                       <td>{formatBudget(row)}</td>
                       <td>
-                        {integrationActive && row.targetApplicantCount != null
-                          ? `${row.validApplicantCount ?? 0} / ${row.targetApplicantCount}`
-                          : row.bidsCount ?? 0}
+                        {row.bidCollection?.label ||
+                          (row.requiredBidCount
+                            ? `${row.validApplicantCount ?? 0} من ${row.requiredBidCount} متقدمين مطلوبين`
+                            : integrationActive && row.targetApplicantCount != null
+                            ? `${row.validApplicantCount ?? 0} / ${row.targetApplicantCount}`
+                            : row.bidsCount ?? 0)}
                       </td>
                       {integrationActive ? <td>{row.applicationBidCost ?? 1}</td> : null}
                       <td>{row.assignedFreelancerName || "—"}</td>
@@ -754,6 +826,48 @@ export default function AdminPantryPage() {
             ) : null}
 
             <section className="pantry-form-section">
+              <h3>الحد الأدنى للمناقصات</h3>
+              <p className="muted">اترك الحقل فارغًا للإبقاء على القبول اليدوي الحالي بدون حد أدنى.</p>
+              <label>
+                العدد الأدنى المطلوب للمتقدمين
+                <select
+                  value={form.requiredBidCount}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      requiredBidCount: e.target.value,
+                      minRequiredBidsAcknowledged: e.target.value === "" ? false : f.minRequiredBidsAcknowledged,
+                    }))
+                  }
+                >
+                  <option value="">بدون حد أدنى (الوضع الحالي)</option>
+                  {ARTICLE_ALLOWED_REQUIRED_BID_COUNTS.map((n) => (
+                    <option key={n} value={String(n)}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {form.requiredBidCount !== "" ? (
+                <>
+                  <p className="pantry-field-error" role="note">
+                    {PANTRY_MIN_REQUIRED_BIDS_WARNING_AR}
+                  </p>
+                  <label className="pantry-check">
+                    <input
+                      type="checkbox"
+                      checked={form.minRequiredBidsAcknowledged}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, minRequiredBidsAcknowledged: e.target.checked }))
+                      }
+                    />
+                    {PANTRY_MIN_REQUIRED_BIDS_ACK_AR}
+                  </label>
+                </>
+              ) : null}
+            </section>
+
+            <section className="pantry-form-section">
               <h3>ملاحظات داخلية</h3>
               <label>
                 ملاحظات للأدمن فقط
@@ -810,11 +924,32 @@ export default function AdminPantryPage() {
             <p>
               الحالة: <strong>{STATUS_LABELS[detail.request.status] || detail.request.status}</strong>
             </p>
+            {detail.request.bidCollection ? (
+              <p>
+                <strong>
+                  {formatArticleBidCollectionLabel(detail.request.bidCollection, {
+                    current: detail.request.bidCollection.currentBidCount,
+                    required: detail.request.bidCollection.requiredBidCount,
+                  })}
+                </strong>
+              </p>
+            ) : null}
+            {canRelistBidCollection(detail.request.bidCollection) ? (
+              <div data-testid="pantry-relist-bid-collection">
+                <p className="muted">
+                  سيتم فتح جولة جديدة لطلب بيت المونة بنفس البيانات، ولن يتم احتساب المتقدمين السابقين ضمن الجولة الجديدة.
+                  سيبقى الحد الأدنى للمناقصات كما هو.
+                </p>
+                <button type="button" className="btn-primary" onClick={relistBidCollection} disabled={relisting}>
+                  إعادة طرح المناقصة
+                </button>
+              </div>
+            ) : null}
             {integrationActive ? (
             <p className="muted">
-              تكلفة التقديم: {detail.request.applicationBidCost ?? 1} عرض متاح
+              تكلفة التقديم: {detail.request.applicationBidCost ?? 1} مناقصة
               {detail.request.targetApplicantCount != null
-                ? ` · المتقدمون: ${detail.request.validApplicantCount ?? 0} / ${detail.request.targetApplicantCount}`
+                ? ` · سقف المتقدمين: ${detail.request.validApplicantCount ?? 0} / ${detail.request.targetApplicantCount}`
                 : ` · المتقدمون: ${detail.request.validApplicantCount ?? detail.bids?.length ?? 0}`}
               {detail.request.remainingApplicantSlots != null
                 ? ` · المتبقي: ${detail.request.remainingApplicantSlots}`
@@ -826,6 +961,39 @@ export default function AdminPantryPage() {
                 الباقات المؤهلة: {detail.request.eligibleTierCodes.map((t) => String(t).toUpperCase()).join("، ")}
               </p>
             )}
+            {detail.request.requiredBidCount != null ? (
+              <section className="pantry-form-section" data-testid="pantry-fair-ranking">
+                <h3>ترتيب التوزيع العادل</h3>
+                {!isFairRankingEligible(detail.fairRanking) ? (
+                  <p className="muted">
+                    {detail.fairRanking?.messageAr || ARTICLE_FAIR_RANKING_PENDING_AR}
+                  </p>
+                ) : (
+                  <>
+                    <p className="muted">{PANTRY_FAIR_RANKING_DISCLAIMER_AR}</p>
+                    <ol className="pantry-bid-list">
+                      {(detail.fairRanking?.candidates || []).map((c) => (
+                        <li key={c.bidId}>
+                          <div>
+                            <strong>
+                              #{c.rank} {c.freelancerName || c.freelancerUserId}
+                              {isRecommendedPantryBid(c.bidId, detail.fairRanking)
+                                ? " (المرشح الأول)"
+                                : ""}
+                            </strong>
+                            {c.amount != null ? ` — ${c.amount}` : ""}
+                            <div className="muted">
+                              {c.submittedAt ? new Date(c.submittedAt).toLocaleString() : ""}
+                              {c.rankingReason ? ` · ${c.rankingReason}` : ""}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </>
+                )}
+              </section>
+            ) : null}
             <h3>العروض</h3>
             <ul className="pantry-bid-list">
               {(detail.bids || []).map((b) => (
@@ -838,7 +1006,21 @@ export default function AdminPantryPage() {
                   </div>
                   {b.status === "pending" && detail.request.status === "open_for_bids" && (
                     <div className="pantry-actions">
-                      <button type="button" className="btn btn-primary btn-sm" onClick={() => onAcceptBid(b.id)}>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        disabled={
+                          detail.request.requiredBidCount != null &&
+                          !canSelectArticleApplicant(detail.request.bidCollection)
+                        }
+                        title={
+                          detail.request.requiredBidCount != null &&
+                          !canSelectArticleApplicant(detail.request.bidCollection)
+                            ? "لا يمكن الإسناد قبل اكتمال الحد الأدنى للمناقصات"
+                            : undefined
+                        }
+                        onClick={() => onAcceptBid(b.id)}
+                      >
                         قبول العرض
                       </button>
                       <button type="button" className="btn btn-secondary btn-sm" onClick={() => onRejectBid(b.id)}>
@@ -892,6 +1074,16 @@ export default function AdminPantryPage() {
           </div>
         </div>
       )}
+      <FairSelectionOverrideDialog
+        open={Boolean(overrideBidId)}
+        submitting={false}
+        onCancel={() => setOverrideBidId(null)}
+        onConfirm={async (reason) => {
+          const id = overrideBidId;
+          setOverrideBidId(null);
+          await onAcceptBid(id, reason);
+        }}
+      />
     </div>
   );
 }

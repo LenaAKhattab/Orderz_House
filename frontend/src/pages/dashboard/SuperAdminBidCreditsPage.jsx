@@ -79,6 +79,7 @@ export default function SuperAdminBidCreditsPage() {
 
   const createPackage = async (e) => {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setMessage(null);
     try {
@@ -109,6 +110,7 @@ export default function SuperAdminBidCreditsPage() {
   };
 
   const togglePackage = async (pkg) => {
+    if (busy) return;
     setBusy(true);
     try {
       await updateAdminBidCreditPackageRequest(pkg.id, { isActive: !pkg.isActive });
@@ -137,6 +139,7 @@ export default function SuperAdminBidCreditsPage() {
 
   const grantBids = async (e) => {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setMessage(null);
     try {

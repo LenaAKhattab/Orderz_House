@@ -34,6 +34,17 @@ const createMarketplaceArticleValidators = [
   body("categoryId").optional({ nullable: true }).isInt({ min: 1 }),
   body("subcategoryId").optional({ nullable: true }).isInt({ min: 1 }),
   body("isFakeOrTraining").optional().isBoolean(),
+  body("requiredBidCount").isInt({ min: 1 }).withMessage("requiredBidCount is required."),
+  body("minRequiredBidsAcknowledged")
+    .custom((value) => value === true || value === "true" || value === 1 || value === "1")
+    .withMessage("يجب الإقرار بحد المناقصات الأدنى."),
+  body("applicationDeadlineAt")
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === null || value === undefined || value === "") return true;
+      return !Number.isNaN(new Date(value).getTime());
+    })
+    .withMessage("applicationDeadlineAt is invalid."),
 ];
 
 const updateMarketplaceArticleValidators = [
@@ -60,6 +71,8 @@ const updateMarketplaceArticleValidators = [
   body("categoryId").optional({ nullable: true }).isInt({ min: 1 }),
   body("subcategoryId").optional({ nullable: true }).isInt({ min: 1 }),
   body("isFakeOrTraining").optional().isBoolean(),
+  body("requiredBidCount").optional().isInt({ min: 1 }),
+  body("minRequiredBidsAcknowledged").optional(),
 ];
 
 const listMarketplaceArticlesValidators = [

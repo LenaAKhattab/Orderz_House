@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../../client_orders/data/order_attachment_limits.dart';
 import '../../orders/presentation/order_detail_widgets.dart';
+import '../../currency/presentation/jod_money_display.dart';
 import '../../orders/presentation/order_file_download_tile.dart';
 import '../data/freelancer_delivery_models.dart';
 import '../data/freelancer_my_order_models.dart';
@@ -61,7 +62,13 @@ class _FreelancerOrderDetailBody extends ConsumerWidget {
           statusLabel: order.statusLabel,
           statusKey: order.orderStatus,
           projectTypeLabel: order.projectTypeLabel,
-          budgetLabel: order.budgetLabel,
+          budgetDisplay: JodOrderBudgetDisplay(
+            projectType: order.projectType,
+            amount: order.budget ?? order.paymentAmount,
+            bidMin: order.bidBudgetMin,
+            bidMax: order.bidBudgetMax,
+            onDark: true,
+          ),
           dateLabel: formatOrderDateLabel(order.updatedAt ?? order.createdAt),
           dateCaption: 'آخر تحديث',
         ),

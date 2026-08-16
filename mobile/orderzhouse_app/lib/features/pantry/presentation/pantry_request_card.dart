@@ -32,7 +32,7 @@ class PantryRequestCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            request.title.trim().isEmpty ? 'طلب بيت المونة' : request.title,
+            request.title.trim().isEmpty ? 'طلب' : request.title,
             textAlign: TextAlign.right,
             style: const TextStyle(
               fontWeight: FontWeight.w800,
@@ -70,9 +70,11 @@ class PantryRequestCard extends StatelessWidget {
           ],
           const SizedBox(height: 10),
           _row('نوع التسعير', pantryPricingLabel(request)),
-          _row('الميزانية', pantryBudgetLabel(request)),
+          _rowWidget('الميزانية', pantryBudgetWidget(request)),
           _row('مدة التنفيذ', pantryDurationLabel(request)),
           if (request.bidsCount != null) _row('عدد العروض', '${request.bidsCount}'),
+          if (pantryPublicBidProgressLabel(request) != null)
+            _row('حد المتقدمين', pantryPublicBidProgressLabel(request)!),
           if (request.acceptedBid?.createdAt != null || request.updatedAt != null)
             _row(
               'التاريخ',
@@ -114,13 +116,18 @@ class PantryRequestCard extends StatelessWidget {
   }
 
   Widget _row(String label, String value) {
+    return _rowWidget(
+      label,
+      Text(value, textAlign: TextAlign.left, style: const TextStyle(fontWeight: FontWeight.w600)),
+    );
+  }
+
+  Widget _rowWidget(String label, Widget value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
-          Expanded(
-            child: Text(value, textAlign: TextAlign.left, style: const TextStyle(fontWeight: FontWeight.w600)),
-          ),
+          Expanded(child: Align(alignment: Alignment.centerLeft, child: value)),
           Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
         ],
       ),

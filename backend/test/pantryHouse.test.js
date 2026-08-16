@@ -298,16 +298,45 @@ describe("pantry house rules", () => {
     assert.ok(routesSrc.includes('requireAnyRole(["admin", "super_admin"])'));
   });
 
-  it("freelancer pantry page is a separate route from available client orders", () => {
+  it("freelancer pantry route redirects into available orders; admin pantry stays separate", () => {
     const nav = fs.readFileSync(
       path.join(__dirname, "../../frontend/src/constants/freelancerNav.js"),
       "utf8",
     );
     const app = fs.readFileSync(path.join(__dirname, "../../frontend/src/App.jsx"), "utf8");
-    assert.ok(nav.includes('/dashboard/freelancer/pantry'));
-    assert.ok(nav.includes("dashboard.nav.freelancer.pantry"));
+    const redirectPage = fs.readFileSync(
+      path.join(__dirname, "../../frontend/src/pages/dashboard/FreelancerPantryPage.jsx"),
+      "utf8",
+    );
+    const marketplace = fs.readFileSync(
+      path.join(__dirname, "../../frontend/src/components/open-orders/OpenOrdersMarketplace.jsx"),
+      "utf8",
+    );
+    const mapper = fs.readFileSync(
+      path.join(__dirname, "../../frontend/src/components/open-orders/mapPantryRequestToPoolOrder.js"),
+      "utf8",
+    );
+    const adminPage = fs.readFileSync(
+      path.join(__dirname, "../../frontend/src/pages/dashboard/AdminPantryPage.jsx"),
+      "utf8",
+    );
+    assert.ok(!nav.includes("/dashboard/freelancer/pantry"));
+    assert.ok(!nav.includes("dashboard.nav.freelancer.pantry"));
+    assert.ok(nav.includes("/dashboard/freelancer/orders"));
     assert.ok(app.includes('path="/dashboard/freelancer/pantry"'));
     assert.ok(app.includes("FreelancerPantryPage"));
+    assert.ok(app.includes('path="/dashboard/freelancer/orders"'));
+    assert.ok(app.includes('path="/dashboard/super-admin/pantry"'));
+    assert.ok(app.includes("AdminPantryPage"));
+    assert.match(redirectPage, /Navigate to="\/dashboard\/freelancer\/orders"/);
+    assert.match(redirectPage, /replace/);
+    assert.doesNotMatch(redirectPage, /listFreelancerPantryRequestsRequest/);
+    assert.match(marketplace, /listFreelancerPantryRequestsRequest/);
+    assert.match(marketplace, /mergePantryIntoPool/);
+    assert.match(marketplace, /mapPantryRequestToPoolOrder/);
+    assert.match(mapper, /isPantryPoolItem: true/);
+    assert.doesNotMatch(mapper, /بيت المونة/);
+    assert.match(adminPage, /إنشاء طلب بيت المونة/);
   });
 
   it("listOpenRequestsForFreelancer filters open_for_bids only", () => {

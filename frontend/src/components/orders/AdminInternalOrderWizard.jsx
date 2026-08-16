@@ -16,6 +16,7 @@ import DashboardShell from "../dashboard/DashboardShell";
 import { getDashboardPath } from "../../constants/authRoutes";
 import { SelectPanelBusySkeleton } from "../ui/Skeleton";
 import { CreateOrderReviewRow } from "./CreateOrderReviewRow";
+import { JodMoneyDisplay } from "../money/JodMoneyDisplay";
 import {
   ORDER_UPLOAD_TOTAL_SIZE_HELPER_AR,
   ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR,
@@ -924,7 +925,7 @@ export default function AdminInternalOrderWizard({
           style={{ gridColumn: "span 12" }}
         >
           <div
-            className={`oh-stepper${isModal ? ` co-modal-ref__stepper co-modal-ref__stepper--steps-${steps.length}` : ""}`.trim()}
+            className={`oh-stepper max-[420px]:flex-wrap max-[420px]:gap-y-2 max-[420px]:overflow-x-hidden${isModal ? ` co-modal-ref__stepper co-modal-ref__stepper--steps-${steps.length}` : ""}`.trim()}
           >
             {steps.map((s, idx) => (
               <button
@@ -937,7 +938,9 @@ export default function AdminInternalOrderWizard({
                 }}
               >
                 <span className="oh-step__num">{idx + 1}</span>
-                <span className="oh-step__label">{s.label}</span>
+                <span className="oh-step__label max-[420px]:text-[0.8rem] max-[420px]:leading-[1.3] max-[420px]:whitespace-normal max-[420px]:text-balance">
+                  {s.label}
+                </span>
               </button>
             ))}
           </div>
@@ -1564,20 +1567,24 @@ export default function AdminInternalOrderWizard({
                         : tpl("emDash")}
                   </CreateOrderReviewRow>
                   <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewBudget") : "الميزانية"}>
-                    <span dir="ltr" style={{ display: "inline-block", textAlign: "right", width: "100%" }}>
-                      {isFakePoolMode
-                        ? formatTrainingOrderBudget({
-                            projectType: form.projectType,
-                            budget: form.budget,
-                            bidBudgetMin: form.bidBudgetMin,
-                            bidBudgetMax: form.bidBudgetMax,
-                          })
-                        : form.projectType === "bidding"
-                          ? isClientAudience
-                            ? `${formatMoney(form.bidBudgetMin)} – ${formatMoney(form.bidBudgetMax)} JOD`
-                            : "—"
-                          : `${formatMoney(form.budget)} JOD`}
-                    </span>
+                    {isFakePoolMode ? (
+                      <span dir="ltr" style={{ display: "inline-block", textAlign: "right", width: "100%" }}>
+                        {formatTrainingOrderBudget({
+                          projectType: form.projectType,
+                          budget: form.budget,
+                          bidBudgetMin: form.bidBudgetMin,
+                          bidBudgetMax: form.bidBudgetMax,
+                        })}
+                      </span>
+                    ) : form.projectType === "bidding" ? (
+                      isClientAudience ? (
+                        <JodMoneyDisplay amount={form.bidBudgetMin} amountMax={form.bidBudgetMax} compact />
+                      ) : (
+                        "—"
+                      )
+                    ) : (
+                      <JodMoneyDisplay amount={form.budget} compact />
+                    )}
                   </CreateOrderReviewRow>
                 </div>
                 <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewDuration") : "مدة التسليم"}>

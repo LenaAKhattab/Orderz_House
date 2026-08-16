@@ -961,7 +961,7 @@ button.oh-sa-navlink.oh-sa-navlink--button {
     max-height: calc(var(--oh-sa-viewport-h) - 20px);
     transform: translateX(calc(100% + 20px));
     transition: transform 0.28s var(--oh-sa-ease);
-    z-index: 45;
+    z-index: var(--oh-z-drawer, 45);
   }
 
   .oh-sa-sidebar-wrap--open {

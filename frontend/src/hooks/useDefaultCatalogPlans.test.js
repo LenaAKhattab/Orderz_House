@@ -174,9 +174,11 @@ describe("Super Admin default catalog button UX", () => {
     assert.match(labels, /الباقات الرئيسية/);
     assert.match(labels, /باقات الصفحات/);
     assert.match(labels, /باقات العمل/);
+    assert.match(nav, /باقات التدريب/);
     assert.match(nav, /\/dashboard\/super-admin\/plans\?section=core/);
     assert.match(nav, /\/dashboard\/super-admin\/plans\?section=pages/);
     assert.match(nav, /\/dashboard\/super-admin\/marketplace-plans/);
+    assert.match(nav, /\/dashboard\/super-admin\/training-packages/);
     assert.match(nav, /إدارة الباقات والاشتراكات/);
     assert.match(shell, /PLAN_CATALOG_ADMIN_TITLE/);
     assert.match(shell, /PlanCatalogNavigation/);
