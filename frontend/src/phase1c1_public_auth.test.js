@@ -32,7 +32,7 @@ describe("Phase 1C.1 public/auth routing", () => {
     const hook = read("hooks/usePublicTrainingPackages.js");
     assert.match(card, /buildTrainingWhatsAppUrl/);
     assert.doesNotMatch(card, /startCheckout/);
-    assert.match(plans, /showTraining \? <TrainingPlansSection/);
+    assert.match(plans, /showTraining \? \(\s*<TrainingPlansSection/);
     assert.match(plans, /if \(!user \|\| !isFreelancer\) return/);
     assert.match(hook, /TRAINING_PACKAGES/);
     assert.match(hook, /isVisible !== false/);

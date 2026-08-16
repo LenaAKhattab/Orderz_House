@@ -97,6 +97,24 @@ describe("Phase 1C.3 freelancer routes", () => {
     assert.match(src, /mergePantryIntoPool = Boolean\(isFreelancer && layout === "dashboard"\)/);
   });
 
+  it("OpenOrdersMarketplace imports MarketplaceOrderListRow so the list cannot crash", () => {
+    const src = read("components/open-orders/OpenOrdersMarketplace.jsx");
+    assert.match(src, /import MarketplaceOrderListRow from "\.\/MarketplaceOrderListRow"/);
+    assert.match(src, /displayedOrders\.map\(\(order\) => \(\s*<MarketplaceOrderListRow/);
+    const row = read("components/open-orders/MarketplaceOrderListRow.jsx");
+    assert.match(row, /export default function MarketplaceOrderListRow/);
+    assert.doesNotMatch(row, /بيت المونة|Work Token|Article Token/i);
+    assert.match(row, /guestLoginLabel/);
+    const app = read("App.jsx");
+    assert.match(app, /path="\/orders"/);
+    assert.match(app, /path="\/dashboard\/freelancer\/orders"/);
+    assert.match(app, /path="\/dashboard\/client\/orders"/);
+    const publicOrders = read("pages/Orders.jsx");
+    assert.match(publicOrders, /OpenOrdersMarketplace layout="public"/);
+    const dash = read("pages/dashboard/DashboardPage.jsx");
+    assert.match(dash, /OpenOrdersMarketplace layout="dashboard"/);
+  });
+
   it("getting-started and notifications use the safe internal path resolver", () => {
     const gs = read("pages/dashboard/FreelancerGettingStartedPage.jsx");
     assert.match(gs, /resolveSafeInternalNavPath/);

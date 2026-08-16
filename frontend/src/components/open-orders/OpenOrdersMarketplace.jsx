@@ -27,6 +27,7 @@ import BidAmountModal from "../../components/orders/BidAmountModal";
 import TakePoolOrderConfirmModal from "../../components/orders/TakePoolOrderConfirmModal";
 import Pagination from "../../components/common/Pagination";
 import OpportunityHelpTrigger from "../onboarding/OpportunityHelpTrigger";
+import MarketplaceOrderListRow from "./MarketplaceOrderListRow";
 import {
   isPantryPoolOrder,
   mapPantryRequestToPoolOrder,
