@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { probePublicWebsitePageForNav } from "../services/api";
+import { probePublicWebsitePageForNav } from "../services/publicChromeApi";
 import { HOW_IT_WORKS_PAGES } from "../constants/howItWorksPages";
 
 /**

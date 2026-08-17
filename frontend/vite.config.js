@@ -39,6 +39,11 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (
+            id.includes('node_modules/axios')
+          ) {
+            return 'vendor-axios';
+          }
           if (id.includes('node_modules/posthog-js')) {
             return 'vendor-posthog';
           }

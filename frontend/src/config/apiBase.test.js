@@ -14,10 +14,12 @@ describe("apiBase production contract", () => {
     assert.match(src, /VITE_API_BASE_URL/);
   });
 
-  it("api.js uses getApiBaseUrl (not hardcoded localhost fallback)", () => {
+  it("http client uses getApiBaseUrl (not hardcoded localhost fallback)", () => {
     const api = readFileSync(join(here, "../services/api.js"), "utf8");
-    assert.match(api, /getApiBaseUrl/);
+    const client = readFileSync(join(here, "../services/httpClient.js"), "utf8");
+    assert.match(client, /getApiBaseUrl/);
     assert.doesNotMatch(api, /localhost:5000\/api/);
+    assert.doesNotMatch(client, /localhost:5000\/api/);
   });
 
   it("refuses localhost API hosts in production builds", () => {

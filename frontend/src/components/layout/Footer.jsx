@@ -15,6 +15,7 @@ import {
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getFooterImportantLinkLabel } from "../../lib/i18n/footerImportantLinkLabel";
 import { useAuth } from "../../context/useAuth";
+import "../../styles/publicChrome.css";
 
 const linkClass =
   "site-footer__link text-[#202020] no-underline transition-colors hover:text-[#475569]";

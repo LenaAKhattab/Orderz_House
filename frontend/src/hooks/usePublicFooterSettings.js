@@ -3,7 +3,7 @@ import {
   FOOTER_APP_DOWNLOAD_FALLBACKS,
   mergeFooterSettings,
 } from "../constants/footerSettings";
-import { getPublicFooterSettingsRequest } from "../services/api";
+import { getPublicFooterSettingsRequest } from "../services/publicChromeApi";
 
 /**
  * Public footer settings (contact + working hours + app downloads).

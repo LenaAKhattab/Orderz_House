@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getPublicSitePagesRequest } from "../services/api";
+import { getPublicSitePagesRequest } from "../services/publicChromeApi";
 import { getPublicSitePagePath, isRemovedPublicSitePageSlug } from "../constants/publicSitePages";
 
 /**

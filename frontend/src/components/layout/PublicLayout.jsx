@@ -6,8 +6,7 @@ import { useHeroWallpaperReady } from "../../hooks/useHeroWallpaperReady";
 import PartnersBandSkeleton from "../skeletons/PartnersBandSkeleton";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import "../sections/home-hero-loading.css";
-import "../../styles/servicesPage.css";
+import "../../styles/publicHomeShell.css";
 
 const PartnersSection = lazy(() => import("../sections/PartnersSection"));
 

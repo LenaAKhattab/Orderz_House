@@ -6,7 +6,7 @@ import {
   markAllNotificationsReadRequest,
   markNotificationReadRequest,
   NOTIFICATIONS_REFRESH_EVENT,
-} from "../../services/api";
+} from "../../services/notificationsApi";
 import { useAuth } from "../../context/useAuth";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getNotificationDetails } from "../../utils/notificationDisplay";

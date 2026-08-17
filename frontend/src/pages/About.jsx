@@ -1,6 +1,7 @@
 import { createElement, useEffect, useRef, useState } from "react";
 import { useTranslation } from "../i18n/LanguageProvider";
 import PublicPageHeader from "../components/layout/PublicPageHeader";
+import "../styles/aboutPage.css";
 
 function useReveal(options = {}) {
   const ref = useRef(null);

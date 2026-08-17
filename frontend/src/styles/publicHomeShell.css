@@ -1,0 +1,87 @@
+/* Public home layout shell — wallpaper + desktop/mobile visibility for PublicLayout. */
+/* Hero/page internals remain in home-landing-top.css and home-mobile-page.css. */
+
+/* Home top: hero shell only (offers live in home-promo-offers.css) */
+
+/* Homepage: wallpaper from top of viewport (behind navbar) */
+.home-public-layout {
+  background: transparent;
+}
+
+.home-public-layout::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  height: 100svh;
+  pointer-events: none;
+  background-color: var(--page-bg, #f3f4f4);
+  background-image:
+    linear-gradient(
+      90deg,
+      rgb(248 250 252 / 0.06) 0%,
+      rgb(248 250 252 / 0.14) 45%,
+      rgb(248 250 252 / 0.3) 100%
+    ),
+    url("/hero/background.webp");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 0.65s cubic-bezier(0.33, 1, 0.68, 1);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 90%,
+    rgba(0, 0, 0, 0.7) 96%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 90%,
+    rgba(0, 0, 0, 0.7) 96%,
+    transparent 100%
+  );
+}
+
+.home-public-layout.home-public-layout--wallpaper-ready::before {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-public-layout::before {
+    transition: none;
+    opacity: 1;
+  }
+}
+
+.home-public-layout > *:not(.public-nav-mobile-layer) {
+  position: relative;
+  z-index: 1;
+}
+
+.home-public-layout > .public-nav-header {
+  z-index: var(--public-nav-z, 500);
+}
+
+.home-public-layout > .public-nav-mobile-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--public-nav-layer-z, 600);
+}
+
+.home-desktop-only {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .home-desktop-only {
+    display: none !important;
+  }
+}
+

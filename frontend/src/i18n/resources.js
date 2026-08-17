@@ -7,9 +7,6 @@ import arServices from "../locales/ar/services.json";
 import arPlans from "../locales/ar/plans.json";
 import arAbout from "../locales/ar/about.json";
 import arOrders from "../locales/ar/orders.json";
-import arDashboard from "../locales/ar/dashboard.json";
-import arTrainingOrders from "../locales/ar/trainingOrders.json";
-import arFreelancerDashboard from "../locales/ar/freelancerDashboard.json";
 import arAccountDeletion from "../locales/ar/accountDeletion.json";
 
 import enCommon from "../locales/en/common.json";
@@ -21,9 +18,6 @@ import enServices from "../locales/en/services.json";
 import enPlans from "../locales/en/plans.json";
 import enAbout from "../locales/en/about.json";
 import enOrders from "../locales/en/orders.json";
-import enDashboard from "../locales/en/dashboard.json";
-import enTrainingOrders from "../locales/en/trainingOrders.json";
-import enFreelancerDashboard from "../locales/en/freelancerDashboard.json";
 import enAccountDeletion from "../locales/en/accountDeletion.json";
 
 export const DEFAULT_LOCALE = "ar";
@@ -42,9 +36,6 @@ export const resources = {
     plans: arPlans,
     about: arAbout,
     orders: arOrders,
-    dashboard: arDashboard,
-    trainingOrders: arTrainingOrders,
-    freelancerDashboard: arFreelancerDashboard,
     accountDeletion: arAccountDeletion,
   },
   en: {
@@ -57,9 +48,6 @@ export const resources = {
     plans: enPlans,
     about: enAbout,
     orders: enOrders,
-    dashboard: enDashboard,
-    trainingOrders: enTrainingOrders,
-    freelancerDashboard: enFreelancerDashboard,
     accountDeletion: enAccountDeletion,
   },
 };
@@ -71,3 +59,13 @@ export function isSupportedLocale(value) {
 export function getLocaleDirection(locale) {
   return locale === "en" ? "ltr" : "rtl";
 }
+
+/** Merge extra namespaces into the shared resources object (used by dashboard layout chunk). */
+export function mergeLocaleNamespaces(extra) {
+  if (!extra || typeof extra !== "object") return;
+  for (const locale of Object.keys(extra)) {
+    if (!resources[locale]) resources[locale] = {};
+    Object.assign(resources[locale], extra[locale]);
+  }
+}
+
