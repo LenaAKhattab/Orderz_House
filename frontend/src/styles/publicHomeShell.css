@@ -29,7 +29,7 @@
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.65s cubic-bezier(0.33, 1, 0.68, 1);
   -webkit-mask-image: linear-gradient(
     to bottom,
@@ -45,6 +45,19 @@
     rgba(0, 0, 0, 0.7) 96%,
     transparent 100%
   );
+}
+
+@media (max-width: 1023px) {
+  .home-public-layout::before {
+    background-image:
+      linear-gradient(
+        90deg,
+        rgb(248 250 252 / 0.1) 0%,
+        rgb(248 250 252 / 0.22) 50%,
+        rgb(248 250 252 / 0.35) 100%
+      ),
+      url("/hero/background.webp");
+  }
 }
 
 .home-public-layout.home-public-layout--wallpaper-ready::before {

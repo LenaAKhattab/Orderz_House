@@ -1,6 +1,17 @@
 const { pool } = require("../config/db");
 const fakeOrdersService = require("./fakeOrdersService");
 
+/** Guest-only merged-id cache. Never keyed by user. Clamp 10–60s. */
+const PUBLIC_POOL_META_CACHE_MS = Math.min(
+  Math.max(Number(process.env.PUBLIC_POOL_META_CACHE_MS) || 20_000, 10_000),
+  60_000,
+);
+
+/** @type {Map<string, { value: object, expires: number }>} */
+const guestMetaCache = new Map();
+/** @type {Map<string, Promise<object | null>>} */
+const guestMetaInflight = new Map();
+
 function debugTrainingPoolLog(event, fields = {}) {
   if (String(process.env.TRAINING_POOL_DEBUG || "").trim() !== "1") return;
   // eslint-disable-next-line no-console
@@ -86,8 +97,48 @@ function buildDualFilters(status, projectType, categoryId, categoryIds, subSubId
   return { vals, wr, wf };
 }
 
-/** Pool list triggers synchronous handoff recovery when the marketplace would otherwise be empty. */
-async function tryMergedPoolMeta({
+function isGuestViewer(viewerUserId) {
+  return viewerUserId == null || !(Number(viewerUserId) > 0);
+}
+
+function guestMetaCacheKey(opts) {
+  return JSON.stringify({
+    page: Number(opts.page) || 1,
+    limit: Number(opts.limit) || 8,
+    offset: opts.offset == null ? null : Number(opts.offset),
+    status: opts.status || null,
+    projectType: opts.projectType || null,
+    categoryId: opts.categoryId || null,
+    categoryIds: String(opts.categoryIds || ""),
+    subSubCategoryIds: String(opts.subSubCategoryIds || ""),
+    sort: String(opts.sort || "newest"),
+    q: String(opts.q || ""),
+    includeRealOrders: opts.includeRealOrders !== false,
+  });
+}
+
+function cloneMeta(meta) {
+  if (!meta) return null;
+  return {
+    total: meta.total,
+    idOrder: Array.isArray(meta.idOrder)
+      ? meta.idOrder.map((r) => ({ id: String(r.id), source: r.source }))
+      : [],
+    page: meta.page,
+    limit: meta.limit,
+  };
+}
+
+function invalidatePublicGuestPoolMetaCache() {
+  guestMetaCache.clear();
+  guestMetaInflight.clear();
+}
+
+/**
+ * Pool list triggers synchronous handoff recovery when the marketplace would otherwise be empty.
+ * Audience/settings are applied in poolViewerMaySeeFakeOrders; SQL only lists currently visible rows.
+ */
+async function computeMergedPoolMeta({
   viewerUserId,
   viewerRole,
   page = 1,
@@ -103,15 +154,15 @@ async function tryMergedPoolMeta({
   includeRealOrders = true,
 }) {
   const { perfStart } = require("../utils/perfLog");
-  const totalTimer = perfStart("training_pool_list", "tryMergedPoolMeta");
+  const canSeeTimer = perfStart("training_pool_list", "visibility_gate");
   const canSee = await fakeOrdersService.poolViewerMaySeeFakeOrders({ userId: viewerUserId, role: viewerRole });
+  canSeeTimer.end({ canSee });
   debugTrainingPoolLog("visibility_gate", {
     viewerUserId: viewerUserId ?? null,
     viewerRole: viewerRole || null,
     canSee,
   });
   if (!canSee) {
-    totalTimer.end({ canSee: false });
     return null;
   }
 
@@ -129,8 +180,7 @@ async function tryMergedPoolMeta({
     `COALESCE(o.visibility_scope, 'public') = 'public'`,
     ...wr,
   ];
-  const uid = viewerUserId != null && Number(viewerUserId) > 0 ? Number(viewerUserId) : null;
-  const uidIdx = fvals.length + 1;
+  // Visibility gate already applied. Do not re-query fake_order_settings per UNION row.
   const fakeExtra = [
     `fo.fake_status = 'active'`,
     `fo.is_published = TRUE`,
@@ -142,22 +192,6 @@ async function tryMergedPoolMeta({
     `ri.visible_until > NOW()`,
     `fr.status = 'active'`,
     ...wf,
-    `
-    (SELECT training_orders_enabled FROM fake_order_settings WHERE id = 1) = TRUE
-    AND (
-      (SELECT show_to_all_visitors FROM fake_order_settings WHERE id = 1) = TRUE
-      OR (SELECT show_to_all_freelancers FROM fake_order_settings WHERE id = 1) = TRUE
-      OR (
-        $${uidIdx}::bigint IS NOT NULL
-        AND EXISTS (
-          SELECT 1 FROM freelancer_subscriptions fs
-          INNER JOIN fake_order_settings_plans sp ON sp.plan_id = fs.plan_id
-          WHERE fs.freelancer_user_id = $${uidIdx}::bigint
-            AND fs.is_current = TRUE
-            AND fs.status IN ('active', 'assigned_not_started')
-        )
-      )
-    )`,
   ];
 
   const whereRSql = `WHERE ${realExtra.join(" AND ")}`;
@@ -168,7 +202,6 @@ async function tryMergedPoolMeta({
       ? "sort_ts ASC, sort_id ASC"
       : "sort_ts DESC, sort_id DESC";
 
-  const baseParams = [...fvals, uid];
   const fakeSelect = `
       SELECT fo.id AS sort_id, ri.visible_from AS sort_ts, 'fake'::text AS src
       FROM fake_orders fo
@@ -185,32 +218,25 @@ async function tryMergedPoolMeta({
     ? `${realSelect}\n      UNION ALL\n      ${fakeSelect}`
     : fakeSelect;
 
-  const countSql = `
-    WITH unioned AS (
-      ${unionBody}
-    )
-    SELECT COUNT(*)::int AS total FROM unioned
-  `;
-
-  const limPh = baseParams.length + 1;
-  const offPh = baseParams.length + 2;
+  const limPh = fvals.length + 1;
+  const offPh = fvals.length + 2;
   const listSql = `
     WITH unioned AS (
       ${unionBody}
     )
-    SELECT sort_id, src FROM unioned
+    SELECT sort_id, src, COUNT(*) OVER()::int AS total
+    FROM unioned
     ORDER BY ${orderBy}
     LIMIT $${limPh} OFFSET $${offPh}
   `;
 
-  const listParams = [...baseParams, lim, off];
+  const listParams = [...fvals, lim, off];
 
-  const [{ rows: cRows }, { rows: idRows }] = await Promise.all([
-    pool.query(countSql, baseParams),
-    pool.query(listSql, listParams),
-  ]);
+  const sqlTimer = perfStart("training_pool_list", "union_page_query");
+  const { rows: idRows } = await pool.query(listSql, listParams);
+  sqlTimer.end({ rowCount: idRows.length, queryCount: 1 });
 
-  let total = Number(cRows[0]?.total || 0);
+  let total = Number(idRows[0]?.total || 0);
   let idOrder = idRows.map((r) => ({ id: String(r.sort_id), source: r.src }));
 
   let fakeCount = idOrder.filter((r) => String(r.source) === "fake").length;
@@ -218,13 +244,17 @@ async function tryMergedPoolMeta({
   if (fakeCount === 0) {
     debugTrainingPoolLog("no_fake_in_page", { note: "attempting_handoff_recovery" });
     try {
+      const recoveryTimer = perfStart("training_pool_list", "handoff_recovery");
       const recovery = await fakeOrdersService.ensureMinimumVisibleFakeOrders({ reason: "pool_list_handoff" });
+      recoveryTimer.end({
+        generated: Boolean(recovery?.generated),
+        visible: recovery?.visible ?? null,
+      });
       if (recovery?.generated || (Number(recovery?.visible) || 0) > 0) {
-        const [{ rows: cRows2 }, { rows: idRows2 }] = await Promise.all([
-          pool.query(countSql, baseParams),
-          pool.query(listSql, listParams),
-        ]);
-        total = Number(cRows2[0]?.total || 0);
+        const retryTimer = perfStart("training_pool_list", "union_page_query_retry");
+        const { rows: idRows2 } = await pool.query(listSql, listParams);
+        retryTimer.end({ rowCount: idRows2.length, queryCount: 1 });
+        total = Number(idRows2[0]?.total || 0);
         idOrder = idRows2.map((r) => ({ id: String(r.sort_id), source: r.src }));
         fakeCount = idOrder.filter((r) => String(r.source) === "fake").length;
         debugTrainingPoolLog("handoff_recovery_result", {
@@ -249,7 +279,9 @@ async function tryMergedPoolMeta({
     .filter((n) => Number.isInteger(n) && n > 0);
   if (fakeIdsToMark.length) {
     try {
+      const markTimer = perfStart("training_pool_list", "record_marketplace_visible");
       await fakeOrdersService.recordMarketplaceVisibleFakeOrders(pool, { fakeOrderIds: fakeIdsToMark });
+      markTimer.end({ count: fakeIdsToMark.length });
     } catch (e) {
       console.warn("[trainingPoolList] recordMarketplaceVisibleFakeOrders failed:", e?.message || e);
     }
@@ -262,13 +294,59 @@ async function tryMergedPoolMeta({
     page: Math.floor(off / lim) + 1,
     limit: lim,
   });
-  totalTimer.end({ total, fakeInPage: fakeCount, realInPage: idOrder.length - fakeCount });
   return {
     total,
     idOrder,
     page: Math.floor(off / lim) + 1,
     limit: lim,
   };
+}
+
+/** Pool list triggers synchronous handoff recovery when the marketplace would otherwise be empty. */
+async function tryMergedPoolMeta(options) {
+  const { perfStart } = require("../utils/perfLog");
+  const totalTimer = perfStart("training_pool_list", "tryMergedPoolMeta");
+  const guest = isGuestViewer(options?.viewerUserId);
+
+  if (guest) {
+    const key = guestMetaCacheKey(options || {});
+    const hit = guestMetaCache.get(key);
+    if (hit && hit.expires > Date.now()) {
+      totalTimer.end({ cache: "hit", total: hit.value?.total ?? null });
+      return cloneMeta(hit.value);
+    }
+    if (guestMetaInflight.has(key)) {
+      const shared = await guestMetaInflight.get(key);
+      totalTimer.end({ cache: "coalesce", total: shared?.total ?? null });
+      return cloneMeta(shared);
+    }
+    const pending = computeMergedPoolMeta(options)
+      .then((value) => {
+        if (value) {
+          guestMetaCache.set(key, { value: cloneMeta(value), expires: Date.now() + PUBLIC_POOL_META_CACHE_MS });
+        }
+        return value;
+      })
+      .finally(() => {
+        guestMetaInflight.delete(key);
+      });
+    guestMetaInflight.set(key, pending);
+    const value = await pending;
+    totalTimer.end({
+      cache: "miss",
+      total: value?.total ?? null,
+      fakeInPage: value?.idOrder?.filter((r) => r.source === "fake").length ?? 0,
+    });
+    return cloneMeta(value);
+  }
+
+  const value = await computeMergedPoolMeta(options);
+  totalTimer.end({
+    cache: "bypass_auth",
+    total: value?.total ?? null,
+    fakeInPage: value?.idOrder?.filter((r) => r.source === "fake").length ?? 0,
+  });
+  return value;
 }
 
 /** Training/fake orders only (no real `orders` branch) — for free-plan freelancers. */
@@ -280,4 +358,6 @@ module.exports = {
   tryMergedPoolMeta,
   tryFakeOnlyPoolMeta,
   parseIdCsv,
+  invalidatePublicGuestPoolMetaCache,
+  PUBLIC_POOL_META_CACHE_MS,
 };

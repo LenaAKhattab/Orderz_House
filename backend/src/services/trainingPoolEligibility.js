@@ -3,11 +3,20 @@
  * Keep homepage stats, pool list, rotation coverage checks aligned.
  */
 
+function sqlBool(value) {
+  return value === true ? "TRUE" : "FALSE";
+}
+
 /**
  * @param {string} [alias]
+ * @param {{ training_orders_enabled?: boolean } | null} [settings]
+ *        When provided, inlines the already-loaded master switch instead of a per-row settings subquery.
  */
-function trainingPoolItemCoreSql(alias = "fo") {
+function trainingPoolItemCoreSql(alias = "fo", settings = null) {
   const a = String(alias || "fo").trim() || "fo";
+  const enabledPred = settings
+    ? sqlBool(settings.training_orders_enabled === true)
+    : `(SELECT training_orders_enabled FROM fake_order_settings WHERE id = 1) = TRUE`;
   return `
   ${a}.fake_status = 'active'
   AND ${a}.is_published = TRUE
@@ -19,7 +28,7 @@ function trainingPoolItemCoreSql(alias = "fo") {
   AND ri.visible_from <= NOW()
   -- Exclusive end boundary: item is visible while visible_until > NOW() (not >=).
   AND ri.visible_until > NOW()
-  AND (SELECT training_orders_enabled FROM fake_order_settings WHERE id = 1) = TRUE
+  AND ${enabledPred}
 `.trim();
 }
 
@@ -68,15 +77,43 @@ function trainingPoolVisibleFromSql(alias = "fo") {
 const TRAINING_POOL_VISIBLE_FROM_SQL = trainingPoolVisibleFromSql("fo");
 
 /**
- * @param {{ publicAudienceOnly?: boolean, anyAudience?: boolean, alias?: string }} [options]
+ * @param {{ show_to_all_visitors?: boolean, show_to_all_freelancers?: boolean } | null} [settings]
+ */
+function resolvePublicAudienceSql(settings) {
+  if (!settings) return TRAINING_POOL_PUBLIC_AUDIENCE_SQL.trim();
+  return `(${sqlBool(settings.show_to_all_visitors === true)} OR ${sqlBool(settings.show_to_all_freelancers === true)})`;
+}
+
+/**
+ * @param {{ show_to_all_visitors?: boolean, show_to_all_freelancers?: boolean } | null} [settings]
+ */
+function resolveAnyAudienceSql(settings) {
+  if (!settings) return TRAINING_POOL_ANY_AUDIENCE_SQL.trim();
+  if (settings.show_to_all_visitors === true || settings.show_to_all_freelancers === true) {
+    return "TRUE";
+  }
+  return `(
+    EXISTS (
+      SELECT 1
+      FROM fake_order_settings_plans sp
+      INNER JOIN freelancer_subscriptions fs ON fs.plan_id = sp.plan_id
+      WHERE fs.is_current = TRUE
+        AND fs.status IN ('active', 'assigned_not_started')
+    )
+  )`;
+}
+
+/**
+ * @param {{ publicAudienceOnly?: boolean, anyAudience?: boolean, alias?: string, settings?: object | null }} [options]
  */
 function trainingPoolVisibleWhereSql(options = {}) {
   const alias = options.alias || "fo";
-  const parts = [trainingPoolItemCoreSql(alias)];
+  const settings = options.settings || null;
+  const parts = [trainingPoolItemCoreSql(alias, settings)];
   if (options.publicAudienceOnly) {
-    parts.push(TRAINING_POOL_PUBLIC_AUDIENCE_SQL.trim());
+    parts.push(resolvePublicAudienceSql(settings));
   } else if (options.anyAudience) {
-    parts.push(TRAINING_POOL_ANY_AUDIENCE_SQL.trim());
+    parts.push(resolveAnyAudienceSql(settings));
   }
   return parts.join("\n  AND ");
 }

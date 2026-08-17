@@ -4,25 +4,37 @@ import {
   mergeFooterSettings,
 } from "../constants/footerSettings";
 import { getPublicFooterSettingsRequest } from "../services/publicChromeApi";
+import { fetchPublicCached, peekPublicCached } from "../lib/publicRequestCache";
+
+const FOOTER_SETTINGS_KEY = "GET /public/footer-settings";
+
+function fromResponse(res) {
+  return mergeFooterSettings(res?.data?.settings || null);
+}
 
 /**
  * Public footer settings (contact + working hours + app downloads).
  */
 export function usePublicFooterSettings() {
-  const [settings, setSettings] = useState(() => mergeFooterSettings(null));
-  const [loading, setLoading] = useState(true);
+  const cached = peekPublicCached(FOOTER_SETTINGS_KEY);
+  const [settings, setSettings] = useState(() =>
+    cached !== undefined ? fromResponse(cached) : mergeFooterSettings(null),
+  );
+  const [loading, setLoading] = useState(() => cached === undefined);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(false);
+    if (cached === undefined) {
+      setLoading(true);
+      setError(false);
+    }
     (async () => {
       try {
-        const res = await getPublicFooterSettingsRequest();
-        if (!cancelled) setSettings(mergeFooterSettings(res?.data?.settings || null));
+        const res = await fetchPublicCached(FOOTER_SETTINGS_KEY, () => getPublicFooterSettingsRequest());
+        if (!cancelled) setSettings(fromResponse(res));
       } catch {
-        if (!cancelled) {
+        if (!cancelled && cached === undefined) {
           setError(true);
           setSettings(mergeFooterSettings(null));
         }
