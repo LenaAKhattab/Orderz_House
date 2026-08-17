@@ -30,6 +30,18 @@ abstract final class AppRoutes {
   static const freelancerFinancialClaims = '/freelancer/financial-claims';
   static const notifications = '/notifications';
 
+  static const superAdminActivation = '/super-admin/activation';
+  static const superAdminClaims = '/super-admin/claims';
+  static const superAdminPantry = '/super-admin/pantry';
+  static const superAdminPantryRequest = '/super-admin/pantry/requests/:id';
+  static const superAdminPantryDelivery = '/super-admin/pantry/deliveries/:id';
+  static const superAdminArticles = '/super-admin/articles';
+  static const superAdminArticleDetail = '/super-admin/articles/:id';
+
+  static String superAdminPantryRequestPath(String id) => '/super-admin/pantry/requests/$id';
+  static String superAdminPantryDeliveryPath(String id) => '/super-admin/pantry/deliveries/$id';
+  static String superAdminArticlePath(String id) => '/super-admin/articles/$id';
+
   static const accountSettings = '/account/settings';
   static const accountEditProfile = '/account/edit-profile';
   static const accountChangePassword = '/account/change-password';

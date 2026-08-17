@@ -127,7 +127,8 @@ class _AuthenticatedProfileBody extends ConsumerWidget {
       context.push(action.route);
       return;
     }
-    if (action.route == AppRoutes.myOrders ||
+    if (action.route == AppRoutes.home ||
+        action.route == AppRoutes.myOrders ||
         action.route == AppRoutes.marketplace ||
         action.route == AppRoutes.courses) {
       context.go(action.route);
@@ -262,6 +263,7 @@ class _ProfileHeroCard extends StatelessWidget {
     final role = profileRoleLabelAr(user);
     final status = profileStatusLabelAr(user) ?? 'الحساب نشط';
     final isFreelancer = user.usesFreelancerExperience;
+    final isSuperAdmin = user.usesSuperAdminExperience;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 22, 18, 16),
@@ -370,17 +372,24 @@ class _ProfileHeroCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          _ProfileCtaBanner(
-            title: isFreelancer ? 'تابع أعمالك ومستحقاتك من مكان واحد' : 'أنشئ طلبك التالي بسهولة',
-            actionLabel: isFreelancer ? 'طلباتي' : 'طلب جديد',
-            onPressed: () {
-              if (isFreelancer) {
-                context.go(AppRoutes.myOrders);
-              } else {
-                context.push(AppRoutes.clientCreateOrder);
-              }
-            },
-          ),
+          if (!isSuperAdmin)
+            _ProfileCtaBanner(
+              title: isFreelancer ? 'تابع أعمالك ومستحقاتك من مكان واحد' : 'أنشئ طلبك التالي بسهولة',
+              actionLabel: isFreelancer ? 'طلباتي' : 'طلب جديد',
+              onPressed: () {
+                if (isFreelancer) {
+                  context.go(AppRoutes.myOrders);
+                } else {
+                  context.push(AppRoutes.clientCreateOrder);
+                }
+              },
+            ),
+          if (isSuperAdmin)
+            _ProfileCtaBanner(
+              title: 'راجع المهام العاجلة من مركز المشرف الأعلى',
+              actionLabel: 'مركز المهام',
+              onPressed: () => GoRouter.of(context).go(AppRoutes.home),
+            ),
           if (status.isNotEmpty && !user.isActive) ...[
             const SizedBox(height: 8),
             Text(

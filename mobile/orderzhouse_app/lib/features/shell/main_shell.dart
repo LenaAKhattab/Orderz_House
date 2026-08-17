@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/router/super_admin_access.dart';
 import '../ads/presentation/popup_ads_host.dart';
 import '../auth/presentation/auth_controller.dart';
 
@@ -14,19 +15,20 @@ class MainShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authControllerProvider);
-    // Match tab content: courses only for freelancers; everyone else sees services.
+    final isSuperAdmin = auth.user?.usesSuperAdminExperience == true;
     final isFreelancer = auth.user?.usesFreelancerExperience == true;
     final destinations = _destinationsFor(isClient: !isFreelancer);
+    final showAds = auth.isAuthenticated && shouldShowPopupAdsForRole(auth.user?.effectiveRole);
 
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
           navigationShell,
-          if (auth.isAuthenticated) const PopupAdsHost(),
+          if (showAds) const PopupAdsHost(),
         ],
       ),
-      bottomNavigationBar: auth.isAuthenticated
+      bottomNavigationBar: auth.isAuthenticated && !isSuperAdmin
           ? _SoftBottomNavBar(
               selectedIndex: navigationShell.currentIndex,
               destinations: destinations,

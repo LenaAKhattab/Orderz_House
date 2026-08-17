@@ -14,6 +14,7 @@ enum ProfileActionId {
   courses,
   login,
   register,
+  superAdminHome,
 }
 
 class ProfileActionItem {
@@ -85,6 +86,23 @@ String profileInitials(AuthUser user) {
 
 /// Quick actions for authenticated users (role-specific).
 List<ProfileActionItem> profileQuickActionsForUser(AuthUser user) {
+  if (user.usesSuperAdminExperience) {
+    return const [
+      ProfileActionItem(
+        id: ProfileActionId.superAdminHome,
+        label: 'مركز المهام',
+        icon: Icons.dashboard_outlined,
+        route: AppRoutes.home,
+      ),
+      ProfileActionItem(
+        id: ProfileActionId.notifications,
+        label: 'الإشعارات',
+        icon: Icons.notifications_outlined,
+        route: AppRoutes.notifications,
+      ),
+    ];
+  }
+
   if (user.usesFreelancerExperience) {
     return const [
       ProfileActionItem(
@@ -235,11 +253,14 @@ bool profileActionAllowedForUser(ProfileActionId id, AuthUser user) {
     case ProfileActionId.financialClaims:
     case ProfileActionId.courses:
       return user.usesFreelancerExperience;
+    case ProfileActionId.superAdminHome:
+      return user.usesSuperAdminExperience;
     case ProfileActionId.myOrders:
-    case ProfileActionId.notifications:
-    case ProfileActionId.legalHelp:
     case ProfileActionId.marketplace:
     case ProfileActionId.services:
+      return !user.usesSuperAdminExperience;
+    case ProfileActionId.notifications:
+    case ProfileActionId.legalHelp:
     case ProfileActionId.login:
     case ProfileActionId.register:
       return true;
