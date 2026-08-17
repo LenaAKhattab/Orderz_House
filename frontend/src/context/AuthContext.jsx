@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AUTH_SESSION_HINT_KEY, TOKEN_KEY } from "../services/httpClient";
 import {
-  TOKEN_KEY,
-  AUTH_SESSION_HINT_KEY,
   fetchSessionBootstrap,
   resetSessionBootstrap,
   loginRequest,
@@ -9,12 +8,12 @@ import {
   meRequest,
   registerRequest,
   verifyRegisterOtpRequest,
-} from "../services/api";
+} from "../services/authSessionApi";
 import { getDashboardPath, ROLE } from "../constants/authRoutes";
 import { userHasPermission, userHasAnyPermission } from "../constants/dashboardPermissions";
 import { AuthContext } from "./authContext";
 import { clearAnalyticsUser, trackEvent } from "../services/analytics";
-import { invalidateFreelancerSessionCache, invalidatePublicPlansCache } from "../services/freelancerSessionCache";
+import { invalidateFreelancerSessionCache, invalidatePublicPlansCache } from "../services/freelancerSessionCacheStore";
 import { clearEveryLoginPopupDismissals } from "../utils/popupAdDismiss";
 import { clearLoginSessionId, createLoginSessionId } from "../utils/loginSession";
 

@@ -832,3 +832,27 @@ Broad CSS conversion, leftover uncommitted 1A–1C work, production deploy, opti
 
 ---
 
+## Performance Phase 0 + 1 (Web Audit)
+
+- Performance baseline, safe quick wins, and security-preserving caching rules are documented in:
+  - `docs/WEB_PERFORMANCE_AUDIT.md`
+- Scope intentionally stayed frontend-safe without changing backend business logic, Stripe webhook, payment/JOD/claims/subscription logic, or role/security boundaries.
+
+## Performance Phase 2 (Initial bundle / CSS)
+
+- Route-level Home + popup-ad lazy loading and public CSS chrome split are documented in:
+  - `docs/WEB_PERFORMANCE_AUDIT.md` → “Performance Phase 2 — Initial Bundle and CSS Cost Reduction”
+- No backend, Stripe, payment, or role-guard changes.
+
+## Performance Phase 3 (legacy CSS split)
+
+- Safe, proven-owner splits from `legacy-application.css` (About, Services helpers, unscoped pricing base, admin outlet compact) are documented in:
+  - `docs/WEB_PERFORMANCE_AUDIT.md` → “Performance Phase 3 — legacy CSS split”
+- Mixed-role / overlay / create-order CSS stayed global. No backend, Stripe, payment, or role-guard changes.
+
+## Performance Phase 4 (initial JS)
+
+- Safe index-JS splits (API client vs public/auth helpers, dashboard locales behind `MainLayout`, lucide icons off the home skeleton, lazy NotificationsBell) are documented in:
+  - `docs/WEB_PERFORMANCE_AUDIT.md` → “Performance Phase 4 — Initial JS Chunk Reduction”
+- No backend, Stripe, payment, or role-guard changes.
+

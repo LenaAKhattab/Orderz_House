@@ -16,6 +16,7 @@ import {
   resolvePublicPlansGridClassName,
 } from "./plansLayoutUtils";
 
+import "../../styles/publicPlans.css";
 import "../../styles/plansPage.css";
 
 const PricingSection = ({

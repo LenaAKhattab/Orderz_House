@@ -1,35 +1,11 @@
-import {
-  AppWindow,
-  BrainCircuit,
-  Handshake,
-  LayoutDashboard,
-  Megaphone,
-  NotebookPen,
-  PenTool,
-  Server,
-  TabletSmartphone,
-} from "lucide-react";
-
 /** WhatsApp business number for طلبات خاصة (fixed, not admin-editable for now). */
 export const HOME_SPECIAL_REQUESTS_WHATSAPP_PHONE = "971543266550";
 
 /**
  * Homepage featured services — static config (admin API later).
  * `subSubcategoryId` maps to real DB records for order filtering via `/orders?filters=`.
+ * Icon components live in `homeFeaturedServiceIcons.js` so lucide stays off the public index graph.
  */
-export const HOME_FEATURED_SERVICE_ICON_MAP = {
-  AppWindow,
-  Server,
-  TabletSmartphone,
-  BrainCircuit,
-  PenTool,
-  LayoutDashboard,
-  Megaphone,
-  NotebookPen,
-  Handshake,
-};
-
-/** Fixed homepage grid: 8 services + طلبات خاصة (last). */
 export const HOME_FEATURED_SERVICES = [
   {
     id: "frontend-dev",
@@ -108,10 +84,6 @@ export const HOME_FEATURED_SERVICES_COUNT = HOME_FEATURED_SERVICES.length;
 export const HOME_FEATURED_ICON_STROKE_WIDTH = 2.25;
 
 export const HOME_FEATURED_ICON_STROKE_WIDTH_MOBILE = 1.85;
-
-export function getHomeFeaturedServiceIcon(item) {
-  return HOME_FEATURED_SERVICE_ICON_MAP[item?.icon] || AppWindow;
-}
 
 /**
  * @param {string} message - Prefilled WhatsApp message (localized).

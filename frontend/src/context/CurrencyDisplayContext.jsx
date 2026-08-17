@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { getCurrencyDisplayRequest } from "../services/api";
+import { getCurrencyDisplayRequest } from "../services/publicChromeApi";
 import {
   BASE_CURRENCY,
   DISPLAY_DISCLAIMER,

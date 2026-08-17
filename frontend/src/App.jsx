@@ -9,7 +9,6 @@ import ScrollToTop from "./components/routing/ScrollToTop";
 import DocumentTitle from "./components/routing/DocumentTitle";
 import LocaleTransitionOverlay from "./components/layout/LocaleTransitionOverlay";
 import PublicLayout from "./components/layout/PublicLayout";
-import Home from "./pages/Home";
 import Unauthorized from "./pages/Unauthorized";
 
 const MainLayout = lazy(() => import("./layouts/MainLayout"));
@@ -25,6 +24,7 @@ import {
 } from "./components/auth/AuthGuards";
 import { ADMIN_PAGE_PERMISSIONS, SUPER_ADMIN_PAGE_PERMISSIONS } from "./constants/dashboardPermissions";
 import {
+  Home,
   About,
   Services,
   Plans,
@@ -121,7 +121,7 @@ import {
   clearGuestPoolLoginToastFlag,
   isGuestPoolLoginToast,
 } from "./utils/guestPoolLoginToast";
-import PopupAdsHost from "./components/ads/PopupAdsHost";
+const PopupAdsHost = lazy(() => import("./components/ads/PopupAdsHost"));
 
 function AnalyticsBridge() {
   const location = useLocation();
@@ -129,7 +129,22 @@ function AnalyticsBridge() {
 
   useEffect(() => {
     runAnalyticsStartupChecks();
-    initAnalytics();
+    let timeoutId = null;
+    let idleId = null;
+    const boot = () => initAnalytics();
+    if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+      idleId = window.requestIdleCallback(boot, { timeout: 2500 });
+    } else {
+      timeoutId = window.setTimeout(boot, 900);
+    }
+    return () => {
+      if (idleId != null && typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId != null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -204,7 +219,9 @@ function App() {
           <AnalyticsBridge />
           <ToastDashboardExitBridge />
           <ToastGuestPoolBridge />
-          <PopupAdsHost />
+          <Suspense fallback={null}>
+            <PopupAdsHost />
+          </Suspense>
           <Routes>
             <Route element={<PublicLayout />}>
               <Route

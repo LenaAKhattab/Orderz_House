@@ -1,86 +1,34 @@
-import axios from "axios";
-import { getApiBaseUrl } from "../config/apiBase";
+import api, { AUTH_REGISTER_TIMEOUT_MS } from "./httpClient";
 
-export const TOKEN_KEY = "orderz_auth_token";
-
-/** Non-secret flag: set after any successful server session in this tab (login/register); cleared on logout. Used to avoid GET /auth/me for cold visitors. HttpOnly cookies alone are not readable here—users who only clear localStorage may need to sign in again until the next successful session. */
-export const AUTH_SESSION_HINT_KEY = "orderz_session_hint";
-
-const api = axios.create({
-  baseURL: getApiBaseUrl(),
-  timeout: 10000,
-  withCredentials: true,
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-function hasSessionBootstrapCandidate() {
-  if (typeof localStorage === "undefined") return false;
-  const legacy = localStorage.getItem(TOKEN_KEY);
-  return Boolean((legacy && legacy.trim()) || localStorage.getItem(AUTH_SESSION_HINT_KEY));
-}
-
-/** Shared in-flight promise so React Strict Mode’s double mount does not send two /auth/me requests. */
-let sessionBootstrapPromise = null;
-
-export function resetSessionBootstrap() {
-  sessionBootstrapPromise = null;
-}
-
-/**
- * Initial session check: 401 is treated as guest (validateStatus), not an axios error.
- * Returns null when there is no legacy token and no session hint — skips the request entirely.
- */
-export async function fetchSessionBootstrap() {
-  if (!hasSessionBootstrapCandidate()) {
-    return null;
-  }
-  if (!sessionBootstrapPromise) {
-    sessionBootstrapPromise = api
-      .get("/auth/me", {
-        validateStatus: (status) => status === 200 || status === 401,
-      })
-      .then((response) => {
-        if (response.status === 401) {
-          return null;
-        }
-        return response.data;
-      })
-      .catch((err) => {
-        resetSessionBootstrap();
-        throw err;
-      });
-  }
-  return sessionBootstrapPromise;
-}
+export { default } from "./httpClient";
+export { TOKEN_KEY, AUTH_SESSION_HINT_KEY, AUTH_REGISTER_TIMEOUT_MS } from "./httpClient";
+export {
+  fetchSessionBootstrap,
+  resetSessionBootstrap,
+  loginRequest,
+  registerRequest,
+  verifyRegisterOtpRequest,
+  meRequest,
+  logoutRequest,
+} from "./authSessionApi";
+export {
+  getCurrencyDisplayRequest,
+  getPublicFooterSettingsRequest,
+  getPublicSitePagesRequest,
+  probePublicWebsitePageForNav,
+  postPublicPageViewRequest,
+} from "./publicChromeApi";
+export {
+  NOTIFICATIONS_REFRESH_EVENT,
+  listMyNotificationsRequest,
+  getUnreadNotificationsCountRequest,
+  markNotificationReadRequest,
+  markAllNotificationsReadRequest,
+} from "./notificationsApi";
 
 export const getHealthStatus = async () => {
   const response = await api.get("/health");
   return response.data;
-};
-
-/** Register/resend wait for bcrypt + DB + email; allow more than the default 10s client timeout. */
-const AUTH_REGISTER_TIMEOUT_MS = 25000;
-
-export const loginRequest = async (email, password) => {
-  const { data } = await api.post("/auth/login", { email, password });
-  return data;
-};
-
-export const registerRequest = async (body) => {
-  const { data } = await api.post("/auth/register", body, { timeout: AUTH_REGISTER_TIMEOUT_MS });
-  return data;
-};
-
-export const verifyRegisterOtpRequest = async (email, otp) => {
-  const { data } = await api.post("/auth/verify-register-otp", { email, otp });
-  return data;
 };
 
 export const resendRegisterOtpRequest = async (email) => {
@@ -104,20 +52,6 @@ export const resetPasswordRequest = async (email, resetToken, newPassword) => {
 };
 
 /** Forgot-password 401 is a request error only. There is no axios response interceptor that logs the current session out. */
-
-/**
- * Refresh current user (e.g. after profile change). 401 → null without axios throw.
- * Prefer fetchSessionBootstrap() only for the one-time app shell init.
- */
-export const meRequest = async () => {
-  const response = await api.get("/auth/me", {
-    validateStatus: (status) => status === 200 || status === 401,
-  });
-  if (response.status === 401) {
-    return null;
-  }
-  return response.data;
-};
 
 /** Extended profile + dashboard stats + subscription (freelancer). */
 export const getProfileMeRequest = async () => {
@@ -172,12 +106,6 @@ export const convertAccountRoleRequest = async ({ currentPassword, confirmation 
   return data;
 };
 
-/** Clears HttpOnly session cookie on the server (no body secrets). */
-export const logoutRequest = async () => {
-  const { data } = await api.post("/auth/logout");
-  return data;
-};
-
 export const getCategoriesRequest = async () => {
   const { data } = await api.get("/categories");
   return data;
@@ -207,15 +135,6 @@ export const getCategorySubSubcategoriesRequest = async (categoryId) => {
 // Plans / Subscriptions (RBAC-protected on backend)
 export const getPublicGeoRequest = async () => {
   const { data } = await api.get("/public/geo", { timeout: 8000 });
-  return data;
-};
-
-/** Display-only FX settings. Does not change stored JOD amounts or checkout. */
-export const getCurrencyDisplayRequest = async ({ preferred } = {}) => {
-  const { data } = await api.get("/public/currency-display", {
-    timeout: 8000,
-    params: preferred ? { preferred } : undefined,
-  });
   return data;
 };
 
@@ -2259,11 +2178,6 @@ export const getPublicFooterAppDownloadsRequest = async ({ signal } = {}) => {
   return data;
 };
 
-export const getPublicFooterSettingsRequest = async ({ signal } = {}) => {
-  const { data } = await api.get("/public/footer-settings", { signal, timeout: 8000 });
-  return data;
-};
-
 export const getSuperAdminFooterAppDownloadsRequest = async () => {
   const { data } = await api.get("/super-admin/website/footer-app-downloads");
   return data;
@@ -2291,11 +2205,6 @@ export const updateSuperAdminFooterWorkingHoursRequest = async (payload) => {
 
 export const updateSuperAdminFooterContactCenterRequest = async (payload) => {
   const { data } = await api.patch("/super-admin/website/footer/contact-center", payload);
-  return data;
-};
-
-export const getPublicSitePagesRequest = async ({ signal } = {}) => {
-  const { data } = await api.get("/public/site-pages", { signal, timeout: 8000 });
   return data;
 };
 
@@ -2352,19 +2261,6 @@ export const getPublicWebsitePageRequest = async (slug, { signal } = {}) => {
   return data;
 };
 
-/** Nav-only probe: treats inactive/missing pages as null without throwing on 404. */
-export const probePublicWebsitePageForNav = async (slug, { signal } = {}) => {
-  const { data, status } = await api.get(`/public/pages/${encodeURIComponent(slug)}`, {
-    signal,
-    timeout: 8000,
-    validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
-  });
-  if (status === 404 || !data?.success || !data?.data?.page) {
-    return null;
-  }
-  return data;
-};
-
 export const listSuperAdminWebsitePagesRequest = async () => {
   const { data } = await api.get("/super-admin/website/pages");
   return data;
@@ -2412,12 +2308,6 @@ export const uploadSuperAdminWebsiteImageRequest = async (file) => {
   const fd = new FormData();
   fd.append("image", file);
   const { data } = await api.post("/super-admin/website/upload-image", fd, { timeout: 120000 });
-  return data;
-};
-
-/** Record a public pageview in the local DB counter (idempotent per idempotencyKey). */
-export const postPublicPageViewRequest = async (payload) => {
-  const { data } = await api.post("/public/analytics/pageview", payload, { timeout: 8000 });
   return data;
 };
 
@@ -2768,30 +2658,6 @@ export async function downloadAdminCourseFile(courseId, fileKind, fallbackName) 
   triggerBlobDownload(blob, name);
 }
 
-/** Dispatched on `window` after notification-worthy events (e.g. subscription payment) so the bell refetches. */
-export const NOTIFICATIONS_REFRESH_EVENT = "orderz-notifications-refresh";
-
-// Notifications
-export const listMyNotificationsRequest = async (params = {}) => {
-  const { data } = await api.get("/notifications", { params });
-  return data;
-};
-
-export const getUnreadNotificationsCountRequest = async () => {
-  const { data } = await api.get("/notifications/unread-count");
-  return data;
-};
-
-export const markNotificationReadRequest = async (notificationId) => {
-  const { data } = await api.post(`/notifications/${notificationId}/read`);
-  return data;
-};
-
-export const markAllNotificationsReadRequest = async () => {
-  const { data } = await api.post("/notifications/read-all");
-  return data;
-};
-
 /* ---------- بيت المونة (Pantry House) ---------- */
 export const listAdminPantryRequestsRequest = async (params = {}) => {
   const { data } = await api.get("/admin/pantry/requests", { params });
@@ -2882,4 +2748,3 @@ export const submitFreelancerPantryDeliveryRequest = async (id, payload) => {
   return data;
 };
 
-export default api;

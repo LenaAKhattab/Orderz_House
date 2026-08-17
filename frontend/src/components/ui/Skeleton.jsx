@@ -1,4 +1,3 @@
-import "../orders/order-details/order-details-page.css";
 export { AuthRouteSkeleton } from "./AuthRouteSkeleton";
 
 /**

@@ -354,7 +354,7 @@ export default function FreelancerDashboardHome({ user }) {
 
   const orderCounts = useMemo(() => summary?.orders?.counts ?? {}, [summary?.orders?.counts]);
 
-  const pendingActions = summary?.pendingActions ?? [];
+  const pendingActions = useMemo(() => summary?.pendingActions ?? [], [summary?.pendingActions]);
 
   const insights = useMemo(
 

@@ -1,6 +1,7 @@
 import { lazy } from "react";
 
-/** Public marketing & auth — Home is eagerly loaded in App.jsx for first paint */
+/** Public marketing & auth — Home is lazy so its hero/CSS stay out of the initial index chunk. */
+export const Home = lazy(() => import("../pages/Home"));
 export const About = lazy(() => import("../pages/About"));
 export const Services = lazy(() => import("../pages/Services"));
 export const Plans = lazy(() => import("../pages/Plans"));

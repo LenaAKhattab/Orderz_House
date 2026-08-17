@@ -2,6 +2,7 @@ import PublicPageHeader from "../layout/PublicPageHeader";
 import TrainingPlanCard from "./TrainingPlanCard";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { usePublicTrainingPackages } from "../../hooks/usePublicTrainingPackages";
+import "../../styles/publicPlans.css";
 
 /**
  * Training packages grid for public `/plans` (WhatsApp inquiry CTAs).

@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
 import {
   getHomeFeaturedServiceHref,
-  getHomeFeaturedServiceIcon,
   HOME_FEATURED_ICON_STROKE_WIDTH,
   HOME_FEATURED_SERVICES,
   isHomeFeaturedServiceExternal,
 } from "../../constants/homeFeaturedServices";
+import { getHomeFeaturedServiceIcon } from "../../constants/homeFeaturedServiceIcons";
 import { useTranslation } from "../../i18n/LanguageProvider";
 
 function FeaturedServiceCell({ item, index, iconSize = 28, iconStrokeWidth = HOME_FEATURED_ICON_STROKE_WIDTH, t }) {
