@@ -63,6 +63,7 @@ void main() {
       expect(PublicSignupAccountType.blocked, contains('merchant'));
       expect(PublicSignupAccountType.blocked, contains('admin'));
       expect(PublicSignupAccountType.blocked, contains('super_admin'));
+      expect(PublicSignupAccountType.blocked, contains('program_admin'));
       expect(
         () => buildRegisterRequestBody(
           firstName: 'أ',

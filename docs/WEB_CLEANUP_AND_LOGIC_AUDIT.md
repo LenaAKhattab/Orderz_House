@@ -856,3 +856,7 @@ Broad CSS conversion, leftover uncommitted 1A–1C work, production deploy, opti
   - `docs/WEB_PERFORMANCE_AUDIT.md` → “Performance Phase 4 — Initial JS Chunk Reduction”
 - No backend, Stripe, payment, or role-guard changes.
 
+## Mobile Super Admin (cross-reference)
+
+Flutter Super Admin is **not** a clone of the web dashboard in §3.2. Scope, page classifications (A–E), notification matrix, and API readiness are in `docs/MOBILE_SUPER_ADMIN_SCOPE.md` (2026-08-17, analysis only). Web Super Admin routes stay as inventoried above.
+

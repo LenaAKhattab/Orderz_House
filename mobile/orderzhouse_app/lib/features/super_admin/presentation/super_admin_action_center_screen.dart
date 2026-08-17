@@ -1,0 +1,277 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/branding/app_branding.dart';
+import '../../../core/router/routes.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/oh_widgets.dart';
+import '../../auth/presentation/auth_controller.dart';
+import '../../home/presentation/home_dashboard_chrome.dart';
+import '../../notifications/presentation/unread_notifications_controller.dart';
+import '../../profile/domain/profile_actions.dart';
+import '../data/super_admin_controllers.dart';
+import '../data/super_admin_models.dart';
+import 'super_admin_ui.dart';
+
+class SuperAdminActionCenterScreen extends ConsumerWidget {
+  const SuperAdminActionCenterScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authControllerProvider).user;
+    final async = ref.watch(superAdminActionCenterProvider);
+    final unreadAsync = ref.watch(unreadNotificationsControllerProvider);
+    final unread = unreadAsync.maybeWhen(data: (v) => v, orElse: () => 0);
+    final name = user?.displayName.trim();
+    final greeting = (name != null && name.isNotEmpty) ? name : 'المشرف الأعلى';
+    final initials = user != null ? profileInitials(user) : 'م';
+
+    return Scaffold(
+      backgroundColor: AppColors.homeMobileBg,
+      body: Stack(
+        children: [
+          const HomeAtmosphere(),
+          SafeArea(
+            child: async.when(
+              skipLoadingOnReload: true,
+              skipLoadingOnRefresh: true,
+              loading: () => SuperAdminActionCenterView(
+                greetingName: greeting,
+                initials: initials,
+                unread: unread,
+                isLoading: true,
+                onRetry: () => ref.read(superAdminActionCenterProvider.notifier).refresh(),
+                onRefresh: () => ref.read(superAdminActionCenterProvider.notifier).refresh(),
+              ),
+              error: (error, _) => SuperAdminActionCenterView(
+                greetingName: greeting,
+                initials: initials,
+                unread: unread,
+                errorMessage: superAdminLoadErrorMessage(error),
+                onRetry: () => ref.read(superAdminActionCenterProvider.notifier).refresh(),
+                onRefresh: () => ref.read(superAdminActionCenterProvider.notifier).refresh(),
+              ),
+              data: (snapshot) => SuperAdminActionCenterView(
+                greetingName: greeting,
+                initials: initials,
+                unread: unread,
+                snapshot: snapshot,
+                onRetry: () => ref.read(superAdminActionCenterProvider.notifier).refresh(),
+                onRefresh: () => ref.read(superAdminActionCenterProvider.notifier).refresh(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SuperAdminActionCenterView extends StatelessWidget {
+  const SuperAdminActionCenterView({
+    super.key,
+    required this.greetingName,
+    required this.initials,
+    required this.unread,
+    required this.onRetry,
+    required this.onRefresh,
+    this.snapshot,
+    this.errorMessage,
+    this.isLoading = false,
+  });
+
+  final String greetingName;
+  final String initials;
+  final int unread;
+  final SuperAdminActionCenterSnapshot? snapshot;
+  final String? errorMessage;
+  final bool isLoading;
+  final VoidCallback onRetry;
+  final Future<void> Function() onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      AppBranding.displayNameAr,
+                      style: const TextStyle(
+                        color: AppColors.primaryDeep,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'أهلاً، $greetingName',
+                      style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                      textAlign: TextAlign.right,
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'مركز المهام',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              HomeHeaderNotificationButton(unread: unread),
+              const SizedBox(width: 10),
+              HomeHeaderAvatar(initials: initials, onTap: () {}),
+            ],
+          ),
+          const SizedBox(height: 22),
+          if (isLoading) ...[
+            const SizedBox(height: 80),
+            const SizedBox(
+              height: 220,
+              child: OhLoadingBody(message: 'جاري تحميل المهام العاجلة...'),
+            ),
+          ] else if (errorMessage != null) ...[
+            const SizedBox(height: 40),
+            SizedBox(
+              height: 260,
+              child: OhErrorBody(message: errorMessage!, onRetry: onRetry),
+            ),
+          ] else if (snapshot != null) ...[
+            if (!snapshot!.hasUrgentWork) ...[
+              const SizedBox(
+                height: 160,
+                child: OhEmptyBody(
+                  message: 'لا توجد مهام عاجلة حالياً.',
+                  icon: Icons.verified_outlined,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            const Text(
+              'يحتاج إجراء',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+                color: AppColors.primaryDeep,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SuperAdminCountTile(
+              title: 'طلبات تفعيل بانتظار المراجعة',
+              card: snapshot!.activations,
+              icon: Icons.verified_user_outlined,
+              onTap: () => context.push(AppRoutes.superAdminActivation),
+            ),
+            const SizedBox(height: 10),
+            SuperAdminCountTile(
+              title: 'مطالبات مالية تحتاج إجراء',
+              card: snapshot!.claims,
+              icon: Icons.payments_outlined,
+              onTap: () => context.push(AppRoutes.superAdminClaims),
+            ),
+            const SizedBox(height: 10),
+            SuperAdminCountTile(
+              title: 'إشعارات غير مقروءة',
+              card: snapshot!.unread,
+              icon: Icons.notifications_outlined,
+              onTap: () => context.push(AppRoutes.notifications),
+            ),
+            const SizedBox(height: 10),
+            SuperAdminCountTile(
+              title: 'بيت المونة يحتاج متابعة',
+              card: snapshot!.pantry,
+              icon: Icons.inventory_2_outlined,
+              onTap: () => context.push(AppRoutes.superAdminPantry),
+            ),
+            const SizedBox(height: 10),
+            SuperAdminCountTile(
+              title: 'المقالات تحتاج متابعة',
+              card: snapshot!.articles,
+              icon: Icons.article_outlined,
+              onTap: () => context.push(AppRoutes.superAdminArticles),
+            ),
+            const SizedBox(height: 10),
+            SuperAdminCountTile(
+              title: 'طلبات داخلية بمطالبات معلّقة',
+              card: snapshot!.internalOrders,
+              icon: Icons.assignment_late_outlined,
+              comingSoon: true,
+            ),
+            if (snapshot!.platformOrdersAvailable) ...[
+              const SizedBox(height: 22),
+              const Text(
+                'ملخص المنصة',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  color: AppColors.primaryDeep,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _MiniStat(label: 'مفتوحة', value: snapshot!.openProjects ?? 0),
+                  const SizedBox(width: 8),
+                  _MiniStat(label: 'قيد التنفيذ', value: snapshot!.inProgressProjects ?? 0),
+                  const SizedBox(width: 8),
+                  _MiniStat(label: 'مكتملة', value: snapshot!.completedProjects ?? 0),
+                ],
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  const _MiniStat({required this.label, required this.value});
+
+  final String label;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        child: Column(
+          children: [
+            Text(
+              '$value',
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                color: AppColors.primaryDeep,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+          ],
+        ),
+      ),
+    );
+  }
+}

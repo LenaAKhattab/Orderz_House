@@ -12,6 +12,7 @@ abstract final class PublicSignupAccountType {
     'merchant',
     'admin',
     'super_admin',
+    'program_admin',
     'financial_user',
   };
 }
