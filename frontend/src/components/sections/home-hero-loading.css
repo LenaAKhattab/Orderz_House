@@ -25,22 +25,7 @@
   }
 }
 
-/* Wallpaper fades in after preload (see useHeroWallpaperReady) */
-.home-public-layout::before {
-  opacity: 0;
-  transition: opacity 0.65s cubic-bezier(0.33, 1, 0.68, 1);
-}
-
-.home-public-layout.home-public-layout--wallpaper-ready::before {
-  opacity: 1;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-public-layout::before {
-    transition: none;
-    opacity: 1;
-  }
-}
+/* Wallpaper is a single CSS background (see publicHomeShell.css). */
 
 /* Staged hero copy reveal — text/CTA first, ads lane later */
 .home-hero--progressive .home-hero__copy > * {

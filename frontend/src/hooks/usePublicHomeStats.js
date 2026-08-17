@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getPublicHomeStatsRequest } from "../services/api";
 import { setPublicHomeStatsRefetchListener, peekLatestVisitorsTotal, peekLatestActiveUsersTotal } from "../services/publicHomeStatsRefetch";
+import { fetchPublicCached, PUBLIC_HOME_STATS_TTL_MS } from "../lib/publicRequestCache";
 
 export { formatHomePublicStat } from "../utils/homePublicStatFormat";
 
@@ -111,7 +112,7 @@ export function usePublicHomeStats() {
       setPayload(next);
     };
 
-    const load = async () => {
+    const load = async ({ initial = false } = {}) => {
       if (cancelled || (typeof document !== "undefined" && document.visibilityState === "hidden")) {
         return;
       }
@@ -120,7 +121,11 @@ export function usePublicHomeStats() {
       abortController = new AbortController();
 
       try {
-        const res = await getPublicHomeStatsRequest({ signal: abortController.signal });
+        const res = await fetchPublicCached(
+          "GET /public/home-stats",
+          () => getPublicHomeStatsRequest(),
+          { ttlMs: PUBLIC_HOME_STATS_TTL_MS, bypassCache: !initial },
+        );
         const d = res?.data;
         if (cancelled) return;
 
@@ -156,13 +161,13 @@ export function usePublicHomeStats() {
         intervalId = null;
         return;
       }
-      intervalId = window.setInterval(() => void load(), PUBLIC_HOME_STATS_POLL_MS);
+      intervalId = window.setInterval(() => void load({ initial: false }), PUBLIC_HOME_STATS_POLL_MS);
     };
 
     const onVisibilityChange = () => {
       if (cancelled) return;
       if (document.visibilityState === "visible") {
-        void load();
+        void load({ initial: false });
         schedulePoll();
       } else {
         if (intervalId) window.clearInterval(intervalId);
@@ -174,7 +179,7 @@ export function usePublicHomeStats() {
     setPublicHomeStatsRefetchListener((instant) => {
       if (cancelled) return;
       if (instant?.visitors == null && instant?.activeUsers == null) {
-        void load();
+        void load({ initial: false });
         return;
       }
       setPayload((prev) => {
@@ -182,10 +187,10 @@ export function usePublicHomeStats() {
         lastGoodRef.current = patched;
         return patched;
       });
-      void load();
+      void load({ initial: false });
     });
 
-    void load();
+    void load({ initial: true });
     schedulePoll();
     document.addEventListener("visibilitychange", onVisibilityChange);
 

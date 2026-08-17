@@ -159,7 +159,10 @@ const Navbar = () => {
     setUserMenuOpen(false);
   }, []);
 
-  const { items: howItWorksItems, showNav: showHowItWorksNav } = useHowItWorksNav();
+  const howItWorksNavActive = openDesktopDropdownId === "how-it-works" || mobileDrawerOpen;
+  const { items: howItWorksItems, showNav: showHowItWorksNav } = useHowItWorksNav({
+    active: howItWorksNavActive,
+  });
   const { mobileMenuPages, error: sitePagesError } = usePublicSitePages();
 
   /** Shared CMS important links for mobile drawer + desktop More dropdown. */

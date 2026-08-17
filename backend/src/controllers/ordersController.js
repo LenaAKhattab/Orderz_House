@@ -26,6 +26,31 @@ const {
 } = require("../utils/orderViewerSanitize");
 const { capture } = require("../config/posthog");
 
+/** Guest-only sanitized pool JSON. Never stores freelancer/client-private fields. Clamp 10–60s. */
+const PUBLIC_POOL_RESPONSE_CACHE_MS = Math.min(
+  Math.max(Number(process.env.PUBLIC_POOL_RESPONSE_CACHE_MS) || 20_000, 10_000),
+  60_000,
+);
+/** @type {Map<string, { value: object, expires: number }>} */
+const guestPoolResponseCache = new Map();
+/** @type {Map<string, Promise<object>>} */
+const guestPoolResponseInflight = new Map();
+
+function guestPoolResponseCacheKey(queryOpts) {
+  return JSON.stringify({
+    page: String(queryOpts.page || ""),
+    limit: String(queryOpts.limit || ""),
+    offset: String(queryOpts.offset || ""),
+    status: String(queryOpts.status || ""),
+    projectType: String(queryOpts.projectType || ""),
+    categoryId: String(queryOpts.categoryId || ""),
+    categoryIds: String(queryOpts.categoryIds || ""),
+    subSubCategoryIds: String(queryOpts.subSubCategoryIds || ""),
+    sort: String(queryOpts.sort || "newest"),
+    q: String(queryOpts.q || ""),
+  });
+}
+
 const listPoolOrders = async (req, res, next) => {
   try {
     const userId = req.auth?.userId || null;
@@ -46,23 +71,61 @@ const listPoolOrders = async (req, res, next) => {
       sort: req.query.sort,
       q: req.query.q,
     };
-    const result = isFreelancer
-      ? await ordersService.listPoolOrdersForFreelancer({
-          freelancerUserId: userId,
-          viewerRole: role,
-          ...queryOpts,
+
+    const loadPayload = async () => {
+      const result = isFreelancer
+        ? await ordersService.listPoolOrdersForFreelancer({
+            freelancerUserId: userId,
+            viewerRole: role,
+            ...queryOpts,
+          })
+        : await ordersService.listPoolOrders({
+            viewerUserId: userId,
+            viewerRole: isStaff ? "admin" : role || null,
+            ...queryOpts,
+          });
+      const orders = Array.isArray(result.orders)
+        ? result.orders.map((o) =>
+            isFreelancer ? sanitizeFreelancerPoolOrder(o) : sanitizePublicPoolOrder(o),
+          )
+        : [];
+      return { success: true, data: { ...result, orders } };
+    };
+
+    // Public/guest only — authenticated users (client/freelancer/admin) skip this cache.
+    if (!userId && !isFreelancer) {
+      const { perfStart } = require("../utils/perfLog");
+      const cacheTimer = perfStart("orders_pool", "guest_response_cache");
+      const key = guestPoolResponseCacheKey(queryOpts);
+      const hit = guestPoolResponseCache.get(key);
+      if (hit && hit.expires > Date.now()) {
+        cacheTimer.end({ cache: "hit" });
+        return res.status(200).json(hit.value);
+      }
+      if (guestPoolResponseInflight.has(key)) {
+        const payload = await guestPoolResponseInflight.get(key);
+        cacheTimer.end({ cache: "coalesce" });
+        return res.status(200).json(payload);
+      }
+      const pending = loadPayload()
+        .then((payload) => {
+          guestPoolResponseCache.set(key, {
+            value: payload,
+            expires: Date.now() + PUBLIC_POOL_RESPONSE_CACHE_MS,
+          });
+          return payload;
         })
-      : await ordersService.listPoolOrders({
-          viewerUserId: userId,
-          viewerRole: isStaff ? "admin" : role || null,
-          ...queryOpts,
+        .finally(() => {
+          guestPoolResponseInflight.delete(key);
         });
-    const orders = Array.isArray(result.orders)
-      ? result.orders.map((o) =>
-          isFreelancer ? sanitizeFreelancerPoolOrder(o) : sanitizePublicPoolOrder(o),
-        )
-      : [];
-    return res.status(200).json({ success: true, data: { ...result, orders } });
+      guestPoolResponseInflight.set(key, pending);
+      const payload = await pending;
+      cacheTimer.end({ cache: "miss" });
+      return res.status(200).json(payload);
+    }
+
+    const payload = await loadPayload();
+    return res.status(200).json(payload);
   } catch (err) {
     return next(err);
   }

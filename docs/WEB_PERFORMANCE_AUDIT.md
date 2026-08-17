@@ -2,8 +2,8 @@
 
 ## 1) Executive summary
 
-- Status: **Phase 0–4 completed**; **Phase 5 live browser measurement completed (PARTIAL)**. Initial CSS is ~236 kB; initial `index` JS is **387 kB**. Live measurement shows **slow public APIs**, not remaining JS weight, are now the user-perceived bottleneck. See Phase 5.
-- Main remaining bottlenecks are **slow/duplicated public API calls** (orders pool, home-stats, how-it-works probes, site-pages), plus large hero/logo images. JS/CSS splitting did not cause runtime crashes on measured routes.
+- Status: **Phase 0–6 (frontend) completed**, plus **Backend Performance Phase 1** for public pool and home-stats. Initial CSS is ~236 kB; initial `index` JS is **~388 kB**. Phase 6 removed duplicate public chrome/FAQ/how-it-works requests and cut the home wallpaper from **2.5 MB ×2** to **~42 kB ×1**. Backend Phase 1 cut guest `GET /api/orders/pool` from **~9–11 s** to **~0.65 s cold / ~1–5 ms cached**, and `GET /api/public/home-stats` from **~5.5–8 s** to **~1.6 s cold / ~1 ms cached**.
+- Public chrome duplicates and the 2.5 MB hero wallpaper are fixed. Remaining backend cost is mainly home-stats training-completed (~1.2 s cold, then cached) and unrelated public ads.
 - No product logic, security controls, Stripe webhook, payment logic, ordersService, or backend business rules were changed.
 - Safe quick wins were applied to reduce repeated public fetches, reduce startup competition, and remove avoidable rerender churn.
 
@@ -494,5 +494,134 @@ None. Duplicate `site-pages` is two legitimate hook consumers, not an unstable `
 Backend pool/home-stats latency is the largest win but is **out of scope** for this frontend-only track unless a separate backend performance pass is requested.
 
 Phase 5 tests: no frontend source change, so tests were not re-run. Last known: **220/220**. This session’s `npm run build` succeeded; preview smoke of public + crash routes passed; authenticated routes passed guest-guard smoke + lazy-chunk import only.
+
+## Performance Phase 6 — Public request dedupe and hero image optimization
+
+Frontend-only. Public non-sensitive GETs use a shared in-memory TTL + in-flight helper (`src/lib/publicRequestCache.js`). No auth/dashboard/orders/financial/claims/payment data is stored there.
+
+### Request classification
+
+| Request | Class | Action |
+| --- | --- | --- |
+| `/public/site-pages` | A | 5 min TTL + in-flight (Navbar + Footer) |
+| `/public/footer-settings` | A | 5 min TTL + in-flight |
+| `/public/faq` | A | 5 min TTL + in-flight (desktop + mobile FAQ) |
+| `/public/training-packages` | A | Moved onto shared helper (was local TTL) |
+| `/public/pages/how-it-works-*` | A + D | Cached 5 min; **only probed when How-it-works dropdown or mobile drawer opens** |
+| `/public/home-stats` | B (+ short TTL) | 20 s TTL on first load; polls bypass cache. Public display counters only |
+| `/public/currency-display` | A (existing) | Unchanged CurrencyDisplayContext |
+| `/public/geo` | A (existing) | Unchanged session/in-flight geo cache |
+| Public plans/catalog | A (existing) | Still `freelancerSessionCache` on `/plans` |
+| `/orders/pool` | C | Not cached (marketplace list; backend latency) |
+| Auth / dashboard / notifications / claims / payments | C | Not in this cache |
+
+### Navbar / Footer
+
+Both still call `usePublicSitePages()` independently (no fragile Navbar↔Footer coupling). One network call via the shared cache. Footer still owns `footer-settings`. Login hides Footer, so login only needs Navbar’s single `site-pages` fetch.
+
+### How-it-works probes
+
+`useHowItWorksNav({ active })` shows the two known public links immediately and probes only when `active` (desktop dropdown id `how-it-works` or mobile drawer). Login no longer fires both `/public/pages/how-it-works-*` GETs on every visit. Public `/how-it-works/client` and `/freelancer` routes are unchanged.
+
+### Hero wallpaper
+
+- Removed `new Image()` preload (`useHeroWallpaperReady`).
+- Single CSS `url("/hero/background.webp")` in `publicHomeShell.css` (mobile gradient override kept there). Duplicate url removed from `home-hero-marketing.css`.
+- Recompressed `frontend/public/hero/background.webp`: max width 1920, WebP q82, effort 6. **2,508,662 → 42,268 bytes**. Build copies it to `dist/hero/background.webp`.
+
+### Before / after (desktop unthrottled, cache disabled, ~10 s wait)
+
+Phase 5 numbers from the prior live pass; Phase 6 from `localhost:4173` preview after this build.
+
+| Route | Metric | Phase 5 | Phase 6 |
+| --- | --- | --- | --- |
+| `/` | `site-pages` | 2 | **1** |
+| `/` | `faq` | 2 | **1** |
+| `/` | how-it-works probes | 2 | **0** |
+| `/` | `background.webp` | 2 × ~2.5 MB | **1 × ~42 kB** |
+| `/login` | `site-pages` | 2 | **1** |
+| `/login` | how-it-works probes | 2 | **0** |
+| `/login` | footer-settings | 0 (footer hidden) | 0 |
+| `/plans` | `site-pages` | 2 | **1** |
+| `/plans` | how-it-works probes | 2 | **0** |
+| `/plans` | training-packages | 1 | 1 |
+
+Mobile note: home still paints chrome quickly; `/orders` list wait remains the pool API. Wallpaper is now a small single request instead of a 2.5 MB double fetch.
+
+Home `/` after Phase 6 public APIs in 10 s: pageview, currency-display, site-pages, footer-settings, ads, faq, home-stats (7). Pool preview may still arrive later if the backend is slow.
+
+### Tests / build
+
+- `frontend npm test`: **224/224** (includes `phase6_performance.test.js`).
+- `frontend npm run build`: pass; compressed wallpaper present in `dist/hero/background.webp`.
+
+### Remaining (backend)
+
+See **Backend Performance Phase 1** below. Guest pool and home-stats are no longer 8–11 s. Remaining backend cost is mainly the training-completed aggregate over a large `fake_orders` table (~1.2 s cold, then cached), plus unrelated public ads latency.
+
+## Backend Performance Phase 1 — Public pool and home stats
+
+Status: **COMPLETE** for the two public endpoints. No migrations applied, no deploy, no commit, no `ordersService` product-logic edits, no Stripe webhook / payment / JOD / min-bids / Pantry collection changes.
+
+### 1) Endpoint implementation paths
+
+**`GET /api/orders/pool`** (optional auth; public browse + role-aware sanitization)
+
+- Route: `backend/src/routes/ordersRoutes.js` — `router.get("/orders/pool", optionalAuth, …)`
+- Controller: `backend/src/controllers/ordersController.js` → `listPoolOrders`
+- Service: `ordersService.listPoolOrders` (guest/client/staff) or `listPoolOrdersForFreelancer` (freelancer). **Read only in this phase; not modified.**
+- Shared helpers: `trainingPoolList.tryMergedPoolMeta` → `hydrateMergedPool.hydrateMergedPoolOrders` → `sanitizePublicPoolOrder` / `sanitizeFreelancerPoolOrder`
+- DB: one UNION ALL of public real `orders` + currently visible `fake_orders`/`fake_order_round_items`/`fake_order_rounds`; then hydrate by id (`o.*` / `fo.*` + category names + applicant/file counts). Handoff recovery still runs if the page has zero fake rows.
+- Role behavior (unchanged): guest/client/staff get `sanitizePublicPoolOrder` (browse / login CTA; no bid/take actions). Freelancers get `sanitizeFreelancerPoolOrder` plus plan eligibility. Guest JSON is cached in memory; freelancer/client/admin responses are not.
+
+**`GET /api/public/home-stats`** (public, no auth)
+
+- Route: `backend/src/routes/publicRoutes.js` — `router.get("/public/home-stats", …)`
+- Controller: `backend/src/controllers/publicHomeStatsController.js` → `getPublicHomeStats`
+- Services: `platformUiSettingsService.getPlatformUiSettings`, `publicHomeOrderStatsService.getPublicHomeOrderCounts`, `analyticsHealthService.getPublicHomeAnalyticsMeta`
+- DB: independent count queries over public `orders` plus training available/completed aggregates. Aggregation math (`completedOrders = completedReal + trainingRotationsCompletedSinceCutoff`) is unchanged.
+
+Pantry merge and min-bids `bidCollection` are **not** on these two endpoints (article/pantry controllers). Flutter available-opportunities continues to parse the same pool JSON allowlist.
+
+### 2) Bottlenecks found
+
+- **Pool (~9–11 s, `tryMergedPoolMeta` ~8 s):** two full UNION scans (COUNT + page); per-row correlated `fake_order_settings` subqueries even after `poolViewerMaySeeFakeOrders`; guest requests never shared in-flight work. Local table: **68,673** `fake_orders` (all with marketplace-visible proof) vs **239** real orders.
+- **Home-stats (~5.5–8 s every load):** one SQL mixed a full `orders` scan with expensive training-completed counts (correlated `NOT EXISTS` + per-row `MAX(visible_until)` over ~68k fake rows). Existing cache TTL was **20 s**, matching the frontend poll interval, so almost every poll missed. Parallel homepage requests each ran the full query (no single-flight).
+
+### 3) Query/cache improvements made
+
+- Pool UNION: drop redundant settings/subscription SQL after the visibility gate; **one** `COUNT(*) OVER()` page query instead of COUNT+LIST; guest-only in-memory TTL cache + single-flight (`trainingPoolList` + controller). Authenticated users bypass public caches.
+- Home-stats: split independent counts and run with `Promise.all`; inline already-loaded `fake_order_settings` flags into training SQL; rewrite since-cutoff to a grouped `MAX(visible_until)` join; TTL **60 s** (clamped 30–120 s); single-flight; stale-if-error if a prior value exists; controller caches assembled public JSON; `platformUiSettings` 30 s public-toggle cache.
+- Dev timing via existing `perfLog` (`PERF_LOG=1` or non-production): no secrets, bodies, or PII.
+
+### 4) Before/after timings (local DB, read-only)
+
+| Endpoint | Before (live preview / API logs) | After cold | After warm (in-memory TTL) |
+| --- | --- | --- | --- |
+| `GET /api/orders/pool` (guest `limit=3`) | **9–11 s** (`tryMergedPoolMeta` 8.1–9.0 s) | **~654 ms** HTTP (UNION ~165 ms + hydrate ~161 ms + visibility mark ~162 ms) | **~1–5 ms** guest response cache |
+| `GET /api/public/home-stats` | **~5.5–8 s** | **~1636 ms** HTTP (training-completed ~1159 ms) | **~0.3–1.4 ms** |
+
+EXPLAIN on the fake pool list used existing indexes (`idx_fake_order_round_items_visible`, `fake_orders_pkey`, `idx_fake_order_rounds_list_admin`). **No migration created or applied.**
+
+### 5) Security boundaries preserved
+
+- Optional auth + sanitizers unchanged. Guest cache is query-keyed, not user-keyed, and stores only `sanitizePublicPoolOrder` JSON.
+- Freelancer myBid/myClaim/eligibility never enter the public cache.
+- Institution-scoped orders still excluded (`visibility_scope = public`).
+- CSRF/CORS/rate limits, Stripe webhook, payment/JOD/wallet/claims/subscription, min-bids, Pantry/Article collection, auto-assign: untouched.
+- `ordersService` not modified.
+
+### 6) Migrations
+
+None. Existing pool indexes are sufficient for the list UNION. Remaining home-stats cost is an aggregate over ~68k historical fake orders, absorbed by the 60 s public TTL.
+
+### 7) Remaining backend opportunities
+
+- Training-completed home-stats aggregate (~1.2 s cold) over 68k `fake_orders`; a later additive index or maintained counter could help cold misses.
+- `recordMarketplaceVisibleFakeOrders` still runs on guest cache miss (~170 ms) — product tracking, left in place.
+- Unrelated: `GET /api/public/ads` still ~2.5–3 s in Phase 5/6 logs.
+- Freelancer pool is faster from the SQL change but is not publicly cached (plan-specific).
+
+
 
 

@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { TRAINING_PACKAGES } from "../constants/trainingPlansCatalog";
 import { listPublicTrainingPackagesRequest } from "../services/api";
+import { fetchPublicCached, peekPublicCached, PUBLIC_CACHE_TTL_MS } from "../lib/publicRequestCache";
 
-const PUBLIC_TRAINING_TTL_MS = 5 * 60 * 1000;
-let cachedPackages = [...TRAINING_PACKAGES];
-let cachedAt = 0;
-let inFlightRequest = null;
+const TRAINING_PACKAGES_KEY = "GET /public/training-packages";
 
 function normalizeList(items) {
   if (!Array.isArray(items) || items.length === 0) return [...TRAINING_PACKAGES];
@@ -20,34 +18,30 @@ function normalizeList(items) {
   return visible.length > 0 ? visible : [...TRAINING_PACKAGES];
 }
 
+function packagesFromResponse(res) {
+  return normalizeList(res?.data?.packages);
+}
+
 export function usePublicTrainingPackages() {
-  const [packages, setPackages] = useState(() => [...cachedPackages]);
+  const cached = peekPublicCached(TRAINING_PACKAGES_KEY);
+  const [packages, setPackages] = useState(() =>
+    cached !== undefined ? packagesFromResponse(cached) : [...TRAINING_PACKAGES],
+  );
 
   useEffect(() => {
     let cancelled = false;
-    const now = Date.now();
-    const cacheFresh = now - cachedAt < PUBLIC_TRAINING_TTL_MS;
-    if (cacheFresh) {
-      setPackages([...cachedPackages]);
-      return () => {
-        cancelled = true;
-      };
-    }
 
     (async () => {
       try {
-        if (!inFlightRequest) {
-          inFlightRequest = listPublicTrainingPackagesRequest();
-        }
-        const res = await inFlightRequest;
-        const next = normalizeList(res?.data?.packages);
-        cachedPackages = next;
-        cachedAt = Date.now();
+        const res = await fetchPublicCached(
+          TRAINING_PACKAGES_KEY,
+          () => listPublicTrainingPackagesRequest(),
+          { ttlMs: PUBLIC_CACHE_TTL_MS },
+        );
+        const next = packagesFromResponse(res);
         if (!cancelled) setPackages(next);
       } catch {
-        if (!cancelled) setPackages([...cachedPackages]);
-      } finally {
-        inFlightRequest = null;
+        if (!cancelled) setPackages((prev) => (prev.length ? prev : [...TRAINING_PACKAGES]));
       }
     })();
     return () => {

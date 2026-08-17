@@ -4,6 +4,8 @@ const { FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT } = require("../utils/fakeMarke
 
 async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUserId }) {
   if (!idOrder.length) return [];
+  const { perfStart } = require("../utils/perfLog");
+  const totalTimer = perfStart("hydrate_merged_pool", "hydrateMergedPoolOrders");
   const realIds = idOrder.filter((x) => x.source === "real").map((x) => Number(x.id));
   const fakeIds = idOrder.filter((x) => x.source === "fake").map((x) => Number(x.id));
   const uid = freelancerUserId && Number(freelancerUserId) > 0 ? Number(freelancerUserId) : null;
@@ -150,10 +152,16 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
       WHERE fo.id = ANY($1::bigint[])
     `;
 
+  const dbTimer = perfStart("hydrate_merged_pool", "hydrate_queries");
   const [realRes, fakeRes] = await Promise.all([
     realIds.length ? pool.query(realSql, uid ? [realIds, uid] : [realIds]) : { rows: [] },
     fakeIds.length ? pool.query(fakeSql, uid ? [fakeIds, uid] : [fakeIds]) : { rows: [] },
   ]);
+  dbTimer.end({
+    realRows: realRes.rows.length,
+    fakeRows: fakeRes.rows.length,
+    queryCount: (realIds.length ? 1 : 0) + (fakeIds.length ? 1 : 0),
+  });
 
   const realBy = new Map(realRes.rows.map((r) => [String(r.id), r]));
   const fakeBy = new Map(fakeRes.rows.map((r) => [String(r.id), r]));
@@ -193,6 +201,7 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
     }
     out.push(mapped);
   }
+  totalTimer.end({ count: out.length, hasFreelancer: Boolean(uid) });
   return out;
 }
 

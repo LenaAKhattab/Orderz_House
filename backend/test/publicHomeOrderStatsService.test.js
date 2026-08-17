@@ -76,6 +76,22 @@ describe("publicHomeOrderStatsService", () => {
     assert.match(sql, /was_marketplace_visible = TRUE/);
   });
 
+  it("public display cache TTL is clamped to 30–120 seconds", () => {
+    const { HOME_ORDER_STATS_CACHE_TTL_MS } = require("../src/services/publicHomeOrderStatsService");
+    assert.ok(HOME_ORDER_STATS_CACHE_TTL_MS >= 30_000);
+    assert.ok(HOME_ORDER_STATS_CACHE_TTL_MS <= 120_000);
+  });
+
+  it("hero count query runs independent aggregates in parallel", () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "..", "src", "services", "publicHomeOrderStatsService.js"),
+      "utf8",
+    );
+    assert.match(src, /Promise\.all\(/);
+    assert.match(src, /orderStatsInflight/);
+    assert.match(src, /publicAudienceOnly: true/);
+  });
+
   it("training completed exclusion uses full audience-aware pool visibility", () => {
     const src = fs.readFileSync(
       path.join(__dirname, "..", "src", "services", "publicHomeOrderStatsService.js"),
