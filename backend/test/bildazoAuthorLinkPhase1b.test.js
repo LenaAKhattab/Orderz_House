@@ -24,15 +24,18 @@ const { isBildazoAuthorSyncEnabled } = require("../src/config/bildazoAuthorSync"
 const { clearBildazoAuthorLinkSchemaCache } = require("../src/utils/bildazoAuthorLinkSchema");
 const {
   submitBildazoAuthorLinkRequest,
+  changeBildazoAuthorLink,
   assertBildazoAuthorLinkedForArticleApply,
 } = require("../src/services/bildazoAuthorLinkService");
 const {
   linkOrCreateBildazoAuthor,
   createAndLinkBildazoAuthor,
   linkExistingBildazoAuthorWithCredentials,
+  replaceBildazoAuthorLink,
   buildSafeRequestBody,
   buildCreateAndLinkRequestBody,
   buildCredentialLinkRequestBody,
+  buildReplaceLinkRequestBody,
   joinLinkOrCreateUrl,
 } = require("../src/services/bildazoAuthorIntegrationClient");
 
@@ -97,6 +100,20 @@ function createMemoryDb({ user = USER, schemaReady = true, link = null } = {}) {
         return { rows: [row] };
       }
       if (s.includes("UPDATE freelancer_bildazo_author_links")) {
+        if (s.includes("AND status = 'linked'")) {
+          if (!row || row.status !== "linked") return { rows: [] };
+          Object.assign(row, {
+            link_flow: params[1],
+            existing_bildazo_email: params[2],
+            bildazo_user_id: params[3],
+            bildazo_public_id: params[4],
+            bildazo_profile_url: params[5],
+            linked_at: new Date(),
+            last_error: null,
+            updated_at: new Date(),
+          });
+          return { rows: [row] };
+        }
         if (!row || row.status === "linked") return { rows: [] };
         if (s.includes("bildazo_user_id")) {
           Object.assign(row, {
@@ -180,6 +197,7 @@ function mockSync(result) {
     linkOrCreateBildazoAuthor: impl,
     createAndLinkBildazoAuthor: impl,
     linkExistingBildazoAuthorWithCredentials: impl,
+    replaceBildazoAuthorLink: impl,
   };
 }
 
@@ -259,6 +277,40 @@ describe("Phase 1B Bildazo S2S client", () => {
       roleId: 2,
     });
     assert.deepEqual(Object.keys(body).sort(), ["email", "orderzFreelancerId", "password"]);
+  });
+
+  it("replace-link body requires replace=true and never sends passwordHash", async () => {
+    const body = buildReplaceLinkRequestBody({
+      orderzFreelancerId: "11",
+      email: "a@b.com",
+      password: "Writer1x",
+      linkFlow: "existing_account",
+      passwordHash: "nope",
+      roleId: 2,
+    });
+    assert.equal(body.replace, true);
+    assert.equal(body.password, "Writer1x");
+    assert.equal(body.passwordHash, undefined);
+    assert.equal(body.roleId, undefined);
+    assert.match(
+      (await replaceBildazoAuthorLink(
+        { orderzFreelancerId: "11", email: "a@b.com", password: "Writer1x", linkFlow: "existing_account" },
+        {
+          getConfig: () => LOCAL_FETCH_CFG,
+          fetchImpl: async (url, opts) => {
+            assert.match(url, /\/authors\/replace-link$/);
+            const sent = JSON.parse(opts.body);
+            assert.equal(sent.replace, true);
+            return jsonResponse(200, {
+              status: "replaced",
+              bildazoUserId: "99",
+              bildazoPublicId: "pub-99",
+            });
+          },
+        },
+      )).status,
+      /replaced/,
+    );
   });
 
   it("disabled sync makes no HTTP call", async () => {
@@ -371,6 +423,21 @@ describe("Phase 1B Bildazo S2S client", () => {
     assert.equal(result.errorCode, "BILDAZO_SYNC_INVALID_CREDENTIALS");
     assert.equal(result.ok, false);
     assert.equal(result.safeMessage, "Invalid email or password");
+  });
+
+  it("credential link maps 404 to endpoint-missing without leaking bodies", async () => {
+    const result = await linkExistingBildazoAuthorWithCredentials(
+      { orderzFreelancerId: "11", email: "a@b.com", password: "Writer1x" },
+      {
+        getConfig: () => LOCAL_FETCH_CFG,
+        fetchImpl: async () => jsonResponse(404, { error: "Not Found" }),
+      },
+    );
+    assert.equal(result.errorCode, "BILDAZO_SYNC_ENDPOINT_MISSING");
+    assert.equal(result.httpStatus, 404);
+    assert.equal(result.ok, false);
+    assert.match(result.safeMessage, /unavailable/i);
+    assert.doesNotMatch(JSON.stringify(result), /Writer1x/);
   });
 
   it("timeout/network errors are safe failures", async () => {
@@ -586,6 +653,40 @@ describe("Phase 1B freelancer request S2S mapping", () => {
     );
     assert.equal(failed.link.status, "failed");
     assert.equal(failed.link.linked, null);
+    assert.equal(failed.link.failureCode, "INVALID_CREDENTIALS");
+    assert.equal(failed.link.lastError, undefined);
+  });
+
+  it("existing-account 404 maps to ENDPOINT_UNAVAILABLE and stays unlinked", async () => {
+    process.env.BILDAZO_AUTHOR_SYNC_ENABLED = "true";
+    const db = createMemoryDb();
+    const missing = mockSync({
+      ok: false,
+      called: true,
+      status: null,
+      httpStatus: 404,
+      errorCode: "BILDAZO_SYNC_ENDPOINT_MISSING",
+      safeMessage: "Bildazo link endpoint is unavailable",
+      bildazoUserId: null,
+      bildazoPublicId: null,
+      profileUrl: null,
+    });
+    const failed = await submitBildazoAuthorLinkRequest(
+      11,
+      existingBody({
+        existingBildazoEmail: "writer@bildazo.test",
+        password: "Writer1x",
+      }),
+      { db, syncClient: missing },
+    );
+    assert.equal(failed.link.status, "failed");
+    assert.equal(failed.link.failureCode, "ENDPOINT_UNAVAILABLE");
+    assert.equal(failed.link.linked, null);
+    const stored = await db.query("SELECT last_error FROM freelancer_bildazo_author_links WHERE freelancer_user_id = $1", [
+      11,
+    ]);
+    assert.match(String(stored.rows[0].last_error), /ENDPOINT_MISSING|unavailable/i);
+    assert.doesNotMatch(JSON.stringify(failed.link), /password/i);
   });
 
   it("existing_account same email can call S2S and link", async () => {
@@ -671,6 +772,110 @@ describe("Phase 1B freelancer request S2S mapping", () => {
     assert.equal(result.link.status, "linked");
     assert.equal(result.link.linked.bildazoPublicId, "pub-1");
     assert.equal(sync.calls.length, 0);
+  });
+
+  it("linked account cannot be changed without explicit confirmChange", async () => {
+    process.env.BILDAZO_AUTHOR_SYNC_ENABLED = "true";
+    const db = createMemoryDb({
+      link: {
+        id: 9,
+        freelancer_user_id: 11,
+        link_flow: "existing_account",
+        status: "linked",
+        orderz_verified_email: USER.email,
+        existing_bildazo_email: USER.email,
+        bildazo_user_id: "2",
+        bildazo_public_id: "pub-1",
+        linked_at: new Date(),
+        email_matches_orderz: true,
+        accepted_terms_version: ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_VERSION,
+        accepted_at: new Date(),
+        source: "orderzhouse",
+      },
+    });
+    const sync = mockSync(linkedOk("replaced"));
+    await assert.rejects(
+      () =>
+        changeBildazoAuthorLink(
+          11,
+          existingBody({ existingBildazoEmail: "new@bildazo.test", password: "Writer1x" }),
+          { db, syncClient: sync },
+        ),
+      (err) => err.publicCode === "BILDAZO_AUTHOR_CHANGE_CONFIRM_REQUIRED",
+    );
+    assert.equal(sync.calls.length, 0);
+    const stored = await db.query("SELECT * FROM freelancer_bildazo_author_links WHERE freelancer_user_id = $1", [11]);
+    assert.equal(stored.rows[0].bildazo_public_id, "pub-1");
+  });
+
+  it("successful change updates future linked account and failed change leaves the old one", async () => {
+    process.env.BILDAZO_AUTHOR_SYNC_ENABLED = "true";
+    const linkedRow = {
+      id: 9,
+      freelancer_user_id: 11,
+      link_flow: "existing_account",
+      status: "linked",
+      orderz_verified_email: USER.email,
+      existing_bildazo_email: USER.email,
+      bildazo_user_id: "2",
+      bildazo_public_id: "pub-1",
+      linked_at: new Date(),
+      email_matches_orderz: true,
+      accepted_terms_version: ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_VERSION,
+      accepted_at: new Date(),
+      source: "orderzhouse",
+    };
+    const dbFail = createMemoryDb({ link: { ...linkedRow } });
+    const failed = await changeBildazoAuthorLink(
+      11,
+      existingBody({
+        existingBildazoEmail: "new@bildazo.test",
+        password: "Writer1x",
+        confirmChange: true,
+      }),
+      {
+        db: dbFail,
+        syncClient: mockSync({
+          ok: false,
+          called: true,
+          status: null,
+          errorCode: "BILDAZO_SYNC_INVALID_CREDENTIALS",
+          safeMessage: "Invalid email or password",
+        }),
+      },
+    );
+    assert.equal(failed.changed, false);
+    assert.equal(failed.link.linked.bildazoPublicId, "pub-1");
+    assert.equal(failed.failureCode, "INVALID_CREDENTIALS");
+
+    const dbOk = createMemoryDb({ link: { ...linkedRow } });
+    const ok = await changeBildazoAuthorLink(
+      11,
+      existingBody({
+        existingBildazoEmail: "new@bildazo.test",
+        password: "Writer1x",
+        confirmChange: true,
+      }),
+      {
+        db: dbOk,
+        syncClient: mockSync({
+          ok: true,
+          called: true,
+          status: "replaced",
+          bildazoUserId: "77",
+          bildazoPublicId: "pub-new",
+          profileUrl: null,
+        }),
+      },
+    );
+    assert.equal(ok.changed, true);
+    assert.equal(ok.link.status, "linked");
+    assert.equal(ok.link.linked.bildazoPublicId, "pub-new");
+    assert.equal(ok.link.linked.bildazoUserId, "77");
+    assert.equal(ok.link.linked.email, "new@bildazo.test");
+    const src = fs.readFileSync(path.join(__dirname, "../src/services/bildazoAuthorLinkService.js"), "utf8");
+    assert.doesNotMatch(src, /bildazo_article_publish_records/);
+    assert.doesNotMatch(JSON.stringify(ok.link), /Writer1x|password/);
   });
 
   it("same freelancer request does not create duplicate local rows", async () => {

@@ -435,6 +435,7 @@ describe("no live Bildazo integration in Phase 0B", () => {
     assert.match(routes, /requireFreelancer/);
     assert.match(routes, /\/bildazo-author-link\/me/);
     assert.match(routes, /\/bildazo-author-link\/request/);
+    assert.match(routes, /\/bildazo-author-link\/change/);
     const app = fs.readFileSync(path.join(__dirname, "../src/app.js"), "utf8");
     assert.match(app, /freelancerBildazoAuthorLinkRoutes/);
   });

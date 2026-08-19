@@ -28,4 +28,11 @@ const submitBildazoAuthorLinkValidators = [
   body("roleId").not().exists().withMessage("حقل غير مسموح."),
 ];
 
-module.exports = { submitBildazoAuthorLinkValidators };
+const changeBildazoAuthorLinkValidators = [
+  ...submitBildazoAuthorLinkValidators,
+  body("confirmChange")
+    .custom((v) => v === true || v === "true" || v === 1)
+    .withMessage("يجب تأكيد أن التغيير يؤثر على المقالات القادمة فقط."),
+];
+
+module.exports = { submitBildazoAuthorLinkValidators, changeBildazoAuthorLinkValidators };

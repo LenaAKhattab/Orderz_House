@@ -15,6 +15,7 @@ const {
   BILDAZO_PENDING_UPDATE_STATUSES,
   BILDAZO_AUTHOR_LINK_REQUIRED_AR,
   BILDAZO_AUTHOR_LINK_ERROR_CODES,
+  mapBildazoLinkFailureCode,
 } = require("../constants/bildazoAuthorLink");
 const {
   bildazoAuthorLinkSchemaReady,
@@ -24,7 +25,7 @@ const defaultBildazoSyncClient = require("./bildazoAuthorIntegrationClient");
 const LOCAL_LINKED_STATUS = "linked";
 const LOCAL_REVIEW_STATUS = "needs_manual_review";
 const LOCAL_FAILED_STATUS = "failed";
-const SYNC_LINKED_OK = new Set(["created", "linked", "already_linked"]);
+const SYNC_LINKED_OK = new Set(["created", "linked", "already_linked", "replaced"]);
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const E164_RE = /^\+[1-9]\d{7,14}$/;
@@ -381,6 +382,7 @@ function toPublicMe({ userRow, linkRow, schemaReady, gateEnabled }) {
             bildazoPublicId: mapped.bildazoPublicId,
             bildazoProfileUrl: mapped.bildazoProfileUrl,
             linkedAt: mapped.linkedAt,
+            email: mapped.existingBildazoEmail || mapped.orderzVerifiedEmail || userRow.email || null,
           }
         : null,
     messageKey:
@@ -397,6 +399,7 @@ function toPublicMe({ userRow, linkRow, schemaReady, gateEnabled }) {
                 : status.startsWith("pending")
                   ? "pending_existing_account"
                   : "not_started",
+    failureCode: mapBildazoLinkFailureCode(status, mapped?.lastError),
   };
 }
 
@@ -419,16 +422,21 @@ function hasBildazoIdentity(sync) {
 }
 
 function safeStoredError(sync) {
-  if (sync?.errorCode === "BILDAZO_SYNC_INVALID_CREDENTIALS") {
-    return "Invalid email or password";
+  const code = String(sync?.errorCode || "").trim();
+  let msg;
+  if (code === "BILDAZO_SYNC_INVALID_CREDENTIALS") {
+    msg = "Invalid email or password";
+  } else {
+    msg = String(sync?.safeMessage || "").trim();
+    if (!msg) {
+      if (code === "BILDAZO_SYNC_CONFIG_MISSING") msg = "Bildazo sync is not configured";
+      else if (code === "BILDAZO_SYNC_TIMEOUT") msg = "Bildazo request timed out";
+      else if (code === "BILDAZO_SYNC_ENDPOINT_MISSING") msg = "Bildazo link endpoint is unavailable";
+      else msg = "Bildazo request failed";
+    }
   }
-  const msg = String(sync?.safeMessage || "").trim();
-  if (!msg) {
-    if (sync?.errorCode === "BILDAZO_SYNC_CONFIG_MISSING") return "Bildazo sync is not configured";
-    if (sync?.errorCode === "BILDAZO_SYNC_TIMEOUT") return "Bildazo request timed out";
-    return "Bildazo request failed";
-  }
-  return msg.slice(0, 240);
+  const combined = code ? `${code}: ${msg}` : msg;
+  return combined.slice(0, 240);
 }
 
 async function persistBildazoSyncOutcome(db, freelancerUserId, currentRow, sync) {
@@ -715,6 +723,161 @@ async function submitBildazoAuthorLinkRequest(
   };
 }
 
+function isTruthyFlag(raw) {
+  return raw === true || raw === "true" || raw === 1 || raw === "1";
+}
+
+async function persistBildazoReplaceOutcome(db, freelancerUserId, parsed, sync) {
+  const updated = await db.query(
+    `UPDATE freelancer_bildazo_author_links
+        SET link_flow = $2,
+            existing_bildazo_email = $3,
+            bildazo_user_id = $4,
+            bildazo_public_id = $5,
+            bildazo_profile_url = $6,
+            linked_at = NOW(),
+            last_error = NULL,
+            updated_at = NOW()
+      WHERE freelancer_user_id = $1
+        AND status = 'linked'
+      RETURNING *`,
+    [
+      Number(freelancerUserId),
+      parsed.linkFlow,
+      parsed.linkFlow === "existing_account" ? parsed.existingBildazoEmail : null,
+      sync.bildazoUserId,
+      sync.bildazoPublicId,
+      sync.profileUrl,
+    ],
+  );
+  return updated.rows[0] || null;
+}
+
+async function changeBildazoAuthorLink(
+  freelancerUserId,
+  body,
+  { db = pool, syncClient = defaultBildazoSyncClient } = {},
+) {
+  if (!isTruthyFlag(body?.confirmChange)) {
+    throw createAppError("يجب تأكيد أن تغيير حساب Bildazo يؤثر على المقالات القادمة فقط.", 400, {
+      exposeToClient: true,
+      publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_CHANGE_CONFIRM_REQUIRED,
+    });
+  }
+
+  const userRow = await loadFreelancerUser(freelancerUserId, db);
+  if (userRow.email_verified === false) {
+    throw createAppError("يجب تأكيد بريد OrderzHouse قبل طلب ربط Bildazo.", 409, {
+      exposeToClient: true,
+      publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_EMAIL_UNVERIFIED,
+    });
+  }
+  const schemaReady = await bildazoAuthorLinkSchemaReady(db);
+  if (!schemaReady) {
+    throw createAppError("طلب ربط Bildazo غير متاح حالياً.", 503, {
+      exposeToClient: true,
+      publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_GATE_SCHEMA_MISSING,
+    });
+  }
+
+  const existing = await getLinkRow(freelancerUserId, db);
+  if (!existing || existing.status !== "linked") {
+    throw createAppError("لا يوجد حساب Bildazo مرتبط لتغييره.", 409, {
+      exposeToClient: true,
+      publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_CHANGE_NOT_LINKED,
+    });
+  }
+
+  const parsed = validateRequestBody(body || {}, { orderzEmail: userRow.email });
+  if (!parsed.password) {
+    throw createAppError("كلمة المرور مطلوبة لتغيير حساب الربط.", 400, {
+      exposeToClient: true,
+      publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_LINK_INVALID,
+    });
+  }
+  if (typeof syncClient.replaceBildazoAuthorLink !== "function") {
+    throw createAppError("Bildazo needs a safe replace-link endpoint or replace mode.", 409, {
+      exposeToClient: true,
+      publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_CHANGE_UNSUPPORTED,
+    });
+  }
+
+  const previous = {
+    userId: existing.bildazo_user_id,
+    publicId: existing.bildazo_public_id,
+  };
+  let sync;
+  try {
+    sync = await syncClient.replaceBildazoAuthorLink({
+      orderzFreelancerId: String(userRow.id),
+      mode: parsed.linkFlow,
+      linkFlow: parsed.linkFlow,
+      email: parsed.linkFlow === "new_account" ? userRow.email : parsed.existingBildazoEmail,
+      password: parsed.password,
+      fullName: parsed.fullName || suggestedFullName(userRow),
+      phoneE164: parsed.phoneE164,
+      countryIso: parsed.countryIso,
+      dateOfBirth: parsed.dateOfBirth,
+      replace: true,
+    });
+  } finally {
+    parsed.password = null;
+    if (body && typeof body === "object") {
+      delete body.password;
+      delete body.passwordConfirm;
+      delete body.confirmPassword;
+    }
+  }
+
+  const publicCurrent = () =>
+    toPublicMe({
+      userRow,
+      linkRow: existing,
+      schemaReady: true,
+      gateEnabled: isBildazoAuthorGateEnabled(),
+    });
+
+  if (!sync || sync.disabled) {
+    return { changed: false, link: publicCurrent(), failureCode: "CONFIG_MISSING" };
+  }
+
+  const sameIdentity =
+    String(sync.bildazoUserId || "") === String(previous.userId || "") &&
+    String(sync.bildazoPublicId || "") === String(previous.publicId || "");
+  const targetEmail =
+    parsed.linkFlow === "existing_account" ? parsed.existingBildazoEmail : userRow.email;
+  const currentEmail = existing.existing_bildazo_email || existing.orderz_verified_email;
+  const wantedDifferent = !emailsMatch(targetEmail, currentEmail) || !sameIdentity;
+
+  if (sync.status === "already_linked" && sameIdentity && wantedDifferent) {
+    throw createAppError("Bildazo needs a safe replace-link endpoint or replace mode.", 409, {
+      exposeToClient: true,
+      publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_CHANGE_UNSUPPORTED,
+    });
+  }
+
+  if (SYNC_LINKED_OK.has(sync.status) && hasBildazoIdentity(sync)) {
+    const nextRow = (await persistBildazoReplaceOutcome(db, freelancerUserId, parsed, sync)) || existing;
+    return {
+      changed:
+        String(nextRow.bildazo_user_id || "") !== String(previous.userId || "") ||
+        String(nextRow.bildazo_public_id || "") !== String(previous.publicId || ""),
+      link: toPublicMe({
+        userRow,
+        linkRow: nextRow,
+        schemaReady: true,
+        gateEnabled: isBildazoAuthorGateEnabled(),
+      }),
+    };
+  }
+
+  return {
+    changed: false,
+    link: publicCurrent(),
+    failureCode: mapBildazoLinkFailureCode("failed", safeStoredError(sync)),
+  };
+}
+
 async function assertBildazoAuthorLinkedForArticleApply(freelancerUserId, { db = pool } = {}) {
   if (!isBildazoAuthorGateEnabled()) return { required: false, linked: false };
   const schemaReady = await bildazoAuthorLinkSchemaReady(db);
@@ -755,6 +918,7 @@ async function getBildazoLinkStatusForEligibility(freelancerUserId, { db = pool 
 module.exports = {
   getMyBildazoAuthorLink,
   submitBildazoAuthorLinkRequest,
+  changeBildazoAuthorLink,
   assertBildazoAuthorLinkedForArticleApply,
   getBildazoLinkStatusForEligibility,
   validateRequestBody,

@@ -76,12 +76,11 @@ describe("Super Admin Bildazo author links page", () => {
     assert.match(app, /SuperAdminBildazoAuthorLinksPage/);
   });
 
-  it("freelancer article page linked state renders profile summary", () => {
-    const card = read("components/freelancer/FreelancerBildazoAuthorGateCard.jsx");
-    assert.match(card, /data-testid="bildazo-linked-profile"/);
-    assert.match(card, /تم ربط حساب الكاتب في Bildazo بنجاح/);
-    assert.match(card, /link\?\.linked\?\.bildazoPublicId/);
-    assert.match(card, /link\?\.linked\?\.bildazoProfileUrl/);
+  it("freelancer article page linked state renders compact account widget", () => {
+    const widget = read("components/freelancer/FreelancerBildazoLinkedAccountWidget.jsx");
+    assert.match(widget, /data-testid="bildazo-linked-profile"/);
+    assert.match(widget, /حساب Bildazo مرتبط/);
+    assert.match(widget, /link\?\.linked\?\.bildazoProfileUrl/);
     assert.equal(isBildazoAuthorLinked({ status: "linked" }), true);
   });
 });

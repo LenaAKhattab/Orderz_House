@@ -12,6 +12,7 @@ import {
   isBildazoAuthorLinked,
   shouldBlockArticleApply,
   validateBildazoAuthorLinkForm,
+  bildazoLinkFailureMessage,
 } from "./constants/bildazoAuthorTerms.js";
 
 const srcRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -110,49 +111,106 @@ describe("Freelancer Articles Bildazo gate UI", () => {
 
   it("new-account tab is a branded compact signup-style form", () => {
     const card = read("components/freelancer/FreelancerBildazoAuthorGateCard.jsx");
+    const form = read("components/freelancer/FreelancerBildazoAuthorLinkForm.jsx");
     assert.match(card, /حساب الكاتب في Bildazo/);
     assert.match(card, /bildazo-logo\.png/);
     assert.match(card, /data-testid="bildazo-logo"/);
-    assert.match(card, /البريد الإلكتروني/);
-    assert.match(card, /readOnly/);
-    assert.match(card, /data-testid="bildazo-orderz-email"/);
-    assert.match(card, /BILDAZO_WRITER_ROLE_LABEL_AR/);
-    assert.match(card, /data-testid="bildazo-new-password"/);
-    assert.match(card, /data-testid="bildazo-new-password-confirm"/);
-    assert.match(card, /إنشاء وربط حساب الكاتب/);
+    assert.match(form, /البريد الإلكتروني/);
+    assert.match(form, /readOnly/);
+    assert.match(form, /data-testid="bildazo-orderz-email"/);
+    assert.match(form, /BILDAZO_WRITER_ROLE_LABEL_AR/);
+    assert.match(form, /data-testid="bildazo-new-password"/);
+    assert.match(form, /data-testid="bildazo-new-password-confirm"/);
+    assert.match(form, /إنشاء وربط حساب الكاتب/);
     assert.doesNotMatch(card, /BILDAZO_ORDERZHOUSE_INTEGRATION_SECRET/);
+    assert.doesNotMatch(form, /BILDAZO_ORDERZHOUSE_INTEGRATION_SECRET/);
   });
 
   it("existing-account tab uses email and password only", () => {
-    const card = read("components/freelancer/FreelancerBildazoAuthorGateCard.jsx");
-    assert.match(card, /type=["']password["']/);
-    assert.match(card, /data-testid="bildazo-existing-password"/);
-    assert.match(card, /لدي حساب في Bildazo/);
-    assert.match(card, /ربط حساب Bildazo الحالي/);
-    assert.doesNotMatch(card, /الرقم العام في Bildazo/);
-    assert.doesNotMatch(card, /BILDAZO_ORDERZHOUSE_INTEGRATION_SECRET/);
+    const form = read("components/freelancer/FreelancerBildazoAuthorLinkForm.jsx");
+    assert.match(form, /type=["']password["']/);
+    assert.match(form, /data-testid="bildazo-existing-password"/);
+    assert.match(form, /لدي حساب في Bildazo/);
+    assert.match(form, /ربط حساب Bildazo الحالي/);
+    assert.doesNotMatch(form, /الرقم العام في Bildazo/);
+    assert.doesNotMatch(form, /BILDAZO_ORDERZHOUSE_INTEGRATION_SECRET/);
   });
 
-  it("pending, review, failed, and linked states render", () => {
+  it("pending and failed states remain on the unlinked gate", () => {
     const card = read("components/freelancer/FreelancerBildazoAuthorGateCard.jsx");
     assert.match(card, /جاري إنشاء حساب الكاتب في Bildazo/);
     assert.match(card, /يحتاج طلب الربط إلى مراجعة من الإدارة/);
-    assert.match(card, /تعذر إكمال الربط مع Bildazo/);
-    assert.match(card, /تم ربط حساب الكاتب في Bildazo بنجاح/);
-    assert.match(card, /متابعة إلى فرص المقالات/);
+    const terms = read("constants/bildazoAuthorTerms.js");
+    assert.match(terms, /تعذر إكمال الربط مع Bildazo/);
     assert.match(card, /bildazo-pending-state/);
     assert.match(card, /bildazo-review-state/);
     assert.match(card, /bildazo-failed-state/);
-    assert.match(card, /data-testid="bildazo-linked-profile"/);
+    assert.match(card, /bildazoLinkFailureMessage/);
+    assert.match(card, /setExistingPassword\(""\)/);
+    assert.match(card, /isBildazoAuthorLinked\(next\)/);
+    assert.match(card, /if \(isBildazoAuthorLinked\(link\)\) return null/);
+    assert.doesNotMatch(card, /تم ربط حساب الكاتب في Bildazo بنجاح/);
+    assert.doesNotMatch(card, /data-testid="bildazo-linked-profile"/);
+  });
+
+  it("linked state shows compact account widget instead of the large gate card", () => {
+    const list = read("pages/dashboard/FreelancerMarketplaceArticlesPage.jsx");
+    const widget = read("components/freelancer/FreelancerBildazoLinkedAccountWidget.jsx");
+    const card = read("components/freelancer/FreelancerBildazoAuthorGateCard.jsx");
+    assert.match(list, /FreelancerBildazoLinkedAccountWidget/);
+    assert.match(list, /!loading && !linked/);
+    assert.match(list, /FreelancerBildazoAuthorGateCard/);
+    assert.match(widget, /data-testid="bildazo-linked-profile"/);
+    assert.match(widget, /حساب Bildazo مرتبط/);
+    assert.match(widget, /data-testid="bildazo-public-id"/);
+    assert.match(widget, /المعرّف:/);
+    assert.match(widget, /data-testid="bildazo-account-menu"/);
+    assert.match(widget, /data-testid="bildazo-change-account"/);
+    assert.match(widget, /data-testid="bildazo-change-modal"/);
+    assert.match(widget, /data-testid="bildazo-change-confirm"/);
+    assert.match(widget, /أفهم أن تغيير حساب Bildazo سيؤثر على المقالات القادمة فقط/);
+    assert.match(widget, /changeFreelancerBildazoAuthorLinkRequest/);
+    assert.doesNotMatch(widget, /تم ربط حساب الكاتب في Bildazo بنجاح/);
+    assert.doesNotMatch(card, /type=["']password["']/);
+  });
+
+  it("password fields appear only in the shared form, used by gate and change modal", () => {
+    const list = read("pages/dashboard/FreelancerMarketplaceArticlesPage.jsx");
+    const widget = read("components/freelancer/FreelancerBildazoLinkedAccountWidget.jsx");
+    const form = read("components/freelancer/FreelancerBildazoAuthorLinkForm.jsx");
+    assert.match(form, /data-testid="bildazo-existing-password"/);
+    assert.match(widget, /FreelancerBildazoAuthorLinkForm/);
+    assert.match(widget, /changeOpen/);
+    assert.doesNotMatch(list, /لا توجد مقالات منشورة/);
+    assert.match(list, /لا توجد فرص مقالات متاحة حاليًا/);
+    assert.match(list, /ستظهر هنا فرص Mini Article التي يمكنك التقديم لها عند نشرها/);
+    assert.match(list, /id="article-opportunities"/);
+  });
+
+  it("existing-account failure copy is specific and linked state refreshes /me", () => {
+    assert.match(
+      bildazoLinkFailureMessage({ status: "failed", failureCode: "ENDPOINT_UNAVAILABLE" }),
+      /غير متاحة مؤقتاً/,
+    );
+    assert.match(
+      bildazoLinkFailureMessage({ status: "failed", failureCode: "INVALID_CREDENTIALS" }),
+      /تأكد من البريد وكلمة المرور/,
+    );
+    assert.equal(bildazoLinkFailureMessage({ status: "linked" }), "");
+    const list = read("pages/dashboard/FreelancerMarketplaceArticlesPage.jsx");
+    assert.match(list, /getFreelancerBildazoAuthorLinkRequest\(\)/);
+    assert.match(list, /isBildazoAuthorLinked\(next\)/);
+    const card = read("components/freelancer/FreelancerBildazoAuthorGateCard.jsx");
+    assert.doesNotMatch(card, /تحقق من البيانات ثم أعد المحاولة/);
   });
 
   it("null profileUrl does not render a broken anchor; publicId is shown when linked", () => {
-    const card = read("components/freelancer/FreelancerBildazoAuthorGateCard.jsx");
-    assert.match(card, /link\?\.linked\?\.bildazoPublicId \?/);
-    assert.match(card, /link\?\.linked\?\.bildazoProfileUrl \?/);
-    assert.match(card, /data-testid="bildazo-public-id"/);
-    assert.match(card, /data-testid="bildazo-profile-url"/);
-    assert.doesNotMatch(card, /href=\{link\?\.linked\?\.bildazoProfileUrl\}/);
+    const widget = read("components/freelancer/FreelancerBildazoLinkedAccountWidget.jsx");
+    assert.match(widget, /publicId/);
+    assert.match(widget, /link\?\.linked\?\.bildazoProfileUrl \?/);
+    assert.match(widget, /data-testid="bildazo-public-id"/);
+    assert.match(widget, /data-testid="bildazo-profile-url"/);
+    assert.doesNotMatch(widget, /href=\{link\?\.linked\?\.bildazoProfileUrl\}/);
   });
 
   it("application CTA hidden when gate enabled and unlinked", () => {
