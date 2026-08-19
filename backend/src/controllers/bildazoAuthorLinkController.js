@@ -32,4 +32,23 @@ async function submitRequest(req, res, next) {
   }
 }
 
-module.exports = { getMe, submitRequest };
+async function changeLinked(req, res, next) {
+  try {
+    const result = await bildazoAuthorLinkService.changeBildazoAuthorLink(
+      freelancerId(req),
+      req.body || {},
+    );
+    return res.status(200).json({
+      success: true,
+      data: {
+        changed: Boolean(result.changed),
+        ...(result.failureCode ? { failureCode: result.failureCode } : {}),
+        ...result.link,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+module.exports = { getMe, submitRequest, changeLinked };

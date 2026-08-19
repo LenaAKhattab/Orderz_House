@@ -1,27 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import {
-  BILDAZO_AUTHOR_COUNTRIES,
   BILDAZO_AUTHOR_LINK_FLOWS,
-  BILDAZO_WRITER_ROLE_LABEL_AR,
-  ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_COPY_AR,
   ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_VERSION,
+  bildazoLinkFailureMessage,
   isBildazoAuthorLinked,
   validateBildazoAuthorLinkForm,
 } from "../../constants/bildazoAuthorTerms";
 import { submitFreelancerBildazoAuthorLinkRequest } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import FreelancerBildazoAuthorLinkForm from "./FreelancerBildazoAuthorLinkForm";
 import "./bildazo-author-gate.css";
-
-function Field({ label, children }) {
-  return (
-    <label className="bz-gate__field">
-      <span>{label}</span>
-      {children}
-    </label>
-  );
-}
 
 export default function FreelancerBildazoAuthorGateCard({
   link,
@@ -78,37 +67,7 @@ export default function FreelancerBildazoAuthorGateCard({
     return s.startsWith("pending") || s === "needs_manual_review" || s === "failed";
   }, [link?.status]);
 
-  if (isBildazoAuthorLinked(link)) {
-    return (
-      <div className="bz-gate bz-gate--success" data-testid="bildazo-linked-profile">
-        <div className="bz-gate__brand">
-          <img className="bz-gate__logo" src="/brand/bildazo-logo.png" alt="Bildazo" />
-        </div>
-        <h2 className="bz-gate__success-title">تم ربط حساب الكاتب في Bildazo بنجاح</h2>
-        <p className="bz-gate__subtitle">يمكنك الآن التقديم على فرص المقالات باسم الكاتب المرتبط.</p>
-        {link?.linked?.bildazoPublicId ? (
-          <p className="bz-gate__hint" data-testid="bildazo-public-id">
-            المعرّف العام: <strong>{link.linked.bildazoPublicId}</strong>
-          </p>
-        ) : null}
-        {link?.linked?.bildazoProfileUrl ? (
-          <p className="bz-gate__hint">
-            <a
-              href={link.linked.bildazoProfileUrl}
-              target="_blank"
-              rel="noreferrer"
-              data-testid="bildazo-profile-url"
-            >
-              {link.linked.bildazoProfileUrl}
-            </a>
-          </p>
-        ) : null}
-        <Link className="bz-gate__continue" to="/dashboard/freelancer/articles#article-opportunities">
-          متابعة إلى فرص المقالات
-        </Link>
-      </div>
-    );
-  }
+  if (isBildazoAuthorLinked(link)) return null;
 
   const pendingCopy =
     link?.status === "pending_new_account"
@@ -116,7 +75,7 @@ export default function FreelancerBildazoAuthorGateCard({
       : link?.status === "needs_manual_review"
         ? "يحتاج طلب الربط إلى مراجعة من الإدارة."
         : link?.status === "failed"
-          ? "تعذر إكمال الربط مع Bildazo. تحقق من البيانات ثم أعد المحاولة."
+          ? bildazoLinkFailureMessage(link, isEn)
           : pending
             ? "تم حفظ طلب الربط. أعد المحاولة إذا لم يظهر الحساب مرتبطًا."
             : null;
@@ -160,11 +119,19 @@ export default function FreelancerBildazoAuthorGateCard({
         body.fullName = fullName.trim() || undefined;
       }
       const res = await submitFreelancerBildazoAuthorLinkRequest(body);
+      const next = res?.data || null;
       setPassword("");
       setPasswordConfirm("");
       setExistingPassword("");
-      onUpdated?.(res?.data || null);
+      if (!isBildazoAuthorLinked(next)) {
+        const failedMsg = bildazoLinkFailureMessage(next, isEn);
+        if (failedMsg) setError(failedMsg);
+      }
+      onUpdated?.(next);
     } catch (err) {
+      setPassword("");
+      setPasswordConfirm("");
+      setExistingPassword("");
       const raw = getSafeApiErrorMessage(err);
       const genericAuth = /invalid email or password|تعذر التحقق/i.test(String(raw || ""));
       setError(
@@ -197,156 +164,32 @@ export default function FreelancerBildazoAuthorGateCard({
         </p>
       ) : null}
 
-      <div className="bz-gate__tabs" role="tablist">
-        <button
-          type="button"
-          className={`bz-gate__tab${flow === BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT ? " is-active" : ""}`}
-          onClick={() => setFlow(BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT)}
-        >
-          أنشئ حساب الكاتب في Bildazo
-        </button>
-        <button
-          type="button"
-          className={`bz-gate__tab${flow === BILDAZO_AUTHOR_LINK_FLOWS.EXISTING_ACCOUNT ? " is-active" : ""}`}
-          onClick={() => setFlow(BILDAZO_AUTHOR_LINK_FLOWS.EXISTING_ACCOUNT)}
-        >
-          لدي حساب في Bildazo
-        </button>
-      </div>
-
-      <form className="bz-gate__form" onSubmit={handleSubmit}>
-        {flow === BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT ? (
-          <>
-            <div className="bz-gate__grid bz-gate__grid--2">
-              <Field label="الاسم الكامل">
-                <input
-                  className="bz-gate__input"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                  maxLength={200}
-                  autoComplete="name"
-                  data-testid="bildazo-full-name"
-                />
-              </Field>
-              <Field label="البريد الإلكتروني">
-                <input
-                  className="bz-gate__input"
-                  value={verifiedEmail}
-                  readOnly
-                  aria-readonly="true"
-                  data-testid="bildazo-orderz-email"
-                />
-              </Field>
-              <Field label="رقم الجوال">
-                <input
-                  className="bz-gate__input"
-                  value={phoneE164}
-                  onChange={(e) => setPhoneE164(e.target.value)}
-                  placeholder="+9627XXXXXXXX"
-                  autoComplete="tel"
-                />
-              </Field>
-              <Field label="الدولة">
-                <select
-                  className="bz-gate__select"
-                  value={countryIso}
-                  onChange={(e) => setCountryIso(e.target.value)}
-                  data-testid="bildazo-country"
-                >
-                  {BILDAZO_AUTHOR_COUNTRIES.map((c) => (
-                    <option key={c.iso} value={c.iso}>
-                      {c.labelAr}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="تاريخ الميلاد (اختياري)">
-                <input
-                  className="bz-gate__input"
-                  type="date"
-                  value={dateOfBirth}
-                  onChange={(e) => setDateOfBirth(e.target.value)}
-                />
-              </Field>
-              <Field label="فئة الحساب">
-                <input className="bz-gate__input" value={BILDAZO_WRITER_ROLE_LABEL_AR} readOnly />
-              </Field>
-              <Field label="كلمة المرور">
-                <input
-                  className="bz-gate__input"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="new-password"
-                  required
-                  data-testid="bildazo-new-password"
-                />
-              </Field>
-              <Field label="تأكيد كلمة المرور">
-                <input
-                  className="bz-gate__input"
-                  type="password"
-                  value={passwordConfirm}
-                  onChange={(e) => setPasswordConfirm(e.target.value)}
-                  autoComplete="new-password"
-                  required
-                  data-testid="bildazo-new-password-confirm"
-                />
-              </Field>
-            </div>
-            <p className="bz-gate__hint">
-              فئة الحساب ثابتة على «كاتب». يُنشأ الحساب عبر خادم OrderzHouse ولا تُحفظ كلمة المرور هنا.
-            </p>
-          </>
-        ) : (
-          <div className="bz-gate__grid bz-gate__grid--2">
-            <Field label="بريد حساب Bildazo">
-              <input
-                className="bz-gate__input"
-                type="email"
-                value={existingEmail}
-                onChange={(e) => setExistingEmail(e.target.value)}
-                autoComplete="username"
-                required
-                data-testid="bildazo-existing-email"
-              />
-            </Field>
-            <Field label="كلمة مرور Bildazo">
-              <input
-                className="bz-gate__input"
-                type="password"
-                value={existingPassword}
-                onChange={(e) => setExistingPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-                data-testid="bildazo-existing-password"
-              />
-            </Field>
-          </div>
-        )}
-
-        <label className="bz-gate__terms">
-          <input
-            type="checkbox"
-            checked={termsChecked}
-            onChange={(e) => setTermsChecked(e.target.checked)}
-          />
-          <span>{ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_COPY_AR}</span>
-        </label>
-
-        {error ? (
-          <p className="bz-gate__error" data-testid="bildazo-auth-error">
-            {error}
-          </p>
-        ) : null}
-
-        <button className="bz-gate__submit" type="submit" disabled={busy}>
-          {flow === BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT
-            ? "إنشاء وربط حساب الكاتب"
-            : "ربط حساب Bildazo الحالي"}
-        </button>
-      </form>
+      <FreelancerBildazoAuthorLinkForm
+        flow={flow}
+        onFlowChange={setFlow}
+        verifiedEmail={verifiedEmail}
+        fullName={fullName}
+        onFullNameChange={setFullName}
+        phoneE164={phoneE164}
+        onPhoneChange={setPhoneE164}
+        countryIso={countryIso}
+        onCountryChange={setCountryIso}
+        dateOfBirth={dateOfBirth}
+        onDateOfBirthChange={setDateOfBirth}
+        password={password}
+        onPasswordChange={setPassword}
+        passwordConfirm={passwordConfirm}
+        onPasswordConfirmChange={setPasswordConfirm}
+        existingEmail={existingEmail}
+        onExistingEmailChange={setExistingEmail}
+        existingPassword={existingPassword}
+        onExistingPasswordChange={setExistingPassword}
+        termsChecked={termsChecked}
+        onTermsChange={setTermsChecked}
+        error={error}
+        busy={busy}
+        onSubmit={handleSubmit}
+      />
     </div>
   );
 }

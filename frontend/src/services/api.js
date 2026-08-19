@@ -271,6 +271,13 @@ export const submitFreelancerBildazoAuthorLinkRequest = async (payload = {}) => 
   return data;
 };
 
+export const changeFreelancerBildazoAuthorLinkRequest = async (payload = {}) => {
+  const { data } = await api.post("/freelancer/bildazo-author-link/change", payload, {
+    timeout: 30000,
+  });
+  return data;
+};
+
 /** Phase 0C — Super Admin manual Bildazo author link (no live Bildazo call). */
 export const listSuperAdminBildazoAuthorLinksRequest = async (params = {}) => {
   const { data } = await api.get("/super-admin/bildazo-author-links", { params });

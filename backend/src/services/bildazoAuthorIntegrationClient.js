@@ -13,9 +13,15 @@ const NOT_IMPLEMENTED =
 const LINK_OR_CREATE_PATH = "/api/integrations/orderzhouse/authors/link-or-create";
 const CREATE_AND_LINK_PATH = "/api/integrations/orderzhouse/authors/create-and-link";
 const LINK_WITH_CREDENTIALS_PATH = "/api/integrations/orderzhouse/authors/link-with-credentials";
+const REPLACE_LINK_PATH = "/api/integrations/orderzhouse/authors/replace-link";
 const SECRET_HEADER = "X-OrderzHouse-Integration-Secret";
 
-const BILDAZO_SYNC_LINKED_OK_STATUSES = Object.freeze(["created", "linked", "already_linked"]);
+const BILDAZO_SYNC_LINKED_OK_STATUSES = Object.freeze([
+  "created",
+  "linked",
+  "already_linked",
+  "replaced",
+]);
 const BILDAZO_SYNC_KNOWN_STATUSES = Object.freeze([
   ...BILDAZO_SYNC_LINKED_OK_STATUSES,
   "needs_manual_review",
@@ -167,6 +173,26 @@ function buildCredentialLinkRequestBody(payload = {}) {
   };
 }
 
+function buildReplaceLinkRequestBody(payload = {}) {
+  const mode = String(payload.mode || payload.linkFlow || "existing_account").trim();
+  const body = {
+    orderzFreelancerId: String(payload.orderzFreelancerId || "").trim(),
+    replace: true,
+    mode,
+    email: String(payload.email || "").trim().toLowerCase(),
+    password: String(payload.password || ""),
+  };
+  const fullName = optionalText(payload.fullName, 200);
+  const phoneE164 = optionalText(payload.phoneE164, 20);
+  const countryIso = optionalText(payload.countryIso, 2);
+  const dateOfBirth = optionalText(payload.dateOfBirth, 10);
+  if (fullName) body.fullName = fullName;
+  if (phoneE164) body.phoneE164 = phoneE164;
+  if (countryIso) body.countryIso = countryIso.toUpperCase();
+  if (dateOfBirth) body.dateOfBirth = dateOfBirth;
+  return body;
+}
+
 function logSyncOutcome({ freelancerId, outcome, httpStatus, pathLabel = "s2s" }) {
   console.info(
     "[bildazo-s2s] %s freelancerId=%s outcome=%s http=%s",
@@ -276,6 +302,26 @@ async function postBildazoAuthorIntegration({
       safeMessage: "Invalid email or password",
     });
   }
+  if (httpStatus === 404) {
+    logSyncOutcome({ freelancerId, outcome: "endpoint_missing", httpStatus, pathLabel });
+    return emptyResult({
+      ok: false,
+      called: true,
+      httpStatus,
+      errorCode: "BILDAZO_SYNC_ENDPOINT_MISSING",
+      safeMessage: "Bildazo link endpoint is unavailable",
+    });
+  }
+  if (httpStatus === 403) {
+    logSyncOutcome({ freelancerId, outcome: "account_unavailable", httpStatus, pathLabel });
+    return emptyResult({
+      ok: false,
+      called: true,
+      httpStatus,
+      errorCode: "BILDAZO_SYNC_ACCOUNT_UNAVAILABLE",
+      safeMessage: "Account is not available",
+    });
+  }
   if (httpStatus < 200 || httpStatus >= 300) {
     logSyncOutcome({ freelancerId, outcome: "http_error", httpStatus, pathLabel });
     return emptyResult({
@@ -348,6 +394,16 @@ async function linkExistingBildazoAuthorWithCredentials(payload = {}, deps = {})
   });
 }
 
+async function replaceBildazoAuthorLink(payload = {}, deps = {}) {
+  return postBildazoAuthorIntegration({
+    path: REPLACE_LINK_PATH,
+    pathLabel: "replace-link",
+    payload,
+    buildBody: buildReplaceLinkRequestBody,
+    deps,
+  });
+}
+
 module.exports = {
   createWriterAccount,
   lookupExistingWriter,
@@ -356,11 +412,13 @@ module.exports = {
   linkOrCreateBildazoAuthor,
   createAndLinkBildazoAuthor,
   linkExistingBildazoAuthorWithCredentials,
+  replaceBildazoAuthorLink,
   joinLinkOrCreateUrl,
   joinBildazoPath,
   buildSafeRequestBody,
   buildCreateAndLinkRequestBody,
   buildCredentialLinkRequestBody,
+  buildReplaceLinkRequestBody,
   stripPasswordKeys,
   BILDAZO_SYNC_LINKED_OK_STATUSES,
   BILDAZO_SYNC_KNOWN_STATUSES,

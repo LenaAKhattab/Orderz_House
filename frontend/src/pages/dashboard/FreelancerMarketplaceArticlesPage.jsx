@@ -11,6 +11,8 @@ import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import { formatArticleBidCollectionLabel } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 import FreelancerBildazoAuthorGateCard from "../../components/freelancer/FreelancerBildazoAuthorGateCard";
+import FreelancerBildazoLinkedAccountWidget from "../../components/freelancer/FreelancerBildazoLinkedAccountWidget";
+import { isBildazoAuthorLinked } from "../../constants/bildazoAuthorTerms";
 
 export default function FreelancerMarketplaceArticlesPage() {
   const { locale } = useTranslation();
@@ -45,25 +47,52 @@ export default function FreelancerMarketplaceArticlesPage() {
     void refresh();
   }, [refresh]);
 
+  const linked = isBildazoAuthorLinked(bildazoLink);
+
   return (
     <DashboardShell>
-      <DashboardSection>
-        {!loading ? (
+      <DashboardSection
+        title={isEn ? "Article opportunities" : "فرص المقالات"}
+        description={
+          isEn
+            ? "Mini Article opportunities you can apply to."
+            : "فرص Mini Article المتاحة للتقديم."
+        }
+        actions={
+          !loading && linked ? (
+            <FreelancerBildazoLinkedAccountWidget
+              link={bildazoLink}
+              isEn={isEn}
+              onUpdated={async (next) => {
+                setBildazoLink(next);
+                const me = await getFreelancerBildazoAuthorLinkRequest().catch(() => null);
+                if (me?.data) setBildazoLink(me.data);
+              }}
+            />
+          ) : null
+        }
+      >
+        {!loading && !linked ? (
           <FreelancerBildazoAuthorGateCard
             link={bildazoLink}
             isEn={isEn}
-            onUpdated={(next) => setBildazoLink(next)}
+            onUpdated={async (next) => {
+              setBildazoLink(next);
+              if (!isBildazoAuthorLinked(next)) return;
+              const me = await getFreelancerBildazoAuthorLinkRequest().catch(() => null);
+              if (me?.data) setBildazoLink(me.data);
+            }}
           />
         ) : null}
         {loading ? <DashboardLoadingState /> : null}
         {!loading && error ? <DashboardErrorState message={error} onRetry={refresh} /> : null}
         {!loading && !error && articles.length === 0 ? (
           <DashboardEmptyState
-            title={isEn ? "No published articles" : "لا توجد مقالات منشورة"}
+            title={isEn ? "No article opportunities right now" : "لا توجد فرص مقالات متاحة حاليًا"}
             description={
               isEn
-                ? "Published articles you can apply to will appear here."
-                : "ستظهر هنا المقالات المنشورة التي يمكنك التقدّم لها."
+                ? "Mini Article opportunities will appear here when they are published."
+                : "ستظهر هنا فرص Mini Article التي يمكنك التقديم لها عند نشرها."
             }
           />
         ) : null}

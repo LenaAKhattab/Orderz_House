@@ -77,6 +77,36 @@ export function isBildazoAuthorLinked(link) {
   return String(link?.status || "") === "linked";
 }
 
+export function bildazoLinkFailureMessage(link, isEn = false) {
+  const code = String(link?.failureCode || "");
+  if (code === "INVALID_CREDENTIALS") {
+    return isEn
+      ? "Could not verify the Bildazo account. Check the email and password."
+      : "تعذر التحقق من حساب Bildazo. تأكد من البريد وكلمة المرور.";
+  }
+  if (code === "ACCOUNT_UNAVAILABLE") {
+    return isEn
+      ? "This Bildazo account cannot be linked right now."
+      : "لا يمكن ربط حساب Bildazo هذا حالياً.";
+  }
+  if (code === "ENDPOINT_UNAVAILABLE" || code === "CONFIG_MISSING") {
+    return isEn
+      ? "Bildazo linking is temporarily unavailable. Try again later."
+      : "خدمة ربط Bildazo غير متاحة مؤقتاً. أعد المحاولة لاحقاً.";
+  }
+  if (code === "TIMEOUT" || code === "NETWORK") {
+    return isEn
+      ? "Could not reach Bildazo. Check your connection and try again."
+      : "تعذر الوصول إلى Bildazo. تحقق من الاتصال ثم أعد المحاولة.";
+  }
+  if (String(link?.status || "") === "failed") {
+    return isEn
+      ? "Could not complete the Bildazo link. Try again."
+      : "تعذر إكمال الربط مع Bildazo. أعد المحاولة.";
+  }
+  return "";
+}
+
 export function shouldBlockArticleApply(link) {
   return Boolean(link?.gateEnabled) && !isBildazoAuthorLinked(link);
 }

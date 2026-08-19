@@ -2,7 +2,7 @@ const express = require("express");
 const { requireAuth, requireFreelancer } = require("../middleware/rbacMiddleware");
 const validateRequest = require("../middleware/validateRequest");
 const controller = require("../controllers/bildazoAuthorLinkController");
-const { submitBildazoAuthorLinkValidators } = require("../validators/bildazoAuthorLinkValidators");
+const { submitBildazoAuthorLinkValidators, changeBildazoAuthorLinkValidators } = require("../validators/bildazoAuthorLinkValidators");
 
 const router = express.Router();
 const guard = [requireAuth, requireFreelancer];
@@ -14,6 +14,13 @@ router.post(
   submitBildazoAuthorLinkValidators,
   validateRequest,
   controller.submitRequest,
+);
+router.post(
+  "/bildazo-author-link/change",
+  ...guard,
+  changeBildazoAuthorLinkValidators,
+  validateRequest,
+  controller.changeLinked,
 );
 
 module.exports = router;
