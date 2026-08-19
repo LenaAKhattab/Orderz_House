@@ -5,6 +5,9 @@ import {
   rejectAdminArticleApplicationRequest,
   relistAdminMarketplaceArticleBidCollectionRequest,
   selectAdminArticleApplicationRequest,
+  finalizeAdminArticleApplicationRequest,
+  retryAdminArticleBildazoPublishRequest,
+  requestAdminArticleRevisionRequest,
 } from "../../services/api";
 import FairSelectionOverrideDialog from "./FairSelectionOverrideDialog";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
@@ -17,6 +20,7 @@ import {
   isFairRankingEligible,
   isRecommendedArticleApplicant,
 } from "./marketplaceArticleFormUtils";
+import { adminBildazoPublishCopy } from "../../constants/bildazoArticlePublish";
 
 export default function MarketplaceArticleApplicationsPanel({
   articleId,
@@ -78,6 +82,24 @@ export default function MarketplaceArticleApplicationsPanel({
         onToast?.({
           type: "success",
           message: isEn ? "Applicant selected." : "تم اختيار المتقدم.",
+        });
+      } else if (action === "finalize") {
+        await finalizeAdminArticleApplicationRequest(applicationId);
+        onToast?.({
+          type: "success",
+          message: isEn ? "Article approved." : "تم اعتماد المقال.",
+        });
+      } else if (action === "retry-publish") {
+        await retryAdminArticleBildazoPublishRequest(applicationId);
+        onToast?.({
+          type: "success",
+          message: isEn ? "Bildazo publish retried." : "تمت إعادة محاولة النشر على Bildazo.",
+        });
+      } else if (action === "request-revision") {
+        await requestAdminArticleRevisionRequest(applicationId, {});
+        onToast?.({
+          type: "success",
+          message: isEn ? "Revision requested." : "تم طلب التعديل.",
         });
       } else {
         await rejectAdminArticleApplicationRequest(applicationId);
@@ -239,7 +261,39 @@ export default function MarketplaceArticleApplicationsPanel({
               </div>
             ) : null}
             {app.proposalMessage ? (
-              <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.85 }}>{app.proposalMessage}</p>
+              <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.85 }}>
+                {isEn ? "Proposal:" : "رسالة العرض:"} {app.proposalMessage}
+              </p>
+            ) : null}
+            {app.articleSubmission ? (
+              <div data-testid="admin-final-article-status" style={{ fontSize: "0.9rem" }}>
+                <strong>{isEn ? "Final manuscript" : "المقال النهائي"}:</strong>{" "}
+                {app.articleSubmission.status}
+                {app.articleSubmission.title ? ` · ${app.articleSubmission.title}` : ""}
+              </div>
+            ) : app.status === "selected" || app.status === "assigned" ? (
+              <p data-testid="admin-final-article-missing" style={{ margin: 0, fontSize: "0.9rem" }}>
+                {isEn
+                  ? "Waiting for the freelancer’s final article."
+                  : "بانتظار تسليم المقال النهائي من المستقل."}
+              </p>
+            ) : null}
+            {app.bildazoPublish ? (
+              <div data-testid="admin-bildazo-publish-status" style={{ fontSize: "0.9rem" }}>
+                {adminBildazoPublishCopy(app.bildazoPublish, isEn)}
+                {app.bildazoPublish.articleUrl ? (
+                  <>
+                    {" · "}
+                    <a
+                      href={app.bildazoPublish.articleUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {app.bildazoPublish.articleUrl}
+                    </a>
+                  </>
+                ) : null}
+              </div>
             ) : null}
             {app.status === "pending" ? (
               <div style={{ display: "flex", gap: 8 }}>
@@ -257,6 +311,44 @@ export default function MarketplaceArticleApplicationsPanel({
                   onClick={() => act(app.id, "reject")}
                 >
                   {isEn ? "Reject" : "رفض"}
+                </Button>
+              </div>
+            ) : null}
+            {app.status === "selected" || app.status === "assigned" ? (
+              <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.8 }}>
+                {isEn
+                  ? "Approve is available after the final article is submitted."
+                  : "الاعتماد متاح بعد تسليم المقال النهائي."}
+              </p>
+            ) : null}
+            {app.articleSubmission?.status === "submitted" ? (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <Button
+                  type="button"
+                  disabled={busyId === app.id}
+                  onClick={() => act(app.id, "finalize")}
+                >
+                  {isEn ? "Approve article" : "اعتماد المقال"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={busyId === app.id}
+                  onClick={() => act(app.id, "request-revision")}
+                >
+                  {isEn ? "Request revision" : "طلب تعديل"}
+                </Button>
+              </div>
+            ) : null}
+            {app.bildazoPublish?.canRetry ? (
+              <div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={busyId === app.id}
+                  onClick={() => act(app.id, "retry-publish")}
+                >
+                  {isEn ? "Retry Bildazo publish" : "إعادة نشر Bildazo"}
                 </Button>
               </div>
             ) : null}

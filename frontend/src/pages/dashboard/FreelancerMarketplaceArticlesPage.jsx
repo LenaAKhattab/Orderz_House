@@ -7,15 +7,17 @@ import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState"
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
 import { useTranslation } from "../../i18n/LanguageProvider";
-import { listPublishedMarketplaceArticlesRequest } from "../../services/api";
+import { listPublishedMarketplaceArticlesRequest, getFreelancerBildazoAuthorLinkRequest } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import { formatArticleBidCollectionLabel } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
+import FreelancerBildazoAuthorGateCard from "../../components/freelancer/FreelancerBildazoAuthorGateCard";
 
 export default function FreelancerMarketplaceArticlesPage() {
   const { locale, t } = useTranslation();
   const isEn = locale === "en";
   const [articles, setArticles] = useState([]);
+  const [bildazoLink, setBildazoLink] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -23,8 +25,12 @@ export default function FreelancerMarketplaceArticlesPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await listPublishedMarketplaceArticlesRequest({});
+      const [res, linkRes] = await Promise.all([
+        listPublishedMarketplaceArticlesRequest({}),
+        getFreelancerBildazoAuthorLinkRequest().catch(() => null),
+      ]);
       setArticles(Array.isArray(res?.data?.articles) ? res.data.articles : []);
+      setBildazoLink(linkRes?.data || null);
     } catch (err) {
       setError(
         getSafeApiErrorMessage(err) ||
@@ -50,6 +56,13 @@ export default function FreelancerMarketplaceArticlesPage() {
         ]}
       />
       <DashboardSection>
+        {!loading ? (
+          <FreelancerBildazoAuthorGateCard
+            link={bildazoLink}
+            isEn={isEn}
+            onUpdated={(next) => setBildazoLink(next)}
+          />
+        ) : null}
         {loading ? <DashboardLoadingState /> : null}
         {!loading && error ? <DashboardErrorState message={error} onRetry={refresh} /> : null}
         {!loading && !error && articles.length === 0 ? (

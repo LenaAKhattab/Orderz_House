@@ -21,6 +21,8 @@ const superAdminMarketplaceArticlesRoutes = require("./routes/superAdminMarketpl
 const superAdminMarketplaceArticleApplicationsRoutes = require("./routes/superAdminMarketplaceArticleApplicationsRoutes");
 const marketplaceArticlesRoutes = require("./routes/marketplaceArticlesRoutes");
 const freelancerMarketplaceArticleApplicationsRoutes = require("./routes/freelancerMarketplaceArticleApplicationsRoutes");
+const freelancerBildazoAuthorLinkRoutes = require("./routes/freelancerBildazoAuthorLinkRoutes");
+const superAdminBildazoAuthorLinkRoutes = require("./routes/superAdminBildazoAuthorLinkRoutes");
 const adminPlanPagesRoutes = require("./routes/adminPlanPagesRoutes");
 const adminPlansRoutes = require("./routes/adminPlansRoutes");
 const adminSubscriptionsRoutes = require("./routes/adminSubscriptionsRoutes");
@@ -176,6 +178,7 @@ app.use("/api/freelancer", freelancerMarketplaceMembershipRoutes);
 app.use("/api/freelancer", freelancerWorkTokenWalletRoutes); // LEGACY_DEPRECATED_WORK_TOKEN_MODEL (read retained)
 app.use("/api/freelancer", freelancerBidCreditsRoutes);
 app.use("/api/freelancer", freelancerMarketplaceArticleApplicationsRoutes);
+app.use("/api/freelancer", freelancerBildazoAuthorLinkRoutes);
 app.use("/api/freelancer", freelancerPriorityAuctionRoutes);
 app.use("/api/freelancer", freelancerEliteDirectOrdersRoutes);
 app.use("/api/freelancer", freelancerCoursesRoutes);
@@ -196,6 +199,7 @@ app.use("/api/super-admin", superAdminTrainingPackagesRoutes);
 app.use("/api/super-admin", superAdminMarketplaceEconomySettingsRoutes);
 app.use("/api/super-admin", superAdminMarketplaceArticlesRoutes);
 app.use("/api/super-admin", superAdminMarketplaceArticleApplicationsRoutes);
+app.use("/api/super-admin", superAdminBildazoAuthorLinkRoutes);
 app.use("/api", marketplaceArticlesRoutes);
 app.use("/api/super-admin", superAdminMarketplaceMembershipsRoutes);
 app.use("/api/super-admin", superAdminWorkTokenWalletRoutes); // LEGACY_DEPRECATED_WORK_TOKEN_MODEL

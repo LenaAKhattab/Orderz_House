@@ -7,6 +7,7 @@ const {
   applicationIdParam,
   submitArticleApplicationValidators,
   editArticleApplicationValidators,
+  submitFinalArticleManuscriptValidators,
   listApplicationsValidators,
 } = require("../validators/marketplaceArticleApplicationsValidators");
 
@@ -51,6 +52,14 @@ router.post(
   applicationIdParam,
   validateRequest,
   controller.withdraw,
+);
+
+router.post(
+  "/article-applications/:applicationId/final-manuscript",
+  ...guard,
+  submitFinalArticleManuscriptValidators,
+  validateRequest,
+  controller.submitFinalManuscript,
 );
 
 module.exports = router;
