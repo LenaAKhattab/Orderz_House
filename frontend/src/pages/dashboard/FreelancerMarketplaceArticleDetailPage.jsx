@@ -12,10 +12,13 @@ import {
   getFreelancerArticleApplicationContextRequest,
   submitFreelancerArticleApplicationRequest,
   withdrawFreelancerArticleApplicationRequest,
+  submitFreelancerFinalArticleManuscriptRequest,
 } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import { formatArticleBidCollectionLabel, isBidCollectionClosedForApply } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
+import { shouldBlockArticleApply } from "../../constants/bildazoAuthorTerms";
+import { freelancerBildazoPublishCopy } from "../../constants/bildazoArticlePublish";
 
 function eligibilityMessage(eligibility, isEn) {
   if (!eligibility) return null;
@@ -54,6 +57,11 @@ function eligibilityMessage(eligibility, isEn) {
       ? "This article did not reach the required number of applicants."
       : "لم يكتمل الحد الأدنى للمناقصات";
   }
+  if (eligibility.reason === "BILDAZO_AUTHOR_LINK_REQUIRED") {
+    return isEn
+      ? "Create or link your Bildazo writer account before applying to articles."
+      : "يرجى إنشاء أو ربط حساب الكاتب في Bildazo قبل التقديم على المقالات.";
+  }
   if (eligibility.reason === "ARTICLE_BID_COLLECTION_DEADLINE_PASSED") {
     return isEn
       ? "The application deadline has passed."
@@ -72,6 +80,8 @@ export default function FreelancerMarketplaceArticleDetailPage() {
   const [application, setApplication] = useState(null);
   const [eligibility, setEligibility] = useState(null);
   const [message, setMessage] = useState("");
+  const [manuscriptTitle, setManuscriptTitle] = useState("");
+  const [manuscriptContent, setManuscriptContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -87,6 +97,12 @@ export default function FreelancerMarketplaceArticleDetailPage() {
       setEligibility(res?.data?.eligibility || null);
       if (res?.data?.application?.proposalMessage) {
         setMessage(res.data.application.proposalMessage);
+      }
+      if (res?.data?.application?.articleSubmission?.title) {
+        setManuscriptTitle(res.data.application.articleSubmission.title);
+      }
+      if (res?.data?.application?.articleSubmission?.content) {
+        setManuscriptContent(res.data.application.articleSubmission.content);
       }
     } catch (err) {
       setError(
@@ -152,6 +168,39 @@ export default function FreelancerMarketplaceArticleDetailPage() {
         type: "error",
         message:
           getSafeApiErrorMessage(err) || (isEn ? "Could not withdraw." : "تعذر سحب الطلب."),
+      });
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  };
+
+  const canSubmitManuscript = ["selected", "assigned", "writing", "submitted", "under_review", "revision_requested"].includes(
+    String(application?.status || ""),
+  );
+  const manuscript = application?.articleSubmission || null;
+  const showManuscriptForm =
+    canSubmitManuscript && (!manuscript || manuscript.canResubmit || manuscript.status === "revision_requested");
+
+  const handleSubmitManuscript = async () => {
+    if (!application?.id || busy || busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
+    try {
+      await submitFreelancerFinalArticleManuscriptRequest(application.id, {
+        title: manuscriptTitle,
+        content: manuscriptContent,
+      });
+      push({
+        type: "success",
+        message: isEn ? "Final article submitted." : "تم تسليم المقال النهائي.",
+      });
+      await refresh();
+    } catch (err) {
+      push({
+        type: "error",
+        message:
+          getSafeApiErrorMessage(err) || (isEn ? "Could not submit article." : "تعذر تسليم المقال."),
       });
     } finally {
       busyRef.current = false;
@@ -281,6 +330,22 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                           : application.status || "—"}
                   </strong>
                 </p>
+                {(() => {
+                  const copy = freelancerBildazoPublishCopy(application.bildazoPublish, isEn);
+                  if (!copy) return null;
+                  return (
+                    <div data-testid="freelancer-bildazo-publish-status">
+                      <p className="mb-2 mt-0">{copy.text}</p>
+                      {copy.url ? (
+                        <p className="mb-2 mt-0">
+                          <a href={copy.url} target="_blank" rel="noreferrer">
+                            {copy.url}
+                          </a>
+                        </p>
+                      ) : null}
+                    </div>
+                  );
+                })()}
                 {application.status === "pending" ? (
                   <>
                     <p className="mb-2 mt-0 text-[0.9rem] text-[color:var(--dash-text-secondary,#4b5563)]">
@@ -293,11 +358,58 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                     </Button>
                   </>
                 ) : null}
+                {manuscript ? (
+                  <p className="mb-2 mt-0" data-testid="freelancer-final-article-status">
+                    {manuscript.status === "submitted"
+                      ? isEn
+                        ? "Final article submitted for review."
+                        : "تم تسليم المقال النهائي للمراجعة."
+                      : manuscript.status === "revision_requested"
+                        ? isEn
+                          ? "Admin requested a revision."
+                          : "طلبت الإدارة تعديلاً على المقال."
+                        : manuscript.status === "approved"
+                          ? isEn
+                            ? "Final article approved."
+                            : "تم اعتماد المقال النهائي."
+                          : manuscript.status}
+                  </p>
+                ) : null}
+                {manuscript?.reviewerNotes && manuscript.status === "revision_requested" ? (
+                  <p className="mb-2 mt-0 text-[0.9rem]">{manuscript.reviewerNotes}</p>
+                ) : null}
+                {showManuscriptForm ? (
+                  <div className="grid gap-2" data-testid="freelancer-final-article-form">
+                    <label className="grid gap-1.5">
+                      <span>{isEn ? "Final article title" : "عنوان المقال النهائي"}</span>
+                      <input
+                        className="w-full rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] p-2.5 font-inherit"
+                        value={manuscriptTitle}
+                        onChange={(e) => setManuscriptTitle(e.target.value)}
+                        maxLength={120}
+                      />
+                    </label>
+                    <label className="grid gap-1.5">
+                      <span>{isEn ? "Final article content" : "محتوى المقال النهائي"}</span>
+                      <textarea
+                        className="w-full rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] p-2.5 font-inherit"
+                        rows={10}
+                        value={manuscriptContent}
+                        onChange={(e) => setManuscriptContent(e.target.value)}
+                        maxLength={200000}
+                      />
+                    </label>
+                    <Button type="button" disabled={busy} onClick={handleSubmitManuscript}>
+                      {isEn ? "Submit final article" : "تسليم المقال النهائي"}
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
             {!application &&
             eligibility?.eligible &&
+            !shouldBlockArticleApply(eligibility?.bildazoAuthorLink) &&
             !isBidCollectionClosedForApply(article.bidCollection || eligibility?.bidCollection) ? (
               <div className="grid gap-2">
                 <label className="grid gap-1.5">
@@ -327,6 +439,16 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                   </p>
                 ) : null}
               </div>
+            ) : null}
+            {!application && eligibility?.reason === "BILDAZO_AUTHOR_LINK_REQUIRED" ? (
+              <p className="m-0">
+                <Link
+                  to="/dashboard/freelancer/articles"
+                  className="font-bold text-[color:var(--dash-primary,#2f3b65)]"
+                >
+                  إكمال طلب ربط حساب الكاتب في Bildazo
+                </Link>
+              </p>
             ) : null}
             {!application && !eligibility?.eligible && eligibility?.reason === "INSUFFICIENT_BID_CREDITS" ? (
               <p className="m-0 text-[0.9rem] text-[color:var(--dash-danger,#c03535)]">

@@ -6,6 +6,7 @@ const {
   articleIdParam,
   applicationIdParam,
   listApplicationsValidators,
+  requestArticleRevisionValidators,
 } = require("../validators/marketplaceArticleApplicationsValidators");
 
 const router = express.Router();
@@ -58,6 +59,30 @@ router.post(
   applicationIdParam,
   validateRequest,
   controller.finalizeApproval,
+);
+
+router.post(
+  "/article-applications/:applicationId/request-revision",
+  ...guard,
+  requestArticleRevisionValidators,
+  validateRequest,
+  controller.requestArticleRevision,
+);
+
+router.post(
+  "/article-applications/:applicationId/bildazo-publish/retry",
+  ...guard,
+  applicationIdParam,
+  validateRequest,
+  controller.retryBildazoPublish,
+);
+
+router.post(
+  "/marketplace-articles/:id/bildazo-publish/retry",
+  ...guard,
+  articleIdParam,
+  validateRequest,
+  controller.retryBildazoPublishForArticle,
 );
 
 module.exports = router;

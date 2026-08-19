@@ -2,7 +2,7 @@ const { authenticate, optionalAuthenticate } = require("./authMiddleware");
 
 const authService = require("../services/authService");
 
-const { resolveAuthzContext } = require("../services/rbacService");
+const rbacService = require("../services/rbacService");
 
 const { collectResolvedRoleNames } = require("../utils/roleResolution");
 
@@ -120,7 +120,7 @@ async function attachAuthContext(req, res, next) {
 
 
 
-    const authz = await resolveAuthzContext({ userId: legacyUser.id, legacyRole: legacyUser.role });
+    const authz = await rbacService.resolveAuthzContext({ userId: legacyUser.id, legacyRole: legacyUser.role });
 
 
 
@@ -149,6 +149,8 @@ async function attachAuthContext(req, res, next) {
 
 
     req.user.role = req.auth.primaryRole || req.user.role;
+    req.user.id = Number(legacyUser.id);
+    if (!req.user.sub) req.user.sub = String(legacyUser.id);
 
 
 

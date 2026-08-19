@@ -17,6 +17,7 @@ const {
 const reservationService = require("./marketplaceBidCreditReservationService");
 const economyService = require("./marketplaceArticleEconomyService");
 const notificationService = require("./notificationService");
+const submissionsService = require("./marketplaceArticleSubmissionsService");
 
 async function enqueueBildazoPublish({ client, settlement, article, application }) {
   const key = `bildazo_publish:settlement:${settlement.id}`;
@@ -83,6 +84,11 @@ async function finalizeArticleApproval({
       alreadySettled: true,
     };
   }
+
+  await submissionsService.assertSubmittedManuscriptForApproval({
+    applicationId: appId,
+    client,
+  });
 
   if (String(application.status) === "approved") {
     throw createAppError("Application already approved without settlement row.", 409, {
@@ -283,6 +289,13 @@ async function finalizeArticleApproval({
       WHERE id = $1`,
     [appId, new Date(now).toISOString()],
   );
+
+  await submissionsService.markSubmissionApproved({
+    applicationId: appId,
+    actorUserId,
+    now,
+    client,
+  });
 
   const outbox = await enqueueBildazoPublish({
     client,

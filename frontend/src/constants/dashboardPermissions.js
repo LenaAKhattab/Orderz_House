@@ -68,6 +68,8 @@ const SUPER_ADMIN_ROUTE_RULES = [
   { prefix: "/dashboard/super-admin/institutions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutions },
   { prefix: "/dashboard/super-admin/marketplace-economy", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { prefix: "/dashboard/super-admin/marketplace-plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { prefix: "/dashboard/super-admin/marketplace-articles", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { prefix: "/dashboard/super-admin/bildazo-author-links", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { prefix: "/dashboard/super-admin/training-packages", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { prefix: "/dashboard/super-admin/plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { prefix: "/dashboard/super-admin/courses", permission: ADMIN_PAGE_PERMISSIONS.courses },

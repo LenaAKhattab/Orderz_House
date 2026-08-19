@@ -17,6 +17,24 @@ const submitArticleApplicationValidators = [
     .withMessage("proposalMessage must be at most 5000 characters."),
 ];
 
+const submitFinalArticleManuscriptValidators = [
+  ...applicationIdParam,
+  body("title").isString().trim().isLength({ min: 3, max: 120 }).withMessage("title is required."),
+  body("content")
+    .isString()
+    .isLength({ min: 50, max: 200000 })
+    .withMessage("content is required."),
+];
+
+const requestArticleRevisionValidators = [
+  ...applicationIdParam,
+  body("reviewerNotes")
+    .optional({ nullable: true })
+    .isString()
+    .isLength({ max: 2000 })
+    .withMessage("reviewerNotes must be at most 2000 characters."),
+];
+
 const editArticleApplicationValidators = [
   ...applicationIdParam,
   body("proposalMessage")
@@ -36,5 +54,7 @@ module.exports = {
   applicationIdParam,
   submitArticleApplicationValidators,
   editArticleApplicationValidators,
+  submitFinalArticleManuscriptValidators,
+  requestArticleRevisionValidators,
   listApplicationsValidators,
 };

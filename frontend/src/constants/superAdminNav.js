@@ -88,6 +88,14 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
   },
+  bildazoAuthorLinks: {
+    key: "bildazoAuthorLinks",
+    to: "/dashboard/super-admin/bildazo-author-links",
+    labelKey: "dashboard.nav.superAdmin.bildazoAuthorLinks",
+    icon: "plans",
+    end: true,
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
+  },
   // Route remains available; hidden from sidebar for now.
   bidCredits: {
     key: "bidCredits",
@@ -208,7 +216,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "usersSubscriptions",
     labelKey: "dashboard.nav.sections.usersSubscriptions",
-    itemKeys: ["plans", "marketplacePlans", "marketplaceEconomy", "marketplaceArticles", "subscriptions", "subscriptionActivation"],
+    itemKeys: ["plans", "marketplacePlans", "marketplaceEconomy", "marketplaceArticles", "bildazoAuthorLinks", "subscriptions", "subscriptionActivation"],
   },
   {
     id: "contentTraining",
@@ -267,6 +275,9 @@ export function superAdminBreadcrumbKeys(pathname) {
   }
   if (pathname.includes("/marketplace-economy")) {
     return [...base, "dashboard.breadcrumbs.marketplaceEconomy"];
+  }
+  if (pathname.includes("/bildazo-author-links")) {
+    return [...base, "dashboard.breadcrumbs.bildazoAuthorLinks"];
   }
   if (pathname.includes("/marketplace-articles")) {
     return [...base, "dashboard.breadcrumbs.marketplaceArticles"];

@@ -258,6 +258,43 @@ export const listPublishedMarketplaceArticlesRequest = async (params = {}) => {
   return data;
 };
 
+/** Phase 0B — OrderzHouse-side Bildazo writer link (no live Bildazo call). */
+export const getFreelancerBildazoAuthorLinkRequest = async () => {
+  const { data } = await api.get("/freelancer/bildazo-author-link/me");
+  return data;
+};
+
+export const submitFreelancerBildazoAuthorLinkRequest = async (payload = {}) => {
+  const { data } = await api.post("/freelancer/bildazo-author-link/request", payload, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+/** Phase 0C — Super Admin manual Bildazo author link (no live Bildazo call). */
+export const listSuperAdminBildazoAuthorLinksRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/bildazo-author-links", { params });
+  return data;
+};
+
+export const manualLinkSuperAdminBildazoAuthorRequest = async (id, payload = {}) => {
+  const { data } = await api.patch(
+    `/super-admin/bildazo-author-links/${encodeURIComponent(id)}/manual-link`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const updateSuperAdminBildazoAuthorLinkStatusRequest = async (id, payload = {}) => {
+  const { data } = await api.patch(
+    `/super-admin/bildazo-author-links/${encodeURIComponent(id)}/status`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
 /** Phase B5 — Freelancer Article applications (no Bid cost displayed until approved). */
 export const getFreelancerArticleApplicationContextRequest = async (articleId) => {
   const { data } = await api.get(
@@ -279,6 +316,15 @@ export const withdrawFreelancerArticleApplicationRequest = async (applicationId)
   const { data } = await api.post(
     `/freelancer/article-applications/${encodeURIComponent(applicationId)}/withdraw`,
     {},
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const submitFreelancerFinalArticleManuscriptRequest = async (applicationId, payload = {}) => {
+  const { data } = await api.post(
+    `/freelancer/article-applications/${encodeURIComponent(applicationId)}/final-manuscript`,
+    payload,
     { timeout: 30000 },
   );
   return data;
@@ -313,6 +359,42 @@ export const selectAdminArticleApplicationRequest = async (applicationId, payloa
 export const rejectAdminArticleApplicationRequest = async (applicationId) => {
   const { data } = await api.post(
     `/super-admin/article-applications/${encodeURIComponent(applicationId)}/reject`,
+    {},
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const finalizeAdminArticleApplicationRequest = async (applicationId) => {
+  const { data } = await api.post(
+    `/super-admin/article-applications/${encodeURIComponent(applicationId)}/finalize-approval`,
+    {},
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const requestAdminArticleRevisionRequest = async (applicationId, payload = {}) => {
+  const { data } = await api.post(
+    `/super-admin/article-applications/${encodeURIComponent(applicationId)}/request-revision`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const retryAdminArticleBildazoPublishRequest = async (applicationId) => {
+  const { data } = await api.post(
+    `/super-admin/article-applications/${encodeURIComponent(applicationId)}/bildazo-publish/retry`,
+    {},
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const retryAdminMarketplaceArticleBildazoPublishRequest = async (articleId) => {
+  const { data } = await api.post(
+    `/super-admin/marketplace-articles/${encodeURIComponent(articleId)}/bildazo-publish/retry`,
     {},
     { timeout: 30000 },
   );

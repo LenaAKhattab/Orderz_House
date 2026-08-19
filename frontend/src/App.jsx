@@ -47,6 +47,7 @@ import {
   SuperAdminTrainingPackagesPage,
   SuperAdminMarketplaceEconomyPage,
   SuperAdminMarketplaceArticlesPage,
+  SuperAdminBildazoAuthorLinksPage,
   SuperAdminBidCreditsPage,
   SuperAdminAnalysisPage,
   SuperAdminSubscriptionsPage,
@@ -332,6 +333,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
                       <SuperAdminMarketplaceArticlesPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/bildazo-author-links"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminBildazoAuthorLinksPage />
                     </RequireRole>
                   }
                 />

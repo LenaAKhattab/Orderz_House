@@ -95,7 +95,10 @@ async function getMineForArticle(req, res, next) {
     const article = await marketplaceArticlesService.getMarketplaceArticleById(req.params.id, {
       forAdmin: false,
     });
-    if (!article || article.status !== "published" || article.isFakeOrTraining) {
+    if (!article || article.isFakeOrTraining) {
+      return res.status(404).json({ success: false, message: "المقال غير موجود." });
+    }
+    if (article.status !== "published" && !application) {
       return res.status(404).json({ success: false, message: "المقال غير موجود." });
     }
     const bidCollection = await opportunityBidCollectionService.getArticleBidCollectionProgress(
@@ -166,6 +169,36 @@ async function reject(req, res, next) {
   }
 }
 
+async function submitFinalManuscript(req, res, next) {
+  try {
+    const submissionsService = require("../services/marketplaceArticleSubmissionsService");
+    const result = await submissionsService.submitFinalArticleManuscript({
+      applicationId: req.params.applicationId,
+      freelancerUserId: req.user.id,
+      title: req.body?.title,
+      content: req.body?.content,
+      body: req.body || {},
+    });
+    return res.status(result.created ? 201 : 200).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function requestArticleRevision(req, res, next) {
+  try {
+    const submissionsService = require("../services/marketplaceArticleSubmissionsService");
+    const result = await submissionsService.requestArticleSubmissionRevision({
+      applicationId: req.params.applicationId,
+      actorUserId: req.user?.id,
+      reviewerNotes: req.body?.reviewerNotes ?? req.body?.notes ?? null,
+    });
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function finalizeApproval(req, res, next) {
   try {
     const result = await articleApplicationsService.finalizeArticleApplicationApproval({
@@ -173,6 +206,44 @@ async function finalizeApproval(req, res, next) {
       actorUserId: req.user?.id,
     });
     return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function retryBildazoPublish(req, res, next) {
+  try {
+    const articlePublishService = require("../services/bildazoArticlePublishService");
+    const result = await articlePublishService.retryPublishForApplication(
+      req.params.applicationId,
+      req.user?.id,
+    );
+    return res.status(200).json({
+      success: true,
+      data: {
+        bildazoPublish: result?.record
+          ? articlePublishService.mapAdminPublishRecord(result.record)
+          : null,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function retryBildazoPublishForArticle(req, res, next) {
+  try {
+    const articlePublishService = require("../services/bildazoArticlePublishService");
+    const result = await articlePublishService.retryPublishForArticle(req.params.id, req.user?.id);
+    return res.status(200).json({
+      success: true,
+      data: {
+        retried: result.retried,
+        results: (result.results || []).map((item) =>
+          item?.record ? articlePublishService.mapAdminPublishRecord(item.record) : null,
+        ),
+      },
+    });
   } catch (err) {
     return next(err);
   }
@@ -204,5 +275,9 @@ module.exports = {
   select,
   reject,
   finalizeApproval,
+  submitFinalManuscript,
+  requestArticleRevision,
+  retryBildazoPublish,
+  retryBildazoPublishForArticle,
   getApplicationAdmin,
 };

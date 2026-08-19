@@ -16,6 +16,10 @@ const crypto = require("node:crypto");
 const jwt = require("jsonwebtoken");
 
 require("dotenv").config({ path: path.join(__dirname, "..", ".env"), override: true });
+const { classifyDatabaseUrl } = require("../src/utils/databaseEnvironmentSafety");
+if (classifyDatabaseUrl(process.env.DATABASE_URL).isProduction) {
+  process.env.DATABASE_URL = "postgresql://127.0.0.1:5432/mobile_auth_session_test_placeholder";
+}
 
 if (!process.env.CLIENT_URL || !String(process.env.CLIENT_URL).trim()) {
   process.env.CLIENT_URL = "http://localhost:5173";

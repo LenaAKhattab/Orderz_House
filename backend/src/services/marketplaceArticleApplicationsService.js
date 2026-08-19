@@ -43,8 +43,14 @@ const {
 } = require("./marketplaceMembershipsService");
 const { isBenefitUsableStatus } = require("../constants/marketplaceMemberships");
 const reservationService = require("./marketplaceBidCreditReservationService");
+const {
+  assertBildazoAuthorLinkedForArticleApply,
+  getBildazoLinkStatusForEligibility,
+} = require("./bildazoAuthorLinkService");
 const economyService = require("./marketplaceArticleEconomyService");
 const settlementService = require("./marketplaceArticleSettlementService");
+const articlePublishService = require("./bildazoArticlePublishService");
+const submissionsService = require("./marketplaceArticleSubmissionsService");
 const eligibility = require("./marketplaceMembershipEligibilityService");
 const marketplaceMembershipCyclesService = require("./marketplaceMembershipCyclesService");
 const notificationService = require("./notificationService");
@@ -76,6 +82,8 @@ function mapApplicationRow(row) {
     selectedAt: row.selected_at || null,
     rejectedAt: row.rejected_at || null,
     cancelledAt: row.cancelled_at || null,
+    approvedAt: row.approved_at || null,
+    assignedAt: row.assigned_at || null,
     selectedByUserId: row.selected_by_user_id != null ? toIdString(row.selected_by_user_id) : null,
     rejectedByUserId: row.rejected_by_user_id != null ? toIdString(row.rejected_by_user_id) : null,
     idempotencyKey: row.idempotency_key || null,
@@ -376,7 +384,15 @@ async function getApplicationById(applicationId, { forAdmin = false } = {}) {
       LIMIT 1`,
     [id],
   );
-  return mapApplicationRow(rows[0]);
+  const mapped = mapApplicationRow(rows[0]);
+  if (!mapped) return null;
+  const record = await articlePublishService.getPublishRecordForApplication(id);
+  mapped.bildazoPublish = forAdmin
+    ? articlePublishService.mapAdminPublishRecord(record)
+    : articlePublishService.mapPublicPublishRecord(record);
+  const submission = await submissionsService.getSubmissionByApplicationId(id);
+  mapped.articleSubmission = submissionsService.mapSubmissionRow(submission, { forAdmin });
+  return mapped;
 }
 
 async function submitArticleApplication({
@@ -401,6 +417,9 @@ async function submitArticleApplication({
     proposalMessage == null || proposalMessage === ""
       ? null
       : String(proposalMessage).trim().slice(0, 5000);
+
+  // Flag-off: no-op. Flag-on: require status=linked before any Bid reservation.
+  await assertBildazoAuthorLinkedForArticleApply(fid);
 
   const ownClient = !externalClient;
   const client = externalClient || (await pool.connect());
@@ -803,7 +822,13 @@ async function getMyApplicationForArticle(articleId, freelancerUserId) {
   );
   const roundId = articleRows[0]?.current_bid_collection_round_id || null;
   const row = await findApplicationByArticleFreelancer(pool, articleId, freelancerUserId, roundId);
-  return mapApplicationRow(row);
+  const mapped = mapApplicationRow(row);
+  if (!mapped) return null;
+  const record = await articlePublishService.getPublishRecordForApplication(mapped.id);
+  mapped.bildazoPublish = articlePublishService.mapPublicPublishRecord(record);
+  const submission = await submissionsService.getSubmissionByApplicationId(mapped.id);
+  mapped.articleSubmission = submissionsService.mapSubmissionRow(submission);
+  return mapped;
 }
 
 async function listApplicationsForArticleAdmin(articleId, { limit = 100, offset = 0 } = {}) {
@@ -836,7 +861,15 @@ async function listApplicationsForArticleAdmin(articleId, { limit = 100, offset 
       LIMIT $2 OFFSET $3`,
     [Number(articleId), lim, off],
   );
-  return rows.map(mapApplicationRow);
+  const mapped = rows.map(mapApplicationRow);
+  const records = await articlePublishService.listPublishRecordsForArticle(articleId);
+  const withPublish = articlePublishService.attachPublishToApplications(mapped, records, {
+    forAdmin: true,
+  });
+  const submissions = await submissionsService.listSubmissionsForArticle(articleId);
+  return submissionsService.attachSubmissionsToApplications(withPublish, submissions, {
+    forAdmin: true,
+  });
 }
 
 async function selectArticleApplication({ applicationId, actorUserId, overrideReason } = {}) {
@@ -1172,12 +1205,26 @@ async function getArticleApplicationEligibility(articleId, freelancerUserId) {
     freeFallback: false,
   };
 
+  const bildazoAuthorLink = await getBildazoLinkStatusForEligibility(freelancerUserId);
+
   if (!row || row.is_fake_or_training || String(row.status) !== "published") {
     return {
       eligible: false,
       reason: "ARTICLE_NOT_OPEN_FOR_APPLICATIONS",
       articleLevel: row ? Number(row.article_level) : null,
       membershipArticleAccessLevel: null,
+      bildazoAuthorLink,
+      ...baseEcon,
+    };
+  }
+
+  if (bildazoAuthorLink.gateEnabled && !bildazoAuthorLink.canApplyToArticles) {
+    return {
+      eligible: false,
+      reason: "BILDAZO_AUTHOR_LINK_REQUIRED",
+      articleLevel: Number(row.article_level),
+      membershipArticleAccessLevel: null,
+      bildazoAuthorLink,
       ...baseEcon,
     };
   }
@@ -1200,6 +1247,7 @@ async function getArticleApplicationEligibility(articleId, freelancerUserId) {
       reason: "ARTICLE_NO_USABLE_MEMBERSHIP",
       articleLevel: Number(row.article_level),
       membershipArticleAccessLevel: null,
+      bildazoAuthorLink,
       ...baseEcon,
     };
   }
@@ -1210,6 +1258,7 @@ async function getArticleApplicationEligibility(articleId, freelancerUserId) {
       reason: "ARTICLE_ACCESS_LEVEL_INSUFFICIENT",
       articleLevel: Number(row.article_level),
       membershipArticleAccessLevel: membershipAccess,
+      bildazoAuthorLink,
       ...baseEcon,
     };
   }
@@ -1220,6 +1269,7 @@ async function getArticleApplicationEligibility(articleId, freelancerUserId) {
       reason: "ARTICLE_APPLICATIONS_ENGINE_OFF",
       articleLevel: Number(row.article_level),
       membershipArticleAccessLevel: membershipAccess,
+      bildazoAuthorLink,
       ...baseEcon,
     };
   }
@@ -1230,6 +1280,7 @@ async function getArticleApplicationEligibility(articleId, freelancerUserId) {
       reason: "ARTICLE_BID_ECONOMY_DISABLED",
       articleLevel: Number(row.article_level),
       membershipArticleAccessLevel: membershipAccess,
+      bildazoAuthorLink,
       ...baseEcon,
     };
   }
@@ -1240,6 +1291,7 @@ async function getArticleApplicationEligibility(articleId, freelancerUserId) {
       reason: "INSUFFICIENT_BID_CREDITS",
       articleLevel: Number(row.article_level),
       membershipArticleAccessLevel: membershipAccess,
+      bildazoAuthorLink,
       ...baseEcon,
     };
   }
@@ -1263,6 +1315,7 @@ async function getArticleApplicationEligibility(articleId, freelancerUserId) {
       articleLevel: Number(row.article_level),
       membershipArticleAccessLevel: membershipAccess,
       bidCollection,
+      bildazoAuthorLink,
       ...baseEcon,
     };
   }
@@ -1273,12 +1326,14 @@ async function getArticleApplicationEligibility(articleId, freelancerUserId) {
     articleLevel: Number(row.article_level),
     membershipArticleAccessLevel: membershipAccess,
     bidCollection,
+    bildazoAuthorLink,
     ...baseEcon,
   };
 }
 
 async function finalizeArticleApplicationApproval({ applicationId, actorUserId, now = new Date() } = {}) {
   await assertSchemaAndEngine();
+  await submissionsService.assertSubmittedManuscriptForApproval({ applicationId });
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -1289,7 +1344,19 @@ async function finalizeArticleApplicationApproval({ applicationId, actorUserId, 
       now,
     });
     await client.query("COMMIT");
-    return result;
+    let bildazoPublish = null;
+    try {
+      const published = await articlePublishService.publishAfterArticleAcceptance({
+        applicationId,
+        actorUserId,
+      });
+      bildazoPublish = published?.record
+        ? articlePublishService.mapAdminPublishRecord(published.record)
+        : null;
+    } catch {
+      /* Bildazo publish is non-fatal; settlement already committed. */
+    }
+    return { ...result, bildazoPublish };
   } catch (err) {
     try {
       await client.query("ROLLBACK");
