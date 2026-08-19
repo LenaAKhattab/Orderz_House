@@ -9,7 +9,6 @@ import { fileURLToPath } from "node:url";
 import {
   BILDAZO_AUTHOR_LINK_FLOWS,
   ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_VERSION,
-  hasExistingAccountIdentifier,
   isBildazoAuthorLinked,
   shouldBlockArticleApply,
   validateBildazoAuthorLinkForm,
@@ -21,11 +20,11 @@ function read(rel) {
 }
 
 describe("Bildazo author terms helpers", () => {
-  it("new-account submit validates required fields and terms", () => {
+  it("new-account submit validates required fields, terms, and passwords", () => {
     assert.equal(
       validateBildazoAuthorLinkForm({
         flow: BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT,
-        payload: { fullName: "أحمد" },
+        payload: { fullName: "أحمد", password: "Writer1x", passwordConfirm: "Writer1x" },
         termsChecked: false,
       }),
       "يجب الموافقة على شروط ربط حساب الكاتب.",
@@ -33,7 +32,7 @@ describe("Bildazo author terms helpers", () => {
     assert.equal(
       validateBildazoAuthorLinkForm({
         flow: BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT,
-        payload: { fullName: "أ" },
+        payload: { fullName: "أ", password: "Writer1x", passwordConfirm: "Writer1x" },
         termsChecked: true,
       }),
       "الاسم الكامل مطلوب لإنشاء حساب الكاتب.",
@@ -41,27 +40,42 @@ describe("Bildazo author terms helpers", () => {
     assert.equal(
       validateBildazoAuthorLinkForm({
         flow: BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT,
-        payload: { fullName: "أحمد علي" },
+        payload: { fullName: "أحمد علي", password: "short", passwordConfirm: "short" },
+        termsChecked: true,
+      }),
+      "كلمة المرور يجب أن تكون 8 أحرف على الأقل وتتضمن حرفًا ورقمًا.",
+    );
+    assert.equal(
+      validateBildazoAuthorLinkForm({
+        flow: BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT,
+        payload: { fullName: "أحمد علي", password: "Writer1x", passwordConfirm: "Other1x" },
+        termsChecked: true,
+      }),
+      "تأكيد كلمة المرور غير مطابق.",
+    );
+    assert.equal(
+      validateBildazoAuthorLinkForm({
+        flow: BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT,
+        payload: { fullName: "أحمد علي", password: "Writer1x", passwordConfirm: "Writer1x" },
         termsChecked: true,
       }),
       null,
     );
   });
 
-  it("existing-account tab requires one identifier", () => {
-    assert.equal(hasExistingAccountIdentifier({}), false);
+  it("existing-account tab requires email and password", () => {
     assert.equal(
       validateBildazoAuthorLinkForm({
         flow: BILDAZO_AUTHOR_LINK_FLOWS.EXISTING_ACCOUNT,
         payload: {},
         termsChecked: true,
       }),
-      "أدخل بريد حساب Bildazo أو الرقم العام أو رابط الملف الشخصي.",
+      "أدخل بريد حساب Bildazo وكلمة المرور.",
     );
     assert.equal(
       validateBildazoAuthorLinkForm({
         flow: BILDAZO_AUTHOR_LINK_FLOWS.EXISTING_ACCOUNT,
-        payload: { existingBildazoPublicId: "w-1" },
+        payload: { existingBildazoEmail: "a@b.com", password: "Writer1x" },
         termsChecked: true,
       }),
       null,
@@ -94,37 +108,42 @@ describe("Freelancer Articles Bildazo gate UI", () => {
     assert.match(list, /getFreelancerBildazoAuthorLinkRequest/);
   });
 
-  it("new-account tab shows verified OrderzHouse email as read-only", () => {
+  it("new-account tab is a branded compact signup-style form", () => {
     const card = read("components/freelancer/FreelancerBildazoAuthorGateCard.jsx");
-    assert.match(card, /البريد الموثق في OrderzHouse/);
+    assert.match(card, /حساب الكاتب في Bildazo/);
+    assert.match(card, /bildazo-logo\.png/);
+    assert.match(card, /data-testid="bildazo-logo"/);
+    assert.match(card, /البريد الإلكتروني/);
     assert.match(card, /readOnly/);
     assert.match(card, /data-testid="bildazo-orderz-email"/);
-    assert.match(card, /لن تحتاج/);
-    assert.match(card, /إرسال طلب إنشاء حساب Bildazo/);
+    assert.match(card, /BILDAZO_WRITER_ROLE_LABEL_AR/);
+    assert.match(card, /data-testid="bildazo-new-password"/);
+    assert.match(card, /data-testid="bildazo-new-password-confirm"/);
+    assert.match(card, /إنشاء وربط حساب الكاتب/);
+    assert.doesNotMatch(card, /BILDAZO_ORDERZHOUSE_INTEGRATION_SECRET/);
   });
 
-  it("existing-account tab does not ask for password", () => {
+  it("existing-account tab uses email and password only", () => {
     const card = read("components/freelancer/FreelancerBildazoAuthorGateCard.jsx");
-    assert.doesNotMatch(card, /type=["']password["']/);
-    assert.doesNotMatch(card, /passwordHash/);
-    assert.doesNotMatch(card, /BILDAZO_ORDERZHOUSE_INTEGRATION_SECRET/);
+    assert.match(card, /type=["']password["']/);
+    assert.match(card, /data-testid="bildazo-existing-password"/);
     assert.match(card, /لدي حساب في Bildazo/);
-    assert.match(card, /إرسال طلب ربط حساب Bildazo/);
+    assert.match(card, /ربط حساب Bildazo الحالي/);
+    assert.doesNotMatch(card, /الرقم العام في Bildazo/);
+    assert.doesNotMatch(card, /BILDAZO_ORDERZHOUSE_INTEGRATION_SECRET/);
   });
 
   it("pending, review, failed, and linked states render", () => {
     const card = read("components/freelancer/FreelancerBildazoAuthorGateCard.jsx");
-    assert.match(card, /تم حفظ طلب إنشاء حساب الكاتب في Bildazo/);
-    assert.match(card, /تم حفظ طلب ربط حساب Bildazo/);
+    assert.match(card, /جاري إنشاء حساب الكاتب في Bildazo/);
     assert.match(card, /يحتاج طلب الربط إلى مراجعة من الإدارة/);
-    assert.match(card, /تعذر إكمال الربط مع Bildazo\. يمكنك إعادة إرسال الطلب لاحقًا/);
-    assert.match(card, /حساب الكاتب مرتبط/);
+    assert.match(card, /تعذر إكمال الربط مع Bildazo/);
+    assert.match(card, /تم ربط حساب الكاتب في Bildazo بنجاح/);
+    assert.match(card, /متابعة إلى فرص المقالات/);
     assert.match(card, /bildazo-pending-state/);
     assert.match(card, /bildazo-review-state/);
     assert.match(card, /bildazo-failed-state/);
     assert.match(card, /data-testid="bildazo-linked-profile"/);
-    assert.doesNotMatch(card, /تم إنشاء الحساب/);
-    assert.doesNotMatch(card, /تم الربط\./);
   });
 
   it("null profileUrl does not render a broken anchor; publicId is shown when linked", () => {
@@ -147,6 +166,7 @@ describe("Freelancer Articles Bildazo gate UI", () => {
     const list = read("pages/dashboard/FreelancerMarketplaceArticlesPage.jsx");
     assert.match(list, /listPublishedMarketplaceArticlesRequest/);
     assert.match(list, /articles\.map/);
+    assert.match(list, /id="article-opportunities"/);
   });
 
   it("terms version is stored as a constant", () => {

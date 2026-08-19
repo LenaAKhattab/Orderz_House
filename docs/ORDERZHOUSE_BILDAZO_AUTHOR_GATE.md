@@ -1,4 +1,32 @@
-# OrderzHouse Bildazo Author Gate — Phase 0B–1B
+# OrderzHouse Bildazo Author Gate — direct writer link
+
+**Status:** Freelancer Articles page uses a branded Bildazo card with two live S2S flows: create writer + link existing account via email/password. Super Admin manual link remains. Article publish pipeline is unchanged.  
+**Related:** freelancer Mini Article flow (`/dashboard/freelancer/articles`).
+
+## Direct UX (current)
+
+- Compact branded panel with Bildazo mark, wine/gold identity, RTL Arabic copy.
+- Tabs: **أنشئ حساب الكاتب في Bildazo** and **لدي حساب في Bildazo**.
+- New account: signup-style fields (name, OrderzHouse email read-only, phone, country, optional date of birth, fixed writer category, password + confirm). Browser posts to OrderzHouse only.
+- Existing account: Bildazo email + password. Browser posts to OrderzHouse only.
+- Success: **تم ربط حساب الكاتب في Bildazo بنجاح** with publicId, optional profile URL, continue to article opportunities.
+- OrderzHouse **does not persist** Bildazo passwords. Logs redact password/secret. Frontend never receives `BILDAZO_ORDERZHOUSE_INTEGRATION_SECRET`.
+
+## S2S endpoints used
+
+| Flow | Bildazo path |
+|---|---|
+| Create writer | `POST /api/integrations/orderzhouse/authors/create-and-link` |
+| Existing credentials | `POST /api/integrations/orderzhouse/authors/link-with-credentials` |
+| Legacy no-password link/create | `POST /api/integrations/orderzhouse/authors/link-or-create` |
+
+All require `X-OrderzHouse-Integration-Secret`. Writer role is resolved inside Bildazo (`writer`). `roleId` from OrderzHouse is rejected.
+
+When `BILDAZO_AUTHOR_GATE_ENABLED=true`, article apply still requires `freelancer_bildazo_author_links.status = linked`.
+
+---
+
+
 
 **Status:** Phase 0B–0F local request + Super Admin manual link. Phase 1B optional backend-only S2S client (off by default).  
 **Related:** freelancer Mini Article flow (`/dashboard/freelancer/articles`), `docs/MOBILE_SUPER_ADMIN_SCOPE.md` (mobile SA article queues remain separate).

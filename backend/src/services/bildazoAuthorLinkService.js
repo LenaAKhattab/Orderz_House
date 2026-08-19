@@ -31,15 +31,44 @@ const E164_RE = /^\+[1-9]\d{7,14}$/;
 const ISO2_RE = /^[A-Za-z]{2}$/;
 const URL_RE = /^https?:\/\/.+/i;
 
-function rejectPasswordFields(body = {}) {
+function rejectSensitiveNonPasswordFields(body = {}) {
   const keys = Object.keys(body || {});
-  const hit = keys.find((k) => /password/i.test(String(k)));
+  const hit = keys.find((k) => String(k).toLowerCase().replace(/_/g, "") === "passwordhash");
   if (hit) {
-    throw createAppError("لا يتم جمع أو تخزين كلمة مرور Bildazo من OrderzHouse.", 400, {
+    throw createAppError("لا يتم تخزين كلمة مرور Bildazo في OrderzHouse.", 400, {
       exposeToClient: true,
       publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_PASSWORD_NOT_ALLOWED,
     });
   }
+}
+
+function validateBildazoPassword(password, confirm) {
+  const p = String(password || "");
+  if (p.length < 8) {
+    throw createAppError("كلمة المرور يجب أن تكون 8 أحرف على الأقل وتتضمن حرفًا ورقمًا.", 400, {
+      exposeToClient: true,
+      publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_LINK_INVALID,
+    });
+  }
+  if (p.length > 72) {
+    throw createAppError("كلمة المرور طويلة جدًا.", 400, {
+      exposeToClient: true,
+      publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_LINK_INVALID,
+    });
+  }
+  if (!/[A-Za-z\u0600-\u06FF]/.test(p) || !/\d/.test(p)) {
+    throw createAppError("كلمة المرور يجب أن تحتوي على حرف واحد ورقم واحد على الأقل.", 400, {
+      exposeToClient: true,
+      publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_LINK_INVALID,
+    });
+  }
+  if (confirm != null && String(confirm) !== p) {
+    throw createAppError("تأكيد كلمة المرور غير مطابق.", 400, {
+      exposeToClient: true,
+      publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_LINK_INVALID,
+    });
+  }
+  return p;
 }
 
 function normalizeEmail(raw) {
@@ -132,7 +161,7 @@ function buildTermsSnapshot({
 }
 
 function validateRequestBody(body, { orderzEmail }) {
-  rejectPasswordFields(body);
+  rejectSensitiveNonPasswordFields(body);
   const linkFlow = String(body?.linkFlow || "").trim();
   if (!BILDAZO_AUTHOR_LINK_FLOWS.includes(linkFlow)) {
     throw createAppError("اختر طريقة الربط: حساب جديد أو حساب موجود.", 400, {
@@ -185,12 +214,20 @@ function validateRequestBody(body, { orderzEmail }) {
         publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_LINK_INVALID,
       });
     }
+    const dateOfBirth = normalizeOptionalText(body?.dateOfBirth, 10);
+    const passwordRaw = body?.password;
+    const password =
+      passwordRaw == null || passwordRaw === ""
+        ? null
+        : validateBildazoPassword(passwordRaw, body?.passwordConfirm ?? body?.confirmPassword);
     return {
       linkFlow,
       fullName,
       phoneE164,
       countryIso,
       bio,
+      dateOfBirth,
+      password,
       existingBildazoEmail: null,
       existingBildazoPublicId: null,
       existingBildazoProfileUrl: null,
@@ -202,6 +239,34 @@ function validateRequestBody(body, { orderzEmail }) {
   const existingBildazoEmail = normalizeEmail(body?.existingBildazoEmail);
   const existingBildazoPublicId = normalizeOptionalText(body?.existingBildazoPublicId, 120);
   const existingBildazoProfileUrl = normalizeOptionalText(body?.existingBildazoProfileUrl, 500);
+  const passwordRaw = body?.password;
+  const password =
+    passwordRaw == null || passwordRaw === ""
+      ? null
+      : validateBildazoPassword(passwordRaw, body?.passwordConfirm ?? body?.confirmPassword);
+
+  if (password) {
+    if (!existingBildazoEmail || !EMAIL_RE.test(existingBildazoEmail)) {
+      throw createAppError("أدخل بريد حساب Bildazo وكلمة المرور.", 400, {
+        exposeToClient: true,
+        publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_LINK_INVALID,
+      });
+    }
+    return {
+      linkFlow,
+      fullName,
+      phoneE164,
+      countryIso,
+      bio,
+      dateOfBirth: null,
+      password,
+      existingBildazoEmail,
+      existingBildazoPublicId: null,
+      existingBildazoProfileUrl: null,
+      status: "pending_existing_account",
+      emailMatchesOrderz: emailsMatch(existingBildazoEmail, orderzEmail),
+    };
+  }
   if (existingBildazoEmail && !EMAIL_RE.test(existingBildazoEmail)) {
     throw createAppError("بريد حساب Bildazo غير صالح.", 400, {
       exposeToClient: true,
@@ -230,6 +295,8 @@ function validateRequestBody(body, { orderzEmail }) {
     phoneE164,
     countryIso,
     bio,
+    dateOfBirth: null,
+    password: null,
     existingBildazoEmail,
     existingBildazoPublicId,
     existingBildazoProfileUrl,
@@ -335,6 +402,7 @@ function toPublicMe({ userRow, linkRow, schemaReady, gateEnabled }) {
 
 function shouldAttemptBildazoSync(parsed) {
   if (!isBildazoAuthorSyncEnabled()) return false;
+  if (parsed.password) return true;
   if (parsed.linkFlow === "new_account") return true;
   if (
     parsed.linkFlow === "existing_account" &&
@@ -351,6 +419,9 @@ function hasBildazoIdentity(sync) {
 }
 
 function safeStoredError(sync) {
+  if (sync?.errorCode === "BILDAZO_SYNC_INVALID_CREDENTIALS") {
+    return "Invalid email or password";
+  }
   const msg = String(sync?.safeMessage || "").trim();
   if (!msg) {
     if (sync?.errorCode === "BILDAZO_SYNC_CONFIG_MISSING") return "Bildazo sync is not configured";
@@ -583,16 +654,52 @@ async function submitBildazoAuthorLinkRequest(
       );
       row = skipped.rows[0] || row;
     } else {
-      const sync = await syncClient.linkOrCreateBildazoAuthor({
-        orderzFreelancerId: String(userRow.id),
-        email: userRow.email,
-        fullName,
-        phoneE164: parsed.phoneE164,
-        countryIso: parsed.countryIso,
-        bio: parsed.bio,
-        acceptedTermsVersion: ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_VERSION,
-        acceptedAt: row?.accepted_at,
-      });
+      let sync;
+      try {
+        if (parsed.linkFlow === "new_account" && parsed.password && typeof syncClient.createAndLinkBildazoAuthor === "function") {
+          sync = await syncClient.createAndLinkBildazoAuthor({
+            orderzFreelancerId: String(userRow.id),
+            email: userRow.email,
+            fullName,
+            phoneE164: parsed.phoneE164,
+            countryIso: parsed.countryIso,
+            bio: parsed.bio,
+            dateOfBirth: parsed.dateOfBirth,
+            password: parsed.password,
+            acceptedTermsVersion: ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_VERSION,
+            acceptedAt: row?.accepted_at,
+          });
+        } else if (
+          parsed.linkFlow === "existing_account" &&
+          parsed.password &&
+          typeof syncClient.linkExistingBildazoAuthorWithCredentials === "function"
+        ) {
+          sync = await syncClient.linkExistingBildazoAuthorWithCredentials({
+            orderzFreelancerId: String(userRow.id),
+            email: parsed.existingBildazoEmail,
+            password: parsed.password,
+            fullName,
+          });
+        } else {
+          sync = await syncClient.linkOrCreateBildazoAuthor({
+            orderzFreelancerId: String(userRow.id),
+            email: userRow.email,
+            fullName,
+            phoneE164: parsed.phoneE164,
+            countryIso: parsed.countryIso,
+            bio: parsed.bio,
+            acceptedTermsVersion: ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_VERSION,
+            acceptedAt: row?.accepted_at,
+          });
+        }
+      } finally {
+        parsed.password = null;
+        if (body && typeof body === "object") {
+          delete body.password;
+          delete body.passwordConfirm;
+          delete body.confirmPassword;
+        }
+      }
       row = (await persistBildazoSyncOutcome(db, freelancerUserId, row, sync)) || row;
     }
   }

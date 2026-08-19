@@ -28,7 +28,11 @@ const {
 } = require("../src/services/bildazoAuthorLinkService");
 const {
   linkOrCreateBildazoAuthor,
+  createAndLinkBildazoAuthor,
+  linkExistingBildazoAuthorWithCredentials,
   buildSafeRequestBody,
+  buildCreateAndLinkRequestBody,
+  buildCredentialLinkRequestBody,
   joinLinkOrCreateUrl,
 } = require("../src/services/bildazoAuthorIntegrationClient");
 
@@ -163,12 +167,19 @@ function existingBody(overrides = {}) {
 
 function mockSync(result) {
   const calls = [];
+  const impl = async (payload) => {
+    calls.push({
+      ...payload,
+      password: payload.password ? "[present]" : undefined,
+      hadPassword: Boolean(payload.password),
+    });
+    return typeof result === "function" ? result(payload) : result;
+  };
   return {
     calls,
-    linkOrCreateBildazoAuthor: async (payload) => {
-      calls.push(payload);
-      return typeof result === "function" ? result(payload) : result;
-    },
+    linkOrCreateBildazoAuthor: impl,
+    createAndLinkBildazoAuthor: impl,
+    linkExistingBildazoAuthorWithCredentials: impl,
   };
 }
 
@@ -224,6 +235,30 @@ describe("Phase 1B Bildazo S2S client", () => {
     assert.equal(body.password, undefined);
     assert.equal(body.passwordHash, undefined);
     assert.equal(body.email, "freelancer@orderzhouse.test");
+  });
+
+  it("create-and-link body includes password but never passwordHash/role", () => {
+    const body = buildCreateAndLinkRequestBody({
+      orderzFreelancerId: "11",
+      email: USER.email,
+      fullName: "أحمد",
+      password: "Writer1x",
+      passwordHash: "nope",
+      roleId: 99,
+    });
+    assert.equal(body.password, "Writer1x");
+    assert.equal(body.passwordHash, undefined);
+    assert.equal(body.roleId, undefined);
+  });
+
+  it("credential-link body is email+password only", () => {
+    const body = buildCredentialLinkRequestBody({
+      orderzFreelancerId: "11",
+      email: "a@b.com",
+      password: "Writer1x",
+      roleId: 2,
+    });
+    assert.deepEqual(Object.keys(body).sort(), ["email", "orderzFreelancerId", "password"]);
   });
 
   it("disabled sync makes no HTTP call", async () => {
@@ -295,6 +330,47 @@ describe("Phase 1B Bildazo S2S client", () => {
     assert.equal(result.bildazoUserId, "99");
     assert.equal(result.bildazoPublicId, "pub-99");
     assert.equal(result.profileUrl, null);
+  });
+
+  it("create-and-link posts password to the dedicated path", async () => {
+    let captured;
+    const result = await createAndLinkBildazoAuthor(
+      {
+        orderzFreelancerId: "11",
+        email: USER.email,
+        fullName: "أحمد علي حسن",
+        password: "Writer1x",
+      },
+      {
+        getConfig: () => LOCAL_FETCH_CFG,
+        fetchImpl: async (url, opts) => {
+          captured = { url, opts };
+          return jsonResponse(200, {
+            status: "created",
+            bildazoUserId: "99",
+            bildazoPublicId: "pub-99",
+            profileUrl: null,
+          });
+        },
+      },
+    );
+    const body = JSON.parse(captured.opts.body);
+    assert.equal(body.password, "Writer1x");
+    assert.match(captured.url, /\/authors\/create-and-link$/);
+    assert.equal(result.status, "created");
+  });
+
+  it("credential link maps 401 to a generic invalid-credentials result", async () => {
+    const result = await linkExistingBildazoAuthorWithCredentials(
+      { orderzFreelancerId: "11", email: "a@b.com", password: "Wrong1x" },
+      {
+        getConfig: () => LOCAL_FETCH_CFG,
+        fetchImpl: async () => jsonResponse(401, { ok: false, code: "INVALID_CREDENTIALS", error: "Invalid email or password" }),
+      },
+    );
+    assert.equal(result.errorCode, "BILDAZO_SYNC_INVALID_CREDENTIALS");
+    assert.equal(result.ok, false);
+    assert.equal(result.safeMessage, "Invalid email or password");
   });
 
   it("timeout/network errors are safe failures", async () => {
@@ -445,16 +521,71 @@ describe("Phase 1B freelancer request S2S mapping", () => {
     assert.notEqual(sync.calls[0].email, "spoof@evil.test");
   });
 
-  it("password/passwordHash is rejected before any sync call", async () => {
+  it("passwordHash is rejected before any sync call", async () => {
     process.env.BILDAZO_AUTHOR_SYNC_ENABLED = "true";
     const db = createMemoryDb();
     const sync = mockSync(linkedOk("created"));
     await assert.rejects(
-      () => submitBildazoAuthorLinkRequest(11, newAccountBody({ password: "x" }), { db, syncClient: sync }),
+      () => submitBildazoAuthorLinkRequest(11, newAccountBody({ passwordHash: "x" }), { db, syncClient: sync }),
       (err) => err.publicCode === "BILDAZO_AUTHOR_PASSWORD_NOT_ALLOWED",
     );
     assert.equal(sync.calls.length, 0);
     assert.equal(db.insertCount, 0);
+  });
+
+  it("new_account with password uses create-and-link mapping", async () => {
+    process.env.BILDAZO_AUTHOR_SYNC_ENABLED = "true";
+    const db = createMemoryDb();
+    const sync = mockSync(linkedOk("created"));
+    const result = await submitBildazoAuthorLinkRequest(
+      11,
+      newAccountBody({ password: "Writer1x", passwordConfirm: "Writer1x" }),
+      { db, syncClient: sync },
+    );
+    assert.equal(result.link.status, "linked");
+    assert.equal(sync.calls[0].hadPassword, true);
+    assert.equal(sync.calls[0].password, "[present]");
+    const stored = await db.query("SELECT * FROM freelancer_bildazo_author_links");
+    assert.equal(stored.rows[0].password, undefined);
+  });
+
+  it("existing-account credentials link and invalid credentials stay unlinked", async () => {
+    process.env.BILDAZO_AUTHOR_SYNC_ENABLED = "true";
+    const db = createMemoryDb();
+    const sync = mockSync(linkedOk("linked"));
+    const ok = await submitBildazoAuthorLinkRequest(
+      11,
+      existingBody({
+        existingBildazoEmail: "writer@bildazo.test",
+        password: "Writer1x",
+      }),
+      { db, syncClient: sync },
+    );
+    assert.equal(ok.link.status, "linked");
+    assert.equal(sync.calls[0].email, "writer@bildazo.test");
+    assert.equal(sync.calls[0].hadPassword, true);
+
+    const db2 = createMemoryDb();
+    const bad = mockSync({
+      ok: false,
+      called: true,
+      status: null,
+      errorCode: "BILDAZO_SYNC_INVALID_CREDENTIALS",
+      safeMessage: "Invalid email or password",
+      bildazoUserId: null,
+      bildazoPublicId: null,
+      profileUrl: null,
+    });
+    const failed = await submitBildazoAuthorLinkRequest(
+      11,
+      existingBody({
+        existingBildazoEmail: "writer@bildazo.test",
+        password: "Writer1x",
+      }),
+      { db: db2, syncClient: bad },
+    );
+    assert.equal(failed.link.status, "failed");
+    assert.equal(failed.link.linked, null);
   });
 
   it("existing_account same email can call S2S and link", async () => {
