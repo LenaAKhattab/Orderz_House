@@ -205,10 +205,24 @@ describe("bildazo author link GET/POST", () => {
     assert.notEqual(result.link.orderzVerifiedEmail, "spoof@evil.test");
   });
 
-  it("new_account does not accept or store password", async () => {
+  it("new_account password is accepted only in-memory and never stored on the row", async () => {
+    const db = createMemoryDb();
+    const result = await submitBildazoAuthorLinkRequest(
+      11,
+      newAccountBody({ password: "Writer1x", passwordConfirm: "Writer1x" }),
+      { db },
+    );
+    assert.equal(result.link.status, "pending_new_account");
+    const stored = await db.query("SELECT * FROM freelancer_bildazo_author_links");
+    assert.equal(stored.rows[0].password, undefined);
+    assert.equal(stored.rows[0].password_hash, undefined);
+    assert.equal(Object.prototype.hasOwnProperty.call(stored.rows[0], "password"), false);
+  });
+
+  it("passwordHash is still rejected", async () => {
     const db = createMemoryDb();
     await assert.rejects(
-      () => submitBildazoAuthorLinkRequest(11, newAccountBody({ password: "secret" }), { db }),
+      () => submitBildazoAuthorLinkRequest(11, newAccountBody({ passwordHash: "x" }), { db }),
       (err) => err.publicCode === BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_PASSWORD_NOT_ALLOWED,
     );
   });
@@ -391,14 +405,14 @@ describe("no live Bildazo integration in Phase 0B", () => {
     await assert.rejects(() => integrationClient.lookupExistingWriter());
   });
 
-  it("link service source never stores password or calls fetch/axios", () => {
+  it("link service source never persists password hashes or calls HTTP directly", () => {
     const src = fs.readFileSync(
       path.join(__dirname, "../src/services/bildazoAuthorLinkService.js"),
       "utf8",
     );
-    assert.doesNotMatch(src, /passwordHash|password_hash/);
+    assert.doesNotMatch(src, /password_hash/);
     assert.doesNotMatch(src, /\bfetch\(|axios\.|http\.request|https\.request/);
-    assert.doesNotMatch(src, /status:\s*['"]linked['"]/);
+    assert.doesNotMatch(src, /console\.(log|info|warn|error)\([^)]*password/);
   });
 
   it("article apply calls the gate before Bid reserve", () => {

@@ -79,7 +79,7 @@ describe("Super Admin Bildazo author links page", () => {
   it("freelancer article page linked state renders profile summary", () => {
     const card = read("components/freelancer/FreelancerBildazoAuthorGateCard.jsx");
     assert.match(card, /data-testid="bildazo-linked-profile"/);
-    assert.match(card, /حساب الكاتب مرتبط/);
+    assert.match(card, /تم ربط حساب الكاتب في Bildazo بنجاح/);
     assert.match(card, /link\?\.linked\?\.bildazoPublicId/);
     assert.match(card, /link\?\.linked\?\.bildazoProfileUrl/);
     assert.equal(isBildazoAuthorLinked({ status: "linked" }), true);

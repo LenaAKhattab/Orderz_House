@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
@@ -14,7 +13,7 @@ import { formatArticleBidCollectionLabel } from "../../admin/marketplaceArticles
 import FreelancerBildazoAuthorGateCard from "../../components/freelancer/FreelancerBildazoAuthorGateCard";
 
 export default function FreelancerMarketplaceArticlesPage() {
-  const { locale, t } = useTranslation();
+  const { locale } = useTranslation();
   const isEn = locale === "en";
   const [articles, setArticles] = useState([]);
   const [bildazoLink, setBildazoLink] = useState(null);
@@ -48,13 +47,6 @@ export default function FreelancerMarketplaceArticlesPage() {
 
   return (
     <DashboardShell>
-      <DashboardPageHeader
-        title={t("dashboard.nav.freelancer.articles")}
-        breadcrumbs={[
-          { labelKey: "dashboard.breadcrumbs.home", href: "/dashboard/freelancer" },
-          { label: t("dashboard.nav.freelancer.articles") },
-        ]}
-      />
       <DashboardSection>
         {!loading ? (
           <FreelancerBildazoAuthorGateCard
@@ -76,7 +68,7 @@ export default function FreelancerMarketplaceArticlesPage() {
           />
         ) : null}
         {!loading && !error && articles.length > 0 ? (
-          <ul className="m-0 grid list-none gap-3 p-0">
+          <ul id="article-opportunities" className="m-0 grid list-none gap-3 p-0">
             {articles.map((article) => {
               const progress = formatArticleBidCollectionLabel(article.bidCollection, {
                 isEn,

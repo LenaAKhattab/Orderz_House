@@ -11,6 +11,8 @@ const NOT_IMPLEMENTED =
   "Bildazo live integration is not implemented. OrderzHouse must not create Bildazo users or call Bildazo APIs in Phase 0B.";
 
 const LINK_OR_CREATE_PATH = "/api/integrations/orderzhouse/authors/link-or-create";
+const CREATE_AND_LINK_PATH = "/api/integrations/orderzhouse/authors/create-and-link";
+const LINK_WITH_CREDENTIALS_PATH = "/api/integrations/orderzhouse/authors/link-with-credentials";
 const SECRET_HEADER = "X-OrderzHouse-Integration-Secret";
 
 const BILDAZO_SYNC_LINKED_OK_STATUSES = Object.freeze(["created", "linked", "already_linked"]);
@@ -38,13 +40,18 @@ async function linkExistingWriter() {
   assertNoLiveBildazoCall();
 }
 
-function joinLinkOrCreateUrl(baseUrl) {
+function joinBildazoPath(baseUrl, pathname) {
   const b = String(baseUrl || "").trim().replace(/\/+$/, "");
+  const p = String(pathname || "");
   if (!b) return "";
-  if (b.endsWith("/api") && LINK_OR_CREATE_PATH.startsWith("/api/")) {
-    return `${b}${LINK_OR_CREATE_PATH.slice(4)}`;
+  if (b.endsWith("/api") && p.startsWith("/api/")) {
+    return `${b}${p.slice(4)}`;
   }
-  return `${b}${LINK_OR_CREATE_PATH}`;
+  return `${b}${p}`;
+}
+
+function joinLinkOrCreateUrl(baseUrl) {
+  return joinBildazoPath(baseUrl, LINK_OR_CREATE_PATH);
 }
 
 function abortSignalForTimeout(ms) {
@@ -102,7 +109,18 @@ function redactSecrets(text, secret) {
   if (secret && s.includes(secret)) s = s.split(secret).join("[redacted]");
   s = s.replace(/X-OrderzHouse-[^\s,;]*/gi, "[redacted-header]");
   s = s.replace(/secret[s]?\s*[=:]\s*\S+/gi, "secret=[redacted]");
+  s = s.replace(/password["']?\s*[:=]\s*["']?[^"'\s,}\\]+/gi, "password=[redacted]");
   return s.slice(0, 240);
+}
+
+function stripPasswordKeys(value) {
+  if (!value || typeof value !== "object") return value;
+  const out = { ...value };
+  delete out.password;
+  delete out.passwordConfirm;
+  delete out.passwordHash;
+  delete out.confirmPassword;
+  return out;
 }
 
 function safeIdentity(value) {
@@ -132,9 +150,27 @@ function parseKnownStatus(raw) {
   return BILDAZO_SYNC_KNOWN_STATUSES.includes(s) ? s : null;
 }
 
-function logSyncOutcome({ freelancerId, outcome, httpStatus }) {
+function buildCreateAndLinkRequestBody(payload = {}) {
+  const body = buildSafeRequestBody(payload);
+  const password = String(payload.password || "");
+  if (password) body.password = password;
+  const dateOfBirth = optionalText(payload.dateOfBirth, 10);
+  if (dateOfBirth) body.dateOfBirth = dateOfBirth;
+  return body;
+}
+
+function buildCredentialLinkRequestBody(payload = {}) {
+  return {
+    orderzFreelancerId: String(payload.orderzFreelancerId || "").trim(),
+    email: String(payload.email || "").trim().toLowerCase(),
+    password: String(payload.password || ""),
+  };
+}
+
+function logSyncOutcome({ freelancerId, outcome, httpStatus, pathLabel = "s2s" }) {
   console.info(
-    "[bildazo-s2s] link-or-create freelancerId=%s outcome=%s http=%s",
+    "[bildazo-s2s] %s freelancerId=%s outcome=%s http=%s",
+    pathLabel,
     freelancerId == null ? "unknown" : String(freelancerId),
     outcome,
     httpStatus == null ? "n/a" : String(httpStatus),
@@ -151,11 +187,13 @@ async function parseResponseJson(res) {
   }
 }
 
-/**
- * POST Bildazo /api/integrations/orderzhouse/authors/link-or-create when enabled.
- * Disabled: no HTTP. Missing URL/secret: configuration error, no HTTP.
- */
-async function linkOrCreateBildazoAuthor(payload = {}, deps = {}) {
+async function postBildazoAuthorIntegration({
+  path,
+  pathLabel,
+  payload,
+  buildBody,
+  deps = {},
+}) {
   const getConfig = deps.getConfig || getBildazoAuthorSyncConfig;
   const fetchImpl = deps.fetchImpl || globalThis.fetch;
   const cfg = getConfig();
@@ -172,7 +210,7 @@ async function linkOrCreateBildazoAuthor(payload = {}, deps = {}) {
   }
 
   if (!cfg.baseUrl || !cfg.secret) {
-    logSyncOutcome({ freelancerId, outcome: "config_missing", httpStatus: null });
+    logSyncOutcome({ freelancerId, outcome: "config_missing", httpStatus: null, pathLabel });
     return emptyResult({
       ok: false,
       called: false,
@@ -182,7 +220,7 @@ async function linkOrCreateBildazoAuthor(payload = {}, deps = {}) {
   }
 
   if (typeof fetchImpl !== "function") {
-    logSyncOutcome({ freelancerId, outcome: "fetch_unavailable", httpStatus: null });
+    logSyncOutcome({ freelancerId, outcome: "fetch_unavailable", httpStatus: null, pathLabel });
     return emptyResult({
       ok: false,
       called: false,
@@ -191,8 +229,8 @@ async function linkOrCreateBildazoAuthor(payload = {}, deps = {}) {
     });
   }
 
-  const url = joinLinkOrCreateUrl(cfg.baseUrl);
-  const body = buildSafeRequestBody(payload);
+  const url = joinBildazoPath(cfg.baseUrl, path);
+  const body = buildBody(payload);
   let res;
   try {
     res = await fetchImpl(url, {
@@ -207,7 +245,7 @@ async function linkOrCreateBildazoAuthor(payload = {}, deps = {}) {
     });
   } catch (err) {
     if (isAbortError(err)) {
-      logSyncOutcome({ freelancerId, outcome: "timeout", httpStatus: null });
+      logSyncOutcome({ freelancerId, outcome: "timeout", httpStatus: null, pathLabel });
       return emptyResult({
         ok: false,
         called: true,
@@ -215,24 +253,36 @@ async function linkOrCreateBildazoAuthor(payload = {}, deps = {}) {
         safeMessage: "Bildazo request timed out",
       });
     }
-    logSyncOutcome({ freelancerId, outcome: "network", httpStatus: null });
+    logSyncOutcome({ freelancerId, outcome: "network", httpStatus: null, pathLabel });
     return emptyResult({
       ok: false,
       called: true,
       errorCode: "BILDAZO_SYNC_NETWORK",
       safeMessage: "Bildazo request failed",
     });
+  } finally {
+    stripPasswordKeys(payload);
   }
 
   const httpStatus = res.status;
   const { json, raw } = await parseResponseJson(res);
-  if (httpStatus < 200 || httpStatus >= 300) {
-    logSyncOutcome({ freelancerId, outcome: "http_error", httpStatus });
+  if (httpStatus === 401) {
+    logSyncOutcome({ freelancerId, outcome: "invalid_credentials", httpStatus, pathLabel });
     return emptyResult({
       ok: false,
       called: true,
       httpStatus,
-      errorCode: "BILDAZO_SYNC_HTTP_ERROR",
+      errorCode: "BILDAZO_SYNC_INVALID_CREDENTIALS",
+      safeMessage: "Invalid email or password",
+    });
+  }
+  if (httpStatus < 200 || httpStatus >= 300) {
+    logSyncOutcome({ freelancerId, outcome: "http_error", httpStatus, pathLabel });
+    return emptyResult({
+      ok: false,
+      called: true,
+      httpStatus,
+      errorCode: httpStatus === 409 ? "BILDAZO_SYNC_EMAIL_IN_USE" : "BILDAZO_SYNC_HTTP_ERROR",
       safeMessage: redactSecrets(
         (json && (json.message || json.error)) || `Bildazo request failed (${httpStatus})`,
         cfg.secret,
@@ -242,7 +292,7 @@ async function linkOrCreateBildazoAuthor(payload = {}, deps = {}) {
 
   const status = parseKnownStatus(json && json.status);
   if (!status) {
-    logSyncOutcome({ freelancerId, outcome: "unknown_status", httpStatus });
+    logSyncOutcome({ freelancerId, outcome: "unknown_status", httpStatus, pathLabel });
     return emptyResult({
       ok: false,
       called: true,
@@ -264,8 +314,38 @@ async function linkOrCreateBildazoAuthor(payload = {}, deps = {}) {
     errorCode: status === "needs_manual_review" ? "BILDAZO_SYNC_NEEDS_REVIEW" : null,
     safeMessage: redactSecrets(json.message || null, cfg.secret),
   });
-  logSyncOutcome({ freelancerId, outcome: status, httpStatus });
+  logSyncOutcome({ freelancerId, outcome: status, httpStatus, pathLabel });
   return result;
+}
+
+async function linkOrCreateBildazoAuthor(payload = {}, deps = {}) {
+  return postBildazoAuthorIntegration({
+    path: LINK_OR_CREATE_PATH,
+    pathLabel: "link-or-create",
+    payload,
+    buildBody: buildSafeRequestBody,
+    deps,
+  });
+}
+
+async function createAndLinkBildazoAuthor(payload = {}, deps = {}) {
+  return postBildazoAuthorIntegration({
+    path: CREATE_AND_LINK_PATH,
+    pathLabel: "create-and-link",
+    payload,
+    buildBody: buildCreateAndLinkRequestBody,
+    deps,
+  });
+}
+
+async function linkExistingBildazoAuthorWithCredentials(payload = {}, deps = {}) {
+  return postBildazoAuthorIntegration({
+    path: LINK_WITH_CREDENTIALS_PATH,
+    pathLabel: "link-with-credentials",
+    payload,
+    buildBody: buildCredentialLinkRequestBody,
+    deps,
+  });
 }
 
 module.exports = {
@@ -274,8 +354,14 @@ module.exports = {
   linkExistingWriter,
   assertNoLiveBildazoCall,
   linkOrCreateBildazoAuthor,
+  createAndLinkBildazoAuthor,
+  linkExistingBildazoAuthorWithCredentials,
   joinLinkOrCreateUrl,
+  joinBildazoPath,
   buildSafeRequestBody,
+  buildCreateAndLinkRequestBody,
+  buildCredentialLinkRequestBody,
+  stripPasswordKeys,
   BILDAZO_SYNC_LINKED_OK_STATUSES,
   BILDAZO_SYNC_KNOWN_STATUSES,
 };

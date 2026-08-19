@@ -13,11 +13,19 @@ const submitBildazoAuthorLinkValidators = [
   body("phoneE164").optional({ nullable: true }).isString().isLength({ max: 20 }),
   body("countryIso").optional({ nullable: true }).isString().isLength({ min: 2, max: 2 }),
   body("bio").optional({ nullable: true }).isString().isLength({ max: 2000 }),
+  body("dateOfBirth")
+    .optional({ nullable: true, checkFalsy: true })
+    .isString()
+    .matches(/^\d{4}-\d{2}-\d{2}$/)
+    .withMessage("تاريخ الميلاد غير صالح."),
   body("existingBildazoEmail").optional({ nullable: true }).isString().isLength({ max: 255 }),
   body("existingBildazoPublicId").optional({ nullable: true }).isString().isLength({ max: 120 }),
   body("existingBildazoProfileUrl").optional({ nullable: true }).isString().isLength({ max: 500 }),
-  body("password").not().exists().withMessage("لا يتم جمع كلمة مرور Bildazo."),
-  body("passwordHash").not().exists().withMessage("لا يتم جمع كلمة مرور Bildazo."),
+  body("password").optional({ nullable: true }).isString().isLength({ min: 8, max: 72 }),
+  body("passwordConfirm").optional({ nullable: true }).isString().isLength({ max: 72 }),
+  body("confirmPassword").optional({ nullable: true }).isString().isLength({ max: 72 }),
+  body("passwordHash").not().exists().withMessage("لا يتم تخزين كلمة مرور Bildazo."),
+  body("roleId").not().exists().withMessage("حقل غير مسموح."),
 ];
 
 module.exports = { submitBildazoAuthorLinkValidators };
