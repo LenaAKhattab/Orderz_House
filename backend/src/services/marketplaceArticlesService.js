@@ -111,6 +111,11 @@ function mapMarketplaceArticle(row) {
         : null,
     articleLevel: level,
     articleValueJod: toFiniteNumber(row.article_value_jod),
+    freelancerShareJod: toFiniteNumber(row.activation_freelancer_share_jod),
+    companyShareJod: toFiniteNumber(row.activation_company_share_jod),
+    reviewerShareJod: toFiniteNumber(row.activation_reviewer_share_jod),
+    totalArticleValueJod: toFiniteNumber(row.article_value_jod),
+    activationPlanTierCode: row.activation_plan_tier_code || null,
     requiredWordCount: Number(row.required_word_count) || 0,
     requiredReferencesCount: Number(row.required_references_count) || 0,
     status: row.status,
@@ -130,6 +135,9 @@ function mapMarketplaceArticle(row) {
     relistCount: row.relist_count != null ? Number(row.relist_count) : 0,
     bidCollectionOutcome: row.bid_collection_outcome || null,
     applicationDeadlineAt: row.application_deadline_at || null,
+    activationCampaignId: toIdString(row.activation_campaign_id),
+    activationWaveId: toIdString(row.activation_wave_id),
+    activationBudgetState: row.activationBudgetState || null,
   };
 }
 
@@ -143,6 +151,11 @@ function mapMarketplaceArticleReadModel(row) {
     description: full.description,
     articleLevel: full.articleLevel,
     articleValueJod: full.articleValueJod,
+    totalArticleValueJod: full.totalArticleValueJod ?? full.articleValueJod,
+    freelancerShareJod: full.freelancerShareJod,
+    companyShareJod: full.companyShareJod,
+    reviewerShareJod: full.reviewerShareJod,
+    activationPlanTierCode: full.activationPlanTierCode,
     requiredWordCount: full.requiredWordCount,
     requiredReferencesCount: full.requiredReferencesCount,
     category: full.category,
@@ -276,7 +289,55 @@ async function listMarketplaceArticlesForAdmin({
      LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params,
   );
-  return rows.map(mapMarketplaceArticle);
+  return attachActivationBudgetStates(rows.map(mapMarketplaceArticle));
+}
+
+async function attachActivationBudgetStates(articles) {
+  const list = Array.isArray(articles) ? articles : [];
+  const ids = list.filter((a) => a.activationCampaignId).map((a) => Number(a.id)).filter((n) => Number.isInteger(n));
+  if (!ids.length) return list;
+  try {
+    const { rows } = await pool.query(
+      `SELECT DISTINCT ON (article_id)
+          article_id,
+          activation_budget_reserved_at,
+          activation_budget_released_at,
+          activation_budget_used_at,
+          activation_budget_amount_jod,
+          activation_campaign_id
+         FROM marketplace_article_applications
+        WHERE article_id = ANY($1::bigint[])
+        ORDER BY article_id,
+          (activation_budget_used_at IS NOT NULL) DESC,
+          (activation_budget_released_at IS NOT NULL) DESC,
+          (activation_budget_reserved_at IS NOT NULL) DESC,
+          id DESC`,
+      [ids],
+    );
+    const byArticle = new Map(rows.map((r) => [String(r.article_id), r]));
+    const campaignService = require("./freelancerActivationCampaignService");
+    return list.map((article) => {
+      const stamp = byArticle.get(String(article.id));
+      if (!stamp) {
+        return article.activationCampaignId
+          ? { ...article, activationBudgetState: "not_reserved" }
+          : article;
+      }
+      return {
+        ...article,
+        activationBudgetState: campaignService.deriveActivationBudgetState(stamp),
+        activationBudgetAmountJod:
+          stamp.activation_budget_amount_jod != null ? String(stamp.activation_budget_amount_jod) : null,
+      };
+    });
+  } catch (err) {
+    if (err?.code === "42703" || err?.code === "42P01") {
+      return list.map((article) =>
+        article.activationCampaignId ? { ...article, activationBudgetState: "not_reserved" } : article,
+      );
+    }
+    throw err;
+  }
 }
 
 async function listPublishedMarketplaceArticles({
@@ -320,7 +381,10 @@ async function getMarketplaceArticleById(id, { forAdmin = false } = {}) {
     [articleId],
   );
   if (!rows[0]) return null;
-  return forAdmin ? mapMarketplaceArticle(rows[0]) : mapMarketplaceArticleReadModel(rows[0]);
+  const mapped = forAdmin ? mapMarketplaceArticle(rows[0]) : mapMarketplaceArticleReadModel(rows[0]);
+  if (!forAdmin) return mapped;
+  const [withState] = await attachActivationBudgetStates([mapped]);
+  return withState;
 }
 
 async function createMarketplaceArticle(payload, { actorUserId = null } = {}) {
@@ -459,6 +523,19 @@ async function createMarketplaceArticle(payload, { actorUserId = null } = {}) {
       rows = inserted.rows;
     }
     articleId = rows[0].id;
+    const campaignService = require("./freelancerActivationCampaignService");
+    const campaignKeyPresent =
+      payload.activationCampaignId !== undefined || payload.activation_campaign_id !== undefined;
+    const waveKeyPresent =
+      payload.activationWaveId !== undefined || payload.activation_wave_id !== undefined;
+    if (campaignKeyPresent || waveKeyPresent) {
+      const attachment = await campaignService.resolveActivationAttachment(payload, { client });
+      await campaignService.persistArticleActivationAttachment(
+        articleId,
+        { campaignId: attachment.campaignId, waveId: attachment.waveId },
+        { client },
+      );
+    }
     await opportunityBidCollectionService.createInitialArticleRound(
       articleId,
       requiredBidCount,
@@ -603,6 +680,35 @@ async function updateMarketplaceArticle(id, patch, { actorUserId = null } = {}) 
       ],
     );
 
+    const campaignKeyPresent =
+      patch.activationCampaignId !== undefined || patch.activation_campaign_id !== undefined;
+    const waveKeyPresent =
+      patch.activationWaveId !== undefined || patch.activation_wave_id !== undefined;
+    if (campaignKeyPresent || waveKeyPresent) {
+      const campaignService = require("./freelancerActivationCampaignService");
+      const campaignValue = campaignKeyPresent
+        ? (patch.activationCampaignId ?? patch.activation_campaign_id)
+        : existing.activationCampaignId;
+      const waveValue =
+        (campaignValue === null || campaignValue === "") && !waveKeyPresent
+          ? null
+          : waveKeyPresent
+            ? (patch.activationWaveId ?? patch.activation_wave_id)
+            : existing.activationWaveId;
+      const attachment = await campaignService.resolveActivationAttachment(
+        {
+          activationCampaignId: campaignValue,
+          activationWaveId: waveValue,
+        },
+        { client },
+      );
+      await campaignService.persistArticleActivationAttachment(
+        Number(id),
+        { campaignId: attachment.campaignId, waveId: attachment.waveId },
+        { client },
+      );
+    }
+
     if (patch.requiredBidCount !== undefined || patch.required_bid_count !== undefined) {
       const settings = await getMarketplaceEconomySettings(client);
       const requiredBidCount = opportunityBidCollectionService.wrapAssertRequiredBidCount(
@@ -642,6 +748,9 @@ async function updateMarketplaceArticle(id, patch, { actorUserId = null } = {}) 
         actorUserId: actorUserId ? Number(actorUserId) : null,
       });
       await articleApplicationsService.cancelPendingApplicationsForArticle(id, client);
+      if (status === "cancelled") {
+        await articleApplicationsService.cancelAssignedApplicationsForCancelledArticle(id, client);
+      }
     }
 
     await client.query("COMMIT");

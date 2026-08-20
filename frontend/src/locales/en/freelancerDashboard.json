@@ -345,6 +345,12 @@
     "createSuccessTitle": "Claim created",
     "createSuccessMessage": "Your financial claim was submitted successfully.",
     "createErrorTitle": "Could not create claim",
+    "errors": {
+      "kycRequired": "You cannot create a financial claim before account activation.",
+      "kycPending": "Your activation request is under review.",
+      "kycRejected": "Your activation request was rejected. Review the reason and resubmit.",
+      "pricingNotAllowed": "Pricing fields are not allowed when creating a claim."
+    },
     "modal": {
       "title": "New claim",
       "subtitle": "Enter order details to submit the claim for review",
@@ -1066,21 +1072,21 @@
   },
   "activateAccount": {
     "title": "Activate account",
-    "subtitle": "Activate your account now so your subscription period starts immediately.",
+    "subtitle": "Submit an account activation request for admin review after uploading your ID.",
     "cardTitle": "Activation status",
-    "hint": "Pressing the button activates your account immediately without waiting for admin approval, and starts your subscription period from this moment.",
-    "cta": "Activate account now",
-    "activating": "Activating…",
+    "hint": "Your account is not activated immediately. Admin will review your request.",
+    "cta": "Submit activation request",
+    "activating": "Submitting…",
     "activated": "Account activated",
     "successMessage": "Your account is activated and the subscription period has started.",
     "successWithStarter": "Your account is activated and the free STARTER membership was granted.",
     "successKeptMembership": "Your account is activated and your current membership was kept.",
     "alreadyActiveMessage": "Your account is already active and the subscription period is running.",
-    "errorTitle": "Could not activate account",
-    "loadError": "Could not load subscription status.",
+    "errorTitle": "Could not submit activation request",
+    "loadError": "Could not load activation status.",
     "status": {
       "approved": "Activated",
-      "pending": "Pending activation"
+      "pending": "Pending review"
     },
     "fields": {
       "activation": "Activation status",
@@ -1089,8 +1095,29 @@
       "expiresAt": "Period end"
     },
     "termsModalTitle": "Terms for receiving and executing orders and tenders",
-    "agreeCheckbox": "I agree to the terms and policy for receiving and executing orders and tenders, I acknowledge that payment is due only after delivery, review, and approval, and that applying may consume tender credits according to the opportunity policy.",
+    "agreeCheckbox": "I agree to the account activation terms and platform use.",
     "termsFallback": "By continuing, you agree to Orderz House terms of use and platform policies.",
-    "termsLoadError": "Could not load the terms of use. You may still agree after reviewing, or try again."
+    "termsLoadError": "Could not load the terms of use. You may still agree after reviewing, or try again.",
+    "kyc": {
+      "pageTitle": "Freelancer account activation",
+      "pageSubtitle": "Upload front and back ID images to submit your activation request.",
+      "uploadHint": "Please upload front and back ID images to submit your activation request.",
+      "notImmediate": "Your account will not be activated immediately. Admin will review the request.",
+      "termsCheckbox": "I agree to the account activation terms and platform use.",
+      "submitCta": "Submit activation request",
+      "resubmitCta": "Resubmit activation request",
+      "submitSuccess": "Your activation request was received and will be reviewed by admin.",
+      "pendingTitle": "Your request is under review",
+      "pendingBody": "Your account activation request was received and will be reviewed by admin.",
+      "approvedTitle": "Your account is activated",
+      "rejectedTitle": "Activation request rejected",
+      "rejectionReasonLabel": "Rejection reason",
+      "idFront": "ID front image",
+      "idBack": "ID back image",
+      "filesRequired": "Please upload both front and back ID images.",
+      "termsRequired": "You must accept the account activation terms.",
+      "goDashboard": "Go to dashboard",
+      "goArticles": "Marketplace articles"
+    }
   }
 }

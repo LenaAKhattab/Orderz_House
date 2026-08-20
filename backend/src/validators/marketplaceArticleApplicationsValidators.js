@@ -24,6 +24,9 @@ const submitFinalArticleManuscriptValidators = [
     .isString()
     .isLength({ min: 50, max: 200000 })
     .withMessage("content is required."),
+  body("termsAccepted")
+    .custom((value) => value === true || value === "true" || value === 1 || value === "1")
+    .withMessage("termsAccepted is required."),
 ];
 
 const requestArticleRevisionValidators = [

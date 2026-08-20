@@ -45,6 +45,8 @@ const createMarketplaceArticleValidators = [
       return !Number.isNaN(new Date(value).getTime());
     })
     .withMessage("applicationDeadlineAt is invalid."),
+  body("activationCampaignId").optional({ nullable: true }).isInt({ min: 1 }),
+  body("activationWaveId").optional({ nullable: true }).isInt({ min: 1 }),
 ];
 
 const updateMarketplaceArticleValidators = [
@@ -73,6 +75,8 @@ const updateMarketplaceArticleValidators = [
   body("isFakeOrTraining").optional().isBoolean(),
   body("requiredBidCount").optional().isInt({ min: 1 }),
   body("minRequiredBidsAcknowledged").optional(),
+  body("activationCampaignId").optional({ nullable: true }).isInt({ min: 1 }),
+  body("activationWaveId").optional({ nullable: true }).isInt({ min: 1 }),
 ];
 
 const listMarketplaceArticlesValidators = [

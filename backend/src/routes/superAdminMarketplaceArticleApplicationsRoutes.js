@@ -37,6 +37,22 @@ router.get(
   controller.getApplicationAdmin,
 );
 
+router.get(
+  "/marketplace-articles/:id/auto-assignment",
+  ...guard,
+  articleIdParam,
+  validateRequest,
+  controller.getAutoAssignment,
+);
+
+router.post(
+  "/marketplace-articles/:id/auto-assignment/run",
+  ...guard,
+  articleIdParam,
+  validateRequest,
+  controller.runAutoAssignment,
+);
+
 router.post(
   "/article-applications/:applicationId/select",
   ...guard,

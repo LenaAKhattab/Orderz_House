@@ -350,9 +350,11 @@ async function applyAdminAssignmentOfflinePayments(
            WHEN $2::text = 'paid' THEN COALESCE(paid_at, $3::timestamptz)
            ELSE paid_at
          END,
-         activation_status = 'company_approved',
-         company_activated_at = COALESCE(company_activated_at, $3::timestamptz),
-         company_activated_by_user_id = COALESCE(company_activated_by_user_id, $4),
+         -- A11.1: admin offline payment must not bypass KYC company approval.
+         activation_status = CASE
+           WHEN activation_status = 'company_approved' THEN 'company_approved'
+           ELSE 'company_pending'
+         END,
          notes = CASE
            WHEN notes IS NULL OR btrim(notes) = '' THEN $5::text
            WHEN position($5::text in notes) > 0 THEN notes
@@ -436,7 +438,7 @@ async function assignPlanToFreelancer({ actorUserId, freelancerUserId, planId, n
         status, has_first_order, first_order_date, actual_start_date, expiry_date,
         is_current, source, payment_status, activation_status,
         paid_at, company_activated_at, company_activated_by_user_id
-      ) VALUES ($1,$2,$3,$4,$5,FALSE,NULL,NULL,NULL,TRUE,$6,$7,$8,$9,$10,$11)
+      ) VALUES ($1,$2,$3,$4,$5,FALSE,NULL,NULL,NULL,TRUE,$6,$7,$8,$9,NULL,NULL)
       RETURNING *`,
       [
         Number(freelancerUserId),
@@ -446,10 +448,9 @@ async function assignPlanToFreelancer({ actorUserId, freelancerUserId, planId, n
         SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED,
         SUBSCRIPTION_SOURCES.ADMIN,
         paymentStatus,
-        SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED,
+        // A11.1: plan assignment no longer auto company_approved — KYC review required.
+        SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_PENDING,
         planPricing.isFree ? null : paidAt,
-        paidAt,
-        actorUserId ? Number(actorUserId) : null,
       ],
     );
 
@@ -956,7 +957,13 @@ async function markFreelancerSubscriptionStripePaymentFailed(
   return null;
 }
 
-async function activateCompanyApprovalForSubscription({ actorUserId, subscriptionId }, client) {
+async function activateCompanyApprovalForSubscription({
+  actorUserId,
+  subscriptionId,
+  actorRole = null,
+  overrideReason = null,
+  skipKycGate = false,
+}, client) {
   const runner = client || pool;
   const { rows } = await runner.query(`SELECT * FROM freelancer_subscriptions WHERE id = $1 LIMIT 1 FOR UPDATE`, [
     Number(subscriptionId),
@@ -976,11 +983,35 @@ async function activateCompanyApprovalForSubscription({ actorUserId, subscriptio
     err.statusCode = 409;
     throw err;
   }
+
+  const kyc = require("./freelancerAccountActivationKycService");
+  const gate = await kyc.assertCompanyApprovalAllowed({
+    freelancerUserId: existing.freelancer_user_id,
+    actorRole,
+    overrideReason,
+    skipKycGate,
+    client: runner,
+  });
+
+  let nextNotes = existing.notes || null;
+  if (gate.mode === "super_admin_override") {
+    const stamp = [
+      "KYC_ADMIN_OVERRIDE",
+      `by=${actorUserId != null ? String(actorUserId) : "unknown"}`,
+      `at=${new Date().toISOString()}`,
+      `reason=${gate.overrideReason}`,
+    ].join(" | ");
+    nextNotes = nextNotes && String(nextNotes).trim()
+      ? `${String(nextNotes).trim()}\n${stamp}`
+      : stamp;
+  }
+
   const { rows: updated } = await runner.query(
     `UPDATE freelancer_subscriptions
      SET activation_status = 'company_approved',
          company_activated_at = COALESCE(company_activated_at, NOW()),
          company_activated_by_user_id = COALESCE($2, company_activated_by_user_id),
+         notes = COALESCE($3, notes),
          status = CASE WHEN has_first_order THEN status ELSE 'assigned_not_started' END,
          payment_status = CASE
            WHEN payment_status = 'pending' THEN 'paid'
@@ -993,7 +1024,7 @@ async function activateCompanyApprovalForSubscription({ actorUserId, subscriptio
          updated_at = NOW()
      WHERE id = $1
      RETURNING *`,
-    [Number(subscriptionId), actorUserId ? Number(actorUserId) : null],
+    [Number(subscriptionId), actorUserId ? Number(actorUserId) : null, nextNotes],
   );
   await safeNotify(() =>
     notificationEventsService.notifySubscriptionOwner(
@@ -1005,7 +1036,10 @@ async function activateCompanyApprovalForSubscription({ actorUserId, subscriptio
         message: "تمت الموافقة على الاشتراك ويمكنك البدء باستلام المشاريع.",
         priority: "high",
         dedupeKey: `subscription_company_activated_${String(updated[0].id)}`,
-        metadata: { subscriptionId: String(updated[0].id) },
+        metadata: {
+          subscriptionId: String(updated[0].id),
+          kycGateMode: gate.mode,
+        },
       },
       runner,
     ),
@@ -1104,6 +1138,89 @@ async function selfActivateFreelancerAccount({ freelancerUserId }, client) {
       };
     }
 
+    // Phase A11: immediate self-approve disabled — KYC + Super Admin review required.
+    const { createAppError } = require("../utils/AppError");
+    const {
+      ACCOUNT_ACTIVATION_KYC_ERROR_CODES,
+    } = require("../constants/freelancerAccountActivationKyc");
+    throw createAppError(
+      "تفعيل الحساب يتطلب رفع الهوية ومراجعة الإدارة.",
+      409,
+      {
+        exposeToClient: true,
+        publicCode: ACCOUNT_ACTIVATION_KYC_ERROR_CODES.SELF_ACTIVATE_DISABLED,
+      },
+    );
+  } catch (err) {
+    if (ownTxn) {
+      try {
+        await runner.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+    }
+    throw err;
+  } finally {
+    if (ownTxn) runner.release();
+  }
+}
+
+/**
+ * Phase A11 — Complete account activation after Super Admin KYC approval.
+ */
+async function activateAccountAfterKycApproval({
+  freelancerUserId,
+  actorUserId,
+  client = null,
+} = {}) {
+  const uid = Number(freelancerUserId);
+  const actor = Number(actorUserId);
+  const ownTxn = !client;
+  const runner = client || (await pool.connect());
+  try {
+    if (ownTxn) {
+      await ensureFreelancerDefaultFreePlan(uid);
+      await runner.query("BEGIN");
+    }
+
+    const { rows } = await runner.query(
+      `SELECT
+         fs.*,
+         p.duration_days AS plan_duration_days
+       FROM freelancer_subscriptions fs
+       JOIN plans p ON p.id = fs.plan_id
+       WHERE fs.freelancer_user_id = $1 AND fs.is_current = TRUE
+       ORDER BY fs.id DESC
+       LIMIT 1
+       FOR UPDATE`,
+      [uid],
+    );
+    const existing = rows[0];
+    if (!existing) {
+      const err = new Error("Subscription not found.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const alreadyApproved =
+      normalizeActivationStatus(existing.activation_status) ===
+      SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED;
+    const periodAlreadyStarted =
+      Boolean(existing.actual_start_date) &&
+      String(existing.status || "").toLowerCase() === SUBSCRIPTION_STATUSES.ACTIVE;
+
+    if (alreadyApproved && periodAlreadyStarted) {
+      if (ownTxn) await runner.query("COMMIT");
+      bootstrapFastPathCache.delete(uid);
+      const marketplace = await ensureMarketplaceMembershipForSelfActivate(uid);
+      return {
+        alreadyActive: true,
+        periodStarted: false,
+        subscription: mapSubscription(existing),
+        marketplace,
+      };
+    }
+
     const now = new Date();
     const durationDays = Number(existing.plan_duration_days);
     const safeDuration =
@@ -1124,7 +1241,7 @@ async function selfActivateFreelancerAccount({ freelancerUserId }, client) {
       `UPDATE freelancer_subscriptions
        SET activation_status = 'company_approved',
            company_activated_at = COALESCE(company_activated_at, $2::timestamptz),
-           company_activated_by_user_id = COALESCE(company_activated_by_user_id, $3),
+           company_activated_by_user_id = COALESCE($3, company_activated_by_user_id),
            payment_status = CASE
              WHEN payment_status IN ('pending', 'failed', 'cancelled') THEN 'paid'
              WHEN payment_status IS NULL OR TRIM(payment_status) = '' THEN 'not_required'
@@ -1135,7 +1252,6 @@ async function selfActivateFreelancerAccount({ freelancerUserId }, client) {
                OR paid_at IS NULL THEN COALESCE(paid_at, $2::timestamptz)
              ELSE paid_at
            END,
-           -- DB check: has_first_order=false ⇒ all dates NULL; true ⇒ all dates set.
            has_first_order = CASE WHEN $5::boolean THEN TRUE ELSE has_first_order END,
            actual_start_date = CASE WHEN $5::boolean THEN $2::timestamptz ELSE actual_start_date END,
            first_order_date = CASE
@@ -1147,16 +1263,21 @@ async function selfActivateFreelancerAccount({ freelancerUserId }, client) {
            updated_at = NOW()
        WHERE id = $1
        RETURNING *`,
-      [Number(existing.id), now, uid, expiryDate, startPeriod],
+      [
+        Number(existing.id),
+        now,
+        Number.isInteger(actor) ? actor : null,
+        expiryDate,
+        startPeriod,
+      ],
     );
 
     const row = updated[0];
-
     await markActivationFeePaidOffline(
       {
-        adminUserId: uid,
+        adminUserId: Number.isInteger(actor) ? actor : uid,
         freelancerUserId: uid,
-        notes: "freelancer_self_activate",
+        notes: "freelancer_kyc_activation_approved",
         paidAt: now,
       },
       runner,
@@ -1165,26 +1286,23 @@ async function selfActivateFreelancerAccount({ freelancerUserId }, client) {
     if (ownTxn) await runner.query("COMMIT");
     bootstrapFastPathCache.delete(uid);
 
-    if (!alreadyApproved) {
-      await safeNotify(() =>
-        notificationEventsService.notifySubscriptionOwner(
-          {
-            subscription: row,
-            actorUserId: uid,
-            type: "subscription.company.activated",
-            title: "تم تفعيل حسابك",
-            message: "تم تفعيل حسابك وبدأ احتساب مدة الاشتراك من الآن.",
-            priority: "high",
-            dedupeKey: `subscription_self_activated_${String(row.id)}`,
-            metadata: { subscriptionId: String(row.id), source: "freelancer_self_activate" },
-          },
-          pool,
-        ),
-      );
-    }
+    await safeNotify(() =>
+      notificationEventsService.notifySubscriptionOwner(
+        {
+          subscription: row,
+          actorUserId: Number.isInteger(actor) ? actor : uid,
+          type: "subscription.company.activated",
+          title: "تم تفعيل حسابك",
+          message: "تمت الموافقة على طلب تفعيل حسابك وبدأ احتساب مدة الاشتراك.",
+          priority: "high",
+          dedupeKey: `subscription_kyc_activated_${String(row.id)}`,
+          metadata: { subscriptionId: String(row.id), source: "kyc_admin_approve" },
+        },
+        pool,
+      ),
+    );
 
     const marketplace = await ensureMarketplaceMembershipForSelfActivate(uid, now);
-
     return {
       alreadyActive: false,
       periodStarted: Boolean(startPeriod),
@@ -2211,6 +2329,7 @@ module.exports = {
   endCurrentSubscription,
   activateCompanyApprovalForSubscription,
   selfActivateFreelancerAccount,
+  activateAccountAfterKycApproval,
   canFreelancerTakeOrders,
   applyActivationFeeEligibilityGate,
   evaluateFreelancerTakeOrdersEligibility,

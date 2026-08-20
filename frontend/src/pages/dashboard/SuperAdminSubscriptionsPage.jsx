@@ -510,9 +510,19 @@ const SuperAdminSubscriptionsPage = () => {
 
   const companyActivate = async (sub) => {
     setError("");
+    const overrideReason = window.prompt(
+      "تفعيل الشركة يتطلب موافقة KYC. للمتابعة كتجاوز من مدير أعلى فقط، أدخل سبب التجاوز (اتركه فارغًا للإلغاء):",
+      "",
+    );
+    if (overrideReason == null) return;
+    const reason = String(overrideReason).trim();
+    if (!reason) {
+      setError("سبب تجاوز KYC مطلوب لمدير أعلى، أو استخدم صفحة طلبات تفعيل المستقلين.");
+      return;
+    }
     setSubmitting(true);
     try {
-      await activateSubscriptionCompanyRequest(sub.id);
+      await activateSubscriptionCompanyRequest(sub.id, { overrideReason: reason });
       await loadSubscriptions(page);
     } catch (err) {
       setError(errorMessage(err));

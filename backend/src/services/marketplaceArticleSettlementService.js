@@ -78,6 +78,17 @@ async function finalizeArticleApproval({
     [appId],
   );
   if (existingSettlement.rows[0]) {
+    try {
+      const campaignService = require("./freelancerActivationCampaignService");
+      await campaignService.markActivationBudgetUsed({
+        client,
+        article: { id: application.article_id, activation_campaign_id: application.activation_campaign_id, activation_wave_id: application.activation_wave_id },
+        application,
+        actorUserId,
+      });
+    } catch {
+      /* activation budget must not undo an existing settlement */
+    }
     return {
       settlement: existingSettlement.rows[0],
       idempotent: true,
@@ -192,6 +203,17 @@ async function finalizeArticleApproval({
       [appId],
     );
     settlement = again.rows[0];
+    try {
+      const campaignService = require("./freelancerActivationCampaignService");
+      await campaignService.markActivationBudgetUsed({
+        client,
+        article,
+        application,
+        actorUserId,
+      });
+    } catch {
+      /* activation budget must not undo an existing settlement */
+    }
     return { settlement, idempotent: true, alreadySettled: true };
   }
 
@@ -296,6 +318,23 @@ async function finalizeArticleApproval({
     now,
     client,
   });
+
+  try {
+    const campaignService = require("./freelancerActivationCampaignService");
+    await campaignService.markActivationBudgetUsed({
+      client,
+      article,
+      application,
+      actorUserId,
+    });
+  } catch (budgetErr) {
+    if (budgetErr?.publicCode === "ACTIVATION_CAMPAIGN_BUDGET_INSUFFICIENT"
+      || budgetErr?.publicCode === "ACTIVATION_WAVE_BUDGET_INSUFFICIENT") {
+      /* late-use without room: ledger may still exist; do not fail settlement */
+    } else {
+      throw budgetErr;
+    }
+  }
 
   const outbox = await enqueueBildazoPublish({
     client,

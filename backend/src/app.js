@@ -34,6 +34,10 @@ const institutionPoolRoutes = require("./routes/institutionPoolRoutes");
 const adminAdsRoutes = require("./routes/adminAdsRoutes");
 const freelancerSubscriptionsRoutes = require("./routes/freelancerSubscriptionsRoutes");
 const freelancerMarketplaceMembershipRoutes = require("./routes/freelancerMarketplaceMembershipRoutes");
+const freelancerActivationEngineRoutes = require("./routes/freelancerActivationEngineRoutes");
+const freelancerAccountActivationKycRoutes = require("./routes/freelancerAccountActivationKycRoutes");
+const superAdminFreelancerActivationRoutes = require("./routes/superAdminFreelancerActivationRoutes");
+const superAdminFreelancerAccountActivationKycRoutes = require("./routes/superAdminFreelancerAccountActivationKycRoutes");
 const freelancerWorkTokenWalletRoutes = require("./routes/freelancerWorkTokenWalletRoutes");
 const freelancerBidCreditsRoutes = require("./routes/freelancerBidCreditsRoutes");
 const freelancerPriorityAuctionRoutes = require("./routes/freelancerPriorityAuctionRoutes");
@@ -147,7 +151,8 @@ app.use("/api", requestTimingMiddleware);
 
 // Static assets (e.g., category images) served from backend/images
 app.use("/images", express.static(path.join(__dirname, "..", "images")));
-// Order uploads live under backend/uploads — never expose via public static; use authenticated download routes only.
+// Order + KYC uploads live under backend/uploads — never expose via public static;
+// use authenticated download routes only (staff/super-admin).
 
 // Versioned API mounting keeps future domains modular (auth/orders/users/etc.).
 app.use("/api", healthRoutes);
@@ -175,6 +180,8 @@ app.use("/api/institution", institutionPoolRoutes);
 app.use("/api/admin", adminAdsRoutes);
 app.use("/api/freelancer", freelancerSubscriptionsRoutes);
 app.use("/api/freelancer", freelancerMarketplaceMembershipRoutes);
+app.use("/api/freelancer", freelancerActivationEngineRoutes);
+app.use("/api/freelancer", freelancerAccountActivationKycRoutes);
 app.use("/api/freelancer", freelancerWorkTokenWalletRoutes); // LEGACY_DEPRECATED_WORK_TOKEN_MODEL (read retained)
 app.use("/api/freelancer", freelancerBidCreditsRoutes);
 app.use("/api/freelancer", freelancerMarketplaceArticleApplicationsRoutes);
@@ -202,6 +209,8 @@ app.use("/api/super-admin", superAdminMarketplaceArticleApplicationsRoutes);
 app.use("/api/super-admin", superAdminBildazoAuthorLinkRoutes);
 app.use("/api", marketplaceArticlesRoutes);
 app.use("/api/super-admin", superAdminMarketplaceMembershipsRoutes);
+app.use("/api/super-admin", superAdminFreelancerActivationRoutes);
+app.use("/api/super-admin", superAdminFreelancerAccountActivationKycRoutes);
 app.use("/api/super-admin", superAdminWorkTokenWalletRoutes); // LEGACY_DEPRECATED_WORK_TOKEN_MODEL
 app.use("/api/super-admin", superAdminBidCreditsRoutes);
 app.use("/api/super-admin", superAdminBidDistributionPoolsRoutes);

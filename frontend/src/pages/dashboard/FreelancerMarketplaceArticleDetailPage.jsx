@@ -14,11 +14,21 @@ import {
   withdrawFreelancerArticleApplicationRequest,
   submitFreelancerFinalArticleManuscriptRequest,
 } from "../../services/api";
-import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { freelancerTrialApplyErrorMessage } from "../../constants/freelancerActivationTrial";
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import { formatArticleBidCollectionLabel, isBidCollectionClosedForApply } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 import { shouldBlockArticleApply } from "../../constants/bildazoAuthorTerms";
 import { freelancerBildazoPublishCopy } from "../../constants/bildazoArticlePublish";
+import {
+  MINI_ARTICLE_SUBMISSION_TERMS_COPY_AR,
+  MINI_ARTICLE_SUBMISSION_TERMS_COPY_EN,
+} from "../../constants/freelancerActivationEarnedBalance";
+import PlanUpgradeRequiredCta from "../../components/freelancer/PlanUpgradeRequiredCta";
+import {
+  requiredTierCodeForArticleLevel,
+  shouldShowArticlePlanUpgradeCta,
+} from "../../constants/planUpgradeCta";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
 function eligibilityMessage(eligibility, isEn) {
   if (!eligibility) return null;
@@ -62,6 +72,11 @@ function eligibilityMessage(eligibility, isEn) {
       ? "Create or link your Bildazo writer account before applying to articles."
       : "يرجى إنشاء أو ربط حساب الكاتب في Bildazo قبل التقديم على المقالات.";
   }
+  const trialMsg = freelancerTrialApplyErrorMessage(
+    { publicCode: eligibility.reason },
+    { isEn },
+  );
+  if (trialMsg) return trialMsg;
   if (eligibility.reason === "ARTICLE_BID_COLLECTION_DEADLINE_PASSED") {
     return isEn
       ? "The application deadline has passed."
@@ -82,6 +97,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
   const [message, setMessage] = useState("");
   const [manuscriptTitle, setManuscriptTitle] = useState("");
   const [manuscriptContent, setManuscriptContent] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -143,7 +159,9 @@ export default function FreelancerMarketplaceArticleDetailPage() {
       push({
         type: "error",
         message:
-          getSafeApiErrorMessage(err) || (isEn ? "Could not apply." : "تعذر تقديم الطلب."),
+          freelancerTrialApplyErrorMessage(err, { isEn }) ||
+          getSafeApiErrorMessage(err) ||
+          (isEn ? "Could not apply." : "تعذر تقديم الطلب."),
       });
       await refresh();
     } finally {
@@ -184,12 +202,14 @@ export default function FreelancerMarketplaceArticleDetailPage() {
 
   const handleSubmitManuscript = async () => {
     if (!application?.id || busy || busyRef.current) return;
+    if (!termsAccepted) return;
     busyRef.current = true;
     setBusy(true);
     try {
       await submitFreelancerFinalArticleManuscriptRequest(application.id, {
         title: manuscriptTitle,
         content: manuscriptContent,
+        termsAccepted: true,
       });
       push({
         type: "success",
@@ -245,16 +265,49 @@ export default function FreelancerMarketplaceArticleDetailPage() {
             <dl className="m-0 grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
               <div>
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
-                  {isEn ? "Value" : "القيمة"}
+                  {isEn ? "Total article value" : "إجمالي قيمة المقال"}
                 </dt>
-                <dd className="mt-1 font-extrabold">
-                  {article.articleValueJod != null ? (
-                    <JodMoneyDisplay amount={article.articleValueJod} compact />
+                <dd className="mt-1 font-extrabold" data-testid="article-detail-total-value">
+                  {(article.totalArticleValueJod ?? article.articleValueJod) != null ? (
+                    <JodMoneyDisplay
+                      amount={article.totalArticleValueJod ?? article.articleValueJod}
+                      compact
+                    />
                   ) : (
                     "—"
                   )}
                 </dd>
               </div>
+              {article.freelancerShareJod != null ? (
+                <div>
+                  <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
+                    {isEn ? "Your net after split" : "صافي مستحقاتك بعد التوزيع"}
+                  </dt>
+                  <dd className="mt-1 font-extrabold" data-testid="article-detail-freelancer-share">
+                    <JodMoneyDisplay amount={article.freelancerShareJod} compact />
+                  </dd>
+                </div>
+              ) : null}
+              {article.reviewerShareJod != null ? (
+                <div>
+                  <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
+                    {isEn ? "Reviewer share" : "حصة التدقيق"}
+                  </dt>
+                  <dd className="mt-1 font-extrabold" data-testid="article-detail-reviewer-share">
+                    <JodMoneyDisplay amount={article.reviewerShareJod} compact />
+                  </dd>
+                </div>
+              ) : null}
+              {article.companyShareJod != null ? (
+                <div>
+                  <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
+                    {isEn ? "Platform share" : "حصة المنصة"}
+                  </dt>
+                  <dd className="mt-1 font-extrabold" data-testid="article-detail-company-share">
+                    <JodMoneyDisplay amount={article.companyShareJod} compact />
+                  </dd>
+                </div>
+              ) : null}
               <div>
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
                   {isEn ? "Article level" : "مستوى المقال"}
@@ -299,6 +352,15 @@ export default function FreelancerMarketplaceArticleDetailPage() {
             </dl>
 
             <p className="m-0 text-[0.95rem]">{eligibilityMessage(eligibility, isEn)}</p>
+
+            {shouldShowArticlePlanUpgradeCta(eligibility) ? (
+              <PlanUpgradeRequiredCta
+                requiredTierCode={requiredTierCodeForArticleLevel(eligibility?.articleLevel ?? article?.articleLevel)}
+                currentTierCode={eligibility?.membershipTierCode || null}
+                reason={eligibility?.reason}
+                isEn={isEn}
+              />
+            ) : null}
 
             <p className="m-0 text-[0.95rem]">
               {isEn ? "Application cost: 1 Bid" : "تكلفة التقديم: عرض واحد"}
@@ -399,7 +461,17 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                         maxLength={200000}
                       />
                     </label>
-                    <Button type="button" disabled={busy} onClick={handleSubmitManuscript}>
+                    <label className="flex items-start gap-2 text-[0.86rem] font-semibold" data-testid="manuscript-terms-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={termsAccepted}
+                        onChange={(e) => setTermsAccepted(e.target.checked)}
+                      />
+                      <span>
+                        {isEn ? MINI_ARTICLE_SUBMISSION_TERMS_COPY_EN : MINI_ARTICLE_SUBMISSION_TERMS_COPY_AR}
+                      </span>
+                    </label>
+                    <Button type="button" disabled={busy || !termsAccepted} onClick={handleSubmitManuscript}>
                       {isEn ? "Submit final article" : "تسليم المقال النهائي"}
                     </Button>
                   </div>

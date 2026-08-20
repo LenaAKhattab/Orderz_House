@@ -348,10 +348,12 @@ async function consumeBidCreditReservation({
   reservationId,
   now = new Date(),
   actorUserId = null,
+  reason = "article_final_approval_bid_consume",
 } = {}) {
   if (!client) {
     throw createAppError("consumeBidCreditReservation requires a transaction client.", 500);
   }
+  const consumeReason = String(reason || "article_final_approval_bid_consume").slice(0, 120);
   const { rows } = await client.query(
     `SELECT * FROM marketplace_bid_credit_reservations WHERE id = $1 FOR UPDATE`,
     [Number(reservationId)],
@@ -425,7 +427,7 @@ async function consumeBidCreditReservation({
        reference_type, reference_id, idempotency_key, reason, actor_user_id, metadata
      ) VALUES (
        $1,$2,'BID_RESERVE_CONSUME',$3,-1,
-       $4,$5,$6,'article_final_approval_bid_consume',$7,$8::jsonb
+       $4,$5,$6,$7,$8,$9::jsonb
      )
      ON CONFLICT (idempotency_key) DO NOTHING`,
     [
@@ -435,8 +437,9 @@ async function consumeBidCreditReservation({
       row.reference_type,
       row.reference_id,
       consumeKey,
+      consumeReason,
       actorUserId,
-      JSON.stringify({ reservationId: Number(row.id), phase: "E2" }),
+      JSON.stringify({ reservationId: Number(row.id), phase: "E2", consumeReason }),
     ],
   );
 

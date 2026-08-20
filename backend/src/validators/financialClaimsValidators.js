@@ -11,6 +11,14 @@ const listDoneProjectsValidators = [
   query("limit").optional().isInt({ min: 1, max: 200 }).withMessage("limit غير صالح.").toInt(),
 ];
 
+const updateFinancialClaimStatusValidators = [
+  ...claimIdParam,
+  body("status")
+    .isIn(["pending", "accepted", "rejected", "frozen", "requires_in_person_review"])
+    .withMessage("status غير صالح. لا يمكن تعيين paid من هنا — استخدم تسجيل دفعة مالية."),
+  body("adminNote").optional({ nullable: true }).isString().trim().isLength({ max: 5000 }).withMessage("admin_note غير صالح."),
+];
+
 const createPortalFinancialClaimValidators = [
   body("mode").isIn(["manual", "done_project"]).withMessage("mode must be manual or done_project."),
   body("projectId").optional({ nullable: true }).isInt({ min: 1 }).withMessage("projectId غير صالح.").toInt(),
@@ -45,6 +53,27 @@ const createPortalFinancialClaimValidators = [
     .isISO8601()
     .withMessage("actual_completion_date must be YYYY-MM-DD."),
   body("freelancerNote").optional({ nullable: true }).isString().trim().isLength({ max: 5000 }).withMessage("freelancer_note غير صالح."),
+  // F1: reject freelancer-supplied pricing keys at validation layer too.
+  body().custom((_, { req }) => {
+    const {
+      FREELANCER_CLAIM_PRICING_BODY_KEYS,
+      FINANCIAL_CLAIM_ERROR_CODES,
+    } = require("../services/financialClaimsService");
+    const bodyObj = req.body || {};
+    const found = FREELANCER_CLAIM_PRICING_BODY_KEYS.filter((key) =>
+      Object.prototype.hasOwnProperty.call(bodyObj, key),
+    );
+    if (found.length) {
+      const err = new Error(
+        "لا يُسمح بإرسال حقول التسعير أو المبالغ عند إنشاء المطالبة. يتم التسعير من الإدارة.",
+      );
+      err.statusCode = 400;
+      err.publicCode = FINANCIAL_CLAIM_ERROR_CODES.PRICING_NOT_ALLOWED;
+      err.exposeToClient = true;
+      throw err;
+    }
+    return true;
+  }),
 ];
 
 const listSuperAdminFinancialClaimsValidators = [
@@ -57,14 +86,6 @@ const listSuperAdminFinancialClaimsValidators = [
     .optional()
     .isIn(["missing_completion_date", "not_due_yet", "within_payout_window", "late_after_payout_window", "paid"])
     .withMessage("payoutStatus غير صالح."),
-];
-
-const updateFinancialClaimStatusValidators = [
-  ...claimIdParam,
-  body("status")
-    .isIn(["pending", "accepted", "rejected", "frozen", "requires_in_person_review", "paid"])
-    .withMessage("status غير صالح."),
-  body("adminNote").optional({ nullable: true }).isString().trim().isLength({ max: 5000 }).withMessage("admin_note غير صالح."),
 ];
 
 const updateFinancialClaimPricingValidators = [

@@ -115,6 +115,38 @@ export function isRecommendedPantryBid(bidId, fairRanking) {
 }
 
 /** Backend source of truth; frontend display only. */
+export function attachableActivationCampaigns(campaigns = [], currentCampaignId = "") {
+  return (Array.isArray(campaigns) ? campaigns : []).filter((c) => {
+    if (currentCampaignId && String(c.id) === String(currentCampaignId)) return true;
+    const status = String(c.status || "");
+    return status === "draft" || status === "active";
+  });
+}
+
+export function attachableActivationWaves(campaigns = [], campaignId, currentWaveId = "") {
+  if (!campaignId) return [];
+  const campaign = (Array.isArray(campaigns) ? campaigns : []).find(
+    (c) => String(c.id) === String(campaignId),
+  );
+  return (campaign?.waves || []).filter((w) => {
+    if (currentWaveId && String(w.id) === String(currentWaveId)) return true;
+    const status = String(w.status || "");
+    return status === "draft" || status === "active";
+  });
+}
+
+export function formatActivationAttachmentBadge(article, campaigns = [], { isEn = false } = {}) {
+  if (!article?.activationCampaignId) return "";
+  const campaign = (Array.isArray(campaigns) ? campaigns : []).find(
+    (c) => String(c.id) === String(article.activationCampaignId),
+  );
+  const wave = (campaign?.waves || []).find((w) => String(w.id) === String(article.activationWaveId));
+  const campaignLabel = campaign?.name || (isEn ? `Campaign ${article.activationCampaignId}` : `حملة ${article.activationCampaignId}`);
+  if (!article.activationWaveId) return campaignLabel;
+  const waveLabel = wave?.name || (isEn ? `Wave ${article.activationWaveId}` : `موجة ${article.activationWaveId}`);
+  return `${campaignLabel} · ${waveLabel}`;
+}
+
 export function deriveArticleValueJodFromLevel(level) {
   const n = Number(level);
   if (!ARTICLE_LEVELS.includes(n)) return "";
@@ -135,6 +167,8 @@ export function getInitialMarketplaceArticleFormState(overrides = {}) {
     requiredBidCount: ARTICLE_MIN_REQUIRED_BIDS,
     minRequiredBidsAcknowledged: false,
     applicationDeadlineAt: "",
+    activationCampaignId: "",
+    activationWaveId: "",
     ...overrides,
   };
 }
@@ -156,6 +190,8 @@ export function articleToMarketplaceFormState(article) {
     applicationDeadlineAt: article.applicationDeadlineAt
       ? String(article.applicationDeadlineAt).slice(0, 16)
       : "",
+    activationCampaignId: article.activationCampaignId || "",
+    activationWaveId: article.activationWaveId || "",
   });
 }
 
@@ -211,5 +247,7 @@ export function normalizeMarketplaceArticlePayload(form) {
     requiredBidCount: Number(form.requiredBidCount),
     minRequiredBidsAcknowledged: Boolean(form.minRequiredBidsAcknowledged),
     applicationDeadlineAt: form.applicationDeadlineAt || null,
+    activationCampaignId: form.activationCampaignId ? Number(form.activationCampaignId) : null,
+    activationWaveId: form.activationWaveId ? Number(form.activationWaveId) : null,
   };
 }

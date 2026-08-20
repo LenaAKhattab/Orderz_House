@@ -28,6 +28,7 @@ import TakePoolOrderConfirmModal from "../../components/orders/TakePoolOrderConf
 import Pagination from "../../components/common/Pagination";
 import OpportunityHelpTrigger from "../onboarding/OpportunityHelpTrigger";
 import MarketplaceOrderListRow from "./MarketplaceOrderListRow";
+import PlanUpgradeRequiredCta from "../freelancer/PlanUpgradeRequiredCta";
 import {
   isPantryPoolOrder,
   mapPantryRequestToPoolOrder,
@@ -68,7 +69,7 @@ function PoolEmptyState({ title, subtitle }) {
 }
 
 function PlanFilterEmptyState() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   return (
     <div className="oh-orders-plan-empty oh-orders-plan-empty--neu fdash-surface-3d fdash-surface-3d--soft">
       <div className="oh-orders-plan-empty__icon" aria-hidden>
@@ -78,9 +79,11 @@ function PlanFilterEmptyState() {
         <h3 className="oh-orders-plan-empty__title">{t("orders.empty.planTitle")}</h3>
         <p className="oh-orders-plan-empty__subtitle">{t("orders.empty.planSubtitle")}</p>
       </div>
-      <Link to="/dashboard/freelancer/plans" className="oh-orders-plan-empty__cta btn btn-primary">
-        {t("orders.empty.upgradeCta")}
-      </Link>
+      <PlanUpgradeRequiredCta
+        reason="plan_locked"
+        isEn={locale === "en"}
+        className="oh-orders-plan-empty__cta-wrap"
+      />
     </div>
   );
 }

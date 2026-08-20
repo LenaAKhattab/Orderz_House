@@ -76,6 +76,8 @@ describe("canRoleAccessPath", () => {
     assert.equal(canRoleAccessPath("/dashboard/super-admin/onboarding", ROLE.SUPER_ADMIN), true);
     assert.equal(canRoleAccessPath("/dashboard/super-admin/onboarding", ROLE.ADMIN), false);
     assert.equal(canRoleAccessPath("/dashboard/super-admin/bid-credits", ROLE.SUPER_ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/freelancer-activation", ROLE.SUPER_ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/freelancer-activation", ROLE.ADMIN), false);
     assert.equal(canRoleAccessPath("/dashboard/super-admin/bid-credits", ROLE.ADMIN), false);
     assert.equal(canRoleAccessPath("/dashboard/super-admin/financial-center", ROLE.SUPER_ADMIN), true);
     assert.equal(canRoleAccessPath("/dashboard/super-admin/financial-center", ROLE.ADMIN), true);

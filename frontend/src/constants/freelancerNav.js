@@ -4,6 +4,7 @@ import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
 export const FREELANCER_NAV_MAIN = [
   { to: "/dashboard/freelancer", labelKey: "dashboard.nav.freelancer.home", icon: "dashboard", end: true },
   { to: "/dashboard/freelancer/orders", labelKey: "dashboard.nav.freelancer.availableRequests", icon: "orders" },
+  { to: "/dashboard/freelancer/articles", labelKey: "dashboard.nav.freelancer.articles", icon: "courses" },
   {
     to: "/dashboard/freelancer/institution-orders",
     labelKey: "dashboard.nav.freelancer.institutionOrders",
@@ -20,7 +21,6 @@ export const FREELANCER_NAV_MAIN = [
     badgeKey: "notifications",
   },
   { to: "/dashboard/freelancer/courses", labelKey: "dashboard.nav.freelancer.courses", icon: "courses" },
-  { to: "/dashboard/freelancer/articles", labelKey: "dashboard.nav.freelancer.articles", icon: "courses" },
   { to: "/dashboard/freelancer/getting-started", labelKey: "dashboard.nav.freelancer.gettingStarted", icon: "courses" },
   {
     to: "/dashboard/freelancer/feedback",

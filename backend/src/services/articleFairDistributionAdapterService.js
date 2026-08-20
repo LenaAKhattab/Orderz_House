@@ -19,6 +19,11 @@
  *   - Article assignment counts are not in orders.received_at
  *   Fallback: order-scoped category metrics when category_id exists; otherwise zeros,
  *   then submittedAt ASC, then applicationId ASC.
+ *
+ * Phase A4.3 overlay (engine on + activation-linked Mini Articles only):
+ * unique-trial fair distribution re-orders eligible candidates for Super Admin
+ * recommendation. Does not auto-assign. Engine off / unattached articles keep
+ * the lexicographic adapter order above.
  */
 
 const { pool } = require("../config/db");
@@ -28,11 +33,19 @@ const {
 } = require("./marketplaceEconomySettingsService");
 const fairDist = require("./marketplaceFairDistributionService");
 const {
+  getActivationEngineSettings,
+} = require("./freelancerActivationEngineService");
+const activationFair = require("./freelancerActivationFairDistributionService");
+const {
   isThresholdStatus,
 } = require("../constants/opportunityBidCollection");
 const {
   ARTICLE_APPLICATION_ERROR_CODES,
 } = require("../constants/marketplaceArticleApplications");
+
+function isMissingSchema(err) {
+  return err?.code === "42P01" || err?.code === "42703";
+}
 
 const ARTICLE_FAIR_RANKING_VERSION = "article_fair_adapter_v1";
 const ARTICLE_FAIR_RANKING_SOURCE = "fair_distribution_adapter";
@@ -76,7 +89,8 @@ function rankingReasonLabel(candidate, rank, { isEn = false } = {}) {
   return isEn ? "Queued by fair lexicographic order" : "في الطابور حسب ترتيب التوزيع العادل";
 }
 
-function toPublicCandidate(candidate, rank) {
+function toPublicCandidate(candidate, rank, { activationFairRankingApplied = false } = {}) {
+  const activation = activationFairRankingApplied ? candidate.activationFairness : null;
   return {
     rank,
     applicationId: String(candidate.applicationId),
@@ -86,14 +100,26 @@ function toPublicCandidate(candidate, rank) {
     status: candidate.status,
     submittedAt: candidate.submittedAt,
     eligible: candidate.eligible !== false,
-    rankingReason: rankingReasonLabel(candidate, rank, { isEn: false }),
-    rankingReasonEn: rankingReasonLabel(candidate, rank, { isEn: true }),
+    rankingReason: activation?.explanationAr || rankingReasonLabel(candidate, rank, { isEn: false }),
+    rankingReasonEn: activation?.explanationEn || rankingReasonLabel(candidate, rank, { isEn: true }),
     metrics: {
       recentEffectiveAssignmentsCount: candidate.recentEffectiveAssignmentsCount,
       appliedAndLostWaitingCount: candidate.appliedAndLostWaitingCount,
       activeWorkloadCount: candidate.activeWorkloadCount,
       lastEffectiveAssignmentAt: candidate.lastEffectiveAssignmentAt,
     },
+    ...(activation
+      ? {
+        activationFairness: {
+          score: activation.score,
+          rankGroup: activation.rankGroup,
+          reasonTags: activation.reasonTags || [],
+          explanationAr: activation.explanationAr,
+          explanationEn: activation.explanationEn,
+          metrics: activation.metrics,
+        },
+      }
+      : {}),
   };
 }
 
@@ -117,11 +143,57 @@ function buildNotEligiblePayload(progress, extra = {}) {
     rankingSource: ARTICLE_FAIR_RANKING_SOURCE,
     rankingVersion: ARTICLE_FAIR_RANKING_VERSION,
     autoAssigned: false,
+    activationFairRankingApplied: false,
     metricsNotes: ARTICLE_FAIR_METRICS_NOTES,
     messageAr: "سيظهر ترتيب التوزيع العادل بعد اكتمال العدد المطلوب.",
     messageEn: "Fair ranking appears after the required applicant count is reached.",
     ...extra,
   };
+}
+
+async function loadArticleForFairRanking(db, articleId) {
+  try {
+    const { rows } = await db.query(
+      `SELECT id, category_id, subcategory_id, current_bid_collection_round_id,
+              required_bid_count, status, activation_campaign_id
+         FROM marketplace_articles
+        WHERE id = $1`,
+      [Number(articleId)],
+    );
+    return rows[0] || null;
+  } catch (err) {
+    if (!isMissingSchema(err)) throw err;
+    const { rows } = await db.query(
+      `SELECT id, category_id, subcategory_id, current_bid_collection_round_id,
+              required_bid_count, status
+         FROM marketplace_articles
+        WHERE id = $1`,
+      [Number(articleId)],
+    );
+    return rows[0] || null;
+  }
+}
+
+async function maybeLoadActivationFairContext(db, article, built) {
+  if (!activationFair.shouldApplyActivationFairRanking({ engineEnabled: true, article })) {
+    return { applied: false };
+  }
+  try {
+    const settings = await getActivationEngineSettings(db);
+    if (!activationFair.shouldApplyActivationFairRanking({
+      engineEnabled: settings.engineEnabled,
+      article,
+    })) {
+      return { applied: false };
+    }
+    const contextByUserId = await activationFair.loadActivationFairContextMap(db, {
+      freelancerUserIds: built.map((c) => c.freelancerUserId),
+    });
+    return { applied: true, contextByUserId };
+  } catch (err) {
+    if (isMissingSchema(err)) return { applied: false };
+    throw err;
+  }
 }
 
 async function loadEligibleApplications(db, articleId, roundId) {
@@ -181,14 +253,7 @@ async function getArticleFairRanking(articleId, { client: db = pool } = {}) {
   const progress = await collectionService.getArticleBidCollectionProgress(articleId, {
     client: db,
   });
-  const { rows: articleRows } = await db.query(
-    `SELECT id, category_id, subcategory_id, current_bid_collection_round_id,
-            required_bid_count, status
-       FROM marketplace_articles
-      WHERE id = $1`,
-    [Number(articleId)],
-  );
-  const article = articleRows[0];
+  const article = await loadArticleForFairRanking(db, articleId);
   if (!article) {
     throw createAppError("Article not found.", 404, {
       exposeToClient: true,
@@ -248,8 +313,15 @@ async function getArticleFairRanking(articleId, { client: db = pool } = {}) {
     });
   }
 
-  const ranked = rankArticleFairCandidates(built);
-  const publicCandidates = ranked.map((c, i) => toPublicCandidate(c, i + 1));
+  const activation = await maybeLoadActivationFairContext(db, article, built);
+  const { ranked, activationFairRankingApplied } = activationFair.resolveArticleFairRankingOrder(
+    built,
+    rankArticleFairCandidates,
+    activation,
+  );
+  const publicCandidates = ranked.map((c, i) => toPublicCandidate(c, i + 1, {
+    activationFairRankingApplied,
+  }));
   const recommended = publicCandidates[0] || null;
 
   return {
@@ -263,6 +335,10 @@ async function getArticleFairRanking(articleId, { client: db = pool } = {}) {
     rankingSource: ARTICLE_FAIR_RANKING_SOURCE,
     rankingVersion: ARTICLE_FAIR_RANKING_VERSION,
     autoAssigned: false,
+    activationFairRankingApplied,
+    activationRankingVersion: activationFairRankingApplied
+      ? activationFair.ACTIVATION_FAIR_RANKING_VERSION
+      : null,
     metricsNotes: ARTICLE_FAIR_METRICS_NOTES,
   };
 }

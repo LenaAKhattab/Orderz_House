@@ -15,6 +15,7 @@ const BID_CREDIT_SOURCE_TYPES = Object.freeze([
   "package_purchase",
   "admin_distribution_pool",
   "pantry_application_refund",
+  "freelancer_activation_trial",
 ]);
 
 const BID_CREDIT_GRANT_STATUSES = Object.freeze([
@@ -42,6 +43,7 @@ const BID_CREDIT_LEDGER_EVENT_TYPES = Object.freeze([
   "BID_RESERVE_CONSUME",
   "PANTRY_APPLICATION_BID_CONSUME",
   "PANTRY_APPLICATION_BID_REFUND",
+  "FREELANCER_ACTIVATION_TRIAL_GRANT",
 ]);
 
 const BID_CREDIT_LEDGER_EVENT_TYPE_SET = new Set(BID_CREDIT_LEDGER_EVENT_TYPES);

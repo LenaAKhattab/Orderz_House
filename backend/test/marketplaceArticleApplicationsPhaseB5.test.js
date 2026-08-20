@@ -152,6 +152,10 @@ describe("Phase B5 service architecture — Bid wired fail-closed", () => {
 
   it("E2 reserves Article Bid on submit; B5 immediate charge deprecated", () => {
     assert.match(svc, /reserveBidCreditsFefo/);
+    assert.match(svc, /assertTrialEligibleForMiniArticleApply/);
+    const trialIdx = svc.indexOf("assertTrialEligibleForMiniArticleApply");
+    const reserveIdx = svc.indexOf("reserveBidCreditsFefo");
+    assert.ok(trialIdx >= 0 && reserveIdx > trialIdx);
     assert.match(svc, /assertArticleBidEconomyActive/);
     assert.doesNotMatch(svc, /chargeArticleApplicationBidCredit\(/);
     assert.match(bidSvc, /DEPRECATED_INACTIVE_E2_USE_RESERVATION/);

@@ -11,6 +11,7 @@ export default function FairSelectionOverrideDialog({
   open,
   isEn = false,
   submitting = false,
+  activationOverride = false,
   onCancel,
   onConfirm,
 }) {
@@ -39,6 +40,13 @@ export default function FairSelectionOverrideDialog({
             ? "This applicant is not rank #1 in fair ranking. Please explain why before continuing."
             : FAIR_OVERRIDE_REASON_HELPER_AR}
         </p>
+        {activationOverride ? (
+          <p data-testid="activation-fair-override-note" className="mb-3 mt-0 text-[0.85rem]" style={{ opacity: 0.8 }}>
+            {isEn
+              ? "This is an override of the preferred activation candidate. Selection is still allowed."
+              : "هذا تجاوز للمرشح المفضل للتفعيل، ويمكن المتابعة."}
+          </p>
+        ) : null}
         <textarea
           data-testid="fair-override-reason"
           className="mb-3 w-full"

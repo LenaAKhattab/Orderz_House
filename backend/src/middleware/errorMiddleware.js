@@ -9,6 +9,28 @@ const { defaultCodeForHttpStatus } = require("../constants/apiErrors");
 const { shouldExposeErrorDebug } = require("../config/env");
 const { captureException } = require("../config/posthog");
 
+const PUBLIC_META_MAX_KEYS = 24;
+const PUBLIC_META_FORBIDDEN = /secret|password|token|authorization|cookie|sql|stack|raw/i;
+
+function sanitizePublicErrorMeta(meta) {
+  if (!meta || typeof meta !== "object" || Array.isArray(meta)) return null;
+  const out = {};
+  const keys = Object.keys(meta).slice(0, PUBLIC_META_MAX_KEYS);
+  for (const key of keys) {
+    if (PUBLIC_META_FORBIDDEN.test(key)) continue;
+    const value = meta[key];
+    if (value == null) {
+      out[key] = value;
+      continue;
+    }
+    const t = typeof value;
+    if (t === "string" || t === "number" || t === "boolean") {
+      out[key] = t === "string" ? String(value).slice(0, 200) : value;
+    }
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 /**
  * When true, the error `message` is sent to the client (must already be safe, user-facing text).
  * When false/undefined and status is 5xx, a generic Arabic message and code are sent instead.
@@ -104,11 +126,13 @@ const errorMiddleware = (err, req, res, next) => {
 
   const payload = pickSafeClientPayload(err);
   const exposeDebug = shouldExposeErrorDebug();
+  const publicMeta = sanitizePublicErrorMeta(err.meta);
 
   res.status(payload.statusCode).json({
     success: false,
     message: payload.message,
     code: payload.code,
+    ...(publicMeta ? { meta: publicMeta } : {}),
     ...(err.fieldErrors && typeof err.fieldErrors === "object" ? { fieldErrors: err.fieldErrors } : {}),
     ...(exposeDebug
       ? {

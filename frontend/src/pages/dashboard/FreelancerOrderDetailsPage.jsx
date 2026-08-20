@@ -35,6 +35,8 @@ import OrderFilesCard from "../../components/orders/order-details/OrderFilesCard
 import { JodMoneyDisplay, JodOrderBudgetDisplay } from "../../components/money/JodMoneyDisplay";
 import { trackEvent } from "../../services/analytics";
 import { isPoolOrderLockedByPlan } from "../../utils/poolOrderPlanEligibility";
+import { planUpgradePropsFromPoolOrder } from "../../constants/planUpgradeCta";
+import PlanUpgradeRequiredCta from "../../components/freelancer/PlanUpgradeRequiredCta";
 import { isPoolOrderAvailable, poolFixedParticipationPending } from "../../utils/poolOrderParticipation";
 import { isPoolOrderTakenAsAssignment } from "../../utils/poolOrderTakeOutcome";
 import { Lock } from "lucide-react";
@@ -403,6 +405,12 @@ export default function FreelancerOrderDetailsPage() {
                   </div>
                   <OrderDescriptionCard label={t("orders.details.skillsLabel")} text={skillsLine} icon="skills" />
                   {renderFooter ? <div className="od-pool-primary-actions">{poolFooterButtons}</div> : null}
+                  {planLocked && isFreelancer ? (
+                    <PlanUpgradeRequiredCta
+                      {...(planUpgradePropsFromPoolOrder(order) || { reason: "plan_locked" })}
+                      isEn={locale === "en"}
+                    />
+                  ) : null}
                 </div>
               </div>
             </div>

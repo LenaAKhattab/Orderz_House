@@ -258,6 +258,229 @@ export const listPublishedMarketplaceArticlesRequest = async (params = {}) => {
   return data;
 };
 
+/** Phase A1 — Freelancer Activation Engine (flagged; default off). */
+export const getFreelancerActivationTrialRequest = async () => {
+  const { data } = await api.get("/freelancer/activation-trial");
+  return data;
+};
+
+export const activateFreelancerActivationTrialRequest = async () => {
+  const { data } = await api.post("/freelancer/activation-trial/activate");
+  return data;
+};
+
+export const getFreelancerActivationEarnedBalanceRequest = async () => {
+  const { data } = await api.get("/freelancer/activation/earned-balance");
+  return data;
+};
+
+export const getFreelancerActivationConversionRequest = async () => {
+  const { data } = await api.get("/freelancer/activation/conversion");
+  return data;
+};
+
+export const recordFreelancerActivationCtaViewedRequest = async () => {
+  const { data } = await api.post("/freelancer/activation/conversion/cta-viewed");
+  return data;
+};
+
+export const startFreelancerSilverCheckoutRequest = async () => {
+  const { data } = await api.post("/freelancer/activation/conversion/start-silver-checkout");
+  return data;
+};
+
+export const getSuperAdminFreelancerActivationTrialsRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/trials", { params });
+  return data;
+};
+
+export const getSuperAdminFreelancerActivationSettingsRequest = async () => {
+  const { data } = await api.get("/super-admin/freelancer-activation/settings");
+  return data;
+};
+
+export const updateSuperAdminFreelancerActivationSettingsRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/freelancer-activation/settings", payload);
+  return data;
+};
+
+export const getSuperAdminFreelancerActivationEarnedBalanceRequest = async () => {
+  const { data } = await api.get("/super-admin/freelancer-activation/earned-balance");
+  return data;
+};
+
+/** Phase A7.1/A7.2 — Super Admin Activation Engine KPIs (read-only). */
+export const getSuperAdminFreelancerActivationKpisRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/kpis", { params });
+  return data;
+};
+
+export const getSuperAdminWorkInventoryReserveRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/work-inventory-reserve", {
+    params,
+  });
+  return data;
+};
+
+export const getSuperAdminActivationArticleFundRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/article-fund", { params });
+  return data;
+};
+
+export const depositSuperAdminActivationArticleFundRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/freelancer-activation/article-fund/deposit", payload);
+  return data;
+};
+
+export const withdrawSuperAdminActivationArticleFundRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/freelancer-activation/article-fund/withdraw", payload);
+  return data;
+};
+
+export const listSuperAdminActivationPlanAllocationsRequest = async (campaignId) => {
+  const { data } = await api.get(
+    `/super-admin/freelancer-activation/campaigns/${campaignId}/plan-allocations`,
+  );
+  return data;
+};
+
+export const createSuperAdminActivationPlanAllocationRequest = async (campaignId, payload) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation/campaigns/${campaignId}/plan-allocations`,
+    payload,
+  );
+  return data;
+};
+
+export const patchSuperAdminActivationPlanAllocationRequest = async (allocationId, payload) => {
+  const { data } = await api.patch(
+    `/super-admin/freelancer-activation/plan-allocations/${allocationId}`,
+    payload,
+  );
+  return data;
+};
+
+export const listSuperAdminActivationArticleInventoryRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/article-inventory", { params });
+  return data;
+};
+
+export const createSuperAdminActivationArticleInventoryRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/freelancer-activation/article-inventory", payload);
+  return data;
+};
+
+export const patchSuperAdminActivationArticleInventoryRequest = async (id, payload) => {
+  const { data } = await api.patch(
+    `/super-admin/freelancer-activation/article-inventory/${id}`,
+    payload,
+  );
+  return data;
+};
+
+export const releaseSuperAdminActivationArticleInventoryRequest = async (id) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation/article-inventory/${id}/release`,
+  );
+  return data;
+};
+
+export const previewSuperAdminActivationArticleReleaseRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/article-release/preview", {
+    params,
+  });
+  return data;
+};
+
+export const runSuperAdminActivationArticleReleaseRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/freelancer-activation/article-release/run", payload);
+  return data;
+};
+
+export const listSuperAdminActivationArticleReleaseRunsRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/article-release/runs", {
+    params,
+  });
+  return data;
+};
+
+export const getSuperAdminActivationArticleReleaseRunRequest = async (id) => {
+  const { data } = await api.get(
+    `/super-admin/freelancer-activation/article-release/runs/${encodeURIComponent(id)}`,
+  );
+  return data;
+};
+
+export const listSuperAdminActivationLiveArticlesRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/live-articles", { params });
+  return data;
+};
+
+export const getSuperAdminActivationLiveArticleRequest = async (articleId) => {
+  const { data } = await api.get(
+    `/super-admin/freelancer-activation/live-articles/${encodeURIComponent(articleId)}`,
+  );
+  return data;
+};
+
+export const runSuperAdminActivationLiveArticleAutoAssignmentRequest = async (articleId) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation/live-articles/${encodeURIComponent(articleId)}/run-auto-assignment`,
+    {},
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const releaseAnotherSuperAdminActivationLiveArticleRequest = async (articleId, payload = {}) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation/live-articles/${encodeURIComponent(articleId)}/release-another`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const listSuperAdminActivationCampaignsRequest = async () => {
+  const { data } = await api.get("/super-admin/freelancer-activation/campaigns");
+  return data;
+};
+
+export const createSuperAdminActivationCampaignRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/freelancer-activation/campaigns", payload);
+  return data;
+};
+
+export const getSuperAdminActivationCampaignRequest = async (id) => {
+  const { data } = await api.get(`/super-admin/freelancer-activation/campaigns/${encodeURIComponent(id)}`);
+  return data;
+};
+
+export const pauseSuperAdminActivationCampaignRequest = async (id) => {
+  const { data } = await api.post(`/super-admin/freelancer-activation/campaigns/${encodeURIComponent(id)}/pause`);
+  return data;
+};
+
+export const resumeSuperAdminActivationCampaignRequest = async (id) => {
+  const { data } = await api.post(`/super-admin/freelancer-activation/campaigns/${encodeURIComponent(id)}/resume`);
+  return data;
+};
+
+export const emergencyStopSuperAdminActivationCampaignRequest = async (id) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation/campaigns/${encodeURIComponent(id)}/emergency-stop`,
+  );
+  return data;
+};
+
+export const createSuperAdminActivationWaveRequest = async (campaignId, payload) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation/campaigns/${encodeURIComponent(campaignId)}/waves`,
+    payload,
+  );
+  return data;
+};
+
 /** Phase 0B — OrderzHouse-side Bildazo writer link (no live Bildazo call). */
 export const getFreelancerBildazoAuthorLinkRequest = async () => {
   const { data } = await api.get("/freelancer/bildazo-author-link/me");
@@ -341,6 +564,22 @@ export const listAdminArticleApplicationsRequest = async (articleId, params = {}
   const { data } = await api.get(
     `/super-admin/marketplace-articles/${encodeURIComponent(articleId)}/applications`,
     { params },
+  );
+  return data;
+};
+
+export const getAdminArticleAutoAssignmentRequest = async (articleId) => {
+  const { data } = await api.get(
+    `/super-admin/marketplace-articles/${encodeURIComponent(articleId)}/auto-assignment`,
+  );
+  return data;
+};
+
+export const runAdminArticleAutoAssignmentRequest = async (articleId) => {
+  const { data } = await api.post(
+    `/super-admin/marketplace-articles/${encodeURIComponent(articleId)}/auto-assignment/run`,
+    {},
+    { timeout: 30000 },
   );
   return data;
 };
@@ -663,8 +902,14 @@ export const updateSubscriptionActivationFeeSettingsRequest = async (payload) =>
   return data;
 };
 
-export const activateSubscriptionCompanyRequest = async (id) => {
-  const { data } = await api.patch(`/admin/subscriptions/${id}/company-activate`);
+export const activateSubscriptionCompanyRequest = async (id, payload = {}) => {
+  const body =
+    payload && typeof payload === "object" && (payload.overrideReason || payload.kycOverrideReason)
+      ? {
+          overrideReason: String(payload.overrideReason || payload.kycOverrideReason || "").trim(),
+        }
+      : {};
+  const { data } = await api.patch(`/admin/subscriptions/${id}/company-activate`, body);
   return data;
 };
 
@@ -691,6 +936,69 @@ export const getMySubscriptionRequest = async () => {
 /** Freelancer self-service account activation — starts subscription period immediately. */
 export const selfActivateFreelancerAccountRequest = async () => {
   const { data } = await api.post("/freelancer/subscription/activate-account");
+  return data;
+};
+
+/** Phase A11 — Account activation KYC status (not marketplace article activation). */
+export const getFreelancerAccountActivationRequest = async () => {
+  const { data } = await api.get("/freelancer/account-activation");
+  return data;
+};
+
+export const submitFreelancerAccountActivationRequest = async ({
+  idFront,
+  idBack,
+  termsAccepted,
+  termsVersion,
+} = {}) => {
+  const fd = new FormData();
+  if (idFront) fd.append("idFront", idFront);
+  if (idBack) fd.append("idBack", idBack);
+  fd.append("termsAccepted", termsAccepted ? "true" : "false");
+  if (termsVersion) fd.append("termsVersion", String(termsVersion));
+  const { data } = await api.post("/freelancer/account-activation/submit", fd, {
+    headers: { "Content-Type": "multipart/form-data" },
+    timeout: 120000,
+  });
+  return data;
+};
+
+export const listSuperAdminFreelancerActivationRequestsRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation-requests", { params });
+  return data;
+};
+
+export const getSuperAdminFreelancerActivationRequestRequest = async (id) => {
+  const { data } = await api.get(
+    `/super-admin/freelancer-activation-requests/${encodeURIComponent(id)}`,
+  );
+  return data;
+};
+
+export const approveSuperAdminFreelancerActivationRequestRequest = async (id) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation-requests/${encodeURIComponent(id)}/approve`,
+  );
+  return data;
+};
+
+export const rejectSuperAdminFreelancerActivationRequestRequest = async (id, payload = {}) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation-requests/${encodeURIComponent(id)}/reject`,
+    payload,
+  );
+  return data;
+};
+
+export const fetchSuperAdminFreelancerActivationKycFileBlob = async (id, side) => {
+  const { data } = await api.get(
+    `/super-admin/freelancer-activation-requests/${encodeURIComponent(id)}/files/${encodeURIComponent(side)}`,
+    {
+      params: { disposition: "inline" },
+      responseType: "blob",
+      timeout: 60000,
+    },
+  );
   return data;
 };
 

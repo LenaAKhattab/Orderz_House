@@ -88,6 +88,22 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
   },
+  freelancerActivation: {
+    key: "freelancerActivation",
+    to: "/dashboard/super-admin/freelancer-activation",
+    labelKey: "dashboard.nav.superAdmin.freelancerActivation",
+    icon: "plans",
+    end: true,
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
+  },
+  freelancerActivationRequests: {
+    key: "freelancerActivationRequests",
+    to: "/dashboard/super-admin/freelancer-activation-requests",
+    labelKey: "dashboard.nav.superAdmin.freelancerActivationRequests",
+    icon: "subscription-activation",
+    end: true,
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
+  },
   bildazoAuthorLinks: {
     key: "bildazoAuthorLinks",
     to: "/dashboard/super-admin/bildazo-author-links",
@@ -216,7 +232,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "usersSubscriptions",
     labelKey: "dashboard.nav.sections.usersSubscriptions",
-    itemKeys: ["plans", "marketplacePlans", "marketplaceEconomy", "marketplaceArticles", "bildazoAuthorLinks", "subscriptions", "subscriptionActivation"],
+    itemKeys: ["plans", "marketplacePlans", "marketplaceEconomy", "marketplaceArticles", "freelancerActivation", "freelancerActivationRequests", "bildazoAuthorLinks", "subscriptions", "subscriptionActivation"],
   },
   {
     id: "contentTraining",
@@ -278,6 +294,12 @@ export function superAdminBreadcrumbKeys(pathname) {
   }
   if (pathname.includes("/bildazo-author-links")) {
     return [...base, "dashboard.breadcrumbs.bildazoAuthorLinks"];
+  }
+  if (pathname.includes("/freelancer-activation-requests")) {
+    return [...base, "dashboard.breadcrumbs.freelancerActivationRequests"];
+  }
+  if (pathname.includes("/freelancer-activation")) {
+    return [...base, "dashboard.breadcrumbs.freelancerActivation"];
   }
   if (pathname.includes("/marketplace-articles")) {
     return [...base, "dashboard.breadcrumbs.marketplaceArticles"];

@@ -18,6 +18,17 @@ const {
 const {
   marketplaceArticleSubmissionsSchemaReady,
 } = require("../utils/marketplaceArticleSubmissionsSchema");
+const {
+  MINI_ARTICLE_SUBMISSION_TERMS_VERSION,
+  MINI_ARTICLE_SUBMISSION_TERMS_SNAPSHOT_KEY,
+  MINI_ARTICLE_SUBMISSION_TERMS_COPY_AR,
+  isTruthyTermsAcceptance,
+  buildManuscriptTermsSnapshot,
+} = require("../constants/marketplaceArticleSubmissionTerms");
+
+function isMissingSchema(err) {
+  return err?.code === "42P01" || err?.code === "42703";
+}
 
 function rejectPasswordFields(body) {
   if (!body || typeof body !== "object") return;
@@ -39,6 +50,17 @@ function sanitizeText(raw, max) {
   return s.slice(0, max);
 }
 
+function mapSubmissionTerms(row) {
+  const acceptedAt = row.terms_accepted_at || null;
+  const version = row.terms_version || null;
+  return {
+    termsAccepted: Boolean(acceptedAt || version),
+    termsVersion: version,
+    termsAcceptedAt: acceptedAt,
+    termsSnapshotKey: row.terms_snapshot_key || null,
+  };
+}
+
 function mapSubmissionRow(row, { forAdmin = false } = {}) {
   if (!row) return null;
   return {
@@ -56,6 +78,61 @@ function mapSubmissionRow(row, { forAdmin = false } = {}) {
     createdAt: row.created_at || null,
     updatedAt: row.updated_at || null,
     canResubmit: ARTICLE_SUBMISSION_EDITABLE_STATUSES.includes(row.status),
+    ...mapSubmissionTerms(row),
+  };
+}
+
+function assertManuscriptTermsAccepted(value) {
+  if (isTruthyTermsAcceptance(value)) return true;
+  throw createAppError(
+    "يجب الموافقة على شروط ملكية ونشر المقال قبل التسليم.",
+    400,
+    {
+      exposeToClient: true,
+      publicCode: ARTICLE_SUBMISSION_ERROR_CODES.ARTICLE_SUBMISSION_TERMS_REQUIRED,
+    },
+  );
+}
+
+function sanitizeClientIp(raw) {
+  const s = String(raw || "").split(",")[0].trim();
+  if (!s) return null;
+  return s.slice(0, 64);
+}
+
+function sanitizeUserAgent(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return null;
+  return s.slice(0, 512);
+}
+
+function termsWriteValues({
+  freelancerUserId,
+  articleId,
+  applicationId,
+  requestMeta = {},
+  now = new Date(),
+} = {}) {
+  const acceptedAt = new Date(now).toISOString();
+  const snapshot = buildManuscriptTermsSnapshot({
+    freelancerUserId,
+    articleId,
+    applicationId,
+    acceptedAt,
+  });
+  return {
+    version: MINI_ARTICLE_SUBMISSION_TERMS_VERSION,
+    acceptedAt,
+    ip: sanitizeClientIp(requestMeta.ip),
+    userAgent: sanitizeUserAgent(requestMeta.userAgent),
+    snapshotKey: MINI_ARTICLE_SUBMISSION_TERMS_SNAPSHOT_KEY,
+    textSnapshot: JSON.stringify({
+      version: snapshot.version,
+      key: snapshot.key,
+      copyAr: MINI_ARTICLE_SUBMISSION_TERMS_COPY_AR,
+      legalReview: snapshot.legalReview,
+      acceptedAt: snapshot.acceptedAt,
+    }),
   };
 }
 
@@ -131,9 +208,13 @@ async function submitFinalArticleManuscript({
   title,
   content,
   body = {},
+  termsAccepted,
+  requestMeta = {},
+  client: existingClient = null,
 } = {}) {
   rejectPasswordFields(body);
-  if (!(await marketplaceArticleSubmissionsSchemaReady())) {
+  assertManuscriptTermsAccepted(termsAccepted ?? body.termsAccepted);
+  if (!(await marketplaceArticleSubmissionsSchemaReady(existingClient || undefined))) {
     throw createAppError("تسليم المقال النهائي غير جاهز.", 503, {
       exposeToClient: true,
       publicCode: ARTICLE_SUBMISSION_ERROR_CODES.ARTICLE_SUBMISSION_SCHEMA_NOT_READY,
@@ -141,9 +222,10 @@ async function submitFinalArticleManuscript({
   }
   const appId = Number(applicationId);
   const fid = Number(freelancerUserId);
-  const client = await pool.connect();
+  const ownsClient = !existingClient;
+  const client = existingClient || await pool.connect();
   try {
-    await client.query("BEGIN");
+    if (ownsClient) await client.query("BEGIN");
     const { rows: appRows } = await client.query(
       `SELECT a.*, art.required_word_count
          FROM marketplace_article_applications a
@@ -209,31 +291,98 @@ async function submitFinalArticleManuscript({
     }
 
     let row;
+    const terms = termsWriteValues({
+      freelancerUserId: fid,
+      articleId: application.article_id,
+      applicationId: appId,
+      requestMeta,
+    });
     if (existing) {
-      const { rows } = await client.query(
-        `UPDATE marketplace_article_submissions
-            SET title = $2,
-                content = $3,
-                status = 'submitted',
-                reviewer_notes = NULL,
-                submitted_at = NOW(),
-                reviewed_at = NULL,
-                reviewed_by_user_id = NULL,
-                updated_at = NOW()
-          WHERE application_id = $1
-          RETURNING *`,
-        [appId, cleanTitle, cleanContent],
-      );
-      row = rows[0];
+      try {
+        const { rows } = await client.query(
+          `UPDATE marketplace_article_submissions
+              SET title = $2,
+                  content = $3,
+                  status = 'submitted',
+                  reviewer_notes = NULL,
+                  submitted_at = NOW(),
+                  reviewed_at = NULL,
+                  reviewed_by_user_id = NULL,
+                  terms_version = $4,
+                  terms_accepted_at = $5::timestamptz,
+                  terms_accepted_ip = $6,
+                  terms_accepted_user_agent = $7,
+                  terms_snapshot_key = $8,
+                  terms_text_snapshot = $9,
+                  updated_at = NOW()
+            WHERE application_id = $1
+            RETURNING *`,
+          [
+            appId,
+            cleanTitle,
+            cleanContent,
+            terms.version,
+            terms.acceptedAt,
+            terms.ip,
+            terms.userAgent,
+            terms.snapshotKey,
+            terms.textSnapshot,
+          ],
+        );
+        row = rows[0];
+      } catch (err) {
+        if (!isMissingSchema(err)) throw err;
+        const { rows } = await client.query(
+          `UPDATE marketplace_article_submissions
+              SET title = $2,
+                  content = $3,
+                  status = 'submitted',
+                  reviewer_notes = NULL,
+                  submitted_at = NOW(),
+                  reviewed_at = NULL,
+                  reviewed_by_user_id = NULL,
+                  updated_at = NOW()
+            WHERE application_id = $1
+            RETURNING *`,
+          [appId, cleanTitle, cleanContent],
+        );
+        row = rows[0];
+      }
     } else {
-      const { rows } = await client.query(
-        `INSERT INTO marketplace_article_submissions (
-           application_id, article_id, freelancer_user_id, title, content, status
-         ) VALUES ($1,$2,$3,$4,$5,'submitted')
-         RETURNING *`,
-        [appId, application.article_id, fid, cleanTitle, cleanContent],
-      );
-      row = rows[0];
+      try {
+        const { rows } = await client.query(
+          `INSERT INTO marketplace_article_submissions (
+             application_id, article_id, freelancer_user_id, title, content, status,
+             terms_version, terms_accepted_at, terms_accepted_ip, terms_accepted_user_agent,
+             terms_snapshot_key, terms_text_snapshot
+           ) VALUES ($1,$2,$3,$4,$5,'submitted',$6,$7::timestamptz,$8,$9,$10,$11)
+           RETURNING *`,
+          [
+            appId,
+            application.article_id,
+            fid,
+            cleanTitle,
+            cleanContent,
+            terms.version,
+            terms.acceptedAt,
+            terms.ip,
+            terms.userAgent,
+            terms.snapshotKey,
+            terms.textSnapshot,
+          ],
+        );
+        row = rows[0];
+      } catch (err) {
+        if (!isMissingSchema(err)) throw err;
+        const { rows } = await client.query(
+          `INSERT INTO marketplace_article_submissions (
+             application_id, article_id, freelancer_user_id, title, content, status
+           ) VALUES ($1,$2,$3,$4,$5,'submitted')
+           RETURNING *`,
+          [appId, application.article_id, fid, cleanTitle, cleanContent],
+        );
+        row = rows[0];
+      }
     }
 
     if (String(application.status) !== "submitted" && String(application.status) !== "approved") {
@@ -246,17 +395,19 @@ async function submitFinalArticleManuscript({
       );
     }
 
-    await client.query("COMMIT");
+    if (ownsClient) await client.query("COMMIT");
     return { submission: mapSubmissionRow(row), created: !existing };
   } catch (err) {
-    try {
-      await client.query("ROLLBACK");
-    } catch {
-      /* ignore */
+    if (ownsClient) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
     }
     throw err;
   } finally {
-    client.release();
+    if (ownsClient) client.release();
   }
 }
 
@@ -339,4 +490,6 @@ module.exports = {
   markSubmissionApproved,
   submitFinalArticleManuscript,
   requestArticleSubmissionRevision,
+  assertManuscriptTermsAccepted,
+  termsWriteValues,
 };

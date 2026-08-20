@@ -102,6 +102,15 @@ const CLAIM_STATUS_OPTIONS = [
   { value: "paid", label: "مدفوعة" },
 ];
 
+/** Statuses editable via generic PATCH — paid requires payment ledger modal. */
+const CLAIM_STATUS_CHANGE_OPTIONS = [
+  { value: "pending", label: "قيد المراجعة" },
+  { value: "accepted", label: "مقبولة" },
+  { value: "rejected", label: "مرفوضة" },
+  { value: "frozen", label: "مجمدة" },
+  { value: "requires_in_person_review", label: "تحتاج مراجعة حضورية" },
+];
+
 const PAYOUT_STATUS_OPTIONS = [
   { value: "", label: "كل حالات الاستحقاق" },
   { value: "missing_completion_date", label: "بدون تاريخ إنجاز" },
@@ -173,6 +182,14 @@ export default function SuperAdminFinancialClaimsPage() {
 
   const applyStatus = async () => {
     if (actionBusy || !statusModal.claim || !statusModal.status) return;
+    if (String(statusModal.status) === "paid") {
+      push({
+        type: "error",
+        title: "تعذر تحديث الحالة",
+        message: "لا يمكن تعليم المطالبة كمدفوعة من هنا. يجب تسجيل دفعة مالية.",
+      });
+      return;
+    }
     if (
       (statusModal.status === "rejected" || statusModal.status === "frozen") &&
       String(statusModal.adminNote || "").trim().length < 3
@@ -348,7 +365,17 @@ export default function SuperAdminFinancialClaimsPage() {
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    onClick={() => setStatusModal({ open: true, claim, status: claim.status, adminNote: claim.adminNote || "" })}
+                    onClick={() =>
+                      setStatusModal({
+                        open: true,
+                        claim,
+                        status:
+                          claim.status === "paid"
+                            ? "accepted"
+                            : claim.status || "pending",
+                        adminNote: claim.adminNote || "",
+                      })
+                    }
                   >
                     تغيير الحالة
                   </button>
@@ -439,12 +466,15 @@ export default function SuperAdminFinancialClaimsPage() {
       >
         <div className="dash-ui-modal__form">
           <select className="input" value={statusModal.status} onChange={(e) => setStatusModal((p) => ({ ...p, status: e.target.value }))}>
-            {CLAIM_STATUS_OPTIONS.filter((opt) => opt.value).map((opt) => (
+            {CLAIM_STATUS_CHANGE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
             ))}
           </select>
+          <p className="text-sm text-slate-500 m-0">
+            لتعليم المطالبة كمدفوعة استخدم زر تسجيل دفعة مالية (لا يمكن تعيين «مدفوعة» من هنا).
+          </p>
           <textarea
             className="textarea"
             placeholder="ملاحظة الإدارة (مطلوبة عند الرفض أو التجميد)..."

@@ -61,6 +61,18 @@ function toIdString(value) {
   return String(value);
 }
 
+function attachActivationBudgetAdminFields(mapped, row) {
+  if (!mapped) return mapped;
+  const campaignService = require("./freelancerActivationCampaignService");
+  mapped.activationBudgetState = campaignService.deriveActivationBudgetState(row);
+  mapped.activationBudgetAmountJod =
+    row.activation_budget_amount_jod != null ? String(row.activation_budget_amount_jod) : null;
+  mapped.activationBudgetReservedAt = row.activation_budget_reserved_at || null;
+  mapped.activationBudgetReleasedAt = row.activation_budget_released_at || null;
+  mapped.activationBudgetUsedAt = row.activation_budget_used_at || null;
+  return mapped;
+}
+
 function mapApplicationRow(row) {
   if (!row) return null;
   return {
@@ -95,6 +107,8 @@ function mapApplicationRow(row) {
     freelancerAccountId: row.freelancer_account_id || null,
     freelancerFirstName: row.freelancer_first_name || null,
     freelancerFamilyName: row.freelancer_family_name || null,
+    activationCampaignId: row.activation_campaign_id != null ? toIdString(row.activation_campaign_id) : null,
+    activationWaveId: row.activation_wave_id != null ? toIdString(row.activation_wave_id) : null,
     articleTitle: row.article_title || null,
     articleStatus: row.article_status || null,
     // Safe economic status only (no ledger/grant IDs in UI payloads)
@@ -235,6 +249,59 @@ async function releaseApplicationReservation(client, applicationRow, reason, now
   }
 }
 
+async function consumeApplicationReservation(client, applicationRow, reason, now = new Date(), actorUserId = null) {
+  const reservationId =
+    applicationRow.bid_reservation_id != null ? Number(applicationRow.bid_reservation_id) : null;
+  if (!reservationId) return null;
+  try {
+    return await reservationService.consumeBidCreditReservation({
+      client,
+      reservationId,
+      reason,
+      now,
+      actorUserId,
+    });
+  } catch (err) {
+    if (err?.publicCode === "BID_RESERVATION_ALREADY_CONSUMED") {
+      return { idempotent: true, consumed: false };
+    }
+    if (err?.publicCode === "BID_RESERVATION_NOT_FOUND") return null;
+    if (err?.publicCode === "ARTICLE_RESERVATION_NOT_ACTIVE") return null;
+    throw err;
+  }
+}
+
+/**
+ * Phase A10 — apply Bid outcome policy (consume vs release) without changing FEFO.
+ */
+async function settleApplicationReservationByPolicy(
+  client,
+  applicationRow,
+  opportunity,
+  event,
+  { now = new Date(), actorUserId = null } = {},
+) {
+  const bidOutcomePolicy = require("../constants/marketplaceBidApplicationOutcomePolicy");
+  const decision = bidOutcomePolicy.decideBidReservationOutcome(opportunity, event);
+  if (decision.action === "consume") {
+    const result = await consumeApplicationReservation(
+      client,
+      applicationRow,
+      decision.reason,
+      now,
+      actorUserId,
+    );
+    return { ...decision, result, bidRefunded: 0 };
+  }
+  const result = await releaseApplicationReservation(
+    client,
+    applicationRow,
+    decision.reason,
+    now,
+  );
+  return { ...decision, result, bidRefunded: result ? 1 : 0 };
+}
+
 async function cancelPendingApplicationsForArticle(articleId, client) {
   if (!(await articleApplicationsSchemaReady(client))) return 0;
   const { rows: pending } = await client.query(
@@ -243,9 +310,20 @@ async function cancelPendingApplicationsForArticle(articleId, client) {
       FOR UPDATE`,
     [Number(articleId)],
   );
+  let article = null;
+  try {
+    const { rows } = await client.query(`SELECT * FROM marketplace_articles WHERE id = $1`, [
+      Number(articleId),
+    ]);
+    article = rows[0] || null;
+  } catch {
+    article = null;
+  }
   for (const app of pending) {
     // eslint-disable-next-line no-await-in-loop
-    await releaseApplicationReservation(client, app, "article_cancelled", new Date());
+    await settleApplicationReservationByPolicy(client, app, article || {}, "article_cancelled", {
+      now: new Date(),
+    });
   }
   const { rowCount } = await client.query(
     `UPDATE marketplace_article_applications
@@ -254,6 +332,42 @@ async function cancelPendingApplicationsForArticle(articleId, client) {
             updated_at = NOW()
       WHERE article_id = $1
         AND status = 'pending'`,
+    [Number(articleId)],
+  );
+  return rowCount || 0;
+}
+
+async function cancelAssignedApplicationsForCancelledArticle(articleId, client) {
+  if (!(await articleApplicationsSchemaReady(client))) return 0;
+  const { rows: assigned } = await client.query(
+    `SELECT * FROM marketplace_article_applications
+      WHERE article_id = $1
+        AND status IN ('selected', 'revision_requested')
+      FOR UPDATE`,
+    [Number(articleId)],
+  );
+  const campaignService = require("./freelancerActivationCampaignService");
+  for (const app of assigned) {
+    const article = { id: articleId, activation_campaign_id: app.activation_campaign_id, activation_wave_id: app.activation_wave_id };
+    // eslint-disable-next-line no-await-in-loop
+    await campaignService.releaseActivationBudgetIfReserved({
+      client,
+      article,
+      application: app,
+      reason: "article_cancelled",
+    });
+    // eslint-disable-next-line no-await-in-loop
+    await settleApplicationReservationByPolicy(client, app, article || {}, "article_cancelled", {
+      now: new Date(),
+    });
+  }
+  const { rowCount } = await client.query(
+    `UPDATE marketplace_article_applications
+        SET status = 'cancelled',
+            cancelled_at = COALESCE(cancelled_at, NOW()),
+            updated_at = NOW()
+      WHERE article_id = $1
+        AND status IN ('selected', 'revision_requested')`,
     [Number(articleId)],
   );
   return rowCount || 0;
@@ -386,6 +500,7 @@ async function getApplicationById(applicationId, { forAdmin = false } = {}) {
   );
   const mapped = mapApplicationRow(rows[0]);
   if (!mapped) return null;
+  if (forAdmin) attachActivationBudgetAdminFields(mapped, rows[0]);
   const record = await articlePublishService.getPublishRecordForApplication(id);
   mapped.bildazoPublish = forAdmin
     ? articlePublishService.mapAdminPublishRecord(record)
@@ -434,6 +549,15 @@ async function submitArticleApplication({
     const collectionService = require("./opportunityBidCollectionService");
     const round = await collectionService.assertArticleIntakeOpen(client, article);
 
+    const activationEngine = require("./freelancerActivationEngineService");
+    await activationEngine.assertTrialEligibleForMiniArticleApply({
+      client,
+      freelancerUserId: fid,
+      now,
+      surface: "mini_article",
+      ignoreUsageLimits: true,
+    });
+
     const { membership, accessLevel, cycleId } = await resolveUsableMembershipContext(client, fid);
     assertMembershipAccessLevel(accessLevel, article.article_level);
 
@@ -459,8 +583,23 @@ async function submitArticleApplication({
       };
     }
 
+    await activationEngine.assertTrialEligibleForMiniArticleApply({
+      client,
+      freelancerUserId: fid,
+      now,
+      surface: "mini_article",
+      ignoreUsageLimits: false,
+    });
+
+    const campaignService = require("./freelancerActivationCampaignService");
+    await campaignService.assertActivationOpportunityOpen({ article, now, client });
+
     const idem = buildArticleApplicationIdempotencyKey(aid, fid, round?.id);
     let inserted;
+    const activationCampaignId =
+      article.activation_campaign_id != null ? Number(article.activation_campaign_id) : null;
+    const activationWaveId =
+      article.activation_wave_id != null ? Number(article.activation_wave_id) : null;
     const insertParams = [
       aid,
       fid,
@@ -474,6 +613,8 @@ async function submitArticleApplication({
       message,
       idem,
       round?.id || null,
+      activationCampaignId,
+      activationWaveId,
     ];
     try {
       const { rows } = await client.query(
@@ -482,13 +623,14 @@ async function submitArticleApplication({
            article_level_snapshot, article_value_jod_snapshot,
            required_word_count_snapshot, required_references_count_snapshot,
            membership_article_access_level_snapshot,
-           status, proposal_message, idempotency_key, collection_round_id
+           status, proposal_message, idempotency_key, collection_round_id,
+           activation_campaign_id, activation_wave_id
          ) VALUES (
            $1,$2,$3,$4,
            $5,$6::numeric,
            $7,$8,
            $9,
-           'pending',$10,$11,$12
+           'pending',$10,$11,$12,$13,$14
          )
          RETURNING *`,
         insertParams,
@@ -496,24 +638,46 @@ async function submitArticleApplication({
       inserted = rows[0];
     } catch (err) {
       if (err?.code === "42703") {
-        const { rows } = await client.query(
-          `INSERT INTO marketplace_article_applications (
-             article_id, freelancer_user_id, membership_id, cycle_id,
-             article_level_snapshot, article_value_jod_snapshot,
-             required_word_count_snapshot, required_references_count_snapshot,
-             membership_article_access_level_snapshot,
-             status, proposal_message, idempotency_key
-           ) VALUES (
-             $1,$2,$3,$4,
-             $5,$6::numeric,
-             $7,$8,
-             $9,
-             'pending',$10,$11
-           )
-           RETURNING *`,
-          insertParams.slice(0, 11),
-        );
-        inserted = rows[0];
+        try {
+          const { rows } = await client.query(
+            `INSERT INTO marketplace_article_applications (
+               article_id, freelancer_user_id, membership_id, cycle_id,
+               article_level_snapshot, article_value_jod_snapshot,
+               required_word_count_snapshot, required_references_count_snapshot,
+               membership_article_access_level_snapshot,
+               status, proposal_message, idempotency_key, collection_round_id
+             ) VALUES (
+               $1,$2,$3,$4,
+               $5,$6::numeric,
+               $7,$8,
+               $9,
+               'pending',$10,$11,$12
+             )
+             RETURNING *`,
+            insertParams.slice(0, 12),
+          );
+          inserted = rows[0];
+        } catch (inner) {
+          if (inner?.code !== "42703") throw inner;
+          const { rows } = await client.query(
+            `INSERT INTO marketplace_article_applications (
+               article_id, freelancer_user_id, membership_id, cycle_id,
+               article_level_snapshot, article_value_jod_snapshot,
+               required_word_count_snapshot, required_references_count_snapshot,
+               membership_article_access_level_snapshot,
+               status, proposal_message, idempotency_key
+             ) VALUES (
+               $1,$2,$3,$4,
+               $5,$6::numeric,
+               $7,$8,
+               $9,
+               'pending',$10,$11
+             )
+             RETURNING *`,
+            insertParams.slice(0, 11),
+          );
+          inserted = rows[0];
+        }
       } else if (err && (err.code === "23505" || /unique/i.test(String(err.message || "")))) {
         const raced = await findApplicationByArticleFreelancer(client, aid, fid, round?.id);
         if (raced) {
@@ -535,8 +699,10 @@ async function submitArticleApplication({
             noSelectionRefundPolicy: ARTICLE_APPLICATION_NO_SELECTION_REFUND,
           };
         }
+        throw err;
+      } else {
+        throw err;
       }
-      throw err;
     }
 
     // E2: reserve Bids (not immediate B5 consume). Final approval consumes reservation.
@@ -612,7 +778,27 @@ async function submitArticleApplication({
       now,
     });
 
+    try {
+      await activationEngine.markTrialFirstBidIfNeeded(client, {
+        freelancerUserId: fid,
+        now,
+      });
+    } catch {
+      /* trial counters must not fail Bid reserve */
+    }
+
     if (ownClient) await client.query("COMMIT");
+
+    let autoAssignment = null;
+    try {
+      const autoAssign = require("./freelancerActivationAutoAssignmentService");
+      autoAssignment = await autoAssign.maybeTriggerAfterApplication({
+        articleId: aid,
+        applicationId: Number(inserted.id),
+      });
+    } catch {
+      autoAssignment = { triggered: false, reason: "hook_error" };
+    }
 
     try {
       await notificationService.createIfNotExists(
@@ -666,6 +852,7 @@ async function submitArticleApplication({
       editAdditionalBidCost: ARTICLE_APPLICATION_EDIT_ADDITIONAL_BID_COST,
       withdrawalRefundPolicy: ARTICLE_APPLICATION_WITHDRAWAL_REFUND,
       noSelectionRefundPolicy: ARTICLE_APPLICATION_NO_SELECTION_REFUND,
+      autoAssignment,
     };
   } catch (err) {
     if (ownClient) {
@@ -768,7 +955,11 @@ async function withdrawArticleApplication({ applicationId, freelancerUserId } = 
         publicCode: ARTICLE_APPLICATION_ERROR_CODES.ARTICLE_APPLICATION_NOT_WITHDRAWABLE,
       });
     }
-    await releaseApplicationReservation(client, row, "withdrawn", new Date());
+    const articleRow = await loadArticleForUpdate(client, row.article_id);
+    await settleApplicationReservationByPolicy(client, row, articleRow || {}, "withdrawn", {
+      now: new Date(),
+      actorUserId: fid,
+    });
     const { rows: updated } = await client.query(
       `UPDATE marketplace_article_applications
           SET status = 'withdrawn',
@@ -783,8 +974,9 @@ async function withdrawArticleApplication({ applicationId, freelancerUserId } = 
       application: mapApplicationRow(updated[0]),
       alreadyWithdrawn: false,
       bidRefunded: 0,
-      bidReservationReleased: true,
-      withdrawalRefundPolicy: "RESERVATION_RELEASE",
+      bidReservationReleased: false,
+      bidReservationConsumed: true,
+      withdrawalRefundPolicy: ARTICLE_APPLICATION_WITHDRAWAL_REFUND,
     };
   } catch (err) {
     try {
@@ -861,7 +1053,7 @@ async function listApplicationsForArticleAdmin(articleId, { limit = 100, offset 
       LIMIT $2 OFFSET $3`,
     [Number(articleId), lim, off],
   );
-  const mapped = rows.map(mapApplicationRow);
+  const mapped = rows.map((row) => attachActivationBudgetAdminFields(mapApplicationRow(row), row));
   const records = await articlePublishService.listPublishRecordsForArticle(articleId);
   const withPublish = articlePublishService.attachPublishToApplications(mapped, records, {
     forAdmin: true,
@@ -872,13 +1064,20 @@ async function listApplicationsForArticleAdmin(articleId, { limit = 100, offset 
   });
 }
 
-async function selectArticleApplication({ applicationId, actorUserId, overrideReason } = {}) {
+async function selectArticleApplication({
+  applicationId,
+  actorUserId,
+  overrideReason,
+  client: externalClient = null,
+  selectionSource = null,
+} = {}) {
   await assertSchemaAndEngine();
   const id = Number(applicationId);
   const actor = Number(actorUserId);
-  const client = await pool.connect();
+  const ownClient = !externalClient;
+  const client = externalClient || (await pool.connect());
   try {
-    await client.query("BEGIN");
+    if (ownClient) await client.query("BEGIN");
     const lockedApp = await client.query(
       `SELECT * FROM marketplace_article_applications WHERE id = $1`,
       [id],
@@ -910,7 +1109,7 @@ async function selectArticleApplication({ applicationId, actorUserId, overrideRe
       });
     }
     if (row.status === "selected") {
-      await client.query("COMMIT");
+      if (ownClient) await client.query("COMMIT");
       return { application: mapApplicationRow(row), alreadySelected: true };
     }
     if (row.status !== "pending") {
@@ -928,6 +1127,8 @@ async function selectArticleApplication({ applicationId, actorUserId, overrideRe
     }
     const collectionService = require("./opportunityBidCollectionService");
     await collectionService.assertArticleSelectionAllowed(client, article);
+    const campaignService = require("./freelancerActivationCampaignService");
+    await campaignService.assertActivationOpportunityOpen({ article, now: new Date(), client });
     const fairAdapter = require("./articleFairDistributionAdapterService");
     fairAdapter.assertApplicationInCurrentRound(article, row);
     const ranking = await fairAdapter.getArticleFairRanking(row.article_id, { client });
@@ -945,6 +1146,12 @@ async function selectArticleApplication({ applicationId, actorUserId, overrideRe
       publicCode: ARTICLE_APPLICATION_ERROR_CODES.ARTICLE_FAIR_SELECTION_OVERRIDE_REASON_REQUIRED,
     });
 
+    await campaignService.reserveActivationBudgetForAssignment({
+      client,
+      article,
+      application: row,
+      actorUserId: actor,
+    });
 
     const economy = await economyService.getArticleEconomyConfig(client);
     const bidCost = economyService.resolveBidCostForCampaign(article, economy);
@@ -954,7 +1161,7 @@ async function selectArticleApplication({ applicationId, actorUserId, overrideRe
     try {
       const memCtx = await resolveUsableMembershipContext(client, row.freelancer_user_id);
       liveTier = String(memCtx.membership?.plan?.tierCode || memCtx.membership?.tierCode || tierCode).toLowerCase();
-      const snapshot = economyService.buildEconomicSnapshot({
+      let snapshot = economyService.buildEconomicSnapshot({
         tierCode: liveTier,
         membershipId: memCtx.membership?.id || row.membership_id,
         planId: memCtx.membership?.marketplacePlanId || memCtx.membership?.plan?.id,
@@ -962,6 +1169,24 @@ async function selectArticleApplication({ applicationId, actorUserId, overrideRe
         bidCost,
         now: new Date(),
       });
+      try {
+        const articleOps = require("./freelancerActivationArticleOpsService");
+        const override = articleOps.buildActivationArticleEconomicOverride(article);
+        if (override) {
+          snapshot = {
+            ...snapshot,
+            grossJod: override.grossJod,
+            companySharePercent: override.companySharePercent,
+            companyShareJod: override.companyShareJod,
+            reviewerFeeJod: override.reviewerFeeJod,
+            writerNetJod: override.writerNetJod,
+            activationPlanTierCode: override.activationPlanTierCode,
+            amountSource: override.amountSource,
+          };
+        }
+      } catch {
+        /* keep economy snapshot */
+      }
       const { rows: updated } = await client.query(
         `UPDATE marketplace_article_applications
             SET status = 'selected',
@@ -976,7 +1201,7 @@ async function selectArticleApplication({ applicationId, actorUserId, overrideRe
         [id, Number.isInteger(actor) ? actor : null, JSON.stringify(snapshot)],
       );
 
-      // Reject other pending apps and release their Bid reservations.
+      // Reject other pending apps and settle Bid reservations (A10: real → consume on loss).
       const { rows: losers } = await client.query(
         `SELECT * FROM marketplace_article_applications
           WHERE article_id = $1 AND id <> $2 AND status = 'pending'
@@ -985,7 +1210,10 @@ async function selectArticleApplication({ applicationId, actorUserId, overrideRe
       );
       for (const loser of losers) {
         // eslint-disable-next-line no-await-in-loop
-        await releaseApplicationReservation(client, loser, "not_selected", new Date());
+        await settleApplicationReservationByPolicy(client, loser, article, "lost_selection", {
+          now: new Date(),
+          actorUserId: actor,
+        });
       }
       await client.query(
         `UPDATE marketplace_article_applications
@@ -1000,7 +1228,7 @@ async function selectArticleApplication({ applicationId, actorUserId, overrideRe
       );
 
       await collectionService.markRoundAssigned(client, article.current_bid_collection_round_id);
-      await client.query("COMMIT");
+      if (ownClient) await client.query("COMMIT");
 
       try {
         await notificationService.createIfNotExists(
@@ -1014,6 +1242,7 @@ async function selectArticleApplication({ applicationId, actorUserId, overrideRe
             entityId: id,
             link: `/dashboard/freelancer/articles/${row.article_id}`,
             priority: "medium",
+            metadata: selectionSource ? { selectionSource } : undefined,
           },
           `article_application_selected:${id}`,
         );
@@ -1027,6 +1256,7 @@ async function selectArticleApplication({ applicationId, actorUserId, overrideRe
         economicSnapshot: snapshot,
         snapshotPoint: "ASSIGNMENT_SELECTION",
         overrideRecorded: Boolean(override.overrideRecorded),
+        selectionSource: selectionSource || null,
       };
     } catch (snapErr) {
       // Fall through to legacy select if pre-154 columns missing
@@ -1058,7 +1288,7 @@ async function selectArticleApplication({ applicationId, actorUserId, overrideRe
     );
 
     await collectionService.markRoundAssigned(client, article.current_bid_collection_round_id);
-    await client.query("COMMIT");
+    if (ownClient) await client.query("COMMIT");
 
     try {
       await notificationService.createIfNotExists(
@@ -1072,6 +1302,7 @@ async function selectArticleApplication({ applicationId, actorUserId, overrideRe
           entityId: id,
           link: `/dashboard/freelancer/articles/${row.article_id}`,
           priority: "medium",
+          metadata: selectionSource ? { selectionSource } : undefined,
         },
         `article_application_selected:${id}`,
       );
@@ -1083,16 +1314,19 @@ async function selectArticleApplication({ applicationId, actorUserId, overrideRe
       application: mapApplicationRow(updated[0]),
       alreadySelected: false,
       overrideRecorded: Boolean(override.overrideRecorded),
+      selectionSource: selectionSource || null,
     };
   } catch (err) {
-    try {
-      await client.query("ROLLBACK");
-    } catch {
-      /* ignore */
+    if (ownClient) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
     }
     throw err;
   } finally {
-    client.release();
+    if (ownClient) client.release();
   }
 }
 
@@ -1123,14 +1357,36 @@ async function rejectArticleApplication({ applicationId, actorUserId } = {}) {
         rejectionRefundPolicy: ARTICLE_APPLICATION_REJECTION_REFUND,
       };
     }
-    if (row.status !== "pending") {
+    if (
+      row.status !== "pending"
+      && row.status !== "selected"
+      && row.status !== "revision_requested"
+    ) {
       throw createAppError("Application is not rejectable.", 409, {
         exposeToClient: true,
         publicCode: ARTICLE_APPLICATION_ERROR_CODES.ARTICLE_APPLICATION_NOT_SELECTABLE,
       });
     }
-    // E2: release reserved Bids on rejection (automatic; no manual refund).
-    await releaseApplicationReservation(client, row, "rejected", new Date());
+    if (row.status === "selected" || row.status === "revision_requested") {
+      const article = await loadArticleForUpdate(client, row.article_id);
+      const campaignService = require("./freelancerActivationCampaignService");
+      await campaignService.releaseActivationBudgetIfReserved({
+        client,
+        article,
+        application: row,
+        actorUserId: actor,
+        reason: "rejected",
+      });
+    }
+    // E2/A10: settle reserved Bids on rejection via outcome policy (real → consume).
+    const articleForPolicy = await loadArticleForUpdate(client, row.article_id);
+    const settle = await settleApplicationReservationByPolicy(
+      client,
+      row,
+      articleForPolicy || {},
+      "rejected",
+      { now: new Date(), actorUserId: actor },
+    );
     const { rows: updated } = await client.query(
       `UPDATE marketplace_article_applications
           SET status = 'rejected',
@@ -1143,6 +1399,7 @@ async function rejectArticleApplication({ applicationId, actorUserId } = {}) {
     );
     await client.query("COMMIT");
 
+    const rejectedWithoutRefund = settle.action === "consume";
     try {
       await notificationService.createIfNotExists(
         {
@@ -1150,7 +1407,9 @@ async function rejectArticleApplication({ applicationId, actorUserId } = {}) {
           recipientRole: "freelancer",
           type: "article_application_rejected",
           title: "تحديث طلب المقال",
-          message: "لم يتم اختيار طلبك لهذا المقال. تم تحرير العروض المحجوزة.",
+          message: rejectedWithoutRefund
+            ? "لم يتم اختيار طلبك لهذا المقال."
+            : settle.publicMessageAr || "تم إغلاق الطلب وإعادة رصيد التقديم.",
           entityType: "marketplace_article_application",
           entityId: id,
           link: `/dashboard/freelancer/articles/${row.article_id}`,
@@ -1165,9 +1424,11 @@ async function rejectArticleApplication({ applicationId, actorUserId } = {}) {
     return {
       application: mapApplicationRow(updated[0]),
       alreadyRejected: false,
-      bidRefunded: 0,
-      bidReservationReleased: true,
-      rejectionRefundPolicy: "RESERVATION_RELEASE",
+      bidRefunded: settle.bidRefunded || 0,
+      bidReservationReleased: settle.action === "release",
+      bidReservationConsumed: settle.action === "consume",
+      rejectionRefundPolicy: ARTICLE_APPLICATION_REJECTION_REFUND,
+      bidOutcomeReason: settle.reason,
     };
   } catch (err) {
     try {
@@ -1227,6 +1488,49 @@ async function getArticleApplicationEligibility(articleId, freelancerUserId) {
       bildazoAuthorLink,
       ...baseEcon,
     };
+  }
+
+  try {
+    const activationEngine = require("./freelancerActivationEngineService");
+    const gate = await activationEngine.evaluateTrialMiniArticleApplyGate({
+      freelancerUserId,
+      now: new Date(),
+      surface: "mini_article",
+      ignoreUsageLimits: false,
+    });
+    if (!gate.skipped && !gate.allowed) {
+      return {
+        eligible: false,
+        reason: gate.code,
+        articleLevel: Number(row.article_level),
+        membershipArticleAccessLevel: null,
+        bildazoAuthorLink,
+        trial: gate.meta || null,
+        ...baseEcon,
+      };
+    }
+  } catch {
+    /* engine schema missing → existing eligibility */
+  }
+
+  try {
+    const campaignService = require("./freelancerActivationCampaignService");
+    const opportunity = await campaignService.evaluateActivationOpportunityGate({
+      article: row,
+      now: new Date(),
+    });
+    if (!opportunity.skipped && !opportunity.allowed) {
+      return {
+        eligible: false,
+        reason: opportunity.code,
+        articleLevel: Number(row.article_level),
+        membershipArticleAccessLevel: null,
+        bildazoAuthorLink,
+        ...baseEcon,
+      };
+    }
+  } catch {
+    /* campaign schema missing → existing eligibility */
   }
 
   let membershipAccess = null;
@@ -1344,6 +1648,22 @@ async function finalizeArticleApplicationApproval({ applicationId, actorUserId, 
       now,
     });
     await client.query("COMMIT");
+    try {
+      const appRow = await client.query(
+        `SELECT freelancer_user_id FROM marketplace_article_applications WHERE id = $1`,
+        [Number(applicationId)],
+      );
+      const uid = Number(appRow.rows[0]?.freelancer_user_id);
+      if (uid) {
+        const activationEngine = require("./freelancerActivationEngineService");
+        await activationEngine.syncTrialWorkCountsAfterApproval({
+          freelancerUserId: uid,
+          now,
+        });
+      }
+    } catch {
+      /* counters must never undo settlement */
+    }
     let bildazoPublish = null;
     try {
       const published = await articlePublishService.publishAfterArticleAcceptance({
@@ -1376,6 +1696,7 @@ module.exports = {
   articleHasApplications,
   assertArticleMetadataMutable,
   cancelPendingApplicationsForArticle,
+  cancelAssignedApplicationsForCancelledArticle,
   submitArticleApplication,
   editArticleApplication,
   withdrawArticleApplication,
@@ -1386,6 +1707,8 @@ module.exports = {
   rejectArticleApplication,
   finalizeArticleApplicationApproval,
   releaseApplicationReservation,
+  consumeApplicationReservation,
+  settleApplicationReservationByPolicy,
   getArticleApplicationEligibility,
   getApplicationById,
   findApplicationByArticleFreelancer,

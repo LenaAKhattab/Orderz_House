@@ -1676,6 +1676,16 @@ async function expireStaleItems(externalClient = null) {
         rowsRounds,
         inTransaction: Boolean(externalClient),
       });
+      try {
+        // A10: training/simulation expiry Bid policy hook (no Bid reservations on fake_orders today).
+        const simRefund = require("./marketplaceSimulationBidRefundService");
+        await simRefund.onTrainingPoolOpportunityExpired({ client });
+      } catch (hookErr) {
+        console.warn(
+          "[fakeOrders.expireStaleItems] simulation Bid refund hook skipped:",
+          hookErr?.message || hookErr,
+        );
+      }
     }
     return { rowsItems, rowsOrders, rowsRounds };
   } catch (e) {

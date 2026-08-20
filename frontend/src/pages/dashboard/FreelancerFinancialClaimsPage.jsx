@@ -325,10 +325,21 @@ export default function FreelancerFinancialClaimsPage() {
       });
       await reload();
     } catch (e) {
+      const code = e?.response?.data?.code || e?.response?.data?.publicCode || e?.publicCode || "";
+      let message = e?.response?.data?.message || e?.message;
+      if (code === "FREELANCER_KYC_REQUIRED") {
+        message = t(`${fc}.errors.kycRequired`);
+      } else if (code === "FREELANCER_KYC_PENDING_REVIEW") {
+        message = t(`${fc}.errors.kycPending`);
+      } else if (code === "FREELANCER_KYC_REJECTED") {
+        message = t(`${fc}.errors.kycRejected`);
+      } else if (code === "FINANCIAL_CLAIM_PRICING_NOT_ALLOWED") {
+        message = t(`${fc}.errors.pricingNotAllowed`);
+      }
       push({
         type: "error",
         title: t(`${fc}.createErrorTitle`),
-        message: e?.response?.data?.message || e?.message,
+        message,
       });
     } finally {
       submittingRef.current = false;
