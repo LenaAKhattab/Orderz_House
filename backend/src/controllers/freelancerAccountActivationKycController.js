@@ -92,7 +92,11 @@ const rejectActivationRequest = async (req, res, next) => {
 
 const downloadActivationRequestFile = async (req, res, next) => {
   try {
-    const side = String(req.params.side || "").toLowerCase() === "back" ? "back" : "front";
+    const sideRaw = String(req.params.side || "").toLowerCase();
+    if (sideRaw !== "front" && sideRaw !== "back") {
+      return res.status(400).json({ success: false, message: "side must be front or back" });
+    }
+    const side = sideRaw;
     const out = await service.prepareAdminKycFileDownload({
       requestId: req.params.id,
       side,
