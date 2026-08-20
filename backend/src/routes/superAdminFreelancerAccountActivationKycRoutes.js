@@ -18,7 +18,7 @@ router.post(
   controller.rejectActivationRequest,
 );
 router.get(
-  "/freelancer-activation-requests/:id/files/:side(front|back)",
+  "/freelancer-activation-requests/:id/files/:side",
   ...guard,
   controller.downloadActivationRequestFile,
 );
