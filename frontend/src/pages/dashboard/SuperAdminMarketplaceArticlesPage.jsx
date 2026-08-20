@@ -16,6 +16,7 @@ import {
   getSubcategoriesRequest,
   listAdminMarketplaceArticlesRequest,
   updateMarketplaceArticleRequest,
+  listSuperAdminActivationCampaignsRequest,
 } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import MarketplaceArticleCard from "../../admin/marketplaceArticles/MarketplaceArticleCard";
@@ -31,6 +32,7 @@ export default function SuperAdminMarketplaceArticlesPage() {
   const [articles, setArticles] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
+  const [activationCampaigns, setActivationCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -41,13 +43,17 @@ export default function SuperAdminMarketplaceArticlesPage() {
     setError("");
     setLoading(true);
     try {
-      const [articlesRes, catsRes] = await Promise.all([
+      const [articlesRes, catsRes, campaignsRes] = await Promise.all([
         listAdminMarketplaceArticlesRequest({}),
         getCategoriesRequest(),
+        listSuperAdminActivationCampaignsRequest().catch(() => null),
       ]);
       setArticles(Array.isArray(articlesRes?.data?.articles) ? articlesRes.data.articles : []);
       const cats = catsRes?.data?.categories || catsRes?.data || catsRes?.categories || [];
       setCategories(Array.isArray(cats) ? cats : []);
+      const campaignList =
+        campaignsRes?.data?.campaigns || campaignsRes?.campaigns || [];
+      setActivationCampaigns(Array.isArray(campaignList) ? campaignList : []);
     } catch (err) {
       setError(getSafeApiErrorMessage(err) || (isEn ? "Failed to load articles." : "تعذر تحميل المقالات."));
       setArticles([]);
@@ -149,6 +155,7 @@ export default function SuperAdminMarketplaceArticlesPage() {
                 article={article}
                 isEn={isEn}
                 busy={submitting}
+                activationCampaigns={activationCampaigns}
                 onEdit={async (a) => {
                   setEditArticle(a);
                   await loadSubcategories(a.categoryId || a.category?.id);
@@ -164,6 +171,7 @@ export default function SuperAdminMarketplaceArticlesPage() {
         mode="create"
         categories={categories}
         subcategories={subcategories}
+        activationCampaigns={activationCampaigns}
         isEn={isEn}
         submitting={submitting}
         onClose={() => setCreateOpen(false)}
@@ -177,6 +185,7 @@ export default function SuperAdminMarketplaceArticlesPage() {
         initialArticle={editArticle}
         categories={categories}
         subcategories={subcategories}
+        activationCampaigns={activationCampaigns}
         isEn={isEn}
         submitting={submitting}
         onClose={() => setEditArticle(null)}

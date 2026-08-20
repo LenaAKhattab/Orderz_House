@@ -245,11 +245,87 @@ function uploadWebsiteContentImageBuffer({ buffer, mimetype, originalname, userI
   });
 }
 
+/**
+ * Phase A11 — KYC ID images. Prefer Cloudinary authenticated assets; fall back to private local disk.
+ * Returns fileKey only (never rely on public URLs for KYC).
+ */
+async function uploadKycIdBuffer({
+  buffer,
+  mimetype,
+  originalname,
+  userId,
+  side = "front",
+} = {}) {
+  const fs = require("node:fs");
+  const fsp = require("node:fs/promises");
+  const uid = String(userId || "me").replace(/\s+/g, "");
+  const sideSafe = String(side || "front").replace(/[^\w]+/g, "") || "front";
+  const ext = path.extname(String(originalname || "")) || ".jpg";
+  const base = toSafeBase(path.basename(String(originalname || sideSafe), ext));
+
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_URL;
+  if (cloudName) {
+    try {
+      const cloudinary = getCloudinary();
+      const folder = `orderz/kyc/${uid}`;
+      const publicId = `${folder}/${sideSafe}-${Date.now()}-${base}`.replace(/\s+/g, "_");
+      const result = await new Promise((resolve, reject) => {
+        const upload = cloudinary.uploader.upload_stream(
+          {
+            resource_type: "image",
+            type: "authenticated",
+            folder,
+            public_id: publicId,
+            overwrite: false,
+            use_filename: false,
+          },
+          (err, res) => {
+            if (err || !res) return reject(err || new Error("Cloudinary KYC upload failed."));
+            resolve(res);
+          },
+        );
+        upload.on("error", reject);
+        upload.end(buffer);
+      });
+      return {
+        fileKey: `cloudinary:${result.public_id}`,
+        publicId: result.public_id,
+        storage: "cloudinary_authenticated",
+        bytes: Number(result.bytes || buffer.length || 0),
+        format: result.format || null,
+        mimetype,
+        originalname,
+      };
+    } catch (err) {
+      // Fall through to local private disk when Cloudinary is misconfigured in non-prod.
+      if (String(process.env.NODE_ENV || "").toLowerCase() === "production") throw err;
+    }
+  }
+
+  const root = path.join(__dirname, "..", "..", "uploads", "kyc", uid);
+  await fsp.mkdir(root, { recursive: true });
+  const filename = `${sideSafe}-${Date.now()}-${base}${ext}`.replace(/\s+/g, "_");
+  const abs = path.join(root, filename);
+  await fsp.writeFile(abs, buffer);
+  const relKey = path.join("kyc", uid, filename).split(path.sep).join("/");
+  return {
+    fileKey: `local:${relKey}`,
+    publicId: null,
+    storage: "local_private",
+    bytes: Number(buffer.length || 0),
+    format: null,
+    mimetype,
+    originalname,
+    absPath: abs,
+  };
+}
+
 module.exports = {
   uploadBuffer,
   uploadAvatarBuffer,
   uploadAdPromoImageBuffer,
   uploadCourseDocumentBuffer,
   uploadWebsiteContentImageBuffer,
+  uploadKycIdBuffer,
   destroyByPublicId,
 };

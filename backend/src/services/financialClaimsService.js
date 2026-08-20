@@ -27,6 +27,119 @@ const PAYOUT_STATUSES = Object.freeze({
   PAID: "paid",
 });
 
+/** Phase F1 — statuses allowed on generic PATCH (paid requires payment ledger). */
+const CLAIM_STATUS_PATCH_ALLOWED = Object.freeze([
+  CLAIM_STATUSES.PENDING,
+  CLAIM_STATUSES.ACCEPTED,
+  CLAIM_STATUSES.REJECTED,
+  CLAIM_STATUSES.FROZEN,
+  CLAIM_STATUSES.REQUIRES_IN_PERSON_REVIEW,
+]);
+
+const FINANCIAL_CLAIM_ERROR_CODES = Object.freeze({
+  PAYMENT_LEDGER_REQUIRED: "FINANCIAL_CLAIM_PAYMENT_LEDGER_REQUIRED",
+  PRICING_NOT_ALLOWED: "FINANCIAL_CLAIM_PRICING_NOT_ALLOWED",
+});
+
+/** Freelancer-supplied pricing / amount fields rejected on claim create (F1). */
+const FREELANCER_CLAIM_PRICING_BODY_KEYS = Object.freeze([
+  "totalPriceSnapshot",
+  "userPercentageSnapshot",
+  "companyPercentageSnapshot",
+  "userAmountSnapshot",
+  "companyAmountSnapshot",
+  "freelancerAmount",
+  "platformAmount",
+  "commissionAmount",
+  "platformCommissionPct",
+  "freelancerSharePct",
+  "amount",
+  "price",
+  "total",
+  "subtotal",
+  "net",
+  "gross",
+  "paidAmount",
+  "remainingAmount",
+]);
+
+function assertNoFreelancerPricingFields(payload) {
+  if (!payload || typeof payload !== "object") return;
+  const found = FREELANCER_CLAIM_PRICING_BODY_KEYS.filter((key) =>
+    Object.prototype.hasOwnProperty.call(payload, key),
+  );
+  if (found.length === 0) return;
+  const err = new Error(
+    "لا يُسمح بإرسال حقول التسعير أو المبالغ عند إنشاء المطالبة. يتم التسعير من الإدارة.",
+  );
+  err.statusCode = 400;
+  err.publicCode = FINANCIAL_CLAIM_ERROR_CODES.PRICING_NOT_ALLOWED;
+  err.exposeToClient = true;
+  err.details = { rejectedFields: found };
+  throw err;
+}
+
+/**
+ * Phase F1 — require company_approved (A11 KYC) before new portal claims.
+ */
+async function assertFreelancerCompanyApprovedForClaims(runner, freelancerUserId) {
+  const {
+    ACCOUNT_ACTIVATION_KYC_ERROR_CODES,
+  } = require("../constants/freelancerAccountActivationKyc");
+  const uid = Number(freelancerUserId);
+  let activationStatus = null;
+  try {
+    const { rows } = await runner.query(
+      `SELECT activation_status
+         FROM freelancer_subscriptions
+        WHERE freelancer_user_id = $1 AND is_current = TRUE
+        ORDER BY id DESC
+        LIMIT 1`,
+      [uid],
+    );
+    activationStatus = String(rows[0]?.activation_status || "").toLowerCase() || null;
+  } catch (err) {
+    if (err?.code !== "42P01" && err?.code !== "42703") throw err;
+  }
+
+  if (activationStatus === "company_approved") return;
+
+  let kycStatus = null;
+  try {
+    const { rows: kycRows } = await runner.query(
+      `SELECT status
+         FROM freelancer_account_activation_requests
+        WHERE freelancer_user_id = $1
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1`,
+      [uid],
+    );
+    kycStatus = kycRows[0] ? String(kycRows[0].status) : null;
+  } catch (err) {
+    if (err?.code !== "42P01" && err?.code !== "42703") throw err;
+  }
+
+  if (kycStatus === "pending_review" || activationStatus === "company_pending") {
+    const err = new Error("طلب التفعيل قيد المراجعة.");
+    err.statusCode = 403;
+    err.publicCode = ACCOUNT_ACTIVATION_KYC_ERROR_CODES.FREELANCER_KYC_PENDING_REVIEW;
+    err.exposeToClient = true;
+    throw err;
+  }
+  if (kycStatus === "rejected" || activationStatus === "company_rejected") {
+    const err = new Error("تم رفض طلب التفعيل. يرجى مراجعة السبب وإعادة الإرسال.");
+    err.statusCode = 403;
+    err.publicCode = ACCOUNT_ACTIVATION_KYC_ERROR_CODES.FREELANCER_KYC_REJECTED;
+    err.exposeToClient = true;
+    throw err;
+  }
+  const err = new Error("لا يمكن إنشاء مطالبة مالية قبل تفعيل الحساب.");
+  err.statusCode = 403;
+  err.publicCode = ACCOUNT_ACTIVATION_KYC_ERROR_CODES.FREELANCER_KYC_REQUIRED;
+  err.exposeToClient = true;
+  throw err;
+}
+
 function normalizeCategories(raw) {
   if (!raw) return [];
   if (Array.isArray(raw)) {
@@ -264,6 +377,9 @@ async function createFinancialClaimForFreelancer({ freelancerUserId, payload }) 
   try {
     await client.query("BEGIN");
 
+    assertNoFreelancerPricingFields(payload);
+    await assertFreelancerCompanyApprovedForClaims(client, freelancerUserId);
+
     // E1: Starter Marketplace Membership blocks withdrawal / financial claim cash-out path.
     try {
       const { rows: memRows } = await client.query(
@@ -311,9 +427,10 @@ async function createFinancialClaimForFreelancer({ freelancerUserId, payload }) 
     let actualCompletionDate = toIsoDateOnly(payload.actualCompletionDate);
     let projectId = payload.projectId ? Number(payload.projectId) : null;
     const freelancerNote = payload.freelancerNote ? String(payload.freelancerNote).trim() : null;
-    let totalPriceSnapshot = parseNumeric(payload.totalPriceSnapshot);
-    let userPercentageSnapshot = parseNumeric(payload.userPercentageSnapshot);
-    let companyPercentageSnapshot = parseNumeric(payload.companyPercentageSnapshot);
+    // F1: pricing never from freelancer body — trusted order budget only for done_project.
+    let totalPriceSnapshot = null;
+    const userPercentageSnapshot = null;
+    const companyPercentageSnapshot = null;
 
     if (mode === "done_project") {
       if (!projectId || !Number.isInteger(projectId)) {
@@ -362,7 +479,7 @@ async function createFinancialClaimForFreelancer({ freelancerUserId, payload }) 
           : actualExecutionMinutes > 0
             ? actualExecutionMinutes
             : durationValueUnitToMinutes(order.duration_value, order.duration_unit);
-      totalPriceSnapshot = order.budget != null ? Number(order.budget) : totalPriceSnapshot;
+      totalPriceSnapshot = order.budget != null ? Number(order.budget) : null;
     } else {
       projectId = null;
     }
@@ -403,25 +520,10 @@ async function createFinancialClaimForFreelancer({ freelancerUserId, payload }) 
       throw err;
     }
 
-    if (userPercentageSnapshot != null || companyPercentageSnapshot != null) {
-      if (userPercentageSnapshot == null || companyPercentageSnapshot == null) {
-        const err = new Error("يجب توفير نسبتي المستقل والشركة معاً.");
-        err.statusCode = 400;
-        throw err;
-      }
-      if (round2(userPercentageSnapshot + companyPercentageSnapshot) !== 100) {
-        const err = new Error("مجموع نسبتي المستقل والشركة يجب أن يساوي 100.");
-        err.statusCode = 400;
-        throw err;
-      }
-    }
-
     const total = totalPriceSnapshot != null ? round2(totalPriceSnapshot) : null;
-    const userAmountSnapshot =
-      total != null && userPercentageSnapshot != null ? round2((total * userPercentageSnapshot) / 100) : null;
-    const companyAmountSnapshot =
-      total != null && companyPercentageSnapshot != null ? round2((total * companyPercentageSnapshot) / 100) : null;
-    const remainingAmount = userAmountSnapshot != null ? userAmountSnapshot : 0;
+    const userAmountSnapshot = null;
+    const companyAmountSnapshot = null;
+    const remainingAmount = 0;
     const payoutStatus = computePayoutStatus({
       actualCompletionDate,
       paidAmount: 0,
@@ -620,6 +722,25 @@ async function getClaimDetailsForSuperAdmin({ claimId }) {
 async function updateClaimStatusBySuperAdmin({ actorUserId, claimId, newStatus, adminNote = null }) {
   const nextStatus = String(newStatus || "").trim();
   const note = adminNote ? String(adminNote).trim() : "";
+
+  // F1 P0: paid only via POST /freelancer-payments (payment ledger + allocations).
+  if (nextStatus === CLAIM_STATUSES.PAID) {
+    const err = new Error(
+      "لا يمكن تعليم المطالبة كمدفوعة من هنا. يجب تسجيل دفعة مالية.",
+    );
+    err.statusCode = 409;
+    err.publicCode = FINANCIAL_CLAIM_ERROR_CODES.PAYMENT_LEDGER_REQUIRED;
+    err.exposeToClient = true;
+    throw err;
+  }
+
+  if (!CLAIM_STATUS_PATCH_ALLOWED.includes(nextStatus)) {
+    const err = new Error("status غير صالح.");
+    err.statusCode = 400;
+    err.exposeToClient = true;
+    throw err;
+  }
+
   const requiresNote = [
     CLAIM_STATUSES.REJECTED,
     CLAIM_STATUSES.FROZEN,
@@ -653,16 +774,11 @@ async function updateClaimStatusBySuperAdmin({ actorUserId, claimId, newStatus, 
       }
     }
 
-    let payoutStatus = row.payout_status;
-    if (nextStatus === CLAIM_STATUSES.PAID) {
-      payoutStatus = PAYOUT_STATUSES.PAID;
-    } else {
-      payoutStatus = computePayoutStatus({
-        actualCompletionDate: row.actual_completion_date,
-        paidAmount: row.paid_amount,
-        remainingAmount: row.remaining_amount,
-      });
-    }
+    const payoutStatus = computePayoutStatus({
+      actualCompletionDate: row.actual_completion_date,
+      paidAmount: row.paid_amount,
+      remainingAmount: row.remaining_amount,
+    });
 
     const { rows } = await client.query(
       `UPDATE financial_claims
@@ -995,8 +1111,13 @@ async function listClaimsForFreelancerDashboard(freelancerUserId) {
 module.exports = {
   CLAIM_STATUSES,
   PAYOUT_STATUSES,
+  CLAIM_STATUS_PATCH_ALLOWED,
+  FINANCIAL_CLAIM_ERROR_CODES,
+  FREELANCER_CLAIM_PRICING_BODY_KEYS,
   computePayoutStatus,
   computePayoutWindow,
+  assertNoFreelancerPricingFields,
+  assertFreelancerCompanyApprovedForClaims,
   listDoneProjectsForFreelancer,
   listClaimsForFreelancer,
   listClaimsForFreelancerDashboard,

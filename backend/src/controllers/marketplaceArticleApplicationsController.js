@@ -135,10 +135,40 @@ async function listForArticleAdmin(req, res, next) {
     } catch {
       fairRanking = fairAdapter.buildNotEligiblePayload(bidCollection);
     }
+    let autoAssignment = null;
+    try {
+      const autoAssign = require("../services/freelancerActivationAutoAssignmentService");
+      autoAssignment = await autoAssign.getLatestAutoAssignmentForArticle(req.params.id);
+    } catch {
+      autoAssignment = { schemaReady: false, run: null, candidates: [], autoAssignedBadge: false };
+    }
     return res.status(200).json({
       success: true,
-      data: { applications, count, bidCollection, fairRanking },
+      data: { applications, count, bidCollection, fairRanking, autoAssignment },
     });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function runAutoAssignment(req, res, next) {
+  try {
+    const autoAssign = require("../services/freelancerActivationAutoAssignmentService");
+    const data = await autoAssign.runAutoAssignmentForArticle(req.params.id, {
+      runType: "manual_admin_run",
+      actorUserId: req.user?.id || null,
+    });
+    return res.status(data.autoAssigned ? 200 : 200).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function getAutoAssignment(req, res, next) {
+  try {
+    const autoAssign = require("../services/freelancerActivationAutoAssignmentService");
+    const data = await autoAssign.getLatestAutoAssignmentForArticle(req.params.id);
+    return res.status(200).json({ success: true, data });
   } catch (err) {
     return next(err);
   }
@@ -178,6 +208,11 @@ async function submitFinalManuscript(req, res, next) {
       title: req.body?.title,
       content: req.body?.content,
       body: req.body || {},
+      termsAccepted: req.body?.termsAccepted,
+      requestMeta: {
+        ip: req.ip || null,
+        userAgent: req.get?.("user-agent") || req.headers?.["user-agent"] || null,
+      },
     });
     return res.status(result.created ? 201 : 200).json({ success: true, data: result });
   } catch (err) {
@@ -272,6 +307,8 @@ module.exports = {
   getMineForArticle,
   listForArticleAdmin,
   getFairRanking,
+  getAutoAssignment,
+  runAutoAssignment,
   select,
   reject,
   finalizeApproval,

@@ -437,15 +437,29 @@ async function closeArticleRoundMinimumNotMet(client, round, { now = new Date() 
   }
 
   let released = 0;
+  const bidOutcomePolicy = require("../constants/marketplaceBidApplicationOutcomePolicy");
+  let articleRow = null;
+  try {
+    const { rows: aRows } = await client.query(`SELECT * FROM marketplace_articles WHERE id = $1`, [
+      round.opportunity_id,
+    ]);
+    articleRow = aRows[0] || null;
+  } catch {
+    articleRow = null;
+  }
   for (const app of applications) {
     const reservationId = app.bid_reservation_id != null ? Number(app.bid_reservation_id) : null;
     if (!reservationId) continue;
+    const decision = bidOutcomePolicy.decideBidReservationOutcome(
+      articleRow || {},
+      "minimum_not_met",
+    );
     try {
       // eslint-disable-next-line no-await-in-loop
       await reservationService.releaseBidCreditReservation({
         client,
         reservationId,
-        reason: "article_minimum_not_met",
+        reason: decision.reason,
         now,
         restoreDailyLimit: true,
       });

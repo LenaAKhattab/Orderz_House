@@ -25,6 +25,7 @@ describe("Phase 1C.4A admin operational routes", () => {
     const saOnly = [
       "/dashboard/super-admin/training-packages",
       "/dashboard/super-admin/marketplace-articles",
+      "/dashboard/super-admin/freelancer-activation",
       "/dashboard/super-admin/bid-credits",
       "/dashboard/super-admin/onboarding",
       "/dashboard/super-admin/marketplace-economy",

@@ -4,7 +4,8 @@
  * Owner-approved Bid policy (wired when engines ON + Migration 150 applied):
  *   ARTICLE_APPLICATION_BID_COST = 1 (flat; first valid application only)
  *   no-selection refund 100% when Article closes/cancels with no Freelancer selected
- *   withdrawal / rejection / loser refund = NONE
+ *   withdrawal / rejection / loser refund = NONE (A10: consume reserved Bid on real opportunities)
+ *   simulation/training expiry may refund with internal reason simulation_closed_refund
  *
  * Access level is eligibility only — not pricing.
  * Activation requires BOTH article_applications_enabled AND bid_credits_enabled (fail-closed).

@@ -20,6 +20,8 @@ import {
 import {
   isPoolOrderLockedByPlan,
 } from "../../utils/poolOrderPlanEligibility";
+import { planUpgradePropsFromPoolOrder } from "../../constants/planUpgradeCta";
+import PlanUpgradeRequiredCta from "../freelancer/PlanUpgradeRequiredCta";
 import { isPoolFixedApplicationOrder, poolFixedParticipationPending } from "../../utils/poolOrderParticipation";
 
 function LockIcon() {
@@ -277,6 +279,19 @@ function MarketplaceOrderRow({
               isGuest={isGuest}
               guestLoginLabel={guestLoginLabel}
             />
+          ) : null}
+          {planLockedForUser && !isGuest ? (
+            <div
+              className="oh-order-row__upgrade-cta"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              <PlanUpgradeRequiredCta
+                {...(planUpgradePropsFromPoolOrder(order) || { reason: "plan_locked" })}
+                isEn={locale === "en"}
+                compact
+              />
+            </div>
           ) : null}
         </div>
       </div>

@@ -175,7 +175,26 @@ export default function AdminSubscriptionsActivationPage() {
     setError("");
     setSubmittingId(String(subscriptionId));
     try {
-      await activateSubscriptionCompanyRequest(subscriptionId);
+      if (isSuperAdmin) {
+        const overrideReason = window.prompt(
+          "التفعيل المباشر يتطلب موافقة KYC أو تجاوز موثّق. أدخل سبب التجاوز للمتابعة، أو اتركه فارغًا للإلغاء وراجع طلبات تفعيل المستقلين:",
+          "",
+        );
+        if (overrideReason == null) {
+          setSubmittingId(null);
+          return;
+        }
+        const reason = String(overrideReason).trim();
+        if (!reason) {
+          setError("سبب تجاوز KYC مطلوب، أو استخدم /dashboard/super-admin/freelancer-activation-requests");
+          setSubmittingId(null);
+          return;
+        }
+        await activateSubscriptionCompanyRequest(subscriptionId, { overrideReason: reason });
+      } else {
+        // Regular admin: backend will reject without approved KYC (no override).
+        await activateSubscriptionCompanyRequest(subscriptionId);
+      }
       await loadQueue(page, { soft: true });
     } catch (err) {
       setError(errorMessage(err));

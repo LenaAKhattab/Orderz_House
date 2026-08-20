@@ -21,6 +21,9 @@ function createAppError(message, statusCode = 500, options = {}) {
   if (options.cause !== undefined) {
     err.cause = options.cause;
   }
+  if (options.meta !== undefined) {
+    err.meta = options.meta;
+  }
   return err;
 }
 

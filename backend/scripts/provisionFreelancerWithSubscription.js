@@ -94,6 +94,8 @@ async function main() {
   const activated = await subscriptionsService.activateCompanyApprovalForSubscription({
     actorUserId: admin.id,
     subscriptionId: assigned.subscription.id,
+    actorRole: "super_admin",
+    overrideReason: "provisionFreelancerWithSubscription script (local/dev)",
   });
 
   console.log(

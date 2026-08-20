@@ -191,6 +191,8 @@ function sanitizeLockedFreelancerPoolOrder(order, poolEligibility = null) {
     lockReason: poolEligibility?.lockReason ?? null,
     requiredPlanLabel: poolEligibility?.requiredPlanLabel ?? null,
     requiredPlanRange: poolEligibility?.requiredPlanRange ?? null,
+    requiredTierCode: poolEligibility?.requiredTierCode ?? null,
+    suggestedUpgradePlanTitle: poolEligibility?.suggestedUpgradePlanTitle ?? null,
     myClaim: null,
     myBid: null,
   };

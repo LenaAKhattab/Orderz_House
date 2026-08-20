@@ -6,7 +6,18 @@ import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState"
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
 import { useTranslation } from "../../i18n/LanguageProvider";
-import { listPublishedMarketplaceArticlesRequest, getFreelancerBildazoAuthorLinkRequest } from "../../services/api";
+import {
+  listPublishedMarketplaceArticlesRequest,
+  getFreelancerBildazoAuthorLinkRequest,
+  getFreelancerActivationTrialRequest,
+  activateFreelancerActivationTrialRequest,
+  getFreelancerActivationEarnedBalanceRequest,
+  getFreelancerActivationConversionRequest,
+} from "../../services/api";
+import FreelancerActivationTrialStatusBlock from "../../components/freelancer/FreelancerActivationTrialStatusBlock";
+import FreelancerEarnedBalancePanel from "../../components/freelancer/FreelancerEarnedBalancePanel";
+import FreelancerSilverConversionCard from "../../components/freelancer/FreelancerSilverConversionCard";
+import { freelancerTrialActivateErrorMessage } from "../../constants/freelancerActivationTrial";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import { formatArticleBidCollectionLabel } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
@@ -19,6 +30,11 @@ export default function FreelancerMarketplaceArticlesPage() {
   const isEn = locale === "en";
   const [articles, setArticles] = useState([]);
   const [bildazoLink, setBildazoLink] = useState(null);
+  const [trialState, setTrialState] = useState(null);
+  const [trialActivating, setTrialActivating] = useState(false);
+  const [trialActivateError, setTrialActivateError] = useState("");
+  const [earnedBalance, setEarnedBalance] = useState(null);
+  const [conversion, setConversion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -26,12 +42,25 @@ export default function FreelancerMarketplaceArticlesPage() {
     setError("");
     setLoading(true);
     try {
-      const [res, linkRes] = await Promise.all([
+      const [res, linkRes, trialRes, earnedRes, conversionRes] = await Promise.all([
         listPublishedMarketplaceArticlesRequest({}),
         getFreelancerBildazoAuthorLinkRequest().catch(() => null),
+        getFreelancerActivationTrialRequest().catch(() => null),
+        getFreelancerActivationEarnedBalanceRequest().catch(() => null),
+        getFreelancerActivationConversionRequest().catch(() => null),
       ]);
       setArticles(Array.isArray(res?.data?.articles) ? res.data.articles : []);
       setBildazoLink(linkRes?.data || null);
+      setTrialState(trialRes?.data || null);
+      setEarnedBalance(
+        earnedRes?.data || {
+          totalPendingJod: "0.000",
+          totalAcceptedArticles: 0,
+          totalPublishedArticles: 0,
+          entries: [],
+        },
+      );
+      setConversion(conversionRes?.data || null);
     } catch (err) {
       setError(
         getSafeApiErrorMessage(err) ||
@@ -84,6 +113,40 @@ export default function FreelancerMarketplaceArticlesPage() {
             }}
           />
         ) : null}
+        {!loading && trialState?.engineEnabled ? (
+          <FreelancerActivationTrialStatusBlock
+            state={trialState}
+            isEn={isEn}
+            activating={trialActivating}
+            activateError={trialActivateError}
+            onActivate={async () => {
+              setTrialActivating(true);
+              setTrialActivateError("");
+              try {
+                const out = await activateFreelancerActivationTrialRequest();
+                setTrialState(out?.data?.state || out?.data || trialState);
+              } catch (err) {
+                setTrialActivateError(
+                  freelancerTrialActivateErrorMessage(err, { isEn }) ||
+                    getSafeApiErrorMessage(err) ||
+                    (isEn
+                      ? "Could not grant trial Bids. Try again."
+                      : "تعذر منح عروض التجربة. حاول مرة أخرى."),
+                );
+              } finally {
+                setTrialActivating(false);
+              }
+            }}
+          />
+        ) : null}
+        {!loading && conversion?.shouldShowSilverCta ? (
+          <FreelancerSilverConversionCard conversion={conversion} isEn={isEn} />
+        ) : null}
+        {!loading ? (
+          <div id="earned-balance">
+            <FreelancerEarnedBalancePanel balance={earnedBalance} isEn={isEn} />
+          </div>
+        ) : null}
         {loading ? <DashboardLoadingState /> : null}
         {!loading && error ? <DashboardErrorState message={error} onRetry={refresh} /> : null}
         {!loading && !error && articles.length === 0 ? (
@@ -123,7 +186,10 @@ export default function FreelancerMarketplaceArticlesPage() {
                       {article.articleValueJod != null ? (
                         <>
                           <span aria-hidden="true">·</span>
-                          <JodMoneyDisplay amount={article.articleValueJod} compact />
+                          <span data-testid="article-card-full-value">
+                            {isEn ? "Article value: " : "قيمة المقال: "}
+                            <JodMoneyDisplay amount={article.articleValueJod} compact />
+                          </span>
                         </>
                       ) : null}
                     </div>

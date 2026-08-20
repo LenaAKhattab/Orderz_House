@@ -1,8 +1,15 @@
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import Button from "../../components/ui/Button";
-import { formatArticleBidCollectionLabel } from "./marketplaceArticleFormUtils";
+import { formatArticleBidCollectionLabel, formatActivationAttachmentBadge } from "./marketplaceArticleFormUtils";
+import { formatActivationBudgetState } from "../../constants/freelancerActivationCampaign";
 
-export default function MarketplaceArticleCard({ article, isEn = false, onEdit, busy = false }) {
+export default function MarketplaceArticleCard({
+  article,
+  isEn = false,
+  onEdit,
+  busy = false,
+  activationCampaigns = [],
+}) {
   if (!article) return null;
   const value =
     article.articleValueJod != null
@@ -24,6 +31,21 @@ export default function MarketplaceArticleCard({ article, isEn = false, onEdit, 
           </StatusBadge>
           {article.isFakeOrTraining ? (
             <StatusBadge tone="warning">{isEn ? "Training" : "تدريب"}</StatusBadge>
+          ) : null}
+          {article.activationCampaignId ? (
+            <span data-testid="activation-attachment-badge">
+              <StatusBadge tone="neutral">
+                {formatActivationAttachmentBadge(article, activationCampaigns, { isEn }) ||
+                  (isEn ? "Activation" : "تفعيل")}
+              </StatusBadge>
+            </span>
+          ) : null}
+          {article.activationCampaignId && article.activationBudgetState ? (
+            <span data-testid="activation-budget-state-badge">
+              <StatusBadge tone={article.activationBudgetState === "used" ? "success" : "neutral"}>
+                {formatActivationBudgetState(article.activationBudgetState, { isEn })}
+              </StatusBadge>
+            </span>
           ) : null}
         </div>
       </header>

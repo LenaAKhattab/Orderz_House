@@ -11,6 +11,8 @@ import {
   ARTICLE_ALLOWED_REQUIRED_BID_COUNTS,
   ARTICLE_MIN_REQUIRED_BIDS_ACK_AR,
   ARTICLE_MIN_REQUIRED_BIDS_WARNING_AR,
+  attachableActivationCampaigns,
+  attachableActivationWaves,
 } from "./marketplaceArticleFormUtils";
 
 export default function MarketplaceArticleFormModal({
@@ -19,6 +21,7 @@ export default function MarketplaceArticleFormModal({
   initialArticle = null,
   categories = [],
   subcategories = [],
+  activationCampaigns = [],
   isEn = false,
   submitting = false,
   onClose,
@@ -215,6 +218,48 @@ export default function MarketplaceArticleFormModal({
               disabled={submitting}
             />
           </label>
+
+          <div className="oh-mmp-form__row">
+            <label>
+              {isEn ? "Activation campaign (optional)" : "حملة التفعيل (اختياري)"}
+              <select
+                data-testid="activation-campaign-select"
+                value={form.activationCampaignId || ""}
+                onChange={(e) => {
+                  setField("activationCampaignId", e.target.value);
+                  setField("activationWaveId", "");
+                }}
+                disabled={submitting}
+              >
+                <option value="">{isEn ? "— Not attached —" : "— غير مرتبط —"}</option>
+                {attachableActivationCampaigns(activationCampaigns, form.activationCampaignId).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.status})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              {isEn ? "Activation wave (optional)" : "موجة التفعيل (اختياري)"}
+              <select
+                data-testid="activation-wave-select"
+                value={form.activationWaveId || ""}
+                onChange={(e) => setField("activationWaveId", e.target.value)}
+                disabled={submitting || !form.activationCampaignId}
+              >
+                <option value="">{isEn ? "— Optional —" : "— اختياري —"}</option>
+                {attachableActivationWaves(
+                  activationCampaigns,
+                  form.activationCampaignId,
+                  form.activationWaveId,
+                ).map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name} ({w.status})
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
 
           <p className="oh-mmp-form__hint" style={{ margin: 0, lineHeight: 1.5 }}>
             {ARTICLE_MIN_REQUIRED_BIDS_WARNING_AR}

@@ -151,7 +151,8 @@ describe("ACTIVE_NEW_BID_MODEL Phase B3 architecture wiring", () => {
       path.join(__dirname, "..", "..", "frontend", "src", "components", "freelancer", "FreelancerMarketplaceMembershipCard.jsx"),
       "utf8",
     );
-    assert.match(card, /bidsPerMonth/);
+    assert.match(card, /monthlyBidAllowance/);
+    assert.match(card, /bidsAvailable/);
     assert.doesNotMatch(card, /Work Token|توكن/);
     const bidCard = fs.readFileSync(
       path.join(__dirname, "..", "..", "frontend", "src", "components", "freelancer", "FreelancerBidCreditsCard.jsx"),

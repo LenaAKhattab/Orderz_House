@@ -278,6 +278,8 @@ const activateSubscriptionCompanyApproval = async (req, res, next) => {
     const subscription = await subscriptionsService.activateCompanyApprovalForSubscription({
       actorUserId: req.auth?.userId,
       subscriptionId: req.params.id,
+      actorRole: req.auth?.primaryRole || req.user?.role,
+      overrideReason: req.body?.overrideReason ?? req.body?.kycOverrideReason ?? null,
     });
     return res.status(200).json({ success: true, data: { subscription } });
   } catch (err) {

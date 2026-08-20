@@ -27,6 +27,11 @@ frontend/dist/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local private uploads (orders, KYC ID images — never commit)
+backend/uploads/
+backend/uploads/**
+
 backend/google/service-account.json
 backend/secrets/
 # Firebase / GCP service accounts (never commit — any path, any double .json typo)

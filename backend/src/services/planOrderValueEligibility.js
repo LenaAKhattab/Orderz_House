@@ -7,7 +7,7 @@
  * - Real and fake/training pool rows use the same value band (e.g. free plan 3–7 د.أ for both).
  * - Display/marketing clones with null bands resolve via `subscription_plan_id` when present.
  */
-const { ORDERZHOUSE_PLANS_BY_ID } = require("../constants/orderzhousePlansCatalog");
+const { ORDERZHOUSE_PLANS_BY_ID, ORDERZHOUSE_PLAN_IDS } = require("../constants/orderzhousePlansCatalog");
 
 function parseJod(value) {
   if (value === null || value === undefined || value === "") return null;
@@ -234,6 +234,27 @@ function isPlanValueAllowedForOrder(orderLike, range) {
 }
 
 /**
+ * Lowest catalog plan whose value band allows this order (upgrade CTA hint only).
+ */
+function findSuggestedUpgradePlanForOrder(orderLike) {
+  const norm = normalizeOrderLikeForPlanCheck(orderLike);
+  for (const id of ORDERZHOUSE_PLAN_IDS) {
+    const catalog = ORDERZHOUSE_PLANS_BY_ID[id];
+    if (!catalog) continue;
+    const planRange = normalizePlanRange(id, catalog);
+    if (!isUsableOrderValueRange(planRange)) continue;
+    if (!isPlanValueAllowedForOrder(norm, planRange)) continue;
+    return {
+      planId: id,
+      planName: catalog.name || null,
+      planTitle: catalog.title || null,
+      requiredTierCode: id === 1 ? "free" : id === 2 ? "silver" : "pro",
+    };
+  }
+  return null;
+}
+
+/**
  * Pool UI eligibility (visibility vs action). Real + fake/training share the same plan value band.
  */
 function computePoolOrderPlanEligibility(orderLike, range) {
@@ -261,6 +282,8 @@ function computePoolOrderPlanEligibility(orderLike, range) {
     norm.bid_budget_min != null &&
     norm.bid_budget_max != null;
 
+  const suggested = locked && usable ? findSuggestedUpgradePlanForOrder(norm) : null;
+
   return {
     canViewDetails: !locked,
     canClaim: !locked && projectType === "fixed",
@@ -270,6 +293,9 @@ function computePoolOrderPlanEligibility(orderLike, range) {
     requiredPlanRange,
     requiredPlanLabel,
     planConfigurationError: usable ? false : true,
+    requiredTierCode: suggested?.requiredTierCode || null,
+    suggestedUpgradePlanId: suggested?.planId || null,
+    suggestedUpgradePlanTitle: suggested?.planTitle || null,
   };
 }
 
@@ -393,6 +419,7 @@ module.exports = {
   getFreelancerPlanOrderValueRange,
   formatPlanRangeLabel,
   isPlanValueAllowedForOrder,
+  findSuggestedUpgradePlanForOrder,
   computePoolOrderPlanEligibility,
   enrichFreelancerPoolOrdersPlanEligibility,
   loadFakeOrderRow,

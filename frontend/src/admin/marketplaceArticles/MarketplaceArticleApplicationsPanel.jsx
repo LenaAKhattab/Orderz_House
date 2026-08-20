@@ -8,6 +8,7 @@ import {
   finalizeAdminArticleApplicationRequest,
   retryAdminArticleBildazoPublishRequest,
   requestAdminArticleRevisionRequest,
+  runAdminArticleAutoAssignmentRequest,
 } from "../../services/api";
 import FairSelectionOverrideDialog from "./FairSelectionOverrideDialog";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
@@ -21,6 +22,36 @@ import {
   isRecommendedArticleApplicant,
 } from "./marketplaceArticleFormUtils";
 import { adminBildazoPublishCopy } from "../../constants/bildazoArticlePublish";
+import { activationAssignmentErrorMessage } from "../../constants/freelancerActivationCampaign";
+import { formatManuscriptTermsAdmin } from "../../constants/freelancerActivationEarnedBalance";
+import {
+  activationFairBadges,
+  findFairRankingCandidate,
+  isActivationFairRankingApplied,
+} from "../../constants/freelancerActivationFairDistribution";
+
+function ActivationFairBadges({ activationFairness, isEn }) {
+  const badges = activationFairBadges(activationFairness, { isEn });
+  if (!badges.length) return null;
+  return (
+    <div data-testid="activation-fair-badges" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+      {badges.map((badge) => (
+        <span
+          key={badge.tag}
+          data-testid="activation-fair-reason-tag"
+          style={{
+            fontSize: "0.78rem",
+            padding: "2px 8px",
+            border: "1px solid rgba(0,0,0,0.12)",
+            background: "rgba(0,0,0,0.04)",
+          }}
+        >
+          {badge.label}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export default function MarketplaceArticleApplicationsPanel({
   articleId,
@@ -31,9 +62,11 @@ export default function MarketplaceArticleApplicationsPanel({
   const [applications, setApplications] = useState([]);
   const [bidCollection, setBidCollection] = useState(null);
   const [fairRanking, setFairRanking] = useState(null);
+  const [autoAssignment, setAutoAssignment] = useState(null);
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [relisting, setRelisting] = useState(false);
+  const [autoAssignBusy, setAutoAssignBusy] = useState(false);
   const [overrideTargetId, setOverrideTargetId] = useState(null);
   const [error, setError] = useState("");
 
@@ -46,6 +79,7 @@ export default function MarketplaceArticleApplicationsPanel({
       setApplications(Array.isArray(res?.data?.applications) ? res.data.applications : []);
       setBidCollection(res?.data?.bidCollection || null);
       setFairRanking(res?.data?.fairRanking || null);
+      setAutoAssignment(res?.data?.autoAssignment || null);
     } catch (err) {
       setError(
         getSafeApiErrorMessage(err) ||
@@ -112,7 +146,10 @@ export default function MarketplaceArticleApplicationsPanel({
     } catch (err) {
       onToast?.({
         type: "error",
-        message: getSafeApiErrorMessage(err) || (isEn ? "Action failed." : "فشل الإجراء."),
+        message:
+          activationAssignmentErrorMessage(err, { isEn }) ||
+          getSafeApiErrorMessage(err) ||
+          (isEn ? "Action failed." : "فشل الإجراء."),
       });
     } finally {
       setBusyId(null);
@@ -167,6 +204,92 @@ export default function MarketplaceArticleApplicationsPanel({
       ) : null}
 
       <section
+        data-testid="activation-auto-assign-panel"
+        style={{
+          margin: "0 0 14px",
+          padding: 12,
+          border: "1px solid rgba(0,0,0,0.08)",
+          background: "rgba(0,0,0,0.02)",
+        }}
+      >
+        <h5 style={{ margin: "0 0 8px" }}>
+          {isEn ? "Automatic assignment (A9.3)" : "الإسناد التلقائي (A9.3)"}
+        </h5>
+        <p data-testid="activation-auto-assign-status" style={{ margin: "0 0 8px" }}>
+          {isEn ? "Status" : "الحالة"}:{" "}
+          <strong>
+            {autoAssignment?.autoAssignedBadge
+              ? isEn
+                ? "auto-assigned"
+                : "تم الإسناد تلقائيًا"
+              : autoAssignment?.readiness?.status ||
+                autoAssignment?.run?.status ||
+                (isEn ? "disabled / unknown" : "معطّل / غير معروف")}
+          </strong>
+        </p>
+        {autoAssignment?.run?.skipReason || autoAssignment?.run?.errorCode ? (
+          <p data-testid="activation-auto-assign-skip-reason" style={{ margin: "0 0 8px", fontSize: "0.9rem" }}>
+            {isEn ? "Reason" : "السبب"}:{" "}
+            {autoAssignment.run.skipReason || autoAssignment.run.errorCode}
+          </p>
+        ) : null}
+        {autoAssignment?.autoAssignedBadge ? (
+          <p data-testid="activation-auto-assigned-badge" style={{ margin: "0 0 8px", fontWeight: 700 }}>
+            {isEn ? "Assigned automatically" : "تم الإسناد تلقائيًا"}
+          </p>
+        ) : null}
+        {(autoAssignment?.candidates || []).length > 0 ? (
+          <div data-testid="activation-auto-assign-fairness-summary" style={{ marginBottom: 8 }}>
+            <p style={{ margin: "0 0 6px", fontSize: "0.9rem" }}>
+              {isEn ? "Admin fairness summary (weights)" : "ملخص العدالة للمشرف (الأوزان)"}
+            </p>
+            <ul style={{ margin: 0, paddingInlineStart: 18, fontSize: "0.85rem" }}>
+              {autoAssignment.candidates.slice(0, 12).map((c) => (
+                <li key={c.id || c.applicationId}>
+                  #{c.candidateRank || "—"} app {c.applicationId} · weight {c.weight}
+                  {c.selected ? (isEn ? " · selected" : " · مختار") : ""}
+                  {Array.isArray(c.reasonTags) && c.reasonTags.length
+                    ? ` · ${c.reasonTags.join(", ")}`
+                    : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {autoAssignment?.readiness?.status === "ready" ||
+        (!autoAssignment?.autoAssignedBadge &&
+          autoAssignment?.readiness?.status === "waiting_for_bidders") ? (
+          <Button
+            type="button"
+            data-testid="activation-auto-assign-run-btn"
+            disabled={autoAssignBusy || autoAssignment?.autoAssignedBadge}
+            onClick={async () => {
+              setAutoAssignBusy(true);
+              try {
+                await runAdminArticleAutoAssignmentRequest(articleId);
+                onToast?.({
+                  type: "success",
+                  message: isEn ? "Auto-assignment run finished." : "اكتمل تشغيل التوزيع التلقائي.",
+                });
+                await refresh();
+              } catch (err) {
+                onToast?.({
+                  type: "error",
+                  message:
+                    getSafeApiErrorMessage(err) ||
+                    (isEn ? "Auto-assignment failed." : "فشل التوزيع التلقائي."),
+                });
+              } finally {
+                setAutoAssignBusy(false);
+              }
+            }}
+          >
+            {isEn ? "Run auto assignment now" : "تشغيل التوزيع التلقائي الآن"}
+          </Button>
+        ) : null}
+      </section>
+
+      <section
         style={{
           margin: "0 0 14px",
           padding: 12,
@@ -208,6 +331,9 @@ export default function MarketplaceArticleApplicationsPanel({
                     {c.submittedAt ? ` · ${new Date(c.submittedAt).toLocaleString()}` : ""}
                     {c.rankingReason ? ` · ${isEn ? c.rankingReasonEn || c.rankingReason : c.rankingReason}` : ""}
                   </div>
+                  {isActivationFairRankingApplied(fairRanking) ? (
+                    <ActivationFairBadges activationFairness={c.activationFairness} isEn={isEn} />
+                  ) : null}
                 </li>
               ))}
             </ol>
@@ -237,7 +363,31 @@ export default function MarketplaceArticleApplicationsPanel({
                 {app.freelancerFirstName || ""} {app.freelancerFamilyName || ""}
               </strong>{" "}
               <span style={{ opacity: 0.75 }}>({app.freelancerAccountId || app.freelancerUserId})</span>
+              {autoAssignment?.autoAssignedBadge &&
+              String(app.id) === String(autoAssignment?.run?.selectedApplicationId) ? (
+                <span
+                  data-testid="activation-auto-assigned-app-badge"
+                  style={{ marginInlineStart: 8, fontWeight: 700, fontSize: "0.85rem" }}
+                >
+                  {isEn ? "Auto-assigned" : "تم الإسناد تلقائيًا"}
+                </span>
+              ) : null}
             </div>
+            {isActivationFairRankingApplied(fairRanking) ? (
+              <ActivationFairBadges
+                activationFairness={findFairRankingCandidate(app.id, fairRanking)?.activationFairness}
+                isEn={isEn}
+              />
+            ) : null}
+            {isActivationFairRankingApplied(fairRanking)
+            && app.status === "pending"
+            && !isRecommendedArticleApplicant(app.id, fairRanking) ? (
+              <div data-testid="activation-fair-override-note" style={{ fontSize: "0.82rem", opacity: 0.75 }}>
+                {isEn
+                  ? "Selecting this applicant overrides the preferred activation candidate."
+                  : "اختيار هذا المتقدم يتجاوز المرشح المفضل للتفعيل."}
+              </div>
+            ) : null}
             <div style={{ fontSize: "0.9rem" }}>
               {isEn ? "Status" : "الحالة"}: <strong>{app.status}</strong>
               {" · "}
@@ -270,6 +420,9 @@ export default function MarketplaceArticleApplicationsPanel({
                 <strong>{isEn ? "Final manuscript" : "المقال النهائي"}:</strong>{" "}
                 {app.articleSubmission.status}
                 {app.articleSubmission.title ? ` · ${app.articleSubmission.title}` : ""}
+                <div data-testid="admin-submission-terms" style={{ fontSize: "0.82rem", opacity: 0.85 }}>
+                  {formatManuscriptTermsAdmin(app.articleSubmission, { isEn })}
+                </div>
               </div>
             ) : app.status === "selected" || app.status === "assigned" ? (
               <p data-testid="admin-final-article-missing" style={{ margin: 0, fontSize: "0.9rem" }}>
@@ -359,6 +512,7 @@ export default function MarketplaceArticleApplicationsPanel({
         open={Boolean(overrideTargetId)}
         isEn={isEn}
         submitting={Boolean(busyId)}
+        activationOverride={isActivationFairRankingApplied(fairRanking)}
         onCancel={() => setOverrideTargetId(null)}
         onConfirm={async (reason) => {
           const id = overrideTargetId;
