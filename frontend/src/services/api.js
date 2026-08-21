@@ -337,7 +337,22 @@ export const withdrawSuperAdminActivationArticleFundRequest = async (payload) =>
   return data;
 };
 
+/** Resolve/create the single internal article-operations setup (no multi-campaign UX). */
+export const getSuperAdminArticleOperationsSetupRequest = async () => {
+  const { data } = await api.get("/super-admin/freelancer-activation/article-operations/setup");
+  return data;
+};
+
+export const ensureSuperAdminArticleOperationsSetupRequest = async () => {
+  const { data } = await api.post("/super-admin/freelancer-activation/article-operations/setup");
+  return data;
+};
+
 export const listSuperAdminActivationPlanAllocationsRequest = async (campaignId) => {
+  if (campaignId == null || campaignId === "") {
+    const { data } = await api.get("/super-admin/freelancer-activation/article-operations/plan-allocations");
+    return data;
+  }
   const { data } = await api.get(
     `/super-admin/freelancer-activation/campaigns/${campaignId}/plan-allocations`,
   );
@@ -345,6 +360,13 @@ export const listSuperAdminActivationPlanAllocationsRequest = async (campaignId)
 };
 
 export const createSuperAdminActivationPlanAllocationRequest = async (campaignId, payload) => {
+  if (campaignId == null || campaignId === "") {
+    const { data } = await api.post(
+      "/super-admin/freelancer-activation/article-operations/plan-allocations",
+      payload,
+    );
+    return data;
+  }
   const { data } = await api.post(
     `/super-admin/freelancer-activation/campaigns/${campaignId}/plan-allocations`,
     payload,

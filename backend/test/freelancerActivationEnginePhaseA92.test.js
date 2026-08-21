@@ -24,16 +24,23 @@ describe("Phase A9.2 isolation", () => {
   it("adds migration 174 and does not touch payment domains", () => {
     const migrations = fs.readdirSync(path.join(root, "sql/migrations"));
     assert.ok(migrations.some((f) => f.startsWith("174_freelancer_activation_article_release")));
+    assert.ok(migrations.some((f) => f.startsWith("177_freelancer_activation_release_interval")));
     const sql = read("sql/migrations/174_freelancer_activation_article_release_engine_a92.sql");
     assert.match(sql, /freelancer_activation_article_release_runs/);
     assert.match(sql, /freelancer_activation_article_release_items/);
     assert.doesNotMatch(sql, /\bDROP TABLE\b|\bTRUNCATE\b|\bDELETE FROM\b/i);
+    const intervalSql = read("sql/migrations/177_freelancer_activation_release_interval_days_a92.sql");
+    assert.match(intervalSql, /release_interval_days/);
+    assert.match(intervalSql, /DEFAULT 1/);
     const svc = read("src/services/freelancerActivationArticleReleaseEngineService.js");
     assert.doesNotMatch(svc, /require\(["'].*stripe/i);
     assert.doesNotMatch(svc, /require\(["'].*ordersService/);
     assert.doesNotMatch(svc, /require\(["'].*financialClaims/);
     assert.doesNotMatch(svc, /require\(["'].*node-cron|node-cron\.schedule|setInterval\s*\(/);
     assert.match(svc, /autoAssigned:\s*false/);
+    assert.match(svc, /isReleaseDayForInterval/);
+    assert.match(svc, /not_release_day/);
+    assert.match(svc, /ليس يوم إنزال حسب الجدولة الحالية/);
     const routes = read("src/routes/superAdminFreelancerActivationRoutes.js");
     assert.match(routes, /article-release\/preview/);
     assert.match(routes, /article-release\/run/);
@@ -669,5 +676,112 @@ describe("Phase A9.2 release plan with fake client", () => {
     assert.equal(second.idempotent, true);
     assert.equal(mem.articles.length, count1);
     assert.equal(first.autoAssigned, false);
+  });
+});
+
+describe("Phase A9.2+ release interval days", () => {
+  it("interval 1 allows every day", () => {
+    assert.equal(
+      engine.isReleaseDayForInterval({
+        runDate: "2026-08-20",
+        intervalDays: 1,
+        anchorDate: "2026-08-01",
+      }),
+      true,
+    );
+    assert.equal(engine.normalizeReleaseIntervalDays(null), 1);
+    assert.equal(engine.normalizeReleaseIntervalDays(0), 1);
+  });
+
+  it("interval 2 skips non-matching days from anchor", () => {
+    assert.equal(
+      engine.isReleaseDayForInterval({
+        runDate: "2026-08-01",
+        intervalDays: 2,
+        anchorDate: "2026-08-01",
+      }),
+      true,
+    );
+    assert.equal(
+      engine.isReleaseDayForInterval({
+        runDate: "2026-08-02",
+        intervalDays: 2,
+        anchorDate: "2026-08-01",
+      }),
+      false,
+    );
+    assert.equal(
+      engine.isReleaseDayForInterval({
+        runDate: "2026-08-03",
+        intervalDays: 2,
+        anchorDate: "2026-08-01",
+      }),
+      true,
+    );
+  });
+
+  it("interval 3 skips non-matching days from anchor", () => {
+    assert.equal(
+      engine.isReleaseDayForInterval({
+        runDate: "2026-08-01",
+        intervalDays: 3,
+        anchorDate: "2026-08-01",
+      }),
+      true,
+    );
+    assert.equal(
+      engine.isReleaseDayForInterval({
+        runDate: "2026-08-02",
+        intervalDays: 3,
+        anchorDate: "2026-08-01",
+      }),
+      false,
+    );
+    assert.equal(
+      engine.isReleaseDayForInterval({
+        runDate: "2026-08-04",
+        intervalDays: 3,
+        anchorDate: "2026-08-01",
+      }),
+      true,
+    );
+  });
+
+  it("manual bypass leaves interval skip for auto path; daily remains compatible", () => {
+    assert.equal(engine.NOT_RELEASE_DAY_MESSAGE_AR, "ليس يوم إنزال حسب الجدولة الحالية.");
+    assert.equal(
+      engine.isReleaseDayForInterval({
+        runDate: "2026-08-02",
+        intervalDays: 2,
+        anchorDate: "2026-08-01",
+      }),
+      false,
+    );
+    assert.equal(
+      engine.isReleaseDayForInterval({
+        runDate: "2026-08-02",
+        intervalDays: 1,
+        anchorDate: "2026-08-01",
+      }),
+      true,
+    );
+    const svc = read("src/services/freelancerActivationArticleReleaseEngineService.js");
+    assert.match(svc, /bypassInterval:\s*includeManualMode/);
+    assert.match(svc, /skipReason:\s*"not_release_day"/);
+  });
+});
+
+describe("Phase A9 article-operations default setup (no multi-campaign UI)", () => {
+  it("exposes getOrCreateDefaultArticleOperationsCampaign and article-operations routes", () => {
+    const camp = read("src/services/freelancerActivationCampaignService.js");
+    assert.match(camp, /getOrCreateDefaultArticleOperationsCampaign/);
+    assert.match(camp, /resolveArticleOperationsCampaignId/);
+    assert.match(camp, /DEFAULT_ARTICLE_OPERATIONS_SETUP_NAME/);
+    const routes = read("src/routes/superAdminFreelancerActivationRoutes.js");
+    assert.match(routes, /article-operations\/setup/);
+    assert.match(routes, /article-operations\/plan-allocations/);
+    const constants = read("src/constants/freelancerActivationArticleOps.js");
+    assert.match(constants, /DEFAULT_ARTICLE_OPERATIONS_SETUP_NAME/);
+    assert.match(constants, /إعداد المقالات الرئيسي/);
   });
 });

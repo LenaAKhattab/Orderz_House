@@ -107,12 +107,75 @@ async function patchWave(req, res, next) {
   }
 }
 
+async function getArticleOperationsSetup(req, res, next) {
+  try {
+    const data = await campaignService.getOrCreateDefaultArticleOperationsCampaign({
+      actorUserId: actorId(req),
+    });
+    return res.json({
+      success: true,
+      data: {
+        setup: data.setup,
+        created: data.created,
+        noteAr:
+          "إعداد واحد داخلي لإدارة صندوق المقالات والمخزون والتوزيع والإنزال. لا يُعرض كحملة في الواجهة.",
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function ensureArticleOperationsSetup(req, res, next) {
+  try {
+    const data = await campaignService.getOrCreateDefaultArticleOperationsCampaign({
+      actorUserId: actorId(req),
+    });
+    return res.status(data.created ? 201 : 200).json({
+      success: true,
+      data: { setup: data.setup, created: data.created },
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function listDefaultPlanAllocations(req, res, next) {
+  try {
+    const id = await campaignService.resolveArticleOperationsCampaignId(null, {
+      actorUserId: actorId(req),
+    });
+    const data = await articleOps.listPlanAllocations(id);
+    return res.json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function createDefaultPlanAllocation(req, res, next) {
+  try {
+    const id = await campaignService.resolveArticleOperationsCampaignId(null, {
+      actorUserId: actorId(req),
+    });
+    const allocation = await articleOps.upsertPlanAllocation(id, req.body || {}, {
+      actorUserId: actorId(req),
+    });
+    return res.status(201).json({ success: true, data: { allocation } });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 const articleOps = require("../services/freelancerActivationArticleOpsService");
 
 async function getArticleFund(req, res, next) {
   try {
+    const campaignId = await campaignService.resolveArticleOperationsCampaignId(
+      req.query?.campaignId,
+      { actorUserId: actorId(req) },
+    );
     const data = await articleOps.getArticleFundSummary({
-      campaignId: req.query?.campaignId || null,
+      campaignId,
       recentLimit: req.query?.limit,
     });
     return res.json({ success: true, data });
@@ -123,8 +186,12 @@ async function getArticleFund(req, res, next) {
 
 async function depositArticleFund(req, res, next) {
   try {
+    const body = { ...(req.body || {}) };
+    body.campaignId = await campaignService.resolveArticleOperationsCampaignId(body.campaignId, {
+      actorUserId: actorId(req),
+    });
     const data = await articleOps.addArticleFundDeposit({
-      ...(req.body || {}),
+      ...body,
       actorUserId: actorId(req),
     });
     return res.status(201).json({ success: true, data });
@@ -135,8 +202,12 @@ async function depositArticleFund(req, res, next) {
 
 async function withdrawArticleFund(req, res, next) {
   try {
+    const body = { ...(req.body || {}) };
+    body.campaignId = await campaignService.resolveArticleOperationsCampaignId(body.campaignId, {
+      actorUserId: actorId(req),
+    });
     const data = await articleOps.withdrawArticleFundAmount({
-      ...(req.body || {}),
+      ...body,
       actorUserId: actorId(req),
     });
     return res.json({ success: true, data });
@@ -176,8 +247,12 @@ async function patchPlanAllocation(req, res, next) {
 
 async function listArticleInventory(req, res, next) {
   try {
+    const campaignId = await campaignService.resolveArticleOperationsCampaignId(
+      req.query?.campaignId,
+      { actorUserId: actorId(req) },
+    );
     const data = await articleOps.listInventoryItems({
-      campaignId: req.query?.campaignId || null,
+      campaignId,
       status: req.query?.status || null,
     });
     return res.json({ success: true, data });
@@ -188,7 +263,12 @@ async function listArticleInventory(req, res, next) {
 
 async function createArticleInventory(req, res, next) {
   try {
-    const item = await articleOps.createInventoryItem(req.body || {}, { actorUserId: actorId(req) });
+    const body = { ...(req.body || {}) };
+    body.campaignId = await campaignService.resolveArticleOperationsCampaignId(
+      body.campaignId ?? body.campaign_id,
+      { actorUserId: actorId(req) },
+    );
+    const item = await articleOps.createInventoryItem(body, { actorUserId: actorId(req) });
     return res.status(201).json({ success: true, data: { item } });
   } catch (err) {
     return next(err);
@@ -217,8 +297,12 @@ const releaseEngine = require("../services/freelancerActivationArticleReleaseEng
 
 async function previewArticleRelease(req, res, next) {
   try {
+    const campaignId = await campaignService.resolveArticleOperationsCampaignId(
+      req.query?.campaignId,
+      { actorUserId: actorId(req) },
+    );
     const data = await releaseEngine.previewDailyMiniArticleRelease({
-      campaignId: req.query?.campaignId,
+      campaignId,
       waveId: req.query?.waveId || null,
       planTierCode: req.query?.planTierCode || null,
       date: req.query?.date || null,
@@ -233,8 +317,11 @@ async function previewArticleRelease(req, res, next) {
 async function runArticleRelease(req, res, next) {
   try {
     const body = req.body || {};
+    const campaignId = await campaignService.resolveArticleOperationsCampaignId(body.campaignId, {
+      actorUserId: actorId(req),
+    });
     const data = await releaseEngine.runDailyMiniArticleRelease({
-      campaignId: body.campaignId,
+      campaignId,
       waveId: body.waveId ?? null,
       planTierCode: body.planTierCode ?? null,
       date: body.date ?? null,
@@ -251,8 +338,12 @@ async function runArticleRelease(req, res, next) {
 
 async function listArticleReleaseRuns(req, res, next) {
   try {
+    const campaignId = await campaignService.resolveArticleOperationsCampaignId(
+      req.query?.campaignId,
+      { actorUserId: actorId(req) },
+    );
     const data = await releaseEngine.listArticleReleaseRuns({
-      campaignId: req.query?.campaignId || null,
+      campaignId,
       waveId: req.query?.waveId || null,
       planTierCode: req.query?.planTierCode || null,
       dateFrom: req.query?.dateFrom || null,
@@ -281,8 +372,11 @@ async function listLiveArticles(req, res, next) {
     const q = req.query || {};
     const page = Math.max(1, Number(q.page) || 1);
     const limit = Math.min(Math.max(Number(q.limit) || 25, 1), 100);
+    const campaignId = await campaignService.resolveArticleOperationsCampaignId(q.campaignId, {
+      actorUserId: actorId(req),
+    });
     const data = await liveMonitoring.listLiveActivationArticles({
-      campaignId: q.campaignId || null,
+      campaignId,
       waveId: q.waveId || null,
       planTierCode: q.planTierCode || null,
       status: q.status || null,
@@ -354,6 +448,10 @@ module.exports = {
   getArticleFund,
   depositArticleFund,
   withdrawArticleFund,
+  getArticleOperationsSetup,
+  ensureArticleOperationsSetup,
+  listDefaultPlanAllocations,
+  createDefaultPlanAllocation,
   listPlanAllocations,
   createPlanAllocation,
   patchPlanAllocation,

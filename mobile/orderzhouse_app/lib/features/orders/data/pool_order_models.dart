@@ -28,11 +28,17 @@ class PoolPlanEligibility {
     this.isLockedByPlan = false,
     this.lockReason,
     this.requiredPlanLabel,
+    this.requiredTierCode,
+    this.planConfigurationError = false,
+    this.suggestedUpgradePlanTitle,
   });
 
   final bool isLockedByPlan;
   final String? lockReason;
   final String? requiredPlanLabel;
+  final String? requiredTierCode;
+  final bool planConfigurationError;
+  final String? suggestedUpgradePlanTitle;
 
   factory PoolPlanEligibility.fromJson(dynamic json) {
     if (json is! Map) return const PoolPlanEligibility();
@@ -41,6 +47,14 @@ class PoolPlanEligibility {
       isLockedByPlan: readBool(map, 'isLockedByPlan', 'is_locked_by_plan'),
       lockReason: readMapField<String>(map, 'lockReason', 'lock_reason'),
       requiredPlanLabel: readMapField<String>(map, 'requiredPlanLabel', 'required_plan_label'),
+      requiredTierCode: readMapField<String>(map, 'requiredTierCode', 'required_tier_code'),
+      planConfigurationError:
+          readBool(map, 'planConfigurationError', 'plan_configuration_error'),
+      suggestedUpgradePlanTitle: readMapField<String>(
+        map,
+        'suggestedUpgradePlanTitle',
+        'suggested_upgrade_plan_title',
+      ),
     );
   }
 }

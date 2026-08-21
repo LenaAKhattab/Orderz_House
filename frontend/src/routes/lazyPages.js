@@ -46,6 +46,12 @@ export const SuperAdminMarketplaceEconomyPage = lazy(
 export const SuperAdminMarketplaceArticlesPage = lazy(
   () => import("../pages/dashboard/SuperAdminMarketplaceArticlesPage"),
 );
+export const SuperAdminArticleManagementPage = lazy(
+  () => import("../pages/dashboard/SuperAdminArticleManagementPage"),
+);
+export const SuperAdminArticlesHubPage = lazy(
+  () => import("../pages/dashboard/SuperAdminArticlesHubPage"),
+);
 export const SuperAdminFreelancerActivationPage = lazy(
   () => import("../pages/dashboard/SuperAdminFreelancerActivationPage"),
 );

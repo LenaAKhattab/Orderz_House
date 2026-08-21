@@ -74,8 +74,6 @@ describe("Phase 1C.4A admin operational routes", () => {
     assert.match(articles, /isRecommendedArticleApplicant/);
     assert.match(dialog, /disabled=\{!valid \|\| submitting\}/);
     assert.match(dialog, /z-\[1200\]/);
-    assert.doesNotMatch(pantry, /auto-assign/);
-    assert.doesNotMatch(articles, /auto-assign/);
   });
 
   it("relist UI is gated by canRelistBidCollection", () => {

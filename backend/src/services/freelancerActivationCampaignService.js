@@ -430,6 +430,79 @@ async function createActivationCampaign(body = {}, { client: externalClient = nu
   }
 }
 
+/**
+ * Resolve one internal article-operations config (campaign row) for Super Admin «المقالات».
+ * Does not expose multi-campaign UX — tables remain for compatibility.
+ */
+async function getOrCreateDefaultArticleOperationsCampaign({
+  actorUserId = null,
+  client = null,
+} = {}) {
+  const { DEFAULT_ARTICLE_OPERATIONS_SETUP_NAME } = require("../constants/freelancerActivationArticleOps");
+  const runner = client || pool;
+
+  function toSetup(campaign, created = false) {
+    return {
+      setup: {
+        id: Number(campaign.id),
+        name: campaign.name || DEFAULT_ARTICLE_OPERATIONS_SETUP_NAME,
+        status: campaign.status || "active",
+        ready: true,
+      },
+      campaign,
+      created: Boolean(created),
+    };
+  }
+
+  try {
+    const { rows: byName } = await runner.query(
+      `SELECT * FROM freelancer_activation_campaigns
+        WHERE name = $1
+        ORDER BY id ASC
+        LIMIT 1`,
+      [DEFAULT_ARTICLE_OPERATIONS_SETUP_NAME],
+    );
+    if (byName[0]) return toSetup(mapCampaignRow(byName[0]), false);
+
+    const { rows: active } = await runner.query(
+      `SELECT * FROM freelancer_activation_campaigns
+        WHERE status = 'active'
+        ORDER BY id ASC
+        LIMIT 1`,
+    );
+    if (active[0]) return toSetup(mapCampaignRow(active[0]), false);
+
+    const { rows: any } = await runner.query(
+      `SELECT * FROM freelancer_activation_campaigns ORDER BY id ASC LIMIT 1`,
+    );
+    if (any[0]) return toSetup(mapCampaignRow(any[0]), false);
+
+    const created = await createActivationCampaign(
+      {
+        name: DEFAULT_ARTICLE_OPERATIONS_SETUP_NAME,
+        status: "active",
+        totalBudgetJod: "0.000",
+        articleTotalValueJod: "1.000",
+        freelancerShareJod: "0.500",
+        companyShareJod: "0.300",
+        reviewerShareJod: "0.200",
+      },
+      { actorUserId, client },
+    );
+    return toSetup(created.campaign, true);
+  } catch (err) {
+    if (isMissingSchema(err)) throwSchemaMissing();
+    throw err;
+  }
+}
+
+async function resolveArticleOperationsCampaignId(rawId, { actorUserId = null, client = null } = {}) {
+  const n = Number(rawId);
+  if (Number.isInteger(n) && n > 0) return n;
+  const resolved = await getOrCreateDefaultArticleOperationsCampaign({ actorUserId, client });
+  return resolved.setup.id;
+}
+
 async function listActivationCampaigns({ client = null } = {}) {
   const runner = client || pool;
   try {
@@ -1557,6 +1630,8 @@ module.exports = {
   pauseCampaign,
   resumeCampaign,
   emergencyStopCampaign,
+  getOrCreateDefaultArticleOperationsCampaign,
+  resolveArticleOperationsCampaignId,
   computeCampaignBudgetSummary,
   computeWaveBudgetSummary,
   computeBudgetSummaryFromParts,

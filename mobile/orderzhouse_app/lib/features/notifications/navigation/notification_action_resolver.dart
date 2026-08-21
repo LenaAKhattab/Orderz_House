@@ -112,6 +112,33 @@ NotificationActionTarget? _resolveFromDashboardLink(
     );
   }
 
+  if (path == '/dashboard/freelancer/articles') {
+    if (role != 'freelancer') return null;
+    return const NotificationActionTarget(
+      route: AppRoutes.freelancerMiniArticles,
+      buttonLabel: 'فتح المقالات المصغّرة',
+    );
+  }
+
+  final articleMatch = RegExp(r'^/dashboard/freelancer/articles/([^/]+)$').firstMatch(path);
+  if (articleMatch != null) {
+    if (role != 'freelancer') return null;
+    final id = articleMatch.group(1)!;
+    return NotificationActionTarget(
+      route: AppRoutes.freelancerMiniArticlePath(id),
+      buttonLabel: 'فتح المقال',
+    );
+  }
+
+  if (path == '/dashboard/freelancer/activate-account' ||
+      path == '/dashboard/freelancer/account-activation') {
+    if (role != 'freelancer') return null;
+    return const NotificationActionTarget(
+      route: AppRoutes.freelancerAccountActivation,
+      buttonLabel: 'فتح تفعيل الحساب',
+    );
+  }
+
   if (path == '/dashboard/freelancer/plans') {
     // Phase 5K: no in-app plans screen — open profile instead of subscription UI.
     if (role != 'freelancer') return null;

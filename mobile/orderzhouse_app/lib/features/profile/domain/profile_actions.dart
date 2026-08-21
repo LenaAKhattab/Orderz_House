@@ -9,6 +9,8 @@ enum ProfileActionId {
   notifications,
   legalHelp,
   financialClaims,
+  accountActivation,
+  miniArticles,
   marketplace,
   services,
   courses,
@@ -110,6 +112,18 @@ List<ProfileActionItem> profileQuickActionsForUser(AuthUser user) {
         label: 'طلباتي كمستقل',
         icon: Icons.receipt_long_outlined,
         route: AppRoutes.myOrders,
+      ),
+      ProfileActionItem(
+        id: ProfileActionId.accountActivation,
+        label: 'تفعيل الحساب',
+        icon: Icons.verified_user_outlined,
+        route: AppRoutes.freelancerAccountActivation,
+      ),
+      ProfileActionItem(
+        id: ProfileActionId.miniArticles,
+        label: 'المقالات المصغّرة',
+        icon: Icons.article_outlined,
+        route: AppRoutes.freelancerMiniArticles,
       ),
       ProfileActionItem(
         id: ProfileActionId.courses,
@@ -251,6 +265,8 @@ bool profileActionAllowedForUser(ProfileActionId id, AuthUser user) {
     case ProfileActionId.createOrder:
       return user.usesClientExperience;
     case ProfileActionId.financialClaims:
+    case ProfileActionId.accountActivation:
+    case ProfileActionId.miniArticles:
     case ProfileActionId.courses:
       return user.usesFreelancerExperience;
     case ProfileActionId.superAdminHome:

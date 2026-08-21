@@ -106,6 +106,8 @@ function mapAllocation(row) {
     minimumBiddersPerArticle: Number(row.minimum_bidders_per_article) || 10,
     isEnabled: Boolean(row.is_enabled),
     releaseMode: row.release_mode || "manual",
+    releaseIntervalDays:
+      row.release_interval_days != null ? Math.max(1, Math.min(30, Number(row.release_interval_days) || 1)) : 1,
     recycleWhenInventoryEmpty: Boolean(row.recycle_when_inventory_empty),
     autoAssignEnabled: Boolean(row.auto_assign_enabled),
     autoAssignMode: row.auto_assign_mode || "disabled",
@@ -382,6 +384,18 @@ async function upsertPlanAllocation(campaignId, body = {}, { actorUserId = null,
       publicCode: FREELANCER_ACTIVATION_A91_ERROR_CODES.INVALID_PLAN_TIER,
     });
   }
+  const releaseIntervalRaw = body.releaseIntervalDays ?? body.release_interval_days;
+  let releaseIntervalDays = 1;
+  if (releaseIntervalRaw != null && releaseIntervalRaw !== "") {
+    const n = Number(releaseIntervalRaw);
+    if (!Number.isInteger(n) || n < 1 || n > 30) {
+      throw createAppError("فترة الإنزال يجب أن تكون بين 1 و 30 يومًا.", 400, {
+        exposeToClient: true,
+        publicCode: FREELANCER_ACTIVATION_A91_ERROR_CODES.INVALID_PLAN_TIER,
+      });
+    }
+    releaseIntervalDays = n;
+  }
   const dailyBudget =
     body.dailyBudgetJod != null && body.dailyBudgetJod !== ""
       ? millisToJodString(parseMoney(body.dailyBudgetJod, "daily budget"))
@@ -422,46 +436,87 @@ async function upsertPlanAllocation(campaignId, body = {}, { actorUserId = null,
         minimumBiddersPerArticle: minBidders,
         isEnabled,
         releaseMode,
+        releaseIntervalDays,
         recycleWhenInventoryEmpty: recycle,
         autoAssignEnabled,
         autoAssignMode,
         autoAssignWhenMinBiddersReached: autoAssignWhenMin,
       }, { client: runner });
     }
-    const { rows } = await runner.query(
-      `INSERT INTO freelancer_activation_plan_daily_allocations (
-         campaign_id, wave_id, plan_tier_code,
-         daily_budget_jod, max_daily_articles,
-         total_article_value_jod, freelancer_share_jod, company_share_jod, reviewer_share_jod,
-         minimum_bidders_per_article, is_enabled, release_mode, recycle_when_inventory_empty,
-         auto_assign_enabled, auto_assign_mode, auto_assign_when_min_bidders_reached
-       ) VALUES (
-         $1, $2, $3,
-         $4::numeric, $5,
-         $6::numeric, $7::numeric, $8::numeric, $9::numeric,
-         $10, $11, $12, $13,
-         $14, $15, $16
-       ) RETURNING *`,
-      [
-        id,
-        waveParam,
-        tier,
-        dailyBudget,
-        Number.isInteger(maxDaily) ? maxDaily : null,
-        split.totalArticleValueJod,
-        split.freelancerShareJod,
-        split.companyShareJod,
-        split.reviewerShareJod,
-        minBidders,
-        isEnabled,
-        releaseMode,
-        recycle,
-        autoAssignEnabled,
-        autoAssignMode,
-        autoAssignWhenMin,
-      ],
-    );
-    return mapAllocation(rows[0]);
+    try {
+      const { rows } = await runner.query(
+        `INSERT INTO freelancer_activation_plan_daily_allocations (
+           campaign_id, wave_id, plan_tier_code,
+           daily_budget_jod, max_daily_articles,
+           total_article_value_jod, freelancer_share_jod, company_share_jod, reviewer_share_jod,
+           minimum_bidders_per_article, is_enabled, release_mode, release_interval_days,
+           recycle_when_inventory_empty,
+           auto_assign_enabled, auto_assign_mode, auto_assign_when_min_bidders_reached
+         ) VALUES (
+           $1, $2, $3,
+           $4::numeric, $5,
+           $6::numeric, $7::numeric, $8::numeric, $9::numeric,
+           $10, $11, $12, $13, $14,
+           $15, $16, $17
+         ) RETURNING *`,
+        [
+          id,
+          waveParam,
+          tier,
+          dailyBudget,
+          Number.isInteger(maxDaily) ? maxDaily : null,
+          split.totalArticleValueJod,
+          split.freelancerShareJod,
+          split.companyShareJod,
+          split.reviewerShareJod,
+          minBidders,
+          isEnabled,
+          releaseMode,
+          releaseIntervalDays,
+          recycle,
+          autoAssignEnabled,
+          autoAssignMode,
+          autoAssignWhenMin,
+        ],
+      );
+      return mapAllocation(rows[0]);
+    } catch (colErr) {
+      if (colErr?.code !== "42703") throw colErr;
+      const { rows } = await runner.query(
+        `INSERT INTO freelancer_activation_plan_daily_allocations (
+           campaign_id, wave_id, plan_tier_code,
+           daily_budget_jod, max_daily_articles,
+           total_article_value_jod, freelancer_share_jod, company_share_jod, reviewer_share_jod,
+           minimum_bidders_per_article, is_enabled, release_mode, recycle_when_inventory_empty,
+           auto_assign_enabled, auto_assign_mode, auto_assign_when_min_bidders_reached
+         ) VALUES (
+           $1, $2, $3,
+           $4::numeric, $5,
+           $6::numeric, $7::numeric, $8::numeric, $9::numeric,
+           $10, $11, $12, $13,
+           $14, $15, $16
+         ) RETURNING *`,
+        [
+          id,
+          waveParam,
+          tier,
+          dailyBudget,
+          Number.isInteger(maxDaily) ? maxDaily : null,
+          split.totalArticleValueJod,
+          split.freelancerShareJod,
+          split.companyShareJod,
+          split.reviewerShareJod,
+          minBidders,
+          isEnabled,
+          releaseMode,
+          recycle,
+          autoAssignEnabled,
+          autoAssignMode,
+          autoAssignWhenMin,
+        ],
+      );
+      return mapAllocation(rows[0]);
+    }
   } catch (err) {
     if (isMissingSchema(err)) throw schemaMissingError();
     // Pre-175 schema without auto_assign columns
@@ -550,6 +605,26 @@ async function patchPlanAllocation(allocationId, body = {}, { client = null } = 
         ? Boolean(body.autoAssignWhenMinBiddersReached)
         : Boolean(existing.auto_assign_when_min_bidders_reached);
 
+    let releaseIntervalDays =
+      existing.release_interval_days != null
+        ? Math.max(1, Math.min(30, Number(existing.release_interval_days) || 1))
+        : 1;
+    if (body.releaseIntervalDays !== undefined || body.release_interval_days !== undefined) {
+      const raw = body.releaseIntervalDays ?? body.release_interval_days;
+      if (raw === null || raw === "") {
+        releaseIntervalDays = 1;
+      } else {
+        const n = Number(raw);
+        if (!Number.isInteger(n) || n < 1 || n > 30) {
+          throw createAppError("فترة الإنزال يجب أن تكون بين 1 و 30 يومًا.", 400, {
+            exposeToClient: true,
+            publicCode: FREELANCER_ACTIVATION_A91_ERROR_CODES.INVALID_PLAN_TIER,
+          });
+        }
+        releaseIntervalDays = n;
+      }
+    }
+
     try {
       const { rows } = await runner.query(
         `UPDATE freelancer_activation_plan_daily_allocations SET
@@ -562,10 +637,11 @@ async function patchPlanAllocation(allocationId, body = {}, { client = null } = 
            minimum_bidders_per_article = $8,
            is_enabled = $9,
            release_mode = $10,
-           recycle_when_inventory_empty = $11,
-           auto_assign_enabled = $12,
-           auto_assign_mode = $13,
-           auto_assign_when_min_bidders_reached = $14,
+           release_interval_days = $11,
+           recycle_when_inventory_empty = $12,
+           auto_assign_enabled = $13,
+           auto_assign_mode = $14,
+           auto_assign_when_min_bidders_reached = $15,
            updated_at = NOW()
          WHERE id = $1
          RETURNING *`,
@@ -580,6 +656,7 @@ async function patchPlanAllocation(allocationId, body = {}, { client = null } = 
           Math.max(1, Number(body.minimumBiddersPerArticle ?? existing.minimum_bidders_per_article) || 10),
           body.isEnabled !== undefined ? Boolean(body.isEnabled) : Boolean(existing.is_enabled),
           releaseMode,
+          releaseIntervalDays,
           body.recycleWhenInventoryEmpty !== undefined
             ? Boolean(body.recycleWhenInventoryEmpty)
             : Boolean(existing.recycle_when_inventory_empty),
@@ -591,38 +668,80 @@ async function patchPlanAllocation(allocationId, body = {}, { client = null } = 
       return mapAllocation(rows[0]);
     } catch (colErr) {
       if (colErr?.code !== "42703") throw colErr;
-      const { rows } = await runner.query(
-        `UPDATE freelancer_activation_plan_daily_allocations SET
-           daily_budget_jod = $2::numeric,
-           max_daily_articles = $3,
-           total_article_value_jod = $4::numeric,
-           freelancer_share_jod = $5::numeric,
-           company_share_jod = $6::numeric,
-           reviewer_share_jod = $7::numeric,
-           minimum_bidders_per_article = $8,
-           is_enabled = $9,
-           release_mode = $10,
-           recycle_when_inventory_empty = $11,
-           updated_at = NOW()
-         WHERE id = $1
-         RETURNING *`,
-        [
-          id,
-          dailyBudget,
-          maxDaily,
-          split.totalArticleValueJod,
-          split.freelancerShareJod,
-          split.companyShareJod,
-          split.reviewerShareJod,
-          Math.max(1, Number(body.minimumBiddersPerArticle ?? existing.minimum_bidders_per_article) || 10),
-          body.isEnabled !== undefined ? Boolean(body.isEnabled) : Boolean(existing.is_enabled),
-          releaseMode,
-          body.recycleWhenInventoryEmpty !== undefined
-            ? Boolean(body.recycleWhenInventoryEmpty)
-            : Boolean(existing.recycle_when_inventory_empty),
-        ],
-      );
-      return mapAllocation(rows[0]);
+      try {
+        const { rows } = await runner.query(
+          `UPDATE freelancer_activation_plan_daily_allocations SET
+             daily_budget_jod = $2::numeric,
+             max_daily_articles = $3,
+             total_article_value_jod = $4::numeric,
+             freelancer_share_jod = $5::numeric,
+             company_share_jod = $6::numeric,
+             reviewer_share_jod = $7::numeric,
+             minimum_bidders_per_article = $8,
+             is_enabled = $9,
+             release_mode = $10,
+             recycle_when_inventory_empty = $11,
+             auto_assign_enabled = $12,
+             auto_assign_mode = $13,
+             auto_assign_when_min_bidders_reached = $14,
+             updated_at = NOW()
+           WHERE id = $1
+           RETURNING *`,
+          [
+            id,
+            dailyBudget,
+            maxDaily,
+            split.totalArticleValueJod,
+            split.freelancerShareJod,
+            split.companyShareJod,
+            split.reviewerShareJod,
+            Math.max(1, Number(body.minimumBiddersPerArticle ?? existing.minimum_bidders_per_article) || 10),
+            body.isEnabled !== undefined ? Boolean(body.isEnabled) : Boolean(existing.is_enabled),
+            releaseMode,
+            body.recycleWhenInventoryEmpty !== undefined
+              ? Boolean(body.recycleWhenInventoryEmpty)
+              : Boolean(existing.recycle_when_inventory_empty),
+            autoAssignEnabled,
+            autoAssignMode,
+            autoAssignWhenMin,
+          ],
+        );
+        return mapAllocation(rows[0]);
+      } catch (colErr2) {
+        if (colErr2?.code !== "42703") throw colErr2;
+        const { rows } = await runner.query(
+          `UPDATE freelancer_activation_plan_daily_allocations SET
+             daily_budget_jod = $2::numeric,
+             max_daily_articles = $3,
+             total_article_value_jod = $4::numeric,
+             freelancer_share_jod = $5::numeric,
+             company_share_jod = $6::numeric,
+             reviewer_share_jod = $7::numeric,
+             minimum_bidders_per_article = $8,
+             is_enabled = $9,
+             release_mode = $10,
+             recycle_when_inventory_empty = $11,
+             updated_at = NOW()
+           WHERE id = $1
+           RETURNING *`,
+          [
+            id,
+            dailyBudget,
+            maxDaily,
+            split.totalArticleValueJod,
+            split.freelancerShareJod,
+            split.companyShareJod,
+            split.reviewerShareJod,
+            Math.max(1, Number(body.minimumBiddersPerArticle ?? existing.minimum_bidders_per_article) || 10),
+            body.isEnabled !== undefined ? Boolean(body.isEnabled) : Boolean(existing.is_enabled),
+            releaseMode,
+            body.recycleWhenInventoryEmpty !== undefined
+              ? Boolean(body.recycleWhenInventoryEmpty)
+              : Boolean(existing.recycle_when_inventory_empty),
+          ],
+        );
+        return mapAllocation(rows[0]);
+      }
     }
   } catch (err) {
     if (isMissingSchema(err)) throw schemaMissingError();

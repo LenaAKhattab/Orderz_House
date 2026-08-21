@@ -111,7 +111,26 @@ String mapFinancialClaimCreateErrorMessage(
 }) {
   if (error is DioException) {
     final status = error.response?.statusCode;
+    final data = error.response?.data;
+    String? code;
+    if (data is Map) {
+      final raw = data['code'] ?? data['publicCode'] ?? data['errorCode'];
+      if (raw != null) code = raw.toString().trim();
+    }
     final backend = apiErrorMessage(error, fallback: '').trim();
+
+    switch (code) {
+      case 'FREELANCER_KYC_REQUIRED':
+        return 'لا يمكن إنشاء مطالبة مالية قبل تفعيل الحساب.';
+      case 'FREELANCER_KYC_PENDING_REVIEW':
+        return 'طلب تفعيل حسابك قيد المراجعة.';
+      case 'FREELANCER_KYC_REJECTED':
+        return 'تم رفض طلب تفعيل حسابك. يرجى مراجعة السبب وإعادة إرسال الطلب.';
+      case 'FINANCIAL_CLAIM_PRICING_NOT_ALLOWED':
+        return 'لا يمكن إرسال مبالغ أو أسعار من التطبيق عند إنشاء المطالبة.';
+      case 'FINANCIAL_CLAIM_PAYMENT_LEDGER_REQUIRED':
+        return 'لا يمكن تعليم المطالبة كمدفوعة من هنا. يجب تسجيل دفعة مالية.';
+    }
 
     if (status == 409) {
       if (backend.contains('مسبق') || backend.contains('مسبقاً')) {

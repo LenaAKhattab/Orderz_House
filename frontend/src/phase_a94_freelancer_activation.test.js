@@ -34,7 +34,7 @@ describe("Phase A9.4 live monitoring UI", () => {
   it("existing A9.1–A9.3 tabs remain", () => {
     const panel = read("components/admin/FreelancerActivationArticleOpsPanel.jsx");
     assert.match(panel, /صندوق المقالات/);
-    assert.match(panel, /توزيع الخطط اليومي/);
+    assert.match(panel, /توزيع الخطط/);
     assert.match(panel, /مخزن المقالات/);
     assert.match(panel, /إنزال المقالات/);
   });

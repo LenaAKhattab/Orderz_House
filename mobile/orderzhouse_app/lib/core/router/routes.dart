@@ -27,7 +27,10 @@ abstract final class AppRoutes {
 
   static const freelancerOrderDetails = '/freelancer/my-orders/:id';
   static const freelancerPlans = '/freelancer/plans';
+  static const freelancerAccountActivation = '/freelancer/account-activation';
   static const freelancerFinancialClaims = '/freelancer/financial-claims';
+  static const freelancerMiniArticles = '/freelancer/mini-articles';
+  static const freelancerMiniArticleDetail = '/freelancer/mini-articles/:id';
   static const notifications = '/notifications';
 
   static const superAdminActivation = '/super-admin/activation';
@@ -51,6 +54,7 @@ abstract final class AppRoutes {
   static String poolOrderPath(String id) => '/orders/pool/$id';
   static String clientOrderPath(String id) => '/client/orders/$id';
   static String freelancerOrderPath(String id) => '/freelancer/my-orders/$id';
+  static String freelancerMiniArticlePath(String id) => '/freelancer/mini-articles/$id';
 
   static const privacyPolicy = 'privacy-policy';
   static const termsConditions = 'terms-conditions';

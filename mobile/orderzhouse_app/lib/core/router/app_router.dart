@@ -18,6 +18,9 @@ import '../../features/client_orders/presentation/client_order_details_screen.da
 import '../../features/client_orders/presentation/create_order_screen.dart';
 import '../../features/client_orders/presentation/payment_return_screen.dart';
 import '../../features/client_orders/data/payment_return_parser.dart';
+import '../../features/freelancer/account_activation/presentation/account_activation_kyc_screen.dart';
+import '../../features/freelancer/mini_articles/presentation/mini_article_detail_screen.dart';
+import '../../features/freelancer/mini_articles/presentation/mini_articles_hub_screen.dart';
 import '../../features/freelancer/presentation/freelancer_order_detail_screen.dart';
 import '../../features/freelancer/financial_claims/presentation/financial_claims_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
@@ -216,9 +219,27 @@ final routerProvider = Provider<GoRouter>((ref) {
         redirect: (context, state) => AppRoutes.profile,
       ),
       GoRoute(
+        path: AppRoutes.freelancerAccountActivation,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AccountActivationKycScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.freelancerFinancialClaims,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const FinancialClaimsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.freelancerMiniArticles,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MiniArticlesHubScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.freelancerMiniArticleDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return MiniArticleDetailScreen(articleId: id);
+        },
       ),
       GoRoute(
         path: AppRoutes.freelancerOrderDetails,

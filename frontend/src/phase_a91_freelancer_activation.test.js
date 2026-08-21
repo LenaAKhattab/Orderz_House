@@ -19,14 +19,14 @@ describe("Phase A9.1 Mini Article ops UI", () => {
     const panel = read("components/admin/FreelancerActivationArticleOpsPanel.jsx");
     assert.match(panel, /activation-article-ops-panel/);
     assert.match(panel, /صندوق المقالات/);
-    assert.match(panel, /توزيع الخطط اليومي/);
+    assert.match(panel, /توزيع الخطط/);
     assert.match(panel, /مخزن المقالات/);
     assert.match(panel, /activation-fund-balance/);
     assert.match(panel, /activation-fund-deposit-form/);
     assert.match(panel, /activation-fund-withdraw-form/);
     assert.match(panel, /إجمالي قيمة المقال/);
-    assert.match(panel, /حصة الفريلانسر/);
-    assert.match(panel, /حصة الشركة/);
+    assert.match(panel, /حصة المستقل/);
+    assert.match(panel, /حصة المنصة/);
     assert.match(panel, /حصة التدقيق/);
     assert.match(panel, /activation-alloc-error/);
     assert.match(panel, /يجب أن يساوي مجموع الحصص إجمالي قيمة المقال/);
@@ -34,7 +34,13 @@ describe("Phase A9.1 Mini Article ops UI", () => {
     assert.match(panel, /إنزال مقال/);
     assert.match(panel, /activation-no-auto-assign-note/);
     const page = read("pages/dashboard/SuperAdminFreelancerActivationPage.jsx");
-    assert.match(page, /FreelancerActivationArticleOpsPanel/);
+    assert.doesNotMatch(page, /FreelancerActivationArticleOpsPanel/);
+    assert.match(page, /activation-article-mgmt-link-card/);
+    assert.match(page, /فتح المقالات/);
+    assert.match(page, /\/dashboard\/super-admin\/articles/);
+    const hub = read("pages/dashboard/SuperAdminArticlesHubPage.jsx");
+    assert.match(hub, /listSuperAdminActivationArticleFundRequest|getSuperAdminActivationArticleFundRequest/);
+    assert.match(hub, /MarketplaceArticleApplicationsPanel|listSuperAdminActivationLiveArticlesRequest/);
   });
 
   it("default splits match product examples and validate", () => {
