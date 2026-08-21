@@ -227,8 +227,9 @@ void main() {
   });
 
   group('activation / claims / pantry / article safety', () {
-    test('activation has approve only; claims omit paid/pricing/payout', () {
-      expect(superAdminApproveActivationLabelAr, 'اعتماد التفعيل');
+    test('activation approve is web-only; claims omit paid/pricing/payout', () {
+      expect(superAdminActivationWebOnlyMessageAr, contains('لوحة الويب'));
+      expect(isMobileCompanyActivateDisabled(), isTrue);
       expect(superAdminAllowedClaimStatusValues, ['accepted', 'rejected', 'frozen', 'requires_in_person_review']);
       expect(isAllowedClaimStatusAction('paid'), isFalse);
       expect(claimStatusRequiresNote('rejected'), isTrue);
@@ -308,7 +309,8 @@ void main() {
       expect(pantryUi, isNot(contains('archive')));
 
       final activation = File('lib/features/super_admin/presentation/super_admin_queue_screens.dart').readAsStringSync();
-      expect(activation, contains('superAdminApproveActivationLabelAr'));
+      expect(activation, contains('superAdminActivationWebOnlyMessageAr'));
+      expect(activation, isNot(contains('sa-approve-activation-')));
       expect(activation, isNot(contains('رفض التفعيل')));
 
       final freelancerPantry = File('lib/features/pantry/presentation/pantry_hub_screen.dart').readAsStringSync();

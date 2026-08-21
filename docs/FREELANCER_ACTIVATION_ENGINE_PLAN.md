@@ -1204,6 +1204,8 @@ Calls existing `selectArticleApplication` with shared client + override reason.
 
 Fifth ops tab **متابعة المقالات**: summary cards, filters, live rows (`current / required`), auto-assign badges, safe actions (open/view apps, run auto-assign, release another). Links to existing marketplace articles applications panel for approve/reject/revision/Bildazo retry.
 
+**Placement (product UX):** Article operations and monitoring are managed from Super Admin → **المقالات** (`/dashboard/super-admin/articles`), placed in the sidebar directly under **بيت المونة**. Legacy routes (`/article-management`, `/marketplace-articles`) redirect into this hub. Freelancer Activation remains for campaign/settings compatibility only and is no longer a primary sidebar entry for article tools.
+
 ### Privacy
 
 Admin-only. Freelancer UI unchanged — no weights, fund balance, or admin actions exposed.
@@ -1340,3 +1342,14 @@ See focused doc: [`docs/FREELANCER_ACCOUNT_ACTIVATION_KYC.md`](./FREELANCER_ACCO
 - Freelancer FE page no longer calls `/subscription/activate-account`.
 - `backend/uploads/**` gitignored; uploads not served as public static.
 
+---
+
+## 31. Super Admin «المقالات» — single internal setup (product)
+
+**Product:** `/dashboard/super-admin/articles` is the only operational surface for Mini Article fund / inventory / release / monitoring.
+
+**Visible concept:** «المقالات» only — Super Admin does **not** select or manage multiple campaigns on this page.
+
+**Internal implementation:** existing `freelancer_activation_campaigns` (and `campaign_id` FKs) remain for schema compatibility. Backend resolves one default via `getOrCreateDefaultArticleOperationsCampaign` (internal name: «إعداد المقالات الرئيسي»). Endpoints under `article-operations/*` and omitted `campaignId` on fund/inventory/release/live-articles use that default.
+
+**Not changed:** KYC queue stays at «طلبات تفعيل المستقلين»; Stripe/PayTabs/orders/Pantry/Bildazo/Bid internals untouched.

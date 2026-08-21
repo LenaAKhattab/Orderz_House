@@ -10,6 +10,7 @@ class WebConstants {
   WebConstants._();
 
   static const freelancerPlansPath = '/dashboard/freelancer/plans';
+  static const freelancerArticlesPath = '/dashboard/freelancer/articles';
 
   static String get baseUrl {
     final dotEnv = !kReleaseMode && dotenv.isInitialized
@@ -34,6 +35,9 @@ class WebConstants {
   }
 
   static String get freelancerPlansUrl => buildWebPath(freelancerPlansPath);
+
+  /// Web Mini Articles hub (Bildazo link / create account flow lives here).
+  static String get freelancerArticlesUrl => buildWebPath(freelancerArticlesPath);
 
   /// Joins [baseUrl] with [path] without double slashes (except after scheme).
   static String buildWebPath(String path) {

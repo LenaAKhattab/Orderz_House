@@ -39,6 +39,34 @@ function toDateOnly(raw) {
   return s;
 }
 
+/** Clamp interval to 1..30. Missing/invalid → 1 (daily, backward compatible). */
+function normalizeReleaseIntervalDays(raw) {
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 1) return 1;
+  return Math.min(n, 30);
+}
+
+function utcDayNumber(dateOnly) {
+  const [y, m, d] = String(dateOnly).split("-").map(Number);
+  return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
+}
+
+/**
+ * Release day check relative to allocation anchor (created_at date).
+ * interval 1 = every day; 2 = every other day from anchor; etc.
+ */
+function isReleaseDayForInterval({ runDate, intervalDays, anchorDate } = {}) {
+  const interval = normalizeReleaseIntervalDays(intervalDays);
+  if (interval === 1) return true;
+  const run = toDateOnly(runDate);
+  const anchor = anchorDate ? toDateOnly(String(anchorDate).slice(0, 10)) : run;
+  const daysSince = utcDayNumber(run) - utcDayNumber(anchor);
+  if (daysSince < 0) return false;
+  return daysSince % interval === 0;
+}
+
+const NOT_RELEASE_DAY_MESSAGE_AR = "ليس يوم إنزال حسب الجدولة الحالية.";
+
 function mapReleaseRun(row) {
   if (!row) return null;
   return {
@@ -337,6 +365,7 @@ async function planReleaseForAllocation(runner, allocation, {
   runDate,
   dryRun = true,
   includeManualMode = false,
+  bypassInterval = false,
 } = {}) {
   const skipBase = {
     allocationId: allocation.id,
@@ -347,6 +376,8 @@ async function planReleaseForAllocation(runner, allocation, {
     capacity: null,
     skipped: true,
     skipReason: null,
+    messageAr: null,
+    releaseIntervalDays: normalizeReleaseIntervalDays(allocation.releaseIntervalDays),
   };
 
   if (!allocation.isEnabled) {
@@ -357,6 +388,25 @@ async function planReleaseForAllocation(runner, allocation, {
   }
   if (allocation.releaseMode !== "daily_auto" && allocation.releaseMode !== "manual") {
     return { ...skipBase, skipReason: "unsupported_release_mode" };
+  }
+
+  // Auto schedule respects interval; admin manual run (bypassInterval) and inventory publish do not.
+  const intervalDays = normalizeReleaseIntervalDays(allocation.releaseIntervalDays);
+  if (
+    !bypassInterval &&
+    allocation.releaseMode === "daily_auto" &&
+    intervalDays > 1
+  ) {
+    const anchorRaw = allocation.createdAt || allocation.created_at || null;
+    const anchorDate = anchorRaw ? String(anchorRaw).slice(0, 10) : runDate;
+    if (!isReleaseDayForInterval({ runDate, intervalDays, anchorDate })) {
+      return {
+        ...skipBase,
+        skipReason: "not_release_day",
+        messageAr: NOT_RELEASE_DAY_MESSAGE_AR,
+        releaseIntervalDays: intervalDays,
+      };
+    }
   }
 
   const gate = await campaignService.evaluateActivationOpportunityGate({
@@ -662,6 +712,8 @@ async function runDailyMiniArticleRelease({
         runDate,
         dryRun: false,
         includeManualMode,
+        // Admin "تشغيل إنزال الآن" uses runType=manual → bypass schedule day.
+        bypassInterval: includeManualMode,
       });
 
       // Re-cap planned rows by remaining fund in this run (multi-tier safety).
@@ -949,4 +1001,7 @@ module.exports = {
   mapReleaseRun,
   mapReleaseItem,
   planReleaseForAllocation,
+  normalizeReleaseIntervalDays,
+  isReleaseDayForInterval,
+  NOT_RELEASE_DAY_MESSAGE_AR,
 };

@@ -133,6 +133,13 @@ class FreelancerHomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 HomeWideActionTile(
+                  title: 'المقالات المصغّرة',
+                  subtitle: 'قدّم على Mini Articles وتابع الرصيد المكتسب',
+                  icon: Icons.article_outlined,
+                  onTap: () => context.push(AppRoutes.freelancerMiniArticles),
+                ),
+                const SizedBox(height: 12),
+                HomeWideActionTile(
                   title: 'الدورات التدريبية',
                   subtitle: 'أكمل دوراتك المطلوبة للعمل على المنصة',
                   icon: Icons.school_rounded,

@@ -22,6 +22,7 @@ import {
   runSuperAdminActivationLiveArticleAutoAssignmentRequest,
   releaseAnotherSuperAdminActivationLiveArticleRequest,
 } from "../../services/api";
+import "../../pages/dashboard/super-admin-article-management.css";
 
 const emptyInventory = {
   title: "",
@@ -30,8 +31,54 @@ const emptyInventory = {
   status: "ready",
 };
 
-export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
-  const [tab, setTab] = useState("fund");
+function fundEntryTypeAr(type) {
+  const t = String(type || "").toLowerCase();
+  if (t.includes("deposit") || t === "credit") return "إيداع";
+  if (t.includes("withdraw") || t === "debit") return "سحب";
+  return type || "—";
+}
+
+function inventoryStatusAr(status) {
+  switch (String(status || "").toLowerCase()) {
+    case "draft":
+      return "مسودة";
+    case "ready":
+      return "جاهز";
+    case "released":
+      return "منزّل";
+    default:
+      return status || "—";
+  }
+}
+
+function releaseModeAr(mode) {
+  switch (String(mode || "").toLowerCase()) {
+    case "manual":
+      return "يدوي";
+    case "auto":
+    case "automatic":
+      return "تلقائي";
+    default:
+      return mode || "—";
+  }
+}
+
+/**
+ * A9 article ops (fund / allocation / inventory / release / monitor).
+ * Used by إدارة المقالات hub (preferred) — keep campaign-scoped API calls unchanged.
+ */
+export default function FreelancerActivationArticleOpsPanel({
+  campaignId,
+  activeTab: controlledTab,
+  hideTabBar = false,
+  onSummaryChange,
+}) {
+  const [internalTab, setInternalTab] = useState("fund");
+  const tab = controlledTab || internalTab;
+  const setTab = (id) => {
+    if (controlledTab == null) setInternalTab(id);
+  };
+
   const [fund, setFund] = useState(null);
   const [allocations, setAllocations] = useState([]);
   const [inventory, setInventory] = useState([]);
@@ -46,6 +93,8 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
     maxDailyArticles: 5,
     minimumBiddersPerArticle: 10,
     releaseMode: "manual",
+    recycleWhenInventoryEmpty: false,
+    autoAssignEnabled: false,
   }));
   const [allocError, setAllocError] = useState("");
   const [invForm, setInvForm] = useState(emptyInventory);
@@ -95,6 +144,18 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (typeof onSummaryChange !== "function") return;
+    const readyCount = inventory.filter((i) => i.status === "ready").length;
+    onSummaryChange({
+      fundBalanceJod: fund?.currentBalanceJod ?? null,
+      inventoryReady: campaignId ? readyCount : null,
+      totalReleased: liveSummary?.totalReleased ?? null,
+      waitingForBidders: liveSummary?.waitingForBidders ?? null,
+      readyForAssignment: liveSummary?.readyForAssignment ?? null,
+    });
+  }, [fund, inventory, liveSummary, campaignId, onSummaryChange]);
 
   const releaseStats = useMemo(() => {
     const alloc = allocations.find((a) => a.planTierCode === releaseTier) || null;
@@ -299,31 +360,37 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
     }
   }
 
+  const articleDetailHref = (articleId) =>
+    `/dashboard/super-admin/article-management?tab=articles&edit=${articleId}`;
+
   return (
     <div data-testid="activation-article-ops-panel" className="grid gap-4">
-      <div className="flex flex-wrap gap-2" data-testid="activation-ops-tabs">
-        {[
-          { id: "fund", label: "صندوق المقالات" },
-          { id: "alloc", label: "توزيع الخطط اليومي" },
-          { id: "inventory", label: "مخزن المقالات" },
-          { id: "release", label: "إنزال المقالات" },
-          { id: "monitor", label: "متابعة المقالات" },
-        ].map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            data-testid={`activation-ops-tab-${t.id}`}
-            className="oh-account-btn-primary"
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {!hideTabBar ? (
+        <div className="flex flex-wrap gap-2" data-testid="activation-ops-tabs">
+          {[
+            { id: "fund", label: "صندوق المقالات" },
+            { id: "alloc", label: "توزيع الخطط" },
+            { id: "inventory", label: "مخزن المقالات" },
+            { id: "release", label: "إنزال المقالات" },
+            { id: "monitor", label: "متابعة المقالات" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              data-testid={`activation-ops-tab-${t.id}`}
+              className="oh-account-btn-primary"
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {error ? <p data-testid="activation-ops-error">{error}</p> : null}
 
       {tab === "fund" ? (
         <div data-testid="activation-fund-tab" className="grid gap-3 max-w-2xl">
+          <p className="oh-am-helper">أضف أو اسحب رصيد تمويل مقالات التفعيل لهذه الحملة.</p>
           <p data-testid="activation-fund-balance">
             الرصيد الحالي: {fund?.currentBalanceJod ?? "0.000"} JOD
           </p>
@@ -349,11 +416,11 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
             </button>
           </form>
           <div data-testid="activation-fund-ledger">
-            <h3>سجل العمليات</h3>
+            <h3>آخر العمليات</h3>
             <ul>
               {(fund?.recentEntries || []).map((e) => (
                 <li key={e.id}>
-                  {e.entryType}: {e.amountJod} JOD
+                  {fundEntryTypeAr(e.entryType)}: {e.amountJod} JOD
                 </li>
               ))}
             </ul>
@@ -362,10 +429,11 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
       ) : null}
 
       {tab === "alloc" ? (
-        <div data-testid="activation-alloc-tab" className="grid gap-3 max-w-3xl">
+        <div data-testid="activation-alloc-tab" className="grid gap-3 max-w-4xl">
+          <p className="oh-am-helper">حدّد قيمة المقال وعدد المقالات اليومية لكل خطة.</p>
           <form onSubmit={onSaveAllocation} data-testid="activation-alloc-form" className="grid gap-2">
             <label>
-              الباقة
+              الخطة
               <select
                 value={allocForm.planTierCode}
                 onChange={(e) => {
@@ -392,14 +460,14 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
               />
             </label>
             <label>
-              حصة الفريلانسر
+              حصة المستقل
               <input
                 value={allocForm.freelancerShareJod}
                 onChange={(e) => setAllocForm({ ...allocForm, freelancerShareJod: e.target.value })}
               />
             </label>
             <label>
-              حصة الشركة
+              حصة المنصة
               <input
                 value={allocForm.companyShareJod}
                 onChange={(e) => setAllocForm({ ...allocForm, companyShareJod: e.target.value })}
@@ -429,6 +497,57 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
                 }
               />
             </label>
+            <label>
+              عدد المتقدمين المطلوب
+              <input
+                type="number"
+                value={allocForm.minimumBiddersPerArticle}
+                onChange={(e) =>
+                  setAllocForm({
+                    ...allocForm,
+                    minimumBiddersPerArticle: Number(e.target.value),
+                  })
+                }
+              />
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={Boolean(allocForm.autoAssignEnabled)}
+                onChange={(e) =>
+                  setAllocForm({ ...allocForm, autoAssignEnabled: e.target.checked })
+                }
+              />{" "}
+              تفعيل التوزيع التلقائي
+            </label>
+            <details className="oh-am-advanced">
+              <summary>إعدادات متقدمة</summary>
+              <div className="grid gap-2 mt-2">
+                <label>
+                  وضع الإنزال
+                  <select
+                    value={allocForm.releaseMode}
+                    onChange={(e) => setAllocForm({ ...allocForm, releaseMode: e.target.value })}
+                  >
+                    <option value="manual">يدوي</option>
+                    <option value="auto">تلقائي</option>
+                  </select>
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(allocForm.recycleWhenInventoryEmpty)}
+                    onChange={(e) =>
+                      setAllocForm({
+                        ...allocForm,
+                        recycleWhenInventoryEmpty: e.target.checked,
+                      })
+                    }
+                  />{" "}
+                  إعادة التدوير عند نفاد المخزون
+                </label>
+              </div>
+            </details>
             {allocError ? <p data-testid="activation-alloc-error">{allocError}</p> : null}
             <button type="submit" disabled={busy}>
               حفظ توزيع الخطة
@@ -437,21 +556,29 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
           <table data-testid="activation-alloc-table">
             <thead>
               <tr>
-                <th>الباقة</th>
+                <th>الخطة</th>
+                <th>الحد اليومي بالدينار</th>
+                <th>الحد اليومي بعدد المقالات</th>
                 <th>إجمالي قيمة المقال</th>
-                <th>حصة الفريلانسر</th>
-                <th>حصة الشركة</th>
+                <th>حصة المستقل</th>
                 <th>حصة التدقيق</th>
+                <th>حصة المنصة</th>
+                <th>عدد المتقدمين المطلوب</th>
+                <th>تفعيل التوزيع التلقائي</th>
               </tr>
             </thead>
             <tbody>
               {allocations.map((a) => (
                 <tr key={a.id}>
                   <td>{a.planTierCode}</td>
+                  <td>{a.dailyBudgetJod ?? "—"}</td>
+                  <td>{a.maxDailyArticles ?? "—"}</td>
                   <td>{a.totalArticleValueJod}</td>
                   <td>{a.freelancerShareJod}</td>
-                  <td>{a.companyShareJod}</td>
                   <td>{a.reviewerShareJod}</td>
+                  <td>{a.companyShareJod}</td>
+                  <td>{a.minimumBiddersPerArticle ?? "—"}</td>
+                  <td>{a.autoAssignEnabled ? "نعم" : "لا"}</td>
                 </tr>
               ))}
             </tbody>
@@ -461,6 +588,7 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
 
       {tab === "inventory" ? (
         <div data-testid="activation-inventory-tab" className="grid gap-3 max-w-2xl">
+          <p className="oh-am-helper">ضع هنا المقالات الجاهزة ليتم إنزالها لاحقاً للمستقلين.</p>
           <form onSubmit={onCreateInventory} data-testid="activation-inventory-form" className="grid gap-2">
             <label>
               إضافة مقال للمخزن
@@ -471,7 +599,7 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
               />
             </label>
             <label>
-              الباقة المستهدفة
+              الخطة المستهدفة
               <select
                 value={invForm.planTierCode}
                 onChange={(e) => setInvForm({ ...invForm, planTierCode: e.target.value })}
@@ -491,10 +619,11 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
           <ul data-testid="activation-inventory-list">
             {inventory.map((item) => (
               <li key={item.id}>
-                {item.title} · {item.planTierCode} · {item.status} · إنزال {item.releasedCount}
+                {item.title} · {item.planTierCode} · {inventoryStatusAr(item.status)} · إنزال{" "}
+                {item.releasedCount}
                 {item.status === "draft" ? (
                   <button type="button" onClick={() => void onMarkReady(item.id)} disabled={busy}>
-                    جاهز للنشر
+                    جاهز للإنزال
                   </button>
                 ) : null}
                 {item.status === "ready" || item.status === "released" ? (
@@ -511,15 +640,16 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
             ))}
           </ul>
           <p data-testid="activation-no-auto-assign-note">
-            لا يوجد تعيين فائز تلقائي في هذه المرحلة (A9.1 / A9.2).
+            ملاحظة: الإسناد التلقائي للفائز يُدار من تبويب المتابعة عند تفعيله للخطة.
           </p>
         </div>
       ) : null}
 
       {tab === "release" ? (
         <div data-testid="activation-release-tab" className="grid gap-3 max-w-3xl">
+          <p className="oh-am-helper">استخدم هذه الصفحة لإنزال مقالات من المخزن حسب التوزيع المحدد.</p>
           <label>
-            الباقة
+            الخطة
             <select
               data-testid="activation-release-tier"
               value={releaseTier}
@@ -576,38 +706,34 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
           </div>
           {releaseError ? <p data-testid="activation-release-error">{releaseError}</p> : null}
           {releasePreview ? (
-            <pre data-testid="activation-release-preview-json" className="overflow-auto text-xs">
-              {JSON.stringify(
-                {
-                  plannedCount: releasePreview.plannedCount,
-                  plannedValueJod: releasePreview.plannedValueJod,
-                  fundBalanceJod: releasePreview.fundBalanceJod,
-                  allocations: releasePreview.allocations,
-                },
-                null,
-                2,
-              )}
-            </pre>
+            <div data-testid="activation-release-preview-json" className="oh-am-advanced">
+              <p>
+                المتوقع: {releasePreview.plannedCount ?? "—"} مقال · قيمة{" "}
+                {releasePreview.plannedValueJod ?? "—"} JOD · رصيد الصندوق{" "}
+                {releasePreview.fundBalanceJod ?? "—"} JOD
+              </p>
+            </div>
           ) : null}
           <div data-testid="activation-release-runs">
-            <h3>سجل عمليات الإنزال</h3>
+            <h3>آخر عمليات الإنزال</h3>
             <ul>
               {releaseRuns.map((r) => (
                 <li key={r.id} data-testid={`activation-release-run-${r.id}`}>
-                  {r.runDate} · {r.runType} · {r.status} · {r.releasedCount} مقال ·{" "}
+                  {r.runDate} · {releaseModeAr(r.runType)} · {r.status} · {r.releasedCount} مقال ·{" "}
                   {r.totalReservedValueJod} JOD
                 </li>
               ))}
             </ul>
           </div>
           <p data-testid="activation-release-no-auto-assign">
-            لا يوجد تعيين فائز تلقائي في A9.2 — الإنزال فقط.
+            الإنزال من هذا التبويب لا يختار فائزًا تلقائيًا — استخدم المتابعة عند الحاجة.
           </p>
         </div>
       ) : null}
 
       {tab === "monitor" ? (
         <div data-testid="activation-monitor-tab" className="grid gap-3">
+          <p className="oh-am-helper">تابع المقالات التي ظهرت للمستقلين وحالة التقديم والتوزيع.</p>
           <div data-testid="activation-monitor-summary" className="flex flex-wrap gap-3 text-sm">
             <span>المقالات المنزلة: {liveSummary?.totalReleased ?? 0}</span>
             <span>بانتظار المتقدمين: {liveSummary?.waitingForBidders ?? 0}</span>
@@ -621,7 +747,7 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
 
           <div data-testid="activation-monitor-filters" className="flex flex-wrap gap-2 items-end">
             <label>
-              الباقة
+              الخطة
               <select
                 value={liveFilter.planTierCode}
                 onChange={(e) => setLiveFilter({ ...liveFilter, planTierCode: e.target.value })}
@@ -696,19 +822,18 @@ export default function FreelancerActivationArticleOpsPanel({ campaignId }) {
                 </div>
                 <div className="text-sm">
                   المختار: {item.selectedFreelancerDisplayName || "—"} · مراجعة:{" "}
-                  {item.reviewStatus || "—"} · Bildazo: {item.bildazoPublishStatus || "—"} · ميزانية:{" "}
-                  {item.budgetState || "—"}
+                  {item.reviewStatus || "—"} · نشر Bildazo: {item.bildazoPublishStatus || "—"}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <a
                     data-testid="activation-monitor-open-article"
-                    href={`/dashboard/super-admin/marketplace-articles?edit=${item.articleId}`}
+                    href={articleDetailHref(item.articleId)}
                   >
                     فتح التفاصيل
                   </a>
                   <a
                     data-testid="activation-monitor-view-apps"
-                    href={`/dashboard/super-admin/marketplace-articles?edit=${item.articleId}`}
+                    href={articleDetailHref(item.articleId)}
                   >
                     عرض المتقدمين
                   </a>

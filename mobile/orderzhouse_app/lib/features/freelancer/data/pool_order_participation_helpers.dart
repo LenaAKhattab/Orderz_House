@@ -1,17 +1,31 @@
 import '../../orders/data/pool_order_models.dart';
+import 'plan_upgrade_cta.dart';
 
 const poolPlanLockMessageAr = 'هذا الطلب غير متاح لحسابك حاليًا.';
 
 bool isPoolOrderLockedByPlan(PoolOrder order) => order.isPlanLocked;
 
+PlanUpgradeCtaProps? poolOrderPlanUpgradeProps(PoolOrder order) {
+  final pe = order.poolEligibility;
+  return planUpgradePropsFromPoolEligibility(
+    isLockedByPlan: pe?.isLockedByPlan == true || order.isPlanLocked,
+    planConfigurationError: pe?.planConfigurationError,
+    requiredTierCode: pe?.requiredTierCode,
+    requiredPlanLabel: pe?.requiredPlanLabel ?? pe?.suggestedUpgradePlanTitle,
+    lockReason: pe?.lockReason,
+  );
+}
+
 String poolPlanLockUserMessage(PoolOrder order) {
+  final props = poolOrderPlanUpgradeProps(order);
+  if (props != null) {
+    return buildPlanUpgradeCopy(
+      requiredTierCode: props.requiredTierCode,
+      requiredPlanLabel: props.requiredPlanLabel,
+    ).headline;
+  }
   final reason = order.poolEligibility?.lockReason?.trim();
   if (reason != null && reason.isNotEmpty) {
-    // Strip purchase-oriented phrasing when API returns plan-oriented copy.
-    final lower = reason.toLowerCase();
-    if (lower.contains('باق') || lower.contains('اشتراك') || lower.contains('plan')) {
-      return poolPlanLockMessageAr;
-    }
     return reason;
   }
   return poolPlanLockMessageAr;

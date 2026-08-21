@@ -1,9 +1,9 @@
 export const FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS = Object.freeze([
-  { value: "starter", labelAr: "تجربة / مجاني / Starter" },
-  { value: "trial", labelAr: "Trial" },
-  { value: "silver", labelAr: "Silver" },
-  { value: "pro", labelAr: "Pro" },
-  { value: "elite", labelAr: "Elite" },
+  { value: "starter", labelAr: "تجربة / مجاني" },
+  { value: "trial", labelAr: "تجربة" },
+  { value: "silver", labelAr: "فضية (Silver)" },
+  { value: "pro", labelAr: "احترافية (Pro)" },
+  { value: "elite", labelAr: "نخبة (Elite)" },
 ]);
 
 export const FREELANCER_ACTIVATION_PLAN_SPLIT_DEFAULTS = Object.freeze({

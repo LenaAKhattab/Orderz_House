@@ -60,7 +60,7 @@ describe("Phase A6 Silver conversion UI", () => {
     assert.match(api, /start-silver-checkout/);
     const admin = read("pages/dashboard/SuperAdminFreelancerActivationPage.jsx");
     assert.match(admin, /admin-conversion-counters/);
-    assert.match(admin, /CTA shown/);
+    assert.match(admin, /ظهر الزر/);
   });
 
   it("earned balance panel still has no withdrawal/claim buttons", () => {

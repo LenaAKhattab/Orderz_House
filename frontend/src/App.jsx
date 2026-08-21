@@ -47,6 +47,8 @@ import {
   SuperAdminTrainingPackagesPage,
   SuperAdminMarketplaceEconomyPage,
   SuperAdminMarketplaceArticlesPage,
+  SuperAdminArticleManagementPage,
+  SuperAdminArticlesHubPage,
   SuperAdminFreelancerActivationPage,
   SuperAdminFreelancerActivationRequestsPage,
   SuperAdminBildazoAuthorLinksPage,
@@ -335,6 +337,22 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
                       <SuperAdminMarketplaceArticlesPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/article-management"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminArticleManagementPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/articles"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminArticlesHubPage />
                     </RequireRole>
                   }
                 />

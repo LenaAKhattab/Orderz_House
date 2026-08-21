@@ -43,6 +43,15 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     matchPrefix: "/dashboard/super-admin/pantry",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.pantry,
   },
+  articles: {
+    key: "articles",
+    to: "/dashboard/super-admin/articles",
+    labelKey: "dashboard.nav.superAdmin.articles",
+    icon: "plans",
+    end: true,
+    matchPrefix: "/dashboard/super-admin/articles",
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
+  },
   financialClaims: {
     key: "financialClaims",
     to: "/dashboard/super-admin/financial-claims",
@@ -82,8 +91,16 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
   },
   marketplaceArticles: {
     key: "marketplaceArticles",
-    to: "/dashboard/super-admin/marketplace-articles",
-    labelKey: "dashboard.nav.superAdmin.marketplaceArticles",
+    to: "/dashboard/super-admin/article-management",
+    labelKey: "dashboard.nav.superAdmin.articleManagement",
+    icon: "plans",
+    end: true,
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
+  },
+  articleManagement: {
+    key: "articleManagement",
+    to: "/dashboard/super-admin/article-management",
+    labelKey: "dashboard.nav.superAdmin.articleManagement",
     icon: "plans",
     end: true,
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans,
@@ -221,7 +238,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "ordersOps",
     labelKey: "dashboard.nav.sections.ordersOps",
-    itemKeys: ["internalRequests", "trainingRequests", "pantry"],
+    itemKeys: ["internalRequests", "trainingRequests", "pantry", "articles"],
     showCreateOrder: true,
   },
   {
@@ -232,7 +249,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "usersSubscriptions",
     labelKey: "dashboard.nav.sections.usersSubscriptions",
-    itemKeys: ["plans", "marketplacePlans", "marketplaceEconomy", "marketplaceArticles", "freelancerActivation", "freelancerActivationRequests", "bildazoAuthorLinks", "subscriptions", "subscriptionActivation"],
+    itemKeys: ["plans", "marketplacePlans", "marketplaceEconomy", "freelancerActivationRequests", "bildazoAuthorLinks", "subscriptions", "subscriptionActivation"],
   },
   {
     id: "contentTraining",
@@ -301,8 +318,12 @@ export function superAdminBreadcrumbKeys(pathname) {
   if (pathname.includes("/freelancer-activation")) {
     return [...base, "dashboard.breadcrumbs.freelancerActivation"];
   }
-  if (pathname.includes("/marketplace-articles")) {
-    return [...base, "dashboard.breadcrumbs.marketplaceArticles"];
+  if (
+    pathname.includes("/articles") ||
+    pathname.includes("/article-management") ||
+    pathname.includes("/marketplace-articles")
+  ) {
+    return [...base, "dashboard.breadcrumbs.articles"];
   }
   if (pathname.includes("/bid-credits")) {
     return [...base, "dashboard.breadcrumbs.bidCredits"];

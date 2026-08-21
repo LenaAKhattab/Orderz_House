@@ -23,7 +23,7 @@ import {
 } from "../../services/api";
 import { sharesSumToTotal } from "../../constants/freelancerActivationCampaign";
 import FreelancerActivationKpiDashboard from "../../components/admin/FreelancerActivationKpiDashboard";
-import FreelancerActivationArticleOpsPanel from "../../components/admin/FreelancerActivationArticleOpsPanel";
+import { Link } from "react-router-dom";
 
 const emptyCampaignForm = {
   name: "",
@@ -185,46 +185,62 @@ export default function SuperAdminFreelancerActivationPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title="Freelancer Activation Engine"
+        title="محرك تفعيل المستقلين"
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.freelancerActivation")}
       />
       {loading ? <DashboardLoadingState /> : null}
       {!loading && error ? <DashboardErrorState message={error} onRetry={loadList} /> : null}
 
+      <DashboardSection title="إدارة مقالات التفعيل">
+        <div data-testid="activation-article-mgmt-link-card" className="grid gap-2 max-w-xl">
+          <p>
+            الصندوق، المخزن، الإنزال، ومتابعة المقالات أصبحت ضمن صفحة المقالات الموحّدة.
+          </p>
+          <Link
+            to="/dashboard/super-admin/articles"
+            className="oh-account-btn-primary"
+            data-testid="activation-open-article-management"
+            style={{ display: "inline-block", textAlign: "center", maxWidth: "16rem" }}
+          >
+            فتح المقالات
+          </Link>
+        </div>
+      </DashboardSection>
+
       {settings ? (
-        <DashboardSection title="Engine settings">
+        <DashboardSection title="إعدادات التفعيل">
           <p data-testid="activation-settings-snapshot">
-            Engine {settings.engineEnabled ? "on" : "off"} · trial {settings.trialDurationDays}d ·
-            bids {settings.trialBids} · daily {settings.dailyBidLimit}
+            المحرك {settings.engineEnabled ? "مفعّل" : "متوقف"} · مدة التجربة {settings.trialDurationDays} يوم ·
+            عروض {settings.trialBids} · يوميًا {settings.dailyBidLimit}
           </p>
         </DashboardSection>
       ) : null}
 
       {earnedBalance ? (
-        <DashboardSection title="Earned balance (freelancer share)">
+        <DashboardSection title="الرصيد المكتسب">
           <p data-testid="admin-earned-balance-summary">
-            Pending {earnedBalance.totalPendingJod} JOD · accepted {earnedBalance.totalAcceptedArticles} ·
-            published {earnedBalance.totalPublishedArticles}
+            قيد المعالجة {earnedBalance.totalPendingJod} JOD · مقبول {earnedBalance.totalAcceptedArticles} ·
+            منشور {earnedBalance.totalPublishedArticles}
           </p>
         </DashboardSection>
       ) : null}
 
       {workInventoryReserve || settings ? (
-        <DashboardSection title="Work Inventory Reserve">
+        <DashboardSection title="احتياطي مخزون العمل">
           <div data-testid="admin-work-inventory-reserve" className="grid gap-3 max-w-2xl">
             <p data-testid="admin-wir-status">
-              Reserve{" "}
+              الاحتياطي{" "}
               {(workInventoryReserve?.settings?.workInventoryEnabled ?? settings?.workInventoryEnabled)
-                ? "enabled"
-                : "disabled"}{" "}
+                ? "مفعّل"
+                : "متوقف"}{" "}
               · {workInventoryReserve?.settings?.workInventoryPercentage ??
                 settings?.workInventoryPercentage ??
                 50}
               %
             </p>
             <p data-testid="admin-wir-totals">
-              Total allocated {workInventoryReserve?.totalReserveAllocatedJod ?? "0.000"} JOD · active{" "}
-              {workInventoryReserve?.totalReserveActiveJod ?? "0.000"} JOD · reversed{" "}
+              إجمالي المخصص {workInventoryReserve?.totalReserveAllocatedJod ?? "0.000"} JOD · نشط{" "}
+              {workInventoryReserve?.totalReserveActiveJod ?? "0.000"} JOD · مُعاد{" "}
               {workInventoryReserve?.totalReserveReversedJod ?? "0.000"} JOD
             </p>
             <p data-testid="admin-wir-internal-note" className="text-sm opacity-90">
@@ -245,10 +261,10 @@ export default function SuperAdminFreelancerActivationPage() {
                       settings?.workInventoryEnabled,
                   )}
                 />{" "}
-                Enable Work Inventory Reserve
+                تفعيل احتياطي مخزون العمل
               </label>
               <label>
-                Reserve percentage (0–100)
+                نسبة الاحتياطي (0–100)
                 <input
                   name="workInventoryPercentage"
                   type="number"
@@ -264,60 +280,60 @@ export default function SuperAdminFreelancerActivationPage() {
               </label>
               {wirFormError ? <p data-testid="admin-wir-settings-error">{wirFormError}</p> : null}
               <button type="submit" className="oh-account-btn-primary" disabled={wirSaving}>
-                Save reserve settings
+                حفظ إعدادات الاحتياطي
               </button>
             </form>
             {(workInventoryReserve?.recentEntries || []).length > 0 ? (
               <ul data-testid="admin-wir-recent-entries">
                 {workInventoryReserve.recentEntries.slice(0, 10).map((entry) => (
                   <li key={entry.id}>
-                    user {entry.freelancerUserId} · {entry.planCode} · {entry.reserveAmountJod} JOD ·{" "}
+                    مستخدم {entry.freelancerUserId} · {entry.planCode} · {entry.reserveAmountJod} JOD ·{" "}
                     {entry.status}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p data-testid="admin-wir-empty">No reserve entries yet.</p>
+              <p data-testid="admin-wir-empty">لا توجد قيود احتياطي بعد.</p>
             )}
           </div>
         </DashboardSection>
       ) : null}
 
       {conversion ? (
-        <DashboardSection title="Silver conversion (compact)">
+        <DashboardSection title="تحويل إلى Silver (مختصر)">
           <p data-testid="admin-conversion-counters">
-            CTA shown {conversion.ctaShownCount ?? 0} · payment started{" "}
-            {conversion.paymentStartedCount ?? 0} · paid active {conversion.paidActiveCount ?? 0}
+            ظهر الزر {conversion.ctaShownCount ?? 0} · بدأ الدفع{" "}
+            {conversion.paymentStartedCount ?? 0} · اشتراك نشط {conversion.paidActiveCount ?? 0}
             {conversion.trialToSilverRate != null
-              ? ` · rate ${conversion.trialToSilverRate}`
-              : " · rate —"}
+              ? ` · النسبة ${conversion.trialToSilverRate}`
+              : " · النسبة —"}
           </p>
         </DashboardSection>
       ) : null}
 
       {!loading ? (
-        <DashboardSection title="مؤشرات محرك التفعيل (KPI)">
+        <DashboardSection title="مؤشرات التفعيل">
           <FreelancerActivationKpiDashboard campaigns={campaigns} />
         </DashboardSection>
       ) : null}
 
-      <DashboardSection title="Create campaign">
+      <DashboardSection title="إنشاء حملة">
         <form onSubmit={onCreateCampaign} data-testid="create-campaign-form" className="grid gap-2 max-w-xl">
           <input
             required
-            placeholder="Campaign name"
+            placeholder="اسم الحملة"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
           <label>
-            Total budget JOD
+            الميزانية الإجمالية (دينار)
             <input
               value={form.totalBudgetJod}
               onChange={(e) => setForm({ ...form, totalBudgetJod: e.target.value })}
             />
           </label>
           <label>
-            Article value / freelancer / company / reviewer
+            قيمة المقال / المستقل / المنصة / التدقيق
             <input
               value={form.articleTotalValueJod}
               onChange={(e) => setForm({ ...form, articleTotalValueJod: e.target.value })}
@@ -337,20 +353,20 @@ export default function SuperAdminFreelancerActivationPage() {
           </label>
           {formError ? <p data-testid="create-campaign-error">{formError}</p> : null}
           <button type="submit" className="oh-account-btn-primary" disabled={saving}>
-            Create campaign
+            إنشاء حملة
           </button>
         </form>
       </DashboardSection>
 
-      <DashboardSection title="Campaigns">
+      <DashboardSection title="الحملات">
         {campaigns.length === 0 ? (
-          <DashboardEmptyState title="No campaigns yet" description="Create a campaign to fund trial Mini Articles later." />
+          <DashboardEmptyState title="لا توجد حملات بعد" description="أنشئ حملة لتمويل مقالات التجربة لاحقًا." />
         ) : (
           <ul data-testid="activation-campaign-list">
             {campaigns.map((c) => (
               <li key={c.id}>
                 <button type="button" onClick={() => void openCampaign(c.id)}>
-                  {c.name} · {c.status} · remaining {c.budget?.remainingBudgetJod}
+                  {c.name} · {c.status} · متبقي {c.budget?.remainingBudgetJod}
                 </button>
               </li>
             ))}
@@ -359,42 +375,42 @@ export default function SuperAdminFreelancerActivationPage() {
       </DashboardSection>
 
       {detail?.campaign ? (
-        <DashboardSection title="Campaign detail">
+        <DashboardSection title="تفاصيل الحملة">
           <div data-testid="campaign-detail">
             <p>
               {detail.campaign.name} · {detail.campaign.status}
-              {detail.campaign.emergencyStopEnabled ? " · emergency stop" : ""}
+              {detail.campaign.emergencyStopEnabled ? " · إيقاف طارئ" : ""}
             </p>
             <p data-testid="linked-articles-count">
-              Linked articles: {detail.linkedArticlesCount ?? 0}
+              مقالات مرتبطة: {detail.linkedArticlesCount ?? 0}
             </p>
             <p data-testid="emergency-stop-copy">
-              Emergency stop blocks new applications and assignment for linked Mini Articles. It does not spend budget.
+              الإيقاف الطارئ يمنع التقديمات الجديدة والإسناد للمقالات المرتبطة. لا يصرف من الميزانية.
             </p>
             <dl data-testid="campaign-budget-summary">
-              <div>Total {budget?.totalBudgetJod}</div>
-              <div>Reserved {budget?.reservedBudgetJod}</div>
-              <div>Used {budget?.usedBudgetJod}</div>
-              <div>Remaining {budget?.remainingBudgetJod}</div>
-              <div>Allocated {budget?.allocatedToWavesJod}</div>
-              <div>Unallocated {budget?.unallocatedBudgetJod}</div>
+              <div>الإجمالي {budget?.totalBudgetJod}</div>
+              <div>محجوز {budget?.reservedBudgetJod}</div>
+              <div>مستخدم {budget?.usedBudgetJod}</div>
+              <div>متبقي {budget?.remainingBudgetJod}</div>
+              <div>مخصص للموجات {budget?.allocatedToWavesJod}</div>
+              <div>غير مخصص {budget?.unallocatedBudgetJod}</div>
             </dl>
-            <p data-testid="assigned-articles-count">Assigned articles: {detail.assignedArticleCount ?? 0}</p>
-            <p data-testid="accepted-articles-count">Accepted articles: {detail.acceptedArticleCount ?? 0}</p>
+            <p data-testid="assigned-articles-count">مقالات مسندة: {detail.assignedArticleCount ?? 0}</p>
+            <p data-testid="accepted-articles-count">مقالات مقبولة: {detail.acceptedArticleCount ?? 0}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <button
                 type="button"
                 disabled={saving}
                 onClick={() => void pauseSuperAdminActivationCampaignRequest(detail.campaign.id).then(() => openCampaign(detail.campaign.id))}
               >
-                Pause
+                إيقاف مؤقت
               </button>
               <button
                 type="button"
                 disabled={saving}
                 onClick={() => void resumeSuperAdminActivationCampaignRequest(detail.campaign.id).then(() => openCampaign(detail.campaign.id))}
               >
-                Resume
+                استئناف
               </button>
               <button
                 type="button"
@@ -402,24 +418,21 @@ export default function SuperAdminFreelancerActivationPage() {
                 disabled={saving}
                 onClick={() => void onEmergencyStop()}
               >
-                Emergency stop
+                إيقاف طارئ
               </button>
             </div>
-            <div className="mt-4">
-              <FreelancerActivationArticleOpsPanel campaignId={detail.campaign.id} />
-            </div>
-            <h3 className="mt-3">Waves</h3>
+            <h3 className="mt-3">الموجات</h3>
             <ul data-testid="activation-wave-list">
               {(detail.waves || []).map((w) => (
                 <li key={w.id} data-testid="activation-wave-budget">
-                  {w.name} · {w.status} · reserved {w.budget?.reservedBudgetJod} · used {w.budget?.usedBudgetJod} · remaining {w.budget?.remainingBudgetJod}
+                  {w.name} · {w.status} · محجوز {w.budget?.reservedBudgetJod} · مستخدم {w.budget?.usedBudgetJod} · متبقي {w.budget?.remainingBudgetJod}
                 </li>
               ))}
             </ul>
             <form onSubmit={onCreateWave} data-testid="create-wave-form" className="mt-2 grid gap-2 max-w-xl">
               <input
                 required
-                placeholder="Wave name"
+                placeholder="اسم الموجة"
                 value={waveForm.name}
                 onChange={(e) => setWaveForm({ ...waveForm, name: e.target.value })}
               />
@@ -429,7 +442,7 @@ export default function SuperAdminFreelancerActivationPage() {
               />
               {waveError ? <p>{waveError}</p> : null}
               <button type="submit" disabled={saving}>
-                Create wave
+                إنشاء موجة
               </button>
             </form>
           </div>

@@ -76,7 +76,13 @@ bool isDashboardAdminAssignedActivation(SuperAdminActivationItem item) {
 }
 
 /// Matches web `needsCompanyActivationAction` and hides admin-assigned rows.
+/// Phase M1: in-app company-activate is disabled (KYC review is web-only).
 bool canApproveActivation(SuperAdminActivationItem item) {
+  return false;
+}
+
+/// Whether the queue item would historically have been approvable (tests / diagnostics).
+bool wouldHaveBeenApprovableActivation(SuperAdminActivationItem item) {
   if (item.id.trim().isEmpty) return false;
   if (isDashboardAdminAssignedActivation(item)) return false;
   if (item.needsCompanyActivation == true) return true;
@@ -88,6 +94,8 @@ bool canApproveActivation(SuperAdminActivationItem item) {
       payment == 'not_required' ||
       payment.isEmpty;
 }
+
+bool isMobileCompanyActivateDisabled() => true;
 
 bool canUpdatePendingClaimStatus(SuperAdminClaimItem item) {
   if (item.id.trim().isEmpty) return false;

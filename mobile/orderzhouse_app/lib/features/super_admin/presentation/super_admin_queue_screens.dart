@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../data/super_admin_actions.dart';
 import '../data/super_admin_article_models.dart';
@@ -21,37 +22,9 @@ class SuperAdminActivationQueueScreen extends ConsumerStatefulWidget {
 }
 
 class _SuperAdminActivationQueueScreenState extends ConsumerState<SuperAdminActivationQueueScreen> {
-  bool _promptOpen = false;
-
-  Future<void> _approve(SuperAdminActivationItem item) async {
-    if (_promptOpen) return;
-    if (ref.read(superAdminActivationBusyIdProvider) != null) return;
-
-    _promptOpen = true;
-    final confirmed = await showSuperAdminApproveActivationDialog(context);
-    _promptOpen = false;
-    if (!confirmed || !mounted) return;
-    if (ref.read(superAdminActivationBusyIdProvider) != null) return;
-
-    try {
-      final started = await ref.read(superAdminActivationQueueProvider.notifier).approve(item.id);
-      if (!started) return;
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminActionSuccessAr)),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(superAdminActionErrorMessage(error))),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(superAdminActivationQueueProvider);
-    final busyId = ref.watch(superAdminActivationBusyIdProvider);
     return SuperAdminQueueScaffold(
       title: 'طلبات التفعيل',
       onRefresh: () => ref.read(superAdminActivationQueueProvider.notifier).refresh(),
@@ -75,12 +48,40 @@ class _SuperAdminActivationQueueScreenState extends ConsumerState<SuperAdminActi
           return ListView.separated(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
-            itemCount: items.length,
+            itemCount: items.length + 1,
             separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
-              final item = items[index];
-              final canApprove = canApproveActivation(item);
-              final busy = busyId == item.id;
+              if (index == 0) {
+                return Container(
+                  key: const Key('sa-activation-web-only-banner'),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.45)),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        superAdminActivationWebOnlyMessageAr,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFFB45309),
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        superAdminActivationWebOnlyBodyAr,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(height: 1.45, color: AppColors.textInk),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              final item = items[index - 1];
               return SuperAdminQueueCard(
                 title: item.freelancerName ?? item.freelancerEmail ?? 'مستقل',
                 subtitle: [
@@ -92,14 +93,17 @@ class _SuperAdminActivationQueueScreenState extends ConsumerState<SuperAdminActi
                   label: _activationStatusAr(item.activationStatus),
                   tone: SuperAdminChipTone.warning,
                 ),
-                actions: canApprove
-                    ? OhButton(
-                        key: Key('sa-approve-activation-${item.id}'),
-                        label: superAdminApproveActivationLabelAr,
-                        isLoading: busy,
-                        onPressed: busyId != null ? null : () => _approve(item),
-                      )
-                    : null,
+                actions: Text(
+                  superAdminActivationWebOnlyMessageAr,
+                  key: Key('sa-activation-web-only-${item.id}'),
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
               );
             },
           );

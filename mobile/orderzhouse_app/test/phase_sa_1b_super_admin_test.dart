@@ -149,15 +149,17 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('activation eligibility', () {
-    test('pending paid item can be approved', () {
+    test('M1 disables in-app approve even when historically pending', () {
       final item = SuperAdminActivationItem.fromJson(_pendingActivation());
-      expect(canApproveActivation(item), isTrue);
+      expect(wouldHaveBeenApprovableActivation(item), isTrue);
+      expect(canApproveActivation(item), isFalse);
     });
 
     test('already approved item has no approve action', () {
       final item = SuperAdminActivationItem.fromJson(
         _pendingActivation(status: 'company_approved'),
       );
+      expect(wouldHaveBeenApprovableActivation(item), isFalse);
       expect(canApproveActivation(item), isFalse);
     });
 
@@ -169,6 +171,7 @@ void main() {
         'paymentStatus': 'not_required',
         'notes': 'manual',
       });
+      expect(wouldHaveBeenApprovableActivation(item), isFalse);
       expect(canApproveActivation(item), isFalse);
     });
   });
@@ -328,7 +331,7 @@ void main() {
   });
 
   group('activation queue widgets', () {
-    testWidgets('approve button appears for pending item and requires confirmation', (tester) async {
+    testWidgets('M1 shows web-only KYC message and hides approve button', (tester) async {
       tester.view.physicalSize = const Size(400, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -348,57 +351,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text(superAdminApproveActivationLabelAr), findsOneWidget);
+      expect(find.text(superAdminApproveActivationLabelAr), findsNothing);
+      expect(find.byKey(const Key('sa-activation-web-only-banner')), findsOneWidget);
+      expect(find.text(superAdminActivationWebOnlyMessageAr), findsWidgets);
       expect(find.textContaining('د.أ'), findsWidgets);
-
-      await tester.tap(find.text(superAdminApproveActivationLabelAr));
-      await tester.pumpAndSettle();
-      expect(find.text(superAdminConfirmApprovalTitleAr), findsOneWidget);
-      expect(find.text(superAdminConfirmApprovalBodyAr), findsOneWidget);
       expect(api.approveCalls, 0);
-
-      await tester.tap(find.text(superAdminCancelActionLabelAr));
-      await tester.pumpAndSettle();
-      expect(api.approveCalls, 0);
-      expect(find.text(superAdminApproveActivationLabelAr), findsOneWidget);
-    });
-
-    testWidgets('double tap does not send duplicate approve requests and success refreshes', (tester) async {
-      tester.view.physicalSize = const Size(400, 900);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      final api = FakeSuperAdminApi()..activationItems = [_pendingActivation()];
-      final gate = Completer<void>();
-      api.approveGate = gate;
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [superAdminApiProvider.overrideWithValue(api)],
-          child: const MaterialApp(home: SuperAdminActivationQueueScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text(superAdminApproveActivationLabelAr));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(superAdminConfirmActivationButtonKey));
-      await tester.pump();
-      expect(api.approveCalls, 1);
-
-      final container = ProviderScope.containerOf(
-        tester.element(find.byType(SuperAdminActivationQueueScreen)),
-      );
-      final second = container.read(superAdminActivationQueueProvider.notifier).approve('10');
-      expect(await second, isFalse);
-      expect(api.approveCalls, 1);
-
-      gate.complete();
-      await tester.pump();
-      await tester.pump();
-      expect(find.text(superAdminActionSuccessAr), findsOneWidget);
-      expect(find.text('لا توجد طلبات تفعيل بانتظار المراجعة.'), findsOneWidget);
     });
   });
 
@@ -506,8 +463,9 @@ void main() {
       expect(api, isNot(contains('debugPrint')));
 
       final queues = File('lib/features/super_admin/presentation/super_admin_queue_screens.dart').readAsStringSync();
-      expect(queues, contains('superAdminApproveActivationLabelAr'));
+      expect(queues, contains('superAdminActivationWebOnlyMessageAr'));
       expect(queues, contains('superAdminUpdateClaimStatusLabelAr'));
+      expect(queues, isNot(contains('sa-approve-activation-')));
       expect(queues, isNot(contains('تسعير')));
       expect(queues, isNot(contains('صرف')));
       expect(queues, isNot(contains('approveDelivery')));

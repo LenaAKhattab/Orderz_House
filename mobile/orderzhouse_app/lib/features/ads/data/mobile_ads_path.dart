@@ -55,6 +55,9 @@ class MobileAdsPath {
     if (path.startsWith('/freelancer/financial-claims')) {
       return '/dashboard/freelancer/financial-claims';
     }
+    if (path.startsWith('/freelancer/account-activation')) {
+      return '/dashboard/freelancer/activate-account';
+    }
     if (path.startsWith('/freelancer/plans')) {
       return '/dashboard/freelancer/plans';
     }
@@ -94,6 +97,10 @@ class MobileAdsPath {
     }
     if (path.startsWith(AppRoutes.freelancerFinancialClaims) ||
         web.startsWith('/dashboard/freelancer/financial-claims')) {
+      return true;
+    }
+    if (path.startsWith(AppRoutes.freelancerMiniArticles) ||
+        web.startsWith('/dashboard/freelancer/articles')) {
       return true;
     }
     if (path.startsWith(AppRoutes.freelancerPlans) || web.startsWith('/dashboard/freelancer/plans')) {

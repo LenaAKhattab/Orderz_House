@@ -5,6 +5,11 @@ const superAdminUnavailableCardAr = 'غير متاح حاليًا';
 const superAdminAccessDeniedAr = 'ليس لديك صلاحية للوصول إلى هذا المورد.';
 const superAdminJodSuffixAr = 'د.أ';
 const superAdminApproveActivationLabelAr = 'اعتماد التفعيل';
+const superAdminActivationWebOnlyMessageAr =
+    'مراجعة الهوية تتم من لوحة الويب حالياً';
+const superAdminActivationWebOnlyBodyAr =
+    'لا يمكن اعتماد تفعيل الحساب من التطبيق بعد تفعيل مسار KYC. افتح لوحة الويب لمراجعة طلبات الهوية والموافقة أو الرفض.';
+
 const superAdminConfirmApprovalTitleAr = 'تأكيد الاعتماد';
 const superAdminConfirmApprovalBodyAr = 'هل تريد اعتماد هذا الحساب؟';
 const superAdminUpdateClaimStatusLabelAr = 'تحديث حالة المطالبة';

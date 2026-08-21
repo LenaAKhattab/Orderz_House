@@ -23,7 +23,9 @@ function read(rel) {
 describe("Phase A9.4 isolation", () => {
   it("adds monitoring service without payment domains or new migration requirement", () => {
     const migrations = fs.readdirSync(path.join(root, "sql/migrations"));
-    assert.ok(!migrations.some((f) => f.startsWith("176_")));
+    // A9.4 reuses A9.3 schema (175). Later 176 (KYC) / 177 (interval) are unrelated phases.
+    assert.ok(migrations.some((f) => f.startsWith("175_freelancer_activation_auto_assignment")));
+    assert.ok(!migrations.some((f) => /a94|live_article_monitoring/i.test(f)));
     const svc = read("src/services/freelancerActivationLiveArticleMonitoringService.js");
     assert.doesNotMatch(svc, /require\(["'].*stripe/i);
     assert.doesNotMatch(svc, /require\(["'].*ordersService/);

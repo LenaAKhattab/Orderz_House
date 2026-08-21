@@ -28,6 +28,19 @@ router.get("/freelancer-activation/article-fund", ...guard, campaigns.getArticle
 router.post("/freelancer-activation/article-fund/deposit", ...guard, campaigns.depositArticleFund);
 router.post("/freelancer-activation/article-fund/withdraw", ...guard, campaigns.withdrawArticleFund);
 
+router.get("/freelancer-activation/article-operations/setup", ...guard, campaigns.getArticleOperationsSetup);
+router.post("/freelancer-activation/article-operations/setup", ...guard, campaigns.ensureArticleOperationsSetup);
+router.get(
+  "/freelancer-activation/article-operations/plan-allocations",
+  ...guard,
+  campaigns.listDefaultPlanAllocations,
+);
+router.post(
+  "/freelancer-activation/article-operations/plan-allocations",
+  ...guard,
+  campaigns.createDefaultPlanAllocation,
+);
+
 router.get("/freelancer-activation/campaigns/:id/plan-allocations", ...guard, campaigns.listPlanAllocations);
 router.post("/freelancer-activation/campaigns/:id/plan-allocations", ...guard, campaigns.createPlanAllocation);
 router.patch("/freelancer-activation/plan-allocations/:id", ...guard, campaigns.patchPlanAllocation);

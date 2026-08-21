@@ -28,6 +28,9 @@ const FREELANCER_ACTIVATION_INVENTORY_STATUSES = Object.freeze([
 
 const FREELANCER_ACTIVATION_RELEASE_MODES = Object.freeze(["manual", "daily_auto"]);
 
+/** Internal single article-ops setup name (not shown as "campaign" in Super Admin UI). */
+const DEFAULT_ARTICLE_OPERATIONS_SETUP_NAME = "إعداد المقالات الرئيسي";
+
 const FREELANCER_ACTIVATION_INVENTORY_RELEASE_STRATEGIES = Object.freeze([
   "one_time",
   "reusable",
@@ -140,4 +143,5 @@ module.exports = {
   FREELANCER_ACTIVATION_A92_ERROR_CODES,
   normalizePlanTierCode,
   resolveArticleLevelForTier,
+  DEFAULT_ARTICLE_OPERATIONS_SETUP_NAME,
 };
