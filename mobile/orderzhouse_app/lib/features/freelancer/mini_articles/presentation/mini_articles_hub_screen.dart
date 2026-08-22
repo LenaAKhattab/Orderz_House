@@ -76,7 +76,25 @@ class MiniArticlesHubScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             BildazoLinkPanel(status: ui.bildazo),
             const SizedBox(height: 10),
-            EarnedBalancePanel(snapshot: ui.earnedBalance),
+            EarnedBalancePanel(
+              snapshot: ui.earnedBalance,
+              onSilverCta: () async {
+                final url =
+                    await ref.read(miniArticlesHubControllerProvider.notifier).startSilverCheckout();
+                if (!context.mounted) return;
+                if (url != null && url.trim().isNotEmpty) {
+                  final uri = Uri.tryParse(url.trim());
+                  if (uri != null) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    return;
+                  }
+                }
+                final plans = Uri.tryParse(WebConstants.freelancerPlansUrl);
+                if (plans != null) {
+                  await launchUrl(plans, mode: LaunchMode.externalApplication);
+                }
+              },
+            ),
             const SizedBox(height: 10),
             TrialSilverPanel(
               trial: ui.trial,

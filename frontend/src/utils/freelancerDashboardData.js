@@ -207,6 +207,7 @@ export function aggregateCourses(courses = []) {
   let continueCourse = null;
 
   for (const c of courses) {
+    if (c?.isLocked) continue;
     if (isCourseCompleted(c)) {
       completed += 1;
       continue;
@@ -221,12 +222,12 @@ export function aggregateCourses(courses = []) {
   }
 
   return {
-    total: courses.length,
+    total: courses.filter((c) => !c?.isLocked).length,
     inProgress,
     notStarted,
     completed,
     pendingFinalTest,
-    continueCourse: continueCourse || courses.find((c) => !isCourseCompleted(c)) || null,
+    continueCourse: continueCourse || courses.find((c) => !isCourseCompleted(c) && !c?.isLocked) || null,
   };
 }
 

@@ -175,18 +175,42 @@ class ArticleApplicationEligibility {
   }
 }
 
+class BildazoPublishStatus {
+  const BildazoPublishStatus({this.status, this.articleUrl});
+
+  final String? status;
+  final String? articleUrl;
+
+  bool get isPublished {
+    final s = (status ?? '').trim().toLowerCase();
+    return s == 'published' || s == 'already_imported';
+  }
+
+  factory BildazoPublishStatus.fromJson(dynamic json) {
+    if (json is! Map) return const BildazoPublishStatus();
+    final map = Map<String, dynamic>.from(json);
+    return BildazoPublishStatus(
+      status: readMapField<String>(map, 'status', 'status'),
+      articleUrl: readMapField<String>(map, 'articleUrl', 'article_url') ??
+          readMapField<String>(map, 'bildazoArticleUrl', 'bildazo_article_url'),
+    );
+  }
+}
+
 class ArticleApplication {
   const ArticleApplication({
     required this.id,
     this.status,
     this.proposalMessage,
     this.submittedAt,
+    this.bildazoPublish,
   });
 
   final String id;
   final String? status;
   final String? proposalMessage;
   final String? submittedAt;
+  final BildazoPublishStatus? bildazoPublish;
 
   String get statusKey => (status ?? '').trim().toLowerCase();
   bool get isPending => statusKey == 'pending' || statusKey == 'submitted';
@@ -225,12 +249,16 @@ class ArticleApplication {
   }
 
   factory ArticleApplication.fromJson(Map<String, dynamic> json) {
+    final publishRaw = json['bildazoPublish'] ?? json['bildazo_publish'];
     return ArticleApplication(
       id: readString(json, 'id', 'id'),
       status: readMapField<String>(json, 'status', 'status'),
       proposalMessage: readMapField<String>(json, 'proposalMessage', 'proposal_message'),
       submittedAt: readMapField<String>(json, 'submittedAt', 'submitted_at') ??
           readMapField<String>(json, 'createdAt', 'created_at'),
+      bildazoPublish: publishRaw is Map
+          ? BildazoPublishStatus.fromJson(Map<String, dynamic>.from(publishRaw))
+          : null,
     );
   }
 }
@@ -240,11 +268,13 @@ class MiniArticleDetailContext {
     required this.article,
     this.application,
     this.eligibility,
+    this.writerProfileUrl,
   });
 
   final MiniArticle article;
   final ArticleApplication? application;
   final ArticleApplicationEligibility? eligibility;
+  final String? writerProfileUrl;
 
   factory MiniArticleDetailContext.fromResponse(dynamic body) {
     if (body is! Map) throw FormatException('استجابة المقال غير متوقعة.');
@@ -260,6 +290,7 @@ class MiniArticleDetailContext {
           ? ArticleApplication.fromJson(Map<String, dynamic>.from(appRaw))
           : null,
       eligibility: ArticleApplicationEligibility.fromJson(map['eligibility']),
+      writerProfileUrl: readMapField<String>(map, 'writerProfileUrl', 'writer_profile_url'),
     );
   }
 }

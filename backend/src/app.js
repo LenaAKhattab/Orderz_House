@@ -22,6 +22,7 @@ const superAdminMarketplaceArticleApplicationsRoutes = require("./routes/superAd
 const marketplaceArticlesRoutes = require("./routes/marketplaceArticlesRoutes");
 const freelancerMarketplaceArticleApplicationsRoutes = require("./routes/freelancerMarketplaceArticleApplicationsRoutes");
 const freelancerBildazoAuthorLinkRoutes = require("./routes/freelancerBildazoAuthorLinkRoutes");
+const freelancerMyArticlesRoutes = require("./routes/freelancerMyArticlesRoutes");
 const superAdminBildazoAuthorLinkRoutes = require("./routes/superAdminBildazoAuthorLinkRoutes");
 const adminPlanPagesRoutes = require("./routes/adminPlanPagesRoutes");
 const adminPlansRoutes = require("./routes/adminPlansRoutes");
@@ -186,6 +187,7 @@ app.use("/api/freelancer", freelancerWorkTokenWalletRoutes); // LEGACY_DEPRECATE
 app.use("/api/freelancer", freelancerBidCreditsRoutes);
 app.use("/api/freelancer", freelancerMarketplaceArticleApplicationsRoutes);
 app.use("/api/freelancer", freelancerBildazoAuthorLinkRoutes);
+app.use("/api/freelancer", freelancerMyArticlesRoutes);
 app.use("/api/freelancer", freelancerPriorityAuctionRoutes);
 app.use("/api/freelancer", freelancerEliteDirectOrdersRoutes);
 app.use("/api/freelancer", freelancerCoursesRoutes);

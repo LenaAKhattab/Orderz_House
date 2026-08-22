@@ -21,6 +21,8 @@ const {
 const conversion = require("../src/services/freelancerActivationConversionService");
 const activationRequestService = require("../src/services/marketplaceMembershipActivationRequestService");
 const plansService = require("../src/services/marketplaceMembershipPlansService");
+const forfeitureService = require("../src/services/trialPendingEarningsForfeitureService");
+const { clearBildazoAuthorLinkSchemaCache } = require("../src/utils/bildazoAuthorLinkSchema");
 
 const root = path.join(__dirname, "..");
 function read(rel) {
@@ -73,10 +75,38 @@ const eligibleUser = {
 function createFakeClient(mem) {
   mem.events = mem.events || [];
   mem.trial = mem.trial || null;
+  forfeitureService.clearForfeitureSchemaCache();
+  clearBildazoAuthorLinkSchemaCache();
   return {
     async query(sql, params = []) {
       const s = String(sql);
       if (/\bBEGIN\b|\bCOMMIT\b|\bROLLBACK\b/.test(s)) return { rows: [] };
+      if (s.includes("to_regclass(")) {
+        if (s.includes("trial_pending_earnings_forfeiture_events")) {
+          return {
+            rows: [
+              {
+                tbl: mem.forfeitureSchemaReady
+                  ? "trial_pending_earnings_forfeiture_events"
+                  : null,
+              },
+            ],
+          };
+        }
+        if (s.includes("freelancer_bildazo_author_links")) {
+          return {
+            rows: [
+              {
+                tbl: mem.bildazoSchemaReady ? "freelancer_bildazo_author_links" : null,
+              },
+            ],
+          };
+        }
+        return { rows: [{ tbl: null }] };
+      }
+      if (s.includes("freelancer_activation_trial_pending_earnings_grace_days")) {
+        return { rows: [{ grace_days: mem.graceDays ?? 40 }] };
+      }
       if (s.includes("freelancer_activation_engine_enabled")) {
         return { rows: [mem.settings] };
       }

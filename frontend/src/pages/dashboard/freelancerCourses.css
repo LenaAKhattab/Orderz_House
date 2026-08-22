@@ -1031,3 +1031,53 @@
     display: contents;
   }
 }
+
+.fc-course-card--locked {
+  cursor: default;
+  opacity: 0.96;
+}
+
+.fc-course-card--locked .fc-course-card__thumb {
+  filter: grayscale(0.35) brightness(0.92);
+}
+
+.fc-course-card__lock-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.08), rgba(15, 23, 42, 0.22));
+  pointer-events: none;
+}
+
+.fc-course-card__badge--locked {
+  background: rgba(120, 53, 15, 0.92);
+  color: #fff7ed;
+}
+
+.fc-course-card__locked-aside {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 12px 8px;
+}
+
+.fc-course-card__upgrade-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(217, 119, 6, 0.22);
+}
+
+.fc-course-card__upgrade-cta:hover {
+  color: #fff;
+  filter: brightness(1.03);
+}

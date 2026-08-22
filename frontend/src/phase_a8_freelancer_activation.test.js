@@ -27,10 +27,10 @@ describe("Phase A8 Work Inventory Reserve admin UI", () => {
       page,
       /هذا سجل داخلي لتخصيص جزء من الاشتراكات لتمويل فرص العمل المستقبلية، ولا يمثل رصيدًا قابلًا/,
     );
-    assert.match(page, /Total allocated/);
-    assert.match(page, /Reserve\{/);
-    assert.match(page, /"enabled"/);
-    assert.match(page, /"disabled"/);
+    assert.match(page, /إجمالي المخصص/);
+    assert.match(page, /totalReserveAllocatedJod/);
+    assert.match(page, /مفعّل/);
+    assert.match(page, /متوقف/);
   });
 
   it("API helper exposes work-inventory-reserve GET and settings PATCH", () => {

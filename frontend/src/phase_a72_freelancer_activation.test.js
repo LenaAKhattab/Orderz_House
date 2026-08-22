@@ -44,7 +44,7 @@ describe("Phase A7.2 Super Admin KPI dashboard UI", () => {
 
     const page = read("pages/dashboard/SuperAdminFreelancerActivationPage.jsx");
     assert.match(page, /FreelancerActivationKpiDashboard/);
-    assert.match(page, /مؤشرات محرك التفعيل \(KPI\)/);
+    assert.match(page, /مؤشرات التفعيل/);
   });
 
   it("loading, error, and schemaReady false states render safe Arabic copy", () => {

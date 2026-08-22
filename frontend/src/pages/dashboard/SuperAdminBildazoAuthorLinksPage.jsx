@@ -15,6 +15,7 @@ import {
   manualLinkSuperAdminBildazoAuthorRequest,
   updateSuperAdminBildazoAuthorLinkStatusRequest,
 } from "../../services/api";
+import SuperAdminFreelancerBildazoIntegrationPanel from "../../components/admin/SuperAdminFreelancerBildazoIntegrationPanel";
 import {
   BILDAZO_ADMIN_REVIEW_STATUSES,
   BILDAZO_ADMIN_STATUS_FILTERS,
@@ -170,7 +171,11 @@ export default function SuperAdminBildazoAuthorLinksPage() {
         <p className="mb-4 rounded-[10px] border border-[color:var(--dash-warning-border,#f0d4a8)] bg-[color:var(--dash-warning-bg,#fff6e8)] px-3 py-2 text-[0.92rem]">
           جدول الربط غير جاهز بعد (الترحيل 164). يمكن فتح الصفحة لكن لا يمكن الربط حتى يُطبَّق الترحيل.
         </p>
-      ) : null}
+      ) : (
+        <p className="mb-4 text-[0.88rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]">
+          لا توجد صفحة ملف مستقل منفصلة في Super Admin — يظهر ملخص تكامل Bildazo لكل مستقل ضمن هذه الصفحة.
+        </p>
+      )}
 
       <DashboardSection>
         <form
@@ -256,6 +261,8 @@ export default function SuperAdminBildazoAuthorLinksPage() {
                   ) : null}
                 </p>
               ) : null}
+
+              <SuperAdminFreelancerBildazoIntegrationPanel freelancerUserId={row.freelancerUserId} />
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {row.status !== "blocked" ? (

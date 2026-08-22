@@ -164,13 +164,82 @@ describe("Phase F1 — earned balance uses frozen writer amount", () => {
 
   it("source no longer prefers freelancer_share_jod first", () => {
     const src = read("src/services/freelancerActivationEarnedBalanceService.js");
-    assert.match(src, /writer_net_jod/);
-    assert.match(src, /frozen settlement writer net/i);
     const fn = src.slice(
       src.indexOf("function resolveDisplayAmountJod"),
       src.indexOf("function mapEarnedBalanceEntry"),
     );
-    assert.ok(fn.indexOf("writer_net_jod") < fn.indexOf("freelancer_share_jod") || !fn.includes("freelancer_share_jod"));
+    assert.match(fn, /writer_net_jod/);
+    assert.match(fn, /ledger_amount_jod/);
+    assert.doesNotMatch(fn, /row\.freelancer_share_jod|freelancer_share_jod\s*\?\?/);
+  });
+
+  it("released ledger entries are not withdrawable without company_approved", () => {
+    const mapped = earned.mapEarnedBalanceEntry(
+      {
+        entry_type: "writer_available",
+        entry_status: "released",
+        writer_net_jod: "0.500",
+        article_application_id: 1,
+        article_id: 2,
+      },
+      { companyApproved: false },
+    );
+    assert.equal(mapped.withdrawable, false);
+    assert.equal(mapped.status, "awaiting_account_approval");
+    assert.equal(mapped.withdrawalBlockedReason, "company_kyc_required");
+    const summary = earned.summarizeEntries([mapped]);
+    assert.equal(summary.totalAvailableJod, "0.000");
+  });
+
+  it("released ledger entries are withdrawable after company_approved", () => {
+    const mapped = earned.mapEarnedBalanceEntry(
+      {
+        entry_type: "writer_available",
+        entry_status: "released",
+        writer_net_jod: "0.500",
+        article_application_id: 1,
+        article_id: 2,
+      },
+      { companyApproved: true },
+    );
+    assert.equal(mapped.withdrawable, true);
+    assert.equal(mapped.status, "settled_externally");
+    const summary = earned.summarizeEntries([mapped]);
+    assert.equal(summary.totalAvailableJod, "0.500");
+  });
+
+  it("getFreelancerEarnedBalance exposes withdrawalPolicy blocked before KYC", async () => {
+    const client = {
+      async query(sql, params = []) {
+        const s = String(sql);
+        if (s.includes("marketplace_article_financial_entries")) {
+          return {
+            rows: [
+              {
+                beneficiary_user_id: 10,
+                article_application_id: 41,
+                article_id: 7,
+                ledger_amount_jod: "0.500",
+                amount_jod: "0.500",
+                entry_status: "released",
+                entry_type: "writer_available",
+                writer_net_jod: "0.500",
+                article_title: "Released article",
+              },
+            ],
+          };
+        }
+        if (s.includes("FROM freelancer_subscriptions")) {
+          return { rows: [{ activation_status: "company_pending" }] };
+        }
+        return { rows: [] };
+      },
+    };
+    const out = await earned.getFreelancerEarnedBalance(10, { client, evaluateForfeiture: false });
+    assert.equal(out.withdrawalPolicy.allowed, false);
+    assert.equal(out.withdrawalPolicy.reason, "company_kyc_required");
+    assert.equal(out.totalAvailableJod, "0.000");
+    assert.equal(out.entries[0].withdrawable, false);
   });
 });
 

@@ -17,8 +17,9 @@ import {
 import { freelancerTrialApplyErrorMessage } from "../../constants/freelancerActivationTrial";
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import { formatArticleBidCollectionLabel, isBidCollectionClosedForApply } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
-import { shouldBlockArticleApply } from "../../constants/bildazoAuthorTerms";
+import { BILDAZO_GATE_REQUIRED_MESSAGE_AR, shouldBlockArticleApply } from "../../constants/bildazoAuthorTerms";
 import { freelancerBildazoPublishCopy } from "../../constants/bildazoArticlePublish";
+import FreelancerBildazoPublishSuccessBlock from "../../components/freelancer/FreelancerBildazoPublishSuccessBlock";
 import {
   MINI_ARTICLE_SUBMISSION_TERMS_COPY_AR,
   MINI_ARTICLE_SUBMISSION_TERMS_COPY_EN,
@@ -69,8 +70,8 @@ function eligibilityMessage(eligibility, isEn) {
   }
   if (eligibility.reason === "BILDAZO_AUTHOR_LINK_REQUIRED") {
     return isEn
-      ? "Create or link your Bildazo writer account before applying to articles."
-      : "يرجى إنشاء أو ربط حساب الكاتب في Bildazo قبل التقديم على المقالات.";
+      ? "Activate your Bildazo writer profile to work on articles and publish under your name."
+      : BILDAZO_GATE_REQUIRED_MESSAGE_AR;
   }
   const trialMsg = freelancerTrialApplyErrorMessage(
     { publicCode: eligibility.reason },
@@ -94,6 +95,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
   const [article, setArticle] = useState(null);
   const [application, setApplication] = useState(null);
   const [eligibility, setEligibility] = useState(null);
+  const [writerProfileUrl, setWriterProfileUrl] = useState(null);
   const [message, setMessage] = useState("");
   const [manuscriptTitle, setManuscriptTitle] = useState("");
   const [manuscriptContent, setManuscriptContent] = useState("");
@@ -111,6 +113,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
       setArticle(res?.data?.article || null);
       setApplication(res?.data?.application || null);
       setEligibility(res?.data?.eligibility || null);
+      setWriterProfileUrl(res?.data?.writerProfileUrl || null);
       if (res?.data?.application?.proposalMessage) {
         setMessage(res.data.application.proposalMessage);
       }
@@ -395,16 +398,18 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                 {(() => {
                   const copy = freelancerBildazoPublishCopy(application.bildazoPublish, isEn);
                   if (!copy) return null;
+                  if (copy.tone === "success") {
+                    return (
+                      <FreelancerBildazoPublishSuccessBlock
+                        publish={application.bildazoPublish}
+                        writerProfileUrl={writerProfileUrl}
+                        isEn={isEn}
+                      />
+                    );
+                  }
                   return (
                     <div data-testid="freelancer-bildazo-publish-status">
                       <p className="mb-2 mt-0">{copy.text}</p>
-                      {copy.url ? (
-                        <p className="mb-2 mt-0">
-                          <a href={copy.url} target="_blank" rel="noreferrer">
-                            {copy.url}
-                          </a>
-                        </p>
-                      ) : null}
                     </div>
                   );
                 })()}

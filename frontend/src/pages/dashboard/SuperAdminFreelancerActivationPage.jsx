@@ -219,8 +219,11 @@ export default function SuperAdminFreelancerActivationPage() {
       {earnedBalance ? (
         <DashboardSection title="الرصيد المكتسب">
           <p data-testid="admin-earned-balance-summary">
-            قيد المعالجة {earnedBalance.totalPendingJod} JOD · مقبول {earnedBalance.totalAcceptedArticles} ·
-            منشور {earnedBalance.totalPublishedArticles}
+            أرباح معلّقة {earnedBalance.totalPendingJod} JOD · فُعّلت بعد الاشتراك{" "}
+            {earnedBalance.totalReleasedJod || "0.000"} JOD · أُغلقت بعد انتهاء المهلة{" "}
+            {earnedBalance.totalForfeitedJod || "0.000"} JOD · محتفظ بها للشركة{" "}
+            {earnedBalance.totalCompanyRetainedJod || "0.000"} JOD · مقبول{" "}
+            {earnedBalance.totalAcceptedArticles} · منشور {earnedBalance.totalPublishedArticles}
           </p>
         </DashboardSection>
       ) : null}

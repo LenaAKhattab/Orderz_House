@@ -265,9 +265,24 @@ const recordFreelancerSubscriptionCheckoutCancelledNotify = async (req, res, nex
 
 const listAssignablePlans = async (req, res, next) => {
   try {
-    const plans = await plansService.listPlans({ includeDeleted: false });
-    const assignable = plans.filter((p) => p && p.isActive);
-    return res.status(200).json({ success: true, data: { plans: assignable } });
+    const assignmentService = require("../services/subscriptionMarketplaceAssignmentService");
+    const catalog = await assignmentService.listAssignmentCatalogForAdmin();
+    return res.status(200).json({ success: true, data: catalog });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const assignMarketplaceMembership = async (req, res, next) => {
+  try {
+    const assignmentService = require("../services/subscriptionMarketplaceAssignmentService");
+    const result = await assignmentService.assignMarketplaceMembershipToFreelancerByAdmin({
+      actorUserId: req.auth?.userId,
+      freelancerUserId: req.body.freelancerUserId,
+      marketplacePlanId: req.body.marketplacePlanId,
+      notes: req.body.notes,
+    });
+    return res.status(201).json({ success: true, data: result });
   } catch (err) {
     return next(err);
   }
@@ -333,6 +348,7 @@ const clearFreelancerPaymentFailureHold = async (req, res, next) => {
 
 module.exports = {
   assignPlan,
+  assignMarketplaceMembership,
   listAssignablePlans,
   updateSubscription,
   listActivationQueue,

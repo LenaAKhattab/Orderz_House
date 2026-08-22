@@ -158,6 +158,20 @@ async function finalizeArticleApproval({
   });
 
   const writerMode = snapshot.writerEarningsMode === "pending" ? "pending" : "available";
+
+  let submissionTermsVersion = null;
+  try {
+    const submissionRow = await submissionsService.getSubmissionByApplicationId(appId, client);
+    submissionTermsVersion = submissionRow?.terms_version || null;
+  } catch {
+    submissionTermsVersion = null;
+  }
+  const policy = require("../constants/trialPendingEarningsPolicy");
+  const trialEarningsPolicyVersion =
+    submissionTermsVersion && policy.termsVersionAcceptsForfeiturePolicy(submissionTermsVersion)
+      ? submissionTermsVersion
+      : null;
+
   const settleKey = `article_settle:app:${appId}`;
   const { rows: settleRows } = await client.query(
     `INSERT INTO marketplace_article_settlements (
@@ -241,24 +255,53 @@ async function finalizeArticleApproval({
     },
   ];
   for (const e of entries) {
+    const writerMetadata =
+      e.type === "writer_starter_pending" && trialEarningsPolicyVersion
+        ? JSON.stringify({
+            trialEarningsPolicyVersion,
+            submissionTermsVersion,
+          })
+        : null;
     // eslint-disable-next-line no-await-in-loop
-    await client.query(
-      `INSERT INTO marketplace_article_financial_entries (
-         settlement_id, article_id, article_application_id, entry_type,
-         beneficiary_user_id, amount_jod, status, idempotency_key
-       ) VALUES ($1,$2,$3,$4,$5,$6::numeric,$7,$8)
-       ON CONFLICT (idempotency_key) DO NOTHING`,
-      [
-        settlement.id,
-        article.id,
-        appId,
-        e.type,
-        e.userId,
-        e.amount,
-        e.status,
-        e.key,
-      ],
-    );
+    try {
+      await client.query(
+        `INSERT INTO marketplace_article_financial_entries (
+           settlement_id, article_id, article_application_id, entry_type,
+           beneficiary_user_id, amount_jod, status, idempotency_key, metadata
+         ) VALUES ($1,$2,$3,$4,$5,$6::numeric,$7,$8,$9::jsonb)
+         ON CONFLICT (idempotency_key) DO NOTHING`,
+        [
+          settlement.id,
+          article.id,
+          appId,
+          e.type,
+          e.userId,
+          e.amount,
+          e.status,
+          e.key,
+          writerMetadata || "{}",
+        ],
+      );
+    } catch (metaErr) {
+      if (metaErr?.code !== "42703") throw metaErr;
+      await client.query(
+        `INSERT INTO marketplace_article_financial_entries (
+           settlement_id, article_id, article_application_id, entry_type,
+           beneficiary_user_id, amount_jod, status, idempotency_key
+         ) VALUES ($1,$2,$3,$4,$5,$6::numeric,$7,$8)
+         ON CONFLICT (idempotency_key) DO NOTHING`,
+        [
+          settlement.id,
+          article.id,
+          appId,
+          e.type,
+          e.userId,
+          e.amount,
+          e.status,
+          e.key,
+        ],
+      );
+    }
   }
 
   const spentAfter = millisToJodString(

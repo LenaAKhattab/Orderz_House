@@ -216,12 +216,23 @@ class _Row extends StatelessWidget {
 }
 
 class EarnedBalancePanel extends StatelessWidget {
-  const EarnedBalancePanel({super.key, required this.snapshot});
+  const EarnedBalancePanel({
+    super.key,
+    required this.snapshot,
+    this.onSilverCta,
+  });
 
   final EarnedBalanceSnapshot snapshot;
+  final VoidCallback? onSilverCta;
 
   @override
   Widget build(BuildContext context) {
+    final policy = snapshot.lockPolicy;
+    final showCta = policy?.showSilverCta == true && policy?.state != 'forfeited_closed';
+    final lockedTotal = snapshot.totalLockedPendingJod.trim().isNotEmpty
+        ? snapshot.totalLockedPendingJod
+        : snapshot.totalPendingJod;
+
     return OhCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -231,12 +242,49 @@ class EarnedBalancePanel extends StatelessWidget {
             textAlign: TextAlign.right,
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
           ),
+          if (policy?.headlineAr?.trim().isNotEmpty == true) ...[
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('🔒', style: TextStyle(fontSize: 16)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    policy!.headlineAr!,
+                    textAlign: TextAlign.right,
+                    key: const Key('earned-lock-headline'),
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, height: 1.4),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (policy?.detailAr?.trim().isNotEmpty == true) ...[
+            const SizedBox(height: 6),
+            Text(
+              policy!.detailAr!,
+              textAlign: TextAlign.right,
+              key: const Key('earned-lock-detail'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.45),
+            ),
+          ],
           const SizedBox(height: 6),
           Text(
-            'إجمالي قيد المعالجة: ${snapshot.totalPendingJod} JOD',
+            'معلّق غير قابل للسحب: $lockedTotal JOD',
             textAlign: TextAlign.right,
+            key: const Key('earned-locked-total'),
             style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDeep),
           ),
+          if (snapshot.totalForfeitedJod != '0.000' || policy?.state == 'forfeited_closed') ...[
+            const SizedBox(height: 4),
+            Text(
+              'رصيد سابق مُغلق: ${snapshot.totalForfeitedJod} JOD',
+              textAlign: TextAlign.right,
+              key: const Key('earned-forfeited-total'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+            ),
+          ],
           const SizedBox(height: 4),
           Text(
             'مقبول: ${snapshot.totalAcceptedArticles} · منشور: ${snapshot.totalPublishedArticles}',
@@ -244,11 +292,23 @@ class EarnedBalancePanel extends StatelessWidget {
             style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             earnedBalanceNotWithdrawableAr,
             textAlign: TextAlign.right,
-            style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
           ),
+          if (showCta && onSilverCta != null) ...[
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: OhButton(
+                label: policy?.ctaAr?.trim().isNotEmpty == true
+                    ? policy!.ctaAr!
+                    : earnedBalanceLockedCtaAr,
+                onPressed: onSilverCta,
+              ),
+            ),
+          ],
           if (snapshot.entries.isEmpty) ...[
             const SizedBox(height: 10),
             const Text(
@@ -259,6 +319,21 @@ class EarnedBalancePanel extends StatelessWidget {
           ] else ...[
             const SizedBox(height: 10),
             ...snapshot.entries.take(8).map((e) => _EarnedEntryTile(entry: e)),
+          ],
+          if (snapshot.writerProfileUrl?.trim().isNotEmpty == true) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                key: const Key('earned-writer-profile'),
+                onPressed: () async {
+                  final uri = Uri.tryParse(snapshot.writerProfileUrl!.trim());
+                  if (uri == null) return;
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                },
+                child: const Text(bildazoViewWriterProfileAr),
+              ),
+            ),
           ],
         ],
       ),
@@ -286,7 +361,7 @@ class _EarnedEntryTile extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            'صافي المستقل: $amount JOD · ${entry.statusLabelAr}',
+            '${entry.locked ? '🔒 ' : ''}صافي المستقل: $amount JOD · ${entry.statusLabelAr}',
             textAlign: TextAlign.right,
             key: ValueKey('earned-net-${entry.applicationId}'),
             style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
@@ -301,7 +376,7 @@ class _EarnedEntryTile extends StatelessWidget {
                   if (uri == null) return;
                   await launchUrl(uri, mode: LaunchMode.externalApplication);
                 },
-                child: const Text('فتح على Bildazo'),
+                child: const Text(bildazoViewArticleAr),
               ),
             ),
           ],
@@ -348,7 +423,7 @@ class BildazoLinkPanel extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             linked
-                ? 'مرتبط${status.displayName != null && status.displayName!.isNotEmpty ? ': ${status.displayName}' : ''}'
+                ? 'حساب Bildazo: مفعّل ✓${status.displayName != null && status.displayName!.isNotEmpty ? ' · ${status.displayName}' : ''}'
                 : status.gateEnabled
                     ? bildazoRequiredAr
                     : 'الربط غير مطلوب حالياً أو غير مفعّل.',

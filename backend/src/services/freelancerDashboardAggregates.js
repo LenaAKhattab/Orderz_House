@@ -135,6 +135,7 @@ function aggregateCourses(courses = []) {
   let continueCourse = null;
 
   for (const c of courses) {
+    if (c?.isLocked) continue;
     if (isCourseCompleted(c)) {
       completed += 1;
       continue;
@@ -148,11 +149,11 @@ function aggregateCourses(courses = []) {
   }
 
   const latestInProgressCourse = mapLatestInProgressCourse(
-    continueCourse || courses.find((c) => !isCourseCompleted(c)) || null,
+    continueCourse || courses.find((c) => !isCourseCompleted(c) && !c?.isLocked) || null,
   );
 
   return {
-    total: courses.length,
+    total: courses.filter((c) => !c?.isLocked).length,
     inProgress,
     completed,
     pendingFinalTest,

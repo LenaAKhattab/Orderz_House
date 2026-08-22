@@ -207,8 +207,51 @@ function assertNonProductionMigrationAllowed(operation = "database migration", e
       "with APP_ENV=production, ALLOW_PRODUCTION_DB_MIGRATIONS=1,",
       `CONFIRM_PRODUCTION_DATABASE=${PRODUCTION_MIGRATE_CONFIRM_VALUE},`,
       "and PRODUCTION_BACKUP_CONFIRMED=1.",
+      "For Neon branch staging-ord20 use: npm run db:migrate:staging (loads backend/.env.staging only).",
     ].join("\n"),
   );
+}
+
+function assertStagingMigrationAllowed(operation = "staging database migration", env = process.env) {
+  const appEnv = resolveAppEnv(env);
+  if (appEnv !== "staging") {
+    throw createSafetyError(
+      "STAGING_APP_ENV_REQUIRED",
+      [
+        "STAGING_APP_ENV_REQUIRED",
+        `APP_ENV must be "staging" (got "${appEnv || "(unset)"}").`,
+        `Operation: ${operation}`,
+        "Use backend/.env.staging — never run staging migrations with production backend/.env.",
+      ].join("\n"),
+    );
+  }
+
+  const db = classifyDatabaseUrl(env.DATABASE_URL, env);
+  if (!String(env.DATABASE_URL || "").trim()) {
+    throw createSafetyError(
+      "STAGING_DATABASE_URL_REQUIRED",
+      [
+        "STAGING_DATABASE_URL_REQUIRED",
+        "DATABASE_URL must be set in backend/.env.staging.",
+        `Operation: ${operation}`,
+      ].join("\n"),
+    );
+  }
+
+  if (db.isProduction) {
+    throw createSafetyError(
+      "STAGING_DATABASE_PRODUCTION_BLOCKED",
+      [
+        "BLOCKED: database appears to be Production.",
+        `Target database: ${db.maskedTarget}`,
+        `Classification: ${db.classification}`,
+        `Operation: ${operation}`,
+        "Point backend/.env.staging at the Neon branch staging-ord20 (not the main/production endpoint).",
+      ].join("\n"),
+    );
+  }
+
+  return { mode: "staging", db, appEnv };
 }
 
 function assertProductionMigrationAllowed(operation = "production database migration", env = process.env) {
@@ -451,6 +494,7 @@ module.exports = {
   assertNonProductionDatabase,
   assertProductionDatabase,
   assertNonProductionMigrationAllowed,
+  assertStagingMigrationAllowed,
   assertProductionMigrationAllowed,
   hasProductionMigrationApprovals,
   assertQaMutationAllowed,

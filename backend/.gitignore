@@ -1,7 +1,10 @@
 .env
+.env.*
 .env.fazat-e2e
 .env.fazat-e2e.local
 .env.fazat-pilot.local
+.env.staging
+.env.production
 secrets/
 **/firebase-service-account*.json
 **/serviceAccount*.json

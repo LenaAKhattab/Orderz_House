@@ -72,16 +72,29 @@ function createAdminDb({ schemaReady = true, links = [] } = {}) {
       if (s.includes("COUNT(*)")) {
         return { rows: [{ total: rows.length }] };
       }
-      if (s.includes("SELECT id FROM freelancer_bildazo_author_links") && s.includes("status = 'linked'")) {
-        const hit = rows.find(
-          (row) =>
-            Number(row.id) !== Number(params[0]) &&
-            row.status === "linked" &&
-            ((params[1] && row.bildazo_user_id === params[1]) ||
-              (params[2] && row.bildazo_public_id === params[2]) ||
-              (params[3] && row.bildazo_profile_url === params[3])),
-        );
-        return { rows: hit ? [{ id: hit.id }] : [] };
+      if (
+        s.includes("FROM freelancer_bildazo_author_links") &&
+        s.includes("status = 'linked'") &&
+        s.includes("freelancer_user_id <> $1")
+      ) {
+        const excludeFreelancerUserId = params[0];
+        const excludeLinkId = params[1];
+        const bildazoUserId = params[2];
+        const bildazoPublicId = params[3];
+        const bildazoProfileUrl = params[4];
+        const hit = rows.find((row) => {
+          if (row.status !== "linked") return false;
+          if (excludeFreelancerUserId != null && Number(row.freelancer_user_id) === Number(excludeFreelancerUserId)) {
+            return false;
+          }
+          if (excludeLinkId != null && Number(row.id) === Number(excludeLinkId)) return false;
+          return (
+            (bildazoUserId && row.bildazo_user_id === bildazoUserId) ||
+            (bildazoPublicId && row.bildazo_public_id === bildazoPublicId) ||
+            (bildazoProfileUrl && row.bildazo_profile_url === bildazoProfileUrl)
+          );
+        });
+        return { rows: hit ? [{ id: hit.id, freelancer_user_id: hit.freelancer_user_id }] : [] };
       }
       if (s.includes("UPDATE freelancer_bildazo_author_links") && s.includes("status = 'linked'")) {
         const row = rows.find((item) => Number(item.id) === Number(params[0]));

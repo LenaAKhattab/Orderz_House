@@ -11,6 +11,7 @@ const {
   resolveAppEnv,
   evaluateMixedEnvironment,
   assertNonProductionMigrationAllowed,
+  assertStagingMigrationAllowed,
   assertProductionMigrationAllowed,
   assertQaMutationAllowed,
   maskDatabaseTarget,
@@ -23,6 +24,8 @@ const PROD_URL =
   "postgresql://u:SECRET_PASSWORD@ep-wandering-cherry-ah474lak-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require";
 const LOCAL_URL = "postgresql://u:p@127.0.0.1:5432/orderz_house_local";
 const SANDBOX_URL = "postgresql://u:p@ep-other-branch.neon.tech/orderz_house_stripe_sandbox";
+const STAGING_URL =
+  "postgresql://u:p@ep-staging-ord20-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require";
 
 const prev = { ...process.env };
 
@@ -181,6 +184,30 @@ describe("migration guards", () => {
     const env = { DATABASE_URL: LOCAL_URL, APP_ENV: "local" };
     const result = assertNonProductionMigrationAllowed("database migration", env);
     assert.equal(result.mode, "non_production");
+  });
+
+  it("blocks staging migrate without APP_ENV=staging", () => {
+    const env = { DATABASE_URL: STAGING_URL, APP_ENV: "local" };
+    assert.throws(
+      () => assertStagingMigrationAllowed("staging database migration", env),
+      (e) => e && e.code === "STAGING_APP_ENV_REQUIRED",
+    );
+  });
+
+  it("blocks staging migrate when DATABASE_URL is production", () => {
+    const env = { DATABASE_URL: PROD_URL, APP_ENV: "staging" };
+    assert.throws(
+      () => assertStagingMigrationAllowed("staging database migration", env),
+      (e) => e && e.code === "STAGING_DATABASE_PRODUCTION_BLOCKED",
+    );
+  });
+
+  it("allows staging migrate on staging-classified DB with APP_ENV=staging", () => {
+    const env = { DATABASE_URL: STAGING_URL, APP_ENV: "staging" };
+    const result = assertStagingMigrationAllowed("staging database migration", env);
+    assert.equal(result.mode, "staging");
+    assert.equal(result.db.isProduction, false);
+    assert.equal(result.db.classification, "STAGING_REMOTE");
   });
 });
 

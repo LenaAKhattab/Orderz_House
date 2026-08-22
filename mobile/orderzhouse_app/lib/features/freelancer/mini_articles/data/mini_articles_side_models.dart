@@ -38,6 +38,7 @@ class EarnedBalanceEntry {
     this.amountJod,
     this.status,
     this.bildazoUrl,
+    this.locked = false,
   });
 
   final String applicationId;
@@ -46,11 +47,16 @@ class EarnedBalanceEntry {
   final String? amountJod;
   final String? status;
   final String? bildazoUrl;
+  final bool locked;
 
   String get statusLabelAr {
     switch ((status ?? '').trim().toLowerCase()) {
+      case 'pending_locked':
+        return 'معلّق · غير قابل للسحب';
       case 'pending':
         return 'قيد المعالجة';
+      case 'forfeited':
+        return 'مغلق';
       case 'settled_externally':
         return 'مسجّل';
       case 'voided':
@@ -68,6 +74,43 @@ class EarnedBalanceEntry {
       amountJod: (json['amountJod'] ?? json['amount_jod'])?.toString(),
       status: readMapField<String>(json, 'status', 'status'),
       bildazoUrl: readMapField<String>(json, 'bildazoUrl', 'bildazo_url'),
+      locked: json['locked'] == true,
+    );
+  }
+}
+
+class EarnedBalanceLockPolicy {
+  const EarnedBalanceLockPolicy({
+    this.state,
+    this.graceDaysRemaining,
+    this.showSilverCta = false,
+    this.headlineAr,
+    this.detailAr,
+    this.ctaAr,
+  });
+
+  final String? state;
+  final int? graceDaysRemaining;
+  final bool showSilverCta;
+  final String? headlineAr;
+  final String? detailAr;
+  final String? ctaAr;
+
+  factory EarnedBalanceLockPolicy.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const EarnedBalanceLockPolicy();
+    final messages = json['messages'] is Map
+        ? Map<String, dynamic>.from(json['messages'] as Map)
+        : null;
+    final ar = messages?['ar'] is Map
+        ? Map<String, dynamic>.from(messages!['ar'] as Map)
+        : null;
+    return EarnedBalanceLockPolicy(
+      state: readMapField<String>(json, 'state', 'state'),
+      graceDaysRemaining: readInt(json, 'graceDaysRemaining', 'grace_days_remaining'),
+      showSilverCta: json['showSilverCta'] == true || json['show_silver_cta'] == true,
+      headlineAr: ar?['headline']?.toString(),
+      detailAr: ar?['detail']?.toString(),
+      ctaAr: ar?['cta']?.toString(),
     );
   }
 }
@@ -75,15 +118,23 @@ class EarnedBalanceEntry {
 class EarnedBalanceSnapshot {
   const EarnedBalanceSnapshot({
     this.totalPendingJod = '0.000',
+    this.totalLockedPendingJod = '0.000',
+    this.totalForfeitedJod = '0.000',
     this.totalAcceptedArticles = 0,
     this.totalPublishedArticles = 0,
     this.entries = const [],
+    this.lockPolicy,
+    this.writerProfileUrl,
   });
 
   final String totalPendingJod;
+  final String totalLockedPendingJod;
+  final String totalForfeitedJod;
   final int totalAcceptedArticles;
   final int totalPublishedArticles;
   final List<EarnedBalanceEntry> entries;
+  final EarnedBalanceLockPolicy? lockPolicy;
+  final String? writerProfileUrl;
 
   factory EarnedBalanceSnapshot.fromResponse(dynamic body) {
     if (body is! Map) return const EarnedBalanceSnapshot();
@@ -101,11 +152,19 @@ class EarnedBalanceSnapshot {
     }
     return EarnedBalanceSnapshot(
       totalPendingJod: (data['totalPendingJod'] ?? data['total_pending_jod'] ?? '0.000').toString(),
+      totalLockedPendingJod:
+          (data['totalLockedPendingJod'] ?? data['total_locked_pending_jod'] ?? data['totalPendingJod'] ?? '0.000')
+              .toString(),
+      totalForfeitedJod: (data['totalForfeitedJod'] ?? data['total_forfeited_jod'] ?? '0.000').toString(),
       totalAcceptedArticles:
           readInt(data, 'totalAcceptedArticles', 'total_accepted_articles') ?? 0,
       totalPublishedArticles:
           readInt(data, 'totalPublishedArticles', 'total_published_articles') ?? 0,
       entries: entries,
+      lockPolicy: data['lockPolicy'] is Map
+          ? EarnedBalanceLockPolicy.fromJson(Map<String, dynamic>.from(data['lockPolicy'] as Map))
+          : null,
+      writerProfileUrl: readMapField<String>(data, 'writerProfileUrl', 'writer_profile_url'),
     );
   }
 }

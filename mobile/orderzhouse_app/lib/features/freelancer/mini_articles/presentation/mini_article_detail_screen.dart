@@ -186,6 +186,44 @@ class _MiniArticleDetailScreenState extends ConsumerState<MiniArticleDetailScree
                         textAlign: TextAlign.right,
                         style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                       ),
+                      if (application.bildazoPublish?.isPublished == true) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          bildazoPublishSuccessAr,
+                          textAlign: TextAlign.right,
+                          key: const Key('bildazo-publish-success'),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        if (application.bildazoPublish?.articleUrl?.trim().isNotEmpty == true) ...[
+                          const SizedBox(height: 6),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              key: const Key('bildazo-view-article'),
+                              onPressed: () async {
+                                final uri = Uri.tryParse(application.bildazoPublish!.articleUrl!.trim());
+                                if (uri == null) return;
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              },
+                              child: const Text(bildazoViewArticleAr),
+                            ),
+                          ),
+                        ],
+                        if (ctx?.writerProfileUrl?.trim().isNotEmpty == true) ...[
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              key: const Key('bildazo-view-writer-profile'),
+                              onPressed: () async {
+                                final uri = Uri.tryParse(ctx!.writerProfileUrl!.trim());
+                                if (uri == null) return;
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              },
+                              child: const Text(bildazoViewWriterProfileAr),
+                            ),
+                          ),
+                        ],
+                      ],
                     ],
                   ),
                 ),

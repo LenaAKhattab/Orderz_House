@@ -64,6 +64,9 @@ export const SuperAdminBildazoAuthorLinksPage = lazy(
 export const FreelancerMarketplaceArticlesPage = lazy(
   () => import("../pages/dashboard/FreelancerMarketplaceArticlesPage"),
 );
+export const FreelancerMyArticlesPage = lazy(
+  () => import("../pages/dashboard/FreelancerMyArticlesPage"),
+);
 export const FreelancerMarketplaceArticleDetailPage = lazy(
   () => import("../pages/dashboard/FreelancerMarketplaceArticleDetailPage"),
 );

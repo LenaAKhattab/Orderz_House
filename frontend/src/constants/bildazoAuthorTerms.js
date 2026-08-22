@@ -11,6 +11,17 @@ export const BILDAZO_AUTHOR_LINK_FLOWS = Object.freeze({
 
 export const BILDAZO_WRITER_ROLE_LABEL_AR = "كاتب";
 
+export const BILDAZO_GATE_REQUIRED_MESSAGE_AR =
+  "لتتمكن من تنفيذ المقالات ونشر أعمالك باسمك، فعّل ملف الكاتب الخاص بك على Bildazo.";
+
+export const BILDAZO_GATE_CTA_AR = "تفعيل حساب الكاتب على Bildazo";
+
+export const BILDAZO_LINKED_STATUS_AR = "حساب Bildazo: مفعّل ✓";
+
+export const BILDAZO_VIEW_WRITER_PROFILE_AR = "مشاهدة ملفي ككاتب";
+
+export const BILDAZO_VIEW_ARTICLE_AR = "مشاهدة المقال";
+
 export const BILDAZO_AUTHOR_COUNTRIES = Object.freeze([
   { iso: "JO", labelAr: "الأردن" },
   { iso: "SA", labelAr: "السعودية" },
@@ -75,6 +86,10 @@ export function validateBildazoAuthorLinkForm({ flow, payload, termsChecked }) {
 
 export function isBildazoAuthorLinked(link) {
   return String(link?.status || "") === "linked";
+}
+
+export function bildazoWriterProfileUrl(link) {
+  return link?.linked?.bildazoProfileUrl || link?.bildazoProfileUrl || null;
 }
 
 export function bildazoLinkFailureMessage(link, isEn = false) {

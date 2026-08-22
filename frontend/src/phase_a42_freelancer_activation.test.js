@@ -18,9 +18,9 @@ describe("Phase A4.2 Super Admin budget UI", () => {
   it("campaign detail renders reserved/used/remaining and wave budget", () => {
     const src = read("pages/dashboard/SuperAdminFreelancerActivationPage.jsx");
     assert.match(src, /campaign-budget-summary/);
-    assert.match(src, /Reserved \{budget\?\.reservedBudgetJod\}/);
-    assert.match(src, /Used \{budget\?\.usedBudgetJod\}/);
-    assert.match(src, /Remaining \{budget\?\.remainingBudgetJod\}/);
+    assert.match(src, /محجوز \{budget\?\.reservedBudgetJod\}/);
+    assert.match(src, /مستخدم \{budget\?\.usedBudgetJod\}/);
+    assert.match(src, /متبقي \{budget\?\.remainingBudgetJod\}/);
     assert.match(src, /activation-wave-budget/);
     assert.match(src, /assigned-articles-count/);
     assert.match(src, /accepted-articles-count/);

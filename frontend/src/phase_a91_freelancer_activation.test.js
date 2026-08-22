@@ -72,9 +72,11 @@ describe("Phase A9.1 Mini Article ops UI", () => {
     assert.match(detail, /article-detail-freelancer-share/);
   });
 
-  it("earned balance panel does not claim gross is withdrawable", () => {
+  it("earned balance panel shows locked net only; does not claim gross is withdrawable", () => {
     const earned = read("components/freelancer/FreelancerEarnedBalancePanel.jsx");
-    assert.doesNotMatch(earned, /قابل للسحب|withdrawable/i);
+    assert.match(earned, /غير قابل للسحب|Locked pending/);
+    assert.match(earned, /EARNED_BALANCE_HELPER_AR|writer net/i);
     assert.doesNotMatch(earned, /إجمالي قيمة المقال/);
+    assert.doesNotMatch(earned, /(?<!غير )قابل للسحب/);
   });
 });

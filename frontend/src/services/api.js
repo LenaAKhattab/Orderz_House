@@ -547,6 +547,18 @@ export const updateSuperAdminBildazoAuthorLinkStatusRequest = async (id, payload
   return data;
 };
 
+export const getFreelancerMyArticlesRequest = async (params = {}) => {
+  const { data } = await api.get("/freelancer/my-articles", { params });
+  return data;
+};
+
+export const getSuperAdminFreelancerBildazoIntegrationRequest = async (freelancerUserId) => {
+  const { data } = await api.get(
+    `/super-admin/freelancers/${encodeURIComponent(freelancerUserId)}/bildazo-integration`,
+  );
+  return data;
+};
+
 /** Phase B5 — Freelancer Article applications (no Bid cost displayed until approved). */
 export const getFreelancerArticleApplicationContextRequest = async (articleId) => {
   const { data } = await api.get(
@@ -838,6 +850,11 @@ export const deletePlanRequest = async (id) => {
 
 export const assignPlanToFreelancerRequest = async (payload) => {
   const { data } = await api.post("/admin/subscriptions/assign", payload);
+  return data;
+};
+
+export const assignMarketplaceMembershipToFreelancerRequest = async (payload) => {
+  const { data } = await api.post("/admin/subscriptions/assign-marketplace-membership", payload);
   return data;
 };
 

@@ -13,6 +13,10 @@ const {
 const { deriveAssignmentLearning } = require("../utils/courseLearningDuration");
 const subscriptionsService = require("./subscriptionsService");
 const notificationEventsService = require("./notificationEventsService");
+const {
+  resolveFreelancerCourseAccess,
+  FREELANCER_COURSE_UPGRADE_ROUTE,
+} = require("../constants/freelancerCoursesAccess");
 const { uploadCourseDocumentBuffer, destroyByPublicId } = require("./cloudinaryUploadService");
 const {
   assertCoursePdfUploadFile,
@@ -97,6 +101,7 @@ function mapCourse(row, { forFreelancer = false } = {}) {
     youtubeSourceUrl: row.youtube_source_url,
     isActive: Boolean(row.is_active),
     isVisibleToAllFreelancers: Boolean(row.is_visible_to_all_freelancers),
+    requiresPaidMembership: Boolean(row.requires_paid_membership),
     isTestingEnabled: Boolean(row.is_testing_enabled),
     testFileUrl: row.test_file_url || null,
     testPromptFileUrl: row.test_prompt_file_url || null,
@@ -130,6 +135,59 @@ function isCourseGloballyVisible(courseRow) {
   return Boolean(courseRow?.is_visible_to_all_freelancers);
 }
 
+const FREELANCER_COURSE_LIST_SQL_WHERE = `c.is_active = TRUE
+       AND (
+         c.is_visible_to_all_freelancers = TRUE
+         OR a.id IS NOT NULL
+         OR c.requires_paid_membership = TRUE
+       )`;
+
+async function loadFreelancerMembershipTier(client, freelancerUserId) {
+  const uid = Number(freelancerUserId);
+  if (!Number.isInteger(uid) || uid < 1) return null;
+  try {
+    const { rows } = await client.query(
+      `SELECT p.tier_code
+         FROM freelancer_marketplace_memberships m
+         JOIN marketplace_membership_plans p ON p.id = m.marketplace_plan_id
+        WHERE m.freelancer_user_id = $1
+          AND m.is_current = TRUE
+          AND m.status IN ('active', 'cancel_at_period_end')
+        LIMIT 1`,
+      [uid],
+    );
+    return rows[0]?.tier_code ? String(rows[0].tier_code).toLowerCase() : null;
+  } catch (err) {
+    if (err?.code === "42P01" || err?.code === "42703") return null;
+    throw err;
+  }
+}
+
+function mapFreelancerCourseListRow(row, tierCode) {
+  const total = Number(row.total_lessons || 0);
+  const completed = Number(row.completed_lessons || 0);
+  const access = resolveFreelancerCourseAccess({
+    requiresPaidMembership: row.requires_paid_membership,
+    hasAssignment: Boolean(row.has_assignment_row),
+    tierCode,
+  });
+  return {
+    ...mapCourse(row, { forFreelancer: true }),
+    accessMode: Boolean(row.has_assignment_row) ? "assigned" : access.isLocked ? "locked" : "global",
+    isLocked: access.isLocked,
+    canAccess: access.canAccess,
+    lockReason: access.lockReason,
+    upgradeRoute: access.upgradeRoute || FREELANCER_COURSE_UPGRADE_ROUTE,
+    lockCopyAr: access.copyAr,
+    courseCompletedAt: row.assignment_completed_at || null,
+    progress: {
+      totalLessons: total,
+      completedLessons: completed,
+      percentage: total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0,
+    },
+  };
+}
+
 function assertCourseNotGloballyVisibleForManualSend(courseRow) {
   if (isCourseGloballyVisible(courseRow)) {
     const err = new Error(GLOBAL_SEND_BLOCKED_MESSAGE);
@@ -139,12 +197,12 @@ function assertCourseNotGloballyVisibleForManualSend(courseRow) {
   }
 }
 
-/** Freelancer may access when published and global, or has an assignment row. */
+/** Freelancer may access when published and global, assigned, or paid tier for premium courses. */
 async function freelancerHasCourseAccess(client, courseId, freelancerUserId) {
   const cid = Number(courseId);
   const uid = Number(freelancerUserId);
   const { rows } = await client.query(
-    `SELECT c.is_active, c.is_visible_to_all_freelancers,
+    `SELECT c.is_active, c.is_visible_to_all_freelancers, c.requires_paid_membership,
             EXISTS(
               SELECT 1 FROM course_assignments a
               WHERE a.course_id = c.id AND a.freelancer_id = $2
@@ -156,7 +214,16 @@ async function freelancerHasCourseAccess(client, courseId, freelancerUserId) {
   );
   const row = rows[0];
   if (!row || !row.is_active) return false;
-  return Boolean(row.is_visible_to_all_freelancers) || Boolean(row.has_assignment);
+
+  const tierCode = await loadFreelancerMembershipTier(client, uid);
+  const access = resolveFreelancerCourseAccess({
+    requiresPaidMembership: row.requires_paid_membership,
+    hasAssignment: Boolean(row.has_assignment),
+    tierCode,
+  });
+  if (access.isLocked) return false;
+
+  return Boolean(row.is_visible_to_all_freelancers) || Boolean(row.has_assignment) || Boolean(row.requires_paid_membership);
 }
 
 /**
@@ -962,79 +1029,62 @@ async function getCourseDetailsForAdmin({ actorUserId, courseId }) {
   }
 }
 
-/** Lighter course rows for dashboard aggregate (max 50 assignments). */
 async function listAssignedCoursesForFreelancerDashboard({ freelancerUserId }) {
   const uid = Number(freelancerUserId);
   if (!Number.isInteger(uid) || uid < 1) return [];
-  const { rows } = await pool.query(
-    `SELECT DISTINCT ON (c.id) c.id, c.title, c.is_testing_enabled,
-            a.completed_at AS assignment_completed_at,
-            COALESCE(lc.total_lessons, 0)::int AS total_lessons,
-            COALESCE(lp.completed_lessons, 0)::int AS completed_lessons
-     FROM courses c
-     LEFT JOIN course_assignments a ON a.course_id = c.id AND a.freelancer_id = $1
-     LEFT JOIN LATERAL (
-       SELECT COUNT(*)::int AS total_lessons
-       FROM course_lessons l
-       WHERE l.course_id = c.id AND l.is_active = TRUE
-     ) lc ON TRUE
-     LEFT JOIN LATERAL (
-       SELECT COUNT(*)::int AS completed_lessons
-       FROM course_lesson_progress p
-       WHERE p.course_id = c.id AND p.freelancer_id = $1
-     ) lp ON TRUE
-     WHERE c.is_active = TRUE
-       AND (c.is_visible_to_all_freelancers = TRUE OR a.id IS NOT NULL)
-     ORDER BY c.id DESC
-     LIMIT 50`,
-    [uid],
-  );
-  return rows.map((r) => {
-    const total = Number(r.total_lessons || 0);
-    const completed = Number(r.completed_lessons || 0);
-    return {
-      id: String(r.id),
-      title: r.title,
-      isTestingEnabled: Boolean(r.is_testing_enabled),
-      courseCompletedAt: r.assignment_completed_at || null,
-      progress: {
-        totalLessons: total,
-        completedLessons: completed,
-        percentage: total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0,
-      },
-    };
-  });
+  const client = await pool.connect();
+  try {
+    const tierCode = await loadFreelancerMembershipTier(client, uid);
+    const { rows } = await client.query(
+      `SELECT DISTINCT ON (c.id) c.*,
+              a.completed_at AS assignment_completed_at,
+              (a.id IS NOT NULL) AS has_assignment_row,
+              COALESCE(lc.total_lessons, 0)::int AS total_lessons,
+              COALESCE(lp.completed_lessons, 0)::int AS completed_lessons
+       FROM courses c
+       LEFT JOIN course_assignments a ON a.course_id = c.id AND a.freelancer_id = $1
+       LEFT JOIN LATERAL (
+         SELECT COUNT(*)::int AS total_lessons
+         FROM course_lessons l
+         WHERE l.course_id = c.id AND l.is_active = TRUE
+       ) lc ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT COUNT(*)::int AS completed_lessons
+         FROM course_lesson_progress p
+         WHERE p.course_id = c.id AND p.freelancer_id = $1
+       ) lp ON TRUE
+       WHERE ${FREELANCER_COURSE_LIST_SQL_WHERE}
+       ORDER BY c.id DESC
+       LIMIT 50`,
+      [uid],
+    );
+    return rows.map((r) => mapFreelancerCourseListRow(r, tierCode));
+  } finally {
+    client.release();
+  }
 }
 
 async function listAssignedCoursesForFreelancer({ freelancerUserId }) {
   const uid = Number(freelancerUserId);
-  const { rows } = await pool.query(
-    `SELECT DISTINCT ON (c.id) c.*,
-            a.completed_at AS assignment_completed_at,
-            (a.id IS NOT NULL) AS has_assignment_row,
-            (SELECT COUNT(*)::int FROM course_lessons l WHERE l.course_id = c.id AND l.is_active = TRUE) AS total_lessons,
-            (SELECT COUNT(*)::int FROM course_lesson_progress p WHERE p.course_id = c.id AND p.freelancer_id = $1) AS completed_lessons
-     FROM courses c
-     LEFT JOIN course_assignments a ON a.course_id = c.id AND a.freelancer_id = $1
-     WHERE c.is_active = TRUE
-       AND (c.is_visible_to_all_freelancers = TRUE OR a.id IS NOT NULL)
-     ORDER BY c.id DESC`,
-    [uid],
-  );
-  return rows.map((r) => {
-    const total = Number(r.total_lessons || 0);
-    const completed = Number(r.completed_lessons || 0);
-    return {
-      ...mapCourse(r, { forFreelancer: true }),
-      accessMode: Boolean(r.has_assignment_row) ? "assigned" : "global",
-      courseCompletedAt: r.assignment_completed_at || null,
-      progress: {
-        totalLessons: total,
-        completedLessons: completed,
-        percentage: total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0,
-      },
-    };
-  });
+  const client = await pool.connect();
+  try {
+    const tierCode = await loadFreelancerMembershipTier(client, uid);
+    const { rows } = await client.query(
+      `SELECT DISTINCT ON (c.id) c.*,
+              a.completed_at AS assignment_completed_at,
+              (a.id IS NOT NULL) AS has_assignment_row,
+              (SELECT COUNT(*)::int FROM course_lessons l WHERE l.course_id = c.id AND l.is_active = TRUE) AS total_lessons,
+              (SELECT COUNT(*)::int FROM course_lesson_progress p WHERE p.course_id = c.id AND p.freelancer_id = $1) AS completed_lessons
+       FROM courses c
+       LEFT JOIN course_assignments a ON a.course_id = c.id AND a.freelancer_id = $1
+       WHERE ${FREELANCER_COURSE_LIST_SQL_WHERE}
+       ORDER BY c.id DESC`,
+      [uid],
+    );
+    return rows.map((r) => mapFreelancerCourseListRow(r, tierCode));
+  } finally {
+    client.release();
+  }
 }
 
 async function uploadCourseTestFile({ actorUserId, courseId, file }) {
@@ -1189,8 +1239,18 @@ async function getCourseDetailsForFreelancer({ freelancerUserId, courseId }) {
     await client.query("BEGIN");
     const hasAccess = await freelancerHasCourseAccess(client, cid, uid);
     if (!hasAccess) {
-      const err = new Error("لا يمكنك الوصول إلى هذه الدورة.");
+      const { rows: metaRows } = await client.query(
+        `SELECT requires_paid_membership FROM courses WHERE id = $1 LIMIT 1`,
+        [cid],
+      );
+      const requiresPaid = Boolean(metaRows[0]?.requires_paid_membership);
+      const err = new Error(
+        requiresPaid
+          ? "يجب الاشتراك بإحدى الخطط للوصول إلى هذه الدورة."
+          : "لا يمكنك الوصول إلى هذه الدورة.",
+      );
       err.statusCode = 403;
+      err.publicCode = requiresPaid ? "COURSE_SUBSCRIPTION_REQUIRED" : "COURSE_ACCESS_DENIED";
       throw err;
     }
     await ensureFreelancerCourseEngagement(client, { courseId: cid, freelancerId: uid });

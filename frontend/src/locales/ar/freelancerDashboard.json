@@ -166,7 +166,10 @@
       "statusNotStarted": "لم تبدأ بعد",
       "testCompleted": "اكتمل الاختبار النهائي",
       "testPending": "بانتظار الاختبار النهائي",
-      "testIncluded": "يتضمن اختبار نهائي"
+      "testIncluded": "يتضمن اختبار نهائي",
+      "lockedBadge": "يتطلب اشتراك",
+      "lockedMessage": "يجب الاشتراك بإحدى الخطط للوصول إلى هذه الدورة.",
+      "lockedCta": "اشترك بإحدى الخطط"
     },
     "loadError": "تعذر تحميل الدورات."
   },

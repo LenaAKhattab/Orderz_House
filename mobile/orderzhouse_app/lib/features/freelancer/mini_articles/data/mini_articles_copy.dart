@@ -7,12 +7,22 @@ const applyBidUsesBidAr = 'سيتم استخدام Bid عند التقديم ع�
 const applyBidMayNotReturnAr =
     'في حال عدم اختيارك قد لا يعود رصيد التقديم حسب سياسة الفرصة.';
 const applyInsufficientBidsAr = 'لا تملك رصيد Bids كافياً للتقديم.';
-const bildazoRequiredAr = 'يجب ربط حساب Bildazo قبل التقديم على المقالات.';
-const bildazoOpenWebCtaAr = 'فتح ربط Bildazo على الموقع';
+const bildazoRequiredAr =
+    'لتتمكن من تنفيذ المقالات ونشر أعمالك باسمك، فعّل ملف الكاتب الخاص بك على Bildazo.';
+const bildazoOpenWebCtaAr = 'تفعيل حساب الكاتب على Bildazo';
+const bildazoViewArticleAr = 'مشاهدة المقال';
+const bildazoViewWriterProfileAr = 'مشاهدة ملفي ككاتب';
+const bildazoPublishSuccessAr = 'تم نشر مقالك بنجاح على Bildazo.';
 const earnedBalanceTitleAr = 'الرصيد المكتسب من المقالات';
-const earnedBalanceNotWithdrawableAr = 'غير قابل للسحب مباشرة من هذه الصفحة';
-const earnedBalancePendingAr = 'قيد المعالجة';
+const earnedBalanceNotWithdrawableAr =
+    'يعرض صافي أجر الكاتب فقط. الأرباح المعلّقة غير قابلة للسحب حتى تفعيل Silver.';
+const earnedBalanceLockedHeadlineAr = 'أرباحك محفوظة لكنها غير قابلة للسحب حاليًا.';
+const earnedBalanceLockedCtaAr = 'اشترك لتفعيل السحب';
+const earnedBalanceForfeitedHeadlineAr = 'انتهت مهلة تفعيل الأرباح.';
+const earnedBalanceForfeitedDetailAr = 'الرصيد المعلّق السابق لم يعد متاحًا للسحب.';
+const earnedBalancePendingAr = 'معلّق · غير قابل للسحب';
 const earnedBalanceRecordedAr = 'مسجّل';
+const earnedBalanceForfeitedAr = 'مغلق';
 
 String? extractApiErrorCode(Object error) {
   if (error is! DioException) return null;

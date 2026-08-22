@@ -144,7 +144,7 @@ export default function FreelancerMarketplaceArticlesPage() {
         ) : null}
         {!loading ? (
           <div id="earned-balance">
-            <FreelancerEarnedBalancePanel balance={earnedBalance} isEn={isEn} />
+            <FreelancerEarnedBalancePanel balance={earnedBalance} isEn={isEn} conversion={conversion} />
           </div>
         ) : null}
         {loading ? <DashboardLoadingState /> : null}

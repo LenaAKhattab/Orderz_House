@@ -3,6 +3,7 @@ const earnedBalanceService = require("../services/freelancerActivationEarnedBala
 const conversionService = require("../services/freelancerActivationConversionService");
 const kpiService = require("../services/freelancerActivationKpiService");
 const workInventoryReserveService = require("../services/freelancerActivationWorkInventoryReserveService");
+const forfeitureService = require("../services/trialPendingEarningsForfeitureService");
 
 async function getMyTrial(req, res, next) {
   try {
@@ -133,6 +134,18 @@ async function getAdminWorkInventoryReserve(req, res, next) {
   }
 }
 
+async function postAdminEvaluateForfeiture(req, res, next) {
+  try {
+    const freelancerUserId = Number(req.params?.freelancerUserId);
+    const data = await forfeitureService.evaluateAndApplyForfeitureIfDue(freelancerUserId, {
+      now: new Date(),
+    });
+    return res.json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   getMyTrial,
   getMyConversion,
@@ -146,4 +159,5 @@ module.exports = {
   updateAdminSettings,
   getAdminKpis,
   getAdminWorkInventoryReserve,
+  postAdminEvaluateForfeiture,
 };

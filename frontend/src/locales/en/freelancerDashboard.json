@@ -166,7 +166,10 @@
       "statusNotStarted": "Not started yet",
       "testCompleted": "Final test completed",
       "testPending": "Final test pending",
-      "testIncluded": "Includes final test"
+      "testIncluded": "Includes final test",
+      "lockedBadge": "Subscription required",
+      "lockedMessage": "You must subscribe to one of the plans to access this course.",
+      "lockedCta": "Subscribe to a plan"
     },
     "loadError": "Could not load courses."
   },

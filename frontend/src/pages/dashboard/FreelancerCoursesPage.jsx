@@ -8,10 +8,12 @@ import {
   Clock,
   GraduationCap,
   LayoutGrid,
+  Lock,
   Play,
   Search,
   Star,
 } from "lucide-react";
+import { PLAN_UPGRADE_DEFAULT_ROUTE } from "../../constants/planUpgradeCta";
 import { freelancerListMyCoursesRequest } from "../../services/api";
 import LinkifiedText from "../../components/ui/LinkifiedText";
 import { useToast } from "../../components/ui/toastContext";
@@ -179,29 +181,28 @@ function StatSegment({ tone, Icon, value, label, loading }) {
 }
 
 function CourseCard({ course, isFavorite, onToggleFavorite, t, locale }) {
+  const isLocked = Boolean(course?.isLocked);
+  const lockCopy = course?.lockCopyAr || {};
+  const upgradeRoute = course?.upgradeRoute || PLAN_UPGRADE_DEFAULT_ROUTE;
   const { completed, total, pct } = prog(course);
-  const status = courseStatus(course);
-  const test = testingInfo(course, t);
+  const status = isLocked ? "locked" : courseStatus(course);
+  const test = isLocked ? null : testingInfo(course, t);
   const lastTouch = formatCourseDate(course.updatedAt || course.courseCompletedAt, locale);
   const cover = course.coverImage?.trim() || null;
-  const badge = statusUi(status, t);
+  const badge = isLocked
+    ? {
+        label: lockCopy.badge || t("freelancerDashboard.training.card.lockedBadge"),
+        className: "fc-course-card__badge--locked",
+        Icon: Lock,
+      }
+    : statusUi(status, t);
   const BadgeIcon = badge.Icon;
   const untitled = t("freelancerDashboard.training.card.untitled");
 
   const courseTo = `/dashboard/freelancer/courses/${course.id}`;
 
-  return (
-    <Link
-      to={courseTo}
-      className={[
-        "fc-course-card fc-surface-3d fc-surface-3d--soft",
-        status === "completed" ? "fc-course-card--completed" : "",
-        test?.tone === "pending" ? "fc-course-card--test-pending" : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      aria-label={`${course.title || untitled} — ${ctaLabel(status, t)}`}
-    >
+  const cardInner = (
+    <>
       <div className="fc-course-card__media">
         {cover ? (
           <img src={cover} alt="" className="fc-course-card__thumb" loading="lazy" />
@@ -210,27 +211,30 @@ function CourseCard({ course, isFavorite, onToggleFavorite, t, locale }) {
             <BookOpen size={32} strokeWidth={1.6} />
           </div>
         )}
+        {isLocked ? <div className="fc-course-card__lock-overlay" aria-hidden /> : null}
         <span className={`fc-course-card__badge ${badge.className}`}>
           <BadgeIcon size={12} strokeWidth={2.4} aria-hidden />
           {badge.label}
         </span>
-        <button
-          type="button"
-          className={`fc-course-card__fav${isFavorite ? " is-active" : ""}`}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onToggleFavorite(course.id);
-          }}
-          aria-label={
-            isFavorite
-              ? t("freelancerDashboard.training.card.removeFavorite")
-              : t("freelancerDashboard.training.card.addFavorite")
-          }
-          aria-pressed={isFavorite}
-        >
-          <Star size={16} strokeWidth={2} fill={isFavorite ? "currentColor" : "none"} />
-        </button>
+        {!isLocked ? (
+          <button
+            type="button"
+            className={`fc-course-card__fav${isFavorite ? " is-active" : ""}`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleFavorite(course.id);
+            }}
+            aria-label={
+              isFavorite
+                ? t("freelancerDashboard.training.card.removeFavorite")
+                : t("freelancerDashboard.training.card.addFavorite")
+            }
+            aria-pressed={isFavorite}
+          >
+            <Star size={16} strokeWidth={2} fill={isFavorite ? "currentColor" : "none"} />
+          </button>
+        ) : null}
       </div>
 
       <div className="fc-course-card__main">
@@ -244,73 +248,116 @@ function CourseCard({ course, isFavorite, onToggleFavorite, t, locale }) {
         </div>
 
         <p className="fc-course-card__desc">
-          <LinkifiedText
-            text={course.description?.trim() || t("freelancerDashboard.training.card.defaultDescription")}
-          />
+          {isLocked ? (
+            lockCopy.message || t("freelancerDashboard.training.card.lockedMessage")
+          ) : (
+            <LinkifiedText
+              text={course.description?.trim() || t("freelancerDashboard.training.card.defaultDescription")}
+            />
+          )}
         </p>
 
-        <ul className="fc-course-card__meta">
-          <li>
-            <BookOpen size={14} strokeWidth={2} aria-hidden />
-            {total > 0
-              ? t(total === 1 ? "freelancerDashboard.training.card.lessonCount" : "freelancerDashboard.training.card.lessonCount_plural", {
-                  count: total,
-                })
-              : t("freelancerDashboard.training.card.noLessons")}
-          </li>
-          <li>
-            <span className="fc-course-card__meta-dot" aria-hidden>
-              •
-            </span>
-            {t("freelancerDashboard.training.card.levelIntermediate")}
-          </li>
-          {lastTouch ? (
+        {!isLocked ? (
+          <ul className="fc-course-card__meta">
             <li>
-              <Clock size={14} strokeWidth={2} aria-hidden />
-              {t("freelancerDashboard.training.card.lastUpdated", { date: lastTouch })}
+              <BookOpen size={14} strokeWidth={2} aria-hidden />
+              {total > 0
+                ? t(total === 1 ? "freelancerDashboard.training.card.lessonCount" : "freelancerDashboard.training.card.lessonCount_plural", {
+                    count: total,
+                  })
+                : t("freelancerDashboard.training.card.noLessons")}
             </li>
-          ) : null}
-        </ul>
+            <li>
+              <span className="fc-course-card__meta-dot" aria-hidden>
+                •
+              </span>
+              {t("freelancerDashboard.training.card.levelIntermediate")}
+            </li>
+            {lastTouch ? (
+              <li>
+                <Clock size={14} strokeWidth={2} aria-hidden />
+                {t("freelancerDashboard.training.card.lastUpdated", { date: lastTouch })}
+              </li>
+            ) : null}
+          </ul>
+        ) : null}
       </div>
 
       <div className="fc-course-card__aside">
-        <div className="fc-course-card__pct" aria-hidden>
-          {pct}%
-        </div>
-        <div
-          className="fc-course-card__progress"
-          role="progressbar"
-          aria-valuenow={pct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={t("freelancerDashboard.training.card.progressAria", { pct })}
-        >
-          <span
-            className={`fc-course-card__progress-fill${status === "completed" ? " fc-course-card__progress-fill--done" : ""}`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        <div className="fc-course-card__footer">
-          <span className="fc-course-card__progress-sub">
-            <span className="fc-course-card__progress-sub-long">
-              {t(
-                total === 1
-                  ? "freelancerDashboard.training.card.lessonsCompleted"
-                  : "freelancerDashboard.training.card.lessonsCompleted_plural",
-                { completed, total },
-              )}
-            </span>
-            <span className="fc-course-card__progress-sub-short">
-              {t("freelancerDashboard.training.card.lessonsShort", { completed, total })}
-            </span>
-          </span>
-          <span className="fc-course-card__cta" aria-hidden>
-            <span className="fc-course-card__cta-long">{ctaLabel(status, t)}</span>
-            <span className="fc-course-card__cta-short">{ctaLabelShort(status, t)}</span>
-            <ArrowLeft size={16} strokeWidth={2.2} aria-hidden />
-          </span>
-        </div>
+        {isLocked ? (
+          <div className="fc-course-card__locked-aside">
+            <Link to={upgradeRoute} className="fc-course-card__upgrade-cta">
+              {lockCopy.cta || t("freelancerDashboard.training.card.lockedCta")}
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="fc-course-card__pct" aria-hidden>
+              {pct}%
+            </div>
+            <div
+              className="fc-course-card__progress"
+              role="progressbar"
+              aria-valuenow={pct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={t("freelancerDashboard.training.card.progressAria", { pct })}
+            >
+              <span
+                className={`fc-course-card__progress-fill${status === "completed" ? " fc-course-card__progress-fill--done" : ""}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <div className="fc-course-card__footer">
+              <span className="fc-course-card__progress-sub">
+                <span className="fc-course-card__progress-sub-long">
+                  {t(
+                    total === 1
+                      ? "freelancerDashboard.training.card.lessonsCompleted"
+                      : "freelancerDashboard.training.card.lessonsCompleted_plural",
+                    { completed, total },
+                  )}
+                </span>
+                <span className="fc-course-card__progress-sub-short">
+                  {t("freelancerDashboard.training.card.lessonsShort", { completed, total })}
+                </span>
+              </span>
+              <span className="fc-course-card__cta" aria-hidden>
+                <span className="fc-course-card__cta-long">{ctaLabel(status, t)}</span>
+                <span className="fc-course-card__cta-short">{ctaLabelShort(status, t)}</span>
+                <ArrowLeft size={16} strokeWidth={2.2} aria-hidden />
+              </span>
+            </div>
+          </>
+        )}
       </div>
+    </>
+  );
+
+  if (isLocked) {
+    return (
+      <article
+        className="fc-course-card fc-course-card--locked fc-surface-3d fc-surface-3d--soft"
+        aria-label={`${course.title || untitled} — ${lockCopy.badge || t("freelancerDashboard.training.card.lockedBadge")}`}
+      >
+        {cardInner}
+      </article>
+    );
+  }
+
+  return (
+    <Link
+      to={courseTo}
+      className={[
+        "fc-course-card fc-surface-3d fc-surface-3d--soft",
+        status === "completed" ? "fc-course-card--completed" : "",
+        test?.tone === "pending" ? "fc-course-card--test-pending" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      aria-label={`${course.title || untitled} — ${ctaLabel(status, t)}`}
+    >
+      {cardInner}
     </Link>
   );
 }
@@ -355,15 +402,17 @@ export default function FreelancerCoursesPage() {
     });
   }, []);
 
+  const accessibleCourses = useMemo(() => courses.filter((c) => !c?.isLocked), [courses]);
+
   const summary = useMemo(() => {
-    const n = courses.length;
+    const n = accessibleCourses.length;
     if (n === 0) {
       return { count: 0, avgPct: 0, completedCourses: 0, inProgressCourses: 0 };
     }
     let sumPct = 0;
     let completedCourses = 0;
     let inProgressCourses = 0;
-    for (const c of courses) {
+    for (const c of accessibleCourses) {
       const { pct } = prog(c);
       sumPct += pct;
       const st = courseStatus(c);
@@ -376,11 +425,12 @@ export default function FreelancerCoursesPage() {
       completedCourses,
       inProgressCourses,
     };
-  }, [courses]);
+  }, [accessibleCourses]);
 
   const filterCounts = useMemo(() => {
     const counts = { all: courses.length, in_progress: 0, completed: 0, not_started: 0, favorites: 0 };
     for (const c of courses) {
+      if (c?.isLocked) continue;
       counts[courseStatus(c)] += 1;
       if (favorites.includes(String(c.id))) counts.favorites += 1;
     }
@@ -394,14 +444,16 @@ export default function FreelancerCoursesPage() {
     if (filter === "favorites") {
       list = list.filter((c) => favorites.includes(String(c.id)));
     } else if (filter !== "all") {
-      list = list.filter((c) => courseStatus(c) === filter);
+      list = list.filter((c) => !c?.isLocked && courseStatus(c) === filter);
     }
 
     if (q) {
       list = list.filter((c) => courseHaystack(c).includes(q));
     }
 
-    return sortCourses(list, sortBy);
+    return sortCourses(list, sortBy).sort(
+      (a, b) => Number(Boolean(a?.isLocked)) - Number(Boolean(b?.isLocked)),
+    );
   }, [courses, filter, searchInput, sortBy, favorites]);
 
   const emptyCopy = useMemo(() => {

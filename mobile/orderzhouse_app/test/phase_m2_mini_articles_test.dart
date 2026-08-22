@@ -133,7 +133,8 @@ void main() {
               'applicationId': 'app1',
               'articleTitle': 'مقال أ',
               'amountJod': '0.700',
-              'status': 'pending',
+              'status': 'pending_locked',
+              'locked': true,
             },
           ],
         },
@@ -273,6 +274,7 @@ void main() {
       final snap = EarnedBalanceSnapshot.fromResponse({
         'data': {
           'totalPendingJod': '0.700',
+          'totalLockedPendingJod': '0.700',
           'entries': [
             {
               'applicationId': 'x',
@@ -293,6 +295,75 @@ void main() {
       expect(find.textContaining('صافي المستقل: 0.700 JOD'), findsOneWidget);
       expect(find.textContaining(earnedBalanceRecordedAr), findsOneWidget);
       expect(find.textContaining('1.000'), findsNothing);
+    });
+
+    testWidgets('Earned Balance panel shows lock, CTA, and grace countdown', (tester) async {
+      final snap = EarnedBalanceSnapshot.fromResponse({
+        'data': {
+          'totalLockedPendingJod': '0.500',
+          'lockPolicy': {
+            'state': 'grace_period',
+            'showSilverCta': true,
+            'messages': {
+              'ar': {
+                'headline': 'متبقي 10 يوم لتفعيل السحب قبل إغلاق الرصيد.',
+                'detail': 'اشترك في Silver لتفعيل سحب أرباحك.',
+              },
+            },
+            'ctaAr': earnedBalanceLockedCtaAr,
+          },
+          'entries': [
+            {
+              'applicationId': 'y',
+              'articleTitle': 'مقال معلّق',
+              'amountJod': '0.500',
+              'status': 'pending_locked',
+              'locked': true,
+            },
+          ],
+        },
+      });
+      var tapped = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: EarnedBalancePanel(
+              snapshot: snap,
+              onSilverCta: () => tapped = true,
+            ),
+          ),
+        ),
+      );
+      expect(find.byKey(const Key('earned-lock-headline')), findsOneWidget);
+      expect(find.textContaining('متبقي 10 يوم'), findsOneWidget);
+      expect(find.text(earnedBalanceLockedCtaAr), findsOneWidget);
+      await tester.tap(find.text(earnedBalanceLockedCtaAr));
+      expect(tapped, isTrue);
+    });
+
+    testWidgets('Earned Balance panel shows forfeited closed state', (tester) async {
+      final snap = EarnedBalanceSnapshot.fromResponse({
+        'data': {
+          'totalForfeitedJod': '0.500',
+          'lockPolicy': {
+            'state': 'forfeited_closed',
+            'messages': {
+              'ar': {
+                'headline': earnedBalanceForfeitedHeadlineAr,
+                'detail': earnedBalanceForfeitedDetailAr,
+              },
+            },
+          },
+        },
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: EarnedBalancePanel(snapshot: snap)),
+        ),
+      );
+      expect(find.text(earnedBalanceForfeitedHeadlineAr), findsOneWidget);
+      expect(find.byKey(const Key('earned-forfeited-total')), findsOneWidget);
+      expect(find.text(earnedBalanceLockedCtaAr), findsNothing);
     });
 
     testWidgets('plan lock CTA shows only for plan reason', (tester) async {

@@ -10,6 +10,11 @@ router.get("/freelancer-activation/trials", ...guard, controller.getAdminTrials)
 router.get("/freelancer-activation/kpis", ...guard, controller.getAdminKpis);
 router.get("/freelancer-activation/work-inventory-reserve", ...guard, controller.getAdminWorkInventoryReserve);
 router.get("/freelancer-activation/earned-balance", ...guard, controller.getAdminEarnedBalance);
+router.post(
+  "/freelancer-activation/evaluate-earnings-forfeiture/:freelancerUserId",
+  ...guard,
+  controller.postAdminEvaluateForfeiture,
+);
 router.get("/freelancer-activation/settings", ...guard, controller.getAdminSettings);
 router.patch("/freelancer-activation/settings", ...guard, controller.updateAdminSettings);
 

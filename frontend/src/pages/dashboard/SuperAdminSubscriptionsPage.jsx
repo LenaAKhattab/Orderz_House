@@ -4,6 +4,7 @@ import Button from "../../components/ui/Button";
 import Pagination from "../../components/common/Pagination";
 import {
   activateSubscriptionCompanyRequest,
+  assignMarketplaceMembershipToFreelancerRequest,
   assignPlanToFreelancerRequest,
   adminSearchFreelancersRequest,
   getFreelancerCurrentSubscriptionAdminRequest,
@@ -15,6 +16,16 @@ import {
   updateSubscriptionActivationFeeSettingsRequest,
   updateSubscriptionRequest,
 } from "../../services/api";
+import {
+  ADMIN_LEGACY_PLANS_SECTION_AR,
+  ADMIN_MARKETPLACE_ASSIGNMENT_HELPER_AR,
+  ADMIN_MARKETPLACE_ASSIGNMENT_SCOPE_NOTE_AR,
+  formatAdminMarketplaceMembershipAssignmentLabel,
+  formatLegacyPlanAssignmentLabel,
+  isLegacyAssignmentSelection,
+  pickCanonicalMarketplaceMembershipsForAssignment,
+  resolveSelectedAssignmentPlanId,
+} from "../../admin/subscriptions/marketplaceMembershipAssignmentDisplay";
 import { invalidatePublicPlansCache } from "../../services/freelancerSessionCache";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
@@ -86,6 +97,9 @@ function formatDisplayRange(pagination) {
 
 const SuperAdminSubscriptionsPage = () => {
   const [plans, setPlans] = useState([]);
+  const [marketplaceMemberships, setMarketplaceMemberships] = useState([]);
+  const [legacyPlans, setLegacyPlans] = useState([]);
+  const [showLegacyPlans, setShowLegacyPlans] = useState(false);
   const [subs, setSubs] = useState([]);
   const [pagination, setPagination] = useState(EMPTY_PAGINATION);
   const [aggregates, setAggregates] = useState(EMPTY_AGGREGATES);
@@ -97,6 +111,9 @@ const SuperAdminSubscriptionsPage = () => {
 
   const [form, setForm] = useState({
     freelancerUserIds: [],
+    assignmentKind: "marketplace",
+    marketplacePlanId: "",
+    legacyPlanId: "",
     planId: "",
   });
 
@@ -143,11 +160,32 @@ const SuperAdminSubscriptionsPage = () => {
 
   const skipFilterPageReset = useRef(true);
 
+  const canonicalMarketplacePlans = useMemo(
+    () => pickCanonicalMarketplaceMembershipsForAssignment(marketplaceMemberships),
+    [marketplaceMemberships],
+  );
+
   const planTitleById = useMemo(() => {
     const map = {};
     for (const p of plans || []) map[String(p.id)] = p.title || String(p.id);
+    for (const p of legacyPlans || []) {
+      map[String(p.id)] = formatLegacyPlanAssignmentLabel(p);
+    }
+    for (const p of canonicalMarketplacePlans || []) {
+      map[`mmp:${p.id}`] = formatAdminMarketplaceMembershipAssignmentLabel(p);
+      map[String(p.id)] = formatAdminMarketplaceMembershipAssignmentLabel(p);
+    }
     return map;
-  }, [plans]);
+  }, [plans, legacyPlans, canonicalMarketplacePlans]);
+
+  const selectedAssignmentLabel = useMemo(() => {
+    if (isLegacyAssignmentSelection(form)) {
+      const legacy = legacyPlans.find((p) => String(p.id) === String(form.legacyPlanId));
+      return legacy ? formatLegacyPlanAssignmentLabel(legacy) : "";
+    }
+    const plan = canonicalMarketplacePlans.find((p) => String(p.id) === String(form.marketplacePlanId));
+    return plan ? formatAdminMarketplaceMembershipAssignmentLabel(plan) : "";
+  }, [form, legacyPlans, canonicalMarketplacePlans]);
 
   const statItems = useMemo(
     () => [
@@ -200,7 +238,12 @@ const SuperAdminSubscriptionsPage = () => {
       setPlansLoading(true);
       try {
         const plansRes = await listAssignablePlansAdminRequest();
-        if (!cancelled) setPlans(plansRes?.data?.plans || []);
+        if (!cancelled) {
+          const data = plansRes?.data || {};
+          setPlans(data.plans || data.legacyPlans || []);
+          setLegacyPlans(data.legacyPlans || data.plans || []);
+          setMarketplaceMemberships(data.marketplaceMemberships || []);
+        }
       } catch (err) {
         if (!cancelled) setError(errorMessage(err));
       } finally {
@@ -259,11 +302,20 @@ const SuperAdminSubscriptionsPage = () => {
   }, [page, debouncedSearch, filterStatus, filterPlanId, loadSubscriptions]);
 
   const canAssign = useMemo(() => {
-    return (form.freelancerUserIds || []).length > 0 && Number(form.planId) > 0;
-  }, [form.freelancerUserIds, form.planId]);
+    const hasFreelancers = (form.freelancerUserIds || []).length > 0;
+    const selected = resolveSelectedAssignmentPlanId(form);
+    return hasFreelancers && String(selected).trim() !== "";
+  }, [form]);
 
   const resetAssignForm = useCallback(() => {
-    setForm({ freelancerUserIds: [], planId: "" });
+    setForm({
+      freelancerUserIds: [],
+      assignmentKind: "marketplace",
+      marketplacePlanId: "",
+      legacyPlanId: "",
+      planId: "",
+    });
+    setShowLegacyPlans(false);
     setFreelancerQuery("");
     setFreelancerMatches([]);
     setFreelancerOpen(false);
@@ -422,7 +474,9 @@ const SuperAdminSubscriptionsPage = () => {
     setSubmitting(true);
     try {
       const freelancerIds = (form.freelancerUserIds || []).map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0);
-      const planId = Number(form.planId);
+      const legacyMode = isLegacyAssignmentSelection(form);
+      const marketplacePlanId = Number(form.marketplacePlanId);
+      const planId = Number(form.legacyPlanId || form.planId);
 
       const existing = [];
       for (const freelancerUserId of freelancerIds) {
@@ -447,7 +501,11 @@ const SuperAdminSubscriptionsPage = () => {
       if (existing.length) {
         setSubmitting(false);
         setConfirmItems(existing);
-        setConfirmPlanTitle(planTitleById[String(planId)] || `planId: ${String(planId)}`);
+        setConfirmPlanTitle(
+          legacyMode
+            ? planTitleById[String(planId)] || `planId: ${String(planId)}`
+            : selectedAssignmentLabel || `marketplacePlanId: ${String(marketplacePlanId)}`,
+        );
         const ok = await new Promise((resolve) => {
           setAssignConfirmContinue(() => resolve);
           setAssignConfirmOpen(true);
@@ -459,14 +517,26 @@ const SuperAdminSubscriptionsPage = () => {
       const failures = [];
       for (const freelancerUserId of freelancerIds) {
         try {
-          await assignPlanToFreelancerRequest({ freelancerUserId, planId, notes: null });
+          if (legacyMode) {
+            await assignPlanToFreelancerRequest({ freelancerUserId, planId, notes: null });
+          } else {
+            await assignMarketplaceMembershipToFreelancerRequest({
+              freelancerUserId,
+              marketplacePlanId,
+              notes: null,
+            });
+          }
         } catch (e) {
           failures.push({ freelancerUserId: String(freelancerUserId), message: errorMessage(e) });
         }
       }
 
       if (failures.length) {
-        setError(`تعذر إسناد الباقة لبعض المستخدمين: ${failures.map((f) => `ID ${f.freelancerUserId}`).join("، ")}`);
+        setError(
+          legacyMode
+            ? `تعذر إسناد الباقة القديمة لبعض المستخدمين: ${failures.map((f) => `ID ${f.freelancerUserId}`).join("، ")}`
+            : `تعذر إسناد عضوية سوق العمل لبعض المستخدمين: ${failures.map((f) => `ID ${f.freelancerUserId}`).join("، ")}`,
+        );
       } else {
         resetAssignForm();
         setAssignModalOpen(false);
@@ -648,8 +718,8 @@ const SuperAdminSubscriptionsPage = () => {
 
       <DashboardModal
         open={assignModalOpen}
-        title="إسناد باقة لمستقل"
-        ariaLabel="Assign Package — إسناد باقة لمستقل"
+        title="إسناد عضوية سوق العمل لمستقل"
+        ariaLabel="Assign marketplace membership — إسناد عضوية سوق العمل لمستقل"
         className="oh-sa-subs-assign-modal"
         onClose={closeAssignModal}
         footer={
@@ -658,14 +728,20 @@ const SuperAdminSubscriptionsPage = () => {
               إلغاء
             </Button>
             <Button type="button" variant="primary" disabled={!canAssign || submitting} onClick={() => void assign()}>
-              إسناد الباقة
+              إسناد العضوية
             </Button>
           </>
         }
       >
         <div className="oh-sa-subs-assign">
+          <p className="mb-2 text-sm font-semibold text-slate-700" data-testid="assign-marketplace-helper">
+            {ADMIN_MARKETPLACE_ASSIGNMENT_HELPER_AR}
+          </p>
+          <p className="mb-3 text-xs font-semibold text-slate-500" data-testid="assign-marketplace-scope-note">
+            {ADMIN_MARKETPLACE_ASSIGNMENT_SCOPE_NOTE_AR}
+          </p>
           <p className="mb-3 rounded-xl border border-amber-200/80 bg-amber-50/90 px-3 py-2.5 text-sm font-semibold text-amber-950" role="note">
-            عند تعيين الخطة يدويًا، سيُعتبر اشتراك الخطة ورسوم التفعيل مدفوعين أوفلاين، وسيتمكن المستقل من استلام الطلبات مباشرة وفق حدود الخطة.
+            عند تعيين العضوية يدويًا، سيُعتبر اشتراك الخطة ورسوم التفعيل مدفوعين أوفلاين، وستُفعَّل عضوية سوق العمل وفق حدود الباقة المختارة.
           </p>
           <div className="oh-sa-subs-assign__fields">
             <div className="flex min-w-0 flex-col gap-1.5">
@@ -730,21 +806,66 @@ const SuperAdminSubscriptionsPage = () => {
             </div>
 
             <div className="flex min-w-0 flex-col gap-1.5">
-              <span className={fieldLabelClass}>اختيار الباقة</span>
+              <span className={fieldLabelClass}>عضويات سوق العمل</span>
               <select
                 className={controlClass}
-                value={form.planId}
-                onChange={(e) => setForm((v) => ({ ...v, planId: e.target.value }))}
+                data-testid="assign-marketplace-membership-select"
+                value={isLegacyAssignmentSelection(form) ? "" : form.marketplacePlanId}
+                onChange={(e) =>
+                  setForm((v) => ({
+                    ...v,
+                    assignmentKind: "marketplace",
+                    marketplacePlanId: e.target.value,
+                    legacyPlanId: "",
+                    planId: "",
+                  }))
+                }
                 disabled={submitting || plansLoading}
               >
-                <option value="">اختر باقة…</option>
-                {plans.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title} ({p.durationDays} يوم)
+                <option value="">اختر عضوية سوق العمل…</option>
+                {canonicalMarketplacePlans.map((p) => (
+                  <option key={`mmp-${p.id}`} value={p.id}>
+                    {formatAdminMarketplaceMembershipAssignmentLabel(p)}
                   </option>
                 ))}
               </select>
             </div>
+
+            <details
+              className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2"
+              open={showLegacyPlans}
+              onToggle={(e) => setShowLegacyPlans(e.currentTarget.open)}
+              data-testid="assign-legacy-plans-section"
+            >
+              <summary className="cursor-pointer text-sm font-bold text-slate-700">
+                {ADMIN_LEGACY_PLANS_SECTION_AR}
+              </summary>
+              <div className="mt-3 flex min-w-0 flex-col gap-1.5">
+                <span className={fieldLabelClass}>اشتراك قديم (للحالات الاستثنائية فقط)</span>
+                <select
+                  className={controlClass}
+                  data-testid="assign-legacy-plan-select"
+                  value={isLegacyAssignmentSelection(form) ? form.legacyPlanId : ""}
+                  onChange={(e) =>
+                    setForm((v) => ({
+                      ...v,
+                      assignmentKind: e.target.value ? "legacy" : "marketplace",
+                      legacyPlanId: e.target.value,
+                      planId: e.target.value,
+                      marketplacePlanId: "",
+                    }))
+                  }
+                  disabled={submitting || plansLoading}
+                >
+                  <option value="">لا تستخدم للإسناد الجديد</option>
+                  {legacyPlans.map((p) => (
+                    <option key={`legacy-${p.id}`} value={p.id}>
+                      {formatLegacyPlanAssignmentLabel(p)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </details>
           </div>
 
           {(form.freelancerUserIds || []).length > 0 ? (
@@ -998,7 +1119,7 @@ const SuperAdminSubscriptionsPage = () => {
               إعداد بريد إشعارات الاشتراكات
             </Button>
             <Button type="button" variant="primary" disabled={submitting} onClick={() => setAssignModalOpen(true)}>
-              إسناد باقة لمستقل
+              إسناد عضوية سوق العمل
             </Button>
           </>
         }

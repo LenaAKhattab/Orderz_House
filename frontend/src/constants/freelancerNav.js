@@ -5,6 +5,7 @@ export const FREELANCER_NAV_MAIN = [
   { to: "/dashboard/freelancer", labelKey: "dashboard.nav.freelancer.home", icon: "dashboard", end: true },
   { to: "/dashboard/freelancer/orders", labelKey: "dashboard.nav.freelancer.availableRequests", icon: "orders" },
   { to: "/dashboard/freelancer/articles", labelKey: "dashboard.nav.freelancer.articles", icon: "courses" },
+  { to: "/dashboard/freelancer/my-articles", labelKey: "dashboard.nav.freelancer.myArticles", icon: "courses" },
   {
     to: "/dashboard/freelancer/institution-orders",
     labelKey: "dashboard.nav.freelancer.institutionOrders",
@@ -53,6 +54,7 @@ export function freelancerPageTitle(pathname, t) {
   if (pathname.includes("/orders/")) return t("dashboard.nav.freelancer.requestDetails");
   if (pathname.includes("/my-orders/")) return t("dashboard.nav.freelancer.myRequests");
   if (pathname.includes("/courses/")) return t("dashboard.nav.freelancer.courseDetails");
+  if (pathname.includes("/my-articles")) return t("dashboard.nav.freelancer.myArticles");
   if (pathname.includes("/articles")) return t("dashboard.nav.freelancer.articles");
   return t("dashboard.nav.freelancer.panelTitle");
 }

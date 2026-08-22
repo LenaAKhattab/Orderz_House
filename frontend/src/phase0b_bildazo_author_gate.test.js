@@ -161,7 +161,7 @@ describe("Freelancer Articles Bildazo gate UI", () => {
     assert.match(list, /!loading && !linked/);
     assert.match(list, /FreelancerBildazoAuthorGateCard/);
     assert.match(widget, /data-testid="bildazo-linked-profile"/);
-    assert.match(widget, /حساب Bildazo مرتبط/);
+    assert.match(widget, /BILDAZO_LINKED_STATUS_AR/);
     assert.match(widget, /data-testid="bildazo-public-id"/);
     assert.match(widget, /المعرّف:/);
     assert.match(widget, /data-testid="bildazo-account-menu"/);
@@ -207,9 +207,9 @@ describe("Freelancer Articles Bildazo gate UI", () => {
   it("null profileUrl does not render a broken anchor; publicId is shown when linked", () => {
     const widget = read("components/freelancer/FreelancerBildazoLinkedAccountWidget.jsx");
     assert.match(widget, /publicId/);
-    assert.match(widget, /link\?\.linked\?\.bildazoProfileUrl \?/);
+    assert.match(widget, /profileUrl/);
     assert.match(widget, /data-testid="bildazo-public-id"/);
-    assert.match(widget, /data-testid="bildazo-profile-url"/);
+    assert.match(widget, /data-testid="bildazo-view-writer-profile"/);
     assert.doesNotMatch(widget, /href=\{link\?\.linked\?\.bildazoProfileUrl\}/);
   });
 

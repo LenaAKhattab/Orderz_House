@@ -23,9 +23,11 @@ describe("Phase A4.1 Super Admin article attachment UI", () => {
     assert.match(form, /activation-wave-select/);
     const card = read("admin/marketplaceArticles/MarketplaceArticleCard.jsx");
     assert.match(card, /activation-attachment-badge/);
-    const page = read("pages/dashboard/SuperAdminMarketplaceArticlesPage.jsx");
-    assert.match(page, /listSuperAdminActivationCampaignsRequest/);
-    assert.match(page, /activationCampaigns/);
+    const adminPanel = read("components/admin/MarketplaceArticlesAdminPanel.jsx");
+    assert.match(adminPanel, /listSuperAdminActivationCampaignsRequest/);
+    assert.match(adminPanel, /activationCampaigns/);
+    const legacyPage = read("pages/dashboard/SuperAdminMarketplaceArticlesPage.jsx");
+    assert.match(legacyPage, /\/dashboard\/super-admin\/articles/);
   });
 
   it("payload includes optional activation ids without requiring them", () => {

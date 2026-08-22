@@ -13,6 +13,9 @@ const {
   BILDAZO_AUTHOR_LINK_ERROR_CODES,
 } = require("../constants/bildazoAuthorLink");
 const { bildazoAuthorLinkSchemaReady } = require("../utils/bildazoAuthorLinkSchema");
+const {
+  assertBildazoWriterIdentifierAvailableForFreelancer,
+} = require("../utils/bildazoAuthorLinkIdentifierGuard");
 const { mapLinkRow } = require("./bildazoAuthorLinkService");
 
 const SCHEMA_MISSING_AR = "جدول ربط Bildazo غير جاهز. طبّق الترحيل 164 أولاً.";
@@ -200,24 +203,16 @@ async function findLinkById(id, db) {
 }
 
 async function assertIdentifierAvailable({ id, bildazoUserId, bildazoPublicId, bildazoProfileUrl }, db) {
-  const { rows } = await db.query(
-    `SELECT id FROM freelancer_bildazo_author_links
-      WHERE id <> $1
-        AND status = 'linked'
-        AND (
-          ($2::text IS NOT NULL AND bildazo_user_id = $2)
-          OR ($3::text IS NOT NULL AND bildazo_public_id = $3)
-          OR ($4::text IS NOT NULL AND bildazo_profile_url = $4)
-        )
-      LIMIT 1`,
-    [Number(id), bildazoUserId, bildazoPublicId, bildazoProfileUrl],
+  await assertBildazoWriterIdentifierAvailableForFreelancer(
+    {
+      excludeFreelancerUserId: null,
+      excludeLinkId: id,
+      bildazoUserId,
+      bildazoPublicId,
+      bildazoProfileUrl,
+    },
+    db,
   );
-  if (rows[0]) {
-    throw createAppError("معرّف Bildazo هذا مرتبط بمستقل آخر.", 409, {
-      exposeToClient: true,
-      publicCode: BILDAZO_AUTHOR_LINK_ERROR_CODES.BILDAZO_AUTHOR_IDENTIFIER_IN_USE,
-    });
-  }
 }
 
 async function listBildazoAuthorLinks(query = {}, { db = pool } = {}) {
@@ -421,5 +416,6 @@ module.exports = {
   updateBildazoAuthorLinkStatus,
   parseManualLinkBody,
   mapAdminLinkRow,
+  assertBildazoWriterIdentifierAvailableForFreelancer,
   SCHEMA_MISSING_AR,
 };

@@ -21,6 +21,9 @@ const {
   bildazoAuthorLinkSchemaReady,
 } = require("../utils/bildazoAuthorLinkSchema");
 const defaultBildazoSyncClient = require("./bildazoAuthorIntegrationClient");
+const {
+  assertBildazoWriterIdentifierAvailableForFreelancer,
+} = require("../utils/bildazoAuthorLinkIdentifierGuard");
 
 const LOCAL_LINKED_STATUS = "linked";
 const LOCAL_REVIEW_STATUS = "needs_manual_review";
@@ -443,6 +446,15 @@ async function persistBildazoSyncOutcome(db, freelancerUserId, currentRow, sync)
   if (!sync || sync.disabled) return currentRow;
 
   if (SYNC_LINKED_OK.has(sync.status) && hasBildazoIdentity(sync)) {
+    await assertBildazoWriterIdentifierAvailableForFreelancer(
+      {
+        excludeFreelancerUserId: freelancerUserId,
+        bildazoUserId: sync.bildazoUserId,
+        bildazoPublicId: sync.bildazoPublicId,
+        bildazoProfileUrl: sync.profileUrl,
+      },
+      db,
+    );
     const updated = await db.query(
       `UPDATE freelancer_bildazo_author_links
           SET status = $2,
@@ -728,6 +740,15 @@ function isTruthyFlag(raw) {
 }
 
 async function persistBildazoReplaceOutcome(db, freelancerUserId, parsed, sync) {
+  await assertBildazoWriterIdentifierAvailableForFreelancer(
+    {
+      excludeFreelancerUserId: freelancerUserId,
+      bildazoUserId: sync.bildazoUserId,
+      bildazoPublicId: sync.bildazoPublicId,
+      bildazoProfileUrl: sync.profileUrl,
+    },
+    db,
+  );
   const updated = await db.query(
     `UPDATE freelancer_bildazo_author_links
         SET link_flow = $2,

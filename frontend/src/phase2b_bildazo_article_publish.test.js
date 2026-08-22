@@ -19,7 +19,7 @@ describe("Phase 2B freelancer Bildazo publish copy", () => {
       { status: "published", articleUrl: "http://127.0.0.1:4001/articles/1" },
       false,
     );
-    assert.equal(published.text, "تم نشر مقالك على Bildazo");
+    assert.equal(published.text, "تم نشر مقالك بنجاح على Bildazo.");
     assert.equal(published.url, "http://127.0.0.1:4001/articles/1");
     const pending = freelancerBildazoPublishCopy({ status: "pending" }, false);
     assert.match(pending.text, /جارٍ ربط النشر على Bildazo/);

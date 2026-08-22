@@ -3,7 +3,10 @@ import { useAuth } from "../../context/useAuth";
 import {
   BILDAZO_AUTHOR_LINK_FLOWS,
   ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_VERSION,
+  BILDAZO_LINKED_STATUS_AR,
+  BILDAZO_VIEW_WRITER_PROFILE_AR,
   bildazoLinkFailureMessage,
+  bildazoWriterProfileUrl,
   isBildazoAuthorLinked,
   validateBildazoAuthorLinkForm,
 } from "../../constants/bildazoAuthorTerms";
@@ -53,6 +56,7 @@ export default function FreelancerBildazoLinkedAccountWidget({
   const publicId = link?.linked?.bildazoPublicId || "";
   const linkedEmail = link?.linked?.email || link?.submitted?.existingBildazoEmail || verifiedEmail;
   const linkedAt = formatLinkedAt(link?.linked?.linkedAt);
+  const profileUrl = bildazoWriterProfileUrl(link);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -171,7 +175,7 @@ export default function FreelancerBildazoLinkedAccountWidget({
         <span className="bz-account__copy">
           <span className="bz-account__title">
             <span className="bz-account__dot" aria-hidden="true" />
-            حساب Bildazo مرتبط
+            {BILDAZO_LINKED_STATUS_AR}
           </span>
           {publicId ? (
             <span className="bz-account__id" data-testid="bildazo-public-id">
@@ -187,15 +191,15 @@ export default function FreelancerBildazoLinkedAccountWidget({
           {publicId ? <p className="bz-account__detail">المعرّف: {publicId}</p> : null}
           {linkedEmail ? <p className="bz-account__detail">البريد: {linkedEmail}</p> : null}
           {linkedAt ? <p className="bz-account__detail">تاريخ الربط: {linkedAt}</p> : null}
-          {link?.linked?.bildazoProfileUrl ? (
+          {profileUrl ? (
             <a
-              className="bz-account__detail"
-              href={link.linked.bildazoProfileUrl}
+              className="bz-account__action"
+              href={profileUrl}
               target="_blank"
               rel="noreferrer"
-              data-testid="bildazo-profile-url"
+              data-testid="bildazo-view-writer-profile"
             >
-              {link.linked.bildazoProfileUrl}
+              {BILDAZO_VIEW_WRITER_PROFILE_AR}
             </a>
           ) : null}
           <button

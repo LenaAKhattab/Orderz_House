@@ -364,7 +364,7 @@ async function loadBildazoByArticle(runner, articleIds) {
       `SELECT DISTINCT ON (a.article_id)
           a.article_id,
           p.status,
-          p.article_url,
+          p.bildazo_article_url,
           p.published_at,
           p.last_error
          FROM bildazo_article_publish_records p
@@ -377,7 +377,7 @@ async function loadBildazoByArticle(runner, articleIds) {
       const status = String(row.status || "");
       map.set(Number(row.article_id), {
         bildazoPublishStatus: status || null,
-        bildazoUrl: row.article_url || null,
+        bildazoUrl: row.bildazo_article_url || null,
         publishedAt: row.published_at || null,
         canRetry: ["pending", "failed", "needs_manual_review", "skipped"].includes(status),
       });

@@ -3,6 +3,7 @@ const { requireAuth, requireSuperAdmin } = require("../middleware/rbacMiddleware
 const validateRequest = require("../middleware/validateRequest");
 const { adminWriteLimiter } = require("../middleware/orderWriteRateLimiters");
 const controller = require("../controllers/bildazoAuthorLinkAdminController");
+const integrationController = require("../controllers/superAdminFreelancerBildazoIntegrationController");
 const {
   listBildazoAuthorLinkValidators,
   manualLinkValidators,
@@ -11,6 +12,12 @@ const {
 
 const router = express.Router();
 const guard = [requireAuth, requireSuperAdmin];
+
+router.get(
+  "/freelancers/:freelancerUserId/bildazo-integration",
+  ...guard,
+  integrationController.getSummary,
+);
 
 router.get(
   "/bildazo-author-links",

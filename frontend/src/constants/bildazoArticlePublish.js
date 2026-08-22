@@ -1,14 +1,20 @@
 export const BILDAZO_ARTICLE_PUBLISH_SUCCESS = ["published", "already_imported"];
 
+export const BILDAZO_PUBLISH_SUCCESS_AR = "تم نشر مقالك بنجاح على Bildazo.";
+
+export const BILDAZO_PUBLISH_SUCCESS_EN = "Your article was published on Bildazo successfully.";
+
+export const BILDAZO_VIEW_ARTICLE_AR = "مشاهدة المقال";
+
+export const BILDAZO_VIEW_WRITER_PROFILE_AR = "مشاهدة ملفي ككاتب";
+
 export function freelancerBildazoPublishCopy(publish, isEn) {
   const status = String(publish?.status || "").trim();
   if (!status) return null;
   if (BILDAZO_ARTICLE_PUBLISH_SUCCESS.includes(status)) {
     return {
       tone: "success",
-      text: isEn
-        ? "Your article was published on Bildazo."
-        : "تم نشر مقالك على Bildazo",
+      text: isEn ? BILDAZO_PUBLISH_SUCCESS_EN : BILDAZO_PUBLISH_SUCCESS_AR,
       url: publish.articleUrl || null,
     };
   }

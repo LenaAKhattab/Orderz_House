@@ -63,10 +63,13 @@ describe("Phase A6 Silver conversion UI", () => {
     assert.match(admin, /ظهر الزر/);
   });
 
-  it("earned balance panel still has no withdrawal/claim buttons", () => {
+  it("earned balance panel has Silver unlock CTA but no withdrawal/claim actions", () => {
     const panel = read("components/freelancer/FreelancerEarnedBalancePanel.jsx");
-    assert.doesNotMatch(panel, /withdraw/i);
-    assert.doesNotMatch(panel, /<button/i);
-    assert.doesNotMatch(panel, /onWithdraw|startClaim|claimButton/i);
+    assert.match(panel, /earned-balance-silver-cta/);
+    assert.match(panel, /EARNED_BALANCE_LOCKED_CTA_AR|اشترك لتفعيل السحب/);
+    assert.match(panel, /معلّق غير قابل للسحب|Locked pending/);
+    assert.doesNotMatch(panel, /onWithdraw|startClaim|claimButton|financialClaim/i);
+    const buttons = panel.match(/<button/gi) || [];
+    assert.equal(buttons.length, 1, "only the Silver subscription CTA button is allowed");
   });
 });

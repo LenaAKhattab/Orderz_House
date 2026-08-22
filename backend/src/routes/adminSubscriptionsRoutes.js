@@ -40,6 +40,8 @@ const {
 
   assignSubscriptionValidators,
 
+  assignMarketplaceMembershipValidators,
+
   updateSubscriptionValidators,
 
   listSubscriptionsValidators,
@@ -161,6 +163,22 @@ router.post(
   validateRequest,
 
   subscriptionsController.assignPlan,
+
+);
+
+router.post(
+
+  "/subscriptions/assign-marketplace-membership",
+
+  requireAnyRole(ASSIGN_AND_MANAGE_SUBSCRIPTION_ROLES),
+
+  subscriptionsPerm,
+
+  assignMarketplaceMembershipValidators,
+
+  validateRequest,
+
+  subscriptionsController.assignMarketplaceMembership,
 
 );
 

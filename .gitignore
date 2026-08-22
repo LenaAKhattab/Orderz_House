@@ -5,12 +5,16 @@ frontend/node_modules/
 
 # Environment files (never commit secrets)
 .env
+.env.*
 .env.local
 .env.development
 .env.production
+.env.staging
 *.env.local
 backend/.env
+backend/.env.*
 backend/.env.sandbox
+backend/.env.staging
 frontend/.env
 frontend/.env.local
 frontend/.env.production

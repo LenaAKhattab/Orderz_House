@@ -3,6 +3,8 @@ import { useAuth } from "../../context/useAuth";
 import {
   BILDAZO_AUTHOR_LINK_FLOWS,
   ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_VERSION,
+  BILDAZO_GATE_REQUIRED_MESSAGE_AR,
+  BILDAZO_GATE_CTA_AR,
   bildazoLinkFailureMessage,
   isBildazoAuthorLinked,
   validateBildazoAuthorLinkForm,
@@ -154,8 +156,8 @@ export default function FreelancerBildazoAuthorGateCard({
       <h2 className="bz-gate__title">حساب الكاتب في Bildazo</h2>
       <p className="bz-gate__subtitle">
         {informational
-          ? "اربط حساب الكاتب الآن لتنشر مقالاتك لاحقًا على Bildazo بسهولة وباسمك."
-          : "اربط حساب الكاتب في Bildazo لتقديم مقالات Mini Article باسمك مباشرة بعد القبول."}
+          ? BILDAZO_GATE_REQUIRED_MESSAGE_AR
+          : BILDAZO_GATE_REQUIRED_MESSAGE_AR}
       </p>
 
       {pendingCopy ? (
@@ -189,6 +191,8 @@ export default function FreelancerBildazoAuthorGateCard({
         error={error}
         busy={busy}
         onSubmit={handleSubmit}
+        newSubmitLabel={BILDAZO_GATE_CTA_AR}
+        existingSubmitLabel={BILDAZO_GATE_CTA_AR}
       />
     </div>
   );

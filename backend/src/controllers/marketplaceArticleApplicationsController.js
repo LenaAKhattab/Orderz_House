@@ -1,6 +1,7 @@
 const articleApplicationsService = require("../services/marketplaceArticleApplicationsService");
 const marketplaceArticlesService = require("../services/marketplaceArticlesService");
 const opportunityBidCollectionService = require("../services/opportunityBidCollectionService");
+const { loadWriterProfileUrl } = require("../services/freelancerMyArticlesService");
 
 async function submit(req, res, next) {
   try {
@@ -104,6 +105,7 @@ async function getMineForArticle(req, res, next) {
     const bidCollection = await opportunityBidCollectionService.getArticleBidCollectionProgress(
       req.params.id,
     );
+    const writerProfileUrl = await loadWriterProfileUrl(req.user.id);
     return res.status(200).json({
       success: true,
       data: {
@@ -111,6 +113,7 @@ async function getMineForArticle(req, res, next) {
         application: application || null,
         eligibility,
         bidCollection,
+        writerProfileUrl: writerProfileUrl || null,
       },
     });
   } catch (err) {

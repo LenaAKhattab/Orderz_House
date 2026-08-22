@@ -79,8 +79,8 @@ describe("Super Admin Bildazo author links page", () => {
   it("freelancer article page linked state renders compact account widget", () => {
     const widget = read("components/freelancer/FreelancerBildazoLinkedAccountWidget.jsx");
     assert.match(widget, /data-testid="bildazo-linked-profile"/);
-    assert.match(widget, /حساب Bildazo مرتبط/);
-    assert.match(widget, /link\?\.linked\?\.bildazoProfileUrl/);
+    assert.match(widget, /BILDAZO_LINKED_STATUS_AR/);
+    assert.match(widget, /bildazoWriterProfileUrl/);
     assert.equal(isBildazoAuthorLinked({ status: "linked" }), true);
   });
 });
