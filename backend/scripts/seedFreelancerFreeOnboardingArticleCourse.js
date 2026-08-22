@@ -10,8 +10,8 @@
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
 
-const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
-guardQaOrSeed(path.basename(__filename));
+const { assertOperationalScriptAllowed } = require("../src/utils/databaseEnvironmentSafety");
+assertOperationalScriptAllowed(path.basename(__filename));
 
 const { pool } = require("../src/config/db");
 const { importYoutubeSource } = require("../src/utils/youtubeImport");
