@@ -101,6 +101,160 @@ class _SuperAdminArticleDetailScreenState extends ConsumerState<SuperAdminArticl
     }
   }
 
+  Future<void> _approveArticle() async {
+    if (_promptOpen || ref.read(superAdminArticlesBusyIdProvider) != null) return;
+    _promptOpen = true;
+    final ok = await showSuperAdminConfirmDialog(
+      context: context,
+      title: superAdminApproveArticleLabelAr,
+      body: superAdminArticleApproveConfirmAr,
+      confirmLabel: superAdminApproveArticleLabelAr,
+      confirmKey: const Key(superAdminApproveArticleConfirmKey),
+    );
+    _promptOpen = false;
+    if (!ok || !mounted) return;
+    try {
+      final started = await ref
+          .read(superAdminArticleDetailProvider(widget.articleId).notifier)
+          .finalizeSelectedApplicationApproval();
+      if (!started || !mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(superAdminArticleApproveSuccessAr)),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(superAdminActionErrorMessage(error))),
+      );
+    }
+  }
+
+  Future<void> _requestRevision() async {
+    if (_promptOpen || ref.read(superAdminArticlesBusyIdProvider) != null) return;
+    _promptOpen = true;
+    String? notes;
+    try {
+      notes = await showSuperAdminNoteDialog(
+        context: context,
+        title: superAdminRequestArticleRevisionLabelAr,
+        label: 'ملاحظات التعديل',
+        helper: superAdminArticleRevisionNoteRequiredAr,
+        confirmLabel: superAdminRequestArticleRevisionLabelAr,
+        minChars: 3,
+        maxChars: 2000,
+        fieldKey: const Key(superAdminArticleRevisionNoteFieldKey),
+        confirmKey: const Key('sa-confirm-article-revision'),
+      );
+    } finally {
+      _promptOpen = false;
+    }
+    if (notes == null || !mounted) return;
+    final validation = validateArticleRevisionNote(notes);
+    if (validation != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(validation)));
+      return;
+    }
+    try {
+      final started = await ref
+          .read(superAdminArticleDetailProvider(widget.articleId).notifier)
+          .requestSelectedApplicationRevision(notes);
+      if (!started || !mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(superAdminArticleRevisionSuccessAr)),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(superAdminActionErrorMessage(error))),
+      );
+    }
+  }
+
+  Future<void> _rejectArticle() async {
+    if (_promptOpen || ref.read(superAdminArticlesBusyIdProvider) != null) return;
+    _promptOpen = true;
+    String? reason;
+    try {
+      reason = await showSuperAdminNoteDialog(
+        context: context,
+        title: superAdminRejectArticleLabelAr,
+        label: 'سبب الرفض',
+        helper: superAdminArticleRejectReasonRequiredAr,
+        confirmLabel: superAdminRejectArticleLabelAr,
+        minChars: 3,
+        maxChars: 2000,
+        fieldKey: const Key(superAdminArticleRejectReasonFieldKey),
+        confirmKey: const Key(superAdminRejectArticleConfirmKey),
+      );
+    } finally {
+      _promptOpen = false;
+    }
+    if (reason == null || !mounted) return;
+    final validation = validateArticleRejectReason(reason);
+    if (validation != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(validation)));
+      return;
+    }
+    try {
+      final started = await ref
+          .read(superAdminArticleDetailProvider(widget.articleId).notifier)
+          .rejectSelectedApplication(rejectionReason: reason);
+      if (!started || !mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(superAdminArticleRejectSuccessAr)),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(superAdminActionErrorMessage(error))),
+      );
+    }
+  }
+
+  Widget? _reviewActions(SuperAdminArticleDetail detail, String? busyId) {
+    final canApprove = canFinalizeArticleApproval(detail);
+    final canRevision = canRequestArticleRevision(detail);
+    final canReject = canRejectSelectedArticleApplication(detail);
+    if (!canApprove && !canRevision && !canReject) return null;
+    final locked = busyId != null;
+    final app = selectedArticleApplication(detail);
+    final approveBusy = app != null && busyId == 'finalize:${app.id}';
+    final revisionBusy = app != null && busyId == 'revision:${app.id}';
+    final rejectBusy = app != null && busyId == 'reject:${app.id}';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (canApprove) ...[
+          OhButton(
+            key: const Key('sa-approve-article'),
+            label: superAdminApproveArticleLabelAr,
+            isLoading: approveBusy,
+            onPressed: locked ? null : _approveArticle,
+          ),
+          const SizedBox(height: 8),
+        ],
+        if (canRevision) ...[
+          OhButton(
+            key: const Key('sa-request-article-revision'),
+            label: superAdminRequestArticleRevisionLabelAr,
+            outlined: true,
+            isLoading: revisionBusy,
+            onPressed: locked ? null : _requestRevision,
+          ),
+          const SizedBox(height: 8),
+        ],
+        if (canReject)
+          OhButton(
+            key: const Key('sa-reject-article'),
+            label: superAdminRejectArticleLabelAr,
+            outlined: true,
+            isLoading: rejectBusy,
+            onPressed: locked ? null : _rejectArticle,
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(superAdminArticleDetailProvider(widget.articleId));
@@ -159,6 +313,10 @@ class _SuperAdminArticleDetailScreenState extends ConsumerState<SuperAdminArticl
                       )
                     : null,
               ),
+              if (_reviewActions(detail, busyId) case final reviewActions?) ...[
+                const SizedBox(height: 12),
+                reviewActions,
+              ],
               const SizedBox(height: 16),
               const Text(
                 'المتقدمون',

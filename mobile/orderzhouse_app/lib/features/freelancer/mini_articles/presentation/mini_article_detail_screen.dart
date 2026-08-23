@@ -45,7 +45,7 @@ class _MiniArticleDetailScreenState extends ConsumerState<MiniArticleDetailScree
   }
 
   Future<void> _openBildazoWeb() async {
-    final uri = Uri.tryParse(WebConstants.freelancerArticlesUrl);
+    final uri = Uri.tryParse(WebConstants.freelancerBildazoWriterActivateUrl);
     if (uri == null) return;
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
@@ -206,7 +206,8 @@ class _MiniArticleDetailScreenState extends ConsumerState<MiniArticleDetailScree
                 if (eligibility?.reason == 'BILDAZO_AUTHOR_LINK_REQUIRED') ...[
                   const SizedBox(height: 10),
                   OhButton(
-                    label: bildazoOpenWebCtaAr,
+                    key: const ValueKey('detail-bildazo-activate-cta'),
+                    label: bildazoActivateCtaAr,
                     outlined: true,
                     onPressed: _openBildazoWeb,
                   ),

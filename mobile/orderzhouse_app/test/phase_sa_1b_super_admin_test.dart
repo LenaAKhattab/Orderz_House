@@ -20,6 +20,7 @@ import 'package:orderzhouse_app/features/super_admin/presentation/super_admin_qu
 class FakeSuperAdminApi extends SuperAdminApi {
   FakeSuperAdminApi() : super(Dio());
 
+  List<Map<String, dynamic>> kycItems = [];
   List<Map<String, dynamic>> activationItems = [];
   List<Map<String, dynamic>> claimItems = [];
   int approveCalls = 0;
@@ -41,6 +42,31 @@ class FakeSuperAdminApi extends SuperAdminApi {
             'internalOrdersPendingClaims': 0,
           },
         },
+      },
+    };
+  }
+
+  @override
+  Future<dynamic> fetchKycActivationRequests({
+    String? status = 'pending_review',
+    int page = 1,
+    int limit = 50,
+  }) async {
+    return {
+      'data': {
+        'schemaReady': true,
+        'items': kycItems,
+        'total': kycItems.length,
+      },
+    };
+  }
+
+  @override
+  Future<dynamic> fetchSuperAdminFeedback({String? status, int limit = 50, int offset = 0}) async {
+    return {
+      'data': {
+        'items': [],
+        'summary': {'new': 0},
       },
     };
   }
@@ -84,7 +110,7 @@ class FakeSuperAdminApi extends SuperAdminApi {
   }
 
   @override
-  Future<void> approveCompanyActivation(String subscriptionId) async {
+  Future<void> approveCompanyActivation(String subscriptionId, {String? overrideReason}) async {
     approveCalls++;
     approvedIds.add(subscriptionId);
     if (approveGate != null) await approveGate!.future;
@@ -149,10 +175,11 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('activation eligibility', () {
-    test('M1 disables in-app approve even when historically pending', () {
+    test('A2 enables in-app approve when pending', () {
       final item = SuperAdminActivationItem.fromJson(_pendingActivation());
       expect(wouldHaveBeenApprovableActivation(item), isTrue);
-      expect(canApproveActivation(item), isFalse);
+      expect(canApproveActivation(item), isTrue);
+      expect(isMobileCompanyActivateDisabled(), isFalse);
     });
 
     test('already approved item has no approve action', () {
@@ -210,7 +237,7 @@ void main() {
   });
 
   group('SuperAdminApi payloads', () {
-    test('approve uses company-activate PATCH with no body', () async {
+    test('approve uses company-activate PATCH with optional overrideReason', () async {
       String? method;
       String? path;
       dynamic data;
@@ -225,10 +252,10 @@ void main() {
           },
         ),
       );
-      await SuperAdminApi(dio).approveCompanyActivation('44');
+      await SuperAdminApi(dio).approveCompanyActivation('44', overrideReason: 'سبب تجاوز');
       expect(method, 'PATCH');
       expect(path, '/admin/subscriptions/44/company-activate');
-      expect(data, isNull);
+      expect(data, {'overrideReason': 'سبب تجاوز'});
     });
 
     test('claim status PATCH sends status and optional note only', () async {
@@ -331,7 +358,7 @@ void main() {
   });
 
   group('activation queue widgets', () {
-    testWidgets('M1 shows web-only KYC message and hides approve button', (tester) async {
+    testWidgets('A2 shows actionable queue cards without web-only banner', (tester) async {
       tester.view.physicalSize = const Size(400, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -351,10 +378,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text(superAdminApproveActivationLabelAr), findsNothing);
-      expect(find.byKey(const Key('sa-activation-web-only-banner')), findsOneWidget);
-      expect(find.text(superAdminActivationWebOnlyMessageAr), findsWidgets);
-      expect(find.textContaining('د.أ'), findsWidgets);
+      expect(find.byKey(const Key('sa-subscription-queue-10')), findsOneWidget);
+      expect(find.textContaining('لوحة الويب'), findsNothing);
       expect(api.approveCalls, 0);
     });
   });
@@ -463,9 +488,10 @@ void main() {
       expect(api, isNot(contains('debugPrint')));
 
       final queues = File('lib/features/super_admin/presentation/super_admin_queue_screens.dart').readAsStringSync();
-      expect(queues, contains('superAdminActivationWebOnlyMessageAr'));
+      expect(queues, contains('superAdminActivationKycSectionAr'));
       expect(queues, contains('superAdminUpdateClaimStatusLabelAr'));
-      expect(queues, isNot(contains('sa-approve-activation-')));
+      expect(queues, contains('sa-kyc-queue-'));
+      expect(queues, contains('sa-subscription-queue-'));
       expect(queues, isNot(contains('تسعير')));
       expect(queues, isNot(contains('صرف')));
       expect(queues, isNot(contains('approveDelivery')));

@@ -22,6 +22,15 @@ router.get(
   controller.listMine,
 );
 
+// Mobile M5 alias — same payload as /article-applications.
+router.get(
+  "/my-articles",
+  ...guard,
+  listApplicationsValidators,
+  validateRequest,
+  controller.listMine,
+);
+
 router.get(
   "/marketplace-articles/:id/application",
   ...guard,

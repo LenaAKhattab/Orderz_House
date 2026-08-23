@@ -216,12 +216,43 @@ class _Row extends StatelessWidget {
 }
 
 class EarnedBalancePanel extends StatelessWidget {
-  const EarnedBalancePanel({super.key, required this.snapshot});
+  const EarnedBalancePanel({
+    super.key,
+    required this.snapshot,
+    this.onOpenPlans,
+    this.onOpenKyc,
+    this.onOpenClaims,
+  });
 
   final EarnedBalanceSnapshot snapshot;
+  final VoidCallback? onOpenPlans;
+  final VoidCallback? onOpenKyc;
+  final VoidCallback? onOpenClaims;
+
+  Future<void> _openPlans(BuildContext context) async {
+    if (onOpenPlans != null) {
+      onOpenPlans!();
+      return;
+    }
+    final uri = Uri.tryParse(WebConstants.freelancerPlansUrl);
+    if (uri == null) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(earnedBalanceOpenPlansFailedAr)),
+      );
+      return;
+    }
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(earnedBalanceOpenPlansFailedAr)),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final ui = resolveEarnedBalanceUiState(snapshot);
     return OhCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -231,13 +262,57 @@ class EarnedBalancePanel extends StatelessWidget {
             textAlign: TextAlign.right,
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
           ),
+          if (ui.headline != null && ui.headline!.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              ui.headline!,
+              key: const ValueKey('earned-balance-headline'),
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryDeep,
+                height: 1.4,
+                fontSize: 13,
+              ),
+            ),
+          ],
+          if (ui.detail != null && ui.detail!.trim().isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              ui.detail!,
+              key: const ValueKey('earned-balance-detail'),
+              textAlign: TextAlign.right,
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
+            ),
+          ],
+          if (ui.showLockedPendingAmount) ...[
+            const SizedBox(height: 8),
+            Text(
+              '$earnedBalanceLockedPendingLabelAr: ${snapshot.displayLockedPendingJod} JOD',
+              key: const ValueKey('earned-balance-locked-pending'),
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDeep),
+            ),
+          ],
+          if (ui.showClosedAmount) ...[
+            const SizedBox(height: 6),
+            Text(
+              '$earnedBalanceClosedAmountLabelAr: ${snapshot.totalForfeitedJod} JOD',
+              key: const ValueKey('earned-balance-closed'),
+              textAlign: TextAlign.right,
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+          ],
+          if (ui.showWithdrawableAmount) ...[
+            const SizedBox(height: 6),
+            Text(
+              '$earnedBalanceWithdrawableLabelAr: ${snapshot.displayWithdrawableJod} JOD',
+              key: const ValueKey('earned-balance-withdrawable'),
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.success, fontSize: 14),
+            ),
+          ],
           const SizedBox(height: 6),
-          Text(
-            'إجمالي قيد المعالجة: ${snapshot.totalPendingJod} JOD',
-            textAlign: TextAlign.right,
-            style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDeep),
-          ),
-          const SizedBox(height: 4),
           Text(
             'مقبول: ${snapshot.totalAcceptedArticles} · منشور: ${snapshot.totalPublishedArticles}',
             textAlign: TextAlign.right,
@@ -245,14 +320,49 @@ class EarnedBalancePanel extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            earnedBalanceNotWithdrawableAr,
+            earnedBalanceHelperAr,
             textAlign: TextAlign.right,
             style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
           ),
+          if (ui.showPlansCta) ...[
+            const SizedBox(height: 10),
+            OhButton(
+              key: const ValueKey('earned-balance-plans-cta'),
+              label: earnedBalancePlansCtaAr,
+              onPressed: () => _openPlans(context),
+            ),
+          ],
+          if (ui.showKycPending) ...[
+            const SizedBox(height: 8),
+            Text(
+              earnedBalanceKycPendingAr,
+              key: const ValueKey('earned-balance-kyc-pending'),
+              textAlign: TextAlign.right,
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+          ],
+          if (ui.showKycCta) ...[
+            const SizedBox(height: 10),
+            OhButton(
+              key: const ValueKey('earned-balance-kyc-cta'),
+              label: earnedBalanceKycCtaAr,
+              outlined: true,
+              onPressed: onOpenKyc,
+            ),
+          ],
+          if (ui.showClaimsCta) ...[
+            const SizedBox(height: 10),
+            OhButton(
+              key: const ValueKey('earned-balance-claims-cta'),
+              label: earnedBalanceClaimsNavAr,
+              outlined: true,
+              onPressed: onOpenClaims,
+            ),
+          ],
           if (snapshot.entries.isEmpty) ...[
             const SizedBox(height: 10),
             const Text(
-              'لا توجد مستحقات مقالات حالياً.',
+              earnedBalanceEmptyAr,
               textAlign: TextAlign.right,
               style: TextStyle(color: AppColors.textMuted, fontSize: 13),
             ),
@@ -274,6 +384,7 @@ class _EarnedEntryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final amount = entry.amountJod ?? '—';
+    final locked = entry.locked || entry.statusKey == 'pending_locked';
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
@@ -286,7 +397,7 @@ class _EarnedEntryTile extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            'صافي المستقل: $amount JOD · ${entry.statusLabelAr}',
+            '${locked ? '🔒 ' : ''}صافي المستقل: $amount JOD · ${entry.statusLabelAr}',
             textAlign: TextAlign.right,
             key: ValueKey('earned-net-${entry.applicationId}'),
             style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
@@ -301,7 +412,7 @@ class _EarnedEntryTile extends StatelessWidget {
                   if (uri == null) return;
                   await launchUrl(uri, mode: LaunchMode.externalApplication);
                 },
-                child: const Text('فتح على Bildazo'),
+                child: const Text(bildazoViewArticleAr),
               ),
             ),
           ],
@@ -316,43 +427,53 @@ class BildazoLinkPanel extends StatelessWidget {
 
   final BildazoAuthorLinkStatus status;
 
-  Future<void> _openWeb(BuildContext context) async {
-    final uri = Uri.tryParse(WebConstants.freelancerArticlesUrl);
+  Future<void> _openActivate(BuildContext context) async {
+    final uri = Uri.tryParse(WebConstants.freelancerBildazoWriterActivateUrl);
     if (uri == null) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر فتح صفحة ربط Bildazo.')),
+        const SnackBar(content: Text(bildazoOpenHandoffFailedAr)),
       );
       return;
     }
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر فتح صفحة ربط Bildazo.')),
+        const SnackBar(content: Text(bildazoOpenHandoffFailedAr)),
       );
     }
+  }
+
+  Future<void> _openProfile(BuildContext context, String url) async {
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   @override
   Widget build(BuildContext context) {
     final linked = status.isLinked;
+    final profileUrl = status.resolvedProfileUrl;
     return OhCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
-            'حساب Bildazo',
+            'حساب الكاتب على Bildazo',
             textAlign: TextAlign.right,
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
           ),
           const SizedBox(height: 8),
           Text(
             linked
-                ? 'مرتبط${status.displayName != null && status.displayName!.isNotEmpty ? ': ${status.displayName}' : ''}'
+                ? (status.displayName != null && status.displayName!.trim().isNotEmpty
+                    ? '$bildazoLinkedStatusAr · ${status.displayName!.trim()}'
+                    : bildazoLinkedStatusAr)
                 : status.gateEnabled
                     ? bildazoRequiredAr
-                    : 'الربط غير مطلوب حالياً أو غير مفعّل.',
+                    : bildazoGateOptionalAr,
             textAlign: TextAlign.right,
+            key: ValueKey(linked ? 'bildazo-linked' : 'bildazo-required'),
             style: TextStyle(
               color: linked ? AppColors.textInk : AppColors.textMuted,
               fontWeight: FontWeight.w600,
@@ -362,9 +483,18 @@ class BildazoLinkPanel extends StatelessWidget {
           if (!linked) ...[
             const SizedBox(height: 10),
             OhButton(
-              label: bildazoOpenWebCtaAr,
+              key: const ValueKey('bildazo-activate-cta'),
+              label: bildazoActivateCtaAr,
               outlined: true,
-              onPressed: () => _openWeb(context),
+              onPressed: () => _openActivate(context),
+            ),
+          ] else if (profileUrl != null) ...[
+            const SizedBox(height: 10),
+            OhButton(
+              key: const ValueKey('bildazo-view-profile-cta'),
+              label: bildazoViewWriterProfileAr,
+              outlined: true,
+              onPressed: () => _openProfile(context, profileUrl),
             ),
           ],
         ],

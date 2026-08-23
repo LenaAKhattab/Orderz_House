@@ -120,6 +120,14 @@ NotificationActionTarget? _resolveFromDashboardLink(
     );
   }
 
+  if (path == '/dashboard/freelancer/my-articles') {
+    if (role != 'freelancer') return null;
+    return const NotificationActionTarget(
+      route: AppRoutes.freelancerMyArticles,
+      buttonLabel: 'فتح مقالاتي',
+    );
+  }
+
   final articleMatch = RegExp(r'^/dashboard/freelancer/articles/([^/]+)$').firstMatch(path);
   if (articleMatch != null) {
     if (role != 'freelancer') return null;
@@ -236,9 +244,32 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
         buttonLabel: 'فتح بيت المونة',
       );
     }
+    if (entityType == 'freelancer_activation_request' ||
+        entityType == 'freelancer_account_activation_request' ||
+        type.contains('kyc') ||
+        type.contains('freelancer_activation')) {
+      final id = _numericIdOrNull(notification.entityId);
+      if (id != null) {
+        return NotificationActionTarget(
+          route: AppRoutes.superAdminActivationKycPath(id),
+          buttonLabel: 'فتح طلب التفعيل',
+        );
+      }
+      return const NotificationActionTarget(
+        route: AppRoutes.superAdminActivation,
+        buttonLabel: 'فتح طلبات التفعيل',
+      );
+    }
     if (entityType == 'subscription' ||
         type.contains('activation') ||
         type.startsWith('subscription')) {
+      final id = _numericIdOrNull(notification.entityId);
+      if (id != null) {
+        return NotificationActionTarget(
+          route: AppRoutes.superAdminActivationSubscriptionPath(id),
+          buttonLabel: 'فتح طلب التفعيل',
+        );
+      }
       return const NotificationActionTarget(
         route: AppRoutes.superAdminActivation,
         buttonLabel: 'فتح طلبات التفعيل',
@@ -259,6 +290,22 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
       return const NotificationActionTarget(
         route: AppRoutes.superAdminArticles,
         buttonLabel: 'فتح المقالات',
+      );
+    }
+    if (entityType == 'feedback' ||
+        type.contains('feedback') ||
+        type.contains('problem') ||
+        type.contains('suggestion')) {
+      final id = _numericIdOrNull(notification.entityId);
+      if (id != null) {
+        return NotificationActionTarget(
+          route: AppRoutes.superAdminFeedbackDetailPath(id),
+          buttonLabel: 'فتح الملاحظة',
+        );
+      }
+      return const NotificationActionTarget(
+        route: AppRoutes.superAdminFeedback,
+        buttonLabel: 'فتح المشاكل والاقتراحات',
       );
     }
     return const NotificationActionTarget(
@@ -420,6 +467,28 @@ NotificationActionTarget? _resolveSuperAdminDashboardLink(String path) {
     );
   }
 
+  if (normalized == '/dashboard/super-admin/freelancer-activation-requests') {
+    return const NotificationActionTarget(
+      route: AppRoutes.superAdminActivation,
+      buttonLabel: 'فتح طلبات التفعيل',
+    );
+  }
+
+  if (normalized.startsWith('/dashboard/super-admin/freelancer-activation-requests/')) {
+    final rest = normalized.substring('/dashboard/super-admin/freelancer-activation-requests/'.length);
+    final idMatch = RegExp(r'^(\d+)$').firstMatch(rest);
+    if (idMatch != null) {
+      return NotificationActionTarget(
+        route: AppRoutes.superAdminActivationKycPath(idMatch.group(1)!),
+        buttonLabel: 'فتح طلب التفعيل',
+      );
+    }
+    return const NotificationActionTarget(
+      route: AppRoutes.superAdminActivation,
+      buttonLabel: 'فتح طلبات التفعيل',
+    );
+  }
+
   if (normalized == '/dashboard/super-admin/financial-claims' ||
       normalized.startsWith('/dashboard/super-admin/financial-claims/')) {
     return const NotificationActionTarget(
@@ -478,6 +547,24 @@ NotificationActionTarget? _resolveSuperAdminDashboardLink(String path) {
       route: AppRoutes.home,
       buttonLabel: 'فتح مركز المهام',
       showComingSoonMessage: true,
+    );
+  }
+
+  if (normalized == '/dashboard/super-admin/feedback' ||
+      normalized.startsWith('/dashboard/super-admin/feedback/')) {
+    final rest = normalized == '/dashboard/super-admin/feedback'
+        ? ''
+        : normalized.substring('/dashboard/super-admin/feedback/'.length);
+    final idMatch = RegExp(r'^(\d+)$').firstMatch(rest);
+    if (idMatch != null) {
+      return NotificationActionTarget(
+        route: AppRoutes.superAdminFeedbackDetailPath(idMatch.group(1)!),
+        buttonLabel: 'فتح الملاحظة',
+      );
+    }
+    return const NotificationActionTarget(
+      route: AppRoutes.superAdminFeedback,
+      buttonLabel: 'فتح المشاكل والاقتراحات',
     );
   }
 

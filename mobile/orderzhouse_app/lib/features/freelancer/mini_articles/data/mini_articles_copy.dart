@@ -1,18 +1,43 @@
 import 'package:dio/dio.dart';
 
 import '../../data/plan_upgrade_cta.dart';
+import 'bildazo_copy.dart';
 import 'mini_articles_models.dart';
+
+export 'bildazo_copy.dart';
+export 'earned_balance_copy.dart'
+    show
+        earnedBalanceTitleAr,
+        earnedBalanceHelperAr,
+        earnedBalanceLockedHeadlineFallbackAr,
+        earnedBalanceLockedDetailFallbackAr,
+        earnedBalancePlansCtaAr,
+        earnedBalanceLockedPendingLabelAr,
+        earnedBalanceClosedAmountLabelAr,
+        earnedBalanceWithdrawableLabelAr,
+        earnedBalanceClaimsCtaAr,
+        earnedBalanceClaimsNavAr,
+        earnedBalanceKycCtaAr,
+        earnedBalanceKycPendingAr,
+        earnedBalanceKycMessageFallbackAr,
+        earnedBalanceEmptyAr,
+        earnedBalanceOpenPlansFailedAr,
+        earnedBalanceStatusLabelAr,
+        resolveEarnedBalanceUiState,
+        earnedBalanceDashboardSummaryAr,
+        EarnedBalanceUiKind,
+        EarnedBalanceUiState;
 
 const applyBidUsesBidAr = 'سيتم استخدام Bid عند التقديم على هذا المقال.';
 const applyBidMayNotReturnAr =
     'في حال عدم اختيارك قد لا يعود رصيد التقديم حسب سياسة الفرصة.';
 const applyInsufficientBidsAr = 'لا تملك رصيد Bids كافياً للتقديم.';
-const bildazoRequiredAr = 'يجب ربط حساب Bildazo قبل التقديم على المقالات.';
-const bildazoOpenWebCtaAr = 'فتح ربط Bildazo على الموقع';
-const earnedBalanceTitleAr = 'الرصيد المكتسب من المقالات';
-const earnedBalanceNotWithdrawableAr = 'غير قابل للسحب مباشرة من هذه الصفحة';
-const earnedBalancePendingAr = 'قيد المعالجة';
-const earnedBalanceRecordedAr = 'مسجّل';
+
+/// Legacy aliases for older tests/call sites (M2).
+const earnedBalanceNotWithdrawableAr =
+    'يعرض هذا الرصيد صافي أجر الكاتب من المقالات المقبولة فقط. الأرباح المعلّقة غير قابلة للسحب حتى تفعيل Silver.';
+const earnedBalancePendingAr = 'معلّق';
+const earnedBalanceRecordedAr = 'قابل للسحب';
 
 String? extractApiErrorCode(Object error) {
   if (error is! DioException) return null;
@@ -30,7 +55,14 @@ String mapMiniArticleApplyErrorMessage(Object error, {String? fallback}) {
     case 'INSUFFICIENT_BID_CREDITS':
       return applyInsufficientBidsAr;
     case 'BILDAZO_AUTHOR_LINK_REQUIRED':
-      return bildazoRequiredAr;
+    case 'BILDAZO_NOT_LINKED':
+    case 'AUTHOR_LINK_REQUIRED':
+      return bildazoNotLinkedErrorAr;
+    case 'BILDAZO_PROFILE_INCOMPLETE':
+    case 'BILDAZO_PROFILE_MISSING':
+    case 'AUTHOR_PROFILE_INCOMPLETE':
+    case 'MISSING_BILDAZO_PROFILE':
+      return bildazoIncompleteProfileErrorAr;
     case 'ARTICLE_ACCESS_LEVEL_INSUFFICIENT':
     case 'ARTICLE_NO_USABLE_MEMBERSHIP':
       return 'هذا المقال يحتاج خطة أعلى.';
@@ -65,10 +97,17 @@ String mapMiniArticleApplyErrorMessage(Object error, {String? fallback}) {
   }
 
   if (error is DioException) {
+    final status = error.response?.statusCode;
+    if (status == 401 || status == 403) return bildazoPermissionErrorAr;
     final data = error.response?.data;
     if (data is Map) {
       final message = data['message'];
-      if (message is String && message.trim().isNotEmpty) return message.trim();
+      if (message is String && message.trim().isNotEmpty) {
+        final m = message.trim();
+        if (RegExp(r'[\u0600-\u06FF]').hasMatch(m) && !m.contains('_')) {
+          return m;
+        }
+      }
     }
   }
   return fallback ?? 'تعذر تقديم الطلب.';
@@ -103,7 +142,8 @@ String? eligibilityMessageAr(ArticleApplicationEligibility? eligibility) {
     case 'ARTICLE_NOT_OPEN_FOR_APPLICATIONS':
       return 'هذا المقال غير مفتوح للتقديم حالياً.';
     default:
-      return code != null && code.isNotEmpty ? 'غير مؤهل للتقديم ($code).' : 'غير مؤهل للتقديم.';
+      // Do not surface raw enum/code to the user.
+      return 'غير مؤهل للتقديم.';
   }
 }
 

@@ -11,11 +11,20 @@ import '../../home/presentation/home_dashboard_chrome.dart';
 import '../../notifications/presentation/unread_notifications_controller.dart';
 import '../../profile/domain/profile_actions.dart';
 import '../data/super_admin_controllers.dart';
+import '../data/super_admin_feedback_models.dart';
 import '../data/super_admin_models.dart';
+import '../data/super_admin_web_handoff.dart';
 import 'super_admin_ui.dart';
 
 class SuperAdminActionCenterScreen extends ConsumerWidget {
   const SuperAdminActionCenterScreen({super.key});
+
+  Future<void> _refreshAll(WidgetRef ref) async {
+    await Future.wait<void>([
+      ref.read(superAdminActionCenterProvider.notifier).refresh(),
+      ref.refresh(unreadNotificationsControllerProvider.future).then((_) {}),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,24 +50,27 @@ class SuperAdminActionCenterScreen extends ConsumerWidget {
                 initials: initials,
                 unread: unread,
                 isLoading: true,
-                onRetry: () => ref.read(superAdminActionCenterProvider.notifier).refresh(),
-                onRefresh: () => ref.read(superAdminActionCenterProvider.notifier).refresh(),
+                onRetry: () => _refreshAll(ref),
+                onRefresh: () => _refreshAll(ref),
+                onAvatarTap: () => context.push(AppRoutes.accountSettings),
               ),
               error: (error, _) => SuperAdminActionCenterView(
                 greetingName: greeting,
                 initials: initials,
                 unread: unread,
                 errorMessage: superAdminLoadErrorMessage(error),
-                onRetry: () => ref.read(superAdminActionCenterProvider.notifier).refresh(),
-                onRefresh: () => ref.read(superAdminActionCenterProvider.notifier).refresh(),
+                onRetry: () => _refreshAll(ref),
+                onRefresh: () => _refreshAll(ref),
+                onAvatarTap: () => context.push(AppRoutes.accountSettings),
               ),
               data: (snapshot) => SuperAdminActionCenterView(
                 greetingName: greeting,
                 initials: initials,
                 unread: unread,
                 snapshot: snapshot,
-                onRetry: () => ref.read(superAdminActionCenterProvider.notifier).refresh(),
-                onRefresh: () => ref.read(superAdminActionCenterProvider.notifier).refresh(),
+                onRetry: () => _refreshAll(ref),
+                onRefresh: () => _refreshAll(ref),
+                onAvatarTap: () => context.push(AppRoutes.accountSettings),
               ),
             ),
           ),
@@ -76,6 +88,7 @@ class SuperAdminActionCenterView extends StatelessWidget {
     required this.unread,
     required this.onRetry,
     required this.onRefresh,
+    required this.onAvatarTap,
     this.snapshot,
     this.errorMessage,
     this.isLoading = false,
@@ -89,6 +102,22 @@ class SuperAdminActionCenterView extends StatelessWidget {
   final bool isLoading;
   final VoidCallback onRetry;
   final Future<void> Function() onRefresh;
+  final VoidCallback onAvatarTap;
+
+  /// Single source of truth for unread: header badge + notifications tile.
+  SuperAdminCountCard get _unreadCard => SuperAdminCountCard.ok(unread < 0 ? 0 : unread);
+
+  bool get _hasInAppUrgent {
+    if (snapshot == null) return false;
+    int n(SuperAdminCountCard c) => c.available ? (c.count ?? 0) : 0;
+    return n(snapshot!.identityRequests) +
+        n(snapshot!.subscriptionActivations) +
+        n(snapshot!.claims) +
+        unread +
+        n(snapshot!.pantry) +
+        n(snapshot!.articles) >
+        0;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -136,7 +165,7 @@ class SuperAdminActionCenterView extends StatelessWidget {
               const SizedBox(width: 12),
               HomeHeaderNotificationButton(unread: unread),
               const SizedBox(width: 10),
-              HomeHeaderAvatar(initials: initials, onTap: () {}),
+              HomeHeaderAvatar(initials: initials, onTap: onAvatarTap),
             ],
           ),
           const SizedBox(height: 22),
@@ -153,19 +182,16 @@ class SuperAdminActionCenterView extends StatelessWidget {
               child: OhErrorBody(message: errorMessage!, onRetry: onRetry),
             ),
           ] else if (snapshot != null) ...[
-            if (!snapshot!.hasUrgentWork) ...[
-              const SizedBox(
-                height: 160,
-                child: OhEmptyBody(
-                  message: 'لا توجد مهام عاجلة حالياً.',
-                  icon: Icons.verified_outlined,
-                ),
+            if (!_hasInAppUrgent) ...[
+              const OhEmptyBody(
+                message: 'لا توجد مهام عاجلة حالياً.',
+                icon: Icons.verified_outlined,
               ),
               const SizedBox(height: 16),
             ],
-            const Text(
-              'يحتاج إجراء',
-              style: TextStyle(
+            Text(
+              superAdminInAppActionsSectionAr,
+              style: const TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 16,
                 color: AppColors.primaryDeep,
@@ -173,23 +199,44 @@ class SuperAdminActionCenterView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             SuperAdminCountTile(
-              title: 'طلبات تفعيل بانتظار المراجعة',
-              card: snapshot!.activations,
-              icon: Icons.verified_user_outlined,
-              onTap: () => context.push(AppRoutes.superAdminActivation),
-            ),
-            const SizedBox(height: 10),
-            SuperAdminCountTile(
               title: 'مطالبات مالية تحتاج إجراء',
               card: snapshot!.claims,
               icon: Icons.payments_outlined,
+              hint: snapshot!.claims.available ? 'اضغط للعرض' : null,
               onTap: () => context.push(AppRoutes.superAdminClaims),
             ),
             const SizedBox(height: 10),
             SuperAdminCountTile(
+              key: const Key('sa-identity-requests-tile'),
+              title: superAdminIdentityQueueTitleAr,
+              card: snapshot!.identityRequests,
+              icon: Icons.badge_outlined,
+              hint: superAdminActivationListHintAr,
+              onTap: () => context.push(AppRoutes.superAdminIdentityRequests),
+            ),
+            const SizedBox(height: 10),
+            SuperAdminCountTile(
+              key: const Key('sa-subscription-activation-tile'),
+              title: superAdminSubscriptionActivationQueueTitleAr,
+              card: snapshot!.subscriptionActivations,
+              icon: Icons.card_membership_outlined,
+              hint: superAdminActivationListHintAr,
+              onTap: () => context.push(AppRoutes.superAdminSubscriptionActivation),
+            ),
+            const SizedBox(height: 10),
+            SuperAdminCountTile(
+              title: superAdminPackageAssignmentTitleAr,
+              card: snapshot!.packageAssignment ?? SuperAdminCountCard.ok(0),
+              icon: Icons.group_outlined,
+              hint: 'إدارة الباقات والمستخدمين',
+              onTap: () => context.push(AppRoutes.superAdminPackageAssignment),
+            ),
+            const SizedBox(height: 10),
+            SuperAdminCountTile(
               title: 'إشعارات غير مقروءة',
-              card: snapshot!.unread,
+              card: _unreadCard,
               icon: Icons.notifications_outlined,
+              hint: 'نفس عداد أيقونة الإشعارات',
               onTap: () => context.push(AppRoutes.notifications),
             ),
             const SizedBox(height: 10),
@@ -197,6 +244,7 @@ class SuperAdminActionCenterView extends StatelessWidget {
               title: 'بيت المونة يحتاج متابعة',
               card: snapshot!.pantry,
               icon: Icons.inventory_2_outlined,
+              hint: snapshot!.pantry.available ? 'اضغط للعرض' : null,
               onTap: () => context.push(AppRoutes.superAdminPantry),
             ),
             const SizedBox(height: 10),
@@ -204,15 +252,54 @@ class SuperAdminActionCenterView extends StatelessWidget {
               title: 'المقالات تحتاج متابعة',
               card: snapshot!.articles,
               icon: Icons.article_outlined,
+              hint: snapshot!.articles.available ? 'اضغط للعرض' : null,
               onTap: () => context.push(AppRoutes.superAdminArticles),
             ),
             const SizedBox(height: 10),
             SuperAdminCountTile(
-              title: 'طلبات داخلية بمطالبات معلّقة',
-              card: snapshot!.internalOrders,
-              icon: Icons.assignment_late_outlined,
-              comingSoon: true,
+              key: const Key('sa-feedback-tile'),
+              title: superAdminFeedbackQueueTitleAr,
+              card: snapshot!.feedback ?? SuperAdminCountCard.ok(0),
+              icon: Icons.feedback_outlined,
+              hint: 'اضغط للعرض',
+              onTap: () => context.push(AppRoutes.superAdminFeedback),
             ),
+            const SizedBox(height: 22),
+            Text(
+              superAdminWebFollowUpSectionAr,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+                color: AppColors.primaryDeep,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              superAdminInternalOrdersAuditNoteAr,
+              textAlign: TextAlign.right,
+              style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
+            ),
+            const SizedBox(height: 12),
+            if (snapshot!.internalOrders.available) ...[
+              SuperAdminCountTile(
+                key: const Key('sa-internal-orders-web-tile'),
+                title: superAdminInternalOrdersTileTitleAr,
+                card: snapshot!.internalOrders,
+                icon: Icons.assignment_late_outlined,
+                webHandoff: true,
+                hint: superAdminInternalOrdersHintAr,
+                onTap: () => openSuperAdminWebOrSnack(
+                  context,
+                  openSuperAdminInternalOrdersWeb,
+                ),
+                onPrimaryCta: () => openSuperAdminWebOrSnack(
+                  context,
+                  openSuperAdminInternalOrdersWeb,
+                ),
+                primaryCtaLabel: superAdminOpenWebPanelAr,
+                primaryCtaKey: const Key('sa-internal-orders-open-web'),
+              ),
+            ],
             if (snapshot!.platformOrdersAvailable) ...[
               const SizedBox(height: 22),
               const Text(

@@ -132,9 +132,75 @@ class SuperAdminApi {
     );
   }
 
-  /// Web: `PATCH /api/admin/subscriptions/:id/company-activate` (no body).
-  Future<void> approveCompanyActivation(String subscriptionId) async {
-    await _dio.patch<dynamic>('/admin/subscriptions/$subscriptionId/company-activate');
+  /// Web: `PATCH /api/admin/subscriptions/:id/company-activate`.
+  Future<void> approveCompanyActivation(
+    String subscriptionId, {
+    String? overrideReason,
+  }) async {
+    final reason = overrideReason?.trim();
+    await _dio.patch<dynamic>(
+      '/admin/subscriptions/$subscriptionId/company-activate',
+      data: {
+        if (reason != null && reason.isNotEmpty) 'overrideReason': reason,
+      },
+    );
+  }
+
+  Future<dynamic> fetchKycActivationRequests({
+    String? status = 'pending_review',
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final response = await _dio.get<dynamic>(
+      '/super-admin/freelancer-activation-requests',
+      queryParameters: {
+        if (status != null && status.isNotEmpty) 'status': status,
+        'page': page,
+        'limit': limit,
+      },
+    );
+    return response.data;
+  }
+
+  Future<dynamic> fetchKycActivationRequestDetail(String requestId) async {
+    final response = await _dio.get<dynamic>(
+      '/super-admin/freelancer-activation-requests/$requestId',
+    );
+    return response.data;
+  }
+
+  Future<void> approveKycActivationRequest(String requestId) async {
+    await _dio.post<dynamic>(
+      '/super-admin/freelancer-activation-requests/$requestId/approve',
+    );
+  }
+
+  Future<void> rejectKycActivationRequest({
+    required String requestId,
+    required String rejectionReason,
+    String? adminNotes,
+  }) async {
+    final note = adminNotes?.trim();
+    await _dio.post<dynamic>(
+      '/super-admin/freelancer-activation-requests/$requestId/reject',
+      data: {
+        'rejectionReason': rejectionReason.trim(),
+        if (note != null && note.isNotEmpty) 'adminNotes': note,
+      },
+    );
+  }
+
+  /// Authenticated binary fetch — never expose public URLs.
+  Future<List<int>> fetchKycActivationFileBytes({
+    required String requestId,
+    required String side,
+  }) async {
+    final response = await _dio.get<List<int>>(
+      '/super-admin/freelancer-activation-requests/$requestId/files/$side',
+      queryParameters: {'disposition': 'inline'},
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return response.data ?? const [];
   }
 
   /// Web: `PATCH /api/super-admin/financial-claims/:id/status`.
@@ -151,6 +217,100 @@ class SuperAdminApi {
         'status': status,
         if (note != null && note.isNotEmpty) 'adminNote': note,
       },
+    );
+  }
+
+  Future<dynamic> searchFreelancers({String? q, int limit = 50}) async {
+    final response = await _dio.get<dynamic>(
+      '/admin/freelancers',
+      queryParameters: {
+        if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
+        'limit': limit.clamp(1, 100),
+      },
+    );
+    return response.data;
+  }
+
+  Future<dynamic> fetchFreelancerSubscription(String freelancerUserId) async {
+    final response = await _dio.get<dynamic>('/admin/freelancers/$freelancerUserId/subscription');
+    return response.data;
+  }
+
+  Future<dynamic> fetchFreelancerEligibility(String freelancerUserId) async {
+    final response = await _dio.get<dynamic>('/admin/freelancers/$freelancerUserId/eligibility');
+    return response.data;
+  }
+
+  Future<dynamic> fetchAssignablePlans() async {
+    final response = await _dio.get<dynamic>('/admin/subscriptions/assignable-plans');
+    return response.data;
+  }
+
+  Future<void> assignSubscriptionPlan({
+    required String freelancerUserId,
+    required String planId,
+    String? notes,
+  }) async {
+    final note = notes?.trim();
+    await _dio.post<dynamic>(
+      '/admin/subscriptions/assign',
+      data: {
+        'freelancerUserId': int.parse(freelancerUserId),
+        'planId': int.parse(planId),
+        if (note != null && note.isNotEmpty) 'notes': note,
+      },
+    );
+  }
+
+  Future<dynamic> fetchSuperAdminFeedback({String? status, int limit = 50, int offset = 0}) async {
+    final response = await _dio.get<dynamic>(
+      '/super-admin/feedback',
+      queryParameters: {
+        if (status != null && status.isNotEmpty) 'status': status,
+        'limit': limit.clamp(1, 100),
+        'offset': offset.clamp(0, 10000),
+      },
+    );
+    return response.data;
+  }
+
+  Future<dynamic> fetchSuperAdminFeedbackDetail(String feedbackId) async {
+    final response = await _dio.get<dynamic>('/super-admin/feedback/$feedbackId');
+    return response.data;
+  }
+
+  Future<void> updateSuperAdminFeedbackStatus({
+    required String feedbackId,
+    required String status,
+    String? adminNote,
+  }) async {
+    final note = adminNote?.trim();
+    await _dio.patch<dynamic>(
+      '/super-admin/feedback/$feedbackId',
+      data: {
+        'status': status,
+        if (note != null && note.isNotEmpty) 'adminNote': note,
+      },
+    );
+  }
+
+  Future<void> rejectArticleApplication(String applicationId) async {
+    await _dio.post<dynamic>('/super-admin/article-applications/$applicationId/reject');
+  }
+
+  Future<void> requestArticleApplicationRevision({
+    required String applicationId,
+    required String reviewerNotes,
+  }) async {
+    await _dio.post<dynamic>(
+      '/super-admin/article-applications/$applicationId/request-revision',
+      data: {'reviewerNotes': reviewerNotes.trim()},
+    );
+  }
+
+  Future<void> finalizeArticleApplicationApproval(String applicationId) async {
+    await _dio.post<dynamic>(
+      '/super-admin/article-applications/$applicationId/finalize-approval',
     );
   }
 }

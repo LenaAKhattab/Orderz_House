@@ -56,6 +56,7 @@ void main() {
       expect(ids, contains(ProfileActionId.myOrders));
       expect(ids, contains(ProfileActionId.accountActivation));
       expect(ids, contains(ProfileActionId.miniArticles));
+      expect(ids, contains(ProfileActionId.myArticles));
       expect(ids, contains(ProfileActionId.financialClaims));
       expect(ids, contains(ProfileActionId.notifications));
       expect(ids, contains(ProfileActionId.marketplace));
@@ -68,6 +69,10 @@ void main() {
       );
       expect(
         actions.any((a) => a.route == AppRoutes.freelancerMiniArticles),
+        isTrue,
+      );
+      expect(
+        actions.any((a) => a.route == AppRoutes.freelancerMyArticles),
         isTrue,
       );
     });

@@ -227,9 +227,8 @@ void main() {
   });
 
   group('activation / claims / pantry / article safety', () {
-    test('activation approve is web-only; claims omit paid/pricing/payout', () {
-      expect(superAdminActivationWebOnlyMessageAr, contains('لوحة الويب'));
-      expect(isMobileCompanyActivateDisabled(), isTrue);
+    test('A2 activation is in-app; claims omit paid/pricing/payout', () {
+      expect(isMobileCompanyActivateDisabled(), isFalse);
       expect(superAdminAllowedClaimStatusValues, ['accepted', 'rejected', 'frozen', 'requires_in_person_review']);
       expect(isAllowedClaimStatusAction('paid'), isFalse);
       expect(claimStatusRequiresNote('rejected'), isTrue);
@@ -286,21 +285,25 @@ void main() {
   });
 
   group('source guards', () {
-    test('no disk cache, auto-assign, tokens, pricing, payout, ledger, or article reject', () {
+    test('no disk cache, auto-assign, tokens, pricing, payout, or ledger', () {
       final api = File('lib/features/super_admin/data/super_admin_api.dart').readAsStringSync();
       expect(api, isNot(contains('SharedPreferences')));
       expect(api, isNot(contains('debugPrint')));
       expect(api, isNot(contains('/pricing')));
       expect(api, isNot(contains('freelancer-payments')));
       expect(api, isNot(contains('financial-center')));
-      expect(api, isNot(contains('article-applications/\$applicationId/reject')));
+      expect(api, contains('rejectArticleApplication'));
+      expect(api, contains('requestArticleApplicationRevision'));
+      expect(api, contains('finalizeArticleApplicationApproval'));
 
       final articleUi =
           File('lib/features/super_admin/presentation/super_admin_article_screens.dart').readAsStringSync();
       expect(articleUi, isNot(contains('auto-assign')));
       expect(articleUi, isNot(contains('Work Token')));
       expect(articleUi, isNot(contains('Article Token')));
-      expect(articleUi, isNot(contains('/reject')));
+      expect(articleUi, contains('sa-approve-article'));
+      expect(articleUi, contains('sa-reject-article'));
+      expect(articleUi, contains('sa-request-article-revision'));
 
       final pantryUi =
           File('lib/features/super_admin/presentation/super_admin_pantry_screens.dart').readAsStringSync();
@@ -309,9 +312,9 @@ void main() {
       expect(pantryUi, isNot(contains('archive')));
 
       final activation = File('lib/features/super_admin/presentation/super_admin_queue_screens.dart').readAsStringSync();
-      expect(activation, contains('superAdminActivationWebOnlyMessageAr'));
-      expect(activation, isNot(contains('sa-approve-activation-')));
-      expect(activation, isNot(contains('رفض التفعيل')));
+      expect(activation, contains('superAdminActivationKycSectionAr'));
+      expect(activation, contains('sa-kyc-queue-'));
+      expect(activation, isNot(contains('superAdminActivationWebOnlyMessageAr')));
 
       final freelancerPantry = File('lib/features/pantry/presentation/pantry_hub_screen.dart').readAsStringSync();
       expect(freelancerPantry, isNot(contains('overrideReason')));

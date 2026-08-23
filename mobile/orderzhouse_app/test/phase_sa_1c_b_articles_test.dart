@@ -57,6 +57,25 @@ class FakeSuperAdminApi extends SuperAdminApi {
       };
 
   @override
+  Future<dynamic> fetchKycActivationRequests({
+    String? status = 'pending_review',
+    int page = 1,
+    int limit = 50,
+  }) async =>
+      {
+        'data': {'schemaReady': true, 'items': [], 'total': 0},
+      };
+
+  @override
+  Future<dynamic> fetchSuperAdminFeedback({String? status, int limit = 50, int offset = 0}) async =>
+      {
+        'data': {
+          'items': [],
+          'summary': {'new': 0},
+        },
+      };
+
+  @override
   Future<dynamic> fetchPendingClaims() async => {
         'data': {'claims': []},
       };
@@ -636,14 +655,20 @@ void main() {
       expect(screens, isNot(contains('auto-assign')));
       expect(screens, isNot(contains('Work Token')));
       expect(screens, isNot(contains('Article Token')));
-      expect(screens, isNot(contains('رفض المتقدم')));
-      expect(screens, isNot(contains('/reject')));
+      expect(screens, contains('sa-approve-article'));
+      expect(screens, contains('sa-reject-article'));
+      expect(screens, contains('sa-request-article-revision'));
+      expect(screens, contains('superAdminApproveArticleLabelAr'));
+      expect(screens, contains('superAdminRejectArticleLabelAr'));
+      expect(screens, contains('superAdminRequestArticleRevisionLabelAr'));
 
       final api = File('lib/features/super_admin/data/super_admin_api.dart').readAsStringSync();
       expect(api, contains('/article-applications/'));
       expect(api, contains('/select'));
       expect(api, contains('relist-bid-collection'));
-      expect(api, isNot(contains('article-applications/\$applicationId/reject')));
+      expect(api, contains('reject'));
+      expect(api, contains('request-revision'));
+      expect(api, contains('finalize-approval'));
       expect(api, isNot(contains('/pricing')));
       expect(api, isNot(contains('freelancer-payments')));
       expect(api, isNot(contains('debugPrint')));

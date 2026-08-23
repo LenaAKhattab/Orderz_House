@@ -54,6 +54,25 @@ class FakeSuperAdminApi extends SuperAdminApi {
       };
 
   @override
+  Future<dynamic> fetchKycActivationRequests({
+    String? status = 'pending_review',
+    int page = 1,
+    int limit = 50,
+  }) async =>
+      {
+        'data': {'schemaReady': true, 'items': [], 'total': 0},
+      };
+
+  @override
+  Future<dynamic> fetchSuperAdminFeedback({String? status, int limit = 50, int offset = 0}) async =>
+      {
+        'data': {
+          'items': [],
+          'summary': {'new': 0},
+        },
+      };
+
+  @override
   Future<dynamic> fetchPendingClaims() async => {
         'data': {'claims': []},
       };

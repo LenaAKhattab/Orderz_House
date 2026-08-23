@@ -8,11 +8,141 @@ import '../../../core/widgets/oh_widgets.dart';
 import '../data/super_admin_actions.dart';
 import '../data/super_admin_article_models.dart';
 import '../data/super_admin_controllers.dart';
+import '../data/super_admin_kyc_models.dart';
 import '../data/super_admin_models.dart';
 import '../data/super_admin_pantry_models.dart';
 import 'super_admin_action_dialogs.dart';
 import 'super_admin_ui.dart';
 
+class SuperAdminIdentityQueueScreen extends ConsumerWidget {
+  const SuperAdminIdentityQueueScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(superAdminIdentityQueueProvider);
+    return SuperAdminQueueScaffold(
+      title: superAdminIdentityQueueTitleAr,
+      onRefresh: () => ref.read(superAdminIdentityQueueProvider.notifier).refresh(),
+      body: async.when(
+        loading: () => ListView(
+          physics: AlwaysScrollableScrollPhysics(),
+          children: [SizedBox(height: 120), OhLikeLoading()],
+        ),
+        error: (error, _) => SuperAdminQueueErrorOrEmpty(
+          isError: true,
+          message: superAdminLoadErrorMessage(error),
+          onRetry: () => ref.read(superAdminIdentityQueueProvider.notifier).refresh(),
+        ),
+        data: (snapshot) {
+          if (snapshot.loadFailed && snapshot.pendingItems.isEmpty) {
+            return SuperAdminQueueErrorOrEmpty(
+              isError: true,
+              message: 'تعذّر تحميل طلبات التوثيق. حاول مرة أخرى.',
+              onRetry: () => ref.read(superAdminIdentityQueueProvider.notifier).refresh(),
+            );
+          }
+          final kycItems = snapshot.pendingItems;
+          if (kycItems.isEmpty) {
+            return const SuperAdminQueueErrorOrEmpty(
+              isError: false,
+              message: superAdminActivationEmptyAr,
+            );
+          }
+          return ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            itemCount: kycItems.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
+            itemBuilder: (context, index) => _KycQueueCard(item: kycItems[index]),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class SuperAdminSubscriptionActivationQueueScreen extends ConsumerWidget {
+  const SuperAdminSubscriptionActivationQueueScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(superAdminActivationQueueProvider);
+    return SuperAdminQueueScaffold(
+      title: superAdminSubscriptionActivationQueueTitleAr,
+      onRefresh: () => ref.read(superAdminActivationQueueProvider.notifier).refresh(),
+      body: async.when(
+        loading: () => ListView(
+          physics: AlwaysScrollableScrollPhysics(),
+          children: [SizedBox(height: 120), OhLikeLoading()],
+        ),
+        error: (error, _) => SuperAdminQueueErrorOrEmpty(
+          isError: true,
+          message: superAdminLoadErrorMessage(error),
+          onRetry: () => ref.read(superAdminActivationQueueProvider.notifier).refresh(),
+        ),
+        data: (snapshot) {
+          if (snapshot.subscriptionLoadFailed) {
+            return SuperAdminQueueErrorOrEmpty(
+              isError: true,
+              message: 'تعذّر تحميل طلبات تفعيل الاشتراك. حاول مرة أخرى.',
+              onRetry: () => ref.read(superAdminActivationQueueProvider.notifier).refresh(),
+            );
+          }
+          final classified = snapshot.subscriptionClassification;
+          if (classified.paidActionable.isEmpty && classified.legacyFree.isEmpty) {
+            return const SuperAdminQueueErrorOrEmpty(
+              isError: false,
+              message: superAdminPaidSubscriptionActivationEmptyAr,
+            );
+          }
+          final sections = <Widget>[];
+          if (classified.paidActionable.isNotEmpty) {
+            sections.add(const _SectionHeader(title: 'طلبات مدفوعة'));
+            sections.addAll(classified.paidActionable.map((e) => _SubscriptionQueueCard(item: e)));
+          } else {
+            sections.add(
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Text(
+                  superAdminPaidSubscriptionActivationEmptyAr,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 13, height: 1.4),
+                ),
+              ),
+            );
+          }
+          if (classified.legacyFree.isNotEmpty) {
+            if (sections.isNotEmpty) sections.add(const SizedBox(height: 8));
+            sections.add(const _SectionHeader(title: superAdminLegacyFreeActivationSectionAr));
+            sections.add(
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'هذه الطلبات ليست تفعيل اشتراك مدفوع — راجعها يدوياً أو عالجها من الويب.',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
+                ),
+              ),
+            );
+            sections.addAll(classified.legacyFree.map((e) => _SubscriptionQueueCard(item: e, legacy: true)));
+          }
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            children: [
+              for (var i = 0; i < sections.length; i++) ...[
+                if (i > 0) const SizedBox(height: 10),
+                sections[i],
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Backward-compatible combined queue — prefer split identity/subscription screens.
 class SuperAdminActivationQueueScreen extends ConsumerStatefulWidget {
   const SuperAdminActivationQueueScreen({super.key});
 
@@ -26,7 +156,7 @@ class _SuperAdminActivationQueueScreenState extends ConsumerState<SuperAdminActi
   Widget build(BuildContext context) {
     final async = ref.watch(superAdminActivationQueueProvider);
     return SuperAdminQueueScaffold(
-      title: 'طلبات التفعيل',
+      title: superAdminActivationQueueTitleAr,
       onRefresh: () => ref.read(superAdminActivationQueueProvider.notifier).refresh(),
       body: async.when(
         loading: () => ListView(
@@ -38,77 +168,122 @@ class _SuperAdminActivationQueueScreenState extends ConsumerState<SuperAdminActi
           message: superAdminLoadErrorMessage(error),
           onRetry: () => ref.read(superAdminActivationQueueProvider.notifier).refresh(),
         ),
-        data: (items) {
-          if (items.isEmpty) {
+        data: (snapshot) {
+          final kycItems = snapshot.kycItems.where((e) => e.isPendingReview).toList();
+          final subItems = snapshot.subscriptionClassification.paidActionable;
+          if (kycItems.isEmpty && subItems.isEmpty) {
             return const SuperAdminQueueErrorOrEmpty(
               isError: false,
-              message: 'لا توجد طلبات تفعيل بانتظار المراجعة.',
+              message: superAdminActivationEmptyAr,
             );
           }
+          final total = kycItems.length + subItems.length + (kycItems.isNotEmpty && subItems.isNotEmpty ? 2 : 1);
           return ListView.separated(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
-            itemCount: items.length + 1,
+            itemCount: total,
             separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
-              if (index == 0) {
-                return Container(
-                  key: const Key('sa-activation-web-only-banner'),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFFBEB),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.45)),
-                  ),
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        superAdminActivationWebOnlyMessageAr,
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFFB45309),
-                        ),
-                      ),
-                      SizedBox(height: 6),
-                      Text(
-                        superAdminActivationWebOnlyBodyAr,
-                        textAlign: TextAlign.right,
-                        style: TextStyle(height: 1.45, color: AppColors.textInk),
-                      ),
-                    ],
-                  ),
-                );
+              var cursor = index;
+              if (kycItems.isNotEmpty) {
+                if (cursor == 0) {
+                  return const _SectionHeader(title: superAdminActivationKycSectionAr);
+                }
+                cursor -= 1;
+                if (cursor < kycItems.length) {
+                  return _KycQueueCard(item: kycItems[cursor]);
+                }
+                cursor -= kycItems.length;
               }
-              final item = items[index - 1];
-              return SuperAdminQueueCard(
-                title: item.freelancerName ?? item.freelancerEmail ?? 'مستقل',
-                subtitle: [
-                  if (item.planTitle != null) item.planTitle,
-                  if (item.freelancerEmail != null) item.freelancerEmail,
-                ].whereType<String>().join('\n'),
-                meta: item.priceJod != null ? formatSuperAdminJod(item.priceJod) : null,
-                chip: SuperAdminStatusChip(
-                  label: _activationStatusAr(item.activationStatus),
-                  tone: SuperAdminChipTone.warning,
-                ),
-                actions: Text(
-                  superAdminActivationWebOnlyMessageAr,
-                  key: Key('sa-activation-web-only-${item.id}'),
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                    height: 1.4,
-                  ),
-                ),
-              );
+              if (subItems.isNotEmpty) {
+                if (cursor == 0) {
+                  return const _SectionHeader(title: superAdminActivationSubscriptionSectionAr);
+                }
+                cursor -= 1;
+                return _SubscriptionQueueCard(item: subItems[cursor]);
+              }
+              return const SizedBox.shrink();
             },
           );
         },
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 2),
+      child: Text(
+        title,
+        textAlign: TextAlign.right,
+        style: const TextStyle(
+          fontWeight: FontWeight.w800,
+          fontSize: 15,
+          color: AppColors.primaryDeep,
+        ),
+      ),
+    );
+  }
+}
+
+class _KycQueueCard extends StatelessWidget {
+  const _KycQueueCard({required this.item});
+
+  final SuperAdminKycActivationItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final docsLabel = (item.hasFrontImage || item.hasBackImage)
+        ? superAdminActivationDocumentsAvailableAr
+        : superAdminActivationNoDocumentsAr;
+    return SuperAdminQueueCard(
+      key: Key('sa-kyc-queue-${item.id}'),
+      title: item.freelancerName ?? item.freelancerEmail ?? 'مستقل',
+      subtitle: [
+        if (item.freelancerEmail != null) item.freelancerEmail,
+        docsLabel,
+        if (item.submittedAt != null) formatSuperAdminDate(item.submittedAt),
+      ].whereType<String>().join('\n'),
+      chip: SuperAdminStatusChip(
+        label: kycStatusLabelAr(item.status),
+        tone: SuperAdminChipTone.urgent,
+      ),
+      onTap: () => context.push(AppRoutes.superAdminActivationKycPath(item.id)),
+    );
+  }
+}
+
+class _SubscriptionQueueCard extends StatelessWidget {
+  const _SubscriptionQueueCard({required this.item, this.legacy = false});
+
+  final SuperAdminActivationItem item;
+  final bool legacy;
+
+  @override
+  Widget build(BuildContext context) {
+    return SuperAdminQueueCard(
+      key: Key('sa-subscription-queue-${item.id}'),
+      title: item.freelancerName ?? item.freelancerEmail ?? 'مستقل',
+      subtitle: [
+        if (item.planTitle != null) item.planTitle,
+        if (item.freelancerEmail != null) item.freelancerEmail,
+        if (item.assignedAt != null) formatSuperAdminDate(item.assignedAt),
+      ].whereType<String>().join('\n'),
+      meta: item.priceJod != null && item.priceJod! > 0 ? formatSuperAdminJod(item.priceJod) : null,
+      chip: SuperAdminStatusChip(
+        label: legacy ? 'مراجعة يدوية' : 'بانتظار تفعيل الاشتراك',
+        tone: legacy ? SuperAdminChipTone.neutral : SuperAdminChipTone.warning,
+      ),
+      onTap: legacy
+          ? null
+          : () => context.push(AppRoutes.superAdminActivationSubscriptionPath(item.id)),
     );
   }
 }

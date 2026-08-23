@@ -1,21 +1,37 @@
 import '../../../core/network/json_helpers.dart';
+import 'super_admin_kyc_models.dart';
 
 const superAdminComingSoonMessageAr = 'هذه المهمة ستتوفر قريبًا على التطبيق.';
 const superAdminUnavailableCardAr = 'غير متاح حاليًا';
 const superAdminAccessDeniedAr = 'ليس لديك صلاحية للوصول إلى هذا المورد.';
 const superAdminJodSuffixAr = 'د.أ';
 const superAdminApproveActivationLabelAr = 'اعتماد التفعيل';
-const superAdminActivationWebOnlyMessageAr =
-    'مراجعة الهوية تتم من لوحة الويب حالياً';
-const superAdminActivationWebOnlyBodyAr =
-    'لا يمكن اعتماد تفعيل الحساب من التطبيق بعد تفعيل مسار KYC. افتح لوحة الويب لمراجعة طلبات الهوية والموافقة أو الرفض.';
+const superAdminOpenWebPanelAr = 'فتح لوحة الويب';
+const superAdminActivationTileTitleAr = 'طلبات تفعيل تحتاج إجراء';
+const superAdminIdentityQueueTitleAr = 'طلبات توثيق الهوية';
+const superAdminSubscriptionActivationQueueTitleAr = 'طلبات تفعيل الاشتراك';
+const superAdminLegacyFreeActivationSectionAr = 'طلبات مجانية قديمة تحتاج مراجعة';
+const superAdminPackageAssignmentTitleAr = 'إسناد الباقات';
+const superAdminFeedbackTileTitleAr = 'مشاكل واقتراحات';
+const superAdminActivationListHintAr = 'اضغط للعرض والإجراء';
+const superAdminActivationQueueTitleAr = 'طلبات التفعيل';
+const superAdminActivationEmptyAr = 'لا توجد طلبات تفعيل بانتظار المراجعة.';
+const superAdminPaidSubscriptionActivationEmptyAr =
+    'لا توجد طلبات تفعيل اشتراك مدفوع حالياً.';
+const superAdminInternalOrdersAuditNoteAr =
+    'إدارة الطلبات الداخلية الكاملة ستتوفر في مرحلة A3 — استخدم لوحة الويب مؤقتاً.';
+const superAdminInternalOrdersTileTitleAr = 'طلبات داخلية (لوحة الويب)';
+const superAdminInternalOrdersHintAr = 'هذه الطلبات متاحة حالياً من لوحة الويب.';
+const superAdminInAppActionsSectionAr = 'يحتاج إجراء في التطبيق';
+const superAdminWebFollowUpSectionAr = 'متابعة من الويب';
+const superAdminWebHandoffFailedAr = 'تعذر فتح لوحة الويب. حاول مرة أخرى.';
 
 const superAdminConfirmApprovalTitleAr = 'تأكيد الاعتماد';
 const superAdminConfirmApprovalBodyAr = 'هل تريد اعتماد هذا الحساب؟';
 const superAdminUpdateClaimStatusLabelAr = 'تحديث حالة المطالبة';
 const superAdminActionReasonLabelAr = 'سبب الإجراء';
 const superAdminActionSuccessAr = 'تم تنفيذ الإجراء بنجاح';
-const superAdminActionFailedAr = 'تعذر تنفيذ الإجراء';
+const superAdminActionFailedAr = 'تعذر تنفيذ الإجراء. حاول مرة أخرى.';
 const superAdminActionNoteTooShortAr = 'أدخل سبب الإجراء (3 أحرف على الأقل).';
 const superAdminConfirmActionLabelAr = 'تأكيد';
 const superAdminCancelActionLabelAr = 'إلغاء';
@@ -57,12 +73,16 @@ class SuperAdminCountCard {
   const SuperAdminCountCard({
     required this.available,
     this.count,
+    this.pending = false,
   });
 
   final bool available;
   final int? count;
+  /// True while queue-specific counts are being enriched (avoid misleading home-fast totals).
+  final bool pending;
 
   static const unavailable = SuperAdminCountCard(available: false);
+  static const refreshing = SuperAdminCountCard(available: true, pending: true);
 
   factory SuperAdminCountCard.ok(int count) => SuperAdminCountCard(
         available: true,
@@ -72,62 +92,98 @@ class SuperAdminCountCard {
 
 class SuperAdminActionCenterSnapshot {
   const SuperAdminActionCenterSnapshot({
-    required this.activations,
+    required this.identityRequests,
+    required this.subscriptionActivations,
     required this.claims,
     required this.unread,
     required this.pantry,
     required this.articles,
     required this.internalOrders,
+    this.packageAssignment,
+    this.feedback,
     this.openProjects,
     this.inProgressProjects,
     this.completedProjects,
     this.platformOrdersAvailable = false,
   });
 
-  final SuperAdminCountCard activations;
+  final SuperAdminCountCard identityRequests;
+  final SuperAdminCountCard subscriptionActivations;
   final SuperAdminCountCard claims;
   final SuperAdminCountCard unread;
   final SuperAdminCountCard pantry;
   final SuperAdminCountCard articles;
   final SuperAdminCountCard internalOrders;
+  final SuperAdminCountCard? packageAssignment;
+  final SuperAdminCountCard? feedback;
   final int? openProjects;
   final int? inProgressProjects;
   final int? completedProjects;
   final bool platformOrdersAvailable;
 
+  /// Backward-compatible combined activation count.
+  SuperAdminCountCard get activations {
+    if (identityRequests.pending || subscriptionActivations.pending) {
+      return SuperAdminCountCard.refreshing;
+    }
+    if (!identityRequests.available && !subscriptionActivations.available) {
+      return SuperAdminCountCard.unavailable;
+    }
+    final n = (identityRequests.available ? (identityRequests.count ?? 0) : 0) +
+        (subscriptionActivations.available ? (subscriptionActivations.count ?? 0) : 0);
+    return SuperAdminCountCard.ok(n);
+  }
+
   bool get hasAnyAvailableSection =>
-      activations.available ||
+      identityRequests.available ||
+      subscriptionActivations.available ||
       claims.available ||
       unread.available ||
       pantry.available ||
       articles.available ||
       internalOrders.available ||
+      (packageAssignment?.available ?? false) ||
+      (feedback?.available ?? false) ||
       platformOrdersAvailable;
 
   bool get hasUrgentWork {
-    int n(SuperAdminCountCard c) => c.available ? (c.count ?? 0) : 0;
-    return n(activations) + n(claims) + n(unread) + n(pantry) + n(articles) > 0;
+    int n(SuperAdminCountCard c) =>
+        c.available && !c.pending ? (c.count ?? 0) : 0;
+    return n(identityRequests) +
+        n(subscriptionActivations) +
+        n(claims) +
+        n(unread) +
+        n(pantry) +
+        n(articles) +
+        n(feedback ?? const SuperAdminCountCard(available: false)) >
+        0;
   }
 
   SuperAdminActionCenterSnapshot copyWith({
-    SuperAdminCountCard? activations,
+    SuperAdminCountCard? identityRequests,
+    SuperAdminCountCard? subscriptionActivations,
     SuperAdminCountCard? claims,
     SuperAdminCountCard? unread,
     SuperAdminCountCard? pantry,
     SuperAdminCountCard? articles,
     SuperAdminCountCard? internalOrders,
+    SuperAdminCountCard? packageAssignment,
+    SuperAdminCountCard? feedback,
     int? openProjects,
     int? inProgressProjects,
     int? completedProjects,
     bool? platformOrdersAvailable,
   }) {
     return SuperAdminActionCenterSnapshot(
-      activations: activations ?? this.activations,
+      identityRequests: identityRequests ?? this.identityRequests,
+      subscriptionActivations: subscriptionActivations ?? this.subscriptionActivations,
       claims: claims ?? this.claims,
       unread: unread ?? this.unread,
       pantry: pantry ?? this.pantry,
       articles: articles ?? this.articles,
       internalOrders: internalOrders ?? this.internalOrders,
+      packageAssignment: packageAssignment ?? this.packageAssignment,
+      feedback: feedback ?? this.feedback,
       openProjects: openProjects ?? this.openProjects,
       inProgressProjects: inProgressProjects ?? this.inProgressProjects,
       completedProjects: completedProjects ?? this.completedProjects,
@@ -213,6 +269,9 @@ class SuperAdminActivationItem {
     required this.id,
     this.freelancerName,
     this.freelancerEmail,
+    this.freelancerUserId,
+    this.planId,
+    this.planName,
     this.planTitle,
     this.paymentStatus,
     this.activationStatus,
@@ -222,11 +281,15 @@ class SuperAdminActivationItem {
     this.source,
     this.assignedByUserId,
     this.notes,
+    this.assignedAt,
   });
 
   final String id;
   final String? freelancerName;
   final String? freelancerEmail;
+  final String? freelancerUserId;
+  final String? planId;
+  final String? planName;
   final String? planTitle;
   final String? paymentStatus;
   final String? activationStatus;
@@ -236,6 +299,7 @@ class SuperAdminActivationItem {
   final String? source;
   final String? assignedByUserId;
   final String? notes;
+  final String? assignedAt;
 
   factory SuperAdminActivationItem.fromJson(Map<String, dynamic> json) {
     final freelancer = json['freelancer'];
@@ -262,10 +326,15 @@ class SuperAdminActivationItem {
       id: readString(json, 'id', 'id'),
       freelancerName: name.isEmpty ? null : name,
       freelancerEmail: f == null ? null : _nullIfEmpty(readString(f, 'email', 'email')),
+      freelancerUserId: f == null
+          ? _nullIfEmpty(readString(json, 'freelancerUserId', 'freelancer_user_id'))
+          : _nullIfEmpty(readString(f, 'id', 'id')),
       planTitle: p == null
           ? null
           : (_nullIfEmpty(readString(p, 'title', 'title')) ??
               _nullIfEmpty(readString(p, 'name', 'name'))),
+      planId: p == null ? null : _nullIfEmpty(readString(p, 'id', 'id')),
+      planName: p == null ? null : _nullIfEmpty(readString(p, 'name', 'name')),
       paymentStatus: _nullIfEmpty(readString(json, 'paymentStatus', 'payment_status')),
       activationStatus: _nullIfEmpty(readString(json, 'activationStatus', 'activation_status')),
       queueKind: _nullIfEmpty(readString(json, 'activationQueueKind', 'activation_queue_kind')),
@@ -274,8 +343,34 @@ class SuperAdminActivationItem {
       source: _nullIfEmpty(readString(json, 'source', 'source')),
       assignedByUserId: _nullIfEmpty(readString(json, 'assignedByUserId', 'assigned_by_user_id')),
       notes: _nullIfEmpty(readString(json, 'notes', 'notes')),
+      assignedAt: _nullIfEmpty(() {
+        final assigned = readString(json, 'assignedAt', 'assigned_at');
+        if (assigned.trim().isNotEmpty) return assigned;
+        return readString(json, 'createdAt', 'created_at');
+      }()),
     );
   }
+}
+
+class SuperAdminActivationQueueSnapshot {
+  const SuperAdminActivationQueueSnapshot({
+    required this.kycItems,
+    required this.subscriptionItems,
+    this.kycSchemaReady = true,
+    this.kycLoadFailed = false,
+    this.subscriptionLoadFailed = false,
+  });
+
+  final List<SuperAdminKycActivationItem> kycItems;
+  final List<SuperAdminActivationItem> subscriptionItems;
+  final bool kycSchemaReady;
+  final bool kycLoadFailed;
+  final bool subscriptionLoadFailed;
+
+  bool get isEmpty => kycItems.isEmpty && subscriptionItems.isEmpty;
+
+  int get pendingIdentityCount =>
+      kycItems.where((e) => e.isPendingReview).length;
 }
 
 class SuperAdminClaimItem {
@@ -388,7 +483,8 @@ SuperAdminActionCenterSnapshot parseHomeFastSnapshot(dynamic body) {
   final data = _unwrapData(body);
   if (data == null) {
     return const SuperAdminActionCenterSnapshot(
-      activations: SuperAdminCountCard.unavailable,
+      identityRequests: SuperAdminCountCard.unavailable,
+      subscriptionActivations: SuperAdminCountCard.unavailable,
       claims: SuperAdminCountCard.unavailable,
       unread: SuperAdminCountCard.unavailable,
       pantry: SuperAdminCountCard.unavailable,
@@ -414,10 +510,8 @@ SuperAdminActionCenterSnapshot parseHomeFastSnapshot(dynamic body) {
   }
 
   return SuperAdminActionCenterSnapshot(
-    activations: attentionCard(
-      'subscriptionsAwaitingActivation',
-      'subscriptions_awaiting_activation',
-    ),
+    identityRequests: SuperAdminCountCard.refreshing,
+    subscriptionActivations: SuperAdminCountCard.refreshing,
     claims: attentionCard(
       'financialClaimsPending',
       'financial_claims_pending',
@@ -432,6 +526,7 @@ SuperAdminActionCenterSnapshot parseHomeFastSnapshot(dynamic body) {
       'internalOrdersPendingClaims',
       'internal_orders_pending_claims',
     ),
+    packageAssignment: SuperAdminCountCard.ok(0),
     openProjects: platform == null ? null : readInt(platform, 'openProjects', 'open_projects'),
     inProgressProjects:
         platform == null ? null : readInt(platform, 'inProgressProjects', 'in_progress_projects'),
@@ -529,6 +624,23 @@ List<SuperAdminPantryAttentionItem> parsePantryAttention({
     );
   }
   return items;
+}
+
+dynamic mergePantryDeliveriesBodies(dynamic submittedBody, dynamic revisionBody) {
+  final da = _unwrapData(submittedBody);
+  final db = _unwrapData(revisionBody);
+  if (da == null && db == null) return submittedBody ?? revisionBody;
+  final listA = da == null ? <Map<String, dynamic>>[] : extractList(da, nestedKey: 'deliveries');
+  final listB = db == null ? <Map<String, dynamic>>[] : extractList(db, nestedKey: 'deliveries');
+  final seen = <String>{};
+  final merged = <Map<String, dynamic>>[];
+  for (final row in [...listA, ...listB]) {
+    final id = readString(row, 'id', 'id');
+    if (id.isEmpty || seen.contains(id)) continue;
+    seen.add(id);
+    merged.add(row);
+  }
+  return {'data': {'deliveries': merged}};
 }
 
 String pantryRequestStatusLabelAr(String? status) {

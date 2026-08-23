@@ -73,9 +73,21 @@ void main() {
       );
     });
 
-    test('Bildazo required message', () {
+    test('Bildazo required API error uses short Arabic', () {
       expect(
         mapMiniArticleApplyErrorMessage(dioErr('BILDAZO_AUTHOR_LINK_REQUIRED')),
+        bildazoNotLinkedErrorAr,
+      );
+    });
+
+    test('Bildazo gate eligibility uses full required copy', () {
+      expect(
+        eligibilityMessageAr(
+          const ArticleApplicationEligibility(
+            eligible: false,
+            reason: 'BILDAZO_AUTHOR_LINK_REQUIRED',
+          ),
+        ),
         bildazoRequiredAr,
       );
     });
@@ -273,12 +285,15 @@ void main() {
       final snap = EarnedBalanceSnapshot.fromResponse({
         'data': {
           'totalPendingJod': '0.700',
+          'totalAvailableJod': '0.700',
+          'withdrawalPolicy': {'allowed': true},
           'entries': [
             {
               'applicationId': 'x',
               'articleTitle': 'مقال منشور',
               'amountJod': '0.700',
               'status': 'settled_externally',
+              'withdrawable': true,
             },
           ],
         },
@@ -291,7 +306,7 @@ void main() {
       expect(find.text(earnedBalanceTitleAr), findsOneWidget);
       expect(find.text(earnedBalanceNotWithdrawableAr), findsOneWidget);
       expect(find.textContaining('صافي المستقل: 0.700 JOD'), findsOneWidget);
-      expect(find.textContaining(earnedBalanceRecordedAr), findsOneWidget);
+      expect(find.textContaining(earnedBalanceRecordedAr), findsWidgets);
       expect(find.textContaining('1.000'), findsNothing);
     });
 

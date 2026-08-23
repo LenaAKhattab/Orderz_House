@@ -5,6 +5,20 @@ import 'super_admin_pantry_actions.dart';
 const superAdminSelectApplicantConfirmKey = 'sa-confirm-select-applicant';
 const superAdminRelistArticleConfirmKey = 'sa-confirm-relist-article';
 const superAdminArticleOverrideFieldKey = 'sa-article-override-reason';
+const superAdminApproveArticleConfirmKey = 'sa-confirm-approve-article';
+const superAdminRejectArticleConfirmKey = 'sa-confirm-reject-article';
+const superAdminArticleRevisionNoteFieldKey = 'sa-article-revision-note';
+const superAdminArticleRejectReasonFieldKey = 'sa-article-reject-reason';
+
+const superAdminApproveArticleLabelAr = 'اعتماد المقال';
+const superAdminRequestArticleRevisionLabelAr = 'طلب تعديل';
+const superAdminRejectArticleLabelAr = 'رفض المقال';
+const superAdminArticleApproveConfirmAr = 'هل أنت متأكد من اعتماد هذا المقال؟';
+const superAdminArticleApproveSuccessAr = 'تم اعتماد المقال بنجاح.';
+const superAdminArticleRevisionSuccessAr = 'تم إرسال طلب التعديل بنجاح.';
+const superAdminArticleRejectSuccessAr = 'تم رفض المقال بنجاح.';
+const superAdminArticleRevisionNoteRequiredAr = 'يرجى كتابة ملاحظات التعديل.';
+const superAdminArticleRejectReasonRequiredAr = 'يرجى كتابة سبب الرفض.';
 
 bool isArticleFairRankingEligible(SuperAdminArticleFairRanking? ranking) {
   return ranking?.eligibleForAssignment == true;
@@ -53,6 +67,44 @@ bool canRelistArticleBidCollection(SuperAdminArticleDetail detail) {
   final status = (collection.status ?? '').trim().toLowerCase();
   final outcome = (collection.outcome ?? '').trim().toLowerCase();
   return status == 'minimum_not_met' || outcome == 'minimum_not_met';
+}
+
+SuperAdminArticleApplication? reviewableArticleApplication(SuperAdminArticleDetail detail) {
+  return detail.applications.where((a) => a.isReviewActionable).firstOrNull;
+}
+
+/// Backward-compatible alias used by controllers.
+SuperAdminArticleApplication? selectedArticleApplication(SuperAdminArticleDetail detail) {
+  return reviewableArticleApplication(detail) ??
+      detail.applications.where((a) => a.isSelected).firstOrNull;
+}
+
+bool canRejectSelectedArticleApplication(SuperAdminArticleDetail detail) {
+  final app = reviewableArticleApplication(detail);
+  return app != null && app.id.trim().isNotEmpty;
+}
+
+bool canRequestArticleRevision(SuperAdminArticleDetail detail) {
+  final app = reviewableArticleApplication(detail);
+  if (app == null || app.id.trim().isEmpty) return false;
+  final status = (app.status ?? '').trim().toLowerCase();
+  return status == 'selected' || status == 'revision_requested';
+}
+
+bool canFinalizeArticleApproval(SuperAdminArticleDetail detail) {
+  return canRequestArticleRevision(detail);
+}
+
+String? validateArticleRevisionNote(String note) {
+  if (note.trim().isEmpty) return superAdminArticleRevisionNoteRequiredAr;
+  if (note.trim().length < 3) return superAdminArticleRevisionNoteRequiredAr;
+  return null;
+}
+
+String? validateArticleRejectReason(String reason) {
+  if (reason.trim().isEmpty) return superAdminArticleRejectReasonRequiredAr;
+  if (reason.trim().length < 3) return superAdminArticleRejectReasonRequiredAr;
+  return null;
 }
 
 String? validateArticleOverrideReason(String note) => validatePantryOverrideReason(note);

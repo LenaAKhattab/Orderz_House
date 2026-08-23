@@ -130,6 +130,18 @@ String mapFinancialClaimCreateErrorMessage(
         return 'لا يمكن إرسال مبالغ أو أسعار من التطبيق عند إنشاء المطالبة.';
       case 'FINANCIAL_CLAIM_PAYMENT_LEDGER_REQUIRED':
         return 'لا يمكن تعليم المطالبة كمدفوعة من هنا. يجب تسجيل دفعة مالية.';
+      case 'COURSE_SUBSCRIPTION_REQUIRED':
+        return 'يجب الاشتراك بإحدى الخطط للوصول إلى هذه الدورة.';
+      case 'STARTER_PENDING_EARNINGS_LOCKED':
+      case 'TRIAL_PENDING_EARNINGS_LOCKED':
+      case 'EARNINGS_LOCKED_PENDING_SILVER':
+        return 'رصيدك مسجّل لكنه غير قابل للسحب حالياً. اشترك بإحدى الخطط لتفعيل الرصيد.';
+      case 'TRIAL_PENDING_EARNINGS_FORFEITED':
+      case 'EARNINGS_FORFEITED':
+      case 'EARNINGS_CLOSED':
+        return 'انتهت مهلة تفعيل هذا الرصيد. هذا الرصيد لم يعد قابلاً للسحب.';
+      case 'NO_WITHDRAWABLE_BALANCE':
+        return 'لا يوجد رصيد قابل للسحب حالياً.';
     }
 
     if (status == 409) {

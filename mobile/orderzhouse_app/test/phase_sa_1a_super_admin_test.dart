@@ -224,16 +224,16 @@ void main() {
   });
 
   group('Super Admin parsers', () {
-    test('home-fast attention counts', () {
+    test('home-fast does not bind identity/subscription to subscriptionsAwaitingActivation', () {
       final snap = parseHomeFastSnapshot({
         'success': true,
         'data': {
           'summary': {
             'attention': {
-              'subscriptionsAwaitingActivation': 3,
-              'financialClaimsPending': 2,
-              'unreadNotifications': 4,
-              'internalOrdersPendingClaims': 1,
+              'subscriptionsAwaitingActivation': 4027,
+              'financialClaimsPending': 0,
+              'unreadNotifications': 0,
+              'internalOrdersPendingClaims': 0,
             },
             'platformOrders': {
               'openProjects': 10,
@@ -243,11 +243,15 @@ void main() {
           },
         },
       });
-      expect(snap.activations.count, 3);
-      expect(snap.claims.count, 2);
-      expect(snap.unread.count, 4);
+      expect(snap.identityRequests.pending, isTrue);
+      expect(snap.subscriptionActivations.pending, isTrue);
+      expect(snap.identityRequests.count, isNull);
+      expect(snap.subscriptionActivations.count, isNull);
+      expect(snap.activations.pending, isTrue);
+      expect(snap.claims.count, 0);
+      expect(snap.unread.count, 0);
       expect(snap.platformOrdersAvailable, isTrue);
-      expect(snap.hasUrgentWork, isTrue);
+      expect(snap.hasUrgentWork, isFalse);
     });
 
     test('claims list uses JOD formatter', () {
@@ -328,7 +332,7 @@ void main() {
 
   group('Action Center UI states', () {
     testWidgets('loading / error / empty / success', (tester) async {
-      tester.view.physicalSize = const Size(400, 900);
+      tester.view.physicalSize = const Size(400, 1600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -351,6 +355,7 @@ void main() {
           isLoading: true,
           onRetry: () {},
           onRefresh: () async {},
+          onAvatarTap: () {},
         ),
       );
       expect(find.textContaining('جاري تحميل'), findsOneWidget);
@@ -363,12 +368,14 @@ void main() {
           errorMessage: superAdminAccessDeniedAr,
           onRetry: () {},
           onRefresh: () async {},
+          onAvatarTap: () {},
         ),
       );
       expect(find.text(superAdminAccessDeniedAr), findsOneWidget);
 
       const empty = SuperAdminActionCenterSnapshot(
-        activations: SuperAdminCountCard(available: true, count: 0),
+        identityRequests: SuperAdminCountCard(available: true, count: 0),
+        subscriptionActivations: SuperAdminCountCard(available: true, count: 0),
         claims: SuperAdminCountCard(available: true, count: 0),
         unread: SuperAdminCountCard(available: true, count: 0),
         pantry: SuperAdminCountCard(available: true, count: 0),
@@ -383,17 +390,19 @@ void main() {
           snapshot: empty,
           onRetry: () {},
           onRefresh: () async {},
+          onAvatarTap: () {},
         ),
       );
       expect(find.text('لا توجد مهام عاجلة حالياً.'), findsOneWidget);
 
       const success = SuperAdminActionCenterSnapshot(
-        activations: SuperAdminCountCard(available: true, count: 2),
+        identityRequests: SuperAdminCountCard(available: true, count: 1),
+        subscriptionActivations: SuperAdminCountCard(available: true, count: 1),
         claims: SuperAdminCountCard(available: true, count: 1),
-        unread: SuperAdminCountCard(available: true, count: 3),
+        unread: SuperAdminCountCard(available: true, count: 99),
         pantry: SuperAdminCountCard(available: false),
         articles: SuperAdminCountCard(available: true, count: 0),
-        internalOrders: SuperAdminCountCard(available: true, count: 0),
+        internalOrders: SuperAdminCountCard(available: true, count: 4),
       );
       await pump(
         SuperAdminActionCenterView(
@@ -403,11 +412,21 @@ void main() {
           snapshot: success,
           onRetry: () {},
           onRefresh: () async {},
+          onAvatarTap: () {},
         ),
       );
-      expect(find.text('طلبات تفعيل بانتظار المراجعة'), findsOneWidget);
+      expect(find.text(superAdminIdentityQueueTitleAr), findsOneWidget);
+      expect(find.text(superAdminInAppActionsSectionAr), findsOneWidget);
+      expect(find.text(superAdminWebFollowUpSectionAr), findsOneWidget);
       expect(find.text('غير متاح حاليًا'), findsOneWidget);
-      expect(find.text('2'), findsWidgets);
+      expect(find.text('1'), findsNWidgets(3));
+      // Unread tile uses header source (3), not stale home-fast (99).
+      expect(find.text('3'), findsWidgets);
+      expect(find.text('99'), findsNothing);
+      expect(find.byKey(const Key('sa-identity-requests-tile')), findsOneWidget);
+      expect(find.byKey(const Key('sa-subscription-activation-tile')), findsOneWidget);
+      expect(find.byKey(const Key('sa-internal-orders-web-tile')), findsOneWidget);
+      expect(find.textContaining('اعتماد التفعيل'), findsNothing);
     });
 
     testWidgets('Super Admin count tile has no payout/pricing actions', (tester) async {
@@ -452,7 +471,7 @@ void main() {
 
       final controllers =
           File('lib/features/super_admin/data/super_admin_controllers.dart').readAsStringSync();
-      expect(controllers, contains('unawaited(_enrichPantryAndArticles'));
+      expect(controllers, contains('unawaited(_enrichPantryArticlesAndActivations'));
       expect(controllers, contains('_loadHomeSnapshot'));
       expect(controllers, contains('_fetchTimeout'));
     });

@@ -223,8 +223,8 @@ void main() {
     });
   });
 
-  group('Super Admin activation safety M1', () {
-    test('in-app approve is disabled even for pending items', () {
+  group('Super Admin activation safety A2', () {
+    test('in-app approve enabled for pending items with override path', () {
       final item = SuperAdminActivationItem.fromJson({
         'id': '10',
         'activationStatus': 'company_pending',
@@ -232,8 +232,8 @@ void main() {
         'needsCompanyActivation': true,
       });
       expect(wouldHaveBeenApprovableActivation(item), isTrue);
-      expect(canApproveActivation(item), isFalse);
-      expect(isMobileCompanyActivateDisabled(), isTrue);
+      expect(canApproveActivation(item), isTrue);
+      expect(isMobileCompanyActivateDisabled(), isFalse);
     });
   });
 }

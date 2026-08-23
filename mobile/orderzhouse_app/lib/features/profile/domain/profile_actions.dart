@@ -11,6 +11,7 @@ enum ProfileActionId {
   financialClaims,
   accountActivation,
   miniArticles,
+  myArticles,
   marketplace,
   services,
   courses,
@@ -75,6 +76,11 @@ String profileRoleLabelAr(AuthUser user) {
   }
 }
 
+/// Shown when staff `admin` lands on the generic client-like home (no SA tools).
+const regularAdminMobileDisabledMessageAr =
+    'تجربة الأدمن على التطبيق غير مفعلة لهذا الدور حالياً. استخدم لوحة الويب.';
+
+
 String? profileStatusLabelAr(AuthUser user) {
   if (!user.isActive) return 'الحساب غير نشط';
   return 'الحساب نشط';
@@ -124,6 +130,12 @@ List<ProfileActionItem> profileQuickActionsForUser(AuthUser user) {
         label: 'المقالات المصغّرة',
         icon: Icons.article_outlined,
         route: AppRoutes.freelancerMiniArticles,
+      ),
+      ProfileActionItem(
+        id: ProfileActionId.myArticles,
+        label: 'مقالاتي',
+        icon: Icons.library_books_outlined,
+        route: AppRoutes.freelancerMyArticles,
       ),
       ProfileActionItem(
         id: ProfileActionId.courses,
@@ -267,6 +279,7 @@ bool profileActionAllowedForUser(ProfileActionId id, AuthUser user) {
     case ProfileActionId.financialClaims:
     case ProfileActionId.accountActivation:
     case ProfileActionId.miniArticles:
+    case ProfileActionId.myArticles:
     case ProfileActionId.courses:
       return user.usesFreelancerExperience;
     case ProfileActionId.superAdminHome:

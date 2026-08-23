@@ -12,5 +12,11 @@ final notificationsControllerProvider =
   }
 
   final repo = ref.read(notificationsRepositoryProvider);
-  return repo.fetchNotifications(limit: 50);
+  final page = await repo.fetchNotifications(limit: 50);
+  return NotificationsPage(
+    notifications: sortNotificationsUnreadFirst(page.notifications),
+    total: page.total,
+    limit: page.limit,
+    offset: page.offset,
+  );
 });

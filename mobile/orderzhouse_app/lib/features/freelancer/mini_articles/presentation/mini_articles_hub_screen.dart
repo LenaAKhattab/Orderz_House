@@ -74,9 +74,20 @@ class MiniArticlesHubScreen extends ConsumerWidget {
               style: TextStyle(color: AppColors.textMuted, height: 1.5),
             ),
             const SizedBox(height: 12),
+            OhButton(
+              key: const ValueKey('mini-articles-hub-my-articles'),
+              label: 'مقالاتي',
+              outlined: true,
+              onPressed: () => context.push(AppRoutes.freelancerMyArticles),
+            ),
+            const SizedBox(height: 12),
             BildazoLinkPanel(status: ui.bildazo),
             const SizedBox(height: 10),
-            EarnedBalancePanel(snapshot: ui.earnedBalance),
+            EarnedBalancePanel(
+              snapshot: ui.earnedBalance,
+              onOpenKyc: () => context.push(AppRoutes.freelancerAccountActivation),
+              onOpenClaims: () => context.push(AppRoutes.freelancerFinancialClaims),
+            ),
             const SizedBox(height: 10),
             TrialSilverPanel(
               trial: ui.trial,

@@ -161,6 +161,11 @@ class SuperAdminCountTile extends StatelessWidget {
     required this.icon,
     this.onTap,
     this.comingSoon = false,
+    this.webHandoff = false,
+    this.hint,
+    this.onPrimaryCta,
+    this.primaryCtaLabel,
+    this.primaryCtaKey,
   });
 
   final String title;
@@ -168,20 +173,39 @@ class SuperAdminCountTile extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
   final bool comingSoon;
+  final bool webHandoff;
+  final String? hint;
+  final VoidCallback? onPrimaryCta;
+  final String? primaryCtaLabel;
+  final Key? primaryCtaKey;
 
   @override
   Widget build(BuildContext context) {
     final available = card.available;
     final count = card.count;
+    final resolvedHint = card.pending
+        ? 'جارٍ التحديث'
+        : (hint ??
+            (available
+                ? (webHandoff || comingSoon
+                    ? superAdminOpenWebPanelAr
+                    : 'اضغط للعرض')
+                : superAdminUnavailableCardAr));
+
+    VoidCallback? resolvedTap;
+    if (available) {
+      if (comingSoon && onTap == null && onPrimaryCta == null) {
+        resolvedTap = () => showSuperAdminComingSoonSnack(context);
+      } else {
+        resolvedTap = onTap;
+      }
+    }
+
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
-        onTap: !available
-            ? null
-            : (comingSoon
-                ? () => showSuperAdminComingSoonSnack(context)
-                : onTap),
+        onTap: resolvedTap,
         borderRadius: BorderRadius.circular(18),
         child: Container(
           width: double.infinity,
@@ -190,47 +214,66 @@ class SuperAdminCountTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppColors.cardBorder),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.iconChipBg,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: AppColors.primary),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primaryDeep,
-                      ),
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.iconChipBg,
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      available
-                          ? (comingSoon ? 'للمتابعة من الموقع حالياً' : 'اضغط للعرض')
-                          : superAdminUnavailableCardAr,
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                    child: Icon(icon, color: AppColors.primary),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryDeep,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          resolvedHint,
+                          style: const TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.35),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  Text(
+                    card.pending ? '…' : (available ? '${count ?? 0}' : '—'),
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: available &&
+                              !card.pending &&
+                              (count ?? 0) > 0
+                          ? AppColors.error
+                          : AppColors.primaryDeep,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                available ? '${count ?? 0}' : '—',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: available && (count ?? 0) > 0 ? AppColors.error : AppColors.primaryDeep,
+              if (available && onPrimaryCta != null) ...[
+                const SizedBox(height: 12),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    key: primaryCtaKey ?? const Key('sa-count-tile-web-cta'),
+                    onPressed: onPrimaryCta,
+                    icon: const Icon(Icons.open_in_new, size: 16),
+                    label: Text(primaryCtaLabel ?? superAdminOpenWebPanelAr),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

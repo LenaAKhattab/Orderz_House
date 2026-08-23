@@ -209,18 +209,49 @@ class MarkAllReadResult {
 }
 
 String notificationTypeLabel(String? type) {
-  final raw = (type ?? '').trim().toLowerCase();
-  if (raw.isEmpty) return 'إشعار';
-  if (raw.contains('pantry')) return 'طلب';
-  if (raw.contains('order')) return 'طلب';
+  return notificationDisplayTitle(type: type);
+}
+
+String notificationDisplayTitle({
+  String? type,
+  String? entityType,
+  String? fallbackTitle,
+}) {
+  final raw = '${type ?? ''} ${entityType ?? ''}'.trim().toLowerCase();
+  if (raw.contains('feedback') || raw.contains('problem') || raw.contains('suggestion')) {
+    return 'مشاكل واقتراحات';
+  }
+  if (raw.contains('kyc') ||
+      raw.contains('identity') ||
+      raw.contains('account_activation') ||
+      raw.contains('freelancer_activation')) {
+    return 'طلب توثيق هوية';
+  }
+  if (raw.contains('subscription') && raw.contains('activ')) {
+    return 'طلب تفعيل اشتراك';
+  }
+  if (raw.contains('subscription') || raw.contains('plan') || raw.contains('membership')) {
+    return 'طلب تفعيل اشتراك';
+  }
   if (raw.contains('claim') || raw.contains('financial')) return 'مطالبة مالية';
-  if (raw.contains('subscription') || raw.contains('plan')) return 'اشتراك';
-  if (raw.contains('course')) return 'دورة';
-  if (raw.contains('message') || raw.contains('chat')) return 'رسالة';
-  if (raw.contains('payment') || raw.contains('stripe')) return 'دفع';
-  if (raw.contains('delivery')) return 'تسليم';
-  if (raw.contains('bid')) return 'عرض سعر';
-  return 'إشعار';
+  if (raw.contains('pantry')) return 'بيت المونة';
+  if (raw.contains('article') || raw.contains('manuscript')) return 'مقال';
+  if (raw.contains('order')) return 'طلب';
+  if (raw.contains('system')) return 'إشعار نظام';
+  final title = (fallbackTitle ?? '').trim();
+  if (title.isNotEmpty && title != 'ملاحظة جديدة') return title;
+  return 'إشعار جديد';
+}
+
+List<AppNotification> sortNotificationsUnreadFirst(List<AppNotification> items) {
+  final copy = [...items];
+  copy.sort((a, b) {
+    if (a.isUnread != b.isUnread) return a.isUnread ? -1 : 1;
+    final ad = DateTime.tryParse(a.createdAt ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final bd = DateTime.tryParse(b.createdAt ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+    return bd.compareTo(ad);
+  });
+  return copy;
 }
 
 String formatNotificationDateTime(String? raw) {

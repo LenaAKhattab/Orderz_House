@@ -56,6 +56,9 @@ class AuthUser {
   /// Super Admin Action Center — never fall through to client home.
   bool get usesSuperAdminExperience => effectiveRole == 'super_admin';
 
+  /// Staff `admin` has no dedicated mobile product; keep SA tools locked.
+  bool get isRegularAdminWithoutMobileExperience => effectiveRole == 'admin';
+
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     final rolesRaw = json['roles'];
     final permissionsRaw = json['permissions'];

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/errors/api_error_message.dart';
 import 'super_admin_api.dart';
+import 'super_admin_kyc_models.dart';
 import 'super_admin_models.dart';
 
 /// Phase 1B claim status values already supported by
@@ -75,13 +76,135 @@ bool isDashboardAdminAssignedActivation(SuperAdminActivationItem item) {
       notes != 'auto_default_free_plan';
 }
 
-/// Matches web `needsCompanyActivationAction` and hides admin-assigned rows.
-/// Phase M1: in-app company-activate is disabled (KYC review is web-only).
-bool canApproveActivation(SuperAdminActivationItem item) {
+bool isAdminAssignedFollowUpRow(SuperAdminActivationItem item) =>
+    isDashboardAdminAssignedActivation(item);
+
+const orderzhouseFreePlanId = '1';
+const orderzhouseFreePlanName = 'orderzhouse_free';
+
+bool isFreeOrStarterSubscriptionPlan(SuperAdminActivationItem item) {
+  final planId = (item.planId ?? '').trim();
+  if (planId == orderzhouseFreePlanId) return true;
+  final planName = (item.planName ?? item.planTitle ?? '').trim().toLowerCase();
+  if (planName == orderzhouseFreePlanName) return true;
+  if (planName.contains('starter') || planName.contains('start')) return true;
+  if (planName.contains('مجاني') || planName.contains('free')) return true;
+  final notes = (item.notes ?? '').trim();
+  if (notes == 'auto_default_free_plan') return true;
+  final price = item.priceJod;
+  if (price != null && price <= 0) {
+    final payment = (item.paymentStatus ?? '').trim().toLowerCase();
+    if (payment == 'not_required' || payment.isEmpty) return true;
+  }
   return false;
 }
 
-/// Whether the queue item would historically have been approvable (tests / diagnostics).
+/// Old free-plan rows stuck in activation queue — manual review only, not paid activation.
+bool isLegacyFreeActivationRow(SuperAdminActivationItem item) {
+  if (isAdminAssignedFollowUpRow(item)) return false;
+  if (!isFreeOrStarterSubscriptionPlan(item)) return false;
+  final notes = (item.notes ?? '').trim();
+  if (notes == 'auto_default_free_plan') return true;
+  return wouldHaveBeenApprovableActivation(item) ||
+      (item.needsCompanyActivation == true) ||
+      (item.activationStatus ?? '').trim().toLowerCase() == 'company_pending';
+}
+
+bool isPaidSubscriptionActivationActionable(SuperAdminActivationItem item) {
+  if (isAdminAssignedFollowUpRow(item)) return false;
+  if (isFreeOrStarterSubscriptionPlan(item)) return false;
+  return wouldHaveBeenApprovableActivation(item);
+}
+
+class SuperAdminSubscriptionActivationSnapshot {
+  const SuperAdminSubscriptionActivationSnapshot({
+    required this.paidActionable,
+    required this.legacyFree,
+    required this.adminAssigned,
+  });
+
+  final List<SuperAdminActivationItem> paidActionable;
+  final List<SuperAdminActivationItem> legacyFree;
+  final List<SuperAdminActivationItem> adminAssigned;
+
+  bool get isEmpty =>
+      paidActionable.isEmpty && legacyFree.isEmpty && adminAssigned.isEmpty;
+
+  int get actionableCount => paidActionable.length;
+}
+
+SuperAdminSubscriptionActivationSnapshot classifySubscriptionActivationItems(
+  List<SuperAdminActivationItem> items,
+) {
+  final paid = <SuperAdminActivationItem>[];
+  final legacy = <SuperAdminActivationItem>[];
+  final assigned = <SuperAdminActivationItem>[];
+  for (final item in items) {
+    if (isAdminAssignedFollowUpRow(item)) {
+      assigned.add(item);
+      continue;
+    }
+    if (isLegacyFreeActivationRow(item)) {
+      legacy.add(item);
+      continue;
+    }
+    if (isPaidSubscriptionActivationActionable(item)) {
+      paid.add(item);
+    }
+  }
+  return SuperAdminSubscriptionActivationSnapshot(
+    paidActionable: paid,
+    legacyFree: legacy,
+    adminAssigned: assigned,
+  );
+}
+
+extension SuperAdminActivationQueueSnapshotX on SuperAdminActivationQueueSnapshot {
+  SuperAdminSubscriptionActivationSnapshot get subscriptionClassification =>
+      classifySubscriptionActivationItems(subscriptionItems);
+
+  int get pendingPaidSubscriptionCount => subscriptionClassification.actionableCount;
+}
+
+/// Matches web `needsCompanyActivationAction` and hides admin-assigned rows.
+bool canApproveActivation(SuperAdminActivationItem item) {
+  return wouldHaveBeenApprovableActivation(item);
+}
+
+bool isMobileCompanyActivateDisabled() => false;
+
+bool canApproveKycActivation(SuperAdminKycActivationItem item) {
+  return item.id.trim().isNotEmpty && item.isPendingReview;
+}
+
+bool canApproveKycActivationRequest(SuperAdminKycActivationRequest request) {
+  return request.id.trim().isNotEmpty && request.isPendingReview;
+}
+
+int identityActionableCount(List<SuperAdminKycActivationItem> kycItems) {
+  return kycItems.where((e) => e.isPendingReview).length;
+}
+
+int subscriptionActionableCount(List<SuperAdminActivationItem> subscriptionItems) {
+  return classifySubscriptionActivationItems(subscriptionItems).actionableCount;
+}
+
+int activationActionableCount(SuperAdminActivationQueueSnapshot snapshot) {
+  return identityActionableCount(snapshot.kycItems) +
+      subscriptionActionableCount(snapshot.subscriptionItems);
+}
+
+String? validateKycRejectionReason(String reason) {
+  if (reason.trim().isEmpty) return superAdminActivationRejectReasonRequiredAr;
+  return null;
+}
+
+String? validateActivationOverrideReason(String reason) {
+  if (reason.trim().isEmpty) return superAdminActivationOverrideRequiredAr;
+  return null;
+}
+
+/// Whether subscription queue row can receive company-activate (web parity).
 bool wouldHaveBeenApprovableActivation(SuperAdminActivationItem item) {
   if (item.id.trim().isEmpty) return false;
   if (isDashboardAdminAssignedActivation(item)) return false;
@@ -94,8 +217,6 @@ bool wouldHaveBeenApprovableActivation(SuperAdminActivationItem item) {
       payment == 'not_required' ||
       payment.isEmpty;
 }
-
-bool isMobileCompanyActivateDisabled() => true;
 
 bool canUpdatePendingClaimStatus(SuperAdminClaimItem item) {
   if (item.id.trim().isEmpty) return false;

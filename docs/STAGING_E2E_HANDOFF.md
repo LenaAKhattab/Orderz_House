@@ -106,6 +106,30 @@ Enable engine / auto-assign / daily_auto only after Staging E2E passes.
 2. Flutter test build against Staging  
 3. Confirm no production host in logs  
 
+### Local Staging QA backend (workstation)
+
+**Do not** use plain `npm start` for mobile/Staging QA.  
+`npm start` loads `backend/.env`, which on this workstation often points at **Production** Neon (`ep-wandering-cherry…`).
+
+Use:
+
+```bash
+cd backend
+npm run qa:staging:preflight
+npm run start:staging
+```
+
+| Command | Purpose |
+|---------|---------|
+| `npm run qa:staging:preflight` | Loads `.env.staging`, prints APP_ENV + masked DB, refuses Production host, checks pending migrations = 0, warns on Live Stripe / Bildazo flags |
+| `npm run start:staging` | Same guards, then starts API on port 5000 |
+
+Requirements:
+
+- `backend/.env.staging` exists with `APP_ENV=staging` and Staging `DATABASE_URL` (not Production)
+- Emulator debug APK must target `http://10.0.2.2:5000/api` while this Staging backend listens on **5000**
+- Frontend handoff: `http://localhost:5174` (and `http://10.0.2.2:5174` from emulator)
+
 ---
 
 ## 5. Web E2E checklist

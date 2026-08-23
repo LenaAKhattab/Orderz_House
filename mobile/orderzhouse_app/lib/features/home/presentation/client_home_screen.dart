@@ -72,6 +72,28 @@ class ClientHomeScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
+                if (user?.isRegularAdminWithoutMobileExperience == true) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    key: const Key('regular-admin-mobile-disabled-banner'),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.45)),
+                    ),
+                    child: const Text(
+                      regularAdminMobileDisabledMessageAr,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        height: 1.45,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFB45309),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 22),
                 const Text(
                   'أنجز طلباتك باحتراف\nمن مكان واحد',

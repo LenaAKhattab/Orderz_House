@@ -53,6 +53,12 @@ class SuperAdminArticleApplication {
   bool get isPending => (status ?? '').trim().toLowerCase() == 'pending';
   bool get isSelected => (status ?? '').trim().toLowerCase() == 'selected';
 
+  /// Selected writer (or revision cycle) — eligible for approve / revision / reject.
+  bool get isReviewActionable {
+    final s = (status ?? '').trim().toLowerCase();
+    return s == 'selected' || s == 'revision_requested';
+  }
+
   factory SuperAdminArticleApplication.fromJson(Map<String, dynamic> json, {int? rank}) {
     final first = readString(json, 'freelancerFirstName', 'freelancer_first_name');
     final family = readString(json, 'freelancerFamilyName', 'freelancer_family_name');

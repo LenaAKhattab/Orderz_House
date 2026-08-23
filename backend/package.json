@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
+    "start:staging": "node scripts/startStagingQa.js",
+    "qa:staging:preflight": "node scripts/qaStagingPreflight.js",
     "db:init": "node scripts/runSqlFile.js",
     "db:run": "node scripts/runSqlFile.js",
     "db:seed-client-orders": "node scripts/seedRandomClientOrders.js",

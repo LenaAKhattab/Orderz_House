@@ -1,11 +1,155 @@
 import 'package:flutter/material.dart';
 
 import '../data/super_admin_actions.dart';
+import '../data/super_admin_kyc_models.dart';
 import '../data/super_admin_models.dart';
 
 const superAdminConfirmActivationButtonKey = Key('sa-confirm-activation');
 const superAdminConfirmClaimStatusButtonKey = Key('sa-confirm-claim-status');
 const superAdminClaimNoteFieldKey = Key('sa-claim-note');
+
+const superAdminConfirmKycActivationButtonKey = Key('sa-confirm-kyc-activation');
+const superAdminKycRejectReasonFieldKey = Key('sa-kyc-reject-reason');
+const superAdminKycRejectSubmitButtonKey = Key('sa-kyc-reject-submit');
+
+Future<bool> showSuperAdminKycApproveDialog(BuildContext context) async {
+  final result = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      title: const Text(superAdminActivationConfirmApproveTitleAr),
+      content: const Text(superAdminActivationConfirmApproveBodyAr),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: const Text(superAdminCancelActionLabelAr),
+        ),
+        FilledButton(
+          key: superAdminConfirmKycActivationButtonKey,
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: const Text(superAdminApproveActivationLabelAr),
+        ),
+      ],
+    ),
+  );
+  return result == true;
+}
+
+class SuperAdminKycRejectPayload {
+  const SuperAdminKycRejectPayload({required this.rejectionReason, this.adminNotes});
+
+  final String rejectionReason;
+  final String? adminNotes;
+}
+
+Future<SuperAdminKycRejectPayload?> showSuperAdminKycRejectDialog(BuildContext context) {
+  return showDialog<SuperAdminKycRejectPayload>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => const _SuperAdminKycRejectDialog(),
+  );
+}
+
+class _SuperAdminKycRejectDialog extends StatefulWidget {
+  const _SuperAdminKycRejectDialog();
+
+  @override
+  State<_SuperAdminKycRejectDialog> createState() => _SuperAdminKycRejectDialogState();
+}
+
+class _SuperAdminKycRejectDialogState extends State<_SuperAdminKycRejectDialog> {
+  final _reasonController = TextEditingController();
+  final _notesController = TextEditingController();
+  bool _submitted = false;
+  String? _reasonError;
+
+  @override
+  void initState() {
+    super.initState();
+    _reasonController.addListener(() {
+      if (_reasonError != null) {
+        setState(() => _reasonError = validateKycRejectionReason(_reasonController.text));
+      } else {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  bool get _canSubmit =>
+      !_submitted && validateKycRejectionReason(_reasonController.text) == null;
+
+  void _submit() {
+    if (_submitted) return;
+    final error = validateKycRejectionReason(_reasonController.text);
+    if (error != null) {
+      setState(() => _reasonError = error);
+      return;
+    }
+    _submitted = true;
+    final notes = _notesController.text.trim();
+    Navigator.of(context).pop(
+      SuperAdminKycRejectPayload(
+        rejectionReason: _reasonController.text.trim(),
+        adminNotes: notes.isEmpty ? null : notes,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(superAdminActivationRejectTitleAr),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              key: superAdminKycRejectReasonFieldKey,
+              controller: _reasonController,
+              enabled: !_submitted,
+              minLines: 2,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText: superAdminActivationRejectReasonLabelAr,
+                errorText: _reasonError ??
+                    validateKycRejectionReason(_reasonController.text),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _notesController,
+              enabled: !_submitted,
+              minLines: 2,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: superAdminActivationAdminNotesLabelAr,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _submitted ? null : () => Navigator.of(context).pop(),
+          child: const Text(superAdminCancelActionLabelAr),
+        ),
+        FilledButton(
+          key: superAdminKycRejectSubmitButtonKey,
+          onPressed: _canSubmit ? _submit : null,
+          child: const Text(superAdminActivationRejectSubmitAr),
+        ),
+      ],
+    );
+  }
+}
 
 Future<bool> showSuperAdminApproveActivationDialog(BuildContext context) async {
   final result = await showDialog<bool>(

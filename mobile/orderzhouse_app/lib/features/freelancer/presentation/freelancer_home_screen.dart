@@ -134,9 +134,16 @@ class FreelancerHomeScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 HomeWideActionTile(
                   title: 'المقالات المصغّرة',
-                  subtitle: 'قدّم على Mini Articles وتابع الرصيد المكتسب',
+                  subtitle: 'قدّم على المقالات · الرصيد المعلّق غير قابل للسحب مباشرة',
                   icon: Icons.article_outlined,
                   onTap: () => context.push(AppRoutes.freelancerMiniArticles),
+                ),
+                const SizedBox(height: 12),
+                HomeWideActionTile(
+                  title: 'مقالاتي',
+                  subtitle: 'حالة التدقيق والنشر على Bildazo',
+                  icon: Icons.library_books_outlined,
+                  onTap: () => context.push(AppRoutes.freelancerMyArticles),
                 ),
                 const SizedBox(height: 12),
                 HomeWideActionTile(
