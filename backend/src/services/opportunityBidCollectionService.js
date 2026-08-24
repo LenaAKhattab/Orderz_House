@@ -93,6 +93,29 @@ function resolveNextBidCollectionDeadline(previousDeadline, now = new Date()) {
   return previousDeadline;
 }
 
+/**
+ * Visibility / bid-collection deadline for inventory-released Mini Articles.
+ * Uses the inventory item's visibility_duration_hours (not release_interval_days).
+ * Explicit future deadline wins when provided.
+ */
+function resolveInventoryReleaseBidCollectionDeadline({
+  visibilityDurationHours = 24,
+  now = new Date(),
+  explicitDeadline = null,
+} = {}) {
+  if (explicitDeadline != null && explicitDeadline !== "") {
+    const d = new Date(explicitDeadline);
+    if (!Number.isNaN(d.getTime()) && d > new Date(now)) {
+      return d.toISOString();
+    }
+  }
+  const {
+    normalizeVisibilityDurationHours,
+  } = require("../constants/freelancerActivationArticleOps");
+  const hours = normalizeVisibilityDurationHours(visibilityDurationHours);
+  return new Date(new Date(now).getTime() + hours * 3600000).toISOString();
+}
+
 async function lockAndCountArticleApplications(client, articleId, roundId = null, roundNumber = null) {
   const params = [Number(articleId)];
   let roundClause = "";
@@ -167,9 +190,10 @@ async function createInitialArticleRound(articleId, requiredBidCount, deadline, 
       `UPDATE marketplace_articles
           SET required_bid_count = $2,
               current_bid_collection_round_id = $3,
+              application_deadline_at = COALESCE($4::timestamptz, application_deadline_at),
               updated_at = NOW()
         WHERE id = $1`,
-      [Number(articleId), required, round.id],
+      [Number(articleId), required, round.id, deadline || null],
     );
     if (own) await client.query("COMMIT");
     return round;
@@ -515,6 +539,17 @@ async function closeArticleRoundMinimumNotMet(client, round, { now = new Date() 
     [round.opportunity_id, new Date(now).toISOString()],
   );
 
+  let inventoryRestore = { restored: false };
+  try {
+    const articleOps = require("./freelancerActivationArticleOpsService");
+    inventoryRestore = await articleOps.restoreInventoryItemAfterMinimumNotMet(client, {
+      articleId: round.opportunity_id,
+      now,
+    });
+  } catch {
+    inventoryRestore = { restored: false, skipped: true, reason: "inventory_restore_failed" };
+  }
+
   return {
     skipped: false,
     roundId: round.id,
@@ -523,6 +558,7 @@ async function closeArticleRoundMinimumNotMet(client, round, { now = new Date() 
     required: Number(round.required_bid_count),
     reservationsReleased: released,
     status: "minimum_not_met",
+    inventoryRestore,
   };
 }
 
@@ -1301,6 +1337,7 @@ module.exports = {
   relistArticleBidCollection,
   relistPantryBidCollection,
   resolveNextBidCollectionDeadline,
+  resolveInventoryReleaseBidCollectionDeadline,
   assertPantryIntakeOpen,
   assertPantrySelectionAllowed,
   assertPantryBidInCurrentRound,

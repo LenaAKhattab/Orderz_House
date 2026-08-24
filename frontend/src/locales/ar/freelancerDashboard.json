@@ -314,6 +314,8 @@
     "subtitle": "عرض واحد = تقديم عادي واحد. تعديل العرض لا يستهلك عرضاً إضافياً.",
     "loading": "جارٍ تحميل العروض المتاحة…",
     "available": "المتاح",
+    "fromMembership": "من العضوية",
+    "fromAdmin": "منح إدارية",
     "monthlyAllowance": "الحد الشهري",
     "unlockedThisMonth": "المفتوح هذا الشهر",
     "nextExpiry": "أقرب انتهاء",

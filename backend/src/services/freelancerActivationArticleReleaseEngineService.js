@@ -465,11 +465,17 @@ async function planReleaseForAllocation(runner, allocation, {
 
   const planned = [];
   const usedIds = new Set();
+  let skippedActivePublished = 0;
   for (const item of queue) {
     if (planned.length >= capacity.remainingCapacity) break;
     if (usedIds.has(item.id)) continue;
     // one_time already released cannot be reused even in recycle path
     if (!inventoryCanRelease(item, { allowRecycle: recycle })) continue;
+    // eslint-disable-next-line no-await-in-loop
+    if (await articleOps.hasActivePublishedArticleForInventory(runner, item.id)) {
+      skippedActivePublished += 1;
+      continue;
+    }
     usedIds.add(item.id);
     planned.push({
       inventoryItemId: Number(item.id),
@@ -491,13 +497,14 @@ async function planReleaseForAllocation(runner, allocation, {
     return {
       ...skipBase,
       skipped: true,
-      skipReason: "inventory_empty",
+      skipReason: skippedActivePublished > 0 ? "active_published_exists" : "inventory_empty",
       capacity: {
         ...capacity,
         fundBalanceJod: millisToJodString(fundMillis),
         readyInventoryCount: ready.length,
         reusableInventoryCount: recyclable.length,
         recycleWhenInventoryEmpty: recycle,
+        skippedActivePublished,
       },
       gate,
     };
@@ -772,6 +779,22 @@ async function runDailyMiniArticleRelease({
             reviewerShareJod: String(item.reviewer_share_jod),
             status: "skipped",
             skipReason: "inventory_not_releasable",
+          });
+          itemRows.push(mapReleaseItem(skip));
+          continue;
+        }
+
+        if (await articleOps.hasActivePublishedArticleForInventory(runner, lockedItem.id)) {
+          const skip = await insertReleaseItem(runner, {
+            runId: runRow.id,
+            inventoryItemId: lockedItem.id,
+            planTierCode: alloc.planTierCode,
+            totalArticleValueJod: String(item.total_article_value_jod),
+            freelancerShareJod: String(item.freelancer_share_jod),
+            companyShareJod: String(item.company_share_jod),
+            reviewerShareJod: String(item.reviewer_share_jod),
+            status: "skipped",
+            skipReason: "active_published_exists",
           });
           itemRows.push(mapReleaseItem(skip));
           continue;

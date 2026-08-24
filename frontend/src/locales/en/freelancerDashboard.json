@@ -314,6 +314,8 @@
     "subtitle": "1 Bid = 1 normal marketplace offer. Edits do not consume another Bid.",
     "loading": "Loading Bids…",
     "available": "Available",
+    "fromMembership": "From membership",
+    "fromAdmin": "Admin grants",
     "monthlyAllowance": "Monthly allowance",
     "unlockedThisMonth": "Unlocked this month",
     "nextExpiry": "Next expiry",

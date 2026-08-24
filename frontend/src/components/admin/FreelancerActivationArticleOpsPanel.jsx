@@ -29,6 +29,8 @@ const emptyInventory = {
   planTierCode: "starter",
   description: "",
   status: "ready",
+  visibilityDurationHours: 24,
+  minimumBiddersPerArticle: 10,
 };
 
 function fundEntryTypeAr(type) {
@@ -93,6 +95,7 @@ export default function FreelancerActivationArticleOpsPanel({
     maxDailyArticles: 5,
     minimumBiddersPerArticle: 10,
     releaseMode: "manual",
+    releaseIntervalDays: 1,
     recycleWhenInventoryEmpty: false,
     autoAssignEnabled: false,
   }));
@@ -255,7 +258,8 @@ export default function FreelancerActivationArticleOpsPanel({
         campaignId,
         ...invForm,
         ...defaults,
-        minimumBiddersPerArticle: 10,
+        minimumBiddersPerArticle: Number(invForm.minimumBiddersPerArticle) || 10,
+        visibilityDurationHours: Number(invForm.visibilityDurationHours) || 24,
       });
       setInvForm(emptyInventory);
       await load();
@@ -511,6 +515,25 @@ export default function FreelancerActivationArticleOpsPanel({
               />
             </label>
             <label>
+              تكرار إنزال المقالات
+              <input
+                type="number"
+                min={1}
+                max={30}
+                data-testid="activation-alloc-release-interval-days"
+                value={allocForm.releaseIntervalDays}
+                onChange={(e) =>
+                  setAllocForm({
+                    ...allocForm,
+                    releaseIntervalDays: Number(e.target.value),
+                  })
+                }
+              />
+              <span className="oh-am-helper">
+                يحدد كل كم يوم يتم إنزال دفعة جديدة من المقالات.
+              </span>
+            </label>
+            <label>
               <input
                 type="checkbox"
                 checked={Boolean(allocForm.autoAssignEnabled)}
@@ -564,6 +587,7 @@ export default function FreelancerActivationArticleOpsPanel({
                 <th>حصة التدقيق</th>
                 <th>حصة المنصة</th>
                 <th>عدد المتقدمين المطلوب</th>
+                <th>تكرار الإنزال (يوم)</th>
                 <th>تفعيل التوزيع التلقائي</th>
               </tr>
             </thead>
@@ -578,6 +602,7 @@ export default function FreelancerActivationArticleOpsPanel({
                   <td>{a.reviewerShareJod}</td>
                   <td>{a.companyShareJod}</td>
                   <td>{a.minimumBiddersPerArticle ?? "—"}</td>
+                  <td>{a.releaseIntervalDays ?? 1}</td>
                   <td>{a.autoAssignEnabled ? "نعم" : "لا"}</td>
                 </tr>
               ))}
@@ -611,6 +636,41 @@ export default function FreelancerActivationArticleOpsPanel({
                 ))}
               </select>
             </label>
+            <label>
+              عدد المتقدمين المطلوب
+              <input
+                type="number"
+                min={1}
+                data-testid="activation-inventory-min-bidders"
+                value={invForm.minimumBiddersPerArticle}
+                onChange={(e) =>
+                  setInvForm({
+                    ...invForm,
+                    minimumBiddersPerArticle: Number(e.target.value),
+                  })
+                }
+              />
+            </label>
+            <label>
+              مدة ظهور المقال للمستقلين
+              <input
+                type="number"
+                min={1}
+                max={168}
+                data-testid="activation-inventory-visibility-hours"
+                value={invForm.visibilityDurationHours}
+                onChange={(e) =>
+                  setInvForm({
+                    ...invForm,
+                    visibilityDurationHours: Number(e.target.value),
+                  })
+                }
+              />
+              <span className="oh-am-helper">
+                إذا لم يحصل المقال على عدد العروض المطلوب خلال هذه المدة، يُغلق المقال
+                وتُعاد العروض للمستقلين ويعود المقال لجولة لاحقة.
+              </span>
+            </label>
             {invError ? <p data-testid="activation-inventory-error">{invError}</p> : null}
             <button type="submit" disabled={busy}>
               إضافة مقال للمخزن
@@ -621,6 +681,9 @@ export default function FreelancerActivationArticleOpsPanel({
               <li key={item.id}>
                 {item.title} · {item.planTierCode} · {inventoryStatusAr(item.status)} · إنزال{" "}
                 {item.releasedCount}
+                {item.visibilityDurationHours != null
+                  ? ` · ظهور ${item.visibilityDurationHours} ساعة`
+                  : ""}
                 {item.status === "draft" ? (
                   <button type="button" onClick={() => void onMarkReady(item.id)} disabled={busy}>
                     جاهز للإنزال

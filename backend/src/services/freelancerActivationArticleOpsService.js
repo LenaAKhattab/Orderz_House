@@ -15,6 +15,8 @@ const {
   FREELANCER_ACTIVATION_A91_ERROR_CODES,
   normalizePlanTierCode,
   resolveArticleLevelForTier,
+  normalizeVisibilityDurationHours,
+  parseVisibilityDurationHoursOrThrow,
 } = require("../constants/freelancerActivationArticleOps");
 const campaignService = require("./freelancerActivationCampaignService");
 
@@ -134,6 +136,9 @@ function mapInventoryItem(row) {
     companyShareJod: String(row.company_share_jod),
     reviewerShareJod: String(row.reviewer_share_jod),
     minimumBiddersPerArticle: Number(row.minimum_bidders_per_article) || 10,
+    visibilityDurationHours: normalizeVisibilityDurationHours(
+      row.visibility_duration_hours ?? row.visibilityDurationHours,
+    ),
     status: row.status,
     releaseStrategy: row.release_strategy || "one_time",
     maxReleases: row.max_releases != null ? Number(row.max_releases) : null,
@@ -811,18 +816,22 @@ async function createInventoryItem(body = {}, { actorUserId = null, client = nul
   if (!FREELANCER_ACTIVATION_INVENTORY_RELEASE_STRATEGIES.includes(strategy)) {
     throw createAppError("Invalid release strategy.", 400, { exposeToClient: true });
   }
+  const visibilityDurationHours = parseVisibilityDurationHoursOrThrow(
+    body.visibilityDurationHours ?? body.visibility_duration_hours,
+    { createAppError },
+  );
   try {
     const { rows } = await runner.query(
       `INSERT INTO freelancer_activation_article_inventory_items (
          campaign_id, wave_id, plan_tier_code, title, description, requirements,
          category_id, subcategory_id,
          total_article_value_jod, freelancer_share_jod, company_share_jod, reviewer_share_jod,
-         minimum_bidders_per_article, status, release_strategy, max_releases, created_by_user_id
+         minimum_bidders_per_article, visibility_duration_hours, status, release_strategy, max_releases, created_by_user_id
        ) VALUES (
          $1, $2, $3, $4, $5, $6,
          $7, $8,
          $9::numeric, $10::numeric, $11::numeric, $12::numeric,
-         $13, $14, $15, $16, $17
+         $13, $14, $15, $16, $17, $18
        ) RETURNING *`,
       [
         campaignId,
@@ -838,6 +847,7 @@ async function createInventoryItem(body = {}, { actorUserId = null, client = nul
         split.companyShareJod,
         split.reviewerShareJod,
         Math.max(1, Number(body.minimumBiddersPerArticle ?? splitSource.minimumBiddersPerArticle ?? 10) || 10),
+        visibilityDurationHours,
         status,
         strategy,
         body.maxReleases != null ? Number(body.maxReleases) : null,
@@ -846,6 +856,44 @@ async function createInventoryItem(body = {}, { actorUserId = null, client = nul
     );
     return mapInventoryItem(rows[0]);
   } catch (err) {
+    if (err?.code === "42703") {
+      // Column not migrated yet — insert without visibility_duration_hours (DB may lack default).
+      const { rows } = await runner.query(
+        `INSERT INTO freelancer_activation_article_inventory_items (
+           campaign_id, wave_id, plan_tier_code, title, description, requirements,
+           category_id, subcategory_id,
+           total_article_value_jod, freelancer_share_jod, company_share_jod, reviewer_share_jod,
+           minimum_bidders_per_article, status, release_strategy, max_releases, created_by_user_id
+         ) VALUES (
+           $1, $2, $3, $4, $5, $6,
+           $7, $8,
+           $9::numeric, $10::numeric, $11::numeric, $12::numeric,
+           $13, $14, $15, $16, $17
+         ) RETURNING *`,
+        [
+          campaignId,
+          body.waveId != null ? Number(body.waveId) : null,
+          tier,
+          title,
+          body.description || null,
+          body.requirements || null,
+          body.categoryId != null ? Number(body.categoryId) : null,
+          body.subcategoryId != null ? Number(body.subcategoryId) : null,
+          split.totalArticleValueJod,
+          split.freelancerShareJod,
+          split.companyShareJod,
+          split.reviewerShareJod,
+          Math.max(1, Number(body.minimumBiddersPerArticle ?? splitSource.minimumBiddersPerArticle ?? 10) || 10),
+          status,
+          strategy,
+          body.maxReleases != null ? Number(body.maxReleases) : null,
+          actorUserId,
+        ],
+      );
+      const mapped = mapInventoryItem(rows[0]);
+      if (mapped) mapped.visibilityDurationHours = visibilityDurationHours;
+      return mapped;
+    }
     if (isMissingSchema(err)) throw schemaMissingError();
     throw err;
   }
@@ -876,38 +924,87 @@ async function patchInventoryItem(itemId, body = {}, { client = null } = {}) {
     if (!FREELANCER_ACTIVATION_INVENTORY_STATUSES.includes(status)) {
       throw createAppError("Invalid inventory status.", 400, { exposeToClient: true });
     }
-    const { rows } = await runner.query(
-      `UPDATE freelancer_activation_article_inventory_items SET
-         title = $2,
-         description = $3,
-         requirements = $4,
-         total_article_value_jod = $5::numeric,
-         freelancer_share_jod = $6::numeric,
-         company_share_jod = $7::numeric,
-         reviewer_share_jod = $8::numeric,
-         minimum_bidders_per_article = $9,
-         status = $10,
-         release_strategy = $11,
-         max_releases = $12,
-         updated_at = NOW()
-       WHERE id = $1
-       RETURNING *`,
-      [
-        id,
-        body.title != null ? String(body.title).trim() : cur.title,
-        body.description !== undefined ? body.description : cur.description,
-        body.requirements !== undefined ? body.requirements : cur.requirements,
-        split.totalArticleValueJod,
-        split.freelancerShareJod,
-        split.companyShareJod,
-        split.reviewerShareJod,
-        Math.max(1, Number(body.minimumBiddersPerArticle ?? cur.minimum_bidders_per_article) || 10),
-        status,
-        body.releaseStrategy != null ? String(body.releaseStrategy) : cur.release_strategy,
-        body.maxReleases !== undefined ? body.maxReleases : cur.max_releases,
-      ],
-    );
-    return mapInventoryItem(rows[0]);
+    let visibilityDurationHours = normalizeVisibilityDurationHours(cur.visibility_duration_hours);
+    if (body.visibilityDurationHours !== undefined || body.visibility_duration_hours !== undefined) {
+      visibilityDurationHours = parseVisibilityDurationHoursOrThrow(
+        body.visibilityDurationHours ?? body.visibility_duration_hours,
+        { createAppError },
+      );
+    }
+    try {
+      const { rows } = await runner.query(
+        `UPDATE freelancer_activation_article_inventory_items SET
+           title = $2,
+           description = $3,
+           requirements = $4,
+           total_article_value_jod = $5::numeric,
+           freelancer_share_jod = $6::numeric,
+           company_share_jod = $7::numeric,
+           reviewer_share_jod = $8::numeric,
+           minimum_bidders_per_article = $9,
+           visibility_duration_hours = $10,
+           status = $11,
+           release_strategy = $12,
+           max_releases = $13,
+           updated_at = NOW()
+         WHERE id = $1
+         RETURNING *`,
+        [
+          id,
+          body.title != null ? String(body.title).trim() : cur.title,
+          body.description !== undefined ? body.description : cur.description,
+          body.requirements !== undefined ? body.requirements : cur.requirements,
+          split.totalArticleValueJod,
+          split.freelancerShareJod,
+          split.companyShareJod,
+          split.reviewerShareJod,
+          Math.max(1, Number(body.minimumBiddersPerArticle ?? cur.minimum_bidders_per_article) || 10),
+          visibilityDurationHours,
+          status,
+          body.releaseStrategy != null ? String(body.releaseStrategy) : cur.release_strategy,
+          body.maxReleases !== undefined ? body.maxReleases : cur.max_releases,
+        ],
+      );
+      return mapInventoryItem(rows[0]);
+    } catch (err) {
+      if (err?.code === "42703") {
+        const { rows } = await runner.query(
+          `UPDATE freelancer_activation_article_inventory_items SET
+             title = $2,
+             description = $3,
+             requirements = $4,
+             total_article_value_jod = $5::numeric,
+             freelancer_share_jod = $6::numeric,
+             company_share_jod = $7::numeric,
+             reviewer_share_jod = $8::numeric,
+             minimum_bidders_per_article = $9,
+             status = $10,
+             release_strategy = $11,
+             max_releases = $12,
+             updated_at = NOW()
+           WHERE id = $1
+           RETURNING *`,
+          [
+            id,
+            body.title != null ? String(body.title).trim() : cur.title,
+            body.description !== undefined ? body.description : cur.description,
+            body.requirements !== undefined ? body.requirements : cur.requirements,
+            split.totalArticleValueJod,
+            split.freelancerShareJod,
+            split.companyShareJod,
+            split.reviewerShareJod,
+            Math.max(1, Number(body.minimumBiddersPerArticle ?? cur.minimum_bidders_per_article) || 10),
+            status,
+            body.releaseStrategy != null ? String(body.releaseStrategy) : cur.release_strategy,
+            body.maxReleases !== undefined ? body.maxReleases : cur.max_releases,
+          ],
+        );
+        const mapped = mapInventoryItem(rows[0]);
+        if (mapped) mapped.visibilityDurationHours = visibilityDurationHours;
+        return mapped;
+      }
+      throw err;
+    }
   } catch (err) {
     if (isMissingSchema(err)) throw schemaMissingError();
     throw err;
@@ -941,12 +1038,130 @@ function assertInventoryItemReleasable(item) {
   }
 }
 
+async function hasActivePublishedArticleForInventory(runner, inventoryItemId) {
+  const id = Number(inventoryItemId);
+  if (!Number.isInteger(id) || id < 1) return false;
+  try {
+    const { rows } = await runner.query(
+      `SELECT id
+         FROM marketplace_articles
+        WHERE activation_inventory_item_id = $1
+          AND status = 'published'
+        LIMIT 1`,
+      [id],
+    );
+    return Boolean(rows[0]);
+  } catch (err) {
+    if (err?.code === "42703" || err?.code === "42P01") return false;
+    throw err;
+  }
+}
+
+/**
+ * After minimum_not_met close: restore inventory for a future release cycle.
+ * Unsuccessful one_time release is not final exhaustion — decrement released_count.
+ * Does not release immediately; release_interval_days still gates auto runs.
+ */
+async function restoreInventoryItemAfterMinimumNotMet(client, { articleId, now = new Date() } = {}) {
+  const aid = Number(articleId);
+  if (!Number.isInteger(aid) || aid < 1) {
+    return { restored: false, reason: "invalid_article" };
+  }
+  let invId = null;
+  try {
+    const { rows } = await client.query(
+      `SELECT activation_inventory_item_id
+         FROM marketplace_articles
+        WHERE id = $1`,
+      [aid],
+    );
+    invId = rows[0]?.activation_inventory_item_id != null
+      ? Number(rows[0].activation_inventory_item_id)
+      : null;
+  } catch (err) {
+    if (err?.code === "42703" || err?.code === "42P01") {
+      return { restored: false, reason: "schema_not_ready" };
+    }
+    throw err;
+  }
+  if (!invId) return { restored: false, reason: "not_inventory_article" };
+
+  try {
+    const { rows: active } = await client.query(
+      `SELECT id
+         FROM marketplace_articles
+        WHERE activation_inventory_item_id = $1
+          AND status = 'published'
+          AND id <> $2
+        LIMIT 1`,
+      [invId, aid],
+    );
+    if (active[0]) {
+      return { restored: false, reason: "other_active_published", inventoryItemId: invId };
+    }
+  } catch (err) {
+    if (err?.code !== "42703" && err?.code !== "42P01") throw err;
+  }
+
+  try {
+    const { rows } = await client.query(
+      `UPDATE freelancer_activation_article_inventory_items
+          SET status = 'ready',
+              released_count = GREATEST(0, COALESCE(released_count, 0) - 1),
+              metadata = COALESCE(metadata, '{}'::jsonb) || $2::jsonb,
+              updated_at = NOW()
+        WHERE id = $1
+          AND status IN ('released', 'exhausted')
+        RETURNING *`,
+      [
+        invId,
+        JSON.stringify({
+          lastMinimumNotMetArticleId: aid,
+          lastMinimumNotMetAt: new Date(now).toISOString(),
+          restoredForNextReleaseCycle: true,
+        }),
+      ],
+    );
+    if (!rows[0]) {
+      return { restored: false, reason: "inventory_not_in_released_state", inventoryItemId: invId };
+    }
+    return {
+      restored: true,
+      inventoryItemId: invId,
+      inventoryItem: mapInventoryItem(rows[0]),
+    };
+  } catch (err) {
+    if (err?.code === "42703" || err?.code === "42P01") {
+      return { restored: false, reason: "schema_not_ready", inventoryItemId: invId };
+    }
+    throw err;
+  }
+}
+
 /**
  * Create one live marketplace_article from a locked inventory row (runner must own txn).
+ * Creates bid collection round + deadline so minimum_not_met expiry/refund can run.
  * Does not assign winner. Does not reserve A4.2 budget.
  */
-async function executeInventoryReleaseOnRunner(runner, item, { actorUserId = null, skipFundCheck = false } = {}) {
+async function executeInventoryReleaseOnRunner(
+  runner,
+  item,
+  {
+    actorUserId = null,
+    skipFundCheck = false,
+    applicationDeadlineAt = null,
+    now = new Date(),
+  } = {},
+) {
   assertInventoryItemReleasable(item);
+
+  if (await hasActivePublishedArticleForInventory(runner, item.id)) {
+    throw createAppError("يوجد بالفعل مقال منشور نشط من نفس عنصر المخزون.", 409, {
+      exposeToClient: true,
+      publicCode: FREELANCER_ACTIVATION_A91_ERROR_CODES.RELEASE_BLOCKED,
+      skipReason: "active_published_exists",
+    });
+  }
 
   const totalMillis = parseMoney(item.total_article_value_jod, "article value");
   if (!skipFundCheck) {
@@ -980,6 +1195,18 @@ async function executeInventoryReleaseOnRunner(runner, item, { actorUserId = nul
       ?? item.autoAssignWhenMinBiddersReached,
   );
 
+  const opportunityBidCollectionService = require("./opportunityBidCollectionService");
+  const visibilityDurationHours = normalizeVisibilityDurationHours(
+    item.visibility_duration_hours
+      ?? item.visibilityDurationHours
+      ?? null,
+  );
+  const deadlineIso = opportunityBidCollectionService.resolveInventoryReleaseBidCollectionDeadline({
+    visibilityDurationHours,
+    now,
+    explicitDeadline: applicationDeadlineAt ?? item.application_deadline_at ?? null,
+  });
+
   let article;
   try {
     const { rows: articleRows } = await runner.query(
@@ -988,7 +1215,7 @@ async function executeInventoryReleaseOnRunner(runner, item, { actorUserId = nul
          article_level, article_value_jod,
          required_word_count, required_references_count,
          status, is_fake_or_training,
-         required_bid_count,
+         required_bid_count, application_deadline_at,
          budget_total_jod, target_article_count,
          activation_campaign_id, activation_wave_id,
          activation_plan_tier_code,
@@ -1006,14 +1233,14 @@ async function executeInventoryReleaseOnRunner(runner, item, { actorUserId = nul
          $5, $6::numeric,
          $7, 0,
          'published', FALSE,
-         $8,
+         $8, $9::timestamptz,
          $6::numeric, 1,
-         $9, $10,
-         $11,
-         $12::numeric, $13::numeric, $14::numeric,
-         $15,
-         $16, $17, $18,
-         $19, $19,
+         $10, $11,
+         $12,
+         $13::numeric, $14::numeric, $15::numeric,
+         $16,
+         $17, $18, $19,
+         $20, $20,
          NOW()
        ) RETURNING *`,
       [
@@ -1025,6 +1252,7 @@ async function executeInventoryReleaseOnRunner(runner, item, { actorUserId = nul
         millisToJodString(totalMillis),
         wordCount,
         minBidders,
+        deadlineIso,
         item.campaign_id,
         item.wave_id,
         item.plan_tier_code,
@@ -1093,6 +1321,25 @@ async function executeInventoryReleaseOnRunner(runner, item, { actorUserId = nul
     article = articleRows[0];
   }
 
+  let bidCollectionRound = null;
+  try {
+    bidCollectionRound = await opportunityBidCollectionService.createInitialArticleRound(
+      Number(article.id),
+      minBidders,
+      deadlineIso,
+      { client: runner },
+    );
+    if (bidCollectionRound?.id) {
+      const { rows: refreshed } = await runner.query(
+        `SELECT * FROM marketplace_articles WHERE id = $1`,
+        [Number(article.id)],
+      );
+      if (refreshed[0]) article = refreshed[0];
+    }
+  } catch (roundErr) {
+    if (roundErr?.code !== "42P01" && roundErr?.code !== "42703") throw roundErr;
+  }
+
   const nextCount = Number(item.released_count) + 1;
   let nextStatus = "released";
   if (item.release_strategy === "one_time") nextStatus = "released";
@@ -1113,6 +1360,8 @@ async function executeInventoryReleaseOnRunner(runner, item, { actorUserId = nul
       JSON.stringify({
         lastReleasedArticleId: Number(article.id),
         lastReleasedAt: new Date().toISOString(),
+        bidCollectionRoundId: bidCollectionRound?.id != null ? Number(bidCollectionRound.id) : null,
+        applicationDeadlineAt: deadlineIso,
       }),
     ],
   );
@@ -1135,9 +1384,24 @@ async function executeInventoryReleaseOnRunner(runner, item, { actorUserId = nul
       activationCampaignId: Number(article.activation_campaign_id),
       activationWaveId: article.activation_wave_id != null ? Number(article.activation_wave_id) : null,
       requiredBidCount: Number(article.required_bid_count),
+      applicationDeadlineAt: article.application_deadline_at || deadlineIso,
+      currentBidCollectionRoundId:
+        article.current_bid_collection_round_id != null
+          ? Number(article.current_bid_collection_round_id)
+          : bidCollectionRound?.id != null
+            ? Number(bidCollectionRound.id)
+            : null,
       status: article.status,
       inventoryItemId: item.id != null ? Number(item.id) : null,
     },
+    bidCollectionRound: bidCollectionRound
+      ? {
+          id: Number(bidCollectionRound.id),
+          status: bidCollectionRound.bid_collection_status || "collecting",
+          deadlineAt: bidCollectionRound.bid_collection_deadline_at || deadlineIso,
+          requiredBidCount: Number(bidCollectionRound.required_bid_count) || minBidders,
+        }
+      : null,
     autoAssigned: false,
   };
 }
@@ -1188,7 +1452,9 @@ async function releaseInventoryItem(itemId, { actorUserId = null, client = null 
       auto_assign_enabled: Boolean(alloc?.autoAssignEnabled),
       auto_assign_mode: alloc?.autoAssignMode || "disabled",
       auto_assign_when_min_bidders_reached: Boolean(alloc?.autoAssignWhenMinBiddersReached),
-    }, { actorUserId });
+    }, {
+      actorUserId,
+    });
     if (own) await runner.query("COMMIT");
     return result;
   } catch (err) {
@@ -1289,6 +1555,8 @@ module.exports = {
   releaseInventoryItem,
   executeInventoryReleaseOnRunner,
   assertInventoryItemReleasable,
+  hasActivePublishedArticleForInventory,
+  restoreInventoryItemAfterMinimumNotMet,
   recordArticleFundDailyAllocation,
   buildActivationArticleEconomicOverride,
   computeFundBalanceMillis,

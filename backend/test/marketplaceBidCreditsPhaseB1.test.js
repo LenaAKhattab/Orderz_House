@@ -120,7 +120,7 @@ describe("ACTIVE_NEW_BID_MODEL cycle activation no longer grants Work Tokens", (
 });
 
 describe("ACTIVE_NEW_BID_MODEL frontend Work Token product surfaces removed", () => {
-  it("Freelancer plans page uses Bid Credits card", () => {
+  it("Freelancer plans page does not mount Bid Credits summary card", () => {
     const page = fs.readFileSync(
       path.join(
         __dirname,
@@ -134,8 +134,11 @@ describe("ACTIVE_NEW_BID_MODEL frontend Work Token product surfaces removed", ()
       ),
       "utf8",
     );
-    assert.match(page, /FreelancerBidCreditsCard/);
+    assert.doesNotMatch(page, /FreelancerBidCreditsCard/);
     assert.doesNotMatch(page, /FreelancerWorkTokenWalletCard/);
+    assert.doesNotMatch(page, /العروض المتاحة/);
+    assert.match(page, /FreelancerMarketplaceMembershipCard/);
+    assert.match(page, /PricingSection/);
   });
 
   it("membership admin form uses Bids per month", () => {

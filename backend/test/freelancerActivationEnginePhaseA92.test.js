@@ -25,6 +25,11 @@ describe("Phase A9.2 isolation", () => {
     const migrations = fs.readdirSync(path.join(root, "sql/migrations"));
     assert.ok(migrations.some((f) => f.startsWith("174_freelancer_activation_article_release")));
     assert.ok(migrations.some((f) => f.startsWith("177_freelancer_activation_release_interval")));
+    assert.ok(
+      migrations.some((f) =>
+        f.startsWith("180_freelancer_activation_inventory_visibility_duration_hours"),
+      ),
+    );
     const sql = read("sql/migrations/174_freelancer_activation_article_release_engine_a92.sql");
     assert.match(sql, /freelancer_activation_article_release_runs/);
     assert.match(sql, /freelancer_activation_article_release_items/);
@@ -221,6 +226,71 @@ describe("Phase A9.2 release plan with fake client", () => {
           ).length;
           return { rows: [{ cnt }] };
         }
+        if (
+          s.includes("FROM marketplace_articles") &&
+          s.includes("activation_inventory_item_id") &&
+          s.includes("status = 'published'")
+        ) {
+          const invId = Number(params[0]);
+          const found = mem.articles.find(
+            (a) => Number(a.activation_inventory_item_id) === invId && a.status === "published",
+          );
+          return { rows: found ? [{ id: found.id }] : [] };
+        }
+        if (s.includes("to_regclass") || s.includes("information_schema.columns")) {
+          return { rows: [{ rounds: "opportunity_bid_collection_rounds", article_col: true }] };
+        }
+        if (s.includes("FROM marketplace_economy_settings")) {
+          return {
+            rows: [
+              {
+                id: 1,
+                article_min_required_bids: 10,
+                article_allowed_required_bid_counts: JSON.stringify([10, 15, 20, 30]),
+                article_default_required_bid_count: 10,
+                article_auto_close_when_threshold_reached: true,
+                article_auto_assign_when_threshold_reached: false,
+                article_refund_policy: "full_on_minimum_not_met",
+              },
+            ],
+          };
+        }
+        if (s.includes("INSERT INTO marketplace_economy_settings")) {
+          return { rows: [{ id: 1 }] };
+        }
+        if (s.includes("INSERT INTO opportunity_bid_collection_rounds")) {
+          const round = {
+            id: mem.nextRoundId || (mem.nextRoundId = 1),
+            opportunity_type: params[0],
+            opportunity_id: params[1],
+            round_number: params[2],
+            required_bid_count: params[3],
+            bid_collection_status: "collecting",
+            bid_collection_deadline_at: params[4],
+            auto_close_when_threshold_reached: params[5],
+            auto_assign_when_threshold_reached: params[6],
+          };
+          mem.nextRoundId += 1;
+          mem.rounds = mem.rounds || [];
+          mem.rounds.push(round);
+          return { rows: [round] };
+        }
+        if (
+          s.includes("UPDATE marketplace_articles") &&
+          s.includes("current_bid_collection_round_id")
+        ) {
+          const article = mem.articles.find((a) => Number(a.id) === Number(params[0]));
+          if (article) {
+            article.required_bid_count = params[1];
+            article.current_bid_collection_round_id = params[2];
+            if (params[3] != null) article.application_deadline_at = params[3];
+          }
+          return { rows: article ? [article] : [] };
+        }
+        if (s.includes("FROM marketplace_articles") && s.includes("WHERE id")) {
+          const article = mem.articles.find((a) => Number(a.id) === Number(params[0]));
+          return { rows: article ? [article] : [] };
+        }
         if (s.includes("FROM freelancer_activation_article_inventory_items") && s.includes("ORDER BY")) {
           return {
             rows: mem.inventory.filter(
@@ -236,6 +306,8 @@ describe("Phase A9.2 release plan with fake client", () => {
           return { rows: row ? [row] : [] };
         }
         if (s.includes("INSERT INTO marketplace_articles")) {
+          // New shape includes application_deadline_at at $9; legacy falls back by length.
+          const hasDeadline = Array.isArray(params) && params.length >= 20;
           const article = {
             id: mem.nextArticleId++,
             title: params[0],
@@ -243,13 +315,15 @@ describe("Phase A9.2 release plan with fake client", () => {
             article_level: params[4],
             article_value_jod: params[5],
             required_bid_count: params[7],
-            activation_campaign_id: params[8],
-            activation_wave_id: params[9],
-            activation_plan_tier_code: params[10],
-            activation_freelancer_share_jod: params[11],
-            activation_company_share_jod: params[12],
-            activation_reviewer_share_jod: params[13],
-            activation_inventory_item_id: params[14],
+            application_deadline_at: hasDeadline ? params[8] : null,
+            activation_campaign_id: hasDeadline ? params[9] : params[8],
+            activation_wave_id: hasDeadline ? params[10] : params[9],
+            activation_plan_tier_code: hasDeadline ? params[11] : params[10],
+            activation_freelancer_share_jod: hasDeadline ? params[12] : params[11],
+            activation_company_share_jod: hasDeadline ? params[13] : params[12],
+            activation_reviewer_share_jod: hasDeadline ? params[14] : params[13],
+            activation_inventory_item_id: hasDeadline ? params[15] : params[14],
+            current_bid_collection_round_id: null,
             status: "published",
             published_at: `${mem.runDate || "2026-08-20"}T12:00:00.000Z`,
           };

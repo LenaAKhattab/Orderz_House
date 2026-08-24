@@ -269,7 +269,10 @@ async function evaluateAutoAssignmentReadiness(articleId, { client = null } = {}
       progress?.requiredBidCount ?? progress?.required ?? article.required_bid_count,
       10,
     );
-    const qualified = toInt(progress?.currentCount ?? progress?.count, 0);
+    const qualified = toInt(
+      progress?.currentBidCount ?? progress?.currentCount ?? progress?.current ?? progress?.count,
+      0,
+    );
     if (qualified < required) {
       return {
         ready: false,

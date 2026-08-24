@@ -16,11 +16,12 @@ function read(rel) {
 }
 
 describe("B7A Freelancer economy UX", () => {
-  it("plans page mounts Bid Credits + Membership; not Work Token wallet", () => {
+  it("plans page mounts Membership; not Bid Credits summary or Work Token wallet", () => {
     const page = read("pages/dashboard/FreelancerPlansPage.jsx");
-    assert.match(page, /FreelancerBidCreditsCard/);
     assert.match(page, /FreelancerMarketplaceMembershipCard/);
+    assert.doesNotMatch(page, /FreelancerBidCreditsCard/);
     assert.doesNotMatch(page, /FreelancerWorkTokenWalletCard/);
+    assert.doesNotMatch(page, /العروض المتاحة/);
   });
 });
 
@@ -53,13 +54,15 @@ describe("B7A localization orphans", () => {
 });
 
 describe("B7A public plans marketing", () => {
-  it("plans hero describes Bids / Priority Uses / Membership", () => {
+  it("plans hero describes Bids, daily limits, and project caps", () => {
     const en = JSON.parse(read("locales/en/plans.json"));
     const ar = JSON.parse(read("locales/ar/plans.json"));
     assert.match(en.hero.subtitle, /Bids/);
-    assert.match(en.hero.subtitle, /Priority Uses/);
+    assert.match(en.hero.subtitle, /daily limits/i);
+    assert.match(en.hero.subtitle, /project caps/i);
     assert.match(ar.hero.subtitle, /عروض/);
-    assert.match(ar.hero.subtitle, /أولوية/);
+    assert.match(ar.hero.subtitle, /الحد اليومي/);
+    assert.match(ar.hero.subtitle, /سقف المشاريع/);
     assert.doesNotMatch(en.hero.subtitle, /Work Token/i);
     assert.doesNotMatch(ar.hero.subtitle, /Work Token/i);
   });
