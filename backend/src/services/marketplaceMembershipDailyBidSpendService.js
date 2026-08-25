@@ -42,7 +42,7 @@ async function resolveDailyBidSpendLimit(client, freelancerUserId) {
        JOIN marketplace_membership_plans p ON p.id = m.marketplace_plan_id
       WHERE m.freelancer_user_id = $1
         AND m.is_current = TRUE
-        AND m.status IN ('active', 'cancel_at_period_end')
+        AND m.status IN ('active', 'cancel_at_period_end', 'purchased_pending_start')
       LIMIT 1`,
     [Number(freelancerUserId)],
   );

@@ -236,6 +236,21 @@ async function chargeNormalApplicationBidCreditOnFirstBid({
     now,
   });
 
+  // M4.1: avoid deadlock — pending-start has no cycle unlock yet; grant capped application Bids.
+  try {
+    const pendingStartBids = require("./marketplacePendingStartBidAllowanceService");
+    await pendingStartBids.ensurePurchasedPendingStartApplicationBidAllowance({
+      client,
+      freelancerUserId: Number(freelancerUserId),
+      now,
+      actorUserId: actorUserId != null ? Number(actorUserId) : Number(freelancerUserId),
+    });
+  } catch (allowErr) {
+    if (allowErr?.code !== "42P01" && allowErr?.code !== "42703" && allowErr?.statusCode !== 503) {
+      throw allowErr;
+    }
+  }
+
   // E1: membership daily Bid spend gate (unified wallet — before FEFO). Quantity-aware.
   try {
     const dailySpend = require("./marketplaceMembershipDailyBidSpendService");

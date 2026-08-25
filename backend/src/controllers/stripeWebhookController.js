@@ -1010,6 +1010,14 @@ async function applyCheckoutSessionCompleted(session, dbPool = pool) {
     const purchases = require("../services/marketplaceBidCreditPurchasesService");
     return purchases.applyBidCreditPackageCheckoutSessionCompleted(session, meta, dbPool);
   }
+  if (purpose === "marketplace_membership_checkout") {
+    const membershipCheckout = require("../services/marketplaceMembershipCheckoutService");
+    return membershipCheckout.applyMarketplaceMembershipCheckoutSessionCompleted(
+      session,
+      meta,
+      dbPool,
+    );
+  }
   if (!["client_fixed_order", "client_selected_bid"].includes(purpose)) {
     return { status: "ignored", reason: "unknown_checkout_purpose" };
   }

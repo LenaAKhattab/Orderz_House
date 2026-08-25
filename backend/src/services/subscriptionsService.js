@@ -710,6 +710,27 @@ async function activateCurrentSubscriptionOnFirstAcceptedOrder(
     throw err;
   }
 
+  // Marketplace-M4: start purchased_pending_start paid term on the same first-real-order
+  // event as legacy subscription activation (accept/assign/award). Soft-fails if schema missing.
+  try {
+    const marketplaceMembershipsService = require("./marketplaceMembershipsService");
+    if (typeof marketplaceMembershipsService.maybeStartMarketplaceMembershipOnFirstRealOrder === "function") {
+      await marketplaceMembershipsService.maybeStartMarketplaceMembershipOnFirstRealOrder(
+        {
+          freelancerUserId,
+          orderId: oid,
+          triggeredAt: at,
+        },
+        runner,
+      );
+    }
+  } catch (e) {
+    console.warn(
+      "[marketplace-membership] first-real-order start failed (non-blocking):",
+      e && e.message ? e.message : e,
+    );
+  }
+
   const { rows } = await runner.query(
     `SELECT
        fs.*,

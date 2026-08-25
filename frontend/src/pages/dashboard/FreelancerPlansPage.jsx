@@ -6,6 +6,7 @@ import FreelancerPlansScreenSkeleton from "../../components/plans/FreelancerPlan
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import { useFreelancerPlansCheckout } from "../../hooks/useFreelancerPlansCheckout";
 import { useFreelancerPlansScreen } from "../../hooks/useFreelancerPlansScreen";
+import { useMarketplaceMembershipCheckout } from "../../hooks/useMarketplaceMembershipCheckout";
 import { useFreelancerMarketplaceContext } from "../../hooks/useFreelancerMarketplaceContext";
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
 import { formatJoDateMedium, getPlanOrderValueRangeLabel } from "../../utils/freelancerDashboardData";
@@ -60,7 +61,19 @@ export default function FreelancerPlansPage() {
     screenLoading,
     membership,
     membershipError,
+    applyMembershipSnapshot,
   } = useFreelancerPlansScreen();
+
+  const {
+    checkoutBusyPlanId: marketplaceCheckoutBusyPlanId,
+    checkoutError: marketplaceCheckoutError,
+    returnBanner,
+    dismissReturnBanner,
+    startMarketplaceCheckout,
+  } = useMarketplaceMembershipCheckout({
+    enabled: true,
+    onMembershipUpdated: applyMembershipSnapshot,
+  });
 
   const { eligibility } = useFreelancerMarketplaceContext();
 
@@ -114,6 +127,29 @@ export default function FreelancerPlansPage() {
           </section>
         ) : null}
 
+        {returnBanner ? (
+          <section
+            className={`fp-surface fp-checkout-banner fp-checkout-banner--${returnBanner.kind}`}
+            role="status"
+            data-testid="marketplace-membership-checkout-banner"
+          >
+            <div className="fp-checkout-banner__copy">
+              <h2 className="fp-checkout-banner__title">{returnBanner.title}</h2>
+              <p className="fp-checkout-banner__message">{returnBanner.message}</p>
+              {returnBanner.webhookHint ? (
+                <p className="fp-checkout-banner__hint">{returnBanner.webhookHint}</p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              className="fp-checkout-banner__dismiss"
+              onClick={dismissReturnBanner}
+            >
+              {t("freelancerDashboard.marketplaceMembership.dismissBanner")}
+            </button>
+          </section>
+        ) : null}
+
         {/* Until catalog is known, never render legacy OR marketplace status (prevents flash). */}
         {screenLoading || !catalogResolved ? (
           <FreelancerPlansScreenSkeleton catalog={catalog} catalogResolved={catalogResolved} />
@@ -125,7 +161,9 @@ export default function FreelancerPlansPage() {
               catalogPlans={plans}
             />
             <section className="fp-surface fp-pricing-wrap" aria-label={catalogAria}>
-              {error ? <p className="fp-error">{error}</p> : null}
+              {error || marketplaceCheckoutError ? (
+                <p className="fp-error">{error || marketplaceCheckoutError}</p>
+              ) : null}
               {!error ? (
                 <PricingSection
                   variant="dashboard"
@@ -133,10 +171,10 @@ export default function FreelancerPlansPage() {
                   plans={plans}
                   currentSubscription={null}
                   hasBlockingSubscription={false}
-                  checkoutBusyPlanId={null}
+                  checkoutBusyPlanId={marketplaceCheckoutBusyPlanId}
                   activationFeeNeedsPayment={false}
                   activationFee={null}
-                  onCta={undefined}
+                  onCta={startMarketplaceCheckout}
                 />
               ) : null}
             </section>

@@ -121,6 +121,8 @@
     "autoActivated": "Activated automatically",
     "companyActivation": "Activated through company",
     "viewMembership": "View membership",
+    "buyMembership": "Buy package",
+    "activateStarter": "Activate free plan",
     "startNow": "Start now"
   },
   "pages": {

@@ -42,7 +42,7 @@ describe("FreelancerMarketplaceMembershipCard wiring", () => {
     assert.match(api, /\/freelancer\/marketplace-membership/);
   });
 
-  it("presents Marketplace-only inactive/active copy without architecture explanations", () => {
+  it("presents Marketplace-only inactive/active/pending-start copy without architecture explanations", () => {
     const card = fs.readFileSync(
       path.join(__dirname, "FreelancerMarketplaceMembershipCard.jsx"),
       "utf8",
@@ -54,8 +54,12 @@ describe("FreelancerMarketplaceMembershipCard wiring", () => {
     assert.match(card, /marketplaceMembership\.none/);
     assert.match(card, /marketplaceMembership\.noneHint/);
     assert.match(card, /marketplaceMembership\.currentEyebrow/);
+    assert.match(card, /purchased_pending_start/);
+    assert.match(card, /marketplaceMembership\.purchasedTitle/);
     assert.match(ar, /لا توجد عضوية عمل حر نشطة/);
     assert.match(ar, /اختر إحدى الباقات أدناه لبدء عضويتك/);
+    assert.match(ar, /تم شراء العضوية/);
+    assert.match(ar, /لن تبدأ مدة الاشتراك إلا عند استلامك أول طلب/);
     assert.doesNotMatch(ar, /منفصل عن عضوية|اشتراك المنصة الأساسي|architecture/i);
   });
 });

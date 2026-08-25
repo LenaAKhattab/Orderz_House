@@ -22,6 +22,7 @@ const {
 } = require("../constants/pantryMembershipBid");
 const { evaluateProjectValueEligibility } = require("./marketplaceMembershipEligibilityService");
 const { isBenefitUsableStatus } = require("../constants/marketplaceMemberships");
+const { isApplicationEligibleStatus } = require("../utils/marketplaceMembershipPendingStart");
 const {
   getMarketplaceEconomySettings,
   isBidCreditsEngineActive,
@@ -183,9 +184,10 @@ async function loadUsableMembershipPlan(client, freelancerUserId) {
     [Number(freelancerUserId)],
   );
   const row = rows[0];
-  if (!row || !isBenefitUsableStatus(row.status)) return null;
+  if (!row || !isApplicationEligibleStatus(row.status)) return null;
   return {
     tierCode: String(row.tier_code || "").toLowerCase(),
+    status: String(row.status || ""),
     projectMinValueJod: row.project_min_value_jod != null ? Number(row.project_min_value_jod) : 1,
     maxRealOrderValueJod:
       row.max_real_order_value_jod != null ? Number(row.max_real_order_value_jod) : null,
@@ -383,8 +385,25 @@ async function maybeAutoClosePantryOnTargetReached(client, requestRow, { now = n
 
 async function assertMembershipAndPantryEligibility(client, freelancerUserId, requestRow, { now } = {}) {
   const eligibility = require("./marketplaceMembershipEligibilityService");
+
+  let membershipPlan = null;
   try {
-    await eligibility.assertMarketplaceVerificationComplete(client, freelancerUserId);
+    membershipPlan = await loadUsableMembershipPlan(client, freelancerUserId);
+  } catch (err) {
+    if (err?.code === "42P01" || err?.code === "42703") membershipPlan = null;
+    else throw err;
+  }
+
+  try {
+    await eligibility.assertMarketplaceApplyGates(client, freelancerUserId, {
+      membership: membershipPlan
+        ? {
+            status: membershipPlan.status,
+            plan: { tierCode: membershipPlan.tierCode },
+            tierCode: membershipPlan.tierCode,
+          }
+        : null,
+    });
   } catch (err) {
     if (
       err?.publicCode === "MEMBERSHIP_VERIFICATION_REQUIRED" ||
@@ -393,15 +412,14 @@ async function assertMembershipAndPantryEligibility(client, freelancerUserId, re
     ) {
       httpPantryBlock(PANTRY_MEMBERSHIP_BID_ERROR_CODES.PANTRY_VERIFICATION_REQUIRED, 403);
     }
+    if (
+      err?.publicCode === "MEMBERSHIP_TRAINING_REQUIRED" ||
+      err?.publicCode === "MEMBERSHIP_TRAINING_CONFIG_MISSING" ||
+      err?.publicCode === "MEMBERSHIP_TRAINING_INCOMPLETE"
+    ) {
+      httpPantryBlock(PANTRY_MEMBERSHIP_BID_ERROR_CODES.PANTRY_VERIFICATION_REQUIRED, 403);
+    }
     throw err;
-  }
-
-  let membershipPlan = null;
-  try {
-    membershipPlan = await loadUsableMembershipPlan(client, freelancerUserId);
-  } catch (err) {
-    if (err?.code === "42P01" || err?.code === "42703") membershipPlan = null;
-    else throw err;
   }
 
   const starterConsumed =
@@ -428,6 +446,19 @@ async function assertSpendableBidsIfEngineOn(client, freelancerUserId, requestRo
   }
   if (!(await marketplaceBidCreditsSchemaReady(client))) {
     throwPantryIntegrationPaused();
+  }
+  try {
+    const pendingStartBids = require("./marketplacePendingStartBidAllowanceService");
+    await pendingStartBids.ensurePurchasedPendingStartApplicationBidAllowance({
+      client,
+      freelancerUserId: Number(freelancerUserId),
+      now,
+      actorUserId: Number(freelancerUserId),
+    });
+  } catch (allowErr) {
+    if (allowErr?.code !== "42P01" && allowErr?.code !== "42703" && allowErr?.statusCode !== 503) {
+      throw allowErr;
+    }
   }
   const bidCost = resolvePantryApplicationBidCost(requestRow);
   const available = await accounting.sumAvailableBidCredits({
@@ -459,6 +490,20 @@ async function chargePantryApplicationBids({
   }
   if (!(await marketplaceBidCreditsSchemaReady(client)) || !(await pantryEconomySchemaReady(client))) {
     throwPantryIntegrationPaused();
+  }
+
+  try {
+    const pendingStartBids = require("./marketplacePendingStartBidAllowanceService");
+    await pendingStartBids.ensurePurchasedPendingStartApplicationBidAllowance({
+      client,
+      freelancerUserId: Number(freelancerUserId),
+      now,
+      actorUserId: actorUserId != null ? Number(actorUserId) : Number(freelancerUserId),
+    });
+  } catch (allowErr) {
+    if (allowErr?.code !== "42P01" && allowErr?.code !== "42703" && allowErr?.statusCode !== 503) {
+      throw allowErr;
+    }
   }
 
   const existing = await client.query(

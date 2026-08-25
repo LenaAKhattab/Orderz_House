@@ -1,7 +1,12 @@
 .env
+.env.local
+.env.staging
 .env.fazat-e2e
 .env.fazat-e2e.local
 .env.fazat-pilot.local
+# Keep example templates trackable
+!.env.example
+!.env.*.example
 secrets/
 **/firebase-service-account*.json
 **/serviceAccount*.json

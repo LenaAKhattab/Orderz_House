@@ -42,6 +42,7 @@ const {
   resolveCurrentMarketplaceMembershipForFreelancer,
 } = require("./marketplaceMembershipsService");
 const { isBenefitUsableStatus } = require("../constants/marketplaceMemberships");
+const { isApplicationEligibleStatus } = require("../utils/marketplaceMembershipPendingStart");
 const reservationService = require("./marketplaceBidCreditReservationService");
 const {
   assertBildazoAuthorLinkedForArticleApply,
@@ -418,12 +419,15 @@ async function resolveUsableMembershipContext(client, freelancerUserId) {
   const membership = await resolveCurrentMarketplaceMembershipForFreelancer(freelancerUserId, {
     client,
   });
-  if (!membership || !isBenefitUsableStatus(membership.status)) {
+  if (!membership || !isApplicationEligibleStatus(membership.status)) {
     throw createAppError("No usable Marketplace Membership.", 403, {
       exposeToClient: true,
       publicCode: ARTICLE_APPLICATION_ERROR_CODES.ARTICLE_NO_USABLE_MEMBERSHIP,
     });
   }
+
+  // M4: purchased_pending_start may apply only after identity + training gates.
+  await eligibility.assertMarketplaceApplyGates(client, freelancerUserId, { membership });
 
   const accessLevel = Number(membership.plan?.articleAccessLevel) || 1;
   const cycle = await marketplaceMembershipCyclesService.getCurrentActiveCycle(membership.id, {
@@ -708,7 +712,7 @@ async function submitArticleApplication({
     // E2: reserve Bids (not immediate B5 consume). Final approval consumes reservation.
     const economy = await economyService.getArticleEconomyConfig(client);
     const bidCost = economyService.resolveBidCostForCampaign(article, economy);
-    await eligibility.assertMarketplaceVerificationComplete(client, fid);
+    // Verification/training already enforced in resolveUsableMembershipContext (M4).
 
     // Campaign gates: deadline / target / budget / eligible tiers
     if (article.application_deadline_at && new Date(article.application_deadline_at) <= new Date(now)) {
@@ -741,6 +745,22 @@ async function submitArticleApplication({
         exposeToClient: true,
         publicCode: ARTICLE_E2_ERROR_CODES.ARTICLE_CAMPAIGN_NOT_ELIGIBLE_TIER,
       });
+    }
+
+    // M4.1: pending-start has no cycle unlock yet — grant capped application Bids before reserve.
+    try {
+      const pendingStartBids = require("./marketplacePendingStartBidAllowanceService");
+      await pendingStartBids.ensurePurchasedPendingStartApplicationBidAllowance({
+        client,
+        freelancerUserId: fid,
+        membership,
+        now,
+        actorUserId: fid,
+      });
+    } catch (allowErr) {
+      if (allowErr?.code !== "42P01" && allowErr?.code !== "42703" && allowErr?.statusCode !== 503) {
+        throw allowErr;
+      }
     }
 
     const reserve = await reservationService.reserveBidCreditsFefo({
@@ -1064,6 +1084,27 @@ async function listApplicationsForArticleAdmin(articleId, { limit = 100, offset 
   });
 }
 
+/** Marketplace-M4: start purchased_pending_start when freelancer is selected for a real Mini Article task. */
+async function maybeStartMembershipAfterArticleSelection(freelancerUserId, articleApplicationId) {
+  try {
+    const marketplaceMembershipsService = require("./marketplaceMembershipsService");
+    if (typeof marketplaceMembershipsService.maybeStartMarketplaceMembershipOnFirstRealOrder !== "function") {
+      return;
+    }
+    await marketplaceMembershipsService.maybeStartMarketplaceMembershipOnFirstRealOrder({
+      freelancerUserId: Number(freelancerUserId),
+      articleApplicationId: Number(articleApplicationId),
+      triggerSource: "marketplace_article_application",
+      triggeredAt: new Date(),
+    });
+  } catch (e) {
+    console.warn(
+      "[marketplace-membership] article-selection start failed (non-blocking):",
+      e && e.message ? e.message : e,
+    );
+  }
+}
+
 async function selectArticleApplication({
   applicationId,
   actorUserId,
@@ -1110,6 +1151,7 @@ async function selectArticleApplication({
     }
     if (row.status === "selected") {
       if (ownClient) await client.query("COMMIT");
+      await maybeStartMembershipAfterArticleSelection(row.freelancer_user_id, id);
       return { application: mapApplicationRow(row), alreadySelected: true };
     }
     if (row.status !== "pending") {
@@ -1250,6 +1292,8 @@ async function selectArticleApplication({
         /* non-blocking */
       }
 
+      await maybeStartMembershipAfterArticleSelection(row.freelancer_user_id, id);
+
       return {
         application: mapApplicationRow(updated[0]),
         alreadySelected: false,
@@ -1309,6 +1353,8 @@ async function selectArticleApplication({
     } catch {
       /* non-blocking */
     }
+
+    await maybeStartMembershipAfterArticleSelection(row.freelancer_user_id, id);
 
     return {
       application: mapApplicationRow(updated[0]),

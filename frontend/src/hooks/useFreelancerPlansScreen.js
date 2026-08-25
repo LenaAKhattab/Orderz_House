@@ -49,6 +49,29 @@ export function useFreelancerPlansScreen() {
   const [membershipError, setMembershipError] = useState(null);
   const generationRef = useRef(0);
 
+  const applyMembershipSnapshot = (data) => {
+    setMembership(data);
+    setMembershipError(null);
+    setMembershipLoading(false);
+  };
+
+  const refreshMembership = async () => {
+    if (!userId) return null;
+    const generation = ++generationRef.current;
+    setMembershipLoading(true);
+    try {
+      const data = await fetchFreelancerMarketplaceMembershipCached(userId, { force: true });
+      if (generation !== generationRef.current) return data;
+      applyMembershipSnapshot(data);
+      return data;
+    } catch (err) {
+      if (generation !== generationRef.current) return null;
+      setMembershipError(err?.response?.data?.message || err?.message || "error");
+      setMembershipLoading(false);
+      return null;
+    }
+  };
+
   useEffect(() => {
     if (!userId || !hintedMarketplace) {
       if (catalogResolved && !isMarketplaceCatalog) {
@@ -109,5 +132,7 @@ export function useFreelancerPlansScreen() {
     membership,
     membershipLoading,
     membershipError,
+    refreshMembership,
+    applyMembershipSnapshot,
   };
 }

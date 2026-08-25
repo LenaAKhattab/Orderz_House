@@ -133,6 +133,28 @@ async function rejectActivationRequest(req, res, next) {
   }
 }
 
+/**
+ * Marketplace-M2: Stripe Checkout for SILVER/PRO/ELITE.
+ * Does NOT grant membership — M3 webhook only.
+ */
+async function createMarketplaceMembershipCheckout(req, res, next) {
+  try {
+    const checkoutService = require("../services/marketplaceMembershipCheckoutService");
+    const freelancerUserId = req.auth?.userId ?? req.user?.sub ?? req.user?.id;
+    const planCode = req.body?.planCode ?? req.body?.tierCode;
+    const result = await checkoutService.createMarketplaceMembershipCheckoutSession({
+      freelancerUserId,
+      planCode,
+      locale: String(req.headers["accept-language"] || "ar").toLowerCase().startsWith("en")
+        ? "en"
+        : "ar",
+    });
+    return res.status(201).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   getMyMarketplaceMembership,
   listAdminMarketplaceMemberships,
@@ -142,6 +164,7 @@ module.exports = {
   requestPaidActivation,
   approveActivationRequest,
   rejectActivationRequest,
+  createMarketplaceMembershipCheckout,
   // Exported for route wiring clarity — usage mutations stay internal
   _internalUsageService: marketplacePriorityBidUsageService,
 };

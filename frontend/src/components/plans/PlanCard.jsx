@@ -9,6 +9,11 @@ import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 import { useDisplayCurrency } from "../../hooks/useDisplayCurrency";
 import { ApproximateCurrencyLine } from "../money/JodMoneyDisplay";
 import MembershipPlanCardBody, { MembershipPlanTitle } from "./MembershipPlanCardBody";
+import {
+  isPaidMarketplaceMembershipTierCode,
+  isStarterMarketplaceMembershipTierCode,
+  resolveMarketplaceCheckoutPlanCode,
+} from "../../lib/marketplaceMembership/marketplaceMembershipCheckoutUi";
 
 const MOBILE_FEATURE_PREVIEW = 3;
 const DESKTOP_PUBLIC_FEATURE_LIMIT = 5;
@@ -141,7 +146,15 @@ const PlanCard = ({
         : null;
 
   const ctaLabel = isMarketplaceMembership
-    ? customButtonLabel || t("plans.cta.viewMembership")
+    ? checkoutBusy
+      ? t("common.loading.redirecting")
+      : typeof onCta === "function"
+        ? isPaidMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan))
+          ? t("plans.cta.buyMembership")
+          : isStarterMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan))
+            ? t("plans.cta.activateStarter")
+            : customButtonLabel || t("plans.cta.viewMembership")
+        : customButtonLabel || t("plans.cta.viewMembership")
     : freePlanPayFee
       ? t("plans.cta.payActivationFee")
       : customButtonLabel
@@ -166,13 +179,16 @@ const PlanCard = ({
                           ? t("plans.cta.companyActivation")
                           : t("plans.cta.startNow");
   const usePrimaryCta = isMarketplaceMembership
-    ? Boolean(featured && (isGuest || isFreelancer) && !isLoggedNonFreelancer)
+    ? Boolean(
+        (typeof onCta === "function" && isFreelancer) ||
+          (featured && (isGuest || isFreelancer) && !isLoggedNonFreelancer),
+      )
     : featured &&
       (isGuest || (isFreelancer && (canSelfCheckout || freePlanPayFee))) &&
       !isBlockedBySubscription &&
       !isCurrentPlanLocked;
   const isLocked = isMarketplaceMembership
-    ? isLoggedNonFreelancer
+    ? isLoggedNonFreelancer || (typeof onCta === "function" && checkoutBusy)
     : isLoggedNonFreelancer ||
       isCurrentPlanLocked ||
       isLowerTier ||
@@ -202,6 +218,11 @@ const PlanCard = ({
         return;
       }
       if (!isFreelancer) return;
+      if (typeof onCta === "function") {
+        if (checkoutBusy) return;
+        onCta(plan);
+        return;
+      }
       navigate("/dashboard/freelancer/plans");
       return;
     }

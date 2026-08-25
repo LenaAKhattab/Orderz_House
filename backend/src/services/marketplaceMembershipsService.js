@@ -1,7 +1,7 @@
 /**
- * Marketplace Memberships (باقات العمل) — Phase 3 / 3.1 domain.
+ * Marketplace Memberships (باقات العمل) — Phase 3 / 3.1 / M1 domain.
  * Independent of freelancer_subscriptions / legacy plans.
- * No Stripe checkout. No wallet. No auctions. No Production purchase wiring.
+ * M1–M4: purchased_pending_start, Stripe grant, eligibility while pending, start on first real order/article.
  */
 
 const { pool } = require("../config/db");
@@ -25,6 +25,13 @@ const {
   marketplacePlanJoinSelectExtras,
 } = require("../utils/marketplaceMembershipPlanSchema");
 const { defaultArticleAccessLevelForTier } = require("../constants/marketplaceMembershipPlans");
+const {
+  PURCHASED_PENDING_START_MESSAGE_AR,
+  isPaidMarketplaceMembershipTier,
+  computePaidTermWindowFromDurationDays,
+  decideMarketplaceMembershipFirstOrderStart,
+  isPurchasedPendingStartStatus,
+} = require("../utils/marketplaceMembershipPendingStart");
 
 function isTruthyFlag(value) {
   return value === true || value === "t" || value === 1 || value === "1";
@@ -56,6 +63,10 @@ function mapMembership(row) {
     startedAt: row.started_at || null,
     paidTermStartsAt: row.paid_term_starts_at || null,
     paidTermEndsAt: row.paid_term_ends_at || null,
+    purchasedAt: row.purchased_at || null,
+    firstOrderStartedAt: row.first_order_started_at || null,
+    startTriggerOrderId: toIdString(row.start_trigger_order_id),
+    purchasePaymentReference: row.purchase_payment_reference || null,
     cancelAtPeriodEnd: isTruthyFlag(row.cancel_at_period_end),
     cancelledAt: row.cancelled_at || null,
     endedAt: row.ended_at || null,
@@ -66,6 +77,9 @@ function mapMembership(row) {
     updatedByUserId: toIdString(row.updated_by_user_id),
     createdAt: row.created_at || null,
     updatedAt: row.updated_at || null,
+    statusMessageAr: isPurchasedPendingStartStatus(row.status)
+      ? PURCHASED_PENDING_START_MESSAGE_AR
+      : null,
   };
 }
 
@@ -469,6 +483,45 @@ async function getFreelancerMarketplaceMembershipSnapshot(freelancerUserId, opti
     const used = cycle ? Number(cycle.priorityBidUsesConsumed) || 0 : 0;
     const remaining = Math.max(allowed - used, 0);
     const benefitsUsable = isBenefitUsableStatus(current.status);
+    const {
+      isApplicationEligibleStatus,
+      isPurchasedPendingStartStatus,
+      PURCHASED_PENDING_START_MESSAGE_AR,
+    } = require("../utils/marketplaceMembershipPendingStart");
+    const applicationEligible = isApplicationEligibleStatus(current.status);
+    const pendingStart = isPurchasedPendingStartStatus(current.status);
+    const termStarted = benefitsUsable && Boolean(current.paidTermStartsAt);
+
+    const eligibility = require("./marketplaceMembershipEligibilityService");
+    let canApply = false;
+    let verificationComplete = null;
+    let trainingComplete = null;
+    if (applicationEligible) {
+      try {
+        await eligibility.assertMarketplaceApplyGates(options.client || null, freelancerUserId, {
+          membership: current,
+        });
+        canApply = true;
+        verificationComplete = true;
+        trainingComplete = true;
+      } catch (gateErr) {
+        canApply = false;
+        const code = String(gateErr?.publicCode || "");
+        if (code.includes("VERIFICATION") || /identit|verif/i.test(String(gateErr?.message || ""))) {
+          verificationComplete = false;
+        } else if (code.includes("TRAINING") || /train/i.test(String(gateErr?.message || ""))) {
+          verificationComplete = true;
+          trainingComplete = false;
+        }
+      }
+    }
+
+    const applyCapability = eligibility.evaluatePendingStartApplyCapability({
+      membershipStatus: current.status,
+      verificationComplete,
+      trainingComplete,
+      tierCode: current.plan?.tierCode,
+    });
 
     return {
       hasMembership: true,
@@ -480,7 +533,18 @@ async function getFreelancerMarketplaceMembershipSnapshot(freelancerUserId, opti
         startedAt: current.startedAt,
         paidTermStartsAt: current.paidTermStartsAt,
         paidTermEndsAt: current.paidTermEndsAt,
+        purchasedAt: current.purchasedAt,
+        firstOrderStartedAt: current.firstOrderStartedAt,
+        startTriggerOrderId: current.startTriggerOrderId,
         cancelAtPeriodEnd: current.cancelAtPeriodEnd,
+        statusMessageAr:
+          current.statusMessageAr ||
+          (pendingStart ? PURCHASED_PENDING_START_MESSAGE_AR : null),
+        messageKey: pendingStart ? "marketplace_membership.purchased_pending_start" : null,
+        termStarted,
+        applicationEligible,
+        canApply,
+        entitled: applyCapability.entitled,
         plan: current.plan,
       },
       currentCycle: cycle
@@ -894,10 +958,521 @@ async function listMarketplaceMembershipsForAdmin({
   }
 }
 
+/**
+ * Marketplace-M1 — grant paid membership after payment (future Stripe webhook).
+ * Creates purchased_pending_start: entitlement owned, paid term NOT started.
+ * Does NOT require admin approval / company approval.
+ * Does NOT require KYC/training (purchase-before-gates; apply still gated elsewhere).
+ * Idempotent on purchasePaymentReference when provided.
+ */
+async function createPurchasedPendingStartMembership(input = {}) {
+  const freelancerUserId = Number(input.freelancerUserId);
+  const marketplacePlanId = Number(input.marketplacePlanId);
+  if (!Number.isInteger(freelancerUserId) || freelancerUserId < 1) {
+    throw createAppError("freelancerUserId is required.", 400, {
+      exposeToClient: true,
+      publicCode: "INVALID_FREELANCER",
+    });
+  }
+  if (!Number.isInteger(marketplacePlanId) || marketplacePlanId < 1) {
+    throw createAppError("marketplacePlanId is required.", 400, {
+      exposeToClient: true,
+      publicCode: "INVALID_MARKETPLACE_PLAN",
+    });
+  }
+
+  const source = String(input.source || "stripe").toLowerCase();
+  if (!MEMBERSHIP_SOURCES.includes(source)) {
+    throw createAppError("Invalid membership source.", 400, {
+      exposeToClient: true,
+      publicCode: "INVALID_MEMBERSHIP_SOURCE",
+    });
+  }
+
+  const purchasePaymentReference =
+    input.purchasePaymentReference != null && String(input.purchasePaymentReference).trim() !== ""
+      ? String(input.purchasePaymentReference).trim()
+      : null;
+
+  const now = toUtcDate(input.now || new Date());
+  const { client, release, ownTxn } = await resolveDbClient(input.client);
+  try {
+    if (ownTxn) await client.query("BEGIN");
+
+    if (purchasePaymentReference) {
+      const existing = await client.query(
+        `SELECT * FROM freelancer_marketplace_memberships
+          WHERE purchase_payment_reference = $1
+          LIMIT 1
+          FOR UPDATE`,
+        [purchasePaymentReference],
+      );
+      if (existing.rows[0]) {
+        const membership = mapMembership(existing.rows[0]);
+        const plan = await marketplaceMembershipPlansService.getMarketplaceMembershipPlanById(
+          Number(existing.rows[0].marketplace_plan_id),
+          client,
+        );
+        if (plan) membership.plan = plan;
+        if (ownTxn) await client.query("COMMIT");
+        return { membership, created: false, idempotentReplay: true };
+      }
+    }
+
+    const { rows: userRows } = await client.query(
+      `SELECT id, role, is_active FROM users WHERE id = $1 FOR UPDATE`,
+      [freelancerUserId],
+    );
+    const user = userRows[0];
+    if (!user || user.role !== "freelancer" || user.is_active !== true) {
+      throw createAppError("Freelancer account is not eligible for Marketplace Membership.", 403, {
+        exposeToClient: true,
+        publicCode: "MEMBERSHIP_FREELANCER_INVALID",
+      });
+    }
+
+    const plan = await marketplaceMembershipPlansService.getMarketplaceMembershipPlanById(
+      marketplacePlanId,
+      client,
+    );
+    if (!plan || !plan.isActive) {
+      throw createAppError("Marketplace plan not found or inactive.", 404, {
+        exposeToClient: true,
+        publicCode: "MARKETPLACE_PLAN_NOT_FOUND",
+      });
+    }
+    if (!isPaidMarketplaceMembershipTier(plan.tierCode)) {
+      throw createAppError(
+        "Only paid SILVER/PRO/ELITE plans support purchased_pending_start.",
+        400,
+        {
+          exposeToClient: true,
+          publicCode: "MEMBERSHIP_PENDING_START_PAID_ONLY",
+          details: { tierCode: plan.tierCode },
+        },
+      );
+    }
+
+    // Supersede previous current membership (history preserved)
+    const prior = await client.query(
+      `SELECT id, status FROM freelancer_marketplace_memberships
+       WHERE freelancer_user_id = $1 AND is_current = TRUE
+       FOR UPDATE`,
+      [freelancerUserId],
+    );
+    for (const old of prior.rows) {
+      await client.query(
+        `UPDATE freelancer_marketplace_memberships
+         SET is_current = FALSE,
+             status = 'superseded',
+             ended_at = COALESCE(ended_at, $2),
+             updated_at = NOW(),
+             updated_by_user_id = $3
+         WHERE id = $1`,
+        [old.id, now.toISOString(), input.actorUserId || null],
+      );
+      await marketplaceMembershipCyclesService.closeActiveCycle({
+        membershipId: old.id,
+        client,
+        now,
+        actorUserId: input.actorUserId || null,
+      });
+      await writeAudit(client, {
+        membershipId: old.id,
+        freelancerUserId,
+        actorUserId: input.actorUserId || null,
+        action: MEMBERSHIP_AUDIT_ACTIONS.MEMBERSHIP_SUPERSEDED,
+        detail: { previousStatus: old.status, reason: "replaced_by_purchased_pending_start" },
+      });
+    }
+
+    const anchorDay = resolveCycleAnchorDay(now);
+    let membershipRow;
+    try {
+      const { rows } = await client.query(
+        `INSERT INTO freelancer_marketplace_memberships (
+           freelancer_user_id, marketplace_plan_id, is_current, status, source,
+           cycle_anchor_day, started_at, paid_term_starts_at, paid_term_ends_at,
+           purchased_at, first_order_started_at, start_trigger_order_id,
+           purchase_payment_reference,
+           auto_renew, notes, created_by_user_id, updated_by_user_id
+         ) VALUES (
+           $1, $2, TRUE, 'purchased_pending_start', $3,
+           $4, NULL, NULL, NULL,
+           $5, NULL, NULL,
+           $6,
+           $7, $8, $9, $9
+         )
+         RETURNING *`,
+        [
+          freelancerUserId,
+          marketplacePlanId,
+          source,
+          anchorDay,
+          now.toISOString(),
+          purchasePaymentReference,
+          Boolean(input.autoRenew),
+          input.notes || null,
+          input.actorUserId || null,
+        ],
+      );
+      membershipRow = rows[0];
+    } catch (err) {
+      if (isUniqueViolation(err) && purchasePaymentReference) {
+        const again = await client.query(
+          `SELECT * FROM freelancer_marketplace_memberships
+            WHERE purchase_payment_reference = $1 LIMIT 1`,
+          [purchasePaymentReference],
+        );
+        if (again.rows[0]) {
+          const membership = mapMembership(again.rows[0]);
+          membership.plan = plan;
+          if (ownTxn) await client.query("COMMIT");
+          return { membership, created: false, idempotentReplay: true };
+        }
+      }
+      if (err && err.code === "42703") {
+        throw createAppError(
+          "Marketplace pending-start columns missing. Apply migration 181 on a non-Production DB.",
+          503,
+          {
+            exposeToClient: false,
+            publicCode: "MEMBERSHIP_PENDING_START_SCHEMA_MISSING",
+            cause: err,
+          },
+        );
+      }
+      if (isUniqueViolation(err)) {
+        throw createAppError(
+          "Another Marketplace Membership is already current for this freelancer.",
+          409,
+          {
+            exposeToClient: true,
+            publicCode: "MARKETPLACE_MEMBERSHIP_CONFLICT",
+            cause: err,
+          },
+        );
+      }
+      throw err;
+    }
+
+    const membership = mapMembership(membershipRow);
+    membership.plan = plan;
+
+    await writeAudit(client, {
+      membershipId: membership.id,
+      freelancerUserId,
+      actorUserId: input.actorUserId || null,
+      action: MEMBERSHIP_AUDIT_ACTIONS.MEMBERSHIP_CREATED,
+      detail: {
+        marketplacePlanId: String(marketplacePlanId),
+        source,
+        status: "purchased_pending_start",
+        purchasedAt: now.toISOString(),
+        purchasePaymentReference,
+        paidTermStartsAt: null,
+        paidTermEndsAt: null,
+      },
+    });
+    await writeAudit(client, {
+      membershipId: membership.id,
+      freelancerUserId,
+      actorUserId: input.actorUserId || null,
+      action: MEMBERSHIP_AUDIT_ACTIONS.MEMBERSHIP_PURCHASED_PENDING_START,
+      detail: {
+        status: "purchased_pending_start",
+        messageAr: PURCHASED_PENDING_START_MESSAGE_AR,
+      },
+    });
+
+    if (ownTxn) await client.query("COMMIT");
+    return { membership, created: true, idempotentReplay: false, currentCycle: null };
+  } catch (err) {
+    if (ownTxn) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+    }
+    throw err;
+  } finally {
+    if (release) client.release();
+  }
+}
+
+/**
+ * Marketplace-M4 — start paid term on first real order / real marketplace article assignment.
+ * Idempotent: already-active membership with term started is a no-op.
+ * Does NOT start on fake/training/simulation orders.
+ * Does NOT start on mere application/bid submission.
+ */
+async function startMarketplaceMembershipOnFirstRealOrder(input = {}) {
+  const freelancerUserId = Number(input.freelancerUserId);
+  if (!Number.isInteger(freelancerUserId) || freelancerUserId < 1) {
+    throw createAppError("freelancerUserId is required.", 400, {
+      exposeToClient: true,
+      publicCode: "INVALID_FREELANCER",
+    });
+  }
+
+  const triggerSource = String(input.triggerSource || "order").trim() || "order";
+  const orderIdRaw = input.orderId != null ? Number(input.orderId) : null;
+  const articleApplicationId =
+    input.articleApplicationId != null ? Number(input.articleApplicationId) : null;
+
+  const isArticleTrigger = triggerSource === "marketplace_article_application";
+  if (!isArticleTrigger) {
+    if (!Number.isInteger(orderIdRaw) || orderIdRaw < 1) {
+      throw createAppError("orderId is required.", 400, {
+        exposeToClient: true,
+        publicCode: "INVALID_ORDER",
+      });
+    }
+  } else if (!Number.isInteger(articleApplicationId) || articleApplicationId < 1) {
+    throw createAppError("articleApplicationId is required for article trigger.", 400, {
+      exposeToClient: true,
+      publicCode: "INVALID_ARTICLE_APPLICATION",
+    });
+  }
+
+  const now = toUtcDate(input.now || input.triggeredAt || new Date());
+  const { client, release, ownTxn } = await resolveDbClient(input.client);
+  try {
+    if (ownTxn) await client.query("BEGIN");
+
+    const { rows: memRows } = await client.query(
+      `SELECT *
+         FROM freelancer_marketplace_memberships
+        WHERE freelancer_user_id = $1 AND is_current = TRUE
+        LIMIT 1
+        FOR UPDATE`,
+      [freelancerUserId],
+    );
+    const mem = memRows[0];
+    if (!mem) {
+      if (ownTxn) await client.query("COMMIT");
+      return { membership: null, started: false, reason: "no_current_membership" };
+    }
+
+    let orderRow = null;
+    let startTriggerOrderId = null;
+    if (isArticleTrigger) {
+      // Real paid Mini Article assignment — not an orders row; do not set start_trigger_order_id.
+      orderRow = {
+        id: articleApplicationId,
+        source_type: "client_created",
+        is_fake: false,
+        is_fake_or_training: false,
+      };
+    } else {
+      const { rows: orderRows } = await client.query(
+        `SELECT id, source_type, assigned_freelancer_id, accepted_freelancer_id, received_at
+           FROM orders
+          WHERE id = $1
+          LIMIT 1`,
+        [orderIdRaw],
+      );
+      orderRow = orderRows[0] || null;
+      startTriggerOrderId = orderIdRaw;
+    }
+
+    const decision = decideMarketplaceMembershipFirstOrderStart({
+      membershipStatus: mem.status,
+      paidTermStartsAt: mem.paid_term_starts_at,
+      firstOrderStartedAt: mem.first_order_started_at,
+      orderRow,
+    });
+
+    if (decision === "noop_already_active") {
+      const membership = mapMembership(mem);
+      if (ownTxn) await client.query("COMMIT");
+      return { membership, started: false, reason: "already_active", idempotent: true };
+    }
+    if (decision === "skip_wrong_status") {
+      const membership = mapMembership(mem);
+      if (ownTxn) await client.query("COMMIT");
+      return { membership, started: false, reason: `status_${mem.status}` };
+    }
+    if (decision === "reject_missing_order") {
+      if (ownTxn) await client.query("COMMIT");
+      return {
+        membership: mapMembership(mem),
+        started: false,
+        reason: "order_not_found_in_orders",
+      };
+    }
+    if (decision === "reject_non_real") {
+      if (ownTxn) await client.query("COMMIT");
+      return {
+        membership: mapMembership(mem),
+        started: false,
+        reason: "non_real_order",
+      };
+    }
+
+    const plan = await marketplaceMembershipPlansService.getMarketplaceMembershipPlanById(
+      Number(mem.marketplace_plan_id),
+      client,
+    );
+    let durationDays = Number(plan?.cycleDurationDays);
+    if (!Number.isInteger(durationDays) || durationDays < 1) {
+      durationDays = 30;
+    }
+
+    const { paidTermStartsAt, paidTermEndsAt } = computePaidTermWindowFromDurationDays({
+      startsAt: now,
+      durationDays,
+    });
+    const anchorDay = resolveCycleAnchorDay(paidTermStartsAt);
+
+    let updatedRow;
+    try {
+      const { rows: updated } = await client.query(
+        `UPDATE freelancer_marketplace_memberships
+            SET status = 'active',
+                started_at = COALESCE(started_at, $2),
+                paid_term_starts_at = $2,
+                paid_term_ends_at = $3,
+                first_order_started_at = $2,
+                start_trigger_order_id = $4,
+                cycle_anchor_day = $5,
+                updated_at = NOW(),
+                updated_by_user_id = $6
+          WHERE id = $1
+            AND is_current = TRUE
+            AND status = 'purchased_pending_start'
+            AND paid_term_starts_at IS NULL
+          RETURNING *`,
+        [
+          mem.id,
+          paidTermStartsAt.toISOString(),
+          paidTermEndsAt.toISOString(),
+          startTriggerOrderId,
+          anchorDay,
+          input.actorUserId || null,
+        ],
+      );
+      updatedRow = updated[0] || null;
+    } catch (err) {
+      if (err && err.code === "42703") {
+        throw createAppError(
+          "Marketplace pending-start columns missing. Apply migration 181 on a non-Production DB.",
+          503,
+          {
+            exposeToClient: false,
+            publicCode: "MEMBERSHIP_PENDING_START_SCHEMA_MISSING",
+            cause: err,
+          },
+        );
+      }
+      throw err;
+    }
+
+    if (!updatedRow) {
+      const { rows: again } = await client.query(
+        `SELECT * FROM freelancer_marketplace_memberships WHERE id = $1`,
+        [mem.id],
+      );
+      const membership = mapMembership(again[0] || mem);
+      if (ownTxn) await client.query("COMMIT");
+      return { membership, started: false, reason: "concurrent_or_already_started", idempotent: true };
+    }
+
+    const membership = mapMembership(updatedRow);
+    if (plan) membership.plan = plan;
+
+    await writeAudit(client, {
+      membershipId: membership.id,
+      freelancerUserId,
+      actorUserId: input.actorUserId || null,
+      action: MEMBERSHIP_AUDIT_ACTIONS.MEMBERSHIP_TERM_STARTED_ON_FIRST_ORDER,
+      detail: {
+        orderId: startTriggerOrderId != null ? String(startTriggerOrderId) : null,
+        articleApplicationId: isArticleTrigger ? String(articleApplicationId) : null,
+        triggerSource,
+        paidTermStartsAt: paidTermStartsAt.toISOString(),
+        paidTermEndsAt: paidTermEndsAt.toISOString(),
+        durationDays,
+      },
+    });
+    await writeAudit(client, {
+      membershipId: membership.id,
+      freelancerUserId,
+      actorUserId: input.actorUserId || null,
+      action: MEMBERSHIP_AUDIT_ACTIONS.MEMBERSHIP_ACTIVATED,
+      detail: {
+        status: "active",
+        trigger: isArticleTrigger ? "first_real_article_assignment" : "first_real_order",
+        orderId: startTriggerOrderId != null ? String(startTriggerOrderId) : null,
+        articleApplicationId: isArticleTrigger ? String(articleApplicationId) : null,
+      },
+    });
+
+    let cycle = null;
+    if (plan) {
+      cycle = await marketplaceMembershipCyclesService.createAndActivateCycleForMembership({
+        membership: updatedRow,
+        plan,
+        cycleNumber: 1,
+        now: paidTermStartsAt,
+        client,
+        actorUserId: input.actorUserId || null,
+      });
+    }
+
+    if (ownTxn) await client.query("COMMIT");
+    return {
+      membership,
+      started: true,
+      reason: isArticleTrigger
+        ? "started_on_first_real_article_assignment"
+        : "started_on_first_real_order",
+      currentCycle: cycle,
+    };
+  } catch (err) {
+    if (ownTxn) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+    }
+    throw err;
+  } finally {
+    if (release) client.release();
+  }
+}
+
+/**
+ * Best-effort lifecycle hook used next to legacy subscription first-order activation.
+ * Never throws for "no marketplace membership" / wrong status — only unexpected failures.
+ */
+async function maybeStartMarketplaceMembershipOnFirstRealOrder(input = {}, client = null) {
+  try {
+    return await startMarketplaceMembershipOnFirstRealOrder({
+      ...input,
+      client: client || input.client || null,
+    });
+  } catch (err) {
+    if (
+      err?.publicCode === "MEMBERSHIP_PENDING_START_SCHEMA_MISSING" ||
+      err?.code === "42P01" ||
+      err?.code === "42703"
+    ) {
+      return { membership: null, started: false, reason: "schema_unavailable", error: err };
+    }
+    throw err;
+  }
+}
+
 module.exports = {
   mapMembership,
   writeAudit,
   createAndActivateMarketplaceMembership,
+  createPurchasedPendingStartMembership,
+  startMarketplaceMembershipOnFirstRealOrder,
+  maybeStartMarketplaceMembershipOnFirstRealOrder,
   resolveCurrentMarketplaceMembershipForFreelancer,
   getMarketplaceMembershipById,
   getFreelancerMarketplaceMembershipSnapshot,

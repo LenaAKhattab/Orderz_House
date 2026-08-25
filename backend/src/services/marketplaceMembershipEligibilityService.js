@@ -12,6 +12,12 @@
 const { createAppError } = require("../utils/AppError");
 const { pool } = require("../config/db");
 const { STARTER_WITHDRAWAL, STARTER_EARNINGS_MODE } = require("../constants/marketplaceMembershipPlans");
+const {
+  isPurchasedPendingStartStatus,
+  isPaidMarketplaceMembershipTier,
+  isApplicationEligibleStatus,
+} = require("../utils/marketplaceMembershipPendingStart");
+const { isBenefitUsableStatus } = require("../constants/marketplaceMemberships");
 
 async function assertMarketplaceVerificationComplete(client, freelancerUserId) {
   const runner = client || pool;
@@ -201,9 +207,75 @@ async function assertStarterNotAlreadyConsumed(client, freelancerUserId) {
   }
 }
 
+/**
+ * Gates for applying/bidding with Marketplace Membership entitlement.
+ * purchased_pending_start + paid tiers require identity + training.
+ * Active STARTER keeps verification-only (existing product path).
+ */
+async function assertMarketplaceApplyGates(client, freelancerUserId, { membership = null } = {}) {
+  await assertMarketplaceVerificationComplete(client, freelancerUserId);
+  if (!membership) return { verificationOk: true, trainingRequired: false, trainingOk: true };
+
+  const status = String(membership.status || "");
+  const tierCode =
+    membership.plan?.tierCode || membership.tierCode || membership.plan_tier_code || null;
+  const needsTraining =
+    isPurchasedPendingStartStatus(status) || isPaidMarketplaceMembershipTier(tierCode);
+
+  if (!needsTraining) {
+    return { verificationOk: true, trainingRequired: false, trainingOk: true };
+  }
+
+  await assertPaidTrainingComplete(client, freelancerUserId);
+  return { verificationOk: true, trainingRequired: true, trainingOk: true };
+}
+
+/**
+ * Whether a membership status may apply (entitlement only — gates checked separately).
+ */
+function membershipStatusAllowsApplication(status) {
+  return isApplicationEligibleStatus(status);
+}
+
+/**
+ * Snapshot helper: canApply requires application-eligible status + gates.
+ * Pure evaluation when gate results are provided; otherwise returns null canApply.
+ */
+function evaluatePendingStartApplyCapability({
+  membershipStatus,
+  verificationComplete = null,
+  trainingComplete = null,
+  tierCode = null,
+} = {}) {
+  const status = String(membershipStatus || "");
+  const termStarted = isBenefitUsableStatus(status);
+  const entitled = isApplicationEligibleStatus(status);
+  const needsTraining =
+    isPurchasedPendingStartStatus(status) || isPaidMarketplaceMembershipTier(tierCode);
+
+  let canApply = null;
+  if (verificationComplete != null && (!needsTraining || trainingComplete != null)) {
+    canApply =
+      entitled &&
+      verificationComplete === true &&
+      (needsTraining ? trainingComplete === true : true);
+  }
+
+  return {
+    entitled,
+    termStarted,
+    needsTraining,
+    canApply,
+    status,
+  };
+}
+
 module.exports = {
   assertMarketplaceVerificationComplete,
   assertPaidTrainingComplete,
+  assertMarketplaceApplyGates,
+  membershipStatusAllowsApplication,
+  evaluatePendingStartApplyCapability,
   evaluateProjectValueEligibility,
   assertProjectValueEligible,
   evaluateMembershipWithdrawalEligibility,

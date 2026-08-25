@@ -112,14 +112,21 @@ describe("Phase 3 isolation wiring", () => {
     assert.match(app, /superAdminMarketplaceMembershipsRoutes/);
   });
 
-  it("no public consume Priority Bid route", () => {
+  it("no public Priority Bid consume route (activation POSTs allowed)", () => {
     const freelPath = path.join(
       __dirname,
       "../src/routes/freelancerMarketplaceMembershipRoutes.js",
     );
     const freel = fs.readFileSync(freelPath, "utf8");
-    assert.doesNotMatch(freel, /router\.(post|put|patch|delete)/i);
+    // E1 added Starter activate + paid activation-request POSTs (not Priority Bid consume).
     assert.match(freel, /marketplace-membership/);
+    assert.match(freel, /router\.get\("\/marketplace-membership"/);
+    assert.match(freel, /starter\/activate/);
+    assert.match(freel, /activation-requests/);
+    // Isolation: no Priority Bid consume / usage mutation endpoint on this router.
+    assert.doesNotMatch(freel, /priority[-_]?bid.*consum/i);
+    assert.doesNotMatch(freel, /consumePriority|priorityBidUse/i);
+    assert.doesNotMatch(freel, /router\.(post|put|patch|delete)\([^)]*priority/i);
   });
 
   it("plans routes untouched for public cutover", () => {

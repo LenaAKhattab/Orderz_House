@@ -320,6 +320,24 @@ async function createAndActivateCycleForMembership({
           membershipRow: mem,
           actorUserId,
         });
+        // M4.2: pending-start package Bids carry into the active cycle (no double unlock).
+        try {
+          const pendingStartBids = require("./marketplacePendingStartBidAllowanceService");
+          await pendingStartBids.adoptPendingStartAllowanceIntoActiveCycle({
+            client,
+            membershipId: Number(mem.id),
+            cycleId: Number(cycleRow.id),
+            freelancerUserId: Number(mem.freelancer_user_id),
+            paidTermEndsAt: mem.paid_term_ends_at,
+            now: instant,
+            actorUserId,
+          });
+        } catch (adoptErr) {
+          console.warn(
+            "[marketplace-membership] pending-start allowance adopt failed (non-blocking):",
+            adoptErr && adoptErr.message ? adoptErr.message : adoptErr,
+          );
+        }
         await dist.reconcileDistributionMonth({
           client,
           distributionMonthRow: (

@@ -9,16 +9,31 @@ import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
  */
 function membershipStatusLabel(status, t) {
   const s = String(status || "").toLowerCase();
+  if (s === "purchased_pending_start") {
+    return t("freelancerDashboard.marketplaceMembership.statusPurchasedPendingStart");
+  }
   if (s === "active" || s === "cancel_at_period_end") {
     return t("freelancerDashboard.marketplaceMembership.statusActive");
   }
-  if (s === "pending") return t("freelancerDashboard.marketplaceMembership.statusPending");
+  if (s === "pending" || s === "payment_pending") {
+    return t("freelancerDashboard.marketplaceMembership.statusPending");
+  }
   if (s === "suspended") return t("freelancerDashboard.marketplaceMembership.statusSuspended");
   if (s === "expired") return t("freelancerDashboard.marketplaceMembership.statusExpired");
   if (s === "cancelled" || s === "superseded") {
     return t("freelancerDashboard.marketplaceMembership.statusEnded");
   }
   return status || t("freelancerDashboard.common.emDash");
+}
+
+function resolvePlanName(plan, locale) {
+  return (
+    getLocalizedField(plan, "name", locale) ||
+    (locale === "en" ? plan?.nameEn : plan?.nameAr) ||
+    plan?.nameAr ||
+    plan?.tierCode ||
+    "—"
+  );
 }
 
 /**
@@ -85,13 +100,9 @@ export default function FreelancerMarketplaceMembershipCard({
     );
   }
 
-  const plan = snap.membership?.plan || {};
-  const planName =
-    getLocalizedField(plan, "name", locale) ||
-    (locale === "en" ? plan.nameEn : plan.nameAr) ||
-    plan.nameAr ||
-    plan.tierCode ||
-    "—";
+  const membership = snap.membership || {};
+  const plan = membership.plan || {};
+  const planName = resolvePlanName(plan, locale);
   const tierCode = plan.tierCode ? String(plan.tierCode).toUpperCase() : null;
   const catalogMatch = Array.isArray(catalogPlans)
     ? catalogPlans.find(
@@ -101,24 +112,100 @@ export default function FreelancerMarketplaceMembershipCard({
       )
     : null;
   const cycle = snap.currentCycle;
-  const endsAt = cycle?.endsAt || snap.membership?.paidTermEndsAt || null;
-  const bidsAvailable =
-    cycle?.monthlyBidAllowanceSnapshot ??
-    plan.monthlyBidAllowance ??
-    catalogMatch?.monthlyBidAllowance ??
-    catalogMatch?.primaryMetrics?.bids ??
-    null;
-  const dailyLimit =
-    plan.dailyBidSpendLimit ??
-    plan.capabilities?.dailyBidSpendLimit ??
-    catalogMatch?.dailyBidSpendLimit ??
-    catalogMatch?.primaryMetrics?.dailyLimit ??
-    catalogMatch?.capabilities?.dailyBidSpendLimit ??
-    null;
-  const status = snap.membership?.status;
+  const status = membership.status;
+  const pendingStart = String(status || "") === "purchased_pending_start";
+  const termStarted =
+    membership.termStarted === true ||
+    (Boolean(membership.paidTermStartsAt) &&
+      (status === "active" || status === "cancel_at_period_end"));
+  const benefitsUsable =
+    snap.priorityBid?.membershipBenefitsUsable === true ||
+    status === "active" ||
+    status === "cancel_at_period_end";
+  const endsAt = termStarted
+    ? cycle?.endsAt || membership.paidTermEndsAt || null
+    : null;
+  const startsAt = termStarted ? membership.paidTermStartsAt || cycle?.startsAt || null : null;
+  const purchasedAt = membership.purchasedAt || null;
+  const bidsAvailable = benefitsUsable
+    ? cycle?.monthlyBidAllowanceSnapshot ??
+      plan.monthlyBidAllowance ??
+      catalogMatch?.monthlyBidAllowance ??
+      catalogMatch?.primaryMetrics?.bids ??
+      null
+    : null;
+  const dailyLimit = benefitsUsable
+    ? plan.dailyBidSpendLimit ??
+      plan.capabilities?.dailyBidSpendLimit ??
+      catalogMatch?.dailyBidSpendLimit ??
+      catalogMatch?.primaryMetrics?.dailyLimit ??
+      catalogMatch?.capabilities?.dailyBidSpendLimit ??
+      null
+    : null;
+  const canApply = membership.canApply;
+  const applicationEligible = membership.applicationEligible;
+  const statusMessageAr = membership.statusMessageAr || null;
+  const pendingBody =
+    statusMessageAr ||
+    t("freelancerDashboard.marketplaceMembership.pendingStartBody");
+
+  if (pendingStart) {
+    return (
+      <header
+        className="fp-surface fp-hero fp-hero--membership fp-hero--membership-pending-start"
+        data-testid="marketplace-membership-pending-start"
+        data-term-started="false"
+      >
+        <div className="fp-hero__copy">
+          <span className="fp-hero__eyebrow">
+            <Crown size={14} strokeWidth={2} aria-hidden />
+            {t("freelancerDashboard.marketplaceMembership.purchasedEyebrow")}
+          </span>
+          {tierCode ? <p className="fp-hero__tier">{tierCode}</p> : null}
+          <h1 className="fp-hero__title">
+            {t("freelancerDashboard.marketplaceMembership.purchasedTitle")}
+          </h1>
+          <p className="fp-hero__subtitle">{pendingBody}</p>
+          {canApply === false || applicationEligible === false ? (
+            <p className="fp-upgrade-hint" style={{ marginTop: 10 }}>
+              {t("freelancerDashboard.marketplaceMembership.applyGatesReminder")}
+            </p>
+          ) : null}
+        </div>
+
+        <dl
+          className="fp-hero__stats"
+          aria-label={t("freelancerDashboard.marketplaceMembership.summaryAria")}
+        >
+          <div className="fp-hero__stat">
+            <dt>{t("freelancerDashboard.marketplaceMembership.status")}</dt>
+            <dd className="fp-hero__stat-value--warn">{membershipStatusLabel(status, t)}</dd>
+          </div>
+          <div className="fp-hero__stat">
+            <dt>{t("freelancerDashboard.marketplaceMembership.currentPlan")}</dt>
+            <dd>{planName}</dd>
+          </div>
+          {purchasedAt ? (
+            <div className="fp-hero__stat">
+              <dt>{t("freelancerDashboard.marketplaceMembership.purchasedAt")}</dt>
+              <dd>{formatJoDateMedium(purchasedAt, locale)}</dd>
+            </div>
+          ) : null}
+          <div className="fp-hero__stat">
+            <dt>{t("freelancerDashboard.marketplaceMembership.termStatus")}</dt>
+            <dd>{t("freelancerDashboard.marketplaceMembership.termNotStarted")}</dd>
+          </div>
+          <div className="fp-hero__stat" style={{ gridColumn: "1 / -1" }}>
+            <dt>{t("freelancerDashboard.marketplaceMembership.termStartsWhen")}</dt>
+            <dd>{t("freelancerDashboard.marketplaceMembership.termStartsOnFirstOrder")}</dd>
+          </div>
+        </dl>
+      </header>
+    );
+  }
 
   return (
-    <header className="fp-surface fp-hero fp-hero--membership">
+    <header className="fp-surface fp-hero fp-hero--membership" data-testid="marketplace-membership-active">
       <div className="fp-hero__copy">
         <span className="fp-hero__eyebrow">
           <Crown size={14} strokeWidth={2} aria-hidden />
@@ -126,6 +213,11 @@ export default function FreelancerMarketplaceMembershipCard({
         </span>
         {tierCode ? <p className="fp-hero__tier">{tierCode}</p> : null}
         <h1 className="fp-hero__title">{planName}</h1>
+        {canApply === false ? (
+          <p className="fp-hero__subtitle">
+            {t("freelancerDashboard.marketplaceMembership.applyGatesReminder")}
+          </p>
+        ) : null}
       </div>
 
       <dl
@@ -138,7 +230,7 @@ export default function FreelancerMarketplaceMembershipCard({
             className={
               status === "active" || status === "cancel_at_period_end"
                 ? "fp-hero__stat-value--ok"
-                : status === "pending"
+                : status === "pending" || status === "payment_pending"
                   ? "fp-hero__stat-value--warn"
                   : "fp-hero__stat-value--accent"
             }
@@ -146,6 +238,12 @@ export default function FreelancerMarketplaceMembershipCard({
             {membershipStatusLabel(status, t)}
           </dd>
         </div>
+        {startsAt ? (
+          <div className="fp-hero__stat">
+            <dt>{t("freelancerDashboard.marketplaceMembership.cycleStart")}</dt>
+            <dd>{formatJoDateMedium(startsAt, locale)}</dd>
+          </div>
+        ) : null}
         {endsAt ? (
           <div className="fp-hero__stat">
             <dt>{t("freelancerDashboard.marketplaceMembership.endsOn")}</dt>

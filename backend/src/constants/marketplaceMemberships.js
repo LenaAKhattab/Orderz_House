@@ -4,6 +4,8 @@
 
 const MEMBERSHIP_STATUSES = Object.freeze([
   "pending",
+  "payment_pending",
+  "purchased_pending_start",
   "active",
   "cancel_at_period_end",
   "suspended",
@@ -15,6 +17,8 @@ const MEMBERSHIP_STATUSES = Object.freeze([
 /** Statuses allowed when is_current = TRUE (DB CHECK + service). */
 const CURRENT_ALLOWED_MEMBERSHIP_STATUSES = Object.freeze([
   "pending",
+  "payment_pending",
+  "purchased_pending_start",
   "active",
   "cancel_at_period_end",
   "suspended",
@@ -23,6 +27,7 @@ const CURRENT_ALLOWED_MEMBERSHIP_STATUSES = Object.freeze([
 /**
  * Statuses that may consume Priority Bid uses / cycle benefits.
  * Suspended remains current but cannot consume.
+ * purchased_pending_start is entitled but term/benefits unlock on first real order (M4).
  */
 const BENEFIT_USABLE_MEMBERSHIP_STATUSES = Object.freeze(["active", "cancel_at_period_end"]);
 
@@ -45,6 +50,8 @@ const USAGE_EVENT_TYPES = Object.freeze(["consumed", "returned", "admin_adjustme
 const MEMBERSHIP_AUDIT_ACTIONS = Object.freeze({
   MEMBERSHIP_CREATED: "MEMBERSHIP_CREATED",
   MEMBERSHIP_ACTIVATED: "MEMBERSHIP_ACTIVATED",
+  MEMBERSHIP_PURCHASED_PENDING_START: "MEMBERSHIP_PURCHASED_PENDING_START",
+  MEMBERSHIP_TERM_STARTED_ON_FIRST_ORDER: "MEMBERSHIP_TERM_STARTED_ON_FIRST_ORDER",
   MEMBERSHIP_SUPERSEDED: "MEMBERSHIP_SUPERSEDED",
   MEMBERSHIP_CANCEL_AT_PERIOD_END: "MEMBERSHIP_CANCEL_AT_PERIOD_END",
   MEMBERSHIP_CANCELLED: "MEMBERSHIP_CANCELLED",

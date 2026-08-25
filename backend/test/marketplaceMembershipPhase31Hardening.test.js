@@ -35,6 +35,8 @@ describe("canonical status / is_current model", () => {
     assert.ok(MEMBERSHIP_STATUSES.includes("superseded"));
     assert.deepStrictEqual([...CURRENT_ALLOWED_MEMBERSHIP_STATUSES], [
       "pending",
+      "payment_pending",
+      "purchased_pending_start",
       "active",
       "cancel_at_period_end",
       "suspended",

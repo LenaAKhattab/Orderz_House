@@ -60,6 +60,23 @@ function buildFreelancerBidPackageCheckoutReturnUrls(clientUrl) {
 }
 
 /**
+ * Marketplace Membership Checkout return URLs (Marketplace-M2).
+ * Success page must NOT grant membership — M3 webhook only.
+ */
+function buildFreelancerMarketplaceMembershipCheckoutReturnUrls(clientUrl) {
+  const base = String(clientUrl || "").replace(/\/$/, "");
+  if (!base) {
+    const err = new Error("CLIENT_URL is not configured (set a single origin, e.g. https://orderzhouse.com).");
+    err.statusCode = 500;
+    throw err;
+  }
+  return {
+    successUrl: `${base}/dashboard/freelancer/plans?membershipCheckout=success&session_id={CHECKOUT_SESSION_ID}`,
+    cancelUrl: `${base}/dashboard/freelancer/plans?membershipCheckout=cancelled&session_id={CHECKOUT_SESSION_ID}`,
+  };
+}
+
+/**
  * When CLIENT_URL is an apex host (no www.), also trust the www sibling for CORS/origin-guard.
  * Canonical application URL stays CLIENT_URL; www is only a trusted browser origin during
  * redirect rollout and for leftover tabs that still send Origin: https://www.…
@@ -126,4 +143,5 @@ module.exports = {
   buildFreelancerPlansCheckoutReturnUrls,
   buildFreelancerActivationFeeCheckoutReturnUrls,
   buildFreelancerBidPackageCheckoutReturnUrls,
+  buildFreelancerMarketplaceMembershipCheckoutReturnUrls,
 };

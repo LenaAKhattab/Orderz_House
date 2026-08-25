@@ -113,7 +113,7 @@ async function assertFreelancerCanAccessPoolOrder(freelancerUserId, orderOrId, c
          JOIN marketplace_membership_plans p ON p.id = m.marketplace_plan_id
         WHERE m.freelancer_user_id = $1
           AND m.is_current = TRUE
-          AND m.status IN ('active', 'cancel_at_period_end')
+          AND m.status IN ('active', 'cancel_at_period_end', 'purchased_pending_start')
         LIMIT 1`,
       [Number(freelancerUserId)],
     );
@@ -150,17 +150,6 @@ async function assertFreelancerCanAccessPoolOrder(freelancerUserId, orderOrId, c
   return order;
 }
 
-async function assertFreelancerCanClaimOrder(freelancerUserId, orderOrId, clientMaybe) {
-  const subscriptionsService = require("./subscriptionsService");
-  const eligibility = await subscriptionsService.canFreelancerTakeOrders(String(freelancerUserId));
-  if (!eligibility.eligible) {
-    logBlockedAccess("claim_subscription", { freelancerUserId: String(freelancerUserId), reason: eligibility.reason });
-    throw authError("You are not allowed to take this order.", 403, eligibility.reason || "subscription_ineligible");
-  }
-  const order = await assertFreelancerCanAccessPoolOrder(freelancerUserId, orderOrId, clientMaybe);
-  return order;
-}
-
 async function assertFreelancerCanBidOrder(freelancerUserId, orderOrId, clientMaybe) {
   const subscriptionsService = require("./subscriptionsService");
   const eligibility = await subscriptionsService.canFreelancerTakeOrders(String(freelancerUserId));
@@ -168,7 +157,59 @@ async function assertFreelancerCanBidOrder(freelancerUserId, orderOrId, clientMa
     logBlockedAccess("bid_subscription", { freelancerUserId: String(freelancerUserId), reason: eligibility.reason });
     throw authError("Your subscription is not active. You cannot submit bids.", 403, eligibility.reason || "subscription_ineligible");
   }
+  // M4: if current marketplace membership is purchased_pending_start / paid, enforce identity+training.
+  try {
+    const membershipsService = require("./marketplaceMembershipsService");
+    const membershipEligibility = require("./marketplaceMembershipEligibilityService");
+    const membership = await membershipsService.resolveCurrentMarketplaceMembershipForFreelancer(
+      freelancerUserId,
+      { client: clientMaybe || null },
+    );
+    if (membership) {
+      await membershipEligibility.assertMarketplaceApplyGates(clientMaybe || null, freelancerUserId, {
+        membership,
+      });
+    }
+  } catch (gateErr) {
+    if (gateErr?.statusCode) throw gateErr;
+    if (gateErr?.code === "42P01" || gateErr?.code === "42703") {
+      // schema missing — leave legacy path
+    } else {
+      throw gateErr;
+    }
+  }
   return assertFreelancerCanAccessPoolOrder(freelancerUserId, orderOrId, clientMaybe);
+}
+
+async function assertFreelancerCanClaimOrder(freelancerUserId, orderOrId, clientMaybe) {
+  const subscriptionsService = require("./subscriptionsService");
+  const eligibility = await subscriptionsService.canFreelancerTakeOrders(String(freelancerUserId));
+  if (!eligibility.eligible) {
+    logBlockedAccess("claim_subscription", { freelancerUserId: String(freelancerUserId), reason: eligibility.reason });
+    throw authError("You are not allowed to take this order.", 403, eligibility.reason || "subscription_ineligible");
+  }
+  try {
+    const membershipsService = require("./marketplaceMembershipsService");
+    const membershipEligibility = require("./marketplaceMembershipEligibilityService");
+    const membership = await membershipsService.resolveCurrentMarketplaceMembershipForFreelancer(
+      freelancerUserId,
+      { client: clientMaybe || null },
+    );
+    if (membership) {
+      await membershipEligibility.assertMarketplaceApplyGates(clientMaybe || null, freelancerUserId, {
+        membership,
+      });
+    }
+  } catch (gateErr) {
+    if (gateErr?.statusCode) throw gateErr;
+    if (gateErr?.code === "42P01" || gateErr?.code === "42703") {
+      // schema missing
+    } else {
+      throw gateErr;
+    }
+  }
+  const order = await assertFreelancerCanAccessPoolOrder(freelancerUserId, orderOrId, clientMaybe);
+  return order;
 }
 
 /**

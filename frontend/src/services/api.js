@@ -700,6 +700,28 @@ export const getFreelancerMarketplaceMembershipRequest = async () => {
   return data;
 };
 
+/** Marketplace STARTER free activation (no Stripe). */
+export const activateMarketplaceStarterMembershipRequest = async () => {
+  const { data } = await api.post("/freelancer/marketplace-membership/starter/activate", {}, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+/** Marketplace-M2: start Stripe Checkout for SILVER/PRO/ELITE (does not grant membership). */
+export const createMarketplaceMembershipCheckoutRequest = async (planCode) => {
+  const code = typeof planCode === "string" ? planCode.trim() : "";
+  if (!code) {
+    throw new Error("رمز باقة Marketplace غير صالح.");
+  }
+  const { data } = await api.post(
+    "/freelancer/marketplace-membership/checkout",
+    { planCode: code },
+    { timeout: 30000 },
+  );
+  return data;
+};
+
 /** Bid Credits — Phase B1 active Bids product + B6 packages. */
 export const getFreelancerBidCreditsRequest = async () => {
   const { data } = await api.get("/freelancer/bid-credits");

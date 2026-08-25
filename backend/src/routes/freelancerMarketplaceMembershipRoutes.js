@@ -24,4 +24,19 @@ router.post(
   marketplaceMembershipsController.requestPaidActivation,
 );
 
+/**
+ * Marketplace-M2: Stripe Checkout for paid SILVER/PRO/ELITE.
+ * Does NOT grant membership (webhook M3). STARTER rejected.
+ */
+router.post(
+  "/marketplace-membership/checkout",
+  marketplaceMembershipsController.createMarketplaceMembershipCheckout,
+);
+
+/** Alias matching plural resource naming used in M2 design notes. */
+router.post(
+  "/marketplace-memberships/checkout",
+  marketplaceMembershipsController.createMarketplaceMembershipCheckout,
+);
+
 module.exports = router;
