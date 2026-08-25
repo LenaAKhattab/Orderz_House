@@ -200,6 +200,22 @@ async function createMarketplaceMembershipCheckoutSession(input = {}, deps = {})
     });
   }
 
+  const membershipsService = require("./marketplaceMembershipsService");
+  const currentMembership =
+    await membershipsService.resolveCurrentMarketplaceMembershipForFreelancer(freelancerUserId, {
+      client: db,
+    });
+  if (currentMembership) {
+    const currentTier = String(currentMembership.plan?.tierCode || "").toLowerCase();
+    if (currentTier === resolved.planCode) {
+      throw createAppError("This marketplace package is already your current plan.", 409, {
+        exposeToClient: true,
+        publicCode: "MARKETPLACE_MEMBERSHIP_ALREADY_CURRENT",
+        details: { planCode: resolved.planCode, status: currentMembership.status },
+      });
+    }
+  }
+
   const stripe = deps.stripe || getStripeOrNull();
   if (!stripe) throwStripeNotConfigured();
 

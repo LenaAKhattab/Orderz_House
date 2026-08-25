@@ -27,10 +27,13 @@ const {
 const { defaultArticleAccessLevelForTier } = require("../constants/marketplaceMembershipPlans");
 const {
   PURCHASED_PENDING_START_MESSAGE_AR,
+  STARTER_PENDING_START_MESSAGE_AR,
+  STARTER_TRIAL_DURATION_DAYS,
   isPaidMarketplaceMembershipTier,
   computePaidTermWindowFromDurationDays,
   decideMarketplaceMembershipFirstOrderStart,
   isPurchasedPendingStartStatus,
+  isStarterPendingStartStatus,
 } = require("../utils/marketplaceMembershipPendingStart");
 
 function isTruthyFlag(value) {
@@ -79,7 +82,9 @@ function mapMembership(row) {
     updatedAt: row.updated_at || null,
     statusMessageAr: isPurchasedPendingStartStatus(row.status)
       ? PURCHASED_PENDING_START_MESSAGE_AR
-      : null,
+      : isStarterPendingStartStatus(row.status)
+        ? STARTER_PENDING_START_MESSAGE_AR
+        : null,
   };
 }
 
@@ -448,7 +453,34 @@ async function getMarketplaceMembershipById(membershipId, options = {}) {
 async function getFreelancerMarketplaceMembershipSnapshot(freelancerUserId, options = {}) {
   try {
     const now = toUtcDate(options.now || new Date());
-    const membership = await resolveCurrentMarketplaceMembershipForFreelancer(freelancerUserId, options);
+    let membership = await resolveCurrentMarketplaceMembershipForFreelancer(freelancerUserId, options);
+    if (!membership && options.ensureStarterPending !== false) {
+      try {
+        const ensured = await ensureStarterPendingEntitlement({
+          freelancerUserId,
+          actorUserId: freelancerUserId,
+          now,
+          client: options.client,
+        });
+        if (ensured?.membership) {
+          membership = ensured.membership.plan
+            ? ensured.membership
+            : await resolveCurrentMarketplaceMembershipForFreelancer(freelancerUserId, options);
+        }
+      } catch (ensureErr) {
+        if (
+          ensureErr?.publicCode !== "STARTER_ENTITLEMENT_ALREADY_USED" &&
+          ensureErr?.code !== "42P01" &&
+          ensureErr?.code !== "23514"
+        ) {
+          // eslint-disable-next-line no-console
+          console.error(
+            "[membership] ensureStarterPendingEntitlement on snapshot failed:",
+            ensureErr?.message || ensureErr,
+          );
+        }
+      }
+    }
     if (!membership) {
       return {
         hasMembership: false,
@@ -485,33 +517,51 @@ async function getFreelancerMarketplaceMembershipSnapshot(freelancerUserId, opti
     const benefitsUsable = isBenefitUsableStatus(current.status);
     const {
       isApplicationEligibleStatus,
-      isPurchasedPendingStartStatus,
-      PURCHASED_PENDING_START_MESSAGE_AR,
+      isPurchasedPendingStartStatus: isPaidPending,
+      isStarterPendingStartStatus: isStarterPending,
+      PURCHASED_PENDING_START_MESSAGE_AR: paidMsg,
+      STARTER_PENDING_START_MESSAGE_AR: starterMsg,
     } = require("../utils/marketplaceMembershipPendingStart");
     const applicationEligible = isApplicationEligibleStatus(current.status);
-    const pendingStart = isPurchasedPendingStartStatus(current.status);
+    const pendingStart = isPaidPending(current.status);
+    const starterPendingStart = isStarterPending(current.status);
     const termStarted = benefitsUsable && Boolean(current.paidTermStartsAt);
 
     const eligibility = require("./marketplaceMembershipEligibilityService");
     let canApply = false;
     let verificationComplete = null;
     let trainingComplete = null;
-    if (applicationEligible) {
+    const probeGates = applicationEligible || starterPendingStart;
+    if (probeGates) {
       try {
-        await eligibility.assertMarketplaceApplyGates(options.client || null, freelancerUserId, {
-          membership: current,
-        });
-        canApply = true;
+        await eligibility.assertMarketplaceVerificationComplete(
+          options.client || null,
+          freelancerUserId,
+        );
         verificationComplete = true;
+      } catch {
+        verificationComplete = false;
+      }
+      try {
+        await eligibility.assertPaidTrainingComplete(options.client || null, freelancerUserId);
         trainingComplete = true;
-      } catch (gateErr) {
-        canApply = false;
-        const code = String(gateErr?.publicCode || "");
-        if (code.includes("VERIFICATION") || /identit|verif/i.test(String(gateErr?.message || ""))) {
-          verificationComplete = false;
-        } else if (code.includes("TRAINING") || /train/i.test(String(gateErr?.message || ""))) {
-          verificationComplete = true;
-          trainingComplete = false;
+      } catch {
+        trainingComplete = false;
+      }
+      if (applicationEligible && verificationComplete === true) {
+        const tierCode = current.plan?.tierCode;
+        const needsTraining =
+          isPaidPending(current.status) || isPaidMarketplaceMembershipTier(tierCode);
+        canApply = needsTraining ? trainingComplete === true : true;
+        if (canApply) {
+          try {
+            await eligibility.assertMarketplaceApplyGates(options.client || null, freelancerUserId, {
+              membership: current,
+            });
+            canApply = true;
+          } catch {
+            canApply = false;
+          }
         }
       }
     }
@@ -522,6 +572,14 @@ async function getFreelancerMarketplaceMembershipSnapshot(freelancerUserId, opti
       trainingComplete,
       tierCode: current.plan?.tierCode,
     });
+
+    let remainingDays = null;
+    if (termStarted && current.paidTermEndsAt) {
+      const endMs = new Date(current.paidTermEndsAt).getTime();
+      if (!Number.isNaN(endMs)) {
+        remainingDays = Math.max(0, Math.ceil((endMs - now.getTime()) / (24 * 60 * 60 * 1000)));
+      }
+    }
 
     return {
       hasMembership: true,
@@ -539,12 +597,24 @@ async function getFreelancerMarketplaceMembershipSnapshot(freelancerUserId, opti
         cancelAtPeriodEnd: current.cancelAtPeriodEnd,
         statusMessageAr:
           current.statusMessageAr ||
-          (pendingStart ? PURCHASED_PENDING_START_MESSAGE_AR : null),
-        messageKey: pendingStart ? "marketplace_membership.purchased_pending_start" : null,
+          (pendingStart ? paidMsg : starterPendingStart ? starterMsg : null),
+        messageKey: pendingStart
+          ? "marketplace_membership.purchased_pending_start"
+          : starterPendingStart
+            ? "marketplace_membership.starter_pending_start"
+            : null,
         termStarted,
         applicationEligible,
         canApply,
         entitled: applyCapability.entitled,
+        starterPendingStart,
+        canStartStarterTrial:
+          starterPendingStart &&
+          verificationComplete === true &&
+          trainingComplete === true,
+        verificationComplete,
+        trainingComplete,
+        remainingDays,
         plan: current.plan,
       },
       currentCycle: cycle
@@ -554,6 +624,7 @@ async function getFreelancerMarketplaceMembershipSnapshot(freelancerUserId, opti
             startsAt: cycle.startsAt,
             endsAt: cycle.endsAt,
             status: cycle.status,
+            monthlyBidAllowanceSnapshot: cycle.monthlyBidAllowanceSnapshot,
           }
         : null,
       priorityBid: {
@@ -1466,6 +1537,298 @@ async function maybeStartMarketplaceMembershipOnFirstRealOrder(input = {}, clien
   }
 }
 
+/**
+ * Lazy STARTER entitlement: grant starter_pending_start when freelancer has no current membership.
+ * Does NOT start the 10-day trial clock. Does NOT require Stripe or admin approval.
+ */
+async function ensureStarterPendingEntitlement(input = {}) {
+  const freelancerUserId = Number(input.freelancerUserId);
+  if (!Number.isInteger(freelancerUserId) || freelancerUserId < 1) {
+    throw createAppError("freelancerUserId is required.", 400, {
+      exposeToClient: true,
+      publicCode: "INVALID_FREELANCER",
+    });
+  }
+  const now = toUtcDate(input.now || new Date());
+  const { client, release, ownTxn } = await resolveDbClient(input.client);
+  try {
+    if (ownTxn) await client.query("BEGIN");
+
+    const current = await resolveCurrentMarketplaceMembershipForFreelancer(freelancerUserId, {
+      client,
+    });
+    if (current) {
+      if (ownTxn) await client.query("COMMIT");
+      return { membership: current, created: false, reason: "already_has_current" };
+    }
+
+    const eligibility = require("./marketplaceMembershipEligibilityService");
+    await eligibility.assertStarterNotAlreadyConsumed(client, freelancerUserId);
+
+    const { rows: userRows } = await client.query(
+      `SELECT id, role, is_active FROM users WHERE id = $1 FOR UPDATE`,
+      [freelancerUserId],
+    );
+    const user = userRows[0];
+    if (!user || user.role !== "freelancer" || user.is_active !== true) {
+      throw createAppError("Freelancer account is not eligible for Marketplace Membership.", 403, {
+        exposeToClient: true,
+        publicCode: "MEMBERSHIP_FREELANCER_INVALID",
+      });
+    }
+
+    const plan = await marketplaceMembershipPlansService.getMarketplaceMembershipPlanByTierCode(
+      "starter",
+      client,
+    );
+    if (!plan || !plan.isActive) {
+      throw createAppError("Starter plan is not available.", 404, {
+        exposeToClient: true,
+        publicCode: "STARTER_PLAN_NOT_FOUND",
+      });
+    }
+
+    const anchorDay = resolveCycleAnchorDay(now);
+    let membershipRow;
+    try {
+      const { rows } = await client.query(
+        `INSERT INTO freelancer_marketplace_memberships (
+           freelancer_user_id, marketplace_plan_id, is_current, status, source,
+           cycle_anchor_day, started_at, paid_term_starts_at, paid_term_ends_at,
+           auto_renew, notes, created_by_user_id, updated_by_user_id
+         ) VALUES (
+           $1, $2, TRUE, 'starter_pending_start', 'system',
+           $3, NULL, NULL, NULL,
+           FALSE, $4, $5, $5
+         )
+         RETURNING *`,
+        [
+          freelancerUserId,
+          Number(plan.id),
+          anchorDay,
+          input.notes || "starter_pending_start_entitlement",
+          input.actorUserId != null ? Number(input.actorUserId) : freelancerUserId,
+        ],
+      );
+      membershipRow = rows[0];
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        const again = await resolveCurrentMarketplaceMembershipForFreelancer(freelancerUserId, {
+          client,
+        });
+        if (ownTxn) await client.query("COMMIT");
+        return { membership: again, created: false, reason: "race_current_exists" };
+      }
+      throw err;
+    }
+
+    const membership = mapMembership(membershipRow);
+    membership.plan = plan;
+
+    await writeAudit(client, {
+      membershipId: membership.id,
+      freelancerUserId,
+      actorUserId: input.actorUserId != null ? Number(input.actorUserId) : freelancerUserId,
+      action: MEMBERSHIP_AUDIT_ACTIONS.MEMBERSHIP_STARTER_PENDING_GRANTED,
+      detail: { status: "starter_pending_start", marketplacePlanId: String(plan.id) },
+    });
+    await writeAudit(client, {
+      membershipId: membership.id,
+      freelancerUserId,
+      actorUserId: input.actorUserId != null ? Number(input.actorUserId) : freelancerUserId,
+      action: MEMBERSHIP_AUDIT_ACTIONS.MEMBERSHIP_CREATED,
+      detail: { status: "starter_pending_start", source: "system" },
+    });
+
+    if (ownTxn) await client.query("COMMIT");
+    return { membership, created: true, reason: "granted_starter_pending_start" };
+  } catch (err) {
+    if (ownTxn) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+    }
+    throw err;
+  } finally {
+    if (release) client.release();
+  }
+}
+
+/**
+ * Start STARTER 10-day trial from starter_pending_start.
+ * Requires identity verification + required training. Idempotent if already active STARTER.
+ */
+async function startStarterTrial(input = {}) {
+  const freelancerUserId = Number(input.freelancerUserId);
+  if (!Number.isInteger(freelancerUserId) || freelancerUserId < 1) {
+    throw createAppError("freelancerUserId is required.", 400, {
+      exposeToClient: true,
+      publicCode: "INVALID_FREELANCER",
+    });
+  }
+  const now = toUtcDate(input.now || new Date());
+  const { client, release, ownTxn } = await resolveDbClient(input.client);
+  try {
+    if (ownTxn) await client.query("BEGIN");
+
+    const eligibility = require("./marketplaceMembershipEligibilityService");
+
+    let current = await resolveCurrentMarketplaceMembershipForFreelancer(freelancerUserId, {
+      client,
+    });
+
+    if (!current) {
+      const ensured = await ensureStarterPendingEntitlement({
+        freelancerUserId,
+        actorUserId: input.actorUserId,
+        now,
+        client,
+      });
+      current = ensured.membership;
+    }
+
+    if (!current) {
+      throw createAppError("Starter entitlement is not available.", 404, {
+        exposeToClient: true,
+        publicCode: "STARTER_ENTITLEMENT_MISSING",
+      });
+    }
+
+    const tier = String(current.plan?.tierCode || "").toLowerCase();
+    if (tier === "starter" && isBenefitUsableStatus(current.status) && current.paidTermStartsAt) {
+      const cycle = await marketplaceMembershipCyclesService.getCurrentActiveCycle(current.id, {
+        client,
+        now,
+      });
+      if (ownTxn) await client.query("COMMIT");
+      return {
+        membership: current,
+        currentCycle: cycle,
+        started: false,
+        idempotent: true,
+        reason: "already_active",
+      };
+    }
+
+    if (isPaidMarketplaceMembershipTier(tier) || isPurchasedPendingStartStatus(current.status)) {
+      throw createAppError("A paid marketplace membership is already current.", 409, {
+        exposeToClient: true,
+        publicCode: "PAID_MEMBERSHIP_ALREADY_CURRENT",
+        details: { tierCode: tier, status: current.status },
+      });
+    }
+
+    if (!isStarterPendingStartStatus(current.status) || tier !== "starter") {
+      throw createAppError("Starter trial can only start from a pending STARTER entitlement.", 409, {
+        exposeToClient: true,
+        publicCode: "STARTER_TRIAL_INVALID_STATUS",
+        details: { status: current.status, tierCode: tier },
+      });
+    }
+
+    await eligibility.assertMarketplaceVerificationComplete(client, freelancerUserId);
+    await eligibility.assertPaidTrainingComplete(client, freelancerUserId);
+
+    const plan =
+      current.plan ||
+      (await marketplaceMembershipPlansService.getMarketplaceMembershipPlanById(
+        Number(current.marketplacePlanId),
+        client,
+      ));
+    const durationDays =
+      Number(plan?.cycleDurationDays) > 0
+        ? Number(plan.cycleDurationDays)
+        : STARTER_TRIAL_DURATION_DAYS;
+    const { paidTermStartsAt, paidTermEndsAt } = computePaidTermWindowFromDurationDays({
+      startsAt: now,
+      durationDays,
+    });
+    const anchorDay = resolveCycleAnchorDay(paidTermStartsAt);
+
+    const { rows } = await client.query(
+      `UPDATE freelancer_marketplace_memberships
+          SET status = 'active',
+              started_at = $2,
+              paid_term_starts_at = $2,
+              paid_term_ends_at = $3,
+              cycle_anchor_day = $4,
+              updated_at = NOW(),
+              updated_by_user_id = $5
+        WHERE id = $1
+          AND is_current = TRUE
+          AND status = 'starter_pending_start'
+        RETURNING *`,
+      [
+        current.id,
+        paidTermStartsAt.toISOString(),
+        paidTermEndsAt.toISOString(),
+        anchorDay,
+        input.actorUserId != null ? Number(input.actorUserId) : freelancerUserId,
+      ],
+    );
+    if (!rows[0]) {
+      throw createAppError("Could not start Starter trial (status changed).", 409, {
+        exposeToClient: true,
+        publicCode: "STARTER_TRIAL_CONFLICT",
+      });
+    }
+
+    const membership = mapMembership(rows[0]);
+    membership.plan = plan;
+
+    await writeAudit(client, {
+      membershipId: membership.id,
+      freelancerUserId,
+      actorUserId: input.actorUserId != null ? Number(input.actorUserId) : freelancerUserId,
+      action: MEMBERSHIP_AUDIT_ACTIONS.MEMBERSHIP_STARTER_TRIAL_STARTED,
+      detail: {
+        status: "active",
+        paidTermStartsAt: paidTermStartsAt.toISOString(),
+        paidTermEndsAt: paidTermEndsAt.toISOString(),
+        durationDays,
+      },
+    });
+    await writeAudit(client, {
+      membershipId: membership.id,
+      freelancerUserId,
+      actorUserId: input.actorUserId != null ? Number(input.actorUserId) : freelancerUserId,
+      action: MEMBERSHIP_AUDIT_ACTIONS.MEMBERSHIP_ACTIVATED,
+      detail: { status: "active", source: "starter_trial_start" },
+    });
+
+    const cycle = await marketplaceMembershipCyclesService.createAndActivateCycleForMembership({
+      membership: rows[0],
+      plan,
+      cycleNumber: 1,
+      now: paidTermStartsAt,
+      client,
+      actorUserId: input.actorUserId != null ? Number(input.actorUserId) : freelancerUserId,
+    });
+
+    if (ownTxn) await client.query("COMMIT");
+    return {
+      membership,
+      currentCycle: cycle,
+      started: true,
+      idempotent: false,
+      reason: "trial_started",
+    };
+  } catch (err) {
+    if (ownTxn) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+    }
+    throw err;
+  } finally {
+    if (release) client.release();
+  }
+}
+
 module.exports = {
   mapMembership,
   writeAudit,
@@ -1473,6 +1836,8 @@ module.exports = {
   createPurchasedPendingStartMembership,
   startMarketplaceMembershipOnFirstRealOrder,
   maybeStartMarketplaceMembershipOnFirstRealOrder,
+  ensureStarterPendingEntitlement,
+  startStarterTrial,
   resolveCurrentMarketplaceMembershipForFreelancer,
   getMarketplaceMembershipById,
   getFreelancerMarketplaceMembershipSnapshot,

@@ -12,7 +12,13 @@ router.use(requireAuth, requireRole("freelancer"));
  */
 router.get("/marketplace-membership", marketplaceMembershipsController.getMyMarketplaceMembership);
 
-/** E1: Starter free activation after verification (no company queue). */
+/** STARTER: start 10-day trial after identity + training (no Stripe). */
+router.post(
+  "/marketplace-membership/starter/start-trial",
+  marketplaceMembershipsController.startStarterTrial,
+);
+
+/** Legacy alias → start-trial (kept for older clients). */
 router.post(
   "/marketplace-membership/starter/activate",
   marketplaceMembershipsController.activateStarter,

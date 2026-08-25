@@ -227,7 +227,8 @@ async function rejectActivationRequest({
 }
 
 /**
- * Starter: verification → immediate activate (10 days, 20 Bids once). No company queue.
+ * Starter trial start: identity + training gates, then 10-day clock.
+ * Prefer POST .../starter/start-trial. Legacy .../starter/activate aliases here.
  */
 async function activateStarterMembership({
   freelancerUserId,
@@ -235,28 +236,25 @@ async function activateStarterMembership({
   now = new Date(),
   skipVerification = false,
 } = {}) {
-  const plan = await plansService.getMarketplaceMembershipPlanByTierCode("starter");
-  if (!plan || !plan.isActive) {
-    throw createAppError("Starter plan is not available.", 404, {
-      exposeToClient: true,
-      publicCode: "STARTER_PLAN_NOT_FOUND",
+  if (skipVerification === true) {
+    // Account-activation bootstrap: grant pending entitlement only (no trial clock).
+    return membershipsService.ensureStarterPendingEntitlement({
+      freelancerUserId,
+      actorUserId,
+      now,
     });
   }
-  return membershipsService.createAndActivateMarketplaceMembership({
+  return membershipsService.startStarterTrial({
     freelancerUserId,
-    marketplacePlanId: Number(plan.id),
-    source: "system",
     actorUserId,
     now,
-    paidTermStartsAt: now,
-    skipVerification: Boolean(skipVerification),
   });
 }
 
 /**
  * After platform account activation:
- * - If freelancer already has a current marketplace membership (any paid/usable plan) → keep it.
- * - If none → grant free STARTER once (never supersedes an existing current membership).
+ * - If freelancer already has a current marketplace membership → keep it.
+ * - If none → grant STARTER pending entitlement (trial NOT started).
  */
 async function ensureMarketplaceMembershipAfterAccountActivation({
   freelancerUserId,
@@ -279,17 +277,17 @@ async function ensureMarketplaceMembershipAfterAccountActivation({
       };
     }
 
-    const out = await activateStarterMembership({
+    const out = await membershipsService.ensureStarterPendingEntitlement({
       freelancerUserId: uid,
       actorUserId: actorUserId != null ? Number(actorUserId) : uid,
       now,
-      skipVerification: true,
     });
     return {
-      grantedStarter: true,
+      grantedStarter: Boolean(out?.created),
       keptExisting: false,
-      membership: out?.membership || out || null,
+      membership: out?.membership || null,
       tierCode: "starter",
+      status: out?.membership?.status || "starter_pending_start",
     };
   } catch (err) {
     const code = err?.publicCode || err?.code || null;

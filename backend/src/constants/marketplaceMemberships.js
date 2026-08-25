@@ -5,6 +5,7 @@
 const MEMBERSHIP_STATUSES = Object.freeze([
   "pending",
   "payment_pending",
+  "starter_pending_start",
   "purchased_pending_start",
   "active",
   "cancel_at_period_end",
@@ -18,6 +19,7 @@ const MEMBERSHIP_STATUSES = Object.freeze([
 const CURRENT_ALLOWED_MEMBERSHIP_STATUSES = Object.freeze([
   "pending",
   "payment_pending",
+  "starter_pending_start",
   "purchased_pending_start",
   "active",
   "cancel_at_period_end",
@@ -50,6 +52,8 @@ const USAGE_EVENT_TYPES = Object.freeze(["consumed", "returned", "admin_adjustme
 const MEMBERSHIP_AUDIT_ACTIONS = Object.freeze({
   MEMBERSHIP_CREATED: "MEMBERSHIP_CREATED",
   MEMBERSHIP_ACTIVATED: "MEMBERSHIP_ACTIVATED",
+  MEMBERSHIP_STARTER_PENDING_GRANTED: "MEMBERSHIP_STARTER_PENDING_GRANTED",
+  MEMBERSHIP_STARTER_TRIAL_STARTED: "MEMBERSHIP_STARTER_TRIAL_STARTED",
   MEMBERSHIP_PURCHASED_PENDING_START: "MEMBERSHIP_PURCHASED_PENDING_START",
   MEMBERSHIP_TERM_STARTED_ON_FIRST_ORDER: "MEMBERSHIP_TERM_STARTED_ON_FIRST_ORDER",
   MEMBERSHIP_SUPERSEDED: "MEMBERSHIP_SUPERSEDED",

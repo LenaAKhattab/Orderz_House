@@ -31,14 +31,14 @@ describe("M5 helpers — paid vs STARTER", () => {
 });
 
 describe("M5 A/B — checkout wiring", () => {
-  it("paid packages call createMarketplaceMembershipCheckoutRequest; STARTER uses activate endpoint", () => {
+  it("paid packages call createMarketplaceMembershipCheckoutRequest; STARTER uses start-trial panel not card CTA", () => {
     const hook = read("hooks/useMarketplaceMembershipCheckout.js");
     const page = read("pages/dashboard/FreelancerPlansPage.jsx");
     const planCard = read("components/plans/PlanCard.jsx");
     const api = read("services/api.js");
 
     assert.match(hook, /createMarketplaceMembershipCheckoutRequest/);
-    assert.match(hook, /activateMarketplaceStarterMembershipRequest/);
+    assert.match(hook, /startMarketplaceStarterTrialRequest/);
     assert.match(hook, /isPaidMarketplaceMembershipTierCode/);
     assert.match(hook, /isStarterMarketplaceMembershipTierCode/);
     assert.match(hook, /window\.location\.href\s*=\s*url/);
@@ -47,28 +47,30 @@ describe("M5 A/B — checkout wiring", () => {
 
     assert.match(page, /useMarketplaceMembershipCheckout/);
     assert.match(page, /startMarketplaceCheckout/);
+    assert.match(page, /startStarterTrial/);
     assert.match(page, /checkoutBusyPlanId=\{marketplaceCheckoutBusyPlanId\}/);
     assert.match(page, /onCta=\{startMarketplaceCheckout\}/);
 
     assert.match(planCard, /typeof onCta === "function"/);
     assert.match(planCard, /onCta\(plan\)/);
     assert.match(planCard, /plans\.cta\.buyMembership/);
-    assert.match(planCard, /plans\.cta\.activateStarter/);
+    assert.match(planCard, /plans\.cta\.currentPlan/);
+    assert.doesNotMatch(planCard, /plans\.cta\.activateStarter/);
 
     assert.match(api, /createMarketplaceMembershipCheckoutRequest/);
-    assert.match(api, /activateMarketplaceStarterMembershipRequest/);
-    assert.match(api, /\/freelancer\/marketplace-membership\/starter\/activate/);
+    assert.match(api, /startMarketplaceStarterTrialRequest/);
+    assert.match(api, /\/freelancer\/marketplace-membership\/starter\/start-trial/);
     assert.match(api, /\/freelancer\/marketplace-membership\/checkout/);
   });
 
-  it("STARTER path does not call Stripe checkout", () => {
+  it("STARTER path does not call Stripe checkout from plan CTA", () => {
     const hook = read("hooks/useMarketplaceMembershipCheckout.js");
     const starterBlockStart = hook.indexOf("isStarterMarketplaceMembershipTierCode");
     const paidBlockStart = hook.indexOf("isPaidMarketplaceMembershipTierCode(tier)");
     assert.ok(starterBlockStart > 0 && paidBlockStart > starterBlockStart);
     const starterBody = hook.slice(starterBlockStart, paidBlockStart);
-    assert.match(starterBody, /activateMarketplaceStarterMembershipRequest/);
     assert.doesNotMatch(starterBody, /createMarketplaceMembershipCheckoutRequest/);
+    assert.doesNotMatch(starterBody, /startMarketplaceStarterTrialRequest/);
   });
 });
 

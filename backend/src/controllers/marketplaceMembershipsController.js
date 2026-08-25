@@ -81,12 +81,24 @@ async function runMembershipCyclesReconcileTick(req, res, next) {
 
 async function activateStarter(req, res, next) {
   try {
-    const activation = require("../services/marketplaceMembershipActivationRequestService");
-    const out = await activation.activateStarterMembership({
+    // Legacy path → start trial (identity + training). Prefer /starter/start-trial.
+    const out = await marketplaceMembershipsService.startStarterTrial({
       freelancerUserId: req.auth?.userId || req.user?.id,
       actorUserId: req.auth?.userId || req.user?.id,
     });
-    return res.status(201).json({ success: true, data: out });
+    return res.status(out?.idempotent ? 200 : 201).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function startStarterTrial(req, res, next) {
+  try {
+    const out = await marketplaceMembershipsService.startStarterTrial({
+      freelancerUserId: req.auth?.userId || req.user?.id,
+      actorUserId: req.auth?.userId || req.user?.id,
+    });
+    return res.status(out?.idempotent ? 200 : 201).json({ success: true, data: out });
   } catch (err) {
     return next(err);
   }
@@ -161,6 +173,7 @@ module.exports = {
   getAdminMarketplaceMembership,
   runMembershipCyclesReconcileTick,
   activateStarter,
+  startStarterTrial,
   requestPaidActivation,
   approveActivationRequest,
   rejectActivationRequest,

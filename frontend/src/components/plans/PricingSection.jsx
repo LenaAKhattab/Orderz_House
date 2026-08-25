@@ -23,6 +23,7 @@ const PricingSection = ({
   plans,
   onCta,
   currentSubscription = null,
+  currentMarketplaceMembership = null,
   hasBlockingSubscription = false,
   loading = false,
   checkoutBusyPlanId = null,
@@ -119,6 +120,7 @@ const PricingSection = ({
               plan={p}
               featured={idx === featuredIndex}
               currentSubscription={currentSubscription}
+              currentMarketplaceMembership={currentMarketplaceMembership}
               onCta={onCta}
               hasBlockingSubscription={hasBlockingSubscription}
               checkoutBusy={checkoutBusyPlanId != null && String(checkoutBusyPlanId) === String(p.id)}

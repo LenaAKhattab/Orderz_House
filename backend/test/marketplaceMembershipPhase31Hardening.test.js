@@ -36,6 +36,7 @@ describe("canonical status / is_current model", () => {
     assert.deepStrictEqual([...CURRENT_ALLOWED_MEMBERSHIP_STATUSES], [
       "pending",
       "payment_pending",
+      "starter_pending_start",
       "purchased_pending_start",
       "active",
       "cancel_at_period_end",

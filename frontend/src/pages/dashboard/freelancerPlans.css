@@ -568,3 +568,27 @@
   border-color: rgba(37, 99, 235, 0.28);
   background: linear-gradient(135deg, rgba(219, 234, 254, 0.55), rgba(255, 255, 255, 0.88));
 }
+
+.fp-hero--membership-starter-pending {
+  border-color: rgba(15, 118, 110, 0.28);
+  background: linear-gradient(135deg, rgba(204, 251, 241, 0.55), rgba(255, 255, 255, 0.88));
+}
+
+.fp-hero__trial-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.65rem 1.25rem;
+  border: 0;
+  border-radius: 10px;
+  background: #0f766e;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fp-hero__trial-cta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

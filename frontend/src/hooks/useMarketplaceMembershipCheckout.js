@@ -1,12 +1,13 @@
 /**
  * Marketplace-M5 — paid package checkout + Stripe return banners (UI only).
  * Does NOT grant membership; webhook M3 remains the grant source of truth.
+ * STARTER trial starts from the membership panel (start-trial), not the plan card CTA.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  activateMarketplaceStarterMembershipRequest,
   createMarketplaceMembershipCheckoutRequest,
+  startMarketplaceStarterTrialRequest,
 } from "../services/api";
 import {
   fetchFreelancerMarketplaceMembershipCached,
@@ -20,10 +21,12 @@ import {
   isStarterMarketplaceMembershipTierCode,
   resolveMarketplaceCheckoutPlanCode,
 } from "../lib/marketplaceMembership/marketplaceMembershipCheckoutUi";
+import { isCurrentMarketplacePlanCard } from "../lib/marketplaceMembership/marketplaceMembershipCurrentPlanUi";
 
 export function useMarketplaceMembershipCheckout({
   enabled = true,
   onMembershipUpdated = null,
+  membershipSnapshot = null,
 } = {}) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -31,6 +34,7 @@ export function useMarketplaceMembershipCheckout({
   const location = useLocation();
   const navigate = useNavigate();
   const [checkoutBusyPlanId, setCheckoutBusyPlanId] = useState(null);
+  const [trialBusy, setTrialBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [returnBanner, setReturnBanner] = useState(null);
   const handledReturnRef = useRef(new Set());
@@ -104,29 +108,11 @@ export function useMarketplaceMembershipCheckout({
       const tier = resolveMarketplaceCheckoutPlanCode(plan);
 
       if (isStarterMarketplaceMembershipTierCode(tier) || Number(plan.priceJod) === 0) {
-        setCheckoutBusyPlanId(planId || "starter");
-        setCheckoutError("");
-        try {
-          await activateMarketplaceStarterMembershipRequest();
-          await refreshMembership();
-          push({
-            type: "success",
-            title: t("freelancerDashboard.marketplaceMembership.starterActivatedTitle"),
-            message: t("freelancerDashboard.marketplaceMembership.starterActivatedMessage"),
-          });
-        } catch (err) {
-          const msg =
-            err?.response?.data?.message ||
-            t("freelancerDashboard.marketplaceMembership.starterActivateFailed");
-          setCheckoutError(msg);
-          push({
-            type: "warning",
-            title: t("freelancerDashboard.marketplaceMembership.starterActivateFailedTitle"),
-            message: msg,
-          });
-        } finally {
-          setCheckoutBusyPlanId(null);
-        }
+        // STARTER is current-plan / trial panel only — never activate from card CTA.
+        return;
+      }
+
+      if (isCurrentMarketplacePlanCard(plan, membershipSnapshot)) {
         return;
       }
 
@@ -161,17 +147,46 @@ export function useMarketplaceMembershipCheckout({
         setCheckoutBusyPlanId(null);
       }
     },
-    [checkoutBusyPlanId, enabled, push, refreshMembership, t],
+    [checkoutBusyPlanId, enabled, membershipSnapshot, push, t],
   );
+
+  const startStarterTrial = useCallback(async () => {
+    if (!enabled || trialBusy) return;
+    setTrialBusy(true);
+    setCheckoutError("");
+    try {
+      await startMarketplaceStarterTrialRequest();
+      await refreshMembership();
+      push({
+        type: "success",
+        title: t("freelancerDashboard.marketplaceMembership.starterTrialStartedTitle"),
+        message: t("freelancerDashboard.marketplaceMembership.starterTrialStartedMessage"),
+      });
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        t("freelancerDashboard.marketplaceMembership.starterTrialFailed");
+      setCheckoutError(msg);
+      push({
+        type: "warning",
+        title: t("freelancerDashboard.marketplaceMembership.starterTrialFailedTitle"),
+        message: msg,
+      });
+    } finally {
+      setTrialBusy(false);
+    }
+  }, [enabled, push, refreshMembership, t, trialBusy]);
 
   const dismissReturnBanner = useCallback(() => setReturnBanner(null), []);
 
   return {
     checkoutBusyPlanId,
+    trialBusy,
     checkoutError,
     returnBanner,
     dismissReturnBanner,
     startMarketplaceCheckout,
+    startStarterTrial,
     refreshMembership,
   };
 }

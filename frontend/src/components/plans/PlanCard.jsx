@@ -14,6 +14,7 @@ import {
   isStarterMarketplaceMembershipTierCode,
   resolveMarketplaceCheckoutPlanCode,
 } from "../../lib/marketplaceMembership/marketplaceMembershipCheckoutUi";
+import { isCurrentMarketplacePlanCard } from "../../lib/marketplaceMembership/marketplaceMembershipCurrentPlanUi";
 
 const MOBILE_FEATURE_PREVIEW = 3;
 const DESKTOP_PUBLIC_FEATURE_LIMIT = 5;
@@ -83,6 +84,7 @@ const PlanCard = ({
   plan,
   featured = false,
   currentSubscription = null,
+  currentMarketplaceMembership = null,
   onCta,
   hasBlockingSubscription = false,
   checkoutBusy = false,
@@ -101,6 +103,9 @@ const PlanCard = ({
   const isMarketplaceMembership =
     plan?.catalogSource === "marketplace_membership" || Boolean(plan?.marketplaceMembership);
   const subscriptionRef = getSubscriptionPlanRef(plan);
+  const isMarketplaceCurrentPlan = isMarketplaceMembership
+    ? isCurrentMarketplacePlanCard(plan, currentMarketplaceMembership)
+    : false;
   const isCurrentPlan =
     Boolean(currentSubscription) && String(currentSubscription.planId) === String(subscriptionRef.id);
   const isUpgradeTarget = isUpgradePlan(currentSubscription, subscriptionRef);
@@ -148,13 +153,17 @@ const PlanCard = ({
   const ctaLabel = isMarketplaceMembership
     ? checkoutBusy
       ? t("common.loading.redirecting")
-      : typeof onCta === "function"
-        ? isPaidMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan))
-          ? t("plans.cta.buyMembership")
-          : isStarterMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan))
-            ? t("plans.cta.activateStarter")
-            : customButtonLabel || t("plans.cta.viewMembership")
-        : customButtonLabel || t("plans.cta.viewMembership")
+      : isMarketplaceCurrentPlan
+        ? t("plans.cta.currentPlan")
+        : typeof onCta === "function"
+          ? isPaidMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan))
+            ? t("plans.cta.buyMembership")
+            : isStarterMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan))
+              ? currentMarketplaceMembership?.hasMembership
+                ? t("plans.cta.currentPlan")
+                : t("plans.cta.viewMembership")
+              : customButtonLabel || t("plans.cta.viewMembership")
+          : customButtonLabel || t("plans.cta.viewMembership")
     : freePlanPayFee
       ? t("plans.cta.payActivationFee")
       : customButtonLabel
@@ -180,15 +189,20 @@ const PlanCard = ({
                           : t("plans.cta.startNow");
   const usePrimaryCta = isMarketplaceMembership
     ? Boolean(
-        (typeof onCta === "function" && isFreelancer) ||
-          (featured && (isGuest || isFreelancer) && !isLoggedNonFreelancer),
+        !isMarketplaceCurrentPlan &&
+          isPaidMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan)) &&
+          ((typeof onCta === "function" && isFreelancer) ||
+            (featured && (isGuest || isFreelancer) && !isLoggedNonFreelancer)),
       )
     : featured &&
       (isGuest || (isFreelancer && (canSelfCheckout || freePlanPayFee))) &&
       !isBlockedBySubscription &&
       !isCurrentPlanLocked;
   const isLocked = isMarketplaceMembership
-    ? isLoggedNonFreelancer || (typeof onCta === "function" && checkoutBusy)
+    ? isLoggedNonFreelancer ||
+      isMarketplaceCurrentPlan ||
+      isStarterMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan)) ||
+      (typeof onCta === "function" && checkoutBusy)
     : isLoggedNonFreelancer ||
       isCurrentPlanLocked ||
       isLowerTier ||

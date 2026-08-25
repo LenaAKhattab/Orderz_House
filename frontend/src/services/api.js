@@ -700,13 +700,16 @@ export const getFreelancerMarketplaceMembershipRequest = async () => {
   return data;
 };
 
-/** Marketplace STARTER free activation (no Stripe). */
-export const activateMarketplaceStarterMembershipRequest = async () => {
-  const { data } = await api.post("/freelancer/marketplace-membership/starter/activate", {}, {
+/** Marketplace STARTER trial start (identity + training required). */
+export const startMarketplaceStarterTrialRequest = async () => {
+  const { data } = await api.post("/freelancer/marketplace-membership/starter/start-trial", {}, {
     timeout: 30000,
   });
   return data;
 };
+
+/** @deprecated Prefer startMarketplaceStarterTrialRequest */
+export const activateMarketplaceStarterMembershipRequest = startMarketplaceStarterTrialRequest;
 
 /** Marketplace-M2: start Stripe Checkout for SILVER/PRO/ELITE (does not grant membership). */
 export const createMarketplaceMembershipCheckoutRequest = async (planCode) => {

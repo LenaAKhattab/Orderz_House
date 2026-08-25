@@ -12,6 +12,11 @@ const PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES = Object.freeze(["silver", "pro", "
 const PURCHASED_PENDING_START_MESSAGE_AR =
   "تم شراء العضوية بنجاح. لن تبدأ مدة الاشتراك إلا عند استلامك أول طلب. قبل التقديم على الطلبات، يرجى إكمال توثيق الهوية والتدريب.";
 
+const STARTER_PENDING_START_MESSAGE_AR =
+  "لن تبدأ فترة التجربة إلا بعد توثيق الهوية وإكمال التدريب والضغط على زر بدء التجربة.";
+
+const STARTER_TRIAL_DURATION_DAYS = 10;
+
 /** Stripe/self-checkout paid term start policy (admin path remains COMPANY_APPROVAL_TIME). */
 const PAID_MEMBERSHIP_STRIPE_PERIOD_START = "FIRST_REAL_ORDER";
 
@@ -29,9 +34,14 @@ function isPurchasedPendingStartStatus(status) {
   return String(status || "") === "purchased_pending_start";
 }
 
+function isStarterPendingStartStatus(status) {
+  return String(status || "") === "starter_pending_start";
+}
+
 /**
  * Membership statuses that may entitle a freelancer to apply (once KYC/training pass).
  * Includes purchased_pending_start so first real order can be obtained before the clock starts.
+ * starter_pending_start is NOT application-eligible until the trial is explicitly started.
  * Does NOT unlock Priority Bid / cycle benefit consumption by itself (see isBenefitUsableStatus).
  */
 function isApplicationEligibleStatus(status) {
@@ -101,10 +111,13 @@ function decideMarketplaceMembershipFirstOrderStart({
 module.exports = {
   PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES,
   PURCHASED_PENDING_START_MESSAGE_AR,
+  STARTER_PENDING_START_MESSAGE_AR,
+  STARTER_TRIAL_DURATION_DAYS,
   PAID_MEMBERSHIP_STRIPE_PERIOD_START,
   REAL_ORDER_SOURCE_TYPES,
   isPaidMarketplaceMembershipTier,
   isPurchasedPendingStartStatus,
+  isStarterPendingStartStatus,
   isApplicationEligibleStatus,
   computePaidTermWindowFromDurationDays,
   isRealOrderForMarketplaceMembershipStart,

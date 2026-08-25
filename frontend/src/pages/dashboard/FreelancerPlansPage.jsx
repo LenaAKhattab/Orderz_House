@@ -66,13 +66,16 @@ export default function FreelancerPlansPage() {
 
   const {
     checkoutBusyPlanId: marketplaceCheckoutBusyPlanId,
+    trialBusy,
     checkoutError: marketplaceCheckoutError,
     returnBanner,
     dismissReturnBanner,
     startMarketplaceCheckout,
+    startStarterTrial,
   } = useMarketplaceMembershipCheckout({
     enabled: true,
     onMembershipUpdated: applyMembershipSnapshot,
+    membershipSnapshot: membership,
   });
 
   const { eligibility } = useFreelancerMarketplaceContext();
@@ -159,6 +162,8 @@ export default function FreelancerPlansPage() {
               snapshot={membership}
               error={membershipError}
               catalogPlans={plans}
+              onStartStarterTrial={startStarterTrial}
+              trialBusy={trialBusy}
             />
             <section className="fp-surface fp-pricing-wrap" aria-label={catalogAria}>
               {error || marketplaceCheckoutError ? (
@@ -170,6 +175,7 @@ export default function FreelancerPlansPage() {
                   loading={false}
                   plans={plans}
                   currentSubscription={null}
+                  currentMarketplaceMembership={membership}
                   hasBlockingSubscription={false}
                   checkoutBusyPlanId={marketplaceCheckoutBusyPlanId}
                   activationFeeNeedsPayment={false}
