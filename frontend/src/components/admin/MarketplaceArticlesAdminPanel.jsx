@@ -25,6 +25,7 @@ import MarketplaceArticleFormModal from "../../admin/marketplaceArticles/Marketp
 import MarketplaceArticleApplicationsPanel from "../../admin/marketplaceArticles/MarketplaceArticleApplicationsPanel";
 import {
   ARTICLE_PACKAGE_PLAN_CODES,
+  ARTICLE_PACKAGE_PLAN_LABELS_AR,
   BILDAZO_CATEGORIES_LOAD_ERROR_AR,
   defaultPackageRequirementsState,
 } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
@@ -34,8 +35,15 @@ import "../../admin/marketplaceMembership/marketplace-membership-plans.css";
 /**
  * Super Admin articles list/create/edit — reused inside إدارة المقالات hub.
  * Arabic-first labels (platform SA UX).
+ *
+ * @param {object} props
+ * @param {boolean} [props.showHeaderActions=true]
+ * @param {boolean} [props.inventoryHub=false] — always-visible OZ02 create + package reqs for مخزون المقالات
  */
-export default function MarketplaceArticlesAdminPanel({ showHeaderActions = true }) {
+export default function MarketplaceArticlesAdminPanel({
+  showHeaderActions = true,
+  inventoryHub = false,
+}) {
   const { push } = useToast();
   const { user } = useAuth();
   const canEditPackageRequirements = isSuperAdminUser(user);
@@ -64,7 +72,7 @@ export default function MarketplaceArticlesAdminPanel({ showHeaderActions = true
     mapError: (err) => getSafeApiErrorMessage(err) || "تعذر تحميل المقالات.",
   });
   const [submitting, setSubmitting] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(Boolean(inventoryHub));
   const [editArticle, setEditArticle] = useState(null);
 
   const formOpen = createOpen || Boolean(editArticle);
@@ -142,9 +150,20 @@ export default function MarketplaceArticlesAdminPanel({ showHeaderActions = true
   }, []);
 
   useEffect(() => {
-    if (!formOpen) return;
     void loadBildazoCategories();
-  }, [formOpen, loadBildazoCategories]);
+  }, [loadBildazoCategories]);
+
+  useEffect(() => {
+    if (!formOpen) return;
+    if (bildazoCategories.length || bildazoCategoriesLoading || bildazoCategoriesError) return;
+    void loadBildazoCategories();
+  }, [
+    formOpen,
+    loadBildazoCategories,
+    bildazoCategories.length,
+    bildazoCategoriesLoading,
+    bildazoCategoriesError,
+  ]);
 
   useEffect(() => {
     const editId = searchParams.get("edit");
@@ -174,7 +193,7 @@ export default function MarketplaceArticlesAdminPanel({ showHeaderActions = true
     setSubmitting(true);
     try {
       await createMarketplaceArticleRequest(payload);
-      setCreateOpen(false);
+      if (!inventoryHub) setCreateOpen(false);
       push({ type: "success", message: "تم إنشاء المقال." });
       await refresh();
     } catch (err) {
@@ -252,34 +271,71 @@ export default function MarketplaceArticlesAdminPanel({ showHeaderActions = true
   return (
     <div data-testid="marketplace-articles-admin-panel">
       <DashboardSection>
-        <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-          <p style={{ marginTop: 0, opacity: 0.9, maxWidth: "40rem" }}>
-            أنشئ وعدّل مقالات العمل، وربطها بحملات التفعيل عند الحاجة.
-          </p>
-          {showHeaderActions ? (
-            <div className="flex flex-wrap items-center gap-2">
-              {refreshing ? (
-                <span className="text-sm text-slate-500" data-testid="admin-list-refreshing">
-                  جاري التحديث...
-                </span>
-              ) : null}
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => void refresh()}
-                disabled={refreshing || rateLimited}
-                data-testid="articles-refresh-btn"
-              >
-                تحديث
-              </Button>
-              <Button type="button" onClick={() => setCreateOpen(true)} data-testid="articles-add-btn">
-                إضافة مقال
-              </Button>
-            </div>
-          ) : null}
-        </div>
+        {inventoryHub ? (
+          <div className="oh-mmp-inventory-hub-banner" style={{ marginBottom: 12 }}>
+            <h3 className="oh-articles-hub__section-title" style={{ marginTop: 0 }}>
+              مخزون مقالات السوق (بلدازو)
+            </h3>
+            <p style={{ marginTop: 0, opacity: 0.9, maxWidth: "42rem" }}>
+              أنشئ مقال المخزون بالحقول المطلوبة: العنوان، الوصف، صنف بلدازو، ونمط الكتابة.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+            <p style={{ marginTop: 0, opacity: 0.9, maxWidth: "40rem" }}>
+              أنشئ وعدّل مقالات العمل، وربطها بحملات التفعيل عند الحاجة.
+            </p>
+            {showHeaderActions ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {refreshing ? (
+                  <span className="text-sm text-slate-500" data-testid="admin-list-refreshing">
+                    جاري التحديث...
+                  </span>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => void refresh()}
+                  disabled={refreshing || rateLimited}
+                  data-testid="articles-refresh-btn"
+                >
+                  تحديث
+                </Button>
+                <Button type="button" onClick={() => setCreateOpen(true)} data-testid="articles-add-btn">
+                  إضافة مقال
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        )}
 
-        <details className="oh-mmp-package-reqs" data-testid="package-requirements-section" open={false}>
+        {inventoryHub ? (
+          <MarketplaceArticleFormModal
+            open={createOpen}
+            mode="create"
+            variant="inline"
+            categories={categories}
+            subcategories={subcategories}
+            bildazoCategories={bildazoCategories}
+            categoriesLoading={bildazoCategoriesLoading}
+            categoriesError={bildazoCategoriesError}
+            activationCampaigns={activationCampaigns}
+            isEn={false}
+            submitting={submitting}
+            titleOverride="إضافة إلى المخزون"
+            submitLabel="حفظ في المخزون"
+            hideCancel
+            onClose={() => {}}
+            onSubmit={handleCreate}
+            onCategoryChange={loadSubcategories}
+          />
+        ) : null}
+
+        <details
+          className="oh-mmp-package-reqs"
+          data-testid="package-requirements-section"
+          open={inventoryHub ? true : false}
+        >
           <summary>متطلبات الباقات</summary>
           {packageReqsLoading ? (
             <p className="oh-mmp-form__hint">جارٍ التحميل…</p>
@@ -287,7 +343,15 @@ export default function MarketplaceArticlesAdminPanel({ showHeaderActions = true
             <div className="oh-mmp-package-reqs__grid">
               {packageRequirements.map((row) => (
                 <div key={row.planCode} className="oh-mmp-package-reqs__row">
-                  <div className="oh-mmp-package-reqs__plan">{row.planCode}</div>
+                  <div className="oh-mmp-package-reqs__plan">
+                    {row.planCode}
+                    {ARTICLE_PACKAGE_PLAN_LABELS_AR[row.planCode]
+                      ? ` / ${ARTICLE_PACKAGE_PLAN_LABELS_AR[row.planCode]}`
+                      : ""}
+                    <span className="oh-mmp-form__hint" style={{ display: "block", fontWeight: 400 }}>
+                      {row.minWords} كلمة، {row.minReferences} مراجع
+                    </span>
+                  </div>
                   <label>
                     الحد الأدنى للكلمات
                     <input
@@ -334,6 +398,20 @@ export default function MarketplaceArticlesAdminPanel({ showHeaderActions = true
           )}
         </details>
 
+        {inventoryHub && showHeaderActions ? (
+          <div className="flex flex-wrap items-center gap-2" style={{ margin: "12px 0" }}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => void refresh()}
+              disabled={refreshing || rateLimited}
+              data-testid="articles-refresh-btn"
+            >
+              تحديث قائمة مقالات السوق
+            </Button>
+          </div>
+        ) : null}
+
         {refreshError ? (
           <p role="status" data-testid="admin-list-refresh-soft-note" className="mb-3 text-sm text-amber-700">
             {refreshError}
@@ -369,21 +447,23 @@ export default function MarketplaceArticlesAdminPanel({ showHeaderActions = true
         ) : null}
       </DashboardSection>
 
-      <MarketplaceArticleFormModal
-        open={createOpen}
-        mode="create"
-        categories={categories}
-        subcategories={subcategories}
-        bildazoCategories={bildazoCategories}
-        categoriesLoading={bildazoCategoriesLoading}
-        categoriesError={bildazoCategoriesError}
-        activationCampaigns={activationCampaigns}
-        isEn={false}
-        submitting={submitting}
-        onClose={() => setCreateOpen(false)}
-        onSubmit={handleCreate}
-        onCategoryChange={loadSubcategories}
-      />
+      {!inventoryHub ? (
+        <MarketplaceArticleFormModal
+          open={createOpen}
+          mode="create"
+          categories={categories}
+          subcategories={subcategories}
+          bildazoCategories={bildazoCategories}
+          categoriesLoading={bildazoCategoriesLoading}
+          categoriesError={bildazoCategoriesError}
+          activationCampaigns={activationCampaigns}
+          isEn={false}
+          submitting={submitting}
+          onClose={() => setCreateOpen(false)}
+          onSubmit={handleCreate}
+          onCategoryChange={loadSubcategories}
+        />
+      ) : null}
 
       <MarketplaceArticleFormModal
         open={Boolean(editArticle)}

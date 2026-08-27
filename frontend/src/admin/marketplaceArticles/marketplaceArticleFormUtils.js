@@ -18,6 +18,12 @@ export const ARTICLE_WRITING_SOURCE_LABELS_AR = Object.freeze({
   AI_ASSISTED: "بمساعدة الذكاء الاصطناعي",
 });
 export const ARTICLE_PACKAGE_PLAN_CODES = ["STARTER", "SILVER", "PRO", "ELITE"];
+export const ARTICLE_PACKAGE_PLAN_LABELS_AR = Object.freeze({
+  STARTER: "تجريبية / مجانية",
+  SILVER: "SILVER",
+  PRO: "PRO",
+  ELITE: "ELITE",
+});
 export const ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS = Object.freeze({
   STARTER: { minWords: 600, minReferences: 2 },
   SILVER: { minWords: 1200, minReferences: 4 },

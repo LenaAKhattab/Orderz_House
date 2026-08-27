@@ -140,11 +140,12 @@ describe("Super Admin unified المقالات hub", () => {
     assert.doesNotMatch(hub, /deleteSuperAdminActivationArticleInventory/);
   });
 
-  it("articles hub is the primary article operations path", () => {
+  it("inventory tab always wires OZ02 marketplace panel (not behind toggle)", () => {
     const hub = read("pages/dashboard/SuperAdminArticlesHubPage.jsx");
-    const page = read("pages/dashboard/SuperAdminFreelancerActivationPage.jsx");
-    assert.match(hub, /ensureSuperAdminArticleOperationsSetupRequest/);
-    assert.match(hub, /previewSuperAdminActivationArticleReleaseRequest/);
-    assert.doesNotMatch(page, /FreelancerActivationArticleOpsPanel/);
+    assert.match(hub, /articles-hub-panel-inventory/);
+    assert.match(hub, /articles-marketplace-create-panel/);
+    assert.match(hub, /MarketplaceArticlesAdminPanel inventoryHub/);
+    assert.doesNotMatch(hub, /showCreateArticles/);
+    assert.match(hub, /مخزون التفعيل/);
   });
 });

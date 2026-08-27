@@ -120,6 +120,7 @@ function BildazoCategorySearchSelect({
 export default function MarketplaceArticleFormModal({
   open,
   mode = "create",
+  variant = "modal",
   initialArticle = null,
   categories = [],
   subcategories = [],
@@ -129,11 +130,15 @@ export default function MarketplaceArticleFormModal({
   activationCampaigns = [],
   isEn = false,
   submitting = false,
+  titleOverride = null,
+  submitLabel = null,
+  hideCancel = false,
   onClose,
   onSubmit,
   onCategoryChange,
 }) {
   const isCreate = mode === "create";
+  const isInline = variant === "inline";
   const [form, setForm] = useState(getInitialMarketplaceArticleFormState);
   const [errors, setErrors] = useState({});
 
@@ -156,18 +161,16 @@ export default function MarketplaceArticleFormModal({
   };
 
   const valueLabel = deriveArticleValueJodFromLevel(form.articleLevel);
+  const heading =
+    titleOverride ||
+    (isCreate ? (isEn ? "Add Article" : "إضافة مقال") : isEn ? "Edit Article" : "تعديل مقال");
+  const saveLabel = submitting
+    ? isEn
+      ? "Saving…"
+      : "جارٍ الحفظ…"
+    : submitLabel || (isEn ? "Save" : "حفظ");
 
-  return (
-    <div className="oh-mmp-modal" role="dialog" aria-modal="true">
-      <button type="button" className="oh-mmp-modal__backdrop" aria-label="Close" onClick={onClose} />
-      <div className="oh-mmp-modal__panel">
-        <div className="oh-mmp-modal__header">
-          <h2>{isCreate ? (isEn ? "Add Article" : "إضافة مقال") : isEn ? "Edit Article" : "تعديل مقال"}</h2>
-          <button type="button" className="oh-mmp-modal__close" onClick={onClose} disabled={submitting}>
-            ×
-          </button>
-        </div>
-
+  const formBody = (
         <form className="oh-mmp-form" onSubmit={handleSubmit} data-testid="marketplace-article-form">
           <label>
             {isEn ? "Title" : "العنوان"} *
@@ -182,7 +185,7 @@ export default function MarketplaceArticleFormModal({
           </label>
 
           <label>
-            {isEn ? "Brief / description" : "الوصف / الموجز"}
+            {isEn ? "Description / instructions" : "الوصف / التعليمات"}
             <textarea
               rows={4}
               value={form.description}
@@ -437,14 +440,38 @@ export default function MarketplaceArticleFormModal({
           </label>
 
           <div className="oh-mmp-form__actions">
-            <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
-              {isEn ? "Cancel" : "إلغاء"}
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? (isEn ? "Saving…" : "جارٍ الحفظ…") : isEn ? "Save" : "حفظ"}
+            {hideCancel ? null : (
+              <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
+                {isEn ? "Cancel" : "إلغاء"}
+              </Button>
+            )}
+            <Button type="submit" disabled={submitting} data-testid="article-form-submit">
+              {submitting ? (isEn ? "Saving…" : "جارٍ الحفظ…") : saveLabel}
             </Button>
           </div>
         </form>
+  );
+
+  if (isInline) {
+    return (
+      <div className="oh-mmp-inline-form" data-testid="marketplace-article-form-inline">
+        <h3 className="oh-mmp-inline-form__title">{heading}</h3>
+        {formBody}
+      </div>
+    );
+  }
+
+  return (
+    <div className="oh-mmp-modal" role="dialog" aria-modal="true">
+      <button type="button" className="oh-mmp-modal__backdrop" aria-label="Close" onClick={onClose} />
+      <div className="oh-mmp-modal__panel">
+        <div className="oh-mmp-modal__header">
+          <h2>{heading}</h2>
+          <button type="button" className="oh-mmp-modal__close" onClick={onClose} disabled={submitting}>
+            ×
+          </button>
+        </div>
+        {formBody}
       </div>
     </div>
   );

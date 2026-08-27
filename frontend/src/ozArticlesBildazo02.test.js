@@ -27,9 +27,11 @@ describe("OZ-Articles-Bildazo-02 inventory form", () => {
     const utils = read("admin/marketplaceArticles/marketplaceArticleFormUtils.js");
     assert.match(modal, /article-form-title/);
     assert.match(modal, /article-form-description/);
+    assert.match(modal, /الوصف \/ التعليمات/);
     assert.match(modal, /bildazo-category-select/);
     assert.match(modal, /article-form-writing-mode/);
     assert.match(modal, /ARTICLE_WRITING_MODE_LABELS_AR/);
+    assert.match(modal, /variant === "inline"/);
     assert.match(utils, /بالذكاء الاصطناعي/);
     assert.match(utils, /يدوي/);
     assert.match(utils, /لا يفرق/);
@@ -56,6 +58,7 @@ describe("OZ-Articles-Bildazo-02 inventory form", () => {
     const payload = normalizeMarketplaceArticlePayload(ok);
     assert.equal(payload.writingMode, "either");
     assert.equal(payload.bildazoCategoryId, "11111111-1111-4111-8111-111111111111");
+    assert.ok("description" in payload || payload.description === undefined || typeof payload.description === "string");
   });
 });
 
@@ -66,15 +69,47 @@ describe("OZ-Articles-Bildazo-02 package requirements section", () => {
     assert.match(panel, /متطلبات الباقات/);
     assert.match(panel, /package-requirements-section/);
     assert.match(panel, /ARTICLE_PACKAGE_PLAN_CODES/);
+    assert.match(panel, /ARTICLE_PACKAGE_PLAN_LABELS_AR/);
     assert.match(panel, /package-req-words-/);
     assert.match(panel, /package-req-refs-/);
     assert.match(utils, /STARTER/);
     assert.match(utils, /SILVER/);
     assert.match(utils, /PRO/);
     assert.match(utils, /ELITE/);
+    assert.match(utils, /تجريبية \/ مجانية/);
     assert.match(panel, /updateAdminArticlePackageRequirementsRequest/);
     assert.match(panel, /isSuperAdminUser/);
     assert.match(panel, /listAdminBildazoCategoriesRequest/);
+    assert.match(panel, /inventoryHub/);
+    assert.match(panel, /variant="inline"/);
+    assert.match(panel, /حفظ في المخزون/);
+    assert.match(panel, /BILDAZO_CATEGORIES_LOAD_ERROR_AR/);
+  });
+});
+
+describe("OZ-Articles-Bildazo-02 Super Admin hub inventory wiring", () => {
+  it("hub inventory tab always mounts OZ02 panel with required labels path", () => {
+    const hub = read("pages/dashboard/SuperAdminArticlesHubPage.jsx");
+    const panel = read("components/admin/MarketplaceArticlesAdminPanel.jsx");
+    const modal = read("admin/marketplaceArticles/MarketplaceArticleFormModal.jsx");
+    assert.match(hub, /articles-hub-panel-inventory/);
+    assert.match(hub, /articles-marketplace-create-panel/);
+    assert.match(hub, /MarketplaceArticlesAdminPanel inventoryHub/);
+    assert.doesNotMatch(hub, /showCreateArticles/);
+    assert.match(modal, /صنف بلدازو/);
+    assert.match(modal, /نمط الكتابة/);
+    assert.match(modal, /بالذكاء الاصطناعي/);
+    assert.match(modal, /يدوي/);
+    assert.match(modal, /لا يفرق/);
+    assert.match(panel, /متطلبات الباقات/);
+    assert.match(panel, /STARTER/);
+    assert.match(panel, /SILVER/);
+    assert.match(panel, /PRO/);
+    assert.match(panel, /ELITE/);
+    assert.match(panel, /تجريبية \/ مجانية/);
+    assert.match(modal, /الوصف \/ التعليمات/);
+    assert.match(panel, /createMarketplaceArticleRequest/);
+    assert.match(panel, /onSubmit=\{handleCreate\}/);
   });
 });
 

@@ -268,7 +268,6 @@ export default function SuperAdminArticlesHubPage() {
   const [liveItems, setLiveItems] = useState([]);
   const [liveSummary, setLiveSummary] = useState(null);
   const [expandedArticleId, setExpandedArticleId] = useState(null);
-  const [showCreateArticles, setShowCreateArticles] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const [fundModal, setFundModal] = useState(null);
   const [publishMode, setPublishMode] = useState("manual");
@@ -677,19 +676,32 @@ export default function SuperAdminArticlesHubPage() {
 
         {!loading && !error && activeTab === "inventory" ? (
           <div data-testid="articles-hub-panel-inventory">
+            <div
+              data-testid="articles-marketplace-create-panel"
+              className="oh-articles-hub__card"
+              style={{ marginBottom: 16 }}
+            >
+              <MarketplaceArticlesAdminPanel inventoryHub />
+            </div>
+
             <div className="oh-articles-hub__actions" style={{ marginBottom: 10 }}>
-              <button type="button" className="primary" onClick={() => setShowCreateArticles((v) => !v)}>
-                إضافة مقال
-              </button>
               <input
-                placeholder="بحث في المخزون"
+                placeholder="بحث في مخزون التفعيل"
                 value={invSearch}
                 onChange={(e) => setInvSearch(e.target.value)}
                 data-testid="articles-inventory-search"
               />
             </div>
-            <form onSubmit={onCreateInventory} className="oh-articles-hub__card" data-testid="articles-inventory-add-form" style={{ marginBottom: 12 }}>
-              <h3 className="oh-articles-hub__section-title">إضافة إلى المخزون</h3>
+            <form
+              onSubmit={onCreateInventory}
+              className="oh-articles-hub__card"
+              data-testid="articles-inventory-add-form"
+              style={{ marginBottom: 12 }}
+            >
+              <h3 className="oh-articles-hub__section-title">مخزون التفعيل (تجريبي / خطة)</h3>
+              <p style={{ marginTop: 0, opacity: 0.85 }}>
+                عناصر تفعيل المستقلين المنفصلة عن مخزون مقالات السوق أعلاه.
+              </p>
               <div className="oh-articles-hub__grid">
                 <label>
                   العنوان
@@ -715,18 +727,13 @@ export default function SuperAdminArticlesHubPage() {
               </div>
               <div className="oh-articles-hub__actions">
                 <button type="submit" className="primary" disabled={busy || opsDisabled} title={opsTitle}>
-                  حفظ في المخزون
+                  حفظ في مخزون التفعيل
                 </button>
               </div>
             </form>
-            {showCreateArticles ? (
-              <div data-testid="articles-marketplace-create-panel" style={{ marginBottom: 12 }}>
-                <MarketplaceArticlesAdminPanel />
-              </div>
-            ) : null}
             <div className="oh-articles-hub__grid">
               {filteredInventory.length === 0 ? (
-                <div className="oh-articles-hub__empty">لا توجد عناصر في المخزون.</div>
+                <div className="oh-articles-hub__empty">لا توجد عناصر في مخزون التفعيل.</div>
               ) : (
                 filteredInventory.map((item) => (
                   <div key={item.id} className="oh-articles-hub__card" data-testid={`articles-inventory-card-${item.id}`}>
