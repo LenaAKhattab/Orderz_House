@@ -1,4 +1,9 @@
-import api, { AUTH_REGISTER_TIMEOUT_MS, AUTH_SESSION_HINT_KEY, TOKEN_KEY } from "./httpClient";
+import api, {
+  AUTH_LOGIN_TIMEOUT_MS,
+  AUTH_REGISTER_TIMEOUT_MS,
+  AUTH_SESSION_HINT_KEY,
+  TOKEN_KEY,
+} from "./httpClient";
 
 function hasSessionBootstrapCandidate() {
   if (typeof localStorage === "undefined") return false;
@@ -41,7 +46,7 @@ export async function fetchSessionBootstrap() {
 }
 
 export const loginRequest = async (email, password) => {
-  const { data } = await api.post("/auth/login", { email, password });
+  const { data } = await api.post("/auth/login", { email, password }, { timeout: AUTH_LOGIN_TIMEOUT_MS });
   return data;
 };
 

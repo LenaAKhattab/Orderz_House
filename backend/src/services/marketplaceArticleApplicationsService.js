@@ -87,6 +87,12 @@ function mapApplicationRow(row) {
       row.article_value_jod_snapshot != null ? Number(row.article_value_jod_snapshot) : null,
     requiredWordCountSnapshot: Number(row.required_word_count_snapshot),
     requiredReferencesCountSnapshot: Number(row.required_references_count_snapshot) || 0,
+    writingModeSnapshot: row.writing_mode_snapshot || null,
+    bildazoCategoryIdSnapshot: row.bildazo_category_id_snapshot || null,
+    bildazoCategoryNameSnapshot: row.bildazo_category_name_snapshot || null,
+    bildazoCategorySlugSnapshot: row.bildazo_category_slug_snapshot || null,
+    titleSnapshot: row.title_snapshot || null,
+    descriptionSnapshot: row.description_snapshot || null,
     membershipArticleAccessLevelSnapshot: Number(row.membership_article_access_level_snapshot),
     status: row.status,
     proposalMessage: row.proposal_message || null,
@@ -1229,19 +1235,70 @@ async function selectArticleApplication({
       } catch {
         /* keep economy snapshot */
       }
-      const { rows: updated } = await client.query(
-        `UPDATE marketplace_article_applications
-            SET status = 'selected',
-                selected_at = NOW(),
-                selected_by_user_id = $2,
-                assigned_at = NOW(),
-                economic_snapshot = $3::jsonb,
-                economic_snapshot_at = NOW(),
-                updated_at = NOW()
-          WHERE id = $1
-          RETURNING *`,
-        [id, Number.isInteger(actor) ? actor : null, JSON.stringify(snapshot)],
+      const { rows: artSnapRows } = await client.query(
+        `SELECT title, description, writing_mode,
+                bildazo_category_id, bildazo_category_name, bildazo_category_slug,
+                required_word_count, required_references_count
+           FROM marketplace_articles WHERE id = $1 LIMIT 1`,
+        [row.article_id],
       );
+      const artSnap = artSnapRows[0] || article;
+
+      let updated;
+      try {
+        const res = await client.query(
+          `UPDATE marketplace_article_applications
+              SET status = 'selected',
+                  selected_at = NOW(),
+                  selected_by_user_id = $2,
+                  assigned_at = NOW(),
+                  economic_snapshot = $3::jsonb,
+                  economic_snapshot_at = NOW(),
+                  writing_mode_snapshot = $4,
+                  bildazo_category_id_snapshot = $5,
+                  bildazo_category_name_snapshot = $6,
+                  bildazo_category_slug_snapshot = $7,
+                  title_snapshot = $8,
+                  description_snapshot = $9,
+                  required_word_count_snapshot = COALESCE($10, required_word_count_snapshot),
+                  required_references_count_snapshot = COALESCE($11, required_references_count_snapshot),
+                  updated_at = NOW()
+            WHERE id = $1
+            RETURNING *`,
+          [
+            id,
+            Number.isInteger(actor) ? actor : null,
+            JSON.stringify(snapshot),
+            artSnap.writing_mode || null,
+            artSnap.bildazo_category_id || null,
+            artSnap.bildazo_category_name || null,
+            artSnap.bildazo_category_slug || null,
+            artSnap.title || null,
+            artSnap.description || null,
+            artSnap.required_word_count != null ? Number(artSnap.required_word_count) : null,
+            artSnap.required_references_count != null
+              ? Number(artSnap.required_references_count)
+              : null,
+          ],
+        );
+        updated = res.rows;
+      } catch (err) {
+        if (err?.code !== "42703") throw err;
+        const res = await client.query(
+          `UPDATE marketplace_article_applications
+              SET status = 'selected',
+                  selected_at = NOW(),
+                  selected_by_user_id = $2,
+                  assigned_at = NOW(),
+                  economic_snapshot = $3::jsonb,
+                  economic_snapshot_at = NOW(),
+                  updated_at = NOW()
+            WHERE id = $1
+            RETURNING *`,
+          [id, Number.isInteger(actor) ? actor : null, JSON.stringify(snapshot)],
+        );
+        updated = res.rows;
+      }
 
       // Reject other pending apps and settle Bid reservations (A10: real → consume on loss).
       const { rows: losers } = await client.query(

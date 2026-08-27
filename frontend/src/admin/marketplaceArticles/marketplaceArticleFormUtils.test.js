@@ -28,11 +28,15 @@ describe("marketplaceArticleFormUtils", () => {
       requiredReferencesCount: 0,
       requiredBidCount: 10,
       minRequiredBidsAcknowledged: true,
+      bildazoCategoryId: "11111111-1111-4111-8111-111111111111",
+      writingMode: "either",
     });
     assert.deepEqual(validateMarketplaceArticleForm(ok), {});
     assert.ok(validateMarketplaceArticleForm({ ...ok, articleLevel: 0 }).articleLevel);
     assert.ok(validateMarketplaceArticleForm({ ...ok, requiredWordCount: 0 }).requiredWordCount);
     assert.ok(validateMarketplaceArticleForm({ ...ok, requiredReferencesCount: -1 }).requiredReferencesCount);
+    assert.ok(validateMarketplaceArticleForm({ ...ok, bildazoCategoryId: "" }).bildazoCategoryId);
+    assert.ok(validateMarketplaceArticleForm({ ...ok, writingMode: "" }).writingMode);
   });
 
   it("requires acknowledgement and rejects requiredBidCount 5", () => {
@@ -40,6 +44,8 @@ describe("marketplaceArticleFormUtils", () => {
       title: "T",
       requiredBidCount: 10,
       minRequiredBidsAcknowledged: true,
+      bildazoCategoryId: "11111111-1111-4111-8111-111111111111",
+      writingMode: "manual",
     });
     assert.ok(validateMarketplaceArticleForm({ ...ok, requiredBidCount: 5 }).requiredBidCount);
     assert.ok(
@@ -52,6 +58,8 @@ describe("marketplaceArticleFormUtils", () => {
     const base = getInitialMarketplaceArticleFormState({
       title: "T",
       minRequiredBidsAcknowledged: true,
+      bildazoCategoryId: "11111111-1111-4111-8111-111111111111",
+      writingMode: "ai",
     });
     for (const n of [10, 15, 20, 30]) {
       assert.equal(validateMarketplaceArticleForm({ ...base, requiredBidCount: n }).requiredBidCount, undefined);
@@ -155,11 +163,16 @@ describe("marketplaceArticleFormUtils", () => {
         status: "published",
         requiredBidCount: 10,
         minRequiredBidsAcknowledged: true,
+        bildazoCategoryId: "11111111-1111-4111-8111-111111111111",
+        bildazoCategoryName: "تقنية",
+        writingMode: "manual",
       }),
     );
     assert.equal(payload.articleLevel, 3);
     assert.equal(payload.requiredWordCount, 900);
     assert.equal(payload.requiredReferencesCount, 2);
+    assert.equal(payload.writingMode, "manual");
+    assert.equal(payload.bildazoCategoryId, "11111111-1111-4111-8111-111111111111");
     assert.equal(Object.prototype.hasOwnProperty.call(payload, "articleValueJod"), false);
   });
 });

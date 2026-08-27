@@ -22,3 +22,13 @@ export const markAllNotificationsReadRequest = async () => {
   const { data } = await api.post("/notifications/read-all");
   return data;
 };
+
+export const deleteNotificationRequest = async (notificationId) => {
+  const { data } = await api.delete(`/notifications/${encodeURIComponent(notificationId)}`);
+  return data;
+};
+
+export const deleteNotificationsBulkRequest = async (ids) => {
+  const { data } = await api.post("/notifications/bulk-delete", { ids });
+  return data;
+};

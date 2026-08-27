@@ -2,11 +2,13 @@ import {
   BadgeCheck,
   BarChart3,
   Bell,
+  BookOpen,
   Building2,
   ClipboardList,
   Coins,
   Crown,
   GraduationCap,
+  IdCard,
   Landmark,
   LayoutDashboard,
   Megaphone,
@@ -17,6 +19,7 @@ import {
   Receipt,
   Shield,
   MessageCircleWarning,
+  ShoppingBasket,
   Sparkles,
   UserCog,
 } from "lucide-react";
@@ -42,11 +45,15 @@ const ICON_MAP = {
   admins: UserCog,
   "rate-limit-exemptions": Shield,
   "problems-suggestions": MessageCircleWarning,
+  feedback: MessageCircleWarning,
   institutions: Building2,
   "institutional-order-storage": Package,
   notifications: Bell,
   "create-order": Plus,
   bonuses: Coins,
+  identity: IdCard,
+  pantry: ShoppingBasket,
+  articles: BookOpen,
 };
 
 /**

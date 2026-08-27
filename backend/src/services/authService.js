@@ -409,9 +409,20 @@ async function buildAuthResponseForUserId(userId) {
 async function loginUser(emailRaw, password) {
   ensureJwtSecret();
   const email = String(emailRaw).trim().toLowerCase();
+  const timingEnabled =
+    process.env.AUTH_LOGIN_TIMING === "1" &&
+    String(process.env.NODE_ENV || "").toLowerCase() !== "production" &&
+    String(process.env.APP_ENV || "").toLowerCase() !== "production";
+  const t0 = timingEnabled ? Date.now() : 0;
+  let tLookup = 0;
+  let tBcrypt = 0;
+  let tSession = 0;
+
   let user;
   try {
+    const lookupStart = timingEnabled ? Date.now() : 0;
     user = await findUserByEmail(email);
+    if (timingEnabled) tLookup = Date.now() - lookupStart;
   } catch (error) {
     const schemaErr = mapDbSchemaError(error);
     if (schemaErr) throw schemaErr;
@@ -430,17 +441,38 @@ async function loginUser(emailRaw, password) {
     throw createPublicApiError("تم إيقاف هذا الحساب، يرجى التواصل مع الإدارة.", 403, "ACCOUNT_DISABLED");
   }
 
+  const bcryptStart = timingEnabled ? Date.now() : 0;
   const match = await bcrypt.compare(password, user.password_hash);
+  if (timingEnabled) tBcrypt = Date.now() - bcryptStart;
   if (!match) {
     throw generic();
   }
 
+  const sessionStart = timingEnabled ? Date.now() : 0;
   const token = signToken(user);
   const { password_hash: _, ...rest } = user;
   // Heal users.role ↔ user_roles drift on each successful login (idempotent).
   await ensureUserRole({ userId: rest.id, roleName: rest.role });
   const authz = await resolveAuthzContext({ userId: rest.id, legacyRole: rest.role });
   await bootstrapFreelancerSubscriptionIfNeeded(rest.id, authz);
+  if (timingEnabled) tSession = Date.now() - sessionStart;
+
+  if (timingEnabled) {
+    const masked =
+      email.length > 4 ? `${email.slice(0, 2)}***@${email.split("@")[1] || "?"}` : "***";
+    // eslint-disable-next-line no-console
+    console.info(
+      JSON.stringify({
+        component: "auth_login_timing",
+        emailMasked: masked,
+        lookupMs: tLookup,
+        bcryptMs: tBcrypt,
+        sessionMs: tSession,
+        totalMs: Date.now() - t0,
+      }),
+    );
+  }
+
   return { user: withAuthz(mapUserPublic(rest), authz), token };
 }
 

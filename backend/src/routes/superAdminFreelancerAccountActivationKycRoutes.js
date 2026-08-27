@@ -1,9 +1,10 @@
 const express = require("express");
-const { requireAuth, requireSuperAdmin } = require("../middleware/rbacMiddleware");
+const { requireAuth, requireAdmin } = require("../middleware/rbacMiddleware");
 const controller = require("../controllers/freelancerAccountActivationKycController");
 
 const router = express.Router();
-const guard = [requireAuth, requireSuperAdmin];
+/** Web-Admin-A1: identity KYC queue — admin + super_admin (Flutter Super Admin parity). */
+const guard = [requireAuth, requireAdmin];
 
 router.get("/freelancer-activation-requests", ...guard, controller.listActivationRequests);
 router.get("/freelancer-activation-requests/:id", ...guard, controller.getActivationRequest);

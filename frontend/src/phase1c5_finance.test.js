@@ -70,10 +70,12 @@ describe("Phase 1C.5 finance routes", () => {
     assert.doesNotMatch(src, /startCheckout/);
   });
 
-  it("activation activate is guarded against duplicate clicks", () => {
+  it("legacy activation page is deprecated (no manual activate queue UI)", () => {
     const src = read("pages/dashboard/AdminSubscriptionsActivationPage.jsx");
-    assert.match(src, /if \(submittingId\) return/);
-    assert.match(src, /listAssignablePlansAdminRequest/);
+    assert.match(src, /membership-activation-deprecated/);
+    assert.match(src, /لم تعد هذه الصفحة مستخدمة/);
+    assert.doesNotMatch(src, /activateSubscriptionCompanyRequest/);
+    assert.doesNotMatch(src, /listActivationQueueRequest/);
     assert.doesNotMatch(src, /training.package|TRAINING_PACKAGES|startCheckout/i);
   });
 

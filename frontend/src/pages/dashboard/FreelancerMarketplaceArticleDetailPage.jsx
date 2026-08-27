@@ -16,7 +16,14 @@ import {
 } from "../../services/api";
 import { freelancerTrialApplyErrorMessage } from "../../constants/freelancerActivationTrial";
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
-import { formatArticleBidCollectionLabel, isBidCollectionClosedForApply } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
+import {
+  ARTICLE_WRITING_SOURCES,
+  ARTICLE_WRITING_SOURCE_LABELS_AR,
+  formatArticleBidCollectionLabel,
+  isBidCollectionClosedForApply,
+  validateFreelancerManuscriptForm,
+  writingModeLabelAr,
+} from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 import { shouldBlockArticleApply } from "../../constants/bildazoAuthorTerms";
 import { freelancerBildazoPublishCopy } from "../../constants/bildazoArticlePublish";
 import {
@@ -97,7 +104,10 @@ export default function FreelancerMarketplaceArticleDetailPage() {
   const [message, setMessage] = useState("");
   const [manuscriptTitle, setManuscriptTitle] = useState("");
   const [manuscriptContent, setManuscriptContent] = useState("");
+  const [referencesText, setReferencesText] = useState("");
+  const [writingSource, setWritingSource] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [manuscriptErrors, setManuscriptErrors] = useState({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -119,6 +129,12 @@ export default function FreelancerMarketplaceArticleDetailPage() {
       }
       if (res?.data?.application?.articleSubmission?.content) {
         setManuscriptContent(res.data.application.articleSubmission.content);
+      }
+      if (res?.data?.application?.articleSubmission?.referencesText != null) {
+        setReferencesText(res.data.application.articleSubmission.referencesText || "");
+      }
+      if (res?.data?.application?.articleSubmission?.writingSource) {
+        setWritingSource(res.data.application.articleSubmission.writingSource);
       }
     } catch (err) {
       setError(
@@ -200,15 +216,45 @@ export default function FreelancerMarketplaceArticleDetailPage() {
   const showManuscriptForm =
     canSubmitManuscript && (!manuscript || manuscript.canResubmit || manuscript.status === "revision_requested");
 
+  const displayTitle = application?.titleSnapshot || article?.title || "";
+  const displayDescription = application?.descriptionSnapshot || article?.description || "";
+  const displayCategoryName =
+    application?.bildazoCategoryNameSnapshot ||
+    article?.bildazoCategoryName ||
+    article?.category?.name ||
+    "";
+  const displayWritingMode = application?.writingModeSnapshot || article?.writingMode || "";
+  const displayRequiredWords =
+    application?.requiredWordCountSnapshot ?? article?.requiredWordCount ?? null;
+  const displayRequiredRefs =
+    application?.requiredReferencesCountSnapshot ?? article?.requiredReferencesCount ?? 0;
+
   const handleSubmitManuscript = async () => {
     if (!application?.id || busy || busyRef.current) return;
-    if (!termsAccepted) return;
+    const nextErrors = validateFreelancerManuscriptForm(
+      {
+        title: manuscriptTitle,
+        content: manuscriptContent,
+        referencesText,
+        writingSource,
+        termsAccepted,
+      },
+      {
+        requiredWordCount: displayRequiredWords,
+        requiredReferencesCount: displayRequiredRefs,
+        writingMode: displayWritingMode,
+      },
+    );
+    setManuscriptErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
     busyRef.current = true;
     setBusy(true);
     try {
       await submitFreelancerFinalArticleManuscriptRequest(application.id, {
         title: manuscriptTitle,
         content: manuscriptContent,
+        referencesText,
+        writingSource,
         termsAccepted: true,
       });
       push({
@@ -256,13 +302,16 @@ export default function FreelancerMarketplaceArticleDetailPage() {
           <div className="grid max-w-[720px] gap-4">
             <div>
               <h2 className="mb-2 mt-0 text-lg font-extrabold text-[color:var(--dash-text,#172033)]">
-                {article.title}
+                {displayTitle}
               </h2>
               <p className="m-0 whitespace-pre-wrap text-[color:var(--dash-text-secondary,#4b5563)]">
-                {article.description || "—"}
+                {displayDescription || "—"}
               </p>
             </div>
-            <dl className="m-0 grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
+            <dl
+              className="m-0 grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3"
+              data-testid="freelancer-article-requirements"
+            >
               <div>
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
                   {isEn ? "Total article value" : "إجمالي قيمة المقال"}
@@ -318,13 +367,25 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
                   {isEn ? "Required words" : "عدد الكلمات"}
                 </dt>
-                <dd className="mt-1 font-extrabold">{article.requiredWordCount ?? "—"}</dd>
+                <dd className="mt-1 font-extrabold" data-testid="article-detail-required-words">
+                  {displayRequiredWords ?? "—"}
+                </dd>
               </div>
               <div>
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
                   {isEn ? "Required references" : "عدد المراجع"}
                 </dt>
-                <dd className="mt-1 font-extrabold">{article.requiredReferencesCount ?? 0}</dd>
+                <dd className="mt-1 font-extrabold" data-testid="article-detail-required-refs">
+                  {displayRequiredRefs ?? 0}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
+                  {isEn ? "Writing mode" : "نمط الكتابة"}
+                </dt>
+                <dd className="mt-1 font-extrabold" data-testid="article-detail-writing-mode">
+                  {writingModeLabelAr(displayWritingMode)}
+                </dd>
               </div>
               <div>
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
@@ -335,6 +396,14 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                     isEn,
                     articleStatus: article.status,
                   }) || "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
+                  {isEn ? "Bildazo category" : "صنف بلدازو"}
+                </dt>
+                <dd className="mt-1 font-extrabold" data-testid="article-detail-bildazo-category">
+                  {displayCategoryName || "—"}
                 </dd>
               </div>
               <div>
@@ -450,6 +519,11 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                         onChange={(e) => setManuscriptTitle(e.target.value)}
                         maxLength={120}
                       />
+                      {manuscriptErrors.title ? (
+                        <span className="text-[0.8rem] text-[color:var(--dash-danger,#c03535)]">
+                          {manuscriptErrors.title}
+                        </span>
+                      ) : null}
                     </label>
                     <label className="grid gap-1.5">
                       <span>{isEn ? "Final article content" : "محتوى المقال النهائي"}</span>
@@ -460,6 +534,48 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                         onChange={(e) => setManuscriptContent(e.target.value)}
                         maxLength={200000}
                       />
+                      {manuscriptErrors.content ? (
+                        <span className="text-[0.8rem] text-[color:var(--dash-danger,#c03535)]">
+                          {manuscriptErrors.content}
+                        </span>
+                      ) : null}
+                    </label>
+                    <label className="grid gap-1.5">
+                      <span>{isEn ? "References (one per line)" : "المراجع (مرجع في كل سطر)"}</span>
+                      <textarea
+                        className="w-full rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] p-2.5 font-inherit"
+                        rows={4}
+                        value={referencesText}
+                        onChange={(e) => setReferencesText(e.target.value)}
+                        maxLength={50000}
+                        data-testid="manuscript-references"
+                      />
+                      {manuscriptErrors.referencesText ? (
+                        <span className="text-[0.8rem] text-[color:var(--dash-danger,#c03535)]">
+                          {manuscriptErrors.referencesText}
+                        </span>
+                      ) : null}
+                    </label>
+                    <label className="grid gap-1.5">
+                      <span>{isEn ? "Writing method" : "طريقة الكتابة"}</span>
+                      <select
+                        className="w-full rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] p-2.5 font-inherit"
+                        value={writingSource}
+                        onChange={(e) => setWritingSource(e.target.value)}
+                        data-testid="manuscript-writing-source"
+                      >
+                        <option value="">{isEn ? "— Select —" : "— اختر —"}</option>
+                        {ARTICLE_WRITING_SOURCES.map((src) => (
+                          <option key={src} value={src}>
+                            {isEn ? src : ARTICLE_WRITING_SOURCE_LABELS_AR[src]}
+                          </option>
+                        ))}
+                      </select>
+                      {manuscriptErrors.writingSource ? (
+                        <span className="text-[0.8rem] text-[color:var(--dash-danger,#c03535)]">
+                          {manuscriptErrors.writingSource}
+                        </span>
+                      ) : null}
                     </label>
                     <label className="flex items-start gap-2 text-[0.86rem] font-semibold" data-testid="manuscript-terms-checkbox">
                       <input
@@ -471,6 +587,11 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                         {isEn ? MINI_ARTICLE_SUBMISSION_TERMS_COPY_EN : MINI_ARTICLE_SUBMISSION_TERMS_COPY_AR}
                       </span>
                     </label>
+                    {manuscriptErrors.termsAccepted ? (
+                      <span className="text-[0.8rem] text-[color:var(--dash-danger,#c03535)]">
+                        {manuscriptErrors.termsAccepted}
+                      </span>
+                    ) : null}
                     <Button type="button" disabled={busy || !termsAccepted} onClick={handleSubmitManuscript}>
                       {isEn ? "Submit final article" : "تسليم المقال النهائي"}
                     </Button>

@@ -254,6 +254,36 @@ export function needsCompanyActivationAction(sub) {
   return payment === "paid" || payment === "pending" || payment === "not_required" || payment === "";
 }
 
+/** Flutter Super Admin parity — exclude free/STARTER from paid activation counts. */
+export function isFreeOrStarterSubscriptionPlan(sub) {
+  const planId = String(sub?.planId ?? sub?.plan_id ?? "").trim();
+  if (planId === "1") return true;
+  const planName = String(sub?.planName ?? sub?.plan_name ?? sub?.planTitle ?? sub?.plan_title ?? "")
+    .trim()
+    .toLowerCase();
+  if (planName === "orderzhouse_free") return true;
+  if (planName.includes("starter") || planName.includes("start")) return true;
+  if (planName.includes("مجاني") || planName.includes("free")) return true;
+  if (String(sub?.notes || "").trim() === "auto_default_free_plan") return true;
+  const price = Number(sub?.priceJod ?? sub?.price_jod);
+  if (Number.isFinite(price) && price <= 0) {
+    const payment = String(sub?.paymentStatus || sub?.payment_status || "").trim().toLowerCase();
+    if (payment === "not_required" || payment === "") return true;
+  }
+  return false;
+}
+
+/** Paid membership activation needing company action (not free/legacy/admin-assigned). */
+export function isPaidSubscriptionActivationActionable(sub) {
+  if (isDashboardAdminAssignedSubscription(sub)) return false;
+  if (isFreeOrStarterSubscriptionPlan(sub)) return false;
+  return needsCompanyActivationAction(sub);
+}
+
+export function countPaidSubscriptionActivations(subs) {
+  return (Array.isArray(subs) ? subs : []).filter(isPaidSubscriptionActivationActionable).length;
+}
+
 /** Admin who assigned the subscription (activation queue). */
 export function formatAssignedByAdminLabel(sub) {
   const ab = sub?.assignedBy;

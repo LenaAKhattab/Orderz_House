@@ -26,6 +26,7 @@ const superAdminBildazoAuthorLinkRoutes = require("./routes/superAdminBildazoAut
 const adminPlanPagesRoutes = require("./routes/adminPlanPagesRoutes");
 const adminPlansRoutes = require("./routes/adminPlansRoutes");
 const adminSubscriptionsRoutes = require("./routes/adminSubscriptionsRoutes");
+const adminActionCenterRoutes = require("./routes/adminActionCenterRoutes");
 const adminOrdersRoutes = require("./routes/adminOrdersRoutes");
 const adminCoursesRoutes = require("./routes/adminCoursesRoutes");
 const adminFakeOrdersRoutes = require("./routes/adminFakeOrdersRoutes");
@@ -171,6 +172,7 @@ app.use("/api", publicPlansContentRoutes);
 app.use("/api/admin", adminPlansRoutes);
 app.use("/api/admin", adminPlanPagesRoutes);
 app.use("/api/admin", adminSubscriptionsRoutes);
+app.use("/api/admin", adminActionCenterRoutes);
 app.use("/api/admin", adminOrdersRoutes);
 app.use("/api/admin", adminCoursesRoutes);
 app.use("/api/admin", adminFakeOrdersRoutes);

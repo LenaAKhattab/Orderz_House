@@ -90,6 +90,7 @@ import {
   AdminSubscriptionsActivationPage,
   AdminCoursesPage,
   AdminAdsPage,
+  AdminArticlesReviewPage,
   AdminPantryPage,
   AdminSettingsPage,
   FreelancerPantryPage,
@@ -702,6 +703,70 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/admin/action-center"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <DashboardPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/identity"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <SuperAdminFreelancerActivationRequestsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/identity/:id"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <SuperAdminFreelancerActivationRequestsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/membership-activations"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <AdminSubscriptionsActivationPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/package-assignment"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <SuperAdminSubscriptionsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/articles"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <AdminArticlesReviewPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/feedback"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <SuperAdminFeedbackPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/feedback/:id"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <SuperAdminFeedbackDetailPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/admin/notifications"
                   element={
                     <RequireRole allowedRoles={[ROLE.ADMIN]}>
@@ -771,9 +836,7 @@ function App() {
                   path="/dashboard/admin/pantry"
                   element={
                     <RequireRole allowedRoles={[ROLE.ADMIN]}>
-                      <RequirePermission permission={SUPER_ADMIN_PAGE_PERMISSIONS.pantry}>
-                        <AdminPantryPage />
-                      </RequirePermission>
+                      <AdminPantryPage />
                     </RequireRole>
                   }
                 />

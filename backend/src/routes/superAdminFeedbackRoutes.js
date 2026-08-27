@@ -1,5 +1,5 @@
 const express = require("express");
-const { requireAuth, requireSuperAdmin } = require("../middleware/rbacMiddleware");
+const { requireAuth, requireAdmin, requireSuperAdmin } = require("../middleware/rbacMiddleware");
 const validateRequest = require("../middleware/validateRequest");
 const feedbackController = require("../controllers/feedbackController");
 const feedbackTopicsController = require("../controllers/feedbackTopicsController");
@@ -22,18 +22,20 @@ const { adminWriteLimiter } = require("../middleware/orderWriteRateLimiters");
 
 const router = express.Router();
 
-/** Super Admin only — manage all Problems & Suggestions submissions, categories, and topics. */
-const guard = [requireAuth, requireSuperAdmin];
+/** Review inbox actions — Flutter Super Admin parity for Web Admin. */
+const actionGuard = [requireAuth, requireAdmin];
+/** Topic/category catalog management remains super_admin-only. */
+const configGuard = [requireAuth, requireSuperAdmin];
 
 router.get(
   "/feedback/categories",
-  ...guard,
+  ...actionGuard,
   feedbackCategoriesController.adminListCategories,
 );
 
 router.post(
   "/feedback/categories",
-  ...guard,
+  ...configGuard,
   adminWriteLimiter,
   adminCreateCategoryValidators,
   validateRequest,
@@ -42,7 +44,7 @@ router.post(
 
 router.patch(
   "/feedback/categories/reorder",
-  ...guard,
+  ...configGuard,
   adminWriteLimiter,
   adminReorderCategoriesValidators,
   validateRequest,
@@ -51,7 +53,7 @@ router.patch(
 
 router.patch(
   "/feedback/categories/:id",
-  ...guard,
+  ...configGuard,
   adminWriteLimiter,
   adminUpdateCategoryValidators,
   validateRequest,
@@ -60,7 +62,7 @@ router.patch(
 
 router.delete(
   "/feedback/categories/:id",
-  ...guard,
+  ...configGuard,
   adminWriteLimiter,
   categoryIdParam,
   validateRequest,
@@ -69,7 +71,7 @@ router.delete(
 
 router.get(
   "/feedback/topics",
-  ...guard,
+  ...actionGuard,
   adminListTopicsValidators,
   validateRequest,
   feedbackTopicsController.adminListTopics,
@@ -77,7 +79,7 @@ router.get(
 
 router.post(
   "/feedback/topics",
-  ...guard,
+  ...configGuard,
   adminWriteLimiter,
   adminCreateTopicValidators,
   validateRequest,
@@ -86,7 +88,7 @@ router.post(
 
 router.patch(
   "/feedback/topics/reorder",
-  ...guard,
+  ...configGuard,
   adminWriteLimiter,
   adminReorderTopicsValidators,
   validateRequest,
@@ -95,7 +97,7 @@ router.patch(
 
 router.patch(
   "/feedback/topics/:id",
-  ...guard,
+  ...configGuard,
   adminWriteLimiter,
   adminUpdateTopicValidators,
   validateRequest,
@@ -104,7 +106,7 @@ router.patch(
 
 router.delete(
   "/feedback/topics/:id",
-  ...guard,
+  ...configGuard,
   adminWriteLimiter,
   topicIdParam,
   validateRequest,
@@ -113,7 +115,7 @@ router.delete(
 
 router.get(
   "/feedback",
-  ...guard,
+  ...actionGuard,
   adminListFeedbackValidators,
   validateRequest,
   feedbackController.adminListFeedback,
@@ -121,7 +123,7 @@ router.get(
 
 router.get(
   "/feedback/:id",
-  ...guard,
+  ...actionGuard,
   feedbackIdParam,
   validateRequest,
   feedbackController.adminGetFeedback,
@@ -129,7 +131,7 @@ router.get(
 
 router.patch(
   "/feedback/:id",
-  ...guard,
+  ...actionGuard,
   adminWriteLimiter,
   adminUpdateFeedbackValidators,
   validateRequest,

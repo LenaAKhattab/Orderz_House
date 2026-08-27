@@ -503,6 +503,25 @@ async function listActivationRequestsForAdmin({
   };
 }
 
+/**
+ * Lightweight COUNT for Admin Action Center — pending_review only, no row fetch / user join.
+ */
+async function countPendingReviewRequestsForAdmin({ client = pool } = {}) {
+  if (!(await schemaReady(client))) return 0;
+  try {
+    const { rows } = await client.query(
+      `SELECT COUNT(*)::int AS c
+         FROM freelancer_account_activation_requests
+        WHERE status = $1`,
+      ["pending_review"],
+    );
+    return Math.max(0, Math.trunc(Number(rows[0]?.c || 0)));
+  } catch (err) {
+    if (isMissingSchema(err)) return 0;
+    throw err;
+  }
+}
+
 async function getActivationRequestForAdmin(requestId) {
   if (!(await schemaReady())) {
     throw createAppError("Account activation review schema is not ready.", 503, {
@@ -685,6 +704,12 @@ async function rejectActivationRequest({
 
 async function resolveFileAsset(fileKey) {
   const key = String(fileKey || "");
+  if (!key) {
+    throw createAppError("الملف غير متاح.", 404, {
+      exposeToClient: true,
+      publicCode: ACCOUNT_ACTIVATION_KYC_ERROR_CODES.REQUEST_NOT_FOUND,
+    });
+  }
   if (key.startsWith("local:")) {
     const rel = key.slice("local:".length).replace(/^[/\\]+/, "");
     const abs = path.join(__dirname, "..", "..", "uploads", ...rel.split("/"));
@@ -697,6 +722,12 @@ async function resolveFileAsset(fileKey) {
   }
   if (key.startsWith("cloudinary:")) {
     const publicId = key.slice("cloudinary:".length);
+    if (!publicId) {
+      throw createAppError("الملف غير متاح.", 404, {
+        exposeToClient: true,
+        publicCode: ACCOUNT_ACTIVATION_KYC_ERROR_CODES.REQUEST_NOT_FOUND,
+      });
+    }
     const cloudinary = getCloudinary();
     const url = cloudinary.url(publicId, {
       resource_type: "image",
@@ -705,9 +736,58 @@ async function resolveFileAsset(fileKey) {
       secure: true,
       expires_at: Math.floor(Date.now() / 1000) + 60,
     });
-    return { kind: "signed_url", url, publicId };
+    // Server-side fetch only — never redirect browsers to Cloudinary (CORS + privacy).
+    return { kind: "cloudinary_authenticated", url, publicId };
   }
   throw createAppError("Unsupported file storage key.", 500, { exposeToClient: false });
+}
+
+/**
+ * Fetch private KYC bytes for admin inline/attachment delivery (same-origin stream).
+ * Does not return Cloudinary URLs to clients.
+ */
+async function fetchAdminKycFileBytes({ requestId, side }) {
+  const prepared = await prepareAdminKycFileDownload({ requestId, side });
+  if (prepared.kind === "local") {
+    const buf = await fsp.readFile(prepared.absPath);
+    return {
+      buffer: buf,
+      mimeType: prepared.mimeType || "image/jpeg",
+      originalName: prepared.originalName || `${side}.jpg`,
+    };
+  }
+  if (prepared.kind === "cloudinary_authenticated" && prepared.url) {
+    let upstream;
+    try {
+      upstream = await fetch(prepared.url, {
+        method: "GET",
+        redirect: "follow",
+        headers: { Accept: "image/*,*/*" },
+      });
+    } catch {
+      throw createAppError("تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.", 502, {
+        exposeToClient: true,
+        publicCode: "KYC_STORAGE_UNAVAILABLE",
+      });
+    }
+    if (!upstream.ok) {
+      throw createAppError("تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.", 502, {
+        exposeToClient: true,
+        publicCode: "KYC_STORAGE_UNAVAILABLE",
+      });
+    }
+    const arr = await upstream.arrayBuffer();
+    const upstreamType = String(upstream.headers.get("content-type") || "").split(";")[0].trim();
+    return {
+      buffer: Buffer.from(arr),
+      mimeType: prepared.mimeType || upstreamType || "image/jpeg",
+      originalName: prepared.originalName || `${side}.jpg`,
+    };
+  }
+  throw createAppError("الملف غير متاح.", 404, {
+    exposeToClient: true,
+    publicCode: ACCOUNT_ACTIVATION_KYC_ERROR_CODES.REQUEST_NOT_FOUND,
+  });
 }
 
 async function prepareAdminKycFileDownload({ requestId, side }) {
@@ -729,6 +809,12 @@ async function prepareAdminKycFileDownload({ requestId, side }) {
     });
   }
   const fileKey = side === "back" ? row.id_back_file_key : row.id_front_file_key;
+  if (!fileKey) {
+    throw createAppError("لم يتم العثور على صورة الهوية.", 404, {
+      exposeToClient: true,
+      publicCode: ACCOUNT_ACTIVATION_KYC_ERROR_CODES.REQUEST_NOT_FOUND,
+    });
+  }
   const mime =
     side === "back" ? row.id_back_mime_type : row.id_front_mime_type;
   const originalName =
@@ -748,9 +834,11 @@ module.exports = {
   getFreelancerAccountActivationStatus,
   submitFreelancerAccountActivationRequest,
   listActivationRequestsForAdmin,
+  countPendingReviewRequestsForAdmin,
   getActivationRequestForAdmin,
   approveActivationRequest,
   rejectActivationRequest,
   prepareAdminKycFileDownload,
+  fetchAdminKycFileBytes,
   assertCompanyApprovalAllowed,
 };

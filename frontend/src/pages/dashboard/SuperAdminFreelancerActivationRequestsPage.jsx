@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useCallback, useEffect, useState, useRef } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
-import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
+import { adminBreadcrumbs, superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import {
   listSuperAdminFreelancerActivationRequestsRequest,
@@ -15,6 +15,10 @@ import {
   rejectSuperAdminFreelancerActivationRequestRequest,
   fetchSuperAdminFreelancerActivationKycFileBlob,
 } from "../../services/api";
+import { isAdminStaffShell, staffIdentityRequestsPath } from "../../lib/staff/staffDashboardPaths";
+import { ADMIN_LIST_SEARCH_DEBOUNCE_MS } from "../../lib/staff/adminListLoad";
+import { useAdminListLoad } from "../../hooks/useAdminListLoad";
+import "./kycActivationReviewActions.css";
 
 const STATUS_LABELS = {
   pending_review: "قيد المراجعة",
@@ -33,24 +37,54 @@ function formatDate(value) {
   }
 }
 
+function kycImageErrorMessage(err) {
+  if (err?.code === "ERR_CANCELED" || err?.name === "CanceledError" || err?.name === "AbortError") {
+    return "";
+  }
+  const status = err?.response?.status;
+  if (status === 404) return "لم يتم العثور على صورة الهوية.";
+  if (status === 401 || status === 403) return "ليست لديك صلاحية لعرض هذه الصورة.";
+  if (status === 502 || status === 503) return "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.";
+  const fromApi = getSafeApiErrorMessage(err, "");
+  if (fromApi && fromApi !== "تعذر الاتصال بالخادم. تحقق من الاتصال وحاول مجدداً.") {
+    return fromApi;
+  }
+  if (status >= 400) return "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.";
+  return "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.";
+}
+
 function KycImage({ requestId, side, label }) {
   const [src, setSrc] = useState("");
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    let revoked = false;
+    let active = true;
     let objectUrl = "";
+    const controller = new AbortController();
+    setSrc("");
+    setErr("");
     (async () => {
       try {
-        const blob = await fetchSuperAdminFreelancerActivationKycFileBlob(requestId, side);
+        const blob = await fetchSuperAdminFreelancerActivationKycFileBlob(requestId, side, {
+          signal: controller.signal,
+        });
+        if (!active) return;
         objectUrl = URL.createObjectURL(blob);
-        if (!revoked) setSrc(objectUrl);
+        if (!active) {
+          URL.revokeObjectURL(objectUrl);
+          return;
+        }
+        setSrc(objectUrl);
       } catch (e) {
-        if (!revoked) setErr(getSafeApiErrorMessage(e) || "تعذر عرض الصورة");
+        if (!active || e?.code === "ERR_CANCELED" || e?.name === "CanceledError" || e?.name === "AbortError") {
+          return;
+        }
+        setErr(kycImageErrorMessage(e));
       }
     })();
     return () => {
-      revoked = true;
+      active = false;
+      controller.abort();
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [requestId, side]);
@@ -205,11 +239,21 @@ function RequestDetail({ id, onBack }) {
             />
           </label>
           {actionError ? <p style={{ color: "#b91c1c", margin: 0 }}>{actionError}</p> : null}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            <button type="button" className="oh-account-btn-primary" disabled={busy} onClick={() => void handleApprove()}>
+          <div className="kyc-review-actions">
+            <button
+              type="button"
+              className="kyc-review-btn kyc-review-btn--approve"
+              disabled={busy}
+              onClick={() => void handleApprove()}
+            >
               قبول التفعيل
             </button>
-            <button type="button" className="oh-account-btn-ghost" disabled={busy} onClick={() => void handleReject()}>
+            <button
+              type="button"
+              className="kyc-review-btn kyc-review-btn--reject"
+              disabled={busy}
+              onClick={() => void handleReject()}
+            >
               رفض التفعيل
             </button>
           </div>
@@ -222,49 +266,75 @@ function RequestDetail({ id, onBack }) {
 export default function SuperAdminFreelancerActivationRequestsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { pathname } = useLocation();
+  const listBase = staffIdentityRequestsPath(pathname);
+  const crumbs = isAdminStaffShell(pathname)
+    ? adminBreadcrumbs("dashboard.breadcrumbs.identityVerification")
+    : superAdminBreadcrumbs("dashboard.breadcrumbs.freelancerActivationRequests");
   const [items, setItems] = useState([]);
   const [statusFilter, setStatusFilter] = useState("pending_review");
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const itemsLenRef = useRef(0);
+  itemsLenRef.current = items.length;
+  const {
+    initialLoading,
+    refreshing,
+    initialLoadError,
+    refreshError,
+    rateLimited,
+    run: runListLoad,
+  } = useAdminListLoad({
+    mapError: (err) => getSafeApiErrorMessage(err) || "تعذر تحميل طلبات التفعيل.",
+  });
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchInput.trim()), ADMIN_LIST_SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await listSuperAdminFreelancerActivationRequestsRequest({
-        status: statusFilter || undefined,
-        search: search.trim() || undefined,
-        limit: 50,
-      });
-      setItems(res?.data?.items || []);
-    } catch (err) {
-      setError(getSafeApiErrorMessage(err) || "تعذر تحميل طلبات التفعيل.");
-      setItems([]);
-    } finally {
-      setLoading(false);
+    const result = await runListLoad(
+      ({ signal }) =>
+        listSuperAdminFreelancerActivationRequestsRequest(
+          {
+            status: statusFilter || undefined,
+            search: debouncedSearch || undefined,
+            limit: 50,
+          },
+          { signal },
+        ),
+      { hasExistingRows: itemsLenRef.current > 0 },
+    );
+    if (result.ok) {
+      setItems(result.data?.data?.items || []);
     }
-  }, [statusFilter, search]);
+  }, [runListLoad, statusFilter, debouncedSearch]);
 
   useEffect(() => {
     if (id) return;
     void load();
   }, [id, load]);
 
+  const controlsDisabled = refreshing || rateLimited;
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title="طلبات تفعيل المستقلين"
+        title={isAdminStaffShell(pathname) ? "طلبات توثيق الهوية" : "طلبات تفعيل المستقلين"}
         subtitle="مراجعة صور الهوية والموافقة أو الرفض"
-        crumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.freelancerActivationRequests")}
+        crumbs={crumbs}
       />
 
       {id ? (
-        <RequestDetail id={id} onBack={() => navigate("/dashboard/super-admin/freelancer-activation-requests")} />
+        <RequestDetail id={id} onBack={() => navigate(listBase)} />
       ) : (
         <DashboardSection title="القائمة">
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12, alignItems: "center" }}>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              disabled={controlsDisabled}
+            >
               <option value="pending_review">قيد المراجعة</option>
               <option value="approved">مقبول</option>
               <option value="rejected">مرفوض</option>
@@ -273,21 +343,51 @@ export default function SuperAdminFreelancerActivationRequestsPage() {
             <input
               type="search"
               placeholder="بحث بالاسم أو البريد"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              aria-label="البحث عن مستقل"
+              disabled={rateLimited}
+              data-testid="admin-identity-search"
             />
-            <button type="button" onClick={() => void load()}>
+            <button
+              type="button"
+              onClick={() => void load()}
+              disabled={controlsDisabled || (initialLoading && items.length === 0)}
+              data-testid="admin-identity-refresh"
+            >
               تحديث
             </button>
+            {refreshing ? (
+              <span style={{ color: "#64748b", fontSize: "0.875rem" }} data-testid="admin-list-refreshing">
+                {searchInput.trim() ? "جاري البحث..." : "جاري التحديث..."}
+              </span>
+            ) : null}
+            {rateLimited ? (
+              <span style={{ color: "#b45309", fontSize: "0.875rem" }} data-testid="admin-list-rate-limit-cooldown">
+                انتظر قليلاً ثم حاول مجددًا…
+              </span>
+            ) : null}
           </div>
 
-          {loading ? <DashboardLoadingState /> : null}
-          {error ? <DashboardErrorState message={error} onRetry={() => void load()} /> : null}
-          {!loading && !error && items.length === 0 ? (
+          {refreshError ? (
+            <p
+              role="status"
+              data-testid="admin-list-refresh-soft-note"
+              style={{ color: "#b45309", margin: "0 0 12px", fontSize: "0.9rem" }}
+            >
+              {refreshError}
+            </p>
+          ) : null}
+
+          {initialLoading && items.length === 0 ? <DashboardLoadingState /> : null}
+          {initialLoadError && items.length === 0 ? (
+            <DashboardErrorState message={initialLoadError} onRetry={() => void load()} />
+          ) : null}
+          {!initialLoading && !initialLoadError && items.length === 0 ? (
             <DashboardEmptyState title="لا توجد طلبات" />
           ) : null}
-          {!loading && !error && items.length > 0 ? (
-            <div style={{ overflowX: "auto" }}>
+          {items.length > 0 ? (
+            <div style={{ overflowX: "auto" }} data-testid="admin-identity-table">
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
@@ -308,9 +408,7 @@ export default function SuperAdminFreelancerActivationRequestsPage() {
                       <td>{formatDate(row.submittedAt)}</td>
                       <td>{formatDate(row.reviewedAt)}</td>
                       <td>
-                        <Link to={`/dashboard/super-admin/freelancer-activation-requests/${row.id}`}>
-                          عرض
-                        </Link>
+                        <Link to={`${listBase}/${row.id}`}>عرض</Link>
                       </td>
                     </tr>
                   ))}

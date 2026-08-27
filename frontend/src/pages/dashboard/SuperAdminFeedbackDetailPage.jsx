@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
@@ -7,7 +7,7 @@ import DashboardLoadingState from "../../components/dashboard/DashboardLoadingSt
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import Button from "../../components/ui/Button";
-import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
+import { adminBreadcrumbs, superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { useToast } from "../../components/ui/toastContext";
 import {
@@ -25,10 +25,13 @@ import {
   feedbackStatusTone,
   formatFeedbackDate,
 } from "../../constants/feedback";
+import { isAdminStaffShell, staffFeedbackPath } from "../../lib/staff/staffDashboardPaths";
 import "./superAdminFeedbackPage.css";
 
 export default function SuperAdminFeedbackDetailPage() {
   const { id } = useParams();
+  const { pathname } = useLocation();
+  const listBase = staffFeedbackPath(pathname);
   const { t, locale } = useTranslation();
   const { push } = useToast();
 
@@ -97,11 +100,14 @@ export default function SuperAdminFeedbackDetailPage() {
     setStatus("resolved");
   };
 
+  const homeCrumbs = isAdminStaffShell(pathname)
+    ? adminBreadcrumbs("dashboard.breadcrumbs.problemsSuggestions")
+    : superAdminBreadcrumbs("dashboard.breadcrumbs.problemsSuggestions");
   const breadcrumbs = [
-    ...superAdminBreadcrumbs("dashboard.breadcrumbs.problemsSuggestions").slice(0, -1),
+    ...homeCrumbs.slice(0, -1),
     {
       labelKey: "dashboard.breadcrumbs.problemsSuggestions",
-      href: "/dashboard/super-admin/feedback",
+      href: listBase,
     },
     { label: t("dashboard.feedback.detailsTitle") },
   ];
@@ -113,7 +119,7 @@ export default function SuperAdminFeedbackDetailPage() {
         description={t("dashboard.feedback.detailsIntro")}
         breadcrumbs={breadcrumbs}
         actions={
-          <Link className="sa-feedback-link" to="/dashboard/super-admin/feedback">
+          <Link className="sa-feedback-link" to={listBase}>
             {t("dashboard.feedback.backToList")}
           </Link>
         }

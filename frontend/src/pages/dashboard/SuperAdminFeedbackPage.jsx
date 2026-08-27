@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
@@ -9,7 +9,7 @@ import DashboardErrorState from "../../components/dashboard/DashboardErrorState"
 import DashboardTable from "../../components/dashboard/DashboardTable";
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import Pagination from "../../components/common/Pagination";
-import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
+import { adminBreadcrumbs, superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { useToast } from "../../components/ui/toastContext";
 import { listSuperAdminFeedbackCategoriesRequest, listSuperAdminFeedbackRequest } from "../../services/api";
@@ -25,9 +25,11 @@ import {
   feedbackStatusTone,
   formatFeedbackDate,
 } from "../../constants/feedback";
+import { isAdminStaffShell, staffFeedbackPath } from "../../lib/staff/staffDashboardPaths";
+import { useAdminListLoad } from "../../hooks/useAdminListLoad";
+import { ADMIN_LIST_SEARCH_DEBOUNCE_MS } from "../../lib/staff/adminListLoad";
 import "./superAdminFeedbackPage.css";
 
-const DETAIL_BASE = "/dashboard/super-admin/feedback";
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 const EMPTY_SUMMARY = {
   total: 0,
@@ -41,11 +43,26 @@ const EMPTY_SUMMARY = {
 };
 
 export default function SuperAdminFeedbackPage() {
+  const { pathname } = useLocation();
+  const detailBase = staffFeedbackPath(pathname);
+  const crumbs = isAdminStaffShell(pathname)
+    ? adminBreadcrumbs("dashboard.breadcrumbs.problemsSuggestions")
+    : superAdminBreadcrumbs("dashboard.breadcrumbs.problemsSuggestions");
   const { t, locale } = useTranslation();
   const { push } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [items, setItems] = useState([]);
+  const itemsLenRef = useRef(0);
+  itemsLenRef.current = items.length;
+  const {
+    initialLoading,
+    refreshing,
+    initialLoadError,
+    refreshError,
+    rateLimited,
+    run: runListLoad,
+  } = useAdminListLoad({
+    mapError: (err) => getSafeApiErrorMessage(err) || t("dashboard.feedback.adminLoadError"),
+  });
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
   const [page, setPage] = useState(1);
@@ -61,7 +78,7 @@ export default function SuperAdminFeedbackPage() {
   const useDynamicCategoryFilter = filterCategories.length > 0;
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedQ(searchInput.trim()), 350);
+    const timer = window.setTimeout(() => setDebouncedQ(searchInput.trim()), ADMIN_LIST_SEARCH_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
@@ -94,32 +111,37 @@ export default function SuperAdminFeedbackPage() {
   }, [debouncedQ, categoryFilter, statusFilter, roleFilter, priorityFilter, limit]);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await listSuperAdminFeedbackRequest({
-        q: debouncedQ || undefined,
-        ...(useDynamicCategoryFilter
-          ? { categoryId: categoryFilter || undefined }
-          : { type: categoryFilter || undefined }),
-        status: statusFilter || undefined,
-        userRole: roleFilter || undefined,
-        priority: priorityFilter || undefined,
-        page,
-        limit,
-      });
-      setItems(res?.data?.items || []);
-      setPagination(res?.data?.pagination || { page: 1, limit, total: 0, totalPages: 1 });
-      setSummary(res?.data?.summary || EMPTY_SUMMARY);
-    } catch (err) {
-      const msg = getSafeApiErrorMessage(err) || t("dashboard.feedback.adminLoadError");
-      setError(msg);
-      setItems([]);
-      push({ type: "error", message: msg });
-    } finally {
-      setLoading(false);
+    const result = await runListLoad(
+      ({ signal }) =>
+        listSuperAdminFeedbackRequest(
+          {
+            q: debouncedQ || undefined,
+            ...(useDynamicCategoryFilter
+              ? { categoryId: categoryFilter || undefined }
+              : { type: categoryFilter || undefined }),
+            status: statusFilter || undefined,
+            userRole: roleFilter || undefined,
+            priority: priorityFilter || undefined,
+            page,
+            limit,
+          },
+          { signal },
+        ),
+      { hasExistingRows: itemsLenRef.current > 0 },
+    );
+    if (!result.ok) {
+      if (result.shouldClearRows === false && itemsLenRef.current > 0) return;
+      if (!result.aborted && !result.stale && itemsLenRef.current === 0) {
+        /* initialLoadError already set by hook */
+      }
+      return;
     }
+    const res = result.data;
+    setItems(res?.data?.items || []);
+    setPagination(res?.data?.pagination || { page: 1, limit, total: 0, totalPages: 1 });
+    setSummary(res?.data?.summary || EMPTY_SUMMARY);
   }, [
+    runListLoad,
     debouncedQ,
     categoryFilter,
     useDynamicCategoryFilter,
@@ -128,8 +150,6 @@ export default function SuperAdminFeedbackPage() {
     priorityFilter,
     page,
     limit,
-    push,
-    t,
   ]);
 
   useEffect(() => {
@@ -156,11 +176,13 @@ export default function SuperAdminFeedbackPage() {
       <DashboardPageHeader
         title={t("dashboard.feedback.title")}
         description={t("dashboard.feedback.adminIntro")}
-        breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.problemsSuggestions")}
+        breadcrumbs={crumbs}
         actions={
-          <Link className="sa-feedback-link" to="/dashboard/super-admin/feedback/topics">
-            {t("dashboard.feedback.manageTopics")}
-          </Link>
+          isAdminStaffShell(pathname) ? null : (
+            <Link className="sa-feedback-link" to="/dashboard/super-admin/feedback/topics">
+              {t("dashboard.feedback.manageTopics")}
+            </Link>
+          )
         }
       />
 
@@ -264,10 +286,20 @@ export default function SuperAdminFeedbackPage() {
       </DashboardSection>
 
       <DashboardSection title={t("dashboard.feedback.tableTitle")}>
-        {loading ? <DashboardLoadingState /> : null}
-        {!loading && error ? (
+        {refreshing ? (
+          <p className="mb-2 text-sm text-slate-500" data-testid="admin-list-refreshing">
+            جاري التحديث...
+          </p>
+        ) : null}
+        {refreshError ? (
+          <p role="status" data-testid="admin-list-refresh-soft-note" className="mb-2 text-sm text-amber-700">
+            {refreshError}
+          </p>
+        ) : null}
+        {initialLoading && items.length === 0 ? <DashboardLoadingState /> : null}
+        {initialLoadError && items.length === 0 ? (
           <DashboardErrorState
-            message={error}
+            message={initialLoadError}
             actions={
               <button type="button" className="sa-feedback-reset" onClick={load}>
                 {t("dashboard.feedback.retry")}
@@ -275,13 +307,13 @@ export default function SuperAdminFeedbackPage() {
             }
           />
         ) : null}
-        {!loading && !error && items.length === 0 ? (
+        {!initialLoading && !initialLoadError && items.length === 0 ? (
           <DashboardEmptyState
             title={t("dashboard.feedback.adminEmptyTitle")}
             description={t("dashboard.feedback.adminEmptyDescription")}
           />
         ) : null}
-        {!loading && !error && items.length > 0 ? (
+        {items.length > 0 ? (
           <>
             <DashboardTable>
               <thead>
@@ -324,7 +356,7 @@ export default function SuperAdminFeedbackPage() {
                     <td>{feedbackPriorityLabel(row.priority, locale)}</td>
                     <td>{formatFeedbackDate(row.createdAt, locale)}</td>
                     <td>
-                      <Link className="sa-feedback-link" to={`${DETAIL_BASE}/${row.id}`}>
+                      <Link className="sa-feedback-link" to={`${detailBase}/${row.id}`}>
                         {t("dashboard.feedback.viewDetails")}
                       </Link>
                     </td>
@@ -337,7 +369,7 @@ export default function SuperAdminFeedbackPage() {
                 currentPage={pagination.page}
                 totalPages={pagination.totalPages}
                 onPageChange={setPage}
-                isLoading={loading}
+                isLoading={initialLoading || refreshing || rateLimited}
               />
             ) : null}
           </>

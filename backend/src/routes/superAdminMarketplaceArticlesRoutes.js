@@ -1,7 +1,8 @@
 const express = require("express");
 const marketplaceArticlesController = require("../controllers/marketplaceArticlesController");
+const oz02Controller = require("../controllers/marketplaceArticleBildazoOz02Controller");
 const validateRequest = require("../middleware/validateRequest");
-const { requireAuth, requireSuperAdmin } = require("../middleware/rbacMiddleware");
+const { requireAuth, requireAdmin, requireSuperAdmin } = require("../middleware/rbacMiddleware");
 const {
   articleIdParam,
   createMarketplaceArticleValidators,
@@ -10,7 +11,27 @@ const {
 } = require("../validators/marketplaceArticlesValidators");
 
 const router = express.Router();
-const guard = [requireAuth, requireSuperAdmin];
+/** Review/list/update marketplace articles — admin + super_admin. */
+const guard = [requireAuth, requireAdmin];
+const superGuard = [requireAuth, requireSuperAdmin];
+
+router.get(
+  "/marketplace-articles/bildazo-categories",
+  ...guard,
+  oz02Controller.listBildazoCategories,
+);
+
+router.get(
+  "/marketplace-articles/package-requirements",
+  ...guard,
+  oz02Controller.listPackageRequirements,
+);
+
+router.put(
+  "/marketplace-articles/package-requirements",
+  ...superGuard,
+  oz02Controller.updatePackageRequirements,
+);
 
 router.get(
   "/marketplace-articles",
@@ -39,6 +60,7 @@ router.post(
 router.patch(
   "/marketplace-articles/:id",
   ...guard,
+  articleIdParam,
   updateMarketplaceArticleValidators,
   validateRequest,
   marketplaceArticlesController.update,

@@ -156,6 +156,7 @@ export const AdminSubscriptionsActivationPage = lazy(
 export const AdminCoursesPage = lazy(() => import("../pages/dashboard/AdminCoursesPage"));
 export const AdminAdsPage = lazy(() => import("../pages/dashboard/AdminAdsPage"));
 export const AdminSettingsPage = lazy(() => import("../pages/dashboard/AdminSettingsPage"));
+export const AdminArticlesReviewPage = lazy(() => import("../pages/dashboard/AdminArticlesReviewPage"));
 export const AdminPantryPage = lazy(() => import("../pages/dashboard/AdminPantryPage"));
 export const FreelancerPantryPage = lazy(() => import("../pages/dashboard/FreelancerPantryPage"));
 

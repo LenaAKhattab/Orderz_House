@@ -25,6 +25,16 @@ export function superAdminBreadcrumbs(pageLabelKey) {
   ];
 }
 
+const ADMIN_HOME = "/dashboard/admin";
+
+/** Two-level trail for admin action pages. */
+export function adminBreadcrumbs(pageLabelKey) {
+  return [
+    { labelKey: "dashboard.breadcrumbs.adminHome", href: ADMIN_HOME },
+    { labelKey: pageLabelKey },
+  ];
+}
+
 /** Edit-website hub (tabs under super-admin). */
 export function editWebsiteBreadcrumbs(sectionLabelKey) {
   return [

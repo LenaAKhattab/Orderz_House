@@ -28,6 +28,14 @@ import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
 import DashboardModal from "../../components/dashboard/DashboardModal";
 import SuperAdminSubscriptionsList from "./SuperAdminSubscriptionsList";
 import SubscriptionWhatsAppModal from "./SubscriptionWhatsAppModal";
+import { ADMIN_LIST_TIMEOUT_MS } from "../../services/httpClient";
+import {
+  ADMIN_LIST_REFRESH_SOFT_NOTE,
+  createAdminListRequestGate,
+  isAdminListAbortError,
+  resolveAdminListFailure,
+} from "../../lib/staff/adminListLoad";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import "./superAdminSubscriptionsPage.css";
 
 const PAGE_LIMIT = 20;
@@ -93,7 +101,17 @@ const SuperAdminSubscriptionsPage = () => {
   const [listLoading, setListLoading] = useState(true);
   const [plansLoading, setPlansLoading] = useState(true);
   const [error, setError] = useState("");
+  const [refreshError, setRefreshError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const hasListDataRef = useRef(false);
+  const listGateRef = useRef(null);
+  if (!listGateRef.current) listGateRef.current = createAdminListRequestGate();
+  useEffect(() => {
+    hasListDataRef.current = Array.isArray(subs) && subs.length > 0;
+  }, [subs]);
+  useEffect(() => {
+    return () => listGateRef.current?.abortInFlight();
+  }, []);
 
   const [form, setForm] = useState({
     freelancerUserIds: [],
@@ -216,39 +234,61 @@ const SuperAdminSubscriptionsPage = () => {
   const loadSubscriptions = useCallback(
     async (pageOverride) => {
       const targetPage = pageOverride ?? page;
+      const hadRows = hasListDataRef.current;
+      const ticket = listGateRef.current.begin();
       setListLoading(true);
-      setError("");
+      if (hadRows) {
+        setRefreshError("");
+      } else {
+        setError("");
+      }
       try {
-        const res = await listSubscriptionsRequest({
-          page: targetPage,
-          limit: PAGE_LIMIT,
-          search: debouncedSearch || undefined,
-          status: filterStatus || undefined,
-          planId: filterPlanId || undefined,
-        });
+        const res = await listSubscriptionsRequest(
+          {
+            page: targetPage,
+            limit: PAGE_LIMIT,
+            search: debouncedSearch || undefined,
+            status: filterStatus || undefined,
+            planId: filterPlanId || undefined,
+          },
+          { signal: ticket.signal, timeout: ADMIN_LIST_TIMEOUT_MS },
+        );
+        if (!ticket.isCurrent()) return;
         const nextSubs = res?.data?.subscriptions || [];
         const nextPagination = res?.data?.pagination || EMPTY_PAGINATION;
         const nextAggregates = res?.data?.aggregates || EMPTY_AGGREGATES;
 
         if (nextSubs.length === 0 && targetPage > 1 && (nextPagination.total ?? 0) > 0) {
           setPage(targetPage - 1);
-          setListLoading(false);
           return;
         }
 
         setSubs(nextSubs);
         setPagination(nextPagination);
         setAggregates(nextAggregates);
+        setRefreshError("");
         if (pageOverride == null && targetPage !== page) {
           setPage(targetPage);
         }
       } catch (err) {
-        setError(errorMessage(err));
-        setSubs([]);
-        setPagination(EMPTY_PAGINATION);
-        setAggregates(EMPTY_AGGREGATES);
+        if (!ticket.isCurrent() || isAdminListAbortError(err)) return;
+        const resolved = resolveAdminListFailure({
+          hasExistingRows: hadRows,
+          error: err,
+          mapError: (e) => getSafeApiErrorMessage(e) || errorMessage(e),
+        });
+        if (resolved.softNote) {
+          setRefreshError(ADMIN_LIST_REFRESH_SOFT_NOTE);
+        } else if (resolved.hardError) {
+          setError(resolved.hardError);
+        }
+        if (resolved.shouldClearRows) {
+          setSubs([]);
+          setPagination(EMPTY_PAGINATION);
+          setAggregates(EMPTY_AGGREGATES);
+        }
       } finally {
-        setListLoading(false);
+        if (ticket.isCurrent()) setListLoading(false);
       }
     },
     [page, debouncedSearch, filterStatus, filterPlanId],
@@ -964,7 +1004,7 @@ const SuperAdminSubscriptionsPage = () => {
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.subscriptions")}
       />
 
-      {error ? (
+      {error && subs.length === 0 ? (
         <DashboardErrorState
           message={error}
           actions={
@@ -975,7 +1015,7 @@ const SuperAdminSubscriptionsPage = () => {
         />
       ) : null}
 
-      {!listLoading ? (
+      {(!listLoading || subs.length > 0) && !plansLoading ? (
         <div className="oh-sa-subs-stats" aria-label="ملخص الاشتراكات">
           {statItems.map((item) => (
             <article key={item.key} className="oh-sa-subs-stat">
@@ -1082,13 +1122,23 @@ const SuperAdminSubscriptionsPage = () => {
 
             <div className="oh-sa-subs-toolbar__meta">
               <StatusBadge tone="neutral" className="oh-sa-subs-toolbar__count">
-                {listLoading ? "جارٍ التحميل…" : formatDisplayRange(pagination)}
+                {listLoading && subs.length > 0
+                  ? "جاري التحديث..."
+                  : listLoading
+                    ? "جارٍ التحميل…"
+                    : formatDisplayRange(pagination)}
               </StatusBadge>
             </div>
           </div>
         ) : null}
 
-        {listLoading && !initialLoading ? (
+        {refreshError ? (
+          <p role="status" data-testid="admin-list-refresh-soft-note" className="mb-2 text-sm text-amber-700">
+            {refreshError}
+          </p>
+        ) : null}
+
+        {listLoading && !initialLoading && subs.length === 0 ? (
           <div className="oh-sa-subs-list-loading" aria-live="polite">
             جارٍ تحميل الصفحة…
           </div>
@@ -1105,7 +1155,7 @@ const SuperAdminSubscriptionsPage = () => {
           />
         ) : null}
 
-        {!listLoading && subs.length > 0 ? (
+        {subs.length > 0 ? (
           <>
             <SuperAdminSubscriptionsList
               subscriptions={subs}

@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Button from "../../components/ui/Button";
 import {
   ARTICLE_LEVELS,
   ARTICLE_STATUSES,
+  ARTICLE_WRITING_MODES,
+  ARTICLE_WRITING_MODE_LABELS_AR,
   articleToMarketplaceFormState,
   deriveArticleValueJodFromLevel,
   getInitialMarketplaceArticleFormState,
@@ -11,9 +13,109 @@ import {
   ARTICLE_ALLOWED_REQUIRED_BID_COUNTS,
   ARTICLE_MIN_REQUIRED_BIDS_ACK_AR,
   ARTICLE_MIN_REQUIRED_BIDS_WARNING_AR,
+  BILDAZO_CATEGORIES_LOAD_ERROR_AR,
   attachableActivationCampaigns,
   attachableActivationWaves,
 } from "./marketplaceArticleFormUtils";
+
+function BildazoCategorySearchSelect({
+  categories = [],
+  value,
+  disabled,
+  isEn,
+  loading,
+  error,
+  onSelect,
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+
+  const selected = useMemo(
+    () => (categories || []).find((c) => String(c.id) === String(value)) || null,
+    [categories, value],
+  );
+
+  useEffect(() => {
+    if (selected) {
+      setQuery(selected.path || selected.nameAr || selected.nameEn || selected.slug || "");
+    } else if (!value) {
+      setQuery("");
+    }
+  }, [selected, value]);
+
+  const filtered = useMemo(() => {
+    const q = String(query || "")
+      .trim()
+      .toLowerCase();
+    const list = Array.isArray(categories) ? categories : [];
+    if (!q) return list.slice(0, 80);
+    return list
+      .filter((c) => {
+        const hay = [c.nameAr, c.nameEn, c.slug, c.path, c.id]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return hay.includes(q);
+      })
+      .slice(0, 80);
+  }, [categories, query]);
+
+  return (
+    <div className="oh-mmp-bildazo-cat" data-testid="bildazo-category-select">
+      <input
+        type="search"
+        value={query}
+        placeholder={isEn ? "Search Bildazo category…" : "ابحث عن صنف بلدازو…"}
+        disabled={disabled || loading}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => {
+          // Allow click on option before closing
+          window.setTimeout(() => setOpen(false), 150);
+        }}
+        autoComplete="off"
+      />
+      {loading ? (
+        <span className="oh-mmp-form__hint">{isEn ? "Loading categories…" : "جارٍ تحميل الأصناف…"}</span>
+      ) : null}
+      {error ? <span className="oh-mmp-form__error">{error || BILDAZO_CATEGORIES_LOAD_ERROR_AR}</span> : null}
+      {selected ? (
+        <p className="oh-mmp-form__hint" style={{ margin: 0 }} data-testid="bildazo-category-selected">
+          {selected.nameAr || selected.nameEn || selected.slug}
+          {selected.path ? ` · ${selected.path}` : ""}
+        </p>
+      ) : null}
+      {open && !loading && !disabled ? (
+        <ul className="oh-mmp-bildazo-cat__list" role="listbox">
+          {filtered.length === 0 ? (
+            <li className="oh-mmp-bildazo-cat__empty">{isEn ? "No matches" : "لا نتائج"}</li>
+          ) : (
+            filtered.map((c) => (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  className="oh-mmp-bildazo-cat__option"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    onSelect?.(c);
+                    setQuery(c.path || c.nameAr || c.nameEn || c.slug || "");
+                    setOpen(false);
+                  }}
+                >
+                  <strong>{c.nameAr || c.nameEn || c.slug}</strong>
+                  {c.path ? <span>{c.path}</span> : null}
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
 
 export default function MarketplaceArticleFormModal({
   open,
@@ -21,6 +123,9 @@ export default function MarketplaceArticleFormModal({
   initialArticle = null,
   categories = [],
   subcategories = [],
+  bildazoCategories = [],
+  categoriesLoading = false,
+  categoriesError = "",
   activationCampaigns = [],
   isEn = false,
   submitting = false,
@@ -63,7 +168,7 @@ export default function MarketplaceArticleFormModal({
           </button>
         </div>
 
-        <form className="oh-mmp-form" onSubmit={handleSubmit}>
+        <form className="oh-mmp-form" onSubmit={handleSubmit} data-testid="marketplace-article-form">
           <label>
             {isEn ? "Title" : "العنوان"} *
             <input
@@ -71,6 +176,7 @@ export default function MarketplaceArticleFormModal({
               onChange={(e) => setField("title", e.target.value)}
               disabled={submitting}
               maxLength={240}
+              data-testid="article-form-title"
             />
             {errors.title ? <span className="oh-mmp-form__error">{errors.title}</span> : null}
           </label>
@@ -82,7 +188,50 @@ export default function MarketplaceArticleFormModal({
               value={form.description}
               onChange={(e) => setField("description", e.target.value)}
               disabled={submitting}
+              data-testid="article-form-description"
             />
+          </label>
+
+          <label>
+            {isEn ? "Bildazo category" : "صنف بلدازو"} *
+            <BildazoCategorySearchSelect
+              categories={bildazoCategories}
+              value={form.bildazoCategoryId}
+              disabled={submitting}
+              isEn={isEn}
+              loading={categoriesLoading}
+              error={categoriesError}
+              onSelect={(c) => {
+                setForm((prev) => ({
+                  ...prev,
+                  bildazoCategoryId: c?.id || "",
+                  bildazoCategoryName: c?.nameAr || c?.nameEn || "",
+                  bildazoCategorySlug: c?.slug || "",
+                  bildazoCategoryPath: c?.path || "",
+                }));
+              }}
+            />
+            {errors.bildazoCategoryId ? (
+              <span className="oh-mmp-form__error">{errors.bildazoCategoryId}</span>
+            ) : null}
+          </label>
+
+          <label>
+            {isEn ? "Writing mode" : "نمط الكتابة"} *
+            <select
+              value={form.writingMode || ""}
+              onChange={(e) => setField("writingMode", e.target.value)}
+              disabled={submitting}
+              data-testid="article-form-writing-mode"
+            >
+              <option value="">{isEn ? "— Select —" : "— اختر —"}</option>
+              {ARTICLE_WRITING_MODES.map((mode) => (
+                <option key={mode} value={mode}>
+                  {isEn ? mode : ARTICLE_WRITING_MODE_LABELS_AR[mode]}
+                </option>
+              ))}
+            </select>
+            {errors.writingMode ? <span className="oh-mmp-form__error">{errors.writingMode}</span> : null}
           </label>
 
           <div className="oh-mmp-form__row">

@@ -87,7 +87,6 @@ const ADMIN_SHELL_NAV_ORDER = [
   { to: "/dashboard/admin/orders", permission: ADMIN_PAGE_PERMISSIONS.orders },
   { to: "/dashboard/admin/courses", permission: ADMIN_PAGE_PERMISSIONS.courses },
   { to: "/dashboard/admin/ads", permission: ADMIN_PAGE_PERMISSIONS.ads },
-  { to: "/dashboard/admin/subscriptions", permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation },
   { to: "/dashboard/admin/orders/create", permission: ADMIN_PAGE_PERMISSIONS.createOrder },
 ];
 
@@ -101,7 +100,6 @@ const SUPER_ADMIN_SHELL_NAV_ORDER = [
   { to: "/dashboard/super-admin/courses", permission: ADMIN_PAGE_PERMISSIONS.courses },
   { to: "/dashboard/super-admin/ads", permission: ADMIN_PAGE_PERMISSIONS.ads },
   { to: "/dashboard/super-admin/subscriptions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.subscriptions },
-  { to: "/dashboard/super-admin/subscriptions/activation", permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation },
   { to: "/dashboard/super-admin/financial-center", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialCenter },
   { to: "/dashboard/super-admin/financial-claims", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims },
   { to: "/dashboard/super-admin/orders", permission: ADMIN_PAGE_PERMISSIONS.orders },

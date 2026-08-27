@@ -246,7 +246,7 @@ export default function SuperAdminHomeIntelligenceSections({
               ...fromSection(summaryFailed, summary?.pendingSubscriptions),
               key: "pendingSub",
               label: "اشتراكات معلقة",
-              to: SA_ROUTES.subscriptionsActivation,
+              to: SA_ROUTES.subscriptions,
               scopeLabel: summaryIntelligenceScope("pendingSub", period),
             },
             {
@@ -471,7 +471,7 @@ export default function SuperAdminHomeIntelligenceSections({
               ...fromSection(subscriptionsFailed, subscriptions?.totals?.pendingActivation),
               key: "s2",
               label: "بانتظار التفعيل",
-              to: SA_ROUTES.subscriptionsActivation,
+              to: SA_ROUTES.subscriptions,
             },
             { ...fromSection(subscriptionsFailed, subscriptions?.totals?.pendingPayment), key: "s3", label: "مدفوعات معلقة", to: SA_ROUTES.subscriptions },
             { ...fromSection(subscriptionsFailed, subscriptions?.totals?.failedPayments), key: "s4", label: "مدفوعات فاشلة", to: SA_ROUTES.subscriptions },

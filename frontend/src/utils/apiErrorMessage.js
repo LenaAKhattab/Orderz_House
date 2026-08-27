@@ -123,6 +123,9 @@ export function isOtpEmailSendError(err) {
 export function getAuthApiErrorMessage(err, t, fallbackKey) {
   logDevApiErrorContext(err);
   if (isAxiosTimeoutError(err)) {
+    if (fallbackKey === "auth.login.error") {
+      return t("auth.errors.loginTimeout");
+    }
     return t("auth.errors.requestTimeout");
   }
   if (isOtpEmailSendError(err)) {

@@ -80,7 +80,10 @@ const DashboardPage = () => {
       </LazyDashboardView>
     );
   }
-  if (role === "admin" && pathname === "/dashboard/admin") {
+  if (
+    role === "admin" &&
+    (pathname === "/dashboard/admin" || pathname === "/dashboard/admin/action-center")
+  ) {
     return (
       <LazyDashboardView>
         <AdminDashboardHome user={user} />

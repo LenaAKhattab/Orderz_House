@@ -174,7 +174,8 @@
 }
 
 .oh-mmp-form input,
-.oh-mmp-form textarea {
+.oh-mmp-form textarea,
+.oh-mmp-form select {
   font: inherit;
   font-weight: 500;
   padding: 0.5rem 0.65rem;
@@ -184,6 +185,97 @@
   color: inherit;
   width: 100%;
   box-sizing: border-box;
+}
+
+.oh-mmp-bildazo-cat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.oh-mmp-bildazo-cat__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem;
+  max-height: 220px;
+  overflow: auto;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--oh-border, #d6dde8) 90%, transparent);
+  background: var(--oh-surface, #fff);
+  z-index: 5;
+}
+
+.oh-mmp-bildazo-cat__option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  width: 100%;
+  text-align: start;
+  border: 0;
+  background: transparent;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.oh-mmp-bildazo-cat__option:hover {
+  background: color-mix(in srgb, var(--oh-primary, #2f3b65) 8%, transparent);
+}
+
+.oh-mmp-bildazo-cat__option span {
+  font-size: 0.78rem;
+  opacity: 0.75;
+  font-weight: 500;
+}
+
+.oh-mmp-bildazo-cat__empty {
+  padding: 0.55rem;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.oh-mmp-package-reqs {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--oh-border, #d6dde8) 85%, transparent);
+  background: color-mix(in srgb, var(--oh-surface, #fff) 92%, #f3f5f9);
+}
+
+.oh-mmp-package-reqs summary {
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.oh-mmp-package-reqs__grid {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.oh-mmp-package-reqs__row {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr 1fr;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.oh-mmp-package-reqs__row label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.oh-mmp-package-reqs__plan {
+  font-weight: 800;
+  font-size: 0.86rem;
+  padding-bottom: 0.45rem;
 }
 
 .oh-mmp-form__row {

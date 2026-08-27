@@ -49,6 +49,7 @@ const APPLICATION = {
 };
 
 const ARTICLE = {
+  id: 3,
   title: "How to write",
   description: "Campaign brief",
   category_id: 4,
@@ -116,6 +117,12 @@ function createMemoryDb({
             campaign_description: article.description,
             campaign_category_id: article.category_id,
             campaign_subcategory_id: article.subcategory_id,
+            campaign_bildazo_category_id: article.bildazo_category_id || null,
+            campaign_bildazo_category_name: article.bildazo_category_name || null,
+            campaign_bildazo_category_slug: article.bildazo_category_slug || null,
+            campaign_writing_mode: article.writing_mode || null,
+            campaign_required_word_count: article.required_word_count || null,
+            campaign_required_references_count: article.required_references_count || null,
           },
         ],
       };
@@ -208,7 +215,7 @@ describe("Phase 2B article publish client", () => {
       role: "admin",
       authorId: "nope",
     });
-    assert.equal(body.source, "orderzhouse");
+    assert.equal(Object.prototype.hasOwnProperty.call(body, "source"), false);
     assert.equal(body.orderzArticleId, "9");
     assert.equal(body.categoryId, LEAF_CATEGORY);
     assert.equal(Object.prototype.hasOwnProperty.call(body, "password"), false);
@@ -337,7 +344,7 @@ describe("Phase 2B publish after acceptance", () => {
       },
     );
     assert.equal(bodies.length, 1);
-    assert.equal(bodies[0].orderzArticleId, "9");
+    assert.equal(bodies[0].orderzArticleId, "3");
     assert.equal(bodies[0].orderzFreelancerId, "11");
     assert.equal(bodies[0].bildazoUserId, BILDAZO_USER);
     assert.equal(bodies[0].categoryId, LEAF_CATEGORY);

@@ -31,12 +31,13 @@ export function buildTopRisks({ intelligence, attention }) {
   if (pendingActivation > 0) {
     risks.push({
       id: "pending-activation",
-      severity: SEVERITY.urgent,
-      icon: "🔴",
-      label: "عاجل",
-      text: `${formatInt(pendingActivation)} اشتراك بانتظار التفعيل`,
-      description: "اشتراكات مدفوعة أو مكتملة تنتظر موافقة الإدارة للتفعيل",
-      to: SA_ROUTES.subscriptionsActivation,
+      severity: SEVERITY.info,
+      icon: "ℹ️",
+      label: "معلومة",
+      text: `${formatInt(pendingActivation)} سجل اشتراك بحالة معلّقة (تاريخي)`,
+      description:
+        "الاشتراكات المدفوعة تُفعّل تلقائياً عبر Stripe؛ لا يلزم موافقة يدوية من الإدارة. استخدم إسناد الباقات عند الحاجة.",
+      to: SA_ROUTES.subscriptions,
     });
   }
 

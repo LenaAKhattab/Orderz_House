@@ -45,9 +45,12 @@ async function getAdminById(req, res, next) {
 
 async function create(req, res, next) {
   try {
-    const article = await marketplaceArticlesService.createMarketplaceArticle(req.body || {}, {
-      actorUserId: req.user?.id || null,
-    });
+    const article = await marketplaceArticlesService.createMarketplaceArticle(
+      { ...(req.body || {}), requireBildazoInventory: true },
+      {
+        actorUserId: req.user?.id || null,
+      },
+    );
     const withProgress = await withBidCollection(article);
     return res.status(201).json({
       success: true,

@@ -65,7 +65,8 @@ describe("Phase A11 — API wiring", () => {
     assert.match(fr, /idBack/);
 
     const sa = read("src/routes/superAdminFreelancerAccountActivationKycRoutes.js");
-    assert.match(sa, /requireSuperAdmin/);
+    assert.match(sa, /requireAdmin/);
+    assert.doesNotMatch(sa, /requireSuperAdmin/);
     assert.match(sa, /freelancer-activation-requests/);
     assert.match(sa, /\/approve/);
     assert.match(sa, /\/reject/);
@@ -88,6 +89,28 @@ describe("Phase A11 — API wiring", () => {
     assert.match(up, /uploadKycIdBuffer/);
     assert.match(up, /authenticated/);
     assert.match(up, /local:kyc|uploads[/\\]kyc|orderz\/kyc/i);
+  });
+
+  it("admin KYC file endpoint streams bytes and does not 302 to Cloudinary", () => {
+    const ctrl = read("src/controllers/freelancerAccountActivationKycController.js");
+    assert.match(ctrl, /fetchAdminKycFileBytes/);
+    assert.match(ctrl, /Cache-Control/);
+    assert.match(ctrl, /private, no-store/);
+    assert.match(ctrl, /X-Content-Type-Options/);
+    assert.match(ctrl, /nosniff/);
+    assert.doesNotMatch(ctrl, /res\.redirect/);
+    assert.doesNotMatch(ctrl, /signed_url/);
+
+    const svc = read("src/services/freelancerAccountActivationKycService.js");
+    assert.match(svc, /fetchAdminKycFileBytes/);
+    assert.match(svc, /cloudinary_authenticated/);
+    assert.match(svc, /Server-side fetch only/);
+    assert.doesNotMatch(svc, /kind: "signed_url"/);
+
+    const sa = read("src/routes/superAdminFreelancerAccountActivationKycRoutes.js");
+    assert.match(sa, /requireAuth/);
+    assert.match(sa, /requireAdmin/);
+    assert.match(sa, /files\/:side/);
   });
 });
 
@@ -255,7 +278,8 @@ describe("Phase A11.1 — KYC hardening / bypass gates", () => {
     assert.doesNotMatch(app, /express\.static\([^\)]*uploads/);
     assert.match(app, /never expose via public static/i);
     const sa = read("src/routes/superAdminFreelancerAccountActivationKycRoutes.js");
-    assert.match(sa, /requireSuperAdmin/);
+    assert.match(sa, /requireAdmin/);
+    assert.doesNotMatch(sa, /requireSuperAdmin/);
     assert.match(sa, /files\/:side/);
   });
 

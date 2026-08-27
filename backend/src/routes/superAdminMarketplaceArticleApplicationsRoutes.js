@@ -1,7 +1,8 @@
 const express = require("express");
-const { requireAuth, requireSuperAdmin } = require("../middleware/rbacMiddleware");
+const { requireAuth, requireAdmin, requireSuperAdmin } = require("../middleware/rbacMiddleware");
 const validateRequest = require("../middleware/validateRequest");
 const controller = require("../controllers/marketplaceArticleApplicationsController");
+const oz02Controller = require("../controllers/marketplaceArticleBildazoOz02Controller");
 const {
   articleIdParam,
   applicationIdParam,
@@ -10,7 +11,10 @@ const {
 } = require("../validators/marketplaceArticleApplicationsValidators");
 
 const router = express.Router();
-const guard = [requireAuth, requireSuperAdmin];
+/** Article application review actions — admin + super_admin. */
+const guard = [requireAuth, requireAdmin];
+/** Bildazo publish retries stay super_admin-only. */
+const bildazoGuard = [requireAuth, requireSuperAdmin];
 
 router.get(
   "/marketplace-articles/:id/applications",
@@ -35,6 +39,14 @@ router.get(
   applicationIdParam,
   validateRequest,
   controller.getApplicationAdmin,
+);
+
+router.get(
+  "/article-applications/:applicationId/bildazo-publish-preview",
+  ...guard,
+  applicationIdParam,
+  validateRequest,
+  oz02Controller.getBildazoPublishPreview,
 );
 
 router.get(
@@ -87,7 +99,7 @@ router.post(
 
 router.post(
   "/article-applications/:applicationId/bildazo-publish/retry",
-  ...guard,
+  ...bildazoGuard,
   applicationIdParam,
   validateRequest,
   controller.retryBildazoPublish,
@@ -95,7 +107,7 @@ router.post(
 
 router.post(
   "/marketplace-articles/:id/bildazo-publish/retry",
-  ...guard,
+  ...bildazoGuard,
   articleIdParam,
   validateRequest,
   controller.retryBildazoPublishForArticle,

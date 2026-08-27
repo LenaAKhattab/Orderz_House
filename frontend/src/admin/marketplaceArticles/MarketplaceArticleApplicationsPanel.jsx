@@ -9,6 +9,7 @@ import {
   retryAdminArticleBildazoPublishRequest,
   requestAdminArticleRevisionRequest,
   runAdminArticleAutoAssignmentRequest,
+  getAdminArticleBildazoPublishPreviewRequest,
 } from "../../services/api";
 import FairSelectionOverrideDialog from "./FairSelectionOverrideDialog";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
@@ -18,8 +19,11 @@ import {
   formatArticleBidCollectionLabel,
   ARTICLE_FAIR_RANKING_DISCLAIMER_AR,
   ARTICLE_FAIR_RANKING_PENDING_AR,
+  BILDAZO_AUTHOR_NOT_LINKED_AR,
+  ARTICLE_WRITING_SOURCE_LABELS_AR,
   isFairRankingEligible,
   isRecommendedArticleApplicant,
+  writingModeLabelAr,
 } from "./marketplaceArticleFormUtils";
 import { adminBildazoPublishCopy } from "../../constants/bildazoArticlePublish";
 import { activationAssignmentErrorMessage } from "../../constants/freelancerActivationCampaign";
@@ -49,6 +53,99 @@ function ActivationFairBadges({ activationFairness, isEn }) {
           {badge.label}
         </span>
       ))}
+    </div>
+  );
+}
+
+function BildazoPublishPreviewBlock({ applicationId, attachedPreview, isEn }) {
+  const [preview, setPreview] = useState(attachedPreview || null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (attachedPreview) {
+      setPreview(attachedPreview);
+      return;
+    }
+    if (!applicationId) return;
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    void getAdminArticleBildazoPublishPreviewRequest(applicationId)
+      .then((res) => {
+        if (cancelled) return;
+        setPreview(res?.data || null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(getSafeApiErrorMessage(err) || (isEn ? "Preview unavailable." : "تعذر تحميل المعاينة."));
+        setPreview(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [applicationId, attachedPreview, isEn]);
+
+  if (loading) {
+    return (
+      <p style={{ margin: 0, fontSize: "0.85rem" }}>
+        {isEn ? "Loading publish preview…" : "جارٍ تحميل معاينة النشر…"}
+      </p>
+    );
+  }
+  if (error) {
+    return (
+      <p style={{ margin: 0, fontSize: "0.85rem", color: "#b00020" }}>{error}</p>
+    );
+  }
+  if (!preview) return null;
+
+  const meta = preview.meta || {};
+  const payload = preview.payload || {};
+  const authorLinked = meta.authorLinked === true;
+
+  return (
+    <div data-testid="admin-bildazo-publish-preview" style={{ fontSize: "0.88rem", display: "grid", gap: 6 }}>
+      <strong>{isEn ? "Bildazo publish preview" : "معاينة حمولة نشر بلدازو"}</strong>
+      {!authorLinked ? (
+        <p data-testid="admin-bildazo-author-warning" style={{ margin: 0, color: "#b42318", fontWeight: 700 }}>
+          {meta.authorBlockMessage || BILDAZO_AUTHOR_NOT_LINKED_AR}
+        </p>
+      ) : null}
+      <div>
+        {isEn ? "Words" : "الكلمات"}: {meta.wordCount ?? "—"} / {meta.requiredWords ?? "—"}
+        {" · "}
+        {isEn ? "References" : "المراجع"}: {meta.referencesCount ?? "—"} / {meta.requiredReferences ?? "—"}
+      </div>
+      <div>
+        {isEn ? "Writing source" : "طريقة الكتابة"}:{" "}
+        {ARTICLE_WRITING_SOURCE_LABELS_AR[payload.writingSource] || payload.writingSource || "—"}
+        {" · "}
+        {isEn ? "Mode" : "النمط"}: {writingModeLabelAr(meta.writingMode)}
+      </div>
+      <div>
+        {isEn ? "Category" : "الصنف"}: {meta.categoryName || "—"}
+        {meta.categorySlug ? ` · ${meta.categorySlug}` : ""}
+        {payload.categoryId ? ` · id ${payload.categoryId}` : ""}
+      </div>
+      <pre
+        data-testid="admin-bildazo-publish-payload"
+        style={{
+          margin: 0,
+          padding: 8,
+          overflow: "auto",
+          maxHeight: 160,
+          background: "rgba(0,0,0,0.04)",
+          fontSize: "0.75rem",
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+        }}
+      >
+        {JSON.stringify(payload, null, 2)}
+      </pre>
     </div>
   );
 }
@@ -348,165 +445,207 @@ export default function MarketplaceArticleApplicationsPanel({
         </p>
       ) : null}
       <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 }}>
-        {applications.map((app) => (
-          <li
-            key={app.id}
-            style={{
-              padding: 10,
-              border: "1px solid rgba(0,0,0,0.08)",
-              display: "grid",
-              gap: 6,
-            }}
-          >
-            <div>
-              <strong>
-                {app.freelancerFirstName || ""} {app.freelancerFamilyName || ""}
-              </strong>{" "}
-              <span style={{ opacity: 0.75 }}>({app.freelancerAccountId || app.freelancerUserId})</span>
-              {autoAssignment?.autoAssignedBadge &&
-              String(app.id) === String(autoAssignment?.run?.selectedApplicationId) ? (
-                <span
-                  data-testid="activation-auto-assigned-app-badge"
-                  style={{ marginInlineStart: 8, fontWeight: 700, fontSize: "0.85rem" }}
-                >
-                  {isEn ? "Auto-assigned" : "تم الإسناد تلقائيًا"}
-                </span>
-              ) : null}
-            </div>
-            {isActivationFairRankingApplied(fairRanking) ? (
-              <ActivationFairBadges
-                activationFairness={findFairRankingCandidate(app.id, fairRanking)?.activationFairness}
-                isEn={isEn}
-              />
-            ) : null}
-            {isActivationFairRankingApplied(fairRanking)
-            && app.status === "pending"
-            && !isRecommendedArticleApplicant(app.id, fairRanking) ? (
-              <div data-testid="activation-fair-override-note" style={{ fontSize: "0.82rem", opacity: 0.75 }}>
-                {isEn
-                  ? "Selecting this applicant overrides the preferred activation candidate."
-                  : "اختيار هذا المتقدم يتجاوز المرشح المفضل للتفعيل."}
-              </div>
-            ) : null}
-            <div style={{ fontSize: "0.9rem" }}>
-              {isEn ? "Status" : "الحالة"}: <strong>{app.status}</strong>
-              {" · "}
-              {isEn ? "Access snapshot" : "لقطة الوصول"}: {app.membershipArticleAccessLevelSnapshot}
-              {" · "}
-              {isEn ? "Article level" : "مستوى المقال"}: {app.articleLevelSnapshot}
-            </div>
-            {app.bidEconomics ? (
-              <div style={{ fontSize: "0.85rem", opacity: 0.9 }}>
-                {isEn ? "Bid economics" : "اقتصاد العرض"}:{" "}
-                {app.bidEconomics.chargeStatus === "charged"
-                  ? isEn
-                    ? "charged · 1 Bid"
-                    : "مخصوم · عرض واحد"
-                  : app.bidEconomics.chargeStatus}
-                {app.bidEconomics.refundStatus === "refunded"
-                  ? isEn
-                    ? ` · refunded${app.bidEconomics.refundMode ? ` (${app.bidEconomics.refundMode})` : ""}`
-                    : ` · مسترد${app.bidEconomics.refundMode ? ` (${app.bidEconomics.refundMode})` : ""}`
-                  : ""}
-              </div>
-            ) : null}
-            {app.proposalMessage ? (
-              <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.85 }}>
-                {isEn ? "Proposal:" : "رسالة العرض:"} {app.proposalMessage}
-              </p>
-            ) : null}
-            {app.articleSubmission ? (
-              <div data-testid="admin-final-article-status" style={{ fontSize: "0.9rem" }}>
-                <strong>{isEn ? "Final manuscript" : "المقال النهائي"}:</strong>{" "}
-                {app.articleSubmission.status}
-                {app.articleSubmission.title ? ` · ${app.articleSubmission.title}` : ""}
-                <div data-testid="admin-submission-terms" style={{ fontSize: "0.82rem", opacity: 0.85 }}>
-                  {formatManuscriptTermsAdmin(app.articleSubmission, { isEn })}
-                </div>
-              </div>
-            ) : app.status === "selected" || app.status === "assigned" ? (
-              <p data-testid="admin-final-article-missing" style={{ margin: 0, fontSize: "0.9rem" }}>
-                {isEn
-                  ? "Waiting for the freelancer’s final article."
-                  : "بانتظار تسليم المقال النهائي من المستقل."}
-              </p>
-            ) : null}
-            {app.bildazoPublish ? (
-              <div data-testid="admin-bildazo-publish-status" style={{ fontSize: "0.9rem" }}>
-                {adminBildazoPublishCopy(app.bildazoPublish, isEn)}
-                {app.bildazoPublish.articleUrl ? (
-                  <>
-                    {" · "}
-                    <a
-                      href={app.bildazoPublish.articleUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {app.bildazoPublish.articleUrl}
-                    </a>
-                  </>
+        {applications.map((app) => {
+          const showPreview =
+            Boolean(app.articleSubmission) ||
+            ["selected", "assigned", "approved", "accepted"].includes(String(app.status || ""));
+          const publishStatus = String(app.bildazoPublish?.status || "");
+          return (
+            <li
+              key={app.id}
+              style={{
+                padding: 10,
+                border: "1px solid rgba(0,0,0,0.08)",
+                display: "grid",
+                gap: 6,
+              }}
+            >
+              <div>
+                <strong>
+                  {app.freelancerFirstName || ""} {app.freelancerFamilyName || ""}
+                </strong>{" "}
+                <span style={{ opacity: 0.75 }}>({app.freelancerAccountId || app.freelancerUserId})</span>
+                {autoAssignment?.autoAssignedBadge &&
+                String(app.id) === String(autoAssignment?.run?.selectedApplicationId) ? (
+                  <span
+                    data-testid="activation-auto-assigned-app-badge"
+                    style={{ marginInlineStart: 8, fontWeight: 700, fontSize: "0.85rem" }}
+                  >
+                    {isEn ? "Auto-assigned" : "تم الإسناد تلقائيًا"}
+                  </span>
                 ) : null}
               </div>
-            ) : null}
-            {app.status === "pending" ? (
-              <div style={{ display: "flex", gap: 8 }}>
-                <Button
-                  type="button"
-                  disabled={busyId === app.id || !canSelectArticleApplicant(bidCollection)}
-                  onClick={() => act(app.id, "select")}
-                >
-                  {isEn ? "Select" : "اختيار"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={busyId === app.id}
-                  onClick={() => act(app.id, "reject")}
-                >
-                  {isEn ? "Reject" : "رفض"}
-                </Button>
+              {isActivationFairRankingApplied(fairRanking) ? (
+                <ActivationFairBadges
+                  activationFairness={findFairRankingCandidate(app.id, fairRanking)?.activationFairness}
+                  isEn={isEn}
+                />
+              ) : null}
+              {isActivationFairRankingApplied(fairRanking) &&
+              app.status === "pending" &&
+              !isRecommendedArticleApplicant(app.id, fairRanking) ? (
+                <div data-testid="activation-fair-override-note" style={{ fontSize: "0.82rem", opacity: 0.75 }}>
+                  {isEn
+                    ? "Selecting this applicant overrides the preferred activation candidate."
+                    : "اختيار هذا المتقدم يتجاوز المرشح المفضل للتفعيل."}
+                </div>
+              ) : null}
+              <div style={{ fontSize: "0.9rem" }}>
+                {isEn ? "Status" : "الحالة"}: <strong>{app.status}</strong>
+                {" · "}
+                {isEn ? "Access snapshot" : "لقطة الوصول"}: {app.membershipArticleAccessLevelSnapshot}
+                {" · "}
+                {isEn ? "Article level" : "مستوى المقال"}: {app.articleLevelSnapshot}
               </div>
-            ) : null}
-            {app.status === "selected" || app.status === "assigned" ? (
-              <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.8 }}>
-                {isEn
-                  ? "Approve is available after the final article is submitted."
-                  : "الاعتماد متاح بعد تسليم المقال النهائي."}
-              </p>
-            ) : null}
-            {app.articleSubmission?.status === "submitted" ? (
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <Button
-                  type="button"
-                  disabled={busyId === app.id}
-                  onClick={() => act(app.id, "finalize")}
-                >
-                  {isEn ? "Approve article" : "اعتماد المقال"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={busyId === app.id}
-                  onClick={() => act(app.id, "request-revision")}
-                >
-                  {isEn ? "Request revision" : "طلب تعديل"}
-                </Button>
-              </div>
-            ) : null}
-            {app.bildazoPublish?.canRetry ? (
-              <div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={busyId === app.id}
-                  onClick={() => act(app.id, "retry-publish")}
-                >
-                  {isEn ? "Retry Bildazo publish" : "إعادة نشر Bildazo"}
-                </Button>
-              </div>
-            ) : null}
-          </li>
-        ))}
+              {(app.bildazoCategoryIdSnapshot ||
+                app.bildazoCategoryNameSnapshot ||
+                app.writingModeSnapshot ||
+                app.requiredWordCountSnapshot != null) && (
+                <div data-testid="admin-application-bildazo-snapshots" style={{ fontSize: "0.85rem", opacity: 0.9 }}>
+                  {isEn ? "Bildazo category" : "صنف بلدازو"}: {app.bildazoCategoryNameSnapshot || "—"}
+                  {app.bildazoCategorySlugSnapshot ? ` · ${app.bildazoCategorySlugSnapshot}` : ""}
+                  {app.bildazoCategoryIdSnapshot ? ` · id ${app.bildazoCategoryIdSnapshot}` : ""}
+                  {" · "}
+                  {isEn ? "Writing mode" : "نمط الكتابة"}: {writingModeLabelAr(app.writingModeSnapshot)}
+                  {" · "}
+                  {isEn ? "Words/refs" : "كلمات/مراجع"}: {app.requiredWordCountSnapshot ?? "—"} /{" "}
+                  {app.requiredReferencesCountSnapshot ?? 0}
+                </div>
+              )}
+              {app.bidEconomics ? (
+                <div style={{ fontSize: "0.85rem", opacity: 0.9 }}>
+                  {isEn ? "Bid economics" : "اقتصاد العرض"}:{" "}
+                  {app.bidEconomics.chargeStatus === "charged"
+                    ? isEn
+                      ? "charged · 1 Bid"
+                      : "مخصوم · عرض واحد"
+                    : app.bidEconomics.chargeStatus}
+                  {app.bidEconomics.refundStatus === "refunded"
+                    ? isEn
+                      ? ` · refunded${app.bidEconomics.refundMode ? ` (${app.bidEconomics.refundMode})` : ""}`
+                      : ` · مسترد${app.bidEconomics.refundMode ? ` (${app.bidEconomics.refundMode})` : ""}`
+                    : ""}
+                </div>
+              ) : null}
+              {app.proposalMessage ? (
+                <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.85 }}>
+                  {isEn ? "Proposal:" : "رسالة العرض:"} {app.proposalMessage}
+                </p>
+              ) : null}
+              {app.articleSubmission ? (
+                <div data-testid="admin-final-article-status" style={{ fontSize: "0.9rem" }}>
+                  <strong>{isEn ? "Final manuscript" : "المقال النهائي"}:</strong>{" "}
+                  {app.articleSubmission.status}
+                  {app.articleSubmission.title ? ` · ${app.articleSubmission.title}` : ""}
+                  <div style={{ fontSize: "0.82rem", opacity: 0.9 }}>
+                    {isEn ? "Words" : "الكلمات"}: {app.articleSubmission.wordCount ?? "—"}
+                    {" · "}
+                    {isEn ? "References" : "المراجع"}: {app.articleSubmission.referencesCount ?? "—"}
+                    {" · "}
+                    {isEn ? "Writing source" : "طريقة الكتابة"}:{" "}
+                    {ARTICLE_WRITING_SOURCE_LABELS_AR[app.articleSubmission.writingSource] ||
+                      app.articleSubmission.writingSource ||
+                      "—"}
+                  </div>
+                  <div data-testid="admin-submission-terms" style={{ fontSize: "0.82rem", opacity: 0.85 }}>
+                    {formatManuscriptTermsAdmin(app.articleSubmission, { isEn })}
+                  </div>
+                </div>
+              ) : app.status === "selected" || app.status === "assigned" ? (
+                <p data-testid="admin-final-article-missing" style={{ margin: 0, fontSize: "0.9rem" }}>
+                  {isEn
+                    ? "Waiting for the freelancer’s final article."
+                    : "بانتظار تسليم المقال النهائي من المستقل."}
+                </p>
+              ) : null}
+              {app.bildazoPublish ? (
+                <div data-testid="admin-bildazo-publish-status" style={{ fontSize: "0.9rem" }}>
+                  {adminBildazoPublishCopy(app.bildazoPublish, isEn)}
+                  {publishStatus === "needs_manual_review" ? (
+                    <span data-testid="admin-bildazo-needs-manual-review">
+                      {" · "}
+                      {isEn ? "Needs manual review" : "يحتاج مراجعة يدوية"}
+                    </span>
+                  ) : null}
+                  {publishStatus === "failed" ? (
+                    <span data-testid="admin-bildazo-publish-failed" style={{ color: "#b42318" }}>
+                      {" · "}
+                      {isEn ? "Publish failed" : "فشل النشر"}
+                    </span>
+                  ) : null}
+                  {app.bildazoPublish.articleUrl ? (
+                    <>
+                      {" · "}
+                      <a href={app.bildazoPublish.articleUrl} target="_blank" rel="noreferrer">
+                        {app.bildazoPublish.articleUrl}
+                      </a>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
+              {showPreview ? (
+                <BildazoPublishPreviewBlock
+                  applicationId={app.id}
+                  attachedPreview={app.bildazoPublishPreview || null}
+                  isEn={isEn}
+                />
+              ) : null}
+              {app.status === "pending" ? (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <Button
+                    type="button"
+                    disabled={busyId === app.id || !canSelectArticleApplicant(bidCollection)}
+                    onClick={() => act(app.id, "select")}
+                  >
+                    {isEn ? "Select" : "اختيار"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={busyId === app.id}
+                    onClick={() => act(app.id, "reject")}
+                  >
+                    {isEn ? "Reject" : "رفض"}
+                  </Button>
+                </div>
+              ) : null}
+              {app.status === "selected" || app.status === "assigned" ? (
+                <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.8 }}>
+                  {isEn
+                    ? "Approve is available after the final article is submitted."
+                    : "الاعتماد متاح بعد تسليم المقال النهائي."}
+                </p>
+              ) : null}
+              {app.articleSubmission?.status === "submitted" ? (
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <Button type="button" disabled={busyId === app.id} onClick={() => act(app.id, "finalize")}>
+                    {isEn ? "Approve article" : "اعتماد المقال"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={busyId === app.id}
+                    onClick={() => act(app.id, "request-revision")}
+                  >
+                    {isEn ? "Request revision" : "طلب تعديل"}
+                  </Button>
+                </div>
+              ) : null}
+              {app.bildazoPublish?.canRetry ? (
+                <div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={busyId === app.id}
+                    onClick={() => act(app.id, "retry-publish")}
+                  >
+                    {isEn ? "Retry Bildazo publish" : "إعادة نشر Bildazo"}
+                  </Button>
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
       <FairSelectionOverrideDialog
         open={Boolean(overrideTargetId)}

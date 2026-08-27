@@ -53,23 +53,38 @@ function optionalIsoDate(raw) {
   return d.toISOString();
 }
 
-/** Never copy unknown keys (password/role/admin must never be sent). */
+/**
+ * Never copy unknown keys (password/role/admin/tags/SEO/excerpt/references must never be sent).
+ * OZ-Articles-Bildazo-02 contract allowlist only.
+ */
 function buildSafePublishBody(payload = {}) {
   const body = {
-    orderzArticleId: String(payload.orderzArticleId || "").trim(),
-    orderzFreelancerId: String(payload.orderzFreelancerId || "").trim(),
-    bildazoUserId: String(payload.bildazoUserId || "").trim(),
+    orderzArticleId: String(payload.orderzArticleId || "").trim().slice(0, 80),
+    orderzFreelancerId: String(payload.orderzFreelancerId || "").trim().slice(0, 80),
+    bildazoUserId: String(payload.bildazoUserId || "").trim().slice(0, 80),
     title: String(payload.title || "").trim().slice(0, 120),
-    content: String(payload.content || "").trim().slice(0, 200000),
+    content: String(payload.content || payload.body || "").trim().slice(0, 200000),
     categoryId: String(payload.categoryId || "").trim(),
-    source: "orderzhouse",
   };
   const bildazoPublicId = optionalText(payload.bildazoPublicId, 120);
   const acceptedAt = optionalIsoDate(payload.acceptedAt);
   const reviewerNotes = optionalText(payload.reviewerNotes, 2000);
+  const coverImageUrl =
+    optionalText(payload.coverImageUrl, 2000) || optionalText(payload.imageUrl, 2000);
+  const writingSourceRaw = String(payload.writingSource || "")
+    .trim()
+    .toUpperCase();
+  const writingSource =
+    writingSourceRaw === "HUMAN_WRITTEN" || writingSourceRaw === "AI_ASSISTED"
+      ? writingSourceRaw
+      : writingSourceRaw
+        ? "UNKNOWN"
+        : null;
   if (bildazoPublicId) body.bildazoPublicId = bildazoPublicId;
   if (acceptedAt) body.acceptedAt = acceptedAt;
   if (reviewerNotes) body.reviewerNotes = reviewerNotes;
+  if (coverImageUrl) body.coverImageUrl = coverImageUrl;
+  if (writingSource) body.writingSource = writingSource;
   return body;
 }
 

@@ -2,7 +2,6 @@
  * Phase A11 — Freelancer account activation KYC controllers.
  */
 
-const fs = require("node:fs");
 const service = require("../services/freelancerAccountActivationKycService");
 
 function parseTruthy(value) {
@@ -97,31 +96,30 @@ const downloadActivationRequestFile = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "side must be front or back" });
     }
     const side = sideRaw;
-    const out = await service.prepareAdminKycFileDownload({
+    const out = await service.fetchAdminKycFileBytes({
       requestId: req.params.id,
       side,
     });
-    if (out.kind === "signed_url" && out.url) {
-      return res.redirect(302, out.url);
-    }
-    if (!out.absPath) {
-      const err = new Error("الملف غير متاح.");
-      err.statusCode = 404;
-      throw err;
+    if (!out?.buffer || !Buffer.isBuffer(out.buffer) || out.buffer.length < 1) {
+      return res.status(404).json({
+        success: false,
+        message: "لم يتم العثور على صورة الهوية.",
+        code: "KYC_FILE_NOT_FOUND",
+      });
     }
     const inline = String(req.query.disposition || "").toLowerCase() === "inline";
     const cdType = inline ? "inline" : "attachment";
     const utf8Name = String(out.originalName || `${side}.jpg`);
+    res.status(200);
     res.setHeader("Content-Type", out.mimeType || "image/jpeg");
+    res.setHeader("Content-Length", String(out.buffer.length));
     res.setHeader(
       "Content-Disposition",
       `${cdType}; filename*=UTF-8''${encodeURIComponent(utf8Name)}`,
     );
-    const stream = fs.createReadStream(out.absPath);
-    stream.on("error", (e) => {
-      if (!res.headersSent) return next(e);
-    });
-    return stream.pipe(res);
+    res.setHeader("Cache-Control", "private, no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    return res.end(out.buffer);
   } catch (err) {
     return next(err);
   }

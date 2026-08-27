@@ -834,3 +834,23 @@
     width: 100%;
   }
 }
+
+/* Web-Admin-A1: select/delete without opening detail */
+.fn-notif-card {
+  position: relative;
+}
+.fn-notif-card__select {
+  position: absolute;
+  inset-inline-start: 10px;
+  top: 14px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+.fn-notif-card--selected {
+  outline: 2px solid rgba(59, 111, 200, 0.45);
+}
+.fn-toolbar__delete-selected {
+  color: #b91c1c !important;
+}

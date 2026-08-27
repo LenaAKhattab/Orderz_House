@@ -1,7 +1,18 @@
-import api, { AUTH_REGISTER_TIMEOUT_MS } from "./httpClient";
+import api, {
+  AUTH_REGISTER_TIMEOUT_MS,
+  ADMIN_LIST_TIMEOUT_MS,
+  ADMIN_LIST_HEAVY_TIMEOUT_MS,
+} from "./httpClient";
 
 export { default } from "./httpClient";
-export { TOKEN_KEY, AUTH_SESSION_HINT_KEY, AUTH_REGISTER_TIMEOUT_MS } from "./httpClient";
+export {
+  TOKEN_KEY,
+  AUTH_SESSION_HINT_KEY,
+  AUTH_REGISTER_TIMEOUT_MS,
+  AUTH_LOGIN_TIMEOUT_MS,
+  ADMIN_LIST_TIMEOUT_MS,
+  ADMIN_LIST_HEAVY_TIMEOUT_MS,
+} from "./httpClient";
 export {
   fetchSessionBootstrap,
   resetSessionBootstrap,
@@ -24,6 +35,8 @@ export {
   getUnreadNotificationsCountRequest,
   markNotificationReadRequest,
   markAllNotificationsReadRequest,
+  deleteNotificationRequest,
+  deleteNotificationsBulkRequest,
 } from "./notificationsApi";
 
 export const getHealthStatus = async () => {
@@ -236,8 +249,9 @@ export const updateMarketplaceMembershipPlanRequest = async (id, patch) => {
 };
 
 /** Marketplace Articles — Phase A2 Level model (applications use Bids). */
-export const listAdminMarketplaceArticlesRequest = async (params = {}) => {
-  const { data } = await api.get("/super-admin/marketplace-articles", { params });
+export const listAdminMarketplaceArticlesRequest = async (params = {}, options = {}) => {
+  const { signal, timeout = ADMIN_LIST_TIMEOUT_MS } = options;
+  const { data } = await api.get("/super-admin/marketplace-articles", { params, signal, timeout });
   return data;
 };
 
@@ -250,6 +264,37 @@ export const updateMarketplaceArticleRequest = async (id, patch) => {
   const { data } = await api.patch(`/super-admin/marketplace-articles/${id}`, patch, {
     timeout: 30000,
   });
+  return data;
+};
+
+/** OZ-Articles-Bildazo-02 — Bildazo leaf categories + package word/ref requirements. */
+export const listAdminBildazoCategoriesRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/marketplace-articles/bildazo-categories", {
+    params,
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const listAdminArticlePackageRequirementsRequest = async () => {
+  const { data } = await api.get("/super-admin/marketplace-articles/package-requirements", {
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const updateAdminArticlePackageRequirementsRequest = async (payload) => {
+  const { data } = await api.put("/super-admin/marketplace-articles/package-requirements", payload, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const getAdminArticleBildazoPublishPreviewRequest = async (applicationId) => {
+  const { data } = await api.get(
+    `/super-admin/article-applications/${encodeURIComponent(applicationId)}/bildazo-publish-preview`,
+    { timeout: 30000 },
+  );
   return data;
 };
 
@@ -871,8 +916,9 @@ export const listAssignablePlansAdminRequest = async () => {
   return data;
 };
 
-export const listSubscriptionsRequest = async (params = {}) => {
-  const { data } = await api.get("/admin/subscriptions", { params });
+export const listSubscriptionsRequest = async (params = {}, options = {}) => {
+  const { signal, timeout = ADMIN_LIST_TIMEOUT_MS } = options;
+  const { data } = await api.get("/admin/subscriptions", { params, signal, timeout });
   return data;
 };
 
@@ -886,6 +932,17 @@ export const listActivationQueueRequest = async (params = {}, options = {}) => {
   }
   const { data } = await api.get("/admin/subscriptions/activation-queue", {
     params: query,
+    signal,
+    ...rest,
+  });
+  return data;
+};
+
+/** Single-response Admin Action Center counts (admin + super_admin). */
+export const getAdminActionCenterSummaryRequest = async (options = {}) => {
+  const { signal, timeout = 15000, ...rest } = options;
+  const { data } = await api.get("/admin/action-center/summary", {
+    timeout,
     signal,
     ...rest,
   });
@@ -1010,8 +1067,13 @@ export const submitFreelancerAccountActivationRequest = async ({
   return data;
 };
 
-export const listSuperAdminFreelancerActivationRequestsRequest = async (params = {}) => {
-  const { data } = await api.get("/super-admin/freelancer-activation-requests", { params });
+export const listSuperAdminFreelancerActivationRequestsRequest = async (params = {}, options = {}) => {
+  const { signal, timeout = ADMIN_LIST_TIMEOUT_MS } = options;
+  const { data } = await api.get("/super-admin/freelancer-activation-requests", {
+    params,
+    signal,
+    timeout,
+  });
   return data;
 };
 
@@ -1037,16 +1099,52 @@ export const rejectSuperAdminFreelancerActivationRequestRequest = async (id, pay
   return data;
 };
 
-export const fetchSuperAdminFreelancerActivationKycFileBlob = async (id, side) => {
-  const { data } = await api.get(
-    `/super-admin/freelancer-activation-requests/${encodeURIComponent(id)}/files/${encodeURIComponent(side)}`,
-    {
-      params: { disposition: "inline" },
-      responseType: "blob",
-      timeout: 60000,
-    },
-  );
-  return data;
+export const fetchSuperAdminFreelancerActivationKycFileBlob = async (id, side, options = {}) => {
+  const { signal } = options;
+  try {
+    const response = await api.get(
+      `/super-admin/freelancer-activation-requests/${encodeURIComponent(id)}/files/${encodeURIComponent(side)}`,
+      {
+        params: { disposition: "inline" },
+        responseType: "blob",
+        timeout: 60000,
+        maxRedirects: 0,
+        signal,
+      },
+    );
+    const data = response.data;
+    const ct = String(response.headers?.["content-type"] || "").toLowerCase();
+    if (data instanceof Blob && ct.includes("application/json")) {
+      const text = await data.text();
+      let json = null;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = null;
+      }
+      const err = new Error(json?.message || "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.");
+      err.response = { status: response.status, data: json || { message: err.message } };
+      throw err;
+    }
+    return data;
+  } catch (err) {
+    if (err?.code === "ERR_CANCELED" || err?.name === "CanceledError" || err?.name === "AbortError") {
+      throw err;
+    }
+    const blob = err?.response?.data;
+    if (blob instanceof Blob) {
+      try {
+        const text = await blob.text();
+        const json = JSON.parse(text);
+        const wrapped = new Error(json?.message || "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.");
+        wrapped.response = { status: err.response?.status, data: json };
+        throw wrapped;
+      } catch (parseErr) {
+        if (parseErr?.response) throw parseErr;
+      }
+    }
+    throw err;
+  }
 };
 
 /** Freelancer control-center dashboard: single aggregated summary (Phase 2). */
@@ -2145,8 +2243,9 @@ export const listFeedbackTopicsRequest = async (params = {}) => {
 };
 
 // Super Admin — Problems & Suggestions
-export const listSuperAdminFeedbackRequest = async (params = {}) => {
-  const { data } = await api.get("/super-admin/feedback", { params });
+export const listSuperAdminFeedbackRequest = async (params = {}, options = {}) => {
+  const { signal, timeout = ADMIN_LIST_TIMEOUT_MS } = options;
+  const { data } = await api.get("/super-admin/feedback", { params, signal, timeout });
   return data;
 };
 
@@ -3103,8 +3202,9 @@ export async function downloadAdminCourseFile(courseId, fileKind, fallbackName) 
 }
 
 /* ---------- بيت المونة (Pantry House) ---------- */
-export const listAdminPantryRequestsRequest = async (params = {}) => {
-  const { data } = await api.get("/admin/pantry/requests", { params });
+export const listAdminPantryRequestsRequest = async (params = {}, options = {}) => {
+  const { signal, timeout = ADMIN_LIST_HEAVY_TIMEOUT_MS } = options;
+  const { data } = await api.get("/admin/pantry/requests", { params, signal, timeout });
   return data;
 };
 
@@ -3152,8 +3252,9 @@ export const rejectAdminPantryBidRequest = async (requestId, bidId) => {
   return data;
 };
 
-export const listAdminPantryDeliveriesRequest = async (params = {}) => {
-  const { data } = await api.get("/admin/pantry/deliveries", { params });
+export const listAdminPantryDeliveriesRequest = async (params = {}, options = {}) => {
+  const { signal, timeout = ADMIN_LIST_HEAVY_TIMEOUT_MS } = options;
+  const { data } = await api.get("/admin/pantry/deliveries", { params, signal, timeout });
   return data;
 };
 

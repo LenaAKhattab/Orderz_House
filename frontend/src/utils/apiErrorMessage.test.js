@@ -89,8 +89,10 @@ describe("apiErrorMessage network vs HTTP responses", () => {
     const t = (key) =>
       ({
         "auth.register.error": "تعذر إنشاء الحساب. راجع الحقول وحاول مجدداً.",
+        "auth.login.error": "تعذر تسجيل الدخول. تحقق من البيانات وحاول مجدداً.",
         "auth.errors.network": "تعذر الاتصال بالخادم. تحقق من الاتصال وحاول مجدداً.",
         "auth.errors.requestTimeout": "استغرق الطلب وقتاً طويلاً. تحقق من الاتصال وحاول مجدداً.",
+        "auth.errors.loginTimeout": "استغرق تسجيل الدخول وقتًا أطول من المتوقع. حاول مرة أخرى بعد قليل.",
         "auth.errors.otpEmailFailed": "تعذر إرسال رسالة رمز التحقق.",
       })[key] || key;
 
@@ -110,6 +112,48 @@ describe("apiErrorMessage network vs HTTP responses", () => {
       "auth.register.error",
     );
     assert.match(networkMsg, /تعذر الاتصال بالخادم/);
+  });
+
+  it("maps login timeout to login-specific Arabic message without Axios text", () => {
+    const t = (key) =>
+      ({
+        "auth.login.error": "تعذر تسجيل الدخول. تحقق من البيانات وحاول مجدداً.",
+        "auth.errors.requestTimeout": "استغرق الطلب وقتاً طويلاً. تحقق من الاتصال وحاول مجدداً.",
+        "auth.errors.loginTimeout": "استغرق تسجيل الدخول وقتًا أطول من المتوقع. حاول مرة أخرى بعد قليل.",
+      })[key] || key;
+
+    const msg = getAuthApiErrorMessage(
+      { code: "ECONNABORTED", message: "timeout of 10000ms exceeded" },
+      t,
+      "auth.login.error",
+    );
+    assert.equal(msg, "استغرق تسجيل الدخول وقتًا أطول من المتوقع. حاول مرة أخرى بعد قليل.");
+    assert.doesNotMatch(msg, /timeout of|ECONNABORTED|10000ms/i);
+
+    const registerTimeout = getAuthApiErrorMessage(
+      { code: "ECONNABORTED", message: "timeout of 25000ms exceeded" },
+      t,
+      "auth.register.error",
+    );
+    assert.equal(registerTimeout, "استغرق الطلب وقتاً طويلاً. تحقق من الاتصال وحاول مجدداً.");
+  });
+
+  it("maps invalid credentials HTTP message for login unchanged", () => {
+    const t = (key) =>
+      ({
+        "auth.login.error": "تعذر تسجيل الدخول. تحقق من البيانات وحاول مجدداً.",
+      })[key] || key;
+    const msg = getAuthApiErrorMessage(
+      {
+        response: {
+          status: 401,
+          data: { code: "INVALID_CREDENTIALS", message: "البريد الإلكتروني أو كلمة المرور غير صحيحة." },
+        },
+      },
+      t,
+      "auth.login.error",
+    );
+    assert.equal(msg, "البريد الإلكتروني أو كلمة المرور غير صحيحة.");
   });
 
   it("does not surface English gateway text from HTML/proxy bodies", () => {

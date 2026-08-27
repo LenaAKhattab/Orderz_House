@@ -1,16 +1,12 @@
 const express = require("express");
-const { requireAuth, requireAnyRole, requireRole, requirePermission } = require("../middleware/rbacMiddleware");
-const { PERMISSION_KEYS } = require("../constants/dashboardPermissions");
+const { requireAuth, requireAdmin, requireRole } = require("../middleware/rbacMiddleware");
 const pantryController = require("../controllers/pantryController");
 
 const adminPantryRouter = express.Router();
 const freelancerPantryRouter = express.Router();
 
-const pantryAdminGuard = [
-  requireAuth,
-  requireAnyRole(["admin", "super_admin"]),
-  requirePermission(PERMISSION_KEYS.PANTRY),
-];
+/** Web-Admin-A1: pantry review actions — admin + super_admin (Flutter Super Admin parity). */
+const pantryAdminGuard = [requireAuth, requireAdmin];
 
 adminPantryRouter.get("/pantry/requests", ...pantryAdminGuard, pantryController.listAdminRequests);
 adminPantryRouter.post("/pantry/requests", ...pantryAdminGuard, pantryController.createRequest);

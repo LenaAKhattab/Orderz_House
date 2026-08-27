@@ -39,6 +39,23 @@ describe("Phase 1C.1 public/auth routing", () => {
     assert.doesNotMatch(hook, /default_plan_catalog|startCheckout/);
   });
 
+  it("loginRequest uses 25s timeout and Login stops loading in finally", () => {
+    const http = read("services/httpClient.js");
+    assert.match(http, /AUTH_LOGIN_TIMEOUT_MS = 25000/);
+    assert.match(http, /timeout: 10000/);
+    const session = read("services/authSessionApi.js");
+    assert.match(session, /AUTH_LOGIN_TIMEOUT_MS/);
+    assert.match(session, /api\.post\("\/auth\/login"[\s\S]*timeout:\s*AUTH_LOGIN_TIMEOUT_MS/);
+    const login = read("pages/Login.jsx");
+    assert.match(login, /finally/);
+    assert.match(login, /setSubmitting\(false\)/);
+    assert.match(login, /submittingRef\.current/);
+    assert.match(login, /setError\(""\)/);
+    assert.match(login, /getAuthApiErrorMessage/);
+    const ar = read("locales/ar/auth.json");
+    assert.match(ar, /"loginTimeout":\s*"استغرق تسجيل الدخول وقتًا أطول من المتوقع/);
+  });
+
   it("public plans aliases still redirect", () => {
     const src = read("pages/Plans.jsx");
     assert.match(src, /slug === "freelancers"/);

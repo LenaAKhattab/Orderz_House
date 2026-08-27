@@ -554,6 +554,71 @@ a.acc-attention-item--info:hover {
   }
 }
 
+/* Web Admin action center only — fixed 3-column desktop grid */
+.admin-ops-home .acc-actions-grid--admin-center {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 560px) {
+  .admin-ops-home .acc-actions-grid--admin-center {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .admin-ops-home .acc-actions-grid--admin-center {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.admin-ops-home .acc-action-card__count {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #dc2626;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-ops-home .acc-section__refresh {
+  margin-inline-start: auto;
+}
+
+.admin-ops-home .acc-section__head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 12px;
+  margin-inline-start: auto;
+}
+
+.admin-ops-home .acc-counts-soft-note {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6b7280;
+  line-height: 1.35;
+}
+
+.admin-ops-home .acc-counts-soft-note__btn {
+  margin-inline-start: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 800;
+  color: #4b5563;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.admin-ops-home .acc-counts-soft-note__btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .acc-actions-grid--perms {
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
 }

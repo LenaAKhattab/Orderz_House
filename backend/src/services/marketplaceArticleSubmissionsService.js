@@ -25,6 +25,12 @@ const {
   isTruthyTermsAcceptance,
   buildManuscriptTermsSnapshot,
 } = require("../constants/marketplaceArticleSubmissionTerms");
+const {
+  normalizeWritingSource,
+  writingSourceSatisfiesMode,
+  countReferences,
+  normalizeWritingMode,
+} = require("../constants/marketplaceArticleBildazoOz02");
 
 function isMissingSchema(err) {
   return err?.code === "42P01" || err?.code === "42703";
@@ -70,6 +76,11 @@ function mapSubmissionRow(row, { forAdmin = false } = {}) {
     freelancerUserId: String(row.freelancer_user_id),
     title: row.title,
     content: row.content,
+    referencesText: row.references_text || null,
+    referencesCount: countReferences(row.references_text),
+    writingSource: row.writing_source || null,
+    coverImageUrl: row.cover_image_url || null,
+    wordCount: countWords(row.content),
     status: row.status,
     reviewerNotes: row.reviewer_notes || null,
     submittedAt: row.submitted_at || null,
@@ -227,7 +238,15 @@ async function submitFinalArticleManuscript({
   try {
     if (ownsClient) await client.query("BEGIN");
     const { rows: appRows } = await client.query(
-      `SELECT a.*, art.required_word_count
+      `SELECT a.*,
+              art.required_word_count,
+              art.required_references_count,
+              art.writing_mode,
+              art.bildazo_category_id,
+              art.bildazo_category_name,
+              art.bildazo_category_slug,
+              art.title AS article_title,
+              art.description AS article_description
          FROM marketplace_article_applications a
          JOIN marketplace_articles art ON art.id = a.article_id
         WHERE a.id = $1
@@ -268,13 +287,54 @@ async function submitFinalArticleManuscript({
         publicCode: ARTICLE_SUBMISSION_ERROR_CODES.ARTICLE_SUBMISSION_INVALID,
       });
     }
-    const requiredWords = Number(application.required_word_count) || 0;
+    const requiredWords =
+      Number(application.required_word_count_snapshot) ||
+      Number(application.required_word_count) ||
+      0;
     if (requiredWords > 0 && countWords(cleanContent) < requiredWords) {
       throw createAppError(`يجب ألا يقل المقال عن ${requiredWords} كلمة.`, 400, {
         exposeToClient: true,
         publicCode: ARTICLE_SUBMISSION_ERROR_CODES.ARTICLE_SUBMISSION_INVALID,
       });
     }
+
+    const requiredRefs =
+      Number(application.required_references_count_snapshot) ||
+      Number(application.required_references_count) ||
+      0;
+    const referencesText = sanitizeText(
+      body.referencesText ?? body.references_text ?? body.references,
+      50000,
+    );
+    const refCount = countReferences(referencesText);
+    if (requiredRefs > 0 && refCount < requiredRefs) {
+      throw createAppError(`يجب إضافة ${requiredRefs} مرجعًا على الأقل.`, 400, {
+        exposeToClient: true,
+        publicCode: ARTICLE_SUBMISSION_ERROR_CODES.ARTICLE_SUBMISSION_INVALID,
+      });
+    }
+
+    const writingMode =
+      normalizeWritingMode(application.writing_mode_snapshot) ||
+      normalizeWritingMode(application.writing_mode) ||
+      "either";
+    const writingSource = normalizeWritingSource(
+      body.writingSource ?? body.writing_source ?? body.writingMethod,
+    );
+    if (!writingSource || writingSource === "UNKNOWN") {
+      throw createAppError("يجب تحديد طريقة الكتابة (بشري أو بمساعدة الذكاء الاصطناعي).", 400, {
+        exposeToClient: true,
+        publicCode: ARTICLE_SUBMISSION_ERROR_CODES.ARTICLE_SUBMISSION_INVALID,
+      });
+    }
+    if (!writingSourceSatisfiesMode(writingSource, writingMode)) {
+      throw createAppError("طريقة الكتابة لا تطابق متطلبات المقال.", 400, {
+        exposeToClient: true,
+        publicCode: ARTICLE_SUBMISSION_ERROR_CODES.ARTICLE_SUBMISSION_INVALID,
+      });
+    }
+
+    const coverImageUrl = sanitizeText(body.coverImageUrl ?? body.cover_image_url ?? body.imageUrl, 2000) || null;
 
     const existing = await getSubmissionByApplicationId(appId, client);
     if (existing && String(existing.status) === "approved") {
@@ -303,17 +363,20 @@ async function submitFinalArticleManuscript({
           `UPDATE marketplace_article_submissions
               SET title = $2,
                   content = $3,
+                  references_text = $4,
+                  writing_source = $5,
+                  cover_image_url = $6,
                   status = 'submitted',
                   reviewer_notes = NULL,
                   submitted_at = NOW(),
                   reviewed_at = NULL,
                   reviewed_by_user_id = NULL,
-                  terms_version = $4,
-                  terms_accepted_at = $5::timestamptz,
-                  terms_accepted_ip = $6,
-                  terms_accepted_user_agent = $7,
-                  terms_snapshot_key = $8,
-                  terms_text_snapshot = $9,
+                  terms_version = $7,
+                  terms_accepted_at = $8::timestamptz,
+                  terms_accepted_ip = $9,
+                  terms_accepted_user_agent = $10,
+                  terms_snapshot_key = $11,
+                  terms_text_snapshot = $12,
                   updated_at = NOW()
             WHERE application_id = $1
             RETURNING *`,
@@ -321,6 +384,9 @@ async function submitFinalArticleManuscript({
             appId,
             cleanTitle,
             cleanContent,
+            referencesText || null,
+            writingSource,
+            coverImageUrl,
             terms.version,
             terms.acceptedAt,
             terms.ip,
@@ -353,9 +419,10 @@ async function submitFinalArticleManuscript({
         const { rows } = await client.query(
           `INSERT INTO marketplace_article_submissions (
              application_id, article_id, freelancer_user_id, title, content, status,
+             references_text, writing_source, cover_image_url,
              terms_version, terms_accepted_at, terms_accepted_ip, terms_accepted_user_agent,
              terms_snapshot_key, terms_text_snapshot
-           ) VALUES ($1,$2,$3,$4,$5,'submitted',$6,$7::timestamptz,$8,$9,$10,$11)
+           ) VALUES ($1,$2,$3,$4,$5,'submitted',$6,$7,$8,$9,$10::timestamptz,$11,$12,$13,$14)
            RETURNING *`,
           [
             appId,
@@ -363,6 +430,9 @@ async function submitFinalArticleManuscript({
             fid,
             cleanTitle,
             cleanContent,
+            referencesText || null,
+            writingSource,
+            coverImageUrl,
             terms.version,
             terms.acceptedAt,
             terms.ip,

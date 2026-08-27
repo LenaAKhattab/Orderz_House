@@ -15,8 +15,17 @@ const {
 } = require("../constants/bildazoArticlePublish");
 const { bildazoAuthorLinkSchemaReady } = require("../utils/bildazoAuthorLinkSchema");
 const { bildazoArticlePublishSchemaReady } = require("../utils/bildazoArticlePublishSchema");
-const { publishAcceptedArticleToBildazo } = require("./bildazoArticlePublishClient");
+const { publishAcceptedArticleToBildazo, buildSafePublishBody } = require("./bildazoArticlePublishClient");
 const submissionsService = require("./marketplaceArticleSubmissionsService");
+const { isBildazoLeafCategoryId } = require("../config/bildazoArticlePublish");
+const {
+  countWords,
+  countReferences,
+  writingSourceSatisfiesMode,
+  normalizeWritingSource,
+} = require("../constants/marketplaceArticleBildazoOz02");
+
+const AUTHOR_NOT_LINKED_AR = "لا يمكن نشر المقال قبل ربط حساب الكاتب في بلدازو.";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -92,7 +101,13 @@ async function loadApprovedContext(applicationId, db) {
             art.title AS campaign_title,
             art.description AS campaign_description,
             art.category_id AS campaign_category_id,
-            art.subcategory_id AS campaign_subcategory_id
+            art.subcategory_id AS campaign_subcategory_id,
+            art.bildazo_category_id AS campaign_bildazo_category_id,
+            art.bildazo_category_name AS campaign_bildazo_category_name,
+            art.bildazo_category_slug AS campaign_bildazo_category_slug,
+            art.writing_mode AS campaign_writing_mode,
+            art.required_word_count AS campaign_required_word_count,
+            art.required_references_count AS campaign_required_references_count
        FROM marketplace_article_applications a
        JOIN marketplace_articles art ON art.id = a.article_id
       WHERE a.id = $1
@@ -109,6 +124,75 @@ async function loadApprovedContext(applicationId, db) {
       description: application.campaign_description,
       category_id: application.campaign_category_id,
       subcategory_id: application.campaign_subcategory_id,
+      bildazo_category_id: application.campaign_bildazo_category_id,
+      bildazo_category_name: application.campaign_bildazo_category_name,
+      bildazo_category_slug: application.campaign_bildazo_category_slug,
+      writing_mode: application.campaign_writing_mode,
+      required_word_count: application.campaign_required_word_count,
+      required_references_count: application.campaign_required_references_count,
+    },
+  };
+}
+
+function resolvePublishCategoryId(application, article, cfg) {
+  const snap = String(application.bildazo_category_id_snapshot || "").trim();
+  if (isBildazoLeafCategoryId(snap)) return snap;
+  const fromArticle = String(article.bildazo_category_id || "").trim();
+  if (isBildazoLeafCategoryId(fromArticle)) return fromArticle;
+  return resolveBildazoCategoryId(
+    { categoryId: article.category_id, subcategoryId: article.subcategory_id },
+    cfg,
+  );
+}
+
+function buildBildazoPublishPayloadPreview({
+  application,
+  article,
+  manuscript,
+  link,
+  categoryId,
+  acceptedAt,
+  reviewerNotes,
+}) {
+  const writingSource = normalizeWritingSource(manuscript?.writingSource) || "UNKNOWN";
+  const payload = buildSafePublishBody({
+    orderzArticleId: String(article.id),
+    orderzFreelancerId: String(application.freelancer_user_id),
+    bildazoUserId: link?.bildazo_user_id || "",
+    bildazoPublicId: link?.bildazo_public_id || null,
+    title: manuscript?.title || "",
+    content: manuscript?.content || "",
+    categoryId: categoryId || "",
+    acceptedAt: acceptedAt || application.approved_at || null,
+    reviewerNotes: reviewerNotes || manuscript?.reviewerNotes || null,
+    coverImageUrl: manuscript?.coverImageUrl || null,
+    writingSource,
+  });
+  return {
+    payload,
+    meta: {
+      wordCount: countWords(manuscript?.content),
+      referencesCount: countReferences(manuscript?.referencesText),
+      requiredWords:
+        Number(application.required_word_count_snapshot) ||
+        Number(article.required_word_count) ||
+        0,
+      requiredReferences:
+        Number(application.required_references_count_snapshot) ||
+        Number(article.required_references_count) ||
+        0,
+      writingMode: application.writing_mode_snapshot || article.writing_mode || null,
+      categoryName:
+        application.bildazo_category_name_snapshot || article.bildazo_category_name || null,
+      categorySlug:
+        application.bildazo_category_slug_snapshot || article.bildazo_category_slug || null,
+      authorLinked: Boolean(
+        link && String(link.status) === "linked" && UUID_RE.test(String(link.bildazo_user_id || "")),
+      ),
+      authorBlockMessage: AUTHOR_NOT_LINKED_AR,
+      // references exist internally but are intentionally omitted from payload
+      referencesStoredInternally: Boolean(manuscript?.referencesText),
+      referencesInPayload: false,
     },
   };
 }
@@ -300,16 +384,23 @@ async function publishAfterArticleAcceptance(
     String(link.status) === "linked" &&
     UUID_RE.test(String(link.bildazo_user_id || "").trim());
   const cfg = getConfig();
-  const categoryId = resolveBildazoCategoryId(
-    { categoryId: article.category_id, subcategoryId: article.subcategory_id },
-    cfg,
-  );
+  const categoryId = resolvePublishCategoryId(application, article, cfg);
   const manuscriptRow = await submissionsService.getSubmissionByApplicationId(application.id, db);
   const manuscript = submissionsService.mapSubmissionRow(manuscriptRow);
   const { title, content } = buildPublishContent(article, application, manuscript);
   const reviewerNotes = manuscript?.reviewerNotes || null;
+  const writingSource = normalizeWritingSource(manuscript?.writingSource) || "UNKNOWN";
+  const coverImageUrl = manuscript?.coverImageUrl || null;
   const bildazoUserId = linked ? String(link.bildazo_user_id).trim() : "unlinked";
   const bildazoPublicId = linked ? link.bildazo_public_id || null : null;
+
+  const requiredWords =
+    Number(application.required_word_count_snapshot) || Number(article.required_word_count) || 0;
+  const requiredRefs =
+    Number(application.required_references_count_snapshot) ||
+    Number(article.required_references_count) ||
+    0;
+  const writingMode = application.writing_mode_snapshot || article.writing_mode || null;
 
   if (!linked) {
     const row = await upsertPendingRecord(
@@ -322,6 +413,77 @@ async function publishAfterArticleAcceptance(
         status: "needs_manual_review",
         categoryId,
         lastError: BILDAZO_ARTICLE_PUBLISH_ERROR_CODES.BILDAZO_AUTHOR_NOT_LINKED,
+        lastResponseCode: null,
+        incrementAttempt: false,
+      },
+      db,
+    );
+    return {
+      skipped: true,
+      called: false,
+      record: mapRecordRow(row),
+      safeMessage: AUTHOR_NOT_LINKED_AR,
+    };
+  }
+
+  if (
+    requiredWords > 0 &&
+    countWords(content) < requiredWords
+  ) {
+    const row = await upsertPendingRecord(
+      {
+        articleId: article.id,
+        applicationId: application.id,
+        freelancerUserId: application.freelancer_user_id,
+        bildazoUserId,
+        bildazoPublicId,
+        status: "needs_manual_review",
+        categoryId,
+        lastError: "INSUFFICIENT_WORD_COUNT",
+        lastResponseCode: null,
+        incrementAttempt: false,
+      },
+      db,
+    );
+    return { skipped: true, called: false, record: mapRecordRow(row) };
+  }
+
+  if (
+    requiredRefs > 0 &&
+    countReferences(manuscript?.referencesText) < requiredRefs
+  ) {
+    const row = await upsertPendingRecord(
+      {
+        articleId: article.id,
+        applicationId: application.id,
+        freelancerUserId: application.freelancer_user_id,
+        bildazoUserId,
+        bildazoPublicId,
+        status: "needs_manual_review",
+        categoryId,
+        lastError: "INSUFFICIENT_REFERENCES",
+        lastResponseCode: null,
+        incrementAttempt: false,
+      },
+      db,
+    );
+    return { skipped: true, called: false, record: mapRecordRow(row) };
+  }
+
+  if (
+    writingMode &&
+    !writingSourceSatisfiesMode(writingSource, writingMode)
+  ) {
+    const row = await upsertPendingRecord(
+      {
+        articleId: article.id,
+        applicationId: application.id,
+        freelancerUserId: application.freelancer_user_id,
+        bildazoUserId,
+        bildazoPublicId,
+        status: "needs_manual_review",
+        categoryId,
+        lastError: "WRITING_SOURCE_MISMATCH",
         lastResponseCode: null,
         incrementAttempt: false,
       },
@@ -405,7 +567,7 @@ async function publishAfterArticleAcceptance(
 
   const remote = await publishFn(
     {
-      orderzArticleId: String(application.id),
+      orderzArticleId: String(article.id),
       orderzFreelancerId: String(application.freelancer_user_id),
       bildazoUserId,
       bildazoPublicId,
@@ -414,6 +576,8 @@ async function publishAfterArticleAcceptance(
       categoryId,
       acceptedAt: application.approved_at || new Date(),
       reviewerNotes,
+      coverImageUrl,
+      writingSource,
     },
     deps,
   );
@@ -486,15 +650,37 @@ function attachPublishToApplications(applications, records, { forAdmin = false }
   });
 }
 
+async function getPublishPreviewForApplication(applicationId, db = pool) {
+  const { application, article } = await loadApprovedContext(applicationId, db);
+  if (!application || !article) return null;
+  const link = await loadLinkedAuthor(application.freelancer_user_id, db);
+  const manuscriptRow = await submissionsService.getSubmissionByApplicationId(application.id, db);
+  const manuscript = submissionsService.mapSubmissionRow(manuscriptRow, { forAdmin: true });
+  const cfg = getBildazoArticlePublishConfig();
+  const categoryId = resolvePublishCategoryId(application, article, cfg);
+  return buildBildazoPublishPayloadPreview({
+    application,
+    article,
+    manuscript,
+    link,
+    categoryId,
+    acceptedAt: application.approved_at,
+    reviewerNotes: manuscript?.reviewerNotes,
+  });
+}
+
 module.exports = {
   publishAfterArticleAcceptance,
   retryPublishForApplication,
   retryPublishForArticle,
   listPublishRecordsForArticle,
   getPublishRecordForApplication,
+  getPublishPreviewForApplication,
+  buildBildazoPublishPayloadPreview,
   mapRecordRow,
   mapPublicPublishRecord,
   mapAdminPublishRecord,
   attachPublishToApplications,
   buildPublishContent,
+  AUTHOR_NOT_LINKED_AR,
 };

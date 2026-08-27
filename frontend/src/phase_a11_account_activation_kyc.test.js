@@ -57,6 +57,13 @@ describe("Phase A11 — Super Admin review UI", () => {
     assert.match(page, /صورة الهوية الخلفية/);
     assert.match(page, /approveSuperAdminFreelancerActivationRequestRequest/);
     assert.match(page, /rejectSuperAdminFreelancerActivationRequestRequest/);
+    assert.match(page, /fetchSuperAdminFreelancerActivationKycFileBlob/);
+    assert.match(page, /AbortController/);
+    assert.match(page, /revokeObjectURL/);
+    assert.match(page, /لم يتم العثور على صورة الهوية/);
+    assert.match(page, /ليست لديك صلاحية لعرض هذه الصورة/);
+    assert.match(page, /تعذر تحميل صورة الهوية الآن/);
+    assert.doesNotMatch(page, /res\.cloudinary\.com|cloudinary\.com\/.*authenticated/);
   });
 
   it("route and nav are Super Admin only", () => {
@@ -75,6 +82,19 @@ describe("Phase A11 — Super Admin review UI", () => {
       canRoleAccessPath("/dashboard/super-admin/freelancer-activation-requests", ROLE.ADMIN),
       false,
     );
+  });
+
+  it("KYC file blob helper stays same-origin and disables redirects", () => {
+    const api = read("services/api.js");
+    assert.match(api, /fetchSuperAdminFreelancerActivationKycFileBlob/);
+    assert.match(
+      api,
+      /\/super-admin\/freelancer-activation-requests\/\$\{encodeURIComponent\(id\)\}\/files/,
+    );
+    assert.match(api, /responseType:\s*"blob"/);
+    assert.match(api, /maxRedirects:\s*0/);
+    assert.match(api, /disposition:\s*"inline"/);
+    assert.doesNotMatch(api, /res\.cloudinary\.com/);
   });
 
   it("api helpers exist", () => {

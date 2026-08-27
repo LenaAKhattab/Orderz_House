@@ -146,6 +146,7 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     icon: "subscriptions",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.subscriptions,
   },
+  /** @deprecated Web-Admin-A2 — not in primary sidebar; route kept for legacy deep links. */
   subscriptionActivation: {
     key: "subscriptionActivation",
     to: "/dashboard/super-admin/subscriptions/activation",
@@ -249,7 +250,8 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "usersSubscriptions",
     labelKey: "dashboard.nav.sections.usersSubscriptions",
-    itemKeys: ["plans", "marketplacePlans", "marketplaceEconomy", "freelancerActivationRequests", "bildazoAuthorLinks", "subscriptions", "subscriptionActivation"],
+    // Web-Admin-A2: subscriptionActivation removed from primary nav (Stripe auto-activate).
+    itemKeys: ["plans", "marketplacePlans", "marketplaceEconomy", "freelancerActivationRequests", "bildazoAuthorLinks", "subscriptions"],
   },
   {
     id: "contentTraining",

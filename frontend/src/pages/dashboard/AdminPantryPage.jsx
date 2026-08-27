@@ -24,6 +24,12 @@ import {
   isRecommendedPantryBid,
 } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 import FairSelectionOverrideDialog from "../../admin/marketplaceArticles/FairSelectionOverrideDialog";
+import {
+  ADMIN_LIST_REFRESH_SOFT_NOTE,
+  createAdminListRequestGate,
+  isAdminListAbortError,
+} from "../../lib/staff/adminListLoad";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import "./pantryPages.css";
 
 const STATUS_LABELS = {
@@ -92,11 +98,16 @@ export default function AdminPantryPage() {
   const toast = useToast();
   const [tab, setTab] = useState("requests");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [requests, setRequests] = useState([]);
   const [stats, setStats] = useState(null);
   const [deliveries, setDeliveries] = useState([]);
   const [requestsError, setRequestsError] = useState(null);
   const [deliveriesError, setDeliveriesError] = useState(null);
+  const [listSoftNote, setListSoftNote] = useState("");
+  const listGateRef = useRef(null);
+  if (!listGateRef.current) listGateRef.current = createAdminListRequestGate();
+  const hasListDataRef = useRef(false);
   const [selectedId, setSelectedId] = useState(null);
   const [detail, setDetail] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -111,40 +122,71 @@ export default function AdminPantryPage() {
   const [integrationActive, setIntegrationActive] = useState(false);
 
   const loadList = useCallback(async () => {
-    setLoading(true);
-    setRequestsError(null);
-    setDeliveriesError(null);
-    const reqPromise = listAdminPantryRequestsRequest()
+    const hasExisting = hasListDataRef.current;
+    const ticket = listGateRef.current.begin();
+    if (hasExisting) {
+      setRefreshing(true);
+      setListSoftNote("");
+    } else {
+      setLoading(true);
+      setRequestsError(null);
+      setDeliveriesError(null);
+    }
+
+    let reqFailed = false;
+    let delFailed = false;
+
+    const reqPromise = listAdminPantryRequestsRequest({}, { signal: ticket.signal })
       .then((reqRes) => {
+        if (!ticket.isCurrent()) return;
         setRequests(reqRes?.data?.requests || []);
         setStats(reqRes?.data?.stats || null);
         setIntegrationActive(Boolean(reqRes?.data?.pantryMembershipBidIntegrationActive));
+        setRequestsError(null);
       })
       .catch((err) => {
-        setRequests([]);
-        setStats(null);
-        const msg = apiErrorMessage(err, "تعذر تحميل طلبات بيت المونة");
-        setRequestsError(msg);
-        toast?.error?.(msg);
+        if (!ticket.isCurrent() || isAdminListAbortError(err)) return;
+        reqFailed = true;
+        if (!hasExisting) {
+          setRequests([]);
+          setStats(null);
+          const msg = apiErrorMessage(err, "تعذر تحميل طلبات بيت المونة");
+          setRequestsError(msg);
+          toast?.error?.(msg);
+        }
       });
 
-    const delPromise = listAdminPantryDeliveriesRequest()
+    const delPromise = listAdminPantryDeliveriesRequest({}, { signal: ticket.signal })
       .then((delRes) => {
+        if (!ticket.isCurrent()) return;
         setDeliveries(delRes?.data?.deliveries || []);
+        setDeliveriesError(null);
       })
       .catch((err) => {
-        setDeliveries([]);
-        const msg = apiErrorMessage(err, "تعذر تحميل منجزات بيت المونة");
-        setDeliveriesError(msg);
-        // Do not toast again if requests already failed with same schema message
+        if (!ticket.isCurrent() || isAdminListAbortError(err)) return;
+        delFailed = true;
+        if (!hasExisting) {
+          setDeliveries([]);
+          const msg = apiErrorMessage(err, "تعذر تحميل منجزات بيت المونة");
+          setDeliveriesError(msg);
+        }
       });
 
     await Promise.allSettled([reqPromise, delPromise]);
+    if (!ticket.isCurrent()) return;
+    if (hasExisting && (reqFailed || delFailed)) {
+      setListSoftNote(ADMIN_LIST_REFRESH_SOFT_NOTE);
+    } else if (!reqFailed && !delFailed) {
+      hasListDataRef.current = true;
+      setListSoftNote("");
+    }
     setLoading(false);
+    setRefreshing(false);
   }, [toast]);
 
   useEffect(() => {
-    loadList();
+    void loadList();
+    return () => listGateRef.current?.abortInFlight();
   }, [loadList]);
 
   useEffect(() => {
@@ -425,6 +467,12 @@ export default function AdminPantryPage() {
         </button>
       </header>
 
+      {listSoftNote || refreshing ? (
+        <p className="mb-3 text-sm" style={{ color: listSoftNote ? "#b45309" : "#64748b" }} role="status">
+          {refreshing ? "جاري التحديث..." : listSoftNote}
+        </p>
+      ) : null}
+
       <div className="mb-4 flex flex-wrap gap-2">
         <button
           type="button"
@@ -467,7 +515,7 @@ export default function AdminPantryPage() {
             </div>
           )}
 
-          {loading ? (
+          {loading && requests.length === 0 ? (
             <p>جاري التحميل…</p>
           ) : (
             <div className="pantry-table-wrap">

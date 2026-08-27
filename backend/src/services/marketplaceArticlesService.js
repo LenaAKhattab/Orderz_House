@@ -23,6 +23,11 @@ const {
   assertArticleValueMatchesLevel,
   deriveArticleValueJodFromLevel,
 } = require("../utils/marketplaceArticleValue");
+const {
+  assertBildazoInventoryFields,
+  applyBildazoInventoryColumns,
+  mapBildazoInventoryFromRow,
+} = require("../utils/marketplaceArticleBildazoInventory");
 
 function isTruthyFlag(value) {
   return value === true || value === "t" || value === 1 || value === "1";
@@ -118,6 +123,7 @@ function mapMarketplaceArticle(row) {
     activationPlanTierCode: row.activation_plan_tier_code || null,
     requiredWordCount: Number(row.required_word_count) || 0,
     requiredReferencesCount: Number(row.required_references_count) || 0,
+    ...mapBildazoInventoryFromRow(row),
     status: row.status,
     isFakeOrTraining: isTruthyFlag(row.is_fake_or_training),
     createdByUserId: toIdString(row.created_by_user_id),
@@ -158,6 +164,11 @@ function mapMarketplaceArticleReadModel(row) {
     activationPlanTierCode: full.activationPlanTierCode,
     requiredWordCount: full.requiredWordCount,
     requiredReferencesCount: full.requiredReferencesCount,
+    bildazoCategoryId: full.bildazoCategoryId,
+    bildazoCategoryName: full.bildazoCategoryName,
+    bildazoCategorySlug: full.bildazoCategorySlug,
+    bildazoCategoryPath: full.bildazoCategoryPath,
+    writingMode: full.writingMode,
     category: full.category,
     subcategory: full.subcategory,
     status: full.status,
@@ -418,6 +429,16 @@ async function createMarketplaceArticle(payload, { actorUserId = null } = {}) {
   );
   const stamps = resolveLifecycleTimestamps(status);
   const schemaReady = await opportunityBidCollectionService.articleBidCollectionSchemaReady();
+  const bildazoFields = assertBildazoInventoryFields(payload, {
+    // Soft-require when caller provides Bildazo inventory fields; admin UI always sends them.
+    required: Boolean(
+      payload.bildazoCategoryId ||
+        payload.bildazo_category_id ||
+        payload.writingMode ||
+        payload.writing_mode ||
+        payload.requireBildazoInventory,
+    ),
+  });
   let requiredBidCount = null;
   let deadline = null;
   if (schemaReady) {
@@ -523,6 +544,7 @@ async function createMarketplaceArticle(payload, { actorUserId = null } = {}) {
       rows = inserted.rows;
     }
     articleId = rows[0].id;
+    await applyBildazoInventoryColumns(client, articleId, bildazoFields);
     const campaignService = require("./freelancerActivationCampaignService");
     const campaignKeyPresent =
       payload.activationCampaignId !== undefined || payload.activation_campaign_id !== undefined;
@@ -635,6 +657,37 @@ async function updateMarketplaceArticle(id, patch, { actorUserId = null } = {}) 
     cancelledAt: existing.cancelledAt,
   });
 
+  const hasBildazoPatch =
+    patch.bildazoCategoryId !== undefined ||
+    patch.bildazo_category_id !== undefined ||
+    patch.writingMode !== undefined ||
+    patch.writing_mode !== undefined ||
+    patch.bildazoCategoryName !== undefined ||
+    patch.bildazoCategorySlug !== undefined ||
+    patch.bildazoCategoryPath !== undefined;
+  const bildazoFields = hasBildazoPatch
+    ? assertBildazoInventoryFields(
+        {
+          bildazoCategoryId:
+            patch.bildazoCategoryId ?? patch.bildazo_category_id ?? existing.bildazoCategoryId,
+          bildazoCategoryName:
+            patch.bildazoCategoryName ??
+            patch.bildazo_category_name ??
+            existing.bildazoCategoryName,
+          bildazoCategorySlug:
+            patch.bildazoCategorySlug ??
+            patch.bildazo_category_slug ??
+            existing.bildazoCategorySlug,
+          bildazoCategoryPath:
+            patch.bildazoCategoryPath ??
+            patch.bildazo_category_path ??
+            existing.bildazoCategoryPath,
+          writingMode: patch.writingMode ?? patch.writing_mode ?? existing.writingMode,
+        },
+        { required: true },
+      )
+    : null;
+
   const articleBidEconomics = require("./marketplaceArticleApplicationBidCreditService");
   const client = await pool.connect();
   try {
@@ -679,6 +732,10 @@ async function updateMarketplaceArticle(id, patch, { actorUserId = null } = {}) 
         stamps.cancelledAt,
       ],
     );
+
+    if (bildazoFields) {
+      await applyBildazoInventoryColumns(client, id, bildazoFields);
+    }
 
     const campaignKeyPresent =
       patch.activationCampaignId !== undefined || patch.activation_campaign_id !== undefined;
