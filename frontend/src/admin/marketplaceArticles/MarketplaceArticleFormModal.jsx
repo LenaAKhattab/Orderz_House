@@ -5,8 +5,11 @@ import {
   ARTICLE_STATUSES,
   ARTICLE_WRITING_MODES,
   ARTICLE_WRITING_MODE_LABELS_AR,
+  ARTICLE_PACKAGE_PLAN_CODES,
+  ARTICLE_PACKAGE_PLAN_LABELS_AR,
   articleToMarketplaceFormState,
   deriveArticleValueJodFromLevel,
+  formatDerivedPlanRequirementsSummaryAr,
   getInitialMarketplaceArticleFormState,
   normalizeMarketplaceArticlePayload,
   validateMarketplaceArticleForm,
@@ -237,60 +240,42 @@ export default function MarketplaceArticleFormModal({
             {errors.writingMode ? <span className="oh-mmp-form__error">{errors.writingMode}</span> : null}
           </label>
 
-          <div className="oh-mmp-form__row">
-            <label>
-              {isEn ? "Article level" : "مستوى المقال"} *
-              <select
-                value={form.articleLevel}
-                onChange={(e) => setField("articleLevel", e.target.value)}
-                disabled={submitting}
-              >
-                {ARTICLE_LEVELS.map((lvl) => (
-                  <option key={lvl} value={lvl}>
-                    {isEn ? `Level ${lvl}` : `المستوى ${lvl}`}
-                  </option>
-                ))}
-              </select>
-              {errors.articleLevel ? <span className="oh-mmp-form__error">{errors.articleLevel}</span> : null}
-            </label>
-            <label>
-              {isEn ? "Value (JOD, derived)" : "القيمة (د.أ، مشتقة)"}
-              <input value={valueLabel ? `${valueLabel} JOD` : ""} readOnly disabled />
-            </label>
-          </div>
+                    <label>
+            {isEn ? "Target plan" : "الخطة المستهدفة"} *
+            <select
+              value={form.targetPlanCode || ""}
+              onChange={(e) => setField("targetPlanCode", e.target.value)}
+              disabled={submitting}
+              data-testid="article-form-target-plan"
+            >
+              <option value="">{isEn ? "— Select —" : "— اختر —"}</option>
+              {ARTICLE_PACKAGE_PLAN_CODES.map((code) => (
+                <option key={code} value={code}>
+                  {code}
+                  {ARTICLE_PACKAGE_PLAN_LABELS_AR[code]
+                    ? ` / ${ARTICLE_PACKAGE_PLAN_LABELS_AR[code]}`
+                    : ""}
+                </option>
+              ))}
+            </select>
+            {errors.targetPlanCode ? (
+              <span className="oh-mmp-form__error">{errors.targetPlanCode}</span>
+            ) : null}
+          </label>
 
-          <div className="oh-mmp-form__row">
-            <label>
-              {isEn ? "Required word count" : "عدد الكلمات المطلوب"} *
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={form.requiredWordCount}
-                onChange={(e) => setField("requiredWordCount", e.target.value)}
-                disabled={submitting}
-              />
-              {errors.requiredWordCount ? (
-                <span className="oh-mmp-form__error">{errors.requiredWordCount}</span>
-              ) : null}
-            </label>
-            <label>
-              {isEn ? "Required references" : "عدد المراجع المطلوب"}
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={form.requiredReferencesCount}
-                onChange={(e) => setField("requiredReferencesCount", e.target.value)}
-                disabled={submitting}
-              />
-              {errors.requiredReferencesCount ? (
-                <span className="oh-mmp-form__error">{errors.requiredReferencesCount}</span>
-              ) : null}
-            </label>
-          </div>
+          {derivedSummary ? (
+            <p
+              className="oh-mmp-form__hint"
+              data-testid="article-form-derived-requirements"
+              style={{ margin: 0 }}
+            >
+              {derivedSummary}
+            </p>
+          ) : null}
 
-          <div className="oh-mmp-form__row">
+          {!inventorySimplified ? (
+            <>
+<div className="oh-mmp-form__row">
             <label>
               {isEn ? "Status" : "الحالة"}
               <select
@@ -438,6 +423,9 @@ export default function MarketplaceArticleFormModal({
             />
             {isEn ? "Fake / training Article" : "مقال تدريب / وهمي"}
           </label>
+
+                      </>
+          ) : null}
 
           <div className="oh-mmp-form__actions">
             {hideCancel ? null : (

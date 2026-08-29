@@ -28,9 +28,97 @@ const {
   applyBildazoInventoryColumns,
   mapBildazoInventoryFromRow,
 } = require("../utils/marketplaceArticleBildazoInventory");
+const {
+  normalizePackagePlanCode,
+  articleLevelForPackagePlan,
+  tierCodeForPackagePlan,
+} = require("../constants/marketplaceArticleBildazoOz02");
+const packageRequirementsService = require("./marketplaceArticlePackageRequirementsService");
 
 function isTruthyFlag(value) {
   return value === true || value === "t" || value === 1 || value === "1";
+}
+
+/**
+ * Prefer target plan package requirements over per-article words/refs/level.
+ * Legacy payloads without targetPlanCode keep explicit fields.
+ */
+async function resolveArticleRequirementsFromPayload(payload, { existing = null } = {}) {
+  const planCode = normalizePackagePlanCode(
+    payload.targetPlanCode ??
+      payload.target_plan_code ??
+      payload.planCode ??
+      payload.plan_code ??
+      payload.activationPlanTierCode ??
+      payload.activation_plan_tier_code,
+  );
+
+  if (planCode) {
+    const req = await packageRequirementsService.getRequirementForPlan(planCode);
+    const level = articleLevelForPackagePlan(planCode);
+    return {
+      planCode,
+      tierCode: tierCodeForPackagePlan(planCode),
+      articleLevel: assertArticleLevel(level),
+      requiredWordCount: assertRequiredWordCount(req.minWords),
+      requiredReferencesCount: assertRequiredReferencesCount(req.minReferences),
+      derivedFromPlan: true,
+    };
+  }
+
+  const articleLevel =
+    payload.articleLevel !== undefined || payload.article_level !== undefined
+      ? assertArticleLevel(payload.articleLevel ?? payload.article_level)
+      : existing
+        ? existing.articleLevel
+        : null;
+  if (articleLevel == null) {
+    throw createAppError("targetPlanCode or articleLevel is required.", 400, {
+      exposeToClient: true,
+      publicCode: "ARTICLE_PLAN_OR_LEVEL_REQUIRED",
+    });
+  }
+
+  const hasWords =
+    payload.requiredWordCount !== undefined || payload.required_word_count !== undefined;
+  const hasRefs =
+    payload.requiredReferencesCount !== undefined ||
+    payload.required_references_count !== undefined;
+
+  return {
+    planCode: null,
+    tierCode: null,
+    articleLevel,
+    requiredWordCount: hasWords
+      ? assertRequiredWordCount(payload.requiredWordCount ?? payload.required_word_count)
+      : existing
+        ? existing.requiredWordCount
+        : assertRequiredWordCount(payload.requiredWordCount ?? payload.required_word_count),
+    requiredReferencesCount: hasRefs
+      ? assertRequiredReferencesCount(
+          payload.requiredReferencesCount ?? payload.required_references_count,
+        )
+      : existing
+        ? existing.requiredReferencesCount
+        : assertRequiredReferencesCount(
+            payload.requiredReferencesCount ?? payload.required_references_count ?? 0,
+          ),
+    derivedFromPlan: false,
+  };
+}
+
+async function softSetActivationPlanTierCode(client, articleId, tierCode) {
+  if (!tierCode || !articleId) return;
+  try {
+    await client.query(
+      `UPDATE marketplace_articles
+          SET activation_plan_tier_code = $2
+        WHERE id = $1`,
+      [articleId, tierCode],
+    );
+  } catch (err) {
+    if (err?.code !== "42703") throw err;
+  }
 }
 
 function toIdString(value) {
@@ -407,19 +495,16 @@ async function createMarketplaceArticle(payload, { actorUserId = null } = {}) {
     });
   }
   const description = String(payload.description || payload.brief || "").trim();
-  const articleLevel = assertArticleLevel(payload.articleLevel ?? payload.article_level);
+  const derived = await resolveArticleRequirementsFromPayload(payload);
+  const articleLevel = derived.articleLevel;
   // Prefer deriving value; reject forged mismatches if client sends value.
   assertArticleValueMatchesLevel(
     articleLevel,
     payload.articleValueJod ?? payload.article_value_jod,
   );
   const valueDb = formatArticleValueJodForDb(articleLevel);
-  const requiredWordCount = assertRequiredWordCount(
-    payload.requiredWordCount ?? payload.required_word_count,
-  );
-  const requiredReferencesCount = assertRequiredReferencesCount(
-    payload.requiredReferencesCount ?? payload.required_references_count,
-  );
+  const requiredWordCount = derived.requiredWordCount;
+  const requiredReferencesCount = derived.requiredReferencesCount;
   const status = assertStatus(payload.status || "draft");
   const isFakeOrTraining = Boolean(payload.isFakeOrTraining ?? payload.is_fake_or_training);
   const categoryId = await assertCategoryExists(payload.categoryId ?? payload.category_id);
@@ -545,6 +630,7 @@ async function createMarketplaceArticle(payload, { actorUserId = null } = {}) {
     }
     articleId = rows[0].id;
     await applyBildazoInventoryColumns(client, articleId, bildazoFields);
+    await softSetActivationPlanTierCode(client, articleId, derived.tierCode);
     const campaignService = require("./freelancerActivationCampaignService");
     const campaignKeyPresent =
       payload.activationCampaignId !== undefined || payload.activation_campaign_id !== undefined;
@@ -603,10 +689,42 @@ async function updateMarketplaceArticle(id, patch, { actorUserId = null } = {}) 
       ? String(patch.description ?? patch.brief ?? "").trim()
       : existing.description;
 
-  const articleLevel =
-    patch.articleLevel !== undefined || patch.article_level !== undefined
-      ? assertArticleLevel(patch.articleLevel ?? patch.article_level)
-      : existing.articleLevel;
+  const planInPatch =
+    patch.targetPlanCode ??
+    patch.target_plan_code ??
+    patch.planCode ??
+    patch.plan_code ??
+    null;
+  const levelInPatch =
+    patch.articleLevel !== undefined || patch.article_level !== undefined;
+  const wordsInPatch =
+    patch.requiredWordCount !== undefined || patch.required_word_count !== undefined;
+  const refsInPatch =
+    patch.requiredReferencesCount !== undefined ||
+    patch.required_references_count !== undefined;
+
+  let articleLevel;
+  let requiredWordCount;
+  let requiredReferencesCount;
+  let derivedTierCode = null;
+
+  if (planInPatch) {
+    const derived = await resolveArticleRequirementsFromPayload(patch, { existing });
+    articleLevel = derived.articleLevel;
+    requiredWordCount = derived.requiredWordCount;
+    requiredReferencesCount = derived.requiredReferencesCount;
+    derivedTierCode = derived.tierCode;
+  } else if (levelInPatch || wordsInPatch || refsInPatch) {
+    const derived = await resolveArticleRequirementsFromPayload(patch, { existing });
+    articleLevel = derived.articleLevel;
+    requiredWordCount = derived.requiredWordCount;
+    requiredReferencesCount = derived.requiredReferencesCount;
+  } else {
+    // Preserve stored inventory requirements (do not re-pull global package settings).
+    articleLevel = existing.articleLevel;
+    requiredWordCount = existing.requiredWordCount;
+    requiredReferencesCount = existing.requiredReferencesCount;
+  }
 
   if (patch.articleValueJod !== undefined || patch.article_value_jod !== undefined) {
     assertArticleValueMatchesLevel(
@@ -615,19 +733,6 @@ async function updateMarketplaceArticle(id, patch, { actorUserId = null } = {}) 
     );
   }
   const valueDb = formatArticleValueJodForDb(articleLevel);
-
-  const requiredWordCount =
-    patch.requiredWordCount !== undefined || patch.required_word_count !== undefined
-      ? assertRequiredWordCount(patch.requiredWordCount ?? patch.required_word_count)
-      : existing.requiredWordCount;
-
-  const requiredReferencesCount =
-    patch.requiredReferencesCount !== undefined ||
-    patch.required_references_count !== undefined
-      ? assertRequiredReferencesCount(
-          patch.requiredReferencesCount ?? patch.required_references_count,
-        )
-      : existing.requiredReferencesCount;
 
   const status =
     patch.status !== undefined ? assertStatus(patch.status) : existing.status;
@@ -736,6 +841,9 @@ async function updateMarketplaceArticle(id, patch, { actorUserId = null } = {}) 
     if (bildazoFields) {
       await applyBildazoInventoryColumns(client, id, bildazoFields);
     }
+    if (derivedTierCode) {
+      await softSetActivationPlanTierCode(client, id, derivedTierCode);
+    }
 
     const campaignKeyPresent =
       patch.activationCampaignId !== undefined || patch.activation_campaign_id !== undefined;
@@ -840,6 +948,7 @@ module.exports = {
   createMarketplaceArticle,
   updateMarketplaceArticle,
   relistMarketplaceArticleBidCollection,
+  resolveArticleRequirementsFromPayload,
   assertRequiredWordCount,
   assertRequiredReferencesCount,
   deriveArticleValueJodFromLevel,

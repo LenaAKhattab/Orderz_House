@@ -30,6 +30,74 @@ export const ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS = Object.freeze({
   PRO: { minWords: 1800, minReferences: 6 },
   ELITE: { minWords: 2400, minReferences: 8 },
 });
+/** Matches backend ARTICLE_PACKAGE_TO_LEVEL / membership access levels. */
+export const ARTICLE_PACKAGE_TO_LEVEL = Object.freeze({
+  STARTER: 1,
+  SILVER: 2,
+  PRO: 3,
+  ELITE: 5,
+});
+
+export function normalizePackagePlanCode(raw) {
+  const s = String(raw || "")
+    .trim()
+    .toUpperCase();
+  if (ARTICLE_PACKAGE_PLAN_CODES.includes(s)) return s;
+  const lower = String(raw || "")
+    .trim()
+    .toLowerCase();
+  const map = {
+    starter: "STARTER",
+    free: "STARTER",
+    silver: "SILVER",
+    pro: "PRO",
+    elite: "ELITE",
+  };
+  return map[lower] || null;
+}
+
+export function requirementsForPlanCode(planCode, packageRequirements = null) {
+  const code = normalizePackagePlanCode(planCode);
+  if (!code) return null;
+  const list = Array.isArray(packageRequirements) ? packageRequirements : [];
+  const found = list.find((r) => normalizePackagePlanCode(r.planCode) === code);
+  if (found) {
+    return {
+      planCode: code,
+      minWords: Number(found.minWords) || ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS[code].minWords,
+      minReferences:
+        Number(found.minReferences) ?? ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS[code].minReferences,
+    };
+  }
+  return {
+    planCode: code,
+    minWords: ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS[code].minWords,
+    minReferences: ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS[code].minReferences,
+  };
+}
+
+export function formatDerivedPlanRequirementsSummaryAr(planCode, packageRequirements = null) {
+  const req = requirementsForPlanCode(planCode, packageRequirements);
+  if (!req) return "";
+  const label = ARTICLE_PACKAGE_PLAN_LABELS_AR[req.planCode] || req.planCode;
+  const refs = Number(req.minReferences);
+  const refsLabel =
+    refs === 1 ? "مرجع واحد" : refs === 2 ? "مرجعان" : `${refs} مراجع`;
+  if (req.planCode === "STARTER") {
+    return `سيتم تطبيق متطلبات الخطة التجريبية تلقائياً: ${req.minWords} كلمة و${refsLabel}.`;
+  }
+  return `سيتم تطبيق متطلبات خطة ${label} تلقائياً: ${req.minWords} كلمة و ${refsLabel}.`;
+}
+
+export function planCodeFromArticleLevel(level) {
+  const n = Number(level);
+  if (n >= 5) return "ELITE";
+  if (n === 4) return "ELITE";
+  if (n === 3) return "PRO";
+  if (n === 2) return "SILVER";
+  if (n === 1) return "STARTER";
+  return "";
+}
 export const BILDAZO_AUTHOR_NOT_LINKED_AR =
   "لا يمكن نشر المقال قبل ربط حساب الكاتب في بلدازو.";
 export const BILDAZO_CATEGORIES_LOAD_ERROR_AR =
@@ -218,9 +286,10 @@ export function getInitialMarketplaceArticleFormState(overrides = {}) {
   return {
     title: "",
     description: "",
+    targetPlanCode: "STARTER",
     articleLevel: 1,
-    requiredWordCount: 500,
-    requiredReferencesCount: 0,
+    requiredWordCount: ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS.STARTER.minWords,
+    requiredReferencesCount: ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS.STARTER.minReferences,
     status: "draft",
     categoryId: "",
     subcategoryId: "",
@@ -241,12 +310,17 @@ export function getInitialMarketplaceArticleFormState(overrides = {}) {
 
 export function articleToMarketplaceFormState(article) {
   if (!article) return getInitialMarketplaceArticleFormState();
+  const planFromTier = normalizePackagePlanCode(article.activationPlanTierCode);
+  const plan =
+    planFromTier || planCodeFromArticleLevel(article.articleLevel) || "STARTER";
+  const req = requirementsForPlanCode(plan);
   return getInitialMarketplaceArticleFormState({
     title: article.title || "",
     description: article.description || "",
-    articleLevel: article.articleLevel ?? 1,
-    requiredWordCount: article.requiredWordCount ?? 500,
-    requiredReferencesCount: article.requiredReferencesCount ?? 0,
+    targetPlanCode: plan,
+    articleLevel: article.articleLevel ?? ARTICLE_PACKAGE_TO_LEVEL[plan],
+    requiredWordCount: article.requiredWordCount ?? req.minWords,
+    requiredReferencesCount: article.requiredReferencesCount ?? req.minReferences,
     status: article.status || "draft",
     categoryId: article.categoryId || article.category?.id || "",
     subcategoryId: article.subcategoryId || article.subcategory?.id || "",
@@ -266,22 +340,19 @@ export function articleToMarketplaceFormState(article) {
   });
 }
 
-export function validateMarketplaceArticleForm(form) {
+export function validateMarketplaceArticleForm(form, { packageRequirements = null } = {}) {
   const errors = {};
   const title = String(form.title || "").trim();
   if (!title) errors.title = "العنوان مطلوب.";
   if (title.length > 240) errors.title = "العنوان طويل جداً.";
-  const level = Number(form.articleLevel);
-  if (!Number.isInteger(level) || level < 1 || level > 5) {
-    errors.articleLevel = "مستوى المقال يجب أن يكون بين 1 و 5.";
-  }
-  const words = Number(form.requiredWordCount);
-  if (!Number.isInteger(words) || words <= 0) {
-    errors.requiredWordCount = "عدد الكلمات يجب أن يكون أكبر من صفر.";
-  }
-  const refs = Number(form.requiredReferencesCount);
-  if (!Number.isInteger(refs) || refs < 0) {
-    errors.requiredReferencesCount = "عدد المراجع يجب أن يكون ≥ 0.";
+  const planCode = normalizePackagePlanCode(form.targetPlanCode);
+  if (!planCode) {
+    errors.targetPlanCode = "يجب اختيار الخطة المستهدفة.";
+  } else {
+    const req = requirementsForPlanCode(planCode, packageRequirements);
+    if (!req || !req.minWords) {
+      errors.targetPlanCode = "تعذر قراءة متطلبات هذه الخطة.";
+    }
   }
   if (!ARTICLE_STATUSES.includes(String(form.status || ""))) {
     errors.status = "حالة غير صالحة.";
@@ -308,16 +379,25 @@ export function validateMarketplaceArticleForm(form) {
   return errors;
 }
 
-export function normalizeMarketplaceArticlePayload(form) {
-  const articleLevel = Number(form.articleLevel);
+export function normalizeMarketplaceArticlePayload(form, { packageRequirements = null } = {}) {
+  const planCode = normalizePackagePlanCode(form.targetPlanCode);
+  const req = requirementsForPlanCode(planCode, packageRequirements) || {
+    minWords: Number(form.requiredWordCount) || 600,
+    minReferences: Number(form.requiredReferencesCount) || 0,
+  };
+  const articleLevel = planCode
+    ? ARTICLE_PACKAGE_TO_LEVEL[planCode]
+    : Number(form.articleLevel) || 1;
   const writingMode = normalizeWritingMode(form.writingMode);
   return {
     title: String(form.title || "").trim(),
     description: String(form.description || "").trim(),
+    targetPlanCode: planCode || null,
     articleLevel,
     // Value derived on backend; omit client money forge.
-    requiredWordCount: Number(form.requiredWordCount),
-    requiredReferencesCount: Number(form.requiredReferencesCount) || 0,
+    // Words/refs derived from plan — still sent for legacy API compatibility.
+    requiredWordCount: Number(req.minWords),
+    requiredReferencesCount: Number(req.minReferences) || 0,
     status: String(form.status || "draft"),
     categoryId: form.categoryId ? Number(form.categoryId) : null,
     subcategoryId: form.subcategoryId ? Number(form.subcategoryId) : null,

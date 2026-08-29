@@ -12,10 +12,13 @@ const path = require("node:path");
 
 const {
   ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS,
+  ARTICLE_PACKAGE_TO_LEVEL,
   writingSourceSatisfiesMode,
   countReferences,
   countWords,
   normalizeWritingMode,
+  normalizePackagePlanCode,
+  articleLevelForPackagePlan,
 } = require("../src/constants/marketplaceArticleBildazoOz02");
 const {
   buildSafePublishBody,
@@ -74,6 +77,68 @@ describe("OZ-Articles-Bildazo-02 — package defaults", () => {
       minWords: 2400,
       minReferences: 8,
     });
+  });
+
+  it("maps target plan to article level and normalizes codes", () => {
+    assert.equal(normalizePackagePlanCode("silver"), "SILVER");
+    assert.equal(normalizePackagePlanCode("STARTER"), "STARTER");
+    assert.equal(articleLevelForPackagePlan("STARTER"), 1);
+    assert.equal(articleLevelForPackagePlan("SILVER"), 2);
+    assert.equal(articleLevelForPackagePlan("PRO"), 3);
+    assert.equal(articleLevelForPackagePlan("ELITE"), 5);
+    assert.equal(ARTICLE_PACKAGE_TO_LEVEL.ELITE, 5);
+  });
+});
+
+describe("OZ-Articles-Bildazo-02 — plan-derived create requirements", () => {
+  it("service derives words/refs/level from targetPlanCode without requiring per-article fields", async () => {
+    const svc = require("../src/services/marketplaceArticlesService");
+    const pkg = require("../src/services/marketplaceArticlePackageRequirementsService");
+    const original = pkg.getRequirementForPlan;
+    pkg.getRequirementForPlan = async (planCode) => {
+      const code = String(planCode).toUpperCase();
+      return {
+        planCode: code,
+        minWords: ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS[code].minWords,
+        minReferences: ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS[code].minReferences,
+      };
+    };
+    try {
+      const derived = await svc.resolveArticleRequirementsFromPayload({
+        targetPlanCode: "PRO",
+      });
+      assert.equal(derived.derivedFromPlan, true);
+      assert.equal(derived.planCode, "PRO");
+      assert.equal(derived.articleLevel, 3);
+      assert.equal(derived.requiredWordCount, 1800);
+      assert.equal(derived.requiredReferencesCount, 6);
+      assert.equal(derived.tierCode, "pro");
+    } finally {
+      pkg.getRequirementForPlan = original;
+    }
+  });
+
+  it("assignment snapshot SQL freezes words/refs from article at select time", () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "../src/services/marketplaceArticleApplicationsService.js"),
+      "utf8",
+    );
+    assert.match(src, /required_word_count_snapshot/);
+    assert.match(src, /required_references_count_snapshot/);
+    assert.match(src, /writing_mode_snapshot/);
+    assert.match(src, /title_snapshot/);
+    assert.match(src, /description_snapshot/);
+    assert.match(src, /COALESCE\(\$10, required_word_count_snapshot\)/);
+  });
+
+  it("create validators accept targetPlanCode without requiredWordCount", () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "../src/validators/marketplaceArticlesValidators.js"),
+      "utf8",
+    );
+    assert.match(src, /targetPlanCode/);
+    assert.match(src, /targetPlanCode or articleLevel is required/);
+    assert.match(src, /body\("requiredWordCount"\)\s*\n\s*\.optional/);
   });
 });
 

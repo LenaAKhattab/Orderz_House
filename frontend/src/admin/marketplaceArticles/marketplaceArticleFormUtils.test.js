@@ -20,23 +20,24 @@ describe("marketplaceArticleFormUtils", () => {
     assert.equal(deriveArticleValueJodFromLevel(5), "5.000");
   });
 
-  it("validates word/references/level", () => {
+  it("validates target plan and derives requirements (not per-article words)", () => {
     const ok = getInitialMarketplaceArticleFormState({
       title: "T",
-      articleLevel: 2,
-      requiredWordCount: 100,
-      requiredReferencesCount: 0,
+      targetPlanCode: "SILVER",
       requiredBidCount: 10,
       minRequiredBidsAcknowledged: true,
       bildazoCategoryId: "11111111-1111-4111-8111-111111111111",
       writingMode: "either",
     });
     assert.deepEqual(validateMarketplaceArticleForm(ok), {});
-    assert.ok(validateMarketplaceArticleForm({ ...ok, articleLevel: 0 }).articleLevel);
-    assert.ok(validateMarketplaceArticleForm({ ...ok, requiredWordCount: 0 }).requiredWordCount);
-    assert.ok(validateMarketplaceArticleForm({ ...ok, requiredReferencesCount: -1 }).requiredReferencesCount);
+    assert.ok(validateMarketplaceArticleForm({ ...ok, targetPlanCode: "" }).targetPlanCode);
     assert.ok(validateMarketplaceArticleForm({ ...ok, bildazoCategoryId: "" }).bildazoCategoryId);
     assert.ok(validateMarketplaceArticleForm({ ...ok, writingMode: "" }).writingMode);
+    const payload = normalizeMarketplaceArticlePayload(ok);
+    assert.equal(payload.targetPlanCode, "SILVER");
+    assert.equal(payload.requiredWordCount, 1200);
+    assert.equal(payload.requiredReferencesCount, 4);
+    assert.equal(payload.articleLevel, 2);
   });
 
   it("requires acknowledgement and rejects requiredBidCount 5", () => {
@@ -153,13 +154,11 @@ describe("marketplaceArticleFormUtils", () => {
     assert.match(src, /setOverrideTargetId/);
   });
 
-  it("normalizes payload without forging articleValueJod", () => {
+  it("normalizes payload from target plan without forging articleValueJod", () => {
     const payload = normalizeMarketplaceArticlePayload(
       getInitialMarketplaceArticleFormState({
         title: "Hello",
-        articleLevel: 3,
-        requiredWordCount: 900,
-        requiredReferencesCount: 2,
+        targetPlanCode: "PRO",
         status: "published",
         requiredBidCount: 10,
         minRequiredBidsAcknowledged: true,
@@ -168,9 +167,10 @@ describe("marketplaceArticleFormUtils", () => {
         writingMode: "manual",
       }),
     );
+    assert.equal(payload.targetPlanCode, "PRO");
     assert.equal(payload.articleLevel, 3);
-    assert.equal(payload.requiredWordCount, 900);
-    assert.equal(payload.requiredReferencesCount, 2);
+    assert.equal(payload.requiredWordCount, 1800);
+    assert.equal(payload.requiredReferencesCount, 6);
     assert.equal(payload.writingMode, "manual");
     assert.equal(payload.bildazoCategoryId, "11111111-1111-4111-8111-111111111111");
     assert.equal(Object.prototype.hasOwnProperty.call(payload, "articleValueJod"), false);

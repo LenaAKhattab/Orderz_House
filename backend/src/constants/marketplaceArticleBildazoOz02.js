@@ -19,6 +19,49 @@ const ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS = Object.freeze({
   ELITE: { minWords: 2400, minReferences: 8 },
 });
 
+/** Membership article_access_level mapping used as article_level when plan drives inventory. */
+const ARTICLE_PACKAGE_TO_LEVEL = Object.freeze({
+  STARTER: 1,
+  SILVER: 2,
+  PRO: 3,
+  ELITE: 5,
+});
+
+const ARTICLE_PACKAGE_PLAN_LABELS_AR = Object.freeze({
+  STARTER: "التجريبية / المجانية",
+  SILVER: "SILVER",
+  PRO: "PRO",
+  ELITE: "ELITE",
+});
+
+function normalizePackagePlanCode(raw) {
+  const s = String(raw || "")
+    .trim()
+    .toUpperCase();
+  if (ARTICLE_PACKAGE_PLAN_CODES.includes(s)) return s;
+  const lower = String(raw || "")
+    .trim()
+    .toLowerCase();
+  const map = {
+    starter: "STARTER",
+    free: "STARTER",
+    silver: "SILVER",
+    pro: "PRO",
+    elite: "ELITE",
+  };
+  return map[lower] || null;
+}
+
+function articleLevelForPackagePlan(planCode) {
+  const code = normalizePackagePlanCode(planCode);
+  return code ? ARTICLE_PACKAGE_TO_LEVEL[code] : null;
+}
+
+function tierCodeForPackagePlan(planCode) {
+  const code = normalizePackagePlanCode(planCode);
+  return code ? code.toLowerCase() : null;
+}
+
 const WRITING_MODE_LABELS_AR = Object.freeze({
   ai: "بالذكاء الاصطناعي",
   manual: "يدوي",
@@ -76,7 +119,12 @@ module.exports = {
   ARTICLE_WRITING_SOURCES,
   ARTICLE_PACKAGE_PLAN_CODES,
   ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS,
+  ARTICLE_PACKAGE_TO_LEVEL,
+  ARTICLE_PACKAGE_PLAN_LABELS_AR,
   WRITING_MODE_LABELS_AR,
+  normalizePackagePlanCode,
+  articleLevelForPackagePlan,
+  tierCodeForPackagePlan,
   normalizeWritingMode,
   normalizeWritingSource,
   writingSourceSatisfiesMode,

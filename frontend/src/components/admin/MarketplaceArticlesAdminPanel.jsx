@@ -320,6 +320,8 @@ export default function MarketplaceArticlesAdminPanel({
             categoriesLoading={bildazoCategoriesLoading}
             categoriesError={bildazoCategoriesError}
             activationCampaigns={activationCampaigns}
+            packageRequirements={packageRequirements}
+            inventorySimplified
             isEn={false}
             submitting={submitting}
             titleOverride="إضافة إلى المخزون"
@@ -334,9 +336,12 @@ export default function MarketplaceArticlesAdminPanel({
         <details
           className="oh-mmp-package-reqs"
           data-testid="package-requirements-section"
-          open={inventoryHub ? true : false}
+          open={false}
         >
           <summary>متطلبات الباقات</summary>
+          <p className="oh-mmp-form__hint" data-testid="package-requirements-auto-hint">
+            هذه القيم تُطبّق تلقائياً على المقال حسب الخطة المستهدفة.
+          </p>
           {packageReqsLoading ? (
             <p className="oh-mmp-form__hint">جارٍ التحميل…</p>
           ) : (
@@ -457,6 +462,7 @@ export default function MarketplaceArticlesAdminPanel({
           categoriesLoading={bildazoCategoriesLoading}
           categoriesError={bildazoCategoriesError}
           activationCampaigns={activationCampaigns}
+          packageRequirements={packageRequirements}
           isEn={false}
           submitting={submitting}
           onClose={() => setCreateOpen(false)}
@@ -475,6 +481,7 @@ export default function MarketplaceArticlesAdminPanel({
         categoriesLoading={bildazoCategoriesLoading}
         categoriesError={bildazoCategoriesError}
         activationCampaigns={activationCampaigns}
+        packageRequirements={packageRequirements}
         isEn={false}
         submitting={submitting}
         onClose={() => {

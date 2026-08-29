@@ -118,9 +118,36 @@ async function updatePackageRequirements(items, actorUserId, db = pool) {
   return listPackageRequirements(db);
 }
 
+async function getRequirementForPlan(planCode, db = pool) {
+  const {
+    normalizePackagePlanCode,
+    ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS,
+  } = require("../constants/marketplaceArticleBildazoOz02");
+  const code = normalizePackagePlanCode(planCode);
+  if (!code) {
+    throw createAppError("خطة الباقة غير صالحة.", 400, { code: "INVALID_PLAN_CODE" });
+  }
+  const all = await listPackageRequirements(db);
+  const found = all.find((r) => String(r.planCode).toUpperCase() === code);
+  if (found) {
+    return {
+      planCode: code,
+      minWords: Number(found.minWords),
+      minReferences: Number(found.minReferences),
+    };
+  }
+  const def = ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS[code];
+  return {
+    planCode: code,
+    minWords: def.minWords,
+    minReferences: def.minReferences,
+  };
+}
+
 module.exports = {
   listPackageRequirements,
   updatePackageRequirements,
+  getRequirementForPlan,
   ensureDefaults,
   mapRow,
 };

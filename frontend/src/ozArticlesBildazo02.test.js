@@ -22,7 +22,7 @@ function read(rel) {
 }
 
 describe("OZ-Articles-Bildazo-02 inventory form", () => {
-  it("form fields include title/description/category/writingMode", () => {
+  it("form fields include title/description/category/writingMode/targetPlan and hide per-article words", () => {
     const modal = read("admin/marketplaceArticles/MarketplaceArticleFormModal.jsx");
     const utils = read("admin/marketplaceArticles/marketplaceArticleFormUtils.js");
     assert.match(modal, /article-form-title/);
@@ -30,8 +30,14 @@ describe("OZ-Articles-Bildazo-02 inventory form", () => {
     assert.match(modal, /الوصف \/ التعليمات/);
     assert.match(modal, /bildazo-category-select/);
     assert.match(modal, /article-form-writing-mode/);
+    assert.match(modal, /article-form-target-plan/);
+    assert.match(modal, /article-form-derived-requirements/);
+    assert.match(modal, /الخطة المستهدفة/);
     assert.match(modal, /ARTICLE_WRITING_MODE_LABELS_AR/);
-    assert.match(modal, /variant === "inline"/);
+    assert.doesNotMatch(modal, /مستوى المقال/);
+    assert.doesNotMatch(modal, /عدد الكلمات المطلوب/);
+    assert.doesNotMatch(modal, /عدد المراجع المطلوب/);
+    assert.doesNotMatch(modal, /القيمة \(د\.أ، مشتقة\)/);
     assert.match(utils, /بالذكاء الاصطناعي/);
     assert.match(utils, /يدوي/);
     assert.match(utils, /لا يفرق/);
@@ -40,25 +46,31 @@ describe("OZ-Articles-Bildazo-02 inventory form", () => {
     assert.equal(ARTICLE_WRITING_MODE_LABELS_AR.either, "لا يفرق");
   });
 
-  it("requires bildazoCategoryId + writingMode on save", () => {
+  it("requires bildazoCategoryId + writingMode + targetPlan; derives words from plan", () => {
     const base = getInitialMarketplaceArticleFormState({
       title: "عنوان",
       requiredBidCount: 10,
       minRequiredBidsAcknowledged: true,
+      targetPlanCode: "",
     });
     assert.ok(validateMarketplaceArticleForm(base).bildazoCategoryId);
     assert.ok(validateMarketplaceArticleForm(base).writingMode);
+    assert.ok(validateMarketplaceArticleForm(base).targetPlanCode);
     const ok = {
       ...base,
       bildazoCategoryId: "11111111-1111-4111-8111-111111111111",
       bildazoCategoryName: "تقنية",
       writingMode: "either",
+      targetPlanCode: "SILVER",
     };
     assert.deepEqual(validateMarketplaceArticleForm(ok), {});
     const payload = normalizeMarketplaceArticlePayload(ok);
     assert.equal(payload.writingMode, "either");
     assert.equal(payload.bildazoCategoryId, "11111111-1111-4111-8111-111111111111");
-    assert.ok("description" in payload || payload.description === undefined || typeof payload.description === "string");
+    assert.equal(payload.targetPlanCode, "SILVER");
+    assert.equal(payload.requiredWordCount, 1200);
+    assert.equal(payload.requiredReferencesCount, 4);
+    assert.equal(payload.articleLevel, 2);
   });
 });
 
@@ -98,18 +110,29 @@ describe("OZ-Articles-Bildazo-02 Super Admin hub inventory wiring", () => {
     assert.doesNotMatch(hub, /showCreateArticles/);
     assert.match(modal, /صنف بلدازو/);
     assert.match(modal, /نمط الكتابة/);
-    assert.match(modal, /بالذكاء الاصطناعي/);
-    assert.match(modal, /يدوي/);
-    assert.match(modal, /لا يفرق/);
+    assert.match(modal, /ARTICLE_WRITING_MODE_LABELS_AR/);
+    assert.match(modal, /الخطة المستهدفة/);
+    assert.match(modal, /article-form-derived-requirements/);
+    assert.doesNotMatch(modal, /مستوى المقال/);
+    assert.doesNotMatch(modal, /عدد الكلمات المطلوب/);
     assert.match(panel, /متطلبات الباقات/);
-    assert.match(panel, /STARTER/);
-    assert.match(panel, /SILVER/);
-    assert.match(panel, /PRO/);
-    assert.match(panel, /ELITE/);
-    assert.match(panel, /تجريبية \/ مجانية/);
+    assert.match(panel, /package-requirements-auto-hint/);
+    assert.match(panel, /هذه القيم تُطبّق تلقائياً على المقال حسب الخطة المستهدفة/);
+    assert.match(panel, /ARTICLE_PACKAGE_PLAN_CODES/);
+    assert.match(panel, /ARTICLE_PACKAGE_PLAN_LABELS_AR/);
     assert.match(modal, /الوصف \/ التعليمات/);
     assert.match(panel, /createMarketplaceArticleRequest/);
     assert.match(panel, /onSubmit=\{handleCreate\}/);
+    assert.match(panel, /inventorySimplified/);
+    const utils = read("admin/marketplaceArticles/marketplaceArticleFormUtils.js");
+    assert.match(utils, /بالذكاء الاصطناعي/);
+    assert.match(utils, /يدوي/);
+    assert.match(utils, /لا يفرق/);
+    assert.match(utils, /STARTER/);
+    assert.match(utils, /SILVER/);
+    assert.match(utils, /PRO/);
+    assert.match(utils, /ELITE/);
+    assert.match(utils, /تجريبية \/ مجانية/);
   });
 });
 

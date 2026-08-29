@@ -8,12 +8,28 @@ const createMarketplaceArticleValidators = [
   body("title").isString().trim().isLength({ min: 1, max: 240 }),
   body("description").optional({ nullable: true }).isString(),
   body("brief").optional({ nullable: true }).isString(),
-  body("articleLevel").isInt({ min: 1, max: 5 }).withMessage("articleLevel must be 1..5."),
+  body("targetPlanCode")
+    .optional({ nullable: true })
+    .isString()
+    .custom((value) => {
+      if (value == null || value === "") return true;
+      const s = String(value).trim().toUpperCase();
+      return ["STARTER", "SILVER", "PRO", "ELITE"].includes(s);
+    })
+    .withMessage("targetPlanCode must be STARTER|SILVER|PRO|ELITE."),
+  body("planCode")
+    .optional({ nullable: true })
+    .isString(),
+  body("articleLevel")
+    .optional({ nullable: true })
+    .isInt({ min: 1, max: 5 })
+    .withMessage("articleLevel must be 1..5."),
   body("articleValueJod")
     .optional({ nullable: true })
     .custom((value, { req }) => {
       if (value === undefined || value === null || value === "") return true;
       const level = Number(req.body?.articleLevel);
+      if (!Number.isInteger(level)) return true;
       const expected = level;
       const n = Number(value);
       if (!Number.isFinite(n) || Math.abs(n - expected) > 0.0005) {
@@ -22,12 +38,28 @@ const createMarketplaceArticleValidators = [
       return true;
     }),
   body("requiredWordCount")
+    .optional({ nullable: true })
     .isInt({ min: 1 })
     .withMessage("requiredWordCount must be a positive integer."),
   body("requiredReferencesCount")
     .optional({ nullable: true })
     .isInt({ min: 0 })
     .withMessage("requiredReferencesCount must be >= 0."),
+  body().custom((_, { req }) => {
+    const plan =
+      req.body?.targetPlanCode ||
+      req.body?.target_plan_code ||
+      req.body?.planCode ||
+      req.body?.plan_code;
+    const level = req.body?.articleLevel ?? req.body?.article_level;
+    if (!plan && (level === undefined || level === null || level === "")) {
+      throw new Error("targetPlanCode or articleLevel is required.");
+    }
+    if (!plan && (req.body?.requiredWordCount === undefined || req.body?.requiredWordCount === null)) {
+      throw new Error("requiredWordCount is required when targetPlanCode is omitted.");
+    }
+    return true;
+  }),
   body("status")
     .optional()
     .isIn(["draft", "published", "closed", "cancelled"]),
@@ -54,6 +86,15 @@ const updateMarketplaceArticleValidators = [
   body("title").optional().isString().trim().isLength({ min: 1, max: 240 }),
   body("description").optional({ nullable: true }).isString(),
   body("brief").optional({ nullable: true }).isString(),
+  body("targetPlanCode")
+    .optional({ nullable: true })
+    .isString()
+    .custom((value) => {
+      if (value == null || value === "") return true;
+      const s = String(value).trim().toUpperCase();
+      return ["STARTER", "SILVER", "PRO", "ELITE"].includes(s);
+    }),
+  body("planCode").optional({ nullable: true }).isString(),
   body("articleLevel").optional().isInt({ min: 1, max: 5 }),
   body("articleValueJod")
     .optional({ nullable: true })
