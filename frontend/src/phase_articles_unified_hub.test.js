@@ -124,9 +124,9 @@ describe("Super Admin unified المقالات hub", () => {
     assert.match(hub, /يوم بعد يوم/);
     assert.match(hub, /كل 3 أيام/);
     assert.match(hub, /articles-auto-release-supported/);
-    assert.match(hub, /الإنزال التلقائي مدعوم فعلًا/);
+    assert.match(hub, /تشغيل إنزال مقالات المخزون/);
     assert.match(hub, /releaseIntervalDays/);
-    assert.match(hub, /معاينة الإنزال/);
+    assert.match(hub, /معاينة إنزال مخزون المقالات/);
     assert.match(hub, /articles-not-release-day-msg/);
     assert.match(hub, /ليس يوم إنزال حسب الجدولة الحالية/);
   });
@@ -140,12 +140,22 @@ describe("Super Admin unified المقالات hub", () => {
     assert.doesNotMatch(hub, /deleteSuperAdminActivationArticleInventory/);
   });
 
-  it("inventory tab always wires OZ02 marketplace panel (not behind toggle)", () => {
+  it("inventory tab shows single OZ02 marketplace form; legacy activation UI gated off", () => {
     const hub = read("pages/dashboard/SuperAdminArticlesHubPage.jsx");
     assert.match(hub, /articles-hub-panel-inventory/);
     assert.match(hub, /articles-marketplace-create-panel/);
     assert.match(hub, /MarketplaceArticlesAdminPanel inventoryHub/);
     assert.doesNotMatch(hub, /showCreateArticles/);
+    assert.match(hub, /مخزون المقالات/);
+    assert.match(
+      hub,
+      /أضف المقالات التي ستتاح للمستقلين، مع ربطها بصنف بلدازو ومتطلبات الخطة/,
+    );
+    assert.match(hub, /SHOW_LEGACY_ACTIVATION_INVENTORY_UI\s*=\s*false/);
+    assert.match(hub, /SHOW_LEGACY_ACTIVATION_INVENTORY_UI\s*\?\s*\(/);
+    assert.match(hub, /articles-inventory-add-form/);
     assert.match(hub, /مخزون التفعيل/);
+    assert.match(hub, /draftMarketplaceInventory/);
+    assert.match(hub, /تشغيل إنزال مقالات المخزون/);
   });
 });

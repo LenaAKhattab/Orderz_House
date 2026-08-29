@@ -272,13 +272,10 @@ export default function MarketplaceArticlesAdminPanel({
     <div data-testid="marketplace-articles-admin-panel">
       <DashboardSection>
         {inventoryHub ? (
-          <div className="oh-mmp-inventory-hub-banner" style={{ marginBottom: 12 }}>
+          <div className="oh-mmp-inventory-hub-banner" style={{ marginBottom: 12 }} data-testid="inventory-add-section">
             <h3 className="oh-articles-hub__section-title" style={{ marginTop: 0 }}>
-              مخزون مقالات السوق (بلدازو)
+              إضافة مقال إلى المخزون
             </h3>
-            <p style={{ marginTop: 0, opacity: 0.9, maxWidth: "42rem" }}>
-              أنشئ مقال المخزون بالحقول المطلوبة: العنوان، الوصف، صنف بلدازو، ونمط الكتابة.
-            </p>
           </div>
         ) : (
           <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
@@ -324,7 +321,7 @@ export default function MarketplaceArticlesAdminPanel({
             inventorySimplified
             isEn={false}
             submitting={submitting}
-            titleOverride="إضافة إلى المخزون"
+            titleOverride="إضافة مقال إلى المخزون"
             submitLabel="حفظ في المخزون"
             hideCancel
             onClose={() => {}}
@@ -340,7 +337,7 @@ export default function MarketplaceArticlesAdminPanel({
         >
           <summary>متطلبات الباقات</summary>
           <p className="oh-mmp-form__hint" data-testid="package-requirements-auto-hint">
-            هذه القيم تُطبّق تلقائياً على المقال حسب الخطة المستهدفة.
+            هذه القيم تُطبّق تلقائياً حسب الخطة المستهدفة.
           </p>
           {packageReqsLoading ? (
             <p className="oh-mmp-form__hint">جارٍ التحميل…</p>
@@ -405,6 +402,9 @@ export default function MarketplaceArticlesAdminPanel({
 
         {inventoryHub && showHeaderActions ? (
           <div className="flex flex-wrap items-center gap-2" style={{ margin: "12px 0" }}>
+            <h3 className="oh-articles-hub__section-title" style={{ margin: 0, flex: "1 1 auto" }}>
+              قائمة مقالات المخزون
+            </h3>
             <Button
               type="button"
               variant="secondary"
@@ -412,7 +412,7 @@ export default function MarketplaceArticlesAdminPanel({
               disabled={refreshing || rateLimited}
               data-testid="articles-refresh-btn"
             >
-              تحديث قائمة مقالات السوق
+              تحديث القائمة
             </Button>
           </div>
         ) : null}
@@ -428,7 +428,10 @@ export default function MarketplaceArticlesAdminPanel({
           <DashboardErrorState message={initialLoadError} onRetry={refresh} />
         ) : null}
         {!initialLoading && !initialLoadError && articles.length === 0 ? (
-          <DashboardEmptyState title="لا توجد مقالات بعد" description="أنشئ أول مقال" />
+          <DashboardEmptyState
+            title="لا توجد مقالات في المخزون بعد"
+            description="أضف أول مقال باستخدام النموذج أعلاه"
+          />
         ) : null}
         {articles.length > 0 ? (
           <div className="oh-mmp-grid" data-testid="admin-articles-list">

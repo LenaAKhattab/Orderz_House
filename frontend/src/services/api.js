@@ -452,6 +452,20 @@ export const releaseSuperAdminActivationArticleInventoryRequest = async (id) => 
   return data;
 };
 
+/** OZ03: release marketplace_articles draft → published (same row). */
+export const releaseMarketplaceArticleDraftRequest = async (id, payload = {}) => {
+  const { data } = await api.post(
+    `/super-admin/marketplace-articles/${encodeURIComponent(id)}/release`,
+    payload,
+  );
+  return data;
+};
+
+export const releaseMarketplaceArticleDraftBatchRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/marketplace-articles/release-batch", payload);
+  return data;
+};
+
 export const previewSuperAdminActivationArticleReleaseRequest = async (params = {}) => {
   const { data } = await api.get("/super-admin/freelancer-activation/article-release/preview", {
     params,

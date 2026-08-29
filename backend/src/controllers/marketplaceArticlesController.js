@@ -128,6 +128,46 @@ async function relistBidCollection(req, res, next) {
   }
 }
 
+/** OZ03: draft marketplace_articles → published (same row) + fund deduct once. */
+async function releaseDraftInventory(req, res, next) {
+  try {
+    const oz03Release = require("../services/marketplaceArticleUnifiedReleaseService");
+    const campaignService = require("../services/freelancerActivationCampaignService");
+    const campaignId = await campaignService.resolveArticleOperationsCampaignId(
+      req.body?.campaignId,
+      { actorUserId: req.user?.id },
+    );
+    const data = await oz03Release.releaseMarketplaceDraftArticle(req.params.id, {
+      campaignId,
+      actorUserId: req.user?.id,
+      requireBildazo: true,
+    });
+    const status = data.idempotent || data.alreadyPublished ? 200 : 201;
+    return res.status(status).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function releaseDraftInventoryBatch(req, res, next) {
+  try {
+    const oz03Release = require("../services/marketplaceArticleUnifiedReleaseService");
+    const campaignService = require("../services/freelancerActivationCampaignService");
+    const campaignId = await campaignService.resolveArticleOperationsCampaignId(
+      req.body?.campaignId,
+      { actorUserId: req.user?.id },
+    );
+    const ids = req.body?.ids || req.body?.articleIds || [];
+    const data = await oz03Release.releaseMarketplaceDraftsManual(ids, {
+      campaignId,
+      actorUserId: req.user?.id,
+    });
+    return res.status(201).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   listAdmin,
   getAdminById,
@@ -136,4 +176,6 @@ module.exports = {
   relistBidCollection,
   listPublished,
   getPublishedById,
+  releaseDraftInventory,
+  releaseDraftInventoryBatch,
 };

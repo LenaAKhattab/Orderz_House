@@ -286,6 +286,7 @@ async function patchArticleInventory(req, res, next) {
 
 async function releaseArticleInventory(req, res, next) {
   try {
+    // Legacy activation inventory release — kept for compatibility only (OZ03 main path uses marketplace drafts).
     const data = await articleOps.releaseInventoryItem(req.params.id, { actorUserId: actorId(req) });
     return res.status(201).json({ success: true, data });
   } catch (err) {
@@ -294,6 +295,7 @@ async function releaseArticleInventory(req, res, next) {
 }
 
 const releaseEngine = require("../services/freelancerActivationArticleReleaseEngineService");
+const oz03Release = require("../services/marketplaceArticleUnifiedReleaseService");
 
 async function previewArticleRelease(req, res, next) {
   try {
@@ -301,7 +303,8 @@ async function previewArticleRelease(req, res, next) {
       req.query?.campaignId,
       { actorUserId: actorId(req) },
     );
-    const data = await releaseEngine.previewDailyMiniArticleRelease({
+    // OZ03: preview marketplace_articles draft inventory (not activation inventory templates).
+    const data = await oz03Release.previewMarketplaceInventoryRelease({
       campaignId,
       waveId: req.query?.waveId || null,
       planTierCode: req.query?.planTierCode || null,
@@ -320,7 +323,8 @@ async function runArticleRelease(req, res, next) {
     const campaignId = await campaignService.resolveArticleOperationsCampaignId(body.campaignId, {
       actorUserId: actorId(req),
     });
-    const data = await releaseEngine.runDailyMiniArticleRelease({
+    // OZ03: batch release publishes draft marketplace_articles in place + deducts fund per article.
+    const data = await oz03Release.runMarketplaceInventoryRelease({
       campaignId,
       waveId: body.waveId ?? null,
       planTierCode: body.planTierCode ?? null,

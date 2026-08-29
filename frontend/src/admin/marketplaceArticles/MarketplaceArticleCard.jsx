@@ -1,6 +1,13 @@
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import Button from "../../components/ui/Button";
-import { formatArticleBidCollectionLabel, formatActivationAttachmentBadge } from "./marketplaceArticleFormUtils";
+import {
+  formatArticleBidCollectionLabel,
+  formatActivationAttachmentBadge,
+  writingModeLabelAr,
+  normalizePackagePlanCode,
+  ARTICLE_PACKAGE_PLAN_LABELS_AR,
+  planCodeFromArticleLevel,
+} from "./marketplaceArticleFormUtils";
 import { formatActivationBudgetState } from "../../constants/freelancerActivationCampaign";
 
 export default function MarketplaceArticleCard({
@@ -15,14 +22,33 @@ export default function MarketplaceArticleCard({
     article.articleValueJod != null
       ? Number(article.articleValueJod).toFixed(3)
       : String(article.articleLevel ?? "");
+  const planCode =
+    normalizePackagePlanCode(article.activationPlanTierCode) ||
+    planCodeFromArticleLevel(article.articleLevel) ||
+    "";
+  const planLabel = planCode
+    ? `${planCode}${ARTICLE_PACKAGE_PLAN_LABELS_AR[planCode] ? ` / ${ARTICLE_PACKAGE_PLAN_LABELS_AR[planCode]}` : ""}`
+    : isEn
+      ? "Not set"
+      : "غير محدد";
+  const bildazoLabel =
+    article.bildazoCategoryName ||
+    article.bildazoCategoryPath ||
+    article.bildazoCategorySlug ||
+    (isEn ? "Not set" : "غير محدد");
+  const writingLabel = article.writingMode
+    ? writingModeLabelAr(article.writingMode)
+    : isEn
+      ? "Not set"
+      : "غير محدد";
 
   return (
     <article className={`oh-mmp-card${article.status === "published" ? "" : " oh-mmp-card--inactive"}`}>
       <header className="oh-mmp-card__header">
         <div className="oh-mmp-card__titles">
           <h3 className="oh-mmp-card__title">{article.title}</h3>
-          <p className="oh-mmp-card__tier">
-            {isEn ? `Level ${article.articleLevel}` : `المستوى ${article.articleLevel}`}
+          <p className="oh-mmp-card__tier" data-testid="article-card-target-plan">
+            {isEn ? `Plan: ${planLabel}` : `الخطة: ${planLabel}`}
           </p>
         </div>
         <div className="oh-mmp-card__badges">
@@ -52,10 +78,12 @@ export default function MarketplaceArticleCard({
 
       <dl className="oh-mmp-card__meta">
         <div>
-          <dt>{isEn ? "Value" : "القيمة"}</dt>
-          <dd>
-            {value} {isEn ? "JOD" : "د.أ"}
-          </dd>
+          <dt>{isEn ? "Bildazo category" : "صنف بلدازو"}</dt>
+          <dd data-testid="article-card-bildazo-category">{bildazoLabel}</dd>
+        </div>
+        <div>
+          <dt>{isEn ? "Writing mode" : "نمط الكتابة"}</dt>
+          <dd data-testid="article-card-writing-mode">{writingLabel}</dd>
         </div>
         <div>
           <dt>{isEn ? "Words" : "الكلمات"}</dt>
@@ -64,6 +92,12 @@ export default function MarketplaceArticleCard({
         <div>
           <dt>{isEn ? "References" : "المراجع"}</dt>
           <dd>{article.requiredReferencesCount ?? 0}</dd>
+        </div>
+        <div>
+          <dt>{isEn ? "Value" : "القيمة"}</dt>
+          <dd>
+            {value} {isEn ? "JOD" : "د.أ"}
+          </dd>
         </div>
         <div>
           <dt>{isEn ? "Applicants" : "المتقدمون"}</dt>
@@ -78,14 +112,6 @@ export default function MarketplaceArticleCard({
                   : `المطلوب: ${article.requiredBidCount}`
                 : "—")}
           </dd>
-        </div>
-        <div>
-          <dt>{isEn ? "Category" : "التصنيف"}</dt>
-          <dd>{article.category?.name || "—"}</dd>
-        </div>
-        <div>
-          <dt>{isEn ? "Subcategory" : "الفرعي"}</dt>
-          <dd>{article.subcategory?.name || "—"}</dd>
         </div>
       </dl>
 

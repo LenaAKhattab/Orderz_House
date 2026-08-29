@@ -23,6 +23,8 @@ import {
   createSuperAdminActivationArticleInventoryRequest,
   patchSuperAdminActivationArticleInventoryRequest,
   releaseSuperAdminActivationArticleInventoryRequest,
+  releaseMarketplaceArticleDraftBatchRequest,
+  listAdminMarketplaceArticlesRequest,
   previewSuperAdminActivationArticleReleaseRequest,
   runSuperAdminActivationArticleReleaseRequest,
   listSuperAdminActivationLiveArticlesRequest,
@@ -36,6 +38,12 @@ const TABS = [
   { id: "inventory", label: "مخزون المقالات" },
   { id: "funding", label: "صندوق التمويل" },
 ];
+
+/** Legacy activation inventory UI (title + plan only). Compatibility only — not the OZ03 source of truth. */
+const SHOW_LEGACY_ACTIVATION_INVENTORY_UI = false;
+
+const OZ03_EMPTY_INVENTORY_AR = "لا توجد مقالات جاهزة للإنزال في مخزون المقالات.";
+const OZ03_INSUFFICIENT_FUND_AR = "رصيد صندوق التمويل غير كافٍ لإنزال المقالات المطلوبة.";
 
 const RELEASE_INTERVAL_PRESETS = [
   { value: 1, label: "يوميًا" },
@@ -102,7 +110,8 @@ function ManualPublishModal({
 
   if (!open) return null;
 
-  const readyItems = inventory.filter((i) => i.status === "ready" || i.status === "released");
+  // OZ03: marketplace_articles drafts (status=draft)
+  const readyItems = inventory.filter((i) => String(i.status).toLowerCase() === "draft");
   const count = selected.size;
   const unit = Number(form.totalArticleValueJod) || 0;
   const total = (count * unit).toFixed(3);
@@ -116,10 +125,12 @@ function ManualPublishModal({
   return (
     <div className="oh-articles-hub__modal-backdrop" data-testid="articles-manual-publish-modal">
       <div className="oh-articles-hub__modal" role="dialog" aria-modal="true">
-        <h3>نشر يدوي</h3>
-        <p className="oh-articles-hub__helper">اختر مقالات من المخزون وحدّد الخطة والقيمة ثم أكّد النشر.</p>
+        <h3>نشر يدوي من مخزون المقالات</h3>
+        <p className="oh-articles-hub__helper">
+          اختر مقالات مسودة من مخزون المقالات ثم أكّد الإنزال (نفس الصف يتحول إلى منشور).
+        </p>
         <label>
-          الخطة المستهدفة
+          الخطة المستهدفة (للعرض)
           <select
             value={planTierCode}
             onChange={(e) => {
@@ -137,7 +148,9 @@ function ManualPublishModal({
         </label>
         <div className="oh-articles-hub__grid" style={{ marginTop: 10 }}>
           {readyItems.length === 0 ? (
-            <div className="oh-articles-hub__empty">لا توجد مقالات جاهزة في المخزون.</div>
+            <div className="oh-articles-hub__empty" data-testid="articles-release-empty-inventory">
+              {OZ03_EMPTY_INVENTORY_AR}
+            </div>
           ) : (
             readyItems.map((item) => (
               <label key={item.id} className="oh-articles-hub__card" style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -157,7 +170,8 @@ function ManualPublishModal({
                   <strong>{item.title}</strong>
                   <br />
                   <small>
-                    {item.planTierCode} · {inventoryStatusAr(item.status)}
+                    {item.activationPlanTierCode || item.planTierCode || "—"} · مسودة ·{" "}
+                    {item.articleValueJod != null ? `${item.articleValueJod} JOD` : ""}
                   </small>
                 </span>
               </label>
@@ -264,7 +278,9 @@ export default function SuperAdminArticlesHubPage() {
   const [needsInit, setNeedsInit] = useState(false);
   const [fund, setFund] = useState(null);
   const [allocations, setAllocations] = useState([]);
-  const [inventory, setInventory] = useState([]);
+  const [inventory, setInventory] = useState([]); // legacy activation inventory (flag-only)
+  const [draftMarketplaceInventory, setDraftMarketplaceInventory] = useState([]);
+  const [publishedMarketplaceCount, setPublishedMarketplaceCount] = useState(0);
   const [liveItems, setLiveItems] = useState([]);
   const [liveSummary, setLiveSummary] = useState(null);
   const [expandedArticleId, setExpandedArticleId] = useState(null);
@@ -307,6 +323,8 @@ export default function SuperAdminArticlesHubPage() {
         setFund(null);
         setAllocations([]);
         setInventory([]);
+        setDraftMarketplaceInventory([]);
+        setPublishedMarketplaceCount(0);
         setLiveItems([]);
         setLiveSummary(null);
         return;
@@ -314,16 +332,32 @@ export default function SuperAdminArticlesHubPage() {
       setSetupReady(true);
       setNeedsInit(false);
 
-      const [fundRes, allocRes, invRes, liveRes] = await Promise.all([
+      const [fundRes, allocRes, invRes, liveRes, draftRes, publishedRes] = await Promise.all([
         getSuperAdminActivationArticleFundRequest({}).catch(() => null),
         listSuperAdminActivationPlanAllocationsRequest(null).catch(() => null),
-        listSuperAdminActivationArticleInventoryRequest({}).catch(() => null),
+        SHOW_LEGACY_ACTIVATION_INVENTORY_UI
+          ? listSuperAdminActivationArticleInventoryRequest({}).catch(() => null)
+          : Promise.resolve(null),
         listSuperAdminActivationLiveArticlesRequest({ limit: 50 }).catch(() => null),
+        listAdminMarketplaceArticlesRequest({ status: "draft", includeFake: "false", limit: 200 }).catch(
+          () => null,
+        ),
+        listAdminMarketplaceArticlesRequest({
+          status: "published",
+          includeFake: "false",
+          limit: 1,
+        }).catch(() => null),
       ]);
       setFund(fundRes?.data || null);
       const allocs = allocRes?.data?.allocations || [];
       setAllocations(allocs);
       setInventory(invRes?.data?.items || []);
+      const drafts = draftRes?.data?.articles || [];
+      setDraftMarketplaceInventory(drafts);
+      // Prefer length of draft list for KPI; published count from live summary when available.
+      setPublishedMarketplaceCount(
+        Array.isArray(publishedRes?.data?.articles) ? publishedRes.data.articles.length : 0,
+      );
       setLiveItems(liveRes?.data?.items || []);
       setLiveSummary(liveRes?.data?.summary || null);
       const first = allocs[0];
@@ -349,8 +383,8 @@ export default function SuperAdminArticlesHubPage() {
   }, [load]);
 
   const inventoryReady = useMemo(
-    () => inventory.filter((i) => i.status === "ready").length,
-    [inventory],
+    () => draftMarketplaceInventory.filter((i) => String(i.status).toLowerCase() === "draft").length,
+    [draftMarketplaceInventory],
   );
 
   const filteredInventory = useMemo(() => {
@@ -371,7 +405,11 @@ export default function SuperAdminArticlesHubPage() {
   const kpis = [
     { key: "fund", label: "رصيد الصندوق", value: fund?.currentBalanceJod != null ? `${fund.currentBalanceJod} JOD` : "—" },
     { key: "inv", label: "مقالات في المخزون", value: inventoryReady },
-    { key: "live", label: "مقالات منزلة", value: liveSummary?.totalReleased ?? liveItems.length ?? "—" },
+    {
+      key: "live",
+      label: "مقالات منزلة",
+      value: liveSummary?.totalReleased ?? publishedMarketplaceCount ?? liveItems.length ?? "—",
+    },
     { key: "wait", label: "بانتظار المتقدمين", value: liveSummary?.waitingForBidders ?? "—" },
     { key: "review", label: "بانتظار المراجعة", value: liveSummary?.underReview ?? "—" },
     { key: "done", label: "مكتملة", value: liveSummary?.accepted ?? liveSummary?.published ?? "—" },
@@ -467,7 +505,11 @@ export default function SuperAdminArticlesHubPage() {
       const res = await previewSuperAdminActivationArticleReleaseRequest({
         planTierCode: allocForm.planTierCode || "starter",
       });
-      setReleasePreview(res?.data || null);
+      const data = res?.data || null;
+      setReleasePreview(data);
+      if (data?.messageAr && !(data.plannedTotal > 0)) {
+        push({ type: "error", message: data.messageAr });
+      }
     } catch (err) {
       push({ type: "error", message: getSafeApiErrorMessage(err) || "تعذر معاينة الإنزال." });
     } finally {
@@ -495,18 +537,27 @@ export default function SuperAdminArticlesHubPage() {
     }
   }
 
-  async function onManualPublish({ ids, planTierCode }) {
+  async function onManualPublish({ ids }) {
     setBusy(true);
     try {
-      for (const id of ids) {
-        await releaseSuperAdminActivationArticleInventoryRequest(id);
+      if (!ids?.length) {
+        push({ type: "error", message: OZ03_EMPTY_INVENTORY_AR });
+        return;
       }
+      await releaseMarketplaceArticleDraftBatchRequest({ ids });
       setManualOpen(false);
-      push({ type: "success", message: "تم النشر اليدوي." });
+      push({ type: "success", message: "تم إنزال المقالات من المخزون." });
       setTab("released");
       await load();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || "تعذر النشر اليدوي." });
+      const msg = getSafeApiErrorMessage(err) || "تعذر النشر اليدوي.";
+      const insufficient =
+        err?.response?.data?.code === "ACTIVATION_ARTICLE_FUND_INSUFFICIENT" ||
+        /غير كاف/i.test(msg);
+      push({
+        type: "error",
+        message: insufficient ? OZ03_INSUFFICIENT_FUND_AR : msg,
+      });
     } finally {
       setBusy(false);
     }
@@ -515,15 +566,30 @@ export default function SuperAdminArticlesHubPage() {
   async function onRunAutoRelease() {
     setBusy(true);
     try {
-      await runSuperAdminActivationArticleReleaseRequest({
+      const res = await runSuperAdminActivationArticleReleaseRequest({
         planTierCode: allocForm.planTierCode || "starter",
         runType: "manual",
       });
       setReleasePreview(null);
-      push({ type: "success", message: "تم تشغيل الإنزال." });
+      const data = res?.data;
+      if (data?.messageAr) {
+        push({
+          type: data.releasedCount > 0 || (data.articles || []).length > 0 ? "success" : "error",
+          message: data.messageAr,
+        });
+      } else {
+        push({ type: "success", message: "تم تشغيل إنزال مقالات المخزون." });
+      }
       await load();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || "تعذر تشغيل الإنزال." });
+      const msg = getSafeApiErrorMessage(err) || "تعذر تشغيل الإنزال.";
+      const insufficient =
+        err?.response?.data?.code === "ACTIVATION_ARTICLE_FUND_INSUFFICIENT" ||
+        /غير كاف/i.test(msg);
+      push({
+        type: "error",
+        message: insufficient ? OZ03_INSUFFICIENT_FUND_AR : msg,
+      });
     } finally {
       setBusy(false);
     }
@@ -596,7 +662,7 @@ export default function SuperAdminArticlesHubPage() {
           <div data-testid="articles-hub-panel-overview">
             <h3 className="oh-articles-hub__section-title">إجراءات سريعة</h3>
             <div className="oh-articles-hub__quick" data-testid="articles-hub-quick-actions">
-              <button type="button" className="oh-articles-hub__quick-btn" disabled={opsDisabled} title={opsTitle} onClick={() => { setShowCreateArticles(true); setTab("inventory"); }}>
+              <button type="button" className="oh-articles-hub__quick-btn" disabled={opsDisabled} title={opsTitle} onClick={() => setTab("inventory")}>
                 إضافة مقال
                 <span>إلى المخزون أو القائمة</span>
               </button>
@@ -676,114 +742,132 @@ export default function SuperAdminArticlesHubPage() {
 
         {!loading && !error && activeTab === "inventory" ? (
           <div data-testid="articles-hub-panel-inventory">
-            <div
-              data-testid="articles-marketplace-create-panel"
-              className="oh-articles-hub__card"
-              style={{ marginBottom: 16 }}
-            >
-              <MarketplaceArticlesAdminPanel inventoryHub />
+            <div className="oh-articles-hub__card" style={{ marginBottom: 16 }}>
+              <h2 className="oh-articles-hub__section-title" style={{ marginTop: 0 }}>
+                مخزون المقالات
+              </h2>
+              <p style={{ marginTop: 0, opacity: 0.9, maxWidth: "42rem" }}>
+                أضف المقالات التي ستتاح للمستقلين، مع ربطها بصنف بلدازو ومتطلبات الخطة.
+              </p>
+              <div data-testid="articles-marketplace-create-panel">
+                <MarketplaceArticlesAdminPanel inventoryHub />
+              </div>
             </div>
 
-            <div className="oh-articles-hub__actions" style={{ marginBottom: 10 }}>
-              <input
-                placeholder="بحث في مخزون التفعيل"
-                value={invSearch}
-                onChange={(e) => setInvSearch(e.target.value)}
-                data-testid="articles-inventory-search"
-              />
-            </div>
-            <form
-              onSubmit={onCreateInventory}
-              className="oh-articles-hub__card"
-              data-testid="articles-inventory-add-form"
-              style={{ marginBottom: 12 }}
-            >
-              <h3 className="oh-articles-hub__section-title">مخزون التفعيل (تجريبي / خطة)</h3>
-              <p style={{ marginTop: 0, opacity: 0.85 }}>
-                عناصر تفعيل المستقلين المنفصلة عن مخزون مقالات السوق أعلاه.
-              </p>
-              <div className="oh-articles-hub__grid">
-                <label>
-                  العنوان
+            {SHOW_LEGACY_ACTIVATION_INVENTORY_UI ? (
+              <>
+                <div className="oh-articles-hub__actions" style={{ marginBottom: 10 }}>
                   <input
-                    required
-                    value={invForm.title}
-                    onChange={(e) => setInvForm({ ...invForm, title: e.target.value })}
+                    placeholder="بحث في مخزون التفعيل"
+                    value={invSearch}
+                    onChange={(e) => setInvSearch(e.target.value)}
+                    data-testid="articles-inventory-search"
                   />
-                </label>
-                <label>
-                  الخطة المستهدفة
-                  <select
-                    value={invForm.planTierCode}
-                    onChange={(e) => setInvForm({ ...invForm, planTierCode: e.target.value })}
-                  >
-                    {FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.labelAr}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <div className="oh-articles-hub__actions">
-                <button type="submit" className="primary" disabled={busy || opsDisabled} title={opsTitle}>
-                  حفظ في مخزون التفعيل
-                </button>
-              </div>
-            </form>
-            <div className="oh-articles-hub__grid">
-              {filteredInventory.length === 0 ? (
-                <div className="oh-articles-hub__empty">لا توجد عناصر في مخزون التفعيل.</div>
-              ) : (
-                filteredInventory.map((item) => (
-                  <div key={item.id} className="oh-articles-hub__card" data-testid={`articles-inventory-card-${item.id}`}>
-                    <h4 className="oh-articles-hub__card-title">{item.title}</h4>
-                    <div className="oh-articles-hub__meta">
-                      <span className="oh-articles-hub__chip">{inventoryStatusAr(item.status)}</span>
-                      <span className="oh-articles-hub__chip oh-articles-hub__chip--blue">{item.planTierCode}</span>
-                      <span className="oh-articles-hub__chip">مرات النشر: {item.releasedCount ?? 0}</span>
-                      <span className="oh-articles-hub__chip">
-                        {item.releaseStrategy === "reusable" ? "قابل لإعادة الاستخدام" : "مرة واحدة"}
-                      </span>
-                    </div>
-                    <div className="oh-articles-hub__actions">
-                      {item.status === "draft" ? (
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() =>
-                            void patchSuperAdminActivationArticleInventoryRequest(item.id, { status: "ready" }).then(load)
-                          }
-                        >
-                          تجهيز
-                        </button>
-                      ) : null}
-                      {item.status === "ready" || item.status === "released" ? (
-                        <button
-                          type="button"
-                          className="primary"
-                          disabled={busy}
-                          onClick={() => void releaseSuperAdminActivationArticleInventoryRequest(item.id).then(load)}
-                        >
-                          نشر يدوي
-                        </button>
-                      ) : null}
-                      {item.status !== "archived" ? (
-                        <button
-                          type="button"
-                          disabled={busy}
-                          data-testid={`articles-inventory-archive-${item.id}`}
-                          onClick={() => void onArchiveInventory(item)}
-                          title="إخفاء من المخزون"
-                        >
-                          أرشفة
-                        </button>
-                      ) : null}
-                    </div>
+                </div>
+                <form
+                  onSubmit={onCreateInventory}
+                  className="oh-articles-hub__card"
+                  data-testid="articles-inventory-add-form"
+                  style={{ marginBottom: 12 }}
+                >
+                  <h3 className="oh-articles-hub__section-title">مخزون التفعيل (تجريبي / خطة)</h3>
+                  <p style={{ marginTop: 0, opacity: 0.85 }}>
+                    عناصر تفعيل المستقلين المنفصلة عن مخزون مقالات السوق أعلاه.
+                  </p>
+                  <div className="oh-articles-hub__grid">
+                    <label>
+                      العنوان
+                      <input
+                        required
+                        value={invForm.title}
+                        onChange={(e) => setInvForm({ ...invForm, title: e.target.value })}
+                      />
+                    </label>
+                    <label>
+                      الخطة المستهدفة
+                      <select
+                        value={invForm.planTierCode}
+                        onChange={(e) => setInvForm({ ...invForm, planTierCode: e.target.value })}
+                      >
+                        {FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.labelAr}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                   </div>
-                ))
-              )}
-            </div>
+                  <div className="oh-articles-hub__actions">
+                    <button type="submit" className="primary" disabled={busy || opsDisabled} title={opsTitle}>
+                      حفظ في مخزون التفعيل
+                    </button>
+                  </div>
+                </form>
+                <div className="oh-articles-hub__grid">
+                  {filteredInventory.length === 0 ? (
+                    <div className="oh-articles-hub__empty">لا توجد عناصر في مخزون التفعيل.</div>
+                  ) : (
+                    filteredInventory.map((item) => (
+                      <div
+                        key={item.id}
+                        className="oh-articles-hub__card"
+                        data-testid={`articles-inventory-card-${item.id}`}
+                      >
+                        <h4 className="oh-articles-hub__card-title">{item.title}</h4>
+                        <div className="oh-articles-hub__meta">
+                          <span className="oh-articles-hub__chip">{inventoryStatusAr(item.status)}</span>
+                          <span className="oh-articles-hub__chip oh-articles-hub__chip--blue">
+                            {item.planTierCode}
+                          </span>
+                          <span className="oh-articles-hub__chip">مرات النشر: {item.releasedCount ?? 0}</span>
+                          <span className="oh-articles-hub__chip">
+                            {item.releaseStrategy === "reusable" ? "قابل لإعادة الاستخدام" : "مرة واحدة"}
+                          </span>
+                        </div>
+                        <div className="oh-articles-hub__actions">
+                          {item.status === "draft" ? (
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() =>
+                                void patchSuperAdminActivationArticleInventoryRequest(item.id, {
+                                  status: "ready",
+                                }).then(load)
+                              }
+                            >
+                              تجهيز
+                            </button>
+                          ) : null}
+                          {item.status === "ready" || item.status === "released" ? (
+                            <button
+                              type="button"
+                              className="primary"
+                              disabled={busy}
+                              onClick={() =>
+                                void releaseSuperAdminActivationArticleInventoryRequest(item.id).then(load)
+                              }
+                            >
+                              نشر يدوي
+                            </button>
+                          ) : null}
+                          {item.status !== "archived" ? (
+                            <button
+                              type="button"
+                              disabled={busy}
+                              data-testid={`articles-inventory-archive-${item.id}`}
+                              onClick={() => void onArchiveInventory(item)}
+                              title="إخفاء من المخزون"
+                            >
+                              أرشفة
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            ) : null}
           </div>
         ) : null}
 
@@ -832,8 +916,8 @@ export default function SuperAdminArticlesHubPage() {
             {publishMode === "auto" ? (
               <div className="oh-articles-hub__card" style={{ marginBottom: 12 }} data-testid="articles-auto-release-card">
                 <p className="oh-articles-hub__helper" data-testid="articles-auto-release-supported">
-                  الإنزال التلقائي مدعوم فعلًا على الخادم: يوميًا، يوم بعد يوم، كل 3 أيام، أو كل N أيام (حتى 30).
-                  التشغيل اليدوي من هنا يتجاوز جدول الأيام. لا يوجد تشغيل مجدول تلقائي في هذه المرحلة — المعاينة والتشغيل اليدوي فقط.
+                  تشغيل إنزال مقالات المخزون (marketplace_articles المسودات): يوميًا، يوم بعد يوم، كل 3 أيام، أو كل N أيام (حتى 30).
+                  التشغيل اليدوي من هنا يتجاوز جدول الأيام. لا يوجد cron تلقائي في هذه المرحلة — المعاينة و«تشغيل إنزال مقالات المخزون» فقط.
                 </p>
                 <label data-testid="articles-release-interval">
                   تكرار الإنزال التلقائي
@@ -885,25 +969,39 @@ export default function SuperAdminArticlesHubPage() {
                 </label>
                 <div className="oh-articles-hub__actions">
                   <button type="button" disabled={busy || opsDisabled} title={opsTitle} onClick={() => void onPreviewRelease()} data-testid="articles-release-preview-btn">
-                    معاينة الإنزال
+                    معاينة إنزال مخزون المقالات
                   </button>
-                  <button type="button" className="primary" disabled={busy || opsDisabled} onClick={() => void onRunAutoRelease()} title={opsDisabled ? opsTitle : "يعمل بغض النظر عن يوم الجدولة"}>
-                    تشغيل إنزال الآن
+                  <button
+                    type="button"
+                    className="primary"
+                    disabled={busy || opsDisabled}
+                    onClick={() => void onRunAutoRelease()}
+                    title={opsDisabled ? opsTitle : "يعمل بغض النظر عن يوم الجدولة"}
+                    data-testid="articles-release-run-btn"
+                  >
+                    تشغيل إنزال مقالات المخزون
                   </button>
                 </div>
                 {releasePreview ? (
                   <div className="oh-articles-hub__helper" data-testid="articles-release-preview" style={{ marginTop: 8 }}>
-                    {(releasePreview.allocations || []).map((p) => (
+                    {(releasePreview.plans || releasePreview.allocations || []).map((p) => (
                       <div key={p.allocationId || p.planTierCode}>
                         {p.planTierCode}:{" "}
                         {p.skipReason === "not_release_day"
                           ? p.messageAr || "ليس يوم إنزال حسب الجدولة الحالية."
-                          : p.skipped
-                            ? `متجاوَز (${p.skipReason || "—"})`
-                            : `مخطط ${p.plannedCount || 0} مقال`}
+                          : p.skipReason === "inventory_empty"
+                            ? p.messageAr || OZ03_EMPTY_INVENTORY_AR
+                            : p.skipReason === "insufficient_fund"
+                              ? p.messageAr || OZ03_INSUFFICIENT_FUND_AR
+                              : p.skipped
+                                ? `متجاوَز (${p.skipReason || "—"})`
+                                : `مخطط ${p.plannedCount || 0} مقال`}
                       </div>
                     ))}
-                    {(releasePreview.allocations || []).some((p) => p.skipReason === "not_release_day") ? (
+                    {releasePreview.messageAr ? (
+                      <strong data-testid="articles-release-preview-msg">{releasePreview.messageAr}</strong>
+                    ) : null}
+                    {(releasePreview.plans || releasePreview.allocations || []).some((p) => p.skipReason === "not_release_day") ? (
                       <strong data-testid="articles-not-release-day-msg">ليس يوم إنزال حسب الجدولة الحالية.</strong>
                     ) : null}
                   </div>
@@ -912,7 +1010,7 @@ export default function SuperAdminArticlesHubPage() {
             ) : (
               <div className="oh-articles-hub__actions" style={{ marginBottom: 12 }}>
                 <button type="button" className="primary" disabled={opsDisabled} title={opsTitle} onClick={() => setManualOpen(true)}>
-                  نشر يدوي
+                  تشغيل إنزال مقالات المخزون (يدوي)
                 </button>
               </div>
             )}
@@ -1054,7 +1152,7 @@ export default function SuperAdminArticlesHubPage() {
 
       <ManualPublishModal
         open={manualOpen}
-        inventory={inventory}
+        inventory={draftMarketplaceInventory}
         busy={busy}
         onClose={() => setManualOpen(false)}
         onPublish={onManualPublish}

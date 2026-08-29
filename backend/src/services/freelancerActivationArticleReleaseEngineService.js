@@ -1027,4 +1027,8 @@ module.exports = {
   normalizeReleaseIntervalDays,
   isReleaseDayForInterval,
   NOT_RELEASE_DAY_MESSAGE_AR,
+  // OZ03 unified release reuses these primitives (activation inventory path remains for legacy tests).
+  findCompletedIdempotentRun,
+  insertReleaseRun,
+  insertReleaseItem,
 };

@@ -57,6 +57,20 @@ router.post(
   marketplaceArticlesController.create,
 );
 
+router.post(
+  "/marketplace-articles/release-batch",
+  ...superGuard,
+  marketplaceArticlesController.releaseDraftInventoryBatch,
+);
+
+router.post(
+  "/marketplace-articles/:id/release",
+  ...superGuard,
+  articleIdParam,
+  validateRequest,
+  marketplaceArticlesController.releaseDraftInventory,
+);
+
 router.patch(
   "/marketplace-articles/:id",
   ...guard,

@@ -78,7 +78,9 @@ export function requirementsForPlanCode(planCode, packageRequirements = null) {
 
 export function formatDerivedPlanRequirementsSummaryAr(planCode, packageRequirements = null) {
   const req = requirementsForPlanCode(planCode, packageRequirements);
-  if (!req) return "";
+  if (!req) {
+    return "سيتم تطبيق متطلبات الخطة تلقائياً عند اختيارها.";
+  }
   const label = ARTICLE_PACKAGE_PLAN_LABELS_AR[req.planCode] || req.planCode;
   const refs = Number(req.minReferences);
   const refsLabel =

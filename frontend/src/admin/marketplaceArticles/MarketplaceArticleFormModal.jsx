@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Button from "../../components/ui/Button";
 import {
-  ARTICLE_LEVELS,
   ARTICLE_STATUSES,
   ARTICLE_WRITING_MODES,
   ARTICLE_WRITING_MODE_LABELS_AR,
   ARTICLE_PACKAGE_PLAN_CODES,
   ARTICLE_PACKAGE_PLAN_LABELS_AR,
   articleToMarketplaceFormState,
-  deriveArticleValueJodFromLevel,
   formatDerivedPlanRequirementsSummaryAr,
   getInitialMarketplaceArticleFormState,
   normalizeMarketplaceArticlePayload,
@@ -131,6 +129,8 @@ export default function MarketplaceArticleFormModal({
   categoriesLoading = false,
   categoriesError = "",
   activationCampaigns = [],
+  packageRequirements = null,
+  inventorySimplified = false,
   isEn = false,
   submitting = false,
   titleOverride = null,
@@ -147,9 +147,21 @@ export default function MarketplaceArticleFormModal({
 
   useEffect(() => {
     if (!open) return;
-    setForm(isCreate ? getInitialMarketplaceArticleFormState() : articleToMarketplaceFormState(initialArticle));
+    const next = isCreate
+      ? getInitialMarketplaceArticleFormState(
+          inventorySimplified
+            ? { minRequiredBidsAcknowledged: true, requiredBidCount: 10 }
+            : {},
+        )
+      : articleToMarketplaceFormState(initialArticle);
+    setForm(next);
     setErrors({});
-  }, [open, isCreate, initialArticle]);
+  }, [open, isCreate, initialArticle, inventorySimplified]);
+
+  const derivedSummary = useMemo(
+    () => formatDerivedPlanRequirementsSummaryAr(form.targetPlanCode, packageRequirements),
+    [form.targetPlanCode, packageRequirements],
+  );
 
   if (!open) return null;
 
@@ -157,13 +169,12 @@ export default function MarketplaceArticleFormModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const nextErrors = validateMarketplaceArticleForm(form);
+    const nextErrors = validateMarketplaceArticleForm(form, { packageRequirements });
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
-    onSubmit?.(normalizeMarketplaceArticlePayload(form));
+    onSubmit?.(normalizeMarketplaceArticlePayload(form, { packageRequirements }));
   };
 
-  const valueLabel = deriveArticleValueJodFromLevel(form.articleLevel);
   const heading =
     titleOverride ||
     (isCreate ? (isEn ? "Add Article" : "إضافة مقال") : isEn ? "Edit Article" : "تعديل مقال");
