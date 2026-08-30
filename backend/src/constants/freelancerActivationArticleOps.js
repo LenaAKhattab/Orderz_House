@@ -126,7 +126,7 @@ const VISIBILITY_DURATION_HOURS_DEFAULT = 24;
 
 function normalizePlanTierCode(raw) {
   const code = String(raw || "").trim().toLowerCase();
-  if (code === "free") return "starter";
+  if (code === "free" || code === "trial" || code === "basic") return "starter";
   return code;
 }
 

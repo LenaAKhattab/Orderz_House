@@ -1,8 +1,21 @@
 const { body, param, query } = require("express-validator");
+const {
+  normalizePackagePlanCode,
+  ARTICLE_PACKAGE_PLAN_CODES,
+} = require("../constants/marketplaceArticleBildazoOz02");
 
 const articleIdParam = [
   param("id").isInt({ min: 1 }).withMessage("id must be a positive integer."),
 ];
+
+function assertCanonicalTargetPlanCode(value) {
+  if (value == null || value === "") return true;
+  const code = normalizePackagePlanCode(value);
+  if (!code || !ARTICLE_PACKAGE_PLAN_CODES.includes(code)) {
+    throw new Error("targetPlanCode must be STARTER|SILVER|PRO|ELITE.");
+  }
+  return true;
+}
 
 const createMarketplaceArticleValidators = [
   body("title").isString().trim().isLength({ min: 1, max: 240 }),
@@ -11,15 +24,19 @@ const createMarketplaceArticleValidators = [
   body("targetPlanCode")
     .optional({ nullable: true })
     .isString()
-    .custom((value) => {
-      if (value == null || value === "") return true;
-      const s = String(value).trim().toUpperCase();
-      return ["STARTER", "SILVER", "PRO", "ELITE"].includes(s);
+    .custom(assertCanonicalTargetPlanCode)
+    .customSanitizer((value) => {
+      if (value == null || value === "") return value;
+      return normalizePackagePlanCode(value) || value;
     })
     .withMessage("targetPlanCode must be STARTER|SILVER|PRO|ELITE."),
   body("planCode")
     .optional({ nullable: true })
-    .isString(),
+    .isString()
+    .customSanitizer((value) => {
+      if (value == null || value === "") return value;
+      return normalizePackagePlanCode(value) || value;
+    }),
   body("articleLevel")
     .optional({ nullable: true })
     .isInt({ min: 1, max: 5 })
@@ -100,12 +117,19 @@ const updateMarketplaceArticleValidators = [
   body("targetPlanCode")
     .optional({ nullable: true })
     .isString()
-    .custom((value) => {
-      if (value == null || value === "") return true;
-      const s = String(value).trim().toUpperCase();
-      return ["STARTER", "SILVER", "PRO", "ELITE"].includes(s);
+    .custom(assertCanonicalTargetPlanCode)
+    .customSanitizer((value) => {
+      if (value == null || value === "") return value;
+      return normalizePackagePlanCode(value) || value;
+    })
+    .withMessage("targetPlanCode must be STARTER|SILVER|PRO|ELITE."),
+  body("planCode")
+    .optional({ nullable: true })
+    .isString()
+    .customSanitizer((value) => {
+      if (value == null || value === "") return value;
+      return normalizePackagePlanCode(value) || value;
     }),
-  body("planCode").optional({ nullable: true }).isString(),
   body("articleLevel").optional().isInt({ min: 1, max: 5 }),
   body("articleValueJod")
     .optional({ nullable: true })

@@ -82,6 +82,10 @@ describe("OZ-Articles-Bildazo-02 — package defaults", () => {
   it("maps target plan to article level and normalizes codes", () => {
     assert.equal(normalizePackagePlanCode("silver"), "SILVER");
     assert.equal(normalizePackagePlanCode("STARTER"), "STARTER");
+    assert.equal(normalizePackagePlanCode("trial"), "STARTER");
+    assert.equal(normalizePackagePlanCode("free"), "STARTER");
+    assert.equal(normalizePackagePlanCode("basic"), "STARTER");
+    assert.equal(normalizePackagePlanCode("تجربة"), null);
     assert.equal(articleLevelForPackagePlan("STARTER"), 1);
     assert.equal(articleLevelForPackagePlan("SILVER"), 2);
     assert.equal(articleLevelForPackagePlan("PRO"), 3);
@@ -113,6 +117,34 @@ describe("OZ-Articles-Bildazo-02 — plan-derived create requirements", () => {
       assert.equal(derived.requiredWordCount, 1800);
       assert.equal(derived.requiredReferencesCount, 6);
       assert.equal(derived.tierCode, "pro");
+
+      const starter = await svc.resolveArticleRequirementsFromPayload({
+        targetPlanCode: "STARTER",
+      });
+      assert.equal(starter.planCode, "STARTER");
+      assert.equal(starter.articleLevel, 1);
+      assert.equal(starter.requiredWordCount, 600);
+      assert.equal(starter.requiredReferencesCount, 2);
+
+      const silver = await svc.resolveArticleRequirementsFromPayload({
+        targetPlanCode: "SILVER",
+      });
+      assert.equal(silver.planCode, "SILVER");
+      assert.equal(silver.requiredWordCount, 1200);
+      assert.equal(silver.requiredReferencesCount, 4);
+
+      const fromTrial = await svc.resolveArticleRequirementsFromPayload({
+        targetPlanCode: "trial",
+      });
+      assert.equal(fromTrial.planCode, "STARTER");
+      assert.equal(fromTrial.requiredWordCount, 600);
+      assert.equal(fromTrial.requiredReferencesCount, 2);
+
+      const elite = await svc.resolveArticleRequirementsFromPayload({
+        targetPlanCode: "ELITE",
+      });
+      assert.equal(elite.planCode, "ELITE");
+      assert.equal(elite.articleLevel, 5);
     } finally {
       pkg.getRequirementForPlan = original;
     }

@@ -7,7 +7,7 @@ import MarketplaceArticlesAdminPanel from "../../components/admin/MarketplaceArt
 import { useToast } from "../../components/ui/toastContext";
 import { sharesSumToTotal } from "../../constants/freelancerActivationCampaign";
 import {
-  FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS,
+  ARTICLE_CANONICAL_PLAN_TIER_OPTIONS,
   defaultSplitForTier,
 } from "../../constants/freelancerActivationArticleOps";
 import {
@@ -137,7 +137,7 @@ function ManualPublishModal({
               setForm(defaultSplitForTier(tier));
             }}
           >
-            {FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS.map((o) => (
+            {ARTICLE_CANONICAL_PLAN_TIER_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.labelAr}
               </option>
@@ -783,7 +783,7 @@ export default function SuperAdminArticlesHubPage() {
                         value={invForm.planTierCode}
                         onChange={(e) => setInvForm({ ...invForm, planTierCode: e.target.value })}
                       >
-                        {FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS.map((o) => (
+                        {ARTICLE_CANONICAL_PLAN_TIER_OPTIONS.map((o) => (
                           <option key={o.value} value={o.value}>
                             {o.labelAr}
                           </option>
@@ -1068,7 +1068,7 @@ export default function SuperAdminArticlesHubPage() {
                       setAllocForm({ ...allocForm, planTierCode: tier, ...defaultSplitForTier(tier) });
                     }}
                   >
-                    {FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS.map((o) => (
+                    {ARTICLE_CANONICAL_PLAN_TIER_OPTIONS.map((o) => (
                       <option key={o.value} value={o.value}>
                         {o.labelAr}
                       </option>

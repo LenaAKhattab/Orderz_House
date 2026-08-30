@@ -4,8 +4,7 @@ import {
   ARTICLE_STATUSES,
   ARTICLE_WRITING_MODES,
   ARTICLE_WRITING_MODE_LABELS_AR,
-  ARTICLE_PACKAGE_PLAN_CODES,
-  ARTICLE_PACKAGE_PLAN_LABELS_AR,
+  ARTICLE_TARGET_PLAN_OPTIONS,
   articleToMarketplaceFormState,
   formatDerivedPlanRequirementsSummaryAr,
   getInitialMarketplaceArticleFormState,
@@ -293,12 +292,9 @@ export default function MarketplaceArticleFormModal({
               data-testid="article-form-target-plan"
             >
               <option value="">{isEn ? "— Select —" : "— اختر —"}</option>
-              {ARTICLE_PACKAGE_PLAN_CODES.map((code) => (
-                <option key={code} value={code}>
-                  {code}
-                  {ARTICLE_PACKAGE_PLAN_LABELS_AR[code]
-                    ? ` / ${ARTICLE_PACKAGE_PLAN_LABELS_AR[code]}`
-                    : ""}
+              {ARTICLE_TARGET_PLAN_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.labelAr}
                 </option>
               ))}
             </select>

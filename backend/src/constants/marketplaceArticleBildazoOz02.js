@@ -28,10 +28,10 @@ const ARTICLE_PACKAGE_TO_LEVEL = Object.freeze({
 });
 
 const ARTICLE_PACKAGE_PLAN_LABELS_AR = Object.freeze({
-  STARTER: "التجريبية / المجانية",
-  SILVER: "SILVER",
-  PRO: "PRO",
-  ELITE: "ELITE",
+  STARTER: "تجربة / مجاني",
+  SILVER: "فضية (Silver)",
+  PRO: "احترافية (Pro)",
+  ELITE: "نخبة (Elite)",
 });
 
 function normalizePackagePlanCode(raw) {
@@ -45,6 +45,8 @@ function normalizePackagePlanCode(raw) {
   const map = {
     starter: "STARTER",
     free: "STARTER",
+    trial: "STARTER",
+    basic: "STARTER",
     silver: "SILVER",
     pro: "PRO",
     elite: "ELITE",

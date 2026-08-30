@@ -32,12 +32,20 @@ export const ARTICLE_WRITING_SOURCE_LABELS_AR = Object.freeze({
   AI_ASSISTED: "بمساعدة الذكاء الاصطناعي",
 });
 export const ARTICLE_PACKAGE_PLAN_CODES = ["STARTER", "SILVER", "PRO", "ELITE"];
+/** Canonical Arabic labels for article inventory target plan (exactly 4 options). */
 export const ARTICLE_PACKAGE_PLAN_LABELS_AR = Object.freeze({
-  STARTER: "تجريبية / مجانية",
-  SILVER: "SILVER",
-  PRO: "PRO",
-  ELITE: "ELITE",
+  STARTER: "تجربة / مجاني",
+  SILVER: "فضية (Silver)",
+  PRO: "احترافية (Pro)",
+  ELITE: "نخبة (Elite)",
 });
+/** Dropdown options for OZ inventory — never includes legacy trial duplicate. */
+export const ARTICLE_TARGET_PLAN_OPTIONS = Object.freeze(
+  ARTICLE_PACKAGE_PLAN_CODES.map((code) => ({
+    value: code,
+    labelAr: ARTICLE_PACKAGE_PLAN_LABELS_AR[code],
+  })),
+);
 export const ARTICLE_PACKAGE_REQUIREMENT_DEFAULTS = Object.freeze({
   STARTER: { minWords: 600, minReferences: 2 },
   SILVER: { minWords: 1200, minReferences: 4 },
@@ -63,6 +71,8 @@ export function normalizePackagePlanCode(raw) {
   const map = {
     starter: "STARTER",
     free: "STARTER",
+    trial: "STARTER",
+    basic: "STARTER",
     silver: "SILVER",
     pro: "PRO",
     elite: "ELITE",
@@ -96,13 +106,7 @@ export function formatDerivedPlanRequirementsSummaryAr(planCode, packageRequirem
     return "سيتم تطبيق متطلبات الخطة تلقائياً عند اختيارها.";
   }
   const label = ARTICLE_PACKAGE_PLAN_LABELS_AR[req.planCode] || req.planCode;
-  const refs = Number(req.minReferences);
-  const refsLabel =
-    refs === 1 ? "مرجع واحد" : refs === 2 ? "مرجعان" : `${refs} مراجع`;
-  if (req.planCode === "STARTER") {
-    return `سيتم تطبيق متطلبات الخطة التجريبية تلقائياً: ${req.minWords} كلمة و${refsLabel}.`;
-  }
-  return `سيتم تطبيق متطلبات خطة ${label} تلقائياً: ${req.minWords} كلمة و ${refsLabel}.`;
+  return `سيتم تطبيق متطلبات خطة ${label} تلقائياً: ${req.minWords} كلمة و ${req.minReferences} مراجع.`;
 }
 
 export function planCodeFromArticleLevel(level) {

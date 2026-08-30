@@ -92,21 +92,21 @@ describe("OZ-Articles-Bildazo-02 inventory form", () => {
     );
     assert.equal(
       formatDerivedPlanRequirementsSummaryAr("STARTER"),
-      "سيتم تطبيق متطلبات الخطة التجريبية تلقائياً: 600 كلمة ومرجعان.",
+      "سيتم تطبيق متطلبات خطة تجربة / مجاني تلقائياً: 600 كلمة و 2 مراجع.",
     );
     assert.equal(
       formatDerivedPlanRequirementsSummaryAr("SILVER", [
         { planCode: "SILVER", minWords: 1200, minReferences: 4 },
       ]),
-      "سيتم تطبيق متطلبات خطة SILVER تلقائياً: 1200 كلمة و 4 مراجع.",
+      "سيتم تطبيق متطلبات خطة فضية (Silver) تلقائياً: 1200 كلمة و 4 مراجع.",
     );
     assert.equal(
       formatDerivedPlanRequirementsSummaryAr("PRO"),
-      "سيتم تطبيق متطلبات خطة PRO تلقائياً: 1800 كلمة و 6 مراجع.",
+      "سيتم تطبيق متطلبات خطة احترافية (Pro) تلقائياً: 1800 كلمة و 6 مراجع.",
     );
     assert.equal(
       formatDerivedPlanRequirementsSummaryAr("ELITE"),
-      "سيتم تطبيق متطلبات خطة ELITE تلقائياً: 2400 كلمة و 8 مراجع.",
+      "سيتم تطبيق متطلبات خطة نخبة (Elite) تلقائياً: 2400 كلمة و 8 مراجع.",
     );
   });
 });
@@ -125,7 +125,7 @@ describe("OZ-Articles-Bildazo-02 package requirements section", () => {
     assert.match(utils, /SILVER/);
     assert.match(utils, /PRO/);
     assert.match(utils, /ELITE/);
-    assert.match(utils, /تجريبية \/ مجانية/);
+    assert.match(utils, /تجربة \/ مجاني/);
     assert.match(panel, /updateAdminArticlePackageRequirementsRequest/);
     assert.match(panel, /isSuperAdminUser/);
     assert.match(panel, /listAdminBildazoCategoriesRequest/);
@@ -146,13 +146,14 @@ describe("OZ-Articles-Bildazo-02 Super Admin hub inventory wiring", () => {
     assert.match(hub, /MarketplaceArticlesAdminPanel inventoryHub/);
     assert.doesNotMatch(hub, /showCreateArticles/);
     assert.match(hub, /SHOW_LEGACY_ACTIVATION_INVENTORY_UI\s*=\s*false/);
+    assert.match(hub, /ARTICLE_CANONICAL_PLAN_TIER_OPTIONS/);
+    assert.doesNotMatch(hub, /FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS/);
     assert.match(modal, /صنف بلدازو/);
     assert.match(modal, /نمط الكتابة/);
     assert.match(modal, /ARTICLE_WRITING_MODE_LABELS_AR/);
-    assert.match(modal, /الخطة المستهدفة/);
-    assert.match(modal, /article-form-derived-requirements/);
-    assert.doesNotMatch(modal, /مستوى المقال/);
-    assert.doesNotMatch(modal, /عدد الكلمات المطلوب/);
+    assert.match(modal, /ARTICLE_TARGET_PLAN_OPTIONS/);
+    assert.match(modal, /o\.labelAr/);
+    assert.doesNotMatch(modal, /FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS/);
     assert.match(panel, /متطلبات الباقات/);
     assert.match(panel, /package-requirements-auto-hint/);
     assert.match(panel, /هذه القيم تُطبّق تلقائياً حسب الخطة المستهدفة/);
@@ -172,7 +173,7 @@ describe("OZ-Articles-Bildazo-02 Super Admin hub inventory wiring", () => {
     assert.match(utils, /SILVER/);
     assert.match(utils, /PRO/);
     assert.match(utils, /ELITE/);
-    assert.match(utils, /تجريبية \/ مجانية/);
+    assert.match(utils, /تجربة \/ مجاني/);
   });
 
   it("single visible add-article form; legacy title-only activation form gated off", () => {

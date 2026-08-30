@@ -6,6 +6,17 @@ export const FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS = Object.freeze([
   { value: "elite", labelAr: "نخبة (Elite)" },
 ]);
 
+/**
+ * Canonical article/hub plan tiers — no duplicate free/trial.
+ * Prefer this over FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS in Super Admin articles UI.
+ */
+export const ARTICLE_CANONICAL_PLAN_TIER_OPTIONS = Object.freeze([
+  { value: "starter", labelAr: "تجربة / مجاني" },
+  { value: "silver", labelAr: "فضية (Silver)" },
+  { value: "pro", labelAr: "احترافية (Pro)" },
+  { value: "elite", labelAr: "نخبة (Elite)" },
+]);
+
 export const FREELANCER_ACTIVATION_PLAN_SPLIT_DEFAULTS = Object.freeze({
   starter: Object.freeze({
     totalArticleValueJod: "1.000",

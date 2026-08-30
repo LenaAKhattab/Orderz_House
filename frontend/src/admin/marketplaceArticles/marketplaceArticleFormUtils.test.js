@@ -12,9 +12,47 @@ import {
   normalizeMarketplaceArticlePayload,
   validateMarketplaceArticleForm,
   getInitialMarketplaceArticleFormState,
+  ARTICLE_TARGET_PLAN_OPTIONS,
+  ARTICLE_PACKAGE_PLAN_LABELS_AR,
+  normalizePackagePlanCode,
+  formatDerivedPlanRequirementsSummaryAr,
 } from "./marketplaceArticleFormUtils.js";
 
 describe("marketplaceArticleFormUtils", () => {
+  it("target plan dropdown is exactly 4 canonical options without duplicate تجربة", () => {
+    assert.equal(ARTICLE_TARGET_PLAN_OPTIONS.length, 4);
+    assert.deepEqual(
+      ARTICLE_TARGET_PLAN_OPTIONS.map((o) => o.value),
+      ["STARTER", "SILVER", "PRO", "ELITE"],
+    );
+    assert.deepEqual(
+      ARTICLE_TARGET_PLAN_OPTIONS.map((o) => o.labelAr),
+      [
+        "تجربة / مجاني",
+        "فضية (Silver)",
+        "احترافية (Pro)",
+        "نخبة (Elite)",
+      ],
+    );
+    assert.equal(ARTICLE_PACKAGE_PLAN_LABELS_AR.STARTER, "تجربة / مجاني");
+    const labels = ARTICLE_TARGET_PLAN_OPTIONS.map((o) => o.labelAr);
+    assert.equal(labels.filter((l) => l === "تجربة").length, 0);
+    assert.equal(labels.filter((l) => l.includes("تجربة")).length, 1);
+  });
+
+  it("normalizes legacy free/trial aliases to STARTER only", () => {
+    assert.equal(normalizePackagePlanCode("trial"), "STARTER");
+    assert.equal(normalizePackagePlanCode("free"), "STARTER");
+    assert.equal(normalizePackagePlanCode("basic"), "STARTER");
+    assert.equal(normalizePackagePlanCode("starter"), "STARTER");
+    assert.equal(normalizePackagePlanCode("تجربة"), null);
+  });
+
+  it("STARTER and SILVER derived requirements match product copy", () => {
+    assert.match(formatDerivedPlanRequirementsSummaryAr("STARTER"), /600 كلمة و 2 مراجع/);
+    assert.match(formatDerivedPlanRequirementsSummaryAr("SILVER"), /1200 كلمة و 4 مراجع/);
+  });
+
   it("derives display values 1..5 JOD", () => {
     assert.equal(deriveArticleValueJodFromLevel(1), "1.000");
     assert.equal(deriveArticleValueJodFromLevel(5), "5.000");
