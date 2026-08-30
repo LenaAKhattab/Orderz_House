@@ -16,7 +16,6 @@ const {
 } = require("../constants/marketplaceArticles");
 const articleApplicationsService = require("./marketplaceArticleApplicationsService");
 const opportunityBidCollectionService = require("./opportunityBidCollectionService");
-const { getMarketplaceEconomySettings } = require("./marketplaceEconomySettingsService");
 const {
   assertArticleLevel,
   formatArticleValueJodForDb,
@@ -34,6 +33,7 @@ const {
   tierCodeForPackagePlan,
 } = require("../constants/marketplaceArticleBildazoOz02");
 const packageRequirementsService = require("./marketplaceArticlePackageRequirementsService");
+const oz05BidSettings = require("../utils/marketplaceArticleOz05BidSettings");
 
 function isTruthyFlag(value) {
   return value === true || value === "t" || value === 1 || value === "1";
@@ -222,6 +222,8 @@ function mapMarketplaceArticle(row) {
     createdAt: row.created_at || null,
     updatedAt: row.updated_at || null,
     requiredBidCount: row.required_bid_count != null ? Number(row.required_bid_count) : null,
+    bidCollectionDurationHours: oz05BidSettings.readBidCollectionDurationHours(row.keywords),
+    visibilityDurationHours: oz05BidSettings.readBidCollectionDurationHours(row.keywords),
     currentBidCollectionRoundId:
       row.current_bid_collection_round_id != null
         ? String(row.current_bid_collection_round_id)
@@ -267,6 +269,8 @@ function mapMarketplaceArticleReadModel(row) {
     createdAt: full.createdAt,
     updatedAt: full.updatedAt,
     requiredBidCount: full.requiredBidCount,
+    bidCollectionDurationHours: full.bidCollectionDurationHours,
+    visibilityDurationHours: full.visibilityDurationHours,
     bidCollectionOutcome: full.bidCollectionOutcome,
     applicationDeadlineAt: full.applicationDeadlineAt,
     relistCount: full.relistCount,
@@ -526,21 +530,25 @@ async function createMarketplaceArticle(payload, { actorUserId = null } = {}) {
   });
   let requiredBidCount = null;
   let deadline = null;
+  let bidCollectionDurationHours = oz05BidSettings.VISIBILITY_DURATION_HOURS_DEFAULT;
   if (schemaReady) {
-    const settings = await getMarketplaceEconomySettings();
-    requiredBidCount = opportunityBidCollectionService.wrapAssertRequiredBidCount(
+    requiredBidCount = oz05BidSettings.assertInventoryRequiredBidCount(
       payload.requiredBidCount ?? payload.required_bid_count,
-      settings,
     );
-    opportunityBidCollectionService.assertMinRequiredBidsAcknowledged(payload, {
-      publishing: true,
-    });
+    // Inventory drafts store duration hours; absolute deadline is snapshotted at release.
+    bidCollectionDurationHours = oz05BidSettings.resolveDurationHoursFromPayload(payload);
     const deadlineRaw = payload.applicationDeadlineAt ?? payload.application_deadline_at ?? null;
     deadline = deadlineRaw ? new Date(deadlineRaw) : null;
     if (deadlineRaw && Number.isNaN(deadline.getTime())) {
       throw createAppError("applicationDeadlineAt is invalid.", 400, {
         exposeToClient: true,
         publicCode: "INVALID_APPLICATION_DEADLINE",
+      });
+    }
+    // Soft-ack: inventory UI auto-acks; full form still sends the checkbox.
+    if (String(status) === "published") {
+      opportunityBidCollectionService.assertMinRequiredBidsAcknowledged(payload, {
+        publishing: true,
       });
     }
   }
@@ -644,12 +652,27 @@ async function createMarketplaceArticle(payload, { actorUserId = null } = {}) {
         { client },
       );
     }
-    await opportunityBidCollectionService.createInitialArticleRound(
-      articleId,
-      requiredBidCount,
-      deadline,
-      { client },
-    );
+    // OZ05: persist relative collection duration in unused keywords JSONB (no migration).
+    try {
+      const keywordsMeta = oz05BidSettings.mergeOz05KeywordsMeta(null, {
+        [oz05BidSettings.OZ05_DURATION_META_KEY]: bidCollectionDurationHours,
+      });
+      await client.query(
+        `UPDATE marketplace_articles SET keywords = $2::jsonb, updated_at = NOW() WHERE id = $1`,
+        [articleId, JSON.stringify(keywordsMeta)],
+      );
+    } catch (err) {
+      if (err?.code !== "42703") throw err;
+    }
+    // Bid collection round is created at publish/release — not while inventory is draft.
+    if (String(status) === "published" && requiredBidCount != null) {
+      await opportunityBidCollectionService.createInitialArticleRound(
+        articleId,
+        requiredBidCount,
+        deadline,
+        { client },
+      );
+    }
     await client.query("COMMIT");
   } catch (err) {
     try {
@@ -875,17 +898,20 @@ async function updateMarketplaceArticle(id, patch, { actorUserId = null } = {}) 
     }
 
     if (patch.requiredBidCount !== undefined || patch.required_bid_count !== undefined) {
-      const settings = await getMarketplaceEconomySettings(client);
-      const requiredBidCount = opportunityBidCollectionService.wrapAssertRequiredBidCount(
+      const requiredBidCount = oz05BidSettings.assertInventoryRequiredBidCount(
         patch.requiredBidCount ?? patch.required_bid_count,
-        settings,
       );
       try {
         await client.query(
           `UPDATE marketplace_articles SET required_bid_count = $2, updated_at = NOW() WHERE id = $1`,
           [Number(id), requiredBidCount],
         );
-        if (!existing.currentBidCollectionRoundId) {
+        // Snapshot into a new round only when published and no active round yet.
+        // Never mutate an existing collecting/active round from a draft field edit.
+        if (
+          !existing.currentBidCollectionRoundId &&
+          String(status) === "published"
+        ) {
           await opportunityBidCollectionService.createInitialArticleRound(
             Number(id),
             requiredBidCount,
@@ -897,6 +923,31 @@ async function updateMarketplaceArticle(id, patch, { actorUserId = null } = {}) 
         if (err?.code !== "42703" && err?.code !== "42P01") throw err;
       }
     }
+
+    const durationPatchPresent =
+      patch.bidCollectionDurationHours !== undefined ||
+      patch.bid_collection_duration_hours !== undefined ||
+      patch.visibilityDurationHours !== undefined ||
+      patch.visibility_duration_hours !== undefined;
+    if (durationPatchPresent) {
+      const hours = oz05BidSettings.resolveDurationHoursFromPayload(patch);
+      try {
+        const { rows: kwRows } = await client.query(
+          `SELECT keywords FROM marketplace_articles WHERE id = $1`,
+          [Number(id)],
+        );
+        const keywordsMeta = oz05BidSettings.mergeOz05KeywordsMeta(kwRows[0]?.keywords, {
+          [oz05BidSettings.OZ05_DURATION_META_KEY]: hours,
+        });
+        await client.query(
+          `UPDATE marketplace_articles SET keywords = $2::jsonb, updated_at = NOW() WHERE id = $1`,
+          [Number(id), JSON.stringify(keywordsMeta)],
+        );
+      } catch (err) {
+        if (err?.code !== "42703") throw err;
+      }
+    }
+
     if (status === "published" && existing.status !== "published") {
       opportunityBidCollectionService.assertMinRequiredBidsAcknowledged(patch, { publishing: true });
     }

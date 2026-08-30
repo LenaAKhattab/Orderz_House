@@ -66,10 +66,21 @@ const createMarketplaceArticleValidators = [
   body("categoryId").optional({ nullable: true }).isInt({ min: 1 }),
   body("subcategoryId").optional({ nullable: true }).isInt({ min: 1 }),
   body("isFakeOrTraining").optional().isBoolean(),
-  body("requiredBidCount").isInt({ min: 1 }).withMessage("requiredBidCount is required."),
+  body("requiredBidCount").isInt({ min: 1, max: 100 }).withMessage("requiredBidCount is required."),
   body("minRequiredBidsAcknowledged")
-    .custom((value) => value === true || value === "true" || value === 1 || value === "1")
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value === undefined || value === null || value === "") return true;
+      return value === true || value === "true" || value === 1 || value === "1";
+    })
     .withMessage("يجب الإقرار بحد المناقصات الأدنى."),
+  body("bidCollectionDurationHours")
+    .optional({ nullable: true })
+    .isInt({ min: 1, max: 168 })
+    .withMessage("bidCollectionDurationHours must be 1–168."),
+  body("visibilityDurationHours")
+    .optional({ nullable: true })
+    .isInt({ min: 1, max: 168 }),
   body("applicationDeadlineAt")
     .optional({ nullable: true })
     .custom((value) => {
@@ -114,8 +125,10 @@ const updateMarketplaceArticleValidators = [
   body("categoryId").optional({ nullable: true }).isInt({ min: 1 }),
   body("subcategoryId").optional({ nullable: true }).isInt({ min: 1 }),
   body("isFakeOrTraining").optional().isBoolean(),
-  body("requiredBidCount").optional().isInt({ min: 1 }),
+  body("requiredBidCount").optional().isInt({ min: 1, max: 100 }),
   body("minRequiredBidsAcknowledged").optional(),
+  body("bidCollectionDurationHours").optional({ nullable: true }).isInt({ min: 1, max: 168 }),
+  body("visibilityDurationHours").optional({ nullable: true }).isInt({ min: 1, max: 168 }),
   body("activationCampaignId").optional({ nullable: true }).isInt({ min: 1 }),
   body("activationWaveId").optional({ nullable: true }).isInt({ min: 1 }),
 ];

@@ -4,6 +4,20 @@ export const ARTICLE_LEVELS = [1, 2, 3, 4, 5];
 export const ARTICLE_STATUSES = ["draft", "published", "closed", "cancelled"];
 export const ARTICLE_ALLOWED_REQUIRED_BID_COUNTS = [10, 15, 20, 30];
 export const ARTICLE_MIN_REQUIRED_BIDS = 10;
+/** OZ05 inventory: free integer range (backend assertInventoryRequiredBidCount). */
+export const ARTICLE_INVENTORY_REQUIRED_BID_COUNT_MIN = 1;
+export const ARTICLE_INVENTORY_REQUIRED_BID_COUNT_MAX = 100;
+export const ARTICLE_INVENTORY_REQUIRED_BID_COUNT_DEFAULT = 10;
+/** Hours presets for bid collection window (maps to activation visibility duration). */
+export const ARTICLE_BID_COLLECTION_DURATION_PRESETS = Object.freeze([
+  { hours: 24, labelAr: "24 ساعة" },
+  { hours: 48, labelAr: "48 ساعة" },
+  { hours: 72, labelAr: "3 أيام" },
+  { hours: 168, labelAr: "7 أيام" },
+]);
+export const ARTICLE_BID_COLLECTION_DURATION_DEFAULT_HOURS = 24;
+export const ARTICLE_OZ05_REFUND_RECYCLE_HINT_AR =
+  "إذا لم يصل المقال إلى الحد الأدنى من المتقدمين خلال هذه المدة، سيعود إلى المخزون ويتم إرجاع مبلغ التمويل.";
 
 /** OZ-Articles-Bildazo-02 — writing mode + package plan codes. */
 export const ARTICLE_WRITING_MODES = ["ai", "manual", "either"];
@@ -301,7 +315,8 @@ export function getInitialMarketplaceArticleFormState(overrides = {}) {
     bildazoCategoryPath: "",
     writingMode: "",
     isFakeOrTraining: false,
-    requiredBidCount: ARTICLE_MIN_REQUIRED_BIDS,
+    requiredBidCount: ARTICLE_INVENTORY_REQUIRED_BID_COUNT_DEFAULT,
+    bidCollectionDurationHours: ARTICLE_BID_COLLECTION_DURATION_DEFAULT_HOURS,
     minRequiredBidsAcknowledged: false,
     applicationDeadlineAt: "",
     activationCampaignId: "",
@@ -332,7 +347,12 @@ export function articleToMarketplaceFormState(article) {
     bildazoCategoryPath: article.bildazoCategoryPath || "",
     writingMode: normalizeWritingMode(article.writingMode) || "",
     isFakeOrTraining: Boolean(article.isFakeOrTraining),
-    requiredBidCount: article.requiredBidCount || ARTICLE_MIN_REQUIRED_BIDS,
+    requiredBidCount:
+      article.requiredBidCount || ARTICLE_INVENTORY_REQUIRED_BID_COUNT_DEFAULT,
+    bidCollectionDurationHours:
+      Number(article.bidCollectionDurationHours) ||
+      Number(article.visibilityDurationHours) ||
+      ARTICLE_BID_COLLECTION_DURATION_DEFAULT_HOURS,
     minRequiredBidsAcknowledged: Boolean(article.requiredBidCount),
     applicationDeadlineAt: article.applicationDeadlineAt
       ? String(article.applicationDeadlineAt).slice(0, 16)
@@ -366,17 +386,37 @@ export function validateMarketplaceArticleForm(form, { packageRequirements = nul
     errors.writingMode = "يجب اختيار نمط الكتابة.";
   }
   const requiredBidCount = Number(form.requiredBidCount);
-  const allowed = Array.isArray(form.allowedRequiredBidCounts)
-    ? form.allowedRequiredBidCounts
-    : ARTICLE_ALLOWED_REQUIRED_BID_COUNTS;
-  const minRequired = Number(form.minRequiredBids) || ARTICLE_MIN_REQUIRED_BIDS;
-  if (!Number.isInteger(requiredBidCount) || requiredBidCount < minRequired) {
-    errors.requiredBidCount = `الحد الأدنى للمناقصات هو ${minRequired}.`;
-  } else if (!allowed.includes(requiredBidCount)) {
-    errors.requiredBidCount = `اختر أحد القيم: ${allowed.join("، ")}.`;
+  const inventoryMode = Boolean(form.inventorySimplified || form.allowFlexibleBidCount);
+  if (inventoryMode) {
+    if (
+      !Number.isInteger(requiredBidCount) ||
+      requiredBidCount < ARTICLE_INVENTORY_REQUIRED_BID_COUNT_MIN ||
+      requiredBidCount > ARTICLE_INVENTORY_REQUIRED_BID_COUNT_MAX
+    ) {
+      errors.requiredBidCount = `أدخل عدداً بين ${ARTICLE_INVENTORY_REQUIRED_BID_COUNT_MIN} و ${ARTICLE_INVENTORY_REQUIRED_BID_COUNT_MAX}.`;
+    }
+  } else {
+    const allowed = Array.isArray(form.allowedRequiredBidCounts)
+      ? form.allowedRequiredBidCounts
+      : ARTICLE_ALLOWED_REQUIRED_BID_COUNTS;
+    const minRequired = Number(form.minRequiredBids) || ARTICLE_MIN_REQUIRED_BIDS;
+    if (!Number.isInteger(requiredBidCount) || requiredBidCount < minRequired) {
+      errors.requiredBidCount = `الحد الأدنى للمناقصات هو ${minRequired}.`;
+    } else if (!allowed.includes(requiredBidCount)) {
+      errors.requiredBidCount = `اختر أحد القيم: ${allowed.join("، ")}.`;
+    }
+    if (!form.minRequiredBidsAcknowledged) {
+      errors.minRequiredBidsAcknowledged = "يجب الإقرار بالتحذير قبل الحفظ.";
+    }
   }
-  if (!form.minRequiredBidsAcknowledged) {
-    errors.minRequiredBidsAcknowledged = "يجب الإقرار بالتحذير قبل الحفظ.";
+
+  const durationHours = Number(form.bidCollectionDurationHours);
+  if (
+    !Number.isInteger(durationHours) ||
+    durationHours < 1 ||
+    durationHours > 168
+  ) {
+    errors.bidCollectionDurationHours = "اختر مدة استقبال التقديمات (1–168 ساعة).";
   }
   return errors;
 }
@@ -410,6 +450,8 @@ export function normalizeMarketplaceArticlePayload(form, { packageRequirements =
     writingMode: writingMode || null,
     isFakeOrTraining: Boolean(form.isFakeOrTraining),
     requiredBidCount: Number(form.requiredBidCount),
+    bidCollectionDurationHours: Number(form.bidCollectionDurationHours) || ARTICLE_BID_COLLECTION_DURATION_DEFAULT_HOURS,
+    visibilityDurationHours: Number(form.bidCollectionDurationHours) || ARTICLE_BID_COLLECTION_DURATION_DEFAULT_HOURS,
     minRequiredBidsAcknowledged: Boolean(form.minRequiredBidsAcknowledged),
     applicationDeadlineAt: form.applicationDeadlineAt || null,
     activationCampaignId: form.activationCampaignId ? Number(form.activationCampaignId) : null,

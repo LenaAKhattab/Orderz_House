@@ -40,7 +40,7 @@ describe("marketplaceArticleFormUtils", () => {
     assert.equal(payload.articleLevel, 2);
   });
 
-  it("requires acknowledgement and rejects requiredBidCount 5", () => {
+  it("requires acknowledgement and rejects requiredBidCount 5 (legacy form)", () => {
     const ok = getInitialMarketplaceArticleFormState({
       title: "T",
       requiredBidCount: 10,
@@ -53,6 +53,29 @@ describe("marketplaceArticleFormUtils", () => {
       validateMarketplaceArticleForm({ ...ok, minRequiredBidsAcknowledged: false })
         .minRequiredBidsAcknowledged,
     );
+  });
+
+  it("OZ05 inventory form allows flexible bid count and requires duration", () => {
+    const ok = getInitialMarketplaceArticleFormState({
+      title: "T",
+      inventorySimplified: true,
+      allowFlexibleBidCount: true,
+      requiredBidCount: 2,
+      bidCollectionDurationHours: 48,
+      minRequiredBidsAcknowledged: true,
+      bildazoCategoryId: "11111111-1111-4111-8111-111111111111",
+      writingMode: "manual",
+    });
+    assert.equal(validateMarketplaceArticleForm(ok).requiredBidCount, undefined);
+    assert.equal(validateMarketplaceArticleForm(ok).bidCollectionDurationHours, undefined);
+    assert.ok(validateMarketplaceArticleForm({ ...ok, requiredBidCount: 0 }).requiredBidCount);
+    assert.ok(
+      validateMarketplaceArticleForm({ ...ok, bidCollectionDurationHours: 0 })
+        .bidCollectionDurationHours,
+    );
+    const payload = normalizeMarketplaceArticlePayload(ok);
+    assert.equal(payload.requiredBidCount, 2);
+    assert.equal(payload.bidCollectionDurationHours, 48);
   });
 
   it("allows 10/15/20/30", () => {

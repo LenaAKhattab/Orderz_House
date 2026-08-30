@@ -160,9 +160,19 @@ async function createInitialArticleRound(articleId, requiredBidCount, deadline, 
   if (!(await articleBidCollectionSchemaReady(externalClient || pool))) {
     return null;
   }
+  const oz05BidSettings = require("../utils/marketplaceArticleOz05BidSettings");
   const settings = await marketplaceEconomySettingsService.getMarketplaceEconomySettings(externalClient || pool);
   const cfg = resolveArticleBidCollectionSettings(settings);
-  const required = wrapAssertRequiredBidCount(requiredBidCount, settings);
+  // OZ05 inventory allows any integer 1–100; economy allowed-list remains for legacy UI only.
+  let required;
+  try {
+    required = oz05BidSettings.assertInventoryRequiredBidCount(requiredBidCount);
+  } catch (err) {
+    throw createAppError(err.message, err.statusCode || 400, {
+      exposeToClient: true,
+      publicCode: err.publicCode || BID_COLLECTION_ERROR_CODES.ARTICLE_REQUIRED_BID_COUNT_INVALID,
+    });
+  }
   const own = !externalClient;
   const client = externalClient || (await pool.connect());
   try {
@@ -529,15 +539,38 @@ async function closeArticleRoundMinimumNotMet(client, round, { now = new Date() 
     });
   }
 
-  await client.query(
-    `UPDATE marketplace_articles
-        SET bid_collection_outcome = 'minimum_not_met',
-            status = CASE WHEN status = 'published' THEN 'closed' ELSE status END,
-            closed_at = COALESCE(closed_at, $2::timestamptz),
-            updated_at = NOW()
-      WHERE id = $1`,
-    [round.opportunity_id, new Date(now).toISOString()],
-  );
+  // OZ04: refund article fund + recycle same marketplace_articles row to draft inventory.
+  // Prefer this over leaving status=closed (which hid freelancers but permanently consumed funding).
+  let oz04 = {
+    recycled: false,
+    fundRefund: { refunded: false, skipped: true, reason: "not_attempted" },
+  };
+  try {
+    const oz04Service = require("./marketplaceArticleOz04MinimumNotMetService");
+    oz04 = await oz04Service.recycleAndRefundAfterMinimumNotMet(client, {
+      articleId: round.opportunity_id,
+      roundId: round.id,
+      now,
+    });
+  } catch {
+    oz04 = {
+      recycled: false,
+      fundRefund: { refunded: false, skipped: true, reason: "oz04_recycle_failed" },
+    };
+  }
+
+  if (!oz04.recycled) {
+    await client.query(
+      `UPDATE marketplace_articles
+          SET bid_collection_outcome = 'minimum_not_met',
+              status = CASE WHEN status = 'published' THEN 'closed' ELSE status END,
+              closed_at = COALESCE(closed_at, $2::timestamptz),
+              updated_at = NOW()
+        WHERE id = $1
+          AND status = 'published'`,
+      [round.opportunity_id, new Date(now).toISOString()],
+    );
+  }
 
   let inventoryRestore = { restored: false };
   try {
@@ -559,6 +592,9 @@ async function closeArticleRoundMinimumNotMet(client, round, { now = new Date() 
     reservationsReleased: released,
     status: "minimum_not_met",
     inventoryRestore,
+    oz04,
+    fundRefund: oz04.fundRefund || null,
+    articleRecycled: Boolean(oz04.recycled),
   };
 }
 

@@ -37,7 +37,20 @@ function fundEntryTypeAr(type) {
   const t = String(type || "").toLowerCase();
   if (t.includes("deposit") || t === "credit") return "إيداع";
   if (t.includes("withdraw") || t === "debit") return "سحب";
+  if (t === "daily_allocation") return "خصم إنزال مقال";
+  if (t === "daily_allocation_released") return "إرجاع تمويل مقال";
+  if (t === "manual_adjustment") return "تعديل يدوي";
   return type || "—";
+}
+
+function fundEntryReasonAr(entry) {
+  const reason = String(entry?.reason || "").trim();
+  const metaReason = String(entry?.metadata?.reason || "").trim();
+  if (metaReason === "minimum_not_met_refund" || reason.includes("عدم اكتمال")) {
+    return "إرجاع تمويل بسبب عدم اكتمال عدد المتقدمين";
+  }
+  if (reason) return reason;
+  return null;
 }
 
 function inventoryStatusAr(status) {
@@ -422,11 +435,17 @@ export default function FreelancerActivationArticleOpsPanel({
           <div data-testid="activation-fund-ledger">
             <h3>آخر العمليات</h3>
             <ul>
-              {(fund?.recentEntries || []).map((e) => (
-                <li key={e.id}>
-                  {fundEntryTypeAr(e.entryType)}: {e.amountJod} JOD
-                </li>
-              ))}
+              {(fund?.recentEntries || []).map((e) => {
+                const reasonAr = fundEntryReasonAr(e);
+                return (
+                  <li key={e.id} data-testid={`activation-fund-entry-${e.id}`}>
+                    {fundEntryTypeAr(e.entryType)}: {e.amountJod} JOD
+                    {reasonAr ? (
+                      <span data-testid="fund-entry-reason-ar"> — {reasonAr}</span>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

@@ -40,7 +40,8 @@ describe("Super Admin unified المقالات hub", () => {
 
   it("hub renders four Arabic tabs and overview KPIs", () => {
     const hub = read("pages/dashboard/SuperAdminArticlesHubPage.jsx");
-    assert.match(hub, /title="المقالات"/);
+    assert.doesNotMatch(hub, /DashboardPageHeader/);
+    assert.doesNotMatch(hub, /title="المقالات"/);
     assert.match(hub, /إدارة مقالات المستقلين، المخزون، التمويل، والتوزيع من مكان واحد/);
     assert.match(hub, /articles-hub-tabs/);
     assert.match(hub, /نظرة عامة/);

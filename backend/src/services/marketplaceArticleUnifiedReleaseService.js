@@ -24,6 +24,7 @@ const articleOps = require("./freelancerActivationArticleOpsService");
 const opportunityBidCollectionService = require("./opportunityBidCollectionService");
 const packageRequirementsService = require("./marketplaceArticlePackageRequirementsService");
 const marketplaceArticlesService = require("./marketplaceArticlesService");
+const oz04MinimumNotMet = require("./marketplaceArticleOz04MinimumNotMetService");
 
 const OZ03_EMPTY_INVENTORY_AR = "لا توجد مقالات جاهزة للإنزال في مخزون المقالات.";
 const OZ03_INSUFFICIENT_FUND_AR = "رصيد صندوق التمويل غير كافٍ لإنزال المقالات المطلوبة.";
@@ -155,20 +156,12 @@ async function listEligibleDraftArticles({
   return rows;
 }
 
+/**
+ * Unrefunded daily_allocation for this article (OZ03 idempotency).
+ * After OZ04 minimum_not_met refund, returns null so a future release deducts again.
+ */
 async function findFundDeductionForArticle(runner, articleId) {
-  const { rows } = await runner.query(
-    `SELECT id, amount_jod, metadata, created_at
-       FROM freelancer_activation_article_fund_entries
-      WHERE entry_type = 'daily_allocation'
-        AND (
-          metadata->>'marketplaceArticleId' = $1
-          OR metadata->>'oz03ArticleId' = $1
-        )
-      ORDER BY id ASC
-      LIMIT 1`,
-    [String(articleId)],
-  );
-  return rows[0] || null;
+  return oz04MinimumNotMet.findActiveFundDeductionForArticle(runner, articleId);
 }
 
 async function ensureWordsRefsOnDraft(runner, row) {
@@ -373,18 +366,30 @@ async function releaseMarketplaceDraftArticle(
       valueMillis,
     );
 
-    const hours = normalizeVisibilityDurationHours(visibilityDurationHours);
+    const hoursFromArticle = (() => {
+      try {
+        const oz05 = require("../utils/marketplaceArticleOz05BidSettings");
+        return oz05.readBidCollectionDurationHours(row.keywords, visibilityDurationHours);
+      } catch {
+        return normalizeVisibilityDurationHours(visibilityDurationHours);
+      }
+    })();
     let deadlineIso = null;
     if (typeof opportunityBidCollectionService.resolveInventoryReleaseBidCollectionDeadline === "function") {
       deadlineIso = opportunityBidCollectionService.resolveInventoryReleaseBidCollectionDeadline({
-        visibilityDurationHours: hours,
+        visibilityDurationHours: hoursFromArticle,
         now: new Date(),
-        explicitDeadline: row.application_deadline_at || null,
+        // Inventory release always snapshots a fresh deadline from duration hours.
+        // Absolute draft deadlines are ignored so duration edits apply on next release.
+        explicitDeadline: null,
       });
     }
 
+    // Prefer per-article inventory setting over plan allocation default.
     const minBidders =
-      Number(allocation?.minimumBiddersPerArticle) || Number(row.required_bid_count) || 10;
+      Number(row.required_bid_count) ||
+      Number(allocation?.minimumBiddersPerArticle) ||
+      10;
 
     const { rowCount } = await runner.query(
       `UPDATE marketplace_articles SET
@@ -398,8 +403,8 @@ async function releaseMarketplaceDraftArticle(
          activation_freelancer_share_jod = $5::numeric,
          activation_company_share_jod = $6::numeric,
          activation_reviewer_share_jod = $7::numeric,
-         required_bid_count = COALESCE(required_bid_count, $8),
-         application_deadline_at = COALESCE(application_deadline_at, $9::timestamptz),
+         required_bid_count = $8,
+         application_deadline_at = $9::timestamptz,
          updated_by_user_id = COALESCE($10::bigint, updated_by_user_id),
          updated_at = NOW()
        WHERE id = $1 AND status = 'draft'`,

@@ -12,6 +12,10 @@ import {
   normalizeMarketplaceArticlePayload,
   validateMarketplaceArticleForm,
   ARTICLE_ALLOWED_REQUIRED_BID_COUNTS,
+  ARTICLE_BID_COLLECTION_DURATION_PRESETS,
+  ARTICLE_BID_COLLECTION_DURATION_DEFAULT_HOURS,
+  ARTICLE_INVENTORY_REQUIRED_BID_COUNT_DEFAULT,
+  ARTICLE_OZ05_REFUND_RECYCLE_HINT_AR,
   ARTICLE_MIN_REQUIRED_BIDS_ACK_AR,
   ARTICLE_MIN_REQUIRED_BIDS_WARNING_AR,
   BILDAZO_CATEGORIES_LOAD_ERROR_AR,
@@ -150,10 +154,21 @@ export default function MarketplaceArticleFormModal({
     const next = isCreate
       ? getInitialMarketplaceArticleFormState(
           inventorySimplified
-            ? { minRequiredBidsAcknowledged: true, requiredBidCount: 10 }
+            ? {
+                minRequiredBidsAcknowledged: true,
+                requiredBidCount: ARTICLE_INVENTORY_REQUIRED_BID_COUNT_DEFAULT,
+                bidCollectionDurationHours: ARTICLE_BID_COLLECTION_DURATION_DEFAULT_HOURS,
+                inventorySimplified: true,
+                allowFlexibleBidCount: true,
+              }
             : {},
         )
-      : articleToMarketplaceFormState(initialArticle);
+      : {
+          ...articleToMarketplaceFormState(initialArticle),
+          inventorySimplified: Boolean(inventorySimplified),
+          allowFlexibleBidCount: Boolean(inventorySimplified),
+          minRequiredBidsAcknowledged: true,
+        };
     setForm(next);
     setErrors({});
   }, [open, isCreate, initialArticle, inventorySimplified]);
@@ -169,10 +184,28 @@ export default function MarketplaceArticleFormModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const nextErrors = validateMarketplaceArticleForm(form, { packageRequirements });
+    const nextErrors = validateMarketplaceArticleForm(
+      {
+        ...form,
+        inventorySimplified: Boolean(inventorySimplified),
+        allowFlexibleBidCount: Boolean(inventorySimplified || form.allowFlexibleBidCount),
+      },
+      { packageRequirements },
+    );
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
-    onSubmit?.(normalizeMarketplaceArticlePayload(form, { packageRequirements }));
+    onSubmit?.(
+      normalizeMarketplaceArticlePayload(
+        {
+          ...form,
+          inventorySimplified: Boolean(inventorySimplified),
+          minRequiredBidsAcknowledged: inventorySimplified
+            ? true
+            : form.minRequiredBidsAcknowledged,
+        },
+        { packageRequirements },
+      ),
+    );
   };
 
   const heading =
@@ -282,6 +315,64 @@ export default function MarketplaceArticleFormModal({
             >
               {derivedSummary}
             </p>
+          ) : null}
+
+          {inventorySimplified ? (
+            <div className="oh-mmp-form__inventory-bid-settings" data-testid="article-form-oz05-bid-settings">
+              <label>
+                {isEn ? "Minimum applicants" : "الحد الأدنى من المتقدمين"} *
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  step={1}
+                  value={form.requiredBidCount ?? ARTICLE_INVENTORY_REQUIRED_BID_COUNT_DEFAULT}
+                  onChange={(e) => setField("requiredBidCount", Number(e.target.value))}
+                  disabled={submitting}
+                  data-testid="article-form-required-bid-count"
+                />
+                {errors.requiredBidCount ? (
+                  <span className="oh-mmp-form__error">{errors.requiredBidCount}</span>
+                ) : (
+                  <span className="oh-mmp-form__hint" style={{ display: "block" }}>
+                    {form.requiredBidCount
+                      ? null
+                      : isEn
+                        ? "Default"
+                        : "افتراضي"}
+                  </span>
+                )}
+              </label>
+
+              <label>
+                {isEn ? "Application collection duration" : "مدة استقبال التقديمات"} *
+                <select
+                  value={
+                    form.bidCollectionDurationHours || ARTICLE_BID_COLLECTION_DURATION_DEFAULT_HOURS
+                  }
+                  onChange={(e) => setField("bidCollectionDurationHours", Number(e.target.value))}
+                  disabled={submitting}
+                  data-testid="article-form-bid-collection-duration"
+                >
+                  {ARTICLE_BID_COLLECTION_DURATION_PRESETS.map((p) => (
+                    <option key={p.hours} value={p.hours}>
+                      {isEn ? `${p.hours} hours` : p.labelAr}
+                    </option>
+                  ))}
+                </select>
+                {errors.bidCollectionDurationHours ? (
+                  <span className="oh-mmp-form__error">{errors.bidCollectionDurationHours}</span>
+                ) : null}
+              </label>
+
+              <p
+                className="oh-mmp-form__hint"
+                data-testid="article-form-oz05-refund-hint"
+                style={{ margin: 0, lineHeight: 1.55 }}
+              >
+                {ARTICLE_OZ05_REFUND_RECYCLE_HINT_AR}
+              </p>
+            </div>
           ) : null}
 
           {!inventorySimplified ? (

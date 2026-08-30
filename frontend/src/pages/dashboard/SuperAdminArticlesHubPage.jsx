@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
-import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import MarketplaceArticleApplicationsPanel from "../../admin/marketplaceArticles/MarketplaceArticleApplicationsPanel";
 import MarketplaceArticlesAdminPanel from "../../components/admin/MarketplaceArticlesAdminPanel";
 import { useToast } from "../../components/ui/toastContext";
@@ -602,10 +600,6 @@ export default function SuperAdminArticlesHubPage() {
   return (
     <DashboardShell>
       <div className="oh-articles-hub" data-testid="super-admin-articles-hub">
-        <DashboardPageHeader
-          title="المقالات"
-          breadcrumbs={superAdminBreadcrumbs(["dashboard.breadcrumbs.articles"])}
-        />
         <p className="oh-articles-hub__subtitle" data-testid="articles-hub-subtitle">
           إدارة مقالات المستقلين، المخزون، التمويل، والتوزيع من مكان واحد.
         </p>
@@ -895,6 +889,42 @@ export default function SuperAdminArticlesHubPage() {
                 +
               </button>
             </div>
+
+            {(fund?.recentEntries || []).length > 0 ? (
+              <div className="oh-articles-hub__card" style={{ marginBottom: 12 }} data-testid="articles-fund-ledger">
+                <h3 className="oh-articles-hub__section-title" style={{ marginTop: 0 }}>
+                  آخر عمليات الصندوق
+                </h3>
+                <ul className="oh-articles-hub__fund-ledger" style={{ margin: 0, paddingInlineStart: "1.2rem" }}>
+                  {(fund.recentEntries || []).slice(0, 12).map((e) => {
+                    const metaReason = String(e?.metadata?.reason || "");
+                    const reason = String(e?.reason || "");
+                    const refundLabel =
+                      metaReason === "minimum_not_met_refund" || reason.includes("عدم اكتمال")
+                        ? "إرجاع تمويل بسبب عدم اكتمال عدد المتقدمين"
+                        : reason || null;
+                    const typeLabel =
+                      e.entryType === "daily_allocation_released"
+                        ? "إرجاع تمويل مقال"
+                        : e.entryType === "daily_allocation"
+                          ? "خصم إنزال مقال"
+                          : e.entryType === "fund_deposit"
+                            ? "إيداع"
+                            : e.entryType === "fund_withdrawal"
+                              ? "سحب"
+                              : e.entryType || "—";
+                    return (
+                      <li key={e.id} data-testid={`articles-fund-entry-${e.id}`}>
+                        {typeLabel}: {e.amountJod} JOD
+                        {refundLabel ? (
+                          <span data-testid="fund-entry-reason-ar"> — {refundLabel}</span>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : null}
 
             <h3 className="oh-articles-hub__section-title">وضع النشر</h3>
             <div className="oh-articles-hub__segment" data-testid="articles-publish-mode">
