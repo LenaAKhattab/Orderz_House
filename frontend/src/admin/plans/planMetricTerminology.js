@@ -141,6 +141,16 @@ export const SECTION_COPY = {
     emptyDescAr: "أضف باقة تدريب لتظهر في صفحة الباقات العامة.",
     emptyDescEn: "Add a training package to show it on the public plans page.",
   },
+  specialOffer: {
+    ar: "باقة العرض",
+    en: "Special offer package",
+    hintAr: "باقة ترويجية مستقلة (ليست SILVER/PRO/ELITE) تظهر في صفحة الباقات عند تفعيلها وتُشترى بمزاياها الخاصة.",
+    hintEn: "An independent promotional package (not SILVER/PRO/ELITE) shown on public pricing when enabled, with its own purchasable benefits.",
+    emptyTitleAr: "باقة العرض",
+    emptyTitleEn: "Special offer",
+    emptyDescAr: "عدّل الحقول واحفظ لإظهار العرض.",
+    emptyDescEn: "Edit fields and save to publish the offer.",
+  },
 };
 
 export const STRIP_LABELS = {

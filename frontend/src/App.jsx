@@ -45,6 +45,7 @@ import {
   SuperAdminPlansPage,
   SuperAdminMarketplacePlansPage,
   SuperAdminTrainingPackagesPage,
+  SuperAdminSpecialOfferPackagePage,
   SuperAdminMarketplaceEconomyPage,
   SuperAdminMarketplaceArticlesPage,
   SuperAdminArticleManagementPage,
@@ -322,6 +323,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
                       <SuperAdminTrainingPackagesPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/special-offer-package"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminSpecialOfferPackagePage />
                     </RequireRole>
                   }
                 />

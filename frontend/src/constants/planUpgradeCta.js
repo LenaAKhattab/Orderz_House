@@ -89,10 +89,10 @@ export function buildPlanUpgradeCopy({
   }
 
   const headline = tierLabel
-    ? `هذا الطلب يحتاج خطة ${tierLabel}.`
-    : "هذا الطلب يحتاج خطة أعلى.";
-  const action = "رقِّ خطتك للحصول على هذا الطلب.";
-  const button = "عرض الخطط";
+    ? `هذا الطلب متاح لباقات أعلى (ابتداءً من ${tierLabel}). قم بترقية خطتك لاستلامه.`
+    : "هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.";
+  const action = "ترقية الخطة";
+  const button = "ترقية الخطة";
   return { headline, action, button, requiredTierCode: tier };
 }
 
@@ -113,12 +113,15 @@ export function planUpgradePropsFromPoolOrder(order) {
     : {};
   if (pe.isLockedByPlan !== true && order?.isLockedByPlan !== true) return null;
   if (pe.planConfigurationError === true) return null;
+  if (pe.reasonCode === "INTERNAL_PLAN_CONFIGURATION" || pe.reasonCode === "NO_ACTIVE_PLAN") {
+    return null;
+  }
   return {
     requiredTierCode:
       pe.requiredTierCode
       || order?.requiredTierCode
       || null,
-    reason: "plan_locked",
+    reason: pe.reasonCode || "plan_locked",
     suggestedUpgradePlanTitle:
       pe.suggestedUpgradePlanTitle
       || order?.suggestedUpgradePlanTitle

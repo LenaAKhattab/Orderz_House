@@ -3,6 +3,7 @@ import { PLAN_ADMIN_SECTION, parsePlanAdminSection } from "./planAdminSections.j
 
 /** Nav-only id — not a default_plan_catalog / checkout source. */
 export const TRAINING_PACKAGES_NAV_ID = "training_packages";
+export const SPECIAL_OFFER_NAV_ID = "special_offer_package";
 
 export const PLAN_CATALOG_ADMIN_TITLE = Object.freeze({
   ar: "إدارة الباقات والاشتراكات",
@@ -14,6 +15,7 @@ export const PLAN_CATALOG_ADMIN_HREF = Object.freeze({
   [PLAN_CATALOG.PAGE_PLANS]: "/dashboard/super-admin/plans?section=pages",
   [PLAN_CATALOG.MARKETPLACE_PLANS]: "/dashboard/super-admin/marketplace-plans",
   [TRAINING_PACKAGES_NAV_ID]: "/dashboard/super-admin/training-packages",
+  [SPECIAL_OFFER_NAV_ID]: "/dashboard/super-admin/special-offer-package",
 });
 
 export const DEFAULT_PLAN_CATALOG_TAB_BADGE = Object.freeze({
@@ -48,6 +50,14 @@ export const PLAN_CATALOG_NAV = Object.freeze([
     labelEn: "Training packages",
     href: PLAN_CATALOG_ADMIN_HREF[TRAINING_PACKAGES_NAV_ID],
   },
+  {
+    id: SPECIAL_OFFER_NAV_ID,
+    labelAr: "باقة العرض",
+    labelEn: "Special offer",
+    href: PLAN_CATALOG_ADMIN_HREF[SPECIAL_OFFER_NAV_ID],
+    tabBadgeAr: "خاص",
+    tabBadgeEn: "Special",
+  },
 ]);
 
 /**
@@ -70,6 +80,9 @@ export function catalogIdForAdminSection(section) {
 }
 
 export function resolveActivePlanCatalogNavId(pathname, searchParams) {
+  if (String(pathname || "").includes("/special-offer-package")) {
+    return SPECIAL_OFFER_NAV_ID;
+  }
   if (String(pathname || "").includes("/training-packages")) {
     return TRAINING_PACKAGES_NAV_ID;
   }

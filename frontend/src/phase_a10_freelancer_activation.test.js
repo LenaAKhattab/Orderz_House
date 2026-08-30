@@ -25,8 +25,10 @@ describe("Phase A10 plan upgrade CTA", () => {
   test("locked opportunity copy shows required tier and upgrade action", () => {
     const silver = buildPlanUpgradeCopy({ requiredTierCode: "silver", isEn: false });
     assert.match(silver.headline, /Silver/);
-    assert.match(silver.action, /رقِّ خطتك/);
-    assert.equal(silver.button, "عرض الخطط");
+    assert.match(silver.action, /ترقية الخطة/);
+    assert.equal(silver.button, "ترقية الخطة");
+    assert.match(silver.headline, /باقات أعلى/);
+    assert.doesNotMatch(silver.headline, /تصحيح/);
 
     const pro = buildPlanUpgradeCopy({ requiredTierCode: "pro", isEn: false });
     assert.match(pro.headline, /Pro/);

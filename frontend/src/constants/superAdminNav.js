@@ -336,6 +336,9 @@ export function superAdminBreadcrumbKeys(pathname) {
   if (pathname.includes("/training-packages")) {
     return [...base, "dashboard.breadcrumbs.managePlans"];
   }
+  if (pathname.includes("/special-offer-package")) {
+    return [...base, "dashboard.breadcrumbs.managePlans"];
+  }
   if (pathname.includes("/plans")) return [...base, "dashboard.breadcrumbs.plans"];
   if (pathname.includes("/courses")) return [...base, "dashboard.breadcrumbs.courses"];
   if (pathname.includes("/super-admin/ads")) return [...base, "dashboard.breadcrumbs.ads"];

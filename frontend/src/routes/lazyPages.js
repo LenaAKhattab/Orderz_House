@@ -40,6 +40,9 @@ export const SuperAdminMarketplacePlansPage = lazy(
 export const SuperAdminTrainingPackagesPage = lazy(
   () => import("../pages/dashboard/SuperAdminTrainingPackagesPage"),
 );
+export const SuperAdminSpecialOfferPackagePage = lazy(
+  () => import("../pages/dashboard/SuperAdminSpecialOfferPackagePage"),
+);
 export const SuperAdminMarketplaceEconomyPage = lazy(
   () => import("../pages/dashboard/SuperAdminMarketplaceEconomyPage"),
 );

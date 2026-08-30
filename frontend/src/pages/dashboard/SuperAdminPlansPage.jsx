@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import Button from "../../components/ui/Button";
 import {
   createPlanRequest,
-  deletePlanRequest,
+  archivePlanRequest,
   listAdminPlanPagesRequest,
   listAdminPlansRequest,
   updatePlanPageRequest,
@@ -39,7 +39,9 @@ import {
 import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
+import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
 import StatusBadge from "../../components/dashboard/StatusBadge";
+import { useToast } from "../../components/ui/toastContext";
 
 const SALE_ERROR_MESSAGES = {
   INVALID_SALE_PERCENTAGE: "نسبة الخصم يجب أن تكون أكبر من 0 وأقل من 100.",
@@ -76,6 +78,7 @@ function PlansEmptyIcon() {
 const SuperAdminPlansPage = () => {
   const { locale } = useTranslation();
   const isEn = locale === "en";
+  const { push } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeSection = parsePlanAdminSection(searchParams.get("section"));
   const selectedPageId = activeSection === PLAN_ADMIN_SECTION.PAGES ? searchParams.get("pageId") || "" : "";
@@ -86,6 +89,7 @@ const SuperAdminPlansPage = () => {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [pageMetaSubmitting, setPageMetaSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const [search, setSearch] = useState("");
   const [reorderingPlanId, setReorderingPlanId] = useState(null);
@@ -244,15 +248,29 @@ const SuperAdminPlansPage = () => {
   };
 
   const softDelete = async (plan) => {
-    if (!window.confirm(`حذف الباقة «${plan.title}»؟ لا يمكن التراجع من الواجهة.`)) return;
+    if (!plan?.id) return;
     setError("");
     setSubmitting(true);
     try {
-      await deletePlanRequest(plan.id);
+      await archivePlanRequest(plan.id);
+      setPlans((prev) => prev.filter((item) => String(item.id) !== String(plan.id)));
       if (editPlan?.id === plan.id) setEditPlan(null);
-      await refresh();
+      setDeleteTarget(null);
+      push({
+        type: "success",
+        message: isEn ? "Package deactivated successfully." : "تم تعطيل الباقة بنجاح.",
+      });
     } catch (err) {
-      setError(errorMessage(err));
+      const code = err?.response?.data?.code || err?.response?.data?.publicCode;
+      if (code === "PLAN_HAS_DEPENDENCIES" || code === "PLAN_IN_USE") {
+        setError(
+          isEn
+            ? "This package cannot be removed because it is linked to users or current records. You can deactivate it instead of deleting it."
+            : "لا يمكن حذف هذه الباقة لأنها مرتبطة بمستخدمين أو سجلات حالية. يمكنك تعطيلها بدلاً من حذفها.",
+        );
+      } else {
+        setError(errorMessage(err));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -428,13 +446,31 @@ const SuperAdminPlansPage = () => {
                 onMoveDown={() => void movePlanInDisplayOrder(p, "down")}
                 onActiveChange={setPlanActive}
                 onEdit={() => openEdit(p)}
-                onDelete={() => void softDelete(p)}
+                onDelete={() => setDeleteTarget(p)}
               />
             );
             })}
           </div>
         ) : null}
       </DashboardSection>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title={isEn ? "Confirm package removal" : "تأكيد حذف الباقة"}
+        body={
+          isEn
+            ? "Are you sure? This package will be hidden from new use. Existing subscriptions and historical records will not be deleted."
+            : "هل أنت متأكد؟ سيتم إيقاف ظهور هذه الباقة للاستخدام الجديد، ولن يتم حذف الاشتراكات أو السجلات القديمة المرتبطة بها."
+        }
+        confirmLabel={isEn ? "Deactivate package" : "تعطيل الباقة"}
+        cancelLabel={isEn ? "Cancel" : "إلغاء"}
+        confirmVariant="danger"
+        confirmBusy={submitting}
+        onCancel={() => {
+          if (!submitting) setDeleteTarget(null);
+        }}
+        onConfirm={() => void softDelete(deleteTarget)}
+      />
 
       <PlanCreateModal
         open={createModalOpen}

@@ -4,6 +4,7 @@ import Button from "../../components/ui/Button";
 import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
+import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { useToast } from "../../components/ui/toastContext";
 import {
@@ -40,6 +41,7 @@ export default function SuperAdminMarketplacePlansPage() {
   const [reorderingPlanId, setReorderingPlanId] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [editPlan, setEditPlan] = useState(null);
+  const [archiveTarget, setArchiveTarget] = useState(null);
 
   const displayedPlans = useMemo(() => sortMarketplacePlansForAdmin(plans), [plans]);
 
@@ -121,6 +123,40 @@ export default function SuperAdminMarketplacePlansPage() {
       push({
         type: "error",
         message: getSafeApiErrorMessage(err) || (isEn ? "Update failed." : "فشل التحديث."),
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleArchive = async (plan) => {
+    if (!plan?.id) return;
+    setSubmitting(true);
+    try {
+      const res = await updateMarketplaceMembershipPlanRequest(plan.id, { isActive: false });
+      const updated = res?.data?.plan;
+      setPlans((prev) =>
+        prev.map((item) => {
+          if (String(item.id) !== String(plan.id)) return item;
+          if (updated && typeof updated === "object") {
+            return { ...item, ...updated, isActive: false };
+          }
+          return { ...item, isActive: false };
+        }),
+      );
+      setArchiveTarget(null);
+      push({
+        type: "success",
+        message: isEn ? "Package deactivated successfully." : "تم تعطيل الباقة بنجاح.",
+      });
+    } catch (err) {
+      push({
+        type: "error",
+        message:
+          getSafeApiErrorMessage(err) ||
+          (isEn
+            ? "This package cannot be removed because it is linked to users or current records."
+            : "لا يمكن حذف هذه الباقة لأنها مرتبطة بمستخدمين أو سجلات حالية. يمكنك تعطيلها بدلاً من حذفها."),
       });
     } finally {
       setSubmitting(false);
@@ -213,6 +249,7 @@ export default function SuperAdminMarketplacePlansPage() {
                   canMoveDown={moveMeta.canMoveDown}
                   onEdit={setEditPlan}
                   onToggleActive={handleToggleActive}
+                  onArchive={setArchiveTarget}
                   onMove={handleMove}
                 />
               );
@@ -220,6 +257,24 @@ export default function SuperAdminMarketplacePlansPage() {
           </div>
         ) : null}
       </DashboardSection>
+
+      <ConfirmDialog
+        open={Boolean(archiveTarget)}
+        title={isEn ? "Confirm package removal" : "تأكيد حذف الباقة"}
+        body={
+          isEn
+            ? "Are you sure? This package will be hidden from new use. Existing subscriptions and historical records will not be deleted."
+            : "هل أنت متأكد؟ سيتم إيقاف ظهور هذه الباقة للاستخدام الجديد، ولن يتم حذف الاشتراكات أو السجلات القديمة المرتبطة بها."
+        }
+        confirmLabel={isEn ? "Deactivate package" : "تعطيل الباقة"}
+        cancelLabel={isEn ? "Cancel" : "إلغاء"}
+        confirmVariant="danger"
+        confirmBusy={submitting}
+        onCancel={() => {
+          if (!submitting) setArchiveTarget(null);
+        }}
+        onConfirm={() => void handleArchive(archiveTarget)}
+      />
 
       <MarketplaceMembershipPlanFormModal
         open={createOpen}

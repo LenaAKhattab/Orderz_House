@@ -98,10 +98,19 @@ export function describeFreelancerAdminEligibilityState({
     };
   }
 
-  if (reason === "plan_configuration_error" || reason === "order_value_outside_plan_range") {
+  if (reason === "plan_configuration_error") {
     return {
       code: "plan_configuration_error",
-      label: "الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات",
+      label: "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.",
+      tone: "warning",
+      canTakeOrders: false,
+    };
+  }
+
+  if (reason === "order_value_outside_plan_range") {
+    return {
+      code: "order_value_outside_plan_range",
+      label: "هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.",
       tone: "warning",
       canTakeOrders: false,
     };
@@ -202,7 +211,7 @@ export function adminSubscriptionActivationMenuLabel({
     return "موافقة الشركة مكتملة، لكن رسوم التفعيل غير مدفوعة";
   }
   if (state.code === "plan_configuration_error") {
-    return "الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات";
+    return "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.";
   }
   if (state.code === "awaiting_first_order" && state.canTakeOrders) {
     return "موافقة الشركة مكتملة — بانتظار أول طلب";

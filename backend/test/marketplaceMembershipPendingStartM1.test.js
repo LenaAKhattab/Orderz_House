@@ -110,9 +110,13 @@ describe("M1 status model constants", () => {
   it("locks Stripe period start vs admin approval start policies", () => {
     assert.equal(PAID_MEMBERSHIP_PERIOD_START, "COMPANY_APPROVAL_TIME");
     assert.equal(PAID_MEMBERSHIP_STRIPE_PERIOD_START, "FIRST_REAL_ORDER");
-    assert.deepEqual([...PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES], ["silver", "pro", "elite"]);
+    assert.ok(PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES.includes("silver"));
+    assert.ok(PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES.includes("pro"));
+    assert.ok(PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES.includes("elite"));
     assert.equal(isPaidMarketplaceMembershipTier("starter"), false);
     assert.equal(isPaidMarketplaceMembershipTier("SILVER"), true);
+    assert.equal(isPaidMarketplaceMembershipTier("special_offer"), true);
+    assert.equal(isPaidMarketplaceMembershipTier("special_offer_v2"), true);
   });
 
   it("exposes Arabic purchased_pending_start message", () => {

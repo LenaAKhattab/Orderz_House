@@ -45,4 +45,13 @@ router.post(
   marketplaceMembershipsController.createMarketplaceMembershipCheckout,
 );
 
+/**
+ * Special offer → existing marketplace membership Stripe checkout (linked SILVER/PRO/ELITE).
+ * Hidden / WhatsApp-mode offers are rejected by the service.
+ */
+router.post(
+  "/special-offer-package/checkout",
+  require("../controllers/specialOfferPackageController").createCheckout,
+);
+
 module.exports = router;

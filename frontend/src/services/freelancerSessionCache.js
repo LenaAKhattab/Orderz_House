@@ -54,6 +54,10 @@ export function getCachedPublicActivationFee() {
   return plansCache.activationFee;
 }
 
+export function getCachedSpecialOfferPackage() {
+  return plansCache.specialOfferPackage ?? null;
+}
+
 export function fetchFreelancerSubscriptionCached(userId, { force = false } = {}) {
   if (!userId) {
     subscriptionCache.userId = null;
@@ -186,6 +190,7 @@ export async function fetchDefaultCatalogPlansCached({ force = false } = {}) {
       catalog: plansCache.catalog,
       plans: plansCache.data,
       activationFee: plansCache.activationFee,
+      specialOfferPackage: plansCache.specialOfferPackage ?? null,
       catalogSource: null,
     };
   }
@@ -196,6 +201,7 @@ export async function fetchDefaultCatalogPlansCached({ force = false } = {}) {
       plansCache.catalog = result.catalog;
       plansCache.data = result.plans;
       plansCache.activationFee = result.activationFee ?? null;
+      plansCache.specialOfferPackage = result.specialOfferPackage ?? null;
       plansCache.promise = null;
       return result;
     })

@@ -7,6 +7,7 @@ const MARKETPLACE_MEMBERSHIP_TIER_CODES = Object.freeze([
   "silver",
   "pro",
   "elite",
+  "special_offer",
   // Legacy / historical (retained for FK + audit safety)
   "free",
   "start",
@@ -14,6 +15,7 @@ const MARKETPLACE_MEMBERSHIP_TIER_CODES = Object.freeze([
   "pay_as_you_work",
 ]);
 
+/** Regular public catalog only — special_offer(+versions) managed via باقة العرض tab. */
 const MARKETPLACE_MEMBERSHIP_ACTIVE_TIER_CODES = Object.freeze([
   "starter",
   "silver",
@@ -23,11 +25,16 @@ const MARKETPLACE_MEMBERSHIP_ACTIVE_TIER_CODES = Object.freeze([
 
 const MARKETPLACE_MEMBERSHIP_TIER_CODE_SET = new Set(MARKETPLACE_MEMBERSHIP_TIER_CODES);
 
+/** Base tier; versioned campaigns use special_offer_v2, special_offer_v3, … */
+const SPECIAL_OFFER_MEMBERSHIP_TIER_CODE = "special_offer";
+const SPECIAL_OFFER_TIER_CODE_PATTERN = /^special_offer(?:_v\d+)?$/;
+
 const ARTICLE_ACCESS_LEVEL_BY_TIER = Object.freeze({
   starter: 1,
   silver: 2,
   pro: 3,
   elite: 5,
+  special_offer: 2,
   free: 1,
   start: 2,
   active: 3,
@@ -87,6 +94,20 @@ const E1_PLAN_SPECS = Object.freeze({
     bidDistributionMode: "full_cycle",
     oneTimeStarter: false,
   },
+  /** Fallback only — live benefits come from the special_offer plan row. */
+  special_offer: {
+    priceJod: 29,
+    durationDays: 30,
+    totalBids: 50,
+    dailyBidLimit: 5,
+    projectMinJod: 1,
+    projectMaxJod: 25,
+    unlimitedProjectMax: false,
+    withdrawalEnabled: true,
+    starterEarningsMode: "standard",
+    bidDistributionMode: "full_cycle",
+    oneTimeStarter: false,
+  },
 });
 
 const MEMBERSHIP_BID_DISTRIBUTION = "FULL_CYCLE_GRANT_WITH_DAILY_SPEND_LIMIT";
@@ -96,7 +117,13 @@ const PAID_MEMBERSHIP_ACTIVATION_REQUIRES_TRAINING = "YES";
 const PAID_MEMBERSHIP_PERIOD_START = "COMPANY_APPROVAL_TIME";
 /** Stripe self-checkout path (Marketplace-M1+): term starts on first real order. */
 const PAID_MEMBERSHIP_STRIPE_PERIOD_START = "FIRST_REAL_ORDER";
-const PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES = Object.freeze(["silver", "pro", "elite"]);
+/** Exact base codes; versioned special_offer_* recognized via isSpecialOfferMembershipTier. */
+const PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES = Object.freeze([
+  "silver",
+  "pro",
+  "elite",
+  "special_offer",
+]);
 const STARTER_WITHDRAWAL = "BLOCKED";
 const STARTER_EARNINGS_MODE = "PENDING";
 const DEFAULT_MEMBERSHIP_BUSINESS_TIMEZONE = "Asia/Amman";
@@ -115,8 +142,16 @@ function isValidMarketplaceTierCode(value) {
   return TIER_CODE_PATTERN.test(code);
 }
 
+function isSpecialOfferMembershipTier(tierCode) {
+  const code = String(tierCode || "").trim().toLowerCase();
+  return SPECIAL_OFFER_TIER_CODE_PATTERN.test(code);
+}
+
 function defaultArticleAccessLevelForTier(tierCode) {
   const code = String(tierCode || "").trim().toLowerCase();
+  if (isSpecialOfferMembershipTier(code)) {
+    return ARTICLE_ACCESS_LEVEL_BY_TIER.special_offer;
+  }
   return Object.prototype.hasOwnProperty.call(ARTICLE_ACCESS_LEVEL_BY_TIER, code)
     ? ARTICLE_ACCESS_LEVEL_BY_TIER[code]
     : 1;
@@ -126,6 +161,8 @@ module.exports = {
   MARKETPLACE_MEMBERSHIP_TIER_CODES,
   MARKETPLACE_MEMBERSHIP_ACTIVE_TIER_CODES,
   MARKETPLACE_MEMBERSHIP_TIER_CODE_SET,
+  SPECIAL_OFFER_MEMBERSHIP_TIER_CODE,
+  SPECIAL_OFFER_TIER_CODE_PATTERN,
   ARTICLE_ACCESS_LEVEL_BY_TIER,
   E1_PLAN_SPECS,
   MEMBERSHIP_BID_DISTRIBUTION,
@@ -140,5 +177,6 @@ module.exports = {
   ACTIVATION_REQUEST_STATUSES,
   TIER_CODE_PATTERN,
   isValidMarketplaceTierCode,
+  isSpecialOfferMembershipTier,
   defaultArticleAccessLevelForTier,
 };

@@ -1943,6 +1943,22 @@
   color: #991b1b;
 }
 
+.oh-sapl-card__action--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
+  border-color: rgba(185, 28, 28, 0.18);
+  background: rgba(254, 242, 242, 0.65);
+}
+
+.oh-sapl-card__action--icon:hover:not(:disabled) {
+  border-color: rgba(185, 28, 28, 0.35);
+  background: rgba(254, 226, 226, 0.9);
+}
+
 .oh-sapl-btn--danger {
   border-color: rgba(220, 38, 38, 0.35) !important;
   color: #b91c1c !important;

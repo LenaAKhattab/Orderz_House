@@ -24,6 +24,19 @@
       "subtitle": "Choose the right package and start your skills and freelancing journey."
     }
   },
+  "specialOffer": {
+    "cta": "Get this offer now",
+    "ctaWhatsapp": "Contact us for this offer",
+    "checkoutBusy": "Redirecting to checkout…",
+    "checkoutFailed": "Could not start offer checkout.",
+    "checkoutMissingUrl": "Could not start payment.",
+    "freelancersOnly": "This offer is available to freelancers only.",
+    "totalOffers": "Total bids / offers",
+    "dailyLimit": "Daily limit",
+    "maxProject": "Max project value",
+    "duration": "Package duration",
+    "days": "days"
+  },
   "sectionAria": "Marketplace Membership plans",
   "membership": {
     "free": "Free",

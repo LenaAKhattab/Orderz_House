@@ -221,6 +221,55 @@ void main() {
       expect(props?.requiredTierCode, 'pro');
       expect(isPoolOrderLockedByPlan(order), isTrue);
     });
+
+    test('PLAN_TOO_LOW shows upgrade-friendly message', () {
+      final order = PoolOrder(
+        id: '1',
+        title: 'طلب',
+        poolEligibility: const PoolPlanEligibility(
+          isLockedByPlan: true,
+          reasonCode: 'PLAN_TOO_LOW',
+          lockReason: 'هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.',
+        ),
+      );
+      expect(
+        poolPlanLockUserMessage(order),
+        'هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.',
+      );
+      expect(poolPlanLockUserMessage(order).contains('تصحيح'), isFalse);
+    });
+
+    test('KYC-style INTERNAL/config never shows legacy correction copy', () {
+      final order = PoolOrder(
+        id: '2',
+        title: 'طلب',
+        poolEligibility: const PoolPlanEligibility(
+          isLockedByPlan: true,
+          reasonCode: 'INTERNAL_PLAN_CONFIGURATION',
+          planConfigurationError: true,
+          lockReason: 'الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات',
+        ),
+      );
+      expect(
+        poolPlanLockUserMessage(order),
+        'تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.',
+      );
+      expect(poolPlanLockUserMessage(order).contains('تصحيح'), isFalse);
+      expect(poolOrderPlanUpgradeProps(order), isNull);
+    });
+
+    test('legacy lockReason تصحيح is sanitized', () {
+      final order = PoolOrder(
+        id: '3',
+        title: 'طلب',
+        poolEligibility: const PoolPlanEligibility(
+          isLockedByPlan: true,
+          lockReason: 'الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات',
+          planConfigurationError: true,
+        ),
+      );
+      expect(poolPlanLockUserMessage(order).contains('تصحيح'), isFalse);
+    });
   });
 
   group('Super Admin activation safety A2', () {

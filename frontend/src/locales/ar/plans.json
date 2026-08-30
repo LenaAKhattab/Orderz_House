@@ -24,6 +24,19 @@
       "subtitle": "اختر الباقة المناسبة لك وابدأ رحلتك في تطوير المهارات والعمل الحر."
     }
   },
+  "specialOffer": {
+    "cta": "احصل على العرض الآن",
+    "ctaWhatsapp": "تواصل للحصول على العرض",
+    "checkoutBusy": "جاري التحويل للدفع…",
+    "checkoutFailed": "تعذر بدء شراء العرض.",
+    "checkoutMissingUrl": "تعذر بدء الدفع.",
+    "freelancersOnly": "العرض متاح للمستقلين فقط.",
+    "totalOffers": "عدد العروض",
+    "dailyLimit": "الحد اليومي",
+    "maxProject": "الحد الأقصى للمشروع",
+    "duration": "مدة الباقة",
+    "days": "يوم"
+  },
   "sectionAria": "باقات عضوية السوق",
   "membership": {
     "free": "مجانية",

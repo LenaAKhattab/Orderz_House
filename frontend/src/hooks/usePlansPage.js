@@ -99,6 +99,7 @@ export function usePlansPage({ slug, returnPath }) {
     () => ({
       page,
       plans: slug ? slugPlans : defaultCatalog.plans,
+      specialOfferPackage: slug ? null : defaultCatalog.specialOfferPackage,
       loading: slug ? slugLoading : defaultCatalog.loading,
       error: slug ? slugError : defaultCatalog.error,
       notFound,
@@ -121,6 +122,7 @@ export function usePlansPage({ slug, returnPath }) {
       slugError,
       notFound,
       defaultCatalog.plans,
+      defaultCatalog.specialOfferPackage,
       defaultCatalog.loading,
       defaultCatalog.error,
       defaultCatalog.catalog,

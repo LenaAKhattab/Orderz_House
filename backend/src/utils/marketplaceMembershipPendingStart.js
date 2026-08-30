@@ -7,7 +7,16 @@ const {
   BENEFIT_USABLE_MEMBERSHIP_STATUSES,
 } = require("../constants/marketplaceMemberships");
 
-const PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES = Object.freeze(["silver", "pro", "elite"]);
+const {
+  isSpecialOfferMembershipTier,
+} = require("../constants/marketplaceMembershipPlans");
+
+const PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES = Object.freeze([
+  "silver",
+  "pro",
+  "elite",
+  "special_offer",
+]);
 
 const PURCHASED_PENDING_START_MESSAGE_AR =
   "تم شراء العضوية بنجاح. لن تبدأ مدة الاشتراك إلا عند استلامك أول طلب. قبل التقديم على الطلبات، يرجى إكمال توثيق الهوية والتدريب.";
@@ -27,7 +36,10 @@ const REAL_ORDER_SOURCE_TYPES = Object.freeze([
 ]);
 
 function isPaidMarketplaceMembershipTier(tierCode) {
-  return PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES.includes(String(tierCode || "").trim().toLowerCase());
+  const code = String(tierCode || "").trim().toLowerCase();
+  if (PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES.includes(code)) return true;
+  // Versioned campaigns: special_offer_v2, special_offer_v3, …
+  return isSpecialOfferMembershipTier(code);
 }
 
 function isPurchasedPendingStartStatus(status) {

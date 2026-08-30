@@ -1,5 +1,6 @@
 import PlansMobileHero from "./PlansMobileHero";
 import PlansMobilePlans from "./PlansMobilePlans";
+import SpecialOfferPackageCard from "../SpecialOfferPackageCard";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import PlansActivationFeeNote from "../PlansActivationFeeNote";
 import TrainingPlanCard from "../TrainingPlanCard";
@@ -7,6 +8,7 @@ import { getPlansLayoutConfig, PLANS_LAYOUT_VARIANT } from "../plansLayoutUtils"
 import { useDisplayCurrency } from "../../../hooks/useDisplayCurrency";
 import { usePublicTrainingPackages } from "../../../hooks/usePublicTrainingPackages";
 import { PLANS_CATEGORY } from "../../../constants/trainingPlansCatalog";
+import { normalizePublicSpecialOffer } from "../../../constants/specialOfferPackage";
 import "./plans-mobile-page.css";
 
 /**
@@ -15,11 +17,14 @@ import "./plans-mobile-page.css";
 export default function PlansMobilePage({
   loading = false,
   plans = [],
+  specialOfferPackage = null,
   error = "",
   currentSubscription = null,
   hasBlockingSubscription = false,
   checkoutBusyPlanId = null,
+  specialOfferCheckoutBusy = false,
   onCta,
+  onSpecialOfferCheckout = null,
   pageTitle = null,
   pageSubtitle = null,
   trustPills = [],
@@ -42,6 +47,10 @@ export default function PlansMobilePage({
   const isMainCatalog = !pageSlug;
   const showTraining = !contentPending && isMainCatalog && category === PLANS_CATEGORY.TRAINING;
   const showMembership = !contentPending && (!isMainCatalog || category === PLANS_CATEGORY.MEMBERSHIP);
+  const specialOffer =
+    showMembership && layoutVariant !== PLANS_LAYOUT_VARIANT.LEGACY_THREE_CARD
+      ? normalizePublicSpecialOffer(specialOfferPackage)
+      : null;
 
   return (
     <div className="plans-mobile-page" dir={dir}>
@@ -102,6 +111,17 @@ export default function PlansMobilePage({
               ) : null
             }
           />
+          {specialOffer && !loading ? (
+            <div className="pm-special-offer" data-special-offer-mobile="true">
+              <SpecialOfferPackageCard
+                offer={specialOffer}
+                t={t}
+                compact
+                checkoutBusy={specialOfferCheckoutBusy}
+                onCheckout={onSpecialOfferCheckout}
+              />
+            </div>
+          ) : null}
           <PlansMobilePlans
             loading={loading}
             plans={plans}

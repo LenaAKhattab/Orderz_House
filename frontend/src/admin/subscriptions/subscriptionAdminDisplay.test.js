@@ -47,7 +47,8 @@ describe("describeFreelancerAdminEligibilityState", () => {
       subscription: { activationStatus: "company_approved", status: "assigned_not_started" },
     });
     assert.equal(state.code, "plan_configuration_error");
-    assert.equal(state.label, "الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات");
+    assert.equal(state.label, "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.");
+    assert.doesNotMatch(state.label, /تصحيح/);
   });
 });
 

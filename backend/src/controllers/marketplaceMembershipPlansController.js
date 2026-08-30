@@ -1,9 +1,16 @@
 const marketplaceMembershipPlansService = require("../services/marketplaceMembershipPlansService");
+const specialOfferPackageService = require("../services/specialOfferPackageService");
 
 async function listPublic(req, res, next) {
   try {
-    const items = await marketplaceMembershipPlansService.listPublicMarketplaceMembershipPlans();
-    return res.status(200).json({ success: true, data: { items } });
+    const [items, specialOfferPackage] = await Promise.all([
+      marketplaceMembershipPlansService.listPublicMarketplaceMembershipPlans(),
+      specialOfferPackageService.getPublicSpecialOfferPackage(),
+    ]);
+    return res.status(200).json({
+      success: true,
+      data: { items, specialOfferPackage: specialOfferPackage || null },
+    });
   } catch (err) {
     return next(err);
   }

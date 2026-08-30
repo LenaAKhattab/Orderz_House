@@ -5,6 +5,7 @@ import {
   getCachedDefaultCatalog,
   getCachedPublicActivationFee,
   getCachedPublicPlans,
+  getCachedSpecialOfferPackage,
 } from "../services/freelancerSessionCache";
 import { catalogSourceForPlanCatalog, isMarketplacePlanCatalog } from "../constants/planCatalogs";
 
@@ -36,6 +37,9 @@ export function useDefaultCatalogPlans({
   const [activationFee, setActivationFee] = useState(() =>
     enabled && useSessionCache ? getCachedPublicActivationFee() : null,
   );
+  const [specialOfferPackage, setSpecialOfferPackage] = useState(() =>
+    enabled && useSessionCache ? getCachedSpecialOfferPackage() : null,
+  );
   /** True only for the first unresolved load (no usable cache). */
   const [loading, setLoading] = useState(() => Boolean(enabled) && !hasUsableCache);
   /** True while a background revalidation runs with existing data shown. */
@@ -50,6 +54,7 @@ export function useDefaultCatalogPlans({
       setCatalog(null);
       setPlans([]);
       setActivationFee(null);
+      setSpecialOfferPackage(null);
       setLoading(false);
       setRefreshing(false);
       setError("");
@@ -68,6 +73,7 @@ export function useDefaultCatalogPlans({
       setCatalog(cacheCatalog);
       setPlans(cachePlans);
       setActivationFee(useSessionCache ? getCachedPublicActivationFee() : null);
+      setSpecialOfferPackage(useSessionCache ? getCachedSpecialOfferPackage() : null);
       setCatalogResolved(true);
       setLoading(false);
       setRefreshing(true);
@@ -86,6 +92,7 @@ export function useDefaultCatalogPlans({
         setCatalog(result.catalog);
         setPlans(Array.isArray(result.plans) ? result.plans : []);
         setActivationFee(result.activationFee ?? null);
+        setSpecialOfferPackage(result.specialOfferPackage ?? null);
         setCatalogResolved(true);
         setError("");
       })
@@ -96,6 +103,7 @@ export function useDefaultCatalogPlans({
           setCatalog(null);
           setPlans([]);
           setActivationFee(null);
+          setSpecialOfferPackage(null);
           setCatalogResolved(false);
         }
         setError(err?.response?.data?.message || err?.message || LOAD_ERROR_AR);
@@ -122,11 +130,22 @@ export function useDefaultCatalogPlans({
       catalogResolved,
       plans,
       activationFee,
+      specialOfferPackage,
       /** Initial unresolved load only — use for full skeleton. */
       loading,
       refreshing,
       error,
     }),
-    [catalog, catalogSource, catalogResolved, plans, activationFee, loading, refreshing, error],
+    [
+      catalog,
+      catalogSource,
+      catalogResolved,
+      plans,
+      activationFee,
+      specialOfferPackage,
+      loading,
+      refreshing,
+      error,
+    ],
   );
 }

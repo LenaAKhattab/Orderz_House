@@ -105,6 +105,32 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
+  align-items: center;
+}
+
+.oh-mmp-card__icon-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(185, 28, 28, 0.18);
+  background: rgba(254, 242, 242, 0.65);
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+.oh-mmp-card__icon-danger:hover:not(:disabled) {
+  border-color: rgba(185, 28, 28, 0.35);
+  background: rgba(254, 226, 226, 0.9);
+  color: #991b1b;
+}
+
+.oh-mmp-card__icon-danger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .oh-mmp-modal {

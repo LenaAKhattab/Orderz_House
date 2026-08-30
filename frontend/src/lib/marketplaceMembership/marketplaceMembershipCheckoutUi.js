@@ -1,6 +1,11 @@
 /** Marketplace-M5 — pure helpers for paid vs STARTER checkout UI. */
 
-const PAID_TIER_CODES = Object.freeze(["SILVER", "PRO", "ELITE"]);
+const PAID_TIER_CODES = Object.freeze(["SILVER", "PRO", "ELITE", "SPECIAL_OFFER"]);
+
+function isSpecialOfferTierCodeNormalized(code) {
+  const c = String(code || "").trim().toUpperCase();
+  return c === "SPECIAL_OFFER" || /^SPECIAL_OFFER_V\d+$/.test(c);
+}
 
 export function normalizeMarketplaceTierCode(value) {
   return String(value || "")
@@ -18,7 +23,9 @@ export function resolveMarketplaceCheckoutPlanCode(plan) {
 }
 
 export function isPaidMarketplaceMembershipTierCode(tierCode) {
-  return PAID_TIER_CODES.includes(normalizeMarketplaceTierCode(tierCode));
+  const normalized = normalizeMarketplaceTierCode(tierCode);
+  if (PAID_TIER_CODES.includes(normalized)) return true;
+  return isSpecialOfferTierCodeNormalized(normalized);
 }
 
 export function isStarterMarketplaceMembershipTierCode(tierCode) {

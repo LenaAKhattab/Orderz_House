@@ -1,5 +1,6 @@
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import Button from "../../components/ui/Button";
+import { Trash2 } from "lucide-react";
 import { formatMarketplaceAccessLabel, formatMarketplacePriceLabel } from "./marketplacePlanFormUtils";
 
 /**
@@ -13,6 +14,7 @@ export default function MarketplaceMembershipPlanCard({
   canMoveDown = false,
   onEdit,
   onToggleActive,
+  onArchive,
   onMove,
   busy = false,
 }) {
@@ -140,6 +142,19 @@ export default function MarketplaceMembershipPlanCard({
           >
             {plan.isActive ? (isEn ? "Hide" : "إخفاء") : isEn ? "Show" : "إظهار"}
           </Button>
+          {plan.isActive ? (
+            <button
+              type="button"
+              className="oh-mmp-card__icon-danger"
+              disabled={busy}
+              onClick={() => onArchive?.(plan)}
+              title={isEn ? "Deactivate package" : "تعطيل الباقة"}
+              aria-label={isEn ? `Deactivate ${title}` : `تعطيل الباقة «${title}»`}
+              data-testid="marketplace-plan-card-delete"
+            >
+              <Trash2 size={16} strokeWidth={2} aria-hidden />
+            </button>
+          ) : null}
         </div>
       </footer>
     </article>

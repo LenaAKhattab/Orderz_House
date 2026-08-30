@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, Navigate, useSearchParams } from "react-router-dom";
+import { useParams, Navigate, useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { getLocalizedField } from "../lib/i18n/getLocalizedField";
@@ -23,11 +23,16 @@ import {
 } from "../constants/trainingPlansCatalog";
 import { getCachedPublicPlansContent } from "../services/freelancerSessionCache";
 import { plansCategoryFromDefaultSection } from "../constants/publicPlansContent";
+import { createSpecialOfferCheckoutRequest } from "../services/api";
+import { useToast } from "../components/ui/toastContext";
+import { isSpecialOfferCheckoutSupported } from "../constants/specialOfferPackage";
 
 const Plans = () => {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { push } = useToast();
   const returnPath = slug ? `/plans/${slug}` : "/plans";
   const {
     page,
@@ -36,6 +41,7 @@ const Plans = () => {
     error,
     notFound,
     catalogSource,
+    specialOfferPackage,
     mySubscription,
     hasBlockingSubscription,
     checkoutBusyPlanId,
@@ -44,6 +50,7 @@ const Plans = () => {
     startCheckout,
   } = usePlansPage({ slug, returnPath });
   const { t, dir, locale } = useTranslation();
+  const [specialOfferCheckoutBusy, setSpecialOfferCheckoutBusy] = useState(false);
 
   const isMainCatalog = !slug;
   const plansContent = usePublicPlansContent({ enabled: isMainCatalog });
@@ -114,6 +121,51 @@ const Plans = () => {
     await startCheckout(plan);
   };
 
+  const handleSpecialOfferCheckout = useCallback(async () => {
+    if (authLoading || specialOfferCheckoutBusy) return;
+    if (!isSpecialOfferCheckoutSupported(specialOfferPackage)) return;
+
+    const role = user?.primaryRole || user?.role;
+    const roles = Array.isArray(user?.roles) ? user.roles : [];
+    const isFreelancer = role === "freelancer" || roles.includes("freelancer");
+
+    if (!user) {
+      navigate("/login", { state: { from: { pathname: "/dashboard/freelancer/plans" } } });
+      return;
+    }
+    if (!isFreelancer) {
+      push({
+        type: "warning",
+        message: t("plans.specialOffer.freelancersOnly") || "العرض متاح للمستقلين فقط.",
+      });
+      return;
+    }
+
+    setSpecialOfferCheckoutBusy(true);
+    try {
+      const res = await createSpecialOfferCheckoutRequest();
+      const url = res?.data?.checkoutUrl;
+      if (!url) throw new Error(t("plans.specialOffer.checkoutMissingUrl") || "تعذر بدء الدفع.");
+      window.location.href = url;
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        t("plans.specialOffer.checkoutFailed") ||
+        "تعذر بدء شراء العرض.";
+      push({ type: "warning", message: msg });
+      setSpecialOfferCheckoutBusy(false);
+    }
+  }, [
+    authLoading,
+    navigate,
+    push,
+    specialOfferCheckoutBusy,
+    specialOfferPackage,
+    t,
+    user,
+  ]);
+
   if (notFound) {
     return (
       <main className="container page-content plans-page plans-page--ref" lang={dir === "rtl" ? "ar" : "en"} dir={dir}>
@@ -169,12 +221,15 @@ const Plans = () => {
               <PricingSection
                 loading={loading}
                 plans={plans}
+                specialOfferPackage={specialOfferPackage}
                 currentSubscription={mySubscription}
                 hasBlockingSubscription={hasBlockingSubscription}
                 checkoutBusyPlanId={checkoutBusyPlanId}
+                specialOfferCheckoutBusy={specialOfferCheckoutBusy}
                 activationFeeNeedsPayment={activationFeeNeedsPayment}
                 activationFee={activationFee}
                 onCta={handlePlanCta}
+                onSpecialOfferCheckout={handleSpecialOfferCheckout}
                 pageTitle={pageTitle}
                 pageSubtitle={pageSubtitle}
                 trustPills={trustPills}
@@ -207,13 +262,16 @@ const Plans = () => {
       <PlansMobilePage
         loading={loading}
         plans={plans}
+        specialOfferPackage={specialOfferPackage}
         error={error}
         currentSubscription={mySubscription}
         hasBlockingSubscription={hasBlockingSubscription}
         checkoutBusyPlanId={checkoutBusyPlanId}
+        specialOfferCheckoutBusy={specialOfferCheckoutBusy}
         activationFeeNeedsPayment={activationFeeNeedsPayment}
         activationFee={activationFee}
         onCta={handlePlanCta}
+        onSpecialOfferCheckout={handleSpecialOfferCheckout}
         pageTitle={pageTitle}
         pageSubtitle={pageSubtitle}
         trustPills={trustPills}

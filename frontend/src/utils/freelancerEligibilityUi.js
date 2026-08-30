@@ -8,7 +8,10 @@ export function getFreelancerOrderEligibilityMessage(eligibility, subscription =
   const paymentStatus = String(subscription?.paymentStatus || "");
   const isCompanyPending =
     activationStatus === "company_pending" &&
-    (paymentStatus === "paid" || paymentStatus === "pending" || paymentStatus === "not_required" || paymentStatus === "");
+    (paymentStatus === "paid" ||
+      paymentStatus === "pending" ||
+      paymentStatus === "not_required" ||
+      paymentStatus === "");
 
   if (typeof t === "function") {
     if (isCompanyPending || reason === "company_activation_pending") {
@@ -46,7 +49,7 @@ export function getFreelancerOrderEligibilityMessage(eligibility, subscription =
   }
 
   if (reason === "no_subscription") {
-    return "لا يمكنك استلام الطلبات حالياً لأنك غير مشترك. يرجى الاشتراك أولاً.";
+    return "فعّل باقتك أولاً لاستلام الطلبات.";
   }
 
   if (reason === "status_inactive" || reason === "status_cancelled") {
@@ -73,7 +76,7 @@ export function getFreelancerOrderEligibilityMessage(eligibility, subscription =
   }
 
   if (reason === "plan_configuration_error") {
-    return "الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات.";
+    return "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.";
   }
 
   return "حسابك غير مؤهل حالياً لاستلام طلبات من المعرض (تحقق من الاشتراك).";

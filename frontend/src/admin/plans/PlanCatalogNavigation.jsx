@@ -7,6 +7,7 @@ import {
 import { useAdminDefaultPlanCatalog } from "./DefaultPlanCatalogAdminContext";
 import { PlanCatalogNavSkeleton } from "./PlanCatalogSkeletons";
 import "./super-admin-plans.css";
+import "./specialOfferAdmin.css";
 
 /**
  * Shared Super Admin catalog tabs — same three destinations on every plans page.
@@ -48,6 +49,11 @@ export default function PlanCatalogNavigation({ activeCatalog, isEn = false, hin
                 data-default-catalog-tab={isDefault ? "true" : undefined}
               >
                 <span>{isEn ? item.labelEn : item.labelAr}</span>
+                {item.tabBadgeAr || item.tabBadgeEn ? (
+                  <span className="oh-sapl-section-toggle__special-badge" data-special-tab-badge="true">
+                    {isEn ? item.tabBadgeEn || item.tabBadgeAr : item.tabBadgeAr || item.tabBadgeEn}
+                  </span>
+                ) : null}
                 {isDefault ? (
                   <span
                     className="oh-sapl-section-toggle__now-badge"

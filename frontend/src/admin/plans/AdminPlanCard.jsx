@@ -1,3 +1,4 @@
+import { Trash2 } from "lucide-react";
 import PlanStatusBadge from "./PlanStatusBadge";
 import PlanToggle from "./PlanToggle";
 import { formatOrderValueRange, formatPriceJod, buildPlanBenefits } from "./planDisplayUtils";
@@ -102,11 +103,24 @@ export default function AdminPlanCard({
           </button>
         ) : null}
         <div className="oh-sapl-card__footer-actions">
-          <button type="button" className="oh-sapl-card__action oh-sapl-card__action--primary" disabled={submitting || reorderBusy} onClick={onEdit}>
+          <button
+            type="button"
+            className="oh-sapl-card__action oh-sapl-card__action--primary"
+            disabled={submitting || reorderBusy}
+            onClick={onEdit}
+          >
             تعديل
           </button>
-          <button type="button" className="oh-sapl-card__action oh-sapl-card__action--danger" disabled={submitting || reorderBusy} onClick={onDelete}>
-            حذف
+          <button
+            type="button"
+            className="oh-sapl-card__action oh-sapl-card__action--danger oh-sapl-card__action--icon"
+            disabled={submitting || reorderBusy}
+            onClick={onDelete}
+            title="تعطيل الباقة"
+            aria-label={`تعطيل الباقة «${plan.title}»`}
+            data-testid="plan-card-delete"
+          >
+            <Trash2 size={16} strokeWidth={2} aria-hidden />
           </button>
         </div>
         {showOrderControls ? (

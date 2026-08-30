@@ -1114,7 +1114,7 @@ async function createPurchasedPendingStartMembership(input = {}) {
     }
     if (!isPaidMarketplaceMembershipTier(plan.tierCode)) {
       throw createAppError(
-        "Only paid SILVER/PRO/ELITE plans support purchased_pending_start.",
+        "Only paid marketplace plans (SILVER/PRO/ELITE/special offer) support purchased_pending_start.",
         400,
         {
           exposeToClient: true,

@@ -67,10 +67,15 @@ export async function fetchPlansForCatalog(catalog) {
 
   if (catalog === PLAN_CATALOG.MARKETPLACE_PLANS) {
     const res = await listPublicMarketplaceMembershipPlansRequest();
+    const specialOfferPackage =
+      res?.data?.specialOfferPackage && typeof res.data.specialOfferPackage === "object"
+        ? res.data.specialOfferPackage
+        : null;
     return {
       plans: mapMarketplaceMembershipPlansForPublicPlans(extractItems(res)),
       activationFee: null,
       catalogSource: catalogSourceForPlanCatalog(catalog),
+      specialOfferPackage,
     };
   }
 
@@ -80,6 +85,7 @@ export async function fetchPlansForCatalog(catalog) {
       plans: tagCatalogSource(extractPlans(res), catalog),
       activationFee: res?.data?.activationFee ?? null,
       catalogSource: catalogSourceForPlanCatalog(catalog),
+      specialOfferPackage: null,
     };
   }
 
@@ -89,6 +95,7 @@ export async function fetchPlansForCatalog(catalog) {
       plans: tagCatalogSource(extractPlans(res), catalog),
       activationFee: res?.data?.activationFee ?? null,
       catalogSource: catalogSourceForPlanCatalog(catalog),
+      specialOfferPackage: null,
     };
   }
 

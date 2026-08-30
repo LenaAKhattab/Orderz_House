@@ -271,11 +271,16 @@ async function persistE1PlanCapabilitiesIfReady(planId, payload = {}) {
   return rows[0] || null;
 }
 
+/** Exclude all special-offer campaign versions from regular STARTER–ELITE catalogs. */
+const SPECIAL_OFFER_TIER_SQL_EXCLUDE =
+  `(tier_code !~ '^special_offer(_v[0-9]+)?$')`;
+
 async function listPublicMarketplaceMembershipPlans() {
   const { rows } = await pool.query(
     `SELECT *
      FROM marketplace_membership_plans
      WHERE is_active = TRUE
+       AND ${SPECIAL_OFFER_TIER_SQL_EXCLUDE}
      ORDER BY sort_order ASC, id ASC`,
   );
   return rows.map(mapPublicMarketplaceMembershipPlan);
@@ -286,10 +291,12 @@ async function listAdminMarketplaceMembershipPlans({ includeInactive = true } = 
     includeInactive
       ? `SELECT *
          FROM marketplace_membership_plans
+         WHERE ${SPECIAL_OFFER_TIER_SQL_EXCLUDE}
          ORDER BY sort_order ASC, id ASC`
       : `SELECT *
          FROM marketplace_membership_plans
          WHERE is_active = TRUE
+           AND ${SPECIAL_OFFER_TIER_SQL_EXCLUDE}
          ORDER BY sort_order ASC, id ASC`,
   );
   return rows.map(mapMarketplaceMembershipPlan);

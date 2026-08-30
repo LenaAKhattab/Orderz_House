@@ -62,15 +62,18 @@ export default function FreelancerPlansPage() {
     membership,
     membershipError,
     applyMembershipSnapshot,
+    specialOfferPackage,
   } = useFreelancerPlansScreen();
 
   const {
     checkoutBusyPlanId: marketplaceCheckoutBusyPlanId,
+    specialOfferCheckoutBusy,
     trialBusy,
     checkoutError: marketplaceCheckoutError,
     returnBanner,
     dismissReturnBanner,
     startMarketplaceCheckout,
+    startSpecialOfferCheckout,
     startStarterTrial,
   } = useMarketplaceMembershipCheckout({
     enabled: true,
@@ -174,13 +177,16 @@ export default function FreelancerPlansPage() {
                   variant="dashboard"
                   loading={false}
                   plans={plans}
+                  specialOfferPackage={specialOfferPackage}
                   currentSubscription={null}
                   currentMarketplaceMembership={membership}
                   hasBlockingSubscription={false}
                   checkoutBusyPlanId={marketplaceCheckoutBusyPlanId}
+                  specialOfferCheckoutBusy={specialOfferCheckoutBusy}
                   activationFeeNeedsPayment={false}
                   activationFee={null}
                   onCta={startMarketplaceCheckout}
+                  onSpecialOfferCheckout={startSpecialOfferCheckout}
                 />
               ) : null}
             </section>

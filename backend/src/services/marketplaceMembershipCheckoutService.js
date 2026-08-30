@@ -30,6 +30,9 @@ const {
   isPaidMarketplaceMembershipTier,
 } = require("../utils/marketplaceMembershipPendingStart");
 const {
+  isSpecialOfferMembershipTier,
+} = require("../constants/marketplaceMembershipPlans");
+const {
   MARKETPLACE_MEMBERSHIP_CHECKOUT_PURPOSE,
   MARKETPLACE_MEMBERSHIP_CHECKOUT_CURRENCY,
   MARKETPLACE_MEMBERSHIP_CHECKOUT_FLOW,
@@ -97,7 +100,10 @@ async function resolvePaidMarketplacePlanForCheckout(planCodeRaw, deps = {}) {
     });
   }
   if (!isPaidMarketplaceMembershipTier(planCode)) {
-    throw createAppError("Only SILVER, PRO, or ELITE marketplace memberships can be purchased.", 400, {
+    throw createAppError(
+      "Only SILVER, PRO, ELITE, or special offer marketplace memberships can be purchased.",
+      400,
+      {
       exposeToClient: true,
       publicCode: MARKETPLACE_MEMBERSHIP_CHECKOUT_ERROR_CODES.INVALID_PLAN_CODE,
       details: { planCode },
@@ -172,6 +178,7 @@ async function resolvePaidMarketplacePlanForCheckout(planCodeRaw, deps = {}) {
  *   planCode?: string,
  *   tierCode?: string,
  *   locale?: string,
+ *   extraMetadata?: Record<string, string|number|boolean>,
  * }} input
  * @param {{ stripe?: object, getPlanByTierCode?: Function, db?: object }} [deps]
  */
@@ -253,6 +260,13 @@ async function createMarketplaceMembershipCheckoutSession(input = {}, deps = {})
       expectedAmountMinor: String(resolved.expectedAmountMinor),
       // Explicit: term does not start at payment — first real order (M4).
       termStartPolicy: "first_real_order",
+      ...(input.extraMetadata && typeof input.extraMetadata === "object"
+        ? Object.fromEntries(
+            Object.entries(input.extraMetadata)
+              .filter(([, v]) => v != null && String(v).trim() !== "")
+              .map(([k, v]) => [String(k).slice(0, 40), String(v).slice(0, 500)]),
+          )
+        : {}),
     },
   );
 
@@ -381,7 +395,15 @@ async function applyMarketplaceMembershipCheckoutSessionCompleted(
   }
 
   let marketplacePlanId = Number(
-    metaPick(sessionMeta, "marketplacePlanId", "marketplace_plan_id", "plan_id", "planId"),
+    metaPick(
+      sessionMeta,
+      "specialOfferPlanId",
+      "special_offer_plan_id",
+      "marketplacePlanId",
+      "marketplace_plan_id",
+      "plan_id",
+      "planId",
+    ),
   );
   if (!Number.isInteger(marketplacePlanId) || marketplacePlanId < 1) {
     marketplacePlanId = null;
@@ -427,7 +449,17 @@ async function applyMarketplaceMembershipCheckoutSessionCompleted(
     return { status: "ignored", reason: "marketplace_membership_invalid_duration" };
   }
   const metaDuration = Number(metaPick(sessionMeta, "durationDays", "duration_days"));
-  if (Number.isInteger(metaDuration) && metaDuration >= 1 && metaDuration !== durationDays) {
+  const isSpecialOfferEarly =
+    String(metaPick(sessionMeta, "specialOfferPackage", "special_offer_package") || "") === "1" ||
+    String(metaPick(sessionMeta, "purchaseSource", "purchase_source") || "").toLowerCase() ===
+      "special_offer_package" ||
+    isSpecialOfferMembershipTier(plan.tierCode);
+  if (
+    !isSpecialOfferEarly &&
+    Number.isInteger(metaDuration) &&
+    metaDuration >= 1 &&
+    metaDuration !== durationDays
+  ) {
     return { status: "ignored", reason: "marketplace_membership_duration_mismatch" };
   }
 
@@ -441,7 +473,25 @@ async function applyMarketplaceMembershipCheckoutSessionCompleted(
     MARKETPLACE_MEMBERSHIP_CHECKOUT_CURRENCY,
   );
   const metaExpected = Number(metaPick(sessionMeta, "expectedAmountMinor", "expected_amount_minor"));
-  if (
+  const isSpecialOfferPurchase =
+    String(metaPick(sessionMeta, "specialOfferPackage", "special_offer_package") || "") === "1" ||
+    String(metaPick(sessionMeta, "purchaseSource", "purchase_source") || "").toLowerCase() ===
+      "special_offer_package" ||
+    isSpecialOfferMembershipTier(plan.tierCode);
+
+  // Special offer: lock verification to checkout-time metadata snapshot so later admin
+  // edits to the special_offer plan row cannot void an already-paid session.
+  if (isSpecialOfferPurchase) {
+    if (!Number.isInteger(metaExpected) || metaExpected < 1) {
+      return { status: "ignored", reason: "marketplace_membership_special_offer_missing_expected_amount" };
+    }
+    if (session.amount_total != null) {
+      const paidTotal = Number(session.amount_total);
+      if (!Number.isInteger(paidTotal) || paidTotal !== metaExpected) {
+        return { status: "ignored", reason: "marketplace_membership_amount_mismatch" };
+      }
+    }
+  } else if (
     Number.isInteger(metaExpected) &&
     metaExpected >= 1 &&
     Number.isInteger(expectedAmountMinor) &&
@@ -450,7 +500,7 @@ async function applyMarketplaceMembershipCheckoutSessionCompleted(
     return { status: "ignored", reason: "marketplace_membership_expected_amount_mismatch" };
   }
 
-  if (session.amount_total != null) {
+  if (!isSpecialOfferPurchase && session.amount_total != null) {
     const paidTotal = Number(session.amount_total);
     if (!Number.isInteger(paidTotal) || paidTotal !== expectedAmountMinor) {
       return { status: "ignored", reason: "marketplace_membership_amount_mismatch" };

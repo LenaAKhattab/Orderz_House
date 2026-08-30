@@ -162,6 +162,43 @@ export const listPublicMarketplaceMembershipPlansRequest = async () => {
   return data;
 };
 
+/** Public special-offer package (null when hidden). */
+export const getPublicSpecialOfferPackageRequest = async () => {
+  const { data } = await api.get("/special-offer-package");
+  return data;
+};
+
+export const getAdminSpecialOfferPackageRequest = async () => {
+  const { data } = await api.get("/super-admin/plans/special-offer");
+  return data;
+};
+
+export const updateAdminSpecialOfferPackageRequest = async (payload) => {
+  const { data } = await api.put("/super-admin/plans/special-offer", payload, { timeout: 30000 });
+  return data;
+};
+
+export const updateAdminSpecialOfferVisibilityRequest = async (isVisible) => {
+  const { data } = await api.patch(
+    "/super-admin/plans/special-offer/visibility",
+    { isVisible: Boolean(isVisible) },
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const createAdminSpecialOfferNewVersionRequest = async (payload = {}) => {
+  const { data } = await api.post(
+    "/super-admin/plans/special-offer/new-version",
+    {
+      copyFromCurrent: payload.copyFromCurrent !== false,
+      makeVisible: Boolean(payload.makeVisible),
+    },
+    { timeout: 30000 },
+  );
+  return data;
+};
+
 /** Public/read-safe: Super Admin-selected default plan catalog id only. */
 export const getPublicDefaultPlanCatalogRequest = async () => {
   const { data } = await api.get("/default-plan-catalog");
@@ -784,6 +821,12 @@ export const createMarketplaceMembershipCheckoutRequest = async (planCode) => {
   return data;
 };
 
+/** Special offer → existing marketplace membership Stripe checkout (linked plan). */
+export const createSpecialOfferCheckoutRequest = async () => {
+  const { data } = await api.post("/freelancer/special-offer-package/checkout", {}, { timeout: 30000 });
+  return data;
+};
+
 /** Bid Credits — Phase B1 active Bids product + B6 packages. */
 export const getFreelancerBidCreditsRequest = async () => {
   const { data } = await api.get("/freelancer/bid-credits");
@@ -917,6 +960,11 @@ export const updatePlanRequest = async (id, patch) => {
 
 export const deletePlanRequest = async (id) => {
   const { data } = await api.delete(`/admin/plans/${id}`);
+  return data;
+};
+
+export const archivePlanRequest = async (id) => {
+  const { data } = await api.patch(`/admin/plans/${id}/archive`);
   return data;
 };
 

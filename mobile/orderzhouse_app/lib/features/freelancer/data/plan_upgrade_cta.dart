@@ -1,9 +1,9 @@
 // Phase A10 / M1 — Plan upgrade CTA helpers for pool/order plan locks.
 // Only for plan/tier/value locks — not Bids, Bildazo, training, verification, campaigns.
 
-const planUpgradeDefaultHeadlineAr = 'هذا الطلب يحتاج خطة أعلى.';
-const planUpgradeDefaultActionAr = 'رقِّ خطتك للحصول على هذا الطلب.';
-const planUpgradeButtonLabelAr = 'عرض الخطط';
+const planUpgradeDefaultHeadlineAr = 'هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.';
+const planUpgradeDefaultActionAr = 'ترقية الخطة';
+const planUpgradeButtonLabelAr = 'ترقية الخطة';
 const planUpgradeOpenFailedAr =
     'تعذر فتح صفحة الخطط. يمكنك فتح الموقع من الملف الشخصي أو المحاولة لاحقاً.';
 
@@ -13,6 +13,7 @@ const _planLockReasons = {
   'plan_locked',
   'PLAN_LOCKED',
   'isLockedByPlan',
+  'PLAN_TOO_LOW',
 };
 
 const _nonPlanBlockReasons = {
@@ -29,6 +30,9 @@ const _nonPlanBlockReasons = {
   'CAMPAIGN_PAUSED',
   'ACTIVATION_CAMPAIGN_PAUSED',
   'ACTIVATION_ENGINE_GATED',
+  'INTERNAL_PLAN_CONFIGURATION',
+  'NO_ACTIVE_PLAN',
+  'KYC_REQUIRED',
 };
 
 bool isPlanUpgradeReason(String? reason) {
@@ -86,7 +90,7 @@ PlanUpgradeCtaCopy buildPlanUpgradeCopy({
           : null);
 
   final headline = tierLabel != null
-      ? 'هذا الطلب يحتاج خطة $tierLabel.'
+      ? 'هذا الطلب متاح لباقات أعلى (ابتداءً من $tierLabel). قم بترقية خطتك لاستلامه.'
       : planUpgradeDefaultHeadlineAr;
   final tierHint = tierLabel != null ? 'متاح ابتداءً من خطة $tierLabel.' : null;
 
@@ -118,18 +122,24 @@ PlanUpgradeCtaProps? planUpgradePropsFromPoolEligibility({
   String? requiredTierCode,
   String? requiredPlanLabel,
   String? lockReason,
+  String? reasonCode,
 }) {
   if (isLockedByPlan != true) return null;
   if (planConfigurationError == true) return null;
+  final code = (reasonCode ?? '').trim();
+  if (code == 'INTERNAL_PLAN_CONFIGURATION' || code == 'NO_ACTIVE_PLAN' || code == 'KYC_REQUIRED') {
+    return null;
+  }
   final reason = (lockReason ?? '').trim();
   if (reason.isNotEmpty && _nonPlanBlockReasons.contains(reason)) return null;
+  if (code.isNotEmpty && _nonPlanBlockReasons.contains(code)) return null;
   if (reason.isNotEmpty && !isPlanUpgradeReason(reason) && !_looksLikePlanCopy(reason)) {
     // Unknown reason with explicit isLockedByPlan still shows CTA.
   }
   return PlanUpgradeCtaProps(
     requiredTierCode: requiredTierCode,
     requiredPlanLabel: requiredPlanLabel,
-    reason: reason.isEmpty ? 'plan_locked' : reason,
+    reason: code.isNotEmpty ? code : (reason.isEmpty ? 'plan_locked' : reason),
   );
 }
 

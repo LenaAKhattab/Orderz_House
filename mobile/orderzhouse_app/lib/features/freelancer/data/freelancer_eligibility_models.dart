@@ -76,7 +76,9 @@ String freelancerIneligibleReasonAr(String? reason) {
     case 'company_rejected':
       return 'السبب: تم رفض طلب تفعيل حسابك.';
     case 'no_subscription':
-      return 'السبب: لا يوجد اشتراك فعّال على حسابك.';
+      return 'فعّل باقتك أولاً لاستلام الطلبات.';
+    case 'plan_configuration_error':
+      return 'تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.';
     case 'status_inactive':
       return 'السبب: الاشتراك غير نشط.';
     case 'status_cancelled':
@@ -87,6 +89,15 @@ String freelancerIneligibleReasonAr(String? reason) {
       return 'السبب: انتهت صلاحية الاشتراك.';
     case 'activation_fee_unpaid':
       return 'السبب: رسوم تفعيل الحساب غير مدفوعة. يرجى مراجعة الإدارة.';
+    case 'account_activation_required':
+    case 'kyc_required':
+    case 'KYC_REQUIRED':
+      return 'أكمل توثيق الهوية قبل استلام الطلبات.';
+    case 'TRAINING_REQUIRED':
+    case 'training_required':
+      return 'أكمل التدريب المطلوب قبل استلام الطلبات.';
+    case 'assigned_not_started':
+      return 'باقتك جاهزة، وستبدأ عند استلام أول طلب مؤهل.';
     default:
       return 'السبب: يرجى مراجعة الإدارة لتفعيل أهليتك.';
   }

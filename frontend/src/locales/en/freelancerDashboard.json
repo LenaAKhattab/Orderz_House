@@ -844,7 +844,9 @@
       "activationFeeUnpaid": "Pay the yearly activation fee before receiving orders.",
       "subscriptionRenewalFailedTitle": "Subscription renewal failed",
       "subscriptionRenewalFailed": "We could not charge the 1 JOD monthly subscription fee to your saved card. Your account has been temporarily frozen. Please contact us to reactivate it.",
-      "planConfigurationError": "Your plan configuration needs correction before orders are available.",
+      "planConfigurationError": "We could not verify your plan eligibility right now. Please contact support.",
+      "planTooLow": "This order is available on higher plans. Upgrade your plan to receive it.",
+      "noActivePlan": "Activate your plan first to receive orders.",
       "generic": "Your account is not currently eligible for marketplace orders (check your subscription)."
     }
   },

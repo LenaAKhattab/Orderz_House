@@ -27,6 +27,7 @@ class PoolPlanEligibility {
   const PoolPlanEligibility({
     this.isLockedByPlan = false,
     this.lockReason,
+    this.reasonCode,
     this.requiredPlanLabel,
     this.requiredTierCode,
     this.planConfigurationError = false,
@@ -35,6 +36,7 @@ class PoolPlanEligibility {
 
   final bool isLockedByPlan;
   final String? lockReason;
+  final String? reasonCode;
   final String? requiredPlanLabel;
   final String? requiredTierCode;
   final bool planConfigurationError;
@@ -46,6 +48,7 @@ class PoolPlanEligibility {
     return PoolPlanEligibility(
       isLockedByPlan: readBool(map, 'isLockedByPlan', 'is_locked_by_plan'),
       lockReason: readMapField<String>(map, 'lockReason', 'lock_reason'),
+      reasonCode: readMapField<String>(map, 'reasonCode', 'reason_code'),
       requiredPlanLabel: readMapField<String>(map, 'requiredPlanLabel', 'required_plan_label'),
       requiredTierCode: readMapField<String>(map, 'requiredTierCode', 'required_tier_code'),
       planConfigurationError:

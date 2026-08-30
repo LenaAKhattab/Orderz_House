@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   createMarketplaceMembershipCheckoutRequest,
+  createSpecialOfferCheckoutRequest,
   startMarketplaceStarterTrialRequest,
 } from "../services/api";
 import {
@@ -34,6 +35,7 @@ export function useMarketplaceMembershipCheckout({
   const location = useLocation();
   const navigate = useNavigate();
   const [checkoutBusyPlanId, setCheckoutBusyPlanId] = useState(null);
+  const [specialOfferCheckoutBusy, setSpecialOfferCheckoutBusy] = useState(false);
   const [trialBusy, setTrialBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [returnBanner, setReturnBanner] = useState(null);
@@ -150,6 +152,35 @@ export function useMarketplaceMembershipCheckout({
     [checkoutBusyPlanId, enabled, membershipSnapshot, push, t],
   );
 
+  const startSpecialOfferCheckout = useCallback(async () => {
+    if (!enabled || specialOfferCheckoutBusy || checkoutBusyPlanId) return;
+    setSpecialOfferCheckoutBusy(true);
+    setCheckoutError("");
+    try {
+      const res = await createSpecialOfferCheckoutRequest();
+      const url = res?.data?.checkoutUrl;
+      if (!url) {
+        throw new Error(t("freelancerDashboard.marketplaceMembership.checkoutMissingUrl"));
+      }
+      window.location.href = url;
+    } catch (err) {
+      if (import.meta.env?.DEV) {
+        console.error("[special offer checkout]", err?.response?.data ?? err);
+      }
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        t("freelancerDashboard.marketplaceMembership.checkoutFailed");
+      setCheckoutError(msg);
+      push({
+        type: "warning",
+        title: t("freelancerDashboard.marketplaceMembership.checkoutFailedTitle"),
+        message: msg,
+      });
+      setSpecialOfferCheckoutBusy(false);
+    }
+  }, [checkoutBusyPlanId, enabled, push, specialOfferCheckoutBusy, t]);
+
   const startStarterTrial = useCallback(async () => {
     if (!enabled || trialBusy) return;
     setTrialBusy(true);
@@ -181,11 +212,13 @@ export function useMarketplaceMembershipCheckout({
 
   return {
     checkoutBusyPlanId,
+    specialOfferCheckoutBusy,
     trialBusy,
     checkoutError,
     returnBanner,
     dismissReturnBanner,
     startMarketplaceCheckout,
+    startSpecialOfferCheckout,
     startStarterTrial,
     refreshMembership,
   };

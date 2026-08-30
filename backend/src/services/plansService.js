@@ -712,35 +712,45 @@ async function updatePlan({ actorUserId, id, patch }) {
 }
 
 async function softDeletePlan({ actorUserId, id }) {
-  const { rows: planRows } = await pool.query(`SELECT id, title FROM plans WHERE id = $1 LIMIT 1`, [Number(id)]);
-  const { rowCount } = await pool.query(
+  const { rows } = await pool.query(
     `UPDATE plans
-     SET deleted_at = NOW(), updated_by_user_id = $2, updated_at = NOW()
-     WHERE id = $1 AND deleted_at IS NULL`,
+     SET deleted_at = NOW(),
+         is_active = FALSE,
+         is_visible = FALSE,
+         updated_by_user_id = $2,
+         updated_at = NOW()
+     WHERE id = $1 AND deleted_at IS NULL
+     RETURNING id, title, deleted_at, is_active, is_visible`,
     [Number(id), actorUserId ? Number(actorUserId) : null],
   );
-  if (rowCount === 0) {
+  if (!rows[0]) {
     const err = new Error("Plan not found.");
     err.statusCode = 404;
     throw err;
   }
-  const plan = planRows[0];
+  const plan = rows[0];
   await safeNotify(() =>
     notificationEventsService.notifySuperAdmins({
       recipientRole: "super_admin",
       actorUserId: actorUserId ? Number(actorUserId) : null,
       type: "plan.deleted",
-      title: "تم حذف باقة",
-      message: `تم حذف الباقة: ${plan?.title || `#${id}`}.`,
+      title: "تم تعطيل باقة",
+      message: `تم تعطيل/إخفاء الباقة عن الاستخدام الجديد: ${plan?.title || `#${id}`}.`,
       entityType: "plan",
       entityId: Number(id),
       link: "/dashboard/super-admin/plans",
       priority: "high",
       dedupeKey: `plan_deleted_${id}`,
-      metadata: { planId: String(id) },
+      metadata: { planId: String(id), softDelete: true },
     }),
   );
-  return true;
+  return {
+    id: String(plan.id),
+    title: plan.title,
+    deletedAt: plan.deleted_at,
+    isActive: false,
+    isVisible: false,
+  };
 }
 
 module.exports = {
