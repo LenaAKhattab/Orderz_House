@@ -7,8 +7,8 @@ export default function DashboardBannerIllustration({ className = "" }) {
       src={BANNER_ILLUS_SRC}
       alt=""
       className={`fdash-banner__illus-img ${className}`.trim()}
-      width={112}
-      height={80}
+      width={84}
+      height={60}
       decoding="async"
     />
   );

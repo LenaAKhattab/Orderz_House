@@ -22,17 +22,17 @@
 }
 
 .oh-orders-market--modern {
-  --oh-pool-gap: 22px;
-  --oh-pool-filters-w: 330px;
-  --oh-pool-radius: 28px;
-  --oh-pool-filters-radius: 32px;
+  --oh-pool-gap: 14px;
+  --oh-pool-filters-w: 260px;
+  --oh-pool-radius: 18px;
+  --oh-pool-filters-radius: 20px;
   --oh-pool-layout-top: calc(
     var(--fdl-shell-gap, 16px) + var(--fdl-topbar-h, 80px) + var(--fdl-shell-gap, 16px) + 2px
   );
   --oh-pool-layout-bottom: calc(var(--fdl-shell-gap, 16px) + clamp(14px, 1.6vw, 22px));
   --oh-pool-sticky-top: calc(var(--fdl-topbar-h, 80px) + var(--fdl-shell-gap, 16px) + 4px);
   --oh-pool-filters-panel-h: calc(
-    100dvh - var(--oh-pool-layout-top) - var(--oh-pool-layout-bottom) - 46px
+    100dvh - var(--oh-pool-layout-top) - var(--oh-pool-layout-bottom) - 36px
   );
   --oh-pool-filters-sticky-h: calc(100dvh - var(--oh-pool-sticky-top) - var(--oh-pool-layout-bottom));
   --oh-pool-ease: cubic-bezier(0.33, 1, 0.68, 1);
@@ -71,7 +71,7 @@
 /* [ orders list ] [ filters ] — filters column flush toward sidebar */
 .oh-orders-market--modern .oh-orders-page-layout--neu {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 330px;
+  grid-template-columns: minmax(0, 1fr) 260px;
   gap: var(--oh-pool-gap);
   align-items: start;
   direction: ltr;
@@ -92,12 +92,12 @@
   min-width: 0;
   direction: rtl;
   justify-self: stretch;
-  padding-top: 46px;
+  padding-top: 36px;
 }
 
 .oh-orders-ineligible-note {
-  margin: 0 0 10px;
-  font-size: 0.82rem;
+  margin: 0 0 8px;
+  font-size: 0.72rem;
 }
 
 /* Toolbar — sort on visual left (RTL) */
@@ -105,9 +105,9 @@
   display: flex;
   align-items: center;
   width: 100%;
-  gap: 10px;
-  min-height: 42px;
-  margin: 0 0 12px;
+  gap: 8px;
+  min-height: 34px;
+  margin: 0 0 8px;
   flex-wrap: wrap;
   overflow: visible;
   position: relative;
@@ -117,7 +117,7 @@
 .oh-orders-toolbar-neu__controls {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-inline-start: auto;
   flex-wrap: wrap;
   overflow: visible;
@@ -138,13 +138,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 7px;
   direction: rtl;
-  min-height: 44px;
-  padding: 9px 18px;
+  min-height: 34px;
+  padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid rgba(203, 213, 225, 0.95);
-  font-size: 0.88rem;
+  font-size: 0.74rem;
   font-weight: 700;
   color: #1e3a5f;
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
@@ -241,10 +241,10 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 14px;
-  padding: 28px 22px;
-  margin: 8px 0 16px;
-  border-radius: 18px;
+  gap: 10px;
+  padding: 18px 16px;
+  margin: 6px 0 12px;
+  border-radius: 14px;
 }
 
 .oh-orders-plan-empty--neu {
@@ -259,8 +259,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   color: #64748b;
   background: rgba(255, 255, 255, 0.75);
@@ -271,7 +271,7 @@
 
 .oh-orders-plan-empty__title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 0.88rem;
   font-weight: 800;
   color: #334155;
 }
@@ -279,8 +279,8 @@
 .oh-orders-plan-empty__subtitle {
   margin: 0;
   max-width: 36ch;
-  font-size: 0.88rem;
-  line-height: 1.55;
+  font-size: 0.74rem;
+  line-height: 1.5;
   color: var(--oh-pool-muted);
 }
 
@@ -301,9 +301,9 @@
 .oh-orders-market--modern .oh-orders-sort-card.fdash-surface-3d.fdash-surface-3d--soft {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 14px 7px 12px;
-  border-radius: 14px !important;
+  gap: 7px;
+  padding: 5px 10px 5px 8px;
+  border-radius: 11px !important;
   border: none !important;
   background: var(--oh-pool-card-bg) !important;
   box-shadow:
@@ -313,22 +313,22 @@
 }
 
 .oh-orders-sort-card__label {
-  font-size: 0.82rem;
+  font-size: 0.7rem;
   font-weight: 800;
   color: var(--oh-pool-muted);
   white-space: nowrap;
 }
 
 .oh-orders-market--modern .oh-orders-sort {
-  min-width: 118px;
-  height: 32px;
-  border-radius: 9px;
+  min-width: 100px;
+  height: 28px;
+  border-radius: 8px;
   border: 1px solid rgba(226, 232, 240, 0.9);
   background: rgba(255, 255, 255, 0.92);
   color: #334155;
   font-weight: 700;
-  font-size: 0.82rem;
-  padding: 0 8px 0 26px;
+  font-size: 0.7rem;
+  padding: 0 6px 0 22px;
   cursor: pointer;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
@@ -353,21 +353,21 @@
 
 /* Reserve vertical space while loading (avoids scrollbar/layout shift) */
 .oh-orders-market--modern .oh-orders-list--loading {
-  min-height: calc(5 * 172px + 4 * 14px);
+  min-height: calc(5 * 118px + 4 * 10px);
 }
 
 .oh-orders-market--modern .oh-orders-list-wrapper:has(.oh-orders-list--loading) {
-  min-height: calc(5 * 172px + 4 * 14px);
+  min-height: calc(5 * 118px + 4 * 10px);
 }
 
 .oh-orders-market--modern .oh-orders-main:has(.oh-orders-list--loading) {
-  min-height: calc(54px + 5 * 172px + 4 * 14px);
+  min-height: calc(42px + 5 * 118px + 4 * 10px);
 }
 
 .oh-orders-market--modern .oh-orders-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   border: none;
   border-top: none;
   padding: 0;
@@ -395,12 +395,12 @@
 /* Order card — RTL: budget (right) | center | actions (left) */
 .oh-orders-market--modern .oh-order-row--neu.fdash-surface-3d.fdash-surface-3d--soft {
   direction: rtl;
-  min-height: 158px;
-  padding: 20px 24px;
+  min-height: 112px;
+  padding: 12px 14px;
   display: grid;
-  grid-template-columns: minmax(152px, 178px) 1px minmax(0, 1fr) 1px minmax(136px, 168px);
+  grid-template-columns: minmax(118px, 140px) 1px minmax(0, 1fr) 1px minmax(112px, 138px);
   align-items: center;
-  gap: 20px;
+  gap: 12px;
   text-align: right;
   cursor: pointer;
   transition:
@@ -432,7 +432,7 @@
 .oh-orders-market--modern .oh-order-row__divider {
   width: 1px;
   align-self: stretch;
-  min-height: 76px;
+  min-height: 52px;
   background: linear-gradient(
     180deg,
     rgba(226, 232, 240, 0) 0%,
@@ -444,7 +444,7 @@
 
 .oh-orders-market--modern .oh-order-row__budget {
   display: grid;
-  gap: 14px;
+  gap: 8px;
   align-content: center;
   justify-items: end;
   text-align: right;
@@ -452,18 +452,18 @@
 
 .oh-orders-market--modern .oh-order-row__stat {
   display: grid;
-  gap: 4px;
+  gap: 2px;
   width: 100%;
 }
 
 .oh-orders-market--modern .oh-order-row__stat-label {
-  font-size: 0.75rem;
+  font-size: 0.64rem;
   font-weight: 700;
   color: var(--oh-pool-muted);
 }
 
 .oh-orders-market--modern .oh-order-row__stat-value {
-  font-size: 0.92rem;
+  font-size: 0.78rem;
   font-weight: 800;
   color: #334155;
   line-height: 1.25;
@@ -471,24 +471,24 @@
 
 .oh-orders-market--modern .oh-order-row__stat-value--price {
   color: var(--oh-pool-blue-deep);
-  font-size: 1rem;
+  font-size: 0.84rem;
   letter-spacing: 0.01em;
 }
 
 .oh-orders-market--modern .oh-order-row__center {
   min-width: 0;
   display: grid;
-  gap: 8px;
+  gap: 5px;
   align-content: center;
-  padding-inline: 4px;
+  padding-inline: 2px;
 }
 
 .oh-orders-market--modern .oh-order-row__title {
   margin: 0;
-  font-size: clamp(1rem, 1.2vw, 1.1rem);
+  font-size: clamp(0.82rem, 0.95vw, 0.9rem);
   font-weight: 800;
   color: #0f172a;
-  line-height: 1.38;
+  line-height: 1.35;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -497,8 +497,8 @@
 
 .oh-orders-market--modern .oh-order-row__summary {
   margin: 0;
-  font-size: 0.84rem;
-  line-height: 1.55;
+  font-size: 0.7rem;
+  line-height: 1.45;
   color: #94a3b8;
   font-weight: 500;
   display: -webkit-box;
@@ -510,20 +510,20 @@
 .oh-orders-market--modern .oh-order-row__chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 5px;
   justify-content: flex-start;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .oh-orders-market--modern .oh-order-row__chip {
   display: inline-flex;
   align-items: center;
-  padding: 5px 11px;
+  padding: 3px 8px;
   border-radius: 999px;
   background: #f1f5f9;
   border: none;
   color: #64748b;
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -647,7 +647,7 @@
 .oh-orders-market--modern .oh-order-row__side {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   align-items: flex-start;
   justify-content: center;
   min-width: 0;
@@ -656,9 +656,9 @@
 .oh-orders-market--modern .oh-order-row__applicants {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   color: #64748b;
-  font-size: 0.8rem;
+  font-size: 0.68rem;
   font-weight: 700;
 }
 
@@ -666,36 +666,36 @@
   max-width: 9.5rem;
   line-height: 1.35;
   text-align: center;
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   font-weight: 650;
 }
 
 .oh-orders-market--modern .oh-order-row__applicants-icon {
-  width: 17px;
-  height: 17px;
+  width: 14px;
+  height: 14px;
   color: #94a3b8;
   flex-shrink: 0;
 }
 
 .oh-orders-market--modern .oh-order-row__applicants-icon svg {
-  width: 17px;
-  height: 17px;
+  width: 14px;
+  height: 14px;
 }
 
 .oh-orders-market--modern .oh-order-row__action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   width: 100%;
   max-width: 100%;
-  min-height: 36px;
-  padding: 8px 12px;
+  min-height: 30px;
+  padding: 5px 10px;
   border-radius: 999px;
   border: 1px solid rgba(226, 232, 240, 0.95);
   background: #f8fafc;
   color: #94a3b8;
-  font-size: 0.74rem;
+  font-size: 0.66rem;
   font-weight: 800;
   line-height: 1.25;
   cursor: pointer;
@@ -746,13 +746,90 @@
   gap: 4px;
 }
 
+.oh-orders-market--modern .oh-order-row__upgrade-cta {
+  width: 100%;
+  max-width: 100%;
+}
+
+.oh-plan-upgrade-cta--compact {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.oh-plan-upgrade-cta__helper {
+  margin: 0;
+  font-size: 0.64rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #64748b;
+  text-align: start;
+}
+
+.oh-plan-upgrade-cta__helper--panel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 2px;
+}
+
+.oh-plan-upgrade-cta__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 30px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(180deg, var(--oh-pool-blue, #3b6fc8) 0%, var(--oh-pool-blue-deep, #2f5fb8) 100%);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(47, 95, 184, 0.28);
+}
+
+.oh-plan-upgrade-cta__btn:hover {
+  filter: brightness(1.04);
+  color: #fff;
+  text-decoration: none;
+}
+
+.oh-plan-upgrade-cta--panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(215, 220, 232, 0.95);
+  background: #fcfcfd;
+}
+
+.oh-plan-upgrade-cta__btn--panel {
+  align-self: flex-start;
+  min-height: 34px;
+  padding: 6px 14px;
+  font-size: 0.76rem;
+}
+
 .oh-orders-market--modern .oh-order-row-item--plan-locked .oh-order-row--neu {
   opacity: 0.99;
 }
 
 .oh-orders-market--modern .oh-orders-filters__title {
-  margin: 0 0 14px;
-  font-size: 1rem;
+  margin: 0 0 10px;
+  font-size: 0.84rem;
   font-weight: 800;
   color: #334155;
   text-align: right;
@@ -767,8 +844,8 @@
 .oh-orders-market--modern .oh-orders-filters__switch {
   display: flex;
   gap: 0;
-  margin-bottom: 14px;
-  padding: 4px;
+  margin-bottom: 10px;
+  padding: 3px;
   border-radius: 999px;
   background: rgba(241, 245, 249, 0.95);
   border: 1px solid rgba(226, 232, 240, 0.8);
@@ -779,10 +856,10 @@
   flex: 1;
   border: none;
   border-radius: 999px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   background: transparent;
   color: #64748b;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: 800;
   cursor: pointer;
   transition:
@@ -815,13 +892,13 @@
 
 .oh-orders-market--modern .oh-orders-filters__category-title {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 0.74rem;
   font-weight: 800;
   color: #475569;
 }
 
 .oh-orders-market--modern .oh-orders-filters__item--parent {
-  margin: 12px 0 8px;
+  margin: 8px 0 5px;
 }
 
 .oh-orders-market--modern .oh-orders-filters__item--parent .oh-orders-filters__category-title {
@@ -831,8 +908,8 @@
 
 .oh-orders-market--modern .oh-orders-filters__group {
   border-bottom: 1px solid rgba(241, 245, 249, 0.98);
-  padding-bottom: 10px;
-  margin-bottom: 8px;
+  padding-bottom: 7px;
+  margin-bottom: 5px;
 }
 
 .oh-orders-market--modern .oh-orders-filters__group:last-child {
@@ -843,7 +920,7 @@
 
 .oh-orders-market--modern .oh-orders-filters__sublist {
   display: grid;
-  gap: 3px;
+  gap: 1px;
 }
 
 .oh-orders-market--modern .oh-orders-filters__item {
@@ -851,14 +928,14 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  min-height: 32px;
-  padding: 3px 2px;
+  gap: 8px;
+  min-height: 26px;
+  padding: 2px 2px;
   color: #64748b;
-  font-size: 0.82rem;
+  font-size: 0.7rem;
   font-weight: 600;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 6px;
   transition: background 0.15s var(--oh-pool-ease);
 }
 
@@ -872,8 +949,8 @@
 }
 
 .oh-orders-market--modern .oh-orders-filters__item input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
   accent-color: var(--oh-pool-blue-deep);
   cursor: pointer;
@@ -993,7 +1070,7 @@
     height: var(--oh-pool-filters-panel-h);
     max-height: var(--oh-pool-filters-sticky-h);
     min-height: 0;
-    padding: 22px 20px 20px;
+    padding: 14px 12px 12px;
     box-sizing: border-box;
     overflow: hidden;
   }

@@ -16,23 +16,28 @@ function read(rel) {
 }
 
 describe("Freelancer Plans skeleton fidelity", () => {
-  it("uses shared dashboard pricing grid (not legacy 3-col PlanCardsRowSkeleton alone)", () => {
+  it("uses shared public membership pricing grid on freelancer marketplace plans", () => {
     const page = read("pages/dashboard/FreelancerPlansPage.jsx");
     const screen = read("components/plans/FreelancerPlansScreenSkeleton.jsx");
     const card = read("components/plans/MembershipPlanCardSkeleton.jsx");
+    const section = read("components/plans/PricingSection.jsx");
     const css = read("pages/dashboard/freelancerPlans.css");
 
     assert.match(page, /FreelancerPlansScreenSkeleton/);
+    assert.match(page, /fp-pricing-wrap--public-match/);
+    assert.match(page, /membershipCatalog/);
     assert.doesNotMatch(page, /PlanCardsRowSkeleton/);
     assert.doesNotMatch(page, /loadingEyebrow|loadingSubtitle/);
-    assert.match(screen, /MarketplaceMembershipPlansGridSkeleton|pricing--dashboard/);
+    assert.match(screen, /MarketplaceMembershipPlansGridSkeleton|plans-page--ref/);
     assert.match(screen, /visually-hidden/);
     assert.doesNotMatch(screen, /جارٍ تحميل|Loading your plans|loadingSubtitle/);
     assert.match(card, /pricing-card--membership/);
-    assert.match(card, /pricing-card__metrics/);
-    assert.match(card, /pricing-card__cta/);
+    assert.match(card, /pricing__grid--plans-4/);
+    assert.match(card, /pricing-ref-shell/);
     assert.match(card, /featuredIndex = 2|featured=\{i === featuredIndex\}/);
-    assert.match(css, /repeat\(4/);
+    assert.match(section, /useDashboardLegacyChrome/);
+    assert.match(css, /fp-pricing-wrap--public-match/);
+    assert.match(css, /:not\(\.fp-pricing-wrap--public-match\)[\s\S]*repeat\(4/);
     assert.match(css, /min-width: 640px[\s\S]*repeat\(2/);
   });
 });

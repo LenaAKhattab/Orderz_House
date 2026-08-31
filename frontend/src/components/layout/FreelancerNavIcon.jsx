@@ -35,7 +35,7 @@ export default function FreelancerNavIcon({ name, active = false }) {
       className={`fdl-nav-icon__surface${active ? " fdl-nav-icon__surface--active" : ""}`}
       aria-hidden
     >
-      <Icon className="fdl-nav-icon" size={20} strokeWidth={1.75} />
+      <Icon className="fdl-nav-icon" size={16} strokeWidth={1.75} />
     </span>
   );
 }

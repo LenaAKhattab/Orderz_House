@@ -5,7 +5,7 @@ import { readLastDefaultCatalog } from "../../lib/planCatalog/fetchPlansForCatal
 
 /**
  * Shape-matched loading shell for /dashboard/freelancer/plans.
- * Uses the same wrappers/grid as the resolved Marketplace catalog (1→2→4).
+ * Marketplace uses the same public /plans compact grid chrome.
  * No visible loading copy; no temporary business status text.
  */
 export default function FreelancerPlansScreenSkeleton({
@@ -30,7 +30,10 @@ export default function FreelancerPlansScreenSkeleton({
         </div>
       </header>
 
-      <section className="fp-surface fp-pricing-wrap" aria-hidden>
+      <section
+        className={`fp-surface fp-pricing-wrap${marketplace ? " fp-pricing-wrap--public-match plans-page--ref" : ""}`}
+        aria-hidden
+      >
         {marketplace ? (
           <MarketplaceMembershipPlansGridSkeleton count={4} featuredIndex={2} />
         ) : (

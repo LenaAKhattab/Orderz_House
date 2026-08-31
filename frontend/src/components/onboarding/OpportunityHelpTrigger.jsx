@@ -38,7 +38,7 @@ export default function OpportunityHelpTrigger({ conditionKey, label = "ما ه�
     <>
       <button
         type="button"
-        className="inline-flex cursor-pointer items-center gap-[0.35rem] border-0 bg-transparent text-[0.86rem] font-bold text-[var(--dash-primary,#2f3b65)]"
+        className="inline-flex cursor-pointer items-center gap-[0.3rem] border-0 bg-transparent text-[0.72rem] font-bold text-[var(--dash-primary,#2f3b65)]"
         onClick={() => setOpen(true)}
       >
         {label}

@@ -168,13 +168,17 @@ export default function FreelancerPlansPage() {
               onStartStarterTrial={startStarterTrial}
               trialBusy={trialBusy}
             />
-            <section className="fp-surface fp-pricing-wrap" aria-label={catalogAria}>
+            <section
+              className="fp-surface fp-pricing-wrap fp-pricing-wrap--public-match plans-page--ref"
+              aria-label={catalogAria}
+            >
               {error || marketplaceCheckoutError ? (
                 <p className="fp-error">{error || marketplaceCheckoutError}</p>
               ) : null}
               {!error ? (
                 <PricingSection
                   variant="dashboard"
+                  membershipCatalog
                   loading={false}
                   plans={plans}
                   specialOfferPackage={specialOfferPackage}

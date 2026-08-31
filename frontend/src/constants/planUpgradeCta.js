@@ -8,9 +8,12 @@ export const PLAN_UPGRADE_DEFAULT_ROUTE = "/dashboard/freelancer/plans";
 const PLAN_LOCK_REASONS = new Set([
   "ARTICLE_ACCESS_LEVEL_INSUFFICIENT",
   "ARTICLE_NO_USABLE_MEMBERSHIP",
+  "COURSE_PLAN_UPGRADE_REQUIRED",
   "plan_locked",
   "PLAN_LOCKED",
   "isLockedByPlan",
+  "PLAN_TOO_LOW",
+  "NO_ACTIVE_PLAN",
 ]);
 
 /** Reasons that must NOT show upgrade CTA. */
@@ -28,6 +31,7 @@ const NON_PLAN_BLOCK_REASONS = new Set([
   "CAMPAIGN_PAUSED",
   "ACTIVATION_CAMPAIGN_PAUSED",
   "ACTIVATION_ENGINE_GATED",
+  "INTERNAL_PLAN_CONFIGURATION",
 ]);
 
 export function isPlanUpgradeReason(reason) {
@@ -71,29 +75,85 @@ export function formatRequiredTierLabel(tierCode, { isEn = false } = {}) {
   return code;
 }
 
+export function formatCourseRequiredTierHelper(tierCode, { isEn = false } = {}) {
+  const code = normalizeRequiredTierCode(tierCode);
+  if (!code) return null;
+  if (code === "silver") {
+    return isEn ? "Available from Silver plan and above" : "متاحة من باقة فضة فما فوق";
+  }
+  if (code === "pro") {
+    return isEn ? "Available from Pro plan and above" : "متاحة من باقة برو فما فوق";
+  }
+  if (code === "elite") {
+    return isEn ? "Available on Elite plan" : "متاحة من باقة إيليت";
+  }
+  return null;
+}
+
+function normalizeReasonCode(reason) {
+  return String(reason || "").trim().toUpperCase();
+}
+
+/**
+ * Compact + standard microcopy for plan locks.
+ * @returns {{ headline: string, action: string|null, button: string|null, requiredTierCode: string|null, mode: "upgrade"|"support" }}
+ */
 export function buildPlanUpgradeCopy({
   requiredTierCode = null,
   reason = null,
   isEn = false,
 } = {}) {
+  const code = normalizeReasonCode(reason);
   const tier = normalizeRequiredTierCode(requiredTierCode);
-  const tierLabel = formatRequiredTierLabel(tier, { isEn });
 
-  if (isEn) {
-    const headline = tierLabel
-      ? `This opportunity requires a ${tierLabel} plan.`
-      : "This opportunity needs a higher plan.";
-    const action = "Upgrade your plan to unlock this order.";
-    const button = "View plans";
-    return { headline, action, button, requiredTierCode: tier };
+  if (code === "INTERNAL_PLAN_CONFIGURATION") {
+    return {
+      headline: isEn
+        ? "We couldn't verify your plan eligibility right now. Please contact support."
+        : "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.",
+      action: null,
+      button: null,
+      requiredTierCode: null,
+      mode: "support",
+    };
   }
 
-  const headline = tierLabel
-    ? `هذا الطلب متاح لباقات أعلى (ابتداءً من ${tierLabel}). قم بترقية خطتك لاستلامه.`
-    : "هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.";
-  const action = "ترقية الخطة";
-  const button = "ترقية الخطة";
-  return { headline, action, button, requiredTierCode: tier };
+  if (code === "NO_ACTIVE_PLAN") {
+    return {
+      headline: isEn
+        ? "Activate your plan to receive orders"
+        : "فعّل باقتك لاستلام الطلبات",
+      action: null,
+      button: isEn ? "View plans" : "عرض الباقات",
+      requiredTierCode: null,
+      mode: "upgrade",
+    };
+  }
+
+  if (code === "COURSE_PLAN_UPGRADE_REQUIRED") {
+    const tierHelper = formatCourseRequiredTierHelper(requiredTierCode, { isEn });
+    return {
+      headline: isEn
+        ? "This course is available on higher plans"
+        : "هذه الدورة متاحة لباقات أعلى",
+      subline: tierHelper,
+      action: null,
+      button: isEn ? "Upgrade plan" : "ترقية الباقة",
+      requiredTierCode: tier,
+      mode: "upgrade",
+    };
+  }
+
+  // PLAN_TOO_LOW and generic plan locks
+  return {
+    headline: isEn
+      ? "This order's value exceeds your current plan limit"
+      : "قيمة هذا الطلب أعلى من حد باقتك الحالية",
+    action: null,
+    button: isEn ? "Upgrade plan" : "ترقية الباقة",
+    requiredTierCode: tier,
+    mode: "upgrade",
+  };
 }
 
 /**
@@ -106,22 +166,37 @@ export function shouldShowArticlePlanUpgradeCta(eligibility) {
 
 /**
  * Resolve CTA props from pool order + API poolEligibility.
+ * - PLAN_TOO_LOW / generic: upgrade CTA
+ * - NO_ACTIVE_PLAN: activate/view plans CTA
+ * - INTERNAL_PLAN_CONFIGURATION: support message only (no upgrade button)
  */
 export function planUpgradePropsFromPoolOrder(order) {
   const pe = order?.poolEligibility && typeof order.poolEligibility === "object"
     ? order.poolEligibility
     : {};
   if (pe.isLockedByPlan !== true && order?.isLockedByPlan !== true) return null;
-  if (pe.planConfigurationError === true) return null;
-  if (pe.reasonCode === "INTERNAL_PLAN_CONFIGURATION" || pe.reasonCode === "NO_ACTIVE_PLAN") {
-    return null;
+
+  if (pe.planConfigurationError === true || pe.reasonCode === "INTERNAL_PLAN_CONFIGURATION") {
+    return {
+      reason: "INTERNAL_PLAN_CONFIGURATION",
+      mode: "support",
+    };
   }
+
+  if (pe.reasonCode === "NO_ACTIVE_PLAN") {
+    return {
+      reason: "NO_ACTIVE_PLAN",
+      mode: "upgrade",
+    };
+  }
+
   return {
     requiredTierCode:
       pe.requiredTierCode
       || order?.requiredTierCode
       || null,
-    reason: pe.reasonCode || "plan_locked",
+    reason: pe.reasonCode || "PLAN_TOO_LOW",
+    mode: "upgrade",
     suggestedUpgradePlanTitle:
       pe.suggestedUpgradePlanTitle
       || order?.suggestedUpgradePlanTitle

@@ -39,23 +39,32 @@ const PricingSection = ({
   const plansList = Array.isArray(plans) ? plans : [];
   const featuredIndex = pickFeaturedPlanIndex(plansList);
   const isDashboard = variant === "dashboard";
-  const layout = isDashboard ? null : getPlansLayoutConfig(layoutVariant);
   const plansLookLikeMembership = plansList.some(
     (p) => p?.catalogSource === "marketplace_membership" || p?.marketplaceMembership,
   );
+  // Same membership card chrome on public /plans and freelancer dashboard.
   const isMembershipCatalog =
-    !isDashboard &&
-    (membershipCatalog === true ||
-      (membershipCatalog == null &&
-        (plansLookLikeMembership ||
-          (loading && forceMembershipHero && layoutVariant !== PLANS_LAYOUT_VARIANT.LEGACY_THREE_CARD && !pageTitle))));
-  const skeletonCount = isDashboard ? Math.max(plansList.length || 4, 4) : layout.skeletonCount;
+    membershipCatalog === true ||
+    (membershipCatalog == null &&
+      (plansLookLikeMembership ||
+        (!isDashboard &&
+          loading &&
+          forceMembershipHero &&
+          layoutVariant !== PLANS_LAYOUT_VARIANT.LEGACY_THREE_CARD &&
+          !pageTitle)));
+  const useDashboardLegacyChrome = isDashboard && !isMembershipCatalog;
+  const layout = useDashboardLegacyChrome
+    ? null
+    : getPlansLayoutConfig(isDashboard ? PLANS_LAYOUT_VARIANT.MAIN_FIVE_CARD : layoutVariant);
+  const skeletonCount = useDashboardLegacyChrome
+    ? Math.max(plansList.length || 4, 4)
+    : layout.skeletonCount;
   const isLegacyPublic =
     !isDashboard && layoutVariant === PLANS_LAYOUT_VARIANT.LEGACY_THREE_CARD;
   const specialOffer =
     !isLegacyPublic ? normalizePublicSpecialOffer(specialOfferPackage) : null;
   const showSpecial = Boolean(specialOffer);
-  const gridClassName = isDashboard
+  const gridClassName = useDashboardLegacyChrome
     ? ""
     : isLegacyPublic
       ? layout.gridClassName
@@ -96,7 +105,7 @@ const PricingSection = ({
       id={forceMembershipHero ? "plans-panel-membership" : undefined}
       role={forceMembershipHero ? "tabpanel" : undefined}
       aria-labelledby={forceMembershipHero ? "plans-tab-membership" : undefined}
-      className={`pricing ${isDashboard ? "pricing--dashboard" : "pricing-ref-shell"} ${
+      className={`pricing ${useDashboardLegacyChrome ? "pricing--dashboard" : "pricing-ref-shell"} ${
         isMembershipCatalog ? "pricing--membership pricing--membership-no-hero" : ""
       } ${showSpecial ? "pricing--with-special-offer" : ""}`.trim()}
       aria-label={t("plans.sectionAria")}
@@ -118,7 +127,7 @@ const PricingSection = ({
         />
       ) : null}
 
-      {!isDashboard && isMembershipCatalog && layout?.showActivationFeeNote && feeEnabled ? (
+      {!useDashboardLegacyChrome && isMembershipCatalog && layout?.showActivationFeeNote && feeEnabled ? (
         <PlansActivationFeeNote
           className="plans-activation-fee-note--under-lede"
           enabled={feeEnabled}

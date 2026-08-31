@@ -155,8 +155,8 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  gap: 4px;
-  padding: 4px 8px 12px;
+  gap: 2px;
+  padding: 2px 8px 10px;
   text-align: center;
   border-bottom: 1px solid var(--fdl-border-soft);
 }
@@ -171,7 +171,7 @@
 
 .fdl-sidebar__logo {
   display: block;
-  width: min(156px, 88%);
+  width: min(128px, 78%);
   max-width: 100%;
   height: auto;
   margin-inline: auto;
@@ -185,7 +185,7 @@
 }
 
 .fdl-sidebar--collapsed .fdl-sidebar__logo {
-  width: 44px;
+  width: 38px;
 }
 
 .fdl-sidebar--collapsed .fdl-sidebar__brand {
@@ -226,8 +226,8 @@
 }
 
 .fdl-sidebar--collapsed .fdl-nav-icon__surface {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
 }
 
 .fdl-sidebar__nav {
@@ -276,14 +276,14 @@
 .fdl-navlink {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 9px 12px;
+  padding: 7px 10px;
   border: 1px solid transparent;
-  border-radius: 16px;
+  border-radius: 14px;
   background: transparent;
   color: var(--dash-text-secondary);
-  font-size: 0.86rem;
+  font-size: 0.78rem;
   font-weight: 600;
   font-family: inherit;
   text-decoration: none;
@@ -313,11 +313,11 @@
 /* Sidebar nav icons — flat neutral surfaces */
 .fdl-nav-icon__surface {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
-  border-radius: 13px;
+  border-radius: 11px;
   background: var(--dash-card, #fcfcfd);
   border: 1px solid var(--dash-border, #c9d0da);
   box-shadow: none;
@@ -328,8 +328,8 @@
 }
 
 .fdl-nav-icon {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   color: var(--dash-text-muted);
   stroke-width: 1.75;
 }
@@ -1107,14 +1107,14 @@
   }
 
   .fdl-nav-icon__surface {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
   }
 
   .fdl-nav-icon {
-    width: 19px;
-    height: 19px;
+    width: 15px;
+    height: 15px;
   }
 }
 

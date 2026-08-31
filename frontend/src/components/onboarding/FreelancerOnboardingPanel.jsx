@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import { postOnboardingEventRequest } from "../../services/api";
 
 const CTA_CLASS =
-  "inline-flex min-h-10 items-center rounded-[10px] bg-[var(--dash-primary,#2f3b65)] px-3.5 font-bold text-white no-underline";
+  "inline-flex min-h-8 items-center rounded-[8px] bg-[var(--dash-primary,#2f3b65)] px-3 text-[0.74rem] font-bold text-white no-underline";
 const LINK_CLASS =
-  "cursor-pointer border-0 bg-transparent text-[0.92rem] font-bold text-[var(--dash-primary,#2f3b65)] no-underline";
-const MUTED_CLASS = "mb-[0.35rem] text-[0.82rem] font-bold text-[var(--dash-text-secondary,#5a6378)]";
+  "cursor-pointer border-0 bg-transparent text-[0.74rem] font-bold text-[var(--dash-primary,#2f3b65)] no-underline";
+const MUTED_CLASS = "mb-[0.2rem] text-[0.68rem] font-bold text-[var(--dash-text-secondary,#5a6378)]";
 
 export default function FreelancerOnboardingPanel({ payload }) {
   const viewedRef = useRef(false);
@@ -38,18 +38,18 @@ export default function FreelancerOnboardingPanel({ payload }) {
 
   return (
     <section
-      className={`mb-4 rounded-2xl border border-[color:rgb(23_32_51/0.08)] bg-[var(--dash-card,#fff)] shadow-[0_8px_24px_rgb(23_32_51/0.06)] ${
-        compact ? "px-4 py-3.5" : "px-[1.2rem] py-[1.1rem]"
+      className={`mb-3 rounded-xl border border-[color:rgb(23_32_51/0.08)] bg-[var(--dash-card,#fff)] shadow-[0_6px_18px_rgb(23_32_51/0.05)] ${
+        compact ? "px-3 py-2.5" : "px-3.5 py-3"
       }`}
       aria-labelledby="oh-onboard-title"
     >
       <p className={MUTED_CLASS}>{payload.accountStatusLabel}</p>
       {payload.progress?.label ? <p className={MUTED_CLASS}>{payload.progress.label}</p> : null}
-      <h2 id="oh-onboard-title" className="mb-[0.45rem] text-[1.15rem] text-[var(--dash-text,#172033)]">
+      <h2 id="oh-onboard-title" className="mb-[0.3rem] text-[0.92rem] font-extrabold text-[var(--dash-text,#172033)]">
         {item.title}
       </h2>
-      <p className="mb-[0.9rem] leading-[1.7] text-[var(--dash-text-secondary,#3d4558)]">{body}</p>
-      <div className="flex flex-wrap items-center gap-[0.6rem]">
+      <p className="mb-2.5 text-[0.74rem] leading-[1.55] text-[var(--dash-text-secondary,#3d4558)]">{body}</p>
+      <div className="flex flex-wrap items-center gap-2">
         {item.ctaLabel ? (
           <Link to={ctaTo} className={CTA_CLASS} onClick={onCta}>
             {compact && item.conditionKey === "training_incomplete" ? "أكمل الآن" : item.ctaLabel}

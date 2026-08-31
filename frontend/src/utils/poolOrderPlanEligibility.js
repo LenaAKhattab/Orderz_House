@@ -9,8 +9,8 @@ export const POOL_PLAN_ELIGIBILITY_REASON = Object.freeze({
 });
 
 export const POOL_PLAN_ELIGIBILITY_MESSAGE_AR = Object.freeze({
-  PLAN_TOO_LOW: "هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.",
-  NO_ACTIVE_PLAN: "فعّل باقتك أولاً لاستلام الطلبات.",
+  PLAN_TOO_LOW: "قيمة هذا الطلب أعلى من حد باقتك الحالية",
+  NO_ACTIVE_PLAN: "فعّل باقتك لاستلام الطلبات",
   INTERNAL_PLAN_CONFIGURATION: "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.",
 });
 

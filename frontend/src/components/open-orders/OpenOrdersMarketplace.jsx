@@ -73,7 +73,7 @@ function PlanFilterEmptyState() {
   return (
     <div className="oh-orders-plan-empty oh-orders-plan-empty--neu fdash-surface-3d fdash-surface-3d--soft">
       <div className="oh-orders-plan-empty__icon" aria-hidden>
-        <Briefcase size={28} strokeWidth={1.9} />
+        <Briefcase size={22} strokeWidth={1.9} />
       </div>
       <div className="oh-orders-plan-empty__copy">
         <h3 className="oh-orders-plan-empty__title">{t("orders.empty.planTitle")}</h3>
@@ -919,14 +919,14 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
           }}
         >
           <Filter
-            size={16}
+            size={13}
             strokeWidth={2.2}
             className="oh-orders-plan-filter-btn__icon oh-orders-plan-filter-btn__icon--filter"
             aria-hidden
           />
           <span className="oh-orders-plan-filter-btn__label">{t("orders.planFilter.label")}</span>
           <Sparkles
-            size={15}
+            size={12}
             strokeWidth={2.1}
             className="oh-orders-plan-filter-btn__icon oh-orders-plan-filter-btn__icon--spark"
             aria-hidden

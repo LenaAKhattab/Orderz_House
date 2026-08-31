@@ -1,4 +1,5 @@
 const { pool } = require("../config/db");
+const coursePlanEligibilityService = require("./coursePlanEligibilityService");
 const {
   fetchValidatedCoursePdfBuffer,
   buildCoursePdfDownloadFilename,
@@ -82,6 +83,22 @@ async function streamCourseFileForFreelancer({ freelancerUserId, courseId, fileK
       err.statusCode = 403;
       throw err;
     }
+    const { rows: gateRows } = await client.query(
+      `SELECT id, required_tier_code FROM courses WHERE id = $1 AND is_active = TRUE LIMIT 1`,
+      [cid],
+    );
+    if (!gateRows[0]) {
+      const err = new Error("الدورة غير موجودة.");
+      err.statusCode = 404;
+      throw err;
+    }
+    const planContext = await coursePlanEligibilityService.buildFreelancerCourseAccessContext(uid, { client });
+    await coursePlanEligibilityService.assertFreelancerCoursePlanAccess({
+      freelancerUserId: uid,
+      course: gateRows[0],
+      client,
+      context: planContext,
+    });
     const { rows } = await client.query(
       `SELECT id, is_testing_enabled, test_file_url, test_prompt_file_url, test_model_answer_file_url
        FROM courses

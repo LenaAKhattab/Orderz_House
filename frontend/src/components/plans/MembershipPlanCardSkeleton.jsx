@@ -64,7 +64,7 @@ export function MembershipPlanCardSkeleton({ featured = false }) {
 }
 
 /**
- * Same dashboard pricing grid wrapper as real Freelancer Marketplace cards.
+ * Same public membership grid chrome as /plans (compact 4-col).
  * Order: STARTER → SILVER → PRO → ELITE (PRO featured at index 2).
  */
 export function MarketplaceMembershipPlansGridSkeleton({
@@ -73,8 +73,21 @@ export function MarketplaceMembershipPlansGridSkeleton({
   className = "",
 }) {
   return (
-    <div className={["pricing", "pricing--dashboard", className].filter(Boolean).join(" ")}>
-      <div className="pricing__grid" role="presentation">
+    <div
+      className={[
+        "pricing",
+        "pricing-ref-shell",
+        "pricing--membership",
+        "pricing--membership-no-hero",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <div
+        className="pricing__grid pricing__grid--public-dynamic pricing__grid--plans-4"
+        role="presentation"
+      >
         {Array.from({ length: count }).map((_, i) => (
           <MembershipPlanCardSkeleton key={`mplan-skel-${i}`} featured={i === featuredIndex} />
         ))}

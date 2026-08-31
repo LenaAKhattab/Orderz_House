@@ -19,6 +19,7 @@ import {
 } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 import {
   isPoolOrderLockedByPlan,
+  poolOrderPlanLockUserMessage,
 } from "../../utils/poolOrderPlanEligibility";
 import { planUpgradePropsFromPoolOrder } from "../../constants/planUpgradeCta";
 import PlanUpgradeRequiredCta from "../freelancer/PlanUpgradeRequiredCta";
@@ -164,7 +165,7 @@ function MarketplaceOrderRow({
   const rowDisabledReason = collectionClosed
     ? collectionLabel || (locale === "en" ? "Applications closed" : "التقديم مغلق")
     : planLockedForUser
-    ? t("orders.marketplace.planLocked")
+    ? poolOrderPlanLockUserMessage(order)
     : actionsDisabledReason;
   const applicants = Number(order?.applicantsCount ?? order?.bidsCount ?? 0);
   const durationLabels = {
@@ -262,10 +263,10 @@ function MarketplaceOrderRow({
               emptyLabel={t("orders.marketplace.card.noApplicants")}
             />
           </div>
-          {showActions ? (
+          {showActions && !planLockedForUser ? (
             <ActionButton
               bidding={bidding}
-              planLocked={planLockedForUser}
+              planLocked={false}
               actionsDisabled={actionsDisabled}
               rowDisabled={rowDisabled}
               rowDisabledReason={rowDisabledReason}
@@ -287,7 +288,7 @@ function MarketplaceOrderRow({
               onKeyDown={(e) => e.stopPropagation()}
             >
               <PlanUpgradeRequiredCta
-                {...(planUpgradePropsFromPoolOrder(order) || { reason: "plan_locked" })}
+                {...(planUpgradePropsFromPoolOrder(order) || { reason: "PLAN_TOO_LOW", mode: "upgrade" })}
                 isEn={locale === "en"}
                 compact
               />

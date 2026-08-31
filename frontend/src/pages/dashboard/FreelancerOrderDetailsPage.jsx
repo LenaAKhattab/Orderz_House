@@ -407,8 +407,9 @@ export default function FreelancerOrderDetailsPage() {
                   {renderFooter ? <div className="od-pool-primary-actions">{poolFooterButtons}</div> : null}
                   {planLocked && isFreelancer ? (
                     <PlanUpgradeRequiredCta
-                      {...(planUpgradePropsFromPoolOrder(order) || { reason: "plan_locked" })}
+                      {...(planUpgradePropsFromPoolOrder(order) || { reason: "PLAN_TOO_LOW", mode: "upgrade" })}
                       isEn={locale === "en"}
+                      compact
                     />
                   ) : null}
                 </div>

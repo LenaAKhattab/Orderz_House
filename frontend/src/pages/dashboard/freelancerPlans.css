@@ -159,8 +159,33 @@
   padding: 0;
 }
 
-/* Marketplace catalog: 1 → 2 → 4 columns. Never 3+1. */
-.fp-pricing-wrap .pricing--dashboard .pricing__grid {
+/* Marketplace: match public /plans card chrome (compact fonts + special+4 row) */
+.fp-pricing-wrap--public-match {
+  padding: clamp(12px, 2vw, 16px);
+  overflow: visible;
+}
+
+.fp-pricing-wrap--public-match .pricing {
+  padding: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.fp-pricing-wrap--public-match .pricing__with-special {
+  max-width: 100%;
+  margin-inline: 0;
+}
+
+.fp-pricing-wrap--public-match .pricing__grid--plans-4 {
+  max-width: 100%;
+}
+
+.fp-pricing-wrap--public-match .pricing--membership::before {
+  inset: -4px -8px auto;
+}
+
+/* Legacy dashboard catalog only (not public-match membership) */
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing--dashboard .pricing__grid {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
   gap: 14px;
@@ -169,20 +194,20 @@
 }
 
 @media (min-width: 640px) {
-  .fp-pricing-wrap .pricing--dashboard .pricing__grid {
+  .fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing--dashboard .pricing__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
   }
 }
 
 @media (min-width: 1100px) {
-  .fp-pricing-wrap .pricing--dashboard .pricing__grid {
+  .fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing--dashboard .pricing__grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 12px;
   }
 }
 
-.fp-pricing-wrap .pricing-card {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -200,24 +225,24 @@
     border-color 0.22s ease;
 }
 
-.fp-pricing-wrap .pricing-card:hover {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card:hover {
   border-color: rgba(191, 219, 254, 0.85);
   box-shadow: 0 16px 36px -14px rgba(59, 130, 246, 0.18);
 }
 
 /* Highlight PRO without breaking equal grid cells */
-.fp-pricing-wrap .pricing-card--featured {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card--featured {
   border: 2px solid rgba(30, 58, 138, 0.45);
   box-shadow: 0 18px 40px -14px rgba(30, 58, 138, 0.2);
   transform: none;
 }
 
-.fp-pricing-wrap .pricing-card--current {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card--current {
   border-color: rgba(167, 243, 208, 0.85);
   box-shadow: 0 12px 32px -12px rgba(5, 150, 105, 0.16);
 }
 
-.fp-pricing-wrap .pricing-card__head--membership {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__head--membership {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -225,7 +250,7 @@
   min-height: 3.25rem;
 }
 
-.fp-pricing-wrap .pricing-card__title--tier {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__title--tier {
   font-size: clamp(1rem, 0.9vw + 0.75rem, 1.2rem);
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -233,7 +258,7 @@
   margin: 0;
 }
 
-.fp-pricing-wrap .pricing-card__tagline {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__tagline {
   margin: 2px 0 0;
   font-size: 0.78rem;
   font-weight: 700;
@@ -242,20 +267,20 @@
   min-height: 1.15em;
 }
 
-.fp-pricing-wrap .pricing-card__price--membership {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__price--membership {
   margin-top: 10px;
   margin-bottom: 2px;
   min-height: 4.4rem;
 }
 
-.fp-pricing-wrap .pricing-card__price-stack {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__price-stack {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   gap: 0.28rem 0.4rem;
 }
 
-.fp-pricing-wrap .pricing-card__price-amount {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__price-amount {
   font-size: clamp(1.65rem, 2vw, 2.05rem);
   font-weight: 950;
   line-height: 1;
@@ -263,27 +288,27 @@
   font-variant-numeric: tabular-nums;
 }
 
-.fp-pricing-wrap .pricing-card__price-unit {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__price-unit {
   font-size: 0.9rem;
   font-weight: 800;
   color: #475569;
 }
 
-.fp-pricing-wrap .pricing-card__price-period {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__price-period {
   margin: 8px 0 0;
   font-size: 0.76rem;
   font-weight: 700;
   color: #6f7992;
 }
 
-.fp-pricing-wrap .pricing-card__metrics {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__metrics {
   display: grid;
   gap: 8px;
   margin: 4px 0 0;
   flex: 1 1 auto;
 }
 
-.fp-pricing-wrap .pricing-card__metric {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__metric {
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr);
   gap: 8px;
@@ -294,7 +319,7 @@
   border: 1px solid rgba(148, 163, 184, 0.16);
 }
 
-.fp-pricing-wrap .pricing-card__metric-icon {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__metric-icon {
   display: grid;
   place-items: center;
   width: 28px;
@@ -304,7 +329,7 @@
   background: rgba(56, 82, 180, 0.08);
 }
 
-.fp-pricing-wrap .pricing-card__metric-copy {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__metric-copy {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -315,7 +340,7 @@
   margin: 0;
 }
 
-.fp-pricing-wrap .pricing-card__metric-value {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__metric-value {
   font-size: 1rem;
   font-weight: 950;
   color: #0f1a3a;
@@ -323,24 +348,24 @@
   font-variant-numeric: tabular-nums;
 }
 
-.fp-pricing-wrap .pricing-card__metric-value--text {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__metric-value--text {
   font-size: 0.95rem;
 }
 
-.fp-pricing-wrap .pricing-card__metric-label {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__metric-label {
   font-size: 0.78rem;
   font-weight: 700;
   color: #64748b;
   line-height: 1.35;
 }
 
-.fp-pricing-wrap .pricing-card__secondary {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__secondary {
   margin-top: 10px;
   margin-bottom: 2px;
   min-height: 2rem;
 }
 
-.fp-pricing-wrap .pricing-card__withdrawal {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__withdrawal {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -352,24 +377,24 @@
   line-height: 1.3;
 }
 
-.fp-pricing-wrap .pricing-card__withdrawal--on {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__withdrawal--on {
   color: #166534;
   background: rgba(22, 101, 52, 0.08);
   border: 1px solid rgba(22, 101, 52, 0.14);
 }
 
-.fp-pricing-wrap .pricing-card__withdrawal--off {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card__withdrawal--off {
   color: #64748b;
   background: rgba(148, 163, 184, 0.12);
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
-.fp-pricing-wrap .pricing-card--membership .pricing-card__cta {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card--membership .pricing-card__cta {
   margin-top: auto;
   padding-top: 14px;
 }
 
-.fp-pricing-wrap .pricing-card--membership .pricing-card__btn {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card--membership .pricing-card__btn {
   width: 100%;
 }
 
@@ -400,11 +425,11 @@
 }
 
 /* Skeleton cards share the real dashboard membership card chrome */
-.fp-pricing-wrap .pricing-card--skeleton.pricing-card--membership {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card--skeleton.pricing-card--membership {
   pointer-events: none;
 }
 
-.fp-pricing-wrap .pricing-card--skeleton.pricing-card--membership:hover {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card--skeleton.pricing-card--membership:hover {
   transform: none;
   border-color: rgba(226, 232, 240, 0.9);
   box-shadow:
@@ -412,7 +437,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
-.fp-pricing-wrap .pricing-card--skeleton.pricing-card--featured:hover {
+.fp-pricing-wrap:not(.fp-pricing-wrap--public-match) .pricing-card--skeleton.pricing-card--featured:hover {
   border-color: rgba(30, 58, 138, 0.45);
   box-shadow: 0 18px 40px -14px rgba(30, 58, 138, 0.2);
 }
@@ -426,12 +451,74 @@
   color: #1e40af;
 }
 
+/* Membership status: title on top, metric chips in one row (no side-by-side gap) */
 .fp-hero--membership {
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: clamp(16px, 2.2vw, 22px);
+}
+
+.fp-hero--membership .fp-hero__copy {
+  width: 100%;
+}
+
+.fp-hero--membership .fp-hero__title {
+  margin: 0 0 4px;
+  font-size: clamp(1.05rem, 1.6vw, 1.28rem);
+  line-height: 1.25;
+}
+
+.fp-hero--membership .fp-hero__eyebrow {
+  margin-bottom: 6px;
+}
+
+.fp-hero--membership .fp-hero__stats {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.fp-hero--membership .fp-hero__stat {
+  padding: 8px 10px;
+  border-radius: 12px;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fp-hero--membership .fp-hero__stat dt {
+  font-size: 0.68rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fp-hero--membership .fp-hero__stat dd {
+  font-size: 0.82rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 1100px) {
+  .fp-hero--membership .fp-hero__stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .fp-hero--membership .fp-hero__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .fp-hero--membership-empty .fp-hero__title {
-  font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+  font-size: clamp(1.05rem, 1.6vw, 1.22rem);
 }
 
 .fp-hero--membership-empty .fp-hero__stats {
