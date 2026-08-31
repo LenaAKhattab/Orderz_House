@@ -707,9 +707,13 @@
   margin-top: auto;
 }
 
-/* Training packages on mobile */
+/* Training packages on mobile — font sizes aligned with membership cards */
 .plans-mobile-page .plans-category-toggle {
   margin: 0.35rem 1rem 0.85rem;
+}
+
+.pm-training--no-hero {
+  padding-top: 0.15rem;
 }
 
 .pm-training__list {
@@ -722,8 +726,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 1rem 0.95rem 0.9rem;
+  gap: 0.25rem;
+  padding: 0.85rem 0.85rem 0.75rem;
   border-radius: var(--pm-radius);
   background: var(--pm-surface);
   border: 1px solid rgba(226, 232, 240, 0.95);
@@ -765,10 +769,10 @@
 .plans-mobile-page .training-card__badge {
   display: inline-flex;
   align-self: flex-start;
-  margin-bottom: 0.35rem;
-  padding: 0.2rem 0.65rem;
+  margin-bottom: 0.25rem;
+  padding: 0.18rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 800;
   color: #fff;
   background: linear-gradient(135deg, #4f46e5, #6366f1);
@@ -776,48 +780,49 @@
 
 .plans-mobile-page .training-card__title {
   margin: 0;
-  font-size: 1.12rem;
+  font-size: 0.95rem;
   font-weight: 950;
   color: var(--pm-ink);
 }
 
 .plans-mobile-page .training-card__desc {
-  margin: 0.2rem 0 0;
-  font-size: 0.8rem;
+  margin: 0.15rem 0 0;
+  font-size: 0.68rem;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.4;
   color: var(--pm-muted);
 }
 
 .plans-mobile-page .training-card__price {
   display: flex;
   align-items: baseline;
-  gap: 0.3rem;
-  margin-top: 0.55rem;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.4rem;
 }
 
 .plans-mobile-page .training-card__price-amount {
-  font-size: 1.75rem;
+  font-size: 1.35rem;
   font-weight: 950;
   line-height: 1;
   color: var(--pm-ink);
 }
 
 .plans-mobile-page .training-card__price-unit {
-  font-size: 0.88rem;
+  font-size: 0.78rem;
   font-weight: 800;
   color: #475569;
 }
 
 .plans-mobile-page .training-card__divider {
   height: 1px;
-  margin: 0.55rem 0;
+  margin: 0.4rem 0;
   background: linear-gradient(90deg, transparent, rgba(47, 59, 101, 0.14), transparent);
 }
 
 .plans-mobile-page .training-card__includes-label {
-  margin: 0 0 0.45rem;
-  font-size: 0.76rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.66rem;
   font-weight: 850;
   color: var(--pm-primary);
 }
@@ -827,25 +832,26 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
 
 .plans-mobile-page .training-card__feature {
   display: grid;
-  grid-template-columns: 18px 1fr;
-  gap: 0.45rem;
-  font-size: 0.8rem;
-  line-height: 1.45;
+  grid-template-columns: 16px 1fr;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
   font-weight: 600;
   color: #334155;
 }
 
 .plans-mobile-page .training-card__feature--highlight {
-  padding: 0.5rem 0.55rem;
-  border-radius: 0.8rem;
+  padding: 0.35rem 0.45rem;
+  border-radius: 0.7rem;
   background: rgba(47, 59, 101, 0.06);
   border: 1px solid rgba(47, 59, 101, 0.12);
   font-weight: 800;
+  font-size: 0.7rem;
 }
 
 .plans-mobile-page .training-card__feature-icon {
@@ -855,18 +861,19 @@
 }
 
 .plans-mobile-page .training-card__cta {
-  margin-top: 0.85rem;
+  margin-top: 0.65rem;
 }
 
 .plans-mobile-page .training-card__btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
+  gap: 0.35rem;
   width: 100%;
-  min-height: 2.75rem;
-  border-radius: 0.85rem;
-  font-size: 0.92rem;
+  min-height: 2.15rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
   font-weight: 850;
   text-decoration: none;
 }

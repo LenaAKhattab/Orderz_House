@@ -20,6 +20,17 @@ describe("public special offer pricing UI (checkout)", () => {
     assert.match(section, /onSpecialOfferCheckout/);
     assert.match(section, /specialOfferCheckoutBusy/);
     assert.match(section, /pricing__with-special/);
+    assert.match(section, /showPublicHero/);
+    assert.match(section, /pricing--membership-no-hero/);
+  });
+
+  it("membership catalog omits page hero on desktop and mobile", () => {
+    const section = read("components/plans/PricingSection.jsx");
+    assert.match(section, /!isDashboard && !isMembershipCatalog/);
+    assert.doesNotMatch(section, /plans\.hero\.eyebrow/);
+    const mobile = read("components/plans/mobile/PlansMobilePage.jsx");
+    assert.doesNotMatch(mobile, /plans\.hero\.eyebrow/);
+    assert.match(mobile, /no page hero/);
   });
 
   it("card uses checkout button or WhatsApp link by mode", () => {

@@ -35,11 +35,18 @@
     "dailyLimit": "Daily limit",
     "maxProject": "Max project value",
     "duration": "Package duration",
-    "days": "days"
+    "durationShort": "Duration",
+    "days": "days",
+    "available": "available",
+    "offersPerDay": "offers / day",
+    "upTo": "Up to",
+    "perProject": "per project",
+    "unlimitedProjects": "No project ceiling",
+    "savePercent": "Save {{percent}}%"
   },
   "sectionAria": "Marketplace Membership plans",
   "membership": {
-    "free": "Free",
+    "free": "Trial",
     "metricsAria": "Key membership metrics",
     "bidsAvailable": "Bids available",
     "bidsPerDay": "Bids per day",

@@ -7,6 +7,15 @@
   padding: clamp(44px, 5.5vw, 64px) 0 clamp(40px, 4.5vw, 56px);
 }
 
+/* Plans catalog: tighter gap under site nav (toggle sits right under header). */
+.container.page-content.plans-page--ref.plans-page--catalog-toggle {
+  padding-top: clamp(10px, 1.6vw, 18px);
+}
+
+.container.page-content.plans-page--ref.plans-page--catalog-toggle .plans-category-toggle {
+  margin-bottom: clamp(12px, 1.8vw, 20px);
+}
+
 .public-page-hero {
   text-align: center;
   max-width: none;
@@ -94,6 +103,10 @@
     scroll-padding-top: calc(76px + env(safe-area-inset-top, 0));
     padding-top: clamp(16px, 4vw, 24px);
     padding-bottom: clamp(24px, 5vw, 36px);
+  }
+
+  .container.page-content.plans-page--ref.plans-page--catalog-toggle {
+    padding-top: clamp(8px, 2vw, 14px);
   }
 
   .public-page-hero {

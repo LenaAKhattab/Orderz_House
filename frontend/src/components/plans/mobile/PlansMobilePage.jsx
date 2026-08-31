@@ -1,4 +1,3 @@
-import PlansMobileHero from "./PlansMobileHero";
 import PlansMobilePlans from "./PlansMobilePlans";
 import SpecialOfferPackageCard from "../SpecialOfferPackageCard";
 import { useTranslation } from "../../../i18n/LanguageProvider";
@@ -13,6 +12,7 @@ import "./plans-mobile-page.css";
 
 /**
  * Radical mobile-only plans layout (≤640px). Desktop unchanged.
+ * Membership + Training catalogs have no page hero — cards start immediately.
  */
 export default function PlansMobilePage({
   loading = false,
@@ -25,17 +25,14 @@ export default function PlansMobilePage({
   specialOfferCheckoutBusy = false,
   onCta,
   onSpecialOfferCheckout = null,
-  pageTitle = null,
-  pageSubtitle = null,
-  trustPills = [],
+  pageTitle: _pageTitle = null,
+  pageSubtitle: _pageSubtitle = null,
+  trustPills: _trustPills = [],
   pageSlug = null,
   layoutVariant = PLANS_LAYOUT_VARIANT.MAIN_FIVE_CARD,
   activationFeeNeedsPayment = false,
   activationFee = null,
   category = null,
-  trainingEyebrow = null,
-  trainingTitle = null,
-  trainingSubtitle = null,
   contentPending = false,
 }) {
   const { t, dir, locale } = useTranslation();
@@ -67,17 +64,11 @@ export default function PlansMobilePage({
       {!contentPending && showTraining ? (
         <section
           id="plans-panel-training-mobile"
-          className="pm-training"
+          className="pm-training pm-training--no-hero"
           role="tabpanel"
           aria-labelledby="plans-tab-training"
           aria-label={t("plans.training.sectionAria")}
         >
-          <PlansMobileHero
-            title={trainingTitle || t("plans.training.hero.title")}
-            subtitle={trainingSubtitle || t("plans.training.hero.subtitle")}
-            eyebrow={trainingEyebrow || t("plans.training.hero.eyebrow")}
-            trustPills={trustPills}
-          />
           <div className="pm-training__list">
             {trainingPackages.map((pkg) => (
               <TrainingPlanCard key={pkg.id} pkg={pkg} locale={locale} t={t} />
@@ -88,29 +79,13 @@ export default function PlansMobilePage({
 
       {showMembership ? (
         <>
-          <PlansMobileHero
-            title={pageTitle}
-            subtitle={pageSubtitle}
-            eyebrow={
-              isMainCatalog ||
-              (Array.isArray(plans) &&
-                plans.some(
-                  (p) => p?.catalogSource === "marketplace_membership" || p?.marketplaceMembership,
-                ))
-                ? t("plans.hero.eyebrow")
-                : null
-            }
-            trustPills={trustPills}
-            afterLede={
-              layout.showActivationFeeNote && feeEnabled ? (
-                <PlansActivationFeeNote
-                  className="plans-activation-fee-note--under-lede plans-activation-fee-note--mobile"
-                  enabled={feeEnabled}
-                  amountJod={activationFee?.amountJod}
-                />
-              ) : null
-            }
-          />
+          {layout.showActivationFeeNote && feeEnabled ? (
+            <PlansActivationFeeNote
+              className="plans-activation-fee-note--under-lede plans-activation-fee-note--mobile"
+              enabled={feeEnabled}
+              amountJod={activationFee?.amountJod}
+            />
+          ) : null}
           {specialOffer && !loading ? (
             <div className="pm-special-offer" data-special-offer-mobile="true">
               <SpecialOfferPackageCard

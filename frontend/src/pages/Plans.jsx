@@ -208,11 +208,7 @@ const Plans = () => {
         ) : null}
 
         {showTraining ? (
-          <TrainingPlansSection
-            eyebrow={plansContent.badgeText}
-            title={plansContent.title}
-            subtitle={plansContent.description}
-          />
+          <TrainingPlansSection />
         ) : null}
 
         {showMembership ? (
@@ -278,9 +274,6 @@ const Plans = () => {
         pageSlug={slug || null}
         layoutVariant={layoutVariant}
         category={isMainCatalog ? category : null}
-        trainingEyebrow={plansContent.badgeText}
-        trainingTitle={plansContent.title}
-        trainingSubtitle={plansContent.description}
         contentPending={contentPending}
       />
     </main>

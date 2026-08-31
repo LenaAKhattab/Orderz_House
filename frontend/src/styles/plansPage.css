@@ -99,17 +99,136 @@
 }
 
 .plans-page--ref .pricing__grid--plans-4 .pricing-card {
-  padding: 14px 14px 12px;
+  padding: 10px 10px 8px;
   min-width: 0;
 }
 
 .plans-page--ref .pricing__grid--plans-4 .pricing-card__title {
-  font-size: clamp(1.05rem, 1.1vw + 0.7rem, 1.25rem);
+  font-size: clamp(0.95rem, 0.95vw + 0.6rem, 1.12rem);
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__title--tier {
+  font-size: clamp(0.88rem, 0.85vw + 0.5rem, 1.05rem);
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__tagline {
+  font-size: 0.68rem;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__divider--features {
+  margin: 6px 0 4px;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__price-amount {
+  font-size: clamp(1.2rem, 1.4vw, 1.45rem);
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__price-unit {
+  font-size: 0.78rem;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__price-period {
+  font-size: 0.66rem;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__metrics {
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__metric {
+  padding: 4px 6px;
+  gap: 5px;
+  border-radius: 10px;
+  grid-template-columns: 20px 1fr;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__metric-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__metric-icon svg {
+  width: 11px;
+  height: 11px;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__head--membership {
+  gap: 4px;
+  min-height: 0;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__price--membership {
+  margin-top: 6px;
+  margin-bottom: 0;
+  min-height: 0;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__price-period {
+  margin-top: 4px;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__secondary {
+  margin-top: 6px;
+  margin-bottom: 2px;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__withdrawal {
+  padding: 4px 8px;
+  font-size: 0.66rem;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card--membership .pricing-card__cta {
+  padding-top: 8px;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__btn {
+  min-height: 34px;
+  padding: 6px 10px;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__metric-value {
+  font-size: 0.74rem;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__metric-value--text {
+  font-size: 0.7rem;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__metric-label {
+  font-size: 0.6rem;
 }
 
 .plans-page--ref .pricing__grid--plans-4 .pricing-card__feature-text {
-  font-size: 0.92rem;
-  line-height: 1.45;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__desc {
+  font-size: 0.74rem;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__price-main {
+  font-size: clamp(1.2rem, 1.5vw, 1.45rem);
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__feature {
+  font-size: 0.7rem;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__btn {
+  font-size: 0.74rem;
+}
+
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__duration,
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__price-intro,
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__price-sub,
+.plans-page--ref .pricing__grid--plans-4 .pricing-card__price-note {
+  font-size: 0.68rem;
+}
+
+.plans-page--ref .pricing__grid--with-special-offer.pricing__grid--plans-4 .pricing-card {
+  padding: 8px 8px 7px;
 }
 
 /* 5+ plans: max 3 columns per row */
@@ -1347,10 +1466,10 @@
 
 .plans-page--ref .pricing-card__metric {
   display: grid;
-  grid-template-columns: 28px 1fr;
-  gap: 8px;
+  grid-template-columns: 24px 1fr;
+  gap: 6px;
   align-items: start;
-  padding: 8px 9px;
+  padding: 6px 8px;
   border-radius: 12px;
   background: rgba(248, 250, 252, 0.95);
   border: 1px solid rgba(148, 163, 184, 0.16);
@@ -1359,11 +1478,16 @@
 .plans-page--ref .pricing-card__metric-icon {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 9px;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
   color: #3852b4;
   background: rgba(56, 82, 180, 0.08);
+}
+
+.plans-page--ref .pricing-card__metric-icon svg {
+  width: 13px;
+  height: 13px;
 }
 
 .plans-page--ref .pricing-card--tier-silver .pricing-card__metric-icon {
@@ -1381,29 +1505,29 @@
   flex-direction: row;
   flex-wrap: wrap;
   align-items: baseline;
-  column-gap: 0.35em;
-  row-gap: 0.1em;
+  column-gap: 0.3em;
+  row-gap: 0.05em;
   min-width: 0;
   margin: 0;
 }
 
 .plans-page--ref .pricing-card__metric-value {
-  font-size: 1.05rem;
-  font-weight: 950;
+  font-size: 0.82rem;
+  font-weight: 900;
   color: #0f1a3a;
-  line-height: 1.15;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
 
 .plans-page--ref .pricing-card__metric-value--text {
-  font-size: 0.98rem;
+  font-size: 0.78rem;
 }
 
 .plans-page--ref .pricing-card__metric-label {
-  font-size: 0.72rem;
+  font-size: 0.64rem;
   font-weight: 700;
   color: #64748b;
-  line-height: 1.35;
+  line-height: 1.3;
 }
 
 .plans-page--ref .pricing-card__metric--elite-cap {
@@ -1543,7 +1667,7 @@
   flex-direction: column;
   height: 100%;
   min-width: 0;
-  padding: 18px 16px 14px;
+  padding: 12px 12px 10px;
   border-radius: 16px;
   background: #ffffff;
   border: 1px solid rgba(56, 82, 180, 0.12);
@@ -1605,10 +1729,10 @@
 .plans-page--ref .training-card__badge {
   display: inline-flex;
   align-self: flex-start;
-  margin: 0 0 10px;
-  padding: 4px 10px;
+  margin: 0 0 6px;
+  padding: 3px 10px;
   border-radius: 999px;
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   font-weight: 800;
   color: #fff;
   background: linear-gradient(135deg, #4f46e5, #6366f1);
@@ -1616,8 +1740,8 @@
 }
 
 .plans-page--ref .training-card__title {
-  margin: 0 0 6px;
-  font-size: clamp(1.05rem, 1.1vw + 0.65rem, 1.28rem);
+  margin: 0 0 4px;
+  font-size: clamp(0.88rem, 0.85vw + 0.5rem, 1.05rem);
   font-weight: 950;
   color: #0f1a3a;
   line-height: 1.3;
@@ -1625,23 +1749,23 @@
 
 .plans-page--ref .training-card__desc {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  line-height: 1.55;
+  line-height: 1.45;
   color: #64748b;
-  min-height: 2.6em;
+  min-height: 0;
 }
 
 .plans-page--ref .training-card__price {
   display: flex;
   align-items: baseline;
-  gap: 0.35rem;
-  margin-top: 14px;
-  min-height: 2.6rem;
+  gap: 0.3rem;
+  margin-top: 8px;
+  min-height: 0;
 }
 
 .plans-page--ref .training-card__price-amount {
-  font-size: clamp(1.85rem, 2.2vw, 2.2rem);
+  font-size: clamp(1.2rem, 1.4vw, 1.45rem);
   font-weight: 950;
   line-height: 1;
   color: #0f1a3a;
@@ -1650,20 +1774,20 @@
 }
 
 .plans-page--ref .training-card__price-unit {
-  font-size: 0.95rem;
+  font-size: 0.78rem;
   font-weight: 800;
   color: #475569;
 }
 
 .plans-page--ref .training-card__divider {
   height: 1px;
-  margin: 12px 0 10px;
+  margin: 8px 0 6px;
   background: linear-gradient(90deg, transparent, rgba(56, 82, 180, 0.14), transparent);
 }
 
 .plans-page--ref .training-card__includes-label {
-  margin: 0 0 8px;
-  font-size: 0.78rem;
+  margin: 0 0 6px;
+  font-size: 0.66rem;
   font-weight: 850;
   color: #3852b4;
 }
@@ -1673,53 +1797,54 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 7px;
+  gap: 5px;
 }
 
 .plans-page--ref .training-card__feature {
   display: grid;
-  grid-template-columns: 18px 1fr;
-  gap: 8px;
+  grid-template-columns: 16px 1fr;
+  gap: 6px;
   align-items: start;
-  font-size: 0.8rem;
-  line-height: 1.45;
+  font-size: 0.7rem;
+  line-height: 1.4;
   color: #334155;
   font-weight: 600;
 }
 
 .plans-page--ref .training-card__feature--highlight {
-  padding: 8px 9px;
-  border-radius: 12px;
+  padding: 5px 7px;
+  border-radius: 10px;
   background: rgba(56, 82, 180, 0.06);
   border: 1px solid rgba(56, 82, 180, 0.12);
   font-weight: 800;
   color: #0f1a3a;
+  font-size: 0.7rem;
 }
 
 .plans-page--ref .training-card__feature-icon {
   display: grid;
   place-items: center;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   margin-top: 1px;
   color: #3852b4;
 }
 
 .plans-page--ref .training-card__cta {
   margin-top: auto;
-  padding-top: 16px;
+  padding-top: 10px;
 }
 
 .plans-page--ref .training-card__btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  min-height: 44px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-size: 0.92rem;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
   font-weight: 850;
   text-decoration: none;
   transition:
@@ -1754,6 +1879,16 @@
 .plans-page--ref .training-card__btn:focus-visible {
   outline: 2px solid #3852b4;
   outline-offset: 2px;
+}
+
+.plans-page--ref .training-card .oh-jod-money__approx {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #6f7992;
+}
+
+.plans-page--ref .pricing--training-no-hero {
+  padding-top: clamp(8px, 1.2vw, 14px);
 }
 
 .public-page-hero--training .public-page-hero__eyebrow {
