@@ -18,6 +18,21 @@ export const SPECIAL_OFFER_ACCESS_LEVEL_OPTIONS = Object.freeze([
   { key: "elite", level: 5, labelAr: "مستوى ELITE", labelEn: "ELITE level" },
 ]);
 
+export const SPECIAL_OFFER_DEFAULT_REFUND_EXPLANATION_AR = `يُسترد مبلغ 100 دينار بواقع 20 دينارًا عن كل شهر نشط ومؤهل، حتى استرداد كامل مبلغ 100 دينار، ضمن مدة التزام مقدارها 6 أشهر. يمكن أن تكون الأشهر المؤهلة متتالية أو متفرقة.
+
+إذا لم تعمل في شهر معين، فلا توجد غرامة ولا دفعة جديدة؛ لكن ذلك الشهر لا يولّد مبلغ استرداد بقيمة 20 دينارًا.
+
+الدخل الناتج عن تنفيذ الطلبات منفصل تمامًا عن مبلغ الاسترداد.
+
+المبلغ ليس رسوم تقديم، أو مقابلة، أو دورة تدريبية، ولا يمثل ضمانًا للعمل أو الدخل.`;
+
+export const SPECIAL_OFFER_REFUND_SECTION_TITLES_AR = Object.freeze([
+  "الاسترداد الشهري",
+  "الأشهر غير النشطة",
+  "الدخل من الطلبات",
+  "تنبيه مهم",
+]);
+
 export const SPECIAL_OFFER_DEFAULTS = Object.freeze({
   isVisible: false,
   title: "باقة العرض",
@@ -34,6 +49,7 @@ export const SPECIAL_OFFER_DEFAULTS = Object.freeze({
   accessLevelKey: "silver",
   ctaLabel: "احصل على العرض الآن",
   microcopy: "بدون التزام، يمكنك الترقية أو الإلغاء في أي وقت",
+  refundExplanationAr: SPECIAL_OFFER_DEFAULT_REFUND_EXPLANATION_AR,
   whatsappMessageAr:
     "مرحبًا، أرغب بالاستفادة من باقة العرض الخاصة في Orderz House ومعرفة تفاصيل التسجيل.",
   purchaseMode: SPECIAL_OFFER_PURCHASE_MODE.CHECKOUT,
@@ -114,6 +130,17 @@ export function normalizePublicSpecialOffer(pkg) {
   return isSpecialOfferVisible(normalized) ? normalized : null;
 }
 
+export function hasSpecialOfferRefundExplanation(offer) {
+  return Boolean(String(offer?.refundExplanationAr || "").trim());
+}
+
+export function splitSpecialOfferRefundSections(text) {
+  return String(text || "")
+    .split(/\n\s*\n/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
 export function buildSpecialOfferWhatsAppUrl(pkg) {
   const text = encodeURIComponent(
     String(pkg?.whatsappMessageAr || SPECIAL_OFFER_DEFAULTS.whatsappMessageAr).trim(),
@@ -141,6 +168,7 @@ export function formStateFromSpecialOffer(pkg) {
     accessLevelKey,
     ctaLabel: src.ctaLabel ?? SPECIAL_OFFER_DEFAULTS.ctaLabel,
     microcopy: src.microcopy ?? SPECIAL_OFFER_DEFAULTS.microcopy,
+    refundExplanationAr: src.refundExplanationAr ?? SPECIAL_OFFER_DEFAULTS.refundExplanationAr,
     whatsappMessageAr: src.whatsappMessageAr ?? SPECIAL_OFFER_DEFAULTS.whatsappMessageAr,
     purchaseMode: resolveSpecialOfferPurchaseMode(src),
     offerVersion: Number(src.offerVersion) || 1,
@@ -179,6 +207,7 @@ export function payloadFromSpecialOfferForm(form) {
     articleAccessLevel: articleAccessLevelFromKey(accessLevelKey),
     ctaLabel: String(form.ctaLabel || "").trim() || SPECIAL_OFFER_DEFAULTS.ctaLabel,
     microcopy: String(form.microcopy || "").trim(),
+    refundExplanationAr: String(form.refundExplanationAr || "").trim(),
     whatsappMessageAr: String(form.whatsappMessageAr || "").trim(),
     purchaseMode,
     linkedPlanCode: null,

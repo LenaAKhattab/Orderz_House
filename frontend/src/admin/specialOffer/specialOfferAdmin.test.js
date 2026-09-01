@@ -34,4 +34,11 @@ describe("special offer admin version lock", () => {
     assert.match(api, /\/super-admin\/plans\/special-offer\/new-version/);
     assert.match(api, /createSpecialOfferCheckoutRequest/);
   });
+
+  it("admin form includes refund explanation textarea", () => {
+    const page = read("pages/dashboard/SuperAdminSpecialOfferPackagePage.jsx");
+    assert.match(page, /refundExplanationAr/);
+    assert.match(page, /data-refund-explanation-field/);
+    assert.match(page, /شرح الاسترداد/);
+  });
 });

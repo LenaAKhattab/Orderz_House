@@ -42,7 +42,13 @@
     "upTo": "حتى",
     "perProject": "للمشروع",
     "unlimitedProjects": "بلا سقف للمشاريع",
-    "savePercent": "وفر {{percent}}%"
+    "savePercent": "وفر {{percent}}%",
+    "refundDetailsLink": "تفاصيل استرداد مبلغ الباقة",
+    "refundDetailsLinkShort": "كيف يعمل الاسترداد؟",
+    "refundModalTitle": "تفاصيل استرداد مبلغ باقة العرض",
+    "refundModalGotIt": "فهمت",
+    "refundSummaryAria": "ملخص قيم الباقة",
+    "refundSectionFallback": "تفاصيل"
   },
   "sectionAria": "باقات عضوية السوق",
   "membership": {

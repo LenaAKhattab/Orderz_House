@@ -139,6 +139,26 @@ describe("specialOfferPackageService version lock", () => {
     );
   });
 
+  it("includes refund explanation in normalize and public dto", () => {
+    const withDefault = normalizeSpecialOffer(baseOfferPatch());
+    assert.ok(String(withDefault.refundExplanationAr || "").includes("يُسترد"));
+    const cleared = normalizeSpecialOffer({
+      ...baseOfferPatch(),
+      refundExplanationAr: "",
+    });
+    assert.equal(cleared.refundExplanationAr, "");
+    const pub = toPublicDto({
+      ...withDefault,
+      isVisible: true,
+    });
+    assert.ok(String(pub.refundExplanationAr || "").includes("يُسترد"));
+    const pubHidden = toPublicDto({
+      ...cleared,
+      isVisible: true,
+    });
+    assert.equal(pubHidden.refundExplanationAr, null);
+  });
+
   it("admin can edit special offer before any purchase", async () => {
     const settings = memorySettings();
     const plansService = fakeSpecialOfferPlanStore();

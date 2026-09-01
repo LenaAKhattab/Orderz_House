@@ -42,7 +42,13 @@
     "upTo": "Up to",
     "perProject": "per project",
     "unlimitedProjects": "No project ceiling",
-    "savePercent": "Save {{percent}}%"
+    "savePercent": "Save {{percent}}%",
+    "refundDetailsLink": "Package refund details",
+    "refundDetailsLinkShort": "How does refund work?",
+    "refundModalTitle": "Special offer package refund details",
+    "refundModalGotIt": "Got it",
+    "refundSummaryAria": "Offer value summary",
+    "refundSectionFallback": "Details"
   },
   "sectionAria": "Marketplace Membership plans",
   "membership": {

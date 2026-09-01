@@ -1,0 +1,160 @@
+.oh-special-offer-refund-modal__panel {
+  max-width: min(34rem, calc(100vw - 2rem));
+}
+
+.oh-special-offer-refund-modal {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0.15rem 0.1rem 0.35rem;
+}
+
+.oh-special-offer-refund-modal__summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  padding: 0.55rem;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.oh-special-offer-refund-modal__summary-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.35rem 0.4rem;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.oh-special-offer-refund-modal__summary-icon {
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  border-radius: 999px;
+  color: #4338ca;
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.oh-special-offer-refund-modal__summary-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.08rem;
+}
+
+.oh-special-offer-refund-modal__summary-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #64748b;
+  line-height: 1.25;
+}
+
+.oh-special-offer-refund-modal__summary-value {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.oh-special-offer-refund-modal__sections {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.oh-special-offer-refund-modal__section {
+  padding: 0.55rem 0.6rem;
+  border-radius: 11px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: #fff;
+}
+
+.oh-special-offer-refund-modal__section-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.28rem;
+}
+
+.oh-special-offer-refund-modal__section-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  color: #2f3b65;
+  background: rgba(47, 59, 101, 0.08);
+}
+
+.oh-special-offer-refund-modal__section-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.oh-special-offer-refund-modal__section-body {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.65;
+  color: #475569;
+}
+
+.oh-special-offer-refund-modal__close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 6.5rem;
+  min-height: 2.15rem;
+  padding: 0.45rem 1rem;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 55%, #7c3aed 100%);
+  box-shadow: 0 8px 18px rgba(79, 70, 229, 0.28);
+}
+
+.oh-special-offer-refund-modal__close-btn:hover {
+  filter: brightness(1.03);
+}
+
+.oh-special-offer-card__refund-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  margin: 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 750;
+  line-height: 1.35;
+  color: #4338ca;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.oh-special-offer-card__refund-link:hover {
+  color: #312e81;
+}
+
+.oh-special-offer-card__refund-link:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.45);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (max-width: 480px) {
+  .oh-special-offer-refund-modal__summary {
+    grid-template-columns: 1fr;
+  }
+}

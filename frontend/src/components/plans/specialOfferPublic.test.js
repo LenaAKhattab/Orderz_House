@@ -42,6 +42,19 @@ describe("public special offer pricing UI (checkout)", () => {
     assert.doesNotMatch(card, /startCheckout/);
   });
 
+  it("card shows refund details link and modal when explanation exists", () => {
+    const card = read("components/plans/SpecialOfferPackageCard.jsx");
+    const modal = read("components/plans/SpecialOfferRefundDetailsModal.jsx");
+    assert.match(card, /data-special-offer-refund-details="true"/);
+    assert.match(card, /hasSpecialOfferRefundExplanation/);
+    assert.match(card, /SpecialOfferRefundDetailsModal/);
+    assert.match(card, /refundDetailsLink/);
+    assert.match(modal, /refundModalTitle|تفاصيل استرداد مبلغ باقة العرض/);
+    assert.match(modal, /offer\.totalOffers/);
+    assert.match(modal, /offer\.durationDays/);
+    assert.doesNotMatch(card, /onCheckout\?\.\(offer\).*refund/i);
+  });
+
   it("Plans page starts special offer checkout API", () => {
     const page = read("pages/Plans.jsx");
     assert.match(page, /createSpecialOfferCheckoutRequest/);

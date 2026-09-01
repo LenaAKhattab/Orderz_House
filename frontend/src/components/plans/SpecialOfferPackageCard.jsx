@@ -1,16 +1,20 @@
+import { useRef, useState } from "react";
 import {
   Briefcase,
   CalendarDays,
   Check,
   Clock3,
+  ShieldCheck,
   Sparkles,
   Target,
 } from "lucide-react";
 import {
   buildSpecialOfferWhatsAppUrl,
+  hasSpecialOfferRefundExplanation,
   isSpecialOfferCheckoutSupported,
   SPECIAL_OFFER_PURCHASE_MODE,
 } from "../../constants/specialOfferPackage";
+import SpecialOfferRefundDetailsModal from "./SpecialOfferRefundDetailsModal";
 import "./specialOfferPackageCard.css";
 
 function formatAmount(value) {
@@ -39,7 +43,12 @@ export default function SpecialOfferPackageCard({
   onCheckout = null,
   className = "",
 }) {
+  const [refundOpen, setRefundOpen] = useState(false);
+  const refundTriggerRef = useRef(null);
+
   if (!offer) return null;
+
+  const showRefundDetails = hasSpecialOfferRefundExplanation(offer);
 
   const checkoutSupported = isSpecialOfferCheckoutSupported(offer);
   const purchaseMode = checkoutSupported
@@ -104,6 +113,12 @@ export default function SpecialOfferPackageCard({
       {!checkoutBusy ? <Sparkles className="oh-special-offer-card__cta-icon" aria-hidden size={16} strokeWidth={2.25} /> : null}
     </>
   );
+
+  const handleRefundClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setRefundOpen(true);
+  };
 
   return (
     <article
@@ -201,8 +216,28 @@ export default function SpecialOfferPackageCard({
               <span>{offer.microcopy}</span>
             </p>
           ) : null}
+          {showRefundDetails ? (
+            <button
+              type="button"
+              ref={refundTriggerRef}
+              className="oh-special-offer-card__refund-link"
+              onClick={handleRefundClick}
+              data-special-offer-refund-details="true"
+            >
+              <ShieldCheck size={13} strokeWidth={2.1} aria-hidden />
+              <span>{t?.("plans.specialOffer.refundDetailsLink") || "تفاصيل استرداد مبلغ الباقة"}</span>
+            </button>
+          ) : null}
         </div>
       </div>
+
+      <SpecialOfferRefundDetailsModal
+        open={refundOpen}
+        onClose={() => setRefundOpen(false)}
+        offer={offer}
+        t={t}
+        triggerRef={refundTriggerRef}
+      />
     </article>
   );
 }

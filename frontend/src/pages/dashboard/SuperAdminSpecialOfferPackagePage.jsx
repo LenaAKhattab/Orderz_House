@@ -422,6 +422,21 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   />
                 </label>
                 <label className="oh-special-offer-admin__field--full">
+                  <span>{isEn ? "Refund / offer explanation" : "شرح الاسترداد / تفاصيل العرض"}</span>
+                  <textarea
+                    rows={8}
+                    value={form.refundExplanationAr}
+                    disabled={benefitsLocked || saving}
+                    data-refund-explanation-field="true"
+                    onChange={(e) => setField("refundExplanationAr", e.target.value)}
+                    placeholder={
+                      isEn
+                        ? "Shown in the refund details popup on the public card. Leave empty to hide the link."
+                        : "يظهر في نافذة تفاصيل الاسترداد على بطاقة العرض. اتركه فارغاً لإخفاء الرابط."
+                    }
+                  />
+                </label>
+                <label className="oh-special-offer-admin__field--full">
                   <span>{isEn ? "WhatsApp message" : "رسالة واتساب"}</span>
                   <textarea
                     rows={3}

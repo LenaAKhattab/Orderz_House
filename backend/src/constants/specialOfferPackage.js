@@ -34,6 +34,14 @@ const SPECIAL_OFFER_ACCESS_LEVEL_OPTIONS = Object.freeze({
   elite: 5,
 });
 
+const DEFAULT_SPECIAL_OFFER_REFUND_EXPLANATION_AR = `يُسترد مبلغ 100 دينار بواقع 20 دينارًا عن كل شهر نشط ومؤهل، حتى استرداد كامل مبلغ 100 دينار، ضمن مدة التزام مقدارها 6 أشهر. يمكن أن تكون الأشهر المؤهلة متتالية أو متفرقة.
+
+إذا لم تعمل في شهر معين، فلا توجد غرامة ولا دفعة جديدة؛ لكن ذلك الشهر لا يولّد مبلغ استرداد بقيمة 20 دينارًا.
+
+الدخل الناتج عن تنفيذ الطلبات منفصل تمامًا عن مبلغ الاسترداد.
+
+المبلغ ليس رسوم تقديم، أو مقابلة، أو دورة تدريبية، ولا يمثل ضمانًا للعمل أو الدخل.`;
+
 const DEFAULT_SPECIAL_OFFER_PACKAGE = Object.freeze({
   isVisible: false,
   title: "باقة العرض",
@@ -52,6 +60,7 @@ const DEFAULT_SPECIAL_OFFER_PACKAGE = Object.freeze({
   accessLevelKey: "silver",
   ctaLabel: "احصل على العرض الآن",
   microcopy: "بدون التزام، يمكنك الترقية أو الإلغاء في أي وقت",
+  refundExplanationAr: DEFAULT_SPECIAL_OFFER_REFUND_EXPLANATION_AR,
   whatsappMessageAr:
     "مرحبًا، أرغب بالاستفادة من باقة العرض الخاصة في Orderz House ومعرفة تفاصيل التسجيل.",
   purchaseMode: SPECIAL_OFFER_PURCHASE_MODE.CHECKOUT,
@@ -116,6 +125,7 @@ module.exports = {
   SPECIAL_OFFER_PLAN_TIER_CODE,
   SPECIAL_OFFER_LOCKED_BENEFIT_FIELDS,
   SPECIAL_OFFER_ACCESS_LEVEL_OPTIONS,
+  DEFAULT_SPECIAL_OFFER_REFUND_EXPLANATION_AR,
   DEFAULT_SPECIAL_OFFER_PACKAGE,
   accessLevelKeyFromArticleLevel,
   articleAccessLevelFromKey,

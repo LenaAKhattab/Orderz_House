@@ -127,6 +127,11 @@ function normalizeSpecialOffer(raw = {}, { partial = false } = {}) {
   const planTierCode =
     asString(merged.planTierCode, 64) || specialOfferTierCodeForVersion(offerVersion);
 
+  const refundExplanationAr =
+    merged.refundExplanationAr === undefined || merged.refundExplanationAr === null
+      ? asString(cloneDefault().refundExplanationAr, 2000)
+      : asString(merged.refundExplanationAr, 2000);
+
   return {
     isVisible: Boolean(merged.isVisible),
     title,
@@ -143,6 +148,7 @@ function normalizeSpecialOffer(raw = {}, { partial = false } = {}) {
     accessLevelKey,
     ctaLabel: asString(merged.ctaLabel, 80) || "احصل على العرض الآن",
     microcopy: asString(merged.microcopy, 240),
+    refundExplanationAr,
     whatsappMessageAr: asString(merged.whatsappMessageAr, 500),
     purchaseMode: normalizePurchaseMode(merged.purchaseMode),
     linkedPlanCode,
@@ -247,6 +253,7 @@ function toPublicDto(pkg) {
       ? pkg.ctaLabel || "احصل على العرض الآن"
       : "تواصل للحصول على العرض",
     microcopy: pkg.microcopy,
+    refundExplanationAr: String(pkg.refundExplanationAr || "").trim() || null,
     whatsappMessageAr: checkoutSupported ? null : pkg.whatsappMessageAr || null,
     purchaseMode: checkoutSupported
       ? SPECIAL_OFFER_PURCHASE_MODE.CHECKOUT
@@ -476,6 +483,7 @@ async function upsertSpecialOfferPackage(patch, { updatedByUserId } = {}, settin
       next.ribbonText !== currentDto.ribbonText ||
       next.ctaLabel !== currentDto.ctaLabel ||
       next.microcopy !== currentDto.microcopy ||
+      next.refundExplanationAr !== currentDto.refundExplanationAr ||
       next.whatsappMessageAr !== currentDto.whatsappMessageAr ||
       (next.originalPriceJod == null
         ? currentDto.originalPriceJod != null

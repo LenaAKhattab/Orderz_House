@@ -21,6 +21,7 @@ const updateSpecialOfferValidators = [
     .isIn(["starter", "silver", "pro", "elite"]),
   body("ctaLabel").optional({ nullable: true }).isString().trim().isLength({ max: 80 }),
   body("microcopy").optional({ nullable: true }).isString().trim().isLength({ max: 240 }),
+  body("refundExplanationAr").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("whatsappMessageAr").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
   body("linkedMarketplacePlanId").optional({ nullable: true }).isString().trim().isLength({ max: 40 }),
   body("linkedPlanCode").optional({ nullable: true }).isString().trim().isLength({ max: 40 }),
