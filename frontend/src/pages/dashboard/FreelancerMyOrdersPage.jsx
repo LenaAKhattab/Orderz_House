@@ -47,7 +47,7 @@ function StatSegment({ tone, Icon, value, label, loading }) {
   return (
     <div className={`fmo-stat-segment fmo-stat-segment--${tone}`}>
       <span className="fmo-stat-segment__icon" aria-hidden>
-        <Icon size={18} strokeWidth={2} />
+        <Icon size={14} strokeWidth={2} />
       </span>
       <div className="fmo-stat-segment__copy">
         {loading ? (
@@ -344,7 +344,7 @@ export default function FreelancerMyOrdersPage() {
         </div>
         <div className="fmo-header__art" aria-hidden>
           <span className="fmo-header__icon-chip">
-            <ClipboardList size={32} strokeWidth={1.85} />
+            <ClipboardList size={22} strokeWidth={1.85} />
           </span>
         </div>
       </header>
@@ -399,7 +399,7 @@ export default function FreelancerMyOrdersPage() {
               aria-pressed={active}
               onClick={() => handleStatusFilterChange(id)}
             >
-              <Icon size={15} strokeWidth={2.1} aria-hidden />
+              <Icon size={13} strokeWidth={2.1} aria-hidden />
               <span>{label}</span>
               {statsLoading ? (
                 <HubMetricSkeleton variant="count" />
@@ -413,7 +413,7 @@ export default function FreelancerMyOrdersPage() {
 
       <div className="fmo-surface fmo-toolbar">
         <div className="fmo-toolbar__search">
-          <Search size={17} strokeWidth={2} className="fmo-toolbar__search-icon" aria-hidden />
+          <Search size={14} strokeWidth={2} className="fmo-toolbar__search-icon" aria-hidden />
           <input
             type="search"
             className="fmo-toolbar__search-input"
@@ -447,7 +447,7 @@ export default function FreelancerMyOrdersPage() {
             aria-label={t("freelancerDashboard.myOrders.refreshAria")}
             title={t("freelancerDashboard.myOrders.refreshTitle")}
           >
-            <RefreshCw size={17} strokeWidth={2.2} />
+            <RefreshCw size={14} strokeWidth={2.2} />
           </button>
         </div>
         {isRefetching ? (
@@ -475,7 +475,7 @@ export default function FreelancerMyOrdersPage() {
         ) : orders.length === 0 ? (
           <div className="fmo-empty">
             <span className="fmo-empty__icon-chip" aria-hidden>
-              <Inbox size={36} strokeWidth={1.6} />
+              <Inbox size={26} strokeWidth={1.6} />
             </span>
             <h3 className="fmo-empty__title">{emptyCopy.title}</h3>
             <p className="fmo-empty__sub">{emptyCopy.sub}</p>

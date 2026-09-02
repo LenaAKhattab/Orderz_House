@@ -78,16 +78,7 @@ export function formatRequiredTierLabel(tierCode, { isEn = false } = {}) {
 export function formatCourseRequiredTierHelper(tierCode, { isEn = false } = {}) {
   const code = normalizeRequiredTierCode(tierCode);
   if (!code) return null;
-  if (code === "silver") {
-    return isEn ? "Available from Silver plan and above" : "متاحة من باقة فضة فما فوق";
-  }
-  if (code === "pro") {
-    return isEn ? "Available from Pro plan and above" : "متاحة من باقة برو فما فوق";
-  }
-  if (code === "elite") {
-    return isEn ? "Available on Elite plan" : "متاحة من باقة إيليت";
-  }
-  return null;
+  return isEn ? "Available after upgrading your plan" : "متاحة بعد ترقية الباقة";
 }
 
 function normalizeReasonCode(reason) {

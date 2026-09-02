@@ -349,7 +349,10 @@ class _PoolOrderActionsState extends ConsumerState<_PoolOrderActions> {
           blockMessage = freelancerEligibilityMessageAr(eligibility);
         } else if (isPoolOrderLockedByPlan(order)) {
           planUpgrade = poolOrderPlanUpgradeProps(order);
-          blockMessage = planUpgrade == null ? poolPlanLockUserMessage(order) : null;
+          if (planUpgrade?.mode == PlanUpgradeCtaMode.support) {
+            blockMessage = poolPlanLockUserMessage(order);
+            planUpgrade = null;
+          }
         }
 
         return Column(
@@ -375,6 +378,7 @@ class _PoolOrderActionsState extends ConsumerState<_PoolOrderActions> {
               PlanUpgradeRequiredCta(
                 requiredTierCode: planUpgrade.requiredTierCode,
                 requiredPlanLabel: planUpgrade.requiredPlanLabel,
+                reason: planUpgrade.reason,
               ),
               const SizedBox(height: 10),
             ],

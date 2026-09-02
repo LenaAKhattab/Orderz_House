@@ -14,26 +14,27 @@ void main() {
         'id': '4',
         'title': 'دورة 2024 - كتابة المحتوى باللغة العربية',
         'requiresPaidMembership': true,
-        'isLocked': true,
+        'isLockedByPlan': true,
         'canAccess': false,
+        'requiredTierCode': 'silver',
         'upgradeRoute': '/dashboard/freelancer/plans',
         'lockCopyAr': {
-          'badge': 'يتطلب اشتراك',
-          'message': 'يجب الاشتراك بإحدى الخطط للوصول إلى هذه الدورة.',
-          'cta': 'اشترك بإحدى الخطط',
+          'badge': coursePlanLockBadgeAr,
+          'message': coursePlanLockMessageAr,
+          'cta': coursePlanLockCtaAr,
         },
         'progress': {'totalLessons': 10, 'completedLessons': 0, 'percentage': 0},
       });
 
       expect(course.requiresPaidMembership, isTrue);
-      expect(course.isLocked, isTrue);
+      expect(course.isLockedByPlan, isTrue);
       expect(course.canAccess, isFalse);
       expect(course.isAccessible, isFalse);
-      expect(course.lockCopyAr.badgeOrDefault, courseLockBadgeAr);
-      expect(course.lockCopyAr.messageOrDefault, courseLockMessageAr);
-      expect(course.lockCopyAr.ctaOrDefault, courseLockCtaAr);
+      expect(course.requiredTierCode, 'silver');
+      expect(course.lockCopyAr.messageOrDefault, coursePlanLockMessageAr);
+      expect(course.lockCopyAr.ctaOrDefault, coursePlanLockCtaAr);
       expect(course.upgradeRoute, '/dashboard/freelancer/plans');
-      expect(course.statusLabelAr, courseLockBadgeAr);
+      expect(course.statusLabelAr, coursePlanLockBadgeAr);
     });
 
     test('parses snake_case and lock_copy alias', () {
@@ -41,18 +42,18 @@ void main() {
         'id': '3',
         'title': 'Content Writing',
         'requires_paid_membership': true,
-        'is_locked': true,
+        'is_locked_by_plan': true,
         'can_access': false,
         'upgrade_route': '/dashboard/freelancer/plans',
         'lock_copy': {
-          'badge': 'يتطلب اشتراك',
-          'message': 'يجب الاشتراك بإحدى الخطط للوصول إلى هذه الدورة.',
-          'cta': 'اشترك بإحدى الخطط',
+          'badge': coursePlanLockBadgeAr,
+          'message': coursePlanLockMessageAr,
+          'cta': coursePlanLockCtaAr,
         },
       });
-      expect(course.isLocked, isTrue);
+      expect(course.isLockedByPlan, isTrue);
       expect(course.canAccess, isFalse);
-      expect(course.lockCopyAr.messageOrDefault, contains('الاشتراك'));
+      expect(course.lockCopyAr.messageOrDefault, contains('باقات أعلى'));
     });
 
     test('free onboarding course remains accessible', () {
@@ -60,7 +61,7 @@ void main() {
         'id': '8',
         'title': 'كيفية إنشاء مقال',
         'requiresPaidMembership': false,
-        'isLocked': false,
+        'isLockedByPlan': false,
         'canAccess': true,
         'progress': {'totalLessons': 1, 'completedLessons': 0, 'percentage': 0},
       });
@@ -74,7 +75,7 @@ void main() {
         'title': 'دورة قديمة',
         'progress': {'totalLessons': 2, 'completedLessons': 1, 'percentage': 50},
       });
-      expect(course.isLocked, isFalse);
+      expect(course.isLockedByPlan, isFalse);
       expect(course.canAccess, isTrue);
       expect(course.requiresPaidMembership, isFalse);
       expect(course.isAccessible, isTrue);
@@ -96,19 +97,19 @@ void main() {
         FreelancerCourseSummary.fromJson({
           'id': '8',
           'title': 'كيفية إنشاء مقال',
-          'isLocked': false,
+          'isLockedByPlan': false,
           'canAccess': true,
         }),
         FreelancerCourseSummary.fromJson({
           'id': '4',
           'title': 'كتابة المحتوى',
-          'isLocked': true,
+          'isLockedByPlan': true,
           'canAccess': false,
         }),
         FreelancerCourseSummary.fromJson({
           'id': '3',
           'title': 'content writing',
-          'isLocked': true,
+          'isLockedByPlan': true,
           'canAccess': false,
         }),
       ];
@@ -117,7 +118,7 @@ void main() {
     });
   });
 
-  group('COURSE_SUBSCRIPTION_REQUIRED mapping', () {
+  group('Course access error mapping', () {
     DioException dioWithCode(String code) {
       return DioException(
         requestOptions: RequestOptions(path: '/freelancer/courses/4'),
@@ -125,14 +126,25 @@ void main() {
           requestOptions: RequestOptions(path: '/freelancer/courses/4'),
           statusCode: 403,
           data: {
-            'publicCode': code,
+            'code': code,
             'message': 'forbidden',
           },
         ),
       );
     }
 
-    test('mapCourseAccessErrorMessage', () {
+    test('COURSE_PLAN_UPGRADE_REQUIRED mapping', () {
+      expect(
+        mapCourseAccessErrorMessage(dioWithCode(coursePlanUpgradeRequiredCode)),
+        coursePlanLockMessageAr,
+      );
+      expect(
+        courseLockCtaForError(dioWithCode(coursePlanUpgradeRequiredCode)),
+        coursePlanLockCtaAr,
+      );
+    });
+
+    test('COURSE_SUBSCRIPTION_REQUIRED legacy mapping', () {
       expect(
         mapCourseAccessErrorMessage(dioWithCode(courseSubscriptionRequiredCode)),
         courseLockMessageAr,
@@ -141,8 +153,8 @@ void main() {
 
     test('apiErrorMessage prefers publicCode over raw message', () {
       expect(
-        apiErrorMessage(dioWithCode(courseSubscriptionRequiredCode)),
-        courseLockMessageAr,
+        apiErrorMessage(dioWithCode(coursePlanUpgradeRequiredCode)),
+        coursePlanLockMessageAr,
       );
     });
   });
@@ -153,13 +165,8 @@ void main() {
       final course = FreelancerCourseSummary.fromJson({
         'id': '4',
         'title': 'دورة كتابة المحتوى',
-        'isLocked': true,
+        'isLockedByPlan': true,
         'canAccess': false,
-        'lockCopyAr': {
-          'badge': courseLockBadgeAr,
-          'message': courseLockMessageAr,
-          'cta': courseLockCtaAr,
-        },
       });
 
       await tester.pumpWidget(
@@ -173,9 +180,9 @@ void main() {
         ),
       );
 
-      expect(find.text(courseLockBadgeAr), findsOneWidget);
-      expect(find.text(courseLockMessageAr), findsOneWidget);
-      expect(find.text(courseLockCtaAr), findsOneWidget);
+      expect(find.text(coursePlanLockBadgeAr), findsOneWidget);
+      expect(find.text(coursePlanLockMessageAr), findsOneWidget);
+      expect(find.text(coursePlanLockCtaAr), findsOneWidget);
       expect(find.byKey(const ValueKey('course-lock-cta')), findsOneWidget);
 
       await tester.tap(find.text('دورة كتابة المحتوى'));
@@ -188,7 +195,7 @@ void main() {
       final course = FreelancerCourseSummary.fromJson({
         'id': '8',
         'title': 'كيفية إنشاء مقال',
-        'isLocked': false,
+        'isLockedByPlan': false,
         'canAccess': true,
         'progress': {'totalLessons': 1, 'completedLessons': 0, 'percentage': 0},
       });
@@ -204,8 +211,8 @@ void main() {
         ),
       );
 
-      expect(find.text(courseLockBadgeAr), findsNothing);
-      expect(find.text(courseLockCtaAr), findsNothing);
+      expect(find.text(coursePlanLockBadgeAr), findsNothing);
+      expect(find.text(coursePlanLockCtaAr), findsNothing);
       await tester.tap(find.text('كيفية إنشاء مقال'));
       await tester.pump();
       expect(opened, isTrue);
@@ -217,8 +224,8 @@ void main() {
           home: Scaffold(
             body: CourseLockedAccessBody(
               title: 'دورة مقفلة',
-              message: courseLockMessageAr,
-              ctaLabel: courseLockCtaAr,
+              message: coursePlanLockMessageAr,
+              ctaLabel: coursePlanLockCtaAr,
               onUpgrade: () {},
             ),
           ),
@@ -226,7 +233,7 @@ void main() {
       );
 
       expect(find.byKey(const ValueKey('course-detail-lock-message')), findsOneWidget);
-      expect(find.text(courseLockCtaAr), findsOneWidget);
+      expect(find.text(coursePlanLockCtaAr), findsOneWidget);
       expect(find.byType(LinearProgressIndicator), findsNothing);
     });
   });

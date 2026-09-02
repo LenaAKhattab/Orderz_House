@@ -36,10 +36,10 @@ describe("course plan gating — copy helpers", () => {
     assert.equal(copy.button, "ترقية الباقة");
   });
 
-  it("formats tier helper lines", () => {
-    assert.match(formatCourseRequiredTierHelper("silver"), /فضة/);
-    assert.match(formatCourseRequiredTierHelper("pro"), /برو/);
-    assert.match(formatCourseRequiredTierHelper("elite"), /إيليت/);
+  it("formats tier helper lines for locked courses", () => {
+    assert.match(formatCourseRequiredTierHelper("silver"), /ترقية الباقة/);
+    assert.match(formatCourseRequiredTierHelper("pro"), /ترقية الباقة/);
+    assert.match(formatCourseRequiredTierHelper("elite"), /ترقية الباقة/);
   });
 
   it("plans route is the default upgrade path", () => {
@@ -69,9 +69,15 @@ describe("course plan gating — UI wiring", () => {
     assert.match(details, /PlanUpgradeRequiredCta/);
   });
 
-  it("mobile locked card styles exist", () => {
-    const css = read("pages/dashboard/freelancerCourses.css");
-    assert.match(css, /fc-course-card--locked/);
-    assert.match(css, /@media \(max-width: 720px\)/);
+  it("unlocked course card uses startCourse CTA label helper", () => {
+    const page = read("pages/dashboard/FreelancerCoursesPage.jsx");
+    assert.match(page, /startCourse/);
+    assert.match(page, /ctaLabel\(status, t\)/);
+  });
+
+  it("locked courses do not render startCourse CTA in aside", () => {
+    const page = read("pages/dashboard/FreelancerCoursesPage.jsx");
+    assert.match(page, /isLockedByPlan \? \(/);
+    assert.match(page, /PlanUpgradeRequiredCta/);
   });
 });

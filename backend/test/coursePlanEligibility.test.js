@@ -66,21 +66,28 @@ describe("coursePlanEligibility — tier access matrix", () => {
     assert.equal(access.isLockedByPlan, false);
   });
 
-  it("PRO can access silver and pro courses", () => {
-    assert.equal(
-      evaluateCoursePlanAccessWithContext({
-        course: { id: 1, required_tier_code: "silver" },
-        context: ctx("pro"),
-      }).canAccess,
-      true,
-    );
-    assert.equal(
-      evaluateCoursePlanAccessWithContext({
-        course: { id: 2, required_tier_code: "pro" },
-        context: ctx("pro"),
-      }).canAccess,
-      true,
-    );
+  it("SILVER can access pro and elite courses (paid plans unlock all)", () => {
+    for (const tier of ["pro", "elite"]) {
+      const access = evaluateCoursePlanAccessWithContext({
+        course: { id: 2, required_tier_code: tier },
+        context: ctx("silver"),
+      });
+      assert.equal(access.canAccess, true, `silver should access ${tier}`);
+      assert.equal(access.isLockedByPlan, false);
+    }
+  });
+
+  it("PRO can access silver, pro, and elite courses", () => {
+    for (const tier of ["silver", "pro", "elite"]) {
+      assert.equal(
+        evaluateCoursePlanAccessWithContext({
+          course: { id: 1, required_tier_code: tier },
+          context: ctx("pro"),
+        }).canAccess,
+        true,
+        `pro should access ${tier}`,
+      );
+    }
   });
 
   it("ELITE can access all course tiers", () => {
@@ -99,6 +106,18 @@ describe("coursePlanEligibility — tier access matrix", () => {
       context: ctx("starter"),
     });
     assert.equal(access.canAccess, true);
+  });
+
+  it("STARTER cannot access pro or elite courses", () => {
+    for (const tier of ["pro", "elite"]) {
+      const access = evaluateCoursePlanAccessWithContext({
+        course: { id: 1, required_tier_code: tier },
+        context: ctx("starter"),
+      });
+      assert.equal(access.canAccess, false);
+      assert.equal(access.isLockedByPlan, true);
+      assert.equal(access.lockReason, "COURSE_PLAN_UPGRADE_REQUIRED");
+    }
   });
 });
 

@@ -1,12 +1,18 @@
 import 'package:dio/dio.dart';
 
-/// Arabic lock copy — matches web `FREELANCER_COURSE_LOCKED_COPY_AR`.
+/// Course plan-lock copy — aligned with web freelancer dashboard.
+const coursePlanLockBadgeAr = 'مقفلة';
+const coursePlanLockMessageAr = 'هذه الدورة متاحة لباقات أعلى';
+const coursePlanLockCtaAr = 'ترقية الباقة';
+
+/// Legacy paid-membership gate (backward compatible).
 const courseLockBadgeAr = 'يتطلب اشتراك';
 const courseLockMessageAr = 'يجب الاشتراك بإحدى الخطط للوصول إلى هذه الدورة.';
 const courseLockCtaAr = 'اشترك بإحدى الخطط';
 const courseLockOpenPlansFailedAr = 'تعذر فتح صفحة الخطط.';
 
 const courseSubscriptionRequiredCode = 'COURSE_SUBSCRIPTION_REQUIRED';
+const coursePlanUpgradeRequiredCode = 'COURSE_PLAN_UPGRADE_REQUIRED';
 
 class CourseLockCopyAr {
   const CourseLockCopyAr({
@@ -20,13 +26,13 @@ class CourseLockCopyAr {
   final String? cta;
 
   String get badgeOrDefault =>
-      (badge != null && badge!.trim().isNotEmpty) ? badge!.trim() : courseLockBadgeAr;
+      (badge != null && badge!.trim().isNotEmpty) ? badge!.trim() : coursePlanLockBadgeAr;
 
   String get messageOrDefault =>
-      (message != null && message!.trim().isNotEmpty) ? message!.trim() : courseLockMessageAr;
+      (message != null && message!.trim().isNotEmpty) ? message!.trim() : coursePlanLockMessageAr;
 
   String get ctaOrDefault =>
-      (cta != null && cta!.trim().isNotEmpty) ? cta!.trim() : courseLockCtaAr;
+      (cta != null && cta!.trim().isNotEmpty) ? cta!.trim() : coursePlanLockCtaAr;
 
   factory CourseLockCopyAr.fromJson(dynamic raw) {
     if (raw is! Map) return const CourseLockCopyAr();
@@ -56,9 +62,17 @@ String? extractCourseApiErrorCode(Object error) {
   return s.isEmpty ? null : s;
 }
 
+bool isCoursePlanUpgradeError(Object error) {
+  final code = extractCourseApiErrorCode(error);
+  return code == coursePlanUpgradeRequiredCode || code == courseSubscriptionRequiredCode;
+}
+
 /// Maps known course access codes to Arabic; otherwise null (caller uses generic helper).
 String? mapCourseAccessErrorMessage(Object error) {
   final code = extractCourseApiErrorCode(error);
+  if (code == coursePlanUpgradeRequiredCode) {
+    return coursePlanLockMessageAr;
+  }
   if (code == courseSubscriptionRequiredCode) {
     return courseLockMessageAr;
   }
@@ -66,4 +80,12 @@ String? mapCourseAccessErrorMessage(Object error) {
     return 'لا يمكنك الوصول إلى هذه الدورة.';
   }
   return null;
+}
+
+String courseLockCtaForError(Object error) {
+  final code = extractCourseApiErrorCode(error);
+  if (code == coursePlanUpgradeRequiredCode) {
+    return coursePlanLockCtaAr;
+  }
+  return courseLockCtaAr;
 }

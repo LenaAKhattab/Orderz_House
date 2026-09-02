@@ -1,0 +1,110 @@
+/* Getting Started — compact freelancer guide */
+
+.fgs-page {
+  width: 100%;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.fgs-page > .fgs-page__header {
+  margin-bottom: 0;
+}
+
+.fgs-page > .fgs-page__header [data-dashboard-header] {
+  padding: 0.7rem 0.9rem;
+}
+
+.fgs-page > .fgs-page__header h1 {
+  font-size: 1.12rem;
+  line-height: 1.25;
+}
+
+.fgs-page > .fgs-page__header p {
+  margin-top: 0.28rem;
+  max-width: 48rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.fgs-page > .fgs-page__section.dash-ui-section {
+  margin-bottom: 0;
+  border-radius: 0.75rem;
+  border: 1px solid var(--dash-border, #c9d0da);
+  background: var(--dash-card, #fcfcfd);
+  box-shadow: none;
+  padding: 0.85rem 0.95rem 0.95rem;
+}
+
+.fgs-page > .fgs-page__section .dash-ui-section__head {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.fgs-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.fgs-card {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(23, 32, 51, 0.08);
+  background: var(--dash-card, #fff);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+a.fgs-card:hover {
+  border-color: rgba(47, 59, 101, 0.22);
+  box-shadow: 0 6px 16px -12px rgba(47, 59, 101, 0.28);
+}
+
+.fgs-card__title {
+  margin: 0 0 0.28rem;
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--dash-text, #172033);
+}
+
+.fgs-card__body {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 500;
+  line-height: 1.55;
+  color: var(--dash-text-secondary, #5a6378);
+}
+
+.fgs-empty.dash-ui-empty {
+  min-height: 0;
+  padding-block: 0.6rem;
+}
+
+.fgs-empty .dash-ui-empty__title {
+  font-size: 0.84rem;
+}
+
+.fgs-empty .dash-ui-empty__desc {
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .fgs-page > .fgs-page__section.dash-ui-section {
+    padding: 0.75rem 0.8rem 0.85rem;
+  }
+
+  .fgs-card {
+    padding: 0.6rem 0.7rem;
+  }
+}

@@ -10,6 +10,7 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../home/presentation/home_dashboard_chrome.dart';
 import '../../notifications/presentation/unread_notifications_controller.dart';
 import '../../profile/domain/profile_actions.dart';
+import '../../special_offer/presentation/freelancer_special_offer_section.dart';
 import 'freelancer_eligibility_banner.dart';
 
 /// Freelancer home — layout inspired by the marketing home composition,
@@ -102,6 +103,7 @@ class FreelancerHomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 const FreelancerEligibilityBanner(compact: true),
+                const FreelancerSpecialOfferSection(),
                 const HomePromoAdsSection(),
                 Row(
                   children: [

@@ -8,6 +8,7 @@ import {
   Hourglass,
   Inbox,
   Plus,
+  TrendingUp,
   Wallet,
   X,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton"
 import "../../styles/dashboardHub.css";
 import "./freelancerFinancialClaims.css";
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
+import { aggregateFinancialClaims } from "../../utils/freelancerDashboardData";
 
 function formatDate(value, locale, emDash) {
   if (!value) return emDash;
@@ -89,7 +91,7 @@ function StatSegment({ tone, Icon, value, label, loading }) {
   return (
     <div className={`ffc-stat-segment ffc-stat-segment--${tone}`}>
       <span className="ffc-stat-segment__icon" aria-hidden>
-        <Icon size={20} strokeWidth={1.75} />
+        <Icon size={15} strokeWidth={1.85} />
       </span>
       <div className="ffc-stat-segment__copy">
         <span className="ffc-stat-segment__label">{label}</span>
@@ -251,6 +253,8 @@ export default function FreelancerFinancialClaimsPage() {
     return { total: claims.length, pending, paid };
   }, [claims]);
 
+  const earnings = useMemo(() => aggregateFinancialClaims(claims), [claims]);
+
   const canSubmitClaim = useMemo(() => {
     if (submitting) return false;
     if (mode === "manual") {
@@ -356,14 +360,56 @@ export default function FreelancerFinancialClaimsPage() {
         </div>
         <div className="ffc-header__art">
           <span className="ffc-header__icon-chip" aria-hidden>
-            <Wallet size={32} strokeWidth={1.85} />
+            <Wallet size={22} strokeWidth={1.85} />
           </span>
           <button type="button" className="ffc-header__cta" onClick={() => setCreateOpen(true)}>
-            <Plus size={16} strokeWidth={2.2} aria-hidden />
+            <Plus size={14} strokeWidth={2.2} aria-hidden />
             <span>{t(`${fc}.newClaim`)}</span>
           </button>
         </div>
       </header>
+
+      <section className="ffc-earnings" aria-label={t(`${fc}.earningsHero.aria`)}>
+        <div className="ffc-earnings__visual" aria-hidden>
+          <span className="ffc-earnings__orb ffc-earnings__orb--a" />
+          <span className="ffc-earnings__orb ffc-earnings__orb--b" />
+          <span className="ffc-earnings__mark">
+            <TrendingUp size={22} strokeWidth={1.9} />
+          </span>
+        </div>
+        <div className="ffc-earnings__main">
+          <p className="ffc-earnings__eyebrow">{t(`${fc}.earningsHero.title`)}</p>
+          <p className="ffc-earnings__paid-label">{t(`${fc}.earningsHero.paid`)}</p>
+          {busy ? (
+            <HubMetricSkeleton variant="stat" />
+          ) : (
+            <strong className="ffc-earnings__paid-value">
+              <JodMoneyDisplay amount={earnings.paidTotalJod} compact showDisclaimer={false} />
+            </strong>
+          )}
+          <p className="ffc-earnings__note">{t(`${fc}.earningsNote`)}</p>
+        </div>
+        <div className="ffc-earnings__side">
+          <div className="ffc-earnings__chip ffc-earnings__chip--pending">
+            <span className="ffc-earnings__chip-label">{t(`${fc}.earningsHero.pending`)}</span>
+            {busy ? (
+              <HubMetricSkeleton variant="stat" />
+            ) : (
+              <strong className="ffc-earnings__chip-value">
+                <JodMoneyDisplay amount={earnings.pendingTotalJod} compact showDisclaimer={false} />
+              </strong>
+            )}
+          </div>
+          <div className="ffc-earnings__chip ffc-earnings__chip--open">
+            <span className="ffc-earnings__chip-label">{t(`${fc}.earningsHero.openClaims`)}</span>
+            {busy ? (
+              <HubMetricSkeleton variant="stat" />
+            ) : (
+              <strong className="ffc-earnings__chip-value">{earnings.openClaimsCount}</strong>
+            )}
+          </div>
+        </div>
+      </section>
 
       <div className="ffc-surface ffc-stats-bar" aria-label={t("freelancerDashboard.stats.financialClaims.summaryAria")}>
         <StatSegment
@@ -397,12 +443,12 @@ export default function FreelancerFinancialClaimsPage() {
         <section className="ffc-surface ffc-content">
           <div className="ffc-empty">
             <span className="ffc-empty__icon-chip" aria-hidden>
-              <Inbox size={36} strokeWidth={1.6} />
+              <Inbox size={26} strokeWidth={1.6} />
             </span>
             <h2 className="ffc-empty__title">{t(`${fc}.emptyTitle`)}</h2>
             <p className="ffc-empty__sub">{t(`${fc}.emptySub`)}</p>
             <button type="button" className="ffc-empty__cta" onClick={() => setCreateOpen(true)}>
-              <Plus size={16} strokeWidth={2.2} aria-hidden />
+              <Plus size={14} strokeWidth={2.2} aria-hidden />
               <span>{t(`${fc}.newClaim`)}</span>
             </button>
           </div>

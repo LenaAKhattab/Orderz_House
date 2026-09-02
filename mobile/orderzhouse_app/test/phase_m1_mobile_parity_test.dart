@@ -229,17 +229,27 @@ void main() {
         poolEligibility: const PoolPlanEligibility(
           isLockedByPlan: true,
           reasonCode: 'PLAN_TOO_LOW',
-          lockReason: 'هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.',
         ),
       );
       expect(
         poolPlanLockUserMessage(order),
-        'هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.',
+        planTooLowHeadlineAr,
       );
       expect(poolPlanLockUserMessage(order).contains('تصحيح'), isFalse);
     });
 
-    test('KYC-style INTERNAL/config never shows legacy correction copy', () {
+    test('NO_ACTIVE_PLAN returns view-plans CTA props', () {
+      final props = planUpgradePropsFromPoolEligibility(
+        isLockedByPlan: true,
+        reasonCode: 'NO_ACTIVE_PLAN',
+      );
+      expect(props, isNotNull);
+      final copy = buildPlanUpgradeCopy(reason: props!.reason);
+      expect(copy.headline, noActivePlanHeadlineAr);
+      expect(copy.button, planUpgradeViewPlansButtonAr);
+    });
+
+    test('INTERNAL config returns support mode without button', () {
       final order = PoolOrder(
         id: '2',
         title: 'طلب',
@@ -255,7 +265,9 @@ void main() {
         'تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.',
       );
       expect(poolPlanLockUserMessage(order).contains('تصحيح'), isFalse);
-      expect(poolOrderPlanUpgradeProps(order), isNull);
+      final props = poolOrderPlanUpgradeProps(order);
+      expect(props?.mode, PlanUpgradeCtaMode.support);
+      expect(buildPlanUpgradeCopy(reason: props!.reason).showButton, isFalse);
     });
 
     test('legacy lockReason تصحيح is sanitized', () {

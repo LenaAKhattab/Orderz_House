@@ -1,19 +1,29 @@
-// Phase A10 / M1 — Plan upgrade CTA helpers for pool/order plan locks.
-// Only for plan/tier/value locks — not Bids, Bildazo, training, verification, campaigns.
+// Phase A10 / M1 / Android-Parity-01 — Plan upgrade CTA helpers for pool/order/course locks.
 
 const planUpgradeDefaultHeadlineAr = 'هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.';
 const planUpgradeDefaultActionAr = 'ترقية الخطة';
-const planUpgradeButtonLabelAr = 'ترقية الخطة';
+const planUpgradeButtonLabelAr = 'ترقية الباقة';
+const planUpgradeViewPlansButtonAr = 'عرض الباقات';
 const planUpgradeOpenFailedAr =
     'تعذر فتح صفحة الخطط. يمكنك فتح الموقع من الملف الشخصي أو المحاولة لاحقاً.';
+
+const planTooLowHeadlineAr = 'قيمة هذا الطلب أعلى من حد باقتك الحالية';
+const noActivePlanHeadlineAr = 'فعّل باقتك لاستلام الطلبات';
+const internalPlanConfigHeadlineAr =
+    'تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.';
+
+const coursePlanUpgradeHeadlineAr = 'هذه الدورة متاحة لباقات أعلى';
+const coursePlanUpgradeButtonAr = 'ترقية الباقة';
 
 const _planLockReasons = {
   'ARTICLE_ACCESS_LEVEL_INSUFFICIENT',
   'ARTICLE_NO_USABLE_MEMBERSHIP',
+  'COURSE_PLAN_UPGRADE_REQUIRED',
   'plan_locked',
   'PLAN_LOCKED',
   'isLockedByPlan',
   'PLAN_TOO_LOW',
+  'NO_ACTIVE_PLAN',
 };
 
 const _nonPlanBlockReasons = {
@@ -30,10 +40,10 @@ const _nonPlanBlockReasons = {
   'CAMPAIGN_PAUSED',
   'ACTIVATION_CAMPAIGN_PAUSED',
   'ACTIVATION_ENGINE_GATED',
-  'INTERNAL_PLAN_CONFIGURATION',
-  'NO_ACTIVE_PLAN',
   'KYC_REQUIRED',
 };
+
+enum PlanUpgradeCtaMode { upgrade, support }
 
 bool isPlanUpgradeReason(String? reason) {
   if (reason == null || reason.trim().isEmpty) return false;
@@ -63,31 +73,71 @@ String? formatRequiredTierLabel(String? tierCode) {
   return code;
 }
 
+String _normalizeReasonCode(String? reason) => (reason ?? '').trim().toUpperCase();
+
 class PlanUpgradeCtaCopy {
   const PlanUpgradeCtaCopy({
     required this.headline,
-    required this.action,
     required this.button,
+    this.action,
     this.requiredTierCode,
     this.tierHint,
+    this.mode = PlanUpgradeCtaMode.upgrade,
   });
 
   final String headline;
-  final String action;
+  final String? action;
   final String button;
   final String? requiredTierCode;
   final String? tierHint;
+  final PlanUpgradeCtaMode mode;
+
+  bool get showButton => mode == PlanUpgradeCtaMode.upgrade && button.trim().isNotEmpty;
 }
 
 PlanUpgradeCtaCopy buildPlanUpgradeCopy({
   String? requiredTierCode,
   String? requiredPlanLabel,
+  String? reason,
 }) {
+  final code = _normalizeReasonCode(reason);
   final tier = normalizeRequiredTierCode(requiredTierCode);
   final tierLabel = formatRequiredTierLabel(tier) ??
       (requiredPlanLabel != null && requiredPlanLabel.trim().isNotEmpty
           ? requiredPlanLabel.trim()
           : null);
+
+  if (code == 'INTERNAL_PLAN_CONFIGURATION') {
+    return const PlanUpgradeCtaCopy(
+      headline: internalPlanConfigHeadlineAr,
+      button: '',
+      mode: PlanUpgradeCtaMode.support,
+    );
+  }
+
+  if (code == 'NO_ACTIVE_PLAN') {
+    return const PlanUpgradeCtaCopy(
+      headline: noActivePlanHeadlineAr,
+      button: planUpgradeViewPlansButtonAr,
+    );
+  }
+
+  if (code == 'COURSE_PLAN_UPGRADE_REQUIRED') {
+    return PlanUpgradeCtaCopy(
+      headline: coursePlanUpgradeHeadlineAr,
+      button: coursePlanUpgradeButtonAr,
+      requiredTierCode: tier,
+      tierHint: tierLabel != null ? 'متاحة بعد ترقية الباقة' : null,
+    );
+  }
+
+  if (code == 'PLAN_TOO_LOW') {
+    return PlanUpgradeCtaCopy(
+      headline: planTooLowHeadlineAr,
+      button: planUpgradeButtonLabelAr,
+      requiredTierCode: tier,
+    );
+  }
 
   final headline = tierLabel != null
       ? 'هذا الطلب متاح لباقات أعلى (ابتداءً من $tierLabel). قم بترقية خطتك لاستلامه.'
@@ -108,11 +158,13 @@ class PlanUpgradeCtaProps {
     this.requiredTierCode,
     this.requiredPlanLabel,
     this.reason = 'plan_locked',
+    this.mode = PlanUpgradeCtaMode.upgrade,
   });
 
   final String? requiredTierCode;
   final String? requiredPlanLabel;
   final String reason;
+  final PlanUpgradeCtaMode mode;
 }
 
 /// Resolve CTA from pool eligibility payload.
@@ -125,21 +177,32 @@ PlanUpgradeCtaProps? planUpgradePropsFromPoolEligibility({
   String? reasonCode,
 }) {
   if (isLockedByPlan != true) return null;
-  if (planConfigurationError == true) return null;
-  final code = (reasonCode ?? '').trim();
-  if (code == 'INTERNAL_PLAN_CONFIGURATION' || code == 'NO_ACTIVE_PLAN' || code == 'KYC_REQUIRED') {
-    return null;
+
+  final code = _normalizeReasonCode(reasonCode);
+
+  if (planConfigurationError == true || code == 'INTERNAL_PLAN_CONFIGURATION') {
+    return const PlanUpgradeCtaProps(
+      reason: 'INTERNAL_PLAN_CONFIGURATION',
+      mode: PlanUpgradeCtaMode.support,
+    );
   }
-  final reason = (lockReason ?? '').trim();
-  if (reason.isNotEmpty && _nonPlanBlockReasons.contains(reason)) return null;
+
   if (code.isNotEmpty && _nonPlanBlockReasons.contains(code)) return null;
+
+  if (code == 'NO_ACTIVE_PLAN') {
+    return const PlanUpgradeCtaProps(reason: 'NO_ACTIVE_PLAN');
+  }
+
+  final reason = code.isNotEmpty ? code : (lockReason ?? '').trim();
+  if (reason.isNotEmpty && _nonPlanBlockReasons.contains(reason)) return null;
   if (reason.isNotEmpty && !isPlanUpgradeReason(reason) && !_looksLikePlanCopy(reason)) {
     // Unknown reason with explicit isLockedByPlan still shows CTA.
   }
+
   return PlanUpgradeCtaProps(
     requiredTierCode: requiredTierCode,
     requiredPlanLabel: requiredPlanLabel,
-    reason: code.isNotEmpty ? code : (reason.isEmpty ? 'plan_locked' : reason),
+    reason: code.isNotEmpty ? code : (reason.isEmpty ? 'PLAN_TOO_LOW' : reason),
   );
 }
 

@@ -7,11 +7,9 @@ const poolPlanEligibilityReasonPlanTooLow = 'PLAN_TOO_LOW';
 const poolPlanEligibilityReasonNoActivePlan = 'NO_ACTIVE_PLAN';
 const poolPlanEligibilityReasonInternal = 'INTERNAL_PLAN_CONFIGURATION';
 
-const poolPlanEligibilityMessagePlanTooLowAr =
-    'هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.';
-const poolPlanEligibilityMessageNoActivePlanAr = 'فعّل باقتك أولاً لاستلام الطلبات.';
-const poolPlanEligibilityMessageInternalAr =
-    'تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.';
+const poolPlanEligibilityMessagePlanTooLowAr = planTooLowHeadlineAr;
+const poolPlanEligibilityMessageNoActivePlanAr = noActivePlanHeadlineAr;
+const poolPlanEligibilityMessageInternalAr = internalPlanConfigHeadlineAr;
 
 final _legacyPlanCorrectionRe = RegExp(r'الخطة بحاجة إلى تصحيح');
 
@@ -52,15 +50,14 @@ String poolPlanLockUserMessage(PoolOrder order) {
   }
 
   final props = poolOrderPlanUpgradeProps(order);
-  if (props != null) {
-    // Prefer product PLAN_TOO_LOW copy over older tier-specific headline.
-    if ((props.reason == poolPlanEligibilityReasonPlanTooLow) ||
-        (props.reason.contains('باق') || props.reason == 'plan_locked' || props.reason == 'غير متاح لباقتك')) {
-      return poolPlanEligibilityMessagePlanTooLowAr;
-    }
+  if (props != null && props.mode == PlanUpgradeCtaMode.support) {
+    return buildPlanUpgradeCopy(reason: props.reason).headline;
+  }
+  if (props != null && props.mode == PlanUpgradeCtaMode.upgrade) {
     return buildPlanUpgradeCopy(
       requiredTierCode: props.requiredTierCode,
       requiredPlanLabel: props.requiredPlanLabel,
+      reason: props.reason,
     ).headline;
   }
 

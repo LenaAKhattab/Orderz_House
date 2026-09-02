@@ -38,7 +38,10 @@ class FreelancerCourseSummary {
     this.progress = const CourseProgress(totalLessons: 0, completedLessons: 0, percentage: 0),
     this.requiresPaidMembership = false,
     this.isLocked = false,
+    this.isLockedByPlan = false,
     this.canAccess = true,
+    this.requiredTierCode,
+    this.upgradeRequired = false,
     this.lockCopyAr = const CourseLockCopyAr(),
     this.upgradeRoute,
   });
@@ -53,18 +56,23 @@ class FreelancerCourseSummary {
   final CourseProgress progress;
   final bool requiresPaidMembership;
   final bool isLocked;
+  final bool isLockedByPlan;
   final bool canAccess;
+  final String? requiredTierCode;
+  final bool upgradeRequired;
   final CourseLockCopyAr lockCopyAr;
   final String? upgradeRoute;
 
   /// Locked teasers are visible but not accessible content.
-  bool get isAccessible => !isLocked && canAccess;
+  bool get isLockedByPlanGate => isLockedByPlan || isLocked || !canAccess;
+
+  bool get isAccessible => !isLockedByPlanGate;
 
   bool get isCompleted =>
       courseCompletedAt != null || (!isTestingEnabled && progress.isComplete && progress.totalLessons > 0);
 
   String get statusLabelAr {
-    if (isLocked || !canAccess) return lockCopyAr.badgeOrDefault;
+    if (isLockedByPlanGate) return lockCopyAr.badgeOrDefault;
     if (isCompleted) return 'مكتملة';
     if (progress.completedLessons > 0) return 'قيد التقدّم';
     return 'لم تبدأ';
@@ -74,11 +82,18 @@ class FreelancerCourseSummary {
     final cover = readString(json, 'coverImage', 'cover_image').trim();
     final completedRaw = readMapField<dynamic>(json, 'courseCompletedAt', 'course_completed_at');
     final isLocked = readBool(json, 'isLocked', 'is_locked');
+    final isLockedByPlan =
+        json.containsKey('isLockedByPlan') || json.containsKey('is_locked_by_plan')
+            ? readBool(json, 'isLockedByPlan', 'is_locked_by_plan')
+            : isLocked;
     final hasCanAccess =
         json.containsKey('canAccess') || json.containsKey('can_access');
     final canAccess = hasCanAccess
         ? readBool(json, 'canAccess', 'can_access', fallback: true)
-        : !isLocked;
+        : !isLockedByPlan && !isLocked;
+    final requiredTierCode =
+        _nullIfEmpty(readString(json, 'requiredTierCode', 'required_tier_code'));
+    final upgradeRequired = readBool(json, 'upgradeRequired', 'upgrade_required');
     final lockRaw = json['lockCopyAr'] ??
         json['lock_copy_ar'] ??
         json['lockCopy'] ??
@@ -97,7 +112,10 @@ class FreelancerCourseSummary {
       ),
       requiresPaidMembership: readBool(json, 'requiresPaidMembership', 'requires_paid_membership'),
       isLocked: isLocked,
+      isLockedByPlan: isLockedByPlan,
       canAccess: canAccess,
+      requiredTierCode: requiredTierCode,
+      upgradeRequired: upgradeRequired,
       lockCopyAr: CourseLockCopyAr.fromJson(lockRaw),
       upgradeRoute: upgrade,
     );
