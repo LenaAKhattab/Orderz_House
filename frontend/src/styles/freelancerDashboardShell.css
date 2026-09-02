@@ -394,7 +394,7 @@
   order: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--fdl-shell-gap);
+  gap: 6px;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -774,7 +774,8 @@
   width: 100%;
   margin-inline: 0;
   padding-inline: clamp(10px, 1.25vw, 18px);
-  padding-block: clamp(14px, 2vw, 26px);
+  padding-block-start: 2px;
+  padding-block-end: clamp(14px, 2vw, 26px);
 }
 
 .fdl-outlet .fdash-page {
@@ -808,7 +809,8 @@
 @media (max-width: 560px) {
   .fdl-outlet:has(> .fdash-page) {
     padding-inline: 12px;
-    padding-block: 12px;
+    padding-block-start: 2px;
+    padding-block-end: 12px;
   }
 }
 

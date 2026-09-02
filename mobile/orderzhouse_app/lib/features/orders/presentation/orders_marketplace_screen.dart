@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../../currency/presentation/jod_money_display.dart';
 import '../../freelancer/data/pool_order_participation_helpers.dart';
+import '../../freelancer/presentation/plan_upgrade_required_cta.dart';
 import '../../pantry/data/pantry_models.dart';
 import '../../pantry/presentation/pantry_controllers.dart';
 import '../../pantry/presentation/pantry_display.dart';
@@ -693,19 +694,46 @@ class _PoolOrderCard extends StatelessWidget {
                       color: const Color(0xFFB54708),
                       background: const Color(0xFFFFF4E5),
                     ),
-                  if (opportunity.poolOrder != null &&
-                      poolOrderPlanUpgradeProps(opportunity.poolOrder!) != null)
-                    const _MetaPill(
-                      icon: Icons.lock_outline,
-                      label: 'يتطلب ترقية الباقة',
-                      color: AppColors.primaryDeep,
-                      background: Color(0xFFE8EEF8),
-                    ),
                 ],
               ),
+              if (opportunity.poolOrder != null &&
+                  isPoolOrderLockedByPlan(opportunity.poolOrder!)) ...[
+                const SizedBox(height: 8),
+                _PoolPlanLockListBanner(order: opportunity.poolOrder!),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Compact list-level plan lock (aligned with order details). CTA opens web only.
+class _PoolPlanLockListBanner extends StatelessWidget {
+  const _PoolPlanLockListBanner({required this.order});
+
+  final PoolOrder order;
+
+  @override
+  Widget build(BuildContext context) {
+    final props = poolOrderPlanUpgradeProps(order);
+    final reason = props?.reason ??
+        order.poolEligibility?.reasonCode ??
+        (order.poolEligibility?.planConfigurationError == true
+            ? 'INTERNAL_PLAN_CONFIGURATION'
+            : 'PLAN_TOO_LOW');
+
+    // Absorb pointer so CTA / text area does not also fire card navigation.
+    return GestureDetector(
+      onTap: () {},
+      behavior: HitTestBehavior.opaque,
+      child: PlanUpgradeRequiredCta(
+        key: ValueKey('pool-list-plan-lock-${order.id}'),
+        requiredTierCode: props?.requiredTierCode,
+        requiredPlanLabel: props?.requiredPlanLabel,
+        reason: reason,
+        compact: true,
       ),
     );
   }

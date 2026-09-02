@@ -157,12 +157,11 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
       body: async.when(
         loading: () => const OhLoadingBody(message: 'جاري التحميل...'),
         error: (e, _) {
-          final lockMessage = mapCourseAccessErrorMessage(e);
-          if (lockMessage != null) {
+          if (isCoursePlanUpgradeError(e)) {
             return CourseLockedAccessBody(
               title: null,
-              message: lockMessage,
-              ctaLabel: courseLockCtaAr,
+              message: mapCourseAccessErrorMessage(e) ?? coursePlanLockMessageAr,
+              ctaLabel: courseLockCtaForError(e),
               onUpgrade: _openPlans,
               onRetry: () =>
                   ref.read(freelancerCourseDetailsProvider(widget.courseId).notifier).reload(),
@@ -331,7 +330,7 @@ class CourseLockedAccessBody extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              title?.trim().isNotEmpty == true ? title! : courseLockBadgeAr,
+              title?.trim().isNotEmpty == true ? title! : coursePlanLockBadgeAr,
               key: const ValueKey('course-detail-lock-badge'),
               textAlign: TextAlign.center,
               style: const TextStyle(

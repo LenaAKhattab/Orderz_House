@@ -246,7 +246,7 @@ export default function ProblemsSuggestionsPage() {
     <DashboardShell>
       <div className="ps-feedback-page">
         <DashboardPageHeader
-          className="ps-feedback-page__header !mb-1"
+          className="ps-feedback-page__header"
           title={t("dashboard.feedback.title")}
           description={t("dashboard.feedback.intro")}
           breadcrumbs={[
@@ -257,7 +257,7 @@ export default function ProblemsSuggestionsPage() {
 
         <DashboardSection
           title={t("dashboard.feedback.formTitle")}
-          className="ps-feedback-form-section !mb-[0.35rem] !p-[1.15rem_1.2rem_1.25rem] sm:!p-[1.35rem_1.5rem_1.45rem]"
+          className="ps-feedback-form-section"
         >
           <form className="ps-feedback-form" onSubmit={onSubmit} noValidate>
             {successMessage ? (
@@ -365,7 +365,7 @@ export default function ProblemsSuggestionsPage() {
                 maxLength={5000}
                 required
                 disabled={submitting}
-                rows={7}
+                rows={5}
                 placeholder={t("dashboard.feedback.descriptionPlaceholder")}
                 aria-invalid={Boolean(formError)}
                 aria-describedby={`${descriptionHintId}${formError ? ` ${formErrorId}` : ""}`}
@@ -391,7 +391,7 @@ export default function ProblemsSuggestionsPage() {
 
         <DashboardSection
           title={t("dashboard.feedback.mySubmissionsTitle")}
-          className={`ps-feedback-list-section !mb-0${!loadingList && !listError && items.length === 0 ? " ps-feedback-list-section--empty !pb-4 sm:!pb-4" : ""}`}
+          className={`ps-feedback-list-section${!loadingList && !listError && items.length === 0 ? " ps-feedback-list-section--empty" : ""}`}
         >
           {loadingList ? <DashboardLoadingState /> : null}
           {!loadingList && listError ? (
@@ -406,8 +406,8 @@ export default function ProblemsSuggestionsPage() {
           ) : null}
           {!loadingList && !listError && items.length === 0 ? (
             <DashboardEmptyState
-              className="ps-feedback-empty !border-0 !bg-transparent !shadow-none !px-2 !py-3 sm:!px-3 sm:!py-3.5"
-              icon={<MessageCircleWarning size={26} strokeWidth={1.6} aria-hidden />}
+              className="ps-feedback-empty !border-0 !bg-transparent !shadow-none !px-2 !py-2"
+              icon={<MessageCircleWarning size={20} strokeWidth={1.6} aria-hidden />}
               title={t("dashboard.feedback.emptyTitle")}
               description={t("dashboard.feedback.emptyDescription")}
             />

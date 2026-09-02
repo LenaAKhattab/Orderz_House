@@ -377,6 +377,13 @@
     "wallet": "Earnings & wallet",
     "walletLink": "Wallet",
     "earningsNote": "Figures come from your approved financial claims — not platform order values.",
+    "earningsHero": {
+      "aria": "Freelancer earnings summary",
+      "title": "Your earnings",
+      "paid": "Net paid",
+      "pending": "Pending payout",
+      "openClaims": "Open claims"
+    },
     "latestClaim": "Latest claim",
     "noClaimsYet": "No financial claims yet.",
     "createSuccessTitle": "Claim created",

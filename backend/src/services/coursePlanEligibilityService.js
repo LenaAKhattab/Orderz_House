@@ -47,6 +47,11 @@ function tierRank(tierCode) {
   return COURSE_TIER_RANK[normalized] ?? 0;
 }
 
+/** Paid marketplace plans (silver+) unlock all courses — no gradual pro/elite ladder. */
+function isPaidCourseAccessTier(tierCode) {
+  return tierRank(tierCode) >= tierRank("silver");
+}
+
 function isRequiredMembershipTrainingCourse(courseId, requiredTrainingCourseId) {
   const cid = Number(courseId);
   const rid = Number(requiredTrainingCourseId);
@@ -112,9 +117,9 @@ function evaluateCoursePlanAccessWithContext({ course, context }) {
     };
   }
 
-  const requiredRank = tierRank(requiredTierCode);
-  const currentRank = tierRank(currentTierCode);
-  const canAccess = currentRank >= requiredRank && requiredRank > 0;
+  // Paid plans access all courses; STARTER only starter-tier (+ training exception above).
+  const canAccess =
+    isPaidCourseAccessTier(currentTierCode) || requiredTierCode === "starter";
   const isLockedByPlan = !canAccess;
 
   return {
@@ -170,6 +175,7 @@ module.exports = {
   normalizeCourseRequiredTierCode,
   normalizeMembershipTierForCourses,
   tierRank,
+  isPaidCourseAccessTier,
   isRequiredMembershipTrainingCourse,
   getRequiredMembershipTrainingCourseId,
   resolveFreelancerEffectiveTierCode,

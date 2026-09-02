@@ -17,6 +17,9 @@ String apiErrorMessage(Object error, {String fallback = 'حدث خطأ غير م
       if (codeStr == 'COURSE_SUBSCRIPTION_REQUIRED') {
         return 'يجب الاشتراك بإحدى الخطط للوصول إلى هذه الدورة.';
       }
+      if (codeStr == 'COURSE_PLAN_UPGRADE_REQUIRED') {
+        return 'هذه الدورة متاحة لباقات أعلى';
+      }
       if (codeStr == 'COURSE_ACCESS_DENIED') {
         return 'لا يمكنك الوصول إلى هذه الدورة.';
       }
