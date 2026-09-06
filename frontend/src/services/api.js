@@ -2278,6 +2278,41 @@ export const createSuperAdminFreelancerPaymentRequest = async (payload) => {
   return data;
 };
 
+export const listFazatSettlementsRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/fazat-settlements", { params });
+  return data;
+};
+
+export const getFazatSettlementRequest = async (id) => {
+  const { data } = await api.get(`/super-admin/fazat-settlements/${id}`);
+  return data;
+};
+
+export const approveFazatSettlementRequest = async (id, payload = {}) => {
+  const { data } = await api.post(`/super-admin/fazat-settlements/${id}/approve`, payload);
+  return data;
+};
+
+export const rejectFazatSettlementRequest = async (id, payload) => {
+  const { data } = await api.post(`/super-admin/fazat-settlements/${id}/reject`, payload);
+  return data;
+};
+
+export const adjustFazatSettlementRequest = async (id, payload) => {
+  const { data } = await api.post(`/super-admin/fazat-settlements/${id}/adjust`, payload);
+  return data;
+};
+
+export const adjustAndApproveFazatSettlementRequest = async (id, payload) => {
+  const { data } = await api.post(`/super-admin/fazat-settlements/${id}/adjust-and-approve`, payload);
+  return data;
+};
+
+export const getPortalCashWalletRequest = async (params = {}) => {
+  const { data } = await api.get("/portal/cash-wallet", { params });
+  return data;
+};
+
 // Problems & Suggestions (client / freelancer)
 export const createFeedbackRequest = async (payload) => {
   const { data } = await api.post("/feedback", payload);

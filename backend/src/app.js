@@ -63,6 +63,7 @@ const portalFinancialClaimsRoutes = require("./routes/portalFinancialClaimsRoute
 const superAdminFinancialCenterRoutes = require("./routes/superAdminFinancialCenterRoutes");
 const financialUserRoutes = require("./routes/financialUserRoutes");
 const superAdminFinancialClaimsRoutes = require("./routes/superAdminFinancialClaimsRoutes");
+const superAdminFazatSettlementsRoutes = require("./routes/superAdminFazatSettlementsRoutes");
 const superAdminAnalyticsRoutes = require("./routes/superAdminAnalyticsRoutes");
 const superAdminAdminsRoutes = require("./routes/superAdminAdminsRoutes");
 const rateLimitExemptionsRoutes = require("./routes/rateLimitExemptionsRoutes");
@@ -200,6 +201,7 @@ app.use("/api/portal", portalFinancialClaimsRoutes);
 app.use("/api/superadmin/financial-center", superAdminFinancialCenterRoutes);
 app.use("/api/financial-user", financialUserRoutes);
 app.use("/api/super-admin", superAdminFinancialClaimsRoutes);
+app.use("/api/super-admin", superAdminFazatSettlementsRoutes);
 app.use("/api/super-admin", superAdminAdminsRoutes);
 app.use("/api/super-admin", superAdminWebsiteRoutes);
 app.use("/api/super-admin", rateLimitExemptionsRoutes);

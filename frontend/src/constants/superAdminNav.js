@@ -59,6 +59,13 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     icon: "financial-claims",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims,
   },
+  fazatSettlements: {
+    key: "fazatSettlements",
+    to: "/dashboard/super-admin/fazat-settlements",
+    labelKey: "dashboard.nav.superAdmin.fazatSettlements",
+    icon: "financial-claims",
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims,
+  },
   financialCenter: {
     key: "financialCenter",
     to: "/dashboard/super-admin/financial-center",
@@ -245,7 +252,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "financeAdmin",
     labelKey: "dashboard.nav.sections.financeAdmin",
-    itemKeys: ["financialCenter", "financialClaims"],
+    itemKeys: ["financialCenter", "financialClaims", "fazatSettlements"],
   },
   {
     id: "usersSubscriptions",
@@ -423,6 +430,7 @@ export function superAdminBreadcrumbKeys(pathname) {
     return [...base, "dashboard.breadcrumbs.financialCenter", "dashboard.financialCenter.employeeDetail.breadcrumb"];
   }
   if (pathname.includes("/financial-center")) return [...base, "dashboard.breadcrumbs.financialCenter"];
+  if (pathname.includes("/fazat-settlements")) return [...base, "dashboard.breadcrumbs.fazatSettlements"];
   if (pathname.includes("/financial-claims")) return [...base, "dashboard.breadcrumbs.financialClaims"];
   if (pathname.includes("/orders")) return [...base, "dashboard.breadcrumbs.internalRequests"];
   return base;
