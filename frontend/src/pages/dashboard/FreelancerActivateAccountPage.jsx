@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import { breadcrumbHomeCrumb } from "../../components/dashboard/dashboardBreadcrumbs";
@@ -12,23 +12,129 @@ import {
 import { invalidateFreelancerSessionCache } from "../../services/freelancerSessionCache";
 import "./shared/account-pages.css";
 
-function FileField({ id, label, file, onChange, disabled, accept }) {
+function formatFileSize(bytes) {
+  const n = Number(bytes);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function KycIdUploadCard({
+  id,
+  label,
+  sideLabel,
+  hint,
+  file,
+  onChange,
+  disabled,
+  accept,
+  chooseLabel,
+  changeLabel,
+  removeLabel,
+  selectedLabel,
+}) {
+  const inputRef = useRef(null);
+  const generatedId = useId();
+  const inputId = id || generatedId;
+  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const openPicker = () => {
+    if (disabled) return;
+    inputRef.current?.click();
+  };
+
+  const onFileChange = (e) => {
+    const next = e.target.files?.[0] || null;
+    onChange(next);
+    e.target.value = "";
+  };
+
+  const clearFile = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (disabled) return;
+    onChange(null);
+  };
+
   return (
-    <label className="oh-account-label" htmlFor={id} style={{ display: "block", marginBottom: 12 }}>
-      <span style={{ display: "block", marginBottom: 6 }}>{label}</span>
+    <div className={`oh-kyc-upload${file ? " is-filled" : ""}${disabled ? " is-disabled" : ""}`}>
+      <div className="oh-kyc-upload__header">
+        <span className="oh-kyc-upload__side">{sideLabel}</span>
+        <span className="oh-kyc-upload__label" id={`${inputId}-label`}>
+          {label}
+        </span>
+      </div>
+
       <input
-        id={id}
+        ref={inputRef}
+        id={inputId}
         type="file"
+        className="oh-kyc-upload__input"
         accept={accept}
         disabled={disabled}
-        onChange={(e) => onChange(e.target.files?.[0] || null)}
+        onChange={onFileChange}
+        aria-labelledby={`${inputId}-label`}
       />
-      {file ? (
-        <span className="oh-account-value" style={{ display: "block", marginTop: 4, fontSize: 13 }}>
-          {file.name}
-        </span>
-      ) : null}
-    </label>
+
+      {file && previewUrl ? (
+        <div className="oh-kyc-upload__preview-wrap">
+          <img src={previewUrl} alt={label} className="oh-kyc-upload__preview" />
+          <div className="oh-kyc-upload__meta">
+            <p className="oh-kyc-upload__status">{selectedLabel}</p>
+            <p className="oh-kyc-upload__filename" title={file.name}>
+              {file.name}
+            </p>
+            {file.size ? <p className="oh-kyc-upload__size">{formatFileSize(file.size)}</p> : null}
+            <div className="oh-kyc-upload__actions">
+              <button type="button" className="oh-kyc-upload__btn" disabled={disabled} onClick={openPicker}>
+                {changeLabel}
+              </button>
+              <button
+                type="button"
+                className="oh-kyc-upload__btn oh-kyc-upload__btn--ghost"
+                disabled={disabled}
+                onClick={clearFile}
+              >
+                {removeLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="oh-kyc-upload__dropzone"
+          disabled={disabled}
+          onClick={openPicker}
+          aria-describedby={`${inputId}-hint`}
+        >
+          <span className="oh-kyc-upload__icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" width="40" height="40" fill="none">
+              <rect x="8" y="12" width="32" height="24" rx="4" stroke="currentColor" strokeWidth="2.2" />
+              <path
+                d="M16 28l5.5-6.5 4.5 5 3.5-4.5L32 28"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="19" cy="19" r="2.2" fill="currentColor" />
+            </svg>
+          </span>
+          <span className="oh-kyc-upload__cta">{chooseLabel}</span>
+          <span className="oh-kyc-upload__hint" id={`${inputId}-hint`}>
+            {hint}
+          </span>
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -193,22 +299,36 @@ export default function FreelancerActivateAccountPage() {
               </div>
             ) : null}
 
-            <FileField
-              id="kyc-id-front"
-              label={t("freelancerDashboard.activateAccount.kyc.idFront")}
-              file={idFront}
-              onChange={setIdFront}
-              disabled={busy}
-              accept="image/jpeg,image/png,image/webp"
-            />
-            <FileField
-              id="kyc-id-back"
-              label={t("freelancerDashboard.activateAccount.kyc.idBack")}
-              file={idBack}
-              onChange={setIdBack}
-              disabled={busy}
-              accept="image/jpeg,image/png,image/webp"
-            />
+            <div className="oh-kyc-upload-grid">
+              <KycIdUploadCard
+                id="kyc-id-front"
+                label={t("freelancerDashboard.activateAccount.kyc.idFront")}
+                sideLabel={t("freelancerDashboard.activateAccount.kyc.idFrontSide")}
+                hint={t("freelancerDashboard.activateAccount.kyc.uploadFormats")}
+                file={idFront}
+                onChange={setIdFront}
+                disabled={busy}
+                accept="image/jpeg,image/png,image/webp"
+                chooseLabel={t("freelancerDashboard.activateAccount.kyc.chooseImage")}
+                changeLabel={t("freelancerDashboard.activateAccount.kyc.changeImage")}
+                removeLabel={t("freelancerDashboard.activateAccount.kyc.removeImage")}
+                selectedLabel={t("freelancerDashboard.activateAccount.kyc.imageSelected")}
+              />
+              <KycIdUploadCard
+                id="kyc-id-back"
+                label={t("freelancerDashboard.activateAccount.kyc.idBack")}
+                sideLabel={t("freelancerDashboard.activateAccount.kyc.idBackSide")}
+                hint={t("freelancerDashboard.activateAccount.kyc.uploadFormats")}
+                file={idBack}
+                onChange={setIdBack}
+                disabled={busy}
+                accept="image/jpeg,image/png,image/webp"
+                chooseLabel={t("freelancerDashboard.activateAccount.kyc.chooseImage")}
+                changeLabel={t("freelancerDashboard.activateAccount.kyc.changeImage")}
+                removeLabel={t("freelancerDashboard.activateAccount.kyc.removeImage")}
+                selectedLabel={t("freelancerDashboard.activateAccount.kyc.imageSelected")}
+              />
+            </div>
 
             <FreelancerActivationPolicyPanel />
 

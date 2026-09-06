@@ -19,6 +19,7 @@ router.get(
   validateRequest,
   portalFinancialClaimsController.listMyDoneProjects,
 );
+router.get("/cash-wallet", portalFinancialClaimsController.getMyCashWallet);
 router.post(
   "/financial-claims",
   createPortalFinancialClaimValidators,

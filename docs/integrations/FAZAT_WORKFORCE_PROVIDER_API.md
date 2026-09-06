@@ -367,6 +367,17 @@ Rules:
 
 * `eventId` is unique; FAZ3AT must treat delivery as **idempotent** by `eventId`.
 * Never includes secrets, Stripe keys, wallet, ledger, or FAZ3AT client PII beyond mapping ids already known to FAZ3AT.
+
+### Settlement review (Orderz admin credit)
+
+See `docs/integrations/FAZAT_SETTLEMENTS.md`.
+
+```http
+POST /api/integrations/fazat/settlements
+```
+
+Creates `PENDING_REVIEW` only. Wallet credit happens after Orderz admin approval on **تسويات فزعات**.
+
 * Outbox table: `partner_webhook_events` (`pending` → `sent` | `failed` | `skipped`).
 
 ---

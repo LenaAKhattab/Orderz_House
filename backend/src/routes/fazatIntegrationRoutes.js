@@ -1,6 +1,7 @@
 const express = require("express");
 const { requireFazatPartnerAuth } = require("../middleware/fazatIntegrationAuth");
 const controller = require("../controllers/fazatIntegrationController");
+const settlementController = require("../controllers/fazatSettlementController");
 
 const router = express.Router();
 
@@ -16,5 +17,8 @@ router.post("/orders/:orderId/messages", controller.postMessage);
 router.get("/orders/:orderId/messages", controller.listMessages);
 router.get("/orders/:orderId/deliveries", controller.listDeliveries);
 router.post("/orders/:orderId/revision", controller.requestRevision);
+
+// Settlement review queue — creates PENDING_REVIEW only (no wallet credit on receive).
+router.post("/settlements", settlementController.createSettlement);
 
 module.exports = router;

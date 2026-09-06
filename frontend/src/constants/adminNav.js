@@ -116,6 +116,7 @@ export const ADMIN_NAV_ITEM_DEFS = {
   subscriptions: SUPER_ADMIN_NAV_ITEM_DEFS.subscriptions,
   trainingRequests: SUPER_ADMIN_NAV_ITEM_DEFS.trainingRequests,
   financialClaims: SUPER_ADMIN_NAV_ITEM_DEFS.financialClaims,
+  fazatSettlements: SUPER_ADMIN_NAV_ITEM_DEFS.fazatSettlements,
   financialCenter: SUPER_ADMIN_NAV_ITEM_DEFS.financialCenter,
   editWebsite: SUPER_ADMIN_NAV_ITEM_DEFS.editWebsite,
   admins: SUPER_ADMIN_NAV_ITEM_DEFS.admins,
@@ -146,7 +147,7 @@ export const ADMIN_NAV_SECTION_DEFS = [
   {
     id: "financeAdmin",
     labelKey: "dashboard.nav.sections.financeAdmin",
-    itemKeys: ["financialCenter", "financialClaims"],
+    itemKeys: ["financialCenter", "financialClaims", "fazatSettlements"],
   },
   {
     id: "contentTraining",

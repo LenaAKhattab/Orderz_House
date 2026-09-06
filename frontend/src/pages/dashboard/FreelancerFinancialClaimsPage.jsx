@@ -15,6 +15,7 @@ import {
 import {
   createPortalFinancialClaimRequest,
   getCategoriesRequest,
+  getPortalCashWalletRequest,
   listPortalDoneProjectsRequest,
   listPortalFinancialClaimsRequest,
 } from "../../services/api";
@@ -175,6 +176,7 @@ export default function FreelancerFinancialClaimsPage() {
   const emDash = t("freelancerDashboard.common.emDash");
   const fc = "freelancerDashboard.financialClaims";
   const [claims, setClaims] = useState([]);
+  const [cashWallet, setCashWallet] = useState({ availableMinor: 0, currency: "JOD", entries: [] });
   const [doneProjects, setDoneProjects] = useState([]);
   const [categories, setCategories] = useState([]);
   const [busy, setBusy] = useState(true);
@@ -197,12 +199,20 @@ export default function FreelancerFinancialClaimsPage() {
   const reload = async () => {
     setBusy(true);
     try {
-      const [claimsRes, doneRes] = await Promise.all([
+      const [claimsRes, doneRes, cashRes] = await Promise.all([
         listPortalFinancialClaimsRequest({}),
         listPortalDoneProjectsRequest({ q: searchDone, limit: 50 }),
+        getPortalCashWalletRequest({}).catch(() => null),
       ]);
       setClaims(claimsRes?.data?.claims || []);
       setDoneProjects(extractDoneProjects(doneRes));
+      if (cashRes?.data) {
+        setCashWallet({
+          availableMinor: Number(cashRes.data.availableMinor || 0),
+          currency: cashRes.data.currency || "JOD",
+          entries: Array.isArray(cashRes.data.entries) ? cashRes.data.entries : [],
+        });
+      }
       const categoriesRes = await getCategoriesRequest();
       const categoryList = categoriesRes?.data?.categories || [];
       setCategories(Array.isArray(categoryList) ? categoryList : []);
@@ -368,6 +378,29 @@ export default function FreelancerFinancialClaimsPage() {
           </button>
         </div>
       </header>
+
+      {(cashWallet.availableMinor > 0 || cashWallet.entries.length > 0) && (
+        <section className="ffc-surface" style={{ marginBottom: "1rem", padding: "1rem" }}>
+          <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.05rem" }}>رصيد الطلبات المُدارة</h2>
+          <p style={{ margin: "0 0 0.75rem", opacity: 0.85 }}>
+            المتاح:{" "}
+            <strong>
+              {formatMoney(Number(cashWallet.availableMinor) / 100, emDash)} {cashWallet.currency}
+            </strong>
+          </p>
+          <ul style={{ margin: 0, paddingInlineStart: "1.1rem" }}>
+            {cashWallet.entries.slice(0, 8).map((entry) => (
+              <li key={entry.id} style={{ marginBottom: "0.35rem" }}>
+                {entry.description || "أرباح طلب مُدار"} —{" "}
+                {formatMoney(Number(entry.amountMinor) / 100, emDash)} {entry.currency || "JOD"}
+                <span style={{ opacity: 0.65, marginInlineStart: "0.5rem" }}>
+                  {formatDate(entry.createdAt, locale, emDash)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="ffc-earnings" aria-label={t(`${fc}.earningsHero.aria`)}>
         <div className="ffc-earnings__visual" aria-hidden>

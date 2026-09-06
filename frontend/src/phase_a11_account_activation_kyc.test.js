@@ -43,6 +43,22 @@ describe("Phase A11 — freelancer activate-account KYC UI", () => {
     assert.match(ar, /إرسال طلب التفعيل/);
     assert.match(ar, /طلبك قيد المراجعة/);
     assert.match(ar, /إعادة إرسال طلب التفعيل/);
+    assert.match(ar, /اضغط لاختيار الصورة/);
+    assert.match(ar, /تغيير الصورة/);
+  });
+});
+
+describe("Phase A11 — KYC upload card UI", () => {
+  it("uses custom upload cards instead of bare file inputs", () => {
+    const page = read("pages/dashboard/FreelancerActivateAccountPage.jsx");
+    const css = read("pages/dashboard/shared/account-pages.css");
+    assert.match(page, /oh-kyc-upload/);
+    assert.match(page, /oh-kyc-upload__dropzone/);
+    assert.match(page, /oh-kyc-upload__input/);
+    assert.match(page, /chooseImage|changeImage|removeImage/);
+    assert.match(css, /\.oh-kyc-upload/);
+    assert.match(css, /\.oh-kyc-upload__dropzone/);
+    assert.doesNotMatch(page, /oh-account-label[\s\S]*type=["']file["']/);
   });
 });
 

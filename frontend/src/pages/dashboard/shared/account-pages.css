@@ -503,3 +503,209 @@
   gap: 10px;
   margin-top: 16px;
 }
+
+/* KYC ID image upload cards */
+.oh-kyc-upload-grid {
+  display: grid;
+  gap: 14px;
+  margin: 4px 0 18px;
+}
+
+@media (min-width: 720px) {
+  .oh-kyc-upload-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+}
+
+.oh-kyc-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(47, 59, 101, 0.18);
+  background: linear-gradient(165deg, #f7f9fc 0%, #eef2f7 100%);
+}
+
+.oh-kyc-upload.is-filled {
+  border-color: rgba(34, 120, 90, 0.35);
+  background: linear-gradient(165deg, #f4fbf7 0%, #eef6f2 100%);
+}
+
+.oh-kyc-upload.is-disabled {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.oh-kyc-upload__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.oh-kyc-upload__side {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #2f3b65;
+  background: rgba(47, 59, 101, 0.1);
+  border: 1px solid rgba(47, 59, 101, 0.14);
+}
+
+.oh-kyc-upload__label {
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: #172033;
+}
+
+.oh-kyc-upload__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.oh-kyc-upload__dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 168px;
+  width: 100%;
+  padding: 18px 14px;
+  border-radius: 12px;
+  border: 1.5px dashed rgba(47, 59, 101, 0.35);
+  background: rgba(255, 255, 255, 0.72);
+  color: #2f3b65;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  font: inherit;
+  text-align: center;
+}
+
+.oh-kyc-upload__dropzone:hover:not(:disabled) {
+  border-color: #2f3b65;
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+.oh-kyc-upload__dropzone:focus-visible {
+  outline: 2px solid #2f3b65;
+  outline-offset: 2px;
+}
+
+.oh-kyc-upload__icon {
+  color: #2f3b65;
+  opacity: 0.9;
+}
+
+.oh-kyc-upload__cta {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #172033;
+}
+
+.oh-kyc-upload__hint {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #667085;
+  line-height: 1.45;
+  max-width: 28ch;
+}
+
+.oh-kyc-upload__preview-wrap {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 480px) {
+  .oh-kyc-upload__preview-wrap {
+    grid-template-columns: minmax(120px, 148px) 1fr;
+    align-items: center;
+  }
+}
+
+.oh-kyc-upload__preview {
+  width: 100%;
+  aspect-ratio: 1.55 / 1;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid rgba(47, 59, 101, 0.18);
+  background: #fff;
+}
+
+.oh-kyc-upload__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.oh-kyc-upload__status {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #1f7a4d;
+}
+
+.oh-kyc-upload__filename {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #172033;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.oh-kyc-upload__size {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #667085;
+}
+
+.oh-kyc-upload__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.oh-kyc-upload__btn {
+  appearance: none;
+  border: 1px solid rgba(47, 59, 101, 0.28);
+  background: #2f3b65;
+  color: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.oh-kyc-upload__btn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.oh-kyc-upload__btn--ghost {
+  background: #fff;
+  color: #2f3b65;
+}
+
+.oh-kyc-upload__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

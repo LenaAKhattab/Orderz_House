@@ -1,4 +1,5 @@
 const financialClaimsService = require("../services/financialClaimsService");
+const freelancerCashWalletService = require("../services/freelancerCashWalletService");
 const { capture } = require("../config/posthog");
 
 const listMyFinancialClaims = async (req, res, next) => {
@@ -42,8 +43,29 @@ const createMyFinancialClaim = async (req, res, next) => {
   }
 };
 
+/** White-label managed-order cash balance + ledger (no FAZAT branding). */
+const getMyCashWallet = async (req, res, next) => {
+  try {
+    const wallet = await freelancerCashWalletService.getWalletSnapshot(req.auth.userId);
+    const entries = await freelancerCashWalletService.listLedgerForFreelancer(req.auth.userId, {
+      limit: req.query.limit || 50,
+    });
+    return res.status(200).json({
+      success: true,
+      data: {
+        availableMinor: wallet.availableMinor,
+        currency: wallet.currency || "JOD",
+        entries,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   listMyFinancialClaims,
   listMyDoneProjects,
   createMyFinancialClaim,
+  getMyCashWallet,
 };

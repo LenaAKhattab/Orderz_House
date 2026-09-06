@@ -57,6 +57,7 @@ import {
   SuperAdminAnalysisPage,
   SuperAdminSubscriptionsPage,
   SuperAdminFinancialClaimsPage,
+  SuperAdminFazatSettlementsPage,
   SuperAdminFinancialCenterPage,
   FinancialEmployeeDetailPage,
   SuperAdminSettingsPage,
@@ -443,6 +444,14 @@ function App() {
                   element={
                     <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims}>
                       <SuperAdminFinancialClaimsPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/fazat-settlements"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims}>
+                      <SuperAdminFazatSettlementsPage />
                     </RequireStaffPage>
                   }
                 />

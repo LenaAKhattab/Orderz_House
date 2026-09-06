@@ -78,6 +78,9 @@ export const SuperAdminSubscriptionsPage = lazy(() => import("../pages/dashboard
 export const SuperAdminFinancialClaimsPage = lazy(
   () => import("../pages/dashboard/SuperAdminFinancialClaimsPage"),
 );
+export const SuperAdminFazatSettlementsPage = lazy(
+  () => import("../pages/dashboard/SuperAdminFazatSettlementsPage"),
+);
 export const SuperAdminFinancialCenterPage = lazy(
   () => import("../pages/dashboard/SuperAdminFinancialCenterPage"),
 );
