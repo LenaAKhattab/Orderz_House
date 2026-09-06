@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import HeroAnalyticsStrip from "./HeroAnalyticsStrip";
+import { shouldRenderHeroStatsSection } from "./heroHomeStatUtils";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import BrandLogo from "../brand/BrandLogo";function IconCtaArrow({ isRtl }) {
   return (
@@ -46,9 +47,11 @@ export default function HeroMainContent({ statsPayload }) {
           </Link>
         </div>
 
-        <div className="home-hero__inline-stats w-full min-w-0">
-          <HeroAnalyticsStrip statsPayload={statsPayload} />
-        </div>
+        {shouldRenderHeroStatsSection(statsPayload) ? (
+          <div className="home-hero__inline-stats w-full min-w-0">
+            <HeroAnalyticsStrip statsPayload={statsPayload} />
+          </div>
+        ) : null}
 
         <div className="home-hero__cta home-hero-marketing__cta-row flex w-full min-w-0 flex-wrap justify-center gap-2 sm:mt-5">
           <Link to="/register" className="home-hero__cta-primary home-hero-marketing__cta-primary">

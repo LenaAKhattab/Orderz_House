@@ -55,6 +55,14 @@ function localizeTierLabel(rawLabel, locale, t) {
  */
 export function getPlanLocaleKey(plan) {
   if (!plan) return null;
+  // Marketplace Membership must never inherit legacy free/standard/platinum locale cards
+  // (DB ids can collide with canonical legacy plan ids 1–3).
+  if (
+    plan.catalogSource === "marketplace_membership" ||
+    plan.marketplaceMembership === true
+  ) {
+    return null;
+  }
   const id = String(plan.id ?? "");
   const name = String(plan.name ?? "");
   return PLAN_LOCALE_KEYS[id] || PLAN_LOCALE_KEYS[name] || null;
@@ -164,6 +172,32 @@ function getLocalizedInstallmentSummary(plan, locale, t, cardBundle) {
 }
 
 function getLocalizedPriceHeadline(plan, locale, t) {
+  if (plan?.saleActive && plan?.effectivePriceJod != null && plan?.originalPriceJod != null) {
+    const original = formatPlanPriceJod(plan.originalPriceJod, locale);
+    const effective = formatPlanPriceJod(plan.effectivePriceJod, locale);
+    const pct = Number(plan.salePercentage);
+    const reason =
+      locale === "en"
+        ? String(plan.saleReasonEn || plan.saleReason || "").trim()
+        : String(plan.saleReason || "").trim();
+    return {
+      main: effective || "—",
+      sub: null,
+      sale: {
+        active: true,
+        original,
+        percentage: Number.isFinite(pct) ? pct : null,
+        reason: reason || null,
+        badge:
+          Number.isFinite(pct) && pct > 0
+            ? locale === "en"
+              ? t("plans.sale.percentOff", { percent: pct })
+              : t("plans.sale.percentOff", { percent: pct })
+            : null,
+      },
+    };
+  }
+
   const total = formatPlanPriceJod(plan?.priceJod, locale);
   const checkout =
     plan?.stripeCheckoutAmountJod != null
@@ -178,10 +212,10 @@ function getLocalizedPriceHeadline(plan, locale, t) {
             amount: totalAmount.toLocaleString("en-US", { maximumFractionDigits: 2 }),
           })
         : `الإجمالي ${total}`;
-    return { main: checkout, sub: totalLabel };
+    return { main: checkout, sub: totalLabel, sale: null };
   }
 
-  return { main: total || "—", sub: null };
+  return { main: total || "—", sub: null, sale: null };
 }
 
 /**

@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "../../config/apiBase";
+
 const CACHE_PREFIX = "oh_tr_cache_v1:";
 const CACHE_MAX_ENTRIES = 500;
 
@@ -40,7 +42,7 @@ function pruneCacheIfNeeded() {
   }
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const API_BASE = getApiBaseUrl();
 
 /**
  * Translate a single Arabic string to English via backend API.

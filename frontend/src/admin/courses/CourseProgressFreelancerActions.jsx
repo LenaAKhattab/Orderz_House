@@ -181,6 +181,7 @@ export default function CourseProgressFreelancerActions({
     closeMenu();
     setBusy("activate");
     try {
+      // Staff path: backend requires approved KYC (or Super Admin override elsewhere).
       await activateSubscriptionCompanyRequest(subscriptionId);
       await refreshSummary();
       toast.success("تم تفعيل اشتراك المستقل بنجاح");
@@ -403,7 +404,9 @@ export default function CourseProgressFreelancerActions({
                 <div>
                   <dt>رسوم التفعيل</dt>
                   <dd>
-                    {displayEligibility.activationFeeStatus.needsPayment
+                    {displayEligibility.activationFeeStatus.enabled === false
+                      ? "غير مطلوبة (معطّلة)"
+                      : displayEligibility.activationFeeStatus.needsPayment
                       ? "غير مدفوعة"
                       : displayEligibility.activationFeeStatus.isCurrent
                         ? "مدفوعة وسارية"

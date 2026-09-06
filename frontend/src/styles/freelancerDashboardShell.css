@@ -155,8 +155,8 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  gap: 4px;
-  padding: 4px 8px 12px;
+  gap: 2px;
+  padding: 2px 8px 10px;
   text-align: center;
   border-bottom: 1px solid var(--fdl-border-soft);
 }
@@ -171,7 +171,7 @@
 
 .fdl-sidebar__logo {
   display: block;
-  width: min(156px, 88%);
+  width: min(128px, 78%);
   max-width: 100%;
   height: auto;
   margin-inline: auto;
@@ -185,7 +185,7 @@
 }
 
 .fdl-sidebar--collapsed .fdl-sidebar__logo {
-  width: 44px;
+  width: 38px;
 }
 
 .fdl-sidebar--collapsed .fdl-sidebar__brand {
@@ -226,8 +226,8 @@
 }
 
 .fdl-sidebar--collapsed .fdl-nav-icon__surface {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
 }
 
 .fdl-sidebar__nav {
@@ -276,14 +276,14 @@
 .fdl-navlink {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 9px 12px;
+  padding: 7px 10px;
   border: 1px solid transparent;
-  border-radius: 16px;
+  border-radius: 14px;
   background: transparent;
   color: var(--dash-text-secondary);
-  font-size: 0.86rem;
+  font-size: 0.78rem;
   font-weight: 600;
   font-family: inherit;
   text-decoration: none;
@@ -313,11 +313,11 @@
 /* Sidebar nav icons — flat neutral surfaces */
 .fdl-nav-icon__surface {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
-  border-radius: 13px;
+  border-radius: 11px;
   background: var(--dash-card, #fcfcfd);
   border: 1px solid var(--dash-border, #c9d0da);
   box-shadow: none;
@@ -328,8 +328,8 @@
 }
 
 .fdl-nav-icon {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   color: var(--dash-text-muted);
   stroke-width: 1.75;
 }
@@ -394,7 +394,7 @@
   order: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--fdl-shell-gap);
+  gap: 6px;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -774,7 +774,8 @@
   width: 100%;
   margin-inline: 0;
   padding-inline: clamp(10px, 1.25vw, 18px);
-  padding-block: clamp(14px, 2vw, 26px);
+  padding-block-start: 2px;
+  padding-block-end: clamp(14px, 2vw, 26px);
 }
 
 .fdl-outlet .fdash-page {
@@ -808,7 +809,8 @@
 @media (max-width: 560px) {
   .fdl-outlet:has(> .fdash-page) {
     padding-inline: 12px;
-    padding-block: 12px;
+    padding-block-start: 2px;
+    padding-block-end: 12px;
   }
 }
 
@@ -976,7 +978,7 @@
     height: 100dvh;
     max-height: 100dvh;
     align-self: auto;
-    z-index: 45;
+    z-index: var(--oh-z-drawer, 45);
     pointer-events: none;
     visibility: hidden;
     /* LTR: anchor left, slide off to the left when closed */
@@ -1107,14 +1109,14 @@
   }
 
   .fdl-nav-icon__surface {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
   }
 
   .fdl-nav-icon {
-    width: 19px;
-    height: 19px;
+    width: 15px;
+    height: 15px;
   }
 }
 

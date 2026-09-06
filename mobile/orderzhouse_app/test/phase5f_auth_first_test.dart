@@ -19,6 +19,12 @@ void main() {
       expect(shouldRedirectUnauthenticatedToLogin(AppRoutes.notifications), isTrue);
       expect(shouldRedirectUnauthenticatedToLogin(AppRoutes.clientCreateOrder), isTrue);
       expect(shouldRedirectUnauthenticatedToLogin('/freelancer/my-orders/9'), isTrue);
+      expect(shouldRedirectUnauthenticatedToLogin(AppRoutes.freelancerPantry), isTrue);
+      expect(shouldRedirectUnauthenticatedToLogin('/freelancer/pantry/12'), isTrue);
+      expect(isFreelancerPantryLocation(AppRoutes.freelancerPantry), isTrue);
+      expect(isFreelancerPantryLocation('/freelancer/pantry/12'), isTrue);
+      expect(isFreelancerPantryLocation('/freelancer/my-orders/9'), isFalse);
+      expect(isFreelancerPantryLocation('/freelancer/financial-claims'), isFalse);
     });
 
     test('auth routes and splash do not redirect (no loop)', () {
@@ -27,6 +33,9 @@ void main() {
       expect(shouldRedirectUnauthenticatedToLogin(AppRoutes.otp), isFalse);
       expect(shouldRedirectUnauthenticatedToLogin('${AppRoutes.otp}?email=a%40b.com'), isFalse);
       expect(shouldRedirectUnauthenticatedToLogin(AppRoutes.splash), isFalse);
+      expect(shouldRedirectUnauthenticatedToLogin(AppRoutes.forgotPassword), isFalse);
+      expect(shouldRedirectUnauthenticatedToLogin(AppRoutes.forgotPasswordOtp), isFalse);
+      expect(shouldRedirectUnauthenticatedToLogin(AppRoutes.forgotPasswordReset), isFalse);
     });
 
     test('register remains available without auth', () {
@@ -54,6 +63,7 @@ void main() {
     test('sanitizeLoginRedirect rejects auth/splash loop targets', () {
       expect(sanitizeLoginRedirect(AppRoutes.login), isNull);
       expect(sanitizeLoginRedirect(AppRoutes.register), isNull);
+      expect(sanitizeLoginRedirect(AppRoutes.forgotPassword), isNull);
       expect(sanitizeLoginRedirect(AppRoutes.splash), isNull);
       expect(sanitizeLoginRedirect(AppRoutes.home), AppRoutes.home);
       expect(

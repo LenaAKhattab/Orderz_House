@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "../../i18n/LanguageProvider";
-import { formatMoney } from "../open-orders/openOrdersFormatters";
+import { JodMoneyDisplay } from "../money/JodMoneyDisplay";
 import "../../styles/bidAmountModal.css";
 
 export default function BidAmountModal({
@@ -15,16 +15,26 @@ export default function BidAmountModal({
   busy,
   onClose,
   onSubmit,
+  bidCreditCost = 1,
+  availableBids = null,
+  engineAvailable = false,
+  bidQuoteLoading = false,
+  priorityBoostAvailable = false,
+  remainingPriorityUses = null,
+  priorityUseCost = 1,
+  priorityAdditionalBidCost = 0,
 }) {
   const { t, locale, dir } = useTranslation();
   const [value, setValue] = useState("");
   const [fieldError, setFieldError] = useState("");
+  const [usePriority, setUsePriority] = useState(false);
 
   useEffect(() => {
     if (!open) {
       queueMicrotask(() => {
         setValue("");
         setFieldError("");
+        setUsePriority(false);
       });
     }
   }, [open]);
@@ -42,15 +52,28 @@ export default function BidAmountModal({
 
   const currencyLabel = locale === "en" ? currency || "JOD" : t("orders.bid.currencyShort");
   const summaryTitle = (projectTitle || title || "").trim();
-  const rangeText =
-    min != null && max != null
-      ? `${formatMoney(min)} – ${formatMoney(max)} ${currencyLabel}`
-      : null;
+  const rangeText = min != null && max != null;
   const showCategory = Boolean(categoryName && categoryName !== "—");
   const showDuration = Boolean(durationText && durationText !== "—");
+  const insufficient =
+    engineAvailable &&
+    availableBids != null &&
+    Number(availableBids) < Number(bidCreditCost || 1);
+  const priorityUsesOk =
+    !usePriority ||
+    remainingPriorityUses == null ||
+    Number(remainingPriorityUses) >= Number(priorityUseCost || 1);
 
   const submit = (event) => {
     event.preventDefault();
+    if (insufficient) {
+      setFieldError(t("orders.bid.insufficientBids"));
+      return;
+    }
+    if (usePriority && !priorityUsesOk) {
+      setFieldError(t("orders.bid.insufficientPriorityUses"));
+      return;
+    }
     const amount = Number(String(value).replace(/,/g, "."));
     if (!Number.isFinite(amount) || amount <= 0) {
       setFieldError(t("orders.bid.invalidAmount"));
@@ -61,7 +84,7 @@ export default function BidAmountModal({
       return;
     }
     setFieldError("");
-    onSubmit(amount);
+    onSubmit(amount, { usePriority: Boolean(usePriority && priorityBoostAvailable) });
   };
 
   return (
@@ -110,9 +133,7 @@ export default function BidAmountModal({
               {rangeText ? (
                 <p className="oh-bid-modal__summary-row">
                   <strong>{t("orders.bid.rangeLabel")}</strong>{" "}
-                  <span className="oh-num" dir="ltr">
-                    {rangeText}
-                  </span>
+                  <JodMoneyDisplay amount={min} amountMax={max} compact />
                 </p>
               ) : null}
               {showCategory ? (
@@ -132,7 +153,59 @@ export default function BidAmountModal({
           </section>
         ) : null}
 
+        <section className="oh-bid-modal__summary oh-bid-modal__summary--bid-cost" aria-live="polite">
+          <p className="oh-bid-modal__summary-row">
+            <strong>{t("orders.bid.applicationCostLabel")}</strong>{" "}
+            {bidQuoteLoading
+              ? t("orders.bid.quoteLoading")
+              : usePriority && priorityBoostAvailable
+                ? t("orders.bid.applicationCostPriority")
+                : t("orders.bid.applicationCostOne")}
+          </p>
+          {engineAvailable && availableBids != null ? (
+            <p className="oh-bid-modal__summary-row">
+              <strong>{t("orders.bid.availableBidsLabel")}</strong>{" "}
+              <span className="oh-num" dir="ltr">
+                {availableBids}
+              </span>
+            </p>
+          ) : null}
+          {priorityBoostAvailable && remainingPriorityUses != null ? (
+            <p className="oh-bid-modal__summary-row">
+              <strong>{t("orders.bid.remainingPriorityUsesLabel")}</strong>{" "}
+              <span className="oh-num" dir="ltr">
+                {remainingPriorityUses}
+              </span>
+            </p>
+          ) : null}
+          {insufficient ? (
+            <p className="oh-bid-modal__error" role="alert">
+              {t("orders.bid.insufficientBids")}
+            </p>
+          ) : null}
+        </section>
+
         <form onSubmit={submit}>
+          {priorityBoostAvailable ? (
+            <label
+              className="oh-bid-modal__priority"
+              style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 12 }}
+            >
+              <input
+                type="checkbox"
+                checked={usePriority}
+                disabled={busy || Number(remainingPriorityUses) < Number(priorityUseCost || 1)}
+                onChange={(event) => setUsePriority(event.target.checked)}
+              />
+              <span>
+                <strong>{t("orders.bid.priorityBoostLabel")}</strong>
+                <br />
+                <span className="oh-bid-modal__helper">{t("orders.bid.priorityBoostHelp")}</span>
+                {priorityAdditionalBidCost === 0 ? null : null}
+              </span>
+            </label>
+          ) : null}
+
           <div className="oh-bid-modal__field">
             <label className="oh-bid-modal__label" htmlFor="bid-amount-input">
               {t("orders.bid.amountLabel")}
@@ -150,7 +223,7 @@ export default function BidAmountModal({
                   if (fieldError) setFieldError("");
                 }}
                 placeholder={t("orders.bid.amountPlaceholder")}
-                disabled={busy}
+                disabled={busy || insufficient}
                 aria-invalid={fieldError ? "true" : undefined}
                 aria-describedby={fieldError ? "bid-amount-error" : "bid-amount-helper"}
               />
@@ -167,10 +240,19 @@ export default function BidAmountModal({
                 {t("orders.bid.inputHelper")}
               </p>
             )}
+            {Number(String(value).replace(/,/g, ".")) > 0 ? (
+              <div style={{ marginTop: 8 }}>
+                <JodMoneyDisplay amount={Number(String(value).replace(/,/g, "."))} compact />
+              </div>
+            ) : null}
           </div>
 
           <div className="oh-bid-modal__actions">
-            <button type="submit" className="btn btn-primary" disabled={busy}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={busy || insufficient || bidQuoteLoading || (usePriority && !priorityUsesOk)}
+            >
               {busy ? t("orders.bid.submitting") : t("orders.bid.submit")}
             </button>
             <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>

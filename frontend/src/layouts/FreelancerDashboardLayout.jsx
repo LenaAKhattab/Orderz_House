@@ -665,6 +665,24 @@ export default function FreelancerDashboardLayout() {
 
                     </NavLink>
 
+                    {!isClient ? (
+                      <NavLink
+                        to="/dashboard/freelancer/activate-account"
+                        role="menuitem"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        {t("dashboard.nav.common.activateAccount")}
+                      </NavLink>
+                    ) : null}
+
+                    <NavLink
+                      to={isClient ? "/dashboard/client/convert-account" : "/dashboard/freelancer/convert-account"}
+                      role="menuitem"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      {t("dashboard.nav.common.convertAccount")}
+                    </NavLink>
+
                     <button
 
                       type="button"

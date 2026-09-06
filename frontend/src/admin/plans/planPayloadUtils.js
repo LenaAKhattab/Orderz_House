@@ -32,39 +32,49 @@ function buildInstallmentPlan(form) {
   return Object.keys(out).length > 0 ? out : null;
 }
 
+function optionalText(value) {
+  if (value == null) return null;
+  const trimmed = String(value).trim();
+  return trimmed || null;
+}
+
 function extendedFieldsFromForm(form) {
   return {
     features: linesToArray(form.featuresText),
     featuresEn: linesToArray(form.featuresTextEn),
     trainings: linesToArray(form.trainingsText),
     trainingsEn: linesToArray(form.trainingsTextEn),
-    paymentNotes: form.paymentNotes.trim() || null,
+    paymentNotes: optionalText(form.paymentNotes),
     installmentPlan: buildInstallmentPlan(form),
-    offerExpiresAt: form.offerExpiresAt.trim() || null,
-    offerLabel: form.offerLabel.trim() || null,
-    offerLabelEn: form.offerLabelEn.trim() || null,
+    offerExpiresAt: optionalText(form.offerExpiresAt),
+    offerLabel: optionalText(form.offerLabel),
+    offerLabelEn: optionalText(form.offerLabelEn),
     orderValueMinJod: optionalNum(form.orderValueMinJod),
     orderValueMaxJod: optionalNum(form.orderValueMaxJod),
-    activationRequirements: form.activationRequirements.trim() || null,
-    refundPolicy: form.refundPolicy.trim() || null,
-    adminNotes: form.adminNotes.trim() || null,
+    activationRequirements: optionalText(form.activationRequirements),
+    refundPolicy: optionalText(form.refundPolicy),
+    adminNotes: optionalText(form.adminNotes),
     isPopular: Boolean(form.isPopular),
     isFeatured: Boolean(form.isFeatured),
     stripeCheckoutAmountJod: optionalNum(form.stripeCheckoutAmountJod),
     planPageId: optionalNum(form.planPageId),
     subscriptionPlanId: optionalNum(form.subscriptionPlanId),
-    label: form.label.trim() || null,
-    labelEn: form.labelEn.trim() || null,
-    billingText: form.billingText.trim() || null,
-    billingTextEn: form.billingTextEn.trim() || null,
-    priceIntroText: form.priceIntroText.trim() || null,
-    priceIntroTextEn: form.priceIntroTextEn.trim() || null,
-    buttonText: form.buttonText.trim() || null,
-    buttonTextEn: form.buttonTextEn.trim() || null,
-    buttonUrl: form.buttonUrl.trim() || null,
-    currency: form.currency?.trim() || "JOD",
-    titleEn: form.titleEn.trim() || null,
-    descriptionEn: form.descriptionEn.trim() || null,
+    label: optionalText(form.label),
+    labelEn: optionalText(form.labelEn),
+    billingText: optionalText(form.billingText),
+    billingTextEn: optionalText(form.billingTextEn),
+    priceIntroText: optionalText(form.priceIntroText),
+    priceIntroTextEn: optionalText(form.priceIntroTextEn),
+    buttonText: optionalText(form.buttonText),
+    buttonTextEn: optionalText(form.buttonTextEn),
+    buttonUrl: optionalText(form.buttonUrl),
+    currency: String(form.currency || "JOD").trim() || "JOD",
+    titleEn: optionalText(form.titleEn),
+    descriptionEn: optionalText(form.descriptionEn),
+    saleEnabled: Boolean(form.saleEnabled),
+    salePercentage: optionalNum(form.salePercentage),
+    saleReason: optionalText(form.saleReason),
+    saleReasonEn: optionalText(form.saleReasonEn),
   };
 }
 
@@ -76,8 +86,8 @@ export function normalizeCreatePayload(form, existingNames = [], plansForOrder =
       : Number(form.sortOrder) || 0;
   return {
     name,
-    title: form.title.trim(),
-    description: form.description.trim() || null,
+    title: String(form.title || "").trim(),
+    description: optionalText(form.description),
     durationDays: Number(form.durationDays),
     priceJod: form.priceJod === "" ? null : Number(form.priceJod),
     requiresCompanyVisit: Boolean(form.requiresCompanyVisit),
@@ -96,8 +106,8 @@ export function normalizeCreatePayload(form, existingNames = [], plansForOrder =
 /** PATCH body for edit (all fields backend supports except name). */
 export function normalizeEditPayload(form) {
   return {
-    title: form.title.trim(),
-    description: form.description.trim() || null,
+    title: String(form.title || "").trim(),
+    description: optionalText(form.description),
     durationDays: Number(form.durationDays),
     priceJod: form.priceJod === "" ? null : Number(form.priceJod),
     requiresCompanyVisit: Boolean(form.requiresCompanyVisit),
@@ -118,9 +128,25 @@ export function canSubmitCreate(form, options = {}) {
 }
 
 export function canSubmitEdit(form, options = {}) {
-  return (
-    form.title.trim().length >= 2 &&
-    Number(form.durationDays) > 0 &&
-    isPlanFormLinkingValid(form, options.planPagesById)
-  );
+  if (
+    !(
+      form.title.trim().length >= 2 &&
+      Number(form.durationDays) > 0 &&
+      isPlanFormLinkingValid(form, options.planPagesById)
+    )
+  ) {
+    return false;
+  }
+  if (!form.saleEnabled) return true;
+  const pct = Number(form.salePercentage);
+  if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) return false;
+  if (!String(form.saleReason || "").trim()) return false;
+  const base =
+    form.stripeCheckoutAmountJod !== "" && Number(form.stripeCheckoutAmountJod) > 0
+      ? Number(form.stripeCheckoutAmountJod)
+      : form.priceJod === ""
+        ? 0
+        : Number(form.priceJod);
+  if (!Number.isFinite(base) || base <= 0) return false;
+  return true;
 }

@@ -8,7 +8,10 @@ export function getFreelancerOrderEligibilityMessage(eligibility, subscription =
   const paymentStatus = String(subscription?.paymentStatus || "");
   const isCompanyPending =
     activationStatus === "company_pending" &&
-    (paymentStatus === "paid" || paymentStatus === "pending" || paymentStatus === "not_required" || paymentStatus === "");
+    (paymentStatus === "paid" ||
+      paymentStatus === "pending" ||
+      paymentStatus === "not_required" ||
+      paymentStatus === "");
 
   if (typeof t === "function") {
     if (isCompanyPending || reason === "company_activation_pending") {
@@ -29,6 +32,12 @@ export function getFreelancerOrderEligibilityMessage(eligibility, subscription =
     if (reason === "activation_fee_unpaid") {
       return t("freelancerDashboard.status.eligibility.activationFeeUnpaid");
     }
+    if (reason === "account_hold_payment_failed") {
+      return (
+        eligibility?.freezeMessage?.message ||
+        t("freelancerDashboard.status.eligibility.subscriptionRenewalFailed")
+      );
+    }
     if (reason === "plan_configuration_error") {
       return t("freelancerDashboard.status.eligibility.planConfigurationError");
     }
@@ -40,7 +49,7 @@ export function getFreelancerOrderEligibilityMessage(eligibility, subscription =
   }
 
   if (reason === "no_subscription") {
-    return "لا يمكنك استلام الطلبات حالياً لأنك غير مشترك. يرجى الاشتراك أولاً.";
+    return "فعّل باقتك أولاً لاستلام الطلبات.";
   }
 
   if (reason === "status_inactive" || reason === "status_cancelled") {
@@ -59,8 +68,15 @@ export function getFreelancerOrderEligibilityMessage(eligibility, subscription =
     return "يجب دفع رسوم التفعيل السنوية قبل استلام الطلبات.";
   }
 
+  if (reason === "account_hold_payment_failed") {
+    return (
+      eligibility?.freezeMessage?.message ||
+      "تعذر سحب رسوم الاشتراك الشهري البالغة 15 د.أ من البطاقة المسجلة، لذلك تم تجميد حسابك مؤقتًا. يرجى التواصل معنا لإعادة تفعيل الحساب."
+    );
+  }
+
   if (reason === "plan_configuration_error") {
-    return "الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات.";
+    return "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.";
   }
 
   return "حسابك غير مؤهل حالياً لاستلام طلبات من المعرض (تحقق من الاشتراك).";

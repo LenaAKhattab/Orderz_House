@@ -6,6 +6,7 @@ const { uploadWebsiteContentImage } = require("../middleware/websiteContentImage
 const superAdminWebsiteFaqController = require("../controllers/superAdminWebsiteFaqController");
 const superAdminWebsitePageController = require("../controllers/superAdminWebsitePageController");
 const superAdminSitePageController = require("../controllers/superAdminSitePageController");
+const superAdminWebsiteFooterAppDownloadsController = require("../controllers/superAdminWebsiteFooterAppDownloadsController");
 const {
   faqIdParam,
   createFaqValidators,
@@ -24,6 +25,12 @@ const {
   sitePageIdParam,
   updateSitePageValidators,
 } = require("../validators/publicSitePageValidators");
+const {
+  updateFooterAppDownloadsValidators,
+  updateFooterContactValidators,
+  updateFooterWorkingHoursValidators,
+  updateFooterContactCenterValidators,
+} = require("../validators/websiteFooterAppDownloadsValidators");
 
 const router = express.Router();
 
@@ -104,6 +111,46 @@ router.patch(
   updateSitePageValidators,
   validateRequest,
   superAdminSitePageController.updateSitePage,
+);
+
+router.get(
+  "/website/footer-app-downloads",
+  ...editWebsiteGuard,
+  superAdminWebsiteFooterAppDownloadsController.getFooterAppDownloads,
+);
+router.patch(
+  "/website/footer-app-downloads",
+  ...editWebsiteGuard,
+  updateFooterAppDownloadsValidators,
+  validateRequest,
+  superAdminWebsiteFooterAppDownloadsController.updateFooterAppDownloads,
+);
+
+router.get(
+  "/website/footer",
+  ...editWebsiteGuard,
+  superAdminWebsiteFooterAppDownloadsController.getFooterSettings,
+);
+router.patch(
+  "/website/footer/contact",
+  ...editWebsiteGuard,
+  updateFooterContactValidators,
+  validateRequest,
+  superAdminWebsiteFooterAppDownloadsController.updateFooterContact,
+);
+router.patch(
+  "/website/footer/working-hours",
+  ...editWebsiteGuard,
+  updateFooterWorkingHoursValidators,
+  validateRequest,
+  superAdminWebsiteFooterAppDownloadsController.updateFooterWorkingHours,
+);
+router.patch(
+  "/website/footer/contact-center",
+  ...editWebsiteGuard,
+  updateFooterContactCenterValidators,
+  validateRequest,
+  superAdminWebsiteFooterAppDownloadsController.updateFooterContactCenter,
 );
 
 module.exports = router;

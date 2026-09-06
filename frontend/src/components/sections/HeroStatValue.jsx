@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { formatHomePublicStat } from "../../hooks/usePublicHomeStats";
+import { formatHomePublicStat } from "../../utils/homePublicStatFormat";
 import { getAnalyticsRawNumber, isAnalyticsMetricLoading, resolveNumber } from "./heroHomeStatUtils";
 
 const COUNT_UP_MS = 420;
@@ -90,12 +90,14 @@ export default function HeroStatValue({ statsPayload, metricKey, className = "" 
     );
   }
 
+  if (!displayText) return null;
+
   return (
     <span
       className={`home-hero-stat-value home-hero-stat-value--ready ${className}`.trim()}
       aria-live="polite"
     >
-      {displayText || "—"}
+      {displayText}
     </span>
   );
 }

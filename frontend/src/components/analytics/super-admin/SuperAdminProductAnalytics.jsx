@@ -323,10 +323,20 @@ function buildPaidSubscriptionCopyText(sub) {
   const price = formatPlanPriceLabel(sub?.plan);
   if (price && price !== "—") lines.push(`سعر الباقة: ${price}`);
   const activationFee = sub?.activationFee;
-  if (activationFee && activationFee.amountJod != null) {
-    lines.push(
-      `رسوم التفعيل: ${formatMoneyJod(activationFee.amountJod)} ${activationFee.paid ? "(مدفوعة)" : "(غير مدفوعة)"}`,
-    );
+  if (activationFee) {
+    if (activationFee.enabled === false) {
+      lines.push("رسوم التفعيل: معطّلة حالياً");
+    } else if (activationFee.lastPaidAmountJod != null) {
+      lines.push(
+        `رسوم التفعيل المدفوعة: ${formatMoneyJod(activationFee.lastPaidAmountJod)}${activationFee.paid ? " (سارية)" : " (منتهية/غير سارية)"}`,
+      );
+    } else if (activationFee.paid) {
+      lines.push("رسوم التفعيل: مدفوعة (سارية)");
+    } else if (activationFee.currentAmountJod != null || activationFee.amountJod != null) {
+      lines.push(
+        `رسوم التفعيل الحالية: ${formatMoneyJod(activationFee.currentAmountJod ?? activationFee.amountJod)} (غير مدفوعة)`,
+      );
+    }
   }
   lines.push("حالة الدفع: مدفوع");
   lines.push(`حالة التفعيل: ${activationStatusLabel(sub?.activationStatus)}`);
@@ -348,7 +358,11 @@ function PaidSubscriptionCard({ sub, onWhatsApp }) {
   const planTitle = resolveSubscriptionPlanTitle(sub) || "—";
   const price = formatPlanPriceLabel(sub?.plan);
   const activationFee = sub?.activationFee || null;
-  const hasActivationFee = activationFee && activationFee.amountJod != null;
+  const historicalFeeJod = activationFee?.lastPaidAmountJod ?? null;
+  const currentFeeJod = activationFee?.currentAmountJod ?? activationFee?.amountJod ?? null;
+  const hasActivationFee =
+    activationFee &&
+    (activationFee.enabled === false || historicalFeeJod != null || currentFeeJod != null || activationFee.paid);
   const date = paidSubscriptionDate(sub);
   const activation = activationStatusLabel(sub?.activationStatus);
   const status = subscriptionStatusLabel(sub?.status);
@@ -427,8 +441,11 @@ function PaidSubscriptionCard({ sub, onWhatsApp }) {
             <span
               className={`acc-paid-card__fee ${activationFee.paid ? "" : "acc-paid-card__fee--unpaid"}`.trim()}
             >
-              رسوم التفعيل: {formatMoneyJod(activationFee.amountJod)}
-              {activationFee.paid ? " (مدفوعة)" : " (غير مدفوعة)"}
+              {activationFee.enabled === false
+                ? "رسوم التفعيل: معطّلة"
+                : historicalFeeJod != null
+                  ? `رسوم التفعيل المدفوعة: ${formatMoneyJod(historicalFeeJod)}${activationFee.paid ? " (سارية)" : ""}`
+                  : `رسوم التفعيل الحالية: ${formatMoneyJod(currentFeeJod)}${activationFee.paid ? " (مدفوعة)" : " (غير مدفوعة)"}`}
             </span>
           ) : null}
           {date ? <span className="acc-paid-card__date">{date}</span> : null}

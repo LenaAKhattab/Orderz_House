@@ -1,6 +1,7 @@
 import { lazy } from "react";
 
-/** Public marketing & auth — Home is eagerly loaded in App.jsx for first paint */
+/** Public marketing & auth — Home is lazy so its hero/CSS stay out of the initial index chunk. */
+export const Home = lazy(() => import("../pages/Home"));
 export const About = lazy(() => import("../pages/About"));
 export const Services = lazy(() => import("../pages/Services"));
 export const Plans = lazy(() => import("../pages/Plans"));
@@ -26,7 +27,6 @@ export const PublicCommunityPage = lazy(() =>
 export const PublicBlogPage = lazy(() =>
   import("../pages/publicSite/PublicSiteSlugPages").then((m) => ({ default: m.PublicBlogPage })),
 );
-export const Unauthorized = lazy(() => import("../pages/Unauthorized"));
 export const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 
 /** Shared dashboard hub */
@@ -34,6 +34,45 @@ export const DashboardPage = lazy(() => import("../pages/dashboard/DashboardPage
 
 /** Super admin */
 export const SuperAdminPlansPage = lazy(() => import("../pages/dashboard/SuperAdminPlansPage"));
+export const SuperAdminMarketplacePlansPage = lazy(
+  () => import("../pages/dashboard/SuperAdminMarketplacePlansPage"),
+);
+export const SuperAdminTrainingPackagesPage = lazy(
+  () => import("../pages/dashboard/SuperAdminTrainingPackagesPage"),
+);
+export const SuperAdminSpecialOfferPackagePage = lazy(
+  () => import("../pages/dashboard/SuperAdminSpecialOfferPackagePage"),
+);
+export const SuperAdminMarketplaceEconomyPage = lazy(
+  () => import("../pages/dashboard/SuperAdminMarketplaceEconomyPage"),
+);
+export const SuperAdminMarketplaceArticlesPage = lazy(
+  () => import("../pages/dashboard/SuperAdminMarketplaceArticlesPage"),
+);
+export const SuperAdminArticleManagementPage = lazy(
+  () => import("../pages/dashboard/SuperAdminArticleManagementPage"),
+);
+export const SuperAdminArticlesHubPage = lazy(
+  () => import("../pages/dashboard/SuperAdminArticlesHubPage"),
+);
+export const SuperAdminFreelancerActivationPage = lazy(
+  () => import("../pages/dashboard/SuperAdminFreelancerActivationPage"),
+);
+export const SuperAdminFreelancerActivationRequestsPage = lazy(
+  () => import("../pages/dashboard/SuperAdminFreelancerActivationRequestsPage"),
+);
+export const SuperAdminBildazoAuthorLinksPage = lazy(
+  () => import("../pages/dashboard/SuperAdminBildazoAuthorLinksPage"),
+);
+export const FreelancerMarketplaceArticlesPage = lazy(
+  () => import("../pages/dashboard/FreelancerMarketplaceArticlesPage"),
+);
+export const FreelancerMarketplaceArticleDetailPage = lazy(
+  () => import("../pages/dashboard/FreelancerMarketplaceArticleDetailPage"),
+);
+export const SuperAdminBidCreditsPage = lazy(
+  () => import("../pages/dashboard/SuperAdminBidCreditsPage"),
+);
 export const SuperAdminAnalysisPage = lazy(() => import("../pages/dashboard/SuperAdminAnalysisPage"));
 export const SuperAdminSubscriptionsPage = lazy(() => import("../pages/dashboard/SuperAdminSubscriptionsPage"));
 export const SuperAdminFinancialClaimsPage = lazy(
@@ -51,6 +90,15 @@ export const SuperAdminAdminsPage = lazy(() => import("../pages/dashboard/SuperA
 export const SuperAdminRateLimitExemptionsPage = lazy(
   () => import("../pages/dashboard/SuperAdminRateLimitExemptionsPage"),
 );
+export const SuperAdminFeedbackPage = lazy(() => import("../pages/dashboard/SuperAdminFeedbackPage"));
+export const SuperAdminFeedbackDetailPage = lazy(
+  () => import("../pages/dashboard/SuperAdminFeedbackDetailPage"),
+);
+export const SuperAdminFeedbackTopicsPage = lazy(
+  () => import("../pages/dashboard/SuperAdminFeedbackTopicsPage"),
+);
+export const SuperAdminOnboardingPage = lazy(() => import("../pages/dashboard/SuperAdminOnboardingPage"));
+export const ProblemsSuggestionsPage = lazy(() => import("../pages/dashboard/ProblemsSuggestionsPage"));
 export const SuperAdminInstitutionsPage = lazy(
   () => import("../pages/dashboard/SuperAdminInstitutionsPage"),
 );
@@ -73,6 +121,21 @@ export const SuperAdminEditWebsitePage = lazy(() => import("../pages/dashboard/S
 export const SuperAdminEditWebsiteFaqPage = lazy(() => import("../pages/dashboard/SuperAdminEditWebsiteFaqPage"));
 export const SuperAdminSitePagesPage = lazy(() => import("../pages/dashboard/SuperAdminSitePagesPage"));
 export const SuperAdminSitePageEditPage = lazy(() => import("../pages/dashboard/SuperAdminSitePageEditPage"));
+export const SuperAdminEditWebsiteFooterPage = lazy(
+  () => import("../pages/dashboard/SuperAdminEditWebsiteFooterPage"),
+);
+export const SuperAdminEditWebsiteFooterContactPage = lazy(
+  () => import("../pages/dashboard/SuperAdminEditWebsiteFooterContactPage"),
+);
+export const SuperAdminEditWebsiteFooterHoursPage = lazy(
+  () => import("../pages/dashboard/SuperAdminEditWebsiteFooterHoursPage"),
+);
+export const SuperAdminEditWebsiteFooterAppsPage = lazy(
+  () => import("../pages/dashboard/SuperAdminEditWebsiteFooterAppsPage"),
+);
+export const SuperAdminEditWebsiteFooterContactCenterPage = lazy(
+  () => import("../pages/dashboard/SuperAdminEditWebsiteFooterContactCenterPage"),
+);
 export const SuperAdminEditWebsiteHowItWorksPage = lazy(
   () => import("../pages/dashboard/SuperAdminEditWebsiteHowItWorksPage"),
 );
@@ -96,6 +159,9 @@ export const AdminSubscriptionsActivationPage = lazy(
 export const AdminCoursesPage = lazy(() => import("../pages/dashboard/AdminCoursesPage"));
 export const AdminAdsPage = lazy(() => import("../pages/dashboard/AdminAdsPage"));
 export const AdminSettingsPage = lazy(() => import("../pages/dashboard/AdminSettingsPage"));
+export const AdminArticlesReviewPage = lazy(() => import("../pages/dashboard/AdminArticlesReviewPage"));
+export const AdminPantryPage = lazy(() => import("../pages/dashboard/AdminPantryPage"));
+export const FreelancerPantryPage = lazy(() => import("../pages/dashboard/FreelancerPantryPage"));
 
 /** Training orders (super admin) */
 export const TrainingOrdersAdminShell = lazy(
@@ -109,9 +175,6 @@ export const TrainingOrdersSettingsPage = lazy(
 );
 export const TrainingOrderTemplatesPage = lazy(
   () => import("../pages/dashboard/trainingOrders/TrainingOrderTemplatesPage"),
-);
-export const TrainingOrderRoundsPage = lazy(
-  () => import("../pages/dashboard/trainingOrders/TrainingOrderRoundsPage"),
 );
 export const TrainingOrderApplicationsPage = lazy(
   () => import("../pages/dashboard/trainingOrders/TrainingOrderApplicationsPage"),
@@ -128,6 +191,7 @@ export const ClientSettingsPage = lazy(() => import("../pages/dashboard/ClientSe
 
 /** Freelancer */
 export const FreelancerOrderDetailsPage = lazy(() => import("../pages/dashboard/FreelancerOrderDetailsPage"));
+export const FreelancerEliteOfferPage = lazy(() => import("../pages/dashboard/FreelancerEliteOfferPage"));
 export const FreelancerMyOrderDetailsPage = lazy(
   () => import("../pages/dashboard/FreelancerMyOrderDetailsPage"),
 );
@@ -138,6 +202,13 @@ export const FreelancerPlansPage = lazy(() => import("../pages/dashboard/Freelan
 export const FreelancerCoursesPage = lazy(() => import("../pages/dashboard/FreelancerCoursesPage"));
 export const FreelancerCourseDetailsPage = lazy(() => import("../pages/dashboard/FreelancerCourseDetailsPage"));
 export const FreelancerSettingsPage = lazy(() => import("../pages/dashboard/FreelancerSettingsPage"));
+export const FreelancerActivateAccountPage = lazy(
+  () => import("../pages/dashboard/FreelancerActivateAccountPage"),
+);
+export const FreelancerGettingStartedPage = lazy(
+  () => import("../pages/dashboard/FreelancerGettingStartedPage"),
+);
+export const ConvertAccountPage = lazy(() => import("../pages/dashboard/ConvertAccountPage"));
 
 /** Shared dashboard utilities */
 export const NotificationsPage = lazy(() => import("../pages/dashboard/NotificationsPage"));

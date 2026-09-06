@@ -1,7 +1,11 @@
 const subscriptionsService = require("../services/subscriptionsService");
 const plansService = require("../services/plansService");
 const stripeCheckoutService = require("../services/stripeCheckoutService");
-const { markActivationFeePaidOffline } = require("../services/subscriptionActivationFeeService");
+const {
+  markActivationFeePaidOffline,
+  getActivationFeeConfig,
+  updateActivationFeeSettings,
+} = require("../services/subscriptionActivationFeeService");
 const systemSettingsService = require("../services/systemSettingsService");
 const {
   PAID_NOTIFICATION_EMAIL_KEY,
@@ -43,9 +47,11 @@ const updateSubscription = async (req, res, next) => {
 
 const listActivationQueue = async (req, res, next) => {
   try {
+    const searchRaw = req.query.search != null ? String(req.query.search).trim() : "";
     const result = await subscriptionsService.listActivationQueueSubscriptions({
       page: req.query.page != null ? Number(req.query.page) : 1,
       limit: req.query.limit != null ? Number(req.query.limit) : 20,
+      search: searchRaw || null,
     });
     return res.status(200).json({
       success: true,
@@ -113,6 +119,61 @@ const updateSubscriptionNotificationEmail = async (req, res, next) => {
         email: saved,
         envFallback,
         effectiveEmail: saved || envFallback || null,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const getSubscriptionActivationFeeSettings = async (req, res, next) => {
+  try {
+    const config = await getActivationFeeConfig();
+    return res.status(200).json({
+      success: true,
+      data: {
+        enabled: config.enabled,
+        amountJod: config.amountJod,
+        amountMinor: config.amountMinor,
+        validityDays: config.validityDays,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const updateSubscriptionActivationFeeSettings = async (req, res, next) => {
+  try {
+    let stripe = null;
+    try {
+      const stripeCheckoutService = require("../services/stripeCheckoutService");
+      if (typeof stripeCheckoutService.getStripeOrNull === "function") {
+        stripe = stripeCheckoutService.getStripeOrNull();
+      }
+    } catch (_) {
+      stripe = null;
+    }
+    const result = await updateActivationFeeSettings({
+      enabled: req.body.enabled,
+      amountJod: req.body.amountJod,
+      amountMinor: req.body.amountMinor,
+      updatedByUserId: req.auth?.userId ?? null,
+      stripe,
+    });
+    return res.status(200).json({
+      success: true,
+      data: {
+        enabled: result.config.enabled,
+        amountJod: result.config.amountJod,
+        amountMinor: result.config.amountMinor,
+        validityDays: result.config.validityDays,
+        previous: {
+          enabled: result.previous.enabled,
+          amountJod: result.previous.amountJod,
+          amountMinor: result.previous.amountMinor,
+        },
+        supersededOpenFeeCheckouts: result.supersededCount,
       },
     });
   } catch (err) {
@@ -217,8 +278,21 @@ const activateSubscriptionCompanyApproval = async (req, res, next) => {
     const subscription = await subscriptionsService.activateCompanyApprovalForSubscription({
       actorUserId: req.auth?.userId,
       subscriptionId: req.params.id,
+      actorRole: req.auth?.primaryRole || req.user?.role,
+      overrideReason: req.body?.overrideReason ?? req.body?.kycOverrideReason ?? null,
     });
     return res.status(200).json({ success: true, data: { subscription } });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const selfActivateFreelancerAccount = async (req, res, next) => {
+  try {
+    const result = await subscriptionsService.selfActivateFreelancerAccount({
+      freelancerUserId: req.auth?.userId,
+    });
+    return res.status(200).json({ success: true, data: result });
   } catch (err) {
     return next(err);
   }
@@ -244,6 +318,19 @@ const markActivationFeePaidOfflineAdmin = async (req, res, next) => {
   }
 };
 
+const clearFreelancerPaymentFailureHold = async (req, res, next) => {
+  try {
+    const result = await subscriptionsService.adminClearPaymentFailureHold({
+      actorUserId: req.auth?.userId,
+      freelancerUserId: req.params.freelancerUserId,
+      reason: req.body?.reason || null,
+    });
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   assignPlan,
   listAssignablePlans,
@@ -252,12 +339,16 @@ module.exports = {
   listSubscriptions,
   getSubscriptionNotificationEmail,
   updateSubscriptionNotificationEmail,
+  getSubscriptionActivationFeeSettings,
+  updateSubscriptionActivationFeeSettings,
   getFreelancerCurrentSubscription,
   getFreelancerEligibility,
   createFreelancerSubscriptionCheckout,
   confirmFreelancerSubscriptionCheckout,
   recordFreelancerSubscriptionCheckoutCancelledNotify,
   activateSubscriptionCompanyApproval,
+  selfActivateFreelancerAccount,
   markActivationFeePaidOfflineAdmin,
+  clearFreelancerPaymentFailureHold,
 };
 

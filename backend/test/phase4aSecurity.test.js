@@ -60,9 +60,10 @@ describe("automation cron secret", () => {
 });
 
 describe("origin guard", () => {
-  it("skips webhooks and internal paths", () => {
+  it("skips webhooks, internal, and FAZAT partner paths", () => {
     assert.strictEqual(shouldSkipOriginGuard({ path: "/webhooks/stripe" }), true);
     assert.strictEqual(shouldSkipOriginGuard({ path: "/internal/fake-orders/automation-tick" }), true);
+    assert.strictEqual(shouldSkipOriginGuard({ path: "/integrations/fazat/freelancers" }), true);
     assert.strictEqual(shouldSkipOriginGuard({ path: "/auth/login" }), false);
   });
 

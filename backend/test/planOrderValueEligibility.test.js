@@ -131,11 +131,58 @@ describe("computePoolOrderPlanEligibility", () => {
     assert.strictEqual(ok.canBid, true);
   });
 
-  it("null range is a plan configuration error, not a universal open band", () => {
-    const bad = computePoolOrderPlanEligibility({ project_type: "fixed", budget: 50 }, null);
+  it("locks with PLAN_TOO_LOW and friendly Arabic when value is outside band", () => {
+    const range = getPlanOrderValueRange(2);
+    const high = computePoolOrderPlanEligibility({ project_type: "fixed", budget: 25 }, range);
+    assert.strictEqual(high.isLockedByPlan, true);
+    assert.strictEqual(high.reasonCode, "PLAN_TOO_LOW");
+    assert.strictEqual(
+      high.lockReason,
+      "هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.",
+    );
+    assert.strictEqual(high.planConfigurationError, false);
+    assert.doesNotMatch(String(high.lockReason || ""), /تصحيح/);
+  });
+
+  it("null range without plan id is NO_ACTIVE_PLAN, not internal config copy", () => {
+    const bad = computePoolOrderPlanEligibility(
+      { project_type: "fixed", budget: 50 },
+      null,
+      { hasPlanId: false },
+    );
+    assert.strictEqual(bad.isLockedByPlan, true);
+    assert.strictEqual(bad.reasonCode, "NO_ACTIVE_PLAN");
+    assert.strictEqual(bad.planConfigurationError, false);
+    assert.strictEqual(bad.lockReason, "فعّل باقتك أولاً لاستلام الطلبات.");
+    assert.doesNotMatch(String(bad.lockReason || ""), /تصحيح/);
+  });
+
+  it("unusable range with plan id is INTERNAL_PLAN_CONFIGURATION with support message", () => {
+    const bad = computePoolOrderPlanEligibility(
+      { project_type: "fixed", budget: 50 },
+      { planId: 99, minOrderValue: null, maxOrderValue: null },
+      { hasPlanId: true, planId: 99 },
+    );
+    assert.strictEqual(bad.isLockedByPlan, true);
+    assert.strictEqual(bad.reasonCode, "INTERNAL_PLAN_CONFIGURATION");
+    assert.strictEqual(bad.planConfigurationError, true);
+    assert.strictEqual(
+      bad.lockReason,
+      "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.",
+    );
+    assert.doesNotMatch(String(bad.lockReason || ""), /تصحيح/);
+  });
+
+  it("null range with plan id is INTERNAL_PLAN_CONFIGURATION, not a universal open band", () => {
+    const bad = computePoolOrderPlanEligibility(
+      { project_type: "fixed", budget: 50 },
+      null,
+      { hasPlanId: true, planId: 42 },
+    );
     assert.strictEqual(bad.isLockedByPlan, true);
     assert.strictEqual(bad.planConfigurationError, true);
-    assert.match(String(bad.lockReason || ""), /تصحيح/);
+    assert.strictEqual(bad.reasonCode, "INTERNAL_PLAN_CONFIGURATION");
+    assert.doesNotMatch(String(bad.lockReason || ""), /تصحيح/);
   });
 
   it("free plan unlocks in-band real orders, locks out-of-band", () => {

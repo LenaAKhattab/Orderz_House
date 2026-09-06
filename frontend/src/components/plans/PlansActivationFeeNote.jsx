@@ -15,9 +15,16 @@ function PriceTagIcon() {
   );
 }
 
-export default function PlansActivationFeeNote({ className = "" }) {
+/**
+ * @param {{ className?: string, amountJod?: number|null, enabled?: boolean }} props
+ */
+export default function PlansActivationFeeNote({ className = "", amountJod = null, enabled = true }) {
   const { t } = useTranslation();
   const { formatActivationFeeAmount } = useDisplayCurrency();
+
+  if (!enabled) return null;
+  const amount = formatActivationFeeAmount(amountJod);
+  if (!amount) return null;
 
   return (
     <p className={["plans-activation-fee-note", className].filter(Boolean).join(" ")} role="note">
@@ -26,7 +33,7 @@ export default function PlansActivationFeeNote({ className = "" }) {
       </span>
       <span className="plans-activation-fee-note__text">
         <span className="plans-activation-fee-note__label">{t("plans.activationFeeNote.prefix")}</span>{" "}
-        <span className="plans-activation-fee-note__amount">{formatActivationFeeAmount()}</span>
+        <span className="plans-activation-fee-note__amount">{amount}</span>
         <span className="plans-activation-fee-note__suffix">{t("plans.activationFeeNote.suffix")}</span>
       </span>
     </p>

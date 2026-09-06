@@ -1,0 +1,101 @@
+﻿Γùç injected env (21) from .env // tip: Γùê secrets for agents [www.dotenvx.com]
+node : (node:19968) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as 
+aliases for 'verify-full'.
+At C:\Users\Batman\AppData\Local\Temp\ps-script-d5929462-8e63-418b-a815-937cc1251f79.ps1:83 char:1
++ node scripts/b8aPreActivationCountsFollowupReadOnly.js 2>&1 | Out-Fil ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:19968) Wa... 'verify-full'.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq 
+semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+{
+  "membershipTables": [
+    "freelancer_marketplace_memberships",
+    "marketplace_membership_audit_logs",
+    "marketplace_membership_bid_distribution_months",
+    "marketplace_membership_cycle_usage",
+    "marketplace_membership_cycles",
+    "marketplace_membership_plans"
+  ],
+  "orderFakeCols": [],
+  "boostCols": [
+    "id",
+    "bid_id",
+    "order_id",
+    "freelancer_user_id",
+    "membership_id",
+    "cycle_id",
+    "usage_consume_id",
+    "status",
+    "boost_source",
+    "priority_use_cost",
+    "additional_bid_credit_cost",
+    "work_token_cost",
+    "idempotency_key",
+    "boosted_at",
+    "returned_at",
+    "actor_user_id",
+    "created_at",
+    "updated_at"
+  ],
+  "membershipStatuses": [],
+  "usableMemberships": 0,
+  "membershipsTotal": 0,
+  "activeCycles": 0,
+  "openPricedBidding": {
+    "columnsUsed": {
+      "hasIsFake": false,
+      "hasIsTraining": false,
+      "hasSourceType": true
+    },
+    "count": 78
+  },
+  "pendingAppsOnOpenOrders": 6,
+  "articleStatuses": [],
+  "packages": [],
+  "activePlanAllowances": [
+    {
+      "tier_code": "free",
+      "monthly_bid_allowance": 0,
+      "priority_bid_uses_per_cycle": 0,
+      "article_access_level": 1,
+      "is_active": true
+    },
+    {
+      "tier_code": "start",
+      "monthly_bid_allowance": 0,
+      "priority_bid_uses_per_cycle": 1,
+      "article_access_level": 2,
+      "is_active": true
+    },
+    {
+      "tier_code": "active",
+      "monthly_bid_allowance": 0,
+      "priority_bid_uses_per_cycle": 2,
+      "article_access_level": 3,
+      "is_active": true
+    },
+    {
+      "tier_code": "pro",
+      "monthly_bid_allowance": 0,
+      "priority_bid_uses_per_cycle": 3,
+      "article_access_level": 4,
+      "is_active": true
+    },
+    {
+      "tier_code": "elite",
+      "monthly_bid_allowance": 0,
+      "priority_bid_uses_per_cycle": 4,
+      "article_access_level": 5,
+      "is_active": true
+    }
+  ]
+}

@@ -1,8 +1,21 @@
 const { pool } = require("../config/db");
 const { amountMajorToStripeMinor } = require("../utils/stripeMoney");
+const systemSettingsService = require("./systemSettingsService");
 
-const SUBSCRIPTION_ACTIVATION_FEE_JOD = 25;
+/** Canonical committed product default: 25 JOD (JOD × 1000 Stripe minor units). */
+const DEFAULT_ACTIVATION_FEE_AMOUNT_MINOR = 25000;
+const DEFAULT_ACTIVATION_FEE_ENABLED = true;
+/** @deprecated Use getActivationFeeConfig().amountJod — retained for test/default documentation only. */
+const SUBSCRIPTION_ACTIVATION_FEE_JOD = DEFAULT_ACTIVATION_FEE_AMOUNT_MINOR / 1000;
 const ACTIVATION_FEE_VALIDITY_DAYS = 365;
+
+/** Max configurable fee: 10_000 JOD. */
+const MAX_ACTIVATION_FEE_AMOUNT_MINOR = 10_000_000;
+
+const ACTIVATION_FEE_SETTING_KEYS = Object.freeze({
+  ENABLED: "subscription_activation_fee_enabled",
+  AMOUNT_MINOR: "subscription_activation_fee_amount_minor",
+});
 
 const ACTIVATION_FEE_SOURCES = {
   STRIPE: "stripe",
@@ -13,6 +26,7 @@ const ACTIVATION_FEE_SOURCES = {
 const CHECKOUT_KIND = {
   SUBSCRIPTION: "subscription",
   ACTIVATION_FEE_ONLY: "activation_fee_only",
+  RECURRING_SUBSCRIPTION: "recurring_subscription",
 };
 
 const CHECKOUT_SESSION_STATUS = {
@@ -30,8 +44,201 @@ const ACTIVATION_FEE_LINE_ITEM_NAMES = {
 const PURPOSE_ACTIVATION_FEE_ONLY = "freelancer_activation_fee_only";
 const PURPOSE_SUBSCRIPTION_PURCHASE = "freelancer_subscription_purchase";
 
-function activationFeeMinorUnits() {
-  return amountMajorToStripeMinor(SUBSCRIPTION_ACTIVATION_FEE_JOD, "JOD");
+function amountMinorToJod(amountMinor) {
+  const n = Number(amountMinor);
+  if (!Number.isFinite(n)) return null;
+  return n / 1000;
+}
+
+function parseEnabledSetting(raw) {
+  if (raw == null || String(raw).trim() === "") return DEFAULT_ACTIVATION_FEE_ENABLED;
+  const s = String(raw).trim().toLowerCase();
+  if (s === "true" || s === "1" || s === "yes" || s === "on") return true;
+  if (s === "false" || s === "0" || s === "no" || s === "off") return false;
+  return DEFAULT_ACTIVATION_FEE_ENABLED;
+}
+
+function parseAmountMinorSetting(raw) {
+  if (raw == null || String(raw).trim() === "") return DEFAULT_ACTIVATION_FEE_AMOUNT_MINOR;
+  const n = Number.parseInt(String(raw).trim(), 10);
+  if (!Number.isInteger(n) || n < 1 || n > MAX_ACTIVATION_FEE_AMOUNT_MINOR) {
+    return DEFAULT_ACTIVATION_FEE_AMOUNT_MINOR;
+  }
+  return n;
+}
+
+function normalizeActivationFeeConfig({ enabled, amountMinor }) {
+  const minor = Number(amountMinor);
+  const safeMinor =
+    Number.isInteger(minor) && minor >= 1 && minor <= MAX_ACTIVATION_FEE_AMOUNT_MINOR
+      ? minor
+      : DEFAULT_ACTIVATION_FEE_AMOUNT_MINOR;
+  return {
+    enabled: Boolean(enabled),
+    amountMinor: safeMinor,
+    amountJod: amountMinorToJod(safeMinor),
+    validityDays: ACTIVATION_FEE_VALIDITY_DAYS,
+  };
+}
+
+/**
+ * Single runtime source of truth for current activation-fee configuration.
+ * Absent setting rows → production defaults (enabled=true, 25 JOD).
+ * DB/query failures propagate (do not silently make checkout free).
+ */
+async function getActivationFeeConfig(client) {
+  const [enabledRaw, amountRaw] = await Promise.all([
+    systemSettingsService.getSetting(ACTIVATION_FEE_SETTING_KEYS.ENABLED, client),
+    systemSettingsService.getSetting(ACTIVATION_FEE_SETTING_KEYS.AMOUNT_MINOR, client),
+  ]);
+  return normalizeActivationFeeConfig({
+    enabled: parseEnabledSetting(enabledRaw),
+    amountMinor: parseAmountMinorSetting(amountRaw),
+  });
+}
+
+/**
+ * Public-safe config snapshot (no secrets).
+ */
+async function getPublicActivationFeeConfig(client) {
+  const cfg = await getActivationFeeConfig(client);
+  return {
+    enabled: cfg.enabled,
+    amountJod: cfg.amountJod,
+    amountMinor: cfg.amountMinor,
+    validityDays: cfg.validityDays,
+  };
+}
+
+/**
+ * Validate and persist Super Admin activation fee settings.
+ * When disabled, preserves the last configured amount (does not force 0).
+ * Supersedes open fee-bearing checkout sessions locally in the same transaction.
+ *
+ * Stripe remote expire is intentionally NOT awaited inside this request: hundreds of
+ * open sessions would hang the HTTP call past the client timeout and hold a DB
+ * transaction open. Remote expire is best-effort after COMMIT (never fails the save).
+ */
+async function updateActivationFeeSettings(
+  { enabled, amountJod, amountMinor = null, updatedByUserId = null, stripe = null },
+  client,
+) {
+  const runner = client || pool;
+  const ownClient = !client;
+  const db = ownClient ? await pool.connect() : runner;
+
+  try {
+    if (ownClient) await db.query("BEGIN");
+
+    const current = await getActivationFeeConfig(db);
+    const nextEnabled = Boolean(enabled);
+
+    let nextMinor = current.amountMinor;
+    if (amountMinor != null && amountMinor !== "") {
+      const parsed = Number.parseInt(String(amountMinor), 10);
+      if (!Number.isInteger(parsed) || parsed < 1 || parsed > MAX_ACTIVATION_FEE_AMOUNT_MINOR) {
+        const err = new Error("Invalid activation fee amount.");
+        err.statusCode = 400;
+        err.exposeToClient = true;
+        throw err;
+      }
+      nextMinor = parsed;
+    } else if (amountJod != null && amountJod !== "") {
+      const major = Number(amountJod);
+      if (!Number.isFinite(major) || major <= 0) {
+        const err = new Error("قيمة رسوم التفعيل يجب أن تكون أكبر من صفر.");
+        err.statusCode = 400;
+        err.exposeToClient = true;
+        throw err;
+      }
+      const converted = amountMajorToStripeMinor(major, "JOD");
+      if (converted == null || !Number.isInteger(converted) || converted < 1 || converted > MAX_ACTIVATION_FEE_AMOUNT_MINOR) {
+        const err = new Error("قيمة رسوم التفعيل غير صالحة.");
+        err.statusCode = 400;
+        err.exposeToClient = true;
+        throw err;
+      }
+      nextMinor = converted;
+    }
+
+    if (nextEnabled && nextMinor < 1) {
+      const err = new Error("عند تفعيل رسوم التفعيل يجب أن تكون القيمة أكبر من صفر.");
+      err.statusCode = 400;
+      err.exposeToClient = true;
+      throw err;
+    }
+
+    const opts = { updatedByUserId };
+    await systemSettingsService.setSetting(
+      ACTIVATION_FEE_SETTING_KEYS.ENABLED,
+      nextEnabled ? "true" : "false",
+      opts,
+      db,
+    );
+    await systemSettingsService.setSetting(
+      ACTIVATION_FEE_SETTING_KEYS.AMOUNT_MINOR,
+      String(nextMinor),
+      opts,
+      db,
+    );
+
+    const settingsChanged =
+      current.enabled !== nextEnabled || Number(current.amountMinor) !== Number(nextMinor);
+
+    let superseded = [];
+    if (settingsChanged) {
+      // Local DB only inside the transaction — never call Stripe here.
+      superseded = await supersedeAllOpenFeeBearingCheckoutSessions({ stripe: null }, db);
+    }
+
+    if (ownClient) await db.query("COMMIT");
+
+    // Best-effort remote expire after settings are durable. Do not await / fail the API.
+    // Only schedule on the owning-transaction path (real HTTP request); injected clients
+    // (tests) skip so hanging Stripe mocks cannot leak into the test runner.
+    if (
+      ownClient &&
+      settingsChanged &&
+      stripe &&
+      Array.isArray(superseded) &&
+      superseded.length > 0
+    ) {
+      const sessionIds = superseded
+        .map((row) => row?.stripeSessionId)
+        .filter((sid) => sid != null && String(sid).trim() !== "");
+      setImmediate(() => {
+        void expireStripeCheckoutSessionsBestEffort(stripe, sessionIds).catch(() => {});
+      });
+    }
+
+    const config = normalizeActivationFeeConfig({ enabled: nextEnabled, amountMinor: nextMinor });
+    return {
+      config,
+      previous: current,
+      supersededCount: Array.isArray(superseded) ? superseded.length : 0,
+      superseded,
+    };
+  } catch (err) {
+    if (ownClient) {
+      try {
+        await db.query("ROLLBACK");
+      } catch (_) {
+        /* ignore */
+      }
+    }
+    throw err;
+  } finally {
+    if (ownClient) db.release();
+  }
+}
+
+/**
+ * Current configured amount in Stripe minor units (ignores enabled flag).
+ * Prefer getActivationFeeConfig() for full decisions.
+ */
+async function activationFeeMinorUnits(client) {
+  const cfg = await getActivationFeeConfig(client);
+  return cfg.amountMinor;
 }
 
 function isActivationFeeCurrent(paidAt, now = new Date()) {
@@ -69,11 +276,32 @@ async function getLatestActivationFeePaidAt(userId, client) {
   return userPaid || auditPaid || null;
 }
 
+async function getLatestActivationFeePayment(userId, client) {
+  const runner = client || pool;
+  const uid = Number(userId);
+  if (!Number.isInteger(uid) || uid < 1) return null;
+  const { rows } = await runner.query(
+    `SELECT id, user_id, amount_minor, currency, paid_at, source, stripe_session_id, stripe_payment_intent_id
+     FROM subscription_activation_fee_payments
+     WHERE user_id = $1
+     ORDER BY paid_at DESC, id DESC
+     LIMIT 1`,
+    [uid],
+  );
+  return rows[0] || null;
+}
+
 async function getActivationFeePaidAt(userId, client) {
   return getLatestActivationFeePaidAt(userId, client);
 }
 
+/**
+ * Whether Checkout / eligibility should require the fee now.
+ * Globally disabled → false (bypass requirement; does not invent a paid timestamp).
+ */
 async function freelancerNeedsSubscriptionActivationFee(userId, client, now = new Date()) {
+  const cfg = await getActivationFeeConfig(client);
+  if (!cfg.enabled) return false;
   const paidAt = await getLatestActivationFeePaidAt(userId, client);
   return !isActivationFeeCurrent(paidAt, now);
 }
@@ -113,7 +341,10 @@ async function recordActivationFeePayment(
 ) {
   const runner = client || pool;
   const uid = Number(userId);
-  const minor = amountMinor != null ? Number(amountMinor) : activationFeeMinorUnits();
+  let minor = amountMinor != null ? Number(amountMinor) : null;
+  if (minor == null || !Number.isFinite(minor)) {
+    minor = await activationFeeMinorUnits(runner);
+  }
   const when = paidAt instanceof Date ? paidAt : new Date(paidAt);
   const sid =
     stripeSessionId != null && String(stripeSessionId).trim() !== ""
@@ -179,12 +410,17 @@ async function recordActivationFeePayment(
 
 /** @deprecated Use recordActivationFeePayment */
 async function recordSubscriptionActivationFeePaid(userId, paidAt = new Date(), client) {
+  const minor = await activationFeeMinorUnits(client);
   return recordActivationFeePayment(
-    { userId, paidAt, source: ACTIVATION_FEE_SOURCES.STRIPE, amountMinor: activationFeeMinorUnits() },
+    { userId, paidAt, source: ACTIVATION_FEE_SOURCES.STRIPE, amountMinor: minor },
     client,
   );
 }
 
+/**
+ * Record fee from a completed Stripe session using the session's own activationFeeMinor
+ * (historical amount at Checkout creation — never re-read current settings).
+ */
 async function recordActivationFeeFromStripeSession(
   { freelancerUserId, stripeSessionId, stripePaymentIntentId, activationFeeMinor, paidAt = new Date() },
   client,
@@ -194,8 +430,9 @@ async function recordActivationFeeFromStripeSession(
     return { recorded: false, skipped: true, reason: "no_activation_fee_in_session" };
   }
 
-  const needsFee = await freelancerNeedsSubscriptionActivationFee(freelancerUserId, client, paidAt);
-  if (!needsFee) {
+  const paidAtDate = paidAt instanceof Date ? paidAt : new Date(paidAt);
+  const paidAtExisting = await getLatestActivationFeePaidAt(freelancerUserId, client);
+  if (isActivationFeeCurrent(paidAtExisting, paidAtDate)) {
     return { recorded: false, skipped: true, reason: "activation_fee_already_current" };
   }
 
@@ -205,7 +442,7 @@ async function recordActivationFeeFromStripeSession(
       stripeSessionId,
       stripePaymentIntentId,
       amountMinor: minor,
-      paidAt,
+      paidAt: paidAtDate,
       source: ACTIVATION_FEE_SOURCES.STRIPE,
     },
     client,
@@ -224,6 +461,16 @@ async function markActivationFeePaidOffline(
     throw err;
   }
 
+  const cfg = await getActivationFeeConfig(runner);
+  if (!cfg.enabled) {
+    return {
+      recorded: false,
+      skipped: true,
+      reason: "activation_fee_disabled",
+      alreadyPaid: false,
+    };
+  }
+
   const needsFee = await freelancerNeedsSubscriptionActivationFee(uid, runner, paidAt);
   if (!needsFee) {
     const paidAtCurrent = await getLatestActivationFeePaidAt(uid, runner);
@@ -237,7 +484,7 @@ async function markActivationFeePaidOffline(
   const result = await recordActivationFeePayment(
     {
       userId: uid,
-      amountMinor: activationFeeMinorUnits(),
+      amountMinor: cfg.amountMinor,
       paidAt,
       source: ACTIVATION_FEE_SOURCES.ADMIN_OFFLINE,
       createdByAdminId: adminUserId,
@@ -262,16 +509,26 @@ function activationFeeValidUntil(paidAt, now = new Date()) {
 }
 
 async function getActivationFeeStatus(userId, client) {
+  const cfg = await getActivationFeeConfig(client);
   const paidAt = await getLatestActivationFeePaidAt(userId, client);
+  const payment = await getLatestActivationFeePayment(userId, client);
   const isCurrent = isActivationFeeCurrent(paidAt);
   const validUntil = activationFeeValidUntil(paidAt);
+  const lastPaidAmountMinor =
+    payment?.amount_minor != null && Number.isFinite(Number(payment.amount_minor))
+      ? Number(payment.amount_minor)
+      : null;
   return {
-    amountJod: SUBSCRIPTION_ACTIVATION_FEE_JOD,
+    enabled: cfg.enabled,
+    amountJod: cfg.amountJod,
+    amountMinor: cfg.amountMinor,
     validityDays: ACTIVATION_FEE_VALIDITY_DAYS,
     paidAt: paidAt || null,
     validUntil: validUntil || null,
     isCurrent,
-    needsPayment: !isCurrent,
+    needsPayment: Boolean(cfg.enabled && !isCurrent),
+    lastPaidAmountMinor,
+    lastPaidAmountJod: lastPaidAmountMinor != null ? amountMinorToJod(lastPaidAmountMinor) : null,
   };
 }
 
@@ -315,6 +572,22 @@ async function expireStripeCheckoutSession(stripe, stripeSessionId) {
   }
 }
 
+/**
+ * Best-effort remote expire for already-superseded local tracking rows.
+ * Never throws; safe to run after settings COMMIT without blocking the HTTP response.
+ */
+async function expireStripeCheckoutSessionsBestEffort(stripe, stripeSessionIds) {
+  if (!stripe || !Array.isArray(stripeSessionIds) || stripeSessionIds.length === 0) {
+    return { attempted: 0, expired: 0 };
+  }
+  let expired = 0;
+  for (const sid of stripeSessionIds) {
+    const result = await expireStripeCheckoutSession(stripe, sid);
+    if (result?.expired) expired += 1;
+  }
+  return { attempted: stripeSessionIds.length, expired };
+}
+
 async function supersedeOpenCheckoutSessions(
   { stripe, freelancerUserId, exceptStripeSessionId = null, feeBearingOnly = false },
   client,
@@ -351,6 +624,54 @@ async function supersedeOpenCheckoutSessions(
     });
   }
 
+  return results;
+}
+
+/**
+ * After admin changes fee amount/enabled: invalidate all OPEN fee-bearing checkout tracking.
+ * Completed/paid sessions are never touched.
+ *
+ * Uses a single bulk UPDATE for local supersession (fast even with hundreds of rows).
+ * Optional Stripe expire runs only when `stripe` is provided — callers that must not
+ * block (settings save) should pass stripe:null and expire asynchronously afterward.
+ */
+async function supersedeAllOpenFeeBearingCheckoutSessions({ stripe = null } = {}, client) {
+  const runner = client || pool;
+  const { rows } = await runner.query(
+    `UPDATE freelancer_subscription_checkout_sessions
+     SET status = $2, updated_at = NOW()
+     WHERE status = $1
+       AND includes_activation_fee = TRUE
+     RETURNING id, stripe_session_id, includes_activation_fee, checkout_kind, freelancer_user_id`,
+    [CHECKOUT_SESSION_STATUS.OPEN, CHECKOUT_SESSION_STATUS.SUPERSEDED],
+  );
+
+  const results = [];
+  for (const row of rows) {
+    const sid = String(row.stripe_session_id);
+    let stripeResult = { expired: false, reason: "local_supersede_only" };
+    let status = CHECKOUT_SESSION_STATUS.SUPERSEDED;
+    if (stripe) {
+      stripeResult = await expireStripeCheckoutSession(stripe, sid);
+      if (stripeResult.expired) {
+        status = CHECKOUT_SESSION_STATUS.EXPIRED;
+        await runner.query(
+          `UPDATE freelancer_subscription_checkout_sessions
+           SET status = $2, updated_at = NOW()
+           WHERE id = $1`,
+          [Number(row.id), CHECKOUT_SESSION_STATUS.EXPIRED],
+        );
+      }
+    }
+
+    results.push({
+      stripeSessionId: sid,
+      freelancerUserId: Number(row.freelancer_user_id),
+      includesActivationFee: true,
+      status,
+      stripe: stripeResult,
+    });
+  }
   return results;
 }
 
@@ -416,14 +737,20 @@ function activationFeeLineItemName(locale = "ar") {
   return ACTIVATION_FEE_LINE_ITEM_NAMES[key];
 }
 
-function buildActivationFeeStripeLineItem(locale = "ar", { productName = null } = {}) {
-  const unitAmount = activationFeeMinorUnits();
+async function buildActivationFeeStripeLineItem(locale = "ar", { productName = null, amountMinor = null, client } = {}) {
+  const unitAmount =
+    amountMinor != null && Number.isFinite(Number(amountMinor))
+      ? Number(amountMinor)
+      : await activationFeeMinorUnits(client);
   if (unitAmount == null || unitAmount < 1) {
     const err = new Error("Invalid subscription activation fee amount.");
     err.statusCode = 500;
     throw err;
   }
-  const name = productName != null && String(productName).trim() !== "" ? String(productName) : activationFeeLineItemName(locale);
+  const name =
+    productName != null && String(productName).trim() !== ""
+      ? String(productName)
+      : activationFeeLineItemName(locale);
   return {
     quantity: 1,
     price_data: {
@@ -445,17 +772,26 @@ function isFreeDisplayPlanEligibleForActivationFeeCheckout(displayPlanRow) {
 
 module.exports = {
   SUBSCRIPTION_ACTIVATION_FEE_JOD,
+  DEFAULT_ACTIVATION_FEE_AMOUNT_MINOR,
+  DEFAULT_ACTIVATION_FEE_ENABLED,
+  MAX_ACTIVATION_FEE_AMOUNT_MINOR,
   ACTIVATION_FEE_VALIDITY_DAYS,
+  ACTIVATION_FEE_SETTING_KEYS,
   ACTIVATION_FEE_SOURCES,
   CHECKOUT_KIND,
   CHECKOUT_SESSION_STATUS,
   PURPOSE_ACTIVATION_FEE_ONLY,
   PURPOSE_SUBSCRIPTION_PURCHASE,
+  amountMinorToJod,
+  getActivationFeeConfig,
+  getPublicActivationFeeConfig,
+  updateActivationFeeSettings,
   activationFeeMinorUnits,
   isActivationFeeCurrent,
   activationFeeValidUntil,
   getActivationFeePaidAt,
   getLatestActivationFeePaidAt,
+  getLatestActivationFeePayment,
   freelancerNeedsSubscriptionActivationFee,
   recordActivationFeePayment,
   recordSubscriptionActivationFeePaid,
@@ -465,7 +801,9 @@ module.exports = {
   lockFreelancerForCheckout,
   listOpenCheckoutSessionsForFreelancer,
   expireStripeCheckoutSession,
+  expireStripeCheckoutSessionsBestEffort,
   supersedeOpenCheckoutSessions,
+  supersedeAllOpenFeeBearingCheckoutSessions,
   trackFreelancerCheckoutSession,
   markCheckoutSessionStatus,
   prepareFreelancerCheckoutSessionCreation,

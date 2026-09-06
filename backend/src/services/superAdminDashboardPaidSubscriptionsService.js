@@ -40,9 +40,13 @@ async function attachActivationFees(subs) {
       try {
         const status = await getActivationFeeStatus(sub.freelancerUserId);
         sub.activationFee = {
+          enabled: status.enabled,
+          currentAmountJod: status.amountJod,
           amountJod: status.amountJod,
+          lastPaidAmountJod: status.lastPaidAmountJod,
           paid: Boolean(status.isCurrent),
           paidAt: status.paidAt || null,
+          needsPayment: Boolean(status.needsPayment),
         };
       } catch {
         sub.activationFee = null;

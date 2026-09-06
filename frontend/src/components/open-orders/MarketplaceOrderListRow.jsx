@@ -9,13 +9,20 @@ import {
   categoryChips,
   durationLabel,
   isBiddingOrder,
-  orderPriceText,
   shortDescription,
 } from "./openOrdersFormatters";
-import { DurationValue, MoneyValue } from "./OrderNumericValue";
+import { DurationValue } from "./OrderNumericValue";
+import { JodOrderBudgetDisplay } from "../money/JodMoneyDisplay";
+import {
+  formatArticleBidCollectionLabel,
+  isBidCollectionClosedForApply,
+} from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 import {
   isPoolOrderLockedByPlan,
+  poolOrderPlanLockUserMessage,
 } from "../../utils/poolOrderPlanEligibility";
+import { planUpgradePropsFromPoolOrder } from "../../constants/planUpgradeCta";
+import PlanUpgradeRequiredCta from "../freelancer/PlanUpgradeRequiredCta";
 import { isPoolFixedApplicationOrder, poolFixedParticipationPending } from "../../utils/poolOrderParticipation";
 
 function LockIcon() {
@@ -149,11 +156,16 @@ function MarketplaceOrderRow({
   const { t, locale, dir } = useTranslation();
   const isAuthenticated = Boolean(user);
   const isGuest = !isAuthenticated;
+  const collectionClosed =
+    Boolean(order?.collectionClosed) || isBidCollectionClosedForApply(order?.bidCollection);
+  const collectionLabel = formatArticleBidCollectionLabel(order?.bidCollection, { isEn: locale === "en" });
   const planLockedForUser = isAuthenticated && planLocked;
-  const rowDisabled = actionsDisabled || planLockedForUser;
+  const rowDisabled = actionsDisabled || planLockedForUser || collectionClosed;
   const guestLoginLabel = t("orders.marketplace.loginFirst");
-  const rowDisabledReason = planLockedForUser
-    ? t("orders.marketplace.planLocked")
+  const rowDisabledReason = collectionClosed
+    ? collectionLabel || (locale === "en" ? "Applications closed" : "التقديم مغلق")
+    : planLockedForUser
+    ? poolOrderPlanLockUserMessage(order)
     : actionsDisabledReason;
   const applicants = Number(order?.applicantsCount ?? order?.bidsCount ?? 0);
   const durationLabels = {
@@ -188,7 +200,7 @@ function MarketplaceOrderRow({
           <div className="oh-order-row__stat">
             <span className="oh-order-row__stat-label">{t("orders.row.budget")}</span>
             <strong className="oh-order-row__stat-value oh-order-row__stat-value--price">
-              <MoneyValue>{orderPriceText(order, locale)}</MoneyValue>
+              <JodOrderBudgetDisplay order={order} compact />
             </strong>
           </div>
           <div className="oh-order-row__stat">
@@ -208,7 +220,7 @@ function MarketplaceOrderRow({
           <p className="oh-order-row__summary text-start" dir={locale === "en" ? "ltr" : "auto"}>
             {shortDescription(description, 120, { emptyLabel: t("orders.marketplace.card.noDescription") })}
           </p>
-          {order?.showTrainingBadge || chips.length ? (
+          {order?.showTrainingBadge || chips.length || collectionLabel || Number(order?.relistCount) > 0 ? (
             <div className="oh-order-row__chips">
               {order?.showTrainingBadge ? (
                 <span className="oh-order-row__chip oh-order-row__chip--training">
@@ -220,6 +232,14 @@ function MarketplaceOrderRow({
                   {chip}
                 </span>
               ))}
+              {collectionLabel ? (
+                <span className="oh-order-row__chip">{collectionLabel}</span>
+              ) : null}
+              {Number(order?.relistCount) > 0 ? (
+                <span className="oh-order-row__chip">
+                  {locale === "en" ? "Updated opportunity" : "فرصة محدّثة"}
+                </span>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -243,10 +263,10 @@ function MarketplaceOrderRow({
               emptyLabel={t("orders.marketplace.card.noApplicants")}
             />
           </div>
-          {showActions ? (
+          {showActions && !planLockedForUser ? (
             <ActionButton
               bidding={bidding}
-              planLocked={planLockedForUser}
+              planLocked={false}
               actionsDisabled={actionsDisabled}
               rowDisabled={rowDisabled}
               rowDisabledReason={rowDisabledReason}
@@ -260,6 +280,19 @@ function MarketplaceOrderRow({
               isGuest={isGuest}
               guestLoginLabel={guestLoginLabel}
             />
+          ) : null}
+          {planLockedForUser && !isGuest ? (
+            <div
+              className="oh-order-row__upgrade-cta"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              <PlanUpgradeRequiredCta
+                {...(planUpgradePropsFromPoolOrder(order) || { reason: "PLAN_TOO_LOW", mode: "upgrade" })}
+                isEn={locale === "en"}
+                compact
+              />
+            </div>
           ) : null}
         </div>
       </div>

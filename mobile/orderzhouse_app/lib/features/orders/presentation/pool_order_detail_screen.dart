@@ -7,13 +7,17 @@ import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../freelancer/account_activation/data/account_activation_kyc_models.dart';
 import '../../freelancer/data/freelancer_eligibility_models.dart';
+import '../../freelancer/data/plan_upgrade_cta.dart';
 import '../../freelancer/data/pool_order_participation_helpers.dart';
 import '../../freelancer/presentation/freelancer_eligibility_provider.dart';
 import '../../freelancer/presentation/freelancer_my_orders_controller.dart';
 import '../../freelancer/presentation/freelancer_pool_actions_controller.dart';
+import '../../freelancer/presentation/plan_upgrade_required_cta.dart';
 import '../../freelancer/presentation/submit_pool_bid_sheet.dart';
 import '../data/pool_order_models.dart';
+import '../../currency/presentation/jod_money_display.dart';
 import 'order_detail_widgets.dart';
 import 'pool_order_detail_provider.dart';
 
@@ -73,7 +77,13 @@ class _PoolOrderDetailBody extends ConsumerWidget {
                 statusLabel: order.statusLabel,
                 statusKey: order.orderStatus,
                 projectTypeLabel: order.projectTypeLabel,
-                budgetLabel: order.budgetLabel,
+                budgetDisplay: JodOrderBudgetDisplay(
+                  projectType: order.projectType,
+                  amount: order.budget,
+                  bidMin: order.bidBudgetMin,
+                  bidMax: order.bidBudgetMax,
+                  onDark: true,
+                ),
                 dateLabel: formatOrderDateLabel(order.publishedAtLabel),
                 dateCaption: 'تاريخ النشر',
               ),
@@ -329,10 +339,20 @@ class _PoolOrderActionsState extends ConsumerState<_PoolOrderActions> {
       ),
       data: (eligibility) {
         String? blockMessage;
+        PlanUpgradeCtaProps? planUpgrade;
+        final needsKyc = eligibility != null &&
+            !eligibility.eligible &&
+            freelancerEligibilityNeedsAccountActivation(eligibility);
+        final eligibilityForCta = eligibility;
+
         if (eligibility != null && !eligibility.eligible) {
           blockMessage = freelancerEligibilityMessageAr(eligibility);
         } else if (isPoolOrderLockedByPlan(order)) {
-          blockMessage = poolPlanLockUserMessage(order);
+          planUpgrade = poolOrderPlanUpgradeProps(order);
+          if (planUpgrade?.mode == PlanUpgradeCtaMode.support) {
+            blockMessage = poolPlanLockUserMessage(order);
+            planUpgrade = null;
+          }
         }
 
         return Column(
@@ -345,10 +365,27 @@ class _PoolOrderActionsState extends ConsumerState<_PoolOrderActions> {
               ),
               const SizedBox(height: 10),
             ],
+            if (needsKyc && eligibilityForCta != null) ...[
+              OhButton(
+                label: freelancerEligibilityLooksRejected(eligibilityForCta)
+                    ? accountActivationKycResubmitCtaAr
+                    : accountActivationKycCompleteCtaAr,
+                onPressed: () => context.push(AppRoutes.freelancerAccountActivation),
+              ),
+              const SizedBox(height: 10),
+            ],
+            if (planUpgrade != null) ...[
+              PlanUpgradeRequiredCta(
+                requiredTierCode: planUpgrade.requiredTierCode,
+                requiredPlanLabel: planUpgrade.requiredPlanLabel,
+                reason: planUpgrade.reason,
+              ),
+              const SizedBox(height: 10),
+            ],
             _buildFreelancerButtons(
               order: order,
               actionsState: actionsState,
-              canAct: canAct && blockMessage == null,
+              canAct: canAct && blockMessage == null && planUpgrade == null && !needsKyc,
               participationLabel: participationLabel,
               blockMessage: blockMessage,
             ),

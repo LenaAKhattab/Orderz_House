@@ -97,7 +97,7 @@ export default function DashboardModal({
 
   return (
     <div
-      className={`dash-ui-modal fixed inset-0 z-[1200] grid place-items-center p-4 ${className}`.trim()}
+      className={`dash-ui-modal fixed inset-0 z-[var(--oh-z-modal,1200)] grid place-items-center p-4 ${className}`.trim()}
       role="presentation"
     >
       <button

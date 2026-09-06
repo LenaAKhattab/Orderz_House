@@ -9,6 +9,11 @@ const {
   effectiveCheckoutPriceJod,
 } = require("../utils/planFields");
 const {
+  resolvePlanPayablePricing,
+  assertValidSalePatch,
+  attachSaleFieldsToMappedPlan,
+} = require("../utils/planSalePricing");
+const {
   ORDERZHOUSE_PLAN_IDS,
   mergeApiPlansWithCatalog,
 } = require("../constants/orderzhousePlansCatalog");
@@ -149,7 +154,7 @@ async function safeNotify(run) {
 
 function mapPlan(row) {
   if (!row) return null;
-  return {
+  const mapped = {
     id: String(row.id),
     name: row.name,
     title: row.title,
@@ -192,10 +197,16 @@ function mapPlan(row) {
     labelEn: row.label_en || null,
     billingTextEn: row.billing_text_en || null,
     buttonTextEn: row.button_text_en || null,
+    isRecurring: Boolean(row.is_recurring),
+    billingInterval: row.billing_interval || null,
+    billingIntervalCount: row.billing_interval_count != null ? Number(row.billing_interval_count) : null,
+    stripeProductId: row.stripe_product_id || null,
+    stripePriceId: row.stripe_price_id || null,
     deletedAt: row.deleted_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+  return attachSaleFieldsToMappedPlan(mapped, row);
 }
 
 /** Row shape from `plans` (snake_case DB columns). Used by Stripe self-checkout. */
@@ -203,7 +214,9 @@ function planEligibleForFreelancerSelfCheckout(row) {
   if (!row || row.deleted_at) return false;
   if (!row.is_active || !row.is_visible) return false;
   if (!row.self_subscribe_allowed) return false;
-  const charge = effectiveCheckoutPriceJod(row);
+  const recurring = Boolean(row.is_recurring) || String(row.name || "").trim() === "freelancers_monthly_paid_15";
+  const pricing = resolvePlanPayablePricing(row, { mode: recurring ? "recurring" : "one_time" });
+  const charge = pricing.effectivePriceJod;
   if (!Number.isFinite(charge) || charge <= 0) return false;
   return true;
 }
@@ -268,6 +281,8 @@ async function listPublicCatalogPlans() {
         const row = rows[idx];
         const mapped = { ...plan };
         delete mapped.adminNotes;
+        delete mapped.stripeProductId;
+        delete mapped.stripePriceId;
         return {
           ...mapped,
           checkoutPlanId: String(resolveCheckoutPlanId(row)),
@@ -450,7 +465,41 @@ async function createPlan({ actorUserId, payload }) {
     ],
   );
 
-  const [plan] = await attachFeaturesToPlans(rows);
+  let inserted = rows[0];
+  if (
+    payload.saleEnabled !== undefined ||
+    payload.salePercentage !== undefined ||
+    payload.saleReason !== undefined ||
+    payload.saleReasonEn !== undefined
+  ) {
+    assertValidSalePatch(payload, {
+      priceJod: priceJod != null ? Number(priceJod) : null,
+      stripeCheckoutAmountJod:
+        ext.stripeCheckoutAmountJod != null ? Number(ext.stripeCheckoutAmountJod) : null,
+      isRecurring: Boolean(payload.isRecurring),
+    });
+    const saleEnabled = Boolean(payload.saleEnabled);
+    const { rows: saleRows } = await pool.query(
+      `UPDATE plans
+       SET sale_enabled = $2,
+           sale_percentage = $3,
+           sale_reason = $4,
+           sale_reason_en = $5,
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [
+        inserted.id,
+        saleEnabled,
+        saleEnabled && payload.salePercentage != null ? Number(payload.salePercentage) : null,
+        saleEnabled ? payload.saleReason || null : null,
+        saleEnabled ? payload.saleReasonEn || null : null,
+      ],
+    );
+    inserted = saleRows[0] || inserted;
+  }
+
+  const [plan] = await attachFeaturesToPlans([inserted]);
   await safeNotify(() =>
     notificationEventsService.notifySuperAdmins({
       recipientRole: "super_admin",
@@ -470,6 +519,54 @@ async function createPlan({ actorUserId, payload }) {
 }
 
 async function updatePlan({ actorUserId, id, patch }) {
+  const planId = Number(id);
+  const { rows: existingRows } = await pool.query(
+    `SELECT * FROM plans WHERE id = $1::bigint AND deleted_at IS NULL LIMIT 1`,
+    [planId],
+  );
+  const existing = existingRows[0];
+  if (!existing) {
+    const err = new Error("Plan not found.");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const nextPriceJod =
+    patch.priceJod !== undefined
+      ? patch.priceJod == null
+        ? null
+        : Number(patch.priceJod)
+      : existing.price_jod != null
+        ? Number(existing.price_jod)
+        : null;
+  const nextStripeCheckout =
+    patch.stripeCheckoutAmountJod !== undefined
+      ? patch.stripeCheckoutAmountJod == null
+        ? null
+        : Number(patch.stripeCheckoutAmountJod)
+      : existing.stripe_checkout_amount_jod != null
+        ? Number(existing.stripe_checkout_amount_jod)
+        : null;
+  const nextRecurring =
+    patch.isRecurring !== undefined ? Boolean(patch.isRecurring) : Boolean(existing.is_recurring);
+
+  if (
+    patch.saleEnabled !== undefined ||
+    patch.salePercentage !== undefined ||
+    patch.saleReason !== undefined ||
+    patch.saleReasonEn !== undefined
+  ) {
+    assertValidSalePatch(patch, {
+      priceJod: nextPriceJod,
+      stripeCheckoutAmountJod: nextStripeCheckout,
+      isRecurring: nextRecurring,
+      saleEnabled: existing.sale_enabled,
+      salePercentage: existing.sale_percentage != null ? Number(existing.sale_percentage) : null,
+      saleReason: existing.sale_reason,
+      saleReasonEn: existing.sale_reason_en,
+    });
+  }
+
   const fields = [];
   const values = [];
   let i = 1;
@@ -484,6 +581,14 @@ async function updatePlan({ actorUserId, id, patch }) {
   if (patch.description !== undefined) set("description", patch.description);
   if (patch.durationDays !== undefined) set("duration_days", patch.durationDays);
   if (patch.priceJod !== undefined) set("price_jod", patch.priceJod == null ? null : Number(patch.priceJod));
+  if (patch.isRecurring !== undefined) set("is_recurring", Boolean(patch.isRecurring));
+  if (patch.billingInterval !== undefined) set("billing_interval", patch.billingInterval || null);
+  if (patch.billingIntervalCount !== undefined) {
+    set(
+      "billing_interval_count",
+      patch.billingIntervalCount == null ? null : Number(patch.billingIntervalCount),
+    );
+  }
   if (patch.stripeCheckoutAmountJod !== undefined) {
     set(
       "stripe_checkout_amount_jod",
@@ -532,10 +637,40 @@ async function updatePlan({ actorUserId, id, patch }) {
   if (patch.billingTextEn !== undefined) set("billing_text_en", patch.billingTextEn);
   if (patch.buttonTextEn !== undefined) set("button_text_en", patch.buttonTextEn);
 
+  if (patch.saleEnabled !== undefined) set("sale_enabled", Boolean(patch.saleEnabled));
+  if (patch.salePercentage !== undefined) {
+    set("sale_percentage", patch.salePercentage == null ? null : Number(patch.salePercentage));
+  }
+  if (patch.saleReason !== undefined) set("sale_reason", patch.saleReason || null);
+  if (patch.saleReasonEn !== undefined) set("sale_reason_en", patch.saleReasonEn || null);
+
+  // Never mutate a live Stripe Price amount in place — only clear cached Price IDs when the
+  // payable amount inputs actually change (avoids wiping IDs on every full-form save).
+  const prevSaleEnabled = Boolean(existing.sale_enabled);
+  const nextSaleEnabled =
+    patch.saleEnabled !== undefined ? Boolean(patch.saleEnabled) : prevSaleEnabled;
+  const prevSalePct =
+    existing.sale_percentage != null ? Number(existing.sale_percentage) : null;
+  const nextSalePct =
+    patch.salePercentage !== undefined
+      ? patch.salePercentage == null
+        ? null
+        : Number(patch.salePercentage)
+      : prevSalePct;
+  const prevPrice = existing.price_jod != null ? Number(existing.price_jod) : null;
+  const payableInputsChanged =
+    (patch.priceJod !== undefined && nextPriceJod !== prevPrice) ||
+    (patch.saleEnabled !== undefined && nextSaleEnabled !== prevSaleEnabled) ||
+    (patch.salePercentage !== undefined && nextSalePct !== prevSalePct);
+  if (payableInputsChanged) {
+    set("stripe_price_id", null);
+    set("stripe_price_amount_minor", null);
+  }
+
   set("updated_by_user_id", actorUserId ? Number(actorUserId) : null);
   set("updated_at", new Date());
 
-  values.push(Number(id));
+  values.push(planId);
 
   const { rows } = await pool.query(
     `UPDATE plans
@@ -563,42 +698,59 @@ async function updatePlan({ actorUserId, id, patch }) {
       link: "/dashboard/super-admin/plans",
       priority: "medium",
       dedupeKey: `plan_updated_${plan.id}_${String(plan.updatedAt)}`,
-      metadata: { planId: plan.id },
+      metadata: {
+        planId: plan.id,
+        saleEnabled: plan.saleEnabled,
+        salePercentage: plan.salePercentage,
+        previousSaleEnabled: Boolean(existing.sale_enabled),
+        previousSalePercentage:
+          existing.sale_percentage != null ? Number(existing.sale_percentage) : null,
+      },
     }),
   );
   return plan;
 }
 
 async function softDeletePlan({ actorUserId, id }) {
-  const { rows: planRows } = await pool.query(`SELECT id, title FROM plans WHERE id = $1 LIMIT 1`, [Number(id)]);
-  const { rowCount } = await pool.query(
+  const { rows } = await pool.query(
     `UPDATE plans
-     SET deleted_at = NOW(), updated_by_user_id = $2, updated_at = NOW()
-     WHERE id = $1 AND deleted_at IS NULL`,
+     SET deleted_at = NOW(),
+         is_active = FALSE,
+         is_visible = FALSE,
+         updated_by_user_id = $2,
+         updated_at = NOW()
+     WHERE id = $1 AND deleted_at IS NULL
+     RETURNING id, title, deleted_at, is_active, is_visible`,
     [Number(id), actorUserId ? Number(actorUserId) : null],
   );
-  if (rowCount === 0) {
+  if (!rows[0]) {
     const err = new Error("Plan not found.");
     err.statusCode = 404;
     throw err;
   }
-  const plan = planRows[0];
+  const plan = rows[0];
   await safeNotify(() =>
     notificationEventsService.notifySuperAdmins({
       recipientRole: "super_admin",
       actorUserId: actorUserId ? Number(actorUserId) : null,
       type: "plan.deleted",
-      title: "تم حذف باقة",
-      message: `تم حذف الباقة: ${plan?.title || `#${id}`}.`,
+      title: "تم تعطيل باقة",
+      message: `تم تعطيل/إخفاء الباقة عن الاستخدام الجديد: ${plan?.title || `#${id}`}.`,
       entityType: "plan",
       entityId: Number(id),
       link: "/dashboard/super-admin/plans",
       priority: "high",
       dedupeKey: `plan_deleted_${id}`,
-      metadata: { planId: String(id) },
+      metadata: { planId: String(id), softDelete: true },
     }),
   );
-  return true;
+  return {
+    id: String(plan.id),
+    title: plan.title,
+    deletedAt: plan.deleted_at,
+    isActive: false,
+    isVisible: false,
+  };
 }
 
 module.exports = {
@@ -616,4 +768,5 @@ module.exports = {
   softDeletePlan,
   planEligibleForFreelancerSelfCheckout,
   effectiveCheckoutPriceJod,
+  resolvePlanPayablePricing,
 };

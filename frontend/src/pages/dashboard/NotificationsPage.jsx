@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bell,
@@ -8,10 +8,13 @@ import {
   Inbox,
   MessageSquare,
   Search,
+  Trash2,
   Wallet,
 } from "lucide-react";
 import { useAuth } from "../../context/useAuth";
 import {
+  deleteNotificationRequest,
+  deleteNotificationsBulkRequest,
   getUnreadNotificationsCountRequest,
   listMyNotificationsRequest,
   markAllNotificationsReadRequest,
@@ -19,10 +22,14 @@ import {
   NOTIFICATIONS_REFRESH_EVENT,
 } from "../../services/api";
 import Pagination from "../../components/common/Pagination";
+import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
 import NotificationListSkeleton from "../../components/dashboard/hub/NotificationListSkeleton";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { getNotificationDetails, getNotificationTypeIconKind } from "../../utils/notificationDisplay";
+import { resolveSafeInternalNavPath } from "../../utils/safeInternalNavPath";
+import { createAdminListRequestGate } from "../../lib/staff/adminListLoad";
 import "../../styles/dashboardHub.css";
 import "./notifications-page.css";
 
@@ -60,40 +67,9 @@ function fmtRelativeTime(value, t, locale) {
   return fmtDate(value, locale);
 }
 
-function actorLabel(actor) {
-  if (!actor) return "";
-  const name = String(actor.fullName || "").trim();
-  const acc = String(actor.accountId || "").trim();
-  if (name && acc) return `${name} (${acc})`;
-  return name || acc || "";
-}
-
-function notificationDetails(n, canShowOrderReference) {
-  const type = String(n?.type || "").trim();
-  const actor = actorLabel(n?.actor);
-  const actorFallbackName = String(n?.metadata?.actorName || "").trim();
-  const actorFallbackAcc = String(n?.metadata?.actorAccountId || "").trim();
-  const actorFallback =
-    actorFallbackName && actorFallbackAcc ? `${actorFallbackName} (${actorFallbackAcc})` : actorFallbackName || actorFallbackAcc || "";
-  const actorPart = actor || actorFallback;
-  const projectName = String(n?.metadata?.projectName || "").trim();
-  const orderCode = String(n?.metadata?.orderCode || "").trim();
-  const orderId = String(n?.metadata?.orderId || n?.entityId || "").trim();
-
-  if (type === "order.created") {
-    return projectName;
-  }
-
-  const orderPart =
-    canShowOrderReference && (orderCode || orderId) ? (orderCode ? `${orderCode}` : `#${orderId}`) : "";
-  const projectPart = projectName ? projectName : "";
-  const parts = [actorPart, projectPart, orderPart].filter(Boolean);
-  return parts.join(" - ");
-}
-
 function notificationCategory(type, t) {
   const raw = String(type || "").toLowerCase();
-  if (raw.includes("message") || raw.includes("chat")) {
+  if (raw.includes("feedback") || raw.includes("message") || raw.includes("chat")) {
     return { label: t("freelancerDashboard.notificationsPage.categoryMessages"), tone: "emerald" };
   }
   if (raw.includes("claim") || raw.includes("financial") || raw.includes("payment") || raw.includes("pay") || raw.includes("stripe") || raw.includes("invoice")) {
@@ -109,15 +85,12 @@ function notificationCategory(type, t) {
 }
 
 function NotifTypeIcon({ type }) {
-  const raw = String(type || "").toLowerCase();
   const props = { size: 21, strokeWidth: 1.5, "aria-hidden": true };
-
-  if (raw.includes("message") || raw.includes("chat")) return <MessageSquare {...props} />;
-  if (raw.includes("claim") || raw.includes("financial") || raw.includes("payment") || raw.includes("pay") || raw.includes("stripe") || raw.includes("invoice")) {
-    return <Wallet {...props} />;
-  }
-  if (raw.includes("course") || raw.includes("lesson")) return <GraduationCap {...props} />;
-  if (raw.includes("order")) return <FileText {...props} />;
+  const kind = getNotificationTypeIconKind(type);
+  if (kind === "message") return <MessageSquare {...props} />;
+  if (kind === "wallet") return <Wallet {...props} />;
+  if (kind === "course") return <GraduationCap {...props} />;
+  if (kind === "order") return <FileText {...props} />;
   return <Bell {...props} />;
 }
 
@@ -141,6 +114,7 @@ export default function NotificationsPage() {
   const { t, locale, isLanguageSwitching } = useTranslation();
   const role = user?.primaryRole || user?.role;
   const isDashboardHubShell = role === "freelancer" || role === "client";
+  const canSelectDelete = role === "admin" || role === "super_admin";
   const canShowOrderReference = role === "admin" || role === "super_admin";
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
@@ -150,10 +124,16 @@ export default function NotificationsPage() {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const listGateRef = useRef(null);
+  if (!listGateRef.current) listGateRef.current = createAdminListRequestGate();
 
   const totalPages = Math.max(1, Math.ceil(listTotal / PAGE_SIZE));
 
   const fetchData = useCallback(async () => {
+    const ticket = listGateRef.current.begin();
     setLoading(true);
     try {
       const offset = (page - 1) * PAGE_SIZE;
@@ -168,6 +148,7 @@ export default function NotificationsPage() {
           ? listMyNotificationsRequest({ limit: 1, offset: 0 })
           : Promise.resolve(null),
       ]);
+      if (!ticket.isCurrent()) return;
       const list = sortNewestFirst(
         Array.isArray(listRes?.data?.notifications) ? listRes.data.notifications : [],
       );
@@ -180,13 +161,18 @@ export default function NotificationsPage() {
         setAllTotal(Number(allListRes?.data?.total || 0));
       }
       setUnreadCount(Number(countRes?.data?.unreadCount || 0));
+      setSelectedIds(new Set());
+    } catch {
+      if (!ticket.isCurrent()) return;
+      /* Keep previous rows — do not clear on refresh/list failure. */
     } finally {
-      setLoading(false);
+      if (ticket.isCurrent()) setLoading(false);
     }
   }, [filter, page]);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
+    return () => listGateRef.current?.abortInFlight();
   }, [fetchData]);
 
   useEffect(() => {
@@ -233,11 +219,15 @@ export default function NotificationsPage() {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return items;
     return items.filter((n) => {
-      const details = notificationDetails(n, canShowOrderReference);
+      const details = getNotificationDetails(n, canShowOrderReference, {
+        locale,
+        categoryPrefix: t("freelancerDashboard.notificationsPage.feedbackCategoryPrefix"),
+        topicPrefix: t("freelancerDashboard.notificationsPage.feedbackTopicPrefix"),
+      });
       const hay = [n.title, n.message, details, n.type].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
-  }, [items, searchQuery, canShowOrderReference]);
+  }, [items, searchQuery, canShowOrderReference, locale, t]);
 
   const handleRead = useCallback(async (n) => {
     if (!n || n.isRead) return;
@@ -253,7 +243,7 @@ export default function NotificationsPage() {
   const handleOpen = useCallback(
     async (n) => {
       await handleRead(n);
-      navigate(n?.link || "/dashboard");
+      navigate(resolveSafeInternalNavPath(n?.link, "/dashboard"));
     },
     [handleRead, navigate],
   );
@@ -268,7 +258,37 @@ export default function NotificationsPage() {
     }
   }, []);
 
+  const toggleSelected = useCallback((id, checked) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(String(id));
+      else next.delete(String(id));
+      return next;
+    });
+  }, []);
+
+  const handleDeleteSelected = useCallback(async () => {
+    const ids = [...selectedIds];
+    if (!ids.length || deleting) return;
+    setDeleting(true);
+    try {
+      if (ids.length === 1) {
+        await deleteNotificationRequest(ids[0]);
+      } else {
+        await deleteNotificationsBulkRequest(ids);
+      }
+      setSelectedIds(new Set());
+      setConfirmDeleteOpen(false);
+      void fetchData();
+    } catch {
+      // no-op
+    } finally {
+      setDeleting(false);
+    }
+  }, [selectedIds, deleting, fetchData]);
+
   const showLoading = loading || isLanguageSwitching;
+  const selectedCount = selectedIds.size;
 
   const pageBody = (
     <>
@@ -326,6 +346,18 @@ export default function NotificationsPage() {
           </div>
         </div>
         <div className="fn-toolbar__zone fn-toolbar__zone--action">
+          {canSelectDelete && selectedCount > 0 ? (
+            <button
+              type="button"
+              className="fn-toolbar__mark-all fn-toolbar__delete-selected"
+              onClick={() => setConfirmDeleteOpen(true)}
+              disabled={deleting || showLoading}
+              data-testid="notifications-bulk-delete"
+            >
+              <Trash2 size={16} strokeWidth={1.75} aria-hidden />
+              <span>حذف المحدد ({selectedCount})</span>
+            </button>
+          ) : null}
           <button type="button" className="fn-toolbar__mark-all" onClick={handleReadAll} disabled={!unreadCount || showLoading}>
             <CheckCheck size={16} strokeWidth={1.75} aria-hidden />
             <span>{t("freelancerDashboard.notificationsPage.markAllRead")}</span>
@@ -359,18 +391,42 @@ export default function NotificationsPage() {
           <div className="fn-notif-list">
             {filteredItems.map((n) => {
               const unread = !n.isRead;
-              const details = notificationDetails(n, canShowOrderReference);
+              const details = getNotificationDetails(n, canShowOrderReference, {
+                locale,
+                categoryPrefix: t("freelancerDashboard.notificationsPage.feedbackCategoryPrefix"),
+                topicPrefix: t("freelancerDashboard.notificationsPage.feedbackTopicPrefix"),
+              });
               const message = String(n.message || "").trim();
-              const description = message || details || "";
               const category = notificationCategory(n.type, t);
               const relativeTime = fmtRelativeTime(n.createdAt, t, locale);
               const cardTitle = n.title || t("freelancerDashboard.notificationsPage.newNotification");
+              const isFeedbackNotif = String(n?.type || "").startsWith("feedback.");
+              // Feedback: show labeled category/topic details first; keep message as secondary body.
+              const description = isFeedbackNotif
+                ? [details, message].filter(Boolean).join("\n")
+                : message || details || "";
+              const isSelected = selectedIds.has(String(n.id));
 
               return (
                 <article
                   key={n.id}
-                  className={`fn-notif-card${unread ? " fn-notif-card--unread" : " fn-notif-card--read"}`.trim()}
+                  className={`fn-notif-card${unread ? " fn-notif-card--unread" : " fn-notif-card--read"}${isSelected ? " fn-notif-card--selected" : ""}`.trim()}
                 >
+                  {canSelectDelete ? (
+                    <label
+                      className="fn-notif-card__select"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => toggleSelected(n.id, e.target.checked)}
+                        aria-label={`تحديد: ${cardTitle}`}
+                        data-testid="notification-select"
+                      />
+                    </label>
+                  ) : null}
                   <button
                     type="button"
                     className="fn-notif-card__surface"
@@ -395,7 +451,11 @@ export default function NotificationsPage() {
                           {unread ? <span className="fn-notif-card__details-dot" aria-hidden /> : null}
                           <span className="fn-notif-card__details-category">{category.label}</span>
                         </p>
-                        {description ? <p className="fn-notif-card__desc">{description}</p> : null}
+                        {description ? (
+                          <p className={`fn-notif-card__desc${isFeedbackNotif && details ? " fn-notif-card__desc--stacked" : ""}`}>
+                            {description}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
 
@@ -421,6 +481,20 @@ export default function NotificationsPage() {
         ) : null}
         </>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="حذف الإشعارات المحددة؟"
+        body={`سيتم حذف ${selectedCount} إشعار بشكل نهائي. لا يمكن التراجع عن هذا الإجراء.`}
+        confirmLabel="حذف"
+        cancelLabel="إلغاء"
+        confirmVariant="danger"
+        confirmBusy={deleting}
+        onCancel={() => {
+          if (!deleting) setConfirmDeleteOpen(false);
+        }}
+        onConfirm={() => void handleDeleteSelected()}
+      />
     </>
   );
 

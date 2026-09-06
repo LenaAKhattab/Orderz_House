@@ -5,6 +5,14 @@ const { assertCheckoutSessionAuthorizedForOrder } = require("../utils/stripeChec
 const orderFlowService = require("../services/orderFlowService");
 const subscriptionsService = require("../services/subscriptionsService");
 const { recordActivationFeeFromStripeSession, markCheckoutSessionStatus, supersedeOpenCheckoutSessions, CHECKOUT_SESSION_STATUS, PURPOSE_ACTIVATION_FEE_ONLY } = require("../services/subscriptionActivationFeeService");
+const {
+  PURPOSE_RECURRING_SUBSCRIPTION,
+  fulfillRecurringSubscriptionFromCheckout,
+  applyRecurringInvoicePaid,
+  applyRecurringInvoicePaymentFailed,
+  syncRecurringSubscriptionStatus,
+  periodFromStripeSubscription,
+} = require("../services/stripeRecurringSubscriptionService");
 const notificationService = require("../services/notificationService");
 const freelancerSubscriptionPaymentNotifications = require("../services/freelancerSubscriptionPaymentNotifications");
 const subscriptionAdminNotificationService = require("../services/subscriptionAdminNotificationService");
@@ -209,6 +217,22 @@ async function handleStripeWebhook(req, res) {
       applyResult = await applyPaymentIntentOutcome(event.data.object, "paid");
     } else if (eventType === "payment_intent.payment_failed") {
       applyResult = await applyPaymentIntentOutcome(event.data.object, "failed");
+    } else if (eventType === "invoice.paid" || eventType === "invoice.payment_succeeded") {
+      applyResult = await applyInvoicePaidEvent(event.data.object);
+    } else if (eventType === "invoice.payment_failed") {
+      applyResult = await applyInvoicePaymentFailedEvent(event.data.object);
+    } else if (
+      eventType === "customer.subscription.updated" ||
+      eventType === "customer.subscription.deleted"
+    ) {
+      applyResult = await applyCustomerSubscriptionEvent(event.data.object, eventType);
+    } else if (
+      eventType === "charge.refunded" ||
+      eventType === "charge.dispute.created" ||
+      eventType === "charge.dispute.closed"
+    ) {
+      // Bid package: record only — Bid economic reversal is PRODUCT_DECISION_REQUIRED.
+      applyResult = await applyBidPackageProviderRefundOrDisputeRecordOnly(event.data.object, eventType);
     } else {
       logStripeWebhook({ eventId, type: eventType, outcome: "unhandled_type" });
       applyResult = { status: "ignored", reason: "unhandled_event_type" };
@@ -265,6 +289,210 @@ async function handleStripeWebhook(req, res) {
     // eslint-disable-next-line no-console
     console.error("[stripe webhook] handler failed:", safeMsg);
     return res.status(500).json({ received: false });
+  }
+}
+
+async function applyCheckoutSessionFreelancerRecurringCompleted(session, meta, dbPool) {
+  const freelancerUserId = Number(meta.freelancerUserId || meta.user_id);
+  const planId = Number(meta.planId || meta.plan_id);
+  if (!Number.isInteger(freelancerUserId) || freelancerUserId < 1 || !Number.isInteger(planId) || planId < 1) {
+    return { status: "ignored", reason: "recurring_invalid_meta" };
+  }
+  if (String(session.mode || "") !== "subscription") {
+    return { status: "ignored", reason: "recurring_wrong_mode" };
+  }
+  if (!isCheckoutSessionPaymentSuccessful(session)) {
+    return { status: "ignored", reason: "recurring_checkout_not_paid" };
+  }
+
+  const expectedMinor = meta.expectedAmountMinor != null ? Number(meta.expectedAmountMinor) : null;
+  const total = session.amount_total != null ? Number(session.amount_total) : null;
+  if (
+    expectedMinor != null &&
+    Number.isFinite(expectedMinor) &&
+    total != null &&
+    Number.isFinite(total) &&
+    expectedMinor !== total
+  ) {
+    return { status: "ignored", reason: "recurring_amount_mismatch" };
+  }
+
+  const stripe = getStripeOrNull();
+  const stripeSubscriptionId =
+    typeof session.subscription === "string" ? session.subscription : session.subscription?.id || null;
+  if (!stripeSubscriptionId) {
+    return { status: "retryable_failure", reason: "recurring_missing_subscription_id" };
+  }
+
+  let stripeSubscription = null;
+  try {
+    if (stripe) {
+      stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+    }
+  } catch (err) {
+    return { status: "retryable_failure", reason: "recurring_subscription_retrieve_failed" };
+  }
+
+  const { currentPeriodStart, currentPeriodEnd } = periodFromStripeSubscription(stripeSubscription || {}, {
+    preferredPriceId: meta.stripePriceId || stripeSubscription?.items?.data?.[0]?.price?.id || null,
+  });
+  const stripeCustomerId =
+    typeof session.customer === "string" ? session.customer : session.customer?.id || null;
+  const stripePriceId =
+    meta.stripePriceId ||
+    (typeof stripeSubscription?.items?.data?.[0]?.price === "string"
+      ? stripeSubscription.items.data[0].price
+      : stripeSubscription?.items?.data?.[0]?.price?.id) ||
+    null;
+  const paymentIntentId =
+    typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null;
+  const activationMinor = meta.activationFeeMinor != null ? Number(meta.activationFeeMinor) : 0;
+
+  const db = await dbPool.connect();
+  try {
+    await db.query("BEGIN");
+    const { subscription, created } = await fulfillRecurringSubscriptionFromCheckout(
+      {
+        freelancerUserId,
+        planId,
+        stripeSessionId: session.id || null,
+        stripeSubscriptionId,
+        stripeCustomerId,
+        stripePriceId,
+        stripePaymentIntentId: paymentIntentId,
+        currentPeriodStart,
+        currentPeriodEnd,
+        activationFeeMinor,
+        paidAt: new Date(),
+      },
+      db,
+    );
+    if (subscription?.id) {
+      await safeNotify(() =>
+        freelancerSubscriptionPaymentNotifications.notifyFreelancerSubscriptionPaymentSuccess(
+          {
+            freelancerUserId,
+            planId,
+            subscriptionId: subscription.id,
+            stripeSessionId: session.id || null,
+            source: "stripe_webhook_recurring_checkout",
+          },
+          db,
+        ),
+      );
+      await safeNotify(() =>
+        notificationEventsService.notifyAdmins(
+          {
+            recipientRole: "admin",
+            actorUserId: null,
+            type: "subscription.company.activation.pending",
+            title: "اشتراك شهري جديد بانتظار تفعيل الشركة",
+            message: "تم دفع اشتراك شهري متجدد وهو بانتظار تفعيل الشركة.",
+            entityType: "subscription",
+            entityId: Number(subscription.id),
+            link: "/dashboard/super-admin/subscriptions",
+            priority: "high",
+            metadata: {
+              subscriptionId: String(subscription.id),
+              freelancerUserId: String(freelancerUserId),
+              planId: String(planId),
+              billingMode: "recurring_stripe",
+            },
+          },
+          `subscription_company_pending_${String(subscription.id)}`,
+          db,
+        ),
+      );
+    }
+    await db.query("COMMIT");
+    return { status: created ? "applied" : "already_applied" };
+  } catch (e) {
+    await db.query("ROLLBACK");
+    throw e;
+  } finally {
+    db.release();
+  }
+}
+
+async function retrieveSubscriptionForInvoice(invoice) {
+  const stripe = getStripeOrNull();
+  const subId = typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription?.id;
+  if (!subId || !stripe) return { stripeSubscription: null, subId: subId || null };
+  try {
+    const stripeSubscription = await stripe.subscriptions.retrieve(subId);
+    return { stripeSubscription, subId };
+  } catch (_) {
+    return { stripeSubscription: null, subId };
+  }
+}
+
+async function applyInvoicePaidEvent(invoice) {
+  const meta = invoice?.subscription_details?.metadata || invoice?.metadata || {};
+  const purpose = String(meta.purpose || "");
+  if (purpose && purpose !== PURPOSE_RECURRING_SUBSCRIPTION && purpose !== "freelancer_recurring_subscription") {
+    // Still try by Stripe subscription id lookup for renewals where invoice metadata is sparse.
+  }
+  const { stripeSubscription, subId } = await retrieveSubscriptionForInvoice(invoice);
+  if (!subId) return { status: "ignored", reason: "invoice_no_subscription" };
+  const db = await pool.connect();
+  try {
+    await db.query("BEGIN");
+    const result = await applyRecurringInvoicePaid(
+      { stripeSubscription: stripeSubscription || { id: subId }, invoice },
+      db,
+    );
+    await db.query("COMMIT");
+    if (!result.ok && result.reason === "subscription_row_not_found") {
+      return { status: "ignored", reason: result.reason };
+    }
+    return { status: result.ok ? "applied" : "ignored", reason: result.reason };
+  } catch (e) {
+    await db.query("ROLLBACK");
+    throw e;
+  } finally {
+    db.release();
+  }
+}
+
+async function applyInvoicePaymentFailedEvent(invoice) {
+  const { stripeSubscription, subId } = await retrieveSubscriptionForInvoice(invoice);
+  if (!subId) return { status: "ignored", reason: "invoice_no_subscription" };
+  const db = await pool.connect();
+  try {
+    await db.query("BEGIN");
+    const result = await applyRecurringInvoicePaymentFailed(
+      { stripeSubscription: stripeSubscription || { id: subId }, invoice },
+      db,
+    );
+    await db.query("COMMIT");
+    if (!result.ok && result.reason === "subscription_row_not_found") {
+      return { status: "ignored", reason: result.reason };
+    }
+    return { status: result.ok ? "applied" : "ignored", reason: result.reason };
+  } catch (e) {
+    await db.query("ROLLBACK");
+    throw e;
+  } finally {
+    db.release();
+  }
+}
+
+async function applyCustomerSubscriptionEvent(stripeSubscription, eventType) {
+  if (!stripeSubscription?.id) return { status: "ignored", reason: "missing_subscription" };
+  const db = await pool.connect();
+  try {
+    await db.query("BEGIN");
+    const result = await syncRecurringSubscriptionStatus({ stripeSubscription }, db);
+    if (eventType === "customer.subscription.deleted" && result.ok) {
+      // status sync already marks cancelled
+    }
+    await db.query("COMMIT");
+    return { status: result.ok ? "applied" : "ignored", reason: result.reason };
+  } catch (e) {
+    await db.query("ROLLBACK");
+    throw e;
+  } finally {
+    db.release();
   }
 }
 
@@ -661,6 +889,27 @@ async function applyCheckoutSessionClientOrderCompleted(session, meta, purpose, 
            AND status = 'rejected'`,
         [Number(orderId), Number(bid.id)],
       );
+
+      // Phase 7.1 Fair history
+      {
+        const fairDist = require("../services/marketplaceFairDistributionService");
+        const orderForFair = {
+          ...order,
+          assigned_freelancer_id: bid.freelancer_user_id,
+          received_at: paidAt,
+        };
+        await fairDist.recordFinalEffectiveSelectionOutcome({
+          client,
+          order: orderForFair,
+          winnerFreelancerUserId: bid.freelancer_user_id,
+          loserFreelancerUserIds: rejectedBidders.map((r) => r.freelancer_user_id),
+          selectionSource: "stripe_webhook_client_selected_bid",
+          actorRole: "system",
+          actorUserId: null,
+          occurredAt: paidAt,
+        });
+      }
+
       await safeNotify(() =>
         notificationEventsService.notifyUsers(
           {
@@ -748,11 +997,26 @@ async function applyCheckoutSessionCompleted(session, dbPool = pool) {
     ...pickFazaatTrackingLogFields(meta),
   });
   const purpose = String(meta.purpose || "");
+  if (purpose === PURPOSE_RECURRING_SUBSCRIPTION || purpose === "freelancer_recurring_subscription") {
+    return applyCheckoutSessionFreelancerRecurringCompleted(session, meta, dbPool);
+  }
   if (purpose === "freelancer_subscription_purchase") {
     return applyCheckoutSessionFreelancerSubscriptionCompleted(session, meta, dbPool);
   }
   if (purpose === PURPOSE_ACTIVATION_FEE_ONLY) {
     return applyCheckoutSessionFreelancerActivationFeeOnlyCompleted(session, meta, dbPool);
+  }
+  if (purpose === "bid_credit_package_purchase") {
+    const purchases = require("../services/marketplaceBidCreditPurchasesService");
+    return purchases.applyBidCreditPackageCheckoutSessionCompleted(session, meta, dbPool);
+  }
+  if (purpose === "marketplace_membership_checkout") {
+    const membershipCheckout = require("../services/marketplaceMembershipCheckoutService");
+    return membershipCheckout.applyMarketplaceMembershipCheckoutSessionCompleted(
+      session,
+      meta,
+      dbPool,
+    );
   }
   if (!["client_fixed_order", "client_selected_bid"].includes(purpose)) {
     return { status: "ignored", reason: "unknown_checkout_purpose" };
@@ -772,6 +1036,87 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool
     ...pickFazaatTrackingLogFields(meta),
   });
   const purpose = String(meta.purpose || "");
+  if (purpose === "bid_credit_package_purchase") {
+    const purchases = require("../services/marketplaceBidCreditPurchasesService");
+    const purchaseId = Number(meta.purchaseId || meta.purchase_id || 0);
+    if (!Number.isInteger(purchaseId) || purchaseId < 1) {
+      return { status: "ignored", reason: "bid_pkg_pi_missing_purchase" };
+    }
+    if (outcomePaymentStatus !== "paid") {
+      // Fail closed for unpaid/failed PI — never undo an already fulfilled purchase.
+      const client = await dbPool.connect();
+      try {
+        await client.query("BEGIN");
+        await client.query(
+          `UPDATE marketplace_bid_credit_purchases
+              SET status = 'failed',
+                  failed_at = COALESCE(failed_at, NOW()),
+                  failure_reason = COALESCE(failure_reason, 'payment_intent_failed'),
+                  updated_at = NOW()
+            WHERE id = $1
+              AND status IN ('pending', 'checkout_created')`,
+          [purchaseId],
+        );
+        await client.query("COMMIT");
+      } catch (e) {
+        try {
+          await client.query("ROLLBACK");
+        } catch {
+          /* ignore */
+        }
+        throw e;
+      } finally {
+        client.release();
+      }
+      return { status: "ignored", reason: "bid_pkg_pi_not_paid" };
+    }
+    const client = await dbPool.connect();
+    try {
+      await client.query("BEGIN");
+      const { rows } = await client.query(
+        `SELECT * FROM marketplace_bid_credit_purchases WHERE id = $1 FOR UPDATE`,
+        [purchaseId],
+      );
+      const purchase = rows[0];
+      if (!purchase) {
+        await client.query("COMMIT");
+        return { status: "ignored", reason: "bid_pkg_purchase_not_found" };
+      }
+      const amount =
+        pi.amount_received != null
+          ? Number(pi.amount_received)
+          : pi.amount != null
+            ? Number(pi.amount)
+            : null;
+      const result = await purchases.fulfillBidCreditPurchaseFromVerifiedPayment({
+        client,
+        purchaseRow: purchase,
+        stripePaymentIntentId: pi.id || null,
+        paidAt: new Date(),
+        sessionAmountTotal: amount,
+        sessionCurrency: pi.currency || null,
+      });
+      await client.query("COMMIT");
+      return {
+        status:
+          result.status === "already_applied"
+            ? "already_applied"
+            : result.status === "applied"
+              ? "applied"
+              : "ignored",
+        reason: result.reason || null,
+      };
+    } catch (e) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
   if (purpose === "freelancer_subscription_purchase") {
     const freelancerUserId = Number(meta.freelancerUserId);
     const planId = Number(meta.planId);
@@ -1025,6 +1370,35 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool
              AND status IN ('pending','selected_pending_payment')`,
           [orderId, Number(bid.id)],
         );
+
+        // Phase 7.1 Fair history (PaymentIntent path)
+        {
+          const fairDist = require("../services/marketplaceFairDistributionService");
+          const { rows: rejectedBidders } = await client.query(
+            `SELECT freelancer_user_id
+             FROM order_freelancer_bids
+             WHERE order_id = $1
+               AND id <> $2
+               AND status = 'rejected'`,
+            [Number(orderId), Number(bid.id)],
+          );
+          const orderForFair = {
+            ...order,
+            assigned_freelancer_id: bid.freelancer_user_id,
+            received_at: paidAt,
+          };
+          await fairDist.recordFinalEffectiveSelectionOutcome({
+            client,
+            order: orderForFair,
+            winnerFreelancerUserId: bid.freelancer_user_id,
+            loserFreelancerUserIds: rejectedBidders.map((r) => r.freelancer_user_id),
+            selectionSource: "stripe_pi_client_selected_bid",
+            actorRole: "system",
+            actorUserId: null,
+            occurredAt: paidAt,
+          });
+        }
+
         await client.query(
           `UPDATE client_order_payments
              SET status = 'paid',
@@ -1175,6 +1549,46 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool
   } finally {
     client.release();
   }
+}
+
+/**
+ * Record Stripe refund/dispute against a Bid package purchase and apply owner-approved Bid policy.
+ * Authenticity: verified webhook only (signature + event claim).
+ * No account suspension. No cross-source clawback. No negative Bid balance.
+ */
+async function applyBidPackageProviderRefundOrDisputeRecordOnly(obj, eventType) {
+  const reversals = require("../services/marketplaceBidCreditPurchaseReversalsService");
+  const meta = obj?.metadata || {};
+  let purchaseId = Number(meta.purchaseId || meta.purchase_id || 0);
+
+  if (!(purchaseId > 0) && obj?.payment_intent && typeof obj.payment_intent === "object") {
+    const piMeta = obj.payment_intent.metadata || {};
+    purchaseId = Number(piMeta.purchaseId || piMeta.purchase_id || 0);
+  }
+
+  const purpose = String(meta.purpose || "");
+  if (purpose && purpose !== "bid_credit_package_purchase" && !(purchaseId > 0)) {
+    // Try PI-linked purchase without purpose (charge objects often omit purpose).
+    if (!obj?.payment_intent && !purchaseId) {
+      return { status: "ignored", reason: "refund_not_bid_package" };
+    }
+  }
+
+  const type = String(eventType || "");
+  if (type === "charge.refunded") {
+    return reversals.applyVerifiedChargeRefunded(obj, {
+      ...meta,
+      purchaseId: purchaseId > 0 ? purchaseId : meta.purchaseId,
+    });
+  }
+  if (type.startsWith("charge.dispute.")) {
+    return reversals.applyVerifiedDisputeEvent(
+      obj,
+      type,
+      { ...meta, purchaseId: purchaseId > 0 ? purchaseId : meta.purchaseId },
+    );
+  }
+  return { status: "ignored", reason: "unhandled_bid_pkg_reversal_type" };
 }
 
 module.exports = {

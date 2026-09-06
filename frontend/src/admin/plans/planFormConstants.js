@@ -44,6 +44,10 @@ export function getInitialPlanFormState() {
     buttonTextEn: "",
     buttonUrl: "",
     currency: "JOD",
+    saleEnabled: false,
+    salePercentage: "",
+    saleReason: "",
+    saleReasonEn: "",
   };
 }
 
@@ -125,5 +129,9 @@ export function planToEditForm(plan) {
     buttonTextEn: plan.buttonTextEn ?? "",
     buttonUrl: plan.buttonUrl ?? "",
     currency: plan.currency ?? "JOD",
+    saleEnabled: Boolean(plan.saleEnabled),
+    salePercentage: plan.salePercentage == null ? "" : String(plan.salePercentage),
+    saleReason: plan.saleReason ?? "",
+    saleReasonEn: plan.saleReasonEn ?? "",
   };
 }

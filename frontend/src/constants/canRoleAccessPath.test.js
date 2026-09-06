@@ -51,14 +51,59 @@ describe("canRoleAccessPath", () => {
   });
 
   it("allows admin role on delegated super-admin paths (page permission enforced separately)", () => {
-    assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.ADMIN), true);
     assert.equal(canRoleAccessPath("/dashboard/super-admin/admins", ROLE.ADMIN), true);
+  });
+
+  it("restricts Super Admin plans management to super_admin", () => {
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.SUPER_ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.ADMIN), false);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.FREELANCER), false);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.CLIENT), false);
+  });
+
+  it("allows freelancer article apply routes and denies other roles", () => {
+    assert.equal(canRoleAccessPath("/dashboard/freelancer/articles", ROLE.FREELANCER), true);
+    assert.equal(canRoleAccessPath("/dashboard/freelancer/articles/12", ROLE.FREELANCER), true);
+    assert.equal(canRoleAccessPath("/dashboard/freelancer/articles", ROLE.CLIENT), false);
+    assert.equal(canRoleAccessPath("/dashboard/freelancer/articles", ROLE.ADMIN), false);
+  });
+
+  it("maps pantry, onboarding, bid-credits, and financial-center without loosening roles", () => {
+    assert.equal(canRoleAccessPath("/dashboard/admin/pantry", ROLE.ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/admin/pantry", ROLE.SUPER_ADMIN), false);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/pantry", ROLE.SUPER_ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/pantry", ROLE.ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/onboarding", ROLE.SUPER_ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/onboarding", ROLE.ADMIN), false);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/bid-credits", ROLE.SUPER_ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/freelancer-activation", ROLE.SUPER_ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/freelancer-activation", ROLE.ADMIN), false);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/bid-credits", ROLE.ADMIN), false);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/financial-center", ROLE.SUPER_ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/financial-center", ROLE.ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/financial-center", ROLE.FREELANCER), false);
+  });
+
+  it("allows admin settings without granting super-admin settings to admin role", () => {
+    assert.equal(canRoleAccessPath("/dashboard/admin/settings", ROLE.ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/admin/settings", ROLE.FREELANCER), false);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/settings", ROLE.SUPER_ADMIN), true);
+    assert.equal(canRoleAccessPath("/dashboard/super-admin/settings", ROLE.ADMIN), false);
   });
 
   it("denies cross-role dashboard access", () => {
     assert.equal(canRoleAccessPath("/dashboard/admin/orders", ROLE.FREELANCER), false);
     assert.equal(canRoleAccessPath("/dashboard/client/my-orders", ROLE.FREELANCER), false);
+    assert.equal(canRoleAccessPath("/dashboard/client/convert-account", ROLE.CLIENT), true);
+    assert.equal(canRoleAccessPath("/dashboard/client/convert-account", ROLE.FREELANCER), false);
+    assert.equal(canRoleAccessPath("/dashboard/client/orders/create", ROLE.CLIENT), true);
+    assert.equal(canRoleAccessPath("/dashboard/client/orders/create", ROLE.FREELANCER), false);
     assert.equal(canRoleAccessPath("/dashboard/freelancer", ROLE.CLIENT), false);
+    assert.equal(canRoleAccessPath("/dashboard/freelancer/pantry", ROLE.FREELANCER), true);
+    assert.equal(canRoleAccessPath("/dashboard/freelancer/pantry", ROLE.CLIENT), false);
+    assert.equal(canRoleAccessPath("/dashboard/freelancer/getting-started", ROLE.FREELANCER), true);
+    assert.equal(canRoleAccessPath("/dashboard/freelancer/activate-account", ROLE.FREELANCER), true);
+    assert.equal(canRoleAccessPath("/dashboard/freelancer/activate-account", ROLE.CLIENT), false);
     assert.equal(canRoleAccessPath("/dashboard/super-admin/plans", ROLE.CLIENT), false);
   });
 });

@@ -55,6 +55,31 @@ async function readAllNotifications(req, res, next) {
   }
 }
 
+async function deleteNotification(req, res, next) {
+  try {
+    const deleted = await notificationService.deleteNotification(
+      req.params.id,
+      req.auth.userId,
+    );
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Notification not found." });
+    }
+    return res.status(200).json({ success: true, data: { deleted: true } });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function deleteNotificationsBulk(req, res, next) {
+  try {
+    const ids = req.body?.ids ?? req.body?.notificationIds ?? [];
+    const out = await notificationService.deleteNotifications(ids, req.auth.userId);
+    return res.status(200).json({ success: true, data: out });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function streamNotifications(req, res, next) {
   try {
     const userId = req.auth.userId;
@@ -82,5 +107,7 @@ module.exports = {
   getMyUnreadCount,
   readNotification,
   readAllNotifications,
+  deleteNotification,
+  deleteNotificationsBulk,
   streamNotifications,
 };

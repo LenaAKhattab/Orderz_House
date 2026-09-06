@@ -3,10 +3,13 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/constants/web_constants.dart';
 import '../../../core/errors/api_error_message.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
+import '../data/course_access.dart';
 import '../data/course_models.dart';
 import 'courses_controllers.dart';
 import 'youtube_lesson_player.dart';
@@ -51,10 +54,32 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(apiErrorMessage(e, fallback: 'تعذر إتمام العملية.'))),
+        SnackBar(
+          content: Text(
+            mapCourseAccessErrorMessage(e) ??
+                apiErrorMessage(e, fallback: 'تعذر إتمام العملية.'),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _openPlans() async {
+    final uri = Uri.tryParse(WebConstants.freelancerPlansUrl);
+    if (uri == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(courseLockOpenPlansFailedAr)),
+      );
+      return;
+    }
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(courseLockOpenPlansFailedAr)),
+      );
     }
   }
 
@@ -131,11 +156,34 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
       appBar: AppBar(title: const Text('تفاصيل الدورة')),
       body: async.when(
         loading: () => const OhLoadingBody(message: 'جاري التحميل...'),
-        error: (e, _) => OhErrorBody(
-          message: apiErrorMessage(e, fallback: 'تعذر تحميل الدورة.'),
-          onRetry: () => ref.read(freelancerCourseDetailsProvider(widget.courseId).notifier).reload(),
-        ),
-        data: (details) => Stack(
+        error: (e, _) {
+          if (isCoursePlanUpgradeError(e)) {
+            return CourseLockedAccessBody(
+              title: null,
+              message: mapCourseAccessErrorMessage(e) ?? coursePlanLockMessageAr,
+              ctaLabel: courseLockCtaForError(e),
+              onUpgrade: _openPlans,
+              onRetry: () =>
+                  ref.read(freelancerCourseDetailsProvider(widget.courseId).notifier).reload(),
+            );
+          }
+          return OhErrorBody(
+            message: apiErrorMessage(e, fallback: 'تعذر تحميل الدورة.'),
+            onRetry: () => ref.read(freelancerCourseDetailsProvider(widget.courseId).notifier).reload(),
+          );
+        },
+        data: (details) {
+          if (!details.course.isAccessible) {
+            return CourseLockedAccessBody(
+              title: details.course.title,
+              message: details.course.lockCopyAr.messageOrDefault,
+              ctaLabel: details.course.lockCopyAr.ctaOrDefault,
+              onUpgrade: _openPlans,
+              onRetry: () =>
+                  ref.read(freelancerCourseDetailsProvider(widget.courseId).notifier).reload(),
+            );
+          }
+          return Stack(
           children: [
             ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
@@ -238,6 +286,76 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                   child: Center(child: CircularProgressIndicator()),
                 ),
               ),
+          ],
+        );
+        },
+      ),
+    );
+  }
+}
+
+/// Locked course detail / 403 subscription gate — no player content.
+class CourseLockedAccessBody extends StatelessWidget {
+  const CourseLockedAccessBody({
+    super.key,
+    required this.message,
+    required this.ctaLabel,
+    required this.onUpgrade,
+    this.title,
+    this.onRetry,
+  });
+
+  final String? title;
+  final String message;
+  final String ctaLabel;
+  final VoidCallback onUpgrade;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.lock_rounded, color: AppColors.primaryMid, size: 36),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title?.trim().isNotEmpty == true ? title! : coursePlanLockBadgeAr,
+              key: const ValueKey('course-detail-lock-badge'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.primaryDeep,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              key: const ValueKey('course-detail-lock-message'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textMuted, height: 1.55),
+            ),
+            const SizedBox(height: 20),
+            OhButton(
+              key: const ValueKey('course-detail-lock-cta'),
+              label: ctaLabel,
+              onPressed: onUpgrade,
+            ),
+            if (onRetry != null) ...[
+              const SizedBox(height: 10),
+              TextButton(onPressed: onRetry, child: const Text('إعادة المحاولة')),
+            ],
           ],
         ),
       ),

@@ -1,0 +1,34 @@
+.oh-jod-money {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.12rem;
+  line-height: 1.25;
+}
+
+.oh-jod-money__primary {
+  font-weight: 800;
+  color: inherit;
+}
+
+.oh-jod-money__approx {
+  font-size: 0.78em;
+  font-weight: 600;
+  opacity: 0.72;
+}
+
+.oh-jod-money__note {
+  font-size: 0.68em;
+  font-weight: 500;
+  opacity: 0.62;
+  max-width: 18rem;
+}
+
+.oh-jod-money--compact .oh-jod-money__note {
+  display: none;
+}
+
+.oh-order-row__stat-value--price .oh-jod-money,
+.fmo-order-row__stat-value--price .oh-jod-money {
+  align-items: inherit;
+}

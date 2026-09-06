@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../super_admin/data/super_admin_models.dart';
 import '../data/notification_models.dart';
 import '../navigation/notification_action_resolver.dart';
 
@@ -18,4 +19,12 @@ void openNotificationActionTarget(BuildContext context, NotificationActionTarget
   if (route.isEmpty) return;
   Navigator.of(context).pop();
   context.push(route);
+  if (target.showComingSoonMessage) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(superAdminComingSoonMessageAr)),
+      );
+    });
+  }
 }

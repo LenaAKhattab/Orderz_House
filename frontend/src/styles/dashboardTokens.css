@@ -99,6 +99,22 @@
   --fdl-surface-3d-shadow: var(--dash-shadow-md);
   --fdl-surface-3d-highlight: transparent;
 
+  /*
+    Layer scale (dashboard shells; do not flatten toasts):
+    --oh-z-drawer   45     overlay sidebar / drawer
+    --oh-z-overlay  1100   dimmers / help sheets
+    --oh-z-modal    1200   DashboardModal
+    --oh-z-popup    1300   popup ads
+    --oh-z-wizard   1350   create-order (must sit above ads/dialogs)
+    --oh-z-toast    9999   toasts
+  */
+  --oh-z-drawer: 45;
+  --oh-z-overlay: 1100;
+  --oh-z-modal: 1200;
+  --oh-z-popup: 1300;
+  --oh-z-wizard: 1350;
+  --oh-z-toast: 9999;
+
   /* Hub / ACC / dash-ui aliases used inside shells */
   --page-bg: var(--dash-bg);
   --dash-shell-bg: var(--dash-bg);

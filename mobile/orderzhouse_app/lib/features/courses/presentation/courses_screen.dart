@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/constants/web_constants.dart';
 import '../../../core/errors/api_error_message.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../data/course_access.dart';
 import '../data/course_models.dart';
 import 'courses_controllers.dart';
 
@@ -85,7 +88,8 @@ class _FreelancerCoursesBody extends ConsumerWidget {
     return async.when(
       loading: () => const OhLoadingBody(message: 'جاري تحميل الدورات...'),
       error: (e, _) => OhErrorBody(
-        message: apiErrorMessage(e, fallback: 'تعذر تحميل الدورات.'),
+        message: mapCourseAccessErrorMessage(e) ??
+            apiErrorMessage(e, fallback: 'تعذر تحميل الدورات.'),
         onRetry: () => ref.read(freelancerCoursesListProvider.notifier).refresh(),
       ),
       data: (courses) {
@@ -95,17 +99,26 @@ class _FreelancerCoursesBody extends ConsumerWidget {
             icon: Icons.school_outlined,
           );
         }
+        final accessibleCount = countAccessibleFreelancerCourses(courses);
         return RefreshIndicator(
           onRefresh: () => ref.read(freelancerCoursesListProvider.notifier).refresh(),
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-            itemCount: courses.length,
+            itemCount: courses.length + 1,
             separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
-              final course = courses[index];
-              return _CourseCard(
+              if (index == 0) {
+                return _CoursesSummaryHeader(
+                  total: courses.length,
+                  accessible: accessibleCount,
+                );
+              }
+              final course = courses[index - 1];
+              return FreelancerCourseCard(
                 course: course,
-                onTap: () => context.push(AppRoutes.courseDetailsPath(course.id)),
+                onOpen: course.isAccessible
+                    ? () => context.push(AppRoutes.courseDetailsPath(course.id))
+                    : null,
               );
             },
           ),
@@ -115,32 +128,81 @@ class _FreelancerCoursesBody extends ConsumerWidget {
   }
 }
 
-class _CourseCard extends StatelessWidget {
-  const _CourseCard({required this.course, required this.onTap});
+class _CoursesSummaryHeader extends StatelessWidget {
+  const _CoursesSummaryHeader({required this.total, required this.accessible});
 
-  final FreelancerCourseSummary course;
-  final VoidCallback onTap;
+  final int total;
+  final int accessible;
 
   @override
   Widget build(BuildContext context) {
+    return Text(
+      'المتاح لك: $accessible من $total',
+      key: const ValueKey('courses-accessible-summary'),
+      textAlign: TextAlign.right,
+      style: const TextStyle(
+        color: AppColors.textMuted,
+        fontWeight: FontWeight.w700,
+        fontSize: 13,
+      ),
+    );
+  }
+}
+
+/// Public for widget tests — list card with locked / unlocked states.
+class FreelancerCourseCard extends StatelessWidget {
+  const FreelancerCourseCard({
+    super.key,
+    required this.course,
+    this.onOpen,
+  });
+
+  final FreelancerCourseSummary course;
+  final VoidCallback? onOpen;
+
+  Future<void> _openPlans(BuildContext context) async {
+    final url = WebConstants.freelancerPlansUrl;
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(courseLockOpenPlansFailedAr)),
+      );
+      return;
+    }
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(courseLockOpenPlansFailedAr)),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final locked = !course.isAccessible;
     final progress = course.progress.percentage.clamp(0, 100) / 100.0;
-    final statusColor = course.isCompleted
-        ? AppColors.success
-        : course.progress.completedLessons > 0
-            ? AppColors.primary
-            : AppColors.textMuted;
+    final statusColor = locked
+        ? AppColors.primaryMid
+        : course.isCompleted
+            ? AppColors.success
+            : course.progress.completedLessons > 0
+                ? AppColors.primary
+                : AppColors.textMuted;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: locked ? null : onOpen,
         borderRadius: BorderRadius.circular(18),
         child: Ink(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: locked ? AppColors.primary.withValues(alpha: 0.03) : Colors.white,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.cardBorder),
+            border: Border.all(
+              color: locked ? AppColors.primary.withValues(alpha: 0.35) : AppColors.cardBorder,
+            ),
             boxShadow: [
               BoxShadow(
                 color: AppColors.primary.withValues(alpha: 0.06),
@@ -162,17 +224,19 @@ class _CourseCard extends StatelessWidget {
                       color: AppColors.secondary.withValues(alpha: 0.28),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: course.coverImage != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: Image.network(
-                              course.coverImage!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (c, e, s) =>
-                                  const Icon(Icons.school_rounded, color: AppColors.primary),
-                            ),
-                          )
-                        : const Icon(Icons.school_rounded, color: AppColors.primary),
+                    child: locked
+                        ? const Icon(Icons.lock_rounded, color: AppColors.primaryMid)
+                        : course.coverImage != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: Image.network(
+                                  course.coverImage!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (c, e, s) =>
+                                      const Icon(Icons.school_rounded, color: AppColors.primary),
+                                ),
+                              )
+                            : const Icon(Icons.school_rounded, color: AppColors.primary),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -204,13 +268,15 @@ class _CourseCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Icon(Icons.chevron_left_rounded, color: AppColors.textMuted.withValues(alpha: 0.7)),
+                  if (!locked)
+                    Icon(Icons.chevron_left_rounded, color: AppColors.textMuted.withValues(alpha: 0.7)),
                 ],
               ),
               const SizedBox(height: 14),
               Row(
                 children: [
                   Container(
+                    key: locked ? const ValueKey('course-lock-badge') : null,
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.12),
@@ -225,7 +291,7 @@ class _CourseCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (course.isTestingEnabled) ...[
+                  if (!locked && course.isTestingEnabled) ...[
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -243,33 +309,56 @@ class _CourseCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                  const Spacer(),
-                  Text(
-                    '${course.progress.percentage}%',
-                    style: const TextStyle(
-                      color: AppColors.primaryDeep,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
+                  if (!locked) ...[
+                    const Spacer(),
+                    Text(
+                      '${course.progress.percentage}%',
+                      style: const TextStyle(
+                        color: AppColors.primaryDeep,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
-              const SizedBox(height: 10),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 8,
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.08),
-                  color: AppColors.primary,
+              if (locked) ...[
+                const SizedBox(height: 12),
+                Text(
+                  course.lockCopyAr.messageOrDefault,
+                  key: const ValueKey('course-lock-message'),
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    height: 1.45,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '${course.progress.completedLessons} من ${course.progress.totalLessons} دروس',
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
-                textAlign: TextAlign.left,
-              ),
+                const SizedBox(height: 12),
+                OhButton(
+                  key: const ValueKey('course-lock-cta'),
+                  label: course.lockCopyAr.ctaOrDefault,
+                  onPressed: () => _openPlans(context),
+                ),
+              ] else ...[
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 8,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${course.progress.completedLessons} من ${course.progress.totalLessons} دروس',
+                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  textAlign: TextAlign.left,
+                ),
+              ],
             ],
           ),
         ),

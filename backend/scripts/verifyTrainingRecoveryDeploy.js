@@ -58,7 +58,10 @@ async function main() {
     const fs = require("fs");
     const path = require("path");
     const dbSrc = fs.readFileSync(path.join(__dirname, "..", "src", "config", "db.js"), "utf8");
-    check("db.js pool release hook present", /pool\.on\("release"/.test(dbSrc) && /GENERATION_ADVISORY_LOCK_KEY/.test(dbSrc));
+    check(
+      "db.js has no async unlock-on-release (pool-safe)",
+      !/pool\.on\(\s*["']release["']/.test(dbSrc) && /GENERATION_ADVISORY_LOCK_KEY/.test(dbSrc),
+    );
   } catch (e) {
     check("db.js pool release hook", false, e.message);
   }

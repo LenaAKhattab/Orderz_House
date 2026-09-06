@@ -5,12 +5,34 @@
 process.env.DATABASE_URL =
   process.env.DATABASE_URL || "postgresql://127.0.0.1:5432/subscription_activation_fee_hardening_test";
 
-const { describe, it } = require("node:test");
+const { describe, it, before } = require("node:test");
 const assert = require("node:assert");
 const fs = require("node:fs");
 const path = require("node:path");
+
+const SETTINGS = new Map();
+
+before(() => {
+  const systemSettingsPath = require.resolve("../src/services/systemSettingsService");
+  require.cache[systemSettingsPath] = {
+    id: systemSettingsPath,
+    filename: systemSettingsPath,
+    loaded: true,
+    exports: {
+      getSetting: async (key) => (SETTINGS.has(key) ? SETTINGS.get(key) : null),
+      setSetting: async (key, value) => {
+        const normalized = value == null || String(value).trim() === "" ? null : String(value).trim();
+        if (normalized == null) SETTINGS.delete(key);
+        else SETTINGS.set(key, normalized);
+        return normalized;
+      },
+    },
+  };
+  delete require.cache[require.resolve("../src/services/subscriptionActivationFeeService")];
+});
+
 const {
-  SUBSCRIPTION_ACTIVATION_FEE_JOD,
+  DEFAULT_ACTIVATION_FEE_AMOUNT_MINOR,
   ACTIVATION_FEE_VALIDITY_DAYS,
   ACTIVATION_FEE_SOURCES,
   CHECKOUT_KIND,
@@ -43,15 +65,15 @@ function createMockClient(handlers) {
 }
 
 describe("rolling 365-day activation fee rule", () => {
-  it("requires fee again after 365 days", () => {
+  it("requires fee again after 365 days", async () => {
     const paidAt = new Date("2026-01-01T12:00:00Z");
     const within = new Date("2026-06-22T12:00:00Z");
     const after = new Date("2027-01-02T12:00:00Z");
     assert.strictEqual(isActivationFeeCurrent(paidAt, within), true);
     assert.strictEqual(isActivationFeeCurrent(paidAt, after), false);
     assert.strictEqual(ACTIVATION_FEE_VALIDITY_DAYS, 365);
-    assert.strictEqual(SUBSCRIPTION_ACTIVATION_FEE_JOD, 25);
-    assert.strictEqual(activationFeeMinorUnits(), 25000);
+    assert.strictEqual(DEFAULT_ACTIVATION_FEE_AMOUNT_MINOR, 25000);
+    assert.strictEqual(await activationFeeMinorUnits(), 25000);
   });
 });
 
@@ -316,7 +338,7 @@ describe("checkout and webhook wiring", () => {
     const src = fs.readFileSync(checkoutPath, "utf8");
     assert.ok(src.includes("needsActivationFee ? activationMinor : 0"));
     assert.ok(src.includes("if (needsActivationFee)"));
-    assert.ok(src.includes("lineItems.push(buildActivationFeeStripeLineItem"));
+    assert.ok(src.includes("await buildActivationFeeStripeLineItem"));
   });
 
   it("tracks checkout sessions and supersedes on confirm", () => {
@@ -350,12 +372,11 @@ describe("checkout and webhook wiring", () => {
     assert.ok(src.includes("displayPlanId: String(pid)"));
   });
 
-  it("admin assignment exposes activation fee status without auto-marking paid", () => {
+  it("admin assignment marks activation fee offline when fee enabled and returns status", () => {
     const subs = fs.readFileSync(subsPath, "utf8");
     assert.ok(subs.includes("getActivationFeeStatus"));
     assert.ok(subs.includes("activationFeeStatus"));
-    assert.ok(!subs.includes("markActivationFeePaidOffline"));
-    assert.ok(!subs.includes("recordActivationFeePayment"));
+    assert.ok(subs.includes("markActivationFeePaidOffline"));
   });
 
   it("admin offline mark-paid endpoint exists", () => {

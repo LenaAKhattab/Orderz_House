@@ -1,15 +1,18 @@
-/**
+﻿/**
  * Create an admin user (legacy users.role + user_roles for RBAC).
  *
  * Usage (from backend/):
  *   node scripts/createAdminUser.js
  *   node scripts/createAdminUser.js you@mail.com "YourPassword123"
  *
- * Default (no args): ahmed2001@gmail.com — password must be passed as second arg in production.
+ * Default (no args): ahmed2001@gmail.com â€” password must be passed as second arg in production.
  */
 const path = require("node:path");
 const crypto = require("node:crypto");
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+
+const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
+guardQaOrSeed(require("path").basename(__filename));
 
 const bcrypt = require("bcrypt");
 const { pool } = require("../src/config/db");
@@ -65,16 +68,16 @@ async function main() {
     RETURNING id, account_id, email, role`,
     [
       accountId,
-      "أحمد",
+      "Ø£Ø­Ù…Ø¯",
       "-",
-      "مدير",
+      "Ù…Ø¯ÙŠØ±",
       email,
       passwordHash,
       "admin",
       "JO",
       "+962791111111",
       "+962791111111",
-      "ذكر",
+      "Ø°ÙƒØ±",
       true,
       null,
     ],

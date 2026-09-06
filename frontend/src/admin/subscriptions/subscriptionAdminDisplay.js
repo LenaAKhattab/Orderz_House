@@ -75,14 +75,19 @@ export function describeFreelancerAdminEligibilityState({
   const status = String(subscription?.status || subscription?.subscriptionStatus || "")
     .trim()
     .toLowerCase();
+  const feeDisabled =
+    activationFeeStatus?.enabled === false ||
+    eligibility?.activationFeeStatus?.enabled === false;
   const feeNeedsPayment =
-    activationFeeStatus?.needsPayment === true ||
-    eligibility?.activationFeeStatus?.needsPayment === true ||
-    reason === "activation_fee_unpaid";
+    !feeDisabled &&
+    (activationFeeStatus?.needsPayment === true ||
+      eligibility?.activationFeeStatus?.needsPayment === true ||
+      reason === "activation_fee_unpaid");
   const feePaid =
-    activationFeeStatus?.isCurrent === true ||
-    eligibility?.activationFeeStatus?.isCurrent === true ||
-    (activationFeeStatus?.needsPayment === false && activationFeeStatus != null);
+    !feeDisabled &&
+    (activationFeeStatus?.isCurrent === true ||
+      eligibility?.activationFeeStatus?.isCurrent === true ||
+      (activationFeeStatus?.needsPayment === false && activationFeeStatus != null));
 
   if (eligibility?.eligible === true) {
     return {
@@ -93,10 +98,19 @@ export function describeFreelancerAdminEligibilityState({
     };
   }
 
-  if (reason === "plan_configuration_error" || reason === "order_value_outside_plan_range") {
+  if (reason === "plan_configuration_error") {
     return {
       code: "plan_configuration_error",
-      label: "الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات",
+      label: "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.",
+      tone: "warning",
+      canTakeOrders: false,
+    };
+  }
+
+  if (reason === "order_value_outside_plan_range") {
+    return {
+      code: "order_value_outside_plan_range",
+      label: "هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.",
       tone: "warning",
       canTakeOrders: false,
     };
@@ -197,7 +211,7 @@ export function adminSubscriptionActivationMenuLabel({
     return "موافقة الشركة مكتملة، لكن رسوم التفعيل غير مدفوعة";
   }
   if (state.code === "plan_configuration_error") {
-    return "الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات";
+    return "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.";
   }
   if (state.code === "awaiting_first_order" && state.canTakeOrders) {
     return "موافقة الشركة مكتملة — بانتظار أول طلب";
@@ -247,6 +261,36 @@ export function needsCompanyActivationAction(sub) {
   const activation = String(sub?.activationStatus || sub?.activation_status || "").trim().toLowerCase();
   if (activation !== "company_pending") return false;
   return payment === "paid" || payment === "pending" || payment === "not_required" || payment === "";
+}
+
+/** Flutter Super Admin parity — exclude free/STARTER from paid activation counts. */
+export function isFreeOrStarterSubscriptionPlan(sub) {
+  const planId = String(sub?.planId ?? sub?.plan_id ?? "").trim();
+  if (planId === "1") return true;
+  const planName = String(sub?.planName ?? sub?.plan_name ?? sub?.planTitle ?? sub?.plan_title ?? "")
+    .trim()
+    .toLowerCase();
+  if (planName === "orderzhouse_free") return true;
+  if (planName.includes("starter") || planName.includes("start")) return true;
+  if (planName.includes("مجاني") || planName.includes("free")) return true;
+  if (String(sub?.notes || "").trim() === "auto_default_free_plan") return true;
+  const price = Number(sub?.priceJod ?? sub?.price_jod);
+  if (Number.isFinite(price) && price <= 0) {
+    const payment = String(sub?.paymentStatus || sub?.payment_status || "").trim().toLowerCase();
+    if (payment === "not_required" || payment === "") return true;
+  }
+  return false;
+}
+
+/** Paid membership activation needing company action (not free/legacy/admin-assigned). */
+export function isPaidSubscriptionActivationActionable(sub) {
+  if (isDashboardAdminAssignedSubscription(sub)) return false;
+  if (isFreeOrStarterSubscriptionPlan(sub)) return false;
+  return needsCompanyActivationAction(sub);
+}
+
+export function countPaidSubscriptionActivations(subs) {
+  return (Array.isArray(subs) ? subs : []).filter(isPaidSubscriptionActivationActionable).length;
 }
 
 /** Admin who assigned the subscription (activation queue). */

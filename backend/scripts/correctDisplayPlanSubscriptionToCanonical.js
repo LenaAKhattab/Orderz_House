@@ -6,6 +6,15 @@
  *   node scripts/correctDisplayPlanSubscriptionToCanonical.js --email=ahmed2002@gmail.com --apply
  */
 require("dotenv").config();
+
+const { assertOperationalScriptAllowed } = require("../src/utils/databaseEnvironmentSafety");
+try {
+  assertOperationalScriptAllowed("correctDisplayPlanSubscriptionToCanonical.js");
+} catch (err) {
+  console.error(err.message || err);
+  process.exit(1);
+}
+
 const { pool } = require("../src/config/db");
 const plansService = require("../src/services/plansService");
 const subscriptionsService = require("../src/services/subscriptionsService");

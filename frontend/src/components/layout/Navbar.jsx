@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense, lazy } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
@@ -9,7 +9,6 @@ import {
   getNotificationsPath,
   getProfilePagePath,
 } from "../../constants/authRoutes";
-import NotificationsBell from "../notifications/NotificationsBell";
 import { useHomePageBlocking } from "../../hooks/useHomePageBlocking";
 import useHowItWorksNav from "../../hooks/useHowItWorksNav";
 import { usePublicSitePages } from "../../hooks/usePublicSitePages";
@@ -18,9 +17,9 @@ import NavbarSkeleton from "../skeletons/NavbarSkeleton";
 import BrandLogo from "../brand/BrandLogo";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getFooterImportantLinkLabel } from "../../lib/i18n/footerImportantLinkLabel";
-import "../skeletons/home-skeleton.css";
-import "../../styles/servicesPage.css";
-import "../../styles/howItWorksPage.css";
+import "../../styles/publicChrome.css";
+
+const NotificationsBell = lazy(() => import("../notifications/NotificationsBell"));
 
 /** Language switcher remains in codebase; hidden from public nav for now. */
 const SHOW_NAV_LANGUAGE_SWITCHER = false;
@@ -160,7 +159,10 @@ const Navbar = () => {
     setUserMenuOpen(false);
   }, []);
 
-  const { items: howItWorksItems, showNav: showHowItWorksNav } = useHowItWorksNav();
+  const howItWorksNavActive = openDesktopDropdownId === "how-it-works" || mobileDrawerOpen;
+  const { items: howItWorksItems, showNav: showHowItWorksNav } = useHowItWorksNav({
+    active: howItWorksNavActive,
+  });
   const { mobileMenuPages, error: sitePagesError } = usePublicSitePages();
 
   /** Shared CMS important links for mobile drawer + desktop More dropdown. */
@@ -501,7 +503,9 @@ const Navbar = () => {
                   <span className="text-[1rem] tracking-wide sm:text-[1.05rem]">{t("nav.createOrder")}</span>
                 </button>
               ) : null}
-              <NotificationsBell notificationsPagePath={notificationsPath} variant="navbar" />
+              <Suspense fallback={null}>
+                <NotificationsBell notificationsPagePath={notificationsPath} variant="navbar" />
+              </Suspense>
               <div className="relative" ref={userMenuRef}>
                 <button
                   type="button"

@@ -9,11 +9,15 @@ enum ProfileActionId {
   notifications,
   legalHelp,
   financialClaims,
+  accountActivation,
+  miniArticles,
+  myArticles,
   marketplace,
   services,
   courses,
   login,
   register,
+  superAdminHome,
 }
 
 class ProfileActionItem {
@@ -72,6 +76,11 @@ String profileRoleLabelAr(AuthUser user) {
   }
 }
 
+/// Shown when staff `admin` lands on the generic client-like home (no SA tools).
+const regularAdminMobileDisabledMessageAr =
+    'تجربة الأدمن على التطبيق غير مفعلة لهذا الدور حالياً. استخدم لوحة الويب.';
+
+
 String? profileStatusLabelAr(AuthUser user) {
   if (!user.isActive) return 'الحساب غير نشط';
   return 'الحساب نشط';
@@ -85,6 +94,23 @@ String profileInitials(AuthUser user) {
 
 /// Quick actions for authenticated users (role-specific).
 List<ProfileActionItem> profileQuickActionsForUser(AuthUser user) {
+  if (user.usesSuperAdminExperience) {
+    return const [
+      ProfileActionItem(
+        id: ProfileActionId.superAdminHome,
+        label: 'مركز المهام',
+        icon: Icons.dashboard_outlined,
+        route: AppRoutes.home,
+      ),
+      ProfileActionItem(
+        id: ProfileActionId.notifications,
+        label: 'الإشعارات',
+        icon: Icons.notifications_outlined,
+        route: AppRoutes.notifications,
+      ),
+    ];
+  }
+
   if (user.usesFreelancerExperience) {
     return const [
       ProfileActionItem(
@@ -92,6 +118,24 @@ List<ProfileActionItem> profileQuickActionsForUser(AuthUser user) {
         label: 'طلباتي كمستقل',
         icon: Icons.receipt_long_outlined,
         route: AppRoutes.myOrders,
+      ),
+      ProfileActionItem(
+        id: ProfileActionId.accountActivation,
+        label: 'تفعيل الحساب',
+        icon: Icons.verified_user_outlined,
+        route: AppRoutes.freelancerAccountActivation,
+      ),
+      ProfileActionItem(
+        id: ProfileActionId.miniArticles,
+        label: 'المقالات المصغّرة',
+        icon: Icons.article_outlined,
+        route: AppRoutes.freelancerMiniArticles,
+      ),
+      ProfileActionItem(
+        id: ProfileActionId.myArticles,
+        label: 'مقالاتي',
+        icon: Icons.library_books_outlined,
+        route: AppRoutes.freelancerMyArticles,
       ),
       ProfileActionItem(
         id: ProfileActionId.courses,
@@ -233,13 +277,19 @@ bool profileActionAllowedForUser(ProfileActionId id, AuthUser user) {
     case ProfileActionId.createOrder:
       return user.usesClientExperience;
     case ProfileActionId.financialClaims:
+    case ProfileActionId.accountActivation:
+    case ProfileActionId.miniArticles:
+    case ProfileActionId.myArticles:
     case ProfileActionId.courses:
       return user.usesFreelancerExperience;
+    case ProfileActionId.superAdminHome:
+      return user.usesSuperAdminExperience;
     case ProfileActionId.myOrders:
-    case ProfileActionId.notifications:
-    case ProfileActionId.legalHelp:
     case ProfileActionId.marketplace:
     case ProfileActionId.services:
+      return !user.usesSuperAdminExperience;
+    case ProfileActionId.notifications:
+    case ProfileActionId.legalHelp:
     case ProfileActionId.login:
     case ProfileActionId.register:
       return true;

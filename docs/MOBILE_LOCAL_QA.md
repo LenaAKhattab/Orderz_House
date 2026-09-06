@@ -17,14 +17,21 @@ netstat -ano | findstr ":5000"
 taskkill /PID <PID> /F
 ```
 
-### تشغيل Orderz backend
+### تشغيل Orderz backend (Staging QA فقط)
+
+> **مهم:** لا تستخدم `npm start` لـ QA على المحاكي.  
+> `npm start` يحمّل `backend/.env` وقد يشير إلى **Production**.  
+> استخدم Staging فقط:
 
 ```bash
 cd backend
-npm start
+npm run qa:staging:preflight
+npm run start:staging
 ```
 
-### التحقق — يجب أن يكون Orderz API الحقيقي
+يتطلب وجود `backend/.env.staging` مع `APP_ENV=staging` وقاعدة Staging (ليس `ep-wandering-cherry…`).
+
+### التحقق — يجب أن يكون Orderz API الحقيقي على Staging
 
 ```bash
 curl http://localhost:5000/api/health
@@ -115,7 +122,14 @@ WEB_BASE_URL=http://10.0.2.2:5173
 
 ---
 
-## 5. حسابات QA المحلية
+## 5.1 QA يدوي بعد A2.4 (APK مثبّت)
+
+- استخدم APK المُثبَّت (`app-debug.apk`) وليس `flutter run`.
+- لتبديل الأدوار: **الحساب → تسجيل الخروج** ثم سجّل الدخول يدوياً بلوحة مفاتيح المحاكي.
+- حسابات Staging: `qa.freelancer@orderzhouse.test` / `qa.client@orderzhouse.test` — كلمة المرور `Test123456!`
+- بعد تسجيل الخروج من Super Admin، تحقق من: الدورات، مقالاتي، المقالات (Mini)، الطلبات (عميل) — بدون إتمام دفع.
+
+---
 
 ### إنشاء / تحديث الحسابات (idempotent)
 

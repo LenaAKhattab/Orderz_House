@@ -8,16 +8,13 @@ import StatusBadge from "../../components/dashboard/StatusBadge";
 import { useToast } from "../../components/ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getFinancialUserMyBonusesRequest, getFinancialUserSummaryRequest } from "../../services/api";
-import { currentMonthKey, monthOptions } from "./financialCenter/financialCenterCalculations";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { monthOptions } from "./financialCenter/financialCenterCalculations";
 import FinancialCenterScrollSelect from "./financialCenter/FinancialCenterScrollSelect";
 import FinancialCenterTableWrap from "./financialCenter/FinancialCenterTableWrap";
 import { allocationPaidBadge } from "./financialCenter/financialCenterAuditLabels";
+import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import "./financialCenter/superAdminFinancialCenter.css";
-
-function formatMoney(value, currency = "JOD") {
-  if (value == null || Number.isNaN(Number(value))) return "—";
-  return `${new Intl.NumberFormat("ar-JO-u-nu-latn", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(value))} ${currency}`;
-}
 
 function formatDate(value) {
   if (!value) return "—";
@@ -40,7 +37,6 @@ export default function FinancialUserMyBonusesPage() {
   const [busy, setBusy] = useState(true);
   const [summary, setSummary] = useState(null);
   const [items, setItems] = useState([]);
-  const currency = t("dashboard.financialCenter.currency");
 
   const months = useMemo(
     () => [
@@ -58,9 +54,10 @@ export default function FinancialUserMyBonusesPage() {
         getFinancialUserMyBonusesRequest({ month: monthFilter || undefined }),
       ]);
       setSummary(summaryRes?.data?.summary || null);
-      setItems(bonusesRes?.data?.items || []);
+      const list = bonusesRes?.data?.items;
+      setItems(Array.isArray(list) ? list : []);
     } catch (e) {
-      push(e?.response?.data?.message || t("dashboard.financialUser.loadError"), "error");
+      push(getSafeApiErrorMessage(e, t("dashboard.financialUser.loadError")), "error");
     } finally {
       setBusy(false);
     }
@@ -101,19 +98,19 @@ export default function FinancialUserMyBonusesPage() {
           <div className="fc-summary-grid">
             <div className="fc-summary-card">
               <span className="fc-summary-card__label">{t("dashboard.financialUser.totalBonus")}</span>
-              <strong className="fc-summary-card__value">{formatMoney(summary?.totalBonus, currency)}</strong>
+              <strong className="fc-summary-card__value"><JodMoneyDisplay amount={summary?.totalBonus} compact /></strong>
             </div>
             <div className="fc-summary-card">
               <span className="fc-summary-card__label">{t("dashboard.financialUser.totalPaid")}</span>
-              <strong className="fc-summary-card__value">{formatMoney(summary?.totalPaid, currency)}</strong>
+              <strong className="fc-summary-card__value"><JodMoneyDisplay amount={summary?.totalPaid} compact /></strong>
             </div>
             <div className="fc-summary-card">
               <span className="fc-summary-card__label">{t("dashboard.financialUser.totalUnpaid")}</span>
-              <strong className="fc-summary-card__value">{formatMoney(summary?.totalUnpaid, currency)}</strong>
+              <strong className="fc-summary-card__value"><JodMoneyDisplay amount={summary?.totalUnpaid} compact /></strong>
             </div>
             <div className="fc-summary-card">
               <span className="fc-summary-card__label">{t("dashboard.financialUser.monthBonus")}</span>
-              <strong className="fc-summary-card__value">{formatMoney(summary?.monthBonus, currency)}</strong>
+              <strong className="fc-summary-card__value"><JodMoneyDisplay amount={summary?.monthBonus} compact /></strong>
             </div>
             <div className="fc-summary-card">
               <span className="fc-summary-card__label">{t("dashboard.financialUser.lastPayment")}</span>
@@ -149,9 +146,9 @@ export default function FinancialUserMyBonusesPage() {
                         <td>{item.monthKey}</td>
                         <td>{item.title}</td>
                         <td>{sourceLabel(item.sourceType, t)}</td>
-                        <td>{formatMoney(item.bonusPoolAmount, currency)}</td>
+                        <td><JodMoneyDisplay amount={item.bonusPoolAmount} compact /></td>
                         <td>{item.percentageShare}%</td>
-                        <td>{formatMoney(item.myAmount, currency)}</td>
+                        <td><JodMoneyDisplay amount={item.myAmount} compact /></td>
                         <td>
                           <StatusBadge tone={paid.tone}>{paid.label}</StatusBadge>
                         </td>

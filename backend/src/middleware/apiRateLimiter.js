@@ -21,6 +21,8 @@ function shouldSkipGeneralApiRateLimit(req) {
   if (p.startsWith("/api/")) p = p.slice(4);
   if (p === "/health" || p.startsWith("/health/")) return true;
   if (p.startsWith("/webhooks/stripe")) return true;
+  // Partner integration has its own auth + should not share browser IP buckets.
+  if (p.startsWith("/integrations/fazat")) return true;
   if (p === "/auth" || p.startsWith("/auth/")) return true;
 
   if (method === "POST") {

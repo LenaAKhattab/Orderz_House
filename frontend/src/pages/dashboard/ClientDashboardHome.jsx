@@ -12,17 +12,12 @@ import {
   IconWallet,
 } from "../../components/dashboard/hub/icons/DashboardIcons";
 import { listClientMyOrdersRequest, listMyNotificationsRequest } from "../../services/api";
+import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import "../../styles/dashboardHub.css";
 
 function fullNameAr(user) {
   const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
   return parts.join(" ").trim();
-}
-
-function formatMoney(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "0";
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
 }
 
 function normalizeClientOrders(res) {
@@ -72,7 +67,7 @@ function buildClientMetrics({ orders, financial, attentionCount, unreadNotificat
     {
       id: "paid",
       label: "إجمالي المدفوع",
-      value: `${formatMoney(financial.totalPaid)} د.أ`,
+      value: <JodMoneyDisplay amount={financial.totalPaid} compact />,
       sublabel: "من طلباتك المدفوعة",
       icon: IconWallet,
       tone: "green",
@@ -134,7 +129,7 @@ function buildClientInsights({ attentionOrders, financial, orders, unreadNotific
       descriptionAr: "انشر طلبك في المعرض واستقبل عروض المستقلين.",
       helperText: "إنشاء طلب جديد",
       actionLabel: "إنشاء طلب",
-      actionUrl: "/dashboard/client/my-orders",
+      actionUrl: "/dashboard/client/orders/create",
     });
   }
   if (unreadNotifications > 0) {
@@ -281,7 +276,7 @@ export default function ClientDashboardHome({ user }) {
             ? {
                 headline: "ابدأ بنشر طلبك الأول",
                 description: "أنشئ طلباً جديداً ليظهر في المعرض ويصلك عروض المستقلين.",
-                actionUrl: "/dashboard/client/my-orders",
+                actionUrl: "/dashboard/client/orders/create",
                 actionLabel: "إنشاء طلب",
               }
             : pendingActions[0]

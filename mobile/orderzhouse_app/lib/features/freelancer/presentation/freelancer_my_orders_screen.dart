@@ -7,9 +7,13 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../orders/data/order_display_helpers.dart';
-import '../data/freelancer_my_order_models.dart';
+import '../../pantry/data/pantry_models.dart';
+import '../../pantry/data/pantry_status.dart';
+import '../../pantry/presentation/pantry_controllers.dart';
+import '../../pantry/presentation/pantry_display.dart';
 import 'freelancer_eligibility_banner.dart';
 import 'freelancer_my_orders_controller.dart';
+import '../../currency/presentation/jod_money_display.dart';
 
 class FreelancerMyOrdersScreen extends ConsumerStatefulWidget {
   const FreelancerMyOrdersScreen({super.key});
@@ -72,6 +76,13 @@ class _FreelancerMyOrdersScreenState extends ConsumerState<FreelancerMyOrdersScr
     }
 
     final state = ref.watch(freelancerMyOrdersControllerProvider);
+    final pantryWork = ref.watch(pantryMyWorkProvider).maybeWhen(
+          data: (items) => items
+              .where((r) => (r.assignedFreelancerId ?? '').trim().isNotEmpty)
+              .toList(),
+          orElse: () => const <PantryRequest>[],
+        );
+    final hasAny = state.orders.isNotEmpty || pantryWork.isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
@@ -82,13 +93,20 @@ class _FreelancerMyOrdersScreenState extends ConsumerState<FreelancerMyOrdersScr
             tooltip: 'تحديث',
             onPressed: state.isLoading
                 ? null
-                : () => ref.read(freelancerMyOrdersControllerProvider.notifier).load(refresh: true),
+                : () {
+                    ref.invalidate(pantryMyWorkProvider);
+                    ref.read(freelancerMyOrdersControllerProvider.notifier).load(refresh: true);
+                  },
             icon: const Icon(Icons.refresh),
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref.read(freelancerMyOrdersControllerProvider.notifier).load(refresh: true),
+        onRefresh: () async {
+          ref.invalidate(pantryMyWorkProvider);
+          await ref.read(freelancerMyOrdersControllerProvider.notifier).load(refresh: true);
+          await ref.read(pantryMyWorkProvider.future);
+        },
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           physics: const AlwaysScrollableScrollPhysics(),
@@ -100,18 +118,54 @@ class _FreelancerMyOrdersScreenState extends ConsumerState<FreelancerMyOrdersScr
                 padding: EdgeInsets.symmetric(vertical: 48),
                 child: Center(child: CircularProgressIndicator()),
               )
-            else if (state.error != null && state.orders.isEmpty)
+            else if (state.error != null && state.orders.isEmpty && pantryWork.isEmpty)
               OhErrorBanner(message: state.error!)
-            else if (state.orders.isEmpty)
+            else if (!hasAny)
               const OhEmptyBody(
                 message: 'لا توجد طلبات مسندة إليك حالياً.\nتصفح السوق لاستكشاف الطلبات المتاحة.',
                 icon: Icons.inbox_outlined,
               )
-            else
-              ...state.orders.map((order) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _FreelancerOrderCard(order: order),
-                  )),
+            else ...[
+              ...pantryWork.map(
+                (request) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _ListedWorkCard(
+                    title: request.title.trim().isEmpty ? 'طلب' : request.title,
+                    statusLabel: pantryStatusLabelAr(request.status),
+                    typeLabel: pantryPricingLabel(request),
+                    budgetWidget: JodOrderBudgetDisplay(
+                      projectType: (request.pricingType ?? '').toLowerCase() == 'bidding' ? 'bidding' : 'fixed',
+                      amount: request.acceptedBid?.amount ?? request.myBid?.amount ?? request.fixedBudget,
+                      bidMin: request.budgetMin,
+                      bidMax: request.budgetMax,
+                    ),
+                    durationLabel: pantryDurationLabel(request),
+                    dateLabel: formatOrderDate(request.updatedAt ?? request.createdAt),
+                    onDetails: () => context.push(AppRoutes.freelancerPantryDetail(request.id)),
+                  ),
+                ),
+              ),
+              ...state.orders.map(
+                (order) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _ListedWorkCard(
+                    title: order.title,
+                    statusLabel: order.statusLabel,
+                    typeLabel: order.projectTypeLabel,
+                    budgetWidget: JodOrderBudgetDisplay(
+                      projectType: order.projectType,
+                      amount: order.budget ?? order.paymentAmount,
+                      bidMin: order.bidBudgetMin,
+                      bidMax: order.bidBudgetMax,
+                    ),
+                    durationLabel: order.durationText,
+                    dateLabel: order.createdAt != null ? formatOrderDate(order.createdAt) : null,
+                    dueLabel: order.dueAt != null ? formatOrderDate(order.dueAt) : null,
+                    onDetails: () => context.push(AppRoutes.freelancerOrderPath(order.id)),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -119,10 +173,26 @@ class _FreelancerMyOrdersScreenState extends ConsumerState<FreelancerMyOrdersScr
   }
 }
 
-class _FreelancerOrderCard extends StatelessWidget {
-  const _FreelancerOrderCard({required this.order});
+class _ListedWorkCard extends StatelessWidget {
+  const _ListedWorkCard({
+    required this.title,
+    required this.statusLabel,
+    required this.typeLabel,
+    required this.onDetails,
+    this.budgetWidget,
+    this.durationLabel,
+    this.dateLabel,
+    this.dueLabel,
+  });
 
-  final FreelancerMyOrder order;
+  final String title;
+  final String statusLabel;
+  final String typeLabel;
+  final Widget? budgetWidget;
+  final String? durationLabel;
+  final String? dateLabel;
+  final String? dueLabel;
+  final VoidCallback onDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -131,21 +201,31 @@ class _FreelancerOrderCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            order.title,
+            title,
             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textInk),
           ),
           const SizedBox(height: 8),
-          _MetaRow('الحالة', order.statusLabel),
-          _MetaRow('النوع', order.projectTypeLabel),
-          if (order.budgetLabel != null) _MetaRow('الميزانية', order.budgetLabel!),
-          if (order.durationText != null) _MetaRow('المدة', order.durationText!),
-          if (order.dueAt != null) _MetaRow('موعد التسليم', formatOrderDate(order.dueAt)),
-          if (order.createdAt != null) _MetaRow('تاريخ الإنشاء', formatOrderDate(order.createdAt)),
+          _MetaRow('الحالة', statusLabel),
+          _MetaRow('النوع', typeLabel),
+          if (budgetWidget != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  const Text('الميزانية', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                  const SizedBox(width: 12),
+                  Expanded(child: Align(alignment: Alignment.centerLeft, child: budgetWidget)),
+                ],
+              ),
+            ),
+          if (durationLabel != null && durationLabel != '—') _MetaRow('المدة', durationLabel!),
+          if (dueLabel != null) _MetaRow('موعد التسليم', dueLabel!),
+          if (dateLabel != null) _MetaRow('تاريخ الإنشاء', dateLabel!),
           const SizedBox(height: 12),
           OhButton(
             label: 'التفاصيل',
             outlined: true,
-            onPressed: () => context.push(AppRoutes.freelancerOrderPath(order.id)),
+            onPressed: onDetails,
           ),
         ],
       ),

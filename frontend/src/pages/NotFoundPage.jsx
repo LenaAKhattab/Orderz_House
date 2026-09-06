@@ -1,14 +1,13 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
-import { getDashboardPathByRole } from "../constants/authRoutes";
+import { getPostAuthHomePath } from "../constants/dashboardPermissions";
 
 /**
  * صفحة 404 — مسارات غير معرّفة فقط (لا إعادة توجيه تلقائية).
  */
 const NotFoundPage = () => {
   const { user } = useAuth();
-  const role = user?.primaryRole || user?.role;
-  const backTo = user && role ? getDashboardPathByRole(role) : "/";
+  const backTo = user ? getPostAuthHomePath(user) : "/";
   const backLabel = user ? "العودة للوحة التحكم" : "العودة للرئيسية";
 
   return (

@@ -1,8 +1,21 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { usePublicSitePages } from "../../hooks/usePublicSitePages";
+import { usePublicFooterSettings } from "../../hooks/usePublicFooterSettings";
+import { pickFooterAppDownloadTitle, shouldRenderFooterAppDownload } from "../../constants/footerAppDownloads";
+import {
+  buildFooterTelHref,
+  buildFooterWhatsAppHref,
+  getVisibleFooterContactItems,
+  resolveFooterContactCenterDestination,
+  shouldRenderFooterContactCenter,
+  shouldRenderFooterContactPanel,
+  shouldRenderFooterWorkingHours,
+} from "../../constants/footerSettings";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getFooterImportantLinkLabel } from "../../lib/i18n/footerImportantLinkLabel";
+import { useAuth } from "../../context/useAuth";
+import "../../styles/publicChrome.css";
 
 const linkClass =
   "site-footer__link text-[#202020] no-underline transition-colors hover:text-[#475569]";
@@ -10,6 +23,13 @@ const linkClass =
 const panelClass = "site-footer__panel min-w-0 text-start";
 const linkListClass =
   "site-footer__link-list m-0 grid list-none gap-1.5 p-0 text-start text-[0.9rem] leading-snug text-[#202020]";
+
+const XL_COLS_CLASS = {
+  4: "xl:grid-cols-4",
+  5: "xl:grid-cols-5",
+  6: "xl:grid-cols-6",
+  7: "xl:grid-cols-7",
+};
 
 function footerLinkClass(pathname, href) {
   const active = pathname === href;
@@ -82,14 +102,72 @@ function FooterLocationIcon() {
   );
 }
 
-const FOOTER_WHATSAPP_HREF = "https://wa.me/971522857808";
+/** Apple silhouette — local inline SVG (no CDN). */
+function FooterAppStoreIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden focusable="false">
+      <path d="M16.365 1.43c0 1.14-.493 2.2-1.29 2.98-.837.83-2.211 1.47-3.366 1.385-.15-1.086.42-2.23 1.23-3.01C13.81.97 15.22.4 16.365.43ZM20.7 17.48c-.55 1.2-.81 1.73-1.52 2.79-.99 1.48-2.38 3.32-4.1 3.34-1.53.02-1.93-.99-4.02-.98-2.09.01-2.53 1-4.07.98-1.72-.02-3.04-1.68-4.03-3.16C.91 17.34-.62 12.28 1.7 8.85c1.14-1.7 2.95-2.7 4.64-2.7 1.73 0 2.82 1 4.77 1 1.88 0 2.86-1.01 4.82-1.01 1.52 0 3.13.83 4.26 2.26-3.74 2.05-3.14 7.4-.5 9.08Z" />
+    </svg>
+  );
+}
+
+/** Google Play triangle — local multicolor SVG (no generic play-circle). */
+function FooterGooglePlayIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden focusable="false">
+      <path fill="#32BBFF" d="M2.91 1.62A.75.75 0 0 0 2.5 2.3v19.4c0 .5.37.8.75.62L14.5 12 2.91 1.62Z" />
+      <path fill="#FBBF24" d="m14.5 12 2.7 2.7 5.05-2.88a.8.8 0 0 0 0-1.4L17.2 7.54 14.5 10.24V12Z" />
+      <path fill="#F04438" d="M14.5 12 2.91 22.38c.24.12.52.1.76-.04L16.4 15.5 14.5 12Z" />
+      <path fill="#22C55E" d="M14.5 12 16.4 8.5 3.67 1.66A.8.8 0 0 0 2.91 1.62L14.5 12Z" />
+    </svg>
+  );
+}
 
 const Footer = ({ homeBlend = false }) => {
   const { pathname } = useLocation();
   const gridRef = useRef(null);
+  const { user, loading: authLoading } = useAuth();
   const { footerPages, loading: sitePagesLoading, error: sitePagesError } = usePublicSitePages();
+  const { contact, workingHours, contactCenter, appDownload } = usePublicFooterSettings();
   const showImportantLinks = !sitePagesError && footerPages.length > 0;
-  const { t, dir } = useTranslation();
+  const { t, dir, locale } = useTranslation();
+  const isEn = String(locale || "").toLowerCase().startsWith("en");
+  const footerAppTitle = isEn
+    ? t("footer.downloadApp")
+    : pickFooterAppDownloadTitle(appDownload, "ar");
+  const footerAppStoreHref = appDownload.appStoreUrl;
+  const footerGooglePlayHref = appDownload.googlePlayUrl;
+  const contactPhone = contact.phone;
+  const contactEmail = contact.email;
+  const contactWhatsapp = contact.whatsapp;
+  const contactLocation = contact.location;
+  const hoursTitle = isEn ? t("footer.workingHours") : workingHours.title;
+  const hoursText = isEn ? t("footer.workingHoursValue") : workingHours.text;
+  const phoneHref = buildFooterTelHref(contactPhone);
+  const whatsappHref = buildFooterWhatsAppHref(contactWhatsapp);
+
+  const visibleContactItems = getVisibleFooterContactItems(contact);
+  const showContactItems = visibleContactItems.length > 0;
+  const showHoursBlock = shouldRenderFooterWorkingHours(workingHours);
+  const showContactCenter = shouldRenderFooterContactCenter(contactCenter);
+  const showContactPanel = shouldRenderFooterContactPanel(contact, workingHours, contactCenter);
+  const showAppStore = Boolean(appDownload.appStoreVisible !== false);
+  const showGooglePlay = Boolean(appDownload.googlePlayVisible !== false);
+  const showAppsPanel = shouldRenderFooterAppDownload(appDownload);
+  const showAppTitle = appDownload.titleVisible !== false;
+  const contactCenterDest = resolveFooterContactCenterDestination(user, authLoading);
+  const showContactCenterHelper = contactCenter.helperTextVisible !== false;
+  const showContactCenterButton = contactCenter.buttonVisible !== false;
+
+  // Always-on columns: explore, clients, freelancers, company (=4)
+  const xlColCount = Math.min(
+    7,
+    Math.max(
+      4,
+      4 + (showImportantLinks ? 1 : 0) + (showContactPanel ? 1 : 0) + (showAppsPanel ? 1 : 0),
+    ),
+  );
+  const xlColsClass = XL_COLS_CLASS[xlColCount] || XL_COLS_CLASS[6];
 
   useEffect(() => {
     const root = gridRef.current;
@@ -109,7 +187,7 @@ const Footer = ({ homeBlend = false }) => {
     syncDesktopGroups();
     mq.addEventListener("change", syncDesktopGroups);
     return () => mq.removeEventListener("change", syncDesktopGroups);
-  }, [showImportantLinks, sitePagesLoading]);
+  }, [showImportantLinks, sitePagesLoading, showContactPanel, showAppsPanel]);
 
   return (
     <footer
@@ -123,8 +201,8 @@ const Footer = ({ homeBlend = false }) => {
       <div
         ref={gridRef}
         className={[
-          "site-footer__grid mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-x-4 gap-y-8 px-4 py-8 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:gap-x-6 xl:gap-x-4",
-          showImportantLinks ? "xl:grid-cols-6" : "xl:grid-cols-5",
+          "site-footer__grid mx-auto grid w-full max-w-7xl grid-cols-1 items-start gap-y-8 px-4 py-8 sm:grid-cols-2 sm:px-6 lg:grid-cols-3",
+          xlColsClass,
         ].join(" ")}
       >
         <details className={`site-footer__group ${panelClass}`} open>
@@ -241,77 +319,190 @@ const Footer = ({ homeBlend = false }) => {
           </ul>
         </details>
 
-        <section className="site-footer__contact site-footer__panel min-w-0 border-s border-dashed border-[rgba(100,116,139,0.28)] ps-[18px] max-xl:border-0 max-xl:ps-0">
-          <h3 className="site-footer__panel-title mb-3 text-[0.98rem] font-bold text-[#475569] text-start">
-            {t("footer.contactUs")}
-          </h3>
-          <ul className="site-footer__contact-grid footer-contact-grid m-0 list-none p-0">
-            <li className="site-footer__contact-item">
-              <ContactIcon>
-                <FooterPhoneIcon />
-              </ContactIcon>
-              <div className="site-footer__contact-copy">
-                <span className="site-footer__contact-label">{t("footer.phone")}</span>
-                <a
-                  href="tel:+971522857808"
-                  dir="ltr"
-                  className="site-footer__contact-value site-footer__contact-value--phone text-[#202020] no-underline"
-                >
-                  {t("footer.phoneValue")}
-                </a>
+        {showContactPanel ? (
+          <section className="site-footer__contact site-footer__panel min-w-0">
+            {showContactItems ? (
+              <>
+                <h3 className="site-footer__panel-title mb-2 text-[0.98rem] font-bold text-[#475569] text-start">
+                  {t("footer.contactUs")}
+                </h3>
+                <ul className="site-footer__contact-grid footer-contact-grid m-0 list-none p-0">
+                  {visibleContactItems.includes("phone") ? (
+                    <li className="site-footer__contact-item">
+                      <ContactIcon>
+                        <FooterPhoneIcon />
+                      </ContactIcon>
+                      <div className="site-footer__contact-copy">
+                        <span className="site-footer__contact-label">{t("footer.phone")}</span>
+                        <a
+                          href={phoneHref}
+                          dir="ltr"
+                          className="site-footer__contact-value site-footer__contact-value--phone text-[#202020] no-underline"
+                        >
+                          {contactPhone}
+                        </a>
+                      </div>
+                    </li>
+                  ) : null}
+                  {visibleContactItems.includes("email") ? (
+                    <li className="site-footer__contact-item">
+                      <ContactIcon>
+                        <FooterEmailIcon />
+                      </ContactIcon>
+                      <div className="site-footer__contact-copy">
+                        <span className="site-footer__contact-label">{t("footer.email")}</span>
+                        <a
+                          href={`mailto:${contactEmail}`}
+                          dir="ltr"
+                          className="site-footer__contact-value site-footer__contact-value--email text-[#202020] no-underline [unicode-bidi:plaintext] [direction:ltr]"
+                        >
+                          {contactEmail}
+                        </a>
+                      </div>
+                    </li>
+                  ) : null}
+                  {visibleContactItems.includes("whatsapp") ? (
+                    <li className="site-footer__contact-item">
+                      <ContactIcon>
+                        <FooterWhatsAppIcon />
+                      </ContactIcon>
+                      <div className="site-footer__contact-copy">
+                        <span className="site-footer__contact-label">{t("footer.whatsapp")}</span>
+                        <a
+                          href={whatsappHref}
+                          target="_blank"
+                          rel="noreferrer"
+                          dir="ltr"
+                          className={`site-footer__contact-value site-footer__contact-value--phone ${linkClass}`}
+                        >
+                          {contactWhatsapp}
+                        </a>
+                      </div>
+                    </li>
+                  ) : null}
+                  {visibleContactItems.includes("location") ? (
+                    <li className="site-footer__contact-item">
+                      <ContactIcon>
+                        <FooterLocationIcon />
+                      </ContactIcon>
+                      <div className="site-footer__contact-copy">
+                        <span className="site-footer__contact-label">{t("footer.location")}</span>
+                        <span className="site-footer__contact-value">{contactLocation}</span>
+                      </div>
+                    </li>
+                  ) : null}
+                </ul>
+              </>
+            ) : null}
+            {showContactCenter ? (
+              <div
+                className={[
+                  "site-footer__contact-center",
+                  showContactItems ? "site-footer__contact-center--after-contact" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {showContactCenterHelper ? (
+                  <p className="site-footer__contact-center-helper">{contactCenter.helperText}</p>
+                ) : null}
+                {showContactCenterButton ? (
+                  contactCenterDest.kind === "pending" ? (
+                    <span
+                      className="site-footer__contact-center-btn btn btn-primary btn-sm"
+                      aria-busy="true"
+                      aria-disabled="true"
+                    >
+                      {contactCenter.buttonText}
+                    </span>
+                  ) : contactCenterDest.kind === "login" ? (
+                    <Link
+                      to={contactCenterDest.to}
+                      state={contactCenterDest.state}
+                      className="site-footer__contact-center-btn btn btn-primary btn-sm"
+                    >
+                      {contactCenter.buttonText}
+                    </Link>
+                  ) : (
+                    <Link
+                      to={contactCenterDest.to}
+                      className="site-footer__contact-center-btn btn btn-primary btn-sm"
+                    >
+                      {contactCenter.buttonText}
+                    </Link>
+                  )
+                ) : null}
               </div>
-            </li>
-            <li className="site-footer__contact-item">
-              <ContactIcon>
-                <FooterEmailIcon />
-              </ContactIcon>
-              <div className="site-footer__contact-copy">
-                <span className="site-footer__contact-label">{t("footer.email")}</span>
-                <a
-                  href={`mailto:${t("footer.emailValue")}`}
-                  dir="ltr"
-                  className="site-footer__contact-value site-footer__contact-value--email text-[#202020] no-underline [unicode-bidi:plaintext] [direction:ltr]"
-                >
-                  {t("footer.emailValue")}
-                </a>
+            ) : null}
+            {showHoursBlock ? (
+              <div
+                className={[
+                  "site-footer__hours",
+                  showContactItems || showContactCenter ? "site-footer__hours--after-block" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {workingHours.titleVisible !== false ? (
+                  <h4 className="site-footer__panel-subtitle m-0 mb-1 text-[0.9rem] font-bold text-[#475569] text-start">
+                    {hoursTitle}
+                  </h4>
+                ) : null}
+                {workingHours.textVisible !== false ? (
+                  <p className="site-footer__hours-value m-0 text-[0.84rem] leading-snug text-[#202020] text-start">
+                    {hoursText}
+                  </p>
+                ) : null}
               </div>
-            </li>
-            <li className="site-footer__contact-item">
-              <ContactIcon>
-                <FooterWhatsAppIcon />
-              </ContactIcon>
-              <div className="site-footer__contact-copy">
-                <span className="site-footer__contact-label">{t("footer.whatsapp")}</span>
+            ) : null}
+          </section>
+        ) : null}
+
+        {showAppsPanel ? (
+          <details
+            className={`site-footer__group site-footer__group--apps ${panelClass} border-s border-dashed border-[rgba(100,116,139,0.28)] ps-[18px] max-xl:border-0 max-xl:ps-0`}
+            open
+          >
+            <summary className="site-footer__group-summary text-start">
+              <span className={showAppTitle ? undefined : "sr-only"}>{footerAppTitle}</span>
+              <FooterGroupChevron />
+            </summary>
+            <div className="site-footer__apps-list">
+              {showAppStore ? (
                 <a
-                  href={FOOTER_WHATSAPP_HREF}
+                  href={footerAppStoreHref}
                   target="_blank"
-                  rel="noreferrer"
-                  dir="ltr"
-                  className={`site-footer__contact-value site-footer__contact-value--phone ${linkClass}`}
+                  rel="noopener noreferrer"
+                  aria-label={t("footer.appStoreAria")}
+                  className="site-footer__app-link"
                 >
-                  {t("footer.whatsappValue")}
+                  <span className="site-footer__app-link-inner">
+                    <span className="site-footer__app-link-icon" aria-hidden="true">
+                      <FooterAppStoreIcon />
+                    </span>
+                    <span className="site-footer__app-link-text">{t("footer.appStore")}</span>
+                  </span>
                 </a>
-              </div>
-            </li>
-            <li className="site-footer__contact-item">
-              <ContactIcon>
-                <FooterLocationIcon />
-              </ContactIcon>
-              <div className="site-footer__contact-copy">
-                <span className="site-footer__contact-label">{t("footer.location")}</span>
-                <span className="site-footer__contact-value">{t("footer.locationValue")}</span>
-              </div>
-            </li>
-          </ul>
-          <div className="site-footer__hours mt-[14px] border-t border-dashed border-[rgba(100,116,139,0.22)] pt-3">
-            <h4 className="site-footer__panel-subtitle m-0 mb-1.5 text-[0.9rem] font-bold text-[#475569] text-start">
-              {t("footer.workingHours")}
-            </h4>
-            <p className="site-footer__hours-value m-0 text-[0.84rem] leading-snug text-[#202020] text-start">
-              {t("footer.workingHoursValue")}
-            </p>
-          </div>
-        </section>
+              ) : null}
+              {showGooglePlay ? (
+                <a
+                  href={footerGooglePlayHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t("footer.googlePlayAria")}
+                  className="site-footer__app-link"
+                >
+                  <span className="site-footer__app-link-inner">
+                    <span className="site-footer__app-link-icon" aria-hidden="true">
+                      <FooterGooglePlayIcon />
+                    </span>
+                    <span className="site-footer__app-link-text">{t("footer.googlePlay")}</span>
+                  </span>
+                </a>
+              ) : null}
+            </div>
+          </details>
+        ) : null}
       </div>
 
       <div

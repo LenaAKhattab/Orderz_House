@@ -42,12 +42,16 @@ describe("ensureFreelancerDefaultFreePlan source — activation on insert", () =
     assert.ok(!block.includes("assignPlanToFreelancer("), "default bootstrap must not auto-approve via assignPlan");
   });
 
-  it("manual assignPlanToFreelancer still uses company_approved for admin assignments", () => {
+  it("manual assignPlanToFreelancer keeps company_pending until KYC (A11.1)", () => {
     const src = fs.readFileSync(SUBSCRIPTIONS_SERVICE_PATH, "utf8");
     const fnStart = src.indexOf("async function assignPlanToFreelancer");
     const fnEnd = src.indexOf("async function getCurrentSubscriptionForFreelancer", fnStart);
     const block = src.slice(fnStart, fnEnd);
-    assert.ok(block.includes("SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED"));
+    assert.ok(block.includes("SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_PENDING"));
+    assert.ok(
+      !block.includes("SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED"),
+      "admin assign must not auto company_approved (KYC required)",
+    );
   });
 });
 
@@ -121,6 +125,8 @@ describeIntegration("ensureFreelancerDefaultFreePlan integration", () => {
       const approved = await subscriptionsService.activateCompanyApprovalForSubscription({
         actorUserId: null,
         subscriptionId: out.subscription.id,
+        actorRole: "super_admin",
+        overrideReason: "integration test bootstrap eligibility",
       });
       assert.strictEqual(approved.activationStatus, SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED);
 

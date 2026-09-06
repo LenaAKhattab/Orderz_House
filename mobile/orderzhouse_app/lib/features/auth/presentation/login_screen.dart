@@ -113,7 +113,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton(
+                          onPressed: () => context.push(AppRoutes.forgotPassword),
+                          child: const Text('هل نسيت كلمة المرور؟'),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       AuthPrimaryButton(
                         label: 'تسجيل الدخول',
                         isLoading: _submitting,

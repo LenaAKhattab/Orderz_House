@@ -48,12 +48,14 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import CourseDetailsPageSkeleton from "../../components/dashboard/courses/CourseDetailsPageSkeleton";
 import CourseSideTextAd from "../../components/dashboard/courses/CourseSideTextAd";
+import PlanUpgradeRequiredCta from "../../components/freelancer/PlanUpgradeRequiredCta";
 import {
   getStudentCourseFileDownloadName,
   isLegacyBrokenCloudinaryPdfUrl,
   resolveStudentCourseFileDisplay,
 } from "../../admin/courses/courseAssetDisplayUtils";
 import "../../styles/dashboardHub.css";
+import "../../styles/freelancerOpenOrders.css";
 import "./freelancerCourseDetails.css";
 
 const FINAL_TEST_STEP_ID = "final-test";
@@ -1452,6 +1454,7 @@ export default function FreelancerCourseDetailsPage() {
   const [markingLessonComplete, setMarkingLessonComplete] = useState(false);
   const markCompleteInFlightRef = useRef(false);
   const [data, setData] = useState(null);
+  const [planLock, setPlanLock] = useState(null);
   const [mainView, setMainView] = useState("lesson");
   const [activeLessonId, setActiveLessonId] = useState(null);
   const [auditResponseText, setAuditResponseText] = useState("");
@@ -1466,6 +1469,7 @@ export default function FreelancerCourseDetailsPage() {
       if (!id) return null;
       if (!silent) setLoading(true);
       try {
+        setPlanLock(null);
         const res = await freelancerGetCourseDetailsRequest(id);
         const out = res?.data || null;
         setData(out);
@@ -1519,7 +1523,20 @@ export default function FreelancerCourseDetailsPage() {
         setAuditResponseFile(null);
         return out;
       } catch (err) {
+        const code = err?.response?.data?.code;
+        if (code === "COURSE_PLAN_UPGRADE_REQUIRED") {
+          const meta = err?.response?.data?.meta || {};
+          setData(null);
+          setPlanLock({
+            message: err?.response?.data?.message || t(`${CD}.planLocked.message`),
+            requiredTierCode: meta.requiredTierCode || null,
+            currentTierCode: meta.currentTierCode || null,
+            upgradePath: meta.upgradePath || "/dashboard/freelancer/plans",
+          });
+          return null;
+        }
         toast.error(err?.response?.data?.message || t(`${CD}.loadError`));
+        setPlanLock(null);
         return null;
       } finally {
         if (!silent) setLoading(false);
@@ -2078,7 +2095,27 @@ export default function FreelancerCourseDetailsPage() {
           </div>
         ) : null}
 
-        {!loading && !course ? (
+        {!loading && !course && planLock ? (
+          <div className="fcd-empty fdash-surface-3d fdash-surface-3d--soft fcd-plan-locked">
+            <Lock size={28} strokeWidth={1.8} aria-hidden className="fcd-plan-locked__icon" />
+            <h2 className="fcd-plan-locked__title">{t(`${CD}.planLocked.title`)}</h2>
+            <p className="fcd-plan-locked__text">{planLock.message || t(`${CD}.planLocked.message`)}</p>
+            <PlanUpgradeRequiredCta
+              compact={false}
+              reason="COURSE_PLAN_UPGRADE_REQUIRED"
+              requiredTierCode={planLock.requiredTierCode}
+              currentTierCode={planLock.currentTierCode}
+              targetRoute={planLock.upgradePath}
+              isEn={locale !== "ar"}
+              className="oh-plan-upgrade-cta oh-plan-upgrade-cta--panel fcd-plan-locked__cta"
+            />
+            <NavLink to="/dashboard/freelancer/courses" className="fcd-btn fcd-btn--ghost fcd-plan-locked__back">
+              {t(`${CD}.empty.backToCourses`)}
+            </NavLink>
+          </div>
+        ) : null}
+
+        {!loading && !course && !planLock ? (
           <div className="fcd-empty fdash-surface-3d fdash-surface-3d--soft">
             <p>{t(`${CD}.empty.loadFailed`)}</p>
             <NavLink to="/dashboard/freelancer/courses" className="fcd-btn fcd-btn--primary">

@@ -7,6 +7,7 @@ const {
   isInProcessAutomationIntervalEnabled,
   getAutomationCronSecret,
 } = require("./fakeOrdersAutomation");
+const { printEnvironmentBanner } = require("../utils/databaseEnvironmentSafety");
 
 function isProduction() {
   return String(process.env.NODE_ENV || "").toLowerCase() === "production";
@@ -36,6 +37,9 @@ function warnProduction(name, detail) {
  * Call immediately after `dotenv.config()` and before loading `db` or `app`.
  * Exits the process when required configuration is missing in production,
  * or when DATABASE_URL is missing in any environment.
+ *
+ * Does NOT block normal npm run dev merely because backend/.env points at a
+ * shared DB or Live Stripe — those risks are gated on migrate/QA tooling instead.
  */
 function validateEnv() {
   const missing = [];
@@ -77,6 +81,31 @@ function validateEnv() {
       "Production CLIENT_URL must be a single origin (no commas). Use CORS_ORIGINS for additional browser origins.",
     );
     process.exit(1);
+  }
+
+  if (missing.length === 0 && isProduction()) {
+    const clientUrl = String(process.env.CLIENT_URL || "").trim();
+    if (/localhost|127\.0\.0\.1/i.test(clientUrl)) {
+      // eslint-disable-next-line no-console
+      console.error(
+        "Production CLIENT_URL must not point at localhost/127.0.0.1 (Stripe success/cancel redirects would break for real users).",
+      );
+      process.exit(1);
+    }
+  }
+
+  if (missing.length === 0 && !isProduction()) {
+    const clientUrl = String(process.env.CLIENT_URL || "").trim();
+    const looksPublicHttps =
+      /^https:\/\//i.test(clientUrl) && !/localhost|127\.0\.0\.1/i.test(clientUrl);
+    if (looksPublicHttps) {
+      // eslint-disable-next-line no-console
+      console.error(
+        "[env] CRITICAL: CLIENT_URL is a public HTTPS origin but NODE_ENV is not \"production\". " +
+          "Origin guard, secure cookies, Stripe startup checks, and in-process schedulers will use development defaults. " +
+          "Set NODE_ENV=production on the API host.",
+      );
+    }
   }
 
   if (missing.length === 0 && isProduction()) {
@@ -123,6 +152,11 @@ function validateEnv() {
   }
 
   if (missing.length === 0) {
+    try {
+      printEnvironmentBanner();
+    } catch {
+      /* banner is best-effort */
+    }
     return;
   }
 

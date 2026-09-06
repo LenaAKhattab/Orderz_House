@@ -12,6 +12,7 @@ const CANONICAL_CHECKOUT_NAMES = new Set([
   "freelancers_1_month",
   "freelancers_1_year",
   "freelancers_2_year",
+  "freelancers_monthly_paid_15",
 ]);
 
 export function buildPlanPagesIndex(planPages) {

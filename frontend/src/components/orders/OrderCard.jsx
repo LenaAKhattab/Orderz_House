@@ -11,6 +11,7 @@ import {
   shortDescription,
 } from "../../lib/orders/orderDisplayFormatters";
 import { MoneyValue, DurationValue } from "../open-orders/OrderNumericValue";
+import { JodOrderBudgetDisplay } from "../money/JodMoneyDisplay";
 import {
   getLocalizedOrderDescription,
   getLocalizedOrderTitle,
@@ -142,7 +143,11 @@ export default function OrderCard({
     return timeLeftLabel(order);
   }, [order, nowMs]);
 
-  const priceChipBody = formatOrderBudget(order, locale);
+  const priceChipBody = showAdminBadge ? (
+    <MoneyValue>{formatOrderBudget(order, locale)}</MoneyValue>
+  ) : (
+    <JodOrderBudgetDisplay order={order} compact />
+  );
 
   return (
     <article className={`oh-pool-card oh-pool-card--static${compactSummary ? " oh-pool-card--compact-summary" : ""}`.trim()}>
@@ -179,7 +184,7 @@ export default function OrderCard({
             {t("orders.card.type")}: {typeLabel(order?.projectType, t)}
           </span>
           <span className="oh-mini-chip">
-            {t("orders.card.price")}: <MoneyValue>{priceChipBody}</MoneyValue>
+            {t("orders.card.price")}: {priceChipBody}
           </span>
           <span className="oh-mini-chip">
             {t("orders.card.deliveryDuration")}: <DurationValue>{formatOrderDuration(order, locale, t)}</DurationValue>
@@ -209,7 +214,7 @@ export default function OrderCard({
         <>
           <div className="oh-pool-card__meta oh-pool-card__meta--keyonly" aria-label="ملخص الطلب">
             <span className="oh-mini-chip oh-mini-chip--emph">
-              {t("orders.card.price")}: <MoneyValue>{priceChipBody}</MoneyValue>
+              {t("orders.card.price")}: {priceChipBody}
             </span>
             <span className="oh-mini-chip oh-mini-chip--emph">
               {t("orders.card.deliveryDuration")}: <DurationValue>{formatOrderDuration(order, locale, t)}</DurationValue>
@@ -250,7 +255,9 @@ export default function OrderCard({
             <div className="oh-meta">
               <div className="oh-meta__label">السعر (ملخص)</div>
               <div className="oh-meta__value oh-meta__value--strong">
-                <MoneyValue>{priceLabel(order, locale)}</MoneyValue>
+                <MoneyValue>
+                  {showAdminBadge ? priceLabel(order, locale) : <JodOrderBudgetDisplay order={order} compact />}
+                </MoneyValue>
               </div>
             </div>
             <div className="oh-meta">

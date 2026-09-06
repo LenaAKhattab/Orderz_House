@@ -1,5 +1,6 @@
 import { Suspense, lazy } from "react";
 import { useLocation } from "react-router-dom";
+import "../i18n/dashboardResources";
 import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";

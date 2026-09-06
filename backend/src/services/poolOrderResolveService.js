@@ -72,10 +72,12 @@ async function resolvePoolOrderForViewer(orderId, { userId = null, role = null }
 async function enrichFreelancerPoolOrder(resolved, freelancerUserId) {
   const { kind, order } = resolved;
   const planOrderValueEligibility = require("./planOrderValueEligibility");
-  const range = await planOrderValueEligibility.getFreelancerPlanOrderValueRange(freelancerUserId);
+  const { range, hasPlanId, planId } =
+    await planOrderValueEligibility.getFreelancerPlanEligibilityContext(freelancerUserId);
   const poolEligibility = planOrderValueEligibility.computePoolOrderPlanEligibility(
     { ...order, orderSource: kind },
     range,
+    { hasPlanId, planId, logContext: "pool_detail" },
   );
   if (kind === "fake") {
     return {

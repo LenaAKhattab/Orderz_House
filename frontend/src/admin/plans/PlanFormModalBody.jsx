@@ -318,6 +318,96 @@ export default function PlanFormModalBody({
             disabled={submitting}
           />
         </Field>
+
+        <div className="oh-sapl-sale-block" style={{ marginTop: 20 }}>
+          <h4 className="oh-sapl-sale-block__title">
+            {isEn ? "Plan discount" : "خصم على الباقة"}
+          </h4>
+          <PlanToggle
+            checked={Boolean(form.saleEnabled)}
+            onChange={(v) => set("saleEnabled", v)}
+            label={isEn ? "Enable discount" : "تفعيل الخصم"}
+            disabled={submitting}
+          />
+          {form.saleEnabled ? (
+            <>
+              <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
+                <Field label={isEn ? "Discount percentage (%)" : "نسبة الخصم (%)"}>
+                  <input
+                    className="oh-sapl-input"
+                    type="number"
+                    min={0.01}
+                    max={99.99}
+                    step="0.01"
+                    value={form.salePercentage}
+                    onChange={(e) => set("salePercentage", e.target.value)}
+                    placeholder="20"
+                    disabled={submitting}
+                    required
+                  />
+                </Field>
+              </Grid>
+              <Field label={isEn ? "Sale reason (Arabic)" : "سبب الخصم"} style={{ marginTop: 12 }}>
+                <input
+                  className="oh-sapl-input"
+                  value={form.saleReason}
+                  onChange={(e) => set("saleReason", e.target.value)}
+                  placeholder={isEn ? "Limited-time offer" : "عرض خاص لفترة محدودة"}
+                  disabled={submitting}
+                  required
+                />
+              </Field>
+              <Field label={isEn ? "Sale reason (English)" : "سبب الخصم (إنجليزي)"} style={{ marginTop: 12 }}>
+                <input
+                  className="oh-sapl-input"
+                  dir="ltr"
+                  value={form.saleReasonEn}
+                  onChange={(e) => set("saleReasonEn", e.target.value)}
+                  placeholder="Limited-time offer"
+                  disabled={submitting}
+                />
+              </Field>
+              {(() => {
+                const base =
+                  form.stripeCheckoutAmountJod !== "" && Number(form.stripeCheckoutAmountJod) > 0
+                    ? Number(form.stripeCheckoutAmountJod)
+                    : form.priceJod === ""
+                      ? null
+                      : Number(form.priceJod);
+                const pct = Number(form.salePercentage);
+                if (!Number.isFinite(base) || base <= 0 || !Number.isFinite(pct) || pct <= 0 || pct >= 100) {
+                  return null;
+                }
+                const final = Math.round(base * (1000 - pct * 10)) / 1000;
+                const fmt = (n) =>
+                  n.toLocaleString(isEn ? "en-US" : "ar-JO-u-nu-latn", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 3,
+                  });
+                return (
+                  <div className="oh-sapl-sale-preview" style={{ marginTop: 12 }}>
+                    <p>
+                      {isEn
+                        ? `Original price: ${fmt(base)} JOD`
+                        : `السعر الأصلي: ${fmt(base)} د.أ`}
+                    </p>
+                    <p>{isEn ? `Discount: ${pct}%` : `الخصم: ${pct}%`}</p>
+                    <p>
+                      {isEn
+                        ? `Price after discount: ${fmt(final)} JOD`
+                        : `السعر بعد الخصم: ${fmt(final)} د.أ`}
+                    </p>
+                    <p className="oh-sapl-field__hint">
+                      {isEn
+                        ? "Preview only. Backend calculates the charged amount."
+                        : "معاينة فقط. المبلغ المحصّل يُحسب في الخادم."}
+                    </p>
+                  </div>
+                );
+              })()}
+            </>
+          ) : null}
+        </div>
       </PlanFormSection>
     ),
 

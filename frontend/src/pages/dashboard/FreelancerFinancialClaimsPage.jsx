@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar,
   CircleCheck,
@@ -8,6 +8,7 @@ import {
   Hourglass,
   Inbox,
   Plus,
+  TrendingUp,
   Wallet,
   X,
 } from "lucide-react";
@@ -23,6 +24,8 @@ import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
 import "../../styles/dashboardHub.css";
 import "./freelancerFinancialClaims.css";
+import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
+import { aggregateFinancialClaims } from "../../utils/freelancerDashboardData";
 
 function formatDate(value, locale, emDash) {
   if (!value) return emDash;
@@ -88,7 +91,7 @@ function StatSegment({ tone, Icon, value, label, loading }) {
   return (
     <div className={`ffc-stat-segment ffc-stat-segment--${tone}`}>
       <span className="ffc-stat-segment__icon" aria-hidden>
-        <Icon size={20} strokeWidth={1.75} />
+        <Icon size={15} strokeWidth={1.85} />
       </span>
       <div className="ffc-stat-segment__copy">
         <span className="ffc-stat-segment__label">{label}</span>
@@ -177,6 +180,7 @@ export default function FreelancerFinancialClaimsPage() {
   const [busy, setBusy] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [mode, setMode] = useState("manual");
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [searchDone, setSearchDone] = useState("");
@@ -249,6 +253,8 @@ export default function FreelancerFinancialClaimsPage() {
     return { total: claims.length, pending, paid };
   }, [claims]);
 
+  const earnings = useMemo(() => aggregateFinancialClaims(claims), [claims]);
+
   const canSubmitClaim = useMemo(() => {
     if (submitting) return false;
     if (mode === "manual") {
@@ -283,6 +289,8 @@ export default function FreelancerFinancialClaimsPage() {
   }, [mode, selectedProjectId, doneProjects]);
 
   const createClaim = async () => {
+    if (submitting || submittingRef.current || !canSubmitClaim) return;
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       const payload =
@@ -321,12 +329,24 @@ export default function FreelancerFinancialClaimsPage() {
       });
       await reload();
     } catch (e) {
+      const code = e?.response?.data?.code || e?.response?.data?.publicCode || e?.publicCode || "";
+      let message = e?.response?.data?.message || e?.message;
+      if (code === "FREELANCER_KYC_REQUIRED") {
+        message = t(`${fc}.errors.kycRequired`);
+      } else if (code === "FREELANCER_KYC_PENDING_REVIEW") {
+        message = t(`${fc}.errors.kycPending`);
+      } else if (code === "FREELANCER_KYC_REJECTED") {
+        message = t(`${fc}.errors.kycRejected`);
+      } else if (code === "FINANCIAL_CLAIM_PRICING_NOT_ALLOWED") {
+        message = t(`${fc}.errors.pricingNotAllowed`);
+      }
       push({
         type: "error",
         title: t(`${fc}.createErrorTitle`),
-        message: e?.response?.data?.message || e?.message,
+        message,
       });
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };
@@ -340,14 +360,56 @@ export default function FreelancerFinancialClaimsPage() {
         </div>
         <div className="ffc-header__art">
           <span className="ffc-header__icon-chip" aria-hidden>
-            <Wallet size={32} strokeWidth={1.85} />
+            <Wallet size={22} strokeWidth={1.85} />
           </span>
           <button type="button" className="ffc-header__cta" onClick={() => setCreateOpen(true)}>
-            <Plus size={16} strokeWidth={2.2} aria-hidden />
+            <Plus size={14} strokeWidth={2.2} aria-hidden />
             <span>{t(`${fc}.newClaim`)}</span>
           </button>
         </div>
       </header>
+
+      <section className="ffc-earnings" aria-label={t(`${fc}.earningsHero.aria`)}>
+        <div className="ffc-earnings__visual" aria-hidden>
+          <span className="ffc-earnings__orb ffc-earnings__orb--a" />
+          <span className="ffc-earnings__orb ffc-earnings__orb--b" />
+          <span className="ffc-earnings__mark">
+            <TrendingUp size={22} strokeWidth={1.9} />
+          </span>
+        </div>
+        <div className="ffc-earnings__main">
+          <p className="ffc-earnings__eyebrow">{t(`${fc}.earningsHero.title`)}</p>
+          <p className="ffc-earnings__paid-label">{t(`${fc}.earningsHero.paid`)}</p>
+          {busy ? (
+            <HubMetricSkeleton variant="stat" />
+          ) : (
+            <strong className="ffc-earnings__paid-value">
+              <JodMoneyDisplay amount={earnings.paidTotalJod} compact showDisclaimer={false} />
+            </strong>
+          )}
+          <p className="ffc-earnings__note">{t(`${fc}.earningsNote`)}</p>
+        </div>
+        <div className="ffc-earnings__side">
+          <div className="ffc-earnings__chip ffc-earnings__chip--pending">
+            <span className="ffc-earnings__chip-label">{t(`${fc}.earningsHero.pending`)}</span>
+            {busy ? (
+              <HubMetricSkeleton variant="stat" />
+            ) : (
+              <strong className="ffc-earnings__chip-value">
+                <JodMoneyDisplay amount={earnings.pendingTotalJod} compact showDisclaimer={false} />
+              </strong>
+            )}
+          </div>
+          <div className="ffc-earnings__chip ffc-earnings__chip--open">
+            <span className="ffc-earnings__chip-label">{t(`${fc}.earningsHero.openClaims`)}</span>
+            {busy ? (
+              <HubMetricSkeleton variant="stat" />
+            ) : (
+              <strong className="ffc-earnings__chip-value">{earnings.openClaimsCount}</strong>
+            )}
+          </div>
+        </div>
+      </section>
 
       <div className="ffc-surface ffc-stats-bar" aria-label={t("freelancerDashboard.stats.financialClaims.summaryAria")}>
         <StatSegment
@@ -381,12 +443,12 @@ export default function FreelancerFinancialClaimsPage() {
         <section className="ffc-surface ffc-content">
           <div className="ffc-empty">
             <span className="ffc-empty__icon-chip" aria-hidden>
-              <Inbox size={36} strokeWidth={1.6} />
+              <Inbox size={26} strokeWidth={1.6} />
             </span>
             <h2 className="ffc-empty__title">{t(`${fc}.emptyTitle`)}</h2>
             <p className="ffc-empty__sub">{t(`${fc}.emptySub`)}</p>
             <button type="button" className="ffc-empty__cta" onClick={() => setCreateOpen(true)}>
-              <Plus size={16} strokeWidth={2.2} aria-hidden />
+              <Plus size={14} strokeWidth={2.2} aria-hidden />
               <span>{t(`${fc}.newClaim`)}</span>
             </button>
           </div>
@@ -436,19 +498,27 @@ export default function FreelancerFinancialClaimsPage() {
                           </div>
                           <div className="ffc-dl-row ffc-dl-row--money">
                             <dt>{t(`${fc}.fields.totalPrice`)}</dt>
-                            <dd dir="ltr">{formatMoney(claim.totalPriceSnapshot, emDash)}</dd>
+                            <dd>
+                              <JodMoneyDisplay amount={claim.totalPriceSnapshot} compact />
+                            </dd>
                           </div>
                           <div className="ffc-dl-row ffc-dl-row--money">
                             <dt>{t(`${fc}.fields.freelancerAmount`)}</dt>
-                            <dd dir="ltr">{formatMoney(claim.userAmountSnapshot, emDash)}</dd>
+                            <dd>
+                              <JodMoneyDisplay amount={claim.userAmountSnapshot} compact />
+                            </dd>
                           </div>
                           <div className="ffc-dl-row ffc-dl-row--money">
                             <dt>{t(`${fc}.fields.paid`)}</dt>
-                            <dd dir="ltr">{formatMoney(claim.paidAmount, emDash)}</dd>
+                            <dd>
+                              <JodMoneyDisplay amount={claim.paidAmount} compact />
+                            </dd>
                           </div>
                           <div className="ffc-dl-row ffc-dl-row--money">
                             <dt>{t(`${fc}.fields.remaining`)}</dt>
-                            <dd dir="ltr">{formatMoney(claim.remainingAmount, emDash)}</dd>
+                            <dd>
+                              <JodMoneyDisplay amount={claim.remainingAmount} compact />
+                            </dd>
                           </div>
                         </dl>
                         {claim.adminNote ? (

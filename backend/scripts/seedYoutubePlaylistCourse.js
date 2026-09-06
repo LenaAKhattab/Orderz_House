@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Create or refresh a training course from a YouTube playlist (all videos as lessons).
  *
  * Usage (from backend/):
@@ -6,11 +6,14 @@
  *   node scripts/seedYoutubePlaylistCourse.js --url="https://www.youtube.com/playlist?list=..."
  *   node scripts/seedYoutubePlaylistCourse.js --append
  *
- * Default playlist: دورة 2024 - كتابة المحتوى باللغة الانجليزية
+ * Default playlist: Ø¯ÙˆØ±Ø© 2024 - ÙƒØªØ§Ø¨Ø© Ø§Ù„Ù…Ø­ØªÙˆÙ‰ Ø¨Ø§Ù„Ù„ØºØ© Ø§Ù„Ø§Ù†Ø¬Ù„ÙŠØ²ÙŠØ©
  */
 
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+
+const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
+guardQaOrSeed(require("path").basename(__filename));
 
 const { pool } = require("../src/config/db");
 const { importYoutubeSource } = require("../src/utils/youtubeImport");
@@ -18,9 +21,9 @@ const { importYoutubeSource } = require("../src/utils/youtubeImport");
 const DEFAULT_PLAYLIST_URL =
   "https://www.youtube.com/playlist?list=PLmZeVyIgORSsC_YpijcoIReX1n4A_rIQ5";
 
-const DEFAULT_TITLE = "دورة 2024 - كتابة المحتوى باللغة الانجليزية";
+const DEFAULT_TITLE = "Ø¯ÙˆØ±Ø© 2024 - ÙƒØªØ§Ø¨Ø© Ø§Ù„Ù…Ø­ØªÙˆÙ‰ Ø¨Ø§Ù„Ù„ØºØ© Ø§Ù„Ø§Ù†Ø¬Ù„ÙŠØ²ÙŠØ©";
 const DEFAULT_DESCRIPTION =
-  "دورة تدريبية مستوردة من قائمة تشغيل يوتيوب — كتابة المحتوى باللغة الإنجليزية (جميع الدروس).";
+  "Ø¯ÙˆØ±Ø© ØªØ¯Ø±ÙŠØ¨ÙŠØ© Ù…Ø³ØªÙˆØ±Ø¯Ø© Ù…Ù† Ù‚Ø§Ø¦Ù…Ø© ØªØ´ØºÙŠÙ„ ÙŠÙˆØªÙŠÙˆØ¨ â€” ÙƒØªØ§Ø¨Ø© Ø§Ù„Ù…Ø­ØªÙˆÙ‰ Ø¨Ø§Ù„Ù„ØºØ© Ø§Ù„Ø¥Ù†Ø¬Ù„ÙŠØ²ÙŠØ© (Ø¬Ù…ÙŠØ¹ Ø§Ù„Ø¯Ø±ÙˆØ³).";
 
 function parseArgs(argv) {
   const out = { url: DEFAULT_PLAYLIST_URL, title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION, replace: true };
@@ -104,7 +107,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log("Fetching playlist from YouTube…");
+  console.log("Fetching playlist from YouTubeâ€¦");
   const imported = await importYoutubeSource(playlistUrl);
   if (!imported.lessons?.length) {
     console.error("No lessons found in playlist.");

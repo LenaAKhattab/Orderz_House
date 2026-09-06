@@ -2,134 +2,94 @@
  * Run all SQL files in sql/migrations in sorted order. Skips files whose basename (without .sql)
  * matches an existing schema_migrations.version row.
  *
- * Statements are executed sequentially (same splitting rules as runSqlFile.js). Files may contain
- * their own BEGIN/COMMIT blocks — this script does not wrap the whole file in a transaction.
- *
- * After a successful file, inserts schema_migrations(version) ON CONFLICT DO NOTHING so files that
- * already self-register do not error.
- *
  * Usage (from backend/):
- *   npm run db:migrate
+ *   npm run db:migrate                 — NON-PRODUCTION ONLY
+ *   npm run db:migrate:production      — production DB + multi-flag approval only
+ *   npm run db:migrate:production:next — production + apply ONLY first pending (pinned)
  *
- * Requires DATABASE_URL in backend/.env. Per-file scripts (npm run db:run -- …) remain available.
+ * Requires DATABASE_URL. Never prints credentials.
  */
 
-const fs = require("fs");
-const path = require("path");
+const { loadBackendEnv } = require("../src/config/loadBackendEnv");
+loadBackendEnv({ profile: "default", failClosed: false, quiet: true });
 
-require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+const {
+  guardMigration,
+  logMigrationTarget,
+} = require("./lib/assertScriptDatabaseAllowed");
+const {
+  PRODUCTION_MIGRATE_CONFIRM_VALUE,
+  truthy,
+} = require("../src/utils/databaseEnvironmentSafety");
+const {
+  listMigrationFilenames,
+  listAppliedMigrationVersions,
+  ensureMigrationsTable,
+  discoverPendingMigrations,
+  applyOneMigration,
+  DEFAULT_MIGRATIONS_DIR,
+} = require("./lib/migrationRunnerCore");
+
+const productionMode =
+  process.argv.includes("--production") ||
+  String(process.env.ORDERZ_MIGRATE_MODE || "").trim().toLowerCase() === "production";
+
+const gate = guardMigration({ production: productionMode });
+if (!gate) process.exit(1);
 
 const { pool } = require("../src/config/db");
 
-function stripLineComments(sql) {
-  return sql
-    .split("\n")
-    .filter((line) => !/^\s*--/.test(line))
-    .join("\n");
-}
-
-function splitStatements(sql) {
-  const out = [];
-  let buf = "";
-  let inQuote = false;
-  for (let i = 0; i < sql.length; i += 1) {
-    const c = sql[i];
-    if (c === "'") {
-      if (inQuote && sql[i + 1] === "'") {
-        buf += "''";
-        i += 1;
-        continue;
-      }
-      inQuote = !inQuote;
-      buf += c;
-      continue;
-    }
-    if (c === ";" && !inQuote) {
-      const t = buf.trim();
-      if (t) out.push(t);
-      buf = "";
-      continue;
-    }
-    buf += c;
-  }
-  const tail = buf.trim();
-  if (tail) out.push(tail);
-  return out;
-}
-
-async function ensureMigrationsTable(client) {
-  await client.query(`
-    CREATE TABLE IF NOT EXISTS schema_migrations (
-      version VARCHAR(120) PRIMARY KEY,
-      applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-}
-
-async function isApplied(client, version) {
-  const { rows } = await client.query(`SELECT 1 FROM schema_migrations WHERE version = $1 LIMIT 1`, [version]);
-  return Boolean(rows[0]);
-}
-
 async function main() {
-  const migrationsDir = path.join(__dirname, "..", "sql", "migrations");
-  if (!fs.existsSync(migrationsDir)) {
-    console.error(`Migrations directory not found: ${migrationsDir}`);
-    process.exit(1);
-  }
-
-  const files = fs
-    .readdirSync(migrationsDir)
-    .filter((f) => f.endsWith(".sql"))
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+  const migrationsDir = DEFAULT_MIGRATIONS_DIR;
+  const files = listMigrationFilenames(migrationsDir);
 
   const client = await pool.connect();
   try {
     await ensureMigrationsTable(client);
 
+    const appliedVersions = await listAppliedMigrationVersions(client);
+    const pendingFiles = await discoverPendingMigrations(client, {
+      migrationsDir,
+      appliedVersions,
+    });
+    const allDangerous = [];
+    for (const item of pendingFiles) {
+      if (item.scan.dangerous) allDangerous.push(...item.scan.findings);
+    }
+
+    logMigrationTarget({
+      production: productionMode,
+      pendingCount: pendingFiles.length,
+      dangerousFindings: [...new Set(allDangerous)],
+    });
+
+    if (productionMode && allDangerous.length && !truthy(process.env.ALLOW_DANGEROUS_PRODUCTION_SQL)) {
+      console.error(
+        [
+          "PRODUCTION_DANGEROUS_SQL_REVIEW_REQUIRED",
+          `Pending SQL matched: ${[...new Set(allDangerous)].join(", ")}`,
+          "Review the pending files, then set ALLOW_DANGEROUS_PRODUCTION_SQL=1 only if intentional.",
+          `Also required: CONFIRM_PRODUCTION_DATABASE=${PRODUCTION_MIGRATE_CONFIRM_VALUE}`,
+        ].join("\n"),
+      );
+      process.exit(1);
+    }
+
+    if (pendingFiles.length === 0) {
+      console.log("No pending migrations.");
+      return;
+    }
+
     let appliedCount = 0;
-    let skippedCount = 0;
+    const skippedCount = files.length - pendingFiles.length;
 
-    for (const file of files) {
-      const version = file.replace(/\.sql$/i, "");
-      // eslint-disable-next-line no-await-in-loop
-      if (await isApplied(client, version)) {
-        console.log(`[skip] ${file} (already applied)`);
-        skippedCount += 1;
-        // eslint-disable-next-line no-continue
-        continue;
-      }
-
-      const filePath = path.join(migrationsDir, file);
-      const raw = fs.readFileSync(filePath, "utf8");
-      const cleaned = stripLineComments(raw);
-      const statements = splitStatements(cleaned);
-
-      if (statements.length === 0) {
-        console.warn(`[warn] ${file}: no statements`);
-        // eslint-disable-next-line no-await-in-loop
-        await client.query(`INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT DO NOTHING`, [version]);
-        appliedCount += 1;
-        // eslint-disable-next-line no-continue
-        continue;
-      }
-
-      console.log(`[run] ${file} (${statements.length} statement(s))`);
-
+    for (const item of pendingFiles) {
       try {
-        for (let i = 0; i < statements.length; i += 1) {
-          const stmt = statements[i];
-          // eslint-disable-next-line no-await-in-loop
-          await client.query(stmt);
-          const preview = stmt.replace(/\s+/g, " ").slice(0, 72);
-          console.log(`  [${i + 1}/${statements.length}] OK ${preview}${stmt.length > 72 ? "…" : ""}`);
-        }
         // eslint-disable-next-line no-await-in-loop
-        await client.query(`INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT DO NOTHING`, [version]);
+        await applyOneMigration(client, item);
         appliedCount += 1;
-        console.log(`[ok] ${file}`);
       } catch (e) {
-        console.error(`[fail] ${file}:`, e.message || e);
+        console.error(`[fail] ${e.migrationFile || item.file}:`, e.message || e);
         process.exit(1);
       }
     }

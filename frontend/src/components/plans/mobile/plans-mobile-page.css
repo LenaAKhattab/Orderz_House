@@ -172,6 +172,24 @@
   background: linear-gradient(180deg, #fff 0%, rgba(47, 59, 101, 0.03) 100%);
 }
 
+.pm-plan-card--sale {
+  --plan-sale-bg: #feecec;
+  --plan-sale-text: #c62828;
+  --plan-sale-text-strong: #b71c1c;
+  --plan-sale-muted: #9a5b5b;
+  --plan-sale-price: #8f1d1d;
+  box-shadow:
+    inset 0 2px 0 #e53935,
+    var(--pm-shadow);
+}
+
+.pm-plan-card--featured.pm-plan-card--sale {
+  box-shadow:
+    inset 0 2px 0 #e53935,
+    0 14px 36px -12px rgba(47, 59, 101, 0.22),
+    0 4px 14px rgba(47, 59, 101, 0.08);
+}
+
 .pm-plan-card__badge {
   align-self: flex-start;
   padding: 0.22rem 0.55rem;
@@ -245,6 +263,63 @@
   line-height: 1.05;
   letter-spacing: -0.03em;
   color: var(--pm-primary);
+}
+
+.pm-plan-card__price-sale {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.pm-plan-card__price-sale .pm-plan-card__price-main {
+  color: var(--plan-sale-price, #8f1d1d);
+}
+
+.pm-plan-card__price-sale-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.45rem;
+  margin: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.pm-plan-card__price-original {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--plan-sale-muted, #9a5b5b);
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: currentColor;
+}
+
+.pm-plan-card__sale-badge {
+  display: inline-block;
+  margin: 0;
+  padding: 0.14rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--plan-sale-text, #c62828);
+  background: var(--plan-sale-bg, #feecec);
+  white-space: nowrap;
+}
+
+.pm-plan-card__sale-reason {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--plan-sale-text-strong, #b71c1c);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  opacity: 0.88;
 }
 
 .pm-plan-card__price-sub {
@@ -434,4 +509,382 @@
     animation: none;
     background-position: 0 0;
   }
+}
+
+/* Membership mobile card polish */
+.pm-plan-card--membership {
+  position: relative;
+  overflow: hidden;
+  gap: 0.55rem;
+}
+
+.pm-plan-card--membership::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 3px;
+  background: rgba(148, 163, 184, 0.4);
+}
+
+.pm-plan-card--tier-silver {
+  border-color: rgba(100, 116, 139, 0.28);
+}
+
+.pm-plan-card--tier-silver::before {
+  background: linear-gradient(90deg, #94a3b8, #cbd5e1, #64748b);
+}
+
+.pm-plan-card--tier-pro,
+.pm-plan-card--membership.pm-plan-card--featured {
+  border-color: rgba(47, 59, 101, 0.45);
+  background: linear-gradient(180deg, rgba(47, 59, 101, 0.05), #fff 40%);
+}
+
+.pm-plan-card--tier-pro::before,
+.pm-plan-card--membership.pm-plan-card--featured::before {
+  background: linear-gradient(90deg, #3852b4, #5b6fd4, #3852b4);
+}
+
+.pm-plan-card--tier-elite {
+  border-color: rgba(49, 46, 129, 0.22);
+}
+
+.pm-plan-card--tier-elite::before {
+  background: linear-gradient(90deg, #312e81, #6366f1, #1e1b4b);
+}
+
+.pm-plan-card--membership .pricing-card__head--membership {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+}
+
+.pm-plan-card--membership .pricing-card__badge {
+  display: inline-flex;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, #3852b4, #4f63c3);
+}
+
+.pm-plan-card--membership .pricing-card__title--tier {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pm-ink);
+}
+
+.pm-plan-card--membership .pricing-card__tagline {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--pm-muted);
+}
+
+.pm-plan-card--membership .pricing-card__price--membership {
+  margin: 0.35rem 0 0.15rem;
+}
+
+.pm-plan-card--membership .pricing-card__price-stack {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.pm-plan-card--membership .pricing-card__price-amount {
+  font-size: 1.85rem;
+  font-weight: 950;
+  line-height: 1;
+  color: var(--pm-ink);
+}
+
+.pm-plan-card--membership .pricing-card__price-unit {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #475569;
+}
+
+.pm-plan-card--membership .pricing-card__price-period {
+  margin: 0.4rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--pm-muted);
+}
+
+.pm-plan-card--membership .pricing-card__divider {
+  height: 1px;
+  margin: 0.55rem 0;
+  background: linear-gradient(90deg, transparent, rgba(47, 59, 101, 0.14), transparent);
+}
+
+.pm-plan-card--membership .pricing-card__metrics {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.pm-plan-card--membership .pricing-card__metric {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.55rem 0.6rem;
+  border-radius: 0.85rem;
+  background: #f8fafc;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.pm-plan-card--membership .pricing-card__metric-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 0.55rem;
+  color: var(--pm-primary);
+  background: var(--pm-primary-soft);
+}
+
+.pm-plan-card--membership .pricing-card__metric-copy {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.35em;
+  row-gap: 0.1em;
+  min-width: 0;
+  margin: 0;
+}
+
+.pm-plan-card--membership .pricing-card__metric-value {
+  font-size: 1.02rem;
+  font-weight: 950;
+  color: var(--pm-ink);
+  line-height: 1.15;
+}
+
+.pm-plan-card--membership .pricing-card__metric-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--pm-muted);
+}
+
+.pm-plan-card--membership .pricing-card__metric--elite-cap {
+  background: linear-gradient(135deg, rgba(67, 56, 202, 0.07), #f8fafc);
+  border-color: rgba(67, 56, 202, 0.16);
+}
+
+.pm-plan-card--membership .pricing-card__secondary {
+  margin-top: 0.35rem;
+}
+
+.pm-plan-card--membership .pricing-card__withdrawal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.pm-plan-card--membership .pricing-card__withdrawal--on {
+  color: #166534;
+  background: rgba(22, 101, 52, 0.08);
+}
+
+.pm-plan-card--membership .pricing-card__withdrawal--off {
+  color: #64748b;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.pm-plan-card--membership .pm-plan-card__cta {
+  margin-top: auto;
+}
+
+/* Training packages on mobile — font sizes aligned with membership cards */
+.plans-mobile-page .plans-category-toggle {
+  margin: 0.35rem 1rem 0.85rem;
+}
+
+.pm-training--no-hero {
+  padding-top: 0.15rem;
+}
+
+.pm-training__list {
+  display: grid;
+  gap: 0.85rem;
+  padding-inline: 1rem;
+}
+
+.plans-mobile-page .training-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.85rem 0.85rem 0.75rem;
+  border-radius: var(--pm-radius);
+  background: var(--pm-surface);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow: var(--pm-shadow);
+  overflow: hidden;
+}
+
+.plans-mobile-page .training-card::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 3px;
+  background: rgba(56, 82, 180, 0.35);
+}
+
+.plans-mobile-page .training-card--basic::after {
+  background: linear-gradient(90deg, #60a5fa, #3852b4);
+}
+
+.plans-mobile-page .training-card--professional {
+  border-color: rgba(79, 70, 229, 0.3);
+  background: linear-gradient(180deg, rgba(79, 70, 229, 0.05), #fff 42%);
+}
+
+.plans-mobile-page .training-card--professional::after {
+  background: linear-gradient(90deg, #4f46e5, #7c3aed, #3852b4);
+}
+
+.plans-mobile-page .training-card--premium {
+  border-color: rgba(180, 130, 60, 0.28);
+  background: linear-gradient(180deg, rgba(245, 230, 200, 0.32), #fff 42%);
+}
+
+.plans-mobile-page .training-card--premium::after {
+  background: linear-gradient(90deg, #d4a017, #c9a227, #b8860b);
+}
+
+.plans-mobile-page .training-card__badge {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-bottom: 0.25rem;
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+}
+
+.plans-mobile-page .training-card__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 950;
+  color: var(--pm-ink);
+}
+
+.plans-mobile-page .training-card__desc {
+  margin: 0.15rem 0 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--pm-muted);
+}
+
+.plans-mobile-page .training-card__price {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.4rem;
+}
+
+.plans-mobile-page .training-card__price-amount {
+  font-size: 1.35rem;
+  font-weight: 950;
+  line-height: 1;
+  color: var(--pm-ink);
+}
+
+.plans-mobile-page .training-card__price-unit {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #475569;
+}
+
+.plans-mobile-page .training-card__divider {
+  height: 1px;
+  margin: 0.4rem 0;
+  background: linear-gradient(90deg, transparent, rgba(47, 59, 101, 0.14), transparent);
+}
+
+.plans-mobile-page .training-card__includes-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.66rem;
+  font-weight: 850;
+  color: var(--pm-primary);
+}
+
+.plans-mobile-page .training-card__features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.plans-mobile-page .training-card__feature {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  font-weight: 600;
+  color: #334155;
+}
+
+.plans-mobile-page .training-card__feature--highlight {
+  padding: 0.35rem 0.45rem;
+  border-radius: 0.7rem;
+  background: rgba(47, 59, 101, 0.06);
+  border: 1px solid rgba(47, 59, 101, 0.12);
+  font-weight: 800;
+  font-size: 0.7rem;
+}
+
+.plans-mobile-page .training-card__feature-icon {
+  display: grid;
+  place-items: center;
+  color: var(--pm-primary);
+}
+
+.plans-mobile-page .training-card__cta {
+  margin-top: 0.65rem;
+}
+
+.plans-mobile-page .training-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 2.15rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.plans-mobile-page .training-card__btn--primary {
+  color: #fff;
+  background: linear-gradient(135deg, #3852b4, #4f63c3);
+}
+
+.plans-mobile-page .training-card__btn--outline {
+  color: #1f2a4d;
+  background: rgba(37, 211, 102, 0.07);
+  border: 1px solid rgba(37, 211, 102, 0.3);
 }

@@ -633,6 +633,12 @@
   overflow: hidden;
 }
 
+.fn-notif-card__desc--stacked {
+  white-space: pre-line;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
 .fn-notif-card--read .fn-notif-card__desc {
   color: var(--dash-text-muted, #667085);
   opacity: 0.85;
@@ -827,4 +833,24 @@
   .fn-toolbar__mark-all {
     width: 100%;
   }
+}
+
+/* Web-Admin-A1: select/delete without opening detail */
+.fn-notif-card {
+  position: relative;
+}
+.fn-notif-card__select {
+  position: absolute;
+  inset-inline-start: 10px;
+  top: 14px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+.fn-notif-card--selected {
+  outline: 2px solid rgba(59, 111, 200, 0.45);
+}
+.fn-toolbar__delete-selected {
+  color: #b91c1c !important;
 }

@@ -104,17 +104,49 @@ async function assertFreelancerCanAccessPoolOrder(freelancerUserId, orderOrId, c
     throw notFoundError();
   }
   await planOrderValueEligibility.assertFreelancerMayAccessOrderByPlan(freelancerUserId, order, clientMaybe);
-  return order;
-}
-
-async function assertFreelancerCanClaimOrder(freelancerUserId, orderOrId, clientMaybe) {
-  const subscriptionsService = require("./subscriptionsService");
-  const eligibility = await subscriptionsService.canFreelancerTakeOrders(String(freelancerUserId));
-  if (!eligibility.eligible) {
-    logBlockedAccess("claim_subscription", { freelancerUserId: String(freelancerUserId), reason: eligibility.reason });
-    throw authError("You are not allowed to take this order.", 403, eligibility.reason || "subscription_ineligible");
+  // E1: Marketplace Membership project-value gate (additive; does not remove legacy plan gate).
+  try {
+    const runner = clientMaybe || require("../config/db").pool;
+    const { rows } = await runner.query(
+      `SELECT p.tier_code, p.project_min_value_jod, p.max_real_order_value_jod, p.unlimited_real_order_value
+         FROM freelancer_marketplace_memberships m
+         JOIN marketplace_membership_plans p ON p.id = m.marketplace_plan_id
+        WHERE m.freelancer_user_id = $1
+          AND m.is_current = TRUE
+          AND m.status IN ('active', 'cancel_at_period_end', 'purchased_pending_start')
+        LIMIT 1`,
+      [Number(freelancerUserId)],
+    );
+    if (rows[0]) {
+      const projectValue =
+        order.budget_jod != null
+          ? Number(order.budget_jod)
+          : order.max_budget_jod != null
+            ? Number(order.max_budget_jod)
+            : order.price_jod != null
+              ? Number(order.price_jod)
+              : null;
+      if (projectValue != null && Number.isFinite(projectValue)) {
+        const eligibility = require("./marketplaceMembershipEligibilityService");
+        eligibility.assertProjectValueEligible(
+          {
+            tierCode: rows[0].tier_code,
+            projectMinValueJod: rows[0].project_min_value_jod,
+            maxRealOrderValueJod: rows[0].max_real_order_value_jod,
+            unlimitedRealOrderValue: rows[0].unlimited_real_order_value,
+          },
+          projectValue,
+        );
+      }
+    }
+  } catch (e1Err) {
+    if (e1Err?.publicCode === "MEMBERSHIP_PROJECT_VALUE_BLOCKED") throw e1Err;
+    if (e1Err?.code === "42703" || e1Err?.code === "42P01") {
+      // Pre-153: skip
+    } else if (e1Err?.statusCode) {
+      throw e1Err;
+    }
   }
-  const order = await assertFreelancerCanAccessPoolOrder(freelancerUserId, orderOrId, clientMaybe);
   return order;
 }
 
@@ -125,7 +157,59 @@ async function assertFreelancerCanBidOrder(freelancerUserId, orderOrId, clientMa
     logBlockedAccess("bid_subscription", { freelancerUserId: String(freelancerUserId), reason: eligibility.reason });
     throw authError("Your subscription is not active. You cannot submit bids.", 403, eligibility.reason || "subscription_ineligible");
   }
+  // M4: if current marketplace membership is purchased_pending_start / paid, enforce identity+training.
+  try {
+    const membershipsService = require("./marketplaceMembershipsService");
+    const membershipEligibility = require("./marketplaceMembershipEligibilityService");
+    const membership = await membershipsService.resolveCurrentMarketplaceMembershipForFreelancer(
+      freelancerUserId,
+      { client: clientMaybe || null },
+    );
+    if (membership) {
+      await membershipEligibility.assertMarketplaceApplyGates(clientMaybe || null, freelancerUserId, {
+        membership,
+      });
+    }
+  } catch (gateErr) {
+    if (gateErr?.statusCode) throw gateErr;
+    if (gateErr?.code === "42P01" || gateErr?.code === "42703") {
+      // schema missing — leave legacy path
+    } else {
+      throw gateErr;
+    }
+  }
   return assertFreelancerCanAccessPoolOrder(freelancerUserId, orderOrId, clientMaybe);
+}
+
+async function assertFreelancerCanClaimOrder(freelancerUserId, orderOrId, clientMaybe) {
+  const subscriptionsService = require("./subscriptionsService");
+  const eligibility = await subscriptionsService.canFreelancerTakeOrders(String(freelancerUserId));
+  if (!eligibility.eligible) {
+    logBlockedAccess("claim_subscription", { freelancerUserId: String(freelancerUserId), reason: eligibility.reason });
+    throw authError("You are not allowed to take this order.", 403, eligibility.reason || "subscription_ineligible");
+  }
+  try {
+    const membershipsService = require("./marketplaceMembershipsService");
+    const membershipEligibility = require("./marketplaceMembershipEligibilityService");
+    const membership = await membershipsService.resolveCurrentMarketplaceMembershipForFreelancer(
+      freelancerUserId,
+      { client: clientMaybe || null },
+    );
+    if (membership) {
+      await membershipEligibility.assertMarketplaceApplyGates(clientMaybe || null, freelancerUserId, {
+        membership,
+      });
+    }
+  } catch (gateErr) {
+    if (gateErr?.statusCode) throw gateErr;
+    if (gateErr?.code === "42P01" || gateErr?.code === "42703") {
+      // schema missing
+    } else {
+      throw gateErr;
+    }
+  }
+  const order = await assertFreelancerCanAccessPoolOrder(freelancerUserId, orderOrId, clientMaybe);
+  return order;
 }
 
 /**

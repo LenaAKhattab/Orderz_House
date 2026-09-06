@@ -1,85 +1,47 @@
-import axios from "axios";
+import api, {
+  AUTH_REGISTER_TIMEOUT_MS,
+  ADMIN_LIST_TIMEOUT_MS,
+  ADMIN_LIST_HEAVY_TIMEOUT_MS,
+} from "./httpClient";
 
-export const TOKEN_KEY = "orderz_auth_token";
-
-/** Non-secret flag: set after any successful server session in this tab (login/register); cleared on logout. Used to avoid GET /auth/me for cold visitors. HttpOnly cookies alone are not readable here—users who only clear localStorage may need to sign in again until the next successful session. */
-export const AUTH_SESSION_HINT_KEY = "orderz_session_hint";
-
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
-  timeout: 10000,
-  withCredentials: true,
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-function hasSessionBootstrapCandidate() {
-  if (typeof localStorage === "undefined") return false;
-  const legacy = localStorage.getItem(TOKEN_KEY);
-  return Boolean((legacy && legacy.trim()) || localStorage.getItem(AUTH_SESSION_HINT_KEY));
-}
-
-/** Shared in-flight promise so React Strict Mode’s double mount does not send two /auth/me requests. */
-let sessionBootstrapPromise = null;
-
-export function resetSessionBootstrap() {
-  sessionBootstrapPromise = null;
-}
-
-/**
- * Initial session check: 401 is treated as guest (validateStatus), not an axios error.
- * Returns null when there is no legacy token and no session hint — skips the request entirely.
- */
-export async function fetchSessionBootstrap() {
-  if (!hasSessionBootstrapCandidate()) {
-    return null;
-  }
-  if (!sessionBootstrapPromise) {
-    sessionBootstrapPromise = api
-      .get("/auth/me", {
-        validateStatus: (status) => status === 200 || status === 401,
-      })
-      .then((response) => {
-        if (response.status === 401) {
-          return null;
-        }
-        return response.data;
-      })
-      .catch((err) => {
-        resetSessionBootstrap();
-        throw err;
-      });
-  }
-  return sessionBootstrapPromise;
-}
+export { default } from "./httpClient";
+export {
+  TOKEN_KEY,
+  AUTH_SESSION_HINT_KEY,
+  AUTH_REGISTER_TIMEOUT_MS,
+  AUTH_LOGIN_TIMEOUT_MS,
+  ADMIN_LIST_TIMEOUT_MS,
+  ADMIN_LIST_HEAVY_TIMEOUT_MS,
+} from "./httpClient";
+export {
+  fetchSessionBootstrap,
+  resetSessionBootstrap,
+  loginRequest,
+  registerRequest,
+  verifyRegisterOtpRequest,
+  meRequest,
+  logoutRequest,
+} from "./authSessionApi";
+export {
+  getCurrencyDisplayRequest,
+  getPublicFooterSettingsRequest,
+  getPublicSitePagesRequest,
+  probePublicWebsitePageForNav,
+  postPublicPageViewRequest,
+} from "./publicChromeApi";
+export {
+  NOTIFICATIONS_REFRESH_EVENT,
+  listMyNotificationsRequest,
+  getUnreadNotificationsCountRequest,
+  markNotificationReadRequest,
+  markAllNotificationsReadRequest,
+  deleteNotificationRequest,
+  deleteNotificationsBulkRequest,
+} from "./notificationsApi";
 
 export const getHealthStatus = async () => {
   const response = await api.get("/health");
   return response.data;
-};
-
-/** Register/resend wait for bcrypt + DB + email; allow more than the default 10s client timeout. */
-const AUTH_REGISTER_TIMEOUT_MS = 25000;
-
-export const loginRequest = async (email, password) => {
-  const { data } = await api.post("/auth/login", { email, password });
-  return data;
-};
-
-export const registerRequest = async (body) => {
-  const { data } = await api.post("/auth/register", body, { timeout: AUTH_REGISTER_TIMEOUT_MS });
-  return data;
-};
-
-export const verifyRegisterOtpRequest = async (email, otp) => {
-  const { data } = await api.post("/auth/verify-register-otp", { email, otp });
-  return data;
 };
 
 export const resendRegisterOtpRequest = async (email) => {
@@ -102,19 +64,7 @@ export const resetPasswordRequest = async (email, resetToken, newPassword) => {
   return data;
 };
 
-/**
- * Refresh current user (e.g. after profile change). 401 → null without axios throw.
- * Prefer fetchSessionBootstrap() only for the one-time app shell init.
- */
-export const meRequest = async () => {
-  const response = await api.get("/auth/me", {
-    validateStatus: (status) => status === 200 || status === 401,
-  });
-  if (response.status === 401) {
-    return null;
-  }
-  return response.data;
-};
+/** Forgot-password 401 is a request error only. There is no axios response interceptor that logs the current session out. */
 
 /** Extended profile + dashboard stats + subscription (freelancer). */
 export const getProfileMeRequest = async () => {
@@ -159,9 +109,13 @@ export const deleteProfileAvatarRequest = async () => {
   return data;
 };
 
-/** Clears HttpOnly session cookie on the server (no body secrets). */
-export const logoutRequest = async () => {
-  const { data } = await api.post("/auth/logout");
+export const getRoleConversionEligibilityRequest = async () => {
+  const { data } = await api.get("/profile/role-conversion");
+  return data;
+};
+
+export const convertAccountRoleRequest = async ({ currentPassword, confirmation }) => {
+  const { data } = await api.post("/profile/role-conversion", { currentPassword, confirmation });
   return data;
 };
 
@@ -199,6 +153,761 @@ export const getPublicGeoRequest = async () => {
 
 export const listPublicPlansRequest = async () => {
   const { data } = await api.get("/plans");
+  return data;
+};
+
+/** Marketplace Membership catalog — one of three Admin-selectable default catalogs. */
+export const listPublicMarketplaceMembershipPlansRequest = async () => {
+  const { data } = await api.get("/marketplace-membership-plans");
+  return data;
+};
+
+/** Public special-offer package (null when hidden). */
+export const getPublicSpecialOfferPackageRequest = async () => {
+  const { data } = await api.get("/special-offer-package");
+  return data;
+};
+
+export const getAdminSpecialOfferPackageRequest = async () => {
+  const { data } = await api.get("/super-admin/plans/special-offer");
+  return data;
+};
+
+export const updateAdminSpecialOfferPackageRequest = async (payload) => {
+  const { data } = await api.put("/super-admin/plans/special-offer", payload, { timeout: 30000 });
+  return data;
+};
+
+export const updateAdminSpecialOfferVisibilityRequest = async (isVisible) => {
+  const { data } = await api.patch(
+    "/super-admin/plans/special-offer/visibility",
+    { isVisible: Boolean(isVisible) },
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const createAdminSpecialOfferNewVersionRequest = async (payload = {}) => {
+  const { data } = await api.post(
+    "/super-admin/plans/special-offer/new-version",
+    {
+      copyFromCurrent: payload.copyFromCurrent !== false,
+      makeVisible: Boolean(payload.makeVisible),
+    },
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+/** Public/read-safe: Super Admin-selected default plan catalog id only. */
+export const getPublicDefaultPlanCatalogRequest = async () => {
+  const { data } = await api.get("/default-plan-catalog");
+  return data;
+};
+
+export const getAdminDefaultPlanCatalogRequest = async () => {
+  const { data } = await api.get("/super-admin/default-plan-catalog");
+  return data;
+};
+
+export const updateAdminDefaultPlanCatalogRequest = async (catalog) => {
+  const { data } = await api.patch("/super-admin/default-plan-catalog", { catalog });
+  return data;
+};
+
+/** Public/read-safe: `/plans` hero copy + initial Training/Work section. */
+export const getPublicPlansContentRequest = async () => {
+  const { data } = await api.get("/public-plans-content");
+  return data;
+};
+
+export const getAdminPublicPlansContentRequest = async () => {
+  const { data } = await api.get("/super-admin/public-plans-content");
+  return data;
+};
+
+export const updateAdminPublicPlansContentRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/public-plans-content", payload);
+  return data;
+};
+
+/** Active plans on special plan pages (باقات الصفحات) — existing page-package catalog. */
+export const listPublicSpecialPagePlansRequest = async () => {
+  const { data } = await api.get("/plan-pages/special-catalog");
+  return data;
+};
+
+export const listPublicTrainingPackagesRequest = async () => {
+  const { data } = await api.get("/public/training-packages");
+  return data;
+};
+
+export const listAdminTrainingPackagesRequest = async () => {
+  const { data } = await api.get("/super-admin/training-packages");
+  return data;
+};
+
+export const createAdminTrainingPackageRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/training-packages", payload, { timeout: 30000 });
+  return data;
+};
+
+export const updateAdminTrainingPackageRequest = async (code, patch) => {
+  const { data } = await api.patch(
+    `/super-admin/training-packages/${encodeURIComponent(code)}`,
+    patch,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const reorderAdminTrainingPackagesRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/training-packages/reorder", payload, { timeout: 30000 });
+  return data;
+};
+
+export const listAdminMarketplaceMembershipPlansRequest = async ({ includeInactive = true } = {}) => {
+  const { data } = await api.get("/super-admin/marketplace-membership-plans", {
+    params: { includeInactive },
+  });
+  return data;
+};
+
+export const createMarketplaceMembershipPlanRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/marketplace-membership-plans", payload, { timeout: 30000 });
+  return data;
+};
+
+export const updateMarketplaceMembershipPlanRequest = async (id, patch) => {
+  const { data } = await api.patch(`/super-admin/marketplace-membership-plans/${id}`, patch, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+/** Marketplace Articles — Phase A2 Level model (applications use Bids). */
+export const listAdminMarketplaceArticlesRequest = async (params = {}, options = {}) => {
+  const { signal, timeout = ADMIN_LIST_TIMEOUT_MS } = options;
+  const { data } = await api.get("/super-admin/marketplace-articles", { params, signal, timeout });
+  return data;
+};
+
+export const createMarketplaceArticleRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/marketplace-articles", payload, { timeout: 30000 });
+  return data;
+};
+
+export const updateMarketplaceArticleRequest = async (id, patch) => {
+  const { data } = await api.patch(`/super-admin/marketplace-articles/${id}`, patch, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+/** OZ-Articles-Bildazo-02 — Bildazo leaf categories + package word/ref requirements. */
+export const listAdminBildazoCategoriesRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/marketplace-articles/bildazo-categories", {
+    params,
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const listAdminArticlePackageRequirementsRequest = async () => {
+  const { data } = await api.get("/super-admin/marketplace-articles/package-requirements", {
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const updateAdminArticlePackageRequirementsRequest = async (payload) => {
+  const { data } = await api.put("/super-admin/marketplace-articles/package-requirements", payload, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const getAdminArticleBildazoPublishPreviewRequest = async (applicationId) => {
+  const { data } = await api.get(
+    `/super-admin/article-applications/${encodeURIComponent(applicationId)}/bildazo-publish-preview`,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const listPublishedMarketplaceArticlesRequest = async (params = {}) => {
+  const { data } = await api.get("/marketplace-articles", { params });
+  return data;
+};
+
+/** Phase A1 — Freelancer Activation Engine (flagged; default off). */
+export const getFreelancerActivationTrialRequest = async () => {
+  const { data } = await api.get("/freelancer/activation-trial");
+  return data;
+};
+
+export const activateFreelancerActivationTrialRequest = async () => {
+  const { data } = await api.post("/freelancer/activation-trial/activate");
+  return data;
+};
+
+export const getFreelancerActivationEarnedBalanceRequest = async () => {
+  const { data } = await api.get("/freelancer/activation/earned-balance");
+  return data;
+};
+
+export const getFreelancerActivationConversionRequest = async () => {
+  const { data } = await api.get("/freelancer/activation/conversion");
+  return data;
+};
+
+export const recordFreelancerActivationCtaViewedRequest = async () => {
+  const { data } = await api.post("/freelancer/activation/conversion/cta-viewed");
+  return data;
+};
+
+export const startFreelancerSilverCheckoutRequest = async () => {
+  const { data } = await api.post("/freelancer/activation/conversion/start-silver-checkout");
+  return data;
+};
+
+export const getSuperAdminFreelancerActivationTrialsRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/trials", { params });
+  return data;
+};
+
+export const getSuperAdminFreelancerActivationSettingsRequest = async () => {
+  const { data } = await api.get("/super-admin/freelancer-activation/settings");
+  return data;
+};
+
+export const updateSuperAdminFreelancerActivationSettingsRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/freelancer-activation/settings", payload);
+  return data;
+};
+
+export const getSuperAdminFreelancerActivationEarnedBalanceRequest = async () => {
+  const { data } = await api.get("/super-admin/freelancer-activation/earned-balance");
+  return data;
+};
+
+/** Phase A7.1/A7.2 — Super Admin Activation Engine KPIs (read-only). */
+export const getSuperAdminFreelancerActivationKpisRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/kpis", { params });
+  return data;
+};
+
+export const getSuperAdminWorkInventoryReserveRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/work-inventory-reserve", {
+    params,
+  });
+  return data;
+};
+
+export const getSuperAdminActivationArticleFundRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/article-fund", { params });
+  return data;
+};
+
+export const depositSuperAdminActivationArticleFundRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/freelancer-activation/article-fund/deposit", payload);
+  return data;
+};
+
+export const withdrawSuperAdminActivationArticleFundRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/freelancer-activation/article-fund/withdraw", payload);
+  return data;
+};
+
+/** Resolve/create the single internal article-operations setup (no multi-campaign UX). */
+export const getSuperAdminArticleOperationsSetupRequest = async () => {
+  const { data } = await api.get("/super-admin/freelancer-activation/article-operations/setup");
+  return data;
+};
+
+export const ensureSuperAdminArticleOperationsSetupRequest = async () => {
+  const { data } = await api.post("/super-admin/freelancer-activation/article-operations/setup");
+  return data;
+};
+
+export const listSuperAdminActivationPlanAllocationsRequest = async (campaignId) => {
+  if (campaignId == null || campaignId === "") {
+    const { data } = await api.get("/super-admin/freelancer-activation/article-operations/plan-allocations");
+    return data;
+  }
+  const { data } = await api.get(
+    `/super-admin/freelancer-activation/campaigns/${campaignId}/plan-allocations`,
+  );
+  return data;
+};
+
+export const createSuperAdminActivationPlanAllocationRequest = async (campaignId, payload) => {
+  if (campaignId == null || campaignId === "") {
+    const { data } = await api.post(
+      "/super-admin/freelancer-activation/article-operations/plan-allocations",
+      payload,
+    );
+    return data;
+  }
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation/campaigns/${campaignId}/plan-allocations`,
+    payload,
+  );
+  return data;
+};
+
+export const patchSuperAdminActivationPlanAllocationRequest = async (allocationId, payload) => {
+  const { data } = await api.patch(
+    `/super-admin/freelancer-activation/plan-allocations/${allocationId}`,
+    payload,
+  );
+  return data;
+};
+
+export const listSuperAdminActivationArticleInventoryRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/article-inventory", { params });
+  return data;
+};
+
+export const createSuperAdminActivationArticleInventoryRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/freelancer-activation/article-inventory", payload);
+  return data;
+};
+
+export const patchSuperAdminActivationArticleInventoryRequest = async (id, payload) => {
+  const { data } = await api.patch(
+    `/super-admin/freelancer-activation/article-inventory/${id}`,
+    payload,
+  );
+  return data;
+};
+
+export const releaseSuperAdminActivationArticleInventoryRequest = async (id) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation/article-inventory/${id}/release`,
+  );
+  return data;
+};
+
+/** OZ03: release marketplace_articles draft → published (same row). */
+export const releaseMarketplaceArticleDraftRequest = async (id, payload = {}) => {
+  const { data } = await api.post(
+    `/super-admin/marketplace-articles/${encodeURIComponent(id)}/release`,
+    payload,
+  );
+  return data;
+};
+
+export const releaseMarketplaceArticleDraftBatchRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/marketplace-articles/release-batch", payload);
+  return data;
+};
+
+export const previewSuperAdminActivationArticleReleaseRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/article-release/preview", {
+    params,
+  });
+  return data;
+};
+
+export const runSuperAdminActivationArticleReleaseRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/freelancer-activation/article-release/run", payload);
+  return data;
+};
+
+export const listSuperAdminActivationArticleReleaseRunsRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/article-release/runs", {
+    params,
+  });
+  return data;
+};
+
+export const getSuperAdminActivationArticleReleaseRunRequest = async (id) => {
+  const { data } = await api.get(
+    `/super-admin/freelancer-activation/article-release/runs/${encodeURIComponent(id)}`,
+  );
+  return data;
+};
+
+export const listSuperAdminActivationLiveArticlesRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/freelancer-activation/live-articles", { params });
+  return data;
+};
+
+export const getSuperAdminActivationLiveArticleRequest = async (articleId) => {
+  const { data } = await api.get(
+    `/super-admin/freelancer-activation/live-articles/${encodeURIComponent(articleId)}`,
+  );
+  return data;
+};
+
+export const runSuperAdminActivationLiveArticleAutoAssignmentRequest = async (articleId) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation/live-articles/${encodeURIComponent(articleId)}/run-auto-assignment`,
+    {},
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const releaseAnotherSuperAdminActivationLiveArticleRequest = async (articleId, payload = {}) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation/live-articles/${encodeURIComponent(articleId)}/release-another`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const listSuperAdminActivationCampaignsRequest = async () => {
+  const { data } = await api.get("/super-admin/freelancer-activation/campaigns");
+  return data;
+};
+
+export const createSuperAdminActivationCampaignRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/freelancer-activation/campaigns", payload);
+  return data;
+};
+
+export const getSuperAdminActivationCampaignRequest = async (id) => {
+  const { data } = await api.get(`/super-admin/freelancer-activation/campaigns/${encodeURIComponent(id)}`);
+  return data;
+};
+
+export const pauseSuperAdminActivationCampaignRequest = async (id) => {
+  const { data } = await api.post(`/super-admin/freelancer-activation/campaigns/${encodeURIComponent(id)}/pause`);
+  return data;
+};
+
+export const resumeSuperAdminActivationCampaignRequest = async (id) => {
+  const { data } = await api.post(`/super-admin/freelancer-activation/campaigns/${encodeURIComponent(id)}/resume`);
+  return data;
+};
+
+export const emergencyStopSuperAdminActivationCampaignRequest = async (id) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation/campaigns/${encodeURIComponent(id)}/emergency-stop`,
+  );
+  return data;
+};
+
+export const createSuperAdminActivationWaveRequest = async (campaignId, payload) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation/campaigns/${encodeURIComponent(campaignId)}/waves`,
+    payload,
+  );
+  return data;
+};
+
+/** Phase 0B — OrderzHouse-side Bildazo writer link (no live Bildazo call). */
+export const getFreelancerBildazoAuthorLinkRequest = async () => {
+  const { data } = await api.get("/freelancer/bildazo-author-link/me");
+  return data;
+};
+
+export const submitFreelancerBildazoAuthorLinkRequest = async (payload = {}) => {
+  const { data } = await api.post("/freelancer/bildazo-author-link/request", payload, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const changeFreelancerBildazoAuthorLinkRequest = async (payload = {}) => {
+  const { data } = await api.post("/freelancer/bildazo-author-link/change", payload, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+/** Phase 0C — Super Admin manual Bildazo author link (no live Bildazo call). */
+export const listSuperAdminBildazoAuthorLinksRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/bildazo-author-links", { params });
+  return data;
+};
+
+export const manualLinkSuperAdminBildazoAuthorRequest = async (id, payload = {}) => {
+  const { data } = await api.patch(
+    `/super-admin/bildazo-author-links/${encodeURIComponent(id)}/manual-link`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const updateSuperAdminBildazoAuthorLinkStatusRequest = async (id, payload = {}) => {
+  const { data } = await api.patch(
+    `/super-admin/bildazo-author-links/${encodeURIComponent(id)}/status`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+/** Phase B5 — Freelancer Article applications (no Bid cost displayed until approved). */
+export const getFreelancerArticleApplicationContextRequest = async (articleId) => {
+  const { data } = await api.get(
+    `/freelancer/marketplace-articles/${encodeURIComponent(articleId)}/application`,
+  );
+  return data;
+};
+
+export const submitFreelancerArticleApplicationRequest = async (articleId, payload = {}) => {
+  const { data } = await api.post(
+    `/freelancer/marketplace-articles/${encodeURIComponent(articleId)}/applications`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const withdrawFreelancerArticleApplicationRequest = async (applicationId) => {
+  const { data } = await api.post(
+    `/freelancer/article-applications/${encodeURIComponent(applicationId)}/withdraw`,
+    {},
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const submitFreelancerFinalArticleManuscriptRequest = async (applicationId, payload = {}) => {
+  const { data } = await api.post(
+    `/freelancer/article-applications/${encodeURIComponent(applicationId)}/final-manuscript`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const listAdminArticleApplicationsRequest = async (articleId, params = {}) => {
+  const { data } = await api.get(
+    `/super-admin/marketplace-articles/${encodeURIComponent(articleId)}/applications`,
+    { params },
+  );
+  return data;
+};
+
+export const getAdminArticleAutoAssignmentRequest = async (articleId) => {
+  const { data } = await api.get(
+    `/super-admin/marketplace-articles/${encodeURIComponent(articleId)}/auto-assignment`,
+  );
+  return data;
+};
+
+export const runAdminArticleAutoAssignmentRequest = async (articleId) => {
+  const { data } = await api.post(
+    `/super-admin/marketplace-articles/${encodeURIComponent(articleId)}/auto-assignment/run`,
+    {},
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const relistAdminMarketplaceArticleBidCollectionRequest = async (articleId, payload = {}) => {
+  const { data } = await api.post(
+    `/super-admin/marketplace-articles/${encodeURIComponent(articleId)}/relist-bid-collection`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const selectAdminArticleApplicationRequest = async (applicationId, payload = {}) => {
+  const { data } = await api.post(
+    `/super-admin/article-applications/${encodeURIComponent(applicationId)}/select`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const rejectAdminArticleApplicationRequest = async (applicationId) => {
+  const { data } = await api.post(
+    `/super-admin/article-applications/${encodeURIComponent(applicationId)}/reject`,
+    {},
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const finalizeAdminArticleApplicationRequest = async (applicationId) => {
+  const { data } = await api.post(
+    `/super-admin/article-applications/${encodeURIComponent(applicationId)}/finalize-approval`,
+    {},
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const requestAdminArticleRevisionRequest = async (applicationId, payload = {}) => {
+  const { data } = await api.post(
+    `/super-admin/article-applications/${encodeURIComponent(applicationId)}/request-revision`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const retryAdminArticleBildazoPublishRequest = async (applicationId) => {
+  const { data } = await api.post(
+    `/super-admin/article-applications/${encodeURIComponent(applicationId)}/bildazo-publish/retry`,
+    {},
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const retryAdminMarketplaceArticleBildazoPublishRequest = async (articleId) => {
+  const { data } = await api.post(
+    `/super-admin/marketplace-articles/${encodeURIComponent(articleId)}/bildazo-publish/retry`,
+    {},
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const reorderMarketplaceMembershipPlansRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/marketplace-membership-plans/reorder", payload, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const deleteMarketplaceMembershipPlanRequest = async (id) => {
+  const { data } = await api.delete(`/super-admin/marketplace-membership-plans/${id}`);
+  return data;
+};
+
+/** Marketplace Economy settings (باقات العمل) — Phase 2 policy only; Super Admin. */
+export const getMarketplaceEconomySettingsRequest = async () => {
+  const { data } = await api.get("/super-admin/marketplace-economy-settings");
+  return data;
+};
+
+export const updateMarketplaceEconomySettingsRequest = async (payload) => {
+  const { data } = await api.put("/super-admin/marketplace-economy-settings", payload, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+/** Marketplace Membership (باقات العمل) — Phase 3 read-only snapshot for Freelancer. */
+export const getFreelancerMarketplaceMembershipRequest = async () => {
+  const { data } = await api.get("/freelancer/marketplace-membership");
+  return data;
+};
+
+/** Marketplace STARTER trial start (identity + training required). */
+export const startMarketplaceStarterTrialRequest = async () => {
+  const { data } = await api.post("/freelancer/marketplace-membership/starter/start-trial", {}, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+/** @deprecated Prefer startMarketplaceStarterTrialRequest */
+export const activateMarketplaceStarterMembershipRequest = startMarketplaceStarterTrialRequest;
+
+/** Marketplace-M2: start Stripe Checkout for SILVER/PRO/ELITE (does not grant membership). */
+export const createMarketplaceMembershipCheckoutRequest = async (planCode) => {
+  const code = typeof planCode === "string" ? planCode.trim() : "";
+  if (!code) {
+    throw new Error("رمز باقة Marketplace غير صالح.");
+  }
+  const { data } = await api.post(
+    "/freelancer/marketplace-membership/checkout",
+    { planCode: code },
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+/** Special offer → existing marketplace membership Stripe checkout (linked plan). */
+export const createSpecialOfferCheckoutRequest = async () => {
+  const { data } = await api.post("/freelancer/special-offer-package/checkout", {}, { timeout: 30000 });
+  return data;
+};
+
+/** Bid Credits — Phase B1 active Bids product + B6 packages. */
+export const getFreelancerBidCreditsRequest = async () => {
+  const { data } = await api.get("/freelancer/bid-credits");
+  return data;
+};
+
+export const listFreelancerBidCreditPackagesRequest = async () => {
+  const { data } = await api.get("/freelancer/bid-credit-packages");
+  return data;
+};
+
+export const createFreelancerBidCreditPurchaseCheckoutRequest = async (payload) => {
+  const { data } = await api.post("/freelancer/bid-credit-purchases/checkout", payload, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const confirmFreelancerBidCreditPurchaseRequest = async (payload) => {
+  const { data } = await api.post("/freelancer/bid-credit-purchases/confirm", payload, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const listFreelancerBidCreditPurchasesRequest = async (params = {}) => {
+  const { data } = await api.get("/freelancer/bid-credit-purchases", { params });
+  return data;
+};
+
+export const listAdminBidCreditPackagesRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/bid-credit-packages", { params });
+  return data;
+};
+
+export const listAdminBidCreditPurchasesRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/bid-credit-purchases", { params });
+  return data;
+};
+
+export const resolveAdminBidCreditPurchaseManualReviewRequest = async (purchaseId, payload) => {
+  const { data } = await api.post(
+    `/super-admin/bid-credit-purchases/${encodeURIComponent(purchaseId)}/manual-review`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const createAdminBidCreditPackageRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/bid-credit-packages", payload, { timeout: 30000 });
+  return data;
+};
+
+export const updateAdminBidCreditPackageRequest = async (id, patch) => {
+  const { data } = await api.patch(`/super-admin/bid-credit-packages/${encodeURIComponent(id)}`, patch, {
+    timeout: 30000,
+  });
+  return data;
+};
+
+export const getAdminFreelancerBidCreditsRequest = async (freelancerUserId) => {
+  const { data } = await api.get(
+    `/super-admin/bid-credits/freelancers/${encodeURIComponent(freelancerUserId)}`,
+  );
+  return data;
+};
+
+export const adminGrantBidCreditsRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/bid-credits/grants", payload, { timeout: 30000 });
+  return data;
+};
+
+/** Super Admin Marketplace Membership inspection (Phase 3 read-only). */
+export const listAdminMarketplaceMembershipsRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/marketplace-memberships", { params });
+  return data;
+};
+
+export const getAdminMarketplaceMembershipRequest = async (id) => {
+  const { data } = await api.get(`/super-admin/marketplace-memberships/${encodeURIComponent(id)}`);
   return data;
 };
 
@@ -240,17 +949,22 @@ export const replacePlanFeaturesRequest = async (planId, features) => {
 };
 
 export const createPlanRequest = async (payload) => {
-  const { data } = await api.post("/admin/plans", payload);
+  const { data } = await api.post("/admin/plans", payload, { timeout: 30000 });
   return data;
 };
 
 export const updatePlanRequest = async (id, patch) => {
-  const { data } = await api.patch(`/admin/plans/${id}`, patch);
+  const { data } = await api.patch(`/admin/plans/${id}`, patch, { timeout: 30000 });
   return data;
 };
 
 export const deletePlanRequest = async (id) => {
   const { data } = await api.delete(`/admin/plans/${id}`);
+  return data;
+};
+
+export const archivePlanRequest = async (id) => {
+  const { data } = await api.patch(`/admin/plans/${id}/archive`);
   return data;
 };
 
@@ -264,13 +978,36 @@ export const listAssignablePlansAdminRequest = async () => {
   return data;
 };
 
-export const listSubscriptionsRequest = async (params = {}) => {
-  const { data } = await api.get("/admin/subscriptions", { params });
+export const listSubscriptionsRequest = async (params = {}, options = {}) => {
+  const { signal, timeout = ADMIN_LIST_TIMEOUT_MS } = options;
+  const { data } = await api.get("/admin/subscriptions", { params, signal, timeout });
   return data;
 };
 
-export const listActivationQueueRequest = async (params = {}) => {
-  const { data } = await api.get("/admin/subscriptions/activation-queue", { params });
+export const listActivationQueueRequest = async (params = {}, options = {}) => {
+  const { signal, ...rest } = options;
+  const query = { ...params };
+  if (query.search != null) {
+    const trimmed = String(query.search).trim();
+    if (trimmed) query.search = trimmed;
+    else delete query.search;
+  }
+  const { data } = await api.get("/admin/subscriptions/activation-queue", {
+    params: query,
+    signal,
+    ...rest,
+  });
+  return data;
+};
+
+/** Single-response Admin Action Center counts (admin + super_admin). */
+export const getAdminActionCenterSummaryRequest = async (options = {}) => {
+  const { signal, timeout = 15000, ...rest } = options;
+  const { data } = await api.get("/admin/action-center/summary", {
+    timeout,
+    signal,
+    ...rest,
+  });
   return data;
 };
 
@@ -319,8 +1056,26 @@ export const updateSubscriptionNotificationEmailRequest = async (email) => {
   return data;
 };
 
-export const activateSubscriptionCompanyRequest = async (id) => {
-  const { data } = await api.patch(`/admin/subscriptions/${id}/company-activate`);
+/** Super-admin only: read global subscription activation fee settings. */
+export const getSubscriptionActivationFeeSettingsRequest = async () => {
+  const { data } = await api.get("/admin/subscriptions/activation-fee-settings");
+  return data;
+};
+
+/** Super-admin only: update global subscription activation fee settings. */
+export const updateSubscriptionActivationFeeSettingsRequest = async (payload) => {
+  const { data } = await api.put("/admin/subscriptions/activation-fee-settings", payload);
+  return data;
+};
+
+export const activateSubscriptionCompanyRequest = async (id, payload = {}) => {
+  const body =
+    payload && typeof payload === "object" && (payload.overrideReason || payload.kycOverrideReason)
+      ? {
+          overrideReason: String(payload.overrideReason || payload.kycOverrideReason || "").trim(),
+        }
+      : {};
+  const { data } = await api.patch(`/admin/subscriptions/${id}/company-activate`, body);
   return data;
 };
 
@@ -344,9 +1099,159 @@ export const getMySubscriptionRequest = async () => {
   return data;
 };
 
+/** Freelancer self-service account activation — starts subscription period immediately. */
+export const selfActivateFreelancerAccountRequest = async () => {
+  const { data } = await api.post("/freelancer/subscription/activate-account");
+  return data;
+};
+
+/** Phase A11 — Account activation KYC status (not marketplace article activation). */
+export const getFreelancerAccountActivationRequest = async () => {
+  const { data } = await api.get("/freelancer/account-activation");
+  return data;
+};
+
+export const submitFreelancerAccountActivationRequest = async ({
+  idFront,
+  idBack,
+  termsAccepted,
+  termsVersion,
+} = {}) => {
+  const fd = new FormData();
+  if (idFront) fd.append("idFront", idFront);
+  if (idBack) fd.append("idBack", idBack);
+  fd.append("termsAccepted", termsAccepted ? "true" : "false");
+  if (termsVersion) fd.append("termsVersion", String(termsVersion));
+  const { data } = await api.post("/freelancer/account-activation/submit", fd, {
+    headers: { "Content-Type": "multipart/form-data" },
+    timeout: 120000,
+  });
+  return data;
+};
+
+export const listSuperAdminFreelancerActivationRequestsRequest = async (params = {}, options = {}) => {
+  const { signal, timeout = ADMIN_LIST_TIMEOUT_MS } = options;
+  const { data } = await api.get("/super-admin/freelancer-activation-requests", {
+    params,
+    signal,
+    timeout,
+  });
+  return data;
+};
+
+export const getSuperAdminFreelancerActivationRequestRequest = async (id) => {
+  const { data } = await api.get(
+    `/super-admin/freelancer-activation-requests/${encodeURIComponent(id)}`,
+  );
+  return data;
+};
+
+export const approveSuperAdminFreelancerActivationRequestRequest = async (id) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation-requests/${encodeURIComponent(id)}/approve`,
+  );
+  return data;
+};
+
+export const rejectSuperAdminFreelancerActivationRequestRequest = async (id, payload = {}) => {
+  const { data } = await api.post(
+    `/super-admin/freelancer-activation-requests/${encodeURIComponent(id)}/reject`,
+    payload,
+  );
+  return data;
+};
+
+export const fetchSuperAdminFreelancerActivationKycFileBlob = async (id, side, options = {}) => {
+  const { signal } = options;
+  try {
+    const response = await api.get(
+      `/super-admin/freelancer-activation-requests/${encodeURIComponent(id)}/files/${encodeURIComponent(side)}`,
+      {
+        params: { disposition: "inline" },
+        responseType: "blob",
+        timeout: 60000,
+        maxRedirects: 0,
+        signal,
+      },
+    );
+    const data = response.data;
+    const ct = String(response.headers?.["content-type"] || "").toLowerCase();
+    if (data instanceof Blob && ct.includes("application/json")) {
+      const text = await data.text();
+      let json = null;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = null;
+      }
+      const err = new Error(json?.message || "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.");
+      err.response = { status: response.status, data: json || { message: err.message } };
+      throw err;
+    }
+    return data;
+  } catch (err) {
+    if (err?.code === "ERR_CANCELED" || err?.name === "CanceledError" || err?.name === "AbortError") {
+      throw err;
+    }
+    const blob = err?.response?.data;
+    if (blob instanceof Blob) {
+      try {
+        const text = await blob.text();
+        const json = JSON.parse(text);
+        const wrapped = new Error(json?.message || "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.");
+        wrapped.response = { status: err.response?.status, data: json };
+        throw wrapped;
+      } catch (parseErr) {
+        if (parseErr?.response) throw parseErr;
+      }
+    }
+    throw err;
+  }
+};
+
 /** Freelancer control-center dashboard: single aggregated summary (Phase 2). */
 export const getFreelancerDashboardSummaryRequest = async () => {
   const { data } = await api.get("/freelancer/dashboard-summary", { timeout: 20000 });
+  return data;
+};
+
+export const getOnboardingMyCurrentRequest = async () => {
+  const { data } = await api.get("/onboarding/my-current", { timeout: 12000 });
+  return data;
+};
+
+export const getOnboardingGettingStartedRequest = async () => {
+  const { data } = await api.get("/onboarding/getting-started", { timeout: 12000 });
+  return data;
+};
+
+export const postOnboardingEventRequest = async (payload) => {
+  const { data } = await api.post("/onboarding/events", payload);
+  return data;
+};
+
+export const adminListOnboardingItemsRequest = async () => {
+  const { data } = await api.get("/admin/onboarding/items");
+  return data;
+};
+
+export const adminCreateOnboardingItemRequest = async (payload) => {
+  const { data } = await api.post("/admin/onboarding/items", payload);
+  return data;
+};
+
+export const adminUpdateOnboardingItemRequest = async (id, payload) => {
+  const { data } = await api.patch(`/admin/onboarding/items/${id}`, payload);
+  return data;
+};
+
+export const adminEnableOnboardingItemRequest = async (id) => {
+  const { data } = await api.post(`/admin/onboarding/items/${id}/enable`);
+  return data;
+};
+
+export const adminDisableOnboardingItemRequest = async (id) => {
+  const { data } = await api.post(`/admin/onboarding/items/${id}/disable`);
   return data;
 };
 
@@ -501,6 +1406,11 @@ export const createClientOrderRequest = async (payload) => {
   return data;
 };
 
+export const createClientFixedOrderCheckoutRequest = async (orderId) => {
+  const { data } = await api.post(`/client/orders/${orderId}/pay-checkout`);
+  return data;
+};
+
 export const confirmClientFixedOrderPaidRequest = async (orderId) => {
   const { data } = await api.post(`/client/orders/${orderId}/pay-confirm`);
   return data;
@@ -513,6 +1423,18 @@ export const cancelClientFixedOrderPaymentRequest = async (orderId) => {
 
 export const submitPoolOrderBidRequest = async (orderId, payload) => {
   const { data } = await api.post(`/orders/pool/${orderId}/bids`, payload);
+  return data;
+};
+
+/** Phase B4 — upgrade an existing normal application to Priority Boost. */
+export const upgradePoolOrderBidPriorityRequest = async (orderId) => {
+  const { data } = await api.post(`/orders/pool/${orderId}/bids/priority-boost`);
+  return data;
+};
+
+/** Phase B2 — normal application Bid Credit quote (cost = 1 Bid). */
+export const getPoolOrderNormalApplicationBidQuoteRequest = async (orderId) => {
+  const { data } = await api.get(`/orders/pool/${orderId}/normal-application-bid-quote`);
   return data;
 };
 
@@ -1356,6 +2278,99 @@ export const createSuperAdminFreelancerPaymentRequest = async (payload) => {
   return data;
 };
 
+// Problems & Suggestions (client / freelancer)
+export const createFeedbackRequest = async (payload) => {
+  const { data } = await api.post("/feedback", payload);
+  return data;
+};
+
+export const listMyFeedbackRequest = async (params = {}) => {
+  const { data } = await api.get("/feedback/my", { params });
+  return data;
+};
+
+export const getMyFeedbackByIdRequest = async (id) => {
+  const { data } = await api.get(`/feedback/my/${id}`);
+  return data;
+};
+
+export const listFeedbackCategoriesRequest = async () => {
+  const { data } = await api.get("/feedback/categories");
+  return data;
+};
+
+export const listFeedbackTopicsRequest = async (params = {}) => {
+  const { data } = await api.get("/feedback/topics", { params });
+  return data;
+};
+
+// Super Admin — Problems & Suggestions
+export const listSuperAdminFeedbackRequest = async (params = {}, options = {}) => {
+  const { signal, timeout = ADMIN_LIST_TIMEOUT_MS } = options;
+  const { data } = await api.get("/super-admin/feedback", { params, signal, timeout });
+  return data;
+};
+
+export const getSuperAdminFeedbackByIdRequest = async (id) => {
+  const { data } = await api.get(`/super-admin/feedback/${id}`);
+  return data;
+};
+
+export const updateSuperAdminFeedbackRequest = async (id, payload) => {
+  const { data } = await api.patch(`/super-admin/feedback/${id}`, payload);
+  return data;
+};
+
+export const listSuperAdminFeedbackTopicsRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/feedback/topics", { params });
+  return data;
+};
+
+export const createSuperAdminFeedbackTopicRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/feedback/topics", payload);
+  return data;
+};
+
+export const updateSuperAdminFeedbackTopicRequest = async (id, payload) => {
+  const { data } = await api.patch(`/super-admin/feedback/topics/${id}`, payload);
+  return data;
+};
+
+export const deleteSuperAdminFeedbackTopicRequest = async (id) => {
+  const { data } = await api.delete(`/super-admin/feedback/topics/${id}`);
+  return data;
+};
+
+export const reorderSuperAdminFeedbackTopicsRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/feedback/topics/reorder", payload);
+  return data;
+};
+
+export const listSuperAdminFeedbackCategoriesRequest = async () => {
+  const { data } = await api.get("/super-admin/feedback/categories");
+  return data;
+};
+
+export const createSuperAdminFeedbackCategoryRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/feedback/categories", payload);
+  return data;
+};
+
+export const updateSuperAdminFeedbackCategoryRequest = async (id, payload) => {
+  const { data } = await api.patch(`/super-admin/feedback/categories/${id}`, payload);
+  return data;
+};
+
+export const deleteSuperAdminFeedbackCategoryRequest = async (id) => {
+  const { data } = await api.delete(`/super-admin/feedback/categories/${id}`);
+  return data;
+};
+
+export const reorderSuperAdminFeedbackCategoriesRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/feedback/categories/reorder", payload);
+  return data;
+};
+
 // Super Admin — admin account management
 export const listSuperAdminAdminsRequest = async () => {
   const { data } = await api.get("/super-admin/admins");
@@ -1763,8 +2778,38 @@ export const getPublicFaqRequest = async ({ signal } = {}) => {
   return data;
 };
 
-export const getPublicSitePagesRequest = async ({ signal } = {}) => {
-  const { data } = await api.get("/public/site-pages", { signal, timeout: 8000 });
+export const getPublicFooterAppDownloadsRequest = async ({ signal } = {}) => {
+  const { data } = await api.get("/public/footer-app-downloads", { signal, timeout: 8000 });
+  return data;
+};
+
+export const getSuperAdminFooterAppDownloadsRequest = async () => {
+  const { data } = await api.get("/super-admin/website/footer-app-downloads");
+  return data;
+};
+
+export const updateSuperAdminFooterAppDownloadsRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/website/footer-app-downloads", payload);
+  return data;
+};
+
+export const getSuperAdminFooterSettingsRequest = async () => {
+  const { data } = await api.get("/super-admin/website/footer");
+  return data;
+};
+
+export const updateSuperAdminFooterContactRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/website/footer/contact", payload);
+  return data;
+};
+
+export const updateSuperAdminFooterWorkingHoursRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/website/footer/working-hours", payload);
+  return data;
+};
+
+export const updateSuperAdminFooterContactCenterRequest = async (payload) => {
+  const { data } = await api.patch("/super-admin/website/footer/contact-center", payload);
   return data;
 };
 
@@ -1821,19 +2866,6 @@ export const getPublicWebsitePageRequest = async (slug, { signal } = {}) => {
   return data;
 };
 
-/** Nav-only probe: treats inactive/missing pages as null without throwing on 404. */
-export const probePublicWebsitePageForNav = async (slug, { signal } = {}) => {
-  const { data, status } = await api.get(`/public/pages/${encodeURIComponent(slug)}`, {
-    signal,
-    timeout: 8000,
-    validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
-  });
-  if (status === 404 || !data?.success || !data?.data?.page) {
-    return null;
-  }
-  return data;
-};
-
 export const listSuperAdminWebsitePagesRequest = async () => {
   const { data } = await api.get("/super-admin/website/pages");
   return data;
@@ -1881,12 +2913,6 @@ export const uploadSuperAdminWebsiteImageRequest = async (file) => {
   const fd = new FormData();
   fd.append("image", file);
   const { data } = await api.post("/super-admin/website/upload-image", fd, { timeout: 120000 });
-  return data;
-};
-
-/** Record a public pageview in the local DB counter (idempotent per idempotencyKey). */
-export const postPublicPageViewRequest = async (payload) => {
-  const { data } = await api.post("/public/analytics/pageview", payload, { timeout: 8000 });
   return data;
 };
 
@@ -2237,28 +3263,95 @@ export async function downloadAdminCourseFile(courseId, fileKind, fallbackName) 
   triggerBlobDownload(blob, name);
 }
 
-/** Dispatched on `window` after notification-worthy events (e.g. subscription payment) so the bell refetches. */
-export const NOTIFICATIONS_REFRESH_EVENT = "orderz-notifications-refresh";
-
-// Notifications
-export const listMyNotificationsRequest = async (params = {}) => {
-  const { data } = await api.get("/notifications", { params });
+/* ---------- بيت المونة (Pantry House) ---------- */
+export const listAdminPantryRequestsRequest = async (params = {}, options = {}) => {
+  const { signal, timeout = ADMIN_LIST_HEAVY_TIMEOUT_MS } = options;
+  const { data } = await api.get("/admin/pantry/requests", { params, signal, timeout });
   return data;
 };
 
-export const getUnreadNotificationsCountRequest = async () => {
-  const { data } = await api.get("/notifications/unread-count");
+export const createAdminPantryRequestRequest = async (payload) => {
+  const { data } = await api.post("/admin/pantry/requests", payload);
   return data;
 };
 
-export const markNotificationReadRequest = async (notificationId) => {
-  const { data } = await api.post(`/notifications/${notificationId}/read`);
+export const getAdminPantryRequestRequest = async (id) => {
+  const { data } = await api.get(`/admin/pantry/requests/${id}`);
   return data;
 };
 
-export const markAllNotificationsReadRequest = async () => {
-  const { data } = await api.post("/notifications/read-all");
+export const patchAdminPantryRequestRequest = async (id, payload) => {
+  const { data } = await api.patch(`/admin/pantry/requests/${id}`, payload);
   return data;
 };
 
-export default api;
+export const publishAdminPantryRequestRequest = async (id) => {
+  const { data } = await api.post(`/admin/pantry/requests/${id}/publish`);
+  return data;
+};
+
+export const relistAdminPantryBidCollectionRequest = async (id) => {
+  const { data } = await api.post(`/admin/pantry/requests/${id}/relist-bid-collection`, {}, { timeout: 30000 });
+  return data;
+};
+
+export const getAdminPantryFairRankingRequest = async (id) => {
+  const { data } = await api.get(`/admin/pantry/requests/${id}/fair-ranking`);
+  return data;
+};
+
+export const acceptAdminPantryBidRequest = async (requestId, bidId, payload = {}) => {
+  const { data } = await api.post(
+    `/admin/pantry/requests/${requestId}/bids/${bidId}/accept`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const rejectAdminPantryBidRequest = async (requestId, bidId) => {
+  const { data } = await api.post(`/admin/pantry/requests/${requestId}/bids/${bidId}/reject`);
+  return data;
+};
+
+export const listAdminPantryDeliveriesRequest = async (params = {}, options = {}) => {
+  const { signal, timeout = ADMIN_LIST_HEAVY_TIMEOUT_MS } = options;
+  const { data } = await api.get("/admin/pantry/deliveries", { params, signal, timeout });
+  return data;
+};
+
+export const approveAdminPantryDeliveryRequest = async (deliveryId, payload = {}) => {
+  const { data } = await api.post(`/admin/pantry/deliveries/${deliveryId}/approve`, payload);
+  return data;
+};
+
+export const requestRevisionAdminPantryDeliveryRequest = async (deliveryId, payload = {}) => {
+  const { data } = await api.post(`/admin/pantry/deliveries/${deliveryId}/request-revision`, payload);
+  return data;
+};
+
+export const listFreelancerPantryRequestsRequest = async () => {
+  const { data } = await api.get("/freelancer/pantry/requests");
+  return data;
+};
+
+export const getFreelancerPantryRequestRequest = async (id) => {
+  const { data } = await api.get(`/freelancer/pantry/requests/${id}`);
+  return data;
+};
+
+export const submitFreelancerPantryBidRequest = async (id, payload) => {
+  const { data } = await api.post(`/freelancer/pantry/requests/${id}/bids`, payload);
+  return data;
+};
+
+export const listFreelancerPantryMyWorkRequest = async () => {
+  const { data } = await api.get("/freelancer/pantry/my-work");
+  return data;
+};
+
+export const submitFreelancerPantryDeliveryRequest = async (id, payload) => {
+  const { data } = await api.post(`/freelancer/pantry/requests/${id}/deliveries`, payload);
+  return data;
+};
+

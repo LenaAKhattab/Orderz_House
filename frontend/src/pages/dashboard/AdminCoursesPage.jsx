@@ -18,6 +18,7 @@ import {
   adminUploadCoursePromptFileRequest,
   adminUploadCourseModelAnswerFileRequest,
   listAssignablePlansAdminRequest,
+  getMarketplaceEconomySettingsRequest,
 } from "../../services/api";
 import CourseProgressFreelancerActions from "../../admin/courses/CourseProgressFreelancerActions";
 import { useToast } from "../../components/ui/toastContext";
@@ -79,6 +80,7 @@ const EMPTY_CREATE_FORM = {
   youtubeSourceUrl: "",
   isActive: false,
   isTestingEnabled: false,
+  requiredTierCode: "silver",
   testFileUrl: "",
   testPromptFileUrl: "",
   testModelAnswerFileUrl: "",
@@ -141,6 +143,7 @@ export default function AdminCoursesPage() {
   const [assignablePlansLoading, setAssignablePlansLoading] = useState(false);
   const [coursesLoadError, setCoursesLoadError] = useState(null);
   const [freelancersLoadError, setFreelancersLoadError] = useState(null);
+  const [membershipRequiredCourseId, setMembershipRequiredCourseId] = useState("");
 
   const coursesFetchGenRef = useRef(0);
   const freelancersFetchGenRef = useRef(0);
@@ -194,6 +197,9 @@ export default function AdminCoursesPage() {
       isActive: fields.isActive,
       isTestingEnabled: fields.isTestingEnabled,
     };
+    if (fields.requiredTierCode !== undefined) {
+      patch.requiredTierCode = fields.requiredTierCode;
+    }
     if (fields.isVisibleToAllFreelancers !== undefined) {
       patch.isVisibleToAllFreelancers = fields.isVisibleToAllFreelancers;
     }
@@ -330,6 +336,25 @@ export default function AdminCoursesPage() {
       coursesFetchGenRef.current += 1;
     };
   }, [fetchCoursesList]);
+
+  useEffect(() => {
+    if (!isSuperAdmin) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getMarketplaceEconomySettingsRequest();
+        const courseId = res?.data?.settings?.marketplaceMembershipRequiredCourseId;
+        if (!cancelled && courseId != null) {
+          setMembershipRequiredCourseId(String(courseId));
+        }
+      } catch {
+        /* optional helper only */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isSuperAdmin]);
 
   useEffect(() => {
     if (!selectedCourseId) return undefined;
@@ -682,6 +707,7 @@ export default function AdminCoursesPage() {
       youtubeSourceUrl: course.youtubeSourceUrl || "",
       isActive: Boolean(course.isActive),
       isTestingEnabled: Boolean(course.isTestingEnabled),
+      requiredTierCode: course.requiredTierCode || "silver",
       testFileUrl: course.testFileUrl || "",
       testPromptFileUrl: course.testPromptFileUrl || "",
       testModelAnswerFileUrl: course.testModelAnswerFileUrl || "",
@@ -721,6 +747,7 @@ export default function AdminCoursesPage() {
           coverImage: createForm.coverImage,
           isActive: createForm.isActive,
           isTestingEnabled: createForm.isTestingEnabled,
+          requiredTierCode: createForm.requiredTierCode || "silver",
           testFileUrl: createForm.testFileUrl,
           testPromptFileUrl: createForm.testPromptFileUrl,
           testModelAnswerFileUrl: createForm.testModelAnswerFileUrl,
@@ -1430,6 +1457,7 @@ export default function AdminCoursesPage() {
               onRemoveCoursePromptFile={onRemoveComposerPromptFile}
               onRemoveCourseModelAnswerFile={onRemoveComposerModelAnswerFile}
               fileRemoveBusy={fileRemoveBusy}
+              membershipRequiredCourseId={membershipRequiredCourseId}
             />
           </div>
         </div>

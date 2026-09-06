@@ -4,6 +4,7 @@ import {
   listClientOrderBidsRequest,
   rejectClientOrderBidRequest,
 } from "../../services/api";
+import { JodMoneyDisplay } from "../money/JodMoneyDisplay";
 
 function applicantDisplayName(row) {
   if (row?.displayName) return row.displayName;
@@ -13,18 +14,11 @@ function applicantDisplayName(row) {
   return parts.length ? parts.join(" ") : "—";
 }
 
-function formatMoney(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat("ar-JO-u-nu-latn", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
-}
-
 export default function ClientBiddingOffersModal({ open, orderId, order, onClose, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [bids, setBids] = useState([]);
   const [openPool, setOpenPool] = useState(false);
-  const currencyCode = "JOD";
   const [error, setError] = useState("");
   const [confirmBidId, setConfirmBidId] = useState(null);
 
@@ -51,11 +45,6 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
   }, [open, orderId, load]);
 
   if (!open) return null;
-
-  const rangeText =
-    order?.bidBudgetMin != null && order?.bidBudgetMax != null
-      ? `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)}${currencyCode ? ` ${currencyCode}` : ""}`
-      : "—";
 
   const accept = async (bidId) => {
     setBusy(true);
@@ -118,7 +107,12 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
           عروض الأسعار من المستقلين
         </h2>
         <p className="help" style={{ marginTop: 0 }}>
-          النطاق المسموح للعروض: <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>{rangeText}</span>
+          النطاق المسموح للعروض:{" "}
+          {order?.bidBudgetMin != null && order?.bidBudgetMax != null ? (
+            <JodMoneyDisplay amount={order.bidBudgetMin} amountMax={order.bidBudgetMax} compact />
+          ) : (
+            "—"
+          )}
         </p>
         <p className="help" style={{ marginTop: 0 }}>
           بعد اختيار العرض سيتم تحويلك للدفع أولاً. يبدأ المشروع مع المستقل المختار فقط بعد نجاح الدفع.
@@ -146,10 +140,25 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                 }}
               >
-                <div style={{ fontWeight: 800 }}>{applicantDisplayName(b)}</div>
-                <div style={{ marginTop: 8, fontWeight: 700, unicodeBidi: "plaintext" }} dir="ltr">
-                  مبلغ العرض: {formatMoney(b.amount)}
-                  {currencyCode ? ` ${currencyCode}` : ""}
+                <div style={{ fontWeight: 800, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <span>{applicantDisplayName(b)}</span>
+                  {b.isPriority ? (
+                    <span
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 800,
+                        padding: "2px 8px",
+                        borderRadius: 6,
+                        background: "rgba(14, 116, 144, 0.12)",
+                        color: "#0e7490",
+                      }}
+                    >
+                      عرض أولوية
+                    </span>
+                  ) : null}
+                </div>
+                <div style={{ marginTop: 8, fontWeight: 700 }}>
+                  مبلغ العرض: <JodMoneyDisplay amount={b.amount} compact />
                 </div>
                 {confirmBidId === b.id ? (
                   <div className="help" style={{ marginTop: 8 }}>

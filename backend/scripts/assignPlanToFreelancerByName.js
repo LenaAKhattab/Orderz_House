@@ -1,16 +1,19 @@
-/**
+﻿/**
  * Assigns an active plan subscription to a freelancer by full Arabic name (legacy users.role = freelancer).
  * Uses the same logic as admin API: ends current row, inserts assigned_not_started (eligible to take pool orders).
  *
  * Usage (from backend/):
  *   node scripts/assignPlanToFreelancerByName.js
- *   node scripts/assignPlanToFreelancerByName.js "محمد احمد ابراهيم"
- *   node scripts/assignPlanToFreelancerByName.js "محمد احمد ابراهيم" freelancer_starter
+ *   node scripts/assignPlanToFreelancerByName.js "Ù…Ø­Ù…Ø¯ Ø§Ø­Ù…Ø¯ Ø§Ø¨Ø±Ø§Ù‡ÙŠÙ…"
+ *   node scripts/assignPlanToFreelancerByName.js "Ù…Ø­Ù…Ø¯ Ø§Ø­Ù…Ø¯ Ø§Ø¨Ø±Ø§Ù‡ÙŠÙ…" freelancer_starter
  *
  * Env: DATABASE_URL in backend/.env
  */
 const path = require("node:path");
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+
+const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
+guardQaOrSeed(require("path").basename(__filename));
 
 const { pool } = require("../src/config/db");
 const subscriptionsService = require("../src/services/subscriptionsService");
@@ -75,7 +78,7 @@ async function main() {
       nameParts = argv.slice(0, -1);
     }
   }
-  const displayName = nameParts.join(" ").trim() || "محمد احمد ابراهيم";
+  const displayName = nameParts.join(" ").trim() || "Ù…Ø­Ù…Ø¯ Ø§Ø­Ù…Ø¯ Ø§Ø¨Ø±Ø§Ù‡ÙŠÙ…";
 
   const user = await findFreelancerByDisplayName(displayName);
   if (!user) {

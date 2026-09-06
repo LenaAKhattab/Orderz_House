@@ -31,8 +31,12 @@ const listAdminPlans = async (req, res, next) => {
 
 const listPublicPlans = async (req, res, next) => {
   try {
-    const plans = await plansService.listPublicCatalogPlans();
-    return res.status(200).json({ success: true, data: { plans } });
+    const { getPublicActivationFeeConfig } = require("../services/subscriptionActivationFeeService");
+    const [plans, activationFee] = await Promise.all([
+      plansService.listPublicCatalogPlans(),
+      getPublicActivationFeeConfig(),
+    ]);
+    return res.status(200).json({ success: true, data: { plans, activationFee } });
   } catch (err) {
     return next(err);
   }
@@ -72,8 +76,12 @@ const updatePlan = async (req, res, next) => {
 
 const deletePlan = async (req, res, next) => {
   try {
-    await plansService.softDeletePlan({ actorUserId: req.auth?.userId, id: req.params.id });
-    return res.status(200).json({ success: true, message: "Plan deleted." });
+    const plan = await plansService.softDeletePlan({ actorUserId: req.auth?.userId, id: req.params.id });
+    return res.status(200).json({
+      success: true,
+      message: "تم تعطيل الباقة بنجاح.",
+      data: { plan },
+    });
   } catch (err) {
     return next(err);
   }

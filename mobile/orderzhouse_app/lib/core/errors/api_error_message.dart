@@ -12,6 +12,17 @@ String apiErrorMessage(Object error, {String fallback = 'حدث خطأ غير م
     }
     final data = error.response?.data;
     if (data is Map) {
+      final code = data['code'] ?? data['publicCode'] ?? data['errorCode'];
+      final codeStr = code == null ? '' : code.toString().trim();
+      if (codeStr == 'COURSE_SUBSCRIPTION_REQUIRED') {
+        return 'يجب الاشتراك بإحدى الخطط للوصول إلى هذه الدورة.';
+      }
+      if (codeStr == 'COURSE_PLAN_UPGRADE_REQUIRED') {
+        return 'هذه الدورة متاحة لباقات أعلى';
+      }
+      if (codeStr == 'COURSE_ACCESS_DENIED') {
+        return 'لا يمكنك الوصول إلى هذه الدورة.';
+      }
       final message = data['message'];
       if (message is String && message.trim().isNotEmpty) {
         return message.trim();

@@ -18,7 +18,9 @@ function read(rel) {
 describe("institutional storage frontend wiring", () => {
   it("institution detail supports search/add/remove with confirm dialog", () => {
     const src = read("src/pages/dashboard/SuperAdminInstitutionDetailPage.jsx");
-    assert.match(src, /adminSearchUsersForInstitutionRequest/);
+    const modal = read("src/pages/dashboard/institutions/InstitutionAddMemberModal.jsx");
+    assert.match(src, /InstitutionAddMemberModal/);
+    assert.match(modal, /adminSearchUsersForInstitutionRequest/);
     assert.match(src, /adminAddInstitutionMemberRequest/);
     assert.match(src, /adminRemoveInstitutionMemberRequest/);
     assert.match(src, /ConfirmDialog/);

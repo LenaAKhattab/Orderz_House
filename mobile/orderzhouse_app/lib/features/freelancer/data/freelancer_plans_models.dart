@@ -164,6 +164,7 @@ class ActivationFeeStatus {
   const ActivationFeeStatus({
     this.needsPayment = false,
     this.isCurrent = false,
+    this.enabled = true,
     this.validUntil,
     this.paidAt,
     this.amountJod,
@@ -171,14 +172,18 @@ class ActivationFeeStatus {
 
   final bool needsPayment;
   final bool isCurrent;
+  final bool enabled;
   final String? validUntil;
   final String? paidAt;
   final double? amountJod;
 
   factory ActivationFeeStatus.fromJson(Map<String, dynamic> json) {
+    final enabledRaw = json['enabled'] ?? json['Enabled'];
+    final enabled = enabledRaw == null ? true : enabledRaw == true || enabledRaw == 'true' || enabledRaw == 1;
     return ActivationFeeStatus(
       needsPayment: readBool(json, 'needsPayment', 'needs_payment'),
       isCurrent: readBool(json, 'isCurrent', 'is_current'),
+      enabled: enabled,
       validUntil: readMapField<String>(json, 'validUntil', 'valid_until'),
       paidAt: readMapField<String>(json, 'paidAt', 'paid_at'),
       amountJod: readDouble(json, 'amountJod', 'amount_jod'),
@@ -271,6 +276,7 @@ String freelancerActivationStatusLabelAr(String? status) {
 
 String freelancerActivationFeeStatusLabelAr(ActivationFeeStatus? status) {
   if (status == null) return '—';
+  if (status.enabled == false) return 'غير مطلوبة حالياً';
   if (status.isCurrent) return 'مدفوعة وسارية';
   if (status.needsPayment) return 'مطلوبة — غير مدفوعة';
   return '—';
@@ -320,7 +326,7 @@ bool shouldShowWebSubscriptionButton({
   ActivationFeeStatus? activationFeeStatus,
 }) {
   if (!isCurrentPlan) return true;
-  if (activationFeeStatus?.needsPayment == true) return true;
+  if (activationFeeStatus?.enabled != false && activationFeeStatus?.needsPayment == true) return true;
   if (subscription == null) return true;
   final status = subscription.status?.trim().toLowerCase();
   if (status == 'expired' || status == 'cancelled' || status == 'inactive') return true;

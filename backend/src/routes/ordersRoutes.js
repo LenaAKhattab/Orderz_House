@@ -189,6 +189,15 @@ router.post(
   clientOrdersController.rejectFreelancerBid,
 );
 router.post(
+  "/client/orders/:id/cancel-without-selection",
+  requireAuth,
+  requireRole("client"),
+  orderIdParam,
+  validateRequest,
+  requireClientOwnsOrderParam,
+  clientOrdersController.cancelOpenBiddingOrderWithoutSelection,
+);
+router.post(
   "/client/orders/:id/delivery/approve",
   requireAuth,
   requireRole("client"),
@@ -293,6 +302,31 @@ router.post(
   submitPoolOrderBidValidators,
   validateRequest,
   ordersController.submitPoolOrderBid,
+);
+router.post(
+  "/orders/pool/:id/bids/priority-boost",
+  requireAuth,
+  requireRole("freelancer"),
+  orderBidTakeLimiter,
+  orderIdParam,
+  validateRequest,
+  ordersController.upgradePoolOrderBidPriority,
+);
+router.get(
+  "/orders/pool/:id/normal-application-token-quote",
+  requireAuth,
+  requireRole("freelancer"),
+  orderIdParam,
+  validateRequest,
+  ordersController.getPoolOrderNormalApplicationTokenQuote,
+);
+router.get(
+  "/orders/pool/:id/normal-application-bid-quote",
+  requireAuth,
+  requireRole("freelancer"),
+  orderIdParam,
+  validateRequest,
+  ordersController.getPoolOrderNormalApplicationBidQuote,
 );
 router.get("/orders/pool/:id", optionalAuth, orderIdParam, validateRequest, ordersController.getPoolOrderById);
 router.post(

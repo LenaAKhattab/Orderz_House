@@ -18,12 +18,8 @@ import ClientFreelancerReviewModal from "./ClientFreelancerReviewModal";
 import SubmissionHistoryTimeline from "./submission-history/SubmissionHistoryTimeline";
 import { getClientOrderByIdRequest, getClientOrderReviewStatusRequest } from "../../services/api";
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
-
-function formatMoney(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
-}
+import { JodMoneyDisplay } from "../money/JodMoneyDisplay";
+import ClientFixedOrderPayNowButton from "./ClientFixedOrderPayNowButton";
 
 function shortText(text, max = 160) {
   const s = String(text || "").trim();
@@ -53,6 +49,9 @@ function clientStatusMeta(order, t) {
   if (s === "pending_client_review") return { label: t("orders.status.pending_client_review"), className: "oh-badge oh-badge--info" };
   if (s === "open_for_bids" || s === "open_for_freelancers") {
     return { label: t("orders.status.open_for_bids"), className: "oh-badge oh-badge--warning" };
+  }
+  if (s === "pending_payment") {
+    return { label: getOrderStatusLabel(s, t), className: "oh-badge oh-badge--warning" };
   }
   if (s === "awaiting_payment_after_bid_selection") {
     return { label: t("orders.status.awaiting_payment_after_bid_selection"), className: "oh-badge oh-badge--info" };
@@ -209,15 +208,13 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
         <span className="oh-mini-chip">{categoryText}</span>
         <span className="oh-mini-chip">
           {t("orders.card.price")}:{" "}
-          <span dir="ltr" style={{ unicodeBidi: "plaintext" }}>
-            {pricedBidding
-              ? order?.paymentAmount != null || order?.paymentCurrency
-                ? `${order?.paymentAmount != null ? formatMoney(order.paymentAmount) : "—"} JOD`
-                : `${formatMoney(order.bidBudgetMin)} – ${formatMoney(order.bidBudgetMax)} JOD`
-              : order?.projectType === "bidding"
-                ? "—"
-                : `${formatMoney(order?.budget)} JOD`}
-          </span>
+          {pricedBidding
+            ? order?.paymentAmount != null || order?.paymentCurrency
+              ? <JodMoneyDisplay amount={order?.paymentAmount} compact />
+              : <JodMoneyDisplay amount={order.bidBudgetMin} amountMax={order.bidBudgetMax} compact />
+            : order?.projectType === "bidding"
+              ? "—"
+              : <JodMoneyDisplay amount={order?.budget} compact />}
         </span>
         <span className="oh-mini-chip">
           {t("orders.card.deliveryDuration")}: {durationLabel(order, locale, t)}
@@ -248,7 +245,8 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
         <SubmissionHistoryTimeline submissionHistory={displayOrder.submissionHistory} orderId={String(order.id)} fileAccess="client" />
       ) : null}
 
-      <footer className="client-order-compact__foot" style={{ flexWrap: "wrap", gap: 8 }}>
+      <footer className="client-order-compact__foot flex flex-wrap gap-2">
+        <ClientFixedOrderPayNowButton order={order} />
         <button type="button" className="btn btn-secondary" onClick={() => setExpanded((v) => !v)}>
           {expanded ? "طي الوصف" : "عرض الوصف كاملاً"}
         </button>

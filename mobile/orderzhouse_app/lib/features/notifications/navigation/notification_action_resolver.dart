@@ -6,10 +6,12 @@ class NotificationActionTarget {
   const NotificationActionTarget({
     required this.route,
     required this.buttonLabel,
+    this.showComingSoonMessage = false,
   });
 
   final String route;
   final String buttonLabel;
+  final bool showComingSoonMessage;
 }
 
 final RegExp _numericIdPattern = RegExp(r'^\d+$');
@@ -67,7 +69,6 @@ bool _isBlockedDashboardPath(String link) {
 
   if (normalized == '/dashboard') return true;
   if (normalized.startsWith('/dashboard/admin')) return true;
-  if (normalized.startsWith('/dashboard/super-admin')) return true;
   if (normalized == '/dashboard/freelancer/profile' ||
       normalized.startsWith('/dashboard/freelancer/profile/')) {
     return true;
@@ -84,11 +85,65 @@ NotificationActionTarget? _resolveFromDashboardLink(
   final uri = Uri.parse(link);
   final path = uri.path;
 
+  if (role == 'super_admin') {
+    return _resolveSuperAdminDashboardLink(path);
+  }
+
+  if (_looksLikePantry(path, notification)) {
+    if (role != 'freelancer') return null;
+    final requestId = _extractPantryRequestId(path, uri, notification);
+    if (requestId != null) {
+      return NotificationActionTarget(
+        route: AppRoutes.freelancerPantryDetail(requestId),
+        buttonLabel: 'فتح الطلب',
+      );
+    }
+    return const NotificationActionTarget(
+      route: AppRoutes.marketplace,
+      buttonLabel: 'فتح الطلبات المتاحة',
+    );
+  }
+
   if (path == '/dashboard/freelancer/financial-claims') {
     if (role != 'freelancer') return null;
     return const NotificationActionTarget(
       route: AppRoutes.freelancerFinancialClaims,
       buttonLabel: 'فتح المطالبات المالية',
+    );
+  }
+
+  if (path == '/dashboard/freelancer/articles') {
+    if (role != 'freelancer') return null;
+    return const NotificationActionTarget(
+      route: AppRoutes.freelancerMiniArticles,
+      buttonLabel: 'فتح المقالات المصغّرة',
+    );
+  }
+
+  if (path == '/dashboard/freelancer/my-articles') {
+    if (role != 'freelancer') return null;
+    return const NotificationActionTarget(
+      route: AppRoutes.freelancerMyArticles,
+      buttonLabel: 'فتح مقالاتي',
+    );
+  }
+
+  final articleMatch = RegExp(r'^/dashboard/freelancer/articles/([^/]+)$').firstMatch(path);
+  if (articleMatch != null) {
+    if (role != 'freelancer') return null;
+    final id = articleMatch.group(1)!;
+    return NotificationActionTarget(
+      route: AppRoutes.freelancerMiniArticlePath(id),
+      buttonLabel: 'فتح المقال',
+    );
+  }
+
+  if (path == '/dashboard/freelancer/activate-account' ||
+      path == '/dashboard/freelancer/account-activation') {
+    if (role != 'freelancer') return null;
+    return const NotificationActionTarget(
+      route: AppRoutes.freelancerAccountActivation,
+      buttonLabel: 'فتح تفعيل الحساب',
     );
   }
 
@@ -154,6 +209,130 @@ NotificationActionTarget? _resolveFromDashboardLink(
 
 NotificationActionTarget? _resolveFromEntity(AppNotification notification, String role) {
   final entityType = notification.entityType?.trim().toLowerCase();
+  final type = notification.type?.trim().toLowerCase() ?? '';
+
+  if (role == 'super_admin') {
+    if (entityType == 'financial_claim' || type.startsWith('financial_claim')) {
+      return const NotificationActionTarget(
+        route: AppRoutes.superAdminClaims,
+        buttonLabel: 'فتح المطالبات',
+      );
+    }
+    if (entityType == 'pantry_delivery' || type.contains('pantry_delivery') || type.contains('pantry_revision')) {
+      final id = _numericIdOrNull(notification.entityId);
+      if (id != null) {
+        return NotificationActionTarget(
+          route: AppRoutes.superAdminPantryDeliveryPath(id),
+          buttonLabel: 'فتح التسليم',
+        );
+      }
+      return const NotificationActionTarget(
+        route: AppRoutes.superAdminPantry,
+        buttonLabel: 'فتح بيت المونة',
+      );
+    }
+    if (entityType == 'pantry_request' || type.contains('pantry')) {
+      final id = _numericIdOrNull(notification.entityId);
+      if (id != null) {
+        return NotificationActionTarget(
+          route: AppRoutes.superAdminPantryRequestPath(id),
+          buttonLabel: 'فتح طلب بيت المونة',
+        );
+      }
+      return const NotificationActionTarget(
+        route: AppRoutes.superAdminPantry,
+        buttonLabel: 'فتح بيت المونة',
+      );
+    }
+    if (entityType == 'freelancer_activation_request' ||
+        entityType == 'freelancer_account_activation_request' ||
+        type.contains('kyc') ||
+        type.contains('freelancer_activation')) {
+      final id = _numericIdOrNull(notification.entityId);
+      if (id != null) {
+        return NotificationActionTarget(
+          route: AppRoutes.superAdminActivationKycPath(id),
+          buttonLabel: 'فتح طلب التفعيل',
+        );
+      }
+      return const NotificationActionTarget(
+        route: AppRoutes.superAdminActivation,
+        buttonLabel: 'فتح طلبات التفعيل',
+      );
+    }
+    if (entityType == 'subscription' ||
+        type.contains('activation') ||
+        type.startsWith('subscription')) {
+      final id = _numericIdOrNull(notification.entityId);
+      if (id != null) {
+        return NotificationActionTarget(
+          route: AppRoutes.superAdminActivationSubscriptionPath(id),
+          buttonLabel: 'فتح طلب التفعيل',
+        );
+      }
+      return const NotificationActionTarget(
+        route: AppRoutes.superAdminActivation,
+        buttonLabel: 'فتح طلبات التفعيل',
+      );
+    }
+    if (entityType == 'marketplace_article' ||
+        entityType == 'marketplace_article_application' ||
+        type.contains('article')) {
+      if (entityType == 'marketplace_article') {
+        final id = _numericIdOrNull(notification.entityId);
+        if (id != null) {
+          return NotificationActionTarget(
+            route: AppRoutes.superAdminArticlePath(id),
+            buttonLabel: 'فتح المقال',
+          );
+        }
+      }
+      return const NotificationActionTarget(
+        route: AppRoutes.superAdminArticles,
+        buttonLabel: 'فتح المقالات',
+      );
+    }
+    if (entityType == 'feedback' ||
+        type.contains('feedback') ||
+        type.contains('problem') ||
+        type.contains('suggestion')) {
+      final id = _numericIdOrNull(notification.entityId);
+      if (id != null) {
+        return NotificationActionTarget(
+          route: AppRoutes.superAdminFeedbackDetailPath(id),
+          buttonLabel: 'فتح الملاحظة',
+        );
+      }
+      return const NotificationActionTarget(
+        route: AppRoutes.superAdminFeedback,
+        buttonLabel: 'فتح المشاكل والاقتراحات',
+      );
+    }
+    return const NotificationActionTarget(
+      route: AppRoutes.home,
+      buttonLabel: 'فتح مركز المهام',
+      showComingSoonMessage: true,
+    );
+  }
+
+  if (entityType == 'pantry_request' ||
+      entityType == 'pantry_delivery' ||
+      type.contains('pantry')) {
+    if (role != 'freelancer') return null;
+    if (entityType == 'pantry_request') {
+      final id = _numericIdOrNull(notification.entityId);
+      if (id != null) {
+        return NotificationActionTarget(
+          route: AppRoutes.freelancerPantryDetail(id),
+          buttonLabel: 'فتح الطلب',
+        );
+      }
+    }
+    return const NotificationActionTarget(
+      route: AppRoutes.marketplace,
+      buttonLabel: 'فتح الطلبات المتاحة',
+    );
+  }
 
   if (entityType == 'financial_claim') {
     if (role != 'freelancer') return null;
@@ -201,6 +380,37 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
   return null;
 }
 
+String? _extractPantryRequestId(String path, Uri uri, AppNotification notification) {
+  final fromQuery = _numericIdOrNull(
+    uri.queryParameters['requestId'] ??
+        uri.queryParameters['pantryRequestId'] ??
+        uri.queryParameters['id'],
+  );
+  if (fromQuery != null) return fromQuery;
+
+  final match = RegExp(r'/pantry/(?:requests/)?(\d+)(?:/|$)').firstMatch(path);
+  if (match != null) return match.group(1);
+
+  final entityType = notification.entityType?.trim().toLowerCase();
+  if (entityType == 'pantry_request') {
+    return _numericIdOrNull(notification.entityId);
+  }
+  return null;
+}
+
+bool _looksLikePantry(String path, AppNotification notification) {
+  final haystack = [
+    path.toLowerCase(),
+    (notification.actionUrl ?? '').toLowerCase(),
+    (notification.entityType ?? '').toLowerCase(),
+    (notification.type ?? '').toLowerCase(),
+  ].join(' ');
+  return haystack.contains('pantry') ||
+      haystack.contains('pantry_request') ||
+      haystack.contains('pantry_delivery') ||
+      haystack.contains('/freelancer/pantry');
+}
+
 String? _extractOrderIdFromQuery(Uri uri) {
   final raw = uri.queryParameters['orderId'] ?? uri.queryParameters['orderid'];
   return _numericIdOrNull(raw);
@@ -226,9 +436,156 @@ bool _hasRecipientRoleMismatch(String? recipientRole, String? currentUserRole) {
 
   if (recipient == null) return false;
 
-  if (recipient == 'admin' || recipient == 'super_admin') return true;
+  if (recipient == 'admin' || recipient == 'super_admin') {
+    return current != 'super_admin';
+  }
 
   if (current == null) return true;
 
   return recipient != current;
+}
+
+NotificationActionTarget? _resolveSuperAdminDashboardLink(String path) {
+  var normalized = path;
+  if (normalized.endsWith('/') && normalized.length > 1) {
+    normalized = normalized.substring(0, normalized.length - 1);
+  }
+
+  if (normalized == '/dashboard/super-admin' ||
+      normalized == '/dashboard/super-admin/notifications') {
+    return NotificationActionTarget(
+      route: normalized.endsWith('/notifications') ? AppRoutes.notifications : AppRoutes.home,
+      buttonLabel: normalized.endsWith('/notifications') ? 'فتح الإشعارات' : 'فتح مركز المهام',
+    );
+  }
+
+  if (normalized == '/dashboard/super-admin/subscriptions/activation' ||
+      normalized.startsWith('/dashboard/super-admin/subscriptions/activation/')) {
+    return const NotificationActionTarget(
+      route: AppRoutes.superAdminActivation,
+      buttonLabel: 'فتح طلبات التفعيل',
+    );
+  }
+
+  if (normalized == '/dashboard/super-admin/freelancer-activation-requests') {
+    return const NotificationActionTarget(
+      route: AppRoutes.superAdminActivation,
+      buttonLabel: 'فتح طلبات التفعيل',
+    );
+  }
+
+  if (normalized.startsWith('/dashboard/super-admin/freelancer-activation-requests/')) {
+    final rest = normalized.substring('/dashboard/super-admin/freelancer-activation-requests/'.length);
+    final idMatch = RegExp(r'^(\d+)$').firstMatch(rest);
+    if (idMatch != null) {
+      return NotificationActionTarget(
+        route: AppRoutes.superAdminActivationKycPath(idMatch.group(1)!),
+        buttonLabel: 'فتح طلب التفعيل',
+      );
+    }
+    return const NotificationActionTarget(
+      route: AppRoutes.superAdminActivation,
+      buttonLabel: 'فتح طلبات التفعيل',
+    );
+  }
+
+  if (normalized == '/dashboard/super-admin/financial-claims' ||
+      normalized.startsWith('/dashboard/super-admin/financial-claims/')) {
+    return const NotificationActionTarget(
+      route: AppRoutes.superAdminClaims,
+      buttonLabel: 'فتح المطالبات',
+    );
+  }
+
+  if (normalized == '/dashboard/super-admin/pantry') {
+    return const NotificationActionTarget(
+      route: AppRoutes.superAdminPantry,
+      buttonLabel: 'فتح بيت المونة',
+    );
+  }
+
+  if (normalized.startsWith('/dashboard/super-admin/pantry/')) {
+    final rest = normalized.substring('/dashboard/super-admin/pantry/'.length);
+    final deliveryMatch = RegExp(r'^deliveries/([^/]+)$').firstMatch(rest);
+    if (deliveryMatch != null) {
+      return NotificationActionTarget(
+        route: AppRoutes.superAdminPantryDeliveryPath(deliveryMatch.group(1)!),
+        buttonLabel: 'فتح التسليم',
+      );
+    }
+    final requestMatch = RegExp(r'^(?:requests/)?(\d+)$').firstMatch(rest);
+    if (requestMatch != null) {
+      return NotificationActionTarget(
+        route: AppRoutes.superAdminPantryRequestPath(requestMatch.group(1)!),
+        buttonLabel: 'فتح طلب بيت المونة',
+      );
+    }
+    return const NotificationActionTarget(
+      route: AppRoutes.home,
+      buttonLabel: 'فتح مركز المهام',
+      showComingSoonMessage: true,
+    );
+  }
+
+  if (normalized == '/dashboard/super-admin/marketplace-articles') {
+    return const NotificationActionTarget(
+      route: AppRoutes.superAdminArticles,
+      buttonLabel: 'فتح المقالات',
+    );
+  }
+
+  if (normalized.startsWith('/dashboard/super-admin/marketplace-articles/')) {
+    final rest = normalized.substring('/dashboard/super-admin/marketplace-articles/'.length);
+    final idMatch = RegExp(r'^(\d+)(?:/applications)?$').firstMatch(rest);
+    if (idMatch != null) {
+      return NotificationActionTarget(
+        route: AppRoutes.superAdminArticlePath(idMatch.group(1)!),
+        buttonLabel: 'فتح المقال',
+      );
+    }
+    return const NotificationActionTarget(
+      route: AppRoutes.home,
+      buttonLabel: 'فتح مركز المهام',
+      showComingSoonMessage: true,
+    );
+  }
+
+  if (normalized == '/dashboard/super-admin/feedback' ||
+      normalized.startsWith('/dashboard/super-admin/feedback/')) {
+    final rest = normalized == '/dashboard/super-admin/feedback'
+        ? ''
+        : normalized.substring('/dashboard/super-admin/feedback/'.length);
+    final idMatch = RegExp(r'^(\d+)$').firstMatch(rest);
+    if (idMatch != null) {
+      return NotificationActionTarget(
+        route: AppRoutes.superAdminFeedbackDetailPath(idMatch.group(1)!),
+        buttonLabel: 'فتح الملاحظة',
+      );
+    }
+    return const NotificationActionTarget(
+      route: AppRoutes.superAdminFeedback,
+      buttonLabel: 'فتح المشاكل والاقتراحات',
+    );
+  }
+
+  if (normalized == '/dashboard/super-admin/settings') {
+    return const NotificationActionTarget(
+      route: AppRoutes.accountSettings,
+      buttonLabel: 'فتح إعدادات الحساب',
+    );
+  }
+
+  if (normalized.startsWith('/dashboard/super-admin')) {
+    return const NotificationActionTarget(
+      route: AppRoutes.home,
+      buttonLabel: 'فتح مركز المهام',
+      showComingSoonMessage: true,
+    );
+  }
+
+  return const NotificationActionTarget(
+    route: AppRoutes.home,
+    buttonLabel: 'فتح مركز المهام',
+    showComingSoonMessage: true,
+  );
 }

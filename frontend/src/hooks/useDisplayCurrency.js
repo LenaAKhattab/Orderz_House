@@ -43,8 +43,10 @@ export function useDisplayCurrency() {
       formatPriceFromJod: (amountJod) => formatPriceFromJod(amountJod, { locale, displayCurrency }),
       resolvePlanPriceDisplay: (plan, basePrice) =>
         resolvePlanPriceDisplay(plan, basePrice, locale, t, displayCurrency),
-      formatActivationFeeAmount: () => formatActivationFeeAmount(locale, displayCurrency),
-      formatFreePlanActivationFeeNote: () => formatFreePlanActivationFeeNote(locale, t, displayCurrency),
+      formatActivationFeeAmount: (amountJod) =>
+        formatActivationFeeAmount(amountJod, locale, displayCurrency),
+      formatFreePlanActivationFeeNote: (amountJod) =>
+        formatFreePlanActivationFeeNote(amountJod, locale, t, displayCurrency),
     }),
     [countryCode, displayCurrency, isEgyptDisplay, locale, t],
   );

@@ -6,7 +6,10 @@ import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../components/ui/toastContext";
 import {
   getCategoriesTreeRequest,
+  getPoolOrderNormalApplicationBidQuoteRequest,
+  listFreelancerPantryRequestsRequest,
   listPoolOrdersRequest,
+  submitFreelancerPantryBidRequest,
   submitPoolOrderBidRequest,
   takePoolOrderRequest,
 } from "../../services/api";
@@ -23,7 +26,14 @@ import { useFreelancerMarketplaceContext } from "../../hooks/useFreelancerMarket
 import BidAmountModal from "../../components/orders/BidAmountModal";
 import TakePoolOrderConfirmModal from "../../components/orders/TakePoolOrderConfirmModal";
 import Pagination from "../../components/common/Pagination";
+import OpportunityHelpTrigger from "../onboarding/OpportunityHelpTrigger";
 import MarketplaceOrderListRow from "./MarketplaceOrderListRow";
+import PlanUpgradeRequiredCta from "../freelancer/PlanUpgradeRequiredCta";
+import {
+  isPantryPoolOrder,
+  mapPantryRequestToPoolOrder,
+  pantryRequestIdFromPoolOrder,
+} from "./mapPantryRequestToPoolOrder";
 import { categoryLine, durationLabel } from "./openOrdersFormatters";
 import { trackEvent } from "../../services/analytics";
 import {
@@ -31,6 +41,7 @@ import {
   isPoolOrderLockedByPlan,
 } from "../../utils/poolOrderPlanEligibility";
 import { isPoolOrderTakenAsAssignment } from "../../utils/poolOrderTakeOutcome";
+import { isBidCollectionClosedForApply } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 import {
   clearGuestPoolLoginToastFlag,
   isGuestPoolLoginToast,
@@ -38,6 +49,10 @@ import {
 } from "../../utils/guestPoolLoginToast";
 import "../../styles/dashboardHub.css";
 import "../../styles/freelancerOpenOrders.css";
+
+function isOpportunityCollectionClosed(order) {
+  return Boolean(order?.collectionClosed) || isBidCollectionClosedForApply(order?.bidCollection);
+}
 
 function PoolEmptyState({ title, subtitle }) {
   return (
@@ -54,19 +69,21 @@ function PoolEmptyState({ title, subtitle }) {
 }
 
 function PlanFilterEmptyState() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   return (
     <div className="oh-orders-plan-empty oh-orders-plan-empty--neu fdash-surface-3d fdash-surface-3d--soft">
       <div className="oh-orders-plan-empty__icon" aria-hidden>
-        <Briefcase size={28} strokeWidth={1.9} />
+        <Briefcase size={22} strokeWidth={1.9} />
       </div>
       <div className="oh-orders-plan-empty__copy">
         <h3 className="oh-orders-plan-empty__title">{t("orders.empty.planTitle")}</h3>
         <p className="oh-orders-plan-empty__subtitle">{t("orders.empty.planSubtitle")}</p>
       </div>
-      <Link to="/dashboard/freelancer/plans" className="oh-orders-plan-empty__cta btn btn-primary">
-        {t("orders.empty.upgradeCta")}
-      </Link>
+      <PlanUpgradeRequiredCta
+        reason="plan_locked"
+        isEn={locale === "en"}
+        className="oh-orders-plan-empty__cta-wrap"
+      />
     </div>
   );
 }
@@ -201,11 +218,14 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const { subscription, eligibility } = useFreelancerMarketplaceContext();
 
   const [orders, setOrders] = useState([]);
+  const [pantryPoolOrders, setPantryPoolOrders] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isRefetching, setIsRefetching] = useState(false);
   const [takingId, setTakingId] = useState(null);
   const [bidBusyId, setBidBusyId] = useState(null);
   const [bidModalOrder, setBidModalOrder] = useState(null);
+  const [bidQuoteLoading, setBidQuoteLoading] = useState(false);
+  const [bidQuote, setBidQuote] = useState(null);
   const [takeConfirmOrder, setTakeConfirmOrder] = useState(null);
   const [categoryFilters, setCategoryFilters] = useState([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState(() =>
@@ -244,10 +264,37 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
   const loginRequiredMessage = t("orders.marketplace.loginRequiredFreelancer");
   const clientViewOnlyMessage = t("orders.marketplace.clientViewOnly");
 
+  const mergePantryIntoPool = Boolean(isFreelancer && layout === "dashboard");
+
+  const pantryOrdersMatchingFilters = useMemo(() => {
+    if (!mergePantryIntoPool || pantryPoolOrders.length === 0) return [];
+    if (!hasCategoryFilters) return pantryPoolOrders;
+    return pantryPoolOrders.filter((order) => {
+      const catId = order?.category?.id != null ? String(order.category.id) : "";
+      const subId = order?.subSubcategory?.id != null ? String(order.subSubcategory.id) : "";
+      if (selectedSubSubIds.length > 0) {
+        return Boolean(subId && selectedSubSubIds.includes(subId));
+      }
+      if (selectedCategoryIds.length > 0) {
+        return Boolean(catId && selectedCategoryIds.includes(catId));
+      }
+      return true;
+    });
+  }, [mergePantryIntoPool, pantryPoolOrders, hasCategoryFilters, selectedCategoryIds, selectedSubSubIds]);
+
+  const mergedOrders = useMemo(() => {
+    if (!mergePantryIntoPool || pantryOrdersMatchingFilters.length === 0) return orders;
+    // Show pantry open requests on page 1 only (same card UI as pool orders).
+    if (page !== 1) return orders;
+    const existing = new Set(orders.map((o) => String(o.id)));
+    const extras = pantryOrdersMatchingFilters.filter((o) => !existing.has(String(o.id)));
+    return [...extras, ...orders];
+  }, [mergePantryIntoPool, pantryOrdersMatchingFilters, orders, page]);
+
   const displayedOrders = useMemo(() => {
-    if (!planAvailableOnly || !isFreelancer) return orders;
-    return filterPoolOrdersAccessibleForPlan(orders);
-  }, [orders, planAvailableOnly, isFreelancer]);
+    if (!planAvailableOnly || !isFreelancer) return mergedOrders;
+    return filterPoolOrdersAccessibleForPlan(mergedOrders);
+  }, [mergedOrders, planAvailableOnly, isFreelancer]);
 
   const poolListParams = useCallback(
     (pageNum) => ({
@@ -264,7 +311,42 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     const res = await listPoolOrdersRequest(poolListParams(page));
     setOrders(res?.data?.orders || []);
     setPagination(res?.data?.pagination || { page, limit: POOL_PAGE_LIMIT, total: 0, totalPages: 1 });
+    if (mergePantryIntoPool) {
+      try {
+        const pantryRes = await listFreelancerPantryRequestsRequest();
+        const mapped = (pantryRes?.data?.requests || [])
+          .map(mapPantryRequestToPoolOrder)
+          .filter(Boolean);
+        setPantryPoolOrders(mapped);
+      } catch {
+        /* keep last pantry rows */
+      }
+    }
   };
+
+  useEffect(() => {
+    if (!mergePantryIntoPool) {
+      setPantryPoolOrders([]);
+      return undefined;
+    }
+    if (loading) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const pantryRes = await listFreelancerPantryRequestsRequest();
+        if (cancelled) return;
+        const mapped = (pantryRes?.data?.requests || [])
+          .map(mapPantryRequestToPoolOrder)
+          .filter(Boolean);
+        setPantryPoolOrders(mapped);
+      } catch {
+        if (!cancelled) setPantryPoolOrders([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mergePantryIntoPool, loading, user?.id, reloadTick]);
 
   useEffect(() => {
     if (layout === "dashboard" && loading) return undefined;
@@ -335,6 +417,18 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
         setOrders(res?.data?.orders || []);
         setPagination(res?.data?.pagination || { page, limit: POOL_PAGE_LIMIT, total: 0, totalPages: 1 });
         setLoadError("");
+        if (mergePantryIntoPool) {
+          try {
+            const pantryRes = await listFreelancerPantryRequestsRequest();
+            if (cancelled || listVersionAtStart !== poolListVersionRef.current) return;
+            const mapped = (pantryRes?.data?.requests || [])
+              .map(mapPantryRequestToPoolOrder)
+              .filter(Boolean);
+            setPantryPoolOrders(mapped);
+          } catch {
+            /* keep last pantry rows on silent refresh */
+          }
+        }
       } catch (err) {
         if (cancelled || abortController?.signal.aborted || err?.code === "ERR_CANCELED") return;
         if (listVersionAtStart !== poolListVersionRef.current) return;
@@ -371,7 +465,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       document.removeEventListener("visibilitychange", onVisibilityChange);
       setIsRefetching(false);
     };
-  }, [location.pathname, page, poolListParams, layout, loading, user?.id, push, t]);
+  }, [location.pathname, page, poolListParams, layout, loading, user?.id, push, t, mergePantryIntoPool]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -460,9 +554,40 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     };
   }, []);
 
-  const take = async (orderId) => {
+  const take = async (order) => {
+    if (takingId) return;
+    if (isOpportunityCollectionClosed(order)) return;
+    const orderId = typeof order === "object" && order != null ? order.id : order;
+    const pantryId = typeof order === "object" && order != null ? pantryRequestIdFromPoolOrder(order) : null;
     setTakingId(orderId);
     try {
+      if (pantryId) {
+        const amount =
+          typeof order === "object" && order?.budget != null ? Number(order.budget) : null;
+        if (amount == null || !Number.isFinite(amount) || amount <= 0) {
+          throw new Error(t("orders.marketplace.takeOrderError"));
+        }
+        await submitFreelancerPantryBidRequest(pantryId, {
+          amount,
+          durationDays:
+            typeof order === "object" && order?.durationValue != null
+              ? Number(order.durationValue)
+              : null,
+          message: null,
+        });
+        trackEvent("fixed_order_taken", {
+          order_id: String(pantryId),
+          source: "pantry",
+        });
+        push({
+          type: "success",
+          title: t("orders.marketplace.participationRegistered.title"),
+          message: t("orders.marketplace.participationRegistered.message"),
+        });
+        await reloadPool();
+        return;
+      }
+
       const res = await takePoolOrderRequest(orderId);
       const updated = res?.data?.order;
       trackEvent("fixed_order_taken", {
@@ -507,15 +632,72 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     [t],
   );
 
-  const submitBid = async (amount) => {
-    if (!bidModalOrder?.id) return;
+  useEffect(() => {
+    if (!bidModalOrder?.id || !isFreelancer) {
+      setBidQuote(null);
+      return undefined;
+    }
+    if (isPantryPoolOrder(bidModalOrder)) {
+      setBidQuote(
+        bidModalOrder.applicationBidCost != null
+          ? {
+              bidCreditCost: Number(bidModalOrder.applicationBidCost) || 1,
+              availableBids: null,
+              engineAvailable: false,
+              priorityBoost: { engineAvailable: false, canBoost: false },
+            }
+          : null,
+      );
+      setBidQuoteLoading(false);
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      setBidQuoteLoading(true);
+      try {
+        const res = await getPoolOrderNormalApplicationBidQuoteRequest(bidModalOrder.id);
+        if (!cancelled) setBidQuote(res?.data || null);
+      } catch {
+        if (!cancelled) setBidQuote(null);
+      } finally {
+        if (!cancelled) setBidQuoteLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bidModalOrder, isFreelancer]);
+
+  const submitBid = async (amount, options = {}) => {
+    if (!bidModalOrder?.id || bidBusyId) return;
+    if (isOpportunityCollectionClosed(bidModalOrder)) return;
     setBidBusyId(bidModalOrder.id);
     try {
-      await submitPoolOrderBidRequest(bidModalOrder.id, { amount });
-      trackEvent("bid_submitted", {
-        order_id: String(bidModalOrder.id),
-        amount: Number(amount),
-      });
+      if (isPantryPoolOrder(bidModalOrder)) {
+        const pantryId = pantryRequestIdFromPoolOrder(bidModalOrder);
+        await submitFreelancerPantryBidRequest(pantryId, {
+          amount,
+          durationDays:
+            bidModalOrder.durationValue != null ? Number(bidModalOrder.durationValue) : null,
+          message: null,
+        });
+        trackEvent("bid_submitted", {
+          order_id: String(pantryId),
+          amount: Number(amount),
+          is_priority: false,
+          source: "pantry",
+        });
+      } else {
+        await submitPoolOrderBidRequest(bidModalOrder.id, {
+          amount,
+          usePriority: Boolean(options.usePriority),
+        });
+        trackEvent("bid_submitted", {
+          order_id: String(bidModalOrder.id),
+          amount: Number(amount),
+          is_priority: Boolean(options.usePriority),
+        });
+      }
       push({
         type: "success",
         title: t("orders.marketplace.bidSubmitted.title"),
@@ -569,7 +751,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
 
   const poolDetailsPath = useCallback(
     (orderId) => {
-      if (layout !== "dashboard") return `/orders/${orderId}`;
+      if (layout !== "dashboard") return `/dashboard/freelancer/orders/${orderId}`;
       if (isClient) return `/dashboard/client/orders/${orderId}`;
       return `/dashboard/freelancer/orders/${orderId}`;
     },
@@ -578,6 +760,15 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
 
   const openPoolOrderDetails = useCallback(
     (order) => {
+      if (isPantryPoolOrder(order)) {
+        if (isPoolOrderLockedByPlan(order) || isOpportunityCollectionClosed(order)) return;
+        if (order.projectType === "bidding") {
+          setBidModalOrder(order);
+        } else {
+          setTakeConfirmOrder(order);
+        }
+        return;
+      }
       const id = order?.id;
       if (!id) return;
       const detailsPath = poolDetailsPath(id);
@@ -609,7 +800,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       }
       navigate("/login");
     },
-    [user, navigate, listFromPath, poolDetailsPath, push],
+    [user, navigate, listFromPath, poolDetailsPath, push, t],
   );
 
   const isDashboard = layout === "dashboard";
@@ -632,9 +823,10 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     toggleSubSub,
   };
 
-  const showHardError = Boolean(loadError) && orders.length === 0 && !initialLoading;
-  const showInitialSkeleton = initialLoading && orders.length === 0;
-  const showUpdatingBadge = isRefetching && orders.length > 0;
+  const showHardError = Boolean(loadError) && orders.length === 0 && pantryPoolOrders.length === 0 && !initialLoading;
+  const showInitialSkeleton = initialLoading && orders.length === 0 && pantryPoolOrders.length === 0;
+  const showUpdatingBadge = isRefetching && (orders.length > 0 || pantryPoolOrders.length > 0);
+  const listIsEmpty = mergedOrders.length === 0;
 
   const ordersList = (
     <div className="oh-orders-list-wrapper" ref={listWrapperRef}>
@@ -647,7 +839,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
             {t("common.actions.retry")}
           </button>
         </div>
-      ) : orders.length === 0 ? (
+      ) : listIsEmpty ? (
         hasCategoryFilters ? (
           <CategoryFilterEmptyState onClearFilters={clearCategoryFilters} />
         ) : (
@@ -666,10 +858,14 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
               order={order}
               showActions={showPoolRowActions}
               onTake={() => {
-                if (!isPoolOrderLockedByPlan(order)) setTakeConfirmOrder(order);
+                if (!isPoolOrderLockedByPlan(order) && !isOpportunityCollectionClosed(order)) {
+                  setTakeConfirmOrder(order);
+                }
               }}
               onBid={() => {
-                if (!isPoolOrderLockedByPlan(order)) setBidModalOrder(order);
+                if (!isPoolOrderLockedByPlan(order) && !isOpportunityCollectionClosed(order)) {
+                  setBidModalOrder(order);
+                }
               }}
               taking={takingId === order.id}
               bidBusy={bidBusyId === order.id}
@@ -723,14 +919,14 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
           }}
         >
           <Filter
-            size={16}
+            size={13}
             strokeWidth={2.2}
             className="oh-orders-plan-filter-btn__icon oh-orders-plan-filter-btn__icon--filter"
             aria-hidden
           />
           <span className="oh-orders-plan-filter-btn__label">{t("orders.planFilter.label")}</span>
           <Sparkles
-            size={15}
+            size={12}
             strokeWidth={2.1}
             className="oh-orders-plan-filter-btn__icon oh-orders-plan-filter-btn__icon--spark"
             aria-hidden
@@ -757,6 +953,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     <div className="oh-orders-toolbar-neu__controls">
       {sortControl}
       {planFilterButton}
+      {isFreelancer ? <OpportunityHelpTrigger conditionKey="mini_bid_intro" label="كيف تعمل هذه الفرصة؟" /> : null}
       {showUpdatingBadge ? <OpenOrdersUpdatingBadge /> : null}
     </div>
   );
@@ -846,6 +1043,16 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
           if (!bidBusyId) setBidModalOrder(null);
         }}
         onSubmit={submitBid}
+        bidCreditCost={bidQuote?.bidCreditCost ?? 1}
+        availableBids={bidQuote?.availableBids ?? null}
+        engineAvailable={Boolean(bidQuote?.engineAvailable)}
+        bidQuoteLoading={bidQuoteLoading}
+        priorityBoostAvailable={Boolean(
+          bidQuote?.priorityBoost?.engineAvailable && bidQuote?.priorityBoost?.canBoost,
+        )}
+        remainingPriorityUses={bidQuote?.priorityBoost?.remainingPriorityUses ?? null}
+        priorityUseCost={bidQuote?.priorityBoost?.priorityUseCost ?? 1}
+        priorityAdditionalBidCost={bidQuote?.priorityBoost?.additionalBidCreditCost ?? 0}
       />
 
       <TakePoolOrderConfirmModal
@@ -857,7 +1064,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
         onConfirm={async () => {
           const o = takeConfirmOrder;
           setTakeConfirmOrder(null);
-          if (o?.id) await take(o.id);
+          if (o?.id) await take(o);
         }}
       />
     </div>

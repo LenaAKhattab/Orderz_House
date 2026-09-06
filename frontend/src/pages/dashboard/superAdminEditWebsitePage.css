@@ -64,6 +64,31 @@
   padding-top: 2px;
 }
 
+.oh-website-section-card__status {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.oh-website-section-card__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.oh-website-section-card__badge--on {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.oh-website-section-card__badge--off {
+  background: var(--dash-hover, #eef1f4);
+  color: var(--dash-text-secondary, #4b5563);
+}
+
 .oh-website-section-card__title {
   margin: 0;
   font-size: 1.05rem;

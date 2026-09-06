@@ -11,6 +11,7 @@ import '../../notifications/presentation/unread_notifications_controller.dart';
 import '../../push/data/push_notification_service.dart';
 import '../data/account_models.dart';
 import '../data/account_repository.dart';
+import '../../currency/presentation/preferred_display_currency_settings.dart';
 
 final accountProfileProvider =
     AsyncNotifierProvider.autoDispose<AccountProfileController, AccountProfile>(
@@ -105,9 +106,15 @@ class _AccountSettingsBody extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 18),
-        const _SectionTitle('تشخيص مؤقت'),
-        const SizedBox(height: 8),
-        const _WhiteCard(child: _PushDiagnosticsTile()),
+const _SectionTitle('تشخيص مهني'),
+const SizedBox(height: 8),
+const _WhiteCard(child: _PushDiagnosticsTile()),
+
+const SizedBox(height: 18),
+
+const _SectionTitle('العرض'),
+const SizedBox(height: 8),
+const _WhiteCard(child: PreferredDisplayCurrencySettings()),
         const SizedBox(height: 18),
         const _SectionTitle('الحساب'),
         const SizedBox(height: 8),

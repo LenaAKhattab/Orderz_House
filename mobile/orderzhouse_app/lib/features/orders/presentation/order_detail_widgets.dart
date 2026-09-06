@@ -158,13 +158,15 @@ class OrderInfoGrid extends StatelessWidget {
 class OrderMetaItem {
   const OrderMetaItem({
     required this.label,
-    required this.value,
+    this.value = '',
+    this.valueWidget,
     this.icon,
     this.accent,
   });
 
   final String label;
   final String value;
+  final Widget? valueWidget;
   final IconData? icon;
   final Color? accent;
 }
@@ -207,17 +209,20 @@ class _MetaTile extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            item.value,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: AppColors.textInk,
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
-              height: 1.25,
+          if (item.valueWidget != null)
+            item.valueWidget!
+          else
+            Text(
+              item.value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: AppColors.textInk,
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+                height: 1.25,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -358,6 +363,7 @@ class OrderDetailHeroCard extends StatelessWidget {
     this.statusKey,
     this.projectTypeLabel,
     this.budgetLabel,
+    this.budgetDisplay,
     this.dateLabel,
     this.dateCaption = 'التاريخ',
   });
@@ -368,6 +374,7 @@ class OrderDetailHeroCard extends StatelessWidget {
   final String? statusKey;
   final String? projectTypeLabel;
   final String? budgetLabel;
+  final Widget? budgetDisplay;
   final String? dateLabel;
   final String dateCaption;
 
@@ -427,7 +434,7 @@ class OrderDetailHeroCard extends StatelessWidget {
                 _HeroChip(label: projectTypeLabel!, icon: Icons.layers_outlined),
             ],
           ),
-          if (budgetLabel != null || dateLabel != null) ...[
+          if (budgetDisplay != null || budgetLabel != null || dateLabel != null) ...[
             const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -437,15 +444,16 @@ class OrderDetailHeroCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  if (budgetLabel != null)
+                  if (budgetDisplay != null || budgetLabel != null)
                     Expanded(
                       child: _HeroStat(
                         icon: Icons.payments_outlined,
                         label: 'الميزانية',
-                        value: budgetLabel!,
+                        value: budgetLabel ?? '',
+                        valueWidget: budgetDisplay,
                       ),
                     ),
-                  if (budgetLabel != null && dateLabel != null)
+                  if ((budgetDisplay != null || budgetLabel != null) && dateLabel != null)
                     Container(
                       width: 1,
                       height: 34,
@@ -507,11 +515,13 @@ class _HeroStat extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    this.valueWidget,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final Widget? valueWidget;
 
   @override
   Widget build(BuildContext context) {
@@ -536,17 +546,20 @@ class _HeroStat extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
+          if (valueWidget != null)
+            valueWidget!
+          else
+            Text(
+              value,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+              ),
             ),
-          ),
         ],
       ),
     );

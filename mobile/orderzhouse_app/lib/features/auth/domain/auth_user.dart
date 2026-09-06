@@ -33,8 +33,10 @@ class AuthUser {
   }
 
   String get effectiveRole {
-    final raw = (primaryRole ?? role ?? 'client').trim().toLowerCase();
-    return raw.isEmpty ? 'client' : raw;
+    var raw = (primaryRole ?? role ?? 'client').trim().toLowerCase();
+    if (raw.isEmpty) return 'client';
+    if (raw == 'super-admin') return 'super_admin';
+    return raw;
   }
 
   bool get isFreelancerAccount =>
@@ -50,6 +52,12 @@ class AuthUser {
 
   /// Navigation: client orders/create when primary role is client.
   bool get usesClientExperience => effectiveRole == 'client';
+
+  /// Super Admin Action Center — never fall through to client home.
+  bool get usesSuperAdminExperience => effectiveRole == 'super_admin';
+
+  /// Staff `admin` has no dedicated mobile product; keep SA tools locked.
+  bool get isRegularAdminWithoutMobileExperience => effectiveRole == 'admin';
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     final rolesRaw = json['roles'];

@@ -6,6 +6,13 @@ import '../../../core/errors/api_error_message.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
+import '../../currency/presentation/jod_money_display.dart';
+import '../../freelancer/data/pool_order_participation_helpers.dart';
+import '../../freelancer/presentation/plan_upgrade_required_cta.dart';
+import '../../pantry/data/pantry_models.dart';
+import '../../pantry/presentation/pantry_controllers.dart';
+import '../../pantry/presentation/pantry_display.dart';
+import '../data/available_opportunity.dart';
 import '../data/order_display_helpers.dart';
 import '../data/pool_order_models.dart';
 import 'pool_orders_controller.dart';
@@ -63,17 +70,16 @@ class _MarketplaceFilters {
   final MarketplaceBudgetFilter budget;
 }
 
-bool _orderMatchesBudgetFilter(PoolOrder order, MarketplaceBudgetFilter filter) {
+bool _opportunityMatchesBudgetFilter(AvailableOpportunity order, MarketplaceBudgetFilter filter) {
   if (filter == MarketplaceBudgetFilter.all) return true;
 
   if (order.isBidding) {
-    final oMin = order.bidBudgetMin;
-    final oMax = order.bidBudgetMax;
+    final oMin = order.budgetMin;
+    final oMax = order.budgetMax;
     if (oMin == null && oMax == null) return false;
     final rangeMin = oMin ?? oMax!;
     final rangeMax = oMax ?? oMin!;
     final (bandMin, bandMax) = filter.band;
-    // Treat adjacent bands as half-open on the shared edge except 0–100 includes 100.
     if (filter == MarketplaceBudgetFilter.upTo100) {
       return rangeMin <= 100 && rangeMax >= 0;
     }
@@ -83,7 +89,7 @@ bool _orderMatchesBudgetFilter(PoolOrder order, MarketplaceBudgetFilter filter) 
     return rangeMin <= bandMax && rangeMax > bandMin;
   }
 
-  final budget = order.budget;
+  final budget = order.budgetValue;
   if (budget == null) return false;
   return filter.containsValue(budget);
 }
@@ -107,19 +113,19 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
     super.dispose();
   }
 
-  List<PoolOrder> _filtered(List<PoolOrder> orders) {
+  List<AvailableOpportunity> _filtered(List<PoolOrder> orders, List<PantryRequest> pantry) {
     final q = _query.trim().toLowerCase();
-    return orders.where((order) {
+    return mergeAvailableOpportunities(poolOrders: orders, pantryRequests: pantry).where((order) {
       if (_filter == MarketplaceProjectFilter.bidding && !order.isBidding) return false;
       if (_filter == MarketplaceProjectFilter.fixed && order.isBidding) return false;
-      if (!_orderMatchesBudgetFilter(order, _budgetFilter)) return false;
+      if (!_opportunityMatchesBudgetFilter(order, _budgetFilter)) return false;
       if (q.isEmpty) return true;
       final haystack = [
         order.title,
         order.description ?? '',
-        order.category?.name ?? '',
+        order.categoryName ?? '',
+        ...order.skills,
         order.projectTypeLabel,
-        order.statusLabel,
         order.budgetLabel ?? '',
       ].join(' ').toLowerCase();
       return haystack.contains(q);
@@ -262,7 +268,11 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
   Widget build(BuildContext context) {
     final state = ref.watch(poolOrdersControllerProvider);
     final notifier = ref.read(poolOrdersControllerProvider.notifier);
-    final filtered = _filtered(state.orders);
+    final pantry = ref.watch(pantryOpenRequestsProvider).maybeWhen(
+          data: (value) => value,
+          orElse: () => const <PantryRequest>[],
+        );
+    final filtered = _filtered(state.orders, pantry);
     final hasProjectFilter = _filter != MarketplaceProjectFilter.all;
     final hasBudgetFilter = _budgetFilter != MarketplaceBudgetFilter.all;
     final hasActiveFilter = hasProjectFilter || hasBudgetFilter || _query.trim().isNotEmpty;
@@ -358,7 +368,7 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
               ),
             ),
             const SizedBox(height: 8),
-            Expanded(child: _buildBody(context, state, notifier, filtered)),
+            Expanded(child: _buildBody(context, state, notifier, filtered, pantry)),
           ],
         ),
       ),
@@ -369,20 +379,24 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
     BuildContext context,
     PoolOrdersState state,
     PoolOrdersController notifier,
-    List<PoolOrder> filtered,
+    List<AvailableOpportunity> filtered,
+    List<PantryRequest> pantry,
   ) {
-    if (state.isLoading && state.orders.isEmpty) {
+    if (state.isLoading && state.orders.isEmpty && pantry.isEmpty) {
       return const OhLoadingBody(message: 'جاري تحميل الطلبات...');
     }
 
-    if (state.error != null && state.orders.isEmpty) {
+    if (state.error != null && state.orders.isEmpty && pantry.isEmpty) {
       return OhErrorBody(
         message: apiErrorMessage(state.error!, fallback: 'تعذر تحميل سوق الطلبات.'),
-        onRetry: () => notifier.load(refresh: true),
+        onRetry: () {
+          ref.invalidate(pantryOpenRequestsProvider);
+          notifier.load(refresh: true);
+        },
       );
     }
 
-    if (state.orders.isEmpty) {
+    if (state.orders.isEmpty && pantry.isEmpty) {
       return const OhEmptyBody(
         message: 'لا توجد طلبات في السوق حالياً.',
         icon: Icons.storefront_outlined,
@@ -403,7 +417,11 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
 
     return RefreshIndicator(
       color: AppColors.primary,
-      onRefresh: () => notifier.load(refresh: true),
+      onRefresh: () async {
+        ref.invalidate(pantryOpenRequestsProvider);
+        await notifier.load(refresh: true);
+        await ref.read(pantryOpenRequestsProvider.future);
+      },
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
         itemCount: filtered.length + (showLoadMore ? 1 : 0),
@@ -422,7 +440,7 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
               onPressed: () => notifier.load(),
             );
           }
-          return _PoolOrderCard(order: filtered[index]);
+          return _PoolOrderCard(opportunity: filtered[index]);
         },
       ),
     );
@@ -552,16 +570,22 @@ class _FilterOption extends StatelessWidget {
 }
 
 class _PoolOrderCard extends StatelessWidget {
-  const _PoolOrderCard({required this.order});
+  const _PoolOrderCard({required this.opportunity});
 
-  final PoolOrder order;
+  final AvailableOpportunity opportunity;
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => context.push(AppRoutes.poolOrderPath(order.id)),
+        onTap: () {
+          if (opportunity.isPantryRequest) {
+            context.push(AppRoutes.freelancerPantryDetail(opportunity.id));
+          } else {
+            context.push(AppRoutes.poolOrderPath(opportunity.id));
+          }
+        },
         borderRadius: BorderRadius.circular(18),
         child: Ink(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
@@ -585,7 +609,7 @@ class _PoolOrderCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      order.title,
+                      opportunity.title,
                       textAlign: TextAlign.right,
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
@@ -596,13 +620,13 @@ class _PoolOrderCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _TypeChip(label: order.projectTypeLabel, bidding: order.isBidding),
+                  _TypeChip(label: opportunity.projectTypeLabel, bidding: opportunity.isBidding),
                 ],
               ),
-              if (order.category?.name != null) ...[
+              if (opportunity.categoryName != null) ...[
                 const SizedBox(height: 5),
                 Text(
-                  order.category!.name!,
+                  opportunity.categoryName!,
                   textAlign: TextAlign.right,
                   style: const TextStyle(
                     color: AppColors.primaryMid,
@@ -617,31 +641,99 @@ class _PoolOrderCard extends StatelessWidget {
                 runSpacing: 6,
                 alignment: WrapAlignment.end,
                 children: [
-                  if (order.budgetLabel != null)
+                  if (opportunity.budgetMin != null ||
+                      opportunity.budgetMax != null ||
+                      opportunity.budgetValue != null)
                     _MetaPill(
                       icon: Icons.payments_outlined,
-                      label: order.budgetLabel!,
+                      color: AppColors.success,
+                      background: AppColors.success.withValues(alpha: 0.12),
+                      child: JodOrderBudgetDisplay(
+                        projectType: opportunity.projectType,
+                        amount: opportunity.budgetValue,
+                        bidMin: opportunity.budgetMin,
+                        bidMax: opportunity.budgetMax,
+                      ),
+                    )
+                  else if (opportunity.budgetLabel != null)
+                    _MetaPill(
+                      icon: Icons.payments_outlined,
+                      label: opportunity.budgetLabel!,
                       color: AppColors.success,
                       background: AppColors.success.withValues(alpha: 0.12),
                     ),
+                  if (opportunity.deliveryDaysLabel != null)
+                    _MetaPill(
+                      icon: Icons.schedule_outlined,
+                      label: opportunity.deliveryDaysLabel!,
+                      color: AppColors.primaryDeep,
+                      background: AppColors.iconChipBg,
+                    ),
                   _MetaPill(
                     icon: Icons.calendar_today_outlined,
-                    label: formatOrderDate(order.publishedAtLabel),
+                    label: formatOrderDate(opportunity.publishedAtLabel),
                     color: AppColors.primaryMid,
                     background: AppColors.iconChipBg,
                   ),
-                  if (order.applicantsCount > 0)
+                  if (opportunity.applicantsCount > 0)
                     _MetaPill(
                       icon: Icons.people_outline,
-                      label: '${order.applicantsCount} متقدم',
+                      label: opportunity.pantryRequest != null &&
+                              pantryPublicBidProgressLabel(opportunity.pantryRequest!) != null
+                          ? pantryPublicBidProgressLabel(opportunity.pantryRequest!)!
+                          : '${opportunity.applicantsCount} متقدم',
+                      color: const Color(0xFFB54708),
+                      background: const Color(0xFFFFF4E5),
+                    ),
+                  if (opportunity.applicantsCount == 0 &&
+                      opportunity.pantryRequest != null &&
+                      pantryPublicBidProgressLabel(opportunity.pantryRequest!) != null)
+                    _MetaPill(
+                      icon: Icons.people_outline,
+                      label: pantryPublicBidProgressLabel(opportunity.pantryRequest!)!,
                       color: const Color(0xFFB54708),
                       background: const Color(0xFFFFF4E5),
                     ),
                 ],
               ),
+              if (opportunity.poolOrder != null &&
+                  isPoolOrderLockedByPlan(opportunity.poolOrder!)) ...[
+                const SizedBox(height: 8),
+                _PoolPlanLockListBanner(order: opportunity.poolOrder!),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Compact list-level plan lock (aligned with order details). CTA opens web only.
+class _PoolPlanLockListBanner extends StatelessWidget {
+  const _PoolPlanLockListBanner({required this.order});
+
+  final PoolOrder order;
+
+  @override
+  Widget build(BuildContext context) {
+    final props = poolOrderPlanUpgradeProps(order);
+    final reason = props?.reason ??
+        order.poolEligibility?.reasonCode ??
+        (order.poolEligibility?.planConfigurationError == true
+            ? 'INTERNAL_PLAN_CONFIGURATION'
+            : 'PLAN_TOO_LOW');
+
+    // Absorb pointer so CTA / text area does not also fire card navigation.
+    return GestureDetector(
+      onTap: () {},
+      behavior: HitTestBehavior.opaque,
+      child: PlanUpgradeRequiredCta(
+        key: ValueKey('pool-list-plan-lock-${order.id}'),
+        requiredTierCode: props?.requiredTierCode,
+        requiredPlanLabel: props?.requiredPlanLabel,
+        reason: reason,
+        compact: true,
       ),
     );
   }
@@ -677,13 +769,15 @@ class _TypeChip extends StatelessWidget {
 class _MetaPill extends StatelessWidget {
   const _MetaPill({
     required this.icon,
-    required this.label,
+    this.label,
+    this.child,
     required this.color,
     required this.background,
   });
 
   final IconData icon;
-  final String label;
+  final String? label;
+  final Widget? child;
   final Color color;
   final Color background;
 
@@ -700,14 +794,15 @@ class _MetaPill extends StatelessWidget {
         children: [
           Icon(icon, size: 13, color: color),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          child ??
+              Text(
+                label ?? '',
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
         ],
       ),
     );

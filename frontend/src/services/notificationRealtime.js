@@ -1,6 +1,7 @@
+import { getApiBaseUrl } from "../config/apiBase";
+
 function buildStreamUrl() {
-  const base = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace(/\/$/, "");
-  return `${base}/notifications/stream`;
+  return `${getApiBaseUrl()}/notifications/stream`;
 }
 
 /**

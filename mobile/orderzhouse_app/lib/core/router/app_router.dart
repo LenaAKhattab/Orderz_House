@@ -7,6 +7,7 @@ import '../../features/account/presentation/change_password_screen.dart';
 import '../../features/account/presentation/delete_account_screen.dart';
 import '../../features/account/presentation/edit_profile_screen.dart';
 import '../../features/auth/presentation/auth_controller.dart';
+import '../../features/auth/presentation/forgot_password_screens.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/otp_verification_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
@@ -17,20 +18,34 @@ import '../../features/client_orders/presentation/client_order_details_screen.da
 import '../../features/client_orders/presentation/create_order_screen.dart';
 import '../../features/client_orders/presentation/payment_return_screen.dart';
 import '../../features/client_orders/data/payment_return_parser.dart';
+import '../../features/freelancer/account_activation/presentation/account_activation_kyc_screen.dart';
+import '../../features/freelancer/mini_articles/presentation/mini_article_detail_screen.dart';
+import '../../features/freelancer/mini_articles/presentation/mini_articles_hub_screen.dart';
+import '../../features/freelancer/my_articles/presentation/manuscript_submit_args.dart';
+import '../../features/freelancer/my_articles/presentation/manuscript_submit_screen.dart';
+import '../../features/freelancer/my_articles/presentation/my_articles_screen.dart';
 import '../../features/freelancer/presentation/freelancer_order_detail_screen.dart';
 import '../../features/freelancer/financial_claims/presentation/financial_claims_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/orders/presentation/orders_marketplace_screen.dart';
 import '../../features/orders/presentation/pool_order_detail_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
+import '../../features/pantry/presentation/pantry_request_detail_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/public_pages/presentation/public_page_screen.dart';
+import '../../features/super_admin/presentation/super_admin_activation_screens.dart';
+import '../../features/super_admin/presentation/super_admin_article_screens.dart';
+import '../../features/super_admin/presentation/super_admin_pantry_screens.dart';
+import '../../features/super_admin/presentation/super_admin_feedback_screens.dart';
+import '../../features/super_admin/presentation/super_admin_package_screens.dart';
+import '../../features/super_admin/presentation/super_admin_queue_screens.dart';
 import '../../features/shell/main_shell.dart';
 import '../../features/shell/role_aware_courses_or_services_tab.dart';
 import '../../features/shell/role_aware_my_orders_screen.dart';
 import 'auth_redirect_policy.dart';
 import 'deep_link_normalization.dart';
 import 'routes.dart';
+import 'super_admin_access.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -64,7 +79,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isSplash = location == AppRoutes.splash;
       final isAuthRoute = location == AppRoutes.login ||
           location == AppRoutes.register ||
-          location.startsWith(AppRoutes.otp);
+          location.startsWith(AppRoutes.otp) ||
+          location.startsWith(AppRoutes.forgotPassword);
 
       if (auth.status == AuthStatus.unknown) {
         if (isSplash || isPublicPaymentReturnRoute(location)) return null;
@@ -93,6 +109,21 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (auth.status == AuthStatus.authenticated) {
         if (isSplash || isAuthRoute) return AppRoutes.home;
+        if (isFreelancerPantryLocation(location) &&
+            auth.user?.usesFreelancerExperience != true) {
+          return AppRoutes.home;
+        }
+        final roleRedirect = superAdminRoleRedirect(
+          location: location,
+          effectiveRole: auth.user?.effectiveRole,
+        );
+        if (roleRedirect != null && roleRedirect != location) {
+          return roleRedirect;
+        }
+        final alias = superAdminPathAlias(location);
+        if (alias != null && alias != location) {
+          return alias;
+        }
       }
 
       return null;
@@ -132,6 +163,43 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: AppRoutes.forgotPassword,
+        builder: (context, state) => const ForgotPasswordEmailScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPasswordOtp,
+        builder: (context, state) {
+          final email = state.uri.queryParameters['email'] ?? '';
+          return ForgotPasswordOtpScreen(email: email);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPasswordReset,
+        builder: (context, state) {
+          final extra = state.extra;
+          var email = state.uri.queryParameters['email'] ?? '';
+          var resetToken = '';
+          if (extra is Map) {
+            email = extra['email']?.toString() ?? email;
+            resetToken = extra['resetToken']?.toString() ?? '';
+          }
+          return ForgotPasswordResetScreen(email: email, resetToken: resetToken);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.freelancerPantry,
+        parentNavigatorKey: _rootNavigatorKey,
+        redirect: (context, state) => AppRoutes.marketplace,
+      ),
+      GoRoute(
+        path: AppRoutes.freelancerPantryDetails,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return PantryRequestDetailScreen(requestId: id);
+        },
+      ),
+      GoRoute(
         path: AppRoutes.poolOrderDetails,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
@@ -159,9 +227,41 @@ final routerProvider = Provider<GoRouter>((ref) {
         redirect: (context, state) => AppRoutes.profile,
       ),
       GoRoute(
+        path: AppRoutes.freelancerAccountActivation,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AccountActivationKycScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.freelancerFinancialClaims,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const FinancialClaimsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.freelancerMiniArticles,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MiniArticlesHubScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.freelancerMiniArticleDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return MiniArticleDetailScreen(articleId: id);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.freelancerMyArticles,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MyArticlesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.freelancerMyArticleSubmit,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['applicationId'] ?? '';
+          final args = ManuscriptSubmitArgs.fromExtra(state.extra, applicationId: id);
+          return ManuscriptSubmitScreen(args: args);
+        },
       ),
       GoRoute(
         path: AppRoutes.freelancerOrderDetails,
@@ -188,6 +288,102 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.notifications,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminIdentityRequests,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SuperAdminIdentityQueueScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminSubscriptionActivation,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SuperAdminSubscriptionActivationQueueScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminPackageAssignment,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SuperAdminPackageAssignmentScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminPackageUserDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['userId'] ?? '';
+          return SuperAdminPackageUserDetailScreen(userId: id);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminActivation,
+        parentNavigatorKey: _rootNavigatorKey,
+        redirect: (_, state) => AppRoutes.superAdminIdentityRequests,
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminActivationKycDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return SuperAdminActivationKycDetailScreen(requestId: id);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminActivationSubscriptionDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return SuperAdminActivationSubscriptionDetailScreen(subscriptionId: id);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminClaims,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SuperAdminClaimsQueueScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminPantry,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SuperAdminPantryQueueScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminPantryRequest,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return SuperAdminPantryRequestScreen(requestId: id);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminPantryDelivery,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return SuperAdminPantryDeliveryScreen(deliveryId: id);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminArticles,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SuperAdminArticlesQueueScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminArticleDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return SuperAdminArticleDetailScreen(articleId: id);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminFeedback,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SuperAdminFeedbackQueueScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.superAdminFeedbackDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return SuperAdminFeedbackDetailScreen(feedbackId: id);
+        },
       ),
       GoRoute(
         path: AppRoutes.accountSettings,

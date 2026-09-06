@@ -23,7 +23,8 @@ const REGISTER_DEFAULT_ROLES = new Set(["client", "freelancer"]);
 
 function parseRegisterDefaultRole(searchParams) {
   const raw = String(searchParams.get("role") || "").trim().toLowerCase();
-  return REGISTER_DEFAULT_ROLES.has(raw) ? raw : "client";
+  // No default selection — user must choose (unless deep-linked via ?role=).
+  return REGISTER_DEFAULT_ROLES.has(raw) ? raw : "";
 }
 
 function normalizePhonePart(value) {
@@ -239,8 +240,8 @@ const Register = () => {
 
   const accountTypeOptions = useMemo(
     () => [
-      { value: "client", label: t("auth.register.accountTypes.client") },
       { value: "freelancer", label: t("auth.register.accountTypes.freelancer") },
+      { value: "client", label: t("auth.register.accountTypes.client") },
     ],
     [t],
   );
@@ -371,7 +372,8 @@ const Register = () => {
       termsAccepted,
     };
     if (isFreelancer) {
-      body.categories = categories;
+      const allowed = new Set(CATEGORY_SLUGS.map((c) => c.slug));
+      body.categories = categories.filter((slug) => allowed.has(slug));
     }
 
     submittingRef.current = true;

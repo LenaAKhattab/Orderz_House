@@ -7,7 +7,7 @@
  * - Real and fake/training pool rows use the same value band (e.g. free plan 3–7 د.أ for both).
  * - Display/marketing clones with null bands resolve via `subscription_plan_id` when present.
  */
-const { ORDERZHOUSE_PLANS_BY_ID } = require("../constants/orderzhousePlansCatalog");
+const { ORDERZHOUSE_PLANS_BY_ID, ORDERZHOUSE_PLAN_IDS } = require("../constants/orderzhousePlansCatalog");
 
 function parseJod(value) {
   if (value === null || value === undefined || value === "") return null;
@@ -234,17 +234,93 @@ function isPlanValueAllowedForOrder(orderLike, range) {
 }
 
 /**
- * Pool UI eligibility (visibility vs action). Real + fake/training share the same plan value band.
+ * Lowest catalog plan whose value band allows this order (upgrade CTA hint only).
  */
-function computePoolOrderPlanEligibility(orderLike, range) {
+function findSuggestedUpgradePlanForOrder(orderLike) {
+  const norm = normalizeOrderLikeForPlanCheck(orderLike);
+  for (const id of ORDERZHOUSE_PLAN_IDS) {
+    const catalog = ORDERZHOUSE_PLANS_BY_ID[id];
+    if (!catalog) continue;
+    const planRange = normalizePlanRange(id, catalog);
+    if (!isUsableOrderValueRange(planRange)) continue;
+    if (!isPlanValueAllowedForOrder(norm, planRange)) continue;
+    return {
+      planId: id,
+      planName: catalog.name || null,
+      planTitle: catalog.title || null,
+      requiredTierCode: id === 1 ? "free" : id === 2 ? "silver" : "pro",
+    };
+  }
+  return null;
+}
+
+/** Stable reason codes for freelancer-facing pool plan locks (do not expose internals). */
+const POOL_PLAN_ELIGIBILITY_REASON = Object.freeze({
+  PLAN_TOO_LOW: "PLAN_TOO_LOW",
+  NO_ACTIVE_PLAN: "NO_ACTIVE_PLAN",
+  INTERNAL_PLAN_CONFIGURATION: "INTERNAL_PLAN_CONFIGURATION",
+});
+
+const POOL_PLAN_ELIGIBILITY_MESSAGE_AR = Object.freeze({
+  [POOL_PLAN_ELIGIBILITY_REASON.PLAN_TOO_LOW]:
+    "هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.",
+  [POOL_PLAN_ELIGIBILITY_REASON.NO_ACTIVE_PLAN]:
+    "فعّل باقتك أولاً لاستلام الطلبات.",
+  [POOL_PLAN_ELIGIBILITY_REASON.INTERNAL_PLAN_CONFIGURATION]:
+    "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.",
+});
+
+function logInternalPlanConfiguration(details = {}) {
+  try {
+    const safe = {
+      reasonCode: POOL_PLAN_ELIGIBILITY_REASON.INTERNAL_PLAN_CONFIGURATION,
+      planId: details.planId != null ? Number(details.planId) : null,
+      sourcePlanId: details.sourcePlanId != null ? Number(details.sourcePlanId) : null,
+      resolvedFromPlanId:
+        details.resolvedFromPlanId != null ? Number(details.resolvedFromPlanId) : null,
+      hasPlanId: details.hasPlanId === true,
+      context: details.context ? String(details.context).slice(0, 80) : null,
+    };
+    console.warn("[planOrderValueEligibility] internal plan configuration", safe);
+  } catch {
+    /* never throw from logging */
+  }
+}
+
+/**
+ * Pool UI eligibility (visibility vs action). Real + fake/training share the same plan value band.
+ * @param {object} [options]
+ * @param {boolean} [options.hasPlanId] true when freelancer has a subscription plan id
+ * @param {number|null} [options.planId]
+ * @param {string} [options.logContext]
+ */
+function computePoolOrderPlanEligibility(orderLike, range, options = {}) {
   const norm = normalizeOrderLikeForPlanCheck(orderLike);
   const usable = isUsableOrderValueRange(range);
   const allowed = usable && isPlanValueAllowedForOrder(orderLike, range);
   const locked = !allowed;
+  const hasPlanId = options.hasPlanId === true;
 
+  let reasonCode = null;
   let lockReason = null;
   if (locked) {
-    lockReason = usable ? "غير متاح لباقتك" : "الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات";
+    if (usable) {
+      reasonCode = POOL_PLAN_ELIGIBILITY_REASON.PLAN_TOO_LOW;
+      lockReason = POOL_PLAN_ELIGIBILITY_MESSAGE_AR[reasonCode];
+    } else if (!hasPlanId && (options.hasPlanId === false || range == null)) {
+      reasonCode = POOL_PLAN_ELIGIBILITY_REASON.NO_ACTIVE_PLAN;
+      lockReason = POOL_PLAN_ELIGIBILITY_MESSAGE_AR[reasonCode];
+    } else {
+      reasonCode = POOL_PLAN_ELIGIBILITY_REASON.INTERNAL_PLAN_CONFIGURATION;
+      lockReason = POOL_PLAN_ELIGIBILITY_MESSAGE_AR[reasonCode];
+      logInternalPlanConfiguration({
+        planId: options.planId ?? range?.planId ?? range?.sourcePlanId,
+        sourcePlanId: range?.sourcePlanId,
+        resolvedFromPlanId: range?.resolvedFromPlanId,
+        hasPlanId: hasPlanId || range != null,
+        context: options.logContext || "pool_eligibility",
+      });
+    }
   }
 
   const requiredPlanLabel = formatPlanRangeLabel(range);
@@ -261,24 +337,43 @@ function computePoolOrderPlanEligibility(orderLike, range) {
     norm.bid_budget_min != null &&
     norm.bid_budget_max != null;
 
+  const suggested = locked && usable ? findSuggestedUpgradePlanForOrder(norm) : null;
+
   return {
     canViewDetails: !locked,
     canClaim: !locked && projectType === "fixed",
     canBid: !locked && pricedBidding,
     isLockedByPlan: locked,
+    reasonCode,
     lockReason,
     requiredPlanRange,
     requiredPlanLabel,
-    planConfigurationError: usable ? false : true,
+    planConfigurationError: reasonCode === POOL_PLAN_ELIGIBILITY_REASON.INTERNAL_PLAN_CONFIGURATION,
+    requiredTierCode: suggested?.requiredTierCode || null,
+    suggestedUpgradePlanId: suggested?.planId || null,
+    suggestedUpgradePlanTitle: suggested?.planTitle || null,
   };
 }
 
+async function getFreelancerPlanEligibilityContext(freelancerUserId, client) {
+  const subscriptionsService = require("./subscriptionsService");
+  const sub = await subscriptionsService.getCurrentSubscriptionForFreelancer(freelancerUserId);
+  const planId = sub?.planId != null ? Number(sub.planId) : null;
+  const hasPlanId = Number.isInteger(planId) && planId > 0;
+  const range = hasPlanId ? await resolvePlanOrderValueRange(planId, client) : null;
+  return { sub, planId: hasPlanId ? planId : null, hasPlanId, range };
+}
+
 async function enrichFreelancerPoolOrdersPlanEligibility(orders, freelancerUserId) {
-  const range = await getFreelancerPlanOrderValueRange(freelancerUserId);
+  const { range, hasPlanId, planId } = await getFreelancerPlanEligibilityContext(freelancerUserId);
   if (!Array.isArray(orders)) return [];
   return orders.map((order) => {
     const withSource = { ...order, orderSource: order?.orderSource || "real" };
-    const poolEligibility = computePoolOrderPlanEligibility(withSource, range);
+    const poolEligibility = computePoolOrderPlanEligibility(withSource, range, {
+      hasPlanId,
+      planId,
+      logContext: "pool_list",
+    });
     return { ...withSource, poolEligibility };
   });
 }
@@ -291,10 +386,19 @@ async function loadFakeOrderRow(orderId, clientMaybe) {
   return rows[0] || null;
 }
 
-function throwPlanRangeUnavailableError() {
-  const err = new Error("الخطة بحاجة إلى تصحيح قبل إتاحة الطلبات.");
+function throwPlanRangeUnavailableError(details = {}) {
+  logInternalPlanConfiguration({
+    ...details,
+    hasPlanId: true,
+    context: details.context || "assert_access",
+  });
+  const err = new Error(
+    POOL_PLAN_ELIGIBILITY_MESSAGE_AR[POOL_PLAN_ELIGIBILITY_REASON.INTERNAL_PLAN_CONFIGURATION],
+  );
   err.statusCode = 403;
   err.reason = "plan_configuration_error";
+  err.publicCode = POOL_PLAN_ELIGIBILITY_REASON.INTERNAL_PLAN_CONFIGURATION;
+  err.reasonCode = POOL_PLAN_ELIGIBILITY_REASON.INTERNAL_PLAN_CONFIGURATION;
   err.exposeToClient = true;
   throw err;
 }
@@ -314,21 +418,34 @@ async function assertFreelancerMayAccessFakeOrderByPlan(freelancerUserId, orderO
 
   const range = await getFreelancerPlanOrderValueRange(freelancerUserId, runner);
   if (!range) {
-    const err = new Error("لا يوجد اشتراك نشط يسمح بالوصول إلى هذا الطلب.");
+    const err = new Error(
+      POOL_PLAN_ELIGIBILITY_MESSAGE_AR[POOL_PLAN_ELIGIBILITY_REASON.NO_ACTIVE_PLAN],
+    );
     err.statusCode = 403;
     err.reason = "no_subscription";
+    err.publicCode = POOL_PLAN_ELIGIBILITY_REASON.NO_ACTIVE_PLAN;
+    err.reasonCode = POOL_PLAN_ELIGIBILITY_REASON.NO_ACTIVE_PLAN;
     err.exposeToClient = true;
     throw err;
   }
   if (!isUsableOrderValueRange(range)) {
-    throwPlanRangeUnavailableError();
+    throwPlanRangeUnavailableError({
+      planId: range?.planId,
+      sourcePlanId: range?.sourcePlanId,
+      resolvedFromPlanId: range?.resolvedFromPlanId,
+      context: "fake_order_access",
+    });
   }
 
   const orderLike = { ...order, orderSource: "fake" };
   if (!isPlanValueAllowedForOrder(orderLike, range)) {
-    const err = new Error("قيمة هذا الطلب خارج نطاق باقة اشتراكك.");
+    const err = new Error(
+      POOL_PLAN_ELIGIBILITY_MESSAGE_AR[POOL_PLAN_ELIGIBILITY_REASON.PLAN_TOO_LOW],
+    );
     err.statusCode = 403;
     err.reason = "order_value_outside_plan_range";
+    err.publicCode = POOL_PLAN_ELIGIBILITY_REASON.PLAN_TOO_LOW;
+    err.reasonCode = POOL_PLAN_ELIGIBILITY_REASON.PLAN_TOO_LOW;
     err.exposeToClient = true;
     throw err;
   }
@@ -357,21 +474,34 @@ async function assertFreelancerMayAccessOrderByPlan(freelancerUserId, orderOrId,
 
   const range = await getFreelancerPlanOrderValueRange(freelancerUserId, runner);
   if (!range) {
-    const err = new Error("لا يوجد اشتراك نشط يسمح بالوصول إلى هذا الطلب.");
+    const err = new Error(
+      POOL_PLAN_ELIGIBILITY_MESSAGE_AR[POOL_PLAN_ELIGIBILITY_REASON.NO_ACTIVE_PLAN],
+    );
     err.statusCode = 403;
     err.reason = "no_subscription";
+    err.publicCode = POOL_PLAN_ELIGIBILITY_REASON.NO_ACTIVE_PLAN;
+    err.reasonCode = POOL_PLAN_ELIGIBILITY_REASON.NO_ACTIVE_PLAN;
     err.exposeToClient = true;
     throw err;
   }
   if (!isUsableOrderValueRange(range)) {
-    throwPlanRangeUnavailableError();
+    throwPlanRangeUnavailableError({
+      planId: range?.planId,
+      sourcePlanId: range?.sourcePlanId,
+      resolvedFromPlanId: range?.resolvedFromPlanId,
+      context: "real_order_access",
+    });
   }
 
   const orderLike = { ...order, orderSource: "real" };
   if (!isPlanValueAllowedForOrder(orderLike, range)) {
-    const err = new Error("قيمة هذا الطلب خارج نطاق باقة اشتراكك.");
+    const err = new Error(
+      POOL_PLAN_ELIGIBILITY_MESSAGE_AR[POOL_PLAN_ELIGIBILITY_REASON.PLAN_TOO_LOW],
+    );
     err.statusCode = 403;
     err.reason = "order_value_outside_plan_range";
+    err.publicCode = POOL_PLAN_ELIGIBILITY_REASON.PLAN_TOO_LOW;
+    err.reasonCode = POOL_PLAN_ELIGIBILITY_REASON.PLAN_TOO_LOW;
     err.exposeToClient = true;
     throw err;
   }
@@ -391,8 +521,10 @@ module.exports = {
   isSingleValueInPlanRange,
   budgetRangesOverlap,
   getFreelancerPlanOrderValueRange,
+  getFreelancerPlanEligibilityContext,
   formatPlanRangeLabel,
   isPlanValueAllowedForOrder,
+  findSuggestedUpgradePlanForOrder,
   computePoolOrderPlanEligibility,
   enrichFreelancerPoolOrdersPlanEligibility,
   loadFakeOrderRow,
@@ -400,4 +532,6 @@ module.exports = {
   buildPlanOrderValueWhereClause,
   appendSqlPlanOrderValueFilter,
   assertFreelancerMayAccessOrderByPlan,
+  POOL_PLAN_ELIGIBILITY_REASON,
+  POOL_PLAN_ELIGIBILITY_MESSAGE_AR,
 };

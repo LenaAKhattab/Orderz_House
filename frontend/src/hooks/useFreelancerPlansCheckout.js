@@ -13,6 +13,7 @@ import {
   fetchPublicPlansCached,
   getCachedFreelancerActivationFeeStatus,
   getCachedFreelancerSubscription,
+  getCachedPublicActivationFee,
   getCachedPublicPlans,
   invalidateFreelancerSessionCache,
 } from "../services/freelancerSessionCache";
@@ -22,13 +23,29 @@ import { useToast } from "../components/ui/toastContext";
 import { trackEvent } from "../services/analytics";
 import { isBlockingSubscription } from "../utils/planSubscriptionUtils";
 
-export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer/plans" } = {}) {
+function normalizePublicActivationFee(fee) {
+  if (!fee || typeof fee !== "object") return null;
+  return {
+    enabled: fee.enabled === true,
+    amountJod: fee.amountJod != null ? Number(fee.amountJod) : null,
+    amountMinor: fee.amountMinor != null ? Number(fee.amountMinor) : null,
+    validityDays: fee.validityDays != null ? Number(fee.validityDays) : 365,
+  };
+}
+
+export function useFreelancerPlansCheckout({
+  returnPath = "/dashboard/freelancer/plans",
+  fetchPublicPlans = true,
+} = {}) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { push } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const [plans, setPlans] = useState(() => getCachedPublicPlans() || []);
+  const [activationFee, setActivationFee] = useState(() =>
+    normalizePublicActivationFee(getCachedPublicActivationFee()),
+  );
   const [plansFetching, setPlansFetching] = useState(() => !getCachedPublicPlans()?.length);
   const [error, setError] = useState("");
   const [mySubscription, setMySubscription] = useState(() =>
@@ -40,23 +57,48 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
   const [checkoutBusyPlanId, setCheckoutBusyPlanId] = useState(null);
   const handledToastSearchesRef = useRef(new Set());
 
+  const resolvedActivationFee = useMemo(() => {
+    if (activationFeeStatus && typeof activationFeeStatus === "object") {
+      const enabled =
+        activationFeeStatus.enabled != null
+          ? Boolean(activationFeeStatus.enabled)
+          : activationFee?.enabled !== false;
+      return normalizePublicActivationFee({
+        enabled,
+        amountJod: activationFeeStatus.amountJod ?? activationFee?.amountJod,
+        amountMinor: activationFeeStatus.amountMinor ?? activationFee?.amountMinor,
+        validityDays: activationFeeStatus.validityDays ?? activationFee?.validityDays,
+      });
+    }
+    return activationFee;
+  }, [activationFee, activationFeeStatus]);
+
   const activationFeeNeedsPayment = useMemo(
-    () => Boolean(activationFeeStatus?.needsPayment),
-    [activationFeeStatus],
+    () => Boolean(resolvedActivationFee?.enabled !== false && activationFeeStatus?.needsPayment),
+    [activationFeeStatus, resolvedActivationFee],
   );
 
   useEffect(() => {
+    if (!fetchPublicPlans) {
+      setPlans([]);
+      setPlansFetching(false);
+      return undefined;
+    }
     let cancelled = false;
     const cached = getCachedPublicPlans();
     if (cached?.length) {
       setPlans(cached);
+      setActivationFee(normalizePublicActivationFee(getCachedPublicActivationFee()));
       setPlansFetching(false);
     } else {
       setPlansFetching(true);
     }
     void fetchPublicPlansCached({ force: !cached?.length })
       .then((merged) => {
-        if (!cancelled) setPlans(merged);
+        if (!cancelled) {
+          setPlans(merged);
+          setActivationFee(normalizePublicActivationFee(getCachedPublicActivationFee()));
+        }
       })
       .finally(() => {
         if (!cancelled) setPlansFetching(false);
@@ -64,7 +106,7 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fetchPublicPlans]);
 
   useEffect(() => {
     let cancelled = false;
@@ -268,6 +310,7 @@ export function useFreelancerPlansCheckout({ returnPath = "/dashboard/freelancer
     error,
     mySubscription,
     activationFeeStatus,
+    activationFee: resolvedActivationFee,
     activationFeeNeedsPayment,
     hasBlockingSubscription,
     checkoutBusyPlanId,

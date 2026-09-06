@@ -1,10 +1,68 @@
 {
-  "title": "باقات أوردرز هاوس للعمل الحر",
+  "title": "عضوية سوق أوردرز هاوس",
   "hero": {
-    "title": "باقات أوردرز هاوس للعمل الحر",
-    "subtitle": "اختر الباقة المناسبة لنشاطك، قارن المزايا، وابدأ أو رقِّ اشتراكك من مكان واحد."
+    "title": "عضوية سوق أوردرز هاوس",
+    "eyebrow": "اختر المستوى المناسب لمسيرتك",
+    "subtitle": "قارن العروض والحد اليومي وسقف المشاريع في ثوانٍ."
   },
-  "sectionAria": "خطط الاشتراك",
+  "categories": {
+    "aria": "أقسام الباقات",
+    "training": "باقات التدريب",
+    "membership": "عضوية سوق أوردرز هاوس"
+  },
+  "training": {
+    "sectionAria": "باقات التدريب الاحترافية",
+    "includes": "تشمل الباقة",
+    "featuresAria": "محتويات الباقة التدريبية",
+    "cta": "تواصل معنا",
+    "mostRequested": "الأكثر طلبًا",
+    "footnote": "تواصل معنا عبر واتساب لمعرفة تفاصيل التسجيل والدفع.",
+    "whatsappAria": "تواصل عبر واتساب بخصوص {{package}}",
+    "hero": {
+      "eyebrow": "طوّر مهاراتك وابدأ مسارك المهني",
+      "title": "باقات التدريب الاحترافية",
+      "subtitle": "اختر الباقة المناسبة لك وابدأ رحلتك في تطوير المهارات والعمل الحر."
+    }
+  },
+  "specialOffer": {
+    "cta": "احصل على العرض الآن",
+    "ctaWhatsapp": "تواصل للحصول على العرض",
+    "checkoutBusy": "جاري التحويل للدفع…",
+    "checkoutFailed": "تعذر بدء شراء العرض.",
+    "checkoutMissingUrl": "تعذر بدء الدفع.",
+    "freelancersOnly": "العرض متاح للمستقلين فقط.",
+    "totalOffers": "عدد العروض",
+    "dailyLimit": "حد يومي",
+    "maxProject": "الحد الأقصى للمشروع",
+    "duration": "مدة الباقة",
+    "durationShort": "المدة",
+    "days": "يوم",
+    "available": "متاح",
+    "offersPerDay": "عرض يومياً",
+    "upTo": "حتى",
+    "perProject": "للمشروع",
+    "unlimitedProjects": "بلا سقف للمشاريع",
+    "savePercent": "وفر {{percent}}%",
+    "refundDetailsLink": "تفاصيل استرداد مبلغ الباقة",
+    "refundDetailsLinkShort": "كيف يعمل الاسترداد؟",
+    "refundModalTitle": "تفاصيل استرداد مبلغ باقة العرض",
+    "refundModalGotIt": "فهمت",
+    "refundSummaryAria": "ملخص قيم الباقة",
+    "refundSectionFallback": "تفاصيل"
+  },
+  "sectionAria": "باقات عضوية السوق",
+  "membership": {
+    "free": "تجريبية",
+    "metricsAria": "أبرز مزايا الباقة",
+    "bidsAvailable": "عرض متاح",
+    "bidsPerDay": "عروض يوميًا",
+    "projectCapMax": "للمشروع",
+    "projectCapValue": "حتى {{value}} {{currency}}",
+    "projectCapUnlimited": "سقف المشاريع",
+    "unlimitedShort": "بلا سقف",
+    "withdrawalOn": "السحب متاح",
+    "withdrawalOff": "لا يوجد استلام مباشر للقيم المالية"
+  },
   "mobile": {
     "compareTitle": "قارن الباقات",
     "packageCount": "{{count}} باقة",
@@ -31,6 +89,17 @@
     "mostPopular": "الأكثر شيوعًا",
     "premium": "باقة مميزة"
   },
+  "sale": {
+    "percentOff": "خصم {{percent}}%",
+    "sectionTitle": "خصم على الباقة",
+    "enable": "تفعيل الخصم",
+    "percentage": "نسبة الخصم (%)",
+    "reason": "سبب الخصم",
+    "reasonEn": "Sale reason",
+    "previewOriginal": "السعر الأصلي: {{amount}} د.أ",
+    "previewPercent": "الخصم: {{percent}}%",
+    "previewFinal": "السعر بعد الخصم: {{amount}} د.أ"
+  },
   "tierLabels": {
     "basic": "أساسي",
     "advance": "متقدم",
@@ -41,10 +110,10 @@
   },
   "activationFeeNote": {
     "prefix": "رسوم تفعيل الاشتراك:",
-    "amount": "25 د.أ.",
     "suffix": "تُدفع مرة واحدة سنوياً"
   },
   "currency": {
+    "jod": "د.أ",
     "equivalentJod": "يعادل {{amount}}",
     "checkoutChargedInJod": "يتم الدفع بالدينار الأردني عبر بوابة الدفع"
   },
@@ -74,13 +143,16 @@
     "payActivationFee": "ادفع رسوم التفعيل",
     "autoActivated": "مفعّل تلقائياً",
     "companyActivation": "يتم التفعيل عبر الشركة",
+    "viewMembership": "عرض العضوية",
+    "buyMembership": "اشترِ الباقة",
+    "activateStarter": "تفعيل الباقة المجانية",
     "startNow": "ابدأ الآن"
   },
   "pages": {
     "freelancers": {
       "trustSimple": "أسعار بسيطة",
       "trustNoFees": "بدون رسوم مخفية",
-      "footnote": "يتم توقيع عقد بعد الاشتراك. رسوم توثيق الحساب دفعة واحدة بقيمة 25 ديناراً على جميع الباقات."
+      "footnote": "يتم توقيع عقد بعد الاشتراك. رسوم توثيق الحساب دفعة واحدة بقيمة {{amount}} على جميع الباقات."
     }
   }
 }

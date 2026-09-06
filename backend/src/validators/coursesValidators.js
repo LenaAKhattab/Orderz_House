@@ -1,4 +1,5 @@
 const { body, param, query } = require("express-validator");
+const { COURSE_REQUIRED_TIER_CODES } = require("../services/coursePlanEligibilityService");
 
 const courseIdParam = [param("id").isInt({ min: 1 }).withMessage("معرف الدورة غير صالح.")];
 const lessonIdParam = [param("lessonId").isInt({ min: 1 }).withMessage("معرف الدرس غير صالح.")];
@@ -11,6 +12,12 @@ const createCourseValidators = [
   body("isActive").optional().isBoolean(),
   body("isVisibleToAllFreelancers").optional().isBoolean(),
   body("isTestingEnabled").optional().isBoolean(),
+  body("requiredTierCode")
+    .optional()
+    .isString()
+    .trim()
+    .isIn(COURSE_REQUIRED_TIER_CODES)
+    .withMessage("الحد الأدنى للباقة غير صالح."),
   body("testFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("testPromptFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("testModelAnswerFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
@@ -36,6 +43,12 @@ const updateCourseValidators = [
   body("isActive").optional().isBoolean(),
   body("isVisibleToAllFreelancers").optional().isBoolean(),
   body("isTestingEnabled").optional().isBoolean(),
+  body("requiredTierCode")
+    .optional()
+    .isString()
+    .trim()
+    .isIn(COURSE_REQUIRED_TIER_CODES)
+    .withMessage("الحد الأدنى للباقة غير صالح."),
   body("testFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("testPromptFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("testModelAnswerFileUrl").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),

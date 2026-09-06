@@ -11,7 +11,7 @@ const subscriptionsService = require("./subscriptionsService");
 const ordersService = require("./ordersService");
 const notificationService = require("./notificationService");
 const notificationEventsService = require("./notificationEventsService");
-const { planEligibleForFreelancerSelfCheckout, effectiveCheckoutPriceJod } = require("./plansService");
+const { planEligibleForFreelancerSelfCheckout, effectiveCheckoutPriceJod, resolvePlanPayablePricing } = require("./plansService");
 const {
   activationFeeMinorUnits,
   buildActivationFeeStripeLineItem,
@@ -28,7 +28,15 @@ const {
   isFreeDisplayPlanEligibleForActivationFeeCheckout,
 } = require("./subscriptionActivationFeeService");
 const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPaymentStatus");
-const { getPrimaryClientUrl } = require("../config/clientUrl");
+const {
+  isRecurringPlanRow,
+  createRecurringSubscriptionCheckoutSession,
+} = require("./stripeRecurringSubscriptionService");
+const {
+  getPrimaryClientUrl,
+  buildFreelancerPlansCheckoutReturnUrls,
+  buildFreelancerActivationFeeCheckoutReturnUrls,
+} = require("../config/clientUrl");
 const { buildClientOrderCheckoutReturnUrls } = require("../utils/checkoutReturnUrls");
 const { isProduction } = require("../config/env");
 const freelancerSubscriptionPaymentNotifications = require("./freelancerSubscriptionPaymentNotifications");
@@ -354,6 +362,9 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
       throw err;
     }
 
+    const priorityAuctionService = require("./marketplacePriorityAuctionService");
+    await priorityAuctionService.assertNoActivePriorityAuctionBlockingAssignment(db, oid);
+
     const { rows: bidRows } = await db.query(`SELECT * FROM order_freelancer_bids WHERE id = $1 AND order_id = $2 FOR UPDATE`, [bid, oid]);
     const selectedBid = bidRows[0];
     if (!selectedBid) {
@@ -405,6 +416,22 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
        WHERE id = $1`,
       [oid, bid, orderFlowService.ORDER_STATUSES.AWAITING_PAYMENT_AFTER_BID_SELECTION],
     );
+
+    // Phase 7.1: AWARDED at soft select (NOT EFFECTIVE — received_at unset)
+    {
+      const fairDist = require("./marketplaceFairDistributionService");
+      await fairDist.recordAwarded({
+        client: db,
+        order,
+        freelancerUserId: selectedBid.freelancer_user_id,
+        referenceType: "order_freelancer_bid",
+        referenceId: bid,
+        actorRole: "client",
+        actorUserId: uid,
+        reason: "client_selected_pending_payment",
+        metadata: { pendingPayment: true },
+      });
+    }
 
     const successUrl = `${clientUrl}/dashboard/client/my-orders?paid=1&orderId=${encodeURIComponent(String(oid))}&bidId=${encodeURIComponent(
       String(bid),
@@ -673,6 +700,23 @@ async function confirmClientSelectedBidPayment({ clientUserId, orderId, bidId })
          AND status = 'rejected'`,
       [Number(oid), Number(bid)],
     );
+
+    // Phase 7.1 Fair history (prospective; engine may be OFF)
+    {
+      const fairDist = require("./marketplaceFairDistributionService");
+      const orderForFair = { ...order, assigned_freelancer_id: selectedBid.freelancer_user_id, received_at: paidAt };
+      await fairDist.recordFinalEffectiveSelectionOutcome({
+        client: db,
+        order: orderForFair,
+        winnerFreelancerUserId: selectedBid.freelancer_user_id,
+        loserFreelancerUserIds: rejectedBidders.map((r) => r.freelancer_user_id),
+        selectionSource: "client_selected_bid_payment_confirm",
+        actorRole: "client",
+        actorUserId: uid,
+        occurredAt: paidAt,
+      });
+    }
+
     await safeNotify(() =>
       notificationEventsService.notifyUsers(
         {
@@ -881,13 +925,6 @@ async function createFreelancerActivationFeeOnlyCheckoutSession({ freelancerUser
   const uid = Number(freelancerUserId);
   const clientUrl = requireStripeClientUrl();
   const currency = "jod";
-  const activationMinor = activationFeeMinorUnits();
-  if (activationMinor == null || activationMinor < 1) {
-    const err = new Error("Invalid subscription activation fee amount.");
-    err.statusCode = 500;
-    err.exposeToClient = true;
-    throw err;
-  }
 
   const { needsActivationFee } = await prepareFreelancerCheckoutSessionCreation(
     { stripe, freelancerUserId: uid },
@@ -897,6 +934,14 @@ async function createFreelancerActivationFeeOnlyCheckoutSession({ freelancerUser
     const err = new Error("Subscription activation fee is already paid for the current yearly period.");
     err.statusCode = 409;
     err.publicCode = "ACTIVATION_FEE_ALREADY_PAID";
+    err.exposeToClient = true;
+    throw err;
+  }
+
+  const activationMinor = await activationFeeMinorUnits(db);
+  if (activationMinor == null || activationMinor < 1) {
+    const err = new Error("Invalid subscription activation fee amount.");
+    err.statusCode = 500;
     err.exposeToClient = true;
     throw err;
   }
@@ -922,17 +967,21 @@ async function createFreelancerActivationFeeOnlyCheckoutSession({ freelancerUser
     },
   );
 
+  const { successUrl: activationSuccessUrl, cancelUrl: activationCancelUrl } =
+    buildFreelancerActivationFeeCheckoutReturnUrls(clientUrl);
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     metadata: baseMeta,
     payment_intent_data: buildCheckoutPaymentIntentData(baseMeta, PAYMENT_CONTEXT.ACTIVATION_FEE_ONLY),
     line_items: [
-      buildActivationFeeStripeLineItem(locale, {
+      await buildActivationFeeStripeLineItem(locale, {
         productName: lineItemProductNameForContext(PAYMENT_CONTEXT.ACTIVATION_FEE_ONLY),
+        amountMinor: activationMinor,
+        client: db,
       }),
     ],
-    success_url: `${clientUrl}/dashboard/freelancer/plans?freelancer_activation_fee_paid=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${clientUrl}/dashboard/freelancer/plans?freelancer_activation_fee_cancelled=1&session_id={CHECKOUT_SESSION_ID}`,
+    success_url: activationSuccessUrl,
+    cancel_url: activationCancelUrl,
   });
 
   if (!session?.id) {
@@ -1002,12 +1051,34 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
 
   const clientUrl = requireStripeClientUrl();
 
+  // Recurring Stripe Billing path (mode=subscription) — do not use one-time payment Checkout.
+  const { rows: earlyPlanRows } = await pool.query(`SELECT * FROM plans WHERE id = $1 LIMIT 1`, [pid]);
+  const earlyPlan = earlyPlanRows[0];
+  if (earlyPlan && isRecurringPlanRow(earlyPlan)) {
+    if (!planEligibleForFreelancerSelfCheckout(earlyPlan)) {
+      const err = new Error(
+        `Selected plan is not available for self-checkout (planId=${pid}). It must be active, visible, self_subscribe_allowed, and have price_jod > 0.`,
+      );
+      err.statusCode = 400;
+      err.exposeToClient = true;
+      throw err;
+    }
+    return createRecurringSubscriptionCheckoutSession({
+      stripe,
+      freelancerUserId: uid,
+      planRow: earlyPlan,
+      locale,
+      clientUrl,
+    });
+  }
+
   const db = await pool.connect();
   try {
     await db.query("BEGIN");
     const { rows: planRows } = await db.query(
       `SELECT id, title, price_jod, stripe_checkout_amount_jod, is_active, is_visible, deleted_at,
-              self_subscribe_allowed, subscription_plan_id
+              self_subscribe_allowed, subscription_plan_id,
+              sale_enabled, sale_percentage, sale_reason, sale_reason_en, currency
        FROM plans
        WHERE id = $1
        LIMIT 1`,
@@ -1024,7 +1095,8 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       ? Number(displayPlan.subscription_plan_id)
       : Number(displayPlan.id);
     const { rows: checkoutRows } = await db.query(
-      `SELECT id, title, price_jod, stripe_checkout_amount_jod, is_active, is_visible, deleted_at, self_subscribe_allowed
+      `SELECT id, title, price_jod, stripe_checkout_amount_jod, is_active, is_visible, deleted_at, self_subscribe_allowed,
+              sale_enabled, sale_percentage, sale_reason, sale_reason_en, currency
        FROM plans
        WHERE id = $1
        LIMIT 1`,
@@ -1074,10 +1146,18 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       err.exposeToClient = true;
       throw err;
     }
-    const priceJod = effectiveCheckoutPriceJod(plan);
+    const salePlanRow = Number(displayPlan.id) === Number(plan.id) ? plan : displayPlan;
+    const payable = resolvePlanPayablePricing(plan, {
+      mode: "one_time",
+      saleRow: salePlanRow,
+    });
+    const priceJod = payable.effectivePriceJod;
 
     const currency = "jod";
-    const planAmountMinor = amountMajorToStripeMinor(priceJod, "JOD");
+    const planAmountMinor =
+      payable.effectiveMinor != null
+        ? payable.effectiveMinor
+        : amountMajorToStripeMinor(priceJod, "JOD");
     if (planAmountMinor == null || !Number.isFinite(planAmountMinor) || planAmountMinor < 1) {
       const err = new Error(
         `Invalid subscription amount for planId=${pid} (check price_jod / currency). Checkout uses dynamic price_data, not a static Stripe Price ID.`,
@@ -1091,7 +1171,7 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       { stripe, freelancerUserId: uid },
       db,
     );
-    const activationMinor = needsActivationFee ? activationFeeMinorUnits() : 0;
+    const activationMinor = needsActivationFee ? await activationFeeMinorUnits(db) : 0;
     if (needsActivationFee && (activationMinor == null || activationMinor < 1)) {
       const err = new Error("Invalid subscription activation fee amount.");
       err.statusCode = 500;
@@ -1113,8 +1193,7 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
         lineItems: "price_data (no env Stripe Price ID for freelancer subscription)",
       });
     }
-    const successUrl = `${clientUrl}/dashboard/freelancer/plans?freelancer_sub_paid=1&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${clientUrl}/dashboard/freelancer/plans?freelancer_sub_cancelled=1&session_id={CHECKOUT_SESSION_ID}`;
+    const { successUrl, cancelUrl } = buildFreelancerPlansCheckoutReturnUrls(clientUrl);
 
     const snap = await subscriptionsService.getFreelancerIdentitySnapshot(uid, db);
     if (!snap) {
@@ -1141,6 +1220,9 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       planAmountMinor: String(planAmountMinor),
       activationFeeMinor: String(needsActivationFee ? activationMinor : 0),
       currency: currencyUpper,
+      originalPlanAmountMinor: String(payable.originalMinor != null ? payable.originalMinor : planAmountMinor),
+      saleActive: payable.active ? "1" : "0",
+      salePercentage: payable.active && payable.salePercentage != null ? String(payable.salePercentage) : "",
     };
     const baseMeta = mergeStripeCheckoutMetadata(
       buildFazaatStripeMetadata({
@@ -1173,7 +1255,12 @@ async function createFreelancerSubscriptionCheckoutSession({ freelancerUserId, p
       },
     ];
     if (needsActivationFee) {
-      lineItems.push(buildActivationFeeStripeLineItem(locale));
+      lineItems.push(
+        await buildActivationFeeStripeLineItem(locale, {
+          amountMinor: activationMinor,
+          client: db,
+        }),
+      );
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -1319,6 +1406,78 @@ async function confirmFreelancerSubscriptionCheckout({ freelancerUserId, stripeS
   }
 
   if (purpose !== PURPOSE_SUBSCRIPTION_PURCHASE && purpose !== "freelancer_subscription_purchase") {
+    if (purpose === "freelancer_recurring_subscription") {
+      const planId = Number(meta.planId);
+      if (!Number.isInteger(planId) || planId < 1) {
+        const err = new Error("Invalid subscription metadata.");
+        err.statusCode = 400;
+        err.exposeToClient = true;
+        throw err;
+      }
+      if (!isCheckoutSessionPaymentSuccessful(session)) {
+        const err = new Error("Payment is not completed yet.");
+        err.statusCode = 402;
+        err.exposeToClient = true;
+        err.publicCode = "PAYMENT_NOT_COMPLETED";
+        throw err;
+      }
+      const stripeSubscriptionId =
+        typeof session.subscription === "string" ? session.subscription : session.subscription?.id || null;
+      if (!stripeSubscriptionId) {
+        const err = new Error("Recurring subscription id missing from checkout session.");
+        err.statusCode = 409;
+        err.exposeToClient = true;
+        throw err;
+      }
+      let stripeSubscription = null;
+      try {
+        stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+      } catch (_) {
+        /* period dates optional on confirm */
+      }
+      const {
+        fulfillRecurringSubscriptionFromCheckout,
+        periodFromStripeSubscription,
+      } = require("./stripeRecurringSubscriptionService");
+      const { currentPeriodStart, currentPeriodEnd } = periodFromStripeSubscription(stripeSubscription || {}, {
+        preferredPriceId: meta.stripePriceId || null,
+      });
+      const piId =
+        typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null;
+      const db = await pool.connect();
+      try {
+        await db.query("BEGIN");
+        const result = await fulfillRecurringSubscriptionFromCheckout(
+          {
+            freelancerUserId,
+            planId,
+            stripeSessionId: session.id || null,
+            stripeSubscriptionId,
+            stripeCustomerId:
+              typeof session.customer === "string" ? session.customer : session.customer?.id || null,
+            stripePriceId: meta.stripePriceId || null,
+            stripePaymentIntentId: piId,
+            currentPeriodStart,
+            currentPeriodEnd,
+            activationFeeMinor: meta.activationFeeMinor != null ? Number(meta.activationFeeMinor) : 0,
+            paidAt: new Date(),
+          },
+          db,
+        );
+        await db.query("COMMIT");
+        return {
+          ok: true,
+          recurring: true,
+          subscription: result.subscription,
+          alreadyApplied: result.created === false,
+        };
+      } catch (e) {
+        await db.query("ROLLBACK");
+        throw e;
+      } finally {
+        db.release();
+      }
+    }
     const err = new Error("This checkout session is not for a freelancer subscription.");
     err.statusCode = 400;
     err.exposeToClient = true;

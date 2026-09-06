@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Insert random orders into PostgreSQL.
  *
  * Default: client-created orders (source_type = client_created) for a given user id.
@@ -7,7 +7,7 @@
  * Usage (from backend/):
  *   node scripts/seedRandomClientOrders.js --user-id=1 --count=10
  *   node scripts/seedRandomClientOrders.js --email=client@example.com --count=5
- *   node scripts/seedRandomClientOrders.js --name-like=هزبر --count=3
+ *   node scripts/seedRandomClientOrders.js --name-like=Ù‡Ø²Ø¨Ø± --count=3
  *
  * Pool test data (visible to freelancers on /orders):
  *   node scripts/seedRandomClientOrders.js --for-pool --count=8
@@ -18,13 +18,16 @@
  *   --email=...
  *   --name-like=...   (matches concat of Arabic name parts, ILIKE)
  *   --count=N         (default 10)
- *   --for-pool        (admin_created, published, open pool — not "from client" in DB terms)
+ *   --for-pool        (admin_created, published, open pool â€” not "from client" in DB terms)
  */
 
 const path = require("path");
 const crypto = require("crypto");
 
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+
+const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
+guardQaOrSeed(require("path").basename(__filename));
 
 const { pool } = require("../src/config/db");
 
@@ -71,11 +74,11 @@ async function generateUniqueOrderCode(client) {
 }
 
 const SAMPLE_TITLES = [
-  "تطوير واجهة مستخدم لتطبيق داخلي",
-  "كتابة محتوى تسويقي لصفحة هبوط",
-  "مراجعة أداء API وتحسين الاستعلامات",
-  "تصميم شعار وهوية بصرية مبسطة",
-  "إعداد تقرير بحثي قصير بالعربية",
+  "ØªØ·ÙˆÙŠØ± ÙˆØ§Ø¬Ù‡Ø© Ù…Ø³ØªØ®Ø¯Ù… Ù„ØªØ·Ø¨ÙŠÙ‚ Ø¯Ø§Ø®Ù„ÙŠ",
+  "ÙƒØªØ§Ø¨Ø© Ù…Ø­ØªÙˆÙ‰ ØªØ³ÙˆÙŠÙ‚ÙŠ Ù„ØµÙØ­Ø© Ù‡Ø¨ÙˆØ·",
+  "Ù…Ø±Ø§Ø¬Ø¹Ø© Ø£Ø¯Ø§Ø¡ API ÙˆØªØ­Ø³ÙŠÙ† Ø§Ù„Ø§Ø³ØªØ¹Ù„Ø§Ù…Ø§Øª",
+  "ØªØµÙ…ÙŠÙ… Ø´Ø¹Ø§Ø± ÙˆÙ‡ÙˆÙŠØ© Ø¨ØµØ±ÙŠØ© Ù…Ø¨Ø³Ø·Ø©",
+  "Ø¥Ø¹Ø¯Ø§Ø¯ ØªÙ‚Ø±ÙŠØ± Ø¨Ø­Ø«ÙŠ Ù‚ØµÙŠØ± Ø¨Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©",
 ];
 
 function pick(arr) {
@@ -141,7 +144,7 @@ async function insertOneOrder(client, { creatorId, sourceType, isPublished, isOp
   const orderCode = await generateUniqueOrderCode(client);
   const title = `${pick(SAMPLE_TITLES)} (#${crypto.randomBytes(2).toString("hex")})`;
   const description =
-    "وصف تجريبي تلقائي للطلب. يمكنك تعديله من لوحة الإدارة أو حذف هذه السجلات عند الانتهاء من الاختبار.";
+    "ÙˆØµÙ ØªØ¬Ø±ÙŠØ¨ÙŠ ØªÙ„Ù‚Ø§Ø¦ÙŠ Ù„Ù„Ø·Ù„Ø¨. ÙŠÙ…ÙƒÙ†Ùƒ ØªØ¹Ø¯ÙŠÙ„Ù‡ Ù…Ù† Ù„ÙˆØ­Ø© Ø§Ù„Ø¥Ø¯Ø§Ø±Ø© Ø£Ùˆ Ø­Ø°Ù Ù‡Ø°Ù‡ Ø§Ù„Ø³Ø¬Ù„Ø§Øª Ø¹Ù†Ø¯ Ø§Ù„Ø§Ù†ØªÙ‡Ø§Ø¡ Ù…Ù† Ø§Ù„Ø§Ø®ØªØ¨Ø§Ø±.";
 
   const { categoryId, subcategoryId } = await pickCategoryIds(client);
   const projectType = Math.random() < 0.6 ? "fixed" : "bidding";
@@ -274,13 +277,13 @@ async function main() {
 
   console.log(
     args.forPool
-      ? `Inserted ${codes.length} pool-ready admin orders (codes: ${codes.slice(0, 5).join(", ")}${codes.length > 5 ? "…" : ""}).`
-      : `Inserted ${codes.length} client_created draft orders for user_id=${creator.id} (codes: ${codes.slice(0, 5).join(", ")}${codes.length > 5 ? "…" : ""}).`,
+      ? `Inserted ${codes.length} pool-ready admin orders (codes: ${codes.slice(0, 5).join(", ")}${codes.length > 5 ? "â€¦" : ""}).`
+      : `Inserted ${codes.length} client_created draft orders for user_id=${creator.id} (codes: ${codes.slice(0, 5).join(", ")}${codes.length > 5 ? "â€¦" : ""}).`,
   );
   if (!args.forPool) {
     console.log("");
-    console.log("AR: طلبات العميل ذات السعر الثابت تظهر في المعرض بعد الدفع؛ طلبات المزايدة تظهر عند فتحها للعروض.");
-    console.log("AR: لتعبئة المعرض بطلبات إدارية استخدم: npm run db:seed-pool-orders -- --count=15");
+    console.log("AR: Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ø¹Ù…ÙŠÙ„ Ø°Ø§Øª Ø§Ù„Ø³Ø¹Ø± Ø§Ù„Ø«Ø§Ø¨Øª ØªØ¸Ù‡Ø± ÙÙŠ Ø§Ù„Ù…Ø¹Ø±Ø¶ Ø¨Ø¹Ø¯ Ø§Ù„Ø¯ÙØ¹Ø› Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ù…Ø²Ø§ÙŠØ¯Ø© ØªØ¸Ù‡Ø± Ø¹Ù†Ø¯ ÙØªØ­Ù‡Ø§ Ù„Ù„Ø¹Ø±ÙˆØ¶.");
+    console.log("AR: Ù„ØªØ¹Ø¨Ø¦Ø© Ø§Ù„Ù…Ø¹Ø±Ø¶ Ø¨Ø·Ù„Ø¨Ø§Øª Ø¥Ø¯Ø§Ø±ÙŠØ© Ø§Ø³ØªØ®Ø¯Ù…: npm run db:seed-pool-orders -- --count=15");
     console.log("");
     console.log("EN: Client fixed-price pool orders appear after Stripe marks them paid; bidding orders appear when open for bids.");
     console.log("EN: To seed admin pool orders run: npm run db:seed-pool-orders -- --count=15");

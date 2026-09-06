@@ -4,13 +4,14 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_BASE_URL=https://orderzhouse.com/api
+        # Same-origin /api — browser never embeds an absolute API host.
+        - VITE_API_BASE_URL=/api
     container_name: orderzhouse-frontend
     restart: unless-stopped
     ports:
       - "3006:3000"
     environment:
-      - VITE_API_BASE_URL=https://orderzhouse.com/api
+      - VITE_API_BASE_URL=/api
     depends_on:
       - backend
 
@@ -22,10 +23,20 @@ services:
     restart: unless-stopped
     ports:
       - "3007:5000"
+    # env_file supplies secrets; `environment` below must win for NODE_ENV/PORT/CLIENT_URL.
+    # Do not set NODE_ENV=development in backend/.env on the server.
     env_file:
       - ./backend/.env
     environment:
       - PORT=5000
       - NODE_ENV=production
+      - APP_ENV=production
       - CLIENT_URL=https://orderzhouse.com
       - TRUST_PROXY=1
+      - HOST=0.0.0.0
+      # Single-replica compose: leave schedulers off unless this is the sole API process
+      # and you intentionally own them here. Prefer external cron in multi-instance fleets.
+      - FAKE_ORDERS_AUTOMATION_ENABLED=false
+      - INSTITUTIONAL_RELEASE_SCHEDULER_ENABLED=false
+      # Post-deploy mode check: curl /api/health then set temporarily to 1 if needed
+      # - HEALTH_RUNTIME_DIAGNOSTICS=1

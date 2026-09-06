@@ -7,6 +7,7 @@ import {
   updateSuperAdminFinancialClaimStatusRequest,
 } from "../../services/api";
 import { useToast } from "../../components/ui/toastContext";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { AdminInlineGridSkeleton } from "../../components/ui/Skeleton";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
@@ -27,7 +28,7 @@ function formatDate(value) {
 
 function formatMoney(value) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Number(value));
+  return `${new Intl.NumberFormat("ar-JO-u-nu-latn", { maximumFractionDigits: 2 }).format(Number(value))} د.أ`;
 }
 
 function statusAr(s) {
@@ -101,6 +102,15 @@ const CLAIM_STATUS_OPTIONS = [
   { value: "paid", label: "مدفوعة" },
 ];
 
+/** Statuses editable via generic PATCH — paid requires payment ledger modal. */
+const CLAIM_STATUS_CHANGE_OPTIONS = [
+  { value: "pending", label: "قيد المراجعة" },
+  { value: "accepted", label: "مقبولة" },
+  { value: "rejected", label: "مرفوضة" },
+  { value: "frozen", label: "مجمدة" },
+  { value: "requires_in_person_review", label: "تحتاج مراجعة حضورية" },
+];
+
 const PAYOUT_STATUS_OPTIONS = [
   { value: "", label: "كل حالات الاستحقاق" },
   { value: "missing_completion_date", label: "بدون تاريخ إنجاز" },
@@ -145,7 +155,7 @@ export default function SuperAdminFinancialClaimsPage() {
       const res = await listSuperAdminFinancialClaimsRequest(params);
       setClaims(res?.data?.claims || []);
     } catch (e) {
-      push({ type: "error", title: "تعذر تحميل المطالبات", message: e?.response?.data?.message || e?.message });
+      push({ type: "error", title: "تعذر تحميل المطالبات", message: getSafeApiErrorMessage(e) });
     } finally {
       setBusy(false);
     }
@@ -156,7 +166,7 @@ export default function SuperAdminFinancialClaimsPage() {
       const res = await getSuperAdminFinancialClaimByIdRequest(id);
       setDetail(res?.data?.claim || null);
     } catch (e) {
-      push({ type: "error", title: "تعذر تحميل التفاصيل", message: e?.response?.data?.message || e?.message });
+      push({ type: "error", title: "تعذر تحميل التفاصيل", message: getSafeApiErrorMessage(e) });
     }
   };
 
@@ -171,7 +181,26 @@ export default function SuperAdminFinancialClaimsPage() {
   const filteredClaims = useMemo(() => claims, [claims]);
 
   const applyStatus = async () => {
-    if (!statusModal.claim) return;
+    if (actionBusy || !statusModal.claim || !statusModal.status) return;
+    if (String(statusModal.status) === "paid") {
+      push({
+        type: "error",
+        title: "تعذر تحديث الحالة",
+        message: "لا يمكن تعليم المطالبة كمدفوعة من هنا. يجب تسجيل دفعة مالية.",
+      });
+      return;
+    }
+    if (
+      (statusModal.status === "rejected" || statusModal.status === "frozen") &&
+      String(statusModal.adminNote || "").trim().length < 3
+    ) {
+      push({
+        type: "error",
+        title: "الملاحظة مطلوبة",
+        message: "أدخل سبب الرفض أو التجميد (3 أحرف على الأقل).",
+      });
+      return;
+    }
     setActionBusy(true);
     try {
       await updateSuperAdminFinancialClaimStatusRequest(statusModal.claim.id, {
@@ -183,14 +212,14 @@ export default function SuperAdminFinancialClaimsPage() {
       if (selectedId) await loadDetail(selectedId);
       push({ type: "success", title: "تم تحديث الحالة" });
     } catch (e) {
-      push({ type: "error", title: "تعذر تحديث الحالة", message: e?.response?.data?.message || e?.message });
+      push({ type: "error", title: "تعذر تحديث الحالة", message: getSafeApiErrorMessage(e) });
     } finally {
       setActionBusy(false);
     }
   };
 
   const applyPricing = async () => {
-    if (!pricingModal.claim) return;
+    if (actionBusy || !pricingModal.claim) return;
     setActionBusy(true);
     try {
       await updateSuperAdminFinancialClaimPricingRequest(pricingModal.claim.id, {
@@ -209,14 +238,14 @@ export default function SuperAdminFinancialClaimsPage() {
       if (selectedId) await loadDetail(selectedId);
       push({ type: "success", title: "تم تحديث التسعير" });
     } catch (e) {
-      push({ type: "error", title: "تعذر تحديث التسعير", message: e?.response?.data?.message || e?.message });
+      push({ type: "error", title: "تعذر تحديث التسعير", message: getSafeApiErrorMessage(e) });
     } finally {
       setActionBusy(false);
     }
   };
 
   const registerPayment = async () => {
-    if (!paymentModal.claim) return;
+    if (actionBusy || !paymentModal.claim) return;
     setActionBusy(true);
     try {
       await createSuperAdminFreelancerPaymentRequest({
@@ -231,7 +260,7 @@ export default function SuperAdminFinancialClaimsPage() {
       if (selectedId) await loadDetail(selectedId);
       push({ type: "success", title: "تم تسجيل الدفع" });
     } catch (e) {
-      push({ type: "error", title: "تعذر تسجيل الدفع", message: e?.response?.data?.message || e?.message });
+      push({ type: "error", title: "تعذر تسجيل الدفع", message: getSafeApiErrorMessage(e) });
     } finally {
       setActionBusy(false);
     }
@@ -336,7 +365,17 @@ export default function SuperAdminFinancialClaimsPage() {
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    onClick={() => setStatusModal({ open: true, claim, status: claim.status, adminNote: claim.adminNote || "" })}
+                    onClick={() =>
+                      setStatusModal({
+                        open: true,
+                        claim,
+                        status:
+                          claim.status === "paid"
+                            ? "accepted"
+                            : claim.status || "pending",
+                        adminNote: claim.adminNote || "",
+                      })
+                    }
                   >
                     تغيير الحالة
                   </button>
@@ -427,15 +466,18 @@ export default function SuperAdminFinancialClaimsPage() {
       >
         <div className="dash-ui-modal__form">
           <select className="input" value={statusModal.status} onChange={(e) => setStatusModal((p) => ({ ...p, status: e.target.value }))}>
-            {CLAIM_STATUS_OPTIONS.filter((opt) => opt.value).map((opt) => (
+            {CLAIM_STATUS_CHANGE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
             ))}
           </select>
+          <p className="text-sm text-slate-500 m-0">
+            لتعليم المطالبة كمدفوعة استخدم زر تسجيل دفعة مالية (لا يمكن تعيين «مدفوعة» من هنا).
+          </p>
           <textarea
             className="textarea"
-            placeholder="ملاحظة الإدارة..."
+            placeholder="ملاحظة الإدارة (مطلوبة عند الرفض أو التجميد)..."
             value={statusModal.adminNote}
             onChange={(e) => setStatusModal((p) => ({ ...p, adminNote: e.target.value }))}
           />

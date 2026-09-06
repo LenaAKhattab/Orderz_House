@@ -1,10 +1,68 @@
 {
-  "title": "Orderz House freelance plans",
+  "title": "Orderz House Marketplace Membership",
   "hero": {
-    "title": "Orderz House freelance plans",
-    "subtitle": "Choose the right plan for your work, compare features, and start or upgrade your subscription in one place."
+    "title": "Orderz House Marketplace Membership",
+    "eyebrow": "Choose the level that fits your path",
+    "subtitle": "Compare Bids, daily limits, and project caps in seconds."
   },
-  "sectionAria": "Subscription plans",
+  "categories": {
+    "aria": "Plan categories",
+    "training": "Training packages",
+    "membership": "Orderz House Marketplace Membership"
+  },
+  "training": {
+    "sectionAria": "Professional training packages",
+    "includes": "Package includes",
+    "featuresAria": "Training package contents",
+    "cta": "Contact us",
+    "mostRequested": "Most requested",
+    "footnote": "Contact us on WhatsApp for registration and payment details.",
+    "whatsappAria": "Contact via WhatsApp about {{package}}",
+    "hero": {
+      "eyebrow": "Build your skills and start your career path",
+      "title": "Professional training packages",
+      "subtitle": "Choose the right package and start your skills and freelancing journey."
+    }
+  },
+  "specialOffer": {
+    "cta": "Get this offer now",
+    "ctaWhatsapp": "Contact us for this offer",
+    "checkoutBusy": "Redirecting to checkout…",
+    "checkoutFailed": "Could not start offer checkout.",
+    "checkoutMissingUrl": "Could not start payment.",
+    "freelancersOnly": "This offer is available to freelancers only.",
+    "totalOffers": "Total bids / offers",
+    "dailyLimit": "Daily limit",
+    "maxProject": "Max project value",
+    "duration": "Package duration",
+    "durationShort": "Duration",
+    "days": "days",
+    "available": "available",
+    "offersPerDay": "offers / day",
+    "upTo": "Up to",
+    "perProject": "per project",
+    "unlimitedProjects": "No project ceiling",
+    "savePercent": "Save {{percent}}%",
+    "refundDetailsLink": "Package refund details",
+    "refundDetailsLinkShort": "How does refund work?",
+    "refundModalTitle": "Special offer package refund details",
+    "refundModalGotIt": "Got it",
+    "refundSummaryAria": "Offer value summary",
+    "refundSectionFallback": "Details"
+  },
+  "sectionAria": "Marketplace Membership plans",
+  "membership": {
+    "free": "Trial",
+    "metricsAria": "Key membership metrics",
+    "bidsAvailable": "Bids available",
+    "bidsPerDay": "Bids per day",
+    "projectCapMax": "per project",
+    "projectCapValue": "Up to {{value}} {{currency}}",
+    "projectCapUnlimited": "Project cap",
+    "unlimitedShort": "No ceiling",
+    "withdrawalOn": "Withdrawal available",
+    "withdrawalOff": "No direct payout of financial amounts"
+  },
   "mobile": {
     "compareTitle": "Compare packages",
     "packageCount": "{{count}} packages",
@@ -34,6 +92,17 @@
     "mostPopular": "Most popular",
     "premium": "Premium package"
   },
+  "sale": {
+    "percentOff": "{{percent}}% OFF",
+    "sectionTitle": "Plan discount",
+    "enable": "Enable discount",
+    "percentage": "Discount percentage (%)",
+    "reason": "Sale reason (Arabic)",
+    "reasonEn": "Sale reason",
+    "previewOriginal": "Original price: {{amount}} JOD",
+    "previewPercent": "Discount: {{percent}}%",
+    "previewFinal": "Price after discount: {{amount}} JOD"
+  },
   "tierLabels": {
     "basic": "Basic",
     "advance": "Advance",
@@ -44,10 +113,10 @@
   },
   "activationFeeNote": {
     "prefix": "Subscription activation fee:",
-    "amount": "25 JOD",
     "suffix": "paid once yearly"
   },
   "currency": {
+    "jod": "JOD",
     "equivalentJod": "Equivalent to {{amount}}",
     "checkoutChargedInJod": "Payment is processed in Jordanian dinar (JOD)"
   },
@@ -77,13 +146,16 @@
     "payActivationFee": "Pay activation fee",
     "autoActivated": "Activated automatically",
     "companyActivation": "Activated through company",
+    "viewMembership": "View membership",
+    "buyMembership": "Buy package",
+    "activateStarter": "Activate free plan",
     "startNow": "Start now"
   },
   "pages": {
     "freelancers": {
       "trustSimple": "Simple pricing",
       "trustNoFees": "No hidden fees",
-      "footnote": "A contract is signed after subscription. Account verification is a one-time fee of 25 JOD across all plans."
+      "footnote": "A contract is signed after subscription. Account verification is a one-time fee of {{amount}} across all plans."
     }
   },
   "cards": {

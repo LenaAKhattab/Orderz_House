@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../../core/network/json_helpers.dart';
 import 'notification_models.dart';
 
 /// Notifications API — list, unread count, and mark-as-read (Phase 4E-1/4E-2).
@@ -42,6 +43,26 @@ class NotificationsApi {
   Future<MarkAllReadResult> markAllNotificationsAsRead() async {
     final response = await _dio.post<dynamic>('/notifications/read-all');
     return MarkAllReadResult.parseResponse(response.data);
+  }
+
+  Future<void> deleteNotification(String notificationId) async {
+    await _dio.delete<dynamic>('/notifications/${notificationId.trim()}');
+  }
+
+  Future<int> deleteNotificationsBulk(List<String> notificationIds) async {
+    final ids = notificationIds.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    if (ids.isEmpty) return 0;
+    final response = await _dio.post<dynamic>(
+      '/notifications/bulk-delete',
+      data: {'ids': ids},
+    );
+    if (response.data is Map) {
+      final data = (response.data as Map)['data'];
+      if (data is Map) {
+        return readInt(Map<String, dynamic>.from(data), 'deletedCount', 'deleted_count') ?? ids.length;
+      }
+    }
+    return ids.length;
   }
 }
 

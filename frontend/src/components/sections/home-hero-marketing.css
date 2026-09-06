@@ -639,19 +639,6 @@
   }
 }
 
-@media (max-width: 1023px) {
-  .home-public-layout::before {
-    background-image:
-      linear-gradient(
-        90deg,
-        rgb(248 250 252 / 0.1) 0%,
-        rgb(248 250 252 / 0.22) 50%,
-        rgb(248 250 252 / 0.35) 100%
-      ),
-      url("/hero/background.webp");
-  }
-}
-
 /* Mobile: content-driven hero height — desktop keeps full-viewport rules above */
 @media (max-width: 768px) {
   .home-top-section__hero:has(.home-hero--bg-image) {

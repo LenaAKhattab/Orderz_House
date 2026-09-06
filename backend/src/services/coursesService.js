@@ -13,6 +13,8 @@ const {
 const { deriveAssignmentLearning } = require("../utils/courseLearningDuration");
 const subscriptionsService = require("./subscriptionsService");
 const notificationEventsService = require("./notificationEventsService");
+const coursePlanEligibilityService = require("./coursePlanEligibilityService");
+const { DEFAULT_COURSE_REQUIRED_TIER_CODE } = coursePlanEligibilityService;
 const { uploadCourseDocumentBuffer, destroyByPublicId } = require("./cloudinaryUploadService");
 const {
   assertCoursePdfUploadFile,
@@ -103,6 +105,9 @@ function mapCourse(row, { forFreelancer = false } = {}) {
     testModelAnswerFileUrl: row.test_model_answer_file_url || null,
     testQuestionCount: row.test_question_count != null ? Number(row.test_question_count) : null,
     examQuestions: mapExamQuestionsForApi(row.exam_questions),
+    requiredTierCode: coursePlanEligibilityService.normalizeCourseRequiredTierCode(
+      row.required_tier_code ?? DEFAULT_COURSE_REQUIRED_TIER_CODE,
+    ),
     createdBy: row.created_by ? String(row.created_by) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -157,6 +162,27 @@ async function freelancerHasCourseAccess(client, courseId, freelancerUserId) {
   const row = rows[0];
   if (!row || !row.is_active) return false;
   return Boolean(row.is_visible_to_all_freelancers) || Boolean(row.has_assignment);
+}
+
+async function assertFreelancerCoursePlanAccessForCourseId(client, courseId, freelancerUserId) {
+  const cid = Number(courseId);
+  const uid = Number(freelancerUserId);
+  const { rows } = await client.query(
+    `SELECT id, required_tier_code FROM courses WHERE id = $1 AND is_active = TRUE LIMIT 1`,
+    [cid],
+  );
+  if (!rows[0]) {
+    const err = new Error("الدورة غير موجودة.");
+    err.statusCode = 404;
+    throw err;
+  }
+  const planContext = await coursePlanEligibilityService.buildFreelancerCourseAccessContext(uid, { client });
+  await coursePlanEligibilityService.assertFreelancerCoursePlanAccess({
+    freelancerUserId: uid,
+    course: rows[0],
+    client,
+    context: planContext,
+  });
 }
 
 /**
@@ -240,9 +266,12 @@ async function createCourse({ actorUserId, payload }) {
       examQuestionsNorm?.length > 0
         ? examQuestionsNorm.length
         : normalizeQuestionCount(payload.testQuestionCount);
+    const requiredTierCode = coursePlanEligibilityService.normalizeCourseRequiredTierCode(
+      payload.requiredTierCode ?? DEFAULT_COURSE_REQUIRED_TIER_CODE,
+    );
     const { rows } = await client.query(
-      `INSERT INTO courses (title, description, cover_image, youtube_source_url, is_active, is_visible_to_all_freelancers, is_testing_enabled, test_file_url, test_prompt_file_url, test_model_answer_file_url, test_question_count, exam_questions, created_by, created_at, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,NOW(),NOW())
+      `INSERT INTO courses (title, description, cover_image, youtube_source_url, is_active, is_visible_to_all_freelancers, is_testing_enabled, test_file_url, test_prompt_file_url, test_model_answer_file_url, test_question_count, exam_questions, required_tier_code, created_by, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,$14,NOW(),NOW())
        RETURNING *`,
       [
         String(payload.title || "").trim() || "دورة جديدة",
@@ -257,6 +286,7 @@ async function createCourse({ actorUserId, payload }) {
         payload.testModelAnswerFileUrl ? String(payload.testModelAnswerFileUrl).trim() : null,
         questionCountForInsert,
         examQuestionsNorm ? JSON.stringify(examQuestionsNorm) : null,
+        requiredTierCode,
         Number(actorUserId),
       ],
     );
@@ -368,6 +398,12 @@ async function updateCourse({ actorUserId, courseId, patch }) {
       set("is_visible_to_all_freelancers", Boolean(patch.isVisibleToAllFreelancers));
     }
     if (patch.isTestingEnabled !== undefined) set("is_testing_enabled", Boolean(patch.isTestingEnabled));
+    if (patch.requiredTierCode !== undefined) {
+      set(
+        "required_tier_code",
+        coursePlanEligibilityService.normalizeCourseRequiredTierCode(patch.requiredTierCode),
+      );
+    }
     let examQuestionsNorm = null;
     if (patch.examQuestions !== undefined) {
       examQuestionsNorm = normalizeExamQuestionsPayload(patch.examQuestions, patch.testQuestionCount);
@@ -1008,6 +1044,7 @@ async function listAssignedCoursesForFreelancerDashboard({ freelancerUserId }) {
 
 async function listAssignedCoursesForFreelancer({ freelancerUserId }) {
   const uid = Number(freelancerUserId);
+  const planContext = await coursePlanEligibilityService.buildFreelancerCourseAccessContext(uid);
   const { rows } = await pool.query(
     `SELECT DISTINCT ON (c.id) c.*,
             a.completed_at AS assignment_completed_at,
@@ -1024,6 +1061,10 @@ async function listAssignedCoursesForFreelancer({ freelancerUserId }) {
   return rows.map((r) => {
     const total = Number(r.total_lessons || 0);
     const completed = Number(r.completed_lessons || 0);
+    const planAccess = coursePlanEligibilityService.evaluateCoursePlanAccessWithContext({
+      course: r,
+      context: planContext,
+    });
     return {
       ...mapCourse(r, { forFreelancer: true }),
       accessMode: Boolean(r.has_assignment_row) ? "assigned" : "global",
@@ -1033,6 +1074,7 @@ async function listAssignedCoursesForFreelancer({ freelancerUserId }) {
         completedLessons: completed,
         percentage: total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0,
       },
+      ...planAccess,
     };
   });
 }
@@ -1193,6 +1235,23 @@ async function getCourseDetailsForFreelancer({ freelancerUserId, courseId }) {
       err.statusCode = 403;
       throw err;
     }
+    const { rows: courseGateRows } = await client.query(
+      `SELECT id, required_tier_code FROM courses WHERE id = $1 AND is_active = TRUE LIMIT 1`,
+      [cid],
+    );
+    const courseGateRow = courseGateRows[0];
+    if (!courseGateRow) {
+      const err = new Error("الدورة غير موجودة.");
+      err.statusCode = 404;
+      throw err;
+    }
+    const planContext = await coursePlanEligibilityService.buildFreelancerCourseAccessContext(uid, { client });
+    await coursePlanEligibilityService.assertFreelancerCoursePlanAccess({
+      freelancerUserId: uid,
+      course: courseGateRow,
+      client,
+      context: planContext,
+    });
     await ensureFreelancerCourseEngagement(client, { courseId: cid, freelancerId: uid });
     await client.query("COMMIT");
   } catch (err) {
@@ -1291,6 +1350,7 @@ async function markLessonComplete({ freelancerUserId, courseId, lessonId }) {
       err.statusCode = 403;
       throw err;
     }
+    await assertFreelancerCoursePlanAccessForCourseId(client, cid, uid);
     await ensureFreelancerCourseEngagement(client, { courseId: cid, freelancerId: uid });
     const { rows: lessonRows } = await client.query(
       `SELECT id, title
@@ -1409,6 +1469,7 @@ async function uploadCompletedExamFile({ freelancerUserId, courseId, file }) {
       err.statusCode = 403;
       throw err;
     }
+    await assertFreelancerCoursePlanAccessForCourseId(client, cid, uid);
     await ensureFreelancerCourseEngagement(client, { courseId: cid, freelancerId: uid });
     const { rows: assignRows } = await client.query(
       `SELECT * FROM course_assignments WHERE course_id = $1 AND freelancer_id = $2 LIMIT 1 FOR UPDATE`,
@@ -1499,6 +1560,7 @@ async function submitCourseCompletion({
       err.statusCode = 403;
       throw err;
     }
+    await assertFreelancerCoursePlanAccessForCourseId(client, cid, uid);
     await ensureFreelancerCourseEngagement(client, { courseId: cid, freelancerId: uid });
     const { rows: assignRows } = await client.query(
       `SELECT * FROM course_assignments WHERE course_id = $1 AND freelancer_id = $2 LIMIT 1 FOR UPDATE`,

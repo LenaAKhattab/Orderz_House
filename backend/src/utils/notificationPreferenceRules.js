@@ -72,6 +72,9 @@ const TYPE_CATEGORY = {
 
   "training.order.visible": "orders",
   "general.test": "general",
+
+  "feedback.created": "general",
+  "feedback.status.resolved": "general",
 };
 
 const PREFIX_CATEGORY = [
@@ -82,6 +85,7 @@ const PREFIX_CATEGORY = [
   ["course.", "courses"],
   ["plan.", "general"],
   ["ad.", "general"],
+  ["feedback.", "general"],
 ];
 
 function getCategoryForType(type) {

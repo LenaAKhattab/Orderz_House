@@ -15,6 +15,13 @@ const CREATE_STEPS = [
   { id: "create", label: "إنشاء الدورة" },
 ];
 
+const COURSE_REQUIRED_TIER_OPTIONS = [
+  { value: "starter", label: "ستارتر" },
+  { value: "silver", label: "فضة" },
+  { value: "pro", label: "برو" },
+  { value: "elite", label: "إيليت" },
+];
+
 function CoursePreviewPlaceholderIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
@@ -64,6 +71,7 @@ export default function AdminCourseCreateComposer({
   onRemoveCoursePromptFile,
   onRemoveCourseModelAnswerFile,
   fileRemoveBusy = false,
+  membershipRequiredCourseId = "",
 }) {
   const isEdit = mode === "edit" && Boolean(editingCourseId);
   const [analysis, setAnalysis] = useState(null);
@@ -212,6 +220,10 @@ export default function AdminCourseCreateComposer({
     "سيظهر وصف الدورة هنا كما يراه الطلاب في بطاقة الدورة.";
   const coverUrl = String(form.coverImage || "").trim();
   const [coverBroken, setCoverBroken] = useState(false);
+  const isMembershipTrainingCourse =
+    membershipRequiredCourseId &&
+    editingCourseId &&
+    String(membershipRequiredCourseId) === String(editingCourseId);
 
   useEffect(() => {
     setCoverBroken(false);
@@ -367,6 +379,28 @@ export default function AdminCourseCreateComposer({
                 rows={3}
                 required
               />
+            </label>
+            <label className="oh-admin-courses__field">
+              <span>الحد الأدنى للباقة</span>
+              <span className="oh-admin-courses__field-hint">
+                الدورات المحددة بفضة أو أعلى ستظهر للمستقلين الأقل كبطاقات مقفلة مع زر ترقية الباقة.
+              </span>
+              <select
+                className="oh-admin-courses__input"
+                value={form.requiredTierCode || "silver"}
+                onChange={(e) => setForm((s) => ({ ...s, requiredTierCode: e.target.value }))}
+              >
+                {COURSE_REQUIRED_TIER_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {isMembershipTrainingCourse ? (
+                <span className="oh-admin-courses__field-hint" style={{ marginTop: "0.35rem" }}>
+                  هذه الدورة مستخدمة كتدريب إلزامي لتفعيل العضوية، وستبقى متاحة للمستقلين حسب إعدادات التفعيل.
+                </span>
+              ) : null}
             </label>
           </div>
           {!isEdit ? (

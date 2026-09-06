@@ -13,12 +13,15 @@ Documentation-only guide for staging and production. No application logic change
 - [ ] Create a **dedicated Postgres** instance for staging (not production data).
 - [ ] Set `DATABASE_URL` in backend secrets (SSL as required by host).
 - [ ] **Do not** run `sql/init.sql` on staging — it drops `users` and `categories`.
-- [ ] From `backend/` run migrations:
+- [ ] From `backend/` run migrations **only against the intended DB**:
 
 ```bash
-npm run db:migrate
+npm run db:migrate:status
+npm run db:migrate          # non-production only — refuses shared Neon
 npm run db:verify-schema
 ```
+
+- [ ] Production schema changes: follow `docs/ENVIRONMENT_SAFETY.md` (`db:migrate:production` + backup confirmation). Do **not** run `npm run db:migrate` from a workstation `.env` that points at production Neon.
 
 - [ ] Optional (staging only, if you need an admin user): `npm run db:create-admin` — never on production without a documented process.
 
@@ -28,7 +31,7 @@ Copy `backend/.env.example` → host env / `.env` and set:
 
 | Variable | Staging notes |
 |----------|----------------|
-| `NODE_ENV` | `production` (recommended for cookie/security behaviour) |
+| `NODE_ENV` | **`production` (mandatory on the live API host)** — set in the process manager / Docker `environment`, not only in a file. A host `backend/.env` with `NODE_ENV=development` previously overrode orchestrator env because `dotenv` used `override: true` (fixed). Confirm `GET /api/health` → `runtime.nodeEnv === "production"`. |
 | `PORT` | Host port (e.g. `5000`) |
 | `DATABASE_URL` | Staging Postgres connection string |
 | `JWT_SECRET` | Strong random secret (≥ 16 chars) |
@@ -81,7 +84,7 @@ Copy `frontend/.env.example` → build-time env:
 
 | Variable | Staging notes |
 |----------|----------------|
-| `VITE_API_BASE_URL` | `https://<API_HOST>/api` |
+| `VITE_API_BASE_URL` | Prefer `/api` (same-origin). Absolute API hosts are legacy. See `docs/production-origin-canonical.md`. |
 | `VITE_POSTHOG_KEY` | Staging project key (optional) |
 | `VITE_POSTHOG_HOST` | `https://us.i.posthog.com` or `eu.i` |
 | `VITE_POSTHOG_ENABLE_IN_DEV` | `false` for production builds |
@@ -89,17 +92,24 @@ Copy `frontend/.env.example` → build-time env:
 ### 4. Build & run
 
 ```bash
-# Backend (from backend/)
-npm install
+# Backend (from backend/) — plain Node, no compile step
+npm ci
 npm run test:unit
-npm start
+NODE_ENV=production npm start
+# Verify: GET /api/health → runtime.nodeEnv === "production"
 
 # Frontend (from frontend/)
-npm install
+npm ci
 npm run lint
 npm run build
 npm test
 # Deploy dist/ to static host; point SPA to staging API
+```
+
+Optional Docker (requires `backend/Dockerfile` + `frontend/Dockerfile`):
+
+```bash
+docker compose up --build -d
 ```
 
 ### 5. Smoke checks
@@ -147,6 +157,15 @@ BASE_URL=https://api.staging.your-domain.com npm run api:smoke
 - [ ] `TRUST_PROXY=1` on API behind load balancer
 
 ### Migrations
+
+| Command | Purpose | Production-safe? |
+|---------|---------|------------------|
+| `npm run db:migrate` | Applies pending SQL files from `sql/migrations` via `scripts/runAllMigrations.js`, tracked in `schema_migrations` | **Yes** — use this on staging/production |
+| `npm run db:verify-schema` | Read-only schema sanity checks | **Yes** |
+| `npm run db:migrate:deploy` | **Does not exist** in this repo | N/A |
+| Prisma migrate | **Not used** — backend is raw `pg` + SQL files | Never |
+
+There is **no Prisma** in this backend. Never run `prisma migrate dev` or any Prisma command for Orderz House.
 
 ```bash
 cd backend

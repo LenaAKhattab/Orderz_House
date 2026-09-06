@@ -247,6 +247,11 @@ const submitPoolOrderBidValidators = [
     .withMessage("مبلغ العرض يجب أن يكون أكبر من صفر.")
     .toFloat(),
   body("message").optional({ nullable: true }).isString().trim().isLength({ max: 4000 }).withMessage("رسالة العرض طويلة جداً."),
+  body("usePriority")
+    .optional({ nullable: true })
+    .isBoolean()
+    .withMessage("usePriority must be a boolean.")
+    .toBoolean(),
 ];
 
 const clientOrderClaimIdBodyValidators = [

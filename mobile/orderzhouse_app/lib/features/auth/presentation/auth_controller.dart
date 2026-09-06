@@ -85,6 +85,29 @@ class AuthController extends Notifier<AuthState> {
     return _repository.register(body);
   }
 
+  Future<void> requestForgotPasswordOtp(String email) {
+    return _repository.forgotPassword(email: email);
+  }
+
+  Future<String> verifyForgotPasswordOtp({
+    required String email,
+    required String otp,
+  }) {
+    return _repository.verifyForgotPasswordOtp(email: email, otp: otp);
+  }
+
+  Future<void> resetPassword({
+    required String email,
+    required String resetToken,
+    required String newPassword,
+  }) {
+    return _repository.resetPassword(
+      email: email,
+      resetToken: resetToken,
+      newPassword: newPassword,
+    );
+  }
+
   Future<void> verifyOtp({
     required String email,
     required String otp,

@@ -20,8 +20,9 @@ export default function PlansMobilePlans({
   hasBlockingSubscription = false,
   checkoutBusyPlanId = null,
   onCta,
-  skeletonCount = 5,
+  skeletonCount = 6,
   activationFeeNeedsPayment = false,
+  activationFee = null,
 }) {
   const { t } = useTranslation();
   const featuredIndex = pickFeaturedPlanIndex(plans);
@@ -49,6 +50,7 @@ export default function PlansMobilePlans({
                 hasBlockingSubscription={hasBlockingSubscription}
                 checkoutBusy={checkoutBusyPlanId != null && String(checkoutBusyPlanId) === String(plan.id)}
                 activationFeeNeedsPayment={activationFeeNeedsPayment}
+                activationFee={activationFee}
                 onCta={onCta}
               />
             ))}

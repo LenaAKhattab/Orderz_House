@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Promote a user from admin to super_admin (users.role + user_roles).
  *
  * Usage (from backend/):
@@ -6,6 +6,9 @@
  */
 const path = require("node:path");
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+
+const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
+guardQaOrSeed(require("path").basename(__filename));
 
 const { pool } = require("../src/config/db");
 

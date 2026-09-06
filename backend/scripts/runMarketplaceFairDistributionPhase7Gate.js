@@ -1,0 +1,339 @@
+/**
+ * Marketplace Fair Distribution Phase 7 — isolated DB gate.
+ *
+ * Usage (from backend/):
+ *   node scripts/runMarketplaceFairDistributionPhase7Gate.js
+ *
+ * NEVER points at Production. Does not git add/commit/deploy/migrate Production.
+ * Applies migrations through 142 on the isolated gate DB only.
+ */
+
+const fs = require("fs");
+const path = require("path");
+const { spawn } = require("child_process");
+const { Client } = require("pg");
+const {
+  splitSqlStatements,
+  stripSqlLineComments,
+} = require("./lib/splitSqlStatements");
+const { classifyDatabaseUrl } = require("../src/utils/databaseEnvironmentSafety");
+
+const BACKEND_ROOT = path.join(__dirname, "..");
+const DATA_DIR = path.join(BACKEND_ROOT, ".tmp", "marketplace_fair_distribution_phase7_pg");
+const PORT = 55437;
+const DB_NAME = "orderz_house_test";
+const USER = "postgres";
+const PASSWORD = "password";
+
+function buildUrl(database = DB_NAME) {
+  return `postgresql://${USER}:${PASSWORD}@127.0.0.1:${PORT}/${database}`;
+}
+
+async function startEmbeddedPostgres() {
+  let EmbeddedPostgres;
+  try {
+    ({ default: EmbeddedPostgres } = await import("embedded-postgres"));
+  } catch (err) {
+    throw new Error(
+      "embedded-postgres is required for the Phase 7 gate. Install with: npm install --no-save embedded-postgres@18.4.0-beta.17",
+    );
+  }
+  fs.rmSync(DATA_DIR, { recursive: true, force: true });
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  const pg = new EmbeddedPostgres({
+    databaseDir: DATA_DIR,
+    user: USER,
+    password: PASSWORD,
+    port: PORT,
+    persistent: false,
+    initdbFlags: ["--encoding=UTF8", "--locale=C"],
+  });
+  await pg.initialise();
+  await pg.start();
+  await pg.createDatabase(DB_NAME);
+  return pg;
+}
+
+async function execSqlFile(client, filePath) {
+  const raw = fs.readFileSync(filePath, "utf8");
+  const cleaned = stripSqlLineComments(raw);
+  const statements = splitSqlStatements(cleaned);
+  for (const stmt of statements) {
+    // eslint-disable-next-line no-await-in-loop
+    await client.query(stmt);
+  }
+}
+
+async function ensureOrdersMinimalSchema(client) {
+  const cats = await client.query(`SELECT id FROM categories ORDER BY id LIMIT 1`);
+  if (!cats.rows[0]) {
+    await client
+      .query(
+        `
+      INSERT INTO categories (slug, name, description)
+      VALUES ('programming', 'Programming', 'Phase 7 gate category')
+      ON CONFLICT DO NOTHING
+    `,
+      )
+      .catch(async () => {
+        await client.query(`
+        INSERT INTO categories (name) VALUES ('Programming') ON CONFLICT DO NOTHING
+      `);
+      });
+  }
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS subcategories (
+      id BIGSERIAL PRIMARY KEY,
+      category_id BIGINT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+      slug VARCHAR(120) NOT NULL,
+      name VARCHAR(200) NOT NULL,
+      description TEXT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (category_id, slug)
+    );
+  `);
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id BIGSERIAL PRIMARY KEY,
+      order_code VARCHAR(64) NOT NULL UNIQUE,
+      title VARCHAR(200) NOT NULL DEFAULT 'Phase7 Order',
+      description TEXT NOT NULL DEFAULT 'Phase 7 gate order description.',
+      category_id BIGINT NULL REFERENCES categories(id) ON DELETE SET NULL,
+      subcategory_id BIGINT NULL REFERENCES subcategories(id) ON DELETE SET NULL,
+      project_type VARCHAR(20) NOT NULL CHECK (project_type IN ('fixed','bidding')),
+      budget NUMERIC(12,3) NULL,
+      currency_code VARCHAR(3) NULL,
+      bid_budget_min NUMERIC(12,2) NULL,
+      bid_budget_max NUMERIC(12,2) NULL,
+      duration_value INT NOT NULL DEFAULT 7,
+      duration_unit VARCHAR(10) NOT NULL DEFAULT 'days',
+      created_by_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+      created_by_role VARCHAR(20) NOT NULL DEFAULT 'super_admin',
+      source_type VARCHAR(40) NOT NULL,
+      assigned_freelancer_id BIGINT NULL REFERENCES users(id) ON DELETE SET NULL,
+      accepted_freelancer_id BIGINT NULL REFERENCES users(id) ON DELETE SET NULL,
+      selected_bid_id BIGINT NULL,
+      received_at TIMESTAMPTZ NULL,
+      is_published BOOLEAN NOT NULL DEFAULT TRUE,
+      is_open_for_pool BOOLEAN NOT NULL DEFAULT TRUE,
+      payment_required BOOLEAN NOT NULL DEFAULT FALSE,
+      payment_status VARCHAR(20) NOT NULL DEFAULT 'not_required',
+      order_status VARCHAR(40) NOT NULL DEFAULT 'open_for_bids',
+      visibility_scope VARCHAR(20) NOT NULL DEFAULT 'public',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS subcategory_id BIGINT NULL;
+
+    ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_currency_by_project_type_chk;
+    ALTER TABLE orders
+      ADD CONSTRAINT orders_currency_by_project_type_chk
+      CHECK (
+        (
+          project_type = 'fixed'
+          AND currency_code IS NOT NULL
+          AND char_length(currency_code) = 3
+          AND budget IS NOT NULL
+          AND budget > 0
+          AND bid_budget_min IS NULL
+          AND bid_budget_max IS NULL
+        )
+        OR
+        (
+          project_type = 'bidding'
+          AND budget IS NULL
+          AND (
+            (
+              currency_code IS NULL
+              AND bid_budget_min IS NULL
+              AND bid_budget_max IS NULL
+            )
+            OR
+            (
+              currency_code IS NOT NULL
+              AND char_length(currency_code) = 3
+              AND bid_budget_min IS NOT NULL
+              AND bid_budget_max IS NOT NULL
+              AND bid_budget_min > 0
+              AND bid_budget_max >= bid_budget_min
+            )
+          )
+        )
+      );
+
+    CREATE TABLE IF NOT EXISTS order_freelancer_bids (
+      id BIGSERIAL PRIMARY KEY,
+      order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+      freelancer_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+      amount NUMERIC(12,2) NOT NULL CHECK (amount > 0),
+      status VARCHAR(30) NOT NULL DEFAULT 'pending',
+      is_fake_bid BOOLEAN NOT NULL DEFAULT FALSE,
+      fake_round_id BIGINT NULL,
+      proposal_message TEXT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (order_id, freelancer_user_id)
+    );
+  `);
+}
+
+async function applyInitAndMigrations(databaseUrl) {
+  const classification = classifyDatabaseUrl(databaseUrl);
+  if (classification.isProduction) {
+    throw new Error(`Refusing gate migrate on PRODUCTION: ${classification.maskedTarget}`);
+  }
+
+  const client = new Client({ connectionString: databaseUrl, ssl: false });
+  await client.connect();
+  try {
+    await execSqlFile(client, path.join(BACKEND_ROOT, "sql", "init.sql"));
+    await client.query(`
+      ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT TRUE
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS roles (
+        id BIGSERIAL PRIMARY KEY,
+        name VARCHAR(64) NOT NULL UNIQUE,
+        display_name VARCHAR(120) NOT NULL,
+        description TEXT NULL,
+        is_system BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS user_roles (
+        id BIGSERIAL PRIMARY KEY,
+        user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+        assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (user_id, role_id)
+      );
+      INSERT INTO roles (name, display_name, description, is_system)
+      VALUES
+        ('super_admin', 'سوبر أدمن', 'صلاحيات كاملة على النظام.', TRUE),
+        ('admin', 'أدمن', 'صلاحيات تشغيلية حسب الصلاحيات الممنوحة.', TRUE),
+        ('client', 'عميل', 'مستخدم عميل بقدرات محدودة.', TRUE),
+        ('freelancer', 'مستقل', 'مستخدم مستقل بقدرات محدودة.', TRUE)
+      ON CONFLICT (name) DO NOTHING;
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        version VARCHAR(120) PRIMARY KEY,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    await ensureOrdersMinimalSchema(client);
+
+    const marketplaceMigrations = [
+      "134_marketplace_membership_plans.sql",
+      "135_marketplace_economy_settings.sql",
+      "136_marketplace_membership_priority_bid.sql",
+      "137_marketplace_memberships_cycles.sql",
+      "138_marketplace_membership_phase3_1_hardening.sql",
+      "139_marketplace_work_token_wallet_ledger.sql",
+      "140_marketplace_normal_application_work_tokens.sql",
+      "141_marketplace_priority_bid_auction.sql",
+      "142_marketplace_fair_distribution.sql",
+    ];
+
+    const migrationsDir = path.join(BACKEND_ROOT, "sql", "migrations");
+    for (const file of marketplaceMigrations) {
+      const version = file.replace(/\.sql$/i, "");
+      // eslint-disable-next-line no-await-in-loop
+      const exists = await client.query(
+        `SELECT 1 FROM schema_migrations WHERE version = $1 LIMIT 1`,
+        [version],
+      );
+      if (exists.rows[0]) continue;
+      const raw = fs.readFileSync(path.join(migrationsDir, file), "utf8");
+      const cleaned = stripSqlLineComments(raw);
+      const statements = splitSqlStatements(cleaned);
+      // eslint-disable-next-line no-console
+      console.log(`[gate-migrate] ${file}`);
+      for (const stmt of statements) {
+        // eslint-disable-next-line no-await-in-loop
+        await client.query(stmt);
+      }
+      // eslint-disable-next-line no-await-in-loop
+      await client.query(
+        `INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT DO NOTHING`,
+        [version],
+      );
+    }
+
+    const must = await client.query(
+      `SELECT 1 FROM schema_migrations WHERE version = '142_marketplace_fair_distribution'`,
+    );
+    if (!must.rows[0]) throw new Error("Migration 142 missing after gate bootstrap");
+    const table = await client.query(
+      `SELECT to_regclass('public.fair_distribution_decisions') AS d,
+              to_regclass('public.fair_distribution_events') AS e`,
+    );
+    if (!table.rows[0].d || !table.rows[0].e) {
+      throw new Error("fair distribution tables missing after 142");
+    }
+  } finally {
+    await client.end();
+  }
+}
+
+function runGateTests(databaseUrl) {
+  return new Promise((resolve) => {
+    const env = {
+      ...process.env,
+      DATABASE_URL: databaseUrl,
+      APP_ENV: "test",
+      NODE_ENV: "development",
+      JWT_SECRET: process.env.JWT_SECRET || "marketplace-fair-distribution-phase7-gate-secret",
+      CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
+      MARKETPLACE_MEMBERSHIP_RECONCILE_ENABLED: "0",
+      PRIORITY_AUCTION_RESOLVE_ENABLED: "0",
+      ORDERZ_GATE_ISOLATED_DB: "1",
+    };
+    delete env.STRIPE_SECRET_KEY;
+    delete env.STRIPE_WEBHOOK_SECRET;
+
+    const child = spawn(
+      process.execPath,
+      [
+        "--test",
+        "test/marketplaceFairDistributionPhase7Gate.test.js",
+        "test/marketplaceFairDistributionPhase71LiveWiring.test.js",
+      ],
+      { cwd: BACKEND_ROOT, env, stdio: "inherit" },
+    );
+    child.on("exit", (code) => resolve(code == null ? 1 : code));
+  });
+}
+
+async function main() {
+  // eslint-disable-next-line no-console
+  console.log("=== Marketplace Fair Distribution Phase 7 GATE ===");
+  let pg;
+  try {
+    pg = await startEmbeddedPostgres();
+    const url = buildUrl();
+    await applyInitAndMigrations(url);
+    const code = await runGateTests(url);
+    process.exitCode = code;
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(err && err.message ? err.message : err);
+    process.exitCode = 1;
+  } finally {
+    if (pg) {
+      try {
+        await pg.stop();
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error("[gate-db] stop failed:", e?.message || e);
+      }
+    }
+  }
+}
+
+main();

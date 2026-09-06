@@ -33,6 +33,29 @@ class AuthRepository {
     return _api.register(body: body);
   }
 
+  Future<void> forgotPassword({required String email}) {
+    return _api.forgotPassword(email: email);
+  }
+
+  Future<String> verifyForgotPasswordOtp({
+    required String email,
+    required String otp,
+  }) {
+    return _api.verifyForgotPasswordOtp(email: email, otp: otp);
+  }
+
+  Future<void> resetPassword({
+    required String email,
+    required String resetToken,
+    required String newPassword,
+  }) {
+    return _api.resetPassword(
+      email: email,
+      resetToken: resetToken,
+      newPassword: newPassword,
+    );
+  }
+
   Future<AuthUser> verifyRegisterOtp({
     required String email,
     required String otp,

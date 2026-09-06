@@ -7,44 +7,9 @@ import { orderPriceText, typeLabelAr } from "../../open-orders/openOrdersFormatt
 import { getOrderStatusLabel } from "../../../utils/orderFlowUi";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { getLocalizedField } from "../../../lib/i18n/getLocalizedField";
+import { resolveBackendAssetUrl } from "../../../utils/homeCategoryCards";
 import HeroIpadOverviewAnalytics from "./HeroIpadOverviewAnalytics";
 import { HERO_IPAD_BRAND_AR, HERO_IPAD_DEFAULT_ID, HERO_IPAD_LOGO_SRC, HERO_IPAD_NAV } from "./heroIpadData";
-
-/** Same rules as `CategoriesSection.jsx` / `ServicesExplorer.jsx` for `categories.image_url`. */
-function resolveBackendAssetUrl(maybeUrl) {
-  if (!maybeUrl) return "";
-  const raw = String(maybeUrl).trim();
-  if (!raw) return "";
-
-  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-  const apiOrigin = (() => {
-    try {
-      return new URL(base).origin;
-    } catch {
-      return "";
-    }
-  })();
-  const isLocalHost = (host) => ["localhost", "127.0.0.1", "::1"].includes(String(host || "").toLowerCase());
-
-  if (/^https?:\/\//i.test(raw)) {
-    try {
-      const parsed = new URL(raw);
-      if (apiOrigin && isLocalHost(parsed.hostname)) {
-        return new URL(`${parsed.pathname}${parsed.search}${parsed.hash}`, apiOrigin).toString();
-      }
-      return parsed.toString();
-    } catch {
-      return raw;
-    }
-  }
-
-  try {
-    const relative = raw.startsWith("/") ? raw : `/${raw}`;
-    return new URL(relative, apiOrigin || base).toString();
-  } catch {
-    return raw;
-  }
-}
 
 function formatPriceJod(priceJod) {
   if (priceJod === null || priceJod === undefined) return null;

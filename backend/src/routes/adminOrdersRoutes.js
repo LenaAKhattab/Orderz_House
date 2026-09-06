@@ -1,7 +1,7 @@
 const express = require("express");
 const adminOrdersController = require("../controllers/adminOrdersController");
 const validateRequest = require("../middleware/validateRequest");
-const { requireAuth, requireAnyRole, requirePermission, requireAnyPermission } = require("../middleware/rbacMiddleware");
+const { requireAuth, requireAnyRole, requirePermission } = require("../middleware/rbacMiddleware");
 const { uploadOrderFiles, handleOrderUploadErrors, enforceOrderUploadTotalSize } = require("../middleware/ordersUploadMiddleware");
 const {
   listOrdersValidators,
@@ -26,10 +26,8 @@ router.use(requireAuth, requireAnyRole(["super_admin", "admin"]));
 
 const ordersPerm = requirePermission("dashboard.admin.orders");
 const createOrderPerm = requirePermission("dashboard.admin.create_order");
-const freelancersSearchPerm = requireAnyPermission([
-  "dashboard.admin.orders",
-  "dashboard.super_admin.subscriptions",
-]);
+/** Web-Admin-A1: package-assignment search — any admin/super_admin (router already role-gated). */
+const freelancersSearchPerm = (req, res, next) => next();
 
 router.get("/orders", ordersPerm, listOrdersValidators, validateRequest, adminOrdersController.listInternalOrders);
 router.get("/orders/:id", ordersPerm, orderIdParam, validateRequest, adminOrdersController.getInternalOrder);
@@ -69,6 +67,20 @@ router.post(
   ...clientOrderBidIdParamValidators,
   validateRequest,
   adminOrdersController.approveInternalPricedBid,
+);
+router.post(
+  "/orders/:id/cancel-without-selection",
+  ordersPerm,
+  orderIdParam,
+  validateRequest,
+  adminOrdersController.cancelOpenBiddingOrderWithoutSelection,
+);
+router.patch(
+  "/orders/:id/economic-fields",
+  ordersPerm,
+  orderIdParam,
+  validateRequest,
+  adminOrdersController.patchOrderEconomicFields,
 );
 router.get("/orders/:id/claims", ordersPerm, orderIdParam, validateRequest, adminOrdersController.listOrderClaims);
 router.patch(

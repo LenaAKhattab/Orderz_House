@@ -188,7 +188,7 @@ void main() {
     test('maps known types to Arabic labels', () {
       expect(notificationTypeLabel('order.created'), 'طلب');
       expect(notificationTypeLabel('financial.claim.paid'), 'مطالبة مالية');
-      expect(notificationTypeLabel(null), 'إشعار');
+      expect(notificationTypeLabel(null), 'إشعار جديد');
     });
   });
 }

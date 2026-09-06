@@ -7,6 +7,7 @@ import '../../../core/widgets/oh_widgets.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../../core/files/order_file_download_paths.dart';
 import '../../orders/presentation/order_detail_widgets.dart';
+import '../../currency/presentation/jod_money_display.dart';
 import '../../orders/presentation/order_file_download_tile.dart';
 import '../data/client_delivery_review_models.dart';
 import '../data/client_order_models.dart';
@@ -85,7 +86,13 @@ class _ClientOrderDetailBody extends ConsumerWidget {
         statusLabel: order.statusLabel,
         statusKey: order.orderStatus,
         projectTypeLabel: order.projectTypeLabel,
-        budgetLabel: order.budgetLabel,
+        budgetDisplay: JodOrderBudgetDisplay(
+          projectType: order.projectType,
+          amount: order.budget,
+          bidMin: order.bidBudgetMin,
+          bidMax: order.bidBudgetMax,
+          onDark: true,
+        ),
         dateLabel: formatOrderDateLabel(order.createdAt),
         dateCaption: 'تاريخ الإنشاء',
       ),
@@ -140,7 +147,7 @@ class _ClientOrderDetailBody extends ConsumerWidget {
               if (order.paymentAmount != null)
                 OrderMetaItem(
                   label: 'مبلغ الدفع',
-                  value: '${order.paymentAmount!.toStringAsFixed(0)} ${order.currencyCode ?? 'JOD'}',
+                  valueWidget: JodMoneyDisplay(amount: order.paymentAmount),
                   icon: Icons.paid_outlined,
                   accent: AppColors.success,
                 ),

@@ -1,6 +1,6 @@
 import { resolvePostHogHost, validatePostHogProjectKey } from "../utils/posthogEnv";
 import { buildPageViewIdempotencyKey, getClientSessionId, shouldIncrementVisitCounter } from "../utils/pageViewNavigation";
-import { postPublicPageViewRequest } from "./api";
+import { postPublicPageViewRequest } from "./publicChromeApi";
 import { triggerPublicHomeStatsRefetch } from "./publicHomeStatsRefetch";
 
 const POSTHOG_KEY_RAW = String(import.meta.env.VITE_POSTHOG_KEY || "").trim();

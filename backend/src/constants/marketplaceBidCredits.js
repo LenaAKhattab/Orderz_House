@@ -1,0 +1,121 @@
+/**
+ * Marketplace Bid Credits — Phase B1/B2 constants.
+ * User-facing product term: "Bids" / "العروض المتاحة".
+ * Internal code term: bid_credit (distinct from order_freelancer_bids rows).
+ *
+ * Work Token product is DEPRECATED. Do not reuse work_tokens_enabled for Bids.
+ */
+
+const BID_CREDIT_SOURCE_TYPES = Object.freeze([
+  "membership_daily_unlock",
+  "admin_manual",
+  "admin_adjustment",
+  "normal_application_refund",
+  "article_application_refund",
+  "package_purchase",
+  "admin_distribution_pool",
+  "pantry_application_refund",
+  "freelancer_activation_trial",
+]);
+
+const BID_CREDIT_GRANT_STATUSES = Object.freeze([
+  "active",
+  "exhausted",
+  "expired",
+  "revoked",
+  "frozen",
+]);
+
+const BID_CREDIT_LEDGER_EVENT_TYPES = Object.freeze([
+  "MEMBERSHIP_BID_GRANT",
+  "ADMIN_BID_GRANT",
+  "ADMIN_BID_ADJUSTMENT",
+  "APPLICATION_BID_CONSUME",
+  "BID_EXPIRED",
+  "NORMAL_APPLICATION_BID_REFUND",
+  "ARTICLE_APPLICATION_BID_CONSUME",
+  "ARTICLE_APPLICATION_BID_REFUND",
+  "BID_PACKAGE_PURCHASE_GRANT",
+  "BID_PACKAGE_PURCHASE_REVOKE",
+  "ADMIN_DISTRIBUTION_POOL_GRANT",
+  "BID_RESERVE",
+  "BID_RESERVE_RELEASE",
+  "BID_RESERVE_CONSUME",
+  "PANTRY_APPLICATION_BID_CONSUME",
+  "PANTRY_APPLICATION_BID_REFUND",
+  "FREELANCER_ACTIVATION_TRIAL_GRANT",
+]);
+
+const BID_CREDIT_LEDGER_EVENT_TYPE_SET = new Set(BID_CREDIT_LEDGER_EVENT_TYPES);
+
+/**
+ * Phase B2 default / legacy fallback: 1 Bid per first application.
+ * Phase E3: authoritative cost is Order.application_bid_cost (Admin-constrained snapshot).
+ */
+const NORMAL_APPLICATION_BID_COST = 1;
+
+/** Eligible no-selection refund restores 100% of consumed quantity. */
+const NORMAL_APPLICATION_BID_REFUND_PERCENT = 100;
+
+/**
+ * E3: refunding normal application Bids does NOT restore same-day daily spend capacity.
+ * (Distinct from E2 Article reservation release, which restores daily spend because
+ * reservation is not final consumption.)
+ */
+const NORMAL_ORDER_REFUND_RESTORES_DAILY_CAP = false;
+
+/** Compensating refund grant lifetime when original source grant is already expired. */
+const NORMAL_APPLICATION_BID_REFUND_COMPENSATING_DAYS = 30;
+
+const BID_CREDIT_ERROR_CODES = Object.freeze({
+  BID_CREDITS_SCHEMA_NOT_READY: "BID_CREDITS_SCHEMA_NOT_READY",
+  BID_CREDITS_ENGINE_OFF: "BID_CREDITS_ENGINE_OFF",
+  INVALID_BID_CREDIT_AMOUNT: "INVALID_BID_CREDIT_AMOUNT",
+  INVALID_BID_CREDIT_IDEMPOTENCY_KEY: "INVALID_BID_CREDIT_IDEMPOTENCY_KEY",
+  INVALID_BID_CREDIT_EXPIRY: "INVALID_BID_CREDIT_EXPIRY",
+  INSUFFICIENT_BID_CREDITS: "INSUFFICIENT_BID_CREDITS",
+  BID_CREDIT_GRANT_NOT_FOUND: "BID_CREDIT_GRANT_NOT_FOUND",
+  BID_CREDIT_IDEMPOTENCY_CONFLICT: "BID_CREDIT_IDEMPOTENCY_CONFLICT",
+  INVALID_FREELANCER: "INVALID_FREELANCER",
+  INVALID_BID_PACKAGE: "INVALID_BID_PACKAGE",
+  BID_PACKAGE_CODE_CONFLICT: "BID_PACKAGE_CODE_CONFLICT",
+  BID_PACKAGE_INVALID_VALIDITY: "BID_PACKAGE_INVALID_VALIDITY",
+  BID_CREDIT_PURCHASES_ENGINE_OFF: "BID_CREDIT_PURCHASES_ENGINE_OFF",
+  BID_PURCHASES_SCHEMA_NOT_READY: "BID_PURCHASES_SCHEMA_NOT_READY",
+  NORMAL_APPLICATION_NOT_CHARGED: "NORMAL_APPLICATION_NOT_CHARGED",
+  NORMAL_APPLICATION_BID_REFUND_NOT_ELIGIBLE: "NORMAL_APPLICATION_BID_REFUND_NOT_ELIGIBLE",
+});
+
+/** Product terminology (website). */
+const BID_CREDIT_PRODUCT_LABEL_EN = "Bids";
+const BID_CREDIT_PRODUCT_LABEL_AR = "العروض المتاحة";
+
+const WORK_TOKEN_PRODUCT_STATUS = "DEPRECATED";
+const WORK_TOKEN_SCHEMA_DELETION = "DEFERRED";
+const BID_CREDIT_HISTORICAL_BACKFILL = "NONE";
+const ARTICLE_WORK_TOKEN_ENTRY = "CANCELLED";
+const NORMAL_APPLICATION_BID_HISTORICAL_BACKFILL = "NONE";
+
+function isValidBidCreditLedgerEvent(eventType) {
+  return BID_CREDIT_LEDGER_EVENT_TYPE_SET.has(String(eventType || "").trim());
+}
+
+module.exports = {
+  BID_CREDIT_SOURCE_TYPES,
+  BID_CREDIT_GRANT_STATUSES,
+  BID_CREDIT_LEDGER_EVENT_TYPES,
+  BID_CREDIT_LEDGER_EVENT_TYPE_SET,
+  NORMAL_APPLICATION_BID_COST,
+  NORMAL_APPLICATION_BID_REFUND_PERCENT,
+  NORMAL_APPLICATION_BID_REFUND_COMPENSATING_DAYS,
+  NORMAL_ORDER_REFUND_RESTORES_DAILY_CAP,
+  BID_CREDIT_ERROR_CODES,
+  BID_CREDIT_PRODUCT_LABEL_EN,
+  BID_CREDIT_PRODUCT_LABEL_AR,
+  WORK_TOKEN_PRODUCT_STATUS,
+  WORK_TOKEN_SCHEMA_DELETION,
+  BID_CREDIT_HISTORICAL_BACKFILL,
+  ARTICLE_WORK_TOKEN_ENTRY,
+  NORMAL_APPLICATION_BID_HISTORICAL_BACKFILL,
+  isValidBidCreditLedgerEvent,
+};

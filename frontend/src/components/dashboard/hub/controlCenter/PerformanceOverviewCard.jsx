@@ -1,5 +1,5 @@
 import { useTranslation } from "../../../../i18n/LanguageProvider";
-import { formatMoneyJod } from "../../../../utils/freelancerDashboardData";
+import { JodMoneyDisplay } from "../../../money/JodMoneyDisplay";
 import WidgetLoadError from "./WidgetLoadError";
 
 function pctLabel(value) {
@@ -76,7 +76,7 @@ export default function PerformanceOverviewCard({ performance, loadState = "ok",
           <div className="fdash-cc-metric">
             <span className="fdash-cc-metric__label">{t("freelancerDashboard.controlCenter.performance.paidClaims")}</span>
             <strong className="fdash-cc-metric__value">
-              {p.totalEarnedJod != null ? `${formatMoneyJod(p.totalEarnedJod)} JOD` : emDash}
+              {p.totalEarnedJod != null ? <JodMoneyDisplay amount={p.totalEarnedJod} compact /> : emDash}
             </strong>
           </div>
         </div>

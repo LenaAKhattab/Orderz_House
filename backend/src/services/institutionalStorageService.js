@@ -91,15 +91,48 @@ async function getStorageOrderCounts(storageId, clientOrPool = pool) {
 /**
  * Session-scoped advisory lock so the lock survives the SELECT→COMMIT that
  * lists due batches and covers the full processOneBatch work that follows.
- * Callers must unlock on the same client (see releaseReleaseLock).
+ * Callers must unlock on the same client in `finally` BEFORE `client.release()`,
+ * and must destroy the client (release with an Error) if unlock fails — never
+ * return a still-locked session to the shared pool.
  */
 async function tryAcquireReleaseLock(client) {
   const { rows } = await client.query(`SELECT pg_try_advisory_lock($1::bigint) AS ok`, [ADVISORY_LOCK_KEY]);
   return Boolean(rows[0]?.ok);
 }
 
+/**
+ * @returns {{ ok: boolean, released: boolean, error?: string }}
+ */
 async function releaseReleaseLock(client) {
-  await client.query(`SELECT pg_advisory_unlock($1::bigint)`, [ADVISORY_LOCK_KEY]).catch(() => {});
+  try {
+    const { rows } = await client.query(`SELECT pg_advisory_unlock($1::bigint) AS released`, [ADVISORY_LOCK_KEY]);
+    return { ok: true, released: Boolean(rows[0]?.released) };
+  } catch (e) {
+    return { ok: false, released: false, error: String(e?.message || e).slice(0, 200) };
+  }
+}
+
+/**
+ * Return a pooled client after a session advisory lock attempt.
+ * Destroys the underlying connection when unlock did not succeed after acquire.
+ */
+function releaseClientAfterSessionLock(client, { acquired, unlockResult } = {}) {
+  if (!client) return;
+  if (acquired && unlockResult && (!unlockResult.ok || !unlockResult.released)) {
+    // eslint-disable-next-line no-console
+    console.error(
+      JSON.stringify({
+        component: "institutional_release",
+        event: "advisory_unlock_failed_destroy_client",
+        unlockOk: unlockResult?.ok ?? null,
+        unlockReleased: unlockResult?.released ?? null,
+        error: unlockResult?.error || null,
+      }),
+    );
+    client.release(new Error("institutional_advisory_unlock_failed"));
+    return;
+  }
+  client.release();
 }
 
 function httpError(message, statusCode = 400, code = null) {
@@ -762,6 +795,7 @@ module.exports = {
   assertStorageInstitutionsExist,
   tryAcquireReleaseLock,
   releaseReleaseLock,
+  releaseClientAfterSessionLock,
   ADVISORY_LOCK_KEY,
   STORAGE_ORDER_AVAILABLE_STATUSES,
   httpError,

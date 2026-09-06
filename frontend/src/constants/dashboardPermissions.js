@@ -1,4 +1,4 @@
-import { ROLE } from "./authRoutes";
+import { ROLE, canRoleAccessPath, getDashboardPath } from "./authRoutes";
 
 /** Admin dashboard page permissions (shared with super-admin routes for the same pages). */
 export const ADMIN_PAGE_PERMISSIONS = {
@@ -19,9 +19,12 @@ export const SUPER_ADMIN_PAGE_PERMISSIONS = {
   analytics: "dashboard.super_admin.analytics",
   adminsManage: "dashboard.super_admin.admins_manage",
   trainingOrders: "dashboard.super_admin.training_orders",
+  pantry: "dashboard.super_admin.pantry",
   editWebsite: "dashboard.super_admin.edit_website",
   /** Super Admin only — not in ASSIGNABLE_DASHBOARD_PERMISSIONS */
   rateLimitExemptions: "dashboard.super_admin.rate_limit_exemptions",
+  /** Super Admin only — Problems & Suggestions inbox */
+  problemsSuggestions: "dashboard.super_admin.problems_suggestions",
   /** Institutions catalog — assignable to delegated Admin */
   institutions: "dashboard.super_admin.institutions",
   /** Institutional order storage module */
@@ -41,6 +44,7 @@ export const ASSIGNABLE_DASHBOARD_PERMISSIONS = [
   ADMIN_PAGE_PERMISSIONS.orders,
   ADMIN_PAGE_PERMISSIONS.createOrder,
   SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders,
+  SUPER_ADMIN_PAGE_PERMISSIONS.pantry,
   SUPER_ADMIN_PAGE_PERMISSIONS.institutions,
   SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage,
   SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage,
@@ -52,6 +56,7 @@ const SUPER_ADMIN_ROUTE_RULES = [
   { prefix: "/dashboard/super-admin/analysis", permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics },
   { prefix: "/dashboard/super-admin/edit-website", permission: SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite },
   { prefix: "/dashboard/super-admin/training-orders", permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders },
+  { prefix: "/dashboard/super-admin/pantry", permission: SUPER_ADMIN_PAGE_PERMISSIONS.pantry },
   { prefix: "/dashboard/super-admin/institutional-order-storage", permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage },
   { prefix: "/dashboard/super-admin/subscriptions/activation", permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation },
   { prefix: "/dashboard/super-admin/subscriptions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.subscriptions },
@@ -59,7 +64,17 @@ const SUPER_ADMIN_ROUTE_RULES = [
   { prefix: "/dashboard/super-admin/financial-claims", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims },
   { prefix: "/dashboard/super-admin/admins", permission: SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage },
   { prefix: "/dashboard/super-admin/rate-limit-exemptions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.rateLimitExemptions },
+  { prefix: "/dashboard/super-admin/feedback", permission: SUPER_ADMIN_PAGE_PERMISSIONS.problemsSuggestions },
   { prefix: "/dashboard/super-admin/institutions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutions },
+  { prefix: "/dashboard/super-admin/marketplace-economy", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { prefix: "/dashboard/super-admin/marketplace-plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { prefix: "/dashboard/super-admin/marketplace-articles", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { prefix: "/dashboard/super-admin/article-management", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { prefix: "/dashboard/super-admin/articles", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { prefix: "/dashboard/super-admin/freelancer-activation", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { prefix: "/dashboard/super-admin/bildazo-author-links", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { prefix: "/dashboard/super-admin/training-packages", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { prefix: "/dashboard/super-admin/special-offer-package", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { prefix: "/dashboard/super-admin/plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { prefix: "/dashboard/super-admin/courses", permission: ADMIN_PAGE_PERMISSIONS.courses },
   { prefix: "/dashboard/super-admin/ads", permission: ADMIN_PAGE_PERMISSIONS.ads },
@@ -73,7 +88,6 @@ const ADMIN_SHELL_NAV_ORDER = [
   { to: "/dashboard/admin/orders", permission: ADMIN_PAGE_PERMISSIONS.orders },
   { to: "/dashboard/admin/courses", permission: ADMIN_PAGE_PERMISSIONS.courses },
   { to: "/dashboard/admin/ads", permission: ADMIN_PAGE_PERMISSIONS.ads },
-  { to: "/dashboard/admin/subscriptions", permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation },
   { to: "/dashboard/admin/orders/create", permission: ADMIN_PAGE_PERMISSIONS.createOrder },
 ];
 
@@ -81,17 +95,22 @@ const SUPER_ADMIN_SHELL_NAV_ORDER = [
   { to: "/dashboard/super-admin", permission: SUPER_ADMIN_PAGE_PERMISSIONS.overview },
   { to: "/dashboard/super-admin/analysis", permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics },
   { to: "/dashboard/super-admin/plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { to: "/dashboard/super-admin/marketplace-plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { to: "/dashboard/super-admin/training-packages", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { to: "/dashboard/super-admin/special-offer-package", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
+  { to: "/dashboard/super-admin/marketplace-economy", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { to: "/dashboard/super-admin/courses", permission: ADMIN_PAGE_PERMISSIONS.courses },
   { to: "/dashboard/super-admin/ads", permission: ADMIN_PAGE_PERMISSIONS.ads },
   { to: "/dashboard/super-admin/subscriptions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.subscriptions },
-  { to: "/dashboard/super-admin/subscriptions/activation", permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation },
   { to: "/dashboard/super-admin/financial-center", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialCenter },
   { to: "/dashboard/super-admin/financial-claims", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims },
   { to: "/dashboard/super-admin/orders", permission: ADMIN_PAGE_PERMISSIONS.orders },
   { to: "/dashboard/super-admin/training-orders", permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders },
+  { to: "/dashboard/super-admin/pantry", permission: SUPER_ADMIN_PAGE_PERMISSIONS.pantry },
   { to: "/dashboard/super-admin/institutional-order-storage", permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage },
   { to: "/dashboard/super-admin/admins", permission: SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage },
   { to: "/dashboard/super-admin/rate-limit-exemptions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.rateLimitExemptions },
+  { to: "/dashboard/super-admin/feedback", permission: SUPER_ADMIN_PAGE_PERMISSIONS.problemsSuggestions },
   { to: "/dashboard/super-admin/institutions", permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutions },
   { to: "/dashboard/super-admin/edit-website", permission: SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite },
 ];
@@ -103,6 +122,7 @@ export const ADMIN_ROUTE_PERMISSIONS = {
   "/dashboard/admin/courses": ADMIN_PAGE_PERMISSIONS.courses,
   "/dashboard/admin/ads": ADMIN_PAGE_PERMISSIONS.ads,
   "/dashboard/admin/subscriptions": ADMIN_PAGE_PERMISSIONS.subscriptionActivation,
+  "/dashboard/admin/pantry": SUPER_ADMIN_PAGE_PERMISSIONS.pantry,
 };
 
 export function isSuperAdminUser(user) {
@@ -170,9 +190,19 @@ export function getFirstAccessibleDashboardPath(user) {
     if (userHasPermission(user, item.permission)) return item.to;
   }
   for (const item of SUPER_ADMIN_SHELL_NAV_ORDER) {
-    if (userHasPermission(user, item.permission)) return item.to;
+    if (!userHasPermission(user, item.permission)) continue;
+    if (!canRoleAccessPath(item.to, ROLE.ADMIN)) continue;
+    return item.to;
   }
   return "/dashboard/admin";
+}
+
+/** Role home after login/register/guest-only bounce. Admins use the first permitted page. */
+export function getPostAuthHomePath(user) {
+  if (!user) return "/login";
+  const role = user.primaryRole || user.role;
+  if (role === ROLE.ADMIN) return getFirstAccessibleDashboardPath(user);
+  return getDashboardPath(role);
 }
 
 export function adminUsesSuperAdminShell(pathname) {

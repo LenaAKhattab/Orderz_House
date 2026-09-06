@@ -1,29 +1,26 @@
-import { getMyEligibilityRequest, getMySubscriptionRequest, listPublicPlansRequest } from "./api";
+import {
+  getFreelancerMarketplaceMembershipRequest,
+  getMyEligibilityRequest,
+  getMySubscriptionRequest,
+  getPublicPlansContentRequest,
+  listPublicPlansRequest,
+} from "./api";
 import { mergeApiPlansWithCatalog } from "../constants/orderzhousePlansCatalog";
+import { fetchResolvedDefaultCatalogPlans } from "../lib/planCatalog/fetchPlansForCatalog";
+import {
+  eligibilityCache,
+  legacyPlansCache,
+  membershipCache,
+  plansCache,
+  publicPlansContentCache,
+  subscriptionCache,
+} from "./freelancerSessionCacheStore";
 
-const subscriptionCache = {
-  userId: null,
-  subscription: undefined,
-  activationFeeStatus: undefined,
-  promise: null,
-};
-const eligibilityCache = { userId: null, data: undefined, promise: null };
-const plansCache = { data: null, promise: null };
-
-export function invalidateFreelancerSessionCache() {
-  subscriptionCache.userId = null;
-  subscriptionCache.subscription = undefined;
-  subscriptionCache.activationFeeStatus = undefined;
-  subscriptionCache.promise = null;
-  eligibilityCache.userId = null;
-  eligibilityCache.data = undefined;
-  eligibilityCache.promise = null;
-}
-
-export function invalidatePublicPlansCache() {
-  plansCache.data = null;
-  plansCache.promise = null;
-}
+export {
+  invalidateFreelancerSessionCache,
+  invalidatePublicPlansCache,
+  invalidatePublicPlansContentCache,
+} from "./freelancerSessionCacheStore";
 
 export function getCachedFreelancerSubscription(userId) {
   if (!userId || subscriptionCache.userId !== userId) return undefined;
@@ -40,8 +37,25 @@ export function getCachedFreelancerEligibility(userId) {
   return eligibilityCache.data;
 }
 
+export function getCachedFreelancerMarketplaceMembership(userId) {
+  if (!userId || membershipCache.userId !== userId) return undefined;
+  return membershipCache.data;
+}
+
 export function getCachedPublicPlans() {
   return plansCache.data;
+}
+
+export function getCachedDefaultCatalog() {
+  return plansCache.catalog;
+}
+
+export function getCachedPublicActivationFee() {
+  return plansCache.activationFee;
+}
+
+export function getCachedSpecialOfferPackage() {
+  return plansCache.specialOfferPackage ?? null;
 }
 
 export function fetchFreelancerSubscriptionCached(userId, { force = false } = {}) {
@@ -119,20 +133,106 @@ export function fetchFreelancerEligibilityCached(userId, { force = false } = {})
   return eligibilityCache.promise;
 }
 
+/** Deduped Marketplace Membership snapshot for Freelancer Plans primary status. */
+export function fetchFreelancerMarketplaceMembershipCached(userId, { force = false } = {}) {
+  if (!userId) {
+    membershipCache.userId = null;
+    membershipCache.data = null;
+    return Promise.resolve(null);
+  }
+  if (!force && membershipCache.userId === userId && membershipCache.data !== undefined) {
+    return Promise.resolve(membershipCache.data);
+  }
+  if (!force && membershipCache.userId === userId && membershipCache.promise) {
+    return membershipCache.promise;
+  }
+  membershipCache.userId = userId;
+  membershipCache.promise = getFreelancerMarketplaceMembershipRequest()
+    .then((res) => {
+      const data = res?.data ?? null;
+      membershipCache.data = data;
+      membershipCache.promise = null;
+      return data;
+    })
+    .catch((err) => {
+      membershipCache.promise = null;
+      throw err;
+    });
+  return membershipCache.promise;
+}
+
 export async function fetchPublicPlansCached({ force = false } = {}) {
-  if (!force && plansCache.data) return plansCache.data;
-  if (!force && plansCache.promise) return plansCache.promise;
-  plansCache.promise = listPublicPlansRequest()
+  if (!force && legacyPlansCache.data) return legacyPlansCache.data;
+  if (!force && legacyPlansCache.promise) return legacyPlansCache.promise;
+  legacyPlansCache.promise = listPublicPlansRequest()
     .then((data) => {
       const items = data?.data?.plans || [];
       const merged = mergeApiPlansWithCatalog(items);
-      plansCache.data = merged;
-      plansCache.promise = null;
+      legacyPlansCache.data = merged;
+      legacyPlansCache.activationFee = data?.data?.activationFee ?? null;
+      legacyPlansCache.promise = null;
       return merged;
+    })
+    .catch((err) => {
+      legacyPlansCache.promise = null;
+      throw err;
+    });
+  return legacyPlansCache.promise;
+}
+
+/**
+ * Session cache for the Admin-selected default catalog.
+ * Cache key includes `default_plan_catalog` so a Super Admin change does not reuse the old list.
+ */
+export async function fetchDefaultCatalogPlansCached({ force = false } = {}) {
+  if (!force && plansCache.catalog && Array.isArray(plansCache.data) && !plansCache.promise) {
+    return {
+      catalog: plansCache.catalog,
+      plans: plansCache.data,
+      activationFee: plansCache.activationFee,
+      specialOfferPackage: plansCache.specialOfferPackage ?? null,
+      catalogSource: null,
+    };
+  }
+  if (!force && plansCache.promise) return plansCache.promise;
+
+  const pending = fetchResolvedDefaultCatalogPlans()
+    .then((result) => {
+      plansCache.catalog = result.catalog;
+      plansCache.data = result.plans;
+      plansCache.activationFee = result.activationFee ?? null;
+      plansCache.specialOfferPackage = result.specialOfferPackage ?? null;
+      plansCache.promise = null;
+      return result;
     })
     .catch((err) => {
       plansCache.promise = null;
       throw err;
     });
-  return plansCache.promise;
+  plansCache.promise = pending;
+  return pending;
+}
+
+export function getCachedPublicPlansContent() {
+  return publicPlansContentCache.data;
+}
+
+export async function fetchPublicPlansContentCached({ force = false } = {}) {
+  if (!force && publicPlansContentCache.data && !publicPlansContentCache.promise) {
+    return publicPlansContentCache.data;
+  }
+  if (!force && publicPlansContentCache.promise) return publicPlansContentCache.promise;
+
+  publicPlansContentCache.promise = getPublicPlansContentRequest()
+    .then((res) => {
+      const data = res?.data || null;
+      publicPlansContentCache.data = data;
+      publicPlansContentCache.promise = null;
+      return data;
+    })
+    .catch((err) => {
+      publicPlansContentCache.promise = null;
+      throw err;
+    });
+  return publicPlansContentCache.promise;
 }

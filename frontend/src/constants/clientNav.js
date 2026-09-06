@@ -17,6 +17,11 @@ export const CLIENT_NAV_MAIN = [
     icon: "messages",
     badgeKey: "notifications",
   },
+  {
+    to: "/dashboard/client/feedback",
+    labelKey: "dashboard.nav.client.problemsSuggestions",
+    icon: "feedback",
+  },
 ];
 
 export const CLIENT_NAV_FOOTER = [
@@ -45,7 +50,9 @@ export function clientPageTitle(pathname, t) {
     n.end ? pathname === n.to : pathname === n.to || pathname.startsWith(`${n.to}/`),
   );
   if (item) return resolveNavLabel(item, t);
+  if (pathname.includes("/convert-account")) return t("dashboard.nav.common.convertAccount");
   if (pathname.includes("/settings")) return t("dashboard.nav.common.settings");
+  if (pathname.includes("/feedback")) return t("dashboard.nav.client.problemsSuggestions");
   if (pathname.includes("/profile")) return t("dashboard.nav.common.profile");
   if (pathname.includes("/financial")) return t("dashboard.nav.client.finance");
   if (pathname.includes("/my-orders")) return t("dashboard.nav.client.myRequests");

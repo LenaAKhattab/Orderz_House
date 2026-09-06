@@ -25,11 +25,8 @@ import OrderFilesCard from "../../components/orders/order-details/OrderFilesCard
 import OrderMetadataBlock from "../../components/orders/order-details/OrderMetadataBlock";
 import FileList from "../../components/orders/order-details/FileList";
 import SubmissionHistoryTimeline from "../../components/orders/submission-history/SubmissionHistoryTimeline";
-import {
-  formatJoDate,
-  formatJoDateTime,
-  formatMoneyJod,
-} from "../../components/orders/order-details/orderDetailsUtils";
+import { formatJoDate, formatJoDateTime } from "../../components/orders/order-details/orderDetailsUtils";
+import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import { validateOrderFilesSize } from "../../utils/orderUploadLimits";
 
 function typeLabel(projectType, t) {
@@ -208,13 +205,15 @@ export default function FreelancerMyOrderDetailsPage() {
   const localizedDescription = useMemo(() => getLocalizedOrderDescription(order, locale), [order, locale]);
   const descriptionDir = resolveUserContentDir(localizedDescription, dir);
 
-  const typeAndBudgetText = useMemo(() => {
-    if (!order) return t("freelancerDashboard.common.emDash");
-    const budgetLine = order?.projectType === "bidding" ? t("freelancerDashboard.common.emDash") : formatMoneyJod(order?.budget);
-    return order?.projectType === "bidding"
-      ? `${typeLabel(order?.projectType, t)}`
-      : `${typeLabel(order?.projectType, t)} — ${budgetLine}`;
-  }, [order, t]);
+  const typeAndBudgetValue = !order ? (
+    t("freelancerDashboard.common.emDash")
+  ) : order?.projectType === "bidding" ? (
+    typeLabel(order?.projectType, t)
+  ) : (
+    <>
+      {typeLabel(order?.projectType, t)} — <JodMoneyDisplay amount={order?.budget} compact />
+    </>
+  );
 
   const summaryRows = useMemo(() => {
     if (!order) return [];
@@ -278,7 +277,7 @@ export default function FreelancerMyOrderDetailsPage() {
             <div className="od-aside-col">
               <OrderSummaryCard
                 title={t("orders.details.summaryTitle")}
-                primaryBlock={{ label: t("orders.details.projectTypeBudget"), value: typeAndBudgetText, dir: "ltr" }}
+                primaryBlock={{ label: t("orders.details.projectTypeBudget"), value: typeAndBudgetValue, dir: "ltr" }}
                 rows={summaryRows}
               />
               <OrderFilesCard

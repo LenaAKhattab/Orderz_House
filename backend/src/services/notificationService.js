@@ -335,6 +335,37 @@ async function getUnreadCount(userId, client) {
   return Number(rows[0]?.unread_count || 0);
 }
 
+async function deleteNotification(notificationId, userId, client) {
+  const runner = getRunner(client);
+  const nid = Number(notificationId);
+  const uid = Number(userId);
+  if (!Number.isInteger(nid) || nid < 1 || !Number.isInteger(uid) || uid < 1) {
+    return false;
+  }
+  const { rowCount } = await runner.query(
+    `DELETE FROM notifications WHERE id = $1 AND recipient_user_id = $2`,
+    [nid, uid],
+  );
+  return rowCount > 0;
+}
+
+async function deleteNotifications(notificationIds, userId, client) {
+  const runner = getRunner(client);
+  const uid = Number(userId);
+  if (!Number.isInteger(uid) || uid < 1) return { deletedCount: 0 };
+  const ids = (Array.isArray(notificationIds) ? notificationIds : [])
+    .map((id) => Number(id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+  if (ids.length === 0) return { deletedCount: 0 };
+  const { rowCount } = await runner.query(
+    `DELETE FROM notifications
+     WHERE recipient_user_id = $1
+       AND id = ANY($2::bigint[])`,
+    [uid, ids],
+  );
+  return { deletedCount: rowCount };
+}
+
 module.exports = {
   createNotification,
   createManyNotifications,
@@ -343,5 +374,7 @@ module.exports = {
   markAllAsRead,
   getUserNotifications,
   getUnreadCount,
+  deleteNotification,
+  deleteNotifications,
   sanitizeNotificationForViewer,
 };

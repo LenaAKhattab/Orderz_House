@@ -1,6 +1,9 @@
-const path = require("node:path");
+﻿const path = require("node:path");
 const crypto = require("node:crypto");
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+
+const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
+guardQaOrSeed(require("path").basename(__filename));
 
 const bcrypt = require("bcrypt");
 const { pool } = require("../src/config/db");
@@ -59,7 +62,7 @@ async function main() {
         "JO",
         "+962790000006",
         "+962790000006",
-        "ذكر",
+        "Ø°ÙƒØ±",
         null,
       ],
     );
@@ -91,6 +94,8 @@ async function main() {
   const activated = await subscriptionsService.activateCompanyApprovalForSubscription({
     actorUserId: admin.id,
     subscriptionId: assigned.subscription.id,
+    actorRole: "super_admin",
+    overrideReason: "provisionFreelancerWithSubscription script (local/dev)",
   });
 
   console.log(

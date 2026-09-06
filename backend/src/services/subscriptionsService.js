@@ -7,6 +7,12 @@ const notificationEventsService = require("./notificationEventsService");
 const notificationService = require("./notificationService");
 const freelancerSubscriptionPaymentNotifications = require("./freelancerSubscriptionPaymentNotifications");
 const { getActivationFeeStatus, markActivationFeePaidOffline } = require("./subscriptionActivationFeeService");
+const {
+  getActiveMarketplaceBlockingHold,
+  RENEWAL_FAILED_COPY,
+  clearPaymentFailureHoldsForFreelancer,
+  CLEAR_SOURCE,
+} = require("./freelancerAccountHoldsService");
 
 function isMissingTableError(err) {
   return err && (err.code === "42P01" || String(err.message || "").includes("does not exist"));
@@ -152,6 +158,16 @@ function mapSubscription(row) {
     stripePaymentIntentId: row.stripe_payment_intent_id || null,
     paidAt: row.paid_at || null,
     firstOrderId: row.first_order_id ? String(row.first_order_id) : null,
+    billingMode: row.billing_mode || null,
+    stripeSubscriptionId: row.stripe_subscription_id || null,
+    stripeCustomerId: row.stripe_customer_id || null,
+    stripePriceId: row.stripe_price_id || null,
+    currentPeriodStart: row.current_period_start || null,
+    currentPeriodEnd: row.current_period_end || null,
+    lastPaymentAt: row.last_payment_at || null,
+    nextRenewalAt: row.next_renewal_at || null,
+    paymentFailureAt: row.payment_failure_at || null,
+    paymentFailureCode: row.payment_failure_code || null,
     notes: row.notes,
     cancelledAt: row.cancelled_at,
     endedAt: row.ended_at,
@@ -334,9 +350,11 @@ async function applyAdminAssignmentOfflinePayments(
            WHEN $2::text = 'paid' THEN COALESCE(paid_at, $3::timestamptz)
            ELSE paid_at
          END,
-         activation_status = 'company_approved',
-         company_activated_at = COALESCE(company_activated_at, $3::timestamptz),
-         company_activated_by_user_id = COALESCE(company_activated_by_user_id, $4),
+         -- A11.1: admin offline payment must not bypass KYC company approval.
+         activation_status = CASE
+           WHEN activation_status = 'company_approved' THEN 'company_approved'
+           ELSE 'company_pending'
+         END,
          notes = CASE
            WHEN notes IS NULL OR btrim(notes) = '' THEN $5::text
            WHEN position($5::text in notes) > 0 THEN notes
@@ -420,7 +438,7 @@ async function assignPlanToFreelancer({ actorUserId, freelancerUserId, planId, n
         status, has_first_order, first_order_date, actual_start_date, expiry_date,
         is_current, source, payment_status, activation_status,
         paid_at, company_activated_at, company_activated_by_user_id
-      ) VALUES ($1,$2,$3,$4,$5,FALSE,NULL,NULL,NULL,TRUE,$6,$7,$8,$9,$10,$11)
+      ) VALUES ($1,$2,$3,$4,$5,FALSE,NULL,NULL,NULL,TRUE,$6,$7,$8,$9,NULL,NULL)
       RETURNING *`,
       [
         Number(freelancerUserId),
@@ -430,10 +448,9 @@ async function assignPlanToFreelancer({ actorUserId, freelancerUserId, planId, n
         SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED,
         SUBSCRIPTION_SOURCES.ADMIN,
         paymentStatus,
-        SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED,
+        // A11.1: plan assignment no longer auto company_approved — KYC review required.
+        SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_PENDING,
         planPricing.isFree ? null : paidAt,
-        paidAt,
-        actorUserId ? Number(actorUserId) : null,
       ],
     );
 
@@ -497,8 +514,15 @@ async function assignPlanToFreelancer({ actorUserId, freelancerUserId, planId, n
         activationFee: {
           recorded: feeResult.recorded === true,
           alreadyPaid: feeResult.alreadyPaid === true,
+          skipped: feeResult.skipped === true,
+          reason: feeResult.reason || null,
           amountJod: activationFeeStatus?.amountJod ?? null,
-          status: "paid_offline",
+          status:
+            feeResult.skipped === true
+              ? "not_required_disabled"
+              : feeResult.recorded === true || feeResult.alreadyPaid === true
+                ? "paid_offline"
+                : "unknown",
         },
       },
       resolvedPlan: {
@@ -684,6 +708,27 @@ async function activateCurrentSubscriptionOnFirstAcceptedOrder(
     const err = new Error("Invalid order id for subscription activation.");
     err.statusCode = 400;
     throw err;
+  }
+
+  // Marketplace-M4: start purchased_pending_start paid term on the same first-real-order
+  // event as legacy subscription activation (accept/assign/award). Soft-fails if schema missing.
+  try {
+    const marketplaceMembershipsService = require("./marketplaceMembershipsService");
+    if (typeof marketplaceMembershipsService.maybeStartMarketplaceMembershipOnFirstRealOrder === "function") {
+      await marketplaceMembershipsService.maybeStartMarketplaceMembershipOnFirstRealOrder(
+        {
+          freelancerUserId,
+          orderId: oid,
+          triggeredAt: at,
+        },
+        runner,
+      );
+    }
+  } catch (e) {
+    console.warn(
+      "[marketplace-membership] first-real-order start failed (non-blocking):",
+      e && e.message ? e.message : e,
+    );
   }
 
   const { rows } = await runner.query(
@@ -933,7 +978,13 @@ async function markFreelancerSubscriptionStripePaymentFailed(
   return null;
 }
 
-async function activateCompanyApprovalForSubscription({ actorUserId, subscriptionId }, client) {
+async function activateCompanyApprovalForSubscription({
+  actorUserId,
+  subscriptionId,
+  actorRole = null,
+  overrideReason = null,
+  skipKycGate = false,
+}, client) {
   const runner = client || pool;
   const { rows } = await runner.query(`SELECT * FROM freelancer_subscriptions WHERE id = $1 LIMIT 1 FOR UPDATE`, [
     Number(subscriptionId),
@@ -953,11 +1004,35 @@ async function activateCompanyApprovalForSubscription({ actorUserId, subscriptio
     err.statusCode = 409;
     throw err;
   }
+
+  const kyc = require("./freelancerAccountActivationKycService");
+  const gate = await kyc.assertCompanyApprovalAllowed({
+    freelancerUserId: existing.freelancer_user_id,
+    actorRole,
+    overrideReason,
+    skipKycGate,
+    client: runner,
+  });
+
+  let nextNotes = existing.notes || null;
+  if (gate.mode === "super_admin_override") {
+    const stamp = [
+      "KYC_ADMIN_OVERRIDE",
+      `by=${actorUserId != null ? String(actorUserId) : "unknown"}`,
+      `at=${new Date().toISOString()}`,
+      `reason=${gate.overrideReason}`,
+    ].join(" | ");
+    nextNotes = nextNotes && String(nextNotes).trim()
+      ? `${String(nextNotes).trim()}\n${stamp}`
+      : stamp;
+  }
+
   const { rows: updated } = await runner.query(
     `UPDATE freelancer_subscriptions
      SET activation_status = 'company_approved',
          company_activated_at = COALESCE(company_activated_at, NOW()),
          company_activated_by_user_id = COALESCE($2, company_activated_by_user_id),
+         notes = COALESCE($3, notes),
          status = CASE WHEN has_first_order THEN status ELSE 'assigned_not_started' END,
          payment_status = CASE
            WHEN payment_status = 'pending' THEN 'paid'
@@ -970,7 +1045,7 @@ async function activateCompanyApprovalForSubscription({ actorUserId, subscriptio
          updated_at = NOW()
      WHERE id = $1
      RETURNING *`,
-    [Number(subscriptionId), actorUserId ? Number(actorUserId) : null],
+    [Number(subscriptionId), actorUserId ? Number(actorUserId) : null, nextNotes],
   );
   await safeNotify(() =>
     notificationEventsService.notifySubscriptionOwner(
@@ -982,12 +1057,291 @@ async function activateCompanyApprovalForSubscription({ actorUserId, subscriptio
         message: "تمت الموافقة على الاشتراك ويمكنك البدء باستلام المشاريع.",
         priority: "high",
         dedupeKey: `subscription_company_activated_${String(updated[0].id)}`,
-        metadata: { subscriptionId: String(updated[0].id) },
+        metadata: {
+          subscriptionId: String(updated[0].id),
+          kycGateMode: gate.mode,
+        },
       },
       runner,
     ),
   );
   return mapSubscription(updated[0]);
+}
+
+/**
+ * Freelancer self-service account activation (replaces admin company approval gate).
+ * No payment/course/admin restrictions: ensures a current plan, marks company-approved,
+ * waives yearly activation fee if due, and starts the subscription period from now.
+ * Also ensures Marketplace Membership: keep existing current membership, else grant STARTER.
+ */
+async function ensureMarketplaceMembershipForSelfActivate(freelancerUserId, now = new Date()) {
+  try {
+    const activation = require("./marketplaceMembershipActivationRequestService");
+    return await activation.ensureMarketplaceMembershipAfterAccountActivation({
+      freelancerUserId,
+      actorUserId: freelancerUserId,
+      now,
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[subscriptions] marketplace ensure after self-activate failed:", err?.message || err);
+    return {
+      grantedStarter: false,
+      keptExisting: false,
+      membership: null,
+      skippedReason: "ensure_failed",
+    };
+  }
+}
+
+async function selfActivateFreelancerAccount({ freelancerUserId }, client) {
+  const uid = Number(freelancerUserId);
+  if (!Number.isInteger(uid) || uid < 1) {
+    const err = new Error("Invalid freelancer user id.");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const ownTxn = !client;
+  const runner = client || (await pool.connect());
+  try {
+    // Ensure a current plan exists before locking (uses its own connection/txn).
+    if (ownTxn) {
+      await ensureFreelancerDefaultFreePlan(uid);
+    }
+
+    if (ownTxn) await runner.query("BEGIN");
+
+    const { rows } = await runner.query(
+      `SELECT
+         fs.*,
+         p.duration_days AS plan_duration_days
+       FROM freelancer_subscriptions fs
+       JOIN plans p ON p.id = fs.plan_id
+       WHERE fs.freelancer_user_id = $1 AND fs.is_current = TRUE
+       ORDER BY fs.id DESC
+       LIMIT 1
+       FOR UPDATE`,
+      [uid],
+    );
+    const existing = rows[0];
+    if (!existing) {
+      const err = new Error("Subscription not found.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const alreadyApproved =
+      normalizeActivationStatus(existing.activation_status) ===
+      SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED;
+    const periodAlreadyStarted =
+      Boolean(existing.actual_start_date) &&
+      String(existing.status || "").toLowerCase() === SUBSCRIPTION_STATUSES.ACTIVE;
+
+    if (alreadyApproved && periodAlreadyStarted) {
+      await markActivationFeePaidOffline(
+        {
+          adminUserId: uid,
+          freelancerUserId: uid,
+          notes: "freelancer_self_activate_idempotent",
+        },
+        runner,
+      );
+      if (ownTxn) await runner.query("COMMIT");
+      bootstrapFastPathCache.delete(uid);
+      const marketplace =
+        await ensureMarketplaceMembershipForSelfActivate(uid);
+      return {
+        alreadyActive: true,
+        periodStarted: false,
+        subscription: mapSubscription(existing),
+        marketplace,
+      };
+    }
+
+    // Phase A11: immediate self-approve disabled — KYC + Super Admin review required.
+    const { createAppError } = require("../utils/AppError");
+    const {
+      ACCOUNT_ACTIVATION_KYC_ERROR_CODES,
+    } = require("../constants/freelancerAccountActivationKyc");
+    throw createAppError(
+      "تفعيل الحساب يتطلب رفع الهوية ومراجعة الإدارة.",
+      409,
+      {
+        exposeToClient: true,
+        publicCode: ACCOUNT_ACTIVATION_KYC_ERROR_CODES.SELF_ACTIVATE_DISABLED,
+      },
+    );
+  } catch (err) {
+    if (ownTxn) {
+      try {
+        await runner.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+    }
+    throw err;
+  } finally {
+    if (ownTxn) runner.release();
+  }
+}
+
+/**
+ * Phase A11 — Complete account activation after Super Admin KYC approval.
+ */
+async function activateAccountAfterKycApproval({
+  freelancerUserId,
+  actorUserId,
+  client = null,
+} = {}) {
+  const uid = Number(freelancerUserId);
+  const actor = Number(actorUserId);
+  const ownTxn = !client;
+  const runner = client || (await pool.connect());
+  try {
+    if (ownTxn) {
+      await ensureFreelancerDefaultFreePlan(uid);
+      await runner.query("BEGIN");
+    }
+
+    const { rows } = await runner.query(
+      `SELECT
+         fs.*,
+         p.duration_days AS plan_duration_days
+       FROM freelancer_subscriptions fs
+       JOIN plans p ON p.id = fs.plan_id
+       WHERE fs.freelancer_user_id = $1 AND fs.is_current = TRUE
+       ORDER BY fs.id DESC
+       LIMIT 1
+       FOR UPDATE`,
+      [uid],
+    );
+    const existing = rows[0];
+    if (!existing) {
+      const err = new Error("Subscription not found.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const alreadyApproved =
+      normalizeActivationStatus(existing.activation_status) ===
+      SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED;
+    const periodAlreadyStarted =
+      Boolean(existing.actual_start_date) &&
+      String(existing.status || "").toLowerCase() === SUBSCRIPTION_STATUSES.ACTIVE;
+
+    if (alreadyApproved && periodAlreadyStarted) {
+      if (ownTxn) await runner.query("COMMIT");
+      bootstrapFastPathCache.delete(uid);
+      const marketplace = await ensureMarketplaceMembershipForSelfActivate(uid);
+      return {
+        alreadyActive: true,
+        periodStarted: false,
+        subscription: mapSubscription(existing),
+        marketplace,
+      };
+    }
+
+    const now = new Date();
+    const durationDays = Number(existing.plan_duration_days);
+    const safeDuration =
+      Number.isFinite(durationDays) && durationDays > 0
+        ? durationDays
+        : await getPlanDurationDays(existing.plan_id, runner);
+    const startPeriod = !periodAlreadyStarted;
+    const startAt = startPeriod
+      ? now
+      : existing.actual_start_date
+        ? new Date(existing.actual_start_date)
+        : now;
+    const expiryDate = startPeriod
+      ? computeExpiry({ startDate: startAt, durationDays: safeDuration })
+      : existing.expiry_date || computeExpiry({ startDate: startAt, durationDays: safeDuration });
+
+    const { rows: updated } = await runner.query(
+      `UPDATE freelancer_subscriptions
+       SET activation_status = 'company_approved',
+           company_activated_at = COALESCE(company_activated_at, $2::timestamptz),
+           company_activated_by_user_id = COALESCE($3, company_activated_by_user_id),
+           payment_status = CASE
+             WHEN payment_status IN ('pending', 'failed', 'cancelled') THEN 'paid'
+             WHEN payment_status IS NULL OR TRIM(payment_status) = '' THEN 'not_required'
+             ELSE payment_status
+           END,
+           paid_at = CASE
+             WHEN payment_status IN ('pending', 'failed', 'cancelled')
+               OR paid_at IS NULL THEN COALESCE(paid_at, $2::timestamptz)
+             ELSE paid_at
+           END,
+           has_first_order = CASE WHEN $5::boolean THEN TRUE ELSE has_first_order END,
+           actual_start_date = CASE WHEN $5::boolean THEN $2::timestamptz ELSE actual_start_date END,
+           first_order_date = CASE
+             WHEN $5::boolean THEN COALESCE(first_order_date, $2::timestamptz)
+             ELSE first_order_date
+           END,
+           expiry_date = CASE WHEN $5::boolean THEN $4::timestamptz ELSE expiry_date END,
+           status = 'active',
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [
+        Number(existing.id),
+        now,
+        Number.isInteger(actor) ? actor : null,
+        expiryDate,
+        startPeriod,
+      ],
+    );
+
+    const row = updated[0];
+    await markActivationFeePaidOffline(
+      {
+        adminUserId: Number.isInteger(actor) ? actor : uid,
+        freelancerUserId: uid,
+        notes: "freelancer_kyc_activation_approved",
+        paidAt: now,
+      },
+      runner,
+    );
+
+    if (ownTxn) await runner.query("COMMIT");
+    bootstrapFastPathCache.delete(uid);
+
+    await safeNotify(() =>
+      notificationEventsService.notifySubscriptionOwner(
+        {
+          subscription: row,
+          actorUserId: Number.isInteger(actor) ? actor : uid,
+          type: "subscription.company.activated",
+          title: "تم تفعيل حسابك",
+          message: "تمت الموافقة على طلب تفعيل حسابك وبدأ احتساب مدة الاشتراك.",
+          priority: "high",
+          dedupeKey: `subscription_kyc_activated_${String(row.id)}`,
+          metadata: { subscriptionId: String(row.id), source: "kyc_admin_approve" },
+        },
+        pool,
+      ),
+    );
+
+    const marketplace = await ensureMarketplaceMembershipForSelfActivate(uid, now);
+    return {
+      alreadyActive: false,
+      periodStarted: Boolean(startPeriod),
+      subscription: mapSubscription(row),
+      marketplace,
+    };
+  } catch (err) {
+    if (ownTxn) {
+      try {
+        await runner.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+    }
+    throw err;
+  } finally {
+    if (ownTxn) runner.release();
+  }
 }
 
 async function recalculateSubscriptionDates({ subscriptionId }, client) {
@@ -1367,9 +1721,18 @@ function mapActivationQueueSubscription(row) {
 }
 
 /**
- * Activation dashboard queue: company-pending activations + dashboard admin-assigned follow-up.
+ * Escape `%`, `_`, and `\` for PostgreSQL ILIKE … ESCAPE '\' patterns.
+ * Literal wildcards in the user query must not broaden the match unintentionally.
  */
-async function listActivationQueueSubscriptions({ page = 1, limit = 20 } = {}) {
+function escapeIlikePattern(raw) {
+  return String(raw).replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
+/**
+ * Activation dashboard queue: company-pending activations + dashboard admin-assigned follow-up.
+ * Optional `search` filters freelancers by name parts, full name, or email within the same queue WHERE.
+ */
+async function listActivationQueueSubscriptions({ page = 1, limit = 20, search = null } = {}) {
   const { enrichSubscriptionsWithPaymentCountry } = require("./stripeSubscriptionCountryService");
 
   const pg = Math.max(1, Number(page) || 1);
@@ -1381,11 +1744,34 @@ async function listActivationQueueSubscriptions({ page = 1, limit = 20 } = {}) {
      LEFT JOIN plans p ON p.id = fs.plan_id
      LEFT JOIN users ab ON ab.id = fs.assigned_by_user_id`;
 
+  const values = [];
+  let whereSql = ACTIVATION_QUEUE_WHERE_SQL;
+
+  const searchTerm = search != null ? String(search).trim() : "";
+  if (searchTerm) {
+    const pattern = `%${escapeIlikePattern(searchTerm)}%`;
+    values.push(pattern);
+    const p = `$${values.length}`;
+    // ILIKE is case-insensitive for Latin; Arabic is matched as stored. ESCAPE keeps %/_ literal.
+    whereSql = `${ACTIVATION_QUEUE_WHERE_SQL}
+  AND (
+    u.first_name ILIKE ${p} ESCAPE '\\'
+    OR u.father_name ILIKE ${p} ESCAPE '\\'
+    OR u.family_name ILIKE ${p} ESCAPE '\\'
+    OR u.email ILIKE ${p} ESCAPE '\\'
+    OR CONCAT_WS(' ', u.first_name, u.father_name, u.family_name) ILIKE ${p} ESCAPE '\\'
+  )`;
+  }
+
   const countRes = await pool.query(
-    `SELECT COUNT(*)::int AS total ${fromJoin} WHERE ${ACTIVATION_QUEUE_WHERE_SQL}`,
+    `SELECT COUNT(*)::int AS total ${fromJoin} WHERE ${whereSql}`,
+    values,
   );
   const total = countRes.rows[0]?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / lim));
+
+  const limitParam = values.length + 1;
+  const offsetParam = values.length + 2;
 
   const { rows } = await pool.query(
     `SELECT
@@ -1406,10 +1792,10 @@ async function listActivationQueueSubscriptions({ page = 1, limit = 20 } = {}) {
        ab.family_name AS assigned_by_family_name,
        ab.email AS assigned_by_email
      ${fromJoin}
-     WHERE ${ACTIVATION_QUEUE_WHERE_SQL}
+     WHERE ${whereSql}
      ORDER BY ${ACTIVATION_QUEUE_ORDER_SQL}
-     LIMIT $1 OFFSET $2`,
-    [lim, offset],
+     LIMIT $${limitParam} OFFSET $${offsetParam}`,
+    [...values, lim, offset],
   );
 
   const mapped = rows.map(mapActivationQueueSubscription).filter(Boolean);
@@ -1553,6 +1939,18 @@ function applyActivationFeeEligibilityGate(eligibility, feeStatus) {
 }
 
 async function canFreelancerTakeOrders(freelancerUserId) {
+  const hold = await getActiveMarketplaceBlockingHold(freelancerUserId);
+  if (hold) {
+    const feeStatus = await getActivationFeeStatus(freelancerUserId);
+    return {
+      eligible: false,
+      reason: "account_hold_payment_failed",
+      hold,
+      freezeMessage: RENEWAL_FAILED_COPY.ar,
+      freezeMessageEn: RENEWAL_FAILED_COPY.en,
+      activationFeeStatus: feeStatus,
+    };
+  }
   const sub = await getCurrentSubscriptionForFreelancer(freelancerUserId);
   const base = evaluateFreelancerTakeOrdersEligibility(sub);
   const feeStatus = await getActivationFeeStatus(freelancerUserId);
@@ -1861,6 +2259,67 @@ async function cleanupAbandonedStripePendingSubscriptionsWithFreePlanFallback({
   };
 }
 
+async function adminClearPaymentFailureHold({
+  actorUserId,
+  freelancerUserId,
+  reason = null,
+}) {
+  const uid = Number(freelancerUserId);
+  const actor = Number(actorUserId);
+  if (!Number.isInteger(uid) || uid < 1) {
+    const err = new Error("Invalid freelancer user id.");
+    err.statusCode = 400;
+    throw err;
+  }
+  if (!Number.isInteger(actor) || actor < 1) {
+    const err = new Error("Invalid admin user id.");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const holds = await clearPaymentFailureHoldsForFreelancer(
+      {
+        freelancerUserId: uid,
+        clearSource: CLEAR_SOURCE.ADMIN,
+        actorAdminId: actor,
+        clearReason: reason || "Admin manual reactivation (does not fabricate Stripe payment)",
+      },
+      client,
+    );
+
+    // Restore payment_status only when Stripe later confirms payment — admin clears hold only.
+    // Optionally mark notes on current recurring sub.
+    await client.query(
+      `UPDATE freelancer_subscriptions
+       SET notes = CONCAT(COALESCE(notes, ''), CASE WHEN notes IS NULL OR notes = '' THEN '' ELSE E'\n' END,
+                          $2::text),
+           updated_at = NOW()
+       WHERE freelancer_user_id = $1
+         AND is_current = TRUE
+         AND billing_mode = 'recurring_stripe'`,
+      [
+        uid,
+        `Admin cleared payment-failure marketplace hold at ${new Date().toISOString()} by user ${actor}` +
+          (reason ? `: ${String(reason).slice(0, 500)}` : ""),
+      ],
+    );
+
+    await client.query("COMMIT");
+    return {
+      clearedHolds: holds,
+      note: "Marketplace hold cleared. This does not mark a Stripe invoice as paid.",
+    };
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 /** @deprecated Real pool access is gated by plan value range in planOrderValueEligibility only. */
 async function assertFreelancerMayAccessRealPoolOrders(_freelancerUserId) {}
 
@@ -1871,6 +2330,7 @@ module.exports = {
   SUBSCRIPTION_ACTIVATION_STATUSES,
   ADMIN_ASSIGNMENT_OFFLINE_PAYMENT_NOTE,
   ADMIN_ASSIGNMENT_ACTIVATION_FEE_NOTE,
+  escapeIlikePattern,
   mapSubscription,
   getFreelancerIdentitySnapshot,
   assignPlanToFreelancer,
@@ -1887,7 +2347,10 @@ module.exports = {
   fulfillFreelancerSubscriptionStripePayment,
   markFreelancerSubscriptionStripePaymentPaid,
   markFreelancerSubscriptionStripePaymentFailed,
+  endCurrentSubscription,
   activateCompanyApprovalForSubscription,
+  selfActivateFreelancerAccount,
+  activateAccountAfterKycApproval,
   canFreelancerTakeOrders,
   applyActivationFeeEligibilityGate,
   evaluateFreelancerTakeOrdersEligibility,
@@ -1900,5 +2363,6 @@ module.exports = {
   isFreelancerOnFreePlan,
   assertFreelancerMayAccessRealPoolOrders,
   ensureFreePlanInFakeSettingsPlans,
+  adminClearPaymentFailureHold,
 };
 

@@ -63,10 +63,11 @@ Authorization: <staff with retry_release permission>
 
 ## Duplicate-execution protection
 
-1. Tick acquisition uses **session** advisory lock `pg_try_advisory_lock(913847201)` held for the full tick (due-batch selection **and** `processOneBatch` work). Unlock happens in `finally` (and on pool client release as a safety net).
+1. Tick acquisition uses **session** advisory lock `pg_try_advisory_lock(913847201)` held for the full tick (due-batch selection **and** `processOneBatch` work). Unlock runs in `finally` via `releaseReleaseLock`, and the client is returned to the pool only after a confirmed unlock. If unlock fails, the client is **destroyed** (`client.release(Error)`) instead of being reused.
 2. Due rows use `FOR UPDATE … SKIP LOCKED`.
 3. Each batch is claimed with a conditional `UPDATE … SET status = 'PROCESSING' WHERE status IN ('SCHEDULED','FAILED','PARTIALLY_RELEASED')`.
 4. Per-order release is idempotent (`released_order_id` / existing live order reuse), success logs are written once, and migration **116** enforces a unique index on `orders.institutional_stored_order_id`.
+5. There is **no** `pool.on("release")` unlock safety net — that pattern races with the next checkout under load.
 
 ### What advisory locks do **not** protect against
 

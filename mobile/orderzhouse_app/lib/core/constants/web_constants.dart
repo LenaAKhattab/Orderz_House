@@ -10,6 +10,14 @@ class WebConstants {
   WebConstants._();
 
   static const freelancerPlansPath = '/dashboard/freelancer/plans';
+  static const freelancerArticlesPath = '/dashboard/freelancer/articles';
+
+  /// Super Admin KYC / subscription activation queue (web-only review).
+  static const superAdminSubscriptionsActivationPath =
+      '/dashboard/super-admin/subscriptions/activation';
+
+  /// Super Admin internal orders (web-only; no mobile action page).
+  static const superAdminInternalOrdersPath = '/dashboard/super-admin/orders';
 
   static String get baseUrl {
     final dotEnv = !kReleaseMode && dotenv.isInitialized
@@ -34,6 +42,18 @@ class WebConstants {
   }
 
   static String get freelancerPlansUrl => buildWebPath(freelancerPlansPath);
+
+  /// Web Mini Articles hub (Bildazo writer activate / link flow lives here).
+  static String get freelancerArticlesUrl => buildWebPath(freelancerArticlesPath);
+
+  /// Handoff for «تفعيل حساب الكاتب على Bildazo» — same safe web articles hub.
+  static String get freelancerBildazoWriterActivateUrl => freelancerArticlesUrl;
+
+  static String get superAdminSubscriptionsActivationUrl =>
+      buildWebPath(superAdminSubscriptionsActivationPath);
+
+  static String get superAdminInternalOrdersUrl =>
+      buildWebPath(superAdminInternalOrdersPath);
 
   /// Joins [baseUrl] with [path] without double slashes (except after scheme).
   static String buildWebPath(String path) {

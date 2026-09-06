@@ -18,5 +18,7 @@ router.get(
 );
 router.post("/notifications/:id/read", notificationsController.readNotification);
 router.post("/notifications/read-all", notificationsController.readAllNotifications);
+router.delete("/notifications/:id", notificationsController.deleteNotification);
+router.post("/notifications/bulk-delete", notificationsController.deleteNotificationsBulk);
 
 module.exports = router;

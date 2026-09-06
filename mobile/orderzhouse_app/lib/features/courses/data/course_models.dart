@@ -1,4 +1,5 @@
 import '../../../core/network/json_helpers.dart';
+import 'course_access.dart';
 
 class CourseProgress {
   const CourseProgress({
@@ -35,6 +36,14 @@ class FreelancerCourseSummary {
     this.courseCompletedAt,
     this.accessMode = 'assigned',
     this.progress = const CourseProgress(totalLessons: 0, completedLessons: 0, percentage: 0),
+    this.requiresPaidMembership = false,
+    this.isLocked = false,
+    this.isLockedByPlan = false,
+    this.canAccess = true,
+    this.requiredTierCode,
+    this.upgradeRequired = false,
+    this.lockCopyAr = const CourseLockCopyAr(),
+    this.upgradeRoute,
   });
 
   final String id;
@@ -45,11 +54,25 @@ class FreelancerCourseSummary {
   final DateTime? courseCompletedAt;
   final String accessMode;
   final CourseProgress progress;
+  final bool requiresPaidMembership;
+  final bool isLocked;
+  final bool isLockedByPlan;
+  final bool canAccess;
+  final String? requiredTierCode;
+  final bool upgradeRequired;
+  final CourseLockCopyAr lockCopyAr;
+  final String? upgradeRoute;
+
+  /// Locked teasers are visible but not accessible content.
+  bool get isLockedByPlanGate => isLockedByPlan || isLocked || !canAccess;
+
+  bool get isAccessible => !isLockedByPlanGate;
 
   bool get isCompleted =>
       courseCompletedAt != null || (!isTestingEnabled && progress.isComplete && progress.totalLessons > 0);
 
   String get statusLabelAr {
+    if (isLockedByPlanGate) return lockCopyAr.badgeOrDefault;
     if (isCompleted) return 'مكتملة';
     if (progress.completedLessons > 0) return 'قيد التقدّم';
     return 'لم تبدأ';
@@ -58,6 +81,24 @@ class FreelancerCourseSummary {
   factory FreelancerCourseSummary.fromJson(Map<String, dynamic> json) {
     final cover = readString(json, 'coverImage', 'cover_image').trim();
     final completedRaw = readMapField<dynamic>(json, 'courseCompletedAt', 'course_completed_at');
+    final isLocked = readBool(json, 'isLocked', 'is_locked');
+    final isLockedByPlan =
+        json.containsKey('isLockedByPlan') || json.containsKey('is_locked_by_plan')
+            ? readBool(json, 'isLockedByPlan', 'is_locked_by_plan')
+            : isLocked;
+    final hasCanAccess =
+        json.containsKey('canAccess') || json.containsKey('can_access');
+    final canAccess = hasCanAccess
+        ? readBool(json, 'canAccess', 'can_access', fallback: true)
+        : !isLockedByPlan && !isLocked;
+    final requiredTierCode =
+        _nullIfEmpty(readString(json, 'requiredTierCode', 'required_tier_code'));
+    final upgradeRequired = readBool(json, 'upgradeRequired', 'upgrade_required');
+    final lockRaw = json['lockCopyAr'] ??
+        json['lock_copy_ar'] ??
+        json['lockCopy'] ??
+        json['lock_copy'];
+    final upgrade = _nullIfEmpty(readString(json, 'upgradeRoute', 'upgrade_route'));
     return FreelancerCourseSummary(
       id: readString(json, 'id', 'id'),
       title: readString(json, 'title', 'title'),
@@ -69,8 +110,27 @@ class FreelancerCourseSummary {
       progress: CourseProgress.fromJson(
         json['progress'] is Map ? Map<String, dynamic>.from(json['progress'] as Map) : null,
       ),
+      requiresPaidMembership: readBool(json, 'requiresPaidMembership', 'requires_paid_membership'),
+      isLocked: isLocked,
+      isLockedByPlan: isLockedByPlan,
+      canAccess: canAccess,
+      requiredTierCode: requiredTierCode,
+      upgradeRequired: upgradeRequired,
+      lockCopyAr: CourseLockCopyAr.fromJson(lockRaw),
+      upgradeRoute: upgrade,
     );
   }
+}
+
+/// Courses the freelancer can open/start (excludes locked teasers).
+List<FreelancerCourseSummary> accessibleFreelancerCourses(
+  Iterable<FreelancerCourseSummary> courses,
+) {
+  return courses.where((c) => c.isAccessible).toList(growable: false);
+}
+
+int countAccessibleFreelancerCourses(Iterable<FreelancerCourseSummary> courses) {
+  return courses.where((c) => c.isAccessible).length;
 }
 
 class CourseLesson {

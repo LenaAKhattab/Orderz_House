@@ -13,6 +13,7 @@ const plansGuard = [...staffRoles, requirePermission(PERMISSION_KEYS.PLANS)];
 router.get("/plans", ...plansGuard, listPlansValidators, validateRequest, plansController.listAdminPlans);
 router.post("/plans", ...plansGuard, createPlanValidators, validateRequest, plansController.createPlan);
 router.patch("/plans/:id", ...plansGuard, updatePlanValidators, validateRequest, plansController.updatePlan);
+router.patch("/plans/:id/archive", ...plansGuard, planIdParam, validateRequest, plansController.deletePlan);
 router.delete("/plans/:id", ...plansGuard, planIdParam, validateRequest, plansController.deletePlan);
 
 module.exports = router;

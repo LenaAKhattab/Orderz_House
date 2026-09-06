@@ -1,0 +1,262 @@
+.pantry-page {
+  padding: 1rem 1.25rem 2rem;
+  max-width: 1200px;
+}
+
+.pantry-page__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.pantry-page__header h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.5rem;
+}
+
+.pantry-page__header p,
+.muted {
+  color: #667085;
+  margin: 0;
+}
+
+.pantry-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.pantry-stats__card {
+  background: #f9fafb;
+  border: 1px solid #eaecf0;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pantry-stats__card strong {
+  font-size: 1.35rem;
+}
+
+.pantry-table-wrap {
+  overflow: auto;
+  border: 1px solid #eaecf0;
+  border-radius: 12px;
+}
+
+.pantry-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.pantry-table th,
+.pantry-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #f2f4f7;
+  text-align: right;
+  vertical-align: top;
+}
+
+.pantry-table th {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+.pantry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.pantry-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 40;
+}
+
+.pantry-modal__card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.25rem;
+  width: min(520px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pantry-modal__card--wide {
+  width: min(720px, 100%);
+}
+
+.pantry-modal__card label,
+.pantry-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.pantry-modal__card input,
+.pantry-modal__card textarea,
+.pantry-form input,
+.pantry-form textarea {
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+}
+
+.pantry-check {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem !important;
+}
+
+.pantry-bid-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pantry-bid-list li {
+  border: 1px solid #eaecf0;
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.pantry-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.85rem;
+}
+
+.pantry-card {
+  border: 1px solid #eaecf0;
+  border-radius: 12px;
+  padding: 1rem;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pantry-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.btn-sm {
+  font-size: 0.85rem;
+  padding: 0.3rem 0.65rem;
+}
+
+.pantry-banner {
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.92rem;
+}
+
+.pantry-banner--info {
+  background: #f0f9ff;
+  border: 1px solid #7dd3fc;
+  color: #075985;
+}
+
+.pantry-banner--muted {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.pantry-apply-block {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.pantry-meta-line {
+  font-size: 0.88rem;
+  color: #475569;
+}
+
+.pantry-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid #eaecf0;
+}
+
+.pantry-form-section h3 {
+  margin: 0.25rem 0 0;
+  font-size: 1rem;
+}
+
+.pantry-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.pantry-type-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pantry-type-row button {
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+}
+
+.pantry-type-row button.is-active {
+  background: #101828;
+  color: #fff;
+  border-color: #101828;
+}
+
+.pantry-field-error {
+  color: #b42318;
+  font-size: 0.82rem;
+}
+
+.pantry-modal__card select {
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+  background: #fff;
+}
+
+@media (max-width: 640px) {
+  .pantry-form-row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -2,6 +2,7 @@ import { HOME_HERO_METRICS_ORDER } from "../../constants/homeAnalyticsMetrics";
 
 import { HomeAnalyticsMetricLabelRow } from "../analytics/HomeAnalyticsMetricInfo";
 import HeroStatValue from "./HeroStatValue";
+import { shouldRenderHeroStatsSection } from "./heroHomeStatUtils";
 import { useTranslation } from "../../i18n/LanguageProvider";
 
 import "../analytics/home-analytics-metric-info.css";
@@ -59,6 +60,7 @@ function mapHint(t, payload, key) {
 /**
 
  * Hero copy column: platform metrics (minimal layout, no cards).
+ * Hidden entirely when the public stats request fails or order counts are invalid.
 
  * @param {{ statsPayload: object | null }} p
 
@@ -67,6 +69,10 @@ function mapHint(t, payload, key) {
 export default function HeroAnalyticsStrip({ statsPayload }) {
 
   const { t, dir } = useTranslation();
+
+  if (!shouldRenderHeroStatsSection(statsPayload)) {
+    return null;
+  }
 
   const showGlobalHint =
 
@@ -85,6 +91,8 @@ export default function HeroAnalyticsStrip({ statsPayload }) {
       role="group"
 
       aria-label={t("home.metrics.statsAria")}
+
+      data-testid="home-hero-stats"
 
     >
 

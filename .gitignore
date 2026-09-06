@@ -6,14 +6,27 @@ frontend/node_modules/
 # Environment files (never commit secrets)
 .env
 .env.local
+.env.staging
 .env.development
 .env.production
 *.env.local
 backend/.env
+backend/.env.local
+backend/.env.staging
+backend/.env.sandbox
 frontend/.env
 frontend/.env.local
 frontend/.env.production
 frontend/.env.development
+# Keep example templates trackable
+!.env.example
+!.env.*.example
+!backend/.env.example
+!backend/.env.*.example
+!frontend/.env.example
+!frontend/.env.*.example
+!mobile/**/.env.example
+!mobile/**/.env.*.example
 
 # Logs
 npm-debug.log*
@@ -22,12 +35,33 @@ yarn-error.log*
 
 # Build artifacts
 frontend/dist/
+coverage/
+**/coverage/
+
+# Local agent/test scratch (logs, screenshots, QA reports — never commit)
+backend/.tmp/
+backend/.tmp/**
 
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local private uploads (orders, KYC ID images — never commit)
+backend/uploads/
+backend/uploads/**
+
+# Mobile release artifacts (never commit binaries)
+*.apk
+*.aab
+*.ipa
+*.apk.sha1
+
 backend/google/service-account.json
 backend/secrets/
+# Firebase / GCP service accounts (never commit — any path, any double .json typo)
+firebase-service-account*.json
+**/firebase-service-account*.json
+**/serviceAccount*.json
 backend/**/firebase-service-account*.json
 backend/**/serviceAccount*.json
 backend/data/translation-cache.json

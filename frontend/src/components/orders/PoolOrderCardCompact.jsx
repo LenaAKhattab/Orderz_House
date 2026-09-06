@@ -1,10 +1,6 @@
 import { useMemo } from "react";
 
-function formatMoney(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
-}
+import { JodMoneyDisplay } from "../money/JodMoneyDisplay";
 
 function typeLabel(projectType) {
   if (projectType === "fixed") return "Fixed";
@@ -29,11 +25,6 @@ export default function PoolOrderCardCompact({
 }) {
   const pricedBidding = useMemo(() => isPricedBiddingOrder(order), [order]);
   const typeText = typeLabel(order?.projectType);
-  const priceText = pricedBidding
-    ? `${formatMoney(order.bidBudgetMin)} JOD - ${formatMoney(order.bidBudgetMax)} JOD`
-    : order?.projectType === "bidding"
-      ? "—"
-      : `${formatMoney(order?.budget)} JOD`;
   const description = summaryText(order?.description);
 
   return (
@@ -53,8 +44,14 @@ export default function PoolOrderCardCompact({
         <h3 className="oh-pool-card__title oh-order-card__title">{order?.title || "—"}</h3>
         <p className="oh-order-card__summary">{description}</p>
         <div className="oh-order-card__meta-row" aria-label="order type and price">
-          <span className="oh-order-card__price" dir="ltr">
-            {priceText}
+          <span className="oh-order-card__price">
+            {pricedBidding ? (
+              <JodMoneyDisplay amount={order.bidBudgetMin} amountMax={order.bidBudgetMax} compact />
+            ) : order?.projectType === "bidding" ? (
+              "—"
+            ) : (
+              <JodMoneyDisplay amount={order?.budget} compact />
+            )}
           </span>
           <span className="oh-order-card__type">{typeText}</span>
         </div>

@@ -1,4 +1,3 @@
-import "../orders/order-details/order-details-page.css";
 export { AuthRouteSkeleton } from "./AuthRouteSkeleton";
 
 /**
@@ -295,7 +294,7 @@ export function PlanCardSkeleton({ featured = false }) {
   );
 }
 
-export function PlanCardsRowSkeleton({ count = 5, className = "" }) {
+export function PlanCardsRowSkeleton({ count = 6, className = "" }) {
   return (
     <div
       className={["pricing__grid", className].filter(Boolean).join(" ")}

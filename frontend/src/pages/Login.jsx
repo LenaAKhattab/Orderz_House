@@ -6,8 +6,8 @@ import * as tw from "../components/auth/authTw";
 import Button from "../components/ui/Button";
 import { useToast } from "../components/ui/toastContext";
 import { useAuth } from "../context/useAuth";
-import { canRoleAccessPath, getDashboardPath, ROLE } from "../constants/authRoutes";
-import { getFirstAccessibleDashboardPath } from "../constants/dashboardPermissions";
+import { canRoleAccessPath, getProblemsSuggestionsPathForRole, LOGIN_PROBLEMS_SUGGESTIONS_INTENT } from "../constants/authRoutes";
+import { getPostAuthHomePath } from "../constants/dashboardPermissions";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { getAuthApiErrorMessage } from "../utils/apiErrorMessage";
 import {
@@ -52,7 +52,12 @@ const Login = () => {
     const stripState = () => {
       navigate(location.pathname, {
         replace: true,
-        state: location.state?.from ? { from: location.state.from } : {},
+        state: {
+          ...(location.state?.from ? { from: location.state.from } : {}),
+          ...(location.state?.[LOGIN_PROBLEMS_SUGGESTIONS_INTENT] === true
+            ? { [LOGIN_PROBLEMS_SUGGESTIONS_INTENT]: true }
+            : {}),
+        },
       });
     };
 
@@ -77,7 +82,7 @@ const Login = () => {
     if (pushLoginRouteMessageToast(success, text, t)) {
       stripState();
     }
-  }, [location.key, location.pathname, location.state?.authToast, location.state?.message, location.state?.from, navigationType, navigate, success, t]);
+  }, [location.key, location.pathname, location.state?.authToast, location.state?.message, location.state?.from, location.state?.[LOGIN_PROBLEMS_SUGGESTIONS_INTENT], navigationType, navigate, success, t]);
   const visualContent = {
     title: t("auth.login.visualTitle"),
     description: t("auth.login.visualDesc"),
@@ -97,9 +102,16 @@ const Login = () => {
       success({ title: t("auth.login.successTitle"), message: t("auth.login.successMessage") });
       const from = location.state?.from?.pathname;
       const role = user?.primaryRole || user?.role;
-      const defaultDashboard =
-        role === ROLE.ADMIN ? getFirstAccessibleDashboardPath(user) : getDashboardPath(role);
-      const target = from && canRoleAccessPath(from, role) ? from : defaultDashboard;
+      const defaultDashboard = getPostAuthHomePath(user);
+      let target = defaultDashboard;
+      if (from && canRoleAccessPath(from, role)) {
+        target = from;
+      } else if (location.state?.[LOGIN_PROBLEMS_SUGGESTIONS_INTENT] === true) {
+        const feedbackPath = getProblemsSuggestionsPathForRole(role);
+        if (feedbackPath && canRoleAccessPath(feedbackPath, role)) {
+          target = feedbackPath;
+        }
+      }
       navigate(target, { replace: true });
     } catch (err) {
       const msg = loginErrorMessage(err, t);

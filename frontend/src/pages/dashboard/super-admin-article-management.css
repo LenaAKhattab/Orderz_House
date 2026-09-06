@@ -1,0 +1,86 @@
+.oh-am-subtitle {
+  margin: 0 0 1rem;
+  opacity: 0.9;
+  line-height: 1.6;
+  max-width: 42rem;
+}
+
+.oh-am-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.oh-am-summary-card {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+  background: #fff;
+}
+
+.oh-am-summary-label {
+  font-size: 0.8rem;
+  opacity: 0.75;
+  margin-bottom: 0.35rem;
+}
+
+.oh-am-summary-value {
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.oh-am-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.oh-am-tab {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.oh-am-tab--active {
+  background: var(--oh-primary, #0f766e);
+  color: #fff;
+  border-color: transparent;
+}
+
+.oh-am-campaign label {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 24rem;
+  font-weight: 600;
+}
+
+.oh-am-campaign select {
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.oh-am-helper {
+  margin: 0 0 0.85rem;
+  opacity: 0.85;
+  line-height: 1.5;
+  font-size: 0.92rem;
+}
+
+.oh-am-advanced {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.oh-am-advanced summary {
+  cursor: pointer;
+  font-weight: 700;
+}

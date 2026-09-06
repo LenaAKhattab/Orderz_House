@@ -24,6 +24,14 @@ export function getRetryAfterSeconds(err) {
  * User-facing message for create-order failures. Prefer API Arabic message; no auto-retry.
  */
 export function getOrderCreateErrorMessage(err) {
+  const code = err?.response?.data?.code;
+  if (err?.response?.status === 409 && (code === "PRICING_CHANGED" || code === "PRICING_MISMATCH")) {
+    const fromApi = err?.response?.data?.message;
+    if (typeof fromApi === "string" && fromApi.trim() && !looksTechnicalOrUnsafe(fromApi.trim())) {
+      return fromApi.trim();
+    }
+    return "تغير السعر المعتمد. حدّث الصفحة وراجع المبلغ بالدينار الأردني قبل إعادة الإرسال.";
+  }
   if (isRateLimitedError(err)) {
     const fromApi = err?.response?.data?.message;
     if (typeof fromApi === "string" && fromApi.trim() && !looksTechnicalOrUnsafe(fromApi.trim())) {
@@ -46,6 +54,7 @@ export function isEmailAlreadyRegisteredError(err) {
 
 /** True when axios aborted the request (client timeout). */
 export function isAxiosTimeoutError(err) {
+  if (isAxiosCanceledError(err)) return false;
   if (err?.code === "ECONNABORTED") return true;
   const msg = String(err?.message || "");
   return /timeout/i.test(msg) || /exceeded/i.test(msg);
@@ -57,6 +66,45 @@ export function isAxiosCanceledError(err) {
   if (err.code === "ERR_CANCELED" || err.name === "CanceledError" || err.name === "AbortError") return true;
   if (typeof err.message === "string" && /canceled|cancelled|aborted/i.test(err.message)) return true;
   return false;
+}
+
+/**
+ * True transport failure with no usable HTTP response (CORS block, offline, DNS, TLS, refused).
+ * Never true when `err.response` exists — HTTP 4xx/5xx must use status-specific UX.
+ */
+export function isAxiosNetworkError(err) {
+  if (!err || err.response != null) return false;
+  if (isAxiosCanceledError(err)) return false;
+  if (isAxiosTimeoutError(err)) return false;
+  if (err.code === "ERR_NETWORK") return true;
+  const msg = String(err.message || "");
+  return /Network Error/i.test(msg) || /\bNetwork\b/i.test(msg);
+}
+
+/** Dev-only technical classification for console / support — never shown to end users. */
+export function getAxiosErrorTechnicalKind(err) {
+  if (!err) return "unknown";
+  if (isAxiosCanceledError(err)) return "canceled";
+  if (isAxiosTimeoutError(err)) return "timeout";
+  if (err.response?.status != null) return `http_${err.response.status}`;
+  if (isAxiosNetworkError(err)) return "network_no_response";
+  return "unknown";
+}
+
+function logDevApiErrorContext(err) {
+  if (!import.meta.env?.DEV) return;
+  try {
+    // eslint-disable-next-line no-console
+    console.warn("[apiError]", {
+      kind: getAxiosErrorTechnicalKind(err),
+      code: err?.code || null,
+      status: err?.response?.status ?? null,
+      apiCode: err?.response?.data?.code ?? null,
+      message: err?.message || null,
+    });
+  } catch {
+    /* ignore */
+  }
 }
 
 /** True when the OTP row exists but the verification email could not be sent. */
@@ -73,7 +121,11 @@ export function isOtpEmailSendError(err) {
  * @param {string} fallbackKey e.g. "auth.login.error"
  */
 export function getAuthApiErrorMessage(err, t, fallbackKey) {
+  logDevApiErrorContext(err);
   if (isAxiosTimeoutError(err)) {
+    if (fallbackKey === "auth.login.error") {
+      return t("auth.errors.loginTimeout");
+    }
     return t("auth.errors.requestTimeout");
   }
   if (isOtpEmailSendError(err)) {
@@ -83,7 +135,7 @@ export function getAuthApiErrorMessage(err, t, fallbackKey) {
     }
     return t("auth.errors.otpEmailFailed");
   }
-  if (err?.message && String(err.message).includes("Network")) {
+  if (isAxiosNetworkError(err)) {
     return t("auth.errors.network");
   }
   return getSafeApiErrorMessage(err, t(fallbackKey));
@@ -98,8 +150,18 @@ export function getSafeApiErrorMessage(err, fallback = DEFAULT_GENERIC_AR) {
     return "استغرق الطلب وقتاً طويلاً. تحقق من الاتصال وحاول مجدداً.";
   }
 
-  if (err?.message && String(err.message).includes("Network")) {
+  if (isAxiosNetworkError(err)) {
     return "تعذر الاتصال بالخادم. تحقق من الاتصال وحاول مجدداً.";
+  }
+
+  const code = err?.response?.data?.code;
+  if (
+    code === "WORK_TOKENS_DEPRECATED" ||
+    code === "WORK_TOKENS_ENGINE_DEPRECATED" ||
+    code === "VERIFICATION_WORK_TOKEN_REWARDS_DEPRECATED" ||
+    code === "PRIORITY_BIDDING_ENGINE_DEPRECATED"
+  ) {
+    return "هذا الإجراء غير متاح.";
   }
 
   const msg = err?.response?.data?.message;
@@ -116,7 +178,7 @@ export function getSafeApiErrorMessage(err, fallback = DEFAULT_GENERIC_AR) {
 function looksTechnicalOrUnsafe(t) {
   const lower = t.toLowerCase();
   if (
-    /postgres|error:|severity|syntax|relation |column |violates|deadlock|neon|stripe|resend|sql|ECONNREFUSED|ETIMEDOUT|request failed with status|duplicate key|npm run|\.sql/i.test(
+    /postgres|error:|constraint|syntax|relation |column |violates|deadlock|neon|stripe|resend|sql|ECONNREFUSED|ETIMEDOUT|request failed with status|duplicate key|npm run|\.sql|bad gateway|service unavailable|internal server error|cloudflare/i.test(
       lower,
     )
   ) {

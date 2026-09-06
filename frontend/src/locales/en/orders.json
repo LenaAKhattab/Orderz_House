@@ -82,7 +82,18 @@
     "submitShort": "Submit offer",
     "submitting": "Sending...",
     "submitted": "Offer sent",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "applicationCostLabel": "Application cost:",
+    "applicationCostOne": "1 Bid",
+    "applicationCostPriority": "1 Bid + 1 Priority Use",
+    "availableBidsLabel": "Available Bids:",
+    "remainingPriorityUsesLabel": "Remaining Priority Uses:",
+    "priorityBoostLabel": "Priority Bid",
+    "priorityBoostHelp": "Highlights your proposal for the Client. Costs 1 Bid + 1 Priority Use (not 2 Bids).",
+    "insufficientBids": "Not enough Bids to apply.",
+    "insufficientPriorityUses": "Not enough Priority Uses.",
+    "quoteLoading": "Checking...",
+    "priorityBadge": "Priority"
   },
   "row": {
     "budget": "Budget",

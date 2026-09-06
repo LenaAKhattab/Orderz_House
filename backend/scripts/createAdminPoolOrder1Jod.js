@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Create one admin internal pool order with a fixed budget (default 1 JOD).
  *
  * Usage (from backend/):
@@ -9,6 +9,9 @@
 const path = require("path");
 
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+
+const { guardQaOrSeed } = require("./lib/assertScriptDatabaseAllowed");
+guardQaOrSeed(require("path").basename(__filename));
 
 const ordersService = require("../src/services/ordersService");
 const { pool } = require("../src/config/db");
@@ -49,9 +52,9 @@ async function main() {
     actorUserId: Number(admins[0].id),
     actorRole,
     payload: {
-      title: `طلب تجريبي — ${budget} دينار`,
+      title: `Ø·Ù„Ø¨ ØªØ¬Ø±ÙŠØ¨ÙŠ â€” ${budget} Ø¯ÙŠÙ†Ø§Ø±`,
       description:
-        `طلب داخلي من الإدارة بسعر ${budget} د.أ لاختبار المعرض وقفل الباقة (خارج نطاق معظم الباقات).`,
+        `Ø·Ù„Ø¨ Ø¯Ø§Ø®Ù„ÙŠ Ù…Ù† Ø§Ù„Ø¥Ø¯Ø§Ø±Ø© Ø¨Ø³Ø¹Ø± ${budget} Ø¯.Ø£ Ù„Ø§Ø®ØªØ¨Ø§Ø± Ø§Ù„Ù…Ø¹Ø±Ø¶ ÙˆÙ‚ÙÙ„ Ø§Ù„Ø¨Ø§Ù‚Ø© (Ø®Ø§Ø±Ø¬ Ù†Ø·Ø§Ù‚ Ù…Ø¹Ø¸Ù… Ø§Ù„Ø¨Ø§Ù‚Ø§Øª).`,
       categoryId: Number(cats[0].id),
       projectType: "fixed",
       budget,

@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useRef } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import { CurrencyDisplayProvider } from "./context/CurrencyDisplayContext.jsx";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { useToast } from "./components/ui/toastContext";
 import RouteSuspenseFallback from "./components/ui/RouteSuspenseFallback";
@@ -8,7 +9,7 @@ import ScrollToTop from "./components/routing/ScrollToTop";
 import DocumentTitle from "./components/routing/DocumentTitle";
 import LocaleTransitionOverlay from "./components/layout/LocaleTransitionOverlay";
 import PublicLayout from "./components/layout/PublicLayout";
-import Home from "./pages/Home";
+import Unauthorized from "./pages/Unauthorized";
 
 const MainLayout = lazy(() => import("./layouts/MainLayout"));
 import { ClientCreateOrderModalProvider } from "./context/ClientCreateOrderModalContext.jsx";
@@ -23,6 +24,7 @@ import {
 } from "./components/auth/AuthGuards";
 import { ADMIN_PAGE_PERMISSIONS, SUPER_ADMIN_PAGE_PERMISSIONS } from "./constants/dashboardPermissions";
 import {
+  Home,
   About,
   Services,
   Plans,
@@ -38,10 +40,20 @@ import {
   PublicFindWorkPage,
   PublicCommunityPage,
   PublicBlogPage,
-  Unauthorized,
   NotFoundPage,
   DashboardPage,
   SuperAdminPlansPage,
+  SuperAdminMarketplacePlansPage,
+  SuperAdminTrainingPackagesPage,
+  SuperAdminSpecialOfferPackagePage,
+  SuperAdminMarketplaceEconomyPage,
+  SuperAdminMarketplaceArticlesPage,
+  SuperAdminArticleManagementPage,
+  SuperAdminArticlesHubPage,
+  SuperAdminFreelancerActivationPage,
+  SuperAdminFreelancerActivationRequestsPage,
+  SuperAdminBildazoAuthorLinksPage,
+  SuperAdminBidCreditsPage,
   SuperAdminAnalysisPage,
   SuperAdminSubscriptionsPage,
   SuperAdminFinancialClaimsPage,
@@ -50,6 +62,11 @@ import {
   SuperAdminSettingsPage,
   SuperAdminAdminsPage,
   SuperAdminRateLimitExemptionsPage,
+  SuperAdminFeedbackPage,
+  SuperAdminFeedbackDetailPage,
+  SuperAdminFeedbackTopicsPage,
+  SuperAdminOnboardingPage,
+  ProblemsSuggestionsPage,
   SuperAdminInstitutionsPage,
   SuperAdminInstitutionDetailPage,
   InstitutionalOrderStorageListPage,
@@ -60,6 +77,11 @@ import {
   SuperAdminEditWebsiteFaqPage,
   SuperAdminSitePagesPage,
   SuperAdminSitePageEditPage,
+  SuperAdminEditWebsiteFooterPage,
+  SuperAdminEditWebsiteFooterContactPage,
+  SuperAdminEditWebsiteFooterHoursPage,
+  SuperAdminEditWebsiteFooterAppsPage,
+  SuperAdminEditWebsiteFooterContactCenterPage,
   SuperAdminEditWebsiteHowItWorksPage,
   SuperAdminEditWebsiteHowItWorksEditorPage,
   HowItWorksFreelancerPage,
@@ -69,6 +91,12 @@ import {
   AdminSubscriptionsActivationPage,
   AdminCoursesPage,
   AdminAdsPage,
+  AdminArticlesReviewPage,
+  AdminPantryPage,
+  AdminSettingsPage,
+  FreelancerPantryPage,
+  FreelancerMarketplaceArticlesPage,
+  FreelancerMarketplaceArticleDetailPage,
   TrainingOrdersAdminShell,
   TrainingOrdersOverviewPage,
   TrainingOrdersSettingsPage,
@@ -80,12 +108,16 @@ import {
   ClientProfilePage,
   ClientSettingsPage,
   FreelancerOrderDetailsPage,
+  FreelancerEliteOfferPage,
   FreelancerMyOrderDetailsPage,
   FreelancerFinancialClaimsPage,
   FreelancerPlansPage,
   FreelancerCoursesPage,
   FreelancerCourseDetailsPage,
   FreelancerSettingsPage,
+  FreelancerActivateAccountPage,
+  FreelancerGettingStartedPage,
+  ConvertAccountPage,
   NotificationsPage,
   FinancialUserMyBonusesPage,
 } from "./routes/lazyPages";
@@ -96,7 +128,7 @@ import {
   clearGuestPoolLoginToastFlag,
   isGuestPoolLoginToast,
 } from "./utils/guestPoolLoginToast";
-import PopupAdsHost from "./components/ads/PopupAdsHost";
+const PopupAdsHost = lazy(() => import("./components/ads/PopupAdsHost"));
 
 function AnalyticsBridge() {
   const location = useLocation();
@@ -104,7 +136,22 @@ function AnalyticsBridge() {
 
   useEffect(() => {
     runAnalyticsStartupChecks();
-    initAnalytics();
+    let timeoutId = null;
+    let idleId = null;
+    const boot = () => initAnalytics();
+    if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+      idleId = window.requestIdleCallback(boot, { timeout: 2500 });
+    } else {
+      timeoutId = window.setTimeout(boot, 900);
+    }
+    return () => {
+      if (idleId != null && typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId != null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -175,10 +222,13 @@ function App() {
       <LocaleTransitionOverlay />
       <ToastProvider>
         <AuthProvider>
+          <CurrencyDisplayProvider>
           <AnalyticsBridge />
           <ToastDashboardExitBridge />
           <ToastGuestPoolBridge />
-          <PopupAdsHost />
+          <Suspense fallback={null}>
+            <PopupAdsHost />
+          </Suspense>
           <Routes>
             <Route element={<PublicLayout />}>
               <Route
@@ -255,9 +305,105 @@ function App() {
                 <Route
                   path="/dashboard/super-admin/plans"
                   element={
-                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.plans}>
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
                       <SuperAdminPlansPage />
-                    </RequireStaffPage>
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/marketplace-plans"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminMarketplacePlansPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/training-packages"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminTrainingPackagesPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/special-offer-package"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminSpecialOfferPackagePage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/marketplace-economy"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminMarketplaceEconomyPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/marketplace-articles"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminMarketplaceArticlesPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/article-management"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminArticleManagementPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/articles"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminArticlesHubPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/freelancer-activation"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminFreelancerActivationPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/freelancer-activation-requests"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminFreelancerActivationRequestsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/freelancer-activation-requests/:id"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminFreelancerActivationRequestsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/bildazo-author-links"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminBildazoAuthorLinksPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/bid-credits"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminBidCreditsPage />
+                    </RequireRole>
                   }
                 />
                 <Route
@@ -366,6 +512,38 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/super-admin/onboarding"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminOnboardingPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/feedback"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminFeedbackPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/feedback/topics"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminFeedbackTopicsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/feedback/:id"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminFeedbackDetailPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/super-admin/institutions"
                   element={
                     <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.institutions}>
@@ -422,6 +600,52 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/super-admin/edit-website/footer"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
+                      <SuperAdminEditWebsiteFooterPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website/footer/contact"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
+                      <SuperAdminEditWebsiteFooterContactPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website/footer/working-hours"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
+                      <SuperAdminEditWebsiteFooterHoursPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website/footer/app-downloads"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
+                      <SuperAdminEditWebsiteFooterAppsPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website/footer/contact-center"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
+                      <SuperAdminEditWebsiteFooterContactCenterPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/edit-website/footer-app-downloads"
+                  element={
+                    <Navigate to="/dashboard/super-admin/edit-website/footer/app-downloads" replace />
+                  }
+                />
+                <Route
                   path="/dashboard/super-admin/edit-website/pages"
                   element={
                     <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite}>
@@ -470,6 +694,14 @@ function App() {
                   />
                   <Route path="applications" element={<TrainingOrderApplicationsPage />} />
                 </Route>
+                <Route
+                  path="/dashboard/super-admin/pantry"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.pantry}>
+                      <AdminPantryPage />
+                    </RequireStaffPage>
+                  }
+                />
 
                 <Route
                   path="/dashboard/admin"
@@ -480,10 +712,82 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/admin/action-center"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <DashboardPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/identity"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <SuperAdminFreelancerActivationRequestsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/identity/:id"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <SuperAdminFreelancerActivationRequestsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/membership-activations"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <AdminSubscriptionsActivationPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/package-assignment"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <SuperAdminSubscriptionsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/articles"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <AdminArticlesReviewPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/feedback"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <SuperAdminFeedbackPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/feedback/:id"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <SuperAdminFeedbackDetailPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/admin/notifications"
                   element={
                     <RequireRole allowedRoles={[ROLE.ADMIN]}>
                       <NotificationsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/settings"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <AdminSettingsPage />
                     </RequireRole>
                   }
                 />
@@ -537,6 +841,14 @@ function App() {
                     </RequireRole>
                   }
                 />
+                <Route
+                  path="/dashboard/admin/pantry"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <AdminPantryPage />
+                    </RequireRole>
+                  }
+                />
 
                 <Route
                   path="/dashboard/freelancer/institution-orders"
@@ -579,10 +891,58 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/freelancer/getting-started"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerGettingStartedPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/activate-account"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerActivateAccountPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/convert-account"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <ConvertAccountPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/client/convert-account"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.CLIENT]}>
+                      <ConvertAccountPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/freelancer/my-orders"
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
                       <DashboardPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/pantry"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerPantryPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/elite-offers/:offerId"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerEliteOfferPage />
                     </RequireRole>
                   }
                 />
@@ -611,6 +971,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/freelancer/feedback"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <ProblemsSuggestionsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/freelancer/plans"
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
@@ -631,6 +999,22 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
                       <FreelancerCourseDetailsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/articles"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerMarketplaceArticlesPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/articles/:id"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerMarketplaceArticleDetailPage />
                     </RequireRole>
                   }
                 />
@@ -684,6 +1068,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/client/feedback"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.CLIENT]}>
+                      <ProblemsSuggestionsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/client/orders/create"
                   element={
                     <RequireRole allowedRoles={[ROLE.CLIENT]}>
@@ -720,6 +1112,7 @@ function App() {
               </Route>
             </Route>
           </Routes>
+          </CurrencyDisplayProvider>
         </AuthProvider>
       </ToastProvider>
     </BrowserRouter>

@@ -6,10 +6,44 @@ import react from '@vitejs/plugin-react'
 // as a bogus filesystem path (e.g. frontend/tailwindcss on Windows).
 export default defineConfig({
   plugins: [react()],
+  server: {
+    port: 5173,
+    // Keep Stripe CLIENT_URL and browser origin aligned; do not silently drift to 5174.
+    strictPort: true,
+    // Same-origin /api in the browser → local Express (matches production nginx routing).
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+      '/images': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
+  },
+  preview: {
+    port: 4173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+      '/images': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (
+            id.includes('node_modules/axios')
+          ) {
+            return 'vendor-axios';
+          }
           if (id.includes('node_modules/posthog-js')) {
             return 'vendor-posthog';
           }

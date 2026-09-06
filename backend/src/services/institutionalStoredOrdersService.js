@@ -5,7 +5,7 @@ const { pool } = require("../config/db");
 const ordersService = require("./ordersService");
 const fakeOrdersService = require("./fakeOrdersService");
 const base = require("./institutionalStorageService");
-  const {
+const {
   getStorageBudgetLocked,
   writeAudit,
   writeReview,
@@ -19,6 +19,7 @@ const base = require("./institutionalStorageService");
   assignOrdersToMonthBatches,
   tryAcquireReleaseLock,
   releaseReleaseLock,
+  releaseClientAfterSessionLock,
   loadStorageInstitutions,
   formatPgDateOnly,
 } = base;
@@ -1112,9 +1113,11 @@ async function processDueReleaseBatches({ limit = 10, actorUserId = null } = {})
   const scheduleSvc = require("./institutionalScheduleService");
   const lockClient = await pool.connect();
   const results = [];
+  let acquired = false;
+  let unlockResult = { ok: true, released: false };
   try {
-    const locked = await tryAcquireReleaseLock(lockClient);
-    if (!locked) {
+    acquired = await tryAcquireReleaseLock(lockClient);
+    if (!acquired) {
       await scheduleSvc.recordSchedulerTick({ status: "skipped_lock", summary: { reason: "lock_busy" } }).catch(() => {});
       return { skipped: true, reason: "lock_busy", results: [] };
     }
@@ -1151,8 +1154,10 @@ async function processDueReleaseBatches({ limit = 10, actorUserId = null } = {})
       .catch(() => {});
     throw e;
   } finally {
-    await releaseReleaseLock(lockClient);
-    lockClient.release();
+    if (acquired) {
+      unlockResult = await releaseReleaseLock(lockClient);
+    }
+    releaseClientAfterSessionLock(lockClient, { acquired, unlockResult });
   }
 }
 

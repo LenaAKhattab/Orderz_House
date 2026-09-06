@@ -2,19 +2,31 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getPublicPlanPageBySlugRequest } from "../services/api";
 import { isOrderzhouseFreePlan } from "../constants/orderzhousePlansCatalog";
 import { useFreelancerPlansCheckout } from "./useFreelancerPlansCheckout";
+import { useDefaultCatalogPlans } from "./useDefaultCatalogPlans";
 
+/**
+ * Public `/plans` (no slug) uses the Super Admin-selected default catalog.
+ * Slugged `/plans/:slug` remains legacy page-package plans (isolated).
+ */
 export function usePlansPage({ slug, returnPath }) {
-  const defaultCheckout = useFreelancerPlansCheckout({ returnPath });
+  const defaultCheckout = useFreelancerPlansCheckout({
+    returnPath,
+    fetchPublicPlans: false,
+  });
   const [page, setPage] = useState(null);
   const [slugPlans, setSlugPlans] = useState([]);
+  const [slugActivationFee, setSlugActivationFee] = useState(null);
   const [slugLoading, setSlugLoading] = useState(Boolean(slug));
   const [slugError, setSlugError] = useState("");
   const [notFound, setNotFound] = useState(false);
+
+  const defaultCatalog = useDefaultCatalogPlans({ enabled: !slug });
 
   useEffect(() => {
     if (!slug) {
       setPage(null);
       setSlugPlans([]);
+      setSlugActivationFee(null);
       setSlugLoading(false);
       setSlugError("");
       setNotFound(false);
@@ -31,6 +43,7 @@ export function usePlansPage({ slug, returnPath }) {
         if (cancelled) return;
         setPage(res?.data?.page ?? null);
         setSlugPlans(Array.isArray(res?.data?.plans) ? res.data.plans : []);
+        setSlugActivationFee(res?.data?.activationFee ?? null);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -39,6 +52,7 @@ export function usePlansPage({ slug, returnPath }) {
           setNotFound(true);
           setPage(null);
           setSlugPlans([]);
+          setSlugActivationFee(null);
           return;
         }
         setSlugError(err?.response?.data?.message || "تعذر تحميل صفحة الباقات.");
@@ -54,6 +68,9 @@ export function usePlansPage({ slug, returnPath }) {
 
   const startCheckout = useCallback(
     async (plan) => {
+      if (plan?.catalogSource === "marketplace_membership" || plan?.marketplaceMembership) {
+        return null;
+      }
       const resolvedId = plan.checkoutPlanId || plan.subscriptionPlanId || plan.id;
       const isFree =
         isOrderzhouseFreePlan({ id: resolvedId }) ||
@@ -67,18 +84,33 @@ export function usePlansPage({ slug, returnPath }) {
     [defaultCheckout.startCheckout, defaultCheckout.activationFeeNeedsPayment],
   );
 
+  const isMarketplaceMembershipCatalog = !slug && defaultCatalog.isMarketplaceCatalog;
+  const usesLegacyCheckout =
+    Boolean(slug) ||
+    defaultCatalog.catalogSource === "main_plans" ||
+    defaultCatalog.catalogSource === "page_plans";
+  const activationFee = slug
+    ? slugActivationFee
+    : isMarketplaceMembershipCatalog
+      ? null
+      : defaultCatalog.activationFee;
+
   return useMemo(
     () => ({
       page,
-      plans: slug ? slugPlans : defaultCheckout.plans,
-      loading: slug ? slugLoading : defaultCheckout.loading,
-      error: slug ? slugError : defaultCheckout.error,
+      plans: slug ? slugPlans : defaultCatalog.plans,
+      specialOfferPackage: slug ? null : defaultCatalog.specialOfferPackage,
+      loading: slug ? slugLoading : defaultCatalog.loading,
+      error: slug ? slugError : defaultCatalog.error,
       notFound,
+      catalog: slug ? null : defaultCatalog.catalog,
+      catalogSource: slug ? "legacy_page_package" : defaultCatalog.catalogSource,
       mySubscription: defaultCheckout.mySubscription,
       activationFeeStatus: defaultCheckout.activationFeeStatus,
-      activationFeeNeedsPayment: defaultCheckout.activationFeeNeedsPayment,
-      hasBlockingSubscription: defaultCheckout.hasBlockingSubscription,
-      checkoutBusyPlanId: defaultCheckout.checkoutBusyPlanId,
+      activationFee,
+      activationFeeNeedsPayment: usesLegacyCheckout ? defaultCheckout.activationFeeNeedsPayment : false,
+      hasBlockingSubscription: usesLegacyCheckout ? defaultCheckout.hasBlockingSubscription : false,
+      checkoutBusyPlanId: usesLegacyCheckout ? defaultCheckout.checkoutBusyPlanId : null,
       startCheckout,
       returnPath,
     }),
@@ -89,9 +121,15 @@ export function usePlansPage({ slug, returnPath }) {
       slugLoading,
       slugError,
       notFound,
-      defaultCheckout.plans,
-      defaultCheckout.loading,
-      defaultCheckout.error,
+      defaultCatalog.plans,
+      defaultCatalog.specialOfferPackage,
+      defaultCatalog.loading,
+      defaultCatalog.error,
+      defaultCatalog.catalog,
+      defaultCatalog.catalogSource,
+      isMarketplaceMembershipCatalog,
+      usesLegacyCheckout,
+      activationFee,
       defaultCheckout.mySubscription,
       defaultCheckout.activationFeeStatus,
       defaultCheckout.activationFeeNeedsPayment,

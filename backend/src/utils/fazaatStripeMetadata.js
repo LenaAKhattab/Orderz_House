@@ -13,6 +13,8 @@ const PAYMENT_CONTEXT = {
   FREELANCER_SUBSCRIPTION: "freelancer_subscription",
   ACTIVATION_FEE_ONLY: "activation_fee_only",
   ACTIVATION_FEE_BUNDLED: "activation_fee_bundled",
+  BID_CREDIT_PACKAGE: "bid_credit_package",
+  MARKETPLACE_MEMBERSHIP: "marketplace_membership",
 };
 
 const PAYMENT_INTENT_DESCRIPTION = {
@@ -20,6 +22,8 @@ const PAYMENT_INTENT_DESCRIPTION = {
   [PAYMENT_CONTEXT.CLIENT_SELECTED_BID]: "FAZAAT - Orderz House - Client Bid Payment",
   [PAYMENT_CONTEXT.FREELANCER_SUBSCRIPTION]: "FAZAAT - Orderz House - Freelancer Subscription",
   [PAYMENT_CONTEXT.ACTIVATION_FEE_ONLY]: "FAZAAT - Orderz House - Activation Fee",
+  [PAYMENT_CONTEXT.BID_CREDIT_PACKAGE]: "FAZAAT - Orderz House - Bid Credit Package",
+  [PAYMENT_CONTEXT.MARKETPLACE_MEMBERSHIP]: "FAZAAT - Orderz House - Marketplace Membership",
 };
 
 const LINE_ITEM_PRODUCT_NAME = {
@@ -27,6 +31,8 @@ const LINE_ITEM_PRODUCT_NAME = {
   [PAYMENT_CONTEXT.CLIENT_SELECTED_BID]: "FAZAAT - Orderz House - Client Bid Payment",
   [PAYMENT_CONTEXT.FREELANCER_SUBSCRIPTION]: "FAZAAT - Orderz House - Freelancer Subscription",
   [PAYMENT_CONTEXT.ACTIVATION_FEE_ONLY]: "FAZAAT - Orderz House - Activation Fee",
+  [PAYMENT_CONTEXT.BID_CREDIT_PACKAGE]: "FAZAAT - Orderz House - Bid Credit Package",
+  [PAYMENT_CONTEXT.MARKETPLACE_MEMBERSHIP]: "FAZAAT - Orderz House - Marketplace Membership",
 };
 
 function stringifyMetaValue(value) {
@@ -53,6 +59,12 @@ function buildFazaatStripeMetadata({
   expectedAmountMinor,
   planAmountMinor,
   activationFeeMinor,
+  purchaseId,
+  packageId,
+  marketplacePlanId,
+  planCode,
+  durationDays,
+  flow,
   currency = "JOD",
 }) {
   const raw = {
@@ -71,6 +83,12 @@ function buildFazaatStripeMetadata({
     expected_amount_minor: expectedAmountMinor,
     plan_amount_minor: planAmountMinor,
     activation_fee_minor: activationFeeMinor,
+    purchase_id: purchaseId,
+    package_id: packageId,
+    marketplace_plan_id: marketplacePlanId,
+    plan_code: planCode,
+    duration_days: durationDays,
+    flow,
     currency: currency != null ? String(currency).toUpperCase() : "JOD",
   };
 

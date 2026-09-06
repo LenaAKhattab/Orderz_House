@@ -30,8 +30,6 @@ const RANGE_OPTIONS = [
   { value: "last_month", label: "الشهر الماضي" },
 ];
 
-const SUBSCRIPTION_ACTIVATION_FEE_JOD = 25;
-
 function CountryBarChart({ rows, maxBars = 8 }) {
   const top = (rows || []).filter((r) => r.countryName !== "غير معروف").slice(0, maxBars);
   if (!top.length) {
@@ -473,7 +471,7 @@ export default function SuperAdminAnalysisPage() {
                       {plan.priceJod != null ? formatMoneyJod(plan.priceJod) : "—"}
                       {plan.paidSubscribers > 0 ? (
                         <span className="sa-analysis-cell-note">
-                          + رسوم تفعيل {formatMoneyJod(SUBSCRIPTION_ACTIVATION_FEE_JOD)}
+                          + رسوم التفعيل التاريخية (حسب مبلغ الدفع الفعلي)
                         </span>
                       ) : null}
                     </td>
