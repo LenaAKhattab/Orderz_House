@@ -78,6 +78,8 @@ void main() {
       final src = File('lib/features/auth/presentation/splash_screen.dart').readAsStringSync();
       expect(src, contains('AppRoutes.login'));
       expect(src, contains('auth.isAuthenticated ? AppRoutes.home : AppRoutes.login'));
+      // Push must not gate login routing.
+      expect(src, contains('unawaited(push.initialize()'));
     });
 
     test('login has create-account CTA and no guest marketplace browse', () {
