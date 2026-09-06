@@ -72,7 +72,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (auth.status == AuthStatus.unauthenticated) {
-        if (isAuthRoute || isSplash) return null;
+        // Leave splash as soon as auth is resolved — never sit on loading forever.
+        if (isSplash) return AppRoutes.login;
+        if (isAuthRoute) return null;
         if (isPublicPaymentReturnRoute(location)) return null;
         if (location.startsWith('/public/')) return null;
         if (shouldRedirectUnauthenticatedToLogin(location)) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,16 +27,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   Future<void> _bootstrap() async {
     final push = ref.read(pushNotificationServiceProvider);
-    await Future.wait([
-      ref.read(authControllerProvider.notifier).bootstrap(),
-      push.initialize(),
-    ]);
-    if (!mounted) return;
-    final auth = ref.read(authControllerProvider);
-    if (auth.isAuthenticated) {
-      await push.onAuthenticated();
+    // Push/Firebase must NEVER gate auth routing (iOS hang / APNs / getInitialMessage).
+    unawaited(push.initialize());
+    try {
+      await ref.read(authControllerProvider.notifier).bootstrap();
+    } catch (_) {
+      // AuthController already maps failures to unauthenticated; keep splash moving.
     }
     if (!mounted) return;
+
+    final auth = ref.read(authControllerProvider);
+    // Token registration is non-blocking; PushBootstrapListener also triggers it.
+    if (auth.isAuthenticated) {
+      unawaited(push.onAuthenticated());
+    }
+
     final pending = PushPendingNavigation.takeRoute();
     if (pending != null) {
       if (auth.isAuthenticated) {

@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../notifications/presentation/unread_notifications_controller.dart';
+import '../../push/data/push_notification_service.dart';
 import '../data/account_models.dart';
 import '../data/account_repository.dart';
 
@@ -104,6 +105,10 @@ class _AccountSettingsBody extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 18),
+        const _SectionTitle('تشخيص مؤقت'),
+        const SizedBox(height: 8),
+        const _WhiteCard(child: _PushDiagnosticsTile()),
+        const SizedBox(height: 18),
         const _SectionTitle('الحساب'),
         const SizedBox(height: 8),
         _WhiteCard(
@@ -134,6 +139,80 @@ class _AccountSettingsBody extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _PushDiagnosticsTile extends ConsumerStatefulWidget {
+  const _PushDiagnosticsTile();
+
+  @override
+  ConsumerState<_PushDiagnosticsTile> createState() => _PushDiagnosticsTileState();
+}
+
+class _PushDiagnosticsTileState extends ConsumerState<_PushDiagnosticsTile> {
+  bool _running = false;
+
+  Future<void> _run() async {
+    if (_running) return;
+    setState(() => _running = true);
+    try {
+      final result =
+          await ref.read(pushNotificationServiceProvider).runRegistrationDiagnostics();
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('تشخيص الإشعارات'),
+          content: SingleChildScrollView(
+            child: SelectableText(
+              result.toUserSummary(),
+              style: const TextStyle(height: 1.45, fontSize: 14),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('حسناً'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(apiErrorMessage(e, fallback: 'تعذر تشغيل التشخيص.'))),
+      );
+    } finally {
+      if (mounted) setState(() => _running = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(
+        Icons.notifications_active_outlined,
+        color: _running ? AppColors.textMuted : AppColors.primary,
+      ),
+      title: const Text(
+        'تشخيص الإشعارات',
+        style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDeep),
+      ),
+      subtitle: Text(
+        _running
+            ? 'جاري الفحص… قد يستغرق حتى 10 ثوانٍ على iOS'
+            : 'مؤقت — يختبر إذن الإشعارات وتسجيل الجهاز',
+      ),
+      trailing: _running
+          ? const SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.play_circle_outline_rounded),
+      onTap: _running ? null : _run,
     );
   }
 }
