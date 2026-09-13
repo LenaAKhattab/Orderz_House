@@ -62,6 +62,7 @@ import {
   FinancialEmployeeDetailPage,
   SuperAdminSettingsPage,
   SuperAdminAdminsPage,
+  SuperAdminUsersPage,
   SuperAdminRateLimitExemptionsPage,
   SuperAdminFeedbackPage,
   SuperAdminFeedbackDetailPage,
@@ -510,6 +511,14 @@ function App() {
                     <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage}>
                       <SuperAdminAdminsPage />
                     </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/users"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminUsersPage />
+                    </RequireRole>
                   }
                 />
                 <Route

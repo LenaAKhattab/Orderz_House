@@ -17,6 +17,8 @@ export const SUPER_ADMIN_PAGE_PERMISSIONS = {
   financialClaims: "dashboard.super_admin.financial_claims",
   financialCenter: "dashboard.super_admin.financial_center",
   analytics: "dashboard.super_admin.analytics",
+  /** Super Admin only — Users Control Center (not assignable to delegated admins) */
+  usersControl: "dashboard.super_admin.users_control",
   adminsManage: "dashboard.super_admin.admins_manage",
   trainingOrders: "dashboard.super_admin.training_orders",
   pantry: "dashboard.super_admin.pantry",
@@ -54,6 +56,7 @@ export const ASSIGNABLE_DASHBOARD_PERMISSIONS = [
 /** Longest-prefix-first route → permission (super-admin shell paths). */
 const SUPER_ADMIN_ROUTE_RULES = [
   { prefix: "/dashboard/super-admin/analysis", permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics },
+  { prefix: "/dashboard/super-admin/users", permission: SUPER_ADMIN_PAGE_PERMISSIONS.usersControl },
   { prefix: "/dashboard/super-admin/edit-website", permission: SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite },
   { prefix: "/dashboard/super-admin/training-orders", permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders },
   { prefix: "/dashboard/super-admin/pantry", permission: SUPER_ADMIN_PAGE_PERMISSIONS.pantry },

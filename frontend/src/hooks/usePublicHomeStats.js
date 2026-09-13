@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { getPublicHomeStatsRequest } from "../services/api";
 import { setPublicHomeStatsRefetchListener, peekLatestVisitorsTotal, peekLatestActiveUsersTotal } from "../services/publicHomeStatsRefetch";
 import { fetchPublicCached, PUBLIC_HOME_STATS_TTL_MS } from "../lib/publicRequestCache";
+import { computePublicPollResumeAt, shouldSkipPublicPoll } from "../lib/publicPollBackoff";
+import { isRateLimitedError } from "../utils/apiErrorMessage";
 
 export { formatHomePublicStat } from "../utils/homePublicStatFormat";
 
@@ -101,6 +103,7 @@ export function usePublicHomeStats() {
   const [payload, setPayload] = useState(null);
   const [isReady, setIsReady] = useState(false);
   const lastGoodRef = useRef(null);
+  const rateLimitResumeAtRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,19 +119,24 @@ export function usePublicHomeStats() {
       if (cancelled || (typeof document !== "undefined" && document.visibilityState === "hidden")) {
         return;
       }
+      if (!initial && shouldSkipPublicPoll(rateLimitResumeAtRef.current)) {
+        return;
+      }
 
       abortController?.abort();
       abortController = new AbortController();
 
       try {
+        // Respect TTL — do not bypass cache on every poll (avoids homepage request storms).
         const res = await fetchPublicCached(
           "GET /public/home-stats",
           () => getPublicHomeStatsRequest(),
-          { ttlMs: PUBLIC_HOME_STATS_TTL_MS, bypassCache: !initial },
+          { ttlMs: PUBLIC_HOME_STATS_TTL_MS },
         );
         const d = res?.data;
         if (cancelled) return;
 
+        rateLimitResumeAtRef.current = 0;
         const cachedVisitors = peekLatestVisitorsTotal();
         const cachedActive = peekLatestActiveUsersTotal();
         let next = {
@@ -147,6 +155,12 @@ export function usePublicHomeStats() {
         applyPayload(next);
       } catch (e) {
         if (cancelled || isAbortError(e)) return;
+        if (isRateLimitedError(e)) {
+          rateLimitResumeAtRef.current = computePublicPollResumeAt(e);
+          if (lastGoodRef.current) return;
+          applyPayload({ error: true, ...mapHomeStats({}) });
+          return;
+        }
         if (import.meta.env.DEV) console.warn("[usePublicHomeStats] request failed", e);
         if (lastGoodRef.current) return;
         applyPayload({ error: true, ...mapHomeStats({}) });

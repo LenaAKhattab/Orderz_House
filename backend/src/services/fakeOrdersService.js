@@ -12,6 +12,7 @@ const {
   normalizeTemplateBudget,
 } = require("../utils/fakeBudgetRanges");
 const { FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT } = require("../utils/fakeMarketplaceApplicantsSql");
+const { computeDisplayedFakeApplicantsCount } = require("../utils/fakeSyntheticApplicants");
 const {
   mapCachedEnglishFields,
   scheduleFakeOrderTranslation,
@@ -1441,6 +1442,7 @@ async function getFakePoolOrderMapped({ orderId, freelancerUserId }) {
         ss.subcategory_id AS sub_subcategory_parent_id,
         0::int AS files_count,
         ${FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT},
+        ri.visible_until AS pool_visible_until,
         fa.id AS my_bid_id,
         fa.amount AS my_bid_amount,
         fa.status AS my_bid_status
@@ -1468,7 +1470,8 @@ async function getFakePoolOrderMapped({ orderId, freelancerUserId }) {
         ss.name AS sub_subcategory_name,
         ss.subcategory_id AS sub_subcategory_parent_id,
         0::int AS files_count,
-        ${FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT}
+        ${FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT},
+        ri.visible_until AS pool_visible_until
       FROM fake_orders fo
       INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id AND ri.status = 'active'
         AND ri.visible_from <= NOW() AND ri.visible_until > NOW()
@@ -1488,6 +1491,13 @@ async function getFakePoolOrderMapped({ orderId, freelancerUserId }) {
   if (!mapped) return null;
   mapped.orderSource = "fake";
   mapped.showTrainingBadge = Boolean(row.show_fake_badge);
+  const { displayedApplicantsCount } = computeDisplayedFakeApplicantsCount({
+    realApplicantsCount: Number(row.applicants_count || 0),
+    fakeOrderId: row.id,
+    publishedAt: row.pool_listed_at || row.created_at,
+    visibleUntil: row.pool_visible_until || null,
+  });
+  mapped.applicantsCount = displayedApplicantsCount;
   if (row.pool_listed_at != null) {
     mapped.createdAt = row.pool_listed_at;
     mapped.poolListedAt = row.pool_listed_at;

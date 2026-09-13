@@ -18,6 +18,15 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     icon: "analytics",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics,
   },
+  users: {
+    key: "users",
+    to: "/dashboard/super-admin/users",
+    labelKey: "dashboard.nav.superAdmin.users",
+    icon: "admins",
+    end: true,
+    matchPrefix: "/dashboard/super-admin/users",
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.usersControl,
+  },
   internalRequests: {
     key: "internalRequests",
     to: "/dashboard/super-admin/orders",
@@ -241,7 +250,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "overview",
     labelKey: "dashboard.nav.sections.overview",
-    itemKeys: ["overview", "analytics"],
+    itemKeys: ["overview", "analytics", "users"],
   },
   {
     id: "ordersOps",
@@ -372,6 +381,7 @@ export function superAdminBreadcrumbKeys(pathname) {
     return [...base, "dashboard.breadcrumbs.institutions"];
   }
   if (pathname.includes("/admins")) return [...base, "dashboard.breadcrumbs.admins"];
+  if (pathname.includes("/super-admin/users")) return [...base, "dashboard.breadcrumbs.users"];
   if (pathname.includes("/edit-website/how-it-works/")) {
     return [
       ...base,
