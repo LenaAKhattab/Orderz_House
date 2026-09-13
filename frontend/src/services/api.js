@@ -2406,6 +2406,47 @@ export const reorderSuperAdminFeedbackCategoriesRequest = async (payload) => {
   return data;
 };
 
+// Super Admin — Users Control Center
+export const getSuperAdminUsersStatsRequest = async () => {
+  const { data } = await api.get("/super-admin/users/stats");
+  return data;
+};
+
+export const listSuperAdminUsersRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/users", { params });
+  return data;
+};
+
+export const getSuperAdminUserDetailRequest = async (userId) => {
+  const { data } = await api.get(`/super-admin/users/${encodeURIComponent(userId)}`);
+  return data;
+};
+
+export const patchSuperAdminUserAccountRequest = async (userId, payload) => {
+  const { data } = await api.patch(`/super-admin/users/${encodeURIComponent(userId)}/account`, payload);
+  return data;
+};
+
+export const patchSuperAdminUserIdentityRequest = async (userId, payload) => {
+  const { data } = await api.patch(`/super-admin/users/${encodeURIComponent(userId)}/identity`, payload);
+  return data;
+};
+
+export const patchSuperAdminUserMembershipRequest = async (userId, payload) => {
+  const { data } = await api.patch(`/super-admin/users/${encodeURIComponent(userId)}/membership`, payload);
+  return data;
+};
+
+export const patchSuperAdminUserTrainingRequest = async (userId, payload) => {
+  const { data } = await api.patch(`/super-admin/users/${encodeURIComponent(userId)}/training`, payload);
+  return data;
+};
+
+export const postSuperAdminUsersBulkActionsRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/users/bulk-actions", payload);
+  return data;
+};
+
 // Super Admin — admin account management
 export const listSuperAdminAdminsRequest = async () => {
   const { data } = await api.get("/super-admin/admins");

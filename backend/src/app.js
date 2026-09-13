@@ -66,6 +66,7 @@ const superAdminFinancialClaimsRoutes = require("./routes/superAdminFinancialCla
 const superAdminFazatSettlementsRoutes = require("./routes/superAdminFazatSettlementsRoutes");
 const superAdminAnalyticsRoutes = require("./routes/superAdminAnalyticsRoutes");
 const superAdminAdminsRoutes = require("./routes/superAdminAdminsRoutes");
+const superAdminUsersControlRoutes = require("./routes/superAdminUsersControlRoutes");
 const rateLimitExemptionsRoutes = require("./routes/rateLimitExemptionsRoutes");
 const superAdminFeedbackRoutes = require("./routes/superAdminFeedbackRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
@@ -82,6 +83,7 @@ const { notFoundMiddleware, errorMiddleware } = require("./middleware/errorMiddl
 const { requestTimingMiddleware } = require("./middleware/requestTimingMiddleware");
 const { applySecurityHeaders } = require("./middleware/securityHeaders");
 const { createApiGeneralLimiter } = require("./middleware/apiRateLimiter");
+const { createPublicReadLimiter } = require("./middleware/publicReadRateLimiter");
 const { originGuardMiddleware } = require("./middleware/originGuardMiddleware");
 const { isProduction } = require("./config/env");
 const { parseAllowedClientOrigins } = require("./config/clientUrl");
@@ -150,6 +152,8 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
 app.use("/api", createApiGeneralLimiter());
+// Relaxed bucket for homepage/public GET chrome (skipped from global_api).
+app.use("/api", createPublicReadLimiter());
 app.use("/api", originGuardMiddleware);
 app.use("/api", requestTimingMiddleware);
 
@@ -203,6 +207,7 @@ app.use("/api/financial-user", financialUserRoutes);
 app.use("/api/super-admin", superAdminFinancialClaimsRoutes);
 app.use("/api/super-admin", superAdminFazatSettlementsRoutes);
 app.use("/api/super-admin", superAdminAdminsRoutes);
+app.use("/api/super-admin", superAdminUsersControlRoutes);
 app.use("/api/super-admin", superAdminWebsiteRoutes);
 app.use("/api/super-admin", rateLimitExemptionsRoutes);
 app.use("/api/super-admin", superAdminFeedbackRoutes);

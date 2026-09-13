@@ -1,6 +1,19 @@
 const { pool } = require("../config/db");
 const { isAllowedCleanBudgetRange, normalizeToCleanBudgetRange } = require("../utils/fakeBudgetRanges");
 const { FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT } = require("../utils/fakeMarketplaceApplicantsSql");
+const { computeDisplayedFakeApplicantsCount } = require("../utils/fakeSyntheticApplicants");
+
+function applyFakeMarketplaceApplicantsDisplay(mapped, row) {
+  if (!mapped) return mapped;
+  const { displayedApplicantsCount } = computeDisplayedFakeApplicantsCount({
+    realApplicantsCount: Number(row.applicants_count || 0),
+    fakeOrderId: row.id,
+    publishedAt: row.pool_listed_at || row.created_at,
+    visibleUntil: row.pool_visible_until || null,
+  });
+  mapped.applicantsCount = displayedApplicantsCount;
+  return mapped;
+}
 
 async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUserId }) {
   if (!idOrder.length) return [];
@@ -105,6 +118,7 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
         ss.subcategory_id AS sub_subcategory_parent_id,
         0::int AS files_count,
         ${FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT},
+        ri.visible_until AS pool_visible_until,
         fa.id AS my_bid_id,
         fa.amount AS my_bid_amount,
         fa.status AS my_bid_status
@@ -136,7 +150,8 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
         ss.name_en AS sub_subcategory_name_en,
         ss.subcategory_id AS sub_subcategory_parent_id,
         0::int AS files_count,
-        ${FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT}
+        ${FAKE_MARKETPLACE_APPLICANTS_COUNT_SELECT},
+        ri.visible_until AS pool_visible_until
       FROM fake_orders fo
       INNER JOIN fake_order_round_items ri ON ri.fake_order_id = fo.id AND ri.status = 'active'
         AND ri.visible_from <= NOW() AND ri.visible_until > NOW()
@@ -175,6 +190,7 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
     if (source === "fake") {
       mapped.orderSource = "fake";
       mapped.showTrainingBadge = Boolean(row.show_fake_badge);
+      applyFakeMarketplaceApplicantsDisplay(mapped, row);
       if (mapped.projectType === "bidding") {
         const min = Number(mapped.bidBudgetMin);
         const max = Number(mapped.bidBudgetMax);

@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getPublicAdsRequest } from "../services/adsService";
 import { isAdCurrentlyVisible, msUntilSoonestEnd } from "../utils/adVisibility";
+import { fetchPublicCached } from "../lib/publicRequestCache";
+import { computePublicPollResumeAt, shouldSkipPublicPoll } from "../lib/publicPollBackoff";
+import { isRateLimitedError } from "../utils/apiErrorMessage";
 
 const POLL_MS = 30_000;
 const TICK_MS = 1000;
@@ -22,17 +25,32 @@ export default function usePublicAds(placement = "home_right_panel") {
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
+  const rateLimitResumeAtRef = useRef(0);
 
   const fetchAds = useCallback(
     async ({ silent = false } = {}) => {
+      if (silent && shouldSkipPublicPoll(rateLimitResumeAtRef.current)) {
+        return;
+      }
       try {
-        const res = await getPublicAdsRequest({ placement });
+        const cacheKey = `GET /public/ads?placement=${placement}`;
+        const res = await fetchPublicCached(
+          cacheKey,
+          () => getPublicAdsRequest({ placement }),
+          { ttlMs: POLL_MS },
+        );
         const list = extractAdsArray(res).filter((a) => isAdCurrentlyVisible(a));
         if (!mountedRef.current) return;
+        rateLimitResumeAtRef.current = 0;
         setAds(list);
       } catch (e) {
-        console.error("[usePublicAds]", e);
         if (!mountedRef.current) return;
+        if (isRateLimitedError(e)) {
+          rateLimitResumeAtRef.current = computePublicPollResumeAt(e);
+          if (!silent) setAds([]);
+          return;
+        }
+        if (import.meta.env.DEV) console.warn("[usePublicAds]", e);
         if (!silent) {
           setAds([]);
         }

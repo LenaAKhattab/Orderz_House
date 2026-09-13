@@ -25,6 +25,12 @@ function shouldSkipGeneralApiRateLimit(req) {
   if (p.startsWith("/integrations/fazat")) return true;
   if (p === "/auth" || p.startsWith("/auth/")) return true;
 
+  // Safe public GET chrome + pool preview use dedicated public_read limiter.
+  if (method === "GET") {
+    if (p === "/public" || p.startsWith("/public/")) return true;
+    if (p === "/orders/pool") return true;
+  }
+
   if (method === "POST") {
     // Client create order (exact). Pay/claim/bid routes under /client/orders/:id stay on global.
     if (p === "/client/orders") return true;

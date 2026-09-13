@@ -103,7 +103,8 @@ describe("Performance Phase 6 public request cache", () => {
 
     assert.doesNotMatch(sitePages, /\/client\/|\/freelancer\/|\/financial|notifications|auth\/me/);
     assert.doesNotMatch(faq, /\/client\/|\/freelancer\/orders/);
-    assert.match(stats, /bypassCache: !initial/);
+    assert.doesNotMatch(stats, /bypassCache:\s*!initial/);
+    assert.match(stats, /shouldSkipPublicPoll/);
 
     assert.match(layout, /home-public-layout--wallpaper-ready/);
     assert.doesNotMatch(layout, /useHeroWallpaperReady/);

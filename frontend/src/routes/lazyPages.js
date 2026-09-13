@@ -90,6 +90,7 @@ export const FinancialEmployeeDetailPage = lazy(
 export const FinancialUserMyBonusesPage = lazy(() => import("../pages/dashboard/FinancialUserMyBonusesPage"));
 export const SuperAdminSettingsPage = lazy(() => import("../pages/dashboard/SuperAdminSettingsPage"));
 export const SuperAdminAdminsPage = lazy(() => import("../pages/dashboard/SuperAdminAdminsPage"));
+export const SuperAdminUsersPage = lazy(() => import("../pages/dashboard/SuperAdminUsersPage"));
 export const SuperAdminRateLimitExemptionsPage = lazy(
   () => import("../pages/dashboard/SuperAdminRateLimitExemptionsPage"),
 );

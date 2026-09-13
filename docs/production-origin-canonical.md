@@ -116,6 +116,18 @@ server {
 }
 ```
 
+### SPA cache headers (Vite)
+
+Prefer setting these on the **frontend nginx** (`frontend/nginx.spa.conf`) so they apply even when the host only proxies to `:3006`:
+
+| Path | Cache-Control | Notes |
+|------|---------------|--------|
+| `/index.html` (and SPA HTML fallback) | `no-cache, must-revalidate` | Must revalidate after deploys so chunk hashes update |
+| `/assets/*` (hashed JS/CSS) | `public, max-age=31536000, immutable` | Safe long cache; **return 404** if missing — never serve `index.html` for a missing chunk |
+
+Live symptom `ERR_CACHE_READ_FAILURE` + `304` is often **browser disk-cache corruption** when the origin correctly returns `304 Not Modified`. Missing `Cache-Control` on HTML/assets makes recovery harder; correct headers + client chunk-load recovery (reload once + Arabic fallback) reduce blank-page stuck states.
+
+
 **Do not** create apex → www redirects. **Do not** leave a second `server_name www` that still serves the SPA.
 
 Validate and reload (operator only, after review):

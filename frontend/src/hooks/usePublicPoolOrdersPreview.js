@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { listPoolOrdersRequest } from "../services/api";
+import { fetchPublicCached } from "../lib/publicRequestCache";
+import { computePublicPollResumeAt, shouldSkipPublicPoll } from "../lib/publicPollBackoff";
+import { isRateLimitedError } from "../utils/apiErrorMessage";
 
 /** Same query defaults as `OpenOrdersMarketplace` initial pool load (public `/orders`). */
 const POOL_PREVIEW_PARAMS = Object.freeze({ page: 1, limit: 6, sort: "newest" });
@@ -19,6 +22,7 @@ export default function usePublicPoolOrdersPreview(options = {}) {
   const [loading, setLoading] = useState(true);
   const [refetching, setRefetching] = useState(false);
   const [error, setError] = useState(false);
+  const rateLimitResumeAtRef = useRef(0);
   const queryParams = useMemo(
     () => ({
       ...POOL_PREVIEW_PARAMS,
@@ -36,6 +40,9 @@ export default function usePublicPoolOrdersPreview(options = {}) {
       if (cancelled || (typeof document !== "undefined" && document.visibilityState === "hidden")) {
         return;
       }
+      if (!initial && shouldSkipPublicPoll(rateLimitResumeAtRef.current)) {
+        return;
+      }
 
       abortController?.abort();
       abortController = new AbortController();
@@ -48,14 +55,28 @@ export default function usePublicPoolOrdersPreview(options = {}) {
       }
 
       try {
-        const res = await listPoolOrdersRequest(queryParams, { signal: abortController.signal });
+        const cacheKey = `GET /orders/pool?page=${queryParams.page}&limit=${queryParams.limit}&sort=${queryParams.sort}`;
+        const res = await fetchPublicCached(
+          cacheKey,
+          () => listPoolOrdersRequest(queryParams, { signal: abortController.signal }),
+          { ttlMs: PUBLIC_POOL_PREVIEW_POLL_MS },
+        );
         const list = Array.isArray(res?.data?.orders) ? res.data.orders : [];
         if (!cancelled) {
+          rateLimitResumeAtRef.current = 0;
           setItems(list);
           setError(false);
         }
       } catch (err) {
         if (cancelled || err?.name === "CanceledError" || err?.code === "ERR_CANCELED") return;
+        if (isRateLimitedError(err)) {
+          rateLimitResumeAtRef.current = computePublicPollResumeAt(err);
+          if (!cancelled && initial) {
+            setItems([]);
+            setError(true);
+          }
+          return;
+        }
         if (!cancelled && initial) {
           setItems([]);
           setError(true);

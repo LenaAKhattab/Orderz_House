@@ -43,11 +43,24 @@ describe("global_api skip list (auth + order writes)", () => {
     assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/orders/pool/9/take", method: "POST" }), true);
   });
 
-  it("does not skip ordinary reads or nested client order actions", () => {
+  it("does not skip ordinary dashboard reads or nested client order actions", () => {
     assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/notifications/unread-count", method: "GET" }), false);
-    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/public/popup-ads", method: "GET" }), false);
     assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/client/orders/1/pay-checkout", method: "POST" }), false);
     assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/admin/orders/1/accept", method: "PATCH" }), false);
+  });
+
+  it("skips safe public GET chrome and pool preview list from global_api", () => {
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/public/popup-ads", method: "GET" }), true);
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/public/home-stats", method: "GET" }), true);
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/public/site-pages", method: "GET" }), true);
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/public/footer-settings", method: "GET" }), true);
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/public/faq", method: "GET" }), true);
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/public/ads", method: "GET" }), true);
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/public/currency-display", method: "GET" }), true);
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/orders/pool", method: "GET" }), true);
+    // Writes / events stay on global (or dedicated write limiters)
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/public/ads/1/impression", method: "POST" }), false);
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/orders/pool/9/take", method: "POST" }), true);
   });
 
   it("default general max is at least 300 (SPA read budget)", () => {
