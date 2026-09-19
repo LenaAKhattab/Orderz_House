@@ -1,6 +1,7 @@
 const fazatFreelancerProfileService = require("../services/fazatFreelancerProfileService");
 const fazatPartnerOrderService = require("../services/fazatPartnerOrderService");
 const fazatPartnerMessageService = require("../services/fazatPartnerMessageService");
+const { pipeOrderFileToResponse } = require("../utils/pipeOrderFileDownload");
 
 async function listFreelancers(req, res, next) {
   try {
@@ -32,6 +33,22 @@ async function patchFreelancerRank(req, res, next) {
 async function createOrder(req, res, next) {
   try {
     const result = await fazatPartnerOrderService.createPartnerOrder(req.body || {}, {
+      idempotencyKey: req.fazatPartner?.idempotencyKey || req.headers["x-idempotency-key"] || null,
+    });
+    return res.status(result.idempotentReplay ? 200 : 201).json({
+      success: true,
+      idempotentReplay: Boolean(result.idempotentReplay),
+      data: result.partnerOrder,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function createPoolOrder(req, res, next) {
+  try {
+    const body = { ...(req.body || {}), routeMode: "POOL" };
+    const result = await fazatPartnerOrderService.createPartnerPoolOrder(body, {
       idempotencyKey: req.fazatPartner?.idempotencyKey || req.headers["x-idempotency-key"] || null,
     });
     return res.status(result.idempotentReplay ? 200 : 201).json({
@@ -95,13 +112,27 @@ async function requestRevision(req, res, next) {
   }
 }
 
+async function downloadOrderFile(req, res, next) {
+  try {
+    const out = await fazatPartnerOrderService.preparePartnerOrderFileDownload(
+      req.params.orderId,
+      req.params.fileId,
+    );
+    return pipeOrderFileToResponse(req, res, next, out);
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   listFreelancers,
   patchFreelancerRank,
   createOrder,
+  createPoolOrder,
   getOrder,
   postMessage,
   listMessages,
   listDeliveries,
+  downloadOrderFile,
   requestRevision,
 };

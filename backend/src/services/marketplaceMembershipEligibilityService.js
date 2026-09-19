@@ -208,8 +208,30 @@ async function assertStarterNotAlreadyConsumed(client, freelancerUserId) {
 }
 
 /**
- * Gates for applying/bidding with Marketplace Membership entitlement.
- * purchased_pending_start + paid tiers require identity + training.
+ * Read configured membership training course id (null = feature not configured).
+ * Migration 153: training is required only *when set*.
+ */
+async function getMarketplaceMembershipRequiredCourseId(client) {
+  const runner = client || pool;
+  try {
+    const { rows } = await runner.query(
+      `SELECT marketplace_membership_required_course_id AS course_id
+         FROM marketplace_economy_settings WHERE id = 1`,
+    );
+    const courseId = rows[0]?.course_id != null ? Number(rows[0].course_id) : null;
+    return Number.isInteger(courseId) && courseId > 0 ? courseId : null;
+  } catch (err) {
+    if (err && err.code === "42703") return null;
+    throw err;
+  }
+}
+
+/**
+ * Gates for applying/bidding/pool-claim with Marketplace Membership entitlement.
+ * purchased_pending_start + paid tiers require identity + training *when a course is configured*.
+ * When marketplace_membership_required_course_id is unset, training gate is inactive
+ * (migration 153 "when set"; staging QA skips when unset). Activation requests still
+ * call assertPaidTrainingComplete directly and remain fail-closed until configured.
  * Active STARTER keeps verification-only (existing product path).
  */
 async function assertMarketplaceApplyGates(client, freelancerUserId, { membership = null } = {}) {
@@ -224,6 +246,17 @@ async function assertMarketplaceApplyGates(client, freelancerUserId, { membershi
 
   if (!needsTraining) {
     return { verificationOk: true, trainingRequired: false, trainingOk: true };
+  }
+
+  const configuredCourseId = await getMarketplaceMembershipRequiredCourseId(client);
+  if (!configuredCourseId) {
+    // Official unset setting = training feature not active for apply/claim gates.
+    return {
+      verificationOk: true,
+      trainingRequired: false,
+      trainingOk: true,
+      trainingSkippedUnconfigured: true,
+    };
   }
 
   await assertPaidTrainingComplete(client, freelancerUserId);
@@ -273,6 +306,7 @@ function evaluatePendingStartApplyCapability({
 module.exports = {
   assertMarketplaceVerificationComplete,
   assertPaidTrainingComplete,
+  getMarketplaceMembershipRequiredCourseId,
   assertMarketplaceApplyGates,
   membershipStatusAllowsApplication,
   evaluatePendingStartApplyCapability,

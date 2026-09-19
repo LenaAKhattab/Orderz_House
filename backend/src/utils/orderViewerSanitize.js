@@ -114,7 +114,7 @@ function sanitizePublicPoolOrder(order) {
   const applicantsCount = applicantsCountFrom(order);
   const fc = filesCountFrom(order);
 
-  return {
+  const out = {
     id: order.id,
     title: order.title,
     description: order.description,
@@ -152,6 +152,7 @@ function sanitizePublicPoolOrder(order) {
     hasAssignedFreelancer: Boolean(order.assignedFreelancerId),
     ...(order.showTrainingBadge === true ? { showTrainingBadge: true } : {}),
   };
+  return applyPartnerWhiteLabelForFreelancer(order, out, { keepPoolBudget: true });
 }
 
 /**
@@ -161,7 +162,7 @@ function sanitizePublicPoolOrder(order) {
 function sanitizeFreelancerPoolOrder(order) {
   if (!order || typeof order !== "object") return order;
   const pub = sanitizePublicPoolOrder(order);
-  return {
+  const out = {
     ...pub,
     poolEligibility: order.poolEligibility ?? null,
     files: Array.isArray(order.files) ? order.files.map(stripDirectFileUrls) : [],
@@ -173,6 +174,7 @@ function sanitizeFreelancerPoolOrder(order) {
     startedAt: order.startedAt ?? null,
     submittedAt: order.submittedAt ?? null,
   };
+  return applyPartnerWhiteLabelForFreelancer(order, out, { keepPoolBudget: true });
 }
 
 /** Limited pool preview when plan locks a real order (no files, short description). */
@@ -221,8 +223,9 @@ const FREELANCER_ASSIGNED_STRIP_KEYS = new Set([
 /**
  * Apply white-label client alias for partner-managed orders.
  * Mutates a shallow copy; never exposes FAZAT identity.
+ * @param {{ keepPoolBudget?: boolean }} opts - pool cards may keep budget for plan eligibility UI
  */
-function applyPartnerWhiteLabelForFreelancer(order, out) {
+function applyPartnerWhiteLabelForFreelancer(order, out, opts = {}) {
   const meta = order && (order.partnerMeta || order.integrationMeta || null);
   const isPartner =
     Boolean(order?.isPartnerManaged) ||
@@ -239,15 +242,18 @@ function applyPartnerWhiteLabelForFreelancer(order, out) {
   delete out.partnerCode;
   delete out.externalAssignmentId;
   delete out.externalOrderId;
+  delete out.settlementStatus;
   // Hide payment/finance linkage from freelancers on partner-managed work.
   delete out.paymentAmount;
   delete out.paymentCurrency;
   delete out.paymentRequired;
   delete out.paymentStatus;
-  delete out.budget;
-  delete out.bidBudgetMin;
-  delete out.bidBudgetMax;
-  delete out.currencyCode;
+  if (!opts.keepPoolBudget) {
+    delete out.budget;
+    delete out.bidBudgetMin;
+    delete out.bidBudgetMax;
+    delete out.currencyCode;
+  }
   return out;
 }
 

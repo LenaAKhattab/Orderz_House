@@ -12,10 +12,12 @@ router.get("/freelancers", controller.listFreelancers);
 router.patch("/freelancers/:freelancerId/rank", controller.patchFreelancerRank);
 
 router.post("/orders", controller.createOrder);
+router.post("/orders/pool", controller.createPoolOrder);
 router.get("/orders/:orderId", controller.getOrder);
 router.post("/orders/:orderId/messages", controller.postMessage);
 router.get("/orders/:orderId/messages", controller.listMessages);
 router.get("/orders/:orderId/deliveries", controller.listDeliveries);
+router.get("/orders/:orderId/files/:fileId", controller.downloadOrderFile);
 router.post("/orders/:orderId/revision", controller.requestRevision);
 
 // Settlement review queue — creates PENDING_REVIEW only (no wallet credit on receive).

@@ -2548,7 +2548,17 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
     );
 
     await client.query("COMMIT");
-    return await getOrderById(orderId);
+    const out = await getOrderById(orderId);
+    try {
+      const fazatPartnerOrderService = require("./fazatPartnerOrderService");
+      await fazatPartnerOrderService.markAssignedAfterPoolClaim({
+        orderzOrderId: orderId,
+        freelancerUserId,
+      });
+    } catch {
+      /* partner link/webhook is best-effort after successful take */
+    }
+    return out;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;

@@ -35,6 +35,17 @@ function getFazatIntegrationConfig() {
   const pilotFreelancerIds = parsePilotFreelancerIds();
   const requirePilotAllowlist = enabled; // while integration is on, allowlist is mandatory
 
+  const poolDefaultBudgetRaw = process.env.FAZAT_POOL_DEFAULT_BUDGET_JOD;
+  const poolDefaultBudgetParsed =
+    poolDefaultBudgetRaw != null && String(poolDefaultBudgetRaw).trim() !== ""
+      ? Number(poolDefaultBudgetRaw)
+      : null;
+  /** Optional POOL-only display/claim budget fallback (not Stripe/settlement). */
+  const poolDefaultBudgetJod =
+    Number.isFinite(poolDefaultBudgetParsed) && poolDefaultBudgetParsed > 0
+      ? poolDefaultBudgetParsed
+      : null;
+
   return {
     partnerCode: PARTNER_CODE,
     partnerName: "FAZ3AT",
@@ -46,6 +57,7 @@ function getFazatIntegrationConfig() {
     actorUserId: Number.isInteger(actorUserId) && actorUserId > 0 ? actorUserId : null,
     defaultCategoryId:
       Number.isInteger(defaultCategoryId) && defaultCategoryId > 0 ? defaultCategoryId : null,
+    poolDefaultBudgetJod,
     maxSkewSec,
     pilotFreelancerIds,
     requirePilotAllowlist,
