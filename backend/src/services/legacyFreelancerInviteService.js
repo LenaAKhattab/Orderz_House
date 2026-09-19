@@ -202,11 +202,10 @@ function mapCampaignPublic(row, { includeJoinUrl = false, plaintextToken = null 
 
 function mapCampaignPreview(row) {
   if (!row) return null;
+  // Public preview must not expose seat capacity / remaining counts.
   return {
     name: row.name,
     slug: row.slug,
-    remainingSeats: Math.max(0, Number(row.max_redemptions) - Number(row.used_count)),
-    seatsLimited: true,
     expiresAt: row.expires_at,
     defaultTrustLevel: row.default_trust_level,
     defaultCategoryId: row.default_category_id != null ? String(row.default_category_id) : null,

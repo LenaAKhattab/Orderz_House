@@ -131,13 +131,6 @@ export default function LegacyFreelancerJoinPage() {
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{previewError}</div>
         ) : (
           <>
-            {preview?.seatsLimited ? (
-              <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                المقاعد المتاحة محدودة
-                {typeof preview.remainingSeats === "number" ? ` (${preview.remainingSeats})` : ""}.
-              </p>
-            ) : null}
-
             {success ? (
               <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
                 {success}
