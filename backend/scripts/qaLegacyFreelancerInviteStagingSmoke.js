@@ -147,7 +147,7 @@ async function main() {
     const preview = await previewInvite({ campaignSlug: campaign.slug, token: campaign.token });
     step(
       "preview_valid",
-      preview?.slug === campaign.slug && preview.remainingSeats === 3 && !("secureTokenHash" in preview) && !("notes" in preview && preview.notes),
+      preview?.slug === campaign.slug && !("remainingSeats" in preview) && !("secureTokenHash" in preview) && !("notes" in preview && preview.notes),
       JSON.stringify(preview),
     );
     // notes intentionally omitted from preview mapper — good
