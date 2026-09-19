@@ -57,6 +57,7 @@ export const ASSIGNABLE_DASHBOARD_PERMISSIONS = [
 const SUPER_ADMIN_ROUTE_RULES = [
   { prefix: "/dashboard/super-admin/analysis", permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics },
   { prefix: "/dashboard/super-admin/users", permission: SUPER_ADMIN_PAGE_PERMISSIONS.usersControl },
+  { prefix: "/dashboard/super-admin/legacy-freelancer-invites", permission: SUPER_ADMIN_PAGE_PERMISSIONS.usersControl },
   { prefix: "/dashboard/super-admin/edit-website", permission: SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite },
   { prefix: "/dashboard/super-admin/training-orders", permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders },
   { prefix: "/dashboard/super-admin/pantry", permission: SUPER_ADMIN_PAGE_PERMISSIONS.pantry },

@@ -296,12 +296,46 @@ async function getActivationFeePaidAt(userId, client) {
 }
 
 /**
+ * Company offline / shared-invite freelancers: activation fee is waived (not paid).
+ * Does not invent a paid timestamp and does not create payment rows.
+ */
+async function getActivationFeeWaiver(userId, client) {
+  const runner = client || pool;
+  const uid = Number(userId);
+  if (!Number.isInteger(uid) || uid < 1) return null;
+  try {
+    const { rows } = await runner.query(
+      `SELECT onboarding_source, identity_verification_source, training_waiver_reason
+         FROM users WHERE id = $1 LIMIT 1`,
+      [uid],
+    );
+    const row = rows[0];
+    if (!row) return null;
+    if (String(row.onboarding_source || "") === "LEGACY_INVITE") {
+      return {
+        waived: true,
+        waiverReason: "legacy_company_invite",
+        identityVerificationSource: row.identity_verification_source || null,
+        detail: row.training_waiver_reason || "Legacy company freelancer shared invite",
+      };
+    }
+    return null;
+  } catch (err) {
+    if (err && (err.code === "42703" || err.code === "42P01")) return null;
+    throw err;
+  }
+}
+
+/**
  * Whether Checkout / eligibility should require the fee now.
  * Globally disabled → false (bypass requirement; does not invent a paid timestamp).
+ * Legacy company invite → false (waived; does not invent a paid timestamp).
  */
 async function freelancerNeedsSubscriptionActivationFee(userId, client, now = new Date()) {
   const cfg = await getActivationFeeConfig(client);
   if (!cfg.enabled) return false;
+  const waiver = await getActivationFeeWaiver(userId, client);
+  if (waiver?.waived) return false;
   const paidAt = await getLatestActivationFeePaidAt(userId, client);
   return !isActivationFeeCurrent(paidAt, now);
 }
@@ -510,6 +544,23 @@ function activationFeeValidUntil(paidAt, now = new Date()) {
 
 async function getActivationFeeStatus(userId, client) {
   const cfg = await getActivationFeeConfig(client);
+  const waiver = await getActivationFeeWaiver(userId, client);
+  if (waiver?.waived) {
+    return {
+      enabled: cfg.enabled,
+      amountJod: cfg.amountJod,
+      amountMinor: cfg.amountMinor,
+      validityDays: ACTIVATION_FEE_VALIDITY_DAYS,
+      paidAt: null,
+      validUntil: null,
+      isCurrent: true,
+      needsPayment: false,
+      waived: true,
+      waiverReason: waiver.waiverReason,
+      lastPaidAmountMinor: null,
+      lastPaidAmountJod: null,
+    };
+  }
   const paidAt = await getLatestActivationFeePaidAt(userId, client);
   const payment = await getLatestActivationFeePayment(userId, client);
   const isCurrent = isActivationFeeCurrent(paidAt);
@@ -527,6 +578,8 @@ async function getActivationFeeStatus(userId, client) {
     validUntil: validUntil || null,
     isCurrent,
     needsPayment: Boolean(cfg.enabled && !isCurrent),
+    waived: false,
+    waiverReason: null,
     lastPaidAmountMinor,
     lastPaidAmountJod: lastPaidAmountMinor != null ? amountMinorToJod(lastPaidAmountMinor) : null,
   };
@@ -793,6 +846,7 @@ module.exports = {
   getLatestActivationFeePaidAt,
   getLatestActivationFeePayment,
   freelancerNeedsSubscriptionActivationFee,
+  getActivationFeeWaiver,
   recordActivationFeePayment,
   recordSubscriptionActivationFeePaid,
   recordActivationFeeFromStripeSession,

@@ -81,6 +81,10 @@ export const SuperAdminFinancialClaimsPage = lazy(
 export const SuperAdminFazatSettlementsPage = lazy(
   () => import("../pages/dashboard/SuperAdminFazatSettlementsPage"),
 );
+export const SuperAdminLegacyFreelancerInvitesPage = lazy(
+  () => import("../pages/dashboard/SuperAdminLegacyFreelancerInvitesPage"),
+);
+export const LegacyFreelancerJoinPage = lazy(() => import("../pages/LegacyFreelancerJoinPage"));
 export const SuperAdminFinancialCenterPage = lazy(
   () => import("../pages/dashboard/SuperAdminFinancialCenterPage"),
 );

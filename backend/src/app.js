@@ -67,6 +67,7 @@ const superAdminFazatSettlementsRoutes = require("./routes/superAdminFazatSettle
 const superAdminAnalyticsRoutes = require("./routes/superAdminAnalyticsRoutes");
 const superAdminAdminsRoutes = require("./routes/superAdminAdminsRoutes");
 const superAdminUsersControlRoutes = require("./routes/superAdminUsersControlRoutes");
+const superAdminLegacyFreelancerInviteRoutes = require("./routes/superAdminLegacyFreelancerInviteRoutes");
 const rateLimitExemptionsRoutes = require("./routes/rateLimitExemptionsRoutes");
 const superAdminFeedbackRoutes = require("./routes/superAdminFeedbackRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
@@ -208,6 +209,7 @@ app.use("/api/super-admin", superAdminFinancialClaimsRoutes);
 app.use("/api/super-admin", superAdminFazatSettlementsRoutes);
 app.use("/api/super-admin", superAdminAdminsRoutes);
 app.use("/api/super-admin", superAdminUsersControlRoutes);
+app.use("/api/super-admin", superAdminLegacyFreelancerInviteRoutes);
 app.use("/api/super-admin", superAdminWebsiteRoutes);
 app.use("/api/super-admin", rateLimitExemptionsRoutes);
 app.use("/api/super-admin", superAdminFeedbackRoutes);

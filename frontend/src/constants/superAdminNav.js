@@ -27,6 +27,15 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     matchPrefix: "/dashboard/super-admin/users",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.usersControl,
   },
+  legacyFreelancerInvites: {
+    key: "legacyFreelancerInvites",
+    to: "/dashboard/super-admin/legacy-freelancer-invites",
+    labelKey: "dashboard.nav.superAdmin.legacyFreelancerInvites",
+    icon: "admins",
+    end: true,
+    matchPrefix: "/dashboard/super-admin/legacy-freelancer-invites",
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.usersControl,
+  },
   internalRequests: {
     key: "internalRequests",
     to: "/dashboard/super-admin/orders",
@@ -250,7 +259,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "overview",
     labelKey: "dashboard.nav.sections.overview",
-    itemKeys: ["overview", "analytics", "users"],
+    itemKeys: ["overview", "analytics", "users", "legacyFreelancerInvites"],
   },
   {
     id: "ordersOps",
@@ -320,6 +329,9 @@ export function filterSuperAdminNavSections(user, hasPermission) {
 
 export function superAdminBreadcrumbKeys(pathname) {
   const base = ["dashboard.breadcrumbs.home"];
+  if (pathname.includes("/legacy-freelancer-invites")) {
+    return [...base, "dashboard.breadcrumbs.legacyFreelancerInvites"];
+  }
   if (pathname.includes("/analysis")) return [...base, "dashboard.breadcrumbs.analytics"];
   if (pathname.includes("/subscriptions/activation")) {
     return [...base, "dashboard.breadcrumbs.subscriptionActivation"];

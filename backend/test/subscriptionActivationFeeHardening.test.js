@@ -51,10 +51,26 @@ const {
 } = require("../src/services/subscriptionActivationFeeService");
 
 function createMockClient(handlers) {
+  // Default: non-legacy user so getActivationFeeWaiver returns null (tests can override).
+  const withWaiverDefault = [
+    [
+      "SELECT onboarding_source, identity_verification_source, training_waiver_reason",
+      () => ({
+        rows: [
+          {
+            onboarding_source: null,
+            identity_verification_source: null,
+            training_waiver_reason: null,
+          },
+        ],
+      }),
+    ],
+    ...handlers,
+  ];
   return {
     query: async (sql, params) => {
       const key = String(sql).replace(/\s+/g, " ").trim();
-      for (const [pattern, fn] of handlers) {
+      for (const [pattern, fn] of withWaiverDefault) {
         if (typeof pattern === "string" ? key.includes(pattern) : pattern.test(key)) {
           return fn(sql, params);
         }

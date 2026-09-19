@@ -49,6 +49,9 @@ function mockDbClient(extraHandlers = []) {
       if (key.includes("freelancer_subscription_checkout_sessions")) {
         return { rows: [] };
       }
+      if (key.includes("FROM users WHERE id") || key.includes("FROM users WHERE id =")) {
+        return { rows: [{ onboarding_source: null, identity_verification_source: null, training_waiver_reason: null }] };
+      }
       if (key.includes("FROM users u")) {
         return { rows: [{ user_paid_at: null, audit_paid_at: null }] };
       }
@@ -402,5 +405,86 @@ describe("activation fee config defaults and updates", () => {
         String(Math.round(step.amountJod * 1000)),
       );
     }
+  });
+
+  it("legacy invite waives fee without inventing paidAt or payment rows", async () => {
+    await fee.updateActivationFeeSettings({ enabled: true, amountJod: 25, stripe: null }, mockDbClient());
+    const client = mockDbClient([
+      [
+        "FROM users WHERE id",
+        () => ({
+          rows: [
+            {
+              onboarding_source: "LEGACY_INVITE",
+              identity_verification_source: "COMPANY_OFFLINE_VERIFIED",
+              training_waiver_reason: "Legacy company freelancer",
+            },
+          ],
+        }),
+      ],
+    ]);
+    assert.strictEqual(await fee.freelancerNeedsSubscriptionActivationFee(42, client), false);
+    const status = await fee.getActivationFeeStatus(42, client);
+    assert.strictEqual(status.needsPayment, false);
+    assert.strictEqual(status.waived, true);
+    assert.strictEqual(status.waiverReason, "legacy_company_invite");
+    assert.strictEqual(status.paidAt, null);
+    assert.strictEqual(status.isCurrent, true);
+    assert.strictEqual(status.lastPaidAmountMinor, null);
+  });
+
+  it("normal freelancer still needs payment when fee enabled and unpaid", async () => {
+    await fee.updateActivationFeeSettings({ enabled: true, amountJod: 25, stripe: null }, mockDbClient());
+    const client = mockDbClient();
+    assert.strictEqual(await fee.freelancerNeedsSubscriptionActivationFee(7, client), true);
+    const status = await fee.getActivationFeeStatus(7, client);
+    assert.strictEqual(status.needsPayment, true);
+    assert.strictEqual(status.waived, false);
+    assert.strictEqual(status.paidAt, null);
+  });
+
+  it("genuinely paid freelancer remains current via paidAt (not legacy waiver)", async () => {
+    await fee.updateActivationFeeSettings({ enabled: true, amountJod: 25, stripe: null }, mockDbClient());
+    const recent = new Date();
+    const client = mockDbClient([
+      [
+        "FROM users WHERE id",
+        () => ({
+          rows: [{ onboarding_source: "NORMAL_SIGNUP", identity_verification_source: null, training_waiver_reason: null }],
+        }),
+      ],
+      [
+        "FROM users u",
+        () => ({ rows: [{ user_paid_at: recent, audit_paid_at: recent }] }),
+      ],
+      [
+        "FROM subscription_activation_fee_payments",
+        () => ({ rows: [{ amount_minor: 25000, paid_at: recent }] }),
+      ],
+    ]);
+    assert.strictEqual(await fee.freelancerNeedsSubscriptionActivationFee(8, client), false);
+    const status = await fee.getActivationFeeStatus(8, client);
+    assert.strictEqual(status.needsPayment, false);
+    assert.strictEqual(status.waived, false);
+    assert.ok(status.paidAt);
+    assert.strictEqual(status.lastPaidAmountMinor, 25000);
+  });
+});
+
+describe("activation fee revenue SQL ignores waived legacy (static)", () => {
+  it("dashboard revenue only sums payment rows for payment_status=paid", () => {
+    const analysis = fs.readFileSync(
+      path.join(__dirname, "..", "src", "services", "superAdminDashboardAnalysisService.js"),
+      "utf8",
+    );
+    assert.match(analysis, /FROM subscription_activation_fee_payments/);
+    assert.match(analysis, /WHEN fs\.payment_status = 'paid'/);
+    assert.match(analysis, /PAID_ACTIVATION_FEE_SQL/);
+    // Revenue uses payment ledger rows, not users.subscription_activation_fee_paid_at alone.
+    const revenueBlock = analysis.slice(
+      analysis.indexOf("const PAID_ACTIVATION_FEE_SQL"),
+      analysis.indexOf("const PAID_TOTAL_REVENUE_SQL") + 200,
+    );
+    assert.doesNotMatch(revenueBlock, /subscription_activation_fee_paid_at/);
   });
 });

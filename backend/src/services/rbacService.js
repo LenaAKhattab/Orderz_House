@@ -129,10 +129,12 @@ async function resolveAuthzContext({ userId, legacyRole = null }) {
 
 /**
  * Assign a role to a user in user_roles (idempotent). Safe if RBAC not ready.
+ * @param {{ userId: number, roleName: string, client?: import("pg").PoolClient }} opts
  */
-async function ensureUserRole({ userId, roleName }) {
+async function ensureUserRole({ userId, roleName, client = null }) {
+  const runner = client || pool;
   try {
-    await pool.query(
+    await runner.query(
       `INSERT INTO user_roles (user_id, role_id)
        SELECT $1::bigint, r.id FROM roles r WHERE r.name = $2::text
        ON CONFLICT (user_id, role_id) DO NOTHING`,

@@ -58,6 +58,8 @@ import {
   SuperAdminSubscriptionsPage,
   SuperAdminFinancialClaimsPage,
   SuperAdminFazatSettlementsPage,
+  SuperAdminLegacyFreelancerInvitesPage,
+  LegacyFreelancerJoinPage,
   SuperAdminFinancialCenterPage,
   FinancialEmployeeDetailPage,
   SuperAdminSettingsPage,
@@ -262,6 +264,16 @@ function App() {
                   </GuestOnly>
                 }
               />
+              <Route
+                path="/freelancer/legacy-join/:campaignSlug"
+                element={
+                  <GuestOnly>
+                    <Suspense fallback={<RouteSuspenseFallback />}>
+                      <LegacyFreelancerJoinPage />
+                    </Suspense>
+                  </GuestOnly>
+                }
+              />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-conditions" element={<TermsConditions />} />
@@ -453,6 +465,14 @@ function App() {
                   element={
                     <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims}>
                       <SuperAdminFazatSettlementsPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/legacy-freelancer-invites"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.usersControl}>
+                      <SuperAdminLegacyFreelancerInvitesPage />
                     </RequireStaffPage>
                   }
                 />

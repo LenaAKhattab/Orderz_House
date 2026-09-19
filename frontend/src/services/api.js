@@ -2308,6 +2308,54 @@ export const adjustAndApproveFazatSettlementRequest = async (id, payload) => {
   return data;
 };
 
+export const listLegacyFreelancerInvitesRequest = async () => {
+  const { data } = await api.get("/super-admin/legacy-freelancer-invites");
+  return data;
+};
+
+export const createLegacyFreelancerInviteRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/legacy-freelancer-invites", payload, { timeout: 30000 });
+  return data;
+};
+
+export const updateLegacyFreelancerInviteRequest = async (id, payload) => {
+  const { data } = await api.patch(`/super-admin/legacy-freelancer-invites/${encodeURIComponent(id)}`, payload);
+  return data;
+};
+
+export const revokeLegacyFreelancerInviteRequest = async (id) => {
+  const { data } = await api.post(`/super-admin/legacy-freelancer-invites/${encodeURIComponent(id)}/revoke`);
+  return data;
+};
+
+export const regenerateLegacyFreelancerInviteTokenRequest = async (id) => {
+  const { data } = await api.post(
+    `/super-admin/legacy-freelancer-invites/${encodeURIComponent(id)}/regenerate-token`,
+  );
+  return data;
+};
+
+export const listLegacyFreelancerInviteRedemptionsRequest = async (id) => {
+  const { data } = await api.get(
+    `/super-admin/legacy-freelancer-invites/${encodeURIComponent(id)}/redemptions`,
+  );
+  return data;
+};
+
+export const previewLegacyFreelancerInviteRequest = async (campaignSlug, token) => {
+  const { data } = await api.get(`/auth/legacy-freelancer-invite/${encodeURIComponent(campaignSlug)}`, {
+    params: { token },
+  });
+  return data;
+};
+
+export const legacyFreelancerRegisterRequest = async (payload) => {
+  const { data } = await api.post("/auth/legacy-freelancer-register", payload, {
+    timeout: AUTH_REGISTER_TIMEOUT_MS,
+  });
+  return data;
+};
+
 export const getPortalCashWalletRequest = async (params = {}) => {
   const { data } = await api.get("/portal/cash-wallet", { params });
   return data;

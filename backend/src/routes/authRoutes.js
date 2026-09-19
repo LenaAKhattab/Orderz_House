@@ -1,5 +1,6 @@
 const express = require("express");
 const authController = require("../controllers/authController");
+const legacyInviteController = require("../controllers/legacyFreelancerInviteController");
 const { requireAuth } = require("../middleware/rbacMiddleware");
 const { authorizeRoles } = require("../middleware/roleMiddleware");
 const validateRequest = require("../middleware/validateRequest");
@@ -12,6 +13,10 @@ const {
   verifyForgotPasswordOtpValidators,
   resetPasswordValidators,
 } = require("../validators/authValidators");
+const {
+  campaignSlugParam,
+  registerLegacyValidators,
+} = require("../validators/legacyFreelancerInviteValidators");
 const { ROLES } = require("../constants/roles");
 const {
   registerLimiter,
@@ -58,6 +63,20 @@ router.post(
 router.post("/login", loginLimiter, loginValidators, validateRequest, authController.login);
 router.post("/logout", authController.logout);
 router.get("/me", requireAuth, authController.me);
+
+router.get(
+  "/legacy-freelancer-invite/:campaignSlug",
+  campaignSlugParam,
+  validateRequest,
+  legacyInviteController.previewInvite,
+);
+router.post(
+  "/legacy-freelancer-register",
+  registerLimiter,
+  registerLegacyValidators,
+  validateRequest,
+  legacyInviteController.registerLegacy,
+);
 
 /** Enforce role boundaries on the server (JWT + explicit role lists). */
 router.get("/scope/super-admin", requireAuth, authorizeRoles(ROLES.SUPER_ADMIN), authController.respondScope("super_admin"));
