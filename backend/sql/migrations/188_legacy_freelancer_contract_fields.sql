@@ -1,5 +1,5 @@
 -- 188: Legacy Freelancer contract registration fields (per-campaign config + answers)
--- Additive only. No DROP/TRUNCATE. No token/campaign identity changes.
+-- Additive only. No destructive statements. No token/campaign identity changes.
 
 BEGIN;
 
