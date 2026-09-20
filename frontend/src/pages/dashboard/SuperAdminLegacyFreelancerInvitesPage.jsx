@@ -7,6 +7,10 @@ import {
   regenerateLegacyFreelancerInviteTokenRequest,
   updateLegacyFreelancerInviteRequest,
   getCategoriesRequest,
+  getLegacyFreelancerInviteFieldsRequest,
+  putLegacyFreelancerInviteFieldsRequest,
+  restoreLegacyFreelancerInviteFieldsRequest,
+  getLegacyFreelancerInviteAnswersRequest,
 } from "../../services/api";
 import { useToast } from "../../components/ui/toastContext";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
@@ -61,6 +65,10 @@ export default function SuperAdminLegacyFreelancerInvitesPage() {
   const [selectedId, setSelectedId] = useState(null);
   const [redemptions, setRedemptions] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [fieldConfig, setFieldConfig] = useState(null);
+  const [fieldsBusy, setFieldsBusy] = useState(false);
+  const [answersModal, setAnswersModal] = useState(null);
+  const [answersLoading, setAnswersLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -102,6 +110,85 @@ export default function SuperAdminLegacyFreelancerInvitesPage() {
   useEffect(() => {
     if (selectedId) loadRedemptions(selectedId);
   }, [selectedId, loadRedemptions]);
+
+  const loadFields = useCallback(
+    async (campaignId) => {
+      if (!campaignId) {
+        setFieldConfig(null);
+        return;
+      }
+      try {
+        const res = await getLegacyFreelancerInviteFieldsRequest(campaignId);
+        setFieldConfig(res?.data || null);
+      } catch (err) {
+        pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحميل حقول التسجيل") });
+      }
+    },
+    [pushToast],
+  );
+
+  useEffect(() => {
+    if (selectedId) loadFields(selectedId);
+  }, [selectedId, loadFields]);
+
+  const updateFieldLocal = (fieldKey, patch) => {
+    setFieldConfig((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        fields: (prev.fields || []).map((f) => (f.fieldKey === fieldKey ? { ...f, ...patch } : f)),
+      };
+    });
+  };
+
+  const saveFields = async () => {
+    if (!selectedId || !fieldConfig) return;
+    setFieldsBusy(true);
+    try {
+      const payload = (fieldConfig.fields || []).map((f) => ({
+        fieldKey: f.fieldKey,
+        labelAr: f.labelAr,
+        isEnabled: Boolean(f.isEnabled),
+        isRequired: Boolean(f.isEnabled) && Boolean(f.isRequired),
+        sortOrder: Number(f.sortOrder) || 0,
+      }));
+      const res = await putLegacyFreelancerInviteFieldsRequest(selectedId, payload);
+      setFieldConfig(res?.data || null);
+      pushToast({ type: "success", message: "تم حفظ بيانات التسجيل المطلوبة" });
+    } catch (err) {
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر حفظ الحقول") });
+    } finally {
+      setFieldsBusy(false);
+    }
+  };
+
+  const restoreFields = async () => {
+    if (!selectedId) return;
+    setFieldsBusy(true);
+    try {
+      const res = await restoreLegacyFreelancerInviteFieldsRequest(selectedId);
+      setFieldConfig(res?.data || null);
+      pushToast({ type: "success", message: "تمت استعادة الإعداد الافتراضي" });
+    } catch (err) {
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر الاستعادة") });
+    } finally {
+      setFieldsBusy(false);
+    }
+  };
+
+  const openAnswers = async (userId) => {
+    if (!selectedId || !userId) return;
+    setAnswersLoading(true);
+    setAnswersModal(null);
+    try {
+      const res = await getLegacyFreelancerInviteAnswersRequest(selectedId, userId);
+      setAnswersModal(res?.data || null);
+    } catch (err) {
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحميل بيانات التسجيل") });
+    } finally {
+      setAnswersLoading(false);
+    }
+  };
 
   const onCreate = async (e) => {
     e.preventDefault();
@@ -368,7 +455,7 @@ export default function SuperAdminLegacyFreelancerInvitesPage() {
                           className="rounded border px-2 py-1 text-xs"
                           onClick={() => setSelectedId(row.id)}
                         >
-                          المسجلون
+                          المسجلون / الحقول
                         </button>
                         <button
                           type="button"
@@ -405,6 +492,109 @@ export default function SuperAdminLegacyFreelancerInvitesPage() {
       </DashboardSection>
 
       {selected ? (
+        <DashboardSection title={`بيانات التسجيل المطلوبة — ${selected.name}`}>
+          <p className="mb-3 text-sm text-slate-600">
+            حدد البيانات التي يجب على الفريلانسر تعبئتها عند التسجيل من خلال رابط هذه الحملة.
+          </p>
+          {fieldConfig?.systemAccountFields?.length ? (
+            <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+              <p className="mb-2 font-medium text-slate-800">حقول أساسية للنظام (لا يمكن تعطيلها)</p>
+              <ul className="list-disc pr-5 text-slate-600">
+                {fieldConfig.systemAccountFields.map((f) => (
+                  <li key={f.key}>
+                    {f.labelAr} — {f.labelNote || "حقل أساسي للنظام"}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {fieldConfig?.fields?.length ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b text-right text-slate-500">
+                    <th className="px-2 py-2">السؤال / الحقل</th>
+                    <th className="px-2 py-2">إظهار</th>
+                    <th className="px-2 py-2">إلزامي</th>
+                    <th className="px-2 py-2">الترتيب</th>
+                    <th className="px-2 py-2">تعديل النص</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fieldConfig.fields.map((f) => (
+                    <tr key={f.fieldKey} className="border-b border-slate-100 align-top">
+                      <td className="px-2 py-2">
+                        <div className="font-medium">{f.labelAr}</div>
+                        <div className="text-xs text-slate-400" dir="ltr">
+                          {f.fieldKey}
+                          {f.conditional ? ` · شرط: ${f.conditional.fieldKey}` : ""}
+                        </div>
+                      </td>
+                      <td className="px-2 py-2">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(f.isEnabled)}
+                          onChange={(e) =>
+                            updateFieldLocal(f.fieldKey, {
+                              isEnabled: e.target.checked,
+                              isRequired: e.target.checked ? f.isRequired : false,
+                            })
+                          }
+                        />
+                      </td>
+                      <td className="px-2 py-2">
+                        <input
+                          type="checkbox"
+                          disabled={!f.isEnabled}
+                          checked={Boolean(f.isRequired)}
+                          onChange={(e) => updateFieldLocal(f.fieldKey, { isRequired: e.target.checked })}
+                        />
+                      </td>
+                      <td className="px-2 py-2">
+                        <input
+                          type="number"
+                          className="w-20 rounded border px-2 py-1"
+                          value={f.sortOrder}
+                          onChange={(e) => updateFieldLocal(f.fieldKey, { sortOrder: Number(e.target.value) || 0 })}
+                        />
+                      </td>
+                      <td className="px-2 py-2">
+                        <input
+                          className="w-full min-w-[160px] rounded border px-2 py-1"
+                          value={f.labelAr}
+                          onChange={(e) => updateFieldLocal(f.fieldKey, { labelAr: e.target.value })}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <DashboardEmptyState title="لا توجد حقول بعد" description="اضغط استعادة الافتراضي لتهيئة الكتالوج." />
+          )}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="rounded-lg bg-emerald-700 px-4 py-2 text-sm text-white disabled:opacity-60"
+              disabled={fieldsBusy}
+              onClick={saveFields}
+            >
+              حفظ الحقول
+            </button>
+            <button
+              type="button"
+              className="rounded-lg border px-4 py-2 text-sm disabled:opacity-60"
+              disabled={fieldsBusy}
+              onClick={restoreFields}
+            >
+              استعادة الإعداد الافتراضي
+            </button>
+          </div>
+        </DashboardSection>
+      ) : null}
+
+      {selected ? (
         <DashboardSection title={`المسجلون — ${selected.name}`}>
           <p className="mb-2 text-sm text-slate-600">
             {selected.usedCount} / {selected.maxRedemptions} مقعد
@@ -421,6 +611,7 @@ export default function SuperAdminLegacyFreelancerInvitesPage() {
                     <th className="px-2 py-2">الهاتف</th>
                     <th className="px-2 py-2">مرجع</th>
                     <th className="px-2 py-2">تاريخ التسجيل</th>
+                    <th className="px-2 py-2">إجراء</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -435,6 +626,16 @@ export default function SuperAdminLegacyFreelancerInvitesPage() {
                       </td>
                       <td className="px-2 py-2">{r.internalReference || r.identityLast4 || "—"}</td>
                       <td className="px-2 py-2">{formatDate(r.redeemedAt)}</td>
+                      <td className="px-2 py-2">
+                        <button
+                          type="button"
+                          className="rounded border px-2 py-1 text-xs"
+                          disabled={answersLoading}
+                          onClick={() => openAnswers(r.userId)}
+                        >
+                          عرض بيانات التسجيل
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -448,6 +649,35 @@ export default function SuperAdminLegacyFreelancerInvitesPage() {
             تصدير CSV
           </a>
         </DashboardSection>
+      ) : null}
+
+      {answersModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-4 shadow-xl">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h3 className="text-lg font-semibold">بيانات التسجيل</h3>
+              <button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => setAnswersModal(null)}>
+                إغلاق
+              </button>
+            </div>
+            {(answersModal.sections || []).map((sec) => (
+              <div key={sec.key} className="mb-4">
+                <h4 className="mb-2 border-b pb-1 text-sm font-semibold text-slate-800">{sec.labelAr}</h4>
+                <dl className="grid gap-2 text-sm">
+                  {(sec.fields || []).map((f) => (
+                    <div key={f.fieldKey} className="grid grid-cols-1 gap-0.5 sm:grid-cols-[180px_1fr]">
+                      <dt className="text-slate-500">{f.labelAr}</dt>
+                      <dd className="text-slate-900" dir={f.sensitive ? "ltr" : undefined}>
+                        {f.value === true ? "نعم" : f.value === false ? "لا" : String(f.value ?? "—")}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ))}
+            {!answersModal.sections?.length ? <p className="text-sm text-slate-500">لا توجد إجابات محفوظة.</p> : null}
+          </div>
+        </div>
       ) : null}
     </DashboardShell>
   );

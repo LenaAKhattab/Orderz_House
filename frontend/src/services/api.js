@@ -2342,6 +2342,37 @@ export const listLegacyFreelancerInviteRedemptionsRequest = async (id) => {
   return data;
 };
 
+export const getLegacyFreelancerInviteFieldCatalogRequest = async () => {
+  const { data } = await api.get("/super-admin/legacy-freelancer-invite-field-catalog");
+  return data;
+};
+
+export const getLegacyFreelancerInviteFieldsRequest = async (id) => {
+  const { data } = await api.get(`/super-admin/legacy-freelancer-invites/${encodeURIComponent(id)}/fields`);
+  return data;
+};
+
+export const putLegacyFreelancerInviteFieldsRequest = async (id, fields) => {
+  const { data } = await api.put(`/super-admin/legacy-freelancer-invites/${encodeURIComponent(id)}/fields`, {
+    fields,
+  });
+  return data;
+};
+
+export const restoreLegacyFreelancerInviteFieldsRequest = async (id) => {
+  const { data } = await api.post(
+    `/super-admin/legacy-freelancer-invites/${encodeURIComponent(id)}/fields/restore-defaults`,
+  );
+  return data;
+};
+
+export const getLegacyFreelancerInviteAnswersRequest = async (campaignId, userId) => {
+  const { data } = await api.get(
+    `/super-admin/legacy-freelancer-invites/${encodeURIComponent(campaignId)}/redemptions/${encodeURIComponent(userId)}/answers`,
+  );
+  return data;
+};
+
 export const previewLegacyFreelancerInviteRequest = async (campaignSlug, token) => {
   const { data } = await api.get(`/auth/legacy-freelancer-invite/${encodeURIComponent(campaignSlug)}`, {
     params: { token },

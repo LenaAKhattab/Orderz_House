@@ -1,6 +1,7 @@
 const { body, param } = require("express-validator");
 
 const campaignIdParam = [param("campaignId").isInt({ min: 1 }).withMessage("معرف الحملة غير صالح.")];
+const userIdParam = [param("userId").isInt({ min: 1 }).withMessage("معرف المستخدم غير صالح.")];
 
 const campaignSlugParam = [
   param("campaignSlug")
@@ -37,12 +38,16 @@ const updateCampaignValidators = [
 const registerLegacyValidators = [
   body("campaignSlug").trim().isLength({ min: 3, max: 120 }).withMessage("رابط الحملة مطلوب."),
   body("token").trim().isLength({ min: 16, max: 200 }).withMessage("رمز الدعوة مطلوب."),
-  body("fullName").trim().isLength({ min: 2, max: 200 }).withMessage("الاسم الكامل مطلوب."),
+  body("fullName").optional({ nullable: true }).trim().isLength({ min: 2, max: 200 }),
+  body("firstName").optional({ nullable: true }).trim().isLength({ min: 1, max: 120 }),
+  body("fatherName").optional({ nullable: true }).trim().isLength({ min: 1, max: 120 }),
+  body("familyName").optional({ nullable: true }).trim().isLength({ min: 1, max: 120 }),
   body("email").trim().isEmail().withMessage("البريد الإلكتروني غير صالح."),
   body("password").isLength({ min: 8, max: 128 }).withMessage("كلمة المرور قصيرة جداً."),
   body("passwordConfirm").optional().isLength({ min: 8, max: 128 }),
   body("termsAccepted").custom((v) => v === true || v === "true" || v === 1 || v === "1"),
   body("privacyAccepted").custom((v) => v === true || v === "true" || v === 1 || v === "1"),
+  body("answers").optional({ nullable: true }).isObject(),
   body("identityLast4").optional({ nullable: true }).isString().isLength({ max: 8 }),
   body("internalReference").optional({ nullable: true }).isString().isLength({ max: 120 }),
   body("city").optional({ nullable: true }).isString().isLength({ max: 120 }),
@@ -54,6 +59,7 @@ const registerLegacyValidators = [
 
 module.exports = {
   campaignIdParam,
+  userIdParam,
   campaignSlugParam,
   createCampaignValidators,
   updateCampaignValidators,

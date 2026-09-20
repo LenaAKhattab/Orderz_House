@@ -133,6 +133,67 @@ const exportRedemptionsCsv = async (req, res, next) => {
   }
 };
 
+const getContractCatalog = async (_req, res, next) => {
+  try {
+    const contractFields = require("../services/legacyFreelancerContractFieldsService");
+    return res.status(200).json({ success: true, data: contractFields.getContractCatalog() });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const getCampaignFields = async (req, res, next) => {
+  try {
+    const contractFields = require("../services/legacyFreelancerContractFieldsService");
+    const data = await contractFields.getCampaignFieldConfig(req.params.campaignId, {
+      includeDisabled: true,
+    });
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const putCampaignFields = async (req, res, next) => {
+  try {
+    const contractFields = require("../services/legacyFreelancerContractFieldsService");
+    const data = await contractFields.replaceCampaignFieldConfig(
+      req.params.campaignId,
+      req.body.fields || req.body,
+      { actorAdminId: actorId(req) },
+    );
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const restoreCampaignFields = async (req, res, next) => {
+  try {
+    const contractFields = require("../services/legacyFreelancerContractFieldsService");
+    const data = await contractFields.restoreDefaultFieldConfig(req.params.campaignId, {
+      actorAdminId: actorId(req),
+    });
+    return res.status(200).json({ success: true, data, message: "تمت استعادة الإعداد الافتراضي." });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const getRedemptionAnswers = async (req, res, next) => {
+  try {
+    const contractFields = require("../services/legacyFreelancerContractFieldsService");
+    const data = await contractFields.getAnswersForUser({
+      campaignId: req.params.campaignId,
+      userId: req.params.userId,
+      maskSensitive: false,
+    });
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const previewInvite = async (req, res, next) => {
   try {
     const data = await legacyFreelancerInviteService.previewInvite({
@@ -172,6 +233,11 @@ module.exports = {
   regenerateToken,
   listRedemptions,
   exportRedemptionsCsv,
+  getContractCatalog,
+  getCampaignFields,
+  putCampaignFields,
+  restoreCampaignFields,
+  getRedemptionAnswers,
   previewInvite,
   registerLegacy,
 };

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import AuthFormCard from "../components/auth/AuthFormCard";
 import AuthLayout from "../components/auth/AuthLayout";
@@ -13,14 +13,89 @@ import {
 import { getAuthApiErrorMessage } from "../utils/apiErrorMessage";
 import { ARAB_COUNTRIES, DEFAULT_DIAL_CODE } from "../constants/arabCountries";
 
-const CATEGORY_OPTIONS = [
-  { value: "design", label: "التصميم" },
-  { value: "content_writing", label: "كتابة المحتوى" },
-  { value: "development", label: "البرمجة" },
-];
-
 const fieldLabel = tw.authFieldLabel;
 const fieldInput = tw.authInputNoIcon;
+
+const SECTION_ORDER = ["personal", "address", "education", "skills", "study_work", "extra", "declaration"];
+
+function conditionActive(rule, answers) {
+  if (!rule?.fieldKey) return true;
+  const v = answers[rule.fieldKey];
+  if (typeof rule.equals === "boolean") {
+    return v === true || v === "true" || v === "yes" || v === "نعم";
+  }
+  return String(v ?? "") === String(rule.equals);
+}
+
+function FieldInput({ field, value, onChange }) {
+  const common = { className: fieldInput, id: `lf-${field.key}` };
+  if (field.type === "textarea") {
+    return (
+      <textarea
+        {...common}
+        rows={3}
+        required={field.required}
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    );
+  }
+  if (field.type === "select") {
+    return (
+      <select
+        {...common}
+        required={field.required}
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="">— اختر —</option>
+        {(field.options || []).map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+  if (field.type === "yes_no") {
+    return (
+      <select
+        {...common}
+        required={field.required}
+        value={value === true ? "yes" : value === false ? "no" : ""}
+        onChange={(e) => onChange(e.target.value === "yes" ? true : e.target.value === "no" ? false : "")}
+      >
+        <option value="">— اختر —</option>
+        <option value="yes">نعم</option>
+        <option value="no">لا</option>
+      </select>
+    );
+  }
+  if (field.type === "checkbox") {
+    return (
+      <label className="flex items-start gap-2 text-sm font-normal">
+        <input
+          type="checkbox"
+          checked={value === true}
+          required={field.required}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+        <span>{field.helper || field.label}</span>
+      </label>
+    );
+  }
+  const inputType = field.type === "date" ? "date" : field.type === "number" ? "number" : "text";
+  return (
+    <input
+      {...common}
+      type={inputType}
+      dir={field.type === "phone" || field.type === "number" ? "ltr" : undefined}
+      required={field.required}
+      value={value ?? ""}
+      onChange={(e) => onChange(field.type === "number" ? e.target.value : e.target.value)}
+    />
+  );
+}
 
 export default function LegacyFreelancerJoinPage() {
   const { campaignSlug } = useParams();
@@ -36,20 +111,15 @@ export default function LegacyFreelancerJoinPage() {
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [dial, setDial] = useState(DEFAULT_DIAL_CODE);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
-  const [specialty, setSpecialty] = useState("content_writing");
-  const [city, setCity] = useState("");
   const [country, setCountry] = useState("JO");
-  const [gender, setGender] = useState("ذكر");
-  const [identityLast4, setIdentityLast4] = useState("");
-  const [internalReference, setInternalReference] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [answers, setAnswers] = useState({});
 
   useEffect(() => {
     let cancelled = false;
@@ -57,11 +127,12 @@ export default function LegacyFreelancerJoinPage() {
       setLoadingPreview(true);
       setPreviewError("");
       try {
-        if (!token) {
-          throw new Error("رابط الدعوة غير مكتمل.");
-        }
+        if (!token) throw new Error("رابط الدعوة غير مكتمل.");
         const res = await previewLegacyFreelancerInviteRequest(campaignSlug, token);
-        if (!cancelled) setPreview(res?.data || null);
+        if (!cancelled) {
+          setPreview(res?.data || null);
+          setAnswers({});
+        }
       } catch (err) {
         if (!cancelled) {
           setPreviewError(getAuthApiErrorMessage(err, "تم إيقاف رابط الدعوة."));
@@ -75,6 +146,46 @@ export default function LegacyFreelancerJoinPage() {
       cancelled = true;
     };
   }, [campaignSlug, token]);
+
+  const formFields = useMemo(() => {
+    const list = Array.isArray(preview?.formFields) ? preview.formFields : [];
+    return [...list].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  }, [preview]);
+
+  const sectionMeta = useMemo(() => {
+    const map = {};
+    for (const s of preview?.sections || []) {
+      map[s.key] = s.label || s.key;
+    }
+    return map;
+  }, [preview]);
+
+  const visibleFields = useMemo(
+    () => formFields.filter((f) => conditionActive(f.conditionalRule, answers)),
+    [formFields, answers],
+  );
+
+  const sectionsWithFields = useMemo(() => {
+    const grouped = {};
+    for (const f of visibleFields) {
+      const key = f.section || "extra";
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(f);
+    }
+    const keys = [
+      ...SECTION_ORDER.filter((k) => grouped[k]?.length),
+      ...Object.keys(grouped).filter((k) => !SECTION_ORDER.includes(k)),
+    ];
+    return keys.map((key) => ({
+      key,
+      label: sectionMeta[key] || key,
+      fields: grouped[key],
+    }));
+  }, [visibleFields, sectionMeta]);
+
+  const setAnswer = (key, value) => {
+    setAnswers((prev) => ({ ...prev, [key]: value }));
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -90,21 +201,25 @@ export default function LegacyFreelancerJoinPage() {
     }
     setSubmitting(true);
     try {
+      const payloadAnswers = {};
+      for (const f of visibleFields) {
+        if (Object.prototype.hasOwnProperty.call(answers, f.key)) {
+          payloadAnswers[f.key] = answers[f.key];
+        }
+      }
       const res = await legacyFreelancerRegisterRequest({
         campaignSlug,
         token,
-        fullName,
         email,
         phone: { countryCode: dial, number: phoneNumber },
         password,
         passwordConfirm,
-        specialty,
-        categories: [specialty],
-        city: city || undefined,
         country,
-        gender,
-        identityLast4: identityLast4 || undefined,
-        internalReference: internalReference || undefined,
+        firstName: payloadAnswers.first_name,
+        fatherName: payloadAnswers.father_name,
+        familyName: payloadAnswers.family_name,
+        city: payloadAnswers.city,
+        answers: payloadAnswers,
         termsAccepted: true,
         privacyAccepted: true,
       });
@@ -123,7 +238,7 @@ export default function LegacyFreelancerJoinPage() {
     <AuthLayout>
       <AuthFormCard
         title="تسجيل فريلانسر معتمد سابقًا"
-        subtitle="هذا الرابط مخصص للفريلانسرز الذين تم اعتمادهم سابقًا من قبل الشركة. اختر بيانات دخولك وأكمل التسجيل."
+        subtitle="هذا الرابط مخصص للفريلانسرز الذين تم اعتمادهم سابقًا من قبل الشركة. أكمل البيانات المطلوبة لإنشاء حسابك."
       >
         {loadingPreview ? (
           <p className={tw.authHelperText}>جاري التحقق من الرابط…</p>
@@ -140,139 +255,136 @@ export default function LegacyFreelancerJoinPage() {
               <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{formError}</div>
             ) : null}
 
-            <form className="flex flex-col gap-3" onSubmit={onSubmit}>
-              <label className={fieldLabel}>
-                الاسم الكامل
-                <input className={fieldInput} required value={fullName} onChange={(e) => setFullName(e.target.value)} />
-              </label>
-              <label className={fieldLabel}>
-                البريد الإلكتروني
-                <input
-                  className={fieldInput}
-                  type="email"
-                  required
-                  dir="ltr"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </label>
-              <div className="grid grid-cols-[110px_1fr] gap-2">
-                <label className={fieldLabel}>
-                  مفتاح
-                  <select className={fieldInput} value={dial} onChange={(e) => setDial(e.target.value)} dir="ltr">
-                    {ARAB_COUNTRIES.map((c) => (
-                      <option key={c.code} value={c.dialCode}>
-                        {c.dialCode}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className={fieldLabel}>
-                  رقم الهاتف
-                  <input
-                    className={fieldInput}
-                    required
-                    dir="ltr"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                  />
-                </label>
-              </div>
-              <label className={fieldLabel}>
-                كلمة المرور
-                <input
-                  className={fieldInput}
-                  type="password"
-                  required
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </label>
-              <label className={fieldLabel}>
-                تأكيد كلمة المرور
-                <input
-                  className={fieldInput}
-                  type="password"
-                  required
-                  minLength={8}
-                  value={passwordConfirm}
-                  onChange={(e) => setPasswordConfirm(e.target.value)}
-                />
-              </label>
-              <label className={fieldLabel}>
-                التخصص / التصنيف
-                <select className={fieldInput} value={specialty} onChange={(e) => setSpecialty(e.target.value)}>
-                  {CATEGORY_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className={fieldLabel}>
-                  المدينة (اختياري)
-                  <input className={fieldInput} value={city} onChange={(e) => setCity(e.target.value)} />
-                </label>
-                <label className={fieldLabel}>
-                  الدولة
-                  <select className={fieldInput} value={country} onChange={(e) => setCountry(e.target.value)}>
-                    {ARAB_COUNTRIES.map((c) => (
-                      <option key={c.code} value={c.code}>
-                        {c.nameAr || c.code}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <label className={fieldLabel}>
-                الجنس
-                <select className={fieldInput} value={gender} onChange={(e) => setGender(e.target.value)}>
-                  <option value="ذكر">ذكر</option>
-                  <option value="أنثى">أنثى</option>
-                </select>
-              </label>
-              <label className={fieldLabel}>
-                آخر 4 أرقام من الهوية (اختياري)
-                <input
-                  className={fieldInput}
-                  dir="ltr"
-                  maxLength={4}
-                  value={identityLast4}
-                  onChange={(e) => setIdentityLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                />
-              </label>
-              <label className={fieldLabel}>
-                رقم مرجعي داخلي (اختياري)
-                <input
-                  className={fieldInput}
-                  value={internalReference}
-                  onChange={(e) => setInternalReference(e.target.value)}
-                />
-              </label>
-              <label className="flex items-start gap-2 text-sm">
-                <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} />
-                <span>
-                  أوافق على{" "}
-                  <Link className={tw.authSubtleLink} to="/terms-conditions" target="_blank">
-                    الشروط والأحكام
-                  </Link>
-                </span>
-              </label>
-              <label className="flex items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={privacyAccepted}
-                  onChange={(e) => setPrivacyAccepted(e.target.checked)}
-                />
-                <span>
-                  أوافق على{" "}
-                  <Link className={tw.authSubtleLink} to="/privacy-policy" target="_blank">
-                    سياسة الخصوصية
-                  </Link>
-                </span>
-              </label>
+            <form className="flex flex-col gap-5" onSubmit={onSubmit}>
+              {sectionsWithFields.map((section) => (
+                <fieldset key={section.key} className="rounded-xl border border-slate-200 p-3">
+                  <legend className="px-1 text-sm font-semibold text-slate-800">{section.label}</legend>
+                  <div className="mt-2 flex flex-col gap-3">
+                    {section.fields.map((field) =>
+                      field.type === "checkbox" ? (
+                        <div key={field.key}>
+                          <FieldInput
+                            field={field}
+                            value={answers[field.key]}
+                            onChange={(v) => setAnswer(field.key, v)}
+                          />
+                        </div>
+                      ) : (
+                        <label key={field.key} className={fieldLabel}>
+                          {field.label}
+                          {field.required ? " *" : ""}
+                          {field.helper ? (
+                            <span className="mt-0.5 block text-xs font-normal text-slate-500">{field.helper}</span>
+                          ) : null}
+                          <FieldInput
+                            field={field}
+                            value={answers[field.key]}
+                            onChange={(v) => setAnswer(field.key, v)}
+                          />
+                        </label>
+                      ),
+                    )}
+                  </div>
+                </fieldset>
+              ))}
+
+              <fieldset className="rounded-xl border border-slate-200 p-3">
+                <legend className="px-1 text-sm font-semibold text-slate-800">حساب الدخول</legend>
+                <div className="mt-2 flex flex-col gap-3">
+                  <label className={fieldLabel}>
+                    البريد الإلكتروني *
+                    <input
+                      className={fieldInput}
+                      type="email"
+                      required
+                      dir="ltr"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </label>
+                  <div className="grid grid-cols-[110px_1fr] gap-2">
+                    <label className={fieldLabel}>
+                      مفتاح
+                      <select className={fieldInput} value={dial} onChange={(e) => setDial(e.target.value)} dir="ltr">
+                        {ARAB_COUNTRIES.map((c) => (
+                          <option key={c.code} value={c.dialCode}>
+                            {c.dialCode}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className={fieldLabel}>
+                      رقم الهاتف *
+                      <input
+                        className={fieldInput}
+                        required
+                        dir="ltr"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                      />
+                    </label>
+                  </div>
+                  <label className={fieldLabel}>
+                    الدولة
+                    <select className={fieldInput} value={country} onChange={(e) => setCountry(e.target.value)}>
+                      {ARAB_COUNTRIES.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.nameAr || c.code}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className={fieldLabel}>
+                    كلمة المرور *
+                    <input
+                      className={fieldInput}
+                      type="password"
+                      required
+                      minLength={8}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </label>
+                  <label className={fieldLabel}>
+                    تأكيد كلمة المرور *
+                    <input
+                      className={fieldInput}
+                      type="password"
+                      required
+                      minLength={8}
+                      value={passwordConfirm}
+                      onChange={(e) => setPasswordConfirm(e.target.value)}
+                    />
+                  </label>
+                  <label className="flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={termsAccepted}
+                      onChange={(e) => setTermsAccepted(e.target.checked)}
+                    />
+                    <span>
+                      أوافق على{" "}
+                      <Link className={tw.authSubtleLink} to="/terms-conditions" target="_blank">
+                        الشروط والأحكام
+                      </Link>
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={privacyAccepted}
+                      onChange={(e) => setPrivacyAccepted(e.target.checked)}
+                    />
+                    <span>
+                      أوافق على{" "}
+                      <Link className={tw.authSubtleLink} to="/privacy-policy" target="_blank">
+                        سياسة الخصوصية
+                      </Link>
+                    </span>
+                  </label>
+                </div>
+              </fieldset>
+
               <Button type="submit" disabled={submitting} className="mt-2 w-full">
                 {submitting ? "جاري التسجيل…" : "إكمال التسجيل"}
               </Button>

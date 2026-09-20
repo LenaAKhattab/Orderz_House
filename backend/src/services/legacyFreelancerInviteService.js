@@ -334,6 +334,14 @@ async function createCampaign({
         defaultTrustLevel: trust,
       },
     });
+    try {
+      const contractFields = require("./legacyFreelancerContractFieldsService");
+      await contractFields.ensureDefaultFieldsForCampaign(campaign.id, client);
+    } catch (seedErr) {
+      if (!(seedErr && (seedErr.code === "42P01" || seedErr.code === "42703"))) {
+        throw seedErr;
+      }
+    }
     await client.query("COMMIT");
     return mapCampaignPublic(campaign, { includeJoinUrl: true, plaintextToken });
   } catch (err) {
@@ -560,7 +568,24 @@ async function previewInvite({ campaignSlug, token }) {
   const campaign = await loadCampaignBySlugForToken(campaignSlug, token);
   const err = campaignUnavailableError(campaign);
   if (err) throw err;
-  return mapCampaignPreview(campaign);
+  const contractFields = require("./legacyFreelancerContractFieldsService");
+  let formConfig;
+  try {
+    formConfig = await contractFields.getCampaignFieldConfig(campaign.id, { includeDisabled: false });
+  } catch (e) {
+    // Tables may not exist yet in environments without migration 188
+    if (e && (e.code === "42P01" || e.code === "42703")) {
+      formConfig = { fields: [] };
+    } else {
+      throw e;
+    }
+  }
+  const base = mapCampaignPreview(campaign);
+  return {
+    ...base,
+    formFields: contractFields.buildPublicFormFields(formConfig),
+    sections: (formConfig.sections || []).map((s) => ({ key: s.key, label: s.labelAr, sortOrder: s.sortOrder })),
+  };
 }
 
 async function waiveTrainingAndExam(client, { freelancerUserId, actorAdminId }) {
@@ -695,10 +720,8 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
     throw createPublicApiError("يجب الموافقة على الشروط والأحكام وسياسة الخصوصية.", 400, "TERMS_REQUIRED");
   }
 
-  const names = splitFullName(payload.fullName);
   const phone = composeE164(payload.phone);
   const country = payload.country ? String(payload.country).trim().toUpperCase().slice(0, 2) : null;
-  const city = payload.city ? String(payload.city).trim().slice(0, 120) : null;
   const genderRaw = String(payload.gender || "").trim();
   const gender = genderRaw === "أنثى" || genderRaw === "female" ? "أنثى" : "ذكر";
   const identityLast4 = payload.identityLast4
@@ -720,6 +743,8 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
     throw createPublicApiError("تعذّر تأمين كلمة المرور.", 500, "HASH_FAILED");
   }
 
+  const contractFields = require("./legacyFreelancerContractFieldsService");
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -727,6 +752,57 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
     const campaign = await loadCampaignBySlugForToken(campaignSlug, token, { forUpdate: true, client });
     const unavailable = campaignUnavailableError(campaign);
     if (unavailable) throw unavailable;
+
+    let fieldConfig;
+    try {
+      fieldConfig = await contractFields.getCampaignFieldConfig(campaign.id, {
+        client,
+        includeDisabled: true,
+      });
+    } catch (cfgErr) {
+      if (cfgErr && (cfgErr.code === "42P01" || cfgErr.code === "42703")) {
+        fieldConfig = { fields: [] };
+      } else {
+        throw cfgErr;
+      }
+    }
+
+    const rawAnswers = payload.answers && typeof payload.answers === "object" ? payload.answers : {};
+    // Merge top-level name fields into answers for convenience
+    if (payload.firstName && rawAnswers.first_name == null) rawAnswers.first_name = payload.firstName;
+    if (payload.fatherName && rawAnswers.father_name == null) rawAnswers.father_name = payload.fatherName;
+    if (payload.familyName && rawAnswers.family_name == null) rawAnswers.family_name = payload.familyName;
+    if (payload.city && rawAnswers.city == null) rawAnswers.city = payload.city;
+
+    let normalized = {};
+    let canonicalUserPatches = {};
+    if (fieldConfig.fields && fieldConfig.fields.length > 0) {
+      const validated = contractFields.validateAndNormalizeAnswers(fieldConfig.fields, rawAnswers);
+      normalized = validated.normalized;
+      canonicalUserPatches = validated.canonicalUserPatches;
+    } else if (payload.fullName || payload.firstName) {
+      // Pre-188 fallback: no contract config table
+      const namesFallback = contractFields.extractNamesFromAnswersOrPayload({}, payload);
+      canonicalUserPatches = {
+        first_name: namesFallback.firstName,
+        father_name: namesFallback.fatherName,
+        family_name: namesFallback.familyName,
+      };
+      if (payload.city) canonicalUserPatches.city = String(payload.city).trim().slice(0, 120);
+      normalized = {};
+    } else {
+      throw createPublicApiError("بيانات التسجيل غير مكتملة.", 400, "VALIDATION_ERROR");
+    }
+
+    const names = contractFields.extractNamesFromAnswersOrPayload(normalized, {
+      ...payload,
+      firstName: canonicalUserPatches.first_name || payload.firstName,
+      fatherName: canonicalUserPatches.father_name || payload.fatherName,
+      familyName: canonicalUserPatches.family_name || payload.familyName,
+    });
+    const city =
+      (canonicalUserPatches.city && String(canonicalUserPatches.city).trim().slice(0, 120)) ||
+      (payload.city ? String(payload.city).trim().slice(0, 120) : null);
 
     const { rows: seatRows } = await client.query(
       `UPDATE legacy_freelancer_invite_campaigns
@@ -781,12 +857,26 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
         /* optional */
       }
     }
+    // Prefer freelance_joining_skills / specialization as category hint
+    if ((!categories || categories.length === 0) && normalized.specialization) {
+      categories = [String(normalized.specialization).slice(0, 80)];
+    }
+    if ((!categories || categories.length === 0) && normalized.freelance_joining_skills) {
+      categories = [String(normalized.freelance_joining_skills).split(/[,\n]/)[0].trim().slice(0, 80)].filter(Boolean);
+    }
     if (!categories || categories.length === 0) {
       categories = ["content_writing"];
     }
 
     const accountId = await generateUniqueAccountId(client);
     const nowIso = new Date().toISOString();
+    const skillsArr = canonicalUserPatches.skills
+      ? String(canonicalUserPatches.skills)
+          .split(/[,|\n]/)
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .slice(0, 40)
+      : null;
     const { rows: userRows } = await client.query(
       `INSERT INTO users (
          account_id, first_name, father_name, family_name, email, password_hash, role,
@@ -796,7 +886,8 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
          onboarding_source, legacy_invite_campaign_id,
          identity_verification_source,
          training_waiver_reason, final_exam_waiver_reason,
-         legacy_verified_at, legacy_verified_by_admin_id
+         legacy_verified_at, legacy_verified_by_admin_id,
+         skills
        ) VALUES (
          $1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text,
          $8::text, $9::text, $9::text, $10::text, TRUE, $11::timestamptz,
@@ -805,7 +896,8 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
          'LEGACY_INVITE', $13::bigint,
          'COMPANY_OFFLINE_VERIFIED',
          $14::text, $15::text,
-         $11::timestamptz, $16::bigint
+         $11::timestamptz, $16::bigint,
+         $17::text[]
        )
        RETURNING id, account_id, first_name, father_name, family_name, email, role,
                  country, phone, whatsapp, gender, freelancer_categories, is_active,
@@ -828,6 +920,7 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
         TRAINING_WAIVER_REASON,
         FINAL_EXAM_WAIVER_REASON,
         lockedCampaign.created_by_admin_id,
+        skillsArr,
       ],
     );
     const user = userRows[0];
@@ -860,11 +953,12 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
     const ipHash = ip ? sha256Hex(ip) : null;
     const uaHash = userAgent ? sha256Hex(userAgent) : null;
 
-    await client.query(
+    const { rows: redemptionRows } = await client.query(
       `INSERT INTO legacy_freelancer_invite_redemptions (
          campaign_id, user_id, email_masked, phone_masked,
          identity_last4, internal_reference, ip_hash, user_agent_hash, metadata
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)`,
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)
+       RETURNING id`,
       [
         lockedCampaign.id,
         user.id,
@@ -880,9 +974,36 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
           categories,
           trustLevel: lockedCampaign.default_trust_level,
           planCode: lockedCampaign.default_plan_code,
+          contractFieldKeys: Object.keys(normalized),
         }),
       ],
     );
+    const redemptionId = redemptionRows[0]?.id;
+
+    if (Object.keys(normalized).length > 0) {
+      try {
+        await contractFields.saveAnswers(client, {
+          campaignId: lockedCampaign.id,
+          userId: user.id,
+          redemptionId,
+          normalized,
+        });
+      } catch (ansErr) {
+        if (!(ansErr && (ansErr.code === "42P01" || ansErr.code === "42703"))) {
+          throw ansErr;
+        }
+      }
+    }
+
+    // Apply remaining canonical patches (names/skills already in INSERT)
+    const remainingPatches = { ...canonicalUserPatches };
+    delete remainingPatches.first_name;
+    delete remainingPatches.father_name;
+    delete remainingPatches.family_name;
+    delete remainingPatches.skills;
+    if (Object.keys(remainingPatches).length) {
+      await contractFields.applyCanonicalUserPatches(client, user.id, remainingPatches);
+    }
 
     await writeAudit(client, {
       action: AUDIT_ACTIONS.INVITE_REDEEMED,
@@ -901,6 +1022,7 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
         finalExamWaiverReason: FINAL_EXAM_WAIVER_REASON,
         termsAcceptedAt: nowIso,
         privacyAcceptedAt: nowIso,
+        contractAnswerKeys: Object.keys(normalized),
         timestamp: nowIso,
       },
     });
