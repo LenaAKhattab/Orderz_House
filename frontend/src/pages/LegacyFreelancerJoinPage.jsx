@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import AuthFormCard from "../components/auth/AuthFormCard";
 import AuthLayout from "../components/auth/AuthLayout";
+import LegacyRegistrationInstructions from "../components/auth/LegacyRegistrationInstructions";
 import * as tw from "../components/auth/authTw";
 import Button from "../components/ui/Button";
 import { useAuth } from "../context/useAuth";
@@ -234,12 +235,19 @@ export default function LegacyFreelancerJoinPage() {
     }
   };
 
+  const visualContent = {
+    children: <LegacyRegistrationInstructions variant="visual" />,
+  };
+
   return (
-    <AuthLayout>
+    <AuthLayout visualContent={visualContent}>
       <AuthFormCard
         title="تسجيل فريلانسر معتمد سابقًا"
         subtitle="هذا الرابط مخصص للفريلانسرز الذين تم اعتمادهم سابقًا من قبل الشركة. أكمل البيانات المطلوبة لإنشاء حسابك."
       >
+        <div className="oh-legacy-instructions-mobile">
+          <LegacyRegistrationInstructions variant="form" />
+        </div>
         {loadingPreview ? (
           <p className={tw.authHelperText}>جاري التحقق من الرابط…</p>
         ) : previewError ? (
