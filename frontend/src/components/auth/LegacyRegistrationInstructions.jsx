@@ -50,14 +50,8 @@ function BulletList() {
   );
 }
 
-/**
- * Static Arabic instructions for Legacy Freelancer invite registration only.
- * @param {{ variant?: "visual" | "form" }} props
- */
-export default function LegacyRegistrationInstructions({ variant = "visual" }) {
-  const isVisual = variant === "visual";
-
-  const body = (
+function InstructionsBody({ variant }) {
+  return (
     <>
       <header className="oh-legacy-instructions__header">
         <h2 className="oh-legacy-instructions__title">إرشادات تعبئة الطلب</h2>
@@ -89,11 +83,21 @@ export default function LegacyRegistrationInstructions({ variant = "visual" }) {
       </section>
     </>
   );
+}
+
+/**
+ * Static Arabic instructions for Legacy Freelancer invite registration only.
+ * @param {{ variant?: "visual" | "form" }} props
+ */
+export default function LegacyRegistrationInstructions({ variant = "visual" }) {
+  const isVisual = variant === "visual";
 
   if (isVisual) {
     return (
       <div className="oh-legacy-instructions oh-legacy-instructions--visual" dir="rtl">
-        {body}
+        <div className="oh-legacy-instructions__card">
+          <InstructionsBody variant={variant} />
+        </div>
       </div>
     );
   }
@@ -103,7 +107,9 @@ export default function LegacyRegistrationInstructions({ variant = "visual" }) {
       <summary className="oh-legacy-instructions__summary">
         <span>إرشادات تعبئة الطلب</span>
       </summary>
-      <div className="oh-legacy-instructions__form-body">{body}</div>
+      <div className="oh-legacy-instructions__form-body">
+        <InstructionsBody variant={variant} />
+      </div>
     </details>
   );
 }
