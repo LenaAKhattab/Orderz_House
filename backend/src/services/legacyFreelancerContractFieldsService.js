@@ -42,6 +42,10 @@ function conditionMet(conditional, answersMap) {
 
 function normalizeAnswerValue(fieldDef, raw) {
   if (raw == null || (typeof raw === "string" && raw.trim() === "")) return null;
+  if (fieldDef.key === "national_id") {
+    const { normalizeAndValidateNationalId } = require("../utils/legacyFreelancerMemberId");
+    return normalizeAndValidateNationalId(raw, { required: true });
+  }
   switch (fieldDef.type) {
     case "yes_no":
     case "checkbox": {
@@ -437,9 +441,13 @@ async function getAnswersForUser({ campaignId, userId, maskSensitive = true }) {
     if (maskSensitive) {
       value = maskSensitiveValue(r.field_key, value);
     }
+    const labelAr =
+      r.field_key === "national_id" && !maskSensitive
+        ? "رقم الفريلانسر / الرقم الوطني"
+        : r.label_ar || def?.labelAr || r.field_key;
     const item = {
       fieldKey: r.field_key,
-      labelAr: r.label_ar || def?.labelAr || r.field_key,
+      labelAr,
       section: def?.section || SECTIONS.EXTRA.key,
       type: def?.type || "text",
       value,

@@ -467,6 +467,7 @@
       "fatherName": "Father's name",
       "familyName": "Family name",
       "professionalTitle": "Professional title",
+      "freelancerMemberId": "Freelancer ID",
       "phone": "Mobile (E.164)",
       "whatsapp": "WhatsApp (E.164)",
       "bio": "Bio (max 2000 characters)",

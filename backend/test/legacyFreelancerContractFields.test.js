@@ -259,7 +259,9 @@ describe("wiring / auth isolation", () => {
     assert.match(routes, /fields\/restore-defaults/);
     assert.match(routes, /redemptions\/:userId\/answers/);
     assert.match(routes, /legacy-freelancer-invite-field-catalog/);
-    assert.match(routes, /requireSuperAdmin/);
+    assert.match(routes, /legacy_freelancers\.manage/);
+    assert.match(routes, /requirePermission/);
+    assert.doesNotMatch(routes, /requireSuperAdmin/);
   });
 
   it("normal register route unchanged in authRoutes", () => {
@@ -276,7 +278,7 @@ describe("wiring / auth isolation", () => {
 
   it("frontend pages wire dynamic form and admin config", () => {
     const join = read("../frontend/src/pages/LegacyFreelancerJoinPage.jsx");
-    const admin = read("../frontend/src/pages/dashboard/SuperAdminLegacyFreelancerInvitesPage.jsx");
+    const admin = read("../frontend/src/pages/dashboard/legacyFreelancerAdmin/LegacyCampaignsPanel.jsx");
     assert.match(join, /formFields/);
     assert.match(join, /answers/);
     assert.match(admin, /بيانات التسجيل المطلوبة/);

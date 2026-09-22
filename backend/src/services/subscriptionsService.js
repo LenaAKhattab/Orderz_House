@@ -669,8 +669,38 @@ async function activateCurrentSubscriptionOnFirstOrder({ freelancerUserId, activ
   const sub = rows[0];
   if (!sub) return null;
 
-  // Only activate once, on the very first real order.
-  if (sub.has_first_order || sub.status !== SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED) {
+  // Already recorded a real first order.
+  if (sub.has_first_order) {
+    return mapSubscription(sub);
+  }
+
+  // Admin/company dated entitlement (Case 3): record first order without changing entitlement dates.
+  if (
+    String(sub.status) === SUBSCRIPTION_STATUSES.ACTIVE &&
+    sub.actual_start_date &&
+    sub.expiry_date &&
+    String(sub.source) === SUBSCRIPTION_SOURCES.ADMIN &&
+    String(sub.payment_status) === SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED
+  ) {
+    const { rows: stamped } = await runner.query(
+      `UPDATE freelancer_subscriptions
+       SET has_first_order = TRUE,
+           first_order_date = $2,
+           updated_at = NOW()
+       WHERE id = $1
+         AND is_current = TRUE
+         AND has_first_order = FALSE
+         AND first_order_date IS NULL
+         AND actual_start_date IS NOT NULL
+         AND expiry_date IS NOT NULL
+       RETURNING *`,
+      [Number(sub.id), at],
+    );
+    return mapSubscription(stamped[0] || sub);
+  }
+
+  // Classic path: only activate once, on the very first real order.
+  if (sub.status !== SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED) {
     return mapSubscription(sub);
   }
 
@@ -760,7 +790,39 @@ async function activateCurrentSubscriptionOnFirstAcceptedOrder(
   ) {
     return mapSubscription(sub);
   }
-  if (sub.has_first_order || sub.actual_start_date || sub.status !== SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED) {
+
+  // Already recorded a real first order.
+  if (sub.has_first_order) {
+    return mapSubscription(sub);
+  }
+
+  // Admin/company dated entitlement (Case 3): stamp first order id/date; keep entitlement window.
+  if (
+    String(sub.status) === SUBSCRIPTION_STATUSES.ACTIVE &&
+    sub.actual_start_date &&
+    sub.expiry_date &&
+    String(sub.source) === SUBSCRIPTION_SOURCES.ADMIN &&
+    String(sub.payment_status) === SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED
+  ) {
+    const { rows: stamped } = await runner.query(
+      `UPDATE freelancer_subscriptions
+       SET has_first_order = TRUE,
+           first_order_id = $2,
+           first_order_date = $3,
+           updated_at = NOW()
+       WHERE id = $1
+         AND is_current = TRUE
+         AND has_first_order = FALSE
+         AND first_order_date IS NULL
+         AND actual_start_date IS NOT NULL
+         AND expiry_date IS NOT NULL
+       RETURNING *`,
+      [Number(sub.id), oid, at],
+    );
+    return mapSubscription(stamped[0] || sub);
+  }
+
+  if (sub.actual_start_date || sub.status !== SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED) {
     return mapSubscription(sub);
   }
 

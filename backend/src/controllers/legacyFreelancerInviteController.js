@@ -106,13 +106,24 @@ const listRedemptions = async (req, res, next) => {
 const exportRedemptionsCsv = async (req, res, next) => {
   try {
     const rows = await legacyFreelancerInviteService.listRedemptions(req.params.campaignId);
-    const header = ["userId", "accountId", "fullName", "emailMasked", "phoneMasked", "identityLast4", "internalReference", "redeemedAt"];
+    const header = [
+      "userId",
+      "accountId",
+      "freelancerMemberIdMasked",
+      "fullName",
+      "emailMasked",
+      "phoneMasked",
+      "identityLast4",
+      "internalReference",
+      "redeemedAt",
+    ];
     const lines = [header.join(",")];
     for (const r of rows) {
       lines.push(
         [
           r.userId,
           r.accountId,
+          r.freelancerMemberIdMasked || "",
           JSON.stringify(r.fullName || ""),
           r.emailMasked,
           r.phoneMasked || "",
@@ -208,9 +219,42 @@ const previewInvite = async (req, res, next) => {
 
 const registerLegacy = async (req, res, next) => {
   try {
-    const out = await legacyFreelancerInviteService.registerLegacyFreelancer(req.body, {
+    const body = { ...req.body };
+    if (typeof body.answers === "string") {
+      try {
+        body.answers = JSON.parse(body.answers);
+      } catch (_) {
+        /* leave as-is; service will validate */
+      }
+    }
+    if (typeof body.phone === "string" && body.phone.trim().startsWith("{")) {
+      try {
+        body.phone = JSON.parse(body.phone);
+      } catch (_) {
+        /* keep string e164 */
+      }
+    }
+    if (typeof body.categories === "string") {
+      try {
+        body.categories = JSON.parse(body.categories);
+      } catch (_) {
+        /* keep */
+      }
+    }
+    if (typeof body.signedDocumentTypeIds === "string") {
+      try {
+        body.signedDocumentTypeIds = JSON.parse(body.signedDocumentTypeIds);
+      } catch (_) {
+        /* keep */
+      }
+    }
+    const files = req.files || {};
+    const idFront = Array.isArray(files.idFront) ? files.idFront[0] : files.idFront || null;
+    const idBack = Array.isArray(files.idBack) ? files.idBack[0] : files.idBack || null;
+    const out = await legacyFreelancerInviteService.registerLegacyFreelancer(body, {
       ip: req.ip || req.headers["x-forwarded-for"] || null,
       userAgent: req.headers["user-agent"] || null,
+      files: { idFront, idBack },
     });
     return sendAuthSuccess(res, {
       req,

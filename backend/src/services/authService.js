@@ -79,6 +79,13 @@ function mapUserPublic(row) {
   const prefs = row.notification_preferences;
   const notificationPreferences =
     prefs && typeof prefs === "object" && !Array.isArray(prefs) ? prefs : {};
+  const onboardingSource = row.onboarding_source != null ? String(row.onboarding_source) : null;
+  const isLegacyInvite = onboardingSource === "LEGACY_INVITE";
+  // Freelancer member ID (national ID for Legacy) — private only; never for public pages.
+  const freelancerMemberId =
+    isLegacyInvite && row.freelancer_member_id != null && String(row.freelancer_member_id).trim()
+      ? String(row.freelancer_member_id).trim()
+      : null;
   return {
     id: String(row.id),
     accountId: row.account_id,
@@ -115,16 +122,29 @@ function mapUserPublic(row) {
     notificationPreferences,
     browserNotificationStatus: row.browser_notification_status || "pending",
     notificationPromptAnsweredAt: row.notification_prompt_answered_at || null,
+    onboardingSource,
+    // Present only for LEGACY_INVITE owners via private auth/profile endpoints.
+    freelancerMemberId,
+    mustChangePassword: Boolean(row.must_change_password),
   };
 }
 
-const USER_PUBLIC_SELECT = `
+const USER_PUBLIC_SELECT_CORE = `
   id, account_id, first_name, father_name, family_name, email, role,
   country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at,
   avatar_url, professional_title, bio, skills, website_url, linkedin_url, github_url, behance_url, portfolio_url,
   company_name, billing_name, billing_country, billing_city, billing_notes,
   preferred_withdrawal_method, payout_notes_hint, notification_preferences,
   browser_notification_status, notification_prompt_answered_at`;
+
+const USER_PUBLIC_SELECT = `${USER_PUBLIC_SELECT_CORE},
+  onboarding_source, freelancer_member_id, must_change_password`;
+
+const USER_PUBLIC_SELECT_PRE_PASSWORD_FLAG = `${USER_PUBLIC_SELECT_CORE},
+  onboarding_source, freelancer_member_id`;
+
+const USER_PUBLIC_SELECT_PRE_MEMBER_ID = `${USER_PUBLIC_SELECT_CORE},
+  onboarding_source`;
 
 function withAuthz(user, authz) {
   return {
@@ -136,35 +156,108 @@ function withAuthz(user, authz) {
 }
 
 async function findUserByEmail(emailNormalized) {
-  const { rows } = await pool.query(
-    `SELECT id, account_id, first_name, father_name, family_name, email, password_hash, role,
-            country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at,
-            avatar_url, professional_title, bio, skills, website_url, linkedin_url, github_url, behance_url, portfolio_url,
-            company_name, billing_name, billing_country, billing_city, billing_notes,
-            preferred_withdrawal_method, payout_notes_hint, notification_preferences,
-            browser_notification_status, notification_prompt_answered_at
-     FROM users WHERE lower(email::text) = lower($1::text) LIMIT 1`,
-    [emailNormalized],
-  );
-  return rows[0] || null;
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, account_id, first_name, father_name, family_name, email, password_hash, role,
+              country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at,
+              avatar_url, professional_title, bio, skills, website_url, linkedin_url, github_url, behance_url, portfolio_url,
+              company_name, billing_name, billing_country, billing_city, billing_notes,
+              preferred_withdrawal_method, payout_notes_hint, notification_preferences,
+              browser_notification_status, notification_prompt_answered_at,
+              onboarding_source, freelancer_member_id, must_change_password
+       FROM users WHERE lower(email::text) = lower($1::text) LIMIT 1`,
+      [emailNormalized],
+    );
+    return rows[0] || null;
+  } catch (error) {
+    if (error.code !== "42703") throw error;
+    try {
+      const { rows } = await pool.query(
+        `SELECT id, account_id, first_name, father_name, family_name, email, password_hash, role,
+                country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at,
+                avatar_url, professional_title, bio, skills, website_url, linkedin_url, github_url, behance_url, portfolio_url,
+                company_name, billing_name, billing_country, billing_city, billing_notes,
+                preferred_withdrawal_method, payout_notes_hint, notification_preferences,
+                browser_notification_status, notification_prompt_answered_at,
+                onboarding_source, freelancer_member_id
+         FROM users WHERE lower(email::text) = lower($1::text) LIMIT 1`,
+        [emailNormalized],
+      );
+      return rows[0] || null;
+    } catch (inner) {
+      if (inner.code !== "42703") throw inner;
+      const { rows } = await pool.query(
+        `SELECT id, account_id, first_name, father_name, family_name, email, password_hash, role,
+                country, phone, whatsapp, gender, freelancer_categories, is_active, email_verified, created_at,
+                avatar_url, professional_title, bio, skills, website_url, linkedin_url, github_url, behance_url, portfolio_url,
+                company_name, billing_name, billing_country, billing_city, billing_notes,
+                preferred_withdrawal_method, payout_notes_hint, notification_preferences,
+                browser_notification_status, notification_prompt_answered_at,
+                onboarding_source
+         FROM users WHERE lower(email::text) = lower($1::text) LIMIT 1`,
+        [emailNormalized],
+      );
+      return rows[0] || null;
+    }
+  }
 }
 
 async function findUserById(id) {
-  const { rows } = await pool.query(
-    `SELECT ${USER_PUBLIC_SELECT}, avatar_public_id
-     FROM users WHERE id = $1::bigint LIMIT 1`,
-    [id],
-  );
-  return rows[0] || null;
+  try {
+    const { rows } = await pool.query(
+      `SELECT ${USER_PUBLIC_SELECT}, avatar_public_id
+       FROM users WHERE id = $1::bigint LIMIT 1`,
+      [id],
+    );
+    return rows[0] || null;
+  } catch (error) {
+    if (error.code !== "42703") throw error;
+    try {
+      const { rows } = await pool.query(
+        `SELECT ${USER_PUBLIC_SELECT_PRE_PASSWORD_FLAG}, avatar_public_id
+         FROM users WHERE id = $1::bigint LIMIT 1`,
+        [id],
+      );
+      return rows[0] || null;
+    } catch (inner) {
+      if (inner.code !== "42703") throw inner;
+      try {
+        const { rows } = await pool.query(
+          `SELECT ${USER_PUBLIC_SELECT_PRE_MEMBER_ID}, avatar_public_id
+           FROM users WHERE id = $1::bigint LIMIT 1`,
+          [id],
+        );
+        return rows[0] || null;
+      } catch (inner2) {
+        if (inner2.code !== "42703") throw inner2;
+        const { rows } = await pool.query(
+          `SELECT ${USER_PUBLIC_SELECT_CORE}, avatar_public_id
+           FROM users WHERE id = $1::bigint LIMIT 1`,
+          [id],
+        );
+        return rows[0] || null;
+      }
+    }
+  }
 }
 
 async function getUserRowByIdForAuthz(id) {
-  const { rows } = await pool.query(
-    `SELECT id, account_id, email, role, is_active
-     FROM users WHERE id = $1::bigint LIMIT 1`,
-    [id],
-  );
-  return rows[0] || null;
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, account_id, email, role, is_active, must_change_password
+       FROM users WHERE id = $1::bigint LIMIT 1`,
+      [id],
+    );
+    return rows[0] || null;
+  } catch (error) {
+    if (error.code !== "42703") throw error;
+    const { rows } = await pool.query(
+      `SELECT id, account_id, email, role, is_active
+       FROM users WHERE id = $1::bigint LIMIT 1`,
+      [id],
+    );
+    return rows[0] || null;
+  }
 }
 
 function signToken(userRow) {
@@ -497,14 +590,35 @@ async function getPublicUserById(id) {
 }
 
 async function changePasswordForUser(userId, currentPassword, newPassword) {
-  const { rows } = await pool.query(`SELECT id, password_hash FROM users WHERE id = $1::bigint LIMIT 1`, [userId]);
-  const row = rows[0];
+  let row;
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, password_hash, must_change_password FROM users WHERE id = $1::bigint LIMIT 1`,
+      [userId],
+    );
+    row = rows[0];
+  } catch (error) {
+    if (error.code !== "42703") throw error;
+    const { rows } = await pool.query(
+      `SELECT id, password_hash FROM users WHERE id = $1::bigint LIMIT 1`,
+      [userId],
+    );
+    row = rows[0];
+  }
   if (!row) {
     throw createPublicApiError("المستخدم غير موجود.", 404, "NOT_FOUND");
   }
+  const mustChange = Boolean(row.must_change_password);
   const match = await bcrypt.compare(String(currentPassword || ""), row.password_hash);
   if (!match) {
-    throw createPublicApiError("كلمة المرور الحالية غير صحيحة.", 400, "INVALID_PASSWORD");
+    // When forced password change is required, still require knowing the current (initial) password.
+    throw createPublicApiError(
+      mustChange
+        ? "كلمة المرور الحالية غير صحيحة. استخدم كلمة المرور الأولية لتغييرها."
+        : "كلمة المرور الحالية غير صحيحة.",
+      400,
+      "INVALID_PASSWORD",
+    );
   }
   const np = String(newPassword || "");
   if (np.length < 8) {
@@ -513,8 +627,26 @@ async function changePasswordForUser(userId, currentPassword, newPassword) {
   if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(np)) {
     throw createPublicApiError("كلمة المرور يجب أن تحتوي على حرف ورقم على الأقل.", 400, "VALIDATION_ERROR");
   }
+  if (mustChange && String(currentPassword || "") === np) {
+    throw createPublicApiError("يجب اختيار كلمة مرور جديدة مختلفة.", 400, "VALIDATION_ERROR");
+  }
   const newHash = await bcrypt.hash(np, BCRYPT_ROUNDS);
-  await pool.query(`UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2::bigint`, [newHash, userId]);
+  try {
+    await pool.query(
+      `UPDATE users
+          SET password_hash = $1,
+              must_change_password = FALSE,
+              updated_at = NOW()
+        WHERE id = $2::bigint`,
+      [newHash, userId],
+    );
+  } catch (error) {
+    if (error.code !== "42703") throw error;
+    await pool.query(`UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2::bigint`, [
+      newHash,
+      userId,
+    ]);
+  }
 }
 
 module.exports = {

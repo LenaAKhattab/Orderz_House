@@ -47,7 +47,12 @@ const registerLegacyValidators = [
   body("passwordConfirm").optional().isLength({ min: 8, max: 128 }),
   body("termsAccepted").custom((v) => v === true || v === "true" || v === 1 || v === "1"),
   body("privacyAccepted").custom((v) => v === true || v === "true" || v === 1 || v === "1"),
-  body("answers").optional({ nullable: true }).isObject(),
+  body("answers")
+    .optional({ nullable: true })
+    .custom((v) => v == null || typeof v === "object" || typeof v === "string")
+    .withMessage("حقول الإجابات غير صالحة."),
+  body("signedDocumentTypeIds").optional({ nullable: true }),
+  body("signed_document_type_ids").optional({ nullable: true }),
   body("identityLast4").optional({ nullable: true }).isString().isLength({ max: 8 }),
   body("internalReference").optional({ nullable: true }).isString().isLength({ max: 120 }),
   body("city").optional({ nullable: true }).isString().isLength({ max: 120 }),

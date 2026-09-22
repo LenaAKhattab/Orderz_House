@@ -201,20 +201,22 @@ describe("legacy invite audit action constants", () => {
   });
 });
 
-describe("legacy invite routes — Super Admin only + auth isolation", () => {
-  it("admin routes require requireSuperAdmin", () => {
+describe("legacy invite routes — Admin manage permission + auth isolation", () => {
+  it("admin routes require legacy_freelancers.manage (not Super Admin only)", () => {
     const src = read("src/routes/superAdminLegacyFreelancerInviteRoutes.js");
-    assert.match(src, /requireSuperAdmin/);
+    assert.match(src, /legacy_freelancers\.manage/);
+    assert.match(src, /requireAnyRole\(\["admin", "super_admin"\]\)/);
+    assert.match(src, /requirePermission/);
+    assert.doesNotMatch(src, /requireSuperAdmin/);
     assert.match(src, /\/legacy-freelancer-invites/);
     assert.match(src, /regenerate-token/);
     assert.match(src, /revoke/);
   });
 
-  it("non-super-admin middleware forbids", () => {
-    // requireSuperAdmin is an array [requireAuth, ...] — exercise last guard if possible
+  it("non-staff roles are excluded by requireAnyRole", () => {
     const src = read("src/routes/superAdminLegacyFreelancerInviteRoutes.js");
-    assert.ok(src.includes("requireSuperAdmin"));
-    assert.ok(!src.includes("requireAnyRole([\"admin\""));
+    assert.match(src, /requireAnyRole\(\["admin", "super_admin"\]\)/);
+    assert.doesNotMatch(src, /requireAnyRole\(\["freelancer"/);
   });
 
   it("public register route does not weaken normal /register", () => {

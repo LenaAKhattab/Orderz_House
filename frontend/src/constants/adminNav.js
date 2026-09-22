@@ -113,6 +113,7 @@ export const ADMIN_NAV_ITEM_DEFS = {
     icon: "subscription-activation",
     permission: ADMIN_PAGE_PERMISSIONS.subscriptionActivation,
   },
+  legacyFreelancers: SUPER_ADMIN_NAV_ITEM_DEFS.legacyFreelancerInvites,
   subscriptions: SUPER_ADMIN_NAV_ITEM_DEFS.subscriptions,
   trainingRequests: SUPER_ADMIN_NAV_ITEM_DEFS.trainingRequests,
   financialClaims: SUPER_ADMIN_NAV_ITEM_DEFS.financialClaims,
@@ -126,7 +127,7 @@ export const ADMIN_NAV_SECTION_DEFS = [
   {
     id: "overview",
     labelKey: "dashboard.nav.sections.overview",
-    itemKeys: ["home"],
+    itemKeys: ["home", "legacyFreelancers"],
   },
   {
     id: "actionCenter",

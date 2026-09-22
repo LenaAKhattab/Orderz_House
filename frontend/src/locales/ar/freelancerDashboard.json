@@ -473,6 +473,7 @@
       "fatherName": "اسم الأب",
       "familyName": "العائلة",
       "professionalTitle": "العنوان المهني",
+      "freelancerMemberId": "رقم الفريلانسر",
       "phone": "رقم الجوال (E.164)",
       "whatsapp": "واتساب (E.164)",
       "bio": "نبذة (حد أقصى 2000 حرف)",

@@ -53,6 +53,8 @@ export default function FreelancerSettingsPage() {
   const [preferredWithdrawalMethod, setPreferredWithdrawalMethod] = useState("");
   const [payoutNotesHint, setPayoutNotesHint] = useState("");
   const [notif, setNotif] = useState(() => mergeNotificationPrefs({}));
+  const [freelancerMemberId, setFreelancerMemberId] = useState("");
+  const [onboardingSource, setOnboardingSource] = useState(null);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -84,6 +86,8 @@ export default function FreelancerSettingsPage() {
         setPreferredWithdrawalMethod(u.preferredWithdrawalMethod || "");
         setPayoutNotesHint(u.payoutNotesHint || "");
         setNotif(mergeNotificationPrefs(u.notificationPreferences));
+        setOnboardingSource(u.onboardingSource || null);
+        setFreelancerMemberId(u.freelancerMemberId || "");
       }
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || t(`${s}.loadError`));
@@ -194,6 +198,7 @@ export default function FreelancerSettingsPage() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      await refreshUser();
       toast.success(t(`${s}.security.success`));
     } catch (e) {
       toast.error(e?.response?.data?.message || e?.message || t(`${s}.security.error`));
@@ -277,6 +282,25 @@ export default function FreelancerSettingsPage() {
         ]}
       />
 
+      {user?.mustChangePassword ? (
+        <div
+          className="oh-account-card"
+          style={{
+            marginBottom: 16,
+            borderColor: "#f59e0b",
+            background: "#fffbeb",
+          }}
+        >
+          <h2 className="oh-account-card__title" style={{ color: "#92400e" }}>
+            يجب تغيير كلمة المرور
+          </h2>
+          <p className="oh-account-value" style={{ margin: 0, color: "#78350f" }}>
+            تم إنشاء حسابك بكلمة مرور مؤقتة. يرجى تعيين كلمة مرور جديدة أدناه قبل متابعة استخدام المنصة.
+            استخدم الرقم الوطني ككلمة المرور الحالية إن لم تُغيَّر من قبل.
+          </p>
+        </div>
+      ) : null}
+
       <div className="oh-account-card" style={{ marginBottom: 16 }}>
         <h2 className="oh-account-card__title">{t(`${s}.avatar.title`)}</h2>
         <div className="oh-account-avatar-row">
@@ -296,6 +320,21 @@ export default function FreelancerSettingsPage() {
       <div className="oh-account-card" style={{ marginBottom: 16 }}>
         <h2 className="oh-account-card__title">{t(`${s}.basic.title`)}</h2>
         <div className="oh-account-form-grid oh-account-form-grid--2">
+          {onboardingSource === "LEGACY_INVITE" && freelancerMemberId ? (
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label className="oh-account-label" htmlFor="fmid">
+                {t(`${s}.basic.freelancerMemberId`)}
+              </label>
+              <input
+                id="fmid"
+                className="oh-account-input"
+                value={freelancerMemberId}
+                readOnly
+                dir="ltr"
+                style={{ background: "#f8fafc", cursor: "default" }}
+              />
+            </div>
+          ) : null}
           <div>
             <label className="oh-account-label" htmlFor="fn">
               {t(`${s}.basic.firstName`)}

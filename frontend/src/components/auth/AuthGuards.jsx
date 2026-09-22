@@ -31,6 +31,7 @@ export function AuthRouteLoading() {
 
 /**
  * Requires a valid session. Renders nested routes via `<Outlet />`.
+ * Legacy freelancers with mustChangePassword are forced to settings until they update password.
  */
 export function RequireAuth() {
   const { user, loading } = useAuth();
@@ -42,6 +43,20 @@ export function RequireAuth() {
 
   if (!user) {
     return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  if (user.mustChangePassword) {
+    const path = String(location.pathname || "");
+    const onSettings = path === "/dashboard/freelancer/settings" || path.startsWith("/dashboard/freelancer/settings/");
+    if (!onSettings) {
+      return (
+        <Navigate
+          to="/dashboard/freelancer/settings"
+          replace
+          state={{ forcePasswordChange: true, from: location }}
+        />
+      );
+    }
   }
 
   return <Outlet />;

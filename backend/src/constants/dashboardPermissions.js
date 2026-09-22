@@ -25,6 +25,7 @@ const DASHBOARD_PERMISSION_OPTIONS = Object.freeze([
   { key: "dashboard.super_admin.institutional_order_storage", labelKey: "dashboard.nav.superAdmin.institutionalOrderStorage" },
   { key: "dashboard.super_admin.admins_manage", labelKey: "dashboard.nav.superAdmin.admins" },
   { key: "dashboard.super_admin.edit_website", labelKey: "dashboard.nav.superAdmin.editWebsite" },
+  { key: "legacy_freelancers.manage", labelKey: "dashboard.nav.superAdmin.legacyFreelancerInvites" },
 ]);
 
 /** Business pages super admin may assign to admin accounts. */
@@ -77,6 +78,7 @@ const PERMISSION_KEYS = Object.freeze({
   INSTITUTIONAL_STORAGE_APPROVE: "institutional_order_storage.approve",
   INSTITUTIONAL_STORAGE_TRANSFER: "institutional_order_storage.transfer_to_training",
   INSTITUTIONAL_STORAGE_RETRY_RELEASE: "institutional_order_storage.retry_release",
+  LEGACY_FREELANCERS_MANAGE: "legacy_freelancers.manage",
 });
 
 module.exports = {

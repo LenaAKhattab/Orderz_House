@@ -22,7 +22,7 @@ import {
   RequireRole,
   RequireStaffPage,
 } from "./components/auth/AuthGuards";
-import { ADMIN_PAGE_PERMISSIONS, SUPER_ADMIN_PAGE_PERMISSIONS } from "./constants/dashboardPermissions";
+import { ADMIN_PAGE_PERMISSIONS, SUPER_ADMIN_PAGE_PERMISSIONS, LEGACY_FREELANCERS_MANAGE_PERMISSION } from "./constants/dashboardPermissions";
 import {
   Home,
   About,
@@ -469,11 +469,17 @@ function App() {
                   }
                 />
                 <Route
-                  path="/dashboard/super-admin/legacy-freelancer-invites"
+                  path="/dashboard/legacy-freelancers"
                   element={
-                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.usersControl}>
+                    <RequireStaffPage permission={LEGACY_FREELANCERS_MANAGE_PERMISSION}>
                       <SuperAdminLegacyFreelancerInvitesPage />
                     </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/legacy-freelancer-invites"
+                  element={
+                    <Navigate to="/dashboard/legacy-freelancers" replace />
                   }
                 />
                 <Route

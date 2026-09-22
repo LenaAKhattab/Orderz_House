@@ -14,6 +14,22 @@ const FORBIDDEN_MESSAGE = "ليس لديك صلاحية لهذا الإجراء.
 
 const PERMISSION_FORBIDDEN_MESSAGE = "ليس لديك صلاحية الوصول إلى هذا المورد.";
 
+const MUST_CHANGE_PASSWORD_MESSAGE =
+  "يجب تغيير كلمة المرور قبل متابعة استخدام المنصة.";
+
+/** Paths allowed while must_change_password is true (method-agnostic). */
+const PASSWORD_CHANGE_ALLOWLIST = [
+  /^\/api\/auth\/logout\/?$/i,
+  /^\/api\/auth\/me\/?$/i,
+  /^\/api\/profile\/me\/?$/i,
+  /^\/api\/profile\/password\/?$/i,
+];
+
+function isPasswordChangeAllowlisted(req) {
+  const raw = String(req.originalUrl || req.url || "").split("?")[0];
+  return PASSWORD_CHANGE_ALLOWLIST.some((re) => re.test(raw));
+}
+
 
 
 function sendUnauthorized(res) {
@@ -144,6 +160,8 @@ async function attachAuthContext(req, res, next) {
 
       rbacReady: authz.rbacReady,
 
+      mustChangePassword: Boolean(legacyUser.must_change_password),
+
     };
 
 
@@ -152,7 +170,19 @@ async function attachAuthContext(req, res, next) {
     req.user.id = Number(legacyUser.id);
     if (!req.user.sub) req.user.sub = String(legacyUser.id);
 
-
+    if (req.auth.mustChangePassword && !isPasswordChangeAllowlisted(req)) {
+      logAccessDenied(req, {
+        type: "must_change_password",
+        message: "password_change_required",
+        userId: String(legacyUser.id),
+      });
+      return res.status(403).json({
+        success: false,
+        message: MUST_CHANGE_PASSWORD_MESSAGE,
+        code: "MUST_CHANGE_PASSWORD",
+        mustChangePassword: true,
+      });
+    }
 
     return next();
 
@@ -495,6 +525,10 @@ module.exports = {
   requireAdminPagePermission,
 
   requireRoleScopedPermission,
+
+  isPasswordChangeAllowlisted,
+
+  PASSWORD_CHANGE_ALLOWLIST,
 
 };
 

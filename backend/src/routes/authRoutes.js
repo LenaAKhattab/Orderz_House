@@ -26,6 +26,10 @@ const {
   otpSendLimiter,
   resetPasswordLimiter,
 } = require("../middleware/rateLimiters");
+const {
+  uploadAccountActivationKyc,
+  handleKycUploadErrors,
+} = require("../middleware/accountActivationKycUploadMiddleware");
 
 const router = express.Router();
 
@@ -73,6 +77,11 @@ router.get(
 router.post(
   "/legacy-freelancer-register",
   registerLimiter,
+  uploadAccountActivationKyc.fields([
+    { name: "idFront", maxCount: 1 },
+    { name: "idBack", maxCount: 1 },
+  ]),
+  handleKycUploadErrors,
   registerLegacyValidators,
   validateRequest,
   legacyInviteController.registerLegacy,

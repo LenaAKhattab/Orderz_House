@@ -278,6 +278,8 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/super-admin/financial-claims": STAFF_DASHBOARD_ROLES,
   "/dashboard/super-admin/fazat-settlements": STAFF_DASHBOARD_ROLES,
   "/dashboard/super-admin/feedback": [ROLE.SUPER_ADMIN],
+  "/dashboard/legacy-freelancers": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/legacy-freelancer-invites": STAFF_DASHBOARD_ROLES,
   [DASHBOARD_PATH[ROLE.ADMIN]]: [ROLE.ADMIN],
   "/dashboard/admin/subscriptions": [ROLE.ADMIN],
   "/dashboard/admin/courses": [ROLE.ADMIN],
@@ -341,6 +343,7 @@ const DASHBOARD_PATH_TO_ROLES = {
  * Most specific prefixes first.
  */
 const DASHBOARD_PREFIX_RULES = [
+  { prefix: "/dashboard/legacy-freelancers", roles: STAFF_DASHBOARD_ROLES },
   { prefix: "/dashboard/super-admin", roles: STAFF_DASHBOARD_ROLES },
   { prefix: "/dashboard/admin", roles: [ROLE.ADMIN] },
   { prefix: "/dashboard/freelancer/orders", roles: [ROLE.FREELANCER, ROLE.CLIENT] },

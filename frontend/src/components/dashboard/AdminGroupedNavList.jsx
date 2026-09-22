@@ -4,8 +4,11 @@ import AdminNavIcon from "./AdminNavIcon";
 
 function navLinkClassName(pathname, item) {
   return ({ isActive }) => {
-    const prefix = item.matchPrefix && pathname.startsWith(item.matchPrefix);
-    const active = isActive || prefix;
+    const prefixes = [item.matchPrefix, ...(item.alsoMatchPrefixes || [])].filter(Boolean);
+    const prefixHit = prefixes.some(
+      (p) => pathname === p || pathname.startsWith(`${p}/`) || pathname.startsWith(p),
+    );
+    const active = isActive || prefixHit;
     return `oh-sa-navlink${active ? " oh-sa-navlink--active" : ""}`.trim();
   };
 }

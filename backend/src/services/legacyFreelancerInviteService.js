@@ -20,6 +20,12 @@ const {
   mapSubscription,
   evaluateFreelancerTakeOrdersEligibility,
 } = require("./subscriptionsService");
+const {
+  normalizeAndValidateNationalId,
+  maskFreelancerMemberId,
+  isLegacyMemberIdUniqueViolation,
+  duplicateNationalIdError,
+} = require("../utils/legacyFreelancerMemberId");
 
 const BCRYPT_ROUNDS = 12;
 const TOKEN_BYTES = 32;
@@ -32,6 +38,14 @@ const AUDIT_ACTIONS = Object.freeze({
   CAMPAIGN_REVOKED: "LEGACY_FREELANCER_CAMPAIGN_REVOKED",
   INVITE_REDEEMED: "LEGACY_FREELANCER_INVITE_REDEEMED",
 });
+
+function addMonthsUtc(date, months) {
+  const d = new Date(date);
+  const day = d.getUTCDate();
+  d.setUTCMonth(d.getUTCMonth() + Number(months));
+  if (d.getUTCDate() < day) d.setUTCDate(0);
+  return d;
+}
 
 const TRUST_LEVELS = Object.freeze({
   APPROVED: "APPROVED",
@@ -209,6 +223,8 @@ function mapCampaignPreview(row) {
     expiresAt: row.expires_at,
     defaultTrustLevel: row.default_trust_level,
     defaultCategoryId: row.default_category_id != null ? String(row.default_category_id) : null,
+    requireIdFront: Boolean(row.require_id_front),
+    requireIdBack: Boolean(row.require_id_back),
   };
 }
 
@@ -342,6 +358,14 @@ async function createCampaign({
         throw seedErr;
       }
     }
+    try {
+      const adminCenter = require("./legacyFreelancerAdminService");
+      await adminCenter.ensureDefaultCampaignDocumentRequirements(campaign.id, client);
+    } catch (seedDocErr) {
+      if (!(seedDocErr && (seedDocErr.code === "42P01" || seedDocErr.code === "42703"))) {
+        throw seedDocErr;
+      }
+    }
     await client.query("COMMIT");
     return mapCampaignPublic(campaign, { includeJoinUrl: true, plaintextToken });
   } catch (err) {
@@ -366,6 +390,8 @@ async function updateCampaign({
   defaultCategoryId,
   notes,
   isActive,
+  requireIdFront,
+  requireIdBack,
 }) {
   const client = await pool.connect();
   try {
@@ -421,6 +447,8 @@ async function updateCampaign({
          default_category_id = CASE WHEN $8::boolean THEN $9 ELSE default_category_id END,
          notes = CASE WHEN $10::boolean THEN $11 ELSE notes END,
          is_active = COALESCE($12, is_active),
+         require_id_front = CASE WHEN $13::boolean THEN $14 ELSE require_id_front END,
+         require_id_back = CASE WHEN $15::boolean THEN $16 ELSE require_id_back END,
          updated_at = NOW()
        WHERE id = $1
        RETURNING *`,
@@ -437,6 +465,10 @@ async function updateCampaign({
         notes !== undefined,
         notes != null ? String(notes).slice(0, 4000) : null,
         isActive != null ? Boolean(isActive) : null,
+        requireIdFront !== undefined,
+        requireIdFront != null ? Boolean(requireIdFront) : true,
+        requireIdBack !== undefined,
+        requireIdBack != null ? Boolean(requireIdBack) : true,
       ],
     );
 
@@ -525,20 +557,38 @@ async function regenerateCampaignToken({ actorAdminId, campaignId }) {
 }
 
 async function listRedemptions(campaignId) {
-  const { rows } = await pool.query(
-    `SELECT r.*,
-            u.account_id, u.first_name, u.family_name, u.email, u.phone, u.created_at AS user_created_at
-       FROM legacy_freelancer_invite_redemptions r
-       JOIN users u ON u.id = r.user_id
-      WHERE r.campaign_id = $1::bigint
-      ORDER BY r.redeemed_at DESC, r.id DESC`,
-    [Number(campaignId)],
-  );
+  let rows;
+  try {
+    ({ rows } = await pool.query(
+      `SELECT r.*,
+              u.account_id, u.freelancer_member_id, u.first_name, u.family_name,
+              u.email, u.phone, u.created_at AS user_created_at
+         FROM legacy_freelancer_invite_redemptions r
+         JOIN users u ON u.id = r.user_id
+        WHERE r.campaign_id = $1::bigint
+        ORDER BY r.redeemed_at DESC, r.id DESC`,
+      [Number(campaignId)],
+    ));
+  } catch (err) {
+    if (err.code !== "42703") throw err;
+    ({ rows } = await pool.query(
+      `SELECT r.*,
+              u.account_id, u.first_name, u.family_name,
+              u.email, u.phone, u.created_at AS user_created_at
+         FROM legacy_freelancer_invite_redemptions r
+         JOIN users u ON u.id = r.user_id
+        WHERE r.campaign_id = $1::bigint
+        ORDER BY r.redeemed_at DESC, r.id DESC`,
+      [Number(campaignId)],
+    ));
+  }
   return rows.map((r) => ({
     id: String(r.id),
     campaignId: String(r.campaign_id),
     userId: String(r.user_id),
     accountId: r.account_id,
+    // List views: masked only. Full value is available via Super Admin answers detail.
+    freelancerMemberIdMasked: maskFreelancerMemberId(r.freelancer_member_id),
     fullName: [r.first_name, r.family_name].filter(Boolean).join(" "),
     emailMasked: r.email_masked,
     phoneMasked: r.phone_masked,
@@ -581,10 +631,30 @@ async function previewInvite({ campaignSlug, token }) {
     }
   }
   const base = mapCampaignPreview(campaign);
+  let documentRequirements = [];
+  try {
+    const adminCenter = require("./legacyFreelancerAdminService");
+    const allReqs = await adminCenter.getCampaignDocumentRequirements(campaign.id);
+    documentRequirements = allReqs
+      .filter((r) => r.isEnabled && r.typeIsActive)
+      .map((r) => ({
+        documentTypeId: r.documentTypeId,
+        code: r.code,
+        labelAr: r.labelAr,
+        description: r.description,
+        isRequired: r.isRequired,
+        sortOrder: r.sortOrder,
+      }));
+  } catch (docErr) {
+    if (!(docErr && (docErr.code === "42P01" || docErr.code === "42703"))) {
+      throw docErr;
+    }
+  }
   return {
     ...base,
     formFields: contractFields.buildPublicFormFields(formConfig),
     sections: (formConfig.sections || []).map((s) => ({ key: s.key, label: s.labelAr, sortOrder: s.sortOrder })),
+    documentRequirements,
   };
 }
 
@@ -645,29 +715,110 @@ async function waiveTrainingAndExam(client, { freelancerUserId, actorAdminId }) 
   return { waived: true, courseId: requiredCourseId };
 }
 
-async function assignLegacySubscription(client, { freelancerUserId, planId, actorAdminId }) {
+async function assignLegacySubscription(
+  client,
+  {
+    freelancerUserId,
+    planId,
+    actorAdminId,
+    startsAt = null,
+    expiresAt = null,
+    durationMonths = null,
+    notes = null,
+    assignmentSource = null,
+  } = {},
+) {
   await endCurrentSubscription({ freelancerUserId }, client);
+
+  const startDate = startsAt ? new Date(startsAt) : null;
+  let endDate = expiresAt ? new Date(expiresAt) : null;
+  if (startDate && Number.isFinite(startDate.getTime()) && !endDate && durationMonths != null) {
+    endDate = addMonthsUtc(startDate, Number(durationMonths));
+  }
+  const hasDates = Boolean(
+    startDate &&
+      endDate &&
+      Number.isFinite(startDate.getTime()) &&
+      Number.isFinite(endDate.getTime()) &&
+      endDate.getTime() > startDate.getTime(),
+  );
+
+  const notesVal = notes != null && String(notes).trim()
+    ? String(notes).slice(0, 2000)
+    : hasDates
+      ? "LEGACY_ADMIN_ASSIGNMENT"
+      : PLAN_ASSIGNMENT_REASON;
+  const status = hasDates ? SUBSCRIPTION_STATUSES.ACTIVE : SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED;
+
+  // Dated Legacy admin entitlements use constraint Case 3 (migration 191):
+  // active dates with has_first_order=FALSE — never fabricate a first order/payment.
+  const startIso = hasDates ? startDate.toISOString() : null;
+  const endIso = hasDates ? endDate.toISOString() : null;
+
   const { rows } = await client.query(
     `INSERT INTO freelancer_subscriptions (
        freelancer_user_id, plan_id, assigned_by_user_id, notes,
        status, has_first_order, first_order_date, actual_start_date, expiry_date,
        is_current, source, payment_status, activation_status,
        company_activated_at, company_activated_by_user_id
-     ) VALUES ($1,$2,$3,$4,$5,FALSE,NULL,NULL,NULL,TRUE,$6,$7,$8,NOW(),$9)
+     ) VALUES ($1,$2,$3,$4,$5,FALSE,NULL,$6,$7,TRUE,$8,$9,$10,NOW(),$11)
      RETURNING *`,
     [
       Number(freelancerUserId),
       Number(planId),
       actorAdminId ? Number(actorAdminId) : null,
-      PLAN_ASSIGNMENT_REASON,
-      SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED,
+      notesVal,
+      status,
+      startIso,
+      endIso,
       SUBSCRIPTION_SOURCES.ADMIN,
       SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED,
       SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED,
       actorAdminId ? Number(actorAdminId) : null,
     ],
   );
-  return mapSubscription(rows[0]);
+  const subscription = mapSubscription(rows[0]);
+
+  if (hasDates) {
+    const source =
+      assignmentSource &&
+      ["LEGACY_ADMIN_ASSIGNMENT", "LEGACY_INVITE_DEFAULT", "LEGACY_BULK_ASSIGNMENT"].includes(
+        String(assignmentSource),
+      )
+        ? String(assignmentSource)
+        : "LEGACY_ADMIN_ASSIGNMENT";
+    try {
+      await client.query(
+        `UPDATE legacy_freelancer_package_assignments
+            SET status = 'SUPERSEDED', updated_at = NOW()
+          WHERE user_id = $1::bigint AND status = 'ACTIVE'`,
+        [Number(freelancerUserId)],
+      );
+      await client.query(
+        `INSERT INTO legacy_freelancer_package_assignments (
+           user_id, plan_id, subscription_id, starts_at, expires_at, duration_months,
+           assignment_source, assigned_by_admin_id, notes, status
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'ACTIVE')`,
+        [
+          Number(freelancerUserId),
+          Number(planId),
+          rows[0].id,
+          startDate.toISOString(),
+          endDate.toISOString(),
+          durationMonths != null ? Number(durationMonths) : null,
+          source,
+          actorAdminId ? Number(actorAdminId) : null,
+          notesVal,
+        ],
+      );
+    } catch (histErr) {
+      if (!(histErr && (histErr.code === "42P01" || histErr.code === "42703"))) {
+        throw histErr;
+      }
+    }
+  }
+
+  return subscription;
 }
 
 async function upsertTrustRank(client, { freelancerUserId, trustLevel, notes }) {
@@ -695,8 +846,10 @@ async function upsertTrustRank(client, { freelancerUserId, trustLevel, notes }) 
 
 /**
  * Atomic shared-link registration. Increments used_count only when seats remain.
+ * @param {object} payload
+ * @param {{ ip?: string|null, userAgent?: string|null, files?: { idFront?: object, idBack?: object } }} [opts]
  */
-async function registerLegacyFreelancer(payload, { ip = null, userAgent = null } = {}) {
+async function registerLegacyFreelancer(payload, { ip = null, userAgent = null, files = {} } = {}) {
   const campaignSlug = payload.campaignSlug;
   const token = payload.token;
   const email = String(payload.email || "")
@@ -804,6 +957,42 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
       (canonicalUserPatches.city && String(canonicalUserPatches.city).trim().slice(0, 120)) ||
       (payload.city ? String(payload.city).trim().slice(0, 120) : null);
 
+    // Freelancer Business ID for Legacy Invite = Jordanian national ID (not users.id).
+    let freelancerMemberId = null;
+    if (normalized.national_id != null && normalized.national_id !== "") {
+      freelancerMemberId = normalizeAndValidateNationalId(normalized.national_id, { required: true });
+      normalized.national_id = freelancerMemberId;
+    } else {
+      const nationalFieldEnabled = (fieldConfig.fields || []).some(
+        (f) => f.fieldKey === "national_id" && f.isEnabled,
+      );
+      if (nationalFieldEnabled) {
+        freelancerMemberId = normalizeAndValidateNationalId(null, { required: true });
+      }
+    }
+
+    // Uniqueness before seat claim so a duplicate never consumes a seat.
+    let memberIdColumnReady = true;
+    if (freelancerMemberId) {
+      try {
+        const { rows: memberDup } = await client.query(
+          `SELECT id FROM users
+            WHERE onboarding_source = 'LEGACY_INVITE'
+              AND freelancer_member_id = $1
+            LIMIT 1`,
+          [freelancerMemberId],
+        );
+        if (memberDup[0]) {
+          throw duplicateNationalIdError();
+        }
+      } catch (dupErr) {
+        if (dupErr && dupErr.publicCode === "LEGACY_NATIONAL_ID_EXISTS") throw dupErr;
+        if (!(dupErr && dupErr.code === "42703")) throw dupErr;
+        // Migration 189 not applied yet — answers still store national_id; member column skipped.
+        memberIdColumnReady = false;
+      }
+    }
+
     const { rows: seatRows } = await client.query(
       `UPDATE legacy_freelancer_invite_campaigns
           SET used_count = used_count + 1,
@@ -877,52 +1066,190 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
           .filter(Boolean)
           .slice(0, 40)
       : null;
-    const { rows: userRows } = await client.query(
-      `INSERT INTO users (
-         account_id, first_name, father_name, family_name, email, password_hash, role,
-         country, phone, whatsapp, gender, terms_accepted, terms_accepted_at,
-         privacy_accepted, privacy_accepted_at,
-         freelancer_categories, email_verified, is_active,
-         onboarding_source, legacy_invite_campaign_id,
-         identity_verification_source,
-         training_waiver_reason, final_exam_waiver_reason,
-         legacy_verified_at, legacy_verified_by_admin_id,
-         skills
-       ) VALUES (
-         $1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text,
-         $8::text, $9::text, $9::text, $10::text, TRUE, $11::timestamptz,
-         TRUE, $11::timestamptz,
-         $12::text[], TRUE, TRUE,
-         'LEGACY_INVITE', $13::bigint,
-         'COMPANY_OFFLINE_VERIFIED',
-         $14::text, $15::text,
-         $11::timestamptz, $16::bigint,
-         $17::text[]
-       )
-       RETURNING id, account_id, first_name, father_name, family_name, email, role,
-                 country, phone, whatsapp, gender, freelancer_categories, is_active,
-                 email_verified, created_at, onboarding_source, identity_verification_source,
-                 password_hash`,
-      [
-        accountId,
-        names.firstName,
-        names.fatherName,
-        names.familyName,
-        email,
-        passwordHash,
-        ROLES.FREELANCER,
-        country || "JO",
-        phone,
-        gender,
-        nowIso,
-        categories,
-        lockedCampaign.id,
-        TRAINING_WAIVER_REASON,
-        FINAL_EXAM_WAIVER_REASON,
-        lockedCampaign.created_by_admin_id,
-        skillsArr,
-      ],
-    );
+    const insertParamsBase = [
+      accountId,
+      names.firstName,
+      names.fatherName,
+      names.familyName,
+      email,
+      passwordHash,
+      ROLES.FREELANCER,
+      country || "JO",
+      phone,
+      gender,
+      nowIso,
+      categories,
+      lockedCampaign.id,
+      TRAINING_WAIVER_REASON,
+      FINAL_EXAM_WAIVER_REASON,
+      lockedCampaign.created_by_admin_id,
+      skillsArr,
+    ];
+
+    // Identity requirements (migration 190) — enforce before user insert when columns exist.
+    const requireIdFront = Boolean(lockedCampaign.require_id_front);
+    const requireIdBack = Boolean(lockedCampaign.require_id_back);
+    const idFrontFile = files.idFront || files.front || null;
+    const idBackFile = files.idBack || files.back || null;
+    const identityColumnsReady =
+      Object.prototype.hasOwnProperty.call(lockedCampaign, "require_id_front") ||
+      Object.prototype.hasOwnProperty.call(lockedCampaign, "require_id_back");
+    if (identityColumnsReady) {
+      if (requireIdFront && !idFrontFile) {
+        throw createPublicApiError("صورة الهوية الأمامية مطلوبة.", 400, "ID_FRONT_REQUIRED");
+      }
+      if (requireIdBack && !idBackFile) {
+        throw createPublicApiError("صورة الهوية الخلفية مطلوبة.", 400, "ID_BACK_REQUIRED");
+      }
+    }
+
+    let signedDocumentTypeIds = payload.signedDocumentTypeIds ?? payload.signed_document_type_ids ?? [];
+    if (typeof signedDocumentTypeIds === "string") {
+      try {
+        signedDocumentTypeIds = JSON.parse(signedDocumentTypeIds);
+      } catch (_) {
+        signedDocumentTypeIds = signedDocumentTypeIds
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+    }
+    if (!Array.isArray(signedDocumentTypeIds)) signedDocumentTypeIds = [];
+
+    let userRows;
+    let entryMethodColumnReady = true;
+    if (memberIdColumnReady) {
+      try {
+        ({ rows: userRows } = await client.query(
+          `INSERT INTO users (
+             account_id, first_name, father_name, family_name, email, password_hash, role,
+             country, phone, whatsapp, gender, terms_accepted, terms_accepted_at,
+             privacy_accepted, privacy_accepted_at,
+             freelancer_categories, email_verified, is_active,
+             onboarding_source, legacy_invite_campaign_id,
+             identity_verification_source,
+             training_waiver_reason, final_exam_waiver_reason,
+             legacy_verified_at, legacy_verified_by_admin_id,
+             skills, freelancer_member_id, legacy_entry_method
+           ) VALUES (
+             $1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text,
+             $8::text, $9::text, $9::text, $10::text, TRUE, $11::timestamptz,
+             TRUE, $11::timestamptz,
+             $12::text[], TRUE, TRUE,
+             'LEGACY_INVITE', $13::bigint,
+             'COMPANY_OFFLINE_VERIFIED',
+             $14::text, $15::text,
+             $11::timestamptz, $16::bigint,
+             $17::text[], $18::text, 'SHARED_INVITE'
+           )
+           RETURNING id, account_id, freelancer_member_id, first_name, father_name, family_name, email, role,
+                     country, phone, whatsapp, gender, freelancer_categories, is_active,
+                     email_verified, created_at, onboarding_source, identity_verification_source,
+                     legacy_entry_method, password_hash`,
+          [...insertParamsBase, freelancerMemberId],
+        ));
+      } catch (insErr) {
+        if (insErr && insErr.code === "42703" && String(insErr.message || "").includes("legacy_entry_method")) {
+          entryMethodColumnReady = false;
+        } else if (!(insErr && insErr.code === "42703")) {
+          throw insErr;
+        } else {
+          memberIdColumnReady = false;
+        }
+      }
+    }
+    if (!userRows && memberIdColumnReady && !entryMethodColumnReady) {
+      ({ rows: userRows } = await client.query(
+        `INSERT INTO users (
+           account_id, first_name, father_name, family_name, email, password_hash, role,
+           country, phone, whatsapp, gender, terms_accepted, terms_accepted_at,
+           privacy_accepted, privacy_accepted_at,
+           freelancer_categories, email_verified, is_active,
+           onboarding_source, legacy_invite_campaign_id,
+           identity_verification_source,
+           training_waiver_reason, final_exam_waiver_reason,
+           legacy_verified_at, legacy_verified_by_admin_id,
+           skills, freelancer_member_id
+         ) VALUES (
+           $1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text,
+           $8::text, $9::text, $9::text, $10::text, TRUE, $11::timestamptz,
+           TRUE, $11::timestamptz,
+           $12::text[], TRUE, TRUE,
+           'LEGACY_INVITE', $13::bigint,
+           'COMPANY_OFFLINE_VERIFIED',
+           $14::text, $15::text,
+           $11::timestamptz, $16::bigint,
+           $17::text[], $18::text
+         )
+         RETURNING id, account_id, freelancer_member_id, first_name, father_name, family_name, email, role,
+                   country, phone, whatsapp, gender, freelancer_categories, is_active,
+                   email_verified, created_at, onboarding_source, identity_verification_source,
+                   password_hash`,
+        [...insertParamsBase, freelancerMemberId],
+      ));
+    }
+    if (!memberIdColumnReady) {
+      try {
+        ({ rows: userRows } = await client.query(
+          `INSERT INTO users (
+             account_id, first_name, father_name, family_name, email, password_hash, role,
+             country, phone, whatsapp, gender, terms_accepted, terms_accepted_at,
+             privacy_accepted, privacy_accepted_at,
+             freelancer_categories, email_verified, is_active,
+             onboarding_source, legacy_invite_campaign_id,
+             identity_verification_source,
+             training_waiver_reason, final_exam_waiver_reason,
+             legacy_verified_at, legacy_verified_by_admin_id,
+             skills, legacy_entry_method
+           ) VALUES (
+             $1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text,
+             $8::text, $9::text, $9::text, $10::text, TRUE, $11::timestamptz,
+             TRUE, $11::timestamptz,
+             $12::text[], TRUE, TRUE,
+             'LEGACY_INVITE', $13::bigint,
+             'COMPANY_OFFLINE_VERIFIED',
+             $14::text, $15::text,
+             $11::timestamptz, $16::bigint,
+             $17::text[], 'SHARED_INVITE'
+           )
+           RETURNING id, account_id, first_name, father_name, family_name, email, role,
+                     country, phone, whatsapp, gender, freelancer_categories, is_active,
+                     email_verified, created_at, onboarding_source, identity_verification_source,
+                     legacy_entry_method, password_hash`,
+          insertParamsBase,
+        ));
+      } catch (insErr2) {
+        if (!(insErr2 && insErr2.code === "42703")) throw insErr2;
+        ({ rows: userRows } = await client.query(
+          `INSERT INTO users (
+             account_id, first_name, father_name, family_name, email, password_hash, role,
+             country, phone, whatsapp, gender, terms_accepted, terms_accepted_at,
+             privacy_accepted, privacy_accepted_at,
+             freelancer_categories, email_verified, is_active,
+             onboarding_source, legacy_invite_campaign_id,
+             identity_verification_source,
+             training_waiver_reason, final_exam_waiver_reason,
+             legacy_verified_at, legacy_verified_by_admin_id,
+             skills
+           ) VALUES (
+             $1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text,
+             $8::text, $9::text, $9::text, $10::text, TRUE, $11::timestamptz,
+             TRUE, $11::timestamptz,
+             $12::text[], TRUE, TRUE,
+             'LEGACY_INVITE', $13::bigint,
+             'COMPANY_OFFLINE_VERIFIED',
+             $14::text, $15::text,
+             $11::timestamptz, $16::bigint,
+             $17::text[]
+           )
+           RETURNING id, account_id, first_name, father_name, family_name, email, role,
+                     country, phone, whatsapp, gender, freelancer_categories, is_active,
+                     email_verified, created_at, onboarding_source, identity_verification_source,
+                     password_hash`,
+          insertParamsBase,
+        ));
+      }
+    }
     const user = userRows[0];
 
     // Never return plaintext password; assert hash stored
@@ -937,6 +1264,7 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
       freelancerUserId: user.id,
       planId: lockedCampaign.default_plan_id || ORDERZHOUSE_FREE_PLAN_ID,
       actorAdminId: lockedCampaign.created_by_admin_id,
+      assignmentSource: "LEGACY_INVITE_DEFAULT",
     });
 
     await waiveTrainingAndExam(client, {
@@ -949,6 +1277,38 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
       trustLevel: lockedCampaign.default_trust_level || TRUST_LEVELS.APPROVED,
       notes: PLAN_ASSIGNMENT_REASON,
     });
+
+    // Identity uploads + signed docs (migration 190) — best-effort when schema ready.
+    try {
+      const adminCenter = require("./legacyFreelancerAdminService");
+      if (idFrontFile) {
+        await adminCenter.storeIdentityDocument(client, {
+          userId: user.id,
+          campaignId: lockedCampaign.id,
+          side: "FRONT",
+          file: idFrontFile,
+          uploadSource: "SELF_REGISTRATION",
+        });
+      }
+      if (idBackFile) {
+        await adminCenter.storeIdentityDocument(client, {
+          userId: user.id,
+          campaignId: lockedCampaign.id,
+          side: "BACK",
+          file: idBackFile,
+          uploadSource: "SELF_REGISTRATION",
+        });
+      }
+      await adminCenter.validateAndPersistRegistrationSignedDocs(client, {
+        campaignId: lockedCampaign.id,
+        userId: user.id,
+        signedDocumentTypeIds,
+      });
+    } catch (idDocErr) {
+      if (!(idDocErr && (idDocErr.code === "42P01" || idDocErr.code === "42703"))) {
+        throw idDocErr;
+      }
+    }
 
     const ipHash = ip ? sha256Hex(ip) : null;
     const uaHash = userAgent ? sha256Hex(userAgent) : null;
@@ -975,6 +1335,9 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
           trustLevel: lockedCampaign.default_trust_level,
           planCode: lockedCampaign.default_plan_code,
           contractFieldKeys: Object.keys(normalized),
+          signedDocumentTypeIds,
+          hasIdentityFront: Boolean(idFrontFile),
+          hasIdentityBack: Boolean(idBackFile),
         }),
       ],
     );
@@ -1023,6 +1386,8 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
         termsAcceptedAt: nowIso,
         privacyAcceptedAt: nowIso,
         contractAnswerKeys: Object.keys(normalized),
+        entryMethod: "SHARED_INVITE",
+        signedDocumentCount: signedDocumentTypeIds.length,
         timestamp: nowIso,
       },
     });
@@ -1056,6 +1421,9 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null }
       /* ignore */
     }
     if (err.code === "23505") {
+      if (isLegacyMemberIdUniqueViolation(err)) {
+        throw duplicateNationalIdError();
+      }
       throw createPublicApiError(
         "يوجد حساب مسجل بهذا البريد أو الرقم. الرجاء تسجيل الدخول أو التواصل مع الإدارة.",
         409,
@@ -1074,14 +1442,22 @@ module.exports = {
   TRAINING_WAIVER_REASON,
   FINAL_EXAM_WAIVER_REASON,
   PLAN_ASSIGNMENT_REASON,
+  BCRYPT_ROUNDS,
   sha256Hex,
   generateSecureToken,
+  generateUniqueAccountId,
+  composeE164,
   maskEmail,
   maskPhone,
+  maskFreelancerMemberId,
   normalizeSlug,
   buildPublicJoinUrl,
   campaignUnavailableError,
   mapCampaignPublic,
+  writeAudit,
+  waiveTrainingAndExam,
+  assignLegacySubscription,
+  upsertTrustRank,
   listCampaigns,
   getCampaignById,
   createCampaign,

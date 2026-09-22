@@ -33,6 +33,9 @@ export const SUPER_ADMIN_PAGE_PERMISSIONS = {
   institutionalOrderStorage: "dashboard.super_admin.institutional_order_storage",
 };
 
+/** Non-dashboard assignable business permission for Legacy Admin Center. */
+export const LEGACY_FREELANCERS_MANAGE_PERMISSION = "legacy_freelancers.manage";
+
 /** All assignable dashboard page permission keys (mirrors backend ASSIGNABLE_ADMIN_PERMISSIONS). */
 export const ASSIGNABLE_DASHBOARD_PERMISSIONS = [
   SUPER_ADMIN_PAGE_PERMISSIONS.overview,
@@ -51,13 +54,15 @@ export const ASSIGNABLE_DASHBOARD_PERMISSIONS = [
   SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage,
   SUPER_ADMIN_PAGE_PERMISSIONS.adminsManage,
   SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite,
+  LEGACY_FREELANCERS_MANAGE_PERMISSION,
 ];
 
 /** Longest-prefix-first route → permission (super-admin shell paths). */
 const SUPER_ADMIN_ROUTE_RULES = [
   { prefix: "/dashboard/super-admin/analysis", permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics },
   { prefix: "/dashboard/super-admin/users", permission: SUPER_ADMIN_PAGE_PERMISSIONS.usersControl },
-  { prefix: "/dashboard/super-admin/legacy-freelancer-invites", permission: SUPER_ADMIN_PAGE_PERMISSIONS.usersControl },
+  { prefix: "/dashboard/super-admin/legacy-freelancer-invites", permission: LEGACY_FREELANCERS_MANAGE_PERMISSION },
+  { prefix: "/dashboard/legacy-freelancers", permission: LEGACY_FREELANCERS_MANAGE_PERMISSION },
   { prefix: "/dashboard/super-admin/edit-website", permission: SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite },
   { prefix: "/dashboard/super-admin/training-orders", permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders },
   { prefix: "/dashboard/super-admin/pantry", permission: SUPER_ADMIN_PAGE_PERMISSIONS.pantry },

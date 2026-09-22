@@ -270,7 +270,7 @@ async function main() {
   step("preview_has_birth_place_optional", formFields.some((f) => f.key === "birth_place" && f.required === false));
   step("preview_no_marital_disabled", !formFields.some((f) => f.key === "marital_status"));
   step("preview_no_token_hash", !JSON.stringify(previewA.json).includes("secure_token_hash"));
-  step("preview_no_sensitive_raw_in_preview", !/TMP9990001/.test(JSON.stringify(previewA.json)));
+  step("preview_no_sensitive_raw_in_preview", !/2001298136/.test(JSON.stringify(previewA.json)));
 
   // Campaign B different config
   const createB = await request("POST", "/api/super-admin/legacy-freelancer-invites", {
@@ -328,7 +328,7 @@ async function main() {
     birth_date: "1995-05-05",
     birth_place: "Amman",
     nationality: "أردني",
-    national_id: "TMP9990001",
+    national_id: "2001298136",
     city: "عمّان",
     residence_area: "خلدا",
     education_level: "بكالوريوس",
@@ -521,7 +521,7 @@ async function main() {
     );
     step("admin_answers_200", ansOk.status === 200 && (ansOk.json?.data?.sections || []).length > 0, `status=${ansOk.status};sections=${ansOk.json?.data?.sections?.length}`);
     const ansBody = JSON.stringify(ansOk.json || {});
-    step("admin_answers_has_national_id_value", /TMP9990001/.test(ansBody));
+    step("admin_answers_has_national_id_value", /2001298136/.test(ansBody));
 
     // PII not in audit
     const audits = await pool.query(
@@ -529,7 +529,7 @@ async function main() {
       [campA.id, userId],
     );
     const auditText = audits.rows.map((r) => r.d).join("\n");
-    step("audit_no_national_id", !/TMP9990001/.test(auditText));
+    step("audit_no_national_id", !/2001298136/.test(auditText));
     step("audit_no_ref_phones", !/\+96279000000/.test(auditText));
 
     // Unauthorized

@@ -2381,9 +2381,173 @@ export const previewLegacyFreelancerInviteRequest = async (campaignSlug, token) 
 };
 
 export const legacyFreelancerRegisterRequest = async (payload) => {
+  const isFormData = typeof FormData !== "undefined" && payload instanceof FormData;
   const { data } = await api.post("/auth/legacy-freelancer-register", payload, {
     timeout: AUTH_REGISTER_TIMEOUT_MS,
+    headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
   });
+  return data;
+};
+
+// --- Legacy Freelancer Admin Center ---
+
+export const listLegacyFreelancersRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/legacy-freelancers", { params });
+  return data;
+};
+
+export const getLegacyFreelancerRequest = async (userId) => {
+  const { data } = await api.get(`/super-admin/legacy-freelancers/${encodeURIComponent(userId)}`);
+  return data;
+};
+
+export const createLegacyFreelancerRequest = async (payload) => {
+  const isFormData = typeof FormData !== "undefined" && payload instanceof FormData;
+  const { data } = await api.post("/super-admin/legacy-freelancers", payload, {
+    timeout: 120000,
+    headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+  });
+  return data;
+};
+
+export const bulkAssignLegacyFreelancerPackageRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/legacy-freelancers/bulk-package", payload, {
+    timeout: 60000,
+  });
+  return data;
+};
+
+export const assignLegacyFreelancerPackageRequest = async (userId, payload) => {
+  const { data } = await api.post(
+    `/super-admin/legacy-freelancers/${encodeURIComponent(userId)}/package`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const setLegacyFreelancerSignedDocumentRequest = async (userId, payload) => {
+  const { data } = await api.post(
+    `/super-admin/legacy-freelancers/${encodeURIComponent(userId)}/signed-documents`,
+    payload,
+  );
+  return data;
+};
+
+export const removeLegacyFreelancerSignedDocumentRequest = async (userId, documentTypeId) => {
+  const { data } = await api.delete(
+    `/super-admin/legacy-freelancers/${encodeURIComponent(userId)}/signed-documents/${encodeURIComponent(documentTypeId)}`,
+  );
+  return data;
+};
+
+export const addLegacyFreelancerHistoricalMoneyRequest = async (userId, payload) => {
+  const { data } = await api.post(
+    `/super-admin/legacy-freelancers/${encodeURIComponent(userId)}/historical-money`,
+    payload,
+  );
+  return data;
+};
+
+export const voidLegacyFreelancerHistoricalMoneyRequest = async (userId, id, payload = {}) => {
+  const { data } = await api.post(
+    `/super-admin/legacy-freelancers/${encodeURIComponent(userId)}/historical-money/${encodeURIComponent(id)}/void`,
+    payload,
+  );
+  return data;
+};
+
+export const fetchLegacyFreelancerIdentityBlob = async (userId, side, options = {}) => {
+  const { signal } = options;
+  const normalizedSide = String(side || "").toLowerCase() === "back" ? "back" : "front";
+  try {
+    const response = await api.get(
+      `/super-admin/legacy-freelancers/${encodeURIComponent(userId)}/identity/${encodeURIComponent(normalizedSide)}`,
+      {
+        responseType: "blob",
+        timeout: 60000,
+        maxRedirects: 0,
+        signal,
+      },
+    );
+    const data = response.data;
+    const ct = String(response.headers?.["content-type"] || "").toLowerCase();
+    if (data instanceof Blob && ct.includes("application/json")) {
+      const text = await data.text();
+      let json = null;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = null;
+      }
+      const err = new Error(json?.message || "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.");
+      err.response = { status: response.status, data: json || { message: err.message } };
+      throw err;
+    }
+    return data;
+  } catch (err) {
+    if (err?.code === "ERR_CANCELED" || err?.name === "CanceledError" || err?.name === "AbortError") {
+      throw err;
+    }
+    const blob = err?.response?.data;
+    if (blob instanceof Blob) {
+      try {
+        const text = await blob.text();
+        const json = JSON.parse(text);
+        const wrapped = new Error(json?.message || "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.");
+        wrapped.response = { status: err.response?.status, data: json };
+        throw wrapped;
+      } catch (parseErr) {
+        if (parseErr?.response) throw parseErr;
+      }
+    }
+    throw err;
+  }
+};
+
+export const replaceLegacyFreelancerIdentityRequest = async (userId, side, file) => {
+  const normalizedSide = String(side || "").toLowerCase() === "back" ? "back" : "front";
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append(normalizedSide === "back" ? "idBack" : "idFront", file);
+  const { data } = await api.put(
+    `/super-admin/legacy-freelancers/${encodeURIComponent(userId)}/identity/${encodeURIComponent(normalizedSide)}`,
+    fd,
+    {
+      timeout: 120000,
+      headers: { "Content-Type": "multipart/form-data" },
+    },
+  );
+  return data;
+};
+
+export const listLegacyDocumentTypesRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/legacy-document-types", { params });
+  return data;
+};
+
+export const createLegacyDocumentTypeRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/legacy-document-types", payload);
+  return data;
+};
+
+export const updateLegacyDocumentTypeRequest = async (id, payload) => {
+  const { data } = await api.patch(`/super-admin/legacy-document-types/${encodeURIComponent(id)}`, payload);
+  return data;
+};
+
+export const getLegacyCampaignDocumentRequirementsRequest = async (campaignId) => {
+  const { data } = await api.get(
+    `/super-admin/legacy-freelancer-invites/${encodeURIComponent(campaignId)}/document-requirements`,
+  );
+  return data;
+};
+
+export const putLegacyCampaignDocumentRequirementsRequest = async (campaignId, requirements) => {
+  const { data } = await api.put(
+    `/super-admin/legacy-freelancer-invites/${encodeURIComponent(campaignId)}/document-requirements`,
+    { requirements },
+  );
   return data;
 };
 

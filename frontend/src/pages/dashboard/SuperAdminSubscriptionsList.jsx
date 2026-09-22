@@ -47,7 +47,7 @@ function SubscriptionActions({
   onWhatsApp,
   layout = "wrap",
 }) {
-  const hasFirstOrderRecorded = Boolean(sub?.hasFirstOrder || sub?.firstOrderDate || sub?.actualStartDate);
+  const hasFirstOrderRecorded = Boolean(sub?.hasFirstOrder || sub?.firstOrderDate);
   const showCompanyActivate = sub.paymentStatus === "paid" && sub.activationStatus !== "company_approved";
   const compact = layout === "compact";
   const showWhatsApp = Boolean(onWhatsApp) && isWhatsappEligibleSubscription(sub);

@@ -29,12 +29,13 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
   },
   legacyFreelancerInvites: {
     key: "legacyFreelancerInvites",
-    to: "/dashboard/super-admin/legacy-freelancer-invites",
+    to: "/dashboard/legacy-freelancers",
     labelKey: "dashboard.nav.superAdmin.legacyFreelancerInvites",
     icon: "admins",
     end: true,
-    matchPrefix: "/dashboard/super-admin/legacy-freelancer-invites",
-    permission: SUPER_ADMIN_PAGE_PERMISSIONS.usersControl,
+    matchPrefix: "/dashboard/legacy-freelancers",
+    alsoMatchPrefixes: ["/dashboard/super-admin/legacy-freelancer-invites"],
+    permission: "legacy_freelancers.manage",
   },
   internalRequests: {
     key: "internalRequests",
@@ -329,7 +330,7 @@ export function filterSuperAdminNavSections(user, hasPermission) {
 
 export function superAdminBreadcrumbKeys(pathname) {
   const base = ["dashboard.breadcrumbs.home"];
-  if (pathname.includes("/legacy-freelancer-invites")) {
+  if (pathname.includes("/legacy-freelancer-invites") || pathname.includes("/legacy-freelancers")) {
     return [...base, "dashboard.breadcrumbs.legacyFreelancerInvites"];
   }
   if (pathname.includes("/analysis")) return [...base, "dashboard.breadcrumbs.analytics"];

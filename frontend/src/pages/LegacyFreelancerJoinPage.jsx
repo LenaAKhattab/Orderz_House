@@ -121,6 +121,9 @@ export default function LegacyFreelancerJoinPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [answers, setAnswers] = useState({});
+  const [signedDocumentTypeIds, setSignedDocumentTypeIds] = useState([]);
+  const [idFrontFile, setIdFrontFile] = useState(null);
+  const [idBackFile, setIdBackFile] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -133,6 +136,9 @@ export default function LegacyFreelancerJoinPage() {
         if (!cancelled) {
           setPreview(res?.data || null);
           setAnswers({});
+          setSignedDocumentTypeIds([]);
+          setIdFrontFile(null);
+          setIdBackFile(null);
         }
       } catch (err) {
         if (!cancelled) {
@@ -188,6 +194,11 @@ export default function LegacyFreelancerJoinPage() {
     setAnswers((prev) => ({ ...prev, [key]: value }));
   };
 
+  const documentRequirements = useMemo(
+    () => (Array.isArray(preview?.documentRequirements) ? preview.documentRequirements : []),
+    [preview],
+  );
+
   const onSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
@@ -200,6 +211,21 @@ export default function LegacyFreelancerJoinPage() {
       setFormError("يجب الموافقة على الشروط والأحكام وسياسة الخصوصية.");
       return;
     }
+    if (preview?.requireIdFront && !idFrontFile) {
+      setFormError("صورة الهوية الأمامية مطلوبة.");
+      return;
+    }
+    if (preview?.requireIdBack && !idBackFile) {
+      setFormError("صورة الهوية الخلفية مطلوبة.");
+      return;
+    }
+    const requiredDocs = documentRequirements.filter((d) => d.isRequired);
+    for (const d of requiredDocs) {
+      if (!signedDocumentTypeIds.map(String).includes(String(d.documentTypeId))) {
+        setFormError(`يجب تأكيد توقيع: ${d.labelAr}`);
+        return;
+      }
+    }
     setSubmitting(true);
     try {
       const payloadAnswers = {};
@@ -208,7 +234,8 @@ export default function LegacyFreelancerJoinPage() {
           payloadAnswers[f.key] = answers[f.key];
         }
       }
-      const res = await legacyFreelancerRegisterRequest({
+      const hasFiles = Boolean(idFrontFile || idBackFile);
+      const basePayload = {
         campaignSlug,
         token,
         email,
@@ -221,9 +248,35 @@ export default function LegacyFreelancerJoinPage() {
         familyName: payloadAnswers.family_name,
         city: payloadAnswers.city,
         answers: payloadAnswers,
+        signedDocumentTypeIds,
         termsAccepted: true,
         privacyAccepted: true,
-      });
+      };
+
+      let payload = basePayload;
+      if (hasFiles) {
+        const fd = new FormData();
+        fd.append("campaignSlug", campaignSlug);
+        fd.append("token", token);
+        fd.append("email", email);
+        fd.append("phone", JSON.stringify({ countryCode: dial, number: phoneNumber }));
+        fd.append("password", password);
+        fd.append("passwordConfirm", passwordConfirm);
+        fd.append("country", country);
+        if (payloadAnswers.first_name) fd.append("firstName", String(payloadAnswers.first_name));
+        if (payloadAnswers.father_name) fd.append("fatherName", String(payloadAnswers.father_name));
+        if (payloadAnswers.family_name) fd.append("familyName", String(payloadAnswers.family_name));
+        if (payloadAnswers.city) fd.append("city", String(payloadAnswers.city));
+        fd.append("answers", JSON.stringify(payloadAnswers));
+        fd.append("signedDocumentTypeIds", JSON.stringify(signedDocumentTypeIds));
+        fd.append("termsAccepted", "true");
+        fd.append("privacyAccepted", "true");
+        if (idFrontFile) fd.append("idFront", idFrontFile);
+        if (idBackFile) fd.append("idBack", idBackFile);
+        payload = fd;
+      }
+
+      const res = await legacyFreelancerRegisterRequest(payload);
       setSuccess(res?.message || "تم إنشاء حسابك كفريلانسر معتمد سابقًا.");
       await refreshUser();
       const path = dashPath?.() || getDashboardPath("freelancer");
@@ -295,6 +348,74 @@ export default function LegacyFreelancerJoinPage() {
                   </div>
                 </fieldset>
               ))}
+
+              {preview?.requireIdFront || preview?.requireIdBack ? (
+                <fieldset className="rounded-xl border border-slate-200 p-3">
+                  <legend className="px-1 text-sm font-semibold text-slate-800">الهوية</legend>
+                  <div className="mt-2 flex flex-col gap-3">
+                    {preview?.requireIdFront ? (
+                      <label className={fieldLabel}>
+                        صورة الهوية (أمام) *
+                        <input
+                          className={fieldInput}
+                          type="file"
+                          accept="image/*"
+                          required
+                          onChange={(e) => setIdFrontFile(e.target.files?.[0] || null)}
+                        />
+                      </label>
+                    ) : null}
+                    {preview?.requireIdBack ? (
+                      <label className={fieldLabel}>
+                        صورة الهوية (خلف) *
+                        <input
+                          className={fieldInput}
+                          type="file"
+                          accept="image/*"
+                          required
+                          onChange={(e) => setIdBackFile(e.target.files?.[0] || null)}
+                        />
+                      </label>
+                    ) : null}
+                  </div>
+                </fieldset>
+              ) : null}
+
+              {documentRequirements.length ? (
+                <fieldset className="rounded-xl border border-slate-200 p-3">
+                  <legend className="px-1 text-sm font-semibold text-slate-800">الأوراق والعقود الموقعة</legend>
+                  <div className="mt-2 flex flex-col gap-2">
+                    {documentRequirements.map((doc) => {
+                      const id = String(doc.documentTypeId);
+                      const checked = signedDocumentTypeIds.map(String).includes(id);
+                      return (
+                        <label key={id} className="flex items-start gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            required={Boolean(doc.isRequired)}
+                            onChange={(e) => {
+                              setSignedDocumentTypeIds((prev) => {
+                                const set = new Set(prev.map(String));
+                                if (e.target.checked) set.add(id);
+                                else set.delete(id);
+                                return [...set];
+                              });
+                            }}
+                          />
+                          <span>
+                            {doc.labelAr}
+                            {doc.isRequired ? " *" : ""}
+                            {doc.description ? (
+                              <span className="mt-0.5 block text-xs text-slate-500">{doc.description}</span>
+                            ) : null}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              ) : null}
 
               <fieldset className="rounded-xl border border-slate-200 p-3">
                 <legend className="px-1 text-sm font-semibold text-slate-800">حساب الدخول</legend>
