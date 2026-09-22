@@ -1,6 +1,6 @@
 -- 190: Legacy Freelancer Administration Center
 -- Additive only. Builds on 189. Does NOT modify Campaign 2 / tokens.
--- No DROP / TRUNCATE / destructive UPDATE.
+-- No DROP / no table wipe / no destructive UPDATE.
 
 BEGIN;
 
