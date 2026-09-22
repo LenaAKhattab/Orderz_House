@@ -13,12 +13,14 @@ import {
   listLegacyDocumentTypesRequest,
   listAdminPlansRequest,
 } from "../../../services/api";
+import Button from "../../../components/ui/Button";
 import { useToast } from "../../../components/ui/toastContext";
 import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
 import DashboardSection from "../../../components/dashboard/DashboardSection";
-import DashboardToolbar from "../../../components/dashboard/DashboardToolbar";
 import DashboardEmptyState from "../../../components/dashboard/DashboardEmptyState";
 import DashboardLoadingState from "../../../components/dashboard/DashboardLoadingState";
+import DashboardErrorState from "../../../components/dashboard/DashboardErrorState";
+import DashboardTable from "../../../components/dashboard/DashboardTable";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
 import Pagination from "../../../components/common/Pagination";
 import { DEFAULT_DIAL_CODE } from "../../../constants/arabCountries";
@@ -58,9 +60,20 @@ const EMPTY_CREATE = {
   signedDocumentTypeIds: [],
 };
 
-export default function LegacyFreelancersPanel() {
+const EMPTY_FILTERS = {
+  planId: "",
+  identityComplete: "",
+  entryMethod: "",
+  isActive: "",
+};
+
+/**
+ * @param {{ createSignal?: number, onListChanged?: () => void }} props
+ */
+export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged }) {
   const { pushToast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
@@ -68,13 +81,8 @@ export default function LegacyFreelancersPanel() {
   const [total, setTotal] = useState(0);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [q, setQ] = useState("");
-  const [searchInput, setSearchInput] = useState("");
-  const [filters, setFilters] = useState({
-    planId: "",
-    identityComplete: "",
-    entryMethod: "",
-    isActive: "",
-  });
+  const [draftFilters, setDraftFilters] = useState({ q: "", ...EMPTY_FILTERS });
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [plans, setPlans] = useState([]);
   const [docTypes, setDocTypes] = useState([]);
 
@@ -97,6 +105,7 @@ export default function LegacyFreelancersPanel() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError("");
     try {
       const params = {
         q: q || undefined,
@@ -114,6 +123,7 @@ export default function LegacyFreelancersPanel() {
       setTotalPages(Number(data.totalPages) || 1);
       setSelectedIds(new Set());
     } catch (err) {
+      setLoadError(getSafeApiErrorMessage(err, "تعذر تحميل الفريلانسرز"));
       pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحميل الفريلانسرز") });
     } finally {
       setLoading(false);
@@ -123,6 +133,10 @@ export default function LegacyFreelancersPanel() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (createSignal > 0) setShowCreate(true);
+  }, [createSignal]);
 
   useEffect(() => {
     listAdminPlansRequest(false)
@@ -164,11 +178,8 @@ export default function LegacyFreelancersPanel() {
   const selectedCount = selectedIds.size;
 
   const toggleAll = () => {
-    if (allVisibleSelected) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(items.map((r) => r.id)));
-    }
+    if (allVisibleSelected) setSelectedIds(new Set());
+    else setSelectedIds(new Set(items.map((r) => r.id)));
   };
 
   const toggleOne = (id) => {
@@ -180,10 +191,23 @@ export default function LegacyFreelancersPanel() {
     });
   };
 
-  const applySearch = (e) => {
+  const applyFilters = (e) => {
     e.preventDefault();
     setPage(1);
-    setQ(searchInput.trim());
+    setQ(draftFilters.q.trim());
+    setFilters({
+      planId: draftFilters.planId,
+      identityComplete: draftFilters.identityComplete,
+      entryMethod: draftFilters.entryMethod,
+      isActive: draftFilters.isActive,
+    });
+  };
+
+  const resetFilters = () => {
+    setDraftFilters({ q: "", ...EMPTY_FILTERS });
+    setQ("");
+    setFilters(EMPTY_FILTERS);
+    setPage(1);
   };
 
   const onCreate = async (e) => {
@@ -210,7 +234,9 @@ export default function LegacyFreelancersPanel() {
 
       let payload;
       if (hasFiles) {
-        const phoneE164 = `${String(createForm.phoneDial || "").trim()}${String(createForm.phoneNumber || "").trim().replace(/\D/g, "")}`;
+        const phoneE164 = `${String(createForm.phoneDial || "").trim()}${String(createForm.phoneNumber || "")
+          .trim()
+          .replace(/\D/g, "")}`;
         payload = new FormData();
         Object.entries({
           ...base,
@@ -236,6 +262,7 @@ export default function LegacyFreelancersPanel() {
       setIdFrontFile(null);
       setIdBackFile(null);
       await load();
+      onListChanged?.();
     } catch (err) {
       pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر إضافة الفريلانسر") });
     } finally {
@@ -255,6 +282,7 @@ export default function LegacyFreelancersPanel() {
       pushToast({ type: "success", message: `تم إسناد الباقة لـ ${selectedCount} فريلانسر` });
       setShowBulk(false);
       await load();
+      onListChanged?.();
     } catch (err) {
       pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر الإسناد الجماعي") });
     } finally {
@@ -273,140 +301,144 @@ export default function LegacyFreelancersPanel() {
 
   return (
     <>
-      <DashboardSection title="الفريلانسرز القدامى">
-        <DashboardToolbar>
-          <form className="flex flex-wrap items-end gap-2" onSubmit={applySearch}>
-            <label className="flex flex-col gap-1 text-xs">
-              بحث
-              <input
-                className="min-w-[180px] rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="اسم، بريد، هاتف، رقم عضوية…"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-xs">
-              الباقة
-              <select
-                className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
-                value={filters.planId}
-                onChange={(e) => {
-                  setPage(1);
-                  setFilters((f) => ({ ...f, planId: e.target.value }));
-                }}
-              >
-                <option value="">الكل</option>
-                {planOptions.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-xs">
-              الهوية
-              <select
-                className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
-                value={filters.identityComplete}
-                onChange={(e) => {
-                  setPage(1);
-                  setFilters((f) => ({ ...f, identityComplete: e.target.value }));
-                }}
-              >
-                <option value="">الكل</option>
-                <option value="true">مكتملة</option>
-                <option value="false">غير مكتملة</option>
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-xs">
-              طريقة الدخول
-              <select
-                className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
-                value={filters.entryMethod}
-                onChange={(e) => {
-                  setPage(1);
-                  setFilters((f) => ({ ...f, entryMethod: e.target.value }));
-                }}
-              >
-                <option value="">الكل</option>
-                <option value="SHARED_INVITE">دعوة مشتركة</option>
-                <option value="ADMIN_MANUAL">إضافة يدوية</option>
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-xs">
-              الحالة
-              <select
-                className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
-                value={filters.isActive}
-                onChange={(e) => {
-                  setPage(1);
-                  setFilters((f) => ({ ...f, isActive: e.target.value }));
-                }}
-              >
-                <option value="">الكل</option>
-                <option value="true">نشط</option>
-                <option value="false">غير نشط</option>
-              </select>
-            </label>
-            <button type="submit" className="rounded-lg border px-3 py-1.5 text-sm">
-              بحث
-            </button>
-            <button type="button" className="rounded-lg border px-3 py-1.5 text-sm" onClick={load}>
+      <DashboardSection
+        title="بحث وتصفية"
+        description="ابحث بالاسم أو البريد أو الهاتف أو رقم العضوية، ثم صفِّ النتائج حسب الباقة والهوية وطريقة الدخول."
+        actions={
+          <div className="oh-legacy-admin__actions">
+            <Button type="button" variant="secondary" onClick={load} disabled={loading}>
               تحديث
-            </button>
-          </form>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="rounded-lg bg-emerald-700 px-3 py-1.5 text-sm text-white"
-              onClick={() => setShowCreate(true)}
-            >
+            </Button>
+            <Button type="button" onClick={() => setShowCreate(true)}>
               إضافة فريلانسر قديم
-            </button>
-            <button
-              type="button"
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50"
-              disabled={!selectedCount}
-              onClick={() => setShowBulk(true)}
-            >
-              إسناد باقة ({selectedCount})
-            </button>
+            </Button>
           </div>
-        </DashboardToolbar>
+        }
+      >
+        <form className="oh-sa-users-filters" onSubmit={applyFilters}>
+          <label className="oh-sa-users-field oh-sa-users-field--grow">
+            <span>بحث</span>
+            <input
+              value={draftFilters.q}
+              onChange={(e) => setDraftFilters((s) => ({ ...s, q: e.target.value }))}
+              placeholder="اسم، بريد، هاتف، رقم عضوية…"
+            />
+          </label>
+          <label className="oh-sa-users-field">
+            <span>الباقة</span>
+            <select
+              value={draftFilters.planId}
+              onChange={(e) => setDraftFilters((s) => ({ ...s, planId: e.target.value }))}
+            >
+              <option value="">الكل</option>
+              {planOptions.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="oh-sa-users-field">
+            <span>الهوية</span>
+            <select
+              value={draftFilters.identityComplete}
+              onChange={(e) => setDraftFilters((s) => ({ ...s, identityComplete: e.target.value }))}
+            >
+              <option value="">الكل</option>
+              <option value="true">مكتملة</option>
+              <option value="false">غير مكتملة</option>
+            </select>
+          </label>
+          <label className="oh-sa-users-field">
+            <span>طريقة الدخول</span>
+            <select
+              value={draftFilters.entryMethod}
+              onChange={(e) => setDraftFilters((s) => ({ ...s, entryMethod: e.target.value }))}
+            >
+              <option value="">الكل</option>
+              <option value="SHARED_INVITE">دعوة مشتركة</option>
+              <option value="ADMIN_MANUAL">إضافة يدوية</option>
+            </select>
+          </label>
+          <label className="oh-sa-users-field">
+            <span>حالة الحساب</span>
+            <select
+              value={draftFilters.isActive}
+              onChange={(e) => setDraftFilters((s) => ({ ...s, isActive: e.target.value }))}
+            >
+              <option value="">الكل</option>
+              <option value="true">نشط</option>
+              <option value="false">غير نشط</option>
+            </select>
+          </label>
+          <div className="oh-sa-users-filters__actions">
+            <Button type="submit">تطبيق</Button>
+            <Button type="button" variant="secondary" onClick={resetFilters}>
+              إعادة ضبط
+            </Button>
+          </div>
+        </form>
+      </DashboardSection>
 
+      {selectedCount > 0 ? (
+        <div className="oh-sa-users-bulk" role="region" aria-label="إجراءات جماعية">
+          <span className="oh-sa-users-bulk__count">محدّد: {selectedCount}</span>
+          <Button type="button" onClick={() => setShowBulk(true)}>
+            إسناد باقة
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => setSelectedIds(new Set())}>
+            إلغاء التحديد
+          </Button>
+        </div>
+      ) : null}
+
+      <DashboardSection title="الفريلانسرز القدامى" description="قائمة المسجّلين عبر الدعوة المشتركة أو الإضافة اليدوية.">
         {loading ? (
           <DashboardLoadingState />
+        ) : loadError ? (
+          <DashboardErrorState
+            message={loadError}
+            actions={
+              <Button type="button" variant="secondary" onClick={load}>
+                إعادة المحاولة
+              </Button>
+            }
+          />
         ) : items.length === 0 ? (
-          <DashboardEmptyState title="لا يوجد فريلانسرز" description="أضف يدوياً أو عبر حملات الدعوة." />
+          <DashboardEmptyState
+            title="لا يوجد فريلانسرز"
+            description="أضف يدوياً أو عبر حملات الدعوة المشتركة."
+          />
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
+            <div className="oh-sa-users-table-wrap">
+              <DashboardTable caption="قائمة الفريلانسرز القدامى">
                 <thead>
-                  <tr className="border-b text-right text-slate-500">
-                    <th className="px-2 py-2">
-                      <input type="checkbox" checked={allVisibleSelected} onChange={toggleAll} aria-label="تحديد الكل" />
+                  <tr>
+                    <th scope="col">
+                      <input
+                        type="checkbox"
+                        checked={allVisibleSelected}
+                        onChange={toggleAll}
+                        aria-label="تحديد الكل"
+                      />
                     </th>
-                    <th className="px-2 py-2">رقم العضوية</th>
-                    <th className="px-2 py-2">الاسم</th>
-                    <th className="px-2 py-2">الهاتف</th>
-                    <th className="px-2 py-2">البريد</th>
-                    <th className="px-2 py-2">التخصص</th>
-                    <th className="px-2 py-2">طريقة الدخول</th>
-                    <th className="px-2 py-2">الباقة</th>
-                    <th className="px-2 py-2">انتهاء الباقة</th>
-                    <th className="px-2 py-2">الهوية</th>
-                    <th className="px-2 py-2">الأوراق</th>
-                    <th className="px-2 py-2">مبالغ تاريخية</th>
-                    <th className="px-2 py-2">الحالة</th>
-                    <th className="px-2 py-2">تاريخ الإنشاء</th>
-                    <th className="px-2 py-2">إجراءات</th>
+                    <th scope="col">رقم العضوية</th>
+                    <th scope="col">الاسم</th>
+                    <th scope="col">التواصل</th>
+                    <th scope="col">طريقة الدخول</th>
+                    <th scope="col">الباقة</th>
+                    <th scope="col">الهوية</th>
+                    <th scope="col">الأوراق</th>
+                    <th scope="col">مبالغ تاريخية</th>
+                    <th scope="col">الحالة</th>
+                    <th scope="col">إجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((row) => (
-                    <tr key={row.id} className="border-b border-slate-100 align-top">
-                      <td className="px-2 py-2">
+                    <tr key={row.id} className={selectedIds.has(row.id) ? "oh-legacy-admin__selected-row" : undefined}>
+                      <td>
                         <input
                           type="checkbox"
                           checked={selectedIds.has(row.id)}
@@ -414,54 +446,69 @@ export default function LegacyFreelancersPanel() {
                           aria-label={`تحديد ${row.fullName}`}
                         />
                       </td>
-                      <td className="px-2 py-2 font-mono text-xs" dir="ltr">
-                        {row.freelancerMemberIdMasked || "—"}
+                      <td>
+                        <span className="oh-legacy-admin__member-id">
+                          {row.freelancerMemberIdMasked || "—"}
+                        </span>
                       </td>
-                      <td className="px-2 py-2 font-medium">{row.fullName}</td>
-                      <td className="px-2 py-2" dir="ltr">
-                        {row.phone || "—"}
+                      <td>
+                        <div className="oh-sa-users-user">
+                          <strong>{row.fullName}</strong>
+                          <span>{categoriesLabel(row.categories)}</span>
+                        </div>
                       </td>
-                      <td className="px-2 py-2" dir="ltr">
-                        {row.email || "—"}
+                      <td>
+                        <div className="oh-sa-users-user">
+                          <span dir="ltr">{row.phone || "—"}</span>
+                          <span dir="ltr">{row.email || "—"}</span>
+                        </div>
                       </td>
-                      <td className="px-2 py-2">{categoriesLabel(row.categories)}</td>
-                      <td className="px-2 py-2">{entryMethodLabel(row.legacyEntryMethod)}</td>
-                      <td className="px-2 py-2">{row.plan?.title || row.plan?.name || "—"}</td>
-                      <td className="px-2 py-2">{formatDate(row.plan?.expiresAt)}</td>
-                      <td className="px-2 py-2">
+                      <td>
+                        <StatusBadge
+                          tone={row.legacyEntryMethod === "ADMIN_MANUAL" ? "admin_assigned" : "neutral"}
+                        >
+                          {entryMethodLabel(row.legacyEntryMethod)}
+                        </StatusBadge>
+                      </td>
+                      <td>
+                        <div className="oh-sa-users-plan-cell">
+                          <strong>{row.plan?.title || row.plan?.name || "—"}</strong>
+                          <span className="oh-sa-users-muted">{formatDate(row.plan?.expiresAt)}</span>
+                        </div>
+                      </td>
+                      <td>
                         <StatusBadge tone={row.identity?.complete ? "success" : "warning"}>
                           {identityStatusLabel(row.identity)}
                         </StatusBadge>
                       </td>
-                      <td className="px-2 py-2">{row.signedDocuments?.count ?? 0}</td>
-                      <td className="px-2 py-2">
-                        {formatMoney(row.historicalMoney?.total, row.historicalMoney?.currency)}
-                      </td>
-                      <td className="px-2 py-2">
+                      <td>{row.signedDocuments?.count ?? 0}</td>
+                      <td>{formatMoney(row.historicalMoney?.total, row.historicalMoney?.currency)}</td>
+                      <td>
                         <StatusBadge tone={row.isActive ? "success" : "danger"}>
                           {row.isActive ? "نشط" : "غير نشط"}
                         </StatusBadge>
                       </td>
-                      <td className="px-2 py-2">{formatDate(row.createdAt)}</td>
-                      <td className="px-2 py-2">
-                        <button
-                          type="button"
-                          className="rounded border px-2 py-1 text-xs"
-                          onClick={() => {
-                            setDetailTab("profile");
-                            setDetailUserId(row.id);
-                          }}
-                        >
-                          عرض/إدارة
-                        </button>
+                      <td>
+                        <div className="oh-sa-users-table__actions">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => {
+                              setDetailTab("profile");
+                              setDetailUserId(row.id);
+                            }}
+                          >
+                            عرض / إدارة
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </DashboardTable>
             </div>
-            <div className="mt-3 flex items-center justify-between gap-2">
-              <p className="text-xs text-slate-500">
+            <div className="oh-legacy-admin__pager">
+              <p className="oh-legacy-admin__pager-meta">
                 {total} نتيجة — صفحة {page} من {totalPages}
               </p>
               <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} isLoading={loading} />
@@ -471,199 +518,142 @@ export default function LegacyFreelancersPanel() {
       </DashboardSection>
 
       {showCreate ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-4 shadow-xl">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h3 className="text-lg font-semibold">إضافة فريلانسر قديم</h3>
-              <button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => setShowCreate(false)}>
-                إغلاق
+        <div className="oh-sa-users-modal" role="dialog" aria-modal="true" aria-labelledby="oh-legacy-create-title">
+          <button type="button" className="oh-sa-users-modal__backdrop" aria-label="إغلاق" onClick={() => setShowCreate(false)} />
+          <div className="oh-sa-users-modal__panel" style={{ width: "min(720px, 100%)", maxHeight: "min(92vh, 900px)" }}>
+            <header className="oh-sa-users-modal__header">
+              <h2 id="oh-legacy-create-title">إضافة فريلانسر قديم</h2>
+              <button type="button" className="oh-sa-users-modal__close" onClick={() => setShowCreate(false)} aria-label="إغلاق">
+                ×
               </button>
-            </div>
-            <form className="grid gap-3 md:grid-cols-2" onSubmit={onCreate}>
-              <label className="flex flex-col gap-1 text-sm">
-                الاسم الأول *
-                <input
-                  required
-                  className="rounded-lg border px-3 py-2"
-                  value={createForm.firstName}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, firstName: e.target.value }))}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                اسم الأب *
-                <input
-                  required
-                  className="rounded-lg border px-3 py-2"
-                  value={createForm.fatherName}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, fatherName: e.target.value }))}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                اسم العائلة *
-                <input
-                  required
-                  className="rounded-lg border px-3 py-2"
-                  value={createForm.familyName}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, familyName: e.target.value }))}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                الرقم الوطني *
-                <input
-                  required
-                  className="rounded-lg border px-3 py-2"
-                  dir="ltr"
-                  value={createForm.nationalId}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, nationalId: e.target.value }))}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                مفتاح الهاتف *
-                <input
-                  required
-                  className="rounded-lg border px-3 py-2"
-                  dir="ltr"
-                  value={createForm.phoneDial}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, phoneDial: e.target.value }))}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                رقم الهاتف *
-                <input
-                  required
-                  className="rounded-lg border px-3 py-2"
-                  dir="ltr"
-                  value={createForm.phoneNumber}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, phoneNumber: e.target.value }))}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm md:col-span-2">
-                البريد الإلكتروني *
-                <input
-                  required
-                  type="email"
-                  className="rounded-lg border px-3 py-2"
-                  dir="ltr"
-                  value={createForm.email}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                المدينة
-                <input
-                  className="rounded-lg border px-3 py-2"
-                  value={createForm.city}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, city: e.target.value }))}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                مكان الإقامة
-                <input
-                  className="rounded-lg border px-3 py-2"
-                  value={createForm.residence}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, residence: e.target.value }))}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                التخصص
-                <input
-                  className="rounded-lg border px-3 py-2"
-                  value={createForm.specialization}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, specialization: e.target.value }))}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                الجنسية
-                <input
-                  className="rounded-lg border px-3 py-2"
-                  value={createForm.nationality}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, nationality: e.target.value }))}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                الباقة (اختياري)
-                <select
-                  className="rounded-lg border px-3 py-2"
-                  value={createForm.planId}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, planId: e.target.value }))}
-                >
-                  <option value="">— افتراضي —</option>
-                  {planOptions.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                مدة الباقة (أشهر)
-                <select
-                  className="rounded-lg border px-3 py-2"
-                  value={createForm.durationMonths}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, durationMonths: e.target.value }))}
-                >
-                  <option value="">— بدون مدة محددة —</option>
-                  {PACKAGE_DURATION_OPTIONS.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                مبلغ تاريخي (اختياري)
-                <input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  className="rounded-lg border px-3 py-2"
-                  dir="ltr"
-                  value={createForm.historicalAmount}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, historicalAmount: e.target.value }))}
-                />
-              </label>
-              <div className="md:col-span-2">
-                <p className="mb-2 text-sm font-medium">الأوراق الموقّعة</p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {docTypes.map((t) => {
-                    const checked = createForm.signedDocumentTypeIds.includes(String(t.id));
-                    return (
-                      <label key={t.id} className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => {
-                            setCreateForm((f) => {
-                              const id = String(t.id);
-                              const set = new Set(f.signedDocumentTypeIds.map(String));
-                              if (e.target.checked) set.add(id);
-                              else set.delete(id);
-                              return { ...f, signedDocumentTypeIds: [...set] };
-                            });
-                          }}
-                        />
-                        {t.labelAr}
-                      </label>
-                    );
-                  })}
+            </header>
+            <form className="oh-sa-users-modal__body" onSubmit={onCreate}>
+              <div className="oh-legacy-admin__form-grid oh-legacy-admin__form-grid--2">
+                {[
+                  ["firstName", "الاسم الأول *", true],
+                  ["fatherName", "اسم الأب *", true],
+                  ["familyName", "اسم العائلة *", true],
+                  ["nationalId", "الرقم الوطني *", true, true],
+                  ["phoneDial", "مفتاح الهاتف *", true, true],
+                  ["phoneNumber", "رقم الهاتف *", true, true],
+                ].map(([key, label, required, ltr]) => (
+                  <label key={key} className="oh-sa-users-field">
+                    <span>{label}</span>
+                    <input
+                      required={required}
+                      dir={ltr ? "ltr" : undefined}
+                      value={createForm[key]}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, [key]: e.target.value }))}
+                    />
+                  </label>
+                ))}
+                <label className="oh-sa-users-field oh-legacy-admin__form-span">
+                  <span>البريد الإلكتروني *</span>
+                  <input
+                    required
+                    type="email"
+                    dir="ltr"
+                    value={createForm.email}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+                  />
+                </label>
+                {[
+                  ["city", "المدينة"],
+                  ["residence", "مكان الإقامة"],
+                  ["specialization", "التخصص"],
+                  ["nationality", "الجنسية"],
+                ].map(([key, label]) => (
+                  <label key={key} className="oh-sa-users-field">
+                    <span>{label}</span>
+                    <input
+                      value={createForm[key]}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, [key]: e.target.value }))}
+                    />
+                  </label>
+                ))}
+                <label className="oh-sa-users-field">
+                  <span>الباقة (اختياري)</span>
+                  <select
+                    value={createForm.planId}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, planId: e.target.value }))}
+                  >
+                    <option value="">— افتراضي —</option>
+                    {planOptions.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="oh-sa-users-field">
+                  <span>مدة الباقة (أشهر)</span>
+                  <select
+                    value={createForm.durationMonths}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, durationMonths: e.target.value }))}
+                  >
+                    <option value="">— بدون مدة محددة —</option>
+                    {PACKAGE_DURATION_OPTIONS.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="oh-sa-users-field">
+                  <span>مبلغ تاريخي (اختياري)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    dir="ltr"
+                    value={createForm.historicalAmount}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, historicalAmount: e.target.value }))}
+                  />
+                </label>
+                <div className="oh-legacy-admin__form-span">
+                  <p className="oh-sa-users-muted" style={{ marginBottom: "0.5rem", fontWeight: 800 }}>
+                    الأوراق الموقّعة
+                  </p>
+                  <div className="oh-legacy-admin__form-grid">
+                    {docTypes.map((t) => {
+                      const checked = createForm.signedDocumentTypeIds.includes(String(t.id));
+                      return (
+                        <label key={t.id} className="oh-legacy-admin__doc-card" style={{ cursor: "pointer" }}>
+                          <span>{t.labelAr}</span>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              setCreateForm((f) => {
+                                const id = String(t.id);
+                                const set = new Set(f.signedDocumentTypeIds.map(String));
+                                if (e.target.checked) set.add(id);
+                                else set.delete(id);
+                                return { ...f, signedDocumentTypeIds: [...set] };
+                              });
+                            }}
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
+                <label className="oh-sa-users-field">
+                  <span>صورة الهوية (أمام)</span>
+                  <input type="file" accept="image/*" onChange={(e) => setIdFrontFile(e.target.files?.[0] || null)} />
+                </label>
+                <label className="oh-sa-users-field">
+                  <span>صورة الهوية (خلف)</span>
+                  <input type="file" accept="image/*" onChange={(e) => setIdBackFile(e.target.files?.[0] || null)} />
+                </label>
               </div>
-              <label className="flex flex-col gap-1 text-sm">
-                صورة الهوية (أمام)
-                <input type="file" accept="image/*" onChange={(e) => setIdFrontFile(e.target.files?.[0] || null)} />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                صورة الهوية (خلف)
-                <input type="file" accept="image/*" onChange={(e) => setIdBackFile(e.target.files?.[0] || null)} />
-              </label>
-              <div className="md:col-span-2">
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="rounded-lg bg-emerald-700 px-4 py-2 text-sm text-white disabled:opacity-60"
-                >
+              <div className="oh-sa-users-modal__footer">
+                <Button type="button" variant="secondary" onClick={() => setShowCreate(false)}>
+                  إلغاء
+                </Button>
+                <Button type="submit" disabled={creating}>
                   {creating ? "جاري الحفظ…" : "حفظ"}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -671,53 +661,48 @@ export default function LegacyFreelancersPanel() {
       ) : null}
 
       {showBulk ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-4 shadow-xl">
-            <h3 className="mb-3 text-lg font-semibold">إسناد باقة</h3>
-            <p className="mb-3 text-sm text-slate-600">
-              سيتم إسناد الباقة لـ <strong>{selectedCount}</strong> فريلانسر محدد.
-            </p>
-            <label className="mb-3 flex flex-col gap-1 text-sm">
-              الباقة
-              <select
-                className="rounded-lg border px-3 py-2"
-                value={bulkPlanId}
-                onChange={(e) => setBulkPlanId(e.target.value)}
-              >
-                <option value="">— اختر —</option>
-                {planOptions.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="mb-4 flex flex-col gap-1 text-sm">
-              المدة (أشهر)
-              <select
-                className="rounded-lg border px-3 py-2"
-                value={bulkDuration}
-                onChange={(e) => setBulkDuration(e.target.value)}
-              >
-                {PACKAGE_DURATION_OPTIONS.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className="rounded-lg bg-emerald-700 px-4 py-2 text-sm text-white disabled:opacity-60"
-                disabled={bulkBusy || !bulkPlanId}
-                onClick={onBulkAssign}
-              >
-                {bulkBusy ? "جاري الإسناد…" : "تأكيد"}
+        <div className="oh-sa-users-modal" role="dialog" aria-modal="true" aria-labelledby="oh-legacy-bulk-title">
+          <button type="button" className="oh-sa-users-modal__backdrop" aria-label="إغلاق" onClick={() => setShowBulk(false)} />
+          <div className="oh-sa-users-modal__panel">
+            <header className="oh-sa-users-modal__header">
+              <h2 id="oh-legacy-bulk-title">إسناد باقة</h2>
+              <button type="button" className="oh-sa-users-modal__close" onClick={() => setShowBulk(false)} aria-label="إغلاق">
+                ×
               </button>
-              <button type="button" className="rounded-lg border px-4 py-2 text-sm" onClick={() => setShowBulk(false)}>
-                إلغاء
-              </button>
+            </header>
+            <div className="oh-sa-users-modal__body">
+              <p className="oh-sa-users-modal__desc">
+                سيتم إسناد الباقة لـ <strong>{selectedCount}</strong> فريلانسر محدد.
+              </p>
+              <label className="oh-sa-users-field">
+                <span>الباقة</span>
+                <select value={bulkPlanId} onChange={(e) => setBulkPlanId(e.target.value)}>
+                  <option value="">— اختر —</option>
+                  {planOptions.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="oh-sa-users-field">
+                <span>المدة (أشهر)</span>
+                <select value={bulkDuration} onChange={(e) => setBulkDuration(e.target.value)}>
+                  {PACKAGE_DURATION_OPTIONS.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="oh-sa-users-modal__footer">
+                <Button type="button" variant="secondary" onClick={() => setShowBulk(false)}>
+                  إلغاء
+                </Button>
+                <Button type="button" disabled={bulkBusy || !bulkPlanId} onClick={onBulkAssign}>
+                  {bulkBusy ? "جاري الإسناد…" : "تأكيد"}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -864,30 +849,29 @@ function LegacyFreelancerDetailDrawer({
   const hasBack = (detail?.identityDocuments || []).some((d) => String(d.side).toUpperCase() === "BACK");
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
-      <div className="flex h-full w-full max-w-xl flex-col bg-white shadow-2xl">
-        <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+    <div className="oh-sa-users-drawer" role="dialog" aria-modal="true" aria-labelledby="oh-legacy-drawer-title">
+      <button type="button" className="oh-sa-users-drawer__backdrop" aria-label="إغلاق" onClick={onClose} />
+      <aside className="oh-sa-users-drawer__panel">
+        <header className="oh-sa-users-drawer__header">
           <div>
-            <h3 className="text-lg font-semibold">{detail?.fullName || "تفاصيل الفريلانسر"}</h3>
-            <p className="font-mono text-xs text-slate-500" dir="ltr">
-              {detail?.freelancerMemberIdMasked || "—"}
+            <h2 id="oh-legacy-drawer-title">{detail?.fullName || "تفاصيل الفريلانسر"}</h2>
+            <p className="oh-sa-users-drawer__sub">
+              <span className="oh-legacy-admin__member-id">{detail?.freelancerMemberIdMasked || "—"}</span>
             </p>
           </div>
-          <button type="button" className="rounded border px-3 py-1 text-sm" onClick={onClose}>
-            إغلاق
+          <button type="button" className="oh-sa-users-drawer__close" onClick={onClose} aria-label="إغلاق">
+            ×
           </button>
-        </div>
+        </header>
 
-        <nav className="flex flex-wrap gap-1 border-b bg-slate-50 px-3 py-2" role="tablist">
+        <nav className="oh-sa-users-tabs" role="tablist" aria-label="أقسام التفاصيل">
           {DETAIL_TABS.map((t) => (
             <button
               key={t.id}
               type="button"
               role="tab"
               aria-selected={detailTab === t.id}
-              className={`rounded-full px-3 py-1 text-xs font-bold ${
-                detailTab === t.id ? "bg-slate-800 text-white" : "text-slate-600"
-              }`}
+              className={`oh-sa-users-tabs__btn${detailTab === t.id ? " is-active" : ""}`}
               onClick={() => setDetailTab(t.id)}
             >
               {t.label}
@@ -895,48 +879,56 @@ function LegacyFreelancerDetailDrawer({
           ))}
         </nav>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="oh-sa-users-drawer__body">
           {loading || !detail ? (
             <DashboardLoadingState />
           ) : detailTab === "profile" ? (
-            <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <dl className="oh-sa-users-kv">
               <div>
-                <dt className="text-slate-500">الاسم</dt>
-                <dd className="font-medium">{detail.fullName}</dd>
+                <span>الاسم</span>
+                <strong>{detail.fullName}</strong>
               </div>
               <div>
-                <dt className="text-slate-500">رقم العضوية</dt>
-                <dd className="font-mono" dir="ltr">
-                  {detail.freelancerMemberIdMasked || "—"}
-                </dd>
+                <span>رقم العضوية</span>
+                <strong className="oh-legacy-admin__member-id">{detail.freelancerMemberIdMasked || "—"}</strong>
               </div>
               <div>
-                <dt className="text-slate-500">البريد</dt>
-                <dd dir="ltr">{detail.email || "—"}</dd>
+                <span>البريد</span>
+                <strong dir="ltr">{detail.email || "—"}</strong>
               </div>
               <div>
-                <dt className="text-slate-500">الهاتف</dt>
-                <dd dir="ltr">{detail.phone || "—"}</dd>
+                <span>الهاتف</span>
+                <strong dir="ltr">{detail.phone || "—"}</strong>
               </div>
               <div>
-                <dt className="text-slate-500">طريقة الدخول</dt>
-                <dd>{entryMethodLabel(detail.legacyEntryMethod)}</dd>
+                <span>طريقة الدخول</span>
+                <strong>
+                  <StatusBadge
+                    tone={detail.legacyEntryMethod === "ADMIN_MANUAL" ? "admin_assigned" : "neutral"}
+                  >
+                    {entryMethodLabel(detail.legacyEntryMethod)}
+                  </StatusBadge>
+                </strong>
               </div>
               <div>
-                <dt className="text-slate-500">الحالة</dt>
-                <dd>{detail.isActive ? "نشط" : "غير نشط"}</dd>
+                <span>الحالة</span>
+                <strong>
+                  <StatusBadge tone={detail.isActive ? "success" : "danger"}>
+                    {detail.isActive ? "نشط" : "غير نشط"}
+                  </StatusBadge>
+                </strong>
               </div>
               <div>
-                <dt className="text-slate-500">الباقة الحالية</dt>
-                <dd>{detail.plan?.title || detail.plan?.name || "—"}</dd>
+                <span>الباقة الحالية</span>
+                <strong>{detail.plan?.title || detail.plan?.name || "—"}</strong>
               </div>
               <div>
-                <dt className="text-slate-500">انتهاء الباقة</dt>
-                <dd>{formatDate(detail.plan?.expiresAt)}</dd>
+                <span>انتهاء الباقة</span>
+                <strong>{formatDate(detail.plan?.expiresAt)}</strong>
               </div>
             </dl>
           ) : detailTab === "identity" ? (
-            <div>
+            <div className="oh-sa-users-stack">
               {hasFront ? (
                 <LegacyIdentityImage
                   userId={detail.id}
@@ -945,10 +937,10 @@ function LegacyFreelancerDetailDrawer({
                   refreshKey={identityRefresh}
                 />
               ) : (
-                <p className="mb-3 text-sm text-slate-500">لا توجد صورة أمامية محفوظة.</p>
+                <p className="oh-sa-users-muted">لا توجد صورة أمامية محفوظة.</p>
               )}
-              <label className="mb-4 flex flex-col gap-1 text-sm">
-                استبدال الأمامية
+              <label className="oh-sa-users-field">
+                <span>استبدال الأمامية</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -968,10 +960,10 @@ function LegacyFreelancerDetailDrawer({
                   refreshKey={identityRefresh}
                 />
               ) : (
-                <p className="mb-3 text-sm text-slate-500">لا توجد صورة خلفية محفوظة.</p>
+                <p className="oh-sa-users-muted">لا توجد صورة خلفية محفوظة.</p>
               )}
-              <label className="flex flex-col gap-1 text-sm">
-                استبدال الخلفية
+              <label className="oh-sa-users-field">
+                <span>استبدال الخلفية</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -985,18 +977,18 @@ function LegacyFreelancerDetailDrawer({
               </label>
             </div>
           ) : detailTab === "docs" ? (
-            <div className="space-y-2">
+            <div className="oh-sa-users-stack">
               {docTypes.length === 0 ? (
                 <DashboardEmptyState title="لا أنواع مستندات" />
               ) : (
                 docTypes.map((t) => {
                   const active = activeSignedIds.has(String(t.id));
                   return (
-                    <label
-                      key={t.id}
-                      className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                    >
-                      <span>{t.labelAr}</span>
+                    <label key={t.id} className="oh-legacy-admin__doc-card" style={{ cursor: "pointer" }}>
+                      <div className="oh-legacy-admin__meta">
+                        <strong>{t.labelAr}</strong>
+                        <span>{active ? "موقّع / مؤكد" : "غير مؤكد"}</span>
+                      </div>
                       <input
                         type="checkbox"
                         checked={active}
@@ -1009,21 +1001,16 @@ function LegacyFreelancerDetailDrawer({
               )}
             </div>
           ) : detailTab === "package" ? (
-            <div>
-              <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
-                <p>
-                  الحالية: <strong>{detail.plan?.title || detail.plan?.name || "—"}</strong>
-                </p>
-                <p>الانتهاء: {formatDate(detail.plan?.expiresAt)}</p>
+            <div className="oh-sa-users-stack">
+              <div className="oh-legacy-admin__notice oh-legacy-admin__notice--info">
+                الحالية: <strong>{detail.plan?.title || detail.plan?.name || "—"}</strong>
+                <br />
+                الانتهاء: {formatDate(detail.plan?.expiresAt)}
               </div>
-              <div className="mb-4 grid gap-3 sm:grid-cols-2">
-                <label className="flex flex-col gap-1 text-sm">
-                  باقة جديدة
-                  <select
-                    className="rounded-lg border px-3 py-2"
-                    value={pkgPlanId}
-                    onChange={(e) => setPkgPlanId(e.target.value)}
-                  >
+              <div className="oh-legacy-admin__form-grid">
+                <label className="oh-sa-users-field">
+                  <span>باقة جديدة</span>
+                  <select value={pkgPlanId} onChange={(e) => setPkgPlanId(e.target.value)}>
                     <option value="">— اختر —</option>
                     {planOptions.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -1032,13 +1019,9 @@ function LegacyFreelancerDetailDrawer({
                     ))}
                   </select>
                 </label>
-                <label className="flex flex-col gap-1 text-sm">
-                  المدة (أشهر)
-                  <select
-                    className="rounded-lg border px-3 py-2"
-                    value={pkgDuration}
-                    onChange={(e) => setPkgDuration(e.target.value)}
-                  >
+                <label className="oh-sa-users-field">
+                  <span>المدة (أشهر)</span>
+                  <select value={pkgDuration} onChange={(e) => setPkgDuration(e.target.value)}>
                     {PACKAGE_DURATION_OPTIONS.map((m) => (
                       <option key={m} value={m}>
                         {m}
@@ -1047,25 +1030,22 @@ function LegacyFreelancerDetailDrawer({
                   </select>
                 </label>
               </div>
-              <button
-                type="button"
-                className="mb-6 rounded-lg bg-emerald-700 px-4 py-2 text-sm text-white disabled:opacity-60"
-                disabled={pkgBusy || !pkgPlanId}
-                onClick={assignPackage}
-              >
+              <Button type="button" disabled={pkgBusy || !pkgPlanId} onClick={assignPackage}>
                 {pkgBusy ? "جاري الإسناد…" : "إسناد الباقة"}
-              </button>
-              <h4 className="mb-2 text-sm font-semibold">سجل الإسنادات</h4>
+              </Button>
+              <h4 style={{ margin: "0.5rem 0 0", fontSize: "0.9rem" }}>سجل الإسنادات</h4>
               {(detail.packageHistory || []).length === 0 ? (
-                <p className="text-sm text-slate-500">لا سجل بعد.</p>
+                <p className="oh-sa-users-muted">لا سجل بعد.</p>
               ) : (
-                <ul className="space-y-2 text-sm">
+                <ul className="oh-sa-users-stack" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                   {(detail.packageHistory || []).map((h) => (
-                    <li key={h.id} className="rounded border border-slate-100 px-3 py-2">
-                      <div className="font-medium">{h.planTitle || h.planName || h.planId}</div>
-                      <div className="text-xs text-slate-500">
-                        {formatDate(h.startsAt)} → {formatDate(h.expiresAt)} · {h.durationMonths || "—"} شهر ·{" "}
-                        {h.status}
+                    <li key={h.id} className="oh-legacy-admin__doc-card">
+                      <div className="oh-legacy-admin__meta">
+                        <strong>{h.planTitle || h.planName || h.planId}</strong>
+                        <span>
+                          {formatDate(h.startsAt)} → {formatDate(h.expiresAt)} · {h.durationMonths || "—"} شهر ·{" "}
+                          {h.status}
+                        </span>
                       </div>
                     </li>
                   ))}
@@ -1073,64 +1053,58 @@ function LegacyFreelancerDetailDrawer({
               )}
             </div>
           ) : (
-            <div>
-              <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <div className="oh-sa-users-stack">
+              <p className="oh-legacy-admin__notice">
                 هذه المبالغ تاريخية/إدارية فقط — لا تؤثر على رصيد المحفظة أو المدفوعات.
               </p>
-              <p className="mb-3 text-sm">
+              <p style={{ margin: 0 }}>
                 الإجمالي النشط:{" "}
                 <strong>
                   {formatMoney(detail.historicalMoney?.total, detail.historicalMoney?.currency || "JOD")}
                 </strong>
               </p>
-              <form className="mb-4 grid gap-2 sm:grid-cols-[1fr_1fr_auto]" onSubmit={addMoney}>
-                <input
-                  required
-                  type="number"
-                  min={0.01}
-                  step="0.01"
-                  className="rounded-lg border px-3 py-2 text-sm"
-                  placeholder="المبلغ"
-                  dir="ltr"
-                  value={moneyAmount}
-                  onChange={(e) => setMoneyAmount(e.target.value)}
-                />
-                <input
-                  className="rounded-lg border px-3 py-2 text-sm"
-                  placeholder="ملاحظة"
-                  value={moneyNote}
-                  onChange={(e) => setMoneyNote(e.target.value)}
-                />
-                <button
-                  type="submit"
-                  disabled={moneyBusy}
-                  className="rounded-lg bg-emerald-700 px-3 py-2 text-sm text-white disabled:opacity-60"
-                >
-                  إضافة
-                </button>
+              <form className="oh-legacy-admin__form-grid" onSubmit={addMoney}>
+                <label className="oh-sa-users-field">
+                  <span>المبلغ</span>
+                  <input
+                    required
+                    type="number"
+                    min={0.01}
+                    step="0.01"
+                    dir="ltr"
+                    value={moneyAmount}
+                    onChange={(e) => setMoneyAmount(e.target.value)}
+                  />
+                </label>
+                <label className="oh-sa-users-field">
+                  <span>ملاحظة</span>
+                  <input value={moneyNote} onChange={(e) => setMoneyNote(e.target.value)} />
+                </label>
+                <div className="oh-sa-users-filters__actions">
+                  <Button type="submit" disabled={moneyBusy}>
+                    إضافة
+                  </Button>
+                </div>
               </form>
-              <ul className="space-y-2 text-sm">
+              <ul className="oh-sa-users-stack" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {(detail.historicalMoney?.records || []).map((r) => (
                   <li
                     key={r.id}
-                    className={`flex items-center justify-between gap-2 rounded border px-3 py-2 ${
-                      r.isVoided ? "border-slate-100 bg-slate-50 text-slate-400 line-through" : "border-slate-200"
-                    }`}
+                    className="oh-legacy-admin__doc-card"
+                    style={r.isVoided ? { opacity: 0.55, textDecoration: "line-through" } : undefined}
                   >
-                    <div>
-                      <div className="font-medium">{formatMoney(r.amount, r.currency)}</div>
-                      <div className="text-xs">{r.note || "—"} · {formatDate(r.receivedAt || r.createdAt)}</div>
+                    <div className="oh-legacy-admin__meta">
+                      <strong>{formatMoney(r.amount, r.currency)}</strong>
+                      <span>
+                        {r.note || "—"} · {formatDate(r.receivedAt || r.createdAt)}
+                      </span>
                     </div>
                     {!r.isVoided ? (
-                      <button
-                        type="button"
-                        className="rounded border border-red-200 px-2 py-1 text-xs text-red-700"
-                        onClick={() => voidMoney(r.id)}
-                      >
+                      <Button type="button" variant="secondary" onClick={() => voidMoney(r.id)}>
                         إلغاء
-                      </button>
+                      </Button>
                     ) : (
-                      <span className="text-xs">ملغى</span>
+                      <span className="oh-sa-users-muted">ملغى</span>
                     )}
                   </li>
                 ))}
@@ -1138,7 +1112,7 @@ function LegacyFreelancerDetailDrawer({
             </div>
           )}
         </div>
-      </div>
+      </aside>
     </div>
   );
 }

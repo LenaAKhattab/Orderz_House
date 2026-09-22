@@ -1,0 +1,151 @@
+/* Legacy Freelancer Admin Center — aligns with admin dash-ui / oh-sa-users language */
+
+.oh-legacy-admin {
+  width: 100%;
+  min-width: 0;
+}
+
+.oh-legacy-admin__tabs-card {
+  margin-bottom: 1.15rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(91, 102, 132, 0.14);
+  border-radius: 16px;
+  background: var(--dash-card, #fcfcfd);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+}
+
+.oh-legacy-admin__tabs-card .dash-ui-tabs {
+  width: 100%;
+}
+
+.oh-legacy-admin__member-id {
+  display: inline-flex;
+  align-items: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  direction: ltr;
+  unicode-bidi: isolate;
+  padding: 0.2rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(91, 102, 132, 0.16);
+  background: rgba(91, 102, 132, 0.05);
+  color: #2f3b65;
+}
+
+.oh-legacy-admin__link-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: stretch;
+}
+
+.oh-legacy-admin__link-box input {
+  flex: 1 1 16rem;
+  min-width: 0;
+  border: 1px solid rgba(91, 102, 132, 0.22);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  background: rgba(91, 102, 132, 0.04);
+}
+
+.oh-legacy-admin__notice {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid rgba(184, 106, 0, 0.22);
+  background: rgba(255, 246, 232, 0.9);
+  color: #8a5200;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.oh-legacy-admin__notice--info {
+  border-color: rgba(47, 59, 101, 0.16);
+  background: rgba(47, 59, 101, 0.05);
+  color: #2f3b65;
+}
+
+.oh-legacy-admin__form-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  align-items: end;
+}
+
+.oh-legacy-admin__form-grid--2 {
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.oh-legacy-admin__form-span {
+  grid-column: 1 / -1;
+}
+
+.oh-legacy-admin__doc-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(91, 102, 132, 0.14);
+  border-radius: 14px;
+  background: rgba(91, 102, 132, 0.03);
+}
+
+.oh-legacy-admin__doc-card + .oh-legacy-admin__doc-card {
+  margin-top: 0.55rem;
+}
+
+.oh-legacy-admin__meta {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.oh-legacy-admin__meta strong {
+  color: #1f2a44;
+  font-size: 0.92rem;
+}
+
+.oh-legacy-admin__meta span {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.oh-legacy-admin__pager {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.oh-legacy-admin__pager-meta {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.oh-legacy-admin__selected-row {
+  background: rgba(47, 59, 101, 0.04);
+}
+
+.oh-legacy-admin__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+@media (max-width: 640px) {
+  .oh-legacy-admin__tabs-card {
+    padding: 0.45rem;
+  }
+
+  .oh-legacy-admin__pager {
+    justify-content: center;
+  }
+}

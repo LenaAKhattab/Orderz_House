@@ -12,12 +12,13 @@ import {
   restoreLegacyFreelancerInviteFieldsRequest,
   getLegacyFreelancerInviteAnswersRequest,
 } from "../../../services/api";
+import Button from "../../../components/ui/Button";
 import { useToast } from "../../../components/ui/toastContext";
 import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
 import DashboardSection from "../../../components/dashboard/DashboardSection";
-import DashboardToolbar from "../../../components/dashboard/DashboardToolbar";
 import DashboardEmptyState from "../../../components/dashboard/DashboardEmptyState";
 import DashboardLoadingState from "../../../components/dashboard/DashboardLoadingState";
+import DashboardTable from "../../../components/dashboard/DashboardTable";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
 import { formatDate } from "./legacyAdminShared";
 
@@ -41,8 +42,7 @@ const EMPTY_FORM = {
 };
 
 /**
- * Campaign create/list/revoke/fields/answers — preserved from the original invites page.
- * @param {{ selectedCampaignId: string|null, onSelectedCampaignIdChange: (id: string|null) => void, showFieldConfig?: boolean }} props
+ * @param {{ selectedCampaignId: string|null, onSelectedCampaignIdChange: (id: string|null) => void, showFieldConfig?: boolean, embedMode?: boolean }} props
  */
 export default function LegacyCampaignsPanel({
   selectedCampaignId,
@@ -262,17 +262,116 @@ export default function LegacyCampaignsPanel({
     }
   };
 
+  function renderFieldConfig() {
+    return (
+      <DashboardSection
+        title={`بيانات التسجيل المطلوبة — ${selected.name}`}
+        description="حدد البيانات التي يجب على الفريلانسر تعبئتها عند التسجيل من خلال رابط هذه الحملة."
+        actions={
+          <div className="oh-legacy-admin__actions">
+            <Button type="button" variant="secondary" disabled={fieldsBusy} onClick={restoreFields}>
+              استعادة الافتراضي
+            </Button>
+            <Button type="button" disabled={fieldsBusy} onClick={saveFields}>
+              {fieldsBusy ? "جاري الحفظ…" : "حفظ الحقول"}
+            </Button>
+          </div>
+        }
+      >
+        {fieldConfig?.systemAccountFields?.length ? (
+          <div className="oh-legacy-admin__notice oh-legacy-admin__notice--info" style={{ marginBottom: "1rem" }}>
+            <strong>حقول أساسية للنظام (لا يمكن تعطيلها)</strong>
+            <ul style={{ margin: "0.5rem 0 0", paddingInlineStart: "1.25rem" }}>
+              {fieldConfig.systemAccountFields.map((f) => (
+                <li key={f.key}>
+                  {f.labelAr} — {f.labelNote || "حقل أساسي للنظام"}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {fieldConfig?.fields?.length ? (
+          <div className="oh-sa-users-table-wrap">
+            <DashboardTable caption="حقول التسجيل">
+              <thead>
+                <tr>
+                  <th scope="col">السؤال / الحقل</th>
+                  <th scope="col">إظهار</th>
+                  <th scope="col">إلزامي</th>
+                  <th scope="col">الترتيب</th>
+                  <th scope="col">تعديل النص</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fieldConfig.fields.map((f) => (
+                  <tr key={f.fieldKey}>
+                    <td>
+                      <div className="oh-sa-users-user">
+                        <strong>{f.labelAr}</strong>
+                        <span dir="ltr">
+                          {f.fieldKey}
+                          {f.conditional ? ` · شرط: ${f.conditional.fieldKey}` : ""}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(f.isEnabled)}
+                        onChange={(e) =>
+                          updateFieldLocal(f.fieldKey, {
+                            isEnabled: e.target.checked,
+                            isRequired: e.target.checked ? f.isRequired : false,
+                          })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="checkbox"
+                        disabled={!f.isEnabled}
+                        checked={Boolean(f.isRequired)}
+                        onChange={(e) => updateFieldLocal(f.fieldKey, { isRequired: e.target.checked })}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        className="oh-sa-users-field"
+                        style={{ width: "5rem", padding: "8px 10px", borderRadius: 10, border: "1px solid rgba(91,102,132,0.22)" }}
+                        value={f.sortOrder}
+                        onChange={(e) => updateFieldLocal(f.fieldKey, { sortOrder: Number(e.target.value) || 0 })}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        style={{ width: "100%", minWidth: "10rem", padding: "8px 10px", borderRadius: 10, border: "1px solid rgba(91,102,132,0.22)" }}
+                        value={f.labelAr}
+                        onChange={(e) => updateFieldLocal(f.fieldKey, { labelAr: e.target.value })}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </DashboardTable>
+          </div>
+        ) : (
+          <DashboardEmptyState title="لا توجد حقول بعد" description="اضغط استعادة الافتراضي لتهيئة الكتالوج." />
+        )}
+      </DashboardSection>
+    );
+  }
+
   if (embedMode) {
     return (
       <>
-        <DashboardSection title="اختر حملة لإعداد حقول التسجيل">
-          <p className="mb-3 text-sm text-slate-600">
-            إعدادات حقول التسجيل مرتبطة بحملة الدعوة. اختر حملة أدناه أو من تبويب «حملات الدعوة»، ثم عدّل الحقول المطلوبة.
-          </p>
-          <label className="flex max-w-md flex-col gap-1 text-sm">
-            الحملة
+        <DashboardSection
+          title="إعدادات التسجيل"
+          description="إعدادات حقول التسجيل مرتبطة بحملة الدعوة. اختر حملة ثم عدّل الحقول المطلوبة."
+        >
+          <label className="oh-sa-users-field" style={{ maxWidth: "28rem" }}>
+            <span>الحملة</span>
             <select
-              className="rounded-lg border border-slate-200 px-3 py-2"
               value={selectedId || ""}
               onChange={(e) => onSelectedCampaignIdChange(e.target.value || null)}
             >
@@ -290,189 +389,64 @@ export default function LegacyCampaignsPanel({
     );
   }
 
-  function renderFieldConfig() {
-    return (
-      <DashboardSection title={`بيانات التسجيل المطلوبة — ${selected.name}`}>
-        <p className="mb-3 text-sm text-slate-600">
-          حدد البيانات التي يجب على الفريلانسر تعبئتها عند التسجيل من خلال رابط هذه الحملة.
-        </p>
-        {fieldConfig?.systemAccountFields?.length ? (
-          <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
-            <p className="mb-2 font-medium text-slate-800">حقول أساسية للنظام (لا يمكن تعطيلها)</p>
-            <ul className="list-disc pr-5 text-slate-600">
-              {fieldConfig.systemAccountFields.map((f) => (
-                <li key={f.key}>
-                  {f.labelAr} — {f.labelNote || "حقل أساسي للنظام"}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-        {fieldConfig?.fields?.length ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b text-right text-slate-500">
-                  <th className="px-2 py-2">السؤال / الحقل</th>
-                  <th className="px-2 py-2">إظهار</th>
-                  <th className="px-2 py-2">إلزامي</th>
-                  <th className="px-2 py-2">الترتيب</th>
-                  <th className="px-2 py-2">تعديل النص</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fieldConfig.fields.map((f) => (
-                  <tr key={f.fieldKey} className="border-b border-slate-100 align-top">
-                    <td className="px-2 py-2">
-                      <div className="font-medium">{f.labelAr}</div>
-                      <div className="text-xs text-slate-400" dir="ltr">
-                        {f.fieldKey}
-                        {f.conditional ? ` · شرط: ${f.conditional.fieldKey}` : ""}
-                      </div>
-                    </td>
-                    <td className="px-2 py-2">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(f.isEnabled)}
-                        onChange={(e) =>
-                          updateFieldLocal(f.fieldKey, {
-                            isEnabled: e.target.checked,
-                            isRequired: e.target.checked ? f.isRequired : false,
-                          })
-                        }
-                      />
-                    </td>
-                    <td className="px-2 py-2">
-                      <input
-                        type="checkbox"
-                        disabled={!f.isEnabled}
-                        checked={Boolean(f.isRequired)}
-                        onChange={(e) => updateFieldLocal(f.fieldKey, { isRequired: e.target.checked })}
-                      />
-                    </td>
-                    <td className="px-2 py-2">
-                      <input
-                        type="number"
-                        className="w-20 rounded border px-2 py-1"
-                        value={f.sortOrder}
-                        onChange={(e) => updateFieldLocal(f.fieldKey, { sortOrder: Number(e.target.value) || 0 })}
-                      />
-                    </td>
-                    <td className="px-2 py-2">
-                      <input
-                        className="w-full min-w-[160px] rounded border px-2 py-1"
-                        value={f.labelAr}
-                        onChange={(e) => updateFieldLocal(f.fieldKey, { labelAr: e.target.value })}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <DashboardEmptyState title="لا توجد حقول بعد" description="اضغط استعادة الافتراضي لتهيئة الكتالوج." />
-        )}
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="rounded-lg bg-emerald-700 px-4 py-2 text-sm text-white disabled:opacity-60"
-            disabled={fieldsBusy}
-            onClick={saveFields}
-          >
-            حفظ الحقول
-          </button>
-          <button
-            type="button"
-            className="rounded-lg border px-4 py-2 text-sm disabled:opacity-60"
-            disabled={fieldsBusy}
-            onClick={restoreFields}
-          >
-            استعادة الإعداد الافتراضي
-          </button>
-        </div>
-      </DashboardSection>
-    );
-  }
-
   return (
     <>
       {lastCreatedLink ? (
-        <DashboardSection title="الرابط المشترك">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <input
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
-              readOnly
-              value={lastCreatedLink}
-              dir="ltr"
-            />
-            <button
-              type="button"
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white"
-              onClick={() => copyLink(lastCreatedLink)}
-            >
+        <DashboardSection title="الرابط المشترك" description="احفظ هذا الرابط الآن — الرمز يظهر مرة واحدة فقط بعد الإنشاء أو إعادة التوليد.">
+          <div className="oh-legacy-admin__link-box">
+            <input readOnly value={lastCreatedLink} dir="ltr" aria-label="رابط الدعوة" />
+            <Button type="button" onClick={() => copyLink(lastCreatedLink)}>
               نسخ الرابط
-            </button>
+            </Button>
           </div>
-          <p className="mt-2 text-sm text-slate-600">احفظ هذا الرابط الآن — الرمز يظهر مرة واحدة فقط بعد الإنشاء أو إعادة التوليد.</p>
         </DashboardSection>
       ) : null}
 
-      <DashboardSection title="إنشاء حملة جديدة">
-        <form className="grid gap-3 md:grid-cols-2" onSubmit={onCreate}>
-          <label className="flex flex-col gap-1 text-sm">
-            اسم الحملة
-            <input
-              required
-              className="rounded-lg border border-slate-200 px-3 py-2"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            />
+      <DashboardSection title="إنشاء حملة جديدة" description="أنشئ رابط دعوة مشتركاً بحدود مقاعد وتاريخ انتهاء واضحين.">
+        <form className="oh-legacy-admin__form-grid oh-legacy-admin__form-grid--2" onSubmit={onCreate}>
+          <label className="oh-sa-users-field">
+            <span>اسم الحملة</span>
+            <input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            رابط الحملة / slug
+          <label className="oh-sa-users-field">
+            <span>رابط الحملة / slug</span>
             <input
-              className="rounded-lg border border-slate-200 px-3 py-2"
               dir="ltr"
               placeholder="company-freelancers-2026"
               value={form.slug}
               onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            عدد المقاعد المسموح
+          <label className="oh-sa-users-field">
+            <span>عدد المقاعد المسموح</span>
             <input
               type="number"
               min={1}
               required
-              className="rounded-lg border border-slate-200 px-3 py-2"
               value={form.maxRedemptions}
               onChange={(e) => setForm((f) => ({ ...f, maxRedemptions: e.target.value }))}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            تاريخ انتهاء الرابط
+          <label className="oh-sa-users-field">
+            <span>تاريخ انتهاء الرابط</span>
             <input
               type="datetime-local"
               required
-              className="rounded-lg border border-slate-200 px-3 py-2"
               value={form.expiresAt}
               onChange={(e) => setForm((f) => ({ ...f, expiresAt: e.target.value }))}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            الخطة الافتراضية
+          <label className="oh-sa-users-field">
+            <span>الخطة الافتراضية</span>
             <input
-              className="rounded-lg border border-slate-200 px-3 py-2"
               dir="ltr"
               value={form.defaultPlanCode}
               onChange={(e) => setForm((f) => ({ ...f, defaultPlanCode: e.target.value }))}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            مستوى الثقة الافتراضي
+          <label className="oh-sa-users-field">
+            <span>مستوى الثقة الافتراضي</span>
             <select
-              className="rounded-lg border border-slate-200 px-3 py-2"
               value={form.defaultTrustLevel}
               onChange={(e) => setForm((f) => ({ ...f, defaultTrustLevel: e.target.value }))}
             >
@@ -480,10 +454,9 @@ export default function LegacyCampaignsPanel({
               <option value="TRUSTED">TRUSTED</option>
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            التصنيف الافتراضي (اختياري)
+          <label className="oh-sa-users-field">
+            <span>التصنيف الافتراضي (اختياري)</span>
             <select
-              className="rounded-lg border border-slate-200 px-3 py-2"
               value={form.defaultCategoryId}
               onChange={(e) => setForm((f) => ({ ...f, defaultCategoryId: e.target.value }))}
             >
@@ -495,113 +468,100 @@ export default function LegacyCampaignsPanel({
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm md:col-span-2">
-            ملاحظات داخلية
-            <textarea
-              className="rounded-lg border border-slate-200 px-3 py-2"
-              rows={2}
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-            />
+          <label className="oh-sa-users-field oh-legacy-admin__form-span">
+            <span>ملاحظات داخلية</span>
+            <textarea rows={2} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
           </label>
-          <label className="flex items-center gap-2 text-sm md:col-span-2">
+          <label className="oh-legacy-admin__doc-card oh-legacy-admin__form-span" style={{ cursor: "pointer" }}>
+            <span>تفعيل الرابط فوراً</span>
             <input
               type="checkbox"
               checked={form.isActive}
               onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
             />
-            تفعيل الرابط
           </label>
-          <div className="md:col-span-2">
-            <button
-              type="submit"
-              disabled={creating}
-              className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-            >
+          <div className="oh-legacy-admin__form-span">
+            <Button type="submit" disabled={creating}>
               {creating ? "جاري الإنشاء…" : "إنشاء رابط مشترك"}
-            </button>
+            </Button>
           </div>
         </form>
       </DashboardSection>
 
-      <DashboardSection title="الحملات">
-        <DashboardToolbar>
-          <button type="button" className="rounded-lg border px-3 py-1.5 text-sm" onClick={load}>
+      <DashboardSection
+        title="الحملات"
+        description="إدارة روابط الدعوة المشتركة وحالاتها ومقاعدها."
+        actions={
+          <Button type="button" variant="secondary" onClick={load} disabled={loading}>
             تحديث
-          </button>
-        </DashboardToolbar>
+          </Button>
+        }
+      >
         {loading ? (
           <DashboardLoadingState />
         ) : rows.length === 0 ? (
           <DashboardEmptyState title="لا توجد حملات" description="أنشئ حملة لعرض رابط دعوة مشترك." />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+          <div className="oh-sa-users-table-wrap">
+            <DashboardTable caption="حملات الدعوة">
               <thead>
-                <tr className="border-b text-right text-slate-500">
-                  <th className="px-2 py-2">الاسم</th>
-                  <th className="px-2 py-2">Slug</th>
-                  <th className="px-2 py-2">المسجلون / المقاعد</th>
-                  <th className="px-2 py-2">الانتهاء</th>
-                  <th className="px-2 py-2">الحالة</th>
-                  <th className="px-2 py-2">إجراءات</th>
+                <tr>
+                  <th scope="col">الاسم</th>
+                  <th scope="col">Slug</th>
+                  <th scope="col">المسجلون / المقاعد</th>
+                  <th scope="col">الانتهاء</th>
+                  <th scope="col">الحالة</th>
+                  <th scope="col">إجراءات</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.id} className="border-b border-slate-100">
-                    <td className="px-2 py-2">{row.name}</td>
-                    <td className="px-2 py-2" dir="ltr">
-                      {row.slug}
+                  <tr key={row.id} className={String(selectedId) === String(row.id) ? "oh-legacy-admin__selected-row" : undefined}>
+                    <td>
+                      <div className="oh-sa-users-user">
+                        <strong>{row.name}</strong>
+                      </div>
                     </td>
-                    <td className="px-2 py-2">
+                    <td dir="ltr">{row.slug}</td>
+                    <td>
                       {row.usedCount} / {row.maxRedemptions}
                     </td>
-                    <td className="px-2 py-2">{formatDate(row.expiresAt)}</td>
-                    <td className="px-2 py-2">
+                    <td>{formatDate(row.expiresAt)}</td>
+                    <td>
                       <StatusBadge tone={row.isActive ? "success" : "danger"}>
                         {row.isActive ? "نشط" : "متوقف"}
                       </StatusBadge>
                     </td>
-                    <td className="px-2 py-2">
-                      <div className="flex flex-wrap gap-1">
-                        <button
-                          type="button"
-                          className="rounded border px-2 py-1 text-xs"
-                          onClick={() => onSelectedCampaignIdChange(row.id)}
-                        >
+                    <td>
+                      <div className="oh-sa-users-table__actions">
+                        <Button type="button" variant="secondary" onClick={() => onSelectedCampaignIdChange(row.id)}>
                           المسجلون / الحقول
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
-                          className="rounded border px-2 py-1 text-xs"
+                          variant="secondary"
                           disabled={busyId === row.id}
                           onClick={() => onToggleActive(row)}
                         >
                           {row.isActive ? "إيقاف" : "تفعيل"}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
-                          className="rounded border px-2 py-1 text-xs"
+                          variant="secondary"
                           disabled={busyId === row.id}
                           onClick={() => onRegenerate(row.id)}
                         >
                           إعادة توليد token
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded border border-red-200 px-2 py-1 text-xs text-red-700"
-                          disabled={busyId === row.id}
-                          onClick={() => onRevoke(row.id)}
-                        >
+                        </Button>
+                        <Button type="button" variant="danger" disabled={busyId === row.id} onClick={() => onRevoke(row.id)}>
                           إبطال
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DashboardTable>
           </div>
         )}
       </DashboardSection>
@@ -609,91 +569,84 @@ export default function LegacyCampaignsPanel({
       {selected && showFieldConfig ? renderFieldConfig() : null}
 
       {selected ? (
-        <DashboardSection title={`المسجلون — ${selected.name}`}>
-          <p className="mb-2 text-sm text-slate-600">
-            {selected.usedCount} / {selected.maxRedemptions} مقعد
-          </p>
+        <DashboardSection
+          title={`المسجلون — ${selected.name}`}
+          description={`${selected.usedCount} / ${selected.maxRedemptions} مقعد مستخدم`}
+          actions={
+            <a className="btn btn-secondary" href={`/api/super-admin/legacy-freelancer-invites/${selected.id}/redemptions.csv`}>
+              تصدير CSV
+            </a>
+          }
+        >
           {redemptions.length === 0 ? (
             <DashboardEmptyState title="لا مسجلين بعد" />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
+            <div className="oh-sa-users-table-wrap">
+              <DashboardTable caption="مسجلو الحملة">
                 <thead>
-                  <tr className="border-b text-right text-slate-500">
-                    <th className="px-2 py-2">الاسم</th>
-                    <th className="px-2 py-2">رقم الفريلانسر</th>
-                    <th className="px-2 py-2">البريد</th>
-                    <th className="px-2 py-2">الهاتف</th>
-                    <th className="px-2 py-2">مرجع</th>
-                    <th className="px-2 py-2">تاريخ التسجيل</th>
-                    <th className="px-2 py-2">إجراء</th>
+                  <tr>
+                    <th scope="col">الاسم</th>
+                    <th scope="col">رقم الفريلانسر</th>
+                    <th scope="col">البريد</th>
+                    <th scope="col">الهاتف</th>
+                    <th scope="col">مرجع</th>
+                    <th scope="col">تاريخ التسجيل</th>
+                    <th scope="col">إجراء</th>
                   </tr>
                 </thead>
                 <tbody>
                   {redemptions.map((r) => (
-                    <tr key={r.id} className="border-b border-slate-100">
-                      <td className="px-2 py-2">{r.fullName}</td>
-                      <td className="px-2 py-2 font-mono text-xs" dir="ltr">
-                        {r.freelancerMemberIdMasked || "—"}
+                    <tr key={r.id}>
+                      <td>{r.fullName}</td>
+                      <td>
+                        <span className="oh-legacy-admin__member-id">{r.freelancerMemberIdMasked || "—"}</span>
                       </td>
-                      <td className="px-2 py-2" dir="ltr">
-                        {r.emailMasked}
-                      </td>
-                      <td className="px-2 py-2" dir="ltr">
-                        {r.phoneMasked || "—"}
-                      </td>
-                      <td className="px-2 py-2">{r.internalReference || r.identityLast4 || "—"}</td>
-                      <td className="px-2 py-2">{formatDate(r.redeemedAt)}</td>
-                      <td className="px-2 py-2">
-                        <button
-                          type="button"
-                          className="rounded border px-2 py-1 text-xs"
-                          disabled={answersLoading}
-                          onClick={() => openAnswers(r.userId)}
-                        >
+                      <td dir="ltr">{r.emailMasked}</td>
+                      <td dir="ltr">{r.phoneMasked || "—"}</td>
+                      <td>{r.internalReference || r.identityLast4 || "—"}</td>
+                      <td>{formatDate(r.redeemedAt)}</td>
+                      <td>
+                        <Button type="button" variant="secondary" disabled={answersLoading} onClick={() => openAnswers(r.userId)}>
                           عرض بيانات التسجيل
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </DashboardTable>
             </div>
           )}
-          <a
-            className="mt-3 inline-block text-sm text-emerald-800 underline"
-            href={`/api/super-admin/legacy-freelancer-invites/${selected.id}/redemptions.csv`}
-          >
-            تصدير CSV
-          </a>
         </DashboardSection>
       ) : null}
 
       {answersModal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-4 shadow-xl">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h3 className="text-lg font-semibold">بيانات التسجيل</h3>
-              <button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => setAnswersModal(null)}>
-                إغلاق
+        <div className="oh-sa-users-modal" role="dialog" aria-modal="true" aria-labelledby="oh-legacy-answers-title">
+          <button type="button" className="oh-sa-users-modal__backdrop" aria-label="إغلاق" onClick={() => setAnswersModal(null)} />
+          <div className="oh-sa-users-modal__panel" style={{ width: "min(640px, 100%)" }}>
+            <header className="oh-sa-users-modal__header">
+              <h2 id="oh-legacy-answers-title">بيانات التسجيل</h2>
+              <button type="button" className="oh-sa-users-modal__close" onClick={() => setAnswersModal(null)} aria-label="إغلاق">
+                ×
               </button>
+            </header>
+            <div className="oh-sa-users-modal__body">
+              {(answersModal.sections || []).map((sec) => (
+                <div key={sec.key}>
+                  <h4 style={{ margin: "0 0 0.5rem", fontSize: "0.9rem" }}>{sec.labelAr}</h4>
+                  <dl className="oh-sa-users-kv">
+                    {(sec.fields || []).map((f) => (
+                      <div key={f.fieldKey}>
+                        <span>{f.labelAr}</span>
+                        <strong dir={f.sensitive ? "ltr" : undefined}>
+                          {f.value === true ? "نعم" : f.value === false ? "لا" : String(f.value ?? "—")}
+                        </strong>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              ))}
+              {!answersModal.sections?.length ? <p className="oh-sa-users-muted">لا توجد إجابات محفوظة.</p> : null}
             </div>
-            {(answersModal.sections || []).map((sec) => (
-              <div key={sec.key} className="mb-4">
-                <h4 className="mb-2 border-b pb-1 text-sm font-semibold text-slate-800">{sec.labelAr}</h4>
-                <dl className="grid gap-2 text-sm">
-                  {(sec.fields || []).map((f) => (
-                    <div key={f.fieldKey} className="grid grid-cols-1 gap-0.5 sm:grid-cols-[180px_1fr]">
-                      <dt className="text-slate-500">{f.labelAr}</dt>
-                      <dd className="text-slate-900" dir={f.sensitive ? "ltr" : undefined}>
-                        {f.value === true ? "نعم" : f.value === false ? "لا" : String(f.value ?? "—")}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            ))}
-            {!answersModal.sections?.length ? <p className="text-sm text-slate-500">لا توجد إجابات محفوظة.</p> : null}
           </div>
         </div>
       ) : null}

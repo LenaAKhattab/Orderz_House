@@ -7,12 +7,13 @@ import {
   getLegacyCampaignDocumentRequirementsRequest,
   putLegacyCampaignDocumentRequirementsRequest,
 } from "../../../services/api";
+import Button from "../../../components/ui/Button";
 import { useToast } from "../../../components/ui/toastContext";
 import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
 import DashboardSection from "../../../components/dashboard/DashboardSection";
-import DashboardToolbar from "../../../components/dashboard/DashboardToolbar";
 import DashboardEmptyState from "../../../components/dashboard/DashboardEmptyState";
 import DashboardLoadingState from "../../../components/dashboard/DashboardLoadingState";
+import DashboardTable from "../../../components/dashboard/DashboardTable";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
 
 export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCampaignIdChange }) {
@@ -131,116 +132,117 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
 
   return (
     <>
-      <DashboardSection title="كتالوج أنواع الأوراق والعقود">
-        <form className="mb-4 grid gap-3 md:grid-cols-2" onSubmit={onCreateType}>
-          <label className="flex flex-col gap-1 text-sm">
-            الرمز (CODE)
+      <DashboardSection
+        title="كتالوج أنواع الأوراق والعقود"
+        description="أنواع المستندات الافتراضية والمخصصة التي يمكن ربطها بالحملات وتأكيد توقيعها للفريلانسر."
+        actions={
+          <Button type="button" variant="secondary" onClick={loadTypes} disabled={loadingTypes}>
+            تحديث
+          </Button>
+        }
+      >
+        <form className="oh-legacy-admin__form-grid oh-legacy-admin__form-grid--2" onSubmit={onCreateType} style={{ marginBottom: "1.25rem" }}>
+          <label className="oh-sa-users-field">
+            <span>الرمز (CODE)</span>
             <input
               required
-              className="rounded-lg border border-slate-200 px-3 py-2"
               dir="ltr"
               value={form.code}
               onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
               placeholder="CONTRACTOR_AGREEMENT"
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            الاسم بالعربية
+          <label className="oh-sa-users-field">
+            <span>الاسم بالعربية</span>
             <input
               required
-              className="rounded-lg border border-slate-200 px-3 py-2"
               value={form.labelAr}
               onChange={(e) => setForm((f) => ({ ...f, labelAr: e.target.value }))}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm md:col-span-2">
-            الوصف (اختياري)
+          <label className="oh-sa-users-field oh-legacy-admin__form-span">
+            <span>الوصف (اختياري)</span>
             <input
-              className="rounded-lg border border-slate-200 px-3 py-2"
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            الترتيب
+          <label className="oh-sa-users-field">
+            <span>الترتيب</span>
             <input
               type="number"
-              className="rounded-lg border border-slate-200 px-3 py-2"
               value={form.sortOrder}
               onChange={(e) => setForm((f) => ({ ...f, sortOrder: e.target.value }))}
             />
           </label>
-          <div className="flex items-end">
-            <button
-              type="submit"
-              disabled={creating}
-              className="rounded-lg bg-emerald-700 px-4 py-2 text-sm text-white disabled:opacity-60"
-            >
+          <div className="oh-sa-users-filters__actions">
+            <Button type="submit" disabled={creating}>
               {creating ? "جاري الإنشاء…" : "إضافة نوع مستند"}
-            </button>
+            </Button>
           </div>
         </form>
-
-        <DashboardToolbar>
-          <button type="button" className="rounded-lg border px-3 py-1.5 text-sm" onClick={loadTypes}>
-            تحديث
-          </button>
-        </DashboardToolbar>
 
         {loadingTypes ? (
           <DashboardLoadingState />
         ) : types.length === 0 ? (
           <DashboardEmptyState title="لا توجد أنواع مستندات" />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+          <div className="oh-sa-users-table-wrap">
+            <DashboardTable caption="أنواع المستندات">
               <thead>
-                <tr className="border-b text-right text-slate-500">
-                  <th className="px-2 py-2">الرمز</th>
-                  <th className="px-2 py-2">الاسم</th>
-                  <th className="px-2 py-2">الترتيب</th>
-                  <th className="px-2 py-2">الحالة</th>
-                  <th className="px-2 py-2">إجراء</th>
+                <tr>
+                  <th scope="col">الرمز</th>
+                  <th scope="col">الاسم</th>
+                  <th scope="col">الترتيب</th>
+                  <th scope="col">الحالة</th>
+                  <th scope="col">إجراء</th>
                 </tr>
               </thead>
               <tbody>
                 {types.map((row) => (
-                  <tr key={row.id} className="border-b border-slate-100">
-                    <td className="px-2 py-2 font-mono text-xs" dir="ltr">
-                      {row.code}
+                  <tr key={row.id}>
+                    <td dir="ltr">
+                      <span className="oh-legacy-admin__member-id">{row.code}</span>
                     </td>
-                    <td className="px-2 py-2">{row.labelAr}</td>
-                    <td className="px-2 py-2">{row.sortOrder}</td>
-                    <td className="px-2 py-2">
+                    <td>
+                      <div className="oh-sa-users-user">
+                        <strong>{row.labelAr}</strong>
+                        {row.description ? <span>{row.description}</span> : null}
+                      </div>
+                    </td>
+                    <td>{row.sortOrder}</td>
+                    <td>
                       <StatusBadge tone={row.isActive ? "success" : "danger"}>
                         {row.isActive ? "نشط" : "معطّل"}
                       </StatusBadge>
                     </td>
-                    <td className="px-2 py-2">
-                      <button
-                        type="button"
-                        className="rounded border px-2 py-1 text-xs"
-                        onClick={() => toggleTypeActive(row)}
-                      >
+                    <td>
+                      <Button type="button" variant="secondary" onClick={() => toggleTypeActive(row)}>
                         {row.isActive ? "تعطيل" : "تفعيل"}
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DashboardTable>
           </div>
         )}
       </DashboardSection>
 
-      <DashboardSection title="متطلبات المستندات للحملة">
-        <p className="mb-3 text-sm text-slate-600">
-          عند اختيار حملة، حدّد الأوراق التي يجب على المسجّل تأكيد توقيعها أثناء التسجيل عبر الرابط.
-        </p>
-        <label className="mb-4 flex max-w-md flex-col gap-1 text-sm">
-          الحملة
+      <DashboardSection
+        title="متطلبات المستندات للحملة"
+        description="عند اختيار حملة، حدّد الأوراق التي يجب على المسجّل تأكيد توقيعها أثناء التسجيل عبر الرابط."
+        actions={
+          selectedCampaignId ? (
+            <Button type="button" disabled={reqsBusy || !reqs.length} onClick={saveReqs}>
+              {reqsBusy ? "جاري الحفظ…" : "حفظ متطلبات الحملة"}
+            </Button>
+          ) : null
+        }
+      >
+        <label className="oh-sa-users-field" style={{ maxWidth: "28rem", marginBottom: "1rem" }}>
+          <span>الحملة</span>
           <select
-            className="rounded-lg border border-slate-200 px-3 py-2"
             value={selectedCampaignId || ""}
             onChange={(e) => onSelectedCampaignIdChange(e.target.value || null)}
           >
@@ -257,30 +259,32 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
           <DashboardEmptyState title="اختر حملة" description="حدد حملة لعرض وتعديل متطلبات الأوراق." />
         ) : (
           <>
-            <p className="mb-2 text-sm font-medium text-slate-700">{selectedCampaign?.name}</p>
+            <p className="oh-legacy-admin__notice oh-legacy-admin__notice--info">
+              الحملة المحددة: <strong>{selectedCampaign?.name || "—"}</strong>
+            </p>
             {reqs.length === 0 ? (
               <DashboardEmptyState title="لا متطلبات بعد" />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
+              <div className="oh-sa-users-table-wrap">
+                <DashboardTable caption="متطلبات الحملة">
                   <thead>
-                    <tr className="border-b text-right text-slate-500">
-                      <th className="px-2 py-2">المستند</th>
-                      <th className="px-2 py-2">إظهار</th>
-                      <th className="px-2 py-2">إلزامي</th>
-                      <th className="px-2 py-2">الترتيب</th>
+                    <tr>
+                      <th scope="col">المستند</th>
+                      <th scope="col">إظهار</th>
+                      <th scope="col">إلزامي</th>
+                      <th scope="col">الترتيب</th>
                     </tr>
                   </thead>
                   <tbody>
                     {reqs.map((r) => (
-                      <tr key={r.documentTypeId} className="border-b border-slate-100">
-                        <td className="px-2 py-2">
-                          <div className="font-medium">{r.labelAr}</div>
-                          <div className="text-xs text-slate-400" dir="ltr">
-                            {r.code}
+                      <tr key={r.documentTypeId}>
+                        <td>
+                          <div className="oh-sa-users-user">
+                            <strong>{r.labelAr}</strong>
+                            <span dir="ltr">{r.code}</span>
                           </div>
                         </td>
-                        <td className="px-2 py-2">
+                        <td>
                           <input
                             type="checkbox"
                             checked={Boolean(r.isEnabled)}
@@ -292,7 +296,7 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
                             }
                           />
                         </td>
-                        <td className="px-2 py-2">
+                        <td>
                           <input
                             type="checkbox"
                             disabled={!r.isEnabled}
@@ -300,10 +304,10 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
                             onChange={(e) => updateReqLocal(r.documentTypeId, { isRequired: e.target.checked })}
                           />
                         </td>
-                        <td className="px-2 py-2">
+                        <td>
                           <input
                             type="number"
-                            className="w-20 rounded border px-2 py-1"
+                            style={{ width: "5rem", padding: "8px 10px", borderRadius: 10, border: "1px solid rgba(91,102,132,0.22)" }}
                             value={r.sortOrder}
                             onChange={(e) =>
                               updateReqLocal(r.documentTypeId, { sortOrder: Number(e.target.value) || 0 })
@@ -313,17 +317,9 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DashboardTable>
               </div>
             )}
-            <button
-              type="button"
-              className="mt-3 rounded-lg bg-emerald-700 px-4 py-2 text-sm text-white disabled:opacity-60"
-              disabled={reqsBusy || !reqs.length}
-              onClick={saveReqs}
-            >
-              {reqsBusy ? "جاري الحفظ…" : "حفظ متطلبات الحملة"}
-            </button>
           </>
         )}
       </DashboardSection>
