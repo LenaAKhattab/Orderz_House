@@ -302,21 +302,16 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
   return (
     <>
       <DashboardSection
-        title="بحث وتصفية"
-        description="ابحث بالاسم أو البريد أو الهاتف أو رقم العضوية، ثم صفِّ النتائج حسب الباقة والهوية وطريقة الدخول."
+        title="إدارة الفريلانسرز"
+        description={loading ? "جارٍ التحميل…" : `${total} نتيجة`}
         actions={
-          <div className="oh-legacy-admin__actions">
-            <Button type="button" variant="secondary" onClick={load} disabled={loading}>
-              تحديث
-            </Button>
-            <Button type="button" onClick={() => setShowCreate(true)}>
-              إضافة فريلانسر قديم
-            </Button>
-          </div>
+          <Button type="button" variant="secondary" onClick={load} disabled={loading}>
+            تحديث
+          </Button>
         }
       >
-        <form className="oh-sa-users-filters" onSubmit={applyFilters}>
-          <label className="oh-sa-users-field oh-sa-users-field--grow">
+        <form className="oh-legacy-admin__toolbar" onSubmit={applyFilters}>
+          <label className="oh-sa-users-field oh-legacy-admin__toolbar-search">
             <span>بحث</span>
             <input
               value={draftFilters.q}
@@ -324,7 +319,7 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
               placeholder="اسم، بريد، هاتف، رقم عضوية…"
             />
           </label>
-          <label className="oh-sa-users-field">
+          <label className="oh-sa-users-field oh-legacy-admin__toolbar-field">
             <span>الباقة</span>
             <select
               value={draftFilters.planId}
@@ -338,7 +333,7 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
               ))}
             </select>
           </label>
-          <label className="oh-sa-users-field">
+          <label className="oh-sa-users-field oh-legacy-admin__toolbar-field">
             <span>الهوية</span>
             <select
               value={draftFilters.identityComplete}
@@ -349,7 +344,7 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
               <option value="false">غير مكتملة</option>
             </select>
           </label>
-          <label className="oh-sa-users-field">
+          <label className="oh-sa-users-field oh-legacy-admin__toolbar-field">
             <span>طريقة الدخول</span>
             <select
               value={draftFilters.entryMethod}
@@ -360,7 +355,7 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
               <option value="ADMIN_MANUAL">إضافة يدوية</option>
             </select>
           </label>
-          <label className="oh-sa-users-field">
+          <label className="oh-sa-users-field oh-legacy-admin__toolbar-field">
             <span>حالة الحساب</span>
             <select
               value={draftFilters.isActive}
@@ -371,28 +366,26 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
               <option value="false">غير نشط</option>
             </select>
           </label>
-          <div className="oh-sa-users-filters__actions">
+          <div className="oh-legacy-admin__toolbar-actions">
             <Button type="submit">تطبيق</Button>
             <Button type="button" variant="secondary" onClick={resetFilters}>
               إعادة ضبط
             </Button>
           </div>
         </form>
-      </DashboardSection>
 
-      {selectedCount > 0 ? (
-        <div className="oh-sa-users-bulk" role="region" aria-label="إجراءات جماعية">
-          <span className="oh-sa-users-bulk__count">محدّد: {selectedCount}</span>
-          <Button type="button" onClick={() => setShowBulk(true)}>
-            إسناد باقة
-          </Button>
-          <Button type="button" variant="secondary" onClick={() => setSelectedIds(new Set())}>
-            إلغاء التحديد
-          </Button>
-        </div>
-      ) : null}
+        {selectedCount > 0 ? (
+          <div className="oh-sa-users-bulk" role="region" aria-label="إجراءات جماعية" style={{ marginBottom: "0.85rem" }}>
+            <span className="oh-sa-users-bulk__count">محدّد: {selectedCount}</span>
+            <Button type="button" onClick={() => setShowBulk(true)}>
+              إسناد باقة
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setSelectedIds(new Set())}>
+              إلغاء التحديد
+            </Button>
+          </div>
+        ) : null}
 
-      <DashboardSection title="الفريلانسرز القدامى" description="قائمة المسجّلين عبر الدعوة المشتركة أو الإضافة اليدوية.">
         {loading ? (
           <DashboardLoadingState />
         ) : loadError ? (
@@ -509,7 +502,7 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
             </div>
             <div className="oh-legacy-admin__pager">
               <p className="oh-legacy-admin__pager-meta">
-                {total} نتيجة — صفحة {page} من {totalPages}
+                صفحة {page} من {totalPages}
               </p>
               <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} isLoading={loading} />
             </div>

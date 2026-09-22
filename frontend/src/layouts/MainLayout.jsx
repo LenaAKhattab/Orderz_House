@@ -27,8 +27,11 @@ const MainLayout = () => {
   const { user } = useAuth();
   const { pathname } = useLocation();
   const role = user?.primaryRole || user?.role;
+  // Legacy Admin Center lives at /dashboard/legacy-freelancers (not under /super-admin)
+  // but must use the same RTL right sidebar shell as other staff admin pages.
+  const isLegacyAdminCenterPath = pathname.startsWith("/dashboard/legacy-freelancers");
   const useSuperShell =
-    pathname.startsWith("/dashboard/super-admin") &&
+    (pathname.startsWith("/dashboard/super-admin") || isLegacyAdminCenterPath) &&
     (role === ROLE.SUPER_ADMIN || (role === ROLE.ADMIN && adminUsesSuperAdminShell(pathname)));
   const useAdminShell = role === ROLE.ADMIN && isAdminDashboardPath(pathname) && !adminUsesSuperAdminShell(pathname);
   const useFreelancerShell = role === ROLE.FREELANCER && isFreelancerDashboardPath(pathname);

@@ -215,6 +215,10 @@ export function getPostAuthHomePath(user) {
 }
 
 export function adminUsesSuperAdminShell(pathname) {
-  return String(pathname || "").startsWith("/dashboard/super-admin")
-    && isDelegatedSuperAdminDashboardPath(pathname);
+  const p = String(pathname || "");
+  // Legacy Admin Center is a staff shell page outside /dashboard/super-admin/*.
+  if (p.startsWith("/dashboard/legacy-freelancers")) {
+    return isDelegatedSuperAdminDashboardPath(p);
+  }
+  return p.startsWith("/dashboard/super-admin") && isDelegatedSuperAdminDashboardPath(p);
 }
