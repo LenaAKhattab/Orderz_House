@@ -76,6 +76,27 @@ router.post(
   controller.regenerateToken,
 );
 router.get(
+  "/legacy-freelancer-invites/:campaignId/invite-link",
+  ...guard,
+  campaignIdParam,
+  validateRequest,
+  controller.getCampaignInviteLink,
+);
+router.get(
+  "/legacy-freelancer-invites/:campaignId/workspace",
+  ...guard,
+  campaignIdParam,
+  validateRequest,
+  controller.getCampaignWorkspace,
+);
+router.delete(
+  "/legacy-freelancer-invites/:campaignId",
+  ...writeGuard,
+  campaignIdParam,
+  validateRequest,
+  controller.deleteCampaign,
+);
+router.get(
   "/legacy-freelancer-invites/:campaignId/redemptions",
   ...guard,
   campaignIdParam,

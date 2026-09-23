@@ -28,6 +28,7 @@ const createCampaignValidators = [
 const updateCampaignValidators = [
   ...campaignIdParam,
   body("name").optional().trim().isLength({ min: 2, max: 200 }),
+  body("slug").optional({ nullable: true }).trim().isLength({ min: 3, max: 120 }),
   body("maxRedemptions").optional().isInt({ min: 1, max: 100000 }),
   body("expiresAt").optional().isISO8601(),
   body("defaultPlanCode").optional({ nullable: true }).trim().isLength({ max: 80 }),
@@ -35,6 +36,10 @@ const updateCampaignValidators = [
   body("defaultCategoryId").optional({ nullable: true }),
   body("notes").optional({ nullable: true }).isString().isLength({ max: 4000 }),
   body("isActive").optional().isBoolean(),
+  body("requireIdFront").optional().isBoolean(),
+  body("requireIdBack").optional().isBoolean(),
+  body("require_id_front").optional().isBoolean(),
+  body("require_id_back").optional().isBoolean(),
   body("institutionId").optional({ nullable: true }),
   body("institution_id").optional({ nullable: true }),
 ];

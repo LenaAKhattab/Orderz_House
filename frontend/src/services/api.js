@@ -2477,6 +2477,32 @@ export const regenerateLegacyFreelancerInviteTokenRequest = async (id) => {
   return data;
 };
 
+export const getLegacyFreelancerInviteLinkRequest = async (id) => {
+  const { data } = await api.get(
+    `/super-admin/legacy-freelancer-invites/${encodeURIComponent(id)}/invite-link`,
+  );
+  return data;
+};
+
+export const getLegacyFreelancerInviteWorkspaceRequest = async (id) => {
+  const { data } = await api.get(
+    `/super-admin/legacy-freelancer-invites/${encodeURIComponent(id)}/workspace`,
+  );
+  return data;
+};
+
+export const deleteLegacyFreelancerInviteRequest = async (id) => {
+  const { data } = await api.delete(
+    `/super-admin/legacy-freelancer-invites/${encodeURIComponent(id)}`,
+  );
+  return data;
+};
+
+export const getLegacyFreelancerInviteRequest = async (id) => {
+  const { data } = await api.get(`/super-admin/legacy-freelancer-invites/${encodeURIComponent(id)}`);
+  return data;
+};
+
 export const listLegacyFreelancerInviteRedemptionsRequest = async (id) => {
   const { data } = await api.get(
     `/super-admin/legacy-freelancer-invites/${encodeURIComponent(id)}/redemptions`,

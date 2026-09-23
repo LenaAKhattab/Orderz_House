@@ -1,16 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   createLegacyFreelancerInviteRequest,
   listLegacyFreelancerInvitesRequest,
-  listLegacyFreelancerInviteRedemptionsRequest,
-  revokeLegacyFreelancerInviteRequest,
-  regenerateLegacyFreelancerInviteTokenRequest,
   updateLegacyFreelancerInviteRequest,
+  deleteLegacyFreelancerInviteRequest,
+  regenerateLegacyFreelancerInviteTokenRequest,
   getCategoriesRequest,
   getLegacyFreelancerInviteFieldsRequest,
   putLegacyFreelancerInviteFieldsRequest,
   restoreLegacyFreelancerInviteFieldsRequest,
-  getLegacyFreelancerInviteAnswersRequest,
   adminListInstitutionsRequest,
 } from "../../../services/api";
 import Button from "../../../components/ui/Button";
@@ -22,6 +21,7 @@ import DashboardLoadingState from "../../../components/dashboard/DashboardLoadin
 import DashboardTable from "../../../components/dashboard/DashboardTable";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
 import { formatDate } from "./legacyAdminShared";
+import LegacyCampaignLinkModal from "./LegacyCampaignLinkModal";
 
 function defaultExpiresAt() {
   const d = new Date();
@@ -43,6 +43,18 @@ const EMPTY_FORM = {
   institutionId: "",
 };
 
+const CAMPAIGN_STATUS = {
+  active: { label: "نشط", tone: "success" },
+  inactive: { label: "متوقف", tone: "neutral" },
+  archived: { label: "مؤرشف", tone: "warning" },
+};
+
+function campaignStatus(row) {
+  if (row?.isArchived || row?.archivedAt) return CAMPAIGN_STATUS.archived;
+  if (row?.isActive) return CAMPAIGN_STATUS.active;
+  return CAMPAIGN_STATUS.inactive;
+}
+
 /**
  * @param {{ selectedCampaignId: string|null, onSelectedCampaignIdChange: (id: string|null) => void, showFieldConfig?: boolean, embedMode?: boolean }} props
  */
@@ -52,21 +64,22 @@ export default function LegacyCampaignsPanel({
   showFieldConfig = true,
   embedMode = false,
 }) {
+  const navigate = useNavigate();
   const { pushToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [creating, setCreating] = useState(false);
   const [busyId, setBusyId] = useState(null);
-  const [lastCreatedLink, setLastCreatedLink] = useState(null);
-  const [redemptions, setRedemptions] = useState([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [institutionFilter, setInstitutionFilter] = useState("");
   const [categories, setCategories] = useState([]);
+  const [institutions, setInstitutions] = useState([]);
+  const [linkModalCampaign, setLinkModalCampaign] = useState(null);
   const [fieldConfig, setFieldConfig] = useState(null);
   const [fieldsBusy, setFieldsBusy] = useState(false);
-  const [answersModal, setAnswersModal] = useState(null);
-  const [answersLoading, setAnswersLoading] = useState(false);
-  const [institutions, setInstitutions] = useState([]);
-  const [campaignInstitutionId, setCampaignInstitutionId] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
 
   const selectedId = selectedCampaignId;
 
@@ -94,35 +107,6 @@ export default function LegacyCampaignsPanel({
 
   const selected = useMemo(() => rows.find((r) => r.id === selectedId) || null, [rows, selectedId]);
 
-  useEffect(() => {
-    if (!selected) {
-      setCampaignInstitutionId("");
-      return;
-    }
-    const iid = selected.institutionId ?? selected.institution?.id ?? "";
-    setCampaignInstitutionId(iid ? String(iid) : "");
-  }, [selected]);
-
-  const loadRedemptions = useCallback(
-    async (campaignId) => {
-      if (!campaignId) {
-        setRedemptions([]);
-        return;
-      }
-      try {
-        const res = await listLegacyFreelancerInviteRedemptionsRequest(campaignId);
-        setRedemptions(Array.isArray(res?.data) ? res.data : []);
-      } catch (err) {
-        pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحميل المسجلين") });
-      }
-    },
-    [pushToast],
-  );
-
-  useEffect(() => {
-    if (selectedId) loadRedemptions(selectedId);
-  }, [selectedId, loadRedemptions]);
-
   const loadFields = useCallback(
     async (campaignId) => {
       if (!campaignId) {
@@ -140,8 +124,125 @@ export default function LegacyCampaignsPanel({
   );
 
   useEffect(() => {
-    if (selectedId && showFieldConfig) loadFields(selectedId);
-  }, [selectedId, loadFields, showFieldConfig]);
+    if (selectedId && showFieldConfig && embedMode) loadFields(selectedId);
+  }, [selectedId, loadFields, showFieldConfig, embedMode]);
+
+  const filteredRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (statusFilter === "active" && !r.isActive) return false;
+      if (statusFilter === "inactive" && (r.isActive || r.isArchived)) return false;
+      if (statusFilter === "archived" && !r.isArchived && !r.archivedAt) return false;
+      if (institutionFilter === "none" && r.institutionId) return false;
+      if (institutionFilter && institutionFilter !== "none" && String(r.institutionId) !== institutionFilter) {
+        return false;
+      }
+      if (!q) return true;
+      const hay = `${r.name || ""} ${r.slug || ""} ${r.institutionName || ""}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [rows, search, statusFilter, institutionFilter]);
+
+  const resolveInstitutionLabel = (row) => {
+    if (row?.institutionName) return row.institutionName;
+    if (row?.institutionId) {
+      const hit = institutions.find((i) => String(i.id) === String(row.institutionId));
+      return hit?.name || `#${row.institutionId}`;
+    }
+    return "بدون مؤسسة";
+  };
+
+  const openManage = (row) => {
+    onSelectedCampaignIdChange?.(String(row.id));
+    navigate(`/dashboard/legacy-freelancers/campaigns/${encodeURIComponent(row.id)}`);
+  };
+
+  const onCreate = async (e) => {
+    e.preventDefault();
+    setCreating(true);
+    try {
+      const res = await createLegacyFreelancerInviteRequest({
+        name: form.name,
+        slug: form.slug || undefined,
+        maxRedemptions: Number(form.maxRedemptions),
+        expiresAt: new Date(form.expiresAt).toISOString(),
+        defaultPlanCode: form.defaultPlanCode,
+        defaultTrustLevel: form.defaultTrustLevel,
+        defaultCategoryId: form.defaultCategoryId ? Number(form.defaultCategoryId) : null,
+        notes: form.notes || null,
+        isActive: Boolean(form.isActive),
+        institutionId: form.institutionId ? Number(form.institutionId) : null,
+      });
+      const created = res?.data;
+      setForm(EMPTY_FORM);
+      setShowCreate(false);
+      pushToast({ type: "success", message: "تم إنشاء رابط الدعوة المشترك" });
+      await load();
+      if (created?.id) {
+        onSelectedCampaignIdChange?.(String(created.id));
+        if (created.joinUrl) {
+          setLinkModalCampaign(created);
+        }
+      }
+    } catch (err) {
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر إنشاء الحملة") });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const onToggleActive = async (row, e) => {
+    e?.stopPropagation?.();
+    if (row.isArchived) return;
+    setBusyId(row.id);
+    try {
+      await updateLegacyFreelancerInviteRequest(row.id, { isActive: !row.isActive });
+      pushToast({ type: "success", message: row.isActive ? "تم إيقاف الحملة" : "تم تفعيل الحملة" });
+      await load();
+    } catch (err) {
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر التحديث") });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const onDelete = async (row, e) => {
+    e?.stopPropagation?.();
+    const ok = window.confirm(
+      row.usedCount > 0
+        ? `الحملة «${row.name}» تحتوي مسجّلين. سيتم أرشفتها وإيقاف الرابط مع الاحتفاظ بالسجلات. هل تريد المتابعة؟`
+        : `حذف الحملة «${row.name}» نهائياً؟ هذا الإجراء للحملات غير المستخدمة فقط.`,
+    );
+    if (!ok) return;
+    setBusyId(row.id);
+    try {
+      const res = await deleteLegacyFreelancerInviteRequest(row.id);
+      pushToast({ type: "success", message: res?.message || res?.data?.message || "تم تنفيذ الإجراء" });
+      if (selectedId === String(row.id)) onSelectedCampaignIdChange?.(null);
+      await load();
+    } catch (err) {
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر حذف/أرشفة الحملة") });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const onRegenerate = async (row, e) => {
+    e?.stopPropagation?.();
+    const ok = window.confirm("إعادة توليد الرمز تُبطل الرابط السابق. المتابعة؟");
+    if (!ok) return;
+    setBusyId(row.id);
+    try {
+      const res = await regenerateLegacyFreelancerInviteTokenRequest(row.id);
+      pushToast({ type: "success", message: "تم إعادة توليد الرمز" });
+      await load();
+      if (res?.data) setLinkModalCampaign(res.data);
+    } catch (err) {
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر إعادة التوليد") });
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const updateFieldLocal = (fieldKey, patch) => {
     setFieldConfig((prev) => {
@@ -188,564 +289,350 @@ export default function LegacyCampaignsPanel({
     }
   };
 
-  const openAnswers = async (userId) => {
-    if (!selectedId || !userId) return;
-    setAnswersLoading(true);
-    setAnswersModal(null);
-    try {
-      const res = await getLegacyFreelancerInviteAnswersRequest(selectedId, userId);
-      setAnswersModal(res?.data || null);
-    } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحميل بيانات التسجيل") });
-    } finally {
-      setAnswersLoading(false);
-    }
-  };
+  if (loading) return <DashboardLoadingState label="جاري تحميل الحملات…" />;
 
-  const onCreate = async (e) => {
-    e.preventDefault();
-    setCreating(true);
-    try {
-      const res = await createLegacyFreelancerInviteRequest({
-        name: form.name,
-        slug: form.slug || undefined,
-        maxRedemptions: Number(form.maxRedemptions),
-        expiresAt: new Date(form.expiresAt).toISOString(),
-        defaultPlanCode: form.defaultPlanCode,
-        defaultTrustLevel: form.defaultTrustLevel,
-        defaultCategoryId: form.defaultCategoryId ? Number(form.defaultCategoryId) : null,
-        notes: form.notes || null,
-        isActive: Boolean(form.isActive),
-        institutionId: form.institutionId ? Number(form.institutionId) : null,
-      });
-      const created = res?.data;
-      setLastCreatedLink(created?.joinUrl || null);
-      setForm(EMPTY_FORM);
-      pushToast({ type: "success", message: "تم إنشاء رابط الدعوة المشترك" });
-      await load();
-      if (created?.id) onSelectedCampaignIdChange(String(created.id));
-    } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر إنشاء الحملة") });
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const copyLink = async (url) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      pushToast({ type: "success", message: "تم نسخ الرابط" });
-    } catch {
-      pushToast({ type: "error", message: "تعذر النسخ — انسخ الرابط يدوياً" });
-    }
-  };
-
-  const onRevoke = async (id) => {
-    setBusyId(id);
-    try {
-      await revokeLegacyFreelancerInviteRequest(id);
-      pushToast({ type: "success", message: "تم إيقاف الرابط" });
-      await load();
-    } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر إيقاف الرابط") });
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const onRegenerate = async (id) => {
-    setBusyId(id);
-    try {
-      const res = await regenerateLegacyFreelancerInviteTokenRequest(id);
-      setLastCreatedLink(res?.data?.joinUrl || null);
-      pushToast({ type: "success", message: "تم إعادة توليد الرمز — الرابط السابق باطل" });
-      await load();
-    } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر إعادة التوليد") });
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const institutionNameById = useMemo(() => {
-    const map = new Map();
-    institutions.forEach((i) => map.set(String(i.id), i.name || `#${i.id}`));
-    return map;
-  }, [institutions]);
-
-  const resolveCampaignInstitutionLabel = (row) => {
-    if (row?.institutionName) return row.institutionName;
-    if (row?.institution?.name) return row.institution.name;
-    const iid = row?.institutionId ?? row?.institution?.id;
-    if (iid) return institutionNameById.get(String(iid)) || `#${iid}`;
-    return "بدون مؤسسة";
-  };
-
-  const saveCampaignInstitution = async () => {
-    if (!selectedId) return;
-    setBusyId(selectedId);
-    try {
-      await updateLegacyFreelancerInviteRequest(selectedId, {
-        institutionId: campaignInstitutionId ? Number(campaignInstitutionId) : null,
-      });
-      pushToast({ type: "success", message: "تم تحديث ربط المؤسسة" });
-      await load();
-    } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحديث المؤسسة") });
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const onToggleActive = async (row) => {
-    setBusyId(row.id);
-    try {
-      await updateLegacyFreelancerInviteRequest(row.id, { isActive: !row.isActive });
-      await load();
-    } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر التحديث") });
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  function renderFieldConfig() {
-    return (
-      <DashboardSection
-        title={`بيانات التسجيل المطلوبة — ${selected.name}`}
-        description="حدد البيانات التي يجب على الفريلانسر تعبئتها عند التسجيل من خلال رابط هذه الحملة."
-        actions={
-          <div className="oh-legacy-admin__actions">
-            <Button type="button" variant="secondary" disabled={fieldsBusy} onClick={restoreFields}>
-              استعادة الافتراضي
-            </Button>
-            <Button type="button" disabled={fieldsBusy} onClick={saveFields}>
-              {fieldsBusy ? "جاري الحفظ…" : "حفظ الحقول"}
-            </Button>
-          </div>
-        }
-      >
-        {fieldConfig?.systemAccountFields?.length ? (
-          <div className="oh-legacy-admin__notice oh-legacy-admin__notice--info" style={{ marginBottom: "1rem" }}>
-            <strong>حقول أساسية للنظام (لا يمكن تعطيلها)</strong>
-            <ul style={{ margin: "0.5rem 0 0", paddingInlineStart: "1.25rem" }}>
-              {fieldConfig.systemAccountFields.map((f) => (
-                <li key={f.key}>
-                  {f.labelAr} — {f.labelNote || "حقل أساسي للنظام"}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-        {fieldConfig?.fields?.length ? (
-          <div className="oh-sa-users-table-wrap">
-            <DashboardTable caption="حقول التسجيل">
-              <thead>
-                <tr>
-                  <th scope="col">السؤال / الحقل</th>
-                  <th scope="col">إظهار</th>
-                  <th scope="col">إلزامي</th>
-                  <th scope="col">الترتيب</th>
-                  <th scope="col">تعديل النص</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fieldConfig.fields.map((f) => (
-                  <tr key={f.fieldKey}>
-                    <td>
-                      <div className="oh-sa-users-user">
-                        <strong>{f.labelAr}</strong>
-                        <span dir="ltr">
-                          {f.fieldKey}
-                          {f.conditional ? ` · شرط: ${f.conditional.fieldKey}` : ""}
-                        </span>
-                      </div>
-                    </td>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={Boolean(f.isEnabled)}
-                        onChange={(e) =>
-                          updateFieldLocal(f.fieldKey, {
-                            isEnabled: e.target.checked,
-                            isRequired: e.target.checked ? f.isRequired : false,
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="checkbox"
-                        disabled={!f.isEnabled}
-                        checked={Boolean(f.isRequired)}
-                        onChange={(e) => updateFieldLocal(f.fieldKey, { isRequired: e.target.checked })}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        className="oh-sa-users-field"
-                        style={{ width: "5rem", padding: "8px 10px", borderRadius: 10, border: "1px solid rgba(91,102,132,0.22)" }}
-                        value={f.sortOrder}
-                        onChange={(e) => updateFieldLocal(f.fieldKey, { sortOrder: Number(e.target.value) || 0 })}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        style={{ width: "100%", minWidth: "10rem", padding: "8px 10px", borderRadius: 10, border: "1px solid rgba(91,102,132,0.22)" }}
-                        value={f.labelAr}
-                        onChange={(e) => updateFieldLocal(f.fieldKey, { labelAr: e.target.value })}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </DashboardTable>
-          </div>
-        ) : (
-          <DashboardEmptyState title="لا توجد حقول بعد" description="اضغط استعادة الافتراضي لتهيئة الكتالوج." />
-        )}
-      </DashboardSection>
-    );
-  }
-
+  // Embed mode: registration field config for a selected campaign (top-level tab).
   if (embedMode) {
     return (
-      <>
-        <DashboardSection
-          title="إعدادات التسجيل"
-          description="إعدادات حقول التسجيل مرتبطة بحملة الدعوة. اختر حملة ثم عدّل الحقول المطلوبة."
-        >
-          <label className="oh-sa-users-field" style={{ maxWidth: "28rem" }}>
-            <span>الحملة</span>
-            <select
-              value={selectedId || ""}
-              onChange={(e) => onSelectedCampaignIdChange(e.target.value || null)}
-            >
-              <option value="">— اختر حملة —</option>
-              {rows.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name} ({r.slug})
-                </option>
-              ))}
-            </select>
-          </label>
+      <div className="oh-legacy-admin__stack">
+        <DashboardSection title="اختر حملة" description="إعداد حقول التسجيل مرتبط بحملة واحدة.">
+          <select
+            className="oh-legacy-admin__select"
+            value={selectedId || ""}
+            onChange={(e) => onSelectedCampaignIdChange?.(e.target.value || null)}
+          >
+            <option value="">— اختر حملة —</option>
+            {rows.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name} ({r.slug})
+              </option>
+            ))}
+          </select>
         </DashboardSection>
-        {selected && showFieldConfig ? renderFieldConfig() : null}
-      </>
+        {selected && showFieldConfig ? (
+          <DashboardSection
+            title={`بيانات التسجيل — ${selected.name}`}
+            actions={
+              <div className="oh-legacy-admin__actions">
+                <Button type="button" variant="secondary" disabled={fieldsBusy} onClick={restoreFields}>
+                  استعادة الافتراضي
+                </Button>
+                <Button type="button" disabled={fieldsBusy} onClick={saveFields}>
+                  {fieldsBusy ? "جاري الحفظ…" : "حفظ الحقول"}
+                </Button>
+              </div>
+            }
+          >
+            {fieldConfig?.fields?.length ? (
+              <div className="oh-sa-users-table-wrap">
+                <DashboardTable caption="حقول التسجيل">
+                  <thead>
+                    <tr>
+                      <th scope="col">الحقل</th>
+                      <th scope="col">إظهار</th>
+                      <th scope="col">إلزامي</th>
+                      <th scope="col">الترتيب</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fieldConfig.fields.map((f) => (
+                      <tr key={f.fieldKey}>
+                        <td>
+                          <strong>{f.labelAr}</strong>
+                          <div dir="ltr" className="oh-legacy-admin__muted">
+                            {f.fieldKey}
+                          </div>
+                        </td>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(f.isEnabled)}
+                            onChange={(e) => updateFieldLocal(f.fieldKey, { isEnabled: e.target.checked })}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(f.isRequired)}
+                            disabled={!f.isEnabled}
+                            onChange={(e) => updateFieldLocal(f.fieldKey, { isRequired: e.target.checked })}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            className="oh-legacy-admin__input"
+                            style={{ width: 72 }}
+                            value={f.sortOrder ?? 0}
+                            onChange={(e) =>
+                              updateFieldLocal(f.fieldKey, { sortOrder: Number(e.target.value) || 0 })
+                            }
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </DashboardTable>
+              </div>
+            ) : (
+              <DashboardEmptyState title="لا توجد حقول" description="اختر حملة أو أنشئ حملة أولاً." />
+            )}
+          </DashboardSection>
+        ) : null}
+      </div>
     );
   }
 
   return (
-    <>
-      {lastCreatedLink ? (
-        <DashboardSection title="الرابط المشترك" description="احفظ هذا الرابط الآن — الرمز يظهر مرة واحدة فقط بعد الإنشاء أو إعادة التوليد.">
-          <div className="oh-legacy-admin__link-box">
-            <input readOnly value={lastCreatedLink} dir="ltr" aria-label="رابط الدعوة" />
-            <Button type="button" onClick={() => copyLink(lastCreatedLink)}>
-              نسخ الرابط
-            </Button>
-          </div>
-        </DashboardSection>
-      ) : null}
-
-      <DashboardSection title="إنشاء حملة جديدة" description="أنشئ رابط دعوة مشتركاً بحدود مقاعد وتاريخ انتهاء واضحين.">
-        <form className="oh-legacy-admin__form-grid oh-legacy-admin__form-grid--2" onSubmit={onCreate}>
-          <label className="oh-sa-users-field">
-            <span>اسم الحملة</span>
-            <input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-          </label>
-          <label className="oh-sa-users-field">
-            <span>رابط الحملة / slug</span>
-            <input
-              dir="ltr"
-              placeholder="company-freelancers-2026"
-              value={form.slug}
-              onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-            />
-          </label>
-          <label className="oh-sa-users-field">
-            <span>عدد المقاعد المسموح</span>
-            <input
-              type="number"
-              min={1}
-              required
-              value={form.maxRedemptions}
-              onChange={(e) => setForm((f) => ({ ...f, maxRedemptions: e.target.value }))}
-            />
-          </label>
-          <label className="oh-sa-users-field">
-            <span>تاريخ انتهاء الرابط</span>
-            <input
-              type="datetime-local"
-              required
-              value={form.expiresAt}
-              onChange={(e) => setForm((f) => ({ ...f, expiresAt: e.target.value }))}
-            />
-          </label>
-          <label className="oh-sa-users-field">
-            <span>الخطة الافتراضية</span>
-            <input
-              dir="ltr"
-              value={form.defaultPlanCode}
-              onChange={(e) => setForm((f) => ({ ...f, defaultPlanCode: e.target.value }))}
-            />
-          </label>
-          <label className="oh-sa-users-field">
-            <span>مستوى الثقة الافتراضي</span>
-            <select
-              value={form.defaultTrustLevel}
-              onChange={(e) => setForm((f) => ({ ...f, defaultTrustLevel: e.target.value }))}
-            >
-              <option value="APPROVED">APPROVED</option>
-              <option value="TRUSTED">TRUSTED</option>
-            </select>
-          </label>
-          <label className="oh-sa-users-field">
-            <span>التصنيف الافتراضي (اختياري)</span>
-            <select
-              value={form.defaultCategoryId}
-              onChange={(e) => setForm((f) => ({ ...f, defaultCategoryId: e.target.value }))}
-            >
-              <option value="">— بدون —</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name || c.slug}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="oh-sa-users-field oh-legacy-admin__form-span">
-            <span>المؤسسة المرتبطة</span>
-            <select
-              value={form.institutionId}
-              onChange={(e) => setForm((f) => ({ ...f, institutionId: e.target.value }))}
-            >
-              <option value="">بدون مؤسسة</option>
-              {institutions.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.name}
-                </option>
-              ))}
-            </select>
-            <span className="oh-sa-users-muted" style={{ fontSize: "0.78rem", lineHeight: 1.5 }}>
-              كل فريلانسر يسجل من خلال هذه الحملة سيتم إضافته تلقائياً كعضو في المؤسسة المحددة.
-            </span>
-          </label>
-          <label className="oh-sa-users-field oh-legacy-admin__form-span">
-            <span>ملاحظات داخلية</span>
-            <textarea rows={2} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
-          </label>
-          <label className="oh-legacy-admin__doc-card oh-legacy-admin__form-span" style={{ cursor: "pointer" }}>
-            <span>تفعيل الرابط فوراً</span>
-            <input
-              type="checkbox"
-              checked={form.isActive}
-              onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
-            />
-          </label>
-          <div className="oh-legacy-admin__form-span">
-            <Button type="submit" disabled={creating}>
-              {creating ? "جاري الإنشاء…" : "إنشاء رابط مشترك"}
-            </Button>
-          </div>
-        </form>
-      </DashboardSection>
-
+    <div className="oh-legacy-admin__stack">
       <DashboardSection
-        title="الحملات"
-        description="إدارة روابط الدعوة المشتركة وحالاتها ومقاعدها."
+        title="حملات الدعوة"
+        description="كل حملة لها مساحة إدارة مستقلة للمسجّلين والإعدادات. المسجّلون عبر رابط مشترك يُدارون داخل حملتهم فقط."
         actions={
-          <Button type="button" variant="secondary" onClick={load} disabled={loading}>
-            تحديث
+          <Button type="button" onClick={() => setShowCreate((v) => !v)}>
+            {showCreate ? "إخفاء النموذج" : "إنشاء حملة"}
           </Button>
         }
       >
-        {loading ? (
-          <DashboardLoadingState />
-        ) : rows.length === 0 ? (
-          <DashboardEmptyState title="لا توجد حملات" description="أنشئ حملة لعرض رابط دعوة مشترك." />
+        <div className="oh-legacy-campaigns__toolbar">
+          <input
+            className="oh-legacy-admin__input"
+            placeholder="بحث بالاسم أو الـ slug…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <select
+            className="oh-legacy-admin__select"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="">كل الحالات</option>
+            <option value="active">نشط</option>
+            <option value="inactive">متوقف</option>
+            <option value="archived">مؤرشف</option>
+          </select>
+          <select
+            className="oh-legacy-admin__select"
+            value={institutionFilter}
+            onChange={(e) => setInstitutionFilter(e.target.value)}
+          >
+            <option value="">كل المؤسسات</option>
+            <option value="none">بدون مؤسسة</option>
+            {institutions.map((i) => (
+              <option key={i.id} value={String(i.id)}>
+                {i.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {showCreate ? (
+          <form className="oh-legacy-campaigns__create" onSubmit={onCreate}>
+            <div className="oh-legacy-campaigns__create-grid">
+              <label>
+                اسم الحملة
+                <input
+                  className="oh-legacy-admin__input"
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                />
+              </label>
+              <label>
+                Slug
+                <input
+                  className="oh-legacy-admin__input"
+                  dir="ltr"
+                  placeholder="auto من الاسم"
+                  value={form.slug}
+                  onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
+                />
+              </label>
+              <label>
+                المقاعد
+                <input
+                  className="oh-legacy-admin__input"
+                  type="number"
+                  min={1}
+                  required
+                  value={form.maxRedemptions}
+                  onChange={(e) => setForm((f) => ({ ...f, maxRedemptions: e.target.value }))}
+                />
+              </label>
+              <label>
+                الانتهاء
+                <input
+                  className="oh-legacy-admin__input"
+                  type="datetime-local"
+                  required
+                  value={form.expiresAt}
+                  onChange={(e) => setForm((f) => ({ ...f, expiresAt: e.target.value }))}
+                />
+              </label>
+              <label>
+                مستوى الثقة
+                <select
+                  className="oh-legacy-admin__select"
+                  value={form.defaultTrustLevel}
+                  onChange={(e) => setForm((f) => ({ ...f, defaultTrustLevel: e.target.value }))}
+                >
+                  <option value="APPROVED">APPROVED</option>
+                  <option value="TRUSTED">TRUSTED</option>
+                </select>
+              </label>
+              <label>
+                التصنيف الافتراضي
+                <select
+                  className="oh-legacy-admin__select"
+                  value={form.defaultCategoryId}
+                  onChange={(e) => setForm((f) => ({ ...f, defaultCategoryId: e.target.value }))}
+                >
+                  <option value="">—</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={String(c.id)}>
+                      {c.nameAr || c.name || c.id}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                المؤسسة
+                <select
+                  className="oh-legacy-admin__select"
+                  value={form.institutionId}
+                  onChange={(e) => setForm((f) => ({ ...f, institutionId: e.target.value }))}
+                >
+                  <option value="">بدون مؤسسة</option>
+                  {institutions.map((i) => (
+                    <option key={i.id} value={String(i.id)}>
+                      {i.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="oh-legacy-admin__actions" style={{ marginTop: "0.75rem" }}>
+              <Button type="submit" disabled={creating}>
+                {creating ? "جاري الإنشاء…" : "إنشاء الحملة"}
+              </Button>
+            </div>
+          </form>
+        ) : null}
+
+        {filteredRows.length === 0 ? (
+          <DashboardEmptyState
+            title="لا توجد حملات"
+            description={rows.length ? "لا نتائج مطابقة للفلاتر." : "أنشئ أول حملة دعوة مشتركة."}
+          />
         ) : (
-          <div className="oh-sa-users-table-wrap">
-            <DashboardTable caption="حملات الدعوة">
-              <thead>
-                <tr>
-                  <th scope="col">الاسم</th>
-                  <th scope="col">Slug</th>
-                  <th scope="col">المؤسسة</th>
-                  <th scope="col">المسجلون / المقاعد</th>
-                  <th scope="col">الانتهاء</th>
-                  <th scope="col">الحالة</th>
-                  <th scope="col">إجراءات</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.id} className={String(selectedId) === String(row.id) ? "oh-legacy-admin__selected-row" : undefined}>
-                    <td>
-                      <div className="oh-sa-users-user">
-                        <strong>{row.name}</strong>
-                      </div>
-                    </td>
-                    <td dir="ltr">{row.slug}</td>
-                    <td>{resolveCampaignInstitutionLabel(row)}</td>
-                    <td>
-                      {row.usedCount} / {row.maxRedemptions}
-                    </td>
-                    <td>{formatDate(row.expiresAt)}</td>
-                    <td>
-                      <StatusBadge tone={row.isActive ? "success" : "danger"}>
-                        {row.isActive ? "نشط" : "متوقف"}
-                      </StatusBadge>
-                    </td>
-                    <td>
-                      <div className="oh-sa-users-table__actions">
-                        <Button type="button" variant="secondary" onClick={() => onSelectedCampaignIdChange(row.id)}>
-                          المسجلون / الحقول
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          disabled={busyId === row.id}
-                          onClick={() => onToggleActive(row)}
-                        >
-                          {row.isActive ? "إيقاف" : "تفعيل"}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          disabled={busyId === row.id}
-                          onClick={() => onRegenerate(row.id)}
-                        >
-                          إعادة توليد token
-                        </Button>
-                        <Button type="button" variant="danger" disabled={busyId === row.id} onClick={() => onRevoke(row.id)}>
-                          إبطال
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </DashboardTable>
+          <div className="oh-legacy-campaigns__grid">
+            {filteredRows.map((row) => {
+              const st = campaignStatus(row);
+              const busy = busyId === row.id;
+              return (
+                <article
+                  key={row.id}
+                  className={`oh-legacy-campaign-card${selectedId === String(row.id) ? " is-selected" : ""}`}
+                  onClick={() => openManage(row)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      openManage(row);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <header className="oh-legacy-campaign-card__head">
+                    <div>
+                      <h3 className="oh-legacy-campaign-card__title">{row.name}</h3>
+                      <p className="oh-legacy-campaign-card__slug" dir="ltr">
+                        {row.slug}
+                      </p>
+                    </div>
+                    <StatusBadge tone={st.tone}>{st.label}</StatusBadge>
+                  </header>
+
+                  <dl className="oh-legacy-campaign-card__meta">
+                    <div>
+                      <dt>المؤسسة</dt>
+                      <dd>{resolveInstitutionLabel(row)}</dd>
+                    </div>
+                    <div>
+                      <dt>المقاعد</dt>
+                      <dd>
+                        {row.usedCount ?? 0} / {row.maxRedemptions ?? "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>الانتهاء</dt>
+                      <dd>{formatDate(row.expiresAt)}</dd>
+                    </div>
+                    <div>
+                      <dt>زيارات الرابط</dt>
+                      <dd>{Number(row.linkViewCount || 0).toLocaleString("en-US")}</dd>
+                    </div>
+                    <div>
+                      <dt>تسجيلات ناجحة</dt>
+                      <dd>{Number(row.usedCount || 0).toLocaleString("en-US")}</dd>
+                    </div>
+                  </dl>
+
+                  <div
+                    className="oh-legacy-campaign-card__actions"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  >
+                    <Button type="button" onClick={() => openManage(row)}>
+                      إدارة
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setLinkModalCampaign(row)}
+                    >
+                      عرض الرابط
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={busy || row.isArchived}
+                      onClick={(e) => onToggleActive(row, e)}
+                    >
+                      {row.isActive ? "إيقاف" : "تفعيل"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={busy}
+                      onClick={(e) => onRegenerate(row, e)}
+                    >
+                      إعادة توليد
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={busy}
+                      onClick={(e) => onDelete(row, e)}
+                      aria-label="حذف أو أرشفة"
+                    >
+                      حذف
+                    </Button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </DashboardSection>
 
-      {selected && showFieldConfig ? renderFieldConfig() : null}
-
-      {selected ? (
-        <DashboardSection
-          title={`ربط المؤسسة — ${selected.name}`}
-          description="يمكن تعديل المؤسسة المرتبطة بالحملة؛ ينطبق على المسجلين الجدد عبر الرابط."
-        >
-          <div className="oh-legacy-admin__form-grid oh-legacy-admin__form-grid--2" style={{ maxWidth: "36rem" }}>
-            <label className="oh-sa-users-field oh-legacy-admin__form-span">
-              <span>المؤسسة</span>
-              <select
-                value={campaignInstitutionId}
-                onChange={(e) => setCampaignInstitutionId(e.target.value)}
-                disabled={busyId === selectedId}
-              >
-                <option value="">بدون مؤسسة</option>
-                {institutions.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="oh-legacy-admin__form-span">
-              <Button type="button" disabled={busyId === selectedId} onClick={() => void saveCampaignInstitution()}>
-                حفظ ربط المؤسسة
-              </Button>
-            </div>
-          </div>
-        </DashboardSection>
+      {linkModalCampaign ? (
+        <LegacyCampaignLinkModal
+          campaign={linkModalCampaign}
+          onClose={() => setLinkModalCampaign(null)}
+          onRegenerated={() => load()}
+        />
       ) : null}
-
-      {selected ? (
-        <DashboardSection
-          title={`المسجلون — ${selected.name}`}
-          description={`${selected.usedCount} / ${selected.maxRedemptions} مقعد مستخدم`}
-          actions={
-            <a className="btn btn-secondary" href={`/api/super-admin/legacy-freelancer-invites/${selected.id}/redemptions.csv`}>
-              تصدير CSV
-            </a>
-          }
-        >
-          {redemptions.length === 0 ? (
-            <DashboardEmptyState title="لا مسجلين بعد" />
-          ) : (
-            <div className="oh-sa-users-table-wrap">
-              <DashboardTable caption="مسجلو الحملة">
-                <thead>
-                  <tr>
-                    <th scope="col">الاسم</th>
-                    <th scope="col">رقم الفريلانسر</th>
-                    <th scope="col">البريد</th>
-                    <th scope="col">الهاتف</th>
-                    <th scope="col">مرجع</th>
-                    <th scope="col">تاريخ التسجيل</th>
-                    <th scope="col">إجراء</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {redemptions.map((r) => (
-                    <tr key={r.id}>
-                      <td>{r.fullName}</td>
-                      <td>
-                        <span className="oh-legacy-admin__member-id">{r.freelancerMemberIdMasked || "—"}</span>
-                      </td>
-                      <td dir="ltr">{r.emailMasked}</td>
-                      <td dir="ltr">{r.phoneMasked || "—"}</td>
-                      <td>{r.internalReference || r.identityLast4 || "—"}</td>
-                      <td>{formatDate(r.redeemedAt)}</td>
-                      <td>
-                        <Button type="button" variant="secondary" disabled={answersLoading} onClick={() => openAnswers(r.userId)}>
-                          عرض بيانات التسجيل
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </DashboardTable>
-            </div>
-          )}
-        </DashboardSection>
-      ) : null}
-
-      {answersModal ? (
-        <div className="oh-sa-users-modal" role="dialog" aria-modal="true" aria-labelledby="oh-legacy-answers-title">
-          <button type="button" className="oh-sa-users-modal__backdrop" aria-label="إغلاق" onClick={() => setAnswersModal(null)} />
-          <div className="oh-sa-users-modal__panel" style={{ width: "min(640px, 100%)" }}>
-            <header className="oh-sa-users-modal__header">
-              <h2 id="oh-legacy-answers-title">بيانات التسجيل</h2>
-              <button type="button" className="oh-sa-users-modal__close" onClick={() => setAnswersModal(null)} aria-label="إغلاق">
-                ×
-              </button>
-            </header>
-            <div className="oh-sa-users-modal__body">
-              {(answersModal.sections || []).map((sec) => (
-                <div key={sec.key}>
-                  <h4 style={{ margin: "0 0 0.5rem", fontSize: "0.9rem" }}>{sec.labelAr}</h4>
-                  <dl className="oh-sa-users-kv">
-                    {(sec.fields || []).map((f) => (
-                      <div key={f.fieldKey}>
-                        <span>{f.labelAr}</span>
-                        <strong dir={f.sensitive ? "ltr" : undefined}>
-                          {f.value === true ? "نعم" : f.value === false ? "لا" : String(f.value ?? "—")}
-                        </strong>
-                      </div>
-                    ))}
-                  </dl>
-                </div>
-              ))}
-              {!answersModal.sections?.length ? <p className="oh-sa-users-muted">لا توجد إجابات محفوظة.</p> : null}
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </>
+    </div>
   );
 }

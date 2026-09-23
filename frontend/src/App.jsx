@@ -59,6 +59,7 @@ import {
   SuperAdminFinancialClaimsPage,
   SuperAdminFazatSettlementsPage,
   SuperAdminLegacyFreelancerInvitesPage,
+  LegacyCampaignWorkspacePage,
   LegacyFreelancerJoinPage,
   SuperAdminFinancialCenterPage,
   FinancialEmployeeDetailPage,
@@ -474,6 +475,14 @@ function App() {
                   element={
                     <RequireStaffPage permission={LEGACY_FREELANCERS_MANAGE_PERMISSION}>
                       <SuperAdminLegacyFreelancerInvitesPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/legacy-freelancers/campaigns/:campaignId"
+                  element={
+                    <RequireStaffPage permission={LEGACY_FREELANCERS_MANAGE_PERMISSION}>
+                      <LegacyCampaignWorkspacePage />
                     </RequireStaffPage>
                   }
                 />

@@ -21,8 +21,9 @@ describe("legacy institution link UI", () => {
     assert.match(src, /adminListInstitutionsRequest\(\{\s*status:\s*["']active["'],\s*limit:\s*100\s*\}/);
     assert.match(src, /institutionId:\s*form\.institutionId/);
     assert.match(src, /updateLegacyFreelancerInviteRequest/);
-    assert.match(src, /كل فريلانسر يسجل من خلال هذه الحملة/);
-    assert.match(src, /resolveCampaignInstitutionLabel/);
+    assert.match(src, /resolveInstitutionLabel/);
+    assert.match(src, /بدون مؤسسة/);
+    assert.match(src, /oh-legacy-campaign-card/);
   });
 
   it("manual legacy create form includes optional institutionId", () => {

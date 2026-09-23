@@ -97,11 +97,13 @@ describe("admin service wiring", () => {
     assert.ok(rbac.includes("profile") && rbac.includes("password"));
   });
 
-  it("invite registration sets SHARED_INVITE and identity/signed docs", () => {
+  it("invite registration sets SHARED_INVITE and identity; ignores public signed docs", () => {
     assert.match(invite, /SHARED_INVITE/);
     assert.match(invite, /require_id_front|requireIdFront/);
-    assert.match(invite, /signedDocumentTypeIds/);
     assert.match(invite, /idFront/);
+    assert.match(invite, /Do NOT persist signed docs from public registration/);
+    assert.match(invite, /documentRequirements:\s*\[\]/);
+    assert.match(invite, /workFields|normalizeLegacyWorkFields/);
   });
 
   it("package assignment uses LEGACY_ADMIN_ASSIGNMENT and not Stripe", () => {
@@ -118,11 +120,19 @@ describe("frontend admin center tabs", () => {
     assert.match(page, /الأوراق والعقود|LegacyDocumentsPanel/);
   });
 
-  it("join page supports identity and signed docs", () => {
+  it("join page supports identity and work fields; no public signed-contract UI", () => {
     const join = read("../frontend/src/pages/LegacyFreelancerJoinPage.jsx");
     assert.match(join, /requireIdFront|idFront|الهوية/);
-    assert.match(join, /documentRequirements|signedDocument|الأوراق/);
+    assert.match(join, /مجال العمل/);
+    assert.match(join, /content_writing|LEGACY_WORK_FIELDS/);
+    assert.match(join, /رقم الهاتف \*/);
+    assert.match(join, /\+9627XXXXXXXX/);
     assert.match(join, /FormData|multipart/i);
+    assert.doesNotMatch(join, /عقد مقاولة/);
+    assert.doesNotMatch(join, /عقد تدريب/);
+    assert.doesNotMatch(join, /documentRequirements/);
+    assert.doesNotMatch(join, /signedDocumentTypeIds/);
+    assert.doesNotMatch(join, /countryCode|مفتاح الدولة|phoneCountryCode/);
   });
 
   it("AuthGuards redirect mustChangePassword users", () => {

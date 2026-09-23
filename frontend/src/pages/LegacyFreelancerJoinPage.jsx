@@ -12,7 +12,11 @@ import {
   legacyFreelancerRegisterRequest,
 } from "../services/api";
 import { getAuthApiErrorMessage } from "../utils/apiErrorMessage";
-import { ARAB_COUNTRIES, DEFAULT_DIAL_CODE } from "../constants/arabCountries";
+import { ARAB_COUNTRIES } from "../constants/arabCountries";
+import {
+  LEGACY_WORK_FIELDS,
+  WORK_FIELDS_REQUIRED_MESSAGE,
+} from "../constants/legacyFreelancerWorkFields";
 
 const fieldLabel = tw.authFieldLabel;
 const fieldInput = tw.authInputNoIcon;
@@ -113,15 +117,14 @@ export default function LegacyFreelancerJoinPage() {
   const [success, setSuccess] = useState("");
 
   const [email, setEmail] = useState("");
-  const [dial, setDial] = useState(DEFAULT_DIAL_CODE);
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [country, setCountry] = useState("JO");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [answers, setAnswers] = useState({});
-  const [signedDocumentTypeIds, setSignedDocumentTypeIds] = useState([]);
+  const [workFields, setWorkFields] = useState([]);
   const [idFrontFile, setIdFrontFile] = useState(null);
   const [idBackFile, setIdBackFile] = useState(null);
 
@@ -136,7 +139,7 @@ export default function LegacyFreelancerJoinPage() {
         if (!cancelled) {
           setPreview(res?.data || null);
           setAnswers({});
-          setSignedDocumentTypeIds([]);
+          setWorkFields([]);
           setIdFrontFile(null);
           setIdBackFile(null);
         }
@@ -194,10 +197,14 @@ export default function LegacyFreelancerJoinPage() {
     setAnswers((prev) => ({ ...prev, [key]: value }));
   };
 
-  const documentRequirements = useMemo(
-    () => (Array.isArray(preview?.documentRequirements) ? preview.documentRequirements : []),
-    [preview],
-  );
+  const toggleWorkField = (key, checked) => {
+    setWorkFields((prev) => {
+      const set = new Set(prev);
+      if (checked) set.add(key);
+      else set.delete(key);
+      return [...set];
+    });
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -211,6 +218,10 @@ export default function LegacyFreelancerJoinPage() {
       setFormError("يجب الموافقة على الشروط والأحكام وسياسة الخصوصية.");
       return;
     }
+    if (!workFields.length) {
+      setFormError(WORK_FIELDS_REQUIRED_MESSAGE);
+      return;
+    }
     if (preview?.requireIdFront && !idFrontFile) {
       setFormError("صورة الهوية الأمامية مطلوبة.");
       return;
@@ -218,13 +229,6 @@ export default function LegacyFreelancerJoinPage() {
     if (preview?.requireIdBack && !idBackFile) {
       setFormError("صورة الهوية الخلفية مطلوبة.");
       return;
-    }
-    const requiredDocs = documentRequirements.filter((d) => d.isRequired);
-    for (const d of requiredDocs) {
-      if (!signedDocumentTypeIds.map(String).includes(String(d.documentTypeId))) {
-        setFormError(`يجب تأكيد توقيع: ${d.labelAr}`);
-        return;
-      }
     }
     setSubmitting(true);
     try {
@@ -234,12 +238,13 @@ export default function LegacyFreelancerJoinPage() {
           payloadAnswers[f.key] = answers[f.key];
         }
       }
+      const phoneValue = String(phone || "").trim();
       const hasFiles = Boolean(idFrontFile || idBackFile);
       const basePayload = {
         campaignSlug,
         token,
         email,
-        phone: { countryCode: dial, number: phoneNumber },
+        phone: phoneValue,
         password,
         passwordConfirm,
         country,
@@ -248,7 +253,7 @@ export default function LegacyFreelancerJoinPage() {
         familyName: payloadAnswers.family_name,
         city: payloadAnswers.city,
         answers: payloadAnswers,
-        signedDocumentTypeIds,
+        workFields,
         termsAccepted: true,
         privacyAccepted: true,
       };
@@ -259,7 +264,7 @@ export default function LegacyFreelancerJoinPage() {
         fd.append("campaignSlug", campaignSlug);
         fd.append("token", token);
         fd.append("email", email);
-        fd.append("phone", JSON.stringify({ countryCode: dial, number: phoneNumber }));
+        fd.append("phone", phoneValue);
         fd.append("password", password);
         fd.append("passwordConfirm", passwordConfirm);
         fd.append("country", country);
@@ -268,7 +273,7 @@ export default function LegacyFreelancerJoinPage() {
         if (payloadAnswers.family_name) fd.append("familyName", String(payloadAnswers.family_name));
         if (payloadAnswers.city) fd.append("city", String(payloadAnswers.city));
         fd.append("answers", JSON.stringify(payloadAnswers));
-        fd.append("signedDocumentTypeIds", JSON.stringify(signedDocumentTypeIds));
+        fd.append("workFields", JSON.stringify(workFields));
         fd.append("termsAccepted", "true");
         fd.append("privacyAccepted", "true");
         if (idFrontFile) fd.append("idFront", idFrontFile);
@@ -349,6 +354,26 @@ export default function LegacyFreelancerJoinPage() {
                 </fieldset>
               ))}
 
+              <fieldset className="rounded-xl border border-slate-200 p-3">
+                <legend className="px-1 text-sm font-semibold text-slate-800">مجال العمل</legend>
+                <p className="mt-1 text-xs text-slate-500">اختر مجال أو مجالات العمل التي تمارسها.</p>
+                <div className="mt-2 flex flex-col gap-2">
+                  {LEGACY_WORK_FIELDS.map((wf) => {
+                    const checked = workFields.includes(wf.key);
+                    return (
+                      <label key={wf.key} className="flex items-start gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => toggleWorkField(wf.key, e.target.checked)}
+                        />
+                        <span>{wf.labelAr}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
               {preview?.requireIdFront || preview?.requireIdBack ? (
                 <fieldset className="rounded-xl border border-slate-200 p-3">
                   <legend className="px-1 text-sm font-semibold text-slate-800">الهوية</legend>
@@ -381,42 +406,6 @@ export default function LegacyFreelancerJoinPage() {
                 </fieldset>
               ) : null}
 
-              {documentRequirements.length ? (
-                <fieldset className="rounded-xl border border-slate-200 p-3">
-                  <legend className="px-1 text-sm font-semibold text-slate-800">الأوراق والعقود الموقعة</legend>
-                  <div className="mt-2 flex flex-col gap-2">
-                    {documentRequirements.map((doc) => {
-                      const id = String(doc.documentTypeId);
-                      const checked = signedDocumentTypeIds.map(String).includes(id);
-                      return (
-                        <label key={id} className="flex items-start gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            required={Boolean(doc.isRequired)}
-                            onChange={(e) => {
-                              setSignedDocumentTypeIds((prev) => {
-                                const set = new Set(prev.map(String));
-                                if (e.target.checked) set.add(id);
-                                else set.delete(id);
-                                return [...set];
-                              });
-                            }}
-                          />
-                          <span>
-                            {doc.labelAr}
-                            {doc.isRequired ? " *" : ""}
-                            {doc.description ? (
-                              <span className="mt-0.5 block text-xs text-slate-500">{doc.description}</span>
-                            ) : null}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </fieldset>
-              ) : null}
-
               <fieldset className="rounded-xl border border-slate-200 p-3">
                 <legend className="px-1 text-sm font-semibold text-slate-800">حساب الدخول</legend>
                 <div className="mt-2 flex flex-col gap-3">
@@ -431,28 +420,18 @@ export default function LegacyFreelancerJoinPage() {
                       onChange={(e) => setEmail(e.target.value)}
                     />
                   </label>
-                  <div className="grid grid-cols-[110px_1fr] gap-2">
-                    <label className={fieldLabel}>
-                      مفتاح
-                      <select className={fieldInput} value={dial} onChange={(e) => setDial(e.target.value)} dir="ltr">
-                        {ARAB_COUNTRIES.map((c) => (
-                          <option key={c.code} value={c.dialCode}>
-                            {c.dialCode}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className={fieldLabel}>
-                      رقم الهاتف *
-                      <input
-                        className={fieldInput}
-                        required
-                        dir="ltr"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                      />
-                    </label>
-                  </div>
+                  <label className={fieldLabel}>
+                    رقم الهاتف *
+                    <input
+                      className={fieldInput}
+                      required
+                      dir="ltr"
+                      placeholder="+9627XXXXXXXX"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      autoComplete="tel"
+                    />
+                  </label>
                   <label className={fieldLabel}>
                     الدولة
                     <select className={fieldInput} value={country} onChange={(e) => setCountry(e.target.value)}>

@@ -185,9 +185,11 @@ describe("contract validation stores canonical national_id", () => {
 
 describe("admin UI + freelancer dashboard + campaign 2 untouched", () => {
   it("admin redemption table shows رقم الفريلانسر masked field", () => {
-    const admin = read("../frontend/src/pages/dashboard/legacyFreelancerAdmin/LegacyCampaignsPanel.jsx");
-    assert.match(admin, /رقم الفريلانسر/);
-    assert.match(admin, /freelancerMemberIdMasked/);
+    const freelancers = read(
+      "../frontend/src/pages/dashboard/legacyFreelancerAdmin/LegacyFreelancersPanel.jsx",
+    );
+    assert.match(freelancers, /رقم العضوية|رقم الفريلانسر/);
+    assert.match(freelancers, /freelancerMemberIdMasked/);
   });
 
   it("freelancer settings shows رقم الفريلانسر for legacy only", () => {

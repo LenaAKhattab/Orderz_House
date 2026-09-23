@@ -26,20 +26,42 @@ const {
   isLegacyMemberIdUniqueViolation,
   duplicateNationalIdError,
 } = require("../utils/legacyFreelancerMemberId");
+const {
+  encryptInviteToken,
+  decryptInviteToken,
+  isInviteTokenCryptoAvailable,
+} = require("../utils/legacyInviteTokenCrypto");
 
 const BCRYPT_ROUNDS = 12;
 const TOKEN_BYTES = 32;
 const ACCOUNT_ID_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const MAX_ACCOUNT_ID_ATTEMPTS = 25;
 
+/** Admin-facing copy when hash-only campaigns cannot reconstruct the live URL. */
+const INVITE_LINK_UNRECOVERABLE_MESSAGE =
+  "لا يمكن عرض الرابط الحالي لهذه الحملة لأنه أُنشئ قبل دعم استرجاع الرابط. يمكنك إعادة توليد الرابط مرة واحدة لتفعيل العرض والنسخ مستقبلاً.";
+
 const AUDIT_ACTIONS = Object.freeze({
   CAMPAIGN_CREATED: "LEGACY_FREELANCER_CAMPAIGN_CREATED",
   CAMPAIGN_UPDATED: "LEGACY_FREELANCER_CAMPAIGN_UPDATED",
   CAMPAIGN_REVOKED: "LEGACY_FREELANCER_CAMPAIGN_REVOKED",
+  CAMPAIGN_ARCHIVED: "LEGACY_FREELANCER_CAMPAIGN_ARCHIVED",
+  CAMPAIGN_DELETED: "LEGACY_FREELANCER_CAMPAIGN_DELETED",
+  CAMPAIGN_TOKEN_REGENERATED: "LEGACY_FREELANCER_CAMPAIGN_TOKEN_REGENERATED",
+  CAMPAIGN_LINK_VIEWED_ADMIN: "LEGACY_FREELANCER_CAMPAIGN_LINK_VIEWED_ADMIN",
   INVITE_REDEEMED: "LEGACY_FREELANCER_INVITE_REDEEMED",
   CAMPAIGN_INSTITUTION_CHANGED: "LEGACY_CAMPAIGN_INSTITUTION_CHANGED",
   REGISTRATION_JOINED_INSTITUTION: "LEGACY_REGISTRATION_JOINED_INSTITUTION",
 });
+
+function wrapInviteTokenForStorage(plaintextToken) {
+  if (!isInviteTokenCryptoAvailable()) return null;
+  try {
+    return encryptInviteToken(plaintextToken);
+  } catch {
+    return null;
+  }
+}
 
 function addMonthsUtc(date, months) {
   const d = new Date(date);
@@ -174,7 +196,7 @@ function campaignUnavailableError(campaign) {
   if (!campaign) {
     return createPublicApiError("تم إيقاف رابط الدعوة.", 404, "LEGACY_INVITE_NOT_FOUND");
   }
-  if (campaign.revoked_at || campaign.is_active === false) {
+  if (campaign.archived_at || campaign.revoked_at || campaign.is_active === false) {
     return createPublicApiError("تم إيقاف رابط الدعوة.", 410, "LEGACY_INVITE_REVOKED");
   }
   if (campaign.expires_at && new Date(campaign.expires_at).getTime() <= Date.now()) {
@@ -189,6 +211,8 @@ function campaignUnavailableError(campaign) {
 function mapCampaignPublic(row, { includeJoinUrl = false, plaintextToken = null } = {}) {
   if (!row) return null;
   const remaining = Math.max(0, Number(row.max_redemptions) - Number(row.used_count));
+  const isArchived = Boolean(row.archived_at);
+  const hasRecoverableInviteLink = Boolean(row.invite_token_encrypted);
   const out = {
     id: String(row.id),
     name: row.name,
@@ -205,12 +229,19 @@ function mapCampaignPublic(row, { includeJoinUrl = false, plaintextToken = null 
     remainingSeats: remaining,
     seatsLimited: true,
     expiresAt: row.expires_at,
-    isActive: Boolean(row.is_active) && !row.revoked_at,
+    isActive: Boolean(row.is_active) && !row.revoked_at && !isArchived,
+    isArchived,
+    archivedAt: row.archived_at || null,
     notes: row.notes || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     revokedAt: row.revoked_at || null,
     createdByAdminId: row.created_by_admin_id != null ? String(row.created_by_admin_id) : null,
+    requireIdFront: row.require_id_front != null ? Boolean(row.require_id_front) : true,
+    requireIdBack: row.require_id_back != null ? Boolean(row.require_id_back) : true,
+    // Total successful public preview loads — not unique visitors.
+    linkViewCount: Number(row.link_view_count || 0),
+    hasRecoverableInviteLink,
   };
   if (includeJoinUrl && plaintextToken) {
     out.joinUrl = buildPublicJoinUrl(row.slug, plaintextToken);
@@ -354,6 +385,7 @@ async function createCampaign({
 
   const plaintextToken = generateSecureToken();
   const tokenHash = sha256Hex(plaintextToken);
+  const tokenEncrypted = wrapInviteTokenForStorage(plaintextToken);
   const resolved = await resolvePlanByCode(defaultPlanCode);
 
   const client = await pool.connect();
@@ -365,8 +397,9 @@ async function createCampaign({
         `INSERT INTO legacy_freelancer_invite_campaigns (
            name, slug, secure_token_hash, created_by_admin_id,
            default_plan_id, default_plan_code, default_trust_level, default_category_id,
-           max_redemptions, used_count, expires_at, is_active, notes, institution_id
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,$10,$11,$12,$13)
+           max_redemptions, used_count, expires_at, is_active, notes, institution_id,
+           invite_token_encrypted, invite_token_wrapped_at
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,$10,$11,$12,$13,$14,CASE WHEN $14::text IS NULL THEN NULL ELSE NOW() END)
          RETURNING *`,
         [
           safeName,
@@ -382,40 +415,70 @@ async function createCampaign({
           Boolean(isActive),
           notes != null ? String(notes).slice(0, 4000) : null,
           resolvedInstitutionId,
+          tokenEncrypted,
         ],
       );
       campaign = rows[0];
     } catch (insErr) {
       if (!(insErr && insErr.code === "42703")) throw insErr;
-      const { rows } = await client.query(
-        `INSERT INTO legacy_freelancer_invite_campaigns (
-           name, slug, secure_token_hash, created_by_admin_id,
-           default_plan_id, default_plan_code, default_trust_level, default_category_id,
-           max_redemptions, used_count, expires_at, is_active, notes
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,$10,$11,$12)
-         RETURNING *`,
-        [
-          safeName,
-          safeSlug,
-          tokenHash,
-          Number(actorAdminId),
-          resolved.planId,
-          resolved.planCode,
-          trust,
-          defaultCategoryId != null && defaultCategoryId !== "" ? Number(defaultCategoryId) : null,
-          maxSeats,
-          expires.toISOString(),
-          Boolean(isActive),
-          notes != null ? String(notes).slice(0, 4000) : null,
-        ],
-      );
-      campaign = rows[0];
-      if (resolvedInstitutionId != null) {
-        throw createPublicApiError(
-          "عمود ربط المؤسسة غير متاح بعد. طبّق ترحيل 192 أولاً.",
-          500,
-          "MIGRATION_REQUIRED",
+      // Fallback without encrypted-token / institution columns (pre-195 / pre-192).
+      try {
+        const { rows } = await client.query(
+          `INSERT INTO legacy_freelancer_invite_campaigns (
+             name, slug, secure_token_hash, created_by_admin_id,
+             default_plan_id, default_plan_code, default_trust_level, default_category_id,
+             max_redemptions, used_count, expires_at, is_active, notes, institution_id
+           ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,$10,$11,$12,$13)
+           RETURNING *`,
+          [
+            safeName,
+            safeSlug,
+            tokenHash,
+            Number(actorAdminId),
+            resolved.planId,
+            resolved.planCode,
+            trust,
+            defaultCategoryId != null && defaultCategoryId !== "" ? Number(defaultCategoryId) : null,
+            maxSeats,
+            expires.toISOString(),
+            Boolean(isActive),
+            notes != null ? String(notes).slice(0, 4000) : null,
+            resolvedInstitutionId,
+          ],
         );
+        campaign = rows[0];
+      } catch (insErr2) {
+        if (!(insErr2 && insErr2.code === "42703")) throw insErr2;
+        const { rows } = await client.query(
+          `INSERT INTO legacy_freelancer_invite_campaigns (
+             name, slug, secure_token_hash, created_by_admin_id,
+             default_plan_id, default_plan_code, default_trust_level, default_category_id,
+             max_redemptions, used_count, expires_at, is_active, notes
+           ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,$10,$11,$12)
+           RETURNING *`,
+          [
+            safeName,
+            safeSlug,
+            tokenHash,
+            Number(actorAdminId),
+            resolved.planId,
+            resolved.planCode,
+            trust,
+            defaultCategoryId != null && defaultCategoryId !== "" ? Number(defaultCategoryId) : null,
+            maxSeats,
+            expires.toISOString(),
+            Boolean(isActive),
+            notes != null ? String(notes).slice(0, 4000) : null,
+          ],
+        );
+        campaign = rows[0];
+        if (resolvedInstitutionId != null) {
+          throw createPublicApiError(
+            "عمود ربط المؤسسة غير متاح بعد. طبّق ترحيل 192 أولاً.",
+            500,
+            "MIGRATION_REQUIRED",
+          );
+        }
       }
     }
     await writeAudit(client, {
@@ -466,6 +529,7 @@ async function updateCampaign({
   actorAdminId,
   campaignId,
   name,
+  slug,
   maxRedemptions,
   expiresAt,
   defaultPlanCode,
@@ -538,11 +602,32 @@ async function updateCampaign({
         String(existing.institution_id || "") !== String(nextInstitutionId || "");
     }
 
+    let nextSlug = existing.slug;
+    let slugChanged = false;
+    if (slug != null && String(slug).trim()) {
+      const candidate = normalizeSlug(slug);
+      if (!candidate || candidate.length < 3) {
+        throw createPublicApiError("رابط الحملة غير صالح.", 400, "VALIDATION_ERROR");
+      }
+      if (candidate !== existing.slug) {
+        if (Number(existing.used_count) > 0) {
+          throw createPublicApiError(
+            "لا يمكن تغيير الرابط بعد وجود مسجّلين في الحملة.",
+            400,
+            "SLUG_LOCKED",
+          );
+        }
+        nextSlug = candidate;
+        slugChanged = true;
+      }
+    }
+
     let rows;
     try {
       ({ rows } = await client.query(
         `UPDATE legacy_freelancer_invite_campaigns SET
            name = COALESCE($2, name),
+           slug = $19,
            max_redemptions = $3,
            expires_at = $4,
            default_plan_id = $5,
@@ -576,9 +661,13 @@ async function updateCampaign({
           requireIdBack != null ? Boolean(requireIdBack) : true,
           institutionId !== undefined,
           nextInstitutionId,
+          nextSlug,
         ],
       ));
     } catch (updErr) {
+      if (updErr && updErr.code === "23505" && slugChanged) {
+        throw createPublicApiError("رابط الحملة مستخدم مسبقاً. اختر slug مختلفاً.", 409, "SLUG_TAKEN");
+      }
       if (!(updErr && updErr.code === "42703")) throw updErr;
       if (institutionId !== undefined && institutionChanged) {
         throw createPublicApiError(
@@ -630,11 +719,15 @@ async function updateCampaign({
       campaignId,
       detail: {
         name: rows[0].name,
+        slug: rows[0].slug,
+        slugChanged,
         maxRedemptions: rows[0].max_redemptions,
         isActive: rows[0].is_active,
         defaultTrustLevel: rows[0].default_trust_level,
         defaultPlanCode: rows[0].default_plan_code,
         institutionId: rows[0].institution_id != null ? String(rows[0].institution_id) : null,
+        requireIdFront: rows[0].require_id_front,
+        requireIdBack: rows[0].require_id_back,
       },
     });
     if (institutionChanged) {
@@ -693,23 +786,39 @@ async function revokeCampaign({ actorAdminId, campaignId }) {
 async function regenerateCampaignToken({ actorAdminId, campaignId }) {
   const plaintextToken = generateSecureToken();
   const tokenHash = sha256Hex(plaintextToken);
+  const tokenEncrypted = wrapInviteTokenForStorage(plaintextToken);
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    const { rows } = await client.query(
-      `UPDATE legacy_freelancer_invite_campaigns SET
-         secure_token_hash = $2,
-         updated_at = NOW()
-       WHERE id = $1::bigint
-       RETURNING *`,
-      [Number(campaignId), tokenHash],
-    );
+    let rows;
+    try {
+      ({ rows } = await client.query(
+        `UPDATE legacy_freelancer_invite_campaigns SET
+           secure_token_hash = $2,
+           invite_token_encrypted = $3,
+           invite_token_wrapped_at = CASE WHEN $3::text IS NULL THEN NULL ELSE NOW() END,
+           updated_at = NOW()
+         WHERE id = $1::bigint
+         RETURNING *`,
+        [Number(campaignId), tokenHash, tokenEncrypted],
+      ));
+    } catch (updErr) {
+      if (!(updErr && updErr.code === "42703")) throw updErr;
+      ({ rows } = await client.query(
+        `UPDATE legacy_freelancer_invite_campaigns SET
+           secure_token_hash = $2,
+           updated_at = NOW()
+         WHERE id = $1::bigint
+         RETURNING *`,
+        [Number(campaignId), tokenHash],
+      ));
+    }
     if (!rows[0]) throw createPublicApiError("الحملة غير موجودة.", 404, "NOT_FOUND");
     await writeAudit(client, {
-      action: AUDIT_ACTIONS.CAMPAIGN_UPDATED,
+      action: AUDIT_ACTIONS.CAMPAIGN_TOKEN_REGENERATED,
       actorAdminId,
       campaignId,
-      detail: { tokenRegenerated: true, slug: rows[0].slug },
+      detail: { slug: rows[0].slug, recoverable: Boolean(tokenEncrypted) },
     });
     await client.query("COMMIT");
     return mapCampaignPublic(rows[0], { includeJoinUrl: true, plaintextToken });
@@ -783,6 +892,22 @@ async function previewInvite({ campaignSlug, token }) {
   const campaign = await loadCampaignBySlugForToken(campaignSlug, token);
   const err = campaignUnavailableError(campaign);
   if (err) throw err;
+
+  // link_view_count = total successful public preview loads (not unique visitors).
+  try {
+    await pool.query(
+      `UPDATE legacy_freelancer_invite_campaigns
+          SET link_view_count = COALESCE(link_view_count, 0) + 1
+        WHERE id = $1::bigint`,
+      [Number(campaign.id)],
+    );
+  } catch (viewErr) {
+    if (!(viewErr && viewErr.code === "42703")) {
+      // Non-fatal: preview should still succeed if counter column missing.
+      console.warn("[legacyInvite] link_view_count increment skipped:", viewErr.message || viewErr);
+    }
+  }
+
   const contractFields = require("./legacyFreelancerContractFieldsService");
   let formConfig;
   try {
@@ -796,30 +921,13 @@ async function previewInvite({ campaignSlug, token }) {
     }
   }
   const base = mapCampaignPreview(campaign);
-  let documentRequirements = [];
-  try {
-    const adminCenter = require("./legacyFreelancerAdminService");
-    const allReqs = await adminCenter.getCampaignDocumentRequirements(campaign.id);
-    documentRequirements = allReqs
-      .filter((r) => r.isEnabled && r.typeIsActive)
-      .map((r) => ({
-        documentTypeId: r.documentTypeId,
-        code: r.code,
-        labelAr: r.labelAr,
-        description: r.description,
-        isRequired: r.isRequired,
-        sortOrder: r.sortOrder,
-      }));
-  } catch (docErr) {
-    if (!(docErr && (docErr.code === "42P01" || docErr.code === "42703"))) {
-      throw docErr;
-    }
-  }
+  // Signed documents are Admin-owned. Do not expose requirements on the public preview —
+  // freelancers must not self-confirm company contracts during registration.
   return {
     ...base,
     formFields: contractFields.buildPublicFormFields(formConfig),
     sections: (formConfig.sections || []).map((s) => ({ key: s.key, label: s.labelAr, sortOrder: s.sortOrder })),
-    documentRequirements,
+    documentRequirements: [],
   };
 }
 
@@ -1049,6 +1157,24 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null, 
     ? String(payload.internalReference).trim().slice(0, 120)
     : null;
 
+  const {
+    normalizeLegacyWorkFields,
+    WORK_FIELDS_REQUIRED_MESSAGE,
+    parseDetailedSkillsPrograms,
+  } = require("../constants/legacyFreelancerWorkFields");
+  let workFieldKeys;
+  try {
+    workFieldKeys = normalizeLegacyWorkFields(
+      payload.workFields ?? payload.work_fields,
+      { required: true },
+    );
+  } catch (wfErr) {
+    if (wfErr && wfErr.code === "WORK_FIELDS_REQUIRED") {
+      throw createPublicApiError(WORK_FIELDS_REQUIRED_MESSAGE, 400, "WORK_FIELDS_REQUIRED");
+    }
+    throw wfErr;
+  }
+
   let categories = null;
   if (Array.isArray(payload.categories) && payload.categories.length > 0) {
     categories = [...new Set(payload.categories.map(String))].sort();
@@ -1224,13 +1350,9 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null, 
 
     const accountId = await generateUniqueAccountId(client);
     const nowIso = new Date().toISOString();
-    const skillsArr = canonicalUserPatches.skills
-      ? String(canonicalUserPatches.skills)
-          .split(/[,|\n]/)
-          .map((s) => s.trim())
-          .filter(Boolean)
-          .slice(0, 40)
-      : null;
+    // users.skills = detailed skills/programs from contract field skills_programs.
+    // users.legacy_work_areas = general work areas (separate column; migration 196).
+    const skillsArr = parseDetailedSkillsPrograms(canonicalUserPatches.skills);
     const insertParamsBase = [
       accountId,
       names.firstName,
@@ -1268,18 +1390,9 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null, 
       }
     }
 
-    let signedDocumentTypeIds = payload.signedDocumentTypeIds ?? payload.signed_document_type_ids ?? [];
-    if (typeof signedDocumentTypeIds === "string") {
-      try {
-        signedDocumentTypeIds = JSON.parse(signedDocumentTypeIds);
-      } catch (_) {
-        signedDocumentTypeIds = signedDocumentTypeIds
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
-      }
-    }
-    if (!Array.isArray(signedDocumentTypeIds)) signedDocumentTypeIds = [];
+    let signedDocumentTypeIds = [];
+    // Intentionally ignore any client-submitted signedDocumentTypeIds.
+    // Signed documents are Admin-owned and must not be set via public self-registration.
 
     let userRows;
     let entryMethodColumnReady = true;
@@ -1425,6 +1538,16 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null, 
 
     await ensureUserRole({ userId: user.id, roleName: ROLES.FREELANCER, client });
 
+    // Persist general work areas without touching detailed users.skills.
+    try {
+      await client.query(
+        `UPDATE users SET legacy_work_areas = $1::text[] WHERE id = $2::bigint`,
+        [workFieldKeys, user.id],
+      );
+    } catch (waErr) {
+      if (!(waErr && waErr.code === "42703")) throw waErr;
+    }
+
     const subscription = await assignLegacySubscription(client, {
       freelancerUserId: user.id,
       planId: lockedCampaign.default_plan_id || ORDERZHOUSE_FREE_PLAN_ID,
@@ -1464,11 +1587,7 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null, 
           uploadSource: "SELF_REGISTRATION",
         });
       }
-      await adminCenter.validateAndPersistRegistrationSignedDocs(client, {
-        campaignId: lockedCampaign.id,
-        userId: user.id,
-        signedDocumentTypeIds,
-      });
+      // Do NOT persist signed docs from public registration — Admin marks them later.
     } catch (idDocErr) {
       if (!(idDocErr && (idDocErr.code === "42P01" || idDocErr.code === "42703"))) {
         throw idDocErr;
@@ -1500,7 +1619,8 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null, 
           trustLevel: lockedCampaign.default_trust_level,
           planCode: lockedCampaign.default_plan_code,
           contractFieldKeys: Object.keys(normalized),
-          signedDocumentTypeIds,
+          signedDocumentTypeIds: [],
+          workFields: workFieldKeys,
           hasIdentityFront: Boolean(idFrontFile),
           hasIdentityBack: Boolean(idBackFile),
         }),
@@ -1523,12 +1643,13 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null, 
       }
     }
 
-    // Apply remaining canonical patches (names/skills already in INSERT)
+    // Apply remaining canonical patches (names already in INSERT).
+    // Keep skills patch only when INSERT stored null (field disabled / empty).
     const remainingPatches = { ...canonicalUserPatches };
     delete remainingPatches.first_name;
     delete remainingPatches.father_name;
     delete remainingPatches.family_name;
-    delete remainingPatches.skills;
+    if (skillsArr) delete remainingPatches.skills;
     if (Object.keys(remainingPatches).length) {
       await contractFields.applyCanonicalUserPatches(client, user.id, remainingPatches);
     }
@@ -1552,7 +1673,8 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null, 
         privacyAcceptedAt: nowIso,
         contractAnswerKeys: Object.keys(normalized),
         entryMethod: "SHARED_INVITE",
-        signedDocumentCount: signedDocumentTypeIds.length,
+        signedDocumentCount: 0,
+        workFields: workFieldKeys,
         timestamp: nowIso,
       },
     });
@@ -1623,12 +1745,273 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null, 
   }
 }
 
+async function getCampaignInviteLink({ actorAdminId, campaignId }) {
+  let row;
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, slug, invite_token_encrypted, archived_at, is_active, revoked_at
+         FROM legacy_freelancer_invite_campaigns
+        WHERE id = $1::bigint
+        LIMIT 1`,
+      [Number(campaignId)],
+    );
+    row = rows[0];
+  } catch (e) {
+    if (!(e && e.code === "42703")) throw e;
+    const { rows } = await pool.query(
+      `SELECT id, slug, is_active, revoked_at
+         FROM legacy_freelancer_invite_campaigns
+        WHERE id = $1::bigint
+        LIMIT 1`,
+      [Number(campaignId)],
+    );
+    row = rows[0];
+  }
+  if (!row) throw createPublicApiError("الحملة غير موجودة.", 404, "NOT_FOUND");
+
+  const encrypted = row.invite_token_encrypted || null;
+  if (!encrypted) {
+    return {
+      recoverable: false,
+      joinUrl: null,
+      message: INVITE_LINK_UNRECOVERABLE_MESSAGE,
+    };
+  }
+
+  const plaintext = decryptInviteToken(encrypted);
+  if (!plaintext) {
+    return {
+      recoverable: false,
+      joinUrl: null,
+      message: INVITE_LINK_UNRECOVERABLE_MESSAGE,
+    };
+  }
+
+  // Verify ciphertext still matches current hash (regenerate/invalidate safety).
+  const { rows: hashRows } = await pool.query(
+    `SELECT secure_token_hash FROM legacy_freelancer_invite_campaigns WHERE id = $1::bigint LIMIT 1`,
+    [Number(campaignId)],
+  );
+  if (!hashRows[0] || sha256Hex(plaintext) !== hashRows[0].secure_token_hash) {
+    return {
+      recoverable: false,
+      joinUrl: null,
+      message: INVITE_LINK_UNRECOVERABLE_MESSAGE,
+    };
+  }
+
+  try {
+    await writeAudit(pool, {
+      action: AUDIT_ACTIONS.CAMPAIGN_LINK_VIEWED_ADMIN,
+      actorAdminId,
+      campaignId,
+      detail: { slug: row.slug },
+    });
+  } catch {
+    /* non-fatal */
+  }
+
+  return {
+    recoverable: true,
+    joinUrl: buildPublicJoinUrl(row.slug, plaintext),
+    message: null,
+  };
+}
+
+async function getCampaignWorkspaceStats(campaignId) {
+  const campaign = await getCampaignById(campaignId);
+  if (!campaign) throw createPublicApiError("الحملة غير موجودة.", 404, "NOT_FOUND");
+
+  const cid = Number(campaignId);
+  let activeRegistrants = 0;
+  let identityIncomplete = 0;
+  let packagesAssigned = 0;
+  let historicalMoneyTotal = 0;
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE u.is_active)::int AS active_registrants,
+         COUNT(*) FILTER (
+           WHERE NOT (
+             COALESCE(idc.front_ok, FALSE) AND COALESCE(idc.back_ok, FALSE)
+           )
+         )::int AS identity_incomplete,
+         COUNT(*) FILTER (
+           WHERE fs.id IS NOT NULL
+             AND fs.status = 'active'
+             AND (fs.expiry_date IS NULL OR fs.expiry_date > NOW())
+         )::int AS packages_assigned,
+         COALESCE(SUM(hm.money_total), 0)::numeric AS historical_money_total
+       FROM users u
+       LEFT JOIN LATERAL (
+         SELECT
+           BOOL_OR(side = 'FRONT' AND status = 'ACTIVE') AS front_ok,
+           BOOL_OR(side = 'BACK' AND status = 'ACTIVE') AS back_ok
+           FROM legacy_freelancer_identity_documents d
+          WHERE d.user_id = u.id
+       ) idc ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT fs0.*
+           FROM freelancer_subscriptions fs0
+          WHERE fs0.freelancer_user_id = u.id AND fs0.is_current = TRUE
+          ORDER BY fs0.id DESC
+          LIMIT 1
+       ) fs ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT COALESCE(SUM(m.amount) FILTER (WHERE NOT m.is_voided), 0) AS money_total
+           FROM legacy_freelancer_historical_money_received m
+          WHERE m.user_id = u.id
+       ) hm ON TRUE
+       WHERE u.legacy_invite_campaign_id = $1::bigint
+         AND u.onboarding_source = 'LEGACY_INVITE'`,
+      [cid],
+    );
+    activeRegistrants = Number(rows[0]?.active_registrants || 0);
+    identityIncomplete = Number(rows[0]?.identity_incomplete || 0);
+    packagesAssigned = Number(rows[0]?.packages_assigned || 0);
+    historicalMoneyTotal = Number(rows[0]?.historical_money_total || 0);
+  } catch (err) {
+    if (!(err && (err.code === "42P01" || err.code === "42703"))) throw err;
+  }
+
+  return {
+    campaign,
+    stats: {
+      linkViews: Number(campaign.linkViewCount || 0),
+      successfulRegistrations: Number(campaign.usedCount || 0),
+      remainingSeats: Number(campaign.remainingSeats || 0),
+      usedSeats: Number(campaign.usedCount || 0),
+      activeRegistrants,
+      identityIncompleteCount: identityIncomplete,
+      historicalMoneyTotal,
+      packagesAssignedCount: packagesAssigned,
+    },
+  };
+}
+
+/**
+ * Safe delete: hard-delete only unused campaigns; otherwise archive+revoke and keep records.
+ */
+async function deleteOrArchiveCampaign({ actorAdminId, campaignId, forceHard = false }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows: existingRows } = await client.query(
+      `SELECT * FROM legacy_freelancer_invite_campaigns WHERE id = $1::bigint FOR UPDATE`,
+      [Number(campaignId)],
+    );
+    const existing = existingRows[0];
+    if (!existing) throw createPublicApiError("الحملة غير موجودة.", 404, "NOT_FOUND");
+
+    let redemptionCount = 0;
+    let linkedUsers = 0;
+    try {
+      const { rows: r1 } = await client.query(
+        `SELECT COUNT(*)::int AS n FROM legacy_freelancer_invite_redemptions WHERE campaign_id = $1::bigint`,
+        [Number(campaignId)],
+      );
+      redemptionCount = Number(r1[0]?.n || 0);
+    } catch (e) {
+      if (!(e && e.code === "42P01")) throw e;
+    }
+    try {
+      const { rows: r2 } = await client.query(
+        `SELECT COUNT(*)::int AS n FROM users WHERE legacy_invite_campaign_id = $1::bigint`,
+        [Number(campaignId)],
+      );
+      linkedUsers = Number(r2[0]?.n || 0);
+    } catch (e) {
+      if (!(e && e.code === "42703")) throw e;
+    }
+
+    const hasHistory =
+      Number(existing.used_count) > 0 || redemptionCount > 0 || linkedUsers > 0;
+
+    if (hasHistory || !forceHard) {
+      if (hasHistory) {
+        let rows;
+        try {
+          ({ rows } = await client.query(
+            `UPDATE legacy_freelancer_invite_campaigns SET
+               is_active = FALSE,
+               revoked_at = COALESCE(revoked_at, NOW()),
+               revoked_by_admin_id = COALESCE(revoked_by_admin_id, $2),
+               archived_at = COALESCE(archived_at, NOW()),
+               archived_by_admin_id = COALESCE(archived_by_admin_id, $2),
+               invite_token_encrypted = NULL,
+               invite_token_wrapped_at = NULL,
+               updated_at = NOW()
+             WHERE id = $1::bigint
+             RETURNING *`,
+            [Number(campaignId), Number(actorAdminId)],
+          ));
+        } catch (archErr) {
+          if (!(archErr && archErr.code === "42703")) throw archErr;
+          ({ rows } = await client.query(
+            `UPDATE legacy_freelancer_invite_campaigns SET
+               is_active = FALSE,
+               revoked_at = COALESCE(revoked_at, NOW()),
+               revoked_by_admin_id = COALESCE(revoked_by_admin_id, $2),
+               updated_at = NOW()
+             WHERE id = $1::bigint
+             RETURNING *`,
+            [Number(campaignId), Number(actorAdminId)],
+          ));
+        }
+        await writeAudit(client, {
+          action: AUDIT_ACTIONS.CAMPAIGN_ARCHIVED,
+          actorAdminId,
+          campaignId,
+          detail: {
+            slug: existing.slug,
+            reason: "has_redemptions_or_registrants",
+            usedCount: Number(existing.used_count),
+            redemptionCount,
+            linkedUsers,
+          },
+        });
+        await client.query("COMMIT");
+        return {
+          mode: "archived",
+          message:
+            "تم أرشفة الحملة وإيقاف الرابط مع الاحتفاظ بسجلات المسجّلين. الحذف النهائي غير متاح لهذه الحملة.",
+          campaign: mapCampaignPublic(rows[0]),
+        };
+      }
+    }
+
+    // Unused campaign: hard delete (CASCADE clears redemptions/fields/requirements).
+    await writeAudit(client, {
+      action: AUDIT_ACTIONS.CAMPAIGN_DELETED,
+      actorAdminId,
+      campaignId,
+      detail: { slug: existing.slug, mode: "hard_delete" },
+    });
+    await client.query(`DELETE FROM legacy_freelancer_invite_campaigns WHERE id = $1::bigint`, [
+      Number(campaignId),
+    ]);
+    await client.query("COMMIT");
+    return {
+      mode: "deleted",
+      message: "تم حذف الحملة غير المستخدمة نهائياً.",
+      campaign: null,
+    };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   AUDIT_ACTIONS,
   TRUST_LEVELS,
   TRAINING_WAIVER_REASON,
   FINAL_EXAM_WAIVER_REASON,
   PLAN_ASSIGNMENT_REASON,
+  INVITE_LINK_UNRECOVERABLE_MESSAGE,
   BCRYPT_ROUNDS,
   sha256Hex,
   generateSecureToken,
@@ -1654,5 +2037,8 @@ module.exports = {
   listRedemptions,
   previewInvite,
   registerLegacyFreelancer,
+  getCampaignInviteLink,
+  getCampaignWorkspaceStats,
+  deleteOrArchiveCampaign,
   evaluateFreelancerTakeOrdersEligibility,
 };

@@ -24,7 +24,6 @@ import DashboardErrorState from "../../../components/dashboard/DashboardErrorSta
 import DashboardTable from "../../../components/dashboard/DashboardTable";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
 import Pagination from "../../../components/common/Pagination";
-import { DEFAULT_DIAL_CODE } from "../../../constants/arabCountries";
 import {
   formatDate,
   formatMoney,
@@ -34,11 +33,12 @@ import {
   PACKAGE_DURATION_OPTIONS,
   LegacyIdentityImage,
 } from "./legacyAdminShared";
+import { LEGACY_WORK_FIELDS, WORK_FIELDS_REQUIRED_MESSAGE } from "../../../constants/legacyFreelancerWorkFields";
 
 const DETAIL_TABS = [
   { id: "profile", label: "البيانات" },
   { id: "identity", label: "الهوية" },
-  { id: "docs", label: "الأوراق" },
+  { id: "docs", label: "الأوراق والعقود" },
   { id: "package", label: "الباقة" },
   { id: "money", label: "المبالغ المستلمة" },
 ];
@@ -48,8 +48,7 @@ const EMPTY_CREATE = {
   fatherName: "",
   familyName: "",
   nationalId: "",
-  phoneDial: DEFAULT_DIAL_CODE,
-  phoneNumber: "",
+  phone: "",
   email: "",
   city: "",
   residence: "",
@@ -59,6 +58,7 @@ const EMPTY_CREATE = {
   durationMonths: "",
   historicalAmount: "",
   signedDocumentTypeIds: [],
+  workFields: [],
   institutionId: "",
 };
 
@@ -67,12 +67,18 @@ const EMPTY_FILTERS = {
   identityComplete: "",
   entryMethod: "",
   isActive: "",
+  workField: "",
 };
 
 /**
- * @param {{ createSignal?: number, onListChanged?: () => void }} props
+ * @param {{ createSignal?: number, onListChanged?: () => void, campaignId?: string|null, hideManualCreate?: boolean }} props
  */
-export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged }) {
+export default function LegacyFreelancersPanel({
+  createSignal = 0,
+  onListChanged,
+  campaignId = null,
+  hideManualCreate = false,
+}) {
   const { pushToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -118,6 +124,8 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
         identityComplete: filters.identityComplete || undefined,
         entryMethod: filters.entryMethod || undefined,
         isActive: filters.isActive || undefined,
+        workField: filters.workField || undefined,
+        campaignId: campaignId || undefined,
       };
       const res = await listLegacyFreelancersRequest(params);
       const data = res?.data || {};
@@ -131,15 +139,16 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
     } finally {
       setLoading(false);
     }
-  }, [q, page, pageSize, filters, pushToast]);
+  }, [q, page, pageSize, filters, campaignId, pushToast]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   useEffect(() => {
+    if (hideManualCreate) return;
     if (createSignal > 0) setShowCreate(true);
-  }, [createSignal]);
+  }, [createSignal, hideManualCreate]);
 
   useEffect(() => {
     listAdminPlansRequest(false)
@@ -206,6 +215,8 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
       identityComplete: draftFilters.identityComplete,
       entryMethod: draftFilters.entryMethod,
       isActive: draftFilters.isActive,
+      campaignId: draftFilters.campaignId,
+      workField: draftFilters.workField,
     });
   };
 
@@ -226,7 +237,7 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
         fatherName: createForm.fatherName,
         familyName: createForm.familyName,
         nationalId: createForm.nationalId,
-        phone: { countryCode: createForm.phoneDial, number: createForm.phoneNumber },
+        phone: String(createForm.phone || "").trim(),
         email: createForm.email,
         city: createForm.city || undefined,
         residence: createForm.residence || undefined,
@@ -236,22 +247,23 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
         durationMonths: createForm.durationMonths || undefined,
         historicalAmount: createForm.historicalAmount || undefined,
         signedDocumentTypeIds: createForm.signedDocumentTypeIds,
+        workFields: createForm.workFields,
         institutionId: createForm.institutionId ? Number(createForm.institutionId) : undefined,
       };
 
+      if (!base.workFields?.length) {
+        pushToast({ type: "error", message: WORK_FIELDS_REQUIRED_MESSAGE });
+        setCreating(false);
+        return;
+      }
+
       let payload;
       if (hasFiles) {
-        const phoneE164 = `${String(createForm.phoneDial || "").trim()}${String(createForm.phoneNumber || "")
-          .trim()
-          .replace(/\D/g, "")}`;
         payload = new FormData();
-        Object.entries({
-          ...base,
-          phone: phoneE164.startsWith("+") ? phoneE164 : `+${phoneE164.replace(/^\+/, "")}`,
-        }).forEach(([key, value]) => {
+        Object.entries(base).forEach(([key, value]) => {
           if (value == null || value === "") return;
-          if (key === "signedDocumentTypeIds") {
-            payload.append("signedDocumentTypeIds", JSON.stringify(value));
+          if (key === "signedDocumentTypeIds" || key === "workFields") {
+            payload.append(key, JSON.stringify(value));
           } else {
             payload.append(key, String(value));
           }
@@ -373,6 +385,20 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
               <option value="false">غير نشط</option>
             </select>
           </label>
+          <label className="oh-sa-users-field oh-legacy-admin__toolbar-field">
+            <span>مجال العمل</span>
+            <select
+              value={draftFilters.workField}
+              onChange={(e) => setDraftFilters((s) => ({ ...s, workField: e.target.value }))}
+            >
+              <option value="">الكل</option>
+              {LEGACY_WORK_FIELDS.map((wf) => (
+                <option key={wf.key} value={wf.key}>
+                  {wf.labelAr}
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="oh-legacy-admin__toolbar-actions">
             <Button type="submit">تطبيق</Button>
             <Button type="button" variant="secondary" onClick={resetFilters}>
@@ -425,6 +451,7 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
                     </th>
                     <th scope="col">رقم العضوية</th>
                     <th scope="col">الاسم</th>
+                    <th scope="col">مجال العمل</th>
                     <th scope="col">التواصل</th>
                     <th scope="col">طريقة الدخول</th>
                     <th scope="col">الباقة</th>
@@ -456,6 +483,19 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
                           <strong>{row.fullName}</strong>
                           <span>{categoriesLabel(row.categories)}</span>
                         </div>
+                      </td>
+                      <td>
+                        {row.workFields?.isEmpty || !(row.workFields?.labels || []).length ? (
+                          <span className="oh-legacy-admin__muted">غير محدد</span>
+                        ) : (
+                          <div className="oh-legacy-work-chips">
+                            {(row.workFields?.labels || []).map((lbl) => (
+                              <span key={lbl} className="oh-legacy-work-chip">
+                                {lbl}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </td>
                       <td>
                         <div className="oh-sa-users-user">
@@ -534,14 +574,14 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
                   ["fatherName", "اسم الأب *", true],
                   ["familyName", "اسم العائلة *", true],
                   ["nationalId", "الرقم الوطني *", true, true],
-                  ["phoneDial", "مفتاح الهاتف *", true, true],
-                  ["phoneNumber", "رقم الهاتف *", true, true],
+                  ["phone", "رقم الهاتف *", true, true],
                 ].map(([key, label, required, ltr]) => (
                   <label key={key} className="oh-sa-users-field">
                     <span>{label}</span>
                     <input
                       required={required}
                       dir={ltr ? "ltr" : undefined}
+                      placeholder={key === "phone" ? "+9627XXXXXXXX" : undefined}
                       value={createForm[key]}
                       onChange={(e) => setCreateForm((f) => ({ ...f, [key]: e.target.value }))}
                     />
@@ -557,6 +597,31 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
                     onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
                   />
                 </label>
+                <div className="oh-sa-users-field oh-legacy-admin__form-span">
+                  <span>مجال العمل *</span>
+                  <div className="oh-legacy-admin__doc-checks" style={{ marginTop: "0.4rem" }}>
+                    {LEGACY_WORK_FIELDS.map((wf) => {
+                      const checked = createForm.workFields.includes(wf.key);
+                      return (
+                        <label key={wf.key} className="oh-legacy-admin__check">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              setCreateForm((f) => {
+                                const set = new Set(f.workFields);
+                                if (e.target.checked) set.add(wf.key);
+                                else set.delete(wf.key);
+                                return { ...f, workFields: [...set] };
+                              });
+                            }}
+                          />
+                          {wf.labelAr}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
                 {[
                   ["city", "المدينة"],
                   ["residence", "مكان الإقامة"],
@@ -626,7 +691,10 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
                 </label>
                 <div className="oh-legacy-admin__form-span">
                   <p className="oh-sa-users-muted" style={{ marginBottom: "0.5rem", fontWeight: 800 }}>
-                    الأوراق الموقّعة
+                    الأوراق والعقود الموقعة
+                    <span className="oh-legacy-admin__muted" style={{ display: "block", fontWeight: 400 }}>
+                      تُدار بواسطة الإدارة فقط
+                    </span>
                   </p>
                   <div className="oh-legacy-admin__form-grid">
                     {docTypes.map((t) => {
@@ -915,6 +983,38 @@ function LegacyFreelancerDetailDrawer({
                 <strong dir="ltr">{detail.phone || "—"}</strong>
               </div>
               <div>
+                <span>مجال العمل</span>
+                <strong>
+                  {detail.workFields?.isEmpty || !(detail.workFields?.labels || []).length ? (
+                    "غير محدد"
+                  ) : (
+                    <span className="oh-legacy-work-chips">
+                      {detail.workFields.labels.map((lbl) => (
+                        <span key={lbl} className="oh-legacy-work-chip">
+                          {lbl}
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                </strong>
+              </div>
+              <div>
+                <span>المهارات والبرامج</span>
+                <strong>
+                  {!(detail.detailedSkills || []).length ? (
+                    "—"
+                  ) : (
+                    <span className="oh-legacy-work-chips">
+                      {(detail.detailedSkills || []).map((sk) => (
+                        <span key={sk} className="oh-legacy-work-chip">
+                          {sk}
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                </strong>
+              </div>
+              <div>
                 <span>طريقة الدخول</span>
                 <strong>
                   <StatusBadge
@@ -992,6 +1092,9 @@ function LegacyFreelancerDetailDrawer({
             </div>
           ) : detailTab === "docs" ? (
             <div className="oh-sa-users-stack">
+              <p className="oh-sa-users-muted" style={{ margin: 0 }}>
+                الأوراق والعقود الموقعة — تُدار بواسطة الإدارة فقط. التغييرات تُسجَّل في سجل التدقيق.
+              </p>
               {docTypes.length === 0 ? (
                 <DashboardEmptyState title="لا أنواع مستندات" />
               ) : (

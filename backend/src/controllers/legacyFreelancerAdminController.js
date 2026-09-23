@@ -36,6 +36,8 @@ const listLegacyFreelancers = async (req, res, next) => {
       identityComplete: req.query.identityComplete,
       joinedFrom: req.query.joinedFrom,
       joinedTo: req.query.joinedTo,
+      campaignId: req.query.campaignId || req.query.legacyInviteCampaignId || null,
+      workField: req.query.workField || req.query.skill || null,
     };
     const data = await legacyFreelancerAdminService.listLegacyFreelancers({
       q: req.query.q || req.query.search || null,
@@ -68,6 +70,7 @@ const createManualLegacyFreelancer = async (req, res, next) => {
       body.signedDocumentTypeIds ?? body.signed_document_type_ids,
       [],
     );
+    body.workFields = parseJsonField(body.workFields ?? body.work_fields, body.workFields);
     const files = {
       idFront: pickFile(req.files, "idFront", "front"),
       idBack: pickFile(req.files, "idBack", "back"),

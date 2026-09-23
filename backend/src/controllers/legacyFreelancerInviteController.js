@@ -53,6 +53,7 @@ const updateCampaign = async (req, res, next) => {
       actorAdminId: actorId(req),
       campaignId: req.params.campaignId,
       name: req.body.name,
+      slug: req.body.slug,
       maxRedemptions: req.body.maxRedemptions ?? req.body.max_redemptions,
       expiresAt: req.body.expiresAt ?? req.body.expires_at,
       defaultPlanCode: req.body.defaultPlanCode ?? req.body.default_plan_code,
@@ -60,6 +61,8 @@ const updateCampaign = async (req, res, next) => {
       defaultCategoryId: req.body.defaultCategoryId ?? req.body.default_category_id,
       notes: req.body.notes,
       isActive: req.body.isActive ?? req.body.is_active,
+      requireIdFront: req.body.requireIdFront ?? req.body.require_id_front,
+      requireIdBack: req.body.requireIdBack ?? req.body.require_id_back,
       institutionId:
         req.body.institutionId !== undefined
           ? req.body.institutionId
@@ -255,6 +258,13 @@ const registerLegacy = async (req, res, next) => {
         /* keep */
       }
     }
+    if (typeof body.workFields === "string") {
+      try {
+        body.workFields = JSON.parse(body.workFields);
+      } catch (_) {
+        /* keep */
+      }
+    }
     const files = req.files || {};
     const idFront = Array.isArray(files.idFront) ? files.idFront[0] : files.idFront || null;
     const idBack = Array.isArray(files.idBack) ? files.idBack[0] : files.idBack || null;
@@ -270,6 +280,39 @@ const registerLegacy = async (req, res, next) => {
       message: out.message,
       statusCode: 201,
     });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const getCampaignInviteLink = async (req, res, next) => {
+  try {
+    const data = await legacyFreelancerInviteService.getCampaignInviteLink({
+      actorAdminId: actorId(req),
+      campaignId: req.params.campaignId,
+    });
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const getCampaignWorkspace = async (req, res, next) => {
+  try {
+    const data = await legacyFreelancerInviteService.getCampaignWorkspaceStats(req.params.campaignId);
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const deleteCampaign = async (req, res, next) => {
+  try {
+    const data = await legacyFreelancerInviteService.deleteOrArchiveCampaign({
+      actorAdminId: actorId(req),
+      campaignId: req.params.campaignId,
+    });
+    return res.status(200).json({ success: true, data, message: data.message });
   } catch (err) {
     return next(err);
   }
@@ -291,4 +334,7 @@ module.exports = {
   getRedemptionAnswers,
   previewInvite,
   registerLegacy,
+  getCampaignInviteLink,
+  getCampaignWorkspace,
+  deleteCampaign,
 };

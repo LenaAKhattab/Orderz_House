@@ -12,6 +12,7 @@ const {
   getContractCatalog,
   getDefaultFieldSeedRows,
 } = require("../constants/legacyFreelancerContractCatalog");
+const { parseDetailedSkillsPrograms } = require("../constants/legacyFreelancerWorkFields");
 
 function coerceYesNo(value) {
   if (value === true || value === 1 || value === "1" || value === "true" || value === "yes" || value === "YES" || value === "نعم") {
@@ -397,11 +398,7 @@ async function applyCanonicalUserPatches(client, userId, patches) {
   for (const [col, val] of Object.entries(patches)) {
     if (!allowed.has(col)) continue;
     if (col === "skills") {
-      const arr = String(val || "")
-        .split(/[,|\n]/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .slice(0, 40);
+      const arr = parseDetailedSkillsPrograms(val);
       params.push(arr);
       sets.push(`skills = $${params.length}::text[]`);
       continue;

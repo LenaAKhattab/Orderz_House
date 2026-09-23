@@ -230,8 +230,8 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
       </DashboardSection>
 
       <DashboardSection
-        title="متطلبات المستندات للحملة"
-        description="عند اختيار حملة، حدّد الأوراق التي يجب على المسجّل تأكيد توقيعها أثناء التسجيل عبر الرابط."
+        title="أوراق يجب على الإدارة التحقق منها"
+        description="تكوين قائمة تحقق إدارية لأنواع الأوراق/العقود. الفريلانسر لا يؤكّدها أثناء التسجيل — الإدارة فقط تُسجّل التوقيع من صفحة المسجّل."
         actions={
           selectedCampaignId ? (
             <Button type="button" disabled={reqsBusy || !reqs.length} onClick={saveReqs}>
@@ -270,8 +270,8 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
                   <thead>
                     <tr>
                       <th scope="col">المستند</th>
-                      <th scope="col">إظهار</th>
-                      <th scope="col">إلزامي</th>
+                      <th scope="col">في القائمة</th>
+                      <th scope="col">يجب التحقق</th>
                       <th scope="col">الترتيب</th>
                     </tr>
                   </thead>

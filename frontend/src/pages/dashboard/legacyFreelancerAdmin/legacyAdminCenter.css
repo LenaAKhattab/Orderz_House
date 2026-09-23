@@ -282,6 +282,22 @@
   gap: 0.4rem;
 }
 
+.oh-legacy-admin__input,
+.oh-legacy-admin__select {
+  width: 100%;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(91, 102, 132, 0.22);
+  background: #fff;
+  font-size: 0.9rem;
+  color: #1f2a44;
+}
+
+.oh-legacy-admin__select {
+  cursor: pointer;
+}
+
 .oh-sa-outlet .oh-legacy-admin .oh-sa-users-table th,
 .oh-sa-outlet .oh-legacy-admin .dash-ui-table thead th {
   padding-block: 0.55rem;
@@ -320,5 +336,302 @@
 
   .oh-legacy-admin__pager {
     justify-content: center;
+  }
+}
+
+/* —— Campaign cards + workspace —— */
+.oh-legacy-admin__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.oh-legacy-campaigns__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+}
+
+.oh-legacy-campaigns__toolbar .oh-legacy-admin__input,
+.oh-legacy-campaigns__toolbar .oh-legacy-admin__select {
+  flex: 1 1 160px;
+  min-width: 140px;
+}
+
+.oh-legacy-campaigns__create {
+  margin-bottom: 1rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(91, 102, 132, 0.14);
+  border-radius: 14px;
+  background: rgba(47, 59, 101, 0.03);
+}
+
+.oh-legacy-campaigns__create-grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.oh-legacy-campaigns__create-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--dash-text-muted, #5b6684);
+}
+
+.oh-legacy-campaigns__grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.oh-legacy-campaign-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(91, 102, 132, 0.14);
+  border-radius: 16px;
+  background: var(--dash-card, #fcfcfd);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+  cursor: pointer;
+  text-align: start;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.oh-legacy-campaign-card:hover,
+.oh-legacy-campaign-card.is-selected {
+  border-color: rgba(47, 59, 101, 0.32);
+  box-shadow: 0 6px 18px rgba(47, 59, 101, 0.08);
+}
+
+.oh-legacy-campaign-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.oh-legacy-campaign-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--dash-primary, #2f3b65);
+}
+
+.oh-legacy-campaign-card__slug {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  color: var(--dash-text-muted, #5b6684);
+}
+
+.oh-legacy-campaign-card__meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem 0.75rem;
+  margin: 0;
+}
+
+.oh-legacy-campaign-card__meta dt {
+  font-size: 0.72rem;
+  color: var(--dash-text-muted, #5b6684);
+}
+
+.oh-legacy-campaign-card__meta dd {
+  margin: 0.1rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--dash-primary, #2f3b65);
+}
+
+.oh-legacy-campaign-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+}
+
+.oh-legacy-admin__stats--workspace {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.oh-legacy-campaign-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem 1rem;
+  margin: 0;
+}
+
+.oh-legacy-campaign-summary dt {
+  font-size: 0.75rem;
+  color: var(--dash-text-muted, #5b6684);
+}
+
+.oh-legacy-campaign-summary dd {
+  margin: 0.2rem 0 0;
+  font-weight: 600;
+  color: var(--dash-primary, #2f3b65);
+}
+
+.oh-legacy-admin__field-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(91, 102, 132, 0.1);
+}
+
+.oh-legacy-admin__check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.oh-legacy-admin__muted {
+  color: var(--dash-text-muted, #5b6684);
+  font-size: 0.82rem;
+}
+
+.oh-legacy-work-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.oh-legacy-work-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--dash-primary, #2f3b65);
+  background: rgba(47, 59, 101, 0.08);
+  border: 1px solid rgba(47, 59, 101, 0.14);
+}
+
+.oh-legacy-admin__doc-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+}
+
+.oh-legacy-admin__doc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+
+.oh-legacy-link-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.oh-legacy-link-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(15, 23, 42, 0.45);
+  cursor: pointer;
+}
+
+.oh-legacy-link-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(560px, 100%);
+  padding: 1rem 1.1rem 1.15rem;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22);
+}
+
+.oh-legacy-link-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.oh-legacy-link-modal__head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--dash-primary, #2f3b65);
+}
+
+.oh-legacy-link-modal__close {
+  border: 0;
+  background: transparent;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #5b6684;
+}
+
+.oh-legacy-link-modal__label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.oh-legacy-link-modal__url-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.oh-legacy-link-modal__url {
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(91, 102, 132, 0.22);
+  font-size: 0.82rem;
+}
+
+.oh-legacy-link-modal__warn {
+  margin: 0 0 0.85rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  color: #9a3412;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.oh-legacy-link-modal__hint {
+  margin: 0;
+  color: #5b6684;
+}
+
+@media (max-width: 900px) {
+  .oh-legacy-admin__stats--workspace {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .oh-legacy-admin__stats--workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .oh-legacy-campaign-card__meta {
+    grid-template-columns: 1fr;
   }
 }

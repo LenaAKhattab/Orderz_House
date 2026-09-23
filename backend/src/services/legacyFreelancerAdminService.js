@@ -21,6 +21,11 @@ const {
   duplicateNationalIdError,
 } = require("../utils/legacyFreelancerMemberId");
 const {
+  normalizeLegacyWorkFields,
+  resolveLegacyWorkAreasFromUserRow,
+  WORK_FIELDS_REQUIRED_MESSAGE,
+} = require("../constants/legacyFreelancerWorkFields");
+const {
   writeAudit,
   waiveTrainingAndExam,
   assignLegacySubscription,
@@ -161,13 +166,36 @@ function mapPackageAssignmentPublic(row) {
 
 async function assertLegacyUser(client, userId) {
   const runner = client || pool;
-  const { rows } = await runner.query(
-    `SELECT id, onboarding_source, freelancer_member_id, is_active, legacy_entry_method,
-            first_name, father_name, family_name, email, phone, account_id
-       FROM users WHERE id = $1::bigint LIMIT 1`,
-    [Number(userId)],
-  );
-  const row = rows[0];
+  let row;
+  try {
+    const { rows } = await runner.query(
+      `SELECT id, onboarding_source, freelancer_member_id, is_active, legacy_entry_method,
+              first_name, father_name, family_name, email, phone, account_id, skills, legacy_work_areas
+         FROM users WHERE id = $1::bigint LIMIT 1`,
+      [Number(userId)],
+    );
+    row = rows[0];
+  } catch (e) {
+    if (!(e && e.code === "42703")) throw e;
+    try {
+      const { rows } = await runner.query(
+        `SELECT id, onboarding_source, freelancer_member_id, is_active, legacy_entry_method,
+                first_name, father_name, family_name, email, phone, account_id, skills
+           FROM users WHERE id = $1::bigint LIMIT 1`,
+        [Number(userId)],
+      );
+      row = rows[0];
+    } catch (e2) {
+      if (!(e2 && e2.code === "42703")) throw e2;
+      const { rows } = await runner.query(
+        `SELECT id, onboarding_source, freelancer_member_id, is_active, legacy_entry_method,
+                first_name, father_name, family_name, email, phone, account_id
+           FROM users WHERE id = $1::bigint LIMIT 1`,
+        [Number(userId)],
+      );
+      row = rows[0];
+    }
+  }
   if (!row) throw createPublicApiError("المستخدم غير موجود.", 404, "NOT_FOUND");
   if (String(row.onboarding_source) !== "LEGACY_INVITE") {
     throw createPublicApiError("هذا الحساب ليس فريلانسر قديماً.", 400, "NOT_LEGACY_FREELANCER");
@@ -530,6 +558,25 @@ async function listLegacyFreelancers({ q = null, filters = {}, page = 1, pageSiz
     params.push(new Date(filters.joinedTo).toISOString());
     where.push(`u.created_at <= $${params.length}::timestamptz`);
   }
+  if (filters.campaignId != null && filters.campaignId !== "") {
+    params.push(Number(filters.campaignId));
+    where.push(`u.legacy_invite_campaign_id = $${params.length}::bigint`);
+  }
+  if (filters.workField) {
+    const key = String(filters.workField).trim();
+    if (key) {
+      params.push(key);
+      // Prefer dedicated legacy_work_areas; transitional OR against skills for pre-196 rows.
+      where.push(`(
+        (u.legacy_work_areas IS NOT NULL AND $${params.length}::text = ANY(u.legacy_work_areas))
+        OR (
+          (u.legacy_work_areas IS NULL OR cardinality(u.legacy_work_areas) = 0)
+          AND u.skills IS NOT NULL
+          AND $${params.length}::text = ANY(u.skills)
+        )
+      )`);
+    }
+  }
 
   const whereSql = where.join(" AND ");
   const countParams = [...params];
@@ -577,7 +624,7 @@ async function listLegacyFreelancers({ q = null, filters = {}, page = 1, pageSiz
     `SELECT
        u.id, u.account_id, u.first_name, u.father_name, u.family_name,
        u.email, u.phone, u.is_active, u.created_at, u.legacy_entry_method,
-       u.freelancer_member_id, u.freelancer_categories,
+       u.freelancer_member_id, u.freelancer_categories, u.skills, u.legacy_work_areas,
        fs.plan_id, fs.status AS sub_status, fs.actual_start_date, fs.expiry_date,
        p.name AS plan_name, p.title AS plan_title,
        COALESCE(idc.front_ok, FALSE) AS identity_front_ok,
@@ -606,6 +653,7 @@ async function listLegacyFreelancers({ q = null, filters = {}, page = 1, pageSiz
       legacyEntryMethod: r.legacy_entry_method || null,
       freelancerMemberIdMasked: maskFreelancerMemberId(r.freelancer_member_id),
       categories: r.freelancer_categories || null,
+      workFields: resolveLegacyWorkAreasFromUserRow(r),
       plan: r.plan_id
         ? {
             id: String(r.plan_id),
@@ -703,6 +751,8 @@ async function getLegacyFreelancerDetail(userId) {
     legacyEntryMethod: user.legacy_entry_method || null,
     freelancerMemberId: user.freelancer_member_id || null,
     freelancerMemberIdMasked: maskFreelancerMemberId(user.freelancer_member_id),
+    workFields: resolveLegacyWorkAreasFromUserRow(user),
+    detailedSkills: Array.isArray(user.skills) ? user.skills : [],
     plan: sub
       ? {
           id: String(sub.plan_id),
@@ -763,7 +813,24 @@ async function createManualLegacyFreelancer(payload, { actorAdminId, files = {} 
   } else if (payload.specialization || payload.specialty) {
     categories = [String(payload.specialization || payload.specialty).trim()].filter(Boolean);
   }
-  if (!categories || !categories.length) categories = ["content_writing"];
+
+  let workFieldKeys;
+  try {
+    workFieldKeys = normalizeLegacyWorkFields(
+      payload.workFields ?? payload.work_fields,
+      { required: true },
+    );
+  } catch (wfErr) {
+    if (wfErr && wfErr.code === "WORK_FIELDS_REQUIRED") {
+      throw createPublicApiError(WORK_FIELDS_REQUIRED_MESSAGE, 400, "WORK_FIELDS_REQUIRED");
+    }
+    throw wfErr;
+  }
+
+  // Prefer explicit categories; otherwise mirror declared work fields (no silent fabrications).
+  if (!categories || !categories.length) {
+    categories = workFieldKeys.length ? [...workFieldKeys] : null;
+  }
 
   const planId = payload.planId != null && payload.planId !== ""
     ? Number(payload.planId)
@@ -828,7 +895,7 @@ async function createManualLegacyFreelancer(payload, { actorAdminId, files = {} 
          training_waiver_reason, final_exam_waiver_reason,
          legacy_verified_at, legacy_verified_by_admin_id,
          freelancer_member_id, legacy_entry_method, must_change_password,
-         billing_city
+         billing_city, legacy_work_areas
        ) VALUES (
          $1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text,
          $8::text, $9::text, $9::text, $10::text, TRUE, $11::timestamptz,
@@ -839,7 +906,7 @@ async function createManualLegacyFreelancer(payload, { actorAdminId, files = {} 
          $13::text, $14::text,
          $11::timestamptz, $15::bigint,
          $16::text, 'ADMIN_MANUAL', TRUE,
-         $17::text
+         $17::text, $18::text[]
        )
        RETURNING id, account_id, freelancer_member_id, first_name, father_name, family_name,
                  email, role, phone, is_active, created_at, onboarding_source,
@@ -862,6 +929,7 @@ async function createManualLegacyFreelancer(payload, { actorAdminId, files = {} 
         actorAdminId != null ? Number(actorAdminId) : null,
         nationalId,
         city,
+        workFieldKeys,
       ],
     );
     const user = userRows[0];
@@ -1188,6 +1256,14 @@ async function setSignedDocument({
     );
     if (!typeRows[0]) throw createPublicApiError("نوع المستند غير موجود.", 404, "NOT_FOUND");
 
+    const { rows: prevRows } = await client.query(
+      `SELECT is_active FROM legacy_freelancer_signed_documents
+        WHERE user_id = $1::bigint AND document_type_id = $2::bigint
+        LIMIT 1`,
+      [Number(userId), typeId],
+    );
+    const previousActive = Boolean(prevRows[0]?.is_active);
+
     await saveSignedDocuments(client, {
       userId,
       documentTypeIds: [typeId],
@@ -1199,7 +1275,12 @@ async function setSignedDocument({
       action: AUDIT_ACTIONS.SIGNED_DOC_SET,
       actorAdminId,
       targetUserId: userId,
-      detail: { documentTypeId: String(typeId), code: typeRows[0].code },
+      detail: {
+        documentTypeId: String(typeId),
+        code: typeRows[0].code,
+        previousState: previousActive ? "signed" : "unsigned",
+        newState: "signed",
+      },
     });
     await client.query("COMMIT");
     return getLegacyFreelancerDetail(userId);
@@ -1228,7 +1309,11 @@ async function removeSignedDocument({ userId, documentTypeId, actorAdminId = nul
       action: AUDIT_ACTIONS.SIGNED_DOC_REMOVED,
       actorAdminId,
       targetUserId: userId,
-      detail: { documentTypeId: String(documentTypeId) },
+      detail: {
+        documentTypeId: String(documentTypeId),
+        previousState: "signed",
+        newState: "unsigned",
+      },
     });
     await client.query("COMMIT");
     return { removed: true, documentTypeId: String(documentTypeId) };
@@ -1441,13 +1526,17 @@ async function getIdentityFileBytes({ userId, side, actorAdminId = null }) {
 }
 
 /**
- * Validate signedDocumentTypeIds against campaign requirements (for public register).
+ * Legacy: campaign document requirements are an Admin checklist only.
+ * Public registration must NEVER call this to block or persist signed docs.
+ * Kept for Admin tooling / historical compatibility — no longer used by invite register.
  */
 async function validateAndPersistRegistrationSignedDocs(client, {
   campaignId,
   userId,
   signedDocumentTypeIds,
 }) {
+  // Do not enforce required docs against public self-registration.
+  // If invoked, only persist Admin-style selections that are enabled for the campaign.
   const reqs = await client.query(
     `SELECT r.document_type_id, r.is_enabled, r.is_required, t.code, t.label_ar
        FROM legacy_freelancer_campaign_document_requirements r
@@ -1456,11 +1545,9 @@ async function validateAndPersistRegistrationSignedDocs(client, {
     [Number(campaignId)],
   );
   const enabled = new Map();
-  const required = [];
   for (const r of reqs.rows) {
     if (r.is_enabled) {
       enabled.set(Number(r.document_type_id), r);
-      if (r.is_required) required.push(r);
     }
   }
 
@@ -1468,24 +1555,9 @@ async function validateAndPersistRegistrationSignedDocs(client, {
     ...new Set(
       (signedDocumentTypeIds || [])
         .map(Number)
-        .filter((n) => Number.isInteger(n) && n > 0),
+        .filter((n) => Number.isInteger(n) && n > 0 && enabled.has(n)),
     ),
   ];
-
-  for (const id of selected) {
-    if (!enabled.has(id)) {
-      throw createPublicApiError("تم اختيار مستند غير مفعّل لهذه الحملة.", 400, "VALIDATION_ERROR");
-    }
-  }
-  for (const req of required) {
-    if (!selected.includes(Number(req.document_type_id))) {
-      throw createPublicApiError(
-        `يجب تأكيد توقيع المستند: ${req.label_ar}`,
-        400,
-        "SIGNED_DOCUMENT_REQUIRED",
-      );
-    }
-  }
 
   if (selected.length) {
     await saveSignedDocuments(client, {

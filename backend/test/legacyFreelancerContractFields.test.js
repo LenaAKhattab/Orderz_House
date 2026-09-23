@@ -279,11 +279,15 @@ describe("wiring / auth isolation", () => {
   it("frontend pages wire dynamic form and admin config", () => {
     const join = read("../frontend/src/pages/LegacyFreelancerJoinPage.jsx");
     const admin = read("../frontend/src/pages/dashboard/legacyFreelancerAdmin/LegacyCampaignsPanel.jsx");
+    const workspace = read(
+      "../frontend/src/pages/dashboard/legacyFreelancerAdmin/LegacyCampaignWorkspacePage.jsx",
+    );
     assert.match(join, /formFields/);
     assert.match(join, /answers/);
-    assert.match(admin, /بيانات التسجيل المطلوبة/);
-    assert.match(admin, /عرض بيانات التسجيل/);
+    assert.match(admin, /بيانات التسجيل/);
     assert.match(admin, /putLegacyFreelancerInviteFieldsRequest/);
+    assert.match(workspace, /حقول التسجيل/);
+    assert.match(workspace, /putLegacyFreelancerInviteFieldsRequest/);
   });
 
   it("fee waiver constants remain", () => {

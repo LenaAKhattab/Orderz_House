@@ -49,6 +49,15 @@ function normalizeSkills(raw) {
   if (!Array.isArray(raw)) {
     throw createPublicApiError("المهارات يجب أن تكون مصفوفة نصوص.", 400, "VALIDATION_ERROR");
   }
+  // Keep Legacy work-area keys out of users.skills (they live in users.legacy_work_areas).
+  let workAreaKeys = null;
+  try {
+    workAreaKeys = new Set(
+      require("../constants/legacyFreelancerWorkFields").LEGACY_WORK_FIELD_KEYS,
+    );
+  } catch (_) {
+    workAreaKeys = new Set(["content_writing", "design", "programming"]);
+  }
   const seen = new Set();
   const out = [];
   for (const item of raw) {
@@ -56,6 +65,7 @@ function normalizeSkills(raw) {
       .trim()
       .slice(0, SKILL_ITEM_MAX);
     if (!t) continue;
+    if (workAreaKeys.has(t)) continue;
     const key = t.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
