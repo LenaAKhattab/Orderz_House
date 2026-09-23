@@ -16,10 +16,13 @@ function read(rel) {
 }
 
 describe("institutions management frontend", () => {
-  it("list page uses DashboardTable with search filter pagination", () => {
+  it("list page uses responsive cards with search filter pagination", () => {
     const src = read("src/pages/dashboard/SuperAdminInstitutionsPage.jsx");
-    assert.match(src, /DashboardTable/);
+    assert.doesNotMatch(src, /DashboardTable/);
+    assert.match(src, /oh-institutions-card-grid/);
+    assert.match(src, /sm:grid-cols-2.*xl:grid-cols-3.*2xl:grid-cols-4/);
     assert.match(src, /adminListInstitutionsRequest/);
+    assert.match(src, /adminDeleteInstitutionRequest/);
     assert.match(src, /debouncedQ|setDebouncedQ/);
     assert.match(src, /statusFilter/);
     assert.match(src, /Pagination/);
@@ -29,7 +32,6 @@ describe("institutions management frontend", () => {
     assert.doesNotMatch(src, /limit:\s*100/);
     assert.match(src, /adminCreateInstitutionRequest/);
     assert.match(src, /duplicateName|DUPLICATE_INSTITUTION_NAME/);
-    assert.match(src, /oh-institutions-mobile-cards|md:hidden/);
     assert.match(src, /summary\.totalInstitutions|metricTotal/);
     assert.match(src, /StatusBadge|min-w-\[4\.75rem\]/);
     assert.match(src, /formatSubscriptionAdminDate/);
@@ -37,27 +39,23 @@ describe("institutions management frontend", () => {
     assert.match(src, /title=\{name\}/);
     assert.match(src, /DETAIL_BASE\/\$\{inst\.id\}|`\$\{DETAIL_BASE\}\/\$\{inst\.id\}`/);
     assert.match(src, /oh-institutions-results-meta|oh-institutions-list-toolbar/);
-    assert.match(src, /oh-inst-col-name|table-layout|oh-institutions-desktop-table/);
     assert.match(src, /grid-cols-2.*lg:grid-cols-5|dash-ui-form-card/);
     assert.match(src, /aria-invalid|aria-describedby/);
     assert.match(src, /emptyFiltered|DashboardEmptyState/);
+    assert.match(src, /tab=members&addMember=1|addMember=1/);
+    assert.match(src, /سيتم تعطيل المؤسسة مع الاحتفاظ بالسجلات/);
     assert.doesNotMatch(src, /toLocaleDateString/);
     assert.doesNotMatch(src, /function formatDate\(/);
   });
 
-  it("list table name links to details and truncates long names on desktop", () => {
+  it("list cards link to details and expose manage actions", () => {
     const src = read("src/pages/dashboard/SuperAdminInstitutionsPage.jsx");
-    const css = read("src/styles/adminDashboardShell.css");
     assert.match(src, /to=\{detailTo\}/);
-    assert.match(src, /className="oh-inst-name-link"/);
-    assert.match(src, /btn btn-secondary/);
+    assert.match(src, /oh-inst-name-link/);
+    assert.match(src, /btn btn-primary/);
     assert.match(src, /dashboard\.institutions\.manage/);
-    assert.match(css, /\.oh-institutions-desktop-table/);
-    assert.match(css, /text-overflow:\s*ellipsis/);
-    assert.match(css, /table-layout:\s*fixed/);
-    assert.match(css, /\.oh-inst-name-link:focus-visible/);
     assert.match(src, /break-words/);
-    assert.match(src, /oh-institutions-mobile-cards/);
+    assert.match(src, /ordersCount/);
   });
 
   it("detail page supports edit, activate/deactivate, linked storages, membership search", () => {
@@ -81,6 +79,19 @@ describe("institutions management frontend", () => {
     assert.match(src, /memberReactivated|reactivated/);
     assert.match(src, /DUPLICATE_MEMBERSHIP|memberAlreadyActive/);
     assert.match(src, /memberRole/);
+    assert.match(src, /adminUpdateInstitutionMemberRequest/);
+    assert.match(src, /adminListInstitutionOrdersRequest/);
+    assert.match(src, /DashboardTabs|WORKSPACE_TABS/);
+    assert.match(src, /tab=members|setActiveTab/);
+    assert.match(src, /debouncedMemberQ|memberStatusFilter/);
+    assert.match(src, /manager is membership classification only/);
+    assert.match(src, /platformRoleLabel/);
+    assert.match(src, /إضافة طلب للمؤسسة/);
+    assert.match(src, /InstitutionCreateWorkModal/);
+    assert.match(src, /createWorkOpen|setCreateWorkOpen/);
+    assert.match(src, /WORK_DETAIL_BASE|\/work\/\$\{wt\}/);
+    assert.match(src, /res\?\.data\?\.items/);
+    assert.match(src, /sourceLabel|applicantCount/);
     assert.match(src, /break-words/);
     assert.match(src, /activeMemberIds|existingActiveMemberIds/);
     assert.doesNotMatch(src, /DashboardSection title=\{t\("dashboard\.institutions\.addMember"\)\}/);
@@ -169,9 +180,37 @@ describe("institutions management frontend", () => {
   it("API client exposes patch and linked-storage helpers", () => {
     const src = read("src/services/api.js");
     assert.match(src, /adminPatchInstitutionRequest/);
+    assert.match(src, /adminDeleteInstitutionRequest/);
+    assert.match(src, /adminUpdateInstitutionMemberRequest/);
+    assert.match(src, /adminListInstitutionOrdersRequest/);
     assert.match(src, /adminGetInstitutionDeactivationImpactRequest/);
     assert.match(src, /adminListInstitutionStoragesRequest/);
     assert.match(src, /adminGetInstitutionRequest[\s\S]*bundle/);
+    assert.match(src, /adminListInstitutionMembersRequest[\s\S]*params/);
+  });
+
+  it("institution work API helpers target admin institution work routes", () => {
+    const api = read("src/services/api.js");
+    const workPage = read("src/pages/dashboard/SuperAdminInstitutionWorkDetailPage.jsx");
+    const app = read("src/App.jsx");
+    const lazy = read("src/routes/lazyPages.js");
+    assert.match(api, /export const adminCreateInstitutionWorkRequest/);
+    assert.match(api, /export const adminGetInstitutionWorkRequest/);
+    assert.match(api, /export const adminAcceptInstitutionWorkApplicantRequest/);
+    assert.match(api, /export const adminRejectInstitutionWorkApplicantRequest/);
+    assert.match(api, /export const adminApproveInstitutionWorkDeliveryRequest/);
+    assert.match(api, /export const adminRequestInstitutionWorkRevisionRequest/);
+    assert.match(api, /\/admin\/institutions\/\$\{institutionId\}\/work/);
+    assert.match(api, /params:\s*\{[\s\S]*workType/);
+    assert.match(workPage, /adminGetInstitutionWorkRequest/);
+    assert.match(workPage, /adminAcceptInstitutionWorkApplicantRequest/);
+    assert.match(app, /institutions\/:institutionId\/work\/:workType\/:workId/);
+    assert.match(lazy, /SuperAdminInstitutionWorkDetailPage/);
+    assert.match(read("src/pages/dashboard/institutions/InstitutionCreateWorkModal.jsx"), /AdminInternalOrderWizard/);
+    assert.match(
+      read("src/pages/dashboard/institutions/InstitutionCreateWorkModal.jsx"),
+      /adminCreateInstitutionWorkRequest/,
+    );
   });
 
   it("ConfirmDialog traps focus and supports Escape", () => {

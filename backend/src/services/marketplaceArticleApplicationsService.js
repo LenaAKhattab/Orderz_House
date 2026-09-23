@@ -556,6 +556,23 @@ async function submitArticleApplication({
 
     const article = await loadArticleForUpdate(client, aid);
     assertArticleOpenForApplications(article);
+    if (String(article.visibility_scope || "public") === "institution") {
+      const iid = Number(article.institution_id);
+      if (!Number.isInteger(iid) || iid < 1) {
+        throw createAppError("Institution article is misconfigured.", 403, {
+          exposeToClient: true,
+          publicCode: "INSTITUTION_ARTICLE_FORBIDDEN",
+        });
+      }
+      const institutionsService = require("./institutionsService");
+      const ok = await institutionsService.userBelongsToAnyInstitution(fid, [iid]);
+      if (!ok) {
+        throw createAppError("هذا المقال مخصص لأعضاء المؤسسة فقط.", 403, {
+          exposeToClient: true,
+          publicCode: "INSTITUTION_MEMBERSHIP_REQUIRED",
+        });
+      }
+    }
     const collectionService = require("./opportunityBidCollectionService");
     const round = await collectionService.assertArticleIntakeOpen(client, article);
 
@@ -1582,6 +1599,25 @@ async function getArticleApplicationEligibility(articleId, freelancerUserId) {
     };
   }
 
+  if (String(row.visibility_scope || "public") === "institution") {
+    const iid = Number(row.institution_id);
+    const institutionsService = require("./institutionsService");
+    const ok =
+      Number.isInteger(iid) && iid > 0
+        ? await institutionsService.userBelongsToAnyInstitution(freelancerUserId, [iid])
+        : false;
+    if (!ok) {
+      return {
+        eligible: false,
+        reason: "INSTITUTION_MEMBERSHIP_REQUIRED",
+        articleLevel: Number(row.article_level),
+        membershipArticleAccessLevel: null,
+        bildazoAuthorLink,
+        ...baseEcon,
+      };
+    }
+  }
+
   if (bildazoAuthorLink.gateEnabled && !bildazoAuthorLink.canApplyToArticles) {
     return {
       eligible: false,
@@ -1738,8 +1774,180 @@ async function getArticleApplicationEligibility(articleId, freelancerUserId) {
   };
 }
 
-async function finalizeArticleApplicationApproval({ applicationId, actorUserId, now = new Date() } = {}) {
+const SETTLEMENT_MODES = Object.freeze({
+  MARKETPLACE: "marketplace",
+  WORKFLOW_ONLY: "workflow_only",
+});
+
+/**
+ * Resolve settlement policy from the application → article row (server-trusted).
+ * Institution-scoped articles never settle marketplace money in Phase 3.
+ */
+async function resolveSettlementModeForApplication(applicationId, client = pool) {
+  const { rows } = await client.query(
+    `SELECT a.id AS application_id,
+            art.id AS article_id,
+            art.visibility_scope,
+            art.institution_id
+       FROM marketplace_article_applications a
+       INNER JOIN marketplace_articles art ON art.id = a.article_id
+      WHERE a.id = $1
+      LIMIT 1`,
+    [Number(applicationId)],
+  );
+  const row = rows[0];
+  if (!row) return SETTLEMENT_MODES.MARKETPLACE;
+  if (
+    String(row.visibility_scope || "public") === "institution" &&
+    row.institution_id != null
+  ) {
+    return SETTLEMENT_MODES.WORKFLOW_ONLY;
+  }
+  return SETTLEMENT_MODES.MARKETPLACE;
+}
+
+/**
+ * Complete Institution Article workflow without marketplace settlement / wallets / payouts.
+ */
+async function finalizeArticleApplicationWorkflowOnly({
+  applicationId,
+  actorUserId,
+  now = new Date(),
+} = {}) {
   await assertSchemaAndEngine();
+  await submissionsService.assertSubmittedManuscriptForApproval({ applicationId });
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows: appRows } = await client.query(
+      `SELECT * FROM marketplace_article_applications WHERE id = $1 FOR UPDATE`,
+      [Number(applicationId)],
+    );
+    const application = appRows[0];
+    if (!application) {
+      throw createAppError("Application not found.", 404, {
+        exposeToClient: true,
+        publicCode: ARTICLE_APPLICATION_ERROR_CODES.ARTICLE_APPLICATION_NOT_FOUND,
+      });
+    }
+    if (String(application.status) === "approved") {
+      await client.query("COMMIT");
+      return {
+        settlementMode: SETTLEMENT_MODES.WORKFLOW_ONLY,
+        alreadyApproved: true,
+        applicationId: String(application.id),
+        articleId: String(application.article_id),
+      };
+    }
+
+    const { rows: artRows } = await client.query(
+      `SELECT id, visibility_scope, institution_id, status
+         FROM marketplace_articles WHERE id = $1 FOR UPDATE`,
+      [Number(application.article_id)],
+    );
+    const article = artRows[0];
+    if (!article || String(article.visibility_scope || "public") !== "institution") {
+      throw createAppError("Workflow-only finalize is only for institution articles.", 403, {
+        exposeToClient: true,
+        publicCode: "SETTLEMENT_MODE_FORBIDDEN",
+      });
+    }
+
+    await submissionsService.markSubmissionApproved({
+      applicationId,
+      actorUserId,
+      now,
+      client,
+    });
+
+    try {
+      await client.query(
+        `UPDATE marketplace_article_applications
+            SET status = 'approved',
+                approved_at = COALESCE(approved_at, $2),
+                updated_at = NOW()
+          WHERE id = $1`,
+        [Number(applicationId), new Date(now).toISOString()],
+      );
+    } catch (e) {
+      if (!(e && e.code === "42703")) throw e;
+      await client.query(
+        `UPDATE marketplace_article_applications
+            SET status = 'approved',
+                updated_at = NOW()
+          WHERE id = $1`,
+        [Number(applicationId)],
+      );
+    }
+
+    // Close article when target count reached — without budget/settlement mutations.
+    try {
+      await client.query(
+        `UPDATE marketplace_articles
+            SET accepted_article_count = COALESCE(accepted_article_count, 0) + 1,
+                updated_at = NOW(),
+                status = CASE
+                  WHEN target_article_count IS NOT NULL
+                   AND COALESCE(accepted_article_count, 0) + 1 >= target_article_count
+                  THEN 'closed'
+                  ELSE status
+                END,
+                closed_at = CASE
+                  WHEN target_article_count IS NOT NULL
+                   AND COALESCE(accepted_article_count, 0) + 1 >= target_article_count
+                  THEN COALESCE(closed_at, NOW())
+                  ELSE closed_at
+                END
+          WHERE id = $1`,
+        [Number(application.article_id)],
+      );
+    } catch (e) {
+      if (!(e && e.code === "42703")) throw e;
+      await client.query(
+        `UPDATE marketplace_articles SET updated_at = NOW() WHERE id = $1`,
+        [Number(application.article_id)],
+      );
+    }
+
+    await client.query("COMMIT");
+    return {
+      settlementMode: SETTLEMENT_MODES.WORKFLOW_ONLY,
+      alreadyApproved: false,
+      applicationId: String(application.id),
+      articleId: String(application.article_id),
+      financialMutation: false,
+    };
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function finalizeArticleApplicationApproval({
+  applicationId,
+  actorUserId,
+  now = new Date(),
+  settlementMode = null,
+} = {}) {
+  await assertSchemaAndEngine();
+
+  // Trusted mode: explicit server arg OR derived from article ownership.
+  // Never accept client-supplied skipSettlement.
+  let mode = settlementMode;
+  if (mode !== SETTLEMENT_MODES.MARKETPLACE && mode !== SETTLEMENT_MODES.WORKFLOW_ONLY) {
+    mode = await resolveSettlementModeForApplication(applicationId);
+  }
+
+  if (mode === SETTLEMENT_MODES.WORKFLOW_ONLY) {
+    return finalizeArticleApplicationWorkflowOnly({ applicationId, actorUserId, now });
+  }
+
   await submissionsService.assertSubmittedManuscriptForApproval({ applicationId });
   const client = await pool.connect();
   try {
@@ -1779,7 +1987,7 @@ async function finalizeArticleApplicationApproval({ applicationId, actorUserId, 
     } catch {
       /* Bildazo publish is non-fatal; settlement already committed. */
     }
-    return { ...result, bildazoPublish };
+    return { ...result, settlementMode: SETTLEMENT_MODES.MARKETPLACE, bildazoPublish };
   } catch (err) {
     try {
       await client.query("ROLLBACK");
@@ -1809,6 +2017,9 @@ module.exports = {
   selectArticleApplication,
   rejectArticleApplication,
   finalizeArticleApplicationApproval,
+  finalizeArticleApplicationWorkflowOnly,
+  resolveSettlementModeForApplication,
+  SETTLEMENT_MODES,
   releaseApplicationReservation,
   consumeApplicationReservation,
   settleApplicationReservationByPolicy,

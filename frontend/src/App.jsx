@@ -73,6 +73,7 @@ import {
   ProblemsSuggestionsPage,
   SuperAdminInstitutionsPage,
   SuperAdminInstitutionDetailPage,
+  SuperAdminInstitutionWorkDetailPage,
   InstitutionalOrderStorageListPage,
   InstitutionalOrderStorageDetailPage,
   InstitutionalPendingApprovalsPage,
@@ -600,6 +601,14 @@ function App() {
                   element={
                     <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.institutions}>
                       <SuperAdminInstitutionDetailPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/institutions/:institutionId/work/:workType/:workId"
+                  element={
+                    <RequireStaffPage permission={SUPER_ADMIN_PAGE_PERMISSIONS.institutions}>
+                      <SuperAdminInstitutionWorkDetailPage />
                     </RequireStaffPage>
                   }
                 />

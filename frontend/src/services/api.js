@@ -1739,6 +1739,13 @@ export const adminPatchInstitutionRequest = async (id, payload) => {
   return data;
 };
 
+export const adminDeleteInstitutionRequest = async (id) => {
+  const { data } = await api.delete(`/admin/institutions/${id}`, {
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+  });
+  return data;
+};
+
 export const adminGetInstitutionStatisticsRequest = async (id, options = {}) => {
   const { signal, ...rest } = options;
   const { data } = await api.get(`/admin/institutions/${id}/statistics`, {
@@ -1806,6 +1813,141 @@ export const adminRemoveInstitutionMemberRequest = async (id, userId) => {
   const { data } = await api.delete(`/admin/institutions/${id}/members/${userId}`, {
     timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
   });
+  return data;
+};
+
+export const adminUpdateInstitutionMemberRequest = async (id, userId, payload) => {
+  const { data } = await api.patch(`/admin/institutions/${id}/members/${userId}`, payload, {
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminListInstitutionOrdersRequest = async (id, params = {}, options = {}) => {
+  const { signal, ...rest } = options;
+  const { data } = await api.get(`/admin/institutions/${id}/orders`, {
+    params: {
+      page: params.page,
+      limit: params.limit,
+      q: params.q,
+      workType: params.workType ?? params.type,
+    },
+    signal,
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+    ...rest,
+  });
+  return data;
+};
+
+export const adminCreateInstitutionWorkRequest = async (institutionId, formDataOrPayload) => {
+  const isFormData =
+    typeof FormData !== "undefined" && formDataOrPayload instanceof FormData;
+  if (isFormData) {
+    if (!formDataOrPayload.has("workType")) {
+      formDataOrPayload.append("workType", "order");
+    }
+    const { data } = await api.post(`/admin/institutions/${institutionId}/work`, formDataOrPayload, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 120000,
+    });
+    return data;
+  }
+  const payload = {
+    workType: "article",
+    publish: true,
+    ...(formDataOrPayload && typeof formDataOrPayload === "object" ? formDataOrPayload : {}),
+  };
+  const { data } = await api.post(`/admin/institutions/${institutionId}/work`, payload, {
+    timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+  });
+  return data;
+};
+
+export const adminGetInstitutionWorkRequest = async (institutionId, workType, workId, options = {}) => {
+  const { signal, ...rest } = options;
+  const { data } = await api.get(
+    `/admin/institutions/${institutionId}/work/${encodeURIComponent(workType)}/${encodeURIComponent(workId)}`,
+    {
+      signal,
+      timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+      ...rest,
+    },
+  );
+  return data;
+};
+
+export const adminAcceptInstitutionWorkApplicantRequest = async (
+  institutionId,
+  workType,
+  workId,
+  applicantId,
+  payload = {},
+) => {
+  const { data } = await api.post(
+    `/admin/institutions/${institutionId}/work/${encodeURIComponent(workType)}/${encodeURIComponent(workId)}/applicants/${encodeURIComponent(applicantId)}/accept`,
+    payload,
+    { timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS },
+  );
+  return data;
+};
+
+export const adminRejectInstitutionWorkApplicantRequest = async (
+  institutionId,
+  workType,
+  workId,
+  applicantId,
+  payload = {},
+) => {
+  const { data } = await api.post(
+    `/admin/institutions/${institutionId}/work/${encodeURIComponent(workType)}/${encodeURIComponent(workId)}/applicants/${encodeURIComponent(applicantId)}/reject`,
+    payload,
+    { timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS },
+  );
+  return data;
+};
+
+export const adminApproveInstitutionWorkDeliveryRequest = async (
+  institutionId,
+  workType,
+  workId,
+  payload = {},
+) => {
+  const { data } = await api.post(
+    `/admin/institutions/${institutionId}/work/${encodeURIComponent(workType)}/${encodeURIComponent(workId)}/delivery/approve`,
+    payload,
+    { timeout: INSTITUTIONS_ADMIN_READ_TIMEOUT_MS },
+  );
+  return data;
+};
+
+export const adminRequestInstitutionWorkRevisionRequest = async (
+  institutionId,
+  workType,
+  workId,
+  note,
+  files = [],
+  extra = {},
+) => {
+  const hasFiles = Array.isArray(files) && files.length > 0;
+  let body;
+  if (hasFiles) {
+    body = new FormData();
+    body.append("note", note || "");
+    for (const f of files) body.append("files", f);
+    Object.entries(extra || {}).forEach(([key, value]) => {
+      if (value != null && value !== "") body.append(key, String(value));
+    });
+  } else {
+    body = { note: note || "", ...extra };
+  }
+  const { data } = await api.post(
+    `/admin/institutions/${institutionId}/work/${encodeURIComponent(workType)}/${encodeURIComponent(workId)}/delivery/revision`,
+    body,
+    {
+      headers: hasFiles ? { "Content-Type": "multipart/form-data" } : undefined,
+      timeout: hasFiles ? 120000 : INSTITUTIONS_ADMIN_READ_TIMEOUT_MS,
+    },
+  );
   return data;
 };
 

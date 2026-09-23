@@ -1,22 +1,28 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Building2 } from "lucide-react";
+import { Building2, UserPlus } from "lucide-react";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
-import DashboardTable from "../../components/dashboard/DashboardTable";
+import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
 import Pagination from "../../components/common/Pagination";
 import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { useToast } from "../../components/ui/toastContext";
 import { formatSubscriptionAdminDate } from "../../admin/subscriptions/subscriptionAdminDisplay";
-import { adminCreateInstitutionRequest, adminListInstitutionsRequest } from "../../services/api";
+import {
+  adminCreateInstitutionRequest,
+  adminDeleteInstitutionRequest,
+  adminListInstitutionsRequest,
+} from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
 const DETAIL_BASE = "/dashboard/super-admin/institutions";
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
+const DELETE_CONFIRM_BODY =
+  "سيتم تعطيل المؤسسة مع الاحتفاظ بالسجلات والطلبات السابقة.";
 const EMPTY_SUMMARY = {
   totalInstitutions: 0,
   activeInstitutions: 0,
@@ -26,22 +32,33 @@ const EMPTY_SUMMARY = {
 };
 
 function statusLabel(status, t) {
+  if (status === "frozen") return t("dashboard.institutions.frozen");
   return status === "active" ? t("dashboard.institutions.active") : t("dashboard.institutions.inactive");
 }
 
 function StatusBadge({ status, t }) {
   const active = status === "active";
+  const frozen = status === "frozen";
   return (
     <span
       className={`inline-flex min-h-[1.75rem] min-w-[4.75rem] items-center justify-center rounded-md border px-2 text-[0.78rem] font-semibold ${
-        active
-          ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-          : "border-slate-200 bg-slate-50 text-slate-700"
+        frozen
+          ? "border-sky-200 bg-sky-50 text-sky-900"
+          : active
+            ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+            : "border-slate-200 bg-slate-50 text-slate-700"
       }`}
     >
       {statusLabel(status, t)}
     </span>
   );
+}
+
+function truncateDescription(text, max = 120) {
+  const s = String(text || "").trim();
+  if (!s) return null;
+  if (s.length <= max) return s;
+  return `${s.slice(0, max).trim()}…`;
 }
 
 export default function SuperAdminInstitutionsPage() {
@@ -61,6 +78,8 @@ export default function SuperAdminInstitutionsPage() {
   const [form, setForm] = useState({ name: "", description: "", status: "active" });
   const [formError, setFormError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQ(searchInput.trim()), 350);
@@ -149,6 +168,26 @@ export default function SuperAdminInstitutionsPage() {
       push({ type: "error", message: msg });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    try {
+      const res = await adminDeleteInstitutionRequest(deleteTarget.id);
+      const msg =
+        res?.data?.message ||
+        res?.message ||
+        t("dashboard.institutions.deactivated");
+      push({ type: "success", message: msg });
+      setDeleteTarget(null);
+      await load({ soft: true });
+    } catch (err) {
+      const msg = getSafeApiErrorMessage(err) || t("dashboard.institutions.actionDeactivateError");
+      push({ type: "error", message: msg });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -337,100 +376,79 @@ export default function SuperAdminInstitutionsPage() {
           />
         ) : (
           <>
-            <div className="oh-institutions-desktop-table hidden md:block">
-              <DashboardTable caption={t("dashboard.institutions.sectionTitle")}>
-                <thead>
-                  <tr>
-                    <th className="oh-inst-col-name" scope="col">
-                      {t("dashboard.institutions.name")}
-                    </th>
-                    <th className="oh-inst-col-status" scope="col">
-                      {t("dashboard.institutions.status")}
-                    </th>
-                    <th className="oh-inst-col-count" scope="col">
-                      {t("dashboard.institutions.members")}
-                    </th>
-                    <th className="oh-inst-col-linked" scope="col">
-                      {t("dashboard.institutions.linkedStorages")}
-                    </th>
-                    <th className="oh-inst-col-date" scope="col">
-                      {t("dashboard.institutions.createdAt")}
-                    </th>
-                    <th className="oh-inst-col-actions" scope="col">
-                      {t("dashboard.institutions.actions")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {institutions.map((inst) => {
-                    const detailTo = `${DETAIL_BASE}/${inst.id}`;
-                    const name = inst.name || "";
-                    return (
-                      <tr key={inst.id}>
-                        <td className="oh-inst-cell-name align-middle">
-                          <Link
-                            to={detailTo}
-                            className="oh-inst-name-link"
-                            title={name}
-                            aria-label={`${t("dashboard.institutions.manage")}: ${name}`}
-                          >
-                            {name}
-                          </Link>
-                        </td>
-                        <td className="oh-inst-cell-status align-middle">
-                          <StatusBadge status={inst.status} t={t} />
-                        </td>
-                        <td className="oh-inst-cell-count align-middle tabular-nums">
-                          {inst.memberCount ?? 0}
-                        </td>
-                        <td className="oh-inst-cell-count align-middle tabular-nums">
-                          {inst.linkedStorageCount ?? 0}
-                        </td>
-                        <td className="oh-inst-cell-date align-middle whitespace-nowrap tabular-nums">
-                          {formatSubscriptionAdminDate(inst.createdAt)}
-                        </td>
-                        <td className="oh-inst-cell-actions align-middle whitespace-nowrap">
-                          <Link to={detailTo} className="btn btn-secondary">
-                            {t("dashboard.institutions.manage")}
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </DashboardTable>
-            </div>
-
-            <ul className="oh-institutions-mobile-cards m-0 grid list-none gap-3 p-0 md:hidden">
+            <ul className="oh-institutions-card-grid m-0 grid list-none gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {institutions.map((inst) => {
                 const detailTo = `${DETAIL_BASE}/${inst.id}`;
+                const addMembersTo = `${detailTo}?tab=members&addMember=1`;
                 const name = inst.name || "";
+                const shortDesc = truncateDescription(inst.description);
                 return (
-                  <li key={`m-${inst.id}`} className="dash-ui-form-card grid gap-2 p-3.5">
-                    <Link
-                      to={detailTo}
-                      className="oh-inst-name-link break-words leading-snug"
-                      title={name}
-                      aria-label={`${t("dashboard.institutions.manage")}: ${name}`}
-                    >
-                      {name}
-                    </Link>
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span>{t("dashboard.institutions.status")}:</span>
+                  <li key={inst.id} className="dash-ui-form-card flex min-w-0 flex-col gap-2.5 p-3.5">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <Link
+                        to={detailTo}
+                        className="oh-inst-name-link break-words text-base font-extrabold leading-snug"
+                        title={name}
+                        aria-label={`${t("dashboard.institutions.manage")}: ${name}`}
+                      >
+                        {name}
+                      </Link>
                       <StatusBadge status={inst.status} t={t} />
-                    </span>
-                    <span>
-                      {t("dashboard.institutions.members")}: {inst.memberCount ?? 0}
-                    </span>
-                    <span>
-                      {t("dashboard.institutions.linkedStorages")}: {inst.linkedStorageCount ?? 0}
-                    </span>
-                    <span>
-                      {t("dashboard.institutions.createdAt")}: {formatSubscriptionAdminDate(inst.createdAt)}
-                    </span>
-                    <Link to={detailTo} className="btn btn-secondary w-full justify-center">
-                      {t("dashboard.institutions.manage")}
-                    </Link>
+                    </div>
+                    {shortDesc ? (
+                      <p className="m-0 line-clamp-2 text-sm leading-snug text-slate-600">{shortDesc}</p>
+                    ) : (
+                      <p className="m-0 text-sm text-slate-400">{t("dashboard.institutions.noDescription")}</p>
+                    )}
+                    <dl className="m-0 grid grid-cols-2 gap-x-3 gap-y-1 text-[0.78rem] text-slate-700">
+                      <div>
+                        <dt className="inline font-bold text-slate-500 after:content-[':']">
+                          {t("dashboard.institutions.members")}
+                        </dt>{" "}
+                        <dd className="inline m-0 tabular-nums font-semibold">{inst.memberCount ?? 0}</dd>
+                      </div>
+                      {inst.ordersCount != null ? (
+                        <div>
+                          <dt className="inline font-bold text-slate-500 after:content-[':']">
+                            {t("dashboard.institutions.statsOrdersCount")}
+                          </dt>{" "}
+                          <dd className="inline m-0 tabular-nums font-semibold">{inst.ordersCount}</dd>
+                        </div>
+                      ) : null}
+                      <div>
+                        <dt className="inline font-bold text-slate-500 after:content-[':']">
+                          {t("dashboard.institutions.linkedStorages")}
+                        </dt>{" "}
+                        <dd className="inline m-0 tabular-nums font-semibold">{inst.linkedStorageCount ?? 0}</dd>
+                      </div>
+                      <div className="col-span-2 sm:col-span-1">
+                        <dt className="inline font-bold text-slate-500 after:content-[':']">
+                          {t("dashboard.institutions.createdAt")}
+                        </dt>{" "}
+                        <dd className="inline m-0 tabular-nums">{formatSubscriptionAdminDate(inst.createdAt)}</dd>
+                      </div>
+                    </dl>
+                    <div className="mt-auto flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap">
+                      <Link to={detailTo} className="btn btn-primary flex-1 justify-center sm:flex-none">
+                        {t("dashboard.institutions.manage")}
+                      </Link>
+                      <Link
+                        to={addMembersTo}
+                        className="btn btn-secondary inline-flex flex-1 items-center justify-center gap-1.5 sm:flex-none"
+                      >
+                        <UserPlus size={16} strokeWidth={1.75} aria-hidden />
+                        إضافة أعضاء
+                      </Link>
+                      {inst.status !== "frozen" ? (
+                        <button
+                          type="button"
+                          className="btn btn-danger flex-1 justify-center sm:flex-none"
+                          onClick={() => setDeleteTarget(inst)}
+                        >
+                          حذف
+                        </button>
+                      ) : null}
+                    </div>
                   </li>
                 );
               })}
@@ -449,6 +467,18 @@ export default function SuperAdminInstitutionsPage() {
           </>
         )}
       </DashboardSection>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="تعطيل المؤسسة"
+        body={DELETE_CONFIRM_BODY}
+        confirmLabel="تعطيل"
+        cancelLabel={t("dashboard.institutions.cancel")}
+        confirmVariant="danger"
+        confirmBusy={deleting}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => void confirmDelete()}
+      />
     </DashboardShell>
   );
 }

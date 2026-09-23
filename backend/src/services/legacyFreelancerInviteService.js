@@ -37,6 +37,8 @@ const AUDIT_ACTIONS = Object.freeze({
   CAMPAIGN_UPDATED: "LEGACY_FREELANCER_CAMPAIGN_UPDATED",
   CAMPAIGN_REVOKED: "LEGACY_FREELANCER_CAMPAIGN_REVOKED",
   INVITE_REDEEMED: "LEGACY_FREELANCER_INVITE_REDEEMED",
+  CAMPAIGN_INSTITUTION_CHANGED: "LEGACY_CAMPAIGN_INSTITUTION_CHANGED",
+  REGISTRATION_JOINED_INSTITUTION: "LEGACY_REGISTRATION_JOINED_INSTITUTION",
 });
 
 function addMonthsUtc(date, months) {
@@ -195,6 +197,9 @@ function mapCampaignPublic(row, { includeJoinUrl = false, plaintextToken = null 
     defaultPlanId: row.default_plan_id != null ? String(row.default_plan_id) : null,
     defaultTrustLevel: row.default_trust_level,
     defaultCategoryId: row.default_category_id != null ? String(row.default_category_id) : null,
+    institutionId: row.institution_id != null ? String(row.institution_id) : null,
+    institutionName: row.institution_name || null,
+    institutionStatus: row.institution_status || null,
     maxRedemptions: Number(row.max_redemptions),
     usedCount: Number(row.used_count),
     remainingSeats: remaining,
@@ -262,20 +267,48 @@ async function resolvePlanByCode(planCode, client) {
 }
 
 async function listCampaigns() {
-  const { rows } = await pool.query(
-    `SELECT *
-       FROM legacy_freelancer_invite_campaigns
-      ORDER BY created_at DESC, id DESC`,
-  );
-  return rows.map((r) => mapCampaignPublic(r));
+  try {
+    const { rows } = await pool.query(
+      `SELECT c.*,
+              i.name AS institution_name,
+              i.status AS institution_status
+         FROM legacy_freelancer_invite_campaigns c
+         LEFT JOIN institutions i ON i.id = c.institution_id
+        ORDER BY c.created_at DESC, c.id DESC`,
+    );
+    return rows.map((r) => mapCampaignPublic(r));
+  } catch (e) {
+    if (!(e && e.code === "42703")) throw e;
+    const { rows } = await pool.query(
+      `SELECT *
+         FROM legacy_freelancer_invite_campaigns
+        ORDER BY created_at DESC, id DESC`,
+    );
+    return rows.map((r) => mapCampaignPublic(r));
+  }
 }
 
 async function getCampaignById(campaignId) {
-  const { rows } = await pool.query(
-    `SELECT * FROM legacy_freelancer_invite_campaigns WHERE id = $1::bigint LIMIT 1`,
-    [Number(campaignId)],
-  );
-  return mapCampaignPublic(rows[0] || null);
+  try {
+    const { rows } = await pool.query(
+      `SELECT c.*,
+              i.name AS institution_name,
+              i.status AS institution_status
+         FROM legacy_freelancer_invite_campaigns c
+         LEFT JOIN institutions i ON i.id = c.institution_id
+        WHERE c.id = $1::bigint
+        LIMIT 1`,
+      [Number(campaignId)],
+    );
+    return mapCampaignPublic(rows[0] || null);
+  } catch (e) {
+    if (!(e && e.code === "42703")) throw e;
+    const { rows } = await pool.query(
+      `SELECT * FROM legacy_freelancer_invite_campaigns WHERE id = $1::bigint LIMIT 1`,
+      [Number(campaignId)],
+    );
+    return mapCampaignPublic(rows[0] || null);
+  }
 }
 
 async function createCampaign({
@@ -289,6 +322,7 @@ async function createCampaign({
   defaultCategoryId = null,
   notes = null,
   isActive = true,
+  institutionId = null,
 }) {
   const safeName = String(name || "").trim();
   if (!safeName) throw createPublicApiError("اسم الحملة مطلوب.", 400, "VALIDATION_ERROR");
@@ -309,6 +343,15 @@ async function createCampaign({
     throw createPublicApiError("مستوى الثقة غير صالح.", 400, "VALIDATION_ERROR");
   }
 
+  let resolvedInstitutionId = null;
+  if (institutionId != null && institutionId !== "") {
+    const institutionsService = require("./institutionsService");
+    const resolved = await institutionsService.resolveAssignableInstitutionId(institutionId, {
+      allowInactive: true,
+    });
+    resolvedInstitutionId = resolved.id;
+  }
+
   const plaintextToken = generateSecureToken();
   const tokenHash = sha256Hex(plaintextToken);
   const resolved = await resolvePlanByCode(defaultPlanCode);
@@ -316,29 +359,65 @@ async function createCampaign({
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    const { rows } = await client.query(
-      `INSERT INTO legacy_freelancer_invite_campaigns (
-         name, slug, secure_token_hash, created_by_admin_id,
-         default_plan_id, default_plan_code, default_trust_level, default_category_id,
-         max_redemptions, used_count, expires_at, is_active, notes
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,$10,$11,$12)
-       RETURNING *`,
-      [
-        safeName,
-        safeSlug,
-        tokenHash,
-        Number(actorAdminId),
-        resolved.planId,
-        resolved.planCode,
-        trust,
-        defaultCategoryId != null && defaultCategoryId !== "" ? Number(defaultCategoryId) : null,
-        maxSeats,
-        expires.toISOString(),
-        Boolean(isActive),
-        notes != null ? String(notes).slice(0, 4000) : null,
-      ],
-    );
-    const campaign = rows[0];
+    let campaign;
+    try {
+      const { rows } = await client.query(
+        `INSERT INTO legacy_freelancer_invite_campaigns (
+           name, slug, secure_token_hash, created_by_admin_id,
+           default_plan_id, default_plan_code, default_trust_level, default_category_id,
+           max_redemptions, used_count, expires_at, is_active, notes, institution_id
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,$10,$11,$12,$13)
+         RETURNING *`,
+        [
+          safeName,
+          safeSlug,
+          tokenHash,
+          Number(actorAdminId),
+          resolved.planId,
+          resolved.planCode,
+          trust,
+          defaultCategoryId != null && defaultCategoryId !== "" ? Number(defaultCategoryId) : null,
+          maxSeats,
+          expires.toISOString(),
+          Boolean(isActive),
+          notes != null ? String(notes).slice(0, 4000) : null,
+          resolvedInstitutionId,
+        ],
+      );
+      campaign = rows[0];
+    } catch (insErr) {
+      if (!(insErr && insErr.code === "42703")) throw insErr;
+      const { rows } = await client.query(
+        `INSERT INTO legacy_freelancer_invite_campaigns (
+           name, slug, secure_token_hash, created_by_admin_id,
+           default_plan_id, default_plan_code, default_trust_level, default_category_id,
+           max_redemptions, used_count, expires_at, is_active, notes
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,$10,$11,$12)
+         RETURNING *`,
+        [
+          safeName,
+          safeSlug,
+          tokenHash,
+          Number(actorAdminId),
+          resolved.planId,
+          resolved.planCode,
+          trust,
+          defaultCategoryId != null && defaultCategoryId !== "" ? Number(defaultCategoryId) : null,
+          maxSeats,
+          expires.toISOString(),
+          Boolean(isActive),
+          notes != null ? String(notes).slice(0, 4000) : null,
+        ],
+      );
+      campaign = rows[0];
+      if (resolvedInstitutionId != null) {
+        throw createPublicApiError(
+          "عمود ربط المؤسسة غير متاح بعد. طبّق ترحيل 192 أولاً.",
+          500,
+          "MIGRATION_REQUIRED",
+        );
+      }
+    }
     await writeAudit(client, {
       action: AUDIT_ACTIONS.CAMPAIGN_CREATED,
       actorAdminId,
@@ -348,6 +427,7 @@ async function createCampaign({
         maxRedemptions: maxSeats,
         defaultPlanCode: resolved.planCode,
         defaultTrustLevel: trust,
+        institutionId: resolvedInstitutionId != null ? String(resolvedInstitutionId) : null,
       },
     });
     try {
@@ -367,6 +447,9 @@ async function createCampaign({
       }
     }
     await client.query("COMMIT");
+    if (resolvedInstitutionId != null) {
+      campaign.institution_id = resolvedInstitutionId;
+    }
     return mapCampaignPublic(campaign, { includeJoinUrl: true, plaintextToken });
   } catch (err) {
     await client.query("ROLLBACK");
@@ -392,6 +475,7 @@ async function updateCampaign({
   isActive,
   requireIdFront,
   requireIdBack,
+  institutionId,
 }) {
   const client = await pool.connect();
   try {
@@ -436,41 +520,109 @@ async function updateCampaign({
       expires = d.toISOString();
     }
 
-    const { rows } = await client.query(
-      `UPDATE legacy_freelancer_invite_campaigns SET
-         name = COALESCE($2, name),
-         max_redemptions = $3,
-         expires_at = $4,
-         default_plan_id = $5,
-         default_plan_code = $6,
-         default_trust_level = $7,
-         default_category_id = CASE WHEN $8::boolean THEN $9 ELSE default_category_id END,
-         notes = CASE WHEN $10::boolean THEN $11 ELSE notes END,
-         is_active = COALESCE($12, is_active),
-         require_id_front = CASE WHEN $13::boolean THEN $14 ELSE require_id_front END,
-         require_id_back = CASE WHEN $15::boolean THEN $16 ELSE require_id_back END,
-         updated_at = NOW()
-       WHERE id = $1
-       RETURNING *`,
-      [
-        Number(campaignId),
-        name != null ? String(name).trim() : null,
-        maxSeats,
-        expires,
-        planId,
-        planCode,
-        trust,
-        defaultCategoryId !== undefined,
-        defaultCategoryId != null && defaultCategoryId !== "" ? Number(defaultCategoryId) : null,
-        notes !== undefined,
-        notes != null ? String(notes).slice(0, 4000) : null,
-        isActive != null ? Boolean(isActive) : null,
-        requireIdFront !== undefined,
-        requireIdFront != null ? Boolean(requireIdFront) : true,
-        requireIdBack !== undefined,
-        requireIdBack != null ? Boolean(requireIdBack) : true,
-      ],
-    );
+    let nextInstitutionId =
+      existing.institution_id != null ? Number(existing.institution_id) : null;
+    let institutionChanged = false;
+    if (institutionId !== undefined) {
+      if (institutionId == null || institutionId === "") {
+        nextInstitutionId = null;
+      } else {
+        const institutionsService = require("./institutionsService");
+        const resolved = await institutionsService.resolveAssignableInstitutionId(institutionId, {
+          client,
+          allowInactive: true,
+        });
+        nextInstitutionId = resolved.id;
+      }
+      institutionChanged =
+        String(existing.institution_id || "") !== String(nextInstitutionId || "");
+    }
+
+    let rows;
+    try {
+      ({ rows } = await client.query(
+        `UPDATE legacy_freelancer_invite_campaigns SET
+           name = COALESCE($2, name),
+           max_redemptions = $3,
+           expires_at = $4,
+           default_plan_id = $5,
+           default_plan_code = $6,
+           default_trust_level = $7,
+           default_category_id = CASE WHEN $8::boolean THEN $9 ELSE default_category_id END,
+           notes = CASE WHEN $10::boolean THEN $11 ELSE notes END,
+           is_active = COALESCE($12, is_active),
+           require_id_front = CASE WHEN $13::boolean THEN $14 ELSE require_id_front END,
+           require_id_back = CASE WHEN $15::boolean THEN $16 ELSE require_id_back END,
+           institution_id = CASE WHEN $17::boolean THEN $18 ELSE institution_id END,
+           updated_at = NOW()
+         WHERE id = $1
+         RETURNING *`,
+        [
+          Number(campaignId),
+          name != null ? String(name).trim() : null,
+          maxSeats,
+          expires,
+          planId,
+          planCode,
+          trust,
+          defaultCategoryId !== undefined,
+          defaultCategoryId != null && defaultCategoryId !== "" ? Number(defaultCategoryId) : null,
+          notes !== undefined,
+          notes != null ? String(notes).slice(0, 4000) : null,
+          isActive != null ? Boolean(isActive) : null,
+          requireIdFront !== undefined,
+          requireIdFront != null ? Boolean(requireIdFront) : true,
+          requireIdBack !== undefined,
+          requireIdBack != null ? Boolean(requireIdBack) : true,
+          institutionId !== undefined,
+          nextInstitutionId,
+        ],
+      ));
+    } catch (updErr) {
+      if (!(updErr && updErr.code === "42703")) throw updErr;
+      if (institutionId !== undefined && institutionChanged) {
+        throw createPublicApiError(
+          "عمود ربط المؤسسة غير متاح بعد. طبّق ترحيل 192 أولاً.",
+          500,
+          "MIGRATION_REQUIRED",
+        );
+      }
+      ({ rows } = await client.query(
+        `UPDATE legacy_freelancer_invite_campaigns SET
+           name = COALESCE($2, name),
+           max_redemptions = $3,
+           expires_at = $4,
+           default_plan_id = $5,
+           default_plan_code = $6,
+           default_trust_level = $7,
+           default_category_id = CASE WHEN $8::boolean THEN $9 ELSE default_category_id END,
+           notes = CASE WHEN $10::boolean THEN $11 ELSE notes END,
+           is_active = COALESCE($12, is_active),
+           require_id_front = CASE WHEN $13::boolean THEN $14 ELSE require_id_front END,
+           require_id_back = CASE WHEN $15::boolean THEN $16 ELSE require_id_back END,
+           updated_at = NOW()
+         WHERE id = $1
+         RETURNING *`,
+        [
+          Number(campaignId),
+          name != null ? String(name).trim() : null,
+          maxSeats,
+          expires,
+          planId,
+          planCode,
+          trust,
+          defaultCategoryId !== undefined,
+          defaultCategoryId != null && defaultCategoryId !== "" ? Number(defaultCategoryId) : null,
+          notes !== undefined,
+          notes != null ? String(notes).slice(0, 4000) : null,
+          isActive != null ? Boolean(isActive) : null,
+          requireIdFront !== undefined,
+          requireIdFront != null ? Boolean(requireIdFront) : true,
+          requireIdBack !== undefined,
+          requireIdBack != null ? Boolean(requireIdBack) : true,
+        ],
+      ));
+    }
 
     await writeAudit(client, {
       action: AUDIT_ACTIONS.CAMPAIGN_UPDATED,
@@ -482,8 +634,21 @@ async function updateCampaign({
         isActive: rows[0].is_active,
         defaultTrustLevel: rows[0].default_trust_level,
         defaultPlanCode: rows[0].default_plan_code,
+        institutionId: rows[0].institution_id != null ? String(rows[0].institution_id) : null,
       },
     });
+    if (institutionChanged) {
+      await writeAudit(client, {
+        action: AUDIT_ACTIONS.CAMPAIGN_INSTITUTION_CHANGED,
+        actorAdminId,
+        campaignId,
+        detail: {
+          previousInstitutionId:
+            existing.institution_id != null ? String(existing.institution_id) : null,
+          institutionId: nextInstitutionId != null ? String(nextInstitutionId) : null,
+        },
+      });
+    }
     await client.query("COMMIT");
     return mapCampaignPublic(rows[0]);
   } catch (err) {
@@ -1391,6 +1556,28 @@ async function registerLegacyFreelancer(payload, { ip = null, userAgent = null, 
         timestamp: nowIso,
       },
     });
+
+    // Optional Institution membership — same transaction; failure rolls back seat + user.
+    if (lockedCampaign.institution_id != null) {
+      const institutionsService = require("./institutionsService");
+      await institutionsService.ensureActiveMembership(client, {
+        institutionId: lockedCampaign.institution_id,
+        userId: user.id,
+        memberRole: "member",
+        actorUserId: lockedCampaign.created_by_admin_id,
+        source: "legacy_invite_registration",
+      });
+      await writeAudit(client, {
+        action: AUDIT_ACTIONS.REGISTRATION_JOINED_INSTITUTION,
+        actorAdminId: lockedCampaign.created_by_admin_id,
+        campaignId: lockedCampaign.id,
+        targetUserId: user.id,
+        detail: {
+          institutionId: String(lockedCampaign.institution_id),
+          source: "legacy_invite_registration",
+        },
+      });
+    }
 
     await client.query("COMMIT");
 

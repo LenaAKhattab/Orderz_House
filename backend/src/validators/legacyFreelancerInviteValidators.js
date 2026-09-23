@@ -21,6 +21,8 @@ const createCampaignValidators = [
   body("defaultCategoryId").optional({ nullable: true }).isInt({ min: 1 }),
   body("notes").optional({ nullable: true }).isString().isLength({ max: 4000 }),
   body("isActive").optional().isBoolean(),
+  body("institutionId").optional({ nullable: true }),
+  body("institution_id").optional({ nullable: true }),
 ];
 
 const updateCampaignValidators = [
@@ -33,6 +35,8 @@ const updateCampaignValidators = [
   body("defaultCategoryId").optional({ nullable: true }),
   body("notes").optional({ nullable: true }).isString().isLength({ max: 4000 }),
   body("isActive").optional().isBoolean(),
+  body("institutionId").optional({ nullable: true }),
+  body("institution_id").optional({ nullable: true }),
 ];
 
 const registerLegacyValidators = [

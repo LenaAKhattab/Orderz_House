@@ -234,6 +234,8 @@ function mapMarketplaceArticle(row) {
     activationCampaignId: toIdString(row.activation_campaign_id),
     activationWaveId: toIdString(row.activation_wave_id),
     activationBudgetState: row.activationBudgetState || null,
+    institutionId: row.institution_id != null ? toIdString(row.institution_id) : null,
+    visibilityScope: row.visibility_scope || "public",
   };
 }
 
@@ -452,7 +454,11 @@ async function listPublishedMarketplaceArticles({
   const lim = Math.min(Math.max(Number(limit) || 50, 1), 200);
   const off = Math.max(Number(offset) || 0, 0);
   const params = [];
-  const where = [`a.status = 'published'`, `a.is_fake_or_training = FALSE`];
+  const where = [
+    `a.status = 'published'`,
+    `a.is_fake_or_training = FALSE`,
+    `COALESCE(a.visibility_scope, 'public') = 'public'`,
+  ];
   if (articleLevel != null && articleLevel !== "") {
     params.push(assertArticleLevel(articleLevel));
     where.push(`a.article_level = $${params.length}`);
@@ -462,15 +468,40 @@ async function listPublishedMarketplaceArticles({
     where.push(`a.category_id = $${params.length}`);
   }
   params.push(lim, off);
-  const { rows } = await pool.query(
-    `SELECT ${ARTICLE_SELECT}
-     ${ARTICLE_FROM}
-     WHERE ${where.join(" AND ")}
-     ORDER BY a.published_at DESC NULLS LAST, a.id DESC
-     LIMIT $${params.length - 1} OFFSET $${params.length}`,
-    params,
-  );
-  return rows.map(mapMarketplaceArticleReadModel);
+  try {
+    const { rows } = await pool.query(
+      `SELECT ${ARTICLE_SELECT}
+       ${ARTICLE_FROM}
+       WHERE ${where.join(" AND ")}
+       ORDER BY a.published_at DESC NULLS LAST, a.id DESC
+       LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      params,
+    );
+    return rows.map(mapMarketplaceArticleReadModel);
+  } catch (e) {
+    if (!(e && e.code === "42703")) throw e;
+    // Pre-194 fallback
+    const whereLegacy = [`a.status = 'published'`, `a.is_fake_or_training = FALSE`];
+    const paramsLegacy = [];
+    if (articleLevel != null && articleLevel !== "") {
+      paramsLegacy.push(assertArticleLevel(articleLevel));
+      whereLegacy.push(`a.article_level = $${paramsLegacy.length}`);
+    }
+    if (categoryId != null && categoryId !== "") {
+      paramsLegacy.push(Number(categoryId));
+      whereLegacy.push(`a.category_id = $${paramsLegacy.length}`);
+    }
+    paramsLegacy.push(lim, off);
+    const { rows } = await pool.query(
+      `SELECT ${ARTICLE_SELECT}
+       ${ARTICLE_FROM}
+       WHERE ${whereLegacy.join(" AND ")}
+       ORDER BY a.published_at DESC NULLS LAST, a.id DESC
+       LIMIT $${paramsLegacy.length - 1} OFFSET $${paramsLegacy.length}`,
+      paramsLegacy,
+    );
+    return rows.map(mapMarketplaceArticleReadModel);
+  }
 }
 
 async function getMarketplaceArticleById(id, { forAdmin = false } = {}) {
@@ -490,7 +521,7 @@ async function getMarketplaceArticleById(id, { forAdmin = false } = {}) {
   return withState;
 }
 
-async function createMarketplaceArticle(payload, { actorUserId = null } = {}) {
+async function createMarketplaceArticle(payload, { actorUserId = null, institutionId = null, visibilityScope = null } = {}) {
   const title = String(payload.title || "").trim();
   if (!title || title.length > 240) {
     throw createAppError("title is required (max 240 characters).", 400, {
@@ -520,14 +551,35 @@ async function createMarketplaceArticle(payload, { actorUserId = null } = {}) {
   const schemaReady = await opportunityBidCollectionService.articleBidCollectionSchemaReady();
   const bildazoFields = assertBildazoInventoryFields(payload, {
     // Soft-require when caller provides Bildazo inventory fields; admin UI always sends them.
-    required: Boolean(
-      payload.bildazoCategoryId ||
-        payload.bildazo_category_id ||
-        payload.writingMode ||
-        payload.writing_mode ||
-        payload.requireBildazoInventory,
-    ),
+    // Explicit requireBildazoInventory:false wins (Institution workflow-only articles).
+    required:
+      payload.requireBildazoInventory === false || payload.requireBildazoInventory === "false"
+        ? false
+        : Boolean(
+            payload.bildazoCategoryId ||
+              payload.bildazo_category_id ||
+              payload.writingMode ||
+              payload.writing_mode ||
+              payload.requireBildazoInventory,
+          ),
   });
+
+  // Trusted institution context ONLY via options (institutionWorkService).
+  // Never accept institutionId/visibilityScope from untrusted payload.
+  let resolvedInstitutionId = null;
+  let resolvedVisibilityScope = "public";
+  if (visibilityScope === "institution" || (institutionId != null && institutionId !== "")) {
+    const rawInst = Number(institutionId);
+    if (!Number.isInteger(rawInst) || rawInst < 1) {
+      throw createAppError("institutionId is required for institution-scoped articles.", 400, {
+        exposeToClient: true,
+        publicCode: "INVALID_INSTITUTION_ID",
+      });
+    }
+    resolvedInstitutionId = rawInst;
+    resolvedVisibilityScope = "institution";
+  }
+
   let requiredBidCount = null;
   let deadline = null;
   let bidCollectionDurationHours = oz05BidSettings.VISIBILITY_DURATION_HOURS_DEFAULT;
@@ -567,7 +619,8 @@ async function createMarketplaceArticle(payload, { actorUserId = null } = {}) {
            status, is_fake_or_training,
            created_by_user_id, updated_by_user_id,
            published_at, closed_at, cancelled_at,
-           required_bid_count, application_deadline_at
+           required_bid_count, application_deadline_at,
+           institution_id, visibility_scope
          ) VALUES (
            $1,$2,$3,$4,
            $5,$6::numeric,
@@ -575,7 +628,8 @@ async function createMarketplaceArticle(payload, { actorUserId = null } = {}) {
            $9,$10,
            $11,$11,
            $12,$13,$14,
-           $15,$16
+           $15,$16,
+           $17,$18
          )
          RETURNING id`,
         [
@@ -595,11 +649,20 @@ async function createMarketplaceArticle(payload, { actorUserId = null } = {}) {
           stamps.cancelledAt,
           requiredBidCount,
           deadline,
+          resolvedInstitutionId,
+          resolvedVisibilityScope,
         ],
       );
       rows = inserted.rows;
     } catch (err) {
       if (err?.code !== "42703") throw err;
+      if (resolvedVisibilityScope === "institution") {
+        throw createAppError(
+          "عمود ربط المؤسسة بالمقالات غير متاح. طبّق ترحيل 194 أولاً.",
+          500,
+          { exposeToClient: true, publicCode: "MIGRATION_REQUIRED" },
+        );
+      }
       const inserted = await client.query(
         `INSERT INTO marketplace_articles (
            title, description, category_id, subcategory_id,

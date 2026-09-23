@@ -189,6 +189,7 @@ function mapOrderBase(row) {
     isPublished: row.is_published,
     isOpenForPool: row.is_open_for_pool,
     visibilityScope: row.visibility_scope || "public",
+    institutionId: row.institution_id != null ? String(row.institution_id) : null,
     institutionalStorageId: row.institutional_storage_id != null ? String(row.institutional_storage_id) : null,
     institutionalStoredOrderId:
       row.institutional_stored_order_id != null ? String(row.institutional_stored_order_id) : null,
@@ -654,6 +655,12 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
       options.institutionalStorageId != null ? Number(options.institutionalStorageId) : null;
     const institutionalStoredOrderId =
       options.institutionalStoredOrderId != null ? Number(options.institutionalStoredOrderId) : null;
+    const institutionIdOpt =
+      options.institutionId != null && options.institutionId !== ""
+        ? Number(options.institutionId)
+        : null;
+    const institutionId =
+      Number.isInteger(institutionIdOpt) && institutionIdOpt > 0 ? institutionIdOpt : null;
 
     if (Number.isInteger(institutionalStoredOrderId) && institutionalStoredOrderId > 0) {
       const { rows: existingInst } = await client.query(
@@ -771,7 +778,8 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         bid_budget_min, bid_budget_max,
         visibility_scope,
         institutional_storage_id,
-        institutional_stored_order_id
+        institutional_stored_order_id,
+        institution_id
       ) VALUES (
         $1,$2,$3,
         $4,$5,
@@ -788,7 +796,7 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         FALSE,'not_required',
         $25,
         $26, $27,
-        $28, $29, $30
+        $28, $29, $30, $31
       )
       RETURNING *`,
       [
@@ -826,6 +834,7 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
         Number.isInteger(institutionalStoredOrderId) && institutionalStoredOrderId > 0
           ? institutionalStoredOrderId
           : null,
+        institutionId,
       ],
     );
 

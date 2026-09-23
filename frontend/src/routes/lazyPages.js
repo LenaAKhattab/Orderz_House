@@ -113,6 +113,9 @@ export const SuperAdminInstitutionsPage = lazy(
 export const SuperAdminInstitutionDetailPage = lazy(
   () => import("../pages/dashboard/SuperAdminInstitutionDetailPage"),
 );
+export const SuperAdminInstitutionWorkDetailPage = lazy(
+  () => import("../pages/dashboard/SuperAdminInstitutionWorkDetailPage"),
+);
 export const InstitutionalOrderStorageListPage = lazy(
   () => import("../pages/dashboard/institutionalStorage/InstitutionalOrderStorageListPage"),
 );

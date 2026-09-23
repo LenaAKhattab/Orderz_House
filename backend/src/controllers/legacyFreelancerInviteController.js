@@ -39,6 +39,7 @@ const createCampaign = async (req, res, next) => {
       defaultCategoryId: req.body.defaultCategoryId ?? req.body.default_category_id,
       notes: req.body.notes,
       isActive: req.body.isActive ?? req.body.is_active,
+      institutionId: req.body.institutionId ?? req.body.institution_id ?? null,
     });
     return res.status(201).json({ success: true, data });
   } catch (err) {
@@ -59,6 +60,12 @@ const updateCampaign = async (req, res, next) => {
       defaultCategoryId: req.body.defaultCategoryId ?? req.body.default_category_id,
       notes: req.body.notes,
       isActive: req.body.isActive ?? req.body.is_active,
+      institutionId:
+        req.body.institutionId !== undefined
+          ? req.body.institutionId
+          : req.body.institution_id !== undefined
+            ? req.body.institution_id
+            : undefined,
     });
     return res.status(200).json({ success: true, data });
   } catch (err) {

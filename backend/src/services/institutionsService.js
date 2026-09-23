@@ -19,6 +19,9 @@ function mapInstitution(row) {
       row.linked_storage_count != null ? Number(row.linked_storage_count) : undefined,
     activeStorageCount:
       row.active_storage_count != null ? Number(row.active_storage_count) : undefined,
+    ordersCount: row.orders_count != null ? Number(row.orders_count) : undefined,
+    releasedOrdersCount:
+      row.released_orders_count != null ? Number(row.released_orders_count) : undefined,
     createdBy: row.created_by != null ? String(row.created_by) : null,
     createdByName: row.created_by_name || null,
     createdAt: row.created_at || null,
@@ -35,9 +38,12 @@ function mapMember(row) {
     memberRole: row.member_role,
     status: row.status,
     email: row.email || null,
+    phone: row.phone || null,
+    accountId: row.account_id || null,
     fullName: row.full_name || row.name || null,
     userRole: row.user_role || null,
     createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
     createdBy: row.created_by != null ? String(row.created_by) : null,
     createdByName: row.created_by_name || null,
   };
@@ -48,6 +54,8 @@ const INSTITUTION_SELECT_EXTRAS = `
   COALESCE(mc.total_count, 0)::int AS membership_total_count,
   COALESCE(sc.linked_count, 0)::int AS linked_storage_count,
   COALESCE(sc.active_storage_count, 0)::int AS active_storage_count,
+  COALESCE(oc.orders_count, 0)::int AS orders_count,
+  COALESCE(oc.released_orders_count, 0)::int AS released_orders_count,
   COALESCE(
     NULLIF(trim(concat_ws(' ', cb.first_name, cb.father_name, cb.family_name)), ''),
     cb.email
@@ -70,6 +78,15 @@ const INSTITUTION_COUNT_JOINS = `
     LEFT JOIN institutional_order_storages s ON s.id = si.storage_id
     WHERE si.institution_id = i.id
   ) sc ON TRUE
+  LEFT JOIN LATERAL (
+    SELECT
+      COUNT(*)::int AS orders_count,
+      COUNT(*) FILTER (WHERE o.visibility_scope = 'institution')::int AS released_orders_count
+    FROM orders o
+    INNER JOIN institutional_storage_institutions si ON si.storage_id = o.institutional_storage_id
+    WHERE si.institution_id = i.id
+      AND o.institutional_storage_id IS NOT NULL
+  ) oc ON TRUE
 `;
 
 async function getInstitutionsSummary() {
@@ -309,13 +326,30 @@ async function updateInstitution({ id, patch, actorUserId = null }) {
   return { institution, deactivationImpact };
 }
 
-async function listMembers(institutionId, { page = 1, limit = 50 } = {}) {
+async function listMembers(institutionId, { page = 1, limit = 50, q = "", status = null } = {}) {
   const lim = Math.min(Math.max(Number(limit) || 50, 1), 100);
   const pg = Math.max(Number(page) || 1, 1);
   const off = (pg - 1) * lim;
   const iid = Number(institutionId);
+  const params = [iid];
+  const where = ["m.institution_id = $1"];
+  if (status === "active" || status === "inactive") {
+    params.push(status);
+    where.push(`m.status = $${params.length}`);
+  }
+  if (q && String(q).trim()) {
+    params.push(`%${String(q).trim()}%`);
+    where.push(`(
+      u.email ILIKE $${params.length}
+      OR u.account_id ILIKE $${params.length}
+      OR u.phone ILIKE $${params.length}
+      OR COALESCE(NULLIF(trim(concat_ws(' ', u.first_name, u.father_name, u.family_name)), ''), '') ILIKE $${params.length}
+    )`);
+  }
+  const whereSql = where.join(" AND ");
+  params.push(lim, off);
   const { rows } = await pool.query(
-    `SELECT m.*, u.email, u.role AS user_role,
+    `SELECT m.*, u.email, u.phone, u.account_id, u.role AS user_role,
        COALESCE(NULLIF(trim(concat_ws(' ', u.first_name, u.father_name, u.family_name)), ''), u.email) AS full_name,
        COALESCE(
          NULLIF(trim(concat_ws(' ', cb.first_name, cb.father_name, cb.family_name)), ''),
@@ -325,10 +359,10 @@ async function listMembers(institutionId, { page = 1, limit = 50 } = {}) {
      FROM institution_members m
      INNER JOIN users u ON u.id = m.user_id
      LEFT JOIN users cb ON cb.id = m.created_by
-     WHERE m.institution_id = $1
+     WHERE ${whereSql}
      ORDER BY m.created_at DESC
-     LIMIT $2 OFFSET $3`,
-    [iid, lim, off],
+     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params,
   );
   const total = Number(rows[0]?.total_count || 0);
   return {
@@ -377,7 +411,7 @@ async function addMember({ institutionId, userId, memberRole = "member", actorUs
     [Number(institutionId), Number(userId), role, Number(actorUserId)],
   );
   const { rows: enriched } = await pool.query(
-    `SELECT m.*, u.email, u.role AS user_role,
+    `SELECT m.*, u.email, u.phone, u.account_id, u.role AS user_role,
        COALESCE(NULLIF(trim(concat_ws(' ', u.first_name, u.father_name, u.family_name)), ''), u.email) AS full_name,
        COALESCE(
          NULLIF(trim(concat_ws(' ', cb.first_name, cb.father_name, cb.family_name)), ''),
@@ -389,10 +423,18 @@ async function addMember({ institutionId, userId, memberRole = "member", actorUs
      WHERE m.id = $1`,
     [rows[0].id],
   );
+  await writeInstitutionAudit(pool, {
+    institutionId,
+    actorUserId,
+    action: reactivated ? "member_reactivated" : "member_added",
+    previousStatus: reactivated ? "inactive" : null,
+    newStatus: "active",
+    metadata: { userId: Number(userId), memberRole: role, source: "admin" },
+  }).catch(() => {});
   return { member: mapMember(enriched[0] || rows[0]), reactivated };
 }
 
-async function removeMember({ institutionId, userId }) {
+async function removeMember({ institutionId, userId, actorUserId = null }) {
   await assertInstitutionNotFrozen(institutionId);
   const { rowCount } = await pool.query(
     `UPDATE institution_members
@@ -400,7 +442,379 @@ async function removeMember({ institutionId, userId }) {
      WHERE institution_id = $1 AND user_id = $2 AND status = 'active'`,
     [Number(institutionId), Number(userId)],
   );
+  if (rowCount > 0) {
+    await writeInstitutionAudit(pool, {
+      institutionId,
+      actorUserId,
+      action: "member_removed",
+      previousStatus: "active",
+      newStatus: "inactive",
+      metadata: { userId: Number(userId) },
+    }).catch(() => {});
+  }
   return { ok: rowCount > 0 };
+}
+
+/**
+ * Upsert active membership inside an existing transaction.
+ * Safe for Legacy registration / manual create — no duplicate active rows.
+ */
+async function ensureActiveMembership(
+  client,
+  { institutionId, userId, memberRole = "member", actorUserId = null, source = "admin" } = {},
+) {
+  const iid = Number(institutionId);
+  const uid = Number(userId);
+  if (!Number.isInteger(iid) || iid < 1) {
+    const err = new Error("معرّف المؤسسة غير صالح.");
+    err.statusCode = 400;
+    err.publicCode = "VALIDATION_ERROR";
+    throw err;
+  }
+  if (!Number.isInteger(uid) || uid < 1) {
+    const err = new Error("معرّف المستخدم غير صالح.");
+    err.statusCode = 400;
+    err.publicCode = "VALIDATION_ERROR";
+    throw err;
+  }
+  const { rows: instRows } = await client.query(
+    `SELECT id, status, name FROM institutions WHERE id = $1 LIMIT 1 FOR SHARE`,
+    [iid],
+  );
+  if (!instRows[0]) {
+    const err = new Error("المؤسسة غير موجودة.");
+    err.statusCode = 404;
+    err.publicCode = "INSTITUTION_NOT_FOUND";
+    throw err;
+  }
+  if (instRows[0].status === "frozen") {
+    throw institutionFrozenError();
+  }
+  const role = memberRole === "manager" ? "manager" : "member";
+  const { rows } = await client.query(
+    `INSERT INTO institution_members (institution_id, user_id, member_role, status, created_by)
+     VALUES ($1, $2, $3, 'active', $4)
+     ON CONFLICT (institution_id, user_id) DO UPDATE
+       SET status = 'active',
+           member_role = CASE
+             WHEN institution_members.status = 'inactive' THEN EXCLUDED.member_role
+             ELSE institution_members.member_role
+           END,
+           updated_at = NOW()
+     RETURNING id, status, member_role,
+       (xmax = 0) AS inserted`,
+    [iid, uid, role, actorUserId != null ? Number(actorUserId) : null],
+  );
+  await writeInstitutionAudit(client, {
+    institutionId: iid,
+    actorUserId,
+    action: "member_added",
+    previousStatus: null,
+    newStatus: "active",
+    metadata: {
+      userId: uid,
+      memberRole: rows[0]?.member_role || role,
+      source,
+      inserted: Boolean(rows[0]?.inserted),
+    },
+  });
+  return {
+    membershipId: String(rows[0].id),
+    institutionId: String(iid),
+    institutionName: instRows[0].name,
+    reactivated: !rows[0].inserted,
+  };
+}
+
+async function updateMember({
+  institutionId,
+  userId,
+  memberRole,
+  status,
+  actorUserId = null,
+} = {}) {
+  await assertInstitutionNotFrozen(institutionId);
+  const { rows: existingRows } = await pool.query(
+    `SELECT * FROM institution_members
+      WHERE institution_id = $1 AND user_id = $2
+      LIMIT 1`,
+    [Number(institutionId), Number(userId)],
+  );
+  const existing = existingRows[0];
+  if (!existing) {
+    const err = new Error("العضوية غير موجودة.");
+    err.statusCode = 404;
+    throw err;
+  }
+  const nextRole =
+    memberRole === undefined
+      ? existing.member_role
+      : memberRole === "manager"
+        ? "manager"
+        : "member";
+  const nextStatus =
+    status === undefined
+      ? existing.status
+      : status === "inactive"
+        ? "inactive"
+        : "active";
+  const { rows } = await pool.query(
+    `UPDATE institution_members
+        SET member_role = $3,
+            status = $4,
+            updated_at = NOW()
+      WHERE institution_id = $1 AND user_id = $2
+      RETURNING *`,
+    [Number(institutionId), Number(userId), nextRole, nextStatus],
+  );
+  if (existing.member_role !== nextRole) {
+    await writeInstitutionAudit(pool, {
+      institutionId,
+      actorUserId,
+      action: "member_role_changed",
+      previousStatus: existing.member_role,
+      newStatus: nextRole,
+      metadata: { userId: Number(userId) },
+    }).catch(() => {});
+  }
+  if (existing.status !== nextStatus) {
+    await writeInstitutionAudit(pool, {
+      institutionId,
+      actorUserId,
+      action: nextStatus === "active" ? "member_activated" : "member_deactivated",
+      previousStatus: existing.status,
+      newStatus: nextStatus,
+      metadata: { userId: Number(userId) },
+    }).catch(() => {});
+  }
+  const { rows: enriched } = await pool.query(
+    `SELECT m.*, u.email, u.phone, u.account_id, u.role AS user_role,
+       COALESCE(NULLIF(trim(concat_ws(' ', u.first_name, u.father_name, u.family_name)), ''), u.email) AS full_name,
+       COALESCE(
+         NULLIF(trim(concat_ws(' ', cb.first_name, cb.father_name, cb.family_name)), ''),
+         cb.email
+       ) AS created_by_name
+     FROM institution_members m
+     INNER JOIN users u ON u.id = m.user_id
+     LEFT JOIN users cb ON cb.id = m.created_by
+     WHERE m.institution_id = $1 AND m.user_id = $2
+     LIMIT 1`,
+    [Number(institutionId), Number(userId)],
+  );
+  return { member: mapMember(enriched[0] || rows[0]) };
+}
+
+/**
+ * Safe delete: hard-delete only unused institutions; otherwise deactivate (archive).
+ */
+async function softDeleteOrArchiveInstitution({ id, actorUserId = null, allowHardDelete = true } = {}) {
+  const existing = await getInstitutionById(id);
+  if (!existing) {
+    const err = new Error("المؤسسة غير موجودة.");
+    err.statusCode = 404;
+    throw err;
+  }
+  if (existing.status === "frozen") {
+    throw institutionFrozenError();
+  }
+
+  const iid = Number(id);
+  const { rows: usage } = await pool.query(
+    `SELECT
+       (SELECT COUNT(*)::int FROM institution_members WHERE institution_id = $1) AS members,
+       (SELECT COUNT(*)::int FROM institutional_storage_institutions WHERE institution_id = $1) AS storages,
+       (
+         SELECT COUNT(*)::int
+         FROM orders o
+         WHERE o.visibility_scope = 'institution'
+           AND (
+             o.institution_id = $1
+             OR (
+               o.institutional_storage_id IS NOT NULL
+               AND EXISTS (
+                 SELECT 1 FROM institutional_storage_institutions si
+                  WHERE si.storage_id = o.institutional_storage_id
+                    AND si.institution_id = $1
+               )
+             )
+           )
+       ) AS released_orders`,
+    [iid],
+  );
+  let legacyCampaigns = 0;
+  let institutionArticles = 0;
+  try {
+    const { rows: campRows } = await pool.query(
+      `SELECT COUNT(*)::int AS c FROM legacy_freelancer_invite_campaigns WHERE institution_id = $1`,
+      [iid],
+    );
+    legacyCampaigns = Number(campRows[0]?.c || 0);
+  } catch (e) {
+    if (!(e && e.code === "42703")) throw e;
+  }
+  try {
+    const { rows: artRows } = await pool.query(
+      `SELECT COUNT(*)::int AS c FROM marketplace_articles WHERE institution_id = $1`,
+      [iid],
+    );
+    institutionArticles = Number(artRows[0]?.c || 0);
+  } catch (e) {
+    if (!(e && e.code === "42703")) throw e;
+  }
+  const u = usage[0] || {};
+  // Audit rows alone do not count as usage — create/status changes always write audits.
+  const used =
+    Number(u.members || 0) > 0 ||
+    Number(u.storages || 0) > 0 ||
+    Number(u.released_orders || 0) > 0 ||
+    legacyCampaigns > 0 ||
+    institutionArticles > 0;
+
+  if (!used && allowHardDelete) {
+    await pool.query(`DELETE FROM institutions WHERE id = $1`, [iid]);
+    return {
+      mode: "hard_deleted",
+      message: "تم حذف المؤسسة غير المستخدمة نهائياً.",
+      institution: null,
+    };
+  }
+
+  if (existing.status === "inactive") {
+    return {
+      mode: "already_inactive",
+      message: "المؤسسة معطّلة مسبقاً مع الاحتفاظ بالسجلات.",
+      institution: existing,
+      usage: {
+        members: Number(u.members || 0),
+        storages: Number(u.storages || 0),
+        releasedOrders: Number(u.released_orders || 0),
+        legacyCampaigns,
+      },
+    };
+  }
+
+  const { institution } = await updateInstitution({
+    id: iid,
+    patch: { status: "inactive" },
+    actorUserId,
+  });
+  await writeInstitutionAudit(pool, {
+    institutionId: iid,
+    actorUserId,
+    action: "archived_via_delete",
+    previousStatus: existing.status,
+    newStatus: "inactive",
+    metadata: {
+      members: Number(u.members || 0),
+      storages: Number(u.storages || 0),
+      releasedOrders: Number(u.released_orders || 0),
+      legacyCampaigns,
+    },
+  }).catch(() => {});
+
+  return {
+    mode: "deactivated",
+    message: "سيتم تعطيل المؤسسة مع الاحتفاظ بالسجلات والطلبات السابقة.",
+    institution,
+    usage: {
+      members: Number(u.members || 0),
+      storages: Number(u.storages || 0),
+      releasedOrders: Number(u.released_orders || 0),
+      legacyCampaigns,
+    },
+  };
+}
+
+async function listReleasedOrdersForInstitution(
+  institutionId,
+  { page = 1, limit = 20, q = "" } = {},
+) {
+  const lim = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const pg = Math.max(Number(page) || 1, 1);
+  const off = (pg - 1) * lim;
+  const iid = Number(institutionId);
+  const params = [iid];
+  const where = [
+    "si.institution_id = $1",
+    "o.institutional_storage_id IS NOT NULL",
+    "o.visibility_scope = 'institution'",
+  ];
+  if (q && String(q).trim()) {
+    params.push(`%${String(q).trim()}%`);
+    where.push(`(o.title ILIKE $${params.length} OR o.order_code ILIKE $${params.length})`);
+  }
+  const whereSql = where.join(" AND ");
+  params.push(lim, off);
+  const { rows } = await pool.query(
+    `SELECT o.id, o.order_code, o.title, o.order_status, o.project_type,
+            o.created_at, o.assigned_freelancer_id, o.institutional_storage_id,
+            o.institutional_stored_order_id,
+            COALESCE(
+              NULLIF(trim(concat_ws(' ', u.first_name, u.father_name, u.family_name)), ''),
+              u.email
+            ) AS assigned_freelancer_name,
+            s.name AS storage_name,
+            COUNT(*) OVER()::int AS total_count
+       FROM orders o
+       INNER JOIN institutional_storage_institutions si ON si.storage_id = o.institutional_storage_id
+       LEFT JOIN institutional_order_storages s ON s.id = o.institutional_storage_id
+       LEFT JOIN users u ON u.id = o.assigned_freelancer_id
+      WHERE ${whereSql}
+      ORDER BY o.created_at DESC
+      LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params,
+  );
+  const total = Number(rows[0]?.total_count || 0);
+  return {
+    orders: rows.map((r) => ({
+      id: String(r.id),
+      orderCode: r.order_code || null,
+      title: r.title || null,
+      status: r.order_status || null,
+      projectType: r.project_type || null,
+      contentType: "order",
+      createdAt: r.created_at || null,
+      assignedFreelancerId: r.assigned_freelancer_id != null ? String(r.assigned_freelancer_id) : null,
+      assignedFreelancerName: r.assigned_freelancer_name || null,
+      storageId: r.institutional_storage_id != null ? String(r.institutional_storage_id) : null,
+      storageName: r.storage_name || null,
+      storedOrderId:
+        r.institutional_stored_order_id != null ? String(r.institutional_stored_order_id) : null,
+    })),
+    pagination: { page: pg, limit: lim, total, totalPages: Math.max(1, Math.ceil(total / lim) || 1) },
+  };
+}
+
+async function resolveAssignableInstitutionId(institutionId, { client = null, allowInactive = true } = {}) {
+  if (institutionId == null || institutionId === "") return null;
+  const iid = Number(institutionId);
+  if (!Number.isInteger(iid) || iid < 1) {
+    const err = new Error("معرّف المؤسسة غير صالح.");
+    err.statusCode = 400;
+    err.publicCode = "VALIDATION_ERROR";
+    throw err;
+  }
+  const runner = client || pool;
+  const { rows } = await runner.query(
+    `SELECT id, status, name FROM institutions WHERE id = $1 LIMIT 1`,
+    [iid],
+  );
+  if (!rows[0]) {
+    const err = new Error("المؤسسة غير موجودة.");
+    err.statusCode = 404;
+    err.publicCode = "INSTITUTION_NOT_FOUND";
+    throw err;
+  }
+  if (rows[0].status === "frozen") {
+    throw institutionFrozenError();
+  }
+  if (!allowInactive && rows[0].status !== "active") {
+    const err = new Error("يمكن ربط الحملات بالمؤسسات النشطة فقط.");
+    err.statusCode = 400;
+    err.publicCode = "INSTITUTION_INACTIVE";
+    throw err;
+  }
+  return { id: Number(rows[0].id), name: rows[0].name, status: rows[0].status };
 }
 
 async function listStoragesForInstitution(institutionId, { page = 1, limit = 20 } = {}) {
@@ -727,9 +1141,14 @@ module.exports = {
   getDeactivationImpact,
   createInstitution,
   updateInstitution,
+  softDeleteOrArchiveInstitution,
   listMembers,
   addMember,
   removeMember,
+  updateMember,
+  ensureActiveMembership,
+  resolveAssignableInstitutionId,
+  listReleasedOrdersForInstitution,
   listStoragesForInstitution,
   listActiveInstitutionIdsForUser,
   userBelongsToAnyInstitution,

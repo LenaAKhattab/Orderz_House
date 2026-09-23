@@ -11,6 +11,7 @@ import {
   putLegacyFreelancerInviteFieldsRequest,
   restoreLegacyFreelancerInviteFieldsRequest,
   getLegacyFreelancerInviteAnswersRequest,
+  adminListInstitutionsRequest,
 } from "../../../services/api";
 import Button from "../../../components/ui/Button";
 import { useToast } from "../../../components/ui/toastContext";
@@ -39,6 +40,7 @@ const EMPTY_FORM = {
   defaultCategoryId: "",
   notes: "",
   isActive: true,
+  institutionId: "",
 };
 
 /**
@@ -63,6 +65,8 @@ export default function LegacyCampaignsPanel({
   const [fieldsBusy, setFieldsBusy] = useState(false);
   const [answersModal, setAnswersModal] = useState(null);
   const [answersLoading, setAnswersLoading] = useState(false);
+  const [institutions, setInstitutions] = useState([]);
+  const [campaignInstitutionId, setCampaignInstitutionId] = useState("");
 
   const selectedId = selectedCampaignId;
 
@@ -83,9 +87,21 @@ export default function LegacyCampaignsPanel({
     getCategoriesRequest()
       .then((res) => setCategories(Array.isArray(res?.data) ? res.data : []))
       .catch(() => setCategories([]));
+    adminListInstitutionsRequest({ status: "active", limit: 100 })
+      .then((res) => setInstitutions(res?.data?.institutions || []))
+      .catch(() => setInstitutions([]));
   }, [load]);
 
   const selected = useMemo(() => rows.find((r) => r.id === selectedId) || null, [rows, selectedId]);
+
+  useEffect(() => {
+    if (!selected) {
+      setCampaignInstitutionId("");
+      return;
+    }
+    const iid = selected.institutionId ?? selected.institution?.id ?? "";
+    setCampaignInstitutionId(iid ? String(iid) : "");
+  }, [selected]);
 
   const loadRedemptions = useCallback(
     async (campaignId) => {
@@ -200,6 +216,7 @@ export default function LegacyCampaignsPanel({
         defaultCategoryId: form.defaultCategoryId ? Number(form.defaultCategoryId) : null,
         notes: form.notes || null,
         isActive: Boolean(form.isActive),
+        institutionId: form.institutionId ? Number(form.institutionId) : null,
       });
       const created = res?.data;
       setLastCreatedLink(created?.joinUrl || null);
@@ -245,6 +262,36 @@ export default function LegacyCampaignsPanel({
       await load();
     } catch (err) {
       pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر إعادة التوليد") });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const institutionNameById = useMemo(() => {
+    const map = new Map();
+    institutions.forEach((i) => map.set(String(i.id), i.name || `#${i.id}`));
+    return map;
+  }, [institutions]);
+
+  const resolveCampaignInstitutionLabel = (row) => {
+    if (row?.institutionName) return row.institutionName;
+    if (row?.institution?.name) return row.institution.name;
+    const iid = row?.institutionId ?? row?.institution?.id;
+    if (iid) return institutionNameById.get(String(iid)) || `#${iid}`;
+    return "بدون مؤسسة";
+  };
+
+  const saveCampaignInstitution = async () => {
+    if (!selectedId) return;
+    setBusyId(selectedId);
+    try {
+      await updateLegacyFreelancerInviteRequest(selectedId, {
+        institutionId: campaignInstitutionId ? Number(campaignInstitutionId) : null,
+      });
+      pushToast({ type: "success", message: "تم تحديث ربط المؤسسة" });
+      await load();
+    } catch (err) {
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحديث المؤسسة") });
     } finally {
       setBusyId(null);
     }
@@ -469,6 +516,23 @@ export default function LegacyCampaignsPanel({
             </select>
           </label>
           <label className="oh-sa-users-field oh-legacy-admin__form-span">
+            <span>المؤسسة المرتبطة</span>
+            <select
+              value={form.institutionId}
+              onChange={(e) => setForm((f) => ({ ...f, institutionId: e.target.value }))}
+            >
+              <option value="">بدون مؤسسة</option>
+              {institutions.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.name}
+                </option>
+              ))}
+            </select>
+            <span className="oh-sa-users-muted" style={{ fontSize: "0.78rem", lineHeight: 1.5 }}>
+              كل فريلانسر يسجل من خلال هذه الحملة سيتم إضافته تلقائياً كعضو في المؤسسة المحددة.
+            </span>
+          </label>
+          <label className="oh-sa-users-field oh-legacy-admin__form-span">
             <span>ملاحظات داخلية</span>
             <textarea rows={2} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
           </label>
@@ -508,6 +572,7 @@ export default function LegacyCampaignsPanel({
                 <tr>
                   <th scope="col">الاسم</th>
                   <th scope="col">Slug</th>
+                  <th scope="col">المؤسسة</th>
                   <th scope="col">المسجلون / المقاعد</th>
                   <th scope="col">الانتهاء</th>
                   <th scope="col">الحالة</th>
@@ -523,6 +588,7 @@ export default function LegacyCampaignsPanel({
                       </div>
                     </td>
                     <td dir="ltr">{row.slug}</td>
+                    <td>{resolveCampaignInstitutionLabel(row)}</td>
                     <td>
                       {row.usedCount} / {row.maxRedemptions}
                     </td>
@@ -567,6 +633,36 @@ export default function LegacyCampaignsPanel({
       </DashboardSection>
 
       {selected && showFieldConfig ? renderFieldConfig() : null}
+
+      {selected ? (
+        <DashboardSection
+          title={`ربط المؤسسة — ${selected.name}`}
+          description="يمكن تعديل المؤسسة المرتبطة بالحملة؛ ينطبق على المسجلين الجدد عبر الرابط."
+        >
+          <div className="oh-legacy-admin__form-grid oh-legacy-admin__form-grid--2" style={{ maxWidth: "36rem" }}>
+            <label className="oh-sa-users-field oh-legacy-admin__form-span">
+              <span>المؤسسة</span>
+              <select
+                value={campaignInstitutionId}
+                onChange={(e) => setCampaignInstitutionId(e.target.value)}
+                disabled={busyId === selectedId}
+              >
+                <option value="">بدون مؤسسة</option>
+                {institutions.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="oh-legacy-admin__form-span">
+              <Button type="button" disabled={busyId === selectedId} onClick={() => void saveCampaignInstitution()}>
+                حفظ ربط المؤسسة
+              </Button>
+            </div>
+          </div>
+        </DashboardSection>
+      ) : null}
 
       {selected ? (
         <DashboardSection

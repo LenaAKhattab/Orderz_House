@@ -968,8 +968,26 @@ async function createManualLegacyFreelancer(payload, { actorAdminId, files = {} 
         hasIdentityBack: Boolean(idBack),
         signedDocCount: signedTypeIds.length,
         mustChangePassword: true,
+        institutionId:
+          payload.institutionId != null && payload.institutionId !== ""
+            ? String(payload.institutionId)
+            : payload.institution_id != null && payload.institution_id !== ""
+              ? String(payload.institution_id)
+              : null,
       },
     });
+
+    const rawInstitutionId = payload.institutionId ?? payload.institution_id ?? null;
+    if (rawInstitutionId != null && rawInstitutionId !== "") {
+      const institutionsService = require("./institutionsService");
+      await institutionsService.ensureActiveMembership(client, {
+        institutionId: rawInstitutionId,
+        userId: user.id,
+        memberRole: "member",
+        actorUserId: actorAdminId,
+        source: "legacy_admin_manual",
+      });
+    }
 
     await client.query("COMMIT");
 

@@ -195,6 +195,11 @@ describe("legacy invite audit action constants", () => {
     assert.strictEqual(AUDIT_ACTIONS.CAMPAIGN_UPDATED, "LEGACY_FREELANCER_CAMPAIGN_UPDATED");
     assert.strictEqual(AUDIT_ACTIONS.CAMPAIGN_REVOKED, "LEGACY_FREELANCER_CAMPAIGN_REVOKED");
     assert.strictEqual(AUDIT_ACTIONS.INVITE_REDEEMED, "LEGACY_FREELANCER_INVITE_REDEEMED");
+    assert.strictEqual(AUDIT_ACTIONS.CAMPAIGN_INSTITUTION_CHANGED, "LEGACY_CAMPAIGN_INSTITUTION_CHANGED");
+    assert.strictEqual(
+      AUDIT_ACTIONS.REGISTRATION_JOINED_INSTITUTION,
+      "LEGACY_REGISTRATION_JOINED_INSTITUTION",
+    );
     assert.match(TRAINING_WAIVER_REASON, /Legacy/);
     assert.match(FINAL_EXAM_WAIVER_REASON, /Legacy/);
     assert.strictEqual(PLAN_ASSIGNMENT_REASON, "Legacy company freelancer shared invite");

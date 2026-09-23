@@ -12,6 +12,7 @@ import {
   replaceLegacyFreelancerIdentityRequest,
   listLegacyDocumentTypesRequest,
   listAdminPlansRequest,
+  adminListInstitutionsRequest,
 } from "../../../services/api";
 import Button from "../../../components/ui/Button";
 import { useToast } from "../../../components/ui/toastContext";
@@ -58,6 +59,7 @@ const EMPTY_CREATE = {
   durationMonths: "",
   historicalAmount: "",
   signedDocumentTypeIds: [],
+  institutionId: "",
 };
 
 const EMPTY_FILTERS = {
@@ -85,6 +87,7 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [plans, setPlans] = useState([]);
   const [docTypes, setDocTypes] = useState([]);
+  const [institutions, setInstitutions] = useState([]);
 
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState(EMPTY_CREATE);
@@ -148,6 +151,9 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
     listLegacyDocumentTypesRequest({ includeInactive: false })
       .then((res) => setDocTypes(Array.isArray(res?.data) ? res.data : []))
       .catch(() => setDocTypes([]));
+    adminListInstitutionsRequest({ status: "active", limit: 100 })
+      .then((res) => setInstitutions(res?.data?.institutions || []))
+      .catch(() => setInstitutions([]));
   }, []);
 
   const loadDetail = useCallback(
@@ -230,6 +236,7 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
         durationMonths: createForm.durationMonths || undefined,
         historicalAmount: createForm.historicalAmount || undefined,
         signedDocumentTypeIds: createForm.signedDocumentTypeIds,
+        institutionId: createForm.institutionId ? Number(createForm.institutionId) : undefined,
       };
 
       let payload;
@@ -564,6 +571,20 @@ export default function LegacyFreelancersPanel({ createSignal = 0, onListChanged
                     />
                   </label>
                 ))}
+                <label className="oh-sa-users-field oh-legacy-admin__form-span">
+                  <span>ربط بمؤسسة (اختياري)</span>
+                  <select
+                    value={createForm.institutionId}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, institutionId: e.target.value }))}
+                  >
+                    <option value="">— بدون —</option>
+                    {institutions.map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {i.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <label className="oh-sa-users-field">
                   <span>الباقة (اختياري)</span>
                   <select

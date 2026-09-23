@@ -101,6 +101,10 @@ async function getPublishedById(req, res, next) {
     if (!article || article.status !== "published" || article.isFakeOrTraining) {
       return res.status(404).json({ success: false, message: "المقال غير موجود." });
     }
+    // Institution-scoped articles are not public marketplace inventory.
+    if (String(article.visibilityScope || "public") === "institution") {
+      return res.status(404).json({ success: false, message: "المقال غير موجود." });
+    }
     const withProgress = await withBidCollection(article);
     return res.status(200).json({
       success: true,

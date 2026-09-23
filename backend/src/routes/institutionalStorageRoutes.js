@@ -22,6 +22,7 @@ router.post("/institutions", ...institutionsPerm, adminWriteLimiter, controller.
 router.get("/institutions/users/search", ...institutionsPerm, controller.searchUsersForMembership);
 router.get("/institutions/:id", ...institutionsPerm, controller.getInstitution);
 router.patch("/institutions/:id", ...institutionsPerm, adminWriteLimiter, controller.patchInstitution);
+router.delete("/institutions/:id", ...institutionsPerm, adminWriteLimiter, controller.deleteInstitution);
 router.get("/institutions/:id/statistics", ...institutionsPerm, controller.getInstitutionStatistics);
 router.post(
   "/institutions/:id/freeze",
@@ -43,8 +44,56 @@ router.get(
   controller.getInstitutionDeactivationImpact,
 );
 router.get("/institutions/:id/storages", ...institutionsPerm, controller.listInstitutionStorages);
+router.get("/institutions/:id/orders", ...institutionsPerm, controller.listInstitutionOrders);
+router.post(
+  "/institutions/:id/work",
+  ...institutionsPerm,
+  adminOrderCreateLimiter,
+  uploadMw.uploadOrderFiles,
+  uploadMw.handleOrderUploadErrors,
+  uploadMw.enforceOrderUploadTotalSize,
+  controller.createInstitutionWork,
+);
+router.get(
+  "/institutions/:id/work/:workType/:workId",
+  ...institutionsPerm,
+  controller.getInstitutionWork,
+);
+router.post(
+  "/institutions/:id/work/:workType/:workId/applicants/:applicantId/accept",
+  ...institutionsPerm,
+  adminWriteLimiter,
+  controller.acceptInstitutionWorkApplicant,
+);
+router.post(
+  "/institutions/:id/work/:workType/:workId/applicants/:applicantId/reject",
+  ...institutionsPerm,
+  adminWriteLimiter,
+  controller.rejectInstitutionWorkApplicant,
+);
+router.post(
+  "/institutions/:id/work/:workType/:workId/delivery/approve",
+  ...institutionsPerm,
+  adminWriteLimiter,
+  controller.approveInstitutionWorkDelivery,
+);
+router.post(
+  "/institutions/:id/work/:workType/:workId/delivery/revision",
+  ...institutionsPerm,
+  adminWriteLimiter,
+  uploadMw.uploadOrderFiles,
+  uploadMw.handleOrderUploadErrors,
+  uploadMw.enforceOrderUploadTotalSize,
+  controller.requestInstitutionWorkRevision,
+);
 router.get("/institutions/:id/members", ...institutionsPerm, controller.listMembers);
 router.post("/institutions/:id/members", ...institutionsPerm, adminWriteLimiter, controller.addMember);
+router.patch(
+  "/institutions/:id/members/:userId",
+  ...institutionsPerm,
+  adminWriteLimiter,
+  controller.updateMember,
+);
 router.delete("/institutions/:id/members/:userId", ...institutionsPerm, adminWriteLimiter, controller.removeMember);
 
 // Institutional order storage — static paths before :storageId

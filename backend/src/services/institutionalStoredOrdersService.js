@@ -1076,6 +1076,7 @@ async function releaseOneStoredOrder(_clientUnused, { storedOrder, storage, acto
       visibilityScope: "institution",
       institutionalStorageId: storage.id,
       institutionalStoredOrderId: storedOrder.id,
+      institutionId: await resolveSoleInstitutionIdForStorage(storage.id),
     },
   });
   const realOrderId = Number(created?.id);
@@ -1351,6 +1352,19 @@ async function retryBatch({ actorUserId, batchId }) {
 }
 
 /** Institution-scoped private pool listing. */
+async function resolveSoleInstitutionIdForStorage(storageId) {
+  const sid = Number(storageId);
+  if (!Number.isInteger(sid) || sid < 1) return null;
+  const { rows } = await pool.query(
+    `SELECT institution_id
+       FROM institutional_storage_institutions
+      WHERE storage_id = $1`,
+    [sid],
+  );
+  if (rows.length !== 1) return null;
+  return Number(rows[0].institution_id);
+}
+
 async function listInstitutionalPoolForUser({ userId, page = 1, limit = 20, q = "" }) {
   const institutionIds = await base.institutionsService.listActiveInstitutionIdsForUser(userId);
   if (!institutionIds.length) {
@@ -1370,6 +1384,18 @@ async function listInstitutionalPoolForUser({ userId, page = 1, limit = 20, q = 
       OR CAST(o.id AS text) ILIKE $${params.length})`;
   }
 
+  const visibilityMembershipSql = `
+    AND (
+      o.institution_id = ANY($1::bigint[])
+      OR (
+        o.institutional_storage_id IS NOT NULL
+        AND o.institutional_storage_id IN (
+          SELECT si.storage_id FROM institutional_storage_institutions si
+          WHERE si.institution_id = ANY($1::bigint[])
+        )
+      )
+    )`;
+
   const { rows: cRows } = await pool.query(
     `SELECT COUNT(*)::int AS c
      FROM orders o
@@ -1378,10 +1404,7 @@ async function listInstitutionalPoolForUser({ userId, page = 1, limit = 20, q = 
        AND o.is_open_for_pool = TRUE
        AND o.assigned_freelancer_id IS NULL
        AND o.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')
-       AND o.institutional_storage_id IN (
-         SELECT si.storage_id FROM institutional_storage_institutions si
-         WHERE si.institution_id = ANY($1::bigint[])
-       )${searchSql}`,
+       ${visibilityMembershipSql}${searchSql}`,
     params,
   );
   const total = Number(cRows[0]?.c || 0);
@@ -1390,17 +1413,14 @@ async function listInstitutionalPoolForUser({ userId, page = 1, limit = 20, q = 
     `SELECT o.id, o.order_code, o.title, o.description, o.project_type, o.budget,
             o.bid_budget_min, o.bid_budget_max, o.currency_code, o.order_status,
             o.duration_value, o.duration_unit, o.category_id, o.created_at,
-            o.institutional_storage_id
+            o.institutional_storage_id, o.institution_id
      FROM orders o
      WHERE o.visibility_scope = 'institution'
        AND o.is_published = TRUE
        AND o.is_open_for_pool = TRUE
        AND o.assigned_freelancer_id IS NULL
        AND o.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')
-       AND o.institutional_storage_id IN (
-         SELECT si.storage_id FROM institutional_storage_institutions si
-         WHERE si.institution_id = ANY($1::bigint[])
-       )${searchSql}
+       ${visibilityMembershipSql}${searchSql}
      ORDER BY o.created_at DESC
      LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params,
@@ -1422,8 +1442,10 @@ async function listInstitutionalPoolForUser({ userId, page = 1, limit = 20, q = 
       durationUnit: r.duration_unit,
       categoryId: r.category_id != null ? String(r.category_id) : null,
       institutionalStorageId: r.institutional_storage_id != null ? String(r.institutional_storage_id) : null,
+      institutionId: r.institution_id != null ? String(r.institution_id) : null,
       createdAt: r.created_at,
       orderSource: "institutional",
+      sourceLabel: r.institutional_storage_id != null ? "storage" : "direct",
     })),
     pagination: { page: pg, limit: lim, total, totalPages: Math.max(1, Math.ceil(total / lim)) },
   };
@@ -1432,31 +1454,36 @@ async function listInstitutionalPoolForUser({ userId, page = 1, limit = 20, q = 
 async function assertUserCanViewInstitutionalOrder(userId, orderId) {
   const institutionsService = require("./institutionsService");
   const { rows } = await pool.query(
-    `SELECT o.id, o.visibility_scope, o.institutional_storage_id
+    `SELECT o.id, o.visibility_scope, o.institutional_storage_id, o.institution_id
      FROM orders o WHERE o.id = $1 LIMIT 1`,
     [Number(orderId)],
   );
   const order = rows[0];
   if (!order) return { allowed: false, reason: "not_found" };
   if (order.visibility_scope !== "institution") return { allowed: true, reason: "public_scope" };
-  if (!order.institutional_storage_id) return { allowed: false, reason: "missing_storage" };
+
+  let institutionIds = [];
+  if (order.institution_id != null) {
+    institutionIds = [Number(order.institution_id)];
+  } else if (order.institutional_storage_id) {
+    const { rows: inst } = await pool.query(
+      `SELECT institution_id FROM institutional_storage_institutions WHERE storage_id = $1`,
+      [order.institutional_storage_id],
+    );
+    institutionIds = inst.map((r) => Number(r.institution_id));
+  } else {
+    return { allowed: false, reason: "missing_institution_link" };
+  }
+
+  if (!institutionIds.length) return { allowed: false, reason: "missing_institution_link" };
 
   const { rows: frozen } = await pool.query(
-    `SELECT 1
-     FROM institutional_storage_institutions si
-     INNER JOIN institutions i ON i.id = si.institution_id
-     WHERE si.storage_id = $1 AND i.status = 'frozen'
-     LIMIT 1`,
-    [order.institutional_storage_id],
+    `SELECT 1 FROM institutions WHERE id = ANY($1::bigint[]) AND status = 'frozen' LIMIT 1`,
+    [institutionIds],
   );
   if (frozen[0]) return { allowed: false, reason: "institution_frozen" };
 
-  const { rows: inst } = await pool.query(
-    `SELECT institution_id FROM institutional_storage_institutions WHERE storage_id = $1`,
-    [order.institutional_storage_id],
-  );
-  const ids = inst.map((r) => Number(r.institution_id));
-  const ok = await institutionsService.userBelongsToAnyInstitution(userId, ids);
+  const ok = await institutionsService.userBelongsToAnyInstitution(userId, institutionIds);
   return { allowed: ok, reason: ok ? "member" : "forbidden" };
 }
 
