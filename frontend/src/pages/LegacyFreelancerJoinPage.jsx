@@ -12,7 +12,9 @@ import {
   legacyFreelancerRegisterRequest,
 } from "../services/api";
 import { getAuthApiErrorMessage } from "../utils/apiErrorMessage";
-import { ARAB_COUNTRIES } from "../constants/arabCountries";
+import { ARAB_COUNTRIES, DEFAULT_DIAL_CODE } from "../constants/arabCountries";
+import LegacyPhoneInput from "../components/legacy/LegacyPhoneInput";
+import { toPhonePayload } from "../utils/legacyPhone";
 import {
   LEGACY_WORK_FIELDS,
   WORK_FIELDS_REQUIRED_MESSAGE,
@@ -117,7 +119,8 @@ export default function LegacyFreelancerJoinPage() {
   const [success, setSuccess] = useState("");
 
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phoneCountryCode, setPhoneCountryCode] = useState(DEFAULT_DIAL_CODE);
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [country, setCountry] = useState("JO");
@@ -238,7 +241,7 @@ export default function LegacyFreelancerJoinPage() {
           payloadAnswers[f.key] = answers[f.key];
         }
       }
-      const phoneValue = String(phone || "").trim();
+      const phoneValue = toPhonePayload({ countryCode: phoneCountryCode, number: phoneNumber });
       const hasFiles = Boolean(idFrontFile || idBackFile);
       const basePayload = {
         campaignSlug,
@@ -264,7 +267,7 @@ export default function LegacyFreelancerJoinPage() {
         fd.append("campaignSlug", campaignSlug);
         fd.append("token", token);
         fd.append("email", email);
-        fd.append("phone", phoneValue);
+        fd.append("phone", JSON.stringify(phoneValue));
         fd.append("password", password);
         fd.append("passwordConfirm", passwordConfirm);
         fd.append("country", country);
@@ -420,18 +423,20 @@ export default function LegacyFreelancerJoinPage() {
                       onChange={(e) => setEmail(e.target.value)}
                     />
                   </label>
-                  <label className={fieldLabel}>
-                    رقم الهاتف *
-                    <input
-                      className={fieldInput}
+                  <div className={tw.authField}>
+                    <span className={fieldLabel} id="lf-phone-label">
+                      رقم الهاتف *
+                    </span>
+                    <LegacyPhoneInput
+                      id="lf-account-phone"
                       required
-                      dir="ltr"
-                      placeholder="+9627XXXXXXXX"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      autoComplete="tel"
+                      countryCode={phoneCountryCode}
+                      number={phoneNumber}
+                      onCountryCodeChange={setPhoneCountryCode}
+                      onNumberChange={setPhoneNumber}
+                      aria-labelledby="lf-phone-label"
                     />
-                  </label>
+                  </div>
                   <label className={fieldLabel}>
                     الدولة
                     <select className={fieldInput} value={country} onChange={(e) => setCountry(e.target.value)}>

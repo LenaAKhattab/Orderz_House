@@ -140,9 +140,26 @@ describe("unified phone composeE164", () => {
     );
   });
 
+  it("composes non-Jordan countryCode + number", () => {
+    assert.strictEqual(
+      composeE164({ countryCode: "+971", number: "501234567" }),
+      "+971501234567",
+    );
+  });
+
   it("rejects invalid phone", () => {
     assert.throws(() => composeE164("791234567"), (err) => err.statusCode === 400);
     assert.throws(() => composeE164("+962"), (err) => err.statusCode === 400);
+    assert.throws(
+      () => composeE164({ countryCode: "+962", number: "12" }),
+      (err) => err.statusCode === 400,
+    );
+  });
+
+  it("registration still enforces phone uniqueness before seat claim", () => {
+    const invite = read("src/services/legacyFreelancerInviteService.js");
+    assert.match(invite, /Uniqueness before seat claim/);
+    assert.match(invite, /SELECT id FROM users WHERE phone = \$1/);
   });
 });
 
@@ -178,10 +195,15 @@ describe("admin signed-document ownership + audit", () => {
 });
 
 describe("frontend registration UX", () => {
-  it("public join has one phone input and work fields; no contract checkboxes", () => {
+  it("public join uses shared LegacyPhoneInput with country selector; no contract checkboxes", () => {
     const join = read("../frontend/src/pages/LegacyFreelancerJoinPage.jsx");
+    const phoneComp = read("../frontend/src/components/legacy/LegacyPhoneInput.jsx");
+    const phoneCss = read("../frontend/src/components/legacy/LegacyPhoneInput.css");
+    const phoneUtil = read("../frontend/src/utils/legacyPhone.js");
     assert.match(join, /رقم الهاتف \*/);
-    assert.match(join, /\+9627XXXXXXXX/);
+    assert.match(join, /LegacyPhoneInput/);
+    assert.match(join, /toPhonePayload/);
+    assert.match(join, /DEFAULT_DIAL_CODE/);
     assert.match(join, /مجال العمل/);
     assert.match(join, /اختر مجال أو مجالات العمل التي تمارسها/);
     assert.match(join, /WORK_FIELDS_REQUIRED_MESSAGE/);
@@ -189,11 +211,18 @@ describe("frontend registration UX", () => {
     assert.doesNotMatch(join, /عقد تدريب/);
     assert.doesNotMatch(join, /signedDocumentTypeIds/);
     assert.doesNotMatch(join, /documentRequirements/);
-    assert.doesNotMatch(join, /phoneCountryCode|countryCode\s*:/);
-    assert.doesNotMatch(join, /مفتاح/);
+    assert.doesNotMatch(join, /\+9627XXXXXXXX/);
+    assert.match(phoneComp, /dir=["']ltr["']/);
+    assert.match(phoneComp, /legacy-phone-country/);
+    assert.match(phoneComp, /legacy-phone-number/);
+    assert.match(phoneCss, /direction:\s*ltr/);
+    assert.match(phoneCss, /flex-direction:\s*row/);
+    assert.match(phoneUtil, /DEFAULT_DIAL_CODE/);
+    assert.match(phoneUtil, /splitE164/);
+    assert.match(phoneUtil, /DIAL_CODES_LONGEST_FIRST|longest/i);
   });
 
-  it("admin freelancers panel manages signed docs and shows work fields", () => {
+  it("admin freelancers panel manages signed docs and uses shared phone input", () => {
     const panel = read("../frontend/src/pages/dashboard/legacyFreelancerAdmin/LegacyFreelancersPanel.jsx");
     assert.match(panel, /الأوراق والعقود الموقعة/);
     assert.match(panel, /setLegacyFreelancerSignedDocumentRequest|toggleSignedDoc/);
@@ -201,7 +230,9 @@ describe("frontend registration UX", () => {
     assert.match(panel, /غير محدد/);
     assert.match(panel, /workFields/);
     assert.match(panel, /رقم الهاتف \*/);
-    assert.match(panel, /\+9627XXXXXXXX/);
+    assert.match(panel, /LegacyPhoneInput/);
+    assert.match(panel, /toPhonePayload/);
+    assert.doesNotMatch(panel, /\+9627XXXXXXXX/);
   });
 
   it("signed-document APIs are per-freelancer userId (not campaign-only)", () => {

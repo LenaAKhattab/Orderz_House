@@ -126,13 +126,13 @@ describe("frontend admin center tabs", () => {
     assert.match(join, /مجال العمل/);
     assert.match(join, /content_writing|LEGACY_WORK_FIELDS/);
     assert.match(join, /رقم الهاتف \*/);
-    assert.match(join, /\+9627XXXXXXXX/);
+    assert.match(join, /LegacyPhoneInput/);
     assert.match(join, /FormData|multipart/i);
     assert.doesNotMatch(join, /عقد مقاولة/);
     assert.doesNotMatch(join, /عقد تدريب/);
     assert.doesNotMatch(join, /documentRequirements/);
     assert.doesNotMatch(join, /signedDocumentTypeIds/);
-    assert.doesNotMatch(join, /countryCode|مفتاح الدولة|phoneCountryCode/);
+    assert.doesNotMatch(join, /\+9627XXXXXXXX/);
   });
 
   it("AuthGuards redirect mustChangePassword users", () => {

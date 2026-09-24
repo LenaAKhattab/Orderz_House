@@ -1,0 +1,135 @@
+/* Combined Legacy phone control — LTR internal order (country LEFT, number RIGHT)
+   regardless of outer RTL page direction. */
+
+.oh-legacy-phone {
+  display: flex;
+  flex-direction: row;
+  direction: ltr;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-height: 52px;
+  border-radius: 1rem;
+  border: 1px solid rgba(47, 59, 101, 0.14);
+  background: #f9fafc;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.oh-legacy-phone:focus-within {
+  border-color: var(--secondary, #76cfdf);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(118, 207, 223, 0.18);
+}
+
+.oh-legacy-phone__cc-wrap {
+  flex: 0 0 23%;
+  min-width: 5.75rem;
+  max-width: 7.25rem;
+  display: flex;
+  margin: 0;
+}
+
+.oh-legacy-phone__number-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  margin: 0;
+}
+
+.oh-legacy-phone__cc,
+.oh-legacy-phone__number {
+  width: 100%;
+  min-width: 0;
+  min-height: 52px;
+  margin: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none;
+  font-size: 0.92rem;
+  color: #1a2238;
+  direction: ltr;
+  text-align: left;
+}
+
+/* Win over .oh-sa-users-field input/select padding/border in Admin modal */
+.oh-sa-users-field .oh-legacy-phone {
+  background: #fff;
+}
+
+.oh-sa-users-field .oh-legacy-phone__cc,
+.oh-sa-users-field .oh-legacy-phone__number {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.oh-legacy-phone__cc {
+  padding: 0.75rem 0.4rem 0.75rem 0.65rem;
+  border-inline-end: 1px solid rgba(47, 59, 101, 0.12) !important;
+  cursor: pointer;
+  appearance: auto;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.oh-legacy-phone__number {
+  padding: 0.75rem 0.9rem;
+}
+
+.oh-legacy-phone__number::placeholder {
+  color: #8e96ae;
+}
+
+.oh-legacy-phone__cc:disabled,
+.oh-legacy-phone__number:disabled {
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+.oh-legacy-phone__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Compact admin modal fields (slightly shorter to match oh-sa-users inputs) */
+.oh-legacy-phone--admin {
+  min-height: 42px;
+  border-radius: 10px;
+}
+
+.oh-legacy-phone--admin .oh-legacy-phone__cc,
+.oh-legacy-phone--admin .oh-legacy-phone__number {
+  min-height: 42px;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 390px) {
+  .oh-legacy-phone__cc-wrap {
+    flex-basis: 28%;
+    min-width: 5.25rem;
+    max-width: 6.5rem;
+  }
+
+  .oh-legacy-phone__cc {
+    padding-inline: 0.35rem 0.25rem;
+    font-size: 0.82rem;
+  }
+
+  .oh-legacy-phone__number {
+    padding-inline: 0.65rem;
+    font-size: 0.88rem;
+  }
+}

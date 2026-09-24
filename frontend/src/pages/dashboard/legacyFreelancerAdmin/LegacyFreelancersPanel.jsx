@@ -34,6 +34,8 @@ import {
   LegacyIdentityImage,
 } from "./legacyAdminShared";
 import { LEGACY_WORK_FIELDS, WORK_FIELDS_REQUIRED_MESSAGE } from "../../../constants/legacyFreelancerWorkFields";
+import LegacyPhoneInput from "../../../components/legacy/LegacyPhoneInput";
+import { DEFAULT_DIAL_CODE, toPhonePayload } from "../../../utils/legacyPhone";
 
 const DETAIL_TABS = [
   { id: "profile", label: "البيانات" },
@@ -48,7 +50,8 @@ const EMPTY_CREATE = {
   fatherName: "",
   familyName: "",
   nationalId: "",
-  phone: "",
+  phoneCountryCode: DEFAULT_DIAL_CODE,
+  phoneNumber: "",
   email: "",
   city: "",
   residence: "",
@@ -237,7 +240,10 @@ export default function LegacyFreelancersPanel({
         fatherName: createForm.fatherName,
         familyName: createForm.familyName,
         nationalId: createForm.nationalId,
-        phone: String(createForm.phone || "").trim(),
+        phone: toPhonePayload({
+          countryCode: createForm.phoneCountryCode,
+          number: createForm.phoneNumber,
+        }),
         email: createForm.email,
         city: createForm.city || undefined,
         residence: createForm.residence || undefined,
@@ -263,6 +269,8 @@ export default function LegacyFreelancersPanel({
         Object.entries(base).forEach(([key, value]) => {
           if (value == null || value === "") return;
           if (key === "signedDocumentTypeIds" || key === "workFields") {
+            payload.append(key, JSON.stringify(value));
+          } else if (key === "phone" && typeof value === "object") {
             payload.append(key, JSON.stringify(value));
           } else {
             payload.append(key, String(value));
@@ -574,19 +582,30 @@ export default function LegacyFreelancersPanel({
                   ["fatherName", "اسم الأب *", true],
                   ["familyName", "اسم العائلة *", true],
                   ["nationalId", "الرقم الوطني *", true, true],
-                  ["phone", "رقم الهاتف *", true, true],
                 ].map(([key, label, required, ltr]) => (
                   <label key={key} className="oh-sa-users-field">
                     <span>{label}</span>
                     <input
                       required={required}
                       dir={ltr ? "ltr" : undefined}
-                      placeholder={key === "phone" ? "+9627XXXXXXXX" : undefined}
                       value={createForm[key]}
                       onChange={(e) => setCreateForm((f) => ({ ...f, [key]: e.target.value }))}
                     />
                   </label>
                 ))}
+                <div className="oh-sa-users-field">
+                  <span id="oh-legacy-create-phone-label">رقم الهاتف *</span>
+                  <LegacyPhoneInput
+                    id="oh-legacy-create-phone"
+                    variant="admin"
+                    required
+                    countryCode={createForm.phoneCountryCode}
+                    number={createForm.phoneNumber}
+                    onCountryCodeChange={(v) => setCreateForm((f) => ({ ...f, phoneCountryCode: v }))}
+                    onNumberChange={(v) => setCreateForm((f) => ({ ...f, phoneNumber: v }))}
+                    aria-labelledby="oh-legacy-create-phone-label"
+                  />
+                </div>
                 <label className="oh-sa-users-field oh-legacy-admin__form-span">
                   <span>البريد الإلكتروني *</span>
                   <input
