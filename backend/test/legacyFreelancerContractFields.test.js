@@ -111,17 +111,53 @@ describe("validateAndNormalizeAnswers", () => {
       specialization: "حاسوب",
       skills_programs: "Word, Excel",
       freelance_joining_skills: "كتابة محتوى",
-      is_university_student: false,
       is_currently_employed: false,
       information_declaration: true,
     };
     const { normalized } = validateAndNormalizeAnswers(enabledDefaults, answers);
     assert.strictEqual(normalized.first_name, "أحمد");
     assert.strictEqual(normalized.university_institute, undefined);
-    assert.strictEqual(normalized.is_university_student, false);
+    assert.strictEqual(normalized.is_university_student, undefined);
   });
 
-  it("requires current_university when student=yes", () => {
+  it("does not require university-student question on default public fields", () => {
+    const answers = {
+      first_name: "أحمد",
+      father_name: "محمد",
+      family_name: "علي",
+      birth_date: "1990-01-01",
+      nationality: "أردني",
+      national_id: "1234567890",
+      city: "عمّان",
+      residence_area: "خلدا",
+      education_level: "بكالوريوس",
+      specialization: "حاسوب",
+      skills_programs: "Word",
+      freelance_joining_skills: "تصميم",
+      is_currently_employed: false,
+      information_declaration: true,
+    };
+    const { normalized } = validateAndNormalizeAnswers(enabledDefaults, answers);
+    assert.ok(!Object.prototype.hasOwnProperty.call(normalized, "is_university_student"));
+  });
+
+  it("student conditional still works when student field is enabled for a campaign", () => {
+    const fields = enabledDefaults.concat([
+      {
+        fieldKey: "is_university_student",
+        labelAr: "هل أنت طالب جامعي؟",
+        isEnabled: true,
+        isRequired: true,
+        conditional: null,
+      },
+      {
+        fieldKey: "current_university",
+        labelAr: "أين تدرس؟",
+        isEnabled: true,
+        isRequired: true,
+        conditional: { fieldKey: "is_university_student", equals: true },
+      },
+    ]);
     const answers = {
       first_name: "أحمد",
       father_name: "محمد",
@@ -139,10 +175,26 @@ describe("validateAndNormalizeAnswers", () => {
       is_currently_employed: false,
       information_declaration: true,
     };
-    assert.throws(() => validateAndNormalizeAnswers(enabledDefaults, answers), /أين تدرس|مطلوب/);
+    assert.throws(() => validateAndNormalizeAnswers(fields, answers), /أين تدرس|مطلوب/);
   });
 
-  it("student yes with university succeeds", () => {
+  it("student yes with university succeeds when student fields enabled", () => {
+    const fields = enabledDefaults.concat([
+      {
+        fieldKey: "is_university_student",
+        labelAr: "هل أنت طالب جامعي؟",
+        isEnabled: true,
+        isRequired: true,
+        conditional: null,
+      },
+      {
+        fieldKey: "current_university",
+        labelAr: "أين تدرس؟",
+        isEnabled: true,
+        isRequired: true,
+        conditional: { fieldKey: "is_university_student", equals: true },
+      },
+    ]);
     const answers = {
       first_name: "أحمد",
       father_name: "محمد",
@@ -162,7 +214,20 @@ describe("validateAndNormalizeAnswers", () => {
       current_employer: "شركة",
       information_declaration: true,
     };
-    const { normalized } = validateAndNormalizeAnswers(enabledDefaults, answers);
+    // current_employer also needs is_currently_employed enabled — already in defaults
+    const withEmployer = fields.concat([
+      {
+        fieldKey: "current_employer",
+        labelAr: "أين تعمل؟",
+        isEnabled: true,
+        isRequired: true,
+        conditional: { fieldKey: "is_currently_employed", equals: true },
+      },
+    ]);
+    // Avoid duplicate keys from enabledDefaults
+    const byKey = new Map();
+    for (const f of withEmployer) byKey.set(f.fieldKey, f);
+    const { normalized } = validateAndNormalizeAnswers([...byKey.values()], answers);
     assert.strictEqual(normalized.current_university, "الجامعة الأردنية");
     assert.strictEqual(normalized.current_employer, "شركة");
   });

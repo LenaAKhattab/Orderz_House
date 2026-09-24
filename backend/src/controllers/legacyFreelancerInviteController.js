@@ -227,6 +227,18 @@ const previewInvite = async (req, res, next) => {
   }
 };
 
+const fieldSuggestions = async (req, res, next) => {
+  try {
+    const suggestions = require("../services/legacyFreelancerFieldSuggestionsService");
+    const field = String(req.query.field || req.query.fieldKey || "").trim();
+    const q = String(req.query.q || req.query.query || "").trim();
+    const data = await suggestions.getFieldSuggestions(field, q);
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const registerLegacy = async (req, res, next) => {
   try {
     const body = { ...req.body };
@@ -333,6 +345,7 @@ module.exports = {
   restoreCampaignFields,
   getRedemptionAnswers,
   previewInvite,
+  fieldSuggestions,
   registerLegacy,
   getCampaignInviteLink,
   getCampaignWorkspace,

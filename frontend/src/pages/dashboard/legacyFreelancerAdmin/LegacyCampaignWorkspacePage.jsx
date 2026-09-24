@@ -57,7 +57,7 @@ function InsightCard({ label, value, hint, icon: Icon, tone = "default" }) {
         className={`oh-legacy-admin__stat-icon${tone !== "default" ? ` oh-legacy-admin__stat-icon--${tone}` : ""}`}
         aria-hidden
       >
-        {Icon ? <Icon size={16} strokeWidth={2.25} /> : null}
+        {Icon ? <Icon size={14} strokeWidth={2.25} /> : null}
       </div>
       <div className="oh-legacy-admin__stat-body">
         <p className="oh-legacy-admin__stat-label">{label}</p>
@@ -627,7 +627,13 @@ export default function LegacyCampaignWorkspacePage() {
               </div>
               {(fieldConfig?.fields || []).map((f) => (
                 <div key={f.fieldKey} className="oh-legacy-admin__field-row">
-                  <strong>{f.labelAr}</strong>
+                  <strong>
+                    {f.labelAr}
+                    <span className="oh-legacy-admin__muted" style={{ display: "block", fontWeight: 400 }} dir="ltr">
+                      {f.fieldKey} · {f.type}
+                      {f.controlLocked ? " · ثابت" : ""}
+                    </span>
+                  </strong>
                   <label>
                     <input
                       type="checkbox"

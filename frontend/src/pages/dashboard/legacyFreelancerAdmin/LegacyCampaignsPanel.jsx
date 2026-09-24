@@ -329,6 +329,7 @@ export default function LegacyCampaignsPanel({
                   <thead>
                     <tr>
                       <th scope="col">الحقل</th>
+                      <th scope="col">النوع</th>
                       <th scope="col">إظهار</th>
                       <th scope="col">إلزامي</th>
                       <th scope="col">الترتيب</th>
@@ -342,6 +343,12 @@ export default function LegacyCampaignsPanel({
                           <div dir="ltr" className="oh-legacy-admin__muted">
                             {f.fieldKey}
                           </div>
+                        </td>
+                        <td>
+                          <span dir="ltr" className="oh-legacy-admin__muted">
+                            {f.type}
+                            {f.controlLocked ? " (ثابت)" : ""}
+                          </span>
                         </td>
                         <td>
                           <input

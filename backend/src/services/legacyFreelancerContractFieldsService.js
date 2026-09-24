@@ -13,6 +13,12 @@ const {
   getDefaultFieldSeedRows,
 } = require("../constants/legacyFreelancerContractCatalog");
 const { parseDetailedSkillsPrograms } = require("../constants/legacyFreelancerWorkFields");
+const {
+  EDUCATION_OTHER_VALUE,
+  buildGraduationYearOptions,
+  normalizeGraduationYearValue,
+} = require("../constants/legacyEducationOptions");
+const { canonicalJordanCity, CITY_OTHER_VALUE } = require("../constants/jordanCities");
 
 function coerceYesNo(value) {
   if (value === true || value === 1 || value === "1" || value === "true" || value === "yes" || value === "YES" || value === "نعم") {
@@ -41,6 +47,10 @@ function conditionMet(conditional, answersMap) {
   return String(parentVal ?? "") === String(expected);
 }
 
+function normalizeTextLike(raw, maxLen = 500) {
+  return String(raw).trim().replace(/\s+/g, " ").slice(0, maxLen);
+}
+
 function normalizeAnswerValue(fieldDef, raw) {
   if (raw == null || (typeof raw === "string" && raw.trim() === "")) return null;
   if (fieldDef.key === "national_id") {
@@ -63,6 +73,13 @@ function normalizeAnswerValue(fieldDef, raw) {
       }
       return n;
     }
+    case "year_select": {
+      const normalized = normalizeGraduationYearValue(raw);
+      if (normalized == null) {
+        throw createPublicApiError(`سنة تخرج غير صالحة: ${fieldDef.labelAr}`, 400, "VALIDATION_ERROR");
+      }
+      return normalized;
+    }
     case "date": {
       const s = String(raw).trim().slice(0, 32);
       const d = new Date(s);
@@ -72,18 +89,37 @@ function normalizeAnswerValue(fieldDef, raw) {
       return s.slice(0, 10);
     }
     case "select": {
-      const v = String(raw).trim();
+      const v = normalizeTextLike(raw, 200);
+      if (v === EDUCATION_OTHER_VALUE || v === CITY_OTHER_VALUE || v === "أخرى") {
+        throw createPublicApiError(`يرجى كتابة قيمة مخصصة للحقل: ${fieldDef.labelAr}`, 400, "VALIDATION_ERROR");
+      }
       const opts = fieldDef.options || [];
+      const allowCustom = Boolean(fieldDef.allowCustomOther);
       if (opts.length && !opts.some((o) => o.value === v)) {
-        throw createPublicApiError(`خيار غير صالح: ${fieldDef.labelAr}`, 400, "VALIDATION_ERROR");
+        // Historical free-text or "Other" custom value — allowed when catalog permits custom.
+        if (!allowCustom) {
+          throw createPublicApiError(`خيار غير صالح: ${fieldDef.labelAr}`, 400, "VALIDATION_ERROR");
+        }
       }
       return v;
     }
+    case "searchable_select": {
+      let v = normalizeTextLike(raw, 200);
+      if (v === CITY_OTHER_VALUE || v === "أخرى") {
+        throw createPublicApiError(`يرجى كتابة اسم المدينة`, 400, "VALIDATION_ERROR");
+      }
+      if (fieldDef.key === "city") {
+        const canon = canonicalJordanCity(v);
+        if (canon) v = canon;
+      }
+      return v;
+    }
+    case "smart_text":
     case "textarea":
     case "text":
     case "phone":
     default:
-      return String(raw).trim().slice(0, fieldDef.type === "textarea" ? 4000 : 500);
+      return normalizeTextLike(raw, fieldDef.type === "textarea" ? 4000 : 500);
   }
 }
 
@@ -155,6 +191,10 @@ function mapConfigRows(rows, { includeDisabled }) {
       const def = CONTRACT_FIELD_BY_KEY[r.field_key];
       if (!def) return null;
       const cfg = r.config_json && typeof r.config_json === "object" ? r.config_json : {};
+      let options = def.options ? def.options.map((o) => ({ ...o })) : null;
+      if (def.type === "year_select") {
+        options = buildGraduationYearOptions();
+      }
       return {
         id: String(r.id),
         fieldKey: r.field_key,
@@ -165,10 +205,17 @@ function mapConfigRows(rows, { includeDisabled }) {
         isEnabled: Boolean(r.is_enabled),
         isRequired: Boolean(r.is_required),
         sortOrder: Number(r.sort_order),
-        options: def.options ? def.options.map((o) => ({ ...o })) : null,
+        options,
         conditional: def.conditional ? { ...def.conditional } : null,
         sensitive: Boolean(def.sensitive),
         informationalOnly: Boolean(def.informationalOnly),
+        suggestionEnabled: Boolean(def.suggestionEnabled),
+        controlLocked: Boolean(def.controlLocked),
+        allowCustomOther: Boolean(def.allowCustomOther),
+        otherValue: def.otherValue || null,
+        otherLabelAr: def.otherLabelAr || null,
+        notYetValue: def.notYetValue || null,
+        notYetLabelAr: def.notYetLabelAr || null,
         updatedAt: r.updated_at,
       };
     })
@@ -184,6 +231,8 @@ function mapConfigRows(rows, { includeDisabled }) {
       labelNote: "حقل أساسي للنظام",
     })),
     sections: catalog.sections,
+    suggestionFieldKeys: catalog.suggestionFieldKeys,
+    lockedControlFieldKeys: catalog.lockedControlFieldKeys,
     fields: items,
   };
 }
@@ -191,21 +240,45 @@ function mapConfigRows(rows, { includeDisabled }) {
 function buildPublicFormFields(config) {
   return (config.fields || [])
     .filter((f) => f.isEnabled)
-    .map((f) => ({
-      key: f.fieldKey,
-      label: f.labelAr,
-      helper: f.helperAr || null,
-      type: f.type,
-      required: Boolean(f.isRequired),
-      sortOrder: f.sortOrder,
-      section: f.section,
-      options: f.options
-        ? f.options.map((o) => ({ value: o.value, label: o.labelAr }))
-        : null,
-      conditionalRule: f.conditional
-        ? { fieldKey: f.conditional.fieldKey, equals: f.conditional.equals }
-        : null,
-    }));
+    .map((f) => {
+      let options = f.options
+        ? f.options.map((o) => ({ value: o.value, label: o.labelAr || o.label }))
+        : null;
+      if (f.type === "year_select") {
+        options = buildGraduationYearOptions().map((o) => ({
+          value: o.value,
+          label: o.labelAr || o.label,
+        }));
+      }
+      if (f.type === "searchable_select" && f.allowCustomOther) {
+        const otherVal = f.otherValue || CITY_OTHER_VALUE;
+        const otherLabel = f.otherLabelAr || "أخرى";
+        const withoutDup = (options || []).filter((o) => o.value !== otherVal);
+        options = [...withoutDup, { value: otherVal, label: otherLabel }];
+      }
+      if (f.type === "select" && f.allowCustomOther && f.otherValue) {
+        // keep other in options for UI; submitted value must be custom text
+      }
+      return {
+        key: f.fieldKey,
+        label: f.labelAr,
+        helper: f.helperAr || null,
+        type: f.type,
+        required: Boolean(f.isRequired),
+        sortOrder: f.sortOrder,
+        section: f.section,
+        options,
+        allowCustomOther: Boolean(f.allowCustomOther),
+        otherValue: f.otherValue || null,
+        otherLabel: f.otherLabelAr || null,
+        suggestionEnabled: Boolean(f.suggestionEnabled),
+        notYetValue: f.notYetValue || null,
+        notYetLabel: f.notYetLabelAr || null,
+        conditionalRule: f.conditional
+          ? { fieldKey: f.conditional.fieldKey, equals: f.conditional.equals }
+          : null,
+      };
+    });
 }
 
 async function replaceCampaignFieldConfig(campaignId, fieldsPayload, { actorAdminId = null } = {}) {

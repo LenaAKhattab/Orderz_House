@@ -82,7 +82,7 @@
     "fazat:pilot-server": "node scripts/startFazatPilotServer.js",
     "seed:fazat-staging": "node scripts/seedFazatStagingFreelancers.js",
     "test:fazat-integration": "node --test test/fazatIntegrationFoundation.test.js",
-    "test:legacy-freelancer-invite": "node --test test/legacyFreelancerSharedInvite.test.js test/legacyFreelancerContractFields.test.js test/legacyFreelancerMemberId.test.js test/legacyFreelancerAdminCenter.test.js test/legacyFreelancerAdminCenterPreprodGate.test.js test/legacyFreelancerCampaignWorkspace.test.js test/legacyFreelancerRegistrationFields.test.js",
+    "test:legacy-freelancer-invite": "node --test test/legacyFreelancerSharedInvite.test.js test/legacyFreelancerContractFields.test.js test/legacyFreelancerMemberId.test.js test/legacyFreelancerAdminCenter.test.js test/legacyFreelancerAdminCenterPreprodGate.test.js test/legacyFreelancerCampaignWorkspace.test.js test/legacyFreelancerRegistrationFields.test.js test/legacyFreelancerSmartRegistrationFields.test.js",
     "qa:staging:apply-legacy-member-id-189": "node scripts/applyLegacyFreelancerMemberId189Staging.js",
     "qa:staging:legacy-member-id-smoke": "node scripts/qaLegacyFreelancerMemberIdStagingSmoke.js",
     "qa:staging:apply-legacy-admin-center-190": "node scripts/applyLegacyAdminCenter190Staging.js",

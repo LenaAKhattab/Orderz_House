@@ -2548,6 +2548,15 @@ export const previewLegacyFreelancerInviteRequest = async (campaignSlug, token) 
   return data;
 };
 
+/** Anonymous vocabulary suggestions for Legacy smart fields (strings only). */
+export const legacyFreelancerFieldSuggestionsRequest = async (fieldKey, q = "") => {
+  const { data } = await api.get("/auth/legacy-freelancer-field-suggestions", {
+    params: { field: fieldKey, q: q || undefined },
+    timeout: 12000,
+  });
+  return data;
+};
+
 export const legacyFreelancerRegisterRequest = async (payload) => {
   const isFormData = typeof FormData !== "undefined" && payload instanceof FormData;
   const { data } = await api.post("/auth/legacy-freelancer-register", payload, {

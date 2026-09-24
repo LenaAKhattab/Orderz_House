@@ -117,6 +117,20 @@ function registerRateLimitDebugMiddleware(req, _res, next) {
   next();
 }
 
+/** Public Legacy smart-field suggestions — 60 / min / IP. */
+const legacyFieldSuggestionsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `legacy_suggest:${clientIpKey(req)}`,
+  handler: rateLimitJsonHandler(
+    "legacy_field_suggestions",
+    "تم تجاوز حد طلبات الاقتراحات، حاول لاحقاً",
+    { windowMsFallback: 60 * 1000 },
+  ),
+});
+
 module.exports = {
   registerLimiter,
   registerRateLimitKey,
@@ -126,6 +140,7 @@ module.exports = {
   resetPasswordLimiter,
   resetPasswordRateLimitKey,
   registerRateLimitDebugMiddleware,
+  legacyFieldSuggestionsLimiter,
   rateLimitJsonHandler,
   RATE_LIMITED_CODE,
   REGISTER_LIMIT_WINDOW_MS,

@@ -175,7 +175,6 @@ describe("contract validation stores canonical national_id", () => {
       specialization: "حاسوب",
       skills_programs: "Word",
       freelance_joining_skills: "كتابة",
-      is_university_student: false,
       is_currently_employed: false,
       information_declaration: true,
     });

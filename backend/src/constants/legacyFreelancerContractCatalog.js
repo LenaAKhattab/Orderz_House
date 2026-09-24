@@ -12,7 +12,42 @@ const FIELD_TYPES = Object.freeze({
   YES_NO: "yes_no",
   CHECKBOX: "checkbox",
   PHONE: "phone",
+  /** Free text with anonymous historical suggestions (whitelist-backed). */
+  SMART_TEXT: "smart_text",
+  /** Searchable combobox; may allow custom "Other" values. */
+  SEARCHABLE_SELECT: "searchable_select",
+  /** Dynamic year list + optional currently-studying sentinel. */
+  YEAR_SELECT: "year_select",
 });
+
+const {
+  EDUCATION_LEVEL_OPTIONS,
+  EDUCATION_OTHER_VALUE,
+  GRADUATION_NOT_YET_VALUE,
+  GRADUATION_NOT_YET_LABEL_AR,
+  buildGraduationYearOptions,
+} = require("./legacyEducationOptions");
+const { listJordanCityOptions, CITY_OTHER_VALUE, CITY_OTHER_LABEL_AR } = require("./jordanCities");
+
+/** Fields that may power public anonymous suggestion vocabulary. */
+const SUGGESTION_FIELD_KEYS = Object.freeze([
+  "nationality",
+  "residence_area",
+  "specialization",
+  "university_institute",
+  "city",
+]);
+
+/** Control types Admin should not accidentally reclassify. */
+const LOCKED_CONTROL_FIELD_KEYS = Object.freeze([
+  "city",
+  "education_level",
+  "graduation_year",
+  "nationality",
+  "residence_area",
+  "specialization",
+  "university_institute",
+]);
 
 const SECTIONS = Object.freeze({
   PERSONAL: { key: "personal", labelAr: "البيانات الشخصية", sortOrder: 10 },
@@ -108,11 +143,13 @@ const CONTRACT_FIELDS = Object.freeze([
   {
     key: "nationality",
     labelAr: "الجنسية",
-    type: FIELD_TYPES.TEXT,
+    type: FIELD_TYPES.SMART_TEXT,
     section: SECTIONS.PERSONAL.key,
     sortOrder: 60,
     defaultEnabled: true,
     defaultRequired: true,
+    suggestionEnabled: true,
+    controlLocked: true,
   },
   {
     key: "marital_status",
@@ -157,56 +194,75 @@ const CONTRACT_FIELDS = Object.freeze([
   {
     key: "city",
     labelAr: "المدينة",
-    type: FIELD_TYPES.TEXT,
+    type: FIELD_TYPES.SEARCHABLE_SELECT,
     section: SECTIONS.ADDRESS.key,
     sortOrder: 110,
     defaultEnabled: true,
     defaultRequired: true,
+    options: listJordanCityOptions(),
+    allowCustomOther: true,
+    otherValue: CITY_OTHER_VALUE,
+    otherLabelAr: CITY_OTHER_LABEL_AR,
+    suggestionEnabled: true,
+    controlLocked: true,
   },
   {
     key: "residence_area",
     labelAr: "منطقة السكن",
-    type: FIELD_TYPES.TEXT,
+    type: FIELD_TYPES.SMART_TEXT,
     section: SECTIONS.ADDRESS.key,
     sortOrder: 120,
     defaultEnabled: true,
     defaultRequired: true,
+    suggestionEnabled: true,
+    controlLocked: true,
   },
   {
     key: "education_level",
     labelAr: "المؤهل العلمي",
-    type: FIELD_TYPES.TEXT,
+    type: FIELD_TYPES.SELECT,
     section: SECTIONS.EDUCATION.key,
     sortOrder: 130,
+    options: EDUCATION_LEVEL_OPTIONS,
+    allowCustomOther: true,
+    otherValue: EDUCATION_OTHER_VALUE,
     defaultEnabled: true,
     defaultRequired: true,
+    controlLocked: true,
   },
   {
     key: "specialization",
     labelAr: "التخصص",
-    type: FIELD_TYPES.TEXT,
+    type: FIELD_TYPES.SMART_TEXT,
     section: SECTIONS.EDUCATION.key,
     sortOrder: 140,
     defaultEnabled: true,
     defaultRequired: true,
+    suggestionEnabled: true,
+    controlLocked: true,
   },
   {
     key: "university_institute",
     labelAr: "المعهد / الجامعة",
-    type: FIELD_TYPES.TEXT,
+    type: FIELD_TYPES.SMART_TEXT,
     section: SECTIONS.EDUCATION.key,
     sortOrder: 150,
     defaultEnabled: true,
     defaultRequired: false,
+    suggestionEnabled: true,
+    controlLocked: true,
   },
   {
     key: "graduation_year",
     labelAr: "سنة التخرج",
-    type: FIELD_TYPES.NUMBER,
+    type: FIELD_TYPES.YEAR_SELECT,
     section: SECTIONS.EDUCATION.key,
     sortOrder: 160,
     defaultEnabled: true,
     defaultRequired: false,
+    controlLocked: true,
+    notYetValue: GRADUATION_NOT_YET_VALUE,
+    notYetLabelAr: GRADUATION_NOT_YET_LABEL_AR,
   },
   {
     key: "academic_average",
@@ -243,8 +299,9 @@ const CONTRACT_FIELDS = Object.freeze([
     type: FIELD_TYPES.YES_NO,
     section: SECTIONS.STUDY_WORK.key,
     sortOrder: 200,
-    defaultEnabled: true,
-    defaultRequired: true,
+    // Removed from public registration defaults; historical answers preserved.
+    defaultEnabled: false,
+    defaultRequired: false,
   },
   {
     key: "current_university",
@@ -252,8 +309,8 @@ const CONTRACT_FIELDS = Object.freeze([
     type: FIELD_TYPES.TEXT,
     section: SECTIONS.STUDY_WORK.key,
     sortOrder: 210,
-    defaultEnabled: true,
-    defaultRequired: true,
+    defaultEnabled: false,
+    defaultRequired: false,
     conditional: { fieldKey: "is_university_student", equals: true },
   },
   {
@@ -396,6 +453,8 @@ function getContractCatalog() {
   return {
     systemAccountFields: SYSTEM_ACCOUNT_FIELDS.map((f) => ({ ...f })),
     sections: Object.values(SECTIONS).map((s) => ({ ...s })),
+    suggestionFieldKeys: [...SUGGESTION_FIELD_KEYS],
+    lockedControlFieldKeys: [...LOCKED_CONTROL_FIELD_KEYS],
     fields: CONTRACT_FIELDS.map((f) => ({
       key: f.key,
       labelAr: f.labelAr,
@@ -403,13 +462,25 @@ function getContractCatalog() {
       type: f.type,
       section: f.section,
       sortOrder: f.sortOrder,
-      options: f.options ? f.options.map((o) => ({ ...o })) : null,
+      options:
+        f.key === "graduation_year"
+          ? buildGraduationYearOptions().map((o) => ({ ...o }))
+          : f.options
+            ? f.options.map((o) => ({ ...o }))
+            : null,
       conditional: f.conditional ? { ...f.conditional } : null,
       defaultEnabled: Boolean(f.defaultEnabled),
       defaultRequired: Boolean(f.defaultRequired),
       sensitive: Boolean(f.sensitive),
       informationalOnly: Boolean(f.informationalOnly),
       canonicalUserColumn: f.canonicalUserColumn || null,
+      suggestionEnabled: Boolean(f.suggestionEnabled),
+      controlLocked: Boolean(f.controlLocked),
+      allowCustomOther: Boolean(f.allowCustomOther),
+      otherValue: f.otherValue || null,
+      otherLabelAr: f.otherLabelAr || null,
+      notYetValue: f.notYetValue || null,
+      notYetLabelAr: f.notYetLabelAr || null,
     })),
   };
 }
@@ -425,9 +496,14 @@ function getDefaultFieldSeedRows() {
       helperAr: f.helperAr || null,
       type: f.type,
       section: f.section,
-      options: f.options || null,
+      options: f.key === "graduation_year" ? null : f.options || null,
       conditional: f.conditional || null,
       sensitive: Boolean(f.sensitive),
+      suggestionEnabled: Boolean(f.suggestionEnabled),
+      controlLocked: Boolean(f.controlLocked),
+      allowCustomOther: Boolean(f.allowCustomOther),
+      otherValue: f.otherValue || null,
+      otherLabelAr: f.otherLabelAr || null,
     },
   }));
 }
@@ -439,8 +515,14 @@ module.exports = {
   CONTRACT_FIELDS,
   CONTRACT_FIELD_BY_KEY,
   SENSITIVE_FIELD_KEYS,
+  SUGGESTION_FIELD_KEYS,
+  LOCKED_CONTROL_FIELD_KEYS,
   MARITAL_OPTIONS,
   HOW_HEARD_OPTIONS,
+  EDUCATION_LEVEL_OPTIONS,
+  EDUCATION_OTHER_VALUE,
+  GRADUATION_NOT_YET_VALUE,
+  GRADUATION_NOT_YET_LABEL_AR,
   getContractCatalog,
   getDefaultFieldSeedRows,
 };

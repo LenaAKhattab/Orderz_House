@@ -35,6 +35,9 @@ import {
 } from "./legacyAdminShared";
 import { LEGACY_WORK_FIELDS, WORK_FIELDS_REQUIRED_MESSAGE } from "../../../constants/legacyFreelancerWorkFields";
 import LegacyPhoneInput from "../../../components/legacy/LegacyPhoneInput";
+import LegacySmartSuggestField from "../../../components/legacy/LegacySmartSuggestField";
+import LegacySearchableSelect from "../../../components/legacy/LegacySearchableSelect";
+import { listJordanCityOptions, CITY_OTHER_VALUE, CITY_OTHER_LABEL_AR } from "../../../constants/jordanCities";
 import { DEFAULT_DIAL_CODE, toPhonePayload } from "../../../utils/legacyPhone";
 
 const DETAIL_TABS = [
@@ -641,20 +644,46 @@ export default function LegacyFreelancersPanel({
                     })}
                   </div>
                 </div>
-                {[
-                  ["city", "المدينة"],
-                  ["residence", "مكان الإقامة"],
-                  ["specialization", "التخصص"],
-                  ["nationality", "الجنسية"],
-                ].map(([key, label]) => (
-                  <label key={key} className="oh-sa-users-field">
-                    <span>{label}</span>
-                    <input
-                      value={createForm[key]}
-                      onChange={(e) => setCreateForm((f) => ({ ...f, [key]: e.target.value }))}
-                    />
-                  </label>
-                ))}
+                <label className="oh-sa-users-field">
+                  <span>المدينة</span>
+                  <LegacySearchableSelect
+                    className="oh-legacy-smart--admin"
+                    value={createForm.city}
+                    onChange={(v) => setCreateForm((f) => ({ ...f, city: v }))}
+                    options={listJordanCityOptions()}
+                    allowOther
+                    otherValue={CITY_OTHER_VALUE}
+                    otherLabel={CITY_OTHER_LABEL_AR}
+                    otherInputLabel="اكتب اسم المدينة"
+                  />
+                </label>
+                <label className="oh-sa-users-field">
+                  <span>مكان الإقامة</span>
+                  <LegacySmartSuggestField
+                    fieldKey="residence_area"
+                    className="oh-legacy-smart--admin"
+                    value={createForm.residence}
+                    onChange={(v) => setCreateForm((f) => ({ ...f, residence: v }))}
+                  />
+                </label>
+                <label className="oh-sa-users-field">
+                  <span>التخصص</span>
+                  <LegacySmartSuggestField
+                    fieldKey="specialization"
+                    className="oh-legacy-smart--admin"
+                    value={createForm.specialization}
+                    onChange={(v) => setCreateForm((f) => ({ ...f, specialization: v }))}
+                  />
+                </label>
+                <label className="oh-sa-users-field">
+                  <span>الجنسية</span>
+                  <LegacySmartSuggestField
+                    fieldKey="nationality"
+                    className="oh-legacy-smart--admin"
+                    value={createForm.nationality}
+                    onChange={(v) => setCreateForm((f) => ({ ...f, nationality: v }))}
+                  />
+                </label>
                 <label className="oh-sa-users-field oh-legacy-admin__form-span">
                   <span>ربط بمؤسسة (اختياري)</span>
                   <select

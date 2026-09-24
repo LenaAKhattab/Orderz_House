@@ -1,0 +1,72 @@
+/* Shared Legacy smart autocomplete / searchable select — match auth inputs */
+
+.oh-legacy-smart {
+  position: relative;
+  width: 100%;
+}
+
+.oh-legacy-smart__input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.oh-legacy-smart__list {
+  position: absolute;
+  z-index: 40;
+  inset-inline: 0;
+  top: calc(100% + 4px);
+  margin: 0;
+  padding: 0.35rem 0;
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid rgba(47, 59, 101, 0.14);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 28px -16px rgba(24, 36, 64, 0.35);
+}
+
+.oh-legacy-smart__option {
+  padding: 0.55rem 0.85rem;
+  font-size: 0.9rem;
+  color: #1e293b;
+  cursor: pointer;
+  text-align: start;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.oh-legacy-smart__option--active,
+.oh-legacy-smart__option:hover {
+  background: rgba(47, 59, 101, 0.06);
+}
+
+.oh-legacy-smart__option--selected {
+  font-weight: 600;
+}
+
+.oh-legacy-smart__empty {
+  padding: 0.55rem 0.85rem;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.oh-legacy-smart__other {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.oh-legacy-smart__other-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+/* Admin modal variant inherits input styles from parent panels */
+.oh-legacy-smart--admin .oh-legacy-smart__input {
+  width: 100%;
+}

@@ -25,6 +25,7 @@ const {
   otpVerifyLimiter,
   otpSendLimiter,
   resetPasswordLimiter,
+  legacyFieldSuggestionsLimiter,
 } = require("../middleware/rateLimiters");
 const {
   uploadAccountActivationKyc,
@@ -73,6 +74,11 @@ router.get(
   campaignSlugParam,
   validateRequest,
   legacyInviteController.previewInvite,
+);
+router.get(
+  "/legacy-freelancer-field-suggestions",
+  legacyFieldSuggestionsLimiter,
+  legacyInviteController.fieldSuggestions,
 );
 router.post(
   "/legacy-freelancer-register",

@@ -10,15 +10,20 @@ import { getDashboardPath } from "../constants/authRoutes";
 import {
   previewLegacyFreelancerInviteRequest,
   legacyFreelancerRegisterRequest,
+  legacyFreelancerFieldSuggestionsRequest,
 } from "../services/api";
 import { getAuthApiErrorMessage } from "../utils/apiErrorMessage";
 import { ARAB_COUNTRIES, DEFAULT_DIAL_CODE } from "../constants/arabCountries";
 import LegacyPhoneInput from "../components/legacy/LegacyPhoneInput";
+import LegacySmartSuggestField from "../components/legacy/LegacySmartSuggestField";
+import LegacySearchableSelect from "../components/legacy/LegacySearchableSelect";
 import { toPhonePayload } from "../utils/legacyPhone";
 import {
   LEGACY_WORK_FIELDS,
   WORK_FIELDS_REQUIRED_MESSAGE,
 } from "../constants/legacyFreelancerWorkFields";
+import { EDUCATION_OTHER_VALUE } from "../constants/legacyEducationOptions";
+import { CITY_OTHER_VALUE, CITY_OTHER_LABEL_AR } from "../constants/jordanCities";
 
 const fieldLabel = tw.authFieldLabel;
 const fieldInput = tw.authInputNoIcon;
@@ -34,6 +39,98 @@ function conditionActive(rule, answers) {
   return String(v ?? "") === String(rule.equals);
 }
 
+function EducationSelectField({ field, value, onChange }) {
+  const options = (field.options || []).filter((o) => o.value !== EDUCATION_OTHER_VALUE);
+  const known = options.some((o) => o.value === value);
+  const [otherMode, setOtherMode] = useState(() => Boolean(value && !known));
+
+  useEffect(() => {
+    if (value && !options.some((o) => o.value === value)) setOtherMode(true);
+    else if (options.some((o) => o.value === value)) setOtherMode(false);
+  }, [value, options]);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <select
+        className={fieldInput}
+        id={`lf-${field.key}`}
+        required={field.required && !otherMode}
+        value={otherMode ? EDUCATION_OTHER_VALUE : value ?? ""}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === EDUCATION_OTHER_VALUE) {
+            setOtherMode(true);
+            onChange("");
+            return;
+          }
+          setOtherMode(false);
+          onChange(v);
+        }}
+      >
+        <option value="">— اختر —</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+        <option value={EDUCATION_OTHER_VALUE}>أخرى</option>
+      </select>
+      {otherMode ? (
+        <input
+          className={fieldInput}
+          type="text"
+          required={field.required}
+          placeholder="اكتب المؤهل العلمي"
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function CitySelectField({ field, value, onChange }) {
+  const [extra, setExtra] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await legacyFreelancerFieldSuggestionsRequest("city", "");
+        const list = Array.isArray(res?.data) ? res.data : [];
+        if (!cancelled) {
+          setExtra(
+            list
+              .filter((s) => typeof s === "string")
+              .map((s) => ({ value: s, label: s })),
+          );
+        }
+      } catch {
+        if (!cancelled) setExtra([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <LegacySearchableSelect
+      id={`lf-${field.key}`}
+      value={value ?? ""}
+      onChange={onChange}
+      required={field.required}
+      inputClassName={fieldInput}
+      options={(field.options || []).filter((o) => o.value !== (field.otherValue || CITY_OTHER_VALUE))}
+      extraOptions={extra}
+      allowOther
+      otherValue={field.otherValue || CITY_OTHER_VALUE}
+      otherLabel={field.otherLabel || CITY_OTHER_LABEL_AR}
+      otherInputLabel="اكتب اسم المدينة"
+    />
+  );
+}
+
 function FieldInput({ field, value, onChange }) {
   const common = { className: fieldInput, id: `lf-${field.key}` };
   if (field.type === "textarea") {
@@ -46,6 +143,39 @@ function FieldInput({ field, value, onChange }) {
         onChange={(e) => onChange(e.target.value)}
       />
     );
+  }
+  if (field.type === "smart_text") {
+    return (
+      <LegacySmartSuggestField
+        id={`lf-${field.key}`}
+        fieldKey={field.key}
+        value={value ?? ""}
+        onChange={onChange}
+        required={field.required}
+        inputClassName={fieldInput}
+      />
+    );
+  }
+  if (field.type === "searchable_select" && field.key === "city") {
+    return <CitySelectField field={field} value={value} onChange={onChange} />;
+  }
+  if (field.type === "searchable_select" || field.type === "year_select") {
+    return (
+      <LegacySearchableSelect
+        id={`lf-${field.key}`}
+        value={value == null ? "" : String(value)}
+        onChange={onChange}
+        required={field.required}
+        inputClassName={fieldInput}
+        options={field.options || []}
+        allowOther={Boolean(field.allowCustomOther)}
+        otherValue={field.otherValue || CITY_OTHER_VALUE}
+        otherLabel={field.otherLabel || CITY_OTHER_LABEL_AR}
+      />
+    );
+  }
+  if (field.type === "select" && field.key === "education_level") {
+    return <EducationSelectField field={field} value={value} onChange={onChange} />;
   }
   if (field.type === "select") {
     return (
