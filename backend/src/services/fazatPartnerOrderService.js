@@ -358,7 +358,6 @@ async function createPartnerOrder(body = {}, { idempotencyKey = null } = {}) {
     return { partnerOrder: mapPartnerOrder(existing, order), order, idempotentReplay: true };
   }
 
-  const cfg = getFazatIntegrationConfig();
   if (cfg.freelancerExportMode === "eligible") {
     const fazatFreelancerExportService = require("./fazatFreelancerExportService");
     await fazatFreelancerExportService.assertEligibleForFazatAssignment(freelancerId);
