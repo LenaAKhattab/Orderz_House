@@ -144,6 +144,11 @@ router.get(
 // --- Legacy Freelancer Admin Center ---
 router.get("/legacy-freelancers", ...guard, adminController.listLegacyFreelancers);
 router.get(
+  "/legacy-freelancers/assignable-packages",
+  ...guard,
+  adminController.listAssignablePackages,
+);
+router.get(
   "/legacy-freelancers/:userId",
   ...guard,
   ...userIdParam,

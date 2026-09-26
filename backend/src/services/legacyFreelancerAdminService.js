@@ -26,6 +26,10 @@ const {
   WORK_FIELDS_REQUIRED_MESSAGE,
 } = require("../constants/legacyFreelancerWorkFields");
 const {
+  listAssignablePackagesForLegacyAdmin,
+  assertAssignableLegacyPackagePlanId,
+} = require("./legacyAssignableMarketplacePackagesService");
+const {
   writeAudit,
   waiveTrainingAndExam,
   assignLegacySubscription,
@@ -841,6 +845,12 @@ async function createManualLegacyFreelancer(payload, { actorAdminId, files = {} 
       : null;
   const startsAt = payload.startsAt ? new Date(payload.startsAt) : new Date();
 
+  // Explicit package choice on create must be a live marketplace membership bridge plan.
+  // Default free plan remains allowed when no package is selected.
+  if (Number(planId) !== Number(ORDERZHOUSE_FREE_PLAN_ID)) {
+    await assertAssignableLegacyPackagePlanId(planId);
+  }
+
   const passwordHash = await bcrypt.hash(nationalId, BCRYPT_ROUNDS);
   if (!passwordHash.startsWith("$2")) {
     throw createPublicApiError("تعذّر تأمين كلمة المرور.", 500, "HASH_FAILED");
@@ -1138,15 +1148,13 @@ async function assignPackage({
     await client.query("BEGIN");
     await assertLegacyUser(client, userId);
 
-    const { rows: planRows } = await client.query(
-      `SELECT id, name FROM plans WHERE id = $1::bigint AND deleted_at IS NULL LIMIT 1`,
-      [pid],
-    );
-    if (!planRows[0]) throw createPublicApiError("الباقة غير موجودة.", 404, "PLAN_NOT_FOUND");
+    // NEW assignments must use live marketplace membership bridge plans only.
+    // Historical subscriptions with older plan_ids remain readable unchanged.
+    const assignable = await assertAssignableLegacyPackagePlanId(pid, client);
 
     const subscription = await assignLegacySubscription(client, {
       freelancerUserId: userId,
-      planId: pid,
+      planId: assignable.planId,
       actorAdminId,
       startsAt: start,
       expiresAt,
@@ -1161,8 +1169,11 @@ async function assignPackage({
       targetUserId: userId,
       detail: {
         userId: String(userId),
-        planId: String(pid),
-        planName: planRows[0].name,
+        planId: String(assignable.planId),
+        planName: assignable.planName,
+        planTitle: assignable.planTitle,
+        marketplacePlanId: String(assignable.marketplacePlanId),
+        tierCode: assignable.tierCode,
         durationMonths: months,
         startsAt: start.toISOString(),
         expiresAt: expiresAt.toISOString(),
@@ -1170,7 +1181,15 @@ async function assignPackage({
       },
     });
     await client.query("COMMIT");
-    return { subscription, startsAt: start, expiresAt, durationMonths: months, planId: pid };
+    return {
+      subscription,
+      startsAt: start,
+      expiresAt,
+      durationMonths: months,
+      planId: assignable.planId,
+      marketplacePlanId: assignable.marketplacePlanId,
+      tierCode: assignable.tierCode,
+    };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -1576,6 +1595,7 @@ module.exports = {
   listLegacyFreelancers,
   getLegacyFreelancerDetail,
   createManualLegacyFreelancer,
+  listAssignablePackages: listAssignablePackagesForLegacyAdmin,
   assignPackage,
   bulkAssignPackage,
   listDocumentTypes,

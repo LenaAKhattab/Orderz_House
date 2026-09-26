@@ -11,7 +11,7 @@ import {
   voidLegacyFreelancerHistoricalMoneyRequest,
   replaceLegacyFreelancerIdentityRequest,
   listLegacyDocumentTypesRequest,
-  listAdminPlansRequest,
+  listLegacyFreelancerAssignablePackagesRequest,
   adminListInstitutionsRequest,
 } from "../../../services/api";
 import Button from "../../../components/ui/Button";
@@ -157,10 +157,10 @@ export default function LegacyFreelancersPanel({
   }, [createSignal, hideManualCreate]);
 
   useEffect(() => {
-    listAdminPlansRequest(false)
+    listLegacyFreelancerAssignablePackagesRequest()
       .then((res) => {
-        const plansList = res?.data?.plans || res?.data || [];
-        setPlans(Array.isArray(plansList) ? plansList : []);
+        const packages = res?.data?.packages || res?.packages || [];
+        setPlans(Array.isArray(packages) ? packages : []);
       })
       .catch(() => setPlans([]));
     listLegacyDocumentTypesRequest({ includeInactive: false })
@@ -322,10 +322,20 @@ export default function LegacyFreelancersPanel({
 
   const planOptions = useMemo(
     () =>
-      plans.map((p) => ({
-        id: String(p.id),
-        label: p.title || p.name || `#${p.id}`,
-      })),
+      plans.map((p) => {
+        const name =
+          p.displayName || p.title || p.name || p.tierCode?.toUpperCase() || `#${p.id || p.planId}`;
+        const price =
+          p.monthlyPriceJod != null && Number.isFinite(Number(p.monthlyPriceJod))
+            ? Number(p.monthlyPriceJod)
+            : null;
+        const label =
+          price != null ? `${name}${price > 0 ? ` — ${price} د.أ` : " — مجاني"}` : name;
+        return {
+          id: String(p.planId || p.id),
+          label,
+        };
+      }),
     [plans],
   );
 
