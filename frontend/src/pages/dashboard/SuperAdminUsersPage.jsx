@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { MoreVertical, Search, X } from "lucide-react";
 import Button from "../../components/ui/Button";
-import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
@@ -8,7 +9,6 @@ import DashboardLoadingState from "../../components/dashboard/DashboardLoadingSt
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import Pagination from "../../components/common/Pagination";
-import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { useToast } from "../../components/ui/toastContext";
 import {
   getSuperAdminUsersStatsRequest,
@@ -24,16 +24,31 @@ import {
 import "./superAdminUsersPage.css";
 
 const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 350;
 
-const EMPTY_FILTERS = {
-  q: "",
-  role: "",
-  accountStatus: "",
-  identityStatus: "",
-  membershipStatus: "",
-  courseStatus: "",
-  hasPendingFinalTest: "",
-};
+const FILTER_TABS = [
+  { id: "all", label: "الكل", countKey: "totals", params: {} },
+  { id: "freelancers", label: "المستقلون", countKey: "freelancers", params: { role: "freelancer" } },
+  { id: "clients", label: "العملاء", countKey: "clients", params: { role: "client" } },
+  {
+    id: "pending_activation",
+    label: "تفعيل معلّق",
+    countKey: "pendingActivation",
+    params: { activationStatus: "company_pending" },
+  },
+  {
+    id: "identity_review",
+    label: "هوية قيد المراجعة",
+    countKey: "identityPendingReview",
+    params: { identityStatus: "pending_review" },
+  },
+  {
+    id: "final_test",
+    label: "اختبار نهائي",
+    countKey: "pendingFinalTests",
+    params: { hasPendingFinalTest: true },
+  },
+];
 
 const DETAIL_TABS = [
   { id: "overview", label: "نظرة عامة" },
@@ -227,11 +242,117 @@ function ReasonModal({
   );
 }
 
-function StatCard({ label, value }) {
+function formatCount(value) {
+  return Number(value || 0).toLocaleString("en-US");
+}
+
+function UserRowActionsMenu({ user, open, onOpenChange, onEdit, onToggleStatus, onDelete }) {
+  const triggerRef = useRef(null);
+  const panelRef = useRef(null);
+  const [pos, setPos] = useState(null);
+  const isActive = user.accountStatus === "active";
+
+  useEffect(() => {
+    if (!open) {
+      setPos(null);
+      return undefined;
+    }
+    const update = () => {
+      const el = triggerRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const width = 168;
+      const left = Math.min(Math.max(8, r.right - width), window.innerWidth - width - 8);
+      setPos({ top: r.bottom + 6, left });
+    };
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDoc = (e) => {
+      const t = e.target;
+      if (triggerRef.current?.contains(t) || panelRef.current?.contains(t)) return;
+      onOpenChange(false);
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") onOpenChange(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, onOpenChange]);
+
+  const panel =
+    open && pos
+      ? createPortal(
+          <div
+            ref={panelRef}
+            className="oh-sa-users-row-menu__panel"
+            role="menu"
+            style={{ top: pos.top, left: pos.left }}
+          >
+            <button
+              type="button"
+              role="menuitem"
+              className="oh-sa-users-row-menu__item"
+              onClick={() => {
+                onOpenChange(false);
+                onEdit();
+              }}
+            >
+              تعديل
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="oh-sa-users-row-menu__item"
+              onClick={() => {
+                onOpenChange(false);
+                onToggleStatus();
+              }}
+            >
+              {isActive ? "تعطيل" : "تفعيل"}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="oh-sa-users-row-menu__item oh-sa-users-row-menu__item--danger"
+              onClick={() => {
+                onOpenChange(false);
+                onDelete();
+              }}
+            >
+              حذف
+            </button>
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
-    <div className="oh-sa-users-stat">
-      <p className="oh-sa-users-stat__label">{label}</p>
-      <p className="oh-sa-users-stat__value">{Number(value || 0).toLocaleString("en-US")}</p>
+    <div className="oh-sa-users-row-menu">
+      <button
+        ref={triggerRef}
+        type="button"
+        className={`oh-sa-users-row-menu__trigger${open ? " is-open" : ""}`}
+        aria-label={`إجراءات ${user.fullName || user.email || user.id}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => onOpenChange(!open)}
+      >
+        <MoreVertical size={18} strokeWidth={2.25} aria-hidden />
+      </button>
+      {panel}
     </div>
   );
 }
@@ -762,8 +883,11 @@ export default function SuperAdminUsersPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [draftFilters, setDraftFilters] = useState(EMPTY_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
+  const [activeTab, setActiveTab] = useState("all");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef(null);
   const [selected, setSelected] = useState(() => new Set());
   const [plans, setPlans] = useState([]);
   const [detailUserId, setDetailUserId] = useState(null);
@@ -774,6 +898,12 @@ export default function SuperAdminUsersPage() {
   const [busy, setBusy] = useState(false);
   const [bulkPlanId, setBulkPlanId] = useState("");
   const [bulkStatus, setBulkStatus] = useState("inactive");
+  const [rowMenuUserId, setRowMenuUserId] = useState(null);
+
+  const tabParams = useMemo(() => {
+    const tab = FILTER_TABS.find((t) => t.id === activeTab) || FILTER_TABS[0];
+    return tab.params || {};
+  }, [activeTab]);
 
   const loadStats = useCallback(async () => {
     try {
@@ -793,22 +923,22 @@ export default function SuperAdminUsersPage() {
       const params = {
         page,
         limit: PAGE_SIZE,
-        ...Object.fromEntries(
-          Object.entries(appliedFilters).filter(([, v]) => v !== "" && v != null),
-        ),
+        ...tabParams,
       };
+      if (searchQuery) params.q = searchQuery;
       const res = await listSuperAdminUsersRequest(params);
       setItems(res?.data?.items || []);
       setTotal(Number(res?.data?.total || 0));
       setTotalPages(Number(res?.data?.totalPages || 1));
       setSelected(new Set());
+      setRowMenuUserId(null);
     } catch (err) {
       setError(errorMessage(err));
       setItems([]);
     } finally {
       setLoading(false);
     }
-  }, [page, appliedFilters]);
+  }, [page, tabParams, searchQuery]);
 
   const loadPlans = useCallback(async () => {
     try {
@@ -847,6 +977,37 @@ export default function SuperAdminUsersPage() {
     if (detailUserId) loadDetail(detailUserId);
   }, [detailUserId, loadDetail]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const next = searchInput.trim();
+      if (next === searchQuery) return;
+      setPage(1);
+      setSearchQuery(next);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [searchInput, searchQuery]);
+
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus();
+  }, [searchOpen]);
+
+  const selectTab = (tabId) => {
+    if (tabId === activeTab) return;
+    setActiveTab(tabId);
+    setPage(1);
+  };
+
+  const openSearch = () => setSearchOpen(true);
+
+  const closeSearch = () => {
+    setSearchOpen(false);
+    if (searchInput.trim()) {
+      setSearchInput("");
+      setSearchQuery("");
+      setPage(1);
+    }
+  };
+
   const allSelected = items.length > 0 && items.every((u) => selected.has(String(u.id)));
   const selectedIds = useMemo(() => [...selected].map((id) => Number(id)), [selected]);
 
@@ -863,18 +1024,6 @@ export default function SuperAdminUsersPage() {
       else next.add(key);
       return next;
     });
-  };
-
-  const applyFilters = (e) => {
-    e?.preventDefault?.();
-    setPage(1);
-    setAppliedFilters({ ...draftFilters });
-  };
-
-  const resetFilters = () => {
-    setDraftFilters(EMPTY_FILTERS);
-    setAppliedFilters(EMPTY_FILTERS);
-    setPage(1);
   };
 
   const closeDetail = () => {
@@ -951,117 +1100,23 @@ export default function SuperAdminUsersPage() {
     });
   };
 
+  const openRowAccountModal = (user, { title, accountStatus, danger = false, description }) => {
+    setRowMenuUserId(null);
+    setReasonModal({
+      type: "detail",
+      userId: user.id,
+      kind: "account",
+      title,
+      danger: Boolean(danger),
+      payload: { accountStatus },
+      description: description || "هذا إجراء حسّاس ويتطلب سبباً واضحاً.",
+      confirmLabel: "تنفيذ",
+    });
+  };
+
   return (
     <DashboardShell>
-      <DashboardPageHeader
-        title="المستخدمون"
-        description="إدارة حسابات المستخدمين، الهويات، الباقات، والدورات من مكان واحد."
-        breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.users")}
-      />
-
-      <div className="oh-sa-users-stats">
-        <StatCard label="الإجمالي" value={stats?.totals} />
-        <StatCard label="المستقلون" value={stats?.freelancers} />
-        <StatCard label="العملاء" value={stats?.clients} />
-        <StatCard label="تفعيل معلّق" value={stats?.pendingActivation} />
-        <StatCard label="هوية قيد المراجعة" value={stats?.identityPendingReview} />
-        <StatCard label="اختبارات نهائية" value={stats?.pendingFinalTests} />
-      </div>
       {statsError ? <p className="oh-sa-users-inline-error">{statsError}</p> : null}
-
-      <DashboardSection title="بحث وتصفية">
-        <form className="oh-sa-users-filters" onSubmit={applyFilters}>
-          <label className="oh-sa-users-field oh-sa-users-field--grow">
-            <span>بحث</span>
-            <input
-              value={draftFilters.q}
-              onChange={(e) => setDraftFilters((s) => ({ ...s, q: e.target.value }))}
-              placeholder="اسم، بريد، هاتف، أو رقم المستخدم"
-            />
-          </label>
-          <label className="oh-sa-users-field">
-            <span>الدور</span>
-            <select
-              value={draftFilters.role}
-              onChange={(e) => setDraftFilters((s) => ({ ...s, role: e.target.value }))}
-            >
-              <option value="">الكل</option>
-              <option value="freelancer">مستقل</option>
-              <option value="client">عميل</option>
-              <option value="admin">أدمن</option>
-              <option value="super_admin">سوبر أدمن</option>
-              <option value="financial_user">مستخدم مالي</option>
-            </select>
-          </label>
-          <label className="oh-sa-users-field">
-            <span>حالة الحساب</span>
-            <select
-              value={draftFilters.accountStatus}
-              onChange={(e) => setDraftFilters((s) => ({ ...s, accountStatus: e.target.value }))}
-            >
-              <option value="">الكل</option>
-              <option value="active">نشط</option>
-              <option value="inactive">معطّل</option>
-            </select>
-          </label>
-          <label className="oh-sa-users-field">
-            <span>الهوية</span>
-            <select
-              value={draftFilters.identityStatus}
-              onChange={(e) => setDraftFilters((s) => ({ ...s, identityStatus: e.target.value }))}
-            >
-              <option value="">الكل</option>
-              <option value="none">لا يوجد</option>
-              <option value="pending_review">بانتظار المراجعة</option>
-              <option value="approved">موافق عليه</option>
-              <option value="rejected">مرفوض</option>
-            </select>
-          </label>
-          <label className="oh-sa-users-field">
-            <span>الباقة</span>
-            <select
-              value={draftFilters.membershipStatus}
-              onChange={(e) => setDraftFilters((s) => ({ ...s, membershipStatus: e.target.value }))}
-            >
-              <option value="">الكل</option>
-              <option value="none">لا يوجد</option>
-              <option value="active">نشط</option>
-              <option value="cancelled">ملغى</option>
-              <option value="expired">منتهٍ</option>
-            </select>
-          </label>
-          <label className="oh-sa-users-field">
-            <span>الدورات</span>
-            <select
-              value={draftFilters.courseStatus}
-              onChange={(e) => setDraftFilters((s) => ({ ...s, courseStatus: e.target.value }))}
-            >
-              <option value="">الكل</option>
-              <option value="none">لا يوجد</option>
-              <option value="assigned">مُسند</option>
-              <option value="in_progress">قيد التقدم</option>
-              <option value="pending_final_test">اختبار نهائي</option>
-              <option value="completed">مكتمل</option>
-            </select>
-          </label>
-          <label className="oh-sa-users-field">
-            <span>اختبار نهائي معلّق</span>
-            <select
-              value={draftFilters.hasPendingFinalTest}
-              onChange={(e) => setDraftFilters((s) => ({ ...s, hasPendingFinalTest: e.target.value }))}
-            >
-              <option value="">الكل</option>
-              <option value="true">نعم</option>
-            </select>
-          </label>
-          <div className="oh-sa-users-filters__actions">
-            <Button type="submit">تطبيق</Button>
-            <Button type="button" variant="secondary" onClick={resetFilters}>
-              إعادة ضبط
-            </Button>
-          </div>
-        </form>
-      </DashboardSection>
 
       {selected.size > 0 ? (
         <div className="oh-sa-users-bulk" role="region" aria-label="إجراءات جماعية">
@@ -1136,10 +1191,76 @@ export default function SuperAdminUsersPage() {
         </div>
       ) : null}
 
-      <DashboardSection
-        title="قائمة المستخدمين"
-        description={total ? `${total.toLocaleString("en-US")} مستخدم` : undefined}
-      >
+      <DashboardSection className="oh-sa-users-list-section">
+        <header className="oh-sa-users-list-head">
+          <div className="oh-sa-users-list-head__top">
+            <div className="oh-sa-users-list-head__titles">
+              <h2 className="oh-sa-users-list-head__title">قائمة المستخدمين</h2>
+              {total ? (
+                <p className="oh-sa-users-list-head__desc">{total.toLocaleString("en-US")} مستخدم</p>
+              ) : null}
+            </div>
+            <div className={`oh-sa-users-toolbar__search${searchOpen ? " is-open" : ""}`}>
+              {searchOpen ? (
+                <>
+                  <Search size={16} strokeWidth={2} className="oh-sa-users-toolbar__search-glyph" aria-hidden />
+                  <input
+                    ref={searchInputRef}
+                    type="search"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") closeSearch();
+                    }}
+                    placeholder="اسم، بريد، هاتف، أو رقم المستخدم"
+                    aria-label="بحث عن مستخدم"
+                  />
+                  <button
+                    type="button"
+                    className="oh-sa-users-toolbar__search-clear"
+                    onClick={closeSearch}
+                    aria-label="إغلاق البحث"
+                  >
+                    <X size={14} strokeWidth={2.25} aria-hidden />
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="oh-sa-users-toolbar__search-btn"
+                  onClick={openSearch}
+                  aria-label="بحث"
+                >
+                  <Search size={18} strokeWidth={2} aria-hidden />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="oh-sa-users-toolbar__tabs" role="tablist" aria-label="تصفية المستخدمين">
+            {FILTER_TABS.map((tab) => {
+              const count = stats?.[tab.countKey];
+              const showBadge = Number(count || 0) > 0;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`oh-sa-users-tab${isActive ? " is-active" : ""}`}
+                  onClick={() => selectTab(tab.id)}
+                >
+                  <span className="oh-sa-users-tab__label">{tab.label}</span>
+                  {showBadge ? (
+                    <span className="oh-sa-users-tab__badge">{formatCount(count)}</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </header>
+
         {error && !loading ? <DashboardErrorState message={error} onRetry={loadUsers} /> : null}
         {loading ? (
           <DashboardLoadingState label="جاري تحميل المستخدمين…" />
@@ -1147,30 +1268,34 @@ export default function SuperAdminUsersPage() {
           <DashboardEmptyState title="لا يوجد مستخدمون" description="عدّل الفلاتر أو أعد المحاولة لاحقاً." />
         ) : (
           <>
-            <div className="oh-sa-users-table-wrap">
-              <table className="oh-sa-users-table">
+            <div className="oh-sa-users-table-wrap oh-sa-users-table-wrap--airy">
+              <table className="oh-sa-users-table oh-sa-users-table--airy">
                 <thead>
                   <tr>
-                    <th>
+                    <th className="oh-sa-users-table__check">
                       <input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="تحديد الكل" />
                     </th>
-                    <th>المستخدم</th>
-                    <th>الدور</th>
-                    <th>الحساب</th>
-                    <th>الهوية</th>
-                    <th>الباقة</th>
-                    <th>الدورات</th>
-                    <th>آخر نشاط</th>
-                    <th>تاريخ الإنشاء</th>
-                    <th>إجراءات</th>
+                    <th className="oh-sa-users-col oh-sa-users-col--user">المستخدم</th>
+                    <th className="oh-sa-users-col oh-sa-users-col--role">الدور</th>
+                    <th className="oh-sa-users-col oh-sa-users-col--account">الحساب</th>
+                    <th className="oh-sa-users-col oh-sa-users-col--identity">الهوية</th>
+                    <th className="oh-sa-users-col oh-sa-users-col--plan">الباقة</th>
+                    <th className="oh-sa-users-col oh-sa-users-col--courses">الدورات</th>
+                    <th className="oh-sa-users-col oh-sa-users-col--seen">آخر نشاط</th>
+                    <th className="oh-sa-users-col oh-sa-users-col--created">تاريخ الإنشاء</th>
+                    <th className="oh-sa-users-col oh-sa-users-col--actions">إجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((user) => {
                     const id = String(user.id);
+                    const initial = String(user.fullName || user.email || "?")
+                      .trim()
+                      .slice(0, 1)
+                      .toUpperCase();
                     return (
                       <tr key={id}>
-                        <td>
+                        <td className="oh-sa-users-table__check">
                           <input
                             type="checkbox"
                             checked={selected.has(id)}
@@ -1178,44 +1303,93 @@ export default function SuperAdminUsersPage() {
                             aria-label={`تحديد ${user.fullName || user.email || id}`}
                           />
                         </td>
-                        <td>
-                          <div className="oh-sa-users-user">
-                            <strong>{user.fullName || "بدون اسم"}</strong>
-                            <span dir="ltr">{user.email || "—"}</span>
-                            <span className="oh-sa-users-muted">#{user.id}</span>
+                        <td className="oh-sa-users-col oh-sa-users-col--user">
+                          <div className="oh-sa-users-person">
+                            <span
+                              className="oh-sa-users-person__avatar-wrap"
+                              title={user.isOnline ? "متصل الآن" : "غير متصل"}
+                            >
+                              <span className="oh-sa-users-person__avatar" aria-hidden>
+                                {user.avatarUrl ? (
+                                  <img src={user.avatarUrl} alt="" />
+                                ) : (
+                                  initial
+                                )}
+                              </span>
+                              <span
+                                className={
+                                  user.isOnline
+                                    ? "oh-sa-users-person__presence oh-sa-users-person__presence--online"
+                                    : "oh-sa-users-person__presence oh-sa-users-person__presence--offline"
+                                }
+                                aria-label={user.isOnline ? "متصل الآن" : "غير متصل"}
+                              />
+                            </span>
+                            <span className="oh-sa-users-person__text">
+                              <strong className="oh-sa-users-person__name">{user.fullName || "بدون اسم"}</strong>
+                              <span className="oh-sa-users-person__sub" dir="ltr">
+                                {user.email || "—"}
+                              </span>
+                            </span>
                           </div>
                         </td>
-                        <td>{roleLabel(user.role)}</td>
-                        <td>
-                          <StatusBadge tone={toneForAccount(user.accountStatus)}>
+                        <td className="oh-sa-users-col oh-sa-users-col--role">
+                          <span className="oh-sa-users-cell-primary">{roleLabel(user.role)}</span>
+                        </td>
+                        <td className="oh-sa-users-col oh-sa-users-col--account">
+                          <StatusBadge tone={toneForAccount(user.accountStatus)} className="oh-sa-users-pill">
                             {accountLabel(user.accountStatus)}
                           </StatusBadge>
                         </td>
-                        <td>
-                          <StatusBadge tone={toneForIdentity(user.identityStatus)}>
+                        <td className="oh-sa-users-col oh-sa-users-col--identity">
+                          <StatusBadge tone={toneForIdentity(user.identityStatus)} className="oh-sa-users-pill">
                             {identityLabel(user.identityStatus)}
                           </StatusBadge>
                         </td>
-                        <td>
-                          <div className="oh-sa-users-plan-cell">
-                            <span>{user.membershipTier || "—"}</span>
-                            <span className="oh-sa-users-muted">{membershipLabel(user.membershipStatus)}</span>
+                        <td className="oh-sa-users-col oh-sa-users-col--plan">
+                          <div className="oh-sa-users-stack-cell">
+                            <span className="oh-sa-users-cell-primary">{user.membershipTier || "—"}</span>
+                            <span className="oh-sa-users-cell-sub">{membershipLabel(user.membershipStatus)}</span>
                           </div>
                         </td>
-                        <td>
-                          <StatusBadge tone={toneForCourse(user.courseStatus)}>
+                        <td className="oh-sa-users-col oh-sa-users-col--courses">
+                          <StatusBadge tone={toneForCourse(user.courseStatus)} className="oh-sa-users-pill">
                             {courseLabel(user.courseStatus)}
                             {user.coursesTotal
                               ? ` (${user.coursesCompleted || 0}/${user.coursesTotal})`
                               : ""}
                           </StatusBadge>
                         </td>
-                        <td>{formatJoDateTime(user.lastSeenAt)}</td>
-                        <td>{formatJoDate(user.createdAt)}</td>
-                        <td>
-                          <Button type="button" variant="secondary" onClick={() => setDetailUserId(user.id)}>
-                            تفاصيل
-                          </Button>
+                        <td className="oh-sa-users-col oh-sa-users-col--seen">
+                          <span className="oh-sa-users-cell-sub">{formatJoDateTime(user.lastSeenAt)}</span>
+                        </td>
+                        <td className="oh-sa-users-col oh-sa-users-col--created">
+                          <span className="oh-sa-users-cell-sub">{formatJoDate(user.createdAt)}</span>
+                        </td>
+                        <td className="oh-sa-users-col oh-sa-users-col--actions">
+                          <UserRowActionsMenu
+                            user={user}
+                            open={rowMenuUserId === id}
+                            onOpenChange={(next) => setRowMenuUserId(next ? id : null)}
+                            onEdit={() => setDetailUserId(user.id)}
+                            onToggleStatus={() =>
+                              openRowAccountModal(user, {
+                                title:
+                                  user.accountStatus === "active" ? "تعطيل الحساب" : "تفعيل الحساب",
+                                accountStatus: user.accountStatus === "active" ? "inactive" : "active",
+                                danger: user.accountStatus === "active",
+                              })
+                            }
+                            onDelete={() =>
+                              openRowAccountModal(user, {
+                                title: "حذف الحساب",
+                                accountStatus: "inactive",
+                                danger: true,
+                                description:
+                                  "سيتم تعطيل الحساب ومنع تسجيل الدخول. هذا إجراء حسّاس ويتطلب سبباً واضحاً.",
+                              })
+                            }
+                          />
                         </td>
                       </tr>
                     );

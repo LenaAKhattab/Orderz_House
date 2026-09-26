@@ -1,0 +1,165 @@
+/* Soft analytics page — same visual language as overview (aos-*) */
+
+.aan-page--refreshing {
+  opacity: 0.92;
+  transition: opacity 0.2s ease;
+}
+
+.aan-tool-select {
+  padding-inline-end: 0.35rem;
+}
+
+.aan-tool-select select {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  padding: 0 0.15rem;
+  max-width: 9.5rem;
+  cursor: pointer;
+}
+
+.aan-check {
+  gap: 0.4rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.aan-check input {
+  width: 0.9rem;
+  height: 0.9rem;
+  accent-color: #8b7fd4;
+}
+
+.aan-kpi-grid--6 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.aan-metric-grid {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.aan-metric-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.aan-metric-grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.aan-metric {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  min-width: 0;
+}
+
+.aan-metric__label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--aos-label, #9ca3af);
+}
+
+.aan-metric__value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--aos-ink-soft, #0a0a0a);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.aan-metric__hint {
+  font-size: 0.66rem;
+  font-weight: 500;
+  color: var(--aos-muted, #64748b);
+  line-height: 1.35;
+}
+
+.aan-group-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.45rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--aos-line-soft, #f1f2f4);
+}
+
+.aan-group-footer__label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--aos-label, #9ca3af);
+}
+
+.aan-group-footer__value {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--aos-ink, #0f172a);
+}
+
+.aan-group-footer__count {
+  margin-inline-start: 0.35rem;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--aos-muted, #64748b);
+  font-size: 0.72rem;
+}
+
+.aan-plan-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+}
+
+.aan-table-scroll {
+  overflow-x: auto;
+}
+
+.aan-table--plans {
+  min-width: 52rem;
+}
+
+@media (max-width: 1100px) {
+  .aan-kpi-grid--6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .aan-metric-grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .aan-kpi-grid--6,
+  .aan-metric-grid--3,
+  .aan-metric-grid--4 {
+    grid-template-columns: 1fr;
+  }
+
+  .aan-col--clients,
+  .aan-col--freelancers,
+  .aan-col--share,
+  .aan-col--duration,
+  .aan-col--free,
+  .aan-col--notstarted,
+  .aan-col--pending,
+  .aan-col--plan {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .aan-col--paid,
+  .aan-col--admin,
+  .aan-col--active {
+    display: none;
+  }
+}

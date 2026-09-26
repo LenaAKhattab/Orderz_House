@@ -25,8 +25,8 @@ import {
 } from "lucide-react";
 
 /** Shared size/stroke for admin & super-admin sidebar icons. */
-export const ADMIN_NAV_ICON_SIZE = 18;
-export const ADMIN_NAV_ICON_STROKE = 1.75;
+export const ADMIN_NAV_ICON_SIZE = 17;
+export const ADMIN_NAV_ICON_STROKE = 1.6;
 
 const ICON_MAP = {
   overview: LayoutDashboard,

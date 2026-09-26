@@ -91,7 +91,7 @@ export default function AdminLayout() {
           <aside className="oh-sa-nav" aria-label={t("dashboard.nav.admin.sidebarAria")}>
         <div className="oh-sa-brand oh-sa-brand--full-logo">
           <img
-            src="/hero/fullLogp.png"
+            src="/hero/orderzhouse-sidebar-logo.png"
             alt={t("common.brand")}
             className="oh-sa-brand__logo"
             width={200}
@@ -153,19 +153,26 @@ export default function AdminLayout() {
 
           <div className="oh-sa-topbar__actions">
             <NotificationsBell notificationsPagePath={notificationsPath} variant="superadmin" />
+            <span className="oh-sa-topbar__divider" aria-hidden />
             <div className="oh-sa-user" ref={userMenuRef}>
               <button
                 type="button"
-                className="oh-sa-avatar"
+                className="oh-sa-user__trigger"
                 aria-expanded={userMenuOpen}
                 aria-haspopup="true"
                 onClick={() => setUserMenuOpen((v) => !v)}
               >
-                {user?.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="" className="oh-sa-avatar-img" />
-                ) : (
-                  initial
-                )}
+                <span className="oh-sa-avatar" aria-hidden>
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="" className="oh-sa-avatar-img" />
+                  ) : (
+                    initial
+                  )}
+                </span>
+                <span className="oh-sa-user__meta">
+                  <span className="oh-sa-user__name">{displayName}</span>
+                  <span className="oh-sa-user__role">{t("dashboard.roles.admin")}</span>
+                </span>
               </button>
               {userMenuOpen ? (
                 <div className="oh-sa-user-menu" role="menu">

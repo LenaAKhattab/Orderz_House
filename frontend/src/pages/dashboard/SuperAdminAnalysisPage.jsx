@@ -1,25 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Banknote,
-  BarChart3,
-  CreditCard,
-  Globe,
-  MapPin,
-  RefreshCw,
-  Users,
-} from "lucide-react";
+import { CalendarRange, RefreshCw } from "lucide-react";
 import DashboardShell from "../../components/dashboard/DashboardShell";
-import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
-import DashboardSection from "../../components/dashboard/DashboardSection";
-import DashboardStatCard, { DashboardStatCardSkeleton } from "../../components/dashboard/DashboardStatCard";
-import DashboardTable from "../../components/dashboard/DashboardTable";
-import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
-import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
-import StatusBadge from "../../components/dashboard/StatusBadge";
 import { formatInt, formatMoneyJod } from "../../components/analytics/super-admin/superAdminHomeBundleUi";
 import { getSuperadminDashboardAnalysisRequest } from "../../services/api";
 import { withResolvedCountryNames } from "../../utils/countryDisplayAr";
-import "../../styles/adminControlCenter.css";
+import "../../styles/adminOverviewSoft.css";
+import "../../styles/adminAnalysisSoft.css";
 
 const RANGE_OPTIONS = [
   { value: "all", label: "كل الفترات" },
@@ -30,27 +16,27 @@ const RANGE_OPTIONS = [
   { value: "last_month", label: "الشهر الماضي" },
 ];
 
-function CountryBarChart({ rows, maxBars = 8 }) {
-  const top = (rows || []).filter((r) => r.countryName !== "غير معروف").slice(0, maxBars);
-  if (!top.length) {
-    return (
-      <p className="sa-analysis-muted m-0 text-sm">لا توجد بيانات كافية لعرض المخطط.</p>
-    );
+function SoftHBars({ rows, valueKey = "value", labelKey = "label" }) {
+  const list = rows || [];
+  if (!list.length) {
+    return <p className="aos-chart__empty">لا توجد بيانات كافية لعرض المخطط.</p>;
   }
-  const max = Math.max(...top.map((r) => r.totalUsers || r.totalSubscriptions || 0), 1);
-
+  const max = Math.max(1, ...list.map((r) => Number(r[valueKey]) || 0));
   return (
-    <div className="sa-analysis-bars" role="img" aria-label="أعلى الدول">
-      {top.map((row) => {
-        const value = row.totalUsers ?? row.totalSubscriptions ?? 0;
-        const pct = Math.max(4, Math.round((100 * value) / max));
+    <div className="aos-hbars">
+      {list.map((row) => {
+        const value = Number(row[valueKey]) || 0;
+        const pct = Math.max(6, Math.round((value / max) * 100));
+        const id = row.countryCode || row.planId || row[labelKey];
         return (
-          <div key={row.countryCode || row.countryName} className="sa-analysis-bars__row">
-            <span className="sa-analysis-bars__label">{row.countryName}</span>
-            <span className="sa-analysis-bars__track" aria-hidden>
-              <span className="sa-analysis-bars__fill" style={{ width: `${pct}%` }} />
-            </span>
-            <span className="sa-analysis-bars__value">{formatInt(value)}</span>
+          <div key={id} className="aos-hbar">
+            <div className="aos-hbar__top">
+              <span className="aos-hbar__name">{row[labelKey]}</span>
+              <span className="aos-hbar__meta">{formatInt(value)}</span>
+            </div>
+            <div className="aos-hbar__track" aria-hidden>
+              <span className="aos-hbar__fill" style={{ width: `${pct}%` }} />
+            </div>
           </div>
         );
       })}
@@ -58,23 +44,33 @@ function CountryBarChart({ rows, maxBars = 8 }) {
   );
 }
 
-function CompactKpiGrid({ items, loading, columns = 4 }) {
-  if (loading) {
-    return (
-      <div className={`sa-analysis-kpi-grid sa-analysis-kpi-grid--${columns}`}>
-        {Array.from({ length: items?.length || 6 }).map((_, i) => (
-          <div key={i} className="sa-analysis-kpi sa-analysis-kpi--skeleton" aria-hidden />
-        ))}
-      </div>
-    );
-  }
+function SoftKpi({ label, value, hint, money, textValue }) {
+  const display = textValue
+    ? value || "—"
+    : money
+      ? formatMoneyJod(value)
+      : formatInt(value);
   return (
-    <div className={`sa-analysis-kpi-grid sa-analysis-kpi-grid--${columns}`}>
+    <div className="aos-kpi">
+      <p className="aos-kpi__label">{label}</p>
+      <div className="aos-kpi__row">
+        <strong className="aos-kpi__value">{display}</strong>
+        {hint ? <span className="aos-kpi__delta aos-kpi__delta--neutral">{hint}</span> : null}
+      </div>
+    </div>
+  );
+}
+
+function SoftMetricGrid({ items, columns = 4 }) {
+  return (
+    <div className={`aan-metric-grid aan-metric-grid--${columns}`}>
       {items.map((item) => (
-        <div key={item.key} className="sa-analysis-kpi">
-          <span className="sa-analysis-kpi__label">{item.label}</span>
-          <strong className="sa-analysis-kpi__value">{item.money ? formatMoneyJod(item.value) : formatInt(item.value)}</strong>
-          {item.hint ? <span className="sa-analysis-kpi__hint">{item.hint}</span> : null}
+        <div key={item.key || item.label} className="aan-metric">
+          <span className="aan-metric__label">{item.label}</span>
+          <strong className="aan-metric__value">
+            {item.money ? formatMoneyJod(item.value) : formatInt(item.value)}
+          </strong>
+          {item.hint ? <span className="aan-metric__hint">{item.hint}</span> : null}
         </div>
       ))}
     </div>
@@ -93,31 +89,24 @@ function PlanGroupCard({ group }) {
   ];
 
   return (
-    <article className="sa-analysis-group-card">
-      <header className="sa-analysis-group-card__head">
-        <h3 className="sa-analysis-group-card__title">{group.groupLabel}</h3>
-        {group.planPages?.length ? (
-          <p className="sa-analysis-group-card__sub">
-            {group.planPages.map((p) => p.title || p.slug).filter(Boolean).join(" · ")}
-          </p>
-        ) : null}
+    <article className="aos-card">
+      <header className="aos-card__head">
+        <div>
+          <h3 className="aos-card__title">{group.groupLabel}</h3>
+          {group.planPages?.length ? (
+            <p className="aos-card__desc">
+              {group.planPages.map((p) => p.title || p.slug).filter(Boolean).join(" · ")}
+            </p>
+          ) : null}
+        </div>
       </header>
-      <div className="sa-analysis-group-card__grid">
-        {metrics.map((m) => (
-          <div key={m.label} className="sa-analysis-group-card__metric">
-            <span className="sa-analysis-group-card__metric-label">{m.label}</span>
-            <strong className="sa-analysis-group-card__metric-value">
-              {m.money ? formatMoneyJod(m.value) : formatInt(m.value)}
-            </strong>
-          </div>
-        ))}
-      </div>
+      <SoftMetricGrid items={metrics.map((m, i) => ({ ...m, key: `${group.groupKey}-${i}` }))} columns={3} />
       {topPlan ? (
-        <footer className="sa-analysis-group-card__footer">
-          <span className="sa-analysis-group-card__footer-label">أشهر باقة</span>
-          <span className="sa-analysis-group-card__footer-value">
+        <footer className="aan-group-footer">
+          <span className="aan-group-footer__label">أشهر باقة</span>
+          <span className="aan-group-footer__value">
             {topPlan.planTitle}
-            <em className="sa-analysis-group-card__footer-count">{formatInt(topPlan.totalSubscribers)} مشترك</em>
+            <em className="aan-group-footer__count">{formatInt(topPlan.totalSubscribers)} مشترك</em>
           </span>
         </footer>
       ) : null}
@@ -125,14 +114,8 @@ function PlanGroupCard({ group }) {
   );
 }
 
-function SectionSkeleton({ rows = 4 }) {
-  return (
-    <div className="sa-analysis-section-skel" aria-busy="true" aria-label="جارٍ التحميل">
-      {Array.from({ length: rows }).map((_, i) => (
-        <span key={i} className="sa-analysis-section-skel__line" />
-      ))}
-    </div>
-  );
+function SoftPill({ tone = "muted", children }) {
+  return <span className={`aos-pill aos-pill--${tone}`}>{children}</span>;
 }
 
 export default function SuperAdminAnalysisPage() {
@@ -187,20 +170,44 @@ export default function SuperAdminAnalysisPage() {
 
   const topUserCountry = userCountries.find((r) => r.countryName !== "غير معروف") || userCountries[0];
 
+  const topUserBars = useMemo(
+    () =>
+      userCountries
+        .filter((r) => r.countryName !== "غير معروف")
+        .slice(0, 8)
+        .map((r) => ({
+          countryCode: r.countryCode,
+          label: r.countryName,
+          value: r.totalUsers,
+        })),
+    [userCountries],
+  );
+
+  const topSubBars = useMemo(
+    () =>
+      subCountries
+        .filter((r) => r.countryName !== "غير معروف")
+        .slice(0, 8)
+        .map((r) => ({
+          countryCode: r.countryCode,
+          label: r.countryName,
+          value: r.totalSubscriptions,
+        })),
+    [subCountries],
+  );
+
   const heroCards = useMemo(
     () => [
       {
         key: "users",
         label: "إجمالي المستخدمين",
         value: usersByCountry?.totalUsers,
-        icon: <Users size={18} />,
         hint: "عملاء ومستقلون",
       },
       {
         key: "topCountry",
         label: "أكثر دولة",
         value: topUserCountry?.countryName || "—",
-        icon: <MapPin size={18} />,
         hint: topUserCountry ? `${formatInt(topUserCountry.totalUsers)} مستخدم` : null,
         textValue: true,
       },
@@ -208,26 +215,22 @@ export default function SuperAdminAnalysisPage() {
         key: "subs",
         label: "إجمالي الاشتراكات الحالية",
         value: subOverview?.totalCurrent,
-        icon: <CreditCard size={18} />,
       },
       {
         key: "paid",
         label: "الاشتراكات المدفوعة",
         value: subOverview?.paid,
-        icon: <CreditCard size={18} />,
       },
       {
         key: "admin",
         label: "الإسناد الإداري",
         value: subOverview?.adminAssigned,
-        icon: <Users size={18} />,
       },
       {
         key: "revenue",
         label: "إجمالي قيمة الاشتراكات المدفوعة",
         value: subOverview?.paidRevenueJod,
         money: true,
-        icon: <Banknote size={18} />,
       },
     ],
     [usersByCountry?.totalUsers, topUserCountry, subOverview],
@@ -255,315 +258,399 @@ export default function SuperAdminAnalysisPage() {
   const handleRefresh = () => void load({ isRefresh: true });
   const isInitialLoad = loading && !data;
   const hasData = Boolean(data);
-
-  const filterToolbar = (
-    <div className="sa-analysis-toolbar" role="toolbar" aria-label="أدوات التحليلات">
-      <div className="sa-analysis-toolbar__filters">
-        <div className="sa-analysis-toolbar__group sa-analysis-toolbar__group--period">
-          <label className="sa-analysis-toolbar__range" htmlFor="sa-analysis-range">
-            <span className="sa-analysis-toolbar__range-label">الفترة</span>
-            <select
-              id="sa-analysis-range"
-              className="input sa-analysis-toolbar__select"
-              value={range}
-              onChange={(e) => setRange(e.target.value)}
-            >
-              {RANGE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="sa-analysis-toolbar__group sa-analysis-toolbar__group--scope">
-          <label className="sa-analysis-toolbar__checkbox">
-            <input type="checkbox" checked={currentOnly} onChange={(e) => setCurrentOnly(e.target.checked)} />
-            <span>الاشتراكات الحالية فقط</span>
-          </label>
-        </div>
-      </div>
-
-      <div className="sa-analysis-toolbar__divider" aria-hidden="true" />
-
-      <button
-        type="button"
-        className={`btn btn-secondary sa-analysis-toolbar__refresh${refreshing ? " acc-btn--refreshing" : ""}`}
-        onClick={handleRefresh}
-        disabled={refreshing}
-      >
-        <RefreshCw size={16} className={refreshing ? "acc-spin" : undefined} aria-hidden />
-        <span>{refreshing ? "جارٍ التحديث…" : "تحديث"}</span>
-      </button>
-    </div>
-  );
-
-  if (isInitialLoad) {
-    return (
-      <DashboardShell>
-        <DashboardPageHeader eyebrow="لوحة الإدارة" title="التحليلات" description="جارٍ تحميل الإحصائيات…" />
-        <DashboardSection title="ملخص سريع">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <DashboardStatCardSkeleton key={i} />
-            ))}
-          </div>
-        </DashboardSection>
-        <DashboardSection title="تحليل المستخدمين حسب الدولة">
-          <SectionSkeleton />
-        </DashboardSection>
-      </DashboardShell>
-    );
-  }
-
-  if (error && !hasData) {
-    return (
-      <DashboardShell>
-        <DashboardPageHeader eyebrow="لوحة الإدارة" title="التحليلات" />
-        <DashboardErrorState
-          message={error}
-          actions={
-            <button type="button" className="btn btn-secondary" onClick={handleRefresh}>
-              إعادة المحاولة
-            </button>
-          }
-        />
-      </DashboardShell>
-    );
-  }
+  const rangeLabel = RANGE_OPTIONS.find((o) => o.value === range)?.label || range;
 
   return (
     <DashboardShell>
-      <div className={`sa-analysis-page${refreshing ? " sa-analysis-page--refreshing" : ""}`}>
-        <DashboardPageHeader
-          eyebrow="لوحة الإدارة"
-          title="التحليلات"
-          description="نظرة تحليلية على توزيع المستخدمين والاشتراكات حسب الدولة والباقة."
-          actions={filterToolbar}
-        />
+      <div className={`aos-page aan-page${refreshing ? " aan-page--refreshing" : ""}`}>
+        <header className="aos-dash-head">
+          <div className="aos-dash-head__titles">
+            <h1 className="aos-dash-head__title">التحليلات</h1>
+            <p className="aos-dash-head__desc">
+              نظرة تحليلية على توزيع المستخدمين والاشتراكات حسب الدولة والباقة
+            </p>
+          </div>
+          <div className="aos-dash-head__tools">
+            <label className="aos-tool aan-tool-select" htmlFor="aan-range">
+              <CalendarRange size={14} strokeWidth={2} aria-hidden />
+              <select
+                id="aan-range"
+                value={range}
+                onChange={(e) => setRange(e.target.value)}
+                aria-label="الفترة"
+              >
+                {RANGE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="aos-tool aos-tool--btn aan-check">
+              <input
+                type="checkbox"
+                checked={currentOnly}
+                onChange={(e) => setCurrentOnly(e.target.checked)}
+              />
+              الاشتراكات الحالية فقط
+            </label>
+            <button
+              type="button"
+              className="aos-tool aos-tool--btn"
+              onClick={handleRefresh}
+              disabled={refreshing || isInitialLoad}
+            >
+              <RefreshCw size={14} strokeWidth={2} className={refreshing ? "aos-spin" : undefined} aria-hidden />
+              {refreshing ? "تحديث…" : "تحديث"}
+            </button>
+          </div>
+        </header>
 
-        {error ? (
-          <DashboardErrorState
-            message={error}
-            className="mb-4"
-            actions={
-              <button type="button" className="btn btn-secondary btn-sm" onClick={handleRefresh}>
-                إعادة المحاولة
-              </button>
-            }
-          />
+        {error && !hasData ? (
+          <p className="aos-notice aos-notice--error" role="alert">
+            {error}{" "}
+            <button type="button" className="aos-notice__btn" onClick={handleRefresh}>
+              إعادة المحاولة
+            </button>
+          </p>
         ) : null}
 
-        <DashboardSection title="ملخص سريع" description="أهم المؤشرات في لمحة واحدة.">
-          <div className="sa-analysis-hero-grid">
-            {heroCards.map((card) => (
-              <DashboardStatCard
-                key={card.key}
-                label={card.label}
-                value={card.textValue ? card.value : card.money ? formatMoneyJod(card.value) : formatInt(card.value)}
-                hint={card.hint}
-                icon={card.icon}
-                className="sa-analysis-hero-card"
-              />
-            ))}
-          </div>
-        </DashboardSection>
+        {error && hasData ? (
+          <p className="aos-notice" role="status">
+            {error}{" "}
+            <button type="button" className="aos-notice__btn" onClick={handleRefresh}>
+              إعادة المحاولة
+            </button>
+          </p>
+        ) : null}
 
-        <DashboardSection
-          title="تحليل المستخدمين حسب الدولة"
-          description="توزيع العملاء والمستقلين حسب الدولة المسجّلة في الحساب."
-          actions={<Globe size={18} className="text-slate-400" aria-hidden />}
-        >
-          {hasData ? (
-            <>
-              <CompactKpiGrid
-                columns={3}
-                items={[
-                  { key: "known", label: "بدولة معروفة", value: usersByCountry?.totalKnown },
-                  { key: "unknown", label: "دولة غير معروفة", value: usersByCountry?.totalUnknown },
-                  { key: "total", label: "إجمالي العملاء والمستقلين", value: usersByCountry?.totalUsers },
-                ]}
-                loading={false}
-              />
-              <div className="sa-analysis-split mt-5">
-                <div className="sa-analysis-split__chart">
-                  <p className="sa-analysis-split__chart-title">أعلى 8 دول</p>
-                  <CountryBarChart rows={userCountries} maxBars={8} />
-                </div>
-                <div className="sa-analysis-split__table">
-                  <DashboardTable caption="المستخدمون حسب الدولة" className="sa-analysis-table-wrap">
-                    <thead>
-                      <tr>
-                        <th>الدولة</th>
-                        <th>إجمالي المستخدمين</th>
-                        <th>العملاء</th>
-                        <th>المستقلون</th>
-                        <th>النسبة</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {userCountries.map((row) => (
-                        <tr key={row.countryCode || row.countryName}>
-                          <td className="sa-analysis-table__country">{row.countryName}</td>
-                          <td className="tabular-nums">{formatInt(row.totalUsers)}</td>
-                          <td className="tabular-nums">{formatInt(row.clients)}</td>
-                          <td className="tabular-nums">{formatInt(row.freelancers)}</td>
-                          <td className="tabular-nums">{row.sharePct != null ? `${row.sharePct}٪` : "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </DashboardTable>
-                </div>
-              </div>
-              {!userCountries.length ? <DashboardEmptyState title="لا توجد بيانات مستخدمين" /> : null}
-            </>
+        <section className="aos-card" aria-labelledby="aan-summary-title">
+          <header className="aos-card__head">
+            <div>
+              <h2 id="aan-summary-title" className="aos-card__title">
+                ملخص سريع
+              </h2>
+              <p className="aos-card__desc">أهم المؤشرات في لمحة — {rangeLabel}</p>
+            </div>
+          </header>
+          {isInitialLoad ? (
+            <p className="aos-chart__empty">جارٍ تحميل الإحصائيات…</p>
           ) : (
-            <SectionSkeleton />
-          )}
-        </DashboardSection>
-
-        <DashboardSection
-          title="تحليل اشتراكات المستقلين"
-          description="إحصائيات الاشتراكات الحالية حسب حالة الدفع والتفعيل."
-          actions={<CreditCard size={18} className="text-slate-400" aria-hidden />}
-        >
-          <CompactKpiGrid items={subscriptionCards} loading={!hasData} columns={4} />
-        </DashboardSection>
-
-        <DashboardSection title="الاشتراكات حسب الباقة" description="مرتبة حسب عدد المشتركين الحاليين.">
-          {byPlan.length ? (
-            <DashboardTable caption="الاشتراكات حسب الباقة" className="sa-analysis-table-wrap sa-analysis-table-wrap--wide">
-              <thead>
-                <tr>
-                  <th className="sa-analysis-table__sticky-col">الباقة</th>
-                  <th>السعر</th>
-                  <th>المدة</th>
-                  <th>الإجمالي</th>
-                  <th>مدفوعة</th>
-                  <th>إسناد</th>
-                  <th>مجانية</th>
-                  <th>نشطة</th>
-                  <th>بانتظار التفعيل</th>
-                  <th>لم تبدأ</th>
-                  <th>قيمة مدفوعة</th>
-                </tr>
-              </thead>
-              <tbody>
-                {byPlan.map((plan) => (
-                  <tr key={plan.planId}>
-                    <td className="sa-analysis-table__sticky-col">
-                      <strong className="sa-analysis-plan-name">{plan.planTitle}</strong>
-                      <span className="sa-analysis-plan-id">#{plan.planId}</span>
-                      <div className="sa-analysis-plan-badges">
-                        {plan.paidSubscribers > 0 ? (
-                          <StatusBadge tone="success">{formatInt(plan.paidSubscribers)} مدفوع</StatusBadge>
-                        ) : null}
-                        {plan.adminAssignedSubscribers > 0 ? (
-                          <StatusBadge tone="admin_assigned">{formatInt(plan.adminAssignedSubscribers)} إسناد</StatusBadge>
-                        ) : null}
-                        {plan.freeNotRequiredSubscribers > 0 ? (
-                          <StatusBadge tone="neutral">{formatInt(plan.freeNotRequiredSubscribers)} مجاني</StatusBadge>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td className="tabular-nums whitespace-nowrap">
-                      {plan.priceJod != null ? formatMoneyJod(plan.priceJod) : "—"}
-                      {plan.paidSubscribers > 0 ? (
-                        <span className="sa-analysis-cell-note">
-                          + رسوم التفعيل التاريخية (حسب مبلغ الدفع الفعلي)
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="tabular-nums">{plan.durationDays != null ? `${formatInt(plan.durationDays)} يوم` : "—"}</td>
-                    <td className="tabular-nums font-semibold">{formatInt(plan.totalSubscribers)}</td>
-                    <td className="tabular-nums">{formatInt(plan.paidSubscribers)}</td>
-                    <td className="tabular-nums">{formatInt(plan.adminAssignedSubscribers)}</td>
-                    <td className="tabular-nums">{formatInt(plan.freeNotRequiredSubscribers)}</td>
-                    <td className="tabular-nums">{formatInt(plan.activeSubscribers)}</td>
-                    <td className="tabular-nums">{formatInt(plan.pendingActivation)}</td>
-                    <td className="tabular-nums">{formatInt(plan.assignedNotStarted)}</td>
-                    <td className="tabular-nums whitespace-nowrap">
-                      {formatMoneyJod(plan.paidRevenueJod)}
-                      {plan.paidRevenueJod > 0 ? (
-                        <span className="sa-analysis-cell-note">
-                          {[
-                            plan.paidPlanRevenueJod > 0 ? `${formatMoneyJod(plan.paidPlanRevenueJod)} باقة` : null,
-                            plan.paidActivationFeeRevenueJod > 0
-                              ? `${formatMoneyJod(plan.paidActivationFeeRevenueJod)} تفعيل`
-                              : null,
-                          ]
-                            .filter(Boolean)
-                            .join(" + ")}
-                        </span>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </DashboardTable>
-          ) : (
-            <DashboardEmptyState title="لا توجد اشتراكات على الباقات" />
-          )}
-        </DashboardSection>
-
-        <DashboardSection
-          title="تحليل الاشتراكات حسب نوع الباقة"
-          description="الباقات الأساسية (صفحة /plans) مقابل باقات الصفحات المباشرة."
-        >
-          {byPlanGroup.length ? (
-            <div className="sa-analysis-group-grid">
-              {byPlanGroup.map((group) => (
-                <PlanGroupCard key={group.groupKey} group={group} />
+            <div className="aos-kpi-grid aan-kpi-grid--6">
+              {heroCards.map((card) => (
+                <SoftKpi
+                  key={card.key}
+                  label={card.label}
+                  value={card.value}
+                  hint={card.hint}
+                  money={card.money}
+                  textValue={card.textValue}
+                />
               ))}
             </div>
-          ) : (
-            <DashboardEmptyState title="لا توجد بيانات مجموعات باقات" />
           )}
-        </DashboardSection>
+        </section>
 
-        <DashboardSection
-          title="الدول الأكثر اشتراكاً"
-          description="توزيع الاشتراكات حسب دولة المستقل."
-          actions={<BarChart3 size={18} className="text-slate-400" aria-hidden />}
-        >
-          {subCountries.length ? (
-            <div className="sa-analysis-split">
-              <div className="sa-analysis-split__chart">
-                <p className="sa-analysis-split__chart-title">أعلى 8 دول</p>
-                <CountryBarChart rows={subCountries} maxBars={8} />
+        <section className="aos-bot-grid" aria-label="تحليل المستخدمين حسب الدولة">
+          <article className="aos-card">
+            <header className="aos-card__head">
+              <div>
+                <h2 className="aos-card__title">أعلى الدول (مستخدمون)</h2>
+                <p className="aos-card__desc">توزيع العملاء والمستقلين</p>
               </div>
-              <div className="sa-analysis-split__table">
-                <DashboardTable caption="الاشتراكات حسب الدولة" className="sa-analysis-table-wrap">
+              <span className="aos-chip">أعلى 8</span>
+            </header>
+            {isInitialLoad ? (
+              <p className="aos-chart__empty">جارٍ التحميل…</p>
+            ) : (
+              <SoftHBars rows={topUserBars} />
+            )}
+          </article>
+
+          <article className="aos-list-panel">
+            <header className="aos-list-head">
+              <div className="aos-list-head__top">
+                <div>
+                  <h2 className="aos-list-head__title">تحليل المستخدمين حسب الدولة</h2>
+                  <p className="aos-list-head__desc">حسب الدولة المسجّلة في الحساب</p>
+                </div>
+              </div>
+              {!isInitialLoad ? (
+                <SoftMetricGrid
+                  columns={3}
+                  items={[
+                    { key: "known", label: "بدولة معروفة", value: usersByCountry?.totalKnown },
+                    { key: "unknown", label: "دولة غير معروفة", value: usersByCountry?.totalUnknown },
+                    { key: "total", label: "إجمالي العملاء والمستقلين", value: usersByCountry?.totalUsers },
+                  ]}
+                />
+              ) : null}
+            </header>
+
+            {isInitialLoad ? (
+              <p className="aos-empty">جارٍ التحميل…</p>
+            ) : userCountries.length ? (
+              <div className="aos-table-wrap">
+                <table className="aos-table">
+                  <thead>
+                    <tr>
+                      <th>الدولة</th>
+                      <th>إجمالي المستخدمين</th>
+                      <th className="aan-col--clients">العملاء</th>
+                      <th className="aan-col--freelancers">المستقلون</th>
+                      <th className="aan-col--share">النسبة</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {userCountries.map((row) => (
+                      <tr key={row.countryCode || row.countryName}>
+                        <td>
+                          <strong className="aos-stack__primary">{row.countryName}</strong>
+                        </td>
+                        <td>
+                          <span className="aos-stack__primary">{formatInt(row.totalUsers)}</span>
+                        </td>
+                        <td className="aan-col--clients">
+                          <span className="aos-stack__sub">{formatInt(row.clients)}</span>
+                        </td>
+                        <td className="aan-col--freelancers">
+                          <span className="aos-stack__sub">{formatInt(row.freelancers)}</span>
+                        </td>
+                        <td className="aan-col--share">
+                          <span className="aos-stack__sub">
+                            {row.sharePct != null ? `${row.sharePct}٪` : "—"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="aos-empty">لا توجد بيانات مستخدمين</p>
+            )}
+          </article>
+        </section>
+
+        <section className="aos-card" aria-labelledby="aan-subs-overview-title">
+          <header className="aos-card__head">
+            <div>
+              <h2 id="aan-subs-overview-title" className="aos-card__title">
+                تحليل اشتراكات المستقلين
+              </h2>
+              <p className="aos-card__desc">حسب حالة الدفع والتفعيل</p>
+            </div>
+          </header>
+          {isInitialLoad ? (
+            <p className="aos-chart__empty">جارٍ التحميل…</p>
+          ) : (
+            <SoftMetricGrid items={subscriptionCards} columns={4} />
+          )}
+        </section>
+
+        <section className="aos-list-panel" aria-labelledby="aan-by-plan-title">
+          <header className="aos-list-head">
+            <div className="aos-list-head__top">
+              <div>
+                <h2 id="aan-by-plan-title" className="aos-list-head__title">
+                  الاشتراكات حسب الباقة
+                </h2>
+                <p className="aos-list-head__desc">مرتبة حسب عدد المشتركين الحاليين</p>
+              </div>
+            </div>
+          </header>
+
+          {isInitialLoad ? (
+            <p className="aos-empty">جارٍ التحميل…</p>
+          ) : byPlan.length ? (
+            <div className="aos-table-wrap aan-table-scroll">
+              <table className="aos-table aan-table--plans">
+                <thead>
+                  <tr>
+                    <th>الباقة</th>
+                    <th>السعر</th>
+                    <th className="aan-col--duration">المدة</th>
+                    <th>الإجمالي</th>
+                    <th className="aan-col--paid">مدفوعة</th>
+                    <th className="aan-col--admin">إسناد</th>
+                    <th className="aan-col--free">مجانية</th>
+                    <th className="aan-col--active">نشطة</th>
+                    <th className="aan-col--pending">بانتظار التفعيل</th>
+                    <th className="aan-col--notstarted">لم تبدأ</th>
+                    <th>قيمة مدفوعة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {byPlan.map((plan) => (
+                    <tr key={plan.planId}>
+                      <td>
+                        <div className="aos-stack">
+                          <strong className="aos-stack__primary">{plan.planTitle}</strong>
+                          <span className="aos-stack__sub">#{plan.planId}</span>
+                          <div className="aan-plan-badges">
+                            {plan.paidSubscribers > 0 ? (
+                              <SoftPill tone="ok">{formatInt(plan.paidSubscribers)} مدفوع</SoftPill>
+                            ) : null}
+                            {plan.adminAssignedSubscribers > 0 ? (
+                              <SoftPill tone="info">{formatInt(plan.adminAssignedSubscribers)} إسناد</SoftPill>
+                            ) : null}
+                            {plan.freeNotRequiredSubscribers > 0 ? (
+                              <SoftPill tone="muted">{formatInt(plan.freeNotRequiredSubscribers)} مجاني</SoftPill>
+                            ) : null}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="aos-stack">
+                          <span className="aos-stack__primary">
+                            {plan.priceJod != null ? formatMoneyJod(plan.priceJod) : "—"}
+                          </span>
+                          {plan.paidSubscribers > 0 ? (
+                            <span className="aos-stack__sub">يشمل رسوم التفعيل التاريخية عند وجودها</span>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="aan-col--duration">
+                        <span className="aos-stack__sub">
+                          {plan.durationDays != null ? `${formatInt(plan.durationDays)} يوم` : "—"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="aos-stack__primary">{formatInt(plan.totalSubscribers)}</span>
+                      </td>
+                      <td className="aan-col--paid">
+                        <span className="aos-stack__sub">{formatInt(plan.paidSubscribers)}</span>
+                      </td>
+                      <td className="aan-col--admin">
+                        <span className="aos-stack__sub">{formatInt(plan.adminAssignedSubscribers)}</span>
+                      </td>
+                      <td className="aan-col--free">
+                        <span className="aos-stack__sub">{formatInt(plan.freeNotRequiredSubscribers)}</span>
+                      </td>
+                      <td className="aan-col--active">
+                        <span className="aos-stack__sub">{formatInt(plan.activeSubscribers)}</span>
+                      </td>
+                      <td className="aan-col--pending">
+                        <span className="aos-stack__sub">{formatInt(plan.pendingActivation)}</span>
+                      </td>
+                      <td className="aan-col--notstarted">
+                        <span className="aos-stack__sub">{formatInt(plan.assignedNotStarted)}</span>
+                      </td>
+                      <td>
+                        <div className="aos-stack">
+                          <span className="aos-stack__primary">{formatMoneyJod(plan.paidRevenueJod)}</span>
+                          {plan.paidRevenueJod > 0 ? (
+                            <span className="aos-stack__sub">
+                              {[
+                                plan.paidPlanRevenueJod > 0
+                                  ? `${formatMoneyJod(plan.paidPlanRevenueJod)} باقة`
+                                  : null,
+                                plan.paidActivationFeeRevenueJod > 0
+                                  ? `${formatMoneyJod(plan.paidActivationFeeRevenueJod)} تفعيل`
+                                  : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" + ")}
+                            </span>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="aos-empty">لا توجد اشتراكات على الباقات</p>
+          )}
+        </section>
+
+        <section className="aos-extra-grid" aria-label="تحليل الاشتراكات حسب نوع الباقة">
+          {isInitialLoad ? (
+            <article className="aos-card">
+              <p className="aos-chart__empty">جارٍ التحميل…</p>
+            </article>
+          ) : byPlanGroup.length ? (
+            byPlanGroup.map((group) => <PlanGroupCard key={group.groupKey} group={group} />)
+          ) : (
+            <article className="aos-card">
+              <p className="aos-chart__empty">لا توجد بيانات مجموعات باقات</p>
+            </article>
+          )}
+        </section>
+
+        <section className="aos-bot-grid" aria-label="الدول الأكثر اشتراكاً">
+          <article className="aos-card">
+            <header className="aos-card__head">
+              <div>
+                <h2 className="aos-card__title">أعلى الدول (اشتراكات)</h2>
+                <p className="aos-card__desc">توزيع الاشتراكات حسب دولة المستقل</p>
+              </div>
+              <span className="aos-chip">أعلى 8</span>
+            </header>
+            {isInitialLoad ? (
+              <p className="aos-chart__empty">جارٍ التحميل…</p>
+            ) : (
+              <SoftHBars rows={topSubBars} />
+            )}
+          </article>
+
+          <article className="aos-list-panel">
+            <header className="aos-list-head">
+              <div className="aos-list-head__top">
+                <div>
+                  <h2 className="aos-list-head__title">الدول الأكثر اشتراكاً</h2>
+                  <p className="aos-list-head__desc">مدفوع، إسناد، وأشهر باقة لكل دولة</p>
+                </div>
+              </div>
+            </header>
+
+            {isInitialLoad ? (
+              <p className="aos-empty">جارٍ التحميل…</p>
+            ) : subCountries.length ? (
+              <div className="aos-table-wrap">
+                <table className="aos-table">
                   <thead>
                     <tr>
                       <th>الدولة</th>
                       <th>الاشتراكات</th>
-                      <th>مدفوعة</th>
-                      <th>إسناد إداري</th>
-                      <th>أشهر باقة</th>
+                      <th className="aan-col--paid">مدفوعة</th>
+                      <th className="aan-col--admin">إسناد إداري</th>
+                      <th className="aan-col--plan">أشهر باقة</th>
                       <th>قيمة مدفوعة</th>
                     </tr>
                   </thead>
                   <tbody>
                     {subCountries.map((row) => (
                       <tr key={row.countryCode || row.countryName}>
-                        <td className="sa-analysis-table__country">{row.countryName}</td>
-                        <td className="tabular-nums font-semibold">{formatInt(row.totalSubscriptions)}</td>
-                        <td className="tabular-nums">{formatInt(row.paidSubscriptions)}</td>
-                        <td className="tabular-nums">{formatInt(row.adminAssignedSubscriptions)}</td>
-                        <td>{row.topPlan?.planTitle || "—"}</td>
-                        <td className="tabular-nums whitespace-nowrap">{formatMoneyJod(row.paidRevenueJod)}</td>
+                        <td>
+                          <strong className="aos-stack__primary">{row.countryName}</strong>
+                        </td>
+                        <td>
+                          <span className="aos-stack__primary">{formatInt(row.totalSubscriptions)}</span>
+                        </td>
+                        <td className="aan-col--paid">
+                          <span className="aos-stack__sub">{formatInt(row.paidSubscriptions)}</span>
+                        </td>
+                        <td className="aan-col--admin">
+                          <span className="aos-stack__sub">{formatInt(row.adminAssignedSubscriptions)}</span>
+                        </td>
+                        <td className="aan-col--plan">
+                          <span className="aos-stack__sub">{row.topPlan?.planTitle || "—"}</span>
+                        </td>
+                        <td>
+                          <span className="aos-stack__primary">{formatMoneyJod(row.paidRevenueJod)}</span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
-                </DashboardTable>
+                </table>
               </div>
-            </div>
-          ) : (
-            <DashboardEmptyState title="لا توجد بيانات اشتراكات حسب الدولة" />
-          )}
-        </DashboardSection>
+            ) : (
+              <p className="aos-empty">لا توجد بيانات اشتراكات حسب الدولة</p>
+            )}
+          </article>
+        </section>
       </div>
     </DashboardShell>
   );
