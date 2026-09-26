@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/oh_widgets.dart';
 import '../data/account_activation_kyc_models.dart';
+import '../data/identity_image_picker.dart';
 import 'account_activation_kyc_controller.dart';
 
 class AccountActivationKycScreen extends ConsumerStatefulWidget {
@@ -22,26 +22,35 @@ class _AccountActivationKycScreenState extends ConsumerState<AccountActivationKy
   String? _frontName;
   String? _backName;
   bool _termsAccepted = false;
+  String? _pickError;
+  bool _picking = false;
 
   Future<void> _pick(bool front) async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      allowMultiple: false,
-      withData: false,
-    );
-    if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
-    final path = file.path;
-    if (path == null || path.isEmpty) return;
+    if (_picking) return;
     setState(() {
-      if (front) {
-        _front = File(path);
-        _frontName = file.name;
-      } else {
-        _back = File(path);
-        _backName = file.name;
-      }
+      _picking = true;
+      _pickError = null;
     });
+    try {
+      final picked = await pickIdentityImageFile();
+      if (!mounted) return;
+      if (picked.cancelled) return;
+      if (!picked.isSuccess) {
+        setState(() => _pickError = picked.errorMessageAr ?? identityImagePickFailedAr);
+        return;
+      }
+      setState(() {
+        if (front) {
+          _front = picked.file;
+          _frontName = picked.fileName;
+        } else {
+          _back = picked.file;
+          _backName = picked.fileName;
+        }
+      });
+    } finally {
+      if (mounted) setState(() => _picking = false);
+    }
   }
 
   Future<void> _submit() async {
@@ -58,6 +67,7 @@ class _AccountActivationKycScreenState extends ConsumerState<AccountActivationKy
         _frontName = null;
         _backName = null;
         _termsAccepted = false;
+        _pickError = null;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text(accountActivationKycSubmitSuccessAr)),
@@ -69,6 +79,7 @@ class _AccountActivationKycScreenState extends ConsumerState<AccountActivationKy
   Widget build(BuildContext context) {
     final ui = ref.watch(accountActivationKycControllerProvider);
     final status = ui.status;
+    final pickBusy = _picking || ui.submitting;
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
@@ -127,13 +138,13 @@ class _AccountActivationKycScreenState extends ConsumerState<AccountActivationKy
                       _FilePickerRow(
                         label: 'صورة الهوية — الأمام',
                         fileName: _frontName,
-                        onPick: ui.submitting ? null : () => _pick(true),
+                        onPick: pickBusy ? null : () => _pick(true),
                       ),
                       const SizedBox(height: 12),
                       _FilePickerRow(
                         label: 'صورة الهوية — الخلف',
                         fileName: _backName,
-                        onPick: ui.submitting ? null : () => _pick(false),
+                        onPick: pickBusy ? null : () => _pick(false),
                       ),
                       const SizedBox(height: 14),
                       Text(
@@ -159,6 +170,10 @@ class _AccountActivationKycScreenState extends ConsumerState<AccountActivationKy
                           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                         ),
                       ),
+                      if (_pickError != null) ...[
+                        const SizedBox(height: 8),
+                        OhErrorBanner(message: _pickError!),
+                      ],
                       if (ui.localValidationError != null) ...[
                         const SizedBox(height: 8),
                         OhErrorBanner(message: ui.localValidationError!),
@@ -169,7 +184,7 @@ class _AccountActivationKycScreenState extends ConsumerState<AccountActivationKy
                             ? accountActivationKycResubmitCtaAr
                             : 'إرسال طلب التفعيل',
                         isLoading: ui.submitting,
-                        onPressed: ui.submitting ? null : _submit,
+                        onPressed: pickBusy ? null : _submit,
                       ),
                     ],
                   ),

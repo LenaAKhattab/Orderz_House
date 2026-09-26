@@ -27,7 +27,7 @@ function InsightCard({ label, value, hint, icon: Icon, tone = "default" }) {
   return (
     <article className="oh-legacy-admin__stat">
       <div className={`oh-legacy-admin__stat-icon${tone !== "default" ? ` oh-legacy-admin__stat-icon--${tone}` : ""}`} aria-hidden>
-        {Icon ? <Icon size={16} strokeWidth={2.25} /> : null}
+        {Icon ? <Icon size={14} strokeWidth={2.25} /> : null}
       </div>
       <div className="oh-legacy-admin__stat-body">
         <p className="oh-legacy-admin__stat-label">{label}</p>

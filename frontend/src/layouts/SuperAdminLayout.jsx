@@ -141,7 +141,7 @@ export default function SuperAdminLayout() {
           <aside className={navClassName} aria-label={t("dashboard.nav.superAdmin.sidebarAria")}>
             <div className="oh-sa-brand oh-sa-brand--full-logo">
               <img
-                src="/hero/fullLogp.png"
+                src="/hero/orderzhouse-sidebar-logo.png"
                 alt={t("common.brand")}
                 className="oh-sa-brand__logo"
                 width={200}
@@ -200,13 +200,28 @@ export default function SuperAdminLayout() {
 
           <div className="oh-sa-topbar__actions">
             <NotificationsBell notificationsPagePath={notificationsPath} variant="superadmin" />
+            <span className="oh-sa-topbar__divider" aria-hidden />
             <div className="oh-sa-user" ref={userMenuRef}>
-              <button type="button" className="oh-sa-avatar" aria-expanded={userMenuOpen} aria-haspopup="true" onClick={() => setUserMenuOpen((v) => !v)}>
-                {user?.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="" className="oh-sa-avatar-img" />
-                ) : (
-                  initial
-                )}
+              <button
+                type="button"
+                className="oh-sa-user__trigger"
+                aria-expanded={userMenuOpen}
+                aria-haspopup="true"
+                onClick={() => setUserMenuOpen((v) => !v)}
+              >
+                <span className="oh-sa-avatar" aria-hidden>
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="" className="oh-sa-avatar-img" />
+                  ) : (
+                    initial
+                  )}
+                </span>
+                <span className="oh-sa-user__meta">
+                  <span className="oh-sa-user__name">{displayName}</span>
+                  <span className="oh-sa-user__role">
+                    {role === "admin" ? t("dashboard.roles.admin") : t("dashboard.roles.superAdmin")}
+                  </span>
+                </span>
               </button>
               {userMenuOpen ? (
                 <div className="oh-sa-user-menu" role="menu">
