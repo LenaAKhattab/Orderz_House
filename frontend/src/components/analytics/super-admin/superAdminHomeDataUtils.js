@@ -12,6 +12,8 @@ export const SA_ROUTES = {
   ads: "/dashboard/super-admin/ads",
   editWebsite: "/dashboard/super-admin/edit-website",
   trainingOrders: "/dashboard/super-admin/training-orders",
+  analysis: "/dashboard/super-admin/analysis",
+  users: "/dashboard/super-admin/users",
 };
 
 export const ADMIN_DASHBOARD_ROUTES = {

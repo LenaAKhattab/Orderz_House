@@ -83,10 +83,16 @@ function connectionCount(userId) {
   return connectionsByUser.get(userKey(userId))?.size || 0;
 }
 
+/** True when the user has at least one live SSE notification stream open. */
+function isUserOnline(userId) {
+  return connectionCount(userId) > 0;
+}
+
 module.exports = {
   subscribe,
   unsubscribe,
   publish,
   startHeartbeat,
   connectionCount,
+  isUserOnline,
 };
