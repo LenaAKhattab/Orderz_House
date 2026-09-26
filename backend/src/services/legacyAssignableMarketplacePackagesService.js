@@ -85,11 +85,11 @@ async function ensureLegacyBridgePlanForMarketplaceTier(marketplacePlan, client 
        is_active, is_visible, sort_order,
        admin_notes, currency
      ) VALUES (
-       $1, $2, $2, $3, $3,
-       $4, $5,
+       $1::text, $2::text, $3::text, $4::text, $5::text,
+       $6::int, $7::numeric,
        FALSE, FALSE,
-       TRUE, FALSE, $6,
-       $7, 'JOD'
+       TRUE, FALSE, $8::int,
+       $9::text, 'JOD'
      )
      ON CONFLICT (name) DO UPDATE SET
        title = EXCLUDED.title,
@@ -108,6 +108,8 @@ async function ensureLegacyBridgePlanForMarketplaceTier(marketplacePlan, client 
     [
       name,
       title,
+      title,
+      description,
       description,
       durationDays,
       priceJod != null ? priceJod : 0,
@@ -120,14 +122,15 @@ async function ensureLegacyBridgePlanForMarketplaceTier(marketplacePlan, client 
 }
 
 async function listLiveMarketplaceMembershipRows(client = pool) {
+  const tiers = MARKETPLACE_MEMBERSHIP_ACTIVE_TIER_CODES.map((c) => String(c).toLowerCase());
   const { rows } = await client.query(
     `SELECT *
        FROM marketplace_membership_plans
       WHERE is_active = TRUE
         AND (tier_code !~ '^special_offer(_v[0-9]+)?$')
-        AND lower(tier_code) = ANY($1::text[])
+        AND lower(tier_code) IN (${tiers.map((_, i) => `$${i + 1}`).join(", ")})
       ORDER BY sort_order ASC, id ASC`,
-    [MARKETPLACE_MEMBERSHIP_ACTIVE_TIER_CODES.map((c) => String(c).toLowerCase())],
+    tiers,
   );
   return rows;
 }
