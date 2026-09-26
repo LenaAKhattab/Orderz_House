@@ -2594,6 +2594,13 @@ export const bulkAssignLegacyFreelancerPackageRequest = async (payload) => {
   return data;
 };
 
+export const listLegacyFreelancerAssignablePackagesRequest = async ({ diagnostic = false } = {}) => {
+  const { data } = await api.get("/super-admin/legacy-freelancers/assignable-packages", {
+    params: diagnostic ? { diagnostic: 1 } : undefined,
+  });
+  return data;
+};
+
 export const assignLegacyFreelancerPackageRequest = async (userId, payload) => {
   const { data } = await api.post(
     `/super-admin/legacy-freelancers/${encodeURIComponent(userId)}/package`,

@@ -101,6 +101,20 @@ const assignPackage = async (req, res, next) => {
   }
 };
 
+const listAssignablePackages = async (req, res, next) => {
+  try {
+    const includeDiagnostic =
+      String(req.query.diagnostic || "").trim() === "1" ||
+      String(req.query.diagnostic || "").toLowerCase() === "true";
+    const data = await legacyFreelancerAdminService.listAssignablePackages({
+      includeDiagnostic,
+    });
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const bulkAssignPackage = async (req, res, next) => {
   try {
     const data = await legacyFreelancerAdminService.bulkAssignPackage({
@@ -280,6 +294,7 @@ module.exports = {
   listLegacyFreelancers,
   getLegacyFreelancer,
   createManualLegacyFreelancer,
+  listAssignablePackages,
   assignPackage,
   bulkAssignPackage,
   listDocumentTypes,
