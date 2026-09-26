@@ -44,6 +44,12 @@ async function ensurePartnerRow(client) {
 async function listAssignableSnapshots({ limit = 100, offset = 0, rank = null } = {}) {
   const { getFazatIntegrationConfig, isPilotAllowlisted } = require("../config/fazatIntegration");
   const cfg = getFazatIntegrationConfig();
+
+  if (cfg.freelancerExportMode === "eligible") {
+    const fazatFreelancerExportService = require("./fazatFreelancerExportService");
+    return fazatFreelancerExportService.listEligibleFreelancerSnapshots({ limit, offset, rank });
+  }
+
   const lim = Math.min(Math.max(Number(limit) || 100, 1), 200);
   const off = Math.max(Number(offset) || 0, 0);
   const params = [PARTNER_CODE];
@@ -57,8 +63,29 @@ async function listAssignableSnapshots({ limit = 100, offset = 0, rank = null } 
     params.push(cfg.pilotFreelancerIds);
     allowSql = ` AND p.freelancer_user_id = ANY($${params.length}::bigint[])`;
   } else if (cfg.requirePilotAllowlist && !cfg.pilotFreelancerIds.length) {
-    return [];
+    return {
+      data: [],
+      total: 0,
+      limit: lim,
+      offset: off,
+      hasMore: false,
+      exportMode: "pilot",
+    };
   }
+
+  const countParams = [...params];
+  const { rows: countRows } = await pool.query(
+    `SELECT COUNT(*)::int AS c
+     FROM partner_freelancer_profiles p
+     JOIN users u ON u.id = p.freelancer_user_id
+     WHERE p.partner_code = $1
+       AND u.role = 'freelancer'
+       ${rankSql}
+       ${allowSql}`,
+    countParams,
+  );
+  const total = Number(countRows[0]?.c) || 0;
+
   params.push(lim, off);
 
   const { rows } = await pool.query(
@@ -80,7 +107,15 @@ async function listAssignableSnapshots({ limit = 100, offset = 0, rank = null } 
      LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params,
   );
-  return rows.map(mapProfile).filter((p) => isPilotAllowlisted(p.freelancerId));
+  const data = rows.map(mapProfile).filter((p) => isPilotAllowlisted(p.freelancerId));
+  return {
+    data,
+    total,
+    limit: lim,
+    offset: off,
+    hasMore: off + lim < total,
+    exportMode: "pilot",
+  };
 }
 
 async function upsertRank({ freelancerId, rank, notesInternal = null, isAssignable = null }) {

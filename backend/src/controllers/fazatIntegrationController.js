@@ -5,12 +5,27 @@ const { pipeOrderFileToResponse } = require("../utils/pipeOrderFileDownload");
 
 async function listFreelancers(req, res, next) {
   try {
-    const data = await fazatFreelancerProfileService.listAssignableSnapshots({
+    const page = await fazatFreelancerProfileService.listAssignableSnapshots({
       limit: req.query.limit,
       offset: req.query.offset,
       rank: req.query.rank || null,
     });
-    return res.json({ success: true, partnerCode: "FAZAT", count: data.length, data });
+    const data = Array.isArray(page) ? page : page.data || [];
+    const limit = Array.isArray(page) ? data.length : page.limit;
+    const offset = Array.isArray(page) ? 0 : page.offset;
+    const total = Array.isArray(page) ? data.length : page.total;
+    const hasMore = Array.isArray(page) ? false : Boolean(page.hasMore);
+    return res.json({
+      success: true,
+      partnerCode: "FAZAT",
+      count: data.length,
+      total,
+      limit,
+      offset,
+      hasMore,
+      exportMode: Array.isArray(page) ? "pilot" : page.exportMode || null,
+      data,
+    });
   } catch (err) {
     return next(err);
   }

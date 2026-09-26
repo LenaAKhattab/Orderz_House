@@ -171,7 +171,12 @@ Base: `/api/integrations/fazat`
 
 ### 5.1 `GET /freelancers`
 
-Query (optional): `limit`, `offset`, `rank`
+Query (optional): `limit` (default 100, max 200), `offset`, `rank`
+
+Export mode (`FAZAT_FREELANCER_EXPORT_MODE`):
+
+- `pilot` (default): `partner_freelancer_profiles` ∩ `FAZAT_PILOT_FREELANCER_IDS`
+- `eligible`: freelancers who can take Orderz work (`canFreelancerTakeOrders` + active + email verified)
 
 **200 response example:**
 
@@ -180,6 +185,11 @@ Query (optional): `limit`, `offset`, `rank`
   "success": true,
   "partnerCode": "FAZAT",
   "count": 1,
+  "total": 1,
+  "limit": 100,
+  "offset": 0,
+  "hasMore": false,
+  "exportMode": "pilot",
   "data": [
     {
       "providerFreelancerId": "2404",
@@ -196,6 +206,7 @@ Query (optional): `limit`, `offset`, `rank`
 }
 ```
 
+If `hasMore` is true, request the next page with `offset = offset + limit`.
 ### 5.2 `PATCH /freelancers/:freelancerId/rank`
 
 **Request:**

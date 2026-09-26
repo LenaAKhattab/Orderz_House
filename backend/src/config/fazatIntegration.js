@@ -17,6 +17,15 @@ function parsePilotFreelancerIds(raw = process.env.FAZAT_PILOT_FREELANCER_IDS) {
     .filter((n) => Number.isInteger(n) && n > 0);
 }
 
+/** @returns {'pilot'|'eligible'} */
+function parseFreelancerExportMode(raw = process.env.FAZAT_FREELANCER_EXPORT_MODE) {
+  const mode = String(raw || "")
+    .trim()
+    .toLowerCase();
+  if (mode === "eligible" || mode === "eligibility") return "eligible";
+  return "pilot";
+}
+
 function getFazatIntegrationConfig() {
   const enabled = truthy(process.env.FAZAT_INTEGRATION_ENABLED);
   const sharedSecret = String(process.env.FAZAT_INTEGRATION_SHARED_SECRET || "").trim();
@@ -33,8 +42,9 @@ function getFazatIntegrationConfig() {
       : null;
   const maxSkewSec = Math.max(30, Number(process.env.FAZAT_REQUEST_MAX_SKEW_SEC) || 300);
   const pilotFreelancerIds = parsePilotFreelancerIds();
-  const requirePilotAllowlist = enabled; // while integration is on, allowlist is mandatory
-
+  const freelancerExportMode = parseFreelancerExportMode();
+  // Pilot mode keeps the manual allowlist mandatory. Eligible mode uses Orderz work-eligibility.
+  const requirePilotAllowlist = enabled && freelancerExportMode === "pilot";
   const poolDefaultBudgetRaw = process.env.FAZAT_POOL_DEFAULT_BUDGET_JOD;
   const poolDefaultBudgetParsed =
     poolDefaultBudgetRaw != null && String(poolDefaultBudgetRaw).trim() !== ""
@@ -61,6 +71,7 @@ function getFazatIntegrationConfig() {
     maxSkewSec,
     pilotFreelancerIds,
     requirePilotAllowlist,
+    freelancerExportMode,
     freelancerClientAliasAr: "طلب مُدار من Orderz",
     freelancerClientAliasEn: "Orderz House managed order",
   };
@@ -141,4 +152,5 @@ module.exports = {
   assertPilotAllowlisted,
   isPilotAllowlisted,
   parsePilotFreelancerIds,
+  parseFreelancerExportMode,
 };

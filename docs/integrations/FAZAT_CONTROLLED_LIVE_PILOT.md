@@ -25,12 +25,21 @@ FAZAT_PILOT_FREELANCER_IDS=<id1>,<id2>
 
 ## Pilot allowlist
 
-When `FAZAT_INTEGRATION_ENABLED=true`, `FAZAT_PILOT_FREELANCER_IDS` is **required**.
+When `FAZAT_INTEGRATION_ENABLED=true` and `FAZAT_FREELANCER_EXPORT_MODE` is unset or `pilot`, `FAZAT_PILOT_FREELANCER_IDS` is **required**.
 
 - Empty allowlist → API returns `FAZAT_PILOT_ALLOWLIST_EMPTY` (503).
 - Non-allowlisted freelancer → `FAZAT_PILOT_NOT_ALLOWLISTED` (403) on create/rank via API.
 - Expand rollout only by editing the allowlist env (no seed).
 
+### Eligible export mode (Orderz work gates)
+
+Set:
+
+```bash
+FAZAT_FREELANCER_EXPORT_MODE=eligible
+```
+
+Then `GET /api/integrations/fazat/freelancers` exports freelancers who can receive work in Orderz (same gates as admin assignment / `canFreelancerTakeOrders`): active account, verified email, current subscription with `company_approved`, valid payment/status, no marketplace hold, activation-fee satisfied when enabled. Pilot allowlist is **not** required in this mode. Default remains `pilot` until Production env is switched.
 ## Manual rank (selected ids only)
 
 ```bash

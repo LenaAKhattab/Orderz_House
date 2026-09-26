@@ -358,8 +358,14 @@ async function createPartnerOrder(body = {}, { idempotencyKey = null } = {}) {
     return { partnerOrder: mapPartnerOrder(existing, order), order, idempotentReplay: true };
   }
 
-  assertPilotAllowlisted(freelancerId);
-  await fazatFreelancerProfileService.assertAssignableForPartner(freelancerId);
+  const cfg = getFazatIntegrationConfig();
+  if (cfg.freelancerExportMode === "eligible") {
+    const fazatFreelancerExportService = require("./fazatFreelancerExportService");
+    await fazatFreelancerExportService.assertEligibleForFazatAssignment(freelancerId);
+  } else {
+    assertPilotAllowlisted(freelancerId);
+    await fazatFreelancerProfileService.assertAssignableForPartner(freelancerId);
+  }
 
   // Ensure partner row exists (env FAZAT_INTEGRATION_ENABLED is the real gate).
   await pool.query(
