@@ -9,6 +9,7 @@ const { ROLES } = require("../constants/roles");
 const { aggregateCoursesForAdmin } = require("../utils/superAdminUsersCourseHelpers");
 const subscriptionsService = require("./subscriptionsService");
 const freelancerAccountActivationKycService = require("./freelancerAccountActivationKycService");
+const notificationRealtimeHub = require("./notificationRealtimeHub");
 
 const KYC_FILE_BASE = "/api/super-admin/freelancer-activation-requests";
 const MAX_BULK_IDS = 100;
@@ -601,6 +602,9 @@ async function listUsers(query = {}) {
     ? String(query.membershipStatus).trim().toLowerCase()
     : "";
   const courseStatus = query.courseStatus ? String(query.courseStatus).trim().toLowerCase() : "";
+  const activationStatus = query.activationStatus
+    ? String(query.activationStatus).trim().toLowerCase()
+    : "";
   const hasPendingFinalTest =
     query.hasPendingFinalTest === true ||
     String(query.hasPendingFinalTest || "").toLowerCase() === "true";
@@ -706,6 +710,16 @@ async function listUsers(query = {}) {
            AND (LOWER(p2.name) = $${params.length} OR LOWER(COALESCE(p2.title, '')) = $${params.length})
       )`);
     }
+  }
+
+  if (activationStatus) {
+    params.push(activationStatus);
+    where.push(`EXISTS (
+      SELECT 1 FROM freelancer_subscriptions fs_act
+       WHERE fs_act.freelancer_user_id = u.id
+         AND fs_act.is_current = TRUE
+         AND LOWER(COALESCE(fs_act.activation_status, '')) = $${params.length}
+    )`);
   }
 
   if (hasPendingFinalTest) {
@@ -865,6 +879,7 @@ async function listUsers(query = {}) {
         coursesTotal: training.total,
         pendingFinalTests: training.pendingFinalTest,
         lastSeenAt: lastSeenByUser.get(uid) || null,
+        isOnline: notificationRealtimeHub.isUserOnline(uid),
         flags: {
           emailUnverified: !row.email_verified,
           identityPending: identity.status === "pending_review",
@@ -928,6 +943,7 @@ async function getUserDetail(userId) {
       freelancerCategories: Array.isArray(row.freelancer_categories) ? row.freelancer_categories : [],
       termsAccepted: Boolean(row.terms_accepted),
       lastSeenAt: activity.lastSeenAt,
+      isOnline: notificationRealtimeHub.isUserOnline(uid),
     },
     subscription,
     eligibility: eligibility
