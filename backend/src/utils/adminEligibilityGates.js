@@ -113,15 +113,50 @@ function composeOrderReadiness({
 
   const blocking = gates.filter((g) => g.blocksEligibility && !g.notApplicable && !g.passed);
   const eligible = blocking.length === 0;
+  const shapedGates = gates.map((g) => ({
+    ...g,
+    state: g.notApplicable ? "not_applicable" : g.passed ? "passed" : "failed",
+  }));
+  const blockers = eligible ? [] : blockersFromGates(shapedGates);
   return {
     eligible,
     badge: eligible ? "مؤهل لاستقبال الطلبات" : "غير مؤهل لاستقبال الطلبات",
-    gates: gates.map((g) => ({
-      ...g,
-      state: g.notApplicable ? "not_applicable" : g.passed ? "passed" : "failed",
-    })),
+    gates: shapedGates,
+    blockers,
     training: training || null,
   };
+}
+
+const PACKAGE_BLOCKER_MESSAGES = Object.freeze({
+  no_subscription: "لا يوجد اشتراك حالي",
+  company_activation_pending: "بانتظار تفعيل الشركة",
+  payment_not_completed: "دفع الباقة غير مكتمل",
+  expired: "الباقة منتهية",
+  status_inactive: "الاشتراك غير نشط",
+  status_cancelled: "الاشتراك ملغى",
+  activation_fee_unpaid: "رسوم توثيق الحساب غير مدفوعة",
+  account_hold_payment_failed: "الحساب موقوف بسبب فشل الدفع",
+  invalid_status: "حالة الاشتراك لا تسمح باستقبال الطلبات",
+});
+
+function blockerMessageForGate(gate) {
+  if (gate.code === "account_active") return "الحساب غير نشط";
+  if (gate.code === "identity") return "الهوية غير معتمدة";
+  if (gate.code === "package") {
+    return PACKAGE_BLOCKER_MESSAGES[gate.reason] || "الباقة غير صالحة";
+  }
+  if (gate.code === "training") return "التدريب المطلوب غير مكتمل";
+  if (gate.code === "final_exam") return "الاختبار النهائي غير مكتمل";
+  return gate.label || "عائق أهلية";
+}
+
+function blockersFromGates(gates = []) {
+  return gates
+    .filter((gate) => gate.blocksEligibility === true && gate.notApplicable !== true && gate.state === "failed")
+    .map((gate) => ({
+      code: gate.code,
+      message: blockerMessageForGate(gate),
+    }));
 }
 
 module.exports = {
@@ -130,4 +165,5 @@ module.exports = {
   evaluateCourseExam,
   evaluateTrainingRequirements,
   composeOrderReadiness,
+  blockersFromGates,
 };

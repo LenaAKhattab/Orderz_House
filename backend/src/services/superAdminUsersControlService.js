@@ -584,41 +584,14 @@ async function loadAuditEvents(targetUserId, limit = 30) {
   }
 }
 
-function buildBlockers({ user, subscription, eligibility, identity, training }) {
-  const blockers = [];
-  if (!user.is_active) {
-    blockers.push({ code: "account_inactive", message: "الحساب غير نشط" });
+function buildBlockers({ user, orderReadiness }) {
+  if (user?.role === ROLES.FREELANCER) {
+    return Array.isArray(orderReadiness?.blockers) ? orderReadiness.blockers : [];
   }
-  if (user.role === ROLES.FREELANCER) {
-    if (!user.email_verified) {
-      blockers.push({ code: "email_unverified", message: "البريد غير موثّق" });
-    }
-    if (!subscription) {
-      blockers.push({ code: "no_subscription", message: "لا يوجد اشتراك حالي" });
-    } else if (String(subscription.activationStatus || "").toLowerCase() === "company_pending") {
-      blockers.push({ code: "activation_pending", message: "بانتظار تفعيل الشركة" });
-    } else if (String(subscription.activationStatus || "").toLowerCase() === "company_rejected") {
-      blockers.push({ code: "activation_rejected", message: "تم رفض تفعيل الحساب" });
-    }
-    if (identity?.status === "pending_review") {
-      blockers.push({ code: "identity_pending_review", message: "الهوية بانتظار المراجعة" });
-    } else if (identity?.status === "rejected") {
-      blockers.push({ code: "identity_rejected", message: "الهوية مرفوضة — يلزم إعادة الرفع" });
-    }
-    if (eligibility && eligibility.eligible === false) {
-      blockers.push({
-        code: eligibility.reason || "not_eligible",
-        message: "غير مؤهل لاستلام الطلبات",
-      });
-    }
-    if (training?.pendingFinalTest > 0) {
-      blockers.push({
-        code: "pending_final_test",
-        message: `يوجد ${training.pendingFinalTest} اختبار نهائي معلّق`,
-      });
-    }
+  if (user && user.is_active !== true) {
+    return [{ code: "account_inactive", message: "الحساب غير نشط" }];
   }
-  return blockers;
+  return [];
 }
 
 async function getStats() {
@@ -1036,10 +1009,7 @@ async function getUserDetail(userId) {
   const auditEvents = await loadAuditEvents(uid, 40);
   const blockers = buildBlockers({
     user: row,
-    subscription,
-    eligibility,
-    identity,
-    training,
+    orderReadiness,
   });
 
   return {
