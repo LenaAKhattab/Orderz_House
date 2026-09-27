@@ -16,6 +16,7 @@ const {
   ACCOUNT_ACTIVATION_KYC_ERROR_CODES,
 } = require("../constants/freelancerAccountActivationKyc");
 const { uploadKycIdBuffer } = require("./cloudinaryUploadService");
+const { loadManualIdentityVerification, isManualIdentityApproved } = require("./freelancerIdentityGate");
 const { getCloudinary } = require("../config/cloudinary");
 
 function isMissingSchema(err) {
@@ -90,7 +91,7 @@ async function loadLatestRequest(runner, freelancerUserId) {
 
 /**
  * A11.1 — Gate setting company_approved outside the KYC approve endpoint.
- * @returns {{ mode: 'kyc_approved'|'super_admin_override'|'skip', overrideReason?: string|null }}
+ * @returns {{ mode: 'kyc_approved'|'manual_admin'|'super_admin_override'|'skip', overrideReason?: string|null }}
  */
 async function assertCompanyApprovalAllowed({
   freelancerUserId,
@@ -111,6 +112,11 @@ async function assertCompanyApprovalAllowed({
     const latest = await loadLatestRequest(client || pool, freelancerUserId);
     if (latest && String(latest.status) === "approved") {
       return { mode: "kyc_approved", overrideReason: null };
+    }
+
+    const manual = await loadManualIdentityVerification(freelancerUserId, client || pool);
+    if (isManualIdentityApproved(manual)) {
+      return { mode: "manual_admin", overrideReason: null };
     }
 
     if (reason) {

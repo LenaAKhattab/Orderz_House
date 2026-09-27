@@ -796,6 +796,79 @@
   gap: 0.55rem;
 }
 
+.oh-sa-users-actions-row--secondary {
+  opacity: 0.92;
+}
+
+.oh-sa-users-gates {
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #f1f5f9;
+}
+
+.oh-sa-users-gates__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+}
+
+.oh-sa-users-gates__head h3 {
+  margin: 0;
+  font-size: 1.06rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.oh-sa-users-gates ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.oh-sa-users-gates li {
+  font-size: 0.875rem;
+}
+
+.oh-sa-users-gate--pass {
+  color: #3f6212;
+}
+
+.oh-sa-users-gate--fail {
+  color: #b91c1c;
+}
+
+.oh-sa-users-gate--na {
+  color: #64748b;
+}
+
+.oh-sa-users-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.84rem;
+  color: #0f172a;
+}
+
+.oh-sa-users-course-admin {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+}
+
+.oh-sa-users-field select {
+  width: 100%;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
+  background: #fff;
+  color: #0f172a;
+}
+
 .oh-sa-users-blockers {
   padding: 0.75rem 0.9rem;
   border-radius: 12px;

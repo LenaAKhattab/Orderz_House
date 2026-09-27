@@ -7,9 +7,19 @@ const { pool } = require("../config/db");
 const { createAppError } = require("../utils/AppError");
 const { ROLES } = require("../constants/roles");
 const { aggregateCoursesForAdmin } = require("../utils/superAdminUsersCourseHelpers");
+const {
+  composeOrderReadiness,
+  evaluateTrainingRequirements,
+  isIdentityGateApproved,
+} = require("../utils/adminEligibilityGates");
 const subscriptionsService = require("./subscriptionsService");
 const freelancerAccountActivationKycService = require("./freelancerAccountActivationKycService");
 const notificationRealtimeHub = require("./notificationRealtimeHub");
+const {
+  MANUAL_IDENTITY_METHODS,
+  COURSE_COMPLETION_REASON_CODES,
+  loadManualIdentityVerification,
+} = require("./freelancerIdentityGate");
 
 const KYC_FILE_BASE = "/api/super-admin/freelancer-activation-requests";
 const MAX_BULK_IDS = 100;
@@ -34,6 +44,8 @@ const IDENTITY_ACTIONS = Object.freeze([
   "reject_identity",
   "mark_pending_review",
   "request_resubmission",
+  "manual_identity_approved",
+  "manual_identity_revoked",
 ]);
 const MEMBERSHIP_ACTIONS = Object.freeze(["assign_plan", "change_plan", "cancel_plan"]);
 const TRAINING_ACTIONS = Object.freeze([
@@ -41,6 +53,8 @@ const TRAINING_ACTIONS = Object.freeze([
   "mark_final_test_passed",
   "reset_course_progress",
   "reset_final_test",
+  "admin_course_completed",
+  "admin_course_completion_revoked",
 ]);
 const BULK_ACTIONS = Object.freeze([
   "set_account_status",
@@ -310,90 +324,177 @@ async function loadLatestKycRequest(freelancerUserId, client = null) {
   }
 }
 
-function mapIdentityForAdmin(kycRow) {
-  if (!kycRow) {
-    return {
-      status: "none",
-      requestId: null,
-      submittedAt: null,
-      reviewedAt: null,
-      rejectionReason: null,
-      adminNotes: null,
-      resubmissionCount: 0,
-      documents: { front: null, back: null },
-    };
-  }
+function mapIdentityForAdmin(kycRow, manualRow = null) {
+  const documents = kycRow ? kycProtectedDocs(kycRow.id, kycRow) : { front: null, back: null };
+  const hasFiles = Boolean(documents.front?.protectedPath || documents.back?.protectedPath);
+  const platformStatus = kycRow?.status || "none";
+  const manualApproved = Boolean(manualRow) && String(manualRow.status) === "approved";
   return {
-    status: kycRow.status || "none",
-    requestId: String(kycRow.id),
-    submittedAt: kycRow.submitted_at || null,
-    reviewedAt: kycRow.reviewed_at || null,
-    rejectionReason: kycRow.rejection_reason || null,
-    adminNotes: kycRow.admin_notes || null,
-    resubmissionCount: Number(kycRow.resubmission_count || 0),
-    documents: kycProtectedDocs(kycRow.id, kycRow),
+    status: manualApproved ? "approved" : platformStatus,
+    platformStatus,
+    requestId: kycRow ? String(kycRow.id) : null,
+    submittedAt: kycRow?.submitted_at || null,
+    reviewedAt: manualApproved ? manualRow.verified_at || null : kycRow?.reviewed_at || null,
+    rejectionReason: manualApproved ? null : kycRow?.rejection_reason || null,
+    adminNotes: kycRow?.admin_notes || null,
+    resubmissionCount: Number(kycRow?.resubmission_count || 0),
+    documents,
+    verificationSource: manualApproved ? "manual_admin" : platformStatus === "approved" ? "platform" : null,
+    verificationMethod: manualApproved ? manualRow.verification_method || null : null,
+    verifiedByAdminId:
+      manualApproved && manualRow.verified_by_user_id != null ? String(manualRow.verified_by_user_id) : null,
+    verifiedByName: manualApproved ? manualRow.verified_by_name || null : null,
+    verifiedAt: manualApproved ? manualRow.verified_at || null : null,
+    adminNote: manualRow?.admin_note || null,
+    manualStatus: manualRow?.status || null,
+    externallyVerified: Boolean(manualApproved && !hasFiles),
+  };
+}
+
+function identityAuditSnapshot(identity) {
+  if (!identity) return null;
+  const { documents, ...rest } = identity;
+  return {
+    ...rest,
+    hasPlatformDocuments: Boolean(documents?.front?.protectedPath || documents?.back?.protectedPath),
+  };
+}
+
+function mapCourseRow(r) {
+  const total = Number(r.total_lessons || 0);
+  const completed = Number(r.completed_lessons || 0);
+  return {
+    id: String(r.id),
+    title: r.title,
+    isTestingEnabled: Boolean(r.is_testing_enabled),
+    courseCompletedAt: r.course_completed_at || null,
+    auditConfirmed: Boolean(r.audit_confirmed),
+    auditNotes: r.audit_notes || null,
+    auditSubmittedAt: r.audit_submitted_at || null,
+    examFinalGrade: r.exam_final_grade != null ? Number(r.exam_final_grade) : null,
+    hasAssignment: r.assignment_id != null,
+    completionSource: r.completion_source || null,
+    completedByAdminId: r.completed_by_admin_id != null ? String(r.completed_by_admin_id) : null,
+    completedByAdminName: r.completed_by_admin_name || null,
+    adminCompletionReason: r.admin_completion_reason || null,
+    adminCompletionNote: r.admin_completion_note || null,
+    progress: {
+      totalLessons: total,
+      completedLessons: completed,
+      percentage: total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0,
+    },
   };
 }
 
 async function loadCoursesForUser(freelancerUserId) {
   const uid = Number(freelancerUserId);
+  const baseSelect = `
+    SELECT DISTINCT ON (c.id)
+           c.id,
+           c.title,
+           c.is_testing_enabled,
+           a.id AS assignment_id,
+           a.completed_at AS course_completed_at,
+           a.audit_confirmed,
+           a.audit_notes,
+           a.audit_submitted_at,
+           a.exam_final_grade,`;
+  const overrideSelect = `
+           a.completion_source,
+           a.completed_by_admin_id,
+           a.admin_completion_reason,
+           a.admin_completion_note,
+           NULLIF(TRIM(CONCAT_WS(' ', au.first_name, au.father_name, au.family_name)), '') AS completed_by_admin_name,`;
+  const fromSql = `
+           COALESCE(lc.total_lessons, 0)::int AS total_lessons,
+           COALESCE(lp.completed_lessons, 0)::int AS completed_lessons
+      FROM courses c
+      LEFT JOIN course_assignments a
+        ON a.course_id = c.id AND a.freelancer_id = $1
+      LEFT JOIN users au ON au.id = a.completed_by_admin_id
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*)::int AS total_lessons
+          FROM course_lessons l
+         WHERE l.course_id = c.id AND l.is_active = TRUE
+      ) lc ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*)::int AS completed_lessons
+          FROM course_lesson_progress p
+         WHERE p.course_id = c.id AND p.freelancer_id = $1
+      ) lp ON TRUE
+     WHERE c.is_active = TRUE
+       AND (c.is_visible_to_all_freelancers = TRUE OR a.id IS NOT NULL)
+     ORDER BY c.id DESC
+     LIMIT 100`;
   try {
-    const { rows } = await pool.query(
-      `SELECT DISTINCT ON (c.id)
-              c.id,
-              c.title,
-              c.is_testing_enabled,
-              a.id AS assignment_id,
-              a.completed_at AS course_completed_at,
-              a.audit_confirmed,
-              a.audit_notes,
-              a.audit_submitted_at,
-              a.exam_final_grade,
-              COALESCE(lc.total_lessons, 0)::int AS total_lessons,
-              COALESCE(lp.completed_lessons, 0)::int AS completed_lessons
-         FROM courses c
-         LEFT JOIN course_assignments a
-           ON a.course_id = c.id AND a.freelancer_id = $1
-         LEFT JOIN LATERAL (
-           SELECT COUNT(*)::int AS total_lessons
-             FROM course_lessons l
-            WHERE l.course_id = c.id AND l.is_active = TRUE
-         ) lc ON TRUE
-         LEFT JOIN LATERAL (
-           SELECT COUNT(*)::int AS completed_lessons
-             FROM course_lesson_progress p
-            WHERE p.course_id = c.id AND p.freelancer_id = $1
-         ) lp ON TRUE
-        WHERE c.is_active = TRUE
-          AND (c.is_visible_to_all_freelancers = TRUE OR a.id IS NOT NULL)
-        ORDER BY c.id DESC
-        LIMIT 100`,
-      [uid],
-    );
-    return rows.map((r) => {
-      const total = Number(r.total_lessons || 0);
-      const completed = Number(r.completed_lessons || 0);
-      return {
-        id: String(r.id),
-        title: r.title,
-        isTestingEnabled: Boolean(r.is_testing_enabled),
-        courseCompletedAt: r.course_completed_at || null,
-        auditConfirmed: Boolean(r.audit_confirmed),
-        auditNotes: r.audit_notes || null,
-        auditSubmittedAt: r.audit_submitted_at || null,
-        examFinalGrade: r.exam_final_grade != null ? Number(r.exam_final_grade) : null,
-        hasAssignment: r.assignment_id != null,
-        progress: {
-          totalLessons: total,
-          completedLessons: completed,
-          percentage: total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0,
-        },
-      };
-    });
+    const { rows } = await pool.query(`${baseSelect}${overrideSelect}${fromSql}`, [uid]);
+    return rows.map(mapCourseRow);
   } catch (err) {
+    if (err?.code === "42703") {
+      const { rows } = await pool.query(
+        `${baseSelect}
+           NULL::text AS completion_source,
+           NULL::bigint AS completed_by_admin_id,
+           NULL::text AS admin_completion_reason,
+           NULL::text AS admin_completion_note,
+           NULL::text AS completed_by_admin_name,
+           COALESCE(lc.total_lessons, 0)::int AS total_lessons,
+           COALESCE(lp.completed_lessons, 0)::int AS completed_lessons
+      FROM courses c
+      LEFT JOIN course_assignments a
+        ON a.course_id = c.id AND a.freelancer_id = $1
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*)::int AS total_lessons
+          FROM course_lessons l
+         WHERE l.course_id = c.id AND l.is_active = TRUE
+      ) lc ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*)::int AS completed_lessons
+          FROM course_lesson_progress p
+         WHERE p.course_id = c.id AND p.freelancer_id = $1
+      ) lp ON TRUE
+     WHERE c.is_active = TRUE
+       AND (c.is_visible_to_all_freelancers = TRUE OR a.id IS NOT NULL)
+     ORDER BY c.id DESC
+     LIMIT 100`,
+        [uid],
+      );
+      return rows.map(mapCourseRow);
+    }
     if (err?.code === "42P01") return [];
     throw err;
   }
+}
+
+async function loadRequiredTrainingCourseId() {
+  try {
+    const { rows } = await pool.query(
+      `SELECT marketplace_membership_required_course_id AS course_id
+         FROM marketplace_economy_settings
+        WHERE id = 1`,
+    );
+    const id = rows[0]?.course_id != null ? Number(rows[0].course_id) : null;
+    return Number.isInteger(id) && id > 0 ? id : null;
+  } catch (err) {
+    if (err?.code === "42P01" || err?.code === "42703") return null;
+    throw err;
+  }
+}
+
+function buildOrderReadiness({ user, eligibility, identity, courses, requiredCourseId }) {
+  if (!user || user.role !== ROLES.FREELANCER) return null;
+  const requiredIds = requiredCourseId ? [requiredCourseId] : [];
+  const training = evaluateTrainingRequirements(courses, requiredIds);
+  return composeOrderReadiness({
+    accountActive: user.is_active === true,
+    identityApproved: isIdentityGateApproved({
+      platformStatus: identity?.platformStatus,
+      manualStatus: identity?.manualStatus,
+    }),
+    packageEligible: eligibility?.eligible === true,
+    packageReason: eligibility?.reason || null,
+    training,
+  });
 }
 
 async function loadActivityCounts(userId) {
@@ -918,9 +1019,14 @@ async function getUserDetail(userId) {
   const subscription = isFreelancer ? sanitizeSubscription(await getCurrentSubscriptionSafe(uid)) : null;
   const eligibility = isFreelancer ? await getEligibilitySafe(uid) : null;
   const kycRow = isFreelancer ? await loadLatestKycRequest(uid) : null;
-  const identity = mapIdentityForAdmin(kycRow);
+  const manualIdentity = isFreelancer ? await loadManualIdentityVerification(uid) : null;
+  const identity = mapIdentityForAdmin(kycRow, manualIdentity);
   const courses = isFreelancer ? await loadCoursesForUser(uid) : [];
+  const requiredCourseId = isFreelancer ? await loadRequiredTrainingCourseId() : null;
   const training = aggregateCoursesForAdmin(courses);
+  const orderReadiness = isFreelancer
+    ? buildOrderReadiness({ user: row, eligibility, identity, courses, requiredCourseId })
+    : null;
   const activity = await loadActivityCounts(uid);
   const auditEvents = await loadAuditEvents(uid, 40);
   const blockers = buildBlockers({
@@ -965,8 +1071,15 @@ async function getUserDetail(userId) {
         auditNotes: c.auditNotes,
         examFinalGrade: c.examFinalGrade,
         progress: c.progress,
+        completionSource: c.completionSource || null,
+        completedByAdminId: c.completedByAdminId || null,
+        completedByAdminName: c.completedByAdminName || null,
+        adminCompletionReason: c.adminCompletionReason || null,
+        adminCompletionNote: c.adminCompletionNote || null,
+        required: requiredCourseId != null && Number(c.id) === Number(requiredCourseId),
       })),
     },
+    orderReadiness,
     activity,
     blockers,
     auditEvents,
@@ -1134,6 +1247,7 @@ async function patchIdentity({
   action,
   reason,
   adminNote = null,
+  verificationMethod = null,
   requestId = null,
 } = {}) {
   const actor = toUserId(actorAdminId);
@@ -1162,10 +1276,24 @@ async function patchIdentity({
   }
 
   const beforeKyc = await loadLatestKycRequest(uid);
-  const beforeSnap = mapIdentityForAdmin(beforeKyc);
+  const beforeManual = await loadManualIdentityVerification(uid);
+  const beforeSnap = identityAuditSnapshot(mapIdentityForAdmin(beforeKyc, beforeManual));
   let result = null;
+  let idempotent = false;
 
-  if (act === "approve_identity") {
+  if (act === "manual_identity_approved" || act === "manual_identity_revoked") {
+    const manualResult = await applyManualIdentityAction({
+      actor,
+      uid,
+      act,
+      safeReason,
+      adminNote,
+      verificationMethod,
+      beforeManual,
+    });
+    result = manualResult.result;
+    idempotent = manualResult.idempotent === true;
+  } else if (act === "approve_identity") {
     if (!beforeKyc) {
       throw createAppError("لا يوجد طلب تفعيل للهوية.", 404, {
         exposeToClient: true,
@@ -1259,19 +1387,109 @@ async function patchIdentity({
   }
 
   const afterKyc = await loadLatestKycRequest(uid);
-  const afterSnap = mapIdentityForAdmin(afterKyc);
-  await writeAudit({
-    actorAdminId: actor,
-    targetUserId: uid,
-    action: act,
-    reason: safeReason,
-    beforeSnapshot: beforeSnap,
-    afterSnapshot: afterSnap,
-    requestId,
-    metadata: { adminNote: adminNote != null ? String(adminNote).slice(0, 500) : null },
-  });
+  const afterManual = await loadManualIdentityVerification(uid);
+  const afterSnap = identityAuditSnapshot(mapIdentityForAdmin(afterKyc, afterManual));
+  if (!idempotent) {
+    await writeAudit({
+      actorAdminId: actor,
+      targetUserId: uid,
+      action: act,
+      reason: safeReason,
+      beforeSnapshot: beforeSnap,
+      afterSnapshot: afterSnap,
+      requestId,
+      metadata: {
+        verificationMethod: verificationMethod != null ? String(verificationMethod).slice(0, 40) : null,
+        previousStatus: beforeSnap?.status || null,
+        newStatus: afterSnap?.status || null,
+        manualStatus: afterSnap?.manualStatus || null,
+      },
+    });
+  }
 
-  return { identity: afterSnap, result };
+  return { identity: afterSnap, result, idempotent };
+}
+
+async function applyManualIdentityAction({
+  actor,
+  uid,
+  act,
+  safeReason,
+  adminNote,
+  verificationMethod,
+  beforeManual,
+}) {
+  const note = adminNote != null ? String(adminNote).trim().slice(0, 2000) : null;
+  if (act === "manual_identity_approved") {
+    const method = String(verificationMethod || "").trim();
+    if (!MANUAL_IDENTITY_METHODS.includes(method)) {
+      throw createAppError("طريقة استلام الهوية مطلوبة.", 400, {
+        exposeToClient: true,
+        publicCode: "INVALID_VERIFICATION_METHOD",
+      });
+    }
+    if (
+      beforeManual &&
+      String(beforeManual.status) === "approved" &&
+      String(beforeManual.verification_method) === method
+    ) {
+      return { result: { alreadyApproved: true }, idempotent: true };
+    }
+    try {
+      await pool.query(
+        `INSERT INTO freelancer_identity_manual_verifications (
+           freelancer_user_id, status, verification_method, admin_note,
+           verified_by_user_id, verified_at, revoked_by_user_id, revoked_at, revoke_reason, updated_at
+         ) VALUES ($1, 'approved', $2, $3, $4, NOW(), NULL, NULL, NULL, NOW())
+         ON CONFLICT (freelancer_user_id) DO UPDATE SET
+           status = 'approved',
+           verification_method = EXCLUDED.verification_method,
+           admin_note = EXCLUDED.admin_note,
+           verified_by_user_id = EXCLUDED.verified_by_user_id,
+           verified_at = NOW(),
+           revoked_by_user_id = NULL,
+           revoked_at = NULL,
+           revoke_reason = NULL,
+           updated_at = NOW()`,
+        [uid, method, note || safeReason.slice(0, 2000), actor],
+      );
+    } catch (err) {
+      if (err?.code === "42P01") {
+        throw createAppError("جدول الاعتماد اليدوي للهوية غير جاهز. طبّق الترحيل 198.", 503, {
+          exposeToClient: true,
+          publicCode: "MANUAL_IDENTITY_SCHEMA_NOT_READY",
+        });
+      }
+      throw err;
+    }
+    return { result: { approved: true, verificationMethod: method }, idempotent: false };
+  }
+
+  if (!beforeManual || String(beforeManual.status) !== "approved") {
+    return { result: { alreadyRevoked: true }, idempotent: true };
+  }
+  try {
+    await pool.query(
+      `UPDATE freelancer_identity_manual_verifications
+          SET status = 'revoked',
+              revoked_by_user_id = $2,
+              revoked_at = NOW(),
+              revoke_reason = $3,
+              updated_at = NOW()
+        WHERE freelancer_user_id = $1
+          AND status = 'approved'`,
+      [uid, actor, (note || safeReason).slice(0, 2000)],
+    );
+  } catch (err) {
+    if (err?.code === "42P01") {
+      throw createAppError("جدول الاعتماد اليدوي للهوية غير جاهز. طبّق الترحيل 198.", 503, {
+        exposeToClient: true,
+        publicCode: "MANUAL_IDENTITY_SCHEMA_NOT_READY",
+      });
+    }
+    throw err;
+  }
+  return { result: { revoked: true }, idempotent: false };
 }
 
 async function cancelCurrentPlan({ actorUserId, freelancerUserId, reason }) {
@@ -1456,6 +1674,8 @@ async function patchTraining({
   action,
   courseId,
   reason,
+  completionReasonCode = null,
+  adminNote = null,
   requestId = null,
 } = {}) {
   const actor = toUserId(actorAdminId);
@@ -1491,7 +1711,7 @@ async function patchTraining({
   }
 
   const beforeCourses = await loadCoursesForUser(uid);
-  const beforeAgg = aggregateCoursesForAdmin(beforeCourses);
+  let trainingIdempotent = false;
 
   const client = await pool.connect();
   try {
@@ -1523,7 +1743,17 @@ async function patchTraining({
       });
     }
 
-    if (act === "mark_course_completed" || act === "mark_final_test_passed") {
+    if (act === "admin_course_completed" || act === "admin_course_completion_revoked") {
+      trainingIdempotent = await applyAdminCourseCompletion({
+        client,
+        assignment,
+        act,
+        actor,
+        safeReason,
+        completionReasonCode,
+        adminNote,
+      });
+    } else if (act === "mark_course_completed" || act === "mark_final_test_passed") {
       await client.query(
         `INSERT INTO course_lesson_progress (course_id, lesson_id, freelancer_id, completed_at)
          SELECT $1, l.id, $2, NOW()
@@ -1586,6 +1816,12 @@ async function patchTraining({
     } catch {
       /* ignore */
     }
+    if (err?.code === "42703") {
+      throw createAppError("أعمدة اعتماد الدورة الإداري غير جاهزة. طبّق الترحيل 198.", 503, {
+        exposeToClient: true,
+        publicCode: "ADMIN_COURSE_SCHEMA_NOT_READY",
+      });
+    }
     throw err;
   } finally {
     client.release();
@@ -1593,18 +1829,99 @@ async function patchTraining({
 
   const afterCourses = await loadCoursesForUser(uid);
   const afterAgg = aggregateCoursesForAdmin(afterCourses);
-  await writeAudit({
-    actorAdminId: actor,
-    targetUserId: uid,
-    action: act,
-    reason: safeReason,
-    beforeSnapshot: { courseId: String(cid), training: beforeAgg },
-    afterSnapshot: { courseId: String(cid), training: afterAgg },
-    requestId,
-    metadata: { courseId: String(cid) },
-  });
+  const beforeCourse = beforeCourses.find((c) => Number(c.id) === cid) || null;
+  const afterCourse = afterCourses.find((c) => Number(c.id) === cid) || null;
+  if (!trainingIdempotent) {
+    await writeAudit({
+      actorAdminId: actor,
+      targetUserId: uid,
+      action: act,
+      reason: safeReason,
+      beforeSnapshot: {
+        courseId: String(cid),
+        completionSource: beforeCourse?.completionSource || null,
+        courseCompletedAt: beforeCourse?.courseCompletedAt || null,
+        examFinalGrade: beforeCourse?.examFinalGrade ?? null,
+        progressPercentage: beforeCourse?.progress?.percentage ?? 0,
+      },
+      afterSnapshot: {
+        courseId: String(cid),
+        completionSource: afterCourse?.completionSource || null,
+        courseCompletedAt: afterCourse?.courseCompletedAt || null,
+        examFinalGrade: afterCourse?.examFinalGrade ?? null,
+        progressPercentage: afterCourse?.progress?.percentage ?? 0,
+      },
+      requestId,
+      metadata: {
+        courseId: String(cid),
+        completionReasonCode: completionReasonCode != null ? String(completionReasonCode).slice(0, 64) : null,
+        previousStatus: beforeCourse?.courseCompletedAt ? "completed" : "incomplete",
+        newStatus: afterCourse?.courseCompletedAt ? "completed" : "incomplete",
+      },
+    });
+  }
 
-  return { training: afterAgg };
+  return { training: afterAgg, idempotent: Boolean(trainingIdempotent) };
+}
+
+async function applyAdminCourseCompletion({
+  client,
+  assignment,
+  act,
+  actor,
+  safeReason,
+  completionReasonCode,
+  adminNote,
+}) {
+  const note = adminNote != null ? String(adminNote).trim().slice(0, 2000) : null;
+  if (act === "admin_course_completed") {
+    const code = String(completionReasonCode || "").trim();
+    if (!COURSE_COMPLETION_REASON_CODES.includes(code)) {
+      throw createAppError("سبب اعتماد إكمال الدورة مطلوب.", 400, {
+        exposeToClient: true,
+        publicCode: "INVALID_COMPLETION_REASON",
+      });
+    }
+    if (assignment.completed_at && assignment.completion_source === "admin_override") {
+      return true;
+    }
+    if (assignment.completed_at && assignment.completion_source !== "admin_override") {
+      return true;
+    }
+    const updated = await client.query(
+      `UPDATE course_assignments
+          SET completed_at = NOW(),
+              completion_source = 'admin_override',
+              completed_by_admin_id = $2,
+              admin_completion_reason = $3,
+              admin_completion_note = $4
+        WHERE id = $1
+          AND completed_at IS NULL`,
+      [assignment.id, actor, code, note || safeReason.slice(0, 2000)],
+    );
+    if (updated.rowCount === 0) return true;
+    return false;
+  }
+
+  if (assignment.completion_source !== "admin_override") {
+    if (!assignment.completed_at) return true;
+    throw createAppError("لا يمكن إلغاء إكمال تم عبر مسار التعلّم. استخدم إعادة التقدم إن لزم.", 409, {
+      exposeToClient: true,
+      publicCode: "CANNOT_REVOKE_LEARNER_COMPLETION",
+    });
+  }
+  const updated = await client.query(
+    `UPDATE course_assignments
+        SET completed_at = NULL,
+            completion_source = NULL,
+            completed_by_admin_id = NULL,
+            admin_completion_reason = NULL,
+            admin_completion_note = NULL
+      WHERE id = $1
+        AND completion_source = 'admin_override'`,
+    [assignment.id],
+  );
+  return updated.rowCount === 0;
 }
 
 function escapeCsv(value) {

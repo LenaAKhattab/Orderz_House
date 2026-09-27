@@ -43,9 +43,19 @@ const patchIdentityValidators = [
   ...userIdParam,
   reasonBody,
   body("action")
-    .isIn(["approve_identity", "reject_identity", "mark_pending_review", "request_resubmission"])
+    .isIn([
+      "approve_identity",
+      "reject_identity",
+      "mark_pending_review",
+      "request_resubmission",
+      "manual_identity_approved",
+      "manual_identity_revoked",
+    ])
     .withMessage("إجراء الهوية غير صالح."),
   body("adminNote").optional({ nullable: true }).isString().isLength({ max: 2000 }),
+  body("verificationMethod")
+    .optional({ nullable: true })
+    .isIn(["whatsapp", "in_person", "email", "company_docs", "other"]),
 ];
 
 const patchMembershipValidators = [
@@ -59,9 +69,20 @@ const patchTrainingValidators = [
   ...userIdParam,
   reasonBody,
   body("action")
-    .isIn(["mark_course_completed", "mark_final_test_passed", "reset_course_progress", "reset_final_test"])
+    .isIn([
+      "mark_course_completed",
+      "mark_final_test_passed",
+      "reset_course_progress",
+      "reset_final_test",
+      "admin_course_completed",
+      "admin_course_completion_revoked",
+    ])
     .withMessage("إجراء التدريب غير صالح."),
   body("courseId").isInt({ min: 1 }).withMessage("معرّف الدورة مطلوب."),
+  body("completionReasonCode")
+    .optional({ nullable: true })
+    .isIn(["external_training", "manual_verification", "company_record", "admin_decision", "other"]),
+  body("adminNote").optional({ nullable: true }).isString().isLength({ max: 2000 }),
 ];
 
 const bulkActionsValidators = [

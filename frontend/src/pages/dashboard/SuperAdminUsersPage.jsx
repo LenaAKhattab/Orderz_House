@@ -101,11 +101,31 @@ function accountLabel(status) {
   return status || "—";
 }
 
+const IDENTITY_METHOD_OPTIONS = [
+  { value: "whatsapp", label: "واتساب" },
+  { value: "in_person", label: "حضوري" },
+  { value: "email", label: "بريد إلكتروني" },
+  { value: "company_docs", label: "مستندات الشركة" },
+  { value: "other", label: "أخرى" },
+];
+
+const COURSE_REASON_OPTIONS = [
+  { value: "external_training", label: "تم التدريب خارج المنصة" },
+  { value: "manual_verification", label: "تم التحقق من الإكمال يدويًا" },
+  { value: "company_record", label: "سجل قديم لدى الشركة" },
+  { value: "admin_decision", label: "قرار إداري" },
+  { value: "other", label: "أخرى" },
+];
+
+function identityMethodLabel(method) {
+  return IDENTITY_METHOD_OPTIONS.find((o) => o.value === method)?.label || method || "—";
+}
+
 function identityLabel(status) {
   const map = {
     none: "لا يوجد",
     pending_review: "بانتظار المراجعة",
-    approved: "موافق عليه",
+    approved: "معتمدة",
     rejected: "مرفوض",
   };
   return map[status] || status || "—";
@@ -176,23 +196,46 @@ function ReasonModal({
   danger = false,
   busy = false,
   extra = null,
+  selectLabel = null,
+  selectOptions = null,
+  checkboxLabel = null,
+  noteLabel = null,
   onClose,
   onConfirm,
 }) {
   const [reason, setReason] = useState("");
+  const [method, setMethod] = useState("");
+  const [checked, setChecked] = useState(false);
   const [localError, setLocalError] = useState("");
+  const structured = Array.isArray(selectOptions) && selectOptions.length > 0;
 
   useEffect(() => {
     if (!open) return;
     setReason("");
+    setMethod(selectOptions?.[0]?.value || "");
+    setChecked(false);
     setLocalError("");
-  }, [open]);
+  }, [open, selectOptions]);
 
   if (!open) return null;
 
   const submit = async (e) => {
     e.preventDefault();
     const trimmed = reason.trim();
+    if (checkboxLabel && !checked) {
+      setLocalError("يلزم تأكيد الإجراء قبل المتابعة.");
+      return;
+    }
+    if (structured) {
+      if (!method) {
+        setLocalError(`${selectLabel || "الاختيار"} مطلوب.`);
+        return;
+      }
+      const composed = trimmed.length >= 3 ? trimmed : `${selectLabel || "اعتماد"}: ${method}`;
+      setLocalError("");
+      await onConfirm({ reason: composed, method, note: trimmed });
+      return;
+    }
     if (trimmed.length < 3) {
       setLocalError("سبب الإجراء مطلوب (٣ أحرف على الأقل).");
       return;
@@ -214,19 +257,42 @@ function ReasonModal({
         <form className="oh-sa-users-modal__body" onSubmit={submit}>
           {description ? <p className="oh-sa-users-modal__desc">{description}</p> : null}
           {extra}
+          {structured ? (
+            <label className="oh-sa-users-field">
+              <span>{selectLabel}</span>
+              <select value={method} onChange={(e) => setMethod(e.target.value)} required disabled={busy}>
+                {selectOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <label className="oh-sa-users-field">
-            <span>سبب الإجراء</span>
+            <span>{structured ? noteLabel || "ملاحظة" : "سبب الإجراء"}</span>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
-              required
-              minLength={3}
+              required={!structured}
+              minLength={structured ? undefined : 3}
               maxLength={2000}
-              placeholder="اكتب سبب الإجراء…"
+              placeholder={structured ? "ملاحظة اختيارية…" : "اكتب سبب الإجراء…"}
               disabled={busy}
             />
           </label>
+          {checkboxLabel ? (
+            <label className="oh-sa-users-check">
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={(e) => setChecked(e.target.checked)}
+                disabled={busy}
+              />
+              <span>{checkboxLabel}</span>
+            </label>
+          ) : null}
           {localError ? <div className="oh-sa-users-modal__error">{localError}</div> : null}
           <footer className="oh-sa-users-modal__footer">
             <Button type="button" variant="secondary" onClick={onClose} disabled={busy}>
@@ -404,6 +470,7 @@ function UserDetailDrawer({
   const activity = detail?.activity;
   const auditEvents = detail?.auditEvents || [];
   const blockers = detail?.blockers || [];
+  const orderReadiness = detail?.orderReadiness || null;
 
   return (
     <div className="oh-sa-users-drawer" role="dialog" aria-modal="true" aria-labelledby="oh-sa-users-drawer-title">
@@ -471,6 +538,37 @@ function UserDetailDrawer({
                       <strong>{formatJoDateTime(profile.lastSeenAt)}</strong>
                     </div>
                   </div>
+
+                  {orderReadiness ? (
+                    <section className="oh-sa-users-gates" aria-label="أهلية استقبال الطلبات">
+                      <div className="oh-sa-users-gates__head">
+                        <h3>أهلية استقبال الطلبات</h3>
+                        <StatusBadge tone={orderReadiness.eligible ? "success" : "danger"}>
+                          {orderReadiness.badge}
+                        </StatusBadge>
+                      </div>
+                      <ul>
+                        {(orderReadiness.gates || []).map((gate) => (
+                          <li
+                            key={gate.code}
+                            className={
+                              gate.state === "passed"
+                                ? "oh-sa-users-gate--pass"
+                                : gate.state === "failed"
+                                  ? "oh-sa-users-gate--fail"
+                                  : "oh-sa-users-gate--na"
+                            }
+                          >
+                            {gate.state === "passed" ? "✓" : gate.state === "failed" ? "✕" : "–"} {gate.label}
+                            {gate.notApplicable ? " — غير مُفعّل" : ""}
+                            {gate.code === "final_exam" && gate.state === "failed"
+                              ? " — منفصل عن بوابة الطلبات ولم يُمرَّر تلقائيًا"
+                              : ""}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
 
                   {blockers.length ? (
                     <div className="oh-sa-users-blockers">
@@ -566,43 +664,113 @@ function UserDetailDrawer({
                       <StatusBadge tone={toneForIdentity(identity?.status)}>
                         {identityLabel(identity?.status)}
                       </StatusBadge>
+                      {identity?.verificationSource === "manual_admin" ? (
+                        <StatusBadge tone="admin_assigned">اعتماد إداري</StatusBadge>
+                      ) : null}
                     </div>
-                    <div>
-                      <span>تاريخ الإرسال</span>
-                      <strong>{formatJoDateTime(identity?.submittedAt)}</strong>
-                    </div>
-                    <div>
-                      <span>تاريخ المراجعة</span>
-                      <strong>{formatJoDateTime(identity?.reviewedAt)}</strong>
-                    </div>
+                    {identity?.verificationSource === "manual_admin" ? (
+                      <>
+                        <div>
+                          <span>طريقة الاستلام</span>
+                          <strong>{identityMethodLabel(identity?.verificationMethod)}</strong>
+                        </div>
+                        <div>
+                          <span>اعتمدها</span>
+                          <strong>{identity?.verifiedByName || "—"}</strong>
+                        </div>
+                        <div>
+                          <span>تاريخ الاعتماد</span>
+                          <strong>{formatJoDateTime(identity?.verifiedAt)}</strong>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <span>تاريخ الإرسال</span>
+                          <strong>{formatJoDateTime(identity?.submittedAt)}</strong>
+                        </div>
+                        <div>
+                          <span>تاريخ المراجعة</span>
+                          <strong>{formatJoDateTime(identity?.reviewedAt)}</strong>
+                        </div>
+                      </>
+                    )}
                     <div>
                       <span>إعادة الإرسال</span>
                       <strong>{identity?.resubmissionCount ?? 0}</strong>
                     </div>
                   </div>
+                  {identity?.adminNote && identity?.verificationSource === "manual_admin" ? (
+                    <p className="oh-sa-users-note">{identity.adminNote}</p>
+                  ) : null}
                   {identity?.rejectionReason ? (
                     <p className="oh-sa-users-note">سبب الرفض: {identity.rejectionReason}</p>
                   ) : null}
-                  <div className="oh-sa-users-docs">
-                    {["front", "back"].map((side) => {
-                      const doc = identity?.documents?.[side];
-                      return (
-                        <div key={side} className="oh-sa-users-doc">
-                          <strong>{side === "front" ? "الوجه الأمامي" : "الوجه الخلفي"}</strong>
-                          {doc?.protectedPath ? (
-                            <Button type="button" variant="secondary" onClick={() => openProtectedPath(doc.protectedPath)}>
-                              فتح الملف
-                            </Button>
-                          ) : (
-                            <span className="oh-sa-users-muted">لا يوجد ملف</span>
-                          )}
-                        </div>
-                      );
-                    })}
+                  {identity?.externallyVerified ? (
+                    <p className="oh-sa-users-note">لم تُرفع نسخة داخل المنصة — تم التحقق خارجيًا</p>
+                  ) : (
+                    <div className="oh-sa-users-docs">
+                      {["front", "back"].map((side) => {
+                        const doc = identity?.documents?.[side];
+                        return (
+                          <div key={side} className="oh-sa-users-doc">
+                            <strong>{side === "front" ? "الوجه الأمامي" : "الوجه الخلفي"}</strong>
+                            {doc?.protectedPath ? (
+                              <Button type="button" variant="secondary" onClick={() => openProtectedPath(doc.protectedPath)}>
+                                فتح الملف
+                              </Button>
+                            ) : (
+                              <span className="oh-sa-users-muted">لا يوجد ملف</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="oh-sa-users-actions-row oh-sa-users-actions-row--primary">
+                    {identity?.manualStatus === "approved" ? (
+                      <Button
+                        type="button"
+                        variant="danger"
+                        onClick={() =>
+                          onAction({
+                            kind: "identity",
+                            title: "إلغاء اعتماد الهوية",
+                            danger: true,
+                            description: "سيُلغى الاعتماد الإداري مع الإبقاء على سجل التدقيق وأي ملفات مرفوعة فعلًا.",
+                            confirmLabel: "إلغاء الاعتماد",
+                            checkboxLabel: "أؤكد إلغاء اعتماد الهوية الإداري.",
+                            payload: { action: "manual_identity_revoked" },
+                          })
+                        }
+                      >
+                        إلغاء اعتماد الهوية
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        onClick={() =>
+                          onAction({
+                            kind: "identity",
+                            title: "اعتماد الهوية يدويًا",
+                            description: "استخدم هذا الإجراء فقط إذا تم استلام هوية المستخدم والتحقق منها خارج المنصة.",
+                            confirmLabel: "اعتماد الهوية",
+                            selectLabel: "طريقة الاستلام",
+                            selectOptions: IDENTITY_METHOD_OPTIONS,
+                            checkboxLabel: "أؤكد أنني راجعت هوية المستخدم وأعتمدها إداريًا.",
+                            noteLabel: "ملاحظة إدارية",
+                            payload: { action: "manual_identity_approved" },
+                          })
+                        }
+                      >
+                        اعتماد الهوية يدويًا
+                      </Button>
+                    )}
                   </div>
-                  <div className="oh-sa-users-actions-row">
+                  <div className="oh-sa-users-actions-row oh-sa-users-actions-row--secondary">
                     <Button
                       type="button"
+                      variant="secondary"
                       onClick={() =>
                         onAction({
                           kind: "identity",
@@ -611,7 +779,7 @@ function UserDetailDrawer({
                         })
                       }
                     >
-                      موافقة
+                      موافقة على طلب مرفوع
                     </Button>
                     <Button
                       type="button"
@@ -753,48 +921,79 @@ function UserDetailDrawer({
                         <tbody>
                           {(training.courses || []).map((c) => (
                             <tr key={c.id}>
-                              <td>{c.title || `دورة #${c.id}`}</td>
                               <td>
-                                {c.progress?.percentage ?? 0}%
-                                {c.courseCompletedAt ? " · مكتملة" : ""}
-                                {c.isTestingEnabled ? " · اختبار" : ""}
+                                {c.title || `دورة #${c.id}`}
+                                {c.required ? <span className="oh-sa-users-muted"> · متطلب</span> : null}
+                              </td>
+                              <td>
+                                <div>التقدّم: {c.progress?.percentage ?? 0}%</div>
+                                {c.completionSource === "admin_override" ? (
+                                  <div className="oh-sa-users-course-admin">
+                                    <StatusBadge tone="success">مكتملة</StatusBadge>
+                                    <StatusBadge tone="admin_assigned">اعتماد إداري</StatusBadge>
+                                    <div className="oh-sa-users-muted">
+                                      بواسطة: {c.completedByAdminName || "—"}
+                                    </div>
+                                    <div className="oh-sa-users-muted">التاريخ: {formatJoDateTime(c.courseCompletedAt)}</div>
+                                  </div>
+                                ) : c.courseCompletedAt ? (
+                                  <StatusBadge tone="success">مكتملة</StatusBadge>
+                                ) : (
+                                  <span className="oh-sa-users-muted">غير مكتملة</span>
+                                )}
+                                {c.isTestingEnabled && c.examFinalGrade == null && c.completionSource === "admin_override" ? (
+                                  <div className="oh-sa-users-muted">الاختبار النهائي لم يُعتمد</div>
+                                ) : null}
                               </td>
                               <td>
                                 <div className="oh-sa-users-table__actions">
+                                  {c.completionSource === "admin_override" ? (
+                                    <Button
+                                      type="button"
+                                      variant="danger"
+                                      onClick={() =>
+                                        onAction({
+                                          kind: "training",
+                                          title: "إلغاء الاعتماد الإداري",
+                                          danger: true,
+                                          description: "سيُزال الاعتماد الإداري لهذه الدورة مع الإبقاء على تقدّم التعلّم وسجل الاختبار الحقيقي.",
+                                          confirmLabel: "إلغاء الاعتماد",
+                                          checkboxLabel: "أؤكد إلغاء الاعتماد الإداري لهذه الدورة.",
+                                          payload: { action: "admin_course_completion_revoked", courseId: Number(c.id) },
+                                        })
+                                      }
+                                    >
+                                      إلغاء الاعتماد الإداري
+                                    </Button>
+                                  ) : c.courseCompletedAt ? null : (
+                                    <Button
+                                      type="button"
+                                      onClick={() =>
+                                        onAction({
+                                          kind: "training",
+                                          title: "اعتماد إكمال الدورة",
+                                          description: "سيتم اعتبار متطلب هذه الدورة مكتملًا لهذا المستخدم بقرار إداري.",
+                                          confirmLabel: "اعتماد الإكمال",
+                                          selectLabel: "سبب الاعتماد",
+                                          selectOptions: COURSE_REASON_OPTIONS,
+                                          checkboxLabel: "أؤكد اعتماد إكمال هذه الدورة لهذا المستخدم.",
+                                          noteLabel: "ملاحظة",
+                                          payload: { action: "admin_course_completed", courseId: Number(c.id) },
+                                        })
+                                      }
+                                    >
+                                      اعتماد إكمال الدورة
+                                    </Button>
+                                  )}
                                   <Button
                                     type="button"
                                     variant="secondary"
-                                    onClick={() =>
-                                      onAction({
-                                        kind: "training",
-                                        title: "تعليم الدورة مكتملة",
-                                        payload: { action: "mark_course_completed", courseId: Number(c.id) },
-                                      })
-                                    }
-                                  >
-                                    إكمال
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="secondary"
-                                    onClick={() =>
-                                      onAction({
-                                        kind: "training",
-                                        title: "تعليم الاختبار النهائي ناجحاً",
-                                        payload: { action: "mark_final_test_passed", courseId: Number(c.id) },
-                                      })
-                                    }
-                                  >
-                                    نجاح الاختبار
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="danger"
                                     onClick={() =>
                                       onAction({
                                         kind: "training",
                                         title: "إعادة ضبط تقدم الدورة",
                                         danger: true,
+                                        description: "يحذف تقدّم الدروس الفعلي ويعيد فتح الدورة. هذا إجراء صيانة وليس اعتمادًا إداريًا.",
                                         payload: { action: "reset_course_progress", courseId: Number(c.id) },
                                       })
                                     }
@@ -803,12 +1002,12 @@ function UserDetailDrawer({
                                   </Button>
                                   <Button
                                     type="button"
-                                    variant="danger"
+                                    variant="secondary"
                                     onClick={() =>
                                       onAction({
                                         kind: "training",
                                         title: "إعادة ضبط الاختبار النهائي",
-                                        danger: true,
+                                        description: "يعيد الاختبار الفعلي فقط. لا ينشئ درجة وهمية.",
                                         payload: { action: "reset_final_test", courseId: Number(c.id) },
                                       })
                                     }
@@ -1032,8 +1231,11 @@ export default function SuperAdminUsersPage() {
     setDetailError("");
   };
 
-  const runReasonedAction = async (reason) => {
+  const runReasonedAction = async (input) => {
     if (!reasonModal) return;
+    const reason = typeof input === "string" ? input : String(input?.reason || "");
+    const method = typeof input === "object" && input ? input.method : null;
+    const note = typeof input === "object" && input ? input.note : null;
     setBusy(true);
     try {
       const { type } = reasonModal;
@@ -1063,6 +1265,9 @@ export default function SuperAdminUsersPage() {
         const userId = reasonModal.userId;
         const kind = reasonModal.kind;
         const payload = { ...(reasonModal.payload || {}), reason };
+        if (method && reasonModal.kind === "identity") payload.verificationMethod = method;
+        if (method && reasonModal.kind === "training") payload.completionReasonCode = method;
+        if (note) payload.adminNote = note;
         if (kind === "account") {
           await patchSuperAdminUserAccountRequest(userId, payload);
         } else if (kind === "identity") {
@@ -1420,8 +1625,12 @@ export default function SuperAdminUsersPage() {
             title: spec.title,
             danger: Boolean(spec.danger),
             payload: spec.payload,
-            description: "هذا إجراء حسّاس ويتطلب سبباً واضحاً.",
-            confirmLabel: "تنفيذ",
+            description: spec.description || "هذا إجراء حسّاس ويتطلب سبباً واضحاً.",
+            confirmLabel: spec.confirmLabel || "تنفيذ",
+            selectLabel: spec.selectLabel || null,
+            selectOptions: spec.selectOptions || null,
+            checkboxLabel: spec.checkboxLabel || null,
+            noteLabel: spec.noteLabel || null,
           })
         }
       />
@@ -1434,6 +1643,10 @@ export default function SuperAdminUsersPage() {
         danger={reasonModal?.danger}
         busy={busy}
         extra={reasonModal?.extra}
+        selectLabel={reasonModal?.selectLabel}
+        selectOptions={reasonModal?.selectOptions}
+        checkboxLabel={reasonModal?.checkboxLabel}
+        noteLabel={reasonModal?.noteLabel}
         onClose={() => (busy ? null : setReasonModal(null))}
         onConfirm={runReasonedAction}
       />

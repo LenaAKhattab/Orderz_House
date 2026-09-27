@@ -58,6 +58,7 @@ async function patchIdentity(req, res, next) {
       action: req.body?.action,
       reason: req.body?.reason,
       adminNote: req.body?.adminNote || req.body?.admin_note || null,
+      verificationMethod: req.body?.verificationMethod || req.body?.verification_method || null,
       requestId: requestId(req),
     });
     return res.json({ success: true, data: result, message: "تم تحديث حالة الهوية." });
@@ -90,6 +91,8 @@ async function patchTraining(req, res, next) {
       action: req.body?.action,
       courseId: req.body?.courseId || req.body?.course_id || null,
       reason: req.body?.reason,
+      completionReasonCode: req.body?.completionReasonCode || req.body?.completion_reason_code || null,
+      adminNote: req.body?.adminNote || req.body?.admin_note || null,
       requestId: requestId(req),
     });
     return res.json({ success: true, data: result, message: "تم تحديث التدريب." });
