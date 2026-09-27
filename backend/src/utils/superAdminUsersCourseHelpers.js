@@ -5,8 +5,12 @@
 function courseProgress(course) {
   const completed = Number(course?.progress?.completedLessons ?? course?.completedLessons ?? 0);
   const total = Number(course?.progress?.totalLessons ?? course?.totalLessons ?? 0);
-  const pct = total > 0 ? Math.round((completed / total) * 100) : course?.courseCompletedAt ? 100 : 0;
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
   return { completed, total, pct };
+}
+
+function isAdminOverrideCompletion(course) {
+  return course?.completionSource === "admin_override" && Boolean(course?.courseCompletedAt);
 }
 
 function isCourseCompleted(course) {
@@ -16,7 +20,9 @@ function isCourseCompleted(course) {
 }
 
 function isCourseFinalTestPending(course) {
-  if (!course?.isTestingEnabled || isCourseCompleted(course)) return false;
+  if (!course?.isTestingEnabled) return false;
+  if (isAdminOverrideCompletion(course) && course?.examFinalGrade == null) return true;
+  if (isCourseCompleted(course)) return false;
   const { completed, total } = courseProgress(course);
   return total > 0 && completed >= total;
 }
@@ -28,6 +34,7 @@ function aggregateCoursesForAdmin(courses = []) {
   for (const c of courses) {
     if (isCourseCompleted(c)) {
       completed += 1;
+      if (isCourseFinalTestPending(c)) pendingFinalTest += 1;
       continue;
     }
     const { pct } = courseProgress(c);
@@ -45,6 +52,7 @@ function aggregateCoursesForAdmin(courses = []) {
 
 module.exports = {
   courseProgress,
+  isAdminOverrideCompletion,
   isCourseCompleted,
   isCourseFinalTestPending,
   aggregateCoursesForAdmin,
