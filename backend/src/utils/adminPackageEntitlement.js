@@ -162,6 +162,44 @@ function classifyPrematureAdminEntitlement(row) {
   };
 }
 
+/**
+ * A first-order flag with no real accepted order and no legacy/Stripe window
+ * was fabricated by account approval, not by the canonical order event.
+ */
+function classifyFabricatedFirstOrderWithoutRealOrder(row) {
+  if (!row) return { action: "skip", reason: "missing" };
+  if (row.legacyAssignment) return { action: "skip", reason: "legacy_assignment" };
+  const notes = String(row.notes || "");
+  if (notes.includes("LEGACY_")) return { action: "skip", reason: "legacy_notes" };
+  if (row.hasAcceptedRealOrder) return { action: "skip", reason: "real_order" };
+  if (row.first_order_id || row.firstOrderId) return { action: "skip", reason: "first_order_id" };
+  if (row.stripe_subscription_id || row.stripeSubscriptionId) {
+    return { action: "skip", reason: "stripe_recurring" };
+  }
+  const started = row.has_first_order === true || row.hasFirstOrder === true;
+  if (!started) return { action: "skip", reason: "has_first_order_false" };
+  const start = row.actual_start_date || row.actualStartDate || null;
+  const expiry = row.expiry_date || row.expiryDate || null;
+  if (!start || !expiry) return { action: "skip", reason: "dates_incomplete" };
+
+  const stored = Number(row.entitlement_duration_months ?? row.entitlementDurationMonths);
+  const months =
+    Number.isInteger(stored) && stored >= MIN_DURATION_MONTHS && stored <= MAX_DURATION_MONTHS
+      ? stored
+      : inferWholeDurationMonths(start, expiry);
+
+  return {
+    action: "correct",
+    reason: "fabricated_first_order_without_real_order",
+    status: "assigned_not_started",
+    has_first_order: false,
+    first_order_date: null,
+    actual_start_date: null,
+    expiry_date: null,
+    entitlement_duration_months: months,
+  };
+}
+
 module.exports = {
   PRESET_DURATION_MONTHS,
   MIN_DURATION_MONTHS,
@@ -174,4 +212,5 @@ module.exports = {
   inferWholeDurationMonths,
   planFirstRealOrderStart,
   classifyPrematureAdminEntitlement,
+  classifyFabricatedFirstOrderWithoutRealOrder,
 };

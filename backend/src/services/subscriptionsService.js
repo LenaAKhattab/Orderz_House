@@ -1266,7 +1266,8 @@ async function selfActivateFreelancerAccount({ freelancerUserId }, client) {
 }
 
 /**
- * Phase A11 — Complete account activation after Super Admin KYC approval.
+ * Phase A11 — Company-approve the current subscription after Super Admin KYC approval.
+ * Does not start the marketplace membership countdown. That stays on the first real order.
  */
 async function activateAccountAfterKycApproval({
   freelancerUserId,
@@ -1305,11 +1306,8 @@ async function activateAccountAfterKycApproval({
     const alreadyApproved =
       normalizeActivationStatus(existing.activation_status) ===
       SUBSCRIPTION_ACTIVATION_STATUSES.COMPANY_APPROVED;
-    const periodAlreadyStarted =
-      Boolean(existing.actual_start_date) &&
-      String(existing.status || "").toLowerCase() === SUBSCRIPTION_STATUSES.ACTIVE;
 
-    if (alreadyApproved && periodAlreadyStarted) {
+    if (alreadyApproved) {
       if (ownTxn) await runner.query("COMMIT");
       bootstrapFastPathCache.delete(uid);
       const marketplace = await ensureMarketplaceMembershipForSelfActivate(uid);
@@ -1322,21 +1320,6 @@ async function activateAccountAfterKycApproval({
     }
 
     const now = new Date();
-    const durationDays = Number(existing.plan_duration_days);
-    const safeDuration =
-      Number.isFinite(durationDays) && durationDays > 0
-        ? durationDays
-        : await getPlanDurationDays(existing.plan_id, runner);
-    const startPeriod = !periodAlreadyStarted;
-    const startAt = startPeriod
-      ? now
-      : existing.actual_start_date
-        ? new Date(existing.actual_start_date)
-        : now;
-    const expiryDate = startPeriod
-      ? computeExpiry({ startDate: startAt, durationDays: safeDuration })
-      : existing.expiry_date || computeExpiry({ startDate: startAt, durationDays: safeDuration });
-
     const { rows: updated } = await runner.query(
       `UPDATE freelancer_subscriptions
        SET activation_status = 'company_approved',
@@ -1352,24 +1335,15 @@ async function activateAccountAfterKycApproval({
                OR paid_at IS NULL THEN COALESCE(paid_at, $2::timestamptz)
              ELSE paid_at
            END,
-           has_first_order = CASE WHEN $5::boolean THEN TRUE ELSE has_first_order END,
-           actual_start_date = CASE WHEN $5::boolean THEN $2::timestamptz ELSE actual_start_date END,
-           first_order_date = CASE
-             WHEN $5::boolean THEN COALESCE(first_order_date, $2::timestamptz)
-             ELSE first_order_date
+           status = CASE
+             WHEN has_first_order = TRUE THEN status
+             WHEN actual_start_date IS NOT NULL OR expiry_date IS NOT NULL THEN status
+             ELSE 'assigned_not_started'
            END,
-           expiry_date = CASE WHEN $5::boolean THEN $4::timestamptz ELSE expiry_date END,
-           status = 'active',
            updated_at = NOW()
        WHERE id = $1
        RETURNING *`,
-      [
-        Number(existing.id),
-        now,
-        Number.isInteger(actor) ? actor : null,
-        expiryDate,
-        startPeriod,
-      ],
+      [Number(existing.id), now, Number.isInteger(actor) ? actor : null],
     );
 
     const row = updated[0];
@@ -1393,7 +1367,7 @@ async function activateAccountAfterKycApproval({
           actorUserId: Number.isInteger(actor) ? actor : uid,
           type: "subscription.company.activated",
           title: "تم تفعيل حسابك",
-          message: "تمت الموافقة على طلب تفعيل حسابك وبدأ احتساب مدة الاشتراك.",
+          message: "تمت الموافقة على طلب تفعيل حسابك. يبدأ احتساب مدة الاشتراك عند أول طلب حقيقي.",
           priority: "high",
           dedupeKey: `subscription_kyc_activated_${String(row.id)}`,
           metadata: { subscriptionId: String(row.id), source: "kyc_admin_approve" },
@@ -1405,7 +1379,7 @@ async function activateAccountAfterKycApproval({
     const marketplace = await ensureMarketplaceMembershipForSelfActivate(uid, now);
     return {
       alreadyActive: false,
-      periodStarted: Boolean(startPeriod),
+      periodStarted: false,
       subscription: mapSubscription(row),
       marketplace,
     };
