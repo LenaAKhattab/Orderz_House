@@ -150,6 +150,8 @@ function sanitizeSubscription(sub) {
     actualStartDate: safe.actualStartDate || null,
     expiryDate: safe.expiryDate || null,
     hasFirstOrder: safe.hasFirstOrder === true,
+    entitlementDurationMonths:
+      safe.entitlementDurationMonths != null ? Number(safe.entitlementDurationMonths) : null,
     notes: safe.notes || null,
     cancelledAt: safe.cancelledAt || null,
     endedAt: safe.endedAt || null,

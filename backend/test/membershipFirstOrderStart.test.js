@@ -14,6 +14,7 @@ const { evaluateFreelancerTakeOrdersEligibility } = require("../src/services/sub
 
 const root = path.join(__dirname, "..");
 const subsSrc = fs.readFileSync(path.join(root, "src/services/subscriptionsService.js"), "utf8");
+const usersSrc = fs.readFileSync(path.join(root, "src/services/superAdminUsersControlService.js"), "utf8");
 const ordersSrc = fs.readFileSync(path.join(root, "src/services/ordersService.js"), "utf8");
 const fakeSrc = fs.readFileSync(path.join(root, "src/services/fakeOrdersService.js"), "utf8");
 
@@ -40,6 +41,11 @@ const awaiting = {
 };
 
 describe("pre-first-order admin entitlement", () => {
+  it("exposes the stored duration on the user drawer subscription", () => {
+    const block = sliceBetween(usersSrc, "function sanitizeSubscription", "async function writeAudit");
+    assert.match(block, /entitlementDurationMonths/);
+  });
+
   it("stores one month without start or expiry", () => {
     const fields = buildAdminEntitlementFields({ durationMonths: 1 });
     assert.equal(fields.hasFirstOrder, false);
