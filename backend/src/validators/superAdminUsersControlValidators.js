@@ -61,8 +61,12 @@ const patchIdentityValidators = [
 const patchMembershipValidators = [
   ...userIdParam,
   reasonBody,
-  body("action").isIn(["assign_plan", "change_plan", "cancel_plan"]).withMessage("إجراء الباقة غير صالح."),
+  body("action")
+    .isIn(["assign_plan", "change_plan", "activate_plan", "cancel_plan"])
+    .withMessage("إجراء الباقة غير صالح."),
   body("planId").optional({ nullable: true }).isInt({ min: 1 }),
+  body("durationMonths").optional({ nullable: true }).isInt({ min: 1, max: 120 }),
+  body("startsAt").optional({ nullable: true }).isString().isLength({ max: 40 }),
 ];
 
 const patchTrainingValidators = [

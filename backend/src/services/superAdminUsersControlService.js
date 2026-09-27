@@ -47,7 +47,12 @@ const IDENTITY_ACTIONS = Object.freeze([
   "manual_identity_approved",
   "manual_identity_revoked",
 ]);
-const MEMBERSHIP_ACTIONS = Object.freeze(["assign_plan", "change_plan", "cancel_plan"]);
+const MEMBERSHIP_ACTIONS = Object.freeze([
+  "assign_plan",
+  "change_plan",
+  "activate_plan",
+  "cancel_plan",
+]);
 const TRAINING_ACTIONS = Object.freeze([
   "mark_course_completed",
   "mark_final_test_passed",
@@ -1553,6 +1558,8 @@ async function patchMembership({
   userId,
   action,
   planId = null,
+  durationMonths = null,
+  startsAt = null,
   reason,
   notes = null,
   requestId = null,
@@ -1603,19 +1610,35 @@ async function patchMembership({
       .filter(Boolean)
       .join("\n");
 
-    if (typeof subscriptionsService?.assignPlanToFreelancer !== "function") {
-      throw createAppError("خدمة تعيين الباقة غير متاحة.", 503, {
-        exposeToClient: true,
-        publicCode: "SUBSCRIPTIONS_SERVICE_UNAVAILABLE",
+    if (act === "activate_plan") {
+      if (typeof subscriptionsService?.activateAdminPackageEntitlement !== "function") {
+        throw createAppError("تفعيل الباقة الإداري غير متاح.", 503, {
+          exposeToClient: true,
+          publicCode: "SUBSCRIPTIONS_SERVICE_UNAVAILABLE",
+        });
+      }
+      assignResult = await subscriptionsService.activateAdminPackageEntitlement({
+        actorUserId: actor,
+        freelancerUserId: uid,
+        planId: pid,
+        durationMonths,
+        startsAt,
+        notes: adminNotes,
+      });
+    } else {
+      if (typeof subscriptionsService?.assignPlanToFreelancer !== "function") {
+        throw createAppError("خدمة تعيين الباقة غير متاحة.", 503, {
+          exposeToClient: true,
+          publicCode: "SUBSCRIPTIONS_SERVICE_UNAVAILABLE",
+        });
+      }
+      assignResult = await subscriptionsService.assignPlanToFreelancer({
+        actorUserId: actor,
+        freelancerUserId: uid,
+        planId: pid,
+        notes: adminNotes,
       });
     }
-
-    assignResult = await subscriptionsService.assignPlanToFreelancer({
-      actorUserId: actor,
-      freelancerUserId: uid,
-      planId: pid,
-      notes: adminNotes,
-    });
     after = sanitizeSubscription(assignResult?.subscription || (await getCurrentSubscriptionSafe(uid)));
   }
 
@@ -1627,7 +1650,11 @@ async function patchMembership({
     beforeSnapshot: before,
     afterSnapshot: after,
     requestId,
-    metadata: { planId: planId != null ? String(planId) : null },
+    metadata: {
+      planId: planId != null ? String(planId) : null,
+      durationMonths: durationMonths != null ? Number(durationMonths) : null,
+      activateNow: act === "activate_plan",
+    },
   });
 
   return {

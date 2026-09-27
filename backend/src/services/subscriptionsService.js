@@ -1,4 +1,5 @@
 const { pool } = require("../config/db");
+const { resolveAdminEntitlementWindow } = require("../utils/adminPackageEntitlement");
 const {
   ORDERZHOUSE_FREE_PLAN_ID,
   isOrderzhouseFreePlan,
@@ -2382,6 +2383,90 @@ async function adminClearPaymentFailureHold({
   }
 }
 
+/**
+ * Explicit Super Admin entitlement: active dated package, no payment, no first order.
+ * Does not mark fees, Stripe, wallet, or invoices. Ends the previous current row first.
+ */
+async function activateAdminPackageEntitlement({
+  actorUserId,
+  freelancerUserId,
+  planId,
+  durationMonths,
+  startsAt = null,
+  notes = null,
+}) {
+  const window = resolveAdminEntitlementWindow({ startsAt, durationMonths });
+  if (!window.ok) {
+    const err = new Error("مدة الباقة أو تاريخ البداية غير صالح.");
+    err.statusCode = 400;
+    err.publicCode = window.code || "INVALID_DURATION";
+    err.exposeToClient = true;
+    throw err;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assertUserIsFreelancer(freelancerUserId, client);
+    const plansService = require("./plansService");
+    const resolved = await plansService.resolveAssignableSubscriptionPlanId(planId, client);
+    const assignmentPlanId = resolved.assignmentPlanId;
+    await loadPlanPricingForAssignment(assignmentPlanId, client);
+
+    await endCurrentSubscription({ freelancerUserId }, client);
+
+    const note = [notes, "ADMIN_PACKAGE_ENTITLEMENT"]
+      .map((n) => (n != null ? String(n).trim() : ""))
+      .filter(Boolean)
+      .join("\n")
+      .slice(0, 4000);
+
+    const { rows } = await client.query(
+      `INSERT INTO freelancer_subscriptions (
+         freelancer_user_id, plan_id, assigned_by_user_id, notes,
+         status, has_first_order, first_order_date, actual_start_date, expiry_date,
+         is_current, source, payment_status, activation_status,
+         paid_at, company_activated_at, company_activated_by_user_id
+       ) VALUES ($1,$2,$3,$4,'active',FALSE,NULL,$5,$6,TRUE,'admin','not_required','company_approved',NULL,NOW(),$7)
+       RETURNING *`,
+      [
+        Number(freelancerUserId),
+        Number(assignmentPlanId),
+        actorUserId ? Number(actorUserId) : null,
+        note || null,
+        window.start.toISOString(),
+        window.expiry.toISOString(),
+        actorUserId ? Number(actorUserId) : null,
+      ],
+    );
+
+    await client.query("COMMIT");
+
+    const subscription = mapSubscription(rows[0]);
+    const eligibility = await canFreelancerTakeOrders(String(freelancerUserId));
+    return {
+      subscription,
+      eligibility,
+      durationMonths: window.months,
+      startsAt: window.start,
+      expiresAt: window.expiry,
+      resolvedPlan: {
+        assignmentPlanId: String(assignmentPlanId),
+        selectedPlanId: String(resolved.selectedPlanId),
+      },
+    };
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 /** @deprecated Real pool access is gated by plan value range in planOrderValueEligibility only. */
 async function assertFreelancerMayAccessRealPoolOrders(_freelancerUserId) {}
 
@@ -2396,6 +2481,7 @@ module.exports = {
   mapSubscription,
   getFreelancerIdentitySnapshot,
   assignPlanToFreelancer,
+  activateAdminPackageEntitlement,
   applyAdminAssignmentOfflinePayments,
   applyOfflinePaymentsToExistingAdminAssignment,
   loadPlanPricingForAssignment,

@@ -74,6 +74,8 @@ async function patchMembership(req, res, next) {
       userId: req.params.userId,
       action: req.body?.action,
       planId: req.body?.planId || req.body?.plan_id || null,
+      durationMonths: req.body?.durationMonths || req.body?.duration_months || null,
+      startsAt: req.body?.startsAt || req.body?.starts_at || null,
       reason: req.body?.reason,
       requestId: requestId(req),
     });
