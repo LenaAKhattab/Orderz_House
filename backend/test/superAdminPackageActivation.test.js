@@ -6,7 +6,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const {
-  resolveAdminEntitlementWindow,
+  resolveAdminEntitlementDuration,
   buildAdminEntitlementFields,
 } = require("../src/utils/adminPackageEntitlement");
 const { evaluateFreelancerTakeOrdersEligibility } = require("../src/services/subscriptionsService");
@@ -50,29 +50,23 @@ describe("package change without activation", () => {
 });
 
 describe("admin activation entitlement", () => {
-  it("sets the canonical dated entitlement fields", () => {
-    const window = resolveAdminEntitlementWindow({
-      durationMonths: 3,
-      now: new Date("2026-09-01T00:00:00.000Z"),
-    });
-    assert.equal(window.ok, true);
-    const fields = buildAdminEntitlementFields(window);
-    assert.equal(fields.status, "active");
+  it("approves the package without starting the countdown", () => {
+    const duration = resolveAdminEntitlementDuration(1);
+    assert.equal(duration.ok, true);
+    const fields = buildAdminEntitlementFields({ durationMonths: 1 });
+    assert.equal(fields.status, "assigned_not_started");
     assert.equal(fields.source, "admin");
     assert.equal(fields.paymentStatus, "not_required");
     assert.equal(fields.activationStatus, "company_approved");
     assert.equal(fields.hasFirstOrder, false);
     assert.equal(fields.firstOrderDate, null);
-    assert.equal(fields.actualStartDate.toISOString(), "2026-09-01T00:00:00.000Z");
-    assert.equal(fields.expiryDate.toISOString(), "2026-12-01T00:00:00.000Z");
+    assert.equal(fields.actualStartDate, null);
+    assert.equal(fields.expiryDate, null);
+    assert.equal(fields.entitlementDurationMonths, 1);
   });
 
-  it("makes the package gate true when those fields are present", () => {
-    const window = resolveAdminEntitlementWindow({
-      durationMonths: 1,
-      now: new Date("2026-09-01T00:00:00.000Z"),
-    });
-    const fields = buildAdminEntitlementFields(window);
+  it("makes the package gate true before the first order", () => {
+    const fields = buildAdminEntitlementFields({ durationMonths: 1 });
     const result = evaluateFreelancerTakeOrdersEligibility({
       status: fields.status,
       activationStatus: fields.activationStatus,
@@ -81,14 +75,14 @@ describe("admin activation entitlement", () => {
       expiryDate: fields.expiryDate,
     });
     assert.equal(result.eligible, true);
-    assert.equal(result.reason, "active");
+    assert.equal(result.reason, "assigned_not_started");
   });
 
   it("accepts preset and custom durations and rejects zero", () => {
-    assert.equal(resolveAdminEntitlementWindow({ durationMonths: 12, now: new Date() }).preset, true);
-    assert.equal(resolveAdminEntitlementWindow({ durationMonths: 8, now: new Date() }).preset, false);
-    assert.equal(resolveAdminEntitlementWindow({ durationMonths: 8, now: new Date() }).ok, true);
-    assert.equal(resolveAdminEntitlementWindow({ durationMonths: 0, now: new Date() }).ok, false);
+    assert.equal(resolveAdminEntitlementDuration(12).preset, true);
+    assert.equal(resolveAdminEntitlementDuration(8).preset, false);
+    assert.equal(resolveAdminEntitlementDuration(8).ok, true);
+    assert.equal(resolveAdminEntitlementDuration(0).ok, false);
   });
 });
 
@@ -99,10 +93,11 @@ describe("activation source contracts", () => {
       "async function activateAdminPackageEntitlement",
       "async function assertFreelancerMayAccessRealPoolOrders",
     );
+    assert.match(block, /'assigned_not_started',FALSE,NULL,NULL,NULL/);
     assert.match(block, /'not_required'/);
     assert.match(block, /'company_approved'/);
-    assert.match(block, /'active'/);
-    assert.match(block, /FALSE,NULL/);
+    assert.match(block, /entitlement_duration_months/);
+    assert.match(block, /has_first_order = TRUE/);
     assert.match(block, /endCurrentSubscription/);
     assert.doesNotMatch(block, /markActivationFeePaidOffline|stripe|wallet|invoice/i);
     assert.match(usersSrc, /activate_plan/);

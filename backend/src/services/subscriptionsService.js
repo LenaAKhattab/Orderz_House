@@ -1,5 +1,10 @@
 const { pool } = require("../config/db");
-const { resolveAdminEntitlementWindow } = require("../utils/adminPackageEntitlement");
+const {
+  resolveAdminEntitlementDuration,
+  planFirstRealOrderStart,
+  addMonthsUtc,
+  DRAWER_ENTITLEMENT_NOTE,
+} = require("../utils/adminPackageEntitlement");
 const {
   ORDERZHOUSE_FREE_PLAN_ID,
   isOrderzhouseFreePlan,
@@ -169,6 +174,8 @@ function mapSubscription(row) {
     nextRenewalAt: row.next_renewal_at || null,
     paymentFailureAt: row.payment_failure_at || null,
     paymentFailureCode: row.payment_failure_code || null,
+    entitlementDurationMonths:
+      row.entitlement_duration_months != null ? Number(row.entitlement_duration_months) : null,
     notes: row.notes,
     cancelledAt: row.cancelled_at,
     endedAt: row.ended_at,
@@ -670,19 +677,13 @@ async function activateCurrentSubscriptionOnFirstOrder({ freelancerUserId, activ
   const sub = rows[0];
   if (!sub) return null;
 
-  // Already recorded a real first order.
-  if (sub.has_first_order) {
+  const planned = planFirstRealOrderStart(sub, at);
+  if (planned.mode === "unchanged") {
     return mapSubscription(sub);
   }
 
-  // Admin/company dated entitlement (Case 3): record first order without changing entitlement dates.
-  if (
-    String(sub.status) === SUBSCRIPTION_STATUSES.ACTIVE &&
-    sub.actual_start_date &&
-    sub.expiry_date &&
-    String(sub.source) === SUBSCRIPTION_SOURCES.ADMIN &&
-    String(sub.payment_status) === SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED
-  ) {
+  // Legacy Case 3 dated entitlement: record the first order without moving the window.
+  if (planned.mode === "stamp_only") {
     const { rows: stamped } = await runner.query(
       `UPDATE freelancer_subscriptions
        SET has_first_order = TRUE,
@@ -694,19 +695,12 @@ async function activateCurrentSubscriptionOnFirstOrder({ freelancerUserId, activ
          AND first_order_date IS NULL
          AND actual_start_date IS NOT NULL
          AND expiry_date IS NOT NULL
+         AND notes NOT LIKE ('%' || $3 || '%')
        RETURNING *`,
-      [Number(sub.id), at],
+      [Number(sub.id), at, DRAWER_ENTITLEMENT_NOTE],
     );
     return mapSubscription(stamped[0] || sub);
   }
-
-  // Classic path: only activate once, on the very first real order.
-  if (sub.status !== SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED) {
-    return mapSubscription(sub);
-  }
-
-  const durationDays = Number(sub.plan_duration_days);
-  const expiryDate = computeExpiry({ startDate: at, durationDays });
 
   const { rows: updated } = await runner.query(
     `UPDATE freelancer_subscriptions
@@ -715,13 +709,30 @@ async function activateCurrentSubscriptionOnFirstOrder({ freelancerUserId, activ
          actual_start_date = $2,
          expiry_date = $3,
          status = $4,
+         entitlement_duration_months = COALESCE($5::int, entitlement_duration_months),
          updated_at = NOW()
      WHERE id = $1
        AND is_current = TRUE
        AND has_first_order = FALSE
-       AND status = 'assigned_not_started'
+       AND first_order_date IS NULL
+       AND (
+         (status = 'assigned_not_started' AND actual_start_date IS NULL)
+         OR (
+           notes LIKE ('%' || $6 || '%')
+           AND source = 'admin'
+           AND payment_status = 'not_required'
+           AND first_order_id IS NULL
+         )
+       )
      RETURNING *`,
-    [Number(sub.id), at, expiryDate, SUBSCRIPTION_STATUSES.ACTIVE],
+    [
+      Number(sub.id),
+      at,
+      planned.expiry_date,
+      SUBSCRIPTION_STATUSES.ACTIVE,
+      planned.entitlement_duration_months,
+      DRAWER_ENTITLEMENT_NOTE,
+    ],
   );
 
   // If a concurrent request already activated it, fall back to the locked row we read.
@@ -792,19 +803,13 @@ async function activateCurrentSubscriptionOnFirstAcceptedOrder(
     return mapSubscription(sub);
   }
 
-  // Already recorded a real first order.
-  if (sub.has_first_order) {
+  const planned = planFirstRealOrderStart(sub, at);
+  if (planned.mode === "unchanged") {
     return mapSubscription(sub);
   }
 
-  // Admin/company dated entitlement (Case 3): stamp first order id/date; keep entitlement window.
-  if (
-    String(sub.status) === SUBSCRIPTION_STATUSES.ACTIVE &&
-    sub.actual_start_date &&
-    sub.expiry_date &&
-    String(sub.source) === SUBSCRIPTION_SOURCES.ADMIN &&
-    String(sub.payment_status) === SUBSCRIPTION_PAYMENT_STATUSES.NOT_REQUIRED
-  ) {
+  // Legacy Case 3 dated entitlement: stamp the order id without moving the window.
+  if (planned.mode === "stamp_only") {
     const { rows: stamped } = await runner.query(
       `UPDATE freelancer_subscriptions
        SET has_first_order = TRUE,
@@ -817,18 +822,12 @@ async function activateCurrentSubscriptionOnFirstAcceptedOrder(
          AND first_order_date IS NULL
          AND actual_start_date IS NOT NULL
          AND expiry_date IS NOT NULL
+         AND notes NOT LIKE ('%' || $4 || '%')
        RETURNING *`,
-      [Number(sub.id), oid, at],
+      [Number(sub.id), oid, at, DRAWER_ENTITLEMENT_NOTE],
     );
     return mapSubscription(stamped[0] || sub);
   }
-
-  if (sub.actual_start_date || sub.status !== SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED) {
-    return mapSubscription(sub);
-  }
-
-  const durationDays = Number(sub.plan_duration_days);
-  const expiryDate = computeExpiry({ startDate: at, durationDays });
 
   const { rows: updated } = await runner.query(
     `UPDATE freelancer_subscriptions
@@ -838,14 +837,31 @@ async function activateCurrentSubscriptionOnFirstAcceptedOrder(
          actual_start_date = $3,
          expiry_date = $4,
          status = $5,
+         entitlement_duration_months = COALESCE($6::int, entitlement_duration_months),
          updated_at = NOW()
      WHERE id = $1
        AND is_current = TRUE
        AND has_first_order = FALSE
-       AND actual_start_date IS NULL
-       AND status = 'assigned_not_started'
+       AND first_order_date IS NULL
+       AND (
+         (status = 'assigned_not_started' AND actual_start_date IS NULL)
+         OR (
+           notes LIKE ('%' || $7 || '%')
+           AND source = 'admin'
+           AND payment_status = 'not_required'
+           AND first_order_id IS NULL
+         )
+       )
      RETURNING *`,
-    [Number(sub.id), oid, at, expiryDate, SUBSCRIPTION_STATUSES.ACTIVE],
+    [
+      Number(sub.id),
+      oid,
+      at,
+      planned.expiry_date,
+      SUBSCRIPTION_STATUSES.ACTIVE,
+      planned.entitlement_duration_months,
+      DRAWER_ENTITLEMENT_NOTE,
+    ],
   );
   const result = updated[0] || sub;
   if (updated[0]) {
@@ -1437,7 +1453,22 @@ async function recalculateSubscriptionDates({ subscriptionId }, client) {
 
   const firstOrderDate = new Date(sub.first_order_date);
   const actualStartDate = firstOrderDate;
-  const expiryDate = computeExpiry({ startDate: actualStartDate, durationDays });
+  const planned = planFirstRealOrderStart(
+    {
+      has_first_order: false,
+      status: SUBSCRIPTION_STATUSES.ASSIGNED_NOT_STARTED,
+      actual_start_date: null,
+      expiry_date: null,
+      notes: sub.notes,
+      source: sub.source,
+      payment_status: sub.payment_status,
+      entitlement_duration_months: sub.entitlement_duration_months,
+      plan_duration_days: durationDays,
+    },
+    actualStartDate,
+  );
+  const expiryDate =
+    planned.mode === "start" ? planned.expiry_date : computeExpiry({ startDate: actualStartDate, durationDays });
   const now = new Date();
   const nextStatus = now > expiryDate ? SUBSCRIPTION_STATUSES.EXPIRED : SUBSCRIPTION_STATUSES.ACTIVE;
 
@@ -2384,8 +2415,10 @@ async function adminClearPaymentFailureHold({
 }
 
 /**
- * Explicit Super Admin entitlement: active dated package, no payment, no first order.
- * Does not mark fees, Stripe, wallet, or invoices. Ends the previous current row first.
+ * Explicit Super Admin entitlement: company-approved package, countdown not started.
+ * Duration is stored separately. Start and expiry stay NULL until the first real order.
+ * A subscription that already started keeps its start timestamp.
+ * Does not mark fees, Stripe, wallet, or invoices.
  */
 async function activateAdminPackageEntitlement({
   actorUserId,
@@ -2395,11 +2428,12 @@ async function activateAdminPackageEntitlement({
   startsAt = null,
   notes = null,
 }) {
-  const window = resolveAdminEntitlementWindow({ startsAt, durationMonths });
-  if (!window.ok) {
-    const err = new Error("مدة الباقة أو تاريخ البداية غير صالح.");
+  void startsAt;
+  const duration = resolveAdminEntitlementDuration(durationMonths);
+  if (!duration.ok) {
+    const err = new Error("مدة الباقة غير صالحة.");
     err.statusCode = 400;
-    err.publicCode = window.code || "INVALID_DURATION";
+    err.publicCode = duration.code || "INVALID_DURATION";
     err.exposeToClient = true;
     throw err;
   }
@@ -2413,30 +2447,73 @@ async function activateAdminPackageEntitlement({
     const assignmentPlanId = resolved.assignmentPlanId;
     await loadPlanPricingForAssignment(assignmentPlanId, client);
 
-    await endCurrentSubscription({ freelancerUserId }, client);
-
-    const note = [notes, "ADMIN_PACKAGE_ENTITLEMENT"]
+    const note = [notes, DRAWER_ENTITLEMENT_NOTE]
       .map((n) => (n != null ? String(n).trim() : ""))
       .filter(Boolean)
       .join("\n")
       .slice(0, 4000);
+
+    const { rows: currentRows } = await client.query(
+      `SELECT *
+       FROM freelancer_subscriptions
+       WHERE freelancer_user_id = $1 AND is_current = TRUE
+       ORDER BY id DESC
+       LIMIT 1
+       FOR UPDATE`,
+      [Number(freelancerUserId)],
+    );
+    const current = currentRows[0];
+    if (current && current.has_first_order === true && current.actual_start_date) {
+      const expiry = addMonthsUtc(new Date(current.actual_start_date), duration.months);
+      const { rows: kept } = await client.query(
+        `UPDATE freelancer_subscriptions
+         SET plan_id = $2,
+             entitlement_duration_months = $3,
+             expiry_date = $4,
+             notes = $5,
+             updated_at = NOW()
+         WHERE id = $1
+           AND is_current = TRUE
+           AND has_first_order = TRUE
+           AND actual_start_date IS NOT NULL
+         RETURNING *`,
+        [Number(current.id), Number(assignmentPlanId), duration.months, expiry, note || null],
+      );
+      await client.query("COMMIT");
+      const subscription = mapSubscription(kept[0] || current);
+      const eligibility = await canFreelancerTakeOrders(String(freelancerUserId));
+      return {
+        subscription,
+        eligibility,
+        durationMonths: duration.months,
+        preservedCountdown: true,
+        startsAt: subscription?.actualStartDate || null,
+        expiresAt: subscription?.expiryDate || null,
+        resolvedPlan: {
+          assignmentPlanId: String(assignmentPlanId),
+          selectedPlanId: String(resolved.selectedPlanId),
+        },
+      };
+    }
+
+    await endCurrentSubscription({ freelancerUserId }, client);
 
     const { rows } = await client.query(
       `INSERT INTO freelancer_subscriptions (
          freelancer_user_id, plan_id, assigned_by_user_id, notes,
          status, has_first_order, first_order_date, actual_start_date, expiry_date,
          is_current, source, payment_status, activation_status,
-         paid_at, company_activated_at, company_activated_by_user_id
-       ) VALUES ($1,$2,$3,$4,'active',FALSE,NULL,$5,$6,TRUE,'admin','not_required','company_approved',NULL,NOW(),$7)
+         paid_at, company_activated_at, company_activated_by_user_id,
+         entitlement_duration_months
+       ) VALUES ($1,$2,$3,$4,'assigned_not_started',FALSE,NULL,NULL,NULL,TRUE,'admin','not_required','company_approved',NULL,NOW(),$5,$6)
        RETURNING *`,
       [
         Number(freelancerUserId),
         Number(assignmentPlanId),
         actorUserId ? Number(actorUserId) : null,
         note || null,
-        window.start.toISOString(),
-        window.expiry.toISOString(),
         actorUserId ? Number(actorUserId) : null,
+        duration.months,
       ],
     );
 
@@ -2447,9 +2524,9 @@ async function activateAdminPackageEntitlement({
     return {
       subscription,
       eligibility,
-      durationMonths: window.months,
-      startsAt: window.start,
-      expiresAt: window.expiry,
+      durationMonths: duration.months,
+      startsAt: null,
+      expiresAt: null,
       resolvedPlan: {
         assignmentPlanId: String(assignmentPlanId),
         selectedPlanId: String(resolved.selectedPlanId),

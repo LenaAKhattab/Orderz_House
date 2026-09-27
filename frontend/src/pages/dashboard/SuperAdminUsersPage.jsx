@@ -21,6 +21,7 @@ import {
   postSuperAdminUsersBulkActionsRequest,
   listAdminPlansRequest,
 } from "../../services/api";
+import { membershipScheduleView } from "../../utils/membershipFirstOrderSchedule";
 import "./superAdminUsersPage.css";
 
 const PAGE_SIZE = 20;
@@ -502,6 +503,7 @@ function UserDetailDrawer({
   const profile = detail?.profile;
   const identity = detail?.identity;
   const subscription = detail?.subscription;
+  const schedule = membershipScheduleView(subscription);
   const training = detail?.training;
   const activity = detail?.activity;
   const auditEvents = detail?.auditEvents || [];
@@ -879,19 +881,34 @@ function UserDetailDrawer({
                     </div>
                     <div>
                       <span>حالة الاشتراك</span>
-                      <strong>{subscriptionStatusLabel(subscription?.status)}</strong>
+                      <strong>
+                        {schedule.statusLabel ||
+                          subscriptionStatusLabel(subscription?.status)}
+                      </strong>
                     </div>
                     <div>
                       <span>التفعيل</span>
                       <strong>{activationStatusLabel(subscription?.activationStatus)}</strong>
                     </div>
+                    {schedule.durationLabel ? (
+                      <div>
+                        <span>المدة</span>
+                        <strong>{schedule.durationLabel}</strong>
+                      </div>
+                    ) : null}
                     <div>
                       <span>البداية</span>
-                      <strong>{formatJoDate(subscription?.actualStartDate)}</strong>
+                      <strong>
+                        {schedule.startLabel ||
+                          formatJoDate(subscription?.actualStartDate)}
+                      </strong>
                     </div>
                     <div>
                       <span>الانتهاء</span>
-                      <strong>{formatJoDate(subscription?.expiryDate)}</strong>
+                      <strong>
+                        {schedule.expiryLabel ||
+                          formatJoDate(subscription?.expiryDate)}
+                      </strong>
                     </div>
                     {subscriptionSourceLabel(subscription?.source) ? (
                       <div>
@@ -942,7 +959,7 @@ function UserDetailDrawer({
                           kind: "membership",
                           title: "تفعيل الباقة الآن",
                           description:
-                            "سيُمنح استحقاق إداري نشط الآن: بدون دفع، بدون طلب أول، وبتاريخ بداية ونهاية حسب المدة المختارة.",
+                            "ستُعتمد الباقة لاستقبال الطلبات الآن، بدون دفع. يبدأ العدّ عند أول طلب حقيقي، ولن يُحسب تاريخ بداية أو انتهاء قبل ذلك.",
                           confirmLabel: "تفعيل الباقة الآن",
                           payload: {
                             action: "activate_plan",
