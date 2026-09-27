@@ -142,16 +142,48 @@ function courseLabel(status) {
   return map[status] || status || "—";
 }
 
+const PACKAGE_DURATION_OPTIONS = [
+  { value: "1", label: "شهر واحد" },
+  { value: "3", label: "3 أشهر" },
+  { value: "4", label: "4 أشهر" },
+  { value: "6", label: "6 أشهر" },
+  { value: "12", label: "12 شهرًا" },
+  { value: "custom", label: "مدة مخصصة" },
+];
+
+function subscriptionStatusLabel(status) {
+  const map = {
+    assigned_not_started: "تم إسناد الباقة — لم يبدأ الاشتراك",
+    active: "نشطة",
+    expired: "منتهية",
+    inactive: "غير نشطة",
+    cancelled: "ملغاة",
+    canceled: "ملغاة",
+  };
+  return map[String(status || "").toLowerCase()] || status || "—";
+}
+
+function activationStatusLabel(status) {
+  const map = {
+    company_pending: "بانتظار تفعيل الشركة",
+    company_approved: "معتمدة من الشركة",
+    company_rejected: "مرفوضة من الشركة",
+  };
+  return map[String(status || "").toLowerCase()] || status || "—";
+}
+
+function subscriptionSourceLabel(source) {
+  const map = {
+    admin: "إسناد إداري",
+    manual: "يدوي",
+    stripe: "شراء عبر المنصة",
+  };
+  return map[String(source || "").toLowerCase()] || null;
+}
+
 function membershipLabel(status) {
   if (!status) return "لا يوجد";
-  const map = {
-    active: "نشط",
-    cancelled: "ملغى",
-    canceled: "ملغى",
-    expired: "منتهٍ",
-    pending: "معلّق",
-  };
-  return map[String(status).toLowerCase()] || status;
+  return subscriptionStatusLabel(status);
 }
 
 function toneForAccount(status) {
@@ -442,6 +474,8 @@ function UserDetailDrawer({
     whatsapp: "",
   });
   const [planId, setPlanId] = useState("");
+  const [durationChoice, setDurationChoice] = useState("1");
+  const [customMonths, setCustomMonths] = useState("1");
 
   useEffect(() => {
     if (!open) return;
@@ -459,6 +493,8 @@ function UserDetailDrawer({
       whatsapp: p.whatsapp || "",
     });
     setPlanId(detail?.subscription?.planId || "");
+    setDurationChoice("1");
+    setCustomMonths("1");
   }, [detail]);
 
   if (!open) return null;
@@ -471,6 +507,10 @@ function UserDetailDrawer({
   const auditEvents = detail?.auditEvents || [];
   const blockers = detail?.blockers || [];
   const orderReadiness = detail?.orderReadiness || null;
+  const selectedDurationMonths = (() => {
+    const raw = durationChoice === "custom" ? Number(customMonths) : Number(durationChoice);
+    return Number.isInteger(raw) && raw >= 1 && raw <= 120 ? raw : null;
+  })();
 
   return (
     <div className="oh-sa-users-drawer" role="dialog" aria-modal="true" aria-labelledby="oh-sa-users-drawer-title">
@@ -834,21 +874,31 @@ function UserDetailDrawer({
                       <strong>
                         {subscription?.plan?.title ||
                           subscription?.plan?.name ||
-                          membershipLabel(subscription?.status)}
+                          (subscription ? "باقة مسندة" : "لا يوجد")}
                       </strong>
                     </div>
                     <div>
                       <span>حالة الاشتراك</span>
-                      <strong>{membershipLabel(subscription?.status)}</strong>
+                      <strong>{subscriptionStatusLabel(subscription?.status)}</strong>
                     </div>
                     <div>
                       <span>التفعيل</span>
-                      <strong>{subscription?.activationStatus || "—"}</strong>
+                      <strong>{activationStatusLabel(subscription?.activationStatus)}</strong>
+                    </div>
+                    <div>
+                      <span>البداية</span>
+                      <strong>{formatJoDate(subscription?.actualStartDate)}</strong>
                     </div>
                     <div>
                       <span>الانتهاء</span>
                       <strong>{formatJoDate(subscription?.expiryDate)}</strong>
                     </div>
+                    {subscriptionSourceLabel(subscription?.source) ? (
+                      <div>
+                        <span>المصدر</span>
+                        <strong>{subscriptionSourceLabel(subscription?.source)}</strong>
+                      </div>
+                    ) : null}
                   </div>
                   <label className="oh-sa-users-field">
                     <span>اختيار باقة</span>
@@ -861,14 +911,62 @@ function UserDetailDrawer({
                       ))}
                     </select>
                   </label>
-                  <div className="oh-sa-users-actions-row">
+                  <label className="oh-sa-users-field">
+                    <span>المدة</span>
+                    <select value={durationChoice} onChange={(e) => setDurationChoice(e.target.value)}>
+                      {PACKAGE_DURATION_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {durationChoice === "custom" ? (
+                    <label className="oh-sa-users-field">
+                      <span>عدد الأشهر</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={120}
+                        value={customMonths}
+                        onChange={(e) => setCustomMonths(e.target.value)}
+                      />
+                    </label>
+                  ) : null}
+                  <div className="oh-sa-users-actions-row oh-sa-users-actions-row--primary">
                     <Button
                       type="button"
+                      disabled={!planId || !selectedDurationMonths}
+                      onClick={() =>
+                        onAction({
+                          kind: "membership",
+                          title: "تفعيل الباقة الآن",
+                          description:
+                            "سيُمنح استحقاق إداري نشط الآن: بدون دفع، بدون طلب أول، وبتاريخ بداية ونهاية حسب المدة المختارة.",
+                          confirmLabel: "تفعيل الباقة الآن",
+                          payload: {
+                            action: "activate_plan",
+                            planId: Number(planId),
+                            durationMonths: selectedDurationMonths,
+                          },
+                        })
+                      }
+                    >
+                      تفعيل الباقة الآن
+                    </Button>
+                  </div>
+                  <div className="oh-sa-users-actions-row oh-sa-users-actions-row--secondary">
+                    <Button
+                      type="button"
+                      variant="secondary"
                       disabled={!planId}
                       onClick={() =>
                         onAction({
                           kind: "membership",
-                          title: subscription ? "تغيير الباقة" : "إسناد باقة",
+                          title: "إسناد بدون بدء الاشتراك",
+                          description:
+                            "سيتغير سجل الباقة إلى «تم إسناد الباقة — لم يبدأ الاشتراك» مع «بانتظار تفعيل الشركة». لن يُمنح استحقاق استقبال الطلبات.",
+                          confirmLabel: "إسناد بدون تفعيل",
                           payload: {
                             action: subscription ? "change_plan" : "assign_plan",
                             planId: Number(planId),
@@ -876,7 +974,7 @@ function UserDetailDrawer({
                         })
                       }
                     >
-                      {subscription ? "تغيير الباقة" : "إسناد باقة"}
+                      إسناد بدون بدء الاشتراك
                     </Button>
                     <Button
                       type="button"
@@ -887,6 +985,8 @@ function UserDetailDrawer({
                           kind: "membership",
                           title: "إلغاء الباقة",
                           danger: true,
+                          description: "سيُلغى الاشتراك الحالي ويُحفظ في السجل.",
+                          confirmLabel: "إلغاء الباقة",
                           payload: { action: "cancel_plan" },
                         })
                       }
