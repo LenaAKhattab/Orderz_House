@@ -26,6 +26,7 @@ async function updatePage(req, res, next) {
   try {
     const page = await websitePageService.updatePageBySlug(req.params.slug, {
       title: req.body.title,
+      titleEn: req.body.titleEn,
       isActive: req.body.isActive,
     });
     if (!page) {
@@ -43,6 +44,8 @@ async function createBlock(req, res, next) {
       blockType: req.body.blockType,
       title: req.body.title,
       body: req.body.body,
+      titleEn: req.body.titleEn,
+      bodyEn: req.body.bodyEn,
       imageUrl: req.body.imageUrl,
     });
     if (!block) {
@@ -63,6 +66,8 @@ async function updateBlock(req, res, next) {
       blockType: req.body.blockType,
       title: req.body.title,
       body: req.body.body,
+      titleEn: req.body.titleEn,
+      bodyEn: req.body.bodyEn,
       imageUrl: req.body.imageUrl,
       isActive: req.body.isActive,
     });

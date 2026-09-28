@@ -13,8 +13,10 @@ const createFaqValidators = [
     .trim()
     .notEmpty()
     .withMessage("الإجابة مطلوبة.")
-    .isLength({ max: 5000 })
+    .isLength({ max: 20000 })
     .withMessage("الإجابة طويلة جداً."),
+  body("questionEn").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
+  body("answerEn").optional({ nullable: true }).isString().trim().isLength({ max: 20000 }),
 ];
 
 const updateFaqValidators = [
@@ -31,8 +33,10 @@ const updateFaqValidators = [
     .trim()
     .notEmpty()
     .withMessage("الإجابة لا يمكن أن تكون فارغة.")
-    .isLength({ max: 5000 })
+    .isLength({ max: 20000 })
     .withMessage("الإجابة طويلة جداً."),
+  body("questionEn").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
+  body("answerEn").optional({ nullable: true }).isString().trim().isLength({ max: 20000 }),
 ];
 
 const reorderFaqValidators = [

@@ -13,6 +13,14 @@ import DashboardStatCard, { DashboardStatCardSkeleton } from "../../dashboard/Da
 import DashboardChartCard from "../../dashboard/DashboardChartCard";
 import DashboardEmptyState from "../../dashboard/DashboardEmptyState";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import {
+  localizeAnalyticsMetricHint,
+  localizeAnalyticsMetricLabel,
+  localizeCategoryName,
+  localizeCountryName,
+  localizeCourseTitle,
+  localizeCanonicalPlanTitle,
+} from "../../../lib/i18n/platformContentLocale";
 import { resolveSuperAdminDashboardHomeLink } from "./superAdminHomeDataUtils";
 import { resolveAnalysisScopeLabel } from "./dashboardMetricScope";
 import { formatJodMoney } from "../../../utils/formatJodMoney";
@@ -277,14 +285,14 @@ export function KpiComparisonGrid({ metrics, loading = false, dense = false, per
       showCardScope={showCardScope}
       items={metrics.map((m) => ({
         key: m.key,
-        label: m.label,
+        label: localizeAnalyticsMetricLabel(m, t),
         scopeLabel: showCardScope ? m.scopeLabel || (resolveScope ? resolveScope(m.key, period) : undefined) : undefined,
         value: m.current,
         money: m.money,
         comparable: m.comparable,
         hint:
           m.comparable === false
-            ? m.hint || t("analysis.labels.noComparison")
+            ? localizeAnalyticsMetricHint(m, t) || m.hint || t("analysis.labels.noComparison")
             : m.hint ||
               t("analysis.labels.previous", {
                 value: m.money ? formatMoneyJod(m.previous) : formatInt(m.previous),
@@ -313,6 +321,21 @@ export function TopList({
   }
   const formatVal = money ? (value) => formatMoneyJod(value, locale) : formatInt;
   const rowLabel = (row) => {
+    if (labelKey === "fullName" && row.fullName) return row.fullName;
+    if (locale === "en") {
+      if (row.planTitle || row.planTitleEn || row.planName) {
+        const plan = localizeCanonicalPlanTitle(row, locale);
+        if (plan) return plan;
+      }
+      if (row.courseId && row.title) return localizeCourseTitle(row, locale);
+      if ((row.countryCode || row.nameEn) && row.name && !row.totalOrders && !row.slug) {
+        return localizeCountryName(row, locale);
+      }
+      if (row.name || row.nameEn || row.slug) {
+        const category = localizeCategoryName(row, locale);
+        if (category) return category;
+      }
+    }
     if (labelKey && row[labelKey]) return row[labelKey];
     return row.name || row.title || row.fullName || row.countryCode || "—";
   };

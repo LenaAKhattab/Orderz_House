@@ -1,4 +1,4 @@
-import { HOME_FAQ_ITEMS } from "../../constants/homeFaqItems";
+import { HOME_FAQ_ITEMS } from "../../constants/homeFaqItems.js";
 
 function normalizeFaqText(text) {
   return String(text || "")

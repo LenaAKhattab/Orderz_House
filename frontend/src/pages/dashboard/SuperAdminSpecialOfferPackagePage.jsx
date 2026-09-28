@@ -266,12 +266,29 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   />
                 </label>
                 <label>
+                  <span>{t("planAdmin.sections.specialOffer.offerTitleEn")}</span>
+                  <input
+                    value={form.titleEn || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("titleEn", e.target.value)}
+                  />
+                </label>
+                <label>
 <span>{t("planAdmin.sections.specialOffer.shortDesc")}</span>
                   <textarea
                     rows={2}
                     value={form.subtitle}
                     disabled={benefitsLocked || saving}
                     onChange={(e) => setField("subtitle", e.target.value)}
+                  />
+                </label>
+                <label>
+                  <span>{t("planAdmin.sections.specialOffer.shortDescEn")}</span>
+                  <textarea
+                    rows={2}
+                    value={form.subtitleEn || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("subtitleEn", e.target.value)}
                   />
                 </label>
                 <label>
@@ -402,6 +419,15 @@ export default function SuperAdminSpecialOfferPackagePage() {
                     data-refund-explanation-field="true"
                     onChange={(e) => setField("refundExplanationAr", e.target.value)}
                     placeholder={t("planAdmin.sections.specialOffer.refundPlaceholder")}
+                  />
+                </label>
+                <label className="oh-special-offer-admin__field--full">
+                  <span>{t("planAdmin.sections.specialOffer.refundExplainEn")}</span>
+                  <textarea
+                    rows={8}
+                    value={form.refundExplanationEn || ""}
+                    disabled={saving}
+                    onChange={(e) => setField("refundExplanationEn", e.target.value)}
                   />
                 </label>
                 <label className="oh-special-offer-admin__field--full">

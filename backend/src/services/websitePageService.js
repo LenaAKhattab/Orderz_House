@@ -7,6 +7,7 @@ function mapPageRow(row) {
     id: row.id,
     slug: row.slug,
     title: row.title,
+    titleEn: row.title_en || null,
     pageType: row.page_type,
     isActive: row.is_active,
     createdAt: row.created_at,
@@ -21,6 +22,8 @@ function mapBlockRow(row) {
     blockType: row.block_type,
     title: row.title,
     body: row.body,
+    titleEn: row.title_en || null,
+    bodyEn: row.body_en || null,
     imageUrl: row.image_url,
     sortOrder: row.sort_order,
     isActive: row.is_active,
@@ -30,11 +33,17 @@ function mapBlockRow(row) {
 }
 
 const PAGE_SELECT =
-  `SELECT id, slug, title, page_type, is_active, created_at, updated_at FROM website_pages`;
+  `SELECT id, slug, title, title_en, page_type, is_active, created_at, updated_at FROM website_pages`;
 
 const BLOCK_SELECT =
-  `SELECT id, page_id, block_type, title, body, image_url, sort_order, is_active, created_at, updated_at
+  `SELECT id, page_id, block_type, title, body, title_en, body_en, image_url, sort_order, is_active, created_at, updated_at
    FROM website_page_blocks`;
+
+const PAGE_RETURNING =
+  `id, slug, title, title_en, page_type, is_active, created_at, updated_at`;
+
+const BLOCK_RETURNING =
+  `id, page_id, block_type, title, body, title_en, body_en, image_url, sort_order, is_active, created_at, updated_at`;
 
 async function listAllPages() {
   const { rows } = await pool.query(`${PAGE_SELECT} ORDER BY slug ASC`);
@@ -57,7 +66,13 @@ async function getPageBySlug(slug, { includeInactiveBlocks = false } = {}) {
   };
 }
 
-async function updatePageBySlug(slug, { title, isActive }) {
+function emptyToNull(value) {
+  if (value === undefined) return undefined;
+  const text = value == null ? "" : String(value).trim();
+  return text || null;
+}
+
+async function updatePageBySlug(slug, { title, titleEn, isActive }) {
   const fields = [];
   const values = [];
   let idx = 1;
@@ -65,6 +80,10 @@ async function updatePageBySlug(slug, { title, isActive }) {
   if (title !== undefined) {
     fields.push(`title = $${idx++}`);
     values.push(title);
+  }
+  if (titleEn !== undefined) {
+    fields.push(`title_en = $${idx++}`);
+    values.push(emptyToNull(titleEn));
   }
   if (isActive !== undefined) {
     fields.push(`is_active = $${idx++}`);
@@ -81,7 +100,7 @@ async function updatePageBySlug(slug, { title, isActive }) {
 
   const { rows } = await pool.query(
     `UPDATE website_pages SET ${fields.join(", ")} WHERE slug = $${idx}
-     RETURNING id, slug, title, page_type, is_active, created_at, updated_at`,
+     RETURNING ${PAGE_RETURNING}`,
     values,
   );
   return rows.length ? mapPageRow(rows[0]) : null;
@@ -113,14 +132,16 @@ async function createPageBlock(slug, payload) {
     const nextOrder = Number(maxRes.rows[0]?.max_order || 0) + 1;
     const { rows } = await client.query(
       `INSERT INTO website_page_blocks
-         (page_id, block_type, title, body, image_url, sort_order, is_active, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, TRUE, NOW(), NOW())
-       RETURNING id, page_id, block_type, title, body, image_url, sort_order, is_active, created_at, updated_at`,
+         (page_id, block_type, title, body, title_en, body_en, image_url, sort_order, is_active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, NOW(), NOW())
+       RETURNING ${BLOCK_RETURNING}`,
       [
         pageData.page.id,
         blockType,
         payload.title ?? null,
         payload.body ?? null,
+        emptyToNull(payload.titleEn) ?? null,
+        emptyToNull(payload.bodyEn) ?? null,
         payload.imageUrl ?? null,
         nextOrder,
       ],
@@ -167,6 +188,14 @@ async function updatePageBlock(slug, blockId, payload) {
     fields.push(`body = $${idx++}`);
     values.push(payload.body);
   }
+  if (payload.titleEn !== undefined) {
+    fields.push(`title_en = $${idx++}`);
+    values.push(emptyToNull(payload.titleEn));
+  }
+  if (payload.bodyEn !== undefined) {
+    fields.push(`body_en = $${idx++}`);
+    values.push(emptyToNull(payload.bodyEn));
+  }
   if (payload.imageUrl !== undefined) {
     fields.push(`image_url = $${idx++}`);
     values.push(payload.imageUrl);
@@ -184,7 +213,7 @@ async function updatePageBlock(slug, blockId, payload) {
   const { rows } = await pool.query(
     `UPDATE website_page_blocks SET ${fields.join(", ")}
      WHERE id = $${idx} AND page_id = $${idx + 1}
-     RETURNING id, page_id, block_type, title, body, image_url, sort_order, is_active, created_at, updated_at`,
+     RETURNING ${BLOCK_RETURNING}`,
     values,
   );
   return rows.length ? mapBlockRow(rows[0]) : null;

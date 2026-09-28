@@ -58,6 +58,7 @@ export function buildUnifiedAttention({ intelligence, attention }) {
       severity,
       icon: meta.icon,
       labelKey: meta.labelKey,
+      textKey: alert.key ? `analysis.product.alerts.${alert.key}` : "",
       text: alert.title,
       descriptionKey: "analysis.attention.pendingFollowUp",
       descriptionParams: { count: formatInt(count) },

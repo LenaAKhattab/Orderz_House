@@ -273,6 +273,7 @@ async function getSubscriptionsByPlan(scope) {
     `SELECT
        p.id AS plan_id,
        p.title AS plan_title,
+       p.title_en AS plan_title_en,
        p.name AS plan_name,
        p.price_jod,
        p.duration_days,
@@ -310,7 +311,8 @@ async function getSubscriptionsByPlan(scope) {
 
   return rows.map((row) => ({
     planId: toInt(row.plan_id),
-    planTitle: row.plan_title || row.plan_name || `باقة #${row.plan_id}`,
+    planTitle: row.plan_title || row.plan_name || null,
+    planTitleEn: row.plan_title_en || null,
     planName: row.plan_name || null,
     priceJod: row.price_jod != null ? toNum(row.price_jod) : null,
     durationDays: row.duration_days != null ? toInt(row.duration_days) : null,
@@ -339,6 +341,7 @@ async function getSubscriptionsByPlanGroup(scope, byPlan) {
        COALESCE(pp.page_type, 'unassigned') AS page_type_key,
        pp.id AS plan_page_id,
        pp.title AS plan_page_title,
+       pp.title_en AS plan_page_title_en,
        pp.slug AS plan_page_slug,
        COUNT(fs.id)::int AS total_subscriptions,
        COUNT(fs.id) FILTER (WHERE fs.payment_status = 'paid')::int AS paid_subscriptions,
@@ -401,6 +404,7 @@ async function getSubscriptionsByPlanGroup(scope, byPlan) {
       g.planPages.push({
         planPageId: toInt(row.plan_page_id),
         title: row.plan_page_title,
+        titleEn: row.plan_page_title_en || null,
         slug: row.plan_page_slug,
         pageType: row.page_type_key,
         totalSubscriptions: toInt(row.total_subscriptions),
@@ -501,6 +505,8 @@ async function getSubscriptionsByCountry(scope) {
        SELECT
          fs.plan_id,
          p.title AS plan_title,
+         p.title_en AS plan_title_en,
+         p.name AS plan_name,
          ${USER_COUNTRY_CODE_SQL} AS country_code
        FROM freelancer_subscriptions fs
        JOIN users u ON u.id = fs.freelancer_user_id
@@ -508,15 +514,17 @@ async function getSubscriptionsByCountry(scope) {
        WHERE ${whereSql}
      ),
      plan_counts AS (
-       SELECT country_code, plan_id, plan_title, COUNT(*)::int AS subs
+       SELECT country_code, plan_id, plan_title, plan_title_en, plan_name, COUNT(*)::int AS subs
        FROM scoped
        WHERE country_code IS NOT NULL AND plan_id IS NOT NULL
-       GROUP BY country_code, plan_id, plan_title
+       GROUP BY country_code, plan_id, plan_title, plan_title_en, plan_name
      )
      SELECT DISTINCT ON (country_code)
        country_code,
        plan_id,
        plan_title,
+       plan_title_en,
+       plan_name,
        subs
      FROM plan_counts
      ORDER BY country_code, subs DESC, plan_id ASC`,
@@ -528,7 +536,9 @@ async function getSubscriptionsByCountry(scope) {
       r.country_code,
       {
         planId: toInt(r.plan_id),
-        planTitle: r.plan_title || `باقة #${r.plan_id}`,
+        planTitle: r.plan_title || r.plan_name || null,
+        planTitleEn: r.plan_title_en || null,
+        planName: r.plan_name || null,
         subscribers: toInt(r.subs),
       },
     ]),
@@ -571,9 +581,9 @@ async function getDashboardAnalysis(query = {}) {
       staffExcludedFromUsers: true,
       userCountryPriority: "users.country → users.billing_country",
       subscriptionScope: currentOnly ? "is_current = TRUE" : "all subscription rows",
-      planGroupLogic: "plan_pages.page_type: default = الباقات الأساسية, special = باقات الصفحات",
+      planGroupLogic: "plan_pages.page_type: default = core plans, special = page plans",
       revenueNote:
-        "paidRevenueJod = سعر الباقة + مبلغ رسوم التفعيل التاريخي (amount_minor من آخر دفعة تفعيل للمستقل)، وليس القيمة الحالية للإعداد",
+        "paidRevenueJod = plan price + historical activation fee (amount_minor of the freelancer's latest activation payment), not the current settings value",
     },
     usersByCountry,
     subscriptionOverview,

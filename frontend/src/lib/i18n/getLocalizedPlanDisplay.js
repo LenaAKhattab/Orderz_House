@@ -3,9 +3,9 @@ import {
   formatOrderValueRange,
   isOfferActive,
   planListItems,
-} from "../../components/plans/planDisplayUtils";
-import { resources } from "../../i18n/resources";
-import { getLocalizedField } from "./getLocalizedField";
+} from "../../components/plans/planDisplayUtils.js";
+import { resources } from "../../i18n/resources.js";
+import { getLocalizedField } from "./getLocalizedField.js";
 
 const PLAN_LOCALE_KEYS = {
   1: "free",
@@ -74,20 +74,24 @@ function getCardLocaleBundle(locale, localeKey) {
   return bundle && typeof bundle === "object" ? bundle : null;
 }
 
+function containsArabicScript(value) {
+  return /[\u0600-\u06FF]/.test(String(value || ""));
+}
+
 function resolveCardString(plan, field, locale, localeKey, cardBundle) {
   const base = plan?.[field] != null ? String(plan[field]).trim() : "";
 
   if (locale === "en") {
     const enExplicit = plan?.[`${field}En`] ?? plan?.[`${field}_en`];
-    if (enExplicit != null && String(enExplicit).trim() !== "") {
+    if (enExplicit != null && String(enExplicit).trim() !== "" && !containsArabicScript(enExplicit)) {
       return String(enExplicit).trim();
     }
-    // API/base column beats hardcoded locale cards when DB has content.
-    if (base) return base;
     const fromLocale = cardBundle?.[field];
-    if (fromLocale != null && String(fromLocale).trim() !== "") {
+    if (fromLocale != null && String(fromLocale).trim() !== "" && (!base || containsArabicScript(base))) {
       return String(fromLocale).trim();
     }
+    if (base && !containsArabicScript(base)) return base;
+    if (fromLocale != null && String(fromLocale).trim() !== "") return String(fromLocale).trim();
     return "";
   }
 
@@ -115,11 +119,20 @@ function getLocalizedFeatures(plan, locale, localeKey, cardBundle) {
       .filter((item) => item?.isIncluded !== false)
       .sort((a, b) => Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0))
       .map((item) => {
-        if (locale === "en" && item?.featureTextEn) return String(item.featureTextEn);
+        if (locale === "en") {
+          const english = item?.featureTextEn ? String(item.featureTextEn).trim() : "";
+          if (english && !containsArabicScript(english)) return english;
+          const base = String(item.featureText || "");
+          if (base && !containsArabicScript(base)) return base;
+          return "";
+        }
         return String(item.featureText || item);
       })
       .filter(Boolean);
     if (fromDb.length > 0) return fromDb.slice(0, 14);
+    if (locale === "en" && Array.isArray(cardBundle?.features) && cardBundle.features.length > 0) {
+      return cardBundle.features.map((item) => String(item)).slice(0, 14);
+    }
   }
 
   const apiFeatures = planListItems(plan, locale);
@@ -178,7 +191,8 @@ function getLocalizedPriceHeadline(plan, locale, t) {
     const pct = Number(plan.salePercentage);
     const reason =
       locale === "en"
-        ? String(plan.saleReasonEn || plan.saleReason || "").trim()
+        ? String(plan.saleReasonEn || "").trim() ||
+          (containsArabicScript(plan.saleReason) ? "" : String(plan.saleReason || "").trim())
         : String(plan.saleReason || "").trim();
     return {
       main: effective || "—",
@@ -246,7 +260,7 @@ export function getLocalizedPlanBadge(plan, featured, locale, t) {
 /**
  * Resolve localized plan card copy for public Plans UI.
  *
- * Priority for English: API `*En` columns → API base (Arabic) fields → `en/plans.json` cards fallback.
+ * Priority for English: API `*En` columns → `en/plans.json` cards when the base text is Arabic → non-Arabic base text.
  * Arabic copy comes from API/DB fields directly.
  *
  * @param {Record<string, unknown>} plan

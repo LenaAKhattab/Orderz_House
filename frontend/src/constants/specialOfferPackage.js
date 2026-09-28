@@ -26,6 +26,47 @@ export const SPECIAL_OFFER_DEFAULT_REFUND_EXPLANATION_AR = `يُسترد مبل�
 
 المبلغ ليس رسوم تقديم، أو مقابلة، أو دورة تدريبية، ولا يمثل ضمانًا للعمل أو الدخل.`;
 
+export const SPECIAL_OFFER_DEFAULT_REFUND_EXPLANATION_EN = `A refund of 100 JOD is issued at 20 JOD for each active, eligible month, until the full 100 JOD is refunded, within a 6-month commitment period. Eligible months may be consecutive or separate.
+
+If you do not work in a given month, there is no penalty and no new payment; that month does not generate a 20 JOD refund.
+
+Income from completing Orders is entirely separate from the refund amount.
+
+The amount is not an application fee, an interview fee, or a training-course fee, and it is not a guarantee of work or income.`;
+
+const SPECIAL_OFFER_EN_BY_FIELD = Object.freeze({
+  title: { "باقة العرض": "Special offer" },
+  subtitle: {
+    "عرض ترويجي لفترة محدودة — عروض أكثر بسعر خاص.": "A limited-time promotion — more bids at a special price.",
+  },
+  badgeText: { "عرض خاص": "Special offer" },
+  ribbonText: { "لفترة محدودة": "Limited time" },
+  ctaLabel: {
+    "احصل على العرض الآن": "Get this offer now",
+    "تواصل للحصول على العرض": "Contact us for this offer",
+  },
+  microcopy: {
+    "بدون التزام، يمكنك الترقية في أي وقت": "No commitment. You can upgrade at any time.",
+    "بدون التزام، يمكنك الترقية أو الإلغاء في أي وقت": "No commitment. You can upgrade or cancel at any time.",
+  },
+});
+
+export function localizedSpecialOfferText(offer, field, locale) {
+  const arabic = String(offer?.[field] ?? "");
+  if (locale !== "en") return arabic;
+  const direct = String(offer?.[`${field}En`] || "").trim();
+  if (direct) return direct;
+  if (field === "refundExplanationAr") {
+    const refundEn = String(offer?.refundExplanationEn || "").trim();
+    if (refundEn) return refundEn;
+    if (arabic.trim() === SPECIAL_OFFER_DEFAULT_REFUND_EXPLANATION_AR.trim()) {
+      return SPECIAL_OFFER_DEFAULT_REFUND_EXPLANATION_EN;
+    }
+    return "";
+  }
+  return SPECIAL_OFFER_EN_BY_FIELD[field]?.[arabic.trim()] || "";
+}
+
 export const SPECIAL_OFFER_REFUND_SECTION_TITLES_AR = Object.freeze([
   "الاسترداد الشهري",
   "الأشهر غير النشطة",
@@ -156,9 +197,13 @@ export function formStateFromSpecialOffer(pkg) {
   return {
     isVisible: Boolean(src.isVisible),
     title: src.title ?? SPECIAL_OFFER_DEFAULTS.title,
+    titleEn: src.titleEn ?? "",
     subtitle: src.subtitle ?? "",
+    subtitleEn: src.subtitleEn ?? "",
     badgeText: src.badgeText ?? SPECIAL_OFFER_DEFAULTS.badgeText,
+    badgeTextEn: src.badgeTextEn ?? "",
     ribbonText: src.ribbonText ?? SPECIAL_OFFER_DEFAULTS.ribbonText,
+    ribbonTextEn: src.ribbonTextEn ?? "",
     priceJod: src.priceJod ?? SPECIAL_OFFER_DEFAULTS.priceJod,
     originalPriceJod: src.originalPriceJod ?? "",
     totalOffers: src.totalOffers ?? SPECIAL_OFFER_DEFAULTS.totalOffers,
@@ -167,8 +212,11 @@ export function formStateFromSpecialOffer(pkg) {
     maxProjectValueJod: src.maxProjectValueJod ?? "",
     accessLevelKey,
     ctaLabel: src.ctaLabel ?? SPECIAL_OFFER_DEFAULTS.ctaLabel,
+    ctaLabelEn: src.ctaLabelEn ?? "",
     microcopy: src.microcopy ?? SPECIAL_OFFER_DEFAULTS.microcopy,
+    microcopyEn: src.microcopyEn ?? "",
     refundExplanationAr: src.refundExplanationAr ?? SPECIAL_OFFER_DEFAULTS.refundExplanationAr,
+    refundExplanationEn: src.refundExplanationEn ?? "",
     whatsappMessageAr: src.whatsappMessageAr ?? SPECIAL_OFFER_DEFAULTS.whatsappMessageAr,
     purchaseMode: resolveSpecialOfferPurchaseMode(src),
     offerVersion: Number(src.offerVersion) || 1,
@@ -194,7 +242,9 @@ export function payloadFromSpecialOfferForm(form) {
   return {
     isVisible: Boolean(form.isVisible),
     title: String(form.title || "").trim(),
+    titleEn: String(form.titleEn || "").trim(),
     subtitle: String(form.subtitle || "").trim(),
+    subtitleEn: String(form.subtitleEn || "").trim(),
     badgeText: String(form.badgeText || "").trim() || SPECIAL_OFFER_DEFAULTS.badgeText,
     ribbonText: String(form.ribbonText || "").trim() || SPECIAL_OFFER_DEFAULTS.ribbonText,
     priceJod: Number(form.priceJod),
@@ -205,9 +255,14 @@ export function payloadFromSpecialOfferForm(form) {
     maxProjectValueJod: Number.isFinite(maxProject) ? maxProject : null,
     accessLevelKey,
     articleAccessLevel: articleAccessLevelFromKey(accessLevelKey),
+    badgeTextEn: String(form.badgeTextEn || "").trim(),
+    ribbonTextEn: String(form.ribbonTextEn || "").trim(),
     ctaLabel: String(form.ctaLabel || "").trim() || SPECIAL_OFFER_DEFAULTS.ctaLabel,
+    ctaLabelEn: String(form.ctaLabelEn || "").trim(),
     microcopy: String(form.microcopy || "").trim(),
+    microcopyEn: String(form.microcopyEn || "").trim(),
     refundExplanationAr: String(form.refundExplanationAr || "").trim(),
+    refundExplanationEn: String(form.refundExplanationEn || "").trim(),
     whatsappMessageAr: String(form.whatsappMessageAr || "").trim(),
     purchaseMode,
     linkedPlanCode: null,

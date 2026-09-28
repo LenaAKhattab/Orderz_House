@@ -6,6 +6,11 @@ import { isUnknownCountryRow } from "../../components/analytics/super-admin/regi
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getSuperadminDashboardAnalysisRequest } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import {
+  localizeCanonicalPlanTitle,
+  localizePlanGroupLabel,
+  localizePlanPageTitle,
+} from "../../lib/i18n/platformContentLocale";
 import { withResolvedCountryNames } from "../../utils/countryDisplayAr";
 import "../../styles/adminOverviewSoft.css";
 import "../../styles/adminAnalysisSoft.css";
@@ -80,7 +85,7 @@ function SoftMetricGrid({ items, columns = 4 }) {
   );
 }
 
-function PlanGroupCard({ group, t }) {
+function PlanGroupCard({ group, t, locale }) {
   const topPlan = group.topPlans?.[0];
   const metrics = [
     { label: t("analysis.kpi.totalSubscriptions"), value: group.totalSubscriptions },
@@ -95,10 +100,13 @@ function PlanGroupCard({ group, t }) {
     <article className="aos-card">
       <header className="aos-card__head">
         <div>
-          <h3 className="aos-card__title">{group.groupLabel}</h3>
+          <h3 className="aos-card__title">{localizePlanGroupLabel(group, t)}</h3>
           {group.planPages?.length ? (
             <p className="aos-card__desc">
-              {group.planPages.map((p) => p.title || p.slug).filter(Boolean).join(" · ")}
+              {group.planPages
+                .map((p) => localizePlanPageTitle(p, locale) || p.slug)
+                .filter(Boolean)
+                .join(" · ")}
             </p>
           ) : null}
         </div>
@@ -108,7 +116,7 @@ function PlanGroupCard({ group, t }) {
         <footer className="aan-group-footer">
           <span className="aan-group-footer__label">{t("analysis.planGroup.topPlan")}</span>
           <span className="aan-group-footer__value">
-            {topPlan.planTitle}
+            {localizeCanonicalPlanTitle(topPlan, locale)}
             <em className="aan-group-footer__count">
               {t("analysis.planGroup.subscribers", { count: formatInt(topPlan.totalSubscribers) })}
             </em>
@@ -124,7 +132,7 @@ function SoftPill({ tone = "muted", children }) {
 }
 
 export default function SuperAdminAnalysisPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [range, setRange] = useState("all");
   const [currentOnly, setCurrentOnly] = useState(true);
   const [data, setData] = useState(null);
@@ -165,13 +173,13 @@ export default function SuperAdminAnalysisPage() {
   const byPlanGroup = data?.subscriptionsByPlanGroup || [];
 
   const userCountries = useMemo(
-    () => withResolvedCountryNames(usersByCountry?.countries || []),
-    [usersByCountry?.countries],
+    () => withResolvedCountryNames(usersByCountry?.countries || [], locale),
+    [usersByCountry?.countries, locale],
   );
 
   const subCountries = useMemo(
-    () => withResolvedCountryNames(data?.subscriptionsByCountry || []),
-    [data?.subscriptionsByCountry],
+    () => withResolvedCountryNames(data?.subscriptionsByCountry || [], locale),
+    [data?.subscriptionsByCountry, locale],
   );
 
   const topUserCountry = userCountries.find((r) => !isUnknownCountryRow(r)) || userCountries[0];
@@ -529,7 +537,7 @@ export default function SuperAdminAnalysisPage() {
                     <tr key={plan.planId}>
                       <td>
                         <div className="aos-stack">
-                          <strong className="aos-stack__primary">{plan.planTitle}</strong>
+                          <strong className="aos-stack__primary">{localizeCanonicalPlanTitle(plan, locale)}</strong>
                           <span className="aos-stack__sub">#{plan.planId}</span>
                           <div className="aan-plan-badges">
                             {plan.paidSubscribers > 0 ? (
@@ -631,7 +639,7 @@ export default function SuperAdminAnalysisPage() {
               <p className="aos-chart__empty">{loadingGeneric}</p>
             </article>
           ) : byPlanGroup.length ? (
-            byPlanGroup.map((group) => <PlanGroupCard key={group.groupKey} group={group} t={t} />)
+            byPlanGroup.map((group) => <PlanGroupCard key={group.groupKey} group={group} t={t} locale={locale} />)
           ) : (
             <article className="aos-card">
               <p className="aos-chart__empty">{t("analysis.planGroup.empty")}</p>
@@ -696,7 +704,7 @@ export default function SuperAdminAnalysisPage() {
                           <span className="aos-stack__sub">{formatInt(row.adminAssignedSubscriptions)}</span>
                         </td>
                         <td className="aan-col--plan">
-                          <span className="aos-stack__sub">{row.topPlan?.planTitle || "—"}</span>
+                          <span className="aos-stack__sub">{localizeCanonicalPlanTitle(row.topPlan, locale) || "—"}</span>
                         </td>
                         <td>
                           <span className="aos-stack__primary">{formatMoneyJod(row.paidRevenueJod)}</span>

@@ -4,7 +4,8 @@ const { mapPageRow, mapPublicListRow, mapPublicDetailRow } = require("../utils/p
 const PAGE_SELECT = `
   SELECT
     id, slug, title, menu_label, content,
-    meta_title, meta_description,
+    title_en, menu_label_en, content_en,
+    meta_title, meta_description, meta_title_en, meta_description_en,
     is_published, show_in_mobile_menu, show_in_footer,
     sort_order, is_system, updated_by,
     created_at, updated_at
@@ -49,8 +50,13 @@ async function updatePage(id, payload, updatedByUserId) {
     title: "title",
     menuLabel: "menu_label",
     content: "content",
+    titleEn: "title_en",
+    menuLabelEn: "menu_label_en",
+    contentEn: "content_en",
     metaTitle: "meta_title",
     metaDescription: "meta_description",
+    metaTitleEn: "meta_title_en",
+    metaDescriptionEn: "meta_description_en",
     isPublished: "is_published",
     showInMobileMenu: "show_in_mobile_menu",
     showInFooter: "show_in_footer",
@@ -83,7 +89,8 @@ async function updatePage(id, payload, updatedByUserId) {
     WHERE id = $${idx}
     RETURNING
       id, slug, title, menu_label, content,
-      meta_title, meta_description,
+      title_en, menu_label_en, content_en,
+      meta_title, meta_description, meta_title_en, meta_description_en,
       is_published, show_in_mobile_menu, show_in_footer,
       sort_order, is_system, updated_by,
       created_at, updated_at

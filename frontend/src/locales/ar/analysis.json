@@ -118,6 +118,9 @@
     "sectionAria": "تحليل الاشتراكات حسب نوع الباقة",
     "empty": "لا توجد بيانات مجموعات باقات",
     "topPlan": "أشهر باقة",
+    "core": "الباقات الأساسية",
+    "pages": "باقات الصفحات",
+    "unassigned": "غير مصنّفة",
     "subscribers": "{{count}} مشترك"
   },
   "subsByCountry": {
@@ -179,7 +182,21 @@
     "vsPrevious": "عن الفترة السابقة",
     "dataScope": "نطاق البيانات: {{scope}}",
     "previous": "السابق: {{value}}",
-    "countOf": "{{shown}} من أصل {{total}}"
+    "countOf": "{{shown}} من أصل {{total}}",
+    "comparedToMonthStart": "مقارنة ببداية الشهر",
+    "currentOnly": "العدد الحالي فقط — لا يُقارن بفترة سابقة",
+    "monthVsPrevious": "هذا الشهر مقابل الشهر السابق"
+  },
+  "metrics": {
+    "totalUsers": "إجمالي المستخدمين",
+    "totalOrders": "إجمالي الطلبات",
+    "ordersThisMonth": "طلبات الشهر",
+    "monthlyRevenue": "إيرادات الشهر",
+    "activeSubscriptions": "اشتراكات نشطة",
+    "totalClients": "إجمالي العملاء",
+    "activeFreelancers": "مستقلون نشطون",
+    "pendingClaims": "مطالبات معلقة",
+    "claimsSubmitted": "مطالبات مقدّمة"
   },
   "charts": {
     "ordersCount": "عدد الطلبات",
@@ -534,6 +551,14 @@
     "requiresFollowUp": "يتطلب متابعة",
     "pendingActivation": "تفعيل اشتراكات معلّق",
     "pendingClaims": "مطالبات مالية معلّقة",
+    "alerts": {
+      "pending_activations": "تفعيل اشتراكات بانتظار الموافقة",
+      "pending_or_failed_payments": "مدفوعات اشتراكات عالقة",
+      "pending_claims_review": "مطالبات مالية بانتظار المراجعة",
+      "orders_waiting_too_long": "طلبات متأخرة دون معالجة",
+      "inactive_subscribed_freelancers": "مستقلون مشتركون بلا نشاط",
+      "low_performing_courses": "دورات منخفضة الأداء"
+    },
     "stuckCourses": "متعلمون عالقون فوق 80%",
     "examComplete": "إكمال الاختبار",
     "publishedCourses": "دورات منشورة",

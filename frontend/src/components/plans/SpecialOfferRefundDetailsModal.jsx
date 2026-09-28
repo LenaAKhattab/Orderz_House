@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Briefcase, CalendarDays, ShieldAlert, Target, Wallet } from "lucide-react";
 import DashboardModal from "../dashboard/DashboardModal";
 import {
+  localizedSpecialOfferText,
   SPECIAL_OFFER_REFUND_SECTION_TITLES_AR,
   splitSpecialOfferRefundSections,
 } from "../../constants/specialOfferPackage";
@@ -30,12 +31,12 @@ export default function SpecialOfferRefundDetailsModal({
   t,
   triggerRef = null,
 }) {
-  const { t: tHook } = useTranslation();
+  const { t: tHook, locale } = useTranslation();
   const tr = (key, params) => (t ?? tHook)(key, params);
   const jod = tr("plans.currency.jod");
   const sections = useMemo(
-    () => splitSpecialOfferRefundSections(offer?.refundExplanationAr),
-    [offer?.refundExplanationAr],
+    () => splitSpecialOfferRefundSections(localizedSpecialOfferText(offer, "refundExplanationAr", locale)),
+    [offer, locale],
   );
 
   const summaryItems = useMemo(() => {

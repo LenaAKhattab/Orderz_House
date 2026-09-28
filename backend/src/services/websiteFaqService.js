@@ -5,6 +5,10 @@ function mapFaqRow(row) {
     id: row.id,
     question: row.question,
     answer: row.answer,
+    question_en: row.question_en || null,
+    answer_en: row.answer_en || null,
+    questionEn: row.question_en || null,
+    answerEn: row.answer_en || null,
     sortOrder: row.sort_order,
     isActive: row.is_active,
     createdAt: row.created_at,
@@ -13,8 +17,11 @@ function mapFaqRow(row) {
 }
 
 const FAQ_SELECT =
-  `SELECT id, question, answer, sort_order, is_active, created_at, updated_at
+  `SELECT id, question, answer, question_en, answer_en, sort_order, is_active, created_at, updated_at
    FROM website_faq_items`;
+
+const FAQ_RETURNING =
+  `id, question, answer, question_en, answer_en, sort_order, is_active, created_at, updated_at`;
 
 async function listActiveFaqItems() {
   const { rows } = await pool.query(
@@ -38,7 +45,13 @@ async function getFaqItemById(id) {
   return rows.length ? mapFaqRow(rows[0]) : null;
 }
 
-async function createFaqItem({ question, answer }) {
+function emptyToNull(value) {
+  if (value === undefined) return undefined;
+  const text = value == null ? "" : String(value).trim();
+  return text || null;
+}
+
+async function createFaqItem({ question, answer, questionEn, answerEn }) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -47,10 +60,10 @@ async function createFaqItem({ question, answer }) {
     );
     const nextOrder = Number(maxRes.rows[0]?.max_order || 0) + 1;
     const { rows } = await client.query(
-      `INSERT INTO website_faq_items (question, answer, sort_order, is_active, created_at, updated_at)
-       VALUES ($1, $2, $3, TRUE, NOW(), NOW())
-       RETURNING id, question, answer, sort_order, is_active, created_at, updated_at`,
-      [question, answer, nextOrder],
+      `INSERT INTO website_faq_items (question, answer, question_en, answer_en, sort_order, is_active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), NOW())
+       RETURNING ${FAQ_RETURNING}`,
+      [question, answer, emptyToNull(questionEn) || null, emptyToNull(answerEn) || null, nextOrder],
     );
     await client.query("COMMIT");
     return mapFaqRow(rows[0]);
@@ -62,7 +75,7 @@ async function createFaqItem({ question, answer }) {
   }
 }
 
-async function updateFaqItem(id, { question, answer }) {
+async function updateFaqItem(id, { question, answer, questionEn, answerEn }) {
   const fields = [];
   const values = [];
   let idx = 1;
@@ -74,6 +87,14 @@ async function updateFaqItem(id, { question, answer }) {
   if (answer !== undefined) {
     fields.push(`answer = $${idx++}`);
     values.push(answer);
+  }
+  if (questionEn !== undefined) {
+    fields.push(`question_en = $${idx++}`);
+    values.push(emptyToNull(questionEn));
+  }
+  if (answerEn !== undefined) {
+    fields.push(`answer_en = $${idx++}`);
+    values.push(emptyToNull(answerEn));
   }
 
   if (!fields.length) {
@@ -87,7 +108,7 @@ async function updateFaqItem(id, { question, answer }) {
     `UPDATE website_faq_items
      SET ${fields.join(", ")}
      WHERE id = $${idx}
-     RETURNING id, question, answer, sort_order, is_active, created_at, updated_at`,
+     RETURNING ${FAQ_RETURNING}`,
     values,
   );
   return rows.length ? mapFaqRow(rows[0]) : null;

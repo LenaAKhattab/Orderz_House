@@ -3,7 +3,14 @@ const { SPECIAL_OFFER_PURCHASE_MODE } = require("../constants/specialOfferPackag
 
 const updateSpecialOfferValidators = [
   body("title").optional().isString().trim().isLength({ min: 1, max: 120 }),
+  body("titleEn").optional({ nullable: true }).isString().trim().isLength({ max: 120 }),
   body("subtitle").optional({ nullable: true }).isString().trim().isLength({ max: 400 }),
+  body("subtitleEn").optional({ nullable: true }).isString().trim().isLength({ max: 400 }),
+  body("badgeTextEn").optional({ nullable: true }).isString().trim().isLength({ max: 80 }),
+  body("ribbonTextEn").optional({ nullable: true }).isString().trim().isLength({ max: 80 }),
+  body("ctaLabelEn").optional({ nullable: true }).isString().trim().isLength({ max: 80 }),
+  body("microcopyEn").optional({ nullable: true }).isString().trim().isLength({ max: 240 }),
+  body("refundExplanationEn").optional({ nullable: true }).isString().trim().isLength({ max: 2000 }),
   body("badgeText").optional({ nullable: true }).isString().trim().isLength({ max: 80 }),
   body("ribbonText").optional({ nullable: true }).isString().trim().isLength({ max: 80 }),
   body("priceJod").optional().isFloat({ min: 0, max: 100000 }),

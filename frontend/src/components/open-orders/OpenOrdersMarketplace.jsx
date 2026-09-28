@@ -19,7 +19,7 @@ import {
   PoolOrderListSkeleton,
 } from "../../components/ui/Skeleton";
 import { useTranslation } from "../../i18n/LanguageProvider";
-import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
+import { localizeCategoryName } from "../../lib/i18n/platformContentLocale";
 import { getLocalizedMarketplaceOrderTitle } from "../../lib/i18n/getLocalizedMarketplaceOrderText";
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
 import { useFreelancerMarketplaceContext } from "../../hooks/useFreelancerMarketplaceContext";
@@ -171,7 +171,7 @@ function CategoryFiltersPanel({
           return (
             <div key={category.id} className="oh-orders-filters__group">
               <label className="oh-orders-filters__item oh-orders-filters__item--parent">
-                <span className="oh-orders-filters__category-title">{getLocalizedField(category, "name", locale)}</span>
+                <span className="oh-orders-filters__category-title">{localizeCategoryName(category, locale)}</span>
                 <input
                   type="checkbox"
                   checked={parentChecked}
@@ -183,7 +183,7 @@ function CategoryFiltersPanel({
                   const checked = selectedSubSubIds.includes(sub.id);
                   return (
                     <label key={sub.id} className="oh-orders-filters__item">
-                      <span>{getLocalizedField(sub, "name", locale)}</span>
+                      <span>{localizeCategoryName(sub, locale)}</span>
                       <input type="checkbox" checked={checked} onChange={(e) => toggleSubSub(sub.id, e.target.checked)} />
                     </label>
                   );

@@ -1,5 +1,15 @@
 import PublicPageHeader from "../layout/PublicPageHeader";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickLocalizedPlatformCopy } from "../../lib/i18n/platformContentLocale";
+
+function localizedBlock(block, locale) {
+  if (!block || locale !== "en") return block;
+  return {
+    ...block,
+    title: pickLocalizedPlatformCopy(block.title, block.titleEn || block.title_en, locale),
+    body: pickLocalizedPlatformCopy(block.body, block.bodyEn || block.body_en, locale),
+  };
+}
 
 function HiwImageFigure({ block }) {
   const { t } = useTranslation();
@@ -74,7 +84,7 @@ function HiwTextImageBlock({ block, index }) {
 }
 
 export default function HowItWorksBlockRenderer({ blocks }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   if (!blocks.length) {
     return <p className="hiw-page__empty">{t("home.hiw.empty")}</p>;
   }
@@ -84,16 +94,17 @@ export default function HowItWorksBlockRenderer({ blocks }) {
   return (
     <div className="hiw-page__blocks">
       {blocks.map((block) => {
-        const Renderer = BLOCK_RENDERERS[block.blockType];
+        const localized = localizedBlock(block, locale);
+        const Renderer = BLOCK_RENDERERS[localized.blockType];
         if (!Renderer) return null;
 
-        const usesStepNumber = block.blockType === "text" || block.blockType === "text_image";
+        const usesStepNumber = localized.blockType === "text" || localized.blockType === "text_image";
         const index = usesStepNumber ? stepIndex : 0;
         if (usesStepNumber) stepIndex += 1;
 
         return (
           <div key={block.id} className="hiw-page__block-wrap">
-            <Renderer block={block} index={index} />
+            <Renderer block={localized} index={index} />
           </div>
         );
       })}
@@ -102,11 +113,12 @@ export default function HowItWorksBlockRenderer({ blocks }) {
 }
 
 export function HowItWorksPageShell({ page, blocks, children }) {
-  const { t } = useTranslation();
+  const { t, locale, dir } = useTranslation();
+  const title = pickLocalizedPlatformCopy(page?.title, page?.titleEn || page?.title_en, locale);
   return (
-    <main className="hiw-page page-content" lang="ar" dir="rtl">
+    <main className="hiw-page page-content" lang={locale === "en" ? "en" : "ar"} dir={dir || (locale === "en" ? "ltr" : "rtl")}>
       <div className="hiw-page__inner">
-        <PublicPageHeader title={page?.title || t("home.hiw.defaultTitle")} />
+        <PublicPageHeader title={title || t("home.hiw.defaultTitle")} />
         {children || <HowItWorksBlockRenderer blocks={blocks} />}
       </div>
     </main>

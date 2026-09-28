@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import usePublicSitePage from "../hooks/usePublicSitePage";
 import { useTranslation } from "../i18n/LanguageProvider";
+import { pickLocalizedPlatformCopy } from "../lib/i18n/platformContentLocale";
 import "../styles/publicSitePage.css";
 
 function renderContentBlock(block, index) {
@@ -18,7 +19,7 @@ function renderContentBlock(block, index) {
  * @param {{ slug: string }} props
  */
 export default function PublicSitePage({ slug }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const ps = "home.publicSite";
   const { page, loading, unavailable, error } = usePublicSitePage(slug);
 
@@ -46,7 +47,7 @@ export default function PublicSitePage({ slug }) {
     return (
       <main className="container public-site-page__state">
         <h1>{t(`${ps}.loadFailedTitle`)}</h1>
-        <p>{error}</p>
+        <p>{error === "LOAD_FAILED" ? t(`${ps}.loadFailedText`) : error}</p>
         <Link to="/" className="btn btn-primary">
           {t("common.actions.backHome")}
         </Link>
@@ -54,13 +55,19 @@ export default function PublicSitePage({ slug }) {
     );
   }
 
-  const blocks = (page?.content || "").split(/\n\n+/);
+  const title = pickLocalizedPlatformCopy(page?.title, page?.titleEn || page?.title_en, locale);
+  const content = pickLocalizedPlatformCopy(page?.content, page?.contentEn || page?.content_en, locale);
+  const blocks = content.split(/\n\n+/);
+  const missingEnglish = locale === "en" && !content;
 
   return (
     <main className="container page-content public-site-page">
       <section className="card legal-card public-site-page__card">
-        <h1 className="public-site-page__title">{page?.title || t(`${ps}.fallbackTitle`)}</h1>
+        <h1 className="public-site-page__title">
+          {title || (locale === "en" ? t(`${ps}.englishUnavailable`) : t(`${ps}.fallbackTitle`))}
+        </h1>
         <div className="public-site-page__content">
+          {missingEnglish ? <p>{t(`${ps}.englishUnavailable`)}</p> : null}
           {blocks.map((block, index) => renderContentBlock(block, index))}
         </div>
       </section>

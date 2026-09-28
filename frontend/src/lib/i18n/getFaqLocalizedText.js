@@ -1,5 +1,5 @@
-import { getLocalizedField } from "./getLocalizedField";
-import { canonicalFaqIdForField } from "./resolveFaqLocaleKey";
+import { getLocalizedField } from "./getLocalizedField.js";
+import { canonicalFaqIdForField } from "./resolveFaqLocaleKey.js";
 
 /**
  * Resolve FAQ question/answer for the active locale.
@@ -21,7 +21,7 @@ export function getFaqLocalizedText(item, field, locale, t, index) {
 
   const fromApi = getLocalizedField(item, field, locale);
   const base = String(item[field] || "");
-  if (fromApi && fromApi !== base) {
+  if (fromApi && fromApi !== base && !/[\u0600-\u06FF]/.test(fromApi)) {
     return fromApi;
   }
 
@@ -32,5 +32,11 @@ export function getFaqLocalizedText(item, field, locale, t, index) {
     if (translated && translated !== key) return translated;
   }
 
-  return base;
+  return "";
+}
+
+export function faqTextOrNotice(text, locale, t) {
+  if (text) return text;
+  if (locale === "en") return t("home.faq.englishUnavailable");
+  return "";
 }

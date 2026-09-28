@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FAQ_SCROLL_THRESHOLD, usePublicFaq } from "../../../hooks/usePublicFaq";
 import { useTranslation } from "../../../i18n/LanguageProvider";
-import { getFaqLocalizedText } from "../../../lib/i18n/getFaqLocalizedText";
+import { faqTextOrNotice, getFaqLocalizedText } from "../../../lib/i18n/getFaqLocalizedText";
 import "../home-faq-scroll.css";
 
 function Chevron({ open }) {
@@ -74,8 +74,8 @@ export default function HomeMobileFaq() {
                 const open = openId === item.id;
                 const panelId = `hm-faq-panel-${item.id}`;
                 const buttonId = `hm-faq-trigger-${item.id}`;
-                const question = getFaqLocalizedText(item, "question", locale, t, index);
-                const answer = getFaqLocalizedText(item, "answer", locale, t, index);
+                const question = faqTextOrNotice(getFaqLocalizedText(item, "question", locale, t, index), locale, t);
+                const answer = faqTextOrNotice(getFaqLocalizedText(item, "answer", locale, t, index), locale, t);
 
                 return (
                   <li key={item.id} className="hm-faq__item">
